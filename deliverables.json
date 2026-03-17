@@ -1,0 +1,52 @@
+{
+  "project_name": "Nexus-Bio",
+  "description": "Production-ready, zero-cost-deployable web app for Next-Gen Bio-Intelligent Architecture.",
+  "tech_stack": ["React", "Three.js", "Tailwind CSS", "Vite", "Framer Motion"],
+  "deliverables": [
+    {
+      "type": "Source Code",
+      "path": "/",
+      "description": "Complete React project ready for deployment."
+    },
+    {
+      "type": "Documentation",
+      "path": "/README.md",
+      "description": "Main project documentation with agent automation notes."
+    },
+    {
+      "type": "Documentation",
+      "path": "/DEPLOY-STEP-BY-STEP.md",
+      "description": "Non-coder friendly deployment checklist and instructions."
+    },
+    {
+      "type": "Documentation",
+      "path": "/SOCIAL-AND-OUTREACH.md",
+      "description": "LinkedIn posts and DM templates for outreach."
+    },
+    {
+      "type": "Documentation",
+      "path": "/DEMO-SCRIPT.md",
+      "description": "60-90 second demo script with time-coded voiceover lines."
+    },
+    {
+      "type": "Data",
+      "path": "/src/data/pathwayData.json",
+      "description": "Mock JSON dataset for the 3D metabolic pathway."
+    },
+    {
+      "type": "Data",
+      "path": "/src/data/mockIndex.json",
+      "description": "Mock JSON index for semantic search."
+    }
+  ],
+  "build_commands": {
+    "install": "npm install",
+    "dev": "npm run dev",
+    "build": "npm run build",
+    "test": "npm test"
+  },
+  "deployment": {
+    "zero_cost_hosts": ["Vercel", "Netlify", "GitHub Pages"],
+    "one_click_deploy": "Use Vercel or Netlify dashboard to import the GitHub repository. The build command is 'npm run build' and the output directory is 'dist'."
+  }
+}
