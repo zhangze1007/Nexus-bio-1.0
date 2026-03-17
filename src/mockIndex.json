@@ -1,0 +1,30 @@
+[
+  {
+    "id": "doc1",
+    "title": "Advancements in Microbial Applications for Sustainable Food Production",
+    "extract": "Precision fermentation utilizes genetically modified microorganisms to produce specific ingredients, including alternative proteins, enzymes, and flavors, for the food industry.",
+    "sourceLink": "https://doi.org/10.3390/foods14193427",
+    "keywords": ["precision fermentation", "alternative proteins", "microorganisms", "food industry", "enzymes", "flavors"]
+  },
+  {
+    "id": "doc2",
+    "title": "Advancements in Microbial Applications for Sustainable Food Production",
+    "extract": "Microbial biopolymers, such as pullulan and xanthan gum, are another source of biopreservation technology that the food industry has investigated for edible coatings.",
+    "sourceLink": "https://doi.org/10.3390/foods14193427",
+    "keywords": ["biopolymers", "pullulan", "xanthan gum", "biopreservation", "edible coatings", "food industry"]
+  },
+  {
+    "id": "doc3",
+    "title": "Advancements in Microbial Applications for Sustainable Food Production",
+    "extract": "Postbiotics are structures derived from microorganisms after cellular death, including all metabolites and cellular components that might promote health benefits to the host.",
+    "sourceLink": "https://doi.org/10.3390/foods14193427",
+    "keywords": ["postbiotics", "metabolites", "health benefits", "cellular death", "microorganisms"]
+  },
+  {
+    "id": "doc4",
+    "title": "Advancements in Microbial Applications for Sustainable Food Production",
+    "extract": "Lactic acid bacteria (LAB) are widely explored as starter cultures in the food industry to enhance the gustatory, nutritional value, and flavor.",
+    "sourceLink": "https://doi.org/10.3390/foods14193427",
+    "keywords": ["lactic acid bacteria", "starter cultures", "food industry", "nutritional value", "flavor"]
+  }
+]
