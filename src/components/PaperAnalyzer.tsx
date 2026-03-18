@@ -143,7 +143,7 @@ Rules: 4-8 nodes, IDs lowercase with underscores, labels 1-3 words max.`;
 
   return (
     <section className="px-4 py-24" id="analyzer"
-      style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+      style={{ borderTop: 'none' }}>
       <div className="max-w-2xl mx-auto">
 
         {/* Header */}
