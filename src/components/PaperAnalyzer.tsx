@@ -73,7 +73,7 @@ Rules: 4-8 nodes, IDs lowercase with underscores, labels 1-3 words max.`;
     const createBody = (parts: any[]) => ({
       contents: [{ parts }],
       generationConfig: config,
-      tools: tools
+      tools //
 
     if ((mode === 'image' || mode === 'camera') && imageBase64) {
       return { url: baseUrl, body: { contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: 'image/jpeg', data: imageBase64 } }] }], generationConfig: config } };
