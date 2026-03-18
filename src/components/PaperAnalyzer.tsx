@@ -68,7 +68,7 @@ ${text.slice(0, 3000)}`;
 
     try {
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -214,7 +214,7 @@ Example: 'We engineered E. coli to produce succinic acid via the reductive TCA c
           </button>
 
           <p className="text-center text-zinc-600 text-xs mt-4 font-mono">
-            Powered by Google Gemini 1.5 Flash · Results may vary based on paper quality
+            Powered by Google Gemini 2.0 Flash · Results may vary based on paper quality
           </p>
         </div>
       </div>
