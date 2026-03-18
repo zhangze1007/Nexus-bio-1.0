@@ -36,8 +36,7 @@ export default function App() {
       <Hero />
 
       {/* Pathway Section */}
-      <section id="demo" className="px-4 py-24"
-        style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+      <section id="demo" className="px-4 py-24">
         <div className="max-w-5xl mx-auto">
           <div className="flex items-start justify-between mb-10 flex-wrap gap-4">
             <div>
@@ -52,13 +51,13 @@ export default function App() {
             {aiNodes && (
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-mono"
-                  style={{ background: 'rgba(255,255,255,0.05)', 
+                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.5)' }}>
                   <span className="w-1.5 h-1.5 rounded-full bg-white opacity-60 animate-pulse" />
                   AI Generated · {aiNodes.length} nodes
                 </div>
                 <button onClick={handleResetPathway}
                   className="text-xs px-3 py-1.5 rounded-full transition-colors"
-                  style={{ color: 'rgba(255,255,255,0.3)'
+                  style={{ color: 'rgba(255,255,255,0.3)', border: '1px solid rgba(255,255,255,0.08)' }}
                   onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#ffffff'; }}
                   onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.3)'; }}>
                   Reset
@@ -91,6 +90,7 @@ export default function App() {
 
       {/* Footer */}
       <footer className="px-6 py-6"
+        style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
         <div className="max-w-5xl mx-auto flex items-center justify-between flex-wrap gap-4">
 
           {/* Left — Logo */}
