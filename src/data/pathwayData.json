@@ -1,50 +1,58 @@
 [
   {
-    "id": "glucose",
-    "label": "Glucose",
-    "position": [-3, 0, 0],
-    "summary": "Glucose is the primary carbon source metabolized via the Embden-Meyerhof-Parnas (EMP) pathway.",
-    "citation": "Vermelho et al., 2025. Foods 14, 3427. DOI: 10.3390/foods14193427",
-    "color": "#4ade80"
+    "id": "acetyl_coa",
+    "label": "Acetyl-CoA",
+    "position": [-4, 0, 0],
+    "summary": "Central metabolic precursor derived from glucose catabolism. Entry point into the mevalonate pathway for isoprenoid biosynthesis in engineered S. cerevisiae.",
+    "citation": "Ro et al., 2006. Production of the antimalarial drug precursor artemisinic acid in engineered yeast. Nature 440, 940–943.",
+    "color": "#e5e5e5"
   },
   {
-    "id": "pyruvate",
-    "label": "Pyruvate",
+    "id": "hmg_coa",
+    "label": "HMG-CoA",
+    "position": [-2, 1.5, 0],
+    "summary": "3-Hydroxy-3-methylglutaryl-CoA, a key intermediate in the mevalonate pathway. Overexpression of tHMGR was critical to increase flux toward artemisinin precursors.",
+    "citation": "Ro et al., 2006. Nature 440, 940–943.",
+    "color": "#d4d4d4"
+  },
+  {
+    "id": "mevalonate",
+    "label": "Mevalonate",
+    "position": [-2, -1.5, 0],
+    "summary": "Six-carbon precursor produced by HMG-CoA reductase. Rate-limiting step upregulated via truncated HMGR overexpression to boost isoprenoid flux.",
+    "citation": "Ro et al., 2006. Nature 440, 940–943.",
+    "color": "#a3a3a3"
+  },
+  {
+    "id": "fpp",
+    "label": "FPP",
     "position": [0, 0, 0],
-    "summary": "Pyruvate is a central hub for metabolic pathways, essential for producing industrial compounds.",
-    "citation": "Vermelho et al., 2025. Foods 14, 3427. DOI: 10.3390/foods14193427",
-    "color": "#facc15"
+    "summary": "Farnesyl pyrophosphate — the universal C15 isoprenoid building block. Central branch point redirected from sterol synthesis toward artemisinin production.",
+    "citation": "Ro et al., 2006. Nature 440, 940–943.",
+    "color": "#f5f5f5"
   },
   {
-    "id": "lactic_acid",
-    "label": "Lactic Acid",
-    "position": [3, 2, 0],
-    "summary": "Homofermentation primarily produces lactic acid, which lends a mild flavor and is utilized in yogurt, cheese, and pickles.",
-    "citation": "Vermelho et al., 2025. Foods 14, 3427. DOI: 10.3390/foods14193427",
-    "color": "#60a5fa"
+    "id": "amorpha_4_11_diene",
+    "label": "Amorphadiene",
+    "position": [2, 1.5, 0],
+    "summary": "First committed artemisinin precursor, produced by amorphadiene synthase (ADS) from A. annua. Heterologous expression in yeast established the dedicated biosynthetic route.",
+    "citation": "Ro et al., 2006. Nature 440, 940–943.",
+    "color": "#737373"
   },
   {
-    "id": "ethanol",
-    "label": "Ethanol",
-    "position": [3, 0, 0],
-    "summary": "Alcoholic fermentation is carried out mainly by yeasts, converting sugars into ethanol and CO2.",
-    "citation": "Vermelho et al., 2025. Foods 14, 3427. DOI: 10.3390/foods14193427",
-    "color": "#f87171"
+    "id": "artemisinic_acid",
+    "label": "Artemisinic Acid",
+    "position": [4, 0, 0],
+    "summary": "Direct precursor to artemisinin, produced by cytochrome P450 CYP71AV1 via three-step oxidation of amorphadiene. Accumulated extracellularly enabling simple recovery.",
+    "citation": "Ro et al., 2006. Nature 440, 940–943.",
+    "color": "#525252"
   },
   {
-    "id": "propionic_acid",
-    "label": "Propionic Acid",
-    "position": [3, -2, 0],
-    "summary": "Propionic fermentation converts lactate into propionic acid, acetic acid, and CO2, giving Swiss-type cheeses their flavor.",
-    "citation": "Vermelho et al., 2025. Foods 14, 3427. DOI: 10.3390/foods14193427",
-    "color": "#fb923c"
-  },
-  {
-    "id": "acetic_acid",
-    "label": "Acetic Acid",
-    "position": [6, 0, 0],
-    "summary": "Acetic acid fermentation is carried out by Acetobacter, which oxidize ethanol into acetic acid.",
-    "citation": "Vermelho et al., 2025. Foods 14, 3427. DOI: 10.3390/foods14193427",
-    "color": "#c084fc"
+    "id": "artemisinin",
+    "label": "Artemisinin",
+    "position": [4, -2, 0],
+    "summary": "Sesquiterpene endoperoxide antimalarial. Final product of the engineered pathway — the most effective treatment for Plasmodium falciparum malaria, reaching 500 million patients.",
+    "citation": "Ro et al., 2006. Nature 440, 940–943. WHO Essential Medicine since 2002.",
+    "color": "#d4d4d4"
   }
 ]
