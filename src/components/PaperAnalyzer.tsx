@@ -124,7 +124,7 @@ Rules: 4-8 nodes, IDs lowercase with underscores, labels 1-3 words max.`;
     }
   };
 
-  const canAnalyze = (mode === 'text' && text.trim().length >= 50) ||
+  const canAnalyze = (mode === 'text' && text.trim().length >= 10) ||
     ((mode === 'image' || mode === 'camera' || mode === 'pdf') && !!imageBase64) ||
     (mode === 'web' && webUrl.trim().length > 0);
 
@@ -167,7 +167,7 @@ Rules: 4-8 nodes, IDs lowercase with underscores, labels 1-3 words max.`;
                 {imagePreview ? (
                   <img src={imagePreview} alt="Preview" className="h-16 w-16 object-cover rounded-lg border border-zinc-700" />
                 ) : (
-                  <div className="h-16 w-16 rounded-lg border border-dashed border-zinc-700 flex items-center justify-center text-zinc-600">
+                  <div className="h-16 w-10 rounded-lg border border-dashed border-zinc-700 flex items-center justify-center text-zinc-600">
                     {mode === 'pdf' ? <FileText size={20} /> : <ImageIcon size={20} />}
                   </div>
                 )}
