@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import Hero from './components/Hero';
-import ThreeScene from './ThreeScene';
+import ThreeScene from './components/ThreeScene';
 import NodePanel from './components/NodePanel';
 import SemanticSearch from './components/SemanticSearch';
 import ContactFlow from './components/ContactFlow';
