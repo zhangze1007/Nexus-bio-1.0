@@ -16,7 +16,8 @@ function PathwaySphere({ node, onClick, isHovered, setHovered }: NodeProps) {
 
   useFrame((state) => {
     if (meshRef.current) {
-      meshRef.current.position.y = node.position[1] + Math.sin(state.clock.elapsedTime * 2 + node.position[0]) * 0.1;
+      meshRef.current.position.y =
+        node.position[1] + Math.sin(state.clock.elapsedTime * 2 + node.position[0]) * 0.1;
     }
   });
 
@@ -79,33 +80,40 @@ function PathwaySphere({ node, onClick, isHovered, setHovered }: NodeProps) {
 interface ThreeSceneProps {
   nodes: PathwayNode[];
   onNodeClick: (node: PathwayNode) => void;
+  edges?: { start: string; end: string }[];
 }
 
-export default function ThreeScene({ nodes, onNodeClick }: ThreeSceneProps) {
-  const [hoveredNode, setHoveredNode] = useState<string | null>(null);
+const DEFAULT_EDGES = [
+  { start: 'glucose', end: 'pyruvate' },
+  { start: 'pyruvate', end: 'lactic_acid' },
+  { start: 'pyruvate', end: 'ethanol' },
+  { start: 'pyruvate', end: 'propionic_acid' },
+  { start: 'ethanol', end: 'acetic_acid' },
+];
 
-  // Define edges based on the pathway logic
-  const edges = [
-    { start: 'glucose', end: 'pyruvate' },
-    { start: 'pyruvate', end: 'lactic_acid' },
-    { start: 'pyruvate', end: 'ethanol' },
-    { start: 'pyruvate', end: 'propionic_acid' },
-    { start: 'ethanol', end: 'acetic_acid' },
-  ];
+export default function ThreeScene({ nodes, onNodeClick, edges }: ThreeSceneProps) {
+  const [hoveredNode, setHoveredNode] = useState<string | null>(null);
+  const activeEdges = edges ?? DEFAULT_EDGES;
 
   return (
     <div className="w-full h-[500px] bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-800 relative">
       <div className="absolute top-4 left-4 z-10 text-zinc-400 font-mono text-xs">
         Interactive Metabolic Pathway (交互式代谢途径)
       </div>
+      {edges && (
+        <div className="absolute top-4 right-4 z-10 flex items-center gap-2 px-3 py-1 bg-emerald-500/20 border border-emerald-500/40 rounded-full">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          <span className="text-emerald-400 font-mono text-xs">AI Generated</span>
+        </div>
+      )}
       <Canvas camera={{ position: [0, 0, 8], fov: 50 }}>
         <ambientLight intensity={0.5} />
         <pointLight position={[10, 10, 10]} intensity={1} />
         <OrbitControls enableZoom={false} autoRotate autoRotateSpeed={0.5} />
-        
-        {edges.map((edge, i) => {
-          const startNode = nodes.find(n => n.id === edge.start);
-          const endNode = nodes.find(n => n.id === edge.end);
+
+        {activeEdges.map((edge, i) => {
+          const startNode = nodes.find((n) => n.id === edge.start);
+          const endNode = nodes.find((n) => n.id === edge.end);
           if (!startNode || !endNode) return null;
           return (
             <Line
