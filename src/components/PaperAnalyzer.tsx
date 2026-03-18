@@ -159,7 +159,7 @@ Rules: 4-8 nodes, IDs lowercase with underscores, labels 1-3 words max.`;
                 value={text}
                 onChange={(e) => { setText(e.target.value); setError(null); setSuccess(false); }}
                 placeholder="Paste abstract or methods section from any metabolic engineering paper..."
-                className="w-full h-28 bg-transparent text-zinc-300 placeholder-zinc-600 text-sm focus:outline-none resize-none"
+                className="w-full h-16 bg-transparent text-zinc-300 placeholder-zinc-600 text-sm focus:outline-none resize-none"
               />
             )}
             {(mode === 'pdf' || mode === 'image' || mode === 'camera') && (
