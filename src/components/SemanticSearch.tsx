@@ -1,6 +1,10 @@
 import { useState } from 'react';
 import { Search, ExternalLink, FileText, Sparkles, Loader2, ChevronDown, ChevronUp, Dna } from 'lucide-react';
 
+const ACCENT = '#6495ED'; // Cornflower Blue
+const ACCENT_DIM = 'rgba(100,149,237,0.15)';
+const ACCENT_BORDER = 'rgba(100,149,237,0.25)';
+
 interface PubMedArticle {
   id: string;
   title: string;
@@ -12,7 +16,6 @@ interface PubMedArticle {
   pubmedUrl: string;
 }
 
-// Classic synthetic biology showcase papers
 const SHOWCASE_PAPERS = [
   {
     id: 'showcase1',
@@ -23,7 +26,7 @@ const SHOWCASE_PAPERS = [
     abstract: 'We report the design, synthesis, and assembly of the 1.08-Mbp Mycoplasma mycoides JCVI-syn1.0 genome starting from digitized genome sequence information and its transplantation into a M. capricolum recipient cell to create new M. mycoides cells that are controlled only by the synthetic chromosome.',
     doi: '10.1126/science.1190719',
     pubmedUrl: 'https://pubmed.ncbi.nlm.nih.gov/20488990/',
-    pathway: 'Synthetic genome → Cell division → Protein synthesis → Metabolic activity',
+    pathway: 'Synthetic genome → Chromosome transplantation → Cellular reprogramming → Metabolic activity',
   },
   {
     id: 'showcase2',
@@ -50,11 +53,11 @@ const SHOWCASE_PAPERS = [
 ];
 
 const BIO_KEYWORDS = [
-  'metabolic', 'pathway', 'enzyme', 'biosynthesis', 'fermentation',
-  'glucose', 'pyruvate', 'acetyl', 'synthesis', 'expression',
-  'gene', 'protein', 'cell', 'yeast', 'bacteria', 'E. coli',
-  'CRISPR', 'flux', 'yield', 'titer', 'production', 'engineered',
-  'substrate', 'product', 'intermediate', 'cofactor', 'TCA', 'glycolysis',
+  'metabolic','pathway','enzyme','biosynthesis','fermentation',
+  'glucose','pyruvate','acetyl','synthesis','expression',
+  'gene','protein','cell','yeast','bacteria','E. coli',
+  'CRISPR','flux','yield','titer','production','engineered',
+  'substrate','product','intermediate','cofactor','TCA','glycolysis',
 ];
 
 function highlightKeywords(text: string) {
@@ -62,7 +65,7 @@ function highlightKeywords(text: string) {
   const parts = text.split(pattern);
   return parts.map((part, i) =>
     BIO_KEYWORDS.some(k => k.toLowerCase() === part.toLowerCase())
-      ? <mark key={i} className="bg-emerald-500/20 text-emerald-300 rounded px-0.5">{part}</mark>
+      ? <mark key={i} style={{ background: ACCENT_DIM, color: ACCENT, borderRadius: '3px', padding: '0 2px' }}>{part}</mark>
       : part
   );
 }
@@ -102,28 +105,22 @@ export default function SemanticSearch({ onAnalyzePaper }: SemanticSearchProps) 
     e.preventDefault();
     if (!query.trim()) return;
     setIsSearching(true); setError(null); setHasSearched(true); setResults([]); setShowShowcase(false);
-
     try {
       const searchRes = await fetch(`https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=${encodeURIComponent(query)}+AND+(synthetic+biology+OR+metabolic+engineering+OR+fermentation+OR+bioinformatics)&retmax=5&sort=relevance&retmode=json`);
       const searchData = await searchRes.json();
       const ids: string[] = searchData.esearchresult?.idlist || [];
       if (ids.length === 0) { setIsSearching(false); return; }
-
       const summaryRes = await fetch(`https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id=${ids.join(',')}&retmode=json`);
       const summaryData = await summaryRes.json();
       const uids: string[] = summaryData.result?.uids || [];
-
       const articles: PubMedArticle[] = await Promise.all(
         uids.map(async (uid) => {
           const item = summaryData.result[uid];
           const abstract = await fetchAbstract(uid);
           return {
-            id: uid,
-            title: item.title || 'No title',
-            abstract,
+            id: uid, title: item.title || 'No title', abstract,
             authors: item.authors?.slice(0, 3).map((a: any) => a.name) || [],
-            journal: item.source || '',
-            year: item.pubdate?.split(' ')[0] || '',
+            journal: item.source || '', year: item.pubdate?.split(' ')[0] || '',
             doi: item.articleids?.find((a: any) => a.idtype === 'doi')?.value || '',
             pubmedUrl: `https://pubmed.ncbi.nlm.nih.gov/${uid}/`,
           };
@@ -136,113 +133,131 @@ export default function SemanticSearch({ onAnalyzePaper }: SemanticSearchProps) 
 
   const handleAnalyze = (article: { title: string; authors: string[]; journal: string; year: string; abstract: string }) => {
     if (onAnalyzePaper) {
-      const text = `Title: ${article.title}\nAuthors: ${article.authors.join(', ')}\nJournal: ${article.journal} (${article.year})\nAbstract: ${article.abstract}`;
-      onAnalyzePaper(text);
+      onAnalyzePaper(`Title: ${article.title}\nAuthors: ${article.authors.join(', ')}\nJournal: ${article.journal} (${article.year})\nAbstract: ${article.abstract}`);
       document.getElementById('analyzer')?.scrollIntoView({ behavior: 'smooth' });
     }
   };
 
   return (
-    <section className="py-24 px-4 bg-zinc-950 border-t border-zinc-800" id="search">
+    <section className="px-4 py-24" id="search"
+      style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
       <div className="max-w-4xl mx-auto">
 
         {/* Header */}
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-3 text-white">Literature Search</h2>
-          <p className="text-zinc-500 font-mono text-sm uppercase tracking-widest mb-2">语义文献搜索</p>
-          <p className="text-zinc-600 text-sm">
-            Live search from <span className="text-emerald-400 font-mono">PubMed</span> · 35M+ biomedical articles
+        <div className="mb-12">
+          <p className="text-xs font-mono uppercase tracking-widest mb-2"
+            style={{ color: 'rgba(255,255,255,0.25)' }}>03 · Literature</p>
+          <h2 className="text-2xl md:text-3xl font-semibold text-white mb-2"
+            style={{ letterSpacing: '-0.02em' }}>Literature Search</h2>
+          <p className="text-sm" style={{ color: 'rgba(255,255,255,0.35)' }}>
+            Live search from <span style={{ color: ACCENT }} className="font-mono">PubMed</span> · 35M+ biomedical articles
           </p>
         </div>
 
-        {/* Search Bar */}
+        {/* Search input */}
         <form onSubmit={handleSearch} className="relative mb-10">
           <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-            <Search className="h-5 w-5 text-zinc-500" />
+            <Search size={16} style={{ color: 'rgba(255,255,255,0.25)' }} />
           </div>
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search 'succinic acid fermentation', 'CRISPR metabolic engineering'..."
-            className="block w-full pl-12 pr-36 py-4 bg-zinc-900 border border-zinc-800 rounded-2xl text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+            className="block w-full pl-11 pr-32 py-3.5 rounded-xl text-sm text-white placeholder-neutral-600 focus:outline-none transition-all"
+            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+            onFocus={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)'; }}
+            onBlur={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; }}
           />
-          <button
-            type="submit"
-            disabled={isSearching}
-            className="absolute inset-y-2 right-2 px-5 bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-semibold rounded-xl transition-colors disabled:opacity-50 flex items-center gap-2"
-          >
-            {isSearching ? <Loader2 size={15} className="animate-spin" /> : <Search size={15} />}
+          <button type="submit" disabled={isSearching}
+            className="absolute inset-y-2 right-2 px-4 rounded-lg text-sm font-semibold flex items-center gap-2 transition-all disabled:opacity-40"
+            style={{ background: '#ffffff', color: '#0a0a0a' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#e5e5e5'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#ffffff'; }}>
+            {isSearching ? <Loader2 size={13} className="animate-spin" /> : <Search size={13} />}
             {isSearching ? 'Searching...' : 'Search'}
           </button>
         </form>
 
         {error && (
-          <div className="text-center py-6 text-red-400 border border-red-500/20 rounded-2xl bg-red-500/5 mb-8">{error}</div>
+          <div className="py-4 px-5 rounded-xl text-sm mb-6"
+            style={{ background: 'rgba(255,100,100,0.06)', border: '1px solid rgba(255,100,100,0.15)', color: 'rgba(255,150,150,0.8)' }}>
+            {error}
+          </div>
         )}
 
-        {/* Showcase Section */}
+        {/* Showcase */}
         {showShowcase && (
           <div className="mb-10">
             <div className="flex items-center gap-3 mb-5">
-              <Dna size={18} className="text-emerald-400" />
-              <h3 className="text-white font-semibold">Classic Papers · Landmark Discoveries</h3>
-              <span className="text-xs text-zinc-600 font-mono">手动整理的经典论文</span>
+              <Dna size={15} style={{ color: ACCENT }} />
+              <h3 className="text-sm font-semibold text-white">Landmark Papers in Synthetic Biology</h3>
+              <span className="text-xs font-mono" style={{ color: 'rgba(255,255,255,0.2)' }}>经典论文</span>
             </div>
             <div className="space-y-3">
               {SHOWCASE_PAPERS.map((paper) => {
                 const isExpanded = expandedIds.has(paper.id);
                 return (
-                  <div key={paper.id} className="bg-zinc-900/60 border border-zinc-800 rounded-2xl overflow-hidden hover:border-zinc-700 transition-colors">
+                  <div key={paper.id} className="rounded-2xl overflow-hidden transition-all"
+                    style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)' }}>
                     <div className="p-5">
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-2">
-                            <span className="text-xs font-mono px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full">
+                            <span className="text-xs font-mono px-2 py-0.5 rounded-full"
+                              style={{ background: ACCENT_DIM, color: ACCENT, border: `1px solid ${ACCENT_BORDER}` }}>
                               {paper.journal} · {paper.year}
                             </span>
                           </div>
-                          <h4 className="text-white font-semibold leading-snug mb-2">{paper.title}</h4>
-                          <p className="text-zinc-500 text-xs font-mono">{paper.authors.join(', ')} et al.</p>
+                          <h4 className="text-white text-sm font-medium leading-snug mb-1.5">{paper.title}</h4>
+                          <p className="text-xs font-mono" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                            {paper.authors.join(', ')} et al.
+                          </p>
                         </div>
-                        <button
-                          onClick={() => toggleExpand(paper.id)}
-                          className="text-zinc-500 hover:text-white transition-colors p-1 shrink-0"
-                        >
-                          {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                        <button onClick={() => toggleExpand(paper.id)}
+                          className="p-1 transition-colors shrink-0"
+                          style={{ color: 'rgba(255,255,255,0.25)' }}
+                          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#ffffff'; }}
+                          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.25)'; }}>
+                          {isExpanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
                         </button>
                       </div>
-
                       {isExpanded && (
                         <div className="mt-4 space-y-3">
-                          <p className="text-zinc-300 text-sm leading-relaxed">
+                          <p className="text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.55)' }}>
                             {highlightKeywords(paper.abstract)}
                           </p>
-                          <div className="flex items-center gap-2 text-xs font-mono text-zinc-600 bg-zinc-800/50 px-3 py-2 rounded-xl">
-                            <span className="text-emerald-500">Pathway:</span>
-                            <span>{paper.pathway}</span>
+                          <div className="flex items-start gap-2 text-xs font-mono px-3 py-2 rounded-lg"
+                            style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                            <span style={{ color: ACCENT }}>Pathway →</span>
+                            <span style={{ color: 'rgba(255,255,255,0.35)' }}>{paper.pathway}</span>
                           </div>
                         </div>
                       )}
                     </div>
-
-                    <div className="border-t border-zinc-800/60 px-5 py-3 flex items-center justify-between">
-                      <button
-                        onClick={() => toggleExpand(paper.id)}
-                        className="text-zinc-500 hover:text-zinc-300 text-xs transition-colors"
-                      >
+                    <div className="px-5 py-3 flex items-center justify-between"
+                      style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                      <button onClick={() => toggleExpand(paper.id)}
+                        className="text-xs transition-colors"
+                        style={{ color: 'rgba(255,255,255,0.25)' }}
+                        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.6)'; }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.25)'; }}>
                         {isExpanded ? 'Collapse' : 'Read abstract'}
                       </button>
                       <div className="flex items-center gap-2">
-                        <a href={paper.pubmedUrl} target="_blank" rel="noopener noreferrer" className="text-zinc-500 hover:text-white transition-colors">
-                          <ExternalLink size={14} />
+                        <a href={paper.pubmedUrl} target="_blank" rel="noopener noreferrer"
+                          style={{ color: 'rgba(255,255,255,0.2)' }}
+                          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#ffffff'; }}
+                          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.2)'; }}>
+                          <ExternalLink size={13} />
                         </a>
                         {onAnalyzePaper && (
-                          <button
-                            onClick={() => handleAnalyze(paper)}
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-xs rounded-xl transition-all font-semibold"
-                          >
-                            <Sparkles size={12} />
+                          <button onClick={() => handleAnalyze(paper)}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all"
+                            style={{ background: ACCENT_DIM, color: ACCENT, border: `1px solid ${ACCENT_BORDER}` }}
+                            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(100,149,237,0.25)'; }}
+                            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = ACCENT_DIM; }}>
+                            <Sparkles size={11} />
                             Generate Pathway
                           </button>
                         )}
@@ -256,13 +271,18 @@ export default function SemanticSearch({ onAnalyzePaper }: SemanticSearchProps) 
         )}
 
         {/* Search Results */}
-        <div className="space-y-4">
+        <div className="space-y-3">
           {results.length > 0 && (
-            <div className="flex items-center gap-2 mb-4">
-              <FileText size={16} className="text-zinc-500" />
-              <span className="text-zinc-500 text-sm">{results.length} results from PubMed</span>
-              <button onClick={() => { setResults([]); setHasSearched(false); setShowShowcase(true); }} className="text-xs text-zinc-600 hover:text-zinc-400 ml-auto transition-colors">
-                Clear
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-xs font-mono" style={{ color: 'rgba(255,255,255,0.25)' }}>
+                {results.length} results from PubMed
+              </span>
+              <button onClick={() => { setResults([]); setHasSearched(false); setShowShowcase(true); }}
+                className="text-xs transition-colors"
+                style={{ color: 'rgba(255,255,255,0.2)' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.6)'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.2)'; }}>
+                Clear results
               </button>
             </div>
           )}
@@ -270,59 +290,68 @@ export default function SemanticSearch({ onAnalyzePaper }: SemanticSearchProps) 
           {results.map((article) => {
             const isExpanded = expandedIds.has(article.id);
             return (
-              <div key={article.id} className="bg-zinc-900/50 border border-zinc-800 rounded-2xl overflow-hidden hover:border-zinc-700 transition-colors">
+              <div key={article.id} className="rounded-2xl overflow-hidden transition-all"
+                style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)' }}>
                 <div className="p-5">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        {article.journal && (
-                          <span className="text-xs font-mono px-2 py-0.5 bg-zinc-800 text-zinc-400 rounded-full">
-                            {article.journal}{article.year ? ` · ${article.year}` : ''}
-                          </span>
-                        )}
-                      </div>
-                      <h3 className="text-emerald-400 font-semibold leading-snug mb-2">{article.title}</h3>
+                      {article.journal && (
+                        <span className="text-xs font-mono px-2 py-0.5 rounded-full inline-block mb-2"
+                          style={{ background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.35)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                          {article.journal}{article.year ? ` · ${article.year}` : ''}
+                        </span>
+                      )}
+                      <h3 className="text-white text-sm font-medium leading-snug mb-1.5">{article.title}</h3>
                       {article.authors.length > 0 && (
-                        <p className="text-zinc-500 text-xs font-mono">
+                        <p className="text-xs font-mono" style={{ color: 'rgba(255,255,255,0.3)' }}>
                           {article.authors.join(', ')}{article.authors.length === 3 ? ' et al.' : ''}
                         </p>
                       )}
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
-                      <a href={article.pubmedUrl} target="_blank" rel="noopener noreferrer" className="text-zinc-500 hover:text-white transition-colors">
-                        <ExternalLink size={16} />
+                      <a href={article.pubmedUrl} target="_blank" rel="noopener noreferrer"
+                        style={{ color: 'rgba(255,255,255,0.2)' }}
+                        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#ffffff'; }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.2)'; }}>
+                        <ExternalLink size={14} />
                       </a>
-                      <button onClick={() => toggleExpand(article.id)} className="text-zinc-500 hover:text-white transition-colors">
-                        {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                      <button onClick={() => toggleExpand(article.id)}
+                        style={{ color: 'rgba(255,255,255,0.2)' }}
+                        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#ffffff'; }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.2)'; }}>
+                        {isExpanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
                       </button>
                     </div>
                   </div>
-
-                  {isExpanded && article.abstract && article.abstract !== 'Abstract not available.' && (
+                  {isExpanded && article.abstract !== 'Abstract not available.' && (
                     <div className="mt-4">
-                      <p className="text-zinc-300 text-sm leading-relaxed">
+                      <p className="text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.55)' }}>
                         {highlightKeywords(article.abstract)}
                       </p>
                       {article.doi && (
-                        <p className="text-zinc-600 text-xs font-mono mt-3">DOI: {article.doi}</p>
+                        <p className="text-xs font-mono mt-3" style={{ color: 'rgba(255,255,255,0.2)' }}>
+                          DOI: {article.doi}
+                        </p>
                       )}
                     </div>
                   )}
                 </div>
-
-                <div className="border-t border-zinc-800/60 px-5 py-3 flex items-center justify-between">
-                  <button
-                    onClick={() => toggleExpand(article.id)}
-                    className="text-zinc-500 hover:text-zinc-300 text-xs transition-colors"
-                  >
+                <div className="px-5 py-3 flex items-center justify-between"
+                  style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                  <button onClick={() => toggleExpand(article.id)}
+                    className="text-xs transition-colors"
+                    style={{ color: 'rgba(255,255,255,0.25)' }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.6)'; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.25)'; }}>
                     {isExpanded ? 'Collapse' : 'Read abstract'}
                   </button>
                   {onAnalyzePaper && article.abstract !== 'Abstract not available.' && (
-                    <button
-                      onClick={() => handleAnalyze(article)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-xs rounded-xl transition-all font-semibold"
-                    >
-                      <Sparkles size={12} />
+                    <button onClick={() => handleAnalyze(article)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all"
+                      style={{ background: ACCENT_DIM, color: ACCENT, border: `1px solid ${ACCENT_BORDER}` }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(100,149,237,0.25)'; }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = ACCENT_DIM; }}>
+                      <Sparkles size={11} />
                       Generate Pathway
                     </button>
                   )}
@@ -332,15 +361,17 @@ export default function SemanticSearch({ onAnalyzePaper }: SemanticSearchProps) 
           })}
 
           {hasSearched && !isSearching && results.length === 0 && (
-            <div className="text-center py-12 text-zinc-600 border border-dashed border-zinc-800 rounded-2xl">
+            <div className="text-center py-10 rounded-2xl text-sm"
+              style={{ color: 'rgba(255,255,255,0.2)', border: '1px dashed rgba(255,255,255,0.08)' }}>
               No results for "{query}". Try "lactic acid bacteria" or "E. coli metabolic engineering".
             </div>
           )}
 
           {!hasSearched && !showShowcase && (
-            <div className="text-center py-12 text-zinc-600 border border-dashed border-zinc-800 rounded-2xl">
-              <Search size={28} className="mx-auto mb-3 opacity-30" />
-              <p className="text-sm font-mono">Search any metabolic engineering topic above</p>
+            <div className="text-center py-10 rounded-2xl"
+              style={{ border: '1px dashed rgba(255,255,255,0.08)' }}>
+              <Search size={24} className="mx-auto mb-3 opacity-20" style={{ color: '#fff' }} />
+              <p className="text-xs font-mono" style={{ color: 'rgba(255,255,255,0.2)' }}>Search any metabolic engineering topic above</p>
             </div>
           )}
         </div>
