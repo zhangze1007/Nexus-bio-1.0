@@ -140,7 +140,7 @@ export default function SemanticSearch({ onAnalyzePaper }: SemanticSearchProps) 
 
   return (
     <section className="px-4 py-24" id="search"
-      style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+      style={{ borderTop: 'none' }}>
       <div className="max-w-4xl mx-auto">
 
         {/* Header */}
