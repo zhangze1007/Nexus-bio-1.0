@@ -1,180 +1,287 @@
-import { useRef, useState, useMemo } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Text, Sphere, Line } from '@react-three/drei';
+import { useRef, useState, useMemo, useCallback } from 'react';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { OrbitControls, Line, Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { PathwayNode } from '../types';
 
-// Node importance: hub nodes (more connections) = bigger
-function getNodeSize(nodeId: string, edges: { start: string; end: string }[]) {
-  const connections = edges.filter(e => e.start === nodeId || e.end === nodeId).length;
-  return 0.3 + connections * 0.12;
+// ── Hover info card (HTML overlay) ──
+function NodeCard({ node, visible }: { node: PathwayNode; visible: boolean }) {
+  if (!visible) return null;
+  return (
+    <Html distanceFactor={8} center style={{ pointerEvents: 'none', zIndex: 100 }}>
+      <div style={{
+        background: 'rgba(10,10,10,0.95)',
+        border: '1px solid rgba(255,255,255,0.12)',
+        borderRadius: '12px',
+        padding: '12px 14px',
+        width: '200px',
+        backdropFilter: 'blur(12px)',
+        transform: 'translateY(-110%)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+          <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: node.color, flexShrink: 0, boxShadow: `0 0 6px ${node.color}` }} />
+          <span style={{ color: '#ffffff', fontSize: '13px', fontWeight: 600, letterSpacing: '-0.01em' }}>{node.label}</span>
+        </div>
+        <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px', lineHeight: 1.6, margin: 0 }}>
+          {node.summary?.slice(0, 100)}{node.summary?.length > 100 ? '...' : ''}
+        </p>
+        <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+          <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', fontFamily: 'monospace' }}>
+            Click for full details
+          </span>
+        </div>
+      </div>
+    </Html>
+  );
 }
 
-interface NodeProps {
+// ── Single network node ──
+interface NetworkNodeProps {
   node: PathwayNode;
-  size: number;
-  onClick: (node: PathwayNode) => void;
   isHovered: boolean;
   isSelected: boolean;
-  setHovered: (id: string | null) => void;
+  connectionCount: number;
+  onClick: (node: PathwayNode) => void;
+  onHover: (id: string | null) => void;
 }
 
-function PathwayNode3D({ node, size, onClick, isHovered, isSelected, setHovered }: NodeProps) {
+function NetworkNode({ node, isHovered, isSelected, connectionCount, onClick, onHover }: NetworkNodeProps) {
   const meshRef = useRef<THREE.Mesh>(null);
-  const glowRef = useRef<THREE.Mesh>(null);
   const ringRef = useRef<THREE.Mesh>(null);
+  const glowRef = useRef<THREE.Mesh>(null);
 
-  useFrame((state) => {
-    const t = state.clock.elapsedTime;
+  // Node size based on connections (hub nodes are bigger)
+  const baseSize = 0.28 + connectionCount * 0.08;
+  const targetScale = isHovered || isSelected ? 1.25 : 1;
+
+  useFrame((_, delta) => {
     if (meshRef.current) {
-      // Gentle float animation
-      meshRef.current.position.y = node.position[1] + Math.sin(t * 1.5 + node.position[0] * 0.5) * 0.08;
-      // Slow rotation
-      meshRef.current.rotation.y = t * 0.3;
-      meshRef.current.rotation.x = t * 0.15;
+      const s = meshRef.current.scale.x;
+      meshRef.current.scale.setScalar(s + (targetScale - s) * delta * 8);
+    }
+    if (ringRef.current) {
+      ringRef.current.rotation.z += delta * (isSelected ? 1.5 : 0.6);
+      const targetOpacity = isHovered || isSelected ? 0.8 : 0;
+      const mat = ringRef.current.material as THREE.MeshStandardMaterial;
+      mat.opacity += (targetOpacity - mat.opacity) * delta * 6;
     }
     if (glowRef.current) {
-      glowRef.current.position.y = node.position[1] + Math.sin(t * 1.5 + node.position[0] * 0.5) * 0.08;
-      const pulse = 1 + Math.sin(t * 2) * 0.08;
-      glowRef.current.scale.setScalar(pulse);
-    }
-    if (ringRef.current && (isHovered || isSelected)) {
-      ringRef.current.position.y = node.position[1] + Math.sin(t * 1.5 + node.position[0] * 0.5) * 0.08;
-      ringRef.current.rotation.z = t * 1.2;
-      ringRef.current.rotation.x = t * 0.7;
+      const mat = glowRef.current.material as THREE.MeshStandardMaterial;
+      const targetOpacity = isHovered || isSelected ? 0.18 : 0.04;
+      mat.opacity += (targetOpacity - mat.opacity) * delta * 6;
     }
   });
 
-  const color = new THREE.Color(node.color);
-  const emissiveIntensity = isSelected ? 1.2 : isHovered ? 0.9 : 0.35;
-
   return (
     <group position={node.position}>
-      {/* Outer glow sphere */}
-      <Sphere ref={glowRef} args={[size * 1.8, 16, 16]} position={[0, 0, 0]}>
-        <meshStandardMaterial
-          color={node.color}
-          transparent
-          opacity={isHovered || isSelected ? 0.15 : 0.07}
-          depthWrite={false}
-        />
-      </Sphere>
+      {/* Glow disc */}
+      <mesh ref={glowRef}>
+        <circleGeometry args={[baseSize * 2.2, 32]} />
+        <meshStandardMaterial color={node.color} transparent opacity={0.04} depthWrite={false} />
+      </mesh>
 
-      {/* Spinning ring when hovered/selected */}
-      {(isHovered || isSelected) && (
-        <mesh ref={ringRef} position={[0, 0, 0]}>
-          <torusGeometry args={[size * 1.4, 0.03, 8, 32]} />
-          <meshStandardMaterial color={node.color} emissive={node.color} emissiveIntensity={0.8} />
-        </mesh>
-      )}
+      {/* Orbit ring */}
+      <mesh ref={ringRef} rotation={[0, 0, 0]}>
+        <ringGeometry args={[baseSize * 1.35, baseSize * 1.5, 48]} />
+        <meshStandardMaterial color={node.color} transparent opacity={0} depthWrite={false} />
+      </mesh>
 
-      {/* Main sphere - AlphaFold style: smooth metallic */}
-      <Sphere
+      {/* Main node disc */}
+      <mesh
         ref={meshRef}
-        args={[size, 64, 64]}
         onClick={(e) => { e.stopPropagation(); onClick(node); }}
-        onPointerOver={(e) => { e.stopPropagation(); setHovered(node.id); document.body.style.cursor = 'pointer'; }}
-        onPointerOut={(e) => { e.stopPropagation(); setHovered(null); document.body.style.cursor = 'auto'; }}
+        onPointerOver={(e) => { e.stopPropagation(); onHover(node.id); document.body.style.cursor = 'pointer'; }}
+        onPointerOut={(e) => { e.stopPropagation(); onHover(null); document.body.style.cursor = 'auto'; }}
       >
-        <meshPhysicalMaterial
-          color={node.color}
+        <circleGeometry args={[baseSize, 48]} />
+        <meshStandardMaterial
+          color={isSelected ? '#ffffff' : node.color}
           emissive={node.color}
-          emissiveIntensity={emissiveIntensity}
-          roughness={0.05}
-          metalness={0.3}
-          clearcoat={1}
-          clearcoatRoughness={0.1}
-          transmission={0.1}
+          emissiveIntensity={isHovered ? 0.6 : isSelected ? 0.8 : 0.15}
         />
-      </Sphere>
+      </mesh>
 
-      {/* Label */}
-      <Text
-        position={[0, -(size + 0.45), 0]}
-        fontSize={0.22}
-        color="white"
-        anchorX="center"
-        anchorY="middle"
-        outlineWidth={0.03}
-        outlineColor="#000000"
-        outlineOpacity={0.8}
+      {/* Inner highlight dot */}
+      <mesh position={[baseSize * 0.25, baseSize * 0.25, 0.01]}>
+        <circleGeometry args={[baseSize * 0.18, 16]} />
+        <meshStandardMaterial color="#ffffff" transparent opacity={0.35} />
+      </mesh>
+
+      {/* Label below node */}
+      <Html
+        position={[0, -(baseSize + 0.32), 0]}
+        center
+        style={{ pointerEvents: 'none', whiteSpace: 'nowrap' }}
       >
-        {node.label}
-      </Text>
+        <div style={{
+          color: isHovered || isSelected ? '#ffffff' : 'rgba(255,255,255,0.65)',
+          fontSize: '11px',
+          fontWeight: isSelected ? 700 : 500,
+          fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+          letterSpacing: '-0.01em',
+          textShadow: '0 1px 4px rgba(0,0,0,0.8)',
+          transition: 'color 0.2s',
+          padding: '2px 6px',
+          background: isSelected ? 'rgba(255,255,255,0.08)' : 'transparent',
+          borderRadius: '4px',
+        }}>
+          {node.label}
+        </div>
+      </Html>
 
-      {/* Hover tooltip */}
-      {isHovered && !isSelected && (
-        <Text
-          position={[0, size + 0.5, 0]}
-          fontSize={0.14}
-          color={node.color}
-          anchorX="center"
-          anchorY="middle"
-        >
-          Click for details
-        </Text>
-      )}
+      {/* Hover card */}
+      <NodeCard node={node} visible={isHovered && !isSelected} />
     </group>
   );
 }
 
-// Animated directional edge with arrow
+// ── Animated directed edge ──
 interface EdgeProps {
-  start: THREE.Vector3;
-  end: THREE.Vector3;
+  startPos: [number, number, number];
+  endPos: [number, number, number];
   color: string;
-  isActive: boolean;
+  isHighlighted: boolean;
 }
 
-function AnimatedEdge({ start, end, color, isActive }: EdgeProps) {
+function AnimatedEdge({ startPos, endPos, color, isHighlighted }: EdgeProps) {
   const particleRef = useRef<THREE.Mesh>(null);
   const progress = useRef(Math.random());
+  const lineRef = useRef<any>(null);
+
+  const start = new THREE.Vector3(...startPos);
+  const end = new THREE.Vector3(...endPos);
 
   useFrame((_, delta) => {
+    progress.current = (progress.current + delta * 0.5) % 1;
     if (particleRef.current) {
-      progress.current = (progress.current + delta * 0.4) % 1;
       const pos = new THREE.Vector3().lerpVectors(start, end, progress.current);
       particleRef.current.position.copy(pos);
+      const mat = particleRef.current.material as THREE.MeshStandardMaterial;
+      const targetOpacity = isHighlighted ? 1 : 0.3;
+      mat.opacity += (targetOpacity - mat.opacity) * delta * 5;
     }
   });
 
-  const midPoint = new THREE.Vector3().lerpVectors(start, end, 0.5);
-  const direction = new THREE.Vector3().subVectors(end, start).normalize();
-  const arrowPos = new THREE.Vector3().lerpVectors(start, end, 0.65);
+  const lineColor = isHighlighted ? color : 'rgba(80,80,80,1)';
+  const lineOpacity = isHighlighted ? 0.7 : 0.2;
 
   return (
     <group>
-      {/* Main line */}
       <Line
+        ref={lineRef}
         points={[start, end]}
-        color={isActive ? color : '#3f3f46'}
-        lineWidth={isActive ? 2 : 1}
+        color={isHighlighted ? color : '#404040'}
+        lineWidth={isHighlighted ? 1.5 : 0.8}
         transparent
-        opacity={isActive ? 0.8 : 0.35}
+        opacity={lineOpacity}
+        dashed={false}
       />
-
-      {/* Flowing particle along edge */}
-      <mesh ref={particleRef} position={midPoint}>
-        <sphereGeometry args={[0.06, 8, 8]} />
+      {/* Flowing particle */}
+      <mesh ref={particleRef} position={[0, 0, 0]}>
+        <sphereGeometry args={[0.05, 8, 8]} />
         <meshStandardMaterial
           color={color}
           emissive={color}
-          emissiveIntensity={1.5}
+          emissiveIntensity={2}
           transparent
-          opacity={0.9}
+          opacity={0.4}
         />
       </mesh>
     </group>
   );
 }
 
-interface ThreeSceneProps {
+// ── Main scene ──
+interface SceneProps {
   nodes: PathwayNode[];
+  edges: { start: string; end: string }[];
   onNodeClick: (node: PathwayNode) => void;
-  edges?: { start: string; end: string }[];
-  selectedNodeId?: string | null;
+  selectedNodeId: string | null;
 }
 
+function Scene({ nodes, edges, onNodeClick, selectedNodeId }: SceneProps) {
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
+
+  const connectionCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    nodes.forEach(n => { counts[n.id] = 0; });
+    edges.forEach(e => {
+      if (counts[e.start] !== undefined) counts[e.start]++;
+      if (counts[e.end] !== undefined) counts[e.end]++;
+    });
+    return counts;
+  }, [nodes, edges]);
+
+  const edgeData = useMemo(() => {
+    return edges.map(edge => {
+      const s = nodes.find(n => n.id === edge.start);
+      const e = nodes.find(n => n.id === edge.end);
+      if (!s || !e) return null;
+      const isHighlighted = hoveredId === edge.start || hoveredId === edge.end ||
+        selectedNodeId === edge.start || selectedNodeId === edge.end;
+      return { key: `${edge.start}-${edge.end}`, startPos: s.position, endPos: e.position, color: s.color, isHighlighted };
+    }).filter(Boolean);
+  }, [edges, nodes, hoveredId, selectedNodeId]);
+
+  return (
+    <>
+      <ambientLight intensity={0.6} />
+      <pointLight position={[5, 5, 5]} intensity={1} />
+      <pointLight position={[-5, -5, 5]} intensity={0.4} color="#6495ED" />
+      <OrbitControls
+        enableZoom={true}
+        zoomSpeed={0.5}
+        autoRotate
+        autoRotateSpeed={0.2}
+        minDistance={3}
+        maxDistance={18}
+        enablePan={false}
+      />
+
+      {edgeData.map((e: any) => (
+        <AnimatedEdge key={e.key} {...e} />
+      ))}
+
+      {nodes.map(node => (
+        <NetworkNode
+          key={node.id}
+          node={node}
+          isHovered={hoveredId === node.id}
+          isSelected={selectedNodeId === node.id}
+          connectionCount={connectionCounts[node.id] || 0}
+          onClick={onNodeClick}
+          onHover={setHoveredId}
+        />
+      ))}
+    </>
+  );
+}
+
+// ── Legend ──
+function Legend({ nodes }: { nodes: PathwayNode[] }) {
+  return (
+    <div style={{
+      position: 'absolute', bottom: '16px', left: '16px', zIndex: 10,
+      display: 'flex', flexDirection: 'column', gap: '6px',
+    }}>
+      {nodes.slice(0, 5).map(node => (
+        <div key={node.id} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: node.color, flexShrink: 0 }} />
+          <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '11px', fontFamily: 'monospace' }}>
+            {node.label}
+          </span>
+        </div>
+      ))}
+      {nodes.length > 5 && (
+        <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', fontFamily: 'monospace' }}>
+          +{nodes.length - 5} more
+        </span>
+      )}
+    </div>
+  );
+}
+
+// ── Default edges ──
 const DEFAULT_EDGES = [
   { start: 'glucose', end: 'pyruvate' },
   { start: 'pyruvate', end: 'lactic_acid' },
@@ -183,109 +290,71 @@ const DEFAULT_EDGES = [
   { start: 'ethanol', end: 'acetic_acid' },
 ];
 
-function Scene({ nodes, onNodeClick, edges, selectedNodeId }: ThreeSceneProps) {
-  const [hoveredNode, setHoveredNode] = useState<string | null>(null);
-  const activeEdges = edges ?? DEFAULT_EDGES;
-
-  const edgeData = useMemo(() => {
-    return activeEdges.map(edge => {
-      const startNode = nodes.find(n => n.id === edge.start);
-      const endNode = nodes.find(n => n.id === edge.end);
-      if (!startNode || !endNode) return null;
-      const startColor = startNode.color;
-      const isActive = hoveredNode === edge.start || hoveredNode === edge.end ||
-        selectedNodeId === edge.start || selectedNodeId === edge.end;
-      return {
-        start: new THREE.Vector3(...startNode.position),
-        end: new THREE.Vector3(...endNode.position),
-        color: startColor,
-        isActive,
-        key: `${edge.start}-${edge.end}`,
-      };
-    }).filter(Boolean);
-  }, [activeEdges, nodes, hoveredNode, selectedNodeId]);
-
-  return (
-    <>
-      {/* AlphaFold-style lighting */}
-      <ambientLight intensity={0.3} />
-      <pointLight position={[10, 10, 10]} intensity={1.5} color="#ffffff" />
-      <pointLight position={[-10, -5, -10]} intensity={0.8} color="#4ade80" />
-      <pointLight position={[0, 10, -10]} intensity={0.6} color="#60a5fa" />
-      <fog attach="fog" args={['#09090b', 15, 35]} />
-
-      <OrbitControls
-        enableZoom={true}
-        zoomSpeed={0.5}
-        autoRotate
-        autoRotateSpeed={0.3}
-        minDistance={4}
-        maxDistance={20}
-      />
-
-      {edgeData.map((edge: any) => (
-        <AnimatedEdge key={edge.key} {...edge} />
-      ))}
-
-      {nodes.map((node) => (
-        <PathwayNode3D
-          key={node.id}
-          node={node}
-          size={getNodeSize(node.id, activeEdges)}
-          onClick={onNodeClick}
-          isHovered={hoveredNode === node.id}
-          isSelected={selectedNodeId === node.id}
-          setHovered={setHoveredNode}
-        />
-      ))}
-    </>
-  );
+interface ThreeSceneProps {
+  nodes: PathwayNode[];
+  onNodeClick: (node: PathwayNode) => void;
+  edges?: { start: string; end: string }[];
+  selectedNodeId?: string | null;
 }
 
 export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId }: ThreeSceneProps) {
+  const activeEdges = edges ?? DEFAULT_EDGES;
+
   return (
-    <div className="w-full h-[560px] bg-zinc-950 rounded-2xl overflow-hidden border border-zinc-800/50 relative shadow-2xl">
+    <div style={{
+      width: '100%', height: '540px',
+      background: '#0d0d0d',
+      borderRadius: '16px',
+      overflow: 'hidden',
+      border: '1px solid rgba(255,255,255,0.07)',
+      position: 'relative',
+    }}>
       {/* Top bar */}
-      <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-4 py-3 bg-gradient-to-b from-zinc-950/80 to-transparent">
-        <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-          <span className="text-zinc-400 font-mono text-xs">Metabolic Pathway · 3D Interactive</span>
+      <div style={{
+        position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10,
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '12px 16px',
+        background: 'linear-gradient(to bottom, rgba(13,13,13,0.9), transparent)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'rgba(255,255,255,0.4)' }} />
+          <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '11px', fontFamily: 'monospace' }}>
+            Metabolic Network · {nodes.length} nodes · {activeEdges.length} reactions
+          </span>
         </div>
         {edges && (
-          <div className="flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/30 rounded-full">
-            <span className="text-emerald-400 font-mono text-xs">AI Generated · {nodes.length} nodes</span>
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '6px',
+            padding: '4px 10px', borderRadius: '20px',
+            background: 'rgba(100,149,237,0.1)', border: '1px solid rgba(100,149,237,0.2)',
+          }}>
+            <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#6495ED' }} />
+            <span style={{ color: '#6495ED', fontSize: '10px', fontFamily: 'monospace' }}>AI Generated</span>
           </div>
         )}
       </div>
 
-      {/* Node legend */}
-      <div className="absolute bottom-4 left-4 z-10 flex flex-col gap-1.5">
-        {nodes.slice(0, 4).map(node => (
-          <div key={node.id} className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: node.color }} />
-            <span className="text-zinc-500 text-xs font-mono">{node.label}</span>
-          </div>
-        ))}
-        {nodes.length > 4 && (
-          <span className="text-zinc-600 text-xs font-mono">+{nodes.length - 4} more</span>
-        )}
-      </div>
+      {/* Legend */}
+      <Legend nodes={nodes} />
 
       {/* Hint */}
-      <div className="absolute bottom-4 right-4 z-10 text-zinc-600 text-xs font-mono">
-        Drag to rotate · Scroll to zoom
+      <div style={{
+        position: 'absolute', bottom: '16px', right: '16px', zIndex: 10,
+        color: 'rgba(255,255,255,0.15)', fontSize: '10px', fontFamily: 'monospace',
+      }}>
+        Hover to preview · Click for details · Drag to rotate
       </div>
 
       <Canvas
-        camera={{ position: [0, 2, 10], fov: 45 }}
-        gl={{ antialias: true, alpha: false }}
-        style={{ background: '#09090b' }}
+        camera={{ position: [0, 0, 9], fov: 50 }}
+        gl={{ antialias: true }}
+        style={{ background: '#0d0d0d' }}
       >
         <Scene
           nodes={nodes}
+          edges={activeEdges}
           onNodeClick={onNodeClick}
-          edges={edges}
-          selectedNodeId={selectedNodeId}
+          selectedNodeId={selectedNodeId ?? null}
         />
       </Canvas>
     </div>
