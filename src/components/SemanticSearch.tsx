@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Search, ExternalLink, FileText, Sparkles, Loader2, ChevronDown, ChevronUp, Dna } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { Search, ExternalLink, Sparkles, Loader2, ChevronDown, ChevronUp, Dna } from 'lucide-react';
 
 const ACCENT = '#6495ED'; // Cornflower Blue
 const ACCENT_DIM = 'rgba(100,149,237,0.15)';
@@ -53,11 +53,11 @@ const SHOWCASE_PAPERS = [
 ];
 
 const BIO_KEYWORDS = [
-  'metabolic','pathway','enzyme','biosynthesis','fermentation',
-  'glucose','pyruvate','acetyl','synthesis','expression',
-  'gene','protein','cell','yeast','bacteria','E. coli',
-  'CRISPR','flux','yield','titer','production','engineered',
-  'substrate','product','intermediate','cofactor','TCA','glycolysis',
+  'metabolic', 'pathway', 'enzyme', 'biosynthesis', 'fermentation',
+  'glucose', 'pyruvate', 'acetyl', 'synthesis', 'expression',
+  'gene', 'protein', 'cell', 'yeast', 'bacteria', 'E. coli',
+  'CRISPR', 'flux', 'yield', 'titer', 'production', 'engineered',
+  'substrate', 'product', 'intermediate', 'cofactor', 'TCA', 'glycolysis',
 ];
 
 function highlightKeywords(text: string) {
@@ -83,6 +83,8 @@ export default function SemanticSearch({ onAnalyzePaper }: SemanticSearchProps) 
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [showShowcase, setShowShowcase] = useState(true);
 
+  const searchRequestIdRef = useRef(0);
+
   const toggleExpand = (id: string) => {
     setExpandedIds(prev => {
       const next = new Set(prev);
@@ -93,68 +95,116 @@ export default function SemanticSearch({ onAnalyzePaper }: SemanticSearchProps) 
 
   const fetchAbstract = async (pmid: string): Promise<string> => {
     try {
-      const res = await fetch(`https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=${pmid}&rettype=abstract&retmode=xml`);
+      const res = await fetch(
+        `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=${pmid}&rettype=abstract&retmode=xml`
+      );
       const text = await res.text();
       const parser = new DOMParser();
       const xml = parser.parseFromString(text, 'text/xml');
-      return Array.from(xml.querySelectorAll('AbstractText')).map(el => el.textContent || '').join(' ').trim() || 'Abstract not available.';
-    } catch { return 'Abstract not available.'; }
+      return (
+        Array.from(xml.querySelectorAll('AbstractText'))
+          .map(el => el.textContent || '')
+          .join(' ')
+          .trim() || 'Abstract not available.'
+      );
+    } catch {
+      return 'Abstract not available.';
+    }
   };
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!query.trim()) return;
-    setIsSearching(true); setError(null); setHasSearched(true); setResults([]); setShowShowcase(false);
+    if (!query.trim() || isSearching) return;
+
+    const requestId = ++searchRequestIdRef.current;
+
+    setIsSearching(true);
+    setError(null);
+    setHasSearched(true);
+    setResults([]);
+    setShowShowcase(false);
+    setExpandedIds(new Set());
+
     try {
-      const searchRes = await fetch(`https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=${encodeURIComponent(query)}+AND+(synthetic+biology+OR+metabolic+engineering+OR+fermentation+OR+bioinformatics)&retmax=5&sort=relevance&retmode=json`);
+      const searchRes = await fetch(
+        `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=${encodeURIComponent(query)}+AND+(synthetic+biology+OR+metabolic+engineering+OR+fermentation+OR+bioinformatics)&retmax=5&sort=relevance&retmode=json`
+      );
+
       const searchData = await searchRes.json();
       const ids: string[] = searchData.esearchresult?.idlist || [];
-      if (ids.length === 0) { setIsSearching(false); return; }
-      const summaryRes = await fetch(`https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id=${ids.join(',')}&retmode=json`);
+
+      if (requestId !== searchRequestIdRef.current) return;
+
+      if (ids.length === 0) {
+        setResults([]);
+        return;
+      }
+
+      const summaryRes = await fetch(
+        `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id=${ids.join(',')}&retmode=json`
+      );
+
       const summaryData = await summaryRes.json();
       const uids: string[] = summaryData.result?.uids || [];
+
+      if (requestId !== searchRequestIdRef.current) return;
+
       const articles: PubMedArticle[] = await Promise.all(
         uids.map(async (uid) => {
           const item = summaryData.result[uid];
           const abstract = await fetchAbstract(uid);
+
           return {
-            id: uid, title: item.title || 'No title', abstract,
-            authors: item.authors?.slice(0, 3).map((a: any) => a.name) || [],
-            journal: item.source || '', year: item.pubdate?.split(' ')[0] || '',
-            doi: item.articleids?.find((a: any) => a.idtype === 'doi')?.value || '',
+            id: uid,
+            title: item?.title || 'No title',
+            abstract,
+            authors: item?.authors?.slice(0, 3).map((a: any) => a.name) || [],
+            journal: item?.source || '',
+            year: item?.pubdate?.split(' ')[0] || '',
+            doi: item?.articleids?.find((a: any) => a.idtype === 'doi')?.value || '',
             pubmedUrl: `https://pubmed.ncbi.nlm.nih.gov/${uid}/`,
           };
         })
       );
+
+      if (requestId !== searchRequestIdRef.current) return;
+
       setResults(articles);
-    } catch { setError('Failed to connect to PubMed. Please try again.'); }
-    finally { setIsSearching(false); }
+    } catch {
+      if (requestId !== searchRequestIdRef.current) return;
+      setError('Failed to connect to PubMed. Please try again.');
+    } finally {
+      if (requestId === searchRequestIdRef.current) {
+        setIsSearching(false);
+      }
+    }
   };
 
   const handleAnalyze = (article: { title: string; authors: string[]; journal: string; year: string; abstract: string }) => {
     if (onAnalyzePaper) {
-      onAnalyzePaper(`Title: ${article.title}\nAuthors: ${article.authors.join(', ')}\nJournal: ${article.journal} (${article.year})\nAbstract: ${article.abstract}`);
+      onAnalyzePaper(
+        `Title: ${article.title}\nAuthors: ${article.authors.join(', ')}\nJournal: ${article.journal} (${article.year})\nAbstract: ${article.abstract}`
+      );
       document.getElementById('analyzer')?.scrollIntoView({ behavior: 'smooth' });
     }
   };
 
   return (
-    <section className="px-4 py-24" id="search"
-      style={{ borderTop: 'none' }}>
+    <section className="px-4 py-24" id="search" style={{ borderTop: 'none' }}>
       <div className="max-w-4xl mx-auto">
 
-        {/* Header */}
         <div className="mb-12">
-          <p className="text-xs font-mono uppercase tracking-widest mb-2"
-            style={{ color: 'rgba(255,255,255,0.25)' }}>03 · Literature</p>
-          <h2 className="text-2xl md:text-3xl font-semibold text-white mb-2"
-            style={{ letterSpacing: '-0.02em' }}>Literature Search</h2>
+          <p className="text-xs font-mono uppercase tracking-widest mb-2" style={{ color: 'rgba(255,255,255,0.25)' }}>
+            03 · Literature
+          </p>
+          <h2 className="text-2xl md:text-3xl font-semibold text-white mb-2" style={{ letterSpacing: '-0.02em' }}>
+            Literature Search
+          </h2>
           <p className="text-sm" style={{ color: 'rgba(255,255,255,0.35)' }}>
             Live search from <span style={{ color: ACCENT }} className="font-mono">PubMed</span> · 35M+ biomedical articles
           </p>
         </div>
 
-        {/* Search input */}
         <form onSubmit={handleSearch} className="relative mb-10">
           <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
             <Search size={16} style={{ color: 'rgba(255,255,255,0.25)' }} />
@@ -169,24 +219,28 @@ export default function SemanticSearch({ onAnalyzePaper }: SemanticSearchProps) 
             onFocus={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)'; }}
             onBlur={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; }}
           />
-          <button type="submit" disabled={isSearching}
+          <button
+            type="submit"
+            disabled={isSearching}
             className="absolute inset-y-2 right-2 px-4 rounded-lg text-sm font-semibold flex items-center gap-2 transition-all disabled:opacity-40"
             style={{ background: '#ffffff', color: '#0a0a0a' }}
             onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#e5e5e5'; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#ffffff'; }}>
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#ffffff'; }}
+          >
             {isSearching ? <Loader2 size={13} className="animate-spin" /> : <Search size={13} />}
             {isSearching ? 'Searching...' : 'Search'}
           </button>
         </form>
 
         {error && (
-          <div className="py-4 px-5 rounded-xl text-sm mb-6"
-            style={{ background: 'rgba(255,100,100,0.06)', border: '1px solid rgba(255,100,100,0.15)', color: 'rgba(255,150,150,0.8)' }}>
+          <div
+            className="py-4 px-5 rounded-xl text-sm mb-6"
+            style={{ background: 'rgba(255,100,100,0.06)', border: '1px solid rgba(255,100,100,0.15)', color: 'rgba(255,150,150,0.8)' }}
+          >
             {error}
           </div>
         )}
 
-        {/* Showcase */}
         {showShowcase && (
           <div className="mb-10">
             <div className="flex items-center gap-3 mb-5">
@@ -198,14 +252,19 @@ export default function SemanticSearch({ onAnalyzePaper }: SemanticSearchProps) 
               {SHOWCASE_PAPERS.map((paper) => {
                 const isExpanded = expandedIds.has(paper.id);
                 return (
-                  <div key={paper.id} className="rounded-2xl overflow-hidden transition-all"
-                    style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                  <div
+                    key={paper.id}
+                    className="rounded-2xl overflow-hidden transition-all"
+                    style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)' }}
+                  >
                     <div className="p-5">
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-2">
-                            <span className="text-xs font-mono px-2 py-0.5 rounded-full"
-                              style={{ background: ACCENT_DIM, color: ACCENT, border: `1px solid ${ACCENT_BORDER}` }}>
+                            <span
+                              className="text-xs font-mono px-2 py-0.5 rounded-full"
+                              style={{ background: ACCENT_DIM, color: ACCENT, border: `1px solid ${ACCENT_BORDER}` }}
+                            >
                               {paper.journal} · {paper.year}
                             </span>
                           </div>
@@ -214,11 +273,13 @@ export default function SemanticSearch({ onAnalyzePaper }: SemanticSearchProps) 
                             {paper.authors.join(', ')} et al.
                           </p>
                         </div>
-                        <button onClick={() => toggleExpand(paper.id)}
+                        <button
+                          onClick={() => toggleExpand(paper.id)}
                           className="p-1 transition-colors shrink-0"
                           style={{ color: 'rgba(255,255,255,0.25)' }}
                           onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#ffffff'; }}
-                          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.25)'; }}>
+                          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.25)'; }}
+                        >
                           {isExpanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
                         </button>
                       </div>
@@ -227,36 +288,48 @@ export default function SemanticSearch({ onAnalyzePaper }: SemanticSearchProps) 
                           <p className="text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.55)' }}>
                             {highlightKeywords(paper.abstract)}
                           </p>
-                          <div className="flex items-start gap-2 text-xs font-mono px-3 py-2 rounded-lg"
-                            style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                          <div
+                            className="flex items-start gap-2 text-xs font-mono px-3 py-2 rounded-lg"
+                            style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
+                          >
                             <span style={{ color: ACCENT }}>Pathway →</span>
                             <span style={{ color: 'rgba(255,255,255,0.35)' }}>{paper.pathway}</span>
                           </div>
                         </div>
                       )}
                     </div>
-                    <div className="px-5 py-3 flex items-center justify-between"
-                      style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-                      <button onClick={() => toggleExpand(paper.id)}
+                    <div
+                      className="px-5 py-3 flex items-center justify-between"
+                      style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}
+                    >
+                      <button
+                        onClick={() => toggleExpand(paper.id)}
                         className="text-xs transition-colors"
                         style={{ color: 'rgba(255,255,255,0.25)' }}
                         onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.6)'; }}
-                        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.25)'; }}>
+                        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.25)'; }}
+                      >
                         {isExpanded ? 'Collapse' : 'Read abstract'}
                       </button>
                       <div className="flex items-center gap-2">
-                        <a href={paper.pubmedUrl} target="_blank" rel="noopener noreferrer"
+                        <a
+                          href={paper.pubmedUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
                           style={{ color: 'rgba(255,255,255,0.2)' }}
                           onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#ffffff'; }}
-                          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.2)'; }}>
+                          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.2)'; }}
+                        >
                           <ExternalLink size={13} />
                         </a>
                         {onAnalyzePaper && (
-                          <button onClick={() => handleAnalyze(paper)}
+                          <button
+                            onClick={() => handleAnalyze(paper)}
                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all"
                             style={{ background: ACCENT_DIM, color: ACCENT, border: `1px solid ${ACCENT_BORDER}` }}
                             onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(100,149,237,0.25)'; }}
-                            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = ACCENT_DIM; }}>
+                            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = ACCENT_DIM; }}
+                          >
                             <Sparkles size={11} />
                             Generate Pathway
                           </button>
@@ -270,18 +343,24 @@ export default function SemanticSearch({ onAnalyzePaper }: SemanticSearchProps) 
           </div>
         )}
 
-        {/* Search Results */}
         <div className="space-y-3">
           {results.length > 0 && (
             <div className="flex items-center justify-between mb-4">
               <span className="text-xs font-mono" style={{ color: 'rgba(255,255,255,0.25)' }}>
                 {results.length} results from PubMed
               </span>
-              <button onClick={() => { setResults([]); setHasSearched(false); setShowShowcase(true); }}
+              <button
+                onClick={() => {
+                  setResults([]);
+                  setHasSearched(false);
+                  setShowShowcase(true);
+                  setExpandedIds(new Set());
+                }}
                 className="text-xs transition-colors"
                 style={{ color: 'rgba(255,255,255,0.2)' }}
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.6)'; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.2)'; }}>
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.2)'; }}
+              >
                 Clear results
               </button>
             </div>
@@ -290,14 +369,19 @@ export default function SemanticSearch({ onAnalyzePaper }: SemanticSearchProps) 
           {results.map((article) => {
             const isExpanded = expandedIds.has(article.id);
             return (
-              <div key={article.id} className="rounded-2xl overflow-hidden transition-all"
-                style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)' }}>
+              <div
+                key={article.id}
+                className="rounded-2xl overflow-hidden transition-all"
+                style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)' }}
+              >
                 <div className="p-5">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1">
                       {article.journal && (
-                        <span className="text-xs font-mono px-2 py-0.5 rounded-full inline-block mb-2"
-                          style={{ background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.35)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                        <span
+                          className="text-xs font-mono px-2 py-0.5 rounded-full inline-block mb-2"
+                          style={{ background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.35)', border: '1px solid rgba(255,255,255,0.08)' }}
+                        >
                           {article.journal}{article.year ? ` · ${article.year}` : ''}
                         </span>
                       )}
@@ -309,16 +393,22 @@ export default function SemanticSearch({ onAnalyzePaper }: SemanticSearchProps) 
                       )}
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
-                      <a href={article.pubmedUrl} target="_blank" rel="noopener noreferrer"
+                      <a
+                        href={article.pubmedUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
                         style={{ color: 'rgba(255,255,255,0.2)' }}
                         onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#ffffff'; }}
-                        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.2)'; }}>
+                        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.2)'; }}
+                      >
                         <ExternalLink size={14} />
                       </a>
-                      <button onClick={() => toggleExpand(article.id)}
+                      <button
+                        onClick={() => toggleExpand(article.id)}
                         style={{ color: 'rgba(255,255,255,0.2)' }}
                         onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#ffffff'; }}
-                        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.2)'; }}>
+                        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.2)'; }}
+                      >
                         {isExpanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
                       </button>
                     </div>
@@ -336,21 +426,27 @@ export default function SemanticSearch({ onAnalyzePaper }: SemanticSearchProps) 
                     </div>
                   )}
                 </div>
-                <div className="px-5 py-3 flex items-center justify-between"
-                  style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-                  <button onClick={() => toggleExpand(article.id)}
+                <div
+                  className="px-5 py-3 flex items-center justify-between"
+                  style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}
+                >
+                  <button
+                    onClick={() => toggleExpand(article.id)}
                     className="text-xs transition-colors"
                     style={{ color: 'rgba(255,255,255,0.25)' }}
                     onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.6)'; }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.25)'; }}>
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.25)'; }}
+                  >
                     {isExpanded ? 'Collapse' : 'Read abstract'}
                   </button>
                   {onAnalyzePaper && article.abstract !== 'Abstract not available.' && (
-                    <button onClick={() => handleAnalyze(article)}
+                    <button
+                      onClick={() => handleAnalyze(article)}
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all"
                       style={{ background: ACCENT_DIM, color: ACCENT, border: `1px solid ${ACCENT_BORDER}` }}
                       onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(100,149,237,0.25)'; }}
-                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = ACCENT_DIM; }}>
+                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = ACCENT_DIM; }}
+                    >
                       <Sparkles size={11} />
                       Generate Pathway
                     </button>
@@ -361,17 +457,20 @@ export default function SemanticSearch({ onAnalyzePaper }: SemanticSearchProps) 
           })}
 
           {hasSearched && !isSearching && results.length === 0 && (
-            <div className="text-center py-10 rounded-2xl text-sm"
-              style={{ color: 'rgba(255,255,255,0.2)', border: '1px dashed rgba(255,255,255,0.08)' }}>
+            <div
+              className="text-center py-10 rounded-2xl text-sm"
+              style={{ color: 'rgba(255,255,255,0.2)', border: '1px dashed rgba(255,255,255,0.08)' }}
+            >
               No results for "{query}". Try "lactic acid bacteria" or "E. coli metabolic engineering".
             </div>
           )}
 
           {!hasSearched && !showShowcase && (
-            <div className="text-center py-10 rounded-2xl"
-              style={{ border: '1px dashed rgba(255,255,255,0.08)' }}>
+            <div className="text-center py-10 rounded-2xl" style={{ border: '1px dashed rgba(255,255,255,0.08)' }}>
               <Search size={24} className="mx-auto mb-3 opacity-20" style={{ color: '#fff' }} />
-              <p className="text-xs font-mono" style={{ color: 'rgba(255,255,255,0.2)' }}>Search any metabolic engineering topic above</p>
+              <p className="text-xs font-mono" style={{ color: 'rgba(255,255,255,0.2)' }}>
+                Search any metabolic engineering topic above
+              </p>
             </div>
           )}
         </div>
