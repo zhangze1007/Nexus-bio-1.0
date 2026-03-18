@@ -68,6 +68,12 @@ Rules: 4-8 nodes, IDs lowercase with underscores, labels 1-3 words max.`;
 
     const baseUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
     const config = { temperature: 0.2, maxOutputTokens: 1500 };
+    const tools = [{ googleSearch: {} }];
+
+    const createBody = (parts: any[]) => ({
+      contents: [{ parts }],
+      generationConfig: config,
+      tools: tools
 
     if ((mode === 'image' || mode === 'camera') && imageBase64) {
       return { url: baseUrl, body: { contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: 'image/jpeg', data: imageBase64 } }] }], generationConfig: config } };
