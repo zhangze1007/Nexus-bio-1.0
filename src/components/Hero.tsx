@@ -1,55 +1,154 @@
 import { motion } from 'framer-motion';
+import { ArrowRight, FlaskConical, Search, Dna } from 'lucide-react';
+
+const features = [
+  { icon: <Dna size={14} />, label: 'Metabolic Pathway Visualization' },
+  { icon: <Search size={14} />, label: 'PubMed Literature Search' },
+  { icon: <FlaskConical size={14} />, label: 'AI Paper Analysis' },
+];
 
 export default function Hero() {
   return (
-    <section className="relative w-full min-h-[80vh] flex flex-col items-center justify-center bg-zinc-950 text-white overflow-hidden px-4">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,_#3a1510_0%,_transparent_60%),radial-gradient(circle_at_10%_80%,_#4ade80_0%,_transparent_50%)] opacity-40 blur-[60px]" />
-      
-      <div className="z-10 text-center max-w-4xl mx-auto">
+    <header className="relative w-full min-h-screen flex flex-col items-center justify-center px-4 overflow-hidden">
+
+      {/* Radial vignette — subtle depth */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: 'radial-gradient(ellipse 80% 60% at 50% 40%, rgba(255,255,255,0.03) 0%, transparent 70%)',
+        }}
+      />
+
+      {/* Top nav bar */}
+      <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4"
+        style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(10,10,10,0.8)', backdropFilter: 'blur(12px)' }}>
+        <div className="flex items-center gap-2.5">
+          <div className="w-6 h-6 rounded-md bg-white flex items-center justify-center">
+            <Dna size={14} className="text-black" />
+          </div>
+          <span className="text-white font-semibold text-sm tracking-tight">Nexus-Bio</span>
+        </div>
+        <div className="hidden md:flex items-center gap-6">
+          {['Pathway', 'Search', 'Analyzer'].map((item) => (
+            <a key={item} href={`#${item.toLowerCase()}`}
+              className="text-xs font-medium transition-colors"
+              style={{ color: 'rgba(255,255,255,0.45)' }}
+              onMouseEnter={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.9)')}
+              onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.45)')}>
+              {item}
+            </a>
+          ))}
+        </div>
+        <a href="#analyzer"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
+          style={{ background: 'rgba(255,255,255,0.08)', color: '#f5f5f5', border: '1px solid rgba(255,255,255,0.1)' }}
+          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.14)'; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)'; }}>
+          Try Now <ArrowRight size={11} />
+        </a>
+      </nav>
+
+      {/* Main content */}
+      <div className="relative z-10 text-center max-w-3xl mx-auto pt-20">
+
+        {/* Badge */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
+          transition={{ duration: 0.5 }}
+          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-mono mb-8"
+          style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.5)' }}
         >
-          <h1 className="text-6xl md:text-8xl font-sans font-bold tracking-tighter mb-6 text-transparent bg-clip-text bg-gradient-to-r from-white to-zinc-400">
-            Nexus-Bio
-          </h1>
-          <p className="text-sm md:text-base font-mono text-emerald-400 mb-8 uppercase tracking-widest">
-            Next-Gen Bio-Intelligent Architecture (下一代生物智能架构)
-          </p>
+          <span className="w-1.5 h-1.5 rounded-full bg-white opacity-60" />
+          Synthetic Biology · Metabolic Engineering
         </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
+        {/* Title */}
+        <motion.h1
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.2 }}
-          className="space-y-6 text-zinc-300"
+          transition={{ duration: 0.6, delay: 0.1 }}
+          className="text-5xl md:text-7xl font-semibold text-white mb-6"
+          style={{ letterSpacing: '-0.03em', lineHeight: 1.1 }}
         >
-          <p className="text-xl md:text-2xl font-medium text-white">
-            Engineering the future of sustainable food systems through precision fermentation.
-          </p>
-          <p className="text-lg">
-            We harness microbial cell factories to produce high-value functional ingredients with high yields and purity, minimizing environmental impact.
-          </p>
-          <p className="text-base text-zinc-400 max-w-2xl mx-auto">
-            By integrating advanced omics technologies and synthetic biology, Nexus-Bio accelerates the transition to a circular bioeconomy, transforming agro-industrial waste into nutrient-rich, sustainable alternatives to traditional animal products.
-          </p>
+          Turn research papers<br />
+          <span style={{ color: 'rgba(255,255,255,0.4)' }}>into living pathways.</span>
+        </motion.h1>
+
+        {/* Subtitle */}
+        <motion.p
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="text-base md:text-lg mb-10 max-w-xl mx-auto leading-relaxed"
+          style={{ color: 'rgba(255,255,255,0.4)' }}
+        >
+          Nexus-Bio converts metabolic engineering literature into interactive 3D pathway visualizations — powered by AI, built for researchers.
+        </motion.p>
+
+        {/* CTA Buttons */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.3 }}
+          className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-16"
+        >
+          <a href="#analyzer"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all"
+            style={{ background: '#ffffff', color: '#0a0a0a' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#e5e5e5'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#ffffff'; }}>
+            Analyze a Paper
+            <ArrowRight size={14} />
+          </a>
+          <a href="#search"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all"
+            style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.1)' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.1)'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.06)'; }}>
+            Browse Literature
+          </a>
         </motion.div>
 
+        {/* Feature pills */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.4 }}
-          className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.5 }}
+          className="flex flex-wrap items-center justify-center gap-2"
         >
-          <a href="#demo" className="px-8 py-4 bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-semibold rounded-full transition-colors">
-            Explore Pathway Demo
-          </a>
-          <a href="#contact" className="px-8 py-4 bg-transparent border border-zinc-700 hover:border-zinc-500 text-white font-semibold rounded-full transition-colors">
-            Partner With Us
-          </a>
+          {features.map((f, i) => (
+            <div key={i}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs"
+              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.35)' }}>
+              {f.icon}
+              {f.label}
+            </div>
+          ))}
         </motion.div>
       </div>
-    </section>
+
+      {/* Bottom fade */}
+      <div className="absolute bottom-0 left-0 right-0 h-32 pointer-events-none"
+        style={{ background: 'linear-gradient(to bottom, transparent, #0a0a0a)' }} />
+
+      {/* Scroll indicator */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 1, duration: 0.5 }}
+        className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1"
+        style={{ color: 'rgba(255,255,255,0.2)' }}>
+        <div className="w-px h-8 relative overflow-hidden" style={{ background: 'rgba(255,255,255,0.1)' }}>
+          <motion.div
+            className="w-full absolute top-0"
+            style={{ height: '40%', background: 'rgba(255,255,255,0.5)' }}
+            animate={{ top: ['0%', '100%'] }}
+            transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
+          />
+        </div>
+        <span className="text-xs font-mono" style={{ fontSize: '10px', letterSpacing: '0.1em' }}>SCROLL</span>
+      </motion.div>
+    </header>
   );
 }
