@@ -66,7 +66,7 @@ Return ONLY valid JSON, no markdown, no explanation:
 }
 Rules: 4-8 nodes, IDs lowercase with underscores, labels 1-3 words max.`;
 
-    const baseUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${apiKey}`;
+    const baseUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
     const config = { temperature: 0.2, maxOutputTokens: 1500 };
 
     if ((mode === 'image' || mode === 'camera') && imageBase64) {
@@ -278,7 +278,7 @@ Rules: 4-8 nodes, IDs lowercase with underscores, labels 1-3 words max.`;
         </div>
 
         <p className="text-center text-zinc-700 text-xs mt-3 font-mono">
-          Gemini 2.0 Flash · Text · PDF · Image · Camera · URL
+          Gemini 1.5 Flash · Text · PDF · Image · Camera · URL
         </p>
       </div>
 
