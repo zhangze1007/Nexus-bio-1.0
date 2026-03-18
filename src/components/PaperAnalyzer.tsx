@@ -87,7 +87,7 @@ Rules: 4-8 nodes, IDs lowercase with underscores, labels 1-3 words max.`;
       (mode === 'web' && webUrl.trim());
     if (!hasContent) { setError(mode === 'text' ? 'Paste at least a paragraph of text.' : mode === 'web' ? 'Enter a valid URL.' : 'Upload a file first.'); return; }
 
-    const apiKey = import.meta.env［'VITE_GEMINI_API_KEY'］;
+    const apiKey = import.meta.env['VITE_GEMINI_API_KEY'];
     if (!apiKey) { setError('API key not found.'); return; }
 
     setIsAnalyzing(true); setError(null); setSuccess(false);
