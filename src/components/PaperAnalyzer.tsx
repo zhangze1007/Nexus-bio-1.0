@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
-import { Sparkles, AlertCircle, Loader2, Plus, Upload, Camera, Globe, FileText, X, Image as ImageIcon, ChevronUp } from 'lucide-react';
+import { ArrowUp, Upload, Camera, Globe, Image as ImageIcon, X, ChevronUp, Plus, AlertCircle, Sparkles } from 'lucide-react';
 import { PathwayNode } from '../types';
 
 interface PaperAnalyzerProps {
   onPathwayGenerated: (nodes: PathwayNode[], edges: { start: string; end: string }[]) => void;
 }
 
-const COLORS = ['#4ade80','#facc15','#60a5fa','#f87171','#fb923c','#c084fc','#34d399','#f472b6','#38bdf8','#a78bfa'];
+const COLORS = ['#a3a3a3','#d4d4d4','#737373','#e5e5e5','#525252','#f5f5f5','#404040','#d4d4d4','#262626','#a3a3a3'];
 type InputMode = 'text' | 'pdf' | 'image' | 'camera' | 'web';
 
 export default function PaperAnalyzer({ onPathwayGenerated }: PaperAnalyzerProps) {
@@ -23,6 +23,7 @@ export default function PaperAnalyzer({ onPathwayGenerated }: PaperAnalyzerProps
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     const handler = (e: CustomEvent) => {
@@ -48,8 +49,7 @@ export default function PaperAnalyzer({ onPathwayGenerated }: PaperAnalyzerProps
     const reader = new FileReader();
     reader.onload = () => {
       const result = reader.result as string;
-      const base64 = result.split(',')[1];
-      setImageBase64(base64);
+      setImageBase64(result.split(',')[1]);
       if (type === 'image') setImagePreview(result);
       setText(`${type === 'pdf' ? 'PDF' : 'Image'} loaded: ${file.name}`);
     };
@@ -66,28 +66,26 @@ Return ONLY valid JSON, no markdown, no explanation:
 }
 Rules: 4-8 nodes, IDs lowercase with underscores, labels 1-3 words max.`;
 
-    const baseUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+    const baseUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
     const config = { temperature: 0.2, maxOutputTokens: 1500 };
 
-    if ((mode === 'image' || mode === 'camera') && imageBase64) {
+    if ((mode === 'image' || mode === 'camera') && imageBase64)
       return { url: baseUrl, body: { contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: 'image/jpeg', data: imageBase64 } }] }], generationConfig: config } };
-    }
-    if (mode === 'pdf' && imageBase64) {
+    if (mode === 'pdf' && imageBase64)
       return { url: baseUrl, body: { contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: 'application/pdf', data: imageBase64 } }] }], generationConfig: config } };
-    }
-    if (mode === 'web' && webUrl) {
+    if (mode === 'web' && webUrl)
       return { url: baseUrl, body: { contents: [{ parts: [{ text: `${prompt}\n\nAnalyze this URL: ${webUrl}` }] }], generationConfig: config } };
-    }
     return { url: baseUrl, body: { contents: [{ parts: [{ text: `${prompt}\n\nContent:\n${text.slice(0, 3000)}` }] }], generationConfig: config } };
   };
 
   const handleAnalyze = async () => {
-    const hasContent = (mode === 'text' && text.trim().length >= 50) ||
+    const hasContent =
+      (mode === 'text' && text.trim().length >= 10) ||
       ((mode === 'image' || mode === 'camera' || mode === 'pdf') && imageBase64) ||
       (mode === 'web' && webUrl.trim());
-    if (!hasContent) { setError(mode === 'text' ? 'Paste at least a paragraph of text.' : mode === 'web' ? 'Enter a valid URL.' : 'Upload a file first.'); return; }
+    if (!hasContent) { setError(mode === 'text' ? 'Paste at least a sentence of text.' : mode === 'web' ? 'Enter a valid URL.' : 'Upload a file first.'); return; }
 
-    const apiKey = import.meta.env['VITE_GEMINI_API_KEY'];
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
     if (!apiKey) { setError('API key not found.'); return; }
 
     setIsAnalyzing(true); setError(null); setSuccess(false);
@@ -124,129 +122,168 @@ Rules: 4-8 nodes, IDs lowercase with underscores, labels 1-3 words max.`;
     }
   };
 
-  const canAnalyze = (mode === 'text' && text.trim().length >= 10) ||
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleAnalyze();
+    }
+  };
+
+  const canAnalyze =
+    (mode === 'text' && text.trim().length >= 10) ||
     ((mode === 'image' || mode === 'camera' || mode === 'pdf') && !!imageBase64) ||
     (mode === 'web' && webUrl.trim().length > 0);
 
   const extraModes = [
-    { id: 'pdf' as InputMode, icon: <Upload size={15} />, label: 'PDF' },
-    { id: 'image' as InputMode, icon: <ImageIcon size={15} />, label: 'Image' },
-    { id: 'camera' as InputMode, icon: <Camera size={15} />, label: 'Camera' },
-    { id: 'web' as InputMode, icon: <Globe size={15} />, label: 'URL' },
+    { id: 'pdf' as InputMode, icon: <Upload size={14} />, label: 'PDF' },
+    { id: 'image' as InputMode, icon: <ImageIcon size={14} />, label: 'Image' },
+    { id: 'camera' as InputMode, icon: <Camera size={14} />, label: 'Camera' },
+    { id: 'web' as InputMode, icon: <Globe size={14} />, label: 'URL' },
   ];
 
   return (
-    <section className="py-20 px-4 bg-zinc-900 border-t border-zinc-800" id="analyzer">
+    <section className="px-4 py-24" id="analyzer"
+      style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
       <div className="max-w-2xl mx-auto">
 
         {/* Header */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-emerald-400 text-xs font-mono mb-4">
-            <Sparkles size={12} />
-            AI-Powered
-          </div>
-          <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">Paper → Pathway</h2>
-          <p className="text-zinc-500 text-sm font-mono">论文代谢通路自动生成</p>
+        <div className="mb-10 text-center">
+          <p className="text-xs font-mono uppercase tracking-widest mb-3"
+            style={{ color: 'rgba(255,255,255,0.2)' }}>
+            02 · Analysis
+          </p>
+          {/* Main title - refined copy */}
+          <h2 className="text-2xl md:text-3xl font-semibold text-white mb-3"
+            style={{ letterSpacing: '-0.02em' }}>
+            Decode any pathway.
+          </h2>
+          {/* Subtitle - replacing 论文代谢通路自动生成 */}
+          <p className="text-sm" style={{ color: 'rgba(255,255,255,0.35)' }}>
+            Paste a paper, upload a PDF, or point your camera —{' '}
+            <span style={{ color: 'rgba(255,255,255,0.55)' }}>AI extracts the metabolic architecture instantly.</span>
+          </p>
         </div>
 
-        {/* Main Card */}
-        <div className="bg-zinc-950 border border-zinc-800 rounded-2xl overflow-hidden">
+        {/* GPT/Gemini-style input card */}
+        <div className="rounded-2xl overflow-hidden"
+          style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)' }}>
 
-          {/* Text Input — always visible */}
-          <div className="p-4">
-            {mode === 'text' && (
-              <textarea
-                value={text}
-                onChange={(e) => { setText(e.target.value); setError(null); setSuccess(false); }}
-                placeholder="Paste abstract or methods section from any metabolic engineering paper..."
-                className="w-full h-16 bg-transparent text-zinc-300 placeholder-zinc-600 text-sm focus:outline-none resize-none"
-              />
-            )}
-            {(mode === 'pdf' || mode === 'image' || mode === 'camera') && (
-              <div className="flex items-center gap-3 py-2">
-                {imagePreview ? (
-                  <img src={imagePreview} alt="Preview" className="h-16 w-16 object-cover rounded-lg border border-zinc-700" />
-                ) : (
-                  <div className="h-16 w-10 rounded-lg border border-dashed border-zinc-700 flex items-center justify-center text-zinc-600">
-                    {mode === 'pdf' ? <FileText size={20} /> : <ImageIcon size={20} />}
-                  </div>
-                )}
-                <div className="flex-1">
-                  {fileName ? (
-                    <p className="text-emerald-400 text-sm font-medium truncate">{fileName}</p>
-                  ) : (
-                    <button
-                      onClick={() => mode === 'pdf' ? fileInputRef.current?.click() : mode === 'camera' ? cameraInputRef.current?.click() : imageInputRef.current?.click()}
-                      className="text-sm text-zinc-400 hover:text-white transition-colors"
-                    >
-                      {mode === 'camera' ? 'Tap to take photo →' : `Click to upload ${mode === 'pdf' ? 'PDF' : 'image'} →`}
-                    </button>
-                  )}
-                  {fileName && (
-                    <button onClick={() => { resetState(); }} className="text-xs text-zinc-600 hover:text-zinc-400 mt-1 flex items-center gap-1">
-                      <X size={10} /> remove
-                    </button>
-                  )}
+          {/* File/Image preview inside box */}
+          {(mode === 'pdf' || mode === 'image' || mode === 'camera') && (
+            <div className="px-4 pt-4 pb-2 flex items-center gap-3">
+              {imagePreview ? (
+                <img src={imagePreview} alt="Preview" className="h-12 w-12 object-cover rounded-lg"
+                  style={{ border: '1px solid rgba(255,255,255,0.1)' }} />
+              ) : (
+                <div className="h-12 w-12 rounded-lg flex items-center justify-center"
+                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                  {mode === 'pdf' ? <Upload size={16} style={{ color: 'rgba(255,255,255,0.35)' }} />
+                    : <ImageIcon size={16} style={{ color: 'rgba(255,255,255,0.35)' }} />}
                 </div>
+              )}
+              <div className="flex-1">
+                {fileName
+                  ? <p className="text-sm text-white truncate">{fileName}</p>
+                  : <button
+                      onClick={() => mode === 'pdf' ? fileInputRef.current?.click() : mode === 'camera' ? cameraInputRef.current?.click() : imageInputRef.current?.click()}
+                      className="text-sm transition-colors"
+                      style={{ color: 'rgba(255,255,255,0.4)' }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#ffffff'; }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.4)'; }}>
+                      {mode === 'camera' ? 'Tap to take photo' : `Click to upload ${mode === 'pdf' ? 'PDF' : 'image'}`} →
+                    </button>
+                }
+                {fileName && (
+                  <button onClick={resetState} className="flex items-center gap-1 text-xs mt-0.5 transition-colors"
+                    style={{ color: 'rgba(255,255,255,0.2)' }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.5)'; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.2)'; }}>
+                    <X size={10} /> remove
+                  </button>
+                )}
               </div>
-            )}
-            {mode === 'web' && (
+            </div>
+          )}
+
+          {/* URL input */}
+          {mode === 'web' && (
+            <div className="px-4 pt-4 pb-2 flex items-center gap-2">
+              <Globe size={14} style={{ color: 'rgba(255,255,255,0.25)' }} className="shrink-0" />
               <input
                 type="url"
                 value={webUrl}
                 onChange={(e) => { setWebUrl(e.target.value); setError(null); }}
                 placeholder="https://pubmed.ncbi.nlm.nih.gov/... or https://doi.org/..."
-                className="w-full bg-transparent text-zinc-300 placeholder-zinc-600 text-sm focus:outline-none py-2"
+                className="flex-1 bg-transparent text-sm text-white placeholder-neutral-600 focus:outline-none"
               />
-            )}
-          </div>
+              {webUrl && (
+                <button onClick={() => setWebUrl('')} style={{ color: 'rgba(255,255,255,0.2)' }}>
+                  <X size={13} />
+                </button>
+              )}
+            </div>
+          )}
 
-          {/* Divider + toolbar */}
-          <div className="border-t border-zinc-800 px-4 py-2 flex items-center justify-between">
+          {/* Main textarea — always visible for text mode */}
+          {mode === 'text' && (
+            <textarea
+              ref={textareaRef}
+              value={text}
+              onChange={(e) => { setText(e.target.value); setError(null); setSuccess(false); }}
+              onKeyDown={handleKeyDown}
+              placeholder="Paste an abstract, methods section, or any research text here..."
+              rows={4}
+              className="w-full bg-transparent px-4 pt-4 pb-2 text-sm text-white placeholder-neutral-600 focus:outline-none resize-none"
+              style={{ lineHeight: 1.7 }}
+            />
+          )}
+
+          {/* Bottom toolbar — GPT style */}
+          <div className="px-3 py-3 flex items-center justify-between">
+
             <div className="flex items-center gap-1">
-              {/* Active mode indicator */}
+              {/* Back to text button */}
               {mode !== 'text' && (
                 <button
                   onClick={() => { setMode('text'); resetState(); setExpanded(false); }}
-                  className="flex items-center gap-1.5 px-2 py-1 bg-zinc-800 rounded-lg text-zinc-400 hover:text-white text-xs transition-colors mr-2"
-                >
-                  <FileText size={12} />
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs transition-all"
+                  style={{ color: 'rgba(255,255,255,0.3)' }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#ffffff'; (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.06)'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.3)'; (e.currentTarget as HTMLElement).style.background = 'transparent'; }}>
                   Text
                 </button>
               )}
 
-              {/* + expand button */}
+              {/* + button */}
               <button
                 onClick={() => setExpanded(!expanded)}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
-                  expanded
-                    ? 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-400'
-                    : 'bg-zinc-800 text-zinc-500 hover:text-zinc-300'
-                }`}
-              >
-                {expanded ? <ChevronUp size={13} /> : <Plus size={13} />}
-                {expanded ? 'Less' : 'Add file or URL'}
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs transition-all"
+                style={{ color: expanded ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.3)' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#ffffff'; (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.06)'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = expanded ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.3)'; (e.currentTarget as HTMLElement).style.background = 'transparent'; }}>
+                {expanded ? <ChevronUp size={14} /> : <Plus size={14} />}
+                <span>{expanded ? 'Less' : 'Add file or URL'}</span>
               </button>
 
-              {/* Expanded extra modes */}
+              {/* Extra mode buttons when expanded */}
               {expanded && (
-                <div className="flex items-center gap-1 ml-1">
+                <div className="flex items-center gap-1">
                   {extraModes.map((m) => (
                     <button
                       key={m.id}
                       onClick={() => {
-                        setMode(m.id);
-                        resetState();
+                        setMode(m.id); resetState();
                         if (m.id === 'pdf') setTimeout(() => fileInputRef.current?.click(), 100);
                         if (m.id === 'image') setTimeout(() => imageInputRef.current?.click(), 100);
                         if (m.id === 'camera') setTimeout(() => cameraInputRef.current?.click(), 100);
                       }}
-                      className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs transition-all ${
-                        mode === m.id
-                          ? 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-400'
-                          : 'bg-zinc-800 text-zinc-500 hover:text-zinc-300'
-                      }`}
-                    >
+                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs transition-all"
+                      style={{
+                        color: mode === m.id ? '#ffffff' : 'rgba(255,255,255,0.3)',
+                        background: mode === m.id ? 'rgba(255,255,255,0.1)' : 'transparent',
+                      }}
+                      onMouseEnter={e => { if (mode !== m.id) { (e.currentTarget as HTMLElement).style.color = '#ffffff'; (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.06)'; } }}
+                      onMouseLeave={e => { if (mode !== m.id) { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.3)'; (e.currentTarget as HTMLElement).style.background = 'transparent'; } }}>
                       {m.icon}
                       {m.label}
                     </button>
@@ -255,34 +292,56 @@ Rules: 4-8 nodes, IDs lowercase with underscores, labels 1-3 words max.`;
               )}
             </div>
 
-            {/* Generate button */}
+            {/* Send / Analyze button — arrow up icon, GPT style */}
             <button
               onClick={handleAnalyze}
               disabled={isAnalyzing || !canAnalyze}
-              className="flex items-center gap-2 px-4 py-1.5 bg-emerald-500 hover:bg-emerald-400 disabled:bg-zinc-700 disabled:text-zinc-500 disabled:cursor-not-allowed text-zinc-950 font-semibold rounded-xl text-sm transition-colors"
+              className="w-8 h-8 rounded-full flex items-center justify-center transition-all"
+              style={{
+                background: isAnalyzing
+                  ? 'rgba(255,255,255,0.06)'
+                  : canAnalyze
+                    ? '#ffffff'
+                    : 'rgba(255,255,255,0.08)',
+                color: isAnalyzing || !canAnalyze ? 'rgba(255,255,255,0.2)' : '#0a0a0a',
+                cursor: isAnalyzing || !canAnalyze ? 'not-allowed' : 'pointer',
+              }}
+              title="Generate pathway (or press Enter)"
             >
-              {isAnalyzing ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
-              {isAnalyzing ? 'Analyzing...' : 'Generate'}
+              {isAnalyzing
+                ? <span className="w-3 h-3 rounded-full border border-current border-t-transparent animate-spin" />
+                : <ArrowUp size={15} strokeWidth={2.5} />
+              }
             </button>
           </div>
-
-          {/* Error / Success */}
-          {(error || success) && (
-            <div className={`px-4 py-3 border-t text-sm flex items-center gap-2 ${
-              error ? 'border-red-500/20 bg-red-500/5 text-red-400' : 'border-emerald-500/20 bg-emerald-500/5 text-emerald-400'
-            }`}>
-              {error ? <AlertCircle size={14} /> : <Sparkles size={14} />}
-              {error || 'Pathway generated! Scroll up to see your visualization ↑'}
-            </div>
-          )}
         </div>
 
-        <p className="text-center text-zinc-700 text-xs mt-3 font-mono">
-          Gemini 1.5 Flash · Text · PDF · Image · Camera · URL
+        {/* Hint text below */}
+        <p className="text-center text-xs font-mono mt-3"
+          style={{ color: 'rgba(255,255,255,0.15)' }}>
+          Press Enter to analyze · Shift+Enter for new line · Gemini 1.5 Flash
         </p>
+
+        {/* Error */}
+        {error && (
+          <div className="mt-4 flex items-center gap-2 px-4 py-3 rounded-xl text-sm"
+            style={{ background: 'rgba(255,80,80,0.06)', border: '1px solid rgba(255,80,80,0.12)', color: 'rgba(255,150,150,0.8)' }}>
+            <AlertCircle size={14} className="shrink-0" />
+            {error}
+          </div>
+        )}
+
+        {/* Success */}
+        {success && (
+          <div className="mt-4 flex items-center gap-2 px-4 py-3 rounded-xl text-sm"
+            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.5)' }}>
+            <Sparkles size={14} className="shrink-0" />
+            Pathway extracted. Scroll up to explore your visualization ↑
+          </div>
+        )}
       </div>
 
-      {/* Hidden file inputs */}
+      {/* Hidden inputs */}
       <input ref={fileInputRef} type="file" accept=".pdf,application/pdf" onChange={(e) => handleFileUpload(e, 'pdf')} className="hidden" />
       <input ref={imageInputRef} type="file" accept="image/*" onChange={(e) => handleFileUpload(e, 'image')} className="hidden" />
       <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" onChange={(e) => handleFileUpload(e, 'image')} className="hidden" />
