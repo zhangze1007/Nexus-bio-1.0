@@ -68,8 +68,8 @@ export default function Hero() {
           className="text-5xl md:text-7xl font-semibold text-white mb-6"
           style={{ letterSpacing: '-0.03em', lineHeight: 1.1 }}
         >
-          From literature<br />
-          <span style={{ color: 'rgba(255,255,255,0.35)' }}>to mechanistic insight.</span>
+          From Literature<br />
+          <span style={{ color: 'rgba(255,255,255,0.35)' }}>to Mechanistic Insight</span>
         </motion.h1>
 
         {/* Subtitle */}
