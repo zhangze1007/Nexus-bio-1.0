@@ -2,52 +2,95 @@ import { useState } from 'react';
 import { Mail, FileDown, ArrowRight } from 'lucide-react';
 
 export default function ContactFlow() {
-  const [isHovered, setIsHovered] = useState(false);
+  const [hovered, setHovered] = useState<string | null>(null);
 
   return (
-    <section className="py-24 px-4 bg-zinc-900 text-white border-t border-zinc-800" id="contact">
-      <div className="max-w-4xl mx-auto text-center">
-        <h2 className="text-3xl md:text-4xl font-bold mb-4">Accelerate Your Bio-Innovation</h2>
-        <p className="text-zinc-400 font-mono text-sm uppercase tracking-widest mb-12">早期采用者咨询 (Early-Adopter Consulting)</p>
-        
-        <div className="grid md:grid-cols-2 gap-8 max-w-3xl mx-auto">
-          <div className="bg-zinc-950 p-8 rounded-3xl border border-zinc-800 flex flex-col items-center text-center hover:border-emerald-500/50 transition-colors">
-            <div className="w-16 h-16 bg-emerald-500/10 rounded-2xl flex items-center justify-center mb-6 text-emerald-400">
-              <Mail size={32} />
+    <section className="px-4 py-24" id="contact"
+      style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+      <div className="max-w-5xl mx-auto">
+
+        {/* Header */}
+        <div className="mb-12">
+          <p className="text-xs font-mono uppercase tracking-widest mb-2"
+            style={{ color: 'rgba(255,255,255,0.25)' }}>
+            04 · Contact
+          </p>
+          <h2 className="text-2xl md:text-3xl font-semibold text-white mb-2"
+            style={{ letterSpacing: '-0.02em' }}>
+            Accelerate Your Research
+          </h2>
+          <p className="text-sm" style={{ color: 'rgba(255,255,255,0.35)' }}>
+            Early-adopter consulting for biotech teams · 早期采用者咨询
+          </p>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-4">
+
+          {/* Consulting Card */}
+          <div
+            className="rounded-2xl p-8 flex flex-col transition-all duration-200 cursor-pointer"
+            style={{
+              background: hovered === 'consult' ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.02)',
+              border: `1px solid ${hovered === 'consult' ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.07)'}`,
+            }}
+            onMouseEnter={() => setHovered('consult')}
+            onMouseLeave={() => setHovered(null)}
+          >
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-6"
+              style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }}>
+              <Mail size={18} style={{ color: 'rgba(255,255,255,0.6)' }} />
             </div>
-            <h3 className="text-2xl font-bold mb-4">Strategic Consulting</h3>
-            <p className="text-zinc-400 mb-8 flex-1">
-              Book a 45-minute deep dive into your bioprocessing pipeline. Identify bottlenecks and scalable microbial solutions.
+            <h3 className="text-lg font-semibold text-white mb-3">Strategic Consulting</h3>
+            <p className="text-sm leading-relaxed mb-8 flex-1"
+              style={{ color: 'rgba(255,255,255,0.4)' }}>
+              45-minute deep dive into your bioprocessing pipeline. Identify bottlenecks and scalable microbial solutions tailored to your team.
             </p>
             <a
               href="https://forms.gle/your-google-form-link-here"
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full py-4 bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold rounded-xl transition-colors flex items-center justify-center gap-2"
-              onMouseEnter={() => setIsHovered(true)}
-              onMouseLeave={() => setIsHovered(false)}
+              className="flex items-center justify-between px-5 py-3 rounded-xl text-sm font-semibold transition-all"
+              style={{ background: '#ffffff', color: '#0a0a0a' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#e5e5e5'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#ffffff'; }}
             >
-              Buy Early-Adopter Consulting ($50)
-              <ArrowRight size={20} className={`transition-transform ${isHovered ? 'translate-x-1' : ''}`} />
+              Book Early-Adopter Session · $50
+              <ArrowRight size={14} />
             </a>
           </div>
 
-          <div className="bg-zinc-950 p-8 rounded-3xl border border-zinc-800 flex flex-col items-center text-center hover:border-zinc-600 transition-colors">
-            <div className="w-16 h-16 bg-zinc-800 rounded-2xl flex items-center justify-center mb-6 text-zinc-300">
-              <FileDown size={32} />
+          {/* Whitepaper Card */}
+          <div
+            className="rounded-2xl p-8 flex flex-col transition-all duration-200"
+            style={{
+              background: hovered === 'paper' ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.02)',
+              border: `1px solid ${hovered === 'paper' ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.07)'}`,
+            }}
+            onMouseEnter={() => setHovered('paper')}
+            onMouseLeave={() => setHovered(null)}
+          >
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-6"
+              style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }}>
+              <FileDown size={18} style={{ color: 'rgba(255,255,255,0.6)' }} />
             </div>
-            <h3 className="text-2xl font-bold mb-4">Nexus-Bio Whitepaper</h3>
-            <p className="text-zinc-400 mb-8 flex-1">
-              Download our 1-page technical brief on "Next-Gen Bio-Intelligent Architecture for Sustainable Food Production."
+            <h3 className="text-lg font-semibold text-white mb-3">Technical Whitepaper</h3>
+            <p className="text-sm leading-relaxed mb-8 flex-1"
+              style={{ color: 'rgba(255,255,255,0.4)' }}>
+              1-page technical brief on Next-Gen Bio-Intelligent Architecture for Sustainable Food Production. Free download.
             </p>
             <a
               href="/whitepaper-template.pdf"
               download
-              className="w-full py-4 bg-zinc-800 hover:bg-zinc-700 text-white font-bold rounded-xl transition-colors flex items-center justify-center gap-2 border border-zinc-700"
+              className="flex items-center justify-between px-5 py-3 rounded-xl text-sm font-semibold transition-all"
+              style={{ background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.8)', border: '1px solid rgba(255,255,255,0.1)' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.12)'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.07)'; }}
             >
-              Download Whitepaper (PDF)
+              Download Whitepaper
+              <FileDown size={14} />
             </a>
           </div>
+
         </div>
       </div>
     </section>
