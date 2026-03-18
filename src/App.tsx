@@ -31,58 +31,92 @@ export default function App() {
   const activeEdges = aiEdges ?? undefined;
 
   return (
-    <main className="min-h-screen bg-zinc-950 text-zinc-50 font-sans selection:bg-emerald-500/30">
+    <main style={{ background: '#0a0a0a', minHeight: '100vh', color: '#f5f5f5' }}>
       <Hero />
 
-      <section className="py-24 px-4 max-w-6xl mx-auto" id="demo">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">
-            Metabolic Pathway Simulation
-          </h2>
-          <p className="text-zinc-400 font-mono text-sm uppercase tracking-widest">
-            Interactive Node Exploration (交互式节点探索)
-          </p>
-          {aiNodes && (
-            <div className="mt-6 flex items-center justify-center gap-4 flex-wrap">
-              <div className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 border border-emerald-500/30 rounded-full">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-emerald-400 text-sm font-mono">
-                  AI Generated · {aiNodes.length} nodes detected
-                </span>
-              </div>
-              <button
-                onClick={handleResetPathway}
-                className="px-4 py-2 text-sm text-zinc-400 hover:text-white border border-zinc-700 hover:border-zinc-500 rounded-full transition-colors"
-              >
-                Reset to Default
-              </button>
-            </div>
-          )}
-        </div>
+      {/* Pathway Section */}
+      <section id="demo" className="px-4 py-24"
+        style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+        <div className="max-w-5xl mx-auto">
 
-        <div className="relative">
+          {/* Section header */}
+          <div className="flex items-start justify-between mb-10 flex-wrap gap-4">
+            <div>
+              <p className="text-xs font-mono uppercase tracking-widest mb-2"
+                style={{ color: 'rgba(255,255,255,0.25)' }}>
+                01 · Visualization
+              </p>
+              <h2 className="text-2xl md:text-3xl font-semibold text-white"
+                style={{ letterSpacing: '-0.02em' }}>
+                Metabolic Pathway
+              </h2>
+              <p className="text-sm mt-2" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                Interactive 3D node exploration · Click any node for details
+              </p>
+            </div>
+
+            {aiNodes && (
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-mono"
+                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.5)' }}>
+                  <span className="w-1.5 h-1.5 rounded-full bg-white opacity-60 animate-pulse" />
+                  AI Generated · {aiNodes.length} nodes
+                </div>
+                <button
+                  onClick={handleResetPathway}
+                  className="text-xs px-3 py-1.5 rounded-full transition-colors"
+                  style={{ color: 'rgba(255,255,255,0.3)', border: '1px solid rgba(255,255,255,0.08)' }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#ffffff'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.3)'; }}
+                >
+                  Reset
+                </button>
+              </div>
+            )}
+          </div>
+
           <ThreeScene
             nodes={activeNodes}
             onNodeClick={setSelectedNode}
             edges={activeEdges}
+            selectedNodeId={selectedNode?.id ?? null}
           />
         </div>
       </section>
 
-      <NodePanel
-        node={selectedNode}
-        onClose={() => setSelectedNode(null)}
-      />
+      <NodePanel node={selectedNode} onClose={() => setSelectedNode(null)} />
 
+      {/* Analyzer Section */}
       <PaperAnalyzer onPathwayGenerated={handlePathwayGenerated} />
 
-      <SemanticSearch />
+      {/* Search Section */}
+      <SemanticSearch onAnalyzePaper={(text) => {
+        document.getElementById('analyzer')?.scrollIntoView({ behavior: 'smooth' });
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('autoFillAnalyzer', { detail: { text } }));
+        }, 600);
+      }} />
+
+      {/* Contact Section */}
       <ContactFlow />
+
       <DevModePanel />
 
-      <footer className="py-8 text-center text-zinc-500 text-sm border-t border-zinc-900">
-        <p>© {new Date().getFullYear()} Nexus-Bio. All rights reserved.</p>
-        <p className="mt-2 font-mono text-xs">Built for Zero-Cost Deployment</p>
+      {/* Footer */}
+      <footer className="px-6 py-8 flex items-center justify-between flex-wrap gap-4"
+        style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+        <div className="flex items-center gap-2">
+          <div className="w-5 h-5 rounded bg-white flex items-center justify-center">
+            <span className="text-black text-xs font-bold">N</span>
+          </div>
+          <span className="text-sm font-semibold text-white">Nexus-Bio</span>
+        </div>
+        <p className="text-xs font-mono" style={{ color: 'rgba(255,255,255,0.2)' }}>
+          © {new Date().getFullYear()} · Synthetic Biology & Metabolic Engineering
+        </p>
+        <p className="text-xs font-mono" style={{ color: 'rgba(255,255,255,0.15)' }}>
+          Zero-cost deployment · Powered by Gemini AI
+        </p>
       </footer>
     </main>
   );
