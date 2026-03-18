@@ -60,7 +60,7 @@ export default function Hero() {
           Synthetic Biology · Metabolic Engineering
         </motion.div>
 
-        {/* Title — refined copywriting */}
+        {/* Title */}
         <motion.h1
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -68,8 +68,8 @@ export default function Hero() {
           className="text-5xl md:text-7xl font-semibold text-white mb-6"
           style={{ letterSpacing: '-0.03em', lineHeight: 1.1 }}
         >
-          Turn Research Papers<br />
-          <span style={{ color: 'rgba(255,255,255,0.35)' }}>Into Living Pathway.</span>
+          From literature<br />
+          <span style={{ color: 'rgba(255,255,255,0.35)' }}>to mechanistic insight.</span>
         </motion.h1>
 
         {/* Subtitle */}
@@ -139,24 +139,6 @@ export default function Hero() {
       {/* Bottom fade */}
       <div className="absolute bottom-0 left-0 right-0 h-32 pointer-events-none"
         style={{ background: 'linear-gradient(to bottom, transparent, #0a0a0a)' }} />
-
-      {/* Scroll indicator */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1, duration: 0.5 }}
-        className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1"
-        style={{ color: 'rgba(255,255,255,0.15)' }}>
-        <div className="w-px h-8 relative overflow-hidden" style={{ background: 'rgba(255,255,255,0.08)' }}>
-          <motion.div
-            className="w-full absolute top-0"
-            style={{ height: '40%', background: 'rgba(255,255,255,0.4)' }}
-            animate={{ top: ['0%', '100%'] }}
-            transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
-          />
-        </div>
-        <span style={{ fontSize: '9px', letterSpacing: '0.12em', fontFamily: 'monospace' }}>SCROLL</span>
-      </motion.div>
     </header>
   );
 }
