@@ -6,7 +6,7 @@ export default function ContactFlow() {
 
   return (
     <section className="px-4 py-24" id="contact"
-      style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+      style={{ borderTop: 'none' }}>
       <div className="max-w-5xl mx-auto">
 
         {/* Header */}
