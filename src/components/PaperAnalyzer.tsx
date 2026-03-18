@@ -56,7 +56,7 @@ export default function PaperAnalyzer({ onPathwayGenerated }: PaperAnalyzerProps
     reader.readAsDataURL(file);
   };
 
-  const buildRequest = (apiKey: string) => {
+  const buildRequest = () => {
     const prompt = `You are a synthetic biology and metabolic engineering expert.
 Analyze the provided research content and extract metabolic pathway information.
 Return ONLY valid JSON, no markdown, no explanation:
@@ -66,7 +66,7 @@ Return ONLY valid JSON, no markdown, no explanation:
 }
 Rules: 4-8 nodes, IDs lowercase with underscores, labels 1-3 words max.`;
 
-    const baseUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    const baseUrl = `/api/analyze`;
     const config = { temperature: 0.2, maxOutputTokens: 1500 };
 
     if ((mode === 'image' || mode === 'camera') && imageBase64)
@@ -85,13 +85,12 @@ Rules: 4-8 nodes, IDs lowercase with underscores, labels 1-3 words max.`;
       (mode === 'web' && webUrl.trim());
     if (!hasContent) { setError(mode === 'text' ? 'Paste at least a sentence of text.' : mode === 'web' ? 'Enter a valid URL.' : 'Upload a file first.'); return; }
 
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-    if (!apiKey) { setError('API key not found.'); return; }
+    const apiKey = '';
 
     setIsAnalyzing(true); setError(null); setSuccess(false);
 
     try {
-      const { url, body } = buildRequest(apiKey);
+      const { url, body } = buildRequest();
       const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       if (!res.ok) throw new Error(`API error: ${res.status}`);
       const data = await res.json();
