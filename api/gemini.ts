@@ -3,13 +3,27 @@ export const config = {
 };
 
 const MODELS = [
-  'gemini-2.5-flash',
+  'gemini-2.0-flash',
   'gemini-2.0-flash-lite',
   'gemini-1.5-flash',
 ];
 
-const BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
+const BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
 const TIMEOUT_MS = 25000;
+
+const CORS_HEADERS = {
+  'Content-Type': 'application/json',
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+};
+
+function jsonResponse(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: CORS_HEADERS,
+  });
+}
 
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   return Promise.race([
@@ -20,18 +34,6 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   ]);
 }
 
-function jsonResponse(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: {
-      'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-    },
-  });
-}
-
 function validateRequestBody(body: unknown): { valid: boolean; error?: string } {
   if (!body || typeof body !== 'object') {
     return { valid: false, error: 'Invalid request body' };
@@ -39,12 +41,8 @@ function validateRequestBody(body: unknown): { valid: boolean; error?: string } 
 
   const b = body as Record<string, unknown>;
 
-  if (!b.contents || !Array.isArray(b.contents)) {
-    return { valid: false, error: 'Missing contents array' };
-  }
-
-  if ((b.contents as unknown[]).length === 0) {
-    return { valid: false, error: 'Empty contents array' };
+  if (!Array.isArray(b.contents) || b.contents.length === 0) {
+    return { valid: false, error: 'Missing or empty contents array' };
   }
 
   return { valid: true };
@@ -52,7 +50,7 @@ function validateRequestBody(body: unknown): { valid: boolean; error?: string } 
 
 export default async function handler(req: Request) {
   if (req.method === 'OPTIONS') {
-    return jsonResponse({}, 200);
+    return new Response(null, { status: 200, headers: CORS_HEADERS });
   }
 
   if (req.method !== 'POST') {
@@ -61,97 +59,109 @@ export default async function handler(req: Request) {
 
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    return jsonResponse({ error: 'Server configuration error' }, 500);
+    return jsonResponse({ error: 'GEMINI_API_KEY is not configured' }, 500);
   }
+
+  let body: any;
 
   try {
-    const requestBody = await req.json();
-
-    const validation = validateRequestBody(requestBody);
-    if (!validation.valid) {
-      return jsonResponse({ error: validation.error }, 400);
-    }
-
-    const body = {
-      ...requestBody,
-      generationConfig: {
-        ...(requestBody?.generationConfig || {}),
-        maxOutputTokens: 2048,
-        temperature: 0.1,
-        topP: 0.8,
-      },
-    };
-
-    const errors: string[] = [];
-
-    for (const model of MODELS) {
-      try {
-        const fetchPromise = fetch(
-          `${BASE}/${model}:generateContent?key=${apiKey}`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body),
-          }
-        );
-
-        const response = await withTimeout(fetchPromise, TIMEOUT_MS);
-        const data = await response.json();
-
-        if (response.status === 429) {
-          errors.push(`${model}: rate limited`);
-          continue;
-        }
-
-        if (response.status === 503 || response.status === 404) {
-          errors.push(`${model}: unavailable`);
-          continue;
-        }
-
-        if (!response.ok) {
-          return jsonResponse(
-            {
-              error: data?.error?.message || `HTTP ${response.status}`,
-              code: response.status,
-              model,
-            },
-            response.status
-          );
-        }
-
-        return jsonResponse({
-          ...data,
-          meta: {
-            modelUsed: model,
-            fallbackCount: errors.length,
-          },
-        });
-      } catch (err: any) {
-        const msg =
-          err?.message === 'TIMEOUT'
-            ? `${model}: timeout after ${TIMEOUT_MS}ms`
-            : `${model}: ${err?.message || 'Unknown error'}`;
-        errors.push(msg);
-      }
-    }
-
-    const isRateLimit = errors.length > 0 && errors.every((e) => e.includes('rate limited'));
-
-    return jsonResponse(
-      {
-        error: isRateLimit
-          ? 'Rate limit reached. Please wait 1–2 minutes and try again.'
-          : 'All AI models are currently unavailable. Please try again shortly.',
-        details: errors,
-      },
-      503
-    );
-  } catch (err: any) {
-    return jsonResponse(
-      {
-        error: err?.message || 'Internal server error',
-      },
-      500
-    );
+    body = await req.json();
+  } catch {
+    return jsonResponse({ error: 'Invalid JSON body' }, 400);
   }
+
+  const validation = validateRequestBody(body);
+  if (!validation.valid) {
+    return jsonResponse({ error: validation.error }, 400);
+  }
+
+  const requestBody = {
+    ...body,
+    generationConfig: {
+      maxOutputTokens: 2048,
+      temperature: 0.1,
+      topP: 0.8,
+      ...(body.generationConfig || {}),
+    },
+  };
+
+  const modelErrors: string[] = [];
+
+  for (const model of MODELS) {
+    try {
+      const response = await withTimeout(
+        fetch(`${BASE_URL}/${model}:generateContent?key=${apiKey}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestBody),
+        }),
+        TIMEOUT_MS
+      );
+
+      let data: any = null;
+
+      try {
+        data = await response.json();
+      } catch {
+        data = null;
+      }
+
+      if (response.ok) {
+        return jsonResponse(data, 200);
+      }
+
+      const apiMessage =
+        data?.error?.message ||
+        data?.message ||
+        `Gemini API returned HTTP ${response.status}`;
+
+      if (response.status === 429) {
+        modelErrors.push(`${model}: rate limited`);
+        continue;
+      }
+
+      if (response.status === 503) {
+        modelErrors.push(`${model}: overloaded/unavailable`);
+        continue;
+      }
+
+      if (response.status === 404) {
+        modelErrors.push(`${model}: model not found`);
+        continue;
+      }
+
+      return jsonResponse(
+        {
+          error: apiMessage,
+          code: response.status,
+          model,
+        },
+        response.status
+      );
+    } catch (err: any) {
+      if (err?.message === 'TIMEOUT') {
+        modelErrors.push(`${model}: timeout after ${TIMEOUT_MS}ms`);
+        continue;
+      }
+
+      modelErrors.push(`${model}: ${err?.message || 'Unknown fetch error'}`);
+      continue;
+    }
+  }
+
+  const allRateLimited =
+    modelErrors.length > 0 &&
+    modelErrors.every((msg) => msg.includes('rate limited'));
+
+  return jsonResponse(
+    {
+      error: allRateLimited
+        ? 'Rate limit reached. Please wait a minute and try again.'
+        : 'All AI models are currently unavailable. Please try again shortly.',
+      details: modelErrors,
+    },
+    503
+  );
 }
