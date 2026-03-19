@@ -1,4 +1,4 @@
-import { Mail, Linkedin, FileDown, ArrowRight } from 'lucide-react';
+import { Mail, Linkedin, ArrowRight } from 'lucide-react';
 
 export default function ContactFlow() {
   return (
@@ -19,7 +19,7 @@ export default function ContactFlow() {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-4">
+        <div className="grid md:grid-cols-2 gap-4" style={{ maxWidth: '640px' }}>
 
           {/* Gmail */}
           <a
@@ -92,43 +92,6 @@ export default function ContactFlow() {
             </p>
             <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', gap: '6px', color: 'rgba(255,255,255,0.35)', fontSize: '12px' }}>
               View profile <ArrowRight size={12} />
-            </div>
-          </a>
-
-          {/* Whitepaper */}
-          <a
-            href="/whitepaper-template.pdf"
-            download
-            style={{
-              display: 'flex', flexDirection: 'column', padding: '24px',
-              borderRadius: '16px', textDecoration: 'none',
-              background: 'rgba(255,255,255,0.02)',
-              border: '1px solid rgba(255,255,255,0.07)',
-              transition: 'all 0.2s',
-            }}
-            onMouseEnter={e => {
-              (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.05)';
-              (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.15)';
-            }}
-            onMouseLeave={e => {
-              (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.02)';
-              (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.07)';
-            }}
-          >
-            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
-              <FileDown size={16} style={{ color: 'rgba(255,255,255,0.6)' }} />
-            </div>
-            <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 6px' }}>
-              Whitepaper
-            </p>
-            <p style={{ color: '#ffffff', fontSize: '14px', fontWeight: 500, margin: '0 0 4px', letterSpacing: '-0.01em' }}>
-              Technical Brief
-            </p>
-            <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '12px', margin: '0 0 16px', lineHeight: 1.5 }}>
-              Next-Gen Bio-Intelligent Architecture for Sustainable Food Production
-            </p>
-            <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', gap: '6px', color: 'rgba(255,255,255,0.35)', fontSize: '12px' }}>
-              Download PDF <ArrowRight size={12} />
             </div>
           </a>
 
