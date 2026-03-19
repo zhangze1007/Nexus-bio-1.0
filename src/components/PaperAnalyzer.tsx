@@ -328,7 +328,7 @@ Rules: 4-8 nodes, IDs lowercase with underscores, labels 1-3 words max.`;
         {/* Hint text below */}
         <p className="text-center text-xs font-mono mt-3"
           style={{ color: 'rgba(255,255,255,0.15)' }}>
-          Press Enter to analyze · Shift+Enter for new line · Gemini 2.5 Flash
+          Press Enter to analyze · Shift+Enter for new line · Gemini 2.0 Flash
         </p>
 
         {/* Error */}
