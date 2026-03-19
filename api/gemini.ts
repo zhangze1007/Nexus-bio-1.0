@@ -8,7 +8,7 @@ const MODELS = [
   'gemini-1.5-flash',
 ];
 
-const BASE = 'https://generativelanguage.googleapis.com/v1/models';
+const BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 const TIMEOUT_MS = 25000;
 
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
