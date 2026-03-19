@@ -90,12 +90,10 @@ function normalizePathway(parsed: unknown): { nodes: PathwayNode[]; edges: Pathw
   if (!parsed || typeof parsed !== 'object') return null;
   const p = parsed as Record<string, unknown>;
 
-  if (!Array.isArray(p.nodes) || !Array.isArray(p.edges)) return null;
+  if (!Array.isArray(p.nodes)) return null;
 
   const validNodes = p.nodes.filter(isValidNode);
   if (validNodes.length === 0) return null;
-
-  const nodeIds = new Set(validNodes.map((n: any) => n.id));
 
   const nodes: PathwayNode[] = validNodes.map((node: any, i: number) => {
     const n = node as Record<string, unknown>;
@@ -123,10 +121,12 @@ function normalizePathway(parsed: unknown): { nodes: PathwayNode[]; edges: Pathw
     };
   });
 
+  // Build sanitized node ID set for edge validation
+  const sanitizedIds = new Set(nodes.map(n => n.id));
   const validEdgeTypes = ['catalyzes','produces','consumes','activates','inhibits','converts','transports','regulates','unknown'];
-  const edges: PathwayEdge[] = p.edges
+
+  const edges: PathwayEdge[] = (!Array.isArray(p.edges) ? [] : p.edges)
     .filter(isValidEdge)
-    .filter((e: any) => nodeIds.has(e.start) && nodeIds.has(e.end))
     .map((e: any) => ({
       start: sanitizeNodeId(String(e.start)),
       end: sanitizeNodeId(String(e.end)),
@@ -135,8 +135,11 @@ function normalizePathway(parsed: unknown): { nodes: PathwayNode[]; edges: Pathw
       evidence: e.evidence ? String(e.evidence) : undefined,
       confidenceScore: typeof e.confidenceScore === 'number'
         ? Math.min(1, Math.max(0, e.confidenceScore)) : undefined,
-    }));
+    }))
+    // Only filter edges where BOTH sanitized IDs exist — more permissive
+    .filter((e: any) => sanitizedIds.has(e.start) && sanitizedIds.has(e.end));
 
+  // Return even if no valid edges — nodes alone are still useful
   return { nodes, edges };
 }
 
