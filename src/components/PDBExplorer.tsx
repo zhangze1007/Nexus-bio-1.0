@@ -1,15 +1,13 @@
-import { useEffect, useRef, useState } from 'react';
-import { Loader2, ExternalLink, ChevronDown, ChevronUp } from 'lucide-react';
+import { useEffect, useRef, useState, useCallback } from 'react';
+import { Loader2, ExternalLink, ChevronDown, ChevronUp, X } from 'lucide-react';
 
-// pLDDT color scale matching AlphaFold standard
 const PLDDT_LEVELS = [
   { color: '#0053D6', label: 'Very high', range: '>90', desc: 'Confident — accurately modelled' },
   { color: '#65CBF3', label: 'High', range: '70–90', desc: 'Generally accurate backbone' },
-  { color: '#FFDB13', label: 'Medium', range: '50–70', desc: 'Flexible or uncertain region' },
+  { color: '#FFDB13', label: 'Medium', range: '50–70', desc: 'Flexible region' },
   { color: '#FF7D45', label: 'Low', range: '<50', desc: 'Intrinsically disordered' },
 ];
 
-// Artemisinin pathway enzymes with AlphaFold IDs
 const PATHWAY_ENZYMES = [
   {
     id: 'CYP71AV1',
@@ -18,9 +16,9 @@ const PATHWAY_ENZYMES = [
     organism: 'Artemisia annua',
     pdbId: '2ONH',
     alphafoldId: 'Q8LKJ5',
-    role: 'Catalyzes 3-step oxidation of amorphadiene → artemisinic acid. Key bottleneck enzyme.',
+    role: 'Catalyzes 3-step oxidation of amorphadiene → artemisinic acid. Rate-limiting enzyme in artemisinin biosynthesis.',
+    activeResidue: 'Heme Fe²⁺ — coordinates substrate for sequential oxidation',
     pathway: 'Artemisinin',
-    activeResidue: 'Heme Fe — coordinates substrate for oxidation',
   },
   {
     id: 'ADS',
@@ -29,9 +27,9 @@ const PATHWAY_ENZYMES = [
     organism: 'Artemisia annua',
     pdbId: '2ONH',
     alphafoldId: 'Q9MB61',
-    role: 'Cyclizes FPP into amorphadiene. First committed step toward artemisinin.',
-    pathway: 'Artemisinin',
+    role: 'Cyclizes FPP → amorphadiene. First committed step toward artemisinin.',
     activeResidue: 'Mg²⁺ trinuclear cluster — coordinates pyrophosphate departure',
+    pathway: 'Artemisinin',
   },
   {
     id: 'HMGR',
@@ -41,38 +39,81 @@ const PATHWAY_ENZYMES = [
     pdbId: '1DQA',
     alphafoldId: 'P12683',
     role: 'Rate-limiting enzyme of mevalonate pathway. Overexpression boosts isoprenoid flux 5×.',
-    pathway: 'Mevalonate',
     activeResidue: 'Ser-Asp-His catalytic triad',
+    pathway: 'Mevalonate',
   },
 ];
 
-declare global {
-  interface Window { $3Dmol: any; }
-}
+const RESIDUE_TYPE_INFO: Record<string, { color: string; role: string }> = {
+  ALA: { color: '#C8C8C8', role: 'Alanine — hydrophobic core' },
+  ARG: { color: '#145AFF', role: 'Arginine — positively charged, salt bridges' },
+  ASN: { color: '#00DCDC', role: 'Asparagine — H-bond donor/acceptor' },
+  ASP: { color: '#E60A0A', role: 'Aspartate — negatively charged, catalysis' },
+  CYS: { color: '#E6E600', role: 'Cysteine — disulfide bonds, metal coordination' },
+  GLN: { color: '#00DCDC', role: 'Glutamine — H-bond donor/acceptor' },
+  GLU: { color: '#E60A0A', role: 'Glutamate — negatively charged, proton transfer' },
+  GLY: { color: '#EBEBEB', role: 'Glycine — flexible hinge, no side chain' },
+  HIS: { color: '#8282D2', role: 'Histidine — pH sensor, metal coordination' },
+  ILE: { color: '#0F820F', role: 'Isoleucine — hydrophobic core stability' },
+  LEU: { color: '#0F820F', role: 'Leucine — hydrophobic core stability' },
+  LYS: { color: '#145AFF', role: 'Lysine — positively charged, substrate binding' },
+  MET: { color: '#E6E600', role: 'Methionine — hydrophobic, start codon' },
+  PHE: { color: '#3232AA', role: 'Phenylalanine — aromatic stacking, hydrophobic' },
+  PRO: { color: '#DC9682', role: 'Proline — rigid turn, secondary structure breaker' },
+  SER: { color: '#FA9600', role: 'Serine — H-bond, phosphorylation site' },
+  THR: { color: '#FA9600', role: 'Threonine — H-bond, phosphorylation site' },
+  TRP: { color: '#B45AB4', role: 'Tryptophan — aromatic fluorescence probe' },
+  TYR: { color: '#3232AA', role: 'Tyrosine — aromatic, phosphorylation' },
+  VAL: { color: '#0F820F', role: 'Valine — hydrophobic β-sheet' },
+  HEM: { color: '#FF4500', role: '🔴 HEME — iron-containing cofactor, electron transfer & substrate oxidation' },
+  HEC: { color: '#FF4500', role: '🔴 HEME — active site cofactor' },
+  FE: { color: '#FF6B00', role: 'Iron (Fe) — catalytic metal center' },
+};
+
+declare global { interface Window { $3Dmol: any; } }
 
 function load3Dmol(): Promise<void> {
   return new Promise((resolve, reject) => {
     if (window.$3Dmol) { resolve(); return; }
-    const script = document.createElement('script');
-    script.src = 'https://3Dmol.org/build/3Dmol-min.js';
-    script.onload = () => resolve();
-    script.onerror = () => reject(new Error('Failed to load 3Dmol.js'));
-    document.head.appendChild(script);
+    const s = document.createElement('script');
+    s.src = 'https://3Dmol.org/build/3Dmol-min.js';
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error('Failed to load 3Dmol'));
+    document.head.appendChild(s);
   });
 }
 
-interface ProteinViewerProps {
+interface AtomTooltip {
+  resn: string;
+  resi: number;
+  atom: string;
+  chain: string;
+  elem: string;
+  b: number;
+  x: number;
+  y: number;
+}
+
+interface ProteinCanvasProps {
   pdbId: string;
   alphafoldId?: string;
   name: string;
-  useAlphaFold?: boolean;
+  useAlphaFold: boolean;
 }
 
-function ProteinCanvas({ pdbId, alphafoldId, name, useAlphaFold }: ProteinViewerProps) {
+function ProteinCanvas({ pdbId, alphafoldId, name, useAlphaFold }: ProteinCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<any>(null);
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
-  const [useAF, setUseAF] = useState(useAlphaFold ?? false);
+  const [tooltip, setTooltip] = useState<AtomTooltip | null>(null);
+  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
+
+  const getPLDDTColor = (b: number) => {
+    if (b >= 90) return '#0053D6';
+    if (b >= 70) return '#65CBF3';
+    if (b >= 50) return '#FFDB13';
+    return '#FF7D45';
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -80,69 +121,82 @@ function ProteinCanvas({ pdbId, alphafoldId, name, useAlphaFold }: ProteinViewer
     async function init() {
       if (!containerRef.current) return;
       setStatus('loading');
+      setTooltip(null);
 
       try {
         await load3Dmol();
-
         if (cancelled) return;
 
-        // Clear previous viewer
+        // Clear old viewer
         if (viewerRef.current) {
-          viewerRef.current.clear();
+          try { viewerRef.current.clear(); } catch {}
         }
+        containerRef.current.innerHTML = '';
 
         const viewer = window.$3Dmol.createViewer(containerRef.current, {
-          backgroundColor: '0x0d0d0d',
+          backgroundColor: 'white', // WHITE background
           antialias: true,
-          id: `viewer-${pdbId}-${Date.now()}`,
         });
-
         viewerRef.current = viewer;
 
-        if (useAF && alphafoldId) {
-          // Load from AlphaFold DB — B-factor column = pLDDT
+        if (useAlphaFold && alphafoldId) {
           const afUrl = `https://alphafold.ebi.ac.uk/files/AF-${alphafoldId}-F1-model_v4.pdb`;
           const res = await fetch(afUrl);
-          if (!res.ok) throw new Error('AlphaFold structure not found');
+          if (!res.ok) throw new Error('AlphaFold not found');
           const pdbData = await res.text();
-
           viewer.addModel(pdbData, 'pdb');
-
-          // pLDDT color scheme using B-factor column
           viewer.setStyle({}, {
             cartoon: {
-              colorfunc: (atom: any) => {
-                const b = atom.b; // B-factor = pLDDT in AlphaFold PDB
-                if (b >= 90) return '#0053D6';
-                if (b >= 70) return '#65CBF3';
-                if (b >= 50) return '#FFDB13';
-                return '#FF7D45';
-              },
-              thickness: 0.4,
+              colorfunc: (atom: any) => getPLDDTColor(atom.b),
+              thickness: 0.5,
             }
           });
-
         } else {
-          // Load from RCSB PDB
           await new Promise<void>((res, rej) => {
             window.$3Dmol.download(`pdb:${pdbId}`, viewer, {}, () => res());
             setTimeout(() => rej(new Error('Timeout')), 15000);
           });
 
-          // Cartoon ribbon — secondary structure visible
+          // Cartoon for protein backbone
+          viewer.setStyle({ atom: 'CA' }, {
+            cartoon: { color: 'spectrum', thickness: 0.5 }
+          });
           viewer.setStyle({}, {
-            cartoon: {
-              color: 'spectrum',
-              thickness: 0.4,
-            }
+            cartoon: { color: 'spectrum', thickness: 0.5 }
           });
 
-          // Highlight active site residues (HET atoms = ligands/cofactors)
+          // Highlight ligands/cofactors (active site)
           viewer.setStyle({ hetflag: true }, {
-            stick: { colorscheme: 'greenCarbon', radius: 0.15 },
-            sphere: { colorscheme: 'greenCarbon', radius: 0.35 },
+            stick: { colorscheme: 'greenCarbon', radius: 0.2 },
+            sphere: { colorscheme: 'greenCarbon', radius: 0.5 },
           });
         }
+
+        // ── Hover callback — show atom data ──
+        viewer.setHoverable(
+          {},
+          true,
+          // Mouse enter
+          (atom: any, _viewer: any, event: any) => {
+            if (!atom) return;
+            const rect = containerRef.current?.getBoundingClientRect();
+            if (!rect) return;
+            setTooltipPos({
+              x: event.clientX - rect.left,
+              y: event.clientY - rect.top,
+            });
+            setTooltip({
+              resn: atom.resn || '?',
+              resi: atom.resi || 0,
+              atom: atom.atom || '?',
+              chain: atom.chain || 'A',
+              elem: atom.elem || '?',
+              b: atom.b || 0,
+            } as AtomTooltip);
+          },
+          // Mouse leave
+          () => setTooltip(null)
+        );
 
         viewer.zoomTo();
         viewer.spin('y', 0.5);
@@ -150,74 +204,146 @@ function ProteinCanvas({ pdbId, alphafoldId, name, useAlphaFold }: ProteinViewer
 
         if (!cancelled) setStatus('ready');
       } catch (err) {
-        console.error('3Dmol error:', err);
+        console.error(err);
         if (!cancelled) setStatus('error');
       }
     }
 
     init();
     return () => { cancelled = true; };
-  }, [pdbId, alphafoldId, useAF]);
+  }, [pdbId, alphafoldId, useAlphaFold]);
+
+  const residueInfo = tooltip ? (RESIDUE_TYPE_INFO[tooltip.resn] || { color: '#888', role: `${tooltip.resn} residue` }) : null;
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: '340px' }}>
-      {/* 3Dmol container */}
+    <div style={{ position: 'relative', width: '100%', height: '360px' }}>
+      {/* 3Dmol container — WHITE background */}
       <div
         ref={containerRef}
-        style={{ width: '100%', height: '100%', borderRadius: '12px', overflow: 'hidden', background: '#0d0d0d', border: '1px solid rgba(255,255,255,0.08)' }}
+        style={{ width: '100%', height: '100%', borderRadius: '14px', overflow: 'hidden', background: '#ffffff', border: '1px solid rgba(0,0,0,0.1)', boxShadow: '0 4px 24px rgba(0,0,0,0.15)' }}
       />
 
-      {/* Loading overlay */}
+      {/* Loading */}
       {status === 'loading' && (
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '10px', pointerEvents: 'none' }}>
-          <Loader2 size={20} style={{ color: '#6495ED', animation: 'spin 1s linear infinite' }} />
-          <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '11px', fontFamily: 'monospace' }}>
-            Loading {useAF ? 'AlphaFold' : 'RCSB PDB'} structure...
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '10px', background: '#ffffff', borderRadius: '14px', pointerEvents: 'none' }}>
+          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+          <Loader2 size={22} style={{ color: '#6495ED', animation: 'spin 1s linear infinite' }} />
+          <span style={{ color: '#666', fontSize: '12px', fontFamily: 'monospace' }}>
+            Loading {useAlphaFold ? 'AlphaFold' : 'RCSB PDB'} · {useAlphaFold ? alphafoldId : pdbId}
           </span>
         </div>
       )}
 
-      {/* Error state */}
+      {/* Error */}
       {status === 'error' && (
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-          <span style={{ color: 'rgba(255,100,100,0.7)', fontSize: '12px', fontFamily: 'monospace' }}>Failed to load structure</span>
-          <a href={`https://www.rcsb.org/structure/${pdbId}`} target="_blank" rel="noopener noreferrer"
-            style={{ color: '#6495ED', fontSize: '11px', fontFamily: 'monospace' }}>
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', background: '#ffffff', borderRadius: '14px' }}>
+          <span style={{ color: '#cc4444', fontSize: '12px', fontFamily: 'monospace' }}>Structure unavailable</span>
+          <a href={`https://www.rcsb.org/structure/${pdbId}`} target="_blank" rel="noopener noreferrer" style={{ color: '#6495ED', fontSize: '11px' }}>
             Open in RCSB →
           </a>
         </div>
       )}
 
-      {/* Top labels */}
+      {/* Atom hover tooltip */}
+      {tooltip && residueInfo && (
+        <div style={{
+          position: 'absolute',
+          left: Math.min(tooltipPos.x + 12, 260),
+          top: Math.max(tooltipPos.y - 10, 0),
+          zIndex: 50,
+          pointerEvents: 'none',
+          background: 'rgba(10,10,10,0.95)',
+          border: '1px solid rgba(255,255,255,0.12)',
+          borderRadius: '10px',
+          padding: '10px 12px',
+          width: '220px',
+          backdropFilter: 'blur(12px)',
+        }}>
+          {/* Residue name + color */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+            <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: residueInfo.color, flexShrink: 0 }} />
+            <span style={{ color: '#ffffff', fontSize: '13px', fontWeight: 700, fontFamily: 'monospace' }}>
+              {tooltip.resn} {tooltip.resi}
+            </span>
+            <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', fontFamily: 'monospace' }}>
+              Chain {tooltip.chain}
+            </span>
+          </div>
+
+          {/* Atom info */}
+          <div style={{ display: 'flex', gap: '6px', marginBottom: '6px', flexWrap: 'wrap' }}>
+            <span style={{ padding: '2px 6px', background: 'rgba(255,255,255,0.07)', borderRadius: '4px', color: 'rgba(255,255,255,0.5)', fontSize: '10px', fontFamily: 'monospace' }}>
+              Atom: {tooltip.atom}
+            </span>
+            <span style={{ padding: '2px 6px', background: 'rgba(255,255,255,0.07)', borderRadius: '4px', color: 'rgba(255,255,255,0.5)', fontSize: '10px', fontFamily: 'monospace' }}>
+              Elem: {tooltip.elem}
+            </span>
+          </div>
+
+          {/* Role description */}
+          <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '11px', lineHeight: 1.5, margin: '0 0 8px' }}>
+            {residueInfo.role}
+          </p>
+
+          {/* pLDDT bar */}
+          {tooltip.b > 0 && (
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
+                <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '9px', fontFamily: 'monospace' }}>pLDDT</span>
+                <span style={{ color: getPLDDTColor(tooltip.b), fontSize: '9px', fontFamily: 'monospace', fontWeight: 700 }}>
+                  {tooltip.b.toFixed(1)}
+                </span>
+              </div>
+              <div style={{ width: '100%', height: '3px', background: 'rgba(255,255,255,0.08)', borderRadius: '2px' }}>
+                <div style={{ width: `${Math.min(tooltip.b, 100)}%`, height: '100%', background: getPLDDTColor(tooltip.b), borderRadius: '2px', transition: 'width 0.2s' }} />
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Labels when ready */}
       {status === 'ready' && (
         <>
-          <div style={{ position: 'absolute', top: '10px', left: '10px', display: 'flex', gap: '6px', pointerEvents: 'none' }}>
-            <div style={{ padding: '3px 8px', background: 'rgba(0,0,0,0.75)', borderRadius: '6px', backdropFilter: 'blur(8px)' }}>
+          <div style={{ position: 'absolute', top: '10px', left: '10px', pointerEvents: 'none', display: 'flex', gap: '6px' }}>
+            <div style={{ padding: '3px 8px', background: 'rgba(0,0,0,0.6)', borderRadius: '6px', backdropFilter: 'blur(8px)' }}>
               <span style={{ color: '#6495ED', fontSize: '10px', fontFamily: 'monospace', fontWeight: 700 }}>
-                {useAF ? `AF-${alphafoldId}` : pdbId}
+                {useAlphaFold ? `AF-${alphafoldId}` : pdbId}
               </span>
             </div>
-            {useAF && (
-              <div style={{ padding: '3px 8px', background: 'rgba(0,83,214,0.2)', borderRadius: '6px', border: '1px solid rgba(0,83,214,0.3)' }}>
-                <span style={{ color: '#65CBF3', fontSize: '10px', fontFamily: 'monospace' }}>pLDDT colored</span>
+            {useAlphaFold && (
+              <div style={{ padding: '3px 8px', background: 'rgba(0,83,214,0.15)', border: '1px solid rgba(0,83,214,0.3)', borderRadius: '6px' }}>
+                <span style={{ color: '#65CBF3', fontSize: '10px', fontFamily: 'monospace' }}>pLDDT coloring</span>
               </div>
             )}
           </div>
-          <div style={{ position: 'absolute', bottom: '10px', right: '10px' }}>
-            <a href={useAF ? `https://alphafold.ebi.ac.uk/entry/${alphafoldId}` : `https://www.rcsb.org/structure/${pdbId}`}
+
+          <div style={{ position: 'absolute', top: '10px', right: '10px' }}>
+            <a href={useAlphaFold ? `https://alphafold.ebi.ac.uk/entry/${alphafoldId}` : `https://www.rcsb.org/structure/${pdbId}`}
               target="_blank" rel="noopener noreferrer"
-              style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 8px', background: 'rgba(0,0,0,0.75)', borderRadius: '6px', color: 'rgba(255,255,255,0.35)', fontSize: '10px', fontFamily: 'monospace', textDecoration: 'none', backdropFilter: 'blur(8px)' }}
+              style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 8px', background: 'rgba(0,0,0,0.55)', borderRadius: '6px', color: 'rgba(255,255,255,0.4)', fontSize: '10px', fontFamily: 'monospace', textDecoration: 'none', backdropFilter: 'blur(8px)' }}
               onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#ffffff'; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.35)'; }}>
-              {useAF ? 'AlphaFold DB' : 'RCSB PDB'} <ExternalLink size={8} />
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.4)'; }}>
+              {useAlphaFold ? 'AlphaFold DB' : 'RCSB PDB'} <ExternalLink size={8} />
             </a>
+          </div>
+
+          <div style={{ position: 'absolute', bottom: '10px', right: '10px', pointerEvents: 'none' }}>
+            <span style={{ color: 'rgba(0,0,0,0.3)', fontSize: '10px', fontFamily: 'monospace', background: 'rgba(255,255,255,0.7)', padding: '2px 6px', borderRadius: '4px' }}>
+              Hover for atom data · Drag to rotate
+            </span>
           </div>
         </>
       )}
-
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
+}
+
+function getPLDDTColor(b: number) {
+  if (b >= 90) return '#0053D6';
+  if (b >= 70) return '#65CBF3';
+  if (b >= 50) return '#FFDB13';
+  return '#FF7D45';
 }
 
 export default function PDBExplorer() {
@@ -225,65 +351,61 @@ export default function PDBExplorer() {
   const [useAlphaFold, setUseAlphaFold] = useState(false);
   const [customPDB, setCustomPDB] = useState('');
   const [customActive, setCustomActive] = useState(false);
-  const [showLegend, setShowLegend] = useState(false);
+  const [showLegend, setShowLegend] = useState(true);
 
   return (
     <section className="px-4 py-24" id="structure" style={{ background: '#0a0a0a' }}>
       <div className="max-w-5xl mx-auto">
 
-        {/* Header */}
         <div className="mb-10">
           <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '11px', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' }}>
-            05 · Structure
+            04 · Structure
           </p>
           <h2 className="text-2xl md:text-3xl font-semibold text-white mb-2" style={{ letterSpacing: '-0.02em' }}>
             Enzyme Structure Explorer
           </h2>
           <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '14px' }}>
-            Real 3D protein structures from{' '}
+            Real 3D structures from{' '}
             <span style={{ color: '#6495ED', fontFamily: 'monospace' }}>RCSB PDB</span>
             {' '}·{' '}
             <span style={{ color: '#65CBF3', fontFamily: 'monospace' }}>AlphaFold DB</span>
-            {' '}· Ribbon diagram with secondary structure
+            {' '}· Hover any atom for biochemical data
           </p>
         </div>
 
         <div className="grid md:grid-cols-3 gap-6">
 
-          {/* Left — enzyme selector + controls */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {/* Left controls */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
 
-            {/* Enzyme cards */}
             <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
               Artemisinin Pathway Enzymes
             </p>
+
             {PATHWAY_ENZYMES.map(enzyme => (
-              <button
-                key={enzyme.id}
+              <button key={enzyme.id}
                 onClick={() => { setActiveEnzyme(enzyme); setCustomActive(false); }}
                 style={{
-                  padding: '12px 14px', borderRadius: '12px', textAlign: 'left', cursor: 'pointer',
+                  padding: '11px 13px', borderRadius: '11px', textAlign: 'left', cursor: 'pointer',
                   background: activeEnzyme.id === enzyme.id && !customActive ? 'rgba(100,149,237,0.08)' : 'rgba(255,255,255,0.02)',
-                  border: `1px solid ${activeEnzyme.id === enzyme.id && !customActive ? 'rgba(100,149,237,0.25)' : 'rgba(255,255,255,0.07)'}`,
+                  border: `1px solid ${activeEnzyme.id === enzyme.id && !customActive ? 'rgba(100,149,237,0.3)' : 'rgba(255,255,255,0.07)'}`,
                   transition: 'all 0.15s',
                 }}
                 onMouseEnter={e => { if (activeEnzyme.id !== enzyme.id || customActive) (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.15)'; }}
                 onMouseLeave={e => { if (activeEnzyme.id !== enzyme.id || customActive) (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.07)'; }}
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
                   <span style={{ color: '#6495ED', fontSize: '11px', fontFamily: 'monospace', fontWeight: 700 }}>{enzyme.name}</span>
                   <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', fontFamily: 'monospace' }}>{enzyme.pdbId}</span>
                 </div>
-                <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px', fontWeight: 500, margin: '0 0 3px' }}>{enzyme.fullName}</p>
-                <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '11px', margin: 0, fontStyle: 'italic' }}>{enzyme.organism}</p>
+                <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '12px', fontWeight: 500, margin: '0 0 2px' }}>{enzyme.fullName}</p>
+                <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '10px', margin: 0, fontStyle: 'italic' }}>{enzyme.organism}</p>
               </button>
             ))}
 
-            {/* Custom PDB input */}
-            <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '12px' }}>
-              <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>
-                Custom PDB ID
-              </p>
+            {/* Custom PDB */}
+            <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '10px' }}>
+              <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '7px' }}>Custom PDB ID</p>
               <div style={{ display: 'flex', gap: '6px' }}>
                 <input
                   type="text"
@@ -291,7 +413,7 @@ export default function PDBExplorer() {
                   onChange={e => setCustomPDB(e.target.value.toUpperCase().slice(0, 4))}
                   placeholder="e.g. 1TQN"
                   maxLength={4}
-                  style={{ flex: 1, padding: '8px 10px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', color: '#fff', fontSize: '13px', fontFamily: 'monospace', outline: 'none', letterSpacing: '0.05em' }}
+                  style={{ flex: 1, padding: '8px 10px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', color: '#fff', fontSize: '13px', fontFamily: 'monospace', outline: 'none', letterSpacing: '0.08em' }}
                 />
                 <button
                   onClick={() => { if (customPDB.length === 4) setCustomActive(true); }}
@@ -311,36 +433,37 @@ export default function PDBExplorer() {
               <button
                 onClick={() => setUseAlphaFold(!useAlphaFold)}
                 style={{ width: '36px', height: '20px', borderRadius: '10px', background: useAlphaFold ? '#6495ED' : 'rgba(255,255,255,0.1)', border: 'none', cursor: 'pointer', position: 'relative', transition: 'background 0.2s' }}>
-                <div style={{ width: '14px', height: '14px', borderRadius: '50%', background: '#ffffff', position: 'absolute', top: '3px', left: useAlphaFold ? '19px' : '3px', transition: 'left 0.2s' }} />
+                <div style={{ width: '14px', height: '14px', borderRadius: '50%', background: '#fff', position: 'absolute', top: '3px', left: useAlphaFold ? '19px' : '3px', transition: 'left 0.2s' }} />
               </button>
             </div>
 
             {/* pLDDT Legend */}
-            {useAlphaFold && (
-              <div>
-                <button
-                  onClick={() => setShowLegend(!showLegend)}
-                  style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0', color: 'rgba(255,255,255,0.3)', fontSize: '11px', fontFamily: 'monospace' }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.6)'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.3)'; }}>
-                  {showLegend ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
-                  pLDDT Color Legend
-                </button>
-                {showLegend && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', padding: '10px', borderRadius: '8px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                    {PLDDT_LEVELS.map(l => (
-                      <div key={l.color} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <div style={{ width: '24px', height: '6px', borderRadius: '3px', background: l.color, flexShrink: 0 }} />
-                        <div>
-                          <span style={{ color: 'rgba(255,255,255,0.55)', fontSize: '10px', fontFamily: 'monospace' }}>{l.label} ({l.range})</span>
-                          <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', marginLeft: '4px' }}>{l.desc}</span>
-                        </div>
+            <div>
+              <button
+                onClick={() => setShowLegend(!showLegend)}
+                style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0', color: 'rgba(255,255,255,0.3)', fontSize: '11px', fontFamily: 'monospace' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.6)'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.3)'; }}>
+                {showLegend ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
+                pLDDT Color Scale
+              </button>
+              {showLegend && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '7px', padding: '10px', borderRadius: '8px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', marginTop: '6px' }}>
+                  {PLDDT_LEVELS.map(l => (
+                    <div key={l.color} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                      <div style={{ width: '26px', height: '8px', borderRadius: '3px', background: l.color, flexShrink: 0, marginTop: '2px' }} />
+                      <div>
+                        <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '10px', fontFamily: 'monospace', margin: '0 0 1px' }}>{l.label} ({l.range})</p>
+                        <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', margin: 0 }}>{l.desc}</p>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
+                    </div>
+                  ))}
+                  <p style={{ color: 'rgba(255,255,255,0.12)', fontSize: '9px', fontFamily: 'monospace', margin: '4px 0 0', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '6px' }}>
+                    Jumper et al., Nature 2021 · AlphaFold2 standard
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Right — viewer + info */}
@@ -349,10 +472,9 @@ export default function PDBExplorer() {
               pdbId={customActive ? customPDB : activeEnzyme.pdbId}
               alphafoldId={customActive ? undefined : activeEnzyme.alphafoldId}
               name={customActive ? customPDB : activeEnzyme.name}
-              useAlphaFold={useAlphaFold && !customActive && !!activeEnzyme.alphafoldId}
+              useAlphaFold={useAlphaFold && !customActive}
             />
 
-            {/* Enzyme info card */}
             {!customActive && (
               <div style={{ padding: '16px', borderRadius: '12px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
@@ -361,7 +483,7 @@ export default function PDBExplorer() {
                   </span>
                   <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '11px', fontFamily: 'monospace' }}>{activeEnzyme.fullName}</span>
                 </div>
-                <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '13px', lineHeight: 1.65, margin: '0 0 10px' }}>
+                <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '13px', lineHeight: 1.65, margin: '0 0 10px' }}>
                   {activeEnzyme.role}
                 </p>
                 <div style={{ padding: '8px 12px', borderRadius: '8px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
@@ -370,10 +492,6 @@ export default function PDBExplorer() {
                 </div>
               </div>
             )}
-
-            <p style={{ color: 'rgba(255,255,255,0.12)', fontSize: '10px', fontFamily: 'monospace', textAlign: 'center' }}>
-              Drag to rotate · Scroll to zoom · Powered by 3Dmol.js + RCSB PDB
-            </p>
           </div>
         </div>
       </div>
