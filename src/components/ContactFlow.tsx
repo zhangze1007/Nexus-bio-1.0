@@ -1,95 +1,136 @@
-import { useState } from 'react';
-import { Mail, FileDown, ArrowRight } from 'lucide-react';
+import { Mail, Linkedin, FileDown, ArrowRight } from 'lucide-react';
 
 export default function ContactFlow() {
-  const [hovered, setHovered] = useState<string | null>(null);
-
   return (
-    <section className="px-4 py-24" id="contact"
-      style={{ borderTop: 'none' }}>
+    <section className="px-4 py-24" id="contact" style={{ background: '#0a0a0a' }}>
       <div className="max-w-5xl mx-auto">
 
         {/* Header */}
         <div className="mb-12">
-          <p className="text-xs font-mono uppercase tracking-widest mb-2"
-            style={{ color: 'rgba(255,255,255,0.25)' }}>
-            04 · Contact
+          <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '11px', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' }}>
+            05 · Contact
           </p>
           <h2 className="text-2xl md:text-3xl font-semibold text-white mb-2"
             style={{ letterSpacing: '-0.02em' }}>
-            Accelerate Your Research
+            Get in Touch
           </h2>
-          <p className="text-sm" style={{ color: 'rgba(255,255,255,0.35)' }}>
-            Early-adopter consulting for biotech teams · 早期采用者咨询
+          <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '14px' }}>
+            Open to research collaborations, consulting inquiries, and investment discussions.
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-4">
+        <div className="grid md:grid-cols-3 gap-4">
 
-          {/* Consulting Card */}
-          <div
-            className="rounded-2xl p-8 flex flex-col transition-all duration-200 cursor-pointer"
+          {/* Gmail */}
+          <a
+            href="mailto:fuchanze@gmail.com"
             style={{
-              background: hovered === 'consult' ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.02)',
-              border: `1px solid ${hovered === 'consult' ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.07)'}`,
+              display: 'flex', flexDirection: 'column', padding: '24px',
+              borderRadius: '16px', textDecoration: 'none',
+              background: 'rgba(255,255,255,0.02)',
+              border: '1px solid rgba(255,255,255,0.07)',
+              transition: 'all 0.2s',
             }}
-            onMouseEnter={() => setHovered('consult')}
-            onMouseLeave={() => setHovered(null)}
+            onMouseEnter={e => {
+              (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.05)';
+              (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.15)';
+            }}
+            onMouseLeave={e => {
+              (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.02)';
+              (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.07)';
+            }}
           >
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-6"
-              style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }}>
-              <Mail size={18} style={{ color: 'rgba(255,255,255,0.6)' }} />
+            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
+              <Mail size={16} style={{ color: 'rgba(255,255,255,0.6)' }} />
             </div>
-            <h3 className="text-lg font-semibold text-white mb-3">Strategic Consulting</h3>
-            <p className="text-sm leading-relaxed mb-8 flex-1"
-              style={{ color: 'rgba(255,255,255,0.4)' }}>
-              45-minute deep dive into your bioprocessing pipeline. Identify bottlenecks and scalable microbial solutions tailored to your team.
+            <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 6px' }}>
+              Email
             </p>
-            <a
-              href="https://forms.gle/your-google-form-link-here"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-between px-5 py-3 rounded-xl text-sm font-semibold transition-all"
-              style={{ background: '#ffffff', color: '#0a0a0a' }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#e5e5e5'; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#ffffff'; }}
-            >
-              Book Early-Adopter Session · $50
-              <ArrowRight size={14} />
-            </a>
-          </div>
+            <p style={{ color: '#ffffff', fontSize: '14px', fontWeight: 500, margin: '0 0 4px', letterSpacing: '-0.01em' }}>
+              fuchanze@gmail.com
+            </p>
+            <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '12px', margin: '0 0 16px', lineHeight: 1.5 }}>
+              Research collaborations · Consulting · General inquiries
+            </p>
+            <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', gap: '6px', color: 'rgba(255,255,255,0.35)', fontSize: '12px' }}>
+              Send email <ArrowRight size={12} />
+            </div>
+          </a>
 
-          {/* Whitepaper Card */}
-          <div
-            className="rounded-2xl p-8 flex flex-col transition-all duration-200"
+          {/* LinkedIn */}
+          <a
+            href="https://www.linkedin.com/in/zhangze-foo-3575ba359"
+            target="_blank"
+            rel="noopener noreferrer"
             style={{
-              background: hovered === 'paper' ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.02)',
-              border: `1px solid ${hovered === 'paper' ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.07)'}`,
+              display: 'flex', flexDirection: 'column', padding: '24px',
+              borderRadius: '16px', textDecoration: 'none',
+              background: 'rgba(255,255,255,0.02)',
+              border: '1px solid rgba(255,255,255,0.07)',
+              transition: 'all 0.2s',
             }}
-            onMouseEnter={() => setHovered('paper')}
-            onMouseLeave={() => setHovered(null)}
+            onMouseEnter={e => {
+              (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.05)';
+              (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.15)';
+            }}
+            onMouseLeave={e => {
+              (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.02)';
+              (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.07)';
+            }}
           >
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-6"
-              style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }}>
-              <FileDown size={18} style={{ color: 'rgba(255,255,255,0.6)' }} />
+            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
+              <Linkedin size={16} style={{ color: 'rgba(255,255,255,0.6)' }} />
             </div>
-            <h3 className="text-lg font-semibold text-white mb-3">Technical Whitepaper</h3>
-            <p className="text-sm leading-relaxed mb-8 flex-1"
-              style={{ color: 'rgba(255,255,255,0.4)' }}>
-              1-page technical brief on Next-Gen Bio-Intelligent Architecture for Sustainable Food Production. Free download.
+            <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 6px' }}>
+              LinkedIn
             </p>
-            <a
-              href="/whitepaper-template.pdf"
-              download
-              className="flex items-center justify-between px-5 py-3 rounded-xl text-sm font-semibold transition-all"
-              style={{ background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.8)', border: '1px solid rgba(255,255,255,0.1)' }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.12)'; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.07)'; }}
-            >
-              Download Whitepaper
-              <FileDown size={14} />
-            </a>
-          </div>
+            <p style={{ color: '#ffffff', fontSize: '14px', fontWeight: 500, margin: '0 0 4px', letterSpacing: '-0.01em' }}>
+              Zhang Ze Foo
+            </p>
+            <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '12px', margin: '0 0 16px', lineHeight: 1.5 }}>
+              Founder · Synthetic Biology & Metabolic Engineering · Nexus-Bio
+            </p>
+            <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', gap: '6px', color: 'rgba(255,255,255,0.35)', fontSize: '12px' }}>
+              View profile <ArrowRight size={12} />
+            </div>
+          </a>
+
+          {/* Whitepaper */}
+          <a
+            href="/whitepaper-template.pdf"
+            download
+            style={{
+              display: 'flex', flexDirection: 'column', padding: '24px',
+              borderRadius: '16px', textDecoration: 'none',
+              background: 'rgba(255,255,255,0.02)',
+              border: '1px solid rgba(255,255,255,0.07)',
+              transition: 'all 0.2s',
+            }}
+            onMouseEnter={e => {
+              (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.05)';
+              (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.15)';
+            }}
+            onMouseLeave={e => {
+              (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.02)';
+              (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.07)';
+            }}
+          >
+            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
+              <FileDown size={16} style={{ color: 'rgba(255,255,255,0.6)' }} />
+            </div>
+            <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 6px' }}>
+              Whitepaper
+            </p>
+            <p style={{ color: '#ffffff', fontSize: '14px', fontWeight: 500, margin: '0 0 4px', letterSpacing: '-0.01em' }}>
+              Technical Brief
+            </p>
+            <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '12px', margin: '0 0 16px', lineHeight: 1.5 }}>
+              Next-Gen Bio-Intelligent Architecture for Sustainable Food Production
+            </p>
+            <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', gap: '6px', color: 'rgba(255,255,255,0.35)', fontSize: '12px' }}>
+              Download PDF <ArrowRight size={12} />
+            </div>
+          </a>
 
         </div>
       </div>
