@@ -148,21 +148,28 @@ function normalizePathway(parsed: unknown): { nodes: PathwayNode[]; edges: Pathw
   return { nodes, edges };
 }
 
-// ── Error classifier ──
+// ── Error classifier — merged best of both versions ──
 function classifyError(message: string): string {
-  if (message.includes('429') || message.toLowerCase().includes('rate limit')) {
+  const msg = message.toLowerCase();
+  if (msg.includes('429') || msg.includes('rate limit')) {
     return 'Rate limit reached. Please wait 1–2 minutes and try again.';
   }
-  if (message.includes('TIMEOUT') || message.includes('timeout')) {
+  if (msg.includes('503') || msg.includes('overloaded') || msg.includes('unavailable')) {
+    return 'AI model is temporarily overloaded. Please try again in a moment.';
+  }
+  if (msg.includes('timeout')) {
     return 'Request timed out. Please try with a shorter text input.';
   }
-  if (message.includes('503') || message.toLowerCase().includes('unavailable')) {
-    return 'AI model is temporarily unavailable. Please try again shortly.';
+  if (msg.includes('malformed json') || msg.includes('valid json') || msg.includes('no_valid_json')) {
+    return 'The AI returned an invalid pathway format. Please retry.';
   }
-  if (message.includes('NO_VALID_JSON') || message.includes('JSON')) {
-    return 'AI returned an unexpected response format. Please retry.';
+  if (msg.includes('no usable content') || msg.includes('empty response')) {
+    return 'The AI returned an empty response. Please retry.';
   }
-  return 'An error occurred. Please try again.';
+  if (msg.includes('no pathway nodes')) {
+    return 'No pathway nodes were found in this text. Try a more specific methods section.';
+  }
+  return message || 'AI returned an unexpected error. Please retry.';
 }
 
 export default function PaperAnalyzer({ onPathwayGenerated }: PaperAnalyzerProps) {
