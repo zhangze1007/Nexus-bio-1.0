@@ -16,6 +16,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const body = req.body;
 
+    // Increase token limit to reduce JSON truncation errors
+    if (body.generationConfig) {
+      body.generationConfig.maxOutputTokens = 2048;
+    }
+
     const response = await fetch(`${API_URL}?key=${apiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
