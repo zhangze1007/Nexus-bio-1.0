@@ -8,15 +8,25 @@ import DevModePanel from './components/DevModePanel';
 import PaperAnalyzer from './components/PaperAnalyzer';
 import PDBExplorer from './components/PDBExplorer';
 import pathwayData from './data/pathwayData.json';
-import { PathwayNode } from './types';
+import { PathwayNode, PathwayEdge } from './types';
 import { Dna } from 'lucide-react';
+
+const DEFAULT_EDGES: PathwayEdge[] = [
+  { start: 'acetyl_coa', end: 'hmg_coa', relationshipType: 'converts', direction: 'forward' },
+  { start: 'acetyl_coa', end: 'mevalonate', relationshipType: 'produces', direction: 'forward' },
+  { start: 'hmg_coa', end: 'mevalonate', relationshipType: 'converts', direction: 'forward' },
+  { start: 'mevalonate', end: 'fpp', relationshipType: 'produces', direction: 'forward' },
+  { start: 'fpp', end: 'amorpha_4_11_diene', relationshipType: 'catalyzes', direction: 'forward' },
+  { start: 'amorpha_4_11_diene', end: 'artemisinic_acid', relationshipType: 'converts', direction: 'forward' },
+  { start: 'artemisinic_acid', end: 'artemisinin', relationshipType: 'produces', direction: 'forward' },
+];
 
 export default function App() {
   const [selectedNode, setSelectedNode] = useState<PathwayNode | null>(null);
   const [aiNodes, setAiNodes] = useState<PathwayNode[] | null>(null);
-  const [aiEdges, setAiEdges] = useState<{ start: string; end: string }[] | null>(null);
+  const [aiEdges, setAiEdges] = useState<PathwayEdge[] | null>(null);
 
-  const handlePathwayGenerated = (nodes: PathwayNode[], edges: { start: string; end: string }[]) => {
+  const handlePathwayGenerated = (nodes: PathwayNode[], edges: PathwayEdge[]) => {
     setAiNodes(nodes);
     setAiEdges(edges);
     setSelectedNode(null);
@@ -30,13 +40,13 @@ export default function App() {
   };
 
   const activeNodes = aiNodes ?? (pathwayData as PathwayNode[]);
-  const activeEdges = aiEdges ?? undefined;
+  const activeEdges = aiEdges ?? DEFAULT_EDGES;
 
   return (
     <main style={{ background: '#0a0a0a', minHeight: '100vh', color: '#f5f5f5' }}>
       <Hero />
 
-      {/* 01 — Pathway Visualization */}
+      {/* 01 — Pathway */}
       <section id="demo" className="px-4 py-24">
         <div className="max-w-5xl mx-auto">
           <div className="flex items-start justify-between mb-10 flex-wrap gap-4">
@@ -44,9 +54,9 @@ export default function App() {
               <p className="text-xs font-mono uppercase tracking-widest mb-2"
                 style={{ color: 'rgba(255,255,255,0.25)' }}>01 · Visualization</p>
               <h2 className="text-2xl md:text-3xl font-semibold text-white"
-                style={{ letterSpacing: '-0.02em' }}>Metabolic Pathway</h2>
+                style={{ letterSpacing: '-0.02em' }}>Atomic Pathway</h2>
               <p className="text-sm mt-2" style={{ color: 'rgba(255,255,255,0.35)' }}>
-                Interactive 3D network · Click any node for details & structure
+                pLDDT confidence coloring · Substrate diffusion · Click any node for details
               </p>
               {!aiNodes && (
                 <div className="mt-4 px-4 py-3 rounded-xl max-w-lg"
@@ -55,7 +65,8 @@ export default function App() {
                     SHOWCASE · Ro et al., Nature 2006
                   </p>
                   <p className="text-sm" style={{ color: 'rgba(255,255,255,0.5)', lineHeight: 1.6 }}>
-                    This 7-step engineered pathway in <em>S. cerevisiae</em> made artemisinin-based malaria treatment affordable for 500 million patients worldwide.
+                    Artemisinin biosynthesis in engineered <em>S. cerevisiae</em> —
+                    this 7-step pathway made malaria treatment affordable for 500 million patients.
                   </p>
                 </div>
               )}
@@ -65,7 +76,7 @@ export default function App() {
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-mono"
                   style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.5)' }}>
                   <span className="w-1.5 h-1.5 rounded-full bg-white opacity-60 animate-pulse" />
-                  AI Generated · {aiNodes.length} nodes
+                  AI Generated · {aiNodes.length} entities
                 </div>
                 <button onClick={handleResetPathway}
                   className="text-xs px-3 py-1.5 rounded-full transition-colors"
@@ -90,12 +101,13 @@ export default function App() {
         node={selectedNode}
         onClose={() => setSelectedNode(null)}
         allNodes={activeNodes}
+        allEdges={activeEdges}
       />
 
-      {/* 02 — AI Paper Analyzer */}
+      {/* 02 — Analyzer */}
       <PaperAnalyzer onPathwayGenerated={handlePathwayGenerated} />
 
-      {/* 03 — Literature Search */}
+      {/* 03 — Literature */}
       <SemanticSearch onAnalyzePaper={(text) => {
         document.getElementById('analyzer')?.scrollIntoView({ behavior: 'smooth' });
         setTimeout(() => {
@@ -103,7 +115,7 @@ export default function App() {
         }, 600);
       }} />
 
-      {/* 04 — PDB Structure Explorer */}
+      {/* 04 — Structure */}
       <PDBExplorer />
 
       {/* 05 — Contact */}
@@ -112,8 +124,7 @@ export default function App() {
       <DevModePanel />
 
       {/* Footer */}
-      <footer className="px-6 py-6"
-        style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+      <footer className="px-6 py-6" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
         <div className="max-w-5xl mx-auto flex items-center justify-between flex-wrap gap-4">
           <div className="flex items-center gap-2">
             <div className="w-5 h-5 rounded bg-white flex items-center justify-center">
