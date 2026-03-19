@@ -438,7 +438,17 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId }
         <span style={{ color: 'rgba(255,255,255,0.12)', fontSize: '9px', fontFamily: 'monospace' }}>Drag · Zoom · Click</span>
       </div>
 
-      <Canvas camera={{ position: [0, 2, 12], fov: 48 }} gl={{ antialias: true }} style={{ background: '#050505' }}>
+      <Canvas
+        camera={{ position: [0, 2, 12], fov: 48 }}
+        gl={{
+          antialias: true,
+          powerPreference: 'high-performance',
+          precision: 'highp',
+        }}
+        dpr={[1, 2]}
+        performance={{ min: 0.5 }}
+        style={{ background: '#050505' }}
+      >
         <ambientLight intensity={0.2} />
         <pointLight position={[8, 8, 8]} intensity={1.2} />
         <pointLight position={[-8, -4, -8]} intensity={0.5} color="#6495ED" />
