@@ -288,6 +288,7 @@ export default function PaperAnalyzer({ onPathwayGenerated }: PaperAnalyzerProps
       }
 
       const raw = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      console.log('[Nexus-Bio] Raw Gemini response:', raw); // DEBUG
       if (!raw || typeof raw !== 'string') throw new Error('NO_VALID_JSON');
 
       const parsed = extractJSON(raw);
