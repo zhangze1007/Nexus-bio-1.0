@@ -14,7 +14,7 @@ const PATHWAY_ENZYMES = [
     name: 'CYP71AV1',
     fullName: 'Cytochrome P450 71AV1',
     organism: 'Artemisia annua',
-    pdbId: '2ONH',
+    pdbId: '3CLA',
     alphafoldId: 'Q8LKJ5',
     role: 'Catalyzes 3-step oxidation of amorphadiene → artemisinic acid. Rate-limiting enzyme in artemisinin biosynthesis.',
     activeResidue: 'Heme Fe²⁺ — coordinates substrate for sequential oxidation',
@@ -25,7 +25,7 @@ const PATHWAY_ENZYMES = [
     name: 'ADS',
     fullName: 'Amorphadiene Synthase',
     organism: 'Artemisia annua',
-    pdbId: '2ONH',
+    pdbId: '2ON5',
     alphafoldId: 'Q9MB61',
     role: 'Cyclizes FPP → amorphadiene. First committed step toward artemisinin.',
     activeResidue: 'Mg²⁺ trinuclear cluster — coordinates pyrophosphate departure',
@@ -65,9 +65,6 @@ const RESIDUE_TYPE_INFO: Record<string, { color: string; role: string }> = {
   TRP: { color: '#B45AB4', role: 'Tryptophan — aromatic fluorescence probe' },
   TYR: { color: '#3232AA', role: 'Tyrosine — aromatic, phosphorylation' },
   VAL: { color: '#0F820F', role: 'Valine — hydrophobic β-sheet' },
-  HEM: { color: '#FF4500', role: '🔴 HEME — iron-containing cofactor, electron transfer & substrate oxidation' },
-  HEC: { color: '#FF4500', role: '🔴 HEME — active site cofactor' },
-  FE: { color: '#FF6B00', role: 'Iron (Fe) — catalytic metal center' },
 };
 
 declare global { interface Window { $3Dmol: any; } }
@@ -172,19 +169,19 @@ function ProteinCanvas({ pdbId, alphafoldId, name, useAlphaFold }: ProteinCanvas
           });
         }
 
-        // ── Hover callback — show atom data ──
+        // ── Hover callback — show amino acid residue data only ──
         viewer.setHoverable(
           {},
           true,
-          // Mouse enter
           (atom: any, _viewer: any, event: any) => {
             if (!atom) return;
+            // Only show for standard amino acids (not HET/ligand atoms)
+            const stdAA = ['ALA','ARG','ASN','ASP','CYS','GLN','GLU','GLY','HIS',
+              'ILE','LEU','LYS','MET','PHE','PRO','SER','THR','TRP','TYR','VAL'];
+            if (!stdAA.includes(atom.resn)) return;
             const rect = containerRef.current?.getBoundingClientRect();
             if (!rect) return;
-            setTooltipPos({
-              x: event.clientX - rect.left,
-              y: event.clientY - rect.top,
-            });
+            setTooltipPos({ x: event.clientX - rect.left, y: event.clientY - rect.top });
             setTooltip({
               resn: atom.resn || '?',
               resi: atom.resi || 0,
@@ -194,7 +191,6 @@ function ProteinCanvas({ pdbId, alphafoldId, name, useAlphaFold }: ProteinCanvas
               b: atom.b || 0,
             } as AtomTooltip);
           },
-          // Mouse leave
           () => setTooltip(null)
         );
 
@@ -307,7 +303,7 @@ function ProteinCanvas({ pdbId, alphafoldId, name, useAlphaFold }: ProteinCanvas
         <>
           <div style={{ position: 'absolute', top: '10px', left: '10px', pointerEvents: 'none', display: 'flex', gap: '6px' }}>
             <div style={{ padding: '3px 8px', background: 'rgba(0,0,0,0.6)', borderRadius: '6px', backdropFilter: 'blur(8px)' }}>
-              <span style={{ color: '#6495ED', fontSize: '10px', fontFamily: 'monospace', fontWeight: 700 }}>
+              <span style={{ color: 'rgba(255,255,255,0.75)', fontSize: '10px', fontFamily: 'monospace', fontWeight: 700 }}>
                 {useAlphaFold ? `AF-${alphafoldId}` : pdbId}
               </span>
             </div>
@@ -318,19 +314,29 @@ function ProteinCanvas({ pdbId, alphafoldId, name, useAlphaFold }: ProteinCanvas
             )}
           </div>
 
-          <div style={{ position: 'absolute', top: '10px', right: '10px' }}>
-            <a href={useAlphaFold ? `https://alphafold.ebi.ac.uk/entry/${alphafoldId}` : `https://www.rcsb.org/structure/${pdbId}`}
+          {/* RCSB + AlphaFold links */}
+          <div style={{ position: 'absolute', top: '10px', right: '10px', display: 'flex', gap: '6px' }}>
+            <a href={`https://www.rcsb.org/structure/${pdbId}`}
               target="_blank" rel="noopener noreferrer"
-              style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 8px', background: 'rgba(0,0,0,0.55)', borderRadius: '6px', color: 'rgba(255,255,255,0.4)', fontSize: '10px', fontFamily: 'monospace', textDecoration: 'none', backdropFilter: 'blur(8px)' }}
+              style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 8px', background: 'rgba(0,0,0,0.55)', borderRadius: '6px', color: 'rgba(255,255,255,0.5)', fontSize: '10px', fontFamily: 'monospace', textDecoration: 'none', backdropFilter: 'blur(8px)' }}
               onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#ffffff'; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.4)'; }}>
-              {useAlphaFold ? 'AlphaFold DB' : 'RCSB PDB'} <ExternalLink size={8} />
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.5)'; }}>
+              RCSB PDB <ExternalLink size={8} />
             </a>
+            {alphafoldId && (
+              <a href={`https://alphafold.ebi.ac.uk/entry/${alphafoldId}`}
+                target="_blank" rel="noopener noreferrer"
+                style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 8px', background: 'rgba(0,83,214,0.2)', borderRadius: '6px', color: '#65CBF3', fontSize: '10px', fontFamily: 'monospace', textDecoration: 'none', backdropFilter: 'blur(8px)', border: '1px solid rgba(0,83,214,0.3)' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#ffffff'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = '#65CBF3'; }}>
+                AlphaFold DB <ExternalLink size={8} />
+              </a>
+            )}
           </div>
 
           <div style={{ position: 'absolute', bottom: '10px', right: '10px', pointerEvents: 'none' }}>
             <span style={{ color: 'rgba(0,0,0,0.3)', fontSize: '10px', fontFamily: 'monospace', background: 'rgba(255,255,255,0.7)', padding: '2px 6px', borderRadius: '4px' }}>
-              Hover for atom data · Drag to rotate
+              Hover residues for data · Drag to rotate
             </span>
           </div>
         </>
