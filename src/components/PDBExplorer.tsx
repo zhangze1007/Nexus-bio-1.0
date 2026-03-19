@@ -137,19 +137,29 @@ function ProteinCanvas({ pdbId, alphafoldId, name, useAlphaFold }: ProteinCanvas
         viewerRef.current = viewer;
 
         if (useAlphaFold && alphafoldId) {
-          // Use backend proxy to avoid CORS
-          await new Promise<void>((res, rej) => {
-            const proxyUrl = `/api/alphafold?id=${alphafoldId}`;
-            window.$3Dmol.download(`url:${proxyUrl}`, viewer, {}, () => res());
-            setTimeout(() => rej(new Error('AlphaFold structure not available')), 15000);
-          });
-          // pLDDT coloring via B-factor column
-          viewer.setStyle({}, {
-            cartoon: {
-              colorfunc: (atom: any) => getPLDDTColor(atom.b),
-              thickness: 0.5,
-            }
-          });
+          // Fetch PDB data via backend proxy, then add to viewer
+          try {
+            const proxyRes = await fetch(`/api/alphafold?id=${alphafoldId}`);
+            if (!proxyRes.ok) throw new Error('AlphaFold proxy failed');
+            const pdbData = await proxyRes.text();
+            if (!pdbData || pdbData.length < 100) throw new Error('Empty PDB data');
+            viewer.addModel(pdbData, 'pdb');
+            // pLDDT via B-factor
+            viewer.setStyle({}, {
+              cartoon: {
+                colorfunc: (atom: any) => getPLDDTColor(atom.b),
+                thickness: 0.5,
+              }
+            });
+          } catch (afErr) {
+            // Fallback to RCSB PDB
+            console.warn('AlphaFold failed, falling back to RCSB:', afErr);
+            await new Promise<void>((res, rej) => {
+              window.$3Dmol.download(`pdb:${pdbId}`, viewer, {}, () => res());
+              setTimeout(() => rej(new Error('Timeout')), 15000);
+            });
+            viewer.setStyle({}, { cartoon: { color: 'spectrum', thickness: 0.5 } });
+          }
         } else {
           await new Promise<void>((res, rej) => {
             window.$3Dmol.download(`pdb:${pdbId}`, viewer, {}, () => res());
@@ -158,11 +168,7 @@ function ProteinCanvas({ pdbId, alphafoldId, name, useAlphaFold }: ProteinCanvas
           viewer.setStyle({}, {
             cartoon: { color: 'spectrum', thickness: 0.5 }
           });
-          // Active site ligands
-          viewer.setStyle({ hetflag: true }, {
-            stick: { colorscheme: 'greenCarbon', radius: 0.2 },
-            sphere: { colorscheme: 'greenCarbon', radius: 0.5 },
-          });
+          // DO NOT render HET atoms as spheres — ruins visual clarity
         }
 
         // ── Hover — enzyme residues only, no HET atoms ──
