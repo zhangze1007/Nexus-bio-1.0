@@ -137,11 +137,13 @@ function ProteinCanvas({ pdbId, alphafoldId, name, useAlphaFold }: ProteinCanvas
         viewerRef.current = viewer;
 
         if (useAlphaFold && alphafoldId) {
-          const afUrl = `https://alphafold.ebi.ac.uk/files/AF-${alphafoldId}-F1-model_v4.pdb`;
-          const res = await fetch(afUrl);
-          if (!res.ok) throw new Error('AlphaFold not found');
-          const pdbData = await res.text();
-          viewer.addModel(pdbData, 'pdb');
+          // Use backend proxy to avoid CORS
+          await new Promise<void>((res, rej) => {
+            const proxyUrl = `/api/alphafold?id=${alphafoldId}`;
+            window.$3Dmol.download(`url:${proxyUrl}`, viewer, {}, () => res());
+            setTimeout(() => rej(new Error('AlphaFold structure not available')), 15000);
+          });
+          // pLDDT coloring via B-factor column
           viewer.setStyle({}, {
             cartoon: {
               colorfunc: (atom: any) => getPLDDTColor(atom.b),
@@ -153,32 +155,25 @@ function ProteinCanvas({ pdbId, alphafoldId, name, useAlphaFold }: ProteinCanvas
             window.$3Dmol.download(`pdb:${pdbId}`, viewer, {}, () => res());
             setTimeout(() => rej(new Error('Timeout')), 15000);
           });
-
-          // Cartoon for protein backbone
-          viewer.setStyle({ atom: 'CA' }, {
-            cartoon: { color: 'spectrum', thickness: 0.5 }
-          });
           viewer.setStyle({}, {
             cartoon: { color: 'spectrum', thickness: 0.5 }
           });
-
-          // Highlight ligands/cofactors (active site)
+          // Active site ligands
           viewer.setStyle({ hetflag: true }, {
             stick: { colorscheme: 'greenCarbon', radius: 0.2 },
             sphere: { colorscheme: 'greenCarbon', radius: 0.5 },
           });
         }
 
-        // ── Hover callback — show amino acid residue data only ──
+        // ── Hover — enzyme residues only, no HET atoms ──
         viewer.setHoverable(
-          {},
+          { hetflag: false }, // exclude all HET atoms (HEM, ligands etc)
           true,
           (atom: any, _viewer: any, event: any) => {
             if (!atom) return;
-            // Only show for standard amino acids (not HET/ligand atoms)
             const stdAA = ['ALA','ARG','ASN','ASP','CYS','GLN','GLU','GLY','HIS',
               'ILE','LEU','LYS','MET','PHE','PRO','SER','THR','TRP','TYR','VAL'];
-            if (!stdAA.includes(atom.resn)) return;
+            if (!stdAA.includes(atom.resn?.toUpperCase())) return;
             const rect = containerRef.current?.getBoundingClientRect();
             if (!rect) return;
             setTooltipPos({ x: event.clientX - rect.left, y: event.clientY - rect.top });
@@ -326,9 +321,9 @@ function ProteinCanvas({ pdbId, alphafoldId, name, useAlphaFold }: ProteinCanvas
             {alphafoldId && (
               <a href={`https://alphafold.ebi.ac.uk/entry/${alphafoldId}`}
                 target="_blank" rel="noopener noreferrer"
-                style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 8px', background: 'rgba(0,83,214,0.2)', borderRadius: '6px', color: '#65CBF3', fontSize: '10px', fontFamily: 'monospace', textDecoration: 'none', backdropFilter: 'blur(8px)', border: '1px solid rgba(0,83,214,0.3)' }}
+                style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 8px', background: 'rgba(0,0,0,0.55)', borderRadius: '6px', color: 'rgba(255,255,255,0.5)', fontSize: '10px', fontFamily: 'monospace', textDecoration: 'none', backdropFilter: 'blur(8px)' }}
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#ffffff'; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = '#65CBF3'; }}>
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.5)'; }}>
                 AlphaFold DB <ExternalLink size={8} />
               </a>
             )}
