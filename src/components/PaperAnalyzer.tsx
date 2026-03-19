@@ -288,14 +288,14 @@ export default function PaperAnalyzer({ onPathwayGenerated }: PaperAnalyzerProps
       }
 
       const raw = data.candidates?.[0]?.content?.parts?.[0]?.text;
-      console.log('[Nexus-Bio] Raw Gemini response:', raw); // DEBUG
       if (!raw || typeof raw !== 'string') throw new Error('NO_VALID_JSON');
 
+      // DEBUG — show raw in error so we can see it on tablet
       const parsed = extractJSON(raw);
-      if (!parsed) throw new Error('NO_VALID_JSON');
+      if (!parsed) throw new Error(`PARSE_FAIL: ${raw.slice(0, 300)}`);
 
       const pathway = normalizePathway(parsed);
-      if (!pathway) throw new Error('NO_VALID_JSON');
+      if (!pathway) throw new Error(`NORMALIZE_FAIL: ${JSON.stringify(parsed).slice(0, 300)}`);
 
       onPathwayGenerated(pathway.nodes, pathway.edges);
       setAnalysisState('success');
@@ -303,9 +303,15 @@ export default function PaperAnalyzer({ onPathwayGenerated }: PaperAnalyzerProps
       setExpanded(false);
 
     } catch (err: any) {
-      if (err.name === 'AbortError') return; // User cancelled
+      if (err.name === 'AbortError') return;
       setAnalysisState('error');
-      setErrorMsg(classifyError(err.message || ''));
+      // Show full message for debugging
+      const msg = err.message || '';
+      if (msg.startsWith('PARSE_FAIL:') || msg.startsWith('NORMALIZE_FAIL:')) {
+        setErrorMsg(msg); // Show raw for debugging
+      } else {
+        setErrorMsg(classifyError(msg));
+      }
     }
   };
 
