@@ -2,13 +2,22 @@ export const config = {
   runtime: 'edge',
 };
 
-const MODELS = [
-  'gemini-2.0-flash',
+// ── Model providers in priority order ──
+// Groq: primary (1000 req/day, very stable)
+// Gemini: fallback (250 req/day)
+
+const GROQ_MODELS = [
+  'llama-3.3-70b-versatile',
+  'llama3-70b-8192',
+];
+
+const GEMINI_MODELS = [
   'gemini-2.0-flash-lite',
   'gemini-1.5-flash',
 ];
 
-const BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
+const GROQ_BASE = 'https://api.groq.com/openai/v1/chat/completions';
+const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 const TIMEOUT_MS = 25000;
 
 const CORS_HEADERS = {
@@ -19,10 +28,7 @@ const CORS_HEADERS = {
 };
 
 function jsonResponse(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: CORS_HEADERS,
-  });
+  return new Response(JSON.stringify(body), { status, headers: CORS_HEADERS });
 }
 
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
@@ -34,18 +40,90 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   ]);
 }
 
-function validateRequestBody(body: unknown): { valid: boolean; error?: string } {
-  if (!body || typeof body !== 'object') {
-    return { valid: false, error: 'Invalid request body' };
+// Extract prompt text from Gemini-format request body
+function extractPrompt(body: any): string {
+  try {
+    return body?.contents?.[0]?.parts?.[0]?.text || '';
+  } catch {
+    return '';
   }
+}
 
-  const b = body as Record<string, unknown>;
+// ── Try Groq first (OpenAI-compatible format) ──
+async function tryGroq(prompt: string, apiKey: string): Promise<string | null> {
+  for (const model of GROQ_MODELS) {
+    try {
+      const res = await withTimeout(
+        fetch(GROQ_BASE, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            model,
+            messages: [{ role: 'user', content: prompt }],
+            temperature: 0.1,
+            max_tokens: 2048,
+          }),
+        }),
+        TIMEOUT_MS
+      );
 
-  if (!Array.isArray(b.contents) || b.contents.length === 0) {
-    return { valid: false, error: 'Missing or empty contents array' };
+      const data = await res.json();
+
+      if (res.status === 429) continue; // rate limited, try next model
+      if (res.status === 503) continue; // unavailable
+      if (!res.ok) continue;
+
+      const text = data?.choices?.[0]?.message?.content;
+      if (text) return text;
+
+    } catch {
+      continue;
+    }
   }
+  return null;
+}
 
-  return { valid: true };
+// ── Try Gemini as fallback ──
+async function tryGemini(body: any, apiKey: string): Promise<string | null> {
+  for (const model of GEMINI_MODELS) {
+    try {
+      const geminiBody = {
+        ...body,
+        generationConfig: {
+          maxOutputTokens: 2048,
+          temperature: 0.1,
+          topP: 0.8,
+          ...(body.generationConfig || {}),
+        },
+      };
+
+      const res = await withTimeout(
+        fetch(`${GEMINI_BASE}/${model}:generateContent?key=${apiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(geminiBody),
+        }),
+        TIMEOUT_MS
+      );
+
+      const data = await res.json();
+
+      if (res.status === 429) continue;
+      if (res.status === 503) continue;
+      if (res.status === 404) continue;
+      if (!res.ok) continue;
+
+      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (text) return text;
+
+    } catch {
+      continue;
+    }
+  }
+  return null;
 }
 
 export default async function handler(req: Request) {
@@ -57,111 +135,62 @@ export default async function handler(req: Request) {
     return jsonResponse({ error: 'Method not allowed' }, 405);
   }
 
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    return jsonResponse({ error: 'GEMINI_API_KEY is not configured' }, 500);
+  const groqKey = process.env.GROQ_API_KEY;
+  const geminiKey = process.env.GEMINI_API_KEY;
+
+  if (!groqKey && !geminiKey) {
+    return jsonResponse({ error: 'No API keys configured' }, 500);
   }
 
   let body: any;
-
   try {
     body = await req.json();
   } catch {
     return jsonResponse({ error: 'Invalid JSON body' }, 400);
   }
 
-  const validation = validateRequestBody(body);
-  if (!validation.valid) {
-    return jsonResponse({ error: validation.error }, 400);
+  if (!body?.contents || !Array.isArray(body.contents) || body.contents.length === 0) {
+    return jsonResponse({ error: 'Missing contents array' }, 400);
   }
 
-  const requestBody = {
-    ...body,
-    generationConfig: {
-      maxOutputTokens: 2048,
-      temperature: 0.1,
-      topP: 0.8,
-      ...(body.generationConfig || {}),
-    },
-  };
+  const prompt = extractPrompt(body);
+  if (!prompt) {
+    return jsonResponse({ error: 'No prompt text found' }, 400);
+  }
 
-  const modelErrors: string[] = [];
-
-  for (const model of MODELS) {
-    try {
-      const response = await withTimeout(
-        fetch(`${BASE_URL}/${model}:generateContent?key=${apiKey}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(requestBody),
-        }),
-        TIMEOUT_MS
-      );
-
-      let data: any = null;
-
-      try {
-        data = await response.json();
-      } catch {
-        data = null;
-      }
-
-      if (response.ok) {
-        return jsonResponse(data, 200);
-      }
-
-      const apiMessage =
-        data?.error?.message ||
-        data?.message ||
-        `Gemini API returned HTTP ${response.status}`;
-
-      if (response.status === 429) {
-        modelErrors.push(`${model}: rate limited`);
-        continue;
-      }
-
-      if (response.status === 503) {
-        modelErrors.push(`${model}: overloaded/unavailable`);
-        continue;
-      }
-
-      if (response.status === 404) {
-        modelErrors.push(`${model}: model not found`);
-        continue;
-      }
-
-      return jsonResponse(
-        {
-          error: apiMessage,
-          code: response.status,
-          model,
-        },
-        response.status
-      );
-    } catch (err: any) {
-      if (err?.message === 'TIMEOUT') {
-        modelErrors.push(`${model}: timeout after ${TIMEOUT_MS}ms`);
-        continue;
-      }
-
-      modelErrors.push(`${model}: ${err?.message || 'Unknown fetch error'}`);
-      continue;
+  // ── Try Groq first ──
+  if (groqKey) {
+    const groqResult = await tryGroq(prompt, groqKey);
+    if (groqResult) {
+      // Return in Gemini-compatible format so frontend doesn't need to change
+      return jsonResponse({
+        candidates: [{
+          content: {
+            parts: [{ text: groqResult }]
+          }
+        }],
+        meta: { provider: 'groq' }
+      });
     }
   }
 
-  const allRateLimited =
-    modelErrors.length > 0 &&
-    modelErrors.every((msg) => msg.includes('rate limited'));
+  // ── Fallback to Gemini ──
+  if (geminiKey) {
+    const geminiResult = await tryGemini(body, geminiKey);
+    if (geminiResult) {
+      return jsonResponse({
+        candidates: [{
+          content: {
+            parts: [{ text: geminiResult }]
+          }
+        }],
+        meta: { provider: 'gemini' }
+      });
+    }
+  }
 
-  return jsonResponse(
-    {
-      error: allRateLimited
-        ? 'Rate limit reached. Please wait a minute and try again.'
-        : 'All AI models are currently unavailable. Please try again shortly.',
-      details: modelErrors,
-    },
-    503
-  );
+  // ── All providers failed ──
+  return jsonResponse({
+    error: 'All AI providers are currently unavailable. Please try again in a moment.',
+  }, 503);
 }
