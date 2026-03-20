@@ -9,15 +9,67 @@ export interface PathwayNode {
   citation: string;
   color: string;
 
-  // Extended — scientific credibility layer (optional for backward compat)
-  canonicalLabel?: string;          // IUPAC or standard biochemical name
-  nodeType?: NodeType;              // metabolite | enzyme | gene | complex | cofactor
-  evidenceSnippet?: string;         // Direct quote or paraphrase from source
-  confidenceScore?: number;         // 0–1, derived from pLDDT or AI confidence
-  ecNumber?: string;                // Enzyme Commission number if applicable
-  chebiId?: string;                 // ChEBI identifier for metabolites
-  uniprotId?: string;               // UniProt ID for proteins/enzymes
+  // ── Scientific identity layer ──
+  canonicalLabel?: string;          // IUPAC / standard biochemical name
+  nodeType?: NodeType;
+
+  // ── Database identifiers ──
+  chebiId?: string;                // metabolite
+  pubchemCid?: string;             // 🔥 NEW
+  smiles?: string;                 // 🔥 CORE: SMILES string
+  inchi?: string;                  // optional chemical encoding
+
+  uniprotId?: string;              // protein
+  pdbId?: string;                  // 🔥 for enzyme 3D structure
+  ecNumber?: string;
+
+  // ── Structural data (关键升级) ──
+  structure3D?: MolecularStructure;   // 🔥 REAL 3D geometry
+  structure2D?: string;               // SVG / MOL block
+
+  // ── AI / confidence ──
+  confidenceScore?: number;
+  evidenceSnippet?: string;
+
+  // ── Rendering hints ──
+  renderStyle?: RenderStyle;          // 🔥 sphere | stick | surface
+  sizeScale?: number;
 }
+
+
+// ── Molecular 3D representation ─────────────────────────────────────
+
+export interface MolecularStructure {
+  atoms: Atom[];
+  bonds: Bond[];
+  format?: 'mol' | 'sdf' | 'pdb';
+
+  // geometry quality
+  optimized?: boolean;               // geometry optimization done?
+}
+
+export interface Atom {
+  element: string;                   // C, H, O, N...
+  position: [number, number, number];
+}
+
+export interface Bond {
+  from: number;                      // atom index
+  to: number;
+  order: 1 | 2 | 3;                  // single/double/triple
+}
+
+
+// ── Rendering modes (VERY IMPORTANT) ────────────────────────────────
+
+export type RenderStyle =
+  | 'sphere'        // space-filling (CPK)
+  | 'stick'         // bonds
+  | 'ball-stick'    // hybrid
+  | 'surface';      // protein-like
+
+
+// ── Node classification ─────────────────────────────────────────────
 
 export type NodeType =
   | 'metabolite'
@@ -27,16 +79,25 @@ export type NodeType =
   | 'cofactor'
   | 'unknown';
 
+
+// ── Edges ───────────────────────────────────────────────────────────
+
 export interface PathwayEdge {
   start: string;
   end: string;
 
-  // Extended (optional)
   relationshipType?: EdgeRelationshipType;
-  evidence?: string;                // Supporting text from literature
-  confidenceScore?: number;         // 0–1
+  evidence?: string;
+  confidenceScore?: number;
+
   direction?: 'forward' | 'reverse' | 'bidirectional';
+
+  // 🔥 Flow strength / flux (future simulation)
+  flux?: number;
 }
+
+
+// ── Edge relationships ──────────────────────────────────────────────
 
 export type EdgeRelationshipType =
   | 'catalyzes'
@@ -49,7 +110,8 @@ export type EdgeRelationshipType =
   | 'regulates'
   | 'unknown';
 
-// ── Search types ──────────────────────────────────────────────────────
+
+// ── Search types ─────────────────────────────────────────────────────
 
 export interface SearchResult {
   id: string;
@@ -59,11 +121,13 @@ export interface SearchResult {
   keywords: string[];
 }
 
+
 // ── Pathway generation output ─────────────────────────────────────────
 
 export interface GeneratedPathway {
   nodes: PathwayNode[];
   edges: PathwayEdge[];
+
   metadata?: {
     sourceText?: string;
     generatedAt?: string;
@@ -72,20 +136,23 @@ export interface GeneratedPathway {
   };
 }
 
+
 // ── Validation helpers ────────────────────────────────────────────────
 
 export function isValidNode(node: unknown): node is Partial<PathwayNode> {
   if (!node || typeof node !== 'object') return false;
   const n = node as Record<string, unknown>;
-  return typeof n.id === 'string' && n.id.length > 0 &&
-    typeof n.label === 'string' && n.label.length > 0;
+
+  return typeof n.id === 'string' &&
+    typeof n.label === 'string';
 }
 
 export function isValidEdge(edge: unknown): edge is PathwayEdge {
   if (!edge || typeof edge !== 'object') return false;
   const e = edge as Record<string, unknown>;
-  return typeof e.start === 'string' && e.start.length > 0 &&
-    typeof e.end === 'string' && e.end.length > 0;
+
+  return typeof e.start === 'string' &&
+    typeof e.end === 'string';
 }
 
 export function sanitizeNodeId(id: string): string {
