@@ -1,112 +1,133 @@
 import { useRef, useState, useMemo, useCallback } from 'react';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Html, Line } from '@react-three/drei';
 import * as THREE from 'three';
 import { PathwayNode, PathwayEdge } from '../types';
 
-// ── pLDDT confidence color scale (AlphaFold standard) ──
-function plddt2color(score: number): string {
-  if (score >= 90) return '#4A90D9';  // high confidence — steel blue
-  if (score >= 70) return '#7FB3D3';  // confident — muted blue
-  if (score >= 50) return '#C4A882';  // medium — warm grey
-  return '#A0856C';                   // low — muted amber
+// ─────────────────────────────────────────────
+// HASH UTILITY — stable per node ID
+// ─────────────────────────────────────────────
+function hash(str: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = (h * 16777619) >>> 0;
+  }
+  return h;
+}
+function hashFloat(str: string, index: number, min = 0, max = 1): number {
+  const h = hash(str + index);
+  return min + ((h % 10000) / 10000) * (max - min);
+}
+function hashInt(str: string, index: number, min: number, max: number): number {
+  return min + (hash(str + index) % (max - min + 1));
 }
 
-// Node pLDDT scores per showcase node
+// ─────────────────────────────────────────────
+// COLOR SYSTEM — scientific, muted, cold
+// ─────────────────────────────────────────────
 const NODE_PLDDT: Record<string, number> = {
   acetyl_coa: 85, hmg_coa: 72, mevalonate: 68,
   fpp: 91, amorpha_4_11_diene: 88,
   artemisinic_acid: 76, artemisinin: 93,
 };
 
+// Cold steel palette — no neon
+const SCIENTIFIC_PALETTE = [
+  '#4A7FA5', // steel blue
+  '#5A8F7B', // muted teal
+  '#7A6E9A', // desaturated violet
+  '#8F7A5A', // warm grey-bronze
+  '#5A7A8F', // slate
+  '#6E8F7A', // sage
+  '#8F6E7A', // muted rose-grey
+  '#7A8F6E', // olive-grey
+];
+
 function getNodeColor(node: PathwayNode): string {
   const plddt = NODE_PLDDT[node.id];
-  if (plddt !== undefined) return plddt2color(plddt);
-  // For AI-generated nodes, use muted palette based on node color hint
-  const muted: Record<string, string> = {
-    '#e5e5e5': '#8A9BA8', '#d4d4d4': '#7A8E9B', '#a3a3a3': '#6B7F8C',
-    '#737373': '#5C707D', '#525252': '#4D616E', '#f5f5f5': '#9AABB8',
+  if (plddt !== undefined) {
+    if (plddt >= 90) return '#4A7FA5';
+    if (plddt >= 70) return '#5A8F7B';
+    if (plddt >= 50) return '#8F8A6A';
+    return '#8F6E5A';
+  }
+  const idx = hash(node.id) % SCIENTIFIC_PALETTE.length;
+  return SCIENTIFIC_PALETTE[idx];
+}
+
+function plddt2color(p: number): string {
+  if (p >= 90) return '#4A7FA5';
+  if (p >= 70) return '#5A8F7B';
+  if (p >= 50) return '#C4A882';
+  return '#A0856C';
+}
+
+// ─────────────────────────────────────────────
+// PROCEDURAL GLYPH — unique 3D asset per node
+// ─────────────────────────────────────────────
+type GlyphConfig = {
+  coreGeom: 'octahedron' | 'dodecahedron' | 'tetrahedron' | 'icosahedron' | 'sphere' | 'torus';
+  coreScale: number;
+  ringCount: number;
+  ringRadii: number[];
+  ringTilts: number[];
+  satelliteCount: number;
+  satelliteRadius: number;
+  satelliteSize: number;
+  spinSpeed: number;
+  ringSpeeds: number[];
+  hasInnerCore: boolean;
+};
+
+function buildGlyphConfig(nodeId: string, connectionCount: number): GlyphConfig {
+  const geoms: GlyphConfig['coreGeom'][] = [
+    'octahedron', 'dodecahedron', 'tetrahedron',
+    'icosahedron', 'sphere', 'torus',
+  ];
+  const geomIdx = hashInt(nodeId, 0, 0, geoms.length - 1);
+  const ringCount = hashInt(nodeId, 1, 1, 3);
+  const ringRadii = Array.from({ length: ringCount }, (_, i) =>
+    hashFloat(nodeId, 10 + i, 0.45, 0.85)
+  );
+  const ringTilts = Array.from({ length: ringCount }, (_, i) =>
+    hashFloat(nodeId, 20 + i, 0, Math.PI)
+  );
+  const ringSpeeds = Array.from({ length: ringCount }, (_, i) =>
+    hashFloat(nodeId, 30 + i, 0.12, 0.45) * (i % 2 === 0 ? 1 : -1)
+  );
+
+  return {
+    coreGeom: geoms[geomIdx],
+    coreScale: 0.22 + connectionCount * 0.04 + hashFloat(nodeId, 2, 0, 0.06),
+    ringCount,
+    ringRadii,
+    ringTilts,
+    satelliteCount: hashInt(nodeId, 3, 2, 5),
+    satelliteRadius: hashFloat(nodeId, 4, 0.55, 0.95),
+    satelliteSize: hashFloat(nodeId, 5, 0.04, 0.075),
+    spinSpeed: hashFloat(nodeId, 6, 0.06, 0.18),
+    ringSpeeds,
+    hasInnerCore: hash(nodeId) % 3 === 0,
   };
-  return muted[node.color] || '#6B8A9E';
 }
 
-// ── Subtle technical grid background ──
-function TechGrid() {
-  const gridRef = useRef<THREE.Group>(null);
-
-  const gridLines = useMemo(() => {
-    const lines: { start: [number,number,number]; end: [number,number,number] }[] = [];
-    const size = 20;
-    const step = 2;
-    for (let i = -size; i <= size; i += step) {
-      lines.push({ start: [i, -8, -12], end: [i, -8, 12] });
-      lines.push({ start: [-size, -8, i * 0.6], end: [size, -8, i * 0.6] });
-    }
-    return lines;
-  }, []);
-
-  return (
-    <group ref={gridRef} position={[0, -3.5, 0]}>
-      {gridLines.map((line, i) => (
-        <Line
-          key={i}
-          points={[new THREE.Vector3(...line.start), new THREE.Vector3(...line.end)]}
-          color="#1a2530"
-          lineWidth={0.4}
-          transparent
-          opacity={0.5}
-        />
-      ))}
-    </group>
-  );
+// Core geometry selector
+function CoreGeometry({ geom, scale }: { geom: GlyphConfig['coreGeom']; scale: number }) {
+  switch (geom) {
+    case 'octahedron':   return <octahedronGeometry args={[scale, 0]} />;
+    case 'dodecahedron': return <dodecahedronGeometry args={[scale, 0]} />;
+    case 'tetrahedron':  return <tetrahedronGeometry args={[scale, 0]} />;
+    case 'icosahedron':  return <icosahedronGeometry args={[scale, 1]} />;
+    case 'torus':        return <torusGeometry args={[scale * 0.8, scale * 0.32, 8, 20]} />;
+    default:             return <sphereGeometry args={[scale, 14, 14]} />;
+  }
 }
 
-// ── Edge with directional flow indicator ──
-function PathEdge({ start, end, isActive, color }: {
-  start: [number,number,number];
-  end: [number,number,number];
-  isActive: boolean;
-  color: string;
-}) {
-  const progressRef = useRef(0);
-  const dotRef = useRef<THREE.Mesh>(null);
-
-  useFrame((_, delta) => {
-    progressRef.current = (progressRef.current + delta * 0.3) % 1;
-    if (dotRef.current) {
-      const t = progressRef.current;
-      const s = new THREE.Vector3(...start);
-      const e = new THREE.Vector3(...end);
-      dotRef.current.position.lerpVectors(s, e, t);
-      dotRef.current.visible = isActive;
-    }
-  });
-
-  return (
-    <group>
-      <Line
-        points={[new THREE.Vector3(...start), new THREE.Vector3(...end)]}
-        color={isActive ? color : '#2a3a45'}
-        lineWidth={isActive ? 1.2 : 0.5}
-        transparent
-        opacity={isActive ? 0.85 : 0.3}
-      />
-      {/* Flow dot */}
-      <mesh ref={dotRef} visible={isActive}>
-        <sphereGeometry args={[0.045, 6, 6]} />
-        <meshStandardMaterial
-          color={color}
-          emissive={color}
-          emissiveIntensity={0.6}
-          roughness={0.3}
-        />
-      </mesh>
-    </group>
-  );
-}
-
-// ── Scientific node — flat disc style like molecular modeling software ──
-function ScientificNode({ node, isHovered, isSelected, connectionCount, onClick, onHover }: {
+// ─────────────────────────────────────────────
+// SCIENTIFIC GLYPH COMPONENT
+// ─────────────────────────────────────────────
+function ScientificGlyph({ node, isHovered, isSelected, connectionCount, onClick, onHover }: {
   node: PathwayNode;
   isHovered: boolean;
   isSelected: boolean;
@@ -114,163 +135,225 @@ function ScientificNode({ node, isHovered, isSelected, connectionCount, onClick,
   onClick: (n: PathwayNode) => void;
   onHover: (id: string | null) => void;
 }) {
-  const discRef = useRef<THREE.Mesh>(null);
-  const ringRef = useRef<THREE.Mesh>(null);
-  const glowRef = useRef<THREE.Mesh>(null);
+  const groupRef    = useRef<THREE.Group>(null);
+  const coreRef     = useRef<THREE.Mesh>(null);
+  const innerRef    = useRef<THREE.Mesh>(null);
+  const ringRefs    = useRef<(THREE.Mesh | null)[]>([]);
+  const satRefs     = useRef<(THREE.Mesh | null)[]>([]);
 
-  const nodeColor = getNodeColor(node);
-  const plddt = NODE_PLDDT[node.id] ?? 75;
+  const color   = getNodeColor(node);
+  const plddt   = NODE_PLDDT[node.id] ?? 75;
+  const cfg     = useMemo(() => buildGlyphConfig(node.id, connectionCount), [node.id, connectionCount]);
 
-  // Size based on connections — major nodes are larger
-  const baseRadius = 0.18 + connectionCount * 0.055;
-  const targetScale = isSelected ? 1.35 : isHovered ? 1.15 : 1.0;
+  // Satellite positions on unit sphere (golden angle distribution)
+  const satPositions = useMemo(() =>
+    Array.from({ length: cfg.satelliteCount }, (_, i) => {
+      const phi   = Math.acos(1 - (2 * (i + 0.5)) / cfg.satelliteCount);
+      const theta = Math.PI * (1 + Math.sqrt(5)) * i;
+      return new THREE.Vector3(
+        Math.sin(phi) * Math.cos(theta) * cfg.satelliteRadius,
+        Math.sin(phi) * Math.sin(theta) * cfg.satelliteRadius,
+        Math.cos(phi) * cfg.satelliteRadius
+      );
+    }), [cfg]);
+
+  const targetScale = isSelected ? 1.38 : isHovered ? 1.18 : 1.0;
 
   useFrame((state, delta) => {
     const t = state.clock.elapsedTime;
 
-    if (discRef.current) {
-      // Smooth scale transition
-      const cs = discRef.current.scale.x;
-      const ns = cs + (targetScale - cs) * delta * 7;
-      discRef.current.scale.setScalar(ns);
-      // Very slow rotation — technical feel
-      discRef.current.rotation.y = t * 0.08;
+    if (groupRef.current) {
+      const cs = groupRef.current.scale.x;
+      groupRef.current.scale.setScalar(cs + (targetScale - cs) * delta * 7);
     }
-
-    if (ringRef.current) {
-      ringRef.current.rotation.z = t * 0.15;
-      const mat = ringRef.current.material as THREE.MeshStandardMaterial;
-      const targetOp = isHovered || isSelected ? 0.7 : 0.15;
-      mat.opacity += (targetOp - mat.opacity) * delta * 5;
+    if (coreRef.current) {
+      coreRef.current.rotation.y += delta * cfg.spinSpeed;
+      coreRef.current.rotation.x += delta * cfg.spinSpeed * 0.4;
+      const mat = coreRef.current.material as THREE.MeshStandardMaterial;
+      const targetEmi = isSelected ? 0.35 : isHovered ? 0.2 : 0.07;
+      mat.emissiveIntensity += (targetEmi - mat.emissiveIntensity) * delta * 5;
     }
-
-    if (glowRef.current) {
-      const mat = glowRef.current.material as THREE.MeshStandardMaterial;
-      const targetOp = isSelected ? 0.12 : isHovered ? 0.08 : 0.0;
-      mat.opacity += (targetOp - mat.opacity) * delta * 5;
+    if (innerRef.current) {
+      innerRef.current.rotation.y -= delta * cfg.spinSpeed * 1.5;
+      innerRef.current.rotation.z += delta * cfg.spinSpeed * 0.8;
     }
+    // Rings
+    ringRefs.current.forEach((ring, i) => {
+      if (!ring) return;
+      ring.rotation.z += delta * cfg.ringSpeeds[i];
+      ring.rotation.x += delta * cfg.ringSpeeds[i] * 0.3;
+      const mat = ring.material as THREE.MeshStandardMaterial;
+      const targetOp = isHovered || isSelected ? 0.55 : 0.18;
+      mat.opacity += (targetOp - mat.opacity) * delta * 4;
+    });
+    // Satellites — slow orbit
+    satRefs.current.forEach((sat, i) => {
+      if (!sat) return;
+      const speed = cfg.spinSpeed * 0.35;
+      const angle = t * speed + (i / cfg.satelliteCount) * Math.PI * 2;
+      const r = cfg.satelliteRadius;
+      const tilt = cfg.ringTilts[i % cfg.ringCount] || 0;
+      sat.position.set(
+        Math.cos(angle) * r,
+        Math.sin(angle * 0.7 + tilt) * r * 0.5,
+        Math.sin(angle) * r * 0.85
+      );
+      const mat = sat.material as THREE.MeshStandardMaterial;
+      const targetOp = isHovered || isSelected ? 0.8 : 0.35;
+      mat.opacity += (targetOp - mat.opacity) * delta * 4;
+    });
   });
 
-  const plddt2colorConf = (p: number) => {
-    if (p >= 90) return '#4A90D9';
-    if (p >= 70) return '#7FB3D3';
-    if (p >= 50) return '#C4A882';
-    return '#A0856C';
-  };
+  const colorObj = new THREE.Color(color);
 
   return (
-    <group position={node.position}>
-      {/* Glow volume */}
-      <mesh ref={glowRef}>
-        <sphereGeometry args={[baseRadius * 2.8, 12, 12]} />
-        <meshStandardMaterial
-          color={nodeColor}
-          transparent
-          opacity={0}
-          depthWrite={false}
-        />
-      </mesh>
+    <group position={node.position} ref={groupRef}>
 
-      {/* Selection ring */}
-      <mesh ref={ringRef} rotation={[Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[baseRadius * 1.4, baseRadius * 1.6, 32]} />
-        <meshStandardMaterial
-          color={nodeColor}
-          transparent
-          opacity={0.15}
-          depthWrite={false}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
+      {/* Rings */}
+      {cfg.ringRadii.map((r, i) => (
+        <mesh
+          key={`ring-${i}`}
+          ref={el => { ringRefs.current[i] = el; }}
+          rotation={[cfg.ringTilts[i] || 0, 0, i * 1.1]}
+        >
+          <torusGeometry args={[r, 0.012, 6, 48]} />
+          <meshStandardMaterial
+            color={color}
+            emissive={color}
+            emissiveIntensity={0.15}
+            transparent
+            opacity={0.18}
+            roughness={0.5}
+            metalness={0.6}
+            depthWrite={false}
+          />
+        </mesh>
+      ))}
 
-      {/* Main disc — primary node body */}
+      {/* Satellites */}
+      {satPositions.map((pos, i) => (
+        <mesh
+          key={`sat-${i}`}
+          ref={el => { satRefs.current[i] = el; }}
+          position={pos}
+        >
+          <sphereGeometry args={[cfg.satelliteSize, 7, 7]} />
+          <meshStandardMaterial
+            color={color}
+            emissive={color}
+            emissiveIntensity={0.25}
+            transparent
+            opacity={0.35}
+            roughness={0.4}
+            metalness={0.5}
+          />
+        </mesh>
+      ))}
+
+      {/* Inner core (some nodes) */}
+      {cfg.hasInnerCore && (
+        <mesh ref={innerRef}>
+          <octahedronGeometry args={[cfg.coreScale * 0.45, 0]} />
+          <meshStandardMaterial
+            color={color}
+            emissive={color}
+            emissiveIntensity={0.4}
+            roughness={0.2}
+            metalness={0.7}
+            transparent
+            opacity={0.7}
+          />
+        </mesh>
+      )}
+
+      {/* Main core — procedural geometry */}
       <mesh
-        ref={discRef}
+        ref={coreRef}
         onClick={e => { e.stopPropagation(); onClick(node); }}
         onPointerOver={e => { e.stopPropagation(); onHover(node.id); document.body.style.cursor = 'pointer'; }}
         onPointerOut={e => { e.stopPropagation(); onHover(null); document.body.style.cursor = 'auto'; }}
       >
-        <cylinderGeometry args={[baseRadius, baseRadius, baseRadius * 0.35, 32]} />
+        <CoreGeometry geom={cfg.coreGeom} scale={cfg.coreScale} />
         <meshStandardMaterial
-          color={nodeColor}
-          emissive={nodeColor}
-          emissiveIntensity={isSelected ? 0.4 : isHovered ? 0.25 : 0.08}
-          roughness={0.45}
-          metalness={0.6}
+          color={color}
+          emissive={color}
+          emissiveIntensity={0.07}
+          roughness={0.38}
+          metalness={0.65}
+          envMapIntensity={0.8}
         />
       </mesh>
 
-      {/* Top face highlight */}
-      <mesh position={[0, baseRadius * 0.18, 0]}>
-        <cylinderGeometry args={[baseRadius * 0.65, baseRadius * 0.65, 0.01, 32]} />
+      {/* Wireframe overlay — modeling software feel */}
+      <mesh>
+        <CoreGeometry geom={cfg.coreGeom} scale={cfg.coreScale * 1.04} />
         <meshStandardMaterial
-          color={nodeColor}
-          emissive={nodeColor}
-          emissiveIntensity={0.3}
-          roughness={0.2}
-          metalness={0.8}
+          color={color}
           transparent
-          opacity={0.6}
+          opacity={isHovered || isSelected ? 0.12 : 0.04}
+          wireframe
+          depthWrite={false}
         />
       </mesh>
 
       {/* Label */}
-      <Html
-        position={[0, -(baseRadius + 0.38), 0]}
-        center
-        style={{ pointerEvents: 'none' }}
-      >
+      <Html position={[0, -(cfg.coreScale + 0.52), 0]} center style={{ pointerEvents: 'none' }}>
         <div style={{
-          color: isHovered || isSelected ? '#e8eef2' : '#8a9ba8',
+          color: isHovered || isSelected ? '#d0dde8' : '#607585',
           fontSize: '10px',
           fontWeight: isSelected ? 600 : 400,
           fontFamily: "'Inter', 'SF Mono', monospace",
-          letterSpacing: '0.03em',
-          textShadow: '0 1px 8px rgba(0,0,0,1)',
+          letterSpacing: '0.025em',
+          textShadow: '0 0 12px rgba(0,0,0,1), 0 0 4px rgba(0,0,0,1)',
           whiteSpace: 'nowrap',
           padding: '2px 6px',
-          background: isSelected ? 'rgba(74,144,217,0.12)' : 'transparent',
-          border: isSelected ? '1px solid rgba(74,144,217,0.2)' : '1px solid transparent',
-          borderRadius: '4px',
-          transition: 'color 0.2s',
+          background: isSelected ? 'rgba(74,127,165,0.1)' : 'transparent',
+          borderRadius: '3px',
+          border: isSelected ? '1px solid rgba(74,127,165,0.25)' : '1px solid transparent',
         }}>
           {node.label}
         </div>
       </Html>
 
-      {/* Hover panel */}
+      {/* Hover tooltip */}
       {isHovered && !isSelected && (
         <Html distanceFactor={10} center style={{ pointerEvents: 'none', zIndex: 100 }}>
           <div style={{
-            background: 'rgba(10,15,20,0.97)',
-            border: '1px solid rgba(74,144,217,0.2)',
+            background: 'rgba(8,12,18,0.97)',
+            border: '1px solid rgba(74,127,165,0.18)',
             borderRadius: '8px',
             padding: '10px 13px',
-            width: '196px',
-            backdropFilter: 'blur(12px)',
+            width: '200px',
+            backdropFilter: 'blur(16px)',
             transform: 'translateY(-118%)',
             fontFamily: "'Inter', sans-serif",
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '7px' }}>
-              <span style={{ color: '#e0eaf0', fontSize: '12px', fontWeight: 600, letterSpacing: '-0.01em' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+              <span style={{ color: '#c8d8e4', fontSize: '12px', fontWeight: 600, letterSpacing: '-0.01em' }}>
                 {node.label}
               </span>
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: plddt2colorConf(plddt) }} />
-                <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '9px', fontFamily: 'monospace' }}>
-                  {plddt}
+                <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: plddt2color(plddt) }} />
+                <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '9px', fontFamily: 'monospace' }}>
+                  pLDDT {plddt}
                 </span>
               </div>
             </div>
-            <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px', lineHeight: 1.6, margin: '0 0 8px' }}>
-              {node.summary?.slice(0, 80)}...
+            {node.nodeType && node.nodeType !== 'unknown' && (
+              <div style={{ marginBottom: '6px' }}>
+                <span style={{ color: 'rgba(74,127,165,0.7)', fontSize: '9px', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  {node.nodeType}
+                </span>
+              </div>
+            )}
+            <p style={{ color: 'rgba(180,200,215,0.45)', fontSize: '11px', lineHeight: 1.6, margin: '0 0 8px' }}>
+              {node.summary?.slice(0, 85)}...
             </p>
-            {/* pLDDT bar */}
-            <div style={{ width: '100%', height: '2px', background: 'rgba(255,255,255,0.06)', borderRadius: '1px' }}>
-              <div style={{ width: `${plddt}%`, height: '100%', background: plddt2colorConf(plddt), borderRadius: '1px' }} />
+            <div style={{ width: '100%', height: '2px', background: 'rgba(255,255,255,0.05)', borderRadius: '1px' }}>
+              <div style={{ width: `${plddt}%`, height: '100%', background: plddt2color(plddt), borderRadius: '1px' }} />
             </div>
-            <p style={{ color: 'rgba(255,255,255,0.15)', fontSize: '9px', fontFamily: 'monospace', marginTop: '5px', marginBottom: 0 }}>
-              click to inspect · pLDDT {plddt}
+            <p style={{ color: 'rgba(255,255,255,0.12)', fontSize: '9px', fontFamily: 'monospace', marginTop: '5px', marginBottom: 0 }}>
+              click to inspect
             </p>
           </div>
         </Html>
@@ -279,7 +362,96 @@ function ScientificNode({ node, isHovered, isSelected, connectionCount, onClick,
   );
 }
 
-// ── Scene with auto-rotate pause on interaction ──
+// ─────────────────────────────────────────────
+// ENGINEERING GRID — coordinate system
+// ─────────────────────────────────────────────
+function EngineeringGrid() {
+  const lines = useMemo(() => {
+    const result: { p: [number,number,number][]; op: number }[] = [];
+    const size = 18;
+    const step = 1.5;
+    for (let i = -size; i <= size; i += step) {
+      const isMajor = Math.abs(i % (step * 4)) < 0.01;
+      result.push({
+        p: [[i, 0, -size], [i, 0, size]],
+        op: isMajor ? 0.14 : 0.055,
+      });
+      result.push({
+        p: [[-size, 0, i], [size, 0, i]],
+        op: isMajor ? 0.14 : 0.055,
+      });
+    }
+    return result;
+  }, []);
+
+  return (
+    <group position={[0, -3.8, 0]}>
+      {lines.map((l, i) => (
+        <Line
+          key={i}
+          points={l.p.map(p => new THREE.Vector3(...p))}
+          color="#3a5060"
+          lineWidth={0.3}
+          transparent
+          opacity={l.op}
+        />
+      ))}
+      {/* Axis indicators */}
+      <Line points={[new THREE.Vector3(-8,0,0), new THREE.Vector3(8,0,0)]} color="#4A7FA5" lineWidth={0.6} transparent opacity={0.22} />
+      <Line points={[new THREE.Vector3(0,0,-8), new THREE.Vector3(0,0,8)]} color="#5A8F7B" lineWidth={0.6} transparent opacity={0.22} />
+    </group>
+  );
+}
+
+// ─────────────────────────────────────────────
+// PATHWAY EDGE
+// ─────────────────────────────────────────────
+function PathEdge({ start, end, isActive, color }: {
+  start: [number,number,number];
+  end: [number,number,number];
+  isActive: boolean;
+  color: string;
+}) {
+  const dotRef = useRef<THREE.Mesh>(null);
+  const progress = useRef(Math.random());
+
+  const sv = new THREE.Vector3(...start);
+  const ev = new THREE.Vector3(...end);
+  const mid = sv.clone().lerp(ev, 0.5).add(new THREE.Vector3(0, 0.5, 0));
+
+  useFrame((_, delta) => {
+    progress.current = (progress.current + delta * 0.22) % 1;
+    if (dotRef.current) {
+      const t = progress.current;
+      const pos = new THREE.Vector3()
+        .addScaledVector(sv, (1 - t) * (1 - t))
+        .addScaledVector(mid, 2 * (1 - t) * t)
+        .addScaledVector(ev, t * t);
+      dotRef.current.position.copy(pos);
+      dotRef.current.visible = isActive;
+    }
+  });
+
+  return (
+    <group>
+      <Line
+        points={[sv, ev]}
+        color={isActive ? color : '#1e2d38'}
+        lineWidth={isActive ? 1.0 : 0.4}
+        transparent
+        opacity={isActive ? 0.75 : 0.22}
+      />
+      <mesh ref={dotRef} visible={false}>
+        <sphereGeometry args={[0.04, 6, 6]} />
+        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.5} />
+      </mesh>
+    </group>
+  );
+}
+
+// ─────────────────────────────────────────────
+// SCENE
+// ─────────────────────────────────────────────
 function Scene({ nodes, edges, onNodeClick, selectedNodeId }: {
   nodes: PathwayNode[];
   edges: PathwayEdge[];
@@ -288,82 +460,62 @@ function Scene({ nodes, edges, onNodeClick, selectedNodeId }: {
 }) {
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [userInteracting, setUserInteracting] = useState(false);
-  const controlsRef = useRef<any>(null);
-  const interactionTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const handleInteractionStart = useCallback(() => {
+  const onStart = useCallback(() => {
     setUserInteracting(true);
-    if (interactionTimer.current) clearTimeout(interactionTimer.current);
+    if (timer.current) clearTimeout(timer.current);
+  }, []);
+  const onEnd = useCallback(() => {
+    timer.current = setTimeout(() => setUserInteracting(false), 3500);
   }, []);
 
-  const handleInteractionEnd = useCallback(() => {
-    // Resume auto-rotate after 3 seconds of inactivity
-    interactionTimer.current = setTimeout(() => setUserInteracting(false), 3000);
-  }, []);
+  const connectionCounts = useMemo(() => {
+    const c: Record<string, number> = {};
+    nodes.forEach(n => { c[n.id] = 0; });
+    edges.forEach(e => { if (c[e.start] !== undefined) c[e.start]++; if (c[e.end] !== undefined) c[e.end]++; });
+    return c;
+  }, [nodes, edges]);
 
-  const edgeData = useMemo(() => {
-    return edges.map(edge => {
+  const edgeData = useMemo(() =>
+    edges.map(edge => {
       const s = nodes.find(n => n.id === edge.start);
       const e = nodes.find(n => n.id === edge.end);
       if (!s || !e) return null;
       const isActive = hoveredId === edge.start || hoveredId === edge.end ||
         selectedNodeId === edge.start || selectedNodeId === edge.end;
-      const color = getNodeColor(s);
-      return { key: `${edge.start}-${edge.end}`, s, e, isActive, color };
-    }).filter(Boolean);
-  }, [edges, nodes, hoveredId, selectedNodeId]);
-
-  const connectionCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    nodes.forEach(n => { counts[n.id] = 0; });
-    edges.forEach(e => {
-      if (counts[e.start] !== undefined) counts[e.start]++;
-      if (counts[e.end] !== undefined) counts[e.end]++;
-    });
-    return counts;
-  }, [nodes, edges]);
+      return { key: `${edge.start}-${edge.end}`, s, e, isActive, color: getNodeColor(s) };
+    }).filter(Boolean),
+    [edges, nodes, hoveredId, selectedNodeId]
+  );
 
   return (
     <>
-      {/* Lighting — cold, precise, scientific workstation */}
-      <ambientLight intensity={0.18} color="#c8d8e8" />
-      <directionalLight position={[6, 10, 6]} intensity={0.9} color="#ddeeff" castShadow={false} />
-      <directionalLight position={[-8, -4, -6]} intensity={0.15} color="#334455" />
-      <pointLight position={[0, 6, 0]} intensity={0.3} color="#aaccdd" />
+      {/* Scientific workstation lighting — cold, directional, minimal */}
+      <ambientLight intensity={0.12} color="#b0c8d8" />
+      <directionalLight position={[8, 12, 6]} intensity={0.7} color="#ddeeff" />
+      <directionalLight position={[-6, -4, -8]} intensity={0.1} color="#223344" />
+      <pointLight position={[0, 8, 0]} intensity={0.2} color="#aac0d0" distance={30} />
+      <hemisphereLight args={['#1a2a38', '#080c10', 0.3]} />
 
-      {/* Subtle fog for depth */}
-      <fog attach="fog" args={['#0c1218', 22, 50]} />
+      <fog attach="fog" args={['#0a1018', 24, 55]} />
 
       <OrbitControls
-        ref={controlsRef}
-        enableZoom
-        autoRotate={!userInteracting}
-        autoRotateSpeed={0.18}
-        zoomSpeed={0.5}
-        minDistance={5}
-        maxDistance={24}
+        enableZoom autoRotate={!userInteracting}
+        autoRotateSpeed={0.15}
+        zoomSpeed={0.5} minDistance={5} maxDistance={26}
         enablePan={false}
-        onStart={handleInteractionStart}
-        onEnd={handleInteractionEnd}
+        onStart={onStart} onEnd={onEnd}
       />
 
-      {/* Technical grid floor */}
-      <TechGrid />
+      <EngineeringGrid />
 
-      {/* Edges */}
       {edgeData.map((ed: any) => (
-        <PathEdge
-          key={ed.key}
-          start={ed.s.position}
-          end={ed.e.position}
-          isActive={ed.isActive}
-          color={ed.color}
-        />
+        <PathEdge key={ed.key} start={ed.s.position} end={ed.e.position} isActive={ed.isActive} color={ed.color} />
       ))}
 
-      {/* Nodes */}
       {nodes.map(node => (
-        <ScientificNode
+        <ScientificGlyph
           key={node.id}
           node={node}
           isHovered={hoveredId === node.id}
@@ -377,6 +529,9 @@ function Scene({ nodes, edges, onNodeClick, selectedNodeId }: {
   );
 }
 
+// ─────────────────────────────────────────────
+// DEFAULT EDGES
+// ─────────────────────────────────────────────
 const DEFAULT_EDGES: PathwayEdge[] = [
   { start: 'acetyl_coa', end: 'hmg_coa', relationshipType: 'converts', direction: 'forward' },
   { start: 'acetyl_coa', end: 'mevalonate', relationshipType: 'produces', direction: 'forward' },
@@ -387,6 +542,9 @@ const DEFAULT_EDGES: PathwayEdge[] = [
   { start: 'artemisinic_acid', end: 'artemisinin', relationshipType: 'produces', direction: 'forward' },
 ];
 
+// ─────────────────────────────────────────────
+// EXPORT
+// ─────────────────────────────────────────────
 interface ThreeSceneProps {
   nodes: PathwayNode[];
   onNodeClick: (node: PathwayNode) => void;
@@ -399,77 +557,74 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId }
 
   return (
     <div style={{
-      width: '100%',
-      height: '560px',
-      background: 'linear-gradient(180deg, #0c1218 0%, #0e1520 60%, #111a22 100%)',
-      borderRadius: '12px',
-      overflow: 'hidden',
-      border: '1px solid rgba(74,144,217,0.1)',
+      width: '100%', height: '580px',
+      background: 'linear-gradient(180deg, #090e14 0%, #0b1219 50%, #0d1520 100%)',
+      borderRadius: '12px', overflow: 'hidden',
+      border: '1px solid rgba(58,80,96,0.35)',
       position: 'relative',
+      boxShadow: 'inset 0 1px 0 rgba(74,127,165,0.08)',
     }}>
 
-      {/* Top bar */}
+      {/* Header bar */}
       <div style={{
         position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10,
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '10px 16px',
-        background: 'linear-gradient(to bottom, rgba(12,18,24,0.95), transparent)',
-        borderBottom: '1px solid rgba(74,144,217,0.06)',
+        background: 'linear-gradient(to bottom, rgba(9,14,20,0.98), transparent)',
+        borderBottom: '1px solid rgba(58,80,96,0.2)',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: 'rgba(74,144,217,0.6)' }} />
-          <span style={{ color: 'rgba(180,200,220,0.4)', fontSize: '10px', fontFamily: 'monospace', letterSpacing: '0.06em' }}>
-            METABOLIC PATHWAY · {nodes.length} ENTITIES
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
+            <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: 'rgba(74,127,165,0.5)' }} />
+            <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: 'rgba(90,143,123,0.4)' }} />
+            <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: 'rgba(122,110,154,0.4)' }} />
+          </div>
+          <span style={{ color: 'rgba(140,170,190,0.35)', fontSize: '10px', fontFamily: 'monospace', letterSpacing: '0.07em' }}>
+            METABOLIC · {nodes.length} ENTITIES · PROCEDURAL RECONSTRUCTION
           </span>
         </div>
         {edges && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '2px 8px', borderRadius: '4px', background: 'rgba(74,144,217,0.06)', border: '1px solid rgba(74,144,217,0.15)' }}>
-            <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: '#4A90D9' }} />
-            <span style={{ color: 'rgba(74,144,217,0.7)', fontSize: '9px', fontFamily: 'monospace', letterSpacing: '0.05em' }}>
-              AI GENERATED
-            </span>
-          </div>
+          <span style={{ color: 'rgba(74,127,165,0.55)', fontSize: '9px', fontFamily: 'monospace', padding: '2px 7px', border: '1px solid rgba(74,127,165,0.15)', borderRadius: '3px', letterSpacing: '0.05em' }}>
+            AI GENERATED
+          </span>
         )}
       </div>
 
       {/* pLDDT legend */}
-      <div style={{
-        position: 'absolute', bottom: '14px', left: '14px', zIndex: 10,
-        display: 'flex', flexDirection: 'column', gap: '4px',
-      }}>
-        <span style={{ color: 'rgba(180,200,220,0.25)', fontSize: '8px', fontFamily: 'monospace', letterSpacing: '0.06em', marginBottom: '2px' }}>
-          pLDDT
-        </span>
+      <div style={{ position: 'absolute', bottom: '14px', left: '14px', zIndex: 10 }}>
+        <p style={{ color: 'rgba(140,170,190,0.2)', fontSize: '8px', fontFamily: 'monospace', margin: '0 0 5px', letterSpacing: '0.07em' }}>
+          pLDDT CONFIDENCE
+        </p>
         {[
-          { c: '#4A90D9', l: '>90', desc: 'Very high' },
-          { c: '#7FB3D3', l: '70–90', desc: 'Confident' },
-          { c: '#C4A882', l: '50–70', desc: 'Medium' },
-          { c: '#A0856C', l: '<50', desc: 'Low' },
+          { c: '#4A7FA5', l: '>90', d: 'Very high' },
+          { c: '#5A8F7B', l: '70–90', d: 'Confident' },
+          { c: '#8F8A6A', l: '50–70', d: 'Medium' },
+          { c: '#8F6E5A', l: '<50', d: 'Low' },
         ].map(x => (
-          <div key={x.l} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-            <div style={{ width: '16px', height: '3px', borderRadius: '1.5px', background: x.c, opacity: 0.8 }} />
-            <span style={{ color: 'rgba(180,200,220,0.25)', fontSize: '8px', fontFamily: 'monospace' }}>{x.l}</span>
+          <div key={x.l} style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '3px' }}>
+            <div style={{ width: '18px', height: '2px', background: x.c, borderRadius: '1px', opacity: 0.7 }} />
+            <span style={{ color: 'rgba(140,170,190,0.22)', fontSize: '8px', fontFamily: 'monospace' }}>{x.l}</span>
           </div>
         ))}
       </div>
 
-      {/* Instructions */}
       <div style={{ position: 'absolute', bottom: '14px', right: '14px', zIndex: 10 }}>
-        <span style={{ color: 'rgba(180,200,220,0.18)', fontSize: '9px', fontFamily: 'monospace', letterSpacing: '0.04em' }}>
-          drag · scroll · click to inspect
+        <span style={{ color: 'rgba(140,170,190,0.15)', fontSize: '9px', fontFamily: 'monospace', letterSpacing: '0.04em' }}>
+          drag · scroll · click
         </span>
       </div>
 
       <Canvas
-        camera={{ position: [0, 3, 12], fov: 46 }}
+        camera={{ position: [0, 3, 13], fov: 46 }}
         gl={{
           antialias: true,
           powerPreference: 'high-performance',
           alpha: false,
           toneMapping: THREE.ACESFilmicToneMapping,
-          toneMappingExposure: 0.9,
+          toneMappingExposure: 0.85,
         }}
         dpr={[1, 2]}
+        performance={{ min: 0.5 }}
         style={{ background: 'transparent' }}
       >
         <Scene
