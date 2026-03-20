@@ -1,5 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import * as $3Dmol from '3dmol';
+
+// 3Dmol is loaded via CDN (same approach as PDBExplorer)
+declare global { interface Window { $3Dmol: any; } }
+
+function load3Dmol(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (window.$3Dmol) { resolve(); return; }
+    const s = document.createElement('script');
+    s.src = 'https://3Dmol.org/build/3Dmol-min.js';
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error('Failed to load 3Dmol'));
+    document.head.appendChild(s);
+  });
+}
 
 type ViewerStatus = 'idle' | 'loading' | 'ready' | 'empty' | 'error';
 
@@ -8,10 +21,9 @@ interface MoleculeViewerProps {
   smiles?: string;
   molecule3dUrl?: string;
   molBlock?: string;
-  className?: string;
 }
 
-function inferFormat(source?: string): 'sdf' | 'mol' | 'pdb' | 'mol2' | 'xyz' {
+function inferFormat(source?: string): string {
   if (!source) return 'sdf';
   const lower = source.toLowerCase();
   if (lower.endsWith('.pdb')) return 'pdb';
@@ -21,13 +33,7 @@ function inferFormat(source?: string): 'sdf' | 'mol' | 'pdb' | 'mol2' | 'xyz' {
   return 'sdf';
 }
 
-export default function MoleculeViewer({
-  title,
-  smiles,
-  molecule3dUrl,
-  molBlock,
-  className,
-}: MoleculeViewerProps) {
+export default function MoleculeViewer({ title, smiles, molecule3dUrl, molBlock }: MoleculeViewerProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const viewerRef = useRef<any>(null);
   const [status, setStatus] = useState<ViewerStatus>('idle');
@@ -45,19 +51,13 @@ export default function MoleculeViewer({
 
     const cleanup = () => {
       if (viewerRef.current) {
-        try {
-          viewerRef.current.clear();
-          viewerRef.current.render();
-        } catch {
-          // no-op
-        }
+        try { viewerRef.current.clear(); viewerRef.current.render(); } catch {}
         viewerRef.current = null;
       }
     };
 
     const run = async () => {
       if (!containerRef.current) return;
-
       cleanup();
       setError(null);
 
@@ -69,47 +69,33 @@ export default function MoleculeViewer({
       setStatus('loading');
 
       try {
-        const container = containerRef.current;
-        const viewer = $3Dmol.createViewer(container, {
-          backgroundColor: '#0b0f14',
-          defaultcolors: $3Dmol.elementColors.defaultJmolColors,
-        });
+        await load3Dmol();
+        if (!mounted) return;
 
+        const viewer = window.$3Dmol.createViewer(containerRef.current, {
+          backgroundColor: '#0b0f14',
+        });
         viewerRef.current = viewer;
 
         let modelText = molBlock || '';
-        let format: 'sdf' | 'mol' | 'pdb' | 'mol2' | 'xyz' = 'sdf';
+        let format = 'sdf';
 
         if (!modelText && molecule3dUrl) {
           format = inferFormat(molecule3dUrl);
           const response = await fetch(molecule3dUrl);
-          if (!response.ok) {
-            throw new Error(`Failed to load 3D model (${response.status})`);
-          }
+          if (!response.ok) throw new Error(`Failed to load 3D model (${response.status})`);
           modelText = await response.text();
-        } else if (molBlock) {
-          format = 'sdf';
         }
 
-        if (!modelText.trim()) {
-          throw new Error('Empty molecular data');
-        }
+        if (!modelText.trim()) throw new Error('Empty molecular data');
 
-        const model = viewer.addModel(modelText, format);
-
-        // 专业、克制、适合科研软件的默认样式
-        model.setStyle({}, {
-          stick: {
-            radius: 0.18,
-          },
-          sphere: {
-            scale: 0.25,
-          },
+        viewer.addModel(modelText, format);
+        viewer.setStyle({}, {
+          stick: { radius: 0.18, colorscheme: 'Jmol' },
+          sphere: { scale: 0.25, colorscheme: 'Jmol' },
         });
-
-        // 轻微强化杂原子与骨架层次
         viewer.zoomTo();
-        viewer.setBackgroundColor('#0b0f14');
+        viewer.spin('y', 0.4);
         viewer.render();
 
         if (!mounted) return;
@@ -122,50 +108,21 @@ export default function MoleculeViewer({
     };
 
     run();
-
-    return () => {
-      mounted = false;
-      cleanup();
-    };
+    return () => { mounted = false; cleanup(); };
   }, [molecule3dUrl, molBlock]);
 
   if (status === 'empty') {
     return (
-      <div
-        className={className}
-        style={{
-          width: '100%',
-          minHeight: 280,
-          borderRadius: 14,
-          border: '1px solid rgba(180,190,200,0.10)',
-          background: 'linear-gradient(180deg, rgba(13,18,24,0.96), rgba(8,11,16,0.98))',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          padding: 18,
-        }}
-      >
-        <div style={{ color: 'rgba(235,241,247,0.90)', fontSize: 13, fontWeight: 600, marginBottom: 8 }}>
+      <div style={{ width: '100%', minHeight: 200, borderRadius: 10, border: '1px solid rgba(180,190,200,0.08)', background: 'rgba(11,15,20,0.6)', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: 16 }}>
+        <p style={{ color: 'rgba(220,228,236,0.4)', fontSize: 12, margin: '0 0 8px' }}>
           {title || 'Molecular structure'}
-        </div>
-        <div style={{ color: 'rgba(220,228,236,0.55)', fontSize: 12, lineHeight: 1.7 }}>
-          当前节点还没有可渲染的 3D conformer 文件。  
-          你可以把对应的 <span style={{ fontFamily: 'monospace' }}>SDF / MOL / PDB</span> 文件放进 <span style={{ fontFamily: 'monospace' }}>public/molecules/</span>，然后把路径写进 <span style={{ fontFamily: 'monospace' }}>molecule3dUrl</span>。
-        </div>
+        </p>
+        <p style={{ color: 'rgba(220,228,236,0.22)', fontSize: 11, lineHeight: 1.6, margin: 0 }}>
+          No 3D conformer available for this node.
+          Add a <code style={{ fontFamily: 'monospace', color: 'rgba(74,127,165,0.7)' }}>molecule3dUrl</code> pointing to an SDF/MOL/PDB file to render structure.
+        </p>
         {smiles && (
-          <div
-            style={{
-              marginTop: 14,
-              padding: '10px 12px',
-              borderRadius: 10,
-              background: 'rgba(74,144,217,0.08)',
-              border: '1px solid rgba(74,144,217,0.16)',
-              color: 'rgba(230,238,246,0.75)',
-              fontSize: 11,
-              fontFamily: 'monospace',
-              lineHeight: 1.6,
-            }}
-          >
+          <div style={{ marginTop: 12, padding: '8px 10px', borderRadius: 8, background: 'rgba(74,144,217,0.06)', border: '1px solid rgba(74,144,217,0.14)', color: 'rgba(180,210,235,0.6)', fontSize: 10, fontFamily: 'monospace' }}>
             SMILES: {smiles}
           </div>
         )}
@@ -174,89 +131,32 @@ export default function MoleculeViewer({
   }
 
   return (
-    <div
-      className={className}
-      style={{
-        width: '100%',
-        minHeight: 320,
-        borderRadius: 14,
-        overflow: 'hidden',
-        border: '1px solid rgba(180,190,200,0.10)',
-        background: 'linear-gradient(180deg, rgba(11,15,20,0.98), rgba(7,10,14,0.98))',
-        boxShadow: '0 18px 50px rgba(0,0,0,0.22)',
-        position: 'relative',
-      }}
-    >
-      <div
-        style={{
-          position: 'absolute',
-          top: 10,
-          left: 12,
-          zIndex: 2,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 4,
-          pointerEvents: 'none',
-        }}
-      >
-        <div style={{ color: 'rgba(235,241,247,0.95)', fontSize: 12, fontWeight: 650 }}>
+    <div style={{ width: '100%', minHeight: 280, borderRadius: 10, overflow: 'hidden', border: '1px solid rgba(180,190,200,0.08)', background: 'linear-gradient(180deg, rgba(11,15,20,0.98), rgba(7,10,14,0.98))', position: 'relative' }}>
+      {/* Labels */}
+      <div style={{ position: 'absolute', top: 8, left: 10, zIndex: 2, pointerEvents: 'none' }}>
+        <p style={{ color: 'rgba(235,241,247,0.85)', fontSize: 11, fontWeight: 600, margin: '0 0 2px' }}>
           {title || 'Molecular structure'}
-        </div>
+        </p>
         {sourceLabel && (
-          <div style={{ color: 'rgba(220,228,236,0.40)', fontSize: 10, fontFamily: 'monospace' }}>
+          <p style={{ color: 'rgba(220,228,236,0.35)', fontSize: 9, fontFamily: 'monospace', margin: 0 }}>
             {sourceLabel}
-          </div>
+          </p>
         )}
       </div>
 
       {status === 'loading' && (
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'rgba(220,228,236,0.58)',
-            fontSize: 12,
-            letterSpacing: '0.02em',
-            zIndex: 1,
-            pointerEvents: 'none',
-          }}
-        >
-          Loading molecular conformer…
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(220,228,236,0.4)', fontSize: 11, zIndex: 1, pointerEvents: 'none' }}>
+          Loading conformer…
         </div>
       )}
 
       {status === 'error' && (
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: 18,
-            color: 'rgba(255,170,170,0.80)',
-            fontSize: 12,
-            lineHeight: 1.7,
-            textAlign: 'center',
-            zIndex: 1,
-            pointerEvents: 'none',
-          }}
-        >
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, color: 'rgba(255,160,160,0.7)', fontSize: 11, textAlign: 'center', zIndex: 1, pointerEvents: 'none' }}>
           {error}
         </div>
       )}
 
-      <div
-        ref={containerRef}
-        style={{
-          width: '100%',
-          height: 320,
-          display: status === 'loading' || status === 'error' ? 'block' : 'block',
-        }}
-      />
+      <div ref={containerRef} style={{ width: '100%', height: 280 }} />
     </div>
   );
 }
