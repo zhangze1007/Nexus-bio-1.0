@@ -6,9 +6,7 @@ import { PathwayNode, PathwayEdge, MolecularStructure } from '../types';
 
 type Vec3 = [number, number, number];
 
-// ─────────────────────────────────────────────
-// HASH — deterministic per node ID (fingerprint)
-// ─────────────────────────────────────────────
+// ─── Hash utilities ───────────────────────────────────────────────────
 function hash(str: string): number {
   let h = 2166136261;
   for (let i = 0; i < str.length; i++) {
@@ -24,9 +22,7 @@ function hashInt(str: string, index: number, min: number, max: number): number {
   return min + (hash(str + index) % (max - min + 1));
 }
 
-// ─────────────────────────────────────────────
-// COLOR SYSTEM
-// ─────────────────────────────────────────────
+// ─── Color system ─────────────────────────────────────────────────────
 const NODE_CONFIDENCE: Record<string, number> = {
   acetyl_coa: 85, hmg_coa: 72, mevalonate: 68,
   fpp: 91, amorpha_4_11_diene: 88,
@@ -34,8 +30,9 @@ const NODE_CONFIDENCE: Record<string, number> = {
 };
 
 const SCIENTIFIC_PALETTE = [
-  '#4A7FA5','#5A8F7B','#7A6E9A','#8F7A5A',
-  '#5A7A8F','#6E8F7A','#8F6E7A','#7A8F6E',
+  '#4A7FA5','#5A8F7B','#7A6E9A',
+  '#8F7A5A','#5A7A8F','#6E8F7A',
+  '#8F6E7A','#7A8F6E',
 ];
 
 function plddt2color(p: number): string {
@@ -51,70 +48,67 @@ function getNodeColor(node: PathwayNode): string {
   return SCIENTIFIC_PALETTE[hash(node.id) % SCIENTIFIC_PALETTE.length];
 }
 
-// ─────────────────────────────────────────────
-// ELEMENT COLORS & RADII (CPK / Jmol standard)
-// ─────────────────────────────────────────────
-const ELEMENT_COLOR: Record<string, string> = {
-  H:'#D6DEE7', C:'#627180', N:'#4A7FA5', O:'#8F6E5A',
-  P:'#8F8A6A', S:'#5A8F7B', F:'#7A8F6E', CL:'#6E8F7A',
-  BR:'#8F7A5A', I:'#7A6E9A', B:'#8A9BA8', SI:'#8A8F95',
-  DEFAULT:'#8E9AA5',
-};
-const ELEMENT_RADIUS: Record<string, number> = {
-  H:0.10, C:0.18, N:0.17, O:0.16, P:0.20, S:0.21,
-  F:0.15, CL:0.17, BR:0.18, I:0.19, B:0.16, SI:0.20,
-  DEFAULT:0.18,
-};
-function elemColor(e: string) { return ELEMENT_COLOR[e.toUpperCase()] || ELEMENT_COLOR.DEFAULT; }
-function elemRadius(e: string) { return ELEMENT_RADIUS[e.toUpperCase()] || ELEMENT_RADIUS.DEFAULT; }
-
-// ─────────────────────────────────────────────
-// MOLECULAR STRUCTURE NORMALIZER
-// ─────────────────────────────────────────────
-function normalizeStructure(structure: MolecularStructure) {
-  if (!structure.atoms?.length) return null;
-  const positions = structure.atoms.map(a => new THREE.Vector3(...a.position));
-  const center = positions.reduce((acc, p) => acc.add(p), new THREE.Vector3()).multiplyScalar(1 / positions.length);
-  const shifted = positions.map(p => p.clone().sub(center));
-  const maxDist = Math.max(0.001, ...shifted.map(p => p.length()));
-  const scale = 0.42 / maxDist;
-  return {
-    atoms: structure.atoms.map((atom, i) => ({ ...atom, position: shifted[i].multiplyScalar(scale).toArray() as Vec3 })),
-    bonds: structure.bonds ?? [],
-  };
+function getConfidence(node: PathwayNode): number {
+  if (node.confidenceScore !== undefined) return node.confidenceScore;
+  const c = NODE_CONFIDENCE[node.id];
+  return c !== undefined ? c / 100 : 0.75;
 }
 
-// ─────────────────────────────────────────────
-// PROCEDURAL GLYPH CONFIG — unique per node ID
-// ─────────────────────────────────────────────
-type GlyphConfig = {
-  coreGeom: 'octahedron'|'dodecahedron'|'tetrahedron'|'icosahedron'|'sphere'|'torus';
-  coreScale: number;
-  ringCount: number;
-  ringRadii: number[];
-  ringTilts: number[];
-  satelliteCount: number;
-  satelliteRadius: number;
-  satelliteSize: number;
-  spinSpeed: number;
-  ringSpeeds: number[];
-  hasInnerCore: boolean;
+// ─── CPK element colors (muted scientific palette) ────────────────────
+const ELEMENT_COLOR: Record<string, string> = {
+  H: '#D6DEE7', C: '#627180', N: '#4A7FA5', O: '#8F6E5A',
+  P: '#8F8A6A', S: '#5A8F7B', F: '#7A8F6E', CL: '#6E8F7A',
+  BR: '#8F7A5A', I: '#7A6E9A', DEFAULT: '#8E9AA5',
+};
+const ELEMENT_RADIUS: Record<string, number> = {
+  H: 0.09, C: 0.17, N: 0.16, O: 0.15, P: 0.19,
+  S: 0.20, F: 0.14, CL: 0.16, BR: 0.17, I: 0.18, DEFAULT: 0.17,
 };
 
-function buildGlyphConfig(nodeId: string, connectionCount: number): GlyphConfig {
+function elemColor(e: string): string {
+  return ELEMENT_COLOR[e.toUpperCase()] ?? ELEMENT_COLOR.DEFAULT;
+}
+function elemRadius(e: string): number {
+  return ELEMENT_RADIUS[e.toUpperCase()] ?? ELEMENT_RADIUS.DEFAULT;
+}
+
+// ─── Normalize molecular structure to unit scale ──────────────────────
+function normalizeStructure(s: MolecularStructure) {
+  if (!s.atoms?.length) return null;
+  const vecs = s.atoms.map(a => new THREE.Vector3(...a.position));
+  const center = vecs.reduce((acc, v) => acc.add(v), new THREE.Vector3()).multiplyScalar(1 / vecs.length);
+  const shifted = vecs.map(v => v.clone().sub(center));
+  const maxD = Math.max(0.001, ...shifted.map(v => v.length()));
+  const scale = 0.42 / maxD;
+  const atoms = s.atoms.map((atom, i) => ({
+    ...atom,
+    position: shifted[i].multiplyScalar(scale).toArray() as Vec3,
+  }));
+  return { atoms, bonds: s.bonds ?? [] };
+}
+
+// ─── Procedural glyph config ──────────────────────────────────────────
+type GlyphConfig = {
+  coreGeom: 'octahedron' | 'dodecahedron' | 'tetrahedron' | 'icosahedron' | 'sphere' | 'torus';
+  coreScale: number; ringCount: number; ringRadii: number[];
+  ringTilts: number[]; satelliteCount: number; satelliteRadius: number;
+  satelliteSize: number; spinSpeed: number; ringSpeeds: number[]; hasInnerCore: boolean;
+};
+
+function buildGlyphConfig(nodeId: string, cc: number): GlyphConfig {
   const geoms: GlyphConfig['coreGeom'][] = ['octahedron','dodecahedron','tetrahedron','icosahedron','sphere','torus'];
-  const ringCount = hashInt(nodeId, 1, 1, 3);
+  const rc = hashInt(nodeId, 1, 1, 3);
   return {
     coreGeom: geoms[hashInt(nodeId, 0, 0, geoms.length - 1)],
-    coreScale: 0.24 + connectionCount * 0.045 + hashFloat(nodeId, 2, 0, 0.05),
-    ringCount,
-    ringRadii: Array.from({ length: ringCount }, (_, i) => hashFloat(nodeId, 10 + i, 0.45, 0.85)),
-    ringTilts: Array.from({ length: ringCount }, (_, i) => hashFloat(nodeId, 20 + i, 0, Math.PI)),
+    coreScale: 0.24 + cc * 0.045 + hashFloat(nodeId, 2, 0, 0.05),
+    ringCount: rc,
+    ringRadii: Array.from({ length: rc }, (_, i) => hashFloat(nodeId, 10 + i, 0.45, 0.85)),
+    ringTilts: Array.from({ length: rc }, (_, i) => hashFloat(nodeId, 20 + i, 0, Math.PI)),
     satelliteCount: hashInt(nodeId, 3, 2, 5),
     satelliteRadius: hashFloat(nodeId, 4, 0.55, 0.95),
     satelliteSize: hashFloat(nodeId, 5, 0.04, 0.07),
     spinSpeed: hashFloat(nodeId, 6, 0.06, 0.16),
-    ringSpeeds: Array.from({ length: ringCount }, (_, i) => hashFloat(nodeId, 30 + i, 0.12, 0.45) * (i % 2 === 0 ? 1 : -1)),
+    ringSpeeds: Array.from({ length: rc }, (_, i) => hashFloat(nodeId, 30 + i, 0.12, 0.45) * (i % 2 === 0 ? 1 : -1)),
     hasInnerCore: hash(nodeId) % 3 === 0,
   };
 }
@@ -130,246 +124,209 @@ function CoreGeometry({ geom, scale }: { geom: GlyphConfig['coreGeom']; scale: n
   }
 }
 
-// ─────────────────────────────────────────────
-// ATOM MESH
-// ─────────────────────────────────────────────
-function AtomMesh({ position, element, isHovered, isSelected }: {
-  position: Vec3; element: string; isHovered: boolean; isSelected: boolean;
+// ─── Atom mesh ────────────────────────────────────────────────────────
+function AtomMesh({ position, element, scale = 1.0, isHovered, isSelected }: {
+  position: Vec3; element: string; scale?: number; isHovered: boolean; isSelected: boolean;
 }) {
-  const color = elemColor(element);
-  const radius = elemRadius(element);
   return (
     <mesh position={position}>
-      <sphereGeometry args={[radius, 16, 16]} />
+      <sphereGeometry args={[elemRadius(element) * scale, 14, 14]} />
       <meshStandardMaterial
-        color={isSelected ? '#f6f8fb' : color}
-        emissive={color}
-        emissiveIntensity={isSelected ? 0.18 : isHovered ? 0.10 : 0.04}
+        color={isSelected ? '#f0f4f8' : elemColor(element)}
+        emissive={elemColor(element)}
+        emissiveIntensity={isSelected ? 0.16 : isHovered ? 0.09 : 0.04}
         roughness={0.34} metalness={0.14}
       />
     </mesh>
   );
 }
 
-// ─────────────────────────────────────────────
-// BOND MESH
-// ─────────────────────────────────────────────
-function BondMesh({ start, end, color, thickness = 0.028 }: {
-  start: Vec3; end: Vec3; color: string; thickness?: number;
+// ─── Bond mesh ────────────────────────────────────────────────────────
+function BondMesh({ start, end, color, visible = true }: {
+  start: Vec3; end: Vec3; color: string; visible?: boolean;
 }) {
   const { mid, len, q } = useMemo(() => {
     const s = new THREE.Vector3(...start);
     const e = new THREE.Vector3(...end);
     const dir = new THREE.Vector3().subVectors(e, s);
     const len = dir.length();
-    const mid = new THREE.Vector3().addVectors(s, e).multiplyScalar(0.5);
-    const q = new THREE.Quaternion();
-    q.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().normalize());
+    const mid = s.clone().add(e).multiplyScalar(0.5);
+    const q = new THREE.Quaternion().setFromUnitVectors(
+      new THREE.Vector3(0, 1, 0), dir.normalize()
+    );
     return { mid, len, q };
   }, [start, end]);
 
+  if (!visible) return null;
   return (
     <mesh position={mid} quaternion={q}>
-      <cylinderGeometry args={[thickness, thickness, len, 10, 1]} />
-      <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.08} roughness={0.36} metalness={0.20} />
+      <cylinderGeometry args={[0.025, 0.025, len, 10, 1]} />
+      <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.07} roughness={0.38} metalness={0.2} />
     </mesh>
   );
 }
 
-// ─────────────────────────────────────────────
-// MOLECULAR NODE — real structure OR procedural glyph
-// ─────────────────────────────────────────────
+// ─── Molecular node ───────────────────────────────────────────────────
 function MolecularNode({ node, isHovered, isSelected, connectionCount, onClick, onHover }: {
   node: PathwayNode; isHovered: boolean; isSelected: boolean;
   connectionCount: number; onClick: (n: PathwayNode) => void; onHover: (id: string | null) => void;
 }) {
-  const groupRef  = useRef<THREE.Group>(null);
-  const coreRef   = useRef<THREE.Mesh>(null);
-  const innerRef  = useRef<THREE.Mesh>(null);
-  const ringRefs  = useRef<(THREE.Mesh | null)[]>([]);
-  const satRefs   = useRef<(THREE.Mesh | null)[]>([]);
+  const groupRef = useRef<THREE.Group>(null);
+  const bodyRef  = useRef<THREE.Mesh>(null);
+  const glowRef  = useRef<THREE.Mesh>(null);
+  const ringRef  = useRef<THREE.Mesh>(null);
+  const orbitRef = useRef<THREE.Group>(null);
 
-  const color  = getNodeColor(node);
-  const cfg    = useMemo(() => buildGlyphConfig(node.id, connectionCount), [node.id, connectionCount]);
-  const struct = useMemo(() => node.molecularStructure ? normalizeStructure(node.molecularStructure) : null, [node.molecularStructure]);
-  const plddt  = NODE_CONFIDENCE[node.id] ?? 75;
+  const color      = getNodeColor(node);
+  const confidence = getConfidence(node);
+  const label      = node.canonicalLabel?.trim() || node.label;
+  const normalized = useMemo(() => node.molecularStructure ? normalizeStructure(node.molecularStructure) : null, [node.molecularStructure]);
+  const cfg        = useMemo(() => buildGlyphConfig(node.id, connectionCount), [node.id, connectionCount]);
+  const targetScale = isSelected ? 1.34 : isHovered ? 1.14 : 1.0;
+  const bondColor  = useMemo(() => new THREE.Color(color).lerp(new THREE.Color('#dce5ee'), 0.22).getStyle(), [color]);
 
-  // Use real structure if available, else glyph
-  const useRealStructure = !!struct;
-
-  // Satellite positions — golden angle distribution
-  const satPositions = useMemo(() =>
-    Array.from({ length: cfg.satelliteCount }, (_, i) => {
-      const phi = Math.acos(1 - (2 * (i + 0.5)) / cfg.satelliteCount);
-      const theta = Math.PI * (1 + Math.sqrt(5)) * i;
-      return new THREE.Vector3(
-        Math.sin(phi) * Math.cos(theta) * cfg.satelliteRadius,
-        Math.sin(phi) * Math.sin(theta) * cfg.satelliteRadius,
-        Math.cos(phi) * cfg.satelliteRadius
-      );
-    }), [cfg]);
-
-  const targetScale = isSelected ? 1.38 : isHovered ? 1.18 : 1.0;
+  useEffect(() => () => { document.body.style.cursor = 'auto'; }, []);
 
   useFrame((state, delta) => {
     const t = state.clock.elapsedTime;
-
     if (groupRef.current) {
       const cs = groupRef.current.scale.x;
       groupRef.current.scale.setScalar(cs + (targetScale - cs) * delta * 7);
+      groupRef.current.rotation.x = Math.sin(t * 0.06 + hash(node.id) * 0.001) * 0.04;
+      groupRef.current.rotation.y = Math.sin(t * 0.08 + hash(node.id) * 0.002) * 0.06;
     }
-
-    if (!useRealStructure) {
-      if (coreRef.current) {
-        coreRef.current.rotation.y += delta * cfg.spinSpeed;
-        coreRef.current.rotation.x += delta * cfg.spinSpeed * 0.4;
-        const mat = coreRef.current.material as THREE.MeshStandardMaterial;
-        const targetEmi = isSelected ? 0.35 : isHovered ? 0.2 : 0.07;
-        mat.emissiveIntensity += (targetEmi - mat.emissiveIntensity) * delta * 5;
-      }
-      if (innerRef.current) {
-        innerRef.current.rotation.y -= delta * cfg.spinSpeed * 1.5;
-        innerRef.current.rotation.z += delta * cfg.spinSpeed * 0.8;
-      }
-      ringRefs.current.forEach((ring, i) => {
-        if (!ring) return;
-        ring.rotation.z += delta * cfg.ringSpeeds[i];
-        ring.rotation.x += delta * cfg.ringSpeeds[i] * 0.3;
-        const mat = ring.material as THREE.MeshStandardMaterial;
-        mat.opacity += ((isHovered || isSelected ? 0.55 : 0.18) - mat.opacity) * delta * 4;
-      });
-      satRefs.current.forEach((sat, i) => {
-        if (!sat) return;
-        const angle = t * cfg.spinSpeed * 0.35 + (i / cfg.satelliteCount) * Math.PI * 2;
-        const r = cfg.satelliteRadius;
-        const tilt = cfg.ringTilts[i % cfg.ringCount] || 0;
-        sat.position.set(
-          Math.cos(angle) * r,
-          Math.sin(angle * 0.7 + tilt) * r * 0.5,
-          Math.sin(angle) * r * 0.85
-        );
-        const mat = sat.material as THREE.MeshStandardMaterial;
-        mat.opacity += ((isHovered || isSelected ? 0.8 : 0.35) - mat.opacity) * delta * 4;
-      });
-    } else {
-      // Real structure — slow global spin
-      if (groupRef.current) {
-        groupRef.current.rotation.y += delta * 0.08;
-      }
+    if (bodyRef.current) {
+      const mat = bodyRef.current.material as THREE.MeshStandardMaterial;
+      mat.emissiveIntensity += ((isSelected ? 0.18 : isHovered ? 0.10 : 0.04) - mat.emissiveIntensity) * delta * 5;
+      bodyRef.current.rotation.y += delta * cfg.spinSpeed;
+      bodyRef.current.rotation.x += delta * cfg.spinSpeed * 0.35;
+    }
+    if (glowRef.current) {
+      const mat = glowRef.current.material as THREE.MeshStandardMaterial;
+      mat.opacity += ((isSelected ? 0.10 : isHovered ? 0.07 : 0.025) - mat.opacity) * delta * 4;
+    }
+    if (ringRef.current) {
+      ringRef.current.rotation.z += delta * 0.16;
+      const mat = ringRef.current.material as THREE.MeshStandardMaterial;
+      mat.opacity += ((isHovered || isSelected ? 0.44 : 0.14) - mat.opacity) * delta * 4;
+    }
+    if (orbitRef.current) {
+      orbitRef.current.rotation.y = t * 0.14 + cfg.spinSpeed * 3.2;
+      orbitRef.current.rotation.x = 0.24 + Math.sin(t * 0.42 + cfg.spinSpeed * 10) * 0.05;
     }
   });
 
-  const plddt2c = (p: number) => {
-    if (p >= 90) return '#4A7FA5';
-    if (p >= 70) return '#5A8F7B';
-    if (p >= 50) return '#C4A882';
-    return '#A0856C';
-  };
+  // Procedural fallback glyph
+  const fallbackGlyph = (
+    <>
+      {cfg.ringRadii.map((r, i) => (
+        <mesh key={`ring-${i}`} ref={i === 0 ? ringRef : undefined} rotation={[cfg.ringTilts[i] || 0, 0, i * 1.1]}>
+          <torusGeometry args={[r, 0.012, 6, 48]} />
+          <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.12} transparent opacity={0.16} roughness={0.54} metalness={0.20} depthWrite={false} />
+        </mesh>
+      ))}
+      <group ref={orbitRef}>
+        {Array.from({ length: cfg.satelliteCount }).map((_, i) => {
+          const phi = Math.acos(1 - (2 * (i + 0.5)) / cfg.satelliteCount);
+          const theta = Math.PI * (1 + Math.sqrt(5)) * i;
+          return (
+            <mesh key={`sat-${i}`} position={[
+              Math.sin(phi) * Math.cos(theta) * cfg.satelliteRadius,
+              Math.sin(phi) * Math.sin(theta) * cfg.satelliteRadius,
+              Math.cos(phi) * cfg.satelliteRadius,
+            ]}>
+              <sphereGeometry args={[cfg.satelliteSize, 8, 8]} />
+              <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.12} transparent opacity={0.36} roughness={0.44} metalness={0.18} />
+            </mesh>
+          );
+        })}
+      </group>
+      {cfg.hasInnerCore && (
+        <mesh>
+          <octahedronGeometry args={[cfg.coreScale * 0.38, 0]} />
+          <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.22} roughness={0.24} metalness={0.44} transparent opacity={0.74} />
+        </mesh>
+      )}
+      <mesh ref={bodyRef}>
+        <CoreGeometry geom={cfg.coreGeom} scale={cfg.coreScale} />
+        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.05} roughness={0.42} metalness={0.56} />
+      </mesh>
+      <mesh>
+        <CoreGeometry geom={cfg.coreGeom} scale={cfg.coreScale * 1.04} />
+        <meshStandardMaterial color={color} transparent opacity={isHovered || isSelected ? 0.11 : 0.04} wireframe depthWrite={false} />
+      </mesh>
+    </>
+  );
+
+  // Real molecular structure glyph — uses atomIndex1/atomIndex2 per our types
+  const structureGlyph = normalized ? (
+    <>
+      <mesh ref={glowRef} position={[0, 0, -0.03]}>
+        <sphereGeometry args={[0.9, 22, 22]} />
+        <meshStandardMaterial color={color} transparent opacity={0.02} roughness={1} metalness={0} depthWrite={false} />
+      </mesh>
+      <mesh ref={ringRef} rotation={[Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>
+        <torusGeometry args={[0.78, 0.018, 8, 48]} />
+        <meshStandardMaterial color={color} emissive={color} transparent opacity={0.14} roughness={0.24} metalness={0.10} depthWrite={false} />
+      </mesh>
+      {/* Bonds — uses atomIndex1 / atomIndex2 */}
+      {normalized.bonds.map((bond, i) => {
+        const a = normalized.atoms[bond.atomIndex1];
+        const b = normalized.atoms[bond.atomIndex2];
+        if (!a || !b) return null;
+        return <BondMesh key={`bond-${i}`} start={a.position} end={b.position} color={bondColor} />;
+      })}
+      {/* Atoms */}
+      {normalized.atoms.map((atom, i) => (
+        <AtomMesh key={`atom-${i}`} position={atom.position} element={atom.element} isHovered={isHovered} isSelected={isSelected} />
+      ))}
+    </>
+  ) : null;
 
   return (
     <group
-      position={node.position}
       ref={groupRef}
+      position={node.position}
       onClick={e => { e.stopPropagation(); onClick(node); }}
       onPointerOver={e => { e.stopPropagation(); onHover(node.id); document.body.style.cursor = 'pointer'; }}
       onPointerOut={e => { e.stopPropagation(); onHover(null); document.body.style.cursor = 'auto'; }}
     >
-      {useRealStructure && struct ? (
-        // ── REAL ATOM/BOND STRUCTURE ──
-        <group>
-          {struct.atoms.map((atom, i) => (
-            <AtomMesh key={`atom-${i}`} position={atom.position} element={atom.element} isHovered={isHovered} isSelected={isSelected} />
-          ))}
-          {struct.bonds?.map((bond, i) => {
-            const a = struct.atoms[bond.from];
-            const b = struct.atoms[bond.to];
-            if (!a || !b) return null;
-            return <BondMesh key={`bond-${i}`} start={a.position} end={b.position} color={color} />;
-          })}
-          {/* Bounding indicator ring */}
-          <mesh rotation={[Math.PI / 2, 0, 0]}>
-            <ringGeometry args={[0.52, 0.56, 32]} />
-            <meshStandardMaterial color={color} transparent opacity={isHovered || isSelected ? 0.35 : 0.1} depthWrite={false} side={THREE.DoubleSide} />
-          </mesh>
-        </group>
-      ) : (
-        // ── PROCEDURAL GLYPH (unique fingerprint) ──
-        <group>
-          {/* Rings */}
-          {cfg.ringRadii.map((r, i) => (
-            <mesh key={`ring-${i}`} ref={el => { ringRefs.current[i] = el; }} rotation={[cfg.ringTilts[i] || 0, 0, i * 1.1]}>
-              <torusGeometry args={[r, 0.012, 6, 48]} />
-              <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.15} transparent opacity={0.18} roughness={0.5} metalness={0.6} depthWrite={false} />
-            </mesh>
-          ))}
-          {/* Satellites */}
-          {satPositions.map((pos, i) => (
-            <mesh key={`sat-${i}`} ref={el => { satRefs.current[i] = el; }} position={pos}>
-              <sphereGeometry args={[cfg.satelliteSize, 7, 7]} />
-              <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.25} transparent opacity={0.35} roughness={0.4} metalness={0.5} />
-            </mesh>
-          ))}
-          {/* Inner core */}
-          {cfg.hasInnerCore && (
-            <mesh ref={innerRef}>
-              <octahedronGeometry args={[cfg.coreScale * 0.45, 0]} />
-              <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.4} roughness={0.2} metalness={0.7} transparent opacity={0.7} />
-            </mesh>
-          )}
-          {/* Main core */}
-          <mesh ref={coreRef}>
-            <CoreGeometry geom={cfg.coreGeom} scale={cfg.coreScale} />
-            <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.07} roughness={0.38} metalness={0.65} />
-          </mesh>
-          {/* Wireframe overlay */}
-          <mesh>
-            <CoreGeometry geom={cfg.coreGeom} scale={cfg.coreScale * 1.04} />
-            <meshStandardMaterial color={color} transparent opacity={isHovered || isSelected ? 0.12 : 0.04} wireframe depthWrite={false} />
-          </mesh>
-        </group>
-      )}
+      {normalized ? structureGlyph : fallbackGlyph}
 
-      {/* Label */}
-      <Html position={[0, -(cfg.coreScale + 0.52), 0]} center style={{ pointerEvents: 'none' }}>
+      <Html position={[0, -(cfg.coreScale + 0.48), 0]} center style={{ pointerEvents: 'none', whiteSpace: 'nowrap' }}>
         <div style={{
-          color: isHovered || isSelected ? '#d0dde8' : '#607585',
+          color: isHovered || isSelected ? '#d6e0e8' : '#627381',
           fontSize: '10px', fontWeight: isSelected ? 600 : 400,
-          fontFamily: "'Inter', 'SF Mono', monospace", letterSpacing: '0.025em',
-          textShadow: '0 0 12px rgba(0,0,0,1), 0 0 4px rgba(0,0,0,1)',
-          whiteSpace: 'nowrap', padding: '2px 6px',
-          background: isSelected ? 'rgba(74,127,165,0.1)' : 'transparent',
+          fontFamily: "'Inter', 'SF Mono', monospace",
+          letterSpacing: '0.025em', textShadow: '0 1px 8px rgba(0,0,0,1)',
+          padding: '2px 6px',
+          background: isSelected ? 'rgba(74,127,165,0.10)' : 'transparent',
           borderRadius: '3px',
-          border: isSelected ? '1px solid rgba(74,127,165,0.25)' : '1px solid transparent',
+          border: isSelected ? '1px solid rgba(74,127,165,0.22)' : '1px solid transparent',
         }}>
-          {node.canonicalLabel?.trim() || node.label}
-          {useRealStructure && (
-            <span style={{ color: 'rgba(74,127,165,0.6)', fontSize: '8px', marginLeft: '4px', fontFamily: 'monospace' }}>·3D</span>
-          )}
+          {label}
         </div>
       </Html>
 
-      {/* Hover tooltip */}
       {isHovered && !isSelected && (
         <Html distanceFactor={10} center style={{ pointerEvents: 'none', zIndex: 100 }}>
           <div style={{
             background: 'rgba(8,12,18,0.97)', border: '1px solid rgba(74,127,165,0.18)',
-            borderRadius: '8px', padding: '10px 13px', width: '200px',
+            borderRadius: '8px', padding: '10px 13px', width: '206px',
             backdropFilter: 'blur(16px)', transform: 'translateY(-118%)',
             fontFamily: "'Inter', sans-serif",
           }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
-              <span style={{ color: '#c8d8e4', fontSize: '12px', fontWeight: 600, letterSpacing: '-0.01em' }}>
-                {node.label}
-              </span>
+              <span style={{ color: '#c8d8e4', fontSize: '12px', fontWeight: 600 }}>{label}</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: plddt2c(plddt) }} />
-                <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '9px', fontFamily: 'monospace' }}>
-                  pLDDT {plddt}
+                <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: plddt2color(confidence * 100) }} />
+                <span style={{ color: 'rgba(255,255,255,0.24)', fontSize: '9px', fontFamily: 'monospace' }}>
+                  conf {Math.round(confidence * 100)}
                 </span>
               </div>
             </div>
             {node.nodeType && node.nodeType !== 'unknown' && (
-              <span style={{ color: 'rgba(74,127,165,0.6)', fontSize: '9px', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: '5px' }}>
+              <span style={{ color: 'rgba(74,127,165,0.75)', fontSize: '9px', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: '6px' }}>
                 {node.nodeType}
               </span>
             )}
@@ -377,11 +334,8 @@ function MolecularNode({ node, isHovered, isSelected, connectionCount, onClick, 
               {node.summary?.slice(0, 85)}...
             </p>
             <div style={{ width: '100%', height: '2px', background: 'rgba(255,255,255,0.05)', borderRadius: '1px' }}>
-              <div style={{ width: `${plddt}%`, height: '100%', background: plddt2c(plddt), borderRadius: '1px' }} />
+              <div style={{ width: `${Math.round(confidence * 100)}%`, height: '100%', background: plddt2color(confidence * 100), borderRadius: '1px' }} />
             </div>
-            <p style={{ color: 'rgba(255,255,255,0.12)', fontSize: '9px', fontFamily: 'monospace', marginTop: '5px', marginBottom: 0 }}>
-              click to inspect{useRealStructure ? ' · real 3D structure' : ' · procedural glyph'}
-            </p>
           </div>
         </Html>
       )}
@@ -389,43 +343,26 @@ function MolecularNode({ node, isHovered, isSelected, connectionCount, onClick, 
   );
 }
 
-// ─────────────────────────────────────────────
-// ENGINEERING GRID
-// ─────────────────────────────────────────────
+// ─── Engineering grid — #121212 aesthetic, rgba(255,255,255,0.05) ──────
 function EngineeringGrid() {
-  const lines = useMemo(() => {
-    const result: { p: Vec3[]; op: number }[] = [];
-    const size = 18; const step = 1.5;
-    for (let i = -size; i <= size; i += step) {
-      const major = Math.abs(i % (step * 4)) < 0.01;
-      result.push({ p: [[i, 0, -size], [i, 0, size]], op: major ? 0.14 : 0.055 });
-      result.push({ p: [[-size, 0, i], [size, 0, i]], op: major ? 0.14 : 0.055 });
-    }
-    return result;
-  }, []);
-
   return (
     <group position={[0, -3.8, 0]}>
-      {lines.map((l, i) => (
-        <Line key={i} points={l.p.map(p => new THREE.Vector3(...p))} color="#3a5060" lineWidth={0.3} transparent opacity={l.op} />
-      ))}
-      <Line points={[new THREE.Vector3(-8,0,0), new THREE.Vector3(8,0,0)]} color="#4A7FA5" lineWidth={0.6} transparent opacity={0.22} />
-      <Line points={[new THREE.Vector3(0,0,-8), new THREE.Vector3(0,0,8)]} color="#5A8F7B" lineWidth={0.6} transparent opacity={0.22} />
+      {/* Primary grid — subtle rgba(255,255,255,0.05) */}
+      <gridHelper args={[36, 36, '#2c2c2c', '#1e1e1e']} />
+      {/* Major axis lines */}
+      <Line points={[new THREE.Vector3(-9,0,0), new THREE.Vector3(9,0,0)]} color="#4A7FA5" lineWidth={0.5} transparent opacity={0.18} />
+      <Line points={[new THREE.Vector3(0,0,-9), new THREE.Vector3(0,0,9)]} color="#5A8F7B" lineWidth={0.5} transparent opacity={0.18} />
     </group>
   );
 }
 
-// ─────────────────────────────────────────────
-// PATH EDGE with flow dot
-// ─────────────────────────────────────────────
-function PathEdge({ start, end, isActive, color }: {
-  start: Vec3; end: Vec3; isActive: boolean; color: string;
-}) {
+// ─── Path edge ────────────────────────────────────────────────────────
+function PathEdge({ start, end, isActive, color }: { start: Vec3; end: Vec3; isActive: boolean; color: string; }) {
   const dotRef = useRef<THREE.Mesh>(null);
   const progress = useRef(Math.random());
-  const sv = new THREE.Vector3(...start);
-  const ev = new THREE.Vector3(...end);
-  const mid = sv.clone().lerp(ev, 0.5).add(new THREE.Vector3(0, 0.5, 0));
+  const sv  = useMemo(() => new THREE.Vector3(...start), [start]);
+  const ev  = useMemo(() => new THREE.Vector3(...end), [end]);
+  const mid = useMemo(() => sv.clone().lerp(ev, 0.5).add(new THREE.Vector3(0, 0.52, 0)), [sv, ev]);
 
   useFrame((_, delta) => {
     progress.current = (progress.current + delta * 0.22) % 1;
@@ -442,7 +379,7 @@ function PathEdge({ start, end, isActive, color }: {
 
   return (
     <group>
-      <Line points={[sv, ev]} color={isActive ? color : '#1e2d38'} lineWidth={isActive ? 1.0 : 0.4} transparent opacity={isActive ? 0.76 : 0.22} />
+      <Line points={[sv, mid, ev]} color={isActive ? color : '#1e2d38'} lineWidth={isActive ? 1.0 : 0.4} transparent opacity={isActive ? 0.76 : 0.22} />
       <mesh ref={dotRef} visible={false}>
         <sphereGeometry args={[0.04, 6, 6]} />
         <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.5} />
@@ -451,9 +388,7 @@ function PathEdge({ start, end, isActive, color }: {
   );
 }
 
-// ─────────────────────────────────────────────
-// SCENE
-// ─────────────────────────────────────────────
+// ─── Scene ────────────────────────────────────────────────────────────
 function Scene({ nodes, edges, onNodeClick, selectedNodeId }: {
   nodes: PathwayNode[]; edges: PathwayEdge[];
   onNodeClick: (n: PathwayNode) => void; selectedNodeId: string | null;
@@ -463,7 +398,7 @@ function Scene({ nodes, edges, onNodeClick, selectedNodeId }: {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const onStart = useCallback(() => { setUserInteracting(true); if (timer.current) clearTimeout(timer.current); }, []);
-  const onEnd = useCallback(() => { timer.current = setTimeout(() => setUserInteracting(false), 3500); }, []);
+  const onEnd   = useCallback(() => { timer.current = setTimeout(() => setUserInteracting(false), 3500); }, []);
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
 
   const connectionCounts = useMemo(() => {
@@ -478,9 +413,12 @@ function Scene({ nodes, edges, onNodeClick, selectedNodeId }: {
       const s = nodes.find(n => n.id === edge.start);
       const e = nodes.find(n => n.id === edge.end);
       if (!s || !e) return null;
-      const isActive = hoveredId === edge.start || hoveredId === edge.end || selectedNodeId === edge.start || selectedNodeId === edge.end;
-      return { key: `${edge.start}-${edge.end}`, s, e, isActive, color: getNodeColor(s) };
-    }).filter(Boolean) as any[],
+      return {
+        key: `${edge.start}-${edge.end}`, s, e,
+        isActive: hoveredId === edge.start || hoveredId === edge.end || selectedNodeId === edge.start || selectedNodeId === edge.end,
+        color: getNodeColor(s),
+      };
+    }).filter(Boolean) as { key: string; s: PathwayNode; e: PathwayNode; isActive: boolean; color: string }[],
     [edges, nodes, hoveredId, selectedNodeId]
   );
 
@@ -491,7 +429,7 @@ function Scene({ nodes, edges, onNodeClick, selectedNodeId }: {
       <directionalLight position={[-6, -4, -8]} intensity={0.1} color="#223344" />
       <pointLight position={[0, 8, 0]} intensity={0.2} color="#aac0d0" distance={30} />
       <hemisphereLight args={['#1a2a38', '#080c10', 0.3]} />
-      <fog attach="fog" args={['#0a1018', 24, 55]} />
+      <fog attach="fog" args={['#0d1014', 24, 55]} />
 
       <OrbitControls
         enableZoom autoRotate={!userInteracting && !hoveredId && !selectedNodeId}
@@ -508,7 +446,8 @@ function Scene({ nodes, edges, onNodeClick, selectedNodeId }: {
       {nodes.map(node => (
         <MolecularNode
           key={node.id} node={node}
-          isHovered={hoveredId === node.id} isSelected={selectedNodeId === node.id}
+          isHovered={hoveredId === node.id}
+          isSelected={selectedNodeId === node.id}
           connectionCount={connectionCounts[node.id] ?? 0}
           onClick={onNodeClick} onHover={setHoveredId}
         />
@@ -517,9 +456,7 @@ function Scene({ nodes, edges, onNodeClick, selectedNodeId }: {
   );
 }
 
-// ─────────────────────────────────────────────
-// DEFAULT EDGES
-// ─────────────────────────────────────────────
+// ─── Default edges ────────────────────────────────────────────────────
 const DEFAULT_EDGES: PathwayEdge[] = [
   { start: 'acetyl_coa', end: 'hmg_coa', relationshipType: 'converts', direction: 'forward' },
   { start: 'acetyl_coa', end: 'mevalonate', relationshipType: 'produces', direction: 'forward' },
@@ -530,9 +467,7 @@ const DEFAULT_EDGES: PathwayEdge[] = [
   { start: 'artemisinic_acid', end: 'artemisinin', relationshipType: 'produces', direction: 'forward' },
 ];
 
-// ─────────────────────────────────────────────
-// EXPORT
-// ─────────────────────────────────────────────
+// ─── Export ───────────────────────────────────────────────────────────
 interface ThreeSceneProps {
   nodes: PathwayNode[];
   onNodeClick: (node: PathwayNode) => void;
@@ -544,22 +479,30 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId }
   return (
     <div style={{
       width: '100%', height: '580px',
-      background: 'linear-gradient(180deg, #090e14 0%, #0b1219 50%, #0d1520 100%)',
+      // ── Google AI Studio aesthetic: #121212 base, #1e1e1e surface ──
+      background: 'linear-gradient(180deg, #111318 0%, #141619 50%, #16181c 100%)',
       borderRadius: '12px', overflow: 'hidden',
-      border: '1px solid rgba(58,80,96,0.35)', position: 'relative',
-      boxShadow: 'inset 0 1px 0 rgba(74,127,165,0.08)',
+      border: '1px solid rgba(255,255,255,0.06)',
+      position: 'relative',
+      boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
     }}>
 
       {/* Header */}
-      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', background: 'linear-gradient(to bottom, rgba(9,14,20,0.98), transparent)', borderBottom: '1px solid rgba(58,80,96,0.2)' }}>
+      <div style={{
+        position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10,
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '10px 16px',
+        background: 'linear-gradient(to bottom, rgba(17,19,24,0.98), transparent)',
+        borderBottom: '1px solid rgba(255,255,255,0.05)',
+      }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div style={{ display: 'flex', gap: '5px' }}>
-            {['rgba(74,127,165,0.5)','rgba(90,143,123,0.4)','rgba(122,110,154,0.4)'].map((c, i) => (
-              <div key={i} style={{ width: '4px', height: '4px', borderRadius: '50%', background: c }} />
-            ))}
+            <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: 'rgba(74,127,165,0.5)' }} />
+            <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: 'rgba(90,143,123,0.4)' }} />
+            <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: 'rgba(122,110,154,0.4)' }} />
           </div>
-          <span style={{ color: 'rgba(140,170,190,0.35)', fontSize: '10px', fontFamily: 'monospace', letterSpacing: '0.07em' }}>
-            METABOLIC · {nodes.length} ENTITIES · PROCEDURAL + STRUCTURAL RENDERING
+          <span style={{ color: 'rgba(255,255,255,0.22)', fontSize: '10px', fontFamily: 'monospace', letterSpacing: '0.07em' }}>
+            METABOLIC · {nodes.length} ENTITIES · PROCEDURAL + STRUCTURAL
           </span>
         </div>
         {edges && (
@@ -571,19 +514,17 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId }
 
       {/* pLDDT legend */}
       <div style={{ position: 'absolute', bottom: '14px', left: '14px', zIndex: 10 }}>
-        <p style={{ color: 'rgba(140,170,190,0.2)', fontSize: '8px', fontFamily: 'monospace', margin: '0 0 5px', letterSpacing: '0.07em' }}>CONFIDENCE</p>
-        {[{c:'#4A7FA5',l:'>90'},{c:'#5A8F7B',l:'70–90'},{c:'#8F8A6A',l:'50–70'},{c:'#8F6E5A',l:'<50'}].map(x => (
+        <p style={{ color: 'rgba(255,255,255,0.15)', fontSize: '8px', fontFamily: 'monospace', margin: '0 0 5px', letterSpacing: '0.07em' }}>CONFIDENCE</p>
+        {[{ c: '#4A7FA5', l: '>90' }, { c: '#5A8F7B', l: '70–90' }, { c: '#8F8A6A', l: '50–70' }, { c: '#8F6E5A', l: '<50' }].map(x => (
           <div key={x.l} style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '3px' }}>
             <div style={{ width: '18px', height: '2px', background: x.c, borderRadius: '1px', opacity: 0.7 }} />
-            <span style={{ color: 'rgba(140,170,190,0.22)', fontSize: '8px', fontFamily: 'monospace' }}>{x.l}</span>
+            <span style={{ color: 'rgba(255,255,255,0.18)', fontSize: '8px', fontFamily: 'monospace' }}>{x.l}</span>
           </div>
         ))}
       </div>
 
       <div style={{ position: 'absolute', bottom: '14px', right: '14px', zIndex: 10 }}>
-        <span style={{ color: 'rgba(140,170,190,0.15)', fontSize: '9px', fontFamily: 'monospace', letterSpacing: '0.04em' }}>
-          drag · scroll · click
-        </span>
+        <span style={{ color: 'rgba(255,255,255,0.12)', fontSize: '9px', fontFamily: 'monospace' }}>drag · scroll · click</span>
       </div>
 
       <Canvas
