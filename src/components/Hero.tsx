@@ -57,7 +57,7 @@ export default function Hero() {
           style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.4)' }}
         >
           <span className="w-1.5 h-1.5 rounded-full bg-white opacity-50" />
-          Synthetic Biology · Metabolic Engineering
+          Next-Gen Bio-Intelligent Architecture
         </motion.div>
 
         {/* Title */}
