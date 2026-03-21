@@ -23,10 +23,10 @@ export default function Hero() {
           <div className="w-6 h-6 rounded-md bg-white flex items-center justify-center">
             <Dna size={14} className="text-black" />
           </div>
-          <span className="text-white font-semibold text-sm tracking-tight">Nexus-Bio</span>
+          <span className="text-white font-semibold text-sm tracking-tight">SynPath Bio</span>
         </div>
         <div className="hidden md:flex items-center gap-6">
-          {[['Pathway', 'demo'], ['Literature', 'search'], ['Analyzer', 'analyzer'], ['Structure', 'structure'], ['Contact', 'contact']].map(([label, id]) => (
+          {[['Visualize', 'demo'], ['Search', 'search'], ['Analyze', 'analyzer'], ['Contact', 'contact']].map(([label, id]) => (
             <a key={id} href={`#${id}`}
               className="text-xs font-medium transition-colors"
               style={{ color: 'rgba(255,255,255,0.45)' }}
@@ -68,8 +68,8 @@ export default function Hero() {
           className="text-5xl md:text-7xl font-semibold text-white mb-6"
           style={{ letterSpacing: '-0.03em', lineHeight: 1.1 }}
         >
-          From Literature<br />
-          <span style={{ color: 'rgba(255,255,255,0.35)' }}>to Mechanistic Insight</span>
+          From literature<br />
+          <span style={{ color: 'rgba(255,255,255,0.35)' }}>to mechanistic insight.</span>
         </motion.h1>
 
         {/* Subtitle */}
@@ -80,7 +80,7 @@ export default function Hero() {
           className="text-base md:text-lg mb-4 max-w-xl mx-auto leading-relaxed"
           style={{ color: 'rgba(255,255,255,0.4)' }}
         >
-          Nexus-Bio extracts metabolic nodes, enzymatic reactions, and pathway logic from any research paper — rendered as an interactive 3D map in seconds.
+          SynPath Bio extracts metabolic nodes, enzymatic reactions, and pathway logic from any research paper — rendered as an interactive 3D map in seconds.
         </motion.p>
 
         {/* Secondary line */}
