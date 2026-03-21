@@ -441,8 +441,8 @@ export default function NodePanel({ node, onClose, allNodes, allEdges }: NodePan
               {/* ── TAB 2: STRUCTURE ── */}
               {activeTab === 'structure' && (
                 <>
-                  {isEnzyme && ENZYME_ALPHAFOLD[node.id] ? (
-                    // Enzyme → AlphaFold / RCSB rotating protein structure
+                  {ENZYME_ALPHAFOLD[node.id] ? (
+                    // Has AlphaFold data → rotating protein structure
                     <div>
                       <SectionLabel label="Protein Structure" />
                       <ProteinViewer
@@ -452,7 +452,7 @@ export default function NodePanel({ node, onClose, allNodes, allEdges }: NodePan
                       />
                     </div>
                   ) : pubchemCID ? (
-                    // Metabolite → PubChem small molecule 3D
+                    // Has PubChem CID → small molecule 3D
                     <div>
                       <SectionLabel label="3D Molecular Structure" />
                       <MoleculeViewer
@@ -466,13 +466,40 @@ export default function NodePanel({ node, onClose, allNodes, allEdges }: NodePan
                       </p>
                     </div>
                   ) : (
-                    // No structure available
-                    <div style={{ textAlign: 'center', padding: '32px 16px', color: 'rgba(255,255,255,0.2)' }}>
-                      <Atom size={24} style={{ margin: '0 auto 10px', opacity: 0.3 }} />
-                      <p style={{ fontSize: '13px', margin: '0 0 6px' }}>No 3D structure available</p>
-                      <p style={{ fontSize: '11px', fontFamily: 'monospace', margin: 0, color: 'rgba(255,255,255,0.15)' }}>
-                        Structure data not assigned for this node
+                    <div style={{ padding: '20px', borderRadius: '10px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
+                        <Atom size={18} style={{ color: 'rgba(255,255,255,0.2)', flexShrink: 0 }} />
+                        <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '13px', fontWeight: 500, margin: 0 }}>
+                          3D structure not available for this node
+                        </p>
+                      </div>
+                      <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '12px', lineHeight: 1.7, margin: '0 0 14px' }}>
+                        Nexus-Bio renders 3D structures for <strong style={{ color: 'rgba(255,255,255,0.5)' }}>molecular entities</strong> only — 
+                        such as metabolites, enzymes, and proteins. This node represents a 
+                        biological entity (e.g. a cell, tissue, organism, or physiological process) 
+                        that exists at a scale beyond molecular visualization.
                       </p>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.07em', margin: '0 0 4px' }}>
+                          For structural data, try:
+                        </p>
+                        {[
+                          { label: 'UniProt', desc: 'Protein sequences & structures', url: `https://www.uniprot.org/uniprotkb?query=${encodeURIComponent(node.label)}` },
+                          { label: 'PubChem', desc: 'Small molecule compounds', url: `https://pubchem.ncbi.nlm.nih.gov/#query=${encodeURIComponent(node.label)}` },
+                          { label: 'RCSB PDB', desc: 'Experimental 3D structures', url: `https://www.rcsb.org/search?request=${encodeURIComponent(JSON.stringify({ query: { type: 'terminal', service: 'full_text', parameters: { value: node.label } } }))}` },
+                        ].map(db => (
+                          <a key={db.label} href={db.url} target="_blank" rel="noopener noreferrer"
+                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', borderRadius: '8px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', textDecoration: 'none', transition: 'border-color 0.15s' }}
+                            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.15)'; }}
+                            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.06)'; }}>
+                            <div>
+                              <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '12px', fontWeight: 500, margin: '0 0 2px' }}>{db.label}</p>
+                              <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', margin: 0 }}>{db.desc}</p>
+                            </div>
+                            <ExternalLink size={12} style={{ color: 'rgba(255,255,255,0.2)', flexShrink: 0 }} />
+                          </a>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </>
