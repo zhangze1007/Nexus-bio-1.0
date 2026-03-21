@@ -1,6 +1,6 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Download, FileText, Hash, Link2 } from 'lucide-react';
+import { X, Download, FileText, Hash, Link2, ChevronDown, ChevronUp } from 'lucide-react';
 import { PathwayNode, PathwayEdge, NodeType, EdgeRelationshipType, SHOWCASE_PUBCHEM_CIDS } from '../types';
 import MoleculeViewer from './MoleculeViewer';
 
@@ -53,6 +53,7 @@ function Divider() {
 }
 
 export default function NodePanel({ node, onClose, allNodes, allEdges }: NodePanelProps) {
+  const [showConnections, setShowConnections] = useState(false);
   const connections = useMemo(() => {
     if (!node || !allEdges) return [];
     return allEdges.filter(e => e.start === node.id || e.end === node.id);
@@ -163,69 +164,112 @@ export default function NodePanel({ node, onClose, allNodes, allEdges }: NodePan
                 </p>
               </div>
 
-              {/* Evidence */}
-              {node.evidenceSnippet && (
+              {/* ── Traceability chain — Evidence + Source grouped ── */}
+              {(node.evidenceSnippet || node.citation) && (
                 <>
                   <Divider />
-                  <div>
-                    <SectionLabel label="Evidence from Literature" />
-                    <div style={{ padding: '12px', borderRadius: '10px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderLeft: '2px solid rgba(255,255,255,0.12)' }}>
-                      <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', lineHeight: 1.7, margin: 0, fontStyle: 'italic' }}>
-                        "{node.evidenceSnippet}"
-                      </p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <SectionLabel label="Evidence Trace" />
+                      <span style={{ color: 'rgba(255,255,255,0.15)', fontSize: '9px', fontFamily: 'monospace', marginBottom: '8px' }}>
+                        AI · grounded in source
+                      </span>
                     </div>
+
+                    {/* Evidence snippet — exact quote */}
+                    {node.evidenceSnippet && (
+                      <div style={{
+                        padding: '12px 14px',
+                        borderRadius: '10px',
+                        background: 'rgba(255,255,255,0.025)',
+                        border: '1px solid rgba(255,255,255,0.07)',
+                        borderLeft: '3px solid rgba(255,255,255,0.18)',
+                        position: 'relative',
+                      }}>
+                        {/* Quote mark decoration */}
+                        <span style={{
+                          position: 'absolute', top: '8px', left: '14px',
+                          color: 'rgba(255,255,255,0.12)', fontSize: '28px',
+                          fontFamily: 'Georgia, serif', lineHeight: 1, userSelect: 'none',
+                        }}>"</span>
+                        <p style={{
+                          color: 'rgba(255,255,255,0.55)', fontSize: '12px',
+                          lineHeight: 1.7, margin: '12px 0 0', fontStyle: 'italic',
+                          letterSpacing: '-0.005em',
+                        }}>
+                          {node.evidenceSnippet}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Citation — linked to source */}
+                    {node.citation && (
+                      <div style={{
+                        display: 'flex', alignItems: 'center', gap: '8px',
+                        padding: '8px 12px', borderRadius: '8px',
+                        background: 'rgba(255,255,255,0.02)',
+                        border: '1px solid rgba(255,255,255,0.06)',
+                      }}>
+                        <FileText size={11} style={{ color: 'rgba(255,255,255,0.2)', flexShrink: 0 }} />
+                        <p style={{ color: 'rgba(255,255,255,0.38)', fontSize: '11px', lineHeight: 1.5, margin: 0, fontFamily: 'monospace', letterSpacing: '0.01em' }}>
+                          {node.citation}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </>
               )}
 
-              <Divider />
-
-              {/* Source */}
-              <div>
-                <SectionLabel label="Source" />
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '12px', borderRadius: '10px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                  <FileText size={13} style={{ color: 'rgba(255,255,255,0.2)', marginTop: '1px', flexShrink: 0 }} />
-                  <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px', lineHeight: 1.6, margin: 0 }}>
-                    {node.citation}
-                  </p>
-                </div>
-              </div>
-
-              {/* Connections */}
+              {/* Connections — Progressive Disclosure */}
               {connections.length > 0 && allNodes && (
                 <>
                   <Divider />
                   <div>
-                    <SectionLabel label={`Connections (${connections.length})`} />
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                      {connections.map((edge, i) => {
-                        const isSource = edge.start === node.id;
-                        const otherId = isSource ? edge.end : edge.start;
-                        const otherNode = allNodes.find(n => n.id === otherId);
-                        const relType = edge.relationshipType || 'unknown';
-                        return (
-                          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', borderRadius: '8px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                            <Link2 size={11} style={{ color: 'rgba(255,255,255,0.2)', flexShrink: 0 }} />
-                            <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '10px', fontFamily: 'monospace' }}>
-                              {isSource ? '→' : '←'}
-                            </span>
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px', margin: '0 0 1px', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                {otherNode?.label || otherId}
-                              </p>
-                              <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', fontFamily: 'monospace', margin: 0 }}>
-                                {isSource ? `this ${EDGE_TYPE_LABELS[relType]} →` : `← ${EDGE_TYPE_LABELS[relType]} this`}
-                              </p>
-                            </div>
-                            {edge.confidenceScore !== undefined && (
-                              <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', fontFamily: 'monospace', flexShrink: 0 }}>
-                                {Math.round(edge.confidenceScore * 100)}%
+                    {/* Clickable header — collapsed by default */}
+                    <button
+                      onClick={() => setShowConnections(!showConnections)}
+                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', background: 'none', border: 'none', cursor: 'pointer', padding: '0 0 8px', marginBottom: '0' }}
+                    >
+                      <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                        Connections ({connections.length})
+                      </span>
+                      {showConnections
+                        ? <ChevronUp size={12} style={{ color: 'rgba(255,255,255,0.2)' }} />
+                        : <ChevronDown size={12} style={{ color: 'rgba(255,255,255,0.2)' }} />
+                      }
+                    </button>
+
+                    {showConnections && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '4px' }}>
+                        {connections.map((edge, i) => {
+                          const isSource = edge.start === node.id;
+                          const otherId = isSource ? edge.end : edge.start;
+                          const otherNode = allNodes.find(n => n.id === otherId);
+                          const relType = edge.relationshipType || 'unknown';
+                          return (
+                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', borderRadius: '8px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                              <Link2 size={11} style={{ color: 'rgba(255,255,255,0.2)', flexShrink: 0 }} />
+                              <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '10px', fontFamily: 'monospace' }}>
+                                {isSource ? '→' : '←'}
                               </span>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px', margin: '0 0 1px', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                  {otherNode?.label || otherId}
+                                </p>
+                                <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', fontFamily: 'monospace', margin: 0 }}>
+                                  {isSource ? `this ${EDGE_TYPE_LABELS[relType]} →` : `← ${EDGE_TYPE_LABELS[relType]} this`}
+                                </p>
+                              </div>
+                              {edge.confidenceScore !== undefined && (
+                                <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', fontFamily: 'monospace', flexShrink: 0 }}>
+                                  {Math.round(edge.confidenceScore * 100)}%
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 </>
               )}
