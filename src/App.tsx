@@ -6,7 +6,6 @@ import SemanticSearch from './components/SemanticSearch';
 import ContactFlow from './components/ContactFlow';
 import DevModePanel from './components/DevModePanel';
 import PaperAnalyzer from './components/PaperAnalyzer';
-import PDBExplorer from './components/PDBExplorer';
 import pathwayData from './data/pathwayData.json';
 import { PathwayNode, PathwayEdge } from './types';
 import { Dna } from 'lucide-react';
@@ -115,10 +114,7 @@ export default function App() {
         }, 600);
       }} />
 
-      {/* 04 — Structure */}
-      <PDBExplorer />
-
-      {/* 05 — Contact */}
+      {/* 04 — Contact */}
       <ContactFlow />
 
       <DevModePanel />
@@ -130,11 +126,11 @@ export default function App() {
             <div className="w-5 h-5 rounded bg-white flex items-center justify-center">
               <Dna size={12} className="text-black" />
             </div>
-            <span className="text-sm font-semibold text-white">Nexus-Bio</span>
+            <span className="text-sm font-semibold text-white">SynPath Bio</span>
           </div>
           <div className="flex items-center gap-4 flex-wrap justify-center">
             <p className="text-xs font-mono" style={{ color: 'rgba(255,255,255,0.2)' }}>
-              © {new Date().getFullYear()} Nexus-Bio. All rights reserved.
+              © {new Date().getFullYear()} SynPath Bio. All rights reserved.
             </p>
             <span style={{ color: 'rgba(255,255,255,0.1)' }}>·</span>
             <a href="/terms" className="text-xs font-mono transition-colors"
