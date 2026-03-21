@@ -50,6 +50,8 @@ Return ONLY this exact JSON, nothing else:
 
 Rules:
 - 4 to 7 nodes maximum
+- Extract ONLY molecular entities: metabolites, enzymes, genes, proteins, cofactors
+- Do NOT include cells, tissues, organisms, physiological processes, or anatomical structures as nodes (e.g. no "embryo", "endometrium", "cell", "tissue")
 - nodeType: metabolite, enzyme, gene, complex, cofactor, or unknown
 - relationshipType: catalyzes, produces, consumes, activates, inhibits, converts, transports, regulates, or unknown
 - IDs: lowercase letters and underscores only, no spaces
