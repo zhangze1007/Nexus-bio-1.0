@@ -6,7 +6,7 @@ import { PathwayNode, PathwayEdge, MolecularStructure } from '../types';
 
 type Vec3 = [number, number, number];
 
-// ─── Hash utilities ───────────────────────────────────────────────────
+// ─── Hash ─────────────────────────────────────────────────────────────
 function hash(str: string): number {
   let h = 2166136261;
   for (let i = 0; i < str.length; i++) {
@@ -15,335 +15,280 @@ function hash(str: string): number {
   }
   return h;
 }
-function hashFloat(str: string, index: number, min = 0, max = 1): number {
-  return min + ((hash(str + index) % 10000) / 10000) * (max - min);
+function hashFloat(str: string, idx: number, min = 0, max = 1) {
+  return min + ((hash(str + idx) % 10000) / 10000) * (max - min);
 }
-function hashInt(str: string, index: number, min: number, max: number): number {
-  return min + (hash(str + index) % (max - min + 1));
+function hashInt(str: string, idx: number, min: number, max: number) {
+  return min + (hash(str + idx) % (max - min + 1));
 }
 
-// ─── Pastel tone palette for pathway nodes ───────────────────────────
-// Matches image 2: soft, muted, scientific-grade pastels
-const SCIENTIFIC_PALETTE = [
-  '#A8C5DA', // pastel steel blue
-  '#A8D5B5', // pastel sage green
-  '#C5B8D5', // pastel lavender
-  '#D5C5A8', // pastel warm sand
-  '#A8C5C5', // pastel teal
-  '#C5D5A8', // pastel olive
-  '#D5A8B8', // pastel rose
-  '#B8D5C5', // pastel mint
+// ─── Pastel palette (STRICT — no blue/cyan/yellow) ────────────────────
+const PASTEL = [
+  '#C8D8E8', // soft periwinkle
+  '#C8E0D0', // sage mint
+  '#DDD0E8', // soft lavender
+  '#E8DCC8', // warm cream
+  '#C8DCDC', // muted aqua-grey
+  '#DCE8C8', // pale pistachio
+  '#E8C8D4', // blush rose
+  '#CCE0D8', // cool spearmint
 ];
 
-const NODE_CONFIDENCE: Record<string, number> = {
+const NODE_CONF: Record<string, number> = {
   acetyl_coa: 85, hmg_coa: 72, mevalonate: 68,
   fpp: 91, amorpha_4_11_diene: 88,
   artemisinic_acid: 76, artemisinin: 93,
 };
 
-// pLDDT confidence → pastel color
-function plddt2color(p: number): string {
-  if (p >= 90) return '#A8C5DA'; // pastel blue — very high
-  if (p >= 70) return '#A8D5B5'; // pastel green — confident
-  if (p >= 50) return '#D5C5A8'; // pastel sand — medium
-  return '#D5A8B8';              // pastel rose — low
+function conf2pastel(p: number): string {
+  if (p >= 90) return '#C8D8E8';  // periwinkle
+  if (p >= 70) return '#C8E0D0';  // sage
+  if (p >= 50) return '#E8DCC8';  // cream
+  return '#E8C8D4';               // blush
 }
 
-function getNodeColor(node: PathwayNode): string {
-  const c = NODE_CONFIDENCE[node.id];
-  if (c !== undefined) return plddt2color(c);
-  return SCIENTIFIC_PALETTE[hash(node.id) % SCIENTIFIC_PALETTE.length];
+function getColor(node: PathwayNode): string {
+  const c = NODE_CONF[node.id];
+  if (c !== undefined) return conf2pastel(c);
+  return PASTEL[hash(node.id) % PASTEL.length];
 }
-
-function getConfidence(node: PathwayNode): number {
+function getConf(node: PathwayNode): number {
   if (node.confidenceScore !== undefined) return node.confidenceScore;
-  const c = NODE_CONFIDENCE[node.id];
+  const c = NODE_CONF[node.id];
   return c !== undefined ? c / 100 : 0.75;
 }
-
-// ─── CPK element colors (muted scientific palette) ────────────────────
-const ELEMENT_COLOR: Record<string, string> = {
-  H: '#D6DEE7', C: '#627180', N: '#4A7FA5', O: '#8F6E5A',
-  P: '#8F8A6A', S: '#5A8F7B', F: '#7A8F6E', CL: '#6E8F7A',
-  BR: '#8F7A5A', I: '#7A6E9A', DEFAULT: '#8E9AA5',
-};
-const ELEMENT_RADIUS: Record<string, number> = {
-  H: 0.09, C: 0.17, N: 0.16, O: 0.15, P: 0.19,
-  S: 0.20, F: 0.14, CL: 0.16, BR: 0.17, I: 0.18, DEFAULT: 0.17,
-};
-
-function elemColor(e: string): string {
-  return ELEMENT_COLOR[e.toUpperCase()] ?? ELEMENT_COLOR.DEFAULT;
-}
-function elemRadius(e: string): number {
-  return ELEMENT_RADIUS[e.toUpperCase()] ?? ELEMENT_RADIUS.DEFAULT;
+function conf2color(p: number): string { // for tooltip bar
+  if (p >= 90) return '#C8D8E8';
+  if (p >= 70) return '#C8E0D0';
+  if (p >= 50) return '#E8DCC8';
+  return '#E8C8D4';
 }
 
-// ─── Normalize molecular structure to unit scale ──────────────────────
-function normalizeStructure(s: MolecularStructure) {
+// ─── Element colors for atom rendering ───────────────────────────────
+const ELEM_C: Record<string, string> = {
+  H:'#E8EEF4', C:'#8A9BAA', N:'#A8BED8', O:'#D8B8A8',
+  P:'#D8D4A8', S:'#B8D8C8', DEFAULT:'#B0BEC8',
+};
+const ELEM_R: Record<string, number> = {
+  H:0.09, C:0.17, N:0.16, O:0.15, P:0.19, S:0.20, DEFAULT:0.17,
+};
+const ec = (e: string) => ELEM_C[e.toUpperCase()] ?? ELEM_C.DEFAULT;
+const er = (e: string) => ELEM_R[e.toUpperCase()] ?? ELEM_R.DEFAULT;
+
+// ─── Normalize molecular structure ───────────────────────────────────
+function normalizeStruct(s: MolecularStructure) {
   if (!s.atoms?.length) return null;
   const vecs = s.atoms.map(a => new THREE.Vector3(...a.position));
-  const center = vecs.reduce((acc, v) => acc.add(v), new THREE.Vector3()).multiplyScalar(1 / vecs.length);
-  const shifted = vecs.map(v => v.clone().sub(center));
+  const ctr = vecs.reduce((acc, v) => acc.add(v), new THREE.Vector3()).multiplyScalar(1 / vecs.length);
+  const shifted = vecs.map(v => v.clone().sub(ctr));
   const maxD = Math.max(0.001, ...shifted.map(v => v.length()));
   const scale = 0.42 / maxD;
-  const atoms = s.atoms.map((atom, i) => ({
-    ...atom,
-    position: shifted[i].multiplyScalar(scale).toArray() as Vec3,
-  }));
-  return { atoms, bonds: s.bonds ?? [] };
-}
-
-// ─── Procedural glyph config ──────────────────────────────────────────
-type GlyphConfig = {
-  coreGeom: 'octahedron' | 'dodecahedron' | 'tetrahedron' | 'icosahedron' | 'sphere' | 'torus';
-  coreScale: number; ringCount: number; ringRadii: number[];
-  ringTilts: number[]; satelliteCount: number; satelliteRadius: number;
-  satelliteSize: number; spinSpeed: number; ringSpeeds: number[]; hasInnerCore: boolean;
-};
-
-function buildGlyphConfig(nodeId: string, cc: number): GlyphConfig {
-  const geoms: GlyphConfig['coreGeom'][] = ['octahedron','dodecahedron','tetrahedron','icosahedron','sphere','torus'];
-  const rc = hashInt(nodeId, 1, 1, 3);
   return {
-    coreGeom: geoms[hashInt(nodeId, 0, 0, geoms.length - 1)],
-    coreScale: 0.24 + cc * 0.045 + hashFloat(nodeId, 2, 0, 0.05),
-    ringCount: rc,
-    ringRadii: Array.from({ length: rc }, (_, i) => hashFloat(nodeId, 10 + i, 0.45, 0.85)),
-    ringTilts: Array.from({ length: rc }, (_, i) => hashFloat(nodeId, 20 + i, 0, Math.PI)),
-    satelliteCount: hashInt(nodeId, 3, 2, 5),
-    satelliteRadius: hashFloat(nodeId, 4, 0.55, 0.95),
-    satelliteSize: hashFloat(nodeId, 5, 0.04, 0.07),
-    spinSpeed: hashFloat(nodeId, 6, 0.06, 0.16),
-    ringSpeeds: Array.from({ length: rc }, (_, i) => hashFloat(nodeId, 30 + i, 0.12, 0.45) * (i % 2 === 0 ? 1 : -1)),
-    hasInnerCore: hash(nodeId) % 3 === 0,
+    atoms: s.atoms.map((a, i) => ({ ...a, position: shifted[i].multiplyScalar(scale).toArray() as Vec3 })),
+    bonds: s.bonds ?? [],
   };
 }
 
-function CoreGeometry({ geom, scale }: { geom: GlyphConfig['coreGeom']; scale: number }) {
-  switch (geom) {
-    case 'octahedron':   return <octahedronGeometry args={[scale, 0]} />;
-    case 'dodecahedron': return <dodecahedronGeometry args={[scale, 0]} />;
-    case 'tetrahedron':  return <tetrahedronGeometry args={[scale, 0]} />;
-    case 'icosahedron':  return <icosahedronGeometry args={[scale, 1]} />;
-    case 'torus':        return <torusGeometry args={[scale * 0.8, scale * 0.32, 8, 20]} />;
-    default:             return <sphereGeometry args={[scale, 14, 14]} />;
+// ─── Glyph config ─────────────────────────────────────────────────────
+type GCfg = {
+  geom: 'oct'|'dodec'|'tetra'|'icos'|'sph'|'tor';
+  scale: number; rings: number; rr: number[]; rt: number[];
+  sats: number; sr: number; ss: number; spin: number; rs: number[]; inner: boolean;
+};
+function glyphCfg(id: string, cc: number): GCfg {
+  const gs = ['oct','dodec','tetra','icos','sph','tor'] as GCfg['geom'][];
+  const rc = hashInt(id,1,1,3);
+  return {
+    geom: gs[hashInt(id,0,0,5)],
+    scale: 0.24 + cc*0.045 + hashFloat(id,2,0,0.05),
+    rings: rc,
+    rr: Array.from({length:rc},(_,i)=>hashFloat(id,10+i,0.45,0.85)),
+    rt: Array.from({length:rc},(_,i)=>hashFloat(id,20+i,0,Math.PI)),
+    sats: hashInt(id,3,2,5),
+    sr: hashFloat(id,4,0.55,0.95),
+    ss: hashFloat(id,5,0.04,0.07),
+    spin: hashFloat(id,6,0.06,0.14),
+    rs: Array.from({length:rc},(_,i)=>hashFloat(id,30+i,0.1,0.35)*(i%2?-1:1)),
+    inner: hash(id)%3===0,
+  };
+}
+
+function GeoComp({g,s}:{g:GCfg['geom'];s:number}) {
+  switch(g){
+    case 'oct':   return <octahedronGeometry args={[s,0]} />;
+    case 'dodec': return <dodecahedronGeometry args={[s,0]} />;
+    case 'tetra': return <tetrahedronGeometry args={[s,0]} />;
+    case 'icos':  return <icosahedronGeometry args={[s,1]} />;
+    case 'tor':   return <torusGeometry args={[s*0.8,s*0.32,8,20]} />;
+    default:      return <sphereGeometry args={[s,14,14]} />;
   }
 }
 
-// ─── Atom mesh ────────────────────────────────────────────────────────
-function AtomMesh({ position, element, scale = 1.0, isHovered, isSelected }: {
-  position: Vec3; element: string; scale?: number; isHovered: boolean; isSelected: boolean;
-}) {
+// ─── Lambert atom ─────────────────────────────────────────────────────
+// meshLambertMaterial = diffuse only, ZERO specular = ZERO flicker
+function AtomM({pos,elem,hov,sel}:{pos:Vec3;elem:string;hov:boolean;sel:boolean}) {
   return (
-    <mesh position={position}>
-      <sphereGeometry args={[elemRadius(element) * scale, 14, 14]} />
-      <meshStandardMaterial
-        color={isSelected ? '#f0f4f8' : elemColor(element)}
-        emissive={elemColor(element)}
-        emissiveIntensity={isSelected ? 0.16 : isHovered ? 0.09 : 0.04}
-        roughness={0.34} metalness={0.14}
-      />
+    <mesh position={pos}>
+      <sphereGeometry args={[er(elem),12,12]} />
+      <meshLambertMaterial color={sel?'#f0f4f8':ec(elem)} emissive={ec(elem)} emissiveIntensity={sel?0.12:hov?0.07:0.02} />
     </mesh>
   );
 }
 
-// ─── Bond mesh ────────────────────────────────────────────────────────
-function BondMesh({ start, end, color, visible = true }: {
-  start: Vec3; end: Vec3; color: string; visible?: boolean;
-}) {
-  const { mid, len, q } = useMemo(() => {
-    const s = new THREE.Vector3(...start);
-    const e = new THREE.Vector3(...end);
-    const dir = new THREE.Vector3().subVectors(e, s);
-    const len = dir.length();
-    const mid = s.clone().add(e).multiplyScalar(0.5);
-    const q = new THREE.Quaternion().setFromUnitVectors(
-      new THREE.Vector3(0, 1, 0), dir.normalize()
-    );
-    return { mid, len, q };
-  }, [start, end]);
-
-  if (!visible) return null;
+function BondM({s,e,c}:{s:Vec3;e:Vec3;c:string}) {
+  const {mid,len,q} = useMemo(()=>{
+    const sv=new THREE.Vector3(...s), ev=new THREE.Vector3(...e);
+    const dir=new THREE.Vector3().subVectors(ev,sv);
+    const len=dir.length();
+    return {mid:sv.clone().add(ev).multiplyScalar(0.5), len, q:new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0),dir.normalize())};
+  },[s,e]);
   return (
     <mesh position={mid} quaternion={q}>
-      <cylinderGeometry args={[0.025, 0.025, len, 10, 1]} />
-      <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.07} roughness={0.38} metalness={0.2} />
+      <cylinderGeometry args={[0.022,0.022,len,8,1]} />
+      <meshLambertMaterial color={c} emissive={c} emissiveIntensity={0.05} />
     </mesh>
   );
 }
 
-// ─── Molecular node ───────────────────────────────────────────────────
-function MolecularNode({ node, isHovered, isSelected, connectionCount, onClick, onHover }: {
-  node: PathwayNode; isHovered: boolean; isSelected: boolean;
-  connectionCount: number; onClick: (n: PathwayNode) => void; onHover: (id: string | null) => void;
+// ─── Molecular Node ───────────────────────────────────────────────────
+function MolNode({node,hov,sel,cc,onClick,onHov}:{
+  node:PathwayNode; hov:boolean; sel:boolean; cc:number;
+  onClick:(n:PathwayNode)=>void; onHov:(id:string|null)=>void;
 }) {
-  const groupRef = useRef<THREE.Group>(null);
-  const bodyRef  = useRef<THREE.Mesh>(null);
-  const glowRef  = useRef<THREE.Mesh>(null);
-  const ringRef  = useRef<THREE.Mesh>(null);
-  const orbitRef = useRef<THREE.Group>(null);
+  const grp=useRef<THREE.Group>(null);
+  const body=useRef<THREE.Mesh>(null);
+  const orb=useRef<THREE.Group>(null);
+  const ringMesh=useRef<THREE.Mesh>(null);
 
-  const color      = getNodeColor(node);
-  const confidence = getConfidence(node);
-  const label      = node.canonicalLabel?.trim() || node.label;
-  const normalized = useMemo(() => node.molecularStructure ? normalizeStructure(node.molecularStructure) : null, [node.molecularStructure]);
-  const cfg        = useMemo(() => buildGlyphConfig(node.id, connectionCount), [node.id, connectionCount]);
-  const targetScale = isSelected ? 1.34 : isHovered ? 1.14 : 1.0;
-  const bondColor  = useMemo(() => new THREE.Color(color).lerp(new THREE.Color('#dce5ee'), 0.22).getStyle(), [color]);
+  const color=getColor(node);
+  const conf=getConf(node);
+  const lbl=node.canonicalLabel?.trim()||node.label;
+  const norm=useMemo(()=>node.molecularStructure?normalizeStruct(node.molecularStructure):null,[node.molecularStructure]);
+  const cfg=useMemo(()=>glyphCfg(node.id,cc),[node.id,cc]);
+  const tgt=sel?1.32:hov?1.12:1.0;
+  const bndC=useMemo(()=>new THREE.Color(color).lerp(new THREE.Color('#e0e8f0'),0.2).getStyle(),[color]);
 
-  useEffect(() => () => { document.body.style.cursor = 'auto'; }, []);
+  useEffect(()=>()=>{document.body.style.cursor='auto';},[]);
 
-  useFrame((state, delta) => {
-    const t = state.clock.elapsedTime;
-    if (groupRef.current) {
-      const cs = groupRef.current.scale.x;
-      groupRef.current.scale.setScalar(cs + (targetScale - cs) * delta * 7);
-      groupRef.current.rotation.x = Math.sin(t * 0.06 + hash(node.id) * 0.001) * 0.04;
-      groupRef.current.rotation.y = Math.sin(t * 0.08 + hash(node.id) * 0.002) * 0.06;
+  useFrame((_s,dt)=>{
+    const t=_s.clock.elapsedTime;
+    if(grp.current){
+      const cs=grp.current.scale.x;
+      grp.current.scale.setScalar(cs+(tgt-cs)*dt*7);
+      // subtle breathing — no fast spin to prevent flicker
+      grp.current.rotation.y=Math.sin(t*0.05+hash(node.id)*0.001)*0.06;
     }
-    if (bodyRef.current) {
-      const mat = bodyRef.current.material as THREE.MeshStandardMaterial;
-      // Cap emissiveIntensity low to prevent white flicker
-      const targetEmi = isSelected ? 0.12 : isHovered ? 0.07 : 0.03;
-      mat.emissiveIntensity += (targetEmi - mat.emissiveIntensity) * delta * 4;
-      bodyRef.current.rotation.y += delta * cfg.spinSpeed;
-      bodyRef.current.rotation.x += delta * cfg.spinSpeed * 0.35;
+    if(body.current){
+      const mat=body.current.material as THREE.MeshLambertMaterial;
+      const tEmi=sel?0.18:hov?0.10:0.04;
+      mat.emissiveIntensity+=(tEmi-mat.emissiveIntensity)*dt*4;
+      body.current.rotation.y+=dt*cfg.spin;
     }
-    if (glowRef.current) {
-      const mat = glowRef.current.material as THREE.MeshStandardMaterial;
-      mat.opacity += ((isSelected ? 0.10 : isHovered ? 0.07 : 0.025) - mat.opacity) * delta * 4;
-    }
-    if (ringRef.current) {
-      ringRef.current.rotation.z += delta * 0.16;
-      const mat = ringRef.current.material as THREE.MeshStandardMaterial;
-      mat.opacity += ((isHovered || isSelected ? 0.44 : 0.14) - mat.opacity) * delta * 4;
-    }
-    if (orbitRef.current) {
-      orbitRef.current.rotation.y = t * 0.14 + cfg.spinSpeed * 3.2;
-      orbitRef.current.rotation.x = 0.24 + Math.sin(t * 0.42 + cfg.spinSpeed * 10) * 0.05;
+    if(orb.current) orb.current.rotation.y=t*0.12+cfg.spin*3;
+    if(ringMesh.current){
+      ringMesh.current.rotation.z+=dt*0.14;
+      const mat=ringMesh.current.material as THREE.MeshLambertMaterial;
+      const to=hov||sel?0.42:0.12;
+      mat.opacity+=(to-mat.opacity)*dt*4;
     }
   });
 
-  // Procedural fallback glyph
-  const fallbackGlyph = (
+  const fallback=(
     <>
-      {cfg.ringRadii.map((r, i) => (
-        <mesh key={`ring-${i}`} ref={i === 0 ? ringRef : undefined} rotation={[cfg.ringTilts[i] || 0, 0, i * 1.1]}>
-          <torusGeometry args={[r, 0.012, 6, 48]} />
-          <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.12} transparent opacity={0.16} roughness={0.54} metalness={0.20} depthWrite={false} />
+      {cfg.rr.map((r,i)=>(
+        <mesh key={`r${i}`} ref={i===0?ringMesh:undefined} rotation={[cfg.rt[i]||0,0,i*1.1]}>
+          <torusGeometry args={[r,0.011,6,44]} />
+          <meshLambertMaterial color={color} emissive={color} emissiveIntensity={0.08} transparent opacity={0.14} depthWrite={false} />
         </mesh>
       ))}
-      <group ref={orbitRef}>
-        {Array.from({ length: cfg.satelliteCount }).map((_, i) => {
-          const phi = Math.acos(1 - (2 * (i + 0.5)) / cfg.satelliteCount);
-          const theta = Math.PI * (1 + Math.sqrt(5)) * i;
+      <group ref={orb}>
+        {Array.from({length:cfg.sats}).map((_,i)=>{
+          const phi=Math.acos(1-(2*(i+0.5))/cfg.sats);
+          const theta=Math.PI*(1+Math.sqrt(5))*i;
           return (
-            <mesh key={`sat-${i}`} position={[
-              Math.sin(phi) * Math.cos(theta) * cfg.satelliteRadius,
-              Math.sin(phi) * Math.sin(theta) * cfg.satelliteRadius,
-              Math.cos(phi) * cfg.satelliteRadius,
-            ]}>
-              <sphereGeometry args={[cfg.satelliteSize, 8, 8]} />
-              <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.12} transparent opacity={0.36} roughness={0.44} metalness={0.18} />
+            <mesh key={`s${i}`} position={[Math.sin(phi)*Math.cos(theta)*cfg.sr, Math.sin(phi)*Math.sin(theta)*cfg.sr, Math.cos(phi)*cfg.sr]}>
+              <sphereGeometry args={[cfg.ss,7,7]} />
+              <meshLambertMaterial color={color} emissive={color} emissiveIntensity={0.08} transparent opacity={0.32} />
             </mesh>
           );
         })}
       </group>
-      {cfg.hasInnerCore && (
+      {cfg.inner&&(
         <mesh>
-          <octahedronGeometry args={[cfg.coreScale * 0.38, 0]} />
-          <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.08} roughness={0.5} metalness={0.2} transparent opacity={0.74} />
+          <octahedronGeometry args={[cfg.scale*0.38,0]} />
+          <meshLambertMaterial color={color} emissive={color} emissiveIntensity={0.12} transparent opacity={0.7} />
         </mesh>
       )}
-      <mesh ref={bodyRef}>
-        <CoreGeometry geom={cfg.coreGeom} scale={cfg.coreScale} />
-        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.03} roughness={0.65} metalness={0.25} />
+      <mesh ref={body}>
+        <GeoComp g={cfg.geom} s={cfg.scale} />
+        <meshLambertMaterial color={color} emissive={color} emissiveIntensity={0.04} />
       </mesh>
       <mesh>
-        <CoreGeometry geom={cfg.coreGeom} scale={cfg.coreScale * 1.04} />
-        <meshStandardMaterial color={color} transparent opacity={isHovered || isSelected ? 0.11 : 0.04} wireframe depthWrite={false} />
+        <GeoComp g={cfg.geom} s={cfg.scale*1.04} />
+        <meshLambertMaterial color={color} transparent opacity={hov||sel?0.10:0.03} wireframe />
       </mesh>
     </>
   );
 
-  // Real molecular structure glyph — uses atomIndex1/atomIndex2 per our types
-  const structureGlyph = normalized ? (
+  const structural=norm?(
     <>
-      <mesh ref={glowRef} position={[0, 0, -0.03]}>
-        <sphereGeometry args={[0.9, 22, 22]} />
-        <meshStandardMaterial color={color} transparent opacity={0.02} roughness={1} metalness={0} depthWrite={false} />
-      </mesh>
-      <mesh ref={ringRef} rotation={[Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>
-        <torusGeometry args={[0.78, 0.018, 8, 48]} />
-        <meshStandardMaterial color={color} emissive={color} transparent opacity={0.14} roughness={0.24} metalness={0.10} depthWrite={false} />
-      </mesh>
-      {/* Bonds — uses atomIndex1 / atomIndex2 */}
-      {normalized.bonds.map((bond, i) => {
-        const a = normalized.atoms[bond.atomIndex1];
-        const b = normalized.atoms[bond.atomIndex2];
-        if (!a || !b) return null;
-        return <BondMesh key={`bond-${i}`} start={a.position} end={b.position} color={bondColor} />;
+      {norm.bonds.map((b,i)=>{
+        const a=norm.atoms[b.atomIndex1], bv=norm.atoms[b.atomIndex2];
+        if(!a||!bv) return null;
+        return <BondM key={i} s={a.position} e={bv.position} c={bndC} />;
       })}
-      {/* Atoms */}
-      {normalized.atoms.map((atom, i) => (
-        <AtomMesh key={`atom-${i}`} position={atom.position} element={atom.element} isHovered={isHovered} isSelected={isSelected} />
-      ))}
+      {norm.atoms.map((a,i)=><AtomM key={i} pos={a.position} elem={a.element} hov={hov} sel={sel} />)}
     </>
-  ) : null;
+  ):null;
 
   return (
-    <group
-      ref={groupRef}
-      position={node.position}
-      onClick={e => { e.stopPropagation(); onClick(node); }}
-      onPointerOver={e => { e.stopPropagation(); onHover(node.id); document.body.style.cursor = 'pointer'; }}
-      onPointerOut={e => { e.stopPropagation(); onHover(null); document.body.style.cursor = 'auto'; }}
+    <group ref={grp} position={node.position}
+      onClick={e=>{e.stopPropagation();onClick(node);}}
+      onPointerOver={e=>{e.stopPropagation();onHov(node.id);document.body.style.cursor='pointer';}}
+      onPointerOut={e=>{e.stopPropagation();onHov(null);document.body.style.cursor='auto';}}
     >
-      {normalized ? structureGlyph : fallbackGlyph}
+      {norm?structural:fallback}
 
-      <Html position={[0, -(cfg.coreScale + 0.48), 0]} center style={{ pointerEvents: 'none', whiteSpace: 'nowrap' }}>
+      <Html position={[0,-(cfg.scale+0.48),0]} center style={{pointerEvents:'none',whiteSpace:'nowrap'}}>
         <div style={{
-          color: isHovered || isSelected ? '#d6e0e8' : '#627381',
-          fontSize: '10px', fontWeight: isSelected ? 600 : 400,
-          fontFamily: "'Inter', 'SF Mono', monospace",
-          letterSpacing: '0.025em', textShadow: '0 1px 8px rgba(0,0,0,1)',
-          padding: '2px 6px',
-          background: isSelected ? 'rgba(74,127,165,0.10)' : 'transparent',
-          borderRadius: '3px',
-          border: isSelected ? '1px solid rgba(74,127,165,0.22)' : '1px solid transparent',
-        }}>
-          {label}
-        </div>
+          color:hov||sel?'#d0dce8':'#6a7a88',
+          fontSize:'10px', fontWeight:sel?600:400,
+          fontFamily:"'Inter','SF Mono',monospace",
+          letterSpacing:'0.025em', textShadow:'0 1px 8px rgba(0,0,0,1)',
+          padding:'2px 6px',
+          background:sel?'rgba(200,216,232,0.08)':'transparent',
+          borderRadius:'3px',
+          border:sel?'1px solid rgba(200,216,232,0.18)':'1px solid transparent',
+        }}>{lbl}</div>
       </Html>
 
-      {isHovered && !isSelected && (
-        <Html distanceFactor={10} center style={{ pointerEvents: 'none', zIndex: 100 }}>
+      {hov&&!sel&&(
+        <Html distanceFactor={10} center style={{pointerEvents:'none',zIndex:100}}>
           <div style={{
-            background: 'rgba(8,12,18,0.97)', border: '1px solid rgba(74,127,165,0.18)',
-            borderRadius: '8px', padding: '10px 13px', width: '206px',
-            backdropFilter: 'blur(16px)', transform: 'translateY(-118%)',
-            fontFamily: "'Inter', sans-serif",
+            background:'rgba(8,12,18,0.97)', border:'1px solid rgba(200,216,232,0.14)',
+            borderRadius:'8px', padding:'10px 13px', width:'200px',
+            backdropFilter:'blur(16px)', transform:'translateY(-118%)',
+            fontFamily:"'Inter',sans-serif",
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
-              <span style={{ color: '#c8d8e4', fontSize: '12px', fontWeight: 600 }}>{label}</span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: plddt2color(confidence * 100) }} />
-                <span style={{ color: 'rgba(255,255,255,0.24)', fontSize: '9px', fontFamily: 'monospace' }}>
-                  conf {Math.round(confidence * 100)}
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'6px'}}>
+              <span style={{color:'#c8d8e4',fontSize:'12px',fontWeight:600}}>{lbl}</span>
+              <div style={{display:'flex',alignItems:'center',gap:'4px'}}>
+                <div style={{width:'5px',height:'5px',borderRadius:'50%',background:conf2color(conf*100)}} />
+                <span style={{color:'rgba(255,255,255,0.24)',fontSize:'9px',fontFamily:'monospace'}}>
+                  {Math.round(conf*100)}
                 </span>
               </div>
             </div>
-            {node.nodeType && node.nodeType !== 'unknown' && (
-              <span style={{ color: 'rgba(74,127,165,0.75)', fontSize: '9px', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: '6px' }}>
+            {node.nodeType&&node.nodeType!=='unknown'&&(
+              <span style={{color:'rgba(200,216,232,0.6)',fontSize:'9px',fontFamily:'monospace',textTransform:'uppercase',letterSpacing:'0.06em',display:'block',marginBottom:'5px'}}>
                 {node.nodeType}
               </span>
             )}
-            <p style={{ color: 'rgba(180,200,215,0.45)', fontSize: '11px', lineHeight: 1.6, margin: '0 0 8px' }}>
-              {node.summary?.slice(0, 85)}...
+            <p style={{color:'rgba(180,200,215,0.45)',fontSize:'11px',lineHeight:1.6,margin:'0 0 7px'}}>
+              {node.summary?.slice(0,85)}...
             </p>
-            <div style={{ width: '100%', height: '2px', background: 'rgba(255,255,255,0.05)', borderRadius: '1px' }}>
-              <div style={{ width: `${Math.round(confidence * 100)}%`, height: '100%', background: plddt2color(confidence * 100), borderRadius: '1px' }} />
+            <div style={{width:'100%',height:'2px',background:'rgba(255,255,255,0.05)',borderRadius:'1px'}}>
+              <div style={{width:`${Math.round(conf*100)}%`,height:'100%',background:conf2color(conf*100),borderRadius:'1px'}} />
             </div>
           </div>
         </Html>
@@ -352,197 +297,189 @@ function MolecularNode({ node, isHovered, isSelected, connectionCount, onClick, 
   );
 }
 
-// ─── Engineering grid — #121212 aesthetic, rgba(255,255,255,0.05) ──────
-function EngineeringGrid() {
+// ─── Grid ─────────────────────────────────────────────────────────────
+function Grid() {
   return (
-    <group position={[0, -3.8, 0]}>
-      {/* Primary grid — subtle rgba(255,255,255,0.05) */}
-      <gridHelper args={[36, 36, '#2c2c2c', '#1e1e1e']} />
-      {/* Major axis lines */}
-      <Line points={[new THREE.Vector3(-9,0,0), new THREE.Vector3(9,0,0)]} color="#4A7FA5" lineWidth={0.5} transparent opacity={0.18} />
-      <Line points={[new THREE.Vector3(0,0,-9), new THREE.Vector3(0,0,9)]} color="#5A8F7B" lineWidth={0.5} transparent opacity={0.18} />
+    <group position={[0,-3.8,0]}>
+      <gridHelper args={[36,36,'#2a2a2a','#1e1e1e']} />
+      <Line points={[new THREE.Vector3(-9,0,0),new THREE.Vector3(9,0,0)]} color="#A8C5DA" lineWidth={0.5} transparent opacity={0.15} />
+      <Line points={[new THREE.Vector3(0,0,-9),new THREE.Vector3(0,0,9)]} color="#C8E0D0" lineWidth={0.5} transparent opacity={0.15} />
     </group>
   );
 }
 
-// ─── Path edge ────────────────────────────────────────────────────────
-function PathEdge({ start, end, isActive, color }: { start: Vec3; end: Vec3; isActive: boolean; color: string; }) {
-  const dotRef = useRef<THREE.Mesh>(null);
-  const progress = useRef(Math.random());
-  const sv  = useMemo(() => new THREE.Vector3(...start), [start]);
-  const ev  = useMemo(() => new THREE.Vector3(...end), [end]);
-  const mid = useMemo(() => sv.clone().lerp(ev, 0.5).add(new THREE.Vector3(0, 0.52, 0)), [sv, ev]);
+// ─── Edge ─────────────────────────────────────────────────────────────
+function PathEdge({s,e,active,color}:{s:Vec3;e:Vec3;active:boolean;color:string}) {
+  const dot=useRef<THREE.Mesh>(null);
+  const prog=useRef(Math.random());
+  const sv=useMemo(()=>new THREE.Vector3(...s),[s]);
+  const ev=useMemo(()=>new THREE.Vector3(...e),[e]);
+  const mid=useMemo(()=>sv.clone().lerp(ev,0.5).add(new THREE.Vector3(0,0.5,0)),[sv,ev]);
 
-  useFrame((_, delta) => {
-    progress.current = (progress.current + delta * 0.22) % 1;
-    if (dotRef.current) {
-      const t = progress.current;
-      const pos = new THREE.Vector3()
-        .addScaledVector(sv, (1-t)*(1-t))
-        .addScaledVector(mid, 2*(1-t)*t)
-        .addScaledVector(ev, t*t);
-      dotRef.current.position.copy(pos);
-      dotRef.current.visible = isActive;
+  useFrame((_,dt)=>{
+    prog.current=(prog.current+dt*0.2)%1;
+    if(dot.current){
+      const t=prog.current;
+      dot.current.position.copy(
+        new THREE.Vector3()
+          .addScaledVector(sv,(1-t)*(1-t))
+          .addScaledVector(mid,2*(1-t)*t)
+          .addScaledVector(ev,t*t)
+      );
+      dot.current.visible=active;
     }
   });
 
   return (
     <group>
-      <Line points={[sv, mid, ev]} color={isActive ? color : '#1e2d38'} lineWidth={isActive ? 1.0 : 0.4} transparent opacity={isActive ? 0.76 : 0.22} />
-      <mesh ref={dotRef} visible={false}>
-        <sphereGeometry args={[0.04, 6, 6]} />
-        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.5} />
+      <Line points={[sv,mid,ev]} color={active?color:'#1e2d38'} lineWidth={active?1.0:0.35} transparent opacity={active?0.7:0.18} />
+      <mesh ref={dot} visible={false}>
+        <sphereGeometry args={[0.04,6,6]} />
+        <meshLambertMaterial color={color} emissive={color} emissiveIntensity={0.4} />
       </mesh>
     </group>
   );
 }
 
 // ─── Scene ────────────────────────────────────────────────────────────
-function Scene({ nodes, edges, onNodeClick, selectedNodeId }: {
-  nodes: PathwayNode[]; edges: PathwayEdge[];
-  onNodeClick: (n: PathwayNode) => void; selectedNodeId: string | null;
+function Scene({nodes,edges,onNodeClick,selectedNodeId}:{
+  nodes:PathwayNode[];edges:PathwayEdge[];
+  onNodeClick:(n:PathwayNode)=>void;selectedNodeId:string|null;
 }) {
-  const [hoveredId, setHoveredId] = useState<string | null>(null);
-  const [userInteracting, setUserInteracting] = useState(false);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [hovId,setHovId]=useState<string|null>(null);
+  const [interact,setInteract]=useState(false);
+  const timer=useRef<ReturnType<typeof setTimeout>|null>(null);
+  const onStart=useCallback(()=>{setInteract(true);if(timer.current)clearTimeout(timer.current);},[]);
+  const onEnd=useCallback(()=>{timer.current=setTimeout(()=>setInteract(false),3500);},[]);
+  useEffect(()=>()=>{if(timer.current)clearTimeout(timer.current);},[]);
 
-  const onStart = useCallback(() => { setUserInteracting(true); if (timer.current) clearTimeout(timer.current); }, []);
-  const onEnd   = useCallback(() => { timer.current = setTimeout(() => setUserInteracting(false), 3500); }, []);
-  useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
-
-  const connectionCounts = useMemo(() => {
-    const c: Record<string, number> = {};
-    nodes.forEach(n => { c[n.id] = 0; });
-    edges.forEach(e => { if (c[e.start] !== undefined) c[e.start]++; if (c[e.end] !== undefined) c[e.end]++; });
+  const cc=useMemo(()=>{
+    const c:Record<string,number>={};
+    nodes.forEach(n=>{c[n.id]=0;});
+    edges.forEach(e=>{if(c[e.start]!==undefined)c[e.start]++;if(c[e.end]!==undefined)c[e.end]++;});
     return c;
-  }, [nodes, edges]);
+  },[nodes,edges]);
 
-  const edgeData = useMemo(() =>
-    edges.map(edge => {
-      const s = nodes.find(n => n.id === edge.start);
-      const e = nodes.find(n => n.id === edge.end);
-      if (!s || !e) return null;
-      return {
-        key: `${edge.start}-${edge.end}`, s, e,
-        isActive: hoveredId === edge.start || hoveredId === edge.end || selectedNodeId === edge.start || selectedNodeId === edge.end,
-        color: getNodeColor(s),
-      };
-    }).filter(Boolean) as { key: string; s: PathwayNode; e: PathwayNode; isActive: boolean; color: string }[],
-    [edges, nodes, hoveredId, selectedNodeId]
-  );
+  const ed=useMemo(()=>edges.map(edge=>{
+    const s=nodes.find(n=>n.id===edge.start);
+    const e=nodes.find(n=>n.id===edge.end);
+    if(!s||!e) return null;
+    return {key:`${edge.start}-${edge.end}`,s,e,
+      active:hovId===edge.start||hovId===edge.end||selectedNodeId===edge.start||selectedNodeId===edge.end,
+      color:getColor(s)};
+  }).filter(Boolean) as {key:string;s:PathwayNode;e:PathwayNode;active:boolean;color:string}[],
+    [edges,nodes,hovId,selectedNodeId]);
 
   return (
     <>
-      <ambientLight intensity={0.18} color="#c8d8e8" />
-      <directionalLight position={[8, 12, 6]} intensity={0.5} color="#ddeeff" />
-      <directionalLight position={[-6, -4, -8]} intensity={0.08} color="#223344" />
-      <pointLight position={[0, 8, 0]} intensity={0.15} color="#aac0d0" distance={30} />
-      <hemisphereLight args={['#1a2a38', '#080c10', 0.2]} />
-      <fog attach="fog" args={['#0d1014', 24, 55]} />
+      {/* Pure ambient — NO directional lights = NO specular = NO flicker */}
+      <ambientLight intensity={1.2} color="#d8e4ee" />
+      <hemisphereLight args={['#c8d8e8','#1a2230',0.6]} />
+      <fog attach="fog" args={['#0d1014',24,55]} />
 
-      <OrbitControls
-        enableZoom autoRotate={!userInteracting && !hoveredId && !selectedNodeId}
+      <OrbitControls enableZoom autoRotate={!interact&&!hovId&&!selectedNodeId}
         autoRotateSpeed={0.15} zoomSpeed={0.5} minDistance={5} maxDistance={26}
-        enablePan={false} onStart={onStart} onEnd={onEnd}
-      />
+        enablePan={false} onStart={onStart} onEnd={onEnd} />
 
-      <EngineeringGrid />
+      <Grid />
 
-      {edgeData.map(ed => (
-        <PathEdge key={ed.key} start={ed.s.position} end={ed.e.position} isActive={ed.isActive} color={ed.color} />
-      ))}
+      {ed.map(e=><PathEdge key={e.key} s={e.s.position} e={e.e.position} active={e.active} color={e.color} />)}
 
-      {nodes.map(node => (
-        <MolecularNode
-          key={node.id} node={node}
-          isHovered={hoveredId === node.id}
-          isSelected={selectedNodeId === node.id}
-          connectionCount={connectionCounts[node.id] ?? 0}
-          onClick={onNodeClick} onHover={setHoveredId}
-        />
+      {nodes.map(n=>(
+        <MolNode key={n.id} node={n} hov={hovId===n.id} sel={selectedNodeId===n.id}
+          cc={cc[n.id]??0} onClick={onNodeClick} onHov={setHovId} />
       ))}
     </>
   );
 }
 
-// ─── Default edges ────────────────────────────────────────────────────
-const DEFAULT_EDGES: PathwayEdge[] = [
-  { start: 'acetyl_coa', end: 'hmg_coa', relationshipType: 'converts', direction: 'forward' },
-  { start: 'acetyl_coa', end: 'mevalonate', relationshipType: 'produces', direction: 'forward' },
-  { start: 'hmg_coa', end: 'mevalonate', relationshipType: 'converts', direction: 'forward' },
-  { start: 'mevalonate', end: 'fpp', relationshipType: 'produces', direction: 'forward' },
-  { start: 'fpp', end: 'amorpha_4_11_diene', relationshipType: 'catalyzes', direction: 'forward' },
-  { start: 'amorpha_4_11_diene', end: 'artemisinic_acid', relationshipType: 'converts', direction: 'forward' },
-  { start: 'artemisinic_acid', end: 'artemisinin', relationshipType: 'produces', direction: 'forward' },
+// ─── Defaults ─────────────────────────────────────────────────────────
+const DEF_EDGES: PathwayEdge[] = [
+  {start:'acetyl_coa',end:'hmg_coa',relationshipType:'converts',direction:'forward'},
+  {start:'acetyl_coa',end:'mevalonate',relationshipType:'produces',direction:'forward'},
+  {start:'hmg_coa',end:'mevalonate',relationshipType:'converts',direction:'forward'},
+  {start:'mevalonate',end:'fpp',relationshipType:'produces',direction:'forward'},
+  {start:'fpp',end:'amorpha_4_11_diene',relationshipType:'catalyzes',direction:'forward'},
+  {start:'amorpha_4_11_diene',end:'artemisinic_acid',relationshipType:'converts',direction:'forward'},
+  {start:'artemisinic_acid',end:'artemisinin',relationshipType:'produces',direction:'forward'},
 ];
 
-// ─── Export ───────────────────────────────────────────────────────────
-interface ThreeSceneProps {
-  nodes: PathwayNode[];
-  onNodeClick: (node: PathwayNode) => void;
-  edges?: PathwayEdge[];
-  selectedNodeId?: string | null;
+interface Props {
+  nodes:PathwayNode[];
+  onNodeClick:(node:PathwayNode)=>void;
+  edges?:PathwayEdge[];
+  selectedNodeId?:string|null;
 }
 
-export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId }: ThreeSceneProps) {
+export default function ThreeScene({nodes,onNodeClick,edges,selectedNodeId}:Props) {
   return (
     <div style={{
-      width: '100%', height: '580px',
-      // ── Google AI Studio aesthetic: #121212 base, #1e1e1e surface ──
-      background: 'linear-gradient(180deg, #111318 0%, #141619 50%, #16181c 100%)',
-      borderRadius: '12px', overflow: 'hidden',
-      border: '1px solid rgba(255,255,255,0.06)',
-      position: 'relative',
-      boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
+      width:'100%', height:'580px',
+      background:'linear-gradient(180deg,#111318 0%,#141619 50%,#16181c 100%)',
+      borderRadius:'12px', overflow:'hidden',
+      border:'1px solid rgba(255,255,255,0.06)',
+      position:'relative',
+      boxShadow:'inset 0 1px 0 rgba(255,255,255,0.04)',
     }}>
-
-      {/* Header */}
       <div style={{
-        position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10,
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '10px 16px',
-        background: 'linear-gradient(to bottom, rgba(17,19,24,0.98), transparent)',
-        borderBottom: '1px solid rgba(255,255,255,0.05)',
+        position:'absolute',top:0,left:0,right:0,zIndex:10,
+        display:'flex',alignItems:'center',justifyContent:'space-between',
+        padding:'10px 16px',
+        background:'linear-gradient(to bottom,rgba(17,19,24,0.98),transparent)',
+        borderBottom:'1px solid rgba(255,255,255,0.05)',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{ display: 'flex', gap: '5px' }}>
-            <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: 'rgba(74,127,165,0.5)' }} />
-            <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: 'rgba(90,143,123,0.4)' }} />
-            <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: 'rgba(122,110,154,0.4)' }} />
+        <div style={{display:'flex',alignItems:'center',gap:'10px'}}>
+          <div style={{display:'flex',gap:'5px'}}>
+            <div style={{width:'4px',height:'4px',borderRadius:'50%',background:'rgba(200,216,232,0.4)'}} />
+            <div style={{width:'4px',height:'4px',borderRadius:'50%',background:'rgba(200,224,208,0.35)'}} />
+            <div style={{width:'4px',height:'4px',borderRadius:'50%',background:'rgba(221,208,232,0.35)'}} />
           </div>
-          <span style={{ color: 'rgba(255,255,255,0.22)', fontSize: '10px', fontFamily: 'monospace', letterSpacing: '0.07em' }}>
-            METABOLIC · {nodes.length} ENTITIES · PROCEDURAL + STRUCTURAL
+          <span style={{color:'rgba(255,255,255,0.22)',fontSize:'10px',fontFamily:'monospace',letterSpacing:'0.07em'}}>
+            METABOLIC · {nodes.length} ENTITIES · PROCEDURAL RECONSTRUCTION
           </span>
         </div>
-        {edges && (
-          <span style={{ color: 'rgba(74,127,165,0.55)', fontSize: '9px', fontFamily: 'monospace', padding: '2px 7px', border: '1px solid rgba(74,127,165,0.15)', borderRadius: '3px', letterSpacing: '0.05em' }}>
+        {edges&&(
+          <span style={{color:'rgba(200,216,232,0.5)',fontSize:'9px',fontFamily:'monospace',padding:'2px 7px',border:'1px solid rgba(200,216,232,0.15)',borderRadius:'3px',letterSpacing:'0.05em'}}>
             AI GENERATED
           </span>
         )}
       </div>
 
-      {/* pLDDT legend */}
-      <div style={{ position: 'absolute', bottom: '14px', left: '14px', zIndex: 10 }}>
-        <p style={{ color: 'rgba(255,255,255,0.15)', fontSize: '8px', fontFamily: 'monospace', margin: '0 0 5px', letterSpacing: '0.07em' }}>CONFIDENCE</p>
-        {[{ c: '#4A7FA5', l: '>90' }, { c: '#5A8F7B', l: '70–90' }, { c: '#8F8A6A', l: '50–70' }, { c: '#8F6E5A', l: '<50' }].map(x => (
-          <div key={x.l} style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '3px' }}>
-            <div style={{ width: '18px', height: '2px', background: x.c, borderRadius: '1px', opacity: 0.7 }} />
-            <span style={{ color: 'rgba(255,255,255,0.18)', fontSize: '8px', fontFamily: 'monospace' }}>{x.l}</span>
+      {/* Pastel pLDDT legend */}
+      <div style={{position:'absolute',bottom:'14px',left:'14px',zIndex:10}}>
+        <p style={{color:'rgba(255,255,255,0.15)',fontSize:'8px',fontFamily:'monospace',margin:'0 0 5px',letterSpacing:'0.07em'}}>CONFIDENCE</p>
+        {[
+          {c:'#C8D8E8',l:'>90',d:'Very high'},
+          {c:'#C8E0D0',l:'70–90',d:'Confident'},
+          {c:'#E8DCC8',l:'50–70',d:'Medium'},
+          {c:'#E8C8D4',l:'<50',d:'Low'},
+        ].map(x=>(
+          <div key={x.l} style={{display:'flex',alignItems:'center',gap:'6px',marginBottom:'3px'}}>
+            <div style={{width:'18px',height:'3px',background:x.c,borderRadius:'1.5px',opacity:0.85}} />
+            <span style={{color:'rgba(255,255,255,0.18)',fontSize:'8px',fontFamily:'monospace'}}>{x.l}</span>
           </div>
         ))}
       </div>
 
-      <div style={{ position: 'absolute', bottom: '14px', right: '14px', zIndex: 10 }}>
-        <span style={{ color: 'rgba(255,255,255,0.12)', fontSize: '9px', fontFamily: 'monospace' }}>drag · scroll · click</span>
+      <div style={{position:'absolute',bottom:'14px',right:'14px',zIndex:10}}>
+        <span style={{color:'rgba(255,255,255,0.12)',fontSize:'9px',fontFamily:'monospace'}}>drag · scroll · click</span>
       </div>
 
       <Canvas
-        camera={{ position: [0, 3, 13], fov: 46 }}
-        gl={{ antialias: true, powerPreference: 'high-performance', alpha: false, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 0.7 }}
-        dpr={[1, 2]} performance={{ min: 0.5 }}
-        style={{ background: 'transparent' }}
+        camera={{position:[0,3,13],fov:46}}
+        gl={{
+          antialias:true,
+          powerPreference:'high-performance',
+          alpha:false,
+          // LinearToneMapping = no ACES blowout, pastel colors stay pastel
+          toneMapping:THREE.LinearToneMapping,
+          toneMappingExposure:1.0,
+        }}
+        dpr={[1,2]}
+        performance={{min:0.5}}
+        style={{background:'transparent'}}
       >
-        <Scene nodes={nodes} edges={edges ?? DEFAULT_EDGES} onNodeClick={onNodeClick} selectedNodeId={selectedNodeId ?? null} />
+        <Scene nodes={nodes} edges={edges??DEF_EDGES} onNodeClick={onNodeClick} selectedNodeId={selectedNodeId??null} />
       </Canvas>
     </div>
   );
