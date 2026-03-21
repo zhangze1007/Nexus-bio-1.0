@@ -22,24 +22,31 @@ function hashInt(str: string, index: number, min: number, max: number): number {
   return min + (hash(str + index) % (max - min + 1));
 }
 
-// ─── Color system ─────────────────────────────────────────────────────
+// ─── Pastel tone palette for pathway nodes ───────────────────────────
+// Matches image 2: soft, muted, scientific-grade pastels
+const SCIENTIFIC_PALETTE = [
+  '#A8C5DA', // pastel steel blue
+  '#A8D5B5', // pastel sage green
+  '#C5B8D5', // pastel lavender
+  '#D5C5A8', // pastel warm sand
+  '#A8C5C5', // pastel teal
+  '#C5D5A8', // pastel olive
+  '#D5A8B8', // pastel rose
+  '#B8D5C5', // pastel mint
+];
+
 const NODE_CONFIDENCE: Record<string, number> = {
   acetyl_coa: 85, hmg_coa: 72, mevalonate: 68,
   fpp: 91, amorpha_4_11_diene: 88,
   artemisinic_acid: 76, artemisinin: 93,
 };
 
-const SCIENTIFIC_PALETTE = [
-  '#4A7FA5','#5A8F7B','#7A6E9A',
-  '#8F7A5A','#5A7A8F','#6E8F7A',
-  '#8F6E7A','#7A8F6E',
-];
-
+// pLDDT confidence → pastel color
 function plddt2color(p: number): string {
-  if (p >= 90) return '#4A7FA5';
-  if (p >= 70) return '#5A8F7B';
-  if (p >= 50) return '#8F8A6A';
-  return '#8F6E5A';
+  if (p >= 90) return '#A8C5DA'; // pastel blue — very high
+  if (p >= 70) return '#A8D5B5'; // pastel green — confident
+  if (p >= 50) return '#D5C5A8'; // pastel sand — medium
+  return '#D5A8B8';              // pastel rose — low
 }
 
 function getNodeColor(node: PathwayNode): string {
@@ -197,7 +204,9 @@ function MolecularNode({ node, isHovered, isSelected, connectionCount, onClick, 
     }
     if (bodyRef.current) {
       const mat = bodyRef.current.material as THREE.MeshStandardMaterial;
-      mat.emissiveIntensity += ((isSelected ? 0.18 : isHovered ? 0.10 : 0.04) - mat.emissiveIntensity) * delta * 5;
+      // Cap emissiveIntensity low to prevent white flicker
+      const targetEmi = isSelected ? 0.12 : isHovered ? 0.07 : 0.03;
+      mat.emissiveIntensity += (targetEmi - mat.emissiveIntensity) * delta * 4;
       bodyRef.current.rotation.y += delta * cfg.spinSpeed;
       bodyRef.current.rotation.x += delta * cfg.spinSpeed * 0.35;
     }
@@ -244,12 +253,12 @@ function MolecularNode({ node, isHovered, isSelected, connectionCount, onClick, 
       {cfg.hasInnerCore && (
         <mesh>
           <octahedronGeometry args={[cfg.coreScale * 0.38, 0]} />
-          <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.22} roughness={0.24} metalness={0.44} transparent opacity={0.74} />
+          <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.08} roughness={0.5} metalness={0.2} transparent opacity={0.74} />
         </mesh>
       )}
       <mesh ref={bodyRef}>
         <CoreGeometry geom={cfg.coreGeom} scale={cfg.coreScale} />
-        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.05} roughness={0.42} metalness={0.56} />
+        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.03} roughness={0.65} metalness={0.25} />
       </mesh>
       <mesh>
         <CoreGeometry geom={cfg.coreGeom} scale={cfg.coreScale * 1.04} />
@@ -424,11 +433,11 @@ function Scene({ nodes, edges, onNodeClick, selectedNodeId }: {
 
   return (
     <>
-      <ambientLight intensity={0.12} color="#b0c8d8" />
-      <directionalLight position={[8, 12, 6]} intensity={0.7} color="#ddeeff" />
-      <directionalLight position={[-6, -4, -8]} intensity={0.1} color="#223344" />
-      <pointLight position={[0, 8, 0]} intensity={0.2} color="#aac0d0" distance={30} />
-      <hemisphereLight args={['#1a2a38', '#080c10', 0.3]} />
+      <ambientLight intensity={0.18} color="#c8d8e8" />
+      <directionalLight position={[8, 12, 6]} intensity={0.5} color="#ddeeff" />
+      <directionalLight position={[-6, -4, -8]} intensity={0.08} color="#223344" />
+      <pointLight position={[0, 8, 0]} intensity={0.15} color="#aac0d0" distance={30} />
+      <hemisphereLight args={['#1a2a38', '#080c10', 0.2]} />
       <fog attach="fog" args={['#0d1014', 24, 55]} />
 
       <OrbitControls
@@ -529,7 +538,7 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId }
 
       <Canvas
         camera={{ position: [0, 3, 13], fov: 46 }}
-        gl={{ antialias: true, powerPreference: 'high-performance', alpha: false, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 0.85 }}
+        gl={{ antialias: true, powerPreference: 'high-performance', alpha: false, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 0.7 }}
         dpr={[1, 2]} performance={{ min: 0.5 }}
         style={{ background: 'transparent' }}
       >
