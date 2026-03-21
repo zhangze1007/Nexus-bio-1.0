@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Download, FileText, Hash, Link2 } from 'lucide-react';
-import { PathwayNode, PathwayEdge, NodeType, EdgeRelationshipType } from '../types';
+import { PathwayNode, PathwayEdge, NodeType, EdgeRelationshipType, SHOWCASE_PUBCHEM_CIDS } from '../types';
 import MoleculeViewer from './MoleculeViewer';
 
 interface NodePanelProps {
@@ -12,33 +12,23 @@ interface NodePanelProps {
 }
 
 const NODE_TYPE_LABELS: Record<NodeType, string> = {
-  metabolite: 'Metabolite',
-  enzyme: 'Enzyme',
-  gene: 'Gene',
-  complex: 'Protein Complex',
-  cofactor: 'Cofactor',
-  unknown: 'Unknown',
+  metabolite: 'Metabolite', enzyme: 'Enzyme', gene: 'Gene',
+  complex: 'Protein Complex', cofactor: 'Cofactor', unknown: 'Unknown',
 };
 
 const EDGE_TYPE_LABELS: Record<EdgeRelationshipType, string> = {
-  catalyzes: 'catalyzes',
-  produces: 'produces',
-  consumes: 'consumes',
-  activates: 'activates',
-  inhibits: 'inhibits',
-  converts: 'converts',
-  transports: 'transports',
-  regulates: 'regulates',
-  unknown: 'connects to',
+  catalyzes: 'catalyzes', produces: 'produces', consumes: 'consumes',
+  activates: 'activates', inhibits: 'inhibits', converts: 'converts',
+  transports: 'transports', regulates: 'regulates', unknown: 'connects to',
 };
 
 function ConfidenceBar({ score }: { score: number }) {
   const pct = Math.round(score * 100);
-  const color = score >= 0.8 ? '#65CBF3' : score >= 0.6 ? '#FFDB13' : '#FF7D45';
+  const color = score >= 0.8 ? '#5A8F7B' : score >= 0.6 ? '#8F8A6A' : '#8F6E5A';
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-        <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '10px', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+        <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
           AI Confidence
         </span>
         <span style={{ color, fontSize: '10px', fontFamily: 'monospace', fontWeight: 700 }}>{pct}%</span>
@@ -70,47 +60,40 @@ export default function NodePanel({ node, onClose, allNodes, allEdges }: NodePan
 
   const handleDownload = () => {
     if (!node) return;
-    const blob = new Blob([JSON.stringify(node, null, 2)], { type: 'application/json;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
+    const url = URL.createObjectURL(new Blob([JSON.stringify(node, null, 2)], { type: 'application/json' }));
     const a = document.createElement('a');
-    a.href = url;
-    a.download = `${node.id}_node.json`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
+    a.href = url; a.download = `${node.id}_node.json`;
+    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
   };
+
+  // Resolve pubchem CID — from node data or showcase lookup
+  const pubchemCID = node?.pubchemCID ?? (node?.id ? SHOWCASE_PUBCHEM_CIDS[node.id] : undefined);
 
   return (
     <AnimatePresence>
       {node && (
         <>
-          {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             onClick={onClose}
             style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)', zIndex: 40 }}
           />
 
-          {/* Panel */}
           <motion.div
-            initial={{ x: '100%', opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: '100%', opacity: 0 }}
+            initial={{ x: '100%', opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: '100%', opacity: 0 }}
             transition={{ type: 'spring', damping: 28, stiffness: 220 }}
             style={{
-              position: 'fixed', top: 0, right: 0, height: '100%',
-              width: '100%', maxWidth: '420px', zIndex: 50,
-              display: 'flex', flexDirection: 'column',
-              background: 'linear-gradient(180deg, #0f0f0f 0%, #0b0b0b 100%)',
-              borderLeft: '1px solid rgba(255,255,255,0.08)',
+              position: 'fixed', top: 0, right: 0, height: '100%', width: '100%', maxWidth: '420px',
+              zIndex: 50, display: 'flex', flexDirection: 'column',
+              background: 'linear-gradient(180deg, #111318 0%, #0f1114 100%)',
+              borderLeft: '1px solid rgba(255,255,255,0.07)',
               fontFamily: "'Inter', -apple-system, sans-serif",
             }}
           >
             {/* Header */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
-                <div style={{ width: '10px', height: '10px', borderRadius: '50%', flexShrink: 0, background: node.color, boxShadow: `0 0 8px ${node.color}60` }} />
+                <div style={{ width: '10px', height: '10px', borderRadius: '50%', flexShrink: 0, background: node.color, boxShadow: `0 0 8px ${node.color}50` }} />
                 <div style={{ minWidth: 0 }}>
                   <h2 style={{ color: '#ffffff', fontSize: '14px', fontWeight: 600, margin: 0, letterSpacing: '-0.01em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {node.label}
@@ -133,7 +116,7 @@ export default function NodePanel({ node, onClose, allNodes, allEdges }: NodePan
             {/* Scrollable content */}
             <div style={{ flex: 1, overflowY: 'auto', padding: '20px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
 
-              {/* ID + Node type */}
+              {/* ID + Node Type */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '3px 8px', borderRadius: '6px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
                   <Hash size={10} style={{ color: 'rgba(255,255,255,0.2)' }} />
@@ -151,22 +134,26 @@ export default function NodePanel({ node, onClose, allNodes, allEdges }: NodePan
               {/* Confidence */}
               {node.confidenceScore !== undefined && <ConfidenceBar score={node.confidenceScore} />}
 
-              <Divider />
-
-              {/* Molecular structure viewer */}
-              {(node.molecule3dUrl || node.molecularStructure || node.smiles) && (
+              {/* ── 3D Molecular Structure ── */}
+              {pubchemCID && (
                 <>
-                  <div>
-                    <SectionLabel label="Molecular Structure" />
-                    <MoleculeViewer
-                      title={node.canonicalLabel || node.label}
-                      smiles={node.smiles}
-                      molecule3dUrl={node.molecule3dUrl}
-                    />
-                  </div>
                   <Divider />
+                  <div>
+                    <SectionLabel label="3D Molecular Structure" />
+                    <MoleculeViewer
+                      nodeId={node.id}
+                      pubchemCID={pubchemCID}
+                      label={node.canonicalLabel || node.label}
+                      height={220}
+                    />
+                    <p style={{ color: 'rgba(255,255,255,0.12)', fontSize: '9px', fontFamily: 'monospace', marginTop: '6px', marginBottom: 0 }}>
+                      3D conformer · CPK coloring · Source: PubChem
+                    </p>
+                  </div>
                 </>
               )}
+
+              <Divider />
 
               {/* Biological Role */}
               <div>
@@ -182,7 +169,7 @@ export default function NodePanel({ node, onClose, allNodes, allEdges }: NodePan
                   <Divider />
                   <div>
                     <SectionLabel label="Evidence from Literature" />
-                    <div style={{ padding: '12px', borderRadius: '10px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderLeft: '2px solid rgba(255,255,255,0.15)' }}>
+                    <div style={{ padding: '12px', borderRadius: '10px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderLeft: '2px solid rgba(255,255,255,0.12)' }}>
                       <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', lineHeight: 1.7, margin: 0, fontStyle: 'italic' }}>
                         "{node.evidenceSnippet}"
                       </p>
@@ -193,7 +180,7 @@ export default function NodePanel({ node, onClose, allNodes, allEdges }: NodePan
 
               <Divider />
 
-              {/* Citation */}
+              {/* Source */}
               <div>
                 <SectionLabel label="Source" />
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '12px', borderRadius: '10px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
@@ -244,12 +231,21 @@ export default function NodePanel({ node, onClose, allNodes, allEdges }: NodePan
               )}
 
               {/* External IDs */}
-              {(node.ecNumber || node.chebiId || node.uniprotId) && (
+              {(node.ecNumber || node.chebiId || node.uniprotId || pubchemCID) && (
                 <>
                   <Divider />
                   <div>
                     <SectionLabel label="External Identifiers" />
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      {pubchemCID && (
+                        <div style={{ display: 'flex', gap: '10px' }}>
+                          <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '11px', fontFamily: 'monospace', width: '64px', flexShrink: 0 }}>PubChem</span>
+                          <a href={`https://pubchem.ncbi.nlm.nih.gov/compound/${pubchemCID}`} target="_blank" rel="noopener noreferrer"
+                            style={{ color: '#4A7FA5', fontSize: '11px', fontFamily: 'monospace', textDecoration: 'none' }}>
+                            CID {pubchemCID}
+                          </a>
+                        </div>
+                      )}
                       {node.ecNumber && (
                         <div style={{ display: 'flex', gap: '10px' }}>
                           <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '11px', fontFamily: 'monospace', width: '64px', flexShrink: 0 }}>EC</span>
@@ -266,7 +262,7 @@ export default function NodePanel({ node, onClose, allNodes, allEdges }: NodePan
                         <div style={{ display: 'flex', gap: '10px' }}>
                           <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '11px', fontFamily: 'monospace', width: '64px', flexShrink: 0 }}>UniProt</span>
                           <a href={`https://www.uniprot.org/uniprotkb/${node.uniprotId}`} target="_blank" rel="noopener noreferrer"
-                            style={{ color: '#6495ED', fontSize: '11px', fontFamily: 'monospace', textDecoration: 'none' }}>
+                            style={{ color: '#4A7FA5', fontSize: '11px', fontFamily: 'monospace', textDecoration: 'none' }}>
                             {node.uniprotId}
                           </a>
                         </div>
@@ -282,9 +278,9 @@ export default function NodePanel({ node, onClose, allNodes, allEdges }: NodePan
               <div>
                 <SectionLabel label="Export" />
                 <button onClick={handleDownload}
-                  style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px 16px', borderRadius: '10px', background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.45)', border: '1px solid rgba(255,255,255,0.07)', fontSize: '12px', cursor: 'pointer', transition: 'all 0.15s', fontFamily: 'inherit' }}
+                  style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px 16px', borderRadius: '10px', background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.4)', border: '1px solid rgba(255,255,255,0.07)', fontSize: '12px', cursor: 'pointer', transition: 'all 0.15s', fontFamily: 'inherit' }}
                   onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)'; (e.currentTarget as HTMLElement).style.color = '#ffffff'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'; (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.45)'; }}>
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'; (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.4)'; }}>
                   <Download size={13} />
                   Download node JSON
                 </button>
