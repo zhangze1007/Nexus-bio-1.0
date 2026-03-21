@@ -25,9 +25,9 @@ function load3Dmol(): Promise<void> {
 }
 
 async function fetchPubChemSDF(cid: number): Promise<string> {
-  const url = `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${cid}/SDF?record_type=3d`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`PubChem ${res.status}`);
+  // Use backend proxy to avoid CORS
+  const res = await fetch(`/api/pubchem?cid=${cid}`);
+  if (!res.ok) throw new Error(`PubChem proxy ${res.status}`);
   const text = await res.text();
   if (!text || text.length < 50) throw new Error('Empty SDF');
   return text;
@@ -55,7 +55,7 @@ export default function MoleculeViewer({ nodeId, pubchemCID, molBlock, label, he
         if (cancelled) return;
 
         const viewer = window.$3Dmol.createViewer(containerRef.current, {
-          backgroundColor: '0x121212',
+          backgroundColor: 'white',
           antialias: true,
         });
         viewerRef.current = viewer;
@@ -87,26 +87,26 @@ export default function MoleculeViewer({ nodeId, pubchemCID, molBlock, label, he
   if (status === 'empty') return null;
 
   return (
-    <div style={{ width: '100%', height: `${height}px`, position: 'relative', borderRadius: '10px', overflow: 'hidden', background: '#0f1215', border: '1px solid rgba(255,255,255,0.06)' }}>
-      <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
+    <div style={{ width: '100%', height: `${height}px`, position: 'relative', borderRadius: '10px', overflow: 'hidden', background: '#ffffff', border: '1px solid rgba(0,0,0,0.08)', boxShadow: '0 2px 12px rgba(0,0,0,0.12)' }}>
+      <div ref={containerRef} style={{ width: '100%', height: '100%', background: '#ffffff' }} />
 
       {status === 'loading' && (
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', background: '#0f1215', pointerEvents: 'none' }}>
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', background: '#ffffff', pointerEvents: 'none' }}>
           <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-          <Loader2 size={16} style={{ color: 'rgba(74,127,165,0.6)', animation: 'spin 1s linear infinite' }} />
-          <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', fontFamily: 'monospace' }}>
+          <Loader2 size={16} style={{ color: '#6495ED', animation: 'spin 1s linear infinite' }} />
+          <span style={{ color: 'rgba(0,0,0,0.35)', fontSize: '10px', fontFamily: 'monospace' }}>
             Loading 3D conformer · PubChem
           </span>
         </div>
       )}
 
       {status === 'error' && (
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', background: '#0f1215' }}>
-          <AlertCircle size={14} style={{ color: 'rgba(180,80,80,0.5)' }} />
-          <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '11px' }}>3D structure unavailable</span>
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', background: '#ffffff' }}>
+          <AlertCircle size={14} style={{ color: 'rgba(180,60,60,0.5)' }} />
+          <span style={{ color: 'rgba(0,0,0,0.35)', fontSize: '11px' }}>3D structure unavailable</span>
           {pubchemCID && (
             <a href={`https://pubchem.ncbi.nlm.nih.gov/compound/${pubchemCID}`} target="_blank" rel="noopener noreferrer"
-              style={{ color: 'rgba(74,127,165,0.55)', fontSize: '10px', fontFamily: 'monospace', display: 'flex', alignItems: 'center', gap: '3px' }}>
+              style={{ color: '#6495ED', fontSize: '10px', fontFamily: 'monospace', display: 'flex', alignItems: 'center', gap: '3px' }}>
               PubChem CID:{pubchemCID} <ExternalLink size={8} />
             </a>
           )}
@@ -116,20 +116,20 @@ export default function MoleculeViewer({ nodeId, pubchemCID, molBlock, label, he
       {status === 'ready' && (
         <>
           <div style={{ position: 'absolute', top: '8px', left: '10px', pointerEvents: 'none' }}>
-            <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '9px', fontFamily: 'monospace' }}>{label || nodeId}</span>
+            <span style={{ color: 'rgba(0,0,0,0.3)', fontSize: '9px', fontFamily: 'monospace' }}>{label || nodeId}</span>
           </div>
           {pubchemCID && (
             <div style={{ position: 'absolute', top: '8px', right: '10px' }}>
               <a href={`https://pubchem.ncbi.nlm.nih.gov/compound/${pubchemCID}`} target="_blank" rel="noopener noreferrer"
-                style={{ color: 'rgba(255,255,255,0.12)', fontSize: '9px', fontFamily: 'monospace', display: 'flex', alignItems: 'center', gap: '3px', textDecoration: 'none' }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.45)'; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.12)'; }}>
+                style={{ color: 'rgba(0,0,0,0.25)', fontSize: '9px', fontFamily: 'monospace', display: 'flex', alignItems: 'center', gap: '3px', textDecoration: 'none' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(0,0,0,0.7)'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(0,0,0,0.25)'; }}>
                 CID:{pubchemCID} <ExternalLink size={8} />
               </a>
             </div>
           )}
           <div style={{ position: 'absolute', bottom: '8px', right: '10px', pointerEvents: 'none' }}>
-            <span style={{ color: 'rgba(255,255,255,0.1)', fontSize: '9px', fontFamily: 'monospace' }}>3D · CPK</span>
+            <span style={{ color: 'rgba(0,0,0,0.2)', fontSize: '9px', fontFamily: 'monospace' }}>3D · CPK</span>
           </div>
         </>
       )}
