@@ -8,7 +8,7 @@ import ThermodynamicsPanel from './ThermodynamicsPanel';
 
 // ── AlphaFold IDs for showcase enzymes ────────────────────────────────
 const ENZYME_ALPHAFOLD: Record<string, { afId: string; pdbId: string; name: string }> = {
-  amorpha_4_11_diene: { afId: 'Q9MB61', pdbId: '2ON5', name: 'Amorphadiene Synthase' },
+  amorpha_4_11_diene: { afId: 'Q9AR04', pdbId: '2ON5', name: 'Amorphadiene Synthase' },
   artemisinic_acid:   { afId: 'Q8LKJ5', pdbId: '3CLA', name: 'CYP71AV1' },
   fpp:                { afId: 'P08836', pdbId: '1FPS', name: 'FPP Synthase' },
   hmg_coa:            { afId: 'P12683', pdbId: '1DQA', name: 'HMGR' },
@@ -52,8 +52,11 @@ function ProteinViewer({ pdbId, alphafoldId, label }: { pdbId: string; alphafold
 
         if (useAF && alphafoldId) {
           const res = await fetch(`/api/alphafold?id=${alphafoldId}`);
-          if (!res.ok) throw new Error('AlphaFold unavailable');
+          console.log('[ProteinViewer] AlphaFold response:', res.status, alphafoldId);
+          if (!res.ok) throw new Error(`AlphaFold ${res.status}`);
           const pdb = await res.text();
+          console.log('[ProteinViewer] PDB data length:', pdb.length);
+          if (!pdb || pdb.length < 100) throw new Error('Empty AlphaFold response');
           viewer.addModel(pdb, 'pdb');
           viewer.setStyle({}, {
             cartoon: {
@@ -80,8 +83,31 @@ function ProteinViewer({ pdbId, alphafoldId, label }: { pdbId: string; alphafold
         viewer.spin('y', 0.5);
         viewer.render();
         if (!cancelled) setStatus('ready');
-      } catch {
-        if (!cancelled) setStatus('error');
+      } catch (err) {
+        // AlphaFold failed — fallback to RCSB PDB
+        if (useAF && !cancelled) {
+          try {
+            if (viewerRef.current) { try { viewerRef.current.clear(); } catch {} }
+            containerRef.current!.innerHTML = '';
+            const viewer2 = window.$3Dmol.createViewer(containerRef.current!, {
+              backgroundColor: 'white', antialias: true,
+            });
+            viewerRef.current = viewer2;
+            await new Promise<void>((res, rej) => {
+              window.$3Dmol.download(`pdb:${pdbId}`, viewer2, {}, () => res());
+              setTimeout(() => rej(), 15000);
+            });
+            viewer2.setStyle({}, { cartoon: { color: 'spectrum', thickness: 0.5 } });
+            viewer2.zoomTo();
+            viewer2.spin('y', 0.5);
+            viewer2.render();
+            if (!cancelled) setStatus('ready');
+          } catch {
+            if (!cancelled) setStatus('error');
+          }
+        } else {
+          if (!cancelled) setStatus('error');
+        }
       }
     }
     init();
