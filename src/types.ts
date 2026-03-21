@@ -8,7 +8,7 @@ export interface PathwayNode {
   citation: string;
   color: string;
 
-  // Scientific credibility layer (optional)
+  // Scientific credibility layer
   canonicalLabel?: string;
   nodeType?: NodeType;
   evidenceSnippet?: string;
@@ -17,11 +17,12 @@ export interface PathwayNode {
   chebiId?: string;
   uniprotId?: string;
 
-  // Molecular structure (optional — enables real atom/bond rendering)
-  molecularStructure?: MolecularStructure;
-  smiles?: string;
-  molecule3dUrl?: string;
-  renderStyle?: RenderStyle;
+  // Molecular structure data
+  pubchemCID?: number;          // PubChem Compound ID for 3D SDF fetch
+  smiles?: string;              // SMILES string (metadata)
+  molecularFormula?: string;
+  molecularWeight?: number;
+  molecularStructure?: MolecularStructure; // inline atom/bond data if available
 }
 
 export type NodeType =
@@ -31,6 +32,28 @@ export type NodeType =
   | 'complex'
   | 'cofactor'
   | 'unknown';
+
+export interface MolecularStructure {
+  atoms: MolAtom[];
+  bonds: MolBond[];
+  optimized?: boolean;          // true if geometry-optimized conformer
+}
+
+export interface MolAtom {
+  element: string;
+  position: [number, number, number];
+  charge?: number;
+}
+
+export interface MolBond {
+  atomIndex1: number;
+  atomIndex2: number;
+  order: 1 | 2 | 3;            // bond order
+}
+
+export type RenderStyle = 'stick' | 'sphere' | 'cartoon' | 'surface';
+
+// ── Edge types ──────────────────────────────────────────────────────
 
 export interface PathwayEdge {
   start: string;
@@ -52,29 +75,6 @@ export type EdgeRelationshipType =
   | 'regulates'
   | 'unknown';
 
-// ── Molecular structure types ─────────────────────────────────────────
-
-export interface MolecularAtom {
-  element: string;
-  position: [number, number, number];
-  charge?: number;
-  label?: string;
-}
-
-export interface MolecularBond {
-  from: number;  // index into atoms array
-  to: number;
-  order?: 1 | 2 | 3;  // single, double, triple
-}
-
-export interface MolecularStructure {
-  atoms: MolecularAtom[];
-  bonds?: MolecularBond[];
-  optimized?: boolean;  // true = energy-minimized 3D conformer
-}
-
-export type RenderStyle = 'glyph' | 'molecular' | 'auto';
-
 // ── Search types ──────────────────────────────────────────────────────
 
 export interface SearchResult {
@@ -85,7 +85,7 @@ export interface SearchResult {
   keywords: string[];
 }
 
-// ── Generated pathway ─────────────────────────────────────────────────
+// ── Pathway generation output ─────────────────────────────────────────
 
 export interface GeneratedPathway {
   nodes: PathwayNode[];
@@ -117,3 +117,16 @@ export function isValidEdge(edge: unknown): edge is PathwayEdge {
 export function sanitizeNodeId(id: string): string {
   return id.toLowerCase().replace(/[^a-z0-9_]/g, '_').slice(0, 64);
 }
+
+// ── Artemisinin showcase molecule PubChem CIDs ────────────────────────
+// Used by MoleculeViewer to fetch 3D conformers from PubChem
+
+export const SHOWCASE_PUBCHEM_CIDS: Record<string, number> = {
+  acetyl_coa:          444493,
+  hmg_coa:             439400,
+  mevalonate:          441,
+  fpp:                 445483,
+  amorpha_4_11_diene:  11230765,
+  artemisinic_acid:    5362031,
+  artemisinin:         68827,
+};
