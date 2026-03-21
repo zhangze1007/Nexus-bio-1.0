@@ -18,20 +18,22 @@ const COLORS = [
 type InputMode = 'text' | 'pdf' | 'image' | 'camera' | 'web';
 type AnalysisState = 'idle' | 'analyzing' | 'success' | 'error';
 
-// ── Simplified, reliable prompt ──
-const buildPrompt = (content: string) => `Extract metabolic pathway information from this research text.
+// ── Evidence-first prompt — traceability is mandatory ──
+const buildPrompt = (content: string) => `You are a computational biology expert. Extract a metabolic pathway from the research text below.
 
-Return ONLY this exact JSON structure, nothing else:
+CRITICAL RULE: Every node's evidenceSnippet must be an EXACT QUOTE copied verbatim from the text below. Do not paraphrase. If you cannot find a direct quote, use the closest sentence from the text.
+
+Return ONLY this exact JSON, nothing else:
 
 {
   "nodes": [
     {
-      "id": "lowercase_id",
-      "label": "Short Name",
+      "id": "lowercase_underscore_id",
+      "label": "Standard biochemical name (1-4 words)",
       "nodeType": "metabolite",
-      "summary": "One sentence about this compound's role.",
-      "evidenceSnippet": "Brief quote from source text.",
-      "citation": "Author et al., Year",
+      "summary": "One sentence explaining the role of this entity in the pathway.",
+      "evidenceSnippet": "EXACT QUOTE from the source text that mentions this entity.",
+      "citation": "Author et al., Year, Journal",
       "confidenceScore": 0.85
     }
   ],
@@ -40,20 +42,22 @@ Return ONLY this exact JSON structure, nothing else:
       "start": "source_id",
       "end": "target_id",
       "relationshipType": "converts",
-      "direction": "forward"
+      "direction": "forward",
+      "evidence": "EXACT QUOTE from source text describing this reaction."
     }
   ]
 }
 
 Rules:
-- 4 to 7 nodes only
+- 4 to 7 nodes maximum
 - nodeType: metabolite, enzyme, gene, complex, cofactor, or unknown
 - relationshipType: catalyzes, produces, consumes, activates, inhibits, converts, transports, regulates, or unknown
-- IDs: lowercase letters and underscores only
-- No markdown, no explanation, no extra text
+- IDs: lowercase letters and underscores only, no spaces
+- evidenceSnippet: must be copied word-for-word from the source text
+- No markdown, no explanation, no text outside the JSON
 
-Text:
-${content.slice(0, 2000)}`;
+Source text:
+${content.slice(0, 2500)}`;
 
 // ── Multi-strategy JSON parser ──
 function extractJSON(raw: string): unknown | null {
@@ -150,21 +154,27 @@ function classifyError(message: string): string {
     return 'Rate limit reached. Please wait 1–2 minutes and try again.';
   }
   if (msg.includes('503') || msg.includes('overloaded') || msg.includes('unavailable')) {
-    return 'AI model is temporarily overloaded. Please try again in a moment.';
+    return 'AI model is temporarily overloaded. Please retry in a moment.';
   }
   if (msg.includes('timeout')) {
-    return 'Request timed out. Please try with a shorter text input.';
+    return 'Request timed out. Try pasting just the abstract or methods section — shorter text works better.';
   }
-  if (msg.includes('malformed json') || msg.includes('valid json') || msg.includes('no_valid_json')) {
-    return 'The AI returned an invalid pathway format. Please retry.';
+  if (msg.includes('no_valid_json') || msg.includes('malformed') || msg.includes('parse')) {
+    return 'Could not extract a valid pathway structure. Try pasting just the abstract or methods section of the paper.';
   }
-  if (msg.includes('no usable content') || msg.includes('empty response')) {
+  if (msg.includes('no usable content') || msg.includes('empty')) {
     return 'The AI returned an empty response. Please retry.';
   }
   if (msg.includes('no pathway nodes')) {
-    return 'No pathway nodes were found in this text. Try a more specific methods section.';
+    return 'No metabolic pathway found in this text. Make sure the text describes a biochemical process or reaction.';
   }
-  return message || 'AI returned an unexpected error. Please retry.';
+  if (msg.includes('400')) {
+    return 'Input too short or malformed. Please paste at least a full paragraph of research text.';
+  }
+  if (msg.includes('500')) {
+    return 'Internal server error. Please try again in a moment.';
+  }
+  return message || 'Something went wrong. Please try again.';
 }
 
 export default function PaperAnalyzer({ onPathwayGenerated }: PaperAnalyzerProps) {
