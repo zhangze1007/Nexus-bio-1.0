@@ -1,7 +1,17 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { Loader2, ExternalLink, AlertCircle } from 'lucide-react';
 
-// 3Dmol is loaded via CDN (same approach as PDBExplorer)
 declare global { interface Window { $3Dmol: any; } }
+
+type ViewerStatus = 'idle' | 'loading' | 'ready' | 'empty' | 'error';
+
+interface MoleculeViewerProps {
+  nodeId?: string;
+  pubchemCID?: number;
+  molBlock?: string;
+  label?: string;
+  height?: number;
+}
 
 function load3Dmol(): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -14,149 +24,115 @@ function load3Dmol(): Promise<void> {
   });
 }
 
-type ViewerStatus = 'idle' | 'loading' | 'ready' | 'empty' | 'error';
-
-interface MoleculeViewerProps {
-  title?: string;
-  smiles?: string;
-  molecule3dUrl?: string;
-  molBlock?: string;
+async function fetchPubChemSDF(cid: number): Promise<string> {
+  const url = `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${cid}/SDF?record_type=3d`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`PubChem ${res.status}`);
+  const text = await res.text();
+  if (!text || text.length < 50) throw new Error('Empty SDF');
+  return text;
 }
 
-function inferFormat(source?: string): string {
-  if (!source) return 'sdf';
-  const lower = source.toLowerCase();
-  if (lower.endsWith('.pdb')) return 'pdb';
-  if (lower.endsWith('.mol2')) return 'mol2';
-  if (lower.endsWith('.mol')) return 'mol';
-  if (lower.endsWith('.xyz')) return 'xyz';
-  return 'sdf';
-}
-
-export default function MoleculeViewer({ title, smiles, molecule3dUrl, molBlock }: MoleculeViewerProps) {
-  const containerRef = useRef<HTMLDivElement | null>(null);
+export default function MoleculeViewer({ nodeId, pubchemCID, molBlock, label, height = 240 }: MoleculeViewerProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<any>(null);
   const [status, setStatus] = useState<ViewerStatus>('idle');
-  const [error, setError] = useState<string | null>(null);
-
-  const sourceLabel = useMemo(() => {
-    if (molecule3dUrl) return molecule3dUrl.split('/').pop() || molecule3dUrl;
-    if (molBlock) return 'Inline molecular block';
-    if (smiles) return 'SMILES metadata only';
-    return null;
-  }, [molecule3dUrl, molBlock, smiles]);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
-    let mounted = true;
+    if (!pubchemCID && !molBlock) { setStatus('empty'); return; }
+    let cancelled = false;
 
-    const cleanup = () => {
-      if (viewerRef.current) {
-        try { viewerRef.current.clear(); viewerRef.current.render(); } catch {}
-        viewerRef.current = null;
-      }
-    };
-
-    const run = async () => {
+    async function init() {
       if (!containerRef.current) return;
-      cleanup();
-      setError(null);
-
-      if (!molecule3dUrl && !molBlock) {
-        setStatus('empty');
-        return;
-      }
-
       setStatus('loading');
+      setErrorMsg(null);
+      if (viewerRef.current) { try { viewerRef.current.clear(); } catch {} viewerRef.current = null; }
+      containerRef.current.innerHTML = '';
 
       try {
         await load3Dmol();
-        if (!mounted) return;
+        if (cancelled) return;
 
         const viewer = window.$3Dmol.createViewer(containerRef.current, {
-          backgroundColor: '#0b0f14',
+          backgroundColor: '0x121212',
+          antialias: true,
         });
         viewerRef.current = viewer;
 
-        let modelText = molBlock || '';
-        let format = 'sdf';
+        const sdf = molBlock || (pubchemCID ? await fetchPubChemSDF(pubchemCID) : '');
+        if (cancelled) return;
 
-        if (!modelText && molecule3dUrl) {
-          format = inferFormat(molecule3dUrl);
-          const response = await fetch(molecule3dUrl);
-          if (!response.ok) throw new Error(`Failed to load 3D model (${response.status})`);
-          modelText = await response.text();
-        }
+        viewer.addModel(sdf, 'sdf');
 
-        if (!modelText.trim()) throw new Error('Empty molecular data');
-
-        viewer.addModel(modelText, format);
+        // CPK — scientific standard coloring
         viewer.setStyle({}, {
-          stick: { radius: 0.18, colorscheme: 'Jmol' },
-          sphere: { scale: 0.25, colorscheme: 'Jmol' },
+          stick: { colorscheme: 'Jmol', radius: 0.12 },
+          sphere: { colorscheme: 'Jmol', scale: 0.28 },
         });
+
         viewer.zoomTo();
-        viewer.spin('y', 0.4);
+        viewer.spin('y', 0.5);
         viewer.render();
-
-        if (!mounted) return;
-        setStatus('ready');
-      } catch (e: any) {
-        if (!mounted) return;
-        setError(e?.message || 'Unable to render molecule');
-        setStatus('error');
+        if (!cancelled) setStatus('ready');
+      } catch (err: any) {
+        if (!cancelled) { setStatus('error'); setErrorMsg(err.message || 'Failed'); }
       }
-    };
+    }
 
-    run();
-    return () => { mounted = false; cleanup(); };
-  }, [molecule3dUrl, molBlock]);
+    init();
+    return () => { cancelled = true; };
+  }, [pubchemCID, molBlock]);
 
-  if (status === 'empty') {
-    return (
-      <div style={{ width: '100%', minHeight: 200, borderRadius: 10, border: '1px solid rgba(180,190,200,0.08)', background: 'rgba(11,15,20,0.6)', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: 16 }}>
-        <p style={{ color: 'rgba(220,228,236,0.4)', fontSize: 12, margin: '0 0 8px' }}>
-          {title || 'Molecular structure'}
-        </p>
-        <p style={{ color: 'rgba(220,228,236,0.22)', fontSize: 11, lineHeight: 1.6, margin: 0 }}>
-          No 3D conformer available for this node.
-          Add a <code style={{ fontFamily: 'monospace', color: 'rgba(74,127,165,0.7)' }}>molecule3dUrl</code> pointing to an SDF/MOL/PDB file to render structure.
-        </p>
-        {smiles && (
-          <div style={{ marginTop: 12, padding: '8px 10px', borderRadius: 8, background: 'rgba(74,144,217,0.06)', border: '1px solid rgba(74,144,217,0.14)', color: 'rgba(180,210,235,0.6)', fontSize: 10, fontFamily: 'monospace' }}>
-            SMILES: {smiles}
-          </div>
-        )}
-      </div>
-    );
-  }
+  if (status === 'empty') return null;
 
   return (
-    <div style={{ width: '100%', minHeight: 280, borderRadius: 10, overflow: 'hidden', border: '1px solid rgba(180,190,200,0.08)', background: 'linear-gradient(180deg, rgba(11,15,20,0.98), rgba(7,10,14,0.98))', position: 'relative' }}>
-      {/* Labels */}
-      <div style={{ position: 'absolute', top: 8, left: 10, zIndex: 2, pointerEvents: 'none' }}>
-        <p style={{ color: 'rgba(235,241,247,0.85)', fontSize: 11, fontWeight: 600, margin: '0 0 2px' }}>
-          {title || 'Molecular structure'}
-        </p>
-        {sourceLabel && (
-          <p style={{ color: 'rgba(220,228,236,0.35)', fontSize: 9, fontFamily: 'monospace', margin: 0 }}>
-            {sourceLabel}
-          </p>
-        )}
-      </div>
+    <div style={{ width: '100%', height: `${height}px`, position: 'relative', borderRadius: '10px', overflow: 'hidden', background: '#0f1215', border: '1px solid rgba(255,255,255,0.06)' }}>
+      <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
 
       {status === 'loading' && (
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(220,228,236,0.4)', fontSize: 11, zIndex: 1, pointerEvents: 'none' }}>
-          Loading conformer…
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', background: '#0f1215', pointerEvents: 'none' }}>
+          <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+          <Loader2 size={16} style={{ color: 'rgba(74,127,165,0.6)', animation: 'spin 1s linear infinite' }} />
+          <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', fontFamily: 'monospace' }}>
+            Loading 3D conformer · PubChem
+          </span>
         </div>
       )}
 
       {status === 'error' && (
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, color: 'rgba(255,160,160,0.7)', fontSize: 11, textAlign: 'center', zIndex: 1, pointerEvents: 'none' }}>
-          {error}
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', background: '#0f1215' }}>
+          <AlertCircle size={14} style={{ color: 'rgba(180,80,80,0.5)' }} />
+          <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '11px' }}>3D structure unavailable</span>
+          {pubchemCID && (
+            <a href={`https://pubchem.ncbi.nlm.nih.gov/compound/${pubchemCID}`} target="_blank" rel="noopener noreferrer"
+              style={{ color: 'rgba(74,127,165,0.55)', fontSize: '10px', fontFamily: 'monospace', display: 'flex', alignItems: 'center', gap: '3px' }}>
+              PubChem CID:{pubchemCID} <ExternalLink size={8} />
+            </a>
+          )}
         </div>
       )}
 
-      <div ref={containerRef} style={{ width: '100%', height: 280 }} />
+      {status === 'ready' && (
+        <>
+          <div style={{ position: 'absolute', top: '8px', left: '10px', pointerEvents: 'none' }}>
+            <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '9px', fontFamily: 'monospace' }}>{label || nodeId}</span>
+          </div>
+          {pubchemCID && (
+            <div style={{ position: 'absolute', top: '8px', right: '10px' }}>
+              <a href={`https://pubchem.ncbi.nlm.nih.gov/compound/${pubchemCID}`} target="_blank" rel="noopener noreferrer"
+                style={{ color: 'rgba(255,255,255,0.12)', fontSize: '9px', fontFamily: 'monospace', display: 'flex', alignItems: 'center', gap: '3px', textDecoration: 'none' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.45)'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.12)'; }}>
+                CID:{pubchemCID} <ExternalLink size={8} />
+              </a>
+            </div>
+          )}
+          <div style={{ position: 'absolute', bottom: '8px', right: '10px', pointerEvents: 'none' }}>
+            <span style={{ color: 'rgba(255,255,255,0.1)', fontSize: '9px', fontFamily: 'monospace' }}>3D · CPK</span>
+          </div>
+        </>
+      )}
     </div>
   );
 }
