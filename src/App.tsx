@@ -126,11 +126,11 @@ export default function App() {
             <div className="w-5 h-5 rounded bg-white flex items-center justify-center">
               <Dna size={12} className="text-black" />
             </div>
-            <span className="text-sm font-semibold text-white">SynPath Bio</span>
+            <span className="text-sm font-semibold text-white">Nexus-Bio</span>
           </div>
           <div className="flex items-center gap-4 flex-wrap justify-center">
             <p className="text-xs font-mono" style={{ color: 'rgba(255,255,255,0.2)' }}>
-              © {new Date().getFullYear()} SynPath Bio. All rights reserved.
+              © {new Date().getFullYear()} Nexus-Bio. All rights reserved.
             </p>
             <span style={{ color: 'rgba(255,255,255,0.1)' }}>·</span>
             <a href="/terms" className="text-xs font-mono transition-colors"
