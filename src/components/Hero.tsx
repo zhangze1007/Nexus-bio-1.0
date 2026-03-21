@@ -23,7 +23,7 @@ export default function Hero() {
           <div className="w-6 h-6 rounded-md bg-white flex items-center justify-center">
             <Dna size={14} className="text-black" />
           </div>
-          <span className="text-white font-semibold text-sm tracking-tight">SynPath Bio</span>
+          <span className="text-white font-semibold text-sm tracking-tight">Nexus-Bio</span>
         </div>
         <div className="hidden md:flex items-center gap-6">
           {[['Visualize', 'demo'], ['Search', 'search'], ['Analyze', 'analyzer'], ['Contact', 'contact']].map(([label, id]) => (
@@ -80,7 +80,7 @@ export default function Hero() {
           className="text-base md:text-lg mb-4 max-w-xl mx-auto leading-relaxed"
           style={{ color: 'rgba(255,255,255,0.4)' }}
         >
-          SynPath Bio extracts metabolic nodes, enzymatic reactions, and pathway logic from any research paper — rendered as an interactive 3D map in seconds.
+          Nexus-Bio extracts metabolic nodes, enzymatic reactions, and pathway logic from any research paper — rendered as an interactive 3D map in seconds.
         </motion.p>
 
         {/* Secondary line */}
