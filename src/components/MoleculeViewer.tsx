@@ -8,6 +8,7 @@ type ViewerStatus = 'idle' | 'loading' | 'ready' | 'empty' | 'error';
 interface MoleculeViewerProps {
   nodeId?: string;
   pubchemCID?: number;
+  searchName?: string;   // auto-search by molecule name if no CID
   molBlock?: string;
   label?: string;
   height?: number;
@@ -24,29 +25,41 @@ function load3Dmol(): Promise<void> {
   });
 }
 
-async function fetchPubChemSDF(cid: number): Promise<string> {
-  // Use backend proxy to avoid CORS
+// Fetch by CID
+async function fetchByCID(cid: number): Promise<string> {
   const res = await fetch(`/api/pubchem?cid=${cid}`);
-  if (!res.ok) throw new Error(`PubChem proxy ${res.status}`);
+  if (!res.ok) throw new Error(`PubChem CID ${res.status}`);
   const text = await res.text();
   if (!text || text.length < 50) throw new Error('Empty SDF');
   return text;
 }
 
-export default function MoleculeViewer({ nodeId, pubchemCID, molBlock, label, height = 240 }: MoleculeViewerProps) {
+// Search by name → auto-resolve CID → fetch SDF
+async function fetchByName(name: string): Promise<{ sdf: string; cid: number | null }> {
+  const res = await fetch(`/api/pubchem?name=${encodeURIComponent(name)}`);
+  if (!res.ok) throw new Error(`Name not found: ${name}`);
+  const sdf = await res.text();
+  if (!sdf || sdf.length < 50) throw new Error('Empty SDF from name search');
+  // Backend returns resolved CID in header
+  const cid = res.headers.get('X-PubChem-CID');
+  return { sdf, cid: cid ? parseInt(cid) : null };
+}
+
+export default function MoleculeViewer({ nodeId, pubchemCID, searchName, molBlock, label, height = 240 }: MoleculeViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<any>(null);
   const [status, setStatus] = useState<ViewerStatus>('idle');
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [resolvedCID, setResolvedCID] = useState<number | null>(pubchemCID ?? null);
+
+  const hasSource = !!(pubchemCID || searchName || molBlock);
 
   useEffect(() => {
-    if (!pubchemCID && !molBlock) { setStatus('empty'); return; }
+    if (!hasSource) { setStatus('empty'); return; }
     let cancelled = false;
 
     async function init() {
       if (!containerRef.current) return;
       setStatus('loading');
-      setErrorMsg(null);
       if (viewerRef.current) { try { viewerRef.current.clear(); } catch {} viewerRef.current = null; }
       containerRef.current.innerHTML = '';
 
@@ -55,36 +68,54 @@ export default function MoleculeViewer({ nodeId, pubchemCID, molBlock, label, he
         if (cancelled) return;
 
         const viewer = window.$3Dmol.createViewer(containerRef.current, {
-          backgroundColor: 'white',
-          antialias: true,
+          backgroundColor: 'white', antialias: true,
         });
         viewerRef.current = viewer;
 
-        const sdf = molBlock || (pubchemCID ? await fetchPubChemSDF(pubchemCID) : '');
+        let sdf = molBlock || '';
+        let cid = pubchemCID ?? null;
+
+        if (!sdf && pubchemCID) {
+          sdf = await fetchByCID(pubchemCID);
+        } else if (!sdf && searchName) {
+          // Dynamic name search
+          const result = await fetchByName(searchName);
+          sdf = result.sdf;
+          if (result.cid) {
+            cid = result.cid;
+            setResolvedCID(result.cid);
+          }
+        }
+
         if (cancelled) return;
+        if (!sdf) throw new Error('No SDF data');
 
         viewer.addModel(sdf, 'sdf');
-
-        // CPK — scientific standard coloring
         viewer.setStyle({}, {
           stick: { colorscheme: 'Jmol', radius: 0.12 },
           sphere: { colorscheme: 'Jmol', scale: 0.28 },
         });
-
         viewer.zoomTo();
         viewer.spin('y', 0.5);
         viewer.render();
         if (!cancelled) setStatus('ready');
-      } catch (err: any) {
-        if (!cancelled) { setStatus('error'); setErrorMsg(err.message || 'Failed'); }
+      } catch {
+        if (!cancelled) setStatus('error');
       }
     }
 
     init();
     return () => { cancelled = true; };
-  }, [pubchemCID, molBlock]);
+  }, [pubchemCID, searchName, molBlock]);
 
   if (status === 'empty') return null;
+
+  const displayCID = resolvedCID ?? pubchemCID;
+  const pubchemLink = displayCID
+    ? `https://pubchem.ncbi.nlm.nih.gov/compound/${displayCID}`
+    : searchName
+    ? `https://pubchem.ncbi.nlm.nih.gov/#query=${encodeURIComponent(searchName)}`
+    : null;
 
   return (
     <div style={{ width: '100%', height: `${height}px`, position: 'relative', borderRadius: '10px', overflow: 'hidden', background: '#ffffff', border: '1px solid rgba(0,0,0,0.08)', boxShadow: '0 2px 12px rgba(0,0,0,0.12)' }}>
@@ -95,7 +126,7 @@ export default function MoleculeViewer({ nodeId, pubchemCID, molBlock, label, he
           <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
           <Loader2 size={16} style={{ color: '#6495ED', animation: 'spin 1s linear infinite' }} />
           <span style={{ color: 'rgba(0,0,0,0.35)', fontSize: '10px', fontFamily: 'monospace' }}>
-            Loading 3D conformer · PubChem
+            {searchName ? `Searching PubChem for "${searchName}"...` : 'Loading 3D conformer...'}
           </span>
         </div>
       )}
@@ -103,11 +134,11 @@ export default function MoleculeViewer({ nodeId, pubchemCID, molBlock, label, he
       {status === 'error' && (
         <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', background: '#ffffff' }}>
           <AlertCircle size={14} style={{ color: 'rgba(180,60,60,0.5)' }} />
-          <span style={{ color: 'rgba(0,0,0,0.35)', fontSize: '11px' }}>3D structure unavailable</span>
-          {pubchemCID && (
-            <a href={`https://pubchem.ncbi.nlm.nih.gov/compound/${pubchemCID}`} target="_blank" rel="noopener noreferrer"
+          <span style={{ color: 'rgba(0,0,0,0.35)', fontSize: '11px' }}>Structure not found in PubChem</span>
+          {pubchemLink && (
+            <a href={pubchemLink} target="_blank" rel="noopener noreferrer"
               style={{ color: '#6495ED', fontSize: '10px', fontFamily: 'monospace', display: 'flex', alignItems: 'center', gap: '3px' }}>
-              PubChem CID:{pubchemCID} <ExternalLink size={8} />
+              Search PubChem manually <ExternalLink size={8} />
             </a>
           )}
         </div>
@@ -116,20 +147,23 @@ export default function MoleculeViewer({ nodeId, pubchemCID, molBlock, label, he
       {status === 'ready' && (
         <>
           <div style={{ position: 'absolute', top: '8px', left: '10px', pointerEvents: 'none' }}>
-            <span style={{ color: 'rgba(0,0,0,0.3)', fontSize: '9px', fontFamily: 'monospace' }}>{label || nodeId}</span>
+            <span style={{ color: 'rgba(0,0,0,0.3)', fontSize: '9px', fontFamily: 'monospace', background: 'rgba(255,255,255,0.85)', padding: '2px 6px', borderRadius: '4px' }}>
+              {label || searchName || nodeId}
+              {displayCID && ` · CID ${displayCID}`}
+            </span>
           </div>
-          {pubchemCID && (
+          {pubchemLink && (
             <div style={{ position: 'absolute', top: '8px', right: '10px' }}>
-              <a href={`https://pubchem.ncbi.nlm.nih.gov/compound/${pubchemCID}`} target="_blank" rel="noopener noreferrer"
-                style={{ color: 'rgba(0,0,0,0.25)', fontSize: '9px', fontFamily: 'monospace', display: 'flex', alignItems: 'center', gap: '3px', textDecoration: 'none' }}
+              <a href={pubchemLink} target="_blank" rel="noopener noreferrer"
+                style={{ color: 'rgba(0,0,0,0.25)', fontSize: '9px', fontFamily: 'monospace', display: 'flex', alignItems: 'center', gap: '3px', textDecoration: 'none', background: 'rgba(255,255,255,0.85)', padding: '2px 6px', borderRadius: '4px' }}
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(0,0,0,0.7)'; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(0,0,0,0.25)'; }}>
-                CID:{pubchemCID} <ExternalLink size={8} />
+                PubChem <ExternalLink size={8} />
               </a>
             </div>
           )}
           <div style={{ position: 'absolute', bottom: '8px', right: '10px', pointerEvents: 'none' }}>
-            <span style={{ color: 'rgba(0,0,0,0.2)', fontSize: '9px', fontFamily: 'monospace' }}>3D · CPK</span>
+            <span style={{ color: 'rgba(0,0,0,0.2)', fontSize: '9px', fontFamily: 'monospace', background: 'rgba(255,255,255,0.7)', padding: '2px 6px', borderRadius: '4px' }}>3D · CPK</span>
           </div>
         </>
       )}
