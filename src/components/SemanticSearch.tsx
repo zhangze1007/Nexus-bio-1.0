@@ -58,23 +58,90 @@ const SHOWCASE_PAPERS = [
   },
 ];
 
-const BIO_KEYWORDS = [
-  'metabolic','pathway','enzyme','biosynthesis','fermentation',
-  'glucose','pyruvate','acetyl','synthesis','expression',
-  'gene','protein','cell','yeast','bacteria',
-  'CRISPR','flux','yield','titer','production','engineered',
-  'substrate','cofactor','TCA','glycolysis','kinase','reductase',
-  'synthase','oxidase','P450','cytochrome',
-];
+// ── Dynamic keyword extractor — highlights each paper's own key terms ──
+function extractKeywords(title: string, abstract: string): Set<string> {
+  const combined = `${title} ${abstract}`.toLowerCase();
+  const stopWords = new Set([
+    'the','a','an','and','or','but','in','on','at','to','for','of','with',
+    'by','from','this','that','these','those','is','are','was','were','be',
+    'been','being','have','has','had','do','does','did','will','would','could',
+    'should','may','might','can','shall','its','it','we','our','their','they',
+    'which','who','what','when','where','how','as','than','more','also','been',
+    'such','both','each','during','after','before','between','into','through',
+    'however','therefore','thus','furthermore','although','since','while',
+    'using','used','use','show','shows','showed','study','studies','found',
+    'result','results','analysis','data','based','two','three','new','high',
+    'low','significant','significantly','associated','compared','total',
+  ]);
 
-function highlightKeywords(text: string) {
-  const pattern = new RegExp(`\\b(${BIO_KEYWORDS.join('|')})\\b`, 'gi');
-  const parts = text.split(pattern);
-  return parts.map((part, i) =>
-    BIO_KEYWORDS.some(k => k.toLowerCase() === part.toLowerCase())
-      ? <mark key={i} style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.85)', borderRadius: '3px', padding: '0 2px', fontWeight: 500 }}>{part}</mark>
-      : part
-  );
+  // Extract capitalized phrases and domain-specific terms
+  const words = abstract.split(/\s+/);
+  const candidates = new Set<string>();
+
+  // 1. Title words (always important)
+  title.split(/\s+/).forEach(w => {
+    const clean = w.replace(/[^a-zA-Z0-9\-]/g, '');
+    if (clean.length > 3 && !stopWords.has(clean.toLowerCase())) {
+      candidates.add(clean);
+    }
+  });
+
+  // 2. Capitalized multi-word terms (acronyms + proper nouns)
+  const acronyms = abstract.match(/\b[A-Z][A-Z0-9]{1,9}\b/g) || [];
+  acronyms.forEach(a => { if (a.length >= 2) candidates.add(a); });
+
+  // 3. High-frequency content words in abstract (TF-based)
+  const freq: Record<string, number> = {};
+  words.forEach(w => {
+    const clean = w.replace(/[^a-zA-Z0-9\-]/g, '').toLowerCase();
+    if (clean.length > 4 && !stopWords.has(clean)) {
+      freq[clean] = (freq[clean] || 0) + 1;
+    }
+  });
+
+  // Take top 12 most frequent content words
+  Object.entries(freq)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 12)
+    .forEach(([w]) => candidates.add(w));
+
+  // 4. Hyphenated scientific terms
+  const hyphenated = abstract.match(/\b[a-zA-Z]+-[a-zA-Z]+(?:-[a-zA-Z]+)?\b/g) || [];
+  hyphenated.slice(0, 8).forEach(h => {
+    if (h.length > 5) candidates.add(h);
+  });
+
+  return candidates;
+}
+
+function highlightKeywords(text: string, keywords: Set<string>) {
+  if (!text || keywords.size === 0) return text;
+
+  // Build pattern from this paper's own keywords
+  const escaped = Array.from(keywords)
+    .map(k => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+    .filter(k => k.length > 2)
+    .join('|');
+
+  if (!escaped) return text;
+
+  try {
+    const pattern = new RegExp(`(${escaped})`, 'gi');
+    const parts = text.split(pattern);
+    return parts.map((part, i) =>
+      pattern.test(part)
+        ? <mark key={i} style={{
+            background: 'rgba(255,255,255,0.09)',
+            color: 'rgba(255,255,255,0.88)',
+            borderRadius: '3px',
+            padding: '0 3px',
+            fontWeight: 500,
+          }}>{part}</mark>
+        : part
+    );
+  } catch {
+    return text;
+  }
 }
 
 // ── Parallel database fetchers ──
@@ -177,11 +244,11 @@ export default function SemanticSearch({ onAnalyzePaper }: SemanticSearchProps) 
     onAnalyzePaper && article.abstract ? (
       <button
         onClick={() => handleAnalyze(article)}
-        style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 14px', background: '#ffffff', color: '#0a0a0a', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', letterSpacing: '-0.01em', transition: 'background 0.15s' }}
-        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#e5e5e5'; }}
-        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#ffffff'; }}>
-        <Send size={11} />
-        Analyze
+        title="Analyze pathway"
+        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', background: 'transparent', color: 'rgba(255,255,255,0.4)', border: 'none', borderRadius: '8px', cursor: 'pointer', transition: 'color 0.15s' }}
+        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#ffffff'; }}
+        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.4)'; }}>
+        <Send size={15} strokeWidth={2} />
       </button>
     ) : null
   );
@@ -266,7 +333,7 @@ export default function SemanticSearch({ onAnalyzePaper }: SemanticSearchProps) 
                       {isExpanded && (
                         <div style={{ marginTop: '14px', paddingTop: '14px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
                           <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '13px', lineHeight: 1.75, margin: '0 0 12px', letterSpacing: '-0.005em' }}>
-                            {highlightKeywords(paper.abstract)}
+                            {highlightKeywords(paper.abstract, extractKeywords(paper.title, paper.abstract))}
                           </p>
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
                             <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '11px', fontFamily: 'monospace', margin: 0 }}>
@@ -354,7 +421,7 @@ export default function SemanticSearch({ onAnalyzePaper }: SemanticSearchProps) 
                     {isExpanded && article.abstract && (
                       <div style={{ marginTop: '14px', paddingTop: '14px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
                         <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '13px', lineHeight: 1.75, margin: '0 0 12px', letterSpacing: '-0.005em' }}>
-                          {highlightKeywords(article.abstract)}
+                          {highlightKeywords(article.abstract, extractKeywords(article.title, article.abstract))}
                         </p>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '10px' }}>
                           {article.doi && (
