@@ -52,10 +52,8 @@ function ProteinViewer({ pdbId, alphafoldId, label }: { pdbId: string; alphafold
 
         if (useAF && alphafoldId) {
           const res = await fetch(`/api/alphafold?id=${alphafoldId}`);
-          console.log('[ProteinViewer] AlphaFold response:', res.status, alphafoldId);
           if (!res.ok) throw new Error(`AlphaFold ${res.status}`);
           const pdb = await res.text();
-          console.log('[ProteinViewer] PDB data length:', pdb.length);
           if (!pdb || pdb.length < 100) throw new Error('Empty AlphaFold response');
           viewer.addModel(pdb, 'pdb');
           viewer.setStyle({}, {
@@ -477,13 +475,14 @@ export default function NodePanel({ node, onClose, allNodes, allEdges }: NodePan
                         label={ENZYME_ALPHAFOLD[node.id].name}
                       />
                     </div>
-                  ) : pubchemCID ? (
-                    // Has PubChem CID → small molecule 3D
+                  ) : pubchemCID || (!ENZYME_ALPHAFOLD[node.id] && node.label) ? (
+                    // Metabolite → PubChem 3D (by CID or auto name search)
                     <div>
                       <SectionLabel label="3D Molecular Structure" />
                       <MoleculeViewer
                         nodeId={node.id}
                         pubchemCID={pubchemCID}
+                        searchName={!pubchemCID ? (node.canonicalLabel || node.label) : undefined}
                         label={node.canonicalLabel || node.label}
                         height={260}
                       />
