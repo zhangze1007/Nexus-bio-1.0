@@ -533,55 +533,74 @@ export default function NodePanel({ node, onClose, allNodes, allEdges }: NodePan
                           label={rcsbMatch.name}
                         />
                       </div>
-                    ) : pubchemCID || node.label ? (
-                      // Metabolite → PubChem 3D (by CID or auto name search)
-                      <div>
-                        <SectionLabel label="3D Molecular Structure" />
-                        <MoleculeViewer
-                          nodeId={node.id}
-                          pubchemCID={pubchemCID}
-                          searchName={!pubchemCID ? (node.canonicalLabel || node.label) : undefined}
-                          label={node.canonicalLabel || node.label}
-                          height={260}
-                        />
-                        <p style={{ color: 'rgba(255,255,255,0.12)', fontSize: '9px', fontFamily: 'monospace', marginTop: '6px' }}>
-                          3D conformer · CPK coloring · Source: PubChem
-                        </p>
-                      </div>
-                    ) : (
-                      // No molecular structure → show microscopy images
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                        <div style={{ padding: '8px 12px', borderRadius: '8px', background: 'rgba(200,224,208,0.04)', border: '1px solid rgba(200,224,208,0.1)' }}>
-                          <p style={{ color: 'rgba(200,224,208,0.6)', fontSize: '11px', margin: '0 0 2px', fontWeight: 500 }}>
-                            Biological Entity — Microscopy View
-                          </p>
-                          <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '10px', margin: 0, lineHeight: 1.5 }}>
-                            This node exists at a scale beyond molecular visualization.
-                            Showing reference microscopy images instead.
-                          </p>
-                        </div>
-                        <CellImageViewer searchTerm={node.canonicalLabel || node.label} height={260} />
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                          <p style={{ color: 'rgba(255,255,255,0.15)', fontSize: '9px', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.06em', margin: 0 }}>
-                            Search more databases:
-                          </p>
-                          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                            {[
-                              { label: 'Cell Image Library', url: `https://cellimagelibrary.org/images/search?simple_search=${encodeURIComponent(node.label)}` },
-                              { label: 'UniProt', url: `https://www.uniprot.org/uniprotkb?query=${encodeURIComponent(node.label)}` },
-                              { label: 'RCSB PDB', url: `https://www.rcsb.org/search?request=${encodeURIComponent(JSON.stringify({ query: { type: 'terminal', service: 'full_text', parameters: { value: node.label } } }))}` },
-                            ].map(db => (
-                              <a key={db.label} href={db.url} target="_blank" rel="noopener noreferrer"
-                                style={{ padding: '4px 10px', borderRadius: '6px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.35)', fontSize: '10px', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}
-                                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.2)'; (e.currentTarget as HTMLElement).style.color = '#fff'; }}
-                                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.07)'; (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.35)'; }}>
-                                {db.label} <ExternalLink size={8} />
-                              </a>
-                            ))}
+                    ) : (() => {
+                      // Determine if this node is a molecular entity or a biological entity
+                      const BIOLOGICAL_ENTITY_KEYWORDS = [
+                        'cell','cells','tissue','tissues','organism','bacteria','virus','fungi','fungus',
+                        'microorganism','microbe','plant','animal','yeast','algae','protozoa','parasite',
+                        'embryo','organ','blood','muscle','nerve','neuron','bone','skin','liver','kidney',
+                        'heart','lung','brain','sperm','egg','gamete','chromosome','nucleus','ribosome',
+                        'mitochondria','chloroplast','vacuole','membrane','wall','flagella','cilia',
+                      ];
+                      const labelLower = (node.canonicalLabel || node.label).toLowerCase();
+                      const isBiologicalEntity = BIOLOGICAL_ENTITY_KEYWORDS.some(k => labelLower.includes(k))
+                        || node.nodeType === 'unknown'
+                        || (!node.nodeType && !pubchemCID);
+
+                      if (!isBiologicalEntity || pubchemCID) {
+                        // Molecular entity → try PubChem
+                        return (
+                          <div>
+                            <SectionLabel label="3D Molecular Structure" />
+                            <MoleculeViewer
+                              nodeId={node.id}
+                              pubchemCID={pubchemCID}
+                              searchName={!pubchemCID ? (node.canonicalLabel || node.label) : undefined}
+                              label={node.canonicalLabel || node.label}
+                              height={260}
+                            />
+                            <p style={{ color: 'rgba(255,255,255,0.12)', fontSize: '9px', fontFamily: 'monospace', marginTop: '6px' }}>
+                              3D conformer · CPK coloring · Source: PubChem
+                            </p>
+                          </div>
+                        );
+                      }
+
+                      // Biological entity → microscopy images
+                      return (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                          <div style={{ padding: '8px 12px', borderRadius: '8px', background: 'rgba(200,224,208,0.04)', border: '1px solid rgba(200,224,208,0.1)' }}>
+                            <p style={{ color: 'rgba(200,224,208,0.6)', fontSize: '11px', margin: '0 0 2px', fontWeight: 500 }}>
+                              Biological Entity — Microscopy View
+                            </p>
+                            <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '10px', margin: 0, lineHeight: 1.5 }}>
+                              This node exists at a scale beyond molecular visualization.
+                              Showing reference microscopy images instead.
+                            </p>
+                          </div>
+                          <CellImageViewer searchTerm={node.canonicalLabel || node.label} height={260} />
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                            <p style={{ color: 'rgba(255,255,255,0.15)', fontSize: '9px', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.06em', margin: 0 }}>
+                              Search more databases:
+                            </p>
+                            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                              {[
+                                { label: 'Cell Image Library', url: `https://cellimagelibrary.org/images/search?simple_search=${encodeURIComponent(node.label)}` },
+                                { label: 'UniProt', url: `https://www.uniprot.org/uniprotkb?query=${encodeURIComponent(node.label)}` },
+                                { label: 'RCSB PDB', url: `https://www.rcsb.org/search?request=${encodeURIComponent(JSON.stringify({ query: { type: 'terminal', service: 'full_text', parameters: { value: node.label } } }))}` },
+                              ].map(db => (
+                                <a key={db.label} href={db.url} target="_blank" rel="noopener noreferrer"
+                                  style={{ padding: '4px 10px', borderRadius: '6px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.35)', fontSize: '10px', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}
+                                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.2)'; (e.currentTarget as HTMLElement).style.color = '#fff'; }}
+                                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.07)'; (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.35)'; }}>
+                                  {db.label} <ExternalLink size={8} />
+                                </a>
+                              ))}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    )}
+                      );
+                    })()}
                   </>
                 );
               })()}
