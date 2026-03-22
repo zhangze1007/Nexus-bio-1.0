@@ -14,7 +14,49 @@ const ENZYME_ALPHAFOLD: Record<string, { afId: string; pdbId: string; name: stri
   hmg_coa:            { afId: 'P12683', pdbId: '1DQA', name: 'HMGR' },
 };
 
+// ── RCSB PDB structures for nucleic acids & bio macromolecules ─────────
+// These are canonical reference structures, not molecule-specific
+const RCSB_STRUCTURES: Record<string, { pdbId: string; name: string; description: string }> = {
+  // DNA
+  dna:                  { pdbId: '1BNA', name: 'B-DNA Double Helix', description: 'Canonical B-form DNA, Drew & Dickerson 1981' },
+  'double-stranded dna':{ pdbId: '1BNA', name: 'B-DNA Double Helix', description: 'Canonical B-form DNA' },
+  'double stranded dna':{ pdbId: '1BNA', name: 'B-DNA Double Helix', description: 'Canonical B-form DNA' },
+  dsdna:                { pdbId: '1BNA', name: 'B-DNA Double Helix', description: 'Canonical B-form DNA' },
+  'b-dna':              { pdbId: '1BNA', name: 'B-DNA', description: 'B-form DNA double helix' },
+  'a-dna':              { pdbId: '1ANA', name: 'A-DNA', description: 'A-form DNA double helix' },
+  'z-dna':              { pdbId: '1DCG', name: 'Z-DNA', description: 'Z-form DNA double helix' },
+  // RNA
+  rna:                  { pdbId: '1EHZ', name: 'tRNA (Phe)', description: 'Transfer RNA phenylalanine, classic L-shaped structure' },
+  trna:                 { pdbId: '1EHZ', name: 'tRNA', description: 'Transfer RNA canonical structure' },
+  mrna:                 { pdbId: '6XRZ', name: 'mRNA', description: 'Messenger RNA structure' },
+  'ribosomal rna':      { pdbId: '4V9F', name: 'Ribosomal RNA', description: '23S/16S rRNA in ribosome' },
+  rrna:                 { pdbId: '4V9F', name: 'Ribosomal RNA', description: 'Ribosomal RNA' },
+  // Proteins / complexes
+  ribosome:             { pdbId: '4V9F', name: 'Ribosome (70S)', description: 'E. coli 70S ribosome full structure' },
+  'atp synthase':       { pdbId: '5ARA', name: 'ATP Synthase', description: 'Mitochondrial ATP synthase complex' },
+  'dna polymerase':     { pdbId: '1TAU', name: 'DNA Polymerase I', description: 'E. coli DNA Polymerase I' },
+  'rna polymerase':     { pdbId: '1I6H', name: 'RNA Polymerase', description: 'RNA Polymerase II core' },
+  collagen:             { pdbId: '1CGD', name: 'Collagen Triple Helix', description: 'Collagen triple helix structure' },
+  hemoglobin:           { pdbId: '2HHB', name: 'Hemoglobin', description: 'Human deoxyhemoglobin' },
+  myosin:               { pdbId: '2MYS', name: 'Myosin', description: 'Skeletal muscle myosin' },
+  actin:                { pdbId: '1ATN', name: 'Actin', description: 'Beta-actin monomer' },
+  tubulin:              { pdbId: '1TUB', name: 'Tubulin', description: 'Alpha/beta tubulin dimer' },
+  insulin:              { pdbId: '3I40', name: 'Insulin', description: 'Human insulin structure' },
+  lysozyme:             { pdbId: '1LYZ', name: 'Lysozyme', description: 'Hen egg white lysozyme' },
+  antibody:             { pdbId: '1IGT', name: 'IgG Antibody', description: 'Intact immunoglobulin G' },
+  // Nucleotides
+  atp:                  { pdbId: '1S9I', name: 'ATP-bound structure', description: 'ATP in active site context' },
+  // Chromatin
+  nucleosome:           { pdbId: '1AOI', name: 'Nucleosome Core', description: 'Nucleosome core particle with histone octamer + DNA' },
+  histone:              { pdbId: '1AOI', name: 'Histone Octamer', description: 'H2A/H2B/H3/H4 octamer in nucleosome' },
+};
+
 // ── Inline protein viewer using 3Dmol ─────────────────────────────────
+// Lookup RCSB structure by node label (case-insensitive)
+function lookupRCSB(label: string) {
+  const key = label.toLowerCase().trim();
+  return RCSB_STRUCTURES[key] ?? null;
+}
 declare global { interface Window { $3Dmol: any; } }
 
 function load3Dmol(): Promise<void> {
@@ -463,72 +505,89 @@ export default function NodePanel({ node, onClose, allNodes, allEdges }: NodePan
               )}
 
               {/* ── TAB 2: STRUCTURE ── */}
-              {activeTab === 'structure' && (
-                <>
-                  {ENZYME_ALPHAFOLD[node.id] ? (
-                    // Has AlphaFold data → rotating protein structure
-                    <div>
-                      <SectionLabel label="Protein Structure" />
-                      <ProteinViewer
-                        pdbId={ENZYME_ALPHAFOLD[node.id].pdbId}
-                        alphafoldId={ENZYME_ALPHAFOLD[node.id].afId}
-                        label={ENZYME_ALPHAFOLD[node.id].name}
-                      />
-                    </div>
-                  ) : pubchemCID || (!ENZYME_ALPHAFOLD[node.id] && node.label) ? (
-                    // Metabolite → PubChem 3D (by CID or auto name search)
-                    <div>
-                      <SectionLabel label="3D Molecular Structure" />
-                      <MoleculeViewer
-                        nodeId={node.id}
-                        pubchemCID={pubchemCID}
-                        searchName={!pubchemCID ? (node.canonicalLabel || node.label) : undefined}
-                        label={node.canonicalLabel || node.label}
-                        height={260}
-                      />
-                      <p style={{ color: 'rgba(255,255,255,0.12)', fontSize: '9px', fontFamily: 'monospace', marginTop: '6px' }}>
-                        3D conformer · CPK coloring · Source: PubChem
-                      </p>
-                    </div>
-                  ) : (
-                    <div style={{ padding: '20px', borderRadius: '10px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
-                        <Atom size={18} style={{ color: 'rgba(255,255,255,0.2)', flexShrink: 0 }} />
-                        <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '13px', fontWeight: 500, margin: 0 }}>
-                          3D structure not available for this node
+              {activeTab === 'structure' && (() => {
+                const rcsbMatch = lookupRCSB(node.label);
+                return (
+                  <>
+                    {ENZYME_ALPHAFOLD[node.id] ? (
+                      // Enzyme → AlphaFold / RCSB rotating protein
+                      <div>
+                        <SectionLabel label="Protein Structure" />
+                        <ProteinViewer
+                          pdbId={ENZYME_ALPHAFOLD[node.id].pdbId}
+                          alphafoldId={ENZYME_ALPHAFOLD[node.id].afId}
+                          label={ENZYME_ALPHAFOLD[node.id].name}
+                        />
+                      </div>
+                    ) : rcsbMatch ? (
+                      // Nucleic acid / macromolecule → RCSB canonical structure
+                      <div>
+                        <SectionLabel label="Reference Structure" />
+                        <div style={{ padding: '8px 12px', borderRadius: '8px', background: 'rgba(200,216,232,0.06)', border: '1px solid rgba(200,216,232,0.12)', marginBottom: '10px' }}>
+                          <p style={{ color: 'rgba(200,216,232,0.7)', fontSize: '11px', margin: '0 0 2px', fontWeight: 500 }}>{rcsbMatch.name}</p>
+                          <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '10px', margin: 0 }}>{rcsbMatch.description}</p>
+                        </div>
+                        <ProteinViewer
+                          pdbId={rcsbMatch.pdbId}
+                          label={rcsbMatch.name}
+                        />
+                      </div>
+                    ) : pubchemCID || node.label ? (
+                      // Metabolite → PubChem 3D (by CID or auto name search)
+                      <div>
+                        <SectionLabel label="3D Molecular Structure" />
+                        <MoleculeViewer
+                          nodeId={node.id}
+                          pubchemCID={pubchemCID}
+                          searchName={!pubchemCID ? (node.canonicalLabel || node.label) : undefined}
+                          label={node.canonicalLabel || node.label}
+                          height={260}
+                        />
+                        <p style={{ color: 'rgba(255,255,255,0.12)', fontSize: '9px', fontFamily: 'monospace', marginTop: '6px' }}>
+                          3D conformer · CPK coloring · Source: PubChem
                         </p>
                       </div>
-                      <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '12px', lineHeight: 1.7, margin: '0 0 14px' }}>
-                        Nexus-Bio renders 3D structures for <strong style={{ color: 'rgba(255,255,255,0.5)' }}>molecular entities</strong> only — 
-                        such as metabolites, enzymes, and proteins. This node represents a 
-                        biological entity (e.g. a cell, tissue, organism, or physiological process) 
-                        that exists at a scale beyond molecular visualization.
-                      </p>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                        <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.07em', margin: '0 0 4px' }}>
-                          For structural data, try:
+                    ) : (
+                      // Truly no structure available
+                      <div style={{ padding: '20px', borderRadius: '10px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
+                          <Atom size={18} style={{ color: 'rgba(255,255,255,0.2)', flexShrink: 0 }} />
+                          <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '13px', fontWeight: 500, margin: 0 }}>
+                            3D structure not available for this node
+                          </p>
+                        </div>
+                        <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '12px', lineHeight: 1.7, margin: '0 0 14px' }}>
+                          Nexus-Bio renders 3D structures for <strong style={{ color: 'rgba(255,255,255,0.5)' }}>molecular entities</strong> only —
+                          such as metabolites, enzymes, and proteins. This node represents a
+                          biological entity (e.g. a cell, tissue, organism, or physiological process)
+                          that exists at a scale beyond molecular visualization.
                         </p>
-                        {[
-                          { label: 'UniProt', desc: 'Protein sequences & structures', url: `https://www.uniprot.org/uniprotkb?query=${encodeURIComponent(node.label)}` },
-                          { label: 'PubChem', desc: 'Small molecule compounds', url: `https://pubchem.ncbi.nlm.nih.gov/#query=${encodeURIComponent(node.label)}` },
-                          { label: 'RCSB PDB', desc: 'Experimental 3D structures', url: `https://www.rcsb.org/search?request=${encodeURIComponent(JSON.stringify({ query: { type: 'terminal', service: 'full_text', parameters: { value: node.label } } }))}` },
-                        ].map(db => (
-                          <a key={db.label} href={db.url} target="_blank" rel="noopener noreferrer"
-                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', borderRadius: '8px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', textDecoration: 'none', transition: 'border-color 0.15s' }}
-                            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.15)'; }}
-                            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.06)'; }}>
-                            <div>
-                              <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '12px', fontWeight: 500, margin: '0 0 2px' }}>{db.label}</p>
-                              <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', margin: 0 }}>{db.desc}</p>
-                            </div>
-                            <ExternalLink size={12} style={{ color: 'rgba(255,255,255,0.2)', flexShrink: 0 }} />
-                          </a>
-                        ))}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.07em', margin: '0 0 4px' }}>
+                            For structural data, try:
+                          </p>
+                          {[
+                            { label: 'UniProt', desc: 'Protein sequences & structures', url: `https://www.uniprot.org/uniprotkb?query=${encodeURIComponent(node.label)}` },
+                            { label: 'PubChem', desc: 'Small molecule compounds', url: `https://pubchem.ncbi.nlm.nih.gov/#query=${encodeURIComponent(node.label)}` },
+                            { label: 'RCSB PDB', desc: 'Experimental 3D structures', url: `https://www.rcsb.org/search?request=${encodeURIComponent(JSON.stringify({ query: { type: 'terminal', service: 'full_text', parameters: { value: node.label } } }))}` },
+                          ].map(db => (
+                            <a key={db.label} href={db.url} target="_blank" rel="noopener noreferrer"
+                              style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', borderRadius: '8px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', textDecoration: 'none' }}
+                              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.15)'; }}
+                              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.06)'; }}>
+                              <div>
+                                <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '12px', fontWeight: 500, margin: '0 0 2px' }}>{db.label}</p>
+                                <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', margin: 0 }}>{db.desc}</p>
+                              </div>
+                              <ExternalLink size={12} style={{ color: 'rgba(255,255,255,0.2)', flexShrink: 0 }} />
+                            </a>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </>
-              )}
+                    )}
+                  </>
+                );
+              })()}
 
               {/* ── TAB 3: ANALYSIS ── */}
               {activeTab === 'analysis' && (
