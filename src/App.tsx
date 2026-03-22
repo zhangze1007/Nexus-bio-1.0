@@ -46,24 +46,25 @@ export default function App() {
       <Hero />
 
       {/* 01 — Pathway */}
-      <section id="demo" className="px-4 py-24">
-        <div className="max-w-5xl mx-auto">
-          <div className="flex items-start justify-between mb-10 flex-wrap gap-4">
+      <section id="demo" style={{ padding: '96px 24px' }}>
+        <div style={{ maxWidth: '1024px', margin: '0 auto' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '40px', flexWrap: 'wrap', gap: '16px' }}>
             <div>
-              <p className="text-xs font-mono uppercase tracking-widest mb-2"
-                style={{ color: 'rgba(255,255,255,0.25)' }}>01 · Visualization</p>
-              <h2 className="text-2xl md:text-3xl font-semibold text-white"
-                style={{ letterSpacing: '-0.02em' }}>Atomic Pathway</h2>
-              <p className="text-sm mt-2" style={{ color: 'rgba(255,255,255,0.35)' }}>
+              <p style={{ fontFamily: "'SF Mono','Fira Code',monospace", fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.14em', color: 'rgba(255,255,255,0.2)', margin: '0 0 10px' }}>
+                01 · Visualization
+              </p>
+              <h2 style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: 'clamp(1.75rem, 3vw, 2.5rem)', fontWeight: 400, color: 'rgba(255,255,255,0.90)', letterSpacing: '-0.02em', lineHeight: 1.1, margin: '0 0 10px' }}>
+                Atomic Pathway
+              </h2>
+              <p style={{ fontFamily: 'Arial, sans-serif', fontSize: '13px', color: 'rgba(255,255,255,0.32)', margin: 0, lineHeight: 1.6 }}>
                 pLDDT confidence coloring · Substrate diffusion · Click any node for details
               </p>
               {!aiNodes && (
-                <div className="mt-4 px-4 py-3 rounded-xl max-w-lg"
-                  style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
-                  <p className="text-xs font-mono mb-1" style={{ color: 'rgba(255,255,255,0.25)' }}>
-                    SHOWCASE · Ro et al., Nature 2006
+                <div style={{ marginTop: '16px', padding: '14px 18px', borderRadius: '12px', maxWidth: '520px', background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                  <p style={{ fontFamily: "'SF Mono','Fira Code',monospace", fontSize: '10px', color: 'rgba(255,255,255,0.22)', margin: '0 0 6px', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                    Showcase · Ro et al., Nature 2006
                   </p>
-                  <p className="text-sm" style={{ color: 'rgba(255,255,255,0.5)', lineHeight: 1.6 }}>
+                  <p style={{ fontFamily: 'Arial, sans-serif', fontSize: '13px', color: 'rgba(255,255,255,0.45)', lineHeight: 1.7, margin: 0 }}>
                     Artemisinin biosynthesis in engineered <em>S. cerevisiae</em> —
                     this 7-step pathway made malaria treatment affordable for 500 million patients.
                   </p>
@@ -71,17 +72,14 @@ export default function App() {
               )}
             </div>
             {aiNodes && (
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-mono"
-                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.5)' }}>
-                  <span className="w-1.5 h-1.5 rounded-full bg-white opacity-60 animate-pulse" />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '7px', padding: '6px 14px', borderRadius: '100px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)', color: 'rgba(255,255,255,0.45)', fontFamily: "'SF Mono','Fira Code',monospace", fontSize: '10px' }}>
+                  <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: 'rgba(255,255,255,0.5)', animation: 'pulse 2s infinite' }} />
                   AI Generated · {aiNodes.length} entities
                 </div>
-                <button onClick={handleResetPathway}
-                  className="text-xs px-3 py-1.5 rounded-full transition-colors"
-                  style={{ color: 'rgba(255,255,255,0.3)', border: '1px solid rgba(255,255,255,0.08)' }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#ffffff'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.3)'; }}>
+                <button onClick={handleResetPathway} style={{ fontFamily: 'Arial, sans-serif', fontSize: '12px', color: 'rgba(255,255,255,0.28)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '100px', padding: '6px 14px', background: 'none', cursor: 'pointer', transition: 'color 0.2s' }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#fff'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.28)'; }}>
                   Reset to Showcase
                 </button>
               </div>
@@ -120,34 +118,32 @@ export default function App() {
       <DevModePanel />
 
       {/* Footer */}
-      <footer className="px-6 py-6" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-        <div className="max-w-5xl mx-auto flex items-center justify-between flex-wrap gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-5 h-5 rounded bg-white flex items-center justify-center">
-              <Dna size={12} className="text-black" />
+      <footer style={{ padding: '24px 32px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+        <div style={{ maxWidth: '1024px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ width: '20px', height: '20px', borderRadius: '6px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Dna size={11} style={{ color: 'rgba(255,255,255,0.5)' }} />
             </div>
-            <span className="text-sm font-semibold text-white">Nexus-Bio</span>
+            <span style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: '14px', color: 'rgba(255,255,255,0.6)' }}>Nexus-Bio</span>
           </div>
-          <div className="flex items-center gap-4 flex-wrap justify-center">
-            <p className="text-xs font-mono" style={{ color: 'rgba(255,255,255,0.2)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap', justifyContent: 'center' }}>
+            <p style={{ fontFamily: "'SF Mono','Fira Code',monospace", fontSize: '10px', color: 'rgba(255,255,255,0.15)', margin: 0 }}>
               © {new Date().getFullYear()} Nexus-Bio. All rights reserved.
             </p>
-            <span style={{ color: 'rgba(255,255,255,0.1)' }}>·</span>
-            <a href="/terms" className="text-xs font-mono transition-colors"
-              style={{ color: 'rgba(255,255,255,0.2)' }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.6)'; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.2)'; }}>
+            <span style={{ color: 'rgba(255,255,255,0.08)' }}>·</span>
+            <a href="/terms" style={{ fontFamily: "'SF Mono','Fira Code',monospace", fontSize: '10px', color: 'rgba(255,255,255,0.18)', textDecoration: 'none', transition: 'color 0.2s' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.55)'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.18)'; }}>
               Terms of Service
             </a>
-            <span style={{ color: 'rgba(255,255,255,0.1)' }}>·</span>
-            <a href="/privacy" className="text-xs font-mono transition-colors"
-              style={{ color: 'rgba(255,255,255,0.2)' }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.6)'; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.2)'; }}>
+            <span style={{ color: 'rgba(255,255,255,0.08)' }}>·</span>
+            <a href="/privacy" style={{ fontFamily: "'SF Mono','Fira Code',monospace", fontSize: '10px', color: 'rgba(255,255,255,0.18)', textDecoration: 'none', transition: 'color 0.2s' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.55)'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.18)'; }}>
               Privacy Policy
             </a>
           </div>
-          <div className="w-24 hidden md:block" />
+          <div style={{ width: '100px' }} />
         </div>
       </footer>
     </main>
