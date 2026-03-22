@@ -5,6 +5,7 @@ import { PathwayNode, PathwayEdge, NodeType, EdgeRelationshipType, SHOWCASE_PUBC
 import MoleculeViewer from './MoleculeViewer';
 import KineticPanel from './KineticPanel';
 import ThermodynamicsPanel from './ThermodynamicsPanel';
+import CellImageViewer from './CellImageViewer';
 
 // ── AlphaFold IDs for showcase enzymes ────────────────────────────────
 const ENZYME_ALPHAFOLD: Record<string, { afId: string; pdbId: string; name: string }> = {
@@ -548,40 +549,36 @@ export default function NodePanel({ node, onClose, allNodes, allEdges }: NodePan
                         </p>
                       </div>
                     ) : (
-                      // Truly no structure available
-                      <div style={{ padding: '20px', borderRadius: '10px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
-                          <Atom size={18} style={{ color: 'rgba(255,255,255,0.2)', flexShrink: 0 }} />
-                          <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '13px', fontWeight: 500, margin: 0 }}>
-                            3D structure not available for this node
+                      // No molecular structure → show microscopy images
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        <div style={{ padding: '8px 12px', borderRadius: '8px', background: 'rgba(200,224,208,0.04)', border: '1px solid rgba(200,224,208,0.1)' }}>
+                          <p style={{ color: 'rgba(200,224,208,0.6)', fontSize: '11px', margin: '0 0 2px', fontWeight: 500 }}>
+                            Biological Entity — Microscopy View
+                          </p>
+                          <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '10px', margin: 0, lineHeight: 1.5 }}>
+                            This node exists at a scale beyond molecular visualization.
+                            Showing reference microscopy images instead.
                           </p>
                         </div>
-                        <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '12px', lineHeight: 1.7, margin: '0 0 14px' }}>
-                          Nexus-Bio renders 3D structures for <strong style={{ color: 'rgba(255,255,255,0.5)' }}>molecular entities</strong> only —
-                          such as metabolites, enzymes, and proteins. This node represents a
-                          biological entity (e.g. a cell, tissue, organism, or physiological process)
-                          that exists at a scale beyond molecular visualization.
-                        </p>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                          <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.07em', margin: '0 0 4px' }}>
-                            For structural data, try:
+                        <CellImageViewer searchTerm={node.canonicalLabel || node.label} height={260} />
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                          <p style={{ color: 'rgba(255,255,255,0.15)', fontSize: '9px', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.06em', margin: 0 }}>
+                            Search more databases:
                           </p>
-                          {[
-                            { label: 'UniProt', desc: 'Protein sequences & structures', url: `https://www.uniprot.org/uniprotkb?query=${encodeURIComponent(node.label)}` },
-                            { label: 'PubChem', desc: 'Small molecule compounds', url: `https://pubchem.ncbi.nlm.nih.gov/#query=${encodeURIComponent(node.label)}` },
-                            { label: 'RCSB PDB', desc: 'Experimental 3D structures', url: `https://www.rcsb.org/search?request=${encodeURIComponent(JSON.stringify({ query: { type: 'terminal', service: 'full_text', parameters: { value: node.label } } }))}` },
-                          ].map(db => (
-                            <a key={db.label} href={db.url} target="_blank" rel="noopener noreferrer"
-                              style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', borderRadius: '8px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', textDecoration: 'none' }}
-                              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.15)'; }}
-                              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.06)'; }}>
-                              <div>
-                                <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '12px', fontWeight: 500, margin: '0 0 2px' }}>{db.label}</p>
-                                <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', margin: 0 }}>{db.desc}</p>
-                              </div>
-                              <ExternalLink size={12} style={{ color: 'rgba(255,255,255,0.2)', flexShrink: 0 }} />
-                            </a>
-                          ))}
+                          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                            {[
+                              { label: 'Cell Image Library', url: `https://cellimagelibrary.org/images/search?simple_search=${encodeURIComponent(node.label)}` },
+                              { label: 'UniProt', url: `https://www.uniprot.org/uniprotkb?query=${encodeURIComponent(node.label)}` },
+                              { label: 'RCSB PDB', url: `https://www.rcsb.org/search?request=${encodeURIComponent(JSON.stringify({ query: { type: 'terminal', service: 'full_text', parameters: { value: node.label } } }))}` },
+                            ].map(db => (
+                              <a key={db.label} href={db.url} target="_blank" rel="noopener noreferrer"
+                                style={{ padding: '4px 10px', borderRadius: '6px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.35)', fontSize: '10px', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}
+                                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.2)'; (e.currentTarget as HTMLElement).style.color = '#fff'; }}
+                                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.07)'; (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.35)'; }}>
+                                {db.label} <ExternalLink size={8} />
+                              </a>
+                            ))}
+                          </div>
                         </div>
                       </div>
                     )}
