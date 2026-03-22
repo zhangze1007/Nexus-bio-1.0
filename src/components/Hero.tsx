@@ -1,144 +1,146 @@
-import { motion } from 'framer-motion';
-import { ArrowRight, FlaskConical, Search, Dna } from 'lucide-react';
+import { motion, useScroll, useTransform } from 'framer-motion';
+import { ArrowRight, Dna, BookOpen, Microscope } from 'lucide-react';
+import { useRef } from 'react';
 
-const features = [
-  { icon: <Dna size={14} />, label: 'Metabolic Pathway Visualization' },
-  { icon: <Search size={14} />, label: 'PubMed Literature Search' },
-  { icon: <FlaskConical size={14} />, label: 'AI-Powered Paper Analysis' },
-];
+function AmbientGrid() {
+  return (
+    <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
+      <svg width="100%" height="100%" style={{ position: 'absolute', inset: 0, opacity: 0.018 }}>
+        <defs>
+          <pattern id="grid-minor" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" strokeWidth="0.5" />
+          </pattern>
+          <pattern id="grid-major" width="200" height="200" patternUnits="userSpaceOnUse">
+            <path d="M 200 0 L 0 0 0 200" fill="none" stroke="white" strokeWidth="1" />
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#grid-minor)" />
+        <rect width="100%" height="100%" fill="url(#grid-major)" />
+      </svg>
+      <div style={{ position: 'absolute', top: '-20%', left: '50%', transform: 'translateX(-50%)', width: '80vw', height: '60vh', background: 'radial-gradient(ellipse at center, rgba(200,216,232,0.04) 0%, transparent 65%)' }} />
+      <div style={{ position: 'absolute', top: '20%', left: '-10%', width: '40vw', height: '40vh', background: 'radial-gradient(ellipse at center, rgba(180,200,220,0.025) 0%, transparent 70%)' }} />
+      <div style={{ position: 'absolute', bottom: '10%', right: '-5%', width: '30vw', height: '30vh', background: 'radial-gradient(ellipse at center, rgba(200,210,230,0.02) 0%, transparent 70%)' }} />
+    </div>
+  );
+}
+
+function StatChip({ value, label }: { value: string; label: string }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '14px 20px', borderRadius: '12px', background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', backdropFilter: 'blur(8px)', minWidth: '100px' }}>
+      <span style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: 'clamp(1.25rem, 2.5vw, 1.625rem)', color: 'rgba(255,255,255,0.88)', lineHeight: 1.2, letterSpacing: '-0.01em' }}>{value}</span>
+      <span style={{ fontFamily: "'SF Mono','Fira Code',monospace", fontSize: '9px', color: 'rgba(255,255,255,0.2)', textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: '4px' }}>{label}</span>
+    </div>
+  );
+}
 
 export default function Hero() {
+  const ref = useRef<HTMLElement>(null);
+  const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end start'] });
+  const titleY = useTransform(scrollYProgress, [0, 1], [0, -50]);
+  const titleOpacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
+
   return (
-    <header className="relative w-full min-h-screen flex flex-col items-center justify-center px-4 overflow-hidden">
+    <header ref={ref} style={{ position: 'relative', width: '100%', minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 24px', overflow: 'hidden' }}>
+      <AmbientGrid />
 
-      {/* Radial vignette */}
-      <div className="absolute inset-0 pointer-events-none"
-        style={{ background: 'radial-gradient(ellipse 80% 60% at 50% 40%, rgba(255,255,255,0.03) 0%, transparent 70%)' }}
-      />
-
-      {/* Top nav */}
-      <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4"
-        style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(10,10,10,0.8)', backdropFilter: 'blur(12px)' }}>
-        <div className="flex items-center gap-2.5">
-          <div className="w-6 h-6 rounded-md bg-white flex items-center justify-center">
-            <Dna size={14} className="text-black" />
+      {/* Nav */}
+      <nav style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 32px', height: '60px', borderBottom: '1px solid rgba(255,255,255,0.055)', background: 'rgba(10,10,10,0.78)', backdropFilter: 'blur(20px)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Dna size={14} style={{ color: 'rgba(255,255,255,0.7)' }} />
           </div>
-          <span className="text-white font-semibold text-sm tracking-tight">Nexus-Bio</span>
+          <span style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: '16px', color: 'rgba(255,255,255,0.88)', letterSpacing: '-0.01em' }}>Nexus-Bio</span>
         </div>
-        <div className="hidden md:flex items-center gap-6">
-          {[['Visualize', 'demo'], ['Search', 'search'], ['Analyze', 'analyzer'], ['Contact', 'contact']].map(([label, id]) => (
-            <a key={id} href={`#${id}`}
-              className="text-xs font-medium transition-colors"
-              style={{ color: 'rgba(255,255,255,0.45)' }}
-              onMouseEnter={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.9)')}
-              onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.45)')}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
+          {[['Visualize','demo'],['Search','search'],['Analyze','analyzer'],['Contact','contact']].map(([label, id]) => (
+            <a key={id} href={`#${id}`} style={{ fontFamily: 'Arial, sans-serif', fontSize: '12px', color: 'rgba(255,255,255,0.38)', textDecoration: 'none', letterSpacing: '0.02em', transition: 'color 0.2s' }}
+              onMouseEnter={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.85)')}
+              onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.38)')}>
               {label}
             </a>
           ))}
         </div>
-        <a href="#analyzer"
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
-          style={{ background: 'rgba(255,255,255,0.08)', color: '#f5f5f5', border: '1px solid rgba(255,255,255,0.1)' }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.14)'; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)'; }}>
+        <a href="#analyzer" style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 16px', borderRadius: '8px', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.75)', fontFamily: 'Arial, sans-serif', fontSize: '12px', textDecoration: 'none', transition: 'all 0.2s' }}
+          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.12)'; (e.currentTarget as HTMLElement).style.color = '#fff'; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.07)'; (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.75)'; }}>
           Try Now <ArrowRight size={11} />
         </a>
       </nav>
 
-      {/* Main content */}
-      <div className="relative z-10 text-center max-w-3xl mx-auto pt-20">
+      {/* Content */}
+      <motion.div style={{ y: titleY, opacity: titleOpacity, position: 'relative', zIndex: 10, textAlign: 'center', maxWidth: '820px', margin: '0 auto', paddingTop: '80px' }}>
 
         {/* Badge */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-mono mb-8"
-          style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.4)' }}
-        >
-          <span className="w-1.5 h-1.5 rounded-full bg-white opacity-50" />
-          Next-Gen Bio-Intelligent Architecture
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '5px 14px', borderRadius: '100px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)', marginBottom: '40px' }}>
+          <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: 'rgba(200,216,232,0.6)' }} />
+          <span style={{ fontFamily: "'SF Mono','Fira Code',monospace", fontSize: '10px', color: 'rgba(255,255,255,0.32)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+            Next-Gen Bio-Intelligent Architecture
+          </span>
         </motion.div>
 
-        {/* Title */}
-        <motion.h1
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.1 }}
-          className="text-5xl md:text-7xl font-semibold text-white mb-6"
-          style={{ letterSpacing: '-0.03em', lineHeight: 1.1 }}
-        >
+        {/* Title — DM Serif Display */}
+        <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.1, ease: [0.22,1,0.36,1] }}
+          style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: 'clamp(2.5rem, 7vw, 4.75rem)', fontWeight: 400, lineHeight: 1.08, letterSpacing: '-0.02em', color: 'rgba(255,255,255,0.93)', margin: '0 0 24px' }}>
           From literature<br />
-          <span style={{ color: 'rgba(255,255,255,0.35)' }}>to mechanistic insight.</span>
+          <em style={{ color: 'rgba(255,255,255,0.28)', fontStyle: 'italic' }}>to mechanistic insight.</em>
         </motion.h1>
 
-        {/* Subtitle */}
-        <motion.p
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className="text-base md:text-lg mb-4 max-w-xl mx-auto leading-relaxed"
-          style={{ color: 'rgba(255,255,255,0.4)' }}
-        >
-          Nexus-Bio extracts metabolic nodes, enzymatic reactions, and pathway logic from any research paper — rendered as an interactive 3D map in seconds.
+        {/* Subtitle — Arial */}
+        <motion.p initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.2 }}
+          style={{ fontFamily: 'Arial, sans-serif', fontSize: 'clamp(13px, 1.6vw, 15px)', lineHeight: 1.8, color: 'rgba(255,255,255,0.40)', maxWidth: '540px', margin: '0 auto 12px', letterSpacing: '-0.003em' }}>
+          Nexus-Bio extracts metabolic nodes, enzymatic reactions, and pathway logic
+          from any research paper — rendered as an interactive 3D map in seconds.
         </motion.p>
 
-        {/* Secondary line */}
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.3 }}
-          className="text-sm mb-10"
-          style={{ color: 'rgba(255,255,255,0.2)', fontStyle: 'italic' }}
-        >
+        {/* Tagline — DM Serif italic */}
+        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6, delay: 0.3 }}
+          style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontStyle: 'italic', fontSize: '14px', color: 'rgba(255,255,255,0.16)', margin: '0 0 52px' }}>
           Built for researchers, biotech teams, and grant-stage startups.
         </motion.p>
 
         {/* CTAs */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.35 }}
-          className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-16"
-        >
-          <a href="#analyzer"
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all"
-            style={{ background: '#ffffff', color: '#0a0a0a' }}
-            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#e5e5e5'; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#ffffff'; }}>
-            Analyze a Paper
-            <ArrowRight size={14} />
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.35 }}
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '64px' }}>
+          <a href="#analyzer" style={{ display: 'flex', alignItems: 'center', gap: '7px', padding: '11px 24px', borderRadius: '10px', background: '#ffffff', color: '#0a0a0a', fontFamily: 'Arial, sans-serif', fontSize: '13px', fontWeight: 700, textDecoration: 'none', transition: 'all 0.2s', letterSpacing: '-0.01em' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#e8e8e8'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 20px rgba(255,255,255,0.12)'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#ffffff'; (e.currentTarget as HTMLElement).style.transform = 'none'; (e.currentTarget as HTMLElement).style.boxShadow = 'none'; }}>
+            Analyze a Paper <ArrowRight size={13} />
           </a>
-          <a href="#search"
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all"
-            style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.65)', border: '1px solid rgba(255,255,255,0.1)' }}
-            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.1)'; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.06)'; }}>
-            Browse Literature
+          <a href="#search" style={{ display: 'flex', alignItems: 'center', gap: '7px', padding: '11px 24px', borderRadius: '10px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.55)', fontFamily: 'Arial, sans-serif', fontSize: '13px', textDecoration: 'none', transition: 'all 0.2s' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.09)'; (e.currentTarget as HTMLElement).style.color = '#fff'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.05)'; (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.55)'; }}>
+            <BookOpen size={13} /> Browse Literature
           </a>
         </motion.div>
 
-        {/* Feature pills */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.5 }}
-          className="flex flex-wrap items-center justify-center gap-2"
-        >
-          {features.map((f, i) => (
-            <div key={i}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs"
-              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.3)' }}>
-              {f.icon}
-              {f.label}
+        {/* Stats */}
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.5 }}
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '40px' }}>
+          <StatChip value="6" label="Literature DBs" />
+          <StatChip value="3D" label="Mol. Structures" />
+          <StatChip value="AI" label="Pathway Engine" />
+          <StatChip value="ODE" label="Kinetic Sim." />
+        </motion.div>
+
+        {/* Feature tags */}
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6, delay: 0.65 }}
+          style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+          {[
+            { icon: <Dna size={11} />, label: 'AlphaFold pLDDT' },
+            { icon: <Microscope size={11} />, label: 'PubChem 3D Conformers' },
+            { icon: <BookOpen size={11} />, label: 'Evidence Trace' },
+          ].map((f, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 12px', borderRadius: '100px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.22)', fontFamily: 'Arial, sans-serif', fontSize: '11px' }}>
+              {f.icon} {f.label}
             </div>
           ))}
         </motion.div>
-      </div>
+      </motion.div>
 
-      {/* Bottom fade */}
-      <div className="absolute bottom-0 left-0 right-0 h-32 pointer-events-none"
-        style={{ background: 'linear-gradient(to bottom, transparent, #0a0a0a)' }} />
+      {/* Bottom divider + fade */}
+      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(to right, transparent, rgba(255,255,255,0.06) 30%, rgba(255,255,255,0.06) 70%, transparent)' }} />
+      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '120px', background: 'linear-gradient(to bottom, transparent, #0a0a0a)', pointerEvents: 'none' }} />
     </header>
   );
 }
