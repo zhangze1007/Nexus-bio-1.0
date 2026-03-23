@@ -188,7 +188,7 @@ export default function CellImageViewer({ searchTerm, height = 280 }: CellImageV
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
           <Microscope size={12} style={{ color: 'rgba(200,224,208,0.6)' }} />
-          <span style={{ color: 'rgba(200,224,208,0.6)', fontSize: '10px', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+          <span style={{ color: 'rgba(200,224,208,0.6)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.06em' }}>
             Microscopy Reference
           </span>
         </div>
@@ -199,13 +199,13 @@ export default function CellImageViewer({ searchTerm, height = 280 }: CellImageV
               const hasSource = images.some(i => i.source === src);
               if (!hasSource) return null;
               return (
-                <span key={src} style={{ fontSize: '8px', fontFamily: 'monospace', padding: '1px 5px', borderRadius: '3px', border: `1px solid ${SOURCE_COLORS[src]}`, color: SOURCE_COLORS[src] }}>
+                <span key={src} style={{ fontSize: '8px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", padding: '1px 5px', borderRadius: '8px', border: `1px solid ${SOURCE_COLORS[src]}`, color: SOURCE_COLORS[src] }}>
                   {src === 'Cell Image Library' ? 'CIL' : src === 'EMBL-EBI IDR' ? 'IDR' : src}
                 </span>
               );
             })}
             {total > 1 && (
-              <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '9px', fontFamily: 'monospace' }}>
+              <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '9px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1" }}>
                 {currentIdx + 1}/{total}
               </span>
             )}
@@ -214,17 +214,17 @@ export default function CellImageViewer({ searchTerm, height = 280 }: CellImageV
       </div>
 
       {/* Main image */}
-      <div style={{ position: 'relative', width: '100%', height: `${height}px`, borderRadius: '10px', overflow: 'hidden', background: '#0a0a0a', border: '1px solid rgba(255,255,255,0.08)' }}>
+      <div style={{ position: 'relative', width: '100%', height: `${height}px`, borderRadius: '20px', overflow: 'hidden', background: '#0a0a0a', border: '1px solid rgba(255,255,255,0.08)' }}>
 
         {status === 'loading' && (
           <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
             <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
             <Loader2 size={16} style={{ color: 'rgba(200,224,208,0.5)', animation: 'spin 1s linear infinite' }} />
             <div style={{ textAlign: 'center' }}>
-              <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '10px', fontFamily: 'monospace', margin: '0 0 4px' }}>
+              <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", margin: '0 0 4px' }}>
                 Searching 3 databases in parallel...
               </p>
-              <p style={{ color: 'rgba(255,255,255,0.12)', fontSize: '9px', fontFamily: 'monospace', margin: 0 }}>
+              <p style={{ color: 'rgba(255,255,255,0.12)', fontSize: '9px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", margin: 0 }}>
                 Wikipedia · Cell Image Library · EMBL-EBI IDR
               </p>
             </div>
@@ -243,7 +243,7 @@ export default function CellImageViewer({ searchTerm, height = 280 }: CellImageV
                 { label: 'EMBL-EBI IDR', url: `https://idr.openmicroscopy.org/search/?query=name:${encodeURIComponent(searchTerm)}` },
               ].map(db => (
                 <a key={db.label} href={db.url} target="_blank" rel="noopener noreferrer"
-                  style={{ color: 'rgba(200,224,208,0.5)', fontSize: '10px', fontFamily: 'monospace', display: 'flex', alignItems: 'center', gap: '3px', textDecoration: 'none' }}>
+                  style={{ color: 'rgba(200,224,208,0.5)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", display: 'flex', alignItems: 'center', gap: '3px', textDecoration: 'none' }}>
                   {db.label} <ExternalLink size={9} />
                 </a>
               ))}
@@ -276,12 +276,12 @@ export default function CellImageViewer({ searchTerm, height = 280 }: CellImageV
               </p>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 {current.imagingMethod && (
-                  <span style={{ color: SOURCE_COLORS[current.source] || 'rgba(255,255,255,0.4)', fontSize: '9px', fontFamily: 'monospace', padding: '1px 5px', border: `1px solid ${SOURCE_COLORS[current.source] || 'rgba(255,255,255,0.2)'}`, borderRadius: '3px' }}>
+                  <span style={{ color: SOURCE_COLORS[current.source] || 'rgba(255,255,255,0.4)', fontSize: '9px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", padding: '1px 5px', border: `1px solid ${SOURCE_COLORS[current.source] || 'rgba(255,255,255,0.2)'}`, borderRadius: '8px' }}>
                     {current.imagingMethod}
                   </span>
                 )}
                 {current.organism && (
-                  <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '9px', fontFamily: 'monospace', fontStyle: 'italic' }}>
+                  <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '9px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", fontStyle: 'italic' }}>
                     {current.organism}
                   </span>
                 )}
@@ -312,7 +312,7 @@ export default function CellImageViewer({ searchTerm, height = 280 }: CellImageV
             {current.description}
           </p>
           <a href={current.fullUrl} target="_blank" rel="noopener noreferrer"
-            style={{ color: SOURCE_COLORS[current.source] || 'rgba(255,255,255,0.3)', fontSize: '9px', fontFamily: 'monospace', display: 'flex', alignItems: 'center', gap: '3px', textDecoration: 'none', flexShrink: 0 }}
+            style={{ color: SOURCE_COLORS[current.source] || 'rgba(255,255,255,0.3)', fontSize: '9px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", display: 'flex', alignItems: 'center', gap: '3px', textDecoration: 'none', flexShrink: 0 }}
             onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '0.8'; }}
             onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '1'; }}>
             {current.source} <ExternalLink size={8} />
@@ -325,7 +325,7 @@ export default function CellImageViewer({ searchTerm, height = 280 }: CellImageV
         <div style={{ display: 'flex', gap: '5px', overflowX: 'auto', paddingBottom: '2px' }}>
           {images.map((img, i) => (
             <button key={img.id} onClick={() => setCurrentIdx(i)}
-              style={{ flexShrink: 0, width: '44px', height: '44px', borderRadius: '6px', overflow: 'hidden', border: `2px solid ${i === currentIdx ? (SOURCE_COLORS[img.source] || 'rgba(255,255,255,0.4)') : 'rgba(255,255,255,0.06)'}`, background: '#0a0a0a', cursor: 'pointer', padding: 0, position: 'relative' }}>
+              style={{ flexShrink: 0, width: '44px', height: '44px', borderRadius: '14px', overflow: 'hidden', border: `2px solid ${i === currentIdx ? (SOURCE_COLORS[img.source] || 'rgba(255,255,255,0.4)') : 'rgba(255,255,255,0.06)'}`, background: '#0a0a0a', cursor: 'pointer', padding: 0, position: 'relative' }}>
               {imgError[img.id]
                 ? <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Microscope size={12} style={{ color: 'rgba(255,255,255,0.2)' }} /></div>
                 : <img src={img.thumbnailUrl} alt={img.title} onError={() => setImgError(prev => ({ ...prev, [img.id]: true }))} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
