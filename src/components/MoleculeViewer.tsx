@@ -118,14 +118,14 @@ export default function MoleculeViewer({ nodeId, pubchemCID, searchName, molBloc
     : null;
 
   return (
-    <div style={{ width: '100%', height: `${height}px`, position: 'relative', borderRadius: '10px', overflow: 'hidden', background: '#ffffff', border: '1px solid rgba(0,0,0,0.08)', boxShadow: '0 2px 12px rgba(0,0,0,0.12)' }}>
+    <div style={{ width: '100%', height: `${height}px`, position: 'relative', borderRadius: '20px', overflow: 'hidden', background: '#ffffff', border: '1px solid rgba(0,0,0,0.08)', boxShadow: '0 2px 12px rgba(0,0,0,0.12)' }}>
       <div ref={containerRef} style={{ width: '100%', height: '100%', background: '#ffffff' }} />
 
       {status === 'loading' && (
         <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', background: '#ffffff', pointerEvents: 'none' }}>
           <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
           <Loader2 size={16} style={{ color: '#6495ED', animation: 'spin 1s linear infinite' }} />
-          <span style={{ color: 'rgba(0,0,0,0.35)', fontSize: '10px', fontFamily: 'monospace' }}>
+          <span style={{ color: 'rgba(0,0,0,0.35)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1" }}>
             {searchName ? `Searching PubChem for "${searchName}"...` : 'Loading 3D conformer...'}
           </span>
         </div>
@@ -137,7 +137,7 @@ export default function MoleculeViewer({ nodeId, pubchemCID, searchName, molBloc
           <span style={{ color: 'rgba(0,0,0,0.35)', fontSize: '11px' }}>Structure not found in PubChem</span>
           {pubchemLink && (
             <a href={pubchemLink} target="_blank" rel="noopener noreferrer"
-              style={{ color: '#6495ED', fontSize: '10px', fontFamily: 'monospace', display: 'flex', alignItems: 'center', gap: '3px' }}>
+              style={{ color: '#6495ED', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", display: 'flex', alignItems: 'center', gap: '3px' }}>
               Search PubChem manually <ExternalLink size={8} />
             </a>
           )}
@@ -147,7 +147,7 @@ export default function MoleculeViewer({ nodeId, pubchemCID, searchName, molBloc
       {status === 'ready' && (
         <>
           <div style={{ position: 'absolute', top: '8px', left: '10px', pointerEvents: 'none' }}>
-            <span style={{ color: 'rgba(0,0,0,0.3)', fontSize: '9px', fontFamily: 'monospace', background: 'rgba(255,255,255,0.85)', padding: '2px 6px', borderRadius: '4px' }}>
+            <span style={{ color: 'rgba(0,0,0,0.3)', fontSize: '9px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", background: 'rgba(255,255,255,0.85)', padding: '2px 6px', borderRadius: '8px' }}>
               {label || searchName || nodeId}
               {displayCID && ` · CID ${displayCID}`}
             </span>
@@ -155,7 +155,7 @@ export default function MoleculeViewer({ nodeId, pubchemCID, searchName, molBloc
           {pubchemLink && (
             <div style={{ position: 'absolute', top: '8px', right: '10px' }}>
               <a href={pubchemLink} target="_blank" rel="noopener noreferrer"
-                style={{ color: 'rgba(0,0,0,0.25)', fontSize: '9px', fontFamily: 'monospace', display: 'flex', alignItems: 'center', gap: '3px', textDecoration: 'none', background: 'rgba(255,255,255,0.85)', padding: '2px 6px', borderRadius: '4px' }}
+                style={{ color: 'rgba(0,0,0,0.25)', fontSize: '9px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", display: 'flex', alignItems: 'center', gap: '3px', textDecoration: 'none', background: 'rgba(255,255,255,0.85)', padding: '2px 6px', borderRadius: '8px' }}
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(0,0,0,0.7)'; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(0,0,0,0.25)'; }}>
                 PubChem <ExternalLink size={8} />
@@ -163,7 +163,7 @@ export default function MoleculeViewer({ nodeId, pubchemCID, searchName, molBloc
             </div>
           )}
           <div style={{ position: 'absolute', bottom: '8px', right: '10px', pointerEvents: 'none' }}>
-            <span style={{ color: 'rgba(0,0,0,0.2)', fontSize: '9px', fontFamily: 'monospace', background: 'rgba(255,255,255,0.7)', padding: '2px 6px', borderRadius: '4px' }}>3D · CPK</span>
+            <span style={{ color: 'rgba(0,0,0,0.2)', fontSize: '9px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", background: 'rgba(255,255,255,0.7)', padding: '2px 6px', borderRadius: '8px' }}>3D · CPK</span>
           </div>
         </>
       )}
