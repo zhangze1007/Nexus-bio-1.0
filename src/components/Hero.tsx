@@ -316,10 +316,10 @@ export default function Hero() {
             margin: '0 0 24px',
             textShadow: '0 0 80px rgba(180,210,240,0.08)',
           }}>
-          From literature
+          From Literature
           <br />
           <span style={{ color: 'rgba(255,255,255,0.22)', fontStyle: 'normal' }}>
-            to mechanistic insight.
+            to Mechanistic Insight
           </span>
         </motion.h1>
 
