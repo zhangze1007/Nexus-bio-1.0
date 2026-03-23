@@ -52,18 +52,18 @@ function MiniChart({ x, y, color, label }: { x: number[]; y: number[]; color: st
 
   return (
     <div>
-      <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '9px', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 4px' }}>{label}</p>
+      <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '9px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 4px' }}>{label}</p>
       <svg width={W} height={H}>
         {[0.33, 0.66, 1].map(f => (
           <line key={f} x1={PAD.l} x2={W-PAD.r} y1={PAD.t+iH*(1-f)} y2={PAD.t+iH*(1-f)} stroke="rgba(255,255,255,0.05)" strokeWidth={0.5} />
         ))}
         {[0, 0.5, 1].map(f => (
-          <text key={f} x={PAD.l-4} y={PAD.t+iH*(1-f)+3} textAnchor="end" fill="rgba(255,255,255,0.18)" fontSize={7} fontFamily="monospace">
+          <text key={f} x={PAD.l-4} y={PAD.t+iH*(1-f)+3} textAnchor="end" fill="rgba(255,255,255,0.18)" fontSize={7} fontFamily="Public Sans, sans-serif">
             {(yMax*f).toFixed(2)}
           </text>
         ))}
         {[0, 0.5, 1].map(f => (
-          <text key={f} x={PAD.l+iW*f} y={H-3} textAnchor="middle" fill="rgba(255,255,255,0.18)" fontSize={7} fontFamily="monospace">
+          <text key={f} x={PAD.l+iW*f} y={H-3} textAnchor="middle" fill="rgba(255,255,255,0.18)" fontSize={7} fontFamily="Public Sans, sans-serif">
             {((xMax-xMin)*f).toFixed(0)}s
           </text>
         ))}
@@ -132,21 +132,21 @@ In 3-4 sentences explain: (1) whether this reaction proceeds spontaneously under
   }) => (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-        <label style={{ color: 'rgba(255,255,255,0.4)', fontSize: '10px', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</label>
-        <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '9px', fontFamily: 'monospace' }}>{unit}</span>
+        <label style={{ color: 'rgba(255,255,255,0.4)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</label>
+        <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '9px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1" }}>{unit}</span>
       </div>
       <input type={type} value={value}
         onChange={e => onChange(e.target.value)}
-        style={{ width: '100%', padding: '6px 10px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px', color: '#ffffff', fontSize: '12px', fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box' }} />
-      {hint && <p style={{ color: 'rgba(255,255,255,0.15)', fontSize: '9px', margin: '3px 0 0', fontFamily: 'monospace' }}>{hint}</p>}
+        style={{ width: '100%', padding: '6px 10px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '14px', color: '#ffffff', fontSize: '12px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", outline: 'none', boxSizing: 'border-box' }} />
+      {hint && <p style={{ color: 'rgba(255,255,255,0.15)', fontSize: '9px', margin: '3px 0 0', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1" }}>{hint}</p>}
     </div>
   );
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
 
-      <div style={{ padding: '10px 12px', borderRadius: '8px', background: 'rgba(200,224,208,0.05)', border: '1px solid rgba(200,224,208,0.1)' }}>
-        <p style={{ color: 'rgba(200,224,208,0.6)', fontSize: '11px', fontFamily: 'monospace', margin: 0 }}>
+      <div style={{ padding: '10px 12px', borderRadius: '16px', background: 'rgba(200,224,208,0.05)', border: '1px solid rgba(200,224,208,0.1)' }}>
+        <p style={{ color: 'rgba(200,224,208,0.6)', fontSize: '11px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", margin: 0 }}>
           Gibbs free energy · Mass balance · Thermodynamic spontaneity
         </p>
         <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', margin: '3px 0 0' }}>
@@ -174,14 +174,14 @@ In 3-4 sentences explain: (1) whether this reaction proceeds spontaneously under
 
       <div style={{ display: 'flex', gap: '8px' }}>
         <button onClick={run}
-          style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px', padding: '10px', borderRadius: '8px', background: '#ffffff', color: '#0a0a0a', border: 'none', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+          style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px', padding: '10px', borderRadius: '16px', background: '#ffffff', color: '#0a0a0a', border: 'none', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
           onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#e5e5e5'; }}
           onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#ffffff'; }}>
           <Play size={13} /> Calculate ΔG
         </button>
         {result && (
           <button onClick={() => { setResult(null); setAi({ text: '', loading: false }); }}
-            style={{ padding: '10px 14px', borderRadius: '8px', background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.4)', border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer' }}>
+            style={{ padding: '10px 14px', borderRadius: '16px', background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.4)', border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer' }}>
             <RotateCcw size={13} />
           </button>
         )}
@@ -197,23 +197,23 @@ In 3-4 sentences explain: (1) whether this reaction proceeds spontaneously under
               { l: 'Spontaneous', v: result.spontaneous ? 'Yes (exergonic)' : 'No (endergonic)', col: result.spontaneous ? '#C8E0D0' : '#E8C8D4' },
               { l: 'T (Kelvin)', v: `${T.toFixed(2)} K`, col: 'rgba(255,255,255,0.5)' },
             ].map(m => (
-              <div key={m.l} style={{ padding: '8px 10px', borderRadius: '6px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '9px', fontFamily: 'monospace', margin: '0 0 3px', textTransform: 'uppercase' }}>{m.l}</p>
-                <p style={{ color: m.col, fontSize: '11px', fontFamily: 'monospace', margin: 0, fontWeight: 600 }}>{m.v}</p>
+              <div key={m.l} style={{ padding: '8px 10px', borderRadius: '14px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '9px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", margin: '0 0 3px', textTransform: 'uppercase' }}>{m.l}</p>
+                <p style={{ color: m.col, fontSize: '11px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", margin: 0, fontWeight: 600 }}>{m.v}</p>
               </div>
             ))}
           </div>
 
           {/* Equation display */}
-          <div style={{ padding: '10px 12px', borderRadius: '8px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
-            <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', fontFamily: 'monospace', margin: '0 0 4px' }}>ΔG = ΔG° + RT ln(Q)</p>
-            <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '11px', fontFamily: 'monospace', margin: 0 }}>
+          <div style={{ padding: '10px 12px', borderRadius: '16px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+            <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", margin: '0 0 4px' }}>ΔG = ΔG° + RT ln(Q)</p>
+            <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '11px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", margin: 0 }}>
               {result.dG.toFixed(2)} = {dG0} + {(R * T).toFixed(3)} × ln(Q)
             </p>
           </div>
 
           {/* Mass balance charts */}
-          <div style={{ padding: '14px', borderRadius: '10px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div style={{ padding: '14px', borderRadius: '20px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <MiniChart x={result.sim.time} y={result.sim.S} color="#C8D8E8" label="Substrate [S] over time" />
             <MiniChart x={result.sim.time} y={result.sim.P} color="#C8E0D0" label="Product [P] over time" />
           </div>
@@ -221,10 +221,10 @@ In 3-4 sentences explain: (1) whether this reaction proceeds spontaneously under
       )}
 
       {(ai.loading || ai.text) && (
-        <div style={{ padding: '14px', borderRadius: '10px', background: 'rgba(200,224,208,0.04)', border: '1px solid rgba(200,224,208,0.1)' }}>
+        <div style={{ padding: '14px', borderRadius: '20px', background: 'rgba(200,224,208,0.04)', border: '1px solid rgba(200,224,208,0.1)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
             <Info size={11} style={{ color: 'rgba(200,224,208,0.5)' }} />
-            <span style={{ color: 'rgba(200,224,208,0.5)', fontSize: '10px', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.06em' }}>AI Interpretation</span>
+            <span style={{ color: 'rgba(200,224,208,0.5)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.06em' }}>AI Interpretation</span>
           </div>
           {ai.loading
             ? <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -236,7 +236,7 @@ In 3-4 sentences explain: (1) whether this reaction proceeds spontaneously under
         </div>
       )}
 
-      <p style={{ color: 'rgba(255,255,255,0.1)', fontSize: '9px', fontFamily: 'monospace', textAlign: 'center', margin: 0 }}>
+      <p style={{ color: 'rgba(255,255,255,0.1)', fontSize: '9px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", textAlign: 'center', margin: 0 }}>
         ΔG = ΔG° + RT ln(Q) · Based on user-provided concentrations
       </p>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
