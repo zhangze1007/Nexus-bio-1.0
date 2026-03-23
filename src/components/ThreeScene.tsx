@@ -150,103 +150,73 @@ function BondM({s,e,c}:{s:Vec3;e:Vec3;c:string}) {
   );
 }
 
-// ─── GLSL Dissolve Shader — TSL-equivalent materialize effect ────────
-// Particles scatter from random positions → converge to final shape
-// Visually equivalent to AlphaFold3-style structure prediction animation
-
+// ─── GLSL Dissolve Shader ─────────────────────────────────────────────
 const DISSOLVE_VERT = `
-  uniform float uProgress;   // 0 = scattered, 1 = materialized
+  uniform float uProgress;
   uniform float uTime;
-  uniform vec3  uColor;
   attribute float aRandom;
   attribute vec3  aScatterOffset;
-  varying float vProgress;
   varying float vAlpha;
 
-  // Pseudo-random noise
-  float rand(vec2 co) {
-    return fract(sin(dot(co, vec2(12.9898,78.233))) * 43758.5453);
-  }
-
   void main() {
-    vProgress = uProgress;
-
-    // Scatter offset reduces as progress increases
     float scatter = 1.0 - smoothstep(0.0, 0.85, uProgress);
-    vec3 scattered = position + aScatterOffset * scatter * 2.2;
+    vec3 pos = position + aScatterOffset * scatter * 2.0;
+    float turb = sin(uTime * 2.0 + aRandom * 6.28) * 0.06 * (1.0 - uProgress);
+    pos += vec3(turb, turb * 0.7, turb * 1.2);
 
-    // Add turbulence at mid-transition
-    float turb = sin(uTime * 2.0 + aRandom * 6.28) * 0.08 * (1.0 - uProgress);
-    scattered += vec3(turb, turb * 0.7, turb * 1.3);
-
-    vec4 mvPos = modelViewMatrix * vec4(scattered, 1.0);
+    vec4 mvPos = modelViewMatrix * vec4(pos, 1.0);
     gl_Position = projectionMatrix * mvPos;
-
-    // Particle size: large when scattered, small when materialized
-    float size = mix(4.0, 1.8, smoothstep(0.3, 1.0, uProgress));
-    gl_PointSize = size * (200.0 / -mvPos.z);
-
-    // Alpha: fade in early, stay visible
-    vAlpha = smoothstep(0.0, 0.2, uProgress) * (0.3 + 0.7 * smoothstep(0.5, 1.0, uProgress));
+    float size = mix(5.0, 2.0, smoothstep(0.3, 1.0, uProgress));
+    gl_PointSize = size * (180.0 / -mvPos.z);
+    vAlpha = smoothstep(0.0, 0.25, uProgress) * (0.25 + 0.75 * smoothstep(0.4, 1.0, uProgress));
   }
 `;
 
 const DISSOLVE_FRAG = `
   uniform vec3 uColor;
-  varying float vProgress;
   varying float vAlpha;
 
   void main() {
-    // Circular particle shape
     vec2 uv = gl_PointCoord - 0.5;
     float d = length(uv);
     if (d > 0.5) discard;
-
-    // Soft edge
-    float alpha = (1.0 - smoothstep(0.3, 0.5, d)) * vAlpha;
-
-    // Color: warmer/brighter when scattered, settled when materialized
-    vec3 col = mix(uColor * 1.6, uColor, smoothstep(0.0, 0.8, vProgress));
-
-    gl_FragColor = vec4(col, alpha);
+    float alpha = (1.0 - smoothstep(0.28, 0.5, d)) * vAlpha;
+    gl_FragColor = vec4(uColor * 1.4, alpha);
   }
 `;
 
-// Dissolve particle system for a single node
 function DissolveParticles({ color, progress, nodeId }: {
   color: string; progress: number; nodeId: string;
 }) {
   const matRef = useRef<THREE.ShaderMaterial>(null);
-  const COUNT = 80;
+  const COUNT = 60;
 
-  const { positions, randoms, scatterOffsets } = useMemo(() => {
+  const geo = useMemo(() => {
+    const g = new THREE.BufferGeometry();
     const pos = new Float32Array(COUNT * 3);
     const rnd = new Float32Array(COUNT);
-    const scatter = new Float32Array(COUNT * 3);
-    const h = (s: string) => {
-      let v = 2166136261;
-      for (let i = 0; i < s.length; i++) { v ^= s.charCodeAt(i); v = (v * 16777619) >>> 0; }
-      return v;
-    };
+    const sct = new Float32Array(COUNT * 3);
 
     for (let i = 0; i < COUNT; i++) {
-      // Distribute on sphere surface
-      const phi = Math.acos(1 - 2 * ((h(nodeId + i) % 10000) / 10000));
-      const theta = 2 * Math.PI * ((h(nodeId + i * 7) % 10000) / 10000);
-      const r = 0.35 + ((h(nodeId + i * 3) % 1000) / 1000) * 0.25;
+      const phi   = Math.acos(1 - 2 * ((hash(nodeId + i) % 10000) / 10000));
+      const theta = 2 * Math.PI * ((hash(nodeId + i * 7) % 10000) / 10000);
+      const r     = 0.3 + ((hash(nodeId + i * 3) % 1000) / 1000) * 0.3;
 
-      pos[i * 3]     = r * Math.sin(phi) * Math.cos(theta);
-      pos[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
-      pos[i * 3 + 2] = r * Math.cos(phi);
+      pos[i*3]   = r * Math.sin(phi) * Math.cos(theta);
+      pos[i*3+1] = r * Math.sin(phi) * Math.sin(theta);
+      pos[i*3+2] = r * Math.cos(phi);
 
-      rnd[i] = (h(nodeId + i * 13) % 10000) / 10000;
+      rnd[i] = (hash(nodeId + i * 13) % 10000) / 10000;
 
-      // Random scatter direction
-      scatter[i * 3]     = ((h(nodeId + i * 17) % 10000) / 5000 - 1);
-      scatter[i * 3 + 1] = ((h(nodeId + i * 19) % 10000) / 5000 - 1);
-      scatter[i * 3 + 2] = ((h(nodeId + i * 23) % 10000) / 5000 - 1);
+      sct[i*3]   = (hash(nodeId + i * 17) % 10000) / 5000 - 1;
+      sct[i*3+1] = (hash(nodeId + i * 19) % 10000) / 5000 - 1;
+      sct[i*3+2] = (hash(nodeId + i * 23) % 10000) / 5000 - 1;
     }
-    return { positions: pos, randoms: rnd, scatterOffsets: scatter };
+
+    g.setAttribute('position',      new THREE.BufferAttribute(pos, 3));
+    g.setAttribute('aRandom',       new THREE.BufferAttribute(rnd, 1));
+    g.setAttribute('aScatterOffset',new THREE.BufferAttribute(sct, 3));
+    return g;
   }, [nodeId]);
 
   const uniforms = useMemo(() => ({
@@ -257,18 +227,13 @@ function DissolveParticles({ color, progress, nodeId }: {
 
   useFrame((state, dt) => {
     if (!matRef.current) return;
-    matRef.current.uniforms.uProgress.value +=
-      (progress - matRef.current.uniforms.uProgress.value) * dt * 3.5;
-    matRef.current.uniforms.uTime.value = state.clock.elapsedTime;
+    const u = matRef.current.uniforms;
+    u.uProgress.value += (progress - u.uProgress.value) * dt * 3.5;
+    u.uTime.value      = state.clock.elapsedTime;
   });
 
   return (
-    <points>
-      <bufferGeometry>
-        <bufferAttribute attach="attributes-position"    array={positions}     itemSize={3} count={COUNT} />
-        <bufferAttribute attach="attributes-aRandom"     array={randoms}       itemSize={1} count={COUNT} />
-        <bufferAttribute attach="attributes-aScatterOffset" array={scatterOffsets} itemSize={3} count={COUNT} />
-      </bufferGeometry>
+    <points geometry={geo}>
       <shaderMaterial
         ref={matRef}
         vertexShader={DISSOLVE_VERT}
@@ -563,7 +528,7 @@ interface Props {
 export default function ThreeScene({nodes,onNodeClick,edges,selectedNodeId}:Props) {
   return (
     <div style={{
-      width:'100%', height:'580px',
+      width:'100%', height:'clamp(480px, 65vh, 760px)',
       background:'linear-gradient(180deg,#090d13 0%,#0c1018 100%)',
       borderRadius:'20px', overflow:'hidden',
       border:'1px solid rgba(255,255,255,0.07)',
