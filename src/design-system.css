@@ -1,0 +1,136 @@
+/* ═══════════════════════════════════════════════════════════════
+   NEXUS-BIO DESIGN SYSTEM
+   Fonts: DM Serif Display (headings) + Public Sans (body/data)
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Font imports */
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Public+Sans:ital,wght@0,100..900;1,100..900&display=swap');
+
+/* ── CSS Variables ─────────────────────────────────────────── */
+:root {
+  /* Typography */
+  --font-serif:  'DM Serif Display', Georgia, 'Times New Roman', serif;
+  --font-body:   'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+  /* Spacing */
+  --radius-sm:   8px;
+  --radius-md:   16px;
+  --radius-lg:   20px;
+  --radius-xl:   28px;
+
+  /* Dark mode (default) */
+  --bg-base:     #070a0e;
+  --bg-surface:  #0e1117;
+  --bg-elevated: #141820;
+  --border:      rgba(255,255,255,0.07);
+  --border-hover:rgba(255,255,255,0.16);
+  --text-primary:rgba(255,255,255,0.92);
+  --text-secondary:rgba(255,255,255,0.50);
+  --text-tertiary: rgba(255,255,255,0.25);
+  --text-faint:  rgba(255,255,255,0.12);
+
+  /* Glassmorphism */
+  --glass-bg:    rgba(14,17,23,0.72);
+  --glass-blur:  blur(24px);
+  --glass-border:rgba(255,255,255,0.09);
+
+  /* Accent */
+  --accent:      #C8D8E8;
+  --accent-dim:  rgba(200,216,232,0.18);
+}
+
+/* Light mode */
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg-base:     #f4f5f7;
+    --bg-surface:  #ffffff;
+    --bg-elevated: #f0f1f4;
+    --border:      rgba(0,0,0,0.08);
+    --border-hover:rgba(0,0,0,0.18);
+    --text-primary:rgba(0,0,0,0.88);
+    --text-secondary:rgba(0,0,0,0.50);
+    --text-tertiary: rgba(0,0,0,0.28);
+    --text-faint:  rgba(0,0,0,0.12);
+    --glass-bg:    rgba(255,255,255,0.72);
+    --glass-border:rgba(0,0,0,0.07);
+    --accent:      #2a5f8f;
+    --accent-dim:  rgba(42,95,143,0.12);
+  }
+}
+
+/* ── Base reset ────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg-base);
+  color: var(--text-primary);
+  margin: 0;
+  padding: 0;
+}
+
+/* ── Typography helpers ────────────────────────────────────── */
+.serif   { font-family: var(--font-serif); }
+.body    { font-family: var(--font-body); }
+
+/* Public Sans tabular figures for all data/numbers */
+.data, .tnum, [data-tnum] {
+  font-family: var(--font-body);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+  font-weight: 500;
+}
+
+/* Nature standard panel labels: 8pt Bold ≈ 10.67px, rounded to 11px */
+.panel-label {
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-tertiary);
+}
+
+/* ── Glassmorphism card ────────────────────────────────────── */
+.glass {
+  background:    var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+}
+
+/* ── Bento Grid ────────────────────────────────────────────── */
+.bento-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 12px;
+}
+
+/* ── Scroll reveal utility ─────────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.reveal {
+  animation: fadeUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ── Scrollbar ─────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+
+/* ── Selection ─────────────────────────────────────────────── */
+::selection { background: var(--accent-dim); color: var(--text-primary); }
+
+/* ── Animations ────────────────────────────────────────────── */
+@keyframes pulse { 0%,100%{opacity:0.4} 50%{opacity:1} }
+@keyframes spin  { to { transform: rotate(360deg); } }
