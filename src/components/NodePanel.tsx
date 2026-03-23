@@ -160,12 +160,77 @@ function ProteinViewer({ pdbId, alphafoldId, label }: { pdbId: string; alphafold
       <div style={{ position: 'relative', width: '100%', height: '280px', borderRadius: '20px', overflow: 'hidden', background: '#ffffff', border: '1px solid rgba(0,0,0,0.08)', boxShadow: '0 2px 12px rgba(0,0,0,0.15)' }}>
         <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
         {status === 'loading' && (
-          <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#ffffff', gap: '8px' }}>
-            <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-            <Loader2 size={18} style={{ color: '#6495ED', animation: 'spin 1s linear infinite' }} />
-            <span style={{ color: 'rgba(0,0,0,0.35)', fontSize: '11px', fontFamily: "'Public Sans', sans-serif", fontFeatureSettings: "'tnum' 1" }}>
-              Loading {useAF ? 'AlphaFold' : 'RCSB PDB'}...
-            </span>
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#ffffff', gap: '12px', overflow: 'hidden' }}>
+            <style>{`
+              @keyframes dissolve-float {
+                0%   { transform: translate(var(--tx), 40px) scale(0); opacity: 0; }
+                20%  { opacity: 0.7; }
+                80%  { opacity: 0.5; }
+                100% { transform: translate(var(--tx), -40px) scale(0.3); opacity: 0; }
+              }
+              @keyframes dissolve-converge {
+                0%   { transform: translate(var(--tx2), var(--ty2)) scale(1.2); opacity: 0; }
+                30%  { opacity: 0.8; }
+                100% { transform: translate(0, 0) scale(1); opacity: 1; }
+              }
+              .dissolve-dot {
+                position: absolute;
+                width: 4px; height: 4px;
+                border-radius: 50%;
+                animation: dissolve-float 2.2s ease-in-out infinite;
+              }
+              .converge-dot {
+                position: absolute;
+                width: 3px; height: 3px;
+                border-radius: 50%;
+                animation: dissolve-converge 1.8s cubic-bezier(0.22,1,0.36,1) infinite;
+              }
+            `}</style>
+
+            {/* Floating particles — scatter phase */}
+            {Array.from({ length: 18 }).map((_, i) => {
+              const angle = (i / 18) * 360;
+              const r = 30 + (i % 4) * 12;
+              const tx = Math.cos(angle * Math.PI / 180) * r;
+              const color = ['#0053D6','#65CBF3','#FFDB13','#4A90D9'][i % 4];
+              return (
+                <div key={i} className="dissolve-dot" style={{
+                  left: '50%', top: '50%', marginLeft: '-2px', marginTop: '-2px',
+                  background: color, opacity: 0.6,
+                  '--tx': `${tx}px`,
+                  animationDelay: `${(i / 18) * 2.2}s`,
+                  animationDuration: `${1.8 + (i % 3) * 0.4}s`,
+                } as any} />
+              );
+            })}
+
+            {/* Center convergence ring */}
+            <div style={{ position: 'relative', width: '48px', height: '48px' }}>
+              <div style={{
+                position: 'absolute', inset: 0, borderRadius: '50%',
+                border: '1.5px solid rgba(0,83,214,0.25)',
+                animation: 'spin 3s linear infinite',
+              }} />
+              <div style={{
+                position: 'absolute', inset: '6px', borderRadius: '50%',
+                border: '1px solid rgba(101,203,243,0.35)',
+                animation: 'spin 2s linear infinite reverse',
+              }} />
+              <div style={{
+                position: 'absolute', inset: '14px', borderRadius: '50%',
+                background: 'rgba(0,83,214,0.12)',
+                animation: 'pulse 1.5s ease-in-out infinite',
+              }} />
+            </div>
+
+            <div style={{ textAlign: 'center' }}>
+              <p style={{ color: 'rgba(0,0,0,0.5)', fontSize: '11px', fontFamily: "'Public Sans',sans-serif", fontWeight: 600, margin: '0 0 3px' }}>
+                {useAF ? 'Predicting structure' : 'Loading structure'}
+              </p>
+              <p style={{ color: 'rgba(0,0,0,0.25)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", margin: 0, fontFeatureSettings: "'tnum' 1" }}>
+                {useAF ? `AlphaFold · ${alphafoldId}` : `RCSB PDB · ${pdbId}`}
+              </p>
+            </div>
           </div>
         )}
         {status === 'error' && (
