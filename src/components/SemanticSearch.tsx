@@ -133,7 +133,7 @@ function highlightKeywords(text: string, keywords: Set<string>) {
         ? <mark key={i} style={{
             background: 'rgba(255,255,255,0.09)',
             color: 'rgba(255,255,255,0.88)',
-            borderRadius: '3px',
+            borderRadius: '8px',
             padding: '0 3px',
             fontWeight: 500,
           }}>{part}</mark>
@@ -245,7 +245,7 @@ export default function SemanticSearch({ onAnalyzePaper }: SemanticSearchProps) 
       <button
         onClick={() => handleAnalyze(article)}
         title="Analyze pathway"
-        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', background: 'transparent', color: 'rgba(255,255,255,0.4)', border: 'none', borderRadius: '8px', cursor: 'pointer', transition: 'color 0.15s' }}
+        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', background: 'transparent', color: 'rgba(255,255,255,0.4)', border: 'none', borderRadius: '16px', cursor: 'pointer', transition: 'color 0.15s' }}
         onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#ffffff'; }}
         onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.4)'; }}>
         <Send size={15} strokeWidth={2} />
@@ -259,7 +259,7 @@ export default function SemanticSearch({ onAnalyzePaper }: SemanticSearchProps) 
 
         {/* Header */}
         <div className="mb-10">
-          <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '11px', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' }}>
+          <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '11px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' }}>
             03 · Literature
           </p>
           <h2 style={{ color: '#ffffff', fontSize: 'clamp(24px, 4vw, 32px)', fontWeight: 600, letterSpacing: '-0.03em', marginBottom: '8px', lineHeight: 1.2 }}>
@@ -281,12 +281,12 @@ export default function SemanticSearch({ onAnalyzePaper }: SemanticSearchProps) 
             value={query}
             onChange={e => setQuery(e.target.value)}
             placeholder="Search across 500M+ papers — e.g. artemisinin biosynthesis, CRISPR metabolic engineering"
-            style={{ width: '100%', padding: '14px 130px 14px 46px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', color: '#ffffff', fontSize: '14px', outline: 'none', letterSpacing: '-0.01em', fontFamily: 'inherit' }}
+            style={{ width: '100%', padding: '14px 130px 14px 46px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '20px', color: '#ffffff', fontSize: '14px', outline: 'none', letterSpacing: '-0.01em', fontFamily: 'inherit' }}
             onFocus={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)'; }}
             onBlur={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; }}
           />
           <button type="submit" disabled={isSearching}
-            style={{ position: 'absolute', right: '6px', top: '6px', bottom: '6px', padding: '0 18px', background: isSearching ? 'rgba(255,255,255,0.06)' : '#ffffff', color: isSearching ? 'rgba(255,255,255,0.3)' : '#0a0a0a', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: isSearching ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '7px', letterSpacing: '-0.01em', transition: 'background 0.15s', fontFamily: 'inherit' }}
+            style={{ position: 'absolute', right: '6px', top: '6px', bottom: '6px', padding: '0 18px', background: isSearching ? 'rgba(255,255,255,0.06)' : '#ffffff', color: isSearching ? 'rgba(255,255,255,0.3)' : '#0a0a0a', border: 'none', borderRadius: '16px', fontSize: '13px', fontWeight: 600, cursor: isSearching ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '7px', letterSpacing: '-0.01em', transition: 'background 0.15s', fontFamily: 'inherit' }}
             onMouseEnter={e => { if (!isSearching) (e.currentTarget as HTMLElement).style.background = '#e5e5e5'; }}
             onMouseLeave={e => { if (!isSearching) (e.currentTarget as HTMLElement).style.background = '#ffffff'; }}>
             {isSearching ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <Search size={14} />}
@@ -299,10 +299,10 @@ export default function SemanticSearch({ onAnalyzePaper }: SemanticSearchProps) 
         {/* Showcase papers */}
         {showShowcase && (
           <div style={{ marginBottom: '40px' }}>
-            <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '11px', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '16px' }}>
+            <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '11px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '16px' }}>
               Landmark Papers in Synthetic Biology
             </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', borderRadius: '12px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.07)' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', borderRadius: '20px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.07)' }}>
               {SHOWCASE_PAPERS.map((paper, idx) => {
                 const isExpanded = expandedIds.has(paper.id);
                 return (
@@ -311,7 +311,7 @@ export default function SemanticSearch({ onAnalyzePaper }: SemanticSearchProps) 
                       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px' }}>
                         <div style={{ flex: 1 }}>
                           {/* Clean metadata line */}
-                          <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px', fontFamily: 'monospace', margin: '0 0 8px', letterSpacing: '0.02em' }}>
+                          <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", margin: '0 0 8px', letterSpacing: '0.02em' }}>
                             {paper.source} · {paper.year}
                             {paper.citationCount ? ` · ${paper.citationCount.toLocaleString()} citations` : ''}
                           </p>
@@ -336,7 +336,7 @@ export default function SemanticSearch({ onAnalyzePaper }: SemanticSearchProps) 
                             {highlightKeywords(paper.abstract, extractKeywords(paper.title, paper.abstract))}
                           </p>
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
-                            <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '11px', fontFamily: 'monospace', margin: 0 }}>
+                            <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '11px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", margin: 0 }}>
                               {paper.pathway}
                             </p>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -363,7 +363,7 @@ export default function SemanticSearch({ onAnalyzePaper }: SemanticSearchProps) 
         <div>
           {results.length > 0 && (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-              <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '12px', fontFamily: 'monospace', margin: 0 }}>
+              <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '12px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", margin: 0 }}>
                 {results.length} results{isSearching ? ' · searching more databases...' : ''}
               </p>
               <button onClick={() => { setResults([]); setHasSearched(false); setShowShowcase(true); }}
@@ -375,7 +375,7 @@ export default function SemanticSearch({ onAnalyzePaper }: SemanticSearchProps) 
             </div>
           )}
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', borderRadius: '12px', overflow: 'hidden', border: results.length > 0 ? '1px solid rgba(255,255,255,0.07)' : 'none' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', borderRadius: '20px', overflow: 'hidden', border: results.length > 0 ? '1px solid rgba(255,255,255,0.07)' : 'none' }}>
             {results.map((article, idx) => {
               const isExpanded = expandedIds.has(article.id);
               return (
@@ -383,7 +383,7 @@ export default function SemanticSearch({ onAnalyzePaper }: SemanticSearchProps) 
                   <div style={{ padding: '18px 20px' }}>
                     <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px' }}>
                       <div style={{ flex: 1 }}>
-                        <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '11px', fontFamily: 'monospace', margin: '0 0 8px', letterSpacing: '0.02em' }}>
+                        <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '11px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", margin: '0 0 8px', letterSpacing: '0.02em' }}>
                           {article.source}
                           {article.journal ? ` · ${article.journal}` : ''}
                           {article.year ? ` · ${article.year}` : ''}
@@ -425,7 +425,7 @@ export default function SemanticSearch({ onAnalyzePaper }: SemanticSearchProps) 
                         </p>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '10px' }}>
                           {article.doi && (
-                            <p style={{ color: 'rgba(255,255,255,0.15)', fontSize: '10px', fontFamily: 'monospace', margin: 0, flex: 1 }}>
+                            <p style={{ color: 'rgba(255,255,255,0.15)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", margin: 0, flex: 1 }}>
                               DOI: {article.doi}
                             </p>
                           )}
@@ -441,21 +441,21 @@ export default function SemanticSearch({ onAnalyzePaper }: SemanticSearchProps) 
 
           {/* Loading skeleton */}
           {isSearching && results.length === 0 && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', borderRadius: '12px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.07)' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', borderRadius: '20px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.07)' }}>
               {[80, 95, 70].map((w, i) => (
                 <div key={i} style={{ padding: '18px 20px', background: 'rgba(255,255,255,0.02)', borderTop: i > 0 ? '1px solid rgba(255,255,255,0.06)' : 'none' }}>
-                  <div style={{ height: '10px', width: '30%', background: 'rgba(255,255,255,0.06)', borderRadius: '4px', marginBottom: '10px', animation: 'pulse 1.5s infinite' }} />
-                  <div style={{ height: '14px', width: `${w}%`, background: 'rgba(255,255,255,0.08)', borderRadius: '4px', marginBottom: '8px', animation: 'pulse 1.5s infinite' }} />
-                  <div style={{ height: '10px', width: '25%', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', animation: 'pulse 1.5s infinite' }} />
+                  <div style={{ height: '10px', width: '30%', background: 'rgba(255,255,255,0.06)', borderRadius: '8px', marginBottom: '10px', animation: 'pulse 1.5s infinite' }} />
+                  <div style={{ height: '14px', width: `${w}%`, background: 'rgba(255,255,255,0.08)', borderRadius: '8px', marginBottom: '8px', animation: 'pulse 1.5s infinite' }} />
+                  <div style={{ height: '10px', width: '25%', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', animation: 'pulse 1.5s infinite' }} />
                 </div>
               ))}
             </div>
           )}
 
           {hasSearched && !isSearching && results.length === 0 && (
-            <div style={{ textAlign: 'center', padding: '48px 20px', color: 'rgba(255,255,255,0.2)', border: '1px dashed rgba(255,255,255,0.07)', borderRadius: '12px' }}>
+            <div style={{ textAlign: 'center', padding: '48px 20px', color: 'rgba(255,255,255,0.2)', border: '1px dashed rgba(255,255,255,0.07)', borderRadius: '20px' }}>
               <p style={{ fontSize: '14px', margin: '0 0 6px', letterSpacing: '-0.01em' }}>No results found for "{query}"</p>
-              <p style={{ fontSize: '12px', fontFamily: 'monospace', margin: 0 }}>Try "lactic acid fermentation" or "E. coli metabolic engineering"</p>
+              <p style={{ fontSize: '12px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", margin: 0 }}>Try "lactic acid fermentation" or "E. coli metabolic engineering"</p>
             </div>
           )}
         </div>
