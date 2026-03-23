@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { motion, useInView } from 'framer-motion';
 import Hero from './components/Hero';
 import ThreeScene from './components/ThreeScene';
 import NodePanel from './components/NodePanel';
@@ -8,18 +9,79 @@ import DevModePanel from './components/DevModePanel';
 import PaperAnalyzer from './components/PaperAnalyzer';
 import pathwayData from './data/pathwayData.json';
 import { PathwayNode, PathwayEdge } from './types';
-import { Dna } from 'lucide-react';
+import { Dna, Sparkles } from 'lucide-react';
 
+// ── Design tokens ──────────────────────────────────────────────────────
+const SERIF = "'DM Serif Display', Georgia, serif";
+const BODY  = "'Public Sans', -apple-system, sans-serif";
+
+// ── Scroll reveal wrapper ──────────────────────────────────────────────
+function Reveal({ children, delay = 0, className = '' }: {
+  children: React.ReactNode; delay?: number; className?: string;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const inView = useInView(ref, { once: true, margin: '-80px' });
+  return (
+    <motion.div ref={ref} className={className}
+      initial={{ opacity: 0, y: 32 }}
+      animate={inView ? { opacity: 1, y: 0 } : {}}
+      transition={{ duration: 0.65, delay, ease: [0.22, 1, 0.36, 1] }}>
+      {children}
+    </motion.div>
+  );
+}
+
+// ── Environment badge ──────────────────────────────────────────────────
+function ThemeBadge() {
+  const [isDark, setIsDark] = useState(true);
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    setIsDark(mq.matches);
+    mq.addEventListener('change', e => setIsDark(e.matches));
+    return () => mq.removeEventListener('change', () => {});
+  }, []);
+  return (
+    <span style={{ fontFamily: BODY, fontSize: '10px', color: 'var(--text-faint)', fontFeatureSettings: "'tnum' 1" }}>
+      {isDark ? '◑ dark' : '○ light'}
+    </span>
+  );
+}
+
+// ── Default edges ──────────────────────────────────────────────────────
 const DEFAULT_EDGES: PathwayEdge[] = [
-  { start: 'acetyl_coa', end: 'hmg_coa', relationshipType: 'converts', direction: 'forward' },
-  { start: 'acetyl_coa', end: 'mevalonate', relationshipType: 'produces', direction: 'forward' },
-  { start: 'hmg_coa', end: 'mevalonate', relationshipType: 'converts', direction: 'forward' },
-  { start: 'mevalonate', end: 'fpp', relationshipType: 'produces', direction: 'forward' },
-  { start: 'fpp', end: 'amorpha_4_11_diene', relationshipType: 'catalyzes', direction: 'forward' },
-  { start: 'amorpha_4_11_diene', end: 'artemisinic_acid', relationshipType: 'converts', direction: 'forward' },
-  { start: 'artemisinic_acid', end: 'artemisinin', relationshipType: 'produces', direction: 'forward' },
+  { start: 'acetyl_coa',       end: 'hmg_coa',           relationshipType: 'converts',  direction: 'forward' },
+  { start: 'acetyl_coa',       end: 'mevalonate',         relationshipType: 'produces',  direction: 'forward' },
+  { start: 'hmg_coa',          end: 'mevalonate',         relationshipType: 'converts',  direction: 'forward' },
+  { start: 'mevalonate',       end: 'fpp',                relationshipType: 'produces',  direction: 'forward' },
+  { start: 'fpp',              end: 'amorpha_4_11_diene', relationshipType: 'catalyzes', direction: 'forward' },
+  { start: 'amorpha_4_11_diene',end:'artemisinic_acid',   relationshipType: 'converts',  direction: 'forward' },
+  { start: 'artemisinic_acid', end: 'artemisinin',        relationshipType: 'produces',  direction: 'forward' },
 ];
 
+// ── Bento stat card ────────────────────────────────────────────────────
+function StatCard({ label, value, sub, accent = false }: {
+  label: string; value: string | number; sub?: string; accent?: boolean;
+}) {
+  return (
+    <div style={{
+      padding: '18px 20px', borderRadius: '20px',
+      background: accent ? 'rgba(200,216,232,0.07)' : 'rgba(255,255,255,0.03)',
+      border: `1px solid ${accent ? 'rgba(200,216,232,0.18)' : 'rgba(255,255,255,0.07)'}`,
+      backdropFilter: 'blur(20px)',
+      WebkitBackdropFilter: 'blur(20px)',
+    }}>
+      <p style={{ fontFamily: BODY, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'rgba(255,255,255,0.25)', margin: '0 0 8px' }}>
+        {label}
+      </p>
+      <p style={{ fontFamily: BODY, fontSize: '28px', fontWeight: 700, color: accent ? '#C8D8E8' : 'rgba(255,255,255,0.85)', margin: '0 0 4px', fontFeatureSettings: "'tnum' 1", lineHeight: 1 }}>
+        {value}
+      </p>
+      {sub && <p style={{ fontFamily: BODY, fontSize: '11px', color: 'rgba(255,255,255,0.2)', margin: 0 }}>{sub}</p>}
+    </div>
+  );
+}
+
+// ── Main ───────────────────────────────────────────────────────────────
 export default function App() {
   const [selectedNode, setSelectedNode] = useState<PathwayNode | null>(null);
   const [aiNodes, setAiNodes] = useState<PathwayNode[] | null>(null);
@@ -41,56 +103,131 @@ export default function App() {
   const activeNodes = aiNodes ?? (pathwayData as PathwayNode[]);
   const activeEdges = aiEdges ?? DEFAULT_EDGES;
 
+  const avgConf = Math.round(
+    activeNodes.reduce((acc, n) => acc + (n.confidenceScore ?? 0.78), 0) / activeNodes.length * 100
+  );
+
   return (
-    <main style={{ background: '#0a0a0a', minHeight: '100vh', color: '#f5f5f5' }}>
+    <main style={{ background: 'var(--bg-base, #070a0e)', minHeight: '100vh', color: 'var(--text-primary, rgba(255,255,255,0.92))' }}>
       <Hero />
 
-      {/* 01 — Pathway */}
-      <section id="demo" style={{ padding: '96px 24px' }}>
-        <div style={{ maxWidth: '1024px', margin: '0 auto' }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '40px', flexWrap: 'wrap', gap: '16px' }}>
-            <div>
-              <p style={{ fontFamily: "'SF Mono','Fira Code',monospace", fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.14em', color: 'rgba(255,255,255,0.2)', margin: '0 0 10px' }}>
+      {/* ── BENTO GRID DASHBOARD ── */}
+      <section id="demo" style={{ padding: 'clamp(64px, 10vw, 120px) clamp(16px, 4vw, 40px)' }}>
+        <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
+
+          {/* Section header */}
+          <Reveal>
+            <div style={{ marginBottom: '40px' }}>
+              <p style={{ fontFamily: BODY, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'rgba(255,255,255,0.22)', margin: '0 0 12px' }}>
                 01 · Visualization
               </p>
-              <h2 style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: 'clamp(1.75rem, 3vw, 2.5rem)', fontWeight: 400, color: 'rgba(255,255,255,0.90)', letterSpacing: '-0.02em', lineHeight: 1.1, margin: '0 0 10px' }}>
+              <h2 style={{ fontFamily: SERIF, fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: 400, color: 'rgba(255,255,255,0.92)', letterSpacing: '-0.02em', lineHeight: 1.1, margin: '0 0 12px' }}>
                 Atomic Pathway
               </h2>
-              <p style={{ fontFamily: 'Arial, sans-serif', fontSize: '13px', color: 'rgba(255,255,255,0.32)', margin: 0, lineHeight: 1.6 }}>
+              <p style={{ fontFamily: BODY, fontSize: '14px', color: 'rgba(255,255,255,0.35)', margin: 0, lineHeight: 1.6, maxWidth: '480px' }}>
                 pLDDT confidence coloring · Substrate diffusion · Click any node for details
               </p>
+            </div>
+          </Reveal>
+
+          {/* Bento Grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '12px', gridTemplateRows: 'auto' }}>
+
+            {/* Large card — 3D Pathway (8 cols) */}
+            <Reveal delay={0.05} className="" style={{ gridColumn: 'span 8' }}>
+              <motion.div
+                style={{
+                  gridColumn: 'span 8',
+                  borderRadius: '20px',
+                  overflow: 'hidden',
+                  border: '1px solid rgba(255,255,255,0.07)',
+                  backdropFilter: 'blur(20px)',
+                  WebkitBackdropFilter: 'blur(20px)',
+                  background: 'rgba(14,17,23,0.6)',
+                  position: 'relative',
+                }}>
+                {/* AI Generated badge */}
+                {aiNodes && (
+                  <div style={{ position: 'absolute', top: '16px', right: '16px', zIndex: 10, display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 12px', borderRadius: '100px', background: 'rgba(200,216,232,0.10)', border: '1px solid rgba(200,216,232,0.18)', backdropFilter: 'blur(12px)' }}>
+                    <Sparkles size={10} style={{ color: '#C8D8E8' }} />
+                    <span style={{ fontFamily: BODY, fontSize: '11px', fontWeight: 600, color: '#C8D8E8', fontFeatureSettings: "'tnum' 1" }}>
+                      AI · {aiNodes.length} entities
+                    </span>
+                    <button onClick={handleResetPathway}
+                      style={{ marginLeft: '4px', fontFamily: BODY, fontSize: '10px', color: 'rgba(255,255,255,0.3)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#fff'; }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.3)'; }}>
+                      reset
+                    </button>
+                  </div>
+                )}
+                <ThreeScene
+                  nodes={activeNodes}
+                  onNodeClick={setSelectedNode}
+                  edges={activeEdges}
+                  selectedNodeId={selectedNode?.id ?? null}
+                />
+              </motion.div>
+            </Reveal>
+
+            {/* Right sidebar — 4 cols, stat cards */}
+            <div style={{ gridColumn: 'span 4', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <Reveal delay={0.1}>
+                <StatCard label="Pathway Entities" value={activeNodes.length} sub={aiNodes ? 'AI generated' : 'Showcase pathway'} accent />
+              </Reveal>
+              <Reveal delay={0.15}>
+                <StatCard label="Avg Confidence" value={`${avgConf}%`} sub="pLDDT score" />
+              </Reveal>
+              <Reveal delay={0.2}>
+                <StatCard label="Evidence Edges" value={activeEdges.length} sub="Reaction steps" />
+              </Reveal>
+
+              {/* Showcase info card */}
               {!aiNodes && (
-                <div style={{ marginTop: '16px', padding: '14px 18px', borderRadius: '12px', maxWidth: '520px', background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)' }}>
-                  <p style={{ fontFamily: "'SF Mono','Fira Code',monospace", fontSize: '10px', color: 'rgba(255,255,255,0.22)', margin: '0 0 6px', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-                    Showcase · Ro et al., Nature 2006
-                  </p>
-                  <p style={{ fontFamily: 'Arial, sans-serif', fontSize: '13px', color: 'rgba(255,255,255,0.45)', lineHeight: 1.7, margin: 0 }}>
-                    Artemisinin biosynthesis in engineered <em>S. cerevisiae</em> —
-                    this 7-step pathway made malaria treatment affordable for 500 million patients.
-                  </p>
-                </div>
+                <Reveal delay={0.25}>
+                  <div style={{
+                    padding: '18px 20px', borderRadius: '20px', flex: 1,
+                    background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)',
+                    backdropFilter: 'blur(20px)',
+                  }}>
+                    <p style={{ fontFamily: BODY, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'rgba(255,255,255,0.22)', margin: '0 0 10px' }}>
+                      Showcase
+                    </p>
+                    <p style={{ fontFamily: SERIF, fontSize: '16px', color: 'rgba(255,255,255,0.8)', margin: '0 0 8px', lineHeight: 1.4 }}>
+                      Ro et al., Nature 2006
+                    </p>
+                    <p style={{ fontFamily: BODY, fontSize: '12px', color: 'rgba(255,255,255,0.35)', lineHeight: 1.65, margin: 0 }}>
+                      Artemisinin biosynthesis in <em>S. cerevisiae</em> — 7-step pathway, 500M patients.
+                    </p>
+                  </div>
+                </Reveal>
               )}
             </div>
-            {aiNodes && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '7px', padding: '6px 14px', borderRadius: '100px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)', color: 'rgba(255,255,255,0.45)', fontFamily: "'SF Mono','Fira Code',monospace", fontSize: '10px' }}>
-                  <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: 'rgba(255,255,255,0.5)', animation: 'pulse 2s infinite' }} />
-                  AI Generated · {aiNodes.length} entities
+
+            {/* Bottom row — full width info strip */}
+            <Reveal delay={0.3} style={{ gridColumn: 'span 12' }}>
+              <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '14px 20px', borderRadius: '20px',
+                background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)',
+                backdropFilter: 'blur(12px)', flexWrap: 'wrap', gap: '12px',
+              }}>
+                <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
+                  {[
+                    { l: 'Rendering', v: 'Lambert · Pastel palette' },
+                    { l: 'Confidence', v: 'pLDDT coloring' },
+                    { l: 'Interaction', v: 'Drag · Scroll · Click' },
+                  ].map(({ l, v }) => (
+                    <div key={l}>
+                      <span style={{ fontFamily: BODY, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'rgba(255,255,255,0.2)', marginRight: '6px' }}>{l}</span>
+                      <span style={{ fontFamily: BODY, fontSize: '12px', color: 'rgba(255,255,255,0.4)', fontFeatureSettings: "'tnum' 1" }}>{v}</span>
+                    </div>
+                  ))}
                 </div>
-                <button onClick={handleResetPathway} style={{ fontFamily: 'Arial, sans-serif', fontSize: '12px', color: 'rgba(255,255,255,0.28)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '100px', padding: '6px 14px', background: 'none', cursor: 'pointer', transition: 'color 0.2s' }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#fff'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.28)'; }}>
-                  Reset to Showcase
-                </button>
+                <ThemeBadge />
               </div>
-            )}
+            </Reveal>
           </div>
-          <ThreeScene
-            nodes={activeNodes}
-            onNodeClick={setSelectedNode}
-            edges={activeEdges}
-            selectedNodeId={selectedNode?.id ?? null}
-          />
         </div>
       </section>
 
@@ -101,49 +238,87 @@ export default function App() {
         allEdges={activeEdges}
       />
 
-      {/* 02 — Analyzer */}
-      <PaperAnalyzer onPathwayGenerated={handlePathwayGenerated} />
+      {/* ── ANALYZER ── */}
+      <section id="analyzer" style={{ padding: 'clamp(64px, 10vw, 120px) clamp(16px, 4vw, 40px)' }}>
+        <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
+          <Reveal>
+            <p style={{ fontFamily: BODY, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'rgba(255,255,255,0.22)', margin: '0 0 12px' }}>
+              02 · Analysis
+            </p>
+            <h2 style={{ fontFamily: SERIF, fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: 400, color: 'rgba(255,255,255,0.92)', margin: '0 0 40px', letterSpacing: '-0.02em' }}>
+              Paper Analyzer
+            </h2>
+          </Reveal>
+          <Reveal delay={0.1}>
+            <PaperAnalyzer onPathwayGenerated={handlePathwayGenerated} />
+          </Reveal>
+        </div>
+      </section>
 
-      {/* 03 — Literature */}
-      <SemanticSearch onAnalyzePaper={(text) => {
-        document.getElementById('analyzer')?.scrollIntoView({ behavior: 'smooth' });
-        setTimeout(() => {
-          window.dispatchEvent(new CustomEvent('autoFillAnalyzer', { detail: { text } }));
-        }, 600);
-      }} />
+      {/* ── SEARCH ── */}
+      <section id="search" style={{ padding: 'clamp(64px, 10vw, 120px) clamp(16px, 4vw, 40px)' }}>
+        <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
+          <Reveal>
+            <p style={{ fontFamily: BODY, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'rgba(255,255,255,0.22)', margin: '0 0 12px' }}>
+              03 · Literature
+            </p>
+            <h2 style={{ fontFamily: SERIF, fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: 400, color: 'rgba(255,255,255,0.92)', margin: '0 0 40px', letterSpacing: '-0.02em' }}>
+              Database Research
+            </h2>
+          </Reveal>
+          <Reveal delay={0.1}>
+            <SemanticSearch onAnalyzePaper={(text) => {
+              document.getElementById('analyzer')?.scrollIntoView({ behavior: 'smooth' });
+              setTimeout(() => {
+                window.dispatchEvent(new CustomEvent('autoFillAnalyzer', { detail: { text } }));
+              }, 600);
+            }} />
+          </Reveal>
+        </div>
+      </section>
 
-      {/* 04 — Contact */}
-      <ContactFlow />
+      {/* ── CONTACT ── */}
+      <section id="contact" style={{ padding: 'clamp(64px, 10vw, 120px) clamp(16px, 4vw, 40px)' }}>
+        <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
+          <Reveal>
+            <p style={{ fontFamily: BODY, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'rgba(255,255,255,0.22)', margin: '0 0 12px' }}>
+              04 · Connect
+            </p>
+            <h2 style={{ fontFamily: SERIF, fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: 400, color: 'rgba(255,255,255,0.92)', margin: '0 0 40px', letterSpacing: '-0.02em' }}>
+              Contact
+            </h2>
+          </Reveal>
+          <Reveal delay={0.1}>
+            <ContactFlow />
+          </Reveal>
+        </div>
+      </section>
 
       <DevModePanel />
 
       {/* Footer */}
       <footer style={{ padding: '24px 32px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-        <div style={{ maxWidth: '1024px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+        <div style={{ maxWidth: '1280px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <div style={{ width: '20px', height: '20px', borderRadius: '6px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Dna size={11} style={{ color: 'rgba(255,255,255,0.5)' }} />
             </div>
-            <span style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: '14px', color: 'rgba(255,255,255,0.6)' }}>Nexus-Bio</span>
+            <span style={{ fontFamily: SERIF, fontSize: '14px', color: 'rgba(255,255,255,0.6)' }}>Nexus-Bio</span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap', justifyContent: 'center' }}>
-            <p style={{ fontFamily: "'SF Mono','Fira Code',monospace", fontSize: '10px', color: 'rgba(255,255,255,0.15)', margin: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
+            <p style={{ fontFamily: BODY, fontSize: '11px', color: 'rgba(255,255,255,0.15)', margin: 0, fontFeatureSettings: "'tnum' 1" }}>
               © {new Date().getFullYear()} Nexus-Bio. All rights reserved.
             </p>
-            <span style={{ color: 'rgba(255,255,255,0.08)' }}>·</span>
-            <a href="/terms" style={{ fontFamily: "'SF Mono','Fira Code',monospace", fontSize: '10px', color: 'rgba(255,255,255,0.18)', textDecoration: 'none', transition: 'color 0.2s' }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.55)'; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.18)'; }}>
-              Terms of Service
-            </a>
-            <span style={{ color: 'rgba(255,255,255,0.08)' }}>·</span>
-            <a href="/privacy" style={{ fontFamily: "'SF Mono','Fira Code',monospace", fontSize: '10px', color: 'rgba(255,255,255,0.18)', textDecoration: 'none', transition: 'color 0.2s' }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.55)'; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.18)'; }}>
-              Privacy Policy
-            </a>
+            {['Terms of Service', 'Privacy Policy'].map((t, i) => (
+              <a key={i} href={t === 'Terms of Service' ? '/terms' : '/privacy'}
+                style={{ fontFamily: BODY, fontSize: '11px', color: 'rgba(255,255,255,0.18)', textDecoration: 'none', transition: 'color 0.2s' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.6)'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.18)'; }}>
+                {t}
+              </a>
+            ))}
           </div>
-          <div style={{ width: '100px' }} />
+          <ThemeBadge />
         </div>
       </footer>
     </main>
