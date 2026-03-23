@@ -176,14 +176,14 @@ function ProteinViewer({ pdbId, alphafoldId, label }: { pdbId: string; alphafold
         {status === 'ready' && (
           <>
             <div style={{ position: 'absolute', top: '8px', left: '10px', pointerEvents: 'none' }}>
-              <span style={{ color: 'rgba(0,0,0,0.35)', fontSize: '9px', fontFamily: "'Public Sans', sans-serif", fontFeatureSettings: "'tnum' 1", background: 'rgba(255,255,255,0.8)', padding: '2px 6px', borderRadius: '4px' }}>
+              <span style={{ color: 'rgba(0,0,0,0.35)', fontSize: '9px', fontFamily: "'Public Sans', sans-serif", fontFeatureSettings: "'tnum' 1", background: 'rgba(255,255,255,0.8)', padding: '2px 6px', borderRadius: '8px' }}>
                 {useAF ? `AF-${alphafoldId}` : pdbId}
               </span>
             </div>
             <div style={{ position: 'absolute', bottom: '8px', right: '10px' }}>
               <a href={useAF ? `https://alphafold.ebi.ac.uk/entry/${alphafoldId}` : `https://www.rcsb.org/structure/${pdbId}`}
                 target="_blank" rel="noopener noreferrer"
-                style={{ color: 'rgba(0,0,0,0.3)', fontSize: '9px', fontFamily: "'Public Sans', sans-serif", fontFeatureSettings: "'tnum' 1", display: 'flex', alignItems: 'center', gap: '3px', textDecoration: 'none', background: 'rgba(255,255,255,0.8)', padding: '2px 6px', borderRadius: '4px' }}
+                style={{ color: 'rgba(0,0,0,0.3)', fontSize: '9px', fontFamily: "'Public Sans', sans-serif", fontFeatureSettings: "'tnum' 1", display: 'flex', alignItems: 'center', gap: '3px', textDecoration: 'none', background: 'rgba(255,255,255,0.8)', padding: '2px 6px', borderRadius: '8px' }}
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(0,0,0,0.7)'; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(0,0,0,0.3)'; }}>
                 {useAF ? 'AlphaFold DB' : 'RCSB PDB'} <ExternalLink size={8} />
