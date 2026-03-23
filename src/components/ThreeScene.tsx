@@ -159,6 +159,13 @@ function MolNode({node,hov,sel,cc,onClick,onHov}:{
   const body=useRef<THREE.Mesh>(null);
   const orb=useRef<THREE.Group>(null);
   const ringMesh=useRef<THREE.Mesh>(null);
+  const [materialized, setMaterialized] = useState(false);
+
+  // Dissolve-in effect on mount — simulates TSL materialize
+  useEffect(() => {
+    const t = setTimeout(() => setMaterialized(true), 100 + hash(node.id) % 400);
+    return () => clearTimeout(t);
+  }, [node.id]);
 
   const color=getColor(node);
   const conf=getConf(node);
@@ -174,7 +181,9 @@ function MolNode({node,hov,sel,cc,onClick,onHov}:{
     const t=_s.clock.elapsedTime;
     if(grp.current){
       const cs=grp.current.scale.x;
-      grp.current.scale.setScalar(cs+(tgt-cs)*dt*7);
+      // Dissolve-in materialize: scale 0 → tgt with spring
+      const dissolveTarget = materialized ? tgt : 0;
+      grp.current.scale.setScalar(cs+(dissolveTarget-cs)*dt*7);
       // subtle breathing — no fast spin to prevent flicker
       grp.current.rotation.y=Math.sin(t*0.05+hash(node.id)*0.001)*0.06;
     }
@@ -415,11 +424,11 @@ export default function ThreeScene({nodes,onNodeClick,edges,selectedNodeId}:Prop
   return (
     <div style={{
       width:'100%', height:'580px',
-      background:'linear-gradient(180deg,#111318 0%,#141619 50%,#16181c 100%)',
-      borderRadius:'12px', overflow:'hidden',
-      border:'1px solid rgba(255,255,255,0.06)',
+      background:'linear-gradient(180deg,#090d13 0%,#0c1018 100%)',
+      borderRadius:'20px', overflow:'hidden',
+      border:'1px solid rgba(255,255,255,0.07)',
       position:'relative',
-      boxShadow:'inset 0 1px 0 rgba(255,255,255,0.04)',
+      boxShadow:'0 24px 80px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04)',
     }}>
       <div style={{
         position:'absolute',top:0,left:0,right:0,zIndex:10,
