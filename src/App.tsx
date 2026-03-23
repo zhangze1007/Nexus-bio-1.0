@@ -134,10 +134,10 @@ export default function App() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '12px', gridTemplateRows: 'auto' }}>
 
             {/* Large card — 3D Pathway (8 cols) */}
-            <Reveal delay={0.05} className="" style={{ gridColumn: 'span 8' }}>
+            <div style={{ gridColumn: 'span 8' }}>
+            <Reveal delay={0.05}>
               <motion.div
                 style={{
-                  gridColumn: 'span 8',
                   borderRadius: '20px',
                   overflow: 'hidden',
                   border: '1px solid rgba(255,255,255,0.07)',
@@ -169,6 +169,7 @@ export default function App() {
                 />
               </motion.div>
             </Reveal>
+            </div>
 
             {/* Right sidebar — 4 cols, stat cards */}
             <div style={{ gridColumn: 'span 4', display: 'flex', flexDirection: 'column', gap: '12px' }}>
