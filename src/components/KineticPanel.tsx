@@ -89,7 +89,7 @@ function LineChart({ data, color, label, unit }: {
 
   return (
     <div>
-      <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', fontFamily: 'monospace', margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+      <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
         {label}
       </p>
       <svg width={W} height={H} style={{ overflow: 'visible' }}>
@@ -102,19 +102,19 @@ function LineChart({ data, color, label, unit }: {
         {/* Y axis labels */}
         {[0, 0.5, 1].map(f => (
           <text key={f} x={PAD.l - 4} y={PAD.t + iH * (1 - f) + 3}
-            textAnchor="end" fill="rgba(255,255,255,0.2)" fontSize={8} fontFamily="monospace">
+            textAnchor="end" fill="rgba(255,255,255,0.2)" fontSize={8} fontFamily="Public Sans, sans-serif">
             {(yMin + (yMax - yMin) * f).toFixed(1)}
           </text>
         ))}
         {/* X axis labels */}
         {[0, 0.5, 1].map(f => (
           <text key={f} x={PAD.l + iW * f} y={H - 4}
-            textAnchor="middle" fill="rgba(255,255,255,0.2)" fontSize={8} fontFamily="monospace">
+            textAnchor="middle" fill="rgba(255,255,255,0.2)" fontSize={8} fontFamily="Public Sans, sans-serif">
             {(xMin + (xMax - xMin) * f).toFixed(1)}
           </text>
         ))}
         {/* X axis unit */}
-        <text x={W - PAD.r} y={H - 4} textAnchor="end" fill="rgba(255,255,255,0.15)" fontSize={7} fontFamily="monospace">
+        <text x={W - PAD.r} y={H - 4} textAnchor="end" fill="rgba(255,255,255,0.15)" fontSize={7} fontFamily="Public Sans, sans-serif">
           {unit}
         </text>
         {/* Line */}
@@ -142,17 +142,17 @@ function InputField({ label, value, unit, onChange, min, max, step, hint }: {
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
-        <label style={{ color: 'rgba(255,255,255,0.4)', fontSize: '10px', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        <label style={{ color: 'rgba(255,255,255,0.4)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.05em' }}>
           {label}
         </label>
-        <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '9px', fontFamily: 'monospace' }}>{unit}</span>
+        <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '9px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1" }}>{unit}</span>
       </div>
       <input
         type="number" value={value} min={min} max={max} step={step}
         onChange={e => onChange(parseFloat(e.target.value) || 0)}
-        style={{ width: '100%', padding: '6px 10px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px', color: '#ffffff', fontSize: '12px', fontFamily: 'monospace', outline: 'none' }}
+        style={{ width: '100%', padding: '6px 10px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '14px', color: '#ffffff', fontSize: '12px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", outline: 'none' }}
       />
-      {hint && <p style={{ color: 'rgba(255,255,255,0.15)', fontSize: '9px', margin: '3px 0 0', fontFamily: 'monospace' }}>{hint}</p>}
+      {hint && <p style={{ color: 'rgba(255,255,255,0.15)', fontSize: '9px', margin: '3px 0 0', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1" }}>{hint}</p>}
     </div>
   );
 }
@@ -239,8 +239,8 @@ Be specific and scientific. No generic statements.`;
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
       {/* Header */}
-      <div style={{ padding: '10px 12px', borderRadius: '8px', background: 'rgba(200,216,232,0.05)', border: '1px solid rgba(200,216,232,0.1)' }}>
-        <p style={{ color: 'rgba(200,216,232,0.6)', fontSize: '11px', fontFamily: 'monospace', margin: 0 }}>
+      <div style={{ padding: '10px 12px', borderRadius: '16px', background: 'rgba(200,216,232,0.05)', border: '1px solid rgba(200,216,232,0.1)' }}>
+        <p style={{ color: 'rgba(200,216,232,0.6)', fontSize: '11px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", margin: 0 }}>
           Michaelis-Menten kinetics + RK4 ODE simulation
         </p>
         <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', margin: '3px 0 0' }}>
@@ -260,7 +260,7 @@ Be specific and scientific. No generic statements.`;
 
       {/* Inhibitor section */}
       <div>
-        <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 8px' }}>
+        <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 8px' }}>
           Inhibitor (optional)
         </p>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
@@ -274,7 +274,7 @@ Be specific and scientific. No generic statements.`;
       {/* Run button */}
       <div style={{ display: 'flex', gap: '8px' }}>
         <button onClick={runSimulation}
-          style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px', padding: '10px', borderRadius: '8px', background: '#ffffff', color: '#0a0a0a', border: 'none', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', transition: 'background 0.15s' }}
+          style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px', padding: '10px', borderRadius: '16px', background: '#ffffff', color: '#0a0a0a', border: 'none', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', transition: 'background 0.15s' }}
           onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#e5e5e5'; }}
           onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#ffffff'; }}>
           <Play size={13} />
@@ -282,16 +282,16 @@ Be specific and scientific. No generic statements.`;
         </button>
         {result && (
           <button onClick={reset}
-            style={{ padding: '10px 14px', borderRadius: '8px', background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.4)', border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer' }}>
+            style={{ padding: '10px 14px', borderRadius: '16px', background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.4)', border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer' }}>
             <RotateCcw size={13} />
           </button>
         )}
       </div>
 
       {/* MM curve — always visible */}
-      <div style={{ padding: '14px', borderRadius: '10px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+      <div style={{ padding: '14px', borderRadius: '20px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
         <LineChart data={mmCurve} color="#C8D8E8" label="Michaelis-Menten curve (v vs [S])" unit="mM" />
-        <p style={{ color: 'rgba(255,255,255,0.15)', fontSize: '9px', fontFamily: 'monospace', margin: '6px 0 0' }}>
+        <p style={{ color: 'rgba(255,255,255,0.15)', fontSize: '9px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", margin: '6px 0 0' }}>
           v = (Vmax × [S]) / (Km{Ki > 0 && I > 0 ? ` × (1 + [I]/Ki)` : ''} + [S])
         </p>
       </div>
@@ -299,19 +299,19 @@ Be specific and scientific. No generic statements.`;
       {/* ODE results */}
       {result && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          <div style={{ padding: '14px', borderRadius: '10px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+          <div style={{ padding: '14px', borderRadius: '20px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
             <LineChart
               data={{ x: result.time, y: result.substrate }}
               color="#C8D8E8" label="Substrate [S] over time" unit="min"
             />
           </div>
-          <div style={{ padding: '14px', borderRadius: '10px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+          <div style={{ padding: '14px', borderRadius: '20px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
             <LineChart
               data={{ x: result.time, y: result.product }}
               color="#C8E0D0" label="Product [P] over time" unit="min"
             />
           </div>
-          <div style={{ padding: '14px', borderRadius: '10px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+          <div style={{ padding: '14px', borderRadius: '20px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
             <LineChart
               data={{ x: result.time, y: result.velocity }}
               color="#E8DCC8" label="Reaction velocity over time" unit="min"
@@ -326,9 +326,9 @@ Be specific and scientific. No generic statements.`;
               { l: 'Peak velocity', v: `${Math.max(...result.velocity).toFixed(4)} μmol/min/mg` },
               { l: 'Saturation', v: `${((S0 / (S0 + Km)) * 100).toFixed(1)}%` },
             ].map(m => (
-              <div key={m.l} style={{ padding: '8px 10px', borderRadius: '6px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '9px', fontFamily: 'monospace', margin: '0 0 3px', textTransform: 'uppercase' }}>{m.l}</p>
-                <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '11px', fontFamily: 'monospace', margin: 0, fontWeight: 600 }}>{m.v}</p>
+              <div key={m.l} style={{ padding: '8px 10px', borderRadius: '14px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '9px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", margin: '0 0 3px', textTransform: 'uppercase' }}>{m.l}</p>
+                <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '11px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", margin: 0, fontWeight: 600 }}>{m.v}</p>
               </div>
             ))}
           </div>
@@ -337,10 +337,10 @@ Be specific and scientific. No generic statements.`;
 
       {/* AI interpretation */}
       {(ai.loading || ai.text) && (
-        <div style={{ padding: '14px', borderRadius: '10px', background: 'rgba(200,216,232,0.04)', border: '1px solid rgba(200,216,232,0.1)' }}>
+        <div style={{ padding: '14px', borderRadius: '20px', background: 'rgba(200,216,232,0.04)', border: '1px solid rgba(200,216,232,0.1)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
             <Info size={11} style={{ color: 'rgba(200,216,232,0.5)' }} />
-            <span style={{ color: 'rgba(200,216,232,0.5)', fontSize: '10px', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+            <span style={{ color: 'rgba(200,216,232,0.5)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.06em' }}>
               AI Interpretation
             </span>
           </div>
@@ -354,7 +354,7 @@ Be specific and scientific. No generic statements.`;
         </div>
       )}
 
-      <p style={{ color: 'rgba(255,255,255,0.1)', fontSize: '9px', fontFamily: 'monospace', textAlign: 'center', margin: 0 }}>
+      <p style={{ color: 'rgba(255,255,255,0.1)', fontSize: '9px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", textAlign: 'center', margin: 0 }}>
         Numerical integration via 4th-order Runge-Kutta · Based on user-provided experimental parameters
       </p>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
