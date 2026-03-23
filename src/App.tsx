@@ -205,23 +205,23 @@ export default function App() {
               )}
             </div>
 
-            {/* Bottom row — full width info strip */}
+            {/* Bottom row — single-line info strip */}
             <Reveal delay={0.3} style={{ gridColumn: 'span 12' }}>
               <div style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                padding: '14px 20px', borderRadius: '20px',
+                padding: '12px 20px', borderRadius: '16px',
                 background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)',
-                backdropFilter: 'blur(12px)', flexWrap: 'wrap', gap: '12px',
+                backdropFilter: 'blur(12px)', gap: '12px', flexWrap: 'nowrap', overflow: 'hidden',
               }}>
-                <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: '20px', flexShrink: 0 }}>
                   {[
-                    { l: 'Rendering', v: 'Lambert · Pastel palette' },
+                    { l: 'Rendering', v: 'Lambert · Pastel' },
                     { l: 'Confidence', v: 'pLDDT coloring' },
                     { l: 'Interaction', v: 'Drag · Scroll · Click' },
                   ].map(({ l, v }) => (
-                    <div key={l}>
-                      <span style={{ fontFamily: BODY, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'rgba(255,255,255,0.2)', marginRight: '6px' }}>{l}</span>
-                      <span style={{ fontFamily: BODY, fontSize: '12px', color: 'rgba(255,255,255,0.4)', fontFeatureSettings: "'tnum' 1" }}>{v}</span>
+                    <div key={l} style={{ display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}>
+                      <span style={{ fontFamily: BODY, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.07em', color: 'rgba(255,255,255,0.2)' }}>{l}</span>
+                      <span style={{ fontFamily: BODY, fontSize: '11px', color: 'rgba(255,255,255,0.4)', fontFeatureSettings: "'tnum' 1" }}>{v}</span>
                     </div>
                   ))}
                 </div>
