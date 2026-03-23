@@ -73,123 +73,17 @@ function GeoComp({ g, s }: { g: GCfg['geom']; s: number }) {
   }
 }
 
-// ════════════════════════════════════════════════════════════════════════
-// ORGANIC VOLUME TERRAIN — Image 2 aesthetic
-// Smooth sinusoidal wave field, soft blending, NO high-freq noise spikes
-// ════════════════════════════════════════════════════════════════════════
-const VOLUME_VERT = `
-  uniform float uTime;
-  varying float vY;
-  varying vec3  vNormal;
-  varying vec2  vUv;
-
-  // Low-frequency smooth wave layering — gives organic blob feel
-  float wave(vec2 p, float freq, float phase) {
-    return sin(p.x * freq + phase) * cos(p.y * freq * 0.8 + phase * 1.3);
-  }
-
-  void main() {
-    vUv = uv;
-
-    // 4 smooth wave layers — NO high-frequency noise, smooth like Image 2
-    float t = uTime * 0.18;
-    float h  = wave(position.xz, 0.28, t * 1.0) * 1.20;
-    h += wave(position.xz, 0.18, t * 0.7 + 1.5) * 0.80;
-    h += wave(position.xz, 0.42, t * 1.3 + 3.0) * 0.40;
-    h += wave(position.xz, 0.12, t * 0.5 + 4.5) * 0.60;
-
-    // Radial fade — prevents hard edges, creates natural blob
-    float dist = length(position.xz) / 16.0;
-    float fade = smoothstep(1.0, 0.0, dist);
-    h *= fade * 0.85;
-
-    vY = h;
-    vec3 pos = position + vec3(0.0, h, 0.0);
-
-    // Compute smooth normal for shading
-    float eps = 0.2;
-    float hx = wave((position.xz + vec2(eps,0.0)), 0.28, t) * 1.2
-             + wave((position.xz + vec2(eps,0.0)), 0.18, t*0.7+1.5) * 0.8
-             + wave((position.xz + vec2(eps,0.0)), 0.42, t*1.3+3.0) * 0.4;
-    float hz = wave((position.xz + vec2(0.0,eps)), 0.28, t) * 1.2
-             + wave((position.xz + vec2(0.0,eps)), 0.18, t*0.7+1.5) * 0.8
-             + wave((position.xz + vec2(0.0,eps)), 0.42, t*1.3+3.0) * 0.4;
-    vNormal = normalize(vec3(h - hx, eps, h - hz));
-
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
-  }
-`;
-
-const VOLUME_FRAG = `
-  uniform float uTime;
-  varying float vY;
-  varying vec3  vNormal;
-  varying vec2  vUv;
-
-  void main() {
-    // Color palette: deep indigo → mid blue → sky blue
-    // Matches Image 2 cool-blue scientific aesthetic
-    vec3 deep  = vec3(0.06, 0.08, 0.26);
-    vec3 mid   = vec3(0.18, 0.28, 0.62);
-    vec3 light = vec3(0.38, 0.52, 0.82);
-
-    float nh = clamp((vY + 0.3) / 2.0, 0.0, 1.0);
-    vec3 col = mix(deep, mid,   smoothstep(0.0, 0.5, nh));
-    col       = mix(col, light, smoothstep(0.5, 1.0, nh));
-
-    // Subtle diffuse shading using normal
-    float ndl = dot(normalize(vNormal), normalize(vec3(0.3, 1.0, 0.5)));
-    col += 0.12 * ndl * vec3(0.4, 0.5, 0.9);
-
-    // Edge translucency — softer at edges, opacity builds toward center
-    float dist = length(vUv - 0.5) * 2.0;
-    float alpha = (0.55 + 0.3 * nh) * smoothstep(1.0, 0.55, dist);
-
-    // Gentle surface shimmer
-    alpha *= 0.88 + 0.08 * sin(uTime * 0.5 + vY * 2.0);
-
-    gl_FragColor = vec4(col, alpha);
-  }
-`;
-
-function OrganicVolume() {
-  const matRef = useRef<THREE.ShaderMaterial>(null);
-  const geo = useMemo(() => {
-    // Higher segment count for smooth curvature — no sharp edges
-    const g = new THREE.PlaneGeometry(32, 32, 160, 160);
-    g.rotateX(-Math.PI / 2);
-    return g;
-  }, []);
-  const uniforms = useMemo(() => ({ uTime: { value: 0 } }), []);
-
-  useFrame(state => {
-    if (matRef.current) matRef.current.uniforms.uTime.value = state.clock.elapsedTime;
-  });
-
-  return (
-    <mesh geometry={geo} position={[0, -3.2, 0]} renderOrder={0}>
-      <shaderMaterial
-        ref={matRef}
-        vertexShader={VOLUME_VERT}
-        fragmentShader={VOLUME_FRAG}
-        uniforms={uniforms}
-        transparent
-        depthWrite={false}
-        side={THREE.DoubleSide}
-      />
-    </mesh>
-  );
-}
-
-// ─── Ultra-subtle position grid — space reference only ────────────────
+// ─── Scientific grid — minimal, space reference only ──────────────────
 function SpatialReference() {
   return (
     <group position={[0, -3.8, 0]}>
-      {/* Almost invisible — just enough to feel grounded */}
-      <gridHelper args={[34, 34, '#0f1520', '#0d1218']} renderOrder={-1} />
-      {/* Axis markers — barely perceptible */}
-      <Line points={[new THREE.Vector3(-8,0,0), new THREE.Vector3(8,0,0)]} color="#1a2840" lineWidth={0.3} transparent opacity={0.25} />
-      <Line points={[new THREE.Vector3(0,0,-8), new THREE.Vector3(0,0,8)]} color="#1a2840" lineWidth={0.3} transparent opacity={0.25} />
+      {/* Primary grid — very subtle */}
+      <gridHelper args={[36, 36, '#1c2535', '#141e2a']} />
+      {/* Major axis lines — barely perceptible */}
+      <Line points={[new THREE.Vector3(-10,0,0), new THREE.Vector3(10,0,0)]}
+        color="#2a3a50" lineWidth={0.5} transparent opacity={0.35} />
+      <Line points={[new THREE.Vector3(0,0,-10), new THREE.Vector3(0,0,10)]}
+        color="#2a3a50" lineWidth={0.5} transparent opacity={0.35} />
     </group>
   );
 }
@@ -476,8 +370,6 @@ function Scene({ nodes, edges, onNodeClick, selectedNodeId }: {
         onStart={onStart} onEnd={onEnd}
       />
 
-      {/* Organic volume — primary visual, rendered first */}
-      <OrganicVolume />
 
       {/* Spatial reference — barely visible */}
       <SpatialReference />
