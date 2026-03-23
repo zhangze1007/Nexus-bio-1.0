@@ -1,146 +1,480 @@
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { motion, useScroll, useTransform, useSpring } from 'framer-motion';
 import { ArrowRight, Dna, BookOpen, Microscope } from 'lucide-react';
-import { useRef } from 'react';
+import { useRef, useEffect, useState, useCallback } from 'react';
 
-function AmbientGrid() {
+// ── Typography system ─────────────────────────────────────────────────
+const SERIF = "'DM Serif Display', Georgia, 'Times New Roman', serif";
+const BODY  = "Arial, 'Helvetica Neue', Helvetica, sans-serif";
+const MONO  = "'Public Sans',sans-serif";
+
+// ── Font loader ───────────────────────────────────────────────────────
+function useFonts() {
+  useEffect(() => {
+    if (document.getElementById('nexus-fonts')) return;
+    const link = document.createElement('link');
+    link.id = 'nexus-fonts';
+    link.rel = 'stylesheet';
+    link.href = 'https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&display=swap';
+    document.head.appendChild(link);
+  }, []);
+}
+
+// ── Cursor parallax ───────────────────────────────────────────────────
+function useCursorParallax() {
+  const [pos, setPos] = useState({ x: 0, y: 0 });
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      const x = (e.clientX / window.innerWidth  - 0.5) * 2;
+      const y = (e.clientY / window.innerHeight - 0.5) * 2;
+      setPos({ x, y });
+    };
+    window.addEventListener('mousemove', handler);
+    return () => window.removeEventListener('mousemove', handler);
+  }, []);
+  return pos;
+}
+
+// ── Animated orb background ───────────────────────────────────────────
+function DeepBackground({ cx }: { cx: { x: number; y: number } }) {
   return (
     <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
-      <svg width="100%" height="100%" style={{ position: 'absolute', inset: 0, opacity: 0.018 }}>
+
+      {/* Base */}
+      <div style={{ position: 'absolute', inset: 0, background: '#070a0e' }} />
+
+      {/* Orb 1 — top left, slow drift */}
+      <motion.div
+        animate={{ x: [0, 40, -20, 0], y: [0, -30, 20, 0] }}
+        transition={{ duration: 28, repeat: Infinity, ease: 'easeInOut' }}
+        style={{
+          position: 'absolute',
+          top: '-20%', left: '-10%',
+          width: '70vw', height: '70vw',
+          background: 'radial-gradient(ellipse at center, rgba(140,180,220,0.055) 0%, rgba(100,140,190,0.02) 45%, transparent 70%)',
+          filter: 'blur(60px)',
+          transform: `translate(${cx.x * -18}px, ${cx.y * -12}px)`,
+          transition: 'transform 0.8s cubic-bezier(0.16,1,0.3,1)',
+          borderRadius: '50%',
+        }}
+      />
+
+      {/* Orb 2 — bottom right */}
+      <motion.div
+        animate={{ x: [0, -50, 30, 0], y: [0, 40, -20, 0] }}
+        transition={{ duration: 35, repeat: Infinity, ease: 'easeInOut', delay: 4 }}
+        style={{
+          position: 'absolute',
+          bottom: '-25%', right: '-15%',
+          width: '65vw', height: '65vw',
+          background: 'radial-gradient(ellipse at center, rgba(160,200,240,0.04) 0%, rgba(120,160,210,0.015) 45%, transparent 70%)',
+          filter: 'blur(80px)',
+          transform: `translate(${cx.x * 14}px, ${cx.y * 10}px)`,
+          transition: 'transform 0.8s cubic-bezier(0.16,1,0.3,1)',
+          borderRadius: '50%',
+        }}
+      />
+
+      {/* Orb 3 — center, very faint */}
+      <motion.div
+        animate={{ scale: [1, 1.12, 0.95, 1], opacity: [0.4, 0.65, 0.4] }}
+        transition={{ duration: 22, repeat: Infinity, ease: 'easeInOut', delay: 8 }}
+        style={{
+          position: 'absolute', top: '30%', left: '50%',
+          transform: `translate(-50%, -50%) translate(${cx.x * -8}px, ${cx.y * -6}px)`,
+          width: '50vw', height: '50vw',
+          background: 'radial-gradient(ellipse at center, rgba(180,210,255,0.022) 0%, transparent 65%)',
+          filter: 'blur(40px)',
+          transition: 'transform 1.2s cubic-bezier(0.16,1,0.3,1)',
+          borderRadius: '50%',
+        }}
+      />
+
+      {/* Fine square grid */}
+      <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.7 }}>
         <defs>
-          <pattern id="grid-minor" width="40" height="40" patternUnits="userSpaceOnUse">
-            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" strokeWidth="0.5" />
+          <pattern id="sg" width="28" height="28" patternUnits="userSpaceOnUse">
+            <path d="M 28 0 L 0 0 0 28" fill="none" stroke="rgba(255,255,255,0.028)" strokeWidth="0.5"/>
           </pattern>
-          <pattern id="grid-major" width="200" height="200" patternUnits="userSpaceOnUse">
-            <path d="M 200 0 L 0 0 0 200" fill="none" stroke="white" strokeWidth="1" />
+          <pattern id="lg" width="140" height="140" patternUnits="userSpaceOnUse">
+            <path d="M 140 0 L 0 0 0 140" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="0.5"/>
           </pattern>
         </defs>
-        <rect width="100%" height="100%" fill="url(#grid-minor)" />
-        <rect width="100%" height="100%" fill="url(#grid-major)" />
+        <rect width="100%" height="100%" fill="url(#sg)" />
+        <rect width="100%" height="100%" fill="url(#lg)" />
       </svg>
-      <div style={{ position: 'absolute', top: '-20%', left: '50%', transform: 'translateX(-50%)', width: '80vw', height: '60vh', background: 'radial-gradient(ellipse at center, rgba(200,216,232,0.04) 0%, transparent 65%)' }} />
-      <div style={{ position: 'absolute', top: '20%', left: '-10%', width: '40vw', height: '40vh', background: 'radial-gradient(ellipse at center, rgba(180,200,220,0.025) 0%, transparent 70%)' }} />
-      <div style={{ position: 'absolute', bottom: '10%', right: '-5%', width: '30vw', height: '30vh', background: 'radial-gradient(ellipse at center, rgba(200,210,230,0.02) 0%, transparent 70%)' }} />
+
+      {/* Slow scan line */}
+      <motion.div
+        animate={{ y: ['5vh', '95vh'] }}
+        transition={{ duration: 14, repeat: Infinity, ease: 'linear' }}
+        style={{
+          position: 'absolute', left: 0, right: 0, height: '1px',
+          background: 'linear-gradient(to right, transparent 0%, rgba(180,210,240,0.05) 30%, rgba(180,210,240,0.09) 50%, rgba(180,210,240,0.05) 70%, transparent 100%)',
+        }}
+      />
+
+      {/* Vertical accent lines */}
+      <div style={{ position: 'absolute', top: 0, bottom: 0, left: '18vw', width: '1px', background: 'linear-gradient(to bottom, transparent, rgba(255,255,255,0.04) 30%, rgba(255,255,255,0.04) 70%, transparent)' }} />
+      <div style={{ position: 'absolute', top: 0, bottom: 0, right: '18vw', width: '1px', background: 'linear-gradient(to bottom, transparent, rgba(255,255,255,0.03) 30%, rgba(255,255,255,0.03) 70%, transparent)' }} />
+
+      {/* Noise grain overlay */}
+      <div style={{
+        position: 'absolute', inset: 0,
+        backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E")`,
+        backgroundSize: '180px',
+        opacity: 0.4,
+        mixBlendMode: 'overlay',
+      }} />
     </div>
   );
 }
 
-function StatChip({ value, label }: { value: string; label: string }) {
+// ── Glass card ────────────────────────────────────────────────────────
+function GlassChip({ value, label, delay }: { value: string; label: string; delay: number }) {
+  const [hov, setHov] = useState(false);
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '14px 20px', borderRadius: '12px', background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', backdropFilter: 'blur(8px)', minWidth: '100px' }}>
-      <span style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: 'clamp(1.25rem, 2.5vw, 1.625rem)', color: 'rgba(255,255,255,0.88)', lineHeight: 1.2, letterSpacing: '-0.01em' }}>{value}</span>
-      <span style={{ fontFamily: "'SF Mono','Fira Code',monospace", fontSize: '9px', color: 'rgba(255,255,255,0.2)', textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: '4px' }}>{label}</span>
-    </div>
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.7, delay, ease: [0.22, 1, 0.36, 1] }}
+      onHoverStart={() => setHov(true)}
+      onHoverEnd={() => setHov(false)}
+      style={{
+        display: 'flex', flexDirection: 'column', alignItems: 'center',
+        padding: '16px 24px', borderRadius: '14px', minWidth: '100px',
+        background: hov ? 'rgba(255,255,255,0.045)' : 'rgba(255,255,255,0.02)',
+        border: `1px solid ${hov ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.06)'}`,
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        boxShadow: hov
+          ? '0 8px 40px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.04), inset 0 1px 0 rgba(255,255,255,0.06)'
+          : '0 2px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.04)',
+        transform: hov ? 'translateY(-3px)' : 'none',
+        transition: 'all 0.3s cubic-bezier(0.34,1.56,0.64,1)',
+        cursor: 'default',
+      }}>
+      <span style={{ fontFamily: SERIF, fontSize: '1.75rem', color: hov ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.78)', lineHeight: 1.1, letterSpacing: '-0.02em' }}>
+        {value}
+      </span>
+      <span style={{ fontFamily: MONO, fontSize: '9px', color: 'rgba(255,255,255,0.22)', textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: '6px' }}>
+        {label}
+      </span>
+    </motion.div>
   );
 }
 
+// ── Scroll reveal wrapper ─────────────────────────────────────────────
+function Reveal({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 28, filter: 'blur(4px)' }}
+      whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+      viewport={{ once: true, margin: '-60px' }}
+      transition={{ duration: 0.85, delay, ease: [0.22, 1, 0.36, 1] }}>
+      {children}
+    </motion.div>
+  );
+}
+
+export { Reveal };
+
+// ── Main Hero ─────────────────────────────────────────────────────────
 export default function Hero() {
+  useFonts();
   const ref = useRef<HTMLElement>(null);
+  const cursor = useCursorParallax();
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end start'] });
-  const titleY = useTransform(scrollYProgress, [0, 1], [0, -50]);
-  const titleOpacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
+  const y       = useTransform(scrollYProgress, [0, 1], [0, -100]);
+  const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
+  const scale   = useTransform(scrollYProgress, [0, 0.5], [1, 0.97]);
 
   return (
-    <header ref={ref} style={{ position: 'relative', width: '100%', minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 24px', overflow: 'hidden' }}>
-      <AmbientGrid />
+    <header ref={ref} style={{
+      position: 'relative', width: '100%', minHeight: '100vh',
+      display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center',
+      padding: '0 24px', overflow: 'hidden',
+    }}>
+      <DeepBackground cx={cursor} />
 
-      {/* Nav */}
-      <nav style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 32px', height: '60px', borderBottom: '1px solid rgba(255,255,255,0.055)', background: 'rgba(10,10,10,0.78)', backdropFilter: 'blur(20px)' }}>
+      {/* ── Navbar ── */}
+      <nav style={{
+        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '0 40px', height: '60px',
+        background: 'rgba(7,10,14,0.75)',
+        backdropFilter: 'blur(28px)',
+        WebkitBackdropFilter: 'blur(28px)',
+        borderBottom: '1px solid rgba(255,255,255,0.05)',
+        boxShadow: '0 1px 0 rgba(255,255,255,0.03)',
+      }}>
+        {/* Logo */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Dna size={14} style={{ color: 'rgba(255,255,255,0.7)' }} />
+          <div style={{
+            width: '28px', height: '28px', borderRadius: '16px',
+            background: 'rgba(255,255,255,0.05)',
+            border: '1px solid rgba(255,255,255,0.1)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 0 12px rgba(180,210,240,0.08)',
+          }}>
+            <Dna size={13} style={{ color: 'rgba(255,255,255,0.6)' }} />
           </div>
-          <span style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: '16px', color: 'rgba(255,255,255,0.88)', letterSpacing: '-0.01em' }}>Nexus-Bio</span>
+          <span style={{ fontFamily: SERIF, fontSize: '15px', color: 'rgba(255,255,255,0.82)', letterSpacing: '-0.01em' }}>
+            Nexus-Bio
+          </span>
         </div>
+
+        {/* Nav links */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
           {[['Visualize','demo'],['Search','search'],['Analyze','analyzer'],['Contact','contact']].map(([label, id]) => (
-            <a key={id} href={`#${id}`} style={{ fontFamily: 'Arial, sans-serif', fontSize: '12px', color: 'rgba(255,255,255,0.38)', textDecoration: 'none', letterSpacing: '0.02em', transition: 'color 0.2s' }}
-              onMouseEnter={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.85)')}
-              onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.38)')}>
+            <a key={id} href={`#${id}`} style={{
+              fontFamily: BODY, fontSize: '12px', fontWeight: 400,
+              color: 'rgba(255,255,255,0.32)',
+              textDecoration: 'none', letterSpacing: '0.03em',
+              transition: 'color 0.2s',
+            }}
+              onMouseEnter={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.78)')}
+              onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.32)')}>
               {label}
             </a>
           ))}
         </div>
-        <a href="#analyzer" style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 16px', borderRadius: '8px', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.75)', fontFamily: 'Arial, sans-serif', fontSize: '12px', textDecoration: 'none', transition: 'all 0.2s' }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.12)'; (e.currentTarget as HTMLElement).style.color = '#fff'; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.07)'; (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.75)'; }}>
+
+        {/* CTA */}
+        <a href="#analyzer" style={{
+          display: 'flex', alignItems: 'center', gap: '6px',
+          padding: '7px 18px', borderRadius: '16px',
+          background: 'rgba(255,255,255,0.055)',
+          border: '1px solid rgba(255,255,255,0.09)',
+          backdropFilter: 'blur(12px)',
+          color: 'rgba(255,255,255,0.6)',
+          fontFamily: BODY, fontSize: '12px', fontWeight: 400,
+          textDecoration: 'none', transition: 'all 0.2s',
+          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06)',
+        }}
+          onMouseEnter={e => {
+            const el = e.currentTarget as HTMLElement;
+            el.style.background = 'rgba(255,255,255,0.1)';
+            el.style.color = '#fff';
+            el.style.borderColor = 'rgba(255,255,255,0.16)';
+            el.style.boxShadow = '0 4px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.08)';
+          }}
+          onMouseLeave={e => {
+            const el = e.currentTarget as HTMLElement;
+            el.style.background = 'rgba(255,255,255,0.055)';
+            el.style.color = 'rgba(255,255,255,0.6)';
+            el.style.borderColor = 'rgba(255,255,255,0.09)';
+            el.style.boxShadow = 'inset 0 1px 0 rgba(255,255,255,0.06)';
+          }}>
           Try Now <ArrowRight size={11} />
         </a>
       </nav>
 
-      {/* Content */}
-      <motion.div style={{ y: titleY, opacity: titleOpacity, position: 'relative', zIndex: 10, textAlign: 'center', maxWidth: '820px', margin: '0 auto', paddingTop: '80px' }}>
+      {/* ── Hero content — parallax layer ── */}
+      <motion.div style={{
+        y, opacity, scale,
+        position: 'relative', zIndex: 10,
+        textAlign: 'center', maxWidth: '860px', width: '100%',
+        paddingTop: '80px',
+        transform: `translate(${cursor.x * -6}px, ${cursor.y * -4}px)`,
+        transition: 'transform 1s cubic-bezier(0.16,1,0.3,1)',
+      }}>
 
-        {/* Badge */}
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}
-          style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '5px 14px', borderRadius: '100px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)', marginBottom: '40px' }}>
-          <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: 'rgba(200,216,232,0.6)' }} />
-          <span style={{ fontFamily: "'SF Mono','Fira Code',monospace", fontSize: '10px', color: 'rgba(255,255,255,0.32)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+        {/* Badge — glass pill */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, ease: [0.22,1,0.36,1] }}
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: '9px',
+            padding: '6px 18px', borderRadius: '100px', marginBottom: '52px',
+            background: 'rgba(255,255,255,0.03)',
+            border: '1px solid rgba(255,255,255,0.08)',
+            backdropFilter: 'blur(16px)',
+            boxShadow: '0 2px 20px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05)',
+          }}>
+          <motion.span
+            animate={{ opacity: [0.3, 1, 0.3] }}
+            transition={{ duration: 3, repeat: Infinity }}
+            style={{ width: '5px', height: '5px', borderRadius: '50%', background: 'rgba(180,215,245,0.6)', boxShadow: '0 0 6px rgba(180,215,245,0.4)', flexShrink: 0 }}
+          />
+          <span style={{ fontFamily: SERIF, fontSize: '12px', color: 'rgba(255,255,255,0.35)', letterSpacing: '0.04em' }}>
             Next-Gen Bio-Intelligent Architecture
           </span>
         </motion.div>
 
-        {/* Title — DM Serif Display */}
-        <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.1, ease: [0.22,1,0.36,1] }}
-          style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: 'clamp(2.5rem, 7vw, 4.75rem)', fontWeight: 400, lineHeight: 1.08, letterSpacing: '-0.02em', color: 'rgba(255,255,255,0.93)', margin: '0 0 24px' }}>
-          From literature<br />
-          <em style={{ color: 'rgba(255,255,255,0.28)', fontStyle: 'italic' }}>to mechanistic insight.</em>
+        {/* Main title — DM Serif Display */}
+        <motion.h1
+          initial={{ opacity: 0, y: 32 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.9, delay: 0.08, ease: [0.22,1,0.36,1] }}
+          style={{
+            fontFamily: SERIF, fontWeight: 400, fontStyle: 'normal',
+            fontSize: 'clamp(2.8rem, 8vw, 5.4rem)',
+            lineHeight: 1.04, letterSpacing: '-0.03em',
+            color: 'rgba(255,255,255,0.92)',
+            margin: '0 0 24px',
+            textShadow: '0 0 80px rgba(180,210,240,0.08)',
+          }}>
+          From literature
+          <br />
+          <span style={{ color: 'rgba(255,255,255,0.22)', fontStyle: 'normal' }}>
+            to mechanistic insight.
+          </span>
         </motion.h1>
 
-        {/* Subtitle — Arial */}
-        <motion.p initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.2 }}
-          style={{ fontFamily: 'Arial, sans-serif', fontSize: 'clamp(13px, 1.6vw, 15px)', lineHeight: 1.8, color: 'rgba(255,255,255,0.40)', maxWidth: '540px', margin: '0 auto 12px', letterSpacing: '-0.003em' }}>
+        {/* Subtitle — Arial/body */}
+        <motion.p
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.75, delay: 0.18 }}
+          style={{
+            fontFamily: BODY, fontSize: 'clamp(13px, 1.55vw, 15px)',
+            fontWeight: 400, lineHeight: 1.9,
+            color: 'rgba(255,255,255,0.35)',
+            maxWidth: '540px', margin: '0 auto 12px',
+            letterSpacing: '0.01em',
+          }}>
           Nexus-Bio extracts metabolic nodes, enzymatic reactions, and pathway logic
           from any research paper — rendered as an interactive 3D map in seconds.
         </motion.p>
 
-        {/* Tagline — DM Serif italic */}
-        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6, delay: 0.3 }}
-          style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontStyle: 'italic', fontSize: '14px', color: 'rgba(255,255,255,0.16)', margin: '0 0 52px' }}>
+        {/* Tagline — DM Serif */}
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.3 }}
+          style={{
+            fontFamily: SERIF, fontStyle: 'normal', fontSize: '14px',
+            color: 'rgba(255,255,255,0.14)',
+            margin: '0 0 60px', letterSpacing: '0.01em',
+          }}>
           Built for researchers, biotech teams, and grant-stage startups.
         </motion.p>
 
-        {/* CTAs */}
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.35 }}
-          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '64px' }}>
-          <a href="#analyzer" style={{ display: 'flex', alignItems: 'center', gap: '7px', padding: '11px 24px', borderRadius: '10px', background: '#ffffff', color: '#0a0a0a', fontFamily: 'Arial, sans-serif', fontSize: '13px', fontWeight: 700, textDecoration: 'none', transition: 'all 0.2s', letterSpacing: '-0.01em' }}
-            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#e8e8e8'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 20px rgba(255,255,255,0.12)'; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#ffffff'; (e.currentTarget as HTMLElement).style.transform = 'none'; (e.currentTarget as HTMLElement).style.boxShadow = 'none'; }}>
+        {/* CTAs — glass buttons */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.65, delay: 0.36 }}
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '72px' }}>
+
+          {/* Primary CTA */}
+          <a href="#analyzer" style={{
+            display: 'flex', alignItems: 'center', gap: '8px',
+            padding: '13px 28px', borderRadius: '20px',
+            background: '#ffffff', color: '#07090d',
+            fontFamily: BODY, fontSize: '13px', fontWeight: 600,
+            textDecoration: 'none', letterSpacing: '-0.01em',
+            boxShadow: '0 0 0 0 rgba(255,255,255,0)',
+            transition: 'all 0.25s cubic-bezier(0.34,1.56,0.64,1)',
+          }}
+            onMouseEnter={e => {
+              const el = e.currentTarget as HTMLElement;
+              el.style.background = '#e8e8e8';
+              el.style.transform = 'translateY(-3px) scale(1.01)';
+              el.style.boxShadow = '0 8px 30px rgba(255,255,255,0.18), 0 0 0 1px rgba(255,255,255,0.1)';
+            }}
+            onMouseLeave={e => {
+              const el = e.currentTarget as HTMLElement;
+              el.style.background = '#ffffff';
+              el.style.transform = 'none';
+              el.style.boxShadow = '0 0 0 0 rgba(255,255,255,0)';
+            }}>
             Analyze a Paper <ArrowRight size={13} />
           </a>
-          <a href="#search" style={{ display: 'flex', alignItems: 'center', gap: '7px', padding: '11px 24px', borderRadius: '10px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.55)', fontFamily: 'Arial, sans-serif', fontSize: '13px', textDecoration: 'none', transition: 'all 0.2s' }}
-            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.09)'; (e.currentTarget as HTMLElement).style.color = '#fff'; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.05)'; (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.55)'; }}>
+
+          {/* Secondary CTA — glassmorphism */}
+          <a href="#search" style={{
+            display: 'flex', alignItems: 'center', gap: '8px',
+            padding: '13px 28px', borderRadius: '20px',
+            background: 'rgba(255,255,255,0.04)',
+            border: '1px solid rgba(255,255,255,0.09)',
+            backdropFilter: 'blur(16px)',
+            color: 'rgba(255,255,255,0.45)',
+            fontFamily: BODY, fontSize: '13px', fontWeight: 400,
+            textDecoration: 'none',
+            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
+            transition: 'all 0.22s ease',
+          }}
+            onMouseEnter={e => {
+              const el = e.currentTarget as HTMLElement;
+              el.style.background = 'rgba(255,255,255,0.08)';
+              el.style.color = '#fff';
+              el.style.borderColor = 'rgba(255,255,255,0.16)';
+              el.style.transform = 'translateY(-2px)';
+              el.style.boxShadow = '0 6px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.07)';
+            }}
+            onMouseLeave={e => {
+              const el = e.currentTarget as HTMLElement;
+              el.style.background = 'rgba(255,255,255,0.04)';
+              el.style.color = 'rgba(255,255,255,0.45)';
+              el.style.borderColor = 'rgba(255,255,255,0.09)';
+              el.style.transform = 'none';
+              el.style.boxShadow = 'inset 0 1px 0 rgba(255,255,255,0.05)';
+            }}>
             <BookOpen size={13} /> Browse Literature
           </a>
         </motion.div>
 
-        {/* Stats */}
-        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.5 }}
-          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '40px' }}>
-          <StatChip value="6" label="Literature DBs" />
-          <StatChip value="3D" label="Mol. Structures" />
-          <StatChip value="AI" label="Pathway Engine" />
-          <StatChip value="ODE" label="Kinetic Sim." />
-        </motion.div>
+        {/* Stats — glass chips with stagger */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '44px' }}>
+          {[
+            { value: '6', label: 'Literature DBs', delay: 0.52 },
+            { value: '3D', label: 'Structures', delay: 0.6 },
+            { value: 'AI', label: 'Pathway Engine', delay: 0.68 },
+            { value: 'ODE', label: 'Kinetic Sim.', delay: 0.76 },
+          ].map(s => <GlassChip key={s.value} {...s} />)}
+        </div>
 
         {/* Feature tags */}
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6, delay: 0.65 }}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.7, delay: 0.85 }}
           style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
           {[
-            { icon: <Dna size={11} />, label: 'AlphaFold pLDDT' },
-            { icon: <Microscope size={11} />, label: 'PubChem 3D Conformers' },
-            { icon: <BookOpen size={11} />, label: 'Evidence Trace' },
+            { icon: <Dna size={10} />, label: 'AlphaFold pLDDT' },
+            { icon: <Microscope size={10} />, label: 'PubChem 3D Conformers' },
+            { icon: <BookOpen size={10} />, label: 'Evidence Trace' },
           ].map((f, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 12px', borderRadius: '100px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.22)', fontFamily: 'Arial, sans-serif', fontSize: '11px' }}>
+            <div key={i} style={{
+              display: 'flex', alignItems: 'center', gap: '6px',
+              padding: '5px 13px', borderRadius: '100px',
+              background: 'rgba(255,255,255,0.022)',
+              border: '1px solid rgba(255,255,255,0.06)',
+              backdropFilter: 'blur(8px)',
+              color: 'rgba(255,255,255,0.2)',
+              fontFamily: MONO, fontSize: '10px',
+              letterSpacing: '0.02em',
+              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.03)',
+              transition: 'all 0.2s',
+              cursor: 'default',
+            }}
+              onMouseEnter={e => {
+                const el = e.currentTarget as HTMLElement;
+                el.style.color = 'rgba(255,255,255,0.55)';
+                el.style.borderColor = 'rgba(255,255,255,0.12)';
+                el.style.background = 'rgba(255,255,255,0.05)';
+              }}
+              onMouseLeave={e => {
+                const el = e.currentTarget as HTMLElement;
+                el.style.color = 'rgba(255,255,255,0.2)';
+                el.style.borderColor = 'rgba(255,255,255,0.06)';
+                el.style.background = 'rgba(255,255,255,0.022)';
+              }}>
               {f.icon} {f.label}
             </div>
           ))}
         </motion.div>
       </motion.div>
 
-      {/* Bottom divider + fade */}
-      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(to right, transparent, rgba(255,255,255,0.06) 30%, rgba(255,255,255,0.06) 70%, transparent)' }} />
-      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '120px', background: 'linear-gradient(to bottom, transparent, #0a0a0a)', pointerEvents: 'none' }} />
+      {/* Bottom vignette */}
+      <div style={{
+        position: 'absolute', bottom: 0, left: 0, right: 0, height: '180px',
+        background: 'linear-gradient(to bottom, transparent, rgba(7,10,14,0.95))',
+        pointerEvents: 'none',
+      }} />
     </header>
   );
 }
