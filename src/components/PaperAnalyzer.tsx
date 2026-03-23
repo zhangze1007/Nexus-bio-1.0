@@ -345,7 +345,7 @@ export default function PaperAnalyzer({ onPathwayGenerated }: PaperAnalyzerProps
 
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '11px', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' }}>
+          <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '11px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' }}>
             02 · Analysis
           </p>
           <h2 style={{ color: '#ffffff', fontSize: 'clamp(24px, 4vw, 32px)', fontWeight: 600, letterSpacing: '-0.03em', marginBottom: '8px' }}>
@@ -363,8 +363,8 @@ export default function PaperAnalyzer({ onPathwayGenerated }: PaperAnalyzerProps
           {(mode === 'pdf' || mode === 'image' || mode === 'camera') && (
             <div style={{ padding: '14px 16px 0', display: 'flex', alignItems: 'center', gap: '12px' }}>
               {imagePreview
-                ? <img src={imagePreview} alt="Preview" style={{ height: '48px', width: '48px', objectFit: 'cover', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' }} />
-                : <div style={{ height: '48px', width: '48px', borderRadius: '8px', border: '1px dashed rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                ? <img src={imagePreview} alt="Preview" style={{ height: '48px', width: '48px', objectFit: 'cover', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)' }} />
+                : <div style={{ height: '48px', width: '48px', borderRadius: '16px', border: '1px dashed rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     {mode === 'pdf' ? <Upload size={16} style={{ color: 'rgba(255,255,255,0.3)' }} /> : <ImageIcon size={16} style={{ color: 'rgba(255,255,255,0.3)' }} />}
                   </div>
               }
@@ -417,7 +417,7 @@ export default function PaperAnalyzer({ onPathwayGenerated }: PaperAnalyzerProps
 
               {mode !== 'text' && (
                 <button onClick={() => { setMode('text'); resetState(); setExpanded(false); }}
-                  style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '5px 10px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: '12px', cursor: 'pointer' }}
+                  style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '5px 10px', borderRadius: '16px', background: 'rgba(255,255,255,0.05)', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: '12px', cursor: 'pointer' }}
                   onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#ffffff'; }}
                   onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.4)'; }}>
                   Text
@@ -425,7 +425,7 @@ export default function PaperAnalyzer({ onPathwayGenerated }: PaperAnalyzerProps
               )}
 
               <button onClick={() => setExpanded(!expanded)}
-                style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '5px 10px', borderRadius: '8px', background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', fontSize: '12px', cursor: 'pointer' }}
+                style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '5px 10px', borderRadius: '16px', background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', fontSize: '12px', cursor: 'pointer' }}
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#ffffff'; (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.05)'; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.3)'; (e.currentTarget as HTMLElement).style.background = 'none'; }}>
                 {expanded ? <ChevronUp size={13} /> : <Plus size={13} />}
@@ -440,7 +440,7 @@ export default function PaperAnalyzer({ onPathwayGenerated }: PaperAnalyzerProps
                     if (m.id === 'image') setTimeout(() => imageInputRef.current?.click(), 80);
                     if (m.id === 'camera') setTimeout(() => cameraInputRef.current?.click(), 80);
                   }}
-                  style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '5px 10px', borderRadius: '8px', background: mode === m.id ? 'rgba(255,255,255,0.1)' : 'none', border: 'none', color: mode === m.id ? '#ffffff' : 'rgba(255,255,255,0.35)', fontSize: '12px', cursor: 'pointer' }}>
+                  style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '5px 10px', borderRadius: '16px', background: mode === m.id ? 'rgba(255,255,255,0.1)' : 'none', border: 'none', color: mode === m.id ? '#ffffff' : 'rgba(255,255,255,0.35)', fontSize: '12px', cursor: 'pointer' }}>
                   {m.icon}{m.label}
                 </button>
               ))}
@@ -469,18 +469,18 @@ export default function PaperAnalyzer({ onPathwayGenerated }: PaperAnalyzerProps
         {/* Status messages */}
         <div style={{ marginTop: '10px', minHeight: '28px' }}>
           {analysisState === 'analyzing' && (
-            <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '12px', fontFamily: 'monospace', textAlign: 'center' }}>
+            <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '12px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", textAlign: 'center' }}>
               Extracting pathway structure from literature...
             </p>
           )}
           {analysisState === 'error' && errorMsg && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', borderRadius: '10px', background: 'rgba(255,80,80,0.06)', border: '1px solid rgba(255,80,80,0.12)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', borderRadius: '20px', background: 'rgba(255,80,80,0.06)', border: '1px solid rgba(255,80,80,0.12)' }}>
               <AlertCircle size={13} style={{ color: 'rgba(255,120,120,0.8)', flexShrink: 0 }} />
               <p style={{ color: 'rgba(255,140,140,0.8)', fontSize: '12px', margin: 0 }}>{errorMsg}</p>
             </div>
           )}
           {analysisState === 'success' && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', borderRadius: '10px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', borderRadius: '20px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
               <CheckCircle2 size={13} style={{ color: 'rgba(255,255,255,0.5)', flexShrink: 0 }} />
               <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '12px', margin: 0 }}>
                 Pathway extracted. Scroll up to explore the visualization ↑
@@ -488,7 +488,7 @@ export default function PaperAnalyzer({ onPathwayGenerated }: PaperAnalyzerProps
             </div>
           )}
           {analysisState === 'idle' && (
-            <p style={{ color: 'rgba(255,255,255,0.12)', fontSize: '11px', fontFamily: 'monospace', textAlign: 'center' }}>
+            <p style={{ color: 'rgba(255,255,255,0.12)', fontSize: '11px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", textAlign: 'center' }}>
               Press Enter to analyze · Shift+Enter for new line · Gemini 2.0 Flash
             </p>
           )}
