@@ -1,63 +1,67 @@
-xport interface PathwayNode {
+export type NodeType =
+  | 'metabolite'
+  | 'enzyme'
+  | 'gene'
+  | 'complex'
+  | 'cofactor'
+  | 'unknown';
+
+export type EdgeRelationshipType =
+  | 'catalyzes'
+  | 'produces'
+  | 'consumes'
+  | 'activates'
+  | 'inhibits'
+  | 'converts'
+  | 'transports'
+  | 'regulates'
+  | 'unknown';
+
+export interface PathwayNode {
   id: string;
   label: string;
   canonicalLabel?: string;
+
   position: [number, number, number];
-  nodeType?: string;
+  color: string;
+
+  nodeType?: NodeType;
   summary?: string;
-  confidenceScore?: number;
-  molecularStructure?: string;
-  evidenceSnippet?: string;
   citation?: string;
+  evidenceSnippet?: string;
+
+  confidenceScore?: number;
+
+  // Molecular / structure metadata
+  smiles?: string;
+  molecule3dUrl?: string;
+  molBlock?: string;
+
+  // External identifiers
   ecNumber?: string;
   chebiId?: string;
   uniprotId?: string;
-  pubchemCID?: string;
-  color?: string;
+  pubchemCID?: number | string;
 }
 
 export interface PathwayEdge {
   start: string;
   end: string;
-  relationshipType?: string;
+  relationshipType?: EdgeRelationshipType;
   direction?: 'forward' | 'reverse' | 'bidirectional';
   confidenceScore?: number;
+  evidence?: string;
 }
 
-export type NodeType = 'metabolite' | 'enzyme' | 'gene' | 'complex' | 'cofactor' | 'unknown';
-export type EdgeRelationshipType = 'catalyzes' | 'produces' | 'consumes' | 'activates' | 'inhibits' | 'converts' | 'transports' | 'regulates' | 'unknown';
-
-export const SHOWCASE_PUBCHEM_CIDS: Record<string, string> = {
-  acetyl_coa: '444493',
-  hmg_coa: '446059',
-  mevalonate: '439610',
-  fpp: '445012',
-  amorpha_4_11_diene: '10142942',
-  artemisinic_acid: '11667468',
-  artemisinin: '68827',
+export const SHOWCASE_PUBCHEM_CIDS: Record<string, number> = {
+  acetyl_coa: 444493,
+  hmg_coa: 445014,
+  mevalonate: 750,
+  fpp: 123730,
+  amorpha_4_11_diene: 5281781,
+  artemisinic_acid: 68934,
+  artemisinin: 68827,
+  pyruvate: 1060,
+  glucose: 5793,
+  ethanol: 702,
 };
-
-export function sanitizeNodeId(id: string): string {
-  return id.toLowerCase().replace(/[^a-z0-9_]/g, '_');
-}
-
-export function isValidNode(node: any): node is PathwayNode {
-  return (
-    typeof node === 'object' &&
-    node !== null &&
-    typeof node.id === 'string' &&
-    typeof node.label === 'string' &&
-    Array.isArray(node.position) &&
-    node.position.length === 3 &&
-    node.position.every((n: any) => typeof n === 'number')
-  );
-}
-
-export function isValidEdge(edge: any): edge is PathwayEdge {
-  return (
-    typeof edge === 'object' &&
-    edge !== null &&
-    typeof edge.start === 'string' &&
-    typeof edge.end === 'string'
-  );
-}
