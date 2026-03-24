@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useRef } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Download, FileText, Hash, Link2, ChevronDown, ChevronUp, Atom, Activity, Thermometer, Loader2, ExternalLink } from 'lucide-react';
 import { PathwayNode, PathwayEdge, NodeType, EdgeRelationshipType, SHOWCASE_PUBCHEM_CIDS } from '../types';
@@ -475,7 +475,7 @@ function Divider() { return <div style={{ borderTop: '1px solid rgba(255,255,255
 
 type TabId = 'overview' | 'structure' | 'analysis';
 
-export default function NodePanel({ node, onClose, allNodes, allEdges }: NodePanelProps) {
+const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEdges }: NodePanelProps) {
   const [activeTab, setActiveTab] = useState<TabId>('overview');
   const [showConnections, setShowConnections] = useState(false);
 
@@ -836,4 +836,6 @@ export default function NodePanel({ node, onClose, allNodes, allEdges }: NodePan
       )}
     </AnimatePresence>
   );
-}
+});
+
+export default NodePanel;
