@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Html, Line } from '@react-three/drei';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { OrbitControls, Html, Line, Stars } from '@react-three/drei';
 import * as THREE from 'three';
 import { PathwayNode, PathwayEdge, MolecularStructure } from '../types';
 
@@ -19,7 +19,7 @@ function hashInt(str: string, idx: number, min: number, max: number) {
   return min + (hash(str + idx) % (max - min + 1));
 }
 
-// ─── Color system ─────────────────────────────────────────────────────
+// ─── Color system ─────────────────────────────────────────────────────const PASTEL = ['#C8D8E8','#C8E0D0','#DDD0E8','#E8DCC8','#C8DCDC','#DCE8C8','#E8C8D4','#CCE0D8'];
 const PASTEL = ['#C8D8E8','#C8E0D0','#DDD0E8','#E8DCC8','#C8DCDC','#DCE8C8','#E8C8D4','#CCE0D8'];
 const NODE_CONF: Record<string,number> = { acetyl_coa:85,hmg_coa:72,mevalonate:68,fpp:91,amorpha_4_11_diene:88,artemisinic_acid:76,artemisinin:93 };
 
@@ -73,18 +73,258 @@ function GeoComp({ g, s }: { g: GCfg['geom']; s: number }) {
   }
 }
 
-// ─── Scientific grid — minimal, space reference only ──────────────────
-function SpatialReference() {
+// ─── Base Field Shader System ───────────────────────────────────────────
+const baseFieldVertexShader = `
+uniform float uTime;
+uniform vec2 uMouse;
+uniform float uAnalysisMode;
+uniform float uHoverState;
+uniform vec3 uHoverPos;
+uniform float uClickState;
+uniform vec3 uClickPos;
+
+varying vec2 vUv;
+varying float vElevation;
+
+// Classic Perlin 3D Noise 
+vec4 permute(vec4 x){return mod(((x*34.0)+1.0)*x, 289.0);}
+vec4 taylorInvSqrt(vec4 r){return 1.79284291400159 - 0.85373472095314 * r;}
+vec3 fade(vec3 t) {return t*t*t*(t*(t*6.0-15.0)+10.0);}
+
+float cnoise(vec3 P){
+  vec3 Pi0 = floor(P); 
+  vec3 Pi1 = Pi0 + vec3(1.0); 
+  Pi0 = mod(Pi0, 289.0);
+  Pi1 = mod(Pi1, 289.0);
+  vec3 Pf0 = fract(P); 
+  vec3 Pf1 = Pf0 - vec3(1.0); 
+  vec4 ix = vec4(Pi0.x, Pi1.x, Pi0.x, Pi1.x);
+  vec4 iy = vec4(Pi0.yy, Pi1.yy);
+  vec4 iz0 = Pi0.zzzz;
+  vec4 iz1 = Pi1.zzzz;
+
+  vec4 ixy = permute(permute(ix) + iy);
+  vec4 ixy0 = permute(ixy + iz0);
+  vec4 ixy1 = permute(ixy + iz1);
+
+  vec4 gx0 = ixy0 / 7.0;
+  vec4 gy0 = fract(floor(gx0) / 7.0) - 0.5;
+  gx0 = fract(gx0);
+  vec4 gz0 = vec4(0.5) - abs(gx0) - abs(gy0);
+  vec4 sz0 = step(gz0, vec4(0.0));
+  gx0 -= sz0 * (step(0.0, gx0) - 0.5);
+  gy0 -= sz0 * (step(0.0, gy0) - 0.5);
+
+  vec4 gx1 = ixy1 / 7.0;
+  vec4 gy1 = fract(floor(gx1) / 7.0) - 0.5;
+  gx1 = fract(gx1);
+  vec4 gz1 = vec4(0.5) - abs(gx1) - abs(gy1);
+  vec4 sz1 = step(gz1, vec4(0.0));
+  gx1 -= sz1 * (step(0.0, gx1) - 0.5);
+  gy1 -= sz1 * (step(0.0, gy1) - 0.5);
+
+  vec3 g000 = vec3(gx0.x,gy0.x,gz0.x);
+  vec3 g100 = vec3(gx0.y,gy0.y,gz0.y);
+  vec3 g010 = vec3(gx0.z,gy0.z,gz0.z);
+  vec3 g110 = vec3(gx0.w,gy0.w,gz0.w);
+  vec3 g001 = vec3(gx1.x,gy1.x,gz1.x);
+  vec3 g101 = vec3(gx1.y,gy1.y,gz1.y);
+  vec3 g011 = vec3(gx1.z,gy1.z,gz1.z);
+  vec3 g111 = vec3(gx1.w,gy1.w,gz1.w);
+
+  vec4 norm0 = taylorInvSqrt(vec4(dot(g000, g000), dot(g010, g010), dot(g100, g100), dot(g110, g110)));
+  g000 *= norm0.x;
+  g010 *= norm0.y;
+  g100 *= norm0.z;
+  g110 *= norm0.w;
+  vec4 norm1 = taylorInvSqrt(vec4(dot(g001, g001), dot(g011, g011), dot(g101, g101), dot(g111, g111)));
+  g001 *= norm1.x;
+  g011 *= norm1.y;
+  g101 *= norm1.z;
+  g111 *= norm1.w;
+
+  float n000 = dot(g000, Pf0);
+  float n100 = dot(g100, vec3(Pf1.x, Pf0.yz));
+  float n010 = dot(g010, vec3(Pf0.x, Pf1.y, Pf0.z));
+  float n110 = dot(g110, vec3(Pf1.xy, Pf0.z));
+  float n001 = dot(g001, vec3(Pf0.xy, Pf1.z));
+  float n101 = dot(g101, vec3(Pf1.x, Pf0.y, Pf1.z));
+  float n011 = dot(g011, vec3(Pf0.x, Pf1.yz));
+  float n111 = dot(g111, Pf1);
+
+  vec3 fade_xyz = fade(Pf0);
+  vec4 n_z = mix(vec4(n000, n100, n010, n110), vec4(n001, n101, n011, n111), fade_xyz.z);
+  vec2 n_yz = mix(n_z.xy, n_z.zw, fade_xyz.y);
+  float n_xyz = mix(n_yz.x, n_yz.y, fade_xyz.x); 
+  return 2.2 * n_xyz;
+}
+
+void main() {
+  vUv = uv;
+  vec3 pos = position;
+  vec2 worldXY = pos.xy;
+
+  // 1. Base Field (Low frequency breathing)
+  float baseNoise = cnoise(vec3(pos.x * 0.03, pos.y * 0.03, uTime * 0.15)) * 2.5;
+  
+  // 2. Analysis Layer (High frequency)
+  float highFreqNoise = cnoise(vec3(pos.x * 0.2, pos.y * 0.2, uTime * 0.3)) * 1.5;
+  highFreqNoise += cnoise(vec3(pos.x * 0.5, pos.y * 0.5, uTime * 0.5)) * 0.5;
+  
+  // 3. Mouse Disturbance
+  float mouseDist = distance(worldXY, uMouse);
+  float mouseWave = exp(-mouseDist * 0.05) * sin(mouseDist * 1.5 - uTime * 4.0) * 1.5;
+
+  // 4. Hover Disturbance (Local perturbation)
+  vec2 hoverLocal = vec2(uHoverPos.x, -uHoverPos.z);
+  float hoverDist = distance(worldXY, hoverLocal);
+  float hoverWave = exp(-hoverDist * 0.15) * sin(hoverDist * 2.5 - uTime * 6.0) * 2.0 * uHoverState;
+
+  // 5. Click Convergence (Deep Analysis Mode focus)
+  vec2 clickLocal = vec2(uClickPos.x, -uClickPos.z);
+  float clickDist = distance(worldXY, clickLocal);
+  float clickWave = exp(-clickDist * 0.08) * cos(clickDist * 1.0 - uTime * 2.0) * 3.0 * uClickState;
+
+  // Combine
+  float elevation = baseNoise;
+  elevation = mix(elevation, elevation + highFreqNoise, uAnalysisMode);
+  elevation += mouseWave;
+  elevation += hoverWave;
+  elevation -= clickWave; // Pull down towards the clicked node
+
+  pos.z += elevation;
+  vElevation = elevation;
+
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+}
+`;
+
+const baseFieldFragmentShader = `
+#extension GL_OES_standard_derivatives : enable
+
+uniform float uTime;
+uniform float uAnalysisMode;
+uniform vec3 uColorBase;
+uniform vec3 uColorHighlight;
+uniform vec3 uColorAnalysis;
+
+varying vec2 vUv;
+varying float vElevation;
+
+void main() {
+  // Normalize elevation for color mixing
+  float mixVal = (vElevation + 3.0) / 6.0;
+  mixVal = clamp(mixVal, 0.0, 1.0);
+  
+  // Base gradient
+  vec3 color = mix(uColorBase, uColorHighlight, mixVal);
+  
+  // Analysis mode color shift (more vibrant/electric)
+  vec3 analysisColor = mix(uColorHighlight, uColorAnalysis, mixVal);
+  color = mix(color, analysisColor, uAnalysisMode);
+  
+  // Grid lines
+  vec2 grid = abs(fract(vUv * 80.0 - 0.5) - 0.5);
+  vec2 df = fwidth(vUv * 80.0);
+  vec2 line = smoothstep(df * 1.5, df * 0.5, grid);
+  float gridAlpha = max(line.x, line.y);
+  
+  // Grid becomes sharper in analysis mode
+  float finalGridAlpha = mix(gridAlpha * 0.05, gridAlpha * 0.25, uAnalysisMode);
+  
+  color += vec3(finalGridAlpha);
+
+  // Fade out at edges to blend with background
+  float distToCenter = distance(vUv, vec2(0.5));
+  float alpha = smoothstep(0.5, 0.15, distToCenter);
+
+  gl_FragColor = vec4(color, alpha * 0.85);
+}
+`;
+
+function BaseField({ 
+  analysisMode, 
+  hoverPos, 
+  hoverState,
+  clickPos,
+  clickState
+}: { 
+  analysisMode: boolean, 
+  hoverPos: THREE.Vector3, 
+  hoverState: number,
+  clickPos: THREE.Vector3,
+  clickState: number
+}) {
+  const materialRef = useRef<THREE.ShaderMaterial>(null);
+  const { mouse, viewport } = useThree();
+  
+  const currentAnalysisMode = useRef(0);
+  const currentHoverState = useRef(0);
+  const currentClickState = useRef(0);
+  const currentHoverPos = useRef(new THREE.Vector3());
+  const currentClickPos = useRef(new THREE.Vector3());
+
+  const raycaster = useMemo(() => new THREE.Raycaster(), []);
+  const plane = useMemo(() => new THREE.Plane(new THREE.Vector3(0, 1, 0), 6), []); // Plane at y = -6
+
+  useFrame((state, dt) => {
+    if (!materialRef.current) return;
+    
+    // Smooth transitions
+    currentAnalysisMode.current += ((analysisMode ? 1 : 0) - currentAnalysisMode.current) * dt * 2.0; // 600-900ms transition
+    currentHoverState.current += (hoverState - currentHoverState.current) * dt * 4.0;
+    currentClickState.current += (clickState - currentClickState.current) * dt * 3.0;
+    
+    currentHoverPos.current.lerp(hoverPos, dt * 5.0);
+    currentClickPos.current.lerp(clickPos, dt * 5.0);
+    
+    materialRef.current.uniforms.uTime.value = state.clock.elapsedTime;
+    
+    // Raycast to find mouse position on the plane
+    raycaster.setFromCamera(mouse, state.camera);
+    const target = new THREE.Vector3();
+    const intersect = raycaster.ray.intersectPlane(plane, target);
+    
+    if (intersect) {
+      // Map world intersection to local plane coordinates
+      // Plane is rotated -PI/2 on X, so local X is world X, local Y is world -Z
+      const targetMouse = new THREE.Vector2(target.x, -target.z);
+      materialRef.current.uniforms.uMouse.value.lerp(targetMouse, dt * 3.0);
+    }
+    
+    materialRef.current.uniforms.uAnalysisMode.value = currentAnalysisMode.current;
+    materialRef.current.uniforms.uHoverState.value = currentHoverState.current;
+    materialRef.current.uniforms.uHoverPos.value.copy(currentHoverPos.current);
+    materialRef.current.uniforms.uClickState.value = currentClickState.current;
+    materialRef.current.uniforms.uClickPos.value.copy(currentClickPos.current);
+  });
+
+  const uniforms = useMemo(() => ({
+    uTime: { value: 0 },
+    uMouse: { value: new THREE.Vector2(0, 0) },
+    uAnalysisMode: { value: 0 },
+    uHoverState: { value: 0 },
+    uHoverPos: { value: new THREE.Vector3(0, 0, 0) },
+    uClickState: { value: 0 },
+    uClickPos: { value: new THREE.Vector3(0, 0, 0) },
+    uColorBase: { value: new THREE.Color('#05080d') }, // Deep gray/black
+    uColorHighlight: { value: new THREE.Color('#141e2e') }, // Blue-purple
+    uColorAnalysis: { value: new THREE.Color('#2a3f5c') }, // Brighter cyan/purple for analysis
+  }), []);
+
   return (
-    <group position={[0, -3.8, 0]}>
-      {/* Primary grid — very subtle */}
-      <gridHelper args={[36, 36, '#1c2535', '#141e2a']} />
-      {/* Major axis lines — barely perceptible */}
-      <Line points={[new THREE.Vector3(-10,0,0), new THREE.Vector3(10,0,0)]}
-        color="#2a3a50" lineWidth={0.5} transparent opacity={0.35} />
-      <Line points={[new THREE.Vector3(0,0,-10), new THREE.Vector3(0,0,10)]}
-        color="#2a3a50" lineWidth={0.5} transparent opacity={0.35} />
-    </group>
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -6, 0]}>
+      <planeGeometry args={[120, 120, 256, 256]} />
+      <shaderMaterial
+        ref={materialRef}
+        vertexShader={baseFieldVertexShader}
+        fragmentShader={baseFieldFragmentShader}
+        uniforms={uniforms}
+        transparent
+        depthWrite={false}
+        blending={THREE.AdditiveBlending}
+      />
+    </mesh>
   );
 }
 
@@ -318,6 +558,50 @@ function PathEdge({ s, e, active, color }: { s:Vec3; e:Vec3; active:boolean; col
   );
 }
 
+// ─── Camera Controller ─────────────────────────────────────────────────
+function CameraController({ interact, controlsRef }: { interact: boolean, controlsRef: React.RefObject<any> }) {
+  const { camera } = useThree();
+  const targetPos = useRef(new THREE.Vector3(0, 2, 18));
+  const lookAtTarget = useRef(new THREE.Vector3(0, 0, 0));
+
+  useFrame((state, dt) => {
+    if (interact) return; // Let OrbitControls handle it if user is interacting
+
+    // Scroll-driven camera movement
+    const scrollY = window.scrollY;
+    const maxScroll = Math.max(1, document.body.scrollHeight - window.innerHeight);
+    const scrollProgress = Math.min(scrollY / maxScroll, 1);
+
+    // Cinematic drift based on time and scroll
+    const t = state.clock.elapsedTime;
+    
+    // Base position + scroll offset + subtle drift
+    // Start at [0, 2, 18], move through the network as we scroll down
+    targetPos.current.set(
+      Math.sin(t * 0.1) * 2 + scrollProgress * 15,
+      2 + Math.cos(t * 0.15) * 1 - scrollProgress * 8,
+      18 - scrollProgress * 25
+    );
+
+    lookAtTarget.current.set(
+      scrollProgress * 10,
+      -scrollProgress * 5,
+      -scrollProgress * 10
+    );
+
+    camera.position.lerp(targetPos.current, dt * 2);
+    
+    if (controlsRef.current) {
+      controlsRef.current.target.lerp(lookAtTarget.current, dt * 2);
+      controlsRef.current.update();
+    } else {
+      camera.lookAt(lookAtTarget.current);
+    }
+  });
+
+  return null;
+}
+
 // ─── Scene — unified lighting, integrated depth ────────────────────────
 function Scene({ nodes, edges, onNodeClick, selectedNodeId }: {
   nodes:PathwayNode[]; edges:PathwayEdge[];
@@ -326,6 +610,7 @@ function Scene({ nodes, edges, onNodeClick, selectedNodeId }: {
   const [hovId, setHovId]     = useState<string|null>(null);
   const [interact, setInteract] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout>|null>(null);
+  const controlsRef = useRef<any>(null);
   const onStart = useCallback(() => { setInteract(true); if (timer.current) clearTimeout(timer.current); }, []);
   const onEnd   = useCallback(() => { timer.current = setTimeout(() => setInteract(false), 3500); }, []);
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
@@ -348,6 +633,17 @@ function Scene({ nodes, edges, onNodeClick, selectedNodeId }: {
     }).filter(Boolean) as { key:string; s:PathwayNode; e:PathwayNode; active:boolean; color:string }[],
   [edges, nodes, hovId, selectedNodeId]);
 
+  // Derived states for BaseField
+  const analysisMode = selectedNodeId !== null;
+  
+  const hoveredNode = useMemo(() => nodes.find(n => n.id === hovId), [nodes, hovId]);
+  const hoverPos = useMemo(() => hoveredNode ? new THREE.Vector3(...hoveredNode.position) : new THREE.Vector3(), [hoveredNode]);
+  const hoverState = hoveredNode ? 1 : 0;
+
+  const selectedNode = useMemo(() => nodes.find(n => n.id === selectedNodeId), [nodes, selectedNodeId]);
+  const clickPos = useMemo(() => selectedNode ? new THREE.Vector3(...selectedNode.position) : new THREE.Vector3(), [selectedNode]);
+  const clickState = selectedNode ? 1 : 0;
+
   return (
     <>
       {/* Lighting — soft, unified, no harsh spots */}
@@ -357,22 +653,32 @@ function Scene({ nodes, edges, onNodeClick, selectedNodeId }: {
       <pointLight position={[0, 6, 0]} intensity={0.20} color="#c0d0e8" distance={28} decay={2} />
 
       {/* Deep, soft fog — creates natural depth, no hard cutoff */}
-      <fog attach="fog" args={['#07090f', 20, 48]} />
+      <fog attach="fog" args={['#070a0e', 15, 45]} />
+
+      <CameraController interact={interact} controlsRef={controlsRef} />
 
       <OrbitControls
+        ref={controlsRef}
         enableZoom
-        autoRotate={!interact && !hovId && !selectedNodeId}
-        autoRotateSpeed={0.12}
+        autoRotate={false}
         zoomSpeed={0.45}
-        minDistance={6}
-        maxDistance={24}
-        enablePan={false}
+        minDistance={2}
+        maxDistance={40}
+        enablePan={true}
         onStart={onStart} onEnd={onEnd}
       />
 
+      {/* Unified Base Field */}
+      <BaseField 
+        analysisMode={analysisMode} 
+        hoverPos={hoverPos} 
+        hoverState={hoverState}
+        clickPos={clickPos}
+        clickState={clickState}
+      />
 
-      {/* Spatial reference — barely visible */}
-      <SpatialReference />
+      {/* Subtle particle system for ambient environment */}
+      <Stars radius={40} depth={20} count={800} factor={2} saturation={0} fade speed={0.5} />
 
       {/* Edges — soft, secondary */}
       {ed.map(e => <PathEdge key={e.key} s={e.s.position} e={e.e.position} active={e.active} color={e.color} />)}
@@ -401,48 +707,18 @@ interface Props { nodes:PathwayNode[]; onNodeClick:(node:PathwayNode)=>void; edg
 export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId }: Props) {
   return (
     <div style={{
-      width: '100%', height: 'clamp(500px, 65vh, 760px)',
-      background: 'linear-gradient(180deg, #070910 0%, #090c15 60%, #0b0e18 100%)',
-      borderRadius: '20px', overflow: 'hidden',
-      border: '1px solid rgba(255,255,255,0.06)',
-      position: 'relative',
-      boxShadow: '0 32px 80px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.04)',
+      width: '100%', height: '100%',
+      background: '#070a0e',
+      position: 'absolute',
+      inset: 0,
+      zIndex: 0,
     }}>
-      {/* Minimal header */}
-      <div style={{ position:'absolute', top:0, left:0, right:0, zIndex:10, display:'flex', alignItems:'center', justifyContent:'space-between', padding:'11px 16px', background:'linear-gradient(to bottom, rgba(7,9,16,0.92), transparent)', borderBottom:'1px solid rgba(255,255,255,0.04)' }}>
-        <div style={{ display:'flex', alignItems:'center', gap:'9px' }}>
-          <div style={{ display:'flex', gap:'4px' }}>
-            {['rgba(200,216,232,0.35)','rgba(200,224,208,0.3)','rgba(221,208,232,0.3)'].map((c,i) => (
-              <div key={i} style={{ width:'4px', height:'4px', borderRadius:'50%', background:c }} />
-            ))}
-          </div>
-          <span style={{ color:'rgba(255,255,255,0.20)', fontSize:'10px', fontFamily:"'Public Sans',sans-serif", fontWeight:700, textTransform:'uppercase', letterSpacing:'0.08em' }}>
-            METABOLIC · {nodes.length} ENTITIES
-          </span>
-        </div>
-        <div style={{ display:'flex', alignItems:'center', gap:'8px' }}>
-          {edges && <span style={{ color:'rgba(200,216,232,0.40)', fontSize:'9px', fontFamily:"'Public Sans',sans-serif", padding:'2px 8px', border:'1px solid rgba(200,216,232,0.14)', borderRadius:'99px' }}>AI GENERATED</span>}
-          <span style={{ color:'rgba(255,255,255,0.10)', fontSize:'9px', fontFamily:"'Public Sans',sans-serif" }}>drag · scroll · click</span>
-        </div>
-      </div>
-
-      {/* pLDDT legend — minimal weight */}
-      <div style={{ position:'absolute', bottom:'13px', left:'13px', zIndex:10 }}>
-        <p style={{ color:'rgba(255,255,255,0.12)', fontSize:'8px', fontFamily:"'Public Sans',sans-serif", fontWeight:700, margin:'0 0 4px', letterSpacing:'0.07em', textTransform:'uppercase' }}>CONFIDENCE</p>
-        {[{ c:'#C8D8E8',l:'>90' },{ c:'#C8E0D0',l:'70–90' },{ c:'#E8DCC8',l:'50–70' },{ c:'#E8C8D4',l:'<50' }].map(x => (
-          <div key={x.l} style={{ display:'flex', alignItems:'center', gap:'5px', marginBottom:'2px' }}>
-            <div style={{ width:'12px', height:'2px', background:x.c, borderRadius:'1px', opacity:0.65 }} />
-            <span style={{ color:'rgba(255,255,255,0.14)', fontSize:'8px', fontFamily:"'Public Sans',sans-serif", fontFeatureSettings:"'tnum' 1" }}>{x.l}</span>
-          </div>
-        ))}
-      </div>
-
       <Canvas
-        camera={{ position: [0, 5, 15], fov: 44 }}
+        camera={{ position: [0, 2, 18], fov: 45 }}
         gl={{ antialias: true, powerPreference: 'high-performance', alpha: false, toneMapping: THREE.LinearToneMapping, toneMappingExposure: 1.0 }}
         dpr={[1, 1.5]}
         performance={{ min: 0.5 }}
-        onCreated={({ gl }) => { gl.setClearColor(new THREE.Color('#07090f'), 1); }}
+        onCreated={({ gl }) => { gl.setClearColor(new THREE.Color('#070a0e'), 1); }}
         style={{ background: 'transparent' }}
       >
         <Scene nodes={nodes} edges={edges ?? DEF_EDGES} onNodeClick={onNodeClick} selectedNodeId={selectedNodeId ?? null} />
