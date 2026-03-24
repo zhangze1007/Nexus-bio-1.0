@@ -4,8 +4,8 @@ import { useRef, useEffect, useState, useCallback } from 'react';
 
 // ── Typography system ─────────────────────────────────────────────────
 const SERIF = "'DM Serif Display', Georgia, 'Times New Roman', serif";
-const BODY  = "Arial, 'Helvetica Neue', Helvetica, sans-serif";
-const MONO  = "'Public Sans',sans-serif";
+const BODY  = "'Public Sans', -apple-system, sans-serif";
+// MONO unused
 
 // ── Font loader ───────────────────────────────────────────────────────
 function useFonts() {
@@ -40,7 +40,7 @@ function DeepBackground({ cx }: { cx: { x: number; y: number } }) {
     <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
 
       {/* Base */}
-      <div style={{ position: 'absolute', inset: 0, background: '#070a0e' }} />
+      <div style={{ position: 'absolute', inset: 0, background: 'transparent' }} />
 
       {/* Orb 1 — top left, slow drift */}
       <motion.div
@@ -194,6 +194,7 @@ export default function Hero() {
       display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center',
       padding: '0 24px', overflow: 'hidden',
+      pointerEvents: 'none',
     }}>
       <DeepBackground cx={cursor} />
 
@@ -207,6 +208,7 @@ export default function Hero() {
         WebkitBackdropFilter: 'blur(28px)',
         borderBottom: '1px solid rgba(255,255,255,0.05)',
         boxShadow: '0 1px 0 rgba(255,255,255,0.03)',
+        pointerEvents: 'auto',
       }}>
         {/* Logo */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -278,6 +280,7 @@ export default function Hero() {
         paddingTop: '80px',
         transform: `translate(${cursor.x * -6}px, ${cursor.y * -4}px)`,
         transition: 'transform 1s cubic-bezier(0.16,1,0.3,1)',
+        pointerEvents: 'auto',
       }}>
 
         {/* Badge — glass pill */}
@@ -287,7 +290,7 @@ export default function Hero() {
           transition={{ duration: 0.7, ease: [0.22,1,0.36,1] }}
           style={{
             display: 'inline-flex', alignItems: 'center', gap: '9px',
-            padding: '6px 18px', borderRadius: '100px', marginBottom: '52px',
+            padding: '6px 18px', borderRadius: '100px', marginBottom: '40px',
             background: 'rgba(255,255,255,0.03)',
             border: '1px solid rgba(255,255,255,0.08)',
             backdropFilter: 'blur(16px)',
@@ -298,8 +301,8 @@ export default function Hero() {
             transition={{ duration: 3, repeat: Infinity }}
             style={{ width: '5px', height: '5px', borderRadius: '50%', background: 'rgba(180,215,245,0.6)', boxShadow: '0 0 6px rgba(180,215,245,0.4)', flexShrink: 0 }}
           />
-          <span style={{ fontFamily: SERIF, fontSize: '12px', color: 'rgba(255,255,255,0.35)', letterSpacing: '0.04em' }}>
-            Next-Gen Bio-Intelligent Architecture
+          <span style={{ fontFamily: BODY, fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', letterSpacing: '0.12em' }}>
+            AI-Powered Bio Platform
           </span>
         </motion.div>
 
@@ -310,15 +313,15 @@ export default function Hero() {
           transition={{ duration: 0.9, delay: 0.08, ease: [0.22,1,0.36,1] }}
           style={{
             fontFamily: SERIF, fontWeight: 400, fontStyle: 'normal',
-            fontSize: 'clamp(2.8rem, 8vw, 5.4rem)',
-            lineHeight: 1.04, letterSpacing: '-0.03em',
-            color: 'rgba(255,255,255,0.92)',
+            fontSize: 'clamp(3.5rem, 9vw, 6.5rem)',
+            lineHeight: 1.0, letterSpacing: '-0.03em',
+            color: 'rgba(255,255,255,0.95)',
             margin: '0 0 24px',
-            textShadow: '0 0 80px rgba(180,210,240,0.08)',
+            textShadow: '0 0 80px rgba(180,210,240,0.15)',
           }}>
           From Literature
           <br />
-          <span style={{ color: 'rgba(255,255,255,0.22)', fontStyle: 'normal' }}>
+          <span style={{ color: 'rgba(255,255,255,0.25)', fontStyle: 'normal' }}>
             to Mechanistic Insight
           </span>
         </motion.h1>
