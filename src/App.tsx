@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { motion, useInView } from 'framer-motion';
+import { useState, useEffect, useCallback } from 'react';
+import { motion } from 'framer-motion';
 import Hero from './components/Hero';
 import ThreeScene from './components/ThreeScene';
 import NodePanel from './components/NodePanel';
@@ -19,12 +19,11 @@ const BODY  = "'Public Sans', -apple-system, sans-serif";
 function Reveal({ children, delay = 0, className = '' }: {
   children: React.ReactNode; delay?: number; className?: string;
 }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { once: true, margin: '-80px' });
   return (
-    <motion.div ref={ref} className={className}
+    <motion.div className={className}
       initial={{ opacity: 0, y: 32 }}
-      animate={inView ? { opacity: 1, y: 0 } : {}}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-80px' }}
       transition={{ duration: 0.65, delay, ease: [0.22, 1, 0.36, 1] }}>
       {children}
     </motion.div>
@@ -99,6 +98,8 @@ export default function App() {
     setAiEdges(null);
     setSelectedNode(null);
   };
+
+  const handleCloseNodePanel = useCallback(() => setSelectedNode(null), []);
 
   const activeNodes = aiNodes ?? (pathwayData as PathwayNode[]);
   const activeEdges = aiEdges ?? DEFAULT_EDGES;
@@ -206,35 +207,37 @@ export default function App() {
             </div>
 
             {/* Bottom row — single-line info strip */}
-            <Reveal delay={0.3} style={{ gridColumn: 'span 12' }}>
-              <div style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                padding: '12px 20px', borderRadius: '16px',
-                background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)',
-                backdropFilter: 'blur(12px)', gap: '12px', flexWrap: 'nowrap', overflow: 'hidden',
-              }}>
-                <div style={{ display: 'flex', gap: '20px', flexShrink: 0 }}>
-                  {[
-                    { l: 'Rendering', v: 'Lambert · Pastel' },
-                    { l: 'Confidence', v: 'pLDDT coloring' },
-                    { l: 'Interaction', v: 'Drag · Scroll · Click' },
-                  ].map(({ l, v }) => (
-                    <div key={l} style={{ display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}>
-                      <span style={{ fontFamily: BODY, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.07em', color: 'rgba(255,255,255,0.2)' }}>{l}</span>
-                      <span style={{ fontFamily: BODY, fontSize: '11px', color: 'rgba(255,255,255,0.4)', fontFeatureSettings: "'tnum' 1" }}>{v}</span>
-                    </div>
-                  ))}
+            <div style={{ gridColumn: 'span 12' }}>
+              <Reveal delay={0.3}>
+                <div style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '12px 20px', borderRadius: '16px',
+                  background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)',
+                  backdropFilter: 'blur(12px)', gap: '12px', flexWrap: 'nowrap', overflow: 'hidden',
+                }}>
+                  <div style={{ display: 'flex', gap: '20px', flexShrink: 0 }}>
+                    {[
+                      { l: 'Rendering', v: 'Lambert · Pastel' },
+                      { l: 'Confidence', v: 'pLDDT coloring' },
+                      { l: 'Interaction', v: 'Drag · Scroll · Click' },
+                    ].map(({ l, v }) => (
+                      <div key={l} style={{ display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}>
+                        <span style={{ fontFamily: BODY, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.07em', color: 'rgba(255,255,255,0.2)' }}>{l}</span>
+                        <span style={{ fontFamily: BODY, fontSize: '11px', color: 'rgba(255,255,255,0.4)', fontFeatureSettings: "'tnum' 1" }}>{v}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <ThemeBadge />
                 </div>
-                <ThemeBadge />
-              </div>
-            </Reveal>
+              </Reveal>
+            </div>
           </div>
         </div>
       </section>
 
       <NodePanel
         node={selectedNode}
-        onClose={() => setSelectedNode(null)}
+        onClose={handleCloseNodePanel}
         allNodes={activeNodes}
         allEdges={activeEdges}
       />
@@ -324,4 +327,4 @@ export default function App() {
       </footer>
     </main>
   );
-}
+} 
