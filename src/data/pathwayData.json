@@ -2,57 +2,64 @@
   {
     "id": "acetyl_coa",
     "label": "Acetyl-CoA",
-    "position": [-4, 0, 0],
-    "summary": "Central metabolic precursor derived from glucose catabolism. Entry point into the mevalonate pathway for isoprenoid biosynthesis in engineered S. cerevisiae.",
-    "citation": "Ro et al., 2006. Production of the antimalarial drug precursor artemisinic acid in engineered yeast. Nature 440, 940–943.",
-    "color": "#e5e5e5"
+    "canonicalLabel": "Acetyl-CoA",
+    "position": [-3, 0, -2],
+    "nodeType": "metabolite",
+    "summary": "Acetyl-CoA is a central metabolic intermediate.",
+    "confidenceScore": 0.95
   },
   {
     "id": "hmg_coa",
     "label": "HMG-CoA",
-    "position": [-2, 1.5, 0],
-    "summary": "3-Hydroxy-3-methylglutaryl-CoA, a key intermediate in the mevalonate pathway. Overexpression of tHMGR was critical to increase flux toward artemisinin precursors.",
-    "citation": "Ro et al., 2006. Nature 440, 940–943.",
-    "color": "#d4d4d4"
+    "canonicalLabel": "HMG-CoA",
+    "position": [-1.5, 0.5, -1],
+    "nodeType": "metabolite",
+    "summary": "3-Hydroxy-3-methylglutaryl-CoA.",
+    "confidenceScore": 0.9
   },
   {
     "id": "mevalonate",
     "label": "Mevalonate",
-    "position": [-2, -1.5, 0],
-    "summary": "Six-carbon precursor produced by HMG-CoA reductase. Rate-limiting step upregulated via truncated HMGR overexpression to boost isoprenoid flux.",
-    "citation": "Ro et al., 2006. Nature 440, 940–943.",
-    "color": "#a3a3a3"
+    "canonicalLabel": "Mevalonate",
+    "position": [0, 0, 0],
+    "nodeType": "metabolite",
+    "summary": "Mevalonic acid is a key precursor in the mevalonate pathway.",
+    "confidenceScore": 0.92
   },
   {
     "id": "fpp",
     "label": "FPP",
-    "position": [0, 0, 0],
-    "summary": "Farnesyl pyrophosphate — the universal C15 isoprenoid building block. Central branch point redirected from sterol synthesis toward artemisinin production.",
-    "citation": "Ro et al., 2006. Nature 440, 940–943.",
-    "color": "#f5f5f5"
+    "canonicalLabel": "Farnesyl pyrophosphate",
+    "position": [1.5, -0.5, 1],
+    "nodeType": "metabolite",
+    "summary": "Farnesyl pyrophosphate is an intermediate in the terpene biosynthesis pathway.",
+    "confidenceScore": 0.88
   },
   {
     "id": "amorpha_4_11_diene",
-    "label": "Amorphadiene",
-    "position": [2, 1.5, 0],
-    "summary": "First committed artemisinin precursor, produced by amorphadiene synthase (ADS) from A. annua. Heterologous expression in yeast established the dedicated biosynthetic route.",
-    "citation": "Ro et al., 2006. Nature 440, 940–943.",
-    "color": "#737373"
+    "label": "Amorpha-4,11-diene",
+    "canonicalLabel": "Amorpha-4,11-diene",
+    "position": [3, 0, 2],
+    "nodeType": "metabolite",
+    "summary": "A sesquiterpene olefin, precursor to artemisinin.",
+    "confidenceScore": 0.85
   },
   {
     "id": "artemisinic_acid",
     "label": "Artemisinic Acid",
-    "position": [4, 0, 0],
-    "summary": "Direct precursor to artemisinin, produced by cytochrome P450 CYP71AV1 via three-step oxidation of amorphadiene. Accumulated extracellularly enabling simple recovery.",
-    "citation": "Ro et al., 2006. Nature 440, 940–943.",
-    "color": "#525252"
+    "canonicalLabel": "Artemisinic Acid",
+    "position": [4.5, 0.5, 1],
+    "nodeType": "metabolite",
+    "summary": "An intermediate in the biosynthesis of artemisinin.",
+    "confidenceScore": 0.82
   },
   {
     "id": "artemisinin",
     "label": "Artemisinin",
-    "position": [4, -2, 0],
-    "summary": "Sesquiterpene endoperoxide antimalarial. Final product of the engineered pathway — the most effective treatment for Plasmodium falciparum malaria, reaching 500 million patients.",
-    "citation": "Ro et al., 2006. Nature 440, 940–943. WHO Essential Medicine since 2002.",
-    "color": "#d4d4d4"
+    "canonicalLabel": "Artemisinin",
+    "position": [6, 0, 0],
+    "nodeType": "metabolite",
+    "summary": "An antimalarial lactone derived from sweet wormwood.",
+    "confidenceScore": 0.98
   }
 ]
