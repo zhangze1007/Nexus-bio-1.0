@@ -236,7 +236,7 @@ export default function Hero() {
               transition: 'color 0.2s',
             }}
               onMouseEnter={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.78)')}
-              onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.32)')}>
+              onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.32)')}> 
               {label}
             </a>
           ))}
@@ -301,8 +301,8 @@ export default function Hero() {
             transition={{ duration: 3, repeat: Infinity }}
             style={{ width: '5px', height: '5px', borderRadius: '50%', background: 'rgba(180,215,245,0.6)', boxShadow: '0 0 6px rgba(180,215,245,0.4)', flexShrink: 0 }}
           />
-          <span style={{ fontFamily: BODY, fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', letterSpacing: '0.12em' }}>
-            AI-Powered Bio Platform
+          <span style={{ fontFamily: "'Times New Roman', Times, serif", fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', letterSpacing: '0.12em' }}>
+            Next-Gen-Bio-Intelligent Architecture
           </span>
         </motion.div>
 
@@ -313,8 +313,8 @@ export default function Hero() {
           transition={{ duration: 0.9, delay: 0.08, ease: [0.22,1,0.36,1] }}
           style={{
             fontFamily: SERIF, fontWeight: 400, fontStyle: 'normal',
-            fontSize: 'clamp(3.5rem, 9vw, 6.5rem)',
-            lineHeight: 1.0, letterSpacing: '-0.03em',
+            fontSize: 'clamp(1.8rem, 4.5vw, 3.2rem)',
+            lineHeight: 1.2, letterSpacing: '-0.02em',
             color: 'rgba(255,255,255,0.95)',
             margin: '0 0 24px',
             textShadow: '0 0 80px rgba(180,210,240,0.15)',
