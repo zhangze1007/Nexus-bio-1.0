@@ -134,6 +134,16 @@ This project was built to demonstrate that meaningful scientific tools can be cr
 
 ---
 
+## Copilot Agent & Firewall
+
+If you use the GitHub Copilot coding agent on this repo and the workflow fails with `HTTP/2 GOAWAY connection terminated` or a firewall-blocked warning, see **[docs/firewall.md](docs/firewall.md)** for a step-by-step fix.
+
+Key references:
+- Allowlist configuration: <https://gh.io/copilot/firewall-config>
+- Copilot setup steps: <https://gh.io/copilot/actions-setup-steps>
+
+---
+
 ## License
 
 MIT License — open for research and educational use.
