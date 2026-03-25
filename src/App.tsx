@@ -9,11 +9,12 @@ import DevModePanel from './components/DevModePanel';
 import PaperAnalyzer from './components/PaperAnalyzer';
 import pathwayData from './data/pathwayData.json';
 import { PathwayNode, PathwayEdge } from './types';
-import { Dna, Sparkles } from 'lucide-react';
+import { Dna, Sparkles, Activity } from 'lucide-react';
 
 // ── Design tokens ──────────────────────────────────────────────────────
 const SERIF = "'DM Serif Display', Georgia, serif";
 const BODY  = "'Public Sans', -apple-system, sans-serif";
+const MONO  = "'JetBrains Mono', 'Fira Code', monospace";
 
 // ── Scroll reveal wrapper ──────────────────────────────────────────────
 function Reveal({ children, delay = 0, className = '', style }: {
@@ -41,7 +42,7 @@ function ThemeBadge() {
     return () => mq.removeEventListener('change', () => {});
   }, []);
   return (
-    <span style={{ fontFamily: BODY, fontSize: '10px', color: 'var(--text-faint)', fontFeatureSettings: "'tnum' 1" }}>
+    <span style={{ fontFamily: MONO, fontSize: '9px', color: 'rgba(0,212,255,0.4)', fontFeatureSettings: "'tnum' 1", letterSpacing: '0.08em', textTransform: 'uppercase' }}>
       {isDark ? '◑ dark' : '○ light'}
     </span>
   );
@@ -58,25 +59,63 @@ const DEFAULT_EDGES: PathwayEdge[] = [
   { start: 'artemisinic_acid', end: 'artemisinin',        relationshipType: 'produces',  direction: 'forward' },
 ];
 
-// ── Bento stat card ────────────────────────────────────────────────────
+// ── Neon stat card ─────────────────────────────────────────────────────
 function StatCard({ label, value, sub, accent = false }: {
   label: string; value: string | number; sub?: string; accent?: boolean;
 }) {
+  const [hov, setHov] = useState(false);
   return (
-    <div style={{
-      padding: '18px 20px', borderRadius: '20px',
-      background: accent ? 'rgba(200,216,232,0.07)' : 'rgba(255,255,255,0.03)',
-      border: `1px solid ${accent ? 'rgba(200,216,232,0.18)' : 'rgba(255,255,255,0.07)'}`,
-      backdropFilter: 'blur(20px)',
-      WebkitBackdropFilter: 'blur(20px)',
-    }}>
-      <p style={{ fontFamily: BODY, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'rgba(255,255,255,0.25)', margin: '0 0 8px' }}>
+    <div
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      style={{
+        padding: '18px 20px', borderRadius: '20px',
+        background: accent
+          ? (hov ? 'rgba(0,212,255,0.06)' : 'rgba(0,212,255,0.03)')
+          : (hov ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.02)'),
+        border: `1px solid ${accent
+          ? (hov ? 'rgba(0,212,255,0.35)' : 'rgba(0,212,255,0.15)')
+          : (hov ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.07)')}`,
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        boxShadow: accent && hov
+          ? '0 0 24px rgba(0,212,255,0.1), 0 4px 20px rgba(0,0,0,0.3)'
+          : '0 2px 12px rgba(0,0,0,0.2)',
+        transition: 'all 0.3s cubic-bezier(0.22,1,0.36,1)',
+        cursor: 'default',
+      }}>
+      <p style={{ fontFamily: MONO, fontSize: '10px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.10em', color: accent ? 'rgba(0,212,255,0.5)' : 'rgba(255,255,255,0.22)', margin: '0 0 8px' }}>
         {label}
       </p>
-      <p style={{ fontFamily: BODY, fontSize: '28px', fontWeight: 700, color: accent ? '#C8D8E8' : 'rgba(255,255,255,0.85)', margin: '0 0 4px', fontFeatureSettings: "'tnum' 1", lineHeight: 1 }}>
+      <p style={{ fontFamily: BODY, fontSize: '28px', fontWeight: 700, color: accent ? (hov ? '#00d4ff' : 'rgba(0,212,255,0.85)') : 'rgba(255,255,255,0.85)', margin: '0 0 4px', fontFeatureSettings: "'tnum' 1", lineHeight: 1, textShadow: accent && hov ? '0 0 20px rgba(0,212,255,0.4)' : 'none' }}>
         {value}
       </p>
-      {sub && <p style={{ fontFamily: BODY, fontSize: '11px', color: 'rgba(255,255,255,0.2)', margin: 0 }}>{sub}</p>}
+      {sub && <p style={{ fontFamily: MONO, fontSize: '9px', color: 'rgba(255,255,255,0.2)', margin: 0, letterSpacing: '0.06em', textTransform: 'uppercase' }}>{sub}</p>}
+    </div>
+  );
+}
+
+// ── Section header ─────────────────────────────────────────────────────
+function SectionHeader({ index, title, subtitle }: { index: string; title: string; subtitle?: string }) {
+  return (
+    <div style={{ marginBottom: '40px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+        <div style={{
+          width: '24px', height: '2px',
+          background: 'linear-gradient(to right, #00d4ff, transparent)',
+        }} />
+        <p style={{ fontFamily: MONO, fontSize: '10px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'rgba(0,212,255,0.55)', margin: 0 }}>
+          {index}
+        </p>
+      </div>
+      <h2 style={{ fontFamily: SERIF, fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: 400, color: 'rgba(255,255,255,0.92)', letterSpacing: '-0.02em', lineHeight: 1.1, margin: '0 0 12px' }}>
+        {title}
+      </h2>
+      {subtitle && (
+        <p style={{ fontFamily: BODY, fontSize: '14px', color: 'rgba(255,255,255,0.32)', margin: 0, lineHeight: 1.6, maxWidth: '480px' }}>
+          {subtitle}
+        </p>
+      )}
     </div>
   );
 }
@@ -112,7 +151,7 @@ export default function App() {
     : 0;
 
   return (
-    <main style={{ background: 'var(--bg-base, #070a0e)', minHeight: '100vh', color: 'var(--text-primary, rgba(255,255,255,0.92))' }}>
+    <main style={{ background: 'var(--bg-base, #060810)', minHeight: '100vh', color: 'var(--text-primary, rgba(255,255,255,0.92))' }}>
       <Hero />
 
       {/* ── BENTO GRID DASHBOARD ── */}
@@ -121,17 +160,11 @@ export default function App() {
 
           {/* Section header */}
           <Reveal>
-            <div style={{ marginBottom: '40px' }}>
-              <p style={{ fontFamily: BODY, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'rgba(255,255,255,0.22)', margin: '0 0 12px' }}>
-                01 · Visualization
-              </p>
-              <h2 style={{ fontFamily: SERIF, fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: 400, color: 'rgba(255,255,255,0.92)', letterSpacing: '-0.02em', lineHeight: 1.1, margin: '0 0 12px' }}>
-                Atomic Pathway
-              </h2>
-              <p style={{ fontFamily: BODY, fontSize: '14px', color: 'rgba(255,255,255,0.35)', margin: 0, lineHeight: 1.6, maxWidth: '480px' }}>
-                pLDDT confidence coloring · Substrate diffusion · Click any node for details
-              </p>
-            </div>
+            <SectionHeader
+              index="01 · Visualization"
+              title="Atomic Pathway"
+              subtitle="pLDDT confidence coloring · Substrate diffusion · Click any node for details"
+            />
           </Reveal>
 
           {/* Bento Grid */}
@@ -144,23 +177,26 @@ export default function App() {
                 style={{
                   borderRadius: '20px',
                   overflow: 'hidden',
-                  border: '1px solid rgba(255,255,255,0.07)',
+                  border: '1px solid rgba(0,212,255,0.12)',
                   backdropFilter: 'blur(20px)',
                   WebkitBackdropFilter: 'blur(20px)',
-                  background: 'rgba(14,17,23,0.6)',
+                  background: 'rgba(6,8,16,0.7)',
                   position: 'relative',
-                }}>
+                  boxShadow: '0 0 40px rgba(0,212,255,0.04), 0 8px 40px rgba(0,0,0,0.4)',
+                }}
+                whileHover={{ boxShadow: '0 0 50px rgba(0,212,255,0.08), 0 8px 48px rgba(0,0,0,0.5)' }}
+                transition={{ duration: 0.3 }}>
                 {/* AI Generated badge */}
                 {aiNodes && (
-                  <div style={{ position: 'absolute', top: '16px', right: '16px', zIndex: 10, display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 12px', borderRadius: '100px', background: 'rgba(200,216,232,0.10)', border: '1px solid rgba(200,216,232,0.18)', backdropFilter: 'blur(12px)' }}>
-                    <Sparkles size={10} style={{ color: '#C8D8E8' }} />
-                    <span style={{ fontFamily: BODY, fontSize: '11px', fontWeight: 600, color: '#C8D8E8', fontFeatureSettings: "'tnum' 1" }}>
+                  <div style={{ position: 'absolute', top: '16px', right: '16px', zIndex: 10, display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 12px', borderRadius: '100px', background: 'rgba(0,212,255,0.08)', border: '1px solid rgba(0,212,255,0.25)', backdropFilter: 'blur(12px)' }}>
+                    <Sparkles size={10} style={{ color: '#00d4ff' }} />
+                    <span style={{ fontFamily: MONO, fontSize: '10px', fontWeight: 500, color: '#00d4ff', fontFeatureSettings: "'tnum' 1", letterSpacing: '0.06em' }}>
                       AI · {aiNodes.length} entities
                     </span>
                     <button onClick={handleResetPathway}
-                      style={{ marginLeft: '4px', fontFamily: BODY, fontSize: '10px', color: 'rgba(255,255,255,0.3)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#fff'; }}
-                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.3)'; }}>
+                      style={{ marginLeft: '4px', fontFamily: MONO, fontSize: '9px', color: 'rgba(0,212,255,0.4)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, letterSpacing: '0.05em', textTransform: 'uppercase' }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#00d4ff'; }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(0,212,255,0.4)'; }}>
                       reset
                     </button>
                   </div>
@@ -192,16 +228,26 @@ export default function App() {
                 <Reveal delay={0.25}>
                   <div style={{
                     padding: '18px 20px', borderRadius: '20px', flex: 1,
-                    background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)',
+                    background: 'rgba(139,92,246,0.03)',
+                    border: '1px solid rgba(139,92,246,0.12)',
                     backdropFilter: 'blur(20px)',
-                  }}>
-                    <p style={{ fontFamily: BODY, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'rgba(255,255,255,0.22)', margin: '0 0 10px' }}>
+                    transition: 'all 0.3s ease',
+                  }}
+                    onMouseEnter={e => {
+                      (e.currentTarget as HTMLElement).style.borderColor = 'rgba(139,92,246,0.28)';
+                      (e.currentTarget as HTMLElement).style.boxShadow = '0 0 20px rgba(139,92,246,0.08)';
+                    }}
+                    onMouseLeave={e => {
+                      (e.currentTarget as HTMLElement).style.borderColor = 'rgba(139,92,246,0.12)';
+                      (e.currentTarget as HTMLElement).style.boxShadow = 'none';
+                    }}>
+                    <p style={{ fontFamily: MONO, fontSize: '10px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.10em', color: 'rgba(139,92,246,0.55)', margin: '0 0 10px' }}>
                       Showcase
                     </p>
                     <p style={{ fontFamily: SERIF, fontSize: '16px', color: 'rgba(255,255,255,0.8)', margin: '0 0 8px', lineHeight: 1.4 }}>
                       Ro et al., Nature 2006
                     </p>
-                    <p style={{ fontFamily: BODY, fontSize: '12px', color: 'rgba(255,255,255,0.35)', lineHeight: 1.65, margin: 0 }}>
+                    <p style={{ fontFamily: BODY, fontSize: '12px', color: 'rgba(255,255,255,0.32)', lineHeight: 1.65, margin: 0 }}>
                       Artemisinin biosynthesis in <em>S. cerevisiae</em> — 7-step pathway, 500M patients.
                     </p>
                   </div>
@@ -209,23 +255,25 @@ export default function App() {
               )}
             </div>
 
-            {/* Bottom row — single-line info strip */}
+            {/* Bottom row — HUD info strip */}
             <Reveal delay={0.3} style={{ gridColumn: 'span 12' }}>
               <div style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                padding: '12px 20px', borderRadius: '16px',
-                background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)',
+                padding: '10px 20px', borderRadius: '14px',
+                background: 'rgba(0,212,255,0.02)',
+                border: '1px solid rgba(0,212,255,0.08)',
                 backdropFilter: 'blur(12px)', gap: '12px', flexWrap: 'nowrap', overflow: 'hidden',
               }}>
-                <div style={{ display: 'flex', gap: '20px', flexShrink: 0 }}>
+                <div style={{ display: 'flex', gap: '24px', flexShrink: 0, alignItems: 'center' }}>
+                  <Activity size={12} style={{ color: 'rgba(0,212,255,0.35)', flexShrink: 0 }} />
                   {[
                     { l: 'Rendering', v: 'Lambert · Pastel' },
                     { l: 'Confidence', v: 'pLDDT coloring' },
                     { l: 'Interaction', v: 'Drag · Scroll · Click' },
                   ].map(({ l, v }) => (
                     <div key={l} style={{ display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}>
-                      <span style={{ fontFamily: BODY, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.07em', color: 'rgba(255,255,255,0.2)' }}>{l}</span>
-                      <span style={{ fontFamily: BODY, fontSize: '11px', color: 'rgba(255,255,255,0.4)', fontFeatureSettings: "'tnum' 1" }}>{v}</span>
+                      <span style={{ fontFamily: MONO, fontSize: '10px', fontWeight: 500, textTransform: 'uppercase' as const, letterSpacing: '0.08em', color: 'rgba(0,212,255,0.35)' }}>{l}</span>
+                      <span style={{ fontFamily: MONO, fontSize: '10px', color: 'rgba(255,255,255,0.35)', fontFeatureSettings: "'tnum' 1" }}>{v}</span>
                     </div>
                   ))}
                 </div>
@@ -247,12 +295,7 @@ export default function App() {
       <section id="analyzer" style={{ padding: 'clamp(64px, 10vw, 120px) clamp(16px, 4vw, 40px)' }}>
         <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
           <Reveal>
-            <p style={{ fontFamily: BODY, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'rgba(255,255,255,0.22)', margin: '0 0 12px' }}>
-              02 · Analysis
-            </p>
-            <h2 style={{ fontFamily: SERIF, fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: 400, color: 'rgba(255,255,255,0.92)', margin: '0 0 40px', letterSpacing: '-0.02em' }}>
-              Paper Analyzer
-            </h2>
+            <SectionHeader index="02 · Analysis" title="Paper Analyzer" />
           </Reveal>
           <Reveal delay={0.1}>
             <PaperAnalyzer onPathwayGenerated={handlePathwayGenerated} />
@@ -264,12 +307,7 @@ export default function App() {
       <section id="search" style={{ padding: 'clamp(64px, 10vw, 120px) clamp(16px, 4vw, 40px)' }}>
         <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
           <Reveal>
-            <p style={{ fontFamily: BODY, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'rgba(255,255,255,0.22)', margin: '0 0 12px' }}>
-              03 · Literature
-            </p>
-            <h2 style={{ fontFamily: SERIF, fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: 400, color: 'rgba(255,255,255,0.92)', margin: '0 0 40px', letterSpacing: '-0.02em' }}>
-              Database Research
-            </h2>
+            <SectionHeader index="03 · Literature" title="Database Research" />
           </Reveal>
           <Reveal delay={0.1}>
             <SemanticSearch onAnalyzePaper={(text) => {
@@ -286,12 +324,7 @@ export default function App() {
       <section id="contact" style={{ padding: 'clamp(64px, 10vw, 120px) clamp(16px, 4vw, 40px)' }}>
         <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
           <Reveal>
-            <p style={{ fontFamily: BODY, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'rgba(255,255,255,0.22)', margin: '0 0 12px' }}>
-              04 · Connect
-            </p>
-            <h2 style={{ fontFamily: SERIF, fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: 400, color: 'rgba(255,255,255,0.92)', margin: '0 0 40px', letterSpacing: '-0.02em' }}>
-              Contact
-            </h2>
+            <SectionHeader index="04 · Connect" title="Contact" />
           </Reveal>
           <Reveal delay={0.1}>
             <ContactFlow />
@@ -302,22 +335,22 @@ export default function App() {
       <DevModePanel />
 
       {/* Footer */}
-      <footer style={{ padding: '24px 32px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+      <footer style={{ padding: '24px 32px', borderTop: '1px solid rgba(0,212,255,0.07)' }}>
         <div style={{ maxWidth: '1280px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{ width: '20px', height: '20px', borderRadius: '6px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Dna size={11} style={{ color: 'rgba(255,255,255,0.5)' }} />
+            <div style={{ width: '20px', height: '20px', borderRadius: '6px', background: 'rgba(0,212,255,0.06)', border: '1px solid rgba(0,212,255,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Dna size={11} style={{ color: 'rgba(0,212,255,0.6)' }} />
             </div>
-            <span style={{ fontFamily: SERIF, fontSize: '14px', color: 'rgba(255,255,255,0.6)' }}>Nexus-Bio</span>
+            <span style={{ fontFamily: SERIF, fontSize: '14px', color: 'rgba(255,255,255,0.55)' }}>Nexus-Bio</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
-            <p style={{ fontFamily: BODY, fontSize: '11px', color: 'rgba(255,255,255,0.15)', margin: 0, fontFeatureSettings: "'tnum' 1" }}>
+            <p style={{ fontFamily: MONO, fontSize: '10px', color: 'rgba(255,255,255,0.15)', margin: 0, fontFeatureSettings: "'tnum' 1", letterSpacing: '0.05em' }}>
               © {new Date().getFullYear()} Nexus-Bio. All rights reserved.
             </p>
             {['Terms of Service', 'Privacy Policy'].map((t, i) => (
               <a key={i} href={t === 'Terms of Service' ? '/terms' : '/privacy'}
-                style={{ fontFamily: BODY, fontSize: '11px', color: 'rgba(255,255,255,0.18)', textDecoration: 'none', transition: 'color 0.2s' }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.6)'; }}
+                style={{ fontFamily: MONO, fontSize: '10px', color: 'rgba(255,255,255,0.18)', textDecoration: 'none', transition: 'color 0.2s', letterSpacing: '0.05em' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(0,212,255,0.7)'; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.18)'; }}>
                 {t}
               </a>

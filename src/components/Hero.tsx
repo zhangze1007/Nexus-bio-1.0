@@ -50,7 +50,7 @@ function DeepBackground({ cx }: { cx: { x: number; y: number } }) {
           position: 'absolute',
           top: '-20%', left: '-10%',
           width: '70vw', height: '70vw',
-          background: 'radial-gradient(ellipse at center, rgba(140,180,220,0.055) 0%, rgba(100,140,190,0.02) 45%, transparent 70%)',
+          background: 'radial-gradient(ellipse at center, rgba(0,212,255,0.055) 0%, rgba(59,130,246,0.025) 45%, transparent 70%)',
           filter: 'blur(60px)',
           transform: `translate(${cx.x * -18}px, ${cx.y * -12}px)`,
           transition: 'transform 0.8s cubic-bezier(0.16,1,0.3,1)',
@@ -66,7 +66,7 @@ function DeepBackground({ cx }: { cx: { x: number; y: number } }) {
           position: 'absolute',
           bottom: '-25%', right: '-15%',
           width: '65vw', height: '65vw',
-          background: 'radial-gradient(ellipse at center, rgba(160,200,240,0.04) 0%, rgba(120,160,210,0.015) 45%, transparent 70%)',
+          background: 'radial-gradient(ellipse at center, rgba(139,92,246,0.04) 0%, rgba(59,130,246,0.015) 45%, transparent 70%)',
           filter: 'blur(80px)',
           transform: `translate(${cx.x * 14}px, ${cx.y * 10}px)`,
           transition: 'transform 0.8s cubic-bezier(0.16,1,0.3,1)',
@@ -82,7 +82,7 @@ function DeepBackground({ cx }: { cx: { x: number; y: number } }) {
           position: 'absolute', top: '30%', left: '50%',
           transform: `translate(-50%, -50%) translate(${cx.x * -8}px, ${cx.y * -6}px)`,
           width: '50vw', height: '50vw',
-          background: 'radial-gradient(ellipse at center, rgba(180,210,255,0.022) 0%, transparent 65%)',
+          background: 'radial-gradient(ellipse at center, rgba(0,212,255,0.018) 0%, transparent 65%)',
           filter: 'blur(40px)',
           transition: 'transform 1.2s cubic-bezier(0.16,1,0.3,1)',
           borderRadius: '50%',
@@ -109,7 +109,7 @@ function DeepBackground({ cx }: { cx: { x: number; y: number } }) {
         transition={{ duration: 14, repeat: Infinity, ease: 'linear' }}
         style={{
           position: 'absolute', left: 0, right: 0, height: '1px',
-          background: 'linear-gradient(to right, transparent 0%, rgba(180,210,240,0.05) 30%, rgba(180,210,240,0.09) 50%, rgba(180,210,240,0.05) 70%, transparent 100%)',
+          background: 'linear-gradient(to right, transparent 0%, rgba(0,212,255,0.04) 30%, rgba(0,212,255,0.07) 50%, rgba(0,212,255,0.04) 70%, transparent 100%)',
         }}
       />
 
@@ -142,18 +142,18 @@ function GlassChip({ value, label, delay }: { value: string; label: string; dela
       style={{
         display: 'flex', flexDirection: 'column', alignItems: 'center',
         padding: '16px 24px', borderRadius: '14px', minWidth: '100px',
-        background: hov ? 'rgba(255,255,255,0.045)' : 'rgba(255,255,255,0.02)',
-        border: `1px solid ${hov ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.06)'}`,
+        background: hov ? 'rgba(0,212,255,0.06)' : 'rgba(255,255,255,0.02)',
+        border: `1px solid ${hov ? 'rgba(0,212,255,0.28)' : 'rgba(255,255,255,0.07)'}`,
         backdropFilter: 'blur(20px)',
         WebkitBackdropFilter: 'blur(20px)',
         boxShadow: hov
-          ? '0 8px 40px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.04), inset 0 1px 0 rgba(255,255,255,0.06)'
-          : '0 2px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.04)',
+          ? '0 0 20px rgba(0,212,255,0.1), 0 8px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(0,212,255,0.06)'
+          : '0 2px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.03)',
         transform: hov ? 'translateY(-3px)' : 'none',
         transition: 'all 0.3s cubic-bezier(0.34,1.56,0.64,1)',
         cursor: 'default',
       }}>
-      <span style={{ fontFamily: SERIF, fontSize: '1.75rem', color: hov ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.78)', lineHeight: 1.1, letterSpacing: '-0.02em' }}>
+      <span style={{ fontFamily: SERIF, fontSize: '1.75rem', color: hov ? '#00d4ff' : 'rgba(255,255,255,0.78)', lineHeight: 1.1, letterSpacing: '-0.02em', textShadow: hov ? '0 0 20px rgba(0,212,255,0.4)' : 'none', transition: 'all 0.3s' }}>
         {value}
       </span>
       <span style={{ fontFamily: MONO, fontSize: '9px', color: 'rgba(255,255,255,0.22)', textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: '6px' }}>
@@ -214,12 +214,12 @@ export default function Hero() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div style={{
             width: '28px', height: '28px', borderRadius: '16px',
-            background: 'rgba(255,255,255,0.05)',
-            border: '1px solid rgba(255,255,255,0.1)',
+            background: 'rgba(0,212,255,0.06)',
+            border: '1px solid rgba(0,212,255,0.22)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 0 12px rgba(180,210,240,0.08)',
+            boxShadow: '0 0 16px rgba(0,212,255,0.15)',
           }}>
-            <Dna size={13} style={{ color: 'rgba(255,255,255,0.6)' }} />
+            <Dna size={13} style={{ color: 'rgba(0,212,255,0.85)' }} />
           </div>
           <span style={{ fontFamily: SERIF, fontSize: '15px', color: 'rgba(255,255,255,0.82)', letterSpacing: '-0.01em' }}>
             Nexus-Bio
@@ -235,7 +235,7 @@ export default function Hero() {
               textDecoration: 'none', letterSpacing: '0.03em',
               transition: 'color 0.2s',
             }}
-              onMouseEnter={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.78)')}
+              onMouseEnter={e => (e.currentTarget.style.color = '#00d4ff')}
               onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.32)')}>
               {label}
             </a>
@@ -246,27 +246,27 @@ export default function Hero() {
         <a href="#analyzer" style={{
           display: 'flex', alignItems: 'center', gap: '6px',
           padding: '7px 18px', borderRadius: '16px',
-          background: 'rgba(255,255,255,0.055)',
-          border: '1px solid rgba(255,255,255,0.09)',
+          background: 'rgba(0,212,255,0.06)',
+          border: '1px solid rgba(0,212,255,0.22)',
           backdropFilter: 'blur(12px)',
-          color: 'rgba(255,255,255,0.6)',
-          fontFamily: BODY, fontSize: '12px', fontWeight: 400,
-          textDecoration: 'none', transition: 'all 0.2s',
-          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06)',
+          color: 'rgba(0,212,255,0.75)',
+          fontFamily: BODY, fontSize: '12px', fontWeight: 500,
+          textDecoration: 'none', transition: 'all 0.22s',
+          boxShadow: '0 0 12px rgba(0,212,255,0.08)',
         }}
           onMouseEnter={e => {
             const el = e.currentTarget as HTMLElement;
-            el.style.background = 'rgba(255,255,255,0.1)';
-            el.style.color = '#fff';
-            el.style.borderColor = 'rgba(255,255,255,0.16)';
-            el.style.boxShadow = '0 4px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.08)';
+            el.style.background = 'rgba(0,212,255,0.12)';
+            el.style.color = '#00d4ff';
+            el.style.borderColor = 'rgba(0,212,255,0.4)';
+            el.style.boxShadow = '0 0 20px rgba(0,212,255,0.2), 0 4px 20px rgba(0,0,0,0.3)';
           }}
           onMouseLeave={e => {
             const el = e.currentTarget as HTMLElement;
-            el.style.background = 'rgba(255,255,255,0.055)';
-            el.style.color = 'rgba(255,255,255,0.6)';
-            el.style.borderColor = 'rgba(255,255,255,0.09)';
-            el.style.boxShadow = 'inset 0 1px 0 rgba(255,255,255,0.06)';
+            el.style.background = 'rgba(0,212,255,0.06)';
+            el.style.color = 'rgba(0,212,255,0.75)';
+            el.style.borderColor = 'rgba(0,212,255,0.22)';
+            el.style.boxShadow = '0 0 12px rgba(0,212,255,0.08)';
           }}>
           Try Now <ArrowRight size={11} />
         </a>
@@ -291,17 +291,17 @@ export default function Hero() {
           style={{
             display: 'inline-flex', alignItems: 'center', gap: '9px',
             padding: '6px 18px', borderRadius: '100px', marginBottom: '40px',
-            background: 'rgba(255,255,255,0.03)',
-            border: '1px solid rgba(255,255,255,0.08)',
+            background: 'rgba(0,212,255,0.04)',
+            border: '1px solid rgba(0,212,255,0.18)',
             backdropFilter: 'blur(16px)',
-            boxShadow: '0 2px 20px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05)',
+            boxShadow: '0 0 20px rgba(0,212,255,0.06), 0 2px 20px rgba(0,0,0,0.2), inset 0 1px 0 rgba(0,212,255,0.06)',
           }}>
           <motion.span
             animate={{ opacity: [0.3, 1, 0.3] }}
             transition={{ duration: 3, repeat: Infinity }}
-            style={{ width: '5px', height: '5px', borderRadius: '50%', background: 'rgba(180,215,245,0.6)', boxShadow: '0 0 6px rgba(180,215,245,0.4)', flexShrink: 0 }}
+            style={{ width: '5px', height: '5px', borderRadius: '50%', background: 'rgba(0,212,255,0.8)', boxShadow: '0 0 8px rgba(0,212,255,0.6)', flexShrink: 0 }}
           />
-          <span style={{ fontFamily: BODY, fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', letterSpacing: '0.12em' }}>
+          <span style={{ fontFamily: MONO, fontSize: '10px', fontWeight: 500, textTransform: 'uppercase', color: 'rgba(0,212,255,0.7)', letterSpacing: '0.12em' }}>
             AI-Powered Bio Platform
           </span>
         </motion.div>
@@ -317,7 +317,7 @@ export default function Hero() {
             lineHeight: 1.0, letterSpacing: '-0.03em',
             color: 'rgba(255,255,255,0.95)',
             margin: '0 0 24px',
-            textShadow: '0 0 80px rgba(180,210,240,0.15)',
+            textShadow: '0 0 80px rgba(0,212,255,0.12)',
           }}>
           From Literature
           <br />
@@ -387,34 +387,34 @@ export default function Hero() {
             Analyze a Paper <ArrowRight size={13} />
           </a>
 
-          {/* Secondary CTA — glassmorphism */}
+          {/* Secondary CTA — neon glass */}
           <a href="#search" style={{
             display: 'flex', alignItems: 'center', gap: '8px',
             padding: '13px 28px', borderRadius: '20px',
-            background: 'rgba(255,255,255,0.04)',
-            border: '1px solid rgba(255,255,255,0.09)',
+            background: 'rgba(139,92,246,0.05)',
+            border: '1px solid rgba(139,92,246,0.2)',
             backdropFilter: 'blur(16px)',
-            color: 'rgba(255,255,255,0.45)',
+            color: 'rgba(139,92,246,0.75)',
             fontFamily: BODY, fontSize: '13px', fontWeight: 400,
             textDecoration: 'none',
-            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
+            boxShadow: '0 0 12px rgba(139,92,246,0.06)',
             transition: 'all 0.22s ease',
           }}
             onMouseEnter={e => {
               const el = e.currentTarget as HTMLElement;
-              el.style.background = 'rgba(255,255,255,0.08)';
-              el.style.color = '#fff';
-              el.style.borderColor = 'rgba(255,255,255,0.16)';
+              el.style.background = 'rgba(139,92,246,0.1)';
+              el.style.color = '#a78bfa';
+              el.style.borderColor = 'rgba(139,92,246,0.4)';
               el.style.transform = 'translateY(-2px)';
-              el.style.boxShadow = '0 6px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.07)';
+              el.style.boxShadow = '0 0 24px rgba(139,92,246,0.18), 0 6px 24px rgba(0,0,0,0.3)';
             }}
             onMouseLeave={e => {
               const el = e.currentTarget as HTMLElement;
-              el.style.background = 'rgba(255,255,255,0.04)';
-              el.style.color = 'rgba(255,255,255,0.45)';
-              el.style.borderColor = 'rgba(255,255,255,0.09)';
+              el.style.background = 'rgba(139,92,246,0.05)';
+              el.style.color = 'rgba(139,92,246,0.75)';
+              el.style.borderColor = 'rgba(139,92,246,0.2)';
               el.style.transform = 'none';
-              el.style.boxShadow = 'inset 0 1px 0 rgba(255,255,255,0.05)';
+              el.style.boxShadow = '0 0 12px rgba(139,92,246,0.06)';
             }}>
             <BookOpen size={13} /> Browse Literature
           </a>
@@ -444,27 +444,28 @@ export default function Hero() {
             <div key={i} style={{
               display: 'flex', alignItems: 'center', gap: '6px',
               padding: '5px 13px', borderRadius: '100px',
-              background: 'rgba(255,255,255,0.022)',
-              border: '1px solid rgba(255,255,255,0.06)',
+              background: 'rgba(0,212,255,0.03)',
+              border: '1px solid rgba(0,212,255,0.1)',
               backdropFilter: 'blur(8px)',
-              color: 'rgba(255,255,255,0.2)',
+              color: 'rgba(0,212,255,0.35)',
               fontFamily: MONO, fontSize: '10px',
-              letterSpacing: '0.02em',
-              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.03)',
+              letterSpacing: '0.04em',
               transition: 'all 0.2s',
               cursor: 'default',
             }}
               onMouseEnter={e => {
                 const el = e.currentTarget as HTMLElement;
-                el.style.color = 'rgba(255,255,255,0.55)';
-                el.style.borderColor = 'rgba(255,255,255,0.12)';
-                el.style.background = 'rgba(255,255,255,0.05)';
+                el.style.color = 'rgba(0,212,255,0.8)';
+                el.style.borderColor = 'rgba(0,212,255,0.3)';
+                el.style.background = 'rgba(0,212,255,0.07)';
+                el.style.boxShadow = '0 0 12px rgba(0,212,255,0.08)';
               }}
               onMouseLeave={e => {
                 const el = e.currentTarget as HTMLElement;
-                el.style.color = 'rgba(255,255,255,0.2)';
-                el.style.borderColor = 'rgba(255,255,255,0.06)';
-                el.style.background = 'rgba(255,255,255,0.022)';
+                el.style.color = 'rgba(0,212,255,0.35)';
+                el.style.borderColor = 'rgba(0,212,255,0.1)';
+                el.style.background = 'rgba(0,212,255,0.03)';
+                el.style.boxShadow = 'none';
               }}>
               {f.icon} {f.label}
             </div>
@@ -475,7 +476,7 @@ export default function Hero() {
       {/* Bottom vignette */}
       <div style={{
         position: 'absolute', bottom: 0, left: 0, right: 0, height: '180px',
-        background: 'linear-gradient(to bottom, transparent, rgba(7,10,14,0.95))',
+        background: 'linear-gradient(to bottom, transparent, rgba(6,8,16,0.95))',
         pointerEvents: 'none',
       }} />
     </header>
