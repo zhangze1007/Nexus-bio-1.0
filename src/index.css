@@ -1,23 +1,59 @@
-@import url("https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Public+Sans:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap");
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* ── Google AI Studio inspired design system ── */
+/* ══════════════════════════════════════════════════════════════
+   NEXUS-BIO — FUTURISTIC SCI-FI DESIGN SYSTEM
+   Dark theme · Neon accents (cyan / blue / purple)
+   Glassmorphism · Subtle glow · High visual hierarchy
+   ══════════════════════════════════════════════════════════════ */
 :root {
-  --bg-base: #070a0e;
-  --bg-surface: rgba(255, 255, 255, 0.02);
-  --bg-elevated: rgba(255, 255, 255, 0.04);
-  --border: rgba(255, 255, 255, 0.06);
-  --border-hover: rgba(255, 255, 255, 0.12);
-  --text-primary: rgba(255, 255, 255, 0.92);
-  --text-secondary: rgba(255, 255, 255, 0.65);
-  --text-muted: rgba(255, 255, 255, 0.4);
-  --white: #ffffff;
+  /* Core backgrounds */
+  --bg-base:        #04060a;
+  --bg-surface:     rgba(255, 255, 255, 0.025);
+  --bg-elevated:    rgba(255, 255, 255, 0.045);
+  --bg-panel:       rgba(8, 12, 20, 0.82);
+
+  /* Borders */
+  --border:         rgba(255, 255, 255, 0.07);
+  --border-hover:   rgba(255, 255, 255, 0.14);
+  --border-accent:  rgba(56, 189, 248, 0.28);
+
+  /* Text */
+  --text-primary:   rgba(255, 255, 255, 0.92);
+  --text-secondary: rgba(255, 255, 255, 0.55);
+  --text-muted:     rgba(255, 255, 255, 0.32);
+  --text-faint:     rgba(255, 255, 255, 0.14);
+  --white:          #ffffff;
+
+  /* Neon accents */
+  --neon-cyan:      #38bdf8;
+  --neon-blue:      #60a5fa;
+  --neon-purple:    #a78bfa;
+  --neon-cyan-dim:  rgba(56, 189, 248, 0.15);
+  --neon-blue-dim:  rgba(96, 165, 250, 0.12);
+  --neon-purple-dim:rgba(167, 139, 250, 0.12);
+
+  /* Glow shadows */
+  --glow-cyan:      0 0 20px rgba(56, 189, 248, 0.18), 0 0 60px rgba(56, 189, 248, 0.06);
+  --glow-blue:      0 0 20px rgba(96, 165, 250, 0.18), 0 0 60px rgba(96, 165, 250, 0.06);
+  --glow-purple:    0 0 20px rgba(167, 139, 250, 0.18);
+
+  /* Glassmorphism */
+  --glass-bg:       rgba(8, 12, 20, 0.72);
+  --glass-blur:     blur(24px);
+  --glass-border:   rgba(255, 255, 255, 0.08);
+
+  /* Radius */
+  --radius-sm:  8px;
+  --radius-md:  14px;
+  --radius-lg:  20px;
+  --radius-xl:  28px;
 }
 
-* {
+*, *::before, *::after {
   box-sizing: border-box;
 }
 
@@ -35,13 +71,13 @@ body {
   min-height: 100vh;
 }
 
-/* ── Noise texture & grid ── */
+/* ── Noise + Grid background layers ── */
 body::before {
   content: "";
   position: fixed;
   inset: 0;
   z-index: -2;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
   background-size: 128px;
   pointer-events: none;
 }
@@ -52,11 +88,11 @@ body::after {
   inset: 0;
   z-index: -1;
   background-image:
-    linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
-  background-size: 64px 64px;
-  mask-image: radial-gradient(circle at center, black 40%, transparent 80%);
-  -webkit-mask-image: radial-gradient(circle at center, black 40%, transparent 80%);
+    linear-gradient(to right, rgba(56, 189, 248, 0.025) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(56, 189, 248, 0.025) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 40%, black 30%, transparent 75%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 40%, black 30%, transparent 75%);
   pointer-events: none;
 }
 
@@ -65,39 +101,30 @@ body::after {
   z-index: 1;
 }
 
-h1,
-h2,
-h3,
-h4,
-.font-serif {
+h1, h2, h3, h4, .font-serif {
   font-family: "DM Serif Display", Georgia, serif;
   letter-spacing: -0.01em;
 }
 
 /* ── Scrollbar ── */
-::-webkit-scrollbar {
-  width: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
-}
+::-webkit-scrollbar        { width: 4px; }
+::-webkit-scrollbar-track  { background: transparent; }
+::-webkit-scrollbar-thumb  { background: rgba(56, 189, 248, 0.18); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(56, 189, 248, 0.35); }
 
 /* ── Selection ── */
 ::selection {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(56, 189, 248, 0.2);
+  color: #fff;
 }
 
-/* ── Surface cards ── */
+/* ── Focus ring ── */
+*:focus-visible {
+  outline: 1px solid rgba(56, 189, 248, 0.6);
+  outline-offset: 2px;
+}
+
+/* ── Surface helpers ── */
 .surface {
   background: var(--bg-surface);
   border: 1px solid var(--border);
@@ -108,13 +135,47 @@ h4,
   border: 1px solid var(--border);
 }
 
-/* ── Divider ── */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+}
+
+/* ── Neon glow text ── */
+.neon-text-cyan  { color: var(--neon-cyan); text-shadow: 0 0 12px rgba(56,189,248,0.5); }
+.neon-text-blue  { color: var(--neon-blue); text-shadow: 0 0 12px rgba(96,165,250,0.5); }
+.neon-text-purple{ color: var(--neon-purple); text-shadow: 0 0 12px rgba(167,139,250,0.5); }
+
+/* ── Sci-fi section divider ── */
 .divider {
   border-top: 1px solid var(--border);
 }
 
-/* ── Focus ring ── */
-*:focus-visible {
-  outline: 1px solid rgba(255, 255, 255, 0.4);
-  outline-offset: 2px;
+/* ── Bento grid ── */
+.bento-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 12px;
 }
+
+/* ── Animated scan line keyframe ── */
+@keyframes scanline {
+  from { transform: translateY(-100%); }
+  to   { transform: translateY(100vh); }
+}
+
+/* ── Glow pulse ── */
+@keyframes glowPulse {
+  0%, 100% { opacity: 0.4; }
+  50%       { opacity: 1; }
+}
+
+/* ── Fade up reveal ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Spinner ── */
+@keyframes spin { to { transform: rotate(360deg); } }

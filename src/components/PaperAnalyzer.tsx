@@ -340,159 +340,148 @@ export default function PaperAnalyzer({ onPathwayGenerated }: PaperAnalyzerProps
   ];
 
   return (
-    <section className="px-4 py-24" id="analyzer" style={{ background: '#0a0a0a' }}>
-      <div className="max-w-2xl mx-auto">
+    <div style={{ maxWidth: '680px' }}>
 
-        {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '11px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' }}>
-            02 · Analysis
-          </p>
-          <h2 style={{ color: '#ffffff', fontSize: 'clamp(24px, 4vw, 32px)', fontWeight: 600, letterSpacing: '-0.03em', marginBottom: '8px' }}>
-            Decode any pathway.
-          </h2>
-          <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '14px', lineHeight: 1.6, maxWidth: '480px', margin: '0 auto' }}>
-            Paste a paper, upload a PDF, or point your camera — AI extracts the metabolic architecture with evidence citations.
-          </p>
-        </div>
+      {/* Input card — sci-fi panel */}
+      <div style={{ borderRadius: '16px', overflow: 'hidden', background: 'rgba(8,12,20,0.7)', border: '1px solid rgba(56,189,248,0.14)', boxShadow: '0 0 40px rgba(56,189,248,0.04), 0 24px 48px rgba(0,0,0,0.4)', backdropFilter: 'blur(20px)' }}>
 
-        {/* Input card */}
-        <div style={{ borderRadius: '14px', overflow: 'hidden', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)' }}>
-
-          {/* File/image preview */}
-          {(mode === 'pdf' || mode === 'image' || mode === 'camera') && (
-            <div style={{ padding: '14px 16px 0', display: 'flex', alignItems: 'center', gap: '12px' }}>
-              {imagePreview
-                ? <img src={imagePreview} alt="Preview" style={{ height: '48px', width: '48px', objectFit: 'cover', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)' }} />
-                : <div style={{ height: '48px', width: '48px', borderRadius: '16px', border: '1px dashed rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {mode === 'pdf' ? <Upload size={16} style={{ color: 'rgba(255,255,255,0.3)' }} /> : <ImageIcon size={16} style={{ color: 'rgba(255,255,255,0.3)' }} />}
-                  </div>
-              }
-              <div>
-                {fileName
-                  ? <p style={{ color: '#ffffff', fontSize: '13px', margin: '0 0 3px', fontWeight: 500 }}>{fileName}</p>
-                  : <button
-                      onClick={() => mode === 'pdf' ? fileInputRef.current?.click() : mode === 'camera' ? cameraInputRef.current?.click() : imageInputRef.current?.click()}
-                      style={{ color: 'rgba(255,255,255,0.4)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '13px', padding: 0 }}
-                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#ffffff'; }}
-                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.4)'; }}>
-                      {mode === 'camera' ? 'Tap to take photo →' : `Click to upload ${mode} →`}
-                    </button>
-                }
-                {fileName && (
-                  <button onClick={resetState} style={{ color: 'rgba(255,255,255,0.25)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '11px', padding: 0, display: 'flex', alignItems: 'center', gap: '3px' }}>
-                    <X size={9} /> remove
+        {/* File/image preview */}
+        {(mode === 'pdf' || mode === 'image' || mode === 'camera') && (
+          <div style={{ padding: '14px 16px 0', display: 'flex', alignItems: 'center', gap: '12px' }}>
+            {imagePreview
+              ? <img src={imagePreview} alt="Preview" style={{ height: '48px', width: '48px', objectFit: 'cover', borderRadius: '10px', border: '1px solid rgba(56,189,248,0.2)' }} />
+              : <div style={{ height: '48px', width: '48px', borderRadius: '10px', border: '1px dashed rgba(56,189,248,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {mode === 'pdf' ? <Upload size={16} style={{ color: 'rgba(56,189,248,0.4)' }} /> : <ImageIcon size={16} style={{ color: 'rgba(56,189,248,0.4)' }} />}
+                </div>
+            }
+            <div>
+              {fileName
+                ? <p style={{ color: '#ffffff', fontSize: '13px', margin: '0 0 3px', fontWeight: 500 }}>{fileName}</p>
+                : <button
+                    onClick={() => mode === 'pdf' ? fileInputRef.current?.click() : mode === 'camera' ? cameraInputRef.current?.click() : imageInputRef.current?.click()}
+                    style={{ color: 'rgba(56,189,248,0.6)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '13px', padding: 0 }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#38bdf8'; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(56,189,248,0.6)'; }}>
+                    {mode === 'camera' ? 'Tap to take photo →' : `Click to upload ${mode} →`}
                   </button>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* URL input */}
-          {mode === 'web' && (
-            <div style={{ padding: '14px 16px 0', display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <Globe size={14} style={{ color: 'rgba(255,255,255,0.2)', flexShrink: 0 }} />
-              <input type="url" value={webUrl} onChange={e => { setWebUrl(e.target.value); setErrorMsg(null); }}
-                placeholder="https://pubmed.ncbi.nlm.nih.gov/... or https://doi.org/..."
-                style={{ flex: 1, background: 'transparent', border: 'none', color: '#ffffff', fontSize: '13px', outline: 'none', fontFamily: 'inherit' }} />
-              {webUrl && <button onClick={() => setWebUrl('')} style={{ color: 'rgba(255,255,255,0.2)', background: 'none', border: 'none', cursor: 'pointer' }}><X size={13} /></button>}
-            </div>
-          )}
-
-          {/* Text textarea */}
-          {mode === 'text' && (
-            <textarea
-              value={text}
-              onChange={e => { setText(e.target.value); setErrorMsg(null); if (analysisState === 'error') setAnalysisState('idle'); }}
-              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleAnalyze(); } }}
-              placeholder="Paste an abstract, methods section, or any research text here..."
-              rows={4}
-              style={{ width: '100%', background: 'transparent', padding: '16px', color: '#ffffff', fontSize: '13px', lineHeight: 1.7, border: 'none', outline: 'none', resize: 'none', fontFamily: 'inherit', boxSizing: 'border-box' }}
-            />
-          )}
-
-          {/* Toolbar */}
-          <div style={{ padding: '10px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-
-              {mode !== 'text' && (
-                <button onClick={() => { setMode('text'); resetState(); setExpanded(false); }}
-                  style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '5px 10px', borderRadius: '16px', background: 'rgba(255,255,255,0.05)', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: '12px', cursor: 'pointer' }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#ffffff'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.4)'; }}>
-                  Text
+              }
+              {fileName && (
+                <button onClick={resetState} style={{ color: 'rgba(255,255,255,0.25)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '11px', padding: 0, display: 'flex', alignItems: 'center', gap: '3px' }}>
+                  <X size={9} /> remove
                 </button>
               )}
-
-              <button onClick={() => setExpanded(!expanded)}
-                style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '5px 10px', borderRadius: '16px', background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', fontSize: '12px', cursor: 'pointer' }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#ffffff'; (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.05)'; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.3)'; (e.currentTarget as HTMLElement).style.background = 'none'; }}>
-                {expanded ? <ChevronUp size={13} /> : <Plus size={13} />}
-                {expanded ? 'Less' : 'Add file or URL'}
-              </button>
-
-              {expanded && extraModes.map(m => (
-                <button key={m.id}
-                  onClick={() => {
-                    setMode(m.id); resetState();
-                    if (m.id === 'pdf') setTimeout(() => fileInputRef.current?.click(), 80);
-                    if (m.id === 'image') setTimeout(() => imageInputRef.current?.click(), 80);
-                    if (m.id === 'camera') setTimeout(() => cameraInputRef.current?.click(), 80);
-                  }}
-                  style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '5px 10px', borderRadius: '16px', background: mode === m.id ? 'rgba(255,255,255,0.1)' : 'none', border: 'none', color: mode === m.id ? '#ffffff' : 'rgba(255,255,255,0.35)', fontSize: '12px', cursor: 'pointer' }}>
-                  {m.icon}{m.label}
-                </button>
-              ))}
             </div>
-
-            {/* Send button */}
-            <button
-              onClick={handleAnalyze}
-              disabled={analysisState === 'analyzing' || !canAnalyze}
-              title="Analyze pathway (Enter)"
-              style={{
-                width: '32px', height: '32px', borderRadius: '50%', border: 'none',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-                background: analysisState === 'analyzing' ? 'rgba(255,255,255,0.06)' : canAnalyze ? '#ffffff' : 'rgba(255,255,255,0.07)',
-                color: analysisState === 'analyzing' || !canAnalyze ? 'rgba(255,255,255,0.2)' : '#0a0a0a',
-                transition: 'all 0.15s',
-              }}>
-              {analysisState === 'analyzing'
-                ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} />
-                : <ArrowUp size={14} strokeWidth={2.5} />
-              }
-            </button>
           </div>
-        </div>
+        )}
 
-        {/* Status messages */}
-        <div style={{ marginTop: '10px', minHeight: '28px' }}>
-          {analysisState === 'analyzing' && (
-            <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '12px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", textAlign: 'center' }}>
+        {/* URL input */}
+        {mode === 'web' && (
+          <div style={{ padding: '14px 16px 0', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <Globe size={14} style={{ color: 'rgba(56,189,248,0.5)', flexShrink: 0 }} />
+            <input type="url" value={webUrl} onChange={e => { setWebUrl(e.target.value); setErrorMsg(null); }}
+              placeholder="https://pubmed.ncbi.nlm.nih.gov/... or https://doi.org/..."
+              style={{ flex: 1, background: 'transparent', border: 'none', color: '#ffffff', fontSize: '13px', outline: 'none', fontFamily: 'inherit' }} />
+            {webUrl && <button onClick={() => setWebUrl('')} style={{ color: 'rgba(255,255,255,0.2)', background: 'none', border: 'none', cursor: 'pointer' }}><X size={13} /></button>}
+          </div>
+        )}
+
+        {/* Text textarea */}
+        {mode === 'text' && (
+          <textarea
+            value={text}
+            onChange={e => { setText(e.target.value); setErrorMsg(null); if (analysisState === 'error') setAnalysisState('idle'); }}
+            onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleAnalyze(); } }}
+            placeholder="Paste an abstract, methods section, or any research text here..."
+            rows={5}
+            style={{ width: '100%', background: 'transparent', padding: '18px', color: 'rgba(255,255,255,0.88)', fontSize: '13px', lineHeight: 1.75, border: 'none', outline: 'none', resize: 'none', fontFamily: 'inherit', boxSizing: 'border-box' }}
+          />
+        )}
+
+        {/* Toolbar */}
+        <div style={{ padding: '10px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid rgba(56,189,248,0.08)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+
+            {mode !== 'text' && (
+              <button onClick={() => { setMode('text'); resetState(); setExpanded(false); }}
+                style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '5px 10px', borderRadius: '8px', background: 'rgba(56,189,248,0.08)', border: '1px solid rgba(56,189,248,0.18)', color: '#38bdf8', fontSize: '12px', cursor: 'pointer' }}>
+                Text
+              </button>
+            )}
+
+            <button onClick={() => setExpanded(!expanded)}
+              style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '5px 10px', borderRadius: '8px', background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', fontSize: '12px', cursor: 'pointer', transition: 'all 0.18s' }}
+              onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.color = '#38bdf8'; el.style.background = 'rgba(56,189,248,0.06)'; }}
+              onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.color = 'rgba(255,255,255,0.3)'; el.style.background = 'none'; }}>
+              {expanded ? <ChevronUp size={13} /> : <Plus size={13} />}
+              {expanded ? 'Less' : 'Add file or URL'}
+            </button>
+
+            {expanded && extraModes.map(m => (
+              <button key={m.id}
+                onClick={() => {
+                  setMode(m.id); resetState();
+                  if (m.id === 'pdf') setTimeout(() => fileInputRef.current?.click(), 80);
+                  if (m.id === 'image') setTimeout(() => imageInputRef.current?.click(), 80);
+                  if (m.id === 'camera') setTimeout(() => cameraInputRef.current?.click(), 80);
+                }}
+                style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '5px 10px', borderRadius: '8px', background: mode === m.id ? 'rgba(56,189,248,0.12)' : 'none', border: mode === m.id ? '1px solid rgba(56,189,248,0.22)' : '1px solid transparent', color: mode === m.id ? '#38bdf8' : 'rgba(255,255,255,0.35)', fontSize: '12px', cursor: 'pointer', transition: 'all 0.18s' }}>
+                {m.icon}{m.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Send button — neon */}
+          <button
+            onClick={handleAnalyze}
+            disabled={analysisState === 'analyzing' || !canAnalyze}
+            title="Analyze pathway (Enter)"
+            style={{
+              width: '34px', height: '34px', borderRadius: '10px', border: 'none',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+              background: analysisState === 'analyzing' ? 'rgba(56,189,248,0.06)' : canAnalyze ? 'rgba(56,189,248,0.16)' : 'rgba(255,255,255,0.05)',
+              color: analysisState === 'analyzing' || !canAnalyze ? 'rgba(255,255,255,0.2)' : '#38bdf8',
+              boxShadow: canAnalyze && analysisState !== 'analyzing' ? '0 0 14px rgba(56,189,248,0.2)' : 'none',
+              borderColor: canAnalyze ? 'rgba(56,189,248,0.3)' : 'transparent',
+              borderStyle: 'solid', borderWidth: '1px',
+              transition: 'all 0.18s',
+            }}>
+            {analysisState === 'analyzing'
+              ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} />
+              : <ArrowUp size={14} strokeWidth={2.5} />
+            }
+          </button>
+        </div>
+      </div>
+
+      {/* Status messages */}
+      <div style={{ marginTop: '12px', minHeight: '36px' }}>
+        {analysisState === 'analyzing' && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', borderRadius: '10px', background: 'rgba(56,189,248,0.05)', border: '1px solid rgba(56,189,248,0.14)' }}>
+            <Loader2 size={12} style={{ color: '#38bdf8', animation: 'spin 1s linear infinite', flexShrink: 0 }} />
+            <p style={{ color: 'rgba(56,189,248,0.7)', fontSize: '12px', margin: 0 }}>
               Extracting pathway structure from literature...
             </p>
-          )}
-          {analysisState === 'error' && errorMsg && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', borderRadius: '20px', background: 'rgba(255,80,80,0.06)', border: '1px solid rgba(255,80,80,0.12)' }}>
-              <AlertCircle size={13} style={{ color: 'rgba(255,120,120,0.8)', flexShrink: 0 }} />
-              <p style={{ color: 'rgba(255,140,140,0.8)', fontSize: '12px', margin: 0 }}>{errorMsg}</p>
-            </div>
-          )}
-          {analysisState === 'success' && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', borderRadius: '20px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
-              <CheckCircle2 size={13} style={{ color: 'rgba(255,255,255,0.5)', flexShrink: 0 }} />
-              <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '12px', margin: 0 }}>
-                Pathway extracted. Scroll up to explore the visualization ↑
-              </p>
-            </div>
-          )}
-          {analysisState === 'idle' && (
-            <p style={{ color: 'rgba(255,255,255,0.12)', fontSize: '11px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", textAlign: 'center' }}>
-              Press Enter to analyze · Shift+Enter for new line · Gemini 2.0 Flash
+          </div>
+        )}
+        {analysisState === 'error' && errorMsg && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', borderRadius: '10px', background: 'rgba(255,80,80,0.06)', border: '1px solid rgba(255,80,80,0.16)' }}>
+            <AlertCircle size={13} style={{ color: 'rgba(255,120,120,0.8)', flexShrink: 0 }} />
+            <p style={{ color: 'rgba(255,140,140,0.8)', fontSize: '12px', margin: 0 }}>{errorMsg}</p>
+          </div>
+        )}
+        {analysisState === 'success' && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', borderRadius: '10px', background: 'rgba(56,189,248,0.05)', border: '1px solid rgba(56,189,248,0.18)' }}>
+            <CheckCircle2 size={13} style={{ color: '#38bdf8', flexShrink: 0 }} />
+            <p style={{ color: 'rgba(56,189,248,0.7)', fontSize: '12px', margin: 0 }}>
+              Pathway extracted. Scroll up to explore the visualization ↑
             </p>
-          )}
-        </div>
+          </div>
+        )}
+        {analysisState === 'idle' && (
+          <p style={{ color: 'rgba(255,255,255,0.1)', fontSize: '11px', fontFamily: "'Public Sans',sans-serif", textAlign: 'left', marginLeft: '4px' }}>
+            Press Enter to analyze · Shift+Enter for new line · Gemini 2.0 Flash
+          </p>
+        )}
       </div>
 
       {/* Hidden inputs */}
@@ -500,6 +489,6 @@ export default function PaperAnalyzer({ onPathwayGenerated }: PaperAnalyzerProps
       <input ref={imageInputRef} type="file" accept="image/*" onChange={e => handleFileUpload(e, 'image')} className="hidden" />
       <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" onChange={e => handleFileUpload(e, 'image')} className="hidden" />
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-    </section>
+    </div>
   );
 }

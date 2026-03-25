@@ -87,7 +87,7 @@ function extractKeywords(title: string, abstract: string): Set<string> {
   });
 
   // 2. Capitalized multi-word terms (acronyms + proper nouns)
-  const acronyms = abstract.match(/\b[A-Z][A-Z0-9]{1,9}\b/g) || [];
+  const acronyms: string[] = abstract.match(/\b[A-Z][A-Z0-9]{1,9}\b/g) || [];
   acronyms.forEach(a => { if (a.length >= 2) candidates.add(a); });
 
   // 3. High-frequency content words in abstract (TF-based)
@@ -131,9 +131,9 @@ function highlightKeywords(text: string, keywords: Set<string>) {
     return parts.map((part, i) =>
       pattern.test(part)
         ? <mark key={i} style={{
-            background: 'rgba(255,255,255,0.09)',
-            color: 'rgba(255,255,255,0.88)',
-            borderRadius: '8px',
+            background: 'rgba(56,189,248,0.12)',
+            color: '#38bdf8',
+            borderRadius: '4px',
             padding: '0 3px',
             fontWeight: 500,
           }}>{part}</mark>
@@ -245,191 +245,93 @@ export default function SemanticSearch({ onAnalyzePaper }: SemanticSearchProps) 
       <button
         onClick={() => handleAnalyze(article)}
         title="Analyze pathway"
-        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', background: 'transparent', color: 'rgba(255,255,255,0.4)', border: 'none', borderRadius: '16px', cursor: 'pointer', transition: 'color 0.15s' }}
-        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#ffffff'; }}
-        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.4)'; }}>
-        <Send size={15} strokeWidth={2} />
+        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', background: 'rgba(56,189,248,0.06)', color: 'rgba(56,189,248,0.5)', border: '1px solid rgba(56,189,248,0.15)', borderRadius: '8px', cursor: 'pointer', transition: 'all 0.18s' }}
+        onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.color = '#38bdf8'; el.style.background = 'rgba(56,189,248,0.14)'; el.style.borderColor = 'rgba(56,189,248,0.3)'; }}
+        onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.color = 'rgba(56,189,248,0.5)'; el.style.background = 'rgba(56,189,248,0.06)'; el.style.borderColor = 'rgba(56,189,248,0.15)'; }}>
+        <Send size={14} strokeWidth={2} />
       </button>
     ) : null
   );
 
   return (
-    <section className="px-4 py-24" id="search" style={{ background: '#0a0a0a', fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" }}>
-      <div className="max-w-4xl mx-auto">
+    <div style={{ fontFamily: "'Public Sans', -apple-system, sans-serif" }}>
 
-        {/* Header */}
-        <div className="mb-10">
-          <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '11px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' }}>
-            03 · Literature
-          </p>
-          <h2 style={{ color: '#ffffff', fontSize: 'clamp(24px, 4vw, 32px)', fontWeight: 600, letterSpacing: '-0.03em', marginBottom: '8px', lineHeight: 1.2 }}>
-            Database Research
-          </h2>
-          <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '14px', lineHeight: 1.6 }}>
-            Searches PubMed, Europe PMC, Semantic Scholar, OpenAlex, bioRxiv, and CORE simultaneously —
-            over 500 million papers including Nature, Science, and Cell.
-          </p>
+      {/* Search bar — neon sci-fi */}
+      <form onSubmit={handleSearch} style={{ position: 'relative', marginBottom: '32px' }}>
+        <div style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
+          <Search size={15} style={{ color: 'rgba(56,189,248,0.45)' }} />
         </div>
+        <input
+          type="text"
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          placeholder="Search across 500M+ papers — e.g. artemisinin biosynthesis, CRISPR metabolic engineering"
+          style={{ width: '100%', padding: '13px 130px 13px 46px', background: 'rgba(8,12,20,0.7)', border: '1px solid rgba(56,189,248,0.14)', borderRadius: '14px', color: '#ffffff', fontSize: '14px', outline: 'none', letterSpacing: '-0.01em', fontFamily: 'inherit', backdropFilter: 'blur(12px)', transition: 'border-color 0.2s, box-shadow 0.2s' }}
+          onFocus={e => { e.currentTarget.style.borderColor = 'rgba(56,189,248,0.4)'; e.currentTarget.style.boxShadow = '0 0 20px rgba(56,189,248,0.08)'; }}
+          onBlur={e => { e.currentTarget.style.borderColor = 'rgba(56,189,248,0.14)'; e.currentTarget.style.boxShadow = 'none'; }}
+        />
+        <button type="submit" disabled={isSearching}
+          style={{ position: 'absolute', right: '6px', top: '6px', bottom: '6px', padding: '0 18px', background: isSearching ? 'rgba(56,189,248,0.06)' : 'rgba(56,189,248,0.14)', color: isSearching ? 'rgba(56,189,248,0.3)' : '#38bdf8', border: '1px solid rgba(56,189,248,0.25)', borderRadius: '10px', fontSize: '13px', fontWeight: 600, cursor: isSearching ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '7px', letterSpacing: '-0.01em', transition: 'all 0.18s', fontFamily: 'inherit', boxShadow: isSearching ? 'none' : '0 0 14px rgba(56,189,248,0.12)' }}
+          onMouseEnter={e => { if (!isSearching) { const el = e.currentTarget as HTMLElement; el.style.background = 'rgba(56,189,248,0.22)'; el.style.boxShadow = '0 0 20px rgba(56,189,248,0.2)'; } }}
+          onMouseLeave={e => { if (!isSearching) { const el = e.currentTarget as HTMLElement; el.style.background = 'rgba(56,189,248,0.14)'; el.style.boxShadow = '0 0 14px rgba(56,189,248,0.12)'; } }}>
+          {isSearching ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <Search size={14} />}
+          {isSearching ? 'Searching' : 'Search'}
+        </button>
+      </form>
 
-        {/* Search bar */}
-        <form onSubmit={handleSearch} style={{ position: 'relative', marginBottom: '40px' }}>
-          <div style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
-            <Search size={16} style={{ color: 'rgba(255,255,255,0.25)' }} />
-          </div>
-          <input
-            type="text"
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-            placeholder="Search across 500M+ papers — e.g. artemisinin biosynthesis, CRISPR metabolic engineering"
-            style={{ width: '100%', padding: '14px 130px 14px 46px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '20px', color: '#ffffff', fontSize: '14px', outline: 'none', letterSpacing: '-0.01em', fontFamily: 'inherit' }}
-            onFocus={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)'; }}
-            onBlur={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; }}
-          />
-          <button type="submit" disabled={isSearching}
-            style={{ position: 'absolute', right: '6px', top: '6px', bottom: '6px', padding: '0 18px', background: isSearching ? 'rgba(255,255,255,0.06)' : '#ffffff', color: isSearching ? 'rgba(255,255,255,0.3)' : '#0a0a0a', border: 'none', borderRadius: '16px', fontSize: '13px', fontWeight: 600, cursor: isSearching ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '7px', letterSpacing: '-0.01em', transition: 'background 0.15s', fontFamily: 'inherit' }}
-            onMouseEnter={e => { if (!isSearching) (e.currentTarget as HTMLElement).style.background = '#e5e5e5'; }}
-            onMouseLeave={e => { if (!isSearching) (e.currentTarget as HTMLElement).style.background = '#ffffff'; }}>
-            {isSearching ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <Search size={14} />}
-            {isSearching ? 'Searching' : 'Search'}
-          </button>
-        </form>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } } @keyframes pulse { 0%,100%{opacity:0.3} 50%{opacity:0.6} }`}</style>
 
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } } @keyframes pulse { 0%,100%{opacity:0.3} 50%{opacity:0.6} }`}</style>
-
-        {/* Showcase papers */}
-        {showShowcase && (
-          <div style={{ marginBottom: '40px' }}>
-            <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '11px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '16px' }}>
-              Landmark Papers in Synthetic Biology
-            </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', borderRadius: '20px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.07)' }}>
-              {SHOWCASE_PAPERS.map((paper, idx) => {
-                const isExpanded = expandedIds.has(paper.id);
-                return (
-                  <div key={paper.id} style={{ background: 'rgba(255,255,255,0.02)', borderTop: idx > 0 ? '1px solid rgba(255,255,255,0.06)' : 'none' }}>
-                    <div style={{ padding: '18px 20px' }}>
-                      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px' }}>
-                        <div style={{ flex: 1 }}>
-                          {/* Clean metadata line */}
-                          <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", margin: '0 0 8px', letterSpacing: '0.02em' }}>
-                            {paper.source} · {paper.year}
-                            {paper.citationCount ? ` · ${paper.citationCount.toLocaleString()} citations` : ''}
-                          </p>
-                          <p style={{ color: '#ffffff', fontSize: '14px', fontWeight: 500, lineHeight: 1.55, margin: '0 0 6px', letterSpacing: '-0.01em' }}>
-                            {paper.title}
-                          </p>
-                          <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '12px', margin: 0, letterSpacing: '0.01em' }}>
-                            {paper.authors.join(', ')} et al.
-                          </p>
-                        </div>
-                        <button onClick={() => toggleExpand(paper.id)}
-                          style={{ color: 'rgba(255,255,255,0.2)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px', flexShrink: 0 }}
-                          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#ffffff'; }}
-                          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.2)'; }}>
-                          {isExpanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
-                        </button>
-                      </div>
-
-                      {isExpanded && (
-                        <div style={{ marginTop: '14px', paddingTop: '14px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-                          <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '13px', lineHeight: 1.75, margin: '0 0 12px', letterSpacing: '-0.005em' }}>
-                            {highlightKeywords(paper.abstract, extractKeywords(paper.title, paper.abstract))}
-                          </p>
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
-                            <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '11px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", margin: 0 }}>
-                              {paper.pathway}
-                            </p>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                              <a href={`https://doi.org/${paper.doi}`} target="_blank" rel="noopener noreferrer"
-                                style={{ color: 'rgba(255,255,255,0.2)', display: 'flex' }}
-                                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#ffffff'; }}
-                                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.2)'; }}>
-                                <ExternalLink size={13} />
-                              </a>
-                              <SendButton article={paper} />
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Search results */}
-        <div>
-          {results.length > 0 && (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-              <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '12px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", margin: 0 }}>
-                {results.length} results{isSearching ? ' · searching more databases...' : ''}
-              </p>
-              <button onClick={() => { setResults([]); setHasSearched(false); setShowShowcase(true); }}
-                style={{ color: 'rgba(255,255,255,0.2)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '12px', fontFamily: 'inherit' }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.5)'; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.2)'; }}>
-                Clear
-              </button>
-            </div>
-          )}
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', borderRadius: '20px', overflow: 'hidden', border: results.length > 0 ? '1px solid rgba(255,255,255,0.07)' : 'none' }}>
-            {results.map((article, idx) => {
-              const isExpanded = expandedIds.has(article.id);
+      {/* Showcase papers */}
+      {showShowcase && (
+        <div style={{ marginBottom: '32px' }}>
+          <p style={{ color: 'rgba(255,255,255,0.22)', fontSize: '10px', fontFamily: "'JetBrains Mono','Fira Code',monospace", textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '14px' }}>
+            Landmark Papers in Synthetic Biology
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', borderRadius: '16px', overflow: 'hidden', border: '1px solid rgba(56,189,248,0.1)' }}>
+            {SHOWCASE_PAPERS.map((paper, idx) => {
+              const isExpanded = expandedIds.has(paper.id);
               return (
-                <div key={article.id} style={{ background: 'rgba(255,255,255,0.02)', borderTop: idx > 0 ? '1px solid rgba(255,255,255,0.06)' : 'none' }}>
+                <div key={paper.id} style={{ background: 'rgba(8,12,20,0.65)', borderTop: idx > 0 ? '1px solid rgba(56,189,248,0.07)' : 'none' }}>
                   <div style={{ padding: '18px 20px' }}>
                     <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px' }}>
                       <div style={{ flex: 1 }}>
-                        <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '11px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", margin: '0 0 8px', letterSpacing: '0.02em' }}>
-                          {article.source}
-                          {article.journal ? ` · ${article.journal}` : ''}
-                          {article.year ? ` · ${article.year}` : ''}
-                          {article.citationCount ? ` · ${article.citationCount.toLocaleString()} citations` : ''}
-                          {article.isPreprint ? ' · Preprint' : ''}
-                          {article.openAccess ? ' · Open Access' : ''}
+                        <p style={{ color: 'rgba(56,189,248,0.5)', fontSize: '10px', fontFamily: "'JetBrains Mono','Fira Code',monospace", margin: '0 0 8px', letterSpacing: '0.06em' }}>
+                          {paper.source} · {paper.year}
+                          {paper.citationCount ? ` · ${paper.citationCount.toLocaleString()} citations` : ''}
                         </p>
-                        <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '14px', fontWeight: 500, lineHeight: 1.55, margin: '0 0 6px', letterSpacing: '-0.01em' }}>
-                          {article.title}
+                        <p style={{ color: 'rgba(255,255,255,0.88)', fontSize: '14px', fontWeight: 500, lineHeight: 1.55, margin: '0 0 6px', letterSpacing: '-0.01em' }}>
+                          {paper.title}
                         </p>
-                        {article.authors.length > 0 && (
-                          <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '12px', margin: 0 }}>
-                            {article.authors.join(', ')}{article.authors.length === 3 ? ' et al.' : ''}
-                          </p>
-                        )}
+                        <p style={{ color: 'rgba(255,255,255,0.28)', fontSize: '12px', margin: 0 }}>
+                          {paper.authors.join(', ')} et al.
+                        </p>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-                        {article.url && (
-                          <a href={article.url} target="_blank" rel="noopener noreferrer"
-                            style={{ color: 'rgba(255,255,255,0.2)' }}
-                            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#ffffff'; }}
-                            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.2)'; }}>
-                            <ExternalLink size={14} />
-                          </a>
-                        )}
-                        <button onClick={() => toggleExpand(article.id)}
-                          style={{ color: 'rgba(255,255,255,0.2)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px' }}
-                          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#ffffff'; }}
-                          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.2)'; }}>
-                          {isExpanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
-                        </button>
-                      </div>
+                      <button onClick={() => toggleExpand(paper.id)}
+                        style={{ color: 'rgba(255,255,255,0.2)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px', flexShrink: 0, transition: 'color 0.18s' }}
+                        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#38bdf8'; }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.2)'; }}>
+                        {isExpanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+                      </button>
                     </div>
 
-                    {isExpanded && article.abstract && (
-                      <div style={{ marginTop: '14px', paddingTop: '14px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-                        <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '13px', lineHeight: 1.75, margin: '0 0 12px', letterSpacing: '-0.005em' }}>
-                          {highlightKeywords(article.abstract, extractKeywords(article.title, article.abstract))}
+                    {isExpanded && (
+                      <div style={{ marginTop: '14px', paddingTop: '14px', borderTop: '1px solid rgba(56,189,248,0.07)' }}>
+                        <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '13px', lineHeight: 1.75, margin: '0 0 12px' }}>
+                          {highlightKeywords(paper.abstract, extractKeywords(paper.title, paper.abstract))}
                         </p>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '10px' }}>
-                          {article.doi && (
-                            <p style={{ color: 'rgba(255,255,255,0.15)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", margin: 0, flex: 1 }}>
-                              DOI: {article.doi}
-                            </p>
-                          )}
-                          <SendButton article={article} />
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+                          <p style={{ color: 'rgba(56,189,248,0.4)', fontSize: '10px', fontFamily: "'JetBrains Mono','Fira Code',monospace", margin: 0 }}>
+                            {paper.pathway}
+                          </p>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <a href={`https://doi.org/${paper.doi}`} target="_blank" rel="noopener noreferrer"
+                              style={{ color: 'rgba(255,255,255,0.2)', display: 'flex', transition: 'color 0.18s' }}
+                              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#38bdf8'; }}
+                              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.2)'; }}>
+                              <ExternalLink size={13} />
+                            </a>
+                            <SendButton article={paper} />
+                          </div>
                         </div>
                       </div>
                     )}
@@ -438,28 +340,109 @@ export default function SemanticSearch({ onAnalyzePaper }: SemanticSearchProps) 
               );
             })}
           </div>
-
-          {/* Loading skeleton */}
-          {isSearching && results.length === 0 && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', borderRadius: '20px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.07)' }}>
-              {[80, 95, 70].map((w, i) => (
-                <div key={i} style={{ padding: '18px 20px', background: 'rgba(255,255,255,0.02)', borderTop: i > 0 ? '1px solid rgba(255,255,255,0.06)' : 'none' }}>
-                  <div style={{ height: '10px', width: '30%', background: 'rgba(255,255,255,0.06)', borderRadius: '8px', marginBottom: '10px', animation: 'pulse 1.5s infinite' }} />
-                  <div style={{ height: '14px', width: `${w}%`, background: 'rgba(255,255,255,0.08)', borderRadius: '8px', marginBottom: '8px', animation: 'pulse 1.5s infinite' }} />
-                  <div style={{ height: '10px', width: '25%', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', animation: 'pulse 1.5s infinite' }} />
-                </div>
-              ))}
-            </div>
-          )}
-
-          {hasSearched && !isSearching && results.length === 0 && (
-            <div style={{ textAlign: 'center', padding: '48px 20px', color: 'rgba(255,255,255,0.2)', border: '1px dashed rgba(255,255,255,0.07)', borderRadius: '20px' }}>
-              <p style={{ fontSize: '14px', margin: '0 0 6px', letterSpacing: '-0.01em' }}>No results found for "{query}"</p>
-              <p style={{ fontSize: '12px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", margin: 0 }}>Try "lactic acid fermentation" or "E. coli metabolic engineering"</p>
-            </div>
-          )}
         </div>
+      )}
+
+      {/* Search results */}
+      <div>
+        {results.length > 0 && (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+            <p style={{ color: 'rgba(56,189,248,0.5)', fontSize: '11px', fontFamily: "'JetBrains Mono','Fira Code',monospace", margin: 0 }}>
+              {results.length} results{isSearching ? ' · searching more databases...' : ''}
+            </p>
+            <button onClick={() => { setResults([]); setHasSearched(false); setShowShowcase(true); }}
+              style={{ color: 'rgba(255,255,255,0.2)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '12px', fontFamily: 'inherit', transition: 'color 0.18s' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#38bdf8'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.2)'; }}>
+              Clear
+            </button>
+          </div>
+        )}
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', borderRadius: '16px', overflow: 'hidden', border: results.length > 0 ? '1px solid rgba(56,189,248,0.1)' : 'none' }}>
+          {results.map((article, idx) => {
+            const isExpanded = expandedIds.has(article.id);
+            return (
+              <div key={article.id} style={{ background: 'rgba(8,12,20,0.65)', borderTop: idx > 0 ? '1px solid rgba(56,189,248,0.07)' : 'none' }}>
+                <div style={{ padding: '18px 20px' }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px' }}>
+                    <div style={{ flex: 1 }}>
+                      <p style={{ color: 'rgba(56,189,248,0.5)', fontSize: '10px', fontFamily: "'JetBrains Mono','Fira Code',monospace", margin: '0 0 8px', letterSpacing: '0.04em' }}>
+                        {article.source}
+                        {article.journal ? ` · ${article.journal}` : ''}
+                        {article.year ? ` · ${article.year}` : ''}
+                        {article.citationCount ? ` · ${article.citationCount.toLocaleString()} citations` : ''}
+                        {article.isPreprint ? ' · Preprint' : ''}
+                        {article.openAccess ? ' · Open Access' : ''}
+                      </p>
+                      <p style={{ color: 'rgba(255,255,255,0.88)', fontSize: '14px', fontWeight: 500, lineHeight: 1.55, margin: '0 0 6px', letterSpacing: '-0.01em' }}>
+                        {article.title}
+                      </p>
+                      {article.authors.length > 0 && (
+                        <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '12px', margin: 0 }}>
+                          {article.authors.join(', ')}{article.authors.length === 3 ? ' et al.' : ''}
+                        </p>
+                      )}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                      {article.url && (
+                        <a href={article.url} target="_blank" rel="noopener noreferrer"
+                          style={{ color: 'rgba(255,255,255,0.2)', transition: 'color 0.18s' }}
+                          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#38bdf8'; }}
+                          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.2)'; }}>
+                          <ExternalLink size={14} />
+                        </a>
+                      )}
+                      <button onClick={() => toggleExpand(article.id)}
+                        style={{ color: 'rgba(255,255,255,0.2)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px', transition: 'color 0.18s' }}
+                        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#38bdf8'; }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.2)'; }}>
+                        {isExpanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {isExpanded && article.abstract && (
+                    <div style={{ marginTop: '14px', paddingTop: '14px', borderTop: '1px solid rgba(56,189,248,0.07)' }}>
+                      <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '13px', lineHeight: 1.75, margin: '0 0 12px' }}>
+                        {highlightKeywords(article.abstract, extractKeywords(article.title, article.abstract))}
+                      </p>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '10px' }}>
+                        {article.doi && (
+                          <p style={{ color: 'rgba(56,189,248,0.3)', fontSize: '10px', fontFamily: "'JetBrains Mono','Fira Code',monospace", margin: 0, flex: 1 }}>
+                            DOI: {article.doi}
+                          </p>
+                        )}
+                        <SendButton article={article} />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Loading skeleton */}
+        {isSearching && results.length === 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', borderRadius: '16px', overflow: 'hidden', border: '1px solid rgba(56,189,248,0.1)' }}>
+            {[80, 95, 70].map((w, i) => (
+              <div key={i} style={{ padding: '18px 20px', background: 'rgba(8,12,20,0.65)', borderTop: i > 0 ? '1px solid rgba(56,189,248,0.07)' : 'none' }}>
+                <div style={{ height: '10px', width: '30%', background: 'rgba(56,189,248,0.08)', borderRadius: '6px', marginBottom: '10px', animation: 'pulse 1.5s infinite' }} />
+                <div style={{ height: '14px', width: `${w}%`, background: 'rgba(56,189,248,0.12)', borderRadius: '6px', marginBottom: '8px', animation: 'pulse 1.5s infinite' }} />
+                <div style={{ height: '10px', width: '25%', background: 'rgba(56,189,248,0.06)', borderRadius: '6px', animation: 'pulse 1.5s infinite' }} />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {hasSearched && !isSearching && results.length === 0 && (
+          <div style={{ textAlign: 'center', padding: '48px 20px', color: 'rgba(255,255,255,0.2)', border: '1px dashed rgba(56,189,248,0.1)', borderRadius: '16px' }}>
+            <p style={{ fontSize: '14px', margin: '0 0 6px', letterSpacing: '-0.01em' }}>No results found for "{query}"</p>
+            <p style={{ fontSize: '12px', fontFamily: "'JetBrains Mono','Fira Code',monospace", margin: 0 }}>Try "lactic acid fermentation" or "E. coli metabolic engineering"</p>
+          </div>
+        )}
       </div>
-    </section>
+    </div>
   );
 }

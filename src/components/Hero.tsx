@@ -34,15 +34,12 @@ function useCursorParallax() {
   return pos;
 }
 
-// ── Animated orb background ───────────────────────────────────────────
+// ── Animated orb background — sci-fi neon version ─────────────────────
 function DeepBackground({ cx }: { cx: { x: number; y: number } }) {
   return (
     <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
 
-      {/* Base */}
-      <div style={{ position: 'absolute', inset: 0, background: 'transparent' }} />
-
-      {/* Orb 1 — top left, slow drift */}
+      {/* Orb 1 — cyan top-left */}
       <motion.div
         animate={{ x: [0, 40, -20, 0], y: [0, -30, 20, 0] }}
         transition={{ duration: 28, repeat: Infinity, ease: 'easeInOut' }}
@@ -50,15 +47,15 @@ function DeepBackground({ cx }: { cx: { x: number; y: number } }) {
           position: 'absolute',
           top: '-20%', left: '-10%',
           width: '70vw', height: '70vw',
-          background: 'radial-gradient(ellipse at center, rgba(140,180,220,0.055) 0%, rgba(100,140,190,0.02) 45%, transparent 70%)',
-          filter: 'blur(60px)',
+          background: 'radial-gradient(ellipse at center, rgba(56,189,248,0.07) 0%, rgba(56,189,248,0.025) 40%, transparent 70%)',
+          filter: 'blur(70px)',
           transform: `translate(${cx.x * -18}px, ${cx.y * -12}px)`,
           transition: 'transform 0.8s cubic-bezier(0.16,1,0.3,1)',
           borderRadius: '50%',
         }}
       />
 
-      {/* Orb 2 — bottom right */}
+      {/* Orb 2 — purple bottom-right */}
       <motion.div
         animate={{ x: [0, -50, 30, 0], y: [0, 40, -20, 0] }}
         transition={{ duration: 35, repeat: Infinity, ease: 'easeInOut', delay: 4 }}
@@ -66,56 +63,57 @@ function DeepBackground({ cx }: { cx: { x: number; y: number } }) {
           position: 'absolute',
           bottom: '-25%', right: '-15%',
           width: '65vw', height: '65vw',
-          background: 'radial-gradient(ellipse at center, rgba(160,200,240,0.04) 0%, rgba(120,160,210,0.015) 45%, transparent 70%)',
-          filter: 'blur(80px)',
+          background: 'radial-gradient(ellipse at center, rgba(167,139,250,0.06) 0%, rgba(96,165,250,0.025) 45%, transparent 70%)',
+          filter: 'blur(90px)',
           transform: `translate(${cx.x * 14}px, ${cx.y * 10}px)`,
           transition: 'transform 0.8s cubic-bezier(0.16,1,0.3,1)',
           borderRadius: '50%',
         }}
       />
 
-      {/* Orb 3 — center, very faint */}
+      {/* Orb 3 — blue center, pulsing */}
       <motion.div
-        animate={{ scale: [1, 1.12, 0.95, 1], opacity: [0.4, 0.65, 0.4] }}
+        animate={{ scale: [1, 1.12, 0.95, 1], opacity: [0.3, 0.55, 0.3] }}
         transition={{ duration: 22, repeat: Infinity, ease: 'easeInOut', delay: 8 }}
         style={{
           position: 'absolute', top: '30%', left: '50%',
           transform: `translate(-50%, -50%) translate(${cx.x * -8}px, ${cx.y * -6}px)`,
           width: '50vw', height: '50vw',
-          background: 'radial-gradient(ellipse at center, rgba(180,210,255,0.022) 0%, transparent 65%)',
-          filter: 'blur(40px)',
+          background: 'radial-gradient(ellipse at center, rgba(96,165,250,0.04) 0%, transparent 65%)',
+          filter: 'blur(50px)',
           transition: 'transform 1.2s cubic-bezier(0.16,1,0.3,1)',
           borderRadius: '50%',
         }}
       />
 
-      {/* Fine square grid */}
-      <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.7 }}>
+      {/* Fine sci-fi grid — cyan tinted */}
+      <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.6 }}>
         <defs>
           <pattern id="sg" width="28" height="28" patternUnits="userSpaceOnUse">
-            <path d="M 28 0 L 0 0 0 28" fill="none" stroke="rgba(255,255,255,0.028)" strokeWidth="0.5"/>
+            <path d="M 28 0 L 0 0 0 28" fill="none" stroke="rgba(56,189,248,0.04)" strokeWidth="0.5"/>
           </pattern>
           <pattern id="lg" width="140" height="140" patternUnits="userSpaceOnUse">
-            <path d="M 140 0 L 0 0 0 140" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="0.5"/>
+            <path d="M 140 0 L 0 0 0 140" fill="none" stroke="rgba(56,189,248,0.07)" strokeWidth="0.5"/>
           </pattern>
         </defs>
         <rect width="100%" height="100%" fill="url(#sg)" />
         <rect width="100%" height="100%" fill="url(#lg)" />
       </svg>
 
-      {/* Slow scan line */}
+      {/* Slow neon scan line */}
       <motion.div
         animate={{ y: ['5vh', '95vh'] }}
-        transition={{ duration: 14, repeat: Infinity, ease: 'linear' }}
+        transition={{ duration: 16, repeat: Infinity, ease: 'linear' }}
         style={{
           position: 'absolute', left: 0, right: 0, height: '1px',
-          background: 'linear-gradient(to right, transparent 0%, rgba(180,210,240,0.05) 30%, rgba(180,210,240,0.09) 50%, rgba(180,210,240,0.05) 70%, transparent 100%)',
+          background: 'linear-gradient(to right, transparent 0%, rgba(56,189,248,0.08) 20%, rgba(56,189,248,0.18) 50%, rgba(56,189,248,0.08) 80%, transparent 100%)',
+          boxShadow: '0 0 8px rgba(56,189,248,0.12)',
         }}
       />
 
-      {/* Vertical accent lines */}
-      <div style={{ position: 'absolute', top: 0, bottom: 0, left: '18vw', width: '1px', background: 'linear-gradient(to bottom, transparent, rgba(255,255,255,0.04) 30%, rgba(255,255,255,0.04) 70%, transparent)' }} />
-      <div style={{ position: 'absolute', top: 0, bottom: 0, right: '18vw', width: '1px', background: 'linear-gradient(to bottom, transparent, rgba(255,255,255,0.03) 30%, rgba(255,255,255,0.03) 70%, transparent)' }} />
+      {/* Vertical neon accent lines */}
+      <div style={{ position: 'absolute', top: 0, bottom: 0, left: '18vw', width: '1px', background: 'linear-gradient(to bottom, transparent, rgba(56,189,248,0.06) 30%, rgba(56,189,248,0.06) 70%, transparent)' }} />
+      <div style={{ position: 'absolute', top: 0, bottom: 0, right: '18vw', width: '1px', background: 'linear-gradient(to bottom, transparent, rgba(167,139,250,0.05) 30%, rgba(167,139,250,0.05) 70%, transparent)' }} />
 
       {/* Noise grain overlay */}
       <div style={{
@@ -129,9 +127,15 @@ function DeepBackground({ cx }: { cx: { x: number; y: number } }) {
   );
 }
 
-// ── Glass card ────────────────────────────────────────────────────────
-function GlassChip({ value, label, delay }: { value: string; label: string; delay: number }) {
+// ── Stat chip — neon accent version ──────────────────────────────────
+function GlassChip({ value, label, delay, accent = 'cyan' }: { value: string; label: string; delay: number; accent?: 'cyan' | 'blue' | 'purple' }) {
   const [hov, setHov] = useState(false);
+  const colors = {
+    cyan:   { glow: 'rgba(56,189,248,0.18)', border: 'rgba(56,189,248,0.28)', text: '#38bdf8' },
+    blue:   { glow: 'rgba(96,165,250,0.18)', border: 'rgba(96,165,250,0.28)',  text: '#60a5fa' },
+    purple: { glow: 'rgba(167,139,250,0.18)', border: 'rgba(167,139,250,0.28)', text: '#a78bfa' },
+  };
+  const c = colors[accent];
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -141,22 +145,20 @@ function GlassChip({ value, label, delay }: { value: string; label: string; dela
       onHoverEnd={() => setHov(false)}
       style={{
         display: 'flex', flexDirection: 'column', alignItems: 'center',
-        padding: '16px 24px', borderRadius: '14px', minWidth: '100px',
-        background: hov ? 'rgba(255,255,255,0.045)' : 'rgba(255,255,255,0.02)',
-        border: `1px solid ${hov ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.06)'}`,
+        padding: '14px 22px', borderRadius: '14px', minWidth: '96px',
+        background: hov ? 'rgba(255,255,255,0.055)' : 'rgba(255,255,255,0.025)',
+        border: `1px solid ${hov ? c.border : 'rgba(255,255,255,0.07)'}`,
         backdropFilter: 'blur(20px)',
         WebkitBackdropFilter: 'blur(20px)',
-        boxShadow: hov
-          ? '0 8px 40px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.04), inset 0 1px 0 rgba(255,255,255,0.06)'
-          : '0 2px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.04)',
+        boxShadow: hov ? `0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.04), ${c.glow.replace('0.18', '0.25').replace('rgba', '0 0 20px rgba')}` : '0 2px 12px rgba(0,0,0,0.2)',
         transform: hov ? 'translateY(-3px)' : 'none',
-        transition: 'all 0.3s cubic-bezier(0.34,1.56,0.64,1)',
+        transition: 'all 0.28s cubic-bezier(0.34,1.56,0.64,1)',
         cursor: 'default',
       }}>
-      <span style={{ fontFamily: SERIF, fontSize: '1.75rem', color: hov ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.78)', lineHeight: 1.1, letterSpacing: '-0.02em' }}>
+      <span style={{ fontFamily: SERIF, fontSize: '1.6rem', color: hov ? c.text : 'rgba(255,255,255,0.82)', lineHeight: 1.1, letterSpacing: '-0.02em', textShadow: hov ? `0 0 16px ${c.text}80` : 'none', transition: 'all 0.28s' }}>
         {value}
       </span>
-      <span style={{ fontFamily: MONO, fontSize: '9px', color: 'rgba(255,255,255,0.22)', textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: '6px' }}>
+      <span style={{ fontFamily: MONO, fontSize: '8.5px', color: 'rgba(255,255,255,0.22)', textTransform: 'uppercase', letterSpacing: '0.12em', marginTop: '6px' }}>
         {label}
       </span>
     </motion.div>
@@ -198,30 +200,30 @@ export default function Hero() {
     }}>
       <DeepBackground cx={cursor} />
 
-      {/* ── Navbar ── */}
+      {/* ── Navbar — sci-fi edition ── */}
       <nav style={{
         position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '0 40px', height: '60px',
-        background: 'rgba(7,10,14,0.75)',
+        padding: '0 40px', height: '58px',
+        background: 'rgba(4,6,10,0.82)',
         backdropFilter: 'blur(28px)',
         WebkitBackdropFilter: 'blur(28px)',
-        borderBottom: '1px solid rgba(255,255,255,0.05)',
-        boxShadow: '0 1px 0 rgba(255,255,255,0.03)',
+        borderBottom: '1px solid rgba(56,189,248,0.1)',
+        boxShadow: '0 1px 0 rgba(56,189,248,0.04), 0 4px 24px rgba(0,0,0,0.3)',
         pointerEvents: 'auto',
       }}>
         {/* Logo */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div style={{
-            width: '28px', height: '28px', borderRadius: '16px',
-            background: 'rgba(255,255,255,0.05)',
-            border: '1px solid rgba(255,255,255,0.1)',
+            width: '28px', height: '28px', borderRadius: '8px',
+            background: 'linear-gradient(135deg, rgba(56,189,248,0.15) 0%, rgba(96,165,250,0.08) 100%)',
+            border: '1px solid rgba(56,189,248,0.28)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 0 12px rgba(180,210,240,0.08)',
+            boxShadow: '0 0 12px rgba(56,189,248,0.2), inset 0 1px 0 rgba(255,255,255,0.08)',
           }}>
-            <Dna size={13} style={{ color: 'rgba(255,255,255,0.6)' }} />
+            <Dna size={13} style={{ color: '#38bdf8' }} />
           </div>
-          <span style={{ fontFamily: SERIF, fontSize: '15px', color: 'rgba(255,255,255,0.82)', letterSpacing: '-0.01em' }}>
+          <span style={{ fontFamily: SERIF, fontSize: '15px', color: 'rgba(255,255,255,0.88)', letterSpacing: '-0.01em' }}>
             Nexus-Bio
           </span>
         </div>
@@ -230,43 +232,40 @@ export default function Hero() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
           {[['Visualize','demo'],['Search','search'],['Analyze','analyzer'],['Contact','contact']].map(([label, id]) => (
             <a key={id} href={`#${id}`} style={{
-              fontFamily: BODY, fontSize: '12px', fontWeight: 400,
+              fontFamily: BODY, fontSize: '12px', fontWeight: 500,
               color: 'rgba(255,255,255,0.32)',
-              textDecoration: 'none', letterSpacing: '0.03em',
+              textDecoration: 'none', letterSpacing: '0.04em',
               transition: 'color 0.2s',
             }}
-              onMouseEnter={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.78)')}
-              onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.32)')}>
+              onMouseEnter={e => { e.currentTarget.style.color = '#38bdf8'; }}
+              onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.32)'; }}>
               {label}
             </a>
           ))}
         </div>
 
-        {/* CTA */}
+        {/* CTA — neon outline button */}
         <a href="#analyzer" style={{
           display: 'flex', alignItems: 'center', gap: '6px',
-          padding: '7px 18px', borderRadius: '16px',
-          background: 'rgba(255,255,255,0.055)',
-          border: '1px solid rgba(255,255,255,0.09)',
-          backdropFilter: 'blur(12px)',
-          color: 'rgba(255,255,255,0.6)',
-          fontFamily: BODY, fontSize: '12px', fontWeight: 400,
-          textDecoration: 'none', transition: 'all 0.2s',
-          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06)',
+          padding: '7px 18px', borderRadius: '10px',
+          background: 'rgba(56,189,248,0.08)',
+          border: '1px solid rgba(56,189,248,0.28)',
+          color: '#38bdf8',
+          fontFamily: BODY, fontSize: '12px', fontWeight: 500,
+          textDecoration: 'none', transition: 'all 0.22s',
+          boxShadow: '0 0 12px rgba(56,189,248,0.1)',
         }}
           onMouseEnter={e => {
             const el = e.currentTarget as HTMLElement;
-            el.style.background = 'rgba(255,255,255,0.1)';
-            el.style.color = '#fff';
-            el.style.borderColor = 'rgba(255,255,255,0.16)';
-            el.style.boxShadow = '0 4px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.08)';
+            el.style.background = 'rgba(56,189,248,0.16)';
+            el.style.borderColor = 'rgba(56,189,248,0.5)';
+            el.style.boxShadow = '0 0 20px rgba(56,189,248,0.22)';
           }}
           onMouseLeave={e => {
             const el = e.currentTarget as HTMLElement;
-            el.style.background = 'rgba(255,255,255,0.055)';
-            el.style.color = 'rgba(255,255,255,0.6)';
-            el.style.borderColor = 'rgba(255,255,255,0.09)';
-            el.style.boxShadow = 'inset 0 1px 0 rgba(255,255,255,0.06)';
+            el.style.background = 'rgba(56,189,248,0.08)';
+            el.style.borderColor = 'rgba(56,189,248,0.28)';
+            el.style.boxShadow = '0 0 12px rgba(56,189,248,0.1)';
           }}>
           Try Now <ArrowRight size={11} />
         </a>
@@ -283,25 +282,25 @@ export default function Hero() {
         pointerEvents: 'auto',
       }}>
 
-        {/* Badge — glass pill */}
+        {/* Badge — neon pill */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, ease: [0.22,1,0.36,1] }}
           style={{
             display: 'inline-flex', alignItems: 'center', gap: '9px',
-            padding: '6px 18px', borderRadius: '100px', marginBottom: '40px',
-            background: 'rgba(255,255,255,0.03)',
-            border: '1px solid rgba(255,255,255,0.08)',
+            padding: '5px 16px', borderRadius: '100px', marginBottom: '40px',
+            background: 'rgba(56,189,248,0.06)',
+            border: '1px solid rgba(56,189,248,0.22)',
             backdropFilter: 'blur(16px)',
-            boxShadow: '0 2px 20px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05)',
+            boxShadow: '0 0 16px rgba(56,189,248,0.1)',
           }}>
           <motion.span
-            animate={{ opacity: [0.3, 1, 0.3] }}
-            transition={{ duration: 3, repeat: Infinity }}
-            style={{ width: '5px', height: '5px', borderRadius: '50%', background: 'rgba(180,215,245,0.6)', boxShadow: '0 0 6px rgba(180,215,245,0.4)', flexShrink: 0 }}
+            animate={{ opacity: [0.4, 1, 0.4] }}
+            transition={{ duration: 2.5, repeat: Infinity }}
+            style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#38bdf8', boxShadow: '0 0 8px rgba(56,189,248,0.8)', flexShrink: 0 }}
           />
-          <span style={{ fontFamily: BODY, fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', letterSpacing: '0.12em' }}>
+          <span style={{ fontFamily: BODY, fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', color: '#38bdf8', letterSpacing: '0.12em' }}>
             AI-Powered Bio Platform
           </span>
         </motion.div>
@@ -317,11 +316,11 @@ export default function Hero() {
             lineHeight: 1.0, letterSpacing: '-0.03em',
             color: 'rgba(255,255,255,0.95)',
             margin: '0 0 24px',
-            textShadow: '0 0 80px rgba(180,210,240,0.15)',
+            textShadow: '0 0 80px rgba(56,189,248,0.12)',
           }}>
           From Literature
           <br />
-          <span style={{ color: 'rgba(255,255,255,0.25)', fontStyle: 'normal' }}>
+          <span style={{ color: 'rgba(255,255,255,0.22)', fontStyle: 'normal' }}>
             to Mechanistic Insight
           </span>
         </motion.h1>
@@ -334,7 +333,7 @@ export default function Hero() {
           style={{
             fontFamily: BODY, fontSize: 'clamp(13px, 1.55vw, 15px)',
             fontWeight: 400, lineHeight: 1.9,
-            color: 'rgba(255,255,255,0.35)',
+            color: 'rgba(255,255,255,0.38)',
             maxWidth: '540px', margin: '0 auto 12px',
             letterSpacing: '0.01em',
           }}>
@@ -349,122 +348,121 @@ export default function Hero() {
           transition={{ duration: 0.6, delay: 0.3 }}
           style={{
             fontFamily: SERIF, fontStyle: 'normal', fontSize: '14px',
-            color: 'rgba(255,255,255,0.14)',
+            color: 'rgba(255,255,255,0.13)',
             margin: '0 0 60px', letterSpacing: '0.01em',
           }}>
           Built for researchers, biotech teams, and grant-stage startups.
         </motion.p>
 
-        {/* CTAs — glass buttons */}
+        {/* CTAs — sci-fi neon buttons */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.65, delay: 0.36 }}
           style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '72px' }}>
 
-          {/* Primary CTA */}
+          {/* Primary CTA — neon cyan */}
           <a href="#analyzer" style={{
             display: 'flex', alignItems: 'center', gap: '8px',
-            padding: '13px 28px', borderRadius: '20px',
-            background: '#ffffff', color: '#07090d',
+            padding: '12px 28px', borderRadius: '12px',
+            background: 'rgba(56,189,248,0.12)',
+            border: '1px solid rgba(56,189,248,0.4)',
+            color: '#38bdf8',
             fontFamily: BODY, fontSize: '13px', fontWeight: 600,
-            textDecoration: 'none', letterSpacing: '-0.01em',
-            boxShadow: '0 0 0 0 rgba(255,255,255,0)',
+            textDecoration: 'none', letterSpacing: '0.01em',
+            boxShadow: '0 0 20px rgba(56,189,248,0.15)',
             transition: 'all 0.25s cubic-bezier(0.34,1.56,0.64,1)',
           }}
             onMouseEnter={e => {
               const el = e.currentTarget as HTMLElement;
-              el.style.background = '#e8e8e8';
-              el.style.transform = 'translateY(-3px) scale(1.01)';
-              el.style.boxShadow = '0 8px 30px rgba(255,255,255,0.18), 0 0 0 1px rgba(255,255,255,0.1)';
+              el.style.background = 'rgba(56,189,248,0.2)';
+              el.style.borderColor = 'rgba(56,189,248,0.65)';
+              el.style.transform = 'translateY(-2px) scale(1.01)';
+              el.style.boxShadow = '0 0 32px rgba(56,189,248,0.3), 0 8px 24px rgba(0,0,0,0.3)';
             }}
             onMouseLeave={e => {
               const el = e.currentTarget as HTMLElement;
-              el.style.background = '#ffffff';
+              el.style.background = 'rgba(56,189,248,0.12)';
+              el.style.borderColor = 'rgba(56,189,248,0.4)';
               el.style.transform = 'none';
-              el.style.boxShadow = '0 0 0 0 rgba(255,255,255,0)';
+              el.style.boxShadow = '0 0 20px rgba(56,189,248,0.15)';
             }}>
             Analyze a Paper <ArrowRight size={13} />
           </a>
 
-          {/* Secondary CTA — glassmorphism */}
+          {/* Secondary CTA — glass */}
           <a href="#search" style={{
             display: 'flex', alignItems: 'center', gap: '8px',
-            padding: '13px 28px', borderRadius: '20px',
+            padding: '12px 28px', borderRadius: '12px',
             background: 'rgba(255,255,255,0.04)',
-            border: '1px solid rgba(255,255,255,0.09)',
+            border: '1px solid rgba(255,255,255,0.1)',
             backdropFilter: 'blur(16px)',
             color: 'rgba(255,255,255,0.45)',
             fontFamily: BODY, fontSize: '13px', fontWeight: 400,
             textDecoration: 'none',
-            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
             transition: 'all 0.22s ease',
           }}
             onMouseEnter={e => {
               const el = e.currentTarget as HTMLElement;
               el.style.background = 'rgba(255,255,255,0.08)';
               el.style.color = '#fff';
-              el.style.borderColor = 'rgba(255,255,255,0.16)';
+              el.style.borderColor = 'rgba(255,255,255,0.18)';
               el.style.transform = 'translateY(-2px)';
-              el.style.boxShadow = '0 6px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.07)';
+              el.style.boxShadow = '0 6px 24px rgba(0,0,0,0.3)';
             }}
             onMouseLeave={e => {
               const el = e.currentTarget as HTMLElement;
               el.style.background = 'rgba(255,255,255,0.04)';
               el.style.color = 'rgba(255,255,255,0.45)';
-              el.style.borderColor = 'rgba(255,255,255,0.09)';
+              el.style.borderColor = 'rgba(255,255,255,0.1)';
               el.style.transform = 'none';
-              el.style.boxShadow = 'inset 0 1px 0 rgba(255,255,255,0.05)';
+              el.style.boxShadow = 'none';
             }}>
             <BookOpen size={13} /> Browse Literature
           </a>
         </motion.div>
 
-        {/* Stats — glass chips with stagger */}
+        {/* Stats — neon accent chips */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '44px' }}>
           {[
-            { value: '6', label: 'Literature DBs', delay: 0.52 },
-            { value: '3D', label: 'Structures', delay: 0.6 },
-            { value: 'AI', label: 'Pathway Engine', delay: 0.68 },
-            { value: 'ODE', label: 'Kinetic Sim.', delay: 0.76 },
+            { value: '6', label: 'Literature DBs', delay: 0.52, accent: 'cyan' as const },
+            { value: '3D', label: 'Structures', delay: 0.6, accent: 'blue' as const },
+            { value: 'AI', label: 'Pathway Engine', delay: 0.68, accent: 'purple' as const },
+            { value: 'ODE', label: 'Kinetic Sim.', delay: 0.76, accent: 'cyan' as const },
           ].map(s => <GlassChip key={s.value} {...s} />)}
         </div>
 
-        {/* Feature tags */}
+        {/* Feature tags — neon pill chips */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.7, delay: 0.85 }}
           style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
           {[
-            { icon: <Dna size={10} />, label: 'AlphaFold pLDDT' },
-            { icon: <Microscope size={10} />, label: 'PubChem 3D Conformers' },
-            { icon: <BookOpen size={10} />, label: 'Evidence Trace' },
+            { icon: <Dna size={10} />, label: 'AlphaFold pLDDT', color: 'rgba(56,189,248,0.22)' },
+            { icon: <Microscope size={10} />, label: 'PubChem 3D Conformers', color: 'rgba(96,165,250,0.22)' },
+            { icon: <BookOpen size={10} />, label: 'Evidence Trace', color: 'rgba(167,139,250,0.22)' },
           ].map((f, i) => (
             <div key={i} style={{
               display: 'flex', alignItems: 'center', gap: '6px',
               padding: '5px 13px', borderRadius: '100px',
-              background: 'rgba(255,255,255,0.022)',
-              border: '1px solid rgba(255,255,255,0.06)',
-              backdropFilter: 'blur(8px)',
-              color: 'rgba(255,255,255,0.2)',
+              background: 'rgba(255,255,255,0.025)',
+              border: `1px solid ${f.color}`,
+              color: 'rgba(255,255,255,0.28)',
               fontFamily: MONO, fontSize: '10px',
               letterSpacing: '0.02em',
-              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.03)',
-              transition: 'all 0.2s',
+              transition: 'all 0.22s',
               cursor: 'default',
             }}
               onMouseEnter={e => {
                 const el = e.currentTarget as HTMLElement;
-                el.style.color = 'rgba(255,255,255,0.55)';
-                el.style.borderColor = 'rgba(255,255,255,0.12)';
-                el.style.background = 'rgba(255,255,255,0.05)';
+                el.style.color = 'rgba(255,255,255,0.65)';
+                el.style.background = 'rgba(255,255,255,0.055)';
               }}
               onMouseLeave={e => {
                 const el = e.currentTarget as HTMLElement;
-                el.style.color = 'rgba(255,255,255,0.2)';
-                el.style.borderColor = 'rgba(255,255,255,0.06)';
-                el.style.background = 'rgba(255,255,255,0.022)';
+                el.style.color = 'rgba(255,255,255,0.28)';
+                el.style.background = 'rgba(255,255,255,0.025)';
               }}>
               {f.icon} {f.label}
             </div>
@@ -475,7 +473,7 @@ export default function Hero() {
       {/* Bottom vignette */}
       <div style={{
         position: 'absolute', bottom: 0, left: 0, right: 0, height: '180px',
-        background: 'linear-gradient(to bottom, transparent, rgba(7,10,14,0.95))',
+        background: 'linear-gradient(to bottom, transparent, rgba(4,6,10,0.98))',
         pointerEvents: 'none',
       }} />
     </header>
