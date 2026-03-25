@@ -5,7 +5,7 @@ import { useRef, useEffect, useState, useCallback } from 'react';
 // ── Typography system ─────────────────────────────────────────────────
 const SERIF = "'DM Serif Display', Georgia, 'Times New Roman', serif";
 const BODY  = "'Public Sans', -apple-system, sans-serif";
-// MONO unused
+const MONO  = "'JetBrains Mono', 'Fira Code', 'Consolas', 'Courier New', monospace";
 
 // ── Font loader ───────────────────────────────────────────────────────
 function useFonts() {
