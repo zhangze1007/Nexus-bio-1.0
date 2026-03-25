@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, Html, Line } from '@react-three/drei';
 import * as THREE from 'three';
 import { PathwayNode, PathwayEdge, MolecularStructure } from '../types';
@@ -385,6 +385,32 @@ function Scene({ nodes, edges, onNodeClick, selectedNodeId }: {
   );
 }
 
+// ─── Resize handler — explicit window resize fallback ──────────────────
+function ResizeHandler() {
+  const { gl, camera } = useThree();
+
+  useEffect(() => {
+    const handleResize = () => {
+      const parent = gl.domElement.parentElement;
+      if (!parent) return;
+      const width = parent.clientWidth;
+      const height = parent.clientHeight;
+
+      gl.setSize(width, height, false);
+
+      if (camera instanceof THREE.PerspectiveCamera) {
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [camera, gl]);
+
+  return null;
+}
+
 // ─── Defaults ─────────────────────────────────────────────────────────
 const DEF_EDGES: PathwayEdge[] = [
   { start:'acetyl_coa', end:'hmg_coa', relationshipType:'converts', direction:'forward' },
@@ -439,8 +465,12 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId }
 
       <Canvas
         camera={{ position: [0, 5, 15], fov: 44 }}
+        resize={{ scroll: true, debounce: { scroll: 50, resize: 0 } }}
         gl={async (props) => {
           const canvas = props.canvas as HTMLCanvasElement;
+          const parent = canvas.parentElement;
+          const width = parent?.clientWidth ?? canvas.width;
+          const height = parent?.clientHeight ?? canvas.height;
 
           // Attempt WebGPU when the browser supports it
           if (typeof navigator !== 'undefined' && 'gpu' in navigator) {
@@ -458,6 +488,7 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId }
                     alpha: false,
                   } as ConstructorParameters<typeof WebGPURenderer>[0]);
                   await renderer.init();
+                  renderer.setSize(width, height, false);
                   renderer.toneMapping = THREE.LinearToneMapping;
                   renderer.toneMappingExposure = 1.0;
                   return renderer;
@@ -475,6 +506,7 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId }
             powerPreference: 'high-performance',
             alpha: false,
           });
+          renderer.setSize(width, height, false);
           renderer.toneMapping = THREE.LinearToneMapping;
           renderer.toneMappingExposure = 1.0;
           return renderer;
@@ -484,6 +516,7 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId }
         onCreated={({ gl }) => { gl.setClearColor(new THREE.Color('#07090f'), 1); }}
         style={{ background: 'transparent' }}
       >
+        <ResizeHandler />
         <Scene nodes={nodes} edges={edges ?? DEF_EDGES} onNodeClick={onNodeClick} selectedNodeId={selectedNodeId ?? null} />
       </Canvas>
     </div>

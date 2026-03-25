@@ -5,6 +5,14 @@
 dist/
 build/
 .next/
+*.tsbuildinfo
+
+# Cache
+.cache/
+.vercel/
+
+# Test coverage
+coverage/
 
 # IDE / Editor
 .vscode/
