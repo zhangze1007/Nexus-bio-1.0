@@ -1,20 +1,35 @@
-@import url("https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Public+Sans:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap");
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* ── Google AI Studio inspired design system ── */
+/* ── Futuristic Sci-Fi Design System ── */
 :root {
-  --bg-base: #070a0e;
+  --bg-base: #060810;
   --bg-surface: rgba(255, 255, 255, 0.02);
   --bg-elevated: rgba(255, 255, 255, 0.04);
-  --border: rgba(255, 255, 255, 0.06);
-  --border-hover: rgba(255, 255, 255, 0.12);
+  --border: rgba(255, 255, 255, 0.07);
+  --border-hover: rgba(255, 255, 255, 0.14);
   --text-primary: rgba(255, 255, 255, 0.92);
   --text-secondary: rgba(255, 255, 255, 0.65);
   --text-muted: rgba(255, 255, 255, 0.4);
   --white: #ffffff;
+
+  /* Neon accent palette */
+  --neon-cyan: #00d4ff;
+  --neon-blue: #3b82f6;
+  --neon-purple: #8b5cf6;
+  --neon-teal: #06b6d4;
+
+  /* Glow layers */
+  --glow-cyan: rgba(0, 212, 255, 0.12);
+  --glow-blue: rgba(59, 130, 246, 0.12);
+  --glow-purple: rgba(139, 92, 246, 0.12);
+
+  /* Neon border */
+  --border-neon: rgba(0, 212, 255, 0.22);
+  --border-neon-subtle: rgba(0, 212, 255, 0.10);
 }
 
 * {
@@ -35,25 +50,30 @@ body {
   min-height: 100vh;
 }
 
-/* ── Noise texture & grid ── */
+/* ── Deep space background ── */
 body::before {
   content: "";
   position: fixed;
   inset: 0;
   z-index: -2;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
-  background-size: 128px;
+  background:
+    radial-gradient(ellipse 80% 50% at 20% 10%, rgba(0, 212, 255, 0.04) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 90%, rgba(139, 92, 246, 0.04) 0%, transparent 60%),
+    radial-gradient(ellipse 100% 60% at 50% 50%, rgba(59, 130, 246, 0.025) 0%, transparent 70%),
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+  background-size: auto, auto, auto, 128px;
   pointer-events: none;
 }
 
+/* ── Grid overlay ── */
 body::after {
   content: "";
   position: fixed;
   inset: 0;
   z-index: -1;
   background-image:
-    linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+    linear-gradient(to right, rgba(0, 212, 255, 0.018) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 212, 255, 0.018) 1px, transparent 1px);
   background-size: 64px 64px;
   mask-image: radial-gradient(circle at center, black 40%, transparent 80%);
   -webkit-mask-image: radial-gradient(circle at center, black 40%, transparent 80%);
@@ -74,9 +94,9 @@ h4,
   letter-spacing: -0.01em;
 }
 
-/* ── Scrollbar ── */
+/* ── Neon scrollbar ── */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 4px;
 }
 
 ::-webkit-scrollbar-track {
@@ -84,17 +104,24 @@ h4,
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 3px;
+  background: rgba(0, 212, 255, 0.2);
+  border-radius: 2px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(0, 212, 255, 0.4);
 }
 
 /* ── Selection ── */
 ::selection {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(0, 212, 255, 0.18);
+  color: rgba(255, 255, 255, 0.95);
+}
+
+/* ── Focus ring ── */
+*:focus-visible {
+  outline: 1px solid rgba(0, 212, 255, 0.5);
+  outline-offset: 2px;
 }
 
 /* ── Surface cards ── */
@@ -113,8 +140,32 @@ h4,
   border-top: 1px solid var(--border);
 }
 
-/* ── Focus ring ── */
-*:focus-visible {
-  outline: 1px solid rgba(255, 255, 255, 0.4);
-  outline-offset: 2px;
+/* ── Neon glow utilities ── */
+.neon-glow-cyan {
+  box-shadow: 0 0 20px rgba(0, 212, 255, 0.15), 0 0 40px rgba(0, 212, 255, 0.06);
+}
+
+.neon-glow-purple {
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.15), 0 0 40px rgba(139, 92, 246, 0.06);
+}
+
+.neon-text-cyan {
+  color: var(--neon-cyan);
+  text-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
+}
+
+/* ── Scan-line animation ── */
+@keyframes scanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+
+@keyframes neon-pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+@keyframes hud-blink {
+  0%, 90%, 100% { opacity: 1; }
+  95% { opacity: 0.3; }
 }

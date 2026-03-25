@@ -1,16 +1,18 @@
 /* ═══════════════════════════════════════════════════════════════
-   NEXUS-BIO DESIGN SYSTEM
+   NEXUS-BIO DESIGN SYSTEM — FUTURISTIC SCI-FI EDITION
    Fonts: DM Serif Display (headings) + Public Sans (body/data)
+         + JetBrains Mono (monospace/HUD data)
    ═══════════════════════════════════════════════════════════════ */
 
 /* Font imports */
-@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Public+Sans:ital,wght@0,100..900;1,100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Public+Sans:ital,wght@0,100..900;1,100..900&family=JetBrains+Mono:wght@400;500&display=swap');
 
 /* ── CSS Variables ─────────────────────────────────────────── */
 :root {
   /* Typography */
   --font-serif:  'DM Serif Display', Georgia, 'Times New Roman', serif;
   --font-body:   'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono:   'JetBrains Mono', 'Fira Code', 'Consolas', 'Courier New', monospace;
 
   /* Spacing */
   --radius-sm:   8px;
@@ -19,9 +21,9 @@
   --radius-xl:   28px;
 
   /* Dark mode (default) */
-  --bg-base:     #070a0e;
-  --bg-surface:  #0e1117;
-  --bg-elevated: #141820;
+  --bg-base:     #060810;
+  --bg-surface:  #0d1018;
+  --bg-elevated: #131620;
   --border:      rgba(255,255,255,0.07);
   --border-hover:rgba(255,255,255,0.16);
   --text-primary:rgba(255,255,255,0.92);
@@ -30,13 +32,29 @@
   --text-faint:  rgba(255,255,255,0.12);
 
   /* Glassmorphism */
-  --glass-bg:    rgba(14,17,23,0.72);
+  --glass-bg:    rgba(13,16,24,0.72);
   --glass-blur:  blur(24px);
-  --glass-border:rgba(255,255,255,0.09);
+  --glass-border:rgba(255,255,255,0.08);
 
-  /* Accent */
+  /* Legacy accent (kept for compatibility) */
   --accent:      #C8D8E8;
   --accent-dim:  rgba(200,216,232,0.18);
+
+  /* Neon accent palette */
+  --neon-cyan:   #00d4ff;
+  --neon-blue:   #3b82f6;
+  --neon-purple: #8b5cf6;
+  --neon-teal:   #06b6d4;
+
+  /* Glow layers */
+  --glow-cyan:   rgba(0, 212, 255, 0.12);
+  --glow-blue:   rgba(59, 130, 246, 0.12);
+  --glow-purple: rgba(139, 92, 246, 0.12);
+
+  /* Neon borders */
+  --border-neon:        rgba(0, 212, 255, 0.22);
+  --border-neon-subtle: rgba(0, 212, 255, 0.10);
+  --border-purple:      rgba(139, 92, 246, 0.22);
 }
 
 /* Light mode */
@@ -55,6 +73,11 @@
     --glass-border:rgba(0,0,0,0.07);
     --accent:      #2a5f8f;
     --accent-dim:  rgba(42,95,143,0.12);
+    --neon-cyan:   #0099cc;
+    --neon-blue:   #2563eb;
+    --neon-purple: #7c3aed;
+    --glow-cyan:   rgba(0, 153, 204, 0.1);
+    --border-neon: rgba(0, 153, 204, 0.22);
   }
 }
 
@@ -78,6 +101,7 @@ body {
 /* ── Typography helpers ────────────────────────────────────── */
 .serif   { font-family: var(--font-serif); }
 .body    { font-family: var(--font-body); }
+.mono    { font-family: var(--font-mono); }
 
 /* Public Sans tabular figures for all data/numbers */
 .data, .tnum, [data-tnum] {
@@ -97,6 +121,17 @@ body {
   color: var(--text-tertiary);
 }
 
+/* HUD label — monospace, neon */
+.hud-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  color: var(--neon-cyan);
+  opacity: 0.7;
+}
+
 /* ── Glassmorphism card ────────────────────────────────────── */
 .glass {
   background:    var(--glass-bg);
@@ -104,6 +139,25 @@ body {
   -webkit-backdrop-filter: var(--glass-blur);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
+}
+
+/* ── Neon glass card ───────────────────────────────────────── */
+.glass-neon {
+  background:    var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--border-neon-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.04);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.glass-neon:hover {
+  border-color: var(--border-neon);
+  box-shadow:
+    0 0 20px var(--glow-cyan),
+    0 8px 32px rgba(0,0,0,0.4),
+    inset 0 1px 0 rgba(255,255,255,0.06);
 }
 
 /* ── Bento Grid ────────────────────────────────────────────── */
@@ -124,13 +178,34 @@ body {
 }
 
 /* ── Scrollbar ─────────────────────────────────────────────── */
-::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+::-webkit-scrollbar-thumb { background: rgba(0,212,255,0.2); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(0,212,255,0.4); }
 
 /* ── Selection ─────────────────────────────────────────────── */
-::selection { background: var(--accent-dim); color: var(--text-primary); }
+::selection { background: rgba(0,212,255,0.18); color: var(--text-primary); }
+
+/* ── Focus ring ────────────────────────────────────────────── */
+*:focus-visible {
+  outline: 1px solid rgba(0, 212, 255, 0.5);
+  outline-offset: 2px;
+}
+
+/* ── Neon utility classes ──────────────────────────────────── */
+.neon-border-cyan {
+  border-color: var(--border-neon) !important;
+  box-shadow: 0 0 16px var(--glow-cyan);
+}
+
+.neon-text {
+  color: var(--neon-cyan);
+  text-shadow: 0 0 20px rgba(0,212,255,0.35);
+}
 
 /* ── Animations ────────────────────────────────────────────── */
-@keyframes pulse { 0%,100%{opacity:0.4} 50%{opacity:1} }
-@keyframes spin  { to { transform: rotate(360deg); } }
+@keyframes pulse          { 0%,100%{opacity:0.4} 50%{opacity:1} }
+@keyframes spin           { to { transform: rotate(360deg); } }
+@keyframes neon-pulse     { 0%,100%{opacity:0.5; box-shadow:0 0 8px rgba(0,212,255,0.2)} 50%{opacity:1; box-shadow:0 0 18px rgba(0,212,255,0.45)} }
+@keyframes scan-horizontal{ from{transform:translateY(-100%)} to{transform:translateY(100vh)} }
+@keyframes hud-blink      { 0%,89%,100%{opacity:1} 90%,94%{opacity:0.2} }
