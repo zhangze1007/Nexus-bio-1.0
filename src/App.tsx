@@ -100,12 +100,16 @@ export default function App() {
     setSelectedNode(null);
   };
 
-  const activeNodes = aiNodes ?? (pathwayData as PathwayNode[]);
-  const activeEdges = aiEdges ?? DEFAULT_EDGES;
+  const activeNodes = Array.isArray(aiNodes)
+    ? aiNodes
+    : (Array.isArray(pathwayData) ? pathwayData as PathwayNode[] : []);
+  const activeEdges = Array.isArray(aiEdges) ? aiEdges : DEFAULT_EDGES;
 
-  const avgConf = Math.round(
-    activeNodes.reduce((acc, n) => acc + (n.confidenceScore ?? 0.78), 0) / activeNodes.length * 100
-  );
+  const avgConf = activeNodes.length > 0
+    ? Math.round(
+        activeNodes.reduce((acc, n) => acc + (n.confidenceScore ?? 0.78), 0) / activeNodes.length * 100
+      )
+    : 0;
 
   return (
     <main style={{ background: 'var(--bg-base, #070a0e)', minHeight: '100vh', color: 'var(--text-primary, rgba(255,255,255,0.92))' }}>

@@ -5,6 +5,94 @@ import * as THREE from 'three';
 import { PathwayNode, PathwayEdge, MolecularStructure } from '../types';
 
 type Vec3 = [number, number, number];
+type RendererMode = 'loading' | 'webgpu' | 'webgl2' | 'webgl' | 'error';
+
+const INIT_TIMEOUT_MS = 4500;
+
+function withTimeout<T>(promise: Promise<T>, label: string, timeoutMs = INIT_TIMEOUT_MS): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = window.setTimeout(() => reject(new Error(`${label} timed out.`)), timeoutMs);
+    promise.then(
+      value => {
+        window.clearTimeout(timer);
+        resolve(value);
+      },
+      error => {
+        window.clearTimeout(timer);
+        reject(error);
+      },
+    );
+  });
+}
+
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value);
+}
+
+function isVec3(value: unknown): value is Vec3 {
+  return Array.isArray(value) && value.length === 3 && value.every(isFiniteNumber);
+}
+
+function isRenderableNode(node: PathwayNode | null | undefined): node is PathwayNode {
+  return !!node &&
+    typeof node.id === 'string' &&
+    node.id.length > 0 &&
+    typeof node.label === 'string' &&
+    node.label.length > 0 &&
+    isVec3(node.position);
+}
+
+function getRendererLabel(mode: RendererMode): string | null {
+  switch (mode) {
+    case 'loading': return 'INITIALIZING';
+    case 'webgl2': return 'WEBGL2 FALLBACK';
+    case 'webgl': return 'WEBGL FALLBACK';
+    case 'error': return 'RENDERER ERROR';
+    default: return null;
+  }
+}
+
+function getRendererTone(mode: RendererMode): React.CSSProperties {
+  if (mode === 'error') {
+    return {
+      color: 'rgba(255,186,186,0.92)',
+      border: '1px solid rgba(255,120,120,0.22)',
+      background: 'rgba(48,12,16,0.55)',
+    };
+  }
+  if (mode === 'loading') {
+    return {
+      color: 'rgba(232,240,248,0.82)',
+      border: '1px solid rgba(200,216,232,0.18)',
+      background: 'rgba(9,12,18,0.55)',
+    };
+  }
+  return {
+    color: 'rgba(200,216,232,0.78)',
+    border: '1px solid rgba(200,216,232,0.18)',
+    background: 'rgba(9,12,18,0.55)',
+  };
+}
+
+class SceneErrorBoundary extends React.Component<
+  { onError: (error: Error) => void; children: React.ReactNode },
+  { hasError: boolean }
+> {
+  state = { hasError: false };
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error) {
+    this.props.onError(error);
+  }
+
+  render() {
+    if (this.state.hasError) return null;
+    return this.props.children;
+  }
+}
 
 // ─── Hash ─────────────────────────────────────────────────────────────
 function hash(str: string): number {
@@ -426,6 +514,47 @@ const DEF_EDGES: PathwayEdge[] = [
 interface Props { nodes:PathwayNode[]; onNodeClick:(node:PathwayNode)=>void; edges?:PathwayEdge[]; selectedNodeId?:string|null; }
 
 export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId }: Props) {
+  const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [rendererMode, setRendererMode] = useState<RendererMode>('loading');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
+
+  const setRenderState = useCallback((nextStatus: 'loading' | 'ready' | 'error', mode: RendererMode, message?: string) => {
+    if (!mountedRef.current) return;
+    setStatus(nextStatus);
+    setRendererMode(mode);
+    setErrorMessage(message ?? null);
+  }, []);
+
+  const safeNodes = useMemo(() => Array.isArray(nodes) ? nodes.filter(isRenderableNode) : [], [nodes]);
+  const safeNodeIds = useMemo(() => new Set(safeNodes.map(node => node.id)), [safeNodes]);
+  const safeEdges = useMemo(() => {
+    const sourceEdges = Array.isArray(edges) ? edges : DEF_EDGES;
+    return sourceEdges.filter((edge): edge is PathwayEdge =>
+      !!edge &&
+      typeof edge.start === 'string' &&
+      typeof edge.end === 'string' &&
+      safeNodeIds.has(edge.start) &&
+      safeNodeIds.has(edge.end),
+    );
+  }, [edges, safeNodeIds]);
+  const hasRenderableContent = safeNodes.length > 0;
+  const fallbackLabel = getRendererLabel(rendererMode);
+
+  useEffect(() => {
+    if (!hasRenderableContent) {
+      setRenderState('error', 'error', 'Pathway data is unavailable or incomplete, so the visualization could not be rendered.');
+      return;
+    }
+
+    setRenderState('loading', 'loading');
+  }, [hasRenderableContent, safeEdges.length, safeNodes.length, setRenderState]);
+
   return (
     <div style={{
       width: '100%', height: 'clamp(500px, 65vh, 760px)',
@@ -448,6 +577,19 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId }
           </span>
         </div>
         <div style={{ display:'flex', alignItems:'center', gap:'8px' }}>
+          {fallbackLabel && (
+            <span style={{
+              ...getRendererTone(rendererMode),
+              fontSize:'9px',
+              fontFamily:"'Public Sans',sans-serif",
+              padding:'2px 8px',
+              borderRadius:'99px',
+              letterSpacing:'0.04em',
+              fontWeight:700,
+            }}>
+              {fallbackLabel}
+            </span>
+          )}
           {edges && <span style={{ color:'rgba(200,216,232,0.40)', fontSize:'9px', fontFamily:"'Public Sans',sans-serif", padding:'2px 8px', border:'1px solid rgba(200,216,232,0.14)', borderRadius:'99px' }}>AI GENERATED</span>}
           <span style={{ color:'rgba(255,255,255,0.10)', fontSize:'9px', fontFamily:"'Public Sans',sans-serif" }}>drag · scroll · click</span>
         </div>
@@ -464,61 +606,127 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId }
         ))}
       </div>
 
-      <Canvas
-        camera={{ position: [0, 5, 15], fov: 44 }}
-        gl={async (props) => {
-          const canvas = props.canvas as HTMLCanvasElement;
-          const parent = canvas.parentElement;
-          const width = parent?.clientWidth ?? canvas.width;
-          const height = parent?.clientHeight ?? canvas.height;
+      {status !== 'ready' && (
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '48px 24px 40px',
+          background: status === 'error' ? 'linear-gradient(180deg, rgba(14,10,14,0.92), rgba(11,14,24,0.94))' : 'linear-gradient(180deg, rgba(7,9,16,0.72), rgba(7,9,16,0.36))',
+          backdropFilter: 'blur(14px)',
+          zIndex: 6,
+        }}>
+          <div style={{
+            width: 'min(420px, 100%)',
+            padding: '20px 22px',
+            borderRadius: '20px',
+            border: status === 'error' ? '1px solid rgba(255,120,120,0.18)' : '1px solid rgba(200,216,232,0.12)',
+            background: status === 'error' ? 'rgba(32,11,16,0.76)' : 'rgba(9,12,18,0.76)',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.28)',
+          }}>
+            <p style={{ margin: '0 0 8px', color: status === 'error' ? 'rgba(255,196,196,0.92)' : 'rgba(220,232,242,0.92)', fontSize: '11px', fontFamily:"'Public Sans',sans-serif", fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+              {status === 'error' ? 'Atomic Pathway unavailable' : 'Loading Atomic Pathway'}
+            </p>
+            <p style={{ margin: 0, color: status === 'error' ? 'rgba(255,214,214,0.78)' : 'rgba(200,216,232,0.62)', fontSize: '13px', lineHeight: 1.6, fontFamily:"'Public Sans',sans-serif" }}>
+              {errorMessage ?? 'Initializing the molecular scene and selecting the best available renderer for this device.'}
+            </p>
+          </div>
+        </div>
+      )}
 
-          // Attempt WebGPU when the browser supports it
-          if (typeof navigator !== 'undefined' && 'gpu' in navigator) {
-            try {
-              const gpu = (navigator as Navigator & { gpu: GPU }).gpu;
-              const adapter = await gpu.requestAdapter();
-              if (adapter) {
-                const device = await adapter.requestDevice();
-                if (device) {
-                  const { WebGPURenderer } = await import('three/webgpu');
-                  const renderer = new WebGPURenderer({
-                    canvas,
-                    antialias: true,
-                    powerPreference: 'high-performance',
-                    alpha: false,
-                  } as ConstructorParameters<typeof WebGPURenderer>[0]);
-                  await renderer.init();
-                  renderer.setSize(width, height, false);
-                  renderer.toneMapping = THREE.LinearToneMapping;
-                  renderer.toneMappingExposure = 1.0;
-                  return renderer;
+      {hasRenderableContent && (
+        <SceneErrorBoundary onError={(error) => {
+          console.error('Atomic Pathway render error:', error);
+          setRenderState('error', 'error', 'The molecular scene encountered an unexpected rendering error.');
+        }}>
+          <Canvas
+            camera={{ position: [0, 5, 15], fov: 44 }}
+            gl={async (props) => {
+              const canvas = props.canvas as HTMLCanvasElement;
+              const parent = canvas.parentElement;
+              const width = parent?.clientWidth ?? canvas.width;
+              const height = parent?.clientHeight ?? canvas.height;
+
+              const applyRendererDefaults = <TRenderer extends THREE.WebGLRenderer | { setSize: (w: number, h: number, updateStyle?: boolean) => void; toneMapping: THREE.ToneMapping; toneMappingExposure: number; setClearColor: (color: THREE.ColorRepresentation, alpha?: number) => void; }>(renderer: TRenderer) => {
+                renderer.setSize(width, height, false);
+                renderer.toneMapping = THREE.LinearToneMapping;
+                renderer.toneMappingExposure = 1.0;
+                renderer.setClearColor(new THREE.Color('#07090f'), 1);
+                return renderer;
+              };
+
+              const createWebGLRenderer = (context: WebGL2RenderingContext | WebGLRenderingContext, mode: 'webgl2' | 'webgl') => {
+                const renderer = applyRendererDefaults(new THREE.WebGLRenderer({
+                  canvas,
+                  context,
+                  antialias: true,
+                  powerPreference: 'high-performance',
+                  alpha: false,
+                }));
+                setRenderState('ready', mode);
+                return renderer;
+              };
+
+              setRenderState('loading', 'loading');
+
+              if (typeof navigator !== 'undefined' && 'gpu' in navigator) {
+                try {
+                  const gpu = (navigator as Navigator & { gpu: GPU }).gpu;
+                  const adapter = await withTimeout(gpu.requestAdapter(), 'Requesting a WebGPU adapter');
+                  if (adapter) {
+                    await withTimeout(adapter.requestDevice(), 'Requesting a WebGPU device');
+                    const { WebGPURenderer } = await withTimeout(import('three/webgpu'), 'Loading the WebGPU renderer');
+                    const renderer = applyRendererDefaults(new WebGPURenderer({
+                      canvas,
+                      antialias: true,
+                      powerPreference: 'high-performance',
+                      alpha: false,
+                    } as ConstructorParameters<typeof WebGPURenderer>[0]));
+                    await withTimeout(renderer.init(), 'Initializing WebGPU');
+                    setRenderState('ready', 'webgpu');
+                    return renderer;
+                  }
+                } catch (error) {
+                  console.warn('WebGPU initialization failed, falling back to WebGL2.', error);
                 }
               }
-            } catch (e) {
-              console.debug('WebGPU unavailable, falling back to WebGL:', e);
-            }
-          }
 
-          // Fallback: standard WebGL renderer
-          const renderer = new THREE.WebGLRenderer({
-            canvas,
-            antialias: true,
-            powerPreference: 'high-performance',
-            alpha: false,
-          });
-          renderer.setSize(width, height, false);
-          renderer.toneMapping = THREE.LinearToneMapping;
-          renderer.toneMappingExposure = 1.0;
-          return renderer;
-        }}
-        dpr={[1, 1.5]}
-        performance={{ min: 0.5 }}
-        onCreated={({ gl }) => { gl.setClearColor(new THREE.Color('#07090f'), 1); }}
-        style={{ background: 'transparent' }}
-      >
-        <ResizeHandler />
-        <Scene nodes={nodes} edges={edges ?? DEF_EDGES} onNodeClick={onNodeClick} selectedNodeId={selectedNodeId ?? null} />
-      </Canvas>
+              const webgl2 = canvas.getContext('webgl2', {
+                antialias: true,
+                powerPreference: 'high-performance',
+                alpha: false,
+              });
+              if (webgl2) return createWebGLRenderer(webgl2, 'webgl2');
+
+              const webgl = canvas.getContext('webgl', {
+                antialias: true,
+                powerPreference: 'high-performance',
+                alpha: false,
+              }) || canvas.getContext('experimental-webgl', {
+                antialias: true,
+                powerPreference: 'high-performance',
+                alpha: false,
+              });
+              if (webgl) return createWebGLRenderer(webgl as WebGLRenderingContext, 'webgl');
+
+              const message = 'WebGPU and WebGL are unavailable in this browser session. Please check graphics acceleration and try again.';
+              setRenderState('error', 'error', message);
+              throw new Error(message);
+            }}
+            dpr={[1, 1.5]}
+            performance={{ min: 0.5 }}
+            onCreated={({ gl }) => {
+              gl.setClearColor(new THREE.Color('#07090f'), 1);
+            }}
+            style={{ background: 'transparent' }}
+          >
+            <ResizeHandler />
+            <Scene nodes={safeNodes} edges={safeEdges} onNodeClick={onNodeClick} selectedNodeId={selectedNodeId ?? null} />
+          </Canvas>
+        </SceneErrorBoundary>
+      )}
     </div>
   );
 }
