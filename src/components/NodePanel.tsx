@@ -60,15 +60,28 @@ function lookupRCSB(label: string) {
 }
 declare global { interface Window { $3Dmol: any; } }
 
+const THREEDMOL_CDNS = [
+  'https://cdnjs.cloudflare.com/ajax/libs/3Dmol/2.5.3/3Dmol-min.js',
+  'https://3Dmol.org/build/3Dmol-min.js',
+];
+
 function load3Dmol(): Promise<void> {
-  return new Promise((resolve, reject) => {
-    if (window.$3Dmol) { resolve(); return; }
-    const s = document.createElement('script');
-    s.src = 'https://3Dmol.org/build/3Dmol-min.js';
-    s.onload = () => resolve();
-    s.onerror = () => reject();
-    document.head.appendChild(s);
-  });
+  if (window.$3Dmol) return Promise.resolve();
+
+  return THREEDMOL_CDNS.reduce<Promise<void>>(
+    (chain, url) =>
+      chain.catch(
+        () =>
+          new Promise<void>((resolve, reject) => {
+            const s = document.createElement('script');
+            s.src = url;
+            s.onload = () => (window.$3Dmol ? resolve() : reject(new Error('3Dmol not defined')));
+            s.onerror = () => reject(new Error(`Failed to load ${url}`));
+            document.head.appendChild(s);
+          }),
+      ),
+    Promise.reject<void>(),
+  );
 }
 
 function ProteinViewer({ pdbId, alphafoldId, label }: { pdbId: string; alphafoldId?: string; label: string }) {
@@ -103,18 +116,18 @@ function ProteinViewer({ pdbId, alphafoldId, label }: { pdbId: string; alphafold
             cartoon: {
               colorfunc: (atom: any) => {
                 const b = atom.b;
-                if (b >= 90) return '#0053D6';
-                if (b >= 70) return '#65CBF3';
-                if (b >= 50) return '#FFDB13';
-                return '#FF7D45';
+                if (b >= 90) return 0x0053D6;
+                if (b >= 70) return 0x65CBF3;
+                if (b >= 50) return 0xFFDB13;
+                return 0xFF7D45;
               },
               thickness: 0.5,
             }
           });
         } else {
-          await new Promise<void>((res, rej) => {
-            window.$3Dmol.download(`pdb:${pdbId}`, viewer, {}, () => res());
-            setTimeout(() => rej(), 15000);
+          await new Promise<void>((resolve, reject) => {
+            const timer = setTimeout(() => reject(new Error('PDB download timeout')), 15000);
+            window.$3Dmol.download(`pdb:${pdbId}`, viewer, {}, () => { clearTimeout(timer); resolve(); });
           });
           viewer.setStyle({}, { cartoon: { color: 'spectrum', thickness: 0.5 } });
           viewer.setStyle({ hetflag: true }, { stick: { colorscheme: 'greenCarbon', radius: 0.15 } });
@@ -134,9 +147,9 @@ function ProteinViewer({ pdbId, alphafoldId, label }: { pdbId: string; alphafold
               backgroundColor: 'white', antialias: true,
             });
             viewerRef.current = viewer2;
-            await new Promise<void>((res, rej) => {
-              window.$3Dmol.download(`pdb:${pdbId}`, viewer2, {}, () => res());
-              setTimeout(() => rej(), 15000);
+            await new Promise<void>((resolve, reject) => {
+              const timer = setTimeout(() => reject(new Error('PDB download timeout')), 15000);
+              window.$3Dmol.download(`pdb:${pdbId}`, viewer2, {}, () => { clearTimeout(timer); resolve(); });
             });
             viewer2.setStyle({}, { cartoon: { color: 'spectrum', thickness: 0.5 } });
             viewer2.zoomTo();

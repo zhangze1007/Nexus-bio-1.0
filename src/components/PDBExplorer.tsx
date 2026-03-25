@@ -69,15 +69,28 @@ const RESIDUE_TYPE_INFO: Record<string, { color: string; role: string }> = {
 
 declare global { interface Window { $3Dmol: any; } }
 
+const THREEDMOL_CDNS = [
+  'https://cdnjs.cloudflare.com/ajax/libs/3Dmol/2.5.3/3Dmol-min.js',
+  'https://3Dmol.org/build/3Dmol-min.js',
+];
+
 function load3Dmol(): Promise<void> {
-  return new Promise((resolve, reject) => {
-    if (window.$3Dmol) { resolve(); return; }
-    const s = document.createElement('script');
-    s.src = 'https://3Dmol.org/build/3Dmol-min.js';
-    s.onload = () => resolve();
-    s.onerror = () => reject(new Error('Failed to load 3Dmol'));
-    document.head.appendChild(s);
-  });
+  if (window.$3Dmol) return Promise.resolve();
+
+  return THREEDMOL_CDNS.reduce<Promise<void>>(
+    (chain, url) =>
+      chain.catch(
+        () =>
+          new Promise<void>((resolve, reject) => {
+            const s = document.createElement('script');
+            s.src = url;
+            s.onload = () => (window.$3Dmol ? resolve() : reject(new Error('3Dmol not defined')));
+            s.onerror = () => reject(new Error(`Failed to load ${url}`));
+            document.head.appendChild(s);
+          }),
+      ),
+    Promise.reject<void>(),
+  );
 }
 
 interface AtomTooltip {
@@ -110,6 +123,14 @@ function ProteinCanvas({ pdbId, alphafoldId, name, useAlphaFold }: ProteinCanvas
     if (b >= 70) return '#65CBF3';
     if (b >= 50) return '#FFDB13';
     return '#FF7D45';
+  };
+
+  // Hex numbers for 3Dmol colorfunc (more compatible across versions)
+  const getPLDDTHex = (b: number) => {
+    if (b >= 90) return 0x0053D6;
+    if (b >= 70) return 0x65CBF3;
+    if (b >= 50) return 0xFFDB13;
+    return 0xFF7D45;
   };
 
   useEffect(() => {
@@ -147,23 +168,23 @@ function ProteinCanvas({ pdbId, alphafoldId, name, useAlphaFold }: ProteinCanvas
             // pLDDT via B-factor
             viewer.setStyle({}, {
               cartoon: {
-                colorfunc: (atom: any) => getPLDDTColor(atom.b),
+                colorfunc: (atom: any) => getPLDDTHex(atom.b),
                 thickness: 0.5,
               }
             });
           } catch (afErr) {
             // Fallback to RCSB PDB
             console.warn('AlphaFold failed, falling back to RCSB:', afErr);
-            await new Promise<void>((res, rej) => {
-              window.$3Dmol.download(`pdb:${pdbId}`, viewer, {}, () => res());
-              setTimeout(() => rej(new Error('Timeout')), 15000);
+            await new Promise<void>((resolve, reject) => {
+              const timer = setTimeout(() => reject(new Error('Timeout')), 15000);
+              window.$3Dmol.download(`pdb:${pdbId}`, viewer, {}, () => { clearTimeout(timer); resolve(); });
             });
             viewer.setStyle({}, { cartoon: { color: 'spectrum', thickness: 0.5 } });
           }
         } else {
-          await new Promise<void>((res, rej) => {
-            window.$3Dmol.download(`pdb:${pdbId}`, viewer, {}, () => res());
-            setTimeout(() => rej(new Error('Timeout')), 15000);
+          await new Promise<void>((resolve, reject) => {
+            const timer = setTimeout(() => reject(new Error('Timeout')), 15000);
+            window.$3Dmol.download(`pdb:${pdbId}`, viewer, {}, () => { clearTimeout(timer); resolve(); });
           });
           viewer.setStyle({}, {
             cartoon: { color: 'spectrum', thickness: 0.5 }
