@@ -6,12 +6,18 @@ import { PathwayNode, PathwayEdge, MolecularStructure } from '../types';
 
 type Vec3 = [number, number, number];
 type RendererMode = 'loading' | 'webgpu' | 'webgl2' | 'webgl' | 'error';
+type ConfigurableRenderer = {
+  setSize: (w: number, h: number, updateStyle?: boolean) => void;
+  toneMapping: THREE.ToneMapping;
+  toneMappingExposure: number;
+  setClearColor: (color: THREE.ColorRepresentation, alpha?: number) => void;
+};
 
 const INIT_TIMEOUT_MS = 4500;
 
-function withTimeout<T>(promise: Promise<T>, label: string, timeoutMs = INIT_TIMEOUT_MS): Promise<T> {
+function withTimeout<T>(promise: Promise<T>, label: string): Promise<T> {
   return new Promise<T>((resolve, reject) => {
-    const timer = window.setTimeout(() => reject(new Error(`${label} timed out.`)), timeoutMs);
+    const timer = window.setTimeout(() => reject(new Error(`${label} timed out.`)), INIT_TIMEOUT_MS);
     promise.then(
       value => {
         window.clearTimeout(timer);
@@ -553,7 +559,7 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId }
     }
 
     setRenderState('loading', 'loading');
-  }, [hasRenderableContent, safeEdges.length, safeNodes.length, setRenderState]);
+  }, [edges, hasRenderableContent, nodes, setRenderState]);
 
   return (
     <div style={{
@@ -638,7 +644,7 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId }
 
       {hasRenderableContent && (
         <SceneErrorBoundary onError={(error) => {
-          console.error('Atomic Pathway render error:', error);
+          console.error('Atomic Pathway render error:', error.message, error.stack);
           setRenderState('error', 'error', 'The molecular scene encountered an unexpected rendering error.');
         }}>
           <Canvas
@@ -649,7 +655,7 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId }
               const width = parent?.clientWidth ?? canvas.width;
               const height = parent?.clientHeight ?? canvas.height;
 
-              const applyRendererDefaults = <TRenderer extends THREE.WebGLRenderer | { setSize: (w: number, h: number, updateStyle?: boolean) => void; toneMapping: THREE.ToneMapping; toneMappingExposure: number; setClearColor: (color: THREE.ColorRepresentation, alpha?: number) => void; }>(renderer: TRenderer) => {
+              const applyRendererDefaults = <Renderer extends ConfigurableRenderer>(renderer: Renderer) => {
                 renderer.setSize(width, height, false);
                 renderer.toneMapping = THREE.LinearToneMapping;
                 renderer.toneMappingExposure = 1.0;
@@ -657,10 +663,10 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId }
                 return renderer;
               };
 
-              const createWebGLRenderer = (context: WebGL2RenderingContext | WebGLRenderingContext, mode: 'webgl2' | 'webgl') => {
+              const createWebGLRenderer = (glContext: WebGL2RenderingContext | WebGLRenderingContext, mode: 'webgl2' | 'webgl') => {
                 const renderer = applyRendererDefaults(new THREE.WebGLRenderer({
                   canvas,
-                  context,
+                  context: glContext,
                   antialias: true,
                   powerPreference: 'high-performance',
                   alpha: false,
@@ -675,19 +681,22 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId }
                 try {
                   const gpu = (navigator as Navigator & { gpu: GPU }).gpu;
                   const adapter = await withTimeout(gpu.requestAdapter(), 'Requesting a WebGPU adapter');
-                  if (adapter) {
-                    await withTimeout(adapter.requestDevice(), 'Requesting a WebGPU device');
-                    const { WebGPURenderer } = await withTimeout(import('three/webgpu'), 'Loading the WebGPU renderer');
-                    const renderer = applyRendererDefaults(new WebGPURenderer({
-                      canvas,
-                      antialias: true,
-                      powerPreference: 'high-performance',
-                      alpha: false,
-                    } as ConstructorParameters<typeof WebGPURenderer>[0]));
-                    await withTimeout(renderer.init(), 'Initializing WebGPU');
-                    setRenderState('ready', 'webgpu');
-                    return renderer;
-                  }
+                  if (!adapter) throw new Error('WebGPU adapter unavailable.');
+
+                  const device = await withTimeout(adapter.requestDevice(), 'Requesting a WebGPU device');
+                  if (!device) throw new Error('WebGPU device unavailable.');
+
+                  const { WebGPURenderer } = await withTimeout(import('three/webgpu'), 'Loading the WebGPU renderer');
+                  const webgpuOptions: ConstructorParameters<typeof WebGPURenderer>[0] = {
+                    canvas,
+                    antialias: true,
+                    powerPreference: 'high-performance',
+                    alpha: false,
+                  };
+                  const renderer = applyRendererDefaults(new WebGPURenderer(webgpuOptions));
+                  await withTimeout(renderer.init(), 'Initializing WebGPU');
+                  setRenderState('ready', 'webgpu');
+                  return renderer;
                 } catch (error) {
                   console.warn('WebGPU initialization failed, falling back to WebGL2.', error);
                 }
@@ -704,22 +713,15 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId }
                 antialias: true,
                 powerPreference: 'high-performance',
                 alpha: false,
-              }) || canvas.getContext('experimental-webgl', {
-                antialias: true,
-                powerPreference: 'high-performance',
-                alpha: false,
               });
-              if (webgl) return createWebGLRenderer(webgl as WebGLRenderingContext, 'webgl');
+              if (webgl) return createWebGLRenderer(webgl, 'webgl');
 
-              const message = 'WebGPU and WebGL are unavailable in this browser session. Please check graphics acceleration and try again.';
+              const message = 'This browser session could not start WebGPU or WebGL. Please try updating your browser or opening the page in a different browser.';
               setRenderState('error', 'error', message);
               throw new Error(message);
             }}
             dpr={[1, 1.5]}
             performance={{ min: 0.5 }}
-            onCreated={({ gl }) => {
-              gl.setClearColor(new THREE.Color('#07090f'), 1);
-            }}
             style={{ background: 'transparent' }}
           >
             <ResizeHandler />
