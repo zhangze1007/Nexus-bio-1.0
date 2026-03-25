@@ -404,6 +404,7 @@ function ResizeHandler() {
       }
     };
 
+    handleResize();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, [camera, gl]);
@@ -465,7 +466,6 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId }
 
       <Canvas
         camera={{ position: [0, 5, 15], fov: 44 }}
-        resize={{ scroll: true, debounce: { scroll: 50, resize: 0 } }}
         gl={async (props) => {
           const canvas = props.canvas as HTMLCanvasElement;
           const parent = canvas.parentElement;
