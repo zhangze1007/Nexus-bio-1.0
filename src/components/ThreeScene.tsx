@@ -439,13 +439,14 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId }
 
       <Canvas
         camera={{ position: [0, 5, 15], fov: 44 }}
-        gl={async (props: Record<string, unknown>) => {
+        gl={async (props) => {
           const canvas = props.canvas as HTMLCanvasElement;
 
           // Attempt WebGPU when the browser supports it
           if (typeof navigator !== 'undefined' && 'gpu' in navigator) {
             try {
-              const adapter = await (navigator as unknown as { gpu: GPU }).gpu.requestAdapter();
+              const gpu = (navigator as Navigator & { gpu: GPU }).gpu;
+              const adapter = await gpu.requestAdapter();
               if (adapter) {
                 const device = await adapter.requestDevice();
                 if (device) {
@@ -462,8 +463,8 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId }
                   return renderer;
                 }
               }
-            } catch {
-              /* WebGPU unavailable – fall through to WebGL */
+            } catch (e) {
+              console.debug('WebGPU unavailable, falling back to WebGL:', e);
             }
           }
 
