@@ -1,5 +1,7 @@
 export const config = { runtime: 'edge' };
 
+const MIN_VALID_PDB_LENGTH = 100;
+
 export default async function handler(req: Request) {
   const headers = {
     'Content-Type': 'text/plain',
@@ -34,7 +36,7 @@ export default async function handler(req: Request) {
         const pdbRes = await fetch(pdbUrl);
         if (pdbRes.ok) {
           const pdbData = await pdbRes.text();
-          if (pdbData && pdbData.length > 100) {
+          if (pdbData && pdbData.length > MIN_VALID_PDB_LENGTH) {
             return new Response(pdbData, { status: 200, headers });
           }
         }
@@ -47,7 +49,7 @@ export default async function handler(req: Request) {
 
     if (legacyRes.ok) {
       const pdbData = await legacyRes.text();
-      if (pdbData && pdbData.length > 100) {
+      if (pdbData && pdbData.length > MIN_VALID_PDB_LENGTH) {
         return new Response(pdbData, { status: 200, headers });
       }
     }
