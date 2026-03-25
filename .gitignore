@@ -16,7 +16,12 @@ yarn-error.log*
 .env.local
 .env.*.local
 
-# Editor directories and files
-.DS_Store
+# IDE
 .vscode/
 .idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
