@@ -439,7 +439,45 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId }
 
       <Canvas
         camera={{ position: [0, 5, 15], fov: 44 }}
-        gl={{ antialias: true, powerPreference: 'high-performance', alpha: false, toneMapping: THREE.LinearToneMapping, toneMappingExposure: 1.0 }}
+        gl={async (props: Record<string, unknown>) => {
+          const canvas = props.canvas as HTMLCanvasElement;
+
+          // Attempt WebGPU when the browser supports it
+          if (typeof navigator !== 'undefined' && 'gpu' in navigator) {
+            try {
+              const adapter = await (navigator as unknown as { gpu: GPU }).gpu.requestAdapter();
+              if (adapter) {
+                const device = await adapter.requestDevice();
+                if (device) {
+                  const { WebGPURenderer } = await import('three/webgpu');
+                  const renderer = new WebGPURenderer({
+                    canvas,
+                    antialias: true,
+                    powerPreference: 'high-performance',
+                    alpha: false,
+                  } as ConstructorParameters<typeof WebGPURenderer>[0]);
+                  await renderer.init();
+                  renderer.toneMapping = THREE.LinearToneMapping;
+                  renderer.toneMappingExposure = 1.0;
+                  return renderer;
+                }
+              }
+            } catch {
+              /* WebGPU unavailable – fall through to WebGL */
+            }
+          }
+
+          // Fallback: standard WebGL renderer
+          const renderer = new THREE.WebGLRenderer({
+            canvas,
+            antialias: true,
+            powerPreference: 'high-performance',
+            alpha: false,
+          });
+          renderer.toneMapping = THREE.LinearToneMapping;
+          renderer.toneMappingExposure = 1.0;
+          return renderer;
+        }}
         dpr={[1, 1.5]}
         performance={{ min: 0.5 }}
         onCreated={({ gl }) => { gl.setClearColor(new THREE.Color('#07090f'), 1); }}
