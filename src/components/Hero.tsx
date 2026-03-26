@@ -6,6 +6,12 @@ import { useRef, useEffect, useState, useCallback } from 'react';
 const SERIF = "'DM Serif Display', Georgia, 'Times New Roman', serif";
 const BODY  = "'Public Sans', -apple-system, sans-serif";
 const MONO  = "'JetBrains Mono', 'Fira Code', 'Consolas', 'Courier New', monospace";
+const METAL_HIGHLIGHT = 'rgb(var(--accent-primary-rgb) / 0.16)';
+const METAL_SHEEN = 'rgb(var(--accent-secondary-rgb) / 0.06)';
+const METAL_SHEEN_SOFT = 'rgb(var(--accent-secondary-rgb) / 0.05)';
+const METAL_SURFACE = 'rgb(var(--bg-elevated-rgb) / 0.92)';
+const METAL_DEPTH = 'rgb(var(--bg-surface-rgb) / 0.92)';
+const METAL_DEPTH_SOFT = 'rgb(var(--bg-surface-rgb) / 0.18)';
 
 // ── Font loader ───────────────────────────────────────────────────────
 function useFonts() {
@@ -50,7 +56,7 @@ function DeepBackground({ cx }: { cx: { x: number; y: number } }) {
           position: 'absolute',
           top: '-20%', left: '-10%',
           width: '70vw', height: '70vw',
-          background: 'linear-gradient(140deg, rgba(255,255,255,0.16) 0%, rgba(120,120,126,0.06) 24%, rgba(10,10,12,0.92) 62%, transparent 82%)',
+          background: `linear-gradient(140deg, ${METAL_HIGHLIGHT} 0%, ${METAL_SHEEN} 24%, ${METAL_DEPTH} 62%, transparent 82%)`,
           filter: 'blur(22px)',
           transform: `translate(${cx.x * -18}px, ${cx.y * -12}px)`,
           transition: 'transform 0.8s cubic-bezier(0.16,1,0.3,1)',
@@ -68,7 +74,7 @@ function DeepBackground({ cx }: { cx: { x: number; y: number } }) {
           position: 'absolute',
           bottom: '-25%', right: '-15%',
           width: '65vw', height: '65vw',
-          background: 'linear-gradient(220deg, rgba(255,255,255,0.14) 0%, rgba(130,130,135,0.05) 22%, rgba(7,7,8,0.92) 58%, transparent 80%)',
+          background: `linear-gradient(220deg, rgb(var(--accent-primary-rgb) / 0.14) 0%, ${METAL_SHEEN_SOFT} 22%, ${METAL_SURFACE} 58%, transparent 80%)`,
           filter: 'blur(28px)',
           transform: `translate(${cx.x * 14}px, ${cx.y * 10}px)`,
           transition: 'transform 0.8s cubic-bezier(0.16,1,0.3,1)',
@@ -86,7 +92,7 @@ function DeepBackground({ cx }: { cx: { x: number; y: number } }) {
           position: 'absolute', top: '30%', left: '50%',
           transform: `translate(-50%, -50%) translate(${cx.x * -8}px, ${cx.y * -6}px)`,
           width: '50vw', height: '50vw',
-          background: 'radial-gradient(ellipse at 42% 34%, rgba(255,255,255,0.14) 0%, rgba(120,120,124,0.05) 28%, rgba(10,10,11,0.18) 52%, transparent 72%)',
+          background: `radial-gradient(ellipse at 42% 34%, rgb(var(--accent-primary-rgb) / 0.14) 0%, ${METAL_SHEEN_SOFT} 28%, ${METAL_DEPTH_SOFT} 52%, transparent 72%)`,
           filter: 'blur(26px)',
           transition: 'transform 1.2s cubic-bezier(0.16,1,0.3,1)',
           borderRadius: '42% 58% 46% 54% / 58% 42% 58% 42%',
