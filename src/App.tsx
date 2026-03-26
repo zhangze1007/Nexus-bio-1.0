@@ -112,8 +112,12 @@ export default function App() {
     : 0;
 
   return (
-    <main style={{ background: 'var(--bg-base, #070a0e)', minHeight: '100vh', color: 'var(--text-primary, rgba(255,255,255,0.92))' }}>
-      <Hero />
+    <div className="app-shell bg-futuristic-background text-white">
+      <div id="three-background" aria-hidden="true" className="app-canvas-background">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.08),_transparent_42%),radial-gradient(circle_at_bottom_right,_rgba(217,70,239,0.1),_transparent_38%)]" />
+      </div>
+      <main className="app-content" style={{ background: 'transparent', minHeight: '100vh', color: 'var(--text-primary, rgba(255,255,255,0.92))' }}>
+        <Hero />
 
       {/* ── BENTO GRID DASHBOARD ── */}
       <section id="demo" style={{ padding: 'clamp(64px, 10vw, 120px) clamp(16px, 4vw, 40px)' }}>
@@ -141,13 +145,10 @@ export default function App() {
             <div style={{ gridColumn: 'span 8' }}>
             <Reveal delay={0.05}>
               <motion.div
+                className="glass-panel"
                 style={{
                   borderRadius: '20px',
                   overflow: 'hidden',
-                  border: '1px solid rgba(255,255,255,0.07)',
-                  backdropFilter: 'blur(20px)',
-                  WebkitBackdropFilter: 'blur(20px)',
-                  background: 'rgba(14,17,23,0.6)',
                   position: 'relative',
                 }}>
                 {/* AI Generated badge */}
@@ -326,6 +327,7 @@ export default function App() {
           <ThemeBadge />
         </div>
       </footer>
-    </main>
+      </main>
+    </div>
   );
 }
