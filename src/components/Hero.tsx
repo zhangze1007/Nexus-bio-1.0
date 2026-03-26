@@ -1,3 +1,5 @@
+'use client';
+
 import { motion, useScroll, useTransform, useSpring } from 'framer-motion';
 import { ArrowRight, Dna, BookOpen, Microscope } from 'lucide-react';
 import { useRef, useEffect, useState, useCallback } from 'react';

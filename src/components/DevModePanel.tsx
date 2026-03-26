@@ -1,3 +1,5 @@
+'use client';
+
 import { useState } from 'react';
 import { Terminal, Server, AlertTriangle, X, Code } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';

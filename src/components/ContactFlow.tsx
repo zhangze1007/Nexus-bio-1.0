@@ -1,3 +1,5 @@
+'use client';
+
 import { Mail, Linkedin, ArrowRight } from 'lucide-react';
 
 export default function ContactFlow() {

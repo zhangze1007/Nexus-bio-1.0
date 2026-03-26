@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useRef, useCallback } from 'react';
 import { Loader2, Play, RotateCcw, Info } from 'lucide-react';
 

@@ -5,6 +5,7 @@
 dist/
 build/
 .next/
+out/
 *.tsbuildinfo
 
 # Cache

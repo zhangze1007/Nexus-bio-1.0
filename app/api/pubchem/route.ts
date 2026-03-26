@@ -1,4 +1,6 @@
-export const config = { runtime: 'edge' };
+import { NextRequest, NextResponse } from 'next/server';
+
+export const runtime = 'edge';
 
 const CORS = {
   'Content-Type': 'text/plain',
@@ -8,18 +10,19 @@ const CORS = {
 };
 
 function json(b: unknown, s = 200) {
-  return new Response(JSON.stringify(b), {
+  return new NextResponse(JSON.stringify(b), {
     status: s,
     headers: { ...CORS, 'Content-Type': 'application/json' },
   });
 }
 
-export default async function handler(req: Request) {
-  if (req.method === 'OPTIONS') return new Response(null, { status: 200, headers: CORS });
+export async function OPTIONS() {
+  return new NextResponse(null, { status: 200, headers: CORS });
+}
 
-  const url = new URL(req.url);
-  const cid = url.searchParams.get('cid');
-  const name = url.searchParams.get('name');
+export async function GET(req: NextRequest) {
+  const cid = req.nextUrl.searchParams.get('cid');
+  const name = req.nextUrl.searchParams.get('name');
 
   // ── Mode 1: fetch SDF by CID ──────────────────────────────────────
   if (cid) {
@@ -38,7 +41,7 @@ export default async function handler(req: Request) {
         if (!res.ok) continue;
         const sdf = await res.text();
         if (!sdf || sdf.length < 30) continue;
-        return new Response(sdf, { status: 200, headers: CORS });
+        return new NextResponse(sdf, { status: 200, headers: CORS });
       } catch { continue; }
     }
 
@@ -79,7 +82,7 @@ export default async function handler(req: Request) {
           if (!sdf || sdf.length < 30) continue;
 
           // Return SDF with CID in header so frontend knows what was found
-          return new Response(sdf, {
+          return new NextResponse(sdf, {
             status: 200,
             headers: { ...CORS, 'X-PubChem-CID': String(foundCid) },
           });

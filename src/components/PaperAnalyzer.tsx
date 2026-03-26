@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useEffect, useRef } from 'react';
 import {
   ArrowUp, Upload, Camera, Globe, Image as ImageIcon,

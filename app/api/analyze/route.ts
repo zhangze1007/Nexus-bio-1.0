@@ -1,6 +1,6 @@
-export const config = {
-  runtime: 'edge',
-};
+import { NextRequest, NextResponse } from 'next/server';
+
+export const runtime = 'edge';
 
 // ── Model providers in priority order ──
 // Groq: primary (1000 req/day, very stable)
@@ -28,7 +28,7 @@ const CORS_HEADERS = {
 };
 
 function jsonResponse(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), { status, headers: CORS_HEADERS });
+  return new NextResponse(JSON.stringify(body), { status, headers: CORS_HEADERS });
 }
 
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
@@ -126,15 +126,11 @@ async function tryGemini(body: any, apiKey: string): Promise<string | null> {
   return null;
 }
 
-export default async function handler(req: Request) {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { status: 200, headers: CORS_HEADERS });
-  }
+export async function OPTIONS() {
+  return new NextResponse(null, { status: 200, headers: CORS_HEADERS });
+}
 
-  if (req.method !== 'POST') {
-    return jsonResponse({ error: 'Method not allowed' }, 405);
-  }
-
+export async function POST(req: NextRequest) {
   const groqKey = process.env.GROQ_API_KEY;
   const geminiKey = process.env.GEMINI_API_KEY;
 

@@ -1,3 +1,5 @@
+'use client';
+
 import { useState } from 'react';
 import { Search, ExternalLink, ChevronDown, ChevronUp, Loader2, Send } from 'lucide-react';
 

@@ -1,23 +1,24 @@
-export const config = { runtime: 'edge' };
+import { NextRequest, NextResponse } from 'next/server';
+
+export const runtime = 'edge';
 
 const MIN_VALID_PDB_LENGTH = 100;
 
-export default async function handler(req: Request) {
+export async function GET(req: NextRequest) {
   const headers = {
     'Content-Type': 'text/plain',
     'Access-Control-Allow-Origin': '*',
   };
 
-  const url = new URL(req.url);
-  const uniprotId = url.searchParams.get('id');
+  const uniprotId = req.nextUrl.searchParams.get('id');
 
   if (!uniprotId) {
-    return new Response('Missing id parameter', { status: 400, headers });
+    return new NextResponse('Missing id parameter', { status: 400, headers });
   }
 
   // Sanitize — only allow valid UniProt ID format
   if (!/^[A-Z0-9]{6,10}$/i.test(uniprotId)) {
-    return new Response('Invalid UniProt ID', { status: 400, headers });
+    return new NextResponse('Invalid UniProt ID', { status: 400, headers });
   }
 
   try {
@@ -37,7 +38,7 @@ export default async function handler(req: Request) {
         if (pdbRes.ok) {
           const pdbData = await pdbRes.text();
           if (pdbData && pdbData.length > MIN_VALID_PDB_LENGTH) {
-            return new Response(pdbData, { status: 200, headers });
+            return new NextResponse(pdbData, { status: 200, headers });
           }
         }
       }
@@ -50,14 +51,14 @@ export default async function handler(req: Request) {
     if (legacyRes.ok) {
       const pdbData = await legacyRes.text();
       if (pdbData && pdbData.length > MIN_VALID_PDB_LENGTH) {
-        return new Response(pdbData, { status: 200, headers });
+        return new NextResponse(pdbData, { status: 200, headers });
       }
     }
 
-    return new Response(`AlphaFold structure not found for ${uniprotId}`, {
+    return new NextResponse(`AlphaFold structure not found for ${uniprotId}`, {
       status: 404, headers,
     });
   } catch (err: any) {
-    return new Response(`Fetch error: ${err.message}`, { status: 500, headers });
+    return new NextResponse(`Fetch error: ${err.message}`, { status: 500, headers });
   }
 }

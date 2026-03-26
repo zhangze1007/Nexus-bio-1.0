@@ -1,6 +1,6 @@
-export const config = {
-  runtime: 'edge',
-};
+import { NextRequest, NextResponse } from 'next/server';
+
+export const runtime = 'edge';
 
 const BASE_HEADERS = {
   'Content-Type': 'application/json',
@@ -32,7 +32,7 @@ function makeHeaders(extra?: HeadersInit) {
 }
 
 function jsonResponse(body: unknown, init: ResponseInit = {}) {
-  return new Response(JSON.stringify(body), {
+  return new NextResponse(JSON.stringify(body), {
     ...init,
     headers: makeHeaders(init.headers),
   });
@@ -70,15 +70,11 @@ async function callModel(model: string, apiKey: string, body: unknown) {
   }
 }
 
-export default async function handler(req: Request) {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { status: 200, headers: makeHeaders() });
-  }
+export async function OPTIONS() {
+  return new NextResponse(null, { status: 200, headers: makeHeaders() });
+}
 
-  if (req.method !== 'POST') {
-    return jsonResponse({ error: 'Method not allowed' }, { status: 405 });
-  }
-
+export async function POST(req: NextRequest) {
   const apiKey = process.env.GEMINI_API_KEY;
 
   if (!apiKey) {
