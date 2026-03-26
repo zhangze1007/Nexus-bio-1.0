@@ -7,21 +7,21 @@ import { motion, AnimatePresence } from 'framer-motion';
 const steps = [
   'Push code to a GitHub repository',
   'Go to vercel.com → Import repository',
-  'Framework: Vite · Build: npm run build · Output: dist',
-  'Add GEMINI_API_KEY in Environment Variables',
+  'Framework: Next.js · Build: npm run build · Output: leave default',
+  'Add GROQ_API_KEY (optional) and GEMINI_API_KEY in Environment Variables',
   'Deploy — done in ~2 minutes',
 ];
 
 const faqs = [
   {
-    q: 'vite: command not found',
-    a: 'Run npm install to install all dependencies before building.',
-    code: 'npm install',
+    q: 'Why does Vercel still mention Vite?',
+    a: 'Your project should use the Next.js framework preset. Remove any old Vite build/output overrides and redeploy.',
+    code: null,
   },
   {
     q: 'Blank page after deploy',
-    a: 'Ensure Vercel output directory is set to dist, not public or root.',
-    code: 'dist',
+    a: 'Ensure Vercel output directory is left blank so the Next.js default is used.',
+    code: '.next',
   },
   {
     q: 'API error 429',
@@ -145,9 +145,9 @@ export default function DevModePanel() {
                       Stack
                     </p>
                     {[
-                      ['Frontend', 'React 19 · TypeScript · Vite'],
+                      ['Frontend', 'React 19 · TypeScript · Next.js 15'],
                       ['3D', 'Three.js · React Three Fiber'],
-                      ['AI', 'Gemini 2.5 Flash · Vercel Edge'],
+                      ['AI', 'Groq Llama 3.3 70B → Gemini fallback · Vercel Edge'],
                       ['Data', 'PubMed · Semantic Scholar · RCSB PDB'],
                       ['Deploy', 'Vercel · GitHub'],
                     ].map(([label, value]) => (

@@ -2,6 +2,21 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export const runtime = 'edge';
 
+type GeminiPart = {
+  text?: string;
+  inline_data?: unknown;
+  file_data?: unknown;
+};
+
+type GeminiContent = {
+  parts?: GeminiPart[];
+};
+
+type GeminiRequestBody = {
+  contents?: GeminiContent[];
+  generationConfig?: Record<string, unknown>;
+};
+
 // ── Model providers in priority order ──
 // Groq: primary (1000 req/day, very stable)
 // Gemini: fallback (250 req/day)
@@ -40,13 +55,33 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   ]);
 }
 
+function getParts(body: GeminiRequestBody): GeminiPart[] {
+  if (!Array.isArray(body?.contents)) return [];
+
+  return body.contents.flatMap((content) =>
+    Array.isArray(content?.parts) ? content.parts : []
+  );
+}
+
+function isTextPart(part: GeminiPart): part is GeminiPart & { text: string } {
+  return typeof part?.text === 'string' && !part?.inline_data && !part?.file_data;
+}
+
+function isTextOnlyRequest(body: GeminiRequestBody): boolean {
+  const parts = getParts(body);
+  return parts.length > 0 && parts.every(isTextPart);
+}
+
+function hasMultimodalContent(body: GeminiRequestBody): boolean {
+  return getParts(body).some((part) => part?.inline_data || part?.file_data);
+}
+
 // Extract prompt text from Gemini-format request body
-function extractPrompt(body: any): string {
-  try {
-    return body?.contents?.[0]?.parts?.[0]?.text || '';
-  } catch {
-    return '';
-  }
+function extractPrompt(body: GeminiRequestBody): string {
+  return getParts(body)
+    .map((part) => (isTextPart(part) ? part.text.trim() : ''))
+    .filter(Boolean)
+    .join('\n\n');
 }
 
 // ── Try Groq first (OpenAI-compatible format) ──
@@ -87,7 +122,7 @@ async function tryGroq(prompt: string, apiKey: string): Promise<string | null> {
 }
 
 // ── Try Gemini as fallback ──
-async function tryGemini(body: any, apiKey: string): Promise<string | null> {
+async function tryGemini(body: GeminiRequestBody, apiKey: string): Promise<string | null> {
   for (const model of GEMINI_MODELS) {
     try {
       const geminiBody = {
@@ -138,7 +173,7 @@ export async function POST(req: NextRequest) {
     return jsonResponse({ error: 'No API keys configured' }, 500);
   }
 
-  let body: any;
+  let body: GeminiRequestBody;
   try {
     body = await req.json();
   } catch {
@@ -154,8 +189,16 @@ export async function POST(req: NextRequest) {
     return jsonResponse({ error: 'No prompt text found' }, 400);
   }
 
+  const textOnlyRequest = isTextOnlyRequest(body);
+
+  if (hasMultimodalContent(body) && !geminiKey) {
+    return jsonResponse({
+      error: 'This request includes non-text content such as an image or file and requires GEMINI_API_KEY. Please configure it in your environment variables.',
+    }, 503);
+  }
+
   // ── Try Groq first ──
-  if (groqKey) {
+  if (groqKey && textOnlyRequest) {
     const groqResult = await tryGroq(prompt, groqKey);
     if (groqResult) {
       // Return in Gemini-compatible format so frontend doesn't need to change
