@@ -19,9 +19,9 @@
   --radius-xl:   28px;
 
   /* Dark mode (default) */
-  --bg-base:     #070a0e;
-  --bg-surface:  #0e1117;
-  --bg-elevated: #141820;
+  --bg-base:     #050505;
+  --bg-surface:  #0d0d0e;
+  --bg-elevated: #151516;
   --border:      rgba(255,255,255,0.07);
   --border-hover:rgba(255,255,255,0.16);
   --text-primary:rgba(255,255,255,0.92);
@@ -30,13 +30,13 @@
   --text-faint:  rgba(255,255,255,0.12);
 
   /* Glassmorphism */
-  --glass-bg:    rgba(14,17,23,0.72);
+  --glass-bg:    rgba(10,10,11,0.76);
   --glass-blur:  blur(24px);
   --glass-border:rgba(255,255,255,0.09);
 
   /* Accent */
-  --accent:      #C8D8E8;
-  --accent-dim:  rgba(200,216,232,0.18);
+  --accent:      #e7e7ea;
+  --accent-dim:  rgba(231,231,234,0.16);
 }
 
 /* Light mode */
