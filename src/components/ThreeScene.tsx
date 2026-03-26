@@ -15,7 +15,7 @@ type ConfigurableRenderer = {
   setClearColor: (color: THREE.ColorRepresentation, alpha?: number) => void;
 };
 
-const INIT_TIMEOUT_MS = 4500;
+const INIT_TIMEOUT_MS = 2000;
 
 function withTimeout<T>(promise: Promise<T>, label: string): Promise<T> {
   return new Promise<T>((resolve, reject) => {
@@ -224,12 +224,7 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov
   const grp     = useRef<THREE.Group>(null);
   const ring    = useRef<THREE.Mesh>(null);
   const bodyRef = useRef<THREE.Mesh>(null);
-  const [ready, setReady] = useState(false);
-
-  useEffect(() => {
-    const t = setTimeout(() => setReady(true), 80 + hash(node.id) % 320);
-    return () => clearTimeout(t);
-  }, [node.id]);
+  const ready   = true;
 
   const color  = getColor(node);
   const conf   = getConf(node);
@@ -535,7 +530,7 @@ const DEF_EDGES: PathwayEdge[] = [
 interface Props { nodes:PathwayNode[]; onNodeClick:(node:PathwayNode)=>void; edges?:PathwayEdge[]; selectedNodeId?:string|null; }
 
 export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId }: Props) {
-  const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('ready');
   const [rendererMode, setRendererMode] = useState<RendererMode>('loading');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const mountedRef = useRef(true);
@@ -572,9 +567,7 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId }
       setRenderState('error', 'error', 'Pathway data is unavailable or incomplete, so the visualization could not be rendered.');
       return;
     }
-
-    setRenderState('loading', 'loading');
-  }, [edges, hasRenderableContent, nodes, setRenderState]);
+  }, [hasRenderableContent, setRenderState]);
 
   return (
     <div style={{
@@ -627,7 +620,7 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId }
         ))}
       </div>
 
-      {status !== 'ready' && (
+      {status === 'error' && (
         <div style={{
           position: 'absolute',
           inset: 0,
@@ -635,7 +628,7 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId }
           alignItems: 'center',
           justifyContent: 'center',
           padding: '48px 24px 40px',
-          background: status === 'error' ? 'linear-gradient(180deg, rgba(14,10,14,0.92), rgba(11,14,24,0.94))' : 'linear-gradient(180deg, rgba(7,9,16,0.72), rgba(7,9,16,0.36))',
+          background: 'linear-gradient(180deg, rgba(14,10,14,0.92), rgba(11,14,24,0.94))',
           backdropFilter: 'blur(14px)',
           zIndex: 6,
         }}>
@@ -643,15 +636,15 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId }
             width: 'min(420px, 100%)',
             padding: '20px 22px',
             borderRadius: '20px',
-            border: status === 'error' ? '1px solid rgba(255,120,120,0.18)' : '1px solid rgba(200,216,232,0.12)',
-            background: status === 'error' ? 'rgba(32,11,16,0.76)' : 'rgba(9,12,18,0.76)',
+            border: '1px solid rgba(255,120,120,0.18)',
+            background: 'rgba(32,11,16,0.76)',
             boxShadow: '0 20px 60px rgba(0,0,0,0.28)',
           }}>
-            <p style={{ margin: '0 0 8px', color: status === 'error' ? 'rgba(255,196,196,0.92)' : 'rgba(220,232,242,0.92)', fontSize: '11px', fontFamily:"'Public Sans',sans-serif", fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-              {status === 'error' ? 'Atomic Pathway unavailable' : 'Loading Atomic Pathway'}
+            <p style={{ margin: '0 0 8px', color: 'rgba(255,196,196,0.92)', fontSize: '11px', fontFamily:"'Public Sans',sans-serif", fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+              Atomic Pathway unavailable
             </p>
-            <p style={{ margin: 0, color: status === 'error' ? 'rgba(255,214,214,0.78)' : 'rgba(200,216,232,0.62)', fontSize: '13px', lineHeight: 1.6, fontFamily:"'Public Sans',sans-serif" }}>
-              {errorMessage ?? 'Initializing the molecular scene and selecting the best available renderer for this device.'}
+            <p style={{ margin: 0, color: 'rgba(255,214,214,0.78)', fontSize: '13px', lineHeight: 1.6, fontFamily:"'Public Sans',sans-serif" }}>
+              {errorMessage ?? 'The molecular scene encountered an unexpected error.'}
             </p>
           </div>
         </div>
@@ -690,7 +683,7 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId }
                 return renderer;
               };
 
-              setRenderState('loading', 'loading');
+              // Renderer mode badge will update once ready — no blocking overlay
 
               if (typeof navigator !== 'undefined' && 'gpu' in navigator) {
                 try {
