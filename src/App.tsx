@@ -114,9 +114,9 @@ export default function App() {
   return (
     <div className="app-shell bg-futuristic-background text-white">
       <div id="three-background" aria-hidden="true" className="app-canvas-background">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.08),_transparent_42%),radial-gradient(circle_at_bottom_right,_rgba(217,70,239,0.1),_transparent_38%)]" />
+        <div className="app-canvas-glow" />
       </div>
-      <main className="app-content" style={{ background: 'transparent', minHeight: '100vh', color: 'var(--text-primary, rgba(255,255,255,0.92))' }}>
+      <main className="app-content min-h-screen">
         <Hero />
 
       {/* ── BENTO GRID DASHBOARD ── */}
