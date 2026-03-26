@@ -125,7 +125,7 @@ function conf2pastel(p: number): string {
 }
 function getColor(node: PathwayNode): string {
   const c = NODE_CONF[node.id];
-  return c !== undefined ? conf2pastel(c) : PASTEL[hash(node.id) % PASTEL.length];
+  return c !== undefined ? conf2pastel(c) : (node.color || PASTEL[hash(node.id) % PASTEL.length]);
 }
 function getConf(node: PathwayNode): number {
   if (node.confidenceScore !== undefined) return node.confidenceScore;
@@ -212,15 +212,16 @@ function BondM({ s, e, c }: { s:Vec3; e:Vec3; c:string }) {
   );
 }
 
-// ─── Molecular Node — organic, volume-integrated ──────────────────────
+// ─── Molecular Node — solid sphere body + orbital rings + labels ─────────────
+// Each node renders as a CPK-style solid sphere using MeshPhysicalMaterial.
+// Orbital torus rings orbit the sphere for a sci-fi molecular decoration.
 const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov }: {
   node:PathwayNode; hov:boolean; sel:boolean; cc:number;
   onClick:(n:PathwayNode)=>void; onHov:(id:string|null)=>void;
 }) {
-  const grp  = useRef<THREE.Group>(null);
-  const body = useRef<THREE.Mesh>(null);
-  const orb  = useRef<THREE.Group>(null);
-  const ring = useRef<THREE.Mesh>(null);
+  const grp     = useRef<THREE.Group>(null);
+  const ring    = useRef<THREE.Mesh>(null);
+  const bodyRef = useRef<THREE.Mesh>(null);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -231,10 +232,8 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov
   const color  = getColor(node);
   const conf   = getConf(node);
   const lbl    = node.canonicalLabel?.trim() || node.label;
-  const norm   = useMemo(() => node.molecularStructure ? normalizeStruct(node.molecularStructure) : null, [node.molecularStructure]);
   const cfg    = useMemo(() => glyphCfg(node.id, cc), [node.id, cc]);
   const tgt    = sel ? 1.28 : hov ? 1.10 : 1.0;
-  const bndC   = useMemo(() => new THREE.Color(color).lerp(new THREE.Color('#c8d8e8'), 0.3).getStyle(), [color]);
   const colVec = useMemo(() => new THREE.Color(color), [color]);
 
   useEffect(() => () => { document.body.style.cursor = 'auto'; }, []);
@@ -248,79 +247,18 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov
       grp.current.position.y = node.position[1] + Math.sin(t * 0.4 + hash(node.id) * 0.01) * 0.06;
       grp.current.rotation.y = Math.sin(t * 0.06 + hash(node.id) * 0.001) * 0.05;
     }
-    if (body.current) {
-      const mat = body.current.material as THREE.MeshPhysicalMaterial;
-      const tEmi = sel ? 0.14 : hov ? 0.08 : 0.025;
-      mat.emissiveIntensity += (tEmi - mat.emissiveIntensity) * dt * 3;
-      body.current.rotation.y += dt * cfg.spin * 0.6;
-    }
-    if (orb.current) orb.current.rotation.y = t * 0.10 + cfg.spin * 3;
     if (ring.current) {
       ring.current.rotation.z += dt * 0.10;
       const mat = ring.current.material as THREE.MeshPhysicalMaterial;
-      const to = hov || sel ? 0.35 : 0.08;
+      const to = hov || sel ? 0.28 : 0.07;
       mat.opacity += (to - mat.opacity) * dt * 3;
     }
+    if (bodyRef.current) {
+      const mat = bodyRef.current.material as THREE.MeshPhysicalMaterial;
+      const targetEmissive = sel ? 0.30 : hov ? 0.14 : 0.03;
+      mat.emissiveIntensity += (targetEmissive - mat.emissiveIntensity) * dt * 6;
+    }
   });
-
-  // Translucent, soft-shaded fallback glyph
-  const fallback = (
-    <>
-      {cfg.rr.map((r, i) => (
-        <mesh key={`r${i}`} ref={i === 0 ? ring : undefined} rotation={[cfg.rt[i] || 0, 0, i * 1.1]}>
-          <torusGeometry args={[r, 0.009, 5, 40]} />
-          <meshPhysicalMaterial color={color} emissive={color} emissiveIntensity={0.05} transparent opacity={0.09} roughness={0.6} metalness={0} depthWrite={false} />
-        </mesh>
-      ))}
-      <group ref={orb}>
-        {Array.from({ length: cfg.sats }).map((_, i) => {
-          const phi = Math.acos(1 - (2*(i+0.5))/cfg.sats);
-          const theta = Math.PI*(1+Math.sqrt(5))*i;
-          return (
-            <mesh key={`s${i}`} position={[Math.sin(phi)*Math.cos(theta)*cfg.sr, Math.sin(phi)*Math.sin(theta)*cfg.sr, Math.cos(phi)*cfg.sr]}>
-              <sphereGeometry args={[cfg.ss, 7, 7]} />
-              <meshPhysicalMaterial color={color} emissive={color} emissiveIntensity={0.06} transparent opacity={0.22} roughness={0.5} metalness={0} />
-            </mesh>
-          );
-        })}
-      </group>
-      {cfg.inner && (
-        <mesh>
-          <octahedronGeometry args={[cfg.scale * 0.35, 0]} />
-          <meshPhysicalMaterial color={color} emissive={color} emissiveIntensity={0.10} transparent opacity={0.55} roughness={0.4} metalness={0} transmission={0.2} />
-        </mesh>
-      )}
-      {/* Core body — MeshPhysical for soft shading */}
-      <mesh ref={body}>
-        <GeoComp g={cfg.geom} s={cfg.scale} />
-        <meshPhysicalMaterial
-          color={color} emissive={color} emissiveIntensity={0.025}
-          roughness={0.52} metalness={0.0}
-          transmission={0.08} thickness={0.6}
-          transparent opacity={0.92}
-        />
-      </mesh>
-      {/* Soft outer shell — volume/translucency */}
-      <mesh>
-        <GeoComp g={cfg.geom} s={cfg.scale * 1.12} />
-        <meshPhysicalMaterial
-          color={color} transparent opacity={hov || sel ? 0.07 : 0.025}
-          roughness={1} metalness={0} depthWrite={false} transmission={0.5}
-        />
-      </mesh>
-    </>
-  );
-
-  const structural = norm ? (
-    <>
-      {norm.bonds.map((b, i) => {
-        const a = norm.atoms[b.atomIndex1], bv = norm.atoms[b.atomIndex2];
-        if (!a || !bv) return null;
-        return <BondM key={i} s={a.position} e={bv.position} c={bndC} />;
-      })}
-      {norm.atoms.map((a, i) => <AtomM key={i} pos={a.position} elem={a.element} hov={hov} sel={sel} />)}
-    </>
-  ) : null;
 
   return (
     <group
@@ -330,7 +268,28 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov
       onPointerOver={e => { e.stopPropagation(); onHov(node.id); document.body.style.cursor = 'pointer'; }}
       onPointerOut={e => { e.stopPropagation(); onHov(null); document.body.style.cursor = 'auto'; }}
     >
-      {norm ? structural : fallback}
+      {/* Solid sphere body — scientific CPK-style metabolite representation */}
+      <mesh ref={bodyRef}>
+        <sphereGeometry args={[0.32 + cc * 0.05, 32, 24]} />
+        <meshPhysicalMaterial
+          color={color} emissive={color} emissiveIntensity={0.03}
+          roughness={0.42} metalness={0.03}
+        />
+      </mesh>
+
+      {/* Transparent hit volume — slightly larger than visual sphere for comfortable click area */}
+      <mesh>
+        <sphereGeometry args={[0.46 + cc * 0.05, 6, 6]} />
+        <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+      </mesh>
+
+      {/* Orbital guide rings — subtle sci-fi decoration orbiting the sphere */}
+      {cfg.rr.map((r, i) => (
+        <mesh key={`r${i}`} ref={i === 0 ? ring : undefined} rotation={[cfg.rt[i] || 0, 0, i * 1.1]}>
+          <torusGeometry args={[r, 0.007, 4, 40]} />
+          <meshPhysicalMaterial color={color} emissive={color} emissiveIntensity={0.08} transparent opacity={0.07} roughness={0.6} metalness={0} depthWrite={false} />
+        </mesh>
+      ))}
 
       <Html position={[0, -(cfg.scale + 0.52), 0]} center style={{ pointerEvents: 'none', whiteSpace: 'nowrap' }}>
         <div style={{
@@ -412,13 +371,64 @@ const PathEdge = React.memo(function PathEdge({ s, e, active, color }: { s:Vec3;
   );
 });
 
+// Minimal interface matching the OrbitControls props used by ScrollSyncCamera
+type OrbitControlsHandle = { target: THREE.Vector3; update(): void };
+
+// ─── Scroll-Sync Camera ────────────────────────────────────────────────
+// When a node is selected, lerps the OrbitControls orbit-target toward
+// that node's world position and narrows the camera FOV for a cinematic
+// zoom.  All lerps are frame-rate-independent exponential easing.
+// The camera is left alone while the user is actively interacting.
+function ScrollSyncCamera({
+  nodes, selectedId, interact, controlsRef,
+}: {
+  nodes: PathwayNode[];
+  selectedId: string | null;
+  interact: boolean;
+  controlsRef: React.RefObject<OrbitControlsHandle | null>;
+}) {
+  const { camera } = useThree();
+  const targetLookAt = useRef(new THREE.Vector3(0, 0, 0));
+
+  // Recompute target whenever selection changes
+  useEffect(() => {
+    if (selectedId) {
+      const node = nodes.find(n => n.id === selectedId);
+      if (node) targetLookAt.current.set(...node.position);
+    } else {
+      targetLookAt.current.set(0, 0, 0);
+    }
+  }, [selectedId, nodes]);
+
+  useFrame((_, dt) => {
+    // Don't fight with manual OrbitControls interaction
+    if (interact || !(camera instanceof THREE.PerspectiveCamera)) return;
+
+    const alpha = 1 - Math.exp(-dt * 2.0); // smooth exp-decay lerp
+
+    // Shift the orbit centre so the camera naturally orbits around the active site
+    if (controlsRef.current) {
+      controlsRef.current.target.lerp(targetLookAt.current, alpha);
+      controlsRef.current.update();
+    }
+
+    // Narrow FOV while zoomed into a node → cinematic feel
+    const targetFov = selectedId ? 30 : 44;
+    camera.fov += (targetFov - camera.fov) * alpha;
+    camera.updateProjectionMatrix();
+  });
+
+  return null;
+}
+
 // ─── Scene — unified lighting, integrated depth ────────────────────────
 function Scene({ nodes, edges, onNodeClick, selectedNodeId }: {
   nodes:PathwayNode[]; edges:PathwayEdge[];
   onNodeClick:(n:PathwayNode)=>void; selectedNodeId:string|null;
 }) {
-  const [hovId, setHovId]     = useState<string|null>(null);
+  const [hovId, setHovId]       = useState<string|null>(null);
   const [interact, setInteract] = useState(false);
+  const controlsRef = useRef<OrbitControlsHandle | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout>|null>(null);
   const onStart = useCallback(() => { setInteract(true); if (timer.current) clearTimeout(timer.current); }, []);
   const onEnd   = useCallback(() => { timer.current = setTimeout(() => setInteract(false), 3500); }, []);
@@ -454,6 +464,7 @@ function Scene({ nodes, edges, onNodeClick, selectedNodeId }: {
       <fog attach="fog" args={['#07090f', 20, 48]} />
 
       <OrbitControls
+        ref={controlsRef as React.Ref<never>}
         enableZoom
         autoRotate={!interact && !hovId && !selectedNodeId}
         autoRotateSpeed={0.12}
@@ -464,17 +475,19 @@ function Scene({ nodes, edges, onNodeClick, selectedNodeId }: {
         onStart={onStart} onEnd={onEnd}
       />
 
-
       {/* Spatial reference — barely visible */}
       <SpatialReference />
 
       {/* Edges — soft, secondary */}
       {ed.map(e => <PathEdge key={e.key} s={e.s.position} e={e.e.position} active={e.active} color={e.color} />)}
 
-      {/* Nodes — primary subject */}
+      {/* Nodes — solid sphere bodies + orbital rings + labels */}
       {nodes.map(n => (
         <MolNode key={n.id} node={n} hov={hovId===n.id} sel={selectedNodeId===n.id} cc={cc[n.id]??0} onClick={onNodeClick} onHov={setHovId} />
       ))}
+
+      {/* Scroll-sync camera — cinematic zoom to active sites on scroll/select */}
+      <ScrollSyncCamera nodes={nodes} selectedId={selectedNodeId} interact={interact} controlsRef={controlsRef} />
     </>
   );
 }

@@ -48,15 +48,15 @@ function ThemeBadge() {
   );
 }
 
-// ── Default edges ──────────────────────────────────────────────────────
+// ── Default edges — artemisinin mevalonate pathway ────────────────────
 const DEFAULT_EDGES: PathwayEdge[] = [
-  { start: 'acetyl_coa',       end: 'hmg_coa',           relationshipType: 'converts',  direction: 'forward' },
-  { start: 'acetyl_coa',       end: 'mevalonate',         relationshipType: 'produces',  direction: 'forward' },
-  { start: 'hmg_coa',          end: 'mevalonate',         relationshipType: 'converts',  direction: 'forward' },
-  { start: 'mevalonate',       end: 'fpp',                relationshipType: 'produces',  direction: 'forward' },
-  { start: 'fpp',              end: 'amorpha_4_11_diene', relationshipType: 'catalyzes', direction: 'forward' },
-  { start: 'amorpha_4_11_diene',end:'artemisinic_acid',   relationshipType: 'converts',  direction: 'forward' },
-  { start: 'artemisinic_acid', end: 'artemisinin',        relationshipType: 'produces',  direction: 'forward' },
+  { start: 'acetyl_coa',        end: 'hmg_coa',            relationshipType: 'converts',  direction: 'forward' },
+  { start: 'acetyl_coa',        end: 'mevalonate',          relationshipType: 'produces',  direction: 'forward' },
+  { start: 'hmg_coa',           end: 'mevalonate',          relationshipType: 'converts',  direction: 'forward' },
+  { start: 'mevalonate',        end: 'fpp',                 relationshipType: 'produces',  direction: 'forward' },
+  { start: 'fpp',               end: 'amorpha_4_11_diene',  relationshipType: 'catalyzes', direction: 'forward' },
+  { start: 'amorpha_4_11_diene', end: 'artemisinic_acid',   relationshipType: 'converts',  direction: 'forward' },
+  { start: 'artemisinic_acid',  end: 'artemisinin',         relationshipType: 'produces',  direction: 'forward' },
 ];
 
 // ── Bento stat card ────────────────────────────────────────────────────
