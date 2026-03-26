@@ -335,15 +335,12 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov
 });
 
 // ─── Soft path edges ───────────────────────────────────────────────────
-const PathEdge = React.memo(function PathEdge({ s, e, active, color, flux }: { s:Vec3; e:Vec3; active:boolean; color:string; flux?:number }) {
+const PathEdge = React.memo(function PathEdge({ s, e, active, color }: { s:Vec3; e:Vec3; active:boolean; color:string }) {
   const dot  = useRef<THREE.Mesh>(null);
   const prog = useRef(Math.random());
   const sv   = useMemo(() => new THREE.Vector3(...s), [s]);
   const ev   = useMemo(() => new THREE.Vector3(...e), [e]);
   const mid  = useMemo(() => sv.clone().lerp(ev, 0.5).add(new THREE.Vector3(0, 0.4, 0)), [sv, ev]);
-
-  // Flux-based line width: thicker edges = higher flux (ΔG-driven)
-  const fluxWidth = flux != null ? Math.max(0.3, Math.min(flux * 2.5, 3.0)) : undefined;
 
   useFrame((_, dt) => {
     prog.current = (prog.current + dt * 0.18) % 1;
@@ -364,7 +361,7 @@ const PathEdge = React.memo(function PathEdge({ s, e, active, color, flux }: { s
       <Line
         points={[sv, mid, ev]}
         color={active ? color : '#141e2a'}
-        lineWidth={fluxWidth ?? (active ? 0.8 : 0.25)}
+        lineWidth={active ? 0.8 : 0.25}
         transparent
         opacity={active ? 0.55 : 0.12}
       />
@@ -427,10 +424,9 @@ function ScrollSyncCamera({
 }
 
 // ─── Scene — unified lighting, integrated depth ────────────────────────
-function Scene({ nodes, edges, onNodeClick, selectedNodeId, edgeFluxMap }: {
+function Scene({ nodes, edges, onNodeClick, selectedNodeId }: {
   nodes:PathwayNode[]; edges:PathwayEdge[];
   onNodeClick:(n:PathwayNode)=>void; selectedNodeId:string|null;
-  edgeFluxMap?:Record<string,number>;
 }) {
   const [hovId, setHovId]       = useState<string|null>(null);
   const [interact, setInteract] = useState(false);
@@ -452,13 +448,11 @@ function Scene({ nodes, edges, onNodeClick, selectedNodeId, edgeFluxMap }: {
       const s = nodes.find(n => n.id === edge.start);
       const e = nodes.find(n => n.id === edge.end);
       if (!s || !e) return null;
-      const fluxKey = `${edge.start}_${edge.end}`;
       return { key:`${edge.start}-${edge.end}`, s, e,
         active: hovId===edge.start||hovId===edge.end||selectedNodeId===edge.start||selectedNodeId===edge.end,
-        color: getColor(s),
-        flux: edgeFluxMap?.[fluxKey] };
-    }).filter(Boolean) as { key:string; s:PathwayNode; e:PathwayNode; active:boolean; color:string; flux?:number }[],
-  [edges, nodes, hovId, selectedNodeId, edgeFluxMap]);
+        color: getColor(s) };
+    }).filter(Boolean) as { key:string; s:PathwayNode; e:PathwayNode; active:boolean; color:string }[],
+  [edges, nodes, hovId, selectedNodeId]);
 
   return (
     <>
@@ -486,8 +480,8 @@ function Scene({ nodes, edges, onNodeClick, selectedNodeId, edgeFluxMap }: {
       {/* Spatial reference — barely visible */}
       <SpatialReference />
 
-      {/* Edges — soft, secondary, flux-driven thickness */}
-      {ed.map(e => <PathEdge key={e.key} s={e.s.position} e={e.e.position} active={e.active} color={e.color} flux={e.flux} />)}
+      {/* Edges — soft, secondary */}
+      {ed.map(e => <PathEdge key={e.key} s={e.s.position} e={e.e.position} active={e.active} color={e.color} />)}
 
       {/* Nodes — solid sphere bodies + orbital rings + labels */}
       {nodes.map(n => (
@@ -538,9 +532,9 @@ const DEF_EDGES: PathwayEdge[] = [
   { start:'artemisinic_acid', end:'artemisinin', relationshipType:'produces', direction:'forward' },
 ];
 
-interface Props { nodes:PathwayNode[]; onNodeClick:(node:PathwayNode)=>void; edges?:PathwayEdge[]; selectedNodeId?:string|null; edgeFluxMap?:Record<string,number>; }
+interface Props { nodes:PathwayNode[]; onNodeClick:(node:PathwayNode)=>void; edges?:PathwayEdge[]; selectedNodeId?:string|null; }
 
-export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, edgeFluxMap }: Props) {
+export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId }: Props) {
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [rendererMode, setRendererMode] = useState<RendererMode>('loading');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -746,7 +740,7 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, 
             style={{ background: 'transparent' }}
           >
             <ResizeHandler />
-            <Scene nodes={safeNodes} edges={safeEdges} onNodeClick={onNodeClick} selectedNodeId={selectedNodeId ?? null} edgeFluxMap={edgeFluxMap} />
+            <Scene nodes={safeNodes} edges={safeEdges} onNodeClick={onNodeClick} selectedNodeId={selectedNodeId ?? null} />
           </Canvas>
         </SceneErrorBoundary>
       )}
