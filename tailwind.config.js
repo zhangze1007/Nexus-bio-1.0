@@ -9,7 +9,7 @@ export default {
       colors: {
         futuristic: {
           background: '#050505',
-          primary: '#e7e7ea',
+          primary: '#f3f4f6',
           secondary: '#71717a',
         },
       },
