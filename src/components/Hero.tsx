@@ -6,6 +6,12 @@ import { useRef, useEffect, useState, useCallback } from 'react';
 const SERIF = "'DM Serif Display', Georgia, 'Times New Roman', serif";
 const BODY  = "'Public Sans', -apple-system, sans-serif";
 const MONO  = "'JetBrains Mono', 'Fira Code', 'Consolas', 'Courier New', monospace";
+const METAL_HIGHLIGHT = 'rgb(var(--accent-primary-rgb) / 0.16)';
+const METAL_SHEEN = 'rgb(var(--accent-secondary-rgb) / 0.06)';
+const METAL_SHEEN_SOFT = 'rgb(var(--accent-secondary-rgb) / 0.05)';
+const METAL_SURFACE = 'rgb(var(--bg-elevated-rgb) / 0.92)';
+const METAL_DEPTH = 'rgb(var(--bg-surface-rgb) / 0.92)';
+const METAL_DEPTH_SOFT = 'rgb(var(--bg-surface-rgb) / 0.18)';
 
 // ── Font loader ───────────────────────────────────────────────────────
 function useFonts() {
@@ -50,11 +56,13 @@ function DeepBackground({ cx }: { cx: { x: number; y: number } }) {
           position: 'absolute',
           top: '-20%', left: '-10%',
           width: '70vw', height: '70vw',
-          background: 'radial-gradient(ellipse at center, rgba(140,180,220,0.055) 0%, rgba(100,140,190,0.02) 45%, transparent 70%)',
-          filter: 'blur(60px)',
+          background: `linear-gradient(140deg, ${METAL_HIGHLIGHT} 0%, ${METAL_SHEEN} 24%, ${METAL_DEPTH} 62%, transparent 82%)`,
+          filter: 'blur(22px)',
           transform: `translate(${cx.x * -18}px, ${cx.y * -12}px)`,
           transition: 'transform 0.8s cubic-bezier(0.16,1,0.3,1)',
-          borderRadius: '50%',
+          borderRadius: '48% 52% 64% 36% / 42% 40% 60% 58%',
+          boxShadow: 'inset -18px -20px 40px rgba(0,0,0,0.55), inset 10px 12px 18px rgba(255,255,255,0.08)',
+          opacity: 0.9,
         }}
       />
 
@@ -66,11 +74,13 @@ function DeepBackground({ cx }: { cx: { x: number; y: number } }) {
           position: 'absolute',
           bottom: '-25%', right: '-15%',
           width: '65vw', height: '65vw',
-          background: 'radial-gradient(ellipse at center, rgba(160,200,240,0.04) 0%, rgba(120,160,210,0.015) 45%, transparent 70%)',
-          filter: 'blur(80px)',
+          background: `linear-gradient(220deg, rgb(var(--accent-primary-rgb) / 0.14) 0%, ${METAL_SHEEN_SOFT} 22%, ${METAL_SURFACE} 58%, transparent 80%)`,
+          filter: 'blur(28px)',
           transform: `translate(${cx.x * 14}px, ${cx.y * 10}px)`,
           transition: 'transform 0.8s cubic-bezier(0.16,1,0.3,1)',
-          borderRadius: '50%',
+          borderRadius: '58% 42% 38% 62% / 44% 58% 42% 56%',
+          boxShadow: 'inset 20px 16px 28px rgba(255,255,255,0.05), inset -26px -24px 50px rgba(0,0,0,0.6)',
+          opacity: 0.88,
         }}
       />
 
@@ -82,48 +92,20 @@ function DeepBackground({ cx }: { cx: { x: number; y: number } }) {
           position: 'absolute', top: '30%', left: '50%',
           transform: `translate(-50%, -50%) translate(${cx.x * -8}px, ${cx.y * -6}px)`,
           width: '50vw', height: '50vw',
-          background: 'radial-gradient(ellipse at center, rgba(180,210,255,0.022) 0%, transparent 65%)',
-          filter: 'blur(40px)',
+          background: `radial-gradient(ellipse at 42% 34%, rgb(var(--accent-primary-rgb) / 0.14) 0%, ${METAL_SHEEN_SOFT} 28%, ${METAL_DEPTH_SOFT} 52%, transparent 72%)`,
+          filter: 'blur(26px)',
           transition: 'transform 1.2s cubic-bezier(0.16,1,0.3,1)',
-          borderRadius: '50%',
+          borderRadius: '42% 58% 46% 54% / 58% 42% 58% 42%',
         }}
       />
-
-      {/* Fine square grid */}
-      <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.7 }}>
-        <defs>
-          <pattern id="sg" width="28" height="28" patternUnits="userSpaceOnUse">
-            <path d="M 28 0 L 0 0 0 28" fill="none" stroke="rgba(255,255,255,0.028)" strokeWidth="0.5"/>
-          </pattern>
-          <pattern id="lg" width="140" height="140" patternUnits="userSpaceOnUse">
-            <path d="M 140 0 L 0 0 0 140" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="0.5"/>
-          </pattern>
-        </defs>
-        <rect width="100%" height="100%" fill="url(#sg)" />
-        <rect width="100%" height="100%" fill="url(#lg)" />
-      </svg>
-
-      {/* Slow scan line */}
-      <motion.div
-        animate={{ y: ['5vh', '95vh'] }}
-        transition={{ duration: 14, repeat: Infinity, ease: 'linear' }}
-        style={{
-          position: 'absolute', left: 0, right: 0, height: '1px',
-          background: 'linear-gradient(to right, transparent 0%, rgba(180,210,240,0.05) 30%, rgba(180,210,240,0.09) 50%, rgba(180,210,240,0.05) 70%, transparent 100%)',
-        }}
-      />
-
-      {/* Vertical accent lines */}
-      <div style={{ position: 'absolute', top: 0, bottom: 0, left: '18vw', width: '1px', background: 'linear-gradient(to bottom, transparent, rgba(255,255,255,0.04) 30%, rgba(255,255,255,0.04) 70%, transparent)' }} />
-      <div style={{ position: 'absolute', top: 0, bottom: 0, right: '18vw', width: '1px', background: 'linear-gradient(to bottom, transparent, rgba(255,255,255,0.03) 30%, rgba(255,255,255,0.03) 70%, transparent)' }} />
 
       {/* Noise grain overlay */}
       <div style={{
         position: 'absolute', inset: 0,
         backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E")`,
         backgroundSize: '180px',
-        opacity: 0.4,
-        mixBlendMode: 'overlay',
+        opacity: 0.3,
+        mixBlendMode: 'soft-light',
       }} />
     </div>
   );

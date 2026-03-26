@@ -14,6 +14,7 @@ import { Dna, Sparkles } from 'lucide-react';
 // ── Design tokens ──────────────────────────────────────────────────────
 const SERIF = "'DM Serif Display', Georgia, serif";
 const BODY  = "'Public Sans', -apple-system, sans-serif";
+const METALLIC = '#e7e7ea';
 
 // ── Scroll reveal wrapper ──────────────────────────────────────────────
 function Reveal({ children, delay = 0, className = '', style }: {
@@ -63,17 +64,20 @@ function StatCard({ label, value, sub, accent = false }: {
   label: string; value: string | number; sub?: string; accent?: boolean;
 }) {
   return (
-    <div style={{
-      padding: '18px 20px', borderRadius: '20px',
-      background: accent ? 'rgba(200,216,232,0.07)' : 'rgba(255,255,255,0.03)',
-      border: `1px solid ${accent ? 'rgba(200,216,232,0.18)' : 'rgba(255,255,255,0.07)'}`,
-      backdropFilter: 'blur(20px)',
-      WebkitBackdropFilter: 'blur(20px)',
-    }}>
+      <div style={{
+        padding: '18px 20px', borderRadius: '20px',
+        background: accent ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.03)',
+        border: `1px solid ${accent ? 'rgba(255,255,255,0.14)' : 'rgba(255,255,255,0.07)'}`,
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        boxShadow: accent
+          ? 'inset 0 1px 0 rgba(255,255,255,0.16), inset 0 -16px 28px rgba(0,0,0,0.28), 0 18px 42px rgba(0,0,0,0.22)'
+          : 'inset 0 1px 0 rgba(255,255,255,0.08)',
+      }}>
       <p style={{ fontFamily: BODY, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'rgba(255,255,255,0.25)', margin: '0 0 8px' }}>
         {label}
       </p>
-      <p style={{ fontFamily: BODY, fontSize: '28px', fontWeight: 700, color: accent ? '#C8D8E8' : 'rgba(255,255,255,0.85)', margin: '0 0 4px', fontFeatureSettings: "'tnum' 1", lineHeight: 1 }}>
+      <p style={{ fontFamily: BODY, fontSize: '28px', fontWeight: 700, color: accent ? METALLIC : 'rgba(255,255,255,0.85)', margin: '0 0 4px', fontFeatureSettings: "'tnum' 1", lineHeight: 1 }}>
         {value}
       </p>
       {sub && <p style={{ fontFamily: BODY, fontSize: '11px', color: 'rgba(255,255,255,0.2)', margin: 0 }}>{sub}</p>}
@@ -112,8 +116,12 @@ export default function App() {
     : 0;
 
   return (
-    <main style={{ background: 'var(--bg-base, #070a0e)', minHeight: '100vh', color: 'var(--text-primary, rgba(255,255,255,0.92))' }}>
-      <Hero />
+    <div className="app-shell bg-futuristic-background text-white">
+      <div id="three-background" aria-hidden="true" className="app-canvas-background">
+        <div className="app-canvas-glow" />
+      </div>
+      <main className="app-content min-h-screen">
+        <Hero />
 
       {/* ── BENTO GRID DASHBOARD ── */}
       <section id="demo" style={{ padding: 'clamp(64px, 10vw, 120px) clamp(16px, 4vw, 40px)' }}>
@@ -141,20 +149,17 @@ export default function App() {
             <div style={{ gridColumn: 'span 8' }}>
             <Reveal delay={0.05}>
               <motion.div
+                className="glass-panel"
                 style={{
                   borderRadius: '20px',
                   overflow: 'hidden',
-                  border: '1px solid rgba(255,255,255,0.07)',
-                  backdropFilter: 'blur(20px)',
-                  WebkitBackdropFilter: 'blur(20px)',
-                  background: 'rgba(14,17,23,0.6)',
                   position: 'relative',
                 }}>
                 {/* AI Generated badge */}
                 {aiNodes && (
-                  <div style={{ position: 'absolute', top: '16px', right: '16px', zIndex: 10, display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 12px', borderRadius: '100px', background: 'rgba(200,216,232,0.10)', border: '1px solid rgba(200,216,232,0.18)', backdropFilter: 'blur(12px)' }}>
-                    <Sparkles size={10} style={{ color: '#C8D8E8' }} />
-                    <span style={{ fontFamily: BODY, fontSize: '11px', fontWeight: 600, color: '#C8D8E8', fontFeatureSettings: "'tnum' 1" }}>
+                  <div style={{ position: 'absolute', top: '16px', right: '16px', zIndex: 10, display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 12px', borderRadius: '100px', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.16)', backdropFilter: 'blur(12px)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.14), 0 12px 24px rgba(0,0,0,0.24)' }}>
+                    <Sparkles size={10} style={{ color: METALLIC }} />
+                    <span style={{ fontFamily: BODY, fontSize: '11px', fontWeight: 600, color: METALLIC, fontFeatureSettings: "'tnum' 1" }}>
                       AI · {aiNodes.length} entities
                     </span>
                     <button onClick={handleResetPathway}
@@ -326,6 +331,7 @@ export default function App() {
           <ThemeBadge />
         </div>
       </footer>
-    </main>
+      </main>
+    </div>
   );
 }
