@@ -224,11 +224,7 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov
   const grp     = useRef<THREE.Group>(null);
   const ring    = useRef<THREE.Mesh>(null);
   const bodyRef = useRef<THREE.Mesh>(null);
-  const [ready, setReady] = useState(false);
-
-  useEffect(() => {
-    setReady(true);
-  }, [node.id]);
+  const ready   = true;
 
   const color  = getColor(node);
   const conf   = getConf(node);

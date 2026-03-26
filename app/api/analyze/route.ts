@@ -33,7 +33,7 @@ const GEMINI_MODELS = [
 
 const GROQ_BASE = 'https://api.groq.com/openai/v1/chat/completions';
 const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
-const TIMEOUT_MS = 8000;
+const TIMEOUT_MS = 12000;
 
 const CORS_HEADERS = {
   'Content-Type': 'application/json',
