@@ -16,7 +16,7 @@ const faqs = [
   {
     q: 'Why does Vercel still mention Vite?',
     a: 'Your project should use the Next.js framework preset. Remove any old Vite build/output overrides and redeploy.',
-    code: 'npm install',
+    code: null,
   },
   {
     q: 'Blank page after deploy',
