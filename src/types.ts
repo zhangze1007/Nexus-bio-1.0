@@ -17,6 +17,9 @@ export interface PathwayNode {
   chebiId?: string;
   uniprotId?: string;
 
+  // Evidence-anchored AI traceability
+  evidenceAnchors?: EvidenceAnchor[];
+
   // Molecular structure data
   pubchemCID?: number;          // PubChem Compound ID for 3D SDF fetch
   smiles?: string;              // SMILES string (metadata)
@@ -62,6 +65,9 @@ export interface PathwayEdge {
   evidence?: string;
   confidenceScore?: number;
   direction?: 'forward' | 'reverse' | 'bidirectional';
+
+  // Stoichiometric / kinetic data for dynamic simulation
+  kineticParams?: KineticParams;
 }
 
 export type EdgeRelationshipType =
@@ -74,6 +80,24 @@ export type EdgeRelationshipType =
   | 'transports'
   | 'regulates'
   | 'unknown';
+
+// ── Evidence anchor — audit-grade traceability ───────────────────────
+
+export interface EvidenceAnchor {
+  residue_id: number;
+  pubmed_id: string;
+  confidence_score: number;         // pLDDT or model confidence
+  snippet: string;                  // Exact sentence from source literature
+}
+
+// ── Kinetic / stoichiometric parameters per pathway step ──────────────
+
+export interface KineticParams {
+  Vmax: number;                     // μmol/min/mg
+  Km: number;                       // mM (Michaelis constant)
+  deltaG?: number;                  // kJ/mol (Gibbs free energy)
+  flux?: number;                    // computed flux through edge
+}
 
 // ── Search types ──────────────────────────────────────────────────────
 

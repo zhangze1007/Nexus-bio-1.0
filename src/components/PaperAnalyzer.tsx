@@ -36,7 +36,15 @@ Return ONLY this exact JSON, nothing else:
       "summary": "One sentence explaining the role of this entity in the pathway.",
       "evidenceSnippet": "EXACT QUOTE from the source text that mentions this entity.",
       "citation": "Author et al., Year, Journal",
-      "confidenceScore": 0.85
+      "confidenceScore": 0.85,
+      "evidenceAnchors": [
+        {
+          "residue_id": 1,
+          "pubmed_id": "12345678",
+          "confidence_score": 0.85,
+          "snippet": "EXACT sentence from source describing this entity's function."
+        }
+      ]
     }
   ],
   "edges": [
@@ -45,7 +53,8 @@ Return ONLY this exact JSON, nothing else:
       "end": "target_id",
       "relationshipType": "converts",
       "direction": "forward",
-      "evidence": "EXACT QUOTE from source text describing this reaction."
+      "evidence": "EXACT QUOTE from source text describing this reaction.",
+      "kineticParams": { "Vmax": 1.0, "Km": 0.5, "deltaG": -20.0 }
     }
   ]
 }
@@ -58,6 +67,8 @@ Rules:
 - relationshipType: catalyzes, produces, consumes, activates, inhibits, converts, transports, regulates, or unknown
 - IDs: lowercase letters and underscores only, no spaces
 - evidenceSnippet: must be copied word-for-word from the source text
+- evidenceAnchors: each node MUST include at least one evidence_anchor with residue_id (integer), pubmed_id (string), confidence_score (0-1 float), and snippet (exact quote)
+- kineticParams on edges: estimate Vmax (μmol/min/mg), Km (mM), deltaG (kJ/mol) from the text or use reasonable biochemical defaults
 - No markdown, no explanation, no text outside the JSON
 
 Source text:

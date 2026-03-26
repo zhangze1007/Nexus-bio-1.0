@@ -65,6 +65,7 @@ async function tryGroq(prompt: string, apiKey: string): Promise<string | null> {
             messages: [{ role: 'user', content: prompt }],
             temperature: 0.1,
             max_tokens: 2048,
+            response_format: { type: 'json_object' },
           }),
         }),
         TIMEOUT_MS
