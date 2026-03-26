@@ -125,7 +125,7 @@ function conf2pastel(p: number): string {
 }
 function getColor(node: PathwayNode): string {
   const c = NODE_CONF[node.id];
-  return c !== undefined ? conf2pastel(c) : PASTEL[hash(node.id) % PASTEL.length];
+  return c !== undefined ? conf2pastel(c) : (node.color || PASTEL[hash(node.id) % PASTEL.length]);
 }
 function getConf(node: PathwayNode): number {
   if (node.confidenceScore !== undefined) return node.confidenceScore;
@@ -167,27 +167,17 @@ function GeoComp({ g, s }: { g: GCfg['geom']; s: number }) {
   }
 }
 
-// ─── Subcellular compartment spatial anchors ──────────────────────────
-// These constants define the 3D centre of each organelle shell and must
-// match the node positions in pathwayData.json:
-//   • cytoplasm    z ≈  0   (most nodes)
-//   • mitochondria z ≈ -2   (acetyl_coa, malate, tca_cycle)
-//   • nucleus      z ≈ +2   (histone_lactylation)
-const MITO_CENTER:    [number, number, number] = [-1.5, -4.25, -2];
-const NUCLEUS_CENTER: [number, number, number] = [7.2,  -3.5,   2];
-const GRID_Y = -7.5; // below all organelle shells
-
 // ─── Scientific grid — minimal, space reference only ──────────────────
 function SpatialReference() {
   return (
-    <group position={[0, GRID_Y, 0]}>
+    <group position={[0, -3.8, 0]}>
       {/* Primary grid — very subtle */}
-      <gridHelper args={[44, 44, '#1c2535', '#141e2a']} />
+      <gridHelper args={[36, 36, '#1c2535', '#141e2a']} />
       {/* Major axis lines — barely perceptible */}
-      <Line points={[new THREE.Vector3(-14,0,0), new THREE.Vector3(14,0,0)]}
-        color="#2a3a50" lineWidth={0.5} transparent opacity={0.28} />
+      <Line points={[new THREE.Vector3(-10,0,0), new THREE.Vector3(10,0,0)]}
+        color="#2a3a50" lineWidth={0.5} transparent opacity={0.35} />
       <Line points={[new THREE.Vector3(0,0,-10), new THREE.Vector3(0,0,10)]}
-        color="#2a3a50" lineWidth={0.5} transparent opacity={0.28} />
+        color="#2a3a50" lineWidth={0.5} transparent opacity={0.35} />
     </group>
   );
 }
@@ -222,15 +212,16 @@ function BondM({ s, e, c }: { s:Vec3; e:Vec3; c:string }) {
   );
 }
 
-// ─── Molecular Node — interaction layer + orbital decoration ─────────────
-// Solid body meshes are replaced by MoleculeParticleCloud; this component
-// now handles hit-testing, labels, tooltips and subtle orbital guide rings.
+// ─── Molecular Node — solid sphere body + orbital rings + labels ─────────────
+// Each node renders as a CPK-style solid sphere using MeshPhysicalMaterial.
+// Orbital torus rings orbit the sphere for a sci-fi molecular decoration.
 const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov }: {
   node:PathwayNode; hov:boolean; sel:boolean; cc:number;
   onClick:(n:PathwayNode)=>void; onHov:(id:string|null)=>void;
 }) {
-  const grp  = useRef<THREE.Group>(null);
-  const ring = useRef<THREE.Mesh>(null);
+  const grp     = useRef<THREE.Group>(null);
+  const ring    = useRef<THREE.Mesh>(null);
+  const bodyRef = useRef<THREE.Mesh>(null);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -262,6 +253,11 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov
       const to = hov || sel ? 0.28 : 0.07;
       mat.opacity += (to - mat.opacity) * dt * 3;
     }
+    if (bodyRef.current) {
+      const mat = bodyRef.current.material as THREE.MeshPhysicalMaterial;
+      const targetEmissive = sel ? 0.30 : hov ? 0.14 : 0.03;
+      mat.emissiveIntensity += (targetEmissive - mat.emissiveIntensity) * dt * 6;
+    }
   });
 
   return (
@@ -272,27 +268,28 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov
       onPointerOver={e => { e.stopPropagation(); onHov(node.id); document.body.style.cursor = 'pointer'; }}
       onPointerOut={e => { e.stopPropagation(); onHov(null); document.body.style.cursor = 'auto'; }}
     >
-      {/* Invisible hit volume so pointer events fire even between particles */}
+      {/* Solid sphere body — scientific CPK-style metabolite representation */}
+      <mesh ref={bodyRef}>
+        <sphereGeometry args={[0.32 + cc * 0.05, 32, 24]} />
+        <meshPhysicalMaterial
+          color={color} emissive={color} emissiveIntensity={0.03}
+          roughness={0.42} metalness={0.03}
+        />
+      </mesh>
+
+      {/* Transparent hit volume — slightly larger than visual sphere for comfortable click area */}
       <mesh>
-        <sphereGeometry args={[cfg.scale * 1.2, 6, 6]} />
+        <sphereGeometry args={[0.46 + cc * 0.05, 6, 6]} />
         <meshBasicMaterial transparent opacity={0} depthWrite={false} />
       </mesh>
 
-      {/* Orbital guide rings — skeletal sci-fi decoration */}
+      {/* Orbital guide rings — subtle sci-fi decoration orbiting the sphere */}
       {cfg.rr.map((r, i) => (
         <mesh key={`r${i}`} ref={i === 0 ? ring : undefined} rotation={[cfg.rt[i] || 0, 0, i * 1.1]}>
           <torusGeometry args={[r, 0.007, 4, 40]} />
           <meshPhysicalMaterial color={color} emissive={color} emissiveIntensity={0.08} transparent opacity={0.07} roughness={0.6} metalness={0} depthWrite={false} />
         </mesh>
       ))}
-
-      {/* Inner wireframe glyph — skeletal core reference */}
-      {cfg.inner && (
-        <mesh>
-          <octahedronGeometry args={[cfg.scale * 0.28, 0]} />
-          <meshPhysicalMaterial color={color} emissive={color} emissiveIntensity={0.12} transparent opacity={0.18} roughness={0.4} metalness={0} wireframe />
-        </mesh>
-      )}
 
       <Html position={[0, -(cfg.scale + 0.52), 0]} center style={{ pointerEvents: 'none', whiteSpace: 'nowrap' }}>
         <div style={{
@@ -374,293 +371,8 @@ const PathEdge = React.memo(function PathEdge({ s, e, active, color }: { s:Vec3;
   );
 });
 
-// ─── Subcellular compartment shells ───────────────────────────────────
-// Three semi-transparent organelle volumes that give spatial biological
-// context: plasma membrane (top), mitochondria (lower-back), nucleus
-// (lower-front-right).  All use DoubleSide + depthWrite=false so they
-// stay behind the particle cloud without z-fighting.
-
-function PlasmaMembraneLayer() {
-  return (
-    <group position={[0, 5.3, 0]}>
-      {/* Outer phospholipid leaflet */}
-      <mesh>
-        <boxGeometry args={[30, 0.20, 9]} />
-        <meshPhysicalMaterial
-          color="#f472b6" emissive="#db2777" emissiveIntensity={0.05}
-          transparent opacity={0.10} roughness={0.9} metalness={0}
-          side={THREE.DoubleSide} depthWrite={false}
-        />
-      </mesh>
-      {/* Inner phospholipid leaflet */}
-      <mesh position={[0, -0.30, 0]}>
-        <boxGeometry args={[30, 0.16, 9]} />
-        <meshPhysicalMaterial
-          color="#fb7185" transparent opacity={0.07}
-          roughness={1} metalness={0}
-          side={THREE.DoubleSide} depthWrite={false}
-        />
-      </mesh>
-      <Html center position={[-12.5, 0, 0]} style={{ pointerEvents: 'none' }}>
-        <div style={{
-          color: 'rgba(244,114,182,0.52)', fontSize: '8px', fontWeight: 700,
-          letterSpacing: '0.11em', textTransform: 'uppercase',
-          fontFamily: "'Public Sans', sans-serif",
-          textShadow: '0 1px 8px rgba(0,0,0,0.95)', whiteSpace: 'nowrap',
-        }}>Plasma Membrane</div>
-      </Html>
-    </group>
-  );
-}
-
-// The mitochondria is the hero organelle — rendered as a prominent red/amber
-// elongated ellipsoid matching the reference visualization style.
-function MitochondriaShell() {
-  const outerRef  = useRef<THREE.Mesh>(null);
-  const innerRef  = useRef<THREE.Mesh>(null);
-
-  // Slow autonomous breathing — the mitochondrion "pulses" independently
-  useFrame(({ clock }) => {
-    const t  = clock.elapsedTime;
-    const bx = 1 + 0.012 * Math.sin(t * 0.55);
-    const by = 1 + 0.008 * Math.sin(t * 0.55 + 1.2);
-    if (outerRef.current) outerRef.current.scale.set(bx * 3.7, by * 2.8, by * 2.8);
-    if (innerRef.current) innerRef.current.scale.set(bx * 3.1, by * 2.3, by * 2.3);
-  });
-
-  return (
-    <group position={MITO_CENTER}>
-      {/* Outer mitochondrial membrane — the dominant visible shell */}
-      <mesh ref={outerRef} scale={[3.7, 2.8, 2.8]}>
-        <sphereGeometry args={[1, 48, 32]} />
-        <meshPhysicalMaterial
-          color="#c2410c" emissive="#9a3412" emissiveIntensity={0.12}
-          transparent opacity={0.13} roughness={0.75} metalness={0.05}
-          side={THREE.DoubleSide} depthWrite={false}
-        />
-      </mesh>
-      {/* Inner mitochondrial membrane — slightly smaller, warmer */}
-      <mesh ref={innerRef} scale={[3.1, 2.3, 2.3]}>
-        <sphereGeometry args={[1, 36, 24]} />
-        <meshPhysicalMaterial
-          color="#ea580c" emissive="#c2410c" emissiveIntensity={0.08}
-          transparent opacity={0.07} roughness={0.9} metalness={0}
-          side={THREE.DoubleSide} depthWrite={false}
-        />
-      </mesh>
-      {/* Cristae — C-arc torus folds evenly spaced along the long axis */}
-      {[-1.4, -0.5, 0.4, 1.3].map((xOff, i) => (
-        <mesh key={i} position={[xOff, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
-          <torusGeometry args={[0.72, 0.055, 5, 22, Math.PI * 1.45]} />
-          <meshPhysicalMaterial
-            color="#fed7aa" emissive="#fb923c" emissiveIntensity={0.06}
-            transparent opacity={0.09} roughness={1} metalness={0} depthWrite={false}
-          />
-        </mesh>
-      ))}
-      {/* Equatorial rim highlight — subtle glow band */}
-      <mesh rotation={[Math.PI / 2, 0, 0]}>
-        <torusGeometry args={[2.75, 0.045, 5, 60]} />
-        <meshPhysicalMaterial
-          color="#fdba74" transparent opacity={0.12}
-          roughness={1} metalness={0} depthWrite={false}
-        />
-      </mesh>
-      <Html center position={[0, 3.2, 0]} style={{ pointerEvents: 'none' }}>
-        <div style={{
-          color: 'rgba(234,88,12,0.72)', fontSize: '9px', fontWeight: 700,
-          letterSpacing: '0.11em', textTransform: 'uppercase',
-          fontFamily: "'Public Sans', sans-serif",
-          textShadow: '0 1px 10px rgba(0,0,0,0.95)', whiteSpace: 'nowrap',
-        }}>Mitochondria</div>
-      </Html>
-    </group>
-  );
-}
-
-function NucleusShell() {
-  const envRef = useRef<THREE.Mesh>(null);
-
-  useFrame(({ clock }) => {
-    const s = 1 + 0.010 * Math.sin(clock.elapsedTime * 0.40);
-    if (envRef.current) envRef.current.scale.setScalar(s);
-  });
-
-  return (
-    <group position={NUCLEUS_CENTER}>
-      {/* Nuclear envelope */}
-      <mesh ref={envRef}>
-        <sphereGeometry args={[2.5, 40, 28]} />
-        <meshPhysicalMaterial
-          color="#7c3aed" emissive="#5b21b6" emissiveIntensity={0.08}
-          transparent opacity={0.09} roughness={0.8} metalness={0}
-          side={THREE.DoubleSide} depthWrite={false}
-        />
-      </mesh>
-      {/* Inner nuclear membrane */}
-      <mesh>
-        <sphereGeometry args={[2.15, 30, 20]} />
-        <meshPhysicalMaterial
-          color="#a78bfa" transparent opacity={0.04}
-          roughness={1} metalness={0}
-          side={THREE.DoubleSide} depthWrite={false}
-        />
-      </mesh>
-      {/* Chromatin / condensed chromatin hint — open wireframe */}
-      <mesh>
-        <sphereGeometry args={[1.55, 10, 7]} />
-        <meshPhysicalMaterial
-          color="#c4b5fd" transparent opacity={0.04}
-          roughness={1} metalness={0} wireframe depthWrite={false}
-        />
-      </mesh>
-      <Html center position={[0, 2.8, 0]} style={{ pointerEvents: 'none' }}>
-        <div style={{
-          color: 'rgba(139,92,246,0.65)', fontSize: '9px', fontWeight: 700,
-          letterSpacing: '0.11em', textTransform: 'uppercase',
-          fontFamily: "'Public Sans', sans-serif",
-          textShadow: '0 1px 10px rgba(0,0,0,0.95)', whiteSpace: 'nowrap',
-        }}>Nucleus</div>
-      </Html>
-    </group>
-  );
-}
-
-// ─── Particle shaders ──────────────────────────────────────────────────
-// Vertex: scales each point by its aSize attribute, adds a sine-wave pulse.
-// Fragment: renders a soft glow disc; outer ring fades, bright core stays.
-const PARTICLE_VERT = /* glsl */`
-  uniform float uTime;
-  attribute float aSize;
-  attribute float aPhase;
-  attribute vec3  aColor;
-  varying vec3    vColor;
-  varying float   vAlpha;
-  void main() {
-    vColor = aColor;
-    float pulse    = 0.82 + 0.18 * sin(uTime * 2.2 + aPhase);
-    vec4  mvPos    = modelViewMatrix * vec4(position, 1.0);
-    gl_PointSize   = aSize * pulse * (280.0 / -mvPos.z);
-    gl_Position    = projectionMatrix * mvPos;
-    vAlpha         = pulse;
-  }
-`;
-
-const PARTICLE_FRAG = /* glsl */`
-  varying vec3  vColor;
-  varying float vAlpha;
-  void main() {
-    vec2  uv   = gl_PointCoord - 0.5;
-    float r    = length(uv);
-    if (r > 0.5) discard;
-    float glow = 1.0 - smoothstep(0.0, 0.5, r);
-    float core = 1.0 - smoothstep(0.0, 0.18, r);
-    gl_FragColor = vec4(vColor, (glow * 0.55 + core * 0.45) * vAlpha);
-  }
-`;
-
-const PARTICLES_PER_NODE = 80;  // particles scattered around each node
-const PARTICLE_RADIUS    = 0.55; // sphere radius of the scatter cloud
-
 // Minimal interface matching the OrbitControls props used by ScrollSyncCamera
 type OrbitControlsHandle = { target: THREE.Vector3; update(): void };
-
-// ─── Molecule Particle Cloud ───────────────────────────────────────────
-// Renders all pathway nodes as a single THREE.Points cloud using
-// BufferGeometry and a ShaderMaterial that pulses with time.
-function MoleculeParticleCloud({
-  nodes, selectedId, hovId,
-}: { nodes: PathwayNode[]; selectedId: string | null; hovId: string | null }) {
-  const pointsRef = useRef<THREE.Points>(null);
-  const matRef    = useRef<THREE.ShaderMaterial | null>(null);
-
-  // Build geometry + material once per unique node list
-  const { geometry, material } = useMemo(() => {
-    const count     = nodes.length * PARTICLES_PER_NODE;
-    const positions = new Float32Array(count * 3);
-    const colors    = new Float32Array(count * 3);
-    const sizes     = new Float32Array(count);
-    const phases    = new Float32Array(count);
-
-    nodes.forEach((node, ni) => {
-      const c = new THREE.Color(getColor(node));
-      for (let p = 0; p < PARTICLES_PER_NODE; p++) {
-        const idx   = ni * PARTICLES_PER_NODE + p;
-        // Uniform sphere distribution
-        const u     = Math.random(), v = Math.random();
-        const theta = 2 * Math.PI * u;
-        const phi   = Math.acos(2 * v - 1);
-        const r     = PARTICLE_RADIUS * Math.cbrt(Math.random());
-        positions[idx * 3]     = node.position[0] + r * Math.sin(phi) * Math.cos(theta);
-        positions[idx * 3 + 1] = node.position[1] + r * Math.sin(phi) * Math.sin(theta);
-        positions[idx * 3 + 2] = node.position[2] + r * Math.cos(phi);
-        colors[idx * 3]        = c.r;
-        colors[idx * 3 + 1]    = c.g;
-        colors[idx * 3 + 2]    = c.b;
-        sizes[idx]             = 1.4 + Math.random() * 2.2;
-        phases[idx]            = Math.random() * Math.PI * 2;
-      }
-    });
-
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    geo.setAttribute('aColor',   new THREE.BufferAttribute(colors,    3));
-    geo.setAttribute('aSize',    new THREE.BufferAttribute(sizes,     1));
-    geo.setAttribute('aPhase',   new THREE.BufferAttribute(phases,    1));
-
-    const mat = new THREE.ShaderMaterial({
-      vertexShader:   PARTICLE_VERT,
-      fragmentShader: PARTICLE_FRAG,
-      uniforms:       { uTime: { value: 0 } },
-      transparent:    true,
-      depthWrite:     false,
-      blending:       THREE.AdditiveBlending,
-    });
-
-    return { geometry: geo, material: mat };
-  }, [nodes]);
-
-  matRef.current = material;
-
-  // Brighten selected / hovered node particles
-  useEffect(() => {
-    if (!pointsRef.current) return;
-    const colorAttr = pointsRef.current.geometry.getAttribute('aColor') as THREE.BufferAttribute;
-    nodes.forEach((node, ni) => {
-      const isSel = node.id === selectedId;
-      const isHov = node.id === hovId;
-      const base  = new THREE.Color(getColor(node));
-      // Lerp toward white for emphasis
-      const final = isSel
-        ? base.clone().lerp(new THREE.Color('#ffffff'), 0.35)
-        : isHov
-        ? base.clone().lerp(new THREE.Color('#ffffff'), 0.18)
-        : base;
-      for (let p = 0; p < PARTICLES_PER_NODE; p++) {
-        const idx = ni * PARTICLES_PER_NODE + p;
-        (colorAttr.array as Float32Array)[idx * 3]     = final.r;
-        (colorAttr.array as Float32Array)[idx * 3 + 1] = final.g;
-        (colorAttr.array as Float32Array)[idx * 3 + 2] = final.b;
-      }
-    });
-    colorAttr.needsUpdate = true;
-  }, [nodes, selectedId, hovId]);
-
-  // Dispose GPU resources on unmount
-  useEffect(() => {
-    return () => {
-      geometry.dispose();
-      material.dispose();
-    };
-  }, [geometry, material]);
-
-  // Drive the pulse animation
-  useFrame(({ clock }) => {
-    if (matRef.current) matRef.current.uniforms.uTime.value = clock.elapsedTime;
-  });
-
-  return <points ref={pointsRef} geometry={geometry} material={material} />;
-}
 
 // ─── Scroll-Sync Camera ────────────────────────────────────────────────
 // When a node is selected, lerps the OrbitControls orbit-target toward
@@ -747,12 +459,9 @@ function Scene({ nodes, edges, onNodeClick, selectedNodeId }: {
       <directionalLight position={[4, 10, 6]}  intensity={0.35} color="#e8f0f8" />
       <directionalLight position={[-8, -2, -6]} intensity={0.12} color="#1a2840" />
       <pointLight position={[0, 6, 0]} intensity={0.20} color="#c0d0e8" distance={28} decay={2} />
-      {/* Organelle accent lights — mitochondria (warm amber) and nucleus (cool violet) */}
-      <pointLight position={MITO_CENTER}    intensity={0.28} color="#f97316" distance={12} decay={2} />
-      <pointLight position={NUCLEUS_CENTER} intensity={0.22} color="#7c3aed" distance={10} decay={2} />
 
-      {/* Soft fog — starts further out so deep mitochondria nodes remain visible */}
-      <fog attach="fog" args={['#07090f', 24, 52]} />
+      {/* Deep, soft fog — creates natural depth, no hard cutoff */}
+      <fog attach="fog" args={['#07090f', 20, 48]} />
 
       <OrbitControls
         ref={controlsRef as React.Ref<never>}
@@ -761,26 +470,18 @@ function Scene({ nodes, edges, onNodeClick, selectedNodeId }: {
         autoRotateSpeed={0.12}
         zoomSpeed={0.45}
         minDistance={6}
-        maxDistance={32}
+        maxDistance={24}
         enablePan={false}
         onStart={onStart} onEnd={onEnd}
       />
 
-      {/* Subcellular compartment shells — rendered before particles so they sit behind */}
-      <PlasmaMembraneLayer />
-      <MitochondriaShell />
-      <NucleusShell />
-
-      {/* Spatial reference grid — pushed below all organelles */}
+      {/* Spatial reference — barely visible */}
       <SpatialReference />
-
-      {/* Particle cloud — primary visual representation of all nodes */}
-      <MoleculeParticleCloud nodes={nodes} selectedId={selectedNodeId} hovId={hovId} />
 
       {/* Edges — soft, secondary */}
       {ed.map(e => <PathEdge key={e.key} s={e.s.position} e={e.e.position} active={e.active} color={e.color} />)}
 
-      {/* Nodes — interaction layer + orbital decoration + labels */}
+      {/* Nodes — solid sphere bodies + orbital rings + labels */}
       {nodes.map(n => (
         <MolNode key={n.id} node={n} hov={hovId===n.id} sel={selectedNodeId===n.id} cc={cc[n.id]??0} onClick={onNodeClick} onHov={setHovId} />
       ))}

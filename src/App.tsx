@@ -48,36 +48,15 @@ function ThemeBadge() {
   );
 }
 
-// ── Default edges — histone lactylation / Warburg pathway ─────────────
+// ── Default edges — artemisinin mevalonate pathway ────────────────────
 const DEFAULT_EDGES: PathwayEdge[] = [
-  // ── Glutamine anaplerosis (step c) ──────────────────────────────────
-  { start: 'glutamine',       end: 'glutamate',              relationshipType: 'converts',  direction: 'forward' },
-  { start: 'glutamate',       end: 'alpha_kg',               relationshipType: 'converts',  direction: 'forward' },
-  { start: 'alpha_kg',        end: 'tca_cycle',              relationshipType: 'produces',  direction: 'forward' },
-  // ── Glycerol catabolism (step b) ────────────────────────────────────
-  { start: 'glycerol',        end: 'gro3p',                  relationshipType: 'converts',  direction: 'forward' },
-  { start: 'gro3p',           end: 'dhap',                   relationshipType: 'converts',  direction: 'forward' },
-  // ── Glycolysis ────────────────────────────────────────────────────────
-  { start: 'glycogen',        end: 'g6p',                    relationshipType: 'converts',  direction: 'forward' },
-  { start: 'glucose',         end: 'g6p',                    relationshipType: 'converts',  direction: 'forward' },
-  { start: 'g6p',             end: 'dhap',                   relationshipType: 'converts',  direction: 'forward' },
-  { start: 'dhap',            end: 'g3p',                    relationshipType: 'converts',  direction: 'bidirectional' },
-  { start: 'g3p',             end: 'pyruvate',               relationshipType: 'converts',  direction: 'forward' },
-  // ── Pyruvate hub ──────────────────────────────────────────────────────
-  { start: 'pyruvate',        end: 'lactate',                relationshipType: 'converts',  direction: 'bidirectional' },
-  { start: 'pyruvate',        end: 'acetyl_coa',             relationshipType: 'converts',  direction: 'forward' },
-  // ── TCA cycle (mitochondrial) ─────────────────────────────────────────
-  { start: 'acetyl_coa',      end: 'tca_cycle',              relationshipType: 'produces',  direction: 'forward' },
-  { start: 'tca_cycle',       end: 'malate',                 relationshipType: 'produces',  direction: 'forward' },
-  { start: 'malate',          end: 'pyruvate',               relationshipType: 'converts',  direction: 'forward' },
-  // ── Lactate arms ──────────────────────────────────────────────────────
-  { start: 'lactate',         end: 'gluconeogenesis',        relationshipType: 'converts',  direction: 'forward' },
-  { start: 'gluconeogenesis', end: 'glucose',                relationshipType: 'produces',  direction: 'forward' },
-  { start: 'lactate',         end: 'lactyl_coa',             relationshipType: 'converts',  direction: 'forward' },
-  { start: 'lactyl_coa',      end: 'histone_lactylation',    relationshipType: 'catalyzes', direction: 'forward' },
-  { start: 'lactyl_coa',      end: 'non_histone_lactylation',relationshipType: 'catalyzes', direction: 'forward' },
-  // ── Hypoxia inhibition ────────────────────────────────────────────────
-  { start: 'hypoxia',         end: 'acetyl_coa',             relationshipType: 'inhibits',  direction: 'forward' },
+  { start: 'acetyl_coa',        end: 'hmg_coa',            relationshipType: 'converts',  direction: 'forward' },
+  { start: 'acetyl_coa',        end: 'mevalonate',          relationshipType: 'produces',  direction: 'forward' },
+  { start: 'hmg_coa',           end: 'mevalonate',          relationshipType: 'converts',  direction: 'forward' },
+  { start: 'mevalonate',        end: 'fpp',                 relationshipType: 'produces',  direction: 'forward' },
+  { start: 'fpp',               end: 'amorpha_4_11_diene',  relationshipType: 'catalyzes', direction: 'forward' },
+  { start: 'amorpha_4_11_diene', end: 'artemisinic_acid',   relationshipType: 'converts',  direction: 'forward' },
+  { start: 'artemisinic_acid',  end: 'artemisinin',         relationshipType: 'produces',  direction: 'forward' },
 ];
 
 // ── Bento stat card ────────────────────────────────────────────────────
@@ -225,10 +204,10 @@ export default function App() {
                       Showcase
                     </p>
                     <p style={{ fontFamily: SERIF, fontSize: '16px', color: 'rgba(255,255,255,0.8)', margin: '0 0 8px', lineHeight: 1.4 }}>
-                      Zhang et al., Nature 2019
+                      Ro et al., Nature 2006
                     </p>
                     <p style={{ fontFamily: BODY, fontSize: '12px', color: 'rgba(255,255,255,0.35)', lineHeight: 1.65, margin: 0 }}>
-                      Histone lactylation pathway — 20-node Warburg-to-epigenome network across cytoplasm, mitochondria & nucleus.
+                      Artemisinin biosynthesis in <em>S. cerevisiae</em> — 7-step pathway, 500M patients.
                     </p>
                   </div>
                 </Reveal>

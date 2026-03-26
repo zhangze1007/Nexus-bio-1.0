@@ -118,21 +118,15 @@ export function sanitizeNodeId(id: string): string {
   return id.toLowerCase().replace(/[^a-z0-9_]/g, '_').slice(0, 64);
 }
 
-// ── Histone lactylation pathway PubChem CIDs ──────────────────────────
+// ── Artemisinin showcase molecule PubChem CIDs ────────────────────────
 // Used by MoleculeViewer to fetch 3D conformers from PubChem
 
 export const SHOWCASE_PUBCHEM_CIDS: Record<string, number> = {
-  glucose:    5793,
-  g6p:        65063,
-  glutamine:  5961,
-  glutamate:  33032,
-  alpha_kg:   51,
-  glycerol:   753,
-  gro3p:      57,
-  dhap:       668,
-  g3p:        749,
-  pyruvate:   1060,
-  acetyl_coa: 444493,
-  malate:     525,
-  lactate:    107689,
+  acetyl_coa:          444493,
+  hmg_coa:             439400,
+  mevalonate:          441,
+  fpp:                 445483,
+  amorpha_4_11_diene:  11230765,
+  artemisinic_acid:    5362031,
+  artemisinin:         68827,
 };
