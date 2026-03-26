@@ -1,3 +1,5 @@
+'use client';
+
 import { useState } from 'react';
 import { Search, ExternalLink, ChevronDown, ChevronUp, Loader2, Send } from 'lucide-react';
 
@@ -87,7 +89,7 @@ function extractKeywords(title: string, abstract: string): Set<string> {
   });
 
   // 2. Capitalized multi-word terms (acronyms + proper nouns)
-  const acronyms = abstract.match(/\b[A-Z][A-Z0-9]{1,9}\b/g) || [];
+  const acronyms: string[] = abstract.match(/\b[A-Z][A-Z0-9]{1,9}\b/g) || [];
   acronyms.forEach(a => { if (a.length >= 2) candidates.add(a); });
 
   // 3. High-frequency content words in abstract (TF-based)

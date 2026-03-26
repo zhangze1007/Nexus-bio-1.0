@@ -1,3 +1,5 @@
+'use client';
+
 import { useEffect, useState } from 'react';
 import { Loader2, ExternalLink, Microscope, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react';
 

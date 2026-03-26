@@ -1,3 +1,5 @@
+'use client';
+
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Loader2, ExternalLink, ChevronDown, ChevronUp, X } from 'lucide-react';
 
