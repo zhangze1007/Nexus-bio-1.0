@@ -8,9 +8,9 @@ export default {
     extend: {
       colors: {
         futuristic: {
-          background: '#020617',
-          primary: '#22d3ee',
-          secondary: '#d946ef',
+          background: '#050505',
+          primary: '#e7e7ea',
+          secondary: '#71717a',
         },
       },
     },
