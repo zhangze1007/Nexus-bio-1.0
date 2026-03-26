@@ -212,14 +212,14 @@ function BondM({ s, e, c }: { s:Vec3; e:Vec3; c:string }) {
   );
 }
 
-// ─── Molecular Node — organic, volume-integrated ──────────────────────
+// ─── Molecular Node — interaction layer + orbital decoration ─────────────
+// Solid body meshes are replaced by MoleculeParticleCloud; this component
+// now handles hit-testing, labels, tooltips and subtle orbital guide rings.
 const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov }: {
   node:PathwayNode; hov:boolean; sel:boolean; cc:number;
   onClick:(n:PathwayNode)=>void; onHov:(id:string|null)=>void;
 }) {
   const grp  = useRef<THREE.Group>(null);
-  const body = useRef<THREE.Mesh>(null);
-  const orb  = useRef<THREE.Group>(null);
   const ring = useRef<THREE.Mesh>(null);
   const [ready, setReady] = useState(false);
 
@@ -231,10 +231,8 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov
   const color  = getColor(node);
   const conf   = getConf(node);
   const lbl    = node.canonicalLabel?.trim() || node.label;
-  const norm   = useMemo(() => node.molecularStructure ? normalizeStruct(node.molecularStructure) : null, [node.molecularStructure]);
   const cfg    = useMemo(() => glyphCfg(node.id, cc), [node.id, cc]);
   const tgt    = sel ? 1.28 : hov ? 1.10 : 1.0;
-  const bndC   = useMemo(() => new THREE.Color(color).lerp(new THREE.Color('#c8d8e8'), 0.3).getStyle(), [color]);
   const colVec = useMemo(() => new THREE.Color(color), [color]);
 
   useEffect(() => () => { document.body.style.cursor = 'auto'; }, []);
@@ -248,79 +246,13 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov
       grp.current.position.y = node.position[1] + Math.sin(t * 0.4 + hash(node.id) * 0.01) * 0.06;
       grp.current.rotation.y = Math.sin(t * 0.06 + hash(node.id) * 0.001) * 0.05;
     }
-    if (body.current) {
-      const mat = body.current.material as THREE.MeshPhysicalMaterial;
-      const tEmi = sel ? 0.14 : hov ? 0.08 : 0.025;
-      mat.emissiveIntensity += (tEmi - mat.emissiveIntensity) * dt * 3;
-      body.current.rotation.y += dt * cfg.spin * 0.6;
-    }
-    if (orb.current) orb.current.rotation.y = t * 0.10 + cfg.spin * 3;
     if (ring.current) {
       ring.current.rotation.z += dt * 0.10;
       const mat = ring.current.material as THREE.MeshPhysicalMaterial;
-      const to = hov || sel ? 0.35 : 0.08;
+      const to = hov || sel ? 0.28 : 0.07;
       mat.opacity += (to - mat.opacity) * dt * 3;
     }
   });
-
-  // Translucent, soft-shaded fallback glyph
-  const fallback = (
-    <>
-      {cfg.rr.map((r, i) => (
-        <mesh key={`r${i}`} ref={i === 0 ? ring : undefined} rotation={[cfg.rt[i] || 0, 0, i * 1.1]}>
-          <torusGeometry args={[r, 0.009, 5, 40]} />
-          <meshPhysicalMaterial color={color} emissive={color} emissiveIntensity={0.05} transparent opacity={0.09} roughness={0.6} metalness={0} depthWrite={false} />
-        </mesh>
-      ))}
-      <group ref={orb}>
-        {Array.from({ length: cfg.sats }).map((_, i) => {
-          const phi = Math.acos(1 - (2*(i+0.5))/cfg.sats);
-          const theta = Math.PI*(1+Math.sqrt(5))*i;
-          return (
-            <mesh key={`s${i}`} position={[Math.sin(phi)*Math.cos(theta)*cfg.sr, Math.sin(phi)*Math.sin(theta)*cfg.sr, Math.cos(phi)*cfg.sr]}>
-              <sphereGeometry args={[cfg.ss, 7, 7]} />
-              <meshPhysicalMaterial color={color} emissive={color} emissiveIntensity={0.06} transparent opacity={0.22} roughness={0.5} metalness={0} />
-            </mesh>
-          );
-        })}
-      </group>
-      {cfg.inner && (
-        <mesh>
-          <octahedronGeometry args={[cfg.scale * 0.35, 0]} />
-          <meshPhysicalMaterial color={color} emissive={color} emissiveIntensity={0.10} transparent opacity={0.55} roughness={0.4} metalness={0} transmission={0.2} />
-        </mesh>
-      )}
-      {/* Core body — MeshPhysical for soft shading */}
-      <mesh ref={body}>
-        <GeoComp g={cfg.geom} s={cfg.scale} />
-        <meshPhysicalMaterial
-          color={color} emissive={color} emissiveIntensity={0.025}
-          roughness={0.52} metalness={0.0}
-          transmission={0.08} thickness={0.6}
-          transparent opacity={0.92}
-        />
-      </mesh>
-      {/* Soft outer shell — volume/translucency */}
-      <mesh>
-        <GeoComp g={cfg.geom} s={cfg.scale * 1.12} />
-        <meshPhysicalMaterial
-          color={color} transparent opacity={hov || sel ? 0.07 : 0.025}
-          roughness={1} metalness={0} depthWrite={false} transmission={0.5}
-        />
-      </mesh>
-    </>
-  );
-
-  const structural = norm ? (
-    <>
-      {norm.bonds.map((b, i) => {
-        const a = norm.atoms[b.atomIndex1], bv = norm.atoms[b.atomIndex2];
-        if (!a || !bv) return null;
-        return <BondM key={i} s={a.position} e={bv.position} c={bndC} />;
-      })}
-      {norm.atoms.map((a, i) => <AtomM key={i} pos={a.position} elem={a.element} hov={hov} sel={sel} />)}
-    </>
-  ) : null;
 
   return (
     <group
@@ -330,7 +262,27 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov
       onPointerOver={e => { e.stopPropagation(); onHov(node.id); document.body.style.cursor = 'pointer'; }}
       onPointerOut={e => { e.stopPropagation(); onHov(null); document.body.style.cursor = 'auto'; }}
     >
-      {norm ? structural : fallback}
+      {/* Invisible hit volume so pointer events fire even between particles */}
+      <mesh>
+        <sphereGeometry args={[cfg.scale * 1.2, 6, 6]} />
+        <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+      </mesh>
+
+      {/* Orbital guide rings — skeletal sci-fi decoration */}
+      {cfg.rr.map((r, i) => (
+        <mesh key={`r${i}`} ref={i === 0 ? ring : undefined} rotation={[cfg.rt[i] || 0, 0, i * 1.1]}>
+          <torusGeometry args={[r, 0.007, 4, 40]} />
+          <meshPhysicalMaterial color={color} emissive={color} emissiveIntensity={0.08} transparent opacity={0.07} roughness={0.6} metalness={0} depthWrite={false} />
+        </mesh>
+      ))}
+
+      {/* Inner wireframe glyph — skeletal core reference */}
+      {cfg.inner && (
+        <mesh>
+          <octahedronGeometry args={[cfg.scale * 0.28, 0]} />
+          <meshPhysicalMaterial color={color} emissive={color} emissiveIntensity={0.12} transparent opacity={0.18} roughness={0.4} metalness={0} wireframe />
+        </mesh>
+      )}
 
       <Html position={[0, -(cfg.scale + 0.52), 0]} center style={{ pointerEvents: 'none', whiteSpace: 'nowrap' }}>
         <div style={{
@@ -412,13 +364,197 @@ const PathEdge = React.memo(function PathEdge({ s, e, active, color }: { s:Vec3;
   );
 });
 
+// ─── Particle shaders ──────────────────────────────────────────────────
+// Vertex: scales each point by its aSize attribute, adds a sine-wave pulse.
+// Fragment: renders a soft glow disc; outer ring fades, bright core stays.
+const PARTICLE_VERT = /* glsl */`
+  uniform float uTime;
+  attribute float aSize;
+  attribute float aPhase;
+  attribute vec3  aColor;
+  varying vec3    vColor;
+  varying float   vAlpha;
+  void main() {
+    vColor = aColor;
+    float pulse    = 0.82 + 0.18 * sin(uTime * 2.2 + aPhase);
+    vec4  mvPos    = modelViewMatrix * vec4(position, 1.0);
+    gl_PointSize   = aSize * pulse * (280.0 / -mvPos.z);
+    gl_Position    = projectionMatrix * mvPos;
+    vAlpha         = pulse;
+  }
+`;
+
+const PARTICLE_FRAG = /* glsl */`
+  varying vec3  vColor;
+  varying float vAlpha;
+  void main() {
+    vec2  uv   = gl_PointCoord - 0.5;
+    float r    = length(uv);
+    if (r > 0.5) discard;
+    float glow = 1.0 - smoothstep(0.0, 0.5, r);
+    float core = 1.0 - smoothstep(0.0, 0.18, r);
+    gl_FragColor = vec4(vColor, (glow * 0.55 + core * 0.45) * vAlpha);
+  }
+`;
+
+const PARTICLES_PER_NODE = 80;  // particles scattered around each node
+const PARTICLE_RADIUS    = 0.55; // sphere radius of the scatter cloud
+
+// Minimal interface matching the OrbitControls props used by ScrollSyncCamera
+type OrbitControlsHandle = { target: THREE.Vector3; update(): void };
+
+// ─── Molecule Particle Cloud ───────────────────────────────────────────
+// Renders all pathway nodes as a single THREE.Points cloud using
+// BufferGeometry and a ShaderMaterial that pulses with time.
+function MoleculeParticleCloud({
+  nodes, selectedId, hovId,
+}: { nodes: PathwayNode[]; selectedId: string | null; hovId: string | null }) {
+  const pointsRef = useRef<THREE.Points>(null);
+  const matRef    = useRef<THREE.ShaderMaterial | null>(null);
+
+  // Build geometry + material once per unique node list
+  const { geometry, material } = useMemo(() => {
+    const count     = nodes.length * PARTICLES_PER_NODE;
+    const positions = new Float32Array(count * 3);
+    const colors    = new Float32Array(count * 3);
+    const sizes     = new Float32Array(count);
+    const phases    = new Float32Array(count);
+
+    nodes.forEach((node, ni) => {
+      const c = new THREE.Color(getColor(node));
+      for (let p = 0; p < PARTICLES_PER_NODE; p++) {
+        const idx   = ni * PARTICLES_PER_NODE + p;
+        // Uniform sphere distribution
+        const u     = Math.random(), v = Math.random();
+        const theta = 2 * Math.PI * u;
+        const phi   = Math.acos(2 * v - 1);
+        const r     = PARTICLE_RADIUS * Math.cbrt(Math.random());
+        positions[idx * 3]     = node.position[0] + r * Math.sin(phi) * Math.cos(theta);
+        positions[idx * 3 + 1] = node.position[1] + r * Math.sin(phi) * Math.sin(theta);
+        positions[idx * 3 + 2] = node.position[2] + r * Math.cos(phi);
+        colors[idx * 3]        = c.r;
+        colors[idx * 3 + 1]    = c.g;
+        colors[idx * 3 + 2]    = c.b;
+        sizes[idx]             = 1.4 + Math.random() * 2.2;
+        phases[idx]            = Math.random() * Math.PI * 2;
+      }
+    });
+
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geo.setAttribute('aColor',   new THREE.BufferAttribute(colors,    3));
+    geo.setAttribute('aSize',    new THREE.BufferAttribute(sizes,     1));
+    geo.setAttribute('aPhase',   new THREE.BufferAttribute(phases,    1));
+
+    const mat = new THREE.ShaderMaterial({
+      vertexShader:   PARTICLE_VERT,
+      fragmentShader: PARTICLE_FRAG,
+      uniforms:       { uTime: { value: 0 } },
+      transparent:    true,
+      depthWrite:     false,
+      blending:       THREE.AdditiveBlending,
+    });
+
+    return { geometry: geo, material: mat };
+  }, [nodes]);
+
+  matRef.current = material;
+
+  // Brighten selected / hovered node particles
+  useEffect(() => {
+    if (!pointsRef.current) return;
+    const colorAttr = pointsRef.current.geometry.getAttribute('aColor') as THREE.BufferAttribute;
+    nodes.forEach((node, ni) => {
+      const isSel = node.id === selectedId;
+      const isHov = node.id === hovId;
+      const base  = new THREE.Color(getColor(node));
+      // Lerp toward white for emphasis
+      const final = isSel
+        ? base.clone().lerp(new THREE.Color('#ffffff'), 0.35)
+        : isHov
+        ? base.clone().lerp(new THREE.Color('#ffffff'), 0.18)
+        : base;
+      for (let p = 0; p < PARTICLES_PER_NODE; p++) {
+        const idx = ni * PARTICLES_PER_NODE + p;
+        (colorAttr.array as Float32Array)[idx * 3]     = final.r;
+        (colorAttr.array as Float32Array)[idx * 3 + 1] = final.g;
+        (colorAttr.array as Float32Array)[idx * 3 + 2] = final.b;
+      }
+    });
+    colorAttr.needsUpdate = true;
+  }, [nodes, selectedId, hovId]);
+
+  // Dispose GPU resources on unmount
+  useEffect(() => {
+    return () => {
+      geometry.dispose();
+      material.dispose();
+    };
+  }, [geometry, material]);
+
+  // Drive the pulse animation
+  useFrame(({ clock }) => {
+    if (matRef.current) matRef.current.uniforms.uTime.value = clock.elapsedTime;
+  });
+
+  return <points ref={pointsRef} geometry={geometry} material={material} />;
+}
+
+// ─── Scroll-Sync Camera ────────────────────────────────────────────────
+// When a node is selected, lerps the OrbitControls orbit-target toward
+// that node's world position and narrows the camera FOV for a cinematic
+// zoom.  All lerps are frame-rate-independent exponential easing.
+// The camera is left alone while the user is actively interacting.
+function ScrollSyncCamera({
+  nodes, selectedId, interact, controlsRef,
+}: {
+  nodes: PathwayNode[];
+  selectedId: string | null;
+  interact: boolean;
+  controlsRef: React.RefObject<OrbitControlsHandle | null>;
+}) {
+  const { camera } = useThree();
+  const targetLookAt = useRef(new THREE.Vector3(0, 0, 0));
+
+  // Recompute target whenever selection changes
+  useEffect(() => {
+    if (selectedId) {
+      const node = nodes.find(n => n.id === selectedId);
+      if (node) targetLookAt.current.set(...node.position);
+    } else {
+      targetLookAt.current.set(0, 0, 0);
+    }
+  }, [selectedId, nodes]);
+
+  useFrame((_, dt) => {
+    // Don't fight with manual OrbitControls interaction
+    if (interact || !(camera instanceof THREE.PerspectiveCamera)) return;
+
+    const alpha = 1 - Math.exp(-dt * 2.0); // smooth exp-decay lerp
+
+    // Shift the orbit centre so the camera naturally orbits around the active site
+    if (controlsRef.current) {
+      controlsRef.current.target.lerp(targetLookAt.current, alpha);
+      controlsRef.current.update();
+    }
+
+    // Narrow FOV while zoomed into a node → cinematic feel
+    const targetFov = selectedId ? 30 : 44;
+    camera.fov += (targetFov - camera.fov) * alpha;
+    camera.updateProjectionMatrix();
+  });
+
+  return null;
+}
+
 // ─── Scene — unified lighting, integrated depth ────────────────────────
 function Scene({ nodes, edges, onNodeClick, selectedNodeId }: {
   nodes:PathwayNode[]; edges:PathwayEdge[];
   onNodeClick:(n:PathwayNode)=>void; selectedNodeId:string|null;
 }) {
-  const [hovId, setHovId]     = useState<string|null>(null);
+  const [hovId, setHovId]       = useState<string|null>(null);
   const [interact, setInteract] = useState(false);
+  const controlsRef = useRef<OrbitControlsHandle | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout>|null>(null);
   const onStart = useCallback(() => { setInteract(true); if (timer.current) clearTimeout(timer.current); }, []);
   const onEnd   = useCallback(() => { timer.current = setTimeout(() => setInteract(false), 3500); }, []);
@@ -454,6 +590,7 @@ function Scene({ nodes, edges, onNodeClick, selectedNodeId }: {
       <fog attach="fog" args={['#07090f', 20, 48]} />
 
       <OrbitControls
+        ref={controlsRef as React.Ref<never>}
         enableZoom
         autoRotate={!interact && !hovId && !selectedNodeId}
         autoRotateSpeed={0.12}
@@ -464,17 +601,22 @@ function Scene({ nodes, edges, onNodeClick, selectedNodeId }: {
         onStart={onStart} onEnd={onEnd}
       />
 
-
       {/* Spatial reference — barely visible */}
       <SpatialReference />
+
+      {/* Particle cloud — primary visual representation of all nodes */}
+      <MoleculeParticleCloud nodes={nodes} selectedId={selectedNodeId} hovId={hovId} />
 
       {/* Edges — soft, secondary */}
       {ed.map(e => <PathEdge key={e.key} s={e.s.position} e={e.e.position} active={e.active} color={e.color} />)}
 
-      {/* Nodes — primary subject */}
+      {/* Nodes — interaction layer + orbital decoration + labels */}
       {nodes.map(n => (
         <MolNode key={n.id} node={n} hov={hovId===n.id} sel={selectedNodeId===n.id} cc={cc[n.id]??0} onClick={onNodeClick} onHov={setHovId} />
       ))}
+
+      {/* Scroll-sync camera — cinematic zoom to active sites on scroll/select */}
+      <ScrollSyncCamera nodes={nodes} selectedId={selectedNodeId} interact={interact} controlsRef={controlsRef} />
     </>
   );
 }
