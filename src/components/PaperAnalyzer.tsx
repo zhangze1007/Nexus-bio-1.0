@@ -67,7 +67,7 @@ Rules:
 - relationshipType: catalyzes, produces, consumes, activates, inhibits, converts, transports, regulates, or unknown
 - IDs: lowercase letters and underscores only, no spaces
 - evidenceSnippet: must be copied word-for-word from the source text
-- evidenceAnchors: each node MUST include at least one evidence_anchor with residue_id (integer), pubmed_id (string), confidence_score (0-1 float), and snippet (exact quote)
+- evidenceAnchors: each node MUST include at least one anchor with residue_id (integer), pubmed_id (string), confidence_score (0-1 float), and snippet (exact quote)
 - kineticParams on edges: estimate Vmax (μmol/min/mg), Km (mM), deltaG (kJ/mol) from the text or use reasonable biochemical defaults
 - No markdown, no explanation, no text outside the JSON
 

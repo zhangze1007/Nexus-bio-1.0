@@ -31,9 +31,8 @@ self.onmessage = function handleMessage(e) {
 
     // RK4 integration for substrate → product via Michaelis-Menten
     var S = S0;
+    var v = function(s) { return (Vmax * Math.max(0, s)) / (Km + Math.max(0, s)); };
     for (var step = 0; step < steps; step++) {
-      var v = function(s) { return (Vmax * Math.max(0, s)) / (Km + Math.max(0, s)); };
-
       var k1 = -v(S);
       var k2 = -v(S + dt * k1 / 2);
       var k3 = -v(S + dt * k2 / 2);

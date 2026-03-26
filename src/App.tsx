@@ -500,8 +500,8 @@ function DashboardInner() {
                       <span style={{ fontFamily: MONO, fontSize: '8px', color: 'rgba(255,255,255,0.3)' }}>
                         K<sub>m</sub>={edge.kineticParams!.Km}
                       </span>
-                      <span style={{ fontFamily: MONO, fontSize: '8px', color: edge.kineticParams!.deltaG! < -25 ? '#4ade80' : '#facc15' }}>
-                        ΔG={edge.kineticParams!.deltaG}
+                      <span style={{ fontFamily: MONO, fontSize: '8px', color: (edge.kineticParams?.deltaG ?? 0) < -25 ? '#4ade80' : '#facc15' }}>
+                        ΔG={edge.kineticParams?.deltaG ?? 'N/A'}
                       </span>
                     </div>
                   ))}

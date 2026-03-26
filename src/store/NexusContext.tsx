@@ -15,6 +15,7 @@ export interface NexusState {
   selectedNodeId: string | null;
   selectedResidueId: number | null;
   highlightedEnzymeNodeId: string | null;
+  /** PubMed ID or citation key — consumed by literature panel to auto-scroll on residue selection */
   literatureScrollTarget: string | null;
 
   // Evidence layer
