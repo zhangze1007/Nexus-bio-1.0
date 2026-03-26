@@ -15,7 +15,7 @@ type ConfigurableRenderer = {
   setClearColor: (color: THREE.ColorRepresentation, alpha?: number) => void;
 };
 
-const INIT_TIMEOUT_MS = 4500;
+const INIT_TIMEOUT_MS = 2000;
 
 function withTimeout<T>(promise: Promise<T>, label: string): Promise<T> {
   return new Promise<T>((resolve, reject) => {
@@ -227,8 +227,7 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    const t = setTimeout(() => setReady(true), 80 + hash(node.id) % 320);
-    return () => clearTimeout(t);
+    setReady(true);
   }, [node.id]);
 
   const color  = getColor(node);
