@@ -1,7 +1,7 @@
 {
   "project_name": "Nexus-Bio",
   "description": "Production-ready, zero-cost-deployable web app for Next-Gen Bio-Intelligent Architecture.",
-  "tech_stack": ["React", "Three.js", "Tailwind CSS", "Vite", "Framer Motion"],
+  "tech_stack": ["React", "Next.js", "Three.js", "Tailwind CSS", "Framer Motion"],
   "deliverables": [
     {
       "type": "Source Code",
@@ -47,6 +47,6 @@
   },
   "deployment": {
     "zero_cost_hosts": ["Vercel", "Netlify", "GitHub Pages"],
-    "one_click_deploy": "Use Vercel or Netlify dashboard to import the GitHub repository. The build command is 'npm run build' and the output directory is 'dist'."
+    "one_click_deploy": "Use Vercel or Netlify dashboard to import the GitHub repository. The build command is 'npm run build' and the output directory should be left as the Next.js default."
   }
 }

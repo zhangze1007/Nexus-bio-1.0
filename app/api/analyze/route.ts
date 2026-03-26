@@ -40,13 +40,25 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   ]);
 }
 
+function getParts(body: any): any[] {
+  if (!Array.isArray(body?.contents)) return [];
+
+  return body.contents.flatMap((content: any) =>
+    Array.isArray(content?.parts) ? content.parts : []
+  );
+}
+
+function isTextOnlyRequest(body: any): boolean {
+  const parts = getParts(body);
+  return parts.length > 0 && parts.every((part) => typeof part?.text === 'string' && !part?.inline_data && !part?.file_data);
+}
+
 // Extract prompt text from Gemini-format request body
 function extractPrompt(body: any): string {
-  try {
-    return body?.contents?.[0]?.parts?.[0]?.text || '';
-  } catch {
-    return '';
-  }
+  return getParts(body)
+    .map((part) => (typeof part?.text === 'string' ? part.text.trim() : ''))
+    .filter(Boolean)
+    .join('\n\n');
 }
 
 // ── Try Groq first (OpenAI-compatible format) ──
@@ -154,8 +166,16 @@ export async function POST(req: NextRequest) {
     return jsonResponse({ error: 'No prompt text found' }, 400);
   }
 
+  const textOnlyRequest = isTextOnlyRequest(body);
+
+  if (!textOnlyRequest && !geminiKey) {
+    return jsonResponse({
+      error: 'Multimodal analysis requires GEMINI_API_KEY to be configured.',
+    }, 503);
+  }
+
   // ── Try Groq first ──
-  if (groqKey) {
+  if (groqKey && textOnlyRequest) {
     const groqResult = await tryGroq(prompt, groqKey);
     if (groqResult) {
       // Return in Gemini-compatible format so frontend doesn't need to change

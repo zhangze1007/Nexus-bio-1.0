@@ -43,7 +43,7 @@ Paste a paper → AI extracts pathway → 3D visualization
 ## Tech Stack
 
 ```
-Frontend     React + TypeScript + Vite + Tailwind CSS v3 + Framer Motion
+Frontend     React + TypeScript + Next.js 15 + Tailwind CSS v3 + Framer Motion
 3D           Three.js + @react-three/fiber + @react-three/drei
              Custom GLSL shaders (organic volume terrain)
              3Dmol.js (protein + molecular rendering)
