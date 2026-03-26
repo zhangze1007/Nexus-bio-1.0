@@ -251,60 +251,24 @@ export default function App() {
       />
 
       {/* ── ANALYZER ── */}
-      <section id="analyzer" style={{ padding: 'clamp(64px, 10vw, 120px) clamp(16px, 4vw, 40px)' }}>
-        <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
-          <Reveal>
-            <p style={{ fontFamily: BODY, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'rgba(255,255,255,0.22)', margin: '0 0 12px' }}>
-              02 · Analysis
-            </p>
-            <h2 style={{ fontFamily: SERIF, fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: 400, color: 'rgba(255,255,255,0.92)', margin: '0 0 40px', letterSpacing: '-0.02em' }}>
-              Paper Analyzer
-            </h2>
-          </Reveal>
-          <Reveal delay={0.1}>
-            <PaperAnalyzer onPathwayGenerated={handlePathwayGenerated} />
-          </Reveal>
-        </div>
-      </section>
+      <Reveal>
+        <PaperAnalyzer onPathwayGenerated={handlePathwayGenerated} />
+      </Reveal>
 
       {/* ── SEARCH ── */}
-      <section id="search" style={{ padding: 'clamp(64px, 10vw, 120px) clamp(16px, 4vw, 40px)' }}>
-        <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
-          <Reveal>
-            <p style={{ fontFamily: BODY, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'rgba(255,255,255,0.22)', margin: '0 0 12px' }}>
-              03 · Literature
-            </p>
-            <h2 style={{ fontFamily: SERIF, fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: 400, color: 'rgba(255,255,255,0.92)', margin: '0 0 40px', letterSpacing: '-0.02em' }}>
-              Database Research
-            </h2>
-          </Reveal>
-          <Reveal delay={0.1}>
-            <SemanticSearch onAnalyzePaper={(text) => {
-              document.getElementById('analyzer')?.scrollIntoView({ behavior: 'smooth' });
-              setTimeout(() => {
-                window.dispatchEvent(new CustomEvent('autoFillAnalyzer', { detail: { text } }));
-              }, 600);
-            }} />
-          </Reveal>
-        </div>
-      </section>
+      <Reveal>
+        <SemanticSearch onAnalyzePaper={(text) => {
+          document.getElementById('analyzer')?.scrollIntoView({ behavior: 'smooth' });
+          setTimeout(() => {
+            window.dispatchEvent(new CustomEvent('autoFillAnalyzer', { detail: { text } }));
+          }, 600);
+        }} />
+      </Reveal>
 
       {/* ── CONTACT ── */}
-      <section id="contact" style={{ padding: 'clamp(64px, 10vw, 120px) clamp(16px, 4vw, 40px)' }}>
-        <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
-          <Reveal>
-            <p style={{ fontFamily: BODY, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'rgba(255,255,255,0.22)', margin: '0 0 12px' }}>
-              04 · Connect
-            </p>
-            <h2 style={{ fontFamily: SERIF, fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: 400, color: 'rgba(255,255,255,0.92)', margin: '0 0 40px', letterSpacing: '-0.02em' }}>
-              Contact
-            </h2>
-          </Reveal>
-          <Reveal delay={0.1}>
-            <ContactFlow />
-          </Reveal>
-        </div>
-      </section>
+      <Reveal>
+        <ContactFlow />
+      </Reveal>
 
       <DevModePanel />
 
