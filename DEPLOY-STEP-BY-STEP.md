@@ -48,6 +48,11 @@ This guide will help you deploy the Nexus-Bio application to the internet for fr
 3. Click the **Visit** button to see your live website!
 
 ### Troubleshooting
-- **404: NOT_FOUND?** Go to Vercel Project Settings → General → Framework Preset and change it to **Next.js**. Then redeploy.
+- **404: NOT_FOUND?** Go to Vercel Project Settings → General → Framework Preset and change it to **Next.js**. Clear the Output Directory field (leave blank). Then redeploy.
+- **"No Next.js version detected"?** Go to Vercel Project Settings → General:
+  1. Make sure **Root Directory** is set to `./` (or left blank — the default). It must point to the folder containing `package.json`.
+  2. Make sure **Framework Preset** is set to **Next.js**.
+  3. Clear any custom **Build Command** and **Output Directory** overrides (leave them blank so `vercel.json` settings are used).
+  4. Click **Save**, then redeploy.
 - **Blank Screen?** Ensure the Output Directory is left as default (not set to `dist`).
 - **Build Failed?** Check the Vercel logs. Ensure `package.json` is in the root of your repository.
