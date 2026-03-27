@@ -52,13 +52,13 @@ function ThemeBadge() {
 
 // ── Default edges — artemisinin mevalonate pathway ────────────────────
 const DEFAULT_EDGES: PathwayEdge[] = [
-  { start: 'acetyl_coa',        end: 'hmg_coa',            relationshipType: 'converts',  direction: 'forward' },
-  { start: 'acetyl_coa',        end: 'mevalonate',          relationshipType: 'produces',  direction: 'forward' },
-  { start: 'hmg_coa',           end: 'mevalonate',          relationshipType: 'converts',  direction: 'forward' },
-  { start: 'mevalonate',        end: 'fpp',                 relationshipType: 'produces',  direction: 'forward' },
-  { start: 'fpp',               end: 'amorpha_4_11_diene',  relationshipType: 'catalyzes', direction: 'forward' },
-  { start: 'amorpha_4_11_diene', end: 'artemisinic_acid',   relationshipType: 'converts',  direction: 'forward' },
-  { start: 'artemisinic_acid',  end: 'artemisinin',         relationshipType: 'produces',  direction: 'forward' },
+  { start: 'acetyl_coa',        end: 'hmg_coa',            relationshipType: 'converts',  direction: 'forward', predicted_delta_G_kJ_mol: -33.5, spontaneity: 'Spontaneous', thickness_mapping: 'Medium', yield_prediction: 'High' },
+  { start: 'acetyl_coa',        end: 'mevalonate',          relationshipType: 'produces',  direction: 'forward', predicted_delta_G_kJ_mol: -45.2, spontaneity: 'Spontaneous', thickness_mapping: 'Thin' },
+  { start: 'hmg_coa',           end: 'mevalonate',          relationshipType: 'converts',  direction: 'forward', predicted_delta_G_kJ_mol: -53.1, spontaneity: 'Highly Spontaneous', thickness_mapping: 'Thick', yield_prediction: 'Rate-limiting step' },
+  { start: 'mevalonate',        end: 'fpp',                 relationshipType: 'produces',  direction: 'forward', predicted_delta_G_kJ_mol: -30.0, spontaneity: 'Spontaneous', thickness_mapping: 'Medium', yield_prediction: 'High' },
+  { start: 'fpp',               end: 'amorpha_4_11_diene',  relationshipType: 'catalyzes', direction: 'forward', predicted_delta_G_kJ_mol: -45.2, spontaneity: 'Highly Spontaneous', thickness_mapping: 'Medium', yield_prediction: 'Moderate' },
+  { start: 'amorpha_4_11_diene', end: 'artemisinic_acid',   relationshipType: 'converts',  direction: 'forward', predicted_delta_G_kJ_mol: -120.5, spontaneity: 'Spontaneous', thickness_mapping: 'Thick', yield_prediction: 'High with CPR co-expression' },
+  { start: 'artemisinic_acid',  end: 'artemisinin',         relationshipType: 'produces',  direction: 'forward', predicted_delta_G_kJ_mol: -150.0, spontaneity: 'Spontaneous (condition dependent)', thickness_mapping: 'Thin', yield_prediction: 'Low to Moderate without optimization' },
 ];
 
 // ── Bento stat card ────────────────────────────────────────────────────

@@ -598,7 +598,7 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                   </div>
 
                   {/* ─── 修改点 2：商业风险与合规展示面板 ──────────────────────── */}
-                  {(node.risk_score !== undefined || node.audit_trail) && (
+                  {(node.risk_score !== undefined || node.separation_cost_index !== undefined || node.audit_trail) && (
                     <>
                       <div style={{ padding: '14px 16px', borderRadius: '20px', background: node.risk_score && node.risk_score > 0.7 ? 'rgba(220,53,69,0.1)' : 'rgba(255,255,255,0.03)', border: `1px solid ${node.risk_score && node.risk_score > 0.7 ? 'rgba(220,53,69,0.3)' : 'rgba(255,255,255,0.06)'}`, marginBottom: '16px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
@@ -606,26 +606,38 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                           <span style={{ fontSize: '11px', fontWeight: 800, color: 'rgba(255,255,255,0.85)', letterSpacing: '0.05em', fontFamily: "'Public Sans', sans-serif" }}>COMMERCIAL RISK & COMPLIANCE</span>
                         </div>
                         
-                        {node.risk_score !== undefined && (
+                        {(node.separation_cost_index !== undefined || node.risk_score !== undefined) && (
                           <div style={{ marginBottom: '12px' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'rgba(255,255,255,0.5)', marginBottom: '6px', fontFamily: "'Public Sans', sans-serif" }}>
                               <span>Separation Cost Index</span>
-                              <span>{(node.risk_score * 100).toFixed(0)}%</span>
+                              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                {(node.separation_cost_index ?? node.risk_score ?? 0) > 0.7 && (
+                                  <span style={{ color: '#dc3545', fontWeight: 700, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>High Separation Cost</span>
+                                )}
+                                {((node.separation_cost_index ?? node.risk_score ?? 0) * 100).toFixed(0)}%
+                              </span>
                             </div>
                             <div style={{ height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '2px' }}>
-                              <div style={{ width: `${node.risk_score * 100}%`, height: '100%', background: node.risk_score > 0.7 ? '#dc3545' : '#28a745', borderRadius: '2px' }} />
+                              <div style={{ width: `${(node.separation_cost_index ?? node.risk_score ?? 0) * 100}%`, height: '100%', background: (node.separation_cost_index ?? node.risk_score ?? 0) > 0.7 ? '#dc3545' : '#28a745', borderRadius: '2px' }} />
                             </div>
                           </div>
                         )}
 
                         {node.toxicity_impact && (
-                          <p style={{ color: '#ff7875', fontSize: '11px', fontWeight: 600, margin: '0 0 12px', fontFamily: "'Public Sans', sans-serif" }}>⚠️ {node.toxicity_impact}</p>
+                          <p style={{ color: '#ff7875', fontSize: '11px', fontWeight: 600, margin: '0 0 12px', fontFamily: "'Public Sans', sans-serif" }}>⚠️ Potential Toxicity: {node.toxicity_impact}</p>
+                        )}
+
+                        {node.thermodynamic_stability && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px' }}>
+                            <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', fontFamily: "'Public Sans', sans-serif" }}>Thermodynamic Stability:</span>
+                            <span style={{ fontSize: '10px', fontWeight: 700, color: node.thermodynamic_stability === 'High' ? '#28a745' : node.thermodynamic_stability === 'Low' ? '#dc3545' : '#e8c84a', fontFamily: "'Public Sans', sans-serif" }}>{node.thermodynamic_stability}</span>
+                          </div>
                         )}
 
                         {node.audit_trail && (
                           <div style={{ padding: '10px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px', fontSize: '11px', color: 'rgba(255,255,255,0.45)', fontStyle: 'italic', fontFamily: "'Public Sans', sans-serif", border: '1px solid rgba(255,255,255,0.04)' }}>
                              <span style={{ display: 'block', fontSize: '9px', color: 'rgba(255,255,255,0.3)', marginBottom: '4px', fontWeight: 700, textTransform: 'uppercase', fontStyle: 'normal' }}>Verifiable Audit Trail</span>
-                             "{node.audit_trail}"
+                             &ldquo;{node.audit_trail}&rdquo;
                           </div>
                         )}
                       </div>

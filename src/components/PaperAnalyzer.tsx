@@ -27,6 +27,8 @@ CRITICAL RULES:
 1. Every node's evidenceSnippet must be an EXACT QUOTE copied verbatim from the text. Do not paraphrase.
 2. Include ALL pathway intermediates, branch-point byproducts, and competing impurities mentioned in the text.
 3. For each reaction edge, estimate thermodynamic favorability when the text provides clues (e.g. spontaneous, rate-limiting, high yield).
+4. For nodes with risk_score > 0.7, you MUST assess toxicity_impact and separation_cost_index to meet Nexus-Bio commercial compliance standards.
+5. If the text does not explicitly mention impurities, use your metabolic engineering knowledge to identify likely side reactions and byproducts for the pathway described.
 
 Return ONLY this exact JSON, nothing else:
 
@@ -43,6 +45,8 @@ Return ONLY this exact JSON, nothing else:
       "thermodynamic_stability": "High",
       "color_mapping": "Green",
       "risk_score": 0.0,
+      "toxicity_impact": "None — desired pathway product",
+      "separation_cost_index": 0.0,
       "audit_trail": "Page/section reference from source text"
     }
   ],
@@ -73,7 +77,9 @@ Rules:
 - thermodynamic_stability: "High" | "Moderate" | "Low" (stability of the compound)
 - color_mapping: "Green" (stable/verified) | "Yellow" (moderate) | "Orange" (unstable/low yield) | "Red" (impurity/risk) | "Purple" (dual-role intermediate) | "Blue" (cofactor/auxiliary)
 - risk_score: 0.0 to 1.0 (0 = no risk, 1 = major impurity/competitor; use 0 for desired pathway metabolites)
-- For impurity nodes: typically set risk_score > 0.5 and color_mapping "Red", nodeType "impurity"
+- toxicity_impact: describe potential toxicity to host cells or downstream drug safety (e.g. "Cytotoxic to yeast at >5mM", "Potential genotoxicity risk in human use", or "None — desired pathway product")
+- separation_cost_index: 0.0 to 1.0 — physicochemical similarity to the target product (higher = harder to separate during purification; e.g. structural analogs get 0.7-0.9)
+- For impurity nodes: typically set risk_score > 0.5, color_mapping "Red", nodeType "impurity". Nodes with risk_score > 0.7 MUST have toxicity_impact assessment and separation_cost_index > 0.5
 - predicted_delta_G_kJ_mol: estimated Gibbs free energy change (negative = spontaneous)
 - spontaneity: "Highly Spontaneous" | "Spontaneous" | "Non-spontaneous" | "Spontaneous (condition dependent)"
 - yield_prediction: brief yield assessment (e.g. "High", "Moderate", "Rate-limiting step")
@@ -152,6 +158,9 @@ function normalizePathway(parsed: unknown): { nodes: PathwayNode[]; edges: Pathw
       color_mapping: (VALID_COLOR_MAPPINGS.includes(n.color_mapping as string)
         ? n.color_mapping : undefined) as any,
       audit_trail: typeof n.audit_trail === 'string' ? n.audit_trail : undefined,
+      toxicity_impact: typeof n.toxicity_impact === 'string' ? n.toxicity_impact : undefined,
+      separation_cost_index: typeof n.separation_cost_index === 'number'
+        ? Math.min(1, Math.max(0, n.separation_cost_index)) : undefined,
       color: COLORS[i % COLORS.length],
       position: [
         i === 0 ? -r : parseFloat((Math.cos(angle) * r).toFixed(2)),

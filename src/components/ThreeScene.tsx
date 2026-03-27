@@ -131,9 +131,13 @@ function conf2pastel(p: number): string {
 }
 
 function getColor(node: PathwayNode): string {
-  // --- 功能修复：恢复杂质/高产标签颜色逻辑 ---
-  if (node.color_mapping === 'Red') return '#dc3545'; // Impurity / High Cost (Red)
-  if (node.color_mapping === 'Green') return '#28a745'; // Verified High-Yield (Green)
+  // --- Full color_mapping support for all 6 risk/status levels ---
+  if (node.color_mapping === 'Red') return '#dc3545';    // Impurity / High Cost
+  if (node.color_mapping === 'Green') return '#28a745';  // Verified High-Yield
+  if (node.color_mapping === 'Yellow') return '#e8c84a'; // Moderate stability
+  if (node.color_mapping === 'Orange') return '#e87040'; // Unstable / Low yield
+  if (node.color_mapping === 'Purple') return '#9b59b6'; // Dual-role intermediate
+  if (node.color_mapping === 'Blue') return '#5b9bd5';   // Cofactor / auxiliary
 
   // Fallback to confidence scores for PubChem conformers or showcase nodes
   const c = SHOWCASE_N_CONF[node.id];
@@ -311,26 +315,29 @@ const PathEdge = React.memo(function PathEdge({ edge, s, e, active, color }: { e
     return map[edge.thickness_mapping || "Medium"] || 0.25;
   }, [edge.thickness_mapping]);
 
+  // Show flowing dot for spontaneous reactions (negative ΔG) or when edge is active
+  const isSpontaneous = edge.predicted_delta_G_kJ_mol !== undefined && edge.predicted_delta_G_kJ_mol < 0;
+  const dotSpeed = isSpontaneous ? Math.min(0.4, 0.08 + Math.abs(edge.predicted_delta_G_kJ_mol ?? 0) * 0.002) : 0.18;
+
   useFrame((_, dt) => {
-    prog.current = (prog.current + dt * 0.18) % 1;
+    prog.current = (prog.current + dt * dotSpeed) % 1;
     if (dot.current) {
       dot.current.position.lerpVectors(sv, ev, prog.current);
-      dot.current.visible = active;
+      dot.current.visible = active || isSpontaneous;
     }
   });
 
   return (
     <group>
-      {/* 【关键修复】: 暗灰背景下使用略亮的连线颜色 #556677 防止隐身 */}
       <Line points={[sv, ev]} color={active ? color : '#556677'} lineWidth={active ? thickness * 1.5 : thickness} transparent opacity={active ? 0.8 : 0.25} />
       <mesh ref={dot} visible={false}>
-        <sphereGeometry args={[0.04, 5, 5]} />
-        <meshPhysicalMaterial color={color} emissive={color} emissiveIntensity={0.6} transparent opacity={0.8} />
+        <sphereGeometry args={[active ? 0.05 : 0.035, 6, 6]} />
+        <meshPhysicalMaterial color={color} emissive={color} emissiveIntensity={isSpontaneous ? 0.8 : 0.6} transparent opacity={active ? 0.9 : 0.5} />
       </mesh>
       {active && edge.predicted_delta_G_kJ_mol && (
         <Html position={mid.toArray() as Vec3}>
           <div style={{ background: 'rgba(6,9,16,0.9)', color: '#fff', padding: '2px 6px', borderRadius: '4px', fontSize: '9px', fontWeight: 600, border: '1px solid rgba(255,255,255,0.1)' }}>
-            ΔG: {edge.predicted_delta_G_kJ_mol}
+            ΔG: {edge.predicted_delta_G_kJ_mol} kJ/mol
           </div>
         </Html>
       )}
