@@ -1,0 +1,245 @@
+{
+  "project_name": "Artemisinin Biosynthesis Pathway Reconstruction and Optimization",
+  "nodes": [
+    {
+      "id": "M_FPP",
+      "name": "Farnesyl Pyrophosphate (FPP)",
+      "type": "Metabolite",
+      "thermodynamic_stability": "Moderate",
+      "color_mapping": "Yellow",
+      "audit_trail": "Page 2, Biosynthetic pathway of artemisinin; Figure 1"
+    },
+    {
+      "
+id": "M_A411D",
+      "name": "Amorpha-4,11-diene",
+      "type": "Metabolite",
+      "thermodynamic_stability": "High",
+      "color_mapping": "Green",
+      "audit_trail": "Page 3, Figure 2; Page 4, Figure 3"
+    },
+    {
+      "id": "M_AA_OH",
+      "name": "Artemisinic alcohol",
+      "type": "Metabolite",
+      "thermodynamic_stability": "Moderate",
+      "color_mapping": "Yellow",
+      "audit_trail": "Page 4, Figure 3; Cytochrome P450 section"
+    },
+    {
+      "id": "M_AA_ALD",
+      "name": "Artemisinic aldehyde",
+      "type": "Metabolite",
+      "thermodynamic_stability": "Low",
+      "color_mapping": "Orange",
+      "audit_trail": "Page 4, Figure 3; Artemisinic aldehyde ∆11(13) reductase section"
+    },
+    {
+      "id": "M_AA_ACID",
+      "name": "Artemisinic acid",
+      "type": "Metabolite",
+      "thermodynamic_stability": "High",
+      "color_mapping": "Green",
+      "audit_trail": "Page 4, Figure 3; Other possible intermediates and enzymes section"
+    },
+    {
+      "id": "M_DHAA_ALD",
+      "name": "Dihydroartemisinic aldehyde",
+      "type": "Metabolite",
+      "thermodynamic_stability": "Low",
+      "color_mapping": "Orange",
+      "audit_trail": "Page 4, Figure 3; Aldehyde dehydrogenase section"
+    },
+    {
+      "id": "M_DHAA_ACID",
+      "name": "Dihydroartemisinic acid",
+      "type": "Metabolite",
+      "thermodynamic_stability": "High",
+      "color_mapping": "Green",
+      "audit_trail": "Page 4, Figure 3; Page 5, converted in vivo section"
+    },
+    {
+      "id": "M_ART",
+      "name": "Artemisinin",
+      "type": "Metabolite",
+      "thermodynamic_stability": "Moderate (Endoperoxide bridge is sensitive)",
+      "color_mapping": "Yellow",
+      "audit_trail": "Page 1, Abstract & Introduction; Page 4, Figure 3"
+    },
+    {
+      "id": "I_EPI",
+      "name": "epi-cedrol",
+      "type": "Impurity",
+      "thermodynamic_stability": "High",
+      "color_mapping": "Red",
+      "audit_trail": "Page 3, Figure 2; Sesquiterpene synthases section"
+    },
+    {
+      "id": "I_BCP",
+      "name": "beta-caryophyllene",
+      "type": "Impurity",
+      "thermodynamic_stability": "High",
+      "color_mapping": "Red",
+      "audit_trail": "Page 3, Figure 2; Sesquiterpene synthases section"
+    },
+    {
+      "id": "I_BFS",
+      "name": "beta-farnesene",
+      "type": "Impurity",
+      "thermodynamic_stability": "High",
+      "color_mapping": "Red",
+      "audit_trail": "Page 3, Figure 2; Sesquiterpene synthases section"
+    },
+    {
+      "id": "I_STEROL",
+      "name": "Sterols",
+      "type": "Impurity",
+      "thermodynamic_stability": "High",
+      "color_mapping": "Red",
+      "audit_trail": "Page 3, Sesquiterpene synthases section (Squalene synthase competition)"
+    },
+    {
+      "id": "I_ART_B",
+      "name": "Arteannuin B",
+      "type": "Impurity / Intermediate",
+      "thermodynamic_stability": "High",
+      "color_mapping": "Purple",
+      "audit_trail": "Page 4, Other possible intermediates and enzymes section"
+    }
+  ],
+  "edges": [
+    {
+      "source": "M_FPP",
+      "target": "M_A411D",
+      "enzyme": "Amorpha-4,11-diene synthase (ADS)",
+      "predicted_delta_G_kJ_mol": -45.2,
+      "spontaneity": "Highly Spontaneous",
+      "yield_prediction": "Rate-limiting step, moderate baseline yield",
+      "thickness_mapping": "Medium",
+      "audit_trail": "Page 3, 'The first committed and limiting step of artemisinin biosynthesis should be the cyclization of FPP by ADS.'"
+    },
+    {
+      "source": "M_A411D",
+      "target": "M_AA_OH",
+      "enzyme": "Cytochrome P450 (CYP71AV1)",
+      "predicted_delta_G_kJ_mol": -120.5,
+      "spontaneity": "Spontaneous (NADPH/O2 dependent)",
+      "yield_prediction": "High with CPR co-expression",
+      "thickness_mapping": "Thick",
+      "audit_trail": "Page 4, 'CYP71AV1 was... shown to catalyze the oxidation of the amorpha-4,11-diene, artemisinic alcohol...'"
+    },
+    {
+      "source": "M_AA_OH",
+      "target": "M_AA_ALD",
+      "enzyme": "Cytochrome P450 (CYP71AV1)",
+      "predicted_delta_G_kJ_mol": -85.3,
+      "spontaneity": "Spontaneous",
+      "yield_prediction": "High",
+      "thickness_mapping": "Thick",
+      "audit_trail": "Page 4, 'CYP71AV1... shown to catalyze the oxidation of the... artemisinic alcohol'"
+    },
+    {
+      "source": "M_AA_ALD",
+      "target": "M_DHAA_ALD",
+      "enzyme": "Artemisinic aldehyde ∆11(13) reductase (Dbr2)",
+      "predicted_delta_G_kJ_mol": -30.1,
+      "spontaneity": "Spontaneous",
+      "yield_prediction": "Moderate to High",
+      "thickness_mapping": "Medium",
+      "audit_trail": "Page 4, 'Dbr2 was cloned and characterized, shown to be relatively specific for artemisinic aldehyde'"
+    },
+    {
+      "source": "M_AA_ALD",
+      "target": "M_AA_ACID",
+      "enzyme": "CYP71AV1 / Aldh1",
+      "predicted_delta_G_kJ_mol": -90.0,
+      "spontaneity": "Spontaneous",
+      "yield_prediction": "Moderate",
+      "thickness_mapping": "Medium",
+      "audit_trail": "Page 4, Figure 3; 'Aldh1... capable of catalyzing the oxidation artemisinic aldehyde'"
+    },
+    {
+      "source": "M_DHAA_ALD",
+      "target": "M_DHAA_ACID",
+      "enzyme": "Aldehyde dehydrogenase (Aldh1)",
+      "predicted_delta_G_kJ_mol": -95.0,
+      "spontaneity": "Spontaneous",
+      "yield_prediction": "High",
+      "thickness_mapping": "Thick",
+      "audit_trail": "Page 4, 'Aldh1... capable of catalyzing the oxidation artemisinic aldehyde, dihydroartemisinic aldehyde'"
+    },
+    {
+      "source": "M_DHAA_ACID",
+      "target": "M_ART",
+      "enzyme": "Non-enzymatic (photo-oxidation)",
+      "predicted_delta_G_kJ_mol": -150.0,
+      "spontaneity": "Spontaneous (Light/Singlet Oxygen dependent)",
+      "yield_prediction": "Low to Moderate without optimization",
+      "thickness_mapping": "Thin",
+      "audit_trail": "Page 5, 'in vivo dihydroartemisinic acid undergoes rapid plant pigment photosensitized oxidation, followed by subsequent spontaneous oxidation to form artemisinin.'"
+    },
+    {
+      "source": "M_FPP",
+      "target": "I_EPI",
+      "enzyme": "Epi-cedrol synthase (ECS)",
+      "predicted_delta_G_kJ_mol": -40.0,
+      "spontaneity": "Spontaneous",
+      "yield_prediction": "Side reaction yield (diverts FPP)",
+      "thickness_mapping": "Thin",
+      "audit_trail": "Page 3, Figure 2; 'The cDNA encoding sesquiterpene synthase firstly cloned belongs to the epi-cedol synthase (ECS)'"
+    },
+    {
+      "source": "M_FPP",
+      "target": "I_STEROL",
+      "enzyme": "Squalene Synthase (SS)",
+      "predicted_delta_G_kJ_mol": -60.0,
+      "spontaneity": "Spontaneous",
+      "yield_prediction": "Significant native competitor",
+      "thickness_mapping": "Medium",
+      "audit_trail": "Page 3, 'Since squalene synthase (SS) is responsible for sterol biosynthesis, competitive with FPP, it is considered as a regulatory switch.'"
+    }
+  ],
+  "risk_report": [
+    {
+      "impurity_name": "Sterols",
+      "source_pathway": "Farnesyl Pyrophosphate (FPP) via Squalene Synthase (SS)",
+      "reason": "Squalene synthase competes directly with ADS for the universal precursor FPP. Sterols reduce the total carbon flux available for artemisinin.",
+      "risk_score": 0.85,
+      "audit_trail": "Page 3, Paragraph 4: 'Since squalene synthase (SS) is responsible for sterol biosynthesis, competitive with FPP...'"
+    },
+    {
+      "impurity_name": "epi-cedrol, beta-caryophyllene, beta-farnesene",
+      "source_pathway": "FPP via ECS, CS, FS",
+      "reason": "Endogenous sesquiterpene synthases structurally parallel to ADS cyclize FPP into unwanted volatile/terpene byproducts.",
+      "risk_score": 0.75,
+      "audit_trail": "Page 3, Figure 2: 'Reactions catalyzed by the four sesquiterpene synthases cloned from A. annua'"
+    },
+    {
+      "impurity_name": "Arteannuin B",
+      "source_pathway": "Artemisinic acid via biochemical/non-enzymatic transformation",
+      "reason": "Artemisinic acid is converted to Arteannuin B in competing branches. This indicates an incomplete or misdirected cyclization/oxidation sequence away from artemisinin.",
+      "risk_score": 0.65,
+      "audit_trail": "Page 4, Other possible intermediates: 'Artemisinic acid is a common precursor of arteannuin B... Page 5: possible non-enzymatically into several compounds including arteannuin B'"
+    }
+  ],
+  "yield_optimization_strategies": [
+    {
+      "strategy_type": "Metabolic Flux Redirection (Antisense Technology)",
+      "description": "Introduce antisense SS cDNA to down-regulate Squalene Synthase (SS) mRNA. This reduces sterol biosynthesis and tremendously elevates mRNA coding for amorpha-4,11-diene synthase (ADS), pushing FPP flux into the artemisinin pathway.",
+      "target_nodes": ["M_FPP", "I_STEROL", "M_A411D"],
+      "audit_trail": "Page 3, Paragraph 4: 'An antisense SS cDNA was introduced... resulting in the decline of SS mRNA and simultaneous reduction of total sterols, mRNA coding for amorpha-4,11-diene synthase tremendously elevated.'"
+    },
+    {
+      "strategy_type": "Enzyme Engineering & Co-expression",
+      "description": "Co-express Farnesyl Pyrophosphate Synthase (FPPS) and 3-hydroxy-3-methylglutaryl CoA reductase (HMGR) to increase the upstream FPP pool. Additionally, co-express Cytochrome P450 Reductase (CPR) with CYP71AV1 to prevent electron-transfer bottlenecks during the multi-step oxidation of amorpha-4,11-diene.",
+      "target_nodes": ["M_FPP", "M_A411D", "M_AA_OH", "M_AA_ALD", "M_AA_ACID"],
+      "audit_trail": "Page 2: 'Genes of HMGR and FPPS were co-expressed... inducing 2.32-fold content increase'. Page 4: 'CPR... has been cloned and co-expressed with CYP71AV1 and ADS... leading to high levels of artemisinic acid.'"
+    },
+    {
+      "strategy_type": "Environmental & Physical Regulation",
+      "description": "Apply abiotic stress such as cold acclimation (pre-chilling), heat shock, or UV light exposure to living cultures or plants. These stresses naturally up-regulate the transcription levels of both ADS and CYP71AV1 (up to 7 to 10-fold).",
+      "target_nodes": ["M_A411D", "M_AA_OH"],
+      "audit_trail": "Page 3: 'upon exposure to cold, heat shock or UV light, the transcription levels of ADS were up-regulated'. Page 4: 'CYP71AV1 genes is up-regulated to 10- and 7-fold... after being induced by low temperature stress.'"
+    }
+  ]
+}
