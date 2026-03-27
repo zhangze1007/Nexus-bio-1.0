@@ -4,21 +4,22 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Html, Line } from '@react-three/drei';
 import * as THREE from 'three';
-import { PathwayNode, PathwayEdge } from '../types';
+import { PathwayNode, PathwayEdge,NodeType, EdgeRelationshipType,SHOWCASE_PUBCHEM_CIDS } from '../types';
 
 type Vec3 = [number, number, number];
 
-// ─── 商业级颜色与风险定义 ────────────────────────────────────────
-const RISK_THEME = {
-  STABLE: "#28a745",
-  MODERATE: "#ffc107",
-  LOW_STABILITY: "#fd7e14",
-  HIGH_RISK: "#dc3545",
-  INTERMEDIATE: "#6f42c1",
-  NEUTRAL: "#C8D8E8"
+// ─── 商业级风险颜色 (Nexus-Bio 1.1) ───────────────────────────────────
+const NEXUS_COLORS: Record<string, string> = {
+  "Green": "#28a745",  // 稳定/高产
+  "Yellow": "#ffc107", // 中等风险
+  "Orange": "#fd7e14", // 低稳定性
+  "Red": "#dc3545",    // 杂质风险 (Impurity)
+  "Purple": "#6f42c1", // 中间产物 (Intermediate)
+  "Blue": "#007bff",   // 基础节点
+  "DEFAULT": "#C8D8E8"
 };
 
-// ─── 自动合规引擎 ────────────────────────────────────────
+// ─── 自动合规引擎 ──────────────────────────────────────────
 function getComplianceIntel(node: PathwayNode) {
   const isImpurity = node.nodeType?.toLowerCase().includes('impurity') || node.color_mapping === 'Red';
   const riskScore = node.risk_score ?? 0;
@@ -28,27 +29,33 @@ function getComplianceIntel(node: PathwayNode) {
 
   return {
     isHighAlert,
+    mappedColor: node.color_mapping && NEXUS_COLORS[node.color_mapping] ? NEXUS_COLORS[node.color_mapping] : (isHighAlert ? NEXUS_COLORS.Red : NEXUS_COLORS.DEFAULT),
     statusText: isHighAlert ? "HIGH SEPARATION COST & TOXICITY RISK" : "VALIDATED PATHWAY NODE",
-    alertColor: isHighAlert ? RISK_THEME.HIGH_RISK : RISK_THEME.STABLE,
     complianceTag: isHighAlert ? "⚠️ REGULATORY REVIEW REQUIRED" : "✓ VERIFIED BY NEXUS"
   };
 }
 
-// ─── 新增：专为平板调试打造的“屏幕报错拦截器” (Error Boundary) ──────────
+// ─── 轨道环配置 (找回你的 State 0 视觉) ─────────────────────────────
+// Hash-based glyph configurations for non-showcase molecules
+function glyphCfg(id: string): { rings: number, rr: number[] } {
+  // A deterministic hash function
+  let h = 2166136261;
+  for (let i = 0; i < id.length; i++) { h ^= id.charCodeAt(i); h = (h * 16777619) >>> 0; }
+  
+  const rc = 1 + (h % 2); // 1-2 rings
+  const rr = [];
+  for(let i=0; i<rc; i++) {
+    h = (h * 16777619) >>> 0;
+    rr.push(0.45 + (h % 30) / 100); // radius between 0.45 and 0.75
+  }
+  return { rings: rc, rr };
+}
+
+// ─── 专为平板调试打造的 Error Boundary ──────────────────────────
 class SceneErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, errorMsg: string}> {
-  constructor(props: any) {
-    super(props);
-    this.state = { hasError: false, errorMsg: '' };
-  }
-
-  static getDerivedStateFromError(error: any) {
-    return { hasError: true, errorMsg: error.toString() };
-  }
-
-  componentDidCatch(error: any, errorInfo: any) {
-    console.error("Caught by Vibe Coding Boundary:", error, errorInfo);
-  }
-
+  constructor(props: any) { super(props); this.state = { hasError: false, errorMsg: '' }; }
+  static getDerivedStateFromError(error: any) { return { hasError: true, errorMsg: error.toString() }; }
+  componentDidCatch(error: any, errorInfo: any) { console.error("Caught by Error Boundary:", error, errorInfo); }
   render() {
     if (this.state.hasError) {
       return (
@@ -56,7 +63,6 @@ class SceneErrorBoundary extends React.Component<{children: React.ReactNode}, {h
           <div style={{ width: '300px', background: '#1a0505', borderRadius: '12px', padding: '20px', border: '2px solid #ff4d4f' }}>
             <h3 style={{ color: '#ff4d4f', margin: '0 0 10px 0', fontSize: '14px', fontFamily: "'Public Sans', sans-serif" }}>🚨 捕获到渲染崩溃：</h3>
             <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '11px', wordWrap: 'break-word', fontFamily: "'Public Sans', sans-serif" }}>{this.state.errorMsg}</p>
-            <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '10px', marginTop: '10px', fontFamily: "'Public Sans', sans-serif" }}>请截图将红字发给助手进行修复</p>
           </div>
         </Html>
       );
@@ -65,21 +71,24 @@ class SceneErrorBoundary extends React.Component<{children: React.ReactNode}, {h
   }
 }
 
-// ─── 节点组件 ────────────────────────────────────────
+// ─── 节点组件 (找回你的 CPK + 轨道视觉，并注入风险发光逻辑) ─────────────
 const MolNode = React.memo(function MolNode({ node, hov, sel, onClick, onHov }: {
   node: PathwayNode; hov: boolean; sel: boolean; cc: number;
   onClick: (n: PathwayNode) => void; onHov: (id: string | null) => void;
 }) {
   const grp = useRef<THREE.Group>(null);
+  const ringRefs = useRef<(THREE.Mesh | null)[]>([]);
   const bodyRef = useRef<THREE.Mesh>(null);
-  const { isHighAlert, statusText, alertColor, complianceTag } = useMemo(() => getComplianceIntel(node), [node]);
   
-  const baseColor = useMemo(() => {
-    if (node.color_mapping && RISK_THEME[node.color_mapping as keyof typeof RISK_THEME]) {
-      return RISK_THEME[node.color_mapping as keyof typeof RISK_THEME];
-    }
-    return isHighAlert ? RISK_THEME.HIGH_RISK : RISK_THEME.NEUTRAL;
-  }, [node.color_mapping, isHighAlert]);
+  // 注入商业合规 logic
+  const { isHighAlert, mappedColor, statusText, complianceTag } = useMemo(() => getComplianceIntel(node), [node]);
+  
+  // 找回轨道环 config
+  const cfg = useMemo(() => glyphCfg(node.id), [node.id]);
+
+  useEffect(() => {
+    ringRefs.current = ringRefs.current.slice(0, cfg.rings);
+  }, [cfg.rings]);
 
   useFrame((state, dt) => {
     const t = state.clock.elapsedTime;
@@ -87,15 +96,27 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, onClick, onHov }: 
       const targetScale = sel ? 1.3 : hov ? 1.1 : 1.0;
       grp.current.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), dt * 6);
       
-      if (isHighAlert) {
-        const pulse = 1 + Math.sin(t * 5) * 0.04;
-        grp.current.scale.multiplyScalar(pulse);
-      }
+      // 找回 Organic Breathing Animation
       grp.current.position.y = node.position[1] + Math.sin(t * 0.4 + (node.id?.length || 0)) * 0.05;
+      grp.current.rotation.y = Math.sin(t * 0.06 + (node.id?.length || 0)) * 0.05;
     }
+    
+    // 找回轨道环的旋转与透明度 fading
+    ringRefs.current.forEach((ring, i) => {
+      if (ring) {
+        ring.rotation.z += dt * (0.10 + i * 0.05);
+        const mat = ring.material as THREE.MeshPhysicalMaterial;
+        // 如果是杂质，轨道环也会闪烁红色
+        const baseOpacity = isHighAlert ? 0.3 + Math.sin(t * 4) * 0.1 : 0.08;
+        const targetOpacity = hov || sel ? 0.35 : baseOpacity;
+        mat.opacity = THREE.MathUtils.lerp(mat.opacity, targetOpacity, dt * 3);
+      }
+    });
+
     if (bodyRef.current) {
       const mat = bodyRef.current.material as THREE.MeshPhysicalMaterial;
-      const targetIntensity = sel ? 0.6 : hov ? 0.3 : (isHighAlert ? 0.2 : 0.05);
+      // 注入商业风险发光 logic
+      const targetIntensity = sel ? 0.6 : hov ? 0.4 : (isHighAlert ? 0.2 + Math.sin(t*5)*0.1 : 0.05);
       mat.emissiveIntensity = THREE.MathUtils.lerp(mat.emissiveIntensity, targetIntensity, dt * 10);
     }
   });
@@ -108,11 +129,37 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, onClick, onHov }: 
       onPointerOver={e => { e.stopPropagation(); onHov(node.id); document.body.style.cursor = 'pointer'; }}
       onPointerOut={e => { e.stopPropagation(); onHov(null); document.body.style.cursor = 'auto'; }}
     >
+      {/* 找回 CPK 风格原子球与 MeshPhysicalMaterial 材质 */}
       <mesh ref={bodyRef}>
         <sphereGeometry args={[0.35, 32, 24]} />
-        <meshPhysicalMaterial color={baseColor} emissive={baseColor} roughness={0.4} metalness={0.1} transmission={isHighAlert ? 0 : 0.2} />
+        <meshPhysicalMaterial
+          color={mappedColor}
+          emissive={mappedColor}
+          roughness={0.35}
+          metalness={0.05}
+          transmission={isHighAlert ? 0 : 0.15} // 杂质节点更厚重不透明
+          thickness={0.5}
+        />
       </mesh>
 
+      {/* 找回轨道环组件 */}
+      {cfg.rr.map((r, i) => (
+        <mesh key={`r${i}`} ref={el => { ringRefs.current[i] = el; }} rotation={[Math.PI / 4, 0, i * Math.PI / 2]}>
+          <torusGeometry args={[r, 0.006, 6, 50]} />
+          <meshPhysicalMaterial
+            color={mappedColor}
+            emissive={mappedColor}
+            emissiveIntensity={0.2}
+            transparent
+            opacity={0.08}
+            roughness={0.6}
+            metalness={0}
+            depthWrite={false}
+          />
+        </mesh>
+      ))}
+
+      {/* 增强版数据悬浮窗 */}
       {(hov || sel) && (
         <Html distanceFactor={10} center style={{ pointerEvents: 'none', zIndex: 100 }}>
           <div style={{
@@ -122,10 +169,22 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, onClick, onHov }: 
             backdropFilter: 'blur(20px)', transform: 'translateY(-125%)',
             fontFamily: "'Public Sans', sans-serif", boxShadow: '0 20px 40px rgba(0,0,0,0.6)'
           }}>
-            <div style={{ color: alertColor, fontSize: '9px', fontWeight: 800, letterSpacing: '0.1em', marginBottom: '4px' }}>{complianceTag}</div>
-            <div style={{ color: '#fff', fontSize: '14px', fontWeight: 700, marginBottom: '6px' }}>{node.canonicalLabel || node.label}</div>
-            <div style={{ color: isHighAlert ? '#ff7875' : '#a0b0c0', fontSize: '11px', fontWeight: 600, marginBottom: '10px', lineHeight: 1.4 }}>{statusText}</div>
-            <div style={{ background: 'rgba(255,255,255,0.04)', padding: '8px', borderRadius: '6px', fontSize: '10px', color: '#8a9baa', border: '1px solid rgba(255,255,255,0.05)' }}>
+            <div style={{ color: isHighAlert ? '#ff4d4f' : '#28a745', fontSize: '9px', fontWeight: 800, letterSpacing: '0.1em', marginBottom: '4px' }}>
+              {complianceTag}
+            </div>
+            <div style={{ color: '#fff', fontSize: '14px', fontWeight: 700, marginBottom: '6px' }}>
+              {node.canonicalLabel || node.label}
+            </div>
+            
+            <div style={{ color: isHighAlert ? '#ff7875' : '#a0b0c0', fontSize: '11px', fontWeight: 600, marginBottom: '10px', lineHeight: 1.4 }}>
+              {statusText}
+            </div>
+
+            {/* 审计追踪 */}
+            <div style={{ 
+              background: 'rgba(255,255,255,0.04)', padding: '8px', borderRadius: '6px',
+              fontSize: '10px', color: '#8a9baa', border: '1px solid rgba(255,255,255,0.05)'
+            }}>
               <span style={{ display: 'block', color: 'rgba(255,255,255,0.3)', marginBottom: '2px', textTransform: 'uppercase', fontSize: '8px' }}>Verifiable Source:</span>
               "{node.audit_trail || 'Predictive Bio-Simulation Engine'}"
             </div>
@@ -133,16 +192,19 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, onClick, onHov }: 
         </Html>
       )}
 
-      <Html position={[0, -0.8, 0]} center style={{ pointerEvents: 'none' }}>
-        <div style={{ color: hov || sel ? '#fff' : 'rgba(160,180,200,0.45)', fontSize: '10px', fontWeight: sel ? 700 : 400, textShadow: '0 2px 8px rgba(0,0,0,0.9)', transition: 'all 0.3s' }}>
-          {node.canonicalLabel || node.label}
-        </div>
+      {/* 基础标签 */}
+      <Html position={[0, -0.85, 0]} center style={{ pointerEvents: 'none' }}>
+        <div style={{
+          color: hov || sel ? '#fff' : 'rgba(160,180,200,0.5)',
+          fontSize: '10px', fontWeight: sel ? 700 : 400,
+          textShadow: '0 2px 8px rgba(0,0,0,0.9)', transition: 'all 0.3s'
+        }}>{node.canonicalLabel || node.label}</div>
       </Html>
     </group>
   );
 });
 
-// ─── 连线组件 ────────────────────────────────────────
+// ─── 连线组件 (厚度与能量) ──────────────────────────────────────────
 const PathEdge = React.memo(function PathEdge({ edge, s, e, active, color }: { 
   edge: PathwayEdge; s: Vec3; e: Vec3; active: boolean; color: string 
 }) {
@@ -169,7 +231,7 @@ const PathEdge = React.memo(function PathEdge({ edge, s, e, active, color }: {
   );
 });
 
-// ─── 内部 Scene 组件逻辑 ─────────────────────────────────────────────────────
+// ─── 内部 Scene 组件逻辑 (包含 Error Boundary 包装) ────────────────────
 function Scene({ nodes, edges, onNodeClick, selectedNodeId }: any) {
   const [hovId, setHovId] = useState<string | null>(null);
 
@@ -178,7 +240,7 @@ function Scene({ nodes, edges, onNodeClick, selectedNodeId }: any) {
       const s = nodes.find((n: any) => n.id === edge.start);
       const e = nodes.find((n: any) => n.id === edge.end);
       
-      // 这里的拦截非常关键：如果数据为空或者坐标出错，直接忽略该线，防止黑屏
+      // 数据安全拦截，过滤损坏的线，防黑屏
       if (!s || !e || !Array.isArray(s.position) || !Array.isArray(e.position)) return null; 
       
       return {
@@ -187,7 +249,7 @@ function Scene({ nodes, edges, onNodeClick, selectedNodeId }: any) {
         s: s.position as Vec3,
         e: e.position as Vec3,
         active: hovId === edge.start || hovId === edge.end || selectedNodeId === edge.start || selectedNodeId === edge.end,
-        color: RISK_THEME[s.color_mapping as keyof typeof RISK_THEME] || RISK_THEME.NEUTRAL
+        color: NEXUS_COLORS[s.color_mapping as keyof typeof NEXUS_COLORS] || NEXUS_COLORS.DEFAULT
       };
     }).filter(Boolean),
   [edges, nodes, hovId, selectedNodeId]);
@@ -196,7 +258,7 @@ function Scene({ nodes, edges, onNodeClick, selectedNodeId }: any) {
     <SceneErrorBoundary>
       {ed.map((e: any) => <PathEdge key={e.key} edge={e.edge} s={e.s} e={e.e} active={e.active} color={e.color} />)}
       {nodes.map((n: any) => {
-        // 二次拦截：如果节点数据损坏，则不渲染该节点
+        // 数据安全拦截：如果节点坐标出错，则忽略，不渲染
         if (!n || !Array.isArray(n.position) || n.position.length !== 3) return null;
         return <MolNode key={n.id} node={n} hov={hovId === n.id} sel={selectedNodeId === n.id} cc={0} onClick={onNodeClick} onHov={setHovId} />;
       })}
@@ -204,7 +266,7 @@ function Scene({ nodes, edges, onNodeClick, selectedNodeId }: any) {
   );
 }
 
-// ─── 导出主场景 (包含 SSR 防闪退挂载逻辑) ──────────────────────────────────
+// ─── 导出主场景 (防闪退延迟挂载) ──────────────────────────────────
 export default function NexusBioRenderer({ nodes, onNodeClick, edges, selectedNodeId }: any) {
   const [isMounted, setIsMounted] = useState(false);
 
@@ -215,7 +277,6 @@ export default function NexusBioRenderer({ nodes, onNodeClick, edges, selectedNo
   const safeNodes = useMemo(() => Array.isArray(nodes) ? nodes : [], [nodes]);
   const safeEdges = useMemo(() => Array.isArray(edges) ? edges : [], [edges]);
 
-  // SSR 防白屏闪退：服务端仅渲染 HTML 骨架
   if (!isMounted) {
     return (
       <div style={{ width: '100%', height: '750px', background: '#07090f', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,255,255,0.05)' }}>
@@ -248,11 +309,11 @@ export default function NexusBioRenderer({ nodes, onNodeClick, edges, selectedNo
       {/* 商业图例 */}
       <div style={{ position: 'absolute', bottom: '24px', right: '24px', zIndex: 10, background: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)', fontFamily: "'Public Sans', sans-serif", pointerEvents: 'none' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-          <div style={{ width: '10px', height: '10px', background: RISK_THEME.HIGH_RISK, borderRadius: '2px' }} />
+          <div style={{ width: '10px', height: '10px', background: NEXUS_COLORS.Red, borderRadius: '2px' }} />
           <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '9px' }}>Impurity / High Separation Cost</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <div style={{ width: '10px', height: '10px', background: RISK_THEME.STABLE, borderRadius: '2px' }} />
+          <div style={{ width: '10px', height: '10px', background: NEXUS_COLORS.Green, borderRadius: '2px' }} />
           <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '9px' }}>Verified High-Yield Route</span>
         </div>
       </div>
