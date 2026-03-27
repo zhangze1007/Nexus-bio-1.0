@@ -169,9 +169,9 @@ function SpatialReference() {
   return (
     <group position={[0, -3.8, 0]}>
       {/* --- 视觉效果修复：黑白灰网格 --- */}
-      <gridHelper args={[36, 36, '#606060', '#404040']} /> // Convert to darker, grey palette
-      <Line points={[new THREE.Vector3(-10,0,0), new THREE.Vector3(10,0,0)]} color="#aaaaaa" lineWidth={0.5} transparent opacity={0.35} /> // Lines to white/light grey
-      <Line points={[new THREE.Vector3(0,0,-10), new THREE.Vector3(0,0,10)]} color="#aaaaaa" lineWidth={0.5} transparent opacity={0.35} /> // Lines to white/light grey
+      <gridHelper args={[36, 36, '#606060', '#404040']} /> 
+      <Line points={[new THREE.Vector3(-10,0,0), new THREE.Vector3(10,0,0)]} color="#aaaaaa" lineWidth={0.5} transparent opacity={0.35} /> 
+      <Line points={[new THREE.Vector3(0,0,-10), new THREE.Vector3(0,0,10)]} color="#aaaaaa" lineWidth={0.5} transparent opacity={0.35} /> 
     </group>
   );
 }
@@ -234,11 +234,11 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov
           color={finalColor}
           emissive={finalColor}
           emissiveIntensity={0.03}
-          roughnessMap={roughnessTexture} // Add texture map
-          roughness={0.8} // Increase roughness to show texture
+          roughnessMap={roughnessTexture} 
+          roughness={0.8} 
           metalness={0.03}
           transmission={0.1}
-          depthWrite={true} // Add texture
+          depthWrite={true} 
         />
       </mesh>
 
@@ -273,7 +273,8 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov
             borderRadius: '16px', padding: '10px 14px', width: '210px',
             backdropFilter: 'blur(20px)', transform: 'translateY(-120%)', fontFamily: "'Public Sans', sans-serif",
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', justify: 'space-between', marginBottom: '6px' }}>
+            {/* 修复了 justify 语法错误 -> justifyContent */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
               <span style={{ color: '#c8d8e4', fontSize: '12px', fontWeight: 600 }}>{lbl}</span>
               <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', fontFeatureSettings: "'tnum' 1" }}>{Math.round(conf*100)}%</span>
             </div>
@@ -401,7 +402,7 @@ function Scene({ nodes, edges, onNodeClick, selectedNodeId, roughnessTexture }: 
       <directionalLight position={[4, 10, 6]}  intensity={0.35} color="#e8f0f8" />
       <directionalLight position={[-8, -2, -6]} intensity={0.12} color="#1a2840" />
       <pointLight position={[0, 6, 0]} intensity={0.20} color="#c0d0e8" distance={28} decay={2} />
-      <fog attach="fog" args={['#101010', 20, 48]} /> // Convert to dark grey fog
+      <fog attach="fog" args={['#101010', 20, 48]} />
 
       <OrbitControls ref={controlsRef as React.Ref<never>} enableZoom autoRotate={!interact && !hovId && !selectedNodeId} autoRotateSpeed={0.12} zoomSpeed={0.45} minDistance={6} maxDistance={24} enablePan={false} onStart={onStart} onEnd={onEnd} />
       <SpatialReference />
@@ -456,7 +457,7 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId }
     <div style={{
       width: '100%', 
       height: 'clamp(500px, 65vh, 760px)', 
-      background: 'linear-gradient(180deg, #101010 0%, #0c0e18 100%)', // Spatial sense: dark grey
+      background: 'linear-gradient(180deg, #101010 0%, #0c0e18 100%)', 
       borderRadius: '20px', overflow: 'hidden',
       border: '1px solid rgba(255,255,255,0.06)', position: 'relative',
       boxShadow: '0 32px 80px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.04)',
@@ -519,8 +520,7 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId }
               renderer.setSize(width, height, false);
               renderer.toneMapping = THREE.LinearToneMapping;
               renderer.toneMappingExposure = 1.0;
-              // --- 视觉效果修复：修改 Canvas 清除颜色 ---
-              renderer.setClearColor(new THREE.Color('#101010'), 1); // convert to dark grey colour
+              renderer.setClearColor(new THREE.Color('#101010'), 1); 
               return renderer;
             };
 
