@@ -337,18 +337,11 @@ const PathEdge = React.memo(function PathEdge({
   const prog = useRef(Math.random());
   const sv   = useMemo(() => new THREE.Vector3(...s), [s]);
   const ev   = useMemo(() => new THREE.Vector3(...e), [e]);
-  const mid  = useMemo(() => sv.clone().lerp(ev, 0.5).add(new THREE.Vector3(0, 0.4, 0)), [sv, ev]);
 
   useFrame((_, dt) => {
     prog.current = (prog.current + dt * 0.18) % 1;
     if (dot.current) {
-      const t = prog.current;
-      dot.current.position.copy(
-        new THREE.Vector3()
-          .addScaledVector(sv, (1-t)*(1-t))
-          .addScaledVector(mid, 2*(1-t)*t)
-          .addScaledVector(ev, t*t)
-      );
+      dot.current.position.lerpVectors(sv, ev, prog.current);
       dot.current.visible = active;
     }
   });
@@ -356,7 +349,7 @@ const PathEdge = React.memo(function PathEdge({
   return (
     <group>
       <Line
-        points={[sv, mid, ev]}
+        points={[sv, ev]}
         color={active ? color : '#141e2a'}
         lineWidth={active ? 0.8 * thickness : 0.25 * thickness}
         transparent
