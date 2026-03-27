@@ -118,10 +118,20 @@ export interface GeneratedPathway {
   };
 }
 
-// Validation helpers
+// RESTORED HELPERS for PaperAnalyzer.tsx
 export function isValidNode(node: any): node is Partial<PathwayNode> {
   if (!node || typeof node !== 'object') return false;
   return typeof node.id === 'string' && node.id.length > 0;
+}
+
+export function isValidEdge(edge: any): edge is PathwayEdge {
+  if (!edge || typeof edge !== 'object') return false;
+  return typeof edge.start === 'string' && edge.start.length > 0 &&
+         typeof edge.end === 'string' && edge.end.length > 0;
+}
+
+export function sanitizeNodeId(id: string): string {
+  return id.toLowerCase().replace(/[^a-z0-9_]/g, '_').slice(0, 64);
 }
 
 // Artemisinin showcase CIDs
