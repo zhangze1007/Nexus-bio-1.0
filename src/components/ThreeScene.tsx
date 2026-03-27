@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, Html, Line } from '@react-three/drei';
 import * as THREE from 'three';
-import { PathwayNode, PathwayEdge, MolecularStructure } from '../types';
+import { PathwayNode, PathwayEdge } from '../types';
 
 type Vec3 = [number, number, number];
 type RendererMode = 'loading' | 'webgpu' | 'webgl2' | 'webgl' | 'error';
@@ -45,8 +45,7 @@ function isRenderableNode(node: PathwayNode | null | undefined): node is Pathway
   return !!node &&
     typeof node.id === 'string' &&
     node.id.length > 0 &&
-    typeof node.label === 'string' &&
-    node.label.length > 0 &&
+    (typeof node.label === 'string' || typeof node.canonicalLabel === 'string') &&
     isVec3(node.position);
 }
 
@@ -62,24 +61,12 @@ function getRendererLabel(mode: RendererMode): string | null {
 
 function getRendererTone(mode: RendererMode): React.CSSProperties {
   if (mode === 'error') {
-    return {
-      color: 'rgba(255,186,186,0.92)',
-      border: '1px solid rgba(255,120,120,0.22)',
-      background: 'rgba(48,12,16,0.55)',
-    };
+    return { color: 'rgba(255,186,186,0.92)', border: '1px solid rgba(255,120,120,0.22)', background: 'rgba(48,12,16,0.55)' };
   }
   if (mode === 'loading') {
-    return {
-      color: 'rgba(232,240,248,0.82)',
-      border: '1px solid rgba(200,216,232,0.18)',
-      background: 'rgba(9,12,18,0.55)',
-    };
+    return { color: 'rgba(232,240,248,0.82)', border: '1px solid rgba(200,216,232,0.18)', background: 'rgba(9,12,18,0.55)' };
   }
-  return {
-    color: 'rgba(200,216,232,0.78)',
-    border: '1px solid rgba(200,216,232,0.18)',
-    background: 'rgba(9,12,18,0.55)',
-  };
+  return { color: 'rgba(200,216,232,0.78)', border: '1px solid rgba(200,216,232,0.18)', background: 'rgba(9,12,18,0.55)' };
 }
 
 class SceneErrorBoundary extends React.Component<
@@ -87,22 +74,15 @@ class SceneErrorBoundary extends React.Component<
   { hasError: boolean }
 > {
   state = { hasError: false };
-
-  static getDerivedStateFromError() {
-    return { hasError: true };
-  }
-
-  componentDidCatch(error: Error) {
-    this.props.onError(error);
-  }
-
+  static getDerivedStateFromError() { return { hasError: true }; }
+  componentDidCatch(error: Error) { this.props.onError(error); }
   render() {
     if (this.state.hasError) return null;
     return this.props.children;
   }
 }
 
-// ─── Hash ─────────────────────────────────────────────────────────────
+// ─── Deterministic GlyphConfig based on Node ID ──────────────────────
 function hash(str: string): number {
   let h = 2166136261;
   for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = (h * 16777619) >>> 0; }
@@ -115,123 +95,104 @@ function hashInt(str: string, idx: number, min: number, max: number) {
   return min + (hash(str + idx) % (max - min + 1));
 }
 
-// ─── Color system ─────────────────────────────────────────────────────
-const PASTEL = ['#C8D8E8','#C8E0D0','#DDD0E8','#E8DCC8','#C8DCDC','#DCE8C8','#E8C8D4','#CCE0D8'];
-const NODE_CONF: Record<string,number> = { acetyl_coa:85,hmg_coa:72,mevalonate:68,fpp:91,amorpha_4_11_diene:88,artemisinic_acid:76,artemisinin:93 };
+// ─── Molecular Texture Creation (Procedural Noise Map) ─────────────────
+const createProceduralTexture = () => {
+  const size = 128;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return null;
+  const imageData = ctx.createImageData(size, size);
+  for (let i = 0; i < imageData.data.length; i += 4) {
+    const v = (128 + Math.random() * 80) | 0; // Subtle noise
+    imageData.data[i] = v;
+    imageData.data[i + 1] = v;
+    imageData.data[i + 2] = v;
+    imageData.data[i + 3] = 255;
+  }
+  ctx.putImageData(imageData, 0, 0);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+  texture.repeat.set(10, 10); // Fine, subtle tiling
+  texture.flipY = true;
+  return texture;
+};
+
+// ─── Pastels & Scientific colors ────────────────────────────────────────
+const PastelColors = ['#C8D8E8','#C8E0D0','#DDD0E8','#E8DCC8','#C8DCDC','#DCE8C8','#E8C8D4','#CCE0D8'];
+const SHOWCASE_N_CONF: Record<string,number> = { acetyl_coa:85,hmg_coa:72,mevalonate:68,fpp:91,amorpha_4_11_diene:88,artemisinic_acid:76,artemisinin:93 };
 
 function conf2pastel(p: number): string {
-  if (p >= 90) return '#C8D8E8';
-  if (p >= 70) return '#C8E0D0';
-  if (p >= 50) return '#E8DCC8';
-  return '#E8C8D4';
+  if (p >= 90) return '#C8D8E8'; // Blue
+  if (p >= 70) return '#C8E0D0'; // Green
+  if (p >= 50) return '#E8DCC8'; // Yellow
+  return '#E8C8D4'; // Red
 }
+
 function getColor(node: PathwayNode): string {
-  const c = NODE_CONF[node.id];
-  return c !== undefined ? conf2pastel(c) : (node.color || PASTEL[hash(node.id) % PASTEL.length]);
+  // --- 功能修复：恢复杂质/高产标签颜色逻辑 ---
+  if (node.color_mapping === 'Red') return '#dc3545'; // Impurity / High Cost (Red)
+  if (node.color_mapping === 'Green') return '#28a745'; // Verified High-Yield (Green)
+
+  // Fallback to confidence scores for PubChem conformers or showcase nodes
+  const c = SHOWCASE_N_CONF[node.id];
+  return c !== undefined ? conf2pastel(c) : (node.color || PastelColors[hash(node.id) % PastelColors.length]);
 }
-function getConf(node: PathwayNode): number {
+
+function getConfidenceValue(node: PathwayNode): number {
   if (node.confidenceScore !== undefined) return node.confidenceScore;
-  const c = NODE_CONF[node.id];
-  return c !== undefined ? c / 100 : 0.75;
+  const c = SHOWCASE_N_CONF[node.id];
+  return c !== undefined ? c / 100 : 0.75; // Default for missing data
 }
 
-// ─── CPK elements ─────────────────────────────────────────────────────
-const EC: Record<string,string> = { H:'#E8EEF4',C:'#8A9BAA',N:'#A8BED8',O:'#D8B8A8',P:'#D8D4A8',S:'#B8D8C8',DEFAULT:'#B0BEC8' };
-const ER: Record<string,number> = { H:0.09,C:0.17,N:0.16,O:0.15,P:0.19,S:0.20,DEFAULT:0.17 };
-const ec = (e: string) => EC[e.toUpperCase()] ?? EC.DEFAULT;
-const er = (e: string) => ER[e.toUpperCase()] ?? ER.DEFAULT;
-
-function normalizeStruct(s: MolecularStructure) {
-  if (!s.atoms?.length) return null;
-  const vecs = s.atoms.map(a => new THREE.Vector3(...a.position));
-  const ctr = vecs.reduce((acc,v) => acc.add(v), new THREE.Vector3()).multiplyScalar(1/vecs.length);
-  const shifted = vecs.map(v => v.clone().sub(ctr));
-  const maxD = Math.max(0.001, ...shifted.map(v => v.length()));
-  const scale = 0.42 / maxD;
-  return { atoms: s.atoms.map((a,i) => ({...a, position: shifted[i].multiplyScalar(scale).toArray() as Vec3})), bonds: s.bonds ?? [] };
-}
-
-// ─── Glyph config ─────────────────────────────────────────────────────
+// ─── Geometry Components — deterministic shape distribution ────────────
 type GCfg = { geom:'oct'|'dodec'|'tetra'|'icos'|'sph'|'tor'; scale:number; rings:number; rr:number[]; rt:number[]; sats:number; sr:number; ss:number; spin:number; inner:boolean; };
 function glyphCfg(id: string, cc: number): GCfg {
-  const gs = ['oct','dodec','tetra','icos','sph','tor'] as GCfg['geom'][];
+  const geoms = ['oct','dodec','tetra','icos','sph'] as GCfg['geom'][]; // Torus is too heavy
   const rc = hashInt(id,1,1,2);
-  return { geom:gs[hashInt(id,0,0,5)], scale:0.22+cc*0.04+hashFloat(id,2,0,0.04), rings:rc, rr:Array.from({length:rc},(_,i)=>hashFloat(id,10+i,0.5,0.8)), rt:Array.from({length:rc},(_,i)=>hashFloat(id,20+i,0,Math.PI)), sats:hashInt(id,3,2,4), sr:hashFloat(id,4,0.6,0.9), ss:hashFloat(id,5,0.035,0.055), spin:hashFloat(id,6,0.04,0.10), inner:hash(id)%3===0 };
+  return { geom: geoms[hashInt(id,0,0,4)], scale: 0.22+cc*0.04+hashFloat(id,2,0,0.04), rings: rc, rr: Array.from({length:rc},(_,i)=>hashFloat(id,10+i,0.5,0.8)), rt: Array.from({length:rc},(_,i)=>hashFloat(id,20+i,0,Math.PI)), sats: hashInt(id,3,2,4), sr: hashFloat(id,4,0.6,0.9), ss: hashFloat(id,5,0.035,0.055), spin: hashFloat(id,6,0.04,0.10), inner: hash(id)%3===0 };
 }
+
 function GeoComp({ g, s }: { g: GCfg['geom']; s: number }) {
   switch(g) {
-    case 'oct':   return <octahedronGeometry args={[s,0]}/>;
-    case 'dodec': return <dodecahedronGeometry args={[s,0]}/>;
-    case 'tetra': return <tetrahedronGeometry args={[s,0]}/>;
-    case 'icos':  return <icosahedronGeometry args={[s,1]}/>;
-    case 'tor':   return <torusGeometry args={[s*0.8,s*0.3,8,20]}/>;
-    default:      return <sphereGeometry args={[s,16,16]}/>;
+    case 'oct':   return <octahedronGeometry args={[s, 0]} />;
+    case 'dodec': return <dodecahedronGeometry args={[s, 0]} />;
+    case 'tetra': return <tetrahedronGeometry args={[s, 0]} />;
+    case 'icos':  return <icosahedronGeometry args={[s, 1]} />;
+    default:      return <sphereGeometry args={[s, 24, 24]} />;
   }
 }
 
-// ─── Scientific grid — minimal, space reference only ──────────────────
+// ─── Spatial Grid — darker theme requested ─────────────────────────────
 function SpatialReference() {
   return (
     <group position={[0, -3.8, 0]}>
-      {/* Primary grid — very subtle */}
-      <gridHelper args={[36, 36, '#1c2535', '#141e2a']} />
-      {/* Major axis lines — barely perceptible */}
-      <Line points={[new THREE.Vector3(-10,0,0), new THREE.Vector3(10,0,0)]}
-        color="#2a3a50" lineWidth={0.5} transparent opacity={0.35} />
-      <Line points={[new THREE.Vector3(0,0,-10), new THREE.Vector3(0,0,10)]}
-        color="#2a3a50" lineWidth={0.5} transparent opacity={0.35} />
+      {/* 保持你原本的黑白灰网格颜色 */}
+      <gridHelper args={[36, 36, '#606060', '#404040']} /> 
+      <Line points={[new THREE.Vector3(-10,0,0), new THREE.Vector3(10,0,0)]} color="#aaaaaa" lineWidth={0.5} transparent opacity={0.35} /> 
+      <Line points={[new THREE.Vector3(0,0,-10), new THREE.Vector3(0,0,10)]} color="#aaaaaa" lineWidth={0.5} transparent opacity={0.35} /> 
     </group>
   );
 }
 
-// ─── Node: unified material system ────────────────────────────────────
-// Uses MeshPhysicalMaterial for translucency + soft shading
-function AtomM({ pos, elem, hov, sel }: { pos:Vec3; elem:string; hov:boolean; sel:boolean }) {
-  return (
-    <mesh position={pos}>
-      <sphereGeometry args={[er(elem), 12, 12]} />
-      <meshPhysicalMaterial
-        color={sel ? '#f0f4f8' : ec(elem)}
-        emissive={ec(elem)} emissiveIntensity={sel ? 0.08 : hov ? 0.04 : 0.01}
-        roughness={0.55} metalness={0.05} transmission={0.15} thickness={0.5}
-      />
-    </mesh>
-  );
-}
-
-function BondM({ s, e, c }: { s:Vec3; e:Vec3; c:string }) {
-  const { mid, len, q } = useMemo(() => {
-    const sv = new THREE.Vector3(...s), ev = new THREE.Vector3(...e);
-    const dir = new THREE.Vector3().subVectors(ev, sv);
-    const len = dir.length();
-    return { mid: sv.clone().add(ev).multiplyScalar(0.5), len, q: new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0), dir.normalize()) };
-  }, [s, e]);
-  return (
-    <mesh position={mid} quaternion={q}>
-      <cylinderGeometry args={[0.018, 0.018, len, 8, 1]} />
-      <meshPhysicalMaterial color={c} emissive={c} emissiveIntensity={0.03} roughness={0.6} metalness={0.0} transmission={0.1} />
-    </mesh>
-  );
-}
-
-// ─── Molecular Node — solid sphere body + orbital rings + labels ─────────────
-// Each node renders as a CPK-style solid sphere using MeshPhysicalMaterial.
-// Orbital torus rings orbit the sphere for a sci-fi molecular decoration.
-const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov }: {
-  node:PathwayNode; hov:boolean; sel:boolean; cc:number;
-  onClick:(n:PathwayNode)=>void; onHov:(id:string|null)=>void;
+// ─── Molecular Node with texture and correct commercial coloring ──────
+const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov, roughnessTexture }: {
+  node: PathwayNode; hov: boolean; sel: boolean; cc: number;
+  onClick: (n: PathwayNode) => void; onHov: (id: string | null) => void;
+  roughnessTexture: THREE.Texture | null;
 }) {
   const grp     = useRef<THREE.Group>(null);
   const ring    = useRef<THREE.Mesh>(null);
   const bodyRef = useRef<THREE.Mesh>(null);
   const ready   = true;
 
-  const color  = getColor(node);
-  const conf   = getConf(node);
-  const lbl    = node.canonicalLabel?.trim() || node.label;
+  const conf   = getConfidenceValue(node);
+  const finalColor = getColor(node);
+  const lbl    = node.canonicalLabel?.trim() || node.label || node.id;
   const cfg    = useMemo(() => glyphCfg(node.id, cc), [node.id, cc]);
   const tgt    = sel ? 1.28 : hov ? 1.10 : 1.0;
-  const colVec = useMemo(() => new THREE.Color(color), [color]);
+  const colVec = useMemo(() => new THREE.Color(finalColor), [finalColor]);
 
   useEffect(() => () => { document.body.style.cursor = 'auto'; }, []);
 
@@ -240,19 +201,20 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov
     if (grp.current) {
       const cs = grp.current.scale.x;
       grp.current.scale.setScalar(cs + ((ready ? tgt : 0.001) - cs) * dt * 5);
-      // Organic breathing — subtle, continuous
+      // Organic breathing
       grp.current.position.y = node.position[1] + Math.sin(t * 0.4 + hash(node.id) * 0.01) * 0.06;
       grp.current.rotation.y = Math.sin(t * 0.06 + hash(node.id) * 0.001) * 0.05;
+      grp.current.rotation.z = t * cfg.spin * 0.5; // Spinning different geoms
     }
     if (ring.current) {
       ring.current.rotation.z += dt * 0.10;
       const mat = ring.current.material as THREE.MeshPhysicalMaterial;
-      const to = hov || sel ? 0.28 : 0.07;
+      const to = hov || sel ? 0.35 : 0.07;
       mat.opacity += (to - mat.opacity) * dt * 3;
     }
     if (bodyRef.current) {
       const mat = bodyRef.current.material as THREE.MeshPhysicalMaterial;
-      const targetEmissive = sel ? 0.30 : hov ? 0.14 : 0.03;
+      const targetEmissive = sel ? 0.40 : hov ? 0.2 : 0.03;
       mat.emissiveIntensity += (targetEmissive - mat.emissiveIntensity) * dt * 6;
     }
   });
@@ -265,40 +227,43 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov
       onPointerOver={e => { e.stopPropagation(); onHov(node.id); document.body.style.cursor = 'pointer'; }}
       onPointerOut={e => { e.stopPropagation(); onHov(null); document.body.style.cursor = 'auto'; }}
     >
-      {/* Solid sphere body — scientific CPK-style metabolite representation */}
       <mesh ref={bodyRef}>
-        <sphereGeometry args={[0.32 + cc * 0.05, 32, 24]} />
+        <GeoComp g={cfg.geom} s={0.32 + cc * 0.05} />
+        {/* 保持你的噪点不光滑质感 */}
         <meshPhysicalMaterial
-          color={color} emissive={color} emissiveIntensity={0.03}
-          roughness={0.42} metalness={0.03}
+          color={finalColor}
+          emissive={finalColor}
+          emissiveIntensity={0.03}
+          roughnessMap={roughnessTexture} 
+          roughness={0.8} 
+          metalness={0.03}
+          transmission={0.1}
+          depthWrite={true} 
         />
       </mesh>
 
-      {/* Transparent hit volume — slightly larger than visual sphere for comfortable click area */}
-      <mesh>
-        <sphereGeometry args={[0.46 + cc * 0.05, 6, 6]} />
-        <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+      {/* 【关键修复】: 隐形 Hitbox 触摸判定区，彻底解决点不到分子的 bug */}
+      <mesh visible={false}>
+        <sphereGeometry args={[0.8, 16, 16]} />
+        <meshBasicMaterial color="white" transparent opacity={0} depthWrite={false} />
       </mesh>
 
-      {/* Orbital guide rings — subtle sci-fi decoration orbiting the sphere */}
       {cfg.rr.map((r, i) => (
         <mesh key={`r${i}`} ref={i === 0 ? ring : undefined} rotation={[cfg.rt[i] || 0, 0, i * 1.1]}>
           <torusGeometry args={[r, 0.007, 4, 40]} />
-          <meshPhysicalMaterial color={color} emissive={color} emissiveIntensity={0.08} transparent opacity={0.07} roughness={0.6} metalness={0} depthWrite={false} />
+          <meshPhysicalMaterial color={finalColor} emissive={finalColor} emissiveIntensity={0.08} transparent opacity={0.07} roughness={0.6} metalness={0} depthWrite={false} />
         </mesh>
       ))}
 
-      <Html position={[0, -(cfg.scale + 0.52), 0]} center style={{ pointerEvents: 'none', whiteSpace: 'nowrap' }}>
+      {/* 【关键修复】: 固定偏移量，让分子名字死死贴在正下方 */}
+      <Html position={[0, -0.65, 0]} center style={{ pointerEvents: 'none', whiteSpace: 'nowrap' }}>
         <div style={{
-          color: hov || sel ? 'rgba(220,232,242,0.90)' : 'rgba(160,180,200,0.55)',
+          color: hov || sel ? '#fff' : 'rgba(160,180,200,0.55)',
           fontSize: '10px', fontWeight: sel ? 600 : 400,
-          fontFamily: "'Public Sans', sans-serif",
-          letterSpacing: '0.02em',
+          fontFamily: "'Public Sans', sans-serif", letterSpacing: '0.02em',
           textShadow: '0 1px 12px rgba(0,0,0,0.9), 0 0 24px rgba(0,0,0,0.7)',
-          padding: '2px 7px',
-          background: sel ? 'rgba(200,216,232,0.07)' : 'transparent',
-          borderRadius: '4px',
-          border: sel ? '1px solid rgba(200,216,232,0.14)' : '1px solid transparent',
+          padding: '2px 7px', background: sel ? 'rgba(200,216,232,0.07)' : 'transparent',
+          borderRadius: '4px', border: sel ? '1px solid rgba(200,216,232,0.14)' : '1px solid transparent',
           transition: 'color 0.2s',
         }}>{lbl}</div>
       </Html>
@@ -307,9 +272,8 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov
         <Html distanceFactor={10} center style={{ pointerEvents: 'none', zIndex: 100 }}>
           <div style={{
             background: 'rgba(6,9,16,0.95)', border: '1px solid rgba(200,216,232,0.12)',
-            borderRadius: '16px', padding: '10px 14px', width: '196px',
-            backdropFilter: 'blur(20px)', transform: 'translateY(-120%)',
-            fontFamily: "'Public Sans', sans-serif",
+            borderRadius: '16px', padding: '10px 14px', width: '210px',
+            backdropFilter: 'blur(20px)', transform: 'translateY(-120%)', fontFamily: "'Public Sans', sans-serif",
           }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
               <span style={{ color: '#c8d8e4', fontSize: '12px', fontWeight: 600 }}>{lbl}</span>
@@ -319,9 +283,14 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov
               <span style={{ color: 'rgba(200,216,232,0.5)', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.07em', display: 'block', marginBottom: '5px', fontWeight: 700 }}>{node.nodeType}</span>
             )}
             <p style={{ color: 'rgba(180,200,215,0.42)', fontSize: '11px', lineHeight: 1.6, margin: '0 0 7px' }}>{node.summary?.slice(0, 80)}...</p>
-            <div style={{ width: '100%', height: '2px', background: 'rgba(255,255,255,0.06)', borderRadius: '1px' }}>
+            <div style={{ width: '100%', height: '2px', background: 'rgba(255,255,255,0.06)', borderRadius: '1px', marginBottom: '6px' }}>
               <div style={{ width: `${Math.round(conf*100)}%`, height: '100%', background: colVec.getStyle(), borderRadius: '1px', opacity: 0.8 }} />
             </div>
+            {node.audit_trail && (
+              <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '6px', fontSize: '9px', color: 'rgba(255,255,255,0.35)', fontStyle: 'italic' }}>
+                <span style={{ fontWeight: 600, color: 'rgba(255,255,255,0.2)' }}>Source: </span> {node.audit_trail}
+              </div>
+            )}
           </div>
         </Html>
       )}
@@ -329,14 +298,18 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov
   );
 });
 
-// ─── Soft path edges ───────────────────────────────────────────────────
-const PathEdge = React.memo(function PathEdge({
-  s, e, active, color, thickness = 1.0,
-}: { s:Vec3; e:Vec3; active:boolean; color:string; thickness?:number }) {
+// ─── Soft path edges ────────────────────────────────────────────────────
+const PathEdge = React.memo(function PathEdge({ edge, s, e, active, color }: { edge:PathwayEdge; s:Vec3; e:Vec3; active:boolean; color:string }) {
   const dot  = useRef<THREE.Mesh>(null);
   const prog = useRef(Math.random());
   const sv   = useMemo(() => new THREE.Vector3(...s), [s]);
   const ev   = useMemo(() => new THREE.Vector3(...e), [e]);
+  const mid  = useMemo(() => sv.clone().lerp(ev, 0.5), [sv, ev]);
+
+  const thickness = useMemo(() => {
+    const map: Record<string, number> = { "Thick": 1.5, "Medium": 0.8, "Thin": 0.25 };
+    return map[edge.thickness_mapping || "Medium"] || 0.25;
+  }, [edge.thickness_mapping]);
 
   useFrame((_, dt) => {
     prog.current = (prog.current + dt * 0.18) % 1;
@@ -348,83 +321,88 @@ const PathEdge = React.memo(function PathEdge({
 
   return (
     <group>
-      <Line
-        points={[sv, ev]}
-        color={active ? color : '#141e2a'}
-        lineWidth={active ? 0.8 * thickness : 0.25 * thickness}
-        transparent
-        opacity={active ? 0.55 : 0.12}
-      />
+      {/* 【关键修复】: 暗灰背景下使用略亮的连线颜色 #556677 防止隐身 */}
+      <Line points={[sv, ev]} color={active ? color : '#556677'} lineWidth={active ? thickness * 1.5 : thickness} transparent opacity={active ? 0.8 : 0.25} />
       <mesh ref={dot} visible={false}>
-        <sphereGeometry args={[0.035, 5, 5]} />
-        <meshPhysicalMaterial color={color} emissive={color} emissiveIntensity={0.4} transparent opacity={0.7} />
+        <sphereGeometry args={[0.04, 5, 5]} />
+        <meshPhysicalMaterial color={color} emissive={color} emissiveIntensity={0.6} transparent opacity={0.8} />
       </mesh>
+      {active && edge.predicted_delta_G_kJ_mol && (
+        <Html position={mid.toArray() as Vec3}>
+          <div style={{ background: 'rgba(6,9,16,0.9)', color: '#fff', padding: '2px 6px', borderRadius: '4px', fontSize: '9px', fontWeight: 600, border: '1px solid rgba(255,255,255,0.1)' }}>
+            ΔG: {edge.predicted_delta_G_kJ_mol}
+          </div>
+        </Html>
+      )}
     </group>
   );
 });
 
-// Minimal interface matching the OrbitControls props used by ScrollSyncCamera
+// ─── Scroll-Sync Camera 【关键修复】：镜头居中算法，绝不跑偏 ──────────────
 type OrbitControlsHandle = { target: THREE.Vector3; update(): void };
-
-// ─── Scroll-Sync Camera ────────────────────────────────────────────────
-// When a node is selected, lerps the OrbitControls orbit-target toward
-// that node's world position and narrows the camera FOV for a cinematic
-// zoom.  All lerps are frame-rate-independent exponential easing.
-// The camera is left alone while the user is actively interacting.
-function ScrollSyncCamera({
-  nodes, selectedId, interact, controlsRef,
-}: {
-  nodes: PathwayNode[];
-  selectedId: string | null;
-  interact: boolean;
-  controlsRef: React.RefObject<OrbitControlsHandle | null>;
-}) {
+function ScrollSyncCamera({ nodes, selectedId, interact, controlsRef, centroid }: { nodes: PathwayNode[]; selectedId: string | null; interact: boolean; controlsRef: React.RefObject<OrbitControlsHandle | null>; centroid: THREE.Vector3 }) {
   const { camera } = useThree();
-  const targetLookAt = useRef(new THREE.Vector3(0, 0, 0));
+  const targetLookAt = useRef(new THREE.Vector3().copy(centroid));
 
-  // Recompute target whenever selection changes
   useEffect(() => {
     if (selectedId) {
       const node = nodes.find(n => n.id === selectedId);
-      if (node) targetLookAt.current.set(...node.position);
+      if (node && Array.isArray(node.position)) targetLookAt.current.set(...node.position);
     } else {
-      targetLookAt.current.set(0, 0, 0);
+      // 默认看向计算好的分子质心
+      targetLookAt.current.copy(centroid);
     }
-  }, [selectedId, nodes]);
+  }, [selectedId, nodes, centroid]);
 
   useFrame((_, dt) => {
-    // Don't fight with manual OrbitControls interaction
     if (interact || !(camera instanceof THREE.PerspectiveCamera)) return;
-
-    const alpha = 1 - Math.exp(-dt * 2.0); // smooth exp-decay lerp
-
-    // Shift the orbit centre so the camera naturally orbits around the active site
+    const alpha = 1 - Math.exp(-dt * 2.0);
     if (controlsRef.current) {
       controlsRef.current.target.lerp(targetLookAt.current, alpha);
       controlsRef.current.update();
     }
-
-    // Narrow FOV while zoomed into a node → cinematic feel
     const targetFov = selectedId ? 30 : 44;
     camera.fov += (targetFov - camera.fov) * alpha;
     camera.updateProjectionMatrix();
   });
-
   return null;
 }
 
 // ─── Scene — unified lighting, integrated depth ────────────────────────
-function Scene({ nodes, edges, onNodeClick, selectedNodeId }: {
-  nodes:PathwayNode[]; edges:PathwayEdge[];
-  onNodeClick:(n:PathwayNode)=>void; selectedNodeId:string|null;
-}) {
+function Scene({ nodes, edges, onNodeClick, selectedNodeId, roughnessTexture }: { nodes:PathwayNode[]; edges:PathwayEdge[]; onNodeClick:(n:PathwayNode)=>void; selectedNodeId:string|null; roughnessTexture:THREE.Texture | null; }) {
   const [hovId, setHovId]       = useState<string|null>(null);
   const [interact, setInteract] = useState(false);
   const controlsRef = useRef<OrbitControlsHandle | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout>|null>(null);
   const onStart = useCallback(() => { setInteract(true); if (timer.current) clearTimeout(timer.current); }, []);
   const onEnd   = useCallback(() => { timer.current = setTimeout(() => setInteract(false), 3500); }, []);
+  
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
+
+  // 【关键修复】: 动态计算网络图几何中心 (Centroid)
+  const centroid = useMemo(() => {
+    const center = new THREE.Vector3();
+    let count = 0;
+    nodes.forEach(n => {
+      if (n && Array.isArray(n.position) && n.position.length === 3) {
+        center.add(new THREE.Vector3(...n.position));
+        count++;
+      }
+    });
+    if (count > 0) center.divideScalar(count);
+    return center;
+  }, [nodes]);
+
+  const { camera } = useThree();
+  useEffect(() => {
+    // 渲染的第一秒直接把镜头架在中心点前
+    camera.position.set(centroid.x, centroid.y + 6, centroid.z + 18);
+    camera.lookAt(centroid);
+    if (controlsRef.current) {
+      controlsRef.current.target.copy(centroid);
+      controlsRef.current.update();
+    }
+  }, [centroid, camera]);
 
   const cc = useMemo(() => {
     const c: Record<string,number> = {};
@@ -437,175 +415,101 @@ function Scene({ nodes, edges, onNodeClick, selectedNodeId }: {
     edges.map(edge => {
       const s = nodes.find(n => n.id === edge.start);
       const e = nodes.find(n => n.id === edge.end);
-      if (!s || !e) return null;
-      return { key:`${edge.start}-${edge.end}`, s, e,
-        active: hovId===edge.start||hovId===edge.end||selectedNodeId===edge.start||selectedNodeId===edge.end,
-        color: getColor(s), thickness: edge.thickness ?? 1.0 };
-    }).filter(Boolean) as { key:string; s:PathwayNode; e:PathwayNode; active:boolean; color:string; thickness:number }[],
+      if (!s || !e || !Array.isArray(s.position) || !Array.isArray(e.position)) return null;
+      return { key:`${edge.start}-${edge.end}`, edge, s, e, active: hovId===edge.start||hovId===edge.end||selectedNodeId===edge.start||selectedNodeId===edge.end, color: getColor(s) };
+    }).filter(Boolean) as any[],
   [edges, nodes, hovId, selectedNodeId]);
 
   return (
     <>
-      {/* Lighting — soft, unified, no harsh spots */}
       <ambientLight intensity={0.85} color="#d0dcec" />
       <directionalLight position={[4, 10, 6]}  intensity={0.35} color="#e8f0f8" />
       <directionalLight position={[-8, -2, -6]} intensity={0.12} color="#1a2840" />
-      <pointLight position={[0, 6, 0]} intensity={0.20} color="#c0d0e8" distance={28} decay={2} />
+      <pointLight position={[centroid.x, centroid.y + 6, centroid.z]} intensity={0.20} color="#c0d0e8" distance={28} decay={2} />
+      <fog attach="fog" args={['#101010', 20, 48]} />
 
-      {/* Deep, soft fog — creates natural depth, no hard cutoff */}
-      <fog attach="fog" args={['#07090f', 20, 48]} />
-
-      <OrbitControls
-        ref={controlsRef as React.Ref<never>}
-        enableZoom
-        autoRotate={!interact && !hovId && !selectedNodeId}
-        autoRotateSpeed={0.12}
-        zoomSpeed={0.45}
-        minDistance={6}
-        maxDistance={24}
-        enablePan={false}
-        onStart={onStart} onEnd={onEnd}
-      />
-
-      {/* Spatial reference — barely visible */}
+      {/* 【关键修复】: 添加 makeDefault 和 target 保证触控生效且中心不偏 */}
+      <OrbitControls ref={controlsRef as React.Ref<never>} makeDefault enableZoom autoRotate={!interact && !hovId && !selectedNodeId} autoRotateSpeed={0.12} zoomSpeed={0.45} minDistance={6} maxDistance={24} enablePan={false} onStart={onStart} onEnd={onEnd} target={centroid} />
       <SpatialReference />
 
-      {/* Edges — soft, secondary */}
-      {ed.map(e => <PathEdge key={e.key} s={e.s.position} e={e.e.position} active={e.active} color={e.color} thickness={e.thickness} />)}
+      {ed.map(e => <PathEdge key={e.key} edge={e.edge} s={e.s.position} e={e.e.position} active={e.active} color={e.color} />)}
+      {nodes.map(n => <MolNode key={n.id} node={n} hov={hovId===n.id} sel={selectedNodeId===n.id} cc={cc[n.id]??0} onClick={onNodeClick} onHov={setHovId} roughnessTexture={roughnessTexture} />)}
 
-      {/* Nodes — solid sphere bodies + orbital rings + labels */}
-      {nodes.map(n => (
-        <MolNode key={n.id} node={n} hov={hovId===n.id} sel={selectedNodeId===n.id} cc={cc[n.id]??0} onClick={onNodeClick} onHov={setHovId} />
-      ))}
-
-      {/* Scroll-sync camera — cinematic zoom to active sites on scroll/select */}
-      <ScrollSyncCamera nodes={nodes} selectedId={selectedNodeId} interact={interact} controlsRef={controlsRef} />
+      <ScrollSyncCamera nodes={nodes} selectedId={selectedNodeId} interact={interact} controlsRef={controlsRef} centroid={centroid} />
     </>
   );
 }
 
-// ─── Resize handler — explicit window resize fallback ──────────────────
+// ─── Resize handler ──────────────────────────────────────────────────
 function ResizeHandler() {
   const { gl, camera } = useThree();
-
   useEffect(() => {
     const handleResize = () => {
       const parent = gl.domElement.parentElement;
       if (!parent) return;
-      const width = parent.clientWidth;
-      const height = parent.clientHeight;
-
-      gl.setSize(width, height, false);
-
+      gl.setSize(parent.clientWidth, parent.clientHeight, false);
       if (camera instanceof THREE.PerspectiveCamera) {
-        camera.aspect = width / height;
+        camera.aspect = parent.clientWidth / parent.clientHeight;
         camera.updateProjectionMatrix();
       }
     };
-
     handleResize();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, [camera, gl]);
-
   return null;
 }
 
-// ─── Defaults ─────────────────────────────────────────────────────────
-const DEF_EDGES: PathwayEdge[] = [
-  { start:'acetyl_coa', end:'hmg_coa', relationshipType:'converts', direction:'forward' },
-  { start:'acetyl_coa', end:'mevalonate', relationshipType:'produces', direction:'forward' },
-  { start:'hmg_coa', end:'mevalonate', relationshipType:'converts', direction:'forward' },
-  { start:'mevalonate', end:'fpp', relationshipType:'produces', direction:'forward' },
-  { start:'fpp', end:'amorpha_4_11_diene', relationshipType:'catalyzes', direction:'forward' },
-  { start:'amorpha_4_11_diene', end:'artemisinic_acid', relationshipType:'converts', direction:'forward' },
-  { start:'artemisinic_acid', end:'artemisinin', relationshipType:'produces', direction:'forward' },
-];
-
+// ─── Main Component — loading fallback and scene unified ─────────────
 interface Props { nodes:PathwayNode[]; onNodeClick:(node:PathwayNode)=>void; edges?:PathwayEdge[]; selectedNodeId?:string|null; }
 
 export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId }: Props) {
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('ready');
   const [rendererMode, setRendererMode] = useState<RendererMode>('loading');
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const mountedRef = useRef(true);
+  const roughnessTexture = useMemo(() => createProceduralTexture(), []);
 
   useEffect(() => {
     mountedRef.current = true;
     return () => { mountedRef.current = false; };
   }, []);
 
-  const setRenderState = useCallback((nextStatus: 'loading' | 'ready' | 'error', mode: RendererMode, message?: string) => {
-    if (!mountedRef.current) return;
-    setStatus(nextStatus);
-    setRendererMode(mode);
-    setErrorMessage(message ?? null);
-  }, []);
-
   const safeNodes = useMemo(() => Array.isArray(nodes) ? nodes.filter(isRenderableNode) : [], [nodes]);
-  const safeNodeIds = useMemo(() => new Set(safeNodes.map(node => node.id)), [safeNodes]);
-  const safeEdges = useMemo(() => {
-    const sourceEdges = Array.isArray(edges) ? edges : DEF_EDGES;
-    return sourceEdges.filter((edge): edge is PathwayEdge =>
-      !!edge &&
-      typeof edge.start === 'string' &&
-      typeof edge.end === 'string' &&
-      safeNodeIds.has(edge.start) &&
-      safeNodeIds.has(edge.end),
-    );
-  }, [edges, safeNodeIds]);
-  const hasRenderableContent = safeNodes.length > 0;
+  const safeEdges = useMemo(() => Array.isArray(edges) ? edges : [], [edges]);
   const fallbackLabel = getRendererLabel(rendererMode);
-
-  useEffect(() => {
-    if (!hasRenderableContent) {
-      setRenderState('error', 'error', 'Pathway data is unavailable or incomplete, so the visualization could not be rendered.');
-      return;
-    }
-  }, [hasRenderableContent, setRenderState]);
 
   return (
     <div style={{
-      width: '100%', height: 'clamp(500px, 65vh, 760px)',
-      background: 'linear-gradient(180deg, #070910 0%, #090c15 60%, #0b0e18 100%)',
+      width: '100%', 
+      height: 'clamp(500px, 65vh, 760px)', 
+      background: 'linear-gradient(180deg, #101010 0%, #0c0e18 100%)', 
       borderRadius: '20px', overflow: 'hidden',
-      border: '1px solid rgba(255,255,255,0.06)',
-      position: 'relative',
+      border: '1px solid rgba(255,255,255,0.06)', position: 'relative',
       boxShadow: '0 32px 80px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.04)',
     }}>
-      {/* Minimal header */}
-      <div style={{ position:'absolute', top:0, left:0, right:0, zIndex:10, display:'flex', alignItems:'center', justifyContent:'space-between', padding:'11px 16px', background:'linear-gradient(to bottom, rgba(7,9,16,0.92), transparent)', borderBottom:'1px solid rgba(255,255,255,0.04)' }}>
+      {/* 【关键修复】: 所有的绝对定位UI容器加上 pointerEvents:'none' 防止吞掉鼠标点击 */}
+      <div style={{ pointerEvents: 'none', position:'absolute', top:0, left:0, right:0, zIndex:10, display:'flex', alignItems:'center', justifyContent:'space-between', padding:'11px 16px', background:'linear-gradient(to bottom, rgba(16,16,16,0.92), transparent)', borderBottom:'1px solid rgba(255,255,255,0.04)' }}>
         <div style={{ display:'flex', alignItems:'center', gap:'9px' }}>
           <div style={{ display:'flex', gap:'4px' }}>
-            {['rgba(200,216,232,0.35)','rgba(200,224,208,0.3)','rgba(221,208,232,0.3)'].map((c,i) => (
-              <div key={i} style={{ width:'4px', height:'4px', borderRadius:'50%', background:c }} />
+            {['#C8D8E8','#C8E0D0','#DDD0E8'].map(c => (
+              <div key={c} style={{ width:'4px', height:'4px', borderRadius:'50%', background:c, opacity:0.35 }} />
             ))}
           </div>
           <span style={{ color:'rgba(255,255,255,0.20)', fontSize:'10px', fontFamily:"'Public Sans',sans-serif", fontWeight:700, textTransform:'uppercase', letterSpacing:'0.08em' }}>
-            METABOLIC · {nodes.length} ENTITIES
+            METABOLIC · {safeNodes.length} ENTITIES
           </span>
         </div>
         <div style={{ display:'flex', alignItems:'center', gap:'8px' }}>
           {fallbackLabel && (
-            <span style={{
-              ...getRendererTone(rendererMode),
-              fontSize:'9px',
-              fontFamily:"'Public Sans',sans-serif",
-              padding:'2px 8px',
-              borderRadius:'99px',
-              letterSpacing:'0.04em',
-              fontWeight:700,
-            }}>
+            <span style={{ ...getRendererTone(rendererMode), fontSize:'9px', fontFamily:"'Public Sans',sans-serif", padding:'2px 8px', borderRadius:'99px', letterSpacing:'0.04em', fontWeight:700 }}>
               {fallbackLabel}
             </span>
           )}
-          {edges && <span style={{ color:'rgba(200,216,232,0.40)', fontSize:'9px', fontFamily:"'Public Sans',sans-serif", padding:'2px 8px', border:'1px solid rgba(200,216,232,0.14)', borderRadius:'99px' }}>AI GENERATED</span>}
           <span style={{ color:'rgba(255,255,255,0.10)', fontSize:'9px', fontFamily:"'Public Sans',sans-serif" }}>drag · scroll · click</span>
         </div>
       </div>
 
-      {/* pLDDT legend — minimal weight */}
-      <div style={{ position:'absolute', bottom:'13px', left:'13px', zIndex:10 }}>
+      <div style={{ pointerEvents: 'none', position:'absolute', bottom:'13px', left:'13px', zIndex:10 }}>
         <p style={{ color:'rgba(255,255,255,0.12)', fontSize:'8px', fontFamily:"'Public Sans',sans-serif", fontWeight:700, margin:'0 0 4px', letterSpacing:'0.07em', textTransform:'uppercase' }}>CONFIDENCE</p>
         {[{ c:'#C8D8E8',l:'>90' },{ c:'#C8E0D0',l:'70–90' },{ c:'#E8DCC8',l:'50–70' },{ c:'#E8C8D4',l:'<50' }].map(x => (
           <div key={x.l} style={{ display:'flex', alignItems:'center', gap:'5px', marginBottom:'2px' }}>
@@ -615,123 +519,53 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId }
         ))}
       </div>
 
-      {status === 'error' && (
-        <div style={{
-          position: 'absolute',
-          inset: 0,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '48px 24px 40px',
-          background: 'linear-gradient(180deg, rgba(14,10,14,0.92), rgba(11,14,24,0.94))',
-          backdropFilter: 'blur(14px)',
-          zIndex: 6,
-        }}>
-          <div style={{
-            width: 'min(420px, 100%)',
-            padding: '20px 22px',
-            borderRadius: '20px',
-            border: '1px solid rgba(255,120,120,0.18)',
-            background: 'rgba(32,11,16,0.76)',
-            boxShadow: '0 20px 60px rgba(0,0,0,0.28)',
-          }}>
-            <p style={{ margin: '0 0 8px', color: 'rgba(255,196,196,0.92)', fontSize: '11px', fontFamily:"'Public Sans',sans-serif", fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-              Atomic Pathway unavailable
-            </p>
-            <p style={{ margin: 0, color: 'rgba(255,214,214,0.78)', fontSize: '13px', lineHeight: 1.6, fontFamily:"'Public Sans',sans-serif" }}>
-              {errorMessage ?? 'The molecular scene encountered an unexpected error.'}
-            </p>
-          </div>
+      <div style={{ pointerEvents: 'none', position:'absolute', bottom:'13px', right:'13px', zIndex:10, background:'rgba(0,0,0,0.4)', padding:'6px 10px', borderRadius:'8px', border:'1px solid rgba(255,255,255,0.05)' }}>
+        <div style={{ display:'flex', alignItems:'center', gap:'6px', marginBottom:'4px' }}>
+          <div style={{ width:'8px', height:'8px', background:'#dc3545', borderRadius:'2px' }} />
+          <span style={{ color:'rgba(255,255,255,0.4)', fontSize:'8px', fontFamily:"'Public Sans',sans-serif" }}>Impurity / High Cost</span>
         </div>
-      )}
+        <div style={{ display:'flex', alignItems:'center', gap:'6px' }}>
+          <div style={{ width:'8px', height:'8px', background:'#28a745', borderRadius:'2px' }} />
+          <span style={{ color:'rgba(255,255,255,0.4)', fontSize:'8px', fontFamily:"'Public Sans',sans-serif" }}>Verified High-Yield</span>
+        </div>
+      </div>
 
-      {hasRenderableContent && (
-        <SceneErrorBoundary onError={(error) => {
-          console.error('Atomic Pathway render error:', error.message, error.stack);
-          setRenderState('error', 'error', 'The molecular scene encountered an unexpected rendering error.');
-        }}>
-          <Canvas
-            camera={{ position: [0, 5, 15], fov: 44 }}
-            gl={async (props) => {
-              const canvas = props.canvas as HTMLCanvasElement;
-              const parent = canvas.parentElement;
-              const width = parent?.clientWidth ?? canvas.width;
-              const height = parent?.clientHeight ?? canvas.height;
+      <SceneErrorBoundary onError={(e) => setStatus('error')}>
+        <Canvas
+          camera={{ position: [0, 5, 15], fov: 44 }}
+          gl={async (props) => {
+            const canvas = props.canvas as HTMLCanvasElement;
+            const parent = canvas.parentElement;
+            const width = parent?.clientWidth ?? canvas.width;
+            const height = parent?.clientHeight ?? canvas.height;
 
-              const applyRendererDefaults = <Renderer extends ConfigurableRenderer>(renderer: Renderer) => {
-                renderer.setSize(width, height, false);
-                renderer.toneMapping = THREE.LinearToneMapping;
-                renderer.toneMappingExposure = 1.0;
-                renderer.setClearColor(new THREE.Color('#07090f'), 1);
-                return renderer;
-              };
+            const applyRendererDefaults = <Renderer extends ConfigurableRenderer>(renderer: Renderer) => {
+              renderer.setSize(width, height, false);
+              renderer.toneMapping = THREE.LinearToneMapping;
+              renderer.toneMappingExposure = 1.0;
+              renderer.setClearColor(new THREE.Color('#101010'), 1); 
+              return renderer;
+            };
 
-              const createWebGLRenderer = (glContext: WebGL2RenderingContext | WebGLRenderingContext, mode: 'webgl2' | 'webgl') => {
-                const renderer = applyRendererDefaults(new THREE.WebGLRenderer({
-                  canvas,
-                  context: glContext,
-                  antialias: true,
-                  powerPreference: 'high-performance',
-                  alpha: false,
-                }));
-                setRenderState('ready', mode);
-                return renderer;
-              };
+            const webgl2 = canvas.getContext('webgl2', { antialias: true, powerPreference: 'high-performance', alpha: false });
+            if (webgl2) {
+              setRendererMode('webgl2'); setStatus('ready');
+              return applyRendererDefaults(new THREE.WebGLRenderer({ canvas, context: webgl2, antialias: true, powerPreference: 'high-performance', alpha: false }));
+            }
 
-              // Renderer mode badge will update once ready — no blocking overlay
-
-              if (typeof navigator !== 'undefined' && 'gpu' in navigator) {
-                try {
-                  const gpu = (navigator as Navigator & { gpu: GPU }).gpu;
-                  const adapter = await withTimeout(gpu.requestAdapter(), 'Requesting a WebGPU adapter');
-                  if (!adapter) throw new Error('WebGPU adapter unavailable.');
-
-                  const device = await withTimeout(adapter.requestDevice(), 'Requesting a WebGPU device');
-                  if (!device) throw new Error('WebGPU device unavailable.');
-
-                  const { WebGPURenderer } = await withTimeout(import('three/webgpu'), 'Loading the WebGPU renderer');
-                  const webgpuOptions: ConstructorParameters<typeof WebGPURenderer>[0] = {
-                    canvas,
-                    antialias: true,
-                    powerPreference: 'high-performance',
-                    alpha: false,
-                  };
-                  const renderer = applyRendererDefaults(new WebGPURenderer(webgpuOptions));
-                  await withTimeout(renderer.init(), 'Initializing WebGPU');
-                  setRenderState('ready', 'webgpu');
-                  return renderer;
-                } catch (error) {
-                  console.warn('WebGPU initialization failed, falling back to WebGL2.', error);
-                }
-              }
-
-              const webgl2 = canvas.getContext('webgl2', {
-                antialias: true,
-                powerPreference: 'high-performance',
-                alpha: false,
-              });
-              if (webgl2) return createWebGLRenderer(webgl2, 'webgl2');
-
-              const webgl = canvas.getContext('webgl', {
-                antialias: true,
-                powerPreference: 'high-performance',
-                alpha: false,
-              });
-              if (webgl) return createWebGLRenderer(webgl, 'webgl');
-
-              const message = 'This browser session could not start WebGPU or WebGL. Please try updating your browser or opening the page in a different browser.';
-              setRenderState('error', 'error', message);
-              throw new Error(message);
-            }}
-            dpr={[1, 1.5]}
-            performance={{ min: 0.5 }}
-            style={{ background: 'transparent' }}
-          >
-            <ResizeHandler />
-            <Scene nodes={safeNodes} edges={safeEdges} onNodeClick={onNodeClick} selectedNodeId={selectedNodeId ?? null} />
-          </Canvas>
-        </SceneErrorBoundary>
-      )}
+            const webgl = canvas.getContext('webgl', { antialias: true, powerPreference: 'high-performance', alpha: false });
+            if (webgl) {
+              setRendererMode('webgl'); setStatus('ready');
+              return applyRendererDefaults(new THREE.WebGLRenderer({ canvas, context: webgl, antialias: true, powerPreference: 'high-performance', alpha: false }));
+            }
+            throw new Error('WebGL unavailable');
+          }}
+          dpr={[1, 1.5]} performance={{ min: 0.5 }} style={{ background: 'transparent', pointerEvents: 'auto' }}
+        >
+          <ResizeHandler />
+          <Scene nodes={safeNodes} edges={safeEdges} onNodeClick={onNodeClick} selectedNodeId={selectedNodeId ?? null} roughnessTexture={roughnessTexture} />
+        </Canvas>
+      </SceneErrorBoundary>
     </div>
   );
 }

@@ -1,29 +1,5 @@
-// ── Core pathway types ──────────────────────────────────────────────
-
-export interface PathwayNode {
-  id: string;
-  label: string;
-  position: [number, number, number];
-  summary: string;
-  citation: string;
-  color: string;
-
-  // Scientific credibility layer
-  canonicalLabel?: string;
-  nodeType?: NodeType;
-  evidenceSnippet?: string;
-  confidenceScore?: number;
-  ecNumber?: string;
-  chebiId?: string;
-  uniprotId?: string;
-
-  // Molecular structure data
-  pubchemCID?: number;          // PubChem Compound ID for 3D SDF fetch
-  smiles?: string;              // SMILES string (metadata)
-  molecularFormula?: string;
-  molecularWeight?: number;
-  molecularStructure?: MolecularStructure; // inline atom/bond data if available
-}
+// Core pathway types
+export type NodeColorMapping = 'Green' | 'Yellow' | 'Orange' | 'Red' | 'Purple' | 'Blue';
 
 export type NodeType =
   | 'metabolite'
@@ -31,13 +7,9 @@ export type NodeType =
   | 'gene'
   | 'complex'
   | 'cofactor'
+  | 'impurity'
+  | 'intermediate'
   | 'unknown';
-
-export interface MolecularStructure {
-  atoms: MolAtom[];
-  bonds: MolBond[];
-  optimized?: boolean;          // true if geometry-optimized conformer
-}
 
 export interface MolAtom {
   element: string;
@@ -48,34 +20,46 @@ export interface MolAtom {
 export interface MolBond {
   atomIndex1: number;
   atomIndex2: number;
-  order: 1 | 2 | 3;            // bond order
+  order: 1 | 2 | 3;
 }
 
-export type RenderStyle = 'stick' | 'sphere' | 'cartoon' | 'surface';
+export interface MolecularStructure {
+  atoms: MolAtom[];
+  bonds: MolBond[];
+  optimized?: boolean;
+}
 
-// ── Edge types ──────────────────────────────────────────────────────
+export interface PathwayNode {
+  id: string;
+  label: string;
+  position: [number, number, number];
+  summary: string;
+  citation: string;
+  color: string;
 
-export interface PathwayEdge {
-  start: string;
-  end: string;
-  relationshipType?: EdgeRelationshipType;
-  evidence?: string;
+  // Scientific & Commercial Intelligence Layer
+  canonicalLabel?: string;
+  nodeType?: NodeType;
+  evidenceSnippet?: string;
   confidenceScore?: number;
-  direction?: 'forward' | 'reverse' | 'bidirectional';
-  /** Visual line width (derived from thickness_mapping: Thin=0.4, Medium=1.0, Thick=1.8) */
-  thickness?: number;
-}
-
-// ── Risk / impurity report types ─────────────────────────────────────
-
-export interface RiskEntry {
-  /** Comma-separated impurity name(s) that may match multiple pathway nodes */
-  impurity_name: string;
-  source_pathway: string;
-  reason: string;
-  /** 0–1 numeric risk score; values > 0.7 trigger high-risk compliance warning */
-  risk_score: number;
-  audit_trail: string;
+  
+  // Nexus-Bio 1.1: Risk and Compliance
+  risk_score?: number;
+  audit_trail?: string;
+  color_mapping?: NodeColorMapping;
+  thermodynamic_stability?: string;
+  toxicity_impact?: string;
+  separation_cost_index?: number;
+  
+  // Molecular structure data
+  ecNumber?: string;
+  chebiId?: string;
+  uniprotId?: string;
+  pubchemCID?: number;
+  smiles?: string;
+  molecularFormula?: string;
+  molecularWeight?: number;
+  molecularStructure?: MolecularStructure;
 }
 
 export type EdgeRelationshipType =
@@ -89,21 +73,43 @@ export type EdgeRelationshipType =
   | 'regulates'
   | 'unknown';
 
-// ── Search types ──────────────────────────────────────────────────────
-
-export interface SearchResult {
-  id: string;
-  title: string;
-  extract: string;
-  sourceLink: string;
-  keywords: string[];
+export interface PathwayEdge {
+  start: string;
+  end: string;
+  relationshipType?: EdgeRelationshipType;
+  evidence?: string;
+  confidenceScore?: number;
+  direction?: 'forward' | 'reverse' | 'bidirectional';
+  
+  // Nexus-Bio 1.1: Thermodynamic data
+  predicted_delta_G_kJ_mol?: number;
+  spontaneity?: string;
+  yield_prediction?: string;
+  thickness_mapping?: 'Thick' | 'Medium' | 'Thin';
+  audit_trail?: string;
 }
 
-// ── Pathway generation output ─────────────────────────────────────────
+export interface RiskReportEntry {
+  impurity_name: string;
+  source_pathway: string;
+  reason: string;
+  risk_score: number;
+  audit_trail: string;
+}
+
+export interface YieldOptimizationStrategy {
+  strategy_type: string;
+  description: string;
+  target_nodes: string[];
+  audit_trail: string;
+}
 
 export interface GeneratedPathway {
+  project_name?: string;
   nodes: PathwayNode[];
   edges: PathwayEdge[];
+  risk_report?: RiskReportEntry[];
+  yield_optimization_strategies?: YieldOptimizationStrategy[];
   metadata?: {
     sourceText?: string;
     generatedAt?: string;
@@ -112,35 +118,29 @@ export interface GeneratedPathway {
   };
 }
 
-// ── Validation helpers ────────────────────────────────────────────────
-
-export function isValidNode(node: unknown): node is Partial<PathwayNode> {
+// RESTORED HELPERS for PaperAnalyzer.tsx
+export function isValidNode(node: any): node is Partial<PathwayNode> {
   if (!node || typeof node !== 'object') return false;
-  const n = node as Record<string, unknown>;
-  return typeof n.id === 'string' && n.id.length > 0 &&
-    typeof n.label === 'string' && n.label.length > 0;
+  return typeof node.id === 'string' && node.id.length > 0;
 }
 
-export function isValidEdge(edge: unknown): edge is PathwayEdge {
+export function isValidEdge(edge: any): edge is PathwayEdge {
   if (!edge || typeof edge !== 'object') return false;
-  const e = edge as Record<string, unknown>;
-  return typeof e.start === 'string' && e.start.length > 0 &&
-    typeof e.end === 'string' && e.end.length > 0;
+  return typeof edge.start === 'string' && edge.start.length > 0 &&
+         typeof edge.end === 'string' && edge.end.length > 0;
 }
 
 export function sanitizeNodeId(id: string): string {
   return id.toLowerCase().replace(/[^a-z0-9_]/g, '_').slice(0, 64);
 }
 
-// ── Artemisinin showcase molecule PubChem CIDs ────────────────────────
-// Used by MoleculeViewer to fetch 3D conformers from PubChem
-
+// Artemisinin showcase CIDs
 export const SHOWCASE_PUBCHEM_CIDS: Record<string, number> = {
-  acetyl_coa:          444493,
-  hmg_coa:             439400,
-  mevalonate:          441,
-  fpp:                 445483,
-  amorpha_4_11_diene:  11230765,
-  artemisinic_acid:    5362031,
-  artemisinin:         68827,
+  acetyl_coa: 444493,
+  hmg_coa: 439400,
+  mevalonate: 441,
+  fpp: 445483,
+  amorpha_4_11_diene: 11230765,
+  artemisinic_acid: 5362031,
+  artemisinin: 68827,
 };

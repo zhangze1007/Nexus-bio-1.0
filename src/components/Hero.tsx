@@ -1,7 +1,7 @@
 'use client';
 
 import { motion, useScroll, useTransform, useSpring } from 'framer-motion';
-import { ArrowRight, Dna, BookOpen, Microscope } from 'lucide-react';
+import { ArrowRight, Dna, BookOpen, Microscope, ShieldCheck, Activity } from 'lucide-react';
 import { useRef, useEffect, useState, useCallback } from 'react';
 
 // ── Typography system ─────────────────────────────────────────────────
@@ -206,7 +206,7 @@ export default function Hero() {
             <Dna size={13} style={{ color: 'rgba(255,255,255,0.6)' }} />
           </div>
           <span style={{ fontFamily: SERIF, fontSize: '15px', color: 'rgba(255,255,255,0.82)', letterSpacing: '-0.01em' }}>
-            Nexus-Bio
+            Nexus-Bio 1.1
           </span>
         </div>
 
@@ -252,7 +252,7 @@ export default function Hero() {
             el.style.borderColor = 'rgba(255,255,255,0.09)';
             el.style.boxShadow = 'inset 0 1px 0 rgba(255,255,255,0.06)';
           }}>
-          Try Now <ArrowRight size={11} />
+          Access Engine <ArrowRight size={11} />
         </a>
       </nav>
 
@@ -260,7 +260,7 @@ export default function Hero() {
       <motion.div style={{
         y, opacity, scale,
         position: 'relative', zIndex: 10,
-        textAlign: 'center', maxWidth: '860px', width: '100%',
+        textAlign: 'center', maxWidth: '1000px', width: '100%',
         paddingTop: '80px',
         transform: `translate(${cursor.x * -6}px, ${cursor.y * -4}px)`,
         transition: 'transform 1s cubic-bezier(0.16,1,0.3,1)',
@@ -286,19 +286,19 @@ export default function Hero() {
             style={{ width: '5px', height: '5px', borderRadius: '50%', background: 'rgba(180,215,245,0.6)', boxShadow: '0 0 6px rgba(180,215,245,0.4)', flexShrink: 0 }}
           />
           <span style={{ fontFamily: "'Times New Roman', Times, serif", fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', letterSpacing: '0.12em' }}>
-            Next-Gen-Bio-Intelligent Architecture
+            Next-Gen Biosynthesis Engine
           </span>
         </motion.div>
 
-        {/* Main title — DM Serif Display */}
+        {/* Main title — 保持放大的尺寸，但颜色回归高级黑白灰 */}
         <motion.h1
           initial={{ opacity: 0, y: 32 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.9, delay: 0.08, ease: [0.22,1,0.36,1] }}
           style={{
             fontFamily: SERIF, fontWeight: 400, fontStyle: 'normal',
-            fontSize: 'clamp(1.8rem, 4.5vw, 3.2rem)',
-            lineHeight: 1.2, letterSpacing: '-0.02em',
+            fontSize: 'clamp(2.5rem, 6.5vw, 5rem)',
+            lineHeight: 1.1, letterSpacing: '-0.02em',
             color: 'rgba(255,255,255,0.95)',
             margin: '0 0 24px',
             textShadow: '0 0 80px rgba(180,210,240,0.15)',
@@ -316,27 +316,13 @@ export default function Hero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.75, delay: 0.18 }}
           style={{
-            fontFamily: BODY, fontSize: 'clamp(13px, 1.55vw, 15px)',
-            fontWeight: 400, lineHeight: 1.9,
-            color: 'rgba(255,255,255,0.35)',
-            maxWidth: '540px', margin: '0 auto 12px',
+            fontFamily: BODY, fontSize: 'clamp(14px, 1.8vw, 18px)',
+            fontWeight: 400, lineHeight: 1.8,
+            color: 'rgba(255,255,255,0.45)',
+            maxWidth: '680px', margin: '0 auto 16px',
             letterSpacing: '0.01em',
           }}>
-          Nexus-Bio extracts metabolic nodes, enzymatic reactions, and pathway logic
-          from any research paper — rendered as an interactive 3D map in seconds.
-        </motion.p>
-
-        {/* Tagline — DM Serif */}
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.3 }}
-          style={{
-            fontFamily: SERIF, fontStyle: 'normal', fontSize: '14px',
-            color: 'rgba(255,255,255,0.14)',
-            margin: '0 0 60px', letterSpacing: '0.01em',
-          }}>
-          Built for researchers, biotech teams, and grant-stage startups.
+          Transform complex metabolic engineering papers into verifiable 3D actionable pathways. Predict impurities, optimize yield, and track every decision in minutes.
         </motion.p>
 
         {/* CTAs — glass buttons */}
@@ -344,14 +330,14 @@ export default function Hero() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.65, delay: 0.36 }}
-          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '72px' }}>
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', flexWrap: 'wrap', marginTop: '36px', marginBottom: '64px' }}>
 
           {/* Primary CTA */}
           <a href="#analyzer" style={{
             display: 'flex', alignItems: 'center', gap: '8px',
-            padding: '13px 28px', borderRadius: '20px',
+            padding: '16px 36px', borderRadius: '30px',
             background: '#ffffff', color: '#07090d',
-            fontFamily: BODY, fontSize: '13px', fontWeight: 600,
+            fontFamily: BODY, fontSize: '14px', fontWeight: 700,
             textDecoration: 'none', letterSpacing: '-0.01em',
             boxShadow: '0 0 0 0 rgba(255,255,255,0)',
             transition: 'all 0.25s cubic-bezier(0.34,1.56,0.64,1)',
@@ -359,7 +345,7 @@ export default function Hero() {
             onMouseEnter={e => {
               const el = e.currentTarget as HTMLElement;
               el.style.background = '#e8e8e8';
-              el.style.transform = 'translateY(-3px) scale(1.01)';
+              el.style.transform = 'translateY(-3px) scale(1.02)';
               el.style.boxShadow = '0 8px 30px rgba(255,255,255,0.18), 0 0 0 1px rgba(255,255,255,0.1)';
             }}
             onMouseLeave={e => {
@@ -368,72 +354,68 @@ export default function Hero() {
               el.style.transform = 'none';
               el.style.boxShadow = '0 0 0 0 rgba(255,255,255,0)';
             }}>
-            Analyze a Paper <ArrowRight size={13} />
+            Initialize Pilot Demo <ArrowRight size={14} />
           </a>
 
-          {/* Secondary CTA — glassmorphism */}
+          {/* Secondary CTA */}
           <a href="#search" style={{
             display: 'flex', alignItems: 'center', gap: '8px',
-            padding: '13px 28px', borderRadius: '20px',
+            padding: '16px 36px', borderRadius: '30px',
             background: 'rgba(255,255,255,0.04)',
-            border: '1px solid rgba(255,255,255,0.09)',
+            border: '1px solid rgba(255,255,255,0.15)',
             backdropFilter: 'blur(16px)',
-            color: 'rgba(255,255,255,0.45)',
-            fontFamily: BODY, fontSize: '13px', fontWeight: 400,
+            color: 'rgba(255,255,255,0.8)',
+            fontFamily: BODY, fontSize: '14px', fontWeight: 600,
             textDecoration: 'none',
             boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
             transition: 'all 0.22s ease',
           }}
             onMouseEnter={e => {
               const el = e.currentTarget as HTMLElement;
-              el.style.background = 'rgba(255,255,255,0.08)';
+              el.style.background = 'rgba(255,255,255,0.1)';
               el.style.color = '#fff';
-              el.style.borderColor = 'rgba(255,255,255,0.16)';
               el.style.transform = 'translateY(-2px)';
-              el.style.boxShadow = '0 6px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.07)';
             }}
             onMouseLeave={e => {
               const el = e.currentTarget as HTMLElement;
               el.style.background = 'rgba(255,255,255,0.04)';
-              el.style.color = 'rgba(255,255,255,0.45)';
-              el.style.borderColor = 'rgba(255,255,255,0.09)';
+              el.style.color = 'rgba(255,255,255,0.8)';
               el.style.transform = 'none';
-              el.style.boxShadow = 'inset 0 1px 0 rgba(255,255,255,0.05)';
             }}>
-            <BookOpen size={13} /> Browse Literature
+            <BookOpen size={14} /> View Technical Paper
           </a>
         </motion.div>
 
-        {/* Stats — glass chips with stagger */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '44px' }}>
+        {/* Stats — 还原原版配色，保留商业指标文案 */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '44px' }}>
           {[
-            { value: '6', label: 'Literature DBs', delay: 0.52 },
-            { value: '3D', label: 'Structures', delay: 0.6 },
-            { value: 'AI', label: 'Pathway Engine', delay: 0.68 },
-            { value: 'ODE', label: 'Kinetic Sim.', delay: 0.76 },
+            { value: '< 2.5m', label: 'Analysis Time', delay: 0.52 },
+            { value: '100%', label: 'Audit Trace', delay: 0.6 },
+            { value: 'ADMET', label: 'Risk Predict', delay: 0.68 },
+            { value: '3D', label: 'Spatial Map', delay: 0.76 },
           ].map(s => <GlassChip key={s.value} {...s} />)}
         </div>
 
-        {/* Feature tags */}
+        {/* Feature tags - 还原原版玻璃质感，保留商业 IP 标签 */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.7, delay: 0.85 }}
-          style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+          style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
           {[
-            { icon: <Dna size={10} />, label: 'AlphaFold pLDDT' },
-            { icon: <Microscope size={10} />, label: 'PubChem 3D Conformers' },
-            { icon: <BookOpen size={10} />, label: 'Evidence Trace' },
+            { icon: <Activity size={10} />, label: 'Separation Cost Index' },
+            { icon: <Dna size={10} />, label: 'AlphaFold 3 Integration' },
+            { icon: <ShieldCheck size={10} />, label: 'Verifiable Source Data' },
           ].map((f, i) => (
             <div key={i} style={{
               display: 'flex', alignItems: 'center', gap: '6px',
-              padding: '5px 13px', borderRadius: '100px',
+              padding: '6px 16px', borderRadius: '100px',
               background: 'rgba(255,255,255,0.022)',
               border: '1px solid rgba(255,255,255,0.06)',
               backdropFilter: 'blur(8px)',
               color: 'rgba(255,255,255,0.2)',
               fontFamily: MONO, fontSize: '10px',
-              letterSpacing: '0.02em',
+              letterSpacing: '0.04em', textTransform: 'uppercase',
               boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.03)',
               transition: 'all 0.2s',
               cursor: 'default',
@@ -459,7 +441,7 @@ export default function Hero() {
       {/* Bottom vignette */}
       <div style={{
         position: 'absolute', bottom: 0, left: 0, right: 0, height: '180px',
-        background: 'linear-gradient(to bottom, transparent, rgba(7,10,14,0.95))',
+        background: 'linear-gradient(to bottom, transparent, rgba(7,10,14,1))',
         pointerEvents: 'none',
       }} />
     </header>
