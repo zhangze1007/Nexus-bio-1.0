@@ -168,7 +168,7 @@ function GeoComp({ g, s }: { g: GCfg['geom']; s: number }) {
 function SpatialReference() {
   return (
     <group position={[0, -3.8, 0]}>
-      {/* --- 视觉效果修复：黑白灰网格 --- */}
+      {/* 保持你原本的黑白灰网格颜色 */}
       <gridHelper args={[36, 36, '#606060', '#404040']} /> 
       <Line points={[new THREE.Vector3(-10,0,0), new THREE.Vector3(10,0,0)]} color="#aaaaaa" lineWidth={0.5} transparent opacity={0.35} /> 
       <Line points={[new THREE.Vector3(0,0,-10), new THREE.Vector3(0,0,10)]} color="#aaaaaa" lineWidth={0.5} transparent opacity={0.35} /> 
@@ -229,7 +229,7 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov
     >
       <mesh ref={bodyRef}>
         <GeoComp g={cfg.geom} s={0.32 + cc * 0.05} />
-        {/* --- 视觉效果修复：应用噪点贴图模拟不光滑质感 --- */}
+        {/* 保持你的噪点不光滑质感 */}
         <meshPhysicalMaterial
           color={finalColor}
           emissive={finalColor}
@@ -242,9 +242,10 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov
         />
       </mesh>
 
-      <mesh>
-        <sphereGeometry args={[0.46 + cc * 0.05, 6, 6]} />
-        <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+      {/* 【关键修复】: 隐形 Hitbox 触摸判定区，彻底解决点不到分子的 bug */}
+      <mesh visible={false}>
+        <sphereGeometry args={[0.8, 16, 16]} />
+        <meshBasicMaterial color="white" transparent opacity={0} depthWrite={false} />
       </mesh>
 
       {cfg.rr.map((r, i) => (
@@ -254,7 +255,8 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov
         </mesh>
       ))}
 
-      <Html position={[0, -(cfg.scale + 0.52), 0]} center style={{ pointerEvents: 'none', whiteSpace: 'nowrap' }}>
+      {/* 【关键修复】: 固定偏移量，让分子名字死死贴在正下方 */}
+      <Html position={[0, -0.65, 0]} center style={{ pointerEvents: 'none', whiteSpace: 'nowrap' }}>
         <div style={{
           color: hov || sel ? '#fff' : 'rgba(160,180,200,0.55)',
           fontSize: '10px', fontWeight: sel ? 600 : 400,
@@ -273,7 +275,6 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov
             borderRadius: '16px', padding: '10px 14px', width: '210px',
             backdropFilter: 'blur(20px)', transform: 'translateY(-120%)', fontFamily: "'Public Sans', sans-serif",
           }}>
-            {/* 修复了 justify 语法错误 -> justifyContent */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
               <span style={{ color: '#c8d8e4', fontSize: '12px', fontWeight: 600 }}>{lbl}</span>
               <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', fontFeatureSettings: "'tnum' 1" }}>{Math.round(conf*100)}%</span>
@@ -285,7 +286,6 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov
             <div style={{ width: '100%', height: '2px', background: 'rgba(255,255,255,0.06)', borderRadius: '1px', marginBottom: '6px' }}>
               <div style={{ width: `${Math.round(conf*100)}%`, height: '100%', background: colVec.getStyle(), borderRadius: '1px', opacity: 0.8 }} />
             </div>
-            {/* Commercial logic display */}
             {node.audit_trail && (
               <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '6px', fontSize: '9px', color: 'rgba(255,255,255,0.35)', fontStyle: 'italic' }}>
                 <span style={{ fontWeight: 600, color: 'rgba(255,255,255,0.2)' }}>Source: </span> {node.audit_trail}
@@ -324,7 +324,8 @@ const PathEdge = React.memo(function PathEdge({ edge, s, e, active, color }: { e
 
   return (
     <group>
-      <Line points={[sv, mid, ev]} color={active ? color : '#141e2a'} lineWidth={active ? thickness * 1.5 : thickness} transparent opacity={active ? 0.55 : 0.12} />
+      {/* 【关键修复】: 暗灰背景下使用略亮的连线颜色 #556677 防止隐身 */}
+      <Line points={[sv, mid, ev]} color={active ? color : '#556677'} lineWidth={active ? thickness * 1.5 : thickness} transparent opacity={active ? 0.8 : 0.25} />
       <mesh ref={dot} visible={false}>
         <sphereGeometry args={[0.04, 5, 5]} />
         <meshPhysicalMaterial color={color} emissive={color} emissiveIntensity={0.6} transparent opacity={0.8} />
@@ -340,20 +341,21 @@ const PathEdge = React.memo(function PathEdge({ edge, s, e, active, color }: { e
   );
 });
 
-// ─── Scroll-Sync Camera ────────────────────────────────────────────────
+// ─── Scroll-Sync Camera 【关键修复】：镜头居中算法，绝不跑偏 ──────────────
 type OrbitControlsHandle = { target: THREE.Vector3; update(): void };
-function ScrollSyncCamera({ nodes, selectedId, interact, controlsRef }: { nodes: PathwayNode[]; selectedId: string | null; interact: boolean; controlsRef: React.RefObject<OrbitControlsHandle | null>; }) {
+function ScrollSyncCamera({ nodes, selectedId, interact, controlsRef, centroid }: { nodes: PathwayNode[]; selectedId: string | null; interact: boolean; controlsRef: React.RefObject<OrbitControlsHandle | null>; centroid: THREE.Vector3 }) {
   const { camera } = useThree();
-  const targetLookAt = useRef(new THREE.Vector3(0, 0, 0));
+  const targetLookAt = useRef(new THREE.Vector3().copy(centroid));
 
   useEffect(() => {
     if (selectedId) {
       const node = nodes.find(n => n.id === selectedId);
       if (node && Array.isArray(node.position)) targetLookAt.current.set(...node.position);
     } else {
-      targetLookAt.current.set(0, 0, 0);
+      // 默认看向计算好的分子质心
+      targetLookAt.current.copy(centroid);
     }
-  }, [selectedId, nodes]);
+  }, [selectedId, nodes, centroid]);
 
   useFrame((_, dt) => {
     if (interact || !(camera instanceof THREE.PerspectiveCamera)) return;
@@ -380,6 +382,31 @@ function Scene({ nodes, edges, onNodeClick, selectedNodeId, roughnessTexture }: 
   
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
 
+  // 【关键修复】: 动态计算网络图几何中心 (Centroid)
+  const centroid = useMemo(() => {
+    const center = new THREE.Vector3();
+    let count = 0;
+    nodes.forEach(n => {
+      if (n && Array.isArray(n.position) && n.position.length === 3) {
+        center.add(new THREE.Vector3(...n.position));
+        count++;
+      }
+    });
+    if (count > 0) center.divideScalar(count);
+    return center;
+  }, [nodes]);
+
+  const { camera } = useThree();
+  useEffect(() => {
+    // 渲染的第一秒直接把镜头架在中心点前
+    camera.position.set(centroid.x, centroid.y + 6, centroid.z + 18);
+    camera.lookAt(centroid);
+    if (controlsRef.current) {
+      controlsRef.current.target.copy(centroid);
+      controlsRef.current.update();
+    }
+  }, [centroid, camera]);
+
   const cc = useMemo(() => {
     const c: Record<string,number> = {};
     nodes.forEach(n => { c[n.id] = 0; });
@@ -401,16 +428,17 @@ function Scene({ nodes, edges, onNodeClick, selectedNodeId, roughnessTexture }: 
       <ambientLight intensity={0.85} color="#d0dcec" />
       <directionalLight position={[4, 10, 6]}  intensity={0.35} color="#e8f0f8" />
       <directionalLight position={[-8, -2, -6]} intensity={0.12} color="#1a2840" />
-      <pointLight position={[0, 6, 0]} intensity={0.20} color="#c0d0e8" distance={28} decay={2} />
+      <pointLight position={[centroid.x, centroid.y + 6, centroid.z]} intensity={0.20} color="#c0d0e8" distance={28} decay={2} />
       <fog attach="fog" args={['#101010', 20, 48]} />
 
-      <OrbitControls ref={controlsRef as React.Ref<never>} enableZoom autoRotate={!interact && !hovId && !selectedNodeId} autoRotateSpeed={0.12} zoomSpeed={0.45} minDistance={6} maxDistance={24} enablePan={false} onStart={onStart} onEnd={onEnd} />
+      {/* 【关键修复】: 添加 makeDefault 和 target 保证触控生效且中心不偏 */}
+      <OrbitControls ref={controlsRef as React.Ref<never>} makeDefault enableZoom autoRotate={!interact && !hovId && !selectedNodeId} autoRotateSpeed={0.12} zoomSpeed={0.45} minDistance={6} maxDistance={24} enablePan={false} onStart={onStart} onEnd={onEnd} target={centroid} />
       <SpatialReference />
 
       {ed.map(e => <PathEdge key={e.key} edge={e.edge} s={e.s.position} e={e.e.position} active={e.active} color={e.color} />)}
       {nodes.map(n => <MolNode key={n.id} node={n} hov={hovId===n.id} sel={selectedNodeId===n.id} cc={cc[n.id]??0} onClick={onNodeClick} onHov={setHovId} roughnessTexture={roughnessTexture} />)}
 
-      <ScrollSyncCamera nodes={nodes} selectedId={selectedNodeId} interact={interact} controlsRef={controlsRef} />
+      <ScrollSyncCamera nodes={nodes} selectedId={selectedNodeId} interact={interact} controlsRef={controlsRef} centroid={centroid} />
     </>
   );
 }
@@ -462,8 +490,8 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId }
       border: '1px solid rgba(255,255,255,0.06)', position: 'relative',
       boxShadow: '0 32px 80px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.04)',
     }}>
-      {/* 品牌页眉 */}
-      <div style={{ position:'absolute', top:0, left:0, right:0, zIndex:10, display:'flex', alignItems:'center', justifyContent:'space-between', padding:'11px 16px', background:'linear-gradient(to bottom, rgba(16,16,16,0.92), transparent)', borderBottom:'1px solid rgba(255,255,255,0.04)' }}>
+      {/* 【关键修复】: 所有的绝对定位UI容器加上 pointerEvents:'none' 防止吞掉鼠标点击 */}
+      <div style={{ pointerEvents: 'none', position:'absolute', top:0, left:0, right:0, zIndex:10, display:'flex', alignItems:'center', justifyContent:'space-between', padding:'11px 16px', background:'linear-gradient(to bottom, rgba(16,16,16,0.92), transparent)', borderBottom:'1px solid rgba(255,255,255,0.04)' }}>
         <div style={{ display:'flex', alignItems:'center', gap:'9px' }}>
           <div style={{ display:'flex', gap:'4px' }}>
             {['#C8D8E8','#C8E0D0','#DDD0E8'].map(c => (
@@ -484,8 +512,7 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId }
         </div>
       </div>
 
-      {/* Confidence Legend */}
-      <div style={{ position:'absolute', bottom:'13px', left:'13px', zIndex:10 }}>
+      <div style={{ pointerEvents: 'none', position:'absolute', bottom:'13px', left:'13px', zIndex:10 }}>
         <p style={{ color:'rgba(255,255,255,0.12)', fontSize:'8px', fontFamily:"'Public Sans',sans-serif", fontWeight:700, margin:'0 0 4px', letterSpacing:'0.07em', textTransform:'uppercase' }}>CONFIDENCE</p>
         {[{ c:'#C8D8E8',l:'>90' },{ c:'#C8E0D0',l:'70–90' },{ c:'#E8DCC8',l:'50–70' },{ c:'#E8C8D4',l:'<50' }].map(x => (
           <div key={x.l} style={{ display:'flex', alignItems:'center', gap:'5px', marginBottom:'2px' }}>
@@ -495,8 +522,7 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId }
         ))}
       </div>
 
-      {/* Impurity/Yield Legend */}
-      <div style={{ position:'absolute', bottom:'13px', right:'13px', zIndex:10, background:'rgba(0,0,0,0.4)', padding:'6px 10px', borderRadius:'8px', border:'1px solid rgba(255,255,255,0.05)' }}>
+      <div style={{ pointerEvents: 'none', position:'absolute', bottom:'13px', right:'13px', zIndex:10, background:'rgba(0,0,0,0.4)', padding:'6px 10px', borderRadius:'8px', border:'1px solid rgba(255,255,255,0.05)' }}>
         <div style={{ display:'flex', alignItems:'center', gap:'6px', marginBottom:'4px' }}>
           <div style={{ width:'8px', height:'8px', background:'#dc3545', borderRadius:'2px' }} />
           <span style={{ color:'rgba(255,255,255,0.4)', fontSize:'8px', fontFamily:"'Public Sans',sans-serif" }}>Impurity / High Cost</span>
@@ -537,7 +563,7 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId }
             }
             throw new Error('WebGL unavailable');
           }}
-          dpr={[1, 1.5]} performance={{ min: 0.5 }} style={{ background: 'transparent' }}
+          dpr={[1, 1.5]} performance={{ min: 0.5 }} style={{ background: 'transparent', pointerEvents: 'auto' }}
         >
           <ResizeHandler />
           <Scene nodes={safeNodes} edges={safeEdges} onNodeClick={onNodeClick} selectedNodeId={selectedNodeId ?? null} roughnessTexture={roughnessTexture} />
