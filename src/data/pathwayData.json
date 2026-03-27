@@ -15,6 +15,9 @@
     "separation_cost_index": 0.02,
     "toxicity_impact": "None — low molecular weight primary metabolite, rapidly consumed in central metabolism",
     "audit_trail": "Ro et al. 2006, Figure 1 — MVA pathway entry point; no accumulation risk reported",
+    "cofactor_balance": "Generates 1 NADH + 1 CO₂ via pyruvate dehydrogenase complex per acetyl-CoA formed",
+    "carbon_efficiency": 66.7,
+    "gene_recommendation": "OE: ACS1/ACS2 — acetyl-CoA synthetase overexpression increases cytosolic acetyl-CoA pool for MVA pathway",
     "pubchemCID": 444493,
     "molecularFormula": "C23H38N7O17P3S",
     "molecularWeight": 809.57
@@ -35,6 +38,9 @@
     "separation_cost_index": 0.04,
     "toxicity_impact": "Minimal — CoA-thioester rapidly turned over by HMGR; accumulation may cause CoA sequestration stress in yeast",
     "audit_trail": "Ro et al. 2006, Supplementary — tHMGR overexpression prevents HMG-CoA accumulation",
+    "cofactor_balance": "Consumes 1 ATP (acetoacetyl-CoA → HMG-CoA condensation step is ATP-independent but precursor formation requires acetyl-CoA)",
+    "carbon_efficiency": 100.0,
+    "gene_recommendation": "OE: tHMGR (truncated HMG-CoA reductase) — bypasses feedback inhibition, rate-limiting step of MVA pathway",
     "pubchemCID": 439400,
     "molecularFormula": "C27H44N7O20P3S",
     "molecularWeight": 911.66
@@ -55,6 +61,9 @@
     "separation_cost_index": 0.05,
     "toxicity_impact": "None — water-soluble organic acid, rapidly phosphorylated by MVK; no toxicity at pathway-relevant concentrations",
     "audit_trail": "Ro et al. 2006, Figure 1 — committed intermediate; mevalonate kinase keeps pool low",
+    "cofactor_balance": "Consumes 2 NADPH (HMG-CoA reductase catalyzes 2-electron reduction per mevalonate formed)",
+    "carbon_efficiency": 83.3,
+    "gene_recommendation": "OE: ERG12 (mevalonate kinase) — prevents mevalonate accumulation; KO: BTS1 — blocks GGPP competing branch",
     "pubchemCID": 441,
     "molecularFormula": "C6H12O4",
     "molecularWeight": 132.16
@@ -75,6 +84,9 @@
     "separation_cost_index": 0.18,
     "toxicity_impact": "Moderate concern — FPP accumulation can disrupt membrane prenylation and sterol homeostasis; ERG9 downregulation creates ergosterol-deficient stress",
     "audit_trail": "Ro et al. 2006, Methods — ERG9 repression via MET3 promoter; FPP is the key branch-point",
+    "cofactor_balance": "Consumes 3 ATP total (mevalonate → IPP requires 3 phosphorylation steps; IPP → FPP is cofactor-neutral)",
+    "carbon_efficiency": 75.0,
+    "gene_recommendation": "KO: ERG9 (squalene synthase) — blocks FPP diversion to sterol pathway; OE: ADS — pulls FPP towards amorphadiene",
     "pubchemCID": 445483,
     "molecularFormula": "C15H28O7P2",
     "molecularWeight": 382.33
@@ -95,6 +107,9 @@
     "separation_cost_index": 0.62,
     "toxicity_impact": "Low direct toxicity but competes for FPP substrate pool, reducing artemisinin precursor yield by up to 15%; requires additional chromatographic purification step",
     "audit_trail": "Side reaction: FPP → epi-cedrol via endogenous yeast sesquiterpene cyclase; Ro et al. 2006, Supplementary Fig. 3",
+    "cofactor_balance": "Cofactor-neutral — cyclisation of FPP is an intramolecular rearrangement requiring no external cofactors",
+    "carbon_efficiency": 100.0,
+    "gene_recommendation": "KO: YJL167W (endogenous terpene cyclase) — eliminates competing FPP cyclisation to epi-cedrol",
     "pubchemCID": 91458,
     "molecularFormula": "C15H26O",
     "molecularWeight": 222.37
@@ -115,6 +130,9 @@
     "separation_cost_index": 0.35,
     "toxicity_impact": "None — volatile hydrocarbon, readily evaporates from culture; no cellular toxicity reported at production levels",
     "audit_trail": "Ro et al. 2006, Figure 2 — ADS cyclisation product; MW 204.35 vs artemisinin 282.33 (easily separated by boiling point)",
+    "cofactor_balance": "Cofactor-neutral — ADS-catalyzed cyclisation of FPP releases pyrophosphate (PPi); no NAD(P)H or ATP consumed",
+    "carbon_efficiency": 100.0,
+    "gene_recommendation": "OE: ADS (amorphadiene synthase) — high-copy expression pulls FPP flux towards artemisinin branch",
     "pubchemCID": 11230765,
     "molecularFormula": "C15H24",
     "molecularWeight": 204.35
@@ -135,6 +153,9 @@
     "separation_cost_index": 0.72,
     "toxicity_impact": "Low host toxicity (exported extracellularly); however, high structural similarity to artemisinin (MW 234.33 vs 282.33, identical carbon skeleton) makes chromatographic separation challenging",
     "audit_trail": "Ro et al. 2006, Figure 3 — CYP71AV1 oxidation product; same C15 sesquiterpene skeleton as artemisinin; separation requires careful HPLC optimization",
+    "cofactor_balance": "Consumes 3 NADPH + 3 O₂ (CYP71AV1 performs three sequential oxidations: amorphadiene → artemisinic alcohol → aldehyde → acid)",
+    "carbon_efficiency": 100.0,
+    "gene_recommendation": "OE: CYP71AV1 + CPR1 (cytochrome P450 reductase) — increases oxidation throughput; balance with NADPH regeneration via ZWF1 OE",
     "pubchemCID": 5362031,
     "molecularFormula": "C15H22O2",
     "molecularWeight": 234.33
@@ -155,6 +176,9 @@
     "separation_cost_index": 0.91,
     "toxicity_impact": "Potential genotoxicity risk — sesquiterpene lactone with α-methylene-γ-butyrolactone moiety can alkylate biological nucleophiles; must be reduced below ICH Q3A threshold (0.15%) in API purification",
     "audit_trail": "Brown & Sy 2007 — arteannuin B co-crystallises with artemisinin during recrystallisation; MW 248.32 vs artemisinin 282.33; identical sesquiterpene skeleton; separation_cost_index computed from Tanimoto similarity 0.91",
+    "cofactor_balance": "Cofactor-neutral — non-enzymatic rearrangement of dihydroartemisinic acid; spontaneous oxidative degradation product",
+    "carbon_efficiency": 100.0,
+    "gene_recommendation": "N/A — non-enzymatic byproduct; mitigation via process control (temperature, pH) rather than genetic engineering",
     "pubchemCID": 11282394,
     "molecularFormula": "C15H20O3",
     "molecularWeight": 248.32
@@ -175,6 +199,9 @@
     "separation_cost_index": 0.0,
     "toxicity_impact": "Target product — therapeutic sesquiterpene; no purification concern as this IS the desired API (Active Pharmaceutical Ingredient)",
     "audit_trail": "Ro et al. 2006 — final target product; MW 282.33; reference standard for all separation cost calculations",
+    "cofactor_balance": "Net pathway balance from glucose: −3 ATP, −5 NADPH, +1 NADH per artemisinin molecule (total MVA + oxidation steps)",
+    "carbon_efficiency": 50.0,
+    "gene_recommendation": "OE: ZWF1 (glucose-6-phosphate dehydrogenase) — increases NADPH supply for CYP71AV1 oxidation steps; KO: ERG9 — maximizes FPP pool",
     "pubchemCID": 68827,
     "molecularFormula": "C15H22O5",
     "molecularWeight": 282.33

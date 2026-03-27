@@ -50,6 +50,11 @@ export interface PathwayNode {
   thermodynamic_stability?: string;
   toxicity_impact?: string;
   separation_cost_index?: number;
+
+  // Nexus-Bio 1.2: Metabolic Engineering Intelligence
+  cofactor_balance?: string;
+  carbon_efficiency?: number;
+  gene_recommendation?: string;
   
   // Molecular structure data
   ecNumber?: string;

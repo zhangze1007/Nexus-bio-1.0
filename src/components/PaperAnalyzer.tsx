@@ -38,6 +38,9 @@ CRITICAL RULES:
 6. Evaluate carbon flux efficiency using TRY metrics: estimate volumetric productivity (g/L/h) when data is available, assess metabolic burden on the host strain, and note any competitive inhibition or pathway crosstalk.
 7. For each node summary, use advanced data science and synthetic biology terminology (e.g. flux balance analysis, proteome allocation, metabolic burden coefficient).
 8. For each audit_trail, reference specific predictive models or literature data (e.g. "Flux Balance Analysis anomaly detected — carbon diversion at Node X", "BRENDA Km = 0.3 mM, suggesting substrate limitation").
+9. Compute the net Cofactor Balance for each reaction step — specify ATP/NADH/NADPH consumption or generation (e.g. "Consumes 1 ATP + 1 NADPH per cycle", "Net: −2 ATP, +1 NADH").
+10. Assess the overall Carbon Efficiency (Atom Economy %) for each node — calculate the fraction of substrate carbon atoms retained in the product vs. lost as CO2 or waste (0-100%).
+11. For pathway-critical intermediates and branch points, suggest 1-2 native host genes for Knockout (KO) or Overexpression (OE) to redirect carbon flux towards the target product (e.g. "KO: ERG9 — blocks squalene synthase to prevent FPP diversion to sterol pathway").
 
 Return ONLY this exact JSON, nothing else:
 
@@ -56,6 +59,9 @@ Return ONLY this exact JSON, nothing else:
       "risk_score": 0.0,
       "toxicity_impact": "None — desired pathway product with no host cytotoxicity below 50 mM",
       "separation_cost_index": 0.0,
+      "cofactor_balance": "Consumes 1 ATP + 2 NADPH per mevalonate cycle",
+      "carbon_efficiency": 85.0,
+      "gene_recommendation": "OE: tHMGR — rate-limiting enzyme overexpression increases flux 3-fold",
       "audit_trail": "FBA model: optimal flux node — carbon partitioning coefficient 0.92"
     }
   ],
@@ -89,6 +95,9 @@ Rules:
 - toxicity_impact: describe potential toxicity to host cells with specific thresholds when possible (e.g. "Cytotoxic to S. cerevisiae at >5 mM — growth inhibition IC50", "Potential genotoxicity risk", or "None — desired pathway product")
 - separation_cost_index: 0.0 to 1.0 — physicochemical similarity to the target product (higher = harder to separate; structural analogs sharing polarity/boiling points get 0.7-0.9)
 - For impurity nodes: typically set risk_score > 0.5, color_mapping "Red", nodeType "impurity". Nodes with risk_score > 0.7 MUST have toxicity_impact assessment and separation_cost_index > 0.5
+- cofactor_balance: net ATP/NAD(P)H consumption or generation at this step (e.g. "Consumes 1 ATP + 1 NADPH", "Generates 1 NADH", "Cofactor-neutral")
+- carbon_efficiency: 0.0 to 100.0 — atom economy percentage (fraction of substrate carbon atoms retained in the product; 100 = no carbon loss)
+- gene_recommendation: suggest 1-2 native host genes for KO or OE to improve flux towards target (e.g. "KO: ERG9 — blocks sterol branch", "OE: ACS1 — increases acetyl-CoA pool"). Use "N/A" for terminal products or impurities where no engineering target applies
 - predicted_delta_G_kJ_mol: estimated Gibbs free energy change (negative = spontaneous)
 - spontaneity: "Highly Spontaneous" | "Spontaneous" | "Non-spontaneous" | "Spontaneous (condition dependent)"
 - yield_prediction: brief yield assessment with TRY context (e.g. "High — titer >10 g/L achievable", "Moderate — rate-limiting step", "Low — thermodynamic sink")
@@ -170,6 +179,11 @@ function normalizePathway(parsed: unknown): { nodes: PathwayNode[]; edges: Pathw
       toxicity_impact: typeof n.toxicity_impact === 'string' ? n.toxicity_impact : undefined,
       separation_cost_index: typeof n.separation_cost_index === 'number'
         ? Math.min(1, Math.max(0, n.separation_cost_index)) : undefined,
+      // v1.2: Metabolic Engineering Intelligence fields
+      cofactor_balance: typeof n.cofactor_balance === 'string' ? n.cofactor_balance : undefined,
+      carbon_efficiency: typeof n.carbon_efficiency === 'number'
+        ? Math.min(100, Math.max(0, n.carbon_efficiency)) : undefined,
+      gene_recommendation: typeof n.gene_recommendation === 'string' ? n.gene_recommendation : undefined,
       color: getSemanticColor(
         VALID_NODE_TYPES.includes(n.nodeType as string) ? String(n.nodeType) : 'unknown',
         typeof n.risk_score === 'number' ? n.risk_score : undefined,

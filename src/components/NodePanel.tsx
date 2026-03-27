@@ -706,6 +706,49 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                       </div>
                     )}
 
+                    {/* Cofactor Balance */}
+                    {node.cofactor_balance && (
+                      <div style={{ padding: '10px 12px', borderRadius: '12px', marginBottom: '12px',
+                        background: 'rgba(139,92,246,0.08)',
+                        border: '1px solid rgba(139,92,246,0.15)',
+                      }}>
+                        <span style={{ display: 'block', fontSize: '9px', color: 'rgba(255,255,255,0.35)', marginBottom: '4px', fontWeight: 700, textTransform: 'uppercase', fontFamily: "'Public Sans', sans-serif" }}>Cofactor Balance (ATP/NAD(P)H)</span>
+                        <p style={{ color: BIO_THEME_COLORS.PURPLE, fontSize: '11px', fontWeight: 500, margin: 0, lineHeight: 1.5, fontFamily: "'Public Sans', sans-serif" }}>
+                          {node.cofactor_balance}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Carbon Efficiency */}
+                    {node.carbon_efficiency !== undefined && (
+                      <div style={{ marginBottom: '12px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'rgba(255,255,255,0.5)', marginBottom: '6px', fontFamily: "'Public Sans', sans-serif" }}>
+                          <span>Carbon Efficiency (Atom Economy)</span>
+                          <span style={{ fontWeight: 600, color: node.carbon_efficiency >= 80 ? BIO_THEME_COLORS.GREEN : node.carbon_efficiency >= 50 ? BIO_THEME_COLORS.AMBER : BIO_THEME_COLORS.RED }}>
+                            {node.carbon_efficiency.toFixed(1)}%
+                          </span>
+                        </div>
+                        <div style={{ height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '2px' }}>
+                          <div style={{ width: `${node.carbon_efficiency}%`, height: '100%', borderRadius: '2px',
+                            background: node.carbon_efficiency >= 80 ? BIO_THEME_COLORS.GREEN : node.carbon_efficiency >= 50 ? BIO_THEME_COLORS.AMBER : BIO_THEME_COLORS.RED,
+                          }} />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Gene KO/OE Recommendation */}
+                    {node.gene_recommendation && node.gene_recommendation !== 'N/A' && (
+                      <div style={{ padding: '10px 12px', borderRadius: '12px', marginBottom: '12px',
+                        background: 'rgba(16,185,129,0.08)',
+                        border: '1px solid rgba(16,185,129,0.15)',
+                      }}>
+                        <span style={{ display: 'block', fontSize: '9px', color: 'rgba(255,255,255,0.35)', marginBottom: '4px', fontWeight: 700, textTransform: 'uppercase', fontFamily: "'Public Sans', sans-serif" }}>Gene Engineering Target (KO/OE)</span>
+                        <p style={{ color: BIO_THEME_COLORS.GREEN, fontSize: '11px', fontWeight: 500, margin: 0, lineHeight: 1.5, fontFamily: "'Public Sans', sans-serif" }}>
+                          {node.gene_recommendation}
+                        </p>
+                      </div>
+                    )}
+
                     {/* Audit Trail */}
                     {node.audit_trail && (
                       <div style={{ padding: '10px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px', fontSize: '11px', color: 'rgba(255,255,255,0.45)', fontStyle: 'italic', fontFamily: "'Public Sans', sans-serif", border: '1px solid rgba(255,255,255,0.04)' }}>
