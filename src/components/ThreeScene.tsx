@@ -131,17 +131,22 @@ function getComplianceIntel(node: PathwayNode) {
   };
 }
 
-// ─── Glyph config (激活多形状分子) ────────────────────────────────────
-type GCfg = { geom:'oct'|'dodec'|'tetra'|'icos'|'sph'|'tor'; scale:number; rings:number; rr:number[]; rt:number[]; };
+// ─── Glyph config (完整修复缺失的属性) ────────────────────────────────────
+type GCfg = { geom:'oct'|'dodec'|'tetra'|'icos'|'sph'|'tor'; scale:number; rings:number; rr:number[]; rt:number[]; sats:number; sr:number; ss:number; spin:number; inner:boolean; };
 function glyphCfg(id: string, cc: number): GCfg {
-  const gs = ['oct','dodec','tetra','icos','sph'] as GCfg['geom'][];
+  const gs = ['oct','dodec','tetra','icos','sph','tor'] as GCfg['geom'][];
   const rc = hashInt(id,1,1,2);
   return { 
-    geom: gs[hashInt(id,0,0,4)], // 使用不同形状
+    geom: gs[hashInt(id,0,0,5)], 
     scale: 0.22+cc*0.04+hashFloat(id,2,0,0.04), 
     rings: rc, 
     rr: Array.from({length:rc},(_,i)=>hashFloat(id,10+i,0.5,0.8)), 
-    rt: Array.from({length:rc},(_,i)=>hashFloat(id,20+i,0,Math.PI))
+    rt: Array.from({length:rc},(_,i)=>hashFloat(id,20+i,0,Math.PI)),
+    sats: hashInt(id,3,2,4),
+    sr: hashFloat(id,4,0.6,0.9),
+    ss: hashFloat(id,5,0.035,0.055),
+    spin: hashFloat(id,6,0.04,0.10),
+    inner: hash(id)%3===0
   };
 }
 
@@ -151,6 +156,7 @@ function GeoComp({ g, s }: { g: GCfg['geom']; s: number }) {
     case 'dodec': return <dodecahedronGeometry args={[s, 0]} />;
     case 'tetra': return <tetrahedronGeometry args={[s, 0]} />;
     case 'icos':  return <icosahedronGeometry args={[s, 1]} />;
+    case 'tor':   return <torusGeometry args={[s*0.8,s*0.3,8,20]} />;
     default:      return <sphereGeometry args={[s, 24, 24]} />;
   }
 }
@@ -223,7 +229,6 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov
       onPointerOut={e => { e.stopPropagation(); onHov(null); document.body.style.cursor = 'auto'; }}
     >
       <mesh ref={bodyRef}>
-        {/* 找回不同形状的分子 */}
         <GeoComp g={cfg.geom} s={0.32 + cc * 0.05} />
         <meshPhysicalMaterial
           color={finalColor} emissive={finalColor} emissiveIntensity={0.03}
