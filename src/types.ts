@@ -62,6 +62,20 @@ export interface PathwayEdge {
   evidence?: string;
   confidenceScore?: number;
   direction?: 'forward' | 'reverse' | 'bidirectional';
+  /** Visual line width (derived from thickness_mapping: Thin=0.4, Medium=1.0, Thick=1.8) */
+  thickness?: number;
+}
+
+// ── Risk / impurity report types ─────────────────────────────────────
+
+export interface RiskEntry {
+  /** Comma-separated impurity name(s) that may match multiple pathway nodes */
+  impurity_name: string;
+  source_pathway: string;
+  reason: string;
+  /** 0–1 numeric risk score; values > 0.7 trigger high-risk compliance warning */
+  risk_score: number;
+  audit_trail: string;
 }
 
 export type EdgeRelationshipType =

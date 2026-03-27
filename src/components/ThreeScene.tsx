@@ -330,7 +330,9 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov
 });
 
 // ─── Soft path edges ───────────────────────────────────────────────────
-const PathEdge = React.memo(function PathEdge({ s, e, active, color }: { s:Vec3; e:Vec3; active:boolean; color:string }) {
+const PathEdge = React.memo(function PathEdge({
+  s, e, active, color, thickness = 1.0,
+}: { s:Vec3; e:Vec3; active:boolean; color:string; thickness?:number }) {
   const dot  = useRef<THREE.Mesh>(null);
   const prog = useRef(Math.random());
   const sv   = useMemo(() => new THREE.Vector3(...s), [s]);
@@ -356,7 +358,7 @@ const PathEdge = React.memo(function PathEdge({ s, e, active, color }: { s:Vec3;
       <Line
         points={[sv, mid, ev]}
         color={active ? color : '#141e2a'}
-        lineWidth={active ? 0.8 : 0.25}
+        lineWidth={active ? 0.8 * thickness : 0.25 * thickness}
         transparent
         opacity={active ? 0.55 : 0.12}
       />
@@ -445,8 +447,8 @@ function Scene({ nodes, edges, onNodeClick, selectedNodeId }: {
       if (!s || !e) return null;
       return { key:`${edge.start}-${edge.end}`, s, e,
         active: hovId===edge.start||hovId===edge.end||selectedNodeId===edge.start||selectedNodeId===edge.end,
-        color: getColor(s) };
-    }).filter(Boolean) as { key:string; s:PathwayNode; e:PathwayNode; active:boolean; color:string }[],
+        color: getColor(s), thickness: edge.thickness ?? 1.0 };
+    }).filter(Boolean) as { key:string; s:PathwayNode; e:PathwayNode; active:boolean; color:string; thickness:number }[],
   [edges, nodes, hovId, selectedNodeId]);
 
   return (
@@ -476,7 +478,7 @@ function Scene({ nodes, edges, onNodeClick, selectedNodeId }: {
       <SpatialReference />
 
       {/* Edges — soft, secondary */}
-      {ed.map(e => <PathEdge key={e.key} s={e.s.position} e={e.e.position} active={e.active} color={e.color} />)}
+      {ed.map(e => <PathEdge key={e.key} s={e.s.position} e={e.e.position} active={e.active} color={e.color} thickness={e.thickness} />)}
 
       {/* Nodes — solid sphere bodies + orbital rings + labels */}
       {nodes.map(n => (

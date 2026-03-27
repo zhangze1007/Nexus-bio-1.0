@@ -2,8 +2,8 @@
 
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Download, FileText, Hash, Link2, ChevronDown, ChevronUp, Atom, Activity, Thermometer, Loader2, ExternalLink } from 'lucide-react';
-import { PathwayNode, PathwayEdge, NodeType, EdgeRelationshipType, SHOWCASE_PUBCHEM_CIDS } from '../types';
+import { X, Download, FileText, Hash, Link2, ChevronDown, ChevronUp, Atom, Activity, Thermometer, Loader2, ExternalLink, AlertTriangle } from 'lucide-react';
+import { PathwayNode, PathwayEdge, NodeType, EdgeRelationshipType, SHOWCASE_PUBCHEM_CIDS, RiskEntry } from '../types';
 import MoleculeViewer from './MoleculeViewer';
 import KineticPanel from './KineticPanel';
 import ThermodynamicsPanel from './ThermodynamicsPanel';
@@ -311,6 +311,8 @@ interface NodePanelProps {
   onClose: () => void;
   allNodes?: PathwayNode[];
   allEdges?: PathwayEdge[];
+  /** Risk-report entries from artemisinin_pathway_v1 for impurity-risk display */
+  riskReport?: RiskEntry[];
 }
 
 const NODE_TYPE_LABELS: Record<NodeType, string> = {
@@ -490,7 +492,7 @@ function Divider() { return <div style={{ borderTop: '1px solid rgba(255,255,255
 
 type TabId = 'overview' | 'structure' | 'analysis';
 
-const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEdges }: NodePanelProps) {
+const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEdges, riskReport }: NodePanelProps) {
   const [activeTab, setActiveTab] = useState<TabId>('overview');
   const [showConnections, setShowConnections] = useState(false);
 
@@ -498,6 +500,15 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
     if (!node || !allEdges) return [];
     return allEdges.filter(e => e.start === node.id || e.end === node.id);
   }, [node, allEdges]);
+
+  // ── Risk-report lookup — matches node label against impurity_name (case-insensitive) ──
+  const matchedRisk = useMemo<RiskEntry | null>(() => {
+    if (!node || !riskReport?.length) return null;
+    const labelLower = node.label.toLowerCase();
+    return riskReport.find(r =>
+      r.impurity_name.toLowerCase().split(/[,;]/).some(part => part.trim() === labelLower)
+    ) ?? null;
+  }, [node, riskReport]);
 
   const handleDownload = () => {
     if (!node) return;
