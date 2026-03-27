@@ -119,31 +119,42 @@ const createProceduralTexture = () => {
   return texture;
 };
 
-// ─── Node-type group colors — fixed vibrant palette per biological role ─
+// ─── Risk thresholds (shared with NodePanel) ──────────────────────────
+const HIGH_RISK_THRESHOLD = 0.7;
+
+// ─── BIO_THEME_COLORS — 6-color dark-mode-optimized semantic palette ──
+export const BIO_THEME_COLORS = {
+  CYAN:   '#06B6D4',  // Bioluminescent Cyan  — Standard Metabolite / Default Node
+  GREEN:  '#10B981',  // Synthesis Emerald     — Verified High-Yield / Target Product
+  RED:    '#EF4444',  // Hazard Crimson        — High Separation Cost / Toxic Impurity
+  AMBER:  '#F59E0B',  // Catalyst Amber        — Enzyme / Catalyst
+  PURPLE: '#8B5CF6',  // Plasma Purple         — Key Intermediate / Precursor
+  PINK:   '#EC4899',  // Quantum Pink          — Secondary Byproduct / Alternative Pathway
+} as const;
+
+// Map each nodeType to its semantic BIO_THEME color
 const NODE_TYPE_COLORS: Record<string, string> = {
-  metabolite:   '#4fc3f7',  // Cyan — primary pathway metabolites
-  enzyme:       '#ab47bc',  // Purple — catalytic proteins
-  gene:         '#66bb6a',  // Green — genetic elements
-  complex:      '#7e57c2',  // Deep purple — multi-subunit assemblies
-  cofactor:     '#26c6da',  // Teal — auxiliary molecules
-  impurity:     '#ef5350',  // Red — impurity / risk
-  intermediate: '#ffa726',  // Orange — transient intermediates
-  unknown:      '#90a4ae',  // Blue-grey — unclassified
+  metabolite:   BIO_THEME_COLORS.CYAN,    // Default metabolite
+  enzyme:       BIO_THEME_COLORS.AMBER,   // Catalytic protein
+  gene:         BIO_THEME_COLORS.GREEN,   // Genetic elements → synthesis success
+  complex:      BIO_THEME_COLORS.PURPLE,  // Multi-subunit assemblies → precursor
+  cofactor:     BIO_THEME_COLORS.PINK,    // Auxiliary molecules → alternative pathway
+  impurity:     BIO_THEME_COLORS.RED,     // Impurity / toxic risk
+  intermediate: BIO_THEME_COLORS.PURPLE,  // Key intermediate / precursor
+  unknown:      BIO_THEME_COLORS.CYAN,    // Fallback → standard metabolite
 };
 
-// Fallback palette for nodes without nodeType
-const PastelColors = ['#C8D8E8','#C8E0D0','#DDD0E8','#E8DCC8','#C8DCDC','#DCE8C8','#E8C8D4','#CCE0D8'];
+/** Semantic color assignment based on node type + risk/yield flags. */
+function getNodeColor(nodeType: string, isHighRisk: boolean, isTargetYield: boolean): string {
+  if (isHighRisk)    return BIO_THEME_COLORS.RED;
+  if (isTargetYield) return BIO_THEME_COLORS.GREEN;
+  return NODE_TYPE_COLORS[nodeType] || BIO_THEME_COLORS.CYAN;
+}
 
 function getColor(node: PathwayNode): string {
-  // Priority 1: impurity/risk nodes always red regardless of nodeType
-  if (node.color_mapping === 'Red') return '#ef5350';
-
-  // Priority 2: use fixed group color for the node's biological type
-  const typeColor = NODE_TYPE_COLORS[node.nodeType || 'unknown'];
-  if (typeColor) return typeColor;
-
-  // Priority 3: fallback to legacy color field or hash palette
-  return node.color || PastelColors[hash(node.id) % PastelColors.length];
+  const isHighRisk    = node.color_mapping === 'Red' || node.nodeType === 'impurity' || (node.risk_score !== undefined && node.risk_score > HIGH_RISK_THRESHOLD);
+  const isTargetYield = node.color_mapping === 'Green' && node.nodeType !== 'impurity';
+  return getNodeColor(node.nodeType || 'unknown', isHighRisk, isTargetYield);
 }
 
 function getConfidenceValue(node: PathwayNode): number {
@@ -510,7 +521,7 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId }
       <div style={{ pointerEvents: 'none', position:'absolute', top:0, left:0, right:0, zIndex:10, display:'flex', alignItems:'center', justifyContent:'space-between', padding:'11px 16px', background:'linear-gradient(to bottom, rgba(16,16,16,0.92), transparent)', borderBottom:'1px solid rgba(255,255,255,0.04)' }}>
         <div style={{ display:'flex', alignItems:'center', gap:'9px' }}>
           <div style={{ display:'flex', gap:'4px' }}>
-            {['#C8D8E8','#C8E0D0','#DDD0E8'].map(c => (
+            {[BIO_THEME_COLORS.CYAN, BIO_THEME_COLORS.GREEN, BIO_THEME_COLORS.PURPLE].map(c => (
               <div key={c} style={{ width:'4px', height:'4px', borderRadius:'50%', background:c, opacity:0.35 }} />
             ))}
           </div>
@@ -541,12 +552,12 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId }
       <div style={{ pointerEvents: 'none', position:'absolute', bottom:'13px', right:'13px', zIndex:10, background:'rgba(0,0,0,0.5)', padding:'8px 12px', borderRadius:'10px', border:'1px solid rgba(255,255,255,0.06)' }}>
         <p style={{ color:'rgba(255,255,255,0.25)', fontSize:'8px', fontFamily:"'Public Sans',sans-serif", fontWeight:700, margin:'0 0 6px', letterSpacing:'0.07em', textTransform:'uppercase' }}>Node Types</p>
         {[
-          { c:'#4fc3f7', l:'Metabolite', s:'●' },
-          { c:'#ab47bc', l:'Enzyme', s:'◆' },
-          { c:'#66bb6a', l:'Gene', s:'▲' },
-          { c:'#ffa726', l:'Intermediate', s:'⬟' },
-          { c:'#ef5350', l:'Impurity', s:'▲' },
-          { c:'#26c6da', l:'Cofactor', s:'⬟' },
+          { c: BIO_THEME_COLORS.CYAN,   l:'Metabolite', s:'●' },
+          { c: BIO_THEME_COLORS.AMBER,  l:'Enzyme', s:'◆' },
+          { c: BIO_THEME_COLORS.GREEN,  l:'Gene', s:'▲' },
+          { c: BIO_THEME_COLORS.PURPLE, l:'Intermediate', s:'⬟' },
+          { c: BIO_THEME_COLORS.RED,    l:'Impurity', s:'▲' },
+          { c: BIO_THEME_COLORS.PINK,   l:'Cofactor', s:'⬟' },
         ].map(x => (
           <div key={x.l} style={{ display:'flex', alignItems:'center', gap:'6px', marginBottom:'3px' }}>
             <span style={{ color:x.c, fontSize:'10px', lineHeight:1, width:'10px', textAlign:'center' }}>{x.s}</span>

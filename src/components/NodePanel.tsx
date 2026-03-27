@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 // 注入了 ShieldAlert 用于合规面板
 import { X, Download, FileText, Hash, Link2, ChevronDown, ChevronUp, Atom, Activity, Thermometer, Loader2, ExternalLink, ShieldAlert } from 'lucide-react';
 import { PathwayNode, PathwayEdge, NodeType, EdgeRelationshipType, SHOWCASE_PUBCHEM_CIDS } from '../types';
+import { BIO_THEME_COLORS } from './ThreeScene';
 import MoleculeViewer from './MoleculeViewer';
 import KineticPanel from './KineticPanel';
 import ThermodynamicsPanel from './ThermodynamicsPanel';
@@ -604,15 +605,15 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                   {/* ─── Purity Status Badge — always visible ──────────────────────── */}
                   <div style={{ padding: '10px 14px', borderRadius: '16px', marginBottom: '12px',
                     background: node.nodeType === 'impurity' || (node.risk_score && node.risk_score > MODERATE_RISK_THRESHOLD) 
-                      ? 'rgba(239,83,80,0.12)' 
+                      ? 'rgba(239,68,68,0.12)' 
                       : node.nodeType === 'intermediate' 
-                        ? 'rgba(255,167,38,0.10)' 
-                        : 'rgba(40,167,69,0.10)',
+                        ? 'rgba(245,158,11,0.10)' 
+                        : 'rgba(16,185,129,0.10)',
                     border: `1px solid ${node.nodeType === 'impurity' || (node.risk_score && node.risk_score > MODERATE_RISK_THRESHOLD)
-                      ? 'rgba(239,83,80,0.3)'
+                      ? 'rgba(239,68,68,0.3)'
                       : node.nodeType === 'intermediate'
-                        ? 'rgba(255,167,38,0.25)'
-                        : 'rgba(40,167,69,0.25)'}`,
+                        ? 'rgba(245,158,11,0.25)'
+                        : 'rgba(16,185,129,0.25)'}`,
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <span style={{ fontSize: '14px' }}>
@@ -621,8 +622,8 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                       <div>
                         <span style={{ fontSize: '12px', fontWeight: 700, fontFamily: "'Public Sans', sans-serif",
                           color: node.nodeType === 'impurity' || (node.risk_score && node.risk_score > MODERATE_RISK_THRESHOLD)
-                            ? '#ef5350'
-                            : node.nodeType === 'intermediate' ? '#ffa726' : '#66bb6a',
+                            ? BIO_THEME_COLORS.RED
+                            : node.nodeType === 'intermediate' ? BIO_THEME_COLORS.AMBER : BIO_THEME_COLORS.GREEN,
                         }}>
                           {node.nodeType === 'impurity' ? 'Impurity — Purification Risk'
                             : (node.risk_score && node.risk_score > MODERATE_RISK_THRESHOLD) ? 'Elevated Commercial Risk'
@@ -643,9 +644,9 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                   </div>
 
                   {/* ─── Commercial Risk & Compliance Panel ──────────────────────── */}
-                  <div style={{ padding: '14px 16px', borderRadius: '20px', background: node.risk_score && node.risk_score > HIGH_RISK_THRESHOLD ? 'rgba(220,53,69,0.1)' : 'rgba(255,255,255,0.03)', border: `1px solid ${node.risk_score && node.risk_score > HIGH_RISK_THRESHOLD ? 'rgba(220,53,69,0.3)' : 'rgba(255,255,255,0.06)'}`, marginBottom: '16px' }}>
+                  <div style={{ padding: '14px 16px', borderRadius: '20px', background: node.risk_score && node.risk_score > HIGH_RISK_THRESHOLD ? 'rgba(239,68,68,0.1)' : 'rgba(255,255,255,0.03)', border: `1px solid ${node.risk_score && node.risk_score > HIGH_RISK_THRESHOLD ? 'rgba(239,68,68,0.3)' : 'rgba(255,255,255,0.06)'}`, marginBottom: '16px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                      <ShieldAlert size={14} color={node.risk_score && node.risk_score > MODERATE_RISK_THRESHOLD ? '#ef5350' : '#66bb6a'} />
+                      <ShieldAlert size={14} color={node.risk_score && node.risk_score > MODERATE_RISK_THRESHOLD ? BIO_THEME_COLORS.RED : BIO_THEME_COLORS.GREEN} />
                       <span style={{ fontSize: '11px', fontWeight: 800, color: 'rgba(255,255,255,0.85)', letterSpacing: '0.05em', fontFamily: "'Public Sans', sans-serif" }}>COMMERCIAL RISK & COMPLIANCE</span>
                     </div>
 
@@ -653,13 +654,13 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                     <div style={{ marginBottom: '12px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'rgba(255,255,255,0.5)', marginBottom: '6px', fontFamily: "'Public Sans', sans-serif" }}>
                         <span>Risk Score</span>
-                        <span style={{ fontWeight: 600, color: (node.risk_score ?? 0) > HIGH_RISK_THRESHOLD ? '#ef5350' : (node.risk_score ?? 0) > MODERATE_RISK_THRESHOLD ? '#ffa726' : '#66bb6a' }}>
+                        <span style={{ fontWeight: 600, color: (node.risk_score ?? 0) > HIGH_RISK_THRESHOLD ? BIO_THEME_COLORS.RED : (node.risk_score ?? 0) > MODERATE_RISK_THRESHOLD ? BIO_THEME_COLORS.AMBER : BIO_THEME_COLORS.GREEN }}>
                           {((node.risk_score ?? 0) * 100).toFixed(0)}%
                         </span>
                       </div>
                       <div style={{ height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '2px' }}>
                         <div style={{ width: `${(node.risk_score ?? 0) * 100}%`, height: '100%', borderRadius: '2px',
-                          background: (node.risk_score ?? 0) > HIGH_RISK_THRESHOLD ? '#ef5350' : (node.risk_score ?? 0) > MODERATE_RISK_THRESHOLD ? '#ffa726' : '#66bb6a',
+                          background: (node.risk_score ?? 0) > HIGH_RISK_THRESHOLD ? BIO_THEME_COLORS.RED : (node.risk_score ?? 0) > MODERATE_RISK_THRESHOLD ? BIO_THEME_COLORS.AMBER : BIO_THEME_COLORS.GREEN,
                         }} />
                       </div>
                     </div>
@@ -670,16 +671,16 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                         <span>Separation Cost Index</span>
                         <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                           {(node.separation_cost_index ?? 0) > HIGH_RISK_THRESHOLD && (
-                            <span style={{ color: '#ef5350', fontWeight: 700, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>High Separation Cost</span>
+                            <span style={{ color: BIO_THEME_COLORS.RED, fontWeight: 700, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>High Separation Cost</span>
                           )}
-                          <span style={{ fontWeight: 600, color: (node.separation_cost_index ?? 0) > HIGH_RISK_THRESHOLD ? '#ef5350' : (node.separation_cost_index ?? 0) > MODERATE_RISK_THRESHOLD ? '#ffa726' : '#66bb6a' }}>
+                          <span style={{ fontWeight: 600, color: (node.separation_cost_index ?? 0) > HIGH_RISK_THRESHOLD ? BIO_THEME_COLORS.RED : (node.separation_cost_index ?? 0) > MODERATE_RISK_THRESHOLD ? BIO_THEME_COLORS.AMBER : BIO_THEME_COLORS.GREEN }}>
                             {((node.separation_cost_index ?? 0) * 100).toFixed(0)}%
                           </span>
                         </span>
                       </div>
                       <div style={{ height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '2px' }}>
                         <div style={{ width: `${(node.separation_cost_index ?? 0) * 100}%`, height: '100%', borderRadius: '2px',
-                          background: (node.separation_cost_index ?? 0) > HIGH_RISK_THRESHOLD ? '#ef5350' : (node.separation_cost_index ?? 0) > MODERATE_RISK_THRESHOLD ? '#ffa726' : '#66bb6a',
+                          background: (node.separation_cost_index ?? 0) > HIGH_RISK_THRESHOLD ? BIO_THEME_COLORS.RED : (node.separation_cost_index ?? 0) > MODERATE_RISK_THRESHOLD ? BIO_THEME_COLORS.AMBER : BIO_THEME_COLORS.GREEN,
                         }} />
                       </div>
                     </div>
@@ -687,11 +688,11 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                     {/* Toxicity Impact */}
                     {node.toxicity_impact && (
                       <div style={{ padding: '10px 12px', borderRadius: '12px', marginBottom: '12px',
-                        background: node.nodeType === 'impurity' ? 'rgba(239,83,80,0.08)' : 'rgba(255,255,255,0.02)',
-                        border: `1px solid ${node.nodeType === 'impurity' ? 'rgba(239,83,80,0.15)' : 'rgba(255,255,255,0.04)'}`,
+                        background: node.nodeType === 'impurity' ? 'rgba(239,68,68,0.08)' : 'rgba(255,255,255,0.02)',
+                        border: `1px solid ${node.nodeType === 'impurity' ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.04)'}`,
                       }}>
                         <span style={{ display: 'block', fontSize: '9px', color: 'rgba(255,255,255,0.35)', marginBottom: '4px', fontWeight: 700, textTransform: 'uppercase', fontFamily: "'Public Sans', sans-serif" }}>Potential Toxicity Analysis</span>
-                        <p style={{ color: node.nodeType === 'impurity' ? '#ff7875' : 'rgba(255,255,255,0.55)', fontSize: '11px', fontWeight: 500, margin: 0, lineHeight: 1.5, fontFamily: "'Public Sans', sans-serif" }}>
+                        <p style={{ color: node.nodeType === 'impurity' ? BIO_THEME_COLORS.RED : 'rgba(255,255,255,0.55)', fontSize: '11px', fontWeight: 500, margin: 0, lineHeight: 1.5, fontFamily: "'Public Sans', sans-serif" }}>
                           {node.toxicity_impact}
                         </p>
                       </div>
@@ -701,7 +702,7 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                     {node.thermodynamic_stability && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px' }}>
                         <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', fontFamily: "'Public Sans', sans-serif" }}>Thermodynamic Stability:</span>
-                        <span style={{ fontSize: '10px', fontWeight: 700, color: node.thermodynamic_stability === 'High' ? '#66bb6a' : node.thermodynamic_stability === 'Low' ? '#ef5350' : '#ffa726', fontFamily: "'Public Sans', sans-serif" }}>{node.thermodynamic_stability}</span>
+                        <span style={{ fontSize: '10px', fontWeight: 700, color: node.thermodynamic_stability === 'High' ? BIO_THEME_COLORS.GREEN : node.thermodynamic_stability === 'Low' ? BIO_THEME_COLORS.RED : BIO_THEME_COLORS.AMBER, fontFamily: "'Public Sans', sans-serif" }}>{node.thermodynamic_stability}</span>
                       </div>
                     )}
 
