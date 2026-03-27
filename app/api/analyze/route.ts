@@ -99,7 +99,7 @@ async function tryGroq(prompt: string, apiKey: string): Promise<string | null> {
             model,
             messages: [{ role: 'user', content: prompt }],
             temperature: 0.1,
-            max_tokens: 2048,
+            max_tokens: 4096,
           }),
         }),
         TIMEOUT_MS
@@ -128,7 +128,7 @@ async function tryGemini(body: GeminiRequestBody, apiKey: string): Promise<strin
       const geminiBody = {
         ...body,
         generationConfig: {
-          maxOutputTokens: 2048,
+          maxOutputTokens: 4096,
           temperature: 0.1,
           topP: 0.8,
           ...(body.generationConfig || {}),

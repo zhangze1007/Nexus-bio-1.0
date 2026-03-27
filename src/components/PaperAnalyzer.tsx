@@ -21,9 +21,12 @@ type InputMode = 'text' | 'pdf' | 'image' | 'camera' | 'web';
 type AnalysisState = 'idle' | 'analyzing' | 'success' | 'error';
 
 // ── Evidence-first prompt — traceability is mandatory ──
-const buildPrompt = (content: string) => `You are a computational biology expert. Extract a metabolic pathway from the research text below.
+const buildPrompt = (content: string) => `You are a computational biology and metabolic engineering expert. Extract a comprehensive metabolic/biosynthetic pathway from the research text below, including intermediates, impurities, and thermodynamic data.
 
-CRITICAL RULE: Every node's evidenceSnippet must be an EXACT QUOTE copied verbatim from the text below. Do not paraphrase. If you cannot find a direct quote, use the closest sentence from the text.
+CRITICAL RULES:
+1. Every node's evidenceSnippet must be an EXACT QUOTE copied verbatim from the text. Do not paraphrase.
+2. Include ALL pathway intermediates, branch-point byproducts, and competing impurities mentioned in the text.
+3. For each reaction edge, estimate thermodynamic favorability when the text provides clues (e.g. spontaneous, rate-limiting, high yield).
 
 Return ONLY this exact JSON, nothing else:
 
@@ -36,7 +39,11 @@ Return ONLY this exact JSON, nothing else:
       "summary": "One sentence explaining the role of this entity in the pathway.",
       "evidenceSnippet": "EXACT QUOTE from the source text that mentions this entity.",
       "citation": "Author et al., Year, Journal",
-      "confidenceScore": 0.85
+      "confidenceScore": 0.85,
+      "thermodynamic_stability": "High",
+      "color_mapping": "Green",
+      "risk_score": 0.0,
+      "audit_trail": "Page/section reference from source text"
     }
   ],
   "edges": [
@@ -45,23 +52,37 @@ Return ONLY this exact JSON, nothing else:
       "end": "target_id",
       "relationshipType": "converts",
       "direction": "forward",
-      "evidence": "EXACT QUOTE from source text describing this reaction."
+      "evidence": "EXACT QUOTE from source text describing this reaction.",
+      "predicted_delta_G_kJ_mol": -50.0,
+      "spontaneity": "Spontaneous",
+      "yield_prediction": "High",
+      "thickness_mapping": "Thick",
+      "audit_trail": "Page/section reference"
     }
   ]
 }
 
 Rules:
-- 4 to 7 nodes maximum
-- Extract ONLY molecular entities: metabolites, enzymes, genes, proteins, cofactors
-- Do NOT include cells, tissues, organisms, physiological processes, or anatomical structures as nodes (e.g. no "embryo", "endometrium", "cell", "tissue")
-- nodeType: metabolite, enzyme, gene, complex, cofactor, or unknown
-- relationshipType: catalyzes, produces, consumes, activates, inhibits, converts, transports, regulates, or unknown
+- 4 to 15 nodes (include the most significant intermediates, impurities, and pathway entities)
+- Extract molecular entities: metabolites, enzymes, genes, proteins, cofactors, impurities, intermediates
+- Do NOT include cells, tissues, organisms, physiological processes, or anatomical structures as nodes
+- nodeType: metabolite | enzyme | gene | complex | cofactor | impurity | intermediate | unknown
+- relationshipType: catalyzes | produces | consumes | activates | inhibits | converts | transports | regulates | unknown
 - IDs: lowercase letters and underscores only, no spaces
 - evidenceSnippet: must be copied word-for-word from the source text
+- thermodynamic_stability: "High" | "Moderate" | "Low" (stability of the compound)
+- color_mapping: "Green" (stable/verified) | "Yellow" (moderate) | "Orange" (unstable/low yield) | "Red" (impurity/risk) | "Purple" (dual-role intermediate) | "Blue" (cofactor/auxiliary)
+- risk_score: 0.0 to 1.0 (0 = no risk, 1 = major impurity/competitor; use 0 for desired pathway metabolites)
+- For impurity nodes: typically set risk_score > 0.5 and color_mapping "Red", nodeType "impurity"
+- predicted_delta_G_kJ_mol: estimated Gibbs free energy change (negative = spontaneous)
+- spontaneity: "Highly Spontaneous" | "Spontaneous" | "Non-spontaneous" | "Spontaneous (condition dependent)"
+- yield_prediction: brief yield assessment (e.g. "High", "Moderate", "Rate-limiting step")
+- thickness_mapping: "Thick" (high flux) | "Medium" (moderate) | "Thin" (low flux/side reaction)
+- audit_trail: page number, figure, or section reference from source
 - No markdown, no explanation, no text outside the JSON
 
 Source text:
-${content.slice(0, 2500)}`;
+${content.slice(0, 6000)}`;
 
 // ── Multi-strategy JSON parser ──
 function extractJSON(raw: string): unknown | null {
@@ -103,23 +124,34 @@ function normalizePathway(parsed: unknown): { nodes: PathwayNode[]; edges: Pathw
   const validNodes = p.nodes.filter(isValidNode);
   if (validNodes.length === 0) return null;
 
+  const VALID_NODE_TYPES = ['metabolite','enzyme','gene','complex','cofactor','impurity','intermediate','unknown'];
+  const VALID_COLOR_MAPPINGS = ['Green','Yellow','Orange','Red','Purple','Blue'];
+
   const nodes: PathwayNode[] = validNodes.map((node: any, i: number) => {
     const n = node as Record<string, unknown>;
     const count = validNodes.length;
     const angle = (i / count) * Math.PI * 2;
-    const r = count <= 4 ? 2.5 : 3.5;
+    const r = count <= 4 ? 2.5 : count <= 8 ? 3.5 : 4.5;
 
     return {
       id: sanitizeNodeId(String(n.id)),
       label: String(n.label).slice(0, 32),
       canonicalLabel: n.canonicalLabel ? String(n.canonicalLabel) : undefined,
-      nodeType: (['metabolite','enzyme','gene','complex','cofactor','unknown'].includes(n.nodeType as string)
+      nodeType: (VALID_NODE_TYPES.includes(n.nodeType as string)
         ? n.nodeType : 'unknown') as any,
       summary: n.summary ? String(n.summary) : 'No summary available.',
       evidenceSnippet: n.evidenceSnippet ? String(n.evidenceSnippet) : undefined,
       citation: n.citation ? String(n.citation) : 'Extracted from provided text',
       confidenceScore: typeof n.confidenceScore === 'number'
         ? Math.min(1, Math.max(0, n.confidenceScore)) : undefined,
+      // v1.1: Risk & Compliance fields
+      risk_score: typeof n.risk_score === 'number'
+        ? Math.min(1, Math.max(0, n.risk_score)) : undefined,
+      thermodynamic_stability: typeof n.thermodynamic_stability === 'string'
+        ? n.thermodynamic_stability : undefined,
+      color_mapping: (VALID_COLOR_MAPPINGS.includes(n.color_mapping as string)
+        ? n.color_mapping : undefined) as any,
+      audit_trail: typeof n.audit_trail === 'string' ? n.audit_trail : undefined,
       color: COLORS[i % COLORS.length],
       position: [
         i === 0 ? -r : parseFloat((Math.cos(angle) * r).toFixed(2)),
@@ -143,6 +175,14 @@ function normalizePathway(parsed: unknown): { nodes: PathwayNode[]; edges: Pathw
       evidence: e.evidence ? String(e.evidence) : undefined,
       confidenceScore: typeof e.confidenceScore === 'number'
         ? Math.min(1, Math.max(0, e.confidenceScore)) : undefined,
+      // v1.1: Thermodynamic edge fields
+      predicted_delta_G_kJ_mol: typeof e.predicted_delta_G_kJ_mol === 'number'
+        ? e.predicted_delta_G_kJ_mol : undefined,
+      spontaneity: typeof e.spontaneity === 'string' ? e.spontaneity : undefined,
+      yield_prediction: typeof e.yield_prediction === 'string' ? e.yield_prediction : undefined,
+      thickness_mapping: (['Thick','Medium','Thin'].includes(e.thickness_mapping)
+        ? e.thickness_mapping : undefined) as any,
+      audit_trail: typeof e.audit_trail === 'string' ? e.audit_trail : undefined,
     }))
     // Only filter edges where BOTH sanitized IDs exist — more permissive
     .filter((e: any) => sanitizedIds.has(e.start) && sanitizedIds.has(e.end));
@@ -236,7 +276,7 @@ export default function PaperAnalyzer({ onPathwayGenerated }: PaperAnalyzerProps
   };
 
   const buildRequestBody = () => {
-    const config = { temperature: 0.1, maxOutputTokens: 2048 };
+    const config = { temperature: 0.1, maxOutputTokens: 4096 };
 
     if ((mode === 'image' || mode === 'camera') && imageBase64) {
       return {
