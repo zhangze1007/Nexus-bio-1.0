@@ -311,15 +311,10 @@ const PathEdge = React.memo(function PathEdge({ edge, s, e, active, color }: { e
     return map[edge.thickness_mapping || "Medium"] || 0.25;
   }, [edge.thickness_mapping]);
 
-  const thickness = useMemo(() => {
-    const map: Record<string, number> = { "Thick": 1.5, "Medium": 0.8, "Thin": 0.25 };
-    return map[edge.thickness_mapping || "Medium"] || 0.25;
-  }, [edge.thickness_mapping]);
-
   useFrame((_, dt) => {
     prog.current = (prog.current + dt * 0.18) % 1;
     if (dot.current) {
-
+      dot.current.position.lerpVectors(sv, ev, prog.current);
       dot.current.visible = active;
     }
   });
@@ -327,7 +322,7 @@ const PathEdge = React.memo(function PathEdge({ edge, s, e, active, color }: { e
   return (
     <group>
       {/* 【关键修复】: 暗灰背景下使用略亮的连线颜色 #556677 防止隐身 */}
-
+      <Line points={[sv, ev]} color={active ? color : '#556677'} lineWidth={active ? thickness * 1.5 : thickness} transparent opacity={active ? 0.8 : 0.25} />
       <mesh ref={dot} visible={false}>
         <sphereGeometry args={[0.04, 5, 5]} />
         <meshPhysicalMaterial color={color} emissive={color} emissiveIntensity={0.6} transparent opacity={0.8} />
