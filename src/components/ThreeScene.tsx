@@ -304,7 +304,7 @@ const PathEdge = React.memo(function PathEdge({ edge, s, e, active, color }: { e
   const prog = useRef(Math.random());
   const sv   = useMemo(() => new THREE.Vector3(...s), [s]);
   const ev   = useMemo(() => new THREE.Vector3(...e), [e]);
-  const mid  = useMemo(() => sv.clone().lerp(ev, 0.5).add(new THREE.Vector3(0, 0.4, 0)), [sv, ev]);
+  const mid  = useMemo(() => sv.clone().lerp(ev, 0.5), [sv, ev]);
 
   const thickness = useMemo(() => {
     const map: Record<string, number> = { "Thick": 1.5, "Medium": 0.8, "Thin": 0.25 };
@@ -314,10 +314,7 @@ const PathEdge = React.memo(function PathEdge({ edge, s, e, active, color }: { e
   useFrame((_, dt) => {
     prog.current = (prog.current + dt * 0.18) % 1;
     if (dot.current) {
-      const t = prog.current;
-      dot.current.position.copy(
-        new THREE.Vector3().addScaledVector(sv, (1-t)*(1-t)).addScaledVector(mid, 2*(1-t)*t).addScaledVector(ev, t*t)
-      );
+      dot.current.position.lerpVectors(sv, ev, prog.current);
       dot.current.visible = active;
     }
   });
@@ -325,7 +322,7 @@ const PathEdge = React.memo(function PathEdge({ edge, s, e, active, color }: { e
   return (
     <group>
       {/* 【关键修复】: 暗灰背景下使用略亮的连线颜色 #556677 防止隐身 */}
-      <Line points={[sv, mid, ev]} color={active ? color : '#556677'} lineWidth={active ? thickness * 1.5 : thickness} transparent opacity={active ? 0.8 : 0.25} />
+      <Line points={[sv, ev]} color={active ? color : '#556677'} lineWidth={active ? thickness * 1.5 : thickness} transparent opacity={active ? 0.8 : 0.25} />
       <mesh ref={dot} visible={false}>
         <sphereGeometry args={[0.04, 5, 5]} />
         <meshPhysicalMaterial color={color} emissive={color} emissiveIntensity={0.6} transparent opacity={0.8} />
