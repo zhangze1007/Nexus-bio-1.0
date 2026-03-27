@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useRef, useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Html, Line } from '@react-three/drei';
 import * as THREE from 'three';
@@ -34,9 +34,35 @@ function getComplianceIntel(node: PathwayNode) {
   };
 }
 
-// ─── 数据安全校验 (修复黑屏崩溃的核心) ───────────────────────────────────
-function isSafeNode(node: any): node is PathwayNode {
-  return !!node && typeof node.id === 'string' && Array.isArray(node.position) && node.position.length === 3;
+// ─── 新增：专为平板调试打造的“屏幕报错拦截器” (Error Boundary) ──────────
+class SceneErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, errorMsg: string}> {
+  constructor(props: any) {
+    super(props);
+    this.state = { hasError: false, errorMsg: '' };
+  }
+
+  static getDerivedStateFromError(error: any) {
+    return { hasError: true, errorMsg: error.toString() };
+  }
+
+  componentDidCatch(error: any, errorInfo: any) {
+    console.error("Caught by Vibe Coding Boundary:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <Html center>
+          <div style={{ width: '300px', background: '#1a0505', borderRadius: '12px', padding: '20px', border: '2px solid #ff4d4f' }}>
+            <h3 style={{ color: '#ff4d4f', margin: '0 0 10px 0', fontSize: '14px', fontFamily: "'Public Sans', sans-serif" }}>🚨 捕获到渲染崩溃：</h3>
+            <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '11px', wordWrap: 'break-word', fontFamily: "'Public Sans', sans-serif" }}>{this.state.errorMsg}</p>
+            <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '10px', marginTop: '10px', fontFamily: "'Public Sans', sans-serif" }}>请截图将红字发给助手进行修复</p>
+          </div>
+        </Html>
+      );
+    }
+    return this.props.children;
+  }
 }
 
 // ─── 节点组件 ────────────────────────────────────────
@@ -151,7 +177,10 @@ function Scene({ nodes, edges, onNodeClick, selectedNodeId }: any) {
     edges.map((edge: any) => {
       const s = nodes.find((n: any) => n.id === edge.start);
       const e = nodes.find((n: any) => n.id === edge.end);
-      if (!s || !e || !Array.isArray(s.position) || !Array.isArray(e.position)) return null; // 终极安全拦截
+      
+      // 这里的拦截非常关键：如果数据为空或者坐标出错，直接忽略该线，防止黑屏
+      if (!s || !e || !Array.isArray(s.position) || !Array.isArray(e.position)) return null; 
+      
       return {
         key: `${edge.start}-${edge.end}`,
         edge,
@@ -164,12 +193,14 @@ function Scene({ nodes, edges, onNodeClick, selectedNodeId }: any) {
   [edges, nodes, hovId, selectedNodeId]);
 
   return (
-    <>
+    <SceneErrorBoundary>
       {ed.map((e: any) => <PathEdge key={e.key} edge={e.edge} s={e.s} e={e.e} active={e.active} color={e.color} />)}
-      {nodes.map((n: any) => (
-        <MolNode key={n.id} node={n} hov={hovId === n.id} sel={selectedNodeId === n.id} cc={0} onClick={onNodeClick} onHov={setHovId} />
-      ))}
-    </>
+      {nodes.map((n: any) => {
+        // 二次拦截：如果节点数据损坏，则不渲染该节点
+        if (!n || !Array.isArray(n.position) || n.position.length !== 3) return null;
+        return <MolNode key={n.id} node={n} hov={hovId === n.id} sel={selectedNodeId === n.id} cc={0} onClick={onNodeClick} onHov={setHovId} />;
+      })}
+    </SceneErrorBoundary>
   );
 }
 
@@ -177,17 +208,15 @@ function Scene({ nodes, edges, onNodeClick, selectedNodeId }: any) {
 export default function NexusBioRenderer({ nodes, onNodeClick, edges, selectedNodeId }: any) {
   const [isMounted, setIsMounted] = useState(false);
 
-  // 修复 SSR 白屏闪退的核心：只在客户端浏览器加载完成后才渲染 3D 内容
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-  // 严格清洗数据，过滤掉损坏的节点
-  const safeNodes = useMemo(() => Array.isArray(nodes) ? nodes.filter(isSafeNode) : [], [nodes]);
+  const safeNodes = useMemo(() => Array.isArray(nodes) ? nodes : [], [nodes]);
   const safeEdges = useMemo(() => Array.isArray(edges) ? edges : [], [edges]);
 
+  // SSR 防白屏闪退：服务端仅渲染 HTML 骨架
   if (!isMounted) {
-    // 服务端渲染时的骨架屏，防止 UI 错位闪白
     return (
       <div style={{ width: '100%', height: '750px', background: '#07090f', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,255,255,0.05)' }}>
         <p style={{ color: 'rgba(255,255,255,0.3)', fontFamily: "'Public Sans', sans-serif", fontSize: '12px', letterSpacing: '0.1em' }}>INITIALIZING NEXUS ENGINE...</p>
@@ -198,7 +227,7 @@ export default function NexusBioRenderer({ nodes, onNodeClick, edges, selectedNo
   return (
     <div style={{ width: '100%', height: '750px', background: '#07090f', borderRadius: '24px', overflow: 'hidden', position: 'relative', border: '1px solid rgba(255,255,255,0.05)' }}>
       {/* 品牌页眉 */}
-      <div style={{ position: 'absolute', top: '24px', left: '24px', zIndex: 10 }}>
+      <div style={{ position: 'absolute', top: '24px', left: '24px', zIndex: 10, pointerEvents: 'none' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
           <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#28a745', boxShadow: '0 0 10px #28a745' }} />
           <h2 style={{ color: '#fff', margin: 0, fontSize: '20px', fontWeight: 800, letterSpacing: '0.02em', fontFamily: "'Public Sans', sans-serif" }}>NEXUS-BIO <span style={{ color: 'rgba(255,255,255,0.3)', fontWeight: 400 }}>1.1</span></h2>
@@ -217,7 +246,7 @@ export default function NexusBioRenderer({ nodes, onNodeClick, edges, selectedNo
       </Canvas>
 
       {/* 商业图例 */}
-      <div style={{ position: 'absolute', bottom: '24px', right: '24px', zIndex: 10, background: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)', fontFamily: "'Public Sans', sans-serif" }}>
+      <div style={{ position: 'absolute', bottom: '24px', right: '24px', zIndex: 10, background: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)', fontFamily: "'Public Sans', sans-serif", pointerEvents: 'none' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
           <div style={{ width: '10px', height: '10px', background: RISK_THEME.HIGH_RISK, borderRadius: '2px' }} />
           <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '9px' }}>Impurity / High Separation Cost</span>
