@@ -137,10 +137,10 @@ function GlassChip({ value, label, delay }: { value: string; label: string; dela
         transition: 'all 0.3s cubic-bezier(0.34,1.56,0.64,1)',
         cursor: 'default',
       }}>
-      <span style={{ fontFamily: SERIF, fontSize: '1.75rem', color: hov ? 'rgba(40,167,69,0.92)' : 'rgba(255,255,255,0.9)', lineHeight: 1.1, letterSpacing: '-0.02em' }}>
+      <span style={{ fontFamily: SERIF, fontSize: '1.75rem', color: hov ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.78)', lineHeight: 1.1, letterSpacing: '-0.02em' }}>
         {value}
       </span>
-      <span style={{ fontFamily: MONO, fontSize: '9px', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: '6px' }}>
+      <span style={{ fontFamily: MONO, fontSize: '9px', color: 'rgba(255,255,255,0.22)', textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: '6px' }}>
         {label}
       </span>
     </motion.div>
@@ -203,9 +203,9 @@ export default function Hero() {
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             boxShadow: '0 0 12px rgba(180,210,240,0.08)',
           }}>
-            <Dna size={13} style={{ color: 'rgba(40,167,69,0.8)' }} />
+            <Dna size={13} style={{ color: 'rgba(255,255,255,0.6)' }} />
           </div>
-          <span style={{ fontFamily: SERIF, fontSize: '15px', color: 'rgba(255,255,255,0.9)', letterSpacing: '-0.01em' }}>
+          <span style={{ fontFamily: SERIF, fontSize: '15px', color: 'rgba(255,255,255,0.82)', letterSpacing: '-0.01em' }}>
             Nexus-Bio 1.1
           </span>
         </div>
@@ -215,12 +215,12 @@ export default function Hero() {
           {[['Visualize','demo'],['Search','search'],['Analyze','analyzer'],['Contact','contact']].map(([label, id]) => (
             <a key={id} href={`#${id}`} style={{
               fontFamily: BODY, fontSize: '12px', fontWeight: 400,
-              color: 'rgba(255,255,255,0.4)',
+              color: 'rgba(255,255,255,0.32)',
               textDecoration: 'none', letterSpacing: '0.03em',
               transition: 'color 0.2s',
             }}
-              onMouseEnter={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.9)')}
-              onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.4)')}> 
+              onMouseEnter={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.78)')}
+              onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.32)')}> 
               {label}
             </a>
           ))}
@@ -230,22 +230,27 @@ export default function Hero() {
         <a href="#analyzer" style={{
           display: 'flex', alignItems: 'center', gap: '6px',
           padding: '7px 18px', borderRadius: '16px',
-          background: 'rgba(40,167,69,0.15)', // 改为强调色
-          border: '1px solid rgba(40,167,69,0.3)',
+          background: 'rgba(255,255,255,0.055)',
+          border: '1px solid rgba(255,255,255,0.09)',
           backdropFilter: 'blur(12px)',
-          color: '#fff',
-          fontFamily: BODY, fontSize: '12px', fontWeight: 600,
+          color: 'rgba(255,255,255,0.6)',
+          fontFamily: BODY, fontSize: '12px', fontWeight: 400,
           textDecoration: 'none', transition: 'all 0.2s',
+          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06)',
         }}
           onMouseEnter={e => {
             const el = e.currentTarget as HTMLElement;
-            el.style.background = 'rgba(40,167,69,0.25)';
-            el.style.boxShadow = '0 4px 20px rgba(40,167,69,0.2), inset 0 1px 0 rgba(255,255,255,0.1)';
+            el.style.background = 'rgba(255,255,255,0.1)';
+            el.style.color = '#fff';
+            el.style.borderColor = 'rgba(255,255,255,0.16)';
+            el.style.boxShadow = '0 4px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.08)';
           }}
           onMouseLeave={e => {
             const el = e.currentTarget as HTMLElement;
-            el.style.background = 'rgba(40,167,69,0.15)';
-            el.style.boxShadow = 'none';
+            el.style.background = 'rgba(255,255,255,0.055)';
+            el.style.color = 'rgba(255,255,255,0.6)';
+            el.style.borderColor = 'rgba(255,255,255,0.09)';
+            el.style.boxShadow = 'inset 0 1px 0 rgba(255,255,255,0.06)';
           }}>
           Access Engine <ArrowRight size={11} />
         </a>
@@ -269,30 +274,30 @@ export default function Hero() {
           transition={{ duration: 0.7, ease: [0.22,1,0.36,1] }}
           style={{
             display: 'inline-flex', alignItems: 'center', gap: '9px',
-            padding: '6px 18px', borderRadius: '100px', marginBottom: '30px',
-            background: 'rgba(40,167,69,0.05)',
-            border: '1px solid rgba(40,167,69,0.2)',
+            padding: '6px 18px', borderRadius: '100px', marginBottom: '40px',
+            background: 'rgba(255,255,255,0.03)',
+            border: '1px solid rgba(255,255,255,0.08)',
             backdropFilter: 'blur(16px)',
             boxShadow: '0 2px 20px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05)',
           }}>
           <motion.span
             animate={{ opacity: [0.3, 1, 0.3] }}
             transition={{ duration: 3, repeat: Infinity }}
-            style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#28a745', boxShadow: '0 0 6px #28a745', flexShrink: 0 }}
+            style={{ width: '5px', height: '5px', borderRadius: '50%', background: 'rgba(180,215,245,0.6)', boxShadow: '0 0 6px rgba(180,215,245,0.4)', flexShrink: 0 }}
           />
-          <span style={{ fontFamily: "'Times New Roman', Times, serif", fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', color: 'rgba(255,255,255,0.7)', letterSpacing: '0.12em' }}>
+          <span style={{ fontFamily: "'Times New Roman', Times, serif", fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', letterSpacing: '0.12em' }}>
             Next-Gen Biosynthesis Engine
           </span>
         </motion.div>
 
-        {/* Main title — 极大幅度放大字体尺寸 */}
+        {/* Main title — 保持放大的尺寸，但颜色回归高级黑白灰 */}
         <motion.h1
           initial={{ opacity: 0, y: 32 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.9, delay: 0.08, ease: [0.22,1,0.36,1] }}
           style={{
             fontFamily: SERIF, fontWeight: 400, fontStyle: 'normal',
-            fontSize: 'clamp(2.5rem, 6.5vw, 5rem)', // 这里极限放大了尺寸
+            fontSize: 'clamp(2.5rem, 6.5vw, 5rem)',
             lineHeight: 1.1, letterSpacing: '-0.02em',
             color: 'rgba(255,255,255,0.95)',
             margin: '0 0 24px',
@@ -300,7 +305,7 @@ export default function Hero() {
           }}>
           From Literature
           <br />
-          <span style={{ color: 'transparent', backgroundImage: 'linear-gradient(to right, #28a745, #b4d7f5)', WebkitBackgroundClip: 'text', fontStyle: 'normal' }}>
+          <span style={{ color: 'rgba(255,255,255,0.25)', fontStyle: 'normal' }}>
             to Mechanistic Insight
           </span>
         </motion.h1>
@@ -313,7 +318,7 @@ export default function Hero() {
           style={{
             fontFamily: BODY, fontSize: 'clamp(14px, 1.8vw, 18px)',
             fontWeight: 400, lineHeight: 1.8,
-            color: 'rgba(255,255,255,0.5)',
+            color: 'rgba(255,255,255,0.45)',
             maxWidth: '680px', margin: '0 auto 16px',
             letterSpacing: '0.01em',
           }}>
@@ -327,7 +332,7 @@ export default function Hero() {
           transition={{ duration: 0.65, delay: 0.36 }}
           style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', flexWrap: 'wrap', marginTop: '36px', marginBottom: '64px' }}>
 
-          {/* Primary CTA - 转化为商业引导 */}
+          {/* Primary CTA */}
           <a href="#analyzer" style={{
             display: 'flex', alignItems: 'center', gap: '8px',
             padding: '16px 36px', borderRadius: '30px',
@@ -341,7 +346,7 @@ export default function Hero() {
               const el = e.currentTarget as HTMLElement;
               el.style.background = '#e8e8e8';
               el.style.transform = 'translateY(-3px) scale(1.02)';
-              el.style.boxShadow = '0 8px 30px rgba(255,255,255,0.2), 0 0 0 1px rgba(255,255,255,0.1)';
+              el.style.boxShadow = '0 8px 30px rgba(255,255,255,0.18), 0 0 0 1px rgba(255,255,255,0.1)';
             }}
             onMouseLeave={e => {
               const el = e.currentTarget as HTMLElement;
@@ -381,7 +386,7 @@ export default function Hero() {
           </a>
         </motion.div>
 
-        {/* Stats — 注入商业卖点指标 */}
+        {/* Stats — 还原原版配色，保留商业指标文案 */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '44px' }}>
           {[
             { value: '< 2.5m', label: 'Analysis Time', delay: 0.52 },
@@ -391,7 +396,7 @@ export default function Hero() {
           ].map(s => <GlassChip key={s.value} {...s} />)}
         </div>
 
-        {/* Feature tags - 强调核心 IP */}
+        {/* Feature tags - 还原原版玻璃质感，保留商业 IP 标签 */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -405,15 +410,28 @@ export default function Hero() {
             <div key={i} style={{
               display: 'flex', alignItems: 'center', gap: '6px',
               padding: '6px 16px', borderRadius: '100px',
-              background: i === 0 ? 'rgba(40,167,69,0.1)' : 'rgba(255,255,255,0.03)', // 高亮第一个核心功能
-              border: `1px solid ${i === 0 ? 'rgba(40,167,69,0.3)' : 'rgba(255,255,255,0.08)'}`,
+              background: 'rgba(255,255,255,0.022)',
+              border: '1px solid rgba(255,255,255,0.06)',
               backdropFilter: 'blur(8px)',
-              color: i === 0 ? '#28a745' : 'rgba(255,255,255,0.4)',
+              color: 'rgba(255,255,255,0.2)',
               fontFamily: MONO, fontSize: '10px',
               letterSpacing: '0.04em', textTransform: 'uppercase',
               boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.03)',
+              transition: 'all 0.2s',
               cursor: 'default',
-            }}>
+            }}
+              onMouseEnter={e => {
+                const el = e.currentTarget as HTMLElement;
+                el.style.color = 'rgba(255,255,255,0.55)';
+                el.style.borderColor = 'rgba(255,255,255,0.12)';
+                el.style.background = 'rgba(255,255,255,0.05)';
+              }}
+              onMouseLeave={e => {
+                const el = e.currentTarget as HTMLElement;
+                el.style.color = 'rgba(255,255,255,0.2)';
+                el.style.borderColor = 'rgba(255,255,255,0.06)';
+                el.style.background = 'rgba(255,255,255,0.022)';
+              }}>
               {f.icon} {f.label}
             </div>
           ))}
