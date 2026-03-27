@@ -6,6 +6,8 @@ import { OrbitControls, Html, Line } from '@react-three/drei';
 import * as THREE from 'three';
 import { PathwayNode, PathwayEdge } from '../types';
 
+type Vec3 = [number, number, number];
+
 // ─── 商业级颜色与风险定义 (核心逻辑) ────────────────────────────────────────
 const RISK_THEME = {
   STABLE: "#28a745",    // 绿色：高产/自发反应
@@ -19,7 +21,8 @@ const RISK_THEME = {
 // ─── 自动合规引擎 (解决你的后顾之忧) ────────────────────────────────────────
 // 即使 JSON 数据缺失，前端也会根据属性自动判定商业风险
 function getComplianceIntel(node: PathwayNode) {
-  const isImpurity = node.type?.toLowerCase().includes('impurity') || node.color_mapping === 'Red';
+  // 核心修复：将 node.type 修正为正确的 node.nodeType
+  const isImpurity = node.nodeType?.toLowerCase().includes('impurity') || node.color_mapping === 'Red';
   const riskScore = node.risk_score ?? 0;
   const isHighlyUnstable = node.thermodynamic_stability?.toLowerCase().includes('low');
 
@@ -231,8 +234,8 @@ function Scene({ nodes, edges, onNodeClick, selectedNodeId }: any) {
       return {
         key: `${edge.start}-${edge.end}`,
         edge,
-        s: s.position,
-        e: e.position,
+        s: s.position as Vec3,
+        e: e.position as Vec3,
         active: hovId === edge.start || hovId === edge.end || selectedNodeId === edge.start || selectedNodeId === edge.end,
         color: RISK_THEME[s.color_mapping as keyof typeof RISK_THEME] || RISK_THEME.NEUTRAL
       };
