@@ -262,7 +262,7 @@ export default function SemanticSearch({ onAnalyzePaper }: SemanticSearchProps) 
         {/* Header */}
         <div className="mb-10">
           <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '11px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' }}>
-            03 · Literature
+            04 · Literature
           </p>
           <h2 style={{ color: '#ffffff', fontSize: 'clamp(24px, 4vw, 32px)', fontWeight: 600, letterSpacing: '-0.03em', marginBottom: '8px', lineHeight: 1.2 }}>
             Database Research

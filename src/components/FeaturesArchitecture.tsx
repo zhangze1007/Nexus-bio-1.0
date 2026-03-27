@@ -1,11 +1,12 @@
 'use client';
 
 import { motion, useInView } from 'framer-motion';
-import { useRef } from 'react';
+import { useRef, useState, useEffect, useCallback } from 'react';
 import { Activity, FlaskConical, Dna } from 'lucide-react';
 
 const SERIF = "'DM Serif Display', Georgia, serif";
 const BODY  = "'Public Sans', -apple-system, sans-serif";
+const MONO  = "'Fira Code', 'Courier New', Courier, monospace";
 
 const FEATURES = [
   {
@@ -46,6 +47,195 @@ const FEATURES = [
   },
 ];
 
+// ── Terminal log lines ────────────────────────────────────────────────
+type LineColor = 'system' | 'module' | 'compute' | 'result' | 'ok' | 'warning' | 'critical' | 'suggestion' | 'divider';
+
+interface TerminalLine {
+  text: string;
+  color: LineColor;
+}
+
+const TERMINAL_SCRIPT: TerminalLine[] = [
+  { text: '[SYSTEM] Initiating Nexus-Bio Engine v1.1...', color: 'system' },
+  { text: '[MODULE] Loading pathway data: Artemisinin Biosynthesis', color: 'module' },
+  { text: '[COMPUTING] Running Flux Balance Analysis (FBA)...', color: 'compute' },
+  { text: '--------------------------------------------------', color: 'divider' },
+  { text: '[METRIC] Carbon Efficiency (Atom Economy): Calculating...', color: 'compute' },
+  { text: '[RESULT] Target MW: 282.33 -> Atom Economy: 50.0% [OK]', color: 'ok' },
+  { text: '--------------------------------------------------', color: 'divider' },
+  { text: '[ALERT] Scanning Downstream Processing (DSP) Bottlenecks...', color: 'warning' },
+  { text: '[WARNING] Impurity Detected: Arteannuin B.', color: 'warning' },
+  { text: '[ANALYSIS] Identical polarity to target. DSP Cost Index: 91% (CRITICAL)', color: 'critical' },
+  { text: '--------------------------------------------------', color: 'divider' },
+  { text: '[OPTIMIZATION] Generating Genetic Intervention Strategy...', color: 'compute' },
+  { text: '[SUGGESTION] Knockout (KO): ERG9 to maximize FPP pool.', color: 'suggestion' },
+  { text: '[SUGGESTION] Overexpress (OE): ZWF1 for NADPH supply.', color: 'suggestion' },
+  { text: '[SYSTEM] Simulation Complete. Rebooting in 3s...', color: 'system' },
+];
+
+const LINE_COLORS: Record<LineColor, string> = {
+  system:     '#64748B',
+  module:     '#38BDF8',
+  compute:    '#94A3B8',
+  result:     '#CBD5E1',
+  ok:         '#10B981',
+  warning:    '#EF4444',
+  critical:   '#EF4444',
+  suggestion: '#10B981',
+  divider:    '#334155',
+};
+
+// ── EngineTerminal Component ──────────────────────────────────────────
+function EngineTerminal() {
+  const [lines, setLines] = useState<TerminalLine[]>([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [charIndex, setCharIndex] = useState(0);
+  const [isTyping, setIsTyping] = useState(true);
+  const terminalRef = useRef<HTMLDivElement>(null);
+
+  const resetTerminal = useCallback(() => {
+    setLines([]);
+    setCurrentIndex(0);
+    setCharIndex(0);
+    setIsTyping(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isTyping) return;
+
+    // All lines typed — pause then reboot
+    if (currentIndex >= TERMINAL_SCRIPT.length) {
+      const timer = setTimeout(resetTerminal, 3000);
+      return () => clearTimeout(timer);
+    }
+
+    const currentLine = TERMINAL_SCRIPT[currentIndex];
+    const fullText = currentLine.text;
+
+    // Divider lines appear instantly
+    if (currentLine.color === 'divider') {
+      setLines(prev => [...prev, currentLine]);
+      setCurrentIndex(prev => prev + 1);
+      setCharIndex(0);
+      return;
+    }
+
+    // Type character by character
+    if (charIndex < fullText.length) {
+      const speed = 18 + Math.random() * 22;
+      const timer = setTimeout(() => {
+        setCharIndex(prev => prev + 1);
+      }, speed);
+      return () => clearTimeout(timer);
+    }
+
+    // Line complete — add full line and move on
+    setLines(prev => [...prev, currentLine]);
+    const delay = currentLine.color === 'system' ? 600 : 200;
+    const timer = setTimeout(() => {
+      setCurrentIndex(prev => prev + 1);
+      setCharIndex(0);
+    }, delay);
+    return () => clearTimeout(timer);
+  }, [currentIndex, charIndex, isTyping, resetTerminal]);
+
+  // Auto-scroll terminal
+  useEffect(() => {
+    if (terminalRef.current) {
+      terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
+    }
+  }, [lines, charIndex]);
+
+  // Current line being typed (partial)
+  const typingLine = currentIndex < TERMINAL_SCRIPT.length && TERMINAL_SCRIPT[currentIndex].color !== 'divider'
+    ? TERMINAL_SCRIPT[currentIndex]
+    : null;
+  const partialText = typingLine ? typingLine.text.slice(0, charIndex) : '';
+
+  return (
+    <div style={{
+      borderRadius: '16px',
+      overflow: 'hidden',
+      border: '1px solid rgba(255,255,255,0.08)',
+      boxShadow: '0 24px 64px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06)',
+    }}>
+      {/* macOS title bar */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: '8px',
+        padding: '12px 16px',
+        background: 'rgba(255,255,255,0.04)',
+        borderBottom: '1px solid rgba(255,255,255,0.06)',
+      }}>
+        <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#EF4444' }} />
+        <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#F59E0B' }} />
+        <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#10B981' }} />
+        <span style={{
+          marginLeft: '12px', fontFamily: MONO, fontSize: '11px',
+          color: 'rgba(255,255,255,0.3)', fontFeatureSettings: "'tnum' 1",
+        }}>
+          nexus-bio-engine — live simulation
+        </span>
+      </div>
+
+      {/* Terminal body */}
+      <div
+        ref={terminalRef}
+        style={{
+          background: '#0a0b10',
+          padding: '16px 20px',
+          height: '340px',
+          overflowY: 'auto',
+          fontFamily: MONO,
+          fontSize: '12.5px',
+          lineHeight: 1.8,
+        }}
+      >
+        {/* Completed lines */}
+        {lines.map((line, i) => (
+          <div key={i} style={{ color: LINE_COLORS[line.color], whiteSpace: 'pre-wrap' }}>
+            {line.color !== 'divider' ? `> ${line.text}` : line.text}
+          </div>
+        ))}
+
+        {/* Currently typing line */}
+        {typingLine && partialText.length > 0 && (
+          <div style={{ color: LINE_COLORS[typingLine.color], whiteSpace: 'pre-wrap' }}>
+            {'> '}{partialText}
+            <span style={{
+              display: 'inline-block', width: '7px', height: '14px',
+              background: LINE_COLORS[typingLine.color],
+              marginLeft: '2px', verticalAlign: 'middle',
+              animation: 'engineCursorBlink 0.8s step-end infinite',
+            }} />
+          </div>
+        )}
+
+        {/* Blinking cursor when idle */}
+        {!typingLine && currentIndex >= TERMINAL_SCRIPT.length && (
+          <div style={{ color: '#64748B' }}>
+            {'> '}
+            <span style={{
+              display: 'inline-block', width: '7px', height: '14px',
+              background: '#64748B',
+              marginLeft: '2px', verticalAlign: 'middle',
+              animation: 'engineCursorBlink 0.8s step-end infinite',
+            }} />
+          </div>
+        )}
+      </div>
+
+      {/* Cursor blink keyframes */}
+      <style>{`
+        @keyframes engineCursorBlink {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0; }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+// ── Feature Card ──────────────────────────────────────────────────────
 function FeatureCard({ feature, index }: { feature: typeof FEATURES[number]; index: number }) {
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: '-60px' });
@@ -128,6 +318,7 @@ function FeatureCard({ feature, index }: { feature: typeof FEATURES[number]; ind
   );
 }
 
+// ── Main Section ──────────────────────────────────────────────────────
 export default function FeaturesArchitecture() {
   const sectionRef = useRef<HTMLElement>(null);
   const inView = useInView(sectionRef, { once: true, margin: '-80px' });
@@ -179,11 +370,21 @@ export default function FeaturesArchitecture() {
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
           gap: '16px',
+          marginBottom: '48px',
         }}>
           {FEATURES.map((feature, i) => (
             <FeatureCard key={feature.title} feature={feature} index={i} />
           ))}
         </div>
+
+        {/* Live Computation Terminal */}
+        <motion.div
+          initial={{ opacity: 0, y: 32 }}
+          animate={inView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.7, delay: 0.45, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <EngineTerminal />
+        </motion.div>
       </div>
     </section>
   );
