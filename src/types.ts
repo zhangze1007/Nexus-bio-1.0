@@ -55,6 +55,12 @@ export interface PathwayNode {
   cofactor_balance?: string;
   carbon_efficiency?: number;
   gene_recommendation?: string;
+
+  // Nexus-Bio 1.3: Industrial Metrics & DSP Intelligence
+  genetic_intervention?: string;
+  atom_economy?: number;
+  dsp_bottleneck?: string;
+  ic50_toxicity?: string;
   
   // Molecular structure data
   ecNumber?: string;

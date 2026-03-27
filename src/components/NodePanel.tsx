@@ -487,6 +487,7 @@ type TabId = 'overview' | 'structure' | 'analysis';
 const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEdges }: NodePanelProps) {
   const [activeTab, setActiveTab] = useState<TabId>('overview');
   const [showConnections, setShowConnections] = useState(false);
+  const [showRawData, setShowRawData] = useState(false);
 
   const connections = useMemo(() => {
     if (!node || !allEdges) return [];
@@ -875,6 +876,104 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                   )}
 
                   <Divider />
+
+                  {/* ─── Genetic Intervention Badge ─────────────────────────── */}
+                  {node.genetic_intervention && (
+                    <div style={{ marginBottom: '12px' }}>
+                      <div style={{
+                        display: 'inline-flex', alignItems: 'center', gap: '6px',
+                        padding: '6px 12px', borderRadius: '20px',
+                        background: node.genetic_intervention.startsWith('KO')
+                          ? 'rgba(239,68,68,0.12)' : 'rgba(16,185,129,0.12)',
+                        border: `1px solid ${node.genetic_intervention.startsWith('KO')
+                          ? 'rgba(239,68,68,0.25)' : 'rgba(16,185,129,0.25)'}`,
+                      }}>
+                        <span style={{ fontSize: '14px' }}>
+                          {node.genetic_intervention.startsWith('KO') ? '✂️' : '⬆️'}
+                        </span>
+                        <span style={{
+                          fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+                          fontSize: '11px', fontWeight: 600,
+                          color: node.genetic_intervention.startsWith('KO')
+                            ? BIO_THEME_COLORS.RED : BIO_THEME_COLORS.GREEN,
+                        }}>
+                          {node.genetic_intervention}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ─── Collapsible Raw Data Section ──────────────────────── */}
+                  {(node.cofactor_balance || node.atom_economy !== undefined || node.dsp_bottleneck || node.ic50_toxicity) && (
+                    <div style={{ marginBottom: '12px' }}>
+                      <button
+                        onClick={() => setShowRawData(!showRawData)}
+                        style={{
+                          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                          width: '100%', background: 'none', border: 'none', cursor: 'pointer',
+                          padding: '8px 0',
+                        }}
+                      >
+                        <span style={{
+                          color: 'rgba(255,255,255,0.3)', fontSize: '10px',
+                          fontFamily: "'Public Sans', sans-serif",
+                          textTransform: 'uppercase', letterSpacing: '0.08em',
+                          fontFeatureSettings: "'tnum' 1",
+                        }}>
+                          {showRawData ? '[−]' : '[+]'} View Raw Thermodynamics & Kinetics
+                        </span>
+                        {showRawData
+                          ? <ChevronUp size={12} style={{ color: 'rgba(255,255,255,0.2)' }} />
+                          : <ChevronDown size={12} style={{ color: 'rgba(255,255,255,0.2)' }} />}
+                      </button>
+
+                      {showRawData && (
+                        <div style={{
+                          padding: '14px',
+                          borderRadius: '16px',
+                          background: 'rgba(0,0,0,0.3)',
+                          border: '1px solid rgba(255,255,255,0.06)',
+                          fontFamily: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace",
+                          fontSize: '11px',
+                          lineHeight: 1.8,
+                          color: 'rgba(255,255,255,0.5)',
+                        }}>
+                          {node.cofactor_balance && (
+                            <div style={{ marginBottom: '8px' }}>
+                              <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: "'Public Sans', sans-serif", fontWeight: 700 }}>Cofactor Balance</span>
+                              <div style={{ color: BIO_THEME_COLORS.PURPLE, marginTop: '2px' }}>{node.cofactor_balance}</div>
+                            </div>
+                          )}
+                          {node.atom_economy !== undefined && (
+                            <div style={{ marginBottom: '8px' }}>
+                              <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: "'Public Sans', sans-serif", fontWeight: 700 }}>Atom Economy (Carbon Efficiency)</span>
+                              <div style={{
+                                color: node.atom_economy >= 80 ? BIO_THEME_COLORS.GREEN
+                                  : node.atom_economy >= 50 ? BIO_THEME_COLORS.AMBER
+                                  : BIO_THEME_COLORS.RED,
+                                marginTop: '2px',
+                              }}>
+                                {node.atom_economy.toFixed(1)}%
+                              </div>
+                            </div>
+                          )}
+                          {node.dsp_bottleneck && (
+                            <div style={{ marginBottom: '8px' }}>
+                              <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: "'Public Sans', sans-serif", fontWeight: 700 }}>DSP Bottleneck</span>
+                              <div style={{ color: BIO_THEME_COLORS.AMBER, marginTop: '2px' }}>{node.dsp_bottleneck}</div>
+                            </div>
+                          )}
+                          {node.ic50_toxicity && (
+                            <div>
+                              <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: "'Public Sans', sans-serif", fontWeight: 700 }}>IC50 Toxicity</span>
+                              <div style={{ color: BIO_THEME_COLORS.RED, marginTop: '2px' }}>{node.ic50_toxicity}</div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   <button onClick={handleDownload}
                     style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px 16px', borderRadius: '20px', background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.4)', border: '1px solid rgba(255,255,255,0.07)', fontSize: '12px', cursor: 'pointer', transition: 'all 0.15s', fontFamily: 'inherit' }}
                     onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)'; (e.currentTarget as HTMLElement).style.color = '#ffffff'; }}

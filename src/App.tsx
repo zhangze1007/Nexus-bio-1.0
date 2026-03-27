@@ -9,6 +9,7 @@ import SemanticSearch from './components/SemanticSearch';
 import ContactFlow from './components/ContactFlow';
 import DevModePanel from './components/DevModePanel';
 import PaperAnalyzer from './components/PaperAnalyzer';
+import FeaturesArchitecture from './components/FeaturesArchitecture';
 import pathwayData from './data/pathwayData.json';
 import { PathwayNode, PathwayEdge } from './types';
 import { Dna, Sparkles } from 'lucide-react';
@@ -251,6 +252,11 @@ export default function App() {
         allNodes={activeNodes}
         allEdges={activeEdges}
       />
+
+      {/* ── ARCHITECTURE / FEATURES ── */}
+      <Reveal>
+        <FeaturesArchitecture />
+      </Reveal>
 
       {/* ── ANALYZER ── */}
       <Reveal>

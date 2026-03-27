@@ -27,20 +27,32 @@ type InputMode = 'text' | 'pdf' | 'image' | 'camera' | 'web';
 type AnalysisState = 'idle' | 'analyzing' | 'success' | 'error';
 
 // ── Evidence-first prompt — traceability is mandatory ──
-const buildPrompt = (content: string) => `You are a computational biology and metabolic engineering expert specializing in TRY (Titer, Rate, Yield) analysis and downstream process economics. Extract a comprehensive metabolic/biosynthetic pathway from the research text below, including intermediates, impurities, and thermodynamic data.
+const buildPrompt = (content: string) => `Act as a Senior Metabolic Engineer and Lead Data Scientist. Deeply analyze the provided fermentation dataset or metabolic pathway literature. Evaluate carbon flux efficiency using strictly TRY (Titer, Rate, Yield) metrics.
+
+Conduct a rigorous risk analysis focusing on industrial bottlenecks:
+1. Cellular Fitness & Toxicity: Identify exact thresholds for product-induced toxicity (IC50) where host strain growth inhibition occurs.
+2. Downstream Processing (DSP) & Separation Cost: Pinpoint structural analogs sharing similar polarity/boiling points that exponentially inflate separation costs.
+3. Cofactor Ledger: Compute the net Cofactor Balance (ATP/NADH consumption).
+4. Carbon ROI: Assess the overall Carbon Efficiency (Atom Economy %).
+5. Genetic Strategy: Suggest exactly 1-2 native host genes for Knockout (KO) or Overexpression (OE) to redirect carbon flux.
+
+Output STRICTLY as a JSON array matching our PathwayNode schema.
+- For thermodynamic energy sinks (ΔG > 0) or high toxicity: set color_mapping: "Red", risk_score > 0.7.
+- For optimal high-yield intermediates: set color_mapping: "Green".
+- Generate a highly professional summary and a verifiable audit_trail referencing specific predictive models (e.g., 'Flux Balance Analysis anomaly detected').
 
 CRITICAL RULES:
 1. Every node's evidenceSnippet must be an EXACT QUOTE copied verbatim from the text. Do not paraphrase.
 2. Include ALL pathway intermediates, branch-point byproducts, and competing impurities mentioned in the text.
 3. For each reaction edge, estimate thermodynamic favorability when the text provides clues (e.g. spontaneous, rate-limiting, high yield).
-4. For nodes with risk_score > 0.7, you MUST assess toxicity_impact (identify the exact concentration threshold for product-induced toxicity where host strain growth inhibition occurs, e.g. "IC50 ~8 mM in S. cerevisiae") and separation_cost_index to meet Nexus-Bio commercial compliance standards.
-5. If the text does not explicitly mention impurities, use your metabolic engineering knowledge to identify likely side reactions and byproducts for the pathway described. Specifically, pinpoint structural analogs, toxic intermediates, or byproducts sharing similar polarity/boiling points with the target molecule that would inflate DSP separation costs.
-6. Evaluate carbon flux efficiency using TRY metrics: estimate volumetric productivity (g/L/h) when data is available, assess metabolic burden on the host strain, and note any competitive inhibition or pathway crosstalk.
+4. For nodes with risk_score > 0.7, you MUST assess toxicity_impact and ic50_toxicity (identify the exact concentration threshold where host strain growth inhibition occurs) and separation_cost_index to meet Nexus-Bio commercial compliance standards.
+5. If the text does not explicitly mention impurities, use your metabolic engineering knowledge to identify likely side reactions and byproducts. Pinpoint structural analogs that would inflate DSP separation costs and set dsp_bottleneck accordingly.
+6. Evaluate carbon flux efficiency using TRY metrics: estimate volumetric productivity (g/L/h) when data is available, assess metabolic burden on the host strain.
 7. For each node summary, use advanced data science and synthetic biology terminology (e.g. flux balance analysis, proteome allocation, metabolic burden coefficient).
 8. For each audit_trail, reference specific predictive models or literature data (e.g. "Flux Balance Analysis anomaly detected — carbon diversion at Node X", "BRENDA Km = 0.3 mM, suggesting substrate limitation").
 9. Compute the net Cofactor Balance for each reaction step — specify ATP/NADH/NADPH consumption or generation (e.g. "Consumes 1 ATP + 1 NADPH per cycle", "Net: −2 ATP, +1 NADH").
 10. Assess the overall Carbon Efficiency (Atom Economy %) for each node — calculate the fraction of substrate carbon atoms retained in the product vs. lost as CO2 or waste (0-100%).
-11. For pathway-critical intermediates and branch points, suggest 1-2 native host genes for Knockout (KO) or Overexpression (OE) to redirect carbon flux towards the target product (e.g. "KO: ERG9 — blocks squalene synthase to prevent FPP diversion to sterol pathway").
+11. For pathway-critical intermediates and branch points, suggest 1-2 native host genes for Knockout (KO) or Overexpression (OE) to redirect carbon flux towards the target product (e.g. "KO: ERG9 — blocks squalene synthase to prevent FPP diversion to sterol pathway"). Provide both genetic_intervention (concise, e.g. "KO: ERG9") and gene_recommendation (detailed explanation).
 
 Return ONLY this exact JSON, nothing else:
 
@@ -58,9 +70,13 @@ Return ONLY this exact JSON, nothing else:
       "color_mapping": "Green",
       "risk_score": 0.0,
       "toxicity_impact": "None — desired pathway product with no host cytotoxicity below 50 mM",
+      "ic50_toxicity": "No growth inhibition below 50 mM",
       "separation_cost_index": 0.0,
+      "dsp_bottleneck": "None — product easily separated from fermentation broth",
       "cofactor_balance": "Consumes 1 ATP + 2 NADPH per mevalonate cycle",
       "carbon_efficiency": 85.0,
+      "atom_economy": 85.0,
+      "genetic_intervention": "OE: tHMGR",
       "gene_recommendation": "OE: tHMGR — rate-limiting enzyme overexpression increases flux 3-fold",
       "audit_trail": "FBA model: optimal flux node — carbon partitioning coefficient 0.92"
     }
@@ -92,12 +108,16 @@ Rules:
 - thermodynamic_stability: "High" | "Moderate" | "Low" (stability of the compound)
 - color_mapping: "Green" (thermodynamically favorable, high-yield, minimal competitive inhibition) | "Yellow" (moderate yield) | "Orange" (unstable/low yield) | "Red" (impurity/risk, ΔG > 0, or exceeds cytotoxicity thresholds) | "Purple" (dual-role intermediate/precursor at metabolic crossroads) | "Blue" (cofactor/auxiliary)
 - risk_score: 0.0 to 1.0 (0 = no risk, 1 = major impurity/competitor; use 0 for desired pathway metabolites). Set > 0.7 for high-risk impurities, thermodynamic energy sinks (ΔG > 0), or nodes exceeding cytotoxicity thresholds
-- toxicity_impact: describe potential toxicity to host cells with specific thresholds when possible (e.g. "Cytotoxic to S. cerevisiae at >5 mM — growth inhibition IC50", "Potential genotoxicity risk", or "None — desired pathway product")
-- separation_cost_index: 0.0 to 1.0 — physicochemical similarity to the target product (higher = harder to separate; structural analogs sharing polarity/boiling points get 0.7-0.9)
-- For impurity nodes: typically set risk_score > 0.5, color_mapping "Red", nodeType "impurity". Nodes with risk_score > 0.7 MUST have toxicity_impact assessment and separation_cost_index > 0.5
+- toxicity_impact: describe potential toxicity to host cells with specific thresholds when possible
+- ic50_toxicity: specific IC50 or growth inhibition threshold (e.g. "< 10 μM growth inhibition", "IC50 ~8 mM in S. cerevisiae", "No toxicity below 50 mM")
+- separation_cost_index: 0.0 to 1.0 — physicochemical similarity to the target product (higher = harder to separate)
+- dsp_bottleneck: detailed reason for high separation cost if any (e.g. "Similar logP to target — co-elutes on C18 reverse phase", "Near-identical boiling point inflates distillation cost")
+- For impurity nodes: typically set risk_score > 0.5, color_mapping "Red", nodeType "impurity". Nodes with risk_score > 0.7 MUST have toxicity_impact, ic50_toxicity, and separation_cost_index > 0.5
 - cofactor_balance: net ATP/NAD(P)H consumption or generation at this step (e.g. "Consumes 1 ATP + 1 NADPH", "Generates 1 NADH", "Cofactor-neutral")
 - carbon_efficiency: 0.0 to 100.0 — atom economy percentage (fraction of substrate carbon atoms retained in the product; 100 = no carbon loss)
-- gene_recommendation: suggest 1-2 native host genes for KO or OE to improve flux towards target (e.g. "KO: ERG9 — blocks sterol branch", "OE: ACS1 — increases acetyl-CoA pool"). Use "N/A" for terminal products or impurities where no engineering target applies
+- atom_economy: 0.0 to 100.0 — same as carbon_efficiency, overall atom economy percentage
+- genetic_intervention: concise KO/OE label (e.g. "KO: ERG9", "OE: tHMGR"). Use "N/A" when not applicable
+- gene_recommendation: detailed explanation of gene engineering target for KO or OE to improve flux towards target. Use "N/A" for terminal products or impurities where no engineering target applies
 - predicted_delta_G_kJ_mol: estimated Gibbs free energy change (negative = spontaneous)
 - spontaneity: "Highly Spontaneous" | "Spontaneous" | "Non-spontaneous" | "Spontaneous (condition dependent)"
 - yield_prediction: brief yield assessment with TRY context (e.g. "High — titer >10 g/L achievable", "Moderate — rate-limiting step", "Low — thermodynamic sink")
@@ -184,6 +204,12 @@ function normalizePathway(parsed: unknown): { nodes: PathwayNode[]; edges: Pathw
       carbon_efficiency: typeof n.carbon_efficiency === 'number'
         ? Math.min(100, Math.max(0, n.carbon_efficiency)) : undefined,
       gene_recommendation: typeof n.gene_recommendation === 'string' ? n.gene_recommendation : undefined,
+      // v1.3: Industrial Metrics & DSP Intelligence fields
+      genetic_intervention: typeof n.genetic_intervention === 'string' ? n.genetic_intervention : undefined,
+      atom_economy: typeof n.atom_economy === 'number'
+        ? Math.min(100, Math.max(0, n.atom_economy)) : undefined,
+      dsp_bottleneck: typeof n.dsp_bottleneck === 'string' ? n.dsp_bottleneck : undefined,
+      ic50_toxicity: typeof n.ic50_toxicity === 'string' ? n.ic50_toxicity : undefined,
       color: getSemanticColor(
         VALID_NODE_TYPES.includes(n.nodeType as string) ? String(n.nodeType) : 'unknown',
         typeof n.risk_score === 'number' ? n.risk_score : undefined,
