@@ -1,12 +1,12 @@
 'use client';
 
 import { motion, useInView } from 'framer-motion';
-import { useRef, useState, useEffect, useCallback } from 'react';
+import { useRef } from 'react';
 import { Activity, FlaskConical, Dna } from 'lucide-react';
 
 const SERIF = "'DM Serif Display', Georgia, serif";
 const BODY  = "'Public Sans', -apple-system, sans-serif";
-const MONO  = "'Fira Code', 'Courier New', Courier, monospace";
+const MATH  = "'Cambria Math', 'Latin Modern Math', 'STIX Two Math', Georgia, serif";
 
 const FEATURES = [
   {
@@ -47,190 +47,185 @@ const FEATURES = [
   },
 ];
 
-// ── Terminal log lines ────────────────────────────────────────────────
-type LineColor = 'system' | 'module' | 'compute' | 'result' | 'ok' | 'warning' | 'critical' | 'suggestion' | 'divider';
-
-interface TerminalLine {
-  text: string;
-  color: LineColor;
-}
-
-const TERMINAL_SCRIPT: TerminalLine[] = [
-  { text: '[SYSTEM] Initiating Nexus-Bio Engine v1.1...', color: 'system' },
-  { text: '[MODULE] Loading pathway data: Artemisinin Biosynthesis', color: 'module' },
-  { text: '[COMPUTING] Running Flux Balance Analysis (FBA)...', color: 'compute' },
-  { text: '--------------------------------------------------', color: 'divider' },
-  { text: '[METRIC] Carbon Efficiency (Atom Economy): Calculating...', color: 'compute' },
-  { text: '[RESULT] Target MW: 282.33 -> Atom Economy: 50.0% [OK]', color: 'ok' },
-  { text: '--------------------------------------------------', color: 'divider' },
-  { text: '[ALERT] Scanning Downstream Processing (DSP) Bottlenecks...', color: 'warning' },
-  { text: '[WARNING] Impurity Detected: Arteannuin B.', color: 'warning' },
-  { text: '[ANALYSIS] Identical polarity to target. DSP Cost Index: 91% (CRITICAL)', color: 'critical' },
-  { text: '--------------------------------------------------', color: 'divider' },
-  { text: '[OPTIMIZATION] Generating Genetic Intervention Strategy...', color: 'compute' },
-  { text: '[SUGGESTION] Knockout (KO): ERG9 to maximize FPP pool.', color: 'suggestion' },
-  { text: '[SUGGESTION] Overexpress (OE): ZWF1 for NADPH supply.', color: 'suggestion' },
-  { text: '[SYSTEM] Simulation Complete. Rebooting in 3s...', color: 'system' },
+// ── Algorithm Showcase Data ───────────────────────────────────────────
+const FORMULA_BLOCKS = [
+  {
+    label: 'Block 1',
+    title: 'Thermodynamic Viability (Risk Score)',
+    accent: '#EF4444',
+    formula: 'ΔG = ΔH − TΔS',
+    calculation: 'ΔG = (−45.2 kJ/mol) − (298 K × −0.04 kJ/K·mol)',
+    resultValue: 'ΔG = −33.28 kJ/mol',
+    resultLabel: 'Spontaneous / High Yield Confirmed',
+    resultColor: '#10B981',
+  },
+  {
+    label: 'Block 2',
+    title: 'Downstream Processing Complexity (DSP Cost)',
+    accent: '#F59E0B',
+    formula: 'ΔlogP = |logP(Target) − logP(Impurity)|',
+    calculation: 'Target (Artemisinic Acid) logP = 3.2  |  Impurity (Arteannuin B) logP = 3.15',
+    resultValue: 'ΔlogP = 0.05',
+    resultLabel: 'Separation Cost Index → 91% (Critical Bottleneck Alert)',
+    resultColor: '#EF4444',
+  },
+  {
+    label: 'Block 3',
+    title: 'Carbon ROI (Atom Economy)',
+    accent: '#8B5CF6',
+    formula: 'AE = (MW_Product / Σ MW_Reactants) × 100%',
+    calculation: '(282.33 / 564.66) × 100%',
+    resultValue: '50.0% Carbon Asset Efficiency',
+    resultLabel: '',
+    resultColor: '#F59E0B',
+  },
 ];
 
-const LINE_COLORS: Record<LineColor, string> = {
-  system:     '#64748B',
-  module:     '#38BDF8',
-  compute:    '#94A3B8',
-  result:     '#CBD5E1',
-  ok:         '#10B981',
-  warning:    '#EF4444',
-  critical:   '#EF4444',
-  suggestion: '#10B981',
-  divider:    '#334155',
-};
-
-// ── EngineTerminal Component ──────────────────────────────────────────
-function EngineTerminal() {
-  const [lines, setLines] = useState<TerminalLine[]>([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [charIndex, setCharIndex] = useState(0);
-  const [isTyping, setIsTyping] = useState(true);
-  const terminalRef = useRef<HTMLDivElement>(null);
-
-  const resetTerminal = useCallback(() => {
-    setLines([]);
-    setCurrentIndex(0);
-    setCharIndex(0);
-    setIsTyping(true);
-  }, []);
-
-  useEffect(() => {
-    if (!isTyping) return;
-
-    // All lines typed — pause then reboot
-    if (currentIndex >= TERMINAL_SCRIPT.length) {
-      const timer = setTimeout(resetTerminal, 3000);
-      return () => clearTimeout(timer);
-    }
-
-    const currentLine = TERMINAL_SCRIPT[currentIndex];
-    const fullText = currentLine.text;
-
-    // Divider lines appear instantly
-    if (currentLine.color === 'divider') {
-      setLines(prev => [...prev, currentLine]);
-      setCurrentIndex(prev => prev + 1);
-      setCharIndex(0);
-      return;
-    }
-
-    // Type character by character
-    if (charIndex < fullText.length) {
-      const speed = 18 + Math.random() * 22;
-      const timer = setTimeout(() => {
-        setCharIndex(prev => prev + 1);
-      }, speed);
-      return () => clearTimeout(timer);
-    }
-
-    // Line complete — add full line and move on
-    setLines(prev => [...prev, currentLine]);
-    const delay = currentLine.color === 'system' ? 600 : 200;
-    const timer = setTimeout(() => {
-      setCurrentIndex(prev => prev + 1);
-      setCharIndex(0);
-    }, delay);
-    return () => clearTimeout(timer);
-  }, [currentIndex, charIndex, isTyping, resetTerminal]);
-
-  // Auto-scroll terminal
-  useEffect(() => {
-    if (terminalRef.current) {
-      terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
-    }
-  }, [lines, charIndex]);
-
-  // Current line being typed (partial)
-  const typingLine = currentIndex < TERMINAL_SCRIPT.length && TERMINAL_SCRIPT[currentIndex].color !== 'divider'
-    ? TERMINAL_SCRIPT[currentIndex]
-    : null;
-  const partialText = typingLine ? typingLine.text.slice(0, charIndex) : '';
+// ── Formula Block Component ───────────────────────────────────────────
+function FormulaBlock({ block, index }: { block: typeof FORMULA_BLOCKS[number]; index: number }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const inView = useInView(ref, { once: true, margin: '-60px' });
 
   return (
-    <div style={{
-      borderRadius: '16px',
-      overflow: 'hidden',
-      border: '1px solid rgba(255,255,255,0.08)',
-      boxShadow: '0 24px 64px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06)',
-    }}>
-      {/* macOS title bar */}
-      <div style={{
-        display: 'flex', alignItems: 'center', gap: '8px',
-        padding: '12px 16px',
-        background: 'rgba(255,255,255,0.04)',
-        borderBottom: '1px solid rgba(255,255,255,0.06)',
-      }}>
-        <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#EF4444' }} />
-        <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#F59E0B' }} />
-        <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#10B981' }} />
+    <motion.div
+      ref={ref}
+      initial={{ opacity: 0, y: 28 }}
+      animate={inView ? { opacity: 1, y: 0 } : {}}
+      transition={{ duration: 0.6, delay: 0.15 * index, ease: [0.22, 1, 0.36, 1] }}
+      style={{
+        padding: '28px 24px',
+        borderRadius: '20px',
+        background: 'rgba(255,255,255,0.025)',
+        border: '1px solid rgba(255,255,255,0.06)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06), 0 16px 40px rgba(0,0,0,0.14)',
+        display: 'flex',
+        flexDirection: 'column' as const,
+        gap: '16px',
+      }}
+    >
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{
+          width: '6px', height: '6px', borderRadius: '50%',
+          background: block.accent, flexShrink: 0,
+        }} />
         <span style={{
-          marginLeft: '12px', fontFamily: MONO, fontSize: '11px',
-          color: 'rgba(255,255,255,0.3)', fontFeatureSettings: "'tnum' 1",
+          fontFamily: BODY, fontSize: '10px', fontWeight: 700,
+          textTransform: 'uppercase', letterSpacing: '0.1em',
+          color: 'rgba(255,255,255,0.25)',
         }}>
-          nexus-bio-engine — live simulation
+          {block.label}
         </span>
       </div>
 
-      {/* Terminal body */}
-      <div
-        ref={terminalRef}
-        style={{
-          background: '#0a0b10',
-          padding: '16px 20px',
-          height: '340px',
-          overflowY: 'auto',
-          fontFamily: MONO,
-          fontSize: '12.5px',
-          lineHeight: 1.8,
-        }}
-      >
-        {/* Completed lines */}
-        {lines.map((line, i) => (
-          <div key={i} style={{ color: LINE_COLORS[line.color], whiteSpace: 'pre-wrap' }}>
-            {line.color !== 'divider' ? `> ${line.text}` : line.text}
-          </div>
-        ))}
+      <h4 style={{
+        fontFamily: SERIF, fontSize: '17px', fontWeight: 400,
+        color: 'rgba(255,255,255,0.85)', margin: 0,
+        lineHeight: 1.3, letterSpacing: '-0.01em',
+      }}>
+        {block.title}
+      </h4>
 
-        {/* Currently typing line */}
-        {typingLine && partialText.length > 0 && (
-          <div style={{ color: LINE_COLORS[typingLine.color], whiteSpace: 'pre-wrap' }}>
-            {'> '}{partialText}
-            <span style={{
-              display: 'inline-block', width: '7px', height: '14px',
-              background: LINE_COLORS[typingLine.color],
-              marginLeft: '2px', verticalAlign: 'middle',
-              animation: 'engineCursorBlink 0.8s step-end infinite',
-            }} />
-          </div>
-        )}
-
-        {/* Blinking cursor when idle */}
-        {!typingLine && currentIndex >= TERMINAL_SCRIPT.length && (
-          <div style={{ color: '#64748B' }}>
-            {'> '}
-            <span style={{
-              display: 'inline-block', width: '7px', height: '14px',
-              background: '#64748B',
-              marginLeft: '2px', verticalAlign: 'middle',
-              animation: 'engineCursorBlink 0.8s step-end infinite',
-            }} />
-          </div>
-        )}
+      {/* Formula */}
+      <div style={{
+        padding: '14px 18px', borderRadius: '12px',
+        background: 'rgba(255,255,255,0.03)',
+        border: '1px solid rgba(255,255,255,0.05)',
+      }}>
+        <p style={{
+          fontFamily: MATH, fontSize: '17px', fontStyle: 'italic',
+          color: 'rgba(255,255,255,0.75)', margin: 0,
+          lineHeight: 1.5, letterSpacing: '0.02em',
+        }}>
+          {block.formula}
+        </p>
       </div>
 
-      {/* Cursor blink keyframes */}
-      <style>{`
-        @keyframes engineCursorBlink {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0; }
-        }
-      `}</style>
+      {/* Calculation */}
+      <p style={{
+        fontFamily: BODY, fontSize: '12px',
+        color: 'rgba(255,255,255,0.35)', margin: 0,
+        lineHeight: 1.7, fontFeatureSettings: "'tnum' 1",
+      }}>
+        {block.calculation}
+      </p>
+
+      {/* Result — glowing border */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={inView ? { opacity: 1 } : {}}
+        transition={{ duration: 0.5, delay: 0.15 * index + 0.4 }}
+        style={{
+          padding: '12px 16px', borderRadius: '12px',
+          background: `${block.resultColor}08`,
+          border: `1px solid ${block.resultColor}30`,
+          boxShadow: `0 0 20px ${block.resultColor}10`,
+        }}
+      >
+        <p style={{
+          fontFamily: MATH, fontSize: '15px', fontWeight: 600,
+          color: block.resultColor, margin: 0,
+          lineHeight: 1.4, fontFeatureSettings: "'tnum' 1",
+        }}>
+          {block.resultValue}
+        </p>
+        {block.resultLabel && (
+          <p style={{
+            fontFamily: BODY, fontSize: '11px',
+            color: `${block.resultColor}BB`, margin: '6px 0 0',
+            lineHeight: 1.4, fontFeatureSettings: "'tnum' 1",
+          }}>
+            {block.resultLabel}
+          </p>
+        )}
+      </motion.div>
+    </motion.div>
+  );
+}
+
+// ── AlgorithmShowcase Component ───────────────────────────────────────
+function AlgorithmShowcase() {
+  const ref = useRef<HTMLDivElement>(null);
+  const inView = useInView(ref, { once: true, margin: '-60px' });
+
+  return (
+    <div ref={ref}>
+      {/* Sub-header */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={inView ? { opacity: 1, y: 0 } : {}}
+        transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+        style={{ marginBottom: '24px' }}
+      >
+        <p style={{
+          fontFamily: BODY, fontSize: '11px', fontWeight: 700,
+          textTransform: 'uppercase', letterSpacing: '0.1em',
+          color: 'rgba(255,255,255,0.2)', margin: '0 0 8px',
+        }}>
+          Step-by-step derivation
+        </p>
+        <p style={{
+          fontFamily: BODY, fontSize: '13px',
+          color: 'rgba(255,255,255,0.35)', margin: 0,
+          lineHeight: 1.65, maxWidth: '520px',
+        }}>
+          The exact formulas and real-world data our engine uses — fully auditable,
+          no black boxes.
+        </p>
+      </motion.div>
+
+      {/* Formula blocks grid */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+        gap: '16px',
+      }}>
+        {FORMULA_BLOCKS.map((block, i) => (
+          <FormulaBlock key={block.label} block={block} index={i} />
+        ))}
+      </div>
     </div>
   );
 }
@@ -377,14 +372,8 @@ export default function FeaturesArchitecture() {
           ))}
         </div>
 
-        {/* Live Computation Terminal */}
-        <motion.div
-          initial={{ opacity: 0, y: 32 }}
-          animate={inView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.7, delay: 0.45, ease: [0.22, 1, 0.36, 1] }}
-        >
-          <EngineTerminal />
-        </motion.div>
+        {/* Algorithm Showcase — Mathematical Derivations */}
+        <AlgorithmShowcase />
       </div>
     </section>
   );
