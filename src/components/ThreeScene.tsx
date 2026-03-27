@@ -21,7 +21,6 @@ const RISK_THEME = {
 // ─── 自动合规引擎 (解决你的后顾之忧) ────────────────────────────────────────
 // 即使 JSON 数据缺失，前端也会根据属性自动判定商业风险
 function getComplianceIntel(node: PathwayNode) {
-  // 核心修复：将 node.type 修正为正确的 node.nodeType
   const isImpurity = node.nodeType?.toLowerCase().includes('impurity') || node.color_mapping === 'Red';
   const riskScore = node.risk_score ?? 0;
   const isHighlyUnstable = node.thermodynamic_stability?.toLowerCase().includes('low');
@@ -107,7 +106,7 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, onClick, onHov }: 
               {complianceTag}
             </div>
             <div style={{ color: '#fff', fontSize: '14px', fontWeight: 700, marginBottom: '6px' }}>
-              {node.name || node.label}
+              {node.canonicalLabel || node.label}
             </div>
             
             {/* 核心商业警告 */}
@@ -132,7 +131,7 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, onClick, onHov }: 
           color: hov || sel ? '#fff' : 'rgba(160,180,200,0.45)',
           fontSize: '10px', fontWeight: sel ? 700 : 400,
           textShadow: '0 2px 8px rgba(0,0,0,0.9)', transition: 'all 0.3s'
-        }}>{node.name || node.label}</div>
+        }}>{node.canonicalLabel || node.label}</div>
       </Html>
     </group>
   );
