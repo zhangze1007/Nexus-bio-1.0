@@ -119,46 +119,59 @@ const createProceduralTexture = () => {
   return texture;
 };
 
-// ─── Pastels & Scientific colors ────────────────────────────────────────
-const PastelColors = ['#C8D8E8','#C8E0D0','#DDD0E8','#E8DCC8','#C8DCDC','#DCE8C8','#E8C8D4','#CCE0D8'];
-const SHOWCASE_N_CONF: Record<string,number> = { acetyl_coa:85,hmg_coa:72,mevalonate:68,fpp:91,amorpha_4_11_diene:88,artemisinic_acid:76,artemisinin:93 };
+// ─── Node-type group colors — fixed vibrant palette per biological role ─
+const NODE_TYPE_COLORS: Record<string, string> = {
+  metabolite:   '#4fc3f7',  // Cyan — primary pathway metabolites
+  enzyme:       '#ab47bc',  // Purple — catalytic proteins
+  gene:         '#66bb6a',  // Green — genetic elements
+  complex:      '#7e57c2',  // Deep purple — multi-subunit assemblies
+  cofactor:     '#26c6da',  // Teal — auxiliary molecules
+  impurity:     '#ef5350',  // Red — impurity / risk
+  intermediate: '#ffa726',  // Orange — transient intermediates
+  unknown:      '#90a4ae',  // Blue-grey — unclassified
+};
 
-function conf2pastel(p: number): string {
-  if (p >= 90) return '#C8D8E8'; // Blue
-  if (p >= 70) return '#C8E0D0'; // Green
-  if (p >= 50) return '#E8DCC8'; // Yellow
-  return '#E8C8D4'; // Red
-}
+// Fallback palette for nodes without nodeType
+const PastelColors = ['#C8D8E8','#C8E0D0','#DDD0E8','#E8DCC8','#C8DCDC','#DCE8C8','#E8C8D4','#CCE0D8'];
 
 function getColor(node: PathwayNode): string {
-  // --- Full color_mapping support for all 6 risk/status levels ---
-  if (node.color_mapping === 'Red') return '#dc3545';    // Impurity / High Cost
-  if (node.color_mapping === 'Green') return '#28a745';  // Verified High-Yield
-  if (node.color_mapping === 'Yellow') return '#e8c84a'; // Moderate stability
-  if (node.color_mapping === 'Orange') return '#e87040'; // Unstable / Low yield
-  if (node.color_mapping === 'Purple') return '#9b59b6'; // Dual-role intermediate
-  if (node.color_mapping === 'Blue') return '#5b9bd5';   // Cofactor / auxiliary
+  // Priority 1: impurity/risk nodes always red regardless of nodeType
+  if (node.color_mapping === 'Red') return '#ef5350';
 
-  // Fallback to confidence scores for PubChem conformers or showcase nodes
-  const c = SHOWCASE_N_CONF[node.id];
-  return c !== undefined ? conf2pastel(c) : (node.color || PastelColors[hash(node.id) % PastelColors.length]);
+  // Priority 2: use fixed group color for the node's biological type
+  const typeColor = NODE_TYPE_COLORS[node.nodeType || 'unknown'];
+  if (typeColor) return typeColor;
+
+  // Priority 3: fallback to legacy color field or hash palette
+  return node.color || PastelColors[hash(node.id) % PastelColors.length];
 }
 
 function getConfidenceValue(node: PathwayNode): number {
   if (node.confidenceScore !== undefined) return node.confidenceScore;
-  const c = SHOWCASE_N_CONF[node.id];
-  return c !== undefined ? c / 100 : 0.75; // Default for missing data
+  return 0.75; // Default for missing data
 }
 
-// ─── Geometry Components — deterministic shape distribution ────────────
-type GCfg = { geom:'oct'|'dodec'|'tetra'|'icos'|'sph'|'tor'; scale:number; rings:number; rr:number[]; rt:number[]; sats:number; sr:number; ss:number; spin:number; inner:boolean; };
-function glyphCfg(id: string, cc: number): GCfg {
-  const geoms = ['oct','dodec','tetra','icos','sph'] as GCfg['geom'][]; // Torus is too heavy
+// ─── Geometry Components — fixed shape per node type ───────────────────
+type GeomKind = 'oct'|'dodec'|'tetra'|'icos'|'sph';
+const NODE_TYPE_SHAPES: Record<string, GeomKind> = {
+  metabolite:   'sph',    // Sphere — organic molecules
+  enzyme:       'oct',    // Octahedron — catalytic proteins
+  gene:         'tetra',  // Tetrahedron — genetic elements
+  complex:      'dodec',  // Dodecahedron — multi-subunit assemblies
+  cofactor:     'icos',   // Icosahedron — auxiliary molecules
+  impurity:     'tetra',  // Tetrahedron — warning shape (sharp edges)
+  intermediate: 'icos',   // Icosahedron — transient forms
+  unknown:      'dodec',  // Dodecahedron — default
+};
+
+type GCfg = { geom:GeomKind; scale:number; rings:number; rr:number[]; rt:number[]; sats:number; sr:number; ss:number; spin:number; inner:boolean; };
+function glyphCfg(id: string, cc: number, nodeType?: string): GCfg {
+  const geom = NODE_TYPE_SHAPES[nodeType || 'unknown'] || 'dodec';
   const rc = hashInt(id,1,1,2);
-  return { geom: geoms[hashInt(id,0,0,4)], scale: 0.22+cc*0.04+hashFloat(id,2,0,0.04), rings: rc, rr: Array.from({length:rc},(_,i)=>hashFloat(id,10+i,0.5,0.8)), rt: Array.from({length:rc},(_,i)=>hashFloat(id,20+i,0,Math.PI)), sats: hashInt(id,3,2,4), sr: hashFloat(id,4,0.6,0.9), ss: hashFloat(id,5,0.035,0.055), spin: hashFloat(id,6,0.04,0.10), inner: hash(id)%3===0 };
+  return { geom, scale: 0.22+cc*0.04+hashFloat(id,2,0,0.04), rings: rc, rr: Array.from({length:rc},(_,i)=>hashFloat(id,10+i,0.5,0.8)), rt: Array.from({length:rc},(_,i)=>hashFloat(id,20+i,0,Math.PI)), sats: hashInt(id,3,2,4), sr: hashFloat(id,4,0.6,0.9), ss: hashFloat(id,5,0.035,0.055), spin: hashFloat(id,6,0.04,0.10), inner: hash(id)%3===0 };
 }
 
-function GeoComp({ g, s }: { g: GCfg['geom']; s: number }) {
+function GeoComp({ g, s }: { g: GeomKind; s: number }) {
   switch(g) {
     case 'oct':   return <octahedronGeometry args={[s, 0]} />;
     case 'dodec': return <dodecahedronGeometry args={[s, 0]} />;
@@ -194,7 +207,7 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov
   const conf   = getConfidenceValue(node);
   const finalColor = getColor(node);
   const lbl    = node.canonicalLabel?.trim() || node.label || node.id;
-  const cfg    = useMemo(() => glyphCfg(node.id, cc), [node.id, cc]);
+  const cfg    = useMemo(() => glyphCfg(node.id, cc, node.nodeType), [node.id, cc, node.nodeType]);
   const tgt    = sel ? 1.28 : hov ? 1.10 : 1.0;
   const colVec = useMemo(() => new THREE.Color(finalColor), [finalColor]);
 
@@ -233,15 +246,14 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov
     >
       <mesh ref={bodyRef}>
         <GeoComp g={cfg.geom} s={0.32 + cc * 0.05} />
-        {/* 保持你的噪点不光滑质感 */}
         <meshPhysicalMaterial
           color={finalColor}
           emissive={finalColor}
-          emissiveIntensity={0.03}
+          emissiveIntensity={0.12}
           roughnessMap={roughnessTexture} 
-          roughness={0.8} 
-          metalness={0.03}
-          transmission={0.1}
+          roughness={0.55} 
+          metalness={0.08}
+          transmission={0.05}
           depthWrite={true} 
         />
       </mesh>
@@ -526,15 +538,21 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId }
         ))}
       </div>
 
-      <div style={{ pointerEvents: 'none', position:'absolute', bottom:'13px', right:'13px', zIndex:10, background:'rgba(0,0,0,0.4)', padding:'6px 10px', borderRadius:'8px', border:'1px solid rgba(255,255,255,0.05)' }}>
-        <div style={{ display:'flex', alignItems:'center', gap:'6px', marginBottom:'4px' }}>
-          <div style={{ width:'8px', height:'8px', background:'#dc3545', borderRadius:'2px' }} />
-          <span style={{ color:'rgba(255,255,255,0.4)', fontSize:'8px', fontFamily:"'Public Sans',sans-serif" }}>Impurity / High Cost</span>
-        </div>
-        <div style={{ display:'flex', alignItems:'center', gap:'6px' }}>
-          <div style={{ width:'8px', height:'8px', background:'#28a745', borderRadius:'2px' }} />
-          <span style={{ color:'rgba(255,255,255,0.4)', fontSize:'8px', fontFamily:"'Public Sans',sans-serif" }}>Verified High-Yield</span>
-        </div>
+      <div style={{ pointerEvents: 'none', position:'absolute', bottom:'13px', right:'13px', zIndex:10, background:'rgba(0,0,0,0.5)', padding:'8px 12px', borderRadius:'10px', border:'1px solid rgba(255,255,255,0.06)' }}>
+        <p style={{ color:'rgba(255,255,255,0.25)', fontSize:'8px', fontFamily:"'Public Sans',sans-serif", fontWeight:700, margin:'0 0 6px', letterSpacing:'0.07em', textTransform:'uppercase' }}>Node Types</p>
+        {[
+          { c:'#4fc3f7', l:'Metabolite', s:'●' },
+          { c:'#ab47bc', l:'Enzyme', s:'◆' },
+          { c:'#66bb6a', l:'Gene', s:'▲' },
+          { c:'#ffa726', l:'Intermediate', s:'⬟' },
+          { c:'#ef5350', l:'Impurity', s:'▲' },
+          { c:'#26c6da', l:'Cofactor', s:'⬟' },
+        ].map(x => (
+          <div key={x.l} style={{ display:'flex', alignItems:'center', gap:'6px', marginBottom:'3px' }}>
+            <span style={{ color:x.c, fontSize:'10px', lineHeight:1, width:'10px', textAlign:'center' }}>{x.s}</span>
+            <span style={{ color:'rgba(255,255,255,0.4)', fontSize:'8px', fontFamily:"'Public Sans',sans-serif" }}>{x.l}</span>
+          </div>
+        ))}
       </div>
 
       <SceneErrorBoundary onError={(e) => setStatus('error')}>

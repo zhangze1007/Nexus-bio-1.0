@@ -57,8 +57,10 @@ const DEFAULT_EDGES: PathwayEdge[] = [
   { start: 'hmg_coa',           end: 'mevalonate',          relationshipType: 'converts',  direction: 'forward', predicted_delta_G_kJ_mol: -53.1, spontaneity: 'Highly Spontaneous', thickness_mapping: 'Thick', yield_prediction: 'Rate-limiting step' },
   { start: 'mevalonate',        end: 'fpp',                 relationshipType: 'produces',  direction: 'forward', predicted_delta_G_kJ_mol: -30.0, spontaneity: 'Spontaneous', thickness_mapping: 'Medium', yield_prediction: 'High' },
   { start: 'fpp',               end: 'amorpha_4_11_diene',  relationshipType: 'catalyzes', direction: 'forward', predicted_delta_G_kJ_mol: -45.2, spontaneity: 'Highly Spontaneous', thickness_mapping: 'Medium', yield_prediction: 'Moderate' },
+  { start: 'fpp',               end: 'epi_cedrol',          relationshipType: 'produces',  direction: 'forward', predicted_delta_G_kJ_mol: -28.0, spontaneity: 'Spontaneous', thickness_mapping: 'Thin', yield_prediction: 'Side reaction — ~15% FPP diverted' },
   { start: 'amorpha_4_11_diene', end: 'artemisinic_acid',   relationshipType: 'converts',  direction: 'forward', predicted_delta_G_kJ_mol: -120.5, spontaneity: 'Spontaneous', thickness_mapping: 'Thick', yield_prediction: 'High with CPR co-expression' },
   { start: 'artemisinic_acid',  end: 'artemisinin',         relationshipType: 'produces',  direction: 'forward', predicted_delta_G_kJ_mol: -150.0, spontaneity: 'Spontaneous (condition dependent)', thickness_mapping: 'Thin', yield_prediction: 'Low to Moderate without optimization' },
+  { start: 'artemisinic_acid',  end: 'arteannuin_b',        relationshipType: 'produces',  direction: 'forward', predicted_delta_G_kJ_mol: -65.0, spontaneity: 'Spontaneous', thickness_mapping: 'Thin', yield_prediction: 'Non-enzymatic rearrangement — competing side product' },
 ];
 
 // ── Bento stat card ────────────────────────────────────────────────────

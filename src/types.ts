@@ -143,4 +143,6 @@ export const SHOWCASE_PUBCHEM_CIDS: Record<string, number> = {
   amorpha_4_11_diene: 11230765,
   artemisinic_acid: 5362031,
   artemisinin: 68827,
+  epi_cedrol: 91458,
+  arteannuin_b: 11282394,
 };

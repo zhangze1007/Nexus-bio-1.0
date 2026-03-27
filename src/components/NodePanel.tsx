@@ -10,6 +10,10 @@ import KineticPanel from './KineticPanel';
 import ThermodynamicsPanel from './ThermodynamicsPanel';
 import CellImageViewer from './CellImageViewer';
 
+// ── Compliance thresholds ─────────────────────────────────────────────
+const HIGH_RISK_THRESHOLD = 0.7;
+const MODERATE_RISK_THRESHOLD = 0.3;
+
 // ── AlphaFold IDs for showcase enzymes ────────────────────────────────
 const ENZYME_ALPHAFOLD: Record<string, { afId: string; pdbId: string; name: string }> = {
   amorpha_4_11_diene: { afId: 'Q9AR04', pdbId: '2ON5', name: 'Amorphadiene Synthase' },
@@ -597,52 +601,118 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                     )}
                   </div>
 
-                  {/* ─── 修改点 2：商业风险与合规展示面板 ──────────────────────── */}
-                  {(node.risk_score !== undefined || node.separation_cost_index !== undefined || node.audit_trail) && (
-                    <>
-                      <div style={{ padding: '14px 16px', borderRadius: '20px', background: node.risk_score && node.risk_score > 0.7 ? 'rgba(220,53,69,0.1)' : 'rgba(255,255,255,0.03)', border: `1px solid ${node.risk_score && node.risk_score > 0.7 ? 'rgba(220,53,69,0.3)' : 'rgba(255,255,255,0.06)'}`, marginBottom: '16px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                          <ShieldAlert size={14} color={node.risk_score && node.risk_score > 0.7 ? '#dc3545' : '#28a745'} />
-                          <span style={{ fontSize: '11px', fontWeight: 800, color: 'rgba(255,255,255,0.85)', letterSpacing: '0.05em', fontFamily: "'Public Sans', sans-serif" }}>COMMERCIAL RISK & COMPLIANCE</span>
-                        </div>
-                        
-                        {(node.separation_cost_index !== undefined || node.risk_score !== undefined) && (
-                          <div style={{ marginBottom: '12px' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'rgba(255,255,255,0.5)', marginBottom: '6px', fontFamily: "'Public Sans', sans-serif" }}>
-                              <span>Separation Cost Index</span>
-                              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                {(node.separation_cost_index ?? node.risk_score ?? 0) > 0.7 && (
-                                  <span style={{ color: '#dc3545', fontWeight: 700, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>High Separation Cost</span>
-                                )}
-                                {((node.separation_cost_index ?? node.risk_score ?? 0) * 100).toFixed(0)}%
-                              </span>
-                            </div>
-                            <div style={{ height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '2px' }}>
-                              <div style={{ width: `${(node.separation_cost_index ?? node.risk_score ?? 0) * 100}%`, height: '100%', background: (node.separation_cost_index ?? node.risk_score ?? 0) > 0.7 ? '#dc3545' : '#28a745', borderRadius: '2px' }} />
-                            </div>
-                          </div>
-                        )}
-
-                        {node.toxicity_impact && (
-                          <p style={{ color: '#ff7875', fontSize: '11px', fontWeight: 600, margin: '0 0 12px', fontFamily: "'Public Sans', sans-serif" }}>⚠️ Potential Toxicity: {node.toxicity_impact}</p>
-                        )}
-
-                        {node.thermodynamic_stability && (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px' }}>
-                            <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', fontFamily: "'Public Sans', sans-serif" }}>Thermodynamic Stability:</span>
-                            <span style={{ fontSize: '10px', fontWeight: 700, color: node.thermodynamic_stability === 'High' ? '#28a745' : node.thermodynamic_stability === 'Low' ? '#dc3545' : '#e8c84a', fontFamily: "'Public Sans', sans-serif" }}>{node.thermodynamic_stability}</span>
-                          </div>
-                        )}
-
-                        {node.audit_trail && (
-                          <div style={{ padding: '10px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px', fontSize: '11px', color: 'rgba(255,255,255,0.45)', fontStyle: 'italic', fontFamily: "'Public Sans', sans-serif", border: '1px solid rgba(255,255,255,0.04)' }}>
-                             <span style={{ display: 'block', fontSize: '9px', color: 'rgba(255,255,255,0.3)', marginBottom: '4px', fontWeight: 700, textTransform: 'uppercase', fontStyle: 'normal' }}>Verifiable Audit Trail</span>
-                             &ldquo;{node.audit_trail}&rdquo;
-                          </div>
-                        )}
+                  {/* ─── Purity Status Badge — always visible ──────────────────────── */}
+                  <div style={{ padding: '10px 14px', borderRadius: '16px', marginBottom: '12px',
+                    background: node.nodeType === 'impurity' || (node.risk_score && node.risk_score > MODERATE_RISK_THRESHOLD) 
+                      ? 'rgba(239,83,80,0.12)' 
+                      : node.nodeType === 'intermediate' 
+                        ? 'rgba(255,167,38,0.10)' 
+                        : 'rgba(40,167,69,0.10)',
+                    border: `1px solid ${node.nodeType === 'impurity' || (node.risk_score && node.risk_score > MODERATE_RISK_THRESHOLD)
+                      ? 'rgba(239,83,80,0.3)'
+                      : node.nodeType === 'intermediate'
+                        ? 'rgba(255,167,38,0.25)'
+                        : 'rgba(40,167,69,0.25)'}`,
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '14px' }}>
+                        {node.nodeType === 'impurity' || (node.risk_score && node.risk_score > MODERATE_RISK_THRESHOLD) ? '⚠️' : node.nodeType === 'intermediate' ? '🔶' : '✅'}
+                      </span>
+                      <div>
+                        <span style={{ fontSize: '12px', fontWeight: 700, fontFamily: "'Public Sans', sans-serif",
+                          color: node.nodeType === 'impurity' || (node.risk_score && node.risk_score > MODERATE_RISK_THRESHOLD)
+                            ? '#ef5350'
+                            : node.nodeType === 'intermediate' ? '#ffa726' : '#66bb6a',
+                        }}>
+                          {node.nodeType === 'impurity' ? 'Impurity — Purification Risk'
+                            : (node.risk_score && node.risk_score > MODERATE_RISK_THRESHOLD) ? 'Elevated Commercial Risk'
+                            : node.nodeType === 'intermediate' ? 'Pathway Intermediate'
+                            : 'Verified High-Yield'}
+                        </span>
+                        <span style={{ display: 'block', fontSize: '10px', color: 'rgba(255,255,255,0.4)', marginTop: '2px', fontFamily: "'Public Sans', sans-serif" }}>
+                          {node.nodeType === 'impurity'
+                            ? 'This compound requires separation from the target product'
+                            : (node.risk_score && node.risk_score > MODERATE_RISK_THRESHOLD)
+                              ? 'Moderate to high risk — monitor during production'
+                              : node.nodeType === 'intermediate'
+                                ? 'Transient intermediate — may require yield optimization'
+                                : 'On-pathway metabolite — standard purification sufficient'}
+                        </span>
                       </div>
-                    </>
-                  )}
+                    </div>
+                  </div>
+
+                  {/* ─── Commercial Risk & Compliance Panel ──────────────────────── */}
+                  <div style={{ padding: '14px 16px', borderRadius: '20px', background: node.risk_score && node.risk_score > HIGH_RISK_THRESHOLD ? 'rgba(220,53,69,0.1)' : 'rgba(255,255,255,0.03)', border: `1px solid ${node.risk_score && node.risk_score > HIGH_RISK_THRESHOLD ? 'rgba(220,53,69,0.3)' : 'rgba(255,255,255,0.06)'}`, marginBottom: '16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                      <ShieldAlert size={14} color={node.risk_score && node.risk_score > MODERATE_RISK_THRESHOLD ? '#ef5350' : '#66bb6a'} />
+                      <span style={{ fontSize: '11px', fontWeight: 800, color: 'rgba(255,255,255,0.85)', letterSpacing: '0.05em', fontFamily: "'Public Sans', sans-serif" }}>COMMERCIAL RISK & COMPLIANCE</span>
+                    </div>
+
+                    {/* Risk Score Bar */}
+                    <div style={{ marginBottom: '12px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'rgba(255,255,255,0.5)', marginBottom: '6px', fontFamily: "'Public Sans', sans-serif" }}>
+                        <span>Risk Score</span>
+                        <span style={{ fontWeight: 600, color: (node.risk_score ?? 0) > HIGH_RISK_THRESHOLD ? '#ef5350' : (node.risk_score ?? 0) > MODERATE_RISK_THRESHOLD ? '#ffa726' : '#66bb6a' }}>
+                          {((node.risk_score ?? 0) * 100).toFixed(0)}%
+                        </span>
+                      </div>
+                      <div style={{ height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '2px' }}>
+                        <div style={{ width: `${(node.risk_score ?? 0) * 100}%`, height: '100%', borderRadius: '2px',
+                          background: (node.risk_score ?? 0) > HIGH_RISK_THRESHOLD ? '#ef5350' : (node.risk_score ?? 0) > MODERATE_RISK_THRESHOLD ? '#ffa726' : '#66bb6a',
+                        }} />
+                      </div>
+                    </div>
+
+                    {/* Separation Cost Index Bar */}
+                    <div style={{ marginBottom: '12px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'rgba(255,255,255,0.5)', marginBottom: '6px', fontFamily: "'Public Sans', sans-serif" }}>
+                        <span>Separation Cost Index</span>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          {(node.separation_cost_index ?? 0) > HIGH_RISK_THRESHOLD && (
+                            <span style={{ color: '#ef5350', fontWeight: 700, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>High Separation Cost</span>
+                          )}
+                          <span style={{ fontWeight: 600, color: (node.separation_cost_index ?? 0) > HIGH_RISK_THRESHOLD ? '#ef5350' : (node.separation_cost_index ?? 0) > MODERATE_RISK_THRESHOLD ? '#ffa726' : '#66bb6a' }}>
+                            {((node.separation_cost_index ?? 0) * 100).toFixed(0)}%
+                          </span>
+                        </span>
+                      </div>
+                      <div style={{ height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '2px' }}>
+                        <div style={{ width: `${(node.separation_cost_index ?? 0) * 100}%`, height: '100%', borderRadius: '2px',
+                          background: (node.separation_cost_index ?? 0) > HIGH_RISK_THRESHOLD ? '#ef5350' : (node.separation_cost_index ?? 0) > MODERATE_RISK_THRESHOLD ? '#ffa726' : '#66bb6a',
+                        }} />
+                      </div>
+                    </div>
+
+                    {/* Toxicity Impact */}
+                    {node.toxicity_impact && (
+                      <div style={{ padding: '10px 12px', borderRadius: '12px', marginBottom: '12px',
+                        background: node.nodeType === 'impurity' ? 'rgba(239,83,80,0.08)' : 'rgba(255,255,255,0.02)',
+                        border: `1px solid ${node.nodeType === 'impurity' ? 'rgba(239,83,80,0.15)' : 'rgba(255,255,255,0.04)'}`,
+                      }}>
+                        <span style={{ display: 'block', fontSize: '9px', color: 'rgba(255,255,255,0.35)', marginBottom: '4px', fontWeight: 700, textTransform: 'uppercase', fontFamily: "'Public Sans', sans-serif" }}>Potential Toxicity Analysis</span>
+                        <p style={{ color: node.nodeType === 'impurity' ? '#ff7875' : 'rgba(255,255,255,0.55)', fontSize: '11px', fontWeight: 500, margin: 0, lineHeight: 1.5, fontFamily: "'Public Sans', sans-serif" }}>
+                          {node.toxicity_impact}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Thermodynamic Stability */}
+                    {node.thermodynamic_stability && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px' }}>
+                        <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', fontFamily: "'Public Sans', sans-serif" }}>Thermodynamic Stability:</span>
+                        <span style={{ fontSize: '10px', fontWeight: 700, color: node.thermodynamic_stability === 'High' ? '#66bb6a' : node.thermodynamic_stability === 'Low' ? '#ef5350' : '#ffa726', fontFamily: "'Public Sans', sans-serif" }}>{node.thermodynamic_stability}</span>
+                      </div>
+                    )}
+
+                    {/* Audit Trail */}
+                    {node.audit_trail && (
+                      <div style={{ padding: '10px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px', fontSize: '11px', color: 'rgba(255,255,255,0.45)', fontStyle: 'italic', fontFamily: "'Public Sans', sans-serif", border: '1px solid rgba(255,255,255,0.04)' }}>
+                         <span style={{ display: 'block', fontSize: '9px', color: 'rgba(255,255,255,0.3)', marginBottom: '4px', fontWeight: 700, textTransform: 'uppercase', fontStyle: 'normal' }}>Verifiable Audit Trail</span>
+                         &ldquo;{node.audit_trail}&rdquo;
+                      </div>
+                    )}
+                  </div>
 
                   {node.confidenceScore !== undefined && <ConfidenceBar score={node.confidenceScore} />}
 
