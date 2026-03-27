@@ -2,7 +2,8 @@
 
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Download, FileText, Hash, Link2, ChevronDown, ChevronUp, Atom, Activity, Thermometer, Loader2, ExternalLink } from 'lucide-react';
+// 注入了 ShieldAlert 用于合规面板
+import { X, Download, FileText, Hash, Link2, ChevronDown, ChevronUp, Atom, Activity, Thermometer, Loader2, ExternalLink, ShieldAlert } from 'lucide-react';
 import { PathwayNode, PathwayEdge, NodeType, EdgeRelationshipType, SHOWCASE_PUBCHEM_CIDS } from '../types';
 import MoleculeViewer from './MoleculeViewer';
 import KineticPanel from './KineticPanel';
@@ -313,9 +314,11 @@ interface NodePanelProps {
   allEdges?: PathwayEdge[];
 }
 
+// ─── 修改点 1：补齐了缺失的标签，修复构建错误 ────────────────────────────
 const NODE_TYPE_LABELS: Record<NodeType, string> = {
   metabolite: 'Metabolite', enzyme: 'Enzyme', gene: 'Gene',
   complex: 'Protein Complex', cofactor: 'Cofactor', unknown: 'Unknown',
+  impurity: 'Potential Impurity', intermediate: 'Intermediate Specie'
 };
 const EDGE_TYPE_LABELS: Record<EdgeRelationshipType, string> = {
   catalyzes: 'catalyzes', produces: 'produces', consumes: 'consumes',
@@ -341,21 +344,15 @@ function ConfidenceBar({ score }: { score: number }) {
   );
 }
 
-// ── Real data-driven confidence histogram ─────────────────────────────
-// Dynamically bins actual confidenceScore values from pathway nodes
-// Updates reactively whenever nodes change (useMemo)
 function PLDDTHistogram({ nodes, currentNodeId }: { nodes?: PathwayNode[]; currentNodeId?: string }) {
-  const BINS = 10; // Fixed 10 bins: 0–10, 10–20, ..., 90–100
+  const BINS = 10; 
 
   const stats = useMemo(() => {
     if (!nodes?.length) return null;
 
-    // Extract real confidence scores — no fallback to 0.75
-    // Only include nodes with actual confidenceScore data
     const scores = nodes
       .map(n => {
         if (n.confidenceScore !== undefined) return Math.round(n.confidenceScore * 100);
-        // Showcase node fallback using known values
         const knownConf: Record<string, number> = {
           acetyl_coa: 85, hmg_coa: 72, mevalonate: 68,
           fpp: 91, amorpha_4_11_diene: 88,
@@ -367,7 +364,6 @@ function PLDDTHistogram({ nodes, currentNodeId }: { nodes?: PathwayNode[]; curre
 
     if (!scores.length) return null;
 
-    // Bin into 10 equal intervals [0,10), [10,20), ..., [90,100]
     const binCounts = Array(BINS).fill(0);
     scores.forEach(s => {
       const binIdx = Math.min(Math.floor(s / 10), BINS - 1);
@@ -378,7 +374,6 @@ function PLDDTHistogram({ nodes, currentNodeId }: { nodes?: PathwayNode[]; curre
     const max  = Math.max(...binCounts);
     const n    = scores.length;
 
-    // Color per bin: interpolate from rose(<50) → sand(50-70) → sage(70-90) → blue(>90)
     const binColor = (idx: number): string => {
       const midpoint = idx * 10 + 5;
       if (midpoint < 50) return '#E8C8D4';
@@ -394,7 +389,7 @@ function PLDDTHistogram({ nodes, currentNodeId }: { nodes?: PathwayNode[]; curre
 
   const { binCounts, mean, max, n, binColor } = stats;
   const CHART_H = 72;
-  const meanBinX = (mean / 100) * BINS; // fractional bin position for mean line
+  const meanBinX = (mean / 100) * BINS;
 
   return (
     <div style={{ padding: '14px 16px', borderRadius: '20px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
@@ -415,7 +410,6 @@ function PLDDTHistogram({ nodes, currentNodeId }: { nodes?: PathwayNode[]; curre
 
       {/* Chart area */}
       <div style={{ position: 'relative', height: `${CHART_H + 20}px` }}>
-        {/* Y-axis label */}
         <div style={{ position: 'absolute', left: 0, top: 0, bottom: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', width: '18px' }}>
           {[max, Math.round(max/2), 0].map((v, i) => (
             <span key={i} style={{ fontFamily: "'Public Sans',sans-serif", fontSize: '8px', color: 'rgba(255,255,255,0.15)', fontFeatureSettings: "'tnum' 1", lineHeight: 1 }}>
@@ -424,9 +418,7 @@ function PLDDTHistogram({ nodes, currentNodeId }: { nodes?: PathwayNode[]; curre
           ))}
         </div>
 
-        {/* Bars + mean line */}
         <div style={{ marginLeft: '22px', position: 'relative', height: `${CHART_H}px`, display: 'flex', alignItems: 'flex-end', gap: '2px' }}>
-          {/* Mean line — vertical, across chart */}
           <div style={{
             position: 'absolute',
             left: `${(meanBinX / BINS) * 100}%`,
@@ -443,7 +435,6 @@ function PLDDTHistogram({ nodes, currentNodeId }: { nodes?: PathwayNode[]; curre
             }}>μ</span>
           </div>
 
-          {/* Histogram bars */}
           {binCounts.map((count, i) => {
             const barH = max > 0 ? Math.max((count / max) * (CHART_H - 4), count > 0 ? 3 : 0) : 0;
             const isCurrentNode = currentNodeId && nodes?.find(n => n.id === currentNodeId)?.confidenceScore !== undefined
@@ -465,7 +456,6 @@ function PLDDTHistogram({ nodes, currentNodeId }: { nodes?: PathwayNode[]; curre
           })}
         </div>
 
-        {/* X-axis labels */}
         <div style={{ marginLeft: '22px', display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}>
           {[0, 20, 40, 60, 80, 100].map(v => (
             <span key={v} style={{ fontFamily: "'Public Sans',sans-serif", fontSize: '8px', color: 'rgba(255,255,255,0.15)', fontFeatureSettings: "'tnum' 1" }}>
@@ -475,7 +465,6 @@ function PLDDTHistogram({ nodes, currentNodeId }: { nodes?: PathwayNode[]; curre
         </div>
       </div>
 
-      {/* X axis label */}
       <p style={{ fontFamily: "'Public Sans',sans-serif", fontSize: '9px', color: 'rgba(255,255,255,0.12)', margin: '4px 0 0', textAlign: 'center' }}>
         Confidence Score (%)
       </p>
@@ -511,7 +500,7 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
   const isEnzyme = node?.nodeType === 'enzyme' || node?.nodeType === 'complex';
   const isMetabolite = !isEnzyme && node?.nodeType !== 'gene';
 
-  // Tab definitions — context-aware
+  // Tab definitions
   const tabs = [
     { id: 'overview' as TabId, label: 'Overview', icon: <FileText size={12} /> },
     { id: 'structure' as TabId, label: 'Structure', icon: <Atom size={12} /> },
@@ -608,9 +597,43 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                     )}
                   </div>
 
+                  {/* ─── 修改点 2：商业风险与合规展示面板 ──────────────────────── */}
+                  {(node.risk_score !== undefined || node.audit_trail) && (
+                    <>
+                      <div style={{ padding: '14px 16px', borderRadius: '20px', background: node.risk_score && node.risk_score > 0.7 ? 'rgba(220,53,69,0.1)' : 'rgba(255,255,255,0.03)', border: `1px solid ${node.risk_score && node.risk_score > 0.7 ? 'rgba(220,53,69,0.3)' : 'rgba(255,255,255,0.06)'}`, marginBottom: '16px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                          <ShieldAlert size={14} color={node.risk_score && node.risk_score > 0.7 ? '#dc3545' : '#28a745'} />
+                          <span style={{ fontSize: '11px', fontWeight: 800, color: 'rgba(255,255,255,0.85)', letterSpacing: '0.05em', fontFamily: "'Public Sans', sans-serif" }}>COMMERCIAL RISK & COMPLIANCE</span>
+                        </div>
+                        
+                        {node.risk_score !== undefined && (
+                          <div style={{ marginBottom: '12px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'rgba(255,255,255,0.5)', marginBottom: '6px', fontFamily: "'Public Sans', sans-serif" }}>
+                              <span>Separation Cost Index</span>
+                              <span>{(node.risk_score * 100).toFixed(0)}%</span>
+                            </div>
+                            <div style={{ height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '2px' }}>
+                              <div style={{ width: `${node.risk_score * 100}%`, height: '100%', background: node.risk_score > 0.7 ? '#dc3545' : '#28a745', borderRadius: '2px' }} />
+                            </div>
+                          </div>
+                        )}
+
+                        {node.toxicity_impact && (
+                          <p style={{ color: '#ff7875', fontSize: '11px', fontWeight: 600, margin: '0 0 12px', fontFamily: "'Public Sans', sans-serif" }}>⚠️ {node.toxicity_impact}</p>
+                        )}
+
+                        {node.audit_trail && (
+                          <div style={{ padding: '10px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px', fontSize: '11px', color: 'rgba(255,255,255,0.45)', fontStyle: 'italic', fontFamily: "'Public Sans', sans-serif", border: '1px solid rgba(255,255,255,0.04)' }}>
+                             <span style={{ display: 'block', fontSize: '9px', color: 'rgba(255,255,255,0.3)', marginBottom: '4px', fontWeight: 700, textTransform: 'uppercase', fontStyle: 'normal' }}>Verifiable Audit Trail</span>
+                             "{node.audit_trail}"
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
+
                   {node.confidenceScore !== undefined && <ConfidenceBar score={node.confidenceScore} />}
 
-                  {/* pLDDT Histogram — shows distribution across all pathway nodes */}
                   {allNodes && allNodes.length > 1 && <PLDDTHistogram nodes={allNodes} currentNodeId={node.id} />}
 
                   <Divider />
@@ -652,7 +675,7 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                     </>
                   )}
 
-                  {/* Connections — Progressive Disclosure */}
+                  {/* Connections */}
                   {connections.length > 0 && allNodes && (
                     <>
                       <Divider />
@@ -741,7 +764,6 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                 return (
                   <>
                     {ENZYME_ALPHAFOLD[node.id] ? (
-                      // Enzyme → AlphaFold / RCSB rotating protein
                       <div>
                         <SectionLabel label="Protein Structure" />
                         <ProteinViewer
@@ -751,7 +773,6 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                         />
                       </div>
                     ) : rcsbMatch ? (
-                      // Nucleic acid / macromolecule → RCSB canonical structure
                       <div>
                         <SectionLabel label="Reference Structure" />
                         <div style={{ padding: '8px 12px', borderRadius: '16px', background: 'rgba(200,216,232,0.06)', border: '1px solid rgba(200,216,232,0.12)', marginBottom: '10px' }}>
@@ -764,7 +785,6 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                         />
                       </div>
                     ) : (() => {
-                      // Determine if this node is a molecular entity or a biological entity
                       const BIOLOGICAL_ENTITY_KEYWORDS = [
                         'cell','cells','tissue','tissues','organism','bacteria','virus','fungi','fungus',
                         'microorganism','microbe','plant','animal','yeast','algae','protozoa','parasite',
@@ -778,7 +798,6 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                         || (!node.nodeType && !pubchemCID);
 
                       if (!isBiologicalEntity || pubchemCID) {
-                        // Molecular entity → try PubChem
                         return (
                           <div>
                             <SectionLabel label="3D Molecular Structure" />
@@ -796,7 +815,6 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                         );
                       }
 
-                      // Biological entity → microscopy images
                       return (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                           <div style={{ padding: '8px 12px', borderRadius: '16px', background: 'rgba(200,224,208,0.04)', border: '1px solid rgba(200,224,208,0.1)' }}>
