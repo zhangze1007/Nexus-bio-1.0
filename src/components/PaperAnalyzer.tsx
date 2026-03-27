@@ -6,29 +6,38 @@ import {
   X, ChevronUp, Plus, AlertCircle, CheckCircle2, Loader2
 } from 'lucide-react';
 import { PathwayNode, PathwayEdge, isValidNode, isValidEdge, sanitizeNodeId } from '../types';
+import { BIO_THEME_COLORS } from './ThreeScene';
 
 interface PaperAnalyzerProps {
   onPathwayGenerated: (nodes: PathwayNode[], edges: PathwayEdge[]) => void;
 }
 
-const COLORS = [
-  '#e5e5e5','#d4d4d4','#a3a3a3','#737373',
-  '#525252','#404040','#f5f5f5','#d4d4d4',
-  '#c4c4c4','#b0b0b0',
-];
+/** Assign a semantic color from BIO_THEME_COLORS based on nodeType and risk. */
+function getSemanticColor(nodeType: string, riskScore?: number): string {
+  if (nodeType === 'impurity' || (riskScore !== undefined && riskScore > 0.7)) return BIO_THEME_COLORS.RED;
+  if (nodeType === 'enzyme')        return BIO_THEME_COLORS.AMBER;
+  if (nodeType === 'intermediate')  return BIO_THEME_COLORS.PURPLE;
+  if (nodeType === 'cofactor')      return BIO_THEME_COLORS.PINK;
+  if (nodeType === 'gene')          return BIO_THEME_COLORS.GREEN;
+  if (nodeType === 'complex')       return BIO_THEME_COLORS.PURPLE;
+  return BIO_THEME_COLORS.CYAN; // metabolite / unknown / default
+}
 
 type InputMode = 'text' | 'pdf' | 'image' | 'camera' | 'web';
 type AnalysisState = 'idle' | 'analyzing' | 'success' | 'error';
 
 // ── Evidence-first prompt — traceability is mandatory ──
-const buildPrompt = (content: string) => `You are a computational biology and metabolic engineering expert. Extract a comprehensive metabolic/biosynthetic pathway from the research text below, including intermediates, impurities, and thermodynamic data.
+const buildPrompt = (content: string) => `You are a computational biology and metabolic engineering expert specializing in TRY (Titer, Rate, Yield) analysis and downstream process economics. Extract a comprehensive metabolic/biosynthetic pathway from the research text below, including intermediates, impurities, and thermodynamic data.
 
 CRITICAL RULES:
 1. Every node's evidenceSnippet must be an EXACT QUOTE copied verbatim from the text. Do not paraphrase.
 2. Include ALL pathway intermediates, branch-point byproducts, and competing impurities mentioned in the text.
 3. For each reaction edge, estimate thermodynamic favorability when the text provides clues (e.g. spontaneous, rate-limiting, high yield).
-4. For nodes with risk_score > 0.7, you MUST assess toxicity_impact and separation_cost_index to meet Nexus-Bio commercial compliance standards.
-5. If the text does not explicitly mention impurities, use your metabolic engineering knowledge to identify likely side reactions and byproducts for the pathway described.
+4. For nodes with risk_score > 0.7, you MUST assess toxicity_impact (identify the exact concentration threshold for product-induced toxicity where host strain growth inhibition occurs, e.g. "IC50 ~8 mM in S. cerevisiae") and separation_cost_index to meet Nexus-Bio commercial compliance standards.
+5. If the text does not explicitly mention impurities, use your metabolic engineering knowledge to identify likely side reactions and byproducts for the pathway described. Specifically, pinpoint structural analogs, toxic intermediates, or byproducts sharing similar polarity/boiling points with the target molecule that would inflate DSP separation costs.
+6. Evaluate carbon flux efficiency using TRY metrics: estimate volumetric productivity (g/L/h) when data is available, assess metabolic burden on the host strain, and note any competitive inhibition or pathway crosstalk.
+7. For each node summary, use advanced data science and synthetic biology terminology (e.g. flux balance analysis, proteome allocation, metabolic burden coefficient).
+8. For each audit_trail, reference specific predictive models or literature data (e.g. "Flux Balance Analysis anomaly detected — carbon diversion at Node X", "BRENDA Km = 0.3 mM, suggesting substrate limitation").
 
 Return ONLY this exact JSON, nothing else:
 
@@ -38,16 +47,16 @@ Return ONLY this exact JSON, nothing else:
       "id": "lowercase_underscore_id",
       "label": "Standard biochemical name (1-4 words)",
       "nodeType": "metabolite",
-      "summary": "One sentence explaining the role of this entity in the pathway.",
+      "summary": "TRY-informed analysis: role in pathway, flux contribution, and metabolic burden assessment.",
       "evidenceSnippet": "EXACT QUOTE from the source text that mentions this entity.",
       "citation": "Author et al., Year, Journal",
       "confidenceScore": 0.85,
       "thermodynamic_stability": "High",
       "color_mapping": "Green",
       "risk_score": 0.0,
-      "toxicity_impact": "None — desired pathway product",
+      "toxicity_impact": "None — desired pathway product with no host cytotoxicity below 50 mM",
       "separation_cost_index": 0.0,
-      "audit_trail": "Page/section reference from source text"
+      "audit_trail": "FBA model: optimal flux node — carbon partitioning coefficient 0.92"
     }
   ],
   "edges": [
@@ -61,7 +70,7 @@ Return ONLY this exact JSON, nothing else:
       "spontaneity": "Spontaneous",
       "yield_prediction": "High",
       "thickness_mapping": "Thick",
-      "audit_trail": "Page/section reference"
+      "audit_trail": "Thermodynamic assessment: ΔG << 0, irreversible under physiological conditions"
     }
   ]
 }
@@ -75,16 +84,16 @@ Rules:
 - IDs: lowercase letters and underscores only, no spaces
 - evidenceSnippet: must be copied word-for-word from the source text
 - thermodynamic_stability: "High" | "Moderate" | "Low" (stability of the compound)
-- color_mapping: "Green" (stable/verified) | "Yellow" (moderate) | "Orange" (unstable/low yield) | "Red" (impurity/risk) | "Purple" (dual-role intermediate) | "Blue" (cofactor/auxiliary)
-- risk_score: 0.0 to 1.0 (0 = no risk, 1 = major impurity/competitor; use 0 for desired pathway metabolites)
-- toxicity_impact: describe potential toxicity to host cells or downstream drug safety (e.g. "Cytotoxic to yeast at >5mM", "Potential genotoxicity risk in human use", or "None — desired pathway product")
-- separation_cost_index: 0.0 to 1.0 — physicochemical similarity to the target product (higher = harder to separate during purification; e.g. structural analogs get 0.7-0.9)
+- color_mapping: "Green" (thermodynamically favorable, high-yield, minimal competitive inhibition) | "Yellow" (moderate yield) | "Orange" (unstable/low yield) | "Red" (impurity/risk, ΔG > 0, or exceeds cytotoxicity thresholds) | "Purple" (dual-role intermediate/precursor at metabolic crossroads) | "Blue" (cofactor/auxiliary)
+- risk_score: 0.0 to 1.0 (0 = no risk, 1 = major impurity/competitor; use 0 for desired pathway metabolites). Set > 0.7 for high-risk impurities, thermodynamic energy sinks (ΔG > 0), or nodes exceeding cytotoxicity thresholds
+- toxicity_impact: describe potential toxicity to host cells with specific thresholds when possible (e.g. "Cytotoxic to S. cerevisiae at >5 mM — growth inhibition IC50", "Potential genotoxicity risk", or "None — desired pathway product")
+- separation_cost_index: 0.0 to 1.0 — physicochemical similarity to the target product (higher = harder to separate; structural analogs sharing polarity/boiling points get 0.7-0.9)
 - For impurity nodes: typically set risk_score > 0.5, color_mapping "Red", nodeType "impurity". Nodes with risk_score > 0.7 MUST have toxicity_impact assessment and separation_cost_index > 0.5
 - predicted_delta_G_kJ_mol: estimated Gibbs free energy change (negative = spontaneous)
 - spontaneity: "Highly Spontaneous" | "Spontaneous" | "Non-spontaneous" | "Spontaneous (condition dependent)"
-- yield_prediction: brief yield assessment (e.g. "High", "Moderate", "Rate-limiting step")
+- yield_prediction: brief yield assessment with TRY context (e.g. "High — titer >10 g/L achievable", "Moderate — rate-limiting step", "Low — thermodynamic sink")
 - thickness_mapping: "Thick" (high flux) | "Medium" (moderate) | "Thin" (low flux/side reaction)
-- audit_trail: page number, figure, or section reference from source
+- audit_trail: reference specific predictive models, FBA results, BRENDA kinetics, or literature data
 - No markdown, no explanation, no text outside the JSON
 
 Source text:
@@ -161,7 +170,10 @@ function normalizePathway(parsed: unknown): { nodes: PathwayNode[]; edges: Pathw
       toxicity_impact: typeof n.toxicity_impact === 'string' ? n.toxicity_impact : undefined,
       separation_cost_index: typeof n.separation_cost_index === 'number'
         ? Math.min(1, Math.max(0, n.separation_cost_index)) : undefined,
-      color: COLORS[i % COLORS.length],
+      color: getSemanticColor(
+        VALID_NODE_TYPES.includes(n.nodeType as string) ? String(n.nodeType) : 'unknown',
+        typeof n.risk_score === 'number' ? n.risk_score : undefined,
+      ),
       position: [
         i === 0 ? -r : parseFloat((Math.cos(angle) * r).toFixed(2)),
         i === 0 ? 0 : parseFloat((Math.sin(angle) * r * 0.6).toFixed(2)),
