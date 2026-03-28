@@ -5,10 +5,15 @@ import { motion, AnimatePresence } from 'framer-motion';
 // 注入了 ShieldAlert 用于合规面板
 import { X, Download, FileText, Hash, Link2, ChevronDown, ChevronUp, Atom, Activity, Thermometer, Loader2, ExternalLink, ShieldAlert } from 'lucide-react';
 import { PathwayNode, PathwayEdge, NodeType, EdgeRelationshipType, SHOWCASE_PUBCHEM_CIDS } from '../types';
+import { BIO_THEME_COLORS } from './ThreeScene';
 import MoleculeViewer from './MoleculeViewer';
 import KineticPanel from './KineticPanel';
 import ThermodynamicsPanel from './ThermodynamicsPanel';
 import CellImageViewer from './CellImageViewer';
+
+// ── Compliance thresholds ─────────────────────────────────────────────
+const HIGH_RISK_THRESHOLD = 0.7;
+const MODERATE_RISK_THRESHOLD = 0.3;
 
 // ── AlphaFold IDs for showcase enzymes ────────────────────────────────
 const ENZYME_ALPHAFOLD: Record<string, { afId: string; pdbId: string; name: string }> = {
@@ -482,6 +487,7 @@ type TabId = 'overview' | 'structure' | 'analysis';
 const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEdges }: NodePanelProps) {
   const [activeTab, setActiveTab] = useState<TabId>('overview');
   const [showConnections, setShowConnections] = useState(false);
+  const [showRawData, setShowRawData] = useState(false);
 
   const connections = useMemo(() => {
     if (!node || !allEdges) return [];
@@ -499,6 +505,16 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
   const pubchemCID = node?.pubchemCID ?? (node?.id ? SHOWCASE_PUBCHEM_CIDS[node.id] : undefined);
   const isEnzyme = node?.nodeType === 'enzyme' || node?.nodeType === 'complex';
   const isMetabolite = !isEnzyme && node?.nodeType !== 'gene';
+
+  // ── Professional Null State Detection ──
+  // A node has "insufficient data" if it's NOT the final target product and key metrics are missing/zero
+  // A node is the "final target" if it's a desired metabolite with no risk and green status —
+  // these intentionally have 0/null metrics and should NOT show "Inference Pending".
+  const isFinalTarget = node?.nodeType === 'metabolite' && (node?.risk_score === undefined || node?.risk_score === 0) && node?.color_mapping === 'Green';
+  const hasInsufficientRiskData = !isFinalTarget && (node?.risk_score === undefined || node?.risk_score === null);
+  const hasInsufficientCarbonData = !isFinalTarget && (node?.carbon_efficiency === undefined || node?.carbon_efficiency === null || node?.carbon_efficiency === 0);
+  const hasInsufficientCofactorData = !isFinalTarget && !node?.cofactor_balance;
+  const hasInsufficientSepData = !isFinalTarget && (node?.separation_cost_index === undefined || node?.separation_cost_index === null);
 
   // Tab definitions
   const tabs = [
@@ -597,40 +613,206 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                     )}
                   </div>
 
-                  {/* ─── 修改点 2：商业风险与合规展示面板 ──────────────────────── */}
-                  {(node.risk_score !== undefined || node.audit_trail) && (
-                    <>
-                      <div style={{ padding: '14px 16px', borderRadius: '20px', background: node.risk_score && node.risk_score > 0.7 ? 'rgba(220,53,69,0.1)' : 'rgba(255,255,255,0.03)', border: `1px solid ${node.risk_score && node.risk_score > 0.7 ? 'rgba(220,53,69,0.3)' : 'rgba(255,255,255,0.06)'}`, marginBottom: '16px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                          <ShieldAlert size={14} color={node.risk_score && node.risk_score > 0.7 ? '#dc3545' : '#28a745'} />
-                          <span style={{ fontSize: '11px', fontWeight: 800, color: 'rgba(255,255,255,0.85)', letterSpacing: '0.05em', fontFamily: "'Public Sans', sans-serif" }}>COMMERCIAL RISK & COMPLIANCE</span>
-                        </div>
-                        
-                        {node.risk_score !== undefined && (
-                          <div style={{ marginBottom: '12px' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'rgba(255,255,255,0.5)', marginBottom: '6px', fontFamily: "'Public Sans', sans-serif" }}>
-                              <span>Separation Cost Index</span>
-                              <span>{(node.risk_score * 100).toFixed(0)}%</span>
-                            </div>
-                            <div style={{ height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '2px' }}>
-                              <div style={{ width: `${node.risk_score * 100}%`, height: '100%', background: node.risk_score > 0.7 ? '#dc3545' : '#28a745', borderRadius: '2px' }} />
-                            </div>
-                          </div>
-                        )}
+                  {/* ─── Purity Status Badge — always visible ──────────────────────── */}
+                  <div style={{ padding: '10px 14px', borderRadius: '16px', marginBottom: '12px',
+                    background: node.nodeType === 'impurity' || (node.risk_score && node.risk_score > MODERATE_RISK_THRESHOLD) 
+                      ? 'rgba(239,68,68,0.12)' 
+                      : node.nodeType === 'intermediate' 
+                        ? 'rgba(245,158,11,0.10)' 
+                        : 'rgba(16,185,129,0.10)',
+                    border: `1px solid ${node.nodeType === 'impurity' || (node.risk_score && node.risk_score > MODERATE_RISK_THRESHOLD)
+                      ? 'rgba(239,68,68,0.3)'
+                      : node.nodeType === 'intermediate'
+                        ? 'rgba(245,158,11,0.25)'
+                        : 'rgba(16,185,129,0.25)'}`,
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '14px' }}>
+                        {node.nodeType === 'impurity' || (node.risk_score && node.risk_score > MODERATE_RISK_THRESHOLD) ? '⚠️' : node.nodeType === 'intermediate' ? '🔶' : '✅'}
+                      </span>
+                      <div>
+                        <span style={{ fontSize: '12px', fontWeight: 700, fontFamily: "'Public Sans', sans-serif",
+                          color: node.nodeType === 'impurity' || (node.risk_score && node.risk_score > MODERATE_RISK_THRESHOLD)
+                            ? BIO_THEME_COLORS.RED
+                            : node.nodeType === 'intermediate' ? BIO_THEME_COLORS.AMBER : BIO_THEME_COLORS.GREEN,
+                        }}>
+                          {node.nodeType === 'impurity' ? 'Impurity — Purification Risk'
+                            : (node.risk_score && node.risk_score > MODERATE_RISK_THRESHOLD) ? 'Elevated Commercial Risk'
+                            : node.nodeType === 'intermediate' ? 'Pathway Intermediate'
+                            : 'Verified High-Yield'}
+                        </span>
+                        <span style={{ display: 'block', fontSize: '10px', color: 'rgba(255,255,255,0.4)', marginTop: '2px', fontFamily: "'Public Sans', sans-serif" }}>
+                          {node.nodeType === 'impurity'
+                            ? 'This compound requires separation from the target product'
+                            : (node.risk_score && node.risk_score > MODERATE_RISK_THRESHOLD)
+                              ? 'Moderate to high risk — monitor during production'
+                              : node.nodeType === 'intermediate'
+                                ? 'Transient intermediate — may require yield optimization'
+                                : 'On-pathway metabolite — standard purification sufficient'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
 
-                        {node.toxicity_impact && (
-                          <p style={{ color: '#ff7875', fontSize: '11px', fontWeight: 600, margin: '0 0 12px', fontFamily: "'Public Sans', sans-serif" }}>⚠️ {node.toxicity_impact}</p>
-                        )}
+                  {/* ─── Commercial Risk & Compliance Panel ──────────────────────── */}
+                  <div style={{ padding: '14px 16px', borderRadius: '20px', background: node.risk_score && node.risk_score > HIGH_RISK_THRESHOLD ? 'rgba(239,68,68,0.1)' : 'rgba(255,255,255,0.03)', border: `1px solid ${node.risk_score && node.risk_score > HIGH_RISK_THRESHOLD ? 'rgba(239,68,68,0.3)' : 'rgba(255,255,255,0.06)'}`, marginBottom: '16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                      <ShieldAlert size={14} color={node.risk_score && node.risk_score > MODERATE_RISK_THRESHOLD ? BIO_THEME_COLORS.RED : BIO_THEME_COLORS.GREEN} />
+                      <span style={{ fontSize: '11px', fontWeight: 800, color: 'rgba(255,255,255,0.85)', letterSpacing: '0.05em', fontFamily: "'Public Sans', sans-serif" }}>COMMERCIAL RISK & COMPLIANCE</span>
+                    </div>
 
-                        {node.audit_trail && (
-                          <div style={{ padding: '10px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px', fontSize: '11px', color: 'rgba(255,255,255,0.45)', fontStyle: 'italic', fontFamily: "'Public Sans', sans-serif", border: '1px solid rgba(255,255,255,0.04)' }}>
-                             <span style={{ display: 'block', fontSize: '9px', color: 'rgba(255,255,255,0.3)', marginBottom: '4px', fontWeight: 700, textTransform: 'uppercase', fontStyle: 'normal' }}>Verifiable Audit Trail</span>
-                             "{node.audit_trail}"
-                          </div>
+                    {/* Risk Score Bar */}
+                    <div style={{ marginBottom: '12px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'rgba(255,255,255,0.5)', marginBottom: '6px', fontFamily: "'Public Sans', sans-serif" }}>
+                        <span>Risk Score</span>
+                        {hasInsufficientRiskData ? (
+                          <span style={{ fontWeight: 600, fontSize: '9px', color: 'rgba(255,255,255,0.35)', background: 'rgba(255,255,255,0.06)', padding: '2px 8px', borderRadius: '8px', letterSpacing: '0.03em' }}>
+                            Inference Pending
+                          </span>
+                        ) : (
+                          <span style={{ fontWeight: 600, color: (node.risk_score ?? 0) > HIGH_RISK_THRESHOLD ? BIO_THEME_COLORS.RED : (node.risk_score ?? 0) > MODERATE_RISK_THRESHOLD ? BIO_THEME_COLORS.AMBER : BIO_THEME_COLORS.GREEN }}>
+                            {((node.risk_score ?? 0) * 100).toFixed(0)}%
+                          </span>
                         )}
                       </div>
-                    </>
-                  )}
+                      {hasInsufficientRiskData ? (
+                        <div style={{ height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '2px' }} />
+                      ) : (
+                        <div style={{ height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '2px' }}>
+                          <div style={{ width: `${(node.risk_score ?? 0) * 100}%`, height: '100%', borderRadius: '2px',
+                            background: (node.risk_score ?? 0) > HIGH_RISK_THRESHOLD ? BIO_THEME_COLORS.RED : (node.risk_score ?? 0) > MODERATE_RISK_THRESHOLD ? BIO_THEME_COLORS.AMBER : BIO_THEME_COLORS.GREEN,
+                          }} />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Separation Cost Index Bar */}
+                    <div style={{ marginBottom: '12px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'rgba(255,255,255,0.5)', marginBottom: '6px', fontFamily: "'Public Sans', sans-serif" }}>
+                        <span>Separation Cost Index</span>
+                        {hasInsufficientSepData ? (
+                          <span style={{ fontWeight: 600, fontSize: '9px', color: 'rgba(255,255,255,0.35)', background: 'rgba(255,255,255,0.06)', padding: '2px 8px', borderRadius: '8px', letterSpacing: '0.03em' }}>
+                            Inference Pending
+                          </span>
+                        ) : (
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            {(node.separation_cost_index ?? 0) > HIGH_RISK_THRESHOLD && (
+                              <span style={{ color: BIO_THEME_COLORS.RED, fontWeight: 700, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>High Separation Cost</span>
+                            )}
+                            <span style={{ fontWeight: 600, color: (node.separation_cost_index ?? 0) > HIGH_RISK_THRESHOLD ? BIO_THEME_COLORS.RED : (node.separation_cost_index ?? 0) > MODERATE_RISK_THRESHOLD ? BIO_THEME_COLORS.AMBER : BIO_THEME_COLORS.GREEN }}>
+                              {((node.separation_cost_index ?? 0) * 100).toFixed(0)}%
+                            </span>
+                          </span>
+                        )}
+                      </div>
+                      {hasInsufficientSepData ? (
+                        <div style={{ height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '2px' }} />
+                      ) : (
+                        <div style={{ height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '2px' }}>
+                          <div style={{ width: `${(node.separation_cost_index ?? 0) * 100}%`, height: '100%', borderRadius: '2px',
+                            background: (node.separation_cost_index ?? 0) > HIGH_RISK_THRESHOLD ? BIO_THEME_COLORS.RED : (node.separation_cost_index ?? 0) > MODERATE_RISK_THRESHOLD ? BIO_THEME_COLORS.AMBER : BIO_THEME_COLORS.GREEN,
+                          }} />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Toxicity Impact */}
+                    {node.toxicity_impact && (
+                      <div style={{ padding: '10px 12px', borderRadius: '12px', marginBottom: '12px',
+                        background: node.nodeType === 'impurity' ? 'rgba(239,68,68,0.08)' : 'rgba(255,255,255,0.02)',
+                        border: `1px solid ${node.nodeType === 'impurity' ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.04)'}`,
+                      }}>
+                        <span style={{ display: 'block', fontSize: '9px', color: 'rgba(255,255,255,0.35)', marginBottom: '4px', fontWeight: 700, textTransform: 'uppercase', fontFamily: "'Public Sans', sans-serif" }}>Potential Toxicity Analysis</span>
+                        <p style={{ color: node.nodeType === 'impurity' ? BIO_THEME_COLORS.RED : 'rgba(255,255,255,0.55)', fontSize: '11px', fontWeight: 500, margin: 0, lineHeight: 1.5, fontFamily: "'Public Sans', sans-serif" }}>
+                          {node.toxicity_impact}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Thermodynamic Stability */}
+                    {node.thermodynamic_stability && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px' }}>
+                        <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', fontFamily: "'Public Sans', sans-serif" }}>Thermodynamic Stability:</span>
+                        <span style={{ fontSize: '10px', fontWeight: 700, color: node.thermodynamic_stability === 'High' ? BIO_THEME_COLORS.GREEN : node.thermodynamic_stability === 'Low' ? BIO_THEME_COLORS.RED : BIO_THEME_COLORS.AMBER, fontFamily: "'Public Sans', sans-serif" }}>{node.thermodynamic_stability}</span>
+                      </div>
+                    )}
+
+                    {/* Cofactor Balance */}
+                    {node.cofactor_balance ? (
+                      <div style={{ padding: '10px 12px', borderRadius: '12px', marginBottom: '12px',
+                        background: 'rgba(139,92,246,0.08)',
+                        border: '1px solid rgba(139,92,246,0.15)',
+                      }}>
+                        <span style={{ display: 'block', fontSize: '9px', color: 'rgba(255,255,255,0.35)', marginBottom: '4px', fontWeight: 700, textTransform: 'uppercase', fontFamily: "'Public Sans', sans-serif" }}>Cofactor Balance (ATP/NAD(P)H)</span>
+                        <p style={{ color: BIO_THEME_COLORS.PURPLE, fontSize: '11px', fontWeight: 500, margin: 0, lineHeight: 1.5, fontFamily: "'Public Sans', sans-serif" }}>
+                          {node.cofactor_balance}
+                        </p>
+                      </div>
+                    ) : hasInsufficientCofactorData && (
+                      <div style={{ padding: '10px 12px', borderRadius: '12px', marginBottom: '12px',
+                        background: 'rgba(255,255,255,0.02)',
+                        border: '1px solid rgba(255,255,255,0.06)',
+                      }}>
+                        <span style={{ display: 'block', fontSize: '9px', color: 'rgba(255,255,255,0.35)', marginBottom: '4px', fontWeight: 700, textTransform: 'uppercase', fontFamily: "'Public Sans', sans-serif" }}>Cofactor Balance (ATP/NAD(P)H)</span>
+                        <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.30)', background: 'rgba(255,255,255,0.05)', padding: '3px 10px', borderRadius: '8px', fontFamily: "'Public Sans', sans-serif", fontWeight: 600 }}>
+                          Inference Pending / Data Insufficient
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Carbon Efficiency */}
+                    {hasInsufficientCarbonData ? (
+                      <div style={{ marginBottom: '12px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'rgba(255,255,255,0.5)', marginBottom: '6px', fontFamily: "'Public Sans', sans-serif" }}>
+                          <span>Carbon Efficiency (Atom Economy)</span>
+                          <span style={{ fontWeight: 600, fontSize: '9px', color: 'rgba(255,255,255,0.35)', background: 'rgba(255,255,255,0.06)', padding: '2px 8px', borderRadius: '8px', letterSpacing: '0.03em' }}>
+                            Inference Pending
+                          </span>
+                        </div>
+                        <div style={{ height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '2px' }} />
+                      </div>
+                    ) : node.carbon_efficiency !== undefined && (
+                      <div style={{ marginBottom: '12px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'rgba(255,255,255,0.5)', marginBottom: '6px', fontFamily: "'Public Sans', sans-serif" }}>
+                          <span>Carbon Efficiency (Atom Economy)</span>
+                          <span style={{ fontWeight: 600, color: node.carbon_efficiency >= 80 ? BIO_THEME_COLORS.GREEN : node.carbon_efficiency >= 50 ? BIO_THEME_COLORS.AMBER : BIO_THEME_COLORS.RED }}>
+                            {node.carbon_efficiency.toFixed(1)}%
+                          </span>
+                        </div>
+                        <div style={{ height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '2px' }}>
+                          <div style={{ width: `${node.carbon_efficiency}%`, height: '100%', borderRadius: '2px',
+                            background: node.carbon_efficiency >= 80 ? BIO_THEME_COLORS.GREEN : node.carbon_efficiency >= 50 ? BIO_THEME_COLORS.AMBER : BIO_THEME_COLORS.RED,
+                          }} />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Gene KO/OE Recommendation */}
+                    {node.gene_recommendation && node.gene_recommendation !== 'N/A' && (
+                      <div style={{ padding: '10px 12px', borderRadius: '12px', marginBottom: '12px',
+                        background: 'rgba(16,185,129,0.08)',
+                        border: '1px solid rgba(16,185,129,0.15)',
+                      }}>
+                        <span style={{ display: 'block', fontSize: '9px', color: 'rgba(255,255,255,0.35)', marginBottom: '4px', fontWeight: 700, textTransform: 'uppercase', fontFamily: "'Public Sans', sans-serif" }}>Gene Engineering Target (KO/OE)</span>
+                        <p style={{ color: BIO_THEME_COLORS.GREEN, fontSize: '11px', fontWeight: 500, margin: 0, lineHeight: 1.5, fontFamily: "'Public Sans', sans-serif" }}>
+                          {node.gene_recommendation}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Audit Trail */}
+                    {node.audit_trail ? (
+                      <div style={{ padding: '10px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px', fontSize: '11px', color: 'rgba(255,255,255,0.45)', fontStyle: 'italic', fontFamily: "'Public Sans', sans-serif", border: '1px solid rgba(255,255,255,0.04)' }}>
+                         <span style={{ display: 'block', fontSize: '9px', color: 'rgba(255,255,255,0.3)', marginBottom: '4px', fontWeight: 700, textTransform: 'uppercase', fontStyle: 'normal' }}>Verifiable Audit Trail</span>
+                         &ldquo;{node.audit_trail}&rdquo;
+                      </div>
+                    ) : (hasInsufficientRiskData || hasInsufficientCarbonData || hasInsufficientCofactorData) && (
+                      <div style={{ padding: '10px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px', fontSize: '11px', color: 'rgba(255,255,255,0.35)', fontStyle: 'italic', fontFamily: "'Public Sans', sans-serif", border: '1px solid rgba(255,255,255,0.04)' }}>
+                         <span style={{ display: 'block', fontSize: '9px', color: 'rgba(255,255,255,0.25)', marginBottom: '4px', fontWeight: 700, textTransform: 'uppercase', fontStyle: 'normal' }}>Verifiable Audit Trail</span>
+                         Real-time thermodynamic modeling requires binding constants not found in current literature. AuditTrail details based on structural analogs are available in raw logs.
+                      </div>
+                    )}
+                  </div>
 
                   {node.confidenceScore !== undefined && <ConfidenceBar score={node.confidenceScore} />}
 
@@ -749,6 +931,109 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                   )}
 
                   <Divider />
+
+                  {/* ─── Genetic Intervention Badge ─────────────────────────── */}
+                  {node.genetic_intervention && (
+                    <div style={{ marginBottom: '12px' }}>
+                      <div style={{
+                        display: 'inline-flex', alignItems: 'center', gap: '6px',
+                        padding: '6px 12px', borderRadius: '20px',
+                        background: node.genetic_intervention.startsWith('KO')
+                          ? 'rgba(239,68,68,0.12)' : 'rgba(16,185,129,0.12)',
+                        border: `1px solid ${node.genetic_intervention.startsWith('KO')
+                          ? 'rgba(239,68,68,0.25)' : 'rgba(16,185,129,0.25)'}`,
+                      }}>
+                        <span style={{ fontSize: '14px' }}>
+                          {node.genetic_intervention.startsWith('KO') ? '✂️' : '⬆️'}
+                        </span>
+                        <span style={{
+                          fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+                          fontSize: '11px', fontWeight: 600,
+                          color: node.genetic_intervention.startsWith('KO')
+                            ? BIO_THEME_COLORS.RED : BIO_THEME_COLORS.GREEN,
+                        }}>
+                          {node.genetic_intervention}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ─── Collapsible Raw Data Section ──────────────────────── */}
+                  {(node.cofactor_balance || node.atom_economy !== undefined || node.dsp_bottleneck || node.ic50_toxicity) && (
+                    <div style={{ marginBottom: '12px' }}>
+                      <button
+                        onClick={() => setShowRawData(!showRawData)}
+                        style={{
+                          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                          width: '100%', background: 'none', border: 'none', cursor: 'pointer',
+                          padding: '8px 0',
+                        }}
+                      >
+                        <span style={{
+                          color: 'rgba(255,255,255,0.3)', fontSize: '10px',
+                          fontFamily: "'Public Sans', sans-serif",
+                          textTransform: 'uppercase', letterSpacing: '0.08em',
+                          fontFeatureSettings: "'tnum' 1",
+                        }}>
+                          {showRawData ? '[−]' : '[+]'} View Raw Thermodynamics & Kinetics
+                        </span>
+                        {showRawData
+                          ? <ChevronUp size={12} style={{ color: 'rgba(255,255,255,0.2)' }} />
+                          : <ChevronDown size={12} style={{ color: 'rgba(255,255,255,0.2)' }} />}
+                      </button>
+
+                      {showRawData && (
+                        <div style={{
+                          padding: '14px',
+                          borderRadius: '16px',
+                          background: 'rgba(0,0,0,0.3)',
+                          border: '1px solid rgba(255,255,255,0.06)',
+                          fontFamily: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace",
+                          fontSize: '11px',
+                          lineHeight: 1.8,
+                          color: 'rgba(255,255,255,0.5)',
+                        }}>
+                          {node.cofactor_balance && (
+                            <div style={{ marginBottom: '8px' }}>
+                              <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: "'Public Sans', sans-serif", fontWeight: 700 }}>Cofactor Balance</span>
+                              <div style={{ color: BIO_THEME_COLORS.PURPLE, marginTop: '2px' }}>{node.cofactor_balance}</div>
+                            </div>
+                          )}
+                          {node.atom_economy !== undefined && node.atom_economy !== 0 ? (
+                            <div style={{ marginBottom: '8px' }}>
+                              <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: "'Public Sans', sans-serif", fontWeight: 700 }}>Atom Economy (Carbon Efficiency)</span>
+                              <div style={{
+                                color: node.atom_economy >= 80 ? BIO_THEME_COLORS.GREEN
+                                  : node.atom_economy >= 50 ? BIO_THEME_COLORS.AMBER
+                                  : BIO_THEME_COLORS.RED,
+                                marginTop: '2px',
+                              }}>
+                                {node.atom_economy.toFixed(1)}%
+                              </div>
+                            </div>
+                          ) : !isFinalTarget && (
+                            <div style={{ marginBottom: '8px' }}>
+                              <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: "'Public Sans', sans-serif", fontWeight: 700 }}>Atom Economy (Carbon Efficiency)</span>
+                              <div style={{ color: 'rgba(255,255,255,0.30)', marginTop: '2px' }}>Inference Pending / Data Insufficient</div>
+                            </div>
+                          )}
+                          {node.dsp_bottleneck && (
+                            <div style={{ marginBottom: '8px' }}>
+                              <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: "'Public Sans', sans-serif", fontWeight: 700 }}>DSP Bottleneck</span>
+                              <div style={{ color: BIO_THEME_COLORS.AMBER, marginTop: '2px' }}>{node.dsp_bottleneck}</div>
+                            </div>
+                          )}
+                          {node.ic50_toxicity && (
+                            <div>
+                              <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: "'Public Sans', sans-serif", fontWeight: 700 }}>IC50 Toxicity</span>
+                              <div style={{ color: BIO_THEME_COLORS.RED, marginTop: '2px' }}>{node.ic50_toxicity}</div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   <button onClick={handleDownload}
                     style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px 16px', borderRadius: '20px', background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.4)', border: '1px solid rgba(255,255,255,0.07)', fontSize: '12px', cursor: 'pointer', transition: 'all 0.15s', fontFamily: 'inherit' }}
                     onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)'; (e.currentTarget as HTMLElement).style.color = '#ffffff'; }}

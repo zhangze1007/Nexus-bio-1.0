@@ -50,6 +50,17 @@ export interface PathwayNode {
   thermodynamic_stability?: string;
   toxicity_impact?: string;
   separation_cost_index?: number;
+
+  // Nexus-Bio 1.2: Metabolic Engineering Intelligence
+  cofactor_balance?: string;
+  carbon_efficiency?: number;
+  gene_recommendation?: string;
+
+  // Nexus-Bio 1.3: Industrial Metrics & DSP Intelligence
+  genetic_intervention?: string;
+  atom_economy?: number;
+  dsp_bottleneck?: string;
+  ic50_toxicity?: string;
   
   // Molecular structure data
   ecNumber?: string;
@@ -143,4 +154,6 @@ export const SHOWCASE_PUBCHEM_CIDS: Record<string, number> = {
   amorpha_4_11_diene: 11230765,
   artemisinic_acid: 5362031,
   artemisinin: 68827,
+  epi_cedrol: 91458,
+  arteannuin_b: 11282394,
 };

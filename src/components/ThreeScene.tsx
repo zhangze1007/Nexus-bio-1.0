@@ -119,42 +119,70 @@ const createProceduralTexture = () => {
   return texture;
 };
 
-// ─── Pastels & Scientific colors ────────────────────────────────────────
-const PastelColors = ['#C8D8E8','#C8E0D0','#DDD0E8','#E8DCC8','#C8DCDC','#DCE8C8','#E8C8D4','#CCE0D8'];
-const SHOWCASE_N_CONF: Record<string,number> = { acetyl_coa:85,hmg_coa:72,mevalonate:68,fpp:91,amorpha_4_11_diene:88,artemisinic_acid:76,artemisinin:93 };
+// ─── Risk thresholds (shared with NodePanel) ──────────────────────────
+const HIGH_RISK_THRESHOLD = 0.7;
 
-function conf2pastel(p: number): string {
-  if (p >= 90) return '#C8D8E8'; // Blue
-  if (p >= 70) return '#C8E0D0'; // Green
-  if (p >= 50) return '#E8DCC8'; // Yellow
-  return '#E8C8D4'; // Red
+// ─── BIO_THEME_COLORS — 6-color dark-mode-optimized semantic palette ──
+export const BIO_THEME_COLORS = {
+  CYAN:   '#06B6D4',  // Bioluminescent Cyan  — Standard Metabolite / Default Node
+  GREEN:  '#10B981',  // Synthesis Emerald     — Verified High-Yield / Target Product
+  RED:    '#EF4444',  // Hazard Crimson        — High Separation Cost / Toxic Impurity
+  AMBER:  '#F59E0B',  // Catalyst Amber        — Enzyme / Catalyst
+  PURPLE: '#8B5CF6',  // Plasma Purple         — Key Intermediate / Precursor
+  PINK:   '#EC4899',  // Quantum Pink          — Secondary Byproduct / Alternative Pathway
+} as const;
+
+// Map each nodeType to its semantic BIO_THEME color
+const NODE_TYPE_COLORS: Record<string, string> = {
+  metabolite:   BIO_THEME_COLORS.CYAN,    // Default metabolite
+  enzyme:       BIO_THEME_COLORS.AMBER,   // Catalytic protein
+  gene:         BIO_THEME_COLORS.GREEN,   // Genetic elements → synthesis success
+  complex:      BIO_THEME_COLORS.PURPLE,  // Multi-subunit assemblies → precursor
+  cofactor:     BIO_THEME_COLORS.PINK,    // Auxiliary molecules → alternative pathway
+  impurity:     BIO_THEME_COLORS.RED,     // Impurity / toxic risk
+  intermediate: BIO_THEME_COLORS.PURPLE,  // Key intermediate / precursor
+  unknown:      BIO_THEME_COLORS.CYAN,    // Fallback → standard metabolite
+};
+
+/** Semantic color assignment based on node type + risk/yield flags. */
+function getNodeColor(nodeType: string, isHighRisk: boolean, isTargetYield: boolean): string {
+  if (isHighRisk)    return BIO_THEME_COLORS.RED;
+  if (isTargetYield) return BIO_THEME_COLORS.GREEN;
+  return NODE_TYPE_COLORS[nodeType] || BIO_THEME_COLORS.CYAN;
 }
 
 function getColor(node: PathwayNode): string {
-  // --- 功能修复：恢复杂质/高产标签颜色逻辑 ---
-  if (node.color_mapping === 'Red') return '#dc3545'; // Impurity / High Cost (Red)
-  if (node.color_mapping === 'Green') return '#28a745'; // Verified High-Yield (Green)
-
-  // Fallback to confidence scores for PubChem conformers or showcase nodes
-  const c = SHOWCASE_N_CONF[node.id];
-  return c !== undefined ? conf2pastel(c) : (node.color || PastelColors[hash(node.id) % PastelColors.length]);
+  const isHighRisk    = node.color_mapping === 'Red' || node.nodeType === 'impurity' || (node.risk_score !== undefined && node.risk_score > HIGH_RISK_THRESHOLD);
+  const isTargetYield = node.color_mapping === 'Green' && node.nodeType !== 'impurity';
+  return getNodeColor(node.nodeType || 'unknown', isHighRisk, isTargetYield);
 }
 
 function getConfidenceValue(node: PathwayNode): number {
   if (node.confidenceScore !== undefined) return node.confidenceScore;
-  const c = SHOWCASE_N_CONF[node.id];
-  return c !== undefined ? c / 100 : 0.75; // Default for missing data
+  return 0.75; // Default for missing data
 }
 
-// ─── Geometry Components — deterministic shape distribution ────────────
-type GCfg = { geom:'oct'|'dodec'|'tetra'|'icos'|'sph'|'tor'; scale:number; rings:number; rr:number[]; rt:number[]; sats:number; sr:number; ss:number; spin:number; inner:boolean; };
-function glyphCfg(id: string, cc: number): GCfg {
-  const geoms = ['oct','dodec','tetra','icos','sph'] as GCfg['geom'][]; // Torus is too heavy
+// ─── Geometry Components — fixed shape per node type ───────────────────
+type GeomKind = 'oct'|'dodec'|'tetra'|'icos'|'sph';
+const NODE_TYPE_SHAPES: Record<string, GeomKind> = {
+  metabolite:   'sph',    // Sphere — organic molecules
+  enzyme:       'oct',    // Octahedron — catalytic proteins
+  gene:         'tetra',  // Tetrahedron — genetic elements
+  complex:      'dodec',  // Dodecahedron — multi-subunit assemblies
+  cofactor:     'icos',   // Icosahedron — auxiliary molecules
+  impurity:     'tetra',  // Tetrahedron — warning shape (sharp edges)
+  intermediate: 'icos',   // Icosahedron — transient forms
+  unknown:      'dodec',  // Dodecahedron — default
+};
+
+type GCfg = { geom:GeomKind; scale:number; rings:number; rr:number[]; rt:number[]; sats:number; sr:number; ss:number; spin:number; inner:boolean; };
+function glyphCfg(id: string, cc: number, nodeType?: string): GCfg {
+  const geom = NODE_TYPE_SHAPES[nodeType || 'unknown'] || 'dodec';
   const rc = hashInt(id,1,1,2);
-  return { geom: geoms[hashInt(id,0,0,4)], scale: 0.22+cc*0.04+hashFloat(id,2,0,0.04), rings: rc, rr: Array.from({length:rc},(_,i)=>hashFloat(id,10+i,0.5,0.8)), rt: Array.from({length:rc},(_,i)=>hashFloat(id,20+i,0,Math.PI)), sats: hashInt(id,3,2,4), sr: hashFloat(id,4,0.6,0.9), ss: hashFloat(id,5,0.035,0.055), spin: hashFloat(id,6,0.04,0.10), inner: hash(id)%3===0 };
+  return { geom, scale: 0.22+cc*0.04+hashFloat(id,2,0,0.04), rings: rc, rr: Array.from({length:rc},(_,i)=>hashFloat(id,10+i,0.5,0.8)), rt: Array.from({length:rc},(_,i)=>hashFloat(id,20+i,0,Math.PI)), sats: hashInt(id,3,2,4), sr: hashFloat(id,4,0.6,0.9), ss: hashFloat(id,5,0.035,0.055), spin: hashFloat(id,6,0.04,0.10), inner: hash(id)%3===0 };
 }
 
-function GeoComp({ g, s }: { g: GCfg['geom']; s: number }) {
+function GeoComp({ g, s }: { g: GeomKind; s: number }) {
   switch(g) {
     case 'oct':   return <octahedronGeometry args={[s, 0]} />;
     case 'dodec': return <dodecahedronGeometry args={[s, 0]} />;
@@ -190,7 +218,7 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov
   const conf   = getConfidenceValue(node);
   const finalColor = getColor(node);
   const lbl    = node.canonicalLabel?.trim() || node.label || node.id;
-  const cfg    = useMemo(() => glyphCfg(node.id, cc), [node.id, cc]);
+  const cfg    = useMemo(() => glyphCfg(node.id, cc, node.nodeType), [node.id, cc, node.nodeType]);
   const tgt    = sel ? 1.28 : hov ? 1.10 : 1.0;
   const colVec = useMemo(() => new THREE.Color(finalColor), [finalColor]);
 
@@ -229,15 +257,14 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov
     >
       <mesh ref={bodyRef}>
         <GeoComp g={cfg.geom} s={0.32 + cc * 0.05} />
-        {/* 保持你的噪点不光滑质感 */}
         <meshPhysicalMaterial
           color={finalColor}
           emissive={finalColor}
-          emissiveIntensity={0.03}
+          emissiveIntensity={0.12}
           roughnessMap={roughnessTexture} 
-          roughness={0.8} 
-          metalness={0.03}
-          transmission={0.1}
+          roughness={0.55} 
+          metalness={0.08}
+          transmission={0.05}
           depthWrite={true} 
         />
       </mesh>
@@ -311,26 +338,29 @@ const PathEdge = React.memo(function PathEdge({ edge, s, e, active, color }: { e
     return map[edge.thickness_mapping || "Medium"] || 0.25;
   }, [edge.thickness_mapping]);
 
+  // Show flowing dot for spontaneous reactions (negative ΔG) or when edge is active
+  const isSpontaneous = edge.predicted_delta_G_kJ_mol !== undefined && edge.predicted_delta_G_kJ_mol < 0;
+  const dotSpeed = isSpontaneous ? Math.min(0.4, 0.08 + Math.abs(edge.predicted_delta_G_kJ_mol ?? 0) * 0.002) : 0.18;
+
   useFrame((_, dt) => {
-    prog.current = (prog.current + dt * 0.18) % 1;
+    prog.current = (prog.current + dt * dotSpeed) % 1;
     if (dot.current) {
       dot.current.position.lerpVectors(sv, ev, prog.current);
-      dot.current.visible = active;
+      dot.current.visible = active || isSpontaneous;
     }
   });
 
   return (
     <group>
-      {/* 【关键修复】: 暗灰背景下使用略亮的连线颜色 #556677 防止隐身 */}
       <Line points={[sv, ev]} color={active ? color : '#556677'} lineWidth={active ? thickness * 1.5 : thickness} transparent opacity={active ? 0.8 : 0.25} />
       <mesh ref={dot} visible={false}>
-        <sphereGeometry args={[0.04, 5, 5]} />
-        <meshPhysicalMaterial color={color} emissive={color} emissiveIntensity={0.6} transparent opacity={0.8} />
+        <sphereGeometry args={[active ? 0.05 : 0.035, 6, 6]} />
+        <meshPhysicalMaterial color={color} emissive={color} emissiveIntensity={isSpontaneous ? 0.8 : 0.6} transparent opacity={active ? 0.9 : 0.5} />
       </mesh>
       {active && edge.predicted_delta_G_kJ_mol && (
         <Html position={mid.toArray() as Vec3}>
           <div style={{ background: 'rgba(6,9,16,0.9)', color: '#fff', padding: '2px 6px', borderRadius: '4px', fontSize: '9px', fontWeight: 600, border: '1px solid rgba(255,255,255,0.1)' }}>
-            ΔG: {edge.predicted_delta_G_kJ_mol}
+            ΔG: {edge.predicted_delta_G_kJ_mol} kJ/mol
           </div>
         </Html>
       )}
@@ -491,7 +521,7 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId }
       <div style={{ pointerEvents: 'none', position:'absolute', top:0, left:0, right:0, zIndex:10, display:'flex', alignItems:'center', justifyContent:'space-between', padding:'11px 16px', background:'linear-gradient(to bottom, rgba(16,16,16,0.92), transparent)', borderBottom:'1px solid rgba(255,255,255,0.04)' }}>
         <div style={{ display:'flex', alignItems:'center', gap:'9px' }}>
           <div style={{ display:'flex', gap:'4px' }}>
-            {['#C8D8E8','#C8E0D0','#DDD0E8'].map(c => (
+            {[BIO_THEME_COLORS.CYAN, BIO_THEME_COLORS.GREEN, BIO_THEME_COLORS.PURPLE].map(c => (
               <div key={c} style={{ width:'4px', height:'4px', borderRadius:'50%', background:c, opacity:0.35 }} />
             ))}
           </div>
@@ -519,15 +549,21 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId }
         ))}
       </div>
 
-      <div style={{ pointerEvents: 'none', position:'absolute', bottom:'13px', right:'13px', zIndex:10, background:'rgba(0,0,0,0.4)', padding:'6px 10px', borderRadius:'8px', border:'1px solid rgba(255,255,255,0.05)' }}>
-        <div style={{ display:'flex', alignItems:'center', gap:'6px', marginBottom:'4px' }}>
-          <div style={{ width:'8px', height:'8px', background:'#dc3545', borderRadius:'2px' }} />
-          <span style={{ color:'rgba(255,255,255,0.4)', fontSize:'8px', fontFamily:"'Public Sans',sans-serif" }}>Impurity / High Cost</span>
-        </div>
-        <div style={{ display:'flex', alignItems:'center', gap:'6px' }}>
-          <div style={{ width:'8px', height:'8px', background:'#28a745', borderRadius:'2px' }} />
-          <span style={{ color:'rgba(255,255,255,0.4)', fontSize:'8px', fontFamily:"'Public Sans',sans-serif" }}>Verified High-Yield</span>
-        </div>
+      <div style={{ pointerEvents: 'none', position:'absolute', bottom:'13px', right:'13px', zIndex:10, background:'rgba(0,0,0,0.5)', padding:'8px 12px', borderRadius:'10px', border:'1px solid rgba(255,255,255,0.06)' }}>
+        <p style={{ color:'rgba(255,255,255,0.25)', fontSize:'8px', fontFamily:"'Public Sans',sans-serif", fontWeight:700, margin:'0 0 6px', letterSpacing:'0.07em', textTransform:'uppercase' }}>Node Types</p>
+        {[
+          { c: BIO_THEME_COLORS.CYAN,   l:'Metabolite', s:'●' },
+          { c: BIO_THEME_COLORS.AMBER,  l:'Enzyme', s:'◆' },
+          { c: BIO_THEME_COLORS.GREEN,  l:'Gene', s:'▲' },
+          { c: BIO_THEME_COLORS.PURPLE, l:'Intermediate', s:'⬟' },
+          { c: BIO_THEME_COLORS.RED,    l:'Impurity', s:'▲' },
+          { c: BIO_THEME_COLORS.PINK,   l:'Cofactor', s:'⬟' },
+        ].map(x => (
+          <div key={x.l} style={{ display:'flex', alignItems:'center', gap:'6px', marginBottom:'3px' }}>
+            <span style={{ color:x.c, fontSize:'10px', lineHeight:1, width:'10px', textAlign:'center' }}>{x.s}</span>
+            <span style={{ color:'rgba(255,255,255,0.4)', fontSize:'8px', fontFamily:"'Public Sans',sans-serif" }}>{x.l}</span>
+          </div>
+        ))}
       </div>
 
       <SceneErrorBoundary onError={(e) => setStatus('error')}>
