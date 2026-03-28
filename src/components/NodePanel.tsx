@@ -506,6 +506,16 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
   const isEnzyme = node?.nodeType === 'enzyme' || node?.nodeType === 'complex';
   const isMetabolite = !isEnzyme && node?.nodeType !== 'gene';
 
+  // ── Professional Null State Detection ──
+  // A node has "insufficient data" if it's NOT the final target product and key metrics are missing/zero
+  // A node is the "final target" if it's a desired metabolite with no risk and green status —
+  // these intentionally have 0/null metrics and should NOT show "Inference Pending".
+  const isFinalTarget = node?.nodeType === 'metabolite' && (node?.risk_score === undefined || node?.risk_score === 0) && node?.color_mapping === 'Green';
+  const hasInsufficientRiskData = !isFinalTarget && (node?.risk_score === undefined || node?.risk_score === null);
+  const hasInsufficientCarbonData = !isFinalTarget && (node?.carbon_efficiency === undefined || node?.carbon_efficiency === null || node?.carbon_efficiency === 0);
+  const hasInsufficientCofactorData = !isFinalTarget && !node?.cofactor_balance;
+  const hasInsufficientSepData = !isFinalTarget && (node?.separation_cost_index === undefined || node?.separation_cost_index === null);
+
   // Tab definitions
   const tabs = [
     { id: 'overview' as TabId, label: 'Overview', icon: <FileText size={12} /> },
@@ -655,35 +665,55 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                     <div style={{ marginBottom: '12px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'rgba(255,255,255,0.5)', marginBottom: '6px', fontFamily: "'Public Sans', sans-serif" }}>
                         <span>Risk Score</span>
-                        <span style={{ fontWeight: 600, color: (node.risk_score ?? 0) > HIGH_RISK_THRESHOLD ? BIO_THEME_COLORS.RED : (node.risk_score ?? 0) > MODERATE_RISK_THRESHOLD ? BIO_THEME_COLORS.AMBER : BIO_THEME_COLORS.GREEN }}>
-                          {((node.risk_score ?? 0) * 100).toFixed(0)}%
-                        </span>
+                        {hasInsufficientRiskData ? (
+                          <span style={{ fontWeight: 600, fontSize: '9px', color: 'rgba(255,255,255,0.35)', background: 'rgba(255,255,255,0.06)', padding: '2px 8px', borderRadius: '8px', letterSpacing: '0.03em' }}>
+                            Inference Pending
+                          </span>
+                        ) : (
+                          <span style={{ fontWeight: 600, color: (node.risk_score ?? 0) > HIGH_RISK_THRESHOLD ? BIO_THEME_COLORS.RED : (node.risk_score ?? 0) > MODERATE_RISK_THRESHOLD ? BIO_THEME_COLORS.AMBER : BIO_THEME_COLORS.GREEN }}>
+                            {((node.risk_score ?? 0) * 100).toFixed(0)}%
+                          </span>
+                        )}
                       </div>
-                      <div style={{ height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '2px' }}>
-                        <div style={{ width: `${(node.risk_score ?? 0) * 100}%`, height: '100%', borderRadius: '2px',
-                          background: (node.risk_score ?? 0) > HIGH_RISK_THRESHOLD ? BIO_THEME_COLORS.RED : (node.risk_score ?? 0) > MODERATE_RISK_THRESHOLD ? BIO_THEME_COLORS.AMBER : BIO_THEME_COLORS.GREEN,
-                        }} />
-                      </div>
+                      {hasInsufficientRiskData ? (
+                        <div style={{ height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '2px' }} />
+                      ) : (
+                        <div style={{ height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '2px' }}>
+                          <div style={{ width: `${(node.risk_score ?? 0) * 100}%`, height: '100%', borderRadius: '2px',
+                            background: (node.risk_score ?? 0) > HIGH_RISK_THRESHOLD ? BIO_THEME_COLORS.RED : (node.risk_score ?? 0) > MODERATE_RISK_THRESHOLD ? BIO_THEME_COLORS.AMBER : BIO_THEME_COLORS.GREEN,
+                          }} />
+                        </div>
+                      )}
                     </div>
 
                     {/* Separation Cost Index Bar */}
                     <div style={{ marginBottom: '12px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'rgba(255,255,255,0.5)', marginBottom: '6px', fontFamily: "'Public Sans', sans-serif" }}>
                         <span>Separation Cost Index</span>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          {(node.separation_cost_index ?? 0) > HIGH_RISK_THRESHOLD && (
-                            <span style={{ color: BIO_THEME_COLORS.RED, fontWeight: 700, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>High Separation Cost</span>
-                          )}
-                          <span style={{ fontWeight: 600, color: (node.separation_cost_index ?? 0) > HIGH_RISK_THRESHOLD ? BIO_THEME_COLORS.RED : (node.separation_cost_index ?? 0) > MODERATE_RISK_THRESHOLD ? BIO_THEME_COLORS.AMBER : BIO_THEME_COLORS.GREEN }}>
-                            {((node.separation_cost_index ?? 0) * 100).toFixed(0)}%
+                        {hasInsufficientSepData ? (
+                          <span style={{ fontWeight: 600, fontSize: '9px', color: 'rgba(255,255,255,0.35)', background: 'rgba(255,255,255,0.06)', padding: '2px 8px', borderRadius: '8px', letterSpacing: '0.03em' }}>
+                            Inference Pending
                           </span>
-                        </span>
+                        ) : (
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            {(node.separation_cost_index ?? 0) > HIGH_RISK_THRESHOLD && (
+                              <span style={{ color: BIO_THEME_COLORS.RED, fontWeight: 700, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>High Separation Cost</span>
+                            )}
+                            <span style={{ fontWeight: 600, color: (node.separation_cost_index ?? 0) > HIGH_RISK_THRESHOLD ? BIO_THEME_COLORS.RED : (node.separation_cost_index ?? 0) > MODERATE_RISK_THRESHOLD ? BIO_THEME_COLORS.AMBER : BIO_THEME_COLORS.GREEN }}>
+                              {((node.separation_cost_index ?? 0) * 100).toFixed(0)}%
+                            </span>
+                          </span>
+                        )}
                       </div>
-                      <div style={{ height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '2px' }}>
-                        <div style={{ width: `${(node.separation_cost_index ?? 0) * 100}%`, height: '100%', borderRadius: '2px',
-                          background: (node.separation_cost_index ?? 0) > HIGH_RISK_THRESHOLD ? BIO_THEME_COLORS.RED : (node.separation_cost_index ?? 0) > MODERATE_RISK_THRESHOLD ? BIO_THEME_COLORS.AMBER : BIO_THEME_COLORS.GREEN,
-                        }} />
-                      </div>
+                      {hasInsufficientSepData ? (
+                        <div style={{ height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '2px' }} />
+                      ) : (
+                        <div style={{ height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '2px' }}>
+                          <div style={{ width: `${(node.separation_cost_index ?? 0) * 100}%`, height: '100%', borderRadius: '2px',
+                            background: (node.separation_cost_index ?? 0) > HIGH_RISK_THRESHOLD ? BIO_THEME_COLORS.RED : (node.separation_cost_index ?? 0) > MODERATE_RISK_THRESHOLD ? BIO_THEME_COLORS.AMBER : BIO_THEME_COLORS.GREEN,
+                          }} />
+                        </div>
+                      )}
                     </div>
 
                     {/* Toxicity Impact */}
@@ -708,7 +738,7 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                     )}
 
                     {/* Cofactor Balance */}
-                    {node.cofactor_balance && (
+                    {node.cofactor_balance ? (
                       <div style={{ padding: '10px 12px', borderRadius: '12px', marginBottom: '12px',
                         background: 'rgba(139,92,246,0.08)',
                         border: '1px solid rgba(139,92,246,0.15)',
@@ -718,10 +748,30 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                           {node.cofactor_balance}
                         </p>
                       </div>
+                    ) : hasInsufficientCofactorData && (
+                      <div style={{ padding: '10px 12px', borderRadius: '12px', marginBottom: '12px',
+                        background: 'rgba(255,255,255,0.02)',
+                        border: '1px solid rgba(255,255,255,0.06)',
+                      }}>
+                        <span style={{ display: 'block', fontSize: '9px', color: 'rgba(255,255,255,0.35)', marginBottom: '4px', fontWeight: 700, textTransform: 'uppercase', fontFamily: "'Public Sans', sans-serif" }}>Cofactor Balance (ATP/NAD(P)H)</span>
+                        <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.30)', background: 'rgba(255,255,255,0.05)', padding: '3px 10px', borderRadius: '8px', fontFamily: "'Public Sans', sans-serif", fontWeight: 600 }}>
+                          Inference Pending / Data Insufficient
+                        </span>
+                      </div>
                     )}
 
                     {/* Carbon Efficiency */}
-                    {node.carbon_efficiency !== undefined && (
+                    {hasInsufficientCarbonData ? (
+                      <div style={{ marginBottom: '12px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'rgba(255,255,255,0.5)', marginBottom: '6px', fontFamily: "'Public Sans', sans-serif" }}>
+                          <span>Carbon Efficiency (Atom Economy)</span>
+                          <span style={{ fontWeight: 600, fontSize: '9px', color: 'rgba(255,255,255,0.35)', background: 'rgba(255,255,255,0.06)', padding: '2px 8px', borderRadius: '8px', letterSpacing: '0.03em' }}>
+                            Inference Pending
+                          </span>
+                        </div>
+                        <div style={{ height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '2px' }} />
+                      </div>
+                    ) : node.carbon_efficiency !== undefined && (
                       <div style={{ marginBottom: '12px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'rgba(255,255,255,0.5)', marginBottom: '6px', fontFamily: "'Public Sans', sans-serif" }}>
                           <span>Carbon Efficiency (Atom Economy)</span>
@@ -751,10 +801,15 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                     )}
 
                     {/* Audit Trail */}
-                    {node.audit_trail && (
+                    {node.audit_trail ? (
                       <div style={{ padding: '10px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px', fontSize: '11px', color: 'rgba(255,255,255,0.45)', fontStyle: 'italic', fontFamily: "'Public Sans', sans-serif", border: '1px solid rgba(255,255,255,0.04)' }}>
                          <span style={{ display: 'block', fontSize: '9px', color: 'rgba(255,255,255,0.3)', marginBottom: '4px', fontWeight: 700, textTransform: 'uppercase', fontStyle: 'normal' }}>Verifiable Audit Trail</span>
                          &ldquo;{node.audit_trail}&rdquo;
+                      </div>
+                    ) : (hasInsufficientRiskData || hasInsufficientCarbonData || hasInsufficientCofactorData) && (
+                      <div style={{ padding: '10px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px', fontSize: '11px', color: 'rgba(255,255,255,0.35)', fontStyle: 'italic', fontFamily: "'Public Sans', sans-serif", border: '1px solid rgba(255,255,255,0.04)' }}>
+                         <span style={{ display: 'block', fontSize: '9px', color: 'rgba(255,255,255,0.25)', marginBottom: '4px', fontWeight: 700, textTransform: 'uppercase', fontStyle: 'normal' }}>Verifiable Audit Trail</span>
+                         Real-time thermodynamic modeling requires binding constants not found in current literature. AuditTrail details based on structural analogs are available in raw logs.
                       </div>
                     )}
                   </div>
@@ -944,7 +999,7 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                               <div style={{ color: BIO_THEME_COLORS.PURPLE, marginTop: '2px' }}>{node.cofactor_balance}</div>
                             </div>
                           )}
-                          {node.atom_economy !== undefined && (
+                          {node.atom_economy !== undefined && node.atom_economy !== 0 ? (
                             <div style={{ marginBottom: '8px' }}>
                               <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: "'Public Sans', sans-serif", fontWeight: 700 }}>Atom Economy (Carbon Efficiency)</span>
                               <div style={{
@@ -955,6 +1010,11 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                               }}>
                                 {node.atom_economy.toFixed(1)}%
                               </div>
+                            </div>
+                          ) : !isFinalTarget && (
+                            <div style={{ marginBottom: '8px' }}>
+                              <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: "'Public Sans', sans-serif", fontWeight: 700 }}>Atom Economy (Carbon Efficiency)</span>
+                              <div style={{ color: 'rgba(255,255,255,0.30)', marginTop: '2px' }}>Inference Pending / Data Insufficient</div>
                             </div>
                           )}
                           {node.dsp_bottleneck && (
