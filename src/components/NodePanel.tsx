@@ -557,7 +557,7 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
                   <div style={{ width: '10px', height: '10px', borderRadius: '50%', flexShrink: 0, background: node.color, boxShadow: `0 0 8px ${node.color}50` }} />
                   <div style={{ minWidth: 0 }}>
-                    <h2 style={{ color: '#ffffff', fontSize: '14px', fontWeight: 600, margin: 0, letterSpacing: '-0.02em', fontFamily: UI_SANS, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    <h2 style={{ color: '#ffffff', fontSize: '14px', fontWeight: 600, margin: 0, letterSpacing: '-0.01em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {node.label}
                     </h2>
                     {node.canonicalLabel && node.canonicalLabel !== node.label && (
@@ -602,7 +602,7 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                       background: activeTab === tab.id ? 'rgba(255,255,255,0.06)' : 'transparent',
                       color: activeTab === tab.id ? '#ffffff' : 'rgba(255,255,255,0.55)',
                       fontSize: '11px', fontWeight: activeTab === tab.id ? 600 : 400,
-                      fontFamily: UI_SANS, transition: 'border-color 300ms ease-out, filter 300ms ease-out, color 300ms ease-out',
+                      transition: 'border-color 300ms ease-out, filter 300ms ease-out, color 300ms ease-out',
                     }}>
                     {tab.icon}
                     {tab.label}
