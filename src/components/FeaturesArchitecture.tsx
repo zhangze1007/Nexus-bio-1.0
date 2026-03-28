@@ -1,12 +1,11 @@
 'use client';
 
 import { motion, useInView } from 'framer-motion';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { Activity, FlaskConical, Dna } from 'lucide-react';
 
-const SERIF = "'DM Serif Display', Georgia, serif";
 const BODY  = "'Public Sans', -apple-system, sans-serif";
-const MATH  = "'Cambria Math', 'Latin Modern Math', 'STIX Two Math', Georgia, serif";
+const UI_MONO = "'JetBrains Mono', 'Fira Code', 'SFMono-Regular', ui-monospace, monospace";
 
 const FEATURES = [
   {
@@ -85,24 +84,28 @@ const FORMULA_BLOCKS = [
 function FormulaBlock({ block, index }: { block: typeof FORMULA_BLOCKS[number]; index: number }) {
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: '-60px' });
+  const [isHovered, setIsHovered] = useState(false);
 
   return (
     <motion.div
       ref={ref}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       initial={{ opacity: 0, y: 28 }}
       animate={inView ? { opacity: 1, y: 0 } : {}}
       transition={{ duration: 0.6, delay: 0.15 * index, ease: [0.22, 1, 0.36, 1] }}
       style={{
         padding: '28px 24px',
-        borderRadius: '20px',
+        borderRadius: '8px',
         background: 'rgba(255,255,255,0.025)',
-        border: '1px solid rgba(255,255,255,0.06)',
+        border: `1px solid ${isHovered ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.08)'}`,
         backdropFilter: 'blur(20px)',
         WebkitBackdropFilter: 'blur(20px)',
-        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06), 0 16px 40px rgba(0,0,0,0.14)',
         display: 'flex',
         flexDirection: 'column' as const,
         gap: '16px',
+        transition: 'border-color 300ms ease-out, filter 300ms ease-out',
+        filter: isHovered ? 'brightness(1.03)' : 'brightness(1)',
       }}
     >
       {/* Header */}
@@ -121,22 +124,22 @@ function FormulaBlock({ block, index }: { block: typeof FORMULA_BLOCKS[number]; 
       </div>
 
       <h4 style={{
-        fontFamily: SERIF, fontSize: '17px', fontWeight: 400,
-        color: 'rgba(255,255,255,0.85)', margin: 0,
-        lineHeight: 1.3, letterSpacing: '-0.01em',
+        fontFamily: BODY, fontSize: '17px', fontWeight: 600,
+        color: '#FFFFFF', margin: 0,
+        lineHeight: 1.3, letterSpacing: '-0.02em',
       }}>
         {block.title}
       </h4>
 
       {/* Formula */}
       <div style={{
-        padding: '14px 18px', borderRadius: '12px',
+        padding: '14px 18px', borderRadius: '8px',
         background: 'rgba(255,255,255,0.03)',
-        border: '1px solid rgba(255,255,255,0.05)',
+        border: '1px solid rgba(255,255,255,0.08)',
       }}>
         <p style={{
-          fontFamily: MATH, fontSize: '17px', fontStyle: 'italic',
-          color: 'rgba(255,255,255,0.75)', margin: 0,
+          fontFamily: UI_MONO, fontSize: '16px',
+          color: '#9CA3AF', margin: 0,
           lineHeight: 1.5, letterSpacing: '0.02em',
         }}>
           {block.formula}
@@ -145,7 +148,7 @@ function FormulaBlock({ block, index }: { block: typeof FORMULA_BLOCKS[number]; 
 
       {/* Calculation */}
       <p style={{
-        fontFamily: BODY, fontSize: '12px',
+        fontFamily: UI_MONO, fontSize: '12px',
         color: 'rgba(255,255,255,0.35)', margin: 0,
         lineHeight: 1.7, fontFeatureSettings: "'tnum' 1",
       }}>
@@ -158,14 +161,13 @@ function FormulaBlock({ block, index }: { block: typeof FORMULA_BLOCKS[number]; 
         animate={inView ? { opacity: 1 } : {}}
         transition={{ duration: 0.5, delay: 0.15 * index + 0.4 }}
         style={{
-          padding: '12px 16px', borderRadius: '12px',
+          padding: '12px 16px', borderRadius: '8px',
           background: `${block.resultColor}08`,
           border: `1px solid ${block.resultColor}30`,
-          boxShadow: `0 0 20px ${block.resultColor}10`,
         }}
       >
         <p style={{
-          fontFamily: MATH, fontSize: '15px', fontWeight: 600,
+          fontFamily: UI_MONO, fontSize: '15px', fontWeight: 600,
           color: block.resultColor, margin: 0,
           lineHeight: 1.4, fontFeatureSettings: "'tnum' 1",
         }}>
@@ -173,7 +175,7 @@ function FormulaBlock({ block, index }: { block: typeof FORMULA_BLOCKS[number]; 
         </p>
         {block.resultLabel && (
           <p style={{
-            fontFamily: BODY, fontSize: '11px',
+            fontFamily: UI_MONO, fontSize: '11px',
             color: `${block.resultColor}BB`, margin: '6px 0 0',
             lineHeight: 1.4, fontFeatureSettings: "'tnum' 1",
           }}>
@@ -235,24 +237,28 @@ function FeatureCard({ feature, index }: { feature: typeof FEATURES[number]; ind
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: '-60px' });
   const Icon = feature.icon;
+  const [isHovered, setIsHovered] = useState(false);
 
   return (
     <motion.div
       ref={ref}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       initial={{ opacity: 0, y: 36 }}
       animate={inView ? { opacity: 1, y: 0 } : {}}
       transition={{ duration: 0.65, delay: 0.12 * index, ease: [0.22, 1, 0.36, 1] }}
       style={{
         padding: '32px 28px',
-        borderRadius: '24px',
+        borderRadius: '8px',
         background: 'rgba(255,255,255,0.03)',
-        border: '1px solid rgba(255,255,255,0.07)',
+        border: `1px solid ${isHovered ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.08)'}`,
         backdropFilter: 'blur(24px)',
         WebkitBackdropFilter: 'blur(24px)',
-        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08), 0 24px 48px rgba(0,0,0,0.18)',
         display: 'flex',
         flexDirection: 'column' as const,
         gap: '20px',
+        transition: 'border-color 300ms ease-out, filter 300ms ease-out',
+        filter: isHovered ? 'brightness(1.03)' : 'brightness(1)',
       }}
     >
       {/* Icon badge */}
@@ -267,13 +273,13 @@ function FeatureCard({ feature, index }: { feature: typeof FEATURES[number]; ind
 
       {/* Title */}
       <h3 style={{
-        fontFamily: SERIF,
+        fontFamily: BODY,
         fontSize: '20px',
-        fontWeight: 400,
-        color: 'rgba(255,255,255,0.9)',
+        fontWeight: 600,
+        color: '#FFFFFF',
         margin: 0,
         lineHeight: 1.25,
-        letterSpacing: '-0.01em',
+        letterSpacing: '-0.02em',
       }}>
         {feature.title}
       </h3>
@@ -340,10 +346,10 @@ export default function FeaturesArchitecture() {
             02 · Engine Architecture
           </p>
           <h2 style={{
-            fontFamily: SERIF,
+            fontFamily: BODY,
             fontSize: 'clamp(1.8rem, 3.5vw, 2.8rem)',
-            fontWeight: 400,
-            color: 'rgba(255,255,255,0.92)',
+            fontWeight: 600,
+            color: '#FFFFFF',
             letterSpacing: '-0.02em',
             lineHeight: 1.1,
             margin: '0 0 14px',

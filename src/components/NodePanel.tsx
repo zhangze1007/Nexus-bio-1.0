@@ -14,6 +14,8 @@ import CellImageViewer from './CellImageViewer';
 // ── Compliance thresholds ─────────────────────────────────────────────
 const HIGH_RISK_THRESHOLD = 0.7;
 const MODERATE_RISK_THRESHOLD = 0.3;
+const UI_SANS = "'Inter', 'Helvetica Neue', 'Public Sans', -apple-system, sans-serif";
+const UI_MONO = "'JetBrains Mono', 'Fira Code', 'SFMono-Regular', ui-monospace, monospace";
 
 // ── AlphaFold IDs for showcase enzymes ────────────────────────────────
 const ENZYME_ALPHAFOLD: Record<string, { afId: string; pdbId: string; name: string }> = {
@@ -545,9 +547,8 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
               background: 'rgba(10,13,20,0.82)',
               backdropFilter: 'blur(28px)',
               WebkitBackdropFilter: 'blur(28px)',
-              borderLeft: '1px solid rgba(255,255,255,0.09)',
-              fontFamily: "'Public Sans', -apple-system, sans-serif",
-              boxShadow: '-24px 0 80px rgba(0,0,0,0.4)',
+              borderLeft: '1px solid rgba(255,255,255,0.08)',
+              fontFamily: UI_SANS,
             }}
           >
             {/* Header */}
@@ -565,25 +566,43 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                   </div>
                 </div>
                 <button onClick={onClose}
-                  style={{ color: 'rgba(255,255,255,0.3)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px', flexShrink: 0, display: 'flex' }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#ffffff'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.3)'; }}>
+                  style={{ color: 'rgba(255,255,255,0.6)', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer', padding: '4px', flexShrink: 0, display: 'flex', borderRadius: '6px', transition: 'border-color 300ms ease-out, filter 300ms ease-out' }}
+                  onMouseEnter={e => {
+                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.2)';
+                    (e.currentTarget as HTMLElement).style.filter = 'brightness(1.08)';
+                  }}
+                  onMouseLeave={e => {
+                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)';
+                    (e.currentTarget as HTMLElement).style.filter = 'brightness(1)';
+                  }}>
                   <X size={15} />
                 </button>
               </div>
 
               {/* Tab bar */}
-              <div style={{ display: 'flex', gap: '2px', background: 'rgba(255,255,255,0.03)', borderRadius: '16px', padding: '3px' }}>
+              <div style={{ display: 'flex', gap: '4px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', padding: '4px', border: '1px solid rgba(255,255,255,0.08)' }}>
                 {tabs.map(tab => (
                   <button key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
+                    onMouseEnter={e => {
+                      if (activeTab !== tab.id) {
+                        (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.2)';
+                        (e.currentTarget as HTMLElement).style.filter = 'brightness(1.05)';
+                      }
+                    }}
+                    onMouseLeave={e => {
+                      if (activeTab !== tab.id) {
+                        (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)';
+                        (e.currentTarget as HTMLElement).style.filter = 'brightness(1)';
+                      }
+                    }}
                     style={{
                       flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px',
-                      padding: '6px 8px', borderRadius: '20px', border: 'none', cursor: 'pointer',
-                      background: activeTab === tab.id ? 'rgba(255,255,255,0.08)' : 'transparent',
-                      color: activeTab === tab.id ? '#ffffff' : 'rgba(255,255,255,0.3)',
+                      padding: '6px 8px', borderRadius: '6px', border: `1px solid ${activeTab === tab.id ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.08)'}`, cursor: 'pointer',
+                      background: activeTab === tab.id ? 'rgba(255,255,255,0.06)' : 'transparent',
+                      color: activeTab === tab.id ? '#ffffff' : 'rgba(255,255,255,0.55)',
                       fontSize: '11px', fontWeight: activeTab === tab.id ? 600 : 400,
-                      fontFamily: 'inherit', transition: 'all 0.15s',
+                      transition: 'border-color 300ms ease-out, filter 300ms ease-out, color 300ms ease-out',
                     }}>
                     {tab.icon}
                     {tab.label}
@@ -602,11 +621,11 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '3px 8px', borderRadius: '20px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
                       <Hash size={10} style={{ color: 'rgba(255,255,255,0.2)' }} />
-                      <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', fontFamily: "'Public Sans', sans-serif", fontFeatureSettings: "'tnum' 1" }}>{node.id}</span>
+                      <span style={{ color: '#9CA3AF', fontSize: '10px', fontFamily: UI_MONO, fontFeatureSettings: "'tnum' 1" }}>{node.id}</span>
                     </div>
                     {node.nodeType && node.nodeType !== 'unknown' && (
                       <div style={{ padding: '3px 8px', borderRadius: '20px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
-                        <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: '10px', fontFamily: "'Public Sans', sans-serif", fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        <span style={{ color: '#9CA3AF', fontSize: '10px', fontFamily: UI_MONO, fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                           {NODE_TYPE_LABELS[node.nodeType]}
                         </span>
                       </div>
@@ -658,19 +677,19 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                   <div style={{ padding: '14px 16px', borderRadius: '20px', background: node.risk_score && node.risk_score > HIGH_RISK_THRESHOLD ? 'rgba(239,68,68,0.1)' : 'rgba(255,255,255,0.03)', border: `1px solid ${node.risk_score && node.risk_score > HIGH_RISK_THRESHOLD ? 'rgba(239,68,68,0.3)' : 'rgba(255,255,255,0.06)'}`, marginBottom: '16px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
                       <ShieldAlert size={14} color={node.risk_score && node.risk_score > MODERATE_RISK_THRESHOLD ? BIO_THEME_COLORS.RED : BIO_THEME_COLORS.GREEN} />
-                      <span style={{ fontSize: '11px', fontWeight: 800, color: 'rgba(255,255,255,0.85)', letterSpacing: '0.05em', fontFamily: "'Public Sans', sans-serif" }}>COMMERCIAL RISK & COMPLIANCE</span>
+                      <span style={{ fontSize: '11px', fontWeight: 800, color: '#FFFFFF', letterSpacing: '0.03em', fontFamily: UI_SANS }}>COMMERCIAL RISK & COMPLIANCE</span>
                     </div>
 
                     {/* Risk Score Bar */}
                     <div style={{ marginBottom: '12px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'rgba(255,255,255,0.5)', marginBottom: '6px', fontFamily: "'Public Sans', sans-serif" }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: '#9CA3AF', marginBottom: '6px', fontFamily: UI_MONO }}>
                         <span>Risk Score</span>
                         {hasInsufficientRiskData ? (
-                          <span style={{ fontWeight: 600, fontSize: '9px', color: 'rgba(255,255,255,0.35)', background: 'rgba(255,255,255,0.06)', padding: '2px 8px', borderRadius: '8px', letterSpacing: '0.03em' }}>
+                          <span style={{ fontWeight: 600, fontSize: '9px', color: '#9CA3AF', background: 'rgba(255,255,255,0.06)', padding: '2px 8px', borderRadius: '6px', letterSpacing: '0.03em', fontFamily: UI_MONO }}>
                             Inference Pending
                           </span>
                         ) : (
-                          <span style={{ fontWeight: 600, color: (node.risk_score ?? 0) > HIGH_RISK_THRESHOLD ? BIO_THEME_COLORS.RED : (node.risk_score ?? 0) > MODERATE_RISK_THRESHOLD ? BIO_THEME_COLORS.AMBER : BIO_THEME_COLORS.GREEN }}>
+                          <span style={{ fontWeight: 600, fontFamily: UI_MONO, color: (node.risk_score ?? 0) > HIGH_RISK_THRESHOLD ? BIO_THEME_COLORS.RED : (node.risk_score ?? 0) > MODERATE_RISK_THRESHOLD ? BIO_THEME_COLORS.AMBER : BIO_THEME_COLORS.GREEN }}>
                             {((node.risk_score ?? 0) * 100).toFixed(0)}%
                           </span>
                         )}
@@ -688,14 +707,14 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
 
                     {/* Separation Cost Index Bar */}
                     <div style={{ marginBottom: '12px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'rgba(255,255,255,0.5)', marginBottom: '6px', fontFamily: "'Public Sans', sans-serif" }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: '#9CA3AF', marginBottom: '6px', fontFamily: UI_MONO }}>
                         <span>Separation Cost Index</span>
                         {hasInsufficientSepData ? (
-                          <span style={{ fontWeight: 600, fontSize: '9px', color: 'rgba(255,255,255,0.35)', background: 'rgba(255,255,255,0.06)', padding: '2px 8px', borderRadius: '8px', letterSpacing: '0.03em' }}>
+                          <span style={{ fontWeight: 600, fontSize: '9px', color: '#9CA3AF', background: 'rgba(255,255,255,0.06)', padding: '2px 8px', borderRadius: '6px', letterSpacing: '0.03em', fontFamily: UI_MONO }}>
                             Inference Pending
                           </span>
                         ) : (
-                          <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontFamily: UI_MONO }}>
                             {(node.separation_cost_index ?? 0) > HIGH_RISK_THRESHOLD && (
                               <span style={{ color: BIO_THEME_COLORS.RED, fontWeight: 700, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>High Separation Cost</span>
                             )}
@@ -732,8 +751,8 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                     {/* Thermodynamic Stability */}
                     {node.thermodynamic_stability && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px' }}>
-                        <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', fontFamily: "'Public Sans', sans-serif" }}>Thermodynamic Stability:</span>
-                        <span style={{ fontSize: '10px', fontWeight: 700, color: node.thermodynamic_stability === 'High' ? BIO_THEME_COLORS.GREEN : node.thermodynamic_stability === 'Low' ? BIO_THEME_COLORS.RED : BIO_THEME_COLORS.AMBER, fontFamily: "'Public Sans', sans-serif" }}>{node.thermodynamic_stability}</span>
+                        <span style={{ fontSize: '10px', color: '#9CA3AF', fontFamily: UI_MONO }}>Thermodynamic Stability:</span>
+                        <span style={{ fontSize: '10px', fontWeight: 700, color: node.thermodynamic_stability === 'High' ? BIO_THEME_COLORS.GREEN : node.thermodynamic_stability === 'Low' ? BIO_THEME_COLORS.RED : BIO_THEME_COLORS.AMBER, fontFamily: UI_MONO }}>{node.thermodynamic_stability}</span>
                       </div>
                     )}
 
@@ -744,7 +763,7 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                         border: '1px solid rgba(139,92,246,0.15)',
                       }}>
                         <span style={{ display: 'block', fontSize: '9px', color: 'rgba(255,255,255,0.35)', marginBottom: '4px', fontWeight: 700, textTransform: 'uppercase', fontFamily: "'Public Sans', sans-serif" }}>Cofactor Balance (ATP/NAD(P)H)</span>
-                        <p style={{ color: BIO_THEME_COLORS.PURPLE, fontSize: '11px', fontWeight: 500, margin: 0, lineHeight: 1.5, fontFamily: "'Public Sans', sans-serif" }}>
+                        <p style={{ color: BIO_THEME_COLORS.PURPLE, fontSize: '11px', fontWeight: 500, margin: 0, lineHeight: 1.5, fontFamily: UI_MONO }}>
                           {node.cofactor_balance}
                         </p>
                       </div>
@@ -754,7 +773,7 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                         border: '1px solid rgba(255,255,255,0.06)',
                       }}>
                         <span style={{ display: 'block', fontSize: '9px', color: 'rgba(255,255,255,0.35)', marginBottom: '4px', fontWeight: 700, textTransform: 'uppercase', fontFamily: "'Public Sans', sans-serif" }}>Cofactor Balance (ATP/NAD(P)H)</span>
-                        <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.30)', background: 'rgba(255,255,255,0.05)', padding: '3px 10px', borderRadius: '8px', fontFamily: "'Public Sans', sans-serif", fontWeight: 600 }}>
+                        <span style={{ fontSize: '10px', color: '#9CA3AF', background: 'rgba(255,255,255,0.05)', padding: '3px 10px', borderRadius: '6px', fontFamily: UI_MONO, fontWeight: 600 }}>
                           Inference Pending / Data Insufficient
                         </span>
                       </div>
@@ -763,9 +782,9 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                     {/* Carbon Efficiency */}
                     {hasInsufficientCarbonData ? (
                       <div style={{ marginBottom: '12px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'rgba(255,255,255,0.5)', marginBottom: '6px', fontFamily: "'Public Sans', sans-serif" }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: '#9CA3AF', marginBottom: '6px', fontFamily: UI_MONO }}>
                           <span>Carbon Efficiency (Atom Economy)</span>
-                          <span style={{ fontWeight: 600, fontSize: '9px', color: 'rgba(255,255,255,0.35)', background: 'rgba(255,255,255,0.06)', padding: '2px 8px', borderRadius: '8px', letterSpacing: '0.03em' }}>
+                          <span style={{ fontWeight: 600, fontSize: '9px', color: '#9CA3AF', background: 'rgba(255,255,255,0.06)', padding: '2px 8px', borderRadius: '6px', letterSpacing: '0.03em', fontFamily: UI_MONO }}>
                             Inference Pending
                           </span>
                         </div>
@@ -773,9 +792,9 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                       </div>
                     ) : node.carbon_efficiency !== undefined && (
                       <div style={{ marginBottom: '12px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'rgba(255,255,255,0.5)', marginBottom: '6px', fontFamily: "'Public Sans', sans-serif" }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: '#9CA3AF', marginBottom: '6px', fontFamily: UI_MONO }}>
                           <span>Carbon Efficiency (Atom Economy)</span>
-                          <span style={{ fontWeight: 600, color: node.carbon_efficiency >= 80 ? BIO_THEME_COLORS.GREEN : node.carbon_efficiency >= 50 ? BIO_THEME_COLORS.AMBER : BIO_THEME_COLORS.RED }}>
+                          <span style={{ fontWeight: 600, fontFamily: UI_MONO, color: node.carbon_efficiency >= 80 ? BIO_THEME_COLORS.GREEN : node.carbon_efficiency >= 50 ? BIO_THEME_COLORS.AMBER : BIO_THEME_COLORS.RED }}>
                             {node.carbon_efficiency.toFixed(1)}%
                           </span>
                         </div>
