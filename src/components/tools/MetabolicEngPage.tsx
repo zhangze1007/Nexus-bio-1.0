@@ -126,9 +126,15 @@ export default function MetabolicEngPage() {
   const { params, readouts, rateHistory } = snapshot.context;
   const state = snapshot.value as 'idle' | 'simulating' | 'stress_test' | 'equilibrium';
 
-  // ── Zustand: node selection for NodePanel ─────────────────────────
-  const selectedNode   = useUIStore(s => s.selectedNode);
+  // ── Zustand: node selection + AI-generated pathway ───────────────
+  const selectedNode    = useUIStore(s => s.selectedNode);
   const setSelectedNode = useUIStore(s => s.setSelectedNode);
+  const aiNodes         = useUIStore(s => s.aiNodes);
+  const aiEdges         = useUIStore(s => s.aiEdges);
+
+  // Use AI-generated pathway when available; fall back to demo Artemisinin data
+  const activeNodes = (aiNodes && aiNodes.length > 0) ? aiNodes : (pathwayNodes as PathwayNode[]);
+  const activeEdges = (aiEdges && aiEdges.length > 0) ? aiEdges : DEMO_EDGES;
 
   // ── ThreeScene: computed props from simulation params ─────────────
   // glowMultiplier: default enzyme=5 → 1.0 (mid); enzyme=20 → 2.0 (max); pH/temp deviate → dims
@@ -295,8 +301,8 @@ export default function MetabolicEngPage() {
           top:'52px', bottom:'40px',
         }}>
           <ThreeScene
-            nodes={pathwayNodes as PathwayNode[]}
-            edges={DEMO_EDGES}
+            nodes={activeNodes}
+            edges={activeEdges}
             onNodeClick={setSelectedNode}
             selectedNodeId={selectedNode?.id ?? null}
             glowMultiplier={glowMultiplier}
@@ -380,8 +386,8 @@ export default function MetabolicEngPage() {
           <NodePanel
             node={selectedNode}
             onClose={() => setSelectedNode(null)}
-            allNodes={pathwayNodes as PathwayNode[]}
-            allEdges={DEMO_EDGES}
+            allNodes={activeNodes}
+            allEdges={activeEdges}
           />
         )}
       </AnimatePresence>

@@ -3,7 +3,7 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 // 注入了 ShieldAlert 用于合规面板
-import { X, Download, FileText, Hash, Link2, ChevronDown, ChevronUp, Atom, Activity, Thermometer, Loader2, ExternalLink, ShieldAlert } from 'lucide-react';
+import { X, Download, FileText, Hash, Link2, ChevronDown, ChevronUp, Atom, Activity, Thermometer, Loader2, ExternalLink, ShieldAlert, AlertTriangle, CheckCircle, Circle } from 'lucide-react';
 import { PathwayNode, PathwayEdge, NodeType, EdgeRelationshipType, SHOWCASE_PUBCHEM_CIDS } from '../types';
 import { BIO_THEME_COLORS } from './ThreeScene';
 import MoleculeViewer from './MoleculeViewer';
@@ -618,7 +618,7 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
             <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
-                  <div style={{ width: '10px', height: '10px', borderRadius: '50%', flexShrink: 0, background: node.color, boxShadow: `0 0 8px ${node.color}50` }} />
+                  <div style={{ width: '10px', height: '10px', borderRadius: '50%', flexShrink: 0, background: 'rgba(255,255,255,0.35)', border: '1px solid rgba(255,255,255,0.2)' }} />
                   <div style={{ minWidth: 0 }}>
                     <h2 style={{ color: '#ffffff', fontSize: '14px', fontWeight: 600, margin: 0, letterSpacing: '-0.01em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {node.label}
@@ -697,26 +697,20 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
 
                   {/* ─── Purity Status Badge — always visible ──────────────────────── */}
                   <div style={{ padding: '10px 14px', borderRadius: '16px', marginBottom: '12px',
-                    background: node.nodeType === 'impurity' || (node.risk_score && node.risk_score > MODERATE_RISK_THRESHOLD) 
-                      ? 'rgba(239,68,68,0.12)' 
-                      : node.nodeType === 'intermediate' 
-                        ? 'rgba(245,158,11,0.10)' 
-                        : 'rgba(16,185,129,0.10)',
-                    border: `1px solid ${node.nodeType === 'impurity' || (node.risk_score && node.risk_score > MODERATE_RISK_THRESHOLD)
-                      ? 'rgba(239,68,68,0.3)'
-                      : node.nodeType === 'intermediate'
-                        ? 'rgba(245,158,11,0.25)'
-                        : 'rgba(16,185,129,0.25)'}`,
+                    background: 'rgba(255,255,255,0.04)',
+                    border: '1px solid rgba(255,255,255,0.1)',
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontSize: '14px' }}>
-                        {node.nodeType === 'impurity' || (node.risk_score && node.risk_score > MODERATE_RISK_THRESHOLD) ? '⚠️' : node.nodeType === 'intermediate' ? '🔶' : '✅'}
+                      <span style={{ display: 'flex', alignItems: 'center', color: 'rgba(255,255,255,0.5)', flexShrink: 0 }}>
+                        {node.nodeType === 'impurity' || (node.risk_score && node.risk_score > MODERATE_RISK_THRESHOLD)
+                          ? <AlertTriangle size={14} />
+                          : node.nodeType === 'intermediate'
+                            ? <Circle size={14} />
+                            : <CheckCircle size={14} />}
                       </span>
                       <div>
                         <span style={{ fontSize: '12px', fontWeight: 700, fontFamily: "'Inter', -apple-system, sans-serif",
-                          color: node.nodeType === 'impurity' || (node.risk_score && node.risk_score > MODERATE_RISK_THRESHOLD)
-                            ? BIO_THEME_COLORS.RED
-                            : node.nodeType === 'intermediate' ? BIO_THEME_COLORS.AMBER : BIO_THEME_COLORS.GREEN,
+                          color: 'rgba(255,255,255,0.85)',
                         }}>
                           {node.nodeType === 'impurity' ? 'Impurity — Purification Risk'
                             : (node.risk_score && node.risk_score > MODERATE_RISK_THRESHOLD) ? 'Elevated Commercial Risk'
