@@ -251,10 +251,10 @@ export const STATE_LABELS: Record<MachineState, string> = {
 };
 
 export const STATE_COLORS: Record<MachineState, string> = {
-  idle:         '#4A5568',
-  simulating:   '#22D3EE',
-  stress_test:  '#F87171',
-  equilibrium:  '#10B981',
+  idle:         'rgba(255,255,255,0.25)',
+  simulating:   'rgba(255,255,255,0.75)',
+  stress_test:  'rgba(255,255,255,0.45)',
+  equilibrium:  'rgba(255,255,255,0.65)',
 };
 
 /**

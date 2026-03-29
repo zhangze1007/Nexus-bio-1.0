@@ -8,12 +8,13 @@
  *   FBA Web Worker runs at 60 Hz, posts readouts to machine TICK event
  *   FluidForce injected via forceRef (zero allocation on RAF path)
  *   Mouse velocity dP/dt → forceRef on mousemove (passive, throttled to RAF)
+ *   ThreeScene center layer — glowMultiplier/flowSpeed driven by params
  *
  * Performance targets:
  *   Desktop: 60 FPS  |  Mobile MatePad 11.5: 45 FPS (dpr capped at 1.2)
  */
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMachine } from '@xstate/react';
 import { Dna, ChevronLeft } from 'lucide-react';
@@ -22,31 +23,44 @@ import FluidSimCanvas from './FluidSimCanvas';
 import type { FluidForce } from './FluidSimCanvas';
 import ToolOverlay from './ToolOverlay';
 import StatusOverlay from './StatusOverlay';
-import { metabolicMachine, STATE_COLORS, STATE_LABELS } from '../../machines/metabolicMachine';
+import ThreeScene from '../ThreeScene';
+import { metabolicMachine, STATE_LABELS } from '../../machines/metabolicMachine';
 import type { FBAWorkerIn, FBAWorkerOut } from '../../workers/fbaWorker';
+import { useUIStore } from '../../store/uiStore';
+import pathwayNodes from '../../data/pathwayData.json';
+import type { PathwayNode, PathwayEdge } from '../../types';
 
 const MONO = "'JetBrains Mono', 'Fira Code', monospace";
 const SANS = "'Inter', -apple-system, sans-serif";
 
+// ── Demo pathway edges (Artemisinin biosynthesis — Ro et al. 2006) ─────
+const DEMO_EDGES: PathwayEdge[] = [
+  { start: 'acetyl_coa',         end: 'hmg_coa',             direction: 'forward' },
+  { start: 'hmg_coa',            end: 'mevalonate',           direction: 'forward' },
+  { start: 'mevalonate',         end: 'fpp',                  direction: 'forward' },
+  { start: 'fpp',                end: 'amorpha_4_11_diene',   direction: 'forward' },
+  { start: 'amorpha_4_11_diene', end: 'artemisinic_acid',     direction: 'forward' },
+  { start: 'artemisinic_acid',   end: 'artemisinin',          direction: 'forward' },
+];
+
 // ── Top bar component ──────────────────────────────────────────────────
 
 interface TopBarProps {
-  state:       string;
-  stateColor:  string;
-  stateLabel:  string;
-  tick:        number;
+  state:      string;
+  stateLabel: string;
+  tick:       number;
 }
 
-function TopBar({ state, stateColor, stateLabel, tick }: TopBarProps) {
+function TopBar({ state, stateLabel, tick }: TopBarProps) {
   return (
     <div style={{
       position:'absolute', top:0, left:0, right:0, zIndex:20,
       height:'52px', display:'flex', alignItems:'center',
       justifyContent:'space-between', padding:'0 20px',
-      background:'rgba(10,13,20,0.75)',
+      background:'rgba(0,0,0,0.85)',
       backdropFilter:'blur(24px)',
       WebkitBackdropFilter:'blur(24px)',
-      borderBottom:'1px solid rgba(255,255,255,0.05)',
+      borderBottom:'1px solid rgba(255,255,255,0.06)',
     }}>
       {/* Left: back + logo */}
       <div style={{ display:'flex', alignItems:'center', gap:'16px' }}>
@@ -59,8 +73,8 @@ function TopBar({ state, stateColor, stateLabel, tick }: TopBarProps) {
         </Link>
         <div style={{ width:'1px', height:'16px', background:'rgba(255,255,255,0.07)' }} />
         <div style={{ display:'flex', alignItems:'center', gap:'8px' }}>
-          <div style={{ width:'22px', height:'22px', borderRadius:'7px', background:'rgba(34,211,238,0.1)', border:'1px solid rgba(34,211,238,0.2)', display:'flex', alignItems:'center', justifyContent:'center' }}>
-            <Dna size={11} style={{ color:'#22D3EE' }} />
+          <div style={{ width:'22px', height:'22px', borderRadius:'7px', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.12)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+            <Dna size={11} style={{ color:'rgba(255,255,255,0.65)' }} />
           </div>
           <div>
             <div style={{ fontFamily:MONO, fontSize:'11px', fontWeight:600, color:'rgba(226,232,240,0.85)', letterSpacing:'-0.01em' }}>Metabolic Eng. Lab</div>
@@ -69,7 +83,7 @@ function TopBar({ state, stateColor, stateLabel, tick }: TopBarProps) {
         </div>
       </div>
 
-      {/* Center: state label (CHANGE_REALITY style) */}
+      {/* Center: state label */}
       <motion.div
         key={state}
         initial={{ opacity:0, y:-8, letterSpacing:'0.3em' }}
@@ -77,12 +91,11 @@ function TopBar({ state, stateColor, stateLabel, tick }: TopBarProps) {
         transition={{ duration:0.55, ease:[0.22,1,0.36,1] }}
         style={{
           fontFamily:MONO, fontSize:'11px', fontWeight:700,
-          textTransform:'uppercase', color: stateColor,
+          textTransform:'uppercase', color:'rgba(255,255,255,0.75)',
           letterSpacing:'0.2em',
           padding:'4px 14px', borderRadius:'100px',
-          background:`${stateColor}12`,
-          border:`1px solid ${stateColor}30`,
-          boxShadow:`0 0 12px ${stateColor}25`,
+          background:'rgba(255,255,255,0.05)',
+          border:'1px solid rgba(255,255,255,0.12)',
         }}
       >
         {stateLabel}
@@ -112,6 +125,22 @@ export default function MetabolicEngPage() {
   const { params, readouts, rateHistory } = snapshot.context;
   const state = snapshot.value as 'idle' | 'simulating' | 'stress_test' | 'equilibrium';
 
+  // ── Zustand: node selection for NodePanel ─────────────────────────
+  const selectedNode   = useUIStore(s => s.selectedNode);
+  const setSelectedNode = useUIStore(s => s.setSelectedNode);
+
+  // ── ThreeScene: computed props from simulation params ─────────────
+  const glowMultiplier = useMemo(() => {
+    const tempF = Math.exp(-((params.temperature - 37) ** 2) / 200);
+    const phF   = Math.exp(-((params.pH - 7.4) ** 2) / 1.2);
+    return Math.max(0.3, Math.min(2.0, tempF * phF * (params.enzyme / 5) * 2));
+  }, [params.temperature, params.pH, params.enzyme]);
+
+  const flowSpeed = useMemo(() =>
+    Math.max(0.3, Math.min(2.5, params.substrate / Math.max(0.1, params.km))),
+    [params.substrate, params.km]
+  );
+
   // ── Fluid force ref — zero allocation on RAF ──────────────────────
   const forceRef = useRef<FluidForce | null>(null);
 
@@ -131,7 +160,6 @@ export default function MetabolicEngPage() {
         send({ type: 'TICK', readouts: msg.readouts });
       }
       if (msg.type === 'EQUILIBRIUM_REACHED') {
-        // Only auto-transition if we're still simulating
         if (snapshot.value === 'simulating') {
           send({ type: 'EQUILIBRATE' });
         }
@@ -157,7 +185,6 @@ export default function MetabolicEngPage() {
     workerRef.current?.postMessage({
       type: 'START', params, mode: 'simulating',
     } satisfies FBAWorkerIn);
-    // Seed a burst in the fluid
     forceRef.current = { x: 0.5, y: 0.5, dx: 0.08, dy: 0.04, strength: 1.4 };
   }, [send, params]);
 
@@ -176,7 +203,6 @@ export default function MetabolicEngPage() {
     workerRef.current?.postMessage({
       type: 'START', params, mode: 'stress_test',
     } satisfies FBAWorkerIn);
-    // Violent fluid burst on stress activation
     for (let i = 0; i < 3; i++) {
       setTimeout(() => {
         forceRef.current = {
@@ -200,7 +226,6 @@ export default function MetabolicEngPage() {
 
   const handleParam = useCallback((key: keyof typeof params, value: number) => {
     send({ type: 'SET_PARAM', key, value });
-    // Sync updated params to worker
     if (state !== 'idle' && workerRef.current) {
       workerRef.current.postMessage({
         type: 'UPDATE', params: { ...params, [key]: value },
@@ -236,16 +261,15 @@ export default function MetabolicEngPage() {
     return () => window.removeEventListener('mousemove', onMouseMove);
   }, [state]);
 
-  const stateColor = STATE_COLORS[state];
   const stateLabel = STATE_LABELS[state];
 
   return (
     <div style={{
       position:'fixed', inset:0,
-      background:'#0A0D14',
+      background:'#000000',
       overflow:'hidden', userSelect:'none',
     }}>
-      {/* ── Core viewport: fluid + molecules + grid ── */}
+      {/* ── Core viewport: fluid background ── */}
       <FluidSimCanvas
         forceRef={forceRef}
         reactionRate={readouts.reactionRate}
@@ -256,32 +280,47 @@ export default function MetabolicEngPage() {
       {/* ── Top bar ── */}
       <TopBar
         state={state}
-        stateColor={stateColor}
         stateLabel={stateLabel}
         tick={readouts.tick}
       />
 
+      {/* ── Center: 3D Pathway Visualization ── */}
+      <div style={{ position:'absolute', inset:0, zIndex:5, pointerEvents:'auto' }}>
+        <div style={{
+          position:'absolute',
+          left:'280px', right:'270px',
+          top:'52px', bottom:'40px',
+        }}>
+          <ThreeScene
+            nodes={pathwayNodes as PathwayNode[]}
+            edges={DEMO_EDGES}
+            onNodeClick={setSelectedNode}
+            selectedNodeId={selectedNode?.id ?? null}
+            glowMultiplier={glowMultiplier}
+            flowSpeed={flowSpeed}
+          />
+        </div>
+      </div>
+
       {/* ── Left tool panel ── */}
-      <div style={{ position:'absolute', inset:0, top:'52px', pointerEvents:'none' }}>
-        <div style={{ position:'absolute', inset:0, pointerEvents:'none' }}>
-          <div style={{ pointerEvents:'auto' }}>
-            <ToolOverlay
-              params={params}
-              state={state}
-              onParam={handleParam}
-              onStart={handleStart}
-              onPause={handlePause}
-              onReset={handleReset}
-              onStress={handleStress}
-              onResume={handleResume}
-              forceRef={forceRef}
-            />
-          </div>
+      <div style={{ position:'absolute', inset:0, top:'52px', zIndex:10, pointerEvents:'none' }}>
+        <div style={{ pointerEvents:'auto' }}>
+          <ToolOverlay
+            params={params}
+            state={state}
+            onParam={handleParam}
+            onStart={handleStart}
+            onPause={handlePause}
+            onReset={handleReset}
+            onStress={handleStress}
+            onResume={handleResume}
+            forceRef={forceRef}
+          />
         </div>
       </div>
 
       {/* ── Right status panel ── */}
-      <div style={{ position:'absolute', inset:0, top:'52px', pointerEvents:'none' }}>
+      <div style={{ position:'absolute', inset:0, top:'52px', zIndex:10, pointerEvents:'none' }}>
         <div style={{ pointerEvents:'auto' }}>
           <StatusOverlay
             readouts={readouts}
@@ -294,12 +333,12 @@ export default function MetabolicEngPage() {
 
       {/* ── Bottom HUD strip ── */}
       <div style={{
-        position:'absolute', bottom:0, left:0, right:0, zIndex:10,
+        position:'absolute', bottom:0, left:0, right:0, zIndex:20,
         height:'36px', display:'flex', alignItems:'center', justifyContent:'center',
         gap:'32px', padding:'0 20px',
-        background:'rgba(10,13,20,0.65)',
+        background:'rgba(0,0,0,0.75)',
         backdropFilter:'blur(16px)',
-        borderTop:'1px solid rgba(255,255,255,0.04)',
+        borderTop:'1px solid rgba(255,255,255,0.05)',
       }}>
         {[
           { l:'FLUID',    v:'WebGL2 NS · 25J' },
@@ -323,7 +362,7 @@ export default function MetabolicEngPage() {
             style={{
               position:'absolute', bottom:'60px', left:'50%', transform:'translateX(-50%)',
               fontFamily:MONO, fontSize:'10px', color:'rgba(226,232,240,0.25)',
-              textTransform:'uppercase', letterSpacing:'0.15em', zIndex:5,
+              textTransform:'uppercase', letterSpacing:'0.15em', zIndex:25,
               pointerEvents:'none',
             }}
           >

@@ -247,10 +247,10 @@ function ProteinViewer({ pdbId, alphafoldId, label }: { pdbId: string; alphafold
             </div>
 
             <div style={{ textAlign: 'center' }}>
-              <p style={{ color: 'rgba(0,0,0,0.5)', fontSize: '11px', fontFamily: "'Public Sans',sans-serif", fontWeight: 600, margin: '0 0 3px' }}>
+              <p style={{ color: 'rgba(0,0,0,0.5)', fontSize: '11px', fontFamily: "'Inter', -apple-system, sans-serif", fontWeight: 600, margin: '0 0 3px' }}>
                 {useAF ? 'Predicting structure' : 'Loading structure'}
               </p>
-              <p style={{ color: 'rgba(0,0,0,0.25)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", margin: 0, fontFeatureSettings: "'tnum' 1" }}>
+              <p style={{ color: 'rgba(0,0,0,0.25)', fontSize: '10px', fontFamily: "'Inter', -apple-system, sans-serif", margin: 0, fontFeatureSettings: "'tnum' 1" }}>
                 {useAF ? `AlphaFold · ${alphafoldId}` : `RCSB PDB · ${pdbId}`}
               </p>
             </div>
@@ -264,14 +264,14 @@ function ProteinViewer({ pdbId, alphafoldId, label }: { pdbId: string; alphafold
         {status === 'ready' && (
           <>
             <div style={{ position: 'absolute', top: '8px', left: '10px', pointerEvents: 'none' }}>
-              <span style={{ color: 'rgba(0,0,0,0.35)', fontSize: '9px', fontFamily: "'Public Sans', sans-serif", fontFeatureSettings: "'tnum' 1", background: 'rgba(255,255,255,0.8)', padding: '2px 6px', borderRadius: '8px' }}>
+              <span style={{ color: 'rgba(0,0,0,0.35)', fontSize: '9px', fontFamily: "'Inter', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1", background: 'rgba(255,255,255,0.8)', padding: '2px 6px', borderRadius: '8px' }}>
                 {useAF ? `AF-${alphafoldId}` : pdbId}
               </span>
             </div>
             <div style={{ position: 'absolute', bottom: '8px', right: '10px' }}>
               <a href={useAF ? `https://alphafold.ebi.ac.uk/entry/${alphafoldId}` : `https://www.rcsb.org/structure/${pdbId}`}
                 target="_blank" rel="noopener noreferrer"
-                style={{ color: 'rgba(0,0,0,0.3)', fontSize: '9px', fontFamily: "'Public Sans', sans-serif", fontFeatureSettings: "'tnum' 1", display: 'flex', alignItems: 'center', gap: '3px', textDecoration: 'none', background: 'rgba(255,255,255,0.8)', padding: '2px 6px', borderRadius: '8px' }}
+                style={{ color: 'rgba(0,0,0,0.3)', fontSize: '9px', fontFamily: "'Inter', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1", display: 'flex', alignItems: 'center', gap: '3px', textDecoration: 'none', background: 'rgba(255,255,255,0.8)', padding: '2px 6px', borderRadius: '8px' }}
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(0,0,0,0.7)'; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(0,0,0,0.3)'; }}>
                 {useAF ? 'AlphaFold DB' : 'RCSB PDB'} <ExternalLink size={8} />
@@ -286,7 +286,7 @@ function ProteinViewer({ pdbId, alphafoldId, label }: { pdbId: string; alphafold
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', borderRadius: '16px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
           <div>
             <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '11px', fontWeight: 500, margin: '0 0 2px' }}>AlphaFold pLDDT</p>
-            <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', fontFamily: "'Public Sans', sans-serif", fontFeatureSettings: "'tnum' 1", margin: 0 }}>AI confidence coloring</p>
+            <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', fontFamily: "'Inter', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1", margin: 0 }}>AI confidence coloring</p>
           </div>
           <button onClick={() => setUseAF(!useAF)}
             style={{ width: '34px', height: '18px', borderRadius: '9px', background: useAF ? '#A8C5DA' : 'rgba(255,255,255,0.1)', border: 'none', cursor: 'pointer', position: 'relative', transition: 'background 0.2s' }}>
@@ -301,13 +301,13 @@ function ProteinViewer({ pdbId, alphafoldId, label }: { pdbId: string; alphafold
           {[{ c: '#0053D6', l: '>90' }, { c: '#65CBF3', l: '70–90' }, { c: '#FFDB13', l: '50–70' }, { c: '#FF7D45', l: '<50' }].map(x => (
             <div key={x.l} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
               <div style={{ width: '10px', height: '4px', borderRadius: '2px', background: x.c }} />
-              <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '9px', fontFamily: "'Public Sans', sans-serif", fontFeatureSettings: "'tnum' 1" }}>{x.l}</span>
+              <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '9px', fontFamily: "'Inter', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1" }}>{x.l}</span>
             </div>
           ))}
         </div>
       )}
 
-      <p style={{ color: 'rgba(255,255,255,0.1)', fontSize: '9px', fontFamily: "'Public Sans', sans-serif", fontFeatureSettings: "'tnum' 1", margin: 0, textAlign: 'center' }}>
+      <p style={{ color: 'rgba(255,255,255,0.1)', fontSize: '9px', fontFamily: "'Inter', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1", margin: 0, textAlign: 'center' }}>
         Hover to inspect · Drag to rotate · {useAF ? 'AlphaFold DB' : 'RCSB PDB'}
       </p>
     </div>
@@ -335,14 +335,15 @@ const EDGE_TYPE_LABELS: Record<EdgeRelationshipType, string> = {
 
 function ConfidenceBar({ score }: { score: number }) {
   const pct = Math.round(score * 100);
-  const color = score >= 0.8 ? '#C8E0D0' : score >= 0.6 ? '#E8DCC8' : '#E8C8D4';
+  const opacity = score >= 0.8 ? 0.85 : score >= 0.6 ? 0.6 : 0.35;
+  const color = `rgba(255,255,255,${opacity})`;
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
-        <span style={{ fontFamily: "'Public Sans',sans-serif", fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'rgba(255,255,255,0.22)' }}>
+        <span style={{ fontFamily: "'Inter', -apple-system, sans-serif", fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'rgba(255,255,255,0.22)' }}>
           AI Confidence
         </span>
-        <span style={{ fontFamily: "'Public Sans',sans-serif", fontSize: '13px', color, fontWeight: 700, fontFeatureSettings: "'tnum' 1" }}>{pct}%</span>
+        <span style={{ fontFamily: "'Inter', -apple-system, sans-serif", fontSize: '13px', color, fontWeight: 700, fontFeatureSettings: "'tnum' 1" }}>{pct}%</span>
       </div>
       <div style={{ height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '2px' }}>
         <div style={{ width: `${pct}%`, height: '100%', background: color, borderRadius: '2px', transition: 'width 0.5s cubic-bezier(0.22,1,0.36,1)' }} />
@@ -383,10 +384,10 @@ function PLDDTHistogram({ nodes, currentNodeId }: { nodes?: PathwayNode[]; curre
 
     const binColor = (idx: number): string => {
       const midpoint = idx * 10 + 5;
-      if (midpoint < 50) return '#E8C8D4';
-      if (midpoint < 70) return '#E8DCC8';
-      if (midpoint < 90) return '#C8E0D0';
-      return '#C8D8E8';
+      if (midpoint < 50) return 'rgba(255,255,255,0.22)';
+      if (midpoint < 70) return 'rgba(255,255,255,0.40)';
+      if (midpoint < 90) return 'rgba(255,255,255,0.60)';
+      return 'rgba(255,255,255,0.80)';
     };
 
     return { binCounts, mean, max, n, binColor };
@@ -402,14 +403,14 @@ function PLDDTHistogram({ nodes, currentNodeId }: { nodes?: PathwayNode[]; curre
     <div style={{ padding: '14px 16px', borderRadius: '20px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
       {/* Header row */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-        <p style={{ fontFamily: "'Public Sans',sans-serif", fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'rgba(255,255,255,0.22)', margin: 0 }}>
+        <p style={{ fontFamily: "'Inter', -apple-system, sans-serif", fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'rgba(255,255,255,0.22)', margin: 0 }}>
           Confidence Distribution
         </p>
         <div style={{ display: 'flex', gap: '10px' }}>
-          <span style={{ fontFamily: "'Public Sans',sans-serif", fontSize: '10px', color: 'rgba(255,255,255,0.2)', fontFeatureSettings: "'tnum' 1" }}>
+          <span style={{ fontFamily: "'Inter', -apple-system, sans-serif", fontSize: '10px', color: 'rgba(255,255,255,0.2)', fontFeatureSettings: "'tnum' 1" }}>
             n = {n}
           </span>
-          <span style={{ fontFamily: "'Public Sans',sans-serif", fontSize: '10px', color: '#C8D8E8', fontFeatureSettings: "'tnum' 1", fontWeight: 600 }}>
+          <span style={{ fontFamily: "'Inter', -apple-system, sans-serif", fontSize: '10px', color: 'rgba(255,255,255,0.6)', fontFeatureSettings: "'tnum' 1", fontWeight: 600 }}>
             μ = {mean.toFixed(1)}%
           </span>
         </div>
@@ -419,7 +420,7 @@ function PLDDTHistogram({ nodes, currentNodeId }: { nodes?: PathwayNode[]; curre
       <div style={{ position: 'relative', height: `${CHART_H + 20}px` }}>
         <div style={{ position: 'absolute', left: 0, top: 0, bottom: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', width: '18px' }}>
           {[max, Math.round(max/2), 0].map((v, i) => (
-            <span key={i} style={{ fontFamily: "'Public Sans',sans-serif", fontSize: '8px', color: 'rgba(255,255,255,0.15)', fontFeatureSettings: "'tnum' 1", lineHeight: 1 }}>
+            <span key={i} style={{ fontFamily: "'Inter', -apple-system, sans-serif", fontSize: '8px', color: 'rgba(255,255,255,0.15)', fontFeatureSettings: "'tnum' 1", lineHeight: 1 }}>
               {v}
             </span>
           ))}
@@ -430,14 +431,14 @@ function PLDDTHistogram({ nodes, currentNodeId }: { nodes?: PathwayNode[]; curre
             position: 'absolute',
             left: `${(meanBinX / BINS) * 100}%`,
             top: 0, bottom: 0, width: '1px',
-            background: 'rgba(200,216,232,0.45)',
+            background: 'rgba(255,255,255,0.35)',
             zIndex: 10,
             pointerEvents: 'none',
           }}>
             <span style={{
               position: 'absolute', top: '-1px', left: '3px',
-              fontFamily: "'Public Sans',sans-serif", fontSize: '8px',
-              color: 'rgba(200,216,232,0.6)', fontFeatureSettings: "'tnum' 1",
+              fontFamily: "'Inter', -apple-system, sans-serif", fontSize: '8px',
+              color: 'rgba(255,255,255,0.5)', fontFeatureSettings: "'tnum' 1",
               whiteSpace: 'nowrap',
             }}>μ</span>
           </div>
@@ -465,14 +466,14 @@ function PLDDTHistogram({ nodes, currentNodeId }: { nodes?: PathwayNode[]; curre
 
         <div style={{ marginLeft: '22px', display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}>
           {[0, 20, 40, 60, 80, 100].map(v => (
-            <span key={v} style={{ fontFamily: "'Public Sans',sans-serif", fontSize: '8px', color: 'rgba(255,255,255,0.15)', fontFeatureSettings: "'tnum' 1" }}>
+            <span key={v} style={{ fontFamily: "'Inter', -apple-system, sans-serif", fontSize: '8px', color: 'rgba(255,255,255,0.15)', fontFeatureSettings: "'tnum' 1" }}>
               {v}
             </span>
           ))}
         </div>
       </div>
 
-      <p style={{ fontFamily: "'Public Sans',sans-serif", fontSize: '9px', color: 'rgba(255,255,255,0.12)', margin: '4px 0 0', textAlign: 'center' }}>
+      <p style={{ fontFamily: "'Inter', -apple-system, sans-serif", fontSize: '9px', color: 'rgba(255,255,255,0.12)', margin: '4px 0 0', textAlign: 'center' }}>
         Confidence Score (%)
       </p>
     </div>
@@ -489,14 +490,6 @@ function AuditTrailBadge({ text, riskScore }: { text: string | null; riskScore?:
   const [open, setOpen] = useState(false);
   if (!text) return null;
 
-  const isHighRisk = (riskScore ?? 0) > HIGH_RISK_THRESHOLD;
-  const isModerate = !isHighRisk && (riskScore ?? 0) > MODERATE_RISK_THRESHOLD;
-
-  const badgeColor  = isHighRisk ? '#F87171' : isModerate ? '#F59E0B' : '#22D3EE';
-  const badgeGlow   = isHighRisk ? 'rgba(248,113,113,0.35)' : isModerate ? 'rgba(245,158,11,0.3)' : 'rgba(34,211,238,0.35)';
-  const badgeBg     = isHighRisk ? 'rgba(248,113,113,0.1)' : isModerate ? 'rgba(245,158,11,0.1)' : 'rgba(34,211,238,0.1)';
-  const badgeBorder = isHighRisk ? 'rgba(248,113,113,0.28)' : isModerate ? 'rgba(245,158,11,0.25)' : 'rgba(34,211,238,0.25)';
-
   return (
     <div>
       {/* Badge trigger */}
@@ -505,19 +498,17 @@ function AuditTrailBadge({ text, riskScore }: { text: string | null; riskScore?:
         style={{
           display: 'inline-flex', alignItems: 'center', gap: '6px',
           padding: '4px 10px', borderRadius: '100px', cursor: 'pointer',
-          background: badgeBg, border: `1px solid ${badgeBorder}`,
-          color: badgeColor, fontFamily: UI_MONO, fontSize: '10px',
+          background: 'rgba(255,255,255,0.04)', border: '0.5px solid rgba(255,255,255,0.12)',
+          color: 'rgba(255,255,255,0.6)', fontFamily: UI_MONO, fontSize: '10px',
           fontWeight: 500, letterSpacing: '0.05em', textTransform: 'uppercase',
-          boxShadow: `0 0 10px ${badgeGlow}`,
-          animation: 'glow-pulse 2.5s ease-in-out infinite',
           transition: 'all 0.2s',
         }}
-        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = `0 0 18px ${badgeGlow}`; }}
-        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = `0 0 10px ${badgeGlow}`; }}
+        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)'; }}
+        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'; }}
         aria-expanded={open}
         aria-label="Toggle audit trail"
       >
-        <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: badgeColor, flexShrink: 0 }} />
+        <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'rgba(255,255,255,0.5)', flexShrink: 0 }} />
         Audit Trail
         <span style={{ opacity: 0.6, fontSize: '9px' }}>{open ? '▲' : '▼'}</span>
       </button>
@@ -534,19 +525,18 @@ function AuditTrailBadge({ text, riskScore }: { text: string | null; riskScore?:
           >
             <div style={{
               marginTop: '8px', padding: '12px 14px', borderRadius: '10px',
-              background: 'rgba(10,13,20,0.9)',
-              border: `1px solid ${badgeBorder}`,
-              fontFamily: UI_MONO, fontSize: '11px', color: 'rgba(226,232,240,0.6)',
+              background: 'rgba(0,0,0,0.92)',
+              border: '0.5px solid rgba(255,255,255,0.10)',
+              fontFamily: UI_MONO, fontSize: '11px', color: 'rgba(255,255,255,0.55)',
               lineHeight: 1.7, backdropFilter: 'blur(12px)',
-              boxShadow: `inset 0 0 20px rgba(0,0,0,0.3)`,
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
-                <span style={{ width: '4px', height: '4px', borderRadius: '50%', background: badgeColor, display: 'inline-block' }} />
-                <span style={{ fontFamily: UI_MONO, fontSize: '9px', fontWeight: 600, color: badgeColor, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                <span style={{ width: '4px', height: '4px', borderRadius: '50%', background: 'rgba(255,255,255,0.45)', display: 'inline-block' }} />
+                <span style={{ fontFamily: UI_MONO, fontSize: '9px', fontWeight: 600, color: 'rgba(255,255,255,0.45)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
                   Verifiable Source Trace
                 </span>
               </div>
-              <p style={{ margin: 0, fontStyle: 'italic', color: 'rgba(226,232,240,0.55)' }}>
+              <p style={{ margin: 0, fontStyle: 'italic', color: 'rgba(255,255,255,0.45)' }}>
                 &ldquo;{text}&rdquo;
               </p>
             </div>
@@ -723,7 +713,7 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                         {node.nodeType === 'impurity' || (node.risk_score && node.risk_score > MODERATE_RISK_THRESHOLD) ? '⚠️' : node.nodeType === 'intermediate' ? '🔶' : '✅'}
                       </span>
                       <div>
-                        <span style={{ fontSize: '12px', fontWeight: 700, fontFamily: "'Public Sans', sans-serif",
+                        <span style={{ fontSize: '12px', fontWeight: 700, fontFamily: "'Inter', -apple-system, sans-serif",
                           color: node.nodeType === 'impurity' || (node.risk_score && node.risk_score > MODERATE_RISK_THRESHOLD)
                             ? BIO_THEME_COLORS.RED
                             : node.nodeType === 'intermediate' ? BIO_THEME_COLORS.AMBER : BIO_THEME_COLORS.GREEN,
@@ -733,7 +723,7 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                             : node.nodeType === 'intermediate' ? 'Pathway Intermediate'
                             : 'Verified High-Yield'}
                         </span>
-                        <span style={{ display: 'block', fontSize: '10px', color: 'rgba(255,255,255,0.4)', marginTop: '2px', fontFamily: "'Public Sans', sans-serif" }}>
+                        <span style={{ display: 'block', fontSize: '10px', color: 'rgba(255,255,255,0.4)', marginTop: '2px', fontFamily: "'Inter', -apple-system, sans-serif" }}>
                           {node.nodeType === 'impurity'
                             ? 'This compound requires separation from the target product'
                             : (node.risk_score && node.risk_score > MODERATE_RISK_THRESHOLD)
@@ -747,9 +737,9 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                   </div>
 
                   {/* ─── Commercial Risk & Compliance Panel ──────────────────────── */}
-                  <div style={{ padding: '14px 16px', borderRadius: '20px', background: node.risk_score && node.risk_score > HIGH_RISK_THRESHOLD ? 'rgba(239,68,68,0.1)' : 'rgba(255,255,255,0.03)', border: `1px solid ${node.risk_score && node.risk_score > HIGH_RISK_THRESHOLD ? 'rgba(239,68,68,0.3)' : 'rgba(255,255,255,0.06)'}`, marginBottom: '16px' }}>
+                  <div style={{ padding: '14px 16px', borderRadius: '20px', background: 'rgba(255,255,255,0.03)', border: '0.5px solid rgba(255,255,255,0.07)', marginBottom: '16px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                      <ShieldAlert size={14} color={node.risk_score && node.risk_score > MODERATE_RISK_THRESHOLD ? BIO_THEME_COLORS.RED : BIO_THEME_COLORS.GREEN} />
+                      <ShieldAlert size={14} color="rgba(255,255,255,0.45)" />
                       <span style={{ fontSize: '11px', fontWeight: 800, color: '#FFFFFF', letterSpacing: '0.03em', fontFamily: UI_SANS }}>COMMERCIAL RISK & COMPLIANCE</span>
                     </div>
 
@@ -762,7 +752,7 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                             Inference Pending
                           </span>
                         ) : (
-                          <span style={{ fontWeight: 600, fontFamily: UI_MONO, color: (node.risk_score ?? 0) > HIGH_RISK_THRESHOLD ? BIO_THEME_COLORS.RED : (node.risk_score ?? 0) > MODERATE_RISK_THRESHOLD ? BIO_THEME_COLORS.AMBER : BIO_THEME_COLORS.GREEN }}>
+                          <span style={{ fontWeight: 600, fontFamily: UI_MONO, color: 'rgba(255,255,255,0.65)' }}>
                             {((node.risk_score ?? 0) * 100).toFixed(0)}%
                           </span>
                         )}
@@ -771,9 +761,7 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                         <div style={{ height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '2px' }} />
                       ) : (
                         <div style={{ height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '2px' }}>
-                          <div style={{ width: `${(node.risk_score ?? 0) * 100}%`, height: '100%', borderRadius: '2px',
-                            background: (node.risk_score ?? 0) > HIGH_RISK_THRESHOLD ? BIO_THEME_COLORS.RED : (node.risk_score ?? 0) > MODERATE_RISK_THRESHOLD ? BIO_THEME_COLORS.AMBER : BIO_THEME_COLORS.GREEN,
-                          }} />
+                          <div style={{ width: `${(node.risk_score ?? 0) * 100}%`, height: '100%', borderRadius: '2px', background: 'rgba(255,255,255,0.75)' }} />
                         </div>
                       )}
                     </div>
@@ -789,9 +777,9 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                         ) : (
                           <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontFamily: UI_MONO }}>
                             {(node.separation_cost_index ?? 0) > HIGH_RISK_THRESHOLD && (
-                              <span style={{ color: BIO_THEME_COLORS.RED, fontWeight: 700, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>High Separation Cost</span>
+                              <span style={{ color: 'rgba(255,255,255,0.5)', fontWeight: 700, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>High Separation Cost</span>
                             )}
-                            <span style={{ fontWeight: 600, color: (node.separation_cost_index ?? 0) > HIGH_RISK_THRESHOLD ? BIO_THEME_COLORS.RED : (node.separation_cost_index ?? 0) > MODERATE_RISK_THRESHOLD ? BIO_THEME_COLORS.AMBER : BIO_THEME_COLORS.GREEN }}>
+                            <span style={{ fontWeight: 600, color: 'rgba(255,255,255,0.65)' }}>
                               {((node.separation_cost_index ?? 0) * 100).toFixed(0)}%
                             </span>
                           </span>
@@ -801,9 +789,7 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                         <div style={{ height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '2px' }} />
                       ) : (
                         <div style={{ height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '2px' }}>
-                          <div style={{ width: `${(node.separation_cost_index ?? 0) * 100}%`, height: '100%', borderRadius: '2px',
-                            background: (node.separation_cost_index ?? 0) > HIGH_RISK_THRESHOLD ? BIO_THEME_COLORS.RED : (node.separation_cost_index ?? 0) > MODERATE_RISK_THRESHOLD ? BIO_THEME_COLORS.AMBER : BIO_THEME_COLORS.GREEN,
-                          }} />
+                          <div style={{ width: `${(node.separation_cost_index ?? 0) * 100}%`, height: '100%', borderRadius: '2px', background: 'rgba(255,255,255,0.75)' }} />
                         </div>
                       )}
                     </div>
@@ -811,11 +797,11 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                     {/* Toxicity Impact */}
                     {node.toxicity_impact && (
                       <div style={{ padding: '10px 12px', borderRadius: '12px', marginBottom: '12px',
-                        background: node.nodeType === 'impurity' ? 'rgba(239,68,68,0.08)' : 'rgba(255,255,255,0.02)',
-                        border: `1px solid ${node.nodeType === 'impurity' ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.04)'}`,
+                        background: 'rgba(255,255,255,0.02)',
+                        border: '0.5px solid rgba(255,255,255,0.06)',
                       }}>
-                        <span style={{ display: 'block', fontSize: '9px', color: 'rgba(255,255,255,0.35)', marginBottom: '4px', fontWeight: 700, textTransform: 'uppercase', fontFamily: "'Public Sans', sans-serif" }}>Potential Toxicity Analysis</span>
-                        <p style={{ color: node.nodeType === 'impurity' ? BIO_THEME_COLORS.RED : 'rgba(255,255,255,0.55)', fontSize: '11px', fontWeight: 500, margin: 0, lineHeight: 1.5, fontFamily: "'Public Sans', sans-serif" }}>
+                        <span style={{ display: 'block', fontSize: '9px', color: 'rgba(255,255,255,0.35)', marginBottom: '4px', fontWeight: 700, textTransform: 'uppercase', fontFamily: "'Inter', -apple-system, sans-serif" }}>Potential Toxicity Analysis</span>
+                        <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '11px', fontWeight: 500, margin: 0, lineHeight: 1.5, fontFamily: "'Inter', -apple-system, sans-serif" }}>
                           {node.toxicity_impact}
                         </p>
                       </div>
@@ -825,18 +811,18 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                     {node.thermodynamic_stability && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px' }}>
                         <span style={{ fontSize: '10px', color: '#9CA3AF', fontFamily: UI_MONO }}>Thermodynamic Stability:</span>
-                        <span style={{ fontSize: '10px', fontWeight: 700, color: node.thermodynamic_stability === 'High' ? BIO_THEME_COLORS.GREEN : node.thermodynamic_stability === 'Low' ? BIO_THEME_COLORS.RED : BIO_THEME_COLORS.AMBER, fontFamily: UI_MONO }}>{node.thermodynamic_stability}</span>
+                        <span style={{ fontSize: '10px', fontWeight: 700, color: 'rgba(255,255,255,0.65)', fontFamily: UI_MONO }}>{node.thermodynamic_stability}</span>
                       </div>
                     )}
 
                     {/* Cofactor Balance */}
                     {node.cofactor_balance ? (
                       <div style={{ padding: '10px 12px', borderRadius: '12px', marginBottom: '12px',
-                        background: 'rgba(139,92,246,0.08)',
-                        border: '1px solid rgba(139,92,246,0.15)',
+                        background: 'rgba(255,255,255,0.02)',
+                        border: '0.5px solid rgba(255,255,255,0.07)',
                       }}>
-                        <span style={{ display: 'block', fontSize: '9px', color: 'rgba(255,255,255,0.35)', marginBottom: '4px', fontWeight: 700, textTransform: 'uppercase', fontFamily: "'Public Sans', sans-serif" }}>Cofactor Balance (ATP/NAD(P)H)</span>
-                        <p style={{ color: BIO_THEME_COLORS.PURPLE, fontSize: '11px', fontWeight: 500, margin: 0, lineHeight: 1.5, fontFamily: UI_MONO }}>
+                        <span style={{ display: 'block', fontSize: '9px', color: 'rgba(255,255,255,0.35)', marginBottom: '4px', fontWeight: 700, textTransform: 'uppercase', fontFamily: "'Inter', -apple-system, sans-serif" }}>Cofactor Balance (ATP/NAD(P)H)</span>
+                        <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '11px', fontWeight: 500, margin: 0, lineHeight: 1.5, fontFamily: UI_MONO }}>
                           {node.cofactor_balance}
                         </p>
                       </div>
@@ -845,7 +831,7 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                         background: 'rgba(255,255,255,0.02)',
                         border: '1px solid rgba(255,255,255,0.06)',
                       }}>
-                        <span style={{ display: 'block', fontSize: '9px', color: 'rgba(255,255,255,0.35)', marginBottom: '4px', fontWeight: 700, textTransform: 'uppercase', fontFamily: "'Public Sans', sans-serif" }}>Cofactor Balance (ATP/NAD(P)H)</span>
+                        <span style={{ display: 'block', fontSize: '9px', color: 'rgba(255,255,255,0.35)', marginBottom: '4px', fontWeight: 700, textTransform: 'uppercase', fontFamily: "'Inter', -apple-system, sans-serif" }}>Cofactor Balance (ATP/NAD(P)H)</span>
                         <span style={{ fontSize: '10px', color: '#9CA3AF', background: 'rgba(255,255,255,0.05)', padding: '3px 10px', borderRadius: '6px', fontFamily: UI_MONO, fontWeight: 600 }}>
                           Inference Pending / Data Insufficient
                         </span>
@@ -867,14 +853,12 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                       <div style={{ marginBottom: '12px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: '#9CA3AF', marginBottom: '6px', fontFamily: UI_MONO }}>
                           <span>Carbon Efficiency (Atom Economy)</span>
-                          <span style={{ fontWeight: 600, fontFamily: UI_MONO, color: node.carbon_efficiency >= 80 ? BIO_THEME_COLORS.GREEN : node.carbon_efficiency >= 50 ? BIO_THEME_COLORS.AMBER : BIO_THEME_COLORS.RED }}>
+                          <span style={{ fontWeight: 600, fontFamily: UI_MONO, color: 'rgba(255,255,255,0.65)' }}>
                             {node.carbon_efficiency.toFixed(1)}%
                           </span>
                         </div>
                         <div style={{ height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '2px' }}>
-                          <div style={{ width: `${node.carbon_efficiency}%`, height: '100%', borderRadius: '2px',
-                            background: node.carbon_efficiency >= 80 ? BIO_THEME_COLORS.GREEN : node.carbon_efficiency >= 50 ? BIO_THEME_COLORS.AMBER : BIO_THEME_COLORS.RED,
-                          }} />
+                          <div style={{ width: `${node.carbon_efficiency}%`, height: '100%', borderRadius: '2px', background: 'rgba(255,255,255,0.75)' }} />
                         </div>
                       </div>
                     )}
@@ -882,11 +866,11 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                     {/* Gene KO/OE Recommendation */}
                     {node.gene_recommendation && node.gene_recommendation !== 'N/A' && (
                       <div style={{ padding: '10px 12px', borderRadius: '12px', marginBottom: '12px',
-                        background: 'rgba(16,185,129,0.08)',
-                        border: '1px solid rgba(16,185,129,0.15)',
+                        background: 'rgba(255,255,255,0.02)',
+                        border: '0.5px solid rgba(255,255,255,0.07)',
                       }}>
-                        <span style={{ display: 'block', fontSize: '9px', color: 'rgba(255,255,255,0.35)', marginBottom: '4px', fontWeight: 700, textTransform: 'uppercase', fontFamily: "'Public Sans', sans-serif" }}>Gene Engineering Target (KO/OE)</span>
-                        <p style={{ color: BIO_THEME_COLORS.GREEN, fontSize: '11px', fontWeight: 500, margin: 0, lineHeight: 1.5, fontFamily: "'Public Sans', sans-serif" }}>
+                        <span style={{ display: 'block', fontSize: '9px', color: 'rgba(255,255,255,0.35)', marginBottom: '4px', fontWeight: 700, textTransform: 'uppercase', fontFamily: "'Inter', -apple-system, sans-serif" }}>Gene Engineering Target (KO/OE)</span>
+                        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '11px', fontWeight: 500, margin: 0, lineHeight: 1.5, fontFamily: "'Inter', -apple-system, sans-serif" }}>
                           {node.gene_recommendation}
                         </p>
                       </div>
@@ -924,13 +908,13 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                           <SectionLabel label="Evidence Trace" />
-                          <span style={{ color: 'rgba(255,255,255,0.12)', fontSize: '9px', fontFamily: "'Public Sans', sans-serif", fontFeatureSettings: "'tnum' 1", marginBottom: '8px' }}>
+                          <span style={{ color: 'rgba(255,255,255,0.12)', fontSize: '9px', fontFamily: "'Inter', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1", marginBottom: '8px' }}>
                             AI · grounded in source
                           </span>
                         </div>
                         {node.evidenceSnippet && (
                           <div style={{ padding: '12px 14px', borderRadius: '20px', background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderLeft: '3px solid rgba(255,255,255,0.18)', position: 'relative' }}>
-                            <span style={{ position: 'absolute', top: '8px', left: '14px', color: 'rgba(255,255,255,0.12)', fontSize: '28px', fontFamily: 'Georgia,serif', lineHeight: 1, userSelect: 'none' }}>"</span>
+                            <span style={{ position: 'absolute', top: '8px', left: '14px', color: 'rgba(255,255,255,0.12)', fontSize: '28px', fontFamily: "'Inter', -apple-system, sans-serif", lineHeight: 1, userSelect: 'none' }}>"</span>
                             <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '12px', lineHeight: 1.7, margin: '12px 0 0', fontStyle: 'italic', letterSpacing: '-0.005em' }}>
                               {node.evidenceSnippet}
                             </p>
@@ -939,7 +923,7 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                         {node.citation && (
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', borderRadius: '16px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
                             <FileText size={11} style={{ color: 'rgba(255,255,255,0.2)', flexShrink: 0 }} />
-                            <p style={{ color: 'rgba(255,255,255,0.38)', fontSize: '11px', lineHeight: 1.5, margin: 0, fontFamily: "'Public Sans', sans-serif", fontFeatureSettings: "'tnum' 1", letterSpacing: '0.01em' }}>{node.citation}</p>
+                            <p style={{ color: 'rgba(255,255,255,0.38)', fontSize: '11px', lineHeight: 1.5, margin: 0, fontFamily: "'Inter', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1", letterSpacing: '0.01em' }}>{node.citation}</p>
                           </div>
                         )}
                       </div>
@@ -953,7 +937,7 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                       <div>
                         <button onClick={() => setShowConnections(!showConnections)}
                           style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', background: 'none', border: 'none', cursor: 'pointer', padding: '0 0 8px' }}>
-                          <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', fontFamily: "'Public Sans', sans-serif", fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                          <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', fontFamily: "'Inter', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                             Connections ({connections.length})
                           </span>
                           {showConnections ? <ChevronUp size={12} style={{ color: 'rgba(255,255,255,0.2)' }} /> : <ChevronDown size={12} style={{ color: 'rgba(255,255,255,0.2)' }} />}
@@ -968,17 +952,17 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                               return (
                                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', borderRadius: '16px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
                                   <Link2 size={11} style={{ color: 'rgba(255,255,255,0.2)', flexShrink: 0 }} />
-                                  <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '10px', fontFamily: "'Public Sans', sans-serif", fontFeatureSettings: "'tnum' 1" }}>{isSource ? '→' : '←'}</span>
+                                  <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '10px', fontFamily: "'Inter', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1" }}>{isSource ? '→' : '←'}</span>
                                   <div style={{ flex: 1, minWidth: 0 }}>
                                     <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px', margin: '0 0 1px', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                       {otherNode?.label || otherId}
                                     </p>
-                                    <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', fontFamily: "'Public Sans', sans-serif", fontFeatureSettings: "'tnum' 1", margin: 0 }}>
+                                    <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', fontFamily: "'Inter', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1", margin: 0 }}>
                                       {isSource ? `this ${EDGE_TYPE_LABELS[relType]} →` : `← ${EDGE_TYPE_LABELS[relType]} this`}
                                     </p>
                                   </div>
                                   {edge.confidenceScore !== undefined && (
-                                    <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', fontFamily: "'Public Sans', sans-serif", fontFeatureSettings: "'tnum' 1", flexShrink: 0 }}>{Math.round(edge.confidenceScore * 100)}%</span>
+                                    <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', fontFamily: "'Inter', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1", flexShrink: 0 }}>{Math.round(edge.confidenceScore * 100)}%</span>
                                   )}
                                 </div>
                               );
@@ -998,20 +982,20 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                           {pubchemCID && (
                             <div style={{ display: 'flex', gap: '10px' }}>
-                              <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '11px', fontFamily: "'Public Sans', sans-serif", fontFeatureSettings: "'tnum' 1", width: '64px', flexShrink: 0 }}>PubChem</span>
-                              <a href={`https://pubchem.ncbi.nlm.nih.gov/compound/${pubchemCID}`} target="_blank" rel="noopener noreferrer" style={{ color: '#A8C5DA', fontSize: '11px', fontFamily: "'Public Sans', sans-serif", fontFeatureSettings: "'tnum' 1", textDecoration: 'none' }}>CID {pubchemCID}</a>
+                              <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '11px', fontFamily: "'Inter', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1", width: '64px', flexShrink: 0 }}>PubChem</span>
+                              <a href={`https://pubchem.ncbi.nlm.nih.gov/compound/${pubchemCID}`} target="_blank" rel="noopener noreferrer" style={{ color: '#A8C5DA', fontSize: '11px', fontFamily: "'Inter', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1", textDecoration: 'none' }}>CID {pubchemCID}</a>
                             </div>
                           )}
                           {node.ecNumber && (
                             <div style={{ display: 'flex', gap: '10px' }}>
-                              <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '11px', fontFamily: "'Public Sans', sans-serif", fontFeatureSettings: "'tnum' 1", width: '64px', flexShrink: 0 }}>EC</span>
-                              <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px', fontFamily: "'Public Sans', sans-serif", fontFeatureSettings: "'tnum' 1" }}>{node.ecNumber}</span>
+                              <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '11px', fontFamily: "'Inter', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1", width: '64px', flexShrink: 0 }}>EC</span>
+                              <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px', fontFamily: "'Inter', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1" }}>{node.ecNumber}</span>
                             </div>
                           )}
                           {node.uniprotId && (
                             <div style={{ display: 'flex', gap: '10px' }}>
-                              <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '11px', fontFamily: "'Public Sans', sans-serif", fontFeatureSettings: "'tnum' 1", width: '64px', flexShrink: 0 }}>UniProt</span>
-                              <a href={`https://www.uniprot.org/uniprotkb/${node.uniprotId}`} target="_blank" rel="noopener noreferrer" style={{ color: '#A8C5DA', fontSize: '11px', fontFamily: "'Public Sans', sans-serif", fontFeatureSettings: "'tnum' 1", textDecoration: 'none' }}>{node.uniprotId}</a>
+                              <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '11px', fontFamily: "'Inter', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1", width: '64px', flexShrink: 0 }}>UniProt</span>
+                              <a href={`https://www.uniprot.org/uniprotkb/${node.uniprotId}`} target="_blank" rel="noopener noreferrer" style={{ color: '#A8C5DA', fontSize: '11px', fontFamily: "'Inter', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1", textDecoration: 'none' }}>{node.uniprotId}</a>
                             </div>
                           )}
                         </div>
@@ -1060,7 +1044,7 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                       >
                         <span style={{
                           color: 'rgba(255,255,255,0.3)', fontSize: '10px',
-                          fontFamily: "'Public Sans', sans-serif",
+                          fontFamily: "'Inter', -apple-system, sans-serif",
                           textTransform: 'uppercase', letterSpacing: '0.08em',
                           fontFeatureSettings: "'tnum' 1",
                         }}>
@@ -1084,13 +1068,13 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                         }}>
                           {node.cofactor_balance && (
                             <div style={{ marginBottom: '8px' }}>
-                              <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: "'Public Sans', sans-serif", fontWeight: 700 }}>Cofactor Balance</span>
+                              <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: "'Inter', -apple-system, sans-serif", fontWeight: 700 }}>Cofactor Balance</span>
                               <div style={{ color: BIO_THEME_COLORS.PURPLE, marginTop: '2px' }}>{node.cofactor_balance}</div>
                             </div>
                           )}
                           {node.atom_economy !== undefined && node.atom_economy !== 0 ? (
                             <div style={{ marginBottom: '8px' }}>
-                              <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: "'Public Sans', sans-serif", fontWeight: 700 }}>Atom Economy (Carbon Efficiency)</span>
+                              <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: "'Inter', -apple-system, sans-serif", fontWeight: 700 }}>Atom Economy (Carbon Efficiency)</span>
                               <div style={{
                                 color: node.atom_economy >= 80 ? BIO_THEME_COLORS.GREEN
                                   : node.atom_economy >= 50 ? BIO_THEME_COLORS.AMBER
@@ -1102,19 +1086,19 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                             </div>
                           ) : !isFinalTarget && (
                             <div style={{ marginBottom: '8px' }}>
-                              <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: "'Public Sans', sans-serif", fontWeight: 700 }}>Atom Economy (Carbon Efficiency)</span>
+                              <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: "'Inter', -apple-system, sans-serif", fontWeight: 700 }}>Atom Economy (Carbon Efficiency)</span>
                               <div style={{ color: 'rgba(255,255,255,0.30)', marginTop: '2px' }}>Inference Pending / Data Insufficient</div>
                             </div>
                           )}
                           {node.dsp_bottleneck && (
                             <div style={{ marginBottom: '8px' }}>
-                              <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: "'Public Sans', sans-serif", fontWeight: 700 }}>DSP Bottleneck</span>
+                              <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: "'Inter', -apple-system, sans-serif", fontWeight: 700 }}>DSP Bottleneck</span>
                               <div style={{ color: BIO_THEME_COLORS.AMBER, marginTop: '2px' }}>{node.dsp_bottleneck}</div>
                             </div>
                           )}
                           {node.ic50_toxicity && (
                             <div>
-                              <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: "'Public Sans', sans-serif", fontWeight: 700 }}>IC50 Toxicity</span>
+                              <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: "'Inter', -apple-system, sans-serif", fontWeight: 700 }}>IC50 Toxicity</span>
                               <div style={{ color: BIO_THEME_COLORS.RED, marginTop: '2px' }}>{node.ic50_toxicity}</div>
                             </div>
                           )}
@@ -1182,7 +1166,7 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                               label={node.canonicalLabel || node.label}
                               height={260}
                             />
-                            <p style={{ color: 'rgba(255,255,255,0.12)', fontSize: '9px', fontFamily: "'Public Sans', sans-serif", fontFeatureSettings: "'tnum' 1", marginTop: '6px' }}>
+                            <p style={{ color: 'rgba(255,255,255,0.12)', fontSize: '9px', fontFamily: "'Inter', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1", marginTop: '6px' }}>
                               3D conformer · CPK coloring · Source: PubChem
                             </p>
                           </div>
@@ -1202,7 +1186,7 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                           </div>
                           <CellImageViewer searchTerm={node.canonicalLabel || node.label} height={260} />
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                            <p style={{ color: 'rgba(255,255,255,0.15)', fontSize: '9px', fontFamily: "'Public Sans', sans-serif", fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.06em', margin: 0 }}>
+                            <p style={{ color: 'rgba(255,255,255,0.15)', fontSize: '9px', fontFamily: "'Inter', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.06em', margin: 0 }}>
                               Search more databases:
                             </p>
                             <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>

@@ -482,7 +482,7 @@ function MetaboliteMolecules({ reactionRate, stressIndex, state }: MoleculesProp
 
 function BlueprintGrid({ state }: { state: MachineState }) {
   const opacity = state === 'idle' ? 0.07 : state === 'equilibrium' ? 0.12 : 0.05;
-  const color   = state === 'stress_test' ? '#F87171' : '#22D3EE';
+  const color   = 'rgba(255,255,255,0.55)';
 
   return (
     <svg
@@ -536,9 +536,9 @@ export default function FluidSimCanvas({
         gl={{ antialias:false, alpha:true, powerPreference:'high-performance' }}
         style={{ position:'absolute', inset:0, background:'transparent', pointerEvents:'none' }}
       >
-        <ambientLight intensity={0.4} color="#1a3050" />
-        <pointLight position={[0,0,12]} intensity={1.2} color="#22D3EE" distance={30} decay={2} />
-        <pointLight position={[8,-6,8]} intensity={0.6} color="#E879F9" distance={20} decay={2} />
+        <ambientLight intensity={0.5} color="#FFFFFF" />
+        <pointLight position={[0,0,12]} intensity={0.9} color="#FFFFFF" distance={30} decay={2} />
+        <pointLight position={[8,-6,8]} intensity={0.4} color="#FFFFFF" distance={20} decay={2} />
         <MetaboliteMolecules
           reactionRate={reactionRate}
           stressIndex={stressIndex}

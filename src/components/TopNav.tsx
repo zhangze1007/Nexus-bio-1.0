@@ -39,12 +39,12 @@ export default function TopNav() {
       <Link href="/" style={{ display:'flex', alignItems:'center', gap:'9px', textDecoration:'none' }}>
         <div style={{
           width: '26px', height: '26px', borderRadius: '8px',
-          background: 'rgba(34,211,238,0.08)',
-          border: '1px solid rgba(34,211,238,0.18)',
+          background: 'rgba(255,255,255,0.05)',
+          border: '1px solid rgba(255,255,255,0.12)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: '0 0 10px rgba(34,211,238,0.12)',
+          boxShadow: '0 0 10px rgba(255,255,255,0.08)',
         }}>
-          <Dna size={13} style={{ color: '#22D3EE' }} />
+          <Dna size={13} style={{ color: 'rgba(255,255,255,0.75)' }} />
         </div>
         <span style={{
           fontFamily: SERIF, fontSize: '14px',
@@ -73,7 +73,7 @@ export default function TopNav() {
                 <span style={{
                   position: 'absolute', bottom: '-1px', left: 0, right: 0,
                   height: '1px',
-                  background: 'linear-gradient(90deg, transparent, #22D3EE, transparent)',
+                  background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.75), transparent)',
                 }} />
               )}
             </Link>
@@ -84,11 +84,11 @@ export default function TopNav() {
       {/* Mono tag */}
       <div style={{
         fontFamily: MONO, fontSize: '9px', fontWeight: 500,
-        color: 'rgba(34,211,238,0.4)',
+        color: 'rgba(255,255,255,0.05)',
         letterSpacing: '0.1em', textTransform: 'uppercase',
         padding: '4px 10px', borderRadius: '6px',
         background: 'rgba(34,211,238,0.05)',
-        border: '1px solid rgba(34,211,238,0.1)',
+        border: '1px solid rgba(255,255,255,0.07)',
       }}>
         v2.0
       </div>

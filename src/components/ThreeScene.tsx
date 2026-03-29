@@ -124,12 +124,12 @@ const HIGH_RISK_THRESHOLD = 0.7;
 
 // ─── BIO_THEME_COLORS — aligned with Design System 2.0 (Dark Mode 2.0) ─
 export const BIO_THEME_COLORS = {
-  CYAN:   '#22D3EE',  // Cyber Cyan       — Standard Metabolite / Default Node
-  GREEN:  '#10B981',  // Synthesis Emerald — Verified High-Yield / Target Product
-  RED:    '#F87171',  // Risk Red          — High Separation Cost / Toxic Impurity
-  AMBER:  '#F59E0B',  // Catalyst Amber    — Enzyme / Catalyst
-  PURPLE: '#A78BFA',  // Plasma Purple     — Key Intermediate / Precursor
-  PINK:   '#E879F9',  // Deep Space Magenta — Secondary Byproduct / Alt Pathway
+  CYAN:   '#FFFFFF',  // Metabolite — bright white
+  GREEN:  '#D0D0D0',  // Gene / target yield — light gray
+  RED:    '#787878',  // Impurity / risk — dark gray
+  AMBER:  '#A8A8A8',  // Enzyme — medium gray
+  PURPLE: '#909090',  // Intermediate / complex — gray
+  PINK:   '#B8B8B8',  // Cofactor — light-medium gray
 } as const;
 
 // Map each nodeType to its semantic BIO_THEME color
@@ -216,13 +216,13 @@ function AmbientParticles() {
     return positions;
   }, []);
 
-  // Tinted colours cycling through design system palette
+  // Monochrome white tiers for ambient particles
   const COLOR_CYCLE = useMemo(() => [
-    new THREE.Color('#22D3EE').multiplyScalar(0.5),
-    new THREE.Color('#E879F9').multiplyScalar(0.4),
-    new THREE.Color('#F59E0B').multiplyScalar(0.45),
-    new THREE.Color('#10B981').multiplyScalar(0.4),
-    new THREE.Color('#A78BFA').multiplyScalar(0.45),
+    new THREE.Color('#FFFFFF').multiplyScalar(0.55),
+    new THREE.Color('#FFFFFF').multiplyScalar(0.40),
+    new THREE.Color('#FFFFFF').multiplyScalar(0.45),
+    new THREE.Color('#FFFFFF').multiplyScalar(0.35),
+    new THREE.Color('#FFFFFF').multiplyScalar(0.50),
   ], []);
 
   useFrame((state) => {
@@ -276,11 +276,12 @@ function SpatialReference() {
 }
 
 // ─── Molecular Node with texture and correct commercial coloring ──────
-const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov, roughnessTexture }: {
+const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov, roughnessTexture, flowSpeed }: {
   node: PathwayNode; hov: boolean; sel: boolean; cc: number;
   onClick: (n: PathwayNode) => void; onHov: (id: string | null) => void;
-  roughnessTexture: THREE.Texture | null;
+  roughnessTexture: THREE.Texture | null; flowSpeed?: number;
 }) {
+  const _flowSpeed = flowSpeed ?? 1;
   const grp     = useRef<THREE.Group>(null);
   const ring    = useRef<THREE.Mesh>(null);
   const bodyRef = useRef<THREE.Mesh>(null);
@@ -297,16 +298,16 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov
 
   useFrame((state, dt) => {
     const t = state.clock.elapsedTime;
+    const fdt = dt * _flowSpeed;
     if (grp.current) {
       const cs = grp.current.scale.x;
       grp.current.scale.setScalar(cs + ((ready ? tgt : 0.001) - cs) * dt * 5);
-      // Organic breathing
-      grp.current.position.y = node.position[1] + Math.sin(t * 0.4 + hash(node.id) * 0.01) * 0.06;
-      grp.current.rotation.y = Math.sin(t * 0.06 + hash(node.id) * 0.001) * 0.05;
-      grp.current.rotation.z = t * cfg.spin * 0.5; // Spinning different geoms
+      grp.current.position.y = node.position[1] + Math.sin(t * 0.4 * _flowSpeed + hash(node.id) * 0.01) * 0.06;
+      grp.current.rotation.y = Math.sin(t * 0.06 * _flowSpeed + hash(node.id) * 0.001) * 0.05;
+      grp.current.rotation.z = t * cfg.spin * 0.5 * _flowSpeed;
     }
     if (ring.current) {
-      ring.current.rotation.z += dt * 0.10;
+      ring.current.rotation.z += fdt * 0.10;
       const mat = ring.current.material as THREE.MeshPhysicalMaterial;
       const to = hov || sel ? 0.35 : 0.07;
       mat.opacity += (to - mat.opacity) * dt * 3;
@@ -397,7 +398,8 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov
 });
 
 // ─── Soft path edges ────────────────────────────────────────────────────
-const PathEdge = React.memo(function PathEdge({ edge, s, e, active, color }: { edge:PathwayEdge; s:Vec3; e:Vec3; active:boolean; color:string }) {
+const PathEdge = React.memo(function PathEdge({ edge, s, e, active, color, flowSpeed }: { edge:PathwayEdge; s:Vec3; e:Vec3; active:boolean; color:string; flowSpeed?:number }) {
+  const _flowSpeed = flowSpeed ?? 1;
   const dot  = useRef<THREE.Mesh>(null);
   const prog = useRef(Math.random());
   const sv   = useMemo(() => new THREE.Vector3(...s), [s]);
@@ -414,7 +416,7 @@ const PathEdge = React.memo(function PathEdge({ edge, s, e, active, color }: { e
   const dotSpeed = isSpontaneous ? Math.min(0.4, 0.08 + Math.abs(edge.predicted_delta_G_kJ_mol ?? 0) * 0.002) : 0.18;
 
   useFrame((_, dt) => {
-    prog.current = (prog.current + dt * dotSpeed) % 1;
+    prog.current = (prog.current + dt * dotSpeed * _flowSpeed) % 1;
     if (dot.current) {
       dot.current.position.lerpVectors(sv, ev, prog.current);
       dot.current.visible = active || isSpontaneous;
@@ -423,7 +425,7 @@ const PathEdge = React.memo(function PathEdge({ edge, s, e, active, color }: { e
 
   return (
     <group>
-      <Line points={[sv, ev]} color={active ? color : '#556677'} lineWidth={active ? thickness * 1.5 : thickness} transparent opacity={active ? 0.8 : 0.25} />
+      <Line points={[sv, ev]} color={active ? color : '#444444'} lineWidth={active ? thickness * 1.5 : thickness} transparent opacity={active ? 0.85 : 0.22} />
       <mesh ref={dot} visible={false}>
         <sphereGeometry args={[active ? 0.05 : 0.035, 6, 6]} />
         <meshPhysicalMaterial color={color} emissive={color} emissiveIntensity={isSpontaneous ? 0.8 : 0.6} transparent opacity={active ? 0.9 : 0.5} />
@@ -470,7 +472,7 @@ function ScrollSyncCamera({ nodes, selectedId, interact, controlsRef, centroid }
 }
 
 // ─── Scene — unified lighting, integrated depth ────────────────────────
-function Scene({ nodes, edges, onNodeClick, selectedNodeId, roughnessTexture }: { nodes:PathwayNode[]; edges:PathwayEdge[]; onNodeClick:(n:PathwayNode)=>void; selectedNodeId:string|null; roughnessTexture:THREE.Texture | null; }) {
+function Scene({ nodes, edges, onNodeClick, selectedNodeId, roughnessTexture, glowMultiplier, flowSpeed }: { nodes:PathwayNode[]; edges:PathwayEdge[]; onNodeClick:(n:PathwayNode)=>void; selectedNodeId:string|null; roughnessTexture:THREE.Texture | null; glowMultiplier:number; flowSpeed:number; }) {
   const [hovId, setHovId]       = useState<string|null>(null);
   const [interact, setInteract] = useState(false);
   const controlsRef = useRef<OrbitControlsHandle | null>(null);
@@ -523,19 +525,19 @@ function Scene({ nodes, edges, onNodeClick, selectedNodeId, roughnessTexture }: 
 
   return (
     <>
-      <ambientLight intensity={0.85} color="#d0dcec" />
-      <directionalLight position={[4, 10, 6]}  intensity={0.35} color="#e8f0f8" />
-      <directionalLight position={[-8, -2, -6]} intensity={0.12} color="#1a2840" />
-      <pointLight position={[centroid.x, centroid.y + 6, centroid.z]} intensity={0.20} color="#c0d0e8" distance={28} decay={2} />
-      <fog attach="fog" args={['#0A0D14', 22, 52]} />
+      <ambientLight intensity={0.75 * glowMultiplier} color="#FFFFFF" />
+      <directionalLight position={[4, 10, 6]}  intensity={0.30 * glowMultiplier} color="#FFFFFF" />
+      <directionalLight position={[-8, -2, -6]} intensity={0.08} color="#111111" />
+      <pointLight position={[centroid.x, centroid.y + 6, centroid.z]} intensity={0.18 * glowMultiplier} color="#FFFFFF" distance={28} decay={2} />
+      <fog attach="fog" args={['#000000', 22, 52]} />
 
       {/* 【关键修复】: 添加 makeDefault 和 target 保证触控生效且中心不偏 */}
       <OrbitControls ref={controlsRef as React.Ref<never>} makeDefault enableZoom autoRotate={!interact && !hovId && !selectedNodeId} autoRotateSpeed={0.12} zoomSpeed={0.45} minDistance={6} maxDistance={24} enablePan={false} onStart={onStart} onEnd={onEnd} target={centroid} />
       <SpatialReference />
 
       <AmbientParticles />
-      {ed.map(e => <PathEdge key={e.key} edge={e.edge} s={e.s.position} e={e.e.position} active={e.active} color={e.color} />)}
-      {nodes.map(n => <MolNode key={n.id} node={n} hov={hovId===n.id} sel={selectedNodeId===n.id} cc={cc[n.id]??0} onClick={onNodeClick} onHov={setHovId} roughnessTexture={roughnessTexture} />)}
+      {ed.map(e => <PathEdge key={e.key} edge={e.edge} s={e.s.position} e={e.e.position} active={e.active} color={e.color} flowSpeed={flowSpeed} />)}
+      {nodes.map(n => <MolNode key={n.id} node={n} hov={hovId===n.id} sel={selectedNodeId===n.id} cc={cc[n.id]??0} onClick={onNodeClick} onHov={setHovId} roughnessTexture={roughnessTexture} flowSpeed={flowSpeed} />)}
 
       <ScrollSyncCamera nodes={nodes} selectedId={selectedNodeId} interact={interact} controlsRef={controlsRef} centroid={centroid} />
     </>
@@ -563,9 +565,9 @@ function ResizeHandler() {
 }
 
 // ─── Main Component — loading fallback and scene unified ─────────────
-interface Props { nodes:PathwayNode[]; onNodeClick:(node:PathwayNode)=>void; edges?:PathwayEdge[]; selectedNodeId?:string|null; }
+interface Props { nodes:PathwayNode[]; onNodeClick:(node:PathwayNode)=>void; edges?:PathwayEdge[]; selectedNodeId?:string|null; glowMultiplier?:number; flowSpeed?:number; }
 
-export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId }: Props) {
+export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, glowMultiplier = 1, flowSpeed = 1 }: Props) {
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('ready');
   const [rendererMode, setRendererMode] = useState<RendererMode>('loading');
   const mountedRef = useRef(true);
@@ -584,10 +586,10 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId }
     <div style={{
       width: '100%', 
       height: 'clamp(500px, 65vh, 760px)', 
-      background: 'linear-gradient(180deg, #0A0D14 0%, #0F1219 100%)',
-      borderRadius: '20px', overflow: 'hidden',
-      border: '1px solid rgba(255,255,255,0.06)', position: 'relative',
-      boxShadow: '0 32px 80px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.04)',
+      background: '#000000',
+      borderRadius: '0', overflow: 'hidden',
+      border: '0.5px solid rgba(255,255,255,0.07)', position: 'relative',
+      boxShadow: 'none',
     }}>
       {/* 【关键修复】: 所有的绝对定位UI容器加上 pointerEvents:'none' 防止吞掉鼠标点击 */}
       <div style={{ pointerEvents: 'none', position:'absolute', top:0, left:0, right:0, zIndex:10, display:'flex', alignItems:'center', justifyContent:'space-between', padding:'11px 16px', background:'linear-gradient(to bottom, rgba(16,16,16,0.92), transparent)', borderBottom:'1px solid rgba(255,255,255,0.04)' }}>
@@ -651,7 +653,7 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId }
               renderer.setSize(width, height, false);
               renderer.toneMapping = THREE.LinearToneMapping;
               renderer.toneMappingExposure = 1.0;
-              renderer.setClearColor(new THREE.Color('#0A0D14'), 1);
+              renderer.setClearColor(new THREE.Color('#000000'), 1);
               return renderer;
             };
 
@@ -671,7 +673,7 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId }
           dpr={[1, 1.5]} performance={{ min: 0.5 }} style={{ background: 'transparent', pointerEvents: 'auto' }}
         >
           <ResizeHandler />
-          <Scene nodes={safeNodes} edges={safeEdges} onNodeClick={onNodeClick} selectedNodeId={selectedNodeId ?? null} roughnessTexture={roughnessTexture} />
+          <Scene nodes={safeNodes} edges={safeEdges} onNodeClick={onNodeClick} selectedNodeId={selectedNodeId ?? null} roughnessTexture={roughnessTexture} glowMultiplier={glowMultiplier} flowSpeed={flowSpeed} />
         </Canvas>
       </SceneErrorBoundary>
     </div>

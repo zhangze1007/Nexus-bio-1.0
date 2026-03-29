@@ -24,7 +24,7 @@ import { Search, ArrowRight, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import HeroFluidCanvas, { type HeroFluidHandle } from './HeroFluidCanvas';
 
-const SERIF = "'DM Serif Display',Georgia,'Times New Roman',serif";
+const BRAND = "'Space Grotesk',-apple-system,sans-serif";
 const SANS  = "'Inter',-apple-system,sans-serif";
 const MONO  = "'JetBrains Mono','Fira Code',monospace";
 
@@ -149,7 +149,7 @@ export default function Hero() {
           style={{
             fontFamily: MONO, fontSize: '10px', fontWeight: 500,
             textTransform: 'uppercase', letterSpacing: '0.18em',
-            color: 'rgba(34,211,238,0.6)',
+            color: 'rgba(255,255,255,0.35)',
             margin: '0 0 28px',
           }}>
           Synthetic Biology Research Platform
@@ -161,12 +161,13 @@ export default function Hero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.95, delay: 0.04, ease: [0.22,1,0.36,1] }}
           style={{
-            fontFamily: SERIF, fontWeight: 400, fontStyle: 'normal',
+            fontWeight: 700, fontStyle: 'normal',
             fontSize: 'clamp(4rem, 11vw, 9.5rem)',
             lineHeight: 0.95, letterSpacing: '-0.03em',
-            color: '#E2E8F0',
+            fontFamily: BRAND,
+            color: '#FFFFFF',
             margin: '0 0 clamp(32px, 5vw, 56px)',
-            textShadow: '0 0 120px rgba(255,255,255,0.08)',
+            textShadow: '0 0 120px rgba(255,255,255,0.06)',
           }}>
           Nexus-Bio
         </motion.h1>
@@ -186,17 +187,17 @@ export default function Hero() {
               ? 'rgba(15,18,25,0.88)'
               : 'rgba(15,18,25,0.72)',
             border: focused
-              ? '1px solid rgba(34,211,238,0.35)'
+              ? '1px solid rgba(255,255,255,0.3)'
               : '1px solid rgba(255,255,255,0.10)',
             backdropFilter: 'blur(32px) saturate(1.5)',
             WebkitBackdropFilter: 'blur(32px) saturate(1.5)',
             boxShadow: focused
-              ? '0 0 0 4px rgba(34,211,238,0.08), 0 24px 64px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.06)'
+              ? '0 0 0 4px rgba(255,255,255,0.05), 0 24px 64px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.06)'
               : '0 12px 40px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.04)',
             transition: 'all 0.25s cubic-bezier(0.22,1,0.36,1)',
           }}>
             <Search size={16} style={{
-              color: focused ? '#22D3EE' : 'rgba(255,255,255,0.25)',
+              color: focused ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.25)',
               flexShrink: 0, transition: 'color 0.2s',
             }} />
 
@@ -226,12 +227,12 @@ export default function Hero() {
                 display: 'flex', alignItems: 'center', gap: '6px',
                 padding: '8px 18px', borderRadius: '20px', flexShrink: 0,
                 background: query.trim()
-                  ? 'rgba(34,211,238,0.15)'
+                  ? 'rgba(255,255,255,0.08)'
                   : 'rgba(255,255,255,0.04)',
                 border: query.trim()
-                  ? '1px solid rgba(34,211,238,0.3)'
+                  ? '1px solid rgba(255,255,255,0.25)'
                   : '1px solid rgba(255,255,255,0.07)',
-                color: query.trim() ? '#22D3EE' : 'rgba(255,255,255,0.2)',
+                color: query.trim() ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.2)',
                 fontFamily: MONO, fontSize: '11px', fontWeight: 500,
                 cursor: query.trim() ? 'pointer' : 'default',
                 transition: 'all 0.2s',
@@ -255,7 +256,7 @@ export default function Hero() {
                 left: 0, right: 0, zIndex: 50,
                 borderRadius: '18px',
                 background: 'rgba(10,13,20,0.94)',
-                border: '1px solid rgba(34,211,238,0.14)',
+                border: '1px solid rgba(255,255,255,0.08)',
                 backdropFilter: 'blur(40px) saturate(1.6)',
                 WebkitBackdropFilter: 'blur(40px) saturate(1.6)',
                 boxShadow: '0 0 0 1px rgba(255,255,255,0.04), 0 32px 80px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.05)',
@@ -263,7 +264,7 @@ export default function Hero() {
               }}>
               {previewLoading && preview.length === 0 ? (
                 <div style={{ padding: '16px 20px', display:'flex', alignItems:'center', gap:'10px' }}>
-                  <Loader2 size={12} style={{ color:'#22D3EE', animation:'spin 1s linear infinite' }} />
+                  <Loader2 size={12} style={{ color:'rgba(255,255,255,0.75)', animation:'spin 1s linear infinite' }} />
                   <span style={{ fontFamily:MONO, fontSize:'11px', color:'rgba(148,163,184,0.6)' }}>
                     Searching OpenAlex…
                   </span>
@@ -281,7 +282,7 @@ export default function Hero() {
                       : 'none',
                     transition: 'background 0.15s',
                   }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(34,211,238,0.06)'; }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'; }}
                   onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'none'; }}>
                   <p style={{
                     fontFamily: SANS, fontSize: '13px', fontWeight: 400,
@@ -310,16 +311,16 @@ export default function Hero() {
                 style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   gap: '8px', width: '100%', padding: '12px 20px',
-                  background: 'rgba(34,211,238,0.05)', border: 'none',
-                  borderTop: '1px solid rgba(34,211,238,0.08)',
+                  background: 'rgba(255,255,255,0.04)', border: 'none',
+                  borderTop: '1px solid rgba(255,255,255,0.05)',
                   cursor: 'pointer', transition: 'background 0.15s',
                 }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(34,211,238,0.1)'; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(34,211,238,0.05)'; }}>
-                <span style={{ fontFamily: MONO, fontSize: '10px', fontWeight: 500, color: '#22D3EE', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.06)'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'; }}>
+                <span style={{ fontFamily: MONO, fontSize: '10px', fontWeight: 500, color: 'rgba(255,255,255,0.75)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
                   View all results for "{query}"
                 </span>
-                <ArrowRight size={10} style={{ color: '#22D3EE' }} />
+                <ArrowRight size={10} style={{ color: 'rgba(255,255,255,0.75)' }} />
               </button>
             </motion.div>
           )}

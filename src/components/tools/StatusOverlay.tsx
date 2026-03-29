@@ -3,16 +3,16 @@
  * Nexus-Bio — StatusOverlay (Right sidebar data readouts)
  *
  * Design:
+ *   - B&W silicon aesthetic: pure black panel, white text at opacity tiers
  *   - JetBrains Mono for ALL numeric values, right-aligned
  *   - Sparkline rate history chart (SVG, no external dep)
  *   - Animated counter transitions (Framer Motion)
- *   - Glassmorphism 2.0 panel matching ToolOverlay
  */
 
 import { useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { SimReadouts, SimParams } from '../../machines/metabolicMachine';
-import { STATE_COLORS, STATE_LABELS, michaelisRate } from '../../machines/metabolicMachine';
+import { STATE_LABELS, michaelisRate } from '../../machines/metabolicMachine';
 import type { MachineState } from '../../machines/metabolicMachine';
 
 const MONO = "'JetBrains Mono', 'Fira Code', monospace";
@@ -20,8 +20,8 @@ const SANS = "'Inter', -apple-system, sans-serif";
 
 // ── Sparkline SVG ──────────────────────────────────────────────────────
 
-function Sparkline({ data, color, height = 36 }: {
-  data: number[]; color: string; height?: number;
+function Sparkline({ data, height = 36 }: {
+  data: number[]; height?: number;
 }) {
   if (data.length < 2) return (
     <div style={{ height, display:'flex', alignItems:'center', justifyContent:'center' }}>
@@ -40,13 +40,14 @@ function Sparkline({ data, color, height = 36 }: {
   }).join(' ');
 
   const lastX = w, lastY = h - ((data[data.length-1] - min) / range) * (h - 4) - 2;
+  const sparkColor = 'rgba(255,255,255,0.7)';
 
   return (
     <svg viewBox={`0 0 ${w} ${h}`} style={{ width:'100%', height, display:'block' }}>
       <defs>
         <linearGradient id="spark-grad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={color} stopOpacity="0.25"/>
-          <stop offset="100%" stopColor={color} stopOpacity="0"/>
+          <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.18"/>
+          <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0"/>
         </linearGradient>
       </defs>
       <polyline
@@ -57,14 +58,14 @@ function Sparkline({ data, color, height = 36 }: {
       <polyline
         points={pts}
         fill="none"
-        stroke={color}
+        stroke={sparkColor}
         strokeWidth="1.5"
         strokeLinejoin="round"
         strokeLinecap="round"
         opacity={0.8}
       />
       {/* Live cursor dot */}
-      <circle cx={lastX} cy={lastY} r="2.5" fill={color} opacity={0.9}>
+      <circle cx={lastX} cy={lastY} r="2.5" fill="rgba(255,255,255,0.9)">
         <animate attributeName="r" values="2.5;4;2.5" dur="1.5s" repeatCount="indefinite"/>
         <animate attributeName="opacity" values="0.9;0.4;0.9" dur="1.5s" repeatCount="indefinite"/>
       </circle>
@@ -74,16 +75,15 @@ function Sparkline({ data, color, height = 36 }: {
 
 // ── Data row ───────────────────────────────────────────────────────────
 
-function DataRow({ label, value, unit, color = '#E2E8F0', decimals = 2, warn = false }: {
-  label: string; value: number; unit?: string; color?: string;
-  decimals?: number; warn?: boolean;
+function DataRow({ label, value, unit, decimals = 2 }: {
+  label: string; value: number; unit?: string; decimals?: number;
 }) {
   return (
     <div style={{
       display:'flex', alignItems:'center', justifyContent:'space-between',
       padding:'5px 0', borderBottom:'1px solid rgba(255,255,255,0.04)',
     }}>
-      <span style={{ fontFamily:SANS, fontSize:'10px', color:'rgba(226,232,240,0.38)', fontWeight:500 }}>
+      <span style={{ fontFamily:SANS, fontSize:'10px', color:'rgba(255,255,255,0.35)', fontWeight:500 }}>
         {label}
       </span>
       <div style={{ display:'flex', alignItems:'baseline', gap:'3px' }}>
@@ -94,7 +94,7 @@ function DataRow({ label, value, unit, color = '#E2E8F0', decimals = 2, warn = f
           transition={{ duration:0.15 }}
           style={{
             fontFamily:MONO, fontSize:'13px', fontWeight:600,
-            color: warn ? '#F87171' : color,
+            color:'rgba(255,255,255,0.75)',
             textAlign:'right',
             fontVariantNumeric:'tabular-nums',
           }}
@@ -102,7 +102,7 @@ function DataRow({ label, value, unit, color = '#E2E8F0', decimals = 2, warn = f
           {value.toFixed(decimals)}
         </motion.span>
         {unit && (
-          <span style={{ fontFamily:MONO, fontSize:'9px', color:'rgba(226,232,240,0.25)' }}>{unit}</span>
+          <span style={{ fontFamily:MONO, fontSize:'9px', color:'rgba(255,255,255,0.25)' }}>{unit}</span>
         )}
       </div>
     </div>
@@ -113,19 +113,19 @@ function DataRow({ label, value, unit, color = '#E2E8F0', decimals = 2, warn = f
 
 function CofactorMatrix({ readouts }: { readouts: SimReadouts }) {
   const items = [
-    { l:'ATP', v: readouts.atpYield,     u:'mol/mol', color:'#22D3EE' },
-    { l:'NADPH', v: readouts.nadphRate,  u:'μmol/min', color:'#E879F9' },
-    { l:'C%', v: readouts.carbonEfficiency, u:'%', color:'#10B981' },
+    { l:'ATP',   v: readouts.atpYield,          u:'mol/mol',  opacity: 0.8 },
+    { l:'NADPH', v: readouts.nadphRate,          u:'μmol/min', opacity: 0.6 },
+    { l:'C%',    v: readouts.carbonEfficiency,   u:'%',        opacity: 0.45 },
   ];
   return (
     <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'6px', marginTop:'8px' }}>
-      {items.map(({ l, v, u, color }) => (
-        <div key={l} style={{ padding:'8px 6px', borderRadius:'8px', background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.05)', textAlign:'center' }}>
-          <div style={{ fontFamily:MONO, fontSize:'11px', fontWeight:700, color, fontVariantNumeric:'tabular-nums' }}>
+      {items.map(({ l, v, u, opacity }) => (
+        <div key={l} style={{ padding:'8px 6px', borderRadius:'8px', background:'rgba(255,255,255,0.03)', border:'0.5px solid rgba(255,255,255,0.07)', textAlign:'center' }}>
+          <div style={{ fontFamily:MONO, fontSize:'11px', fontWeight:700, color:`rgba(255,255,255,${opacity})`, fontVariantNumeric:'tabular-nums' }}>
             {v.toFixed(1)}
           </div>
-          <div style={{ fontFamily:SANS, fontSize:'8px', color:'rgba(226,232,240,0.3)', marginTop:'2px' }}>{l}</div>
-          <div style={{ fontFamily:MONO, fontSize:'7px', color:'rgba(226,232,240,0.18)' }}>{u}</div>
+          <div style={{ fontFamily:SANS, fontSize:'8px', color:'rgba(255,255,255,0.28)', marginTop:'2px' }}>{l}</div>
+          <div style={{ fontFamily:MONO, fontSize:'7px', color:'rgba(255,255,255,0.18)' }}>{u}</div>
         </div>
       ))}
     </div>
@@ -136,18 +136,17 @@ function CofactorMatrix({ readouts }: { readouts: SimReadouts }) {
 
 function FluxGauge({ value, label }: { value: number; label: string }) {
   const pct = Math.max(0, Math.min(1, value)) * 100;
-  const color = pct > 70 ? '#10B981' : pct > 40 ? '#F59E0B' : '#F87171';
   return (
     <div style={{ marginTop:'6px' }}>
       <div style={{ display:'flex', justifyContent:'space-between', marginBottom:'4px' }}>
-        <span style={{ fontFamily:SANS, fontSize:'9px', color:'rgba(226,232,240,0.35)' }}>{label}</span>
-        <span style={{ fontFamily:MONO, fontSize:'10px', color, fontWeight:700 }}>{pct.toFixed(0)}%</span>
+        <span style={{ fontFamily:SANS, fontSize:'9px', color:'rgba(255,255,255,0.32)' }}>{label}</span>
+        <span style={{ fontFamily:MONO, fontSize:'10px', color:'rgba(255,255,255,0.65)', fontWeight:700 }}>{pct.toFixed(0)}%</span>
       </div>
       <div style={{ height:'4px', borderRadius:'2px', background:'rgba(255,255,255,0.06)', overflow:'hidden' }}>
         <motion.div
           animate={{ width:`${pct}%` }}
           transition={{ duration:0.3 }}
-          style={{ height:'100%', borderRadius:'2px', background:color, boxShadow:`0 0 8px ${color}60` }}
+          style={{ height:'100%', borderRadius:'2px', background:'rgba(255,255,255,0.75)' }}
         />
       </div>
     </div>
@@ -166,11 +165,9 @@ interface StatusOverlayProps {
 export default function StatusOverlay({
   readouts, rateHistory, params, state,
 }: StatusOverlayProps) {
-  const stateColor = STATE_COLORS[state];
   const isStress   = state === 'stress_test';
   const previewRate = michaelisRate(params);
 
-  // Equilibrium detection: history variance < 1%
   const variance = rateHistory.length > 10
     ? rateHistory.slice(-20).reduce((s, v, _, a) => {
         const mean = a.reduce((x,y) => x+y, 0) / a.length;
@@ -187,21 +184,20 @@ export default function StatusOverlay({
         position:'absolute', right:'20px', top:'50%',
         transform:'translateY(-50%)',
         width:'230px', zIndex:10,
-        background:'rgba(10,13,20,0.72)',
-        backdropFilter:'blur(32px) saturate(1.6)',
-        WebkitBackdropFilter:'blur(32px) saturate(1.6)',
-        borderRadius:'18px',
-        border:'none',
-        boxShadow:'0 8px 40px rgba(0,0,0,0.6), inset 0 0 0 1px rgba(255,255,255,0.06)',
+        background:'rgba(0,0,0,0.88)',
+        backdropFilter:'blur(32px)',
+        WebkitBackdropFilter:'blur(32px)',
+        borderRadius:'14px',
+        border:'0.5px solid rgba(255,255,255,0.08)',
         padding:'18px 16px',
       }}
     >
       {/* Header */}
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'12px' }}>
-        <span style={{ fontFamily:MONO, fontSize:'9px', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.12em', color:'rgba(226,232,240,0.3)' }}>
+        <span style={{ fontFamily:MONO, fontSize:'9px', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.12em', color:'rgba(255,255,255,0.25)' }}>
           READOUTS
         </span>
-        <span style={{ fontFamily:MONO, fontSize:'8px', color:'rgba(226,232,240,0.2)', fontVariantNumeric:'tabular-nums' }}>
+        <span style={{ fontFamily:MONO, fontSize:'8px', color:'rgba(255,255,255,0.2)', fontVariantNumeric:'tabular-nums' }}>
           T:{readouts.tick.toString().padStart(5,'0')}
         </span>
       </div>
@@ -209,31 +205,31 @@ export default function StatusOverlay({
       {/* Reaction rate sparkline */}
       <div style={{ marginBottom:'10px' }}>
         <div style={{ display:'flex', alignItems:'baseline', justifyContent:'space-between', marginBottom:'4px' }}>
-          <span style={{ fontFamily:SANS, fontSize:'9px', color:'rgba(226,232,240,0.35)' }}>Reaction Rate v</span>
+          <span style={{ fontFamily:SANS, fontSize:'9px', color:'rgba(255,255,255,0.32)' }}>Reaction Rate v</span>
           <div style={{ display:'flex', alignItems:'baseline', gap:'2px' }}>
             <motion.span
               key={Math.round(readouts.reactionRate * 10)}
               initial={{ opacity:0 }} animate={{ opacity:1 }}
-              style={{ fontFamily:MONO, fontSize:'16px', fontWeight:700, color:stateColor, fontVariantNumeric:'tabular-nums' }}
+              style={{ fontFamily:MONO, fontSize:'16px', fontWeight:700, color:'rgba(255,255,255,0.85)', fontVariantNumeric:'tabular-nums' }}
             >
               {readouts.reactionRate.toFixed(2)}
             </motion.span>
-            <span style={{ fontFamily:MONO, fontSize:'9px', color:'rgba(226,232,240,0.3)' }}>μmol/min</span>
+            <span style={{ fontFamily:MONO, fontSize:'9px', color:'rgba(255,255,255,0.28)' }}>μmol/min</span>
           </div>
         </div>
-        <Sparkline data={rateHistory} color={stateColor} height={40} />
+        <Sparkline data={rateHistory} height={40} />
       </div>
 
-      <div style={{ borderTop:'1px solid rgba(255,255,255,0.05)', paddingTop:'10px', marginBottom:'8px' }}>
-        <DataRow label="ATP Yield"      value={readouts.atpYield}          unit="mol/mol" color="#22D3EE"  decimals={2} />
-        <DataRow label="NADPH Rate"     value={readouts.nadphRate}         unit="μmol/min" color="#E879F9" decimals={2} />
-        <DataRow label="Carbon Eff."    value={readouts.carbonEfficiency}  unit="%"       color="#10B981"  decimals={1} />
-        <DataRow label="Stress Index"   value={readouts.stressIndex}       unit=""        color="#F87171"  decimals={3} warn={isStress} />
-        <DataRow label="Preview Rate"   value={previewRate}                unit="μmol/min" color="#94A3B8" decimals={2} />
+      <div style={{ borderTop:'0.5px solid rgba(255,255,255,0.06)', paddingTop:'10px', marginBottom:'8px' }}>
+        <DataRow label="ATP Yield"   value={readouts.atpYield}         unit="mol/mol"  decimals={2} />
+        <DataRow label="NADPH Rate"  value={readouts.nadphRate}        unit="μmol/min" decimals={2} />
+        <DataRow label="Carbon Eff." value={readouts.carbonEfficiency} unit="%"        decimals={1} />
+        <DataRow label="Stress Index" value={readouts.stressIndex}     unit=""         decimals={3} />
+        <DataRow label="Preview Rate" value={previewRate}              unit="μmol/min" decimals={2} />
       </div>
 
       {/* Flux balance + stress gauges */}
-      <FluxGauge value={readouts.fluxBalance}  label="Flux Balance" />
+      <FluxGauge value={readouts.fluxBalance}   label="Flux Balance" />
       <FluxGauge value={1-readouts.stressIndex} label="Cellular Fitness" />
 
       {/* Cofactor matrix */}
@@ -246,14 +242,14 @@ export default function StatusOverlay({
             initial={{ opacity:0, y:6 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0 }}
             style={{
               marginTop:'12px', padding:'8px 10px', borderRadius:'10px',
-              background:'rgba(16,185,129,0.1)', border:'1px solid rgba(16,185,129,0.25)',
+              background:'rgba(255,255,255,0.04)', border:'0.5px solid rgba(255,255,255,0.10)',
               textAlign:'center',
             }}
           >
-            <span style={{ fontFamily:MONO, fontSize:'9px', color:'#10B981', textTransform:'uppercase', letterSpacing:'0.1em' }}>
+            <span style={{ fontFamily:MONO, fontSize:'9px', color:'rgba(255,255,255,0.65)', textTransform:'uppercase', letterSpacing:'0.1em' }}>
               ⬡ Steady State Reached
             </span>
-            <div style={{ fontFamily:MONO, fontSize:'8px', color:'rgba(16,185,129,0.6)', marginTop:'2px' }}>
+            <div style={{ fontFamily:MONO, fontSize:'8px', color:'rgba(255,255,255,0.35)', marginTop:'2px' }}>
               σ² = {variance.toFixed(4)} (stable)
             </div>
           </motion.div>
@@ -263,13 +259,13 @@ export default function StatusOverlay({
             initial={{ opacity:0, y:6 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0 }}
             style={{
               marginTop:'12px', padding:'8px 10px', borderRadius:'10px',
-              background:'rgba(248,113,113,0.1)', border:'1px solid rgba(248,113,113,0.3)',
+              background:'rgba(255,255,255,0.04)', border:'0.5px solid rgba(255,255,255,0.10)',
               textAlign:'center',
             }}
           >
             <motion.span
               animate={{ opacity:[1,0.4,1] }} transition={{ duration:0.7, repeat:Infinity }}
-              style={{ fontFamily:MONO, fontSize:'9px', color:'#F87171', textTransform:'uppercase', letterSpacing:'0.1em' }}
+              style={{ fontFamily:MONO, fontSize:'9px', color:'rgba(255,255,255,0.65)', textTransform:'uppercase', letterSpacing:'0.1em' }}
             >
               ⚡ STRESS TEST ACTIVE
             </motion.span>
