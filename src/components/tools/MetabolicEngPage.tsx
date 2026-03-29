@@ -24,6 +24,7 @@ import type { FluidForce } from './FluidSimCanvas';
 import ToolOverlay from './ToolOverlay';
 import StatusOverlay from './StatusOverlay';
 import ThreeScene from '../ThreeScene';
+import NodePanel from '../NodePanel';
 import { metabolicMachine, STATE_LABELS } from '../../machines/metabolicMachine';
 import type { FBAWorkerIn, FBAWorkerOut } from '../../workers/fbaWorker';
 import { useUIStore } from '../../store/uiStore';
@@ -77,7 +78,7 @@ function TopBar({ state, stateLabel, tick }: TopBarProps) {
             <Dna size={11} style={{ color:'rgba(255,255,255,0.65)' }} />
           </div>
           <div>
-            <div style={{ fontFamily:MONO, fontSize:'11px', fontWeight:600, color:'rgba(226,232,240,0.85)', letterSpacing:'-0.01em' }}>Metabolic Eng. Lab</div>
+            <div style={{ fontFamily:SANS, fontSize:'11px', fontWeight:600, color:'rgba(226,232,240,0.85)', letterSpacing:'-0.01em' }}>Metabolic Eng. Lab</div>
             <div style={{ fontFamily:MONO, fontSize:'8px', color:'rgba(226,232,240,0.25)', letterSpacing:'0.08em', textTransform:'uppercase' }}>nexus-bio · /tools/metabolic-eng</div>
           </div>
         </div>
@@ -130,14 +131,16 @@ export default function MetabolicEngPage() {
   const setSelectedNode = useUIStore(s => s.setSelectedNode);
 
   // ── ThreeScene: computed props from simulation params ─────────────
+  // glowMultiplier: default enzyme=5 → 1.0 (mid); enzyme=20 → 2.0 (max); pH/temp deviate → dims
   const glowMultiplier = useMemo(() => {
     const tempF = Math.exp(-((params.temperature - 37) ** 2) / 200);
     const phF   = Math.exp(-((params.pH - 7.4) ** 2) / 1.2);
-    return Math.max(0.3, Math.min(2.0, tempF * phF * (params.enzyme / 5) * 2));
+    return Math.max(0.3, Math.min(2.0, tempF * phF * (params.enzyme / 10) * 2));
   }, [params.temperature, params.pH, params.enzyme]);
 
+  // flowSpeed: default substrate=50, km=5 → ~1.0 (mid); max substrate + low km → 2.5
   const flowSpeed = useMemo(() =>
-    Math.max(0.3, Math.min(2.5, params.substrate / Math.max(0.1, params.km))),
+    Math.max(0.3, Math.min(2.5, (params.substrate / 100) * (10 / Math.max(0.5, params.km)) * 1.25)),
     [params.substrate, params.km]
   );
 
@@ -368,6 +371,18 @@ export default function MetabolicEngPage() {
           >
             ▶ PRESS START TO INITIALIZE SIMULATION
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Node detail panel (Overview / Structure / Analysis) ── */}
+      <AnimatePresence>
+        {selectedNode && (
+          <NodePanel
+            node={selectedNode}
+            onClose={() => setSelectedNode(null)}
+            allNodes={pathwayNodes as PathwayNode[]}
+            allEdges={DEMO_EDGES}
+          />
         )}
       </AnimatePresence>
     </div>

@@ -11,14 +11,13 @@ import { Dna } from 'lucide-react';
 
 const MONO = "'JetBrains Mono','Fira Code',monospace";
 const SANS = "'Inter',-apple-system,sans-serif";
-const SERIF = "'DM Serif Display',Georgia,serif";
+const BRAND = "'Space Grotesk',-apple-system,sans-serif";
 
 const NAV_LINKS: [string, string][] = [
   ['Home',     '/'],
   ['Research', '/research'],
   ['Tools',    '/tools/metabolic-eng'],
   ['Analyze',  '/analyze'],
-  ['Contact',  '/contact'],
 ];
 
 export default function TopNav() {
@@ -29,7 +28,7 @@ export default function TopNav() {
       position: 'fixed', top: 0, left: 0, right: 0, zIndex: 200,
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       padding: '0 clamp(20px, 4vw, 48px)', height: '58px',
-      background: 'rgba(10, 13, 20, 0.82)',
+      background: 'rgba(0,0,0,0.85)',
       backdropFilter: 'blur(28px) saturate(1.4)',
       WebkitBackdropFilter: 'blur(28px) saturate(1.4)',
       borderBottom: '1px solid rgba(255,255,255,0.05)',
@@ -47,8 +46,8 @@ export default function TopNav() {
           <Dna size={13} style={{ color: 'rgba(255,255,255,0.75)' }} />
         </div>
         <span style={{
-          fontFamily: SERIF, fontSize: '14px',
-          color: 'rgba(226,232,240,0.88)', letterSpacing: '-0.01em',
+          fontFamily: BRAND, fontWeight: 700, fontSize: '14px',
+          color: 'rgba(255,255,255,0.9)', letterSpacing: '-0.01em',
         }}>
           Nexus-Bio
         </span>

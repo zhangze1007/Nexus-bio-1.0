@@ -52,8 +52,8 @@ function isRenderableNode(node: PathwayNode | null | undefined): node is Pathway
 function getRendererLabel(mode: RendererMode): string | null {
   switch (mode) {
     case 'loading': return 'INITIALIZING';
-    case 'webgl2': return 'WEBGL2 FALLBACK';
-    case 'webgl': return 'WEBGL FALLBACK';
+    case 'webgl2': return null;   // WebGL2 is the target renderer — no label needed
+    case 'webgl': return 'LEGACY WEBGL';
     case 'error': return 'RENDERER ERROR';
     default: return null;
   }

@@ -28,7 +28,7 @@ export default function AnalyzeClient() {
   }, [setAiPathway, router]);
 
   return (
-    <div style={{ background: '#0A0D14', minHeight: '100vh', color: '#E2E8F0' }}>
+    <div style={{ background: '#000000', minHeight: '100vh', color: '#E2E8F0' }}>
       <TopNav />
       <div style={{ paddingTop: '58px' }}>
         <PaperAnalyzer onPathwayGenerated={handlePathway} />

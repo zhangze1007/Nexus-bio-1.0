@@ -607,7 +607,7 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
             style={{
               position: 'fixed', top: 0, right: 0, height: '100%', width: '100%', maxWidth: '440px',
               zIndex: 50, display: 'flex', flexDirection: 'column',
-              background: 'rgba(10,13,20,0.82)',
+              background: 'rgba(0,0,0,0.92)',
               backdropFilter: 'blur(28px)',
               WebkitBackdropFilter: 'blur(28px)',
               borderLeft: '1px solid rgba(255,255,255,0.08)',

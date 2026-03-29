@@ -389,7 +389,7 @@ export default function PDBExplorer() {
 
         <div className="mb-10">
           <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '11px', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' }}>
-            05 · Structure
+            Structure
           </p>
           <h2 className="text-2xl md:text-3xl font-semibold text-white mb-2" style={{ letterSpacing: '-0.02em' }}>
             Enzyme Structure Explorer

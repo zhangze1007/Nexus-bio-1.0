@@ -449,7 +449,7 @@ export default function PaperAnalyzer({ onPathwayGenerated }: PaperAnalyzerProps
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
           <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '11px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' }}>
-            03 · Analysis
+            Analysis
           </p>
           <h2 style={{ color: '#ffffff', fontSize: 'clamp(24px, 4vw, 32px)', fontWeight: 600, letterSpacing: '-0.03em', marginBottom: '8px' }}>
             Decode any pathway.
