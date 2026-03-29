@@ -3,7 +3,7 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 // 注入了 ShieldAlert 用于合规面板
-import { X, Download, FileText, Hash, Link2, ChevronDown, ChevronUp, Atom, Activity, Thermometer, Loader2, ExternalLink, ShieldAlert, AlertTriangle, CheckCircle, Circle } from 'lucide-react';
+import { X, Download, FileText, Hash, Link2, ChevronDown, ChevronUp, Atom, Activity, Thermometer, Loader2, ExternalLink, ShieldAlert, AlertTriangle, CheckCircle, Circle, Scissors, ArrowUp } from 'lucide-react';
 import { PathwayNode, PathwayEdge, NodeType, EdgeRelationshipType, SHOWCASE_PUBCHEM_CIDS } from '../types';
 import { BIO_THEME_COLORS } from './ThreeScene';
 import MoleculeViewer from './MoleculeViewer';
@@ -1005,19 +1005,16 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                       <div style={{
                         display: 'inline-flex', alignItems: 'center', gap: '6px',
                         padding: '6px 12px', borderRadius: '20px',
-                        background: node.genetic_intervention.startsWith('KO')
-                          ? 'rgba(239,68,68,0.12)' : 'rgba(16,185,129,0.12)',
-                        border: `1px solid ${node.genetic_intervention.startsWith('KO')
-                          ? 'rgba(239,68,68,0.25)' : 'rgba(16,185,129,0.25)'}`,
+                        background: 'rgba(255,255,255,0.04)',
+                        border: '1px solid rgba(255,255,255,0.1)',
                       }}>
-                        <span style={{ fontSize: '14px' }}>
-                          {node.genetic_intervention.startsWith('KO') ? '✂️' : '⬆️'}
+                        <span style={{ display: 'flex', alignItems: 'center', color: 'rgba(255,255,255,0.45)' }}>
+                          {node.genetic_intervention.startsWith('KO') ? <Scissors size={12} /> : <ArrowUp size={12} />}
                         </span>
                         <span style={{
                           fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
                           fontSize: '11px', fontWeight: 600,
-                          color: node.genetic_intervention.startsWith('KO')
-                            ? BIO_THEME_COLORS.RED : BIO_THEME_COLORS.GREEN,
+                          color: 'rgba(255,255,255,0.75)',
                         }}>
                           {node.genetic_intervention}
                         </span>
