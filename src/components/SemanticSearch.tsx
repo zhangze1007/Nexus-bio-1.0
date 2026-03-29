@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Search, ExternalLink, ChevronDown, ChevronUp, Loader2, Send } from 'lucide-react';
 
 interface Article {
@@ -200,23 +200,32 @@ async function fetchCORE(query: string): Promise<Article[]> {
 
 interface SemanticSearchProps {
   onAnalyzePaper?: (text: string) => void;
+  initialQuery?: string;
 }
 
-export default function SemanticSearch({ onAnalyzePaper }: SemanticSearchProps) {
-  const [query, setQuery] = useState('');
+export default function SemanticSearch({ onAnalyzePaper, initialQuery }: SemanticSearchProps) {
+  const [query, setQuery] = useState(initialQuery ?? '');
   const [results, setResults] = useState<Article[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
-  const [showShowcase, setShowShowcase] = useState(true);
+  const [showShowcase, setShowShowcase] = useState(!initialQuery);
+
+  const didAutoSearch = useRef(false);
+  useEffect(() => {
+    if (initialQuery && !didAutoSearch.current) {
+      didAutoSearch.current = true;
+      runSearch(initialQuery);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialQuery]);
 
   const toggleExpand = (id: string) => {
     setExpandedIds(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
   };
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!query.trim()) return;
+  const runSearch = async (q: string) => {
+    if (!q.trim()) return;
     setIsSearching(true);
     setHasSearched(true);
     setResults([]);
@@ -225,14 +234,20 @@ export default function SemanticSearch({ onAnalyzePaper }: SemanticSearchProps) 
     const fetchers = [fetchPubMed, fetchEuropePMC, fetchSemanticScholar, fetchOpenAlex, fetchBioRxiv, fetchCORE];
     await Promise.allSettled(fetchers.map(async fn => {
       try {
-        const articles = await fn(query);
+        const articles = await fn(q);
         setResults(prev => {
-          const seen = new Set(prev.map(a => a.title.toLowerCase().slice(0, 60)));
-          return [...prev, ...articles.filter(a => a.title && !seen.has(a.title.toLowerCase().slice(0, 60)))];
+          const ids = new Set(prev.map(a => a.id));
+          const deduped = articles.filter(a => !ids.has(a.id));
+          return [...prev, ...deduped];
         });
-      } catch {}
+      } catch { /* ignore individual failures */ }
     }));
     setIsSearching(false);
+  };
+
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await runSearch(query);
   };
 
   const handleAnalyze = (article: any) => {

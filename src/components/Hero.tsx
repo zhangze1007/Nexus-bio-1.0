@@ -1,449 +1,356 @@
 'use client';
+/**
+ * Hero — xAI-minimal redesign.
+ *
+ * Structure:
+ *   · HeroFluidCanvas — full-section B&W grainy fluid (z=0)
+ *   · Centered layer  — massive "Nexus-Bio" + Research Search Bar (z=10)
+ *   · Bottom vignette — blends into dark bg below
+ *
+ * Search bar interactions:
+ *   · Focus   → fluid.triggerConverge() (8 inward velocity splats)
+ *   · Typing  → debounced OpenAlex preview (4 results, glassmorphism popup)
+ *   · Enter   → router.push('/research?q=...')
+ *   · Scroll parallax on title
+ *
+ * LCP: "Nexus-Bio" h1 is static HTML — renders on first paint before any JS.
+ */
 
-import { motion, useScroll, useTransform, useSpring } from 'framer-motion';
-import { ArrowRight, Dna, BookOpen, Microscope, ShieldCheck, Activity } from 'lucide-react';
-import { useRef, useEffect, useState, useCallback } from 'react';
+import {
+  useRef, useState, useEffect, useCallback, useTransition,
+} from 'react';
+import { motion, useScroll, useTransform } from 'framer-motion';
+import { Search, ArrowRight, Loader2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import HeroFluidCanvas, { type HeroFluidHandle } from './HeroFluidCanvas';
 
-// ── Typography system ─────────────────────────────────────────────────
-const SERIF = "'DM Serif Display', Georgia, 'Times New Roman', serif";
-const BODY  = "'Public Sans', -apple-system, sans-serif";
-const MONO  = "'JetBrains Mono', 'Fira Code', 'Consolas', 'Courier New', monospace";
-const METAL_HIGHLIGHT = 'rgb(var(--accent-primary-rgb) / 0.16)';
-const METAL_SHEEN = 'rgb(var(--accent-secondary-rgb) / 0.06)';
-const METAL_SHEEN_SOFT = 'rgb(var(--accent-secondary-rgb) / 0.05)';
-const METAL_SURFACE = 'rgb(var(--bg-elevated-rgb) / 0.92)';
-const METAL_DEPTH = 'rgb(var(--bg-surface-rgb) / 0.92)';
-const METAL_DEPTH_SOFT = 'rgb(var(--bg-surface-rgb) / 0.18)';
+const SERIF = "'DM Serif Display',Georgia,'Times New Roman',serif";
+const SANS  = "'Inter',-apple-system,sans-serif";
+const MONO  = "'JetBrains Mono','Fira Code',monospace";
 
-// ── Font loader ───────────────────────────────────────────────────────
-function useFonts() {
-  useEffect(() => {
-    if (document.getElementById('nexus-fonts')) return;
-    const link = document.createElement('link');
-    link.id = 'nexus-fonts';
-    link.rel = 'stylesheet';
-    link.href = 'https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&display=swap';
-    document.head.appendChild(link);
-  }, []);
+// Quick preview from OpenAlex (CORS-open, no key)
+interface PreviewResult {
+  id: string;
+  title: string;
+  publication_year: number | null;
+  primary_location?: { source?: { display_name?: string } };
 }
 
-// ── Cursor parallax ───────────────────────────────────────────────────
-function useCursorParallax() {
-  const [pos, setPos] = useState({ x: 0, y: 0 });
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      const x = (e.clientX / window.innerWidth  - 0.5) * 2;
-      const y = (e.clientY / window.innerHeight - 0.5) * 2;
-      setPos({ x, y });
-    };
-    window.addEventListener('mousemove', handler);
-    return () => window.removeEventListener('mousemove', handler);
-  }, []);
-  return pos;
+async function fetchPreview(q: string): Promise<PreviewResult[]> {
+  const url = `https://api.openalex.org/works?search=${encodeURIComponent(q)}&per-page=4&select=id,title,publication_year,primary_location`;
+  const res = await fetch(url, { signal: AbortSignal.timeout(4000) });
+  if (!res.ok) return [];
+  const data = await res.json();
+  return (data.results ?? []) as PreviewResult[];
 }
 
-// ── Animated orb background ───────────────────────────────────────────
-function DeepBackground({ cx }: { cx: { x: number; y: number } }) {
-  return (
-    <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
-
-      {/* Base */}
-      <div style={{ position: 'absolute', inset: 0, background: 'transparent' }} />
-
-      {/* Orb 1 — top left, slow drift */}
-      <motion.div
-        animate={{ x: [0, 40, -20, 0], y: [0, -30, 20, 0] }}
-        transition={{ duration: 28, repeat: Infinity, ease: 'easeInOut' }}
-        style={{
-          position: 'absolute',
-          top: '-20%', left: '-10%',
-          width: '70vw', height: '70vw',
-          background: `linear-gradient(140deg, ${METAL_HIGHLIGHT} 0%, ${METAL_SHEEN} 24%, ${METAL_DEPTH} 62%, transparent 82%)`,
-          filter: 'blur(22px)',
-          transform: `translate(${cx.x * -18}px, ${cx.y * -12}px)`,
-          transition: 'transform 0.8s cubic-bezier(0.16,1,0.3,1)',
-          borderRadius: '48% 52% 64% 36% / 42% 40% 60% 58%',
-          boxShadow: 'inset -18px -20px 40px rgba(0,0,0,0.55), inset 10px 12px 18px rgba(255,255,255,0.08)',
-          opacity: 0.9,
-        }}
-      />
-
-      {/* Orb 2 — bottom right */}
-      <motion.div
-        animate={{ x: [0, -50, 30, 0], y: [0, 40, -20, 0] }}
-        transition={{ duration: 35, repeat: Infinity, ease: 'easeInOut', delay: 4 }}
-        style={{
-          position: 'absolute',
-          bottom: '-25%', right: '-15%',
-          width: '65vw', height: '65vw',
-          background: `linear-gradient(220deg, rgb(var(--accent-primary-rgb) / 0.14) 0%, ${METAL_SHEEN_SOFT} 22%, ${METAL_SURFACE} 58%, transparent 80%)`,
-          filter: 'blur(28px)',
-          transform: `translate(${cx.x * 14}px, ${cx.y * 10}px)`,
-          transition: 'transform 0.8s cubic-bezier(0.16,1,0.3,1)',
-          borderRadius: '58% 42% 38% 62% / 44% 58% 42% 56%',
-          boxShadow: 'inset 20px 16px 28px rgba(255,255,255,0.05), inset -26px -24px 50px rgba(0,0,0,0.6)',
-          opacity: 0.88,
-        }}
-      />
-
-      {/* Orb 3 — center, very faint */}
-      <motion.div
-        animate={{ scale: [1, 1.12, 0.95, 1], opacity: [0.4, 0.65, 0.4] }}
-        transition={{ duration: 22, repeat: Infinity, ease: 'easeInOut', delay: 8 }}
-        style={{
-          position: 'absolute', top: '30%', left: '50%',
-          transform: `translate(-50%, -50%) translate(${cx.x * -8}px, ${cx.y * -6}px)`,
-          width: '50vw', height: '50vw',
-          background: `radial-gradient(ellipse at 42% 34%, rgb(var(--accent-primary-rgb) / 0.14) 0%, ${METAL_SHEEN_SOFT} 28%, ${METAL_DEPTH_SOFT} 52%, transparent 72%)`,
-          filter: 'blur(26px)',
-          transition: 'transform 1.2s cubic-bezier(0.16,1,0.3,1)',
-          borderRadius: '42% 58% 46% 54% / 58% 42% 58% 42%',
-        }}
-      />
-
-      {/* Noise grain overlay */}
-      <div style={{
-        position: 'absolute', inset: 0,
-        backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E")`,
-        backgroundSize: '180px',
-        opacity: 0.3,
-        mixBlendMode: 'soft-light',
-      }} />
-    </div>
-  );
-}
-
-// ── Glass card ────────────────────────────────────────────────────────
-function GlassChip({ value, label, delay }: { value: string; label: string; delay: number }) {
-  const [hov, setHov] = useState(false);
+// ── Reveal helper ─────────────────────────────────────────────────────
+export function Reveal({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.7, delay, ease: [0.22, 1, 0.36, 1] }}
-      onHoverStart={() => setHov(true)}
-      onHoverEnd={() => setHov(false)}
-      style={{
-        display: 'flex', flexDirection: 'column', alignItems: 'center',
-        padding: '16px 24px', borderRadius: '14px', minWidth: '100px',
-        background: hov ? 'rgba(255,255,255,0.045)' : 'rgba(255,255,255,0.02)',
-        border: `1px solid ${hov ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.06)'}`,
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
-        boxShadow: hov
-          ? '0 8px 40px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.04), inset 0 1px 0 rgba(255,255,255,0.06)'
-          : '0 2px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.04)',
-        transform: hov ? 'translateY(-3px)' : 'none',
-        transition: 'all 0.3s cubic-bezier(0.34,1.56,0.64,1)',
-        cursor: 'default',
-      }}>
-      <span style={{ fontFamily: SERIF, fontSize: '1.75rem', color: hov ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.78)', lineHeight: 1.1, letterSpacing: '-0.02em' }}>
-        {value}
-      </span>
-      <span style={{ fontFamily: MONO, fontSize: '9px', color: 'rgba(255,255,255,0.22)', textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: '6px' }}>
-        {label}
-      </span>
-    </motion.div>
-  );
-}
-
-// ── Scroll reveal wrapper ─────────────────────────────────────────────
-function Reveal({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 28, filter: 'blur(4px)' }}
+      initial={{ opacity: 0, y: 24, filter: 'blur(6px)' }}
       whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
       viewport={{ once: true, margin: '-60px' }}
-      transition={{ duration: 0.85, delay, ease: [0.22, 1, 0.36, 1] }}>
+      transition={{ duration: 0.8, delay, ease: [0.22, 1, 0.36, 1] }}>
       {children}
     </motion.div>
   );
 }
 
-export { Reveal };
-
-// ── Main Hero ─────────────────────────────────────────────────────────
+// ── Main ──────────────────────────────────────────────────────────────
 export default function Hero() {
-  useFonts();
-  const ref = useRef<HTMLElement>(null);
-  const cursor = useCursorParallax();
-  const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end start'] });
-  const y       = useTransform(scrollYProgress, [0, 1], [0, -100]);
-  const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
-  const scale   = useTransform(scrollYProgress, [0, 0.5], [1, 0.97]);
+  const router = useRouter();
+  const headerRef = useRef<HTMLElement>(null);
+  const fluidRef = useRef<HeroFluidHandle>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const [query, setQuery] = useState('');
+  const [focused, setFocused] = useState(false);
+  const [preview, setPreview] = useState<PreviewResult[]>([]);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [, startTransition] = useTransition();
+
+  // Scroll-based parallax on title
+  const { scrollYProgress } = useScroll({
+    target: headerRef,
+    offset: ['start start', 'end start'],
+  });
+  const titleY       = useTransform(scrollYProgress, [0, 1], [0, -80]);
+  const titleOpacity = useTransform(scrollYProgress, [0, 0.55], [1, 0]);
+
+  // Debounced preview fetch
+  useEffect(() => {
+    if (!query.trim() || query.length < 3) {
+      setPreview([]);
+      return;
+    }
+    setPreviewLoading(true);
+    const timer = setTimeout(async () => {
+      try {
+        const results = await fetchPreview(query);
+        startTransition(() => setPreview(results));
+      } catch {
+        setPreview([]);
+      } finally {
+        setPreviewLoading(false);
+      }
+    }, 380);
+    return () => clearTimeout(timer);
+  }, [query]);
+
+  const navigate = useCallback((q: string) => {
+    if (q.trim()) router.push(`/research?q=${encodeURIComponent(q.trim())}`);
+  }, [router]);
+
+  const onFocus = useCallback(() => {
+    setFocused(true);
+    fluidRef.current?.triggerConverge();
+  }, []);
+
+  const onKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') navigate(query);
+    if (e.key === 'Escape') { setFocused(false); inputRef.current?.blur(); }
+  }, [navigate, query]);
+
+  const showPopup = focused && query.length >= 3 && (preview.length > 0 || previewLoading);
 
   return (
-    <header ref={ref} style={{
-      position: 'relative', width: '100%', minHeight: '100vh',
-      display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: 'center',
-      padding: '0 24px', overflow: 'hidden',
-      pointerEvents: 'none',
+    <header ref={headerRef} style={{
+      position: 'relative',
+      width: '100%',
+      height: '100svh',
+      minHeight: '600px',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      overflow: 'hidden',
     }}>
-      <DeepBackground cx={cursor} />
+      {/* ── Layer 0: B&W Fluid ── */}
+      <HeroFluidCanvas ref={fluidRef} />
 
-      {/* ── Navbar ── */}
-      <nav style={{
-        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '0 40px', height: '60px',
-        background: 'rgba(7,10,14,0.75)',
-        backdropFilter: 'blur(28px)',
-        WebkitBackdropFilter: 'blur(28px)',
-        borderBottom: '1px solid rgba(255,255,255,0.05)',
-        boxShadow: '0 1px 0 rgba(255,255,255,0.03)',
-        pointerEvents: 'auto',
-      }}>
-        {/* Logo */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{
-            width: '28px', height: '28px', borderRadius: '16px',
-            background: 'rgba(255,255,255,0.05)',
-            border: '1px solid rgba(255,255,255,0.1)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 0 12px rgba(180,210,240,0.08)',
-          }}>
-            <Dna size={13} style={{ color: 'rgba(255,255,255,0.6)' }} />
-          </div>
-          <span style={{ fontFamily: SERIF, fontSize: '15px', color: 'rgba(255,255,255,0.82)', letterSpacing: '-0.01em' }}>
-            Nexus-Bio 1.1
-          </span>
-        </div>
+      {/* ── Layer 1: Content ── */}
+      <motion.div
+        style={{
+          y: titleY, opacity: titleOpacity,
+          position: 'relative', zIndex: 10,
+          display: 'flex', flexDirection: 'column',
+          alignItems: 'center', textAlign: 'center',
+          padding: '0 clamp(20px, 5vw, 60px)',
+          width: '100%', maxWidth: '900px',
+          pointerEvents: 'auto',
+        }}>
 
-        {/* Nav links */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
-          {[['Visualize','demo'],['Search','search'],['Analyze','analyzer'],['Contact','contact']].map(([label, id]) => (
-            <a key={id} href={`#${id}`} style={{
-              fontFamily: BODY, fontSize: '12px', fontWeight: 400,
-              color: 'rgba(255,255,255,0.32)',
-              textDecoration: 'none', letterSpacing: '0.03em',
-              transition: 'color 0.2s',
-            }}
-              onMouseEnter={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.78)')}
-              onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.32)')}> 
-              {label}
-            </a>
-          ))}
-        </div>
-
-        {/* CTA */}
-        <a href="#analyzer" style={{
-          display: 'flex', alignItems: 'center', gap: '6px',
-          padding: '7px 18px', borderRadius: '16px',
-          background: 'rgba(255,255,255,0.055)',
-          border: '1px solid rgba(255,255,255,0.09)',
-          backdropFilter: 'blur(12px)',
-          color: 'rgba(255,255,255,0.6)',
-          fontFamily: BODY, fontSize: '12px', fontWeight: 400,
-          textDecoration: 'none', transition: 'all 0.2s',
-          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06)',
-        }}
-          onMouseEnter={e => {
-            const el = e.currentTarget as HTMLElement;
-            el.style.background = 'rgba(255,255,255,0.1)';
-            el.style.color = '#fff';
-            el.style.borderColor = 'rgba(255,255,255,0.16)';
-            el.style.boxShadow = '0 4px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.08)';
-          }}
-          onMouseLeave={e => {
-            const el = e.currentTarget as HTMLElement;
-            el.style.background = 'rgba(255,255,255,0.055)';
-            el.style.color = 'rgba(255,255,255,0.6)';
-            el.style.borderColor = 'rgba(255,255,255,0.09)';
-            el.style.boxShadow = 'inset 0 1px 0 rgba(255,255,255,0.06)';
-          }}>
-          Access Engine <ArrowRight size={11} />
-        </a>
-      </nav>
-
-      {/* ── Hero content — parallax layer ── */}
-      <motion.div style={{
-        y, opacity, scale,
-        position: 'relative', zIndex: 10,
-        textAlign: 'center', maxWidth: '1000px', width: '100%',
-        paddingTop: '80px',
-        transform: `translate(${cursor.x * -6}px, ${cursor.y * -4}px)`,
-        transition: 'transform 1s cubic-bezier(0.16,1,0.3,1)',
-        pointerEvents: 'auto',
-      }}>
-
-        {/* Badge — glass pill */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
+        {/* Overline */}
+        <motion.p
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, ease: [0.22,1,0.36,1] }}
           style={{
-            display: 'inline-flex', alignItems: 'center', gap: '9px',
-            padding: '6px 18px', borderRadius: '100px', marginBottom: '40px',
-            background: 'rgba(255,255,255,0.03)',
-            border: '1px solid rgba(255,255,255,0.08)',
-            backdropFilter: 'blur(16px)',
-            boxShadow: '0 2px 20px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05)',
+            fontFamily: MONO, fontSize: '10px', fontWeight: 500,
+            textTransform: 'uppercase', letterSpacing: '0.18em',
+            color: 'rgba(34,211,238,0.6)',
+            margin: '0 0 28px',
           }}>
-          <motion.span
-            animate={{ opacity: [0.3, 1, 0.3] }}
-            transition={{ duration: 3, repeat: Infinity }}
-            style={{ width: '5px', height: '5px', borderRadius: '50%', background: 'rgba(180,215,245,0.6)', boxShadow: '0 0 6px rgba(180,215,245,0.4)', flexShrink: 0 }}
-          />
-          <span style={{ fontFamily: "'Times New Roman', Times, serif", fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', letterSpacing: '0.12em' }}>
-            Next-Gen Biosynthesis Engine
-          </span>
-        </motion.div>
-
-        {/* Main title — 保持放大的尺寸，但颜色回归高级黑白灰 */}
-        <motion.h1
-          initial={{ opacity: 0, y: 32 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.9, delay: 0.08, ease: [0.22,1,0.36,1] }}
-          style={{
-            fontFamily: SERIF, fontWeight: 400, fontStyle: 'normal',
-            fontSize: 'clamp(2.5rem, 6.5vw, 5rem)',
-            lineHeight: 1.1, letterSpacing: '-0.02em',
-            color: 'rgba(255,255,255,0.95)',
-            margin: '0 0 24px',
-            textShadow: '0 0 80px rgba(180,210,240,0.15)',
-          }}>
-          From Literature
-          <br />
-          <span style={{ color: 'rgba(255,255,255,0.25)', fontStyle: 'normal' }}>
-            to Mechanistic Insight
-          </span>
-        </motion.h1>
-
-        {/* Subtitle — Arial/body */}
-        <motion.p
-          initial={{ opacity: 0, y: 18 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.75, delay: 0.18 }}
-          style={{
-            fontFamily: BODY, fontSize: 'clamp(14px, 1.8vw, 18px)',
-            fontWeight: 400, lineHeight: 1.8,
-            color: 'rgba(255,255,255,0.45)',
-            maxWidth: '680px', margin: '0 auto 16px',
-            letterSpacing: '0.01em',
-          }}>
-          Transform complex metabolic engineering papers into verifiable 3D actionable pathways. Predict impurities, optimize yield, and track every decision in minutes.
+          Synthetic Biology Research Platform
         </motion.p>
 
-        {/* CTAs — glass buttons */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
+        {/* ── LCP Element — renders before JS hydration ── */}
+        <motion.h1
+          initial={{ opacity: 0, y: 36 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.65, delay: 0.36 }}
-          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', flexWrap: 'wrap', marginTop: '36px', marginBottom: '64px' }}>
+          transition={{ duration: 0.95, delay: 0.04, ease: [0.22,1,0.36,1] }}
+          style={{
+            fontFamily: SERIF, fontWeight: 400, fontStyle: 'normal',
+            fontSize: 'clamp(4rem, 11vw, 9.5rem)',
+            lineHeight: 0.95, letterSpacing: '-0.03em',
+            color: '#E2E8F0',
+            margin: '0 0 clamp(32px, 5vw, 56px)',
+            textShadow: '0 0 120px rgba(255,255,255,0.08)',
+          }}>
+          Nexus-Bio
+        </motion.h1>
 
-          {/* Primary CTA */}
-          <a href="#analyzer" style={{
-            display: 'flex', alignItems: 'center', gap: '8px',
-            padding: '16px 36px', borderRadius: '30px',
-            background: '#ffffff', color: '#07090d',
-            fontFamily: BODY, fontSize: '14px', fontWeight: 700,
-            textDecoration: 'none', letterSpacing: '-0.01em',
-            boxShadow: '0 0 0 0 rgba(255,255,255,0)',
-            transition: 'all 0.25s cubic-bezier(0.34,1.56,0.64,1)',
-          }}
-            onMouseEnter={e => {
-              const el = e.currentTarget as HTMLElement;
-              el.style.background = '#e8e8e8';
-              el.style.transform = 'translateY(-3px) scale(1.02)';
-              el.style.boxShadow = '0 8px 30px rgba(255,255,255,0.18), 0 0 0 1px rgba(255,255,255,0.1)';
-            }}
-            onMouseLeave={e => {
-              const el = e.currentTarget as HTMLElement;
-              el.style.background = '#ffffff';
-              el.style.transform = 'none';
-              el.style.boxShadow = '0 0 0 0 rgba(255,255,255,0)';
-            }}>
-            Initialize Pilot Demo <ArrowRight size={14} />
-          </a>
+        {/* ── Research Search Bar ── */}
+        <motion.div
+          initial={{ opacity: 0, y: 20, scale: 0.97 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.8, delay: 0.18, ease: [0.22,1,0.36,1] }}
+          style={{ position: 'relative', width: '100%', maxWidth: '660px' }}>
 
-          {/* Secondary CTA */}
-          <a href="#search" style={{
-            display: 'flex', alignItems: 'center', gap: '8px',
-            padding: '16px 36px', borderRadius: '30px',
-            background: 'rgba(255,255,255,0.04)',
-            border: '1px solid rgba(255,255,255,0.15)',
-            backdropFilter: 'blur(16px)',
-            color: 'rgba(255,255,255,0.8)',
-            fontFamily: BODY, fontSize: '14px', fontWeight: 600,
-            textDecoration: 'none',
-            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
-            transition: 'all 0.22s ease',
-          }}
-            onMouseEnter={e => {
-              const el = e.currentTarget as HTMLElement;
-              el.style.background = 'rgba(255,255,255,0.1)';
-              el.style.color = '#fff';
-              el.style.transform = 'translateY(-2px)';
-            }}
-            onMouseLeave={e => {
-              const el = e.currentTarget as HTMLElement;
-              el.style.background = 'rgba(255,255,255,0.04)';
-              el.style.color = 'rgba(255,255,255,0.8)';
-              el.style.transform = 'none';
-            }}>
-            <BookOpen size={14} /> View Technical Paper
-          </a>
+          {/* Input wrapper */}
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '12px',
+            padding: '0 20px', height: '58px', borderRadius: '30px',
+            background: focused
+              ? 'rgba(15,18,25,0.88)'
+              : 'rgba(15,18,25,0.72)',
+            border: focused
+              ? '1px solid rgba(34,211,238,0.35)'
+              : '1px solid rgba(255,255,255,0.10)',
+            backdropFilter: 'blur(32px) saturate(1.5)',
+            WebkitBackdropFilter: 'blur(32px) saturate(1.5)',
+            boxShadow: focused
+              ? '0 0 0 4px rgba(34,211,238,0.08), 0 24px 64px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.06)'
+              : '0 12px 40px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.04)',
+            transition: 'all 0.25s cubic-bezier(0.22,1,0.36,1)',
+          }}>
+            <Search size={16} style={{
+              color: focused ? '#22D3EE' : 'rgba(255,255,255,0.25)',
+              flexShrink: 0, transition: 'color 0.2s',
+            }} />
+
+            <input
+              ref={inputRef}
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              onFocus={onFocus}
+              onBlur={() => setTimeout(() => setFocused(false), 200)}
+              onKeyDown={onKeyDown}
+              placeholder="Search pathways, enzymes, literature…"
+              style={{
+                flex: 1, background: 'none', border: 'none', outline: 'none',
+                fontFamily: SANS, fontSize: '15px', fontWeight: 400,
+                color: '#E2E8F0',
+                '::placeholder': { color: 'rgba(148,163,184,0.45)' },
+              } as React.CSSProperties}
+              aria-label="Search research database"
+              autoComplete="off"
+              spellCheck={false}
+            />
+
+            {/* Search button */}
+            <button
+              onClick={() => navigate(query)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '6px',
+                padding: '8px 18px', borderRadius: '20px', flexShrink: 0,
+                background: query.trim()
+                  ? 'rgba(34,211,238,0.15)'
+                  : 'rgba(255,255,255,0.04)',
+                border: query.trim()
+                  ? '1px solid rgba(34,211,238,0.3)'
+                  : '1px solid rgba(255,255,255,0.07)',
+                color: query.trim() ? '#22D3EE' : 'rgba(255,255,255,0.2)',
+                fontFamily: MONO, fontSize: '11px', fontWeight: 500,
+                cursor: query.trim() ? 'pointer' : 'default',
+                transition: 'all 0.2s',
+              }}>
+              {previewLoading
+                ? <Loader2 size={11} style={{ animation: 'spin 1s linear infinite' }} />
+                : <ArrowRight size={11} />}
+              Search
+            </button>
+          </div>
+
+          {/* ── Preview Dropdown (Glassmorphism 2.0) ── */}
+          {showPopup && (
+            <motion.div
+              initial={{ opacity: 0, y: -6, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.18 }}
+              style={{
+                position: 'absolute', top: 'calc(100% + 8px)',
+                left: 0, right: 0, zIndex: 50,
+                borderRadius: '18px',
+                background: 'rgba(10,13,20,0.94)',
+                border: '1px solid rgba(34,211,238,0.14)',
+                backdropFilter: 'blur(40px) saturate(1.6)',
+                WebkitBackdropFilter: 'blur(40px) saturate(1.6)',
+                boxShadow: '0 0 0 1px rgba(255,255,255,0.04), 0 32px 80px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.05)',
+                overflow: 'hidden',
+              }}>
+              {previewLoading && preview.length === 0 ? (
+                <div style={{ padding: '16px 20px', display:'flex', alignItems:'center', gap:'10px' }}>
+                  <Loader2 size={12} style={{ color:'#22D3EE', animation:'spin 1s linear infinite' }} />
+                  <span style={{ fontFamily:MONO, fontSize:'11px', color:'rgba(148,163,184,0.6)' }}>
+                    Searching OpenAlex…
+                  </span>
+                </div>
+              ) : preview.map((r, i) => (
+                <button
+                  key={r.id}
+                  onMouseDown={() => navigate(r.title)}
+                  style={{
+                    display: 'block', width: '100%', textAlign: 'left',
+                    padding: '12px 20px', background: 'none', border: 'none',
+                    cursor: 'pointer',
+                    borderBottom: i < preview.length - 1
+                      ? '1px solid rgba(255,255,255,0.04)'
+                      : 'none',
+                    transition: 'background 0.15s',
+                  }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(34,211,238,0.06)'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'none'; }}>
+                  <p style={{
+                    fontFamily: SANS, fontSize: '13px', fontWeight: 400,
+                    color: 'rgba(226,232,240,0.82)',
+                    margin: '0 0 4px',
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                  }}>
+                    {r.title}
+                  </p>
+                  <p style={{
+                    fontFamily: MONO, fontSize: '10px',
+                    color: 'rgba(148,163,184,0.5)',
+                    margin: 0,
+                  }}>
+                    {r.publication_year ?? '—'}
+                    {r.primary_location?.source?.display_name
+                      ? ` · ${r.primary_location.source.display_name}`
+                      : ''}
+                  </p>
+                </button>
+              ))}
+
+              {/* Footer: view all */}
+              <button
+                onMouseDown={() => navigate(query)}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  gap: '8px', width: '100%', padding: '12px 20px',
+                  background: 'rgba(34,211,238,0.05)', border: 'none',
+                  borderTop: '1px solid rgba(34,211,238,0.08)',
+                  cursor: 'pointer', transition: 'background 0.15s',
+                }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(34,211,238,0.1)'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(34,211,238,0.05)'; }}>
+                <span style={{ fontFamily: MONO, fontSize: '10px', fontWeight: 500, color: '#22D3EE', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                  View all results for "{query}"
+                </span>
+                <ArrowRight size={10} style={{ color: '#22D3EE' }} />
+              </button>
+            </motion.div>
+          )}
         </motion.div>
 
-        {/* Stats — 还原原版配色，保留商业指标文案 */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '44px' }}>
-          {[
-            { value: '< 2.5m', label: 'Analysis Time', delay: 0.52 },
-            { value: '100%', label: 'Audit Trace', delay: 0.6 },
-            { value: 'ADMET', label: 'Risk Predict', delay: 0.68 },
-            { value: '3D', label: 'Spatial Map', delay: 0.76 },
-          ].map(s => <GlassChip key={s.value} {...s} />)}
-        </div>
-
-        {/* Feature tags - 还原原版玻璃质感，保留商业 IP 标签 */}
-        <motion.div
+        {/* Sub-label */}
+        <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.7, delay: 0.85 }}
-          style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
-          {[
-            { icon: <Activity size={10} />, label: 'Separation Cost Index' },
-            { icon: <Dna size={10} />, label: 'AlphaFold 3 Integration' },
-            { icon: <ShieldCheck size={10} />, label: 'Verifiable Source Data' },
-          ].map((f, i) => (
-            <div key={i} style={{
-              display: 'flex', alignItems: 'center', gap: '6px',
-              padding: '6px 16px', borderRadius: '100px',
-              background: 'rgba(255,255,255,0.022)',
-              border: '1px solid rgba(255,255,255,0.06)',
-              backdropFilter: 'blur(8px)',
-              color: 'rgba(255,255,255,0.2)',
-              fontFamily: MONO, fontSize: '10px',
-              letterSpacing: '0.04em', textTransform: 'uppercase',
-              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.03)',
-              transition: 'all 0.2s',
-              cursor: 'default',
-            }}
-              onMouseEnter={e => {
-                const el = e.currentTarget as HTMLElement;
-                el.style.color = 'rgba(255,255,255,0.55)';
-                el.style.borderColor = 'rgba(255,255,255,0.12)';
-                el.style.background = 'rgba(255,255,255,0.05)';
-              }}
-              onMouseLeave={e => {
-                const el = e.currentTarget as HTMLElement;
-                el.style.color = 'rgba(255,255,255,0.2)';
-                el.style.borderColor = 'rgba(255,255,255,0.06)';
-                el.style.background = 'rgba(255,255,255,0.022)';
-              }}>
-              {f.icon} {f.label}
-            </div>
-          ))}
-        </motion.div>
+          transition={{ duration: 0.7, delay: 0.42 }}
+          style={{
+            fontFamily: SANS, fontSize: '13px',
+            color: 'rgba(148,163,184,0.4)',
+            margin: 'clamp(16px, 2vw, 24px) 0 0',
+            letterSpacing: '0.01em',
+          }}>
+          Metabolic pathways · Enzyme kinetics · Literature synthesis · 3D visualization
+        </motion.p>
       </motion.div>
 
-      {/* Bottom vignette */}
+      {/* ── Bottom fade to bg-base ── */}
       <div style={{
-        position: 'absolute', bottom: 0, left: 0, right: 0, height: '180px',
-        background: 'linear-gradient(to bottom, transparent, rgba(7,10,14,1))',
-        pointerEvents: 'none',
+        position: 'absolute', bottom: 0, left: 0, right: 0,
+        height: '160px', pointerEvents: 'none', zIndex: 5,
+        background: 'linear-gradient(to bottom, transparent, #0A0D14)',
       }} />
+
+      {/* ── Spin keyframe (for Loader2) ── */}
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+      `}</style>
     </header>
   );
 }
