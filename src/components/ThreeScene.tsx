@@ -122,14 +122,14 @@ const createProceduralTexture = () => {
 // ─── Risk thresholds (shared with NodePanel) ──────────────────────────
 const HIGH_RISK_THRESHOLD = 0.7;
 
-// ─── BIO_THEME_COLORS — 6-color dark-mode-optimized semantic palette ──
+// ─── BIO_THEME_COLORS — aligned with Design System 2.0 (Dark Mode 2.0) ─
 export const BIO_THEME_COLORS = {
-  CYAN:   '#06B6D4',  // Bioluminescent Cyan  — Standard Metabolite / Default Node
-  GREEN:  '#10B981',  // Synthesis Emerald     — Verified High-Yield / Target Product
-  RED:    '#EF4444',  // Hazard Crimson        — High Separation Cost / Toxic Impurity
-  AMBER:  '#F59E0B',  // Catalyst Amber        — Enzyme / Catalyst
-  PURPLE: '#8B5CF6',  // Plasma Purple         — Key Intermediate / Precursor
-  PINK:   '#EC4899',  // Quantum Pink          — Secondary Byproduct / Alternative Pathway
+  CYAN:   '#22D3EE',  // Cyber Cyan       — Standard Metabolite / Default Node
+  GREEN:  '#10B981',  // Synthesis Emerald — Verified High-Yield / Target Product
+  RED:    '#F87171',  // Risk Red          — High Separation Cost / Toxic Impurity
+  AMBER:  '#F59E0B',  // Catalyst Amber    — Enzyme / Catalyst
+  PURPLE: '#A78BFA',  // Plasma Purple     — Key Intermediate / Precursor
+  PINK:   '#E879F9',  // Deep Space Magenta — Secondary Byproduct / Alt Pathway
 } as const;
 
 // Map each nodeType to its semantic BIO_THEME color
@@ -190,6 +190,77 @@ function GeoComp({ g, s }: { g: GeomKind; s: number }) {
     case 'icos':  return <icosahedronGeometry args={[s, 1]} />;
     default:      return <sphereGeometry args={[s, 24, 24]} />;
   }
+}
+
+// ─── InstancedMesh Ambient Particles (GPU instancing, frustum-culled) ──
+// Replaces any per-component approach. frustumCulled=true (default) on InstancedMesh.
+const PARTICLE_COUNT = 160;
+
+function AmbientParticles() {
+  const meshRef = useRef<THREE.InstancedMesh>(null);
+  const dummy   = useMemo(() => new THREE.Object3D(), []);
+  const phases  = useMemo(() => Float32Array.from({ length: PARTICLE_COUNT }, () => Math.random() * Math.PI * 2), []);
+
+  // Seed positions deterministically
+  const initData = useMemo(() => {
+    const positions: [number, number, number][] = [];
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      const theta = i * 2.399963; // golden angle
+      const r = 2 + Math.sqrt(i + 1) * 1.8;
+      positions.push([
+        r * Math.cos(theta),
+        (Math.sin(i * 0.37) * 6),
+        r * Math.sin(theta),
+      ]);
+    }
+    return positions;
+  }, []);
+
+  // Tinted colours cycling through design system palette
+  const COLOR_CYCLE = useMemo(() => [
+    new THREE.Color('#22D3EE').multiplyScalar(0.5),
+    new THREE.Color('#E879F9').multiplyScalar(0.4),
+    new THREE.Color('#F59E0B').multiplyScalar(0.45),
+    new THREE.Color('#10B981').multiplyScalar(0.4),
+    new THREE.Color('#A78BFA').multiplyScalar(0.45),
+  ], []);
+
+  useFrame((state) => {
+    const mesh = meshRef.current;
+    if (!mesh) return;
+    const t = state.clock.elapsedTime;
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      const [bx, by, bz] = initData[i];
+      dummy.position.set(
+        bx + Math.sin(t * 0.12 + phases[i]) * 0.35,
+        by + Math.sin(t * 0.18 + phases[i] * 1.3) * 0.25,
+        bz + Math.cos(t * 0.10 + phases[i] * 0.7) * 0.35,
+      );
+      const s = 0.028 + Math.sin(t * 0.4 + phases[i]) * 0.01;
+      dummy.scale.setScalar(s);
+      dummy.updateMatrix();
+      mesh.setMatrixAt(i, dummy.matrix);
+      mesh.setColorAt(i, COLOR_CYCLE[i % COLOR_CYCLE.length]);
+    }
+    mesh.instanceMatrix.needsUpdate = true;
+    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+  });
+
+  return (
+    // frustumCulled=true is Three.js default — explicitly stated for clarity
+    <instancedMesh ref={meshRef} args={[undefined, undefined, PARTICLE_COUNT]} frustumCulled={true}>
+      {/* icosahedronGeometry — no gl_PointSize anywhere */}
+      <icosahedronGeometry args={[1, 0]} />
+      <meshPhysicalMaterial
+        transparent
+        opacity={0.55}
+        roughness={0.7}
+        metalness={0.05}
+        depthWrite={false}
+        vertexColors
+      />
+    </instancedMesh>
+  );
 }
 
 // ─── Spatial Grid — darker theme requested ─────────────────────────────
@@ -287,7 +358,7 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov
         <div style={{
           color: hov || sel ? '#fff' : 'rgba(160,180,200,0.55)',
           fontSize: '10px', fontWeight: sel ? 600 : 400,
-          fontFamily: "'Public Sans', sans-serif", letterSpacing: '0.02em',
+          fontFamily: "'JetBrains Mono', 'Fira Code', monospace", letterSpacing: '0.02em',
           textShadow: '0 1px 12px rgba(0,0,0,0.9), 0 0 24px rgba(0,0,0,0.7)',
           padding: '2px 7px', background: sel ? 'rgba(200,216,232,0.07)' : 'transparent',
           borderRadius: '4px', border: sel ? '1px solid rgba(200,216,232,0.14)' : '1px solid transparent',
@@ -456,12 +527,13 @@ function Scene({ nodes, edges, onNodeClick, selectedNodeId, roughnessTexture }: 
       <directionalLight position={[4, 10, 6]}  intensity={0.35} color="#e8f0f8" />
       <directionalLight position={[-8, -2, -6]} intensity={0.12} color="#1a2840" />
       <pointLight position={[centroid.x, centroid.y + 6, centroid.z]} intensity={0.20} color="#c0d0e8" distance={28} decay={2} />
-      <fog attach="fog" args={['#101010', 20, 48]} />
+      <fog attach="fog" args={['#0A0D14', 22, 52]} />
 
       {/* 【关键修复】: 添加 makeDefault 和 target 保证触控生效且中心不偏 */}
       <OrbitControls ref={controlsRef as React.Ref<never>} makeDefault enableZoom autoRotate={!interact && !hovId && !selectedNodeId} autoRotateSpeed={0.12} zoomSpeed={0.45} minDistance={6} maxDistance={24} enablePan={false} onStart={onStart} onEnd={onEnd} target={centroid} />
       <SpatialReference />
 
+      <AmbientParticles />
       {ed.map(e => <PathEdge key={e.key} edge={e.edge} s={e.s.position} e={e.e.position} active={e.active} color={e.color} />)}
       {nodes.map(n => <MolNode key={n.id} node={n} hov={hovId===n.id} sel={selectedNodeId===n.id} cc={cc[n.id]??0} onClick={onNodeClick} onHov={setHovId} roughnessTexture={roughnessTexture} />)}
 
@@ -512,7 +584,7 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId }
     <div style={{
       width: '100%', 
       height: 'clamp(500px, 65vh, 760px)', 
-      background: 'linear-gradient(180deg, #101010 0%, #0c0e18 100%)', 
+      background: 'linear-gradient(180deg, #0A0D14 0%, #0F1219 100%)',
       borderRadius: '20px', overflow: 'hidden',
       border: '1px solid rgba(255,255,255,0.06)', position: 'relative',
       boxShadow: '0 32px 80px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.04)',
@@ -579,7 +651,7 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId }
               renderer.setSize(width, height, false);
               renderer.toneMapping = THREE.LinearToneMapping;
               renderer.toneMappingExposure = 1.0;
-              renderer.setClearColor(new THREE.Color('#101010'), 1); 
+              renderer.setClearColor(new THREE.Color('#0A0D14'), 1);
               return renderer;
             };
 

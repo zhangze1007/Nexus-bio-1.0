@@ -480,9 +480,82 @@ function PLDDTHistogram({ nodes, currentNodeId }: { nodes?: PathwayNode[]; curre
 }
 
 function SectionLabel({ label }: { label: string }) {
-  return <p style={{ fontFamily: "'Public Sans',sans-serif", fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'rgba(255,255,255,0.22)', margin: '0 0 8px' }}>{label}</p>;
+  return <p style={{ fontFamily: UI_MONO, fontSize: '10px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.22)', margin: '0 0 8px' }}>{label}</p>;
 }
 function Divider() { return <div style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }} />; }
+
+// ── Glowing Audit Trail Badge with progressive disclosure ──────────────
+function AuditTrailBadge({ text, riskScore }: { text: string | null; riskScore?: number }) {
+  const [open, setOpen] = useState(false);
+  if (!text) return null;
+
+  const isHighRisk = (riskScore ?? 0) > HIGH_RISK_THRESHOLD;
+  const isModerate = !isHighRisk && (riskScore ?? 0) > MODERATE_RISK_THRESHOLD;
+
+  const badgeColor  = isHighRisk ? '#F87171' : isModerate ? '#F59E0B' : '#22D3EE';
+  const badgeGlow   = isHighRisk ? 'rgba(248,113,113,0.35)' : isModerate ? 'rgba(245,158,11,0.3)' : 'rgba(34,211,238,0.35)';
+  const badgeBg     = isHighRisk ? 'rgba(248,113,113,0.1)' : isModerate ? 'rgba(245,158,11,0.1)' : 'rgba(34,211,238,0.1)';
+  const badgeBorder = isHighRisk ? 'rgba(248,113,113,0.28)' : isModerate ? 'rgba(245,158,11,0.25)' : 'rgba(34,211,238,0.25)';
+
+  return (
+    <div>
+      {/* Badge trigger */}
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{
+          display: 'inline-flex', alignItems: 'center', gap: '6px',
+          padding: '4px 10px', borderRadius: '100px', cursor: 'pointer',
+          background: badgeBg, border: `1px solid ${badgeBorder}`,
+          color: badgeColor, fontFamily: UI_MONO, fontSize: '10px',
+          fontWeight: 500, letterSpacing: '0.05em', textTransform: 'uppercase',
+          boxShadow: `0 0 10px ${badgeGlow}`,
+          animation: 'glow-pulse 2.5s ease-in-out infinite',
+          transition: 'all 0.2s',
+        }}
+        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = `0 0 18px ${badgeGlow}`; }}
+        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = `0 0 10px ${badgeGlow}`; }}
+        aria-expanded={open}
+        aria-label="Toggle audit trail"
+      >
+        <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: badgeColor, flexShrink: 0 }} />
+        Audit Trail
+        <span style={{ opacity: 0.6, fontSize: '9px' }}>{open ? '▲' : '▼'}</span>
+      </button>
+
+      {/* Expandable audit panel */}
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+            style={{ overflow: 'hidden' }}
+          >
+            <div style={{
+              marginTop: '8px', padding: '12px 14px', borderRadius: '10px',
+              background: 'rgba(10,13,20,0.9)',
+              border: `1px solid ${badgeBorder}`,
+              fontFamily: UI_MONO, fontSize: '11px', color: 'rgba(226,232,240,0.6)',
+              lineHeight: 1.7, backdropFilter: 'blur(12px)',
+              boxShadow: `inset 0 0 20px rgba(0,0,0,0.3)`,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+                <span style={{ width: '4px', height: '4px', borderRadius: '50%', background: badgeColor, display: 'inline-block' }} />
+                <span style={{ fontFamily: UI_MONO, fontSize: '9px', fontWeight: 600, color: badgeColor, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                  Verifiable Source Trace
+                </span>
+              </div>
+              <p style={{ margin: 0, fontStyle: 'italic', color: 'rgba(226,232,240,0.55)' }}>
+                &ldquo;{text}&rdquo;
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
 
 type TabId = 'overview' | 'structure' | 'analysis';
 
@@ -819,18 +892,15 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                       </div>
                     )}
 
-                    {/* Audit Trail */}
-                    {node.audit_trail ? (
-                      <div style={{ padding: '10px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px', fontSize: '11px', color: 'rgba(255,255,255,0.45)', fontStyle: 'italic', fontFamily: "'Public Sans', sans-serif", border: '1px solid rgba(255,255,255,0.04)' }}>
-                         <span style={{ display: 'block', fontSize: '9px', color: 'rgba(255,255,255,0.3)', marginBottom: '4px', fontWeight: 700, textTransform: 'uppercase', fontStyle: 'normal' }}>Verifiable Audit Trail</span>
-                         &ldquo;{node.audit_trail}&rdquo;
-                      </div>
-                    ) : (hasInsufficientRiskData || hasInsufficientCarbonData || hasInsufficientCofactorData) && (
-                      <div style={{ padding: '10px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px', fontSize: '11px', color: 'rgba(255,255,255,0.35)', fontStyle: 'italic', fontFamily: "'Public Sans', sans-serif", border: '1px solid rgba(255,255,255,0.04)' }}>
-                         <span style={{ display: 'block', fontSize: '9px', color: 'rgba(255,255,255,0.25)', marginBottom: '4px', fontWeight: 700, textTransform: 'uppercase', fontStyle: 'normal' }}>Verifiable Audit Trail</span>
-                         Real-time thermodynamic modeling requires binding constants not found in current literature. AuditTrail details based on structural analogs are available in raw logs.
-                      </div>
-                    )}
+                    {/* ── Audit Trail — glowing expandable badge (progressive disclosure) ── */}
+                    <AuditTrailBadge
+                      text={node.audit_trail ?? (
+                        (hasInsufficientRiskData || hasInsufficientCarbonData || hasInsufficientCofactorData)
+                          ? 'Real-time thermodynamic modeling requires binding constants not found in current literature. Estimate based on structural analogs and thermodynamic heuristics.'
+                          : null
+                      )}
+                      riskScore={node.risk_score}
+                    />
                   </div>
 
                   {node.confidenceScore !== undefined && <ConfidenceBar score={node.confidenceScore} />}

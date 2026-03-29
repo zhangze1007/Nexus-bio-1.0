@@ -3,87 +3,103 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── Google AI Studio inspired design system ── */
+/* ═══════════════════════════════════════════════════════════════
+   NEXUS-BIO 2.0 — SILICON-GRADE DESIGN TOKENS
+   Dark Mode 2.0: #0A0D14 base — WCAG 2.2 AA compliant
+   NO pure black (#000) · NO pure white (#fff)
+   ═══════════════════════════════════════════════════════════════ */
 
 :root {
-  --bg-base: #050505;
-  --bg-surface: #0e0e0f;
-  --bg-elevated: #171718;
-  --bg-base-rgb: 5 5 5;
-  --bg-surface-rgb: 14 14 15;
-  --bg-elevated-rgb: 23 23 24;
-  --border: rgba(255, 255, 255, 0.08);
-  --border-hover: rgba(255, 255, 255, 0.14);
-  --text-primary: #f4f4f5;
-  --text-secondary: #9f9fa5;
-  --text-muted: #53535a;
-  --white: #ffffff;
-  --accent-primary: #f3f4f6;
-  --accent-secondary: #71717a;
-  --accent-primary-rgb: 243 244 246;
-  --accent-secondary-rgb: 113 113 122;
+  /* ── Background scale (cold deep gray, not pure black) ── */
+  --bg-base:         #0A0D14;
+  --bg-surface:      #0F1219;
+  --bg-elevated:     #161B26;
+  --bg-overlay:      #1C2333;
+
+  /* ── RGB splits for alpha compositing ── */
+  --bg-base-rgb:     10 13 20;
+  --bg-surface-rgb:  15 18 25;
+  --bg-elevated-rgb: 22 27 38;
+
+  /* ── Core text (no pure white) ── */
+  --text-primary:    #E2E8F0;   /* 4.5:1+ on #0A0D14 */
+  --text-secondary:  #94A3B8;
+  --text-muted:      #4A5568;
+  --text-faint:      #2D3748;
+
+  /* ── State-indicating accent palette ── */
+  /* Cyber Cyan — primary interactive */
+  --cyan:            #22D3EE;
+  --cyan-dim:        rgba(34, 211, 238, 0.15);
+  --cyan-glow:       rgba(34, 211, 238, 0.4);
+
+  /* Deep Space Magenta — warning/alert */
+  --magenta:         #E879F9;
+  --magenta-dim:     rgba(232, 121, 249, 0.15);
+  --magenta-glow:    rgba(232, 121, 249, 0.4);
+
+  /* Amber — caution/rate-limiting */
+  --amber:           #F59E0B;
+  --amber-dim:       rgba(245, 158, 11, 0.15);
+  --amber-glow:      rgba(245, 158, 11, 0.35);
+
+  /* Emerald — success/optimal */
+  --emerald:         #10B981;
+  --emerald-dim:     rgba(16, 185, 129, 0.15);
+
+  /* Risk red */
+  --risk-red:        #F87171;
+  --risk-red-dim:    rgba(248, 113, 113, 0.15);
+
+  /* ── Borders ── */
+  --border:          rgba(255, 255, 255, 0.07);
+  --border-hover:    rgba(255, 255, 255, 0.14);
+  --border-active:   rgba(34, 211, 238, 0.3);
+
+  /* ── Typography ── */
+  --font-serif:      'DM Serif Display', Georgia, 'Times New Roman', serif;
+  --font-sans:       'Inter', 'Helvetica Neue', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono:       'JetBrains Mono', 'Fira Code', 'SFMono-Regular', ui-monospace, monospace;
+
+  /* ── Legacy compat vars ── */
+  --accent-primary:          #E2E8F0;
+  --accent-secondary:        #94A3B8;
+  --accent-primary-rgb:      226 232 240;
+  --accent-secondary-rgb:    148 163 184;
+  --white:                   #E2E8F0;
 }
 
-* {
-  box-sizing: border-box;
-}
+/* ── Base reset ── */
+*, *::before, *::after { box-sizing: border-box; }
 
 html {
   scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
   background-color: var(--bg-base);
-  /* sculpted highlight, reflected sheen, and deep metallic vignette */
-  background-image:
-    radial-gradient(72% 58% at 74% 18%, rgb(var(--accent-primary-rgb) / 0.16), transparent 36%),
-    radial-gradient(64% 52% at 22% 76%, rgb(var(--accent-primary-rgb) / 0.08), transparent 34%),
-    linear-gradient(
-      145deg,
-      rgb(var(--bg-elevated-rgb) / 0.92) 0%,
-      rgb(var(--bg-surface-rgb)) 22%,
-      rgb(var(--bg-base-rgb) / 0.55) 47%,
-      rgb(var(--bg-elevated-rgb)) 73%,
-      rgb(var(--bg-base-rgb) / 0.96) 100%
-    );
   color: var(--text-primary);
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  font-family: var(--font-sans);
   overflow-x: hidden;
   min-height: 100vh;
+  margin: 0;
 }
 
-/* ── Noise texture overlay (Google AI Studio feel) ── */
+/* ── Noise grain (film-grain aesthetic, very subtle) ── */
 body::before {
   content: '';
   position: fixed;
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  opacity: 0.02;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   background-size: 256px 256px;
 }
 
-/* ── Subtle grid pattern (like AI Studio) ── */
-body::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  /* broad grayscale highlights to hint at curved liquid-metal forms */
-  background:
-    radial-gradient(58% 44% at 16% 18%, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.03) 18%, transparent 48%),
-    radial-gradient(44% 34% at 78% 14%, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.02) 20%, transparent 52%),
-    radial-gradient(54% 42% at 82% 74%, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 24%, transparent 56%),
-    linear-gradient(180deg, rgba(255,255,255,0.06) 0%, transparent 14%, transparent 86%, rgba(255,255,255,0.03) 100%);
-  mix-blend-mode: screen;
-  opacity: 0.7;
-}
-
-/* All content above pseudo-elements */
+/* All content sits above pseudo-elements */
 #root {
   position: relative;
   z-index: 1;
@@ -91,19 +107,78 @@ body::after {
   isolation: isolate;
 }
 
+/* ── Glassmorphism panels ── */
 @layer components {
   .glass-panel {
     @apply backdrop-blur-xl;
     border: 1px solid var(--border);
-    background: rgb(var(--bg-surface-rgb) / 0.3);
+    background: rgba(15, 18, 25, 0.55);
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.2),
-      inset 0 -24px 48px rgb(var(--bg-base-rgb) / 0.4),
-      inset 18px 18px 40px rgba(255, 255, 255, 0.03),
-      0 28px 80px rgba(0, 0, 0, 0.45);
+      inset 0 1px 0 rgba(255, 255, 255, 0.06),
+      inset 0 -24px 48px rgba(10, 13, 20, 0.5),
+      0 24px 64px rgba(0, 0, 0, 0.5);
+  }
+
+  .glass-panel-cyber {
+    @apply backdrop-blur-xl;
+    border: 1px solid rgba(34, 211, 238, 0.18);
+    background: rgba(15, 18, 25, 0.7);
+    box-shadow:
+      inset 0 1px 0 rgba(34, 211, 238, 0.08),
+      0 0 32px rgba(34, 211, 238, 0.06),
+      0 24px 64px rgba(0, 0, 0, 0.5);
+  }
+
+  /* Glowing audit trail badge */
+  .audit-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 100px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    background: var(--cyan-dim);
+    border: 1px solid rgba(34, 211, 238, 0.3);
+    color: var(--cyan);
+    box-shadow: 0 0 12px var(--cyan-glow), inset 0 1px 0 rgba(34, 211, 238, 0.15);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .audit-badge:hover {
+    background: rgba(34, 211, 238, 0.22);
+    box-shadow: 0 0 20px var(--cyan-glow), inset 0 1px 0 rgba(34, 211, 238, 0.2);
+  }
+
+  .audit-badge-amber {
+    background: var(--amber-dim);
+    border-color: rgba(245, 158, 11, 0.3);
+    color: var(--amber);
+    box-shadow: 0 0 12px var(--amber-glow), inset 0 1px 0 rgba(245, 158, 11, 0.15);
+  }
+
+  .audit-badge-risk {
+    background: var(--risk-red-dim);
+    border-color: rgba(248, 113, 113, 0.3);
+    color: var(--risk-red);
+    box-shadow: 0 0 12px rgba(248, 113, 113, 0.3), inset 0 1px 0 rgba(248, 113, 113, 0.1);
+  }
+
+  /* Monospace data cells */
+  .data-cell {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    color: var(--text-secondary);
   }
 }
 
+/* ── App shell ── */
 .app-shell {
   position: relative;
   min-height: 100vh;
@@ -131,27 +206,35 @@ body::after {
 .app-canvas-glow {
   position: absolute;
   inset: 0;
-  /* fixed ambient sheen behind foreground content and the 3D layer */
   background:
-    radial-gradient(60% 46% at 80% 16%, rgb(var(--accent-primary-rgb) / 0.1), transparent 38%),
-    radial-gradient(72% 58% at 20% 84%, rgb(var(--accent-primary-rgb) / 0.05), transparent 42%),
-    linear-gradient(180deg, rgba(255,255,255,0.04) 0%, transparent 18%, transparent 82%, rgba(255,255,255,0.02) 100%);
+    radial-gradient(60% 46% at 80% 16%, rgba(34, 211, 238, 0.06), transparent 38%),
+    radial-gradient(72% 58% at 20% 84%, rgba(232, 121, 249, 0.04), transparent 42%);
 }
 
 /* ── Typography ── */
 h1, h2, h3, h4 {
   letter-spacing: -0.02em;
   font-weight: 600;
+  color: var(--text-primary);
 }
 
+.font-mono, code, pre, .mono { font-family: var(--font-mono); }
+.font-serif, .serif           { font-family: var(--font-serif); }
+
 /* ── Scrollbar ── */
-::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(34, 211, 238, 0.3); }
 
 /* ── Selection ── */
-::selection { background: rgba(255,255,255,0.15); }
+::selection { background: rgba(34, 211, 238, 0.2); color: var(--text-primary); }
+
+/* ── Focus ring ── */
+*:focus-visible {
+  outline: 1px solid var(--cyan);
+  outline-offset: 2px;
+}
 
 /* ── Surface cards ── */
 .surface {
@@ -164,13 +247,25 @@ h1, h2, h3, h4 {
   border: 1px solid var(--border);
 }
 
-/* ── Divider ── */
-.divider {
-  border-top: 1px solid var(--border);
+.divider { border-top: 1px solid var(--border); }
+
+/* ── Animate glowing pulse (for audit badges) ── */
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 8px var(--cyan-glow); }
+  50%       { box-shadow: 0 0 18px var(--cyan-glow), 0 0 32px rgba(34,211,238,0.2); }
 }
 
-/* ── Focus ring ── */
-*:focus-visible {
-  outline: 1px solid rgba(255,255,255,0.4);
-  outline-offset: 2px;
+.glow-pulse { animation: glow-pulse 2.5s ease-in-out infinite; }
+
+/* ── Audit trail expand panel ── */
+.audit-trail-panel {
+  background: rgba(10, 13, 20, 0.9);
+  border: 1px solid rgba(34, 211, 238, 0.15);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  backdrop-filter: blur(12px);
 }
