@@ -264,19 +264,21 @@ function AmbientParticles() {
 }
 
 // ─── Spatial Grid — darker theme requested ─────────────────────────────
-function SpatialReference({ stressIndex = 0 }: { stressIndex?: number }) {
+function SpatialReference({ stressIndex = 0, centroid }: { stressIndex?: number; centroid?: THREE.Vector3 }) {
+  const cx = centroid?.x ?? 0;
+  const cz = centroid?.z ?? 0;
   const grpRef = useRef<THREE.Group>(null!);
   useFrame(({ clock }) => {
     if (!grpRef.current) return;
     if (stressIndex > 0.8) {
       const mag = (stressIndex - 0.8) * 0.03;
-      grpRef.current.position.x = Math.sin(clock.elapsedTime * 40) * mag;
+      grpRef.current.position.x = cx + Math.sin(clock.elapsedTime * 40) * mag;
     } else {
-      grpRef.current.position.x = 0;
+      grpRef.current.position.x = cx;
     }
   });
   return (
-    <group ref={grpRef} position={[0, -3.8, 0]}>
+    <group ref={grpRef} position={[cx, -3.8, cz]}>
       <gridHelper args={[36, 36, '#606060', '#404040']} />
       <Line points={[new THREE.Vector3(-10,0,0), new THREE.Vector3(10,0,0)]} color="#aaaaaa" lineWidth={0.5} transparent opacity={0.35} />
       <Line points={[new THREE.Vector3(0,0,-10), new THREE.Vector3(0,0,10)]} color="#aaaaaa" lineWidth={0.5} transparent opacity={0.35} />
@@ -577,6 +579,10 @@ function Scene({ nodes, edges, onNodeClick, selectedNodeId, roughnessTexture, gl
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
 
   // BoundingBox auto-focus — FOV-based distance so the entire pathway fits the viewport
+  const { camera, size: viewportSize } = useThree();
+  const aspect = viewportSize.width / (viewportSize.height || 1);
+  const cameraFov = (camera as THREE.PerspectiveCamera).fov ?? 44;
+
   const { centroid, camOffset } = useMemo(() => {
     const box = new THREE.Box3();
     nodes.forEach(n => {
@@ -585,19 +591,18 @@ function Scene({ nodes, edges, onNodeClick, selectedNodeId, roughnessTexture, gl
       }
     });
     const center = new THREE.Vector3();
-    const size   = new THREE.Vector3();
-    if (!box.isEmpty()) { box.getCenter(center); box.getSize(size); }
-    // Fit the widest dimension in the viewport using actual FOV math (Canvas fov=44°)
-    // For 16:9 aspect: half-HFOV ≈ 35.5°, half-VFOV = 22°
-    const hTan = Math.tan(35.5 * Math.PI / 180); // horizontal half-FOV tangent
-    const vTan = Math.tan(22  * Math.PI / 180);  // vertical   half-FOV tangent
-    const distForX = (size.x / 2) / hTan;
-    const distForY = (size.y / 2) / vTan;
-    const dist = Math.max(distForX, distForY, 5) * 1.5 + (size.z / 2);
-    return { centroid: center, camOffset: { y: size.y * 0.08, z: dist } };
-  }, [nodes]);
-
-  const { camera } = useThree();
+    const sz     = new THREE.Vector3();
+    if (!box.isEmpty()) { box.getCenter(center); box.getSize(sz); }
+    // Derive actual half-FOV from the camera's vertical FOV and viewport aspect ratio
+    const vHalfRad = (cameraFov / 2) * Math.PI / 180;
+    const hHalfRad = Math.atan(Math.tan(vHalfRad) * aspect); // horizontal half-FOV from aspect
+    const MIN_DISTANCE = 5;
+    const VIEWPORT_PADDING = 1.45;
+    const distForX = (sz.x / 2) / Math.tan(hHalfRad);
+    const distForY = (sz.y / 2) / Math.tan(vHalfRad);
+    const dist = Math.max(distForX, distForY, MIN_DISTANCE) * VIEWPORT_PADDING + (sz.z / 2);
+    return { centroid: center, camOffset: { y: sz.y * 0.08, z: dist } };
+  }, [nodes, aspect, cameraFov]);
   useEffect(() => {
     camera.position.set(centroid.x, centroid.y + camOffset.y, centroid.z + camOffset.z);
     camera.lookAt(centroid);
@@ -632,7 +637,7 @@ function Scene({ nodes, edges, onNodeClick, selectedNodeId, roughnessTexture, gl
       <fog attach="fog" args={['#000000', 22, 52]} />
 
       <OrbitControls ref={controlsRef as React.Ref<never>} makeDefault enableZoom autoRotate={!interact && !hovId && !selectedNodeId} autoRotateSpeed={0.12} zoomSpeed={0.45} minDistance={6} maxDistance={24} enablePan={false} onStart={onStart} onEnd={onEnd} target={centroid} />
-      <SpatialReference stressIndex={stressIndex} />
+      <SpatialReference stressIndex={stressIndex} centroid={centroid} />
 
       <AmbientParticles />
       <FluxParticles edges={edges} nodes={nodes} flowSpeed={flowSpeed} glowMultiplier={glowMultiplier} />
@@ -742,7 +747,7 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, 
 
       <SceneErrorBoundary onError={(e) => setStatus('error')}>
         <Canvas
-          camera={{ position: [0, 5, 15], fov: 44 }}
+          camera={{ position: [0, 0.3, 12], fov: 44 }}
           gl={async (props) => {
             const canvas = props.canvas as HTMLCanvasElement;
             const parent = canvas.parentElement;
