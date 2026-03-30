@@ -70,7 +70,7 @@ function TopBar({ state, stateLabel, tick }: TopBarProps) {
           onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'rgba(226,232,240,0.35)'}
         >
           <ChevronLeft size={13} />
-          <span style={{ fontFamily:MONO, fontSize:'10px', letterSpacing:'0.05em' }}>HOME</span>
+          <span style={{ fontFamily:SANS, fontSize:'10px', letterSpacing:'0.03em' }}>Home</span>
         </Link>
         <div style={{ width:'1px', height:'16px', background:'rgba(255,255,255,0.07)' }} />
         <div style={{ display:'flex', alignItems:'center', gap:'8px' }}>
@@ -303,6 +303,7 @@ export default function MetabolicEngPage() {
             selectedNodeId={selectedNode?.id ?? null}
             glowMultiplier={glowMultiplier}
             flowSpeed={flowSpeed}
+            fullscreen
           />
         </div>
       </div>
@@ -336,43 +337,33 @@ export default function MetabolicEngPage() {
         </div>
       </div>
 
-      {/* ── Bottom HUD strip ── */}
-      <div style={{
-        position:'absolute', bottom:0, left:0, right:0, zIndex:20,
-        height:'36px', display:'flex', alignItems:'center', justifyContent:'center',
-        gap:'32px', padding:'0 20px',
-        background:'rgba(0,0,0,0.75)',
-        backdropFilter:'blur(16px)',
-        borderTop:'1px solid rgba(255,255,255,0.05)',
-      }}>
-        {[
-          { l:'FLUID',    v:'WebGL2 NS · 25J' },
-          { l:'INSTANCE', v:'8000 · GPU · FC' },
-          { l:'WORKER',   v:'FBA 60Hz · Off-thread' },
-          { l:'FSM',      v:'XState v5 · 4 states' },
-          { l:'TARGET',   v:'60FPS / 45FPS·mobile' },
-        ].map(({ l, v }) => (
-          <div key={l} style={{ display:'flex', alignItems:'center', gap:'6px' }}>
-            <span style={{ fontFamily:MONO, fontSize:'8px', fontWeight:700, textTransform:'uppercase', letterSpacing:'0.1em', color:'rgba(226,232,240,0.2)' }}>{l}</span>
-            <span style={{ fontFamily:MONO, fontSize:'8px', color:'rgba(226,232,240,0.4)', fontVariantNumeric:'tabular-nums' }}>{v}</span>
-          </div>
-        ))}
-      </div>
-
-      {/* ── Idle prompt ── */}
+      {/* ── Idle prompt — clickable start button ── */}
       <AnimatePresence>
         {state === 'idle' && (
-          <motion.div
+          <motion.button
             initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0, y:-10 }}
+            onClick={handleStart}
             style={{
-              position:'absolute', bottom:'60px', left:'50%', transform:'translateX(-50%)',
-              fontFamily:MONO, fontSize:'10px', color:'rgba(226,232,240,0.25)',
+              position:'absolute', bottom:'28px', left:'50%', transform:'translateX(-50%)',
+              fontFamily:MONO, fontSize:'10px', color:'rgba(226,232,240,0.45)',
               textTransform:'uppercase', letterSpacing:'0.15em', zIndex:25,
-              pointerEvents:'none',
+              background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.12)',
+              borderRadius:'100px', padding:'8px 20px', cursor:'pointer',
+              transition:'color 0.2s, border-color 0.2s, background 0.2s',
+            }}
+            onMouseEnter={e => {
+              (e.currentTarget as HTMLElement).style.color = '#fff';
+              (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.3)';
+              (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)';
+            }}
+            onMouseLeave={e => {
+              (e.currentTarget as HTMLElement).style.color = 'rgba(226,232,240,0.45)';
+              (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.12)';
+              (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)';
             }}
           >
-            ▶ PRESS START TO INITIALIZE SIMULATION
-          </motion.div>
+            ▶ Start Simulation
+          </motion.button>
         )}
       </AnimatePresence>
 

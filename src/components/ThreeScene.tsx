@@ -564,9 +564,9 @@ function ResizeHandler() {
 }
 
 // ─── Main Component — loading fallback and scene unified ─────────────
-interface Props { nodes:PathwayNode[]; onNodeClick:(node:PathwayNode)=>void; edges?:PathwayEdge[]; selectedNodeId?:string|null; glowMultiplier?:number; flowSpeed?:number; }
+interface Props { nodes:PathwayNode[]; onNodeClick:(node:PathwayNode)=>void; edges?:PathwayEdge[]; selectedNodeId?:string|null; glowMultiplier?:number; flowSpeed?:number; fullscreen?:boolean; }
 
-export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, glowMultiplier = 1, flowSpeed = 1 }: Props) {
+export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, glowMultiplier = 1, flowSpeed = 1, fullscreen = false }: Props) {
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('ready');
   const [rendererMode, setRendererMode] = useState<RendererMode>('loading');
   const mountedRef = useRef(true);
@@ -583,15 +583,15 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, 
 
   return (
     <div style={{
-      width: '100%', 
-      height: 'clamp(500px, 65vh, 760px)', 
-      background: '#000000',
+      width: '100%',
+      height: fullscreen ? '100%' : 'clamp(500px, 65vh, 760px)',
+      background: fullscreen ? 'transparent' : '#000000',
       borderRadius: '0', overflow: 'hidden',
-      border: '0.5px solid rgba(255,255,255,0.07)', position: 'relative',
+      border: fullscreen ? 'none' : '0.5px solid rgba(255,255,255,0.07)', position: 'relative',
       boxShadow: 'none',
     }}>
-      {/* 【关键修复】: 所有的绝对定位UI容器加上 pointerEvents:'none' 防止吞掉鼠标点击 */}
-      <div style={{ pointerEvents: 'none', position:'absolute', top:0, left:0, right:0, zIndex:10, display:'flex', alignItems:'center', justifyContent:'space-between', padding:'11px 16px', background:'linear-gradient(to bottom, rgba(16,16,16,0.92), transparent)', borderBottom:'1px solid rgba(255,255,255,0.04)' }}>
+      {/* Inner header — hidden when fullscreen (parent page has its own TopBar) */}
+      <div style={{ pointerEvents: 'none', position:'absolute', top:0, left:0, right:0, zIndex:10, display: fullscreen ? 'none' : 'flex', alignItems:'center', justifyContent:'space-between', padding:'11px 16px', background:'linear-gradient(to bottom, rgba(16,16,16,0.92), transparent)', borderBottom:'1px solid rgba(255,255,255,0.04)' }}>
         <div style={{ display:'flex', alignItems:'center', gap:'9px' }}>
           <div style={{ display:'flex', gap:'4px' }}>
             {[BIO_THEME_COLORS.CYAN, BIO_THEME_COLORS.GREEN, BIO_THEME_COLORS.PURPLE].map(c => (
