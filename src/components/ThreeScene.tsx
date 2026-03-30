@@ -687,6 +687,23 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, 
   const safeEdges = useMemo(() => Array.isArray(edges) ? edges : [], [edges]);
   const fallbackLabel = getRendererLabel(rendererMode);
 
+  // Compute initial camera position from node bounding box so Canvas starts centered on the cluster
+  const initialCamPos = useMemo(() => {
+    const box = new THREE.Box3();
+    safeNodes.forEach(n => {
+      if (Array.isArray(n.position) && n.position.length === 3)
+        box.expandByPoint(new THREE.Vector3(...(n.position as [number, number, number])));
+    });
+    if (box.isEmpty()) return { position: [0, 0.3, 12] as [number, number, number], fov: 44 };
+    const center = new THREE.Vector3();
+    const sz = new THREE.Vector3();
+    box.getCenter(center);
+    box.getSize(sz);
+    const vHalfRad = (44 / 2) * Math.PI / 180;
+    const dist = Math.max(sz.x / 2 / Math.tan(vHalfRad), sz.y / 2 / Math.tan(vHalfRad), 5) * 1.45 + sz.z / 2;
+    return { position: [center.x, center.y + sz.y * 0.08, center.z + dist] as [number, number, number], fov: 44 };
+  }, [safeNodes]);
+
   return (
     <div style={{
       width: '100%',
@@ -747,7 +764,7 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, 
 
       <SceneErrorBoundary onError={(e) => setStatus('error')}>
         <Canvas
-          camera={{ position: [0, 0.3, 12], fov: 44 }}
+          camera={initialCamPos}
           gl={async (props) => {
             const canvas = props.canvas as HTMLCanvasElement;
             const parent = canvas.parentElement;

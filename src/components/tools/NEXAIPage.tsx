@@ -26,8 +26,6 @@ function CitationGraph({ citations }: { citations: CitationNode[] }) {
   return (
     <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
       <rect width={W} height={H} fill="#0d0f14" />
-
-      {/* Edges */}
       {nodes.map((n, i) =>
         nodes.slice(i + 1, i + 3).map((m, j) => (
           <line key={`e-${i}-${j}`}
@@ -36,8 +34,6 @@ function CitationGraph({ citations }: { citations: CitationNode[] }) {
           />
         ))
       )}
-
-      {/* Nodes */}
       {nodes.map(n => {
         const isHov = hovered === n.id;
         return (
@@ -59,7 +55,7 @@ function CitationGraph({ citations }: { citations: CitationNode[] }) {
                 <div style={{
                   background: 'rgba(10,12,16,0.95)',
                   border: '1px solid rgba(255,255,255,0.12)',
-                  borderRadius: '4px',
+                  borderRadius: '8px',
                   padding: '6px 8px',
                 }}>
                   <p style={{ fontFamily: SANS, fontSize: '9px', color: 'rgba(255,255,255,0.75)', margin: '0 0 3px', lineHeight: 1.4 }}>
@@ -74,8 +70,6 @@ function CitationGraph({ citations }: { citations: CitationNode[] }) {
           </g>
         );
       })}
-
-      {/* Relevance scale */}
       <text x={10} y={H - 8} fontFamily={SANS} fontSize="8" fill="rgba(255,255,255,0.2)">
         Node size = relevance score
       </text>
@@ -118,7 +112,6 @@ export default function NEXAIPage() {
         });
         appendConsole({ level: 'success', module: 'nexai', message: `Answer generated (${data.provider ?? 'groq'} · ${data.latencyMs ?? '?'}ms)` });
       } else {
-        // Fall back to mock
         const mockResult = MOCK_RESULTS[mockIndex % MOCK_RESULTS.length];
         setResult({ ...mockResult, query, generatedAt: Date.now() });
         appendConsole({ level: 'warn', module: 'nexai', message: 'API unavailable — showing mock result' });
@@ -141,17 +134,17 @@ export default function NEXAIPage() {
 
   return (
     <IDEShell moduleId="nexai">
-      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', background: '#0a0c10' }}>
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', background: '#F5F7FA' }}>
         <AlgorithmInsight
-          title="AI Research Agent"
+          title="Axon"
           description="Semantic search across PubMed, UniProt, ChEMBL, Reactome, KEGG, and literature — synthesized by Groq llama-3.3-70b."
           formula="score = α·semantic_sim + β·citation_weight"
         />
 
         <div style={{ flex: 1, display: 'flex', overflow: 'hidden', minHeight: 0 }}>
           {/* Input panel */}
-          <div style={{ width: '280px', flexShrink: 0, overflowY: 'auto', padding: '16px', borderRight: '1px solid rgba(255,255,255,0.06)', background: '#0a0c10' }}>
-            <p style={{ fontFamily: MONO, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.25)', margin: '0 0 8px' }}>
+          <div style={{ width: '280px', flexShrink: 0, overflowY: 'auto', padding: '16px', borderRight: '1px solid rgba(0,0,0,0.07)', background: '#FFFFFF' }}>
+            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(0,0,0,0.35)', margin: '0 0 8px' }}>
               Research Query
             </p>
 
@@ -163,43 +156,44 @@ export default function NEXAIPage() {
               rows={4}
               style={{
                 width: '100%', padding: '8px 10px', boxSizing: 'border-box',
-                background: 'rgba(255,255,255,0.03)',
-                border: '1px solid rgba(255,255,255,0.1)',
-                borderRadius: '3px',
-                color: 'rgba(255,255,255,0.75)',
+                background: 'rgba(0,0,0,0.04)',
+                border: '1px solid rgba(0,0,0,0.10)',
+                borderRadius: '10px',
+                color: 'rgba(0,0,0,0.75)',
                 fontFamily: SANS, fontSize: '12px', lineHeight: 1.5,
                 resize: 'vertical', marginBottom: '8px',
+                outline: 'none',
               }}
             />
 
             <button onClick={runQuery} disabled={loading || !query.trim()} style={{
               width: '100%', padding: '8px',
-              background: loading ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.07)',
-              border: '1px solid rgba(255,255,255,0.12)',
-              borderRadius: '3px',
-              color: loading ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.8)',
-              fontFamily: MONO, fontSize: '11px', cursor: loading ? 'not-allowed' : 'pointer',
-              textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '16px',
+              background: loading ? 'rgba(0,0,0,0.03)' : 'rgba(200,240,224,0.4)',
+              border: `1px solid ${loading ? 'rgba(0,0,0,0.08)' : 'rgba(0,150,80,0.25)'}`,
+              borderRadius: '8px',
+              color: loading ? 'rgba(0,0,0,0.3)' : 'rgba(0,100,60,0.85)',
+              fontFamily: SANS, fontSize: '11px', cursor: loading ? 'not-allowed' : 'pointer',
+              marginBottom: '16px',
             }}>
-              {loading ? 'Searching...' : '⌘↵ Search'}
+              {loading ? 'Searching...' : '⌘↵ Ask Axon'}
             </button>
 
-            <p style={{ fontFamily: MONO, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.2)', margin: '0 0 8px' }}>
+            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(0,0,0,0.3)', margin: '0 0 8px' }}>
               Preset Queries
             </p>
             {PRESET_QUERIES.map((q, i) => (
               <button key={i} onClick={() => setQuery(q)} style={{
                 display: 'block', width: '100%', textAlign: 'left',
                 padding: '6px 10px', marginBottom: '5px',
-                background: 'rgba(255,255,255,0.02)',
-                border: '1px solid rgba(255,255,255,0.06)',
-                borderRadius: '3px',
-                color: 'rgba(255,255,255,0.4)',
+                background: 'rgba(0,0,0,0.03)',
+                border: '1px solid rgba(0,0,0,0.07)',
+                borderRadius: '8px',
+                color: 'rgba(0,0,0,0.5)',
                 fontFamily: SANS, fontSize: '11px', lineHeight: 1.4,
                 cursor: 'pointer',
               }}
-                onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.05)'}
-                onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.02)'}
+                onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(0,0,0,0.06)'}
+                onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'rgba(0,0,0,0.03)'}
               >
                 {q}
               </button>
@@ -207,22 +201,22 @@ export default function NEXAIPage() {
 
             {result && (
               <>
-                <p style={{ fontFamily: MONO, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.2)', margin: '16px 0 8px' }}>
+                <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(0,0,0,0.3)', margin: '16px 0 8px' }}>
                   Citations ({result.citations.length})
                 </p>
                 {result.citations.map(c => (
                   <div key={c.id} style={{
                     padding: '6px 8px', marginBottom: '5px',
-                    background: 'rgba(255,255,255,0.02)',
-                    border: '1px solid rgba(255,255,255,0.06)',
-                    borderRadius: '3px',
+                    background: 'rgba(0,0,0,0.03)',
+                    border: '1px solid rgba(0,0,0,0.07)',
+                    borderRadius: '8px',
                   }}>
-                    <p style={{ fontFamily: SANS, fontSize: '10px', color: 'rgba(255,255,255,0.55)', margin: '0 0 2px', lineHeight: 1.4 }}>
+                    <p style={{ fontFamily: SANS, fontSize: '10px', color: 'rgba(0,0,0,0.6)', margin: '0 0 2px', lineHeight: 1.4 }}>
                       {c.title.slice(0, 55)}…
                     </p>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span style={{ fontFamily: MONO, fontSize: '8px', color: 'rgba(255,255,255,0.25)' }}>{c.authors.split(',')[0]} et al. {c.year}</span>
-                      <span style={{ fontFamily: MONO, fontSize: '8px', color: 'rgba(120,180,255,0.6)' }}>{(c.relevance * 100).toFixed(0)}%</span>
+                      <span style={{ fontFamily: SANS, fontSize: '8px', color: 'rgba(0,0,0,0.3)' }}>{c.authors.split(',')[0]} et al. {c.year}</span>
+                      <span style={{ fontFamily: MONO, fontSize: '8px', color: 'rgba(20,100,200,0.7)' }}>{(c.relevance * 100).toFixed(0)}%</span>
                     </div>
                   </div>
                 ))}
@@ -239,8 +233,8 @@ export default function NEXAIPage() {
                 {/* Answer card */}
                 <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)', flexShrink: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-                    <span style={{ fontFamily: MONO, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.25)' }}>
-                      Synthesized Answer
+                    <span style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.25)' }}>
+                      Axon Response
                     </span>
                     <span style={{
                       fontFamily: MONO, fontSize: '9px', padding: '2px 8px',
@@ -263,13 +257,13 @@ export default function NEXAIPage() {
                 </div>
               </>
             ) : (
-              <EmptyState type="empty" title="Ask anything" message="Enter a research question to search across 6 scientific databases and get an AI-synthesized answer with citations." />
+              <EmptyState type="empty" title="Ask Axon" message="Enter a research question to search across 6 scientific databases and get an AI-synthesized answer with citations." />
             )}
           </div>
 
           {/* Results panel */}
-          <div style={{ width: '200px', flexShrink: 0, overflowY: 'auto', padding: '16px', borderLeft: '1px solid rgba(255,255,255,0.06)', background: '#0a0c10' }}>
-            <p style={{ fontFamily: MONO, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.25)', margin: '0 0 12px' }}>
+          <div style={{ width: '200px', flexShrink: 0, overflowY: 'auto', padding: '16px', borderLeft: '1px solid rgba(0,0,0,0.07)', background: '#FFFFFF' }}>
+            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(0,0,0,0.35)', margin: '0 0 12px' }}>
               Query Stats
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -281,7 +275,7 @@ export default function NEXAIPage() {
           </div>
         </div>
 
-        <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', padding: '8px 16px', display: 'flex', gap: '8px', flexShrink: 0 }}>
+        <div style={{ borderTop: '1px solid rgba(0,0,0,0.07)', padding: '8px 16px', display: 'flex', gap: '8px', flexShrink: 0, background: '#FFFFFF' }}>
           <ExportButton label="Export Result JSON" data={result} filename="nexai-result" format="json" disabled={!result} />
         </div>
       </div>

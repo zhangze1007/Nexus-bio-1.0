@@ -49,6 +49,9 @@ interface UIState {
   consoleEntries: ConsoleEntry[];
   consoleOpen: boolean;
 
+  // ── IDE Sidebar ───────────────────────────────────────────────────────
+  sidebarCollapsed: boolean;
+
   // ── Actions ──────────────────────────────────────────────────────────
   setSelectedNode: (node: PathwayNode | null) => void;
   setAiPathway: (nodes: PathwayNode[], edges: PathwayEdge[]) => void;
@@ -63,6 +66,7 @@ interface UIState {
   appendConsole: (entry: Omit<ConsoleEntry, 'id' | 'timestamp'>) => void;
   clearConsole: () => void;
   toggleConsole: () => void;
+  toggleSidebarCollapsed: () => void;
 }
 
 // ── Store ──────────────────────────────────────────────────────────────
@@ -93,6 +97,9 @@ export const useUIStore = create<UIState>()(
     // IDE Console
     consoleEntries: [],
     consoleOpen: false,
+
+    // IDE Sidebar
+    sidebarCollapsed: false,
 
     // ── Actions ────────────────────────────────────────────────────────
 
@@ -132,6 +139,8 @@ export const useUIStore = create<UIState>()(
     clearConsole: () => set({ consoleEntries: [] }),
 
     toggleConsole: () => set((s) => ({ consoleOpen: !s.consoleOpen })),
+
+    toggleSidebarCollapsed: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
   }))
 );
 

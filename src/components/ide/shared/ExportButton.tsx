@@ -1,7 +1,7 @@
 'use client';
 import { Download } from 'lucide-react';
 
-const MONO = "'JetBrains Mono','Fira Code',monospace";
+const SANS = "'Inter',-apple-system,sans-serif";
 
 interface ExportButtonProps {
   label: string;
@@ -44,20 +44,19 @@ export default function ExportButton({ label, data, filename, format = 'json', d
       style={{
         display: 'flex', alignItems: 'center', gap: '6px',
         padding: '5px 12px',
-        background: 'rgba(255,255,255,0.04)',
-        border: '1px solid rgba(255,255,255,0.1)',
-        borderRadius: '3px',
-        color: disabled ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.6)',
-        fontFamily: MONO,
-        fontSize: '10px',
-        letterSpacing: '0.06em',
+        background: 'rgba(0,0,0,0.04)',
+        border: '1px solid rgba(0,0,0,0.10)',
+        borderRadius: '8px',
+        color: disabled ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.55)',
+        fontFamily: SANS,
+        fontSize: '11px',
         cursor: disabled ? 'not-allowed' : 'pointer',
         transition: 'all 0.15s',
       }}
-      onMouseEnter={e => { if (!disabled) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)'; }}
-      onMouseLeave={e => { if (!disabled) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'; }}
+      onMouseEnter={e => { if (!disabled) (e.currentTarget as HTMLElement).style.background = 'rgba(0,0,0,0.08)'; }}
+      onMouseLeave={e => { if (!disabled) (e.currentTarget as HTMLElement).style.background = 'rgba(0,0,0,0.04)'; }}
     >
-      <Download size={10} />
+      <Download size={11} />
       {label}
     </button>
   );

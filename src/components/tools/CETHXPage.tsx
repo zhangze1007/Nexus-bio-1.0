@@ -25,12 +25,8 @@ function WaterfallChart({ steps, tempC, pH }: { steps: ReturnType<typeof compute
   return (
     <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
       <rect width={W} height={H} fill="#0d0f14" />
-
-      {/* Zero line */}
       <line x1={PAD.left} y1={yPos(0)} x2={W - PAD.right} y2={yPos(0)}
         stroke="rgba(255,255,255,0.15)" strokeWidth={1} />
-
-      {/* Cumulative step line */}
       <polyline
         points={steps.map((s, i) => {
           const x = PAD.left + (i / steps.length) * innerW + barW / 2;
@@ -38,13 +34,9 @@ function WaterfallChart({ steps, tempC, pH }: { steps: ReturnType<typeof compute
         }).join(' ')}
         fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth={1.5} strokeDasharray="4 2"
       />
-
-      {/* Bars */}
       {steps.map((step, i) => {
         const x = PAD.left + (i / steps.length) * innerW;
         const isNeg = step.deltaG < 0;
-        const yTop = isNeg ? yPos(step.deltaG + (steps[i - 1]?.cumulative ?? 0)) : yPos(steps[i - 1]?.cumulative ?? 0);
-        const barH = Math.abs(yPos(step.deltaG) - yPos(0));
         const color = step.atpYield > 0
           ? 'rgba(255,200,80,0.7)'
           : isNeg ? 'rgba(120,220,180,0.6)' : 'rgba(255,100,100,0.5)';
@@ -62,8 +54,6 @@ function WaterfallChart({ steps, tempC, pH }: { steps: ReturnType<typeof compute
           </g>
         );
       })}
-
-      {/* Y axis */}
       {[-40, -20, 0, 20].map(v => v >= minG && v <= maxG ? (
         <g key={v}>
           <line x1={PAD.left - 4} y1={yPos(v)} x2={PAD.left} y2={yPos(v)} stroke="rgba(255,255,255,0.15)" />
@@ -72,11 +62,8 @@ function WaterfallChart({ steps, tempC, pH }: { steps: ReturnType<typeof compute
           </text>
         </g>
       ) : null)}
-
       <text x={10} y={H / 2} textAnchor="middle" fontFamily={MONO} fontSize="8" fill="rgba(255,255,255,0.25)"
         transform={`rotate(-90,10,${H / 2})`}>ΔG (kJ/mol)</text>
-
-      {/* Legend */}
       {[
         { color: 'rgba(120,220,180,0.6)', label: 'Exergonic' },
         { color: 'rgba(255,100,100,0.5)', label: 'Endergonic' },
@@ -109,7 +96,7 @@ export default function CETHXPage() {
 
   return (
     <IDEShell moduleId="cethx">
-      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', background: '#0a0c10' }}>
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', background: '#F5F7FA' }}>
         <AlgorithmInsight
           title="Cell Thermodynamics Engine"
           description="ΔG° values corrected for temperature and pH via Van't Hoff. ATP yield and NADH/FADH₂ tallied per pathway step."
@@ -118,25 +105,25 @@ export default function CETHXPage() {
 
         <div style={{ flex: 1, display: 'flex', overflow: 'hidden', minHeight: 0 }}>
           {/* Input panel */}
-          <div style={{ width: '220px', flexShrink: 0, overflowY: 'auto', padding: '16px', borderRight: '1px solid rgba(255,255,255,0.06)', background: '#0a0c10' }}>
-            <p style={{ fontFamily: MONO, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.25)', margin: '0 0 12px' }}>
+          <div style={{ width: '220px', flexShrink: 0, overflowY: 'auto', padding: '16px', borderRight: '1px solid rgba(0,0,0,0.07)', background: '#FFFFFF' }}>
+            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(0,0,0,0.35)', margin: '0 0 12px' }}>
               Pathway
             </p>
             {PATHWAYS.map(p => (
               <button key={p.id} onClick={() => setPathway(p.id)} style={{
                 display: 'block', width: '100%', textAlign: 'left',
                 padding: '7px 10px', marginBottom: '5px',
-                background: pathway === p.id ? 'rgba(255,255,255,0.07)' : 'transparent',
-                border: `1px solid ${pathway === p.id ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.07)'}`,
-                borderRadius: '3px',
-                color: pathway === p.id ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.35)',
+                background: pathway === p.id ? 'rgba(0,0,0,0.06)' : 'transparent',
+                border: `1px solid ${pathway === p.id ? 'rgba(0,0,0,0.18)' : 'rgba(0,0,0,0.08)'}`,
+                borderRadius: '8px',
+                color: pathway === p.id ? 'rgba(0,0,0,0.75)' : 'rgba(0,0,0,0.4)',
                 fontFamily: SANS, fontSize: '11px', cursor: 'pointer',
               }}>
                 {p.label}
               </button>
             ))}
 
-            <p style={{ fontFamily: MONO, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.25)', margin: '16px 0 8px' }}>
+            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(0,0,0,0.35)', margin: '16px 0 8px' }}>
               Conditions
             </p>
             {[
@@ -145,24 +132,24 @@ export default function CETHXPage() {
             ].map(s => (
               <div key={s.label} style={{ marginBottom: '12px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                  <span style={{ fontFamily: SANS, fontSize: '11px', color: 'rgba(255,255,255,0.55)' }}>{s.label}</span>
-                  <span style={{ fontFamily: MONO, fontSize: '11px', color: 'rgba(255,255,255,0.75)' }}>{s.value.toFixed(1)}{s.unit}</span>
+                  <span style={{ fontFamily: SANS, fontSize: '11px', color: 'rgba(0,0,0,0.55)' }}>{s.label}</span>
+                  <span style={{ fontFamily: MONO, fontSize: '11px', color: 'rgba(0,0,0,0.7)' }}>{s.value.toFixed(1)}{s.unit}</span>
                 </div>
                 <input type="range" min={s.min} max={s.max} step={s.step} value={s.value}
                   onChange={e => s.onChange(parseFloat(e.target.value))}
-                  style={{ width: '100%', accentColor: 'rgba(255,255,255,0.6)' }} />
+                  style={{ width: '100%', accentColor: 'rgba(0,0,0,0.5)' }} />
               </div>
             ))}
 
-            <p style={{ fontFamily: MONO, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.25)', margin: '16px 0 8px' }}>
+            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(0,0,0,0.35)', margin: '16px 0 8px' }}>
               Steps
             </p>
             {thermo.steps.map((s, i) => (
-              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                <span style={{ fontFamily: SANS, fontSize: '9px', color: 'rgba(255,255,255,0.35)', maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
+                <span style={{ fontFamily: SANS, fontSize: '9px', color: 'rgba(0,0,0,0.4)', maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {s.step}
                 </span>
-                <span style={{ fontFamily: MONO, fontSize: '9px', color: s.deltaG < 0 ? 'rgba(120,220,180,0.7)' : 'rgba(255,100,100,0.7)' }}>
+                <span style={{ fontFamily: MONO, fontSize: '9px', color: s.deltaG < 0 ? 'rgba(20,140,80,0.75)' : 'rgba(180,40,40,0.75)' }}>
                   {s.deltaG > 0 ? '+' : ''}{s.deltaG.toFixed(1)}
                 </span>
               </div>
@@ -175,8 +162,8 @@ export default function CETHXPage() {
           </div>
 
           {/* Results panel */}
-          <div style={{ width: '220px', flexShrink: 0, overflowY: 'auto', padding: '16px', borderLeft: '1px solid rgba(255,255,255,0.06)', background: '#0a0c10' }}>
-            <p style={{ fontFamily: MONO, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.25)', margin: '0 0 12px' }}>
+          <div style={{ width: '220px', flexShrink: 0, overflowY: 'auto', padding: '16px', borderLeft: '1px solid rgba(0,0,0,0.07)', background: '#FFFFFF' }}>
+            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(0,0,0,0.35)', margin: '0 0 12px' }}>
               Thermodynamics
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -189,7 +176,7 @@ export default function CETHXPage() {
           </div>
         </div>
 
-        <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', padding: '8px 16px', display: 'flex', gap: '8px', flexShrink: 0 }}>
+        <div style={{ borderTop: '1px solid rgba(0,0,0,0.07)', padding: '8px 16px', display: 'flex', gap: '8px', flexShrink: 0, background: '#FFFFFF' }}>
           <ExportButton label="Export JSON" data={thermo} filename="cethx-thermodynamics" format="json" />
           <ExportButton label="Export Steps CSV" data={thermo.steps} filename="cethx-steps" format="csv" />
         </div>

@@ -3,7 +3,7 @@
  * Nexus-Bio IDE Shell
  *
  * Layout (CSS Grid):
- *   Col: [220px sidebar] [1fr main]
+ *   Col: [64–220px animated sidebar] [1fr main]
  *   Row: [48px topbar] [1fr canvas] [auto console]
  *
  * TopBar:  spans all columns, row 1
@@ -15,6 +15,7 @@
 import IDESidebar from './IDESidebar';
 import IDETopBar from './IDETopBar';
 import IDEConsole from './IDEConsole';
+import { useUIStore } from '../../store/uiStore';
 
 interface IDEShellProps {
   moduleId: string;
@@ -23,15 +24,19 @@ interface IDEShellProps {
 }
 
 export default function IDEShell({ moduleId, children, topBarActions }: IDEShellProps) {
+  const sidebarCollapsed = useUIStore(s => s.sidebarCollapsed);
+  const sidebarWidth = sidebarCollapsed ? 64 : 220;
+
   return (
     <div style={{
       position: 'fixed',
       inset: 0,
-      background: '#0a0c10',
+      background: '#F2F5F8',
       display: 'grid',
-      gridTemplateColumns: '220px 1fr',
+      gridTemplateColumns: `${sidebarWidth}px 1fr`,
       gridTemplateRows: '48px 1fr auto',
       overflow: 'hidden',
+      transition: 'grid-template-columns 0.25s cubic-bezier(0.4,0,0.2,1)',
     }}>
       {/* TopBar — row 1, full width */}
       <IDETopBar moduleId={moduleId} actions={topBarActions} />

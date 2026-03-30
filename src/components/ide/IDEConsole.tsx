@@ -43,7 +43,7 @@ export default function IDEConsole() {
       display: 'flex',
       flexDirection: 'column',
       background: '#070810',
-      borderTop: '1px solid rgba(255,255,255,0.06)',
+      borderTop: '1px solid rgba(0,0,0,0.1)',
     }}>
       {/* Header */}
       <div style={{

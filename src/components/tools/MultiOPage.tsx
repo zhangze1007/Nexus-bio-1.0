@@ -28,16 +28,12 @@ function VolcanoPlot({ data, fcThreshold, pvThreshold }: {
   return (
     <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
       <rect width={W} height={H} fill="#0d0f14" />
-
-      {/* Threshold lines */}
       <line x1={PAD} y1={pvLine} x2={W - PAD} y2={pvLine}
         stroke="rgba(255,255,255,0.12)" strokeWidth={1} strokeDasharray="4 3" />
       <line x1={fcLineL} y1={PAD} x2={fcLineL} y2={H - PAD}
         stroke="rgba(255,255,255,0.08)" strokeWidth={1} strokeDasharray="4 3" />
       <line x1={fcLineR} y1={PAD} x2={fcLineR} y2={H - PAD}
         stroke="rgba(255,255,255,0.08)" strokeWidth={1} strokeDasharray="4 3" />
-
-      {/* Points */}
       {data.map(row => {
         const fc = row.fold_change ?? 0;
         const pv = row.pValue ?? 1;
@@ -49,17 +45,13 @@ function VolcanoPlot({ data, fcThreshold, pvThreshold }: {
         return (
           <circle key={row.id}
             cx={xPos(fc)} cy={yPos(pv)} r={sig ? 4 : 2.5}
-            fill={color}
-          >
+            fill={color}>
             <title>{row.gene}: FC={fc.toFixed(2)}, p={pv.toFixed(4)}</title>
           </circle>
         );
       })}
-
-      {/* Axes */}
       <line x1={PAD} y1={H - PAD} x2={W - PAD} y2={H - PAD} stroke="rgba(255,255,255,0.1)" />
       <line x1={PAD} y1={PAD} x2={PAD} y2={H - PAD} stroke="rgba(255,255,255,0.1)" />
-
       <text x={W / 2} y={H - 4} textAnchor="middle" fontFamily={MONO} fontSize="8" fill="rgba(255,255,255,0.25)">
         log₂ Fold Change
       </text>
@@ -108,9 +100,15 @@ export default function MultiOPage() {
   const upregulated = significant.filter(r => (r.fold_change ?? 0) > 0).length;
   const downregulated = significant.filter(r => (r.fold_change ?? 0) < 0).length;
 
+  const layerColors = {
+    Transcriptomics: 'rgba(120,180,255,0.7)',
+    Proteomics: 'rgba(255,190,60,0.7)',
+    Metabolomics: 'rgba(120,220,180,0.7)',
+  };
+
   return (
     <IDEShell moduleId="multio">
-      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', background: '#0a0c10' }}>
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', background: '#F5F7FA' }}>
         <AlgorithmInsight
           title="Multi-Omics Integrator"
           description="Pearson correlation across transcript / protein / metabolite layers. Significance: p < threshold after Benjamini-Hochberg correction."
@@ -119,67 +117,65 @@ export default function MultiOPage() {
 
         <div style={{ flex: 1, display: 'flex', overflow: 'hidden', minHeight: 0 }}>
           {/* Input panel */}
-          <div style={{ width: '200px', flexShrink: 0, overflowY: 'auto', padding: '16px', borderRight: '1px solid rgba(255,255,255,0.06)', background: '#0a0c10' }}>
-            <p style={{ fontFamily: MONO, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.25)', margin: '0 0 12px' }}>
+          <div style={{ width: '200px', flexShrink: 0, overflowY: 'auto', padding: '16px', borderRight: '1px solid rgba(0,0,0,0.07)', background: '#FFFFFF' }}>
+            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(0,0,0,0.35)', margin: '0 0 12px' }}>
               Data Layers
             </p>
             {[
-              { label: 'Transcriptomics', val: showTranscript, set: setShowTranscript, color: 'rgba(120,200,255,0.7)' },
-              { label: 'Proteomics', val: showProtein, set: setShowProtein, color: 'rgba(255,200,80,0.7)' },
-              { label: 'Metabolomics', val: showMetabolite, set: setShowMetabolite, color: 'rgba(120,255,180,0.7)' },
+              { label: 'Transcriptomics', val: showTranscript, set: setShowTranscript, color: layerColors.Transcriptomics },
+              { label: 'Proteomics', val: showProtein, set: setShowProtein, color: layerColors.Proteomics },
+              { label: 'Metabolomics', val: showMetabolite, set: setShowMetabolite, color: layerColors.Metabolomics },
             ].map(({ label, val, set, color }) => (
               <button key={label} onClick={() => set(!val)} style={{
                 display: 'flex', alignItems: 'center', gap: '8px',
                 width: '100%', padding: '7px 10px', marginBottom: '6px',
-                background: val ? 'rgba(255,255,255,0.04)' : 'transparent',
-                border: `1px solid ${val ? color : 'rgba(255,255,255,0.07)'}`,
-                borderRadius: '3px', cursor: 'pointer',
-                color: val ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.25)',
+                background: val ? 'rgba(0,0,0,0.04)' : 'transparent',
+                border: `1px solid ${val ? 'rgba(0,0,0,0.15)' : 'rgba(0,0,0,0.08)'}`,
+                borderRadius: '8px', cursor: 'pointer',
+                color: val ? 'rgba(0,0,0,0.7)' : 'rgba(0,0,0,0.3)',
                 fontFamily: SANS, fontSize: '11px', textAlign: 'left',
               }}>
-                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: val ? color : 'transparent', border: `1px solid ${color}`, flexShrink: 0 }} />
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: val ? color : 'transparent', border: `1.5px solid ${color}`, flexShrink: 0 }} />
                 {label}
               </button>
             ))}
 
-            <p style={{ fontFamily: MONO, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.25)', margin: '16px 0 8px' }}>
+            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(0,0,0,0.35)', margin: '16px 0 8px' }}>
               Thresholds
             </p>
             <div style={{ marginBottom: '12px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                <span style={{ fontFamily: SANS, fontSize: '11px', color: 'rgba(255,255,255,0.55)' }}>|FC| &gt;</span>
-                <span style={{ fontFamily: MONO, fontSize: '11px', color: 'rgba(255,255,255,0.75)' }}>{fcThreshold.toFixed(1)}</span>
+                <span style={{ fontFamily: SANS, fontSize: '11px', color: 'rgba(0,0,0,0.55)' }}>|FC| &gt;</span>
+                <span style={{ fontFamily: MONO, fontSize: '11px', color: 'rgba(0,0,0,0.7)' }}>{fcThreshold.toFixed(1)}</span>
               </div>
               <input type="range" min={0.5} max={5} step={0.1} value={fcThreshold}
                 onChange={e => setFcThreshold(parseFloat(e.target.value))}
-                style={{ width: '100%', accentColor: 'rgba(255,255,255,0.6)' }} />
+                style={{ width: '100%', accentColor: 'rgba(0,0,0,0.5)' }} />
             </div>
             <div style={{ marginBottom: '12px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                <span style={{ fontFamily: SANS, fontSize: '11px', color: 'rgba(255,255,255,0.55)' }}>p &lt;</span>
-                <span style={{ fontFamily: MONO, fontSize: '11px', color: 'rgba(255,255,255,0.75)' }}>{pvThreshold.toFixed(3)}</span>
+                <span style={{ fontFamily: SANS, fontSize: '11px', color: 'rgba(0,0,0,0.55)' }}>p &lt;</span>
+                <span style={{ fontFamily: MONO, fontSize: '11px', color: 'rgba(0,0,0,0.7)' }}>{pvThreshold.toFixed(3)}</span>
               </div>
               <input type="range" min={0.001} max={0.1} step={0.001} value={pvThreshold}
                 onChange={e => setPvThreshold(parseFloat(e.target.value))}
-                style={{ width: '100%', accentColor: 'rgba(255,255,255,0.6)' }} />
+                style={{ width: '100%', accentColor: 'rgba(0,0,0,0.5)' }} />
             </div>
           </div>
 
           {/* Engine view — split: table + volcano */}
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#0d0f14' }}>
-            {/* Table */}
             <div style={{ flex: 1, overflow: 'auto', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
               <DataTable<OmicsRow> columns={COLUMNS} rows={filtered} maxRows={50} />
             </div>
-            {/* Volcano plot */}
             <div style={{ height: '240px', flexShrink: 0, padding: '8px', display: 'flex', justifyContent: 'center' }}>
               <VolcanoPlot data={filtered} fcThreshold={fcThreshold} pvThreshold={pvThreshold} />
             </div>
           </div>
 
           {/* Results panel */}
-          <div style={{ width: '200px', flexShrink: 0, overflowY: 'auto', padding: '16px', borderLeft: '1px solid rgba(255,255,255,0.06)', background: '#0a0c10' }}>
-            <p style={{ fontFamily: MONO, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.25)', margin: '0 0 12px' }}>
+          <div style={{ width: '200px', flexShrink: 0, overflowY: 'auto', padding: '16px', borderLeft: '1px solid rgba(0,0,0,0.07)', background: '#FFFFFF' }}>
+            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(0,0,0,0.35)', margin: '0 0 12px' }}>
               Enrichment Summary
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -189,14 +185,14 @@ export default function MultiOPage() {
               <MetricCard label="Total Genes" value={OMICS_DATA.length} />
             </div>
 
-            <p style={{ fontFamily: MONO, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.25)', margin: '16px 0 8px' }}>
+            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(0,0,0,0.35)', margin: '16px 0 8px' }}>
               Top Hits
             </p>
             {significant.slice(0, 5).map(r => (
-              <div key={r.id} style={{ padding: '5px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+              <div key={r.id} style={{ padding: '5px 0', borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ fontFamily: MONO, fontSize: '10px', color: 'rgba(255,255,255,0.65)' }}>{r.gene}</span>
-                  <span style={{ fontFamily: MONO, fontSize: '10px', color: (r.fold_change ?? 0) > 0 ? 'rgba(120,220,180,0.8)' : 'rgba(255,100,100,0.8)' }}>
+                  <span style={{ fontFamily: MONO, fontSize: '10px', color: 'rgba(0,0,0,0.65)' }}>{r.gene}</span>
+                  <span style={{ fontFamily: MONO, fontSize: '10px', color: (r.fold_change ?? 0) > 0 ? 'rgba(20,140,80,0.85)' : 'rgba(180,40,40,0.85)' }}>
                     {(r.fold_change ?? 0) > 0 ? '+' : ''}{r.fold_change?.toFixed(1)}×
                   </span>
                 </div>
@@ -205,7 +201,7 @@ export default function MultiOPage() {
           </div>
         </div>
 
-        <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', padding: '8px 16px', display: 'flex', gap: '8px', flexShrink: 0 }}>
+        <div style={{ borderTop: '1px solid rgba(0,0,0,0.07)', padding: '8px 16px', display: 'flex', gap: '8px', flexShrink: 0, background: '#FFFFFF' }}>
           <ExportButton label="Export All CSV" data={OMICS_DATA} filename="multio-all" format="csv" />
           <ExportButton label="Export Significant JSON" data={significant} filename="multio-significant" format="json" />
         </div>
