@@ -303,6 +303,7 @@ export default function MetabolicEngPage() {
             selectedNodeId={selectedNode?.id ?? null}
             glowMultiplier={glowMultiplier}
             flowSpeed={flowSpeed}
+            stressIndex={readouts.stressIndex}
             fullscreen
           />
         </div>

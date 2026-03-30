@@ -264,24 +264,36 @@ function AmbientParticles() {
 }
 
 // ─── Spatial Grid — darker theme requested ─────────────────────────────
-function SpatialReference() {
+function SpatialReference({ stressIndex = 0 }: { stressIndex?: number }) {
+  const grpRef = useRef<THREE.Group>(null!);
+  useFrame(({ clock }) => {
+    if (!grpRef.current) return;
+    if (stressIndex > 0.8) {
+      const mag = (stressIndex - 0.8) * 0.03;
+      grpRef.current.position.x = Math.sin(clock.elapsedTime * 40) * mag;
+    } else {
+      grpRef.current.position.x = 0;
+    }
+  });
   return (
-    <group position={[0, -3.8, 0]}>
-      {/* 保持你原本的黑白灰网格颜色 */}
-      <gridHelper args={[36, 36, '#606060', '#404040']} /> 
-      <Line points={[new THREE.Vector3(-10,0,0), new THREE.Vector3(10,0,0)]} color="#aaaaaa" lineWidth={0.5} transparent opacity={0.35} /> 
-      <Line points={[new THREE.Vector3(0,0,-10), new THREE.Vector3(0,0,10)]} color="#aaaaaa" lineWidth={0.5} transparent opacity={0.35} /> 
+    <group ref={grpRef} position={[0, -3.8, 0]}>
+      <gridHelper args={[36, 36, '#606060', '#404040']} />
+      <Line points={[new THREE.Vector3(-10,0,0), new THREE.Vector3(10,0,0)]} color="#aaaaaa" lineWidth={0.5} transparent opacity={0.35} />
+      <Line points={[new THREE.Vector3(0,0,-10), new THREE.Vector3(0,0,10)]} color="#aaaaaa" lineWidth={0.5} transparent opacity={0.35} />
     </group>
   );
 }
 
 // ─── Molecular Node with texture and correct commercial coloring ──────
-const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov, roughnessTexture, flowSpeed }: {
+const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov, roughnessTexture, flowSpeed, glowMultiplier = 1, stressIndex = 0 }: {
   node: PathwayNode; hov: boolean; sel: boolean; cc: number;
   onClick: (n: PathwayNode) => void; onHov: (id: string | null) => void;
-  roughnessTexture: THREE.Texture | null; flowSpeed?: number;
+  roughnessTexture: THREE.Texture | null; flowSpeed?: number; glowMultiplier?: number; stressIndex?: number;
 }) {
   const _flowSpeed = flowSpeed ?? 1;
+  const nodeRadius = 0.32 + cc * 0.05;
+  // Shrink nodes when pH/temperature deviate from optimal (encoded in glowMultiplier)
+  const activityScale = 0.7 + 0.3 * Math.min(1, glowMultiplier / 2.0);
   const grp     = useRef<THREE.Group>(null);
   const ring    = useRef<THREE.Mesh>(null);
   const bodyRef = useRef<THREE.Mesh>(null);
@@ -328,7 +340,7 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov
       onPointerOut={e => { e.stopPropagation(); onHov(null); document.body.style.cursor = 'auto'; }}
     >
       <mesh ref={bodyRef}>
-        <GeoComp g={cfg.geom} s={0.32 + cc * 0.05} />
+        <GeoComp g={cfg.geom} s={nodeRadius * activityScale} />
         <meshPhysicalMaterial
           color={finalColor}
           emissive={finalColor}
@@ -341,11 +353,25 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov
         />
       </mesh>
 
-      {/* 【关键修复】: 隐形 Hitbox 触摸判定区，彻底解决点不到分子的 bug */}
+      {/* Invisible hitbox for reliable click detection */}
       <mesh visible={false}>
         <sphereGeometry args={[0.8, 16, 16]} />
         <meshBasicMaterial color="white" transparent opacity={0} depthWrite={false} />
       </mesh>
+
+      {/* Bottleneck anomaly glow — sharp red wireframe ring when substrate accumulates under stress */}
+      {stressIndex > 0.5 && (node.risk_score ?? 0) > 0.5 && (
+        <mesh>
+          <sphereGeometry args={[nodeRadius * 1.55, 16, 16]} />
+          <meshBasicMaterial
+            color="#FF2222"
+            transparent
+            opacity={Math.min(0.45, (stressIndex - 0.5) * (node.risk_score ?? 0) * 0.7)}
+            wireframe
+            depthWrite={false}
+          />
+        </mesh>
+      )}
 
       {cfg.rr.map((r, i) => (
         <mesh key={`r${i}`} ref={i === 0 ? ring : undefined} rotation={[cfg.rt[i] || 0, 0, i * 1.1]}>
@@ -354,7 +380,7 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov
         </mesh>
       ))}
 
-      <Html position={[0, -0.5, 0]} center style={{ pointerEvents: 'none', whiteSpace: 'nowrap' }}>
+      <Html position={[0, -(nodeRadius * 1.2), 0]} center style={{ pointerEvents: 'none', whiteSpace: 'nowrap' }}>
         <div style={{
           color: hov || sel ? '#fff' : 'rgba(160,180,200,0.55)',
           fontSize: '10px', fontWeight: sel ? 600 : 400,
@@ -470,41 +496,110 @@ function ScrollSyncCamera({ nodes, selectedId, interact, controlsRef, centroid }
   return null;
 }
 
+// ─── Flux Particle System — white dots flow along pathway edges ───────
+const FLUX_PER_EDGE = 60;
+
+function FluxParticles({ edges, nodes, flowSpeed, glowMultiplier }: {
+  edges: PathwayEdge[]; nodes: PathwayNode[]; flowSpeed: number; glowMultiplier: number;
+}) {
+  const edgeVecs = useMemo(() =>
+    edges.map(e => {
+      const s = nodes.find(n => n.id === e.start);
+      const t = nodes.find(n => n.id === e.end);
+      if (!s?.position || !t?.position || !Array.isArray(s.position) || !Array.isArray(t.position)) return null;
+      return { sv: new THREE.Vector3(...(s.position as [number,number,number])), ev: new THREE.Vector3(...(t.position as [number,number,number])) };
+    }).filter((x): x is { sv: THREE.Vector3; ev: THREE.Vector3 } => x !== null),
+  [edges, nodes]);
+
+  const N = edgeVecs.length * FLUX_PER_EDGE;
+
+  const { pts, geo } = useMemo(() => {
+    const pos = new Float32Array(Math.max(N, 1) * 3);
+    // Stagger initial positions evenly along each edge
+    for (let i = 0; i < N; i++) {
+      const ei = Math.floor(i / FLUX_PER_EDGE);
+      if (ei >= edgeVecs.length) continue;
+      const { sv, ev } = edgeVecs[ei];
+      const t = (i % FLUX_PER_EDGE) / FLUX_PER_EDGE;
+      pos[i * 3]     = sv.x + (ev.x - sv.x) * t;
+      pos[i * 3 + 1] = sv.y + (ev.y - sv.y) * t;
+      pos[i * 3 + 2] = sv.z + (ev.z - sv.z) * t;
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    const m = new THREE.PointsMaterial({ size: 0.05, color: 0xffffff, transparent: true, opacity: 0.55, sizeAttenuation: true, depthWrite: false });
+    return { pts: new THREE.Points(g, m), geo: g };
+  }, [N, edgeVecs]);
+
+  // Update opacity reactively with glowMultiplier
+  useEffect(() => {
+    (pts.material as THREE.PointsMaterial).opacity = Math.min(0.85, 0.3 + glowMultiplier * 0.2);
+  }, [pts, glowMultiplier]);
+
+  const progress = useRef(Float32Array.from({ length: N }, (_, i) => (i % FLUX_PER_EDGE) / FLUX_PER_EDGE));
+
+  // Reset progress when pathway changes
+  useEffect(() => {
+    progress.current = Float32Array.from({ length: N }, (_, i) => (i % FLUX_PER_EDGE) / FLUX_PER_EDGE);
+  }, [N]);
+
+  useFrame((_, dt) => {
+    if (N === 0 || edgeVecs.length === 0) return;
+    const speed = dt * flowSpeed * 0.28;
+    const prog = progress.current;
+    const positions = (geo.attributes.position as THREE.BufferAttribute).array as Float32Array;
+    for (let i = 0; i < N; i++) {
+      prog[i] = (prog[i] + speed) % 1;
+      const ei = Math.floor(i / FLUX_PER_EDGE);
+      if (ei >= edgeVecs.length) continue;
+      const { sv, ev } = edgeVecs[ei];
+      const t = prog[i];
+      positions[i * 3]     = sv.x + (ev.x - sv.x) * t;
+      positions[i * 3 + 1] = sv.y + (ev.y - sv.y) * t;
+      positions[i * 3 + 2] = sv.z + (ev.z - sv.z) * t;
+    }
+    geo.attributes.position.needsUpdate = true;
+  });
+
+  if (N === 0) return null;
+  return <primitive object={pts} />;
+}
+
 // ─── Scene — unified lighting, integrated depth ────────────────────────
-function Scene({ nodes, edges, onNodeClick, selectedNodeId, roughnessTexture, glowMultiplier, flowSpeed }: { nodes:PathwayNode[]; edges:PathwayEdge[]; onNodeClick:(n:PathwayNode)=>void; selectedNodeId:string|null; roughnessTexture:THREE.Texture | null; glowMultiplier:number; flowSpeed:number; }) {
+function Scene({ nodes, edges, onNodeClick, selectedNodeId, roughnessTexture, glowMultiplier, flowSpeed, stressIndex }: { nodes:PathwayNode[]; edges:PathwayEdge[]; onNodeClick:(n:PathwayNode)=>void; selectedNodeId:string|null; roughnessTexture:THREE.Texture | null; glowMultiplier:number; flowSpeed:number; stressIndex:number; }) {
   const [hovId, setHovId]       = useState<string|null>(null);
   const [interact, setInteract] = useState(false);
   const controlsRef = useRef<OrbitControlsHandle | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout>|null>(null);
   const onStart = useCallback(() => { setInteract(true); if (timer.current) clearTimeout(timer.current); }, []);
   const onEnd   = useCallback(() => { timer.current = setTimeout(() => setInteract(false), 3500); }, []);
-  
+
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
 
-  // 【关键修复】: 动态计算网络图几何中心 (Centroid)
-  const centroid = useMemo(() => {
-    const center = new THREE.Vector3();
-    let count = 0;
+  // BoundingBox auto-focus — compute scene center + adaptive camera offset
+  const { centroid, camOffset } = useMemo(() => {
+    const box = new THREE.Box3();
     nodes.forEach(n => {
       if (n && Array.isArray(n.position) && n.position.length === 3) {
-        center.add(new THREE.Vector3(...n.position));
-        count++;
+        box.expandByPoint(new THREE.Vector3(...(n.position as [number,number,number])));
       }
     });
-    if (count > 0) center.divideScalar(count);
-    return center;
+    const center = new THREE.Vector3();
+    const size   = new THREE.Vector3();
+    if (!box.isEmpty()) { box.getCenter(center); box.getSize(size); }
+    const maxDim = Math.max(size.x, size.y, size.z, 4);
+    return { centroid: center, camOffset: { y: maxDim * 0.35, z: maxDim * 1.3 + 8 } };
   }, [nodes]);
 
   const { camera } = useThree();
   useEffect(() => {
-    // 渲染的第一秒直接把镜头架在中心点前
-    camera.position.set(centroid.x, centroid.y + 6, centroid.z + 18);
+    camera.position.set(centroid.x, centroid.y + camOffset.y, centroid.z + camOffset.z);
     camera.lookAt(centroid);
     if (controlsRef.current) {
       controlsRef.current.target.copy(centroid);
       controlsRef.current.update();
     }
-  }, [centroid, camera]);
+  }, [centroid, camOffset, camera]);
 
   const cc = useMemo(() => {
     const c: Record<string,number> = {};
@@ -530,13 +625,13 @@ function Scene({ nodes, edges, onNodeClick, selectedNodeId, roughnessTexture, gl
       <pointLight position={[centroid.x, centroid.y + 6, centroid.z]} intensity={0.18 * glowMultiplier} color="#FFFFFF" distance={28} decay={2} />
       <fog attach="fog" args={['#000000', 22, 52]} />
 
-      {/* 【关键修复】: 添加 makeDefault 和 target 保证触控生效且中心不偏 */}
       <OrbitControls ref={controlsRef as React.Ref<never>} makeDefault enableZoom autoRotate={!interact && !hovId && !selectedNodeId} autoRotateSpeed={0.12} zoomSpeed={0.45} minDistance={6} maxDistance={24} enablePan={false} onStart={onStart} onEnd={onEnd} target={centroid} />
-      <SpatialReference />
+      <SpatialReference stressIndex={stressIndex} />
 
       <AmbientParticles />
+      <FluxParticles edges={edges} nodes={nodes} flowSpeed={flowSpeed} glowMultiplier={glowMultiplier} />
       {ed.map(e => <PathEdge key={e.key} edge={e.edge} s={e.s.position} e={e.e.position} active={e.active} color={e.color} flowSpeed={flowSpeed} />)}
-      {nodes.map(n => <MolNode key={n.id} node={n} hov={hovId===n.id} sel={selectedNodeId===n.id} cc={cc[n.id]??0} onClick={onNodeClick} onHov={setHovId} roughnessTexture={roughnessTexture} flowSpeed={flowSpeed} />)}
+      {nodes.map(n => <MolNode key={n.id} node={n} hov={hovId===n.id} sel={selectedNodeId===n.id} cc={cc[n.id]??0} onClick={onNodeClick} onHov={setHovId} roughnessTexture={roughnessTexture} flowSpeed={flowSpeed} glowMultiplier={glowMultiplier} stressIndex={stressIndex} />)}
 
       <ScrollSyncCamera nodes={nodes} selectedId={selectedNodeId} interact={interact} controlsRef={controlsRef} centroid={centroid} />
     </>
@@ -564,9 +659,9 @@ function ResizeHandler() {
 }
 
 // ─── Main Component — loading fallback and scene unified ─────────────
-interface Props { nodes:PathwayNode[]; onNodeClick:(node:PathwayNode)=>void; edges?:PathwayEdge[]; selectedNodeId?:string|null; glowMultiplier?:number; flowSpeed?:number; fullscreen?:boolean; }
+interface Props { nodes:PathwayNode[]; onNodeClick:(node:PathwayNode)=>void; edges?:PathwayEdge[]; selectedNodeId?:string|null; glowMultiplier?:number; flowSpeed?:number; fullscreen?:boolean; stressIndex?:number; }
 
-export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, glowMultiplier = 1, flowSpeed = 1, fullscreen = false }: Props) {
+export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, glowMultiplier = 1, flowSpeed = 1, fullscreen = false, stressIndex = 0 }: Props) {
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('ready');
   const [rendererMode, setRendererMode] = useState<RendererMode>('loading');
   const mountedRef = useRef(true);
@@ -672,7 +767,7 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, 
           dpr={[1, 1.5]} performance={{ min: 0.5 }} style={{ background: 'transparent', pointerEvents: 'auto' }}
         >
           <ResizeHandler />
-          <Scene nodes={safeNodes} edges={safeEdges} onNodeClick={onNodeClick} selectedNodeId={selectedNodeId ?? null} roughnessTexture={roughnessTexture} glowMultiplier={glowMultiplier} flowSpeed={flowSpeed} />
+          <Scene nodes={safeNodes} edges={safeEdges} onNodeClick={onNodeClick} selectedNodeId={selectedNodeId ?? null} roughnessTexture={roughnessTexture} glowMultiplier={glowMultiplier} flowSpeed={flowSpeed} stressIndex={stressIndex} />
         </Canvas>
       </SceneErrorBoundary>
     </div>
