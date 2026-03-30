@@ -11,6 +11,10 @@ import { useUIStore } from '../../store/uiStore';
 const SANS  = "'Inter',-apple-system,sans-serif";
 const BRAND = "'Space Grotesk',-apple-system,sans-serif";
 
+const BORDER  = 'rgba(255,255,255,0.06)';
+const LABEL   = 'rgba(255,255,255,0.28)';
+const VALUE   = 'rgba(255,255,255,0.65)';
+
 interface ModuleDef {
   id: string;
   label: string;
@@ -43,12 +47,12 @@ export default function IDESidebar() {
       gridRow: '2 / 4',
       display: 'flex',
       flexDirection: 'column',
-      background: '#FFFFFF',
-      borderRight: '1px solid rgba(0,0,0,0.07)',
+      background: '#10131a',
+      borderRight: `1px solid ${BORDER}`,
       overflowY: 'auto',
       overflowX: 'hidden',
     }}>
-      {/* Logo */}
+      {/* Logo — also acts as Home link */}
       <Link href="/" style={{
         display: 'flex',
         alignItems: 'center',
@@ -56,21 +60,21 @@ export default function IDESidebar() {
         padding: collapsed ? '14px 0' : '14px 16px',
         justifyContent: collapsed ? 'center' : 'flex-start',
         textDecoration: 'none',
-        borderBottom: '1px solid rgba(0,0,0,0.07)',
+        borderBottom: `1px solid ${BORDER}`,
         flexShrink: 0,
         transition: 'padding 0.25s cubic-bezier(0.4,0,0.2,1)',
       }}>
         <div style={{
           width: '24px', height: '24px', borderRadius: '7px',
-          background: 'rgba(0,0,0,0.06)',
-          border: '1px solid rgba(0,0,0,0.1)',
+          background: 'rgba(255,255,255,0.06)',
+          border: '1px solid rgba(255,255,255,0.1)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           flexShrink: 0,
         }}>
-          <Dna size={12} style={{ color: 'rgba(0,0,0,0.55)' }} />
+          <Dna size={12} style={{ color: 'rgba(255,255,255,0.5)' }} />
         </div>
         {!collapsed && (
-          <span style={{ fontFamily: BRAND, fontWeight: 700, fontSize: '13px', color: 'rgba(0,0,0,0.75)', letterSpacing: '-0.01em', whiteSpace: 'nowrap', overflow: 'hidden' }}>
+          <span style={{ fontFamily: BRAND, fontWeight: 700, fontSize: '13px', color: VALUE, letterSpacing: '-0.01em', whiteSpace: 'nowrap', overflow: 'hidden' }}>
             Nexus-Bio
           </span>
         )}
@@ -84,14 +88,14 @@ export default function IDESidebar() {
         padding: '6px 10px',
         background: 'none',
         border: 'none',
-        borderBottom: '1px solid rgba(0,0,0,0.05)',
+        borderBottom: `1px solid ${BORDER}`,
         cursor: 'pointer',
-        color: 'rgba(0,0,0,0.25)',
+        color: LABEL,
         flexShrink: 0,
         transition: 'color 0.15s',
       }}
-        onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = 'rgba(0,0,0,0.55)'}
-        onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'rgba(0,0,0,0.25)'}
+        onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = VALUE}
+        onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = LABEL}
         title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
       >
         {collapsed ? <ChevronRight size={13} /> : <ChevronLeft size={13} />}
@@ -100,7 +104,7 @@ export default function IDESidebar() {
       {/* Section label */}
       {!collapsed && (
         <div style={{ padding: '10px 16px 6px', flexShrink: 0 }}>
-          <span style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'rgba(0,0,0,0.3)' }}>
+          <span style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.12em', color: LABEL }}>
             Modules
           </span>
         </div>
@@ -122,27 +126,27 @@ export default function IDESidebar() {
                 padding: collapsed ? '8px 0' : '8px 16px',
                 justifyContent: collapsed ? 'center' : 'flex-start',
                 textDecoration: 'none',
-                borderLeft: isActive ? '2px solid rgba(0,0,0,0.5)' : '2px solid transparent',
-                background: isActive ? 'rgba(0,0,0,0.04)' : 'transparent',
+                borderLeft: isActive ? '2px solid rgba(120,220,160,0.6)' : '2px solid transparent',
+                background: isActive ? 'rgba(120,220,160,0.06)' : 'transparent',
                 transition: 'all 0.15s',
               }}
-              onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = 'rgba(0,0,0,0.025)'; }}
+              onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.03)'; }}
               onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
             >
               <div style={{
                 width: '28px', height: '28px',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 borderRadius: '8px',
-                background: isActive ? 'rgba(200,240,224,0.6)' : 'rgba(0,0,0,0.04)',
+                background: isActive ? 'rgba(120,220,160,0.12)' : 'rgba(255,255,255,0.04)',
                 flexShrink: 0,
               }}>
-                <Icon size={13} style={{ color: isActive ? 'rgba(0,120,80,0.8)' : 'rgba(0,0,0,0.4)' }} />
+                <Icon size={13} style={{ color: isActive ? 'rgba(120,220,160,0.85)' : LABEL }} />
               </div>
               {!collapsed && (
                 <div style={{ minWidth: 0, overflow: 'hidden' }}>
                   <div style={{
                     fontFamily: SANS, fontSize: '11px', fontWeight: 600,
-                    color: isActive ? 'rgba(0,0,0,0.75)' : 'rgba(0,0,0,0.45)',
+                    color: isActive ? VALUE : LABEL,
                     letterSpacing: '0.01em',
                     lineHeight: 1.2,
                     whiteSpace: 'nowrap',
@@ -151,7 +155,7 @@ export default function IDESidebar() {
                   </div>
                   <div style={{
                     fontFamily: SANS, fontSize: '10px',
-                    color: isActive ? 'rgba(0,0,0,0.4)' : 'rgba(0,0,0,0.25)',
+                    color: isActive ? LABEL : 'rgba(255,255,255,0.18)',
                     marginTop: '1px',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
@@ -170,10 +174,10 @@ export default function IDESidebar() {
       {!collapsed && (
         <div style={{
           padding: '10px 16px',
-          borderTop: '1px solid rgba(0,0,0,0.05)',
+          borderTop: `1px solid ${BORDER}`,
           flexShrink: 0,
         }}>
-          <span style={{ fontFamily: SANS, fontSize: '9px', color: 'rgba(0,0,0,0.2)', letterSpacing: '0.04em' }}>
+          <span style={{ fontFamily: SANS, fontSize: '9px', color: 'rgba(255,255,255,0.15)', letterSpacing: '0.04em' }}>
             v2.0 · IDE
           </span>
         </div>
