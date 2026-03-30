@@ -10,6 +10,15 @@ import type { FitnessPoint } from '../../types';
 const MONO = "'JetBrains Mono','Fira Code',monospace";
 const SANS = "'Inter',-apple-system,sans-serif";
 
+// Dark theme tokens
+const PANEL_BG = '#10131a';
+const BORDER = 'rgba(255,255,255,0.06)';
+const LABEL = 'rgba(255,255,255,0.28)';
+const VALUE = 'rgba(255,255,255,0.65)';
+const INPUT_BG = 'rgba(255,255,255,0.05)';
+const INPUT_BORDER = 'rgba(255,255,255,0.08)';
+const INPUT_TEXT = 'rgba(255,255,255,0.7)';
+
 function fitnessColor(v: number): string {
   const r = Math.round(30 + v * 180);
   const g = Math.round(10 + v * 200);
@@ -87,12 +96,12 @@ function ParamSlider({ label, value, min, max, step = 1, onChange, unit }: {
   return (
     <div style={{ marginBottom: '12px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-        <span style={{ fontFamily: SANS, fontSize: '11px', color: 'rgba(0,0,0,0.55)' }}>{label}</span>
-        <span style={{ fontFamily: MONO, fontSize: '11px', color: 'rgba(0,0,0,0.7)' }}>{value}{unit}</span>
+        <span style={{ fontFamily: SANS, fontSize: '11px', color: LABEL }}>{label}</span>
+        <span style={{ fontFamily: MONO, fontSize: '11px', color: VALUE }}>{value}{unit}</span>
       </div>
       <input type="range" min={min} max={max} step={step} value={value}
         onChange={e => onChange(Number(e.target.value))}
-        style={{ width: '100%', accentColor: 'rgba(0,0,0,0.5)', cursor: 'pointer' }} />
+        style={{ width: '100%', accentColor: 'rgba(120,180,255,0.8)', cursor: 'pointer' }} />
     </div>
   );
 }
@@ -124,7 +133,7 @@ export default function ProEvolPage() {
 
   return (
     <IDEShell moduleId="proevol">
-      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', background: '#F5F7FA' }}>
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', background: '#0d0f14' }}>
         <AlgorithmInsight
           title="Directed Evolution Simulator"
           description="Monte Carlo sampling traverses the fitness landscape via Metropolis criterion. Accepts unfavorable mutations with probability e^(ΔF/T)."
@@ -133,22 +142,22 @@ export default function ProEvolPage() {
 
         <div style={{ flex: 1, display: 'flex', overflow: 'hidden', minHeight: 0 }}>
           {/* Input panel */}
-          <div style={{ width: '240px', flexShrink: 0, overflowY: 'auto', padding: '16px', borderRight: '1px solid rgba(0,0,0,0.07)', background: '#FFFFFF' }}>
-            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(0,0,0,0.35)', margin: '0 0 12px' }}>
+          <div style={{ width: '240px', flexShrink: 0, overflowY: 'auto', padding: '16px', borderRight: `1px solid ${BORDER}`, background: PANEL_BG }}>
+            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: LABEL, margin: '0 0 12px' }}>
               Evolution Parameters
             </p>
 
             <ParamSlider label="Mutation rate" value={mutationRate} min={1} max={20} onChange={setMutationRate} unit="%" />
             <ParamSlider label="Evolution rounds" value={rounds} min={20} max={500} step={10} onChange={setRounds} unit="" />
 
-            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(0,0,0,0.35)', margin: '16px 0 8px' }}>
+            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: LABEL, margin: '16px 0 8px' }}>
               Starting Sequence
             </p>
             <div style={{
-              fontFamily: MONO, fontSize: '9px', color: 'rgba(0,0,0,0.5)',
+              fontFamily: MONO, fontSize: '9px', color: 'rgba(255,255,255,0.4)',
               wordBreak: 'break-all', lineHeight: 1.5,
-              background: 'rgba(0,0,0,0.04)', padding: '8px',
-              border: '1px solid rgba(0,0,0,0.08)', borderRadius: '8px',
+              background: INPUT_BG, padding: '8px',
+              border: `1px solid ${INPUT_BORDER}`, borderRadius: '8px',
               marginBottom: '12px',
             }}>
               {STARTING_SEQUENCE.slice(0, 60)}...
@@ -156,23 +165,23 @@ export default function ProEvolPage() {
 
             <button onClick={run} disabled={running} style={{
               width: '100%', padding: '8px',
-              background: running ? 'rgba(0,0,0,0.03)' : 'rgba(0,0,0,0.06)',
-              border: '1px solid rgba(0,0,0,0.12)',
+              background: running ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.06)',
+              border: `1px solid ${INPUT_BORDER}`,
               borderRadius: '8px',
-              color: running ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.7)',
+              color: running ? 'rgba(255,255,255,0.25)' : VALUE,
               fontFamily: SANS, fontSize: '11px', cursor: running ? 'not-allowed' : 'pointer',
             }}>
               {running ? 'Evolving...' : 'Run Evolution'}
             </button>
 
-            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(0,0,0,0.35)', margin: '20px 0 8px' }}>
+            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: LABEL, margin: '20px 0 8px' }}>
               Best Sequence
             </p>
             <div style={{
-              fontFamily: MONO, fontSize: '9px', color: 'rgba(20,140,80,0.8)',
+              fontFamily: MONO, fontSize: '9px', color: 'rgba(120,220,160,0.8)',
               wordBreak: 'break-all', lineHeight: 1.5,
-              background: 'rgba(200,240,224,0.2)', padding: '8px',
-              border: '1px solid rgba(200,240,224,0.6)', borderRadius: '8px',
+              background: 'rgba(120,220,160,0.06)', padding: '8px',
+              border: '1px solid rgba(120,220,160,0.2)', borderRadius: '8px',
             }}>
               {bestSequence}
             </div>
@@ -184,8 +193,8 @@ export default function ProEvolPage() {
           </div>
 
           {/* Results panel */}
-          <div style={{ width: '240px', flexShrink: 0, overflowY: 'auto', padding: '16px', borderLeft: '1px solid rgba(0,0,0,0.07)', background: '#FFFFFF' }}>
-            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(0,0,0,0.35)', margin: '0 0 12px' }}>
+          <div style={{ width: '240px', flexShrink: 0, overflowY: 'auto', padding: '16px', borderLeft: `1px solid ${BORDER}`, background: PANEL_BG }}>
+            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: LABEL, margin: '0 0 12px' }}>
               Evolution Results
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
@@ -195,11 +204,11 @@ export default function ProEvolPage() {
               <MetricCard label="Diversity Index" value={(trajectory.length > 1 ? (new Set(trajectory.map(p => Math.round(p.fitness * 100))).size / trajectory.length) : 0).toFixed(3)} />
             </div>
 
-            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(0,0,0,0.35)', margin: '0 0 8px' }}>
+            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: LABEL, margin: '0 0 8px' }}>
               Fitness Trajectory
             </p>
             <svg viewBox="0 0 200 60" style={{ width: '100%', height: '60px' }}>
-              <rect width="200" height="60" fill="rgba(0,0,0,0.03)" rx="4" />
+              <rect width="200" height="60" fill="rgba(255,255,255,0.03)" rx="4" />
               {trajectory.length > 1 && (
                 <polyline
                   points={trajectory.map((p, i) => {
@@ -207,16 +216,16 @@ export default function ProEvolPage() {
                     const y = 58 - p.fitness * 54;
                     return `${x},${y}`;
                   }).join(' ')}
-                  fill="none" stroke="rgba(20,140,80,0.6)" strokeWidth={1.5}
+                  fill="none" stroke="rgba(120,220,160,0.6)" strokeWidth={1.5}
                 />
               )}
-              <text x="2" y="56" fontFamily={MONO} fontSize="7" fill="rgba(0,0,0,0.25)">0</text>
-              <text x="2" y="8"  fontFamily={MONO} fontSize="7" fill="rgba(0,0,0,0.25)">1</text>
+              <text x="2" y="56" fontFamily={MONO} fontSize="7" fill="rgba(255,255,255,0.25)">0</text>
+              <text x="2" y="8"  fontFamily={MONO} fontSize="7" fill="rgba(255,255,255,0.25)">1</text>
             </svg>
           </div>
         </div>
 
-        <div style={{ borderTop: '1px solid rgba(0,0,0,0.07)', padding: '8px 16px', display: 'flex', gap: '8px', flexShrink: 0, background: '#FFFFFF' }}>
+        <div style={{ borderTop: `1px solid ${BORDER}`, padding: '8px 16px', display: 'flex', gap: '8px', flexShrink: 0, background: PANEL_BG }}>
           <ExportButton label="Export Trajectory JSON" data={trajectory} filename="proevol-trajectory" format="json" />
           <ExportButton label="Export CSV" data={trajectory} filename="proevol-trajectory" format="csv" />
         </div>
