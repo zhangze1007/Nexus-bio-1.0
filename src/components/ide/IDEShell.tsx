@@ -31,7 +31,7 @@ export default function IDEShell({ moduleId, children, topBarActions }: IDEShell
     <div style={{
       position: 'fixed',
       inset: 0,
-      background: '#F2F5F8',
+      background: '#0d0f14',
       display: 'grid',
       gridTemplateColumns: `${sidebarWidth}px 1fr`,
       gridTemplateRows: '48px 1fr auto',
