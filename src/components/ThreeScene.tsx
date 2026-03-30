@@ -316,7 +316,7 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov
       grp.current.scale.setScalar(cs + ((ready ? tgt : 0.001) - cs) * dt * 5);
       grp.current.position.y = node.position[1] + Math.sin(t * 0.4 * _flowSpeed + hash(node.id) * 0.01) * 0.06;
       grp.current.rotation.y = Math.sin(t * 0.06 * _flowSpeed + hash(node.id) * 0.001) * 0.05;
-      grp.current.rotation.z = t * cfg.spin * 0.5 * _flowSpeed;
+      // NOTE: intentionally no rotation.z — label is inside this group and must stay anchored below node
     }
     if (ring.current) {
       ring.current.rotation.z += fdt * 0.10;
@@ -576,7 +576,7 @@ function Scene({ nodes, edges, onNodeClick, selectedNodeId, roughnessTexture, gl
 
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
 
-  // BoundingBox auto-focus — compute scene center + adaptive camera offset
+  // BoundingBox auto-focus — FOV-based distance so the entire pathway fits the viewport
   const { centroid, camOffset } = useMemo(() => {
     const box = new THREE.Box3();
     nodes.forEach(n => {
@@ -587,8 +587,14 @@ function Scene({ nodes, edges, onNodeClick, selectedNodeId, roughnessTexture, gl
     const center = new THREE.Vector3();
     const size   = new THREE.Vector3();
     if (!box.isEmpty()) { box.getCenter(center); box.getSize(size); }
-    const maxDim = Math.max(size.x, size.y, size.z, 4);
-    return { centroid: center, camOffset: { y: maxDim * 0.35, z: maxDim * 1.3 + 8 } };
+    // Fit the widest dimension in the viewport using actual FOV math (Canvas fov=44°)
+    // For 16:9 aspect: half-HFOV ≈ 35.5°, half-VFOV = 22°
+    const hTan = Math.tan(35.5 * Math.PI / 180); // horizontal half-FOV tangent
+    const vTan = Math.tan(22  * Math.PI / 180);  // vertical   half-FOV tangent
+    const distForX = (size.x / 2) / hTan;
+    const distForY = (size.y / 2) / vTan;
+    const dist = Math.max(distForX, distForY, 5) * 1.5 + (size.z / 2);
+    return { centroid: center, camOffset: { y: size.y * 0.08, z: dist } };
   }, [nodes]);
 
   const { camera } = useThree();
