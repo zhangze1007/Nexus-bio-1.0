@@ -10,6 +10,13 @@ import type { GateType } from '../../data/mockGECAIR';
 const MONO = "'JetBrains Mono','Fira Code',monospace";
 const SANS = "'Inter',-apple-system,sans-serif";
 
+// Dark theme tokens
+const PANEL_BG = '#10131a';
+const BORDER = 'rgba(255,255,255,0.06)';
+const LABEL = 'rgba(255,255,255,0.28)';
+const VALUE = 'rgba(255,255,255,0.65)';
+const INPUT_BORDER = 'rgba(255,255,255,0.08)';
+
 const PART_COLORS: Record<string, string> = {
   promoter: 'rgba(120,200,255,0.8)',
   rbs: 'rgba(255,200,80,0.8)',
@@ -95,12 +102,12 @@ function ParamSlider({ label, value, min, max, step = 0.05, onChange }: {
   return (
     <div style={{ marginBottom: '12px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-        <span style={{ fontFamily: SANS, fontSize: '11px', color: 'rgba(0,0,0,0.55)' }}>{label}</span>
-        <span style={{ fontFamily: MONO, fontSize: '11px', color: 'rgba(0,0,0,0.7)' }}>{(value * 100).toFixed(0)}%</span>
+        <span style={{ fontFamily: SANS, fontSize: '11px', color: LABEL }}>{label}</span>
+        <span style={{ fontFamily: MONO, fontSize: '11px', color: VALUE }}>{(value * 100).toFixed(0)}%</span>
       </div>
       <input type="range" min={min} max={max} step={step} value={value}
         onChange={e => onChange(parseFloat(e.target.value))}
-        style={{ width: '100%', accentColor: 'rgba(0,0,0,0.5)', cursor: 'pointer' }} />
+        style={{ width: '100%', accentColor: 'rgba(120,180,255,0.8)', cursor: 'pointer' }} />
     </div>
   );
 }
@@ -133,7 +140,7 @@ export default function GECAIRPage() {
 
   return (
     <IDEShell moduleId="gecair">
-      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', background: '#F5F7FA' }}>
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', background: '#0d0f14' }}>
         <AlgorithmInsight
           title="Gene Circuit AI Reasoner"
           description="Hill-function kinetics model promoter activity. Inhibition gates use Hill repression; activation uses Hill induction."
@@ -142,39 +149,39 @@ export default function GECAIRPage() {
 
         <div style={{ flex: 1, display: 'flex', overflow: 'hidden', minHeight: 0 }}>
           {/* Input panel */}
-          <div style={{ width: '240px', flexShrink: 0, overflowY: 'auto', padding: '16px', borderRight: '1px solid rgba(0,0,0,0.07)', background: '#FFFFFF' }}>
-            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(0,0,0,0.35)', margin: '0 0 12px' }}>
+          <div style={{ width: '240px', flexShrink: 0, overflowY: 'auto', padding: '16px', borderRight: `1px solid ${BORDER}`, background: PANEL_BG }}>
+            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: LABEL, margin: '0 0 12px' }}>
               Input Signals
             </p>
 
             <ParamSlider label="Input A strength" value={inputA} min={0} max={1} onChange={setInputA} />
             <ParamSlider label="Input B strength" value={inputB} min={0} max={1} onChange={setInputB} />
 
-            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(0,0,0,0.35)', margin: '16px 0 8px' }}>
+            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: LABEL, margin: '16px 0 8px' }}>
               Output Gate Type
             </p>
             {(['NOT', 'AND', 'OR', 'NAND'] as GateType[]).map(gate => (
               <button key={gate} onClick={() => setGateType(gate)} style={{
                 display: 'block', width: '100%', textAlign: 'left',
                 padding: '6px 10px', marginBottom: '4px',
-                background: gateType === gate ? 'rgba(0,0,0,0.06)' : 'transparent',
-                border: `1px solid ${gateType === gate ? 'rgba(0,0,0,0.18)' : 'rgba(0,0,0,0.08)'}`,
+                background: gateType === gate ? 'rgba(255,255,255,0.08)' : 'transparent',
+                border: `1px solid ${gateType === gate ? 'rgba(255,255,255,0.18)' : INPUT_BORDER}`,
                 borderRadius: '8px',
-                color: gateType === gate ? 'rgba(0,0,0,0.75)' : 'rgba(0,0,0,0.4)',
+                color: gateType === gate ? VALUE : LABEL,
                 fontFamily: SANS, fontSize: '11px', cursor: 'pointer',
               }}>
                 {gate} Gate
               </button>
             ))}
 
-            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(0,0,0,0.35)', margin: '16px 0 8px' }}>
+            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: LABEL, margin: '16px 0 8px' }}>
               Truth Table
             </p>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr>
                   {['A', 'B', 'OUT'].map(h => (
-                    <th key={h} style={{ fontFamily: SANS, fontSize: '9px', color: 'rgba(0,0,0,0.4)', padding: '3px 6px', textAlign: 'center', borderBottom: '1px solid rgba(0,0,0,0.08)' }}>{h}</th>
+                    <th key={h} style={{ fontFamily: SANS, fontSize: '9px', color: LABEL, padding: '3px 6px', textAlign: 'center', borderBottom: `1px solid ${BORDER}` }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -187,9 +194,9 @@ export default function GECAIRPage() {
                     : gateType === 'NAND' ? !(a && b) ? 1 : 0
                     : 1 - a;
                   return (
-                    <tr key={i} style={{ background: i % 2 === 0 ? 'transparent' : 'rgba(0,0,0,0.02)' }}>
+                    <tr key={i} style={{ background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)' }}>
                       {[row.A, row.B, out].map((v, j) => (
-                        <td key={j} style={{ fontFamily: MONO, fontSize: '10px', textAlign: 'center', padding: '4px', color: v ? 'rgba(20,140,80,0.85)' : 'rgba(0,0,0,0.3)' }}>
+                        <td key={j} style={{ fontFamily: MONO, fontSize: '10px', textAlign: 'center', padding: '4px', color: v ? 'rgba(120,220,160,0.85)' : 'rgba(255,255,255,0.25)' }}>
                           {v ? '1' : '0'}
                         </td>
                       ))}
@@ -206,8 +213,8 @@ export default function GECAIRPage() {
           </div>
 
           {/* Results panel */}
-          <div style={{ width: '240px', flexShrink: 0, overflowY: 'auto', padding: '16px', borderLeft: '1px solid rgba(0,0,0,0.07)', background: '#FFFFFF' }}>
-            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(0,0,0,0.35)', margin: '0 0 12px' }}>
+          <div style={{ width: '240px', flexShrink: 0, overflowY: 'auto', padding: '16px', borderLeft: `1px solid ${BORDER}`, background: PANEL_BG }}>
+            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: LABEL, margin: '0 0 12px' }}>
               Circuit Readouts
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -220,7 +227,7 @@ export default function GECAIRPage() {
           </div>
         </div>
 
-        <div style={{ borderTop: '1px solid rgba(0,0,0,0.07)', padding: '8px 16px', display: 'flex', gap: '8px', flexShrink: 0, background: '#FFFFFF' }}>
+        <div style={{ borderTop: `1px solid ${BORDER}`, padding: '8px 16px', display: 'flex', gap: '8px', flexShrink: 0, background: PANEL_BG }}>
           <ExportButton label="Export JSON" data={exportData} filename="gecair-circuit" format="json" />
         </div>
       </div>
