@@ -293,13 +293,9 @@ export default function MetabolicEngPage() {
         tick={readouts.tick}
       />
 
-      {/* ── Center: 3D Pathway Visualization ── */}
+      {/* ── Center: 3D Pathway Visualization — full-screen, panels float over ── */}
       <div style={{ position:'absolute', inset:0, zIndex:5, pointerEvents:'auto' }}>
-        <div style={{
-          position:'absolute',
-          left:'280px', right:'270px',
-          top:'52px', bottom:'40px',
-        }}>
+        <div style={{ position:'absolute', inset:0 }}>
           <ThreeScene
             nodes={activeNodes}
             edges={activeEdges}

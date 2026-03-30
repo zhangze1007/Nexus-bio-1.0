@@ -354,8 +354,7 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov
         </mesh>
       ))}
 
-      {/* 【关键修复】: 固定偏移量，让分子名字死死贴在正下方 */}
-      <Html position={[0, -0.65, 0]} center style={{ pointerEvents: 'none', whiteSpace: 'nowrap' }}>
+      <Html position={[0, -0.5, 0]} center style={{ pointerEvents: 'none', whiteSpace: 'nowrap' }}>
         <div style={{
           color: hov || sel ? '#fff' : 'rgba(160,180,200,0.55)',
           fontSize: '10px', fontWeight: sel ? 600 : 400,
@@ -653,20 +652,20 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, 
               renderer.setSize(width, height, false);
               renderer.toneMapping = THREE.LinearToneMapping;
               renderer.toneMappingExposure = 1.0;
-              renderer.setClearColor(new THREE.Color('#000000'), 1);
+              renderer.setClearColor(0x000000, 0); // transparent — FluidSim shows through
               return renderer;
             };
 
-            const webgl2 = canvas.getContext('webgl2', { antialias: true, powerPreference: 'high-performance', alpha: false });
+            const webgl2 = canvas.getContext('webgl2', { antialias: true, powerPreference: 'high-performance', alpha: true });
             if (webgl2) {
               setRendererMode('webgl2'); setStatus('ready');
-              return applyRendererDefaults(new THREE.WebGLRenderer({ canvas, context: webgl2, antialias: true, powerPreference: 'high-performance', alpha: false }));
+              return applyRendererDefaults(new THREE.WebGLRenderer({ canvas, context: webgl2, antialias: true, powerPreference: 'high-performance', alpha: true }));
             }
 
-            const webgl = canvas.getContext('webgl', { antialias: true, powerPreference: 'high-performance', alpha: false });
+            const webgl = canvas.getContext('webgl', { antialias: true, powerPreference: 'high-performance', alpha: true });
             if (webgl) {
               setRendererMode('webgl'); setStatus('ready');
-              return applyRendererDefaults(new THREE.WebGLRenderer({ canvas, context: webgl, antialias: true, powerPreference: 'high-performance', alpha: false }));
+              return applyRendererDefaults(new THREE.WebGLRenderer({ canvas, context: webgl, antialias: true, powerPreference: 'high-performance', alpha: true }));
             }
             throw new Error('WebGL unavailable');
           }}
