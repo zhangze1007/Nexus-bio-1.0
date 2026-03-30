@@ -10,6 +10,15 @@ import type { DBTLIteration } from '../../types';
 const MONO = "'JetBrains Mono','Fira Code',monospace";
 const SANS = "'Inter',-apple-system,sans-serif";
 
+// Dark theme tokens
+const PANEL_BG = '#10131a';
+const BORDER = 'rgba(255,255,255,0.06)';
+const LABEL = 'rgba(255,255,255,0.28)';
+const VALUE = 'rgba(255,255,255,0.65)';
+const INPUT_BG = 'rgba(255,255,255,0.05)';
+const INPUT_BORDER = 'rgba(255,255,255,0.08)';
+const INPUT_TEXT = 'rgba(255,255,255,0.7)';
+
 const PHASE_COLORS: Record<string, string> = {
   Design: 'rgba(120,180,255,0.8)',
   Build:  'rgba(255,200,80,0.8)',
@@ -93,7 +102,7 @@ export default function DBTLflowPage() {
 
   return (
     <IDEShell moduleId="dbtlflow">
-      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', background: '#F5F7FA' }}>
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', background: '#0d0f14' }}>
         <AlgorithmInsight
           title="Design-Build-Test-Learn Tracker"
           description="Iterative experimental optimization. Each cycle records a hypothesis, measured result, and learning for the next design."
@@ -102,13 +111,13 @@ export default function DBTLflowPage() {
 
         <div style={{ flex: 1, display: 'flex', overflow: 'hidden', minHeight: 0 }}>
           {/* Input panel */}
-          <div style={{ width: '260px', flexShrink: 0, overflowY: 'auto', padding: '16px', borderRight: '1px solid rgba(0,0,0,0.07)', background: '#FFFFFF' }}>
-            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(0,0,0,0.35)', margin: '0 0 12px' }}>
+          <div style={{ width: '260px', flexShrink: 0, overflowY: 'auto', padding: '16px', borderRight: `1px solid ${BORDER}`, background: PANEL_BG }}>
+            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: LABEL, margin: '0 0 12px' }}>
               Add Iteration
             </p>
 
             <div style={{ marginBottom: '10px' }}>
-              <label style={{ fontFamily: SANS, fontSize: '11px', color: 'rgba(0,0,0,0.5)', display: 'block', marginBottom: '4px' }}>
+              <label style={{ fontFamily: SANS, fontSize: '11px', color: LABEL, display: 'block', marginBottom: '4px' }}>
                 Hypothesis
               </label>
               <textarea value={hypothesis} onChange={e => setHypothesis(e.target.value)}
@@ -116,10 +125,10 @@ export default function DBTLflowPage() {
                 rows={3}
                 style={{
                   width: '100%', padding: '6px 8px', boxSizing: 'border-box',
-                  background: 'rgba(0,0,0,0.04)',
-                  border: '1px solid rgba(0,0,0,0.10)',
+                  background: INPUT_BG,
+                  border: `1px solid ${INPUT_BORDER}`,
                   borderRadius: '8px',
-                  color: 'rgba(0,0,0,0.75)',
+                  color: INPUT_TEXT,
                   fontFamily: SANS, fontSize: '11px',
                   resize: 'vertical',
                   outline: 'none',
@@ -129,33 +138,33 @@ export default function DBTLflowPage() {
 
             <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
               <div style={{ flex: 1 }}>
-                <label style={{ fontFamily: SANS, fontSize: '11px', color: 'rgba(0,0,0,0.5)', display: 'block', marginBottom: '4px' }}>
+                <label style={{ fontFamily: SANS, fontSize: '11px', color: LABEL, display: 'block', marginBottom: '4px' }}>
                   Result
                 </label>
                 <input type="number" value={result} onChange={e => setResult(e.target.value)}
                   placeholder="0.0"
                   style={{
                     width: '100%', padding: '5px 8px', boxSizing: 'border-box',
-                    background: 'rgba(0,0,0,0.04)',
-                    border: '1px solid rgba(0,0,0,0.10)',
+                    background: INPUT_BG,
+                    border: `1px solid ${INPUT_BORDER}`,
                     borderRadius: '8px',
-                    color: 'rgba(0,0,0,0.75)',
+                    color: INPUT_TEXT,
                     fontFamily: MONO, fontSize: '12px',
                     outline: 'none',
                   }}
                 />
               </div>
               <div style={{ width: '70px' }}>
-                <label style={{ fontFamily: SANS, fontSize: '11px', color: 'rgba(0,0,0,0.5)', display: 'block', marginBottom: '4px' }}>
+                <label style={{ fontFamily: SANS, fontSize: '11px', color: LABEL, display: 'block', marginBottom: '4px' }}>
                   Unit
                 </label>
                 <input value={unit} onChange={e => setUnit(e.target.value)}
                   style={{
                     width: '100%', padding: '5px 6px', boxSizing: 'border-box',
-                    background: 'rgba(0,0,0,0.04)',
-                    border: '1px solid rgba(0,0,0,0.10)',
+                    background: INPUT_BG,
+                    border: `1px solid ${INPUT_BORDER}`,
                     borderRadius: '8px',
-                    color: 'rgba(0,0,0,0.75)',
+                    color: INPUT_TEXT,
                     fontFamily: MONO, fontSize: '11px',
                     outline: 'none',
                   }}
@@ -167,10 +176,10 @@ export default function DBTLflowPage() {
               {[true, false].map(p => (
                 <button key={String(p)} onClick={() => setPassed(p)} style={{
                   flex: 1, padding: '6px',
-                  background: passed === p ? (p ? 'rgba(200,240,224,0.4)' : 'rgba(255,80,80,0.08)') : 'transparent',
-                  border: `1px solid ${passed === p ? (p ? 'rgba(0,150,80,0.3)' : 'rgba(200,60,60,0.3)') : 'rgba(0,0,0,0.08)'}`,
+                  background: passed === p ? (p ? 'rgba(120,220,160,0.12)' : 'rgba(255,80,80,0.1)') : 'transparent',
+                  border: `1px solid ${passed === p ? (p ? 'rgba(120,220,160,0.3)' : 'rgba(255,80,80,0.3)') : INPUT_BORDER}`,
                   borderRadius: '8px',
-                  color: passed === p ? (p ? 'rgba(0,120,60,0.9)' : 'rgba(180,40,40,0.9)') : 'rgba(0,0,0,0.35)',
+                  color: passed === p ? (p ? 'rgba(120,220,160,0.9)' : 'rgba(255,100,80,0.9)') : LABEL,
                   fontFamily: SANS, fontSize: '11px', cursor: 'pointer',
                 }}>
                   {p ? '✓ Pass' : '✗ Fail'}
@@ -180,21 +189,21 @@ export default function DBTLflowPage() {
 
             <button onClick={addIteration} disabled={!hypothesis.trim() || !result.trim()} style={{
               width: '100%', padding: '8px',
-              background: 'rgba(0,0,0,0.05)',
-              border: '1px solid rgba(0,0,0,0.12)',
+              background: 'rgba(255,255,255,0.05)',
+              border: `1px solid ${INPUT_BORDER}`,
               borderRadius: '8px',
-              color: 'rgba(0,0,0,0.65)',
+              color: VALUE,
               fontFamily: SANS, fontSize: '11px', cursor: 'pointer',
             }}>
               + Add Iteration
             </button>
 
-            <div style={{ marginTop: '16px', padding: '10px', background: 'rgba(200,240,224,0.15)', borderRadius: '10px', border: '1px solid rgba(200,240,224,0.5)' }}>
-              <p style={{ fontFamily: SANS, fontSize: '9px', color: 'rgba(0,0,0,0.35)', margin: '0 0 6px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Best Result</p>
-              <p style={{ fontFamily: MONO, fontSize: '14px', color: 'rgba(20,140,80,0.85)', margin: '0 0 4px' }}>
+            <div style={{ marginTop: '16px', padding: '10px', background: 'rgba(120,220,160,0.06)', borderRadius: '10px', border: '1px solid rgba(120,220,160,0.15)' }}>
+              <p style={{ fontFamily: SANS, fontSize: '9px', color: LABEL, margin: '0 0 6px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Best Result</p>
+              <p style={{ fontFamily: MONO, fontSize: '14px', color: 'rgba(120,220,160,0.85)', margin: '0 0 4px' }}>
                 {bestIteration?.result} {bestIteration?.unit}
               </p>
-              <p style={{ fontFamily: SANS, fontSize: '10px', color: 'rgba(0,0,0,0.4)', margin: 0, lineHeight: 1.4 }}>
+              <p style={{ fontFamily: SANS, fontSize: '10px', color: LABEL, margin: 0, lineHeight: 1.4 }}>
                 {bestIteration?.hypothesis.slice(0, 60)}…
               </p>
             </div>
@@ -206,8 +215,8 @@ export default function DBTLflowPage() {
           </div>
 
           {/* Results panel */}
-          <div style={{ width: '220px', flexShrink: 0, overflowY: 'auto', padding: '16px', borderLeft: '1px solid rgba(0,0,0,0.07)', background: '#FFFFFF' }}>
-            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(0,0,0,0.35)', margin: '0 0 12px' }}>
+          <div style={{ width: '220px', flexShrink: 0, overflowY: 'auto', padding: '16px', borderLeft: `1px solid ${BORDER}`, background: PANEL_BG }}>
+            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: LABEL, margin: '0 0 12px' }}>
               Campaign Summary
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -219,7 +228,7 @@ export default function DBTLflowPage() {
           </div>
         </div>
 
-        <div style={{ borderTop: '1px solid rgba(0,0,0,0.07)', padding: '8px 16px', display: 'flex', gap: '8px', flexShrink: 0, background: '#FFFFFF' }}>
+        <div style={{ borderTop: `1px solid ${BORDER}`, padding: '8px 16px', display: 'flex', gap: '8px', flexShrink: 0, background: PANEL_BG }}>
           <ExportButton label="Export JSON" data={iterations} filename="dbtlflow-iterations" format="json" />
           <ExportButton label="Export CSV" data={iterations} filename="dbtlflow-iterations" format="csv" />
         </div>
