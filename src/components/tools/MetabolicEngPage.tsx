@@ -121,7 +121,7 @@ function TopBar({ state, stateLabel, tick }: TopBarProps) {
 
 // ── Main orchestrator ──────────────────────────────────────────────────
 
-export default function MetabolicEngPage() {
+export default function MetabolicEngPage({ embedded = false }: { embedded?: boolean } = {}) {
   const [snapshot, send] = useMachine(metabolicMachine);
   const { params, readouts, rateHistory } = snapshot.context;
   const state = snapshot.value as 'idle' | 'simulating' | 'stress_test' | 'equilibrium';
@@ -274,7 +274,7 @@ export default function MetabolicEngPage() {
 
   return (
     <div style={{
-      position:'fixed', inset:0,
+      position: embedded ? 'absolute' : 'fixed', inset:0,
       background:'#000000',
       overflow:'hidden', userSelect:'none',
     }}>

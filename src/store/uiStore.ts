@@ -7,7 +7,7 @@
 
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
-import type { PathwayNode, PathwayEdge } from '../types';
+import type { PathwayNode, PathwayEdge, ConsoleEntry } from '../types';
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -45,6 +45,10 @@ interface UIState {
   // Dev mode
   devMode: boolean;
 
+  // ── IDE Console ───────────────────────────────────────────────────────
+  consoleEntries: ConsoleEntry[];
+  consoleOpen: boolean;
+
   // ── Actions ──────────────────────────────────────────────────────────
   setSelectedNode: (node: PathwayNode | null) => void;
   setAiPathway: (nodes: PathwayNode[], edges: PathwayEdge[]) => void;
@@ -56,6 +60,9 @@ interface UIState {
   setRendererMode: (mode: RendererMode) => void;
   setFluidPointer: (p: FluidPointer) => void;
   toggleDevMode: () => void;
+  appendConsole: (entry: Omit<ConsoleEntry, 'id' | 'timestamp'>) => void;
+  clearConsole: () => void;
+  toggleConsole: () => void;
 }
 
 // ── Store ──────────────────────────────────────────────────────────────
@@ -83,6 +90,10 @@ export const useUIStore = create<UIState>()(
     // Dev
     devMode: false,
 
+    // IDE Console
+    consoleEntries: [],
+    consoleOpen: false,
+
     // ── Actions ────────────────────────────────────────────────────────
 
     setSelectedNode: (node) =>
@@ -109,6 +120,18 @@ export const useUIStore = create<UIState>()(
     setFluidPointer: (p) => set({ fluidPointer: p }),
 
     toggleDevMode: () => set((s) => ({ devMode: !s.devMode })),
+
+    appendConsole: (entry) => set((s) => ({
+      consoleEntries: [...s.consoleEntries, {
+        ...entry,
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        timestamp: Date.now(),
+      }],
+    })),
+
+    clearConsole: () => set({ consoleEntries: [] }),
+
+    toggleConsole: () => set((s) => ({ consoleOpen: !s.consoleOpen })),
   }))
 );
 
@@ -124,3 +147,4 @@ export const selectAuditTrail    = (s: UIState) => ({
   open: s.auditTrailOpen,
   nodeId: s.auditTrailNodeId,
 });
+export const selectConsole       = (s: UIState) => ({ open: s.consoleOpen, entries: s.consoleEntries });

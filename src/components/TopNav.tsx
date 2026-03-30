@@ -16,7 +16,7 @@ const BRAND = "'Space Grotesk',-apple-system,sans-serif";
 const NAV_LINKS: [string, string][] = [
   ['Home',     '/'],
   ['Research', '/research'],
-  ['Tools',    '/tools/metabolic-eng'],
+  ['Tools',    '/tools/pathd'],
   ['Analyze',  '/analyze'],
 ];
 

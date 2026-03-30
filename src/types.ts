@@ -145,7 +145,101 @@ export function sanitizeNodeId(id: string): string {
   return id.toLowerCase().replace(/[^a-z0-9_]/g, '_').slice(0, 64);
 }
 
-// Artemisinin showcase CIDs
+// ── IDE Console entry ─────────────────────────────────────────────────────────
+export interface ConsoleEntry {
+  id: string;
+  timestamp: number;
+  level: 'info' | 'warn' | 'error' | 'success';
+  module: string;
+  message: string;
+}
+
+// ── MODULE: FBAsim ────────────────────────────────────────────────────────────
+export interface FBAReaction {
+  id: string;
+  name: string;
+  subsystem?: string;
+  lb: number;
+  ub: number;
+  flux?: number;
+}
+export interface FBAResult {
+  objectiveValue: number;
+  reactions: FBAReaction[];
+  shadowPrices: Record<string, number>;
+  feasible: boolean;
+}
+
+// ── MODULE: PROEVOL ───────────────────────────────────────────────────────────
+export interface Mutation { position: number; from: string; to: string; ddG?: number; }
+export interface FitnessPoint { mutationCount: number; fitness: number; sequence: string; }
+
+// ── MODULE: GECAIR ────────────────────────────────────────────────────────────
+export type GeneticPartType = 'promoter' | 'rbs' | 'cds' | 'terminator';
+export interface GeneticPart { id: string; type: GeneticPartType; strength?: number; label?: string; }
+export interface CircuitNode { id: string; parts: GeneticPart[]; outputLevel?: number; }
+
+// ── MODULE: DYNCON ────────────────────────────────────────────────────────────
+export interface ODEState { time: number; biomass: number; substrate: number; product: number; dissolvedO2: number; }
+export interface ControllerParams { kp: number; ki: number; kd: number; setpoint: number; }
+
+// ── MODULE: DBTLflow ──────────────────────────────────────────────────────────
+export interface DBTLIteration {
+  id: number;
+  phase: 'Design' | 'Build' | 'Test' | 'Learn';
+  hypothesis: string;
+  result: number;
+  unit: string;
+  passed: boolean;
+  notes?: string;
+}
+
+// ── MODULE: MULTIO ────────────────────────────────────────────────────────────
+export interface OmicsRow {
+  id: string;
+  gene: string;
+  transcript?: number;
+  protein?: number;
+  metabolite?: number;
+  fold_change?: number;
+  pValue?: number;
+}
+
+// ── MODULE: CETHX ─────────────────────────────────────────────────────────────
+export interface ThermoStep { step: string; deltaG: number; cumulative: number; atpYield: number; }
+export interface ThermoState { atp_yield: number; nadh_yield: number; entropy_production: number; gibbs_free_energy: number; }
+
+// ── MODULE: GENMIM ────────────────────────────────────────────────────────────
+export interface CRISPRiTarget {
+  gene: string;
+  position: number;
+  essential: boolean;
+  knockdown_efficiency: number;
+  phenotype?: string;
+  growth_impact?: number;
+}
+
+// ── MODULE: NEXAI ─────────────────────────────────────────────────────────────
+export interface AIQuery { id: string; text: string; timestamp: number; }
+export interface CitationNode {
+  id: string;
+  title: string;
+  authors: string;
+  year: number;
+  doi?: string;
+  relevance: number;
+  x?: number;
+  y?: number;
+}
+export interface NEXAIResult {
+  query: string;
+  answer: string;
+  citations: CitationNode[];
+  confidence: number;
+  generatedAt: number;
+}
+
+// ── Artemisinin showcase CIDs
 export const SHOWCASE_PUBCHEM_CIDS: Record<string, number> = {
   acetyl_coa: 444493,
   hmg_coa: 439400,
