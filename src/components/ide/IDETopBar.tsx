@@ -1,5 +1,6 @@
 'use client';
-import { Terminal } from 'lucide-react';
+import Link from 'next/link';
+import { Terminal, Home } from 'lucide-react';
 import { useUIStore } from '../../store/uiStore';
 
 const SANS = "'Inter',-apple-system,sans-serif";
@@ -17,6 +18,10 @@ const MODULE_NAMES: Record<string, string> = {
   genmim:   'Gene Minimization',
   nexai:    'Axon — Research Agent',
 };
+
+const BORDER = 'rgba(255,255,255,0.06)';
+const LABEL  = 'rgba(255,255,255,0.28)';
+const VALUE  = 'rgba(255,255,255,0.55)';
 
 interface IDETopBarProps {
   moduleId: string;
@@ -38,20 +43,34 @@ export default function IDETopBar({ moduleId, actions }: IDETopBarProps) {
       alignItems: 'center',
       justifyContent: 'space-between',
       padding: '0 16px',
-      background: '#FFFFFF',
-      borderBottom: '1px solid rgba(0,0,0,0.07)',
+      background: '#10131a',
+      borderBottom: `1px solid ${BORDER}`,
     }}>
       {/* Breadcrumb */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-        <span style={{ fontFamily: SANS, fontSize: '11px', color: 'rgba(0,0,0,0.3)', letterSpacing: '0.01em' }}>
+        <Link href="/" style={{
+          display: 'flex', alignItems: 'center', gap: '4px',
+          textDecoration: 'none',
+          color: LABEL,
+          fontFamily: SANS, fontSize: '11px',
+          transition: 'color 0.15s',
+        }}
+          onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = VALUE}
+          onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = LABEL}
+        >
+          <Home size={11} />
+          Home
+        </Link>
+        <span style={{ color: 'rgba(255,255,255,0.15)', fontSize: '13px', lineHeight: 1 }}>/</span>
+        <span style={{ fontFamily: SANS, fontSize: '11px', color: LABEL, letterSpacing: '0.01em' }}>
           Tools
         </span>
-        <span style={{ color: 'rgba(0,0,0,0.2)', fontSize: '13px', lineHeight: 1 }}>/</span>
-        <span style={{ fontFamily: SANS, fontSize: '11px', fontWeight: 600, color: 'rgba(0,0,0,0.6)', letterSpacing: '0.01em' }}>
+        <span style={{ color: 'rgba(255,255,255,0.15)', fontSize: '13px', lineHeight: 1 }}>/</span>
+        <span style={{ fontFamily: SANS, fontSize: '11px', fontWeight: 600, color: VALUE, letterSpacing: '0.01em' }}>
           {moduleId.toUpperCase()}
         </span>
-        <span style={{ color: 'rgba(0,0,0,0.2)', margin: '0 2px' }}>·</span>
-        <span style={{ fontFamily: SANS, fontSize: '11px', color: 'rgba(0,0,0,0.4)' }}>
+        <span style={{ color: 'rgba(255,255,255,0.15)', margin: '0 2px' }}>·</span>
+        <span style={{ fontFamily: SANS, fontSize: '11px', color: LABEL }}>
           {MODULE_NAMES[moduleId] ?? moduleId}
         </span>
       </div>
@@ -64,28 +83,28 @@ export default function IDETopBar({ moduleId, actions }: IDETopBarProps) {
           style={{
             display: 'flex', alignItems: 'center', gap: '5px',
             padding: '4px 10px',
-            background: consoleOpen ? 'rgba(0,0,0,0.06)' : 'transparent',
-            border: `1px solid ${consoleOpen ? 'rgba(0,0,0,0.15)' : 'rgba(0,0,0,0.12)'}`,
+            background: consoleOpen ? 'rgba(255,255,255,0.06)' : 'transparent',
+            border: `1px solid ${consoleOpen ? 'rgba(255,255,255,0.15)' : BORDER}`,
             borderRadius: '6px',
-            color: errorCount > 0 ? '#E05040' : 'rgba(0,0,0,0.45)',
+            color: errorCount > 0 ? '#E05040' : LABEL,
             fontFamily: SANS,
             fontSize: '11px',
             cursor: 'pointer',
             transition: 'all 0.15s',
           }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(0,0,0,0.05)'; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = consoleOpen ? 'rgba(0,0,0,0.06)' : 'transparent'; }}
+          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.05)'; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = consoleOpen ? 'rgba(255,255,255,0.06)' : 'transparent'; }}
         >
           <Terminal size={11} />
           Console
           {consoleEntries.length > 0 && (
             <span style={{
-              background: errorCount > 0 ? 'rgba(224,80,64,0.12)' : 'rgba(0,0,0,0.07)',
+              background: errorCount > 0 ? 'rgba(224,80,64,0.15)' : 'rgba(255,255,255,0.07)',
               borderRadius: '10px',
               padding: '0 5px',
               fontSize: '9px',
               fontFamily: MONO,
-              color: errorCount > 0 ? '#E05040' : 'rgba(0,0,0,0.4)',
+              color: errorCount > 0 ? '#E05040' : LABEL,
             }}>
               {consoleEntries.length}
             </span>
