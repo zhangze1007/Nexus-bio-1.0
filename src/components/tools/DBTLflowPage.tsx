@@ -1,16 +1,32 @@
 'use client';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import IDEShell from '../ide/IDEShell';
 import AlgorithmInsight from '../ide/shared/AlgorithmInsight';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
 import { INITIAL_ITERATIONS, appendIteration } from '../../data/mockDBTL';
-import type { DBTLIteration } from '../../types';
+import { ProtocolGenerator } from '../../utils/protocol-generator';
+import { AutomatedFeedbackLoop } from '../../utils/feedback-loop';
+import type {
+  DBTLIteration,
+  GeneratedProtocol,
+  FeedbackLoopResult,
+  QCFlag,
+  NextIterationSuggestion,
+  DBTLPhase,
+} from '../../types';
 
+/* ── Design Tokens ── */
 const MONO = "'JetBrains Mono','Fira Code',monospace";
 const SANS = "'Inter',-apple-system,sans-serif";
 
-// Dark theme tokens
+const PHASE_PASTEL: Record<string, string> = {
+  Design: '#C6DEF1',
+  Build:  '#FAEDCB',
+  Test:   '#F2C6DE',
+  Learn:  '#C9E4DE',
+};
+
 const PANEL_BG = '#10131a';
 const BORDER = 'rgba(255,255,255,0.06)';
 const LABEL = 'rgba(255,255,255,0.28)';
@@ -19,31 +35,41 @@ const INPUT_BG = 'rgba(255,255,255,0.05)';
 const INPUT_BORDER = 'rgba(255,255,255,0.08)';
 const INPUT_TEXT = 'rgba(255,255,255,0.7)';
 
-const PHASE_COLORS: Record<string, string> = {
-  Design: 'rgba(120,180,255,0.8)',
-  Build:  'rgba(255,200,80,0.8)',
-  Test:   'rgba(120,255,180,0.8)',
-  Learn:  'rgba(200,120,255,0.8)',
+const GLASS: React.CSSProperties = {
+  borderRadius: '24px',
+  backdropFilter: 'blur(12px)',
+  background: 'rgba(255,255,255,0.04)',
+  border: '1px solid rgba(255,255,255,0.08)',
 };
 
+const PHASES: DBTLPhase[] = ['Design', 'Build', 'Test', 'Learn'];
+
+/* ── Timeline (preserved) ── */
 function Timeline({ iterations }: { iterations: DBTLIteration[] }) {
   const maxResult = Math.max(...iterations.map(i => i.result));
 
   return (
-    <svg viewBox={`0 0 520 ${Math.max(360, iterations.length * 60 + 40)}`}
-      style={{ width: '100%', height: '100%' }}>
+    <svg
+      viewBox={`0 0 520 ${Math.max(360, iterations.length * 60 + 40)}`}
+      style={{ width: '100%', height: '100%' }}
+    >
       <rect width="520" height={Math.max(360, iterations.length * 60 + 40)} fill="#0d0f14" />
       {iterations.length > 1 && (
         <polyline
-          points={iterations.map((it, i) => `${160 + (it.result / maxResult) * 280},${30 + i * 60 + 20}`).join(' ')}
-          fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth={1} strokeDasharray="4 3"
+          points={iterations
+            .map((it, i) => `${160 + (it.result / maxResult) * 280},${30 + i * 60 + 20}`)
+            .join(' ')}
+          fill="none"
+          stroke="rgba(255,255,255,0.1)"
+          strokeWidth={1}
+          strokeDasharray="4 3"
         />
       )}
       <line x1={160} y1={20} x2={160} y2={30 + iterations.length * 60} stroke="rgba(255,255,255,0.08)" />
       {iterations.map((it, i) => {
         const y = 30 + i * 60;
         const barW = (it.result / maxResult) * 280;
-        const phaseColor = PHASE_COLORS[it.phase] ?? 'rgba(255,255,255,0.4)';
+        const phaseColor = PHASE_PASTEL[it.phase] ?? 'rgba(255,255,255,0.4)';
         return (
           <g key={it.id}>
             <rect x={4} y={y + 8} width={60} height={18} rx="3"
@@ -72,7 +98,9 @@ function Timeline({ iterations }: { iterations: DBTLIteration[] }) {
           </g>
         );
       })}
-      <text x={160} y={30 + iterations.length * 60 + 16} fontFamily={MONO} fontSize="8" fill="rgba(255,255,255,0.2)">0</text>
+      <text x={160} y={30 + iterations.length * 60 + 16} fontFamily={MONO} fontSize="8" fill="rgba(255,255,255,0.2)">
+        0
+      </text>
       <text x={440} y={30 + iterations.length * 60 + 16} fontFamily={MONO} fontSize="8" fill="rgba(255,255,255,0.2)">
         {maxResult.toFixed(0)} {iterations[0]?.unit}
       </text>
@@ -80,19 +108,104 @@ function Timeline({ iterations }: { iterations: DBTLIteration[] }) {
   );
 }
 
+/* ── Apple-style Cycle Progress Ring ── */
+function CycleProgressRing({
+  currentPhase,
+  iterationCount,
+}: {
+  currentPhase: DBTLPhase;
+  iterationCount: number;
+}) {
+  const phaseIndex = PHASES.indexOf(currentPhase);
+  const progress = (phaseIndex + 1) / PHASES.length; // 0.25 → 1.0
+  const color = PHASE_PASTEL[currentPhase] ?? '#C6DEF1';
+
+  const size = 140;
+  const stroke = 8;
+  const radius = (size - stroke) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const dashOffset = circumference * (1 - progress);
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '16px 0' }}>
+      <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
+        {/* Track */}
+        <circle
+          cx={size / 2} cy={size / 2} r={radius}
+          fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={stroke}
+        />
+        {/* Progress arc */}
+        <circle
+          cx={size / 2} cy={size / 2} r={radius}
+          fill="none" stroke={color} strokeWidth={stroke}
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={dashOffset}
+          style={{ transition: 'stroke-dashoffset 0.6s ease, stroke 0.4s ease' }}
+        />
+      </svg>
+      {/* Center labels (overlaid) */}
+      <div style={{
+        marginTop: -size + stroke,
+        width: size,
+        height: size - stroke * 2,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        pointerEvents: 'none',
+      }}>
+        <span style={{
+          fontFamily: SANS, fontSize: '11px', fontWeight: 600,
+          color, letterSpacing: '0.04em',
+        }}>
+          {currentPhase.toUpperCase()}
+        </span>
+        <span style={{
+          fontFamily: MONO, fontSize: '20px', fontWeight: 700,
+          color: VALUE, marginTop: '2px',
+        }}>
+          {iterationCount}
+        </span>
+        <span style={{ fontFamily: SANS, fontSize: '9px', color: LABEL }}>
+          iterations
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/* ── Main Page Component ── */
 export default function DBTLflowPage() {
+  const generator = useMemo(() => new ProtocolGenerator(), []);
+
+  // Iteration state (preserved)
   const [iterations, setIterations] = useState<DBTLIteration[]>(INITIAL_ITERATIONS);
   const [hypothesis, setHypothesis] = useState('');
   const [result, setResult] = useState('');
   const [unit, setUnit] = useState('mg/L');
   const [passed, setPassed] = useState(true);
 
-  const bestIteration = iterations.reduce((a, b) => b.result > a.result ? b : a, iterations[0]);
-  const improvementRate = iterations.length > 1
-    ? ((iterations[iterations.length - 1].result - iterations[0].result) / iterations.length).toFixed(2)
-    : '0';
-  const passRate = (iterations.filter(i => i.passed).length / iterations.length * 100).toFixed(0);
+  // Protocol state
+  const [generatedProtocol, setGeneratedProtocol] = useState<GeneratedProtocol | null>(null);
+  const [protocolExpanded, setProtocolExpanded] = useState(false);
 
+  // Feedback loop state
+  const [feedbackResult, setFeedbackResult] = useState<FeedbackLoopResult | null>(null);
+  const [feedbackLoading, setFeedbackLoading] = useState(false);
+
+  // Derived values (preserved)
+  const bestIteration = iterations.reduce((a, b) => (b.result > a.result ? b : a), iterations[0]);
+  const improvementRate =
+    iterations.length > 1
+      ? ((iterations[iterations.length - 1].result - iterations[0].result) / iterations.length).toFixed(2)
+      : '0';
+  const passRate = ((iterations.filter(i => i.passed).length / iterations.length) * 100).toFixed(0);
+
+  const latestIteration = iterations[iterations.length - 1];
+  const currentPhase: DBTLPhase = latestIteration?.phase ?? 'Design';
+
+  /* ── Handlers ── */
   function addIteration() {
     if (!hypothesis.trim() || !result.trim()) return;
     setIterations(prev => appendIteration(prev, hypothesis, parseFloat(result), unit, passed));
@@ -100,6 +213,68 @@ export default function DBTLflowPage() {
     setResult('');
   }
 
+  function handleGenerateProtocol() {
+    if (!latestIteration) return;
+    const proto = generator.generate(latestIteration);
+    setGeneratedProtocol(proto);
+    setProtocolExpanded(true);
+  }
+
+  function handleDownloadProtocol() {
+    if (!generatedProtocol) return;
+    const blob = new Blob([generatedProtocol.python_code], { type: 'text/x-python' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${generatedProtocol.metadata.protocolName.replace(/\s+/g, '_')}.py`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function handleCSVUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !latestIteration) return;
+    setFeedbackLoading(true);
+    const reader = new FileReader();
+    reader.onload = () => {
+      const csvText = reader.result as string;
+      try {
+        const fbResult = AutomatedFeedbackLoop(csvText, latestIteration, 10, 20);
+        setFeedbackResult(fbResult);
+      } catch {
+        setFeedbackResult(null);
+      }
+      setFeedbackLoading(false);
+    };
+    reader.readAsText(file);
+  }
+
+  /* ── Shared input style ── */
+  const inputBase: React.CSSProperties = {
+    width: '100%',
+    padding: '5px 8px',
+    boxSizing: 'border-box',
+    background: INPUT_BG,
+    border: `1px solid ${INPUT_BORDER}`,
+    borderRadius: '8px',
+    color: INPUT_TEXT,
+    fontFamily: MONO,
+    fontSize: '12px',
+    outline: 'none',
+  };
+
+  const sectionLabel: React.CSSProperties = {
+    fontFamily: SANS,
+    fontSize: '9px',
+    textTransform: 'uppercase',
+    letterSpacing: '0.1em',
+    color: LABEL,
+    margin: '0 0 12px',
+  };
+
+  /* ── Render ── */
   return (
     <IDEShell moduleId="dbtlflow">
       <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', background: '#0d0f14' }}>
@@ -110,70 +285,63 @@ export default function DBTLflowPage() {
         />
 
         <div style={{ flex: 1, display: 'flex', overflow: 'hidden', minHeight: 0 }}>
-          {/* Input panel */}
-          <div style={{ width: '260px', flexShrink: 0, overflowY: 'auto', padding: '16px', borderRight: `1px solid ${BORDER}`, background: PANEL_BG }}>
-            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: LABEL, margin: '0 0 12px' }}>
-              Add Iteration
-            </p>
 
+          {/* ═══════ LEFT PANEL: Input + Protocol ═══════ */}
+          <div style={{
+            width: '260px', flexShrink: 0, overflowY: 'auto', padding: '16px',
+            borderRight: `1px solid ${BORDER}`, background: PANEL_BG,
+          }}>
+            <p style={sectionLabel}>Add Iteration</p>
+
+            {/* Hypothesis */}
             <div style={{ marginBottom: '10px' }}>
               <label style={{ fontFamily: SANS, fontSize: '11px', color: LABEL, display: 'block', marginBottom: '4px' }}>
                 Hypothesis
               </label>
-              <textarea value={hypothesis} onChange={e => setHypothesis(e.target.value)}
+              <textarea
+                value={hypothesis}
+                onChange={e => setHypothesis(e.target.value)}
                 placeholder="Describe the engineering hypothesis..."
                 rows={3}
                 style={{
-                  width: '100%', padding: '6px 8px', boxSizing: 'border-box',
-                  background: INPUT_BG,
-                  border: `1px solid ${INPUT_BORDER}`,
-                  borderRadius: '8px',
-                  color: INPUT_TEXT,
-                  fontFamily: SANS, fontSize: '11px',
+                  ...inputBase,
+                  padding: '6px 8px',
+                  fontFamily: SANS,
+                  fontSize: '11px',
                   resize: 'vertical',
-                  outline: 'none',
                 }}
               />
             </div>
 
+            {/* Result + Unit */}
             <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
               <div style={{ flex: 1 }}>
                 <label style={{ fontFamily: SANS, fontSize: '11px', color: LABEL, display: 'block', marginBottom: '4px' }}>
                   Result
                 </label>
-                <input type="number" value={result} onChange={e => setResult(e.target.value)}
+                <input
+                  type="number"
+                  value={result}
+                  onChange={e => setResult(e.target.value)}
                   placeholder="0.0"
-                  style={{
-                    width: '100%', padding: '5px 8px', boxSizing: 'border-box',
-                    background: INPUT_BG,
-                    border: `1px solid ${INPUT_BORDER}`,
-                    borderRadius: '8px',
-                    color: INPUT_TEXT,
-                    fontFamily: MONO, fontSize: '12px',
-                    outline: 'none',
-                  }}
+                  style={inputBase}
                 />
               </div>
               <div style={{ width: '70px' }}>
                 <label style={{ fontFamily: SANS, fontSize: '11px', color: LABEL, display: 'block', marginBottom: '4px' }}>
                   Unit
                 </label>
-                <input value={unit} onChange={e => setUnit(e.target.value)}
-                  style={{
-                    width: '100%', padding: '5px 6px', boxSizing: 'border-box',
-                    background: INPUT_BG,
-                    border: `1px solid ${INPUT_BORDER}`,
-                    borderRadius: '8px',
-                    color: INPUT_TEXT,
-                    fontFamily: MONO, fontSize: '11px',
-                    outline: 'none',
-                  }}
+                <input
+                  value={unit}
+                  onChange={e => setUnit(e.target.value)}
+                  style={{ ...inputBase, padding: '5px 6px', fontSize: '11px' }}
                 />
               </div>
             </div>
 
+            {/* Pass / Fail */}
             <div style={{ display: 'flex', gap: '8px', marginBottom: '14px' }}>
-              {[true, false].map(p => (
+              {([true, false] as const).map(p => (
                 <button key={String(p)} onClick={() => setPassed(p)} style={{
                   flex: 1, padding: '6px',
                   background: passed === p ? (p ? 'rgba(120,220,160,0.12)' : 'rgba(255,80,80,0.1)') : 'transparent',
@@ -187,6 +355,7 @@ export default function DBTLflowPage() {
               ))}
             </div>
 
+            {/* Add iteration button */}
             <button onClick={addIteration} disabled={!hypothesis.trim() || !result.trim()} style={{
               width: '100%', padding: '8px',
               background: 'rgba(255,255,255,0.05)',
@@ -198,8 +367,15 @@ export default function DBTLflowPage() {
               + Add Iteration
             </button>
 
-            <div style={{ marginTop: '16px', padding: '10px', background: 'rgba(120,220,160,0.06)', borderRadius: '10px', border: '1px solid rgba(120,220,160,0.15)' }}>
-              <p style={{ fontFamily: SANS, fontSize: '9px', color: LABEL, margin: '0 0 6px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Best Result</p>
+            {/* Best Result */}
+            <div style={{
+              marginTop: '16px', padding: '10px',
+              background: 'rgba(120,220,160,0.06)', borderRadius: '10px',
+              border: '1px solid rgba(120,220,160,0.15)',
+            }}>
+              <p style={{ fontFamily: SANS, fontSize: '9px', color: LABEL, margin: '0 0 6px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                Best Result
+              </p>
               <p style={{ fontFamily: MONO, fontSize: '14px', color: 'rgba(120,220,160,0.85)', margin: '0 0 4px' }}>
                 {bestIteration?.result} {bestIteration?.unit}
               </p>
@@ -207,28 +383,254 @@ export default function DBTLflowPage() {
                 {bestIteration?.hypothesis.slice(0, 60)}…
               </p>
             </div>
+
+            {/* ── Protocol Generation ── */}
+            <div style={{ marginTop: '16px' }}>
+              <p style={sectionLabel}>Protocol Generation</p>
+              <button onClick={handleGenerateProtocol} disabled={!latestIteration} style={{
+                width: '100%', padding: '8px',
+                background: 'rgba(198,222,241,0.08)',
+                border: '1px solid rgba(198,222,241,0.2)',
+                borderRadius: '8px',
+                color: PHASE_PASTEL.Design,
+                fontFamily: SANS, fontSize: '11px', cursor: 'pointer',
+                opacity: latestIteration ? 1 : 0.4,
+              }}>
+                ⚗ Generate Protocol
+              </button>
+
+              {generatedProtocol && (
+                <div style={{ ...GLASS, marginTop: '10px', padding: '12px' }}>
+                  <div
+                    onClick={() => setProtocolExpanded(prev => !prev)}
+                    style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                  >
+                    <span style={{ fontFamily: SANS, fontSize: '10px', color: VALUE, fontWeight: 500 }}>
+                      {generatedProtocol.metadata.protocolName}
+                    </span>
+                    <span style={{ fontFamily: MONO, fontSize: '10px', color: LABEL }}>
+                      {protocolExpanded ? '▾' : '▸'}
+                    </span>
+                  </div>
+
+                  {protocolExpanded && (
+                    <div style={{ marginTop: '8px' }}>
+                      <p style={{ fontFamily: SANS, fontSize: '9px', color: LABEL, margin: '0 0 4px' }}>
+                        {generatedProtocol.metadata.description}
+                      </p>
+                      <p style={{ fontFamily: MONO, fontSize: '9px', color: LABEL, margin: '0 0 8px' }}>
+                        API {generatedProtocol.api_version} · {generatedProtocol.labware.length} labware · {generatedProtocol.pipetting_logic.length} steps
+                      </p>
+                      <button onClick={handleDownloadProtocol} style={{
+                        width: '100%', padding: '6px',
+                        background: 'rgba(198,222,241,0.1)',
+                        border: '1px solid rgba(198,222,241,0.2)',
+                        borderRadius: '6px',
+                        color: PHASE_PASTEL.Design,
+                        fontFamily: MONO, fontSize: '10px', cursor: 'pointer',
+                      }}>
+                        ↓ Download .py
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Engine view — timeline */}
-          <div style={{ flex: 1, overflow: 'auto', background: '#0d0f14', padding: '12px' }}>
-            <Timeline iterations={iterations} />
+          {/* ═══════ CENTER: Progress Ring + Timeline ═══════ */}
+          <div style={{ flex: 1, overflow: 'auto', background: '#0d0f14', padding: '12px', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ ...GLASS, padding: '8px 16px', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <CycleProgressRing currentPhase={currentPhase} iterationCount={iterations.length} />
+
+              {/* Phase legend */}
+              <div style={{ flex: 1, display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                {PHASES.map(p => {
+                  const isActive = p === currentPhase;
+                  return (
+                    <div key={p} style={{
+                      padding: '4px 10px',
+                      borderRadius: '8px',
+                      background: isActive ? `${PHASE_PASTEL[p]}18` : 'transparent',
+                      border: `1px solid ${isActive ? `${PHASE_PASTEL[p]}40` : 'rgba(255,255,255,0.06)'}`,
+                      display: 'flex', alignItems: 'center', gap: '6px',
+                    }}>
+                      <div style={{
+                        width: 8, height: 8, borderRadius: '50%',
+                        background: PHASE_PASTEL[p],
+                        opacity: isActive ? 1 : 0.3,
+                      }} />
+                      <span style={{
+                        fontFamily: SANS, fontSize: '10px',
+                        color: isActive ? PHASE_PASTEL[p] : LABEL,
+                        fontWeight: isActive ? 600 : 400,
+                      }}>
+                        {p}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div style={{ flex: 1, minHeight: 0 }}>
+              <Timeline iterations={iterations} />
+            </div>
           </div>
 
-          {/* Results panel */}
-          <div style={{ width: '220px', flexShrink: 0, overflowY: 'auto', padding: '16px', borderLeft: `1px solid ${BORDER}`, background: PANEL_BG }}>
-            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: LABEL, margin: '0 0 12px' }}>
-              Campaign Summary
-            </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {/* ═══════ RIGHT PANEL: Campaign Summary + Automation Control Center ═══════ */}
+          <div style={{
+            width: '260px', flexShrink: 0, overflowY: 'auto', padding: '16px',
+            borderLeft: `1px solid ${BORDER}`, background: PANEL_BG,
+          }}>
+            {/* Campaign Summary (preserved) */}
+            <p style={sectionLabel}>Campaign Summary</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px' }}>
               <MetricCard label="Total Iterations" value={iterations.length} highlight />
               <MetricCard label="Best Titer" value={bestIteration?.result ?? 0} unit={bestIteration?.unit} />
               <MetricCard label="Avg Improvement" value={improvementRate} unit={bestIteration?.unit + '/cycle'} />
               <MetricCard label="Pass Rate" value={passRate} unit="%" />
             </div>
+
+            {/* ── Automation Control Center ── */}
+            <div style={{ ...GLASS, padding: '14px' }}>
+              <p style={{ ...sectionLabel, margin: '0 0 10px' }}>Automation Control Center</p>
+
+              {/* CSV Upload drop zone */}
+              <label style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                padding: '14px 8px',
+                borderRadius: '12px',
+                border: '2px dashed rgba(255,255,255,0.1)',
+                background: 'rgba(255,255,255,0.02)',
+                cursor: 'pointer',
+                marginBottom: '12px',
+                transition: 'border-color 0.2s',
+              }}>
+                <span style={{ fontFamily: SANS, fontSize: '11px', color: VALUE, marginBottom: '4px' }}>
+                  {feedbackLoading ? '⏳ Processing…' : '↑ Upload Test CSV'}
+                </span>
+                <span style={{ fontFamily: SANS, fontSize: '9px', color: LABEL }}>
+                  .csv with sample_id, yield columns
+                </span>
+                <input
+                  type="file"
+                  accept=".csv"
+                  onChange={handleCSVUpload}
+                  style={{ display: 'none' }}
+                />
+              </label>
+
+              {/* Feedback Results */}
+              {feedbackResult && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+
+                  {/* Test Summary */}
+                  <div style={{
+                    padding: '10px', borderRadius: '12px',
+                    background: 'rgba(255,255,255,0.03)',
+                    border: '1px solid rgba(255,255,255,0.06)',
+                  }}>
+                    <p style={{ fontFamily: SANS, fontSize: '9px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 8px' }}>
+                      Test Summary
+                    </p>
+                    {([
+                      ['Mean Yield', feedbackResult.test_summary.mean_yield.toFixed(2)],
+                      ['Std Dev', feedbackResult.test_summary.std_yield.toFixed(2)],
+                      ['Best Sample', feedbackResult.test_summary.best_sample],
+                      ['Worst Sample', feedbackResult.test_summary.worst_sample],
+                    ] as const).map(([lbl, val]) => (
+                      <div key={lbl} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
+                        <span style={{ fontFamily: SANS, fontSize: '10px', color: LABEL }}>{lbl}</span>
+                        <span style={{ fontFamily: MONO, fontSize: '10px', color: VALUE, textAlign: 'right' }}>{val}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* QC Flags */}
+                  {feedbackResult.qc_flags.length > 0 && (
+                    <div>
+                      <p style={{ fontFamily: SANS, fontSize: '9px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 6px' }}>
+                        QC Flags ({feedbackResult.qc_flags.length})
+                      </p>
+                      {feedbackResult.qc_flags.map((flag: QCFlag, idx: number) => (
+                        <div key={idx} style={{
+                          padding: '8px', borderRadius: '8px', marginBottom: '6px',
+                          background: flag.flag_type === 'sensor_anomaly'
+                            ? 'rgba(250,237,203,0.08)'
+                            : 'rgba(242,198,222,0.08)',
+                          border: `1px solid ${flag.flag_type === 'sensor_anomaly'
+                            ? 'rgba(250,237,203,0.2)'
+                            : 'rgba(242,198,222,0.2)'}`,
+                        }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
+                            <span style={{ fontFamily: MONO, fontSize: '9px', color: PHASE_PASTEL.Build }}>
+                              {flag.flag_type === 'sensor_anomaly' ? '⚠' : '◆'} {flag.sample_id}
+                            </span>
+                            <span style={{ fontFamily: MONO, fontSize: '9px', color: VALUE, textAlign: 'right' }}>
+                              {flag.measured_value.toFixed(1)} / {flag.theoretical_max.toFixed(1)}
+                            </span>
+                          </div>
+                          <p style={{ fontFamily: SANS, fontSize: '9px', color: LABEL, margin: 0, lineHeight: 1.3 }}>
+                            {flag.message}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Next Iteration Suggestions */}
+                  {feedbackResult.next_iteration_suggestions.length > 0 && (
+                    <div>
+                      <p style={{ fontFamily: SANS, fontSize: '9px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 6px' }}>
+                        Suggested Next Iteration
+                      </p>
+                      {feedbackResult.next_iteration_suggestions.map((s: NextIterationSuggestion, idx: number) => (
+                        <div key={idx} style={{
+                          padding: '8px', borderRadius: '8px', marginBottom: '6px',
+                          background: 'rgba(201,228,222,0.06)',
+                          border: '1px solid rgba(201,228,222,0.15)',
+                        }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                            <span style={{ fontFamily: SANS, fontSize: '10px', color: PHASE_PASTEL.Learn, fontWeight: 500 }}>
+                              {s.parameter}
+                            </span>
+                            <span style={{ fontFamily: MONO, fontSize: '10px', color: 'rgba(120,220,160,0.85)', textAlign: 'right' }}>
+                              +{s.predicted_improvement_percent.toFixed(1)}%
+                            </span>
+                          </div>
+                          <div style={{ display: 'flex', gap: '4px', alignItems: 'center', marginBottom: '4px' }}>
+                            <span style={{ fontFamily: MONO, fontSize: '10px', color: LABEL }}>
+                              {s.current_value}
+                            </span>
+                            <span style={{ fontFamily: SANS, fontSize: '10px', color: LABEL }}>→</span>
+                            <span style={{ fontFamily: MONO, fontSize: '10px', color: VALUE, textAlign: 'right' }}>
+                              {s.suggested_value}
+                            </span>
+                          </div>
+                          <p style={{ fontFamily: SANS, fontSize: '9px', color: LABEL, margin: 0, lineHeight: 1.3 }}>
+                            {s.rationale}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Optimization Objective */}
+                  <p style={{ fontFamily: MONO, fontSize: '9px', color: LABEL, margin: 0, textAlign: 'center' }}>
+                    objective: {feedbackResult.optimization_objective}
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
-        <div style={{ borderTop: `1px solid ${BORDER}`, padding: '8px 16px', display: 'flex', gap: '8px', flexShrink: 0, background: PANEL_BG }}>
+        {/* ═══════ Footer: Export ═══════ */}
+        <div style={{
+          borderTop: `1px solid ${BORDER}`, padding: '8px 16px',
+          display: 'flex', gap: '8px', flexShrink: 0, background: PANEL_BG,
+        }}>
           <ExportButton label="Export JSON" data={iterations} filename="dbtlflow-iterations" format="json" />
           <ExportButton label="Export CSV" data={iterations} filename="dbtlflow-iterations" format="csv" />
         </div>

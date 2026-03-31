@@ -227,6 +227,86 @@ export interface DBTLIteration {
   unit: string;
   passed: boolean;
   notes?: string;
+  // Automation extensions
+  protocol?: GeneratedProtocol;
+  qcStatus?: 'valid' | 'sensor_anomaly' | 'unchecked';
+  theoreticalMax?: number;
+}
+
+// ── DBTL Automation Suite ─────────────────────────────────────────────────────
+export type DBTLPhase = 'Design' | 'Build' | 'Test' | 'Learn';
+
+export interface LabwareSlot {
+  slot: number;
+  labware: string;
+  label: string;
+}
+
+export interface PipettingStep {
+  action: 'aspirate' | 'dispense' | 'mix' | 'transfer';
+  pipette: string;
+  volume_ul: number;
+  source: string;
+  destination: string;
+  mix_cycles?: number;
+  new_tip?: boolean;
+  volumeTracking?: boolean;
+}
+
+export interface IncubationStep {
+  temperature_c: number;
+  duration_min: number;
+  shaking_rpm?: number;
+  label: string;
+}
+
+export interface GeneratedProtocol {
+  api_version: string;
+  metadata: { protocolName: string; author: string; description: string };
+  labware: LabwareSlot[];
+  pipettes: { mount: 'left' | 'right'; pipette: string }[];
+  pipetting_logic: PipettingStep[];
+  incubation_steps: IncubationStep[];
+  python_code: string;
+}
+
+export interface TestDataRow {
+  sample_id: string;
+  strain: string;
+  condition: string;
+  yield_mg_L: number;
+  biomass_OD600: number;
+  substrate_consumed_mM: number;
+  timestamp?: string;
+}
+
+export interface NextIterationSuggestion {
+  parameter: string;
+  current_value: number;
+  suggested_value: number;
+  rationale: string;
+  predicted_improvement_percent: number;
+}
+
+export interface FeedbackLoopResult {
+  iteration_id: number;
+  test_summary: {
+    mean_yield: number;
+    std_yield: number;
+    best_sample: string;
+    worst_sample: string;
+  };
+  qc_flags: QCFlag[];
+  next_iteration_suggestions: NextIterationSuggestion[];
+  optimization_objective: string;
+}
+
+export interface QCFlag {
+  sample_id: string;
+  flag_type: 'sensor_anomaly' | 'outlier' | 'below_detection';
+  measured_value: number;
+  theoretical_max: number;
+  message: string;
 }
 
 // ── MODULE: MULTIO ────────────────────────────────────────────────────────────
