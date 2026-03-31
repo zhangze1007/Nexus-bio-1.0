@@ -161,3 +161,194 @@ export function computeFBAResult(glucoseUptake: number, oxygenUptake: number): F
     feasible: true,
   };
 }
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ── COMMUNITY FBA: Multi-species metabolic modeling ─────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// S. cerevisiae central carbon metabolism (simplified model)
+export const YEAST_REACTIONS: FBAReaction[] = [
+  { id: 'HXT',    name: 'Hexose transporter',         subsystem: 'Glycolysis', lb: 0,    ub: 10,  flux: 8.0  },
+  { id: 'HXK',    name: 'Hexokinase',                 subsystem: 'Glycolysis', lb: 0,    ub: 100, flux: 7.8  },
+  { id: 'PGI_y',  name: 'Phosphoglucose isomerase',   subsystem: 'Glycolysis', lb: -100, ub: 100, flux: 7.5  },
+  { id: 'PFK_y',  name: 'Phosphofructokinase',        subsystem: 'Glycolysis', lb: 0,    ub: 100, flux: 7.3  },
+  { id: 'TPI',    name: 'Triose phosphate isomerase',  subsystem: 'Glycolysis', lb: -100, ub: 100, flux: 14.6 },
+  { id: 'ADH',    name: 'Alcohol dehydrogenase',       subsystem: 'Fermentation', lb: 0, ub: 100, flux: 12.0 },
+  { id: 'PDC',    name: 'Pyruvate decarboxylase',      subsystem: 'Fermentation', lb: 0, ub: 100, flux: 10.5 },
+  { id: 'ACS',    name: 'Acetyl-CoA synthetase',       subsystem: 'TCA',       lb: 0,    ub: 100, flux: 2.1  },
+  { id: 'IDH',    name: 'Isocitrate dehydrogenase',    subsystem: 'TCA',       lb: 0,    ub: 100, flux: 1.8  },
+  { id: 'BIOMASS_y', name: 'Yeast biomass',            subsystem: 'Energy',    lb: 0,    ub: 100, flux: 0.31 },
+];
+
+export const YEAST_NODES: MetabolicNode[] = [
+  { id: 'glc_y',   label: 'Glucose',     x: 50,  y: 30,   subsystem: 'Glycolysis' },
+  { id: 'g6p_y',   label: 'G6P',         x: 50,  y: 110,  subsystem: 'Glycolysis' },
+  { id: 'f6p_y',   label: 'F6P',         x: 50,  y: 190,  subsystem: 'Glycolysis' },
+  { id: 'fbp_y',   label: 'FBP',         x: 50,  y: 270,  subsystem: 'Glycolysis' },
+  { id: 'gap_y',   label: 'GAP',         x: 50,  y: 350,  subsystem: 'Glycolysis' },
+  { id: 'pyr_y',   label: 'Pyruvate',    x: 50,  y: 430,  subsystem: 'Glycolysis' },
+  { id: 'etoh',    label: 'Ethanol',     x: 170, y: 430,  subsystem: 'Glycolysis' },
+  { id: 'accoa_y', label: 'AcCoA',       x: 50,  y: 510,  subsystem: 'TCA'        },
+  { id: 'cit_y',   label: 'Citrate',     x: 170, y: 510,  subsystem: 'TCA'        },
+];
+
+export const YEAST_FLUX_EDGES: FluxEdge[] = [
+  { from: 'glc_y',   to: 'g6p_y',   reactionId: 'HXT',   baseFlux: 8.0  },
+  { from: 'g6p_y',   to: 'f6p_y',   reactionId: 'HXK',   baseFlux: 7.8  },
+  { from: 'f6p_y',   to: 'fbp_y',   reactionId: 'PGI_y', baseFlux: 7.5  },
+  { from: 'fbp_y',   to: 'gap_y',   reactionId: 'PFK_y', baseFlux: 7.3  },
+  { from: 'gap_y',   to: 'pyr_y',   reactionId: 'TPI',   baseFlux: 14.6 },
+  { from: 'pyr_y',   to: 'etoh',    reactionId: 'PDC',   baseFlux: 10.5 },
+  { from: 'etoh',    to: 'accoa_y', reactionId: 'ACS',   baseFlux: 2.1  },
+  { from: 'accoa_y', to: 'cit_y',   reactionId: 'IDH',   baseFlux: 1.8  },
+];
+
+export const YEAST_REACTION_DEFS: ReactionDef[] = [
+  { id: 'HXT',       name: 'Hexose transporter',         subsystem: 'Glycolysis' },
+  { id: 'HXK',       name: 'Hexokinase',                 subsystem: 'Glycolysis' },
+  { id: 'PGI_y',     name: 'Phosphoglucose isomerase',   subsystem: 'Glycolysis' },
+  { id: 'PFK_y',     name: 'Phosphofructokinase',        subsystem: 'Glycolysis' },
+  { id: 'TPI',       name: 'Triose phosphate isomerase', subsystem: 'Glycolysis' },
+  { id: 'PDC',       name: 'Pyruvate decarboxylase',     subsystem: 'Glycolysis' },
+  { id: 'ADH',       name: 'Alcohol dehydrogenase',      subsystem: 'Glycolysis' },
+  { id: 'ACS',       name: 'Acetyl-CoA synthetase',      subsystem: 'TCA'        },
+  { id: 'IDH',       name: 'Isocitrate dehydrogenase',   subsystem: 'TCA'        },
+  { id: 'BIOMASS_y', name: 'Yeast biomass reaction',     subsystem: 'Energy'     },
+];
+
+// Shared metabolites exchanged between E. coli and S. cerevisiae
+export interface SharedMetabolite {
+  id: string;
+  name: string;
+  exporterStrain: string;
+  importerStrain: string;
+  baseFlux: number;
+}
+
+export const SHARED_METABOLITES: SharedMetabolite[] = [
+  { id: 'acetate',   name: 'Acetate',    exporterStrain: 'ecoli', importerStrain: 'yeast', baseFlux: 1.8 },
+  { id: 'ethanol',   name: 'Ethanol',    exporterStrain: 'yeast', importerStrain: 'ecoli', baseFlux: 2.1 },
+  { id: 'succinate', name: 'Succinate',  exporterStrain: 'ecoli', importerStrain: 'yeast', baseFlux: 0.9 },
+  { id: 'lactate',   name: 'Lactate',    exporterStrain: 'ecoli', importerStrain: 'yeast', baseFlux: 0.6 },
+];
+
+/**
+ * Run FBA for S. cerevisiae (yeast) model.
+ * Mirrors the E. coli runFBA structure.
+ */
+export function runYeastFBA(
+  glucoseUptake: number,
+  oxygenUptake: number,
+  knockouts: string[] = [],
+): FBAOutput {
+  const scale = glucoseUptake / 8;
+  const aerobic = Math.min(1, oxygenUptake / 15);
+  const fermentative = 1 - aerobic * 0.6;
+
+  const raw: Record<string, number> = {
+    HXT:       glucoseUptake,
+    HXK:       glucoseUptake * 0.95,
+    PGI_y:     glucoseUptake * 0.92,
+    PFK_y:     glucoseUptake * 0.88,
+    TPI:       glucoseUptake * 1.76,
+    PDC:       glucoseUptake * 0.80 * fermentative,
+    ADH:       glucoseUptake * 0.75 * fermentative,
+    ACS:       glucoseUptake * 0.25 * aerobic,
+    IDH:       glucoseUptake * 0.20 * aerobic,
+    BIOMASS_y: glucoseUptake * 0.06 * (aerobic * 0.7 + 0.3) * scale,
+  };
+
+  const koSet = new Set(knockouts);
+  if (koSet.has('HXT') || koSet.has('TPI')) {
+    Object.keys(raw).forEach(k => raw[k] = 0);
+  } else {
+    knockouts.forEach(ko => { if (raw[ko] !== undefined) raw[ko] = 0; });
+    if (koSet.has('PDC')) { raw['ADH'] = 0; }
+    if (koSet.has('ACS')) { raw['IDH'] = 0; raw['BIOMASS_y'] *= 0.4; }
+  }
+
+  const glcFlux = raw['HXT'] || 1e-9;
+  const biomassFlux = raw['BIOMASS_y'] ?? 0;
+  const adh = raw['ADH'] ?? 0;
+  const tpi = raw['TPI'] ?? 0;
+
+  return {
+    fluxes:           raw,
+    growthRate:        Math.round(biomassFlux * 10000) / 10000,
+    atpYield:          Math.round(((tpi * 0.5 + adh * 0.1) / glcFlux) * 100) / 100,
+    nadhProduction:    Math.round(tpi * 0.8 * 100) / 100,
+    carbonEfficiency:  Math.max(0, Math.min(100, Math.round(((biomassFlux * 42) / (glcFlux * 6) * 100) * 10) / 10)),
+    feasible:          biomassFlux > 1e-6,
+  };
+}
+
+export interface CommunityFBAOutput {
+  ecoli: FBAOutput;
+  yeast: FBAOutput;
+  exchangeFluxes: { id: string; metabolite: string; fromStrain: string; toStrain: string; flux: number }[];
+  communityGrowthRate: number;
+  communityBiomassObjective: number;
+  feasible: boolean;
+}
+
+/**
+ * Community FBA: Composite stoichiometric model S_com = [S1, 0, E1; 0, S2, E2].
+ * Exchange reactions couple the two strain models through a shared environmental pool.
+ * The community biomass objective balances growth rates with a weighted sum.
+ */
+export function calculateCommunityFlux(
+  ecoliGlucose: number,
+  ecoliOxygen: number,
+  ecoliKnockouts: string[],
+  yeastGlucose: number,
+  yeastOxygen: number,
+  yeastKnockouts: string[],
+  alpha = 0.5, // weighting: 0 = all ecoli, 1 = all yeast
+): CommunityFBAOutput {
+  // Compute individual strain FBA
+  const ecoliResult = runFBA(ecoliGlucose, ecoliOxygen, ecoliKnockouts);
+  const yeastResult = runYeastFBA(yeastGlucose, yeastOxygen, yeastKnockouts);
+
+  // Exchange reactions: metabolite transfer between strains via environmental pool
+  const exchangeFluxes = SHARED_METABOLITES.map(sm => {
+    const exporterResult = sm.exporterStrain === 'ecoli' ? ecoliResult : yeastResult;
+    const importerResult = sm.importerStrain === 'ecoli' ? ecoliResult : yeastResult;
+
+    // Export flux scales with exporter's growth; import benefit scales with importer need
+    const exporterViability = exporterResult.feasible ? exporterResult.growthRate : 0;
+    const importerViability = importerResult.feasible ? 1 : 0;
+    const flux = sm.baseFlux * (exporterViability / 0.5) * importerViability;
+
+    return {
+      id: `EX_${sm.id}`,
+      metabolite: sm.name,
+      fromStrain: sm.exporterStrain,
+      toStrain: sm.importerStrain,
+      flux: Math.round(flux * 1000) / 1000,
+    };
+  });
+
+  // Cross-feeding bonus: metabolites flowing into a strain boost its effective growth
+  const ecoliFeedingBonus = exchangeFluxes
+    .filter(e => e.toStrain === 'ecoli' && e.flux > 0)
+    .reduce((sum, e) => sum + e.flux * 0.02, 0);
+  const yeastFeedingBonus = exchangeFluxes
+    .filter(e => e.toStrain === 'yeast' && e.flux > 0)
+    .reduce((sum, e) => sum + e.flux * 0.02, 0);
+
+  const adjustedEcoliGrowth = ecoliResult.growthRate + ecoliFeedingBonus;
+  const adjustedYeastGrowth = yeastResult.growthRate + yeastFeedingBonus;
+
+  // Community biomass objective: weighted sum of individual growth rates
+  const communityBiomassObjective =
+    (1 - alpha) * adjustedEcoliGrowth + alpha * adjustedYeastGrowth;
+
+  return {
+    ecoli: { ...ecoliResult, growthRate: Math.round(adjustedEcoliGrowth * 10000) / 10000 },
+    yeast: { ...yeastResult, growthRate: Math.round(adjustedYeastGrowth * 10000) / 10000 },
+    exchangeFluxes,
+    communityGrowthRate: Math.round(communityBiomassObjective * 10000) / 10000,
+    communityBiomassObjective: Math.round(communityBiomassObjective * 10000) / 10000,
+    feasible: ecoliResult.feasible || yeastResult.feasible,
+  };
+}

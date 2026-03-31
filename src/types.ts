@@ -170,6 +170,41 @@ export interface FBAResult {
   feasible: boolean;
 }
 
+// ── Community FBA (Multi-species) ──
+export interface StrainConfig {
+  id: string;
+  name: string;
+  glucoseUptake: number;
+  oxygenUptake: number;
+  knockouts: string[];
+}
+
+export interface ExchangeReaction {
+  id: string;
+  metabolite: string;
+  fromStrain: string;
+  toStrain: string;
+  flux: number;
+  lb: number;
+  ub: number;
+}
+
+export interface CommunityFBAResult {
+  strainResults: Record<string, {
+    fluxes: Record<string, number>;
+    growthRate: number;
+    atpYield: number;
+    nadhProduction: number;
+    carbonEfficiency: number;
+    feasible: boolean;
+  }>;
+  exchangeFluxes: ExchangeReaction[];
+  communityGrowthRate: number;
+  communityBiomassObjective: number;
+  crossFeedingMetabolites: string[];
+  feasible: boolean;
+}
+
 // ── MODULE: PROEVOL ───────────────────────────────────────────────────────────
 export interface Mutation { position: number; from: string; to: string; ddG?: number; }
 export interface FitnessPoint { mutationCount: number; fitness: number; sequence: string; }

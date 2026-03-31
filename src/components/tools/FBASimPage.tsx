@@ -4,26 +4,46 @@ import IDEShell from '../ide/IDEShell';
 import AlgorithmInsight from '../ide/shared/AlgorithmInsight';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
-import { METABOLIC_NODES, FLUX_EDGES, REACTION_DEFS, runFBA } from '../../data/mockFBA';
+import {
+  METABOLIC_NODES, FLUX_EDGES, REACTION_DEFS, runFBA,
+  YEAST_NODES, YEAST_FLUX_EDGES, YEAST_REACTION_DEFS, SHARED_METABOLITES,
+  calculateCommunityFlux,
+} from '../../data/mockFBA';
+import type { FBAOutput, CommunityFBAOutput } from '../../data/mockFBA';
 
 const MONO = "'JetBrains Mono','Fira Code',monospace";
 const SANS = "'Inter',-apple-system,sans-serif";
 
-function ParamSlider({ label, value, min, max, step = 0.5, onChange, unit }: {
+// ── Pastel palette ──
+const COLORS = {
+  strainA: '#DBCDF0',
+  strainB: '#C9E4DE',
+  sharedPool: '#C6DEF1',
+  strainABg: 'rgba(219,205,240,0.06)',
+  strainBBg: 'rgba(201,228,222,0.06)',
+  sharedBg: 'rgba(198,222,241,0.06)',
+  strainABorder: 'rgba(219,205,240,0.20)',
+  strainBBorder: 'rgba(201,228,222,0.20)',
+  sharedBorder: 'rgba(198,222,241,0.20)',
+};
+
+type SimMode = 'single' | 'community';
+
+function ParamSlider({ label, value, min, max, step = 0.5, onChange, unit, accentColor }: {
   label: string; value: number; min: number; max: number; step?: number;
-  onChange: (v: number) => void; unit?: string;
+  onChange: (v: number) => void; unit?: string; accentColor?: string;
 }) {
   return (
     <div style={{ marginBottom: '12px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
         <span style={{ fontFamily: SANS, fontSize: '11px', color: 'rgba(255,255,255,0.45)' }}>{label}</span>
-        <span style={{ fontFamily: MONO, fontSize: '11px', color: 'rgba(255,255,255,0.55)' }}>
+        <span style={{ fontFamily: MONO, fontSize: '11px', fontWeight: 600, color: 'rgba(255,255,255,0.55)', textAlign: 'right' }}>
           {value.toFixed(1)}{unit ? ` ${unit}` : ''}
         </span>
       </div>
       <input type="range" min={min} max={max} step={step} value={value}
         onChange={e => onChange(parseFloat(e.target.value))}
-        style={{ width: '100%', accentColor: 'rgba(120,180,255,0.8)', cursor: 'pointer' }}
+        style={{ width: '100%', accentColor: accentColor ?? 'rgba(120,180,255,0.8)', cursor: 'pointer' }}
       />
     </div>
   );
@@ -34,35 +54,34 @@ const SUBSYSTEM_COLORS: Record<string, string> = {
   Glycolysis: 'rgba(120,200,255,0.7)',
   TCA: 'rgba(120,255,180,0.7)',
   Energy: 'rgba(255,200,80,0.7)',
+  Fermentation: 'rgba(255,160,200,0.7)',
 };
 
-function FluxMap({ glucoseUptake, oxygenUptake, knockouts }: {
-  glucoseUptake: number; oxygenUptake: number; knockouts: string[];
+function FluxMap({ result, nodes, edges, knockouts, compact }: {
+  result: FBAOutput;
+  nodes: typeof METABOLIC_NODES;
+  edges: typeof FLUX_EDGES;
+  knockouts: string[];
+  compact?: boolean;
 }) {
-  const result = useMemo(
-    () => runFBA(glucoseUptake, oxygenUptake, knockouts),
-    [glucoseUptake, oxygenUptake, knockouts],
-  );
   const fluxValues = Object.values(result.fluxes).map(Math.abs);
   const maxFlux = Math.max(...fluxValues, 1);
-
-  const nodeMap = Object.fromEntries(METABOLIC_NODES.map(n => [n.id, n]));
+  const nodeMap = Object.fromEntries(nodes.map(n => [n.id, n]));
   const koSet = new Set(knockouts);
-
   const [hovered, setHovered] = useState<string | null>(null);
+  const viewH = compact ? 480 : H;
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%', maxHeight: '100%' }}>
-      <rect width={W} height={H} fill="#0d0f14" />
-      {FLUX_EDGES.map(edge => {
+    <svg viewBox={`0 0 ${W} ${viewH}`} style={{ width: '100%', height: '100%', maxHeight: '100%' }}>
+      <rect width={W} height={viewH} fill="transparent" />
+      {edges.map(edge => {
         const from = nodeMap[edge.from];
         const to = nodeMap[edge.to];
         if (!from || !to) return null;
         const flux = Math.abs(result.fluxes[edge.reactionId] ?? 0);
         const normalized = flux / maxFlux;
         const isKO = koSet.has(edge.reactionId);
-        const color = isKO
-          ? 'rgba(255,80,80,0.5)'
+        const color = isKO ? 'rgba(255,80,80,0.5)'
           : normalized > 0.6 ? 'rgba(120,220,180,0.85)'
           : normalized > 0.3 ? 'rgba(120,180,255,0.7)'
           : 'rgba(255,255,255,0.2)';
@@ -82,7 +101,7 @@ function FluxMap({ glucoseUptake, oxygenUptake, knockouts }: {
           </g>
         );
       })}
-      {METABOLIC_NODES.map(node => {
+      {nodes.map(node => {
         const isActive = hovered === node.id;
         const subsystemColor = SUBSYSTEM_COLORS[node.subsystem] ?? 'rgba(255,255,255,0.5)';
         return (
@@ -99,174 +118,454 @@ function FluxMap({ glucoseUptake, oxygenUptake, knockouts }: {
           </g>
         );
       })}
-      <g transform={`translate(${W - 90}, 12)`}>
-        {Object.entries(SUBSYSTEM_COLORS).map(([name, color], i) => (
-          <g key={name} transform={`translate(0,${i * 14})`}>
-            <circle cx={5} cy={5} r={4} fill={color} fillOpacity={0.3} stroke={color} strokeWidth={1} />
-            <text x={14} y={9} fontFamily={SANS} fontSize="8" fill="rgba(255,255,255,0.4)">{name}</text>
-          </g>
-        ))}
-      </g>
-      <text x={W / 2} y={H - 10} textAnchor="middle" fontFamily={MONO} fontSize="10" fill="rgba(255,255,255,0.3)">
+      <text x={W / 2} y={viewH - 10} textAnchor="middle" fontFamily={MONO} fontSize="10" fill="rgba(255,255,255,0.3)">
         μ = {result.growthRate.toFixed(4)} h⁻¹
       </text>
     </svg>
   );
 }
 
+// ── Glassmorphism container ──
+function GlassContainer({ children, color, borderColor, style }: {
+  children: React.ReactNode;
+  color: string;
+  borderColor: string;
+  style?: React.CSSProperties;
+}) {
+  return (
+    <div style={{
+      borderRadius: '24px',
+      background: color,
+      backdropFilter: 'blur(10px)',
+      WebkitBackdropFilter: 'blur(10px)',
+      border: `1px solid ${borderColor}`,
+      boxShadow: '0 4px 24px rgba(0,0,0,0.15)',
+      overflow: 'hidden',
+      ...style,
+    }}>
+      {children}
+    </div>
+  );
+}
+
+// ── Shared Metabolite Bus (animated cross-feeding lines) ──
+function SharedMetaboliteBus({ exchangeFluxes }: {
+  exchangeFluxes: CommunityFBAOutput['exchangeFluxes'];
+}) {
+  const maxFlux = Math.max(...exchangeFluxes.map(e => Math.abs(e.flux)), 0.1);
+
+  return (
+    <GlassContainer color={COLORS.sharedBg} borderColor={COLORS.sharedBorder}
+      style={{ padding: '14px 16px' }}>
+      <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: COLORS.sharedPool, margin: '0 0 10px' }}>
+        Shared Environmental Pool
+      </p>
+
+      <style>{`
+        @keyframes flowRight { from { stroke-dashoffset: 24; } to { stroke-dashoffset: 0; } }
+        @keyframes flowLeft  { from { stroke-dashoffset: -24; } to { stroke-dashoffset: 0; } }
+      `}</style>
+
+      {exchangeFluxes.map((ex) => {
+        const isRightFlow = ex.fromStrain === 'ecoli';
+        const normalized = Math.abs(ex.flux) / maxFlux;
+        const strokeW = 1.5 + normalized * 3;
+
+        return (
+          <div key={ex.id} style={{ marginBottom: '8px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+              <span style={{ fontFamily: SANS, fontSize: '10px', color: 'rgba(255,255,255,0.5)' }}>
+                {ex.metabolite}
+              </span>
+              <span style={{
+                fontFamily: MONO, fontSize: '11px', fontWeight: 600, color: COLORS.sharedPool, textAlign: 'right',
+              }}>
+                {ex.flux.toFixed(2)} mmol/h
+              </span>
+            </div>
+            <svg width="100%" height="12" style={{ display: 'block' }}>
+              <defs>
+                <linearGradient id={`grad-${ex.id}`} x1={isRightFlow ? '0%' : '100%'} y1="0%" x2={isRightFlow ? '100%' : '0%'} y2="0%">
+                  <stop offset="0%" stopColor={COLORS.strainA} stopOpacity="0.8" />
+                  <stop offset="100%" stopColor={COLORS.strainB} stopOpacity="0.8" />
+                </linearGradient>
+              </defs>
+              <line x1="8" y1="6" x2="100%" y2="6"
+                stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
+              <line x1="8" y1="6" x2="100%" y2="6"
+                stroke={`url(#grad-${ex.id})`}
+                strokeWidth={strokeW}
+                strokeDasharray="6 6"
+                strokeLinecap="round"
+                style={{
+                  animation: `${isRightFlow ? 'flowRight' : 'flowLeft'} ${1.5 / Math.max(0.3, normalized)}s linear infinite`,
+                  opacity: ex.flux > 0.01 ? 0.85 : 0.2,
+                }}
+              />
+              {/* Direction arrows */}
+              <text x={isRightFlow ? '92%' : '4%'} y="10" fontFamily={SANS} fontSize="8"
+                fill={COLORS.sharedPool} textAnchor="middle">
+                {isRightFlow ? '→' : '←'}
+              </text>
+            </svg>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '2px' }}>
+              <span style={{ fontSize: '8px', color: isRightFlow ? COLORS.strainA : COLORS.strainB, fontFamily: MONO }}>
+                {ex.fromStrain === 'ecoli' ? 'E. coli' : 'S. cerevisiae'}
+              </span>
+              <span style={{ fontSize: '8px', color: isRightFlow ? COLORS.strainB : COLORS.strainA, fontFamily: MONO }}>
+                {ex.toStrain === 'ecoli' ? 'E. coli' : 'S. cerevisiae'}
+              </span>
+            </div>
+          </div>
+        );
+      })}
+    </GlassContainer>
+  );
+}
+
+// ── Strain sidebar panel ──
+function StrainPanel({ label, color, borderColor, accentColor, glucoseUptake, oxygenUptake,
+  knockouts, reactions, result, onGlucoseChange, onOxygenChange, onToggleKO, onClearKO,
+}: {
+  label: string; color: string; borderColor: string; accentColor: string;
+  glucoseUptake: number; oxygenUptake: number;
+  knockouts: string[]; reactions: typeof REACTION_DEFS;
+  result: FBAOutput;
+  onGlucoseChange: (v: number) => void; onOxygenChange: (v: number) => void;
+  onToggleKO: (id: string) => void; onClearKO: () => void;
+}) {
+  return (
+    <GlassContainer color={color} borderColor={borderColor}
+      style={{ padding: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: accentColor, margin: '0' }}>
+        {label}
+      </p>
+
+      <ParamSlider label="Glucose" value={glucoseUptake} min={0} max={20}
+        onChange={onGlucoseChange} unit="mmol/gDW/h" accentColor={accentColor} />
+      <ParamSlider label="O₂" value={oxygenUptake} min={0} max={20}
+        onChange={onOxygenChange} unit="mmol/gDW/h" accentColor={accentColor} />
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+        <MetricCard label="Growth Rate (μ)" value={result.growthRate} unit="h⁻¹" highlight />
+        <MetricCard label="ATP Yield" value={result.atpYield} unit="mol/mol" />
+        <MetricCard label="Carbon Eff." value={result.carbonEfficiency} unit="%" />
+      </div>
+
+      <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '6px 0 0' }}>
+        Gene Knockouts
+      </p>
+      <div style={{ maxHeight: '140px', overflowY: 'auto' }}>
+        {reactions.map(r => {
+          const isKO = knockouts.includes(r.id);
+          return (
+            <button key={r.id} onClick={() => onToggleKO(r.id)} style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              width: '100%', padding: '4px 8px', marginBottom: '2px',
+              background: isKO ? 'rgba(255,80,80,0.08)' : 'transparent',
+              border: `1px solid ${isKO ? 'rgba(255,80,80,0.3)' : 'rgba(255,255,255,0.06)'}`,
+              borderRadius: '6px', cursor: 'pointer',
+            }}>
+              <span style={{ fontFamily: MONO, fontSize: '10px', color: isKO ? 'rgba(255,120,120,0.9)' : 'rgba(255,255,255,0.5)' }}>{r.id}</span>
+              <span style={{
+                width: '7px', height: '7px', borderRadius: '50%',
+                background: isKO ? 'rgba(255,80,80,0.7)' : 'rgba(255,255,255,0.12)', flexShrink: 0,
+              }} />
+            </button>
+          );
+        })}
+      </div>
+      {knockouts.length > 0 && (
+        <button onClick={onClearKO} style={{
+          display: 'block', width: '100%', padding: '4px 8px',
+          background: 'transparent', border: '1px solid rgba(255,255,255,0.08)',
+          borderRadius: '6px', color: 'rgba(255,255,255,0.3)', fontFamily: SANS, fontSize: '10px', cursor: 'pointer',
+        }}>
+          Clear all
+        </button>
+      )}
+    </GlassContainer>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ── MAIN COMPONENT ──
+// ═══════════════════════════════════════════════════════════════════════════════
+
 export default function FBASimPage() {
+  const [simMode, setSimMode] = useState<SimMode>('single');
+
+  // Single-species state
   const [glucoseUptake, setGlucoseUptake] = useState(10);
   const [oxygenUptake, setOxygenUptake] = useState(12);
   const [objective, setObjective] = useState<'biomass' | 'atp' | 'product'>('biomass');
   const [knockouts, setKnockouts] = useState<string[]>([]);
 
-  const result = useMemo(
+  // Community state
+  const [ecoliGlucose, setEcoliGlucose] = useState(10);
+  const [ecoliOxygen, setEcoliOxygen] = useState(12);
+  const [ecoliKO, setEcoliKO] = useState<string[]>([]);
+  const [yeastGlucose, setYeastGlucose] = useState(8);
+  const [yeastOxygen, setYeastOxygen] = useState(6);
+  const [yeastKO, setYeastKO] = useState<string[]>([]);
+
+  // Single-species FBA
+  const singleResult = useMemo(
     () => runFBA(glucoseUptake, oxygenUptake, knockouts),
     [glucoseUptake, oxygenUptake, knockouts],
   );
 
+  // Community FBA
+  const communityResult: CommunityFBAOutput = useMemo(
+    () => calculateCommunityFlux(ecoliGlucose, ecoliOxygen, ecoliKO, yeastGlucose, yeastOxygen, yeastKO),
+    [ecoliGlucose, ecoliOxygen, ecoliKO, yeastGlucose, yeastOxygen, yeastKO],
+  );
+
   const top5 = useMemo(() => {
     return REACTION_DEFS
-      .map(r => ({ ...r, flux: result.fluxes[r.id] ?? 0 }))
+      .map(r => ({ ...r, flux: singleResult.fluxes[r.id] ?? 0 }))
       .sort((a, b) => Math.abs(b.flux) - Math.abs(a.flux))
       .slice(0, 5);
-  }, [result]);
+  }, [singleResult]);
 
   const maxTopFlux = Math.abs(top5[0]?.flux ?? 1) || 1;
 
   function toggleKO(id: string) {
-    setKnockouts(prev =>
-      prev.includes(id) ? prev.filter(k => k !== id) : [...prev, id]
-    );
+    setKnockouts(prev => prev.includes(id) ? prev.filter(k => k !== id) : [...prev, id]);
   }
+  function toggleEcoliKO(id: string) {
+    setEcoliKO(prev => prev.includes(id) ? prev.filter(k => k !== id) : [...prev, id]);
+  }
+  function toggleYeastKO(id: string) {
+    setYeastKO(prev => prev.includes(id) ? prev.filter(k => k !== id) : [...prev, id]);
+  }
+
+  const exportData = simMode === 'single' ? singleResult : communityResult;
 
   return (
     <IDEShell moduleId="fbasim">
       <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', background: '#10131a' }}>
         <AlgorithmInsight
-          title="Flux Balance Analysis"
-          description="Linear programming maximizes objective flux subject to stoichiometric constraints and reaction bounds."
-          formula="max cᵀv s.t. Sv=0, lb≤v≤ub"
+          title={simMode === 'single' ? 'Flux Balance Analysis' : 'Community FBA — Multi-species'}
+          description={simMode === 'single'
+            ? 'Linear programming maximizes objective flux subject to stoichiometric constraints and reaction bounds.'
+            : 'Composite stoichiometric matrix S_com couples two host organisms through shared exchange reactions in an environmental pool.'}
+          formula={simMode === 'single'
+            ? 'max cᵀv s.t. Sv=0, lb≤v≤ub'
+            : 'S_com = [S₁, 0, E₁; 0, S₂, E₂]'}
         />
 
-        <div style={{ flex: 1, display: 'flex', overflow: 'hidden', minHeight: 0 }}>
-          {/* Input panel */}
-          <div style={{ width: '240px', flexShrink: 0, overflowY: 'auto', padding: '16px', borderRight: '1px solid rgba(255,255,255,0.06)', background: '#10131a' }}>
-            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '0 0 12px' }}>
-              Simulation Parameters
-            </p>
-
-            <ParamSlider label="Glucose uptake" value={glucoseUptake} min={0} max={20} onChange={setGlucoseUptake} unit="mmol/gDW/h" />
-            <ParamSlider label="O₂ uptake" value={oxygenUptake} min={0} max={20} onChange={setOxygenUptake} unit="mmol/gDW/h" />
-
-            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '16px 0 8px' }}>
-              Objective Function
-            </p>
-            {(['biomass', 'atp', 'product'] as const).map(opt => (
-              <button key={opt} onClick={() => setObjective(opt)} style={{
-                display: 'block', width: '100%', textAlign: 'left',
-                padding: '6px 10px', marginBottom: '4px',
-                background: objective === opt ? 'rgba(255,255,255,0.06)' : 'transparent',
-                border: `1px solid ${objective === opt ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.06)'}`,
-                borderRadius: '8px',
-                color: objective === opt ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.4)',
-                fontFamily: SANS, fontSize: '11px', cursor: 'pointer',
-              }}>
-                {opt === 'biomass' ? 'Max Biomass' : opt === 'atp' ? 'Max ATP' : 'Max Product'}
-              </button>
-            ))}
-
-            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '16px 0 8px' }}>
-              Gene Knockouts
-            </p>
-            {REACTION_DEFS.map(r => {
-              const isKO = knockouts.includes(r.id);
-              return (
-                <button key={r.id} onClick={() => toggleKO(r.id)} style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  width: '100%', padding: '5px 8px', marginBottom: '3px',
-                  background: isKO ? 'rgba(255,80,80,0.08)' : 'transparent',
-                  border: `1px solid ${isKO ? 'rgba(255,80,80,0.3)' : 'rgba(255,255,255,0.06)'}`,
-                  borderRadius: '6px', cursor: 'pointer',
-                }}>
-                  <span style={{ fontFamily: MONO, fontSize: '10px', color: isKO ? 'rgba(255,120,120,0.9)' : 'rgba(255,255,255,0.5)' }}>{r.id}</span>
-                  <span style={{
-                    width: '8px', height: '8px', borderRadius: '50%',
-                    background: isKO ? 'rgba(255,80,80,0.7)' : 'rgba(255,255,255,0.12)',
-                    flexShrink: 0,
-                  }} />
-                </button>
-              );
-            })}
-            {knockouts.length > 0 && (
-              <button onClick={() => setKnockouts([])} style={{
-                display: 'block', width: '100%', marginTop: '6px',
-                padding: '5px 8px', background: 'transparent',
-                border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px',
-                color: 'rgba(255,255,255,0.3)', fontFamily: SANS, fontSize: '10px', cursor: 'pointer',
-              }}>
-                Clear all knockouts
-              </button>
-            )}
-          </div>
-
-          {/* Engine view — SVG flux map */}
-          <div style={{ flex: 1, position: 'relative', overflow: 'hidden', background: '#0d0f14', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{ height: '100%', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <FluxMap glucoseUptake={glucoseUptake} oxygenUptake={oxygenUptake} knockouts={knockouts} />
-            </div>
-          </div>
-
-          {/* Results panel */}
-          <div style={{ width: '240px', flexShrink: 0, overflowY: 'auto', padding: '16px', borderLeft: '1px solid rgba(255,255,255,0.06)', background: '#10131a' }}>
-            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '0 0 12px' }}>
-              Results
-            </p>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
-              <MetricCard label="Growth Rate (μ)" value={result.growthRate} unit="h⁻¹" highlight />
-              <MetricCard label="ATP Yield" value={result.atpYield} unit="mol/mol glc" />
-              <MetricCard label="NADH Production" value={result.nadhProduction} unit="mmol/gDW/h" />
-              <MetricCard label="Carbon Efficiency" value={result.carbonEfficiency} unit="%" />
-              <MetricCard label="Feasible" value={result.feasible ? 'YES' : 'NO'} />
-            </div>
-
-            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '0 0 8px' }}>
-              Top 5 Active Reactions
-            </p>
-            {top5.map(r => (
-              <div key={r.id} style={{
-                padding: '6px 8px', marginBottom: '4px',
-                background: 'rgba(255,255,255,0.04)',
-                border: `1px solid ${knockouts.includes(r.id) ? 'rgba(255,80,80,0.2)' : 'rgba(255,255,255,0.06)'}`,
-                borderRadius: '8px',
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontFamily: MONO, fontSize: '10px', color: knockouts.includes(r.id) ? 'rgba(255,120,120,0.7)' : 'rgba(255,255,255,0.6)' }}>{r.id}</span>
-                  <span style={{ fontFamily: MONO, fontSize: '10px', color: r.flux > 0 ? 'rgba(20,140,80,0.9)' : 'rgba(255,80,80,0.6)' }}>
-                    {r.flux.toFixed(2)}
-                  </span>
-                </div>
-                <div style={{ fontFamily: SANS, fontSize: '10px', color: 'rgba(255,255,255,0.35)', marginTop: '2px' }}>{r.name}</div>
-                <div style={{ marginTop: '4px', height: '2px', background: 'rgba(255,255,255,0.06)', borderRadius: '1px' }}>
-                  <div style={{
-                    height: '100%', borderRadius: '1px',
-                    width: `${Math.abs(r.flux / maxTopFlux) * 100}%`,
-                    background: knockouts.includes(r.id) ? 'rgba(255,80,80,0.3)' : 'rgba(20,140,80,0.4)',
-                    transition: 'width 0.3s',
-                  }} />
-                </div>
-              </div>
-            ))}
-          </div>
+        {/* Mode toggle */}
+        <div style={{ padding: '0 16px 8px', display: 'flex', gap: '4px', flexShrink: 0 }}>
+          {(['single', 'community'] as const).map(mode => (
+            <button key={mode} onClick={() => setSimMode(mode)} style={{
+              padding: '6px 14px', borderRadius: '20px',
+              background: simMode === mode ? 'rgba(255,255,255,0.08)' : 'transparent',
+              border: `1px solid ${simMode === mode ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.06)'}`,
+              color: simMode === mode ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.35)',
+              fontFamily: SANS, fontSize: '11px', cursor: 'pointer', transition: 'all 0.2s',
+            }}>
+              {mode === 'single' ? 'Single Species' : 'Community'}
+            </button>
+          ))}
         </div>
+
+        {/* ── SINGLE MODE ── */}
+        {simMode === 'single' && (
+          <div style={{ flex: 1, display: 'flex', overflow: 'hidden', minHeight: 0 }}>
+            {/* Input panel */}
+            <div style={{ width: '240px', flexShrink: 0, overflowY: 'auto', padding: '16px', borderRight: '1px solid rgba(255,255,255,0.06)', background: '#10131a' }}>
+              <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '0 0 12px' }}>
+                Simulation Parameters
+              </p>
+
+              <ParamSlider label="Glucose uptake" value={glucoseUptake} min={0} max={20} onChange={setGlucoseUptake} unit="mmol/gDW/h" />
+              <ParamSlider label="O₂ uptake" value={oxygenUptake} min={0} max={20} onChange={setOxygenUptake} unit="mmol/gDW/h" />
+
+              <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '16px 0 8px' }}>
+                Objective Function
+              </p>
+              {(['biomass', 'atp', 'product'] as const).map(opt => (
+                <button key={opt} onClick={() => setObjective(opt)} style={{
+                  display: 'block', width: '100%', textAlign: 'left',
+                  padding: '6px 10px', marginBottom: '4px',
+                  background: objective === opt ? 'rgba(255,255,255,0.06)' : 'transparent',
+                  border: `1px solid ${objective === opt ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.06)'}`,
+                  borderRadius: '8px',
+                  color: objective === opt ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.4)',
+                  fontFamily: SANS, fontSize: '11px', cursor: 'pointer',
+                }}>
+                  {opt === 'biomass' ? 'Max Biomass' : opt === 'atp' ? 'Max ATP' : 'Max Product'}
+                </button>
+              ))}
+
+              <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '16px 0 8px' }}>
+                Gene Knockouts
+              </p>
+              {REACTION_DEFS.map(r => {
+                const isKO = knockouts.includes(r.id);
+                return (
+                  <button key={r.id} onClick={() => toggleKO(r.id)} style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    width: '100%', padding: '5px 8px', marginBottom: '3px',
+                    background: isKO ? 'rgba(255,80,80,0.08)' : 'transparent',
+                    border: `1px solid ${isKO ? 'rgba(255,80,80,0.3)' : 'rgba(255,255,255,0.06)'}`,
+                    borderRadius: '6px', cursor: 'pointer',
+                  }}>
+                    <span style={{ fontFamily: MONO, fontSize: '10px', color: isKO ? 'rgba(255,120,120,0.9)' : 'rgba(255,255,255,0.5)' }}>{r.id}</span>
+                    <span style={{
+                      width: '8px', height: '8px', borderRadius: '50%',
+                      background: isKO ? 'rgba(255,80,80,0.7)' : 'rgba(255,255,255,0.12)',
+                      flexShrink: 0,
+                    }} />
+                  </button>
+                );
+              })}
+              {knockouts.length > 0 && (
+                <button onClick={() => setKnockouts([])} style={{
+                  display: 'block', width: '100%', marginTop: '6px',
+                  padding: '5px 8px', background: 'transparent',
+                  border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px',
+                  color: 'rgba(255,255,255,0.3)', fontFamily: SANS, fontSize: '10px', cursor: 'pointer',
+                }}>
+                  Clear all knockouts
+                </button>
+              )}
+            </div>
+
+            {/* Engine view — SVG flux map */}
+            <div style={{ flex: 1, position: 'relative', overflow: 'hidden', background: '#0d0f14', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ height: '100%', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <FluxMap result={singleResult} nodes={METABOLIC_NODES} edges={FLUX_EDGES} knockouts={knockouts} />
+              </div>
+            </div>
+
+            {/* Results panel */}
+            <div style={{ width: '240px', flexShrink: 0, overflowY: 'auto', padding: '16px', borderLeft: '1px solid rgba(255,255,255,0.06)', background: '#10131a' }}>
+              <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '0 0 12px' }}>
+                Results
+              </p>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
+                <MetricCard label="Growth Rate (μ)" value={singleResult.growthRate} unit="h⁻¹" highlight />
+                <MetricCard label="ATP Yield" value={singleResult.atpYield} unit="mol/mol glc" />
+                <MetricCard label="NADH Production" value={singleResult.nadhProduction} unit="mmol/gDW/h" />
+                <MetricCard label="Carbon Efficiency" value={singleResult.carbonEfficiency} unit="%" />
+                <MetricCard label="Feasible" value={singleResult.feasible ? 'YES' : 'NO'} />
+              </div>
+
+              <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '0 0 8px' }}>
+                Top 5 Active Reactions
+              </p>
+              {top5.map(r => (
+                <div key={r.id} style={{
+                  padding: '6px 8px', marginBottom: '4px',
+                  background: 'rgba(255,255,255,0.04)',
+                  border: `1px solid ${knockouts.includes(r.id) ? 'rgba(255,80,80,0.2)' : 'rgba(255,255,255,0.06)'}`,
+                  borderRadius: '8px',
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontFamily: MONO, fontSize: '10px', color: knockouts.includes(r.id) ? 'rgba(255,120,120,0.7)' : 'rgba(255,255,255,0.6)' }}>{r.id}</span>
+                    <span style={{ fontFamily: MONO, fontSize: '10px', fontWeight: 600, color: r.flux > 0 ? 'rgba(20,140,80,0.9)' : 'rgba(255,80,80,0.6)', textAlign: 'right' }}>
+                      {r.flux.toFixed(2)}
+                    </span>
+                  </div>
+                  <div style={{ fontFamily: SANS, fontSize: '10px', color: 'rgba(255,255,255,0.35)', marginTop: '2px' }}>{r.name}</div>
+                  <div style={{ marginTop: '4px', height: '2px', background: 'rgba(255,255,255,0.06)', borderRadius: '1px' }}>
+                    <div style={{
+                      height: '100%', borderRadius: '1px',
+                      width: `${Math.abs(r.flux / maxTopFlux) * 100}%`,
+                      background: knockouts.includes(r.id) ? 'rgba(255,80,80,0.3)' : 'rgba(20,140,80,0.4)',
+                      transition: 'width 0.3s',
+                    }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── COMMUNITY MODE ── */}
+        {simMode === 'community' && (
+          <div style={{ flex: 1, display: 'flex', overflow: 'hidden', minHeight: 0 }}>
+            {/* Strain A (E. coli) sidebar */}
+            <div style={{ width: '220px', flexShrink: 0, overflowY: 'auto', padding: '12px' }}>
+              <StrainPanel
+                label="E. coli (Strain A)"
+                color={COLORS.strainABg} borderColor={COLORS.strainABorder} accentColor={COLORS.strainA}
+                glucoseUptake={ecoliGlucose} oxygenUptake={ecoliOxygen} knockouts={ecoliKO}
+                reactions={REACTION_DEFS} result={communityResult.ecoli}
+                onGlucoseChange={setEcoliGlucose} onOxygenChange={setEcoliOxygen}
+                onToggleKO={toggleEcoliKO} onClearKO={() => setEcoliKO([])}
+              />
+            </div>
+
+            {/* Center: dual flux maps + shared bus */}
+            <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '12px', padding: '12px' }}>
+              {/* Community objective banner */}
+              <GlassContainer color={COLORS.sharedBg} borderColor={COLORS.sharedBorder}
+                style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontFamily: SANS, fontSize: '11px', color: 'rgba(255,255,255,0.55)' }}>
+                  Community Biomass Objective
+                </span>
+                <span style={{ fontFamily: MONO, fontSize: '14px', fontWeight: 600, color: COLORS.sharedPool, textAlign: 'right' }}>
+                  μ_com = {communityResult.communityGrowthRate.toFixed(4)} h⁻¹
+                </span>
+              </GlassContainer>
+
+              {/* Dual flux maps */}
+              <div style={{ display: 'flex', gap: '12px', flex: 1, minHeight: 0 }}>
+                <GlassContainer color={COLORS.strainABg} borderColor={COLORS.strainABorder}
+                  style={{ flex: 1, padding: '8px', display: 'flex', flexDirection: 'column' }}>
+                  <p style={{ fontFamily: MONO, fontSize: '9px', color: COLORS.strainA, margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                    E. coli Network
+                  </p>
+                  <div style={{ flex: 1, minHeight: 0 }}>
+                    <FluxMap result={communityResult.ecoli} nodes={METABOLIC_NODES} edges={FLUX_EDGES} knockouts={ecoliKO} compact />
+                  </div>
+                </GlassContainer>
+
+                <GlassContainer color={COLORS.strainBBg} borderColor={COLORS.strainBBorder}
+                  style={{ flex: 1, padding: '8px', display: 'flex', flexDirection: 'column' }}>
+                  <p style={{ fontFamily: MONO, fontSize: '9px', color: COLORS.strainB, margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                    S. cerevisiae Network
+                  </p>
+                  <div style={{ flex: 1, minHeight: 0 }}>
+                    <FluxMap result={communityResult.yeast} nodes={YEAST_NODES} edges={YEAST_FLUX_EDGES} knockouts={yeastKO} compact />
+                  </div>
+                </GlassContainer>
+              </div>
+
+              {/* Shared metabolite bus */}
+              <SharedMetaboliteBus exchangeFluxes={communityResult.exchangeFluxes} />
+            </div>
+
+            {/* Strain B (S. cerevisiae) sidebar */}
+            <div style={{ width: '220px', flexShrink: 0, overflowY: 'auto', padding: '12px' }}>
+              <StrainPanel
+                label="S. cerevisiae (Strain B)"
+                color={COLORS.strainBBg} borderColor={COLORS.strainBBorder} accentColor={COLORS.strainB}
+                glucoseUptake={yeastGlucose} oxygenUptake={yeastOxygen} knockouts={yeastKO}
+                reactions={YEAST_REACTION_DEFS} result={communityResult.yeast}
+                onGlucoseChange={setYeastGlucose} onOxygenChange={setYeastOxygen}
+                onToggleKO={toggleYeastKO} onClearKO={() => setYeastKO([])}
+              />
+            </div>
+          </div>
+        )}
 
         {/* Export bar */}
         <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', padding: '8px 16px', display: 'flex', gap: '8px', flexShrink: 0, background: '#10131a' }}>
-          <ExportButton label="Export JSON" data={result} filename="fbasim-result" format="json" />
+          <ExportButton label="Export JSON" data={exportData} filename={`fbasim-${simMode}-result`} format="json" />
           <ExportButton label="Export Fluxes CSV" data={
-            REACTION_DEFS.map(r => ({ id: r.id, name: r.name, subsystem: r.subsystem, flux: result.fluxes[r.id] ?? 0, knocked_out: knockouts.includes(r.id) }))
-          } filename="fbasim-fluxes" format="csv" />
+            simMode === 'single'
+              ? REACTION_DEFS.map(r => ({ id: r.id, name: r.name, subsystem: r.subsystem, flux: singleResult.fluxes[r.id] ?? 0, knocked_out: knockouts.includes(r.id) }))
+              : [
+                  ...REACTION_DEFS.map(r => ({ strain: 'ecoli', id: r.id, name: r.name, subsystem: r.subsystem, flux: communityResult.ecoli.fluxes[r.id] ?? 0, knocked_out: ecoliKO.includes(r.id) })),
+                  ...YEAST_REACTION_DEFS.map(r => ({ strain: 'yeast', id: r.id, name: r.name, subsystem: r.subsystem, flux: communityResult.yeast.fluxes[r.id] ?? 0, knocked_out: yeastKO.includes(r.id) })),
+                  ...communityResult.exchangeFluxes.map(e => ({ strain: 'exchange', id: e.id, name: e.metabolite, subsystem: 'Exchange', flux: e.flux, knocked_out: false })),
+                ]
+          } filename={`fbasim-${simMode}-fluxes`} format="csv" />
         </div>
       </div>
     </IDEShell>
