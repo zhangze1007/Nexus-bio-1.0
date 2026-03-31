@@ -4,7 +4,7 @@ import IDEShell from '../ide/IDEShell';
 import AlgorithmInsight from '../ide/shared/AlgorithmInsight';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
-import { METABOLIC_NODES, FLUX_EDGES, computeFBAResult } from '../../data/mockFBA';
+import { METABOLIC_NODES, FLUX_EDGES, REACTION_DEFS, runFBA } from '../../data/mockFBA';
 
 const MONO = "'JetBrains Mono','Fira Code',monospace";
 const SANS = "'Inter',-apple-system,sans-serif";
@@ -36,12 +36,18 @@ const SUBSYSTEM_COLORS: Record<string, string> = {
   Energy: 'rgba(255,200,80,0.7)',
 };
 
-function FluxMap({ glucoseUptake, oxygenUptake }: { glucoseUptake: number; oxygenUptake: number }) {
-  const result = useMemo(() => computeFBAResult(glucoseUptake, oxygenUptake), [glucoseUptake, oxygenUptake]);
-  const maxFlux = Math.max(...result.reactions.map(r => Math.abs(r.flux ?? 0)));
+function FluxMap({ glucoseUptake, oxygenUptake, knockouts }: {
+  glucoseUptake: number; oxygenUptake: number; knockouts: string[];
+}) {
+  const result = useMemo(
+    () => runFBA(glucoseUptake, oxygenUptake, knockouts),
+    [glucoseUptake, oxygenUptake, knockouts],
+  );
+  const fluxValues = Object.values(result.fluxes).map(Math.abs);
+  const maxFlux = Math.max(...fluxValues, 1);
 
   const nodeMap = Object.fromEntries(METABOLIC_NODES.map(n => [n.id, n]));
-  const fluxMap = Object.fromEntries(result.reactions.map(r => [r.id, Math.abs(r.flux ?? 0)]));
+  const koSet = new Set(knockouts);
 
   const [hovered, setHovered] = useState<string | null>(null);
 
@@ -52,22 +58,26 @@ function FluxMap({ glucoseUptake, oxygenUptake }: { glucoseUptake: number; oxyge
         const from = nodeMap[edge.from];
         const to = nodeMap[edge.to];
         if (!from || !to) return null;
-        const flux = fluxMap[edge.reactionId] ?? edge.baseFlux * glucoseUptake / 10;
+        const flux = Math.abs(result.fluxes[edge.reactionId] ?? 0);
         const normalized = flux / maxFlux;
-        const strokeW = 1.5 + normalized * 5;
-        const color = normalized > 0.6 ? 'rgba(120,220,180,0.85)'
+        const isKO = koSet.has(edge.reactionId);
+        const color = isKO
+          ? 'rgba(255,80,80,0.5)'
+          : normalized > 0.6 ? 'rgba(120,220,180,0.85)'
           : normalized > 0.3 ? 'rgba(120,180,255,0.7)'
           : 'rgba(255,255,255,0.2)';
+        const strokeW = isKO ? 1 : 1.5 + normalized * 5;
         const mx = (from.x + to.x) / 2;
         const my = (from.y + to.y) / 2;
         return (
           <g key={edge.reactionId}>
             <line x1={from.x + 20} y1={from.y + 20} x2={to.x + 20} y2={to.y + 20}
               stroke={color} strokeWidth={strokeW} strokeLinecap="round"
-              style={{ transition: 'stroke-width 0.3s' }} />
-            <text x={mx + 28} y={my + 20} fill="rgba(255,255,255,0.4)"
+              strokeDasharray={isKO ? '4 3' : undefined}
+              style={{ transition: 'stroke-width 0.3s, stroke 0.3s' }} />
+            <text x={mx + 28} y={my + 20} fill={isKO ? 'rgba(255,80,80,0.5)' : 'rgba(255,255,255,0.4)'}
               fontFamily={MONO} fontSize="8" textAnchor="middle">
-              {flux.toFixed(1)}
+              {isKO ? '—' : flux.toFixed(1)}
             </text>
           </g>
         );
@@ -98,7 +108,7 @@ function FluxMap({ glucoseUptake, oxygenUptake }: { glucoseUptake: number; oxyge
         ))}
       </g>
       <text x={W / 2} y={H - 10} textAnchor="middle" fontFamily={MONO} fontSize="10" fill="rgba(255,255,255,0.3)">
-        μ = {result.objectiveValue.toFixed(3)} h⁻¹
+        μ = {result.growthRate.toFixed(4)} h⁻¹
       </text>
     </svg>
   );
@@ -108,12 +118,27 @@ export default function FBASimPage() {
   const [glucoseUptake, setGlucoseUptake] = useState(10);
   const [oxygenUptake, setOxygenUptake] = useState(12);
   const [objective, setObjective] = useState<'biomass' | 'atp' | 'product'>('biomass');
+  const [knockouts, setKnockouts] = useState<string[]>([]);
 
-  const result = useMemo(() => computeFBAResult(glucoseUptake, oxygenUptake), [glucoseUptake, oxygenUptake]);
+  const result = useMemo(
+    () => runFBA(glucoseUptake, oxygenUptake, knockouts),
+    [glucoseUptake, oxygenUptake, knockouts],
+  );
 
-  const top5 = [...result.reactions]
-    .sort((a, b) => Math.abs(b.flux ?? 0) - Math.abs(a.flux ?? 0))
-    .slice(0, 5);
+  const top5 = useMemo(() => {
+    return REACTION_DEFS
+      .map(r => ({ ...r, flux: result.fluxes[r.id] ?? 0 }))
+      .sort((a, b) => Math.abs(b.flux) - Math.abs(a.flux))
+      .slice(0, 5);
+  }, [result]);
+
+  const maxTopFlux = Math.abs(top5[0]?.flux ?? 1) || 1;
+
+  function toggleKO(id: string) {
+    setKnockouts(prev =>
+      prev.includes(id) ? prev.filter(k => k !== id) : [...prev, id]
+    );
+  }
 
   return (
     <IDEShell moduleId="fbasim">
@@ -152,22 +177,43 @@ export default function FBASimPage() {
             ))}
 
             <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '16px 0 8px' }}>
-              Shadow Prices
+              Gene Knockouts
             </p>
-            {Object.entries(result.shadowPrices).map(([met, price]) => (
-              <div key={met} style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                <span style={{ fontFamily: MONO, fontSize: '10px', color: 'rgba(255,255,255,0.45)' }}>{met}</span>
-                <span style={{ fontFamily: MONO, fontSize: '10px', color: price < 0 ? 'rgba(20,100,200,0.8)' : 'rgba(160,100,20,0.8)' }}>
-                  {price.toFixed(3)}
-                </span>
-              </div>
-            ))}
+            {REACTION_DEFS.map(r => {
+              const isKO = knockouts.includes(r.id);
+              return (
+                <button key={r.id} onClick={() => toggleKO(r.id)} style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  width: '100%', padding: '5px 8px', marginBottom: '3px',
+                  background: isKO ? 'rgba(255,80,80,0.08)' : 'transparent',
+                  border: `1px solid ${isKO ? 'rgba(255,80,80,0.3)' : 'rgba(255,255,255,0.06)'}`,
+                  borderRadius: '6px', cursor: 'pointer',
+                }}>
+                  <span style={{ fontFamily: MONO, fontSize: '10px', color: isKO ? 'rgba(255,120,120,0.9)' : 'rgba(255,255,255,0.5)' }}>{r.id}</span>
+                  <span style={{
+                    width: '8px', height: '8px', borderRadius: '50%',
+                    background: isKO ? 'rgba(255,80,80,0.7)' : 'rgba(255,255,255,0.12)',
+                    flexShrink: 0,
+                  }} />
+                </button>
+              );
+            })}
+            {knockouts.length > 0 && (
+              <button onClick={() => setKnockouts([])} style={{
+                display: 'block', width: '100%', marginTop: '6px',
+                padding: '5px 8px', background: 'transparent',
+                border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px',
+                color: 'rgba(255,255,255,0.3)', fontFamily: SANS, fontSize: '10px', cursor: 'pointer',
+              }}>
+                Clear all knockouts
+              </button>
+            )}
           </div>
 
           {/* Engine view — SVG flux map */}
           <div style={{ flex: 1, position: 'relative', overflow: 'hidden', background: '#0d0f14', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <div style={{ height: '100%', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <FluxMap glucoseUptake={glucoseUptake} oxygenUptake={oxygenUptake} />
+              <FluxMap glucoseUptake={glucoseUptake} oxygenUptake={oxygenUptake} knockouts={knockouts} />
             </div>
           </div>
 
@@ -178,8 +224,10 @@ export default function FBASimPage() {
             </p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
-              <MetricCard label="Growth Rate (μ)" value={result.objectiveValue} unit="h⁻¹" highlight />
-              <MetricCard label="ATP Yield" value={result.reactions.find(r => r.id === 'ATPM')?.flux ?? 0} unit="mmol/gDW/h" />
+              <MetricCard label="Growth Rate (μ)" value={result.growthRate} unit="h⁻¹" highlight />
+              <MetricCard label="ATP Yield" value={result.atpYield} unit="mol/mol glc" />
+              <MetricCard label="NADH Production" value={result.nadhProduction} unit="mmol/gDW/h" />
+              <MetricCard label="Carbon Efficiency" value={result.carbonEfficiency} unit="%" />
               <MetricCard label="Feasible" value={result.feasible ? 'YES' : 'NO'} />
             </div>
 
@@ -190,21 +238,21 @@ export default function FBASimPage() {
               <div key={r.id} style={{
                 padding: '6px 8px', marginBottom: '4px',
                 background: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(255,255,255,0.06)',
+                border: `1px solid ${knockouts.includes(r.id) ? 'rgba(255,80,80,0.2)' : 'rgba(255,255,255,0.06)'}`,
                 borderRadius: '8px',
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontFamily: MONO, fontSize: '10px', color: 'rgba(255,255,255,0.6)' }}>{r.id}</span>
-                  <span style={{ fontFamily: MONO, fontSize: '10px', color: 'rgba(20,140,80,0.9)' }}>
-                    {(r.flux ?? 0).toFixed(2)}
+                  <span style={{ fontFamily: MONO, fontSize: '10px', color: knockouts.includes(r.id) ? 'rgba(255,120,120,0.7)' : 'rgba(255,255,255,0.6)' }}>{r.id}</span>
+                  <span style={{ fontFamily: MONO, fontSize: '10px', color: r.flux > 0 ? 'rgba(20,140,80,0.9)' : 'rgba(255,80,80,0.6)' }}>
+                    {r.flux.toFixed(2)}
                   </span>
                 </div>
                 <div style={{ fontFamily: SANS, fontSize: '10px', color: 'rgba(255,255,255,0.35)', marginTop: '2px' }}>{r.name}</div>
                 <div style={{ marginTop: '4px', height: '2px', background: 'rgba(255,255,255,0.06)', borderRadius: '1px' }}>
                   <div style={{
                     height: '100%', borderRadius: '1px',
-                    width: `${Math.abs((r.flux ?? 0) / (top5[0].flux ?? 1)) * 100}%`,
-                    background: 'rgba(20,140,80,0.4)',
+                    width: `${Math.abs(r.flux / maxTopFlux) * 100}%`,
+                    background: knockouts.includes(r.id) ? 'rgba(255,80,80,0.3)' : 'rgba(20,140,80,0.4)',
                     transition: 'width 0.3s',
                   }} />
                 </div>
@@ -216,7 +264,9 @@ export default function FBASimPage() {
         {/* Export bar */}
         <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', padding: '8px 16px', display: 'flex', gap: '8px', flexShrink: 0, background: '#10131a' }}>
           <ExportButton label="Export JSON" data={result} filename="fbasim-result" format="json" />
-          <ExportButton label="Export Reactions CSV" data={result.reactions} filename="fbasim-reactions" format="csv" />
+          <ExportButton label="Export Fluxes CSV" data={
+            REACTION_DEFS.map(r => ({ id: r.id, name: r.name, subsystem: r.subsystem, flux: result.fluxes[r.id] ?? 0, knocked_out: knockouts.includes(r.id) }))
+          } filename="fbasim-fluxes" format="csv" />
         </div>
       </div>
     </IDEShell>
