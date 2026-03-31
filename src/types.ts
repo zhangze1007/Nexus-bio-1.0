@@ -215,8 +215,53 @@ export interface GeneticPart { id: string; type: GeneticPartType; strength?: num
 export interface CircuitNode { id: string; parts: GeneticPart[]; outputLevel?: number; }
 
 // ── MODULE: DYNCON ────────────────────────────────────────────────────────────
-export interface ODEState { time: number; biomass: number; substrate: number; product: number; dissolvedO2: number; }
+export interface ODEState {
+  time: number;
+  biomass: number;
+  substrate: number;
+  product: number;
+  dissolvedO2: number;
+  // Extended state for artemisinin pathway
+  fpp?: number;            // FPP intermediate concentration (μM)
+  adsExpression?: number;  // ADS enzyme expression level (a.u.)
+  toxicity?: number;       // Toxicity index (0–1)
+  metabolicBurden?: number;// Metabolic burden penalty (0–1)
+}
+
 export interface ControllerParams { kp: number; ki: number; kd: number; setpoint: number; }
+
+export interface HillParams {
+  Vmax: number;  // Maximum expression rate
+  Kd: number;    // Dissociation constant (μM)
+  n: number;     // Hill coefficient (cooperativity)
+}
+
+export interface ConvergenceMetrics {
+  settlingTime: number;        // Time to reach ±5% of setpoint (h)
+  overshoot: number;           // Maximum overshoot (%)
+  steadyStateError: number;    // Final offset from setpoint
+  convergenceRate: number;     // Exponential decay rate (h⁻¹)
+  oscillationCount: number;    // Number of zero-crossings
+  isStable: boolean;
+}
+
+export interface RBSMapping {
+  controlGain: number;          // Normalized gain (0–1)
+  rbsName: string;              // Registry part name
+  rbsStrength: number;          // Relative translation initiation rate
+  translationRate: number;      // au/min
+  sequence: string;             // DNA sequence (5'→3')
+  registryId: string;           // iGEM Registry ID
+}
+
+export interface MetabolicBurdenResult {
+  burdenIndex: number;          // 0–1 composite score
+  proteinCost: number;          // Fraction of ribosome budget consumed
+  atpDrain: number;             // mmol ATP/gDW/h diverted
+  growthPenalty: number;        // Fractional growth rate reduction
+  isViable: boolean;            // Host cell viability prediction
+  recommendation: string;
+}
 
 // ── MODULE: DBTLflow ──────────────────────────────────────────────────────────
 export interface DBTLIteration {
