@@ -89,38 +89,41 @@ export default function NEXAIPage() {
     setLoading(true);
     appendConsole({ level: 'info', module: 'nexai', message: `Query: "${query.slice(0, 60)}${query.length > 60 ? '…' : ''}"` });
 
+    const prompt = `You are a synthetic biology and metabolic engineering expert. Answer the following research question with scientific precision. Provide a detailed, evidence-based answer (2–4 paragraphs). Include specific mechanisms, data points, and cite relevant research where appropriate.\n\nQuestion: ${query}`;
+
     try {
       const res = await fetch('/api/gemini', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          input: query,
-          inputMode: 'semantic_search',
-          pathway_context: 'artemisinin biosynthesis, metabolic engineering',
+          contents: [{ parts: [{ text: prompt }] }],
         }),
       });
 
-      if (res.ok) {
-        const data = await res.json();
+      const data = await res.json();
+      const answer = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+      if (res.ok && answer) {
         const mockBase = MOCK_RESULTS[mockIndex % MOCK_RESULTS.length];
         setResult({
           ...mockBase,
           query,
-          answer: data.summary ?? data.result ?? mockBase.answer,
+          answer,
           confidence: 0.85 + Math.random() * 0.1,
           generatedAt: Date.now(),
         });
-        appendConsole({ level: 'success', module: 'nexai', message: `Answer generated (${data.provider ?? 'groq'} · ${data.latencyMs ?? '?'}ms)` });
+        appendConsole({ level: 'success', module: 'nexai', message: `Answer generated (${data.meta?.provider ?? 'groq'})` });
       } else {
+        const err = data?.error ?? `HTTP ${res.status}`;
+        appendConsole({ level: 'warn', module: 'nexai', message: `API error — ${err}` });
         const mockResult = MOCK_RESULTS[mockIndex % MOCK_RESULTS.length];
         setResult({ ...mockResult, query, generatedAt: Date.now() });
-        appendConsole({ level: 'warn', module: 'nexai', message: 'API unavailable — showing mock result' });
         setMockIndex(i => i + 1);
       }
-    } catch {
+    } catch (e) {
+      appendConsole({ level: 'warn', module: 'nexai', message: `Network error — ${String(e).slice(0, 60)}` });
       const mockResult = MOCK_RESULTS[mockIndex % MOCK_RESULTS.length];
       setResult({ ...mockResult, query, generatedAt: Date.now() });
-      appendConsole({ level: 'warn', module: 'nexai', message: 'Network error — showing mock result' });
       setMockIndex(i => i + 1);
     }
     setLoading(false);
