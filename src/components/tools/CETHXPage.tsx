@@ -96,7 +96,7 @@ export default function CETHXPage() {
 
   return (
     <IDEShell moduleId="cethx">
-      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', background: '#F5F7FA' }}>
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', background: '#10131a' }}>
         <AlgorithmInsight
           title="Cell Thermodynamics Engine"
           description="ΔG° values corrected for temperature and pH via Van't Hoff. ATP yield and NADH/FADH₂ tallied per pathway step."
@@ -105,25 +105,25 @@ export default function CETHXPage() {
 
         <div style={{ flex: 1, display: 'flex', overflow: 'hidden', minHeight: 0 }}>
           {/* Input panel */}
-          <div style={{ width: '220px', flexShrink: 0, overflowY: 'auto', padding: '16px', borderRight: '1px solid rgba(0,0,0,0.07)', background: '#FFFFFF' }}>
-            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(0,0,0,0.35)', margin: '0 0 12px' }}>
+          <div style={{ width: '220px', flexShrink: 0, overflowY: 'auto', padding: '16px', borderRight: '1px solid rgba(255,255,255,0.06)', background: '#10131a' }}>
+            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '0 0 12px' }}>
               Pathway
             </p>
             {PATHWAYS.map(p => (
               <button key={p.id} onClick={() => setPathway(p.id)} style={{
                 display: 'block', width: '100%', textAlign: 'left',
                 padding: '7px 10px', marginBottom: '5px',
-                background: pathway === p.id ? 'rgba(0,0,0,0.06)' : 'transparent',
-                border: `1px solid ${pathway === p.id ? 'rgba(0,0,0,0.18)' : 'rgba(0,0,0,0.08)'}`,
+                background: pathway === p.id ? 'rgba(255,255,255,0.06)' : 'transparent',
+                border: `1px solid ${pathway === p.id ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.06)'}`,
                 borderRadius: '8px',
-                color: pathway === p.id ? 'rgba(0,0,0,0.75)' : 'rgba(0,0,0,0.4)',
+                color: pathway === p.id ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.4)',
                 fontFamily: SANS, fontSize: '11px', cursor: 'pointer',
               }}>
                 {p.label}
               </button>
             ))}
 
-            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(0,0,0,0.35)', margin: '16px 0 8px' }}>
+            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '16px 0 8px' }}>
               Conditions
             </p>
             {[
@@ -132,21 +132,21 @@ export default function CETHXPage() {
             ].map(s => (
               <div key={s.label} style={{ marginBottom: '12px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                  <span style={{ fontFamily: SANS, fontSize: '11px', color: 'rgba(0,0,0,0.55)' }}>{s.label}</span>
-                  <span style={{ fontFamily: MONO, fontSize: '11px', color: 'rgba(0,0,0,0.7)' }}>{s.value.toFixed(1)}{s.unit}</span>
+                  <span style={{ fontFamily: SANS, fontSize: '11px', color: 'rgba(255,255,255,0.45)' }}>{s.label}</span>
+                  <span style={{ fontFamily: MONO, fontSize: '11px', color: 'rgba(255,255,255,0.55)' }}>{s.value.toFixed(1)}{s.unit}</span>
                 </div>
                 <input type="range" min={s.min} max={s.max} step={s.step} value={s.value}
                   onChange={e => s.onChange(parseFloat(e.target.value))}
-                  style={{ width: '100%', accentColor: 'rgba(0,0,0,0.5)' }} />
+                  style={{ width: '100%', accentColor: 'rgba(120,180,255,0.8)' }} />
               </div>
             ))}
 
-            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(0,0,0,0.35)', margin: '16px 0 8px' }}>
+            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '16px 0 8px' }}>
               Steps
             </p>
             {thermo.steps.map((s, i) => (
-              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
-                <span style={{ fontFamily: SANS, fontSize: '9px', color: 'rgba(0,0,0,0.4)', maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                <span style={{ fontFamily: SANS, fontSize: '9px', color: 'rgba(255,255,255,0.4)', maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {s.step}
                 </span>
                 <span style={{ fontFamily: MONO, fontSize: '9px', color: s.deltaG < 0 ? 'rgba(20,140,80,0.75)' : 'rgba(180,40,40,0.75)' }}>
@@ -162,8 +162,8 @@ export default function CETHXPage() {
           </div>
 
           {/* Results panel */}
-          <div style={{ width: '220px', flexShrink: 0, overflowY: 'auto', padding: '16px', borderLeft: '1px solid rgba(0,0,0,0.07)', background: '#FFFFFF' }}>
-            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(0,0,0,0.35)', margin: '0 0 12px' }}>
+          <div style={{ width: '220px', flexShrink: 0, overflowY: 'auto', padding: '16px', borderLeft: '1px solid rgba(255,255,255,0.06)', background: '#10131a' }}>
+            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '0 0 12px' }}>
               Thermodynamics
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -176,7 +176,7 @@ export default function CETHXPage() {
           </div>
         </div>
 
-        <div style={{ borderTop: '1px solid rgba(0,0,0,0.07)', padding: '8px 16px', display: 'flex', gap: '8px', flexShrink: 0, background: '#FFFFFF' }}>
+        <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', padding: '8px 16px', display: 'flex', gap: '8px', flexShrink: 0, background: '#10131a' }}>
           <ExportButton label="Export JSON" data={thermo} filename="cethx-thermodynamics" format="json" />
           <ExportButton label="Export Steps CSV" data={thermo.steps} filename="cethx-steps" format="csv" />
         </div>

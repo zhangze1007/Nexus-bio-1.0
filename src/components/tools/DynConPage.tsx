@@ -78,12 +78,12 @@ function ParamSlider({ label, value, min, max, step = 0.1, onChange, unit }: {
   return (
     <div style={{ marginBottom: '12px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-        <span style={{ fontFamily: SANS, fontSize: '11px', color: 'rgba(0,0,0,0.55)' }}>{label}</span>
-        <span style={{ fontFamily: MONO, fontSize: '11px', color: 'rgba(0,0,0,0.7)' }}>{value.toFixed(2)}{unit ? ` ${unit}` : ''}</span>
+        <span style={{ fontFamily: SANS, fontSize: '11px', color: 'rgba(255,255,255,0.45)' }}>{label}</span>
+        <span style={{ fontFamily: MONO, fontSize: '11px', color: 'rgba(255,255,255,0.55)' }}>{value.toFixed(2)}{unit ? ` ${unit}` : ''}</span>
       </div>
       <input type="range" min={min} max={max} step={step} value={value}
         onChange={e => onChange(parseFloat(e.target.value))}
-        style={{ width: '100%', accentColor: 'rgba(0,0,0,0.5)', cursor: 'pointer' }} />
+        style={{ width: '100%', accentColor: 'rgba(120,180,255,0.8)', cursor: 'pointer' }} />
     </div>
   );
 }
@@ -109,7 +109,7 @@ export default function DynConPage() {
 
   return (
     <IDEShell moduleId="dyncon">
-      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', background: '#F5F7FA' }}>
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', background: '#10131a' }}>
         <AlgorithmInsight
           title="Dynamic Control Simulator"
           description="Fed-batch bioreactor with PID-controlled dissolved O₂. Monod kinetics integrated via RK4 at 1h timestep."
@@ -118,8 +118,8 @@ export default function DynConPage() {
 
         <div style={{ flex: 1, display: 'flex', overflow: 'hidden', minHeight: 0 }}>
           {/* Input panel */}
-          <div style={{ width: '240px', flexShrink: 0, overflowY: 'auto', padding: '16px', borderRight: '1px solid rgba(0,0,0,0.07)', background: '#FFFFFF' }}>
-            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(0,0,0,0.35)', margin: '0 0 12px' }}>
+          <div style={{ width: '240px', flexShrink: 0, overflowY: 'auto', padding: '16px', borderRight: '1px solid rgba(255,255,255,0.06)', background: '#10131a' }}>
+            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '0 0 12px' }}>
               PID Controller
             </p>
             <ParamSlider label="Kp (Proportional)" value={kp} min={0} max={10} step={0.1} onChange={setKp} />
@@ -127,7 +127,7 @@ export default function DynConPage() {
             <ParamSlider label="Kd (Derivative)" value={kd} min={0} max={2} step={0.02} onChange={setKd} />
             <ParamSlider label="DO₂ Setpoint" value={setpoint} min={0.1} max={1.0} step={0.05} onChange={setSetpoint} unit="sat." />
 
-            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(0,0,0,0.35)', margin: '16px 0 8px' }}>
+            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '16px 0 8px' }}>
               Bioreactor Parameters
             </p>
             {[
@@ -137,9 +137,9 @@ export default function DynConPage() {
               ['kLa', `${DEFAULT_PARAMS.kLa} h⁻¹`],
               ['Feed conc', `${DEFAULT_PARAMS.feedConc} g/L`],
             ].map(([k, v]) => (
-              <div key={k} style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
-                <span style={{ fontFamily: MONO, fontSize: '10px', color: 'rgba(0,0,0,0.4)' }}>{k}</span>
-                <span style={{ fontFamily: MONO, fontSize: '10px', color: 'rgba(0,0,0,0.65)' }}>{v}</span>
+              <div key={k} style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                <span style={{ fontFamily: MONO, fontSize: '10px', color: 'rgba(255,255,255,0.4)' }}>{k}</span>
+                <span style={{ fontFamily: MONO, fontSize: '10px', color: 'rgba(255,255,255,0.6)' }}>{v}</span>
               </div>
             ))}
           </div>
@@ -150,8 +150,8 @@ export default function DynConPage() {
           </div>
 
           {/* Results panel */}
-          <div style={{ width: '240px', flexShrink: 0, overflowY: 'auto', padding: '16px', borderLeft: '1px solid rgba(0,0,0,0.07)', background: '#FFFFFF' }}>
-            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(0,0,0,0.35)', margin: '0 0 12px' }}>
+          <div style={{ width: '240px', flexShrink: 0, overflowY: 'auto', padding: '16px', borderLeft: '1px solid rgba(255,255,255,0.06)', background: '#10131a' }}>
+            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '0 0 12px' }}>
               Process Readouts
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -165,7 +165,7 @@ export default function DynConPage() {
           </div>
         </div>
 
-        <div style={{ borderTop: '1px solid rgba(0,0,0,0.07)', padding: '8px 16px', display: 'flex', gap: '8px', flexShrink: 0, background: '#FFFFFF' }}>
+        <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', padding: '8px 16px', display: 'flex', gap: '8px', flexShrink: 0, background: '#10131a' }}>
           <ExportButton label="Export Trajectory JSON" data={trajectory} filename="dyncon-trajectory" format="json" />
           <ExportButton label="Export CSV" data={trajectory} filename="dyncon-trajectory" format="csv" />
         </div>

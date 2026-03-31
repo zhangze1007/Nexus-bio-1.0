@@ -108,7 +108,7 @@ export default function MultiOPage() {
 
   return (
     <IDEShell moduleId="multio">
-      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', background: '#F5F7FA' }}>
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', background: '#10131a' }}>
         <AlgorithmInsight
           title="Multi-Omics Integrator"
           description="Pearson correlation across transcript / protein / metabolite layers. Significance: p < threshold after Benjamini-Hochberg correction."
@@ -117,8 +117,8 @@ export default function MultiOPage() {
 
         <div style={{ flex: 1, display: 'flex', overflow: 'hidden', minHeight: 0 }}>
           {/* Input panel */}
-          <div style={{ width: '200px', flexShrink: 0, overflowY: 'auto', padding: '16px', borderRight: '1px solid rgba(0,0,0,0.07)', background: '#FFFFFF' }}>
-            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(0,0,0,0.35)', margin: '0 0 12px' }}>
+          <div style={{ width: '200px', flexShrink: 0, overflowY: 'auto', padding: '16px', borderRight: '1px solid rgba(255,255,255,0.06)', background: '#10131a' }}>
+            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '0 0 12px' }}>
               Data Layers
             </p>
             {[
@@ -129,10 +129,10 @@ export default function MultiOPage() {
               <button key={label} onClick={() => set(!val)} style={{
                 display: 'flex', alignItems: 'center', gap: '8px',
                 width: '100%', padding: '7px 10px', marginBottom: '6px',
-                background: val ? 'rgba(0,0,0,0.04)' : 'transparent',
-                border: `1px solid ${val ? 'rgba(0,0,0,0.15)' : 'rgba(0,0,0,0.08)'}`,
+                background: val ? 'rgba(255,255,255,0.06)' : 'transparent',
+                border: `1px solid ${val ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.06)'}`,
                 borderRadius: '8px', cursor: 'pointer',
-                color: val ? 'rgba(0,0,0,0.7)' : 'rgba(0,0,0,0.3)',
+                color: val ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.4)',
                 fontFamily: SANS, fontSize: '11px', textAlign: 'left',
               }}>
                 <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: val ? color : 'transparent', border: `1.5px solid ${color}`, flexShrink: 0 }} />
@@ -140,26 +140,26 @@ export default function MultiOPage() {
               </button>
             ))}
 
-            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(0,0,0,0.35)', margin: '16px 0 8px' }}>
+            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '16px 0 8px' }}>
               Thresholds
             </p>
             <div style={{ marginBottom: '12px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                <span style={{ fontFamily: SANS, fontSize: '11px', color: 'rgba(0,0,0,0.55)' }}>|FC| &gt;</span>
-                <span style={{ fontFamily: MONO, fontSize: '11px', color: 'rgba(0,0,0,0.7)' }}>{fcThreshold.toFixed(1)}</span>
+                <span style={{ fontFamily: SANS, fontSize: '11px', color: 'rgba(255,255,255,0.45)' }}>|FC| &gt;</span>
+                <span style={{ fontFamily: MONO, fontSize: '11px', color: 'rgba(255,255,255,0.55)' }}>{fcThreshold.toFixed(1)}</span>
               </div>
               <input type="range" min={0.5} max={5} step={0.1} value={fcThreshold}
                 onChange={e => setFcThreshold(parseFloat(e.target.value))}
-                style={{ width: '100%', accentColor: 'rgba(0,0,0,0.5)' }} />
+                style={{ width: '100%', accentColor: 'rgba(120,180,255,0.8)' }} />
             </div>
             <div style={{ marginBottom: '12px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                <span style={{ fontFamily: SANS, fontSize: '11px', color: 'rgba(0,0,0,0.55)' }}>p &lt;</span>
-                <span style={{ fontFamily: MONO, fontSize: '11px', color: 'rgba(0,0,0,0.7)' }}>{pvThreshold.toFixed(3)}</span>
+                <span style={{ fontFamily: SANS, fontSize: '11px', color: 'rgba(255,255,255,0.45)' }}>p &lt;</span>
+                <span style={{ fontFamily: MONO, fontSize: '11px', color: 'rgba(255,255,255,0.55)' }}>{pvThreshold.toFixed(3)}</span>
               </div>
               <input type="range" min={0.001} max={0.1} step={0.001} value={pvThreshold}
                 onChange={e => setPvThreshold(parseFloat(e.target.value))}
-                style={{ width: '100%', accentColor: 'rgba(0,0,0,0.5)' }} />
+                style={{ width: '100%', accentColor: 'rgba(120,180,255,0.8)' }} />
             </div>
           </div>
 
@@ -174,8 +174,8 @@ export default function MultiOPage() {
           </div>
 
           {/* Results panel */}
-          <div style={{ width: '200px', flexShrink: 0, overflowY: 'auto', padding: '16px', borderLeft: '1px solid rgba(0,0,0,0.07)', background: '#FFFFFF' }}>
-            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(0,0,0,0.35)', margin: '0 0 12px' }}>
+          <div style={{ width: '200px', flexShrink: 0, overflowY: 'auto', padding: '16px', borderLeft: '1px solid rgba(255,255,255,0.06)', background: '#10131a' }}>
+            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '0 0 12px' }}>
               Enrichment Summary
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -185,13 +185,13 @@ export default function MultiOPage() {
               <MetricCard label="Total Genes" value={OMICS_DATA.length} />
             </div>
 
-            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(0,0,0,0.35)', margin: '16px 0 8px' }}>
+            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '16px 0 8px' }}>
               Top Hits
             </p>
             {significant.slice(0, 5).map(r => (
-              <div key={r.id} style={{ padding: '5px 0', borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
+              <div key={r.id} style={{ padding: '5px 0', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ fontFamily: MONO, fontSize: '10px', color: 'rgba(0,0,0,0.65)' }}>{r.gene}</span>
+                  <span style={{ fontFamily: MONO, fontSize: '10px', color: 'rgba(255,255,255,0.65)' }}>{r.gene}</span>
                   <span style={{ fontFamily: MONO, fontSize: '10px', color: (r.fold_change ?? 0) > 0 ? 'rgba(20,140,80,0.85)' : 'rgba(180,40,40,0.85)' }}>
                     {(r.fold_change ?? 0) > 0 ? '+' : ''}{r.fold_change?.toFixed(1)}×
                   </span>
@@ -201,7 +201,7 @@ export default function MultiOPage() {
           </div>
         </div>
 
-        <div style={{ borderTop: '1px solid rgba(0,0,0,0.07)', padding: '8px 16px', display: 'flex', gap: '8px', flexShrink: 0, background: '#FFFFFF' }}>
+        <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', padding: '8px 16px', display: 'flex', gap: '8px', flexShrink: 0, background: '#10131a' }}>
           <ExportButton label="Export All CSV" data={OMICS_DATA} filename="multio-all" format="csv" />
           <ExportButton label="Export Significant JSON" data={significant} filename="multio-significant" format="json" />
         </div>
