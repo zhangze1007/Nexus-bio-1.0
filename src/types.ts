@@ -484,6 +484,95 @@ export interface AxonEnrichedResponse {
   axon_interaction: AxonInteraction;
 }
 
+// ── MODULE: SBOL 3.0 & Assembly ────────────────────────────────────────────────
+export type SBOLRole =
+  | 'SO:0000167'  // Promoter
+  | 'SO:0000139'  // RBS
+  | 'SO:0000316'  // CDS
+  | 'SO:0000141'  // Terminator
+  | 'SO:0000110'  // Sequence feature (generic)
+  | 'SO:0000296'  // Origin of replication
+  | 'SO:0000057'; // Operator
+
+export interface SBOLComponent {
+  displayId: string;
+  name: string;
+  role: SBOLRole;
+  sequence?: string;           // DNA sequence (5'→3')
+  description?: string;
+  namespace: string;
+}
+
+export interface SBOLDocument {
+  displayId: string;
+  name: string;
+  description: string;
+  namespace: string;
+  components: SBOLComponent[];
+  interactions: SBOLInteraction[];
+  serializedXml: string;
+  serializedTurtle: string;
+  createdAt: string;
+}
+
+export interface SBOLInteraction {
+  displayId: string;
+  type: 'SBO:0000170'  // Stimulation
+      | 'SBO:0000169'  // Inhibition
+      | 'SBO:0000176'  // Biochemical reaction
+      | 'SBO:0000589'; // Genetic production
+  participantIds: string[];
+}
+
+export interface GibsonFragment {
+  id: string;
+  index: number;
+  sequence: string;
+  length: number;
+  overlapFwd: string;          // 5' overlap region
+  overlapRev: string;          // 3' overlap region
+  gcContent: number;           // fraction
+}
+
+export interface GibsonPrimer {
+  id: string;
+  fragmentIndex: number;
+  direction: 'forward' | 'reverse';
+  sequence: string;            // Full primer including overlap
+  bindingRegion: string;       // Region that anneals to template
+  overlapRegion: string;       // Gibson overlap region
+  length: number;
+  tm: number;                  // Melting temperature (°C), SantaLucia '98
+  gcContent: number;
+  hasSelfDimer: boolean;       // Secondary structure warning
+  hasMisprime: boolean;        // Mispriming risk
+}
+
+export interface GibsonAssemblyPlan {
+  targetName: string;
+  targetLength: number;
+  fragments: GibsonFragment[];
+  primers: GibsonPrimer[];
+  overlapLength: number;
+  expectedTmRange: [number, number]; // [min, max] across all primers
+  tmSpread: number;            // max - min Tm (should be < 5°C)
+  warnings: string[];
+  provenanceId: string;        // UUID linking digital→physical
+}
+
+export interface ProvenanceRecord {
+  uuid: string;                // Unique tube/sample barcode
+  designId: string;            // Links back to GibsonAssemblyPlan or SBOL displayId
+  sampleType: 'fragment' | 'primer' | 'assembly' | 'transformant' | 'culture';
+  label: string;
+  well?: string;               // Plate well (e.g., 'A1')
+  slot?: number;               // OT-2 deck slot
+  volume_ul?: number;
+  concentration_ng_ul?: number;
+  createdAt: string;
+  parentUuids?: string[];      // Provenance chain (assembly from fragments)
+}
+
 // ── Artemisinin showcase CIDs
 export const SHOWCASE_PUBCHEM_CIDS: Record<string, number> = {
   acetyl_coa: 444493,

@@ -7,6 +7,8 @@ import ExportButton from '../ide/shared/ExportButton';
 import { INITIAL_ITERATIONS, appendIteration } from '../../data/mockDBTL';
 import { ProtocolGenerator } from '../../utils/protocol-generator';
 import { AutomatedFeedbackLoop } from '../../utils/feedback-loop';
+import { serializePartsToSBOL, validateSBOL } from '../../utils/sbol-serializer';
+import { planGibsonAssembly, generateProvenanceRecords, exportPrimerOrderCSV } from '../../utils/assembly-planner';
 import type {
   DBTLIteration,
   GeneratedProtocol,
@@ -14,6 +16,10 @@ import type {
   QCFlag,
   NextIterationSuggestion,
   DBTLPhase,
+  GeneticPart,
+  SBOLDocument,
+  GibsonAssemblyPlan,
+  ProvenanceRecord,
 } from '../../types';
 
 /* ── Design Tokens ── */
@@ -251,6 +257,68 @@ export default function DBTLflowPage() {
     reader.readAsText(file);
   }
 
+  // ── SBOL 3.0 Export ──
+  const [sbolDoc, setSbolDoc] = useState<SBOLDocument | null>(null);
+  const [sbolValidation, setSbolValidation] = useState<string[]>([]);
+  const SHOWCASE_PARTS: GeneticPart[] = useMemo(() => [
+    { id: 'pGAL1', type: 'promoter', strength: 0.85, label: 'GAL1 Promoter' },
+    { id: 'B0034', type: 'rbs', strength: 1.0, label: 'RBS B0034' },
+    { id: 'ADS_CDS', type: 'cds', strength: 0.9, label: 'ADS (Amorphadiene Synthase)' },
+    { id: 'T_CYC1', type: 'terminator', strength: 0.95, label: 'CYC1 Terminator' },
+  ], []);
+
+  function handleSBOLExport() {
+    const doc = serializePartsToSBOL(SHOWCASE_PARTS, 'ADS_Expression_Cassette');
+    setSbolDoc(doc);
+    setSbolValidation(validateSBOL(doc));
+  }
+
+  function handleDownloadSBOL(format: 'xml' | 'turtle') {
+    if (!sbolDoc) return;
+    const content = format === 'xml' ? sbolDoc.serializedXml : sbolDoc.serializedTurtle;
+    const mimeType = format === 'xml' ? 'application/rdf+xml' : 'text/turtle';
+    const ext = format === 'xml' ? '.rdf' : '.ttl';
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = sbolDoc.displayId + ext;
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a); URL.revokeObjectURL(url);
+  }
+
+  // ── Gibson Assembly ──
+  const [assemblyPlan, setAssemblyPlan] = useState<GibsonAssemblyPlan | null>(null);
+  const [assemblyProvenance, setAssemblyProvenance] = useState<ProvenanceRecord[]>([]);
+  const [seqInput, setSeqInput] = useState('');
+  const [assemblyExpanded, setAssemblyExpanded] = useState(false);
+  const DEMO_SEQ = 'ATGCTTCAGCTTTTCAAGGATGCTTCAGCTTTTCAAGGATCCAATTTTGGTAACGCCAGGTTTTCTCCTCTTCCTGGTTTTCAAGGATGCTTCAGCAATTTTGATTTCAAGGATCCAATTTTGGTAACGCCAGGTTTTCTCCTCTTCCTGGTTTTCAAGGATGCTTCAGCTTTTCAAGGATCCAATTTTGGTAACGCCAGGTTTTCTCCTCTTCCTGGAAGCTTCAGCTTTTCAAGGATCCAATTTTGGTAACGCCAGGTTTTCTCCTCTTCCTGGTTTTCAAGGATGCTTCAGCTTTTCAAGGATCCAATTTTGGTAACGCCAGGTTTTCTCCTCTTCCTGGAAGCTTCAGCTTTTCAAGGATCCAATTTTGGTAACGCCAGGTTTTCTCCTCTTCCTGGAAGCTTCAGCTTTTCAAGGATCCAATTTTGGTAACGCCAGGTTTTCTCCTCTTCCTGGAAGCTTCAGCTTTTCAAGGATCCAATTTTGGTAACGCCAGGTTTTCTCCTCTTCCTGGTTTTCAAGGATGCTTCAGCTTTTCAAGGATCCAATTTTGGTAACGCCAGGTTTTCTCCTCTTCCTGGTTTTCAAGGATGCTTCAGCTTTTCAAGGATCCAATTTTGGTAACGCCAGGTTTTCTCCTCTTCCTGGTTTTCAAGGATGCTTCAGCTTTTCAAGGATCCAATTTTGGTAACGCCAGGTTTTCTCCTCTTCCTGGTTTTCAAGGATGCTTCAGCTTTTCAAGGATCCAATTTTGGTAACGCCAGGTTTTCTCCTCTTCCTGGAAGCTTCAGCTTTTCAAGGATCCAATTTTGGTAACGCCAGGTTTTCTCCTCTTCCTGGAAGCTTCAGCTTTTCAAGGATCCAATTTTGGTAACGCCAGGTTTTCTCCTCTTCCTGGAAGCTTCAGCTTTTCAAGGATCCAATTTTGGTAACGCCAGGTTTTCTCCTCTTCCTGGTTTTCAAGGATGCTTCAGCTTTTCAAGGATCCAATTTTGGTAACGCCAGGTTTTCTCCTCTTCCTGGTTTTCAAGGATGCTTCAGCTTTTCAAGGATCCAATTTTGGTAACGCCAGGTTTTCTCCTCTTCCTGGAAGCTTCAGCTTTTCAAGGATCCAATTTTGGTAACGCCAGGTTTTCTCCTCTTCCTGGTTTTCAAGGATGCTTCAGCTTTTCAAGGATCCAATTTTGGTAACGCCAGGTTTTCTCCTCTTCCTGG';
+
+  function handlePlanAssembly() {
+    const seq = seqInput.trim() || DEMO_SEQ;
+    const plan = planGibsonAssembly(seq, 'ADS_Cassette', { maxFragmentLength: 800, overlapLength: 30 });
+    setAssemblyPlan(plan);
+    setAssemblyProvenance(generateProvenanceRecords(plan));
+    setAssemblyExpanded(true);
+  }
+
+  function handleDownloadPrimers() {
+    if (!assemblyPlan) return;
+    const csv = exportPrimerOrderCSV(assemblyPlan);
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = assemblyPlan.targetName + '_primers.csv';
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a); URL.revokeObjectURL(url);
+  }
+
+  function handleGenerateGibsonProtocol() {
+    if (!assemblyPlan) return;
+    const proto = generator.generateGibsonAssembly(assemblyPlan, assemblyProvenance);
+    setGeneratedProtocol(proto);
+    setProtocolExpanded(true);
+  }
+
   /* ── Shared input style ── */
   const inputBase: React.CSSProperties = {
     width: '100%',
@@ -431,6 +499,158 @@ export default function DBTLflowPage() {
                       }}>
                         ↓ Download .py
                       </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* ── SBOL 3.0 Export ── */}
+            <div style={{ marginTop: '16px' }}>
+              <p style={sectionLabel}>SBOL 3.0 Export</p>
+              <button onClick={handleSBOLExport} style={{
+                width: '100%', padding: '8px',
+                background: 'rgba(219,205,240,0.08)',
+                border: '1px solid rgba(219,205,240,0.2)',
+                borderRadius: '8px', color: '#DBCDF0',
+                fontFamily: SANS, fontSize: '11px', cursor: 'pointer',
+              }}>
+                ◎ Serialize to SBOL 3.0
+              </button>
+              {sbolDoc && (
+                <div style={{ ...GLASS, marginTop: '10px', padding: '12px' }}>
+                  <p style={{ fontFamily: SANS, fontSize: '10px', color: VALUE, fontWeight: 500, margin: '0 0 6px' }}>
+                    {sbolDoc.name}
+                  </p>
+                  <p style={{ fontFamily: MONO, fontSize: '9px', color: LABEL, margin: '0 0 8px' }}>
+                    {sbolDoc.components.length} components · {sbolDoc.interactions.length} interactions
+                  </p>
+                  {sbolValidation.map((v, i) => (
+                    <p key={i} style={{
+                      fontFamily: MONO, fontSize: '9px', margin: '0 0 3px', lineHeight: 1.3,
+                      color: v.startsWith('VALID') ? 'rgba(120,220,160,0.8)' :
+                             v.startsWith('ERROR') ? 'rgba(255,100,80,0.8)' :
+                             'rgba(250,237,203,0.8)',
+                    }}>
+                      {v}
+                    </p>
+                  ))}
+                  <div style={{ display: 'flex', gap: '6px', marginTop: '8px' }}>
+                    <button onClick={() => handleDownloadSBOL('xml')} style={{
+                      flex: 1, padding: '5px', background: 'rgba(219,205,240,0.1)',
+                      border: '1px solid rgba(219,205,240,0.2)', borderRadius: '6px',
+                      color: '#DBCDF0', fontFamily: MONO, fontSize: '9px', cursor: 'pointer',
+                    }}>↓ RDF/XML</button>
+                    <button onClick={() => handleDownloadSBOL('turtle')} style={{
+                      flex: 1, padding: '5px', background: 'rgba(198,222,241,0.1)',
+                      border: '1px solid rgba(198,222,241,0.2)', borderRadius: '6px',
+                      color: '#C6DEF1', fontFamily: MONO, fontSize: '9px', cursor: 'pointer',
+                    }}>↓ Turtle</button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* ── Gibson Assembly Planner ── */}
+            <div style={{ marginTop: '16px' }}>
+              <p style={sectionLabel}>Gibson Assembly</p>
+              <textarea
+                value={seqInput} onChange={e => setSeqInput(e.target.value)}
+                placeholder="Paste target DNA (ATCG)… or leave empty for demo"
+                rows={2}
+                style={{ ...inputBase, fontFamily: MONO, fontSize: '10px', resize: 'vertical', marginBottom: '8px' }}
+              />
+              <button onClick={handlePlanAssembly} style={{
+                width: '100%', padding: '8px',
+                background: 'rgba(201,228,222,0.08)',
+                border: '1px solid rgba(201,228,222,0.2)',
+                borderRadius: '8px', color: '#C9E4DE',
+                fontFamily: SANS, fontSize: '11px', cursor: 'pointer',
+              }}>
+                🧬 Plan Assembly
+              </button>
+              {assemblyPlan && (
+                <div style={{ ...GLASS, marginTop: '10px', padding: '12px' }}>
+                  <div onClick={() => setAssemblyExpanded(p => !p)}
+                    style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontFamily: SANS, fontSize: '10px', color: VALUE, fontWeight: 500 }}>
+                      {assemblyPlan.targetName}
+                    </span>
+                    <span style={{ fontFamily: MONO, fontSize: '10px', color: LABEL }}>
+                      {assemblyExpanded ? '▾' : '▸'}
+                    </span>
+                  </div>
+                  {assemblyExpanded && (
+                    <div style={{ marginTop: '8px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', marginBottom: '10px' }}>
+                        {([
+                          ['Target', assemblyPlan.targetLength + ' bp'],
+                          ['Fragments', String(assemblyPlan.fragments.length)],
+                          ['Primers', String(assemblyPlan.primers.length)],
+                          ['Overlap', assemblyPlan.overlapLength + ' bp'],
+                          ['Tm Range', assemblyPlan.expectedTmRange[0].toFixed(1) + '–' + assemblyPlan.expectedTmRange[1].toFixed(1) + ' °C'],
+                          ['Tm Spread', assemblyPlan.tmSpread.toFixed(1) + ' °C'],
+                        ] as const).map(([lbl, val]) => (
+                          <div key={lbl} style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <span style={{ fontFamily: SANS, fontSize: '9px', color: LABEL }}>{lbl}</span>
+                            <span style={{ fontFamily: MONO, fontSize: '9px', color: VALUE, textAlign: 'right' }}>{val}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <div style={{
+                        height: '4px', borderRadius: '2px', marginBottom: '8px',
+                        background: 'rgba(255,255,255,0.06)', position: 'relative', overflow: 'hidden',
+                      }}>
+                        <div style={{
+                          height: '100%', borderRadius: '2px',
+                          width: Math.min(100, assemblyPlan.tmSpread * 20) + '%',
+                          background: assemblyPlan.tmSpread <= 3 ? 'rgba(120,220,160,0.7)' :
+                                     assemblyPlan.tmSpread <= 5 ? 'rgba(250,237,203,0.7)' : 'rgba(255,100,80,0.7)',
+                        }} />
+                      </div>
+                      {assemblyPlan.warnings.length > 0 && (
+                        <div style={{ marginBottom: '8px' }}>
+                          {assemblyPlan.warnings.map((w, i) => (
+                            <p key={i} style={{ fontFamily: SANS, fontSize: '9px', color: 'rgba(250,237,203,0.8)', margin: '0 0 3px', lineHeight: 1.3 }}>
+                              ⚠ {w}
+                            </p>
+                          ))}
+                        </div>
+                      )}
+                      <p style={{ fontFamily: SANS, fontSize: '9px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 6px' }}>
+                        Fragment Map
+                      </p>
+                      <div style={{ display: 'flex', gap: '2px', marginBottom: '10px' }}>
+                        {assemblyPlan.fragments.map((f, i) => {
+                          const colors = ['rgba(201,228,222,0.3)', 'rgba(219,205,240,0.3)', 'rgba(198,222,241,0.3)', 'rgba(242,198,222,0.3)'];
+                          const borders = ['rgba(201,228,222,0.5)', 'rgba(219,205,240,0.5)', 'rgba(198,222,241,0.5)', 'rgba(242,198,222,0.5)'];
+                          return (
+                            <div key={f.id} style={{
+                              flex: f.length / assemblyPlan.targetLength,
+                              height: '16px', borderRadius: '3px',
+                              background: colors[i % 4], border: '1px solid ' + borders[i % 4],
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            }}>
+                              <span style={{ fontFamily: MONO, fontSize: '7px', color: VALUE }}>{f.length}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <div style={{ display: 'flex', gap: '6px', marginBottom: '8px' }}>
+                        <button onClick={handleDownloadPrimers} style={{
+                          flex: 1, padding: '5px', background: 'rgba(201,228,222,0.1)',
+                          border: '1px solid rgba(201,228,222,0.2)', borderRadius: '6px',
+                          color: '#C9E4DE', fontFamily: MONO, fontSize: '9px', cursor: 'pointer',
+                        }}>↓ Primers CSV</button>
+                        <button onClick={handleGenerateGibsonProtocol} style={{
+                          flex: 1, padding: '5px', background: 'rgba(198,222,241,0.1)',
+                          border: '1px solid rgba(198,222,241,0.2)', borderRadius: '6px',
+                          color: '#C6DEF1', fontFamily: MONO, fontSize: '9px', cursor: 'pointer',
+                        }}>⚗ OT-2 Protocol</button>
+                      </div>
+                      <p style={{ fontFamily: MONO, fontSize: '8px', color: LABEL, margin: 0 }}>
+                        Provenance: {assemblyPlan.provenanceId.slice(0, 8)}…
+                      </p>
                     </div>
                   )}
                 </div>
@@ -623,6 +843,33 @@ export default function DBTLflowPage() {
                 </div>
               )}
             </div>
+
+            {/* ── Provenance Tracker ── */}
+            {assemblyProvenance.length > 0 && (
+              <div style={{ ...GLASS, padding: '14px', marginTop: '16px' }}>
+                <p style={{ ...sectionLabel, margin: '0 0 10px' }}>
+                  Data Provenance ({assemblyProvenance.length} records)
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  {assemblyProvenance.map(p => {
+                    const tc: Record<string, string> = { fragment: '#C9E4DE', primer: '#C6DEF1', assembly: '#DBCDF0', transformant: '#F2C6DE', culture: '#FAEDCB' };
+                    const clr = tc[p.sampleType] ?? VALUE;
+                    return (
+                      <div key={p.uuid} style={{ padding: '8px', borderRadius: '8px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
+                          <span style={{ fontFamily: MONO, fontSize: '9px', color: clr }}>{p.sampleType.toUpperCase()}</span>
+                          <span style={{ fontFamily: MONO, fontSize: '8px', color: LABEL, textAlign: 'right' }}>
+                            {p.well ? 'Well ' + p.well : ''}{p.slot ? ' · Slot ' + p.slot : ''}
+                          </span>
+                        </div>
+                        <p style={{ fontFamily: SANS, fontSize: '9px', color: VALUE, margin: '0 0 2px', lineHeight: 1.3 }}>{p.label}</p>
+                        <p style={{ fontFamily: MONO, fontSize: '7px', color: LABEL, margin: 0 }}>{p.uuid}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
