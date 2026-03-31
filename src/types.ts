@@ -239,6 +239,42 @@ export interface NEXAIResult {
   generatedAt: number;
 }
 
+// ── Axon Predictive Design Agent types ──────────────────────────────────────
+
+export interface BottleneckEnzyme {
+  node_id: string;
+  enzyme: string;
+  efficiency_percent: number;
+  yield_loss_percent: number;
+  evidence: string;
+}
+
+export interface DeNovoDesignStrategy {
+  node_id: string;
+  de_novo_design_strategy: {
+    active_site_remodeling: string;
+    thermal_stability_enhancement: string;
+    substrate_specificity_tuning: string;
+    predicted_impact: string;
+  };
+}
+
+export interface AxonInteraction {
+  yield_loss_percent: number;
+  step: string;
+  question: string;
+  options: string[];
+  disclosure_phase?: 'socratic' | 'revealed';
+}
+
+export interface AxonEnrichedResponse {
+  nodes: PathwayNode[];
+  edges: PathwayEdge[];
+  bottleneck_enzymes: BottleneckEnzyme[];
+  de_novo_design_strategies: DeNovoDesignStrategy[];
+  axon_interaction: AxonInteraction;
+}
+
 // ── Artemisinin showcase CIDs
 export const SHOWCASE_PUBCHEM_CIDS: Record<string, number> = {
   acetyl_coa: 444493,

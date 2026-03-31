@@ -3,9 +3,13 @@
 import { useState, useEffect, useRef } from 'react';
 import {
   ArrowUp, Upload, Camera, Globe, Image as ImageIcon,
-  X, ChevronUp, Plus, AlertCircle, CheckCircle2, Loader2
+  X, ChevronUp, Plus, AlertCircle, CheckCircle2, Loader2,
+  FlaskConical, Zap, ChevronDown
 } from 'lucide-react';
-import { PathwayNode, PathwayEdge, isValidNode, isValidEdge, sanitizeNodeId } from '../types';
+import {
+  PathwayNode, PathwayEdge, isValidNode, isValidEdge, sanitizeNodeId,
+  AxonInteraction, BottleneckEnzyme, DeNovoDesignStrategy,
+} from '../types';
 import { BIO_THEME_COLORS } from './ThreeScene';
 
 interface PaperAnalyzerProps {
@@ -293,6 +297,14 @@ export default function PaperAnalyzer({ onPathwayGenerated }: PaperAnalyzerProps
   const [imageBase64, setImageBase64] = useState<string | null>(null);
   const [webUrl, setWebUrl] = useState('');
 
+  // Axon progressive disclosure state
+  const [axonInteraction, setAxonInteraction] = useState<AxonInteraction | null>(null);
+  const [bottleneckEnzymes, setBottleneckEnzymes] = useState<BottleneckEnzyme[]>([]);
+  const [designStrategies, setDesignStrategies] = useState<DeNovoDesignStrategy[]>([]);
+  const [pendingPathway, setPendingPathway] = useState<{ nodes: PathwayNode[]; edges: PathwayEdge[] } | null>(null);
+  const [selectedOption, setSelectedOption] = useState<string | null>(null);
+  const [designExpanded, setDesignExpanded] = useState(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -412,10 +424,28 @@ export default function PaperAnalyzer({ onPathwayGenerated }: PaperAnalyzerProps
       const pathway = normalizePathway(parsed);
       if (!pathway) throw new Error(`NORMALIZE_FAIL: ${JSON.stringify(parsed).slice(0, 300)}`);
 
-      onPathwayGenerated(pathway.nodes, pathway.edges);
-      setAnalysisState('success');
-      resetState();
-      setExpanded(false);
+      // Extract Axon predictive design fields
+      const p = parsed as Record<string, unknown>;
+      const interaction = p.axon_interaction as AxonInteraction | undefined;
+      const bottlenecks = Array.isArray(p.bottleneck_enzymes) ? p.bottleneck_enzymes as BottleneckEnzyme[] : [];
+      const strategies = Array.isArray(p.de_novo_design_strategies) ? p.de_novo_design_strategies as DeNovoDesignStrategy[] : [];
+
+      // Progressive disclosure: if Axon has a Socratic question, show it first
+      if (interaction?.question) {
+        setAxonInteraction({ ...interaction, disclosure_phase: 'socratic' });
+        setBottleneckEnzymes(bottlenecks);
+        setDesignStrategies(strategies);
+        setPendingPathway(pathway);
+        setSelectedOption(null);
+        setDesignExpanded(false);
+        setAnalysisState('success');
+      } else {
+        // No interaction block — reveal immediately
+        onPathwayGenerated(pathway.nodes, pathway.edges);
+        setAnalysisState('success');
+        resetState();
+        setExpanded(false);
+      }
 
     } catch (err: any) {
       if (err.name === 'AbortError') return;
@@ -434,6 +464,37 @@ export default function PaperAnalyzer({ onPathwayGenerated }: PaperAnalyzerProps
     (mode === 'text' && text.trim().length >= 10) ||
     ((mode === 'image' || mode === 'camera' || mode === 'pdf') && !!imageBase64) ||
     (mode === 'web' && webUrl.trim().length > 0);
+
+  // Axon progressive disclosure: user selects an investigation path → reveal pathway
+  const handleAxonOptionSelect = (option: string) => {
+    setSelectedOption(option);
+    if (axonInteraction) {
+      setAxonInteraction({ ...axonInteraction, disclosure_phase: 'revealed' });
+    }
+    if (pendingPathway) {
+      onPathwayGenerated(pendingPathway.nodes, pendingPathway.edges);
+    }
+  };
+
+  // Dismiss Axon dialogue and clean up
+  const dismissAxonDialogue = () => {
+    setAxonInteraction(null);
+    setBottleneckEnzymes([]);
+    setDesignStrategies([]);
+    setPendingPathway(null);
+    setSelectedOption(null);
+    setDesignExpanded(false);
+    resetState();
+    setExpanded(false);
+  };
+
+  // Option label mapping for display
+  const optionLabels: Record<string, string> = {
+    enzyme_substrate_docking: 'Analyze Enzyme-Substrate Docking',
+    flux_balance_optimization: 'Optimize Flux Balance',
+    cofactor_optimization: 'Explore Cofactor Optimization',
+    dsp_analysis: 'Investigate DSP Constraints',
+  };
 
   const extraModes = [
     { id: 'pdf' as InputMode, icon: <Upload size={13} />, label: 'PDF' },
@@ -582,7 +643,7 @@ export default function PaperAnalyzer({ onPathwayGenerated }: PaperAnalyzerProps
               <p style={{ color: 'rgba(255,140,140,0.8)', fontSize: '12px', margin: 0 }}>{errorMsg}</p>
             </div>
           )}
-          {analysisState === 'success' && (
+          {analysisState === 'success' && !axonInteraction && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', borderRadius: '20px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
               <CheckCircle2 size={13} style={{ color: 'rgba(255,255,255,0.5)', flexShrink: 0 }} />
               <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '12px', margin: 0 }}>
@@ -596,9 +657,229 @@ export default function PaperAnalyzer({ onPathwayGenerated }: PaperAnalyzerProps
             </p>
           )}
         </div>
-      </div>
 
-      {/* Hidden inputs */}
+        {/* ── Axon Socratic Dialogue ── */}
+        {axonInteraction && (
+          <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+
+            {/* Axon thought bubble — Glassmorphism 2.0 */}
+            <div style={{
+              borderRadius: '16px',
+              padding: '18px 20px',
+              background: 'linear-gradient(135deg, rgba(201,228,222,0.10) 0%, rgba(201,228,222,0.04) 100%)',
+              backdropFilter: 'blur(24px)',
+              WebkitBackdropFilter: 'blur(24px)',
+              border: '1px solid rgba(201,228,222,0.18)',
+              boxShadow: '0 4px 32px rgba(0,0,0,0.25), inset 0 1px 0 rgba(201,228,222,0.08)',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                <div style={{
+                  width: '22px', height: '22px', borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #C9E4DE 0%, #95C8BC 100%)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '10px', fontWeight: 700, color: '#1a2f2a',
+                }}>A</div>
+                <span style={{ fontSize: '11px', color: 'rgba(201,228,222,0.6)', fontFamily: "var(--font-mono, 'JetBrains Mono', monospace)", letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                  Axon · Predictive Design
+                </span>
+              </div>
+              <p style={{
+                color: 'rgba(255,255,255,0.85)',
+                fontSize: '13.5px',
+                lineHeight: 1.7,
+                margin: 0,
+                fontFamily: "var(--font-sans, 'Inter', sans-serif)",
+              }}>
+                {axonInteraction.question}
+              </p>
+
+              {/* Option buttons — Socratic phase */}
+              {axonInteraction.disclosure_phase === 'socratic' && (
+                <div style={{ display: 'flex', gap: '8px', marginTop: '14px', flexWrap: 'wrap' }}>
+                  {axonInteraction.options.map((opt) => (
+                    <button
+                      key={opt}
+                      onClick={() => handleAxonOptionSelect(opt)}
+                      style={{
+                        padding: '7px 14px',
+                        borderRadius: '20px',
+                        border: '1px solid rgba(201,228,222,0.22)',
+                        background: 'rgba(201,228,222,0.06)',
+                        color: 'rgba(201,228,222,0.85)',
+                        fontSize: '12px',
+                        fontFamily: "var(--font-sans, 'Inter', sans-serif)",
+                        cursor: 'pointer',
+                        transition: 'all 0.15s',
+                      }}
+                      onMouseEnter={e => {
+                        (e.currentTarget as HTMLElement).style.background = 'rgba(201,228,222,0.15)';
+                        (e.currentTarget as HTMLElement).style.borderColor = 'rgba(201,228,222,0.35)';
+                        (e.currentTarget as HTMLElement).style.color = '#C9E4DE';
+                      }}
+                      onMouseLeave={e => {
+                        (e.currentTarget as HTMLElement).style.background = 'rgba(201,228,222,0.06)';
+                        (e.currentTarget as HTMLElement).style.borderColor = 'rgba(201,228,222,0.22)';
+                        (e.currentTarget as HTMLElement).style.color = 'rgba(201,228,222,0.85)';
+                      }}
+                    >
+                      {optionLabels[opt] || opt.replace(/_/g, ' ')}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Revealed phase indicator */}
+              {axonInteraction.disclosure_phase === 'revealed' && selectedOption && (
+                <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <CheckCircle2 size={12} style={{ color: '#95C8BC' }} />
+                  <span style={{ fontSize: '11px', color: 'rgba(201,228,222,0.55)', fontFamily: "var(--font-mono, 'JetBrains Mono', monospace)" }}>
+                    Selected: {optionLabels[selectedOption] || selectedOption}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Bottleneck enzymes — kinetic warning cards */}
+            {axonInteraction.disclosure_phase === 'revealed' && bottleneckEnzymes.length > 0 && (
+              <div style={{
+                borderRadius: '14px',
+                padding: '16px 18px',
+                background: 'linear-gradient(135deg, rgba(250,237,203,0.08) 0%, rgba(250,237,203,0.03) 100%)',
+                backdropFilter: 'blur(20px)',
+                WebkitBackdropFilter: 'blur(20px)',
+                border: '1px solid rgba(250,237,203,0.15)',
+                boxShadow: '0 2px 20px rgba(0,0,0,0.2), inset 0 1px 0 rgba(250,237,203,0.06)',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px' }}>
+                  <Zap size={13} style={{ color: '#FAEDCB' }} />
+                  <span style={{ fontSize: '11px', color: 'rgba(250,237,203,0.7)', fontFamily: "var(--font-mono, 'JetBrains Mono', monospace)", letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                    Bottleneck Enzymes
+                  </span>
+                </div>
+                {bottleneckEnzymes.map((b, i) => (
+                  <div key={i} style={{
+                    display: 'grid', gridTemplateColumns: '1fr auto', gap: '4px 16px',
+                    padding: i > 0 ? '10px 0 0' : '0',
+                    borderTop: i > 0 ? '1px solid rgba(250,237,203,0.08)' : 'none',
+                  }}>
+                    <span style={{ color: 'rgba(255,255,255,0.75)', fontSize: '12.5px' }}>{b.enzyme}</span>
+                    <span style={{
+                      color: '#FAEDCB', fontSize: '12px', textAlign: 'right',
+                      fontFamily: "var(--font-mono, 'JetBrains Mono', monospace)",
+                      fontFeatureSettings: "'tnum' 1",
+                    }}>
+                      {b.efficiency_percent}% eff
+                    </span>
+                    <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '11px', gridColumn: '1 / -1' }}>{b.evidence}</span>
+                    <span style={{
+                      color: 'rgba(250,237,203,0.6)', fontSize: '11px', textAlign: 'right', gridColumn: '2',
+                      fontFamily: "var(--font-mono, 'JetBrains Mono', monospace)",
+                      fontFeatureSettings: "'tnum' 1",
+                    }}>
+                      −{b.yield_loss_percent}% yield
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* De Novo Design Strategies — collapsible */}
+            {axonInteraction.disclosure_phase === 'revealed' && designStrategies.length > 0 && (
+              <div style={{
+                borderRadius: '14px',
+                overflow: 'hidden',
+                background: 'linear-gradient(135deg, rgba(201,228,222,0.06) 0%, rgba(201,228,222,0.02) 100%)',
+                backdropFilter: 'blur(20px)',
+                WebkitBackdropFilter: 'blur(20px)',
+                border: '1px solid rgba(201,228,222,0.12)',
+                boxShadow: '0 2px 20px rgba(0,0,0,0.15)',
+              }}>
+                <button
+                  onClick={() => setDesignExpanded(!designExpanded)}
+                  style={{
+                    width: '100%', padding: '14px 18px',
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    background: 'none', border: 'none', cursor: 'pointer',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <FlaskConical size={13} style={{ color: '#95C8BC' }} />
+                    <span style={{ fontSize: '11px', color: 'rgba(201,228,222,0.7)', fontFamily: "var(--font-mono, 'JetBrains Mono', monospace)", letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                      De Novo Design Strategies ({designStrategies.length})
+                    </span>
+                  </div>
+                  <ChevronDown size={13} style={{
+                    color: 'rgba(201,228,222,0.4)',
+                    transform: designExpanded ? 'rotate(180deg)' : 'rotate(0)',
+                    transition: 'transform 0.2s',
+                  }} />
+                </button>
+
+                {designExpanded && designStrategies.map((s, i) => (
+                  <div key={i} style={{
+                    padding: '0 18px 16px',
+                    borderTop: '1px solid rgba(201,228,222,0.06)',
+                  }}>
+                    <p style={{
+                      fontSize: '11px', color: 'rgba(201,228,222,0.5)', marginBottom: '10px', marginTop: '12px',
+                      fontFamily: "var(--font-mono, 'JetBrains Mono', monospace)",
+                      textTransform: 'uppercase', letterSpacing: '0.05em',
+                    }}>
+                      Target: {s.node_id.replace(/_/g, ' ')}
+                    </p>
+                    {[
+                      { label: 'Active Site', value: s.de_novo_design_strategy.active_site_remodeling },
+                      { label: 'Thermal Stability', value: s.de_novo_design_strategy.thermal_stability_enhancement },
+                      { label: 'Substrate Specificity', value: s.de_novo_design_strategy.substrate_specificity_tuning },
+                      { label: 'Predicted Impact', value: s.de_novo_design_strategy.predicted_impact },
+                    ].map(({ label, value }) => (
+                      <div key={label} style={{ marginBottom: '8px' }}>
+                        <span style={{
+                          fontSize: '10.5px', color: 'rgba(201,228,222,0.45)',
+                          fontFamily: "var(--font-mono, 'JetBrains Mono', monospace)",
+                          fontFeatureSettings: "'tnum' 1",
+                        }}>
+                          {label}
+                        </span>
+                        <p style={{
+                          fontSize: '12px', color: 'rgba(255,255,255,0.65)',
+                          lineHeight: 1.6, margin: '2px 0 0',
+                        }}>
+                          {value}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Pathway revealed confirmation + dismiss */}
+            {axonInteraction.disclosure_phase === 'revealed' && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <CheckCircle2 size={13} style={{ color: 'rgba(255,255,255,0.4)' }} />
+                  <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px' }}>
+                    Pathway visualized above ↑
+                  </span>
+                </div>
+                <button
+                  onClick={dismissAxonDialogue}
+                  style={{
+                    padding: '5px 12px', borderRadius: '14px', fontSize: '11px',
+                    background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
+                    color: 'rgba(255,255,255,0.35)', cursor: 'pointer',
+                  }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.7)'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.35)'; }}
+                >
+                  Dismiss
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
       <input ref={fileInputRef} type="file" accept=".pdf,application/pdf" onChange={e => handleFileUpload(e, 'pdf')} className="hidden" />
       <input ref={imageInputRef} type="file" accept="image/*" onChange={e => handleFileUpload(e, 'image')} className="hidden" />
       <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" onChange={e => handleFileUpload(e, 'image')} className="hidden" />

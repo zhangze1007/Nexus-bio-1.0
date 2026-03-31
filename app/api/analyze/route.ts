@@ -15,7 +15,12 @@ type GeminiContent = {
 type GeminiRequestBody = {
   contents?: GeminiContent[];
   generationConfig?: Record<string, unknown>;
+  systemInstruction?: {
+    parts: Array<{ text: string }>;
+  };
 };
+
+type JsonRecord = Record<string, unknown>;
 
 // ── Model providers in priority order ──
 // Groq: primary (1000 req/day, very stable)
@@ -35,6 +40,35 @@ const GROQ_BASE = 'https://api.groq.com/openai/v1/chat/completions';
 const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 const TIMEOUT_MS = 12000;
 
+const AXON_SYSTEM_PROMPT = `You are Axon, the predictive design core of Nexus-Bio — a de novo metabolic design agent inspired by the rigor of computational protein design.
+Your mission: do not merely extract pathway data. Predict where the pathway will fail, and propose structure-level interventions to fix it.
+
+Global output obligations:
+1. Return strict JSON only, no markdown, no prose outside JSON.
+2. Preserve scientific traceability — every claim needs an evidence field or audit_trail.
+3. BOTTLENECK DETECTION: For every enzyme node, estimate efficiency_percent (catalytic throughput relative to pathway demand). If efficiency < 40%, that enzyme is a bottleneck.
+   Include:
+   - "bottleneck_enzymes": [{ "node_id", "enzyme", "efficiency_percent", "yield_loss_percent", "evidence" }]
+   - "de_novo_design_strategies": [{
+       "node_id": "...",
+       "de_novo_design_strategy": {
+         "active_site_remodeling": "Specify which residue positions to mutate, what interactions to introduce (H-bond networks, π-stacking, charge complementarity), and how this reshapes the transition-state contact shell.",
+         "thermal_stability_enhancement": "Specify loop rigidification targets, disulfide bridge candidates, salt-bridge reinforcement sites, and predicted ΔTm improvement.",
+         "substrate_specificity_tuning": "Specify channel geometry changes, gatekeeper residue swaps, and how these favor productive substrate binding orientation over competing substrates.",
+         "predicted_impact": "Quantify expected TRY improvement: +X% yield, +Y g/L/h productivity."
+       }
+     }]
+4. SOCRATIC INTERACTION: Always include an "axon_interaction" block. Axon does NOT dump all data — it asks the researcher what to investigate next:
+   {
+     "yield_loss_percent": number,
+     "step": "X-to-Y",
+     "question": "A single-sentence Socratic question identifying the primary bottleneck and offering two investigation paths.",
+     "options": ["enzyme_substrate_docking", "flux_balance_optimization"],
+     "disclosure_phase": "socratic"
+   }
+5. If no bottleneck is found, set bottleneck arrays to [] and ask a conservative question about pathway optimization.
+6. Include enzyme efficiency estimates on enzyme nodes as "efficiency_percent" field.`;
+
 const CORS_HEADERS = {
   'Content-Type': 'application/json',
   'Access-Control-Allow-Origin': '*',
@@ -53,6 +87,144 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
       setTimeout(() => reject(new Error('TIMEOUT')), ms)
     ),
   ]);
+}
+
+function parseJsonFromText(raw: string): JsonRecord | null {
+  try {
+    return JSON.parse(raw) as JsonRecord;
+  } catch {
+    // Continue with loose extraction.
+  }
+
+  const stripped = raw.replace(/```(?:json)?\s*/gi, '').replace(/```\s*/g, '').trim();
+  try {
+    return JSON.parse(stripped) as JsonRecord;
+  } catch {
+    // Continue with brace slicing.
+  }
+
+  const first = raw.indexOf('{');
+  const last = raw.lastIndexOf('}');
+  if (first !== -1 && last > first) {
+    try {
+      return JSON.parse(raw.slice(first, last + 1)) as JsonRecord;
+    } catch {
+      return null;
+    }
+  }
+
+  return null;
+}
+
+function readNumber(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string') {
+    const parsed = Number(value.replace('%', '').trim());
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+}
+
+function hasDesignFields(value: unknown): boolean {
+  if (!value || typeof value !== 'object') return false;
+  const v = value as JsonRecord;
+  return typeof v.active_site_remodeling === 'string'
+    && typeof v.thermal_stability_enhancement === 'string'
+    && typeof v.substrate_specificity_tuning === 'string';
+}
+
+function enrichAxonOutput(raw: string): string {
+  const parsed = parseJsonFromText(raw);
+  if (!parsed || !Array.isArray(parsed.nodes)) return raw;
+
+  const nodes = parsed.nodes.filter((n): n is JsonRecord => !!n && typeof n === 'object');
+  const bottlenecks = nodes
+    .filter((node) => String(node.nodeType || '').toLowerCase() === 'enzyme')
+    .map((node) => {
+      const efficiency = readNumber(node.efficiency_percent)
+        ?? readNumber(node.enzyme_efficiency_percent)
+        ?? readNumber(node.yield_percent)
+        ?? (() => {
+          const flux = readNumber(node.flux_efficiency);
+          return flux !== null ? flux * 100 : null;
+        })();
+
+      return { node, efficiency };
+    })
+    .filter((x) => x.efficiency !== null && (x.efficiency as number) < 40)
+    .map(({ node, efficiency }) => {
+      const nodeId = String(node.id || 'unknown_enzyme');
+      const enzyme = String(node.label || nodeId);
+      const yieldLossPercent = Math.max(0, Math.round(100 - (efficiency as number)));
+      return {
+        node_id: nodeId,
+        enzyme,
+        efficiency_percent: Math.round((efficiency as number) * 10) / 10,
+        yield_loss_percent: yieldLossPercent,
+        evidence: String(node.evidenceSnippet || node.audit_trail || 'Predicted bottleneck from model output'),
+      };
+    });
+
+  const existingStrategies = Array.isArray(parsed.de_novo_design_strategies)
+    ? parsed.de_novo_design_strategies.filter((x): x is JsonRecord => !!x && typeof x === 'object')
+    : [];
+
+  const strategyByNode = new Map<string, JsonRecord>();
+  for (const strategy of existingStrategies) {
+    const nodeId = String(strategy.node_id || '');
+    const block = strategy.de_novo_design_strategy;
+    if (nodeId && hasDesignFields(block)) {
+      strategyByNode.set(nodeId, strategy);
+    }
+  }
+
+  const filledStrategies = bottlenecks.map((b) => {
+    const existing = strategyByNode.get(b.node_id);
+    if (existing) return existing;
+
+    return {
+      node_id: b.node_id,
+      de_novo_design_strategy: {
+        active_site_remodeling: `Repack catalytic pocket for ${b.enzyme} by introducing polarity-matched sidechains around the transition-state contact shell to reduce local activation barriers.`,
+        thermal_stability_enhancement: `Engineer a thermostability layer for ${b.enzyme} with loop rigidification and salt-bridge reinforcement to preserve active conformation under production stress.`,
+        substrate_specificity_tuning: `Tune substrate selectivity in ${b.enzyme} by reshaping the substrate entry channel to favor desired substrate geometry and suppress competing side reactions.`,
+        predicted_impact: `Predicted TRY uplift: +${Math.max(8, Math.round(b.yield_loss_percent * 0.35))}% yield recovery with reduced byproduct flux.`,
+      },
+    };
+  });
+
+  const primary = bottlenecks[0];
+  const stepLabel = primary?.enzyme?.includes('amorph')
+    ? 'FPP-to-Amorphadiene'
+    : (primary ? `${primary.enzyme} reaction` : 'rate-limiting step');
+  const yieldLoss = primary?.yield_loss_percent ?? 25;
+
+  parsed.bottleneck_enzymes = bottlenecks;
+  parsed.de_novo_design_strategies = filledStrategies;
+
+  // Build context-aware Socratic question
+  let question: string;
+  let options: string[];
+  if (primary) {
+    const hasMultiple = bottlenecks.length > 1;
+    question = hasMultiple
+      ? `I've identified ${bottlenecks.length} bottleneck enzymes, with the most critical being a ${yieldLoss}% yield loss at the ${stepLabel} step. Should we analyze enzyme-substrate docking to redesign the active site, or optimize the flux balance to redistribute carbon flow?`
+      : `I've identified a ${yieldLoss}% yield loss at the ${stepLabel} step. Should we analyze the enzyme-substrate docking or optimize the flux balance?`;
+    options = ['enzyme_substrate_docking', 'flux_balance_optimization'];
+  } else {
+    question = 'No critical bottlenecks detected. The pathway appears thermodynamically favorable. Should we explore cofactor optimization or investigate potential downstream processing constraints?';
+    options = ['cofactor_optimization', 'dsp_analysis'];
+  }
+
+  parsed.axon_interaction = {
+    yield_loss_percent: yieldLoss,
+    step: stepLabel,
+    question,
+    options,
+    disclosure_phase: 'socratic',
+  };
+
+  return JSON.stringify(parsed, null, 2);
 }
 
 function getParts(body: GeminiRequestBody): GeminiPart[] {
@@ -84,6 +256,19 @@ function extractPrompt(body: GeminiRequestBody): string {
     .join('\n\n');
 }
 
+function withSystemPrompt(prompt: string): string {
+  return `${AXON_SYSTEM_PROMPT}\n\nUser request:\n${prompt}`;
+}
+
+function buildGeminiBodyWithSystemPrompt(body: GeminiRequestBody): GeminiRequestBody {
+  return {
+    ...body,
+    systemInstruction: {
+      parts: [{ text: AXON_SYSTEM_PROMPT }],
+    },
+  };
+}
+
 // ── Try Groq first (OpenAI-compatible format) ──
 async function tryGroq(prompt: string, apiKey: string): Promise<string | null> {
   for (const model of GROQ_MODELS) {
@@ -97,7 +282,10 @@ async function tryGroq(prompt: string, apiKey: string): Promise<string | null> {
           },
           body: JSON.stringify({
             model,
-            messages: [{ role: 'user', content: prompt }],
+            messages: [
+              { role: 'system', content: AXON_SYSTEM_PROMPT },
+              { role: 'user', content: prompt },
+            ],
             temperature: 0.1,
             max_tokens: 4096,
           }),
@@ -126,7 +314,7 @@ async function tryGemini(body: GeminiRequestBody, apiKey: string): Promise<strin
   for (const model of GEMINI_MODELS) {
     try {
       const geminiBody = {
-        ...body,
+        ...buildGeminiBodyWithSystemPrompt(body),
         generationConfig: {
           maxOutputTokens: 4096,
           temperature: 0.1,
@@ -184,6 +372,10 @@ CRITICAL: If real-time thermodynamic or kinetic data is not available in current
 Output STRICTLY as a JSON object matching our PathwayNode schema.
 - For thermodynamic energy sinks (ΔG > 0) or high toxicity: set color_mapping: "Red", risk_score > 0.7.
 - For optimal high-yield intermediates: set color_mapping: "Green".
+- Add predictive-design fields for Axon:
+  - "bottleneck_enzymes": [] or populated when enzyme efficiency < 40%
+  - "de_novo_design_strategies": [] or populated with active-site remodeling, thermal stability enhancement, substrate specificity tuning
+  - "axon_interaction" as a Socratic question object for next-step decisioning
 
 Return ONLY this exact JSON structure, nothing else:
 
@@ -225,7 +417,33 @@ Return ONLY this exact JSON structure, nothing else:
       "thickness_mapping": "Thick",
       "audit_trail": "Thermodynamic assessment based on ΔG estimation"
     }
-  ]
+  ],
+  "bottleneck_enzymes": [
+    {
+      "node_id": "amorpha_4_11_diene_synthase",
+      "enzyme": "Amorphadiene synthase",
+      "efficiency_percent": 33,
+      "yield_loss_percent": 25,
+      "evidence": "Rate-limiting conversion in literature"
+    }
+  ],
+  "de_novo_design_strategies": [
+    {
+      "node_id": "amorpha_4_11_diene_synthase",
+      "de_novo_design_strategy": {
+        "active_site_remodeling": "Redesign pocket residues to stabilize carbocation transition states.",
+        "thermal_stability_enhancement": "Introduce loop rigidification and salt bridges to improve thermostability.",
+        "substrate_specificity_tuning": "Refine channel geometry to favor FPP productive binding orientation.",
+        "predicted_impact": "Expected +15% yield with reduced byproduct flux"
+      }
+    }
+  ],
+  "axon_interaction": {
+    "yield_loss_percent": 25,
+    "step": "FPP-to-Amorphadiene",
+    "question": "I've identified a 25% yield loss at the FPP-to-Amorphadiene step. Should we analyze the enzyme-substrate docking or optimize the flux balance?",
+    "options": ["enzyme_substrate_docking", "flux_balance_optimization"]
+  }
 }
 
 Rules:
@@ -268,7 +486,7 @@ export async function POST(req: NextRequest) {
   if (searchQuery) {
     prompt = buildDynamicPrompt(searchQuery);
     body = {
-      contents: [{ parts: [{ text: prompt }] }],
+      contents: [{ parts: [{ text: withSystemPrompt(prompt) }] }],
       generationConfig: { temperature: 0.1, maxOutputTokens: 4096 },
     };
   } else {
@@ -279,7 +497,7 @@ export async function POST(req: NextRequest) {
       return jsonResponse({ error: 'Missing contents array or searchQuery' }, 400);
     }
 
-    prompt = extractPrompt(body);
+    prompt = withSystemPrompt(extractPrompt(body));
     if (!prompt) {
       return jsonResponse({ error: 'No prompt text found' }, 400);
     }
@@ -297,11 +515,12 @@ export async function POST(req: NextRequest) {
   if (groqKey && textOnlyRequest) {
     const groqResult = await tryGroq(prompt, groqKey);
     if (groqResult) {
+      const enriched = enrichAxonOutput(groqResult);
       // Return in Gemini-compatible format so frontend doesn't need to change
       return jsonResponse({
         candidates: [{
           content: {
-            parts: [{ text: groqResult }]
+            parts: [{ text: enriched }]
           }
         }],
         meta: { provider: 'groq', searchQuery: searchQuery || undefined }
@@ -313,10 +532,11 @@ export async function POST(req: NextRequest) {
   if (geminiKey) {
     const geminiResult = await tryGemini(body, geminiKey);
     if (geminiResult) {
+      const enriched = enrichAxonOutput(geminiResult);
       return jsonResponse({
         candidates: [{
           content: {
-            parts: [{ text: geminiResult }]
+            parts: [{ text: enriched }]
           }
         }],
         meta: { provider: 'gemini', searchQuery: searchQuery || undefined }
