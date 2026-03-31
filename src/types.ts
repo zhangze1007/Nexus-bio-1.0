@@ -320,6 +320,55 @@ export interface OmicsRow {
   pValue?: number;
 }
 
+export type OmicsLayer = 'transcriptomics' | 'proteomics' | 'metabolomics';
+
+export interface EmbeddingPoint {
+  id: string;
+  gene: string;
+  layer: OmicsLayer;
+  coords: [number, number, number]; // UMAP 3D
+  normalizedValue: number;          // z-score normalized
+  rawValue: number;
+}
+
+export interface AttentionHead {
+  name: string;
+  layer: OmicsLayer;
+  weight: number; // 0–1 attention weight
+  signal_strength: number;
+  bottleneck_contribution: number;
+}
+
+export interface BottleneckSignal {
+  dominant_layer: OmicsLayer;
+  attention_heads: AttentionHead[];
+  reasoning: string;
+  confidence: number;
+}
+
+export interface PerturbationResult {
+  gene: string;
+  original_expression: number;
+  perturbed_expression: number;
+  reasoning_chain: ReasoningStep[];
+  predicted_yield_change_percent: number;
+  metabolite_shifts: { metabolite: string; delta: number; direction: 'up' | 'down' }[];
+  confidence: number;
+}
+
+export interface ReasoningStep {
+  step: string;
+  description: string;
+  evidence: string;
+}
+
+export interface InternalThought {
+  timestamp: number;
+  thought: string;
+  layer_context: OmicsLayer[];
+  action_taken: string;
+}
+
 // ── MODULE: CETHX ─────────────────────────────────────────────────────────────
 export interface ThermoStep { step: string; deltaG: number; cumulative: number; atpYield: number; }
 export interface ThermoState { atp_yield: number; nadh_yield: number; entropy_production: number; gibbs_free_energy: number; }
