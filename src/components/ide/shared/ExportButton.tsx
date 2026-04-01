@@ -1,13 +1,15 @@
 'use client';
 import { Download } from 'lucide-react';
+import { T } from '../tokens';
 
-const SANS = "'Inter',-apple-system,sans-serif";
+const SANS = T.SANS;
 
 interface ExportButtonProps {
   label: string;
   data: unknown;
   filename: string;
-  format?: 'json' | 'csv';
+  format?: 'json' | 'csv' | 'svg';
+  svgRef?: React.RefObject<SVGSVGElement | null>;
   disabled?: boolean;
 }
 
@@ -23,9 +25,26 @@ function toCSV(data: unknown): string {
   return [headers.join(','), ...rows].join('\n');
 }
 
-export default function ExportButton({ label, data, filename, format = 'json', disabled }: ExportButtonProps) {
+export default function ExportButton({ label, data, filename, format = 'json', svgRef, disabled }: ExportButtonProps) {
   function handleClick() {
     if (disabled) return;
+
+    // SVG export: serialize the referenced SVG element
+    if (format === 'svg') {
+      const svgEl = svgRef?.current;
+      if (!svgEl) return;
+      const serializer = new XMLSerializer();
+      const svgString = serializer.serializeToString(svgEl);
+      const blob = new Blob([svgString], { type: 'image/svg+xml' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${filename}.svg`;
+      a.click();
+      URL.revokeObjectURL(url);
+      return;
+    }
+
     const content = format === 'csv' ? toCSV(data) : JSON.stringify(data, null, 2);
     const mime = format === 'csv' ? 'text/csv' : 'application/json';
     const blob = new Blob([content], { type: mime });

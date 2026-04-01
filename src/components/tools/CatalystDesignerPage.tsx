@@ -4,6 +4,7 @@ import IDEShell from '../ide/IDEShell';
 import AlgorithmInsight from '../ide/shared/AlgorithmInsight';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
+import SimErrorBanner from '../ide/shared/SimErrorBanner';
 import {
   ENZYME_STRUCTURES,
   PATHWAY_STEPS,
@@ -104,7 +105,7 @@ function BindingRadar({ result }: { result: BindingAffinityResult }) {
   }).join(' ');
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
+    <svg role="img" aria-label="Chart" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
       <rect width={W} height={H} fill="#050505" rx={12} />
       {[0.25, 0.5, 0.75, 1].map(s => (
         <polygon key={s}
@@ -271,7 +272,7 @@ function FluxCostView({ result }: { result: MetabolicDrainResult }) {
     ? result.growthPenalty < 10 ? '#93CB52' : '#FFFB1F'
     : 'rgba(255,120,120,0.8)';
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
+    <svg role="img" aria-label="Chart" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
       <rect width={W} height={H} fill="#050505" rx={12} />
       <text x={70} y={barY - 12} fontFamily={T.SANS} fontSize="9" fill={LABEL}>
         Cost Breakdown (ATP / NADPH / Ribosome)
@@ -350,7 +351,7 @@ function BalancerView({ result }: { result: PathwayBalanceResult }) {
   const maxConc = Math.max(...steps.map(s => s.intermediateConc), 0.01);
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
+    <svg role="img" aria-label="Chart" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
       <rect width={W} height={H} fill="#050505" rx={12} />
       <text x={W / 2} y={24} textAnchor="middle" fontFamily={T.SANS} fontSize="10" fill={VALUE}>
         Pathway Pipeline — {n} Steps
@@ -460,7 +461,7 @@ function ParetoView({ result }: { result: ParetoFrontResult }) {
   const sorted = [...front].sort((a, b) => a.scores.thermodynamic - b.scores.thermodynamic);
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
+    <svg role="img" aria-label="Chart" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
       <rect width={W} height={H} fill="#050505" rx={12} />
       {/* Grid */}
       {[0, 0.25, 0.5, 0.75, 1].map(t => {
@@ -538,7 +539,7 @@ function MutagenesisView({ result, enzyme }: { result: MutagenesisResult; enzyme
 
   return (
     <div style={{ height: '100%', overflow: 'auto', padding: 0 }}>
-      <svg viewBox={`0 0 ${W} ${barY + barH + 60}`} style={{ width: '100%' }}>
+      <svg role="img" aria-label="Chart" viewBox={`0 0 ${W} ${barY + barH + 60}`} style={{ width: '100%' }}>
         <rect width={W} height={barY + barH + 60} fill="#050505" rx={12} />
         {/* Sequence bar */}
         <rect x={PAD} y={barY} width={barW} height={barH} rx={4} fill="rgba(255,255,255,0.04)"
@@ -651,7 +652,10 @@ export default function CatalystDesignerPage() {
   const [viewMode, setViewMode] = useState<ViewMode>('Binding');
 
   const enzyme = ENZYME_STRUCTURES[selectedEnzyme];
-  const binding = useMemo(() => predictBindingAffinity(enzyme), [enzyme]);
+  const { data: binding, error: simError } = useMemo(() => {
+    try { return { data: predictBindingAffinity(enzyme), error: null as string | null }; }
+    catch (e) { return { data: predictBindingAffinity(ENZYME_STRUCTURES[selectedEnzyme]), error: e instanceof Error ? e.message : 'Binding prediction failed' }; }
+  }, [enzyme]);
   const sequences = useMemo(() => designSequences(enzyme, 10), [enzyme]);
   const drain = useMemo(() => estimateMetabolicDrain(enzyme, 0.5), [enzyme]);
   const balance = useMemo(() => balancePathway(PATHWAY_STEPS), []);
@@ -673,14 +677,18 @@ export default function CatalystDesignerPage() {
           formula="Kd = exp(ΔG_bind/RT) | ΔΔG = Σ BLOSUM(wt,mut)"
         />
 
+        {simError && (
+          <div style={{ padding: '0 16px 8px' }}><SimErrorBanner message={simError} /></div>
+        )}
+
         {/* 3-Panel Layout */}
-        <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+        <div className="nb-tool-panels" style={{ flex: 1 }}>
 
           {/* ── LEFT SIDEBAR ──────────────────────────────────────── */}
-          <div style={{
+          <div className="nb-tool-sidebar" style={{
             width: 240, minWidth: 240, background: PANEL_BG,
-            borderRight: `1px solid ${BORDER}`, padding: '14px 12px',
-            overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 16,
+            borderRight: `1px solid ${BORDER}`,
+            display: 'flex', flexDirection: 'column', gap: 16,
           }}>
             {/* Enzyme Selector */}
             <div>
@@ -690,7 +698,7 @@ export default function CatalystDesignerPage() {
                   const isRL = enz.id === RATE_LIMITING_ENZYME.id;
                   const sel = i === selectedEnzyme;
                   return (
-                    <button key={enz.id} onClick={() => setSelectedEnzyme(i)} style={{
+                    <button aria-label="Action" key={enz.id} onClick={() => setSelectedEnzyme(i)} style={{
                       display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
                       padding: '6px 10px', borderRadius: 10, border: 'none', cursor: 'pointer',
                       background: sel ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.02)',
@@ -721,7 +729,7 @@ export default function CatalystDesignerPage() {
               <SectionLabel>Analysis View</SectionLabel>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 4 }}>
                 {VIEW_MODES.map(vm => (
-                  <button key={vm.key} onClick={() => setViewMode(vm.key)} style={{
+                  <button aria-label="Action" key={vm.key} onClick={() => setViewMode(vm.key)} style={{
                     fontFamily: T.SANS, fontSize: '9px', padding: '5px 2px',
                     border: viewMode === vm.key
                       ? `1px solid ${vm.color}` : `1px solid ${INPUT_BORDER}`,

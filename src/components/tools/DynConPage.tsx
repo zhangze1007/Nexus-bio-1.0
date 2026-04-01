@@ -1,10 +1,11 @@
 'use client';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import IDEShell from '../ide/IDEShell';
 import AlgorithmInsight from '../ide/shared/AlgorithmInsight';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
 import SimErrorBanner from '../ide/shared/SimErrorBanner';
+import { usePersistedState } from '../ide/shared/usePersistedState';
 import {
   runBioreactor,
   DEFAULT_CONTROLLER,
@@ -42,7 +43,7 @@ const SERIES = [
 ] as const;
 
 /* ── Time-Series SVG (6 series) ────────────────────────────────────────────── */
-function TimeSeriesSVG({ trajectory, setpoint }: { trajectory: ODEState[]; setpoint: number }) {
+function TimeSeriesSVG({ trajectory, setpoint, svgRef }: { trajectory: ODEState[]; setpoint: number; svgRef?: React.RefObject<SVGSVGElement | null> }) {
   if (trajectory.length < 2) return null;
   const W = 420, H = 300, PAD = 40;
 
@@ -76,7 +77,7 @@ function TimeSeriesSVG({ trajectory, setpoint }: { trajectory: ODEState[]; setpo
   const spY = H - PAD - spNorm * (H - PAD * 2);
 
   return (
-    <svg viewBox={`0 0 ${W + 100} ${H + 20}`} style={{ width: '100%', height: '100%' }}>
+    <svg ref={svgRef} role="img" aria-label="Chart" viewBox={`0 0 ${W + 100} ${H + 20}`} style={{ width: '100%', height: '100%' }}>
       <rect width={W + 100} height={H + 20} fill="#050505" />
       {[0.25, 0.5, 0.75, 1.0].map(f => (
         <g key={f}>
@@ -125,7 +126,7 @@ function HillCurveSVG({ hill, currentFPP }: { hill: HillParams; currentFPP: numb
   const markerX = PAD + (Math.min(currentFPP, fppMax) / fppMax) * (W - PAD * 2);
 
   return (
-    <svg viewBox={`0 0 ${W} ${H + 10}`} style={{ width: '100%', height: '120px' }}>
+    <svg role="img" aria-label="Chart" viewBox={`0 0 ${W} ${H + 10}`} style={{ width: '100%', height: '120px' }}>
       <rect width={W} height={H + 10} fill="#050505" />
       {/* axes */}
       <line x1={PAD} y1={H - PAD + 4} x2={W - PAD} y2={H - PAD + 4} stroke="rgba(255,255,255,0.08)" />
@@ -158,7 +159,7 @@ function ParamSlider({ label, value, min, max, step = 0.1, onChange, unit }: {
         <span style={{ fontFamily: T.SANS, fontSize: '11px', color: 'rgba(255,255,255,0.45)' }}>{label}</span>
         <span style={{ fontFamily: T.MONO, fontSize: '11px', color: 'rgba(255,255,255,0.55)' }}>{value.toFixed(2)}{unit ? ` ${unit}` : ''}</span>
       </div>
-      <input type="range" min={min} max={max} step={step} value={value}
+      <input aria-label="Parameter slider" type="range" min={min} max={max} step={step} value={value}
         onChange={e => onChange(parseFloat(e.target.value))}
         style={{ width: '100%', accentColor: 'rgba(120,180,255,0.8)', cursor: 'pointer' }} />
     </div>
@@ -190,16 +191,17 @@ function StatRow({ label, value, unit }: { label: string; value: string | number
    MAIN PAGE
    ══════════════════════════════════════════════════════════════════════════════ */
 export default function DynConPage() {
-  /* ── PID state ──────────────────────────────────────────────────────────── */
-  const [kp, setKp] = useState(DEFAULT_CONTROLLER.kp);
-  const [ki, setKi] = useState(DEFAULT_CONTROLLER.ki);
-  const [kd, setKd] = useState(DEFAULT_CONTROLLER.kd);
-  const [setpoint, setSetpoint] = useState(DEFAULT_CONTROLLER.setpoint);
+  const chartRef = useRef<SVGSVGElement>(null);
+  /* ── PID state (persisted) ─────────────────────────────────────────────── */
+  const [kp, setKp] = usePersistedState('nexus-bio:dyncon:kp', DEFAULT_CONTROLLER.kp);
+  const [ki, setKi] = usePersistedState('nexus-bio:dyncon:ki', DEFAULT_CONTROLLER.ki);
+  const [kd, setKd] = usePersistedState('nexus-bio:dyncon:kd', DEFAULT_CONTROLLER.kd);
+  const [setpoint, setSetpoint] = usePersistedState('nexus-bio:dyncon:setpoint', DEFAULT_CONTROLLER.setpoint);
 
-  /* ── Hill state ─────────────────────────────────────────────────────────── */
-  const [vmax, setVmax] = useState(DEFAULT_HILL.Vmax);
-  const [hillKd, setHillKd] = useState(DEFAULT_HILL.Kd);
-  const [hillN, setHillN] = useState(DEFAULT_HILL.n);
+  /* ── Hill state (persisted) ────────────────────────────────────────────── */
+  const [vmax, setVmax] = usePersistedState('nexus-bio:dyncon:vmax', DEFAULT_HILL.Vmax);
+  const [hillKd, setHillKd] = usePersistedState('nexus-bio:dyncon:hillKd', DEFAULT_HILL.Kd);
+  const [hillN, setHillN] = usePersistedState('nexus-bio:dyncon:hillN', DEFAULT_HILL.n);
 
   const hill: HillParams = useMemo(() => ({ Vmax: vmax, Kd: hillKd, n: hillN }), [vmax, hillKd, hillN]);
 
@@ -246,9 +248,9 @@ export default function DynConPage() {
           </div>
         ) : (
         <>
-        <div style={{ flex: 1, display: 'flex', overflow: 'hidden', minHeight: 0 }}>
+        <div className="nb-tool-panels" style={{ flex: 1 }}>
           {/* ═══════ LEFT PANEL (260px) ═══════ */}
-          <div style={{ width: '260px', flexShrink: 0, overflowY: 'auto', padding: '16px', borderRight: `1px solid ${BORDER}`, background: PANEL_BG }}>
+          <div className="nb-tool-sidebar" style={{ width: '260px', borderRight: `1px solid ${BORDER}`, background: PANEL_BG }}>
             {/* — PID Controller — */}
             <SectionLabel>PID Controller</SectionLabel>
             <ParamSlider label="Kp (Proportional)" value={kp} min={0} max={10} step={0.1} onChange={setKp} />
@@ -305,7 +307,7 @@ export default function DynConPage() {
           <div style={{ flex: 1, overflow: 'hidden', background: '#050505', display: 'flex', flexDirection: 'column' }}>
             {/* Main time-series plot */}
             <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px 12px 0' }}>
-              <TimeSeriesSVG trajectory={trajectory} setpoint={setpoint} />
+              <TimeSeriesSVG trajectory={trajectory} setpoint={setpoint} svgRef={chartRef} />
             </div>
             {/* Hill feedback mini-curve */}
             <div style={{ flexShrink: 0, padding: '0 12px 8px' }}>
@@ -317,7 +319,7 @@ export default function DynConPage() {
           </div>
 
           {/* ═══════ RIGHT PANEL (280px) ═══════ */}
-          <div style={{ width: '280px', flexShrink: 0, overflowY: 'auto', padding: '16px', borderLeft: `1px solid ${BORDER}`, background: PANEL_BG }}>
+          <div className="nb-tool-right" style={{ width: '280px', borderLeft: `1px solid ${BORDER}`, background: PANEL_BG }}>
             {/* — Process Readouts — */}
             <SectionLabel>Process Readouts</SectionLabel>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
@@ -404,8 +406,9 @@ export default function DynConPage() {
 
         {/* ═══════ FOOTER ═══════ */}
         <div style={{ borderTop: `1px solid ${BORDER}`, padding: '8px 16px', display: 'flex', gap: '8px', flexShrink: 0, background: PANEL_BG }}>
-          <ExportButton label="Export Trajectory JSON" data={trajectory} filename="dyncon-trajectory" format="json" />
+          <ExportButton label="Export JSON" data={trajectory} filename="dyncon-trajectory" format="json" />
           <ExportButton label="Export CSV" data={trajectory} filename="dyncon-trajectory" format="csv" />
+          <ExportButton label="Export SVG" data={null} filename="dyncon-chart" format="svg" svgRef={chartRef} />
         </div>
         </>
         )}

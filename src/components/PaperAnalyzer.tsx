@@ -279,6 +279,7 @@ export default function PaperAnalyzer({ onPathwayGenerated }: PaperAnalyzerProps
   const [pendingPathway, setPendingPathway] = useState<{ nodes: PathwayNode[]; edges: PathwayEdge[] } | null>(null);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [designExpanded, setDesignExpanded] = useState(false);
+  const [aiProvider, setAiProvider] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -390,6 +391,8 @@ export default function PaperAnalyzer({ onPathwayGenerated }: PaperAnalyzerProps
       }
 
       const raw = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      const provider = data.meta?.provider as string | undefined;
+      if (provider) setAiProvider(provider);
       if (!raw || typeof raw !== 'string') throw new Error('NO_VALID_JSON');
 
       // DEBUG — show raw in error so we can see it on tablet
@@ -622,13 +625,13 @@ export default function PaperAnalyzer({ onPathwayGenerated }: PaperAnalyzerProps
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', borderRadius: '20px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
               <CheckCircle2 size={13} style={{ color: 'rgba(255,255,255,0.5)', flexShrink: 0 }} />
               <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '12px', margin: 0 }}>
-                Pathway extracted. Scroll up to explore the visualization ↑
+                Pathway extracted{aiProvider ? ` via ${aiProvider === 'groq' ? 'Groq LLaMA 3.3' : 'Gemini Flash'}` : ''}. Scroll up to explore ↑
               </p>
             </div>
           )}
           {analysisState === 'idle' && (
             <p style={{ color: 'rgba(255,255,255,0.12)', fontSize: '11px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", textAlign: 'center' }}>
-              Press Enter to analyze · Shift+Enter for new line · Gemini 2.0 Flash
+              Press Enter to analyze · Shift+Enter for new line · Groq primary / Gemini fallback
             </p>
           )}
         </div>

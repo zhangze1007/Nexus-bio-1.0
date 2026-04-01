@@ -1,10 +1,11 @@
 'use client';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import IDEShell from '../ide/IDEShell';
 import AlgorithmInsight from '../ide/shared/AlgorithmInsight';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
 import SimErrorBanner from '../ide/shared/SimErrorBanner';
+import { usePersistedState } from '../ide/shared/usePersistedState';
 import {
   METABOLIC_NODES, FLUX_EDGES, REACTION_DEFS, runFBA,
   YEAST_NODES, YEAST_FLUX_EDGES, YEAST_REACTION_DEFS, SHARED_METABOLITES,
@@ -40,7 +41,7 @@ function ParamSlider({ label, value, min, max, step = 0.5, onChange, unit, accen
           {value.toFixed(1)}{unit ? ` ${unit}` : ''}
         </span>
       </div>
-      <input type="range" min={min} max={max} step={step} value={value}
+      <input aria-label="Parameter slider" type="range" min={min} max={max} step={step} value={value}
         onChange={e => onChange(parseFloat(e.target.value))}
         style={{ width: '100%', accentColor: accentColor ?? 'rgba(120,180,255,0.8)', cursor: 'pointer' }}
       />
@@ -56,12 +57,13 @@ const SUBSYSTEM_COLORS: Record<string, string> = {
   Fermentation: 'rgba(255,31,255,0.7)',
 };
 
-function FluxMap({ result, nodes, edges, knockouts, compact }: {
+function FluxMap({ result, nodes, edges, knockouts, compact, svgRef }: {
   result: FBAOutput;
   nodes: typeof METABOLIC_NODES;
   edges: typeof FLUX_EDGES;
   knockouts: string[];
   compact?: boolean;
+  svgRef?: React.RefObject<SVGSVGElement | null>;
 }) {
   const fluxValues = Object.values(result.fluxes).map(Math.abs);
   const maxFlux = Math.max(...fluxValues, 1);
@@ -71,7 +73,7 @@ function FluxMap({ result, nodes, edges, knockouts, compact }: {
   const viewH = compact ? 480 : H;
 
   return (
-    <svg viewBox={`0 0 ${W} ${viewH}`} style={{ width: '100%', height: '100%', maxHeight: '100%' }}>
+    <svg ref={svgRef} role="img" aria-label="Chart" viewBox={`0 0 ${W} ${viewH}`} style={{ width: '100%', height: '100%', maxHeight: '100%' }}>
       <rect width={W} height={viewH} fill="transparent" />
       {edges.map(edge => {
         const from = nodeMap[edge.from];
@@ -182,7 +184,7 @@ function SharedMetaboliteBus({ exchangeFluxes }: {
                 {ex.flux.toFixed(2)} mmol/h
               </span>
             </div>
-            <svg width="100%" height="12" style={{ display: 'block' }}>
+            <svg role="img" aria-label="Chart" width="100%" height="12" style={{ display: 'block' }}>
               <defs>
                 <linearGradient id={`grad-${ex.id}`} x1={isRightFlow ? '0%' : '100%'} y1="0%" x2={isRightFlow ? '100%' : '0%'} y2="0%">
                   <stop offset="0%" stopColor={COLORS.strainA} stopOpacity="0.8" />
@@ -258,7 +260,7 @@ function StrainPanel({ label, color, borderColor, accentColor, glucoseUptake, ox
         {reactions.map(r => {
           const isKO = knockouts.includes(r.id);
           return (
-            <button key={r.id} onClick={() => onToggleKO(r.id)} style={{
+            <button aria-label="Action" key={r.id} onClick={() => onToggleKO(r.id)} style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               width: '100%', padding: '4px 8px', marginBottom: '2px',
               background: isKO ? 'rgba(255,80,80,0.08)' : 'transparent',
@@ -275,7 +277,7 @@ function StrainPanel({ label, color, borderColor, accentColor, glucoseUptake, ox
         })}
       </div>
       {knockouts.length > 0 && (
-        <button onClick={onClearKO} style={{
+        <button aria-label="Action" onClick={onClearKO} style={{
           display: 'block', width: '100%', padding: '4px 8px',
           background: 'transparent', border: '1px solid rgba(255,255,255,0.08)',
           borderRadius: '6px', color: 'rgba(255,255,255,0.3)', fontFamily: T.SANS, fontSize: '10px', cursor: 'pointer',
@@ -293,19 +295,20 @@ function StrainPanel({ label, color, borderColor, accentColor, glucoseUptake, ox
 
 export default function FBASimPage() {
   const [simMode, setSimMode] = useState<SimMode>('single');
+  const chartRef = useRef<SVGSVGElement>(null);
 
-  // Single-species state
-  const [glucoseUptake, setGlucoseUptake] = useState(10);
-  const [oxygenUptake, setOxygenUptake] = useState(12);
+  // Single-species state (persisted)
+  const [glucoseUptake, setGlucoseUptake] = usePersistedState('nexus-bio:fba:glucose', 10);
+  const [oxygenUptake, setOxygenUptake] = usePersistedState('nexus-bio:fba:oxygen', 12);
   const [objective, setObjective] = useState<'biomass' | 'atp' | 'product'>('biomass');
   const [knockouts, setKnockouts] = useState<string[]>([]);
 
-  // Community state
-  const [ecoliGlucose, setEcoliGlucose] = useState(10);
-  const [ecoliOxygen, setEcoliOxygen] = useState(12);
+  // Community state (persisted)
+  const [ecoliGlucose, setEcoliGlucose] = usePersistedState('nexus-bio:fba:ecoli-glucose', 10);
+  const [ecoliOxygen, setEcoliOxygen] = usePersistedState('nexus-bio:fba:ecoli-oxygen', 12);
   const [ecoliKO, setEcoliKO] = useState<string[]>([]);
-  const [yeastGlucose, setYeastGlucose] = useState(8);
-  const [yeastOxygen, setYeastOxygen] = useState(6);
+  const [yeastGlucose, setYeastGlucose] = usePersistedState('nexus-bio:fba:yeast-glucose', 8);
+  const [yeastOxygen, setYeastOxygen] = usePersistedState('nexus-bio:fba:yeast-oxygen', 6);
   const [yeastKO, setYeastKO] = useState<string[]>([]);
 
   // Single-species FBA
@@ -363,7 +366,7 @@ export default function FBASimPage() {
         {/* Mode toggle */}
         <div style={{ padding: '0 16px 8px', display: 'flex', gap: '4px', flexShrink: 0 }}>
           {(['single', 'community'] as const).map(mode => (
-            <button key={mode} onClick={() => setSimMode(mode)} style={{
+            <button aria-label="Action" key={mode} onClick={() => setSimMode(mode)} style={{
               padding: '6px 14px', borderRadius: '20px',
               background: simMode === mode ? 'rgba(255,255,255,0.08)' : 'transparent',
               border: `1px solid ${simMode === mode ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.06)'}`,
@@ -385,9 +388,9 @@ export default function FBASimPage() {
 
         {/* ── SINGLE MODE ── */}
         {simMode === 'single' && (
-          <div style={{ flex: 1, display: 'flex', overflow: 'hidden', minHeight: 0 }}>
+          <div className="nb-tool-panels" style={{ flex: 1 }}>
             {/* Input panel */}
-            <div style={{ width: '240px', flexShrink: 0, overflowY: 'auto', padding: '16px', borderRight: '1px solid rgba(255,255,255,0.06)', background: '#000000' }}>
+            <div className="nb-tool-sidebar" style={{ width: '240px', borderRight: '1px solid rgba(255,255,255,0.06)', background: '#000000' }}>
               <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '0 0 12px' }}>
                 Simulation Parameters
               </p>
@@ -399,7 +402,7 @@ export default function FBASimPage() {
                 Objective Function
               </p>
               {(['biomass', 'atp', 'product'] as const).map(opt => (
-                <button key={opt} onClick={() => setObjective(opt)} style={{
+                <button aria-label="Action" key={opt} onClick={() => setObjective(opt)} style={{
                   display: 'block', width: '100%', textAlign: 'left',
                   padding: '6px 10px', marginBottom: '4px',
                   background: objective === opt ? 'rgba(255,255,255,0.06)' : 'transparent',
@@ -418,7 +421,7 @@ export default function FBASimPage() {
               {REACTION_DEFS.map(r => {
                 const isKO = knockouts.includes(r.id);
                 return (
-                  <button key={r.id} onClick={() => toggleKO(r.id)} style={{
+                  <button aria-label="Action" key={r.id} onClick={() => toggleKO(r.id)} style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                     width: '100%', padding: '5px 8px', marginBottom: '3px',
                     background: isKO ? 'rgba(255,80,80,0.08)' : 'transparent',
@@ -435,7 +438,7 @@ export default function FBASimPage() {
                 );
               })}
               {knockouts.length > 0 && (
-                <button onClick={() => setKnockouts([])} style={{
+                <button aria-label="Action" onClick={() => setKnockouts([])} style={{
                   display: 'block', width: '100%', marginTop: '6px',
                   padding: '5px 8px', background: 'transparent',
                   border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px',
@@ -449,12 +452,12 @@ export default function FBASimPage() {
             {/* Engine view — SVG flux map */}
             <div style={{ flex: 1, position: 'relative', overflow: 'hidden', background: '#050505', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <div style={{ height: '100%', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <FluxMap result={singleResult} nodes={METABOLIC_NODES} edges={FLUX_EDGES} knockouts={knockouts} />
+                <FluxMap result={singleResult} nodes={METABOLIC_NODES} edges={FLUX_EDGES} knockouts={knockouts} svgRef={chartRef} />
               </div>
             </div>
 
             {/* Results panel */}
-            <div style={{ width: '240px', flexShrink: 0, overflowY: 'auto', padding: '16px', borderLeft: '1px solid rgba(255,255,255,0.06)', background: '#000000' }}>
+            <div className="nb-tool-right" style={{ width: '240px', borderLeft: '1px solid rgba(255,255,255,0.06)', background: '#000000' }}>
               <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '0 0 12px' }}>
                 Results
               </p>
@@ -500,7 +503,7 @@ export default function FBASimPage() {
 
         {/* ── COMMUNITY MODE ── */}
         {simMode === 'community' && (
-          <div style={{ flex: 1, display: 'flex', overflow: 'hidden', minHeight: 0 }}>
+          <div className="nb-tool-panels" style={{ flex: 1 }}>
             {/* Strain A (E. coli) sidebar */}
             <div style={{ width: '220px', flexShrink: 0, overflowY: 'auto', padding: '12px' }}>
               <StrainPanel
@@ -570,7 +573,7 @@ export default function FBASimPage() {
         {/* Export bar */}
         <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', padding: '8px 16px', display: 'flex', gap: '8px', flexShrink: 0, background: '#000000' }}>
           <ExportButton label="Export JSON" data={exportData} filename={`fbasim-${simMode}-result`} format="json" />
-          <ExportButton label="Export Fluxes CSV" data={
+          <ExportButton label="Export CSV" data={
             simMode === 'single'
               ? REACTION_DEFS.map(r => ({ id: r.id, name: r.name, subsystem: r.subsystem, flux: singleResult.fluxes[r.id] ?? 0, knocked_out: knockouts.includes(r.id) }))
               : [
@@ -579,6 +582,7 @@ export default function FBASimPage() {
                   ...communityResult.exchangeFluxes.map(e => ({ strain: 'exchange', id: e.id, name: e.metabolite, subsystem: 'Exchange', flux: e.flux, knocked_out: false })),
                 ]
           } filename={`fbasim-${simMode}-fluxes`} format="csv" />
+          <ExportButton label="Export SVG" data={null} filename={`fbasim-${simMode}-chart`} format="svg" svgRef={chartRef} />
         </div>
       </div>
     </IDEShell>

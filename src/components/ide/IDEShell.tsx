@@ -42,9 +42,9 @@ export default function IDEShell({ moduleId, children, topBarActions }: IDEShell
       <IDESidebar />
 
       {/* Main canvas — col 2, row 2 */}
-      <div className="nb-ide-main">
+      <main className="nb-ide-main" role="main" aria-label="Tool workspace">
         {children}
-      </div>
+      </main>
 
       {/* Console — col 2, row 3 */}
       <IDEConsole />

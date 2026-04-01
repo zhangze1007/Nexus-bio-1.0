@@ -4,6 +4,7 @@ import IDEShell from '../ide/IDEShell';
 import AlgorithmInsight from '../ide/shared/AlgorithmInsight';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
+import SimErrorBanner from '../ide/shared/SimErrorBanner';
 import { CIRCUIT_NODES, LOGIC_GATES, hillInhibition, hillActivation } from '../../data/mockGECAIR';
 import type { GateType } from '../../data/mockGECAIR';
 import { T, TOOL_RESULT_PALETTE} from '../ide/tokens';
@@ -45,7 +46,7 @@ function CircuitSVG({ inputA, inputB, gateType }: { inputA: number; inputB: numb
   }
 
   return (
-    <svg viewBox="0 0 480 420" style={{ width: '100%', height: '100%' }}>
+    <svg role="img" aria-label="Chart" viewBox="0 0 480 420" style={{ width: '100%', height: '100%' }}>
       <rect width="480" height="420" fill="#050505" />
       <text x="240" y="20" textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.3)">
         Synthetic Gene Circuit — {gateType} Gate Mode
@@ -103,7 +104,7 @@ function ParamSlider({ label, value, min, max, step = 0.05, onChange }: {
         <span style={{ fontFamily: T.SANS, fontSize: '11px', color: LABEL }}>{label}</span>
         <span style={{ fontFamily: T.MONO, fontSize: '11px', color: VALUE }}>{(value * 100).toFixed(0)}%</span>
       </div>
-      <input type="range" min={min} max={max} step={step} value={value}
+      <input aria-label="Parameter slider" type="range" min={min} max={max} step={step} value={value}
         onChange={e => onChange(parseFloat(e.target.value))}
         style={{ width: '100%', accentColor: 'rgba(120,180,255,0.8)', cursor: 'pointer' }} />
     </div>
@@ -145,9 +146,9 @@ export default function GECAIRPage() {
           formula="f(x) = Kⁿ/(Kⁿ+xⁿ)"
         />
 
-        <div style={{ flex: 1, display: 'flex', overflow: 'hidden', minHeight: 0 }}>
+        <div className="nb-tool-panels" style={{ flex: 1 }}>
           {/* Input panel */}
-          <div style={{ width: '240px', flexShrink: 0, overflowY: 'auto', padding: '16px', borderRight: `1px solid ${BORDER}`, background: PANEL_BG }}>
+          <div className="nb-tool-sidebar" style={{ width: '240px', borderRight: `1px solid ${BORDER}`, background: PANEL_BG }}>
             <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: LABEL, margin: '0 0 12px' }}>
               Input Signals
             </p>
@@ -159,7 +160,7 @@ export default function GECAIRPage() {
               Output Gate Type
             </p>
             {(['NOT', 'AND', 'OR', 'NAND'] as GateType[]).map(gate => (
-              <button key={gate} onClick={() => setGateType(gate)} style={{
+              <button aria-label="Action" key={gate} onClick={() => setGateType(gate)} style={{
                 display: 'block', width: '100%', textAlign: 'left',
                 padding: '6px 10px', marginBottom: '4px',
                 background: gateType === gate ? 'rgba(255,255,255,0.08)' : 'transparent',
@@ -211,7 +212,7 @@ export default function GECAIRPage() {
           </div>
 
           {/* Results panel */}
-          <div style={{ width: '240px', flexShrink: 0, overflowY: 'auto', padding: '16px', borderLeft: `1px solid ${BORDER}`, background: PANEL_BG }}>
+          <div className="nb-tool-right" style={{ width: '240px', borderLeft: `1px solid ${BORDER}`, background: PANEL_BG }}>
             <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: LABEL, margin: '0 0 12px' }}>
               Circuit Readouts
             </p>

@@ -1,7 +1,8 @@
 'use client';
+import { T } from '../tokens';
 
-const MONO = "'JetBrains Mono','Fira Code',monospace";
-const SANS = "'Inter',-apple-system,sans-serif";
+const MONO = T.MONO;
+const SANS = T.SANS;
 
 interface MetricCardProps {
   label: string;

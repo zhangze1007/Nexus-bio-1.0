@@ -4,6 +4,7 @@ import IDEShell from '../ide/IDEShell';
 import AlgorithmInsight from '../ide/shared/AlgorithmInsight';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
+import SimErrorBanner from '../ide/shared/SimErrorBanner';
 import { CRISPRI_TARGETS, greedyKnockdownSchedule } from '../../data/mockGenMIM';
 import type { CRISPRiTarget } from '../../types';
 import { T, TOOL_RESULT_PALETTE} from '../ide/tokens';
@@ -13,7 +14,7 @@ function GenomeMap({ targets, selected }: { targets: CRISPRiTarget[]; selected: 
   const selectedIds = new Set(selected.map(t => t.gene));
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
+    <svg role="img" aria-label="Chart" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
       <rect width={W} height={H} fill="#050505" />
       <rect x={20} y={H / 2 - 6} width={W - 40} height={12} rx="6"
         fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.1)" strokeWidth={1} />
@@ -60,10 +61,13 @@ export default function GenMIMPage() {
   const [maxTargets, setMaxTargets] = useState(5);
   const [protectEssential, setProtectEssential] = useState(true);
 
-  const schedule = useMemo(() =>
-    greedyKnockdownSchedule(CRISPRI_TARGETS, maxTargets, efficiency, protectEssential),
-    [efficiency, maxTargets, protectEssential]
-  );
+  const { data: schedule, error: simError } = useMemo(() => {
+    try {
+      return { data: greedyKnockdownSchedule(CRISPRI_TARGETS, maxTargets, efficiency, protectEssential), error: null as string | null };
+    } catch (e) {
+      return { data: [] as ReturnType<typeof greedyKnockdownSchedule>, error: e instanceof Error ? e.message : 'Knockdown scheduling failed' };
+    }
+  }, [efficiency, maxTargets, protectEssential]);
 
   const growthImpact = schedule.reduce((a, t) => a + (t.growth_impact ?? 0), 0);
   const avgEfficiency = schedule.length > 0
@@ -79,9 +83,13 @@ export default function GenMIMPage() {
           formula="score = KD_eff + (1 + GI) × 0.3"
         />
 
-        <div style={{ flex: 1, display: 'flex', overflow: 'hidden', minHeight: 0 }}>
+        {simError && (
+          <div style={{ padding: '0 16px 8px' }}><SimErrorBanner message={simError} /></div>
+        )}
+
+        <div className="nb-tool-panels" style={{ flex: 1 }}>
           {/* Input panel */}
-          <div style={{ width: '240px', flexShrink: 0, overflowY: 'auto', padding: '16px', borderRight: '1px solid rgba(255,255,255,0.06)', background: '#000000' }}>
+          <div className="nb-tool-sidebar" style={{ width: '240px', borderRight: '1px solid rgba(255,255,255,0.06)', background: '#000000' }}>
             <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '0 0 12px' }}>
               CRISPRi Parameters
             </p>
@@ -95,13 +103,13 @@ export default function GenMIMPage() {
                   <span style={{ fontFamily: T.SANS, fontSize: '11px', color: 'rgba(255,255,255,0.45)' }}>{s.label}</span>
                   <span style={{ fontFamily: T.MONO, fontSize: '11px', color: 'rgba(255,255,255,0.55)' }}>{s.display(s.value)}</span>
                 </div>
-                <input type="range" min={s.min} max={s.max} step={s.step} value={s.value}
+                <input aria-label="Parameter slider" type="range" min={s.min} max={s.max} step={s.step} value={s.value}
                   onChange={e => s.set(parseFloat(e.target.value) as never)}
                   style={{ width: '100%', accentColor: 'rgba(120,180,255,0.8)' }} />
               </div>
             ))}
 
-            <button onClick={() => setProtectEssential(!protectEssential)} style={{
+            <button aria-label="Action" onClick={() => setProtectEssential(!protectEssential)} style={{
               display: 'flex', alignItems: 'center', gap: '8px',
               width: '100%', padding: '7px 10px', marginBottom: '16px',
               background: protectEssential ? 'rgba(255,139,31,0.1)' : 'transparent',
@@ -174,7 +182,7 @@ export default function GenMIMPage() {
           </div>
 
           {/* Results panel */}
-          <div style={{ width: '200px', flexShrink: 0, overflowY: 'auto', padding: '16px', borderLeft: '1px solid rgba(255,255,255,0.06)', background: '#000000' }}>
+          <div className="nb-tool-right" style={{ width: '200px', borderLeft: '1px solid rgba(255,255,255,0.06)', background: '#000000' }}>
             <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '0 0 12px' }}>
               Predicted Impact
             </p>

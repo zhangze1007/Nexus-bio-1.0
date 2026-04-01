@@ -4,6 +4,7 @@ import IDEShell from '../ide/IDEShell';
 import AlgorithmInsight from '../ide/shared/AlgorithmInsight';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
+import SimErrorBanner from '../ide/shared/SimErrorBanner';
 import {
   runFullCFSPipeline,
   generateDefaultConstructs,
@@ -89,7 +90,7 @@ function TimeCourseChart({ result, constructs }: { result: CFSFullResult; constr
   const ticks = 5;
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
+    <svg role="img" aria-label="Chart" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
       <rect width={W} height={H} fill="#050505" rx={12} />
       <GridLines W={W} H={H} PAD={PAD} count={8} />
       {/* X axis ticks */}
@@ -165,7 +166,7 @@ function ResourceChart({ result }: { result: CFSFullResult }) {
   ];
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
+    <svg role="img" aria-label="Chart" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
       <rect width={W} height={H} fill="#050505" rx={12} />
       <GridLines W={W} H={H} PAD={PAD} count={8} />
       {/* Y ticks */}
@@ -224,7 +225,7 @@ function FittingChart({ result }: { result: CFSFullResult }) {
 
   if (!fit) {
     return (
-      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
+      <svg role="img" aria-label="Chart" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
         <rect width={W} height={H} fill="#050505" rx={12} />
         <text x={W / 2} y={H / 2} textAnchor="middle" fontFamily={T.SANS} fontSize="12" fill={LABEL}>
           No fitting data available
@@ -247,7 +248,7 @@ function FittingChart({ result }: { result: CFSFullResult }) {
   const rMaxRes = Math.max(...fit.residuals.map(r => Math.abs(r)), 0.01);
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
+    <svg role="img" aria-label="Chart" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
       <rect width={W} height={H} fill="#050505" rx={12} />
       {/* Main plot grid */}
       {Array.from({ length: 9 }).map((_, i) => {
@@ -326,7 +327,7 @@ function IvIvChart({ result }: { result: CFSFullResult }) {
 
   if (!iviv) {
     return (
-      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
+      <svg role="img" aria-label="Chart" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
         <rect width={W} height={H} fill="#050505" rx={12} />
         <text x={W / 2} y={H / 2} textAnchor="middle" fontFamily={T.SANS} fontSize="12" fill={LABEL}>
           IvIv prediction unavailable — fitting required
@@ -354,7 +355,7 @@ function IvIvChart({ result }: { result: CFSFullResult }) {
   const confAngle = iviv.confidence * 180;
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
+    <svg role="img" aria-label="Chart" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
       <rect width={W} height={H} fill="#050505" rx={12} />
       {/* Bar chart */}
       <rect x={PAD + 40} y={barBaseY - barH(invitro)} width={barW} height={barH(invitro)}
@@ -433,7 +434,10 @@ function IvIvChart({ result }: { result: CFSFullResult }) {
 export default function CellFreePage() {
   const constructs = useMemo(() => generateDefaultConstructs(), []);
   const params = useMemo(() => generateDefaultParameters(), []);
-  const result = useMemo(() => runFullCFSPipeline(constructs, params), [constructs, params]);
+  const { data: result, error: simError } = useMemo(() => {
+    try { return { data: runFullCFSPipeline(constructs, params), error: null as string | null }; }
+    catch (e) { return { data: runFullCFSPipeline([], generateDefaultParameters()), error: e instanceof Error ? e.message : 'CFS pipeline failed' }; }
+  }, [constructs, params]);
 
   const [viewMode, setViewMode] = useState<ViewMode>('TimeCourse');
 
@@ -460,7 +464,11 @@ export default function CellFreePage() {
           formula="dP/dt = k_tl · [mRNA] · R_free / (K_tl + R_free)"
         />
 
-        <div style={{ flex: 1, display: 'flex', overflow: 'hidden', minHeight: 0 }}>
+        {simError && (
+          <div style={{ padding: '0 16px 8px' }}><SimErrorBanner message={simError} /></div>
+        )}
+
+        <div className="nb-tool-panels" style={{ flex: 1 }}>
 
           {/* ── LEFT SIDEBAR (240px) ──────────────────────────────── */}
           <div style={{
@@ -497,7 +505,7 @@ export default function CellFreePage() {
             <SectionLabel>View Mode</SectionLabel>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '16px' }}>
               {(['TimeCourse', 'Resources', 'Fitting', 'IvIv'] as ViewMode[]).map(mode => (
-                <button key={mode} onClick={() => setViewMode(mode)} style={{
+                <button aria-label="Action" key={mode} onClick={() => setViewMode(mode)} style={{
                   flex: '1 1 0', padding: '5px 0', borderRadius: '6px', cursor: 'pointer',
                   fontFamily: T.SANS, fontSize: '10px', border: 'none',
                   background: viewMode === mode ? 'rgba(255,255,255,0.12)' : INPUT_BG,

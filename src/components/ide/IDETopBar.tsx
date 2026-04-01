@@ -3,9 +3,10 @@ import Link from 'next/link';
 import { Home, Terminal, LayoutGrid } from 'lucide-react';
 import { useUIStore } from '../../store/uiStore';
 import { getToolDefinition } from '../tools/shared/toolRegistry';
+import { T } from './tokens';
 
-const SANS = "'Inter',-apple-system,sans-serif";
-const MONO = "'JetBrains Mono','Fira Code',monospace";
+const SANS = T.SANS;
+const MONO = T.MONO;
 
 const BORDER = 'rgba(255,255,255,0.08)';
 const LABEL  = 'rgba(255,255,255,0.28)';
@@ -93,6 +94,7 @@ export default function IDETopBar({ moduleId, actions }: IDETopBarProps) {
           type="button"
           onClick={toggleConsole}
           aria-pressed={consoleOpen}
+          aria-label="Toggle console"
           style={{
             display: 'inline-flex',
             alignItems: 'center',

@@ -4,6 +4,7 @@ import IDEShell from '../ide/IDEShell';
 import AlgorithmInsight from '../ide/shared/AlgorithmInsight';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
+import SimErrorBanner from '../ide/shared/SimErrorBanner';
 import DataTable from '../ide/shared/DataTable';
 import type { TableColumn } from '../ide/shared/DataTable';
 import { OMICS_DATA } from '../../data/mockMultiO';
@@ -72,7 +73,7 @@ function VolcanoPlot({ data, fcThreshold, pvThreshold }: {
   const fcLineR = xPos(fcThreshold);
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
+    <svg role="img" aria-label="Chart" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
       <rect width={W} height={H} fill="#050505" />
       <line x1={PAD} y1={pvLine} x2={W - PAD} y2={pvLine}
         stroke="rgba(255,255,255,0.12)" strokeWidth={1} strokeDasharray="4 3" />
@@ -175,7 +176,7 @@ function EmbeddingScatter({ embeddings, fcThreshold, activeLayers }: {
   const GRID_COUNT = 8;
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
+    <svg role="img" aria-label="Chart" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
       <rect width={W} height={H} fill="#050505" rx={12} />
       {/* Grid */}
       {Array.from({ length: GRID_COUNT + 1 }).map((_, i) => {
@@ -249,7 +250,10 @@ export default function MultiOPage() {
   const [perturbResult, setPerturbResult] = useState<PerturbationResult | null>(null);
 
   /* Foundation model */
-  const model = useMemo(() => new OmicsFoundationModel(OMICS_DATA), []);
+  const { data: model, error: simError } = useMemo(() => {
+    try { return { data: new OmicsFoundationModel(OMICS_DATA), error: null as string | null }; }
+    catch (e) { return { data: new OmicsFoundationModel(OMICS_DATA), error: e instanceof Error ? e.message : 'Model init failed' }; }
+  }, []);
   const embeddings = useMemo(() => model.computeEmbeddings(), [model]);
   const bottleneck = useMemo(() => model.analyzeBottleneck(), [model]);
   const correlations = useMemo(() => model.computeCorrelationMatrix(), [model]);
@@ -329,7 +333,11 @@ export default function MultiOPage() {
           formula="z = Softmax(QKᵀ/√d)·V  |  ΔG = −RT ln(K)"
         />
 
-        <div style={{ flex: 1, display: 'flex', overflow: 'hidden', minHeight: 0 }}>
+        {simError && (
+          <div style={{ padding: '0 16px 8px' }}><SimErrorBanner message={simError} /></div>
+        )}
+
+        <div className="nb-tool-panels" style={{ flex: 1 }}>
 
           {/* ── LEFT SIDEBAR (240px) ──────────────────────────────── */}
           <div style={{
@@ -343,7 +351,7 @@ export default function MultiOPage() {
               { label: 'Proteomics',      layer: 'proteomics' as OmicsLayer,      val: showProtein,    set: setShowProtein },
               { label: 'Metabolomics',    layer: 'metabolomics' as OmicsLayer,    val: showMetabolite, set: setShowMetabolite },
             ]).map(({ label, layer, val, set }) => (
-              <button key={label} onClick={() => set(!val)} style={{
+              <button aria-label="Action" key={label} onClick={() => set(!val)} style={{
                 display: 'flex', alignItems: 'center', gap: '8px',
                 width: '100%', padding: '7px 10px', marginBottom: '6px',
                 background: val ? 'rgba(255,255,255,0.06)' : 'transparent',
@@ -365,7 +373,7 @@ export default function MultiOPage() {
             <SectionLabel>View Mode</SectionLabel>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '16px' }}>
               {(['Embedding', 'Volcano', 'Table', 'MOFA+', 'VAE', 'Efficiency'] as ViewMode[]).map(mode => (
-                <button key={mode} onClick={() => setViewMode(mode)} style={{
+                <button aria-label="Action" key={mode} onClick={() => setViewMode(mode)} style={{
                   flex: '1 0 30%', padding: '5px 0', borderRadius: '6px', cursor: 'pointer',
                   fontFamily: T.SANS, fontSize: '9px', border: 'none',
                   background: viewMode === mode ? 'rgba(255,255,255,0.12)' : INPUT_BG,
@@ -383,7 +391,7 @@ export default function MultiOPage() {
                 <span style={{ fontFamily: T.SANS, fontSize: '11px', color: 'rgba(255,255,255,0.45)' }}>|FC| &gt;</span>
                 <span style={{ fontFamily: T.MONO, fontSize: '11px', color: 'rgba(255,255,255,0.55)' }}>{fcThreshold.toFixed(1)}</span>
               </div>
-              <input type="range" min={0.5} max={5} step={0.1} value={fcThreshold}
+              <input aria-label="Parameter slider" type="range" min={0.5} max={5} step={0.1} value={fcThreshold}
                 onChange={e => setFcThreshold(parseFloat(e.target.value))}
                 style={{ width: '100%', accentColor: LAYER_COLORS.proteomics }} />
             </div>
@@ -392,7 +400,7 @@ export default function MultiOPage() {
                 <span style={{ fontFamily: T.SANS, fontSize: '11px', color: 'rgba(255,255,255,0.45)' }}>p &lt;</span>
                 <span style={{ fontFamily: T.MONO, fontSize: '11px', color: 'rgba(255,255,255,0.55)' }}>{pvThreshold.toFixed(3)}</span>
               </div>
-              <input type="range" min={0.001} max={0.1} step={0.001} value={pvThreshold}
+              <input aria-label="Parameter slider" type="range" min={0.001} max={0.1} step={0.001} value={pvThreshold}
                 onChange={e => setPvThreshold(parseFloat(e.target.value))}
                 style={{ width: '100%', accentColor: LAYER_COLORS.proteomics }} />
             </div>
@@ -418,7 +426,7 @@ export default function MultiOPage() {
                 <span style={{ fontFamily: T.SANS, fontSize: '10px', color: 'rgba(255,255,255,0.45)' }}>Expression</span>
                 <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE }}>{perturbedExpr.toFixed(1)}</span>
               </div>
-              <input type="range" min={-4} max={8} step={0.1} value={perturbedExpr}
+              <input aria-label="Parameter slider" type="range" min={-4} max={8} step={0.1} value={perturbedExpr}
                 onChange={e => setPerturbedExpr(parseFloat(e.target.value))}
                 style={{ width: '100%', accentColor: LAYER_COLORS.metabolomics }} />
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -426,7 +434,7 @@ export default function MultiOPage() {
                 <span style={{ fontFamily: T.MONO, fontSize: '8px', color: LABEL }}>+8</span>
               </div>
             </div>
-            <button onClick={handleSimulate} style={{
+            <button aria-label="Action" onClick={handleSimulate} style={{
               width: '100%', padding: '7px 0', borderRadius: '8px', cursor: 'pointer',
               fontFamily: T.SANS, fontSize: '11px', fontWeight: 600,
               border: `1px solid ${LAYER_COLORS.metabolomics}40`,
@@ -601,7 +609,7 @@ export default function MultiOPage() {
                       const yMin = Math.min(...ys), yMax = Math.max(...ys);
                       const xR = xMax - xMin || 1, yR = yMax - yMin || 1;
                       return (
-                        <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%' }}>
+                        <svg role="img" aria-label="Chart" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%' }}>
                           <rect width={W} height={H} fill="#050505" rx={12} />
                           <line x1={PAD} y1={H - PAD} x2={W - PAD} y2={H - PAD} stroke="rgba(255,255,255,0.1)" />
                           <line x1={PAD} y1={PAD} x2={PAD} y2={H - PAD} stroke="rgba(255,255,255,0.1)" />
@@ -633,7 +641,7 @@ export default function MultiOPage() {
                     const W = 480, H = 80, PAD = 30;
                     const maxL = Math.max(...hist.map(h => h.loss), 0.01);
                     return (
-                      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
+                      <svg role="img" aria-label="Chart" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
                         <rect width={W} height={H} fill="transparent" />
                         <text x={PAD - 4} y={12} fontFamily={T.MONO} fontSize="7" fill={LABEL} textAnchor="end">Loss</text>
                         <polyline

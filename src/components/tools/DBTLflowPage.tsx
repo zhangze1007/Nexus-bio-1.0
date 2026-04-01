@@ -4,6 +4,7 @@ import IDEShell from '../ide/IDEShell';
 import AlgorithmInsight from '../ide/shared/AlgorithmInsight';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
+import SimErrorBanner from '../ide/shared/SimErrorBanner';
 import { INITIAL_ITERATIONS, appendIteration } from '../../data/mockDBTL';
 import { ProtocolGenerator } from '../../utils/protocol-generator';
 import { AutomatedFeedbackLoop } from '../../utils/feedback-loop';
@@ -53,7 +54,7 @@ function Timeline({ iterations }: { iterations: DBTLIteration[] }) {
   const maxResult = Math.max(...iterations.map(i => i.result));
 
   return (
-    <svg
+    <svg role="img" aria-label="Chart"
       viewBox={`0 0 520 ${Math.max(360, iterations.length * 60 + 40)}`}
       style={{ width: '100%', height: '100%' }}
     >
@@ -132,7 +133,7 @@ function CycleProgressRing({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '16px 0' }}>
-      <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
+      <svg role="img" aria-label="Chart" width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
         {/* Track */}
         <circle
           cx={size / 2} cy={size / 2} r={radius}
@@ -350,7 +351,7 @@ export default function DBTLflowPage() {
           formula="Cycle: D→B→T→L→D'"
         />
 
-        <div style={{ flex: 1, display: 'flex', overflow: 'hidden', minHeight: 0 }}>
+        <div className="nb-tool-panels" style={{ flex: 1 }}>
 
           {/* ═══════ LEFT PANEL: Input + Protocol ═══════ */}
           <div style={{
@@ -408,7 +409,7 @@ export default function DBTLflowPage() {
             {/* Pass / Fail */}
             <div style={{ display: 'flex', gap: '8px', marginBottom: '14px' }}>
               {([true, false] as const).map(p => (
-                <button key={String(p)} onClick={() => setPassed(p)} style={{
+                <button aria-label="Action" key={String(p)} onClick={() => setPassed(p)} style={{
                   flex: 1, padding: '6px',
                   background: passed === p ? (p ? 'rgba(120,220,160,0.12)' : 'rgba(255,80,80,0.1)') : 'transparent',
                   border: `1px solid ${passed === p ? (p ? 'rgba(120,220,160,0.3)' : 'rgba(255,80,80,0.3)') : INPUT_BORDER}`,
@@ -422,7 +423,7 @@ export default function DBTLflowPage() {
             </div>
 
             {/* Add iteration button */}
-            <button onClick={addIteration} disabled={!hypothesis.trim() || !result.trim()} style={{
+            <button aria-label="Action" onClick={addIteration} disabled={!hypothesis.trim() || !result.trim()} style={{
               width: '100%', padding: '8px',
               background: 'rgba(255,255,255,0.05)',
               border: `1px solid ${INPUT_BORDER}`,
@@ -453,7 +454,7 @@ export default function DBTLflowPage() {
             {/* ── Protocol Generation ── */}
             <div style={{ marginTop: '16px' }}>
               <p style={sectionLabel}>Protocol Generation</p>
-              <button onClick={handleGenerateProtocol} disabled={!latestIteration} style={{
+              <button aria-label="Action" onClick={handleGenerateProtocol} disabled={!latestIteration} style={{
                 width: '100%', padding: '8px',
                 background: 'rgba(81,81,205,0.08)',
                 border: '1px solid rgba(81,81,205,0.2)',
@@ -487,7 +488,7 @@ export default function DBTLflowPage() {
                       <p style={{ fontFamily: T.MONO, fontSize: '9px', color: LABEL, margin: '0 0 8px' }}>
                         API {generatedProtocol.api_version} · {generatedProtocol.labware.length} labware · {generatedProtocol.pipetting_logic.length} steps
                       </p>
-                      <button onClick={handleDownloadProtocol} style={{
+                      <button aria-label="Action" onClick={handleDownloadProtocol} style={{
                         width: '100%', padding: '6px',
                         background: 'rgba(81,81,205,0.1)',
                         border: '1px solid rgba(81,81,205,0.2)',
@@ -506,7 +507,7 @@ export default function DBTLflowPage() {
             {/* ── SBOL 3.0 Export ── */}
             <div style={{ marginTop: '16px' }}>
               <p style={sectionLabel}>SBOL 3.0 Export</p>
-              <button onClick={handleSBOLExport} style={{
+              <button aria-label="Action" onClick={handleSBOLExport} style={{
                 width: '100%', padding: '8px',
                 background: 'rgba(255,31,255,0.08)',
                 border: '1px solid rgba(255,31,255,0.2)',
@@ -534,12 +535,12 @@ export default function DBTLflowPage() {
                     </p>
                   ))}
                   <div style={{ display: 'flex', gap: '6px', marginTop: '8px' }}>
-                    <button onClick={() => handleDownloadSBOL('xml')} style={{
+                    <button aria-label="Action" onClick={() => handleDownloadSBOL('xml')} style={{
                       flex: 1, padding: '5px', background: 'rgba(255,31,255,0.1)',
                       border: '1px solid rgba(255,31,255,0.2)', borderRadius: '6px',
                       color: '#FF1FFF', fontFamily: T.MONO, fontSize: '9px', cursor: 'pointer',
                     }}>↓ RDF/XML</button>
-                    <button onClick={() => handleDownloadSBOL('turtle')} style={{
+                    <button aria-label="Action" onClick={() => handleDownloadSBOL('turtle')} style={{
                       flex: 1, padding: '5px', background: 'rgba(81,81,205,0.1)',
                       border: '1px solid rgba(81,81,205,0.2)', borderRadius: '6px',
                       color: '#5151CD', fontFamily: T.MONO, fontSize: '9px', cursor: 'pointer',
@@ -558,7 +559,7 @@ export default function DBTLflowPage() {
                 rows={2}
                 style={{ ...inputBase, fontFamily: T.MONO, fontSize: '10px', resize: 'vertical', marginBottom: '8px' }}
               />
-              <button onClick={handlePlanAssembly} style={{
+              <button aria-label="Action" onClick={handlePlanAssembly} style={{
                 width: '100%', padding: '8px',
                 background: 'rgba(240,253,250,0.08)',
                 border: '1px solid rgba(240,253,250,0.2)',
@@ -635,12 +636,12 @@ export default function DBTLflowPage() {
                         })}
                       </div>
                       <div style={{ display: 'flex', gap: '6px', marginBottom: '8px' }}>
-                        <button onClick={handleDownloadPrimers} style={{
+                        <button aria-label="Action" onClick={handleDownloadPrimers} style={{
                           flex: 1, padding: '5px', background: 'rgba(240,253,250,0.1)',
                           border: '1px solid rgba(240,253,250,0.2)', borderRadius: '6px',
                           color: '#F0FDFA', fontFamily: T.MONO, fontSize: '9px', cursor: 'pointer',
                         }}>↓ Primers CSV</button>
-                        <button onClick={handleGenerateGibsonProtocol} style={{
+                        <button aria-label="Action" onClick={handleGenerateGibsonProtocol} style={{
                           flex: 1, padding: '5px', background: 'rgba(81,81,205,0.1)',
                           border: '1px solid rgba(81,81,205,0.2)', borderRadius: '6px',
                           color: '#5151CD', fontFamily: T.MONO, fontSize: '9px', cursor: 'pointer',

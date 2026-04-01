@@ -4,6 +4,7 @@ import IDEShell from '../ide/IDEShell';
 import AlgorithmInsight from '../ide/shared/AlgorithmInsight';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
+import SimErrorBanner from '../ide/shared/SimErrorBanner';
 import { FITNESS_LANDSCAPE, generateEvolutionTrajectory, STARTING_SEQUENCE } from '../../data/mockProEvol';
 import type { FitnessPoint } from '../../types';
 import { T } from '../ide/tokens';
@@ -32,7 +33,7 @@ function FitnessHeatmap({ trajectory }: { trajectory: FitnessPoint[] }) {
   const pathPts = trajectory.slice(-15);
 
   return (
-    <svg viewBox={`0 0 ${W + 80} ${H + 60}`} style={{ width: '100%', height: '100%' }}>
+    <svg role="img" aria-label="Chart" viewBox={`0 0 ${W + 80} ${H + 60}`} style={{ width: '100%', height: '100%' }}>
       <rect width={W + 80} height={H + 60} fill="#050505" />
       {FITNESS_LANDSCAPE.map((row, y) =>
         row.map((v, x) => (
@@ -97,7 +98,7 @@ function ParamSlider({ label, value, min, max, step = 1, onChange, unit }: {
         <span style={{ fontFamily: T.SANS, fontSize: '11px', color: LABEL }}>{label}</span>
         <span style={{ fontFamily: T.MONO, fontSize: '11px', color: VALUE }}>{value}{unit}</span>
       </div>
-      <input type="range" min={min} max={max} step={step} value={value}
+      <input aria-label="Parameter slider" type="range" min={min} max={max} step={step} value={value}
         onChange={e => onChange(Number(e.target.value))}
         style={{ width: '100%', accentColor: 'rgba(120,180,255,0.8)', cursor: 'pointer' }} />
     </div>
@@ -138,9 +139,9 @@ export default function ProEvolPage() {
           formula="P(accept) = min(1, e^(ΔF/kT))"
         />
 
-        <div style={{ flex: 1, display: 'flex', overflow: 'hidden', minHeight: 0 }}>
+        <div className="nb-tool-panels" style={{ flex: 1 }}>
           {/* Input panel */}
-          <div style={{ width: '240px', flexShrink: 0, overflowY: 'auto', padding: '16px', borderRight: `1px solid ${BORDER}`, background: PANEL_BG }}>
+          <div className="nb-tool-sidebar" style={{ width: '240px', borderRight: `1px solid ${BORDER}`, background: PANEL_BG }}>
             <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: LABEL, margin: '0 0 12px' }}>
               Evolution Parameters
             </p>
@@ -161,7 +162,7 @@ export default function ProEvolPage() {
               {STARTING_SEQUENCE.slice(0, 60)}...
             </div>
 
-            <button onClick={run} disabled={running} style={{
+            <button aria-label="Action" onClick={run} disabled={running} style={{
               width: '100%', padding: '8px',
               background: running ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.06)',
               border: `1px solid ${INPUT_BORDER}`,
@@ -191,7 +192,7 @@ export default function ProEvolPage() {
           </div>
 
           {/* Results panel */}
-          <div style={{ width: '240px', flexShrink: 0, overflowY: 'auto', padding: '16px', borderLeft: `1px solid ${BORDER}`, background: PANEL_BG }}>
+          <div className="nb-tool-right" style={{ width: '240px', borderLeft: `1px solid ${BORDER}`, background: PANEL_BG }}>
             <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: LABEL, margin: '0 0 12px' }}>
               Evolution Results
             </p>
@@ -205,7 +206,7 @@ export default function ProEvolPage() {
             <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: LABEL, margin: '0 0 8px' }}>
               Fitness Trajectory
             </p>
-            <svg viewBox="0 0 200 60" style={{ width: '100%', height: '60px' }}>
+            <svg role="img" aria-label="Chart" viewBox="0 0 200 60" style={{ width: '100%', height: '60px' }}>
               <rect width="200" height="60" fill="rgba(255,255,255,0.03)" rx="4" />
               {trajectory.length > 1 && (
                 <polyline

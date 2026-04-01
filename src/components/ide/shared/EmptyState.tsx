@@ -1,7 +1,8 @@
 'use client';
+import { T } from '../tokens';
 
-const SANS = "'Inter',-apple-system,sans-serif";
-const MONO = "'JetBrains Mono','Fira Code',monospace";
+const SANS = T.SANS;
+const MONO = T.MONO;
 
 interface EmptyStateProps {
   type?: 'empty' | 'loading' | 'error';

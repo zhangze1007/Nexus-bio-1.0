@@ -4,9 +4,10 @@ import { usePathname } from 'next/navigation';
 import { ChevronLeft, ChevronRight, LayoutGrid } from 'lucide-react';
 import { useUIStore } from '../../store/uiStore';
 import { TOOL_CATEGORIES, TOOL_DEFINITIONS } from '../tools/shared/toolRegistry';
+import { T } from '../ide/tokens';
 
-const SANS  = "'Inter',-apple-system,sans-serif";
-const BRAND = "'Space Grotesk',-apple-system,sans-serif";
+const SANS  = T.SANS;
+const BRAND = T.BRAND;
 
 const BORDER = 'rgba(255,255,255,0.08)';
 const LABEL  = 'rgba(255,255,255,0.28)';
@@ -18,7 +19,7 @@ export default function IDESidebar() {
   const toggle = useUIStore((s) => s.toggleSidebarCollapsed);
 
   return (
-    <aside className="nb-ide-sidebar">
+    <aside className="nb-ide-sidebar" role="navigation" aria-label="Tool navigation">
       <div
         style={{
           position: 'relative',

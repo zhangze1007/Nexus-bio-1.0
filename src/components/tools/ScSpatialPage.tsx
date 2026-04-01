@@ -4,6 +4,7 @@ import IDEShell from '../ide/IDEShell';
 import AlgorithmInsight from '../ide/shared/AlgorithmInsight';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
+import SimErrorBanner from '../ide/shared/SimErrorBanner';
 import DataTable from '../ide/shared/DataTable';
 import type { TableColumn } from '../ide/shared/DataTable';
 import { SC_SPATIAL_DATA, GENE_LIST, CLUSTER_LABELS } from '../../data/mockScSpatial';
@@ -139,7 +140,7 @@ function SpatialMap({ cells, selectedCluster, highlightGene, showQCFailed }: {
   const GRID = 8;
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
+    <svg role="img" aria-label="Chart" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
       <rect width={W} height={H} fill="#050505" rx={12} />
       {Array.from({ length: GRID + 1 }).map((_, i) => {
         const gx = PAD + (i / GRID) * (W - PAD * 2);
@@ -240,7 +241,7 @@ function UMAPScatter({ analysis, selectedCluster }: {
   const GRID = 8;
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
+    <svg role="img" aria-label="Chart" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
       <rect width={W} height={H} fill="#050505" rx={12} />
       {Array.from({ length: GRID + 1 }).map((_, i) => {
         const gx = PAD + (i / GRID) * (W - PAD * 2);
@@ -322,7 +323,7 @@ function TrajectoryView({ analysis }: { analysis: ScSpatialAnalysisResult }) {
   }, [clusters]);
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
+    <svg role="img" aria-label="Chart" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
       <rect width={W} height={H} fill="#050505" rx={12} />
       {/* Pseudotime axis */}
       <line x1={PAD} y1={H - 28} x2={W - PAD} y2={H - 28} stroke="rgba(255,255,255,0.1)" />
@@ -416,7 +417,7 @@ function EfficiencyChart({ highYield }: { highYield: HighYieldCluster[] }) {
   };
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
+    <svg role="img" aria-label="Chart" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
       <rect width={W} height={H} fill="#050505" rx={12} />
       {/* Y-axis */}
       <line x1={PAD.left} y1={PAD.top} x2={PAD.left} y2={H - PAD.bottom} stroke="rgba(255,255,255,0.1)" />
@@ -485,7 +486,10 @@ function EfficiencyChart({ highYield }: { highYield: HighYieldCluster[] }) {
 /* ── Main Component ───────────────────────────────────────────────── */
 
 export default function ScSpatialPage() {
-  const analysis = useMemo(() => runFullPipeline(SC_SPATIAL_DATA), []);
+  const { data: analysis, error: simError } = useMemo(() => {
+    try { return { data: runFullPipeline(SC_SPATIAL_DATA), error: null as string | null }; }
+    catch (e) { return { data: runFullPipeline(SC_SPATIAL_DATA), error: e instanceof Error ? e.message : 'Pipeline failed' }; }
+  }, []);
 
   const [viewMode, setViewMode] = useState<ViewMode>('Spatial');
   const [selectedCluster, setSelectedCluster] = useState<number | null>(null);
@@ -536,7 +540,11 @@ export default function ScSpatialPage() {
           formula="I = (N/W) × Σᵢⱼ wᵢⱼ(xᵢ−x̄)(xⱼ−x̄) / Σᵢ(xᵢ−x̄)²"
         />
 
-        <div style={{ flex: 1, display: 'flex', overflow: 'hidden', minHeight: 0 }}>
+        {simError && (
+          <div style={{ padding: '0 16px 8px' }}><SimErrorBanner message={simError} /></div>
+        )}
+
+        <div className="nb-tool-panels" style={{ flex: 1 }}>
 
           {/* ── LEFT SIDEBAR (240px) ──────────────────────────────── */}
           <div style={{
@@ -554,7 +562,7 @@ export default function ScSpatialPage() {
             </div>
 
             {/* Show QC-failed toggle */}
-            <button onClick={() => setShowQCFailed(!showQCFailed)} style={{
+            <button aria-label="Action" onClick={() => setShowQCFailed(!showQCFailed)} style={{
               display: 'flex', alignItems: 'center', gap: '8px',
               width: '100%', padding: '7px 10px', marginBottom: '16px',
               background: showQCFailed ? 'rgba(250,128,114,0.12)' : 'transparent',
@@ -574,7 +582,7 @@ export default function ScSpatialPage() {
             {/* Cluster Selection */}
             <SectionLabel>Clusters</SectionLabel>
             {analysis.clusters.clusterSizes.map(cs => (
-              <button key={cs.cluster} onClick={() => toggleCluster(cs.cluster)} style={{
+              <button aria-label="Action" key={cs.cluster} onClick={() => toggleCluster(cs.cluster)} style={{
                 display: 'flex', alignItems: 'center', gap: '8px',
                 width: '100%', padding: '7px 10px', marginBottom: '5px',
                 background: selectedCluster === cs.cluster ? 'rgba(255,255,255,0.06)' : 'transparent',
@@ -599,7 +607,7 @@ export default function ScSpatialPage() {
               <SectionLabel>View Mode</SectionLabel>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '16px' }}>
                 {(['Spatial', 'UMAP', 'Trajectory', 'Efficiency', 'Table'] as ViewMode[]).map(mode => (
-                  <button key={mode} onClick={() => setViewMode(mode)} style={{
+                  <button aria-label="Action" key={mode} onClick={() => setViewMode(mode)} style={{
                     flex: mode === 'Table' ? '1 1 100%' : '1 1 0',
                     padding: '5px 0', borderRadius: '6px', cursor: 'pointer',
                     fontFamily: T.SANS, fontSize: '10px', border: 'none',
