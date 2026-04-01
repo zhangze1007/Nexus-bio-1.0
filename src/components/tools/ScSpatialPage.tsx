@@ -9,12 +9,11 @@ import type { TableColumn } from '../ide/shared/DataTable';
 import { SC_SPATIAL_DATA, GENE_LIST, CLUSTER_LABELS } from '../../data/mockScSpatial';
 import { runFullPipeline } from '../../services/ScSpatialEngine';
 import type { ScSpatialAnalysisResult, HighYieldCluster, MoranResult } from '../../services/ScSpatialEngine';
+import { T, TOOL_RESULT_PALETTE} from '../ide/tokens';
 
 /* ── Design Tokens ────────────────────────────────────────────────── */
 
-const MONO = "'JetBrains Mono','Fira Code',monospace";
-const SANS = "'Inter',-apple-system,sans-serif";
-const PANEL_BG = '#10131a';
+const PANEL_BG = '#000000';
 const BORDER = 'rgba(255,255,255,0.06)';
 const LABEL = 'rgba(255,255,255,0.28)';
 const VALUE = 'rgba(255,255,255,0.65)';
@@ -30,11 +29,11 @@ const GLASS: React.CSSProperties = {
 };
 
 const CLUSTER_COLORS: Record<number, string> = {
-  0: '#C9E4DE',
-  1: '#C6DEF1',
-  2: '#F2C6DE',
-  3: '#FAEDCB',
-  4: '#DBCDF0',
+  0: '#F0FDFA',
+  1: '#5151CD',
+  2: '#FA8072',
+  3: '#FFFB1F',
+  4: '#FF1FFF',
 };
 
 type ViewMode = 'Spatial' | 'UMAP' | 'Trajectory' | 'Efficiency' | 'Table';
@@ -43,7 +42,7 @@ type ViewMode = 'Spatial' | 'UMAP' | 'Trajectory' | 'Efficiency' | 'Table';
 
 const SectionLabel = ({ children }: { children: React.ReactNode }) => (
   <p style={{
-    fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase',
+    fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase',
     letterSpacing: '0.1em', color: LABEL, margin: '0 0 10px',
   }}>
     {children}
@@ -69,7 +68,7 @@ const CELL_COLUMNS: TableColumn<CellRow>[] = [
   { key: 'cluster',     header: 'Cl.',      width: 35,
     render: v => (
       <span style={{
-        fontFamily: MONO, fontSize: '10px',
+        fontFamily: T.MONO, fontSize: '10px',
         color: CLUSTER_COLORS[v as number] ?? VALUE,
       }}>
         {v as number}
@@ -79,14 +78,14 @@ const CELL_COLUMNS: TableColumn<CellRow>[] = [
   { key: 'cellType',    header: 'Type',     width: 110 },
   { key: 'totalCounts', header: 'Counts',   width: 60,
     render: v => (
-      <span style={{ fontFamily: MONO, fontSize: '10px', color: VALUE }}>
+      <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE }}>
         {(v as number).toLocaleString()}
       </span>
     ),
   },
   { key: 'nGenes',      header: 'Genes',    width: 50,
     render: v => (
-      <span style={{ fontFamily: MONO, fontSize: '10px', color: VALUE }}>
+      <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE }}>
         {v as number}
       </span>
     ),
@@ -94,8 +93,8 @@ const CELL_COLUMNS: TableColumn<CellRow>[] = [
   { key: 'mitoPercent',  header: 'Mito%',   width: 50,
     render: v => (
       <span style={{
-        fontFamily: MONO, fontSize: '10px',
-        color: (v as number) > 20 ? 'rgba(255,100,100,0.85)' : VALUE,
+        fontFamily: T.MONO, fontSize: '10px',
+        color: (v as number) > 20 ? 'rgba(250,128,114,0.85)' : VALUE,
       }}>
         {(v as number).toFixed(1)}
       </span>
@@ -103,7 +102,7 @@ const CELL_COLUMNS: TableColumn<CellRow>[] = [
   },
   { key: 'pseudotime',  header: 'PT',       width: 50,
     render: v => (
-      <span style={{ fontFamily: MONO, fontSize: '10px', color: VALUE }}>
+      <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE }}>
         {(v as number).toFixed(2)}
       </span>
     ),
@@ -141,7 +140,7 @@ function SpatialMap({ cells, selectedCluster, highlightGene, showQCFailed }: {
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
-      <rect width={W} height={H} fill="#0d0f14" rx={12} />
+      <rect width={W} height={H} fill="#050505" rx={12} />
       {Array.from({ length: GRID + 1 }).map((_, i) => {
         const gx = PAD + (i / GRID) * (W - PAD * 2);
         const gy = PAD + (i / GRID) * (H - PAD * 2);
@@ -154,10 +153,10 @@ function SpatialMap({ cells, selectedCluster, highlightGene, showQCFailed }: {
       })}
       <line x1={PAD} y1={H - PAD} x2={W - PAD} y2={H - PAD} stroke="rgba(255,255,255,0.1)" />
       <line x1={PAD} y1={PAD} x2={PAD} y2={H - PAD} stroke="rgba(255,255,255,0.1)" />
-      <text x={W / 2} y={H - 6} textAnchor="middle" fontFamily={MONO} fontSize="8" fill={LABEL}>
+      <text x={W / 2} y={H - 6} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill={LABEL}>
         Spatial X (μm)
       </text>
-      <text x={12} y={H / 2} textAnchor="middle" fontFamily={MONO} fontSize="8" fill={LABEL}
+      <text x={12} y={H / 2} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill={LABEL}
         transform={`rotate(-90,12,${H / 2})`}>
         Spatial Y (μm)
       </text>
@@ -167,15 +166,15 @@ function SpatialMap({ cells, selectedCluster, highlightGene, showQCFailed }: {
         const expr = cell.geneExpression[highlightGene] ?? 0;
         const intensity = expr / geneMax;
         const color = highlightGene
-          ? `rgba(120,220,180,${0.2 + intensity * 0.8})`
+          ? `rgba(147,203,82,${0.2 + intensity * 0.8})`
           : CLUSTER_COLORS[cell.cluster] ?? '#888';
         const cx = sx(cell.spatialX);
         const cy = sy(cell.spatialY);
         if (!cell.qcPass) {
           return (
             <g key={cell.id}>
-              <line x1={cx - 3} y1={cy - 3} x2={cx + 3} y2={cy + 3} stroke="rgba(255,100,100,0.6)" strokeWidth={1.5} />
-              <line x1={cx + 3} y1={cy - 3} x2={cx - 3} y2={cy + 3} stroke="rgba(255,100,100,0.6)" strokeWidth={1.5} />
+              <line x1={cx - 3} y1={cy - 3} x2={cx + 3} y2={cy + 3} stroke="rgba(250,128,114,0.6)" strokeWidth={1.5} />
+              <line x1={cx + 3} y1={cy - 3} x2={cx - 3} y2={cy + 3} stroke="rgba(250,128,114,0.6)" strokeWidth={1.5} />
             </g>
           );
         }
@@ -194,7 +193,7 @@ function SpatialMap({ cells, selectedCluster, highlightGene, showQCFailed }: {
         <g key={k} transform={`translate(${W - PAD - 120}, ${PAD + 6 + i * 16})`}>
           <circle cx={0} cy={0} r={4} fill={col}
             opacity={selectedCluster === null || selectedCluster === Number(k) ? 1 : 0.25} />
-          <text x={10} y={3.5} fontFamily={SANS} fontSize="9"
+          <text x={10} y={3.5} fontFamily={T.SANS} fontSize="9"
             fill={selectedCluster === null || selectedCluster === Number(k) ? VALUE : LABEL}>
             {CLUSTER_LABELS[Number(k)]}
           </text>
@@ -242,7 +241,7 @@ function UMAPScatter({ analysis, selectedCluster }: {
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
-      <rect width={W} height={H} fill="#0d0f14" rx={12} />
+      <rect width={W} height={H} fill="#050505" rx={12} />
       {Array.from({ length: GRID + 1 }).map((_, i) => {
         const gx = PAD + (i / GRID) * (W - PAD * 2);
         const gy = PAD + (i / GRID) * (H - PAD * 2);
@@ -255,10 +254,10 @@ function UMAPScatter({ analysis, selectedCluster }: {
       })}
       <line x1={PAD} y1={H - PAD} x2={W - PAD} y2={H - PAD} stroke="rgba(255,255,255,0.1)" />
       <line x1={PAD} y1={PAD} x2={PAD} y2={H - PAD} stroke="rgba(255,255,255,0.1)" />
-      <text x={W / 2} y={H - 6} textAnchor="middle" fontFamily={MONO} fontSize="8" fill={LABEL}>
+      <text x={W / 2} y={H - 6} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill={LABEL}>
         UMAP-1
       </text>
-      <text x={12} y={H / 2} textAnchor="middle" fontFamily={MONO} fontSize="8" fill={LABEL}
+      <text x={12} y={H / 2} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill={LABEL}
         transform={`rotate(-90,12,${H / 2})`}>
         UMAP-2
       </text>
@@ -276,7 +275,7 @@ function UMAPScatter({ analysis, selectedCluster }: {
         if (selectedCluster !== null && selectedCluster !== Number(k)) return null;
         return (
           <text key={k} x={c.sx} y={c.sy - 10} textAnchor="middle"
-            fontFamily={SANS} fontSize="9" fontWeight={600}
+            fontFamily={T.SANS} fontSize="9" fontWeight={600}
             fill={CLUSTER_COLORS[Number(k)]}
             style={{ pointerEvents: 'none' }}>
             {CLUSTER_LABELS[Number(k)]}
@@ -324,12 +323,12 @@ function TrajectoryView({ analysis }: { analysis: ScSpatialAnalysisResult }) {
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
-      <rect width={W} height={H} fill="#0d0f14" rx={12} />
+      <rect width={W} height={H} fill="#050505" rx={12} />
       {/* Pseudotime axis */}
       <line x1={PAD} y1={H - 28} x2={W - PAD} y2={H - 28} stroke="rgba(255,255,255,0.1)" />
-      <text x={PAD} y={H - 14} fontFamily={MONO} fontSize="8" fill={LABEL}>0.0</text>
-      <text x={W - PAD} y={H - 14} textAnchor="end" fontFamily={MONO} fontSize="8" fill={LABEL}>1.0</text>
-      <text x={W / 2} y={H - 6} textAnchor="middle" fontFamily={MONO} fontSize="8" fill={LABEL}>
+      <text x={PAD} y={H - 14} fontFamily={T.MONO} fontSize="8" fill={LABEL}>0.0</text>
+      <text x={W - PAD} y={H - 14} textAnchor="end" fontFamily={T.MONO} fontSize="8" fill={LABEL}>1.0</text>
+      <text x={W / 2} y={H - 6} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill={LABEL}>
         Pseudotime →
       </text>
       {/* Trajectory edges */}
@@ -363,12 +362,12 @@ function TrajectoryView({ analysis }: { analysis: ScSpatialAnalysisResult }) {
               stroke={CLUSTER_COLORS[cs.cluster]}
               strokeWidth={1.5} />
             <text x={cx} y={cy + 3} textAnchor="middle"
-              fontFamily={MONO} fontSize="10" fontWeight={600}
+              fontFamily={T.MONO} fontSize="10" fontWeight={600}
               fill={CLUSTER_COLORS[cs.cluster]}>
               {cs.size}
             </text>
             <text x={cx} y={cy + r + 12} textAnchor="middle"
-              fontFamily={SANS} fontSize="8" fill={VALUE}>
+              fontFamily={T.SANS} fontSize="8" fill={VALUE}>
               {cs.label}
             </text>
           </g>
@@ -383,8 +382,8 @@ function TrajectoryView({ analysis }: { analysis: ScSpatialAnalysisResult }) {
         return (
           <g key={i}>
             <polygon points={`${cx},${cy - 6} ${cx + 5},${cy} ${cx},${cy + 6} ${cx - 5},${cy}`}
-              fill="rgba(255,200,80,0.7)" stroke="rgba(255,200,80,0.9)" strokeWidth={0.8} />
-            <text x={cx + 8} y={cy + 3} fontFamily={MONO} fontSize="7" fill="rgba(255,200,80,0.8)">
+              fill="rgba(255,139,31,0.7)" stroke="rgba(255,139,31,0.9)" strokeWidth={0.8} />
+            <text x={cx + 8} y={cy + 3} fontFamily={T.MONO} fontSize="7" fill="rgba(255,139,31,0.8)">
               Branch
             </text>
           </g>
@@ -394,7 +393,7 @@ function TrajectoryView({ analysis }: { analysis: ScSpatialAnalysisResult }) {
       <text x={nodeX(paga.rootCluster)} y={nodeY(paga.rootCluster) - sizeScale(
         clusters.clusterSizes.find(c => c.cluster === paga.rootCluster)?.size ?? 30
       ) - 14} textAnchor="middle"
-        fontFamily={SANS} fontSize="8" fontWeight={600} fill="rgba(255,200,80,0.9)">
+        fontFamily={T.SANS} fontSize="8" fontWeight={600} fill="rgba(255,139,31,0.9)">
         ▼ Root
       </text>
     </svg>
@@ -411,14 +410,14 @@ function EfficiencyChart({ highYield }: { highYield: HighYieldCluster[] }) {
   const barW = Math.max(12, barGroupW * 0.3);
 
   const FATE_COLORS: Record<string, string> = {
-    productive: 'rgba(120,220,180,0.75)',
-    stressed:   'rgba(255,100,100,0.65)',
-    quiescent:  'rgba(255,200,80,0.65)',
+    productive: 'rgba(147,203,82,0.75)',
+    stressed:   'rgba(250,128,114,0.65)',
+    quiescent:  'rgba(255,139,31,0.65)',
   };
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
-      <rect width={W} height={H} fill="#0d0f14" rx={12} />
+      <rect width={W} height={H} fill="#050505" rx={12} />
       {/* Y-axis */}
       <line x1={PAD.left} y1={PAD.top} x2={PAD.left} y2={H - PAD.bottom} stroke="rgba(255,255,255,0.1)" />
       <line x1={PAD.left} y1={H - PAD.bottom} x2={W - PAD.right} y2={H - PAD.bottom} stroke="rgba(255,255,255,0.1)" />
@@ -428,13 +427,13 @@ function EfficiencyChart({ highYield }: { highYield: HighYieldCluster[] }) {
           <g key={v}>
             <line x1={PAD.left - 4} y1={y} x2={PAD.left} y2={y} stroke="rgba(255,255,255,0.15)" />
             <text x={PAD.left - 6} y={y + 4} textAnchor="end"
-              fontFamily={MONO} fontSize="8" fill="rgba(255,255,255,0.25)">
+              fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.25)">
               {(v * 100).toFixed(0)}%
             </text>
           </g>
         );
       })}
-      <text x={14} y={H / 2} textAnchor="middle" fontFamily={MONO} fontSize="8" fill={LABEL}
+      <text x={14} y={H / 2} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill={LABEL}
         transform={`rotate(-90,14,${H / 2})`}>Score</text>
       {/* Bars per cluster */}
       {highYield.map((hy, i) => {
@@ -453,17 +452,17 @@ function EfficiencyChart({ highYield }: { highYield: HighYieldCluster[] }) {
               fill={FATE_COLORS[hy.fate] ?? '#888'} rx={2} opacity={0.8} />
             {/* Label */}
             <text x={gx} y={H - PAD.bottom + 14} textAnchor="middle"
-              fontFamily={SANS} fontSize="8" fill={VALUE}>
+              fontFamily={T.SANS} fontSize="8" fill={VALUE}>
               {hy.label.length > 14 ? hy.label.slice(0, 12) + '…' : hy.label}
             </text>
             {/* Fate label */}
             <text x={gx} y={H - PAD.bottom + 26} textAnchor="middle"
-              fontFamily={MONO} fontSize="7" fill={FATE_COLORS[hy.fate] ?? LABEL}>
+              fontFamily={T.MONO} fontSize="7" fill={FATE_COLORS[hy.fate] ?? LABEL}>
               {hy.fate}
             </text>
             {/* Key genes */}
             <text x={gx} y={H - PAD.bottom + 38} textAnchor="middle"
-              fontFamily={MONO} fontSize="6" fill={LABEL}>
+              fontFamily={T.MONO} fontSize="6" fill={LABEL}>
               {hy.keyGenes.slice(0, 3).map(g => g.gene).join(', ')}
             </text>
           </g>
@@ -472,11 +471,11 @@ function EfficiencyChart({ highYield }: { highYield: HighYieldCluster[] }) {
       {/* Legend */}
       {[
         { color: CLUSTER_COLORS[0], label: 'Efficiency' },
-        { color: 'rgba(120,220,180,0.75)', label: 'Productivity' },
+        { color: 'rgba(147,203,82,0.75)', label: 'Productivity' },
       ].map((l, i) => (
         <g key={l.label} transform={`translate(${PAD.left + i * 100},${PAD.top - 16})`}>
           <rect width={10} height={8} rx={1} fill={l.color} />
-          <text x={14} y={8} fontFamily={SANS} fontSize="8" fill="rgba(255,255,255,0.35)">{l.label}</text>
+          <text x={14} y={8} fontFamily={T.SANS} fontSize="8" fill="rgba(255,255,255,0.35)">{l.label}</text>
         </g>
       ))}
     </svg>
@@ -558,16 +557,16 @@ export default function ScSpatialPage() {
             <button onClick={() => setShowQCFailed(!showQCFailed)} style={{
               display: 'flex', alignItems: 'center', gap: '8px',
               width: '100%', padding: '7px 10px', marginBottom: '16px',
-              background: showQCFailed ? 'rgba(255,100,100,0.12)' : 'transparent',
-              border: `1px solid ${showQCFailed ? 'rgba(255,100,100,0.3)' : BORDER}`,
+              background: showQCFailed ? 'rgba(250,128,114,0.12)' : 'transparent',
+              border: `1px solid ${showQCFailed ? 'rgba(250,128,114,0.3)' : BORDER}`,
               borderRadius: '8px', cursor: 'pointer',
-              color: showQCFailed ? 'rgba(255,100,100,0.85)' : 'rgba(255,255,255,0.4)',
-              fontFamily: SANS, fontSize: '10px', textAlign: 'left',
+              color: showQCFailed ? 'rgba(250,128,114,0.85)' : 'rgba(255,255,255,0.4)',
+              fontFamily: T.SANS, fontSize: '10px', textAlign: 'left',
             }}>
               <span style={{
                 width: '8px', height: '8px', borderRadius: '2px',
-                background: showQCFailed ? 'rgba(255,100,100,0.7)' : 'transparent',
-                border: '1.5px solid rgba(255,100,100,0.5)', flexShrink: 0,
+                background: showQCFailed ? 'rgba(250,128,114,0.7)' : 'transparent',
+                border: '1.5px solid rgba(250,128,114,0.5)', flexShrink: 0,
               }} />
               Show QC-failed
             </button>
@@ -582,7 +581,7 @@ export default function ScSpatialPage() {
                 border: `1px solid ${selectedCluster === cs.cluster ? 'rgba(255,255,255,0.15)' : BORDER}`,
                 borderRadius: '8px', cursor: 'pointer',
                 color: selectedCluster === cs.cluster ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.4)',
-                fontFamily: SANS, fontSize: '11px', textAlign: 'left',
+                fontFamily: T.SANS, fontSize: '11px', textAlign: 'left',
               }}>
                 <span style={{
                   width: '8px', height: '8px', borderRadius: '50%',
@@ -591,7 +590,7 @@ export default function ScSpatialPage() {
                   border: `1.5px solid ${CLUSTER_COLORS[cs.cluster]}`, flexShrink: 0,
                 }} />
                 <span style={{ flex: 1 }}>{cs.label}</span>
-                <span style={{ fontFamily: MONO, fontSize: '9px', color: LABEL }}>{cs.size}</span>
+                <span style={{ fontFamily: T.MONO, fontSize: '9px', color: LABEL }}>{cs.size}</span>
               </button>
             ))}
 
@@ -603,7 +602,7 @@ export default function ScSpatialPage() {
                   <button key={mode} onClick={() => setViewMode(mode)} style={{
                     flex: mode === 'Table' ? '1 1 100%' : '1 1 0',
                     padding: '5px 0', borderRadius: '6px', cursor: 'pointer',
-                    fontFamily: SANS, fontSize: '10px', border: 'none',
+                    fontFamily: T.SANS, fontSize: '10px', border: 'none',
                     background: viewMode === mode ? 'rgba(255,255,255,0.12)' : INPUT_BG,
                     color: viewMode === mode ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.4)',
                   }}>
@@ -621,7 +620,7 @@ export default function ScSpatialPage() {
               style={{
                 width: '100%', padding: '6px 8px', marginBottom: '16px',
                 background: INPUT_BG, border: `1px solid ${INPUT_BORDER}`, borderRadius: '8px',
-                color: INPUT_TEXT, fontFamily: MONO, fontSize: '10px',
+                color: INPUT_TEXT, fontFamily: T.MONO, fontSize: '10px',
                 outline: 'none', appearance: 'auto' as React.CSSProperties['appearance'],
               }}
             >
@@ -634,14 +633,14 @@ export default function ScSpatialPage() {
             <SectionLabel>HVG Selection</SectionLabel>
             <div style={{ ...GLASS, borderRadius: '14px', padding: '10px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontFamily: SANS, fontSize: '9px', color: LABEL }}>HVGs Found</span>
-                <span style={{ fontFamily: MONO, fontSize: '13px', fontWeight: 700, color: VALUE }}>
+                <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL }}>HVGs Found</span>
+                <span style={{ fontFamily: T.MONO, fontSize: '13px', fontWeight: 700, color: VALUE }}>
                   {analysis.hvg.nHVGs}
                 </span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px' }}>
-                <span style={{ fontFamily: SANS, fontSize: '9px', color: LABEL }}>Method</span>
-                <span style={{ fontFamily: MONO, fontSize: '9px', color: LABEL }}>
+                <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL }}>Method</span>
+                <span style={{ fontFamily: T.MONO, fontSize: '9px', color: LABEL }}>
                   {analysis.hvg.method}
                 </span>
               </div>
@@ -649,7 +648,7 @@ export default function ScSpatialPage() {
           </div>
 
           {/* ── CENTER ENGINE ────────────────────────────────────── */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#0d0f14' }}>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#050505' }}>
             {viewMode === 'Spatial' && (
               <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
                 <div style={{ width: '100%', maxWidth: '600px' }}>
@@ -708,20 +707,20 @@ export default function ScSpatialPage() {
             <SectionLabel>Convergence</SectionLabel>
             <div style={{ ...GLASS, borderRadius: '14px', padding: '10px', marginBottom: '16px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                <span style={{ fontFamily: SANS, fontSize: '9px', color: LABEL }}>Iterations</span>
-                <span style={{ fontFamily: MONO, fontSize: '11px', color: VALUE, textAlign: 'right' }}>
+                <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL }}>Iterations</span>
+                <span style={{ fontFamily: T.MONO, fontSize: '11px', color: VALUE, textAlign: 'right' }}>
                   {convergenceIter}
                 </span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                <span style={{ fontFamily: SANS, fontSize: '9px', color: LABEL }}>Final Loss</span>
-                <span style={{ fontFamily: MONO, fontSize: '11px', color: VALUE, textAlign: 'right' }}>
+                <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL }}>Final Loss</span>
+                <span style={{ fontFamily: T.MONO, fontSize: '11px', color: VALUE, textAlign: 'right' }}>
                   {finalLoss?.loss.toFixed(3) ?? '—'}
                 </span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ fontFamily: SANS, fontSize: '9px', color: LABEL }}>Batch Corrected</span>
-                <span style={{ fontFamily: MONO, fontSize: '11px', color: analysis.vae.batchCorrected ? 'rgba(120,220,180,0.9)' : LABEL, textAlign: 'right' }}>
+                <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL }}>Batch Corrected</span>
+                <span style={{ fontFamily: T.MONO, fontSize: '11px', color: analysis.vae.batchCorrected ? 'rgba(147,203,82,0.9)' : LABEL, textAlign: 'right' }}>
                   {analysis.vae.batchCorrected ? 'Yes' : 'No'}
                 </span>
               </div>
@@ -731,14 +730,14 @@ export default function ScSpatialPage() {
             <SectionLabel>Clustering</SectionLabel>
             <div style={{ ...GLASS, borderRadius: '14px', padding: '10px', marginBottom: '16px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                <span style={{ fontFamily: SANS, fontSize: '9px', color: LABEL }}>Silhouette</span>
-                <span style={{ fontFamily: MONO, fontSize: '11px', color: VALUE, textAlign: 'right' }}>
+                <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL }}>Silhouette</span>
+                <span style={{ fontFamily: T.MONO, fontSize: '11px', color: VALUE, textAlign: 'right' }}>
                   {analysis.clusters.silhouetteScore.toFixed(3)}
                 </span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ fontFamily: SANS, fontSize: '9px', color: LABEL }}>Modularity</span>
-                <span style={{ fontFamily: MONO, fontSize: '11px', color: VALUE, textAlign: 'right' }}>
+                <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL }}>Modularity</span>
+                <span style={{ fontFamily: T.MONO, fontSize: '11px', color: VALUE, textAlign: 'right' }}>
                   {analysis.clusters.modularity.toFixed(3)}
                 </span>
               </div>
@@ -748,14 +747,14 @@ export default function ScSpatialPage() {
             <SectionLabel>PAGA Trajectory</SectionLabel>
             <div style={{ ...GLASS, borderRadius: '14px', padding: '10px', marginBottom: '16px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                <span style={{ fontFamily: SANS, fontSize: '9px', color: LABEL }}>Root Cluster</span>
-                <span style={{ fontFamily: MONO, fontSize: '11px', color: CLUSTER_COLORS[analysis.paga.rootCluster], textAlign: 'right' }}>
+                <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL }}>Root Cluster</span>
+                <span style={{ fontFamily: T.MONO, fontSize: '11px', color: CLUSTER_COLORS[analysis.paga.rootCluster], textAlign: 'right' }}>
                   {CLUSTER_LABELS[analysis.paga.rootCluster]}
                 </span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                <span style={{ fontFamily: SANS, fontSize: '9px', color: LABEL }}>Branch Points</span>
-                <span style={{ fontFamily: MONO, fontSize: '11px', color: VALUE, textAlign: 'right' }}>
+                <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL }}>Branch Points</span>
+                <span style={{ fontFamily: T.MONO, fontSize: '11px', color: VALUE, textAlign: 'right' }}>
                   {analysis.paga.branchingPoints.length}
                 </span>
               </div>
@@ -765,23 +764,23 @@ export default function ScSpatialPage() {
                   borderTop: `1px solid ${BORDER}`,
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                    <span style={{ fontFamily: SANS, fontSize: '9px', color: VALUE }}>
+                    <span style={{ fontFamily: T.SANS, fontSize: '9px', color: VALUE }}>
                       {bp.label}
                     </span>
-                    <span style={{ fontFamily: MONO, fontSize: '9px', color: 'rgba(255,200,80,0.85)' }}>
+                    <span style={{ fontFamily: T.MONO, fontSize: '9px', color: 'rgba(255,139,31,0.85)' }}>
                       div={bp.divergenceScore.toFixed(2)}
                     </span>
                   </div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
                     {bp.childBranches.map(child => {
                       const fateColor = child.fate === 'productive'
-                        ? 'rgba(120,220,180,0.9)'
+                        ? 'rgba(147,203,82,0.9)'
                         : child.fate === 'stressed'
-                          ? 'rgba(255,100,100,0.9)'
-                          : 'rgba(255,200,80,0.9)';
+                          ? 'rgba(250,128,114,0.9)'
+                          : 'rgba(255,139,31,0.9)';
                       return (
                         <span key={child.cluster} style={{
-                          fontFamily: MONO, fontSize: '7px', padding: '2px 6px',
+                          fontFamily: T.MONO, fontSize: '7px', padding: '2px 6px',
                           borderRadius: '4px',
                           background: `${fateColor.replace('0.9', '0.15')}`,
                           color: fateColor,
@@ -802,20 +801,20 @@ export default function ScSpatialPage() {
               {topMoran.map(mr => (
                 <div key={mr.gene} style={{ ...GLASS, borderRadius: '10px', padding: '8px 10px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                    <span style={{ fontFamily: MONO, fontSize: '10px', fontWeight: 600, color: 'rgba(120,220,180,0.9)' }}>
+                    <span style={{ fontFamily: T.MONO, fontSize: '10px', fontWeight: 600, color: 'rgba(147,203,82,0.9)' }}>
                       {mr.gene}
                     </span>
-                    <span style={{ fontFamily: MONO, fontSize: '9px', color: VALUE, textAlign: 'right' }}>
+                    <span style={{ fontFamily: T.MONO, fontSize: '9px', color: VALUE, textAlign: 'right' }}>
                       I={mr.moranI.toFixed(3)}
                     </span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ fontFamily: MONO, fontSize: '8px', color: LABEL }}>
+                    <span style={{ fontFamily: T.MONO, fontSize: '8px', color: LABEL }}>
                       z={mr.zScore.toFixed(2)}
                     </span>
                     <span style={{
-                      fontFamily: MONO, fontSize: '8px', textAlign: 'right',
-                      color: mr.pValue < 0.01 ? 'rgba(255,200,80,0.85)' : LABEL,
+                      fontFamily: T.MONO, fontSize: '8px', textAlign: 'right',
+                      color: mr.pValue < 0.01 ? 'rgba(255,139,31,0.85)' : LABEL,
                     }}>
                       p={mr.pValue < 0.001 ? '<0.001' : mr.pValue.toFixed(3)}
                     </span>
@@ -823,7 +822,7 @@ export default function ScSpatialPage() {
                 </div>
               ))}
               {topMoran.length === 0 && (
-                <p style={{ fontFamily: SANS, fontSize: '10px', color: LABEL, fontStyle: 'italic', margin: 0 }}>
+                <p style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL, fontStyle: 'italic', margin: 0 }}>
                   No spatially restricted genes found.
                 </p>
               )}
@@ -834,10 +833,10 @@ export default function ScSpatialPage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               {analysis.highYieldClusters.map(hy => {
                 const fateColor = hy.fate === 'productive'
-                  ? 'rgba(120,220,180,0.9)'
+                  ? 'rgba(147,203,82,0.9)'
                   : hy.fate === 'stressed'
-                    ? 'rgba(255,100,100,0.9)'
-                    : 'rgba(255,200,80,0.9)';
+                    ? 'rgba(250,128,114,0.9)'
+                    : 'rgba(255,139,31,0.9)';
                 return (
                   <div key={hy.clusterId} style={{ ...GLASS, borderRadius: '10px', padding: '8px 10px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
@@ -846,12 +845,12 @@ export default function ScSpatialPage() {
                           width: '8px', height: '8px', borderRadius: '50%',
                           background: CLUSTER_COLORS[hy.clusterId], flexShrink: 0,
                         }} />
-                        <span style={{ fontFamily: SANS, fontSize: '10px', color: VALUE }}>
+                        <span style={{ fontFamily: T.SANS, fontSize: '10px', color: VALUE }}>
                           {hy.label}
                         </span>
                       </span>
                       <span style={{
-                        fontFamily: MONO, fontSize: '8px', padding: '1px 5px',
+                        fontFamily: T.MONO, fontSize: '8px', padding: '1px 5px',
                         borderRadius: '4px', background: fateColor.replace('0.9', '0.15'),
                         color: fateColor,
                       }}>
@@ -859,21 +858,21 @@ export default function ScSpatialPage() {
                       </span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-                      <span style={{ fontFamily: SANS, fontSize: '8px', color: LABEL }}>Efficiency</span>
-                      <span style={{ fontFamily: MONO, fontSize: '9px', color: VALUE, textAlign: 'right' }}>
+                      <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Efficiency</span>
+                      <span style={{ fontFamily: T.MONO, fontSize: '9px', color: VALUE, textAlign: 'right' }}>
                         {(hy.avgMetabolicEfficiency * 100).toFixed(1)}%
                       </span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-                      <span style={{ fontFamily: SANS, fontSize: '8px', color: LABEL }}>Productivity</span>
-                      <span style={{ fontFamily: MONO, fontSize: '9px', color: VALUE, textAlign: 'right' }}>
+                      <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Productivity</span>
+                      <span style={{ fontFamily: T.MONO, fontSize: '9px', color: VALUE, textAlign: 'right' }}>
                         {(hy.avgProductivity * 100).toFixed(1)}%
                       </span>
                     </div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '3px', marginTop: '4px' }}>
                       {hy.keyGenes.slice(0, 4).map(g => (
                         <span key={g.gene} style={{
-                          fontFamily: MONO, fontSize: '7px', padding: '1px 5px',
+                          fontFamily: T.MONO, fontSize: '7px', padding: '1px 5px',
                           borderRadius: '4px', background: `${CLUSTER_COLORS[hy.clusterId]}20`,
                           color: CLUSTER_COLORS[hy.clusterId],
                         }}>

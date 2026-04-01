@@ -21,19 +21,17 @@ import type {
   GibsonAssemblyPlan,
   ProvenanceRecord,
 } from '../../types';
+import { T, TOOL_RESULT_PALETTE} from '../ide/tokens';
 
 /* ── Design Tokens ── */
-const MONO = "'JetBrains Mono','Fira Code',monospace";
-const SANS = "'Inter',-apple-system,sans-serif";
-
 const PHASE_PASTEL: Record<string, string> = {
-  Design: '#C6DEF1',
-  Build:  '#FAEDCB',
-  Test:   '#F2C6DE',
-  Learn:  '#C9E4DE',
+  Design: '#5151CD',
+  Build:  '#FFFB1F',
+  Test:   '#FA8072',
+  Learn:  '#F0FDFA',
 };
 
-const PANEL_BG = '#10131a';
+const PANEL_BG = '#000000';
 const BORDER = 'rgba(255,255,255,0.06)';
 const LABEL = 'rgba(255,255,255,0.28)';
 const VALUE = 'rgba(255,255,255,0.65)';
@@ -59,7 +57,7 @@ function Timeline({ iterations }: { iterations: DBTLIteration[] }) {
       viewBox={`0 0 520 ${Math.max(360, iterations.length * 60 + 40)}`}
       style={{ width: '100%', height: '100%' }}
     >
-      <rect width="520" height={Math.max(360, iterations.length * 60 + 40)} fill="#0d0f14" />
+      <rect width="520" height={Math.max(360, iterations.length * 60 + 40)} fill="#050505" />
       {iterations.length > 1 && (
         <polyline
           points={iterations
@@ -80,34 +78,34 @@ function Timeline({ iterations }: { iterations: DBTLIteration[] }) {
           <g key={it.id}>
             <rect x={4} y={y + 8} width={60} height={18} rx="3"
               fill={phaseColor} fillOpacity={0.15} stroke={phaseColor} strokeWidth={1} />
-            <text x={34} y={y + 20} textAnchor="middle" fontFamily={MONO} fontSize="8" fill={phaseColor}>
+            <text x={34} y={y + 20} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill={phaseColor}>
               {it.phase.toUpperCase()}
             </text>
-            <text x={80} y={y + 20} fontFamily={MONO} fontSize="9" fill="rgba(255,255,255,0.3)">
+            <text x={80} y={y + 20} fontFamily={T.MONO} fontSize="9" fill="rgba(255,255,255,0.3)">
               #{it.id}
             </text>
-            <text x={100} y={y + 20} fontFamily={SANS} fontSize="9" fill="rgba(255,255,255,0.5)">
+            <text x={100} y={y + 20} fontFamily={T.SANS} fontSize="9" fill="rgba(255,255,255,0.5)">
               {it.hypothesis.slice(0, 40)}{it.hypothesis.length > 40 ? '…' : ''}
             </text>
             <rect x={160} y={y + 28} width={barW} height={10} rx="2"
-              fill={it.passed ? 'rgba(120,220,180,0.4)' : 'rgba(255,80,80,0.3)'}
-              stroke={it.passed ? 'rgba(120,220,180,0.7)' : 'rgba(255,80,80,0.5)'}
+              fill={it.passed ? 'rgba(147,203,82,0.4)' : 'rgba(255,80,80,0.3)'}
+              stroke={it.passed ? 'rgba(147,203,82,0.7)' : 'rgba(255,80,80,0.5)'}
               strokeWidth={1}
             />
-            <text x={160 + barW + 6} y={y + 38} fontFamily={MONO} fontSize="9"
-              fill={it.passed ? 'rgba(120,220,180,0.8)' : 'rgba(255,100,80,0.7)'}>
+            <text x={160 + barW + 6} y={y + 38} fontFamily={T.MONO} fontSize="9"
+              fill={it.passed ? 'rgba(147,203,82,0.8)' : 'rgba(255,100,80,0.7)'}>
               {it.result} {it.unit}
             </text>
             <circle cx={440} cy={y + 22} r={5}
-              fill={it.passed ? 'rgba(120,220,180,0.7)' : 'rgba(255,80,80,0.6)'} />
+              fill={it.passed ? 'rgba(147,203,82,0.7)' : 'rgba(255,80,80,0.6)'} />
             <line x1={4} y1={y + 52} x2={480} y2={y + 52} stroke="rgba(255,255,255,0.04)" />
           </g>
         );
       })}
-      <text x={160} y={30 + iterations.length * 60 + 16} fontFamily={MONO} fontSize="8" fill="rgba(255,255,255,0.2)">
+      <text x={160} y={30 + iterations.length * 60 + 16} fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.2)">
         0
       </text>
-      <text x={440} y={30 + iterations.length * 60 + 16} fontFamily={MONO} fontSize="8" fill="rgba(255,255,255,0.2)">
+      <text x={440} y={30 + iterations.length * 60 + 16} fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.2)">
         {maxResult.toFixed(0)} {iterations[0]?.unit}
       </text>
     </svg>
@@ -124,7 +122,7 @@ function CycleProgressRing({
 }) {
   const phaseIndex = PHASES.indexOf(currentPhase);
   const progress = (phaseIndex + 1) / PHASES.length; // 0.25 → 1.0
-  const color = PHASE_PASTEL[currentPhase] ?? '#C6DEF1';
+  const color = PHASE_PASTEL[currentPhase] ?? '#5151CD';
 
   const size = 140;
   const stroke = 8;
@@ -162,18 +160,18 @@ function CycleProgressRing({
         pointerEvents: 'none',
       }}>
         <span style={{
-          fontFamily: SANS, fontSize: '11px', fontWeight: 600,
+          fontFamily: T.SANS, fontSize: '11px', fontWeight: 600,
           color, letterSpacing: '0.04em',
         }}>
           {currentPhase.toUpperCase()}
         </span>
         <span style={{
-          fontFamily: MONO, fontSize: '20px', fontWeight: 700,
+          fontFamily: T.MONO, fontSize: '20px', fontWeight: 700,
           color: VALUE, marginTop: '2px',
         }}>
           {iterationCount}
         </span>
-        <span style={{ fontFamily: SANS, fontSize: '9px', color: LABEL }}>
+        <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL }}>
           iterations
         </span>
       </div>
@@ -328,13 +326,13 @@ export default function DBTLflowPage() {
     border: `1px solid ${INPUT_BORDER}`,
     borderRadius: '8px',
     color: INPUT_TEXT,
-    fontFamily: MONO,
+    fontFamily: T.MONO,
     fontSize: '12px',
     outline: 'none',
   };
 
   const sectionLabel: React.CSSProperties = {
-    fontFamily: SANS,
+    fontFamily: T.SANS,
     fontSize: '9px',
     textTransform: 'uppercase',
     letterSpacing: '0.1em',
@@ -345,7 +343,7 @@ export default function DBTLflowPage() {
   /* ── Render ── */
   return (
     <IDEShell moduleId="dbtlflow">
-      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', background: '#0d0f14' }}>
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', background: '#050505' }}>
         <AlgorithmInsight
           title="Design-Build-Test-Learn Tracker"
           description="Iterative experimental optimization. Each cycle records a hypothesis, measured result, and learning for the next design."
@@ -363,7 +361,7 @@ export default function DBTLflowPage() {
 
             {/* Hypothesis */}
             <div style={{ marginBottom: '10px' }}>
-              <label style={{ fontFamily: SANS, fontSize: '11px', color: LABEL, display: 'block', marginBottom: '4px' }}>
+              <label style={{ fontFamily: T.SANS, fontSize: '11px', color: LABEL, display: 'block', marginBottom: '4px' }}>
                 Hypothesis
               </label>
               <textarea
@@ -374,7 +372,7 @@ export default function DBTLflowPage() {
                 style={{
                   ...inputBase,
                   padding: '6px 8px',
-                  fontFamily: SANS,
+                  fontFamily: T.SANS,
                   fontSize: '11px',
                   resize: 'vertical',
                 }}
@@ -384,7 +382,7 @@ export default function DBTLflowPage() {
             {/* Result + Unit */}
             <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
               <div style={{ flex: 1 }}>
-                <label style={{ fontFamily: SANS, fontSize: '11px', color: LABEL, display: 'block', marginBottom: '4px' }}>
+                <label style={{ fontFamily: T.SANS, fontSize: '11px', color: LABEL, display: 'block', marginBottom: '4px' }}>
                   Result
                 </label>
                 <input
@@ -396,7 +394,7 @@ export default function DBTLflowPage() {
                 />
               </div>
               <div style={{ width: '70px' }}>
-                <label style={{ fontFamily: SANS, fontSize: '11px', color: LABEL, display: 'block', marginBottom: '4px' }}>
+                <label style={{ fontFamily: T.SANS, fontSize: '11px', color: LABEL, display: 'block', marginBottom: '4px' }}>
                   Unit
                 </label>
                 <input
@@ -416,7 +414,7 @@ export default function DBTLflowPage() {
                   border: `1px solid ${passed === p ? (p ? 'rgba(120,220,160,0.3)' : 'rgba(255,80,80,0.3)') : INPUT_BORDER}`,
                   borderRadius: '8px',
                   color: passed === p ? (p ? 'rgba(120,220,160,0.9)' : 'rgba(255,100,80,0.9)') : LABEL,
-                  fontFamily: SANS, fontSize: '11px', cursor: 'pointer',
+                  fontFamily: T.SANS, fontSize: '11px', cursor: 'pointer',
                 }}>
                   {p ? '✓ Pass' : '✗ Fail'}
                 </button>
@@ -430,7 +428,7 @@ export default function DBTLflowPage() {
               border: `1px solid ${INPUT_BORDER}`,
               borderRadius: '8px',
               color: VALUE,
-              fontFamily: SANS, fontSize: '11px', cursor: 'pointer',
+              fontFamily: T.SANS, fontSize: '11px', cursor: 'pointer',
             }}>
               + Add Iteration
             </button>
@@ -441,13 +439,13 @@ export default function DBTLflowPage() {
               background: 'rgba(120,220,160,0.06)', borderRadius: '10px',
               border: '1px solid rgba(120,220,160,0.15)',
             }}>
-              <p style={{ fontFamily: SANS, fontSize: '9px', color: LABEL, margin: '0 0 6px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              <p style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL, margin: '0 0 6px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                 Best Result
               </p>
-              <p style={{ fontFamily: MONO, fontSize: '14px', color: 'rgba(120,220,160,0.85)', margin: '0 0 4px' }}>
+              <p style={{ fontFamily: T.MONO, fontSize: '14px', color: 'rgba(120,220,160,0.85)', margin: '0 0 4px' }}>
                 {bestIteration?.result} {bestIteration?.unit}
               </p>
-              <p style={{ fontFamily: SANS, fontSize: '10px', color: LABEL, margin: 0, lineHeight: 1.4 }}>
+              <p style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL, margin: 0, lineHeight: 1.4 }}>
                 {bestIteration?.hypothesis.slice(0, 60)}…
               </p>
             </div>
@@ -457,11 +455,11 @@ export default function DBTLflowPage() {
               <p style={sectionLabel}>Protocol Generation</p>
               <button onClick={handleGenerateProtocol} disabled={!latestIteration} style={{
                 width: '100%', padding: '8px',
-                background: 'rgba(198,222,241,0.08)',
-                border: '1px solid rgba(198,222,241,0.2)',
+                background: 'rgba(81,81,205,0.08)',
+                border: '1px solid rgba(81,81,205,0.2)',
                 borderRadius: '8px',
                 color: PHASE_PASTEL.Design,
-                fontFamily: SANS, fontSize: '11px', cursor: 'pointer',
+                fontFamily: T.SANS, fontSize: '11px', cursor: 'pointer',
                 opacity: latestIteration ? 1 : 0.4,
               }}>
                 ⚗ Generate Protocol
@@ -473,29 +471,29 @@ export default function DBTLflowPage() {
                     onClick={() => setProtocolExpanded(prev => !prev)}
                     style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
                   >
-                    <span style={{ fontFamily: SANS, fontSize: '10px', color: VALUE, fontWeight: 500 }}>
+                    <span style={{ fontFamily: T.SANS, fontSize: '10px', color: VALUE, fontWeight: 500 }}>
                       {generatedProtocol.metadata.protocolName}
                     </span>
-                    <span style={{ fontFamily: MONO, fontSize: '10px', color: LABEL }}>
+                    <span style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL }}>
                       {protocolExpanded ? '▾' : '▸'}
                     </span>
                   </div>
 
                   {protocolExpanded && (
                     <div style={{ marginTop: '8px' }}>
-                      <p style={{ fontFamily: SANS, fontSize: '9px', color: LABEL, margin: '0 0 4px' }}>
+                      <p style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL, margin: '0 0 4px' }}>
                         {generatedProtocol.metadata.description}
                       </p>
-                      <p style={{ fontFamily: MONO, fontSize: '9px', color: LABEL, margin: '0 0 8px' }}>
+                      <p style={{ fontFamily: T.MONO, fontSize: '9px', color: LABEL, margin: '0 0 8px' }}>
                         API {generatedProtocol.api_version} · {generatedProtocol.labware.length} labware · {generatedProtocol.pipetting_logic.length} steps
                       </p>
                       <button onClick={handleDownloadProtocol} style={{
                         width: '100%', padding: '6px',
-                        background: 'rgba(198,222,241,0.1)',
-                        border: '1px solid rgba(198,222,241,0.2)',
+                        background: 'rgba(81,81,205,0.1)',
+                        border: '1px solid rgba(81,81,205,0.2)',
                         borderRadius: '6px',
                         color: PHASE_PASTEL.Design,
-                        fontFamily: MONO, fontSize: '10px', cursor: 'pointer',
+                        fontFamily: T.MONO, fontSize: '10px', cursor: 'pointer',
                       }}>
                         ↓ Download .py
                       </button>
@@ -510,41 +508,41 @@ export default function DBTLflowPage() {
               <p style={sectionLabel}>SBOL 3.0 Export</p>
               <button onClick={handleSBOLExport} style={{
                 width: '100%', padding: '8px',
-                background: 'rgba(219,205,240,0.08)',
-                border: '1px solid rgba(219,205,240,0.2)',
-                borderRadius: '8px', color: '#DBCDF0',
-                fontFamily: SANS, fontSize: '11px', cursor: 'pointer',
+                background: 'rgba(255,31,255,0.08)',
+                border: '1px solid rgba(255,31,255,0.2)',
+                borderRadius: '8px', color: '#FF1FFF',
+                fontFamily: T.SANS, fontSize: '11px', cursor: 'pointer',
               }}>
                 ◎ Serialize to SBOL 3.0
               </button>
               {sbolDoc && (
                 <div style={{ ...GLASS, marginTop: '10px', padding: '12px' }}>
-                  <p style={{ fontFamily: SANS, fontSize: '10px', color: VALUE, fontWeight: 500, margin: '0 0 6px' }}>
+                  <p style={{ fontFamily: T.SANS, fontSize: '10px', color: VALUE, fontWeight: 500, margin: '0 0 6px' }}>
                     {sbolDoc.name}
                   </p>
-                  <p style={{ fontFamily: MONO, fontSize: '9px', color: LABEL, margin: '0 0 8px' }}>
+                  <p style={{ fontFamily: T.MONO, fontSize: '9px', color: LABEL, margin: '0 0 8px' }}>
                     {sbolDoc.components.length} components · {sbolDoc.interactions.length} interactions
                   </p>
                   {sbolValidation.map((v, i) => (
                     <p key={i} style={{
-                      fontFamily: MONO, fontSize: '9px', margin: '0 0 3px', lineHeight: 1.3,
+                      fontFamily: T.MONO, fontSize: '9px', margin: '0 0 3px', lineHeight: 1.3,
                       color: v.startsWith('VALID') ? 'rgba(120,220,160,0.8)' :
                              v.startsWith('ERROR') ? 'rgba(255,100,80,0.8)' :
-                             'rgba(250,237,203,0.8)',
+                             'rgba(255,251,31,0.8)',
                     }}>
                       {v}
                     </p>
                   ))}
                   <div style={{ display: 'flex', gap: '6px', marginTop: '8px' }}>
                     <button onClick={() => handleDownloadSBOL('xml')} style={{
-                      flex: 1, padding: '5px', background: 'rgba(219,205,240,0.1)',
-                      border: '1px solid rgba(219,205,240,0.2)', borderRadius: '6px',
-                      color: '#DBCDF0', fontFamily: MONO, fontSize: '9px', cursor: 'pointer',
+                      flex: 1, padding: '5px', background: 'rgba(255,31,255,0.1)',
+                      border: '1px solid rgba(255,31,255,0.2)', borderRadius: '6px',
+                      color: '#FF1FFF', fontFamily: T.MONO, fontSize: '9px', cursor: 'pointer',
                     }}>↓ RDF/XML</button>
                     <button onClick={() => handleDownloadSBOL('turtle')} style={{
-                      flex: 1, padding: '5px', background: 'rgba(198,222,241,0.1)',
-                      border: '1px solid rgba(198,222,241,0.2)', borderRadius: '6px',
-                      color: '#C6DEF1', fontFamily: MONO, fontSize: '9px', cursor: 'pointer',
+                      flex: 1, padding: '5px', background: 'rgba(81,81,205,0.1)',
+                      border: '1px solid rgba(81,81,205,0.2)', borderRadius: '6px',
+                      color: '#5151CD', fontFamily: T.MONO, fontSize: '9px', cursor: 'pointer',
                     }}>↓ Turtle</button>
                   </div>
                 </div>
@@ -558,14 +556,14 @@ export default function DBTLflowPage() {
                 value={seqInput} onChange={e => setSeqInput(e.target.value)}
                 placeholder="Paste target DNA (ATCG)… or leave empty for demo"
                 rows={2}
-                style={{ ...inputBase, fontFamily: MONO, fontSize: '10px', resize: 'vertical', marginBottom: '8px' }}
+                style={{ ...inputBase, fontFamily: T.MONO, fontSize: '10px', resize: 'vertical', marginBottom: '8px' }}
               />
               <button onClick={handlePlanAssembly} style={{
                 width: '100%', padding: '8px',
-                background: 'rgba(201,228,222,0.08)',
-                border: '1px solid rgba(201,228,222,0.2)',
-                borderRadius: '8px', color: '#C9E4DE',
-                fontFamily: SANS, fontSize: '11px', cursor: 'pointer',
+                background: 'rgba(240,253,250,0.08)',
+                border: '1px solid rgba(240,253,250,0.2)',
+                borderRadius: '8px', color: '#F0FDFA',
+                fontFamily: T.SANS, fontSize: '11px', cursor: 'pointer',
               }}>
                 🧬 Plan Assembly
               </button>
@@ -573,10 +571,10 @@ export default function DBTLflowPage() {
                 <div style={{ ...GLASS, marginTop: '10px', padding: '12px' }}>
                   <div onClick={() => setAssemblyExpanded(p => !p)}
                     style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontFamily: SANS, fontSize: '10px', color: VALUE, fontWeight: 500 }}>
+                    <span style={{ fontFamily: T.SANS, fontSize: '10px', color: VALUE, fontWeight: 500 }}>
                       {assemblyPlan.targetName}
                     </span>
-                    <span style={{ fontFamily: MONO, fontSize: '10px', color: LABEL }}>
+                    <span style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL }}>
                       {assemblyExpanded ? '▾' : '▸'}
                     </span>
                   </div>
@@ -592,8 +590,8 @@ export default function DBTLflowPage() {
                           ['Tm Spread', assemblyPlan.tmSpread.toFixed(1) + ' °C'],
                         ] as const).map(([lbl, val]) => (
                           <div key={lbl} style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <span style={{ fontFamily: SANS, fontSize: '9px', color: LABEL }}>{lbl}</span>
-                            <span style={{ fontFamily: MONO, fontSize: '9px', color: VALUE, textAlign: 'right' }}>{val}</span>
+                            <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL }}>{lbl}</span>
+                            <span style={{ fontFamily: T.MONO, fontSize: '9px', color: VALUE, textAlign: 'right' }}>{val}</span>
                           </div>
                         ))}
                       </div>
@@ -605,25 +603,25 @@ export default function DBTLflowPage() {
                           height: '100%', borderRadius: '2px',
                           width: Math.min(100, assemblyPlan.tmSpread * 20) + '%',
                           background: assemblyPlan.tmSpread <= 3 ? 'rgba(120,220,160,0.7)' :
-                                     assemblyPlan.tmSpread <= 5 ? 'rgba(250,237,203,0.7)' : 'rgba(255,100,80,0.7)',
+                                     assemblyPlan.tmSpread <= 5 ? 'rgba(255,251,31,0.7)' : 'rgba(255,100,80,0.7)',
                         }} />
                       </div>
                       {assemblyPlan.warnings.length > 0 && (
                         <div style={{ marginBottom: '8px' }}>
                           {assemblyPlan.warnings.map((w, i) => (
-                            <p key={i} style={{ fontFamily: SANS, fontSize: '9px', color: 'rgba(250,237,203,0.8)', margin: '0 0 3px', lineHeight: 1.3 }}>
+                            <p key={i} style={{ fontFamily: T.SANS, fontSize: '9px', color: 'rgba(255,251,31,0.8)', margin: '0 0 3px', lineHeight: 1.3 }}>
                               ⚠ {w}
                             </p>
                           ))}
                         </div>
                       )}
-                      <p style={{ fontFamily: SANS, fontSize: '9px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 6px' }}>
+                      <p style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 6px' }}>
                         Fragment Map
                       </p>
                       <div style={{ display: 'flex', gap: '2px', marginBottom: '10px' }}>
                         {assemblyPlan.fragments.map((f, i) => {
-                          const colors = ['rgba(201,228,222,0.3)', 'rgba(219,205,240,0.3)', 'rgba(198,222,241,0.3)', 'rgba(242,198,222,0.3)'];
-                          const borders = ['rgba(201,228,222,0.5)', 'rgba(219,205,240,0.5)', 'rgba(198,222,241,0.5)', 'rgba(242,198,222,0.5)'];
+                          const colors = ['rgba(240,253,250,0.3)', 'rgba(255,31,255,0.3)', 'rgba(81,81,205,0.3)', 'rgba(250,128,114,0.3)'];
+                          const borders = ['rgba(240,253,250,0.5)', 'rgba(255,31,255,0.5)', 'rgba(81,81,205,0.5)', 'rgba(250,128,114,0.5)'];
                           return (
                             <div key={f.id} style={{
                               flex: f.length / assemblyPlan.targetLength,
@@ -631,24 +629,24 @@ export default function DBTLflowPage() {
                               background: colors[i % 4], border: '1px solid ' + borders[i % 4],
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
                             }}>
-                              <span style={{ fontFamily: MONO, fontSize: '7px', color: VALUE }}>{f.length}</span>
+                              <span style={{ fontFamily: T.MONO, fontSize: '7px', color: VALUE }}>{f.length}</span>
                             </div>
                           );
                         })}
                       </div>
                       <div style={{ display: 'flex', gap: '6px', marginBottom: '8px' }}>
                         <button onClick={handleDownloadPrimers} style={{
-                          flex: 1, padding: '5px', background: 'rgba(201,228,222,0.1)',
-                          border: '1px solid rgba(201,228,222,0.2)', borderRadius: '6px',
-                          color: '#C9E4DE', fontFamily: MONO, fontSize: '9px', cursor: 'pointer',
+                          flex: 1, padding: '5px', background: 'rgba(240,253,250,0.1)',
+                          border: '1px solid rgba(240,253,250,0.2)', borderRadius: '6px',
+                          color: '#F0FDFA', fontFamily: T.MONO, fontSize: '9px', cursor: 'pointer',
                         }}>↓ Primers CSV</button>
                         <button onClick={handleGenerateGibsonProtocol} style={{
-                          flex: 1, padding: '5px', background: 'rgba(198,222,241,0.1)',
-                          border: '1px solid rgba(198,222,241,0.2)', borderRadius: '6px',
-                          color: '#C6DEF1', fontFamily: MONO, fontSize: '9px', cursor: 'pointer',
+                          flex: 1, padding: '5px', background: 'rgba(81,81,205,0.1)',
+                          border: '1px solid rgba(81,81,205,0.2)', borderRadius: '6px',
+                          color: '#5151CD', fontFamily: T.MONO, fontSize: '9px', cursor: 'pointer',
                         }}>⚗ OT-2 Protocol</button>
                       </div>
-                      <p style={{ fontFamily: MONO, fontSize: '8px', color: LABEL, margin: 0 }}>
+                      <p style={{ fontFamily: T.MONO, fontSize: '8px', color: LABEL, margin: 0 }}>
                         Provenance: {assemblyPlan.provenanceId.slice(0, 8)}…
                       </p>
                     </div>
@@ -659,7 +657,7 @@ export default function DBTLflowPage() {
           </div>
 
           {/* ═══════ CENTER: Progress Ring + Timeline ═══════ */}
-          <div style={{ flex: 1, overflow: 'auto', background: '#0d0f14', padding: '12px', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ flex: 1, overflow: 'auto', background: '#050505', padding: '12px', display: 'flex', flexDirection: 'column' }}>
             <div style={{ ...GLASS, padding: '8px 16px', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '16px' }}>
               <CycleProgressRing currentPhase={currentPhase} iterationCount={iterations.length} />
 
@@ -681,7 +679,7 @@ export default function DBTLflowPage() {
                         opacity: isActive ? 1 : 0.3,
                       }} />
                       <span style={{
-                        fontFamily: SANS, fontSize: '10px',
+                        fontFamily: T.SANS, fontSize: '10px',
                         color: isActive ? PHASE_PASTEL[p] : LABEL,
                         fontWeight: isActive ? 600 : 400,
                       }}>
@@ -727,10 +725,10 @@ export default function DBTLflowPage() {
                 marginBottom: '12px',
                 transition: 'border-color 0.2s',
               }}>
-                <span style={{ fontFamily: SANS, fontSize: '11px', color: VALUE, marginBottom: '4px' }}>
+                <span style={{ fontFamily: T.SANS, fontSize: '11px', color: VALUE, marginBottom: '4px' }}>
                   {feedbackLoading ? '⏳ Processing…' : '↑ Upload Test CSV'}
                 </span>
-                <span style={{ fontFamily: SANS, fontSize: '9px', color: LABEL }}>
+                <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL }}>
                   .csv with sample_id, yield columns
                 </span>
                 <input
@@ -751,7 +749,7 @@ export default function DBTLflowPage() {
                     background: 'rgba(255,255,255,0.03)',
                     border: '1px solid rgba(255,255,255,0.06)',
                   }}>
-                    <p style={{ fontFamily: SANS, fontSize: '9px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 8px' }}>
+                    <p style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 8px' }}>
                       Test Summary
                     </p>
                     {([
@@ -761,8 +759,8 @@ export default function DBTLflowPage() {
                       ['Worst Sample', feedbackResult.test_summary.worst_sample],
                     ] as const).map(([lbl, val]) => (
                       <div key={lbl} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-                        <span style={{ fontFamily: SANS, fontSize: '10px', color: LABEL }}>{lbl}</span>
-                        <span style={{ fontFamily: MONO, fontSize: '10px', color: VALUE, textAlign: 'right' }}>{val}</span>
+                        <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>{lbl}</span>
+                        <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE, textAlign: 'right' }}>{val}</span>
                       </div>
                     ))}
                   </div>
@@ -770,28 +768,28 @@ export default function DBTLflowPage() {
                   {/* QC Flags */}
                   {feedbackResult.qc_flags.length > 0 && (
                     <div>
-                      <p style={{ fontFamily: SANS, fontSize: '9px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 6px' }}>
+                      <p style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 6px' }}>
                         QC Flags ({feedbackResult.qc_flags.length})
                       </p>
                       {feedbackResult.qc_flags.map((flag: QCFlag, idx: number) => (
                         <div key={idx} style={{
                           padding: '8px', borderRadius: '8px', marginBottom: '6px',
                           background: flag.flag_type === 'sensor_anomaly'
-                            ? 'rgba(250,237,203,0.08)'
-                            : 'rgba(242,198,222,0.08)',
+                            ? 'rgba(255,251,31,0.08)'
+                            : 'rgba(250,128,114,0.08)',
                           border: `1px solid ${flag.flag_type === 'sensor_anomaly'
-                            ? 'rgba(250,237,203,0.2)'
-                            : 'rgba(242,198,222,0.2)'}`,
+                            ? 'rgba(255,251,31,0.2)'
+                            : 'rgba(250,128,114,0.2)'}`,
                         }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
-                            <span style={{ fontFamily: MONO, fontSize: '9px', color: PHASE_PASTEL.Build }}>
+                            <span style={{ fontFamily: T.MONO, fontSize: '9px', color: PHASE_PASTEL.Build }}>
                               {flag.flag_type === 'sensor_anomaly' ? '⚠' : '◆'} {flag.sample_id}
                             </span>
-                            <span style={{ fontFamily: MONO, fontSize: '9px', color: VALUE, textAlign: 'right' }}>
+                            <span style={{ fontFamily: T.MONO, fontSize: '9px', color: VALUE, textAlign: 'right' }}>
                               {flag.measured_value.toFixed(1)} / {flag.theoretical_max.toFixed(1)}
                             </span>
                           </div>
-                          <p style={{ fontFamily: SANS, fontSize: '9px', color: LABEL, margin: 0, lineHeight: 1.3 }}>
+                          <p style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL, margin: 0, lineHeight: 1.3 }}>
                             {flag.message}
                           </p>
                         </div>
@@ -802,33 +800,33 @@ export default function DBTLflowPage() {
                   {/* Next Iteration Suggestions */}
                   {feedbackResult.next_iteration_suggestions.length > 0 && (
                     <div>
-                      <p style={{ fontFamily: SANS, fontSize: '9px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 6px' }}>
+                      <p style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 6px' }}>
                         Suggested Next Iteration
                       </p>
                       {feedbackResult.next_iteration_suggestions.map((s: NextIterationSuggestion, idx: number) => (
                         <div key={idx} style={{
                           padding: '8px', borderRadius: '8px', marginBottom: '6px',
-                          background: 'rgba(201,228,222,0.06)',
-                          border: '1px solid rgba(201,228,222,0.15)',
+                          background: 'rgba(240,253,250,0.06)',
+                          border: '1px solid rgba(240,253,250,0.15)',
                         }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                            <span style={{ fontFamily: SANS, fontSize: '10px', color: PHASE_PASTEL.Learn, fontWeight: 500 }}>
+                            <span style={{ fontFamily: T.SANS, fontSize: '10px', color: PHASE_PASTEL.Learn, fontWeight: 500 }}>
                               {s.parameter}
                             </span>
-                            <span style={{ fontFamily: MONO, fontSize: '10px', color: 'rgba(120,220,160,0.85)', textAlign: 'right' }}>
+                            <span style={{ fontFamily: T.MONO, fontSize: '10px', color: 'rgba(120,220,160,0.85)', textAlign: 'right' }}>
                               +{s.predicted_improvement_percent.toFixed(1)}%
                             </span>
                           </div>
                           <div style={{ display: 'flex', gap: '4px', alignItems: 'center', marginBottom: '4px' }}>
-                            <span style={{ fontFamily: MONO, fontSize: '10px', color: LABEL }}>
+                            <span style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL }}>
                               {s.current_value}
                             </span>
-                            <span style={{ fontFamily: SANS, fontSize: '10px', color: LABEL }}>→</span>
-                            <span style={{ fontFamily: MONO, fontSize: '10px', color: VALUE, textAlign: 'right' }}>
+                            <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>→</span>
+                            <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE, textAlign: 'right' }}>
                               {s.suggested_value}
                             </span>
                           </div>
-                          <p style={{ fontFamily: SANS, fontSize: '9px', color: LABEL, margin: 0, lineHeight: 1.3 }}>
+                          <p style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL, margin: 0, lineHeight: 1.3 }}>
                             {s.rationale}
                           </p>
                         </div>
@@ -837,7 +835,7 @@ export default function DBTLflowPage() {
                   )}
 
                   {/* Optimization Objective */}
-                  <p style={{ fontFamily: MONO, fontSize: '9px', color: LABEL, margin: 0, textAlign: 'center' }}>
+                  <p style={{ fontFamily: T.MONO, fontSize: '9px', color: LABEL, margin: 0, textAlign: 'center' }}>
                     objective: {feedbackResult.optimization_objective}
                   </p>
                 </div>
@@ -852,18 +850,18 @@ export default function DBTLflowPage() {
                 </p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   {assemblyProvenance.map(p => {
-                    const tc: Record<string, string> = { fragment: '#C9E4DE', primer: '#C6DEF1', assembly: '#DBCDF0', transformant: '#F2C6DE', culture: '#FAEDCB' };
+                    const tc: Record<string, string> = { fragment: '#F0FDFA', primer: '#5151CD', assembly: '#FF1FFF', transformant: '#FA8072', culture: '#FFFB1F' };
                     const clr = tc[p.sampleType] ?? VALUE;
                     return (
                       <div key={p.uuid} style={{ padding: '8px', borderRadius: '8px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
-                          <span style={{ fontFamily: MONO, fontSize: '9px', color: clr }}>{p.sampleType.toUpperCase()}</span>
-                          <span style={{ fontFamily: MONO, fontSize: '8px', color: LABEL, textAlign: 'right' }}>
+                          <span style={{ fontFamily: T.MONO, fontSize: '9px', color: clr }}>{p.sampleType.toUpperCase()}</span>
+                          <span style={{ fontFamily: T.MONO, fontSize: '8px', color: LABEL, textAlign: 'right' }}>
                             {p.well ? 'Well ' + p.well : ''}{p.slot ? ' · Slot ' + p.slot : ''}
                           </span>
                         </div>
-                        <p style={{ fontFamily: SANS, fontSize: '9px', color: VALUE, margin: '0 0 2px', lineHeight: 1.3 }}>{p.label}</p>
-                        <p style={{ fontFamily: MONO, fontSize: '7px', color: LABEL, margin: 0 }}>{p.uuid}</p>
+                        <p style={{ fontFamily: T.SANS, fontSize: '9px', color: VALUE, margin: '0 0 2px', lineHeight: 1.3 }}>{p.label}</p>
+                        <p style={{ fontFamily: T.MONO, fontSize: '7px', color: LABEL, margin: 0 }}>{p.uuid}</p>
                       </div>
                     );
                   })}

@@ -17,9 +17,7 @@ import type { SimParams } from '../../machines/metabolicMachine';
 import type { FluidForce } from './FluidSimCanvas';
 import type { MachineState } from '../../machines/metabolicMachine';
 import { STATE_LABELS } from '../../machines/metabolicMachine';
-
-const MONO = "'JetBrains Mono', 'Fira Code', monospace";
-const SANS = "'Inter', -apple-system, sans-serif";
+import { T } from '../ide/tokens';
 
 // ── Parameter definitions ──────────────────────────────────────────────
 
@@ -101,10 +99,10 @@ function ParamSlider({ def, value, onChange, forceRef }: SliderProps) {
   return (
     <div style={{ marginBottom: '14px' }}>
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'5px' }}>
-        <span style={{ fontFamily:SANS, fontSize:'10px', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.08em', color:'rgba(255,255,255,0.35)' }}>
+        <span style={{ fontFamily: T.SANS, fontSize:'10px', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.08em', color:'rgba(255,255,255,0.35)' }}>
           {def.label}
         </span>
-        <span style={{ fontFamily:MONO, fontSize:'13px', fontWeight:600, color:'rgba(255,255,255,0.75)', textAlign:'right', minWidth:'72px' }}>
+        <span style={{ fontFamily: T.MONO, fontSize:'13px', fontWeight:600, color:'rgba(255,255,255,0.75)', textAlign:'right', minWidth:'72px' }}>
           {value.toFixed(def.step < 1 ? 1 : 0)}<span style={{ fontSize:'9px', color:'rgba(255,255,255,0.28)', marginLeft:'2px' }}>{def.unit}</span>
         </span>
       </div>
@@ -159,7 +157,7 @@ function ActionBtn({ label, brightness = 0.7, onClick, disabled = false }: {
         background: `rgba(255,255,255,${disabled ? 0.03 : 0.05})`,
         border: `0.5px solid rgba(255,255,255,${disabled ? 0.05 : alpha * 0.4})`,
         color: `rgba(255,255,255,${alpha})`,
-        fontFamily: MONO, fontSize:'10px', fontWeight:600,
+        fontFamily: T.MONO, fontSize:'10px', fontWeight:600,
         textTransform:'uppercase', letterSpacing:'0.08em',
         transition:'all 0.15s',
       }}
@@ -200,7 +198,7 @@ export default function ToolOverlay({
       {/* Header */}
       <div style={{ marginBottom:'16px' }}>
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-          <span style={{ fontFamily:MONO, fontSize:'9px', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.12em', color:'rgba(255,255,255,0.25)' }}>
+          <span style={{ fontFamily: T.MONO, fontSize:'9px', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.12em', color:'rgba(255,255,255,0.25)' }}>
             TOOL CABINET
           </span>
           {/* FSM state indicator */}
@@ -220,13 +218,13 @@ export default function ToolOverlay({
               transition={{ duration:1.5, repeat:Infinity }}
               style={{ width:'5px', height:'5px', borderRadius:'50%', background:'rgba(255,255,255,0.65)' }}
             />
-            <span style={{ fontFamily:MONO, fontSize:'8px', fontWeight:600, color:'rgba(255,255,255,0.65)', letterSpacing:'0.1em' }}>
+            <span style={{ fontFamily: T.MONO, fontSize:'8px', fontWeight:600, color:'rgba(255,255,255,0.65)', letterSpacing:'0.1em' }}>
               {stateLabel}
             </span>
           </motion.div>
         </div>
         <div style={{ marginTop:'8px', borderBottom:'0.5px solid rgba(255,255,255,0.06)', paddingBottom:'12px' }}>
-          <span style={{ fontFamily:SANS, fontSize:'12px', fontWeight:600, color:'rgba(255,255,255,0.6)' }}>
+          <span style={{ fontFamily: T.SANS, fontSize:'12px', fontWeight:600, color:'rgba(255,255,255,0.6)' }}>
             Metabolic Parameters
           </span>
         </div>
@@ -272,14 +270,14 @@ export default function ToolOverlay({
 
       {/* Michaelis-Menten preview formula */}
       <div style={{ marginTop:'14px', padding:'10px', borderRadius:'10px', background:'rgba(255,255,255,0.02)', border:'0.5px solid rgba(255,255,255,0.06)' }}>
-        <span style={{ fontFamily:MONO, fontSize:'9px', color:'rgba(255,255,255,0.22)', display:'block', marginBottom:'4px', textTransform:'uppercase', letterSpacing:'0.08em' }}>
+        <span style={{ fontFamily: T.MONO, fontSize:'9px', color:'rgba(255,255,255,0.22)', display:'block', marginBottom:'4px', textTransform:'uppercase', letterSpacing:'0.08em' }}>
           Kinetics Preview
         </span>
-        <span style={{ fontFamily:MONO, fontSize:'10px', color:'rgba(255,255,255,0.5)' }}>
+        <span style={{ fontFamily: T.MONO, fontSize:'10px', color:'rgba(255,255,255,0.5)' }}>
           v = Vmax·[S] / (Km+[S])
         </span>
         <br />
-        <span style={{ fontFamily:MONO, fontSize:'10px', color:'rgba(255,255,255,0.28)' }}>
+        <span style={{ fontFamily: T.MONO, fontSize:'10px', color:'rgba(255,255,255,0.28)' }}>
           = {params.vmax.toFixed(1)} · {params.substrate} / ({params.km.toFixed(1)} + {params.substrate})
         </span>
       </div>

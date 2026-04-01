@@ -30,9 +30,7 @@ import type { FBAWorkerIn, FBAWorkerOut } from '../../workers/fbaWorker';
 import { useUIStore } from '../../store/uiStore';
 import pathwayNodes from '../../data/pathwayData.json';
 import type { PathwayNode, PathwayEdge } from '../../types';
-
-const MONO = "'JetBrains Mono', 'Fira Code', monospace";
-const SANS = "'Inter', -apple-system, sans-serif";
+import { T } from '../ide/tokens';
 
 // ── Demo pathway edges (Artemisinin biosynthesis — Ro et al. 2006) ─────
 const DEMO_EDGES: PathwayEdge[] = [
@@ -70,7 +68,7 @@ function TopBar({ state, stateLabel, tick }: TopBarProps) {
           onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'rgba(226,232,240,0.35)'}
         >
           <ChevronLeft size={13} />
-          <span style={{ fontFamily:SANS, fontSize:'10px', letterSpacing:'0.03em' }}>Home</span>
+          <span style={{ fontFamily: T.SANS, fontSize:'10px', letterSpacing:'0.03em' }}>Home</span>
         </Link>
         <div style={{ width:'1px', height:'16px', background:'rgba(255,255,255,0.07)' }} />
         <div style={{ display:'flex', alignItems:'center', gap:'8px' }}>
@@ -78,8 +76,8 @@ function TopBar({ state, stateLabel, tick }: TopBarProps) {
             <Dna size={11} style={{ color:'rgba(255,255,255,0.65)' }} />
           </div>
           <div>
-            <div style={{ fontFamily:SANS, fontSize:'11px', fontWeight:600, color:'rgba(226,232,240,0.85)', letterSpacing:'-0.01em' }}>Metabolic Eng. Lab</div>
-            <div style={{ fontFamily:MONO, fontSize:'8px', color:'rgba(226,232,240,0.25)', letterSpacing:'0.08em', textTransform:'uppercase' }}>nexus-bio · /tools/metabolic-eng</div>
+            <div style={{ fontFamily: T.SANS, fontSize:'11px', fontWeight:600, color:'rgba(226,232,240,0.85)', letterSpacing:'-0.01em' }}>Metabolic Eng. Lab</div>
+            <div style={{ fontFamily: T.MONO, fontSize:'8px', color:'rgba(226,232,240,0.25)', letterSpacing:'0.08em', textTransform:'uppercase' }}>nexus-bio · /tools/metabolic-eng</div>
           </div>
         </div>
       </div>
@@ -91,7 +89,7 @@ function TopBar({ state, stateLabel, tick }: TopBarProps) {
         animate={{ opacity:1, y:0, letterSpacing:'0.2em' }}
         transition={{ duration:0.55, ease:[0.22,1,0.36,1] }}
         style={{
-          fontFamily:MONO, fontSize:'11px', fontWeight:700,
+          fontFamily: T.MONO, fontSize:'11px', fontWeight:700,
           textTransform:'uppercase', color:'rgba(255,255,255,0.75)',
           letterSpacing:'0.2em',
           padding:'4px 14px', borderRadius:'100px',
@@ -110,8 +108,8 @@ function TopBar({ state, stateLabel, tick }: TopBarProps) {
           { l:'FSM',      v: state.toUpperCase() },
         ].map(({ l, v }) => (
           <div key={l} style={{ textAlign:'right' }}>
-            <div style={{ fontFamily:MONO, fontSize:'8px', color:'rgba(226,232,240,0.2)', textTransform:'uppercase', letterSpacing:'0.1em' }}>{l}</div>
-            <div style={{ fontFamily:MONO, fontSize:'11px', color:'rgba(226,232,240,0.55)', fontVariantNumeric:'tabular-nums' }}>{v}</div>
+            <div style={{ fontFamily: T.MONO, fontSize:'8px', color:'rgba(226,232,240,0.2)', textTransform:'uppercase', letterSpacing:'0.1em' }}>{l}</div>
+            <div style={{ fontFamily: T.MONO, fontSize:'11px', color:'rgba(226,232,240,0.55)', fontVariantNumeric:'tabular-nums' }}>{v}</div>
           </div>
         ))}
       </div>
@@ -346,7 +344,7 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
             onClick={handleStart}
             style={{
               position:'absolute', bottom:'28px', left:'50%', transform:'translateX(-50%)',
-              fontFamily:MONO, fontSize:'10px', color:'rgba(226,232,240,0.45)',
+              fontFamily: T.MONO, fontSize:'10px', color:'rgba(226,232,240,0.45)',
               textTransform:'uppercase', letterSpacing:'0.15em', zIndex:25,
               background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.12)',
               borderRadius:'100px', padding:'8px 20px', cursor:'pointer',

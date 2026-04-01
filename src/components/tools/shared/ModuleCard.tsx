@@ -8,8 +8,8 @@
 'use client';
 import { motion } from 'framer-motion';
 import type { CSSProperties, ReactNode } from 'react';
+import { T } from '../../ide/tokens';
 
-const SANS = "'Inter',-apple-system,sans-serif";
 const NEON = '#FFFFFF';
 
 interface ModuleCardProps {
@@ -63,7 +63,7 @@ export default function ModuleCard({
     >
       {title && (
         <div style={{
-          fontFamily: SANS, fontSize: '9px', fontWeight: 500,
+          fontFamily: T.SANS, fontSize: '9px', fontWeight: 500,
           textTransform: 'uppercase', letterSpacing: '0.12em',
           color: active ? NEON : 'rgba(255,255,255,0.3)',
           marginBottom: flush ? 0 : '10px',

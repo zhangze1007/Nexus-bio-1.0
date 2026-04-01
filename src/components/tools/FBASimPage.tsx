@@ -4,27 +4,26 @@ import IDEShell from '../ide/IDEShell';
 import AlgorithmInsight from '../ide/shared/AlgorithmInsight';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
+import SimErrorBanner from '../ide/shared/SimErrorBanner';
 import {
   METABOLIC_NODES, FLUX_EDGES, REACTION_DEFS, runFBA,
   YEAST_NODES, YEAST_FLUX_EDGES, YEAST_REACTION_DEFS, SHARED_METABOLITES,
   calculateCommunityFlux,
 } from '../../data/mockFBA';
 import type { FBAOutput, CommunityFBAOutput } from '../../data/mockFBA';
-
-const MONO = "'JetBrains Mono','Fira Code',monospace";
-const SANS = "'Inter',-apple-system,sans-serif";
+import { T, TOOL_RESULT_PALETTE} from '../ide/tokens';
 
 // ── Pastel palette ──
 const COLORS = {
-  strainA: '#DBCDF0',
-  strainB: '#C9E4DE',
-  sharedPool: '#C6DEF1',
-  strainABg: 'rgba(219,205,240,0.06)',
-  strainBBg: 'rgba(201,228,222,0.06)',
-  sharedBg: 'rgba(198,222,241,0.06)',
-  strainABorder: 'rgba(219,205,240,0.20)',
-  strainBBorder: 'rgba(201,228,222,0.20)',
-  sharedBorder: 'rgba(198,222,241,0.20)',
+  strainA: '#FF1FFF',
+  strainB: '#F0FDFA',
+  sharedPool: '#5151CD',
+  strainABg: 'rgba(255,31,255,0.06)',
+  strainBBg: 'rgba(240,253,250,0.06)',
+  sharedBg: 'rgba(81,81,205,0.06)',
+  strainABorder: 'rgba(255,31,255,0.20)',
+  strainBBorder: 'rgba(240,253,250,0.20)',
+  sharedBorder: 'rgba(81,81,205,0.20)',
 };
 
 type SimMode = 'single' | 'community';
@@ -36,8 +35,8 @@ function ParamSlider({ label, value, min, max, step = 0.5, onChange, unit, accen
   return (
     <div style={{ marginBottom: '12px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-        <span style={{ fontFamily: SANS, fontSize: '11px', color: 'rgba(255,255,255,0.45)' }}>{label}</span>
-        <span style={{ fontFamily: MONO, fontSize: '11px', fontWeight: 600, color: 'rgba(255,255,255,0.55)', textAlign: 'right' }}>
+        <span style={{ fontFamily: T.SANS, fontSize: '11px', color: 'rgba(255,255,255,0.45)' }}>{label}</span>
+        <span style={{ fontFamily: T.MONO, fontSize: '11px', fontWeight: 600, color: 'rgba(255,255,255,0.55)', textAlign: 'right' }}>
           {value.toFixed(1)}{unit ? ` ${unit}` : ''}
         </span>
       </div>
@@ -51,10 +50,10 @@ function ParamSlider({ label, value, min, max, step = 0.5, onChange, unit, accen
 
 const W = 340, H = 640;
 const SUBSYSTEM_COLORS: Record<string, string> = {
-  Glycolysis: 'rgba(120,200,255,0.7)',
+  Glycolysis: 'rgba(81,81,205,0.7)',
   TCA: 'rgba(120,255,180,0.7)',
-  Energy: 'rgba(255,200,80,0.7)',
-  Fermentation: 'rgba(255,160,200,0.7)',
+  Energy: 'rgba(255,139,31,0.7)',
+  Fermentation: 'rgba(255,31,255,0.7)',
 };
 
 function FluxMap({ result, nodes, edges, knockouts, compact }: {
@@ -82,7 +81,7 @@ function FluxMap({ result, nodes, edges, knockouts, compact }: {
         const normalized = flux / maxFlux;
         const isKO = koSet.has(edge.reactionId);
         const color = isKO ? 'rgba(255,80,80,0.5)'
-          : normalized > 0.6 ? 'rgba(120,220,180,0.85)'
+          : normalized > 0.6 ? 'rgba(147,203,82,0.85)'
           : normalized > 0.3 ? 'rgba(120,180,255,0.7)'
           : 'rgba(255,255,255,0.2)';
         const strokeW = isKO ? 1 : 1.5 + normalized * 5;
@@ -95,7 +94,7 @@ function FluxMap({ result, nodes, edges, knockouts, compact }: {
               strokeDasharray={isKO ? '4 3' : undefined}
               style={{ transition: 'stroke-width 0.3s, stroke 0.3s' }} />
             <text x={mx + 28} y={my + 20} fill={isKO ? 'rgba(255,80,80,0.5)' : 'rgba(255,255,255,0.4)'}
-              fontFamily={MONO} fontSize="8" textAnchor="middle">
+              fontFamily={T.MONO} fontSize="8" textAnchor="middle">
               {isKO ? '—' : flux.toFixed(1)}
             </text>
           </g>
@@ -112,13 +111,13 @@ function FluxMap({ result, nodes, edges, knockouts, compact }: {
               strokeWidth={isActive ? 2 : 1}
               style={{ transition: 'all 0.2s' }} />
             <text x={node.x + 20} y={node.y + 25} textAnchor="middle"
-              fontFamily={MONO} fontSize="9" fill="rgba(255,255,255,0.85)">
+              fontFamily={T.MONO} fontSize="9" fill="rgba(255,255,255,0.85)">
               {node.label}
             </text>
           </g>
         );
       })}
-      <text x={W / 2} y={viewH - 10} textAnchor="middle" fontFamily={MONO} fontSize="10" fill="rgba(255,255,255,0.3)">
+      <text x={W / 2} y={viewH - 10} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.3)">
         μ = {result.growthRate.toFixed(4)} h⁻¹
       </text>
     </svg>
@@ -157,7 +156,7 @@ function SharedMetaboliteBus({ exchangeFluxes }: {
   return (
     <GlassContainer color={COLORS.sharedBg} borderColor={COLORS.sharedBorder}
       style={{ padding: '14px 16px' }}>
-      <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: COLORS.sharedPool, margin: '0 0 10px' }}>
+      <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: COLORS.sharedPool, margin: '0 0 10px' }}>
         Shared Environmental Pool
       </p>
 
@@ -174,11 +173,11 @@ function SharedMetaboliteBus({ exchangeFluxes }: {
         return (
           <div key={ex.id} style={{ marginBottom: '8px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-              <span style={{ fontFamily: SANS, fontSize: '10px', color: 'rgba(255,255,255,0.5)' }}>
+              <span style={{ fontFamily: T.SANS, fontSize: '10px', color: 'rgba(255,255,255,0.5)' }}>
                 {ex.metabolite}
               </span>
               <span style={{
-                fontFamily: MONO, fontSize: '11px', fontWeight: 600, color: COLORS.sharedPool, textAlign: 'right',
+                fontFamily: T.MONO, fontSize: '11px', fontWeight: 600, color: COLORS.sharedPool, textAlign: 'right',
               }}>
                 {ex.flux.toFixed(2)} mmol/h
               </span>
@@ -203,16 +202,16 @@ function SharedMetaboliteBus({ exchangeFluxes }: {
                 }}
               />
               {/* Direction arrows */}
-              <text x={isRightFlow ? '92%' : '4%'} y="10" fontFamily={SANS} fontSize="8"
+              <text x={isRightFlow ? '92%' : '4%'} y="10" fontFamily={T.SANS} fontSize="8"
                 fill={COLORS.sharedPool} textAnchor="middle">
                 {isRightFlow ? '→' : '←'}
               </text>
             </svg>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '2px' }}>
-              <span style={{ fontSize: '8px', color: isRightFlow ? COLORS.strainA : COLORS.strainB, fontFamily: MONO }}>
+              <span style={{ fontSize: '8px', color: isRightFlow ? COLORS.strainA : COLORS.strainB, fontFamily: T.MONO }}>
                 {ex.fromStrain === 'ecoli' ? 'E. coli' : 'S. cerevisiae'}
               </span>
-              <span style={{ fontSize: '8px', color: isRightFlow ? COLORS.strainB : COLORS.strainA, fontFamily: MONO }}>
+              <span style={{ fontSize: '8px', color: isRightFlow ? COLORS.strainB : COLORS.strainA, fontFamily: T.MONO }}>
                 {ex.toStrain === 'ecoli' ? 'E. coli' : 'S. cerevisiae'}
               </span>
             </div>
@@ -237,7 +236,7 @@ function StrainPanel({ label, color, borderColor, accentColor, glucoseUptake, ox
   return (
     <GlassContainer color={color} borderColor={borderColor}
       style={{ padding: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-      <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: accentColor, margin: '0' }}>
+      <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: accentColor, margin: '0' }}>
         {label}
       </p>
 
@@ -252,7 +251,7 @@ function StrainPanel({ label, color, borderColor, accentColor, glucoseUptake, ox
         <MetricCard label="Carbon Eff." value={result.carbonEfficiency} unit="%" />
       </div>
 
-      <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '6px 0 0' }}>
+      <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '6px 0 0' }}>
         Gene Knockouts
       </p>
       <div style={{ maxHeight: '140px', overflowY: 'auto' }}>
@@ -266,7 +265,7 @@ function StrainPanel({ label, color, borderColor, accentColor, glucoseUptake, ox
               border: `1px solid ${isKO ? 'rgba(255,80,80,0.3)' : 'rgba(255,255,255,0.06)'}`,
               borderRadius: '6px', cursor: 'pointer',
             }}>
-              <span style={{ fontFamily: MONO, fontSize: '10px', color: isKO ? 'rgba(255,120,120,0.9)' : 'rgba(255,255,255,0.5)' }}>{r.id}</span>
+              <span style={{ fontFamily: T.MONO, fontSize: '10px', color: isKO ? 'rgba(255,120,120,0.9)' : 'rgba(255,255,255,0.5)' }}>{r.id}</span>
               <span style={{
                 width: '7px', height: '7px', borderRadius: '50%',
                 background: isKO ? 'rgba(255,80,80,0.7)' : 'rgba(255,255,255,0.12)', flexShrink: 0,
@@ -279,7 +278,7 @@ function StrainPanel({ label, color, borderColor, accentColor, glucoseUptake, ox
         <button onClick={onClearKO} style={{
           display: 'block', width: '100%', padding: '4px 8px',
           background: 'transparent', border: '1px solid rgba(255,255,255,0.08)',
-          borderRadius: '6px', color: 'rgba(255,255,255,0.3)', fontFamily: SANS, fontSize: '10px', cursor: 'pointer',
+          borderRadius: '6px', color: 'rgba(255,255,255,0.3)', fontFamily: T.SANS, fontSize: '10px', cursor: 'pointer',
         }}>
           Clear all
         </button>
@@ -310,16 +309,22 @@ export default function FBASimPage() {
   const [yeastKO, setYeastKO] = useState<string[]>([]);
 
   // Single-species FBA
-  const singleResult = useMemo(
-    () => runFBA(glucoseUptake, oxygenUptake, knockouts),
-    [glucoseUptake, oxygenUptake, knockouts],
-  );
+  const { data: singleResult, error: singleError } = useMemo(() => {
+    try {
+      return { data: runFBA(glucoseUptake, oxygenUptake, knockouts), error: null as string | null };
+    } catch (e) {
+      return { data: runFBA(10, 12, []), error: e instanceof Error ? e.message : 'FBA simulation failed' };
+    }
+  }, [glucoseUptake, oxygenUptake, knockouts]);
 
   // Community FBA
-  const communityResult: CommunityFBAOutput = useMemo(
-    () => calculateCommunityFlux(ecoliGlucose, ecoliOxygen, ecoliKO, yeastGlucose, yeastOxygen, yeastKO),
-    [ecoliGlucose, ecoliOxygen, ecoliKO, yeastGlucose, yeastOxygen, yeastKO],
-  );
+  const { data: communityResult, error: communityError } = useMemo<{ data: CommunityFBAOutput; error: string | null }>(() => {
+    try {
+      return { data: calculateCommunityFlux(ecoliGlucose, ecoliOxygen, ecoliKO, yeastGlucose, yeastOxygen, yeastKO), error: null };
+    } catch (e) {
+      return { data: calculateCommunityFlux(10, 12, [], 8, 6, []), error: e instanceof Error ? e.message : 'Community FBA failed' };
+    }
+  }, [ecoliGlucose, ecoliOxygen, ecoliKO, yeastGlucose, yeastOxygen, yeastKO]);
 
   const top5 = useMemo(() => {
     return REACTION_DEFS
@@ -344,7 +349,7 @@ export default function FBASimPage() {
 
   return (
     <IDEShell moduleId="fbasim">
-      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', background: '#10131a' }}>
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', background: '#000000' }}>
         <AlgorithmInsight
           title={simMode === 'single' ? 'Flux Balance Analysis' : 'Community FBA — Multi-species'}
           description={simMode === 'single'
@@ -363,26 +368,34 @@ export default function FBASimPage() {
               background: simMode === mode ? 'rgba(255,255,255,0.08)' : 'transparent',
               border: `1px solid ${simMode === mode ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.06)'}`,
               color: simMode === mode ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.35)',
-              fontFamily: SANS, fontSize: '11px', cursor: 'pointer', transition: 'all 0.2s',
+              fontFamily: T.SANS, fontSize: '11px', cursor: 'pointer', transition: 'all 0.2s',
             }}>
               {mode === 'single' ? 'Single Species' : 'Community'}
             </button>
           ))}
         </div>
 
+        {/* Error banners */}
+        {singleError && simMode === 'single' && (
+          <div style={{ padding: '0 16px 8px' }}><SimErrorBanner message={singleError} /></div>
+        )}
+        {communityError && simMode === 'community' && (
+          <div style={{ padding: '0 16px 8px' }}><SimErrorBanner message={communityError} /></div>
+        )}
+
         {/* ── SINGLE MODE ── */}
         {simMode === 'single' && (
           <div style={{ flex: 1, display: 'flex', overflow: 'hidden', minHeight: 0 }}>
             {/* Input panel */}
-            <div style={{ width: '240px', flexShrink: 0, overflowY: 'auto', padding: '16px', borderRight: '1px solid rgba(255,255,255,0.06)', background: '#10131a' }}>
-              <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '0 0 12px' }}>
+            <div style={{ width: '240px', flexShrink: 0, overflowY: 'auto', padding: '16px', borderRight: '1px solid rgba(255,255,255,0.06)', background: '#000000' }}>
+              <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '0 0 12px' }}>
                 Simulation Parameters
               </p>
 
               <ParamSlider label="Glucose uptake" value={glucoseUptake} min={0} max={20} onChange={setGlucoseUptake} unit="mmol/gDW/h" />
               <ParamSlider label="O₂ uptake" value={oxygenUptake} min={0} max={20} onChange={setOxygenUptake} unit="mmol/gDW/h" />
 
-              <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '16px 0 8px' }}>
+              <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '16px 0 8px' }}>
                 Objective Function
               </p>
               {(['biomass', 'atp', 'product'] as const).map(opt => (
@@ -393,13 +406,13 @@ export default function FBASimPage() {
                   border: `1px solid ${objective === opt ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.06)'}`,
                   borderRadius: '8px',
                   color: objective === opt ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.4)',
-                  fontFamily: SANS, fontSize: '11px', cursor: 'pointer',
+                  fontFamily: T.SANS, fontSize: '11px', cursor: 'pointer',
                 }}>
                   {opt === 'biomass' ? 'Max Biomass' : opt === 'atp' ? 'Max ATP' : 'Max Product'}
                 </button>
               ))}
 
-              <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '16px 0 8px' }}>
+              <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '16px 0 8px' }}>
                 Gene Knockouts
               </p>
               {REACTION_DEFS.map(r => {
@@ -412,7 +425,7 @@ export default function FBASimPage() {
                     border: `1px solid ${isKO ? 'rgba(255,80,80,0.3)' : 'rgba(255,255,255,0.06)'}`,
                     borderRadius: '6px', cursor: 'pointer',
                   }}>
-                    <span style={{ fontFamily: MONO, fontSize: '10px', color: isKO ? 'rgba(255,120,120,0.9)' : 'rgba(255,255,255,0.5)' }}>{r.id}</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: '10px', color: isKO ? 'rgba(255,120,120,0.9)' : 'rgba(255,255,255,0.5)' }}>{r.id}</span>
                     <span style={{
                       width: '8px', height: '8px', borderRadius: '50%',
                       background: isKO ? 'rgba(255,80,80,0.7)' : 'rgba(255,255,255,0.12)',
@@ -426,7 +439,7 @@ export default function FBASimPage() {
                   display: 'block', width: '100%', marginTop: '6px',
                   padding: '5px 8px', background: 'transparent',
                   border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px',
-                  color: 'rgba(255,255,255,0.3)', fontFamily: SANS, fontSize: '10px', cursor: 'pointer',
+                  color: 'rgba(255,255,255,0.3)', fontFamily: T.SANS, fontSize: '10px', cursor: 'pointer',
                 }}>
                   Clear all knockouts
                 </button>
@@ -434,15 +447,15 @@ export default function FBASimPage() {
             </div>
 
             {/* Engine view — SVG flux map */}
-            <div style={{ flex: 1, position: 'relative', overflow: 'hidden', background: '#0d0f14', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ flex: 1, position: 'relative', overflow: 'hidden', background: '#050505', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <div style={{ height: '100%', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <FluxMap result={singleResult} nodes={METABOLIC_NODES} edges={FLUX_EDGES} knockouts={knockouts} />
               </div>
             </div>
 
             {/* Results panel */}
-            <div style={{ width: '240px', flexShrink: 0, overflowY: 'auto', padding: '16px', borderLeft: '1px solid rgba(255,255,255,0.06)', background: '#10131a' }}>
-              <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '0 0 12px' }}>
+            <div style={{ width: '240px', flexShrink: 0, overflowY: 'auto', padding: '16px', borderLeft: '1px solid rgba(255,255,255,0.06)', background: '#000000' }}>
+              <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '0 0 12px' }}>
                 Results
               </p>
 
@@ -454,7 +467,7 @@ export default function FBASimPage() {
                 <MetricCard label="Feasible" value={singleResult.feasible ? 'YES' : 'NO'} />
               </div>
 
-              <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '0 0 8px' }}>
+              <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '0 0 8px' }}>
                 Top 5 Active Reactions
               </p>
               {top5.map(r => (
@@ -465,12 +478,12 @@ export default function FBASimPage() {
                   borderRadius: '8px',
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontFamily: MONO, fontSize: '10px', color: knockouts.includes(r.id) ? 'rgba(255,120,120,0.7)' : 'rgba(255,255,255,0.6)' }}>{r.id}</span>
-                    <span style={{ fontFamily: MONO, fontSize: '10px', fontWeight: 600, color: r.flux > 0 ? 'rgba(20,140,80,0.9)' : 'rgba(255,80,80,0.6)', textAlign: 'right' }}>
+                    <span style={{ fontFamily: T.MONO, fontSize: '10px', color: knockouts.includes(r.id) ? 'rgba(255,120,120,0.7)' : 'rgba(255,255,255,0.6)' }}>{r.id}</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: '10px', fontWeight: 600, color: r.flux > 0 ? 'rgba(20,140,80,0.9)' : 'rgba(255,80,80,0.6)', textAlign: 'right' }}>
                       {r.flux.toFixed(2)}
                     </span>
                   </div>
-                  <div style={{ fontFamily: SANS, fontSize: '10px', color: 'rgba(255,255,255,0.35)', marginTop: '2px' }}>{r.name}</div>
+                  <div style={{ fontFamily: T.SANS, fontSize: '10px', color: 'rgba(255,255,255,0.35)', marginTop: '2px' }}>{r.name}</div>
                   <div style={{ marginTop: '4px', height: '2px', background: 'rgba(255,255,255,0.06)', borderRadius: '1px' }}>
                     <div style={{
                       height: '100%', borderRadius: '1px',
@@ -505,10 +518,10 @@ export default function FBASimPage() {
               {/* Community objective banner */}
               <GlassContainer color={COLORS.sharedBg} borderColor={COLORS.sharedBorder}
                 style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontFamily: SANS, fontSize: '11px', color: 'rgba(255,255,255,0.55)' }}>
+                <span style={{ fontFamily: T.SANS, fontSize: '11px', color: 'rgba(255,255,255,0.55)' }}>
                   Community Biomass Objective
                 </span>
-                <span style={{ fontFamily: MONO, fontSize: '14px', fontWeight: 600, color: COLORS.sharedPool, textAlign: 'right' }}>
+                <span style={{ fontFamily: T.MONO, fontSize: '14px', fontWeight: 600, color: COLORS.sharedPool, textAlign: 'right' }}>
                   μ_com = {communityResult.communityGrowthRate.toFixed(4)} h⁻¹
                 </span>
               </GlassContainer>
@@ -517,7 +530,7 @@ export default function FBASimPage() {
               <div style={{ display: 'flex', gap: '12px', flex: 1, minHeight: 0 }}>
                 <GlassContainer color={COLORS.strainABg} borderColor={COLORS.strainABorder}
                   style={{ flex: 1, padding: '8px', display: 'flex', flexDirection: 'column' }}>
-                  <p style={{ fontFamily: MONO, fontSize: '9px', color: COLORS.strainA, margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                  <p style={{ fontFamily: T.MONO, fontSize: '9px', color: COLORS.strainA, margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                     E. coli Network
                   </p>
                   <div style={{ flex: 1, minHeight: 0 }}>
@@ -527,7 +540,7 @@ export default function FBASimPage() {
 
                 <GlassContainer color={COLORS.strainBBg} borderColor={COLORS.strainBBorder}
                   style={{ flex: 1, padding: '8px', display: 'flex', flexDirection: 'column' }}>
-                  <p style={{ fontFamily: MONO, fontSize: '9px', color: COLORS.strainB, margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                  <p style={{ fontFamily: T.MONO, fontSize: '9px', color: COLORS.strainB, margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                     S. cerevisiae Network
                   </p>
                   <div style={{ flex: 1, minHeight: 0 }}>
@@ -555,7 +568,7 @@ export default function FBASimPage() {
         )}
 
         {/* Export bar */}
-        <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', padding: '8px 16px', display: 'flex', gap: '8px', flexShrink: 0, background: '#10131a' }}>
+        <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', padding: '8px 16px', display: 'flex', gap: '8px', flexShrink: 0, background: '#000000' }}>
           <ExportButton label="Export JSON" data={exportData} filename={`fbasim-${simMode}-result`} format="json" />
           <ExportButton label="Export Fluxes CSV" data={
             simMode === 'single'

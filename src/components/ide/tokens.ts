@@ -39,4 +39,27 @@ export const T = {
   R_MD: '12px',
   R_LG: '16px',
   R_XL: '20px',
+  // Tool result accent colors — only used inside tool pages for data differentiation
+  RESULT_MINT:   '#F0FDFA',
+  RESULT_CORAL:  '#FA8072',
+  RESULT_YELLOW: '#FFFB1F',
+  RESULT_ORANGE: '#FF8B1F',
+  RESULT_INDIGO: '#5151CD',
+  RESULT_GREEN:  '#93CB52',
+  RESULT_MAGENTA:'#FF1FFF',
+  RESULT_MOCHA:  '#5F444A',
+  RESULT_COCOA:  '#4E3737',
 } as const;
+
+/** All tool result accent colors as an ordered palette. */
+export const TOOL_RESULT_PALETTE = [
+  T.RESULT_MINT,
+  T.RESULT_CORAL,
+  T.RESULT_YELLOW,
+  T.RESULT_ORANGE,
+  T.RESULT_INDIGO,
+  T.RESULT_GREEN,
+  T.RESULT_MAGENTA,
+  T.RESULT_MOCHA,
+  T.RESULT_COCOA,
+] as const;

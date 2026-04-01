@@ -29,19 +29,17 @@ import type {
   PerturbationResult,
   InternalThought,
 } from '../../types';
+import { T, TOOL_RESULT_PALETTE} from '../ide/tokens';
 
 /* ── Design Tokens ────────────────────────────────────────────────── */
 
-const MONO = "'JetBrains Mono','Fira Code',monospace";
-const SANS = "'Inter',-apple-system,sans-serif";
-
 const LAYER_COLORS: Record<OmicsLayer, string> = {
-  transcriptomics: '#DBCDF0',
-  proteomics:      '#C6DEF1',
-  metabolomics:    '#F2C6DE',
+  transcriptomics: '#FF1FFF',
+  proteomics:      '#5151CD',
+  metabolomics:    '#FA8072',
 };
 
-const PANEL_BG = '#10131a';
+const PANEL_BG = '#000000';
 const BORDER = 'rgba(255,255,255,0.06)';
 const LABEL = 'rgba(255,255,255,0.28)';
 const VALUE = 'rgba(255,255,255,0.65)';
@@ -75,7 +73,7 @@ function VolcanoPlot({ data, fcThreshold, pvThreshold }: {
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
-      <rect width={W} height={H} fill="#0d0f14" />
+      <rect width={W} height={H} fill="#050505" />
       <line x1={PAD} y1={pvLine} x2={W - PAD} y2={pvLine}
         stroke="rgba(255,255,255,0.12)" strokeWidth={1} strokeDasharray="4 3" />
       <line x1={fcLineL} y1={PAD} x2={fcLineL} y2={H - PAD}
@@ -88,7 +86,7 @@ function VolcanoPlot({ data, fcThreshold, pvThreshold }: {
         const sig = pv < pvThreshold && Math.abs(fc) > fcThreshold;
         const up = fc > 0;
         const color = sig
-          ? (up ? 'rgba(120,220,180,0.85)' : 'rgba(255,100,100,0.85)')
+          ? (up ? 'rgba(147,203,82,0.85)' : 'rgba(250,128,114,0.85)')
           : 'rgba(255,255,255,0.18)';
         return (
           <circle key={row.id}
@@ -100,15 +98,15 @@ function VolcanoPlot({ data, fcThreshold, pvThreshold }: {
       })}
       <line x1={PAD} y1={H - PAD} x2={W - PAD} y2={H - PAD} stroke="rgba(255,255,255,0.1)" />
       <line x1={PAD} y1={PAD} x2={PAD} y2={H - PAD} stroke="rgba(255,255,255,0.1)" />
-      <text x={W / 2} y={H - 4} textAnchor="middle" fontFamily={MONO} fontSize="8" fill="rgba(255,255,255,0.25)">
+      <text x={W / 2} y={H - 4} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.25)">
         log₂ Fold Change
       </text>
-      <text x={10} y={H / 2} textAnchor="middle" fontFamily={MONO} fontSize="8" fill="rgba(255,255,255,0.25)"
+      <text x={10} y={H / 2} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.25)"
         transform={`rotate(-90,10,${H / 2})`}>
         -log₁₀(p)
       </text>
-      <text x={W - PAD} y={H - PAD + 12} textAnchor="end" fontFamily={MONO} fontSize="7" fill="rgba(255,255,255,0.2)">+{fcMax}</text>
-      <text x={PAD} y={H - PAD + 12} textAnchor="start" fontFamily={MONO} fontSize="7" fill="rgba(255,255,255,0.2)">-{fcMax}</text>
+      <text x={W - PAD} y={H - PAD + 12} textAnchor="end" fontFamily={T.MONO} fontSize="7" fill="rgba(255,255,255,0.2)">+{fcMax}</text>
+      <text x={PAD} y={H - PAD + 12} textAnchor="start" fontFamily={T.MONO} fontSize="7" fill="rgba(255,255,255,0.2)">-{fcMax}</text>
     </svg>
   );
 }
@@ -121,13 +119,13 @@ const COLUMNS: TableColumn<OmicsRow>[] = [
   { key: 'protein',     header: 'Prot.',       width: 55, render: v => typeof v === 'number' ? v.toFixed(1) : '—' },
   { key: 'metabolite',  header: 'Met.',        width: 55, render: v => typeof v === 'number' ? v.toFixed(1) : '—' },
   { key: 'fold_change', header: 'FC',          width: 55, render: v => typeof v === 'number'
-    ? <span style={{ color: (v as number) > 0 ? 'rgba(120,220,180,0.85)' : 'rgba(255,100,100,0.8)', fontFamily: "'JetBrains Mono',monospace", fontSize: '10px' }}>
+    ? <span style={{ color: (v as number) > 0 ? 'rgba(147,203,82,0.85)' : 'rgba(250,128,114,0.8)', fontFamily: "'JetBrains Mono',monospace", fontSize: '10px' }}>
         {(v as number) > 0 ? '+' : ''}{(v as number).toFixed(2)}
       </span>
     : '—'
   },
   { key: 'pValue',      header: 'p-val',       width: 60, render: v => typeof v === 'number'
-    ? <span style={{ color: (v as number) < 0.05 ? 'rgba(255,200,80,0.85)' : 'rgba(255,255,255,0.35)', fontFamily: "'JetBrains Mono',monospace", fontSize: '10px' }}>
+    ? <span style={{ color: (v as number) < 0.05 ? 'rgba(255,139,31,0.85)' : 'rgba(255,255,255,0.35)', fontFamily: "'JetBrains Mono',monospace", fontSize: '10px' }}>
         {(v as number).toFixed(3)}
       </span>
     : '—'
@@ -178,7 +176,7 @@ function EmbeddingScatter({ embeddings, fcThreshold, activeLayers }: {
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
-      <rect width={W} height={H} fill="#0d0f14" rx={12} />
+      <rect width={W} height={H} fill="#050505" rx={12} />
       {/* Grid */}
       {Array.from({ length: GRID_COUNT + 1 }).map((_, i) => {
         const x = PAD + (i / GRID_COUNT) * (W - PAD * 2);
@@ -193,10 +191,10 @@ function EmbeddingScatter({ embeddings, fcThreshold, activeLayers }: {
       {/* Axes */}
       <line x1={PAD} y1={H - PAD} x2={W - PAD} y2={H - PAD} stroke="rgba(255,255,255,0.1)" />
       <line x1={PAD} y1={PAD} x2={PAD} y2={H - PAD} stroke="rgba(255,255,255,0.1)" />
-      <text x={W / 2} y={H - 6} textAnchor="middle" fontFamily={MONO} fontSize="8" fill={LABEL}>
+      <text x={W / 2} y={H - 6} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill={LABEL}>
         UMAP-1 (projected)
       </text>
-      <text x={12} y={H / 2} textAnchor="middle" fontFamily={MONO} fontSize="8" fill={LABEL}
+      <text x={12} y={H / 2} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill={LABEL}
         transform={`rotate(-90,12,${H / 2})`}>
         UMAP-2 (projected)
       </text>
@@ -221,7 +219,7 @@ function EmbeddingScatter({ embeddings, fcThreshold, activeLayers }: {
       {(['transcriptomics', 'proteomics', 'metabolomics'] as OmicsLayer[]).map((layer, i) => (
         <g key={layer} transform={`translate(${W - PAD - 110}, ${PAD + 6 + i * 16})`}>
           <circle cx={0} cy={0} r={4} fill={LAYER_COLORS[layer]} opacity={activeLayers[layer] ? 1 : 0.25} />
-          <text x={10} y={3.5} fontFamily={SANS} fontSize="9" fill={activeLayers[layer] ? VALUE : LABEL}>
+          <text x={10} y={3.5} fontFamily={T.SANS} fontSize="9" fill={activeLayers[layer] ? VALUE : LABEL}>
             {layer.charAt(0).toUpperCase() + layer.slice(1)}
           </text>
         </g>
@@ -315,7 +313,7 @@ export default function MultiOPage() {
   /* Section label helper */
   const SectionLabel = ({ children }: { children: React.ReactNode }) => (
     <p style={{
-      fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase',
+      fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase',
       letterSpacing: '0.1em', color: LABEL, margin: '0 0 10px',
     }}>
       {children}
@@ -352,7 +350,7 @@ export default function MultiOPage() {
                 border: `1px solid ${val ? 'rgba(255,255,255,0.15)' : BORDER}`,
                 borderRadius: '8px', cursor: 'pointer',
                 color: val ? INPUT_TEXT : 'rgba(255,255,255,0.4)',
-                fontFamily: SANS, fontSize: '11px', textAlign: 'left',
+                fontFamily: T.SANS, fontSize: '11px', textAlign: 'left',
               }}>
                 <span style={{
                   width: '8px', height: '8px', borderRadius: '50%',
@@ -369,7 +367,7 @@ export default function MultiOPage() {
               {(['Embedding', 'Volcano', 'Table', 'MOFA+', 'VAE', 'Efficiency'] as ViewMode[]).map(mode => (
                 <button key={mode} onClick={() => setViewMode(mode)} style={{
                   flex: '1 0 30%', padding: '5px 0', borderRadius: '6px', cursor: 'pointer',
-                  fontFamily: SANS, fontSize: '9px', border: 'none',
+                  fontFamily: T.SANS, fontSize: '9px', border: 'none',
                   background: viewMode === mode ? 'rgba(255,255,255,0.12)' : INPUT_BG,
                   color: viewMode === mode ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.4)',
                 }}>
@@ -382,8 +380,8 @@ export default function MultiOPage() {
             <SectionLabel>Thresholds</SectionLabel>
             <div style={{ marginBottom: '12px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                <span style={{ fontFamily: SANS, fontSize: '11px', color: 'rgba(255,255,255,0.45)' }}>|FC| &gt;</span>
-                <span style={{ fontFamily: MONO, fontSize: '11px', color: 'rgba(255,255,255,0.55)' }}>{fcThreshold.toFixed(1)}</span>
+                <span style={{ fontFamily: T.SANS, fontSize: '11px', color: 'rgba(255,255,255,0.45)' }}>|FC| &gt;</span>
+                <span style={{ fontFamily: T.MONO, fontSize: '11px', color: 'rgba(255,255,255,0.55)' }}>{fcThreshold.toFixed(1)}</span>
               </div>
               <input type="range" min={0.5} max={5} step={0.1} value={fcThreshold}
                 onChange={e => setFcThreshold(parseFloat(e.target.value))}
@@ -391,8 +389,8 @@ export default function MultiOPage() {
             </div>
             <div style={{ marginBottom: '16px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                <span style={{ fontFamily: SANS, fontSize: '11px', color: 'rgba(255,255,255,0.45)' }}>p &lt;</span>
-                <span style={{ fontFamily: MONO, fontSize: '11px', color: 'rgba(255,255,255,0.55)' }}>{pvThreshold.toFixed(3)}</span>
+                <span style={{ fontFamily: T.SANS, fontSize: '11px', color: 'rgba(255,255,255,0.45)' }}>p &lt;</span>
+                <span style={{ fontFamily: T.MONO, fontSize: '11px', color: 'rgba(255,255,255,0.55)' }}>{pvThreshold.toFixed(3)}</span>
               </div>
               <input type="range" min={0.001} max={0.1} step={0.001} value={pvThreshold}
                 onChange={e => setPvThreshold(parseFloat(e.target.value))}
@@ -407,7 +405,7 @@ export default function MultiOPage() {
               style={{
                 width: '100%', padding: '6px 8px', marginBottom: '8px',
                 background: INPUT_BG, border: `1px solid ${INPUT_BORDER}`, borderRadius: '8px',
-                color: INPUT_TEXT, fontFamily: MONO, fontSize: '10px',
+                color: INPUT_TEXT, fontFamily: T.MONO, fontSize: '10px',
                 outline: 'none', appearance: 'auto' as React.CSSProperties['appearance'],
               }}
             >
@@ -417,20 +415,20 @@ export default function MultiOPage() {
             </select>
             <div style={{ marginBottom: '6px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                <span style={{ fontFamily: SANS, fontSize: '10px', color: 'rgba(255,255,255,0.45)' }}>Expression</span>
-                <span style={{ fontFamily: MONO, fontSize: '10px', color: VALUE }}>{perturbedExpr.toFixed(1)}</span>
+                <span style={{ fontFamily: T.SANS, fontSize: '10px', color: 'rgba(255,255,255,0.45)' }}>Expression</span>
+                <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE }}>{perturbedExpr.toFixed(1)}</span>
               </div>
               <input type="range" min={-4} max={8} step={0.1} value={perturbedExpr}
                 onChange={e => setPerturbedExpr(parseFloat(e.target.value))}
                 style={{ width: '100%', accentColor: LAYER_COLORS.metabolomics }} />
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ fontFamily: MONO, fontSize: '8px', color: LABEL }}>-4</span>
-                <span style={{ fontFamily: MONO, fontSize: '8px', color: LABEL }}>+8</span>
+                <span style={{ fontFamily: T.MONO, fontSize: '8px', color: LABEL }}>-4</span>
+                <span style={{ fontFamily: T.MONO, fontSize: '8px', color: LABEL }}>+8</span>
               </div>
             </div>
             <button onClick={handleSimulate} style={{
               width: '100%', padding: '7px 0', borderRadius: '8px', cursor: 'pointer',
-              fontFamily: SANS, fontSize: '11px', fontWeight: 600,
+              fontFamily: T.SANS, fontSize: '11px', fontWeight: 600,
               border: `1px solid ${LAYER_COLORS.metabolomics}40`,
               background: `${LAYER_COLORS.metabolomics}18`,
               color: LAYER_COLORS.metabolomics,
@@ -447,11 +445,11 @@ export default function MultiOPage() {
                 }}>
                   {/* Yield change */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                    <span style={{ fontFamily: SANS, fontSize: '9px', color: LABEL }}>Yield Δ</span>
+                    <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL }}>Yield Δ</span>
                     <span style={{
-                      fontFamily: MONO, fontSize: '13px', fontWeight: 700,
+                      fontFamily: T.MONO, fontSize: '13px', fontWeight: 700,
                       color: perturbResult.predicted_yield_change_percent >= 0
-                        ? 'rgba(120,220,180,0.95)' : 'rgba(255,100,100,0.95)',
+                        ? 'rgba(147,203,82,0.95)' : 'rgba(250,128,114,0.95)',
                     }}>
                       {perturbResult.predicted_yield_change_percent >= 0 ? '+' : ''}
                       {perturbResult.predicted_yield_change_percent.toFixed(1)}%
@@ -461,10 +459,10 @@ export default function MultiOPage() {
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '8px' }}>
                     {perturbResult.metabolite_shifts.map(ms => (
                       <span key={ms.metabolite} style={{
-                        fontFamily: MONO, fontSize: '8px', padding: '2px 6px', borderRadius: '6px',
-                        background: ms.direction === 'up' ? 'rgba(120,220,180,0.15)' : 'rgba(255,100,100,0.15)',
-                        color: ms.direction === 'up' ? 'rgba(120,220,180,0.9)' : 'rgba(255,100,100,0.9)',
-                        border: `1px solid ${ms.direction === 'up' ? 'rgba(120,220,180,0.2)' : 'rgba(255,100,100,0.2)'}`,
+                        fontFamily: T.MONO, fontSize: '8px', padding: '2px 6px', borderRadius: '6px',
+                        background: ms.direction === 'up' ? 'rgba(147,203,82,0.15)' : 'rgba(250,128,114,0.15)',
+                        color: ms.direction === 'up' ? 'rgba(147,203,82,0.9)' : 'rgba(250,128,114,0.9)',
+                        border: `1px solid ${ms.direction === 'up' ? 'rgba(147,203,82,0.2)' : 'rgba(250,128,114,0.2)'}`,
                       }}>
                         {ms.metabolite} {ms.direction === 'up' ? '↑' : '↓'}{Math.abs(ms.delta).toFixed(1)}
                       </span>
@@ -476,11 +474,11 @@ export default function MultiOPage() {
                       padding: '4px 0',
                       borderTop: i > 0 ? `1px solid ${BORDER}` : 'none',
                     }}>
-                      <span style={{ fontFamily: MONO, fontSize: '8px', color: LAYER_COLORS.proteomics }}>
+                      <span style={{ fontFamily: T.MONO, fontSize: '8px', color: LAYER_COLORS.proteomics }}>
                         {i + 1}. {step.step}
                       </span>
                       <p style={{
-                        fontFamily: SANS, fontSize: '9px', color: 'rgba(255,255,255,0.45)',
+                        fontFamily: T.SANS, fontSize: '9px', color: 'rgba(255,255,255,0.45)',
                         margin: '2px 0 0', lineHeight: '1.35',
                       }}>
                         {step.description}
@@ -493,7 +491,7 @@ export default function MultiOPage() {
           </div>
 
           {/* ── CENTER ENGINE ────────────────────────────────────── */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#0d0f14' }}>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#050505' }}>
             {viewMode === 'Table' && (
               <div style={{ flex: 1, overflow: 'auto' }}>
                 <DataTable<OmicsRow> columns={COLUMNS} rows={filtered} maxRows={50} />
@@ -524,20 +522,20 @@ export default function MultiOPage() {
                 {/* Summary metrics */}
                 <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
                   <div style={{ ...GLASS, borderRadius: '14px', padding: '12px 16px', flex: '1 0 120px' }}>
-                    <span style={{ fontFamily: SANS, fontSize: '9px', color: LABEL, display: 'block' }}>Total Var. Explained</span>
-                    <span style={{ fontFamily: MONO, fontSize: '18px', fontWeight: 700, color: LAYER_COLORS.transcriptomics }}>
+                    <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL, display: 'block' }}>Total Var. Explained</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: '18px', fontWeight: 700, color: LAYER_COLORS.transcriptomics }}>
                       {(mofaResult.totalVarianceExplained * 100).toFixed(1)}%
                     </span>
                   </div>
                   <div style={{ ...GLASS, borderRadius: '14px', padding: '12px 16px', flex: '1 0 120px' }}>
-                    <span style={{ fontFamily: SANS, fontSize: '9px', color: LABEL, display: 'block' }}>Convergence</span>
-                    <span style={{ fontFamily: MONO, fontSize: '18px', fontWeight: 700, color: VALUE }}>
+                    <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL, display: 'block' }}>Convergence</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: '18px', fontWeight: 700, color: VALUE }}>
                       {mofaResult.convergenceIterations} iter
                     </span>
                   </div>
                   <div style={{ ...GLASS, borderRadius: '14px', padding: '12px 16px', flex: '1 0 120px' }}>
-                    <span style={{ fontFamily: SANS, fontSize: '9px', color: LABEL, display: 'block' }}>Recon. Error</span>
-                    <span style={{ fontFamily: MONO, fontSize: '18px', fontWeight: 700, color: VALUE }}>
+                    <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL, display: 'block' }}>Recon. Error</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: '18px', fontWeight: 700, color: VALUE }}>
                       {mofaResult.reconstructionError.toFixed(4)}
                     </span>
                   </div>
@@ -547,8 +545,8 @@ export default function MultiOPage() {
                 {mofaResult.factors.map(f => (
                   <div key={f.id} style={{ ...GLASS, borderRadius: '14px', padding: '14px', marginBottom: '12px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                      <span style={{ fontFamily: SANS, fontSize: '12px', fontWeight: 600, color: VALUE }}>{f.name}</span>
-                      <span style={{ fontFamily: MONO, fontSize: '10px', color: LABEL }}>
+                      <span style={{ fontFamily: T.SANS, fontSize: '12px', fontWeight: 600, color: VALUE }}>{f.name}</span>
+                      <span style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL }}>
                         {(f.varianceExplained.total * 100).toFixed(1)}% var
                       </span>
                     </div>
@@ -558,10 +556,10 @@ export default function MultiOPage() {
                       return (
                         <div key={layer} style={{ marginBottom: '5px' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
-                            <span style={{ fontFamily: SANS, fontSize: '9px', color: 'rgba(255,255,255,0.4)' }}>
+                            <span style={{ fontFamily: T.SANS, fontSize: '9px', color: 'rgba(255,255,255,0.4)' }}>
                               {layer.slice(0, 5)}
                             </span>
-                            <span style={{ fontFamily: MONO, fontSize: '9px', color: VALUE }}>{pct.toFixed(1)}%</span>
+                            <span style={{ fontFamily: T.MONO, fontSize: '9px', color: VALUE }}>{pct.toFixed(1)}%</span>
                           </div>
                           <div style={{ width: '100%', height: '5px', borderRadius: '3px', background: 'rgba(255,255,255,0.06)' }}>
                             <div style={{ width: `${Math.min(100, pct)}%`, height: '100%', borderRadius: '3px', background: LAYER_COLORS[layer] }} />
@@ -573,14 +571,14 @@ export default function MultiOPage() {
                     <div style={{ display: 'flex', gap: '4px', marginTop: '8px', flexWrap: 'wrap' }}>
                       {f.topGenes.slice(0, 4).map(g => (
                         <span key={g.gene} style={{
-                          fontFamily: MONO, fontSize: '8px', padding: '2px 6px', borderRadius: '6px',
+                          fontFamily: T.MONO, fontSize: '8px', padding: '2px 6px', borderRadius: '6px',
                           background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.55)',
                         }}>
                           {g.gene} ({g.loading.toFixed(2)})
                         </span>
                       ))}
                     </div>
-                    <p style={{ fontFamily: SANS, fontSize: '9px', color: 'rgba(255,255,255,0.35)', margin: '6px 0 0', lineHeight: '1.3' }}>
+                    <p style={{ fontFamily: T.SANS, fontSize: '9px', color: 'rgba(255,255,255,0.35)', margin: '6px 0 0', lineHeight: '1.3' }}>
                       {f.interpretation}
                     </p>
                   </div>
@@ -604,11 +602,11 @@ export default function MultiOPage() {
                       const xR = xMax - xMin || 1, yR = yMax - yMin || 1;
                       return (
                         <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%' }}>
-                          <rect width={W} height={H} fill="#0d0f14" rx={12} />
+                          <rect width={W} height={H} fill="#050505" rx={12} />
                           <line x1={PAD} y1={H - PAD} x2={W - PAD} y2={H - PAD} stroke="rgba(255,255,255,0.1)" />
                           <line x1={PAD} y1={PAD} x2={PAD} y2={H - PAD} stroke="rgba(255,255,255,0.1)" />
-                          <text x={W / 2} y={H - 6} textAnchor="middle" fontFamily={MONO} fontSize="8" fill={LABEL}>Latent Z₁</text>
-                          <text x={12} y={H / 2} textAnchor="middle" fontFamily={MONO} fontSize="8" fill={LABEL} transform={`rotate(-90,12,${H / 2})`}>Latent Z₂</text>
+                          <text x={W / 2} y={H - 6} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill={LABEL}>Latent Z₁</text>
+                          <text x={12} y={H / 2} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill={LABEL} transform={`rotate(-90,12,${H / 2})`}>Latent Z₂</text>
                           {pts.map((p, i) => {
                             const cx = PAD + ((xs[i] - xMin) / xR) * (W - PAD * 2);
                             const cy = H - PAD - ((ys[i] - yMin) / yR) * (H - PAD * 2);
@@ -637,7 +635,7 @@ export default function MultiOPage() {
                     return (
                       <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
                         <rect width={W} height={H} fill="transparent" />
-                        <text x={PAD - 4} y={12} fontFamily={MONO} fontSize="7" fill={LABEL} textAnchor="end">Loss</text>
+                        <text x={PAD - 4} y={12} fontFamily={T.MONO} fontSize="7" fill={LABEL} textAnchor="end">Loss</text>
                         <polyline
                           points={hist.map((h, i) => {
                             const x = PAD + (i / (hist.length - 1)) * (W - PAD * 2);
@@ -646,7 +644,7 @@ export default function MultiOPage() {
                           }).join(' ')}
                           fill="none" stroke={LAYER_COLORS.proteomics} strokeWidth={1.5}
                         />
-                        <text x={W / 2} y={H - 1} textAnchor="middle" fontFamily={MONO} fontSize="7" fill={LABEL}>Epoch</text>
+                        <text x={W / 2} y={H - 1} textAnchor="middle" fontFamily={T.MONO} fontSize="7" fill={LABEL}>Epoch</text>
                       </svg>
                     );
                   })()}
@@ -659,14 +657,14 @@ export default function MultiOPage() {
               <div style={{ flex: 1, overflowY: 'auto', padding: '20px' }}>
                 <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
                   <div style={{ ...GLASS, borderRadius: '14px', padding: '12px 16px', flex: '1 0 140px' }}>
-                    <span style={{ fontFamily: SANS, fontSize: '9px', color: LABEL, display: 'block' }}>Avg Efficiency</span>
-                    <span style={{ fontFamily: MONO, fontSize: '18px', fontWeight: 700, color: 'rgba(120,220,180,0.9)' }}>
+                    <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL, display: 'block' }}>Avg Efficiency</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: '18px', fontWeight: 700, color: 'rgba(147,203,82,0.9)' }}>
                       {(efficiencyScores.reduce((s, e) => s + e.score, 0) / Math.max(1, efficiencyScores.length) * 100).toFixed(1)}%
                     </span>
                   </div>
                   <div style={{ ...GLASS, borderRadius: '14px', padding: '12px 16px', flex: '1 0 140px' }}>
-                    <span style={{ fontFamily: SANS, fontSize: '9px', color: LABEL, display: 'block' }}>Top Gene</span>
-                    <span style={{ fontFamily: MONO, fontSize: '14px', fontWeight: 700, color: VALUE }}>
+                    <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL, display: 'block' }}>Top Gene</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: '14px', fontWeight: 700, color: VALUE }}>
                       {[...efficiencyScores].sort((a, b) => b.score - a.score)[0]?.gene ?? '—'}
                     </span>
                   </div>
@@ -674,30 +672,30 @@ export default function MultiOPage() {
                 {/* Efficiency ranked list */}
                 {[...efficiencyScores].sort((a, b) => b.score - a.score).map((e, i) => {
                   const pct = e.score * 100;
-                  const color = pct > 60 ? 'rgba(120,220,180,0.85)' : pct > 35 ? 'rgba(255,200,80,0.85)' : 'rgba(255,100,100,0.85)';
+                  const color = pct > 60 ? 'rgba(147,203,82,0.85)' : pct > 35 ? 'rgba(255,139,31,0.85)' : 'rgba(250,128,114,0.85)';
                   return (
                     <div key={e.geneId} style={{
                       display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 0',
                       borderBottom: `1px solid ${BORDER}`,
                     }}>
-                      <span style={{ fontFamily: MONO, fontSize: '9px', color: LABEL, width: '20px', textAlign: 'right' }}>
+                      <span style={{ fontFamily: T.MONO, fontSize: '9px', color: LABEL, width: '20px', textAlign: 'right' }}>
                         {i + 1}
                       </span>
-                      <span style={{ fontFamily: MONO, fontSize: '10px', color: VALUE, width: '70px' }}>{e.gene}</span>
+                      <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE, width: '70px' }}>{e.gene}</span>
                       <div style={{ flex: 1, height: '6px', borderRadius: '3px', background: 'rgba(255,255,255,0.06)' }}>
                         <div style={{ width: `${pct}%`, height: '100%', borderRadius: '3px', background: color, transition: 'width 0.3s' }} />
                       </div>
-                      <span style={{ fontFamily: MONO, fontSize: '10px', color, width: '45px', textAlign: 'right' }}>
+                      <span style={{ fontFamily: T.MONO, fontSize: '10px', color, width: '45px', textAlign: 'right' }}>
                         {pct.toFixed(1)}%
                       </span>
                       <div style={{ display: 'flex', gap: '4px' }}>
-                        <span style={{ fontFamily: MONO, fontSize: '7px', padding: '1px 4px', borderRadius: '4px', background: `${LAYER_COLORS.transcriptomics}20`, color: LAYER_COLORS.transcriptomics }}>
+                        <span style={{ fontFamily: T.MONO, fontSize: '7px', padding: '1px 4px', borderRadius: '4px', background: `${LAYER_COLORS.transcriptomics}20`, color: LAYER_COLORS.transcriptomics }}>
                           F:{e.fluxUtilization.toFixed(2)}
                         </span>
-                        <span style={{ fontFamily: MONO, fontSize: '7px', padding: '1px 4px', borderRadius: '4px', background: `${LAYER_COLORS.proteomics}20`, color: LAYER_COLORS.proteomics }}>
+                        <span style={{ fontFamily: T.MONO, fontSize: '7px', padding: '1px 4px', borderRadius: '4px', background: `${LAYER_COLORS.proteomics}20`, color: LAYER_COLORS.proteomics }}>
                           E:{e.expressionBalance.toFixed(2)}
                         </span>
-                        <span style={{ fontFamily: MONO, fontSize: '7px', padding: '1px 4px', borderRadius: '4px', background: `${LAYER_COLORS.metabolomics}20`, color: LAYER_COLORS.metabolomics }}>
+                        <span style={{ fontFamily: T.MONO, fontSize: '7px', padding: '1px 4px', borderRadius: '4px', background: `${LAYER_COLORS.metabolomics}20`, color: LAYER_COLORS.metabolomics }}>
                           Y:{e.metaboliteYield.toFixed(2)}
                         </span>
                       </div>
@@ -727,21 +725,21 @@ export default function MultiOPage() {
             <div style={{ ...GLASS, borderRadius: '14px', padding: '12px', marginBottom: '16px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                 <div>
-                  <span style={{ fontFamily: SANS, fontSize: '9px', color: LABEL, display: 'block', marginBottom: '2px' }}>
+                  <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL, display: 'block', marginBottom: '2px' }}>
                     Dominant Layer
                   </span>
                   <span style={{
-                    fontFamily: MONO, fontSize: '12px', fontWeight: 600,
+                    fontFamily: T.MONO, fontSize: '12px', fontWeight: 600,
                     color: LAYER_COLORS[bottleneck.dominant_layer],
                   }}>
                     {bottleneck.dominant_layer}
                   </span>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <span style={{ fontFamily: SANS, fontSize: '9px', color: LABEL, display: 'block', marginBottom: '2px' }}>
+                  <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL, display: 'block', marginBottom: '2px' }}>
                     Confidence
                   </span>
-                  <span style={{ fontFamily: MONO, fontSize: '12px', color: VALUE }}>
+                  <span style={{ fontFamily: T.MONO, fontSize: '12px', color: VALUE }}>
                     {(bottleneck.confidence * 100).toFixed(0)}%
                   </span>
                 </div>
@@ -752,10 +750,10 @@ export default function MultiOPage() {
                 return (
                   <div key={layer} style={{ marginBottom: '6px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-                      <span style={{ fontFamily: SANS, fontSize: '9px', color: 'rgba(255,255,255,0.45)' }}>
+                      <span style={{ fontFamily: T.SANS, fontSize: '9px', color: 'rgba(255,255,255,0.45)' }}>
                         {layer.charAt(0).toUpperCase() + layer.slice(1)}
                       </span>
-                      <span style={{ fontFamily: MONO, fontSize: '9px', color: VALUE, textAlign: 'right' }}>
+                      <span style={{ fontFamily: T.MONO, fontSize: '9px', color: VALUE, textAlign: 'right' }}>
                         {layerAttention[layer].toFixed(3)}
                       </span>
                     </div>
@@ -783,18 +781,18 @@ export default function MultiOPage() {
                   padding: '4px 0',
                   borderTop: i > 0 ? `1px solid ${BORDER}` : 'none',
                 }}>
-                  <span style={{ fontFamily: SANS, fontSize: '10px', color: 'rgba(255,255,255,0.5)' }}>
+                  <span style={{ fontFamily: T.SANS, fontSize: '10px', color: 'rgba(255,255,255,0.5)' }}>
                     {corrLabel(c.layers[0], c.layers[1])}
                   </span>
                   <span style={{
-                    fontFamily: MONO, fontSize: '11px', textAlign: 'right',
-                    color: Math.abs(c.r) > 0.5 ? 'rgba(120,220,180,0.9)' : VALUE,
+                    fontFamily: T.MONO, fontSize: '11px', textAlign: 'right',
+                    color: Math.abs(c.r) > 0.5 ? 'rgba(147,203,82,0.9)' : VALUE,
                   }}>
                     r={c.r.toFixed(3)}
                   </span>
                   <span style={{
-                    fontFamily: MONO, fontSize: '9px', textAlign: 'right',
-                    color: c.p_approx < 0.05 ? 'rgba(255,200,80,0.85)' : 'rgba(255,255,255,0.3)',
+                    fontFamily: T.MONO, fontSize: '9px', textAlign: 'right',
+                    color: c.p_approx < 0.05 ? 'rgba(255,139,31,0.85)' : 'rgba(255,255,255,0.3)',
                   }}>
                     p={c.p_approx.toFixed(3)}
                   </span>
@@ -809,28 +807,28 @@ export default function MultiOPage() {
             {(viewMode === 'MOFA+' || viewMode === 'VAE' || viewMode === 'Efficiency') && (
               <div style={{ ...GLASS, borderRadius: '14px', padding: '10px', marginBottom: '16px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0' }}>
-                  <span style={{ fontFamily: SANS, fontSize: '9px', color: 'rgba(255,255,255,0.45)' }}>MOFA+ Factors</span>
-                  <span style={{ fontFamily: MONO, fontSize: '10px', color: VALUE, textAlign: 'right' }}>{mofaResult.factors.length}</span>
+                  <span style={{ fontFamily: T.SANS, fontSize: '9px', color: 'rgba(255,255,255,0.45)' }}>MOFA+ Factors</span>
+                  <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE, textAlign: 'right' }}>{mofaResult.factors.length}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', borderTop: `1px solid ${BORDER}` }}>
-                  <span style={{ fontFamily: SANS, fontSize: '9px', color: 'rgba(255,255,255,0.45)' }}>VAE ELBO</span>
-                  <span style={{ fontFamily: MONO, fontSize: '10px', color: VALUE, textAlign: 'right' }}>{vaeResult.elbo.toFixed(3)}</span>
+                  <span style={{ fontFamily: T.SANS, fontSize: '9px', color: 'rgba(255,255,255,0.45)' }}>VAE ELBO</span>
+                  <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE, textAlign: 'right' }}>{vaeResult.elbo.toFixed(3)}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', borderTop: `1px solid ${BORDER}` }}>
-                  <span style={{ fontFamily: SANS, fontSize: '9px', color: 'rgba(255,255,255,0.45)' }}>Recon Loss</span>
-                  <span style={{ fontFamily: MONO, fontSize: '10px', color: VALUE, textAlign: 'right' }}>{vaeResult.reconLoss.toFixed(4)}</span>
+                  <span style={{ fontFamily: T.SANS, fontSize: '9px', color: 'rgba(255,255,255,0.45)' }}>Recon Loss</span>
+                  <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE, textAlign: 'right' }}>{vaeResult.reconLoss.toFixed(4)}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', borderTop: `1px solid ${BORDER}` }}>
-                  <span style={{ fontFamily: SANS, fontSize: '9px', color: 'rgba(255,255,255,0.45)' }}>KL Divergence</span>
-                  <span style={{ fontFamily: MONO, fontSize: '10px', color: VALUE, textAlign: 'right' }}>{vaeResult.klDivergence.toFixed(4)}</span>
+                  <span style={{ fontFamily: T.SANS, fontSize: '9px', color: 'rgba(255,255,255,0.45)' }}>KL Divergence</span>
+                  <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE, textAlign: 'right' }}>{vaeResult.klDivergence.toFixed(4)}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', borderTop: `1px solid ${BORDER}` }}>
-                  <span style={{ fontFamily: SANS, fontSize: '9px', color: 'rgba(255,255,255,0.45)' }}>Latent Dim</span>
-                  <span style={{ fontFamily: MONO, fontSize: '10px', color: VALUE, textAlign: 'right' }}>{vaeResult.latentDim}</span>
+                  <span style={{ fontFamily: T.SANS, fontSize: '9px', color: 'rgba(255,255,255,0.45)' }}>Latent Dim</span>
+                  <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE, textAlign: 'right' }}>{vaeResult.latentDim}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', borderTop: `1px solid ${BORDER}` }}>
-                  <span style={{ fontFamily: SANS, fontSize: '9px', color: 'rgba(255,255,255,0.45)' }}>Batch Correction</span>
-                  <span style={{ fontFamily: MONO, fontSize: '10px', color: vaeResult.batchCorrectionApplied ? 'rgba(120,220,180,0.9)' : LABEL, textAlign: 'right' }}>
+                  <span style={{ fontFamily: T.SANS, fontSize: '9px', color: 'rgba(255,255,255,0.45)' }}>Batch Correction</span>
+                  <span style={{ fontFamily: T.MONO, fontSize: '10px', color: vaeResult.batchCorrectionApplied ? 'rgba(147,203,82,0.9)' : LABEL, textAlign: 'right' }}>
                     {vaeResult.batchCorrectionApplied ? 'Yes' : 'No'}
                   </span>
                 </div>
@@ -845,7 +843,7 @@ export default function MultiOPage() {
                   ...GLASS, borderRadius: '10px', padding: '8px 10px',
                 }}>
                   <p style={{
-                    fontFamily: MONO, fontSize: '9px', color: 'rgba(255,255,255,0.55)',
+                    fontFamily: T.MONO, fontSize: '9px', color: 'rgba(255,255,255,0.55)',
                     margin: 0, lineHeight: '1.4', whiteSpace: 'pre-wrap',
                   }}>
                     {t.thought}
@@ -853,7 +851,7 @@ export default function MultiOPage() {
                   <div style={{ display: 'flex', gap: '4px', marginTop: '4px', flexWrap: 'wrap' }}>
                     {t.layer_context.map(l => (
                       <span key={l} style={{
-                        fontFamily: MONO, fontSize: '7px', padding: '1px 5px',
+                        fontFamily: T.MONO, fontSize: '7px', padding: '1px 5px',
                         borderRadius: '4px', background: `${LAYER_COLORS[l]}20`,
                         color: LAYER_COLORS[l],
                       }}>
@@ -862,14 +860,14 @@ export default function MultiOPage() {
                     ))}
                   </div>
                   <span style={{
-                    fontFamily: MONO, fontSize: '7px', color: LABEL, display: 'block', marginTop: '3px',
+                    fontFamily: T.MONO, fontSize: '7px', color: LABEL, display: 'block', marginTop: '3px',
                   }}>
                     → {t.action_taken}
                   </span>
                 </div>
               ))}
               {thoughts.length === 0 && (
-                <p style={{ fontFamily: SANS, fontSize: '10px', color: LABEL, fontStyle: 'italic', margin: 0 }}>
+                <p style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL, fontStyle: 'italic', margin: 0 }}>
                   Run a simulation to see Axon's reasoning…
                 </p>
               )}

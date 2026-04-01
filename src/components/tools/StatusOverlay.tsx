@@ -14,9 +14,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import type { SimReadouts, SimParams } from '../../machines/metabolicMachine';
 import { STATE_LABELS, michaelisRate } from '../../machines/metabolicMachine';
 import type { MachineState } from '../../machines/metabolicMachine';
-
-const MONO = "'JetBrains Mono', 'Fira Code', monospace";
-const SANS = "'Inter', -apple-system, sans-serif";
+import { T } from '../ide/tokens';
 
 // ── Sparkline SVG ──────────────────────────────────────────────────────
 
@@ -25,7 +23,7 @@ function Sparkline({ data, height = 36 }: {
 }) {
   if (data.length < 2) return (
     <div style={{ height, display:'flex', alignItems:'center', justifyContent:'center' }}>
-      <span style={{ fontFamily:MONO, fontSize:'9px', color:'rgba(255,255,255,0.15)' }}>AWAITING DATA</span>
+      <span style={{ fontFamily: T.MONO, fontSize:'9px', color:'rgba(255,255,255,0.15)' }}>AWAITING DATA</span>
     </div>
   );
 
@@ -83,7 +81,7 @@ function DataRow({ label, value, unit, decimals = 2 }: {
       display:'flex', alignItems:'center', justifyContent:'space-between',
       padding:'5px 0', borderBottom:'1px solid rgba(255,255,255,0.04)',
     }}>
-      <span style={{ fontFamily:SANS, fontSize:'10px', color:'rgba(255,255,255,0.35)', fontWeight:500 }}>
+      <span style={{ fontFamily: T.SANS, fontSize:'10px', color:'rgba(255,255,255,0.35)', fontWeight:500 }}>
         {label}
       </span>
       <div style={{ display:'flex', alignItems:'baseline', gap:'3px' }}>
@@ -93,7 +91,7 @@ function DataRow({ label, value, unit, decimals = 2 }: {
           animate={{ opacity:1, y:0 }}
           transition={{ duration:0.15 }}
           style={{
-            fontFamily:MONO, fontSize:'13px', fontWeight:600,
+            fontFamily: T.MONO, fontSize:'13px', fontWeight:600,
             color:'rgba(255,255,255,0.75)',
             textAlign:'right',
             fontVariantNumeric:'tabular-nums',
@@ -102,7 +100,7 @@ function DataRow({ label, value, unit, decimals = 2 }: {
           {value.toFixed(decimals)}
         </motion.span>
         {unit && (
-          <span style={{ fontFamily:MONO, fontSize:'9px', color:'rgba(255,255,255,0.25)' }}>{unit}</span>
+          <span style={{ fontFamily: T.MONO, fontSize:'9px', color:'rgba(255,255,255,0.25)' }}>{unit}</span>
         )}
       </div>
     </div>
@@ -121,11 +119,11 @@ function CofactorMatrix({ readouts }: { readouts: SimReadouts }) {
     <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'6px', marginTop:'8px' }}>
       {items.map(({ l, v, u, opacity }) => (
         <div key={l} style={{ padding:'8px 6px', borderRadius:'8px', background:'rgba(255,255,255,0.03)', border:'0.5px solid rgba(255,255,255,0.07)', textAlign:'center' }}>
-          <div style={{ fontFamily:MONO, fontSize:'11px', fontWeight:700, color:`rgba(255,255,255,${opacity})`, fontVariantNumeric:'tabular-nums' }}>
+          <div style={{ fontFamily: T.MONO, fontSize:'11px', fontWeight:700, color:`rgba(255,255,255,${opacity})`, fontVariantNumeric:'tabular-nums' }}>
             {v.toFixed(1)}
           </div>
-          <div style={{ fontFamily:SANS, fontSize:'8px', color:'rgba(255,255,255,0.28)', marginTop:'2px' }}>{l}</div>
-          <div style={{ fontFamily:MONO, fontSize:'7px', color:'rgba(255,255,255,0.18)' }}>{u}</div>
+          <div style={{ fontFamily: T.SANS, fontSize:'8px', color:'rgba(255,255,255,0.28)', marginTop:'2px' }}>{l}</div>
+          <div style={{ fontFamily: T.MONO, fontSize:'7px', color:'rgba(255,255,255,0.18)' }}>{u}</div>
         </div>
       ))}
     </div>
@@ -139,8 +137,8 @@ function FluxGauge({ value, label }: { value: number; label: string }) {
   return (
     <div style={{ marginTop:'6px' }}>
       <div style={{ display:'flex', justifyContent:'space-between', marginBottom:'4px' }}>
-        <span style={{ fontFamily:SANS, fontSize:'9px', color:'rgba(255,255,255,0.32)' }}>{label}</span>
-        <span style={{ fontFamily:MONO, fontSize:'10px', color:'rgba(255,255,255,0.65)', fontWeight:700 }}>{pct.toFixed(0)}%</span>
+        <span style={{ fontFamily: T.SANS, fontSize:'9px', color:'rgba(255,255,255,0.32)' }}>{label}</span>
+        <span style={{ fontFamily: T.MONO, fontSize:'10px', color:'rgba(255,255,255,0.65)', fontWeight:700 }}>{pct.toFixed(0)}%</span>
       </div>
       <div style={{ height:'4px', borderRadius:'2px', background:'rgba(255,255,255,0.06)', overflow:'hidden' }}>
         <motion.div
@@ -196,10 +194,10 @@ export default function StatusOverlay({
     >
       {/* Header */}
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'12px' }}>
-        <span style={{ fontFamily:MONO, fontSize:'9px', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.12em', color:'rgba(255,255,255,0.25)' }}>
+        <span style={{ fontFamily: T.MONO, fontSize:'9px', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.12em', color:'rgba(255,255,255,0.25)' }}>
           READOUTS
         </span>
-        <span style={{ fontFamily:MONO, fontSize:'8px', color:'rgba(255,255,255,0.2)', fontVariantNumeric:'tabular-nums' }}>
+        <span style={{ fontFamily: T.MONO, fontSize:'8px', color:'rgba(255,255,255,0.2)', fontVariantNumeric:'tabular-nums' }}>
           T:{readouts.tick.toString().padStart(5,'0')}
         </span>
       </div>
@@ -207,16 +205,16 @@ export default function StatusOverlay({
       {/* Reaction rate sparkline */}
       <div style={{ marginBottom:'10px' }}>
         <div style={{ display:'flex', alignItems:'baseline', justifyContent:'space-between', marginBottom:'4px' }}>
-          <span style={{ fontFamily:SANS, fontSize:'9px', color:'rgba(255,255,255,0.32)' }}>Reaction Rate v</span>
+          <span style={{ fontFamily: T.SANS, fontSize:'9px', color:'rgba(255,255,255,0.32)' }}>Reaction Rate v</span>
           <div style={{ display:'flex', alignItems:'baseline', gap:'2px' }}>
             <motion.span
               key={Math.round(readouts.reactionRate * 10)}
               initial={{ opacity:0 }} animate={{ opacity:1 }}
-              style={{ fontFamily:MONO, fontSize:'16px', fontWeight:700, color:'rgba(255,255,255,0.85)', fontVariantNumeric:'tabular-nums' }}
+              style={{ fontFamily: T.MONO, fontSize:'16px', fontWeight:700, color:'rgba(255,255,255,0.85)', fontVariantNumeric:'tabular-nums' }}
             >
               {readouts.reactionRate.toFixed(2)}
             </motion.span>
-            <span style={{ fontFamily:MONO, fontSize:'9px', color:'rgba(255,255,255,0.28)' }}>μmol/min</span>
+            <span style={{ fontFamily: T.MONO, fontSize:'9px', color:'rgba(255,255,255,0.28)' }}>μmol/min</span>
           </div>
         </div>
         <Sparkline data={rateHistory} height={40} />
@@ -248,10 +246,10 @@ export default function StatusOverlay({
               textAlign:'center',
             }}
           >
-            <span style={{ fontFamily:MONO, fontSize:'9px', color:'rgba(255,255,255,0.65)', textTransform:'uppercase', letterSpacing:'0.1em' }}>
+            <span style={{ fontFamily: T.MONO, fontSize:'9px', color:'rgba(255,255,255,0.65)', textTransform:'uppercase', letterSpacing:'0.1em' }}>
               ⬡ Steady State Reached
             </span>
-            <div style={{ fontFamily:MONO, fontSize:'8px', color:'rgba(255,255,255,0.35)', marginTop:'2px' }}>
+            <div style={{ fontFamily: T.MONO, fontSize:'8px', color:'rgba(255,255,255,0.35)', marginTop:'2px' }}>
               σ² = {variance.toFixed(4)} (stable)
             </div>
           </motion.div>
@@ -267,7 +265,7 @@ export default function StatusOverlay({
           >
             <motion.span
               animate={{ opacity:[1,0.4,1] }} transition={{ duration:0.7, repeat:Infinity }}
-              style={{ fontFamily:MONO, fontSize:'9px', color:'rgba(255,255,255,0.65)', textTransform:'uppercase', letterSpacing:'0.1em' }}
+              style={{ fontFamily: T.MONO, fontSize:'9px', color:'rgba(255,255,255,0.65)', textTransform:'uppercase', letterSpacing:'0.1em' }}
             >
               ⚡ STRESS TEST ACTIVE
             </motion.span>

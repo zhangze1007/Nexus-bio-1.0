@@ -13,8 +13,10 @@ import {
 import EmptyState from './ide/shared/EmptyState';
 import Pagination from './ide/shared/Pagination';
 
-const SANS = "'Inter',-apple-system,sans-serif";
-const MONO = "'JetBrains Mono','Fira Code',monospace";
+import { T } from './ide/tokens';
+
+const SANS = T.SANS;
+const MONO = T.MONO;
 
 interface Article {
   id: string;

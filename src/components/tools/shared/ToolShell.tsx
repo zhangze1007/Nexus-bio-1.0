@@ -30,9 +30,8 @@ import { motion } from 'framer-motion';
 import { ArrowLeft, LayoutGrid } from 'lucide-react';
 import { useToolStore } from '../../../store/toolStore';
 import { getToolDefinition } from './toolRegistry';
+import { T } from '../../ide/tokens';
 
-const MONO = "'JetBrains Mono','Fira Code',monospace";
-const SANS = "'Inter',-apple-system,sans-serif";
 const NEON = '#FFFFFF';
 
 export interface ToolShellProps {
@@ -71,7 +70,7 @@ export default function ToolShell({
       position: 'absolute', inset: 0,
       display: 'flex', flexDirection: 'column',
       background: '#000000',
-      fontFamily: SANS,
+      fontFamily: T.SANS,
     }}>
       {/* ── Header ─────────────────────────────────────────── */}
       <motion.header
@@ -101,7 +100,7 @@ export default function ToolShell({
               background: 'rgba(255,255,255,0.03)',
               color: 'rgba(255,255,255,0.5)',
               textDecoration: 'none',
-              fontFamily: SANS,
+              fontFamily: T.SANS,
               fontSize: '12px',
             }}
           >
@@ -119,7 +118,7 @@ export default function ToolShell({
             border: '1px solid rgba(255,255,255,0.08)',
             background: `${NEON}14`,
             color: NEON,
-            fontFamily: MONO,
+            fontFamily: T.MONO,
             fontSize: '10px',
             fontWeight: 700,
             letterSpacing: '0.08em',
@@ -132,7 +131,7 @@ export default function ToolShell({
 
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{
-            fontFamily: SANS, fontSize: '14px', fontWeight: 700,
+            fontFamily: T.SANS, fontSize: '14px', fontWeight: 700,
             color: 'rgba(255,255,255,0.9)',
             letterSpacing: '-0.01em',
           }}>
@@ -140,7 +139,7 @@ export default function ToolShell({
           </div>
           {description && (
             <div style={{
-              fontFamily: SANS, fontSize: '11px',
+              fontFamily: T.SANS, fontSize: '11px',
               color: 'rgba(255,255,255,0.35)',
               marginTop: '3px',
             }}>
@@ -151,7 +150,7 @@ export default function ToolShell({
 
         {formula && (
           <div style={{
-            fontFamily: MONO, fontSize: '10px',
+            fontFamily: T.MONO, fontSize: '10px',
             color: 'rgba(255,255,255,0.2)',
             padding: '6px 10px',
             background: 'rgba(255,255,255,0.02)',

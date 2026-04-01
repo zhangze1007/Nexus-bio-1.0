@@ -8,9 +8,8 @@
 'use client';
 import { useRef, useCallback, useState } from 'react';
 import { motion, useMotionValue, useTransform, useSpring } from 'framer-motion';
+import { T } from '../../ide/tokens';
 
-const MONO = "'JetBrains Mono','Fira Code',monospace";
-const SANS = "'Inter',-apple-system,sans-serif";
 const NEON  = '#39FF14';
 const TRACK = 'rgba(255,255,255,0.06)';
 
@@ -69,11 +68,11 @@ export default function TactileSlider({
   return (
     <div style={{ marginBottom: '14px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-        <span style={{ fontFamily: SANS, fontSize: '10px', color: 'rgba(255,255,255,0.5)' }}>
+        <span style={{ fontFamily: T.SANS, fontSize: '10px', color: 'rgba(255,255,255,0.5)' }}>
           {label}
         </span>
         <motion.span
-          style={{ fontFamily: MONO, fontSize: '10px', color: 'rgba(255,255,255,0.7)' }}
+          style={{ fontFamily: T.MONO, fontSize: '10px', color: 'rgba(255,255,255,0.7)' }}
           animate={{ color: dragging ? color : 'rgba(255,255,255,0.7)' }}
           transition={{ duration: 0.15 }}
         >

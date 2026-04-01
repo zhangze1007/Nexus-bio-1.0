@@ -2,9 +2,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import EmptyState from './EmptyState';
 import Pagination from './Pagination';
-
-const MONO = "'JetBrains Mono','Fira Code',monospace";
-const SANS = "'Inter',-apple-system,sans-serif";
+import { T } from '../tokens';
 
 export interface TableColumn<T> {
   key: keyof T;
@@ -96,7 +94,7 @@ export default function DataTable<T extends object>({
                   style={{
                     padding: '8px 12px',
                     textAlign: 'left',
-                    fontFamily: MONO,
+                    fontFamily: T.MONO,
                     fontSize: '10px',
                     textTransform: 'uppercase',
                     letterSpacing: '0.08em',
@@ -105,7 +103,7 @@ export default function DataTable<T extends object>({
                     userSelect: 'none',
                     width: col.width,
                     whiteSpace: 'nowrap',
-                    background: 'rgba(8,13,20,0.94)',
+                    background: 'rgba(0,0,0,0.94)',
                     position: 'sticky',
                     top: 0,
                     zIndex: 1,
@@ -135,7 +133,7 @@ export default function DataTable<T extends object>({
                       key={String(col.key)}
                       style={{
                         padding: '7px 12px',
-                        fontFamily: SANS,
+                        fontFamily: T.SANS,
                         fontSize: '11px',
                         color: 'rgba(255,255,255,0.65)',
                         whiteSpace: 'nowrap',

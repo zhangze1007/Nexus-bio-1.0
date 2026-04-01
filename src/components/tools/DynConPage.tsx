@@ -4,6 +4,7 @@ import IDEShell from '../ide/IDEShell';
 import AlgorithmInsight from '../ide/shared/AlgorithmInsight';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
+import SimErrorBanner from '../ide/shared/SimErrorBanner';
 import {
   runBioreactor,
   DEFAULT_CONTROLLER,
@@ -15,11 +16,10 @@ import {
   hillFeedback,
 } from '../../data/mockDynCon';
 import type { ODEState, HillParams } from '../../types';
+import { T, TOOL_RESULT_PALETTE} from '../ide/tokens';
 
 /* ── Design Tokens ─────────────────────────────────────────────────────────── */
-const MONO = "'JetBrains Mono','Fira Code',monospace";
-const SANS = "'Inter',-apple-system,sans-serif";
-const PANEL_BG = '#10131a';
+const PANEL_BG = '#000000';
 const BORDER = 'rgba(255,255,255,0.06)';
 const LABEL = 'rgba(255,255,255,0.28)';
 const VALUE = 'rgba(255,255,255,0.65)';
@@ -33,12 +33,12 @@ const GLASS: React.CSSProperties = {
 
 /* ── Series definitions (6 state variables) ────────────────────────────────── */
 const SERIES = [
-  { key: 'biomass',       label: 'Biomass',   color: 'rgba(120,200,255,0.8)',  unit: 'g/L' },
-  { key: 'substrate',     label: 'Substrate', color: 'rgba(255,200,80,0.8)',   unit: 'g/L' },
+  { key: 'biomass',       label: 'Biomass',   color: 'rgba(81,81,205,0.8)',  unit: 'g/L' },
+  { key: 'substrate',     label: 'Substrate', color: 'rgba(255,139,31,0.8)',   unit: 'g/L' },
   { key: 'product',       label: 'Product',   color: 'rgba(120,255,180,0.8)',  unit: 'g/L' },
-  { key: 'dissolvedO2',   label: 'DO₂',       color: 'rgba(200,120,255,0.7)',  unit: 'sat.' },
-  { key: 'fpp',           label: 'FPP',       color: '#FAEDCB',               unit: 'μM' },
-  { key: 'adsExpression', label: 'ADS Expr',  color: '#C9E4DE',               unit: 'a.u.' },
+  { key: 'dissolvedO2',   label: 'DO₂',       color: 'rgba(95,68,74,0.7)',  unit: 'sat.' },
+  { key: 'fpp',           label: 'FPP',       color: '#FFFB1F',               unit: 'μM' },
+  { key: 'adsExpression', label: 'ADS Expr',  color: '#F0FDFA',               unit: 'a.u.' },
 ] as const;
 
 /* ── Time-Series SVG (6 series) ────────────────────────────────────────────── */
@@ -77,18 +77,18 @@ function TimeSeriesSVG({ trajectory, setpoint }: { trajectory: ODEState[]; setpo
 
   return (
     <svg viewBox={`0 0 ${W + 100} ${H + 20}`} style={{ width: '100%', height: '100%' }}>
-      <rect width={W + 100} height={H + 20} fill="#0d0f14" />
+      <rect width={W + 100} height={H + 20} fill="#050505" />
       {[0.25, 0.5, 0.75, 1.0].map(f => (
         <g key={f}>
           <line x1={PAD} y1={H - PAD - f * (H - PAD * 2)} x2={W} y2={H - PAD - f * (H - PAD * 2)}
             stroke="rgba(255,255,255,0.04)" strokeWidth={1} />
-          <text x={PAD - 4} y={H - PAD - f * (H - PAD * 2) + 4} fontFamily={MONO} fontSize="8"
+          <text x={PAD - 4} y={H - PAD - f * (H - PAD * 2) + 4} fontFamily={T.MONO} fontSize="8"
             textAnchor="end" fill="rgba(255,255,255,0.2)">{(f * 100).toFixed(0)}%</text>
         </g>
       ))}
       {/* DO₂ setpoint dashed line */}
       <line x1={PAD} y1={spY} x2={W} y2={spY}
-        stroke="rgba(200,120,255,0.3)" strokeWidth={1} strokeDasharray="4 4" />
+        stroke="rgba(95,68,74,0.3)" strokeWidth={1} strokeDasharray="4 4" />
       {SERIES.map(s => (
         <polyline key={s.key}
           points={trajectory.map(t => toSVG(t, s.key)).join(' ')}
@@ -98,12 +98,12 @@ function TimeSeriesSVG({ trajectory, setpoint }: { trajectory: ODEState[]; setpo
       <line x1={PAD} y1={H - PAD} x2={W} y2={H - PAD} stroke="rgba(255,255,255,0.1)" />
       {[0, 25, 50, 75, 100].map(h => {
         const x = PAD + (h / 100) * (W - PAD);
-        return <text key={h} x={x} y={H - PAD + 14} fontFamily={MONO} fontSize="8" textAnchor="middle" fill="rgba(255,255,255,0.2)">{h}h</text>;
+        return <text key={h} x={x} y={H - PAD + 14} fontFamily={T.MONO} fontSize="8" textAnchor="middle" fill="rgba(255,255,255,0.2)">{h}h</text>;
       })}
       {SERIES.map((s, i) => (
         <g key={s.key} transform={`translate(${W + 10}, ${20 + i * 20})`}>
           <line x1={0} y1={6} x2={14} y2={6} stroke={s.color} strokeWidth={2} />
-          <text x={18} y={10} fontFamily={SANS} fontSize="9" fill="rgba(255,255,255,0.45)">{s.label}</text>
+          <text x={18} y={10} fontFamily={T.SANS} fontSize="9" fill="rgba(255,255,255,0.45)">{s.label}</text>
         </g>
       ))}
     </svg>
@@ -126,23 +126,23 @@ function HillCurveSVG({ hill, currentFPP }: { hill: HillParams; currentFPP: numb
 
   return (
     <svg viewBox={`0 0 ${W} ${H + 10}`} style={{ width: '100%', height: '120px' }}>
-      <rect width={W} height={H + 10} fill="#0d0f14" />
+      <rect width={W} height={H + 10} fill="#050505" />
       {/* axes */}
       <line x1={PAD} y1={H - PAD + 4} x2={W - PAD} y2={H - PAD + 4} stroke="rgba(255,255,255,0.08)" />
       <line x1={PAD} y1={PAD - 8} x2={PAD} y2={H - PAD + 4} stroke="rgba(255,255,255,0.08)" />
       {/* curve */}
-      <polyline points={pts.join(' ')} fill="none" stroke="#C9E4DE" strokeWidth={1.8} />
+      <polyline points={pts.join(' ')} fill="none" stroke="#F0FDFA" strokeWidth={1.8} />
       {/* current FPP marker */}
       <line x1={markerX} y1={PAD - 8} x2={markerX} y2={H - PAD + 4}
-        stroke="rgba(250,237,203,0.5)" strokeWidth={1} strokeDasharray="3 3" />
+        stroke="rgba(255,251,31,0.5)" strokeWidth={1} strokeDasharray="3 3" />
       <circle cx={markerX} cy={H - PAD + 4 - (hillFeedback(Math.min(currentFPP, fppMax), hill) / hill.Vmax) * (H - PAD * 2 + 4)}
-        r={3} fill="#FAEDCB" />
+        r={3} fill="#FFFB1F" />
       {/* labels */}
-      <text x={W / 2} y={H + 6} fontFamily={MONO} fontSize="8" textAnchor="middle" fill={LABEL}>FPP (μM)</text>
-      <text x={10} y={(PAD + H - PAD) / 2} fontFamily={MONO} fontSize="8" textAnchor="middle" fill={LABEL}
+      <text x={W / 2} y={H + 6} fontFamily={T.MONO} fontSize="8" textAnchor="middle" fill={LABEL}>FPP (μM)</text>
+      <text x={10} y={(PAD + H - PAD) / 2} fontFamily={T.MONO} fontSize="8" textAnchor="middle" fill={LABEL}
         transform={`rotate(-90, 10, ${(PAD + H - PAD) / 2})`}>ADS</text>
-      <text x={W - PAD} y={H + 6} fontFamily={MONO} fontSize="7" textAnchor="end" fill="rgba(255,255,255,0.15)">200</text>
-      <text x={PAD} y={H + 6} fontFamily={MONO} fontSize="7" textAnchor="start" fill="rgba(255,255,255,0.15)">0</text>
+      <text x={W - PAD} y={H + 6} fontFamily={T.MONO} fontSize="7" textAnchor="end" fill="rgba(255,255,255,0.15)">200</text>
+      <text x={PAD} y={H + 6} fontFamily={T.MONO} fontSize="7" textAnchor="start" fill="rgba(255,255,255,0.15)">0</text>
     </svg>
   );
 }
@@ -155,8 +155,8 @@ function ParamSlider({ label, value, min, max, step = 0.1, onChange, unit }: {
   return (
     <div style={{ marginBottom: '12px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-        <span style={{ fontFamily: SANS, fontSize: '11px', color: 'rgba(255,255,255,0.45)' }}>{label}</span>
-        <span style={{ fontFamily: MONO, fontSize: '11px', color: 'rgba(255,255,255,0.55)' }}>{value.toFixed(2)}{unit ? ` ${unit}` : ''}</span>
+        <span style={{ fontFamily: T.SANS, fontSize: '11px', color: 'rgba(255,255,255,0.45)' }}>{label}</span>
+        <span style={{ fontFamily: T.MONO, fontSize: '11px', color: 'rgba(255,255,255,0.55)' }}>{value.toFixed(2)}{unit ? ` ${unit}` : ''}</span>
       </div>
       <input type="range" min={min} max={max} step={step} value={value}
         onChange={e => onChange(parseFloat(e.target.value))}
@@ -168,7 +168,7 @@ function ParamSlider({ label, value, min, max, step = 0.1, onChange, unit }: {
 /* ── Section Header ────────────────────────────────────────────────────────── */
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '16px 0 8px' }}>
+    <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '16px 0 8px' }}>
       {children}
     </p>
   );
@@ -178,8 +178,8 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 function StatRow({ label, value, unit }: { label: string; value: string | number; unit?: string }) {
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', padding: '4px 0', borderBottom: `1px solid ${BORDER}` }}>
-      <span style={{ fontFamily: SANS, fontSize: '10px', color: LABEL }}>{label}</span>
-      <span style={{ fontFamily: MONO, fontSize: '12px', fontWeight: 600, color: VALUE, textAlign: 'right' }}>
+      <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>{label}</span>
+      <span style={{ fontFamily: T.MONO, fontSize: '12px', fontWeight: 600, color: VALUE, textAlign: 'right' }}>
         {typeof value === 'number' ? value.toFixed(3) : value}{unit ? ` ${unit}` : ''}
       </span>
     </div>
@@ -204,10 +204,14 @@ export default function DynConPage() {
   const hill: HillParams = useMemo(() => ({ Vmax: vmax, Kd: hillKd, n: hillN }), [vmax, hillKd, hillN]);
 
   /* ── Simulation ─────────────────────────────────────────────────────────── */
-  const trajectory = useMemo(() =>
-    runBioreactor({ kp, ki, kd, setpoint }, DEFAULT_PARAMS, 100, 1.0, hill),
-    [kp, ki, kd, setpoint, hill],
-  );
+  const { trajectory, simError } = useMemo(() => {
+    try {
+      const t = runBioreactor({ kp, ki, kd, setpoint }, DEFAULT_PARAMS, 100, 1.0, hill);
+      return { trajectory: t, simError: null as string | null };
+    } catch (e) {
+      return { trajectory: [] as ODEState[], simError: e instanceof Error ? e.message : 'Simulation failed' };
+    }
+  }, [kp, ki, kd, setpoint, hill]);
 
   const last = trajectory[trajectory.length - 1];
   const productTiter = last?.product ?? 0;
@@ -236,6 +240,12 @@ export default function DynConPage() {
           formula="f(FPP) = Vmax·Kd^n / (Kd^n + FPP^n)"
         />
 
+        {simError ? (
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px' }}>
+            <SimErrorBanner message={simError} />
+          </div>
+        ) : (
+        <>
         <div style={{ flex: 1, display: 'flex', overflow: 'hidden', minHeight: 0 }}>
           {/* ═══════ LEFT PANEL (260px) ═══════ */}
           <div style={{ width: '260px', flexShrink: 0, overflowY: 'auto', padding: '16px', borderRight: `1px solid ${BORDER}`, background: PANEL_BG }}>
@@ -261,15 +271,15 @@ export default function DynConPage() {
               {/* RBS Strength bar */}
               <div style={{ margin: '8px 0 4px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-                  <span style={{ fontFamily: SANS, fontSize: '10px', color: LABEL }}>RBS Strength</span>
-                  <span style={{ fontFamily: MONO, fontSize: '10px', color: VALUE }}>{rbsMapping.rbsStrength.toFixed(2)}</span>
+                  <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>RBS Strength</span>
+                  <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE }}>{rbsMapping.rbsStrength.toFixed(2)}</span>
                 </div>
                 <div style={{ height: '6px', borderRadius: '3px', background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
-                  <div style={{ height: '100%', width: `${rbsMapping.rbsStrength * 100}%`, borderRadius: '3px', background: '#C9E4DE', transition: 'width 0.3s ease' }} />
+                  <div style={{ height: '100%', width: `${rbsMapping.rbsStrength * 100}%`, borderRadius: '3px', background: '#F0FDFA', transition: 'width 0.3s ease' }} />
                 </div>
               </div>
               {/* DNA Sequence */}
-              <p style={{ fontFamily: MONO, fontSize: '10px', color: '#C6DEF1', wordBreak: 'break-all', lineHeight: 1.5, margin: '8px 0 0', opacity: 0.85 }}>
+              <p style={{ fontFamily: T.MONO, fontSize: '10px', color: '#5151CD', wordBreak: 'break-all', lineHeight: 1.5, margin: '8px 0 0', opacity: 0.85 }}>
                 {rbsMapping.sequence}
               </p>
             </div>
@@ -285,21 +295,21 @@ export default function DynConPage() {
               ['FPP toxic', `${DEFAULT_PARAMS.fppToxicThreshold} μM`],
             ] as const).map(([k, v]) => (
               <div key={k} style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', borderBottom: `1px solid rgba(255,255,255,0.04)` }}>
-                <span style={{ fontFamily: MONO, fontSize: '10px', color: 'rgba(255,255,255,0.4)' }}>{k}</span>
-                <span style={{ fontFamily: MONO, fontSize: '10px', color: 'rgba(255,255,255,0.6)' }}>{v}</span>
+                <span style={{ fontFamily: T.MONO, fontSize: '10px', color: 'rgba(255,255,255,0.4)' }}>{k}</span>
+                <span style={{ fontFamily: T.MONO, fontSize: '10px', color: 'rgba(255,255,255,0.6)' }}>{v}</span>
               </div>
             ))}
           </div>
 
           {/* ═══════ CENTER (flex) ═══════ */}
-          <div style={{ flex: 1, overflow: 'hidden', background: '#0d0f14', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ flex: 1, overflow: 'hidden', background: '#050505', display: 'flex', flexDirection: 'column' }}>
             {/* Main time-series plot */}
             <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px 12px 0' }}>
               <TimeSeriesSVG trajectory={trajectory} setpoint={setpoint} />
             </div>
             {/* Hill feedback mini-curve */}
             <div style={{ flexShrink: 0, padding: '0 12px 8px' }}>
-              <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.3)', margin: '4px 0 2px 4px' }}>
+              <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.3)', margin: '4px 0 2px 4px' }}>
                 Hill Feedback Curve — f(FPP)
               </p>
               <HillCurveSVG hill={hill} currentFPP={currentFPP} />
@@ -336,7 +346,7 @@ export default function DynConPage() {
                   background: convergence.isStable ? 'rgba(80,200,120,0.9)' : 'rgba(255,80,80,0.9)',
                   boxShadow: convergence.isStable ? '0 0 6px rgba(80,200,120,0.4)' : '0 0 6px rgba(255,80,80,0.4)',
                 }} />
-                <span style={{ fontFamily: SANS, fontSize: '11px', color: convergence.isStable ? 'rgba(80,200,120,0.9)' : 'rgba(255,80,80,0.9)' }}>
+                <span style={{ fontFamily: T.SANS, fontSize: '11px', color: convergence.isStable ? 'rgba(80,200,120,0.9)' : 'rgba(255,80,80,0.9)' }}>
                   {convergence.isStable ? 'Stable' : 'Unstable'}
                 </span>
               </div>
@@ -348,8 +358,8 @@ export default function DynConPage() {
               {/* Burden index bar */}
               <div style={{ marginBottom: '10px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-                  <span style={{ fontFamily: SANS, fontSize: '10px', color: LABEL }}>Burden Index</span>
-                  <span style={{ fontFamily: MONO, fontSize: '12px', fontWeight: 600, color: VALUE }}>{burden.burdenIndex.toFixed(3)}</span>
+                  <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>Burden Index</span>
+                  <span style={{ fontFamily: T.MONO, fontSize: '12px', fontWeight: 600, color: VALUE }}>{burden.burdenIndex.toFixed(3)}</span>
                 </div>
                 <div style={{ height: '8px', borderRadius: '4px', background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
                   <div style={{
@@ -358,7 +368,7 @@ export default function DynConPage() {
                     background: burden.burdenIndex < 0.3
                       ? 'rgba(80,200,120,0.8)'
                       : burden.burdenIndex < 0.6
-                        ? 'rgba(255,200,80,0.8)'
+                        ? 'rgba(255,139,31,0.8)'
                         : 'rgba(255,80,80,0.8)',
                   }} />
                 </div>
@@ -372,11 +382,11 @@ export default function DynConPage() {
                   background: burden.isViable ? 'rgba(80,200,120,0.9)' : 'rgba(255,80,80,0.9)',
                   boxShadow: burden.isViable ? '0 0 6px rgba(80,200,120,0.4)' : '0 0 6px rgba(255,80,80,0.4)',
                 }} />
-                <span style={{ fontFamily: SANS, fontSize: '11px', color: burden.isViable ? 'rgba(80,200,120,0.9)' : 'rgba(255,80,80,0.9)' }}>
+                <span style={{ fontFamily: T.SANS, fontSize: '11px', color: burden.isViable ? 'rgba(80,200,120,0.9)' : 'rgba(255,80,80,0.9)' }}>
                   {burden.isViable ? 'Viable' : 'Non-viable'}
                 </span>
               </div>
-              <p style={{ fontFamily: SANS, fontSize: '10px', fontStyle: 'italic', color: 'rgba(255,255,255,0.35)', lineHeight: 1.45, margin: '8px 0 0' }}>
+              <p style={{ fontFamily: T.SANS, fontSize: '10px', fontStyle: 'italic', color: 'rgba(255,255,255,0.35)', lineHeight: 1.45, margin: '8px 0 0' }}>
                 {burden.recommendation}
               </p>
             </div>
@@ -397,6 +407,8 @@ export default function DynConPage() {
           <ExportButton label="Export Trajectory JSON" data={trajectory} filename="dyncon-trajectory" format="json" />
           <ExportButton label="Export CSV" data={trajectory} filename="dyncon-trajectory" format="csv" />
         </div>
+        </>
+        )}
       </div>
     </IDEShell>
   );

@@ -47,7 +47,7 @@ function BreathingWaterfall({ steps }: { steps: ReturnType<typeof computeThermo>
         const isNeg = step.deltaG < 0;
         const color = step.atpYield > 0
           ? T.NEON
-          : isNeg ? 'rgba(120,220,180,0.75)' : 'rgba(255,80,80,0.65)';
+          : isNeg ? 'rgba(147,203,82,0.75)' : 'rgba(255,80,80,0.65)';
         const topY = Math.min(yPos(step.cumulative), yPos(step.cumulative - step.deltaG));
         const h = Math.abs(yPos(step.cumulative) - yPos(step.cumulative - step.deltaG));
 
@@ -105,7 +105,7 @@ function BreathingWaterfall({ steps }: { steps: ReturnType<typeof computeThermo>
 
       {/* Legend */}
       {[
-        { color: 'rgba(120,220,180,0.75)', label: 'Exergonic' },
+        { color: 'rgba(147,203,82,0.75)', label: 'Exergonic' },
         { color: 'rgba(255,80,80,0.65)', label: 'Endergonic' },
         { color: T.NEON, label: 'ATP step' },
       ].map((l, i) => (
@@ -264,7 +264,7 @@ export default function CETHXPage() {
               <span style={{
                 fontFamily: T.MONO, fontSize: '10px', fontWeight: 600,
                 textAlign: 'right',
-                color: s.deltaG < 0 ? 'rgba(120,220,180,0.85)' : 'rgba(255,80,80,0.75)',
+                color: s.deltaG < 0 ? 'rgba(147,203,82,0.85)' : 'rgba(255,80,80,0.75)',
               }}>
                 {s.deltaG > 0 ? '+' : ''}{s.deltaG.toFixed(1)}
               </span>
@@ -295,7 +295,7 @@ export default function CETHXPage() {
                 animate={{ opacity: 1, scale: 1 }}
                 style={{
                   fontFamily: T.MONO, fontSize: '16px', fontWeight: 700,
-                  color: thermo.efficiency > 50 ? T.NEON : 'rgba(255,200,80,0.9)',
+                  color: thermo.efficiency > 50 ? T.NEON : 'rgba(255,139,31,0.9)',
                 }}
               >
                 {thermo.efficiency.toFixed(1)}%
@@ -309,7 +309,7 @@ export default function CETHXPage() {
                   height: '100%', borderRadius: '2px',
                   background: thermo.efficiency > 50
                     ? `linear-gradient(90deg, ${T.NEON}60, ${T.NEON})`
-                    : 'linear-gradient(90deg, rgba(255,200,80,0.4), rgba(255,200,80,0.9))',
+                    : 'linear-gradient(90deg, rgba(255,139,31,0.4), rgba(255,139,31,0.9))',
                 }}
               />
             </div>

@@ -2,44 +2,11 @@
 
 import { useState, useRef } from 'react';
 import { Loader2, Play, Info, RotateCcw } from 'lucide-react';
+import { calcDeltaG, calcKeq, calcMassBalance, R } from '../utils/thermodynamics';
 
 interface ThermoPanelProps {
   nodeLabel: string;
   nodeId: string;
-}
-
-const R = 8.314e-3; // kJ/mol·K
-
-function calcDeltaG(dG0: number, T: number, products: number[], reactants: number[]): number {
-  const Q = products.reduce((a, b) => a * b, 1) / reactants.reduce((a, b) => a * b, 1);
-  return dG0 + R * T * Math.log(Q || 1e-10);
-}
-
-function calcKeq(dG0: number, T: number): number {
-  return Math.exp(-dG0 / (R * T));
-}
-
-function calcMassBalance(
-  S0: number, dG: number, Keq: number, steps: number
-): { time: number[]; S: number[]; P: number[] } {
-  const time = [0];
-  const S = [S0];
-  const P = [0];
-
-  const dt = 0.1;
-  let s = S0, p = 0;
-
-  for (let i = 0; i < steps; i++) {
-    // Driving force proportional to ΔG
-    const drivingForce = dG < 0 ? Math.abs(dG) * 0.01 : -Math.abs(dG) * 0.005;
-    const rate = drivingForce * s / (s + 0.5);
-    s = Math.max(0, s - rate * dt);
-    p = Math.max(0, p + rate * dt);
-    time.push(parseFloat(((i + 1) * dt).toFixed(2)));
-    S.push(parseFloat(s.toFixed(4)));
-    P.push(parseFloat(p.toFixed(4)));
-  }
-  return { time, S, P };
 }
 
 function MiniChart({ x, y, color, label }: { x: number[]; y: number[]; color: string; label: string }) {

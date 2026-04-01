@@ -355,8 +355,8 @@ export default function NEXAIPage() {
                 <span style={{ fontFamily: T.MONO, fontSize: '9px', color: T.NEON }}>AXON</span>
                 <span style={{
                   fontFamily: T.MONO, fontSize: '8px', padding: '2px 6px',
-                  background: 'rgba(120,220,180,0.08)', border: '1px solid rgba(120,220,180,0.15)',
-                  borderRadius: '6px', color: 'rgba(120,220,180,0.7)',
+                  background: 'rgba(147,203,82,0.08)', border: '1px solid rgba(147,203,82,0.15)',
+                  borderRadius: '6px', color: 'rgba(147,203,82,0.7)',
                 }}>
                   {(result.confidence * 100).toFixed(0)}%
                 </span>

@@ -14,12 +14,11 @@ import type {
   GeneConstruct,
   CFSParameters,
 } from '../../services/CellFreeEngine';
+import { T, TOOL_RESULT_PALETTE} from '../ide/tokens';
 
 /* ── Design Tokens ────────────────────────────────────────────────── */
 
-const MONO = "'JetBrains Mono','Fira Code',monospace";
-const SANS = "'Inter',-apple-system,sans-serif";
-const PANEL_BG = '#10131a';
+const PANEL_BG = '#000000';
 const BORDER = 'rgba(255,255,255,0.06)';
 const LABEL = 'rgba(255,255,255,0.28)';
 const VALUE = 'rgba(255,255,255,0.65)';
@@ -33,7 +32,7 @@ const GLASS: React.CSSProperties = {
   border: '1px solid rgba(255,255,255,0.08)',
 };
 
-const GENE_COLORS = ['#C9E4DE', '#C6DEF1', '#F2C6DE', '#FAEDCB', '#DBCDF0'];
+const GENE_COLORS = ['#F0FDFA', '#5151CD', '#FA8072', '#FFFB1F', '#FF1FFF'];
 
 type ViewMode = 'TimeCourse' | 'Resources' | 'Fitting' | 'IvIv';
 
@@ -41,7 +40,7 @@ type ViewMode = 'TimeCourse' | 'Resources' | 'Fitting' | 'IvIv';
 
 const SectionLabel = ({ children }: { children: React.ReactNode }) => (
   <p style={{
-    fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase',
+    fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase',
     letterSpacing: '0.1em', color: LABEL, margin: '0 0 10px',
   }}>
     {children}
@@ -91,14 +90,14 @@ function TimeCourseChart({ result, constructs }: { result: CFSFullResult; constr
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
-      <rect width={W} height={H} fill="#0d0f14" rx={12} />
+      <rect width={W} height={H} fill="#050505" rx={12} />
       <GridLines W={W} H={H} PAD={PAD} count={8} />
       {/* X axis ticks */}
       {Array.from({ length: ticks + 1 }).map((_, i) => {
         const v = (tMax / ticks) * i;
         return (
           <text key={`xt${i}`} x={sx(v)} y={H - PAD + 14} textAnchor="middle"
-            fontFamily={MONO} fontSize="7" fill={LABEL}>{Math.round(v)}</text>
+            fontFamily={T.MONO} fontSize="7" fill={LABEL}>{Math.round(v)}</text>
         );
       })}
       {/* Y axis ticks */}
@@ -106,14 +105,14 @@ function TimeCourseChart({ result, constructs }: { result: CFSFullResult; constr
         const v = (pMax / ticks) * i;
         return (
           <text key={`yt${i}`} x={PAD - 6} y={sy(v) + 3} textAnchor="end"
-            fontFamily={MONO} fontSize="7" fill={LABEL}>{v < 10 ? v.toFixed(1) : Math.round(v)}</text>
+            fontFamily={T.MONO} fontSize="7" fill={LABEL}>{v < 10 ? v.toFixed(1) : Math.round(v)}</text>
         );
       })}
       {/* Axis labels */}
-      <text x={W / 2} y={H - 6} textAnchor="middle" fontFamily={MONO} fontSize="8" fill={LABEL}>
+      <text x={W / 2} y={H - 6} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill={LABEL}>
         Time (min)
       </text>
-      <text x={12} y={H / 2} textAnchor="middle" fontFamily={MONO} fontSize="8" fill={LABEL}
+      <text x={12} y={H / 2} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill={LABEL}
         transform={`rotate(-90,12,${H / 2})`}>
         Protein (nM)
       </text>
@@ -129,7 +128,7 @@ function TimeCourseChart({ result, constructs }: { result: CFSFullResult; constr
         return (
           <g key={`l${gi}`} transform={`translate(${W - PAD - 110}, ${PAD + 8 + gi * 16})`}>
             <line x1={0} y1={0} x2={14} y2={0} stroke={color} strokeWidth={2} />
-            <text x={18} y={3.5} fontFamily={SANS} fontSize="9" fill={VALUE}>{g.geneName}</text>
+            <text x={18} y={3.5} fontFamily={T.SANS} fontSize="9" fill={VALUE}>{g.geneName}</text>
           </g>
         );
       })}
@@ -158,34 +157,34 @@ function ResourceChart({ result }: { result: CFSFullResult }) {
   function sy(f: number) { return H - PAD - f * (H - PAD * 2); }
 
   const series: { key: keyof typeof initials; label: string; color: string }[] = [
-    { key: 'ribosomeFree', label: 'Ribosome (free)', color: '#C9E4DE' },
-    { key: 'atp', label: 'ATP', color: '#FAEDCB' },
-    { key: 'gtp', label: 'GTP', color: '#C6DEF1' },
-    { key: 'pep', label: 'PEP', color: '#F2C6DE' },
-    { key: 'aminoAcids', label: 'Amino Acids', color: '#DBCDF0' },
+    { key: 'ribosomeFree', label: 'Ribosome (free)', color: '#F0FDFA' },
+    { key: 'atp', label: 'ATP', color: '#FFFB1F' },
+    { key: 'gtp', label: 'GTP', color: '#5151CD' },
+    { key: 'pep', label: 'PEP', color: '#FA8072' },
+    { key: 'aminoAcids', label: 'Amino Acids', color: '#FF1FFF' },
   ];
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
-      <rect width={W} height={H} fill="#0d0f14" rx={12} />
+      <rect width={W} height={H} fill="#050505" rx={12} />
       <GridLines W={W} H={H} PAD={PAD} count={8} />
       {/* Y ticks */}
       {[0, 0.25, 0.5, 0.75, 1].map(v => (
         <text key={`yr${v}`} x={PAD - 6} y={sy(v) + 3} textAnchor="end"
-          fontFamily={MONO} fontSize="7" fill={LABEL}>{v.toFixed(2)}</text>
+          fontFamily={T.MONO} fontSize="7" fill={LABEL}>{v.toFixed(2)}</text>
       ))}
       {/* X ticks */}
       {Array.from({ length: 6 }).map((_, i) => {
         const v = (tMax / 5) * i;
         return (
           <text key={`xr${i}`} x={sx(v)} y={H - PAD + 14} textAnchor="middle"
-            fontFamily={MONO} fontSize="7" fill={LABEL}>{Math.round(v)}</text>
+            fontFamily={T.MONO} fontSize="7" fill={LABEL}>{Math.round(v)}</text>
         );
       })}
-      <text x={W / 2} y={H - 6} textAnchor="middle" fontFamily={MONO} fontSize="8" fill={LABEL}>
+      <text x={W / 2} y={H - 6} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill={LABEL}>
         Time (min)
       </text>
-      <text x={12} y={H / 2} textAnchor="middle" fontFamily={MONO} fontSize="8" fill={LABEL}
+      <text x={12} y={H / 2} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill={LABEL}
         transform={`rotate(-90,12,${H / 2})`}>
         Fraction of Initial
       </text>
@@ -194,7 +193,7 @@ function ResourceChart({ result }: { result: CFSFullResult }) {
         <>
           <line x1={sx(depTime)} y1={PAD} x2={sx(depTime)} y2={H - PAD}
             stroke="rgba(255,100,80,0.5)" strokeWidth={1} strokeDasharray="4,3" />
-          <text x={sx(depTime) + 4} y={PAD + 12} fontFamily={MONO} fontSize="7" fill="rgba(255,100,80,0.7)">
+          <text x={sx(depTime) + 4} y={PAD + 12} fontFamily={T.MONO} fontSize="7" fill="rgba(255,100,80,0.7)">
             Depletion
           </text>
         </>
@@ -210,7 +209,7 @@ function ResourceChart({ result }: { result: CFSFullResult }) {
       {series.map((s, i) => (
         <g key={`lr${i}`} transform={`translate(${W - PAD - 120}, ${PAD + 8 + i * 14})`}>
           <line x1={0} y1={0} x2={12} y2={0} stroke={s.color} strokeWidth={2} />
-          <text x={16} y={3.5} fontFamily={SANS} fontSize="8" fill={VALUE}>{s.label}</text>
+          <text x={16} y={3.5} fontFamily={T.SANS} fontSize="8" fill={VALUE}>{s.label}</text>
         </g>
       ))}
     </svg>
@@ -226,8 +225,8 @@ function FittingChart({ result }: { result: CFSFullResult }) {
   if (!fit) {
     return (
       <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
-        <rect width={W} height={H} fill="#0d0f14" rx={12} />
-        <text x={W / 2} y={H / 2} textAnchor="middle" fontFamily={SANS} fontSize="12" fill={LABEL}>
+        <rect width={W} height={H} fill="#050505" rx={12} />
+        <text x={W / 2} y={H / 2} textAnchor="middle" fontFamily={T.SANS} fontSize="12" fill={LABEL}>
           No fitting data available
         </text>
       </svg>
@@ -249,7 +248,7 @@ function FittingChart({ result }: { result: CFSFullResult }) {
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
-      <rect width={W} height={H} fill="#0d0f14" rx={12} />
+      <rect width={W} height={H} fill="#050505" rx={12} />
       {/* Main plot grid */}
       {Array.from({ length: 9 }).map((_, i) => {
         const gx = PAD + (i / 8) * (W - PAD * 2);
@@ -267,36 +266,36 @@ function FittingChart({ result }: { result: CFSFullResult }) {
       {curve.filter((_, i) => i % 3 === 0).map((p, i) => (
         <g key={`dp${i}`}>
           <line x1={sx(p.concentration)} y1={sy(p.rate * 0.9)} x2={sx(p.concentration)} y2={sy(p.rate * 1.1)}
-            stroke="rgba(120,220,180,0.4)" strokeWidth={1} />
+            stroke="rgba(147,203,82,0.4)" strokeWidth={1} />
           <circle cx={sx(p.concentration)} cy={sy(p.rate)} r={3}
-            fill="rgba(120,220,180,0.8)" stroke="rgba(120,220,180,0.4)" strokeWidth={0.5} />
+            fill="rgba(147,203,82,0.8)" stroke="rgba(147,203,82,0.4)" strokeWidth={0.5} />
         </g>
       ))}
       {/* Fitted curve */}
       <polyline
         points={curve.map(p => `${sx(p.concentration)},${sy(p.rate)}`).join(' ')}
-        fill="none" stroke="#C9E4DE" strokeWidth={1.8} opacity={0.85}
+        fill="none" stroke="#F0FDFA" strokeWidth={1.8} opacity={0.85}
       />
       {/* Vmax line */}
       <line x1={PAD} y1={sy(fit.vmax)} x2={W - PAD} y2={sy(fit.vmax)}
-        stroke="rgba(250,237,203,0.4)" strokeWidth={1} strokeDasharray="4,3" />
+        stroke="rgba(255,251,31,0.4)" strokeWidth={1} strokeDasharray="4,3" />
       <text x={W - PAD - 4} y={sy(fit.vmax) - 4} textAnchor="end"
-        fontFamily={MONO} fontSize="7" fill="rgba(250,237,203,0.7)">Vmax={fit.vmax.toFixed(2)}</text>
+        fontFamily={T.MONO} fontSize="7" fill="rgba(255,251,31,0.7)">Vmax={fit.vmax.toFixed(2)}</text>
       {/* Stats text */}
-      <text x={PAD + 8} y={PAD + 14} fontFamily={MONO} fontSize="8" fill={VALUE}>
+      <text x={PAD + 8} y={PAD + 14} fontFamily={T.MONO} fontSize="8" fill={VALUE}>
         Vmax={fit.vmax.toFixed(2)} [{fit.vmax_ci[0].toFixed(2)}, {fit.vmax_ci[1].toFixed(2)}]
       </text>
-      <text x={PAD + 8} y={PAD + 26} fontFamily={MONO} fontSize="8" fill={VALUE}>
+      <text x={PAD + 8} y={PAD + 26} fontFamily={T.MONO} fontSize="8" fill={VALUE}>
         Kd={fit.kd.toFixed(2)} [{fit.kd_ci[0].toFixed(2)}, {fit.kd_ci[1].toFixed(2)}]
       </text>
-      <text x={PAD + 8} y={PAD + 38} fontFamily={MONO} fontSize="8" fill={VALUE}>
+      <text x={PAD + 8} y={PAD + 38} fontFamily={T.MONO} fontSize="8" fill={VALUE}>
         R²={fit.r_squared.toFixed(4)}
       </text>
       {/* Axis labels */}
-      <text x={W / 2} y={mainH - 4} textAnchor="middle" fontFamily={MONO} fontSize="8" fill={LABEL}>
+      <text x={W / 2} y={mainH - 4} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill={LABEL}>
         [DNA] (nM)
       </text>
-      <text x={12} y={mainH / 2} textAnchor="middle" fontFamily={MONO} fontSize="8" fill={LABEL}
+      <text x={12} y={mainH / 2} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill={LABEL}
         transform={`rotate(-90,12,${mainH / 2})`}>
         Rate (nM/min)
       </text>
@@ -310,10 +309,10 @@ function FittingChart({ result }: { result: CFSFullResult }) {
         const yp = resTop + resH / 2 - (r / rMaxRes) * (resH / 2 - 4);
         return (
           <circle key={`res${i}`} cx={xp} cy={yp} r={2}
-            fill={r > 0 ? 'rgba(120,220,180,0.6)' : 'rgba(255,100,80,0.6)'} />
+            fill={r > 0 ? 'rgba(147,203,82,0.6)' : 'rgba(255,100,80,0.6)'} />
         );
       })}
-      <text x={PAD + 4} y={resTop + 10} fontFamily={MONO} fontSize="7" fill={LABEL}>Residuals</text>
+      <text x={PAD + 4} y={resTop + 10} fontFamily={T.MONO} fontSize="7" fill={LABEL}>Residuals</text>
     </svg>
   );
 }
@@ -328,8 +327,8 @@ function IvIvChart({ result }: { result: CFSFullResult }) {
   if (!iviv) {
     return (
       <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
-        <rect width={W} height={H} fill="#0d0f14" rx={12} />
-        <text x={W / 2} y={H / 2} textAnchor="middle" fontFamily={SANS} fontSize="12" fill={LABEL}>
+        <rect width={W} height={H} fill="#050505" rx={12} />
+        <text x={W / 2} y={H / 2} textAnchor="middle" fontFamily={T.SANS} fontSize="12" fill={LABEL}>
           IvIv prediction unavailable — fitting required
         </text>
       </svg>
@@ -356,28 +355,28 @@ function IvIvChart({ result }: { result: CFSFullResult }) {
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
-      <rect width={W} height={H} fill="#0d0f14" rx={12} />
+      <rect width={W} height={H} fill="#050505" rx={12} />
       {/* Bar chart */}
       <rect x={PAD + 40} y={barBaseY - barH(invitro)} width={barW} height={barH(invitro)}
-        fill="#C6DEF1" rx={4} opacity={0.8} />
+        fill="#5151CD" rx={4} opacity={0.8} />
       <text x={PAD + 40 + barW / 2} y={barBaseY + 14} textAnchor="middle"
-        fontFamily={SANS} fontSize="9" fill={VALUE}>In vitro</text>
+        fontFamily={T.SANS} fontSize="9" fill={VALUE}>In vitro</text>
       <text x={PAD + 40 + barW / 2} y={barBaseY - barH(invitro) - 6} textAnchor="middle"
-        fontFamily={MONO} fontSize="8" fill={VALUE}>{invitro.toFixed(1)} nM</text>
+        fontFamily={T.MONO} fontSize="8" fill={VALUE}>{invitro.toFixed(1)} nM</text>
 
       <rect x={PAD + 40 + barW + barGap} y={barBaseY - barH(invivo)} width={barW} height={barH(invivo)}
-        fill="#C9E4DE" rx={4} opacity={0.8} />
+        fill="#F0FDFA" rx={4} opacity={0.8} />
       <text x={PAD + 40 + barW + barGap + barW / 2} y={barBaseY + 14} textAnchor="middle"
-        fontFamily={SANS} fontSize="9" fill={VALUE}>In vivo (pred)</text>
+        fontFamily={T.SANS} fontSize="9" fill={VALUE}>In vivo (pred)</text>
       <text x={PAD + 40 + barW + barGap + barW / 2} y={barBaseY - barH(invivo) - 6} textAnchor="middle"
-        fontFamily={MONO} fontSize="8" fill={VALUE}>{invivo.toFixed(1)} nM</text>
+        fontFamily={T.MONO} fontSize="8" fill={VALUE}>{invivo.toFixed(1)} nM</text>
 
       {/* Baseline */}
       <line x1={PAD + 20} y1={barBaseY} x2={PAD + 40 + barW * 2 + barGap + 20} y2={barBaseY}
         stroke="rgba(255,255,255,0.1)" strokeWidth={0.5} />
 
       {/* Correction factor bars */}
-      <text x={corrLeft} y={corrTop} fontFamily={SANS} fontSize="9" fill={VALUE} fontWeight={600}>
+      <text x={corrLeft} y={corrTop} fontFamily={T.SANS} fontSize="9" fill={VALUE} fontWeight={600}>
         Correction Factors
       </text>
       {iviv.corrections.map((c, i) => {
@@ -387,11 +386,11 @@ function IvIvChart({ result }: { result: CFSFullResult }) {
         const positive = c.adjustment >= 0;
         return (
           <g key={`cf${i}`}>
-            <text x={corrLeft} y={y + 4} fontFamily={SANS} fontSize="7" fill={LABEL}>{c.factor}</text>
+            <text x={corrLeft} y={y + 4} fontFamily={T.SANS} fontSize="7" fill={LABEL}>{c.factor}</text>
             <rect x={corrLeft} y={y + 8} width={bw} height={8}
-              fill={positive ? 'rgba(120,220,180,0.5)' : 'rgba(255,100,80,0.5)'} rx={2} />
-            <text x={corrLeft + bw + 4} y={y + 16} fontFamily={MONO} fontSize="7"
-              fill={positive ? 'rgba(120,220,180,0.8)' : 'rgba(255,100,80,0.8)'}>
+              fill={positive ? 'rgba(147,203,82,0.5)' : 'rgba(255,100,80,0.5)'} rx={2} />
+            <text x={corrLeft + bw + 4} y={y + 16} fontFamily={T.MONO} fontSize="7"
+              fill={positive ? 'rgba(147,203,82,0.8)' : 'rgba(255,100,80,0.8)'}>
               {c.adjustment > 0 ? '+' : ''}{c.adjustment.toFixed(2)}
             </text>
           </g>
@@ -415,11 +414,11 @@ function IvIvChart({ result }: { result: CFSFullResult }) {
             <path d={`M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy}`}
               fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={6} />
             <path d={`M ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2}`}
-              fill="none" stroke="#C9E4DE" strokeWidth={6} strokeLinecap="round" />
-            <text x={cx} y={cy - 4} textAnchor="middle" fontFamily={MONO} fontSize="14" fontWeight={700} fill={VALUE}>
+              fill="none" stroke="#F0FDFA" strokeWidth={6} strokeLinecap="round" />
+            <text x={cx} y={cy - 4} textAnchor="middle" fontFamily={T.MONO} fontSize="14" fontWeight={700} fill={VALUE}>
               {(iviv.confidence * 100).toFixed(0)}%
             </text>
-            <text x={cx} y={cy + 10} textAnchor="middle" fontFamily={SANS} fontSize="7" fill={LABEL}>
+            <text x={cx} y={cy + 10} textAnchor="middle" fontFamily={T.SANS} fontSize="7" fill={LABEL}>
               Confidence
             </text>
           </g>
@@ -478,17 +477,17 @@ export default function CellFreePage() {
                       width: '8px', height: '8px', borderRadius: '50%',
                       background: GENE_COLORS[i % GENE_COLORS.length], flexShrink: 0,
                     }} />
-                    <span style={{ fontFamily: SANS, fontSize: '10px', fontWeight: 600, color: VALUE }}>
+                    <span style={{ fontFamily: T.SANS, fontSize: '10px', fontWeight: 600, color: VALUE }}>
                       {g.name.length > 20 ? g.name.slice(0, 20) + '…' : g.name}
                     </span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-                    <span style={{ fontFamily: SANS, fontSize: '8px', color: LABEL }}>Promoter</span>
-                    <span style={{ fontFamily: MONO, fontSize: '9px', color: VALUE }}>{g.promoter}</span>
+                    <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Promoter</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: '9px', color: VALUE }}>{g.promoter}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ fontFamily: SANS, fontSize: '8px', color: LABEL }}>DNA conc.</span>
-                    <span style={{ fontFamily: MONO, fontSize: '9px', color: VALUE }}>{g.dnaConcentration} nM</span>
+                    <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>DNA conc.</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: '9px', color: VALUE }}>{g.dnaConcentration} nM</span>
                   </div>
                 </div>
               ))}
@@ -500,7 +499,7 @@ export default function CellFreePage() {
               {(['TimeCourse', 'Resources', 'Fitting', 'IvIv'] as ViewMode[]).map(mode => (
                 <button key={mode} onClick={() => setViewMode(mode)} style={{
                   flex: '1 1 0', padding: '5px 0', borderRadius: '6px', cursor: 'pointer',
-                  fontFamily: SANS, fontSize: '10px', border: 'none',
+                  fontFamily: T.SANS, fontSize: '10px', border: 'none',
                   background: viewMode === mode ? 'rgba(255,255,255,0.12)' : INPUT_BG,
                   color: viewMode === mode ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.4)',
                 }}>
@@ -520,8 +519,8 @@ export default function CellFreePage() {
                 { label: 'Sim Time', value: `${params.simulationTime} min` },
               ].map(item => (
                 <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                  <span style={{ fontFamily: SANS, fontSize: '8px', color: LABEL }}>{item.label}</span>
-                  <span style={{ fontFamily: MONO, fontSize: '9px', color: VALUE }}>{item.value}</span>
+                  <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>{item.label}</span>
+                  <span style={{ fontFamily: T.MONO, fontSize: '9px', color: VALUE }}>{item.value}</span>
                 </div>
               ))}
             </div>
@@ -535,15 +534,15 @@ export default function CellFreePage() {
                 { label: 'PEP', value: `${params.initialEnergy.pep} mM` },
               ].map(item => (
                 <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                  <span style={{ fontFamily: SANS, fontSize: '8px', color: LABEL }}>{item.label}</span>
-                  <span style={{ fontFamily: MONO, fontSize: '9px', color: VALUE }}>{item.value}</span>
+                  <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>{item.label}</span>
+                  <span style={{ fontFamily: T.MONO, fontSize: '9px', color: VALUE }}>{item.value}</span>
                 </div>
               ))}
             </div>
           </div>
 
           {/* ── CENTER ENGINE ────────────────────────────────────── */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#0d0f14' }}>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#050505' }}>
             {viewMode === 'TimeCourse' && (
               <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
                 <div style={{ width: '100%', maxWidth: '600px' }}>
@@ -572,10 +571,10 @@ export default function CellFreePage() {
                 </div>
                 {iviv && (
                   <div style={{ ...GLASS, borderRadius: '16px', padding: '14px 18px', maxWidth: '600px', margin: '0 auto', width: '100%' }}>
-                    <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: LABEL, margin: '0 0 6px' }}>
+                    <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: LABEL, margin: '0 0 6px' }}>
                       Reasoning
                     </p>
-                    <p style={{ fontFamily: SANS, fontSize: '11px', color: VALUE, margin: 0, lineHeight: 1.6 }}>
+                    <p style={{ fontFamily: T.SANS, fontSize: '11px', color: VALUE, margin: 0, lineHeight: 1.6 }}>
                       {iviv.reasoning}
                     </p>
                   </div>
@@ -614,21 +613,21 @@ export default function CellFreePage() {
                         width: '8px', height: '8px', borderRadius: '50%',
                         background: color, flexShrink: 0,
                       }} />
-                      <span style={{ fontFamily: SANS, fontSize: '10px', fontWeight: 600, color: VALUE }}>
+                      <span style={{ fontFamily: T.SANS, fontSize: '10px', fontWeight: 600, color: VALUE }}>
                         {gene ? (gene.name.length > 18 ? gene.name.slice(0, 18) + '…' : gene.name) : ss.geneId}
                       </span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-                      <span style={{ fontFamily: SANS, fontSize: '8px', color: LABEL }}>Peak Protein</span>
-                      <span style={{ fontFamily: MONO, fontSize: '9px', color: VALUE }}>{ss.maxProtein.toFixed(1)} nM</span>
+                      <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Peak Protein</span>
+                      <span style={{ fontFamily: T.MONO, fontSize: '9px', color: VALUE }}>{ss.maxProtein.toFixed(1)} nM</span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-                      <span style={{ fontFamily: SANS, fontSize: '8px', color: LABEL }}>Time to Half</span>
-                      <span style={{ fontFamily: MONO, fontSize: '9px', color: VALUE }}>{ss.timeToHalf.toFixed(0)} min</span>
+                      <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Time to Half</span>
+                      <span style={{ fontFamily: T.MONO, fontSize: '9px', color: VALUE }}>{ss.timeToHalf.toFixed(0)} min</span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span style={{ fontFamily: SANS, fontSize: '8px', color: LABEL }}>Yield/DNA</span>
-                      <span style={{ fontFamily: MONO, fontSize: '9px', color: VALUE }}>{ss.yieldPerDNA.toFixed(2)}</span>
+                      <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Yield/DNA</span>
+                      <span style={{ fontFamily: T.MONO, fontSize: '9px', color: VALUE }}>{ss.yieldPerDNA.toFixed(2)}</span>
                     </div>
                   </div>
                 );
@@ -641,28 +640,28 @@ export default function CellFreePage() {
                 <SectionLabel>Fitting Results</SectionLabel>
                 <div style={{ ...GLASS, borderRadius: '14px', padding: '10px', marginBottom: '16px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                    <span style={{ fontFamily: SANS, fontSize: '8px', color: LABEL }}>Vmax</span>
-                    <span style={{ fontFamily: MONO, fontSize: '9px', color: VALUE }}>{fit.vmax.toFixed(3)}</span>
+                    <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Vmax</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: '9px', color: VALUE }}>{fit.vmax.toFixed(3)}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                    <span style={{ fontFamily: SANS, fontSize: '8px', color: LABEL }}>Kd</span>
-                    <span style={{ fontFamily: MONO, fontSize: '9px', color: VALUE }}>{fit.kd.toFixed(3)}</span>
+                    <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Kd</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: '9px', color: VALUE }}>{fit.kd.toFixed(3)}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                    <span style={{ fontFamily: SANS, fontSize: '8px', color: LABEL }}>R²</span>
-                    <span style={{ fontFamily: MONO, fontSize: '9px', color: 'rgba(120,220,180,0.9)' }}>
+                    <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>R²</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: '9px', color: 'rgba(147,203,82,0.9)' }}>
                       {fit.r_squared.toFixed(4)}
                     </span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                    <span style={{ fontFamily: SANS, fontSize: '8px', color: LABEL }}>Vmax CI</span>
-                    <span style={{ fontFamily: MONO, fontSize: '8px', color: LABEL }}>
+                    <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Vmax CI</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: '8px', color: LABEL }}>
                       [{fit.vmax_ci[0].toFixed(2)}, {fit.vmax_ci[1].toFixed(2)}]
                     </span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ fontFamily: SANS, fontSize: '8px', color: LABEL }}>Kd CI</span>
-                    <span style={{ fontFamily: MONO, fontSize: '8px', color: LABEL }}>
+                    <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Kd CI</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: '8px', color: LABEL }}>
                       [{fit.kd_ci[0].toFixed(2)}, {fit.kd_ci[1].toFixed(2)}]
                     </span>
                   </div>
@@ -676,28 +675,28 @@ export default function CellFreePage() {
                 <SectionLabel>IvIv Prediction</SectionLabel>
                 <div style={{ ...GLASS, borderRadius: '14px', padding: '10px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                    <span style={{ fontFamily: SANS, fontSize: '8px', color: LABEL }}>In-vivo Expr</span>
-                    <span style={{ fontFamily: MONO, fontSize: '9px', color: VALUE }}>
+                    <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>In-vivo Expr</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: '9px', color: VALUE }}>
                       {iviv.invivo_expression.toFixed(1)} nM
                     </span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                    <span style={{ fontFamily: SANS, fontSize: '8px', color: LABEL }}>Scaling Factor</span>
-                    <span style={{ fontFamily: MONO, fontSize: '9px', color: VALUE }}>
+                    <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Scaling Factor</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: '9px', color: VALUE }}>
                       {iviv.scalingFactor.toFixed(3)}
                     </span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                    <span style={{ fontFamily: SANS, fontSize: '8px', color: LABEL }}>Fold Change</span>
-                    <span style={{ fontFamily: MONO, fontSize: '9px', color: VALUE }}>
+                    <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Fold Change</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: '9px', color: VALUE }}>
                       {iviv.invivo_foldChange.toFixed(2)}×
                     </span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ fontFamily: SANS, fontSize: '8px', color: LABEL }}>Confidence</span>
+                    <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Confidence</span>
                     <span style={{
-                      fontFamily: MONO, fontSize: '9px',
-                      color: iviv.confidence > 0.7 ? 'rgba(120,220,180,0.9)' : iviv.confidence > 0.4 ? 'rgba(255,200,80,0.85)' : 'rgba(255,100,80,0.85)',
+                      fontFamily: T.MONO, fontSize: '9px',
+                      color: iviv.confidence > 0.7 ? 'rgba(147,203,82,0.9)' : iviv.confidence > 0.4 ? 'rgba(255,139,31,0.85)' : 'rgba(255,100,80,0.85)',
                     }}>
                       {(iviv.confidence * 100).toFixed(0)}%
                     </span>

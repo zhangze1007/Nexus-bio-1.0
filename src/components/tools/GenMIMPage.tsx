@@ -6,9 +6,7 @@ import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
 import { CRISPRI_TARGETS, greedyKnockdownSchedule } from '../../data/mockGenMIM';
 import type { CRISPRiTarget } from '../../types';
-
-const MONO = "'JetBrains Mono','Fira Code',monospace";
-const SANS = "'Inter',-apple-system,sans-serif";
+import { T, TOOL_RESULT_PALETTE} from '../ide/tokens';
 
 function GenomeMap({ targets, selected }: { targets: CRISPRiTarget[]; selected: CRISPRiTarget[] }) {
   const W = 440, H = 120;
@@ -16,27 +14,27 @@ function GenomeMap({ targets, selected }: { targets: CRISPRiTarget[]; selected: 
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
-      <rect width={W} height={H} fill="#0d0f14" />
+      <rect width={W} height={H} fill="#050505" />
       <rect x={20} y={H / 2 - 6} width={W - 40} height={12} rx="6"
         fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.1)" strokeWidth={1} />
-      <text x={20} y={H / 2 + 22} fontFamily={MONO} fontSize="8" fill="rgba(255,255,255,0.2)">0</text>
-      <text x={W - 30} y={H / 2 + 22} fontFamily={MONO} fontSize="8" fill="rgba(255,255,255,0.2)">4.6 Mb</text>
+      <text x={20} y={H / 2 + 22} fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.2)">0</text>
+      <text x={W - 30} y={H / 2 + 22} fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.2)">4.6 Mb</text>
       {targets.map(t => {
         const x = 20 + (t.position / 4641) * (W - 40);
         const isSelected = selectedIds.has(t.gene);
         const isEssential = t.essential;
         const color = isEssential
-          ? 'rgba(255,200,80,0.8)'
+          ? 'rgba(255,139,31,0.8)'
           : isSelected
           ? 'rgba(255,80,80,0.8)'
-          : 'rgba(120,220,180,0.55)';
+          : 'rgba(147,203,82,0.55)';
         const y = H / 2 - (isSelected || isEssential ? 22 : 12);
         return (
           <g key={t.gene}>
             <line x1={x} y1={H / 2 - 6} x2={x} y2={y + 6} stroke={color} strokeWidth={1.5} />
             <polygon points={`${x},${y} ${x - 3},${y + 6} ${x + 3},${y + 6}`} fill={color} />
             {(isSelected || isEssential) && (
-              <text x={x} y={y - 3} textAnchor="middle" fontFamily={MONO} fontSize="7" fill={color}>
+              <text x={x} y={y - 3} textAnchor="middle" fontFamily={T.MONO} fontSize="7" fill={color}>
                 {t.gene}
               </text>
             )}
@@ -44,13 +42,13 @@ function GenomeMap({ targets, selected }: { targets: CRISPRiTarget[]; selected: 
         );
       })}
       {[
-        { color: 'rgba(255,200,80,0.8)', label: 'Essential' },
+        { color: 'rgba(255,139,31,0.8)', label: 'Essential' },
         { color: 'rgba(255,80,80,0.8)',  label: 'Knocked down' },
-        { color: 'rgba(120,220,180,0.55)', label: 'Candidate' },
+        { color: 'rgba(147,203,82,0.55)', label: 'Candidate' },
       ].map((l, i) => (
         <g key={l.label} transform={`translate(${20 + i * 120},${H - 16})`}>
           <line x1={0} y1={4} x2={12} y2={4} stroke={l.color} strokeWidth={2} />
-          <text x={16} y={8} fontFamily={SANS} fontSize="8" fill="rgba(255,255,255,0.35)">{l.label}</text>
+          <text x={16} y={8} fontFamily={T.SANS} fontSize="8" fill="rgba(255,255,255,0.35)">{l.label}</text>
         </g>
       ))}
     </svg>
@@ -74,7 +72,7 @@ export default function GenMIMPage() {
 
   return (
     <IDEShell moduleId="genmim">
-      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', background: '#10131a' }}>
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', background: '#000000' }}>
         <AlgorithmInsight
           title="Gene Minimization via CRISPRi"
           description="Greedy knockdown scheduling: ranks non-essential genes by knockdown efficiency, bounded by max targets and growth tolerance."
@@ -83,8 +81,8 @@ export default function GenMIMPage() {
 
         <div style={{ flex: 1, display: 'flex', overflow: 'hidden', minHeight: 0 }}>
           {/* Input panel */}
-          <div style={{ width: '240px', flexShrink: 0, overflowY: 'auto', padding: '16px', borderRight: '1px solid rgba(255,255,255,0.06)', background: '#10131a' }}>
-            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '0 0 12px' }}>
+          <div style={{ width: '240px', flexShrink: 0, overflowY: 'auto', padding: '16px', borderRight: '1px solid rgba(255,255,255,0.06)', background: '#000000' }}>
+            <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '0 0 12px' }}>
               CRISPRi Parameters
             </p>
 
@@ -94,8 +92,8 @@ export default function GenMIMPage() {
             ].map(s => (
               <div key={s.label} style={{ marginBottom: '12px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                  <span style={{ fontFamily: SANS, fontSize: '11px', color: 'rgba(255,255,255,0.45)' }}>{s.label}</span>
-                  <span style={{ fontFamily: MONO, fontSize: '11px', color: 'rgba(255,255,255,0.55)' }}>{s.display(s.value)}</span>
+                  <span style={{ fontFamily: T.SANS, fontSize: '11px', color: 'rgba(255,255,255,0.45)' }}>{s.label}</span>
+                  <span style={{ fontFamily: T.MONO, fontSize: '11px', color: 'rgba(255,255,255,0.55)' }}>{s.display(s.value)}</span>
                 </div>
                 <input type="range" min={s.min} max={s.max} step={s.step} value={s.value}
                   onChange={e => s.set(parseFloat(e.target.value) as never)}
@@ -106,17 +104,17 @@ export default function GenMIMPage() {
             <button onClick={() => setProtectEssential(!protectEssential)} style={{
               display: 'flex', alignItems: 'center', gap: '8px',
               width: '100%', padding: '7px 10px', marginBottom: '16px',
-              background: protectEssential ? 'rgba(255,200,80,0.1)' : 'transparent',
-              border: `1px solid ${protectEssential ? 'rgba(255,200,80,0.25)' : 'rgba(255,255,255,0.06)'}`,
+              background: protectEssential ? 'rgba(255,139,31,0.1)' : 'transparent',
+              border: `1px solid ${protectEssential ? 'rgba(255,139,31,0.25)' : 'rgba(255,255,255,0.06)'}`,
               borderRadius: '8px', cursor: 'pointer',
-              color: protectEssential ? 'rgba(255,200,80,0.9)' : 'rgba(255,255,255,0.35)',
-              fontFamily: SANS, fontSize: '11px', textAlign: 'left',
+              color: protectEssential ? 'rgba(255,139,31,0.9)' : 'rgba(255,255,255,0.35)',
+              fontFamily: T.SANS, fontSize: '11px', textAlign: 'left',
             }}>
               <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: protectEssential ? 'rgba(200,140,20,0.8)' : 'transparent', border: '1px solid rgba(200,140,20,0.5)', flexShrink: 0 }} />
               Protect essential genes
             </button>
 
-            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '0 0 8px' }}>
+            <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '0 0 8px' }}>
               Knockdown Schedule ({schedule.length} targets)
             </p>
             {schedule.map(t => (
@@ -127,10 +125,10 @@ export default function GenMIMPage() {
                 borderRadius: '8px',
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ fontFamily: MONO, fontSize: '10px', color: 'rgba(255,120,120,0.9)' }}>{t.gene}</span>
-                  <span style={{ fontFamily: MONO, fontSize: '10px', color: 'rgba(255,255,255,0.45)' }}>{(t.knockdown_efficiency * 100).toFixed(0)}% KD</span>
+                  <span style={{ fontFamily: T.MONO, fontSize: '10px', color: 'rgba(255,120,120,0.9)' }}>{t.gene}</span>
+                  <span style={{ fontFamily: T.MONO, fontSize: '10px', color: 'rgba(255,255,255,0.45)' }}>{(t.knockdown_efficiency * 100).toFixed(0)}% KD</span>
                 </div>
-                <div style={{ fontFamily: SANS, fontSize: '10px', color: 'rgba(255,255,255,0.35)', marginTop: '2px' }}>
+                <div style={{ fontFamily: T.SANS, fontSize: '10px', color: 'rgba(255,255,255,0.35)', marginTop: '2px' }}>
                   {t.phenotype} · GI: {((t.growth_impact ?? 0) * 100).toFixed(0)}%
                 </div>
               </div>
@@ -138,9 +136,9 @@ export default function GenMIMPage() {
           </div>
 
           {/* Engine view — genome map + table */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#0d0f14' }}>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#050505' }}>
             <div style={{ padding: '16px', borderBottom: '1px solid rgba(255,255,255,0.06)', flexShrink: 0 }}>
-              <p style={{ fontFamily: MONO, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.25)', margin: '0 0 8px' }}>
+              <p style={{ fontFamily: T.MONO, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.25)', margin: '0 0 8px' }}>
                 E. coli K-12 Genome Map
               </p>
               <GenomeMap targets={CRISPRI_TARGETS} selected={schedule} />
@@ -150,7 +148,7 @@ export default function GenMIMPage() {
                 <thead>
                   <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
                     {['Gene', 'Position', 'Essential', 'KD Eff.', 'Phenotype', 'Growth ΔΔ'].map(h => (
-                      <th key={h} style={{ fontFamily: MONO, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'rgba(255,255,255,0.3)', padding: '5px 8px', textAlign: 'left' }}>
+                      <th key={h} style={{ fontFamily: T.MONO, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'rgba(255,255,255,0.3)', padding: '5px 8px', textAlign: 'left' }}>
                         {h}
                       </th>
                     ))}
@@ -161,12 +159,12 @@ export default function GenMIMPage() {
                     const isSelected = schedule.some(s => s.gene === t.gene);
                     return (
                       <tr key={t.gene} style={{ background: isSelected ? 'rgba(255,80,80,0.04)' : i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)' }}>
-                        <td style={{ fontFamily: MONO, fontSize: '10px', padding: '4px 8px', color: isSelected ? 'rgba(255,120,120,0.85)' : 'rgba(255,255,255,0.55)' }}>{t.gene}</td>
-                        <td style={{ fontFamily: MONO, fontSize: '10px', padding: '4px 8px', color: 'rgba(255,255,255,0.35)' }}>{t.position.toLocaleString()}</td>
-                        <td style={{ fontFamily: MONO, fontSize: '10px', padding: '4px 8px', color: t.essential ? 'rgba(255,200,80,0.8)' : 'rgba(255,255,255,0.25)' }}>{t.essential ? '⚠ YES' : 'no'}</td>
-                        <td style={{ fontFamily: MONO, fontSize: '10px', padding: '4px 8px', color: 'rgba(255,255,255,0.55)' }}>{t.essential ? '—' : `${(t.knockdown_efficiency * 100).toFixed(0)}%`}</td>
-                        <td style={{ fontFamily: SANS, fontSize: '10px', padding: '4px 8px', color: 'rgba(255,255,255,0.4)' }}>{t.phenotype}</td>
-                        <td style={{ fontFamily: MONO, fontSize: '10px', padding: '4px 8px', color: 'rgba(255,255,255,0.4)' }}>{t.essential ? '—' : `${((t.growth_impact ?? 0) * 100).toFixed(0)}%`}</td>
+                        <td style={{ fontFamily: T.MONO, fontSize: '10px', padding: '4px 8px', color: isSelected ? 'rgba(255,120,120,0.85)' : 'rgba(255,255,255,0.55)' }}>{t.gene}</td>
+                        <td style={{ fontFamily: T.MONO, fontSize: '10px', padding: '4px 8px', color: 'rgba(255,255,255,0.35)' }}>{t.position.toLocaleString()}</td>
+                        <td style={{ fontFamily: T.MONO, fontSize: '10px', padding: '4px 8px', color: t.essential ? 'rgba(255,139,31,0.8)' : 'rgba(255,255,255,0.25)' }}>{t.essential ? '⚠ YES' : 'no'}</td>
+                        <td style={{ fontFamily: T.MONO, fontSize: '10px', padding: '4px 8px', color: 'rgba(255,255,255,0.55)' }}>{t.essential ? '—' : `${(t.knockdown_efficiency * 100).toFixed(0)}%`}</td>
+                        <td style={{ fontFamily: T.SANS, fontSize: '10px', padding: '4px 8px', color: 'rgba(255,255,255,0.4)' }}>{t.phenotype}</td>
+                        <td style={{ fontFamily: T.MONO, fontSize: '10px', padding: '4px 8px', color: 'rgba(255,255,255,0.4)' }}>{t.essential ? '—' : `${((t.growth_impact ?? 0) * 100).toFixed(0)}%`}</td>
                       </tr>
                     );
                   })}
@@ -176,8 +174,8 @@ export default function GenMIMPage() {
           </div>
 
           {/* Results panel */}
-          <div style={{ width: '200px', flexShrink: 0, overflowY: 'auto', padding: '16px', borderLeft: '1px solid rgba(255,255,255,0.06)', background: '#10131a' }}>
-            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '0 0 12px' }}>
+          <div style={{ width: '200px', flexShrink: 0, overflowY: 'auto', padding: '16px', borderLeft: '1px solid rgba(255,255,255,0.06)', background: '#000000' }}>
+            <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '0 0 12px' }}>
               Predicted Impact
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -190,7 +188,7 @@ export default function GenMIMPage() {
           </div>
         </div>
 
-        <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', padding: '8px 16px', display: 'flex', gap: '8px', flexShrink: 0, background: '#10131a' }}>
+        <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', padding: '8px 16px', display: 'flex', gap: '8px', flexShrink: 0, background: '#000000' }}>
           <ExportButton label="Export Schedule JSON" data={schedule} filename="genmim-schedule" format="json" />
           <ExportButton label="Export All Targets CSV" data={CRISPRI_TARGETS} filename="genmim-targets" format="csv" />
         </div>
