@@ -1,88 +1,132 @@
 'use client';
-import { useState, useMemo } from 'react';
-import IDEShell from '../ide/IDEShell';
-import AlgorithmInsight from '../ide/shared/AlgorithmInsight';
+import { useState, useMemo, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import ToolShell, { TOOL_TOKENS as T } from './shared/ToolShell';
+import ModuleCard from './shared/ModuleCard';
+import TactileSlider from './shared/TactileSlider';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
 import { PATHWAY_STEPS, computeThermo } from '../../data/mockCETHX';
 import type { PathwayKey } from '../../data/mockCETHX';
+import { useToolStore } from '../../store/toolStore';
 
-const MONO = "'JetBrains Mono','Fira Code',monospace";
-const SANS = "'Inter',-apple-system,sans-serif";
+// ── Breathing Waterfall Chart ──────────────────────────────────────────
 
-function WaterfallChart({ steps, tempC, pH }: { steps: ReturnType<typeof computeThermo>['steps']; tempC: number; pH: number }) {
-  const W = 420, H = 280, PAD = { top: 20, right: 20, bottom: 40, left: 50 };
+function BreathingWaterfall({ steps }: { steps: ReturnType<typeof computeThermo>['steps'] }) {
+  const W = 520, H = 340, PAD = { top: 28, right: 24, bottom: 48, left: 56 };
   const innerW = W - PAD.left - PAD.right;
   const innerH = H - PAD.top - PAD.bottom;
 
   const minG = Math.min(0, ...steps.map(s => s.cumulative));
   const maxG = Math.max(0, ...steps.map(s => s.cumulative), ...steps.map(s => s.deltaG));
   const range = maxG - minG || 1;
-
   function yPos(v: number) { return PAD.top + innerH - ((v - minG) / range) * innerH; }
-  const barW = Math.max(8, innerW / steps.length - 4);
+  const barW = Math.max(12, innerW / steps.length - 6);
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
-      <rect width={W} height={H} fill="#0d0f14" />
+      {/* Zero line */}
       <line x1={PAD.left} y1={yPos(0)} x2={W - PAD.right} y2={yPos(0)}
-        stroke="rgba(255,255,255,0.15)" strokeWidth={1} />
-      <polyline
+        stroke="rgba(255,255,255,0.08)" strokeWidth={1} />
+
+      {/* Cumulative trace */}
+      <motion.polyline
+        initial={{ pathLength: 0 }}
+        animate={{ pathLength: 1 }}
+        transition={{ duration: 1.2, ease: 'easeOut' }}
         points={steps.map((s, i) => {
           const x = PAD.left + (i / steps.length) * innerW + barW / 2;
           return `${x},${yPos(s.cumulative)}`;
         }).join(' ')}
-        fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth={1.5} strokeDasharray="4 2"
+        fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth={1.5} strokeDasharray="4 2"
       />
+
+      {/* Breathing bars — each animates height independently */}
       {steps.map((step, i) => {
-        const x = PAD.left + (i / steps.length) * innerW;
+        const x = PAD.left + (i / steps.length) * innerW + 2;
         const isNeg = step.deltaG < 0;
         const color = step.atpYield > 0
-          ? 'rgba(255,200,80,0.7)'
-          : isNeg ? 'rgba(120,220,180,0.6)' : 'rgba(255,100,100,0.5)';
+          ? T.NEON
+          : isNeg ? 'rgba(120,220,180,0.75)' : 'rgba(255,80,80,0.65)';
+        const topY = Math.min(yPos(step.cumulative), yPos(step.cumulative - step.deltaG));
+        const h = Math.abs(yPos(step.cumulative) - yPos(step.cumulative - step.deltaG));
+
         return (
-          <g key={i}>
-            <rect x={x + 2} y={Math.min(yPos(step.cumulative), yPos(step.cumulative - step.deltaG))}
-              width={barW - 2}
-              height={Math.abs(yPos(step.cumulative) - yPos(step.cumulative - step.deltaG))}
-              fill={color} rx="1" />
-            <text x={x + barW / 2} y={H - 8} textAnchor="middle"
-              fontFamily={MONO} fontSize="7" fill="rgba(255,255,255,0.3)"
-              transform={`rotate(-45,${x + barW / 2},${H - 8})`}>
-              {step.step.slice(0, 8)}
-            </text>
-          </g>
+          <motion.rect
+            key={step.step + i}
+            x={x}
+            width={barW - 4}
+            rx={3}
+            fill={color}
+            initial={{ y: yPos(0), height: 0, opacity: 0 }}
+            animate={{
+              y: topY,
+              height: h,
+              opacity: [0.55, 0.8, 0.55],
+            }}
+            transition={{
+              y: { type: 'spring', stiffness: 200, damping: 25, delay: i * 0.06 },
+              height: { type: 'spring', stiffness: 200, damping: 25, delay: i * 0.06 },
+              opacity: {
+                duration: 3,
+                repeat: Infinity,
+                ease: 'easeInOut',
+                delay: i * 0.15,
+              },
+            }}
+          />
         );
       })}
+
+      {/* Step labels */}
+      {steps.map((step, i) => {
+        const x = PAD.left + (i / steps.length) * innerW + barW / 2;
+        return (
+          <text key={'lbl' + i} x={x} y={H - 6} textAnchor="middle"
+            fontFamily={T.MONO} fontSize="7" fill="rgba(255,255,255,0.2)"
+            transform={`rotate(-40,${x},${H - 6})`}>
+            {step.step.slice(0, 10)}
+          </text>
+        );
+      })}
+
+      {/* Y-axis ticks */}
       {[-40, -20, 0, 20].map(v => v >= minG && v <= maxG ? (
         <g key={v}>
-          <line x1={PAD.left - 4} y1={yPos(v)} x2={PAD.left} y2={yPos(v)} stroke="rgba(255,255,255,0.15)" />
-          <text x={PAD.left - 6} y={yPos(v) + 4} textAnchor="end" fontFamily={MONO} fontSize="8" fill="rgba(255,255,255,0.25)">
+          <line x1={PAD.left - 4} y1={yPos(v)} x2={PAD.left} y2={yPos(v)} stroke="rgba(255,255,255,0.08)" />
+          <text x={PAD.left - 8} y={yPos(v) + 3} textAnchor="end" fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.2)">
             {v}
           </text>
         </g>
       ) : null)}
-      <text x={10} y={H / 2} textAnchor="middle" fontFamily={MONO} fontSize="8" fill="rgba(255,255,255,0.25)"
+
+      <text x={10} y={H / 2} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.15)"
         transform={`rotate(-90,10,${H / 2})`}>ΔG (kJ/mol)</text>
+
+      {/* Legend */}
       {[
-        { color: 'rgba(120,220,180,0.6)', label: 'Exergonic' },
-        { color: 'rgba(255,100,100,0.5)', label: 'Endergonic' },
-        { color: 'rgba(255,200,80,0.7)',  label: 'ATP step' },
+        { color: 'rgba(120,220,180,0.75)', label: 'Exergonic' },
+        { color: 'rgba(255,80,80,0.65)', label: 'Endergonic' },
+        { color: T.NEON, label: 'ATP step' },
       ].map((l, i) => (
-        <g key={l.label} transform={`translate(${PAD.left + i * 90},${PAD.top - 8})`}>
-          <rect width={10} height={8} rx="1" fill={l.color} />
-          <text x={14} y={8} fontFamily={SANS} fontSize="8" fill="rgba(255,255,255,0.35)">{l.label}</text>
+        <g key={l.label} transform={`translate(${PAD.left + i * 100},${PAD.top - 14})`}>
+          <rect width={10} height={8} rx={2} fill={l.color} opacity={0.7} />
+          <text x={14} y={8} fontFamily={T.SANS} fontSize="8" fill="rgba(255,255,255,0.25)">{l.label}</text>
         </g>
       ))}
     </svg>
   );
 }
 
-const PATHWAYS: { id: PathwayKey; label: string }[] = [
-  { id: 'glycolysis', label: 'Glycolysis' },
-  { id: 'tca',        label: 'TCA Cycle' },
-  { id: 'ppp',        label: 'Pentose Phosphate' },
+// ── Pathway list ───────────────────────────────────────────────────────
+
+const PATHWAYS: { id: PathwayKey; label: string; desc: string }[] = [
+  { id: 'glycolysis', label: 'Glycolysis', desc: 'Glucose → 2 Pyruvate' },
+  { id: 'tca',        label: 'TCA Cycle',  desc: 'Acetyl-CoA → CO₂ + energy' },
+  { id: 'ppp',        label: 'Pentose ℙ',  desc: 'G6P → Ribose-5P + NADPH' },
 ];
+
+// ── Main Page ──────────────────────────────────────────────────────────
 
 export default function CETHXPage() {
   const [pathway, setPathway] = useState<PathwayKey>('glycolysis');
@@ -94,93 +138,184 @@ export default function CETHXPage() {
     [pathway, tempC, pH]
   );
 
+  // Sync to global store
+  const setCETHX = useToolStore(s => s.setCETHX);
+  useEffect(() => {
+    setCETHX({
+      pathway, tempC, pH,
+      gibbsTotal: thermo.gibbs_free_energy,
+      atpYield: thermo.atp_yield,
+      efficiency: thermo.efficiency,
+      timestamp: Date.now(),
+    });
+  }, [thermo, pathway, tempC, pH, setCETHX]);
+
   return (
-    <IDEShell moduleId="cethx">
-      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', background: '#10131a' }}>
-        <AlgorithmInsight
-          title="Cell Thermodynamics Engine"
-          description="ΔG° values corrected for temperature and pH via Van't Hoff. ATP yield and NADH/FADH₂ tallied per pathway step."
-          formula="ΔG' = ΔG° · (T/298) + ΔpH · RT·ln10"
-        />
-
-        <div style={{ flex: 1, display: 'flex', overflow: 'hidden', minHeight: 0 }}>
-          {/* Input panel */}
-          <div style={{ width: '220px', flexShrink: 0, overflowY: 'auto', padding: '16px', borderRight: '1px solid rgba(255,255,255,0.06)', background: '#10131a' }}>
-            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '0 0 12px' }}>
-              Pathway
-            </p>
+    <ToolShell
+      moduleId="cethx"
+      title="Cell Thermodynamics Engine"
+      description="ΔG° corrected via Van't Hoff — ATP/NADH tallied per pathway step"
+      formula="ΔG' = ΔG° · (T/298) + ΔpH · RT·ln10"
+      grid="'side main main' 'side steps metrics'"
+      columns="240px 1fr 220px"
+      rows="2fr 1fr"
+      gap={6}
+      footer={
+        <>
+          <ExportButton label="Export JSON" data={thermo} filename="cethx-thermodynamics" format="json" />
+          <ExportButton label="Export CSV" data={thermo.steps} filename="cethx-steps" format="csv" />
+        </>
+      }
+    >
+      {/* ── Sidebar: Pathway + Sliders ──────────────────────── */}
+      <ModuleCard area="side" title="Parameters" active={true}>
+        <div style={{ flex: 1, overflowY: 'auto', paddingTop: '4px' }}>
+          {/* Pathway selector */}
+          <div style={{ marginBottom: '16px' }}>
             {PATHWAYS.map(p => (
-              <button key={p.id} onClick={() => setPathway(p.id)} style={{
-                display: 'block', width: '100%', textAlign: 'left',
-                padding: '7px 10px', marginBottom: '5px',
-                background: pathway === p.id ? 'rgba(255,255,255,0.06)' : 'transparent',
-                border: `1px solid ${pathway === p.id ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.06)'}`,
-                borderRadius: '8px',
-                color: pathway === p.id ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.4)',
-                fontFamily: SANS, fontSize: '11px', cursor: 'pointer',
+              <motion.button
+                key={p.id}
+                onClick={() => setPathway(p.id)}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                style={{
+                  display: 'block', width: '100%', textAlign: 'left',
+                  padding: '8px 10px', marginBottom: '4px',
+                  background: pathway === p.id ? `${T.NEON}08` : 'transparent',
+                  border: pathway === p.id
+                    ? `1px solid ${T.NEON}25`
+                    : '1px solid rgba(255,255,255,0.03)',
+                  borderRadius: '10px', cursor: 'pointer',
+                }}
+              >
+                <span style={{
+                  fontFamily: T.SANS, fontSize: '11px', fontWeight: 500,
+                  color: pathway === p.id ? T.NEON : 'rgba(255,255,255,0.5)',
+                  display: 'block',
+                }}>
+                  {p.label}
+                </span>
+                <span style={{
+                  fontFamily: T.MONO, fontSize: '8px',
+                  color: 'rgba(255,255,255,0.2)',
+                }}>
+                  {p.desc}
+                </span>
+              </motion.button>
+            ))}
+          </div>
+
+          {/* TactileSliders */}
+          <TactileSlider
+            label="Temperature" value={tempC} min={20} max={60} step={1}
+            unit="°C" onChange={setTempC}
+          />
+          <TactileSlider
+            label="pH" value={pH} min={5.5} max={9.0} step={0.1}
+            onChange={setPH} color="rgba(120,180,255,0.9)"
+          />
+        </div>
+      </ModuleCard>
+
+      {/* ── Center: Breathing Waterfall ─────────────────────── */}
+      <ModuleCard area="main" flush>
+        <div style={{
+          flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: '16px', background: 'rgba(0,0,0,0.4)',
+        }}>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={pathway}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              style={{ width: '100%', maxWidth: '600px' }}
+            >
+              <BreathingWaterfall steps={thermo.steps} />
+            </motion.div>
+          </AnimatePresence>
+        </div>
+      </ModuleCard>
+
+      {/* ── Bottom-left: Step breakdown ─────────────────────── */}
+      <ModuleCard area="steps" title="Step Breakdown">
+        <div style={{ flex: 1, overflowY: 'auto' }}>
+          {thermo.steps.map((s, i) => (
+            <motion.div
+              key={s.step + i}
+              initial={{ opacity: 0, x: -6 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: i * 0.04, duration: 0.2 }}
+              style={{
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                padding: '4px 0',
+                borderBottom: '1px solid rgba(255,255,255,0.02)',
+              }}
+            >
+              <span style={{
+                fontFamily: T.SANS, fontSize: '9px',
+                color: 'rgba(255,255,255,0.35)',
+                maxWidth: '140px', overflow: 'hidden',
+                textOverflow: 'ellipsis', whiteSpace: 'nowrap',
               }}>
-                {p.label}
-              </button>
-            ))}
+                {s.step}
+              </span>
+              <span style={{
+                fontFamily: T.MONO, fontSize: '10px', fontWeight: 600,
+                textAlign: 'right',
+                color: s.deltaG < 0 ? 'rgba(120,220,180,0.85)' : 'rgba(255,80,80,0.75)',
+              }}>
+                {s.deltaG > 0 ? '+' : ''}{s.deltaG.toFixed(1)}
+              </span>
+            </motion.div>
+          ))}
+        </div>
+      </ModuleCard>
 
-            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '16px 0 8px' }}>
-              Conditions
-            </p>
-            {[
-              { label: 'Temperature', value: tempC, min: 20, max: 60, step: 1, unit: '°C', onChange: setTempC },
-              { label: 'pH', value: pH, min: 5.5, max: 9.0, step: 0.1, unit: '', onChange: setPH },
-            ].map(s => (
-              <div key={s.label} style={{ marginBottom: '12px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                  <span style={{ fontFamily: SANS, fontSize: '11px', color: 'rgba(255,255,255,0.45)' }}>{s.label}</span>
-                  <span style={{ fontFamily: MONO, fontSize: '11px', color: 'rgba(255,255,255,0.55)' }}>{s.value.toFixed(1)}{s.unit}</span>
-                </div>
-                <input type="range" min={s.min} max={s.max} step={s.step} value={s.value}
-                  onChange={e => s.onChange(parseFloat(e.target.value))}
-                  style={{ width: '100%', accentColor: 'rgba(120,180,255,0.8)' }} />
-              </div>
-            ))}
+      {/* ── Right: Metrics ──────────────────────────────────── */}
+      <ModuleCard area="metrics" title="Thermodynamics">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
+          <MetricCard label="Net ATP Yield" value={thermo.atp_yield} unit="mol/mol" highlight />
+          <MetricCard label="NADH Yield" value={thermo.nadh_yield} unit="mol/mol" />
+          <MetricCard label="ΔG Total" value={thermo.gibbs_free_energy} unit="kJ/mol" />
+          <MetricCard label="Entropy" value={thermo.entropy_production.toFixed(3)} unit="kJ/mol/K" />
 
-            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '16px 0 8px' }}>
-              Steps
-            </p>
-            {thermo.steps.map((s, i) => (
-              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                <span style={{ fontFamily: SANS, fontSize: '9px', color: 'rgba(255,255,255,0.4)', maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {s.step}
-                </span>
-                <span style={{ fontFamily: MONO, fontSize: '9px', color: s.deltaG < 0 ? 'rgba(20,140,80,0.75)' : 'rgba(180,40,40,0.75)' }}>
-                  {s.deltaG > 0 ? '+' : ''}{s.deltaG.toFixed(1)}
-                </span>
-              </div>
-            ))}
-          </div>
-
-          {/* Engine view — waterfall */}
-          <div style={{ flex: 1, overflow: 'hidden', background: '#0d0f14', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px' }}>
-            <WaterfallChart steps={thermo.steps} tempC={tempC} pH={pH} />
-          </div>
-
-          {/* Results panel */}
-          <div style={{ width: '220px', flexShrink: 0, overflowY: 'auto', padding: '16px', borderLeft: '1px solid rgba(255,255,255,0.06)', background: '#10131a' }}>
-            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '0 0 12px' }}>
-              Thermodynamics
-            </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <MetricCard label="Net ATP Yield" value={thermo.atp_yield} unit="mol/mol" highlight />
-              <MetricCard label="NADH Yield" value={thermo.nadh_yield} unit="mol/mol" />
-              <MetricCard label="ΔG Total" value={thermo.gibbs_free_energy} unit="kJ/mol" />
-              <MetricCard label="Entropy Production" value={thermo.entropy_production.toFixed(3)} unit="kJ/mol/K" />
-              <MetricCard label="Efficiency" value={thermo.efficiency.toFixed(1)} unit="%" />
+          {/* Efficiency gauge */}
+          <div style={{
+            marginTop: '8px', padding: '10px',
+            borderRadius: '12px',
+            background: 'rgba(255,255,255,0.02)',
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+              <span style={{ fontFamily: T.SANS, fontSize: '9px', color: T.LABEL }}>Efficiency</span>
+              <motion.span
+                key={thermo.efficiency}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                style={{
+                  fontFamily: T.MONO, fontSize: '16px', fontWeight: 700,
+                  color: thermo.efficiency > 50 ? T.NEON : 'rgba(255,200,80,0.9)',
+                }}
+              >
+                {thermo.efficiency.toFixed(1)}%
+              </motion.span>
+            </div>
+            <div style={{ width: '100%', height: '4px', borderRadius: '2px', background: 'rgba(255,255,255,0.04)' }}>
+              <motion.div
+                animate={{ width: `${Math.min(100, thermo.efficiency)}%` }}
+                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                style={{
+                  height: '100%', borderRadius: '2px',
+                  background: thermo.efficiency > 50
+                    ? `linear-gradient(90deg, ${T.NEON}60, ${T.NEON})`
+                    : 'linear-gradient(90deg, rgba(255,200,80,0.4), rgba(255,200,80,0.9))',
+                }}
+              />
             </div>
           </div>
         </div>
-
-        <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', padding: '8px 16px', display: 'flex', gap: '8px', flexShrink: 0, background: '#10131a' }}>
-          <ExportButton label="Export JSON" data={thermo} filename="cethx-thermodynamics" format="json" />
-          <ExportButton label="Export Steps CSV" data={thermo.steps} filename="cethx-steps" format="csv" />
-        </div>
-      </div>
-    </IDEShell>
+      </ModuleCard>
+    </ToolShell>
   );
 }

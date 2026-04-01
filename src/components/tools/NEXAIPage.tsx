@@ -1,67 +1,79 @@
 'use client';
-import { useState, useMemo } from 'react';
-import IDEShell from '../ide/IDEShell';
-import AlgorithmInsight from '../ide/shared/AlgorithmInsight';
+import { useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import ToolShell, { TOOL_TOKENS as T } from './shared/ToolShell';
+import ModuleCard from './shared/ModuleCard';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
-import EmptyState from '../ide/shared/EmptyState';
 import { MOCK_RESULTS } from '../../data/mockNEXAI';
 import type { NEXAIResult, CitationNode } from '../../types';
 import { useUIStore } from '../../store/uiStore';
 
-const MONO = "'JetBrains Mono','Fira Code',monospace";
-const SANS = "'Inter',-apple-system,sans-serif";
+// ── Full-bleed Citation Graph ──────────────────────────────────────────
 
-function CitationGraph({ citations }: { citations: CitationNode[] }) {
-  const W = 440, H = 320;
+function CitationGraph({ citations, onNodeClick }: {
+  citations: CitationNode[];
+  onNodeClick?: (c: CitationNode) => void;
+}) {
+  const W = 640, H = 480;
   const [hovered, setHovered] = useState<string | null>(null);
 
   const nodes = citations.map((c, i) => ({
     ...c,
-    x: c.x ?? (80 + ((i * 90) % (W - 160))),
-    y: c.y ?? (60 + Math.floor(i / 4) * 100),
-    r: 12 + c.relevance * 16,
+    x: c.x ?? (60 + ((i * 110) % (W - 120))),
+    y: c.y ?? (50 + Math.floor(i / 5) * 120 + (i % 2) * 30),
+    r: 14 + c.relevance * 20,
   }));
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
-      <rect width={W} height={H} fill="#0d0f14" />
+      {/* Edges */}
       {nodes.map((n, i) =>
         nodes.slice(i + 1, i + 3).map((m, j) => (
           <line key={`e-${i}-${j}`}
             x1={n.x} y1={n.y} x2={m.x} y2={m.y}
-            stroke="rgba(255,255,255,0.06)" strokeWidth={1}
+            stroke={`rgba(57,255,20,${0.04 + n.relevance * 0.06})`} strokeWidth={1}
           />
         ))
       )}
+      {/* Nodes */}
       {nodes.map(n => {
         const isHov = hovered === n.id;
         return (
           <g key={n.id}
             onMouseEnter={() => setHovered(n.id)}
             onMouseLeave={() => setHovered(null)}
+            onClick={() => onNodeClick?.(n)}
             style={{ cursor: 'pointer' }}>
+            {/* Glow */}
+            {isHov && (
+              <circle cx={n.x} cy={n.y} r={n.r + 10}
+                fill="none" stroke={T.NEON} strokeWidth={1}
+                opacity={0.2}
+              />
+            )}
             <circle cx={n.x} cy={n.y} r={n.r}
-              fill={`rgba(120,180,255,${0.1 + n.relevance * 0.15})`}
-              stroke={`rgba(120,180,255,${0.4 + n.relevance * 0.4})`}
+              fill={`rgba(57,255,20,${0.06 + n.relevance * 0.1})`}
+              stroke={isHov ? T.NEON : `rgba(57,255,20,${0.2 + n.relevance * 0.3})`}
               strokeWidth={isHov ? 2 : 1}
             />
             <text x={n.x} y={n.y + 4} textAnchor="middle"
-              fontFamily={MONO} fontSize="8" fill="rgba(255,255,255,0.7)">
+              fontFamily={T.MONO} fontSize="9" fill={isHov ? T.NEON : 'rgba(255,255,255,0.6)'}>
               {n.year}
             </text>
             {isHov && (
-              <foreignObject x={n.x + n.r + 4} y={n.y - 30} width={200} height={80}>
+              <foreignObject x={n.x + n.r + 6} y={n.y - 36} width={220} height={80}>
                 <div style={{
-                  background: 'rgba(10,12,16,0.95)',
-                  border: '1px solid rgba(255,255,255,0.12)',
-                  borderRadius: '8px',
-                  padding: '6px 8px',
+                  background: 'rgba(0,0,0,0.92)',
+                  border: `1px solid ${T.NEON}30`,
+                  borderRadius: '10px',
+                  padding: '8px 10px',
+                  backdropFilter: 'blur(12px)',
                 }}>
-                  <p style={{ fontFamily: SANS, fontSize: '9px', color: 'rgba(255,255,255,0.75)', margin: '0 0 3px', lineHeight: 1.4 }}>
-                    {n.title.slice(0, 70)}…
+                  <p style={{ fontFamily: T.SANS, fontSize: '10px', color: 'rgba(255,255,255,0.8)', margin: '0 0 3px', lineHeight: 1.4 }}>
+                    {n.title.slice(0, 80)}…
                   </p>
-                  <p style={{ fontFamily: MONO, fontSize: '8px', color: 'rgba(255,255,255,0.35)', margin: 0 }}>
+                  <p style={{ fontFamily: T.MONO, fontSize: '8px', color: T.NEON, margin: 0 }}>
                     Relevance: {(n.relevance * 100).toFixed(0)}%
                   </p>
                 </div>
@@ -70,12 +82,118 @@ function CitationGraph({ citations }: { citations: CitationNode[] }) {
           </g>
         );
       })}
-      <text x={10} y={H - 8} fontFamily={SANS} fontSize="8" fill="rgba(255,255,255,0.2)">
-        Node size = relevance score
+      <text x={14} y={H - 12} fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.1)">
+        Citation Network — node size = relevance
       </text>
     </svg>
   );
 }
+
+// ── Floating CLI Overlay ───────────────────────────────────────────────
+
+function FloatingCLI({ query, setQuery, onSubmit, loading, history }: {
+  query: string;
+  setQuery: (q: string) => void;
+  onSubmit: () => void;
+  loading: boolean;
+  history: string[];
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [histIdx, setHistIdx] = useState(-1);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === '/' && e.target === document.body) {
+        e.preventDefault();
+        inputRef.current?.focus();
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
+
+  const handleKey = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); onSubmit(); }
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      const newIdx = Math.min(histIdx + 1, history.length - 1);
+      setHistIdx(newIdx);
+      if (history[newIdx]) setQuery(history[newIdx]);
+    }
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      const newIdx = Math.max(histIdx - 1, -1);
+      setHistIdx(newIdx);
+      setQuery(newIdx < 0 ? '' : (history[newIdx] ?? ''));
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ y: 20, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+      style={{
+        position: 'absolute', bottom: '16px', left: '16px', right: '16px',
+        borderRadius: '14px',
+        background: 'rgba(0,0,0,0.85)',
+        backdropFilter: 'blur(16px)',
+        border: `1px solid ${loading ? `${T.NEON}40` : 'rgba(255,255,255,0.06)'}`,
+        boxShadow: loading ? `0 0 30px ${T.NEON}10` : '0 4px 20px rgba(0,0,0,0.5)',
+        padding: '10px 14px',
+        display: 'flex', alignItems: 'center', gap: '10px',
+        zIndex: 10,
+      }}
+    >
+      <span style={{
+        fontFamily: T.MONO, fontSize: '12px', fontWeight: 700,
+        color: loading ? T.NEON : 'rgba(255,255,255,0.3)',
+        flexShrink: 0,
+      }}>
+        {loading ? '⟳' : '›'}
+      </span>
+      <input
+        ref={inputRef}
+        value={query}
+        onChange={e => { setQuery(e.target.value); setHistIdx(-1); }}
+        onKeyDown={handleKey}
+        placeholder="Ask Axon anything… (press / to focus)"
+        disabled={loading}
+        style={{
+          flex: 1, background: 'transparent', border: 'none', outline: 'none',
+          fontFamily: T.MONO, fontSize: '12px',
+          color: 'rgba(255,255,255,0.85)',
+          caretColor: T.NEON,
+        }}
+      />
+      <motion.button
+        onClick={onSubmit}
+        disabled={loading || !query.trim()}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        style={{
+          padding: '5px 14px', borderRadius: '8px', cursor: 'pointer',
+          fontFamily: T.MONO, fontSize: '10px', fontWeight: 600,
+          background: loading ? 'transparent' : `${T.NEON}15`,
+          border: `1px solid ${loading ? 'rgba(255,255,255,0.06)' : `${T.NEON}30`}`,
+          color: loading ? 'rgba(255,255,255,0.3)' : T.NEON,
+        }}
+      >
+        {loading ? 'searching…' : '⏎ ask'}
+      </motion.button>
+    </motion.div>
+  );
+}
+
+// ── Preset Chips ───────────────────────────────────────────────────────
+
+const PRESET_QUERIES = [
+  'How does tHMGR improve artemisinin precursor supply?',
+  'Key bottlenecks in the artemisinin biosynthesis pathway?',
+  'Dynamic regulation strategies for isoprenoid overproduction',
+];
+
+// ── Main Page ──────────────────────────────────────────────────────────
 
 export default function NEXAIPage() {
   const appendConsole = useUIStore(s => s.appendConsole);
@@ -83,21 +201,21 @@ export default function NEXAIPage() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<NEXAIResult | null>(null);
   const [mockIndex, setMockIndex] = useState(0);
+  const [history, setHistory] = useState<string[]>([]);
 
   async function runQuery() {
     if (!query.trim()) return;
+    setHistory(prev => [query, ...prev.slice(0, 19)]);
     setLoading(true);
-    appendConsole({ level: 'info', module: 'nexai', message: `Query: "${query.slice(0, 60)}${query.length > 60 ? '…' : ''}"` });
+    appendConsole({ level: 'info', module: 'nexai', message: 'Query: "' + query.slice(0, 60) + (query.length > 60 ? '…' : '') + '"' });
 
-    const prompt = `You are a synthetic biology and metabolic engineering expert. Answer the following research question with scientific precision. Provide a detailed, evidence-based answer (2–4 paragraphs). Include specific mechanisms, data points, and cite relevant research where appropriate.\n\nQuestion: ${query}`;
+    const prompt = 'You are a synthetic biology and metabolic engineering expert. Answer the following research question with scientific precision. Provide a detailed, evidence-based answer (2–4 paragraphs). Include specific mechanisms, data points, and cite relevant research where appropriate.\n\nQuestion: ' + query;
 
     try {
       const res = await fetch('/api/gemini', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-        }),
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
       });
 
       const data = await res.json();
@@ -105,23 +223,17 @@ export default function NEXAIPage() {
 
       if (res.ok && answer) {
         const mockBase = MOCK_RESULTS[mockIndex % MOCK_RESULTS.length];
-        setResult({
-          ...mockBase,
-          query,
-          answer,
-          confidence: 0.85 + Math.random() * 0.1,
-          generatedAt: Date.now(),
-        });
-        appendConsole({ level: 'success', module: 'nexai', message: `Answer generated (${data.meta?.provider ?? 'groq'})` });
+        setResult({ ...mockBase, query, answer, confidence: 0.85 + Math.random() * 0.1, generatedAt: Date.now() });
+        appendConsole({ level: 'success', module: 'nexai', message: 'Answer generated (' + (data.meta?.provider ?? 'groq') + ')' });
       } else {
-        const err = data?.error ?? `HTTP ${res.status}`;
-        appendConsole({ level: 'warn', module: 'nexai', message: `API error — ${err}` });
+        const err = data?.error ?? ('HTTP ' + res.status);
+        appendConsole({ level: 'warn', module: 'nexai', message: 'API error — ' + err });
         const mockResult = MOCK_RESULTS[mockIndex % MOCK_RESULTS.length];
         setResult({ ...mockResult, query, generatedAt: Date.now() });
         setMockIndex(i => i + 1);
       }
     } catch (e) {
-      appendConsole({ level: 'warn', module: 'nexai', message: `Network error — ${String(e).slice(0, 60)}` });
+      appendConsole({ level: 'warn', module: 'nexai', message: 'Network error — ' + String(e).slice(0, 60) });
       const mockResult = MOCK_RESULTS[mockIndex % MOCK_RESULTS.length];
       setResult({ ...mockResult, query, generatedAt: Date.now() });
       setMockIndex(i => i + 1);
@@ -129,159 +241,181 @@ export default function NEXAIPage() {
     setLoading(false);
   }
 
-  const PRESET_QUERIES = [
-    'How does tHMGR improve artemisinin precursor supply?',
-    'Key bottlenecks in the artemisinin biosynthesis pathway?',
-    'Dynamic regulation strategies for isoprenoid overproduction',
-  ];
-
   return (
-    <IDEShell moduleId="nexai">
-      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', background: '#10131a' }}>
-        <AlgorithmInsight
-          title="Axon"
-          description="Semantic search across PubMed, UniProt, ChEMBL, Reactome, KEGG, and literature — synthesized by Groq llama-3.3-70b."
-          formula="score = α·semantic_sim + β·citation_weight"
-        />
-
-        <div style={{ flex: 1, display: 'flex', overflow: 'hidden', minHeight: 0 }}>
-          {/* Input panel */}
-          <div style={{ width: '280px', flexShrink: 0, overflowY: 'auto', padding: '16px', borderRight: '1px solid rgba(255,255,255,0.06)', background: '#10131a' }}>
-            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '0 0 8px' }}>
-              Research Query
-            </p>
-
-            <textarea
-              value={query}
-              onChange={e => setQuery(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) runQuery(); }}
-              placeholder="Ask a scientific question about metabolic pathways, enzymes, or biosynthesis..."
-              rows={4}
+    <ToolShell
+      moduleId="nexai"
+      title="Axon"
+      description="Semantic search across PubMed, UniProt, ChEMBL, Reactome, KEGG — synthesized by Groq"
+      formula="score = α·semantic_sim + β·citation_weight"
+      grid="'presets graph stats' 'presets graph stats'"
+      columns="200px 1fr 200px"
+      rows="1fr 1fr"
+      gap={6}
+      footer={
+        <ExportButton label="Export Result" data={result} filename="nexai-result" format="json" disabled={!result} />
+      }
+    >
+      {/* ── Presets & Citations ──────────────────────────────── */}
+      <ModuleCard area="presets" title="Quick Queries">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, overflowY: 'auto' }}>
+          {PRESET_QUERIES.map((q, i) => (
+            <motion.button
+              key={i}
+              onClick={() => { setQuery(q); }}
+              whileHover={{ x: 3 }}
               style={{
-                width: '100%', padding: '8px 10px', boxSizing: 'border-box',
-                background: 'rgba(255,255,255,0.06)',
-                border: '1px solid rgba(255,255,255,0.1)',
-                borderRadius: '10px',
-                color: 'rgba(255,255,255,0.85)',
-                fontFamily: SANS, fontSize: '12px', lineHeight: 1.5,
-                resize: 'vertical', marginBottom: '8px',
-                outline: 'none',
-              }}
-            />
-
-            <button onClick={runQuery} disabled={loading || !query.trim()} style={{
-              width: '100%', padding: '8px',
-              background: loading ? 'rgba(255,255,255,0.03)' : 'rgba(120,180,255,0.12)',
-              border: `1px solid ${loading ? 'rgba(255,255,255,0.06)' : 'rgba(120,180,255,0.25)'}`,
-              borderRadius: '8px',
-              color: loading ? 'rgba(255,255,255,0.3)' : 'rgba(120,200,255,0.9)',
-              fontFamily: SANS, fontSize: '11px', cursor: loading ? 'not-allowed' : 'pointer',
-              marginBottom: '16px',
-            }}>
-              {loading ? 'Searching...' : '⌘↵ Ask Axon'}
-            </button>
-
-            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '0 0 8px' }}>
-              Preset Queries
-            </p>
-            {PRESET_QUERIES.map((q, i) => (
-              <button key={i} onClick={() => setQuery(q)} style={{
                 display: 'block', width: '100%', textAlign: 'left',
-                padding: '6px 10px', marginBottom: '5px',
-                background: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(255,255,255,0.06)',
-                borderRadius: '8px',
-                color: 'rgba(255,255,255,0.5)',
-                fontFamily: SANS, fontSize: '11px', lineHeight: 1.4,
-                cursor: 'pointer',
+                padding: '7px 10px',
+                background: query === q ? `${T.NEON}08` : 'transparent',
+                border: query === q ? `1px solid ${T.NEON}20` : '1px solid rgba(255,255,255,0.03)',
+                borderRadius: '8px', cursor: 'pointer',
+                fontFamily: T.SANS, fontSize: '10px', lineHeight: 1.5,
+                color: query === q ? T.NEON : 'rgba(255,255,255,0.45)',
               }}
-                onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)'}
-                onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'}
-              >
-                {q}
-              </button>
-            ))}
+            >
+              {q}
+            </motion.button>
+          ))}
 
-            {result && (
-              <>
-                <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '16px 0 8px' }}>
-                  Citations ({result.citations.length})
-                </p>
-                {result.citations.map(c => (
-                  <div key={c.id} style={{
-                    padding: '6px 8px', marginBottom: '5px',
-                    background: 'rgba(255,255,255,0.04)',
-                    border: '1px solid rgba(255,255,255,0.06)',
-                    borderRadius: '8px',
-                  }}>
-                    <p style={{ fontFamily: SANS, fontSize: '10px', color: 'rgba(255,255,255,0.6)', margin: '0 0 2px', lineHeight: 1.4 }}>
-                      {c.title.slice(0, 55)}…
-                    </p>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span style={{ fontFamily: SANS, fontSize: '8px', color: 'rgba(255,255,255,0.4)' }}>{c.authors.split(',')[0]} et al. {c.year}</span>
-                      <span style={{ fontFamily: MONO, fontSize: '8px', color: 'rgba(20,100,200,0.7)' }}>{(c.relevance * 100).toFixed(0)}%</span>
-                    </div>
-                  </div>
-                ))}
-              </>
-            )}
-          </div>
-
-          {/* Engine view — answer + citation graph */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#0d0f14' }}>
-            {loading ? (
-              <EmptyState type="loading" title="Searching..." message="Querying databases and synthesizing answer" />
-            ) : result ? (
-              <>
-                {/* Answer card */}
-                <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)', flexShrink: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-                    <span style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.25)' }}>
-                      Axon Response
+          {/* Citation list when result exists */}
+          {result && (
+            <>
+              <div style={{
+                fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase',
+                letterSpacing: '0.1em', color: 'rgba(255,255,255,0.2)',
+                margin: '14px 0 6px', padding: '0 2px',
+              }}>
+                Citations ({result.citations.length})
+              </div>
+              {result.citations.map(c => (
+                <div key={c.id} style={{
+                  padding: '6px 8px',
+                  borderRadius: '8px',
+                  background: 'rgba(255,255,255,0.02)',
+                }}>
+                  <p style={{ fontFamily: T.SANS, fontSize: '9px', color: 'rgba(255,255,255,0.5)', margin: '0 0 2px', lineHeight: 1.4 }}>
+                    {c.title.slice(0, 60)}…
+                  </p>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ fontFamily: T.SANS, fontSize: '8px', color: 'rgba(255,255,255,0.3)' }}>
+                      {c.authors.split(',')[0]} et al. {c.year}
                     </span>
-                    <span style={{
-                      fontFamily: MONO, fontSize: '9px', padding: '2px 8px',
-                      background: 'rgba(120,220,180,0.08)', border: '1px solid rgba(120,220,180,0.2)',
-                      borderRadius: '10px', color: 'rgba(120,220,180,0.7)',
-                    }}>
-                      {(result.confidence * 100).toFixed(0)}% confidence
+                    <span style={{ fontFamily: T.MONO, fontSize: '8px', color: T.NEON }}>
+                      {(c.relevance * 100).toFixed(0)}%
                     </span>
                   </div>
-                  <p style={{ fontFamily: SANS, fontSize: '12px', color: 'rgba(255,255,255,0.65)', lineHeight: 1.7, margin: 0 }}>
-                    {result.answer}
-                  </p>
                 </div>
-                {/* Citation graph */}
-                <div style={{ flex: 1, overflow: 'hidden', padding: '8px' }}>
-                  <p style={{ fontFamily: MONO, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.2)', margin: '0 0 6px 4px' }}>
-                    Citation Network
-                  </p>
-                  <CitationGraph citations={result.citations} />
-                </div>
-              </>
-            ) : (
-              <EmptyState type="empty" title="Ask Axon" message="Enter a research question to search across 6 scientific databases and get an AI-synthesized answer with citations." />
-            )}
-          </div>
+              ))}
+            </>
+          )}
+        </div>
+      </ModuleCard>
 
-          {/* Results panel */}
-          <div style={{ width: '200px', flexShrink: 0, overflowY: 'auto', padding: '16px', borderLeft: '1px solid rgba(255,255,255,0.06)', background: '#10131a' }}>
-            <p style={{ fontFamily: SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '0 0 12px' }}>
-              Query Stats
-            </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <MetricCard label="Confidence" value={result ? `${(result.confidence * 100).toFixed(0)}%` : '—'} highlight={!!result} />
-              <MetricCard label="Citations" value={result?.citations.length ?? 0} />
-              <MetricCard label="Databases" value={6} unit="sources" />
-              <MetricCard label="Model" value="llama-3.3" />
+      {/* ── Center: Graph + Floating CLI + Answer ───────────── */}
+      <ModuleCard area="graph" flush style={{ position: 'relative' }}>
+        {/* Full-bleed citation graph background */}
+        <div style={{
+          flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: '12px', overflow: 'hidden',
+        }}>
+          {result ? (
+            <CitationGraph citations={result.citations} />
+          ) : (
+            <div style={{ textAlign: 'center' }}>
+              <p style={{ fontFamily: T.MONO, fontSize: '32px', color: 'rgba(255,255,255,0.04)', margin: '0 0 8px' }}>⬡</p>
+              <p style={{ fontFamily: T.SANS, fontSize: '12px', color: 'rgba(255,255,255,0.15)' }}>
+                Ask Axon a research question
+              </p>
+              <p style={{ fontFamily: T.MONO, fontSize: '9px', color: 'rgba(255,255,255,0.08)', marginTop: '4px' }}>
+                press / to focus the command line
+              </p>
             </div>
-          </div>
+          )}
         </div>
 
-        <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', padding: '8px 16px', display: 'flex', gap: '8px', flexShrink: 0, background: '#10131a' }}>
-          <ExportButton label="Export Result JSON" data={result} filename="nexai-result" format="json" disabled={!result} />
+        {/* Answer overlay (top, translucent) */}
+        <AnimatePresence>
+          {result && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              style={{
+                position: 'absolute', top: '12px', left: '12px', right: '12px',
+                maxHeight: '40%', overflowY: 'auto',
+                borderRadius: '12px',
+                background: 'rgba(0,0,0,0.8)',
+                backdropFilter: 'blur(12px)',
+                border: '1px solid rgba(255,255,255,0.04)',
+                padding: '12px 14px',
+                zIndex: 5,
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                <span style={{ fontFamily: T.MONO, fontSize: '9px', color: T.NEON }}>AXON</span>
+                <span style={{
+                  fontFamily: T.MONO, fontSize: '8px', padding: '2px 6px',
+                  background: 'rgba(120,220,180,0.08)', border: '1px solid rgba(120,220,180,0.15)',
+                  borderRadius: '6px', color: 'rgba(120,220,180,0.7)',
+                }}>
+                  {(result.confidence * 100).toFixed(0)}%
+                </span>
+              </div>
+              <p style={{
+                fontFamily: T.SANS, fontSize: '11px', color: 'rgba(255,255,255,0.65)',
+                lineHeight: 1.7, margin: 0,
+              }}>
+                {result.answer}
+              </p>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Floating CLI at bottom */}
+        <FloatingCLI
+          query={query} setQuery={setQuery}
+          onSubmit={runQuery} loading={loading}
+          history={history}
+        />
+      </ModuleCard>
+
+      {/* ── Right: Stats ────────────────────────────────────── */}
+      <ModuleCard area="stats" title="Query Stats">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
+          <MetricCard label="Confidence" value={result ? (result.confidence * 100).toFixed(0) + '%' : '—'} highlight={!!result} />
+          <MetricCard label="Citations" value={result?.citations.length ?? 0} />
+          <MetricCard label="Databases" value={6} unit="sources" />
+          <MetricCard label="Model" value="llama-3.3" />
+
+          {/* History */}
+          {history.length > 0 && (
+            <div style={{ marginTop: '12px' }}>
+              <div style={{
+                fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase',
+                letterSpacing: '0.1em', color: 'rgba(255,255,255,0.2)', marginBottom: '6px',
+              }}>
+                History ({history.length})
+              </div>
+              {history.slice(0, 5).map((h, i) => (
+                <motion.button
+                  key={h + i}
+                  onClick={() => setQuery(h)}
+                  whileHover={{ x: 2 }}
+                  style={{
+                    display: 'block', width: '100%', textAlign: 'left',
+                    padding: '4px 6px', marginBottom: '2px',
+                    background: 'transparent', border: 'none', cursor: 'pointer',
+                    fontFamily: T.MONO, fontSize: '8px', color: 'rgba(255,255,255,0.25)',
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                  }}
+                >
+                  {h.slice(0, 40)}{h.length > 40 ? '…' : ''}
+                </motion.button>
+              ))}
+            </div>
+          )}
         </div>
-      </div>
-    </IDEShell>
+      </ModuleCard>
+    </ToolShell>
   );
 }
