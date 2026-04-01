@@ -622,11 +622,49 @@ export default function PaperAnalyzer({ onPathwayGenerated }: PaperAnalyzerProps
             </div>
           )}
           {analysisState === 'success' && !axonInteraction && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', borderRadius: '20px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
-              <CheckCircle2 size={13} style={{ color: 'rgba(255,255,255,0.5)', flexShrink: 0 }} />
-              <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '12px', margin: 0 }}>
-                Pathway extracted{aiProvider ? ` via ${aiProvider === 'groq' ? 'Groq LLaMA 3.3' : 'Gemini Flash'}` : ''}. Scroll up to explore ↑
-              </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '12px 14px', borderRadius: '20px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <CheckCircle2 size={13} style={{ color: 'rgba(255,255,255,0.5)', flexShrink: 0 }} />
+                <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '12px', margin: 0 }}>
+                  Pathway extracted{aiProvider ? ` via ${aiProvider === 'groq' ? 'Groq LLaMA 3.3' : 'Gemini Flash'}` : ''}. Scroll up to explore ↑
+                </p>
+              </div>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <a
+                  href="/tools?direction=Pathway%20%26%20Design&tool=pathd"
+                  style={{
+                    minHeight: '32px',
+                    padding: '0 12px',
+                    borderRadius: '999px',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    background: 'rgba(147,203,82,0.10)',
+                    color: 'rgba(255,255,255,0.75)',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    textDecoration: 'none',
+                    fontSize: '11px',
+                  }}
+                >
+                  Open PATHD workbench
+                </a>
+                <a
+                  href="/tools?direction=Research%20Intake"
+                  style={{
+                    minHeight: '32px',
+                    padding: '0 12px',
+                    borderRadius: '999px',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    background: 'rgba(255,255,255,0.03)',
+                    color: 'rgba(255,255,255,0.55)',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    textDecoration: 'none',
+                    fontSize: '11px',
+                  }}
+                >
+                  Browse tool directions
+                </a>
+              </div>
             </div>
           )}
           {analysisState === 'idle' && (

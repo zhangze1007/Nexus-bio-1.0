@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ChevronLeft, ChevronRight, LayoutGrid } from 'lucide-react';
 import { useUIStore } from '../../store/uiStore';
-import { TOOL_CATEGORIES, TOOL_DEFINITIONS } from '../tools/shared/toolRegistry';
+import { TOOL_DEFINITIONS, TOOL_DIRECTIONS } from '../tools/shared/toolRegistry';
 import { T } from '../ide/tokens';
 
 const SANS  = T.SANS;
@@ -115,11 +115,11 @@ export default function IDESidebar() {
       </div>
 
       <nav className="nb-ide-sidebar-nav">
-        {TOOL_CATEGORIES.map((category) => {
-          const tools = TOOL_DEFINITIONS.filter((tool) => tool.category === category);
+        {TOOL_DIRECTIONS.map((direction) => {
+          const tools = TOOL_DEFINITIONS.filter((tool) => tool.direction === direction);
 
           return (
-            <section key={category} style={{ padding: collapsed ? '10px 8px 0' : '12px 12px 0' }}>
+            <section key={direction} style={{ padding: collapsed ? '10px 8px 0' : '12px 12px 0' }}>
               {!collapsed && (
                 <p
                   style={{
@@ -132,7 +132,7 @@ export default function IDESidebar() {
                     color: 'rgba(255,255,255,0.2)',
                   }}
                 >
-                  {category}
+                  {direction}
                 </p>
               )}
 

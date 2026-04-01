@@ -1,5 +1,7 @@
 'use client';
 import { useState, useMemo } from 'react';
+import { Canvas } from '@react-three/fiber';
+import { OrbitControls } from '@react-three/drei';
 import IDEShell from '../ide/IDEShell';
 import AlgorithmInsight from '../ide/shared/AlgorithmInsight';
 import MetricCard from '../ide/shared/MetricCard';
@@ -35,7 +37,7 @@ const GLASS: React.CSSProperties = {
 
 const GENE_COLORS = ['#F0FDFA', '#5151CD', '#FA8072', '#FFFB1F', '#FF1FFF'];
 
-type ViewMode = 'TimeCourse' | 'Resources' | 'Fitting' | 'IvIv';
+type ViewMode = 'TimeCourse' | 'Resources' | 'Fitting' | 'IvIv' | 'Reactor3D';
 
 /* ── Section Label ────────────────────────────────────────────────── */
 
@@ -429,6 +431,99 @@ function IvIvChart({ result }: { result: CFSFullResult }) {
   );
 }
 
+function ReactorTwin3D({ result, constructs, params }: { result: CFSFullResult; constructs: GeneConstruct[]; params: CFSParameters }) {
+  const steadyMap = useMemo(
+    () => Object.fromEntries(result.simulation.steadyState.map(entry => [entry.geneId, entry])),
+    [result.simulation.steadyState],
+  );
+  const maxYield = Math.max(...result.simulation.steadyState.map(entry => entry.maxProtein), 1);
+  const energyPool = params.initialEnergy.atp + params.initialEnergy.gtp + params.initialEnergy.pep;
+  const depletionRatio = Math.min(1, result.simulation.energyDepletionTime / params.simulationTime);
+
+  return (
+    <div style={{ width: '100%', height: '100%', minHeight: '420px', borderRadius: '18px', overflow: 'hidden', border: `1px solid ${BORDER}`, background: '#050505', position: 'relative' }}>
+      <Canvas camera={{ position: [0, 5.5, 12], fov: 45 }}>
+        <color attach="background" args={['#050505']} />
+        <ambientLight intensity={0.72} />
+        <directionalLight position={[6, 8, 7]} intensity={1.0} />
+        <pointLight position={[-4, 4, 2]} intensity={0.45} color="#5151CD" />
+        <gridHelper args={[18, 12, '#1f1f1f', '#111111']} position={[0, -2.1, 0]} />
+
+        <mesh position={[0, -1.1, 0]}>
+          <cylinderGeometry args={[2.8, 2.8, 2.3, 40, 1, true]} />
+          <meshStandardMaterial color="#111111" transparent opacity={0.35} metalness={0.15} roughness={0.55} />
+        </mesh>
+        <mesh position={[0, -0.35 + depletionRatio * 0.65, 0]}>
+          <cylinderGeometry args={[2.4, 2.4, Math.max(0.45, depletionRatio * 1.4), 36]} />
+          <meshStandardMaterial color="#93CB52" emissive="#93CB52" emissiveIntensity={0.12} transparent opacity={0.42} />
+        </mesh>
+
+        {constructs.map((construct, index) => {
+          const steady = steadyMap[construct.id];
+          const normalized = steady ? steady.maxProtein / maxYield : 0.15;
+          const height = 0.8 + normalized * 2.8;
+          const x = -3.8 + index * 1.9;
+          return (
+            <group key={construct.id} position={[x, -0.6 + height / 2, 3.4]}>
+              <mesh>
+                <boxGeometry args={[0.9, height, 0.9]} />
+                <meshStandardMaterial color={GENE_COLORS[index % GENE_COLORS.length]} emissive={GENE_COLORS[index % GENE_COLORS.length]} emissiveIntensity={0.18} />
+              </mesh>
+              <mesh position={[0, height / 2 + 0.2, 0]}>
+                <sphereGeometry args={[0.12, 10, 10]} />
+                <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={0.2} />
+              </mesh>
+            </group>
+          );
+        })}
+
+        {[
+          { label: 'ATP', value: params.initialEnergy.atp / energyPool, x: 4.2, z: -1.4, color: '#FFFB1F' },
+          { label: 'GTP', value: params.initialEnergy.gtp / energyPool, x: 5.3, z: -1.4, color: '#FF8B1F' },
+          { label: 'PEP', value: params.initialEnergy.pep / energyPool, x: 6.4, z: -1.4, color: '#FA8072' },
+        ].map(res => (
+          <mesh key={res.label} position={[res.x, -1.6 + res.value * 1.8, res.z]}>
+            <boxGeometry args={[0.55, Math.max(0.35, res.value * 3), 0.55]} />
+            <meshStandardMaterial color={res.color} emissive={res.color} emissiveIntensity={0.18} />
+          </mesh>
+        ))}
+
+        <OrbitControls enablePan={false} minDistance={8} maxDistance={20} />
+      </Canvas>
+
+      <div style={{ position: 'absolute', top: '10px', left: '12px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+        <span style={{ padding: '3px 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.06)', color: VALUE, fontSize: '9px', fontFamily: T.MONO }}>
+          Center tank = active reaction volume
+        </span>
+        <span style={{ padding: '3px 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.06)', color: VALUE, fontSize: '9px', fontFamily: T.MONO }}>
+          Towers = construct yield
+        </span>
+      </div>
+      <div style={{ position: 'absolute', top: '10px', right: '12px', width: 'min(260px, calc(100% - 24px))' }}>
+        <div style={{ padding: '10px 12px', borderRadius: '14px', border: `1px solid ${BORDER}`, background: 'rgba(0,0,0,0.56)', backdropFilter: 'blur(10px)' }}>
+          <p style={{ margin: '0 0 6px', color: LABEL, fontSize: '9px', fontFamily: T.MONO, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            Evidence trace
+          </p>
+          <p style={{ margin: '0 0 8px', color: VALUE, fontSize: '10px', lineHeight: 1.55, fontFamily: T.SANS }}>
+            Reactor 3D binds the simulated TX-TL state to one scene: depletion timing drives tank fill, gene yield drives tower height, and ATP/GTP/PEP are kept visible as explicit resource assumptions.
+          </p>
+          <div style={{ display: 'grid', gap: '6px' }}>
+            <span style={{ padding: '3px 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.05)', color: VALUE, fontSize: '9px', fontFamily: T.MONO }}>
+              depletion · {result.simulation.energyDepletionTime.toFixed(0)} min
+            </span>
+            <span style={{ padding: '3px 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.05)', color: VALUE, fontSize: '9px', fontFamily: T.MONO }}>
+              total yield · {result.simulation.totalProteinYield.toFixed(1)} nM
+            </span>
+            <span style={{ padding: '3px 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.05)', color: VALUE, fontSize: '9px', fontFamily: T.MONO }}>
+              energy pool · {(params.initialEnergy.atp + params.initialEnergy.gtp + params.initialEnergy.pep).toFixed(1)} mM
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ── Main Component ───────────────────────────────────────────────── */
 
 export default function CellFreePage() {
@@ -504,7 +599,7 @@ export default function CellFreePage() {
             {/* View Mode */}
             <SectionLabel>View Mode</SectionLabel>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '16px' }}>
-              {(['TimeCourse', 'Resources', 'Fitting', 'IvIv'] as ViewMode[]).map(mode => (
+              {(['TimeCourse', 'Resources', 'Fitting', 'IvIv', 'Reactor3D'] as ViewMode[]).map(mode => (
                 <button aria-label="Action" key={mode} onClick={() => setViewMode(mode)} style={{
                   flex: '1 1 0', padding: '5px 0', borderRadius: '6px', cursor: 'pointer',
                   fontFamily: T.SANS, fontSize: '10px', border: 'none',
@@ -587,6 +682,23 @@ export default function CellFreePage() {
                     </p>
                   </div>
                 )}
+              </div>
+            )}
+            {viewMode === 'Reactor3D' && (
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '16px', gap: '10px' }}>
+                <div style={{ maxWidth: '760px', margin: '0 auto', width: '100%' }}>
+                  <div style={{ padding: '8px 12px', borderRadius: '14px', border: `1px solid ${BORDER}`, background: 'rgba(255,255,255,0.04)' }}>
+                    <p style={{ margin: '0 0 3px', color: VALUE, fontSize: '11px', fontFamily: T.SANS }}>
+                      Reactor 3D turns the CFPS run into a digital twin: construct yield, energy pool and depletion timing are mapped into one spatial scene.
+                    </p>
+                    <p style={{ margin: 0, color: LABEL, fontSize: '9px', fontFamily: T.MONO }}>
+                      center tank = resource state · rear towers = expression output · right bars = ATP / GTP / PEP allocation
+                    </p>
+                  </div>
+                </div>
+                <div style={{ flex: 1, minHeight: '420px', maxWidth: '760px', margin: '0 auto', width: '100%' }}>
+                  <ReactorTwin3D result={result} constructs={constructs} params={params} />
+                </div>
               </div>
             )}
           </div>

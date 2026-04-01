@@ -1,5 +1,7 @@
 'use client';
 import { useState, useMemo, useCallback } from 'react';
+import { Canvas } from '@react-three/fiber';
+import { OrbitControls } from '@react-three/drei';
 import IDEShell from '../ide/IDEShell';
 import AlgorithmInsight from '../ide/shared/AlgorithmInsight';
 import MetricCard from '../ide/shared/MetricCard';
@@ -37,7 +39,7 @@ const CLUSTER_COLORS: Record<number, string> = {
   4: '#FF1FFF',
 };
 
-type ViewMode = 'Spatial' | 'UMAP' | 'Trajectory' | 'Efficiency' | 'Table';
+type ViewMode = 'Spatial' | 'Spatial3D' | 'UMAP' | 'Trajectory' | 'Efficiency' | 'Table';
 
 /* ── Section Label (same as MultiOPage) ───────────────────────────── */
 
@@ -201,6 +203,65 @@ function SpatialMap({ cells, selectedCluster, highlightGene, showQCFailed }: {
         </g>
       ))}
     </svg>
+  );
+}
+
+function SpatialPointCloud({ cells, selectedCluster, highlightGene, showQCFailed }: {
+  cells: typeof SC_SPATIAL_DATA;
+  selectedCluster: number | null;
+  highlightGene: string;
+  showQCFailed: boolean;
+}) {
+  const filtered = useMemo(
+    () => cells.filter(cell => (showQCFailed || cell.qcPass) && (selectedCluster === null || cell.cluster === selectedCluster)),
+    [cells, selectedCluster, showQCFailed],
+  );
+
+  const bounds = useMemo(() => {
+    const xs = filtered.map(c => c.spatialX);
+    const ys = filtered.map(c => c.spatialY);
+    const xMin = Math.min(...xs), xMax = Math.max(...xs);
+    const yMin = Math.min(...ys), yMax = Math.max(...ys);
+    const geneMax = Math.max(...filtered.map(c => c.geneExpression[highlightGene] ?? 0), 1);
+    return { xMin, xRange: xMax - xMin || 1, yMin, yRange: yMax - yMin || 1, geneMax };
+  }, [filtered, highlightGene]);
+
+  return (
+    <div style={{ width: '100%', height: '100%', minHeight: '420px', borderRadius: '18px', overflow: 'hidden', border: `1px solid ${BORDER}`, background: '#050505', position: 'relative' }}>
+      <Canvas camera={{ position: [0, 8, 16], fov: 45 }}>
+        <color attach="background" args={['#050505']} />
+        <ambientLight intensity={0.75} />
+        <directionalLight position={[6, 10, 8]} intensity={1.0} />
+        <pointLight position={[-8, 6, -4]} intensity={0.45} color="#5151CD" />
+        <gridHelper args={[18, 12, '#1f1f1f', '#111111']} position={[0, -2.6, 0]} />
+        <group position={[-4.5, 0, -4.5]}>
+          {filtered.map(cell => {
+            const expr = cell.geneExpression[highlightGene] ?? 0;
+            const intensity = expr / bounds.geneMax;
+            const x = ((cell.spatialX - bounds.xMin) / bounds.xRange) * 9;
+            const z = ((cell.spatialY - bounds.yMin) / bounds.yRange) * 9;
+            const y = highlightGene ? intensity * 3.6 : cell.pseudotime * 3;
+            const radius = 0.08 + intensity * 0.18 + (cell.qcPass ? 0 : 0.04);
+            const color = highlightGene ? '#93CB52' : CLUSTER_COLORS[cell.cluster] ?? '#888';
+            return (
+              <mesh key={cell.id} position={[x, y, z]}>
+                <sphereGeometry args={[radius, 12, 12]} />
+                <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.22 + intensity * 0.25} transparent opacity={cell.qcPass ? 0.55 + intensity * 0.35 : 0.35} />
+              </mesh>
+            );
+          })}
+        </group>
+        <OrbitControls enablePan={false} minDistance={8} maxDistance={28} />
+      </Canvas>
+      <div style={{ position: 'absolute', top: '10px', left: '12px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+        <span style={{ padding: '3px 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.06)', color: VALUE, fontSize: '9px', fontFamily: T.MONO }}>
+          X/Y = tissue plane
+        </span>
+        <span style={{ padding: '3px 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.06)', color: VALUE, fontSize: '9px', fontFamily: T.MONO }}>
+          Height = {highlightGene ? `${highlightGene} expression` : 'pseudotime'}
+        </span>
+      </div>
+    </div>
   );
 }
 
@@ -527,6 +588,16 @@ export default function ScSpatialPage() {
       .sort((a, b) => b.moranI - a.moranI)
       .slice(0, 5),
   [analysis]);
+  const spatialTraceSummary = useMemo(() => {
+    const clusterLabel = selectedCluster !== null ? CLUSTER_LABELS[selectedCluster] : 'All clusters';
+    const moranLead = topMoran[0];
+    return {
+      clusterLabel,
+      summary: moranLead
+        ? `${moranLead.gene} is the strongest spatially restricted gene in the current view and remains linked to the 3D height mapping.`
+        : 'The 3D scene reuses the post-QC matrix and switches height between expression and pseudotime.',
+    };
+  }, [selectedCluster, topMoran]);
 
   const convergenceIter = analysis.vae.convergenceHistory.length;
   const finalLoss = analysis.vae.convergenceHistory[convergenceIter - 1];
@@ -606,7 +677,7 @@ export default function ScSpatialPage() {
             <div style={{ margin: '16px 0 0' }}>
               <SectionLabel>View Mode</SectionLabel>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '16px' }}>
-                {(['Spatial', 'UMAP', 'Trajectory', 'Efficiency', 'Table'] as ViewMode[]).map(mode => (
+                {(['Spatial', 'Spatial3D', 'UMAP', 'Trajectory', 'Efficiency', 'Table'] as ViewMode[]).map(mode => (
                   <button aria-label="Action" key={mode} onClick={() => setViewMode(mode)} style={{
                     flex: mode === 'Table' ? '1 1 100%' : '1 1 0',
                     padding: '5px 0', borderRadius: '6px', cursor: 'pointer',
@@ -666,6 +737,56 @@ export default function ScSpatialPage() {
                     highlightGene={highlightGene}
                     showQCFailed={showQCFailed}
                   />
+                </div>
+              </div>
+            )}
+            {viewMode === 'Spatial3D' && (
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '16px', gap: '10px' }}>
+                <div style={{ maxWidth: '760px', margin: '0 auto', width: '100%' }}>
+                  <div style={{ padding: '8px 12px', borderRadius: '14px', border: `1px solid ${BORDER}`, background: 'rgba(255,255,255,0.04)' }}>
+                    <p style={{ margin: '0 0 3px', color: VALUE, fontSize: '11px', fontFamily: T.SANS }}>
+                      Spatial 3D mode lifts cells into depth so cluster location and marker intensity can be inspected together.
+                    </p>
+                    <p style={{ margin: 0, color: LABEL, fontSize: '9px', fontFamily: T.MONO }}>
+                      rotate = tissue context · height = {highlightGene} expression / pseudotime
+                    </p>
+                  </div>
+                </div>
+                <div style={{ flex: 1, minHeight: '420px', maxWidth: '760px', margin: '0 auto', width: '100%' }}>
+                  <div style={{ position: 'relative' }}>
+                    <SpatialPointCloud
+                      cells={SC_SPATIAL_DATA}
+                      selectedCluster={selectedCluster}
+                      highlightGene={highlightGene}
+                      showQCFailed={showQCFailed}
+                    />
+                    <div style={{ position: 'absolute', top: '10px', right: '12px', width: 'min(260px, calc(100% - 24px))' }}>
+                      <div style={{ padding: '10px 12px', borderRadius: '14px', border: `1px solid ${BORDER}`, background: 'rgba(0,0,0,0.56)', backdropFilter: 'blur(10px)' }}>
+                        <p style={{ margin: '0 0 6px', color: LABEL, fontSize: '9px', fontFamily: T.MONO, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                          Evidence trace
+                        </p>
+                        <p style={{ margin: '0 0 8px', color: VALUE, fontSize: '10px', lineHeight: 1.55, fontFamily: T.SANS }}>
+                          {spatialTraceSummary.summary}
+                        </p>
+                        <div style={{ display: 'grid', gap: '6px' }}>
+                          <span style={{ padding: '3px 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.05)', color: VALUE, fontSize: '9px', fontFamily: T.MONO }}>
+                            cluster · {spatialTraceSummary.clusterLabel}
+                          </span>
+                          <span style={{ padding: '3px 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.05)', color: VALUE, fontSize: '9px', fontFamily: T.MONO }}>
+                            QC kept · {analysis.qc.totalCells - analysis.qc.filteredCells}/{analysis.qc.totalCells}
+                          </span>
+                          <span style={{ padding: '3px 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.05)', color: VALUE, fontSize: '9px', fontFamily: T.MONO }}>
+                            silhouette · {analysis.clusters.silhouetteScore.toFixed(3)}
+                          </span>
+                          {topMoran[0] && (
+                            <span style={{ padding: '3px 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.05)', color: VALUE, fontSize: '9px', fontFamily: T.MONO }}>
+                              Moran top · {topMoran[0].gene} ({topMoran[0].moranI.toFixed(3)})
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}

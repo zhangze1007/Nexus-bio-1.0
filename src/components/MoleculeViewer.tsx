@@ -52,6 +52,8 @@ export default function MoleculeViewer({ nodeId, pubchemCID, searchName, molBloc
   const viewerRef = useRef<any>(null);
   const [status, setStatus] = useState<ViewerStatus>('idle');
   const [resolvedCID, setResolvedCID] = useState<number | null>(pubchemCID ?? null);
+  const [renderMode, setRenderMode] = useState<'ball-stick' | 'spacefill' | 'wire'>('ball-stick');
+  const [spinEnabled, setSpinEnabled] = useState(true);
 
   const hasSource = !!(pubchemCID || searchName || molBlock);
 
@@ -93,12 +95,19 @@ export default function MoleculeViewer({ nodeId, pubchemCID, searchName, molBloc
         if (!sdf) throw new Error('No SDF data');
 
         viewer.addModel(sdf, 'sdf');
-        viewer.setStyle({}, {
-          stick: { colorscheme: 'Jmol', radius: 0.12 },
-          sphere: { colorscheme: 'Jmol', scale: 0.28 },
-        });
+        viewer.setStyle({}, {});
+        if (renderMode === 'spacefill') {
+          viewer.setStyle({}, { sphere: { colorscheme: 'Jmol', scale: 0.95 } });
+        } else if (renderMode === 'wire') {
+          viewer.setStyle({}, { line: { colorscheme: 'Jmol' } });
+        } else {
+          viewer.setStyle({}, {
+            stick: { colorscheme: 'Jmol', radius: 0.12 },
+            sphere: { colorscheme: 'Jmol', scale: 0.28 },
+          });
+        }
         viewer.zoomTo();
-        viewer.spin('y', 0.5);
+        viewer.spin(spinEnabled ? 'y' : false, 0.5);
         viewer.render();
         if (!cancelled) setStatus('ready');
       } catch {
@@ -108,7 +117,7 @@ export default function MoleculeViewer({ nodeId, pubchemCID, searchName, molBloc
 
     init();
     return () => { cancelled = true; };
-  }, [pubchemCID, searchName, molBlock]);
+  }, [pubchemCID, searchName, molBlock, renderMode, spinEnabled]);
 
   if (status === 'empty') return null;
 
@@ -118,6 +127,19 @@ export default function MoleculeViewer({ nodeId, pubchemCID, searchName, molBloc
     : searchName
     ? `https://pubchem.ncbi.nlm.nih.gov/#query=${encodeURIComponent(searchName)}`
     : null;
+  const sourceLabel = molBlock
+    ? 'Inline mol block'
+    : pubchemCID
+      ? `PubChem CID ${pubchemCID}`
+      : searchName
+        ? `PubChem name search · ${searchName}`
+        : 'Unknown source';
+  const traceText =
+    renderMode === 'spacefill'
+      ? 'Spacefill emphasizes steric footprint and packing volume.'
+      : renderMode === 'wire'
+        ? 'Wire mode strips the conformer to bond topology for fast structural reading.'
+        : 'Ball-stick keeps atoms and bonds balanced for general inspection and presentation.';
 
   return (
     <div style={{ width: '100%', height: `${height}px`, position: 'relative', borderRadius: '20px', overflow: 'hidden', background: '#ffffff', border: '1px solid rgba(0,0,0,0.08)', boxShadow: '0 2px 12px rgba(0,0,0,0.12)' }}>
@@ -148,6 +170,30 @@ export default function MoleculeViewer({ nodeId, pubchemCID, searchName, molBloc
 
       {status === 'ready' && (
         <>
+          <div style={{ position: 'absolute', bottom: '8px', left: '10px', display: 'flex', gap: '6px' }}>
+            {([
+              { key: 'ball-stick', label: 'Ball-stick' },
+              { key: 'spacefill', label: 'Spacefill' },
+              { key: 'wire', label: 'Wire' },
+            ] as const).map(mode => (
+              <button
+                key={mode.key}
+                type="button"
+                onClick={() => setRenderMode(mode.key)}
+                style={{
+                  border: '1px solid rgba(0,0,0,0.08)',
+                  background: renderMode === mode.key ? '#111111' : 'rgba(255,255,255,0.86)',
+                  color: renderMode === mode.key ? '#ffffff' : 'rgba(0,0,0,0.5)',
+                  fontSize: '9px',
+                  borderRadius: '999px',
+                  padding: '3px 7px',
+                  cursor: 'pointer',
+                }}
+              >
+                {mode.label}
+              </button>
+            ))}
+          </div>
           <div style={{ position: 'absolute', top: '8px', left: '10px', pointerEvents: 'none' }}>
             <span style={{ color: 'rgba(0,0,0,0.3)', fontSize: '9px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", background: 'rgba(255,255,255,0.85)', padding: '2px 6px', borderRadius: '8px' }}>
               {label || searchName || nodeId}
@@ -165,9 +211,41 @@ export default function MoleculeViewer({ nodeId, pubchemCID, searchName, molBloc
             </div>
           )}
           <div style={{ position: 'absolute', bottom: '8px', right: '10px', pointerEvents: 'none' }}>
-            <span style={{ color: 'rgba(0,0,0,0.2)', fontSize: '9px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", background: 'rgba(255,255,255,0.7)', padding: '2px 6px', borderRadius: '8px' }}>3D · CPK</span>
+            <button
+              type="button"
+              onClick={() => setSpinEnabled(!spinEnabled)}
+              style={{ color: 'rgba(0,0,0,0.45)', fontSize: '9px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", background: 'rgba(255,255,255,0.85)', padding: '2px 8px', borderRadius: '999px', border: '1px solid rgba(0,0,0,0.08)', cursor: 'pointer', pointerEvents: 'auto' }}
+            >
+              {spinEnabled ? 'Auto spin' : 'Static'}
+            </button>
           </div>
         </>
+      )}
+
+      {status === 'ready' && (
+        <div style={{ position: 'absolute', left: '10px', right: '10px', bottom: '40px', pointerEvents: 'none' }}>
+          <div style={{ padding: '8px 10px', borderRadius: '12px', background: 'rgba(255,255,255,0.82)', border: '1px solid rgba(0,0,0,0.08)' }}>
+            <p style={{ margin: '0 0 4px', color: 'rgba(0,0,0,0.32)', fontSize: '9px', fontFamily: "'Public Sans',sans-serif", textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              Structure trace
+            </p>
+            <p style={{ margin: '0 0 6px', color: 'rgba(0,0,0,0.62)', fontSize: '10px', lineHeight: 1.5, fontFamily: "'Public Sans',sans-serif" }}>
+              {traceText}
+            </p>
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+              <span style={{ padding: '2px 6px', borderRadius: '999px', background: 'rgba(0,0,0,0.05)', color: 'rgba(0,0,0,0.5)', fontSize: '9px', fontFamily: "'Public Sans',sans-serif" }}>
+                {sourceLabel}
+              </span>
+              {displayCID && (
+                <span style={{ padding: '2px 6px', borderRadius: '999px', background: 'rgba(0,0,0,0.05)', color: 'rgba(0,0,0,0.5)', fontSize: '9px', fontFamily: "'Public Sans',sans-serif" }}>
+                  resolved CID {displayCID}
+                </span>
+              )}
+              <span style={{ padding: '2px 6px', borderRadius: '999px', background: 'rgba(0,0,0,0.05)', color: 'rgba(0,0,0,0.5)', fontSize: '9px', fontFamily: "'Public Sans',sans-serif" }}>
+                mode {renderMode}
+              </span>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

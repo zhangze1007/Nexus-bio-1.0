@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import ToolsDirectoryPage from '../../src/components/tools/ToolsDirectoryPage';
 
 export const metadata: Metadata = {
@@ -8,6 +9,9 @@ export const metadata: Metadata = {
 };
 
 export default function Page() {
-  return <ToolsDirectoryPage />;
+  return (
+    <Suspense fallback={null}>
+      <ToolsDirectoryPage />
+    </Suspense>
+  );
 }
-

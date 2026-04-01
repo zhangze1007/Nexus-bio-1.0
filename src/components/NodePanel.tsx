@@ -11,6 +11,7 @@ import KineticPanel from './KineticPanel';
 import ThermodynamicsPanel from './ThermodynamicsPanel';
 import CellImageViewer from './CellImageViewer';
 import ProteinViewer from './ProteinViewer';
+import { getToolDefinition } from './tools/shared/toolRegistry';
 
 // ── Compliance thresholds ─────────────────────────────────────────────
 const HIGH_RISK_THRESHOLD = 0.7;
@@ -327,6 +328,15 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
   const pubchemCID = node?.pubchemCID ?? (node?.id ? SHOWCASE_PUBCHEM_CIDS[node.id] : undefined);
   const isEnzyme = node?.nodeType === 'enzyme' || node?.nodeType === 'complex';
   const isMetabolite = !isEnzyme && node?.nodeType !== 'gene';
+  const recommendedTools = useMemo(() => {
+    if (!node) return [];
+    const ids = isEnzyme
+      ? ['catdes', 'proevol', 'dyncon']
+      : isMetabolite
+        ? ['cethx', 'fbasim', 'cellfree']
+        : ['scspatial', 'multio', 'nexai'];
+    return ids.map(id => getToolDefinition(id)).filter(Boolean);
+  }, [node, isEnzyme, isMetabolite]);
 
   // ── Professional Null State Detection ──
   // A node has "insufficient data" if it's NOT the final target product and key metrics are missing/zero
@@ -855,14 +865,49 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                     </div>
                   )}
 
-                  <button onClick={handleDownload}
-                    style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px 16px', borderRadius: '20px', background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.4)', border: '1px solid rgba(255,255,255,0.07)', fontSize: '12px', cursor: 'pointer', transition: 'all 0.15s', fontFamily: 'inherit' }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)'; (e.currentTarget as HTMLElement).style.color = '#ffffff'; }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'; (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.4)'; }}>
-                    <Download size={13} /> Download node JSON
-                  </button>
-                </>
-              )}
+                    <button onClick={handleDownload}
+                      style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px 16px', borderRadius: '20px', background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.4)', border: '1px solid rgba(255,255,255,0.07)', fontSize: '12px', cursor: 'pointer', transition: 'all 0.15s', fontFamily: 'inherit' }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)'; (e.currentTarget as HTMLElement).style.color = '#ffffff'; }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'; (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.4)'; }}>
+                      <Download size={13} /> Download node JSON
+                    </button>
+
+                    {recommendedTools.length > 0 && (
+                      <div style={{ marginTop: '12px', padding: '12px 14px', borderRadius: '16px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                        <p style={{ margin: '0 0 8px', color: 'rgba(255,255,255,0.25)', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700 }}>
+                          Next Actions
+                        </p>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                          {recommendedTools.map((tool) => (
+                            <a
+                              key={tool!.id}
+                              href={tool!.href}
+                              style={{
+                                minHeight: '32px',
+                                padding: '0 10px',
+                                borderRadius: '999px',
+                                border: '1px solid rgba(255,255,255,0.08)',
+                                background: tool!.threeDPotential === 'strong' ? 'rgba(147,203,82,0.10)' : 'rgba(255,255,255,0.02)',
+                                color: 'rgba(255,255,255,0.65)',
+                                textDecoration: 'none',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                fontFamily: UI_SANS,
+                                fontSize: '11px',
+                              }}
+                            >
+                              {tool!.shortLabel}
+                              <span style={{ color: 'rgba(255,255,255,0.28)', fontFamily: UI_MONO, fontSize: '9px' }}>
+                                {tool!.direction}
+                              </span>
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
 
               {/* ── TAB 2: STRUCTURE ── */}
               {activeTab === 'structure' && (() => {

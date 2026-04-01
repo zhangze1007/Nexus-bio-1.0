@@ -8,6 +8,7 @@ import { PathwayNode, PathwayEdge } from '../types';
 
 type Vec3 = [number, number, number];
 type RendererMode = 'loading' | 'webgpu' | 'webgl2' | 'webgl' | 'error';
+type SceneViewMode = 'network' | 'flow' | 'risk';
 type ConfigurableRenderer = {
   setSize: (w: number, h: number, updateStyle?: boolean) => void;
   toneMapping: THREE.ToneMapping;
@@ -287,10 +288,10 @@ function SpatialReference({ stressIndex = 0, centroid }: { stressIndex?: number;
 }
 
 // ─── Molecular Node with texture and correct commercial coloring ──────
-const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov, roughnessTexture, flowSpeed, glowMultiplier = 1, stressIndex = 0 }: {
+const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov, roughnessTexture, flowSpeed, glowMultiplier = 1, stressIndex = 0, viewMode = 'network' }: {
   node: PathwayNode; hov: boolean; sel: boolean; cc: number;
   onClick: (n: PathwayNode) => void; onHov: (id: string | null) => void;
-  roughnessTexture: THREE.Texture | null; flowSpeed?: number; glowMultiplier?: number; stressIndex?: number;
+  roughnessTexture: THREE.Texture | null; flowSpeed?: number; glowMultiplier?: number; stressIndex?: number; viewMode?: SceneViewMode;
 }) {
   const _flowSpeed = flowSpeed ?? 1;
   const nodeRadius = 0.32 + cc * 0.05;
@@ -306,6 +307,12 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov
   const lbl    = node.canonicalLabel?.trim() || node.label || node.id;
   const cfg    = useMemo(() => glyphCfg(node.id, cc, node.nodeType), [node.id, cc, node.nodeType]);
   const tgt    = sel ? 1.28 : hov ? 1.10 : 1.0;
+  const riskScore = typeof node.risk_score === 'number' ? node.risk_score : 0;
+  const modeScale = viewMode === 'risk'
+    ? 1 + riskScore * 0.55 + (node.nodeType === 'impurity' ? 0.12 : 0)
+    : viewMode === 'flow'
+      ? 1 + Math.min(cc, 4) * 0.06
+      : 1;
   const colVec = useMemo(() => new THREE.Color(finalColor), [finalColor]);
 
   useEffect(() => () => { document.body.style.cursor = 'auto'; }, []);
@@ -342,7 +349,7 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov
       onPointerOut={e => { e.stopPropagation(); onHov(null); document.body.style.cursor = 'auto'; }}
     >
       <mesh ref={bodyRef}>
-        <GeoComp g={cfg.geom} s={nodeRadius * activityScale} />
+        <GeoComp g={cfg.geom} s={nodeRadius * activityScale * modeScale} />
         <meshPhysicalMaterial
           color={finalColor}
           emissive={finalColor}
@@ -357,14 +364,14 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov
 
       {/* Invisible hitbox for reliable click detection */}
       <mesh visible={false}>
-        <sphereGeometry args={[0.8, 16, 16]} />
+        <sphereGeometry args={[0.8 * modeScale, 16, 16]} />
         <meshBasicMaterial color="white" transparent opacity={0} depthWrite={false} />
       </mesh>
 
       {/* Bottleneck anomaly glow — sharp red wireframe ring when substrate accumulates under stress */}
       {stressIndex > 0.5 && (node.risk_score ?? 0) > 0.5 && (
         <mesh>
-          <sphereGeometry args={[nodeRadius * 1.55, 16, 16]} />
+          <sphereGeometry args={[nodeRadius * 1.55 * modeScale, 16, 16]} />
           <meshBasicMaterial
             color="#FF2222"
             transparent
@@ -377,7 +384,7 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov
 
       {cfg.rr.map((r, i) => (
         <mesh key={`r${i}`} ref={i === 0 ? ring : undefined} rotation={[cfg.rt[i] || 0, 0, i * 1.1]}>
-          <torusGeometry args={[r, 0.007, 4, 40]} />
+          <torusGeometry args={[r * modeScale, 0.007, 4, 40]} />
           <meshPhysicalMaterial color={finalColor} emissive={finalColor} emissiveIntensity={0.08} transparent opacity={0.07} roughness={0.6} metalness={0} depthWrite={false} />
         </mesh>
       ))}
@@ -425,7 +432,7 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov
 });
 
 // ─── Soft path edges ────────────────────────────────────────────────────
-const PathEdge = React.memo(function PathEdge({ edge, s, e, active, color, flowSpeed }: { edge:PathwayEdge; s:Vec3; e:Vec3; active:boolean; color:string; flowSpeed?:number }) {
+const PathEdge = React.memo(function PathEdge({ edge, s, e, active, color, flowSpeed, viewMode = 'network' }: { edge:PathwayEdge; s:Vec3; e:Vec3; active:boolean; color:string; flowSpeed?:number; viewMode?: SceneViewMode }) {
   const _flowSpeed = flowSpeed ?? 1;
   const dot  = useRef<THREE.Mesh>(null);
   const prog = useRef(Math.random());
@@ -450,11 +457,22 @@ const PathEdge = React.memo(function PathEdge({ edge, s, e, active, color, flowS
     }
   });
 
+  const lineOpacity = viewMode === 'risk'
+    ? (active ? 0.9 : 0.14)
+    : viewMode === 'flow'
+      ? (active || isSpontaneous ? 0.95 : 0.26)
+      : (active ? 0.85 : 0.22);
+  const lineWidth = viewMode === 'flow'
+    ? (active || isSpontaneous ? thickness * 1.8 : thickness * 1.15)
+    : viewMode === 'risk'
+      ? (active ? thickness * 1.6 : thickness * 0.85)
+      : (active ? thickness * 1.5 : thickness);
+
   return (
     <group>
-      <Line points={[sv, ev]} color={active ? color : '#444444'} lineWidth={active ? thickness * 1.5 : thickness} transparent opacity={active ? 0.85 : 0.22} />
+      <Line points={[sv, ev]} color={active ? color : '#444444'} lineWidth={lineWidth} transparent opacity={lineOpacity} />
       <mesh ref={dot} visible={false}>
-        <sphereGeometry args={[active ? 0.05 : 0.035, 6, 6]} />
+        <sphereGeometry args={[viewMode === 'flow' ? 0.055 : active ? 0.05 : 0.035, 6, 6]} />
         <meshPhysicalMaterial color={color} emissive={color} emissiveIntensity={isSpontaneous ? 0.8 : 0.6} transparent opacity={active ? 0.9 : 0.5} />
       </mesh>
       {active && edge.predicted_delta_G_kJ_mol && (
@@ -568,7 +586,7 @@ function FluxParticles({ edges, nodes, flowSpeed, glowMultiplier }: {
 }
 
 // ─── Scene — unified lighting, integrated depth ────────────────────────
-function Scene({ nodes, edges, onNodeClick, selectedNodeId, roughnessTexture, glowMultiplier, flowSpeed, stressIndex }: { nodes:PathwayNode[]; edges:PathwayEdge[]; onNodeClick:(n:PathwayNode)=>void; selectedNodeId:string|null; roughnessTexture:THREE.Texture | null; glowMultiplier:number; flowSpeed:number; stressIndex:number; }) {
+function Scene({ nodes, edges, onNodeClick, selectedNodeId, roughnessTexture, glowMultiplier, flowSpeed, stressIndex, viewMode }: { nodes:PathwayNode[]; edges:PathwayEdge[]; onNodeClick:(n:PathwayNode)=>void; selectedNodeId:string|null; roughnessTexture:THREE.Texture | null; glowMultiplier:number; flowSpeed:number; stressIndex:number; viewMode: SceneViewMode; }) {
   const [hovId, setHovId]       = useState<string|null>(null);
   const [interact, setInteract] = useState(false);
   const controlsRef = useRef<OrbitControlsHandle | null>(null);
@@ -640,9 +658,9 @@ function Scene({ nodes, edges, onNodeClick, selectedNodeId, roughnessTexture, gl
       <SpatialReference stressIndex={stressIndex} centroid={centroid} />
 
       <AmbientParticles />
-      <FluxParticles edges={edges} nodes={nodes} flowSpeed={flowSpeed} glowMultiplier={glowMultiplier} />
-      {ed.map(e => <PathEdge key={e.key} edge={e.edge} s={e.s.position} e={e.e.position} active={e.active} color={e.color} flowSpeed={flowSpeed} />)}
-      {nodes.map(n => <MolNode key={n.id} node={n} hov={hovId===n.id} sel={selectedNodeId===n.id} cc={cc[n.id]??0} onClick={onNodeClick} onHov={setHovId} roughnessTexture={roughnessTexture} flowSpeed={flowSpeed} glowMultiplier={glowMultiplier} stressIndex={stressIndex} />)}
+      <FluxParticles edges={edges} nodes={nodes} flowSpeed={viewMode === 'flow' ? flowSpeed * 1.25 : flowSpeed} glowMultiplier={glowMultiplier} />
+      {ed.map(e => <PathEdge key={e.key} edge={e.edge} s={e.s.position} e={e.e.position} active={e.active} color={e.color} flowSpeed={flowSpeed} viewMode={viewMode} />)}
+      {nodes.map(n => <MolNode key={n.id} node={n} hov={hovId===n.id} sel={selectedNodeId===n.id} cc={cc[n.id]??0} onClick={onNodeClick} onHov={setHovId} roughnessTexture={roughnessTexture} flowSpeed={flowSpeed} glowMultiplier={glowMultiplier} stressIndex={stressIndex} viewMode={viewMode} />)}
 
       <ScrollSyncCamera nodes={nodes} selectedId={selectedNodeId} interact={interact} controlsRef={controlsRef} centroid={centroid} />
     </>
@@ -675,6 +693,7 @@ interface Props { nodes:PathwayNode[]; onNodeClick:(node:PathwayNode)=>void; edg
 export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, glowMultiplier = 1, flowSpeed = 1, fullscreen = false, stressIndex = 0 }: Props) {
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('ready');
   const [rendererMode, setRendererMode] = useState<RendererMode>('loading');
+  const [viewMode, setViewMode] = useState<SceneViewMode>('network');
   const mountedRef = useRef(true);
   const roughnessTexture = useMemo(() => createProceduralTexture(), []);
 
@@ -686,6 +705,44 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, 
   const safeNodes = useMemo(() => Array.isArray(nodes) ? nodes.filter(isRenderableNode) : [], [nodes]);
   const safeEdges = useMemo(() => Array.isArray(edges) ? edges : [], [edges]);
   const fallbackLabel = getRendererLabel(rendererMode);
+  const riskNodes = useMemo(() => safeNodes.filter(node => (node.risk_score ?? 0) >= HIGH_RISK_THRESHOLD).length, [safeNodes]);
+  const spontaneousEdges = useMemo(() => safeEdges.filter(edge => (edge.predicted_delta_G_kJ_mol ?? 0) < 0).length, [safeEdges]);
+  const selectedNode = useMemo(
+    () => safeNodes.find((node) => node.id === selectedNodeId) ?? null,
+    [safeNodes, selectedNodeId],
+  );
+  const connectedEdges = useMemo(
+    () => (selectedNodeId
+      ? safeEdges.filter((edge) => edge.start === selectedNodeId || edge.end === selectedNodeId)
+      : []),
+    [safeEdges, selectedNodeId],
+  );
+  const modeTrace = useMemo(() => {
+    if (viewMode === 'risk') {
+      return {
+        label: 'Risk trace',
+        summary: selectedNode
+          ? selectedNode.audit_trail || selectedNode.toxicity_impact || selectedNode.dsp_bottleneck || 'Risk view emphasizes audit trail, toxicity, and downstream bottlenecks.'
+          : 'Risk view scales flagged nodes and keeps hazard mapping visible before downstream validation.',
+        metric: selectedNode ? `risk ${(selectedNode.risk_score ?? 0).toFixed(2)}` : `${riskNodes} flagged nodes`,
+      };
+    }
+    if (viewMode === 'flow') {
+      const edgeEvidence = connectedEdges.find((edge) => edge.evidence || edge.audit_trail);
+      return {
+        label: 'Flux trace',
+        summary: edgeEvidence?.evidence || edgeEvidence?.audit_trail || 'Flux view highlights mapped reaction flow and spontaneity-linked edges.',
+        metric: selectedNode ? `${connectedEdges.length} linked edges` : `${spontaneousEdges} spontaneous steps`,
+      };
+    }
+    return {
+      label: 'Evidence trace',
+      summary: selectedNode
+        ? selectedNode.evidenceSnippet || selectedNode.audit_trail || selectedNode.summary
+        : 'Network view preserves node confidence, citation-backed summary, and topology context.',
+      metric: selectedNode ? `confidence ${getConfidenceValue(selectedNode).toFixed(2)}` : `${safeNodes.length} mapped entities`,
+    };
+  }, [connectedEdges, riskNodes, safeNodes.length, selectedNode, spontaneousEdges, viewMode]);
 
   // Compute initial camera position from node bounding box so Canvas starts centered on the cluster
   const initialCamPos = useMemo(() => {
@@ -726,6 +783,37 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, 
           </span>
         </div>
         <div style={{ display:'flex', alignItems:'center', gap:'8px' }}>
+          {!fullscreen && (
+            <div style={{ pointerEvents: 'auto', display: 'flex', alignItems: 'center', gap: '4px', padding: '2px', borderRadius: '999px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
+              {([
+                { key: 'network', label: 'Network', active: '#5151CD' },
+                { key: 'flow', label: 'Flux', active: '#93CB52' },
+                { key: 'risk', label: 'Risk', active: '#FA8072' },
+              ] as const).map(mode => (
+                <button
+                  key={mode.key}
+                  type="button"
+                  onClick={() => setViewMode(mode.key)}
+                  style={{
+                    pointerEvents: 'auto',
+                    minHeight: '24px',
+                    padding: '0 9px',
+                    borderRadius: '999px',
+                    border: 'none',
+                    background: viewMode === mode.key ? mode.active : 'transparent',
+                    color: viewMode === mode.key ? '#000000' : 'rgba(255,255,255,0.45)',
+                    fontSize: '9px',
+                    fontWeight: 700,
+                    letterSpacing: '0.04em',
+                    textTransform: 'uppercase',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {mode.label}
+                </button>
+              ))}
+            </div>
+          )}
           {fallbackLabel && (
             <span style={{ ...getRendererTone(rendererMode), fontSize:'9px', fontFamily:"'Public Sans',sans-serif", padding:'2px 8px', borderRadius:'99px', letterSpacing:'0.04em', fontWeight:700 }}>
               {fallbackLabel}
@@ -736,13 +824,61 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, 
       </div>
 
       <div style={{ pointerEvents: 'none', position:'absolute', bottom:'13px', left:'13px', zIndex:10 }}>
-        <p style={{ color:'rgba(255,255,255,0.12)', fontSize:'8px', fontFamily:"'Public Sans',sans-serif", fontWeight:700, margin:'0 0 4px', letterSpacing:'0.07em', textTransform:'uppercase' }}>CONFIDENCE</p>
-        {[{ c:'#C8D8E8',l:'>90' },{ c:'#C8E0D0',l:'70–90' },{ c:'#E8DCC8',l:'50–70' },{ c:'#E8C8D4',l:'<50' }].map(x => (
+        <p style={{ color:'rgba(255,255,255,0.12)', fontSize:'8px', fontFamily:"'Public Sans',sans-serif", fontWeight:700, margin:'0 0 4px', letterSpacing:'0.07em', textTransform:'uppercase' }}>
+          {viewMode === 'risk' ? 'RISK NODES' : viewMode === 'flow' ? 'FLUX EDGES' : 'CONFIDENCE'}
+        </p>
+        {(viewMode === 'risk'
+          ? [
+              { c:'#FA8072', l:`${riskNodes} flagged` },
+              { c:'#5151CD', l:`${safeNodes.length - riskNodes} stable` },
+            ]
+          : viewMode === 'flow'
+            ? [
+                { c:'#93CB52', l:`${spontaneousEdges} spontaneous` },
+                { c:'#5151CD', l:`${safeEdges.length} mapped` },
+              ]
+            : [{ c:'#C8D8E8',l:'>90' },{ c:'#C8E0D0',l:'70–90' },{ c:'#E8DCC8',l:'50–70' },{ c:'#E8C8D4',l:'<50' }]).map(x => (
           <div key={x.l} style={{ display:'flex', alignItems:'center', gap:'5px', marginBottom:'2px' }}>
             <div style={{ width:'12px', height:'2px', background:x.c, borderRadius:'1px', opacity:0.65 }} />
             <span style={{ color:'rgba(255,255,255,0.14)', fontSize:'8px', fontFamily:"'Public Sans',sans-serif", fontFeatureSettings:"'tnum' 1" }}>{x.l}</span>
           </div>
         ))}
+      </div>
+
+      <div
+        style={{
+          pointerEvents: 'none',
+          position: 'absolute',
+          top: fullscreen ? '14px' : '56px',
+          left: '13px',
+          zIndex: 10,
+          width: 'min(320px, calc(100% - 26px))',
+          borderRadius: '14px',
+          border: '1px solid rgba(255,255,255,0.08)',
+          background: 'rgba(0,0,0,0.58)',
+          padding: '12px',
+          backdropFilter: 'blur(10px)',
+        }}
+      >
+        <p style={{ margin: '0 0 6px', color: 'rgba(255,255,255,0.22)', fontSize: '8px', fontFamily: "'Public Sans',sans-serif", fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+          {modeTrace.label}
+        </p>
+        <p style={{ margin: '0 0 8px', color: 'rgba(255,255,255,0.78)', fontSize: '11px', lineHeight: 1.55, fontFamily: "'Public Sans',sans-serif" }}>
+          {modeTrace.summary}
+        </p>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <span style={{ minHeight: '24px', padding: '0 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.55)', display: 'inline-flex', alignItems: 'center', fontSize: '9px', fontFamily: "'Public Sans',sans-serif" }}>
+            {selectedNode ? `${selectedNode.label}` : 'No node selected'}
+          </span>
+          <span style={{ minHeight: '24px', padding: '0 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.55)', display: 'inline-flex', alignItems: 'center', fontSize: '9px', fontFamily: "'Public Sans',sans-serif" }}>
+            {modeTrace.metric}
+          </span>
+          {selectedNode?.citation && (
+            <span style={{ minHeight: '24px', padding: '0 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.55)', display: 'inline-flex', alignItems: 'center', fontSize: '9px', fontFamily: "'Public Sans',sans-serif" }}>
+              {selectedNode.citation}
+            </span>
+          )}
+        </div>
       </div>
 
       <div style={{ pointerEvents: 'none', position:'absolute', bottom:'13px', right:'13px', zIndex:10, background:'rgba(0,0,0,0.5)', padding:'8px 12px', borderRadius:'10px', border:'1px solid rgba(255,255,255,0.06)' }}>
@@ -795,7 +931,7 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, 
           dpr={[1, 1.5]} performance={{ min: 0.5 }} style={{ background: 'transparent', pointerEvents: 'auto' }}
         >
           <ResizeHandler />
-          <Scene nodes={safeNodes} edges={safeEdges} onNodeClick={onNodeClick} selectedNodeId={selectedNodeId ?? null} roughnessTexture={roughnessTexture} glowMultiplier={glowMultiplier} flowSpeed={flowSpeed} stressIndex={stressIndex} />
+          <Scene nodes={safeNodes} edges={safeEdges} onNodeClick={onNodeClick} selectedNodeId={selectedNodeId ?? null} roughnessTexture={roughnessTexture} glowMultiplier={glowMultiplier} flowSpeed={flowSpeed} stressIndex={stressIndex} viewMode={viewMode} />
         </Canvas>
       </SceneErrorBoundary>
     </div>

@@ -334,6 +334,26 @@ interface SemanticSearchProps {
   initialQuery?: string;
 }
 
+function suggestToolRoute(article: Article) {
+  const text = `${article.title} ${article.abstract} ${article.pathway ?? ''}`.toLowerCase();
+  if (text.includes('single-cell') || text.includes('spatial') || text.includes('transcriptom')) {
+    return { href: '/tools?direction=Omics%20%26%20Spatial&tool=scspatial', label: 'Open SCSPATIAL' };
+  }
+  if (text.includes('cell-free') || text.includes('tx-tl') || text.includes('iviv')) {
+    return { href: '/tools?direction=Validation%20%26%20DBTL&tool=cellfree', label: 'Open Cell-Free Sandbox' };
+  }
+  if (text.includes('protein') || text.includes('enzyme') || text.includes('catalyst') || text.includes('binding')) {
+    return { href: '/tools?direction=Structure%20%26%20Enzyme&tool=catdes', label: 'Open Catalyst Designer' };
+  }
+  if (text.includes('control') || text.includes('circuit') || text.includes('feedback')) {
+    return { href: '/tools?direction=Dynamic%20%26%20System&tool=dyncon', label: 'Open Dynamic Control' };
+  }
+  if (text.includes('thermodynamic') || text.includes('energy') || text.includes('delta g')) {
+    return { href: '/tools?direction=Dynamic%20%26%20System&tool=cethx', label: 'Open Thermodynamics Engine' };
+  }
+  return { href: '/tools?direction=Pathway%20%26%20Design&tool=pathd', label: 'Open PATHD' };
+}
+
 export default function SemanticSearch({ onAnalyzePaper, initialQuery }: SemanticSearchProps) {
   const [query, setQuery] = useState(initialQuery ?? '');
   const [results, setResults] = useState<Article[]>([]);
@@ -578,7 +598,7 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
               {SHOWCASE_PAPERS.map((paper) => {
                 const isExpanded = expandedIds.has(paper.id);
                 return (
-                  <article
+                    <article
                     key={paper.id}
                     style={{
                       borderRadius: '18px',
@@ -587,7 +607,7 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
                       padding: '18px 20px',
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px' }}>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px' }}>
                       <div style={{ flex: 1 }}>
                         <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '11px', fontFamily: MONO, margin: '0 0 8px' }}>
                           {paper.source} · {paper.year}
@@ -599,6 +619,26 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
                         <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '13px', margin: 0 }}>
                           {paper.authors.join(', ')} et al.
                         </p>
+                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '10px' }}>
+                          <a
+                            href={suggestToolRoute(paper).href}
+                            style={{
+                              minHeight: '30px',
+                              padding: '0 10px',
+                              borderRadius: '999px',
+                              border: '1px solid rgba(255,255,255,0.08)',
+                              background: 'rgba(147,203,82,0.10)',
+                              color: 'rgba(255,255,255,0.72)',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              textDecoration: 'none',
+                              fontFamily: SANS,
+                              fontSize: '11px',
+                            }}
+                          >
+                            {suggestToolRoute(paper).label}
+                          </a>
+                        </div>
                       </div>
                       <button
                         type="button"
@@ -921,24 +961,42 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
                           </div>
                         </div>
 
-                        {isExpanded && article.abstract && (
-                          <div style={{ marginTop: '14px', paddingTop: '14px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-                            <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '13px', lineHeight: 1.8, margin: '0 0 12px' }}>
-                              {highlightKeywords(article.abstract, extractKeywords(article.title, article.abstract))}
-                            </p>
+                      {isExpanded && article.abstract && (
+                        <div style={{ marginTop: '14px', paddingTop: '14px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                          <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '13px', lineHeight: 1.8, margin: '0 0 12px' }}>
+                            {highlightKeywords(article.abstract, extractKeywords(article.title, article.abstract))}
+                          </p>
 
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                                {article.doi && (
-                                  <span style={{ fontFamily: MONO, fontSize: '10px', color: 'rgba(255,255,255,0.25)' }}>
-                                    DOI: {article.doi}
-                                  </span>
-                                )}
-                              </div>
-                              <SendButton article={article} />
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                              {article.doi && (
+                                <span style={{ fontFamily: MONO, fontSize: '10px', color: 'rgba(255,255,255,0.25)' }}>
+                                  DOI: {article.doi}
+                                </span>
+                              )}
+                              <a
+                                href={suggestToolRoute(article).href}
+                                style={{
+                                  minHeight: '30px',
+                                  padding: '0 10px',
+                                  borderRadius: '999px',
+                                  border: '1px solid rgba(255,255,255,0.08)',
+                                  background: 'rgba(147,203,82,0.10)',
+                                  color: 'rgba(255,255,255,0.72)',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  textDecoration: 'none',
+                                  fontFamily: SANS,
+                                  fontSize: '11px',
+                                }}
+                              >
+                                {suggestToolRoute(article).label}
+                              </a>
                             </div>
+                            <SendButton article={article} />
                           </div>
-                        )}
+                        </div>
+                      )}
                       </article>
                     );
                   })}

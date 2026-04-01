@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import {
   ArrowUpRight,
   CheckCircle2,
@@ -14,11 +15,12 @@ import {
 } from 'lucide-react';
 import TopNav from '../TopNav';
 import EmptyState from '../ide/shared/EmptyState';
+import DisplayModeToggle, { useDisplayMode } from '../ide/shared/DisplayModeToggle';
 import Pagination from '../ide/shared/Pagination';
 import {
-  TOOL_CATEGORIES,
   TOOL_DEFINITIONS,
-  type ToolCategory,
+  TOOL_DIRECTIONS,
+  type ToolDirection,
   type ToolDefinition,
 } from './shared/toolRegistry';
 import { T } from '../ide/tokens';
@@ -28,6 +30,58 @@ const STORAGE_KEY = 'nexus-bio-favorite-tools';
 type ShellFilter = 'All' | 'ide' | 'bento';
 type SortMode = 'name' | 'category' | 'workflow';
 
+const DIRECTION_NOTES: Record<string, string> = {
+  'Research Intake': 'Use this layer to move from papers, citations, and evidence into a concrete tool route.',
+  'Pathway & Design': 'Best when the next step is route selection, node inspection, and pathway-level intervention.',
+  'Structure & Enzyme': 'Use for protein structure, catalyst ranking, and evolution-driven design refinement.',
+  'Dynamic & System': 'Use when kinetics, control, thermodynamics, or flux constraints determine the decision.',
+  'Omics & Spatial': 'Use when single-cell, spatial, or multi-omics context is needed to interpret a mechanism.',
+  'Validation & DBTL': 'Use to translate candidates into validation runs, cell-free checks, and engineering workflow.',
+  'AI Assistant': 'Use to synthesize context, compare evidence, and orchestrate next actions across modules.',
+};
+
+const DIRECTION_CLUSTER_RECIPES: Record<ToolDirection, {
+  demoLabel: string;
+  researchLabel: string;
+  spotlight: string[];
+}> = {
+  'Research Intake': {
+    demoLabel: 'Paper → evidence → tool handoff',
+    researchLabel: 'Source triage, evidence intake, and next-step routing',
+    spotlight: ['litsearch', 'paper-analyzer', 'genbio-ai'],
+  },
+  'Pathway & Design': {
+    demoLabel: '3D pathway storytelling and intervention entry',
+    researchLabel: 'Route inspection, node drill-down, and downstream execution',
+    spotlight: ['pathd', 'metabolic-eng'],
+  },
+  'Structure & Enzyme': {
+    demoLabel: 'Candidate enzyme showcase with structure-backed ranking',
+    researchLabel: 'Catalyst comparison, structure review, and mutation strategy',
+    spotlight: ['catdes', 'proevol'],
+  },
+  'Dynamic & System': {
+    demoLabel: 'System constraint story: flux, control, thermo',
+    researchLabel: 'Model tuning, dynamic analysis, and systems-level rejection criteria',
+    spotlight: ['fbasim', 'dyncon', 'cethx'],
+  },
+  'Omics & Spatial': {
+    demoLabel: 'Layered cell-state and spatial context walkthrough',
+    researchLabel: 'QC, latent embedding, trajectory, and ranked omics evidence',
+    spotlight: ['multio', 'scspatial'],
+  },
+  'Validation & DBTL': {
+    demoLabel: 'From construct to validation loop and reactor twin',
+    researchLabel: 'DBTL orchestration, simulation validation, and learn-loop capture',
+    spotlight: ['cellfree', 'dbtlflow', 'genmim'],
+  },
+  'AI Assistant': {
+    demoLabel: 'Narrative copilot across the workbench',
+    researchLabel: 'Cross-tool synthesis, comparison, and action orchestration',
+    spotlight: ['genbio-ai'],
+  },
+};
+
 function matchesQuery(tool: ToolDefinition, query: string) {
   if (!query.trim()) return true;
   const haystack = [
@@ -36,6 +90,9 @@ function matchesQuery(tool: ToolDefinition, query: string) {
     tool.summary,
     tool.focus,
     tool.category,
+    tool.direction,
+    tool.mode,
+    tool.threeDPotential,
     tool.shell,
     ...tool.outputs,
     ...tool.tags,
@@ -48,13 +105,17 @@ function matchesQuery(tool: ToolDefinition, query: string) {
 
 function compareBy(sortMode: SortMode, tool: ToolDefinition) {
   if (sortMode === 'category') return `${tool.category}-${tool.name}`;
-  if (sortMode === 'workflow') return `${tool.shell}-${tool.category}-${tool.name}`;
+  if (sortMode === 'workflow') return `${tool.direction}-${tool.shell}-${tool.category}-${tool.name}`;
   return tool.name;
 }
 
 export default function ToolsDirectoryPage() {
+  const searchParams = useSearchParams();
+  const initialQuery = searchParams.get('query') ?? '';
+  const initialDirection = searchParams.get('direction') as ToolDirection | null;
+  const initialTool = searchParams.get('tool');
   const [query, setQuery] = useState('');
-  const [category, setCategory] = useState<ToolCategory | 'All'>('All');
+  const [direction, setDirection] = useState<ToolDirection | 'All'>('All');
   const [shellFilter, setShellFilter] = useState<ShellFilter>('All');
   const [sortMode, setSortMode] = useState<SortMode>('workflow');
   const [page, setPage] = useState(1);
@@ -63,6 +124,14 @@ export default function ToolsDirectoryPage() {
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const [compareIds, setCompareIds] = useState<string[]>([]);
   const [favoritesReady, setFavoritesReady] = useState(false);
+  const [relatedPage, setRelatedPage] = useState(1);
+  const [displayMode] = useDisplayMode();
+
+  useEffect(() => {
+    if (initialQuery) setQuery(initialQuery);
+    if (initialDirection && TOOL_DIRECTIONS.includes(initialDirection)) setDirection(initialDirection);
+    if (initialTool) setSelectedToolId(initialTool);
+  }, [initialDirection, initialQuery, initialTool]);
 
   useEffect(() => {
     try {
@@ -86,22 +155,26 @@ export default function ToolsDirectoryPage() {
   }, [favoriteIds, favoritesReady]);
 
   const filteredTools = useMemo(() => {
-    return [...TOOL_DEFINITIONS]
+      return [...TOOL_DEFINITIONS]
       .filter((tool) => matchesQuery(tool, query))
-      .filter((tool) => category === 'All' || tool.category === category)
+      .filter((tool) => direction === 'All' || tool.direction === direction)
       .filter((tool) => shellFilter === 'All' || tool.shell === shellFilter)
       .sort((a, b) => compareBy(sortMode, a).localeCompare(compareBy(sortMode, b)));
-  }, [category, query, shellFilter, sortMode]);
+  }, [direction, query, shellFilter, sortMode]);
 
   useEffect(() => {
     setPage(1);
-  }, [query, category, shellFilter, sortMode]);
+  }, [query, direction, shellFilter, sortMode]);
 
   useEffect(() => {
     if (!filteredTools.some((tool) => tool.id === selectedToolId)) {
       setSelectedToolId(filteredTools[0]?.id ?? TOOL_DEFINITIONS[0]?.id ?? 'pathd');
     }
   }, [filteredTools, selectedToolId]);
+
+  useEffect(() => {
+    setRelatedPage(1);
+  }, [selectedToolId]);
 
   const totalPages = Math.max(1, Math.ceil(filteredTools.length / pageSize));
   const safePage = Math.min(page, totalPages);
@@ -117,6 +190,40 @@ export default function ToolsDirectoryPage() {
 
   const selectedTool = filteredTools.find((tool) => tool.id === selectedToolId) ?? TOOL_DEFINITIONS[0];
   const comparedTools = TOOL_DEFINITIONS.filter((tool) => compareIds.includes(tool.id));
+  const relatedTools = useMemo(() => {
+    if (!selectedTool) return [];
+    return TOOL_DEFINITIONS.filter((tool) =>
+      tool.id !== selectedTool.id &&
+      (tool.direction === selectedTool.direction ||
+        selectedTool.relatedRoutes?.includes(tool.href) ||
+        tool.relatedRoutes?.includes(selectedTool.href)),
+    );
+  }, [selectedTool]);
+  const relatedPageSize = 3;
+  const relatedTotalPages = Math.max(1, Math.ceil(relatedTools.length / relatedPageSize));
+  const safeRelatedPage = Math.min(relatedPage, relatedTotalPages);
+  const visibleRelatedTools = useMemo(() => {
+    const start = (safeRelatedPage - 1) * relatedPageSize;
+    return relatedTools.slice(start, start + relatedPageSize);
+  }, [relatedTools, safeRelatedPage]);
+  const directionClusters = useMemo(
+    () => TOOL_DIRECTIONS.map((currentDirection) => ({
+      direction: currentDirection,
+      tools: TOOL_DEFINITIONS
+        .filter((tool) => tool.direction === currentDirection)
+        .sort((a, b) => {
+          const aIndex = DIRECTION_CLUSTER_RECIPES[currentDirection].spotlight.indexOf(a.id);
+          const bIndex = DIRECTION_CLUSTER_RECIPES[currentDirection].spotlight.indexOf(b.id);
+          const aScore = aIndex === -1 ? 99 : aIndex;
+          const bScore = bIndex === -1 ? 99 : bIndex;
+          return aScore - bScore || a.name.localeCompare(b.name);
+        })
+        .slice(0, displayMode === 'demo' ? 2 : 4),
+      total: TOOL_DEFINITIONS.filter((tool) => tool.direction === currentDirection).length,
+      strong3d: TOOL_DEFINITIONS.filter((tool) => tool.direction === currentDirection && tool.threeDPotential === 'strong').length,
+    })),
+    [displayMode],
+  );
 
   function toggleFavorite(toolId: string) {
     setFavoriteIds((prev) =>
@@ -188,8 +295,9 @@ export default function ToolsDirectoryPage() {
                       color: 'rgba(255,255,255,0.55)',
                     }}
                   >
-                    Find a module, understand what it does, compare it against another tool, and enter the
-                    correct route without guessing. The directory keeps the center on task fit rather than visual noise.
+                    {displayMode === 'demo'
+                      ? 'Browse by research direction, open the strongest demo paths, and move through the platform without losing story flow.'
+                      : 'Find a module, understand what it does, compare it against another tool, and enter the correct route without guessing. The directory keeps the center on task fit rather than visual noise.'}
                   </p>
                 </div>
 
@@ -200,11 +308,11 @@ export default function ToolsDirectoryPage() {
                     gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
                   }}
                 >
-                  {[
-                    { label: 'Tools', value: TOOL_DEFINITIONS.length, note: 'All routes indexed' },
-                    { label: 'Categories', value: TOOL_CATEGORIES.length, note: 'Grouped by task intent' },
-                    { label: 'Shells', value: '2', note: 'IDE and bento workbench' },
-                  ].map((item) => (
+                    {[
+                      { label: 'Tools', value: TOOL_DEFINITIONS.length, note: 'All routes indexed' },
+                      { label: 'Directions', value: TOOL_DIRECTIONS.length, note: 'Grouped by research workflow' },
+                      { label: '3D-ready', value: TOOL_DEFINITIONS.filter((tool) => tool.threeDPotential !== 'none').length, note: 'Strong or supporting spatial models' },
+                    ].map((item) => (
                     <div
                       key={item.label}
                       style={{
@@ -224,9 +332,115 @@ export default function ToolsDirectoryPage() {
                         {item.note}
                       </p>
                     </div>
-                  ))}
+                    ))}
                 </div>
               </header>
+
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '16px',
+                  flexWrap: 'wrap',
+                  padding: '16px 18px',
+                  borderRadius: '20px',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  background: '#050505',
+                }}
+              >
+                <div>
+                  <p style={{ margin: '0 0 6px', fontFamily: T.MONO, fontSize: '10px', color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase' }}>
+                    Display mode
+                  </p>
+                  <p style={{ margin: 0, fontFamily: T.SANS, fontSize: '13px', lineHeight: 1.6, color: 'rgba(255,255,255,0.55)' }}>
+                    {displayMode === 'demo'
+                      ? 'Highlights direction clusters and high-signal entry points for presentation and walkthroughs.'
+                      : 'Keeps evidence, compare context, adjacency, and workflow fit visible for detailed research use.'}
+                  </p>
+                </div>
+                <DisplayModeToggle />
+              </div>
+
+              <section
+                style={{
+                  borderRadius: '20px',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  background: '#050505',
+                  padding: '16px',
+                }}
+              >
+                <p style={{ margin: '0 0 12px', fontFamily: T.MONO, fontSize: '10px', color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase' }}>
+                  Direction clusters
+                </p>
+                <div style={{ display: 'grid', gap: '12px', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
+                  {directionClusters.map((cluster) => (
+                    <div
+                      key={cluster.direction}
+                      style={{
+                        borderRadius: '18px',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        background: direction === cluster.direction ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.02)',
+                        padding: '14px',
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', marginBottom: '8px' }}>
+                        <div>
+                          <p style={{ margin: '0 0 4px', fontFamily: T.SANS, fontSize: '13px', fontWeight: 700 }}>{cluster.direction}</p>
+                          <p style={{ margin: 0, fontFamily: T.MONO, fontSize: '10px', color: 'rgba(255,255,255,0.3)' }}>
+                            {cluster.total} tools · {cluster.strong3d} strong 3D
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setDirection(cluster.direction)}
+                          style={{
+                            minHeight: '30px',
+                            padding: '0 10px',
+                            borderRadius: '999px',
+                            border: '1px solid rgba(255,255,255,0.08)',
+                            background: 'rgba(255,255,255,0.03)',
+                            color: 'rgba(255,255,255,0.55)',
+                            cursor: 'pointer',
+                            fontFamily: T.MONO,
+                            fontSize: '10px',
+                          }}
+                        >
+                          Open
+                        </button>
+                      </div>
+                      <p style={{ margin: '0 0 10px', fontFamily: T.SANS, fontSize: '12px', lineHeight: 1.6, color: 'rgba(255,255,255,0.45)' }}>
+                        {displayMode === 'demo'
+                          ? DIRECTION_CLUSTER_RECIPES[cluster.direction].demoLabel
+                          : DIRECTION_CLUSTER_RECIPES[cluster.direction].researchLabel}
+                      </p>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                        {cluster.tools.map((tool) => (
+                          <Link
+                            key={tool.id}
+                            href={tool.href}
+                            style={{
+                              minHeight: '28px',
+                              padding: '0 10px',
+                              borderRadius: '999px',
+                              border: '1px solid rgba(255,255,255,0.08)',
+                              background: tool.threeDPotential === 'strong' ? 'rgba(147,203,82,0.10)' : 'rgba(255,255,255,0.03)',
+                              color: tool.threeDPotential === 'strong' ? 'rgba(147,203,82,0.95)' : 'rgba(255,255,255,0.55)',
+                              textDecoration: 'none',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              fontFamily: T.MONO,
+                              fontSize: '10px',
+                            }}
+                          >
+                            {tool.shortLabel}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
 
               <div className="nb-directory-layout" style={{ display: 'grid', gridTemplateColumns: '280px minmax(0, 1fr) 320px', gap: '18px' }}>
                 <aside
@@ -281,16 +495,16 @@ export default function ToolsDirectoryPage() {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                       <div>
                         <p style={{ margin: '0 0 8px', fontFamily: T.MONO, fontSize: '10px', color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase' }}>
-                          Category
+                          Direction
                         </p>
                         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                          {(['All', ...TOOL_CATEGORIES] as const).map((item) => {
-                            const active = item === category;
+                          {(['All', ...TOOL_DIRECTIONS] as const).map((item) => {
+                            const active = item === direction;
                             return (
                               <button
                                 key={item}
                                 type="button"
-                                onClick={() => setCategory(item)}
+                                onClick={() => setDirection(item)}
                                 aria-pressed={active}
                                 style={{
                                   minHeight: '34px',
@@ -389,6 +603,10 @@ export default function ToolsDirectoryPage() {
                     </p>
                     <div style={{ display: 'grid', gap: '10px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+                        <span style={{ fontFamily: T.SANS, fontSize: '13px', color: 'rgba(255,255,255,0.55)' }}>Display mode</span>
+                        <span style={{ fontFamily: T.MONO, fontSize: '12px', color: '#ffffff' }}>{displayMode}</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
                         <span style={{ fontFamily: T.SANS, fontSize: '13px', color: 'rgba(255,255,255,0.55)' }}>Favorites</span>
                         <span style={{ fontFamily: T.MONO, fontSize: '12px', color: '#ffffff' }}>{favoriteIds.length}</span>
                       </div>
@@ -402,6 +620,45 @@ export default function ToolsDirectoryPage() {
                       </div>
                     </div>
                   </section>
+
+                  <section
+                    style={{
+                      borderRadius: '20px',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      background: '#050505',
+                      padding: '16px',
+                    }}
+                  >
+                    <p style={{ margin: '0 0 10px', fontFamily: T.MONO, fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)' }}>
+                      Research directions
+                    </p>
+                    <div style={{ display: 'grid', gap: '8px' }}>
+                      {TOOL_DIRECTIONS.map((item) => {
+                        const active = direction === item;
+                        return (
+                          <button
+                            key={item}
+                            type="button"
+                            onClick={() => setDirection(item)}
+                            style={{
+                              textAlign: 'left',
+                              padding: '10px 12px',
+                              borderRadius: '14px',
+                              border: active ? '1px solid rgba(255,255,255,0.16)' : '1px solid rgba(255,255,255,0.08)',
+                              background: active ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.02)',
+                              color: active ? '#ffffff' : 'rgba(255,255,255,0.55)',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            <div style={{ fontFamily: T.SANS, fontSize: '12px', fontWeight: 700, marginBottom: '4px' }}>{item}</div>
+                            <div style={{ fontFamily: T.SANS, fontSize: '11px', lineHeight: 1.5, color: active ? 'rgba(255,255,255,0.55)' : 'rgba(255,255,255,0.35)' }}>
+                              {DIRECTION_NOTES[item]}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </section>
                 </aside>
 
                 <section
@@ -412,7 +669,7 @@ export default function ToolsDirectoryPage() {
                     gap: '16px',
                   }}
                 >
-                  {compareIds.length > 0 && (
+                  {displayMode === 'research' && compareIds.length > 0 && (
                     <div
                       style={{
                         borderRadius: '20px',
@@ -482,8 +739,9 @@ export default function ToolsDirectoryPage() {
                             </div>
                             <dl style={{ margin: 0, display: 'grid', gap: '10px' }}>
                               {[
-                                ['Category', tool.category],
+                                ['Direction', tool.direction],
                                 ['Shell', tool.shell.toUpperCase()],
+                                ['3D', tool.threeDPotential.toUpperCase()],
                                 ['Best for', tool.focus],
                               ].map(([label, value]) => (
                                 <div key={label}>
@@ -529,12 +787,12 @@ export default function ToolsDirectoryPage() {
                           {filteredTools.length} tool{filteredTools.length === 1 ? '' : 's'} match the current query and filter state.
                         </p>
                       </div>
-                      {(query || category !== 'All' || shellFilter !== 'All') && (
+                      {(query || direction !== 'All' || shellFilter !== 'All') && (
                         <button
                           type="button"
                           onClick={() => {
                             setQuery('');
-                            setCategory('All');
+                            setDirection('All');
                             setShellFilter('All');
                             setSortMode('workflow');
                           }}
@@ -603,7 +861,7 @@ export default function ToolsDirectoryPage() {
                                   </div>
                                   <div style={{ minWidth: 0 }}>
                                     <p style={{ margin: '0 0 4px', fontFamily: T.MONO, fontSize: '10px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)' }}>
-                                      {tool.shortLabel} · {tool.category}
+                                      {tool.shortLabel} · {tool.direction}
                                     </p>
                                     <h2 style={{ margin: '0 0 6px', fontFamily: T.SANS, fontSize: '17px', lineHeight: 1.25, letterSpacing: '-0.02em' }}>
                                       {tool.name}
@@ -676,6 +934,22 @@ export default function ToolsDirectoryPage() {
                                     {tag}
                                   </span>
                                 ))}
+                                <span
+                                  style={{
+                                    minHeight: '28px',
+                                    padding: '0 10px',
+                                    borderRadius: '999px',
+                                    border: '1px solid rgba(255,255,255,0.08)',
+                                    background: tool.threeDPotential === 'strong' ? 'rgba(147,203,82,0.14)' : tool.threeDPotential === 'supporting' ? 'rgba(81,81,205,0.14)' : 'rgba(255,255,255,0.03)',
+                                    color: tool.threeDPotential === 'strong' ? 'rgba(147,203,82,0.92)' : tool.threeDPotential === 'supporting' ? 'rgba(160,160,255,0.92)' : 'rgba(255,255,255,0.45)',
+                                    fontFamily: T.MONO,
+                                    fontSize: '10px',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                  }}
+                                >
+                                  3D:{tool.threeDPotential}
+                                </span>
                               </div>
 
                               <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' }}>
@@ -762,9 +1036,9 @@ export default function ToolsDirectoryPage() {
                     </p>
                     {selectedTool ? (
                       <>
-                        <p style={{ margin: '0 0 6px', fontFamily: T.MONO, fontSize: '10px', color: 'rgba(255,255,255,0.25)' }}>
-                          {selectedTool.shortLabel} · {selectedTool.shell.toUpperCase()} SHELL
-                        </p>
+                          <p style={{ margin: '0 0 6px', fontFamily: T.MONO, fontSize: '10px', color: 'rgba(255,255,255,0.25)' }}>
+                          {selectedTool.shortLabel} · {selectedTool.direction}
+                          </p>
                         <h2 style={{ margin: '0 0 10px', fontFamily: T.SANS, fontSize: '22px', lineHeight: 1.15, letterSpacing: '-0.03em' }}>
                           {selectedTool.name}
                         </h2>
@@ -775,19 +1049,65 @@ export default function ToolsDirectoryPage() {
                         <div style={{ display: 'grid', gap: '12px' }}>
                           <div style={{ borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)', padding: '14px' }}>
                             <p style={{ margin: '0 0 6px', fontFamily: T.MONO, fontSize: '10px', color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase' }}>
-                              Best for
+                              {displayMode === 'demo' ? 'Story fit' : 'Best for'}
                             </p>
                             <p style={{ margin: 0, fontFamily: T.SANS, fontSize: '13px', lineHeight: 1.65, color: 'rgba(255,255,255,0.65)' }}>
-                              {selectedTool.focus}
+                              {displayMode === 'demo'
+                                ? DIRECTION_CLUSTER_RECIPES[selectedTool.direction].demoLabel
+                                : selectedTool.focus}
                             </p>
                           </div>
 
                           <div style={{ borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)', padding: '14px' }}>
+                            <p style={{ margin: '0 0 6px', fontFamily: T.MONO, fontSize: '10px', color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase' }}>
+                              {displayMode === 'demo' ? 'Direction cluster' : 'Direction fit'}
+                            </p>
+                            <p style={{ margin: '0 0 8px', fontFamily: T.SANS, fontSize: '13px', lineHeight: 1.65, color: 'rgba(255,255,255,0.65)' }}>
+                              {selectedTool.direction} · {selectedTool.mode} mode · {selectedTool.shell.toUpperCase()} shell
+                            </p>
+                            <p style={{ margin: 0, fontFamily: T.MONO, fontSize: '10px', color: selectedTool.threeDPotential === 'strong' ? 'rgba(147,203,82,0.9)' : selectedTool.threeDPotential === 'supporting' ? 'rgba(160,160,255,0.9)' : 'rgba(255,255,255,0.35)' }}>
+                              3D potential: {selectedTool.threeDPotential}
+                            </p>
+                          </div>
+
+                          <div style={{ borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)', padding: '14px' }}>
+                            <p style={{ margin: '0 0 6px', fontFamily: T.MONO, fontSize: '10px', color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase' }}>
+                              {displayMode === 'demo' ? 'Guided route' : 'Workflow map'}
+                            </p>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
+                              {[
+                                { label: 'Research Intake', active: selectedTool.direction === 'Research Intake' },
+                                { label: selectedTool.direction, active: true },
+                                { label: selectedTool.shortLabel, active: true },
+                                { label: 'Validation', active: selectedTool.direction === 'Validation & DBTL' },
+                              ].map((step, index) => (
+                                <div key={`${step.label}-${index}`} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                  <span style={{
+                                    minHeight: '28px',
+                                    padding: '0 10px',
+                                    borderRadius: '999px',
+                                    border: '1px solid rgba(255,255,255,0.08)',
+                                    background: step.active ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.02)',
+                                    color: step.active ? '#ffffff' : 'rgba(255,255,255,0.35)',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    fontFamily: T.MONO,
+                                    fontSize: '10px',
+                                  }}>
+                                    {step.label}
+                                  </span>
+                                  {index < 3 && <span style={{ color: 'rgba(255,255,255,0.18)', fontSize: '10px' }}>→</span>}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div style={{ borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)', padding: '14px' }}>
                             <p style={{ margin: '0 0 8px', fontFamily: T.MONO, fontSize: '10px', color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase' }}>
-                              Outputs you can expect
+                              {displayMode === 'demo' ? 'What this shows best' : 'Outputs you can expect'}
                             </p>
                             <ul style={{ margin: 0, paddingLeft: '18px', display: 'grid', gap: '8px' }}>
-                              {selectedTool.outputs.map((output) => (
+                              {(displayMode === 'demo' ? selectedTool.outputs.slice(0, 2) : selectedTool.outputs).map((output) => (
                                 <li key={output} style={{ fontFamily: T.SANS, fontSize: '13px', lineHeight: 1.55, color: 'rgba(255,255,255,0.65)' }}>
                                   {output}
                                 </li>
@@ -795,7 +1115,7 @@ export default function ToolsDirectoryPage() {
                             </ul>
                           </div>
 
-                          {selectedTool.relatedRoutes && selectedTool.relatedRoutes.length > 0 && (
+                          {displayMode === 'research' && selectedTool.relatedRoutes && selectedTool.relatedRoutes.length > 0 && (
                             <div style={{ borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)', padding: '14px' }}>
                               <p style={{ margin: '0 0 8px', fontFamily: T.MONO, fontSize: '10px', color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase' }}>
                                 Related routes
@@ -823,6 +1143,48 @@ export default function ToolsDirectoryPage() {
                                   </Link>
                                 ))}
                               </div>
+                            </div>
+                          )}
+
+                          {relatedTools.length > 0 && (
+                            <div style={{ borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)', padding: '14px' }}>
+                              <p style={{ margin: '0 0 8px', fontFamily: T.MONO, fontSize: '10px', color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase' }}>
+                                {displayMode === 'demo' ? 'Continue with' : 'Adjacent tools'}
+                              </p>
+                              <div style={{ display: 'grid', gap: '8px' }}>
+                                {visibleRelatedTools.map((tool) => (
+                                  <Link
+                                    key={tool.id}
+                                    href={tool.href}
+                                    style={{
+                                      borderRadius: '12px',
+                                      border: '1px solid rgba(255,255,255,0.08)',
+                                      background: 'rgba(255,255,255,0.02)',
+                                      padding: '10px 12px',
+                                      textDecoration: 'none',
+                                      color: '#ffffff',
+                                    }}
+                                  >
+                                    <div style={{ fontFamily: T.SANS, fontSize: '12px', fontWeight: 700, marginBottom: '3px' }}>
+                                      {tool.shortLabel} · {tool.name}
+                                    </div>
+                                    <div style={{ fontFamily: T.SANS, fontSize: '11px', lineHeight: 1.5, color: 'rgba(255,255,255,0.45)' }}>
+                                      {tool.focus}
+                                    </div>
+                                  </Link>
+                                ))}
+                              </div>
+                              {relatedTools.length > relatedPageSize && (
+                                <div style={{ marginTop: '10px' }}>
+                                  <Pagination
+                                    totalItems={relatedTools.length}
+                                    currentPage={safeRelatedPage}
+                                    pageSize={relatedPageSize}
+                                    onPageChange={setRelatedPage}
+                                    itemLabel="adjacent tools"
+                                  />
+                                </div>
+                              )}
                             </div>
                           )}
 

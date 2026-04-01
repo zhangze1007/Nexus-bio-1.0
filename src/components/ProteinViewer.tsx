@@ -34,6 +34,15 @@ export default function ProteinViewer({ pdbId, alphafoldId, label }: { pdbId: st
   const viewerRef = useRef<any>(null);
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [useAF, setUseAF] = useState(false);
+  const [renderMode, setRenderMode] = useState<'cartoon' | 'surface' | 'confidence'>('cartoon');
+  const [spinEnabled, setSpinEnabled] = useState(true);
+  const sourceLabel = useAF && alphafoldId ? `AlphaFold · ${alphafoldId}` : `RCSB PDB · ${pdbId}`;
+  const traceText =
+    renderMode === 'surface'
+      ? 'Surface mode exposes envelope and packing so catalytic accessibility can be inspected quickly.'
+      : renderMode === 'confidence'
+        ? 'pLDDT mode maps AlphaFold confidence directly onto the fold so uncertain regions remain explicit.'
+        : 'Cartoon mode keeps fold topology legible for presentation and residue-level orientation.';
 
   useEffect(() => {
     let cancelled = false;
@@ -57,6 +66,21 @@ export default function ProteinViewer({ pdbId, alphafoldId, label }: { pdbId: st
           const pdb = await res.text();
           if (!pdb || pdb.length < 100) throw new Error('Empty AlphaFold response');
           viewer.addModel(pdb, 'pdb');
+        } else {
+          await new Promise<void>((resolve, reject) => {
+            const timer = setTimeout(() => reject(new Error('PDB download timeout')), 15000);
+            window.$3Dmol.download(`pdb:${pdbId}`, viewer, {}, () => { clearTimeout(timer); resolve(); });
+          });
+        }
+
+        viewer.setStyle({}, {});
+        if (renderMode === 'surface') {
+          viewer.setStyle({}, { cartoon: { color: useAF ? '#EAEAEA' : 'spectrum', thickness: 0.35 } });
+          viewer.addSurface(window.$3Dmol.SurfaceType.VDW, {
+            opacity: 0.72,
+            color: useAF ? '#F0FDFA' : '#FFFFFF',
+          });
+        } else if (renderMode === 'confidence' && useAF && alphafoldId) {
           viewer.setStyle({}, {
             cartoon: {
               colorfunc: (atom: any) => {
@@ -66,20 +90,16 @@ export default function ProteinViewer({ pdbId, alphafoldId, label }: { pdbId: st
                 if (b >= 50) return 0xFFDB13;
                 return 0xFF7D45;
               },
-              thickness: 0.5,
+              thickness: 0.55,
             }
           });
         } else {
-          await new Promise<void>((resolve, reject) => {
-            const timer = setTimeout(() => reject(new Error('PDB download timeout')), 15000);
-            window.$3Dmol.download(`pdb:${pdbId}`, viewer, {}, () => { clearTimeout(timer); resolve(); });
-          });
-          viewer.setStyle({}, { cartoon: { color: 'spectrum', thickness: 0.5 } });
+          viewer.setStyle({}, { cartoon: { color: useAF ? '#EAEAEA' : 'spectrum', thickness: 0.5 } });
           viewer.setStyle({ hetflag: true }, { stick: { colorscheme: 'greenCarbon', radius: 0.15 } });
         }
 
         viewer.zoomTo();
-        viewer.spin('y', 0.5);
+        viewer.spin(spinEnabled ? 'y' : false, 0.5);
         viewer.render();
         if (!cancelled) setStatus('ready');
       } catch (err) {
@@ -97,7 +117,7 @@ export default function ProteinViewer({ pdbId, alphafoldId, label }: { pdbId: st
             });
             viewer2.setStyle({}, { cartoon: { color: 'spectrum', thickness: 0.5 } });
             viewer2.zoomTo();
-            viewer2.spin('y', 0.5);
+            viewer2.spin(spinEnabled ? 'y' : false, 0.5);
             viewer2.render();
             if (!cancelled) setStatus('ready');
           } catch {
@@ -110,7 +130,7 @@ export default function ProteinViewer({ pdbId, alphafoldId, label }: { pdbId: st
     }
     init();
     return () => { cancelled = true; };
-  }, [pdbId, alphafoldId, useAF]);
+  }, [pdbId, alphafoldId, useAF, renderMode, spinEnabled]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -169,6 +189,30 @@ export default function ProteinViewer({ pdbId, alphafoldId, label }: { pdbId: st
         )}
         {status === 'ready' && (
           <>
+            <div style={{ position: 'absolute', top: '8px', right: '10px', display: 'flex', gap: '6px' }}>
+              {([
+                { key: 'cartoon', label: 'Cartoon' },
+                { key: 'surface', label: 'Surface' },
+                ...(alphafoldId ? [{ key: 'confidence', label: 'pLDDT' }] : []),
+              ] as const).map(mode => (
+                <button
+                  key={mode.key}
+                  type="button"
+                  onClick={() => setRenderMode(mode.key as 'cartoon' | 'surface' | 'confidence')}
+                  style={{
+                    border: '1px solid rgba(0,0,0,0.08)',
+                    background: renderMode === mode.key ? '#111111' : 'rgba(255,255,255,0.86)',
+                    color: renderMode === mode.key ? '#ffffff' : 'rgba(0,0,0,0.5)',
+                    fontSize: '9px',
+                    borderRadius: '999px',
+                    padding: '3px 7px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {mode.label}
+                </button>
+              ))}
+            </div>
             <div style={{ position: 'absolute', top: '8px', left: '10px', pointerEvents: 'none' }}>
               <span style={{ color: 'rgba(0,0,0,0.35)', fontSize: '9px', fontFamily: "'Inter', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1", background: 'rgba(255,255,255,0.8)', padding: '2px 6px', borderRadius: '8px' }}>
                 {useAF ? `AF-${alphafoldId}` : pdbId}
@@ -193,10 +237,19 @@ export default function ProteinViewer({ pdbId, alphafoldId, label }: { pdbId: st
             <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '11px', fontWeight: 500, margin: '0 0 2px' }}>AlphaFold pLDDT</p>
             <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', fontFamily: "'Inter', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1", margin: 0 }}>AI confidence coloring</p>
           </div>
-          <button onClick={() => setUseAF(!useAF)}
-            style={{ width: '34px', height: '18px', borderRadius: '9px', background: useAF ? '#A8C5DA' : 'rgba(255,255,255,0.1)', border: 'none', cursor: 'pointer', position: 'relative', transition: 'background 0.2s' }}>
-            <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#fff', position: 'absolute', top: '3px', left: useAF ? '19px' : '3px', transition: 'left 0.2s' }} />
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <button
+              type="button"
+              onClick={() => setSpinEnabled(!spinEnabled)}
+              style={{ padding: '4px 8px', borderRadius: '999px', border: '1px solid rgba(255,255,255,0.08)', background: spinEnabled ? 'rgba(255,255,255,0.1)' : 'transparent', color: 'rgba(255,255,255,0.7)', fontSize: '9px', cursor: 'pointer' }}
+            >
+              {spinEnabled ? 'Auto spin' : 'Static'}
+            </button>
+            <button onClick={() => setUseAF(!useAF)}
+              style={{ width: '34px', height: '18px', borderRadius: '9px', background: useAF ? '#A8C5DA' : 'rgba(255,255,255,0.1)', border: 'none', cursor: 'pointer', position: 'relative', transition: 'background 0.2s' }}>
+              <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#fff', position: 'absolute', top: '3px', left: useAF ? '19px' : '3px', transition: 'left 0.2s' }} />
+            </button>
+          </div>
         </div>
       )}
 
@@ -211,8 +264,28 @@ export default function ProteinViewer({ pdbId, alphafoldId, label }: { pdbId: st
         </div>
       )}
 
+      <div style={{ padding: '10px 12px', borderRadius: '16px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
+        <p style={{ color: 'rgba(255,255,255,0.28)', fontSize: '10px', fontFamily: "'Inter', -apple-system, sans-serif", textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 6px' }}>
+          Structure trace
+        </p>
+        <p style={{ color: 'rgba(255,255,255,0.68)', fontSize: '11px', lineHeight: 1.6, margin: '0 0 8px', fontFamily: "'Inter', -apple-system, sans-serif" }}>
+          {traceText}
+        </p>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <span style={{ padding: '3px 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.55)', fontSize: '9px', fontFamily: "'Inter', -apple-system, sans-serif" }}>
+            source · {sourceLabel}
+          </span>
+          <span style={{ padding: '3px 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.55)', fontSize: '9px', fontFamily: "'Inter', -apple-system, sans-serif" }}>
+            mode · {renderMode}
+          </span>
+          <span style={{ padding: '3px 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.55)', fontSize: '9px', fontFamily: "'Inter', -apple-system, sans-serif" }}>
+            label · {label}
+          </span>
+        </div>
+      </div>
+
       <p style={{ color: 'rgba(255,255,255,0.1)', fontSize: '9px', fontFamily: "'Inter', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1", margin: 0, textAlign: 'center' }}>
-        Hover to inspect · Drag to rotate · {useAF ? 'AlphaFold DB' : 'RCSB PDB'}
+        Drag to rotate · {spinEnabled ? 'auto-spin on' : 'manual view'} · {renderMode === 'surface' ? 'surface envelope' : renderMode === 'confidence' ? 'confidence coloring' : 'cartoon fold'}
       </p>
     </div>
   );

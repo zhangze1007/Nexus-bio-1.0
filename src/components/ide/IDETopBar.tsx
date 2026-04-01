@@ -2,8 +2,9 @@
 import Link from 'next/link';
 import { Home, Terminal, LayoutGrid } from 'lucide-react';
 import { useUIStore } from '../../store/uiStore';
-import { getToolDefinition } from '../tools/shared/toolRegistry';
+import { getToolDefinition, TOOL_DEFINITIONS } from '../tools/shared/toolRegistry';
 import { T } from './tokens';
+import DisplayModeToggle, { useDisplayMode } from './shared/DisplayModeToggle';
 
 const SANS = T.SANS;
 const MONO = T.MONO;
@@ -23,72 +24,145 @@ export default function IDETopBar({ moduleId, actions }: IDETopBarProps) {
   const consoleEntries = useUIStore((s) => s.consoleEntries);
   const errorCount = consoleEntries.filter((entry) => entry.level === 'error').length;
   const tool = getToolDefinition(moduleId);
+  const [displayMode] = useDisplayMode();
+  const adjacentTools = tool
+    ? TOOL_DEFINITIONS.filter((candidate) =>
+        candidate.id !== tool.id &&
+        (candidate.direction === tool.direction ||
+          tool.relatedRoutes?.includes(candidate.href) ||
+          candidate.relatedRoutes?.includes(tool.href)))
+        .slice(0, 3)
+    : [];
 
   return (
     <header className="nb-ide-topbar">
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flexWrap: 'wrap' }}>
-        <Link
-          href="/"
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px',
-            textDecoration: 'none',
-            color: LABEL,
-            fontFamily: SANS,
-            fontSize: '11px',
-          }}
-        >
-          <Home size={12} />
-          Home
-        </Link>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '8px', minWidth: 0, flex: 1 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flexWrap: 'wrap' }}>
+          <Link
+            href="/"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              textDecoration: 'none',
+              color: LABEL,
+              fontFamily: SANS,
+              fontSize: '11px',
+            }}
+          >
+            <Home size={12} />
+            Home
+          </Link>
 
-        <span style={{ color: 'rgba(255,255,255,0.16)' }}>/</span>
+          <span style={{ color: 'rgba(255,255,255,0.16)' }}>/</span>
 
-        <Link
-          href="/tools"
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px',
-            textDecoration: 'none',
-            color: LABEL,
-            fontFamily: SANS,
-            fontSize: '11px',
-          }}
-        >
-          <LayoutGrid size={12} />
-          Tools
-        </Link>
+          <Link
+            href="/tools"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              textDecoration: 'none',
+              color: LABEL,
+              fontFamily: SANS,
+              fontSize: '11px',
+            }}
+          >
+            <LayoutGrid size={12} />
+            Tools
+          </Link>
 
-        <span style={{ color: 'rgba(255,255,255,0.16)' }}>/</span>
+          <span style={{ color: 'rgba(255,255,255,0.16)' }}>/</span>
 
-        <span style={{ fontFamily: MONO, fontSize: '10px', color: 'rgba(255,255,255,0.28)', textTransform: 'uppercase' }}>
-          {tool?.shortLabel ?? moduleId}
-        </span>
+          <span style={{ fontFamily: MONO, fontSize: '10px', color: 'rgba(255,255,255,0.28)', textTransform: 'uppercase' }}>
+            {tool?.shortLabel ?? moduleId}
+          </span>
+
+          {tool && (
+            <>
+              <span style={{ color: 'rgba(255,255,255,0.16)' }}>·</span>
+              <span
+                style={{
+                  minWidth: 0,
+                  fontFamily: SANS,
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  color: VALUE,
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}
+              >
+                {tool.name}
+              </span>
+            </>
+          )}
+        </div>
 
         {tool && (
-          <>
-            <span style={{ color: 'rgba(255,255,255,0.16)' }}>·</span>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             <span
               style={{
-                minWidth: 0,
-                fontFamily: SANS,
-                fontSize: '12px',
-                fontWeight: 600,
-                color: VALUE,
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
+                minHeight: '28px',
+                padding: '0 10px',
+                borderRadius: '999px',
+                border: `1px solid ${BORDER}`,
+                background: displayMode === 'demo' ? 'rgba(147,203,82,0.10)' : 'rgba(81,81,205,0.10)',
+                color: displayMode === 'demo' ? 'rgba(147,203,82,0.95)' : 'rgba(180,180,255,0.95)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                fontFamily: MONO,
+                fontSize: '10px',
               }}
             >
-              {tool.name}
+              {displayMode.toUpperCase()} MODE
             </span>
-          </>
+            <Link
+              href={`/tools?direction=${encodeURIComponent(tool.direction)}&tool=${tool.id}`}
+              style={{
+                minHeight: '28px',
+                padding: '0 10px',
+                borderRadius: '999px',
+                border: `1px solid ${BORDER}`,
+                background: 'rgba(255,255,255,0.03)',
+                color: 'rgba(255,255,255,0.55)',
+                textDecoration: 'none',
+                display: 'inline-flex',
+                alignItems: 'center',
+                fontFamily: MONO,
+                fontSize: '10px',
+              }}
+            >
+              {tool.direction}
+            </Link>
+            {adjacentTools.map((adjacent) => (
+              <Link
+                key={adjacent.id}
+                href={adjacent.href}
+                style={{
+                  minHeight: '28px',
+                  padding: '0 10px',
+                  borderRadius: '999px',
+                  border: `1px solid ${BORDER}`,
+                  background: 'rgba(255,255,255,0.02)',
+                  color: 'rgba(255,255,255,0.45)',
+                  textDecoration: 'none',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  fontFamily: SANS,
+                  fontSize: '11px',
+                }}
+              >
+                Next: {adjacent.shortLabel}
+              </Link>
+            ))}
+          </div>
         )}
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+        <DisplayModeToggle />
         {actions}
         <button
           type="button"
