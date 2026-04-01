@@ -8,6 +8,19 @@ import DataTable from '../ide/shared/DataTable';
 import type { TableColumn } from '../ide/shared/DataTable';
 import { OMICS_DATA } from '../../data/mockMultiO';
 import { OmicsFoundationModel } from '../../services/OmicsIntegrator';
+import {
+  extractMOFAFactors,
+  trainMultimodalVAE,
+  predictPerturbation as vaePredictPerturbation,
+  computeMetabolicEfficiency,
+  exportEmbeddingsWithEfficiency,
+} from '../../services/MOIEngine';
+import type {
+  MOFAResult,
+  VAETrainingResult,
+  VAEPerturbationPrediction,
+  MetabolicEfficiencyScore,
+} from '../../services/MOIEngine';
 import type {
   OmicsRow,
   OmicsLayer,
@@ -43,7 +56,7 @@ const GLASS: React.CSSProperties = {
   border: '1px solid rgba(255,255,255,0.08)',
 };
 
-type ViewMode = 'Embedding' | 'Volcano' | 'Table';
+type ViewMode = 'Embedding' | 'Volcano' | 'Table' | 'MOFA+' | 'VAE' | 'Efficiency';
 
 /* ── VolcanoPlot (preserved) ──────────────────────────────────────── */
 
@@ -243,6 +256,20 @@ export default function MultiOPage() {
   const bottleneck = useMemo(() => model.analyzeBottleneck(), [model]);
   const correlations = useMemo(() => model.computeCorrelationMatrix(), [model]);
 
+  /* MOI Engine — MOFA+ / VAE / Efficiency */
+  const mofaResult = useMemo(() => extractMOFAFactors(OMICS_DATA, 5), []);
+  const vaeResult = useMemo(() => trainMultimodalVAE(OMICS_DATA, 8, 0.5, 100, 0.005), []);
+  const efficiencyScores = useMemo(() => computeMetabolicEfficiency(OMICS_DATA), []);
+  const vaeEmbeddings = useMemo(
+    () => exportEmbeddingsWithEfficiency(vaeResult, efficiencyScores),
+    [vaeResult, efficiencyScores],
+  );
+
+  /* VAE perturbation state */
+  const [vaePerturbGene, setVaePerturbGene] = useState<string>(OMICS_DATA[0]?.gene ?? '');
+  const [vaePerturbFC, setVaePerturbFC] = useState<number>(2.0);
+  const [vaePerturbResult, setVaePerturbResult] = useState<VAEPerturbationPrediction | null>(null);
+
   /* Derived data */
   const filtered = useMemo(
     () => OMICS_DATA.filter(r => Math.abs(r.fold_change ?? 0) > 0),
@@ -338,11 +365,11 @@ export default function MultiOPage() {
 
             {/* View Mode Tabs */}
             <SectionLabel>View Mode</SectionLabel>
-            <div style={{ display: 'flex', gap: '4px', marginBottom: '16px' }}>
-              {(['Embedding', 'Volcano', 'Table'] as ViewMode[]).map(mode => (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '16px' }}>
+              {(['Embedding', 'Volcano', 'Table', 'MOFA+', 'VAE', 'Efficiency'] as ViewMode[]).map(mode => (
                 <button key={mode} onClick={() => setViewMode(mode)} style={{
-                  flex: 1, padding: '5px 0', borderRadius: '6px', cursor: 'pointer',
-                  fontFamily: SANS, fontSize: '10px', border: 'none',
+                  flex: '1 0 30%', padding: '5px 0', borderRadius: '6px', cursor: 'pointer',
+                  fontFamily: SANS, fontSize: '9px', border: 'none',
                   background: viewMode === mode ? 'rgba(255,255,255,0.12)' : INPUT_BG,
                   color: viewMode === mode ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.4)',
                 }}>
@@ -490,6 +517,195 @@ export default function MultiOPage() {
                 </div>
               </div>
             )}
+
+            {/* ── MOFA+ Factor Analysis ───────────────────────────── */}
+            {viewMode === 'MOFA+' && (
+              <div style={{ flex: 1, overflowY: 'auto', padding: '20px' }}>
+                {/* Summary metrics */}
+                <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
+                  <div style={{ ...GLASS, borderRadius: '14px', padding: '12px 16px', flex: '1 0 120px' }}>
+                    <span style={{ fontFamily: SANS, fontSize: '9px', color: LABEL, display: 'block' }}>Total Var. Explained</span>
+                    <span style={{ fontFamily: MONO, fontSize: '18px', fontWeight: 700, color: LAYER_COLORS.transcriptomics }}>
+                      {(mofaResult.totalVarianceExplained * 100).toFixed(1)}%
+                    </span>
+                  </div>
+                  <div style={{ ...GLASS, borderRadius: '14px', padding: '12px 16px', flex: '1 0 120px' }}>
+                    <span style={{ fontFamily: SANS, fontSize: '9px', color: LABEL, display: 'block' }}>Convergence</span>
+                    <span style={{ fontFamily: MONO, fontSize: '18px', fontWeight: 700, color: VALUE }}>
+                      {mofaResult.convergenceIterations} iter
+                    </span>
+                  </div>
+                  <div style={{ ...GLASS, borderRadius: '14px', padding: '12px 16px', flex: '1 0 120px' }}>
+                    <span style={{ fontFamily: SANS, fontSize: '9px', color: LABEL, display: 'block' }}>Recon. Error</span>
+                    <span style={{ fontFamily: MONO, fontSize: '18px', fontWeight: 700, color: VALUE }}>
+                      {mofaResult.reconstructionError.toFixed(4)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Factor cards */}
+                {mofaResult.factors.map(f => (
+                  <div key={f.id} style={{ ...GLASS, borderRadius: '14px', padding: '14px', marginBottom: '12px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                      <span style={{ fontFamily: SANS, fontSize: '12px', fontWeight: 600, color: VALUE }}>{f.name}</span>
+                      <span style={{ fontFamily: MONO, fontSize: '10px', color: LABEL }}>
+                        {(f.varianceExplained.total * 100).toFixed(1)}% var
+                      </span>
+                    </div>
+                    {/* Variance per layer bars */}
+                    {(['transcriptomics', 'proteomics', 'metabolomics'] as OmicsLayer[]).map(layer => {
+                      const pct = f.varianceExplained[layer] * 100;
+                      return (
+                        <div key={layer} style={{ marginBottom: '5px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
+                            <span style={{ fontFamily: SANS, fontSize: '9px', color: 'rgba(255,255,255,0.4)' }}>
+                              {layer.slice(0, 5)}
+                            </span>
+                            <span style={{ fontFamily: MONO, fontSize: '9px', color: VALUE }}>{pct.toFixed(1)}%</span>
+                          </div>
+                          <div style={{ width: '100%', height: '5px', borderRadius: '3px', background: 'rgba(255,255,255,0.06)' }}>
+                            <div style={{ width: `${Math.min(100, pct)}%`, height: '100%', borderRadius: '3px', background: LAYER_COLORS[layer] }} />
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {/* Top genes */}
+                    <div style={{ display: 'flex', gap: '4px', marginTop: '8px', flexWrap: 'wrap' }}>
+                      {f.topGenes.slice(0, 4).map(g => (
+                        <span key={g.gene} style={{
+                          fontFamily: MONO, fontSize: '8px', padding: '2px 6px', borderRadius: '6px',
+                          background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.55)',
+                        }}>
+                          {g.gene} ({g.loading.toFixed(2)})
+                        </span>
+                      ))}
+                    </div>
+                    <p style={{ fontFamily: SANS, fontSize: '9px', color: 'rgba(255,255,255,0.35)', margin: '6px 0 0', lineHeight: '1.3' }}>
+                      {f.interpretation}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* ── VAE Latent Space ────────────────────────────────── */}
+            {viewMode === 'VAE' && (
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                {/* VAE Latent scatter */}
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+                  <div style={{ width: '100%', maxWidth: '560px' }}>
+                    {(() => {
+                      const W = 520, H = 380, PAD = 44;
+                      const pts = vaeResult.latentPoints;
+                      const xs = pts.map(p => p.z_mean[0] ?? 0);
+                      const ys = pts.map(p => p.z_mean[1] ?? 0);
+                      const xMin = Math.min(...xs), xMax = Math.max(...xs);
+                      const yMin = Math.min(...ys), yMax = Math.max(...ys);
+                      const xR = xMax - xMin || 1, yR = yMax - yMin || 1;
+                      return (
+                        <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%' }}>
+                          <rect width={W} height={H} fill="#0d0f14" rx={12} />
+                          <line x1={PAD} y1={H - PAD} x2={W - PAD} y2={H - PAD} stroke="rgba(255,255,255,0.1)" />
+                          <line x1={PAD} y1={PAD} x2={PAD} y2={H - PAD} stroke="rgba(255,255,255,0.1)" />
+                          <text x={W / 2} y={H - 6} textAnchor="middle" fontFamily={MONO} fontSize="8" fill={LABEL}>Latent Z₁</text>
+                          <text x={12} y={H / 2} textAnchor="middle" fontFamily={MONO} fontSize="8" fill={LABEL} transform={`rotate(-90,12,${H / 2})`}>Latent Z₂</text>
+                          {pts.map((p, i) => {
+                            const cx = PAD + ((xs[i] - xMin) / xR) * (W - PAD * 2);
+                            const cy = H - PAD - ((ys[i] - yMin) / yR) * (H - PAD * 2);
+                            const eff = p.metabolicEfficiency;
+                            const r = Math.round(60 + (1 - eff) * 195);
+                            const g = Math.round(120 + eff * 100);
+                            const b = Math.round(100 + eff * 80);
+                            return (
+                              <circle key={p.id} cx={cx} cy={cy} r={5} fill={`rgb(${r},${g},${b})`} opacity={0.85}>
+                                <title>{p.gene}: eff={eff.toFixed(3)}</title>
+                              </circle>
+                            );
+                          })}
+                        </svg>
+                      );
+                    })()}
+                  </div>
+                </div>
+                {/* Convergence mini-chart */}
+                <div style={{ height: '100px', padding: '0 20px 12px', flexShrink: 0 }}>
+                  {(() => {
+                    const hist = vaeResult.convergenceHistory;
+                    if (hist.length === 0) return null;
+                    const W = 480, H = 80, PAD = 30;
+                    const maxL = Math.max(...hist.map(h => h.loss), 0.01);
+                    return (
+                      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
+                        <rect width={W} height={H} fill="transparent" />
+                        <text x={PAD - 4} y={12} fontFamily={MONO} fontSize="7" fill={LABEL} textAnchor="end">Loss</text>
+                        <polyline
+                          points={hist.map((h, i) => {
+                            const x = PAD + (i / (hist.length - 1)) * (W - PAD * 2);
+                            const y = H - 8 - (h.loss / maxL) * (H - 20);
+                            return `${x},${y}`;
+                          }).join(' ')}
+                          fill="none" stroke={LAYER_COLORS.proteomics} strokeWidth={1.5}
+                        />
+                        <text x={W / 2} y={H - 1} textAnchor="middle" fontFamily={MONO} fontSize="7" fill={LABEL}>Epoch</text>
+                      </svg>
+                    );
+                  })()}
+                </div>
+              </div>
+            )}
+
+            {/* ── Metabolic Efficiency ────────────────────────────── */}
+            {viewMode === 'Efficiency' && (
+              <div style={{ flex: 1, overflowY: 'auto', padding: '20px' }}>
+                <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
+                  <div style={{ ...GLASS, borderRadius: '14px', padding: '12px 16px', flex: '1 0 140px' }}>
+                    <span style={{ fontFamily: SANS, fontSize: '9px', color: LABEL, display: 'block' }}>Avg Efficiency</span>
+                    <span style={{ fontFamily: MONO, fontSize: '18px', fontWeight: 700, color: 'rgba(120,220,180,0.9)' }}>
+                      {(efficiencyScores.reduce((s, e) => s + e.score, 0) / Math.max(1, efficiencyScores.length) * 100).toFixed(1)}%
+                    </span>
+                  </div>
+                  <div style={{ ...GLASS, borderRadius: '14px', padding: '12px 16px', flex: '1 0 140px' }}>
+                    <span style={{ fontFamily: SANS, fontSize: '9px', color: LABEL, display: 'block' }}>Top Gene</span>
+                    <span style={{ fontFamily: MONO, fontSize: '14px', fontWeight: 700, color: VALUE }}>
+                      {[...efficiencyScores].sort((a, b) => b.score - a.score)[0]?.gene ?? '—'}
+                    </span>
+                  </div>
+                </div>
+                {/* Efficiency ranked list */}
+                {[...efficiencyScores].sort((a, b) => b.score - a.score).map((e, i) => {
+                  const pct = e.score * 100;
+                  const color = pct > 60 ? 'rgba(120,220,180,0.85)' : pct > 35 ? 'rgba(255,200,80,0.85)' : 'rgba(255,100,100,0.85)';
+                  return (
+                    <div key={e.geneId} style={{
+                      display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 0',
+                      borderBottom: `1px solid ${BORDER}`,
+                    }}>
+                      <span style={{ fontFamily: MONO, fontSize: '9px', color: LABEL, width: '20px', textAlign: 'right' }}>
+                        {i + 1}
+                      </span>
+                      <span style={{ fontFamily: MONO, fontSize: '10px', color: VALUE, width: '70px' }}>{e.gene}</span>
+                      <div style={{ flex: 1, height: '6px', borderRadius: '3px', background: 'rgba(255,255,255,0.06)' }}>
+                        <div style={{ width: `${pct}%`, height: '100%', borderRadius: '3px', background: color, transition: 'width 0.3s' }} />
+                      </div>
+                      <span style={{ fontFamily: MONO, fontSize: '10px', color, width: '45px', textAlign: 'right' }}>
+                        {pct.toFixed(1)}%
+                      </span>
+                      <div style={{ display: 'flex', gap: '4px' }}>
+                        <span style={{ fontFamily: MONO, fontSize: '7px', padding: '1px 4px', borderRadius: '4px', background: `${LAYER_COLORS.transcriptomics}20`, color: LAYER_COLORS.transcriptomics }}>
+                          F:{e.fluxUtilization.toFixed(2)}
+                        </span>
+                        <span style={{ fontFamily: MONO, fontSize: '7px', padding: '1px 4px', borderRadius: '4px', background: `${LAYER_COLORS.proteomics}20`, color: LAYER_COLORS.proteomics }}>
+                          E:{e.expressionBalance.toFixed(2)}
+                        </span>
+                        <span style={{ fontFamily: MONO, fontSize: '7px', padding: '1px 4px', borderRadius: '4px', background: `${LAYER_COLORS.metabolomics}20`, color: LAYER_COLORS.metabolomics }}>
+                          Y:{e.metaboliteYield.toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {/* ── RIGHT PANEL (260px) ──────────────────────────────── */}
@@ -588,6 +804,38 @@ export default function MultiOPage() {
 
             {/* Internal Thoughts */}
             <SectionLabel>Internal Thoughts</SectionLabel>
+
+            {/* MOI Engine Metrics */}
+            {(viewMode === 'MOFA+' || viewMode === 'VAE' || viewMode === 'Efficiency') && (
+              <div style={{ ...GLASS, borderRadius: '14px', padding: '10px', marginBottom: '16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0' }}>
+                  <span style={{ fontFamily: SANS, fontSize: '9px', color: 'rgba(255,255,255,0.45)' }}>MOFA+ Factors</span>
+                  <span style={{ fontFamily: MONO, fontSize: '10px', color: VALUE, textAlign: 'right' }}>{mofaResult.factors.length}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', borderTop: `1px solid ${BORDER}` }}>
+                  <span style={{ fontFamily: SANS, fontSize: '9px', color: 'rgba(255,255,255,0.45)' }}>VAE ELBO</span>
+                  <span style={{ fontFamily: MONO, fontSize: '10px', color: VALUE, textAlign: 'right' }}>{vaeResult.elbo.toFixed(3)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', borderTop: `1px solid ${BORDER}` }}>
+                  <span style={{ fontFamily: SANS, fontSize: '9px', color: 'rgba(255,255,255,0.45)' }}>Recon Loss</span>
+                  <span style={{ fontFamily: MONO, fontSize: '10px', color: VALUE, textAlign: 'right' }}>{vaeResult.reconLoss.toFixed(4)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', borderTop: `1px solid ${BORDER}` }}>
+                  <span style={{ fontFamily: SANS, fontSize: '9px', color: 'rgba(255,255,255,0.45)' }}>KL Divergence</span>
+                  <span style={{ fontFamily: MONO, fontSize: '10px', color: VALUE, textAlign: 'right' }}>{vaeResult.klDivergence.toFixed(4)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', borderTop: `1px solid ${BORDER}` }}>
+                  <span style={{ fontFamily: SANS, fontSize: '9px', color: 'rgba(255,255,255,0.45)' }}>Latent Dim</span>
+                  <span style={{ fontFamily: MONO, fontSize: '10px', color: VALUE, textAlign: 'right' }}>{vaeResult.latentDim}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', borderTop: `1px solid ${BORDER}` }}>
+                  <span style={{ fontFamily: SANS, fontSize: '9px', color: 'rgba(255,255,255,0.45)' }}>Batch Correction</span>
+                  <span style={{ fontFamily: MONO, fontSize: '10px', color: vaeResult.batchCorrectionApplied ? 'rgba(120,220,180,0.9)' : LABEL, textAlign: 'right' }}>
+                    {vaeResult.batchCorrectionApplied ? 'Yes' : 'No'}
+                  </span>
+                </div>
+              </div>
+            )}
             <div style={{
               maxHeight: '220px', overflowY: 'auto',
               display: 'flex', flexDirection: 'column', gap: '6px',
