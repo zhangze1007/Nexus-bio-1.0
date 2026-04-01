@@ -36,14 +36,12 @@ export default function IDEConsole() {
   if (!consoleOpen) return null;
 
   return (
-    <div style={{
-      gridColumn: '2',
-      gridRow: '3',
+    <div className="nb-ide-console" style={{
       height: '180px',
       display: 'flex',
       flexDirection: 'column',
-      background: '#070810',
-      borderTop: '1px solid rgba(0,0,0,0.1)',
+      background: '#070c12',
+      borderTop: '1px solid rgba(255,255,255,0.08)',
     }}>
       {/* Header */}
       <div style={{

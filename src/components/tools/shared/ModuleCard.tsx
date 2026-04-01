@@ -10,7 +10,7 @@ import { motion } from 'framer-motion';
 import type { CSSProperties, ReactNode } from 'react';
 
 const SANS = "'Inter',-apple-system,sans-serif";
-const NEON = '#39FF14';
+const NEON = '#99D8FF';
 
 interface ModuleCardProps {
   children: ReactNode;
@@ -43,14 +43,14 @@ export default function ModuleCard({
         gridArea: area,
         gridColumn: colSpan ? `span ${colSpan}` : undefined,
         gridRow: rowSpan ? `span ${rowSpan}` : undefined,
-        borderRadius: '16px',
-        background: 'rgba(255,255,255,0.02)',
+        borderRadius: '18px',
+        background: 'linear-gradient(180deg, rgba(16,23,33,0.94), rgba(11,17,25,0.9))',
         backdropFilter: 'blur(12px)',
         border: active
-          ? `1px solid ${NEON}30`
-          : '1px solid rgba(255,255,255,0.04)',
-        boxShadow: active ? `0 0 20px ${NEON}08` : 'none',
-        padding: flush ? 0 : '16px',
+          ? `1px solid ${NEON}4d`
+          : '1px solid rgba(255,255,255,0.08)',
+        boxShadow: active ? '0 14px 40px rgba(5,12,19,0.34)' : '0 10px 28px rgba(5,12,19,0.24)',
+        padding: flush ? 0 : '18px',
         overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
@@ -59,12 +59,13 @@ export default function ModuleCard({
         position: 'relative',
         ...style,
       }}
+      className="nb-tool-card"
     >
       {title && (
         <div style={{
           fontFamily: SANS, fontSize: '9px', fontWeight: 500,
           textTransform: 'uppercase', letterSpacing: '0.12em',
-          color: active ? NEON : 'rgba(255,255,255,0.3)',
+          color: active ? NEON : 'rgba(223,232,245,0.44)',
           marginBottom: flush ? 0 : '10px',
           padding: flush ? '12px 14px 0' : 0,
           flexShrink: 0,

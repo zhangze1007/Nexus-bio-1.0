@@ -1,27 +1,15 @@
 'use client';
 import Link from 'next/link';
-import { Terminal, Home } from 'lucide-react';
+import { Home, Terminal, LayoutGrid } from 'lucide-react';
 import { useUIStore } from '../../store/uiStore';
+import { getToolDefinition } from '../tools/shared/toolRegistry';
 
 const SANS = "'Inter',-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','Fira Code',monospace";
 
-const MODULE_NAMES: Record<string, string> = {
-  pathd:    'Pathway & Enzyme Design',
-  fbasim:   'Flux Balance Analysis',
-  proevol:  'Protein Evolution Simulator',
-  gecair:   'Gene Circuit AI Reasoner',
-  dyncon:   'Dynamic Control Simulator',
-  dbtlflow: 'Design-Build-Test-Learn',
-  multio:   'Multi-Omics Integrator',
-  cethx:    'Cell Thermodynamics Engine',
-  genmim:   'Gene Minimization',
-  nexai:    'Axon — Research Agent',
-};
-
-const BORDER = 'rgba(255,255,255,0.06)';
-const LABEL  = 'rgba(255,255,255,0.28)';
-const VALUE  = 'rgba(255,255,255,0.55)';
+const BORDER = 'rgba(255,255,255,0.08)';
+const LABEL  = 'rgba(223,232,245,0.48)';
+const VALUE  = 'rgba(245,248,252,0.9)';
 
 interface IDETopBarProps {
   moduleId: string;
@@ -29,88 +17,119 @@ interface IDETopBarProps {
 }
 
 export default function IDETopBar({ moduleId, actions }: IDETopBarProps) {
-  const toggleConsole  = useUIStore(s => s.toggleConsole);
-  const consoleOpen    = useUIStore(s => s.consoleOpen);
-  const consoleEntries = useUIStore(s => s.consoleEntries);
-  const errorCount     = consoleEntries.filter(e => e.level === 'error').length;
+  const toggleConsole = useUIStore((s) => s.toggleConsole);
+  const consoleOpen = useUIStore((s) => s.consoleOpen);
+  const consoleEntries = useUIStore((s) => s.consoleEntries);
+  const errorCount = consoleEntries.filter((entry) => entry.level === 'error').length;
+  const tool = getToolDefinition(moduleId);
 
   return (
-    <div style={{
-      gridColumn: '1 / -1',
-      gridRow: '1',
-      height: '48px',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      padding: '0 16px',
-      background: '#10131a',
-      borderBottom: `1px solid ${BORDER}`,
-    }}>
-      {/* Breadcrumb */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-        <Link href="/" style={{
-          display: 'flex', alignItems: 'center', gap: '4px',
-          textDecoration: 'none',
-          color: LABEL,
-          fontFamily: SANS, fontSize: '11px',
-          transition: 'color 0.15s',
-        }}
-          onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = VALUE}
-          onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = LABEL}
-        >
-          <Home size={11} />
-          Home
-        </Link>
-        <span style={{ color: 'rgba(255,255,255,0.15)', fontSize: '13px', lineHeight: 1 }}>/</span>
-        <span style={{ fontFamily: SANS, fontSize: '11px', color: LABEL, letterSpacing: '0.01em' }}>
-          Tools
-        </span>
-        <span style={{ color: 'rgba(255,255,255,0.15)', fontSize: '13px', lineHeight: 1 }}>/</span>
-        <span style={{ fontFamily: SANS, fontSize: '11px', fontWeight: 600, color: VALUE, letterSpacing: '0.01em' }}>
-          {moduleId.toUpperCase()}
-        </span>
-        <span style={{ color: 'rgba(255,255,255,0.15)', margin: '0 2px' }}>·</span>
-        <span style={{ fontFamily: SANS, fontSize: '11px', color: LABEL }}>
-          {MODULE_NAMES[moduleId] ?? moduleId}
-        </span>
-      </div>
-
-      {/* Right: actions + console toggle */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        {actions}
-        <button
-          onClick={toggleConsole}
+    <header className="nb-ide-topbar">
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flexWrap: 'wrap' }}>
+        <Link
+          href="/"
           style={{
-            display: 'flex', alignItems: 'center', gap: '5px',
-            padding: '4px 10px',
-            background: consoleOpen ? 'rgba(255,255,255,0.06)' : 'transparent',
-            border: `1px solid ${consoleOpen ? 'rgba(255,255,255,0.15)' : BORDER}`,
-            borderRadius: '6px',
-            color: errorCount > 0 ? '#E05040' : LABEL,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            textDecoration: 'none',
+            color: LABEL,
             fontFamily: SANS,
             fontSize: '11px',
-            cursor: 'pointer',
-            transition: 'all 0.15s',
           }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.05)'; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = consoleOpen ? 'rgba(255,255,255,0.06)' : 'transparent'; }}
         >
-          <Terminal size={11} />
-          Console
-          {consoleEntries.length > 0 && (
-            <span style={{
-              background: errorCount > 0 ? 'rgba(224,80,64,0.15)' : 'rgba(255,255,255,0.07)',
-              borderRadius: '10px',
-              padding: '0 5px',
-              fontSize: '9px',
-              fontFamily: MONO,
-              color: errorCount > 0 ? '#E05040' : LABEL,
-            }}>
-              {consoleEntries.length}
+          <Home size={12} />
+          Home
+        </Link>
+
+        <span style={{ color: 'rgba(255,255,255,0.16)' }}>/</span>
+
+        <Link
+          href="/tools"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            textDecoration: 'none',
+            color: LABEL,
+            fontFamily: SANS,
+            fontSize: '11px',
+          }}
+        >
+          <LayoutGrid size={12} />
+          Tools
+        </Link>
+
+        <span style={{ color: 'rgba(255,255,255,0.16)' }}>/</span>
+
+        <span style={{ fontFamily: MONO, fontSize: '10px', color: 'rgba(185,204,228,0.55)', textTransform: 'uppercase' }}>
+          {tool?.shortLabel ?? moduleId}
+        </span>
+
+        {tool && (
+          <>
+            <span style={{ color: 'rgba(255,255,255,0.16)' }}>·</span>
+            <span
+              style={{
+                minWidth: 0,
+                fontFamily: SANS,
+                fontSize: '12px',
+                fontWeight: 600,
+                color: VALUE,
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+            >
+              {tool.name}
             </span>
-          )}
+          </>
+        )}
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+        {actions}
+        <button
+          type="button"
+          onClick={toggleConsole}
+          aria-pressed={consoleOpen}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            minHeight: '36px',
+            padding: '0 12px',
+            borderRadius: '10px',
+            border: `1px solid ${consoleOpen ? 'rgba(153,216,255,0.35)' : BORDER}`,
+            background: consoleOpen ? 'rgba(153,216,255,0.12)' : 'rgba(255,255,255,0.03)',
+            color: errorCount > 0 ? 'rgba(255,140,126,0.95)' : VALUE,
+            fontFamily: SANS,
+            fontSize: '12px',
+            cursor: 'pointer',
+          }}
+        >
+          <Terminal size={13} />
+          Console
+          <span
+            style={{
+              minWidth: '22px',
+              height: '22px',
+              borderRadius: '999px',
+              border: `1px solid ${errorCount > 0 ? 'rgba(255,140,126,0.28)' : 'rgba(255,255,255,0.08)'}`,
+              background: errorCount > 0 ? 'rgba(255,140,126,0.12)' : 'rgba(255,255,255,0.04)',
+              color: errorCount > 0 ? 'rgba(255,140,126,0.92)' : LABEL,
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontFamily: MONO,
+              fontSize: '10px',
+            }}
+          >
+            {consoleEntries.length}
+          </span>
         </button>
       </div>
-    </div>
+    </header>
   );
 }
+

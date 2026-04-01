@@ -16,6 +16,7 @@ import IDESidebar from './IDESidebar';
 import IDETopBar from './IDETopBar';
 import IDEConsole from './IDEConsole';
 import { useUIStore } from '../../store/uiStore';
+import type { CSSProperties } from 'react';
 
 interface IDEShellProps {
   moduleId: string;
@@ -25,19 +26,15 @@ interface IDEShellProps {
 
 export default function IDEShell({ moduleId, children, topBarActions }: IDEShellProps) {
   const sidebarCollapsed = useUIStore(s => s.sidebarCollapsed);
-  const sidebarWidth = sidebarCollapsed ? 64 : 220;
+  const sidebarWidth = sidebarCollapsed ? 72 : 264;
 
   return (
-    <div style={{
-      position: 'fixed',
-      inset: 0,
-      background: '#0d0f14',
-      display: 'grid',
-      gridTemplateColumns: `${sidebarWidth}px 1fr`,
-      gridTemplateRows: '48px 1fr auto',
-      overflow: 'hidden',
-      transition: 'grid-template-columns 0.25s cubic-bezier(0.4,0,0.2,1)',
-    }}>
+    <div
+      className="nb-ide-shell"
+      style={{
+        '--nb-sidebar-width': `${sidebarWidth}px`,
+      } as CSSProperties}
+    >
       {/* TopBar — row 1, full width */}
       <IDETopBar moduleId={moduleId} actions={topBarActions} />
 
@@ -45,13 +42,7 @@ export default function IDEShell({ moduleId, children, topBarActions }: IDEShell
       <IDESidebar />
 
       {/* Main canvas — col 2, row 2 */}
-      <div style={{
-        gridColumn: '2',
-        gridRow: '2',
-        position: 'relative',
-        overflow: 'hidden',
-        background: '#0d0f14',
-      }}>
+      <div className="nb-ide-main">
         {children}
       </div>
 

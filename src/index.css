@@ -13,9 +13,9 @@
 :root {
   /* ── Background ── */
   --bg-base:           #000000;
-  --bg-surface:        #0A0A0A;
-  --bg-elevated:       #111111;
-  --bg-overlay:        #181818;
+  --bg-surface:        #0B1016;
+  --bg-elevated:       #101722;
+  --bg-overlay:        #151d28;
 
   --bg-base-rgb:       0 0 0;
   --bg-surface-rgb:    10 10 10;
@@ -23,14 +23,14 @@
 
   /* ── Text ── */
   --text-primary:      #FFFFFF;
-  --text-secondary:    rgba(255,255,255,0.55);
-  --text-muted:        rgba(255,255,255,0.28);
-  --text-faint:        rgba(255,255,255,0.12);
+  --text-secondary:    rgba(223,232,245,0.72);
+  --text-muted:        rgba(223,232,245,0.46);
+  --text-faint:        rgba(223,232,245,0.2);
 
   /* ── Borders ── */
-  --border:            rgba(255,255,255,0.08);
-  --border-hover:      rgba(255,255,255,0.18);
-  --border-active:     rgba(255,255,255,0.35);
+  --border:            rgba(255,255,255,0.1);
+  --border-hover:      rgba(255,255,255,0.22);
+  --border-active:     rgba(153,216,255,0.42);
 
   /* ── Typography ── */
   --font-header: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -40,16 +40,16 @@
   --font-sans:   'Inter', -apple-system, sans-serif;
 
   /* ── Legacy compat: accent vars remapped to monochrome ── */
-  --accent-primary:        #FFFFFF;
-  --accent-secondary:      rgba(255,255,255,0.55);
-  --accent-primary-rgb:    255 255 255;
-  --accent-secondary-rgb:  200 200 200;
+  --accent-primary:        #99D8FF;
+  --accent-secondary:      rgba(153,216,255,0.55);
+  --accent-primary-rgb:    153 216 255;
+  --accent-secondary-rgb:  153 216 255;
   --white:                 #FFFFFF;
 
   /* Color names preserved but remapped to neutral grays */
-  --cyan:          rgba(255,255,255,0.80);
-  --cyan-dim:      rgba(255,255,255,0.06);
-  --cyan-glow:     rgba(255,255,255,0.12);
+  --cyan:          rgba(153,216,255,0.92);
+  --cyan-dim:      rgba(153,216,255,0.08);
+  --cyan-glow:     rgba(153,216,255,0.16);
   --magenta:       rgba(255,255,255,0.70);
   --magenta-dim:   rgba(255,255,255,0.05);
   --amber:         rgba(255,255,255,0.75);
@@ -85,7 +85,7 @@ body::before {
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  opacity: 0.018;
+  opacity: 0.01;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   background-size: 256px 256px;
 }

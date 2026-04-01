@@ -25,12 +25,15 @@
  */
 'use client';
 import { useEffect, type ReactNode } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import Link from 'next/link';
+import { motion } from 'framer-motion';
+import { ArrowLeft, LayoutGrid } from 'lucide-react';
 import { useToolStore } from '../../../store/toolStore';
+import { getToolDefinition } from './toolRegistry';
 
 const MONO = "'JetBrains Mono','Fira Code',monospace";
 const SANS = "'Inter',-apple-system,sans-serif";
-const NEON = '#39FF14';
+const NEON = '#99D8FF';
 
 export interface ToolShellProps {
   moduleId: string;
@@ -56,6 +59,7 @@ export default function ToolShell({
   children, footer,
 }: ToolShellProps) {
   const setActiveModule = useToolStore(s => s.setActiveModule);
+  const tool = getToolDefinition(moduleId);
 
   useEffect(() => {
     setActiveModule(moduleId);
@@ -63,10 +67,10 @@ export default function ToolShell({
   }, [moduleId, setActiveModule]);
 
   return (
-    <div style={{
+    <div className="nb-tool-shell" style={{
       position: 'absolute', inset: 0,
       display: 'flex', flexDirection: 'column',
-      background: '#000',
+      background: 'linear-gradient(180deg, #081018 0%, #0b121a 100%)',
       fontFamily: SANS,
     }}>
       {/* ── Header ─────────────────────────────────────────── */}
@@ -75,37 +79,70 @@ export default function ToolShell({
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
         style={{
-          padding: '10px 16px',
-          display: 'flex', alignItems: 'center', gap: '14px',
+          padding: '12px 16px',
+          display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap',
           flexShrink: 0,
-          borderBottom: '1px solid rgba(255,255,255,0.03)',
+          borderBottom: '1px solid rgba(255,255,255,0.08)',
+          background: 'rgba(7,12,18,0.84)',
+          backdropFilter: 'blur(18px)',
         }}
       >
-        {/* Module badge */}
-        <div style={{
-          fontFamily: MONO, fontSize: '9px', fontWeight: 700,
-          padding: '3px 8px', borderRadius: '6px',
-          background: `${NEON}10`,
-          color: NEON,
-          letterSpacing: '0.06em',
-          textTransform: 'uppercase',
-        }}>
-          {moduleId}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          <Link
+            href="/tools"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              minHeight: '34px',
+              padding: '0 12px',
+              borderRadius: '10px',
+              border: '1px solid rgba(255,255,255,0.08)',
+              background: 'rgba(255,255,255,0.03)',
+              color: 'rgba(223,232,245,0.72)',
+              textDecoration: 'none',
+              fontFamily: SANS,
+              fontSize: '12px',
+            }}
+          >
+            <ArrowLeft size={13} />
+            Tools
+          </Link>
+
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            minHeight: '34px',
+            padding: '0 12px',
+            borderRadius: '10px',
+            border: '1px solid rgba(255,255,255,0.08)',
+            background: `${NEON}14`,
+            color: NEON,
+            fontFamily: MONO,
+            fontSize: '10px',
+            fontWeight: 700,
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+          }}>
+            <LayoutGrid size={13} />
+            {tool?.shortLabel ?? moduleId}
+          </div>
         </div>
 
-        <div style={{ flex: 1 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{
-            fontFamily: SANS, fontSize: '13px', fontWeight: 600,
-            color: 'rgba(255,255,255,0.85)',
+            fontFamily: SANS, fontSize: '14px', fontWeight: 700,
+            color: 'rgba(245,248,252,0.96)',
             letterSpacing: '-0.01em',
           }}>
-            {title}
+            {tool?.name ?? title}
           </div>
           {description && (
             <div style={{
-              fontFamily: SANS, fontSize: '10px',
-              color: 'rgba(255,255,255,0.3)',
-              marginTop: '1px',
+              fontFamily: SANS, fontSize: '11px',
+              color: 'rgba(223,232,245,0.6)',
+              marginTop: '3px',
             }}>
               {description}
             </div>
@@ -115,10 +152,11 @@ export default function ToolShell({
         {formula && (
           <div style={{
             fontFamily: MONO, fontSize: '10px',
-            color: 'rgba(255,255,255,0.2)',
-            padding: '4px 10px',
-            background: 'rgba(255,255,255,0.02)',
-            borderRadius: '8px',
+            color: 'rgba(223,232,245,0.6)',
+            padding: '6px 10px',
+            background: 'rgba(255,255,255,0.04)',
+            border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: '10px',
           }}>
             {formula}
           </div>
@@ -126,7 +164,7 @@ export default function ToolShell({
       </motion.header>
 
       {/* ── BentoGrid ──────────────────────────────────────── */}
-      <div style={{
+      <div className="nb-tool-shell__body" style={{
         flex: 1, minHeight: 0, padding: `${gap}px`,
         display: 'grid',
         gridTemplateAreas: grid,
@@ -138,11 +176,12 @@ export default function ToolShell({
       </div>
 
       {/* ── Footer ─────────────────────────────────────────── */}
-      {footer && (
+        {footer && (
         <div style={{
           padding: '6px 16px',
           display: 'flex', gap: '8px', flexShrink: 0,
-          borderTop: '1px solid rgba(255,255,255,0.03)',
+          borderTop: '1px solid rgba(255,255,255,0.08)',
+          background: 'rgba(7,12,18,0.84)',
         }}>
           {footer}
         </div>
@@ -156,12 +195,12 @@ export default function ToolShell({
 export const TOOL_TOKENS = {
   MONO: "'JetBrains Mono','Fira Code',monospace" as const,
   SANS: "'Inter',-apple-system,sans-serif" as const,
-  NEON: '#39FF14',
-  BG: '#000',
-  CARD_BG: 'rgba(255,255,255,0.02)',
-  BORDER: 'rgba(255,255,255,0.04)',
-  LABEL: 'rgba(255,255,255,0.3)',
-  VALUE: 'rgba(255,255,255,0.75)',
-  DIM: 'rgba(255,255,255,0.15)',
-  INPUT_BG: 'rgba(255,255,255,0.04)',
+  NEON: '#99D8FF',
+  BG: '#081018',
+  CARD_BG: 'rgba(255,255,255,0.03)',
+  BORDER: 'rgba(255,255,255,0.08)',
+  LABEL: 'rgba(223,232,245,0.46)',
+  VALUE: 'rgba(245,248,252,0.9)',
+  DIM: 'rgba(255,255,255,0.18)',
+  INPUT_BG: 'rgba(255,255,255,0.05)',
 } as const;
