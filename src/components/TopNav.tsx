@@ -31,10 +31,10 @@ export default function TopNav() {
       flexWrap: 'wrap',
       padding: '10px clamp(16px, 4vw, 40px)',
       minHeight: '58px',
-      background: 'rgba(6,10,16,0.86)',
-      backdropFilter: 'blur(24px) saturate(1.15)',
-      WebkitBackdropFilter: 'blur(24px) saturate(1.15)',
-      borderBottom: '1px solid rgba(255,255,255,0.08)',
+      background: 'rgba(0,0,0,0.8)',
+      backdropFilter: 'blur(10px)',
+      WebkitBackdropFilter: 'blur(10px)',
+      borderBottom: '1px solid #1a1a1a',
       boxShadow: '0 1px 0 rgba(255,255,255,0.03), 0 12px 40px rgba(0,0,0,0.28)',
     }}>
       {/* Logo */}
@@ -46,7 +46,7 @@ export default function TopNav() {
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           boxShadow: '0 8px 24px rgba(0,0,0,0.24)',
         }}>
-          <Dna size={13} style={{ color: 'rgba(239,245,255,0.88)' }} />
+          <Dna size={13} style={{ color: 'rgba(255,255,255,0.75)' }} />
         </div>
         <span style={{
           fontFamily: BRAND, fontWeight: 700, fontSize: '14px',
@@ -63,20 +63,20 @@ export default function TopNav() {
           return (
             <Link key={href} href={href} style={{
               fontFamily: SANS, fontSize: '12px', fontWeight: isActive ? 500 : 400,
-              color: isActive ? 'rgba(241,246,255,0.96)' : 'rgba(214,226,242,0.54)',
+              color: isActive ? 'rgba(226,232,240,0.92)' : 'rgba(226,232,240,0.32)',
               textDecoration: 'none', letterSpacing: '0.02em',
               position: 'relative', padding: '6px 0',
               transition: 'color 0.2s',
             }}
-              onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLElement).style.color = 'rgba(241,246,255,0.82)'; }}
-              onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLElement).style.color = 'rgba(214,226,242,0.54)'; }}>
+              onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLElement).style.color = 'rgba(226,232,240,0.72)'; }}
+              onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLElement).style.color = 'rgba(226,232,240,0.32)'; }}>
               {label}
               {isActive && (
                 <span style={{
                   position: 'absolute', bottom: '-1px', left: 0, right: 0,
-                  height: '2px',
+                  height: '1px',
                   borderRadius: '999px',
-                  background: 'linear-gradient(90deg, transparent, rgba(153,216,255,0.92), transparent)',
+                  background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.75), transparent)',
                 }} />
               )}
             </Link>
@@ -87,11 +87,11 @@ export default function TopNav() {
       {/* Mono tag */}
       <div style={{
         fontFamily: MONO, fontSize: '9px', fontWeight: 500,
-        color: 'rgba(214,226,242,0.46)',
+        color: 'rgba(255,255,255,0.12)',
         letterSpacing: '0.1em', textTransform: 'uppercase',
         padding: '6px 10px', borderRadius: '999px',
-        background: 'rgba(153,216,255,0.08)',
-        border: '1px solid rgba(255,255,255,0.08)',
+        background: 'rgba(34,211,238,0.05)',
+        border: '1px solid rgba(255,255,255,0.07)',
       }}>
         workbench
       </div>

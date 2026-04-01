@@ -24,17 +24,17 @@
   --space-8: 32px; --space-10: 40px; --space-12: 48px;
   --space-16: 64px; --space-20: 80px; --space-24: 96px;
 
-  /* Color tokens — cool dark workbench */
+  /* Color tokens — monochrome dark workbench */
   --color-bg:        #000000;
-  --color-surface:   #0B1016;
-  --color-surface-2: #101722;
+  --color-surface:   #050505;
+  --color-surface-2: #0A0A0A;
   --color-border:    rgba(255,255,255,0.10);
-  --color-border-2:  rgba(153,216,255,0.18);
+  --color-border-2:  #1f1f1f;
   --color-text-1:    rgba(255,255,255,0.95);
-  --color-text-2:    rgba(223,232,245,0.72);
-  --color-text-3:    rgba(223,232,245,0.46);
-  --color-text-4:    rgba(223,232,245,0.2);
-  --color-accent:    rgba(153,216,255,0.78);
+  --color-text-2:    rgba(255,255,255,0.65);
+  --color-text-3:    rgba(255,255,255,0.4);
+  --color-text-4:    rgba(255,255,255,0.18);
+  --color-accent:    rgba(255,255,255,0.78);
 }
 
 .serif { font-family: var(--font-sans); font-weight: 700; }
@@ -43,7 +43,7 @@
 .nb-ide-shell {
   position: fixed;
   inset: 0;
-  background: linear-gradient(180deg, #081018 0%, #0b1118 100%);
+  background: #000000;
   display: grid;
   grid-template-columns: var(--nb-sidebar-width) minmax(0, 1fr);
   grid-template-rows: 56px minmax(0, 1fr) auto;
@@ -60,9 +60,9 @@
   justify-content: space-between;
   gap: 12px;
   padding: 0 16px;
-  background: rgba(7,12,18,0.92);
-  border-bottom: 1px solid rgba(255,255,255,0.08);
-  backdrop-filter: blur(18px);
+  background: rgba(0,0,0,0.8);
+  border-bottom: 1px solid #1a1a1a;
+  backdrop-filter: blur(10px);
 }
 
 .nb-ide-sidebar {
@@ -70,8 +70,8 @@
   grid-row: 2 / 4;
   display: flex;
   flex-direction: column;
-  background: rgba(10,16,25,0.96);
-  border-right: 1px solid rgba(255,255,255,0.08);
+  background: #050505;
+  border-right: 1px solid #1f1f1f;
   overflow-y: auto;
   overflow-x: hidden;
   position: relative;
@@ -87,7 +87,7 @@
   grid-row: 2;
   position: relative;
   overflow: hidden;
-  background: linear-gradient(180deg, #0b121a 0%, #0c141d 100%);
+  background: #000000;
 }
 
 .nb-ide-console {
@@ -108,7 +108,7 @@
 .nb-directory-layout input:focus-visible,
 .nb-directory-layout select:focus-visible,
 .nb-tool-shell a:focus-visible {
-  outline: 2px solid rgba(153,216,255,0.65);
+  outline: 2px solid rgba(255,255,255,0.38);
   outline-offset: 2px;
 }
 

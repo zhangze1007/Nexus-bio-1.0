@@ -13,9 +13,9 @@
 :root {
   /* ── Background ── */
   --bg-base:           #000000;
-  --bg-surface:        #0B1016;
-  --bg-elevated:       #101722;
-  --bg-overlay:        #151d28;
+  --bg-surface:        #0A0A0A;
+  --bg-elevated:       #111111;
+  --bg-overlay:        #181818;
 
   --bg-base-rgb:       0 0 0;
   --bg-surface-rgb:    10 10 10;
@@ -23,14 +23,14 @@
 
   /* ── Text ── */
   --text-primary:      #FFFFFF;
-  --text-secondary:    rgba(223,232,245,0.72);
-  --text-muted:        rgba(223,232,245,0.46);
-  --text-faint:        rgba(223,232,245,0.2);
+  --text-secondary:    rgba(255,255,255,0.55);
+  --text-muted:        rgba(255,255,255,0.28);
+  --text-faint:        rgba(255,255,255,0.12);
 
   /* ── Borders ── */
   --border:            rgba(255,255,255,0.1);
   --border-hover:      rgba(255,255,255,0.22);
-  --border-active:     rgba(153,216,255,0.42);
+  --border-active:     rgba(255,255,255,0.35);
 
   /* ── Typography ── */
   --font-header: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -40,16 +40,16 @@
   --font-sans:   'Inter', -apple-system, sans-serif;
 
   /* ── Legacy compat: accent vars remapped to monochrome ── */
-  --accent-primary:        #99D8FF;
-  --accent-secondary:      rgba(153,216,255,0.55);
-  --accent-primary-rgb:    153 216 255;
-  --accent-secondary-rgb:  153 216 255;
+  --accent-primary:        #FFFFFF;
+  --accent-secondary:      rgba(255,255,255,0.55);
+  --accent-primary-rgb:    255 255 255;
+  --accent-secondary-rgb:  200 200 200;
   --white:                 #FFFFFF;
 
   /* Color names preserved but remapped to neutral grays */
-  --cyan:          rgba(153,216,255,0.92);
-  --cyan-dim:      rgba(153,216,255,0.08);
-  --cyan-glow:     rgba(153,216,255,0.16);
+  --cyan:          rgba(255,255,255,0.80);
+  --cyan-dim:      rgba(255,255,255,0.06);
+  --cyan-glow:     rgba(255,255,255,0.12);
   --magenta:       rgba(255,255,255,0.70);
   --magenta-dim:   rgba(255,255,255,0.05);
   --amber:         rgba(255,255,255,0.75);

@@ -24,7 +24,7 @@ export default function EmptyState({
   const accent = type === 'error'
     ? 'rgba(255,140,126,0.95)'
     : type === 'loading'
-      ? 'rgba(153,216,255,0.95)'
+      ? 'rgba(255,255,255,0.9)'
       : 'rgba(143,239,197,0.95)';
 
   return (
@@ -37,7 +37,7 @@ export default function EmptyState({
         minHeight: '100%',
         gap: '10px',
         padding: '32px',
-        background: 'linear-gradient(180deg, rgba(10,16,25,0.96), rgba(9,14,22,0.96))',
+        background: '#050505',
         color: '#f5f7fb',
       }}
     >
@@ -79,7 +79,7 @@ export default function EmptyState({
         style={{
           fontFamily: SANS,
           fontSize: '13px',
-          color: 'rgba(223,232,245,0.64)',
+          color: 'rgba(255,255,255,0.45)',
           margin: 0,
           textAlign: 'center',
           lineHeight: 1.6,
@@ -93,4 +93,3 @@ export default function EmptyState({
     </div>
   );
 }
-

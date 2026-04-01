@@ -100,7 +100,7 @@ export default function DataTable<T extends object>({
                     fontSize: '10px',
                     textTransform: 'uppercase',
                     letterSpacing: '0.08em',
-                    color: sortKey === col.key ? 'rgba(245,248,252,0.92)' : 'rgba(223,232,245,0.42)',
+                    color: sortKey === col.key ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.3)',
                     cursor: col.sortable !== false ? 'pointer' : 'default',
                     userSelect: 'none',
                     width: col.width,
@@ -137,7 +137,7 @@ export default function DataTable<T extends object>({
                         padding: '7px 12px',
                         fontFamily: SANS,
                         fontSize: '11px',
-                        color: 'rgba(223,232,245,0.78)',
+                        color: 'rgba(255,255,255,0.65)',
                         whiteSpace: 'nowrap',
                         width: col.width,
                       }}
@@ -170,4 +170,3 @@ export default function DataTable<T extends object>({
     </div>
   );
 }
-

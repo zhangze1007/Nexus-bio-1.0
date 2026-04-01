@@ -134,7 +134,7 @@ export default function ToolsDirectoryPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#081018', color: '#f5f7fb' }}>
+    <div style={{ minHeight: '100vh', background: '#000000', color: '#f5f7fb' }}>
       <TopNav />
       <main style={{ paddingTop: '58px' }}>
         <section style={{ padding: '32px 18px 20px' }}>
@@ -163,7 +163,7 @@ export default function ToolsDirectoryPage() {
                       fontSize: '11px',
                       letterSpacing: '0.12em',
                       textTransform: 'uppercase',
-                      color: 'rgba(206,221,240,0.55)',
+                      color: 'rgba(255,255,255,0.25)',
                     }}
                   >
                     Tools Directory
@@ -186,7 +186,7 @@ export default function ToolsDirectoryPage() {
                       fontFamily: SANS,
                       fontSize: '15px',
                       lineHeight: 1.7,
-                      color: 'rgba(223,232,245,0.72)',
+                      color: 'rgba(255,255,255,0.55)',
                     }}
                   >
                     Find a module, understand what it does, compare it against another tool, and enter the
@@ -211,17 +211,17 @@ export default function ToolsDirectoryPage() {
                       style={{
                         borderRadius: '18px',
                         border: '1px solid rgba(255,255,255,0.08)',
-                        background: 'linear-gradient(180deg, rgba(14,22,32,0.95), rgba(10,15,23,0.92))',
+                        background: 'linear-gradient(180deg, #050505, #050505)',
                         padding: '16px 18px',
                       }}
                     >
-                      <p style={{ margin: '0 0 8px', fontFamily: MONO, fontSize: '10px', color: 'rgba(185,204,228,0.48)' }}>
+                      <p style={{ margin: '0 0 8px', fontFamily: MONO, fontSize: '10px', color: 'rgba(255,255,255,0.25)' }}>
                         {item.label}
                       </p>
                       <p style={{ margin: '0 0 4px', fontFamily: SANS, fontSize: '28px', fontWeight: 700 }}>
                         {item.value}
                       </p>
-                      <p style={{ margin: 0, fontFamily: SANS, fontSize: '12px', color: 'rgba(223,232,245,0.6)' }}>
+                      <p style={{ margin: 0, fontFamily: SANS, fontSize: '12px', color: 'rgba(255,255,255,0.35)' }}>
                         {item.note}
                       </p>
                     </div>
@@ -245,11 +245,11 @@ export default function ToolsDirectoryPage() {
                     style={{
                       borderRadius: '20px',
                       border: '1px solid rgba(255,255,255,0.08)',
-                      background: 'rgba(10,16,25,0.94)',
+                      background: '#050505',
                       padding: '16px',
                     }}
                   >
-                    <p style={{ margin: '0 0 12px', fontFamily: MONO, fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'rgba(185,204,228,0.48)' }}>
+                    <p style={{ margin: '0 0 12px', fontFamily: MONO, fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)' }}>
                       Find a tool
                     </p>
                     <label style={{ display: 'block', marginBottom: '12px' }}>
@@ -281,7 +281,7 @@ export default function ToolsDirectoryPage() {
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                       <div>
-                        <p style={{ margin: '0 0 8px', fontFamily: MONO, fontSize: '10px', color: 'rgba(185,204,228,0.48)', textTransform: 'uppercase' }}>
+                        <p style={{ margin: '0 0 8px', fontFamily: MONO, fontSize: '10px', color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase' }}>
                           Category
                         </p>
                         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
@@ -297,9 +297,9 @@ export default function ToolsDirectoryPage() {
                                   minHeight: '34px',
                                   padding: '0 12px',
                                   borderRadius: '999px',
-                                  border: active ? '1px solid rgba(153,216,255,0.4)' : '1px solid rgba(255,255,255,0.1)',
-                                  background: active ? 'rgba(153,216,255,0.14)' : 'rgba(255,255,255,0.03)',
-                                  color: active ? '#ffffff' : 'rgba(223,232,245,0.68)',
+                                  border: active ? '1px solid rgba(255,255,255,0.18)' : '1px solid rgba(255,255,255,0.1)',
+                                  background: active ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.03)',
+                                  color: active ? '#ffffff' : 'rgba(255,255,255,0.5)',
                                   cursor: 'pointer',
                                   fontFamily: SANS,
                                   fontSize: '12px',
@@ -314,7 +314,7 @@ export default function ToolsDirectoryPage() {
                       </div>
 
                       <div>
-                        <p style={{ margin: '0 0 8px', fontFamily: MONO, fontSize: '10px', color: 'rgba(185,204,228,0.48)', textTransform: 'uppercase' }}>
+                        <p style={{ margin: '0 0 8px', fontFamily: MONO, fontSize: '10px', color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase' }}>
                           Shell type
                         </p>
                         <div style={{ display: 'grid', gap: '8px', gridTemplateColumns: '1fr 1fr 1fr' }}>
@@ -329,9 +329,9 @@ export default function ToolsDirectoryPage() {
                                 style={{
                                   minHeight: '36px',
                                   borderRadius: '12px',
-                                  border: active ? '1px solid rgba(153,216,255,0.4)' : '1px solid rgba(255,255,255,0.1)',
-                                  background: active ? 'rgba(153,216,255,0.14)' : 'rgba(255,255,255,0.03)',
-                                  color: active ? '#ffffff' : 'rgba(223,232,245,0.68)',
+                                  border: active ? '1px solid rgba(255,255,255,0.18)' : '1px solid rgba(255,255,255,0.1)',
+                                  background: active ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.03)',
+                                  color: active ? '#ffffff' : 'rgba(255,255,255,0.5)',
                                   cursor: 'pointer',
                                   fontFamily: MONO,
                                   fontSize: '11px',
@@ -347,7 +347,7 @@ export default function ToolsDirectoryPage() {
                       </div>
 
                       <label>
-                        <p style={{ margin: '0 0 8px', fontFamily: MONO, fontSize: '10px', color: 'rgba(185,204,228,0.48)', textTransform: 'uppercase' }}>
+                        <p style={{ margin: '0 0 8px', fontFamily: MONO, fontSize: '10px', color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase' }}>
                           Sort
                         </p>
                         <div style={{ position: 'relative' }}>
@@ -381,24 +381,24 @@ export default function ToolsDirectoryPage() {
                     style={{
                       borderRadius: '20px',
                       border: '1px solid rgba(255,255,255,0.08)',
-                      background: 'rgba(10,16,25,0.94)',
+                      background: '#050505',
                       padding: '16px',
                     }}
                   >
-                    <p style={{ margin: '0 0 12px', fontFamily: MONO, fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'rgba(185,204,228,0.48)' }}>
+                    <p style={{ margin: '0 0 12px', fontFamily: MONO, fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)' }}>
                       Active state
                     </p>
                     <div style={{ display: 'grid', gap: '10px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
-                        <span style={{ fontFamily: SANS, fontSize: '13px', color: 'rgba(223,232,245,0.74)' }}>Favorites</span>
+                        <span style={{ fontFamily: SANS, fontSize: '13px', color: 'rgba(255,255,255,0.55)' }}>Favorites</span>
                         <span style={{ fontFamily: MONO, fontSize: '12px', color: '#ffffff' }}>{favoriteIds.length}</span>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
-                        <span style={{ fontFamily: SANS, fontSize: '13px', color: 'rgba(223,232,245,0.74)' }}>Compare tray</span>
+                        <span style={{ fontFamily: SANS, fontSize: '13px', color: 'rgba(255,255,255,0.55)' }}>Compare tray</span>
                         <span style={{ fontFamily: MONO, fontSize: '12px', color: '#ffffff' }}>{compareIds.length}/2</span>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
-                        <span style={{ fontFamily: SANS, fontSize: '13px', color: 'rgba(223,232,245,0.74)' }}>Current page</span>
+                        <span style={{ fontFamily: SANS, fontSize: '13px', color: 'rgba(255,255,255,0.55)' }}>Current page</span>
                         <span style={{ fontFamily: MONO, fontSize: '12px', color: '#ffffff' }}>{safePage}/{totalPages}</span>
                       </div>
                     </div>
@@ -418,16 +418,16 @@ export default function ToolsDirectoryPage() {
                       style={{
                         borderRadius: '20px',
                         border: '1px solid rgba(255,255,255,0.08)',
-                        background: 'rgba(10,16,25,0.94)',
+                        background: '#050505',
                         padding: '14px 16px',
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
                         <div>
-                          <p style={{ margin: '0 0 4px', fontFamily: MONO, fontSize: '10px', textTransform: 'uppercase', color: 'rgba(185,204,228,0.48)' }}>
+                          <p style={{ margin: '0 0 4px', fontFamily: MONO, fontSize: '10px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)' }}>
                             Compare tray
                           </p>
-                          <p style={{ margin: 0, fontFamily: SANS, fontSize: '13px', color: 'rgba(223,232,245,0.72)' }}>
+                          <p style={{ margin: 0, fontFamily: SANS, fontSize: '13px', color: 'rgba(255,255,255,0.55)' }}>
                             Pin up to two tools to compare category, outputs, and shell model side by side.
                           </p>
                         </div>
@@ -440,7 +440,7 @@ export default function ToolsDirectoryPage() {
                             borderRadius: '10px',
                             border: '1px solid rgba(255,255,255,0.1)',
                             background: 'rgba(255,255,255,0.03)',
-                            color: 'rgba(223,232,245,0.7)',
+                            color: 'rgba(255,255,255,0.5)',
                             cursor: 'pointer',
                             fontFamily: SANS,
                             fontSize: '12px',
@@ -472,7 +472,7 @@ export default function ToolsDirectoryPage() {
                                   borderRadius: '999px',
                                   border: '1px solid rgba(255,255,255,0.08)',
                                   background: 'rgba(255,255,255,0.04)',
-                                  color: 'rgba(223,232,245,0.72)',
+                                  color: 'rgba(255,255,255,0.55)',
                                   cursor: 'pointer',
                                   display: 'grid',
                                   placeItems: 'center',
@@ -488,10 +488,10 @@ export default function ToolsDirectoryPage() {
                                 ['Best for', tool.focus],
                               ].map(([label, value]) => (
                                 <div key={label}>
-                                  <dt style={{ fontFamily: MONO, fontSize: '10px', color: 'rgba(185,204,228,0.48)', textTransform: 'uppercase', marginBottom: '4px' }}>
+                                  <dt style={{ fontFamily: MONO, fontSize: '10px', color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase', marginBottom: '4px' }}>
                                     {label}
                                   </dt>
-                                  <dd style={{ margin: 0, fontFamily: SANS, fontSize: '13px', color: 'rgba(223,232,245,0.78)', lineHeight: 1.55 }}>
+                                  <dd style={{ margin: 0, fontFamily: SANS, fontSize: '13px', color: 'rgba(255,255,255,0.65)', lineHeight: 1.55 }}>
                                     {value}
                                   </dd>
                                 </div>
@@ -507,7 +507,7 @@ export default function ToolsDirectoryPage() {
                     style={{
                       borderRadius: '20px',
                       border: '1px solid rgba(255,255,255,0.08)',
-                      background: 'rgba(10,16,25,0.94)',
+                      background: '#050505',
                       overflow: 'hidden',
                     }}
                   >
@@ -523,10 +523,10 @@ export default function ToolsDirectoryPage() {
                       }}
                     >
                       <div>
-                        <p style={{ margin: '0 0 4px', fontFamily: MONO, fontSize: '10px', textTransform: 'uppercase', color: 'rgba(185,204,228,0.48)' }}>
+                        <p style={{ margin: '0 0 4px', fontFamily: MONO, fontSize: '10px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)' }}>
                           Matching tools
                         </p>
-                        <p style={{ margin: 0, fontFamily: SANS, fontSize: '14px', color: 'rgba(223,232,245,0.78)' }}>
+                        <p style={{ margin: 0, fontFamily: SANS, fontSize: '14px', color: 'rgba(255,255,255,0.65)' }}>
                           {filteredTools.length} tool{filteredTools.length === 1 ? '' : 's'} match the current query and filter state.
                         </p>
                       </div>
@@ -545,7 +545,7 @@ export default function ToolsDirectoryPage() {
                             borderRadius: '10px',
                             border: '1px solid rgba(255,255,255,0.1)',
                             background: 'rgba(255,255,255,0.03)',
-                            color: 'rgba(223,232,245,0.7)',
+                            color: 'rgba(255,255,255,0.5)',
                             cursor: 'pointer',
                             fontFamily: SANS,
                             fontSize: '12px',
@@ -580,8 +580,8 @@ export default function ToolsDirectoryPage() {
                                 gap: '14px',
                                 minHeight: '100%',
                                 borderRadius: '18px',
-                                border: isSelected ? '1px solid rgba(153,216,255,0.38)' : '1px solid rgba(255,255,255,0.08)',
-                                background: isSelected ? 'rgba(153,216,255,0.08)' : 'rgba(255,255,255,0.03)',
+                                border: isSelected ? '1px solid rgba(255,255,255,0.18)' : '1px solid rgba(255,255,255,0.08)',
+                                background: isSelected ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.03)',
                                 padding: '16px',
                                 boxShadow: isSelected ? '0 12px 36px rgba(7,15,24,0.42)' : 'none',
                               }}
@@ -600,16 +600,16 @@ export default function ToolsDirectoryPage() {
                                       flexShrink: 0,
                                     }}
                                   >
-                                    <Icon size={18} style={{ color: isSelected ? '#ffffff' : 'rgba(223,232,245,0.7)' }} />
+                                    <Icon size={18} style={{ color: isSelected ? '#ffffff' : 'rgba(255,255,255,0.5)' }} />
                                   </div>
                                   <div style={{ minWidth: 0 }}>
-                                    <p style={{ margin: '0 0 4px', fontFamily: MONO, fontSize: '10px', textTransform: 'uppercase', color: 'rgba(185,204,228,0.48)' }}>
+                                    <p style={{ margin: '0 0 4px', fontFamily: MONO, fontSize: '10px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)' }}>
                                       {tool.shortLabel} · {tool.category}
                                     </p>
                                     <h2 style={{ margin: '0 0 6px', fontFamily: SANS, fontSize: '17px', lineHeight: 1.25, letterSpacing: '-0.02em' }}>
                                       {tool.name}
                                     </h2>
-                                    <p style={{ margin: 0, fontFamily: SANS, fontSize: '13px', lineHeight: 1.65, color: 'rgba(223,232,245,0.72)' }}>
+                                    <p style={{ margin: 0, fontFamily: SANS, fontSize: '13px', lineHeight: 1.65, color: 'rgba(255,255,255,0.55)' }}>
                                       {tool.summary}
                                     </p>
                                   </div>
@@ -627,7 +627,7 @@ export default function ToolsDirectoryPage() {
                                       borderRadius: '999px',
                                       border: '1px solid rgba(255,255,255,0.08)',
                                       background: isFavorite ? 'rgba(255,212,92,0.14)' : 'rgba(255,255,255,0.03)',
-                                      color: isFavorite ? 'rgba(255,212,92,0.92)' : 'rgba(223,232,245,0.64)',
+                                      color: isFavorite ? 'rgba(255,212,92,0.92)' : 'rgba(255,255,255,0.45)',
                                       cursor: 'pointer',
                                       display: 'grid',
                                       placeItems: 'center',
@@ -646,7 +646,7 @@ export default function ToolsDirectoryPage() {
                                       borderRadius: '999px',
                                       border: '1px solid rgba(255,255,255,0.08)',
                                       background: isCompared ? 'rgba(143,239,197,0.14)' : 'rgba(255,255,255,0.03)',
-                                      color: isCompared ? 'rgba(143,239,197,0.95)' : 'rgba(223,232,245,0.64)',
+                                      color: isCompared ? 'rgba(143,239,197,0.95)' : 'rgba(255,255,255,0.45)',
                                       cursor: 'pointer',
                                       display: 'grid',
                                       placeItems: 'center',
@@ -667,7 +667,7 @@ export default function ToolsDirectoryPage() {
                                       borderRadius: '999px',
                                       border: '1px solid rgba(255,255,255,0.08)',
                                       background: 'rgba(255,255,255,0.03)',
-                                      color: 'rgba(223,232,245,0.66)',
+                                      color: 'rgba(255,255,255,0.5)',
                                       fontFamily: MONO,
                                       fontSize: '10px',
                                       display: 'inline-flex',
@@ -688,8 +688,8 @@ export default function ToolsDirectoryPage() {
                                     minHeight: '38px',
                                     padding: '0 14px',
                                     borderRadius: '12px',
-                                    border: isSelected ? '1px solid rgba(153,216,255,0.4)' : '1px solid rgba(255,255,255,0.1)',
-                                    background: isSelected ? 'rgba(153,216,255,0.14)' : 'rgba(255,255,255,0.04)',
+                                    border: isSelected ? '1px solid rgba(255,255,255,0.18)' : '1px solid rgba(255,255,255,0.1)',
+                                    background: isSelected ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.04)',
                                     color: '#ffffff',
                                     cursor: 'pointer',
                                     fontFamily: SANS,
@@ -708,7 +708,7 @@ export default function ToolsDirectoryPage() {
                                     borderRadius: '12px',
                                     border: '1px solid rgba(255,255,255,0.12)',
                                     background: '#f4f7fb',
-                                    color: '#081018',
+                                    color: '#000000',
                                     textDecoration: 'none',
                                     display: 'inline-flex',
                                     alignItems: 'center',
@@ -754,42 +754,42 @@ export default function ToolsDirectoryPage() {
                     style={{
                       borderRadius: '20px',
                       border: '1px solid rgba(255,255,255,0.08)',
-                      background: 'rgba(10,16,25,0.94)',
+                      background: '#050505',
                       padding: '18px',
                     }}
                   >
-                    <p style={{ margin: '0 0 12px', fontFamily: MONO, fontSize: '10px', textTransform: 'uppercase', color: 'rgba(185,204,228,0.48)' }}>
+                    <p style={{ margin: '0 0 12px', fontFamily: MONO, fontSize: '10px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)' }}>
                       Selected tool
                     </p>
                     {selectedTool ? (
                       <>
-                        <p style={{ margin: '0 0 6px', fontFamily: MONO, fontSize: '10px', color: 'rgba(185,204,228,0.48)' }}>
+                        <p style={{ margin: '0 0 6px', fontFamily: MONO, fontSize: '10px', color: 'rgba(255,255,255,0.25)' }}>
                           {selectedTool.shortLabel} · {selectedTool.shell.toUpperCase()} SHELL
                         </p>
                         <h2 style={{ margin: '0 0 10px', fontFamily: SANS, fontSize: '22px', lineHeight: 1.15, letterSpacing: '-0.03em' }}>
                           {selectedTool.name}
                         </h2>
-                        <p style={{ margin: '0 0 16px', fontFamily: SANS, fontSize: '14px', lineHeight: 1.7, color: 'rgba(223,232,245,0.74)' }}>
+                        <p style={{ margin: '0 0 16px', fontFamily: SANS, fontSize: '14px', lineHeight: 1.7, color: 'rgba(255,255,255,0.55)' }}>
                           {selectedTool.summary}
                         </p>
 
                         <div style={{ display: 'grid', gap: '12px' }}>
                           <div style={{ borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)', padding: '14px' }}>
-                            <p style={{ margin: '0 0 6px', fontFamily: MONO, fontSize: '10px', color: 'rgba(185,204,228,0.48)', textTransform: 'uppercase' }}>
+                            <p style={{ margin: '0 0 6px', fontFamily: MONO, fontSize: '10px', color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase' }}>
                               Best for
                             </p>
-                            <p style={{ margin: 0, fontFamily: SANS, fontSize: '13px', lineHeight: 1.65, color: 'rgba(223,232,245,0.78)' }}>
+                            <p style={{ margin: 0, fontFamily: SANS, fontSize: '13px', lineHeight: 1.65, color: 'rgba(255,255,255,0.65)' }}>
                               {selectedTool.focus}
                             </p>
                           </div>
 
                           <div style={{ borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)', padding: '14px' }}>
-                            <p style={{ margin: '0 0 8px', fontFamily: MONO, fontSize: '10px', color: 'rgba(185,204,228,0.48)', textTransform: 'uppercase' }}>
+                            <p style={{ margin: '0 0 8px', fontFamily: MONO, fontSize: '10px', color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase' }}>
                               Outputs you can expect
                             </p>
                             <ul style={{ margin: 0, paddingLeft: '18px', display: 'grid', gap: '8px' }}>
                               {selectedTool.outputs.map((output) => (
-                                <li key={output} style={{ fontFamily: SANS, fontSize: '13px', lineHeight: 1.55, color: 'rgba(223,232,245,0.78)' }}>
+                                <li key={output} style={{ fontFamily: SANS, fontSize: '13px', lineHeight: 1.55, color: 'rgba(255,255,255,0.65)' }}>
                                   {output}
                                 </li>
                               ))}
@@ -798,7 +798,7 @@ export default function ToolsDirectoryPage() {
 
                           {selectedTool.relatedRoutes && selectedTool.relatedRoutes.length > 0 && (
                             <div style={{ borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)', padding: '14px' }}>
-                              <p style={{ margin: '0 0 8px', fontFamily: MONO, fontSize: '10px', color: 'rgba(185,204,228,0.48)', textTransform: 'uppercase' }}>
+                              <p style={{ margin: '0 0 8px', fontFamily: MONO, fontSize: '10px', color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase' }}>
                                 Related routes
                               </p>
                               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
@@ -812,7 +812,7 @@ export default function ToolsDirectoryPage() {
                                       borderRadius: '999px',
                                       border: '1px solid rgba(255,255,255,0.08)',
                                       background: 'rgba(255,255,255,0.02)',
-                                      color: 'rgba(223,232,245,0.74)',
+                                      color: 'rgba(255,255,255,0.55)',
                                       textDecoration: 'none',
                                       display: 'inline-flex',
                                       alignItems: 'center',
@@ -834,7 +834,7 @@ export default function ToolsDirectoryPage() {
                               borderRadius: '14px',
                               border: '1px solid rgba(255,255,255,0.1)',
                               background: '#f4f7fb',
-                              color: '#081018',
+                              color: '#000000',
                               textDecoration: 'none',
                               display: 'inline-flex',
                               alignItems: 'center',
@@ -858,11 +858,11 @@ export default function ToolsDirectoryPage() {
                     style={{
                       borderRadius: '20px',
                       border: '1px solid rgba(255,255,255,0.08)',
-                      background: 'rgba(10,16,25,0.94)',
+                      background: '#050505',
                       padding: '18px',
                     }}
                   >
-                    <p style={{ margin: '0 0 10px', fontFamily: MONO, fontSize: '10px', textTransform: 'uppercase', color: 'rgba(185,204,228,0.48)' }}>
+                    <p style={{ margin: '0 0 10px', fontFamily: MONO, fontSize: '10px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)' }}>
                       Why this structure
                     </p>
                     <div style={{ display: 'grid', gap: '10px' }}>
@@ -873,7 +873,7 @@ export default function ToolsDirectoryPage() {
                       ].map((line) => (
                         <div key={line} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
                           <CheckCircle2 size={15} style={{ color: 'rgba(143,239,197,0.95)', marginTop: '2px', flexShrink: 0 }} />
-                          <p style={{ margin: 0, fontFamily: SANS, fontSize: '13px', lineHeight: 1.6, color: 'rgba(223,232,245,0.74)' }}>
+                          <p style={{ margin: 0, fontFamily: SANS, fontSize: '13px', lineHeight: 1.6, color: 'rgba(255,255,255,0.55)' }}>
                             {line}
                           </p>
                         </div>

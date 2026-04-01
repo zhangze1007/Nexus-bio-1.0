@@ -9,8 +9,8 @@ const SANS  = "'Inter',-apple-system,sans-serif";
 const BRAND = "'Space Grotesk',-apple-system,sans-serif";
 
 const BORDER = 'rgba(255,255,255,0.08)';
-const LABEL  = 'rgba(223,232,245,0.46)';
-const VALUE  = 'rgba(245,248,252,0.9)';
+const LABEL  = 'rgba(255,255,255,0.28)';
+const VALUE  = 'rgba(255,255,255,0.9)';
 
 export default function IDESidebar() {
   const pathname = usePathname();
@@ -52,7 +52,7 @@ export default function IDESidebar() {
               flexShrink: 0,
             }}
           >
-            <LayoutGrid size={14} style={{ color: 'rgba(245,248,252,0.88)' }} />
+            <LayoutGrid size={14} style={{ color: 'rgba(255,255,255,0.75)' }} />
           </div>
           {!collapsed && (
             <div style={{ minWidth: 0 }}>
@@ -128,7 +128,7 @@ export default function IDESidebar() {
                     fontSize: '10px',
                     textTransform: 'uppercase',
                     letterSpacing: '0.1em',
-                    color: 'rgba(185,204,228,0.38)',
+                    color: 'rgba(255,255,255,0.2)',
                   }}
                 >
                   {category}
@@ -152,8 +152,8 @@ export default function IDESidebar() {
                         padding: collapsed ? '10px 8px' : '10px 12px',
                         textDecoration: 'none',
                         borderRadius: '14px',
-                        border: isActive ? '1px solid rgba(153,216,255,0.38)' : '1px solid rgba(255,255,255,0.06)',
-                        background: isActive ? 'rgba(153,216,255,0.12)' : 'rgba(255,255,255,0.03)',
+                        border: isActive ? '1px solid rgba(255,255,255,0.18)' : '1px solid rgba(255,255,255,0.06)',
+                        background: isActive ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.03)',
                         minWidth: 0,
                         justifyContent: collapsed ? 'center' : 'flex-start',
                       }}
@@ -179,7 +179,7 @@ export default function IDESidebar() {
                               fontFamily: SANS,
                               fontSize: '11px',
                               fontWeight: 600,
-                              color: isActive ? '#ffffff' : 'rgba(223,232,245,0.74)',
+                              color: isActive ? '#ffffff' : 'rgba(255,255,255,0.55)',
                               lineHeight: 1.25,
                               whiteSpace: 'nowrap',
                               overflow: 'hidden',
@@ -192,7 +192,7 @@ export default function IDESidebar() {
                             style={{
                               fontFamily: SANS,
                               fontSize: '10px',
-                              color: isActive ? 'rgba(223,232,245,0.68)' : 'rgba(223,232,245,0.44)',
+                              color: isActive ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.2)',
                               lineHeight: 1.2,
                               whiteSpace: 'nowrap',
                               overflow: 'hidden',

@@ -8,8 +8,8 @@ const SANS = "'Inter',-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','Fira Code',monospace";
 
 const BORDER = 'rgba(255,255,255,0.08)';
-const LABEL  = 'rgba(223,232,245,0.48)';
-const VALUE  = 'rgba(245,248,252,0.9)';
+const LABEL  = 'rgba(255,255,255,0.28)';
+const VALUE  = 'rgba(255,255,255,0.9)';
 
 interface IDETopBarProps {
   moduleId: string;
@@ -62,7 +62,7 @@ export default function IDETopBar({ moduleId, actions }: IDETopBarProps) {
 
         <span style={{ color: 'rgba(255,255,255,0.16)' }}>/</span>
 
-        <span style={{ fontFamily: MONO, fontSize: '10px', color: 'rgba(185,204,228,0.55)', textTransform: 'uppercase' }}>
+        <span style={{ fontFamily: MONO, fontSize: '10px', color: 'rgba(255,255,255,0.28)', textTransform: 'uppercase' }}>
           {tool?.shortLabel ?? moduleId}
         </span>
 
@@ -100,8 +100,8 @@ export default function IDETopBar({ moduleId, actions }: IDETopBarProps) {
             minHeight: '36px',
             padding: '0 12px',
             borderRadius: '10px',
-            border: `1px solid ${consoleOpen ? 'rgba(153,216,255,0.35)' : BORDER}`,
-            background: consoleOpen ? 'rgba(153,216,255,0.12)' : 'rgba(255,255,255,0.03)',
+            border: `1px solid ${consoleOpen ? 'rgba(255,255,255,0.15)' : BORDER}`,
+            background: consoleOpen ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.03)',
             color: errorCount > 0 ? 'rgba(255,140,126,0.95)' : VALUE,
             fontFamily: SANS,
             fontSize: '12px',
@@ -132,4 +132,3 @@ export default function IDETopBar({ moduleId, actions }: IDETopBarProps) {
     </header>
   );
 }
-

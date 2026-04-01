@@ -156,7 +156,7 @@ function highlightKeywords(text: string, keywords: Set<string>) {
         <mark
           key={`${part}-${index}`}
           style={{
-            background: 'rgba(153,216,255,0.14)',
+            background: 'rgba(255,255,255,0.04)',
             color: '#ffffff',
             borderRadius: '8px',
             padding: '0 3px',
@@ -466,7 +466,7 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
           width: '34px',
           height: '34px',
           background: 'rgba(255,255,255,0.04)',
-          color: 'rgba(223,232,245,0.72)',
+          color: 'rgba(255,255,255,0.55)',
           border: '1px solid rgba(255,255,255,0.08)',
           borderRadius: '999px',
           cursor: 'pointer',
@@ -482,19 +482,19 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
       className="px-4 py-24"
       id="search"
       style={{
-        background: 'linear-gradient(180deg, #071018 0%, #0a121b 100%)',
+        background: '#000000',
         fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
       }}
     >
       <div className="max-w-5xl mx-auto">
         <div style={{ marginBottom: '28px' }}>
-          <p style={{ color: 'rgba(185,204,228,0.5)', fontSize: '11px', fontFamily: MONO, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '10px' }}>
+          <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '11px', fontFamily: MONO, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '10px' }}>
             Literature workbench
           </p>
           <h2 style={{ color: '#ffffff', fontSize: 'clamp(26px, 4vw, 38px)', fontWeight: 700, letterSpacing: '-0.04em', marginBottom: '10px', lineHeight: 1.08 }}>
             Database Research
           </h2>
-          <p style={{ color: 'rgba(223,232,245,0.68)', fontSize: '15px', lineHeight: 1.7, maxWidth: '70ch' }}>
+          <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '15px', lineHeight: 1.7, maxWidth: '70ch' }}>
             Search six academic sources in parallel, then filter, sort, page, and send the right abstract into the analyzer without losing result position.
           </p>
         </div>
@@ -506,13 +506,13 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
             marginBottom: '26px',
             borderRadius: '22px',
             border: '1px solid rgba(255,255,255,0.08)',
-            background: 'rgba(10,16,25,0.92)',
+            background: '#050505',
             padding: '8px',
             boxShadow: '0 18px 48px rgba(4,10,16,0.24)',
           }}
         >
           <div style={{ position: 'absolute', left: '20px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
-            <Search size={16} style={{ color: 'rgba(223,232,245,0.35)' }} />
+            <Search size={16} style={{ color: 'rgba(255,255,255,0.25)' }} />
           </div>
 
           <input
@@ -546,7 +546,7 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
               minWidth: '120px',
               padding: '0 18px',
               background: isSearching ? 'rgba(255,255,255,0.08)' : '#f4f7fb',
-              color: isSearching ? 'rgba(223,232,245,0.4)' : '#081018',
+              color: isSearching ? 'rgba(255,255,255,0.3)' : '#000000',
               border: 'none',
               borderRadius: '16px',
               fontSize: '13px',
@@ -569,7 +569,7 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
 
         {showShowcase && (
           <div style={{ marginBottom: '28px' }}>
-            <p style={{ color: 'rgba(185,204,228,0.48)', fontSize: '10px', fontFamily: MONO, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '14px' }}>
+            <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '10px', fontFamily: MONO, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '14px' }}>
               Landmark papers
             </p>
             <div style={{ display: 'grid', gap: '10px' }}>
@@ -581,20 +581,20 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
                     style={{
                       borderRadius: '18px',
                       border: '1px solid rgba(255,255,255,0.08)',
-                      background: 'rgba(10,16,25,0.92)',
+                      background: '#050505',
                       padding: '18px 20px',
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px' }}>
                       <div style={{ flex: 1 }}>
-                        <p style={{ color: 'rgba(185,204,228,0.48)', fontSize: '11px', fontFamily: MONO, margin: '0 0 8px' }}>
+                        <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '11px', fontFamily: MONO, margin: '0 0 8px' }}>
                           {paper.source} · {paper.year}
                           {paper.citationCount ? ` · ${paper.citationCount.toLocaleString()} citations` : ''}
                         </p>
                         <p style={{ color: '#ffffff', fontSize: '16px', fontWeight: 600, lineHeight: 1.45, margin: '0 0 6px', letterSpacing: '-0.02em' }}>
                           {paper.title}
                         </p>
-                        <p style={{ color: 'rgba(223,232,245,0.58)', fontSize: '13px', margin: 0 }}>
+                        <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '13px', margin: 0 }}>
                           {paper.authors.join(', ')} et al.
                         </p>
                       </div>
@@ -608,7 +608,7 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
                           borderRadius: '999px',
                           border: '1px solid rgba(255,255,255,0.08)',
                           background: 'rgba(255,255,255,0.03)',
-                          color: 'rgba(223,232,245,0.7)',
+                          color: 'rgba(255,255,255,0.5)',
                           cursor: 'pointer',
                           display: 'grid',
                           placeItems: 'center',
@@ -621,11 +621,11 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
 
                     {isExpanded && (
                       <div style={{ marginTop: '14px', paddingTop: '14px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-                        <p style={{ color: 'rgba(223,232,245,0.7)', fontSize: '13px', lineHeight: 1.75, margin: '0 0 12px' }}>
+                        <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '13px', lineHeight: 1.75, margin: '0 0 12px' }}>
                           {highlightKeywords(paper.abstract, extractKeywords(paper.title, paper.abstract))}
                         </p>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' }}>
-                          <p style={{ color: 'rgba(185,204,228,0.48)', fontSize: '11px', fontFamily: MONO, margin: 0 }}>
+                          <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '11px', fontFamily: MONO, margin: 0 }}>
                             {paper.pathway}
                           </p>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -639,7 +639,7 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
                                 borderRadius: '999px',
                                 border: '1px solid rgba(255,255,255,0.08)',
                                 background: 'rgba(255,255,255,0.03)',
-                                color: 'rgba(223,232,245,0.72)',
+                                color: 'rgba(255,255,255,0.55)',
                                 display: 'grid',
                                 placeItems: 'center',
                               }}
@@ -663,7 +663,7 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
             style={{
               borderRadius: '22px',
               border: '1px solid rgba(255,255,255,0.08)',
-              background: 'rgba(10,16,25,0.94)',
+              background: '#050505',
               overflow: 'hidden',
             }}
           >
@@ -678,10 +678,10 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
             >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
                 <div>
-                  <p style={{ margin: '0 0 4px', fontFamily: MONO, fontSize: '10px', textTransform: 'uppercase', color: 'rgba(185,204,228,0.48)' }}>
+                  <p style={{ margin: '0 0 4px', fontFamily: MONO, fontSize: '10px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)' }}>
                     Search state
                   </p>
-                  <p style={{ margin: 0, fontFamily: SANS, fontSize: '14px', color: 'rgba(223,232,245,0.78)' }}>
+                  <p style={{ margin: 0, fontFamily: SANS, fontSize: '14px', color: 'rgba(255,255,255,0.65)' }}>
                     {filteredResults.length} result{filteredResults.length === 1 ? '' : 's'}
                     {sourceFilter !== 'All' ? ` from ${sourceFilter}` : ''}
                     {isSearching ? ` · ${completedSources}/${SOURCE_DEFINITIONS.length} sources responded` : ''}
@@ -689,7 +689,7 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontFamily: MONO, fontSize: '10px', color: 'rgba(185,204,228,0.48)', textTransform: 'uppercase' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontFamily: MONO, fontSize: '10px', color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase' }}>
                     Source
                     <select
                       aria-label="Filter by source"
@@ -715,7 +715,7 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
                     </select>
                   </label>
 
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontFamily: MONO, fontSize: '10px', color: 'rgba(185,204,228,0.48)', textTransform: 'uppercase' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontFamily: MONO, fontSize: '10px', color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase' }}>
                     Sort
                     <select
                       aria-label="Sort results"
@@ -747,7 +747,7 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
                       borderRadius: '10px',
                       border: '1px solid rgba(255,255,255,0.1)',
                       background: 'rgba(255,255,255,0.03)',
-                      color: 'rgba(223,232,245,0.72)',
+                      color: 'rgba(255,255,255,0.55)',
                       cursor: 'pointer',
                       fontFamily: SANS,
                       fontSize: '12px',
@@ -767,8 +767,8 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
                     : state === 'ready'
                       ? 'rgba(143,239,197,0.9)'
                       : state === 'loading'
-                        ? 'rgba(153,216,255,0.9)'
-                        : 'rgba(185,204,228,0.48)';
+                        ? 'rgba(255,255,255,0.7)'
+                        : 'rgba(255,255,255,0.25)';
 
                   return (
                     <button
@@ -802,7 +802,7 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
                         }}
                       />
                       {source.label}
-                      <span style={{ color: 'rgba(223,232,245,0.56)' }}>{sourceCounts[source.key] || 0}</span>
+                      <span style={{ color: 'rgba(255,255,255,0.35)' }}>{sourceCounts[source.key] || 0}</span>
                     </button>
                   );
                 })}
@@ -825,7 +825,7 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
                     <p style={{ margin: '0 0 4px', fontFamily: SANS, fontSize: '13px', fontWeight: 600, color: '#ffffff' }}>
                       Partial results
                     </p>
-                    <p style={{ margin: 0, fontFamily: SANS, fontSize: '12px', lineHeight: 1.6, color: 'rgba(223,232,245,0.74)' }}>
+                    <p style={{ margin: 0, fontFamily: SANS, fontSize: '12px', lineHeight: 1.6, color: 'rgba(255,255,255,0.55)' }}>
                       Some sources did not respond for this query: {failingSources.join(', ')}.
                     </p>
                   </div>
@@ -852,14 +852,14 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
                         key={article.id}
                         style={{
                           borderRadius: '18px',
-                          border: `1px solid ${isExpanded ? 'rgba(153,216,255,0.3)' : 'rgba(255,255,255,0.08)'}`,
-                          background: isExpanded ? 'rgba(153,216,255,0.08)' : 'rgba(255,255,255,0.03)',
+                          border: `1px solid ${isExpanded ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.08)'}`,
+                          background: isExpanded ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.03)',
                           padding: '18px 20px',
                         }}
                       >
                         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px' }}>
                           <div style={{ flex: 1 }}>
-                            <p style={{ color: 'rgba(185,204,228,0.5)', fontSize: '11px', fontFamily: MONO, margin: '0 0 8px' }}>
+                            <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '11px', fontFamily: MONO, margin: '0 0 8px' }}>
                               {article.source}
                               {article.journal ? ` · ${article.journal}` : ''}
                               {article.year ? ` · ${article.year}` : ''}
@@ -871,7 +871,7 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
                               {article.title}
                             </p>
                             {article.authors.length > 0 && (
-                              <p style={{ color: 'rgba(223,232,245,0.6)', fontSize: '13px', margin: 0 }}>
+                              <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '13px', margin: 0 }}>
                                 {article.authors.join(', ')}{article.authors.length === 3 ? ' et al.' : ''}
                               </p>
                             )}
@@ -889,7 +889,7 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
                                   borderRadius: '999px',
                                   border: '1px solid rgba(255,255,255,0.08)',
                                   background: 'rgba(255,255,255,0.03)',
-                                  color: 'rgba(223,232,245,0.72)',
+                                  color: 'rgba(255,255,255,0.55)',
                                   display: 'grid',
                                   placeItems: 'center',
                                 }}
@@ -908,7 +908,7 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
                                 borderRadius: '999px',
                                 border: '1px solid rgba(255,255,255,0.08)',
                                 background: 'rgba(255,255,255,0.03)',
-                                color: 'rgba(223,232,245,0.72)',
+                                color: 'rgba(255,255,255,0.55)',
                                 cursor: 'pointer',
                                 display: 'grid',
                                 placeItems: 'center',
@@ -921,14 +921,14 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
 
                         {isExpanded && article.abstract && (
                           <div style={{ marginTop: '14px', paddingTop: '14px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-                            <p style={{ color: 'rgba(223,232,245,0.74)', fontSize: '13px', lineHeight: 1.8, margin: '0 0 12px' }}>
+                            <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '13px', lineHeight: 1.8, margin: '0 0 12px' }}>
                               {highlightKeywords(article.abstract, extractKeywords(article.title, article.abstract))}
                             </p>
 
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                                 {article.doi && (
-                                  <span style={{ fontFamily: MONO, fontSize: '10px', color: 'rgba(185,204,228,0.5)' }}>
+                                  <span style={{ fontFamily: MONO, fontSize: '10px', color: 'rgba(255,255,255,0.25)' }}>
                                     DOI: {article.doi}
                                   </span>
                                 )}

@@ -33,7 +33,7 @@ import { getToolDefinition } from './toolRegistry';
 
 const MONO = "'JetBrains Mono','Fira Code',monospace";
 const SANS = "'Inter',-apple-system,sans-serif";
-const NEON = '#99D8FF';
+const NEON = '#FFFFFF';
 
 export interface ToolShellProps {
   moduleId: string;
@@ -70,7 +70,7 @@ export default function ToolShell({
     <div className="nb-tool-shell" style={{
       position: 'absolute', inset: 0,
       display: 'flex', flexDirection: 'column',
-      background: 'linear-gradient(180deg, #081018 0%, #0b121a 100%)',
+      background: '#000000',
       fontFamily: SANS,
     }}>
       {/* ── Header ─────────────────────────────────────────── */}
@@ -83,7 +83,7 @@ export default function ToolShell({
           display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap',
           flexShrink: 0,
           borderBottom: '1px solid rgba(255,255,255,0.08)',
-          background: 'rgba(7,12,18,0.84)',
+          background: 'rgba(0,0,0,0.84)',
           backdropFilter: 'blur(18px)',
         }}
       >
@@ -99,7 +99,7 @@ export default function ToolShell({
               borderRadius: '10px',
               border: '1px solid rgba(255,255,255,0.08)',
               background: 'rgba(255,255,255,0.03)',
-              color: 'rgba(223,232,245,0.72)',
+              color: 'rgba(255,255,255,0.5)',
               textDecoration: 'none',
               fontFamily: SANS,
               fontSize: '12px',
@@ -133,7 +133,7 @@ export default function ToolShell({
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{
             fontFamily: SANS, fontSize: '14px', fontWeight: 700,
-            color: 'rgba(245,248,252,0.96)',
+            color: 'rgba(255,255,255,0.9)',
             letterSpacing: '-0.01em',
           }}>
             {tool?.name ?? title}
@@ -141,7 +141,7 @@ export default function ToolShell({
           {description && (
             <div style={{
               fontFamily: SANS, fontSize: '11px',
-              color: 'rgba(223,232,245,0.6)',
+              color: 'rgba(255,255,255,0.35)',
               marginTop: '3px',
             }}>
               {description}
@@ -152,10 +152,10 @@ export default function ToolShell({
         {formula && (
           <div style={{
             fontFamily: MONO, fontSize: '10px',
-            color: 'rgba(223,232,245,0.6)',
+            color: 'rgba(255,255,255,0.2)',
             padding: '6px 10px',
-            background: 'rgba(255,255,255,0.04)',
-            border: '1px solid rgba(255,255,255,0.08)',
+            background: 'rgba(255,255,255,0.02)',
+            border: '1px solid rgba(255,255,255,0.06)',
             borderRadius: '10px',
           }}>
             {formula}
@@ -181,7 +181,7 @@ export default function ToolShell({
           padding: '6px 16px',
           display: 'flex', gap: '8px', flexShrink: 0,
           borderTop: '1px solid rgba(255,255,255,0.08)',
-          background: 'rgba(7,12,18,0.84)',
+          background: 'rgba(0,0,0,0.84)',
         }}>
           {footer}
         </div>
@@ -195,12 +195,12 @@ export default function ToolShell({
 export const TOOL_TOKENS = {
   MONO: "'JetBrains Mono','Fira Code',monospace" as const,
   SANS: "'Inter',-apple-system,sans-serif" as const,
-  NEON: '#99D8FF',
-  BG: '#081018',
-  CARD_BG: 'rgba(255,255,255,0.03)',
-  BORDER: 'rgba(255,255,255,0.08)',
-  LABEL: 'rgba(223,232,245,0.46)',
-  VALUE: 'rgba(245,248,252,0.9)',
+  NEON: '#FFFFFF',
+  BG: '#000',
+  CARD_BG: 'rgba(255,255,255,0.02)',
+  BORDER: 'rgba(255,255,255,0.06)',
+  LABEL: 'rgba(255,255,255,0.3)',
+  VALUE: 'rgba(255,255,255,0.75)',
   DIM: 'rgba(255,255,255,0.18)',
   INPUT_BG: 'rgba(255,255,255,0.05)',
 } as const;
