@@ -29,6 +29,7 @@ import { metabolicMachine, STATE_LABELS } from '../../machines/metabolicMachine'
 import type { FBAWorkerIn, FBAWorkerOut } from '../../workers/fbaWorker';
 import { useUIStore } from '../../store/uiStore';
 import { useToolStore } from '../../store/toolStore';
+import { useNavigation } from '../../contexts/NavigationContext';
 import pathwayNodes from '../../data/pathwayData.json';
 import type { PathwayNode, PathwayEdge } from '../../types';
 import { T } from '../ide/tokens';
@@ -49,9 +50,11 @@ interface TopBarProps {
   state:      string;
   stateLabel: string;
   tick:       number;
+  backHref:   string;
 }
 
-function TopBar({ state, stateLabel, tick }: TopBarProps) {
+function TopBar({ state, stateLabel, tick, backHref }: TopBarProps) {
+  const backLabel = backHref === '/tools' ? 'Tools' : 'Home';
   return (
     <div style={{
       position:'absolute', top:0, left:0, right:0, zIndex:20,
@@ -64,12 +67,12 @@ function TopBar({ state, stateLabel, tick }: TopBarProps) {
     }}>
       {/* Left: back + logo */}
       <div style={{ display:'flex', alignItems:'center', gap:'16px' }}>
-        <Link href="/" style={{ display:'flex', alignItems:'center', gap:'6px', textDecoration:'none', color:'rgba(226,232,240,0.35)', transition:'color 0.2s' }}
+        <Link href={backHref} style={{ display:'flex', alignItems:'center', gap:'6px', textDecoration:'none', color:'rgba(226,232,240,0.35)', transition:'color 0.2s' }}
           onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = 'rgba(226,232,240,0.8)'}
           onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'rgba(226,232,240,0.35)'}
         >
           <ChevronLeft size={13} />
-          <span style={{ fontFamily: T.SANS, fontSize:'10px', letterSpacing:'0.03em' }}>Home</span>
+          <span style={{ fontFamily: T.SANS, fontSize:'10px', letterSpacing:'0.03em' }}>{backLabel}</span>
         </Link>
         <div style={{ width:'1px', height:'16px', background:'rgba(255,255,255,0.07)' }} />
         <div style={{ display:'flex', alignItems:'center', gap:'8px' }}>
@@ -124,6 +127,9 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
   const [snapshot, send] = useMachine(metabolicMachine);
   const { params, readouts, rateHistory } = snapshot.context;
   const state = snapshot.value as 'idle' | 'simulating' | 'stress_test' | 'equilibrium';
+
+  // ── Unified navigation — resolves back target based on current path ──
+  const { backHref } = useNavigation();
 
   // ── Track active module for cross-module state ──────────────────
   const setActiveModule = useToolStore(s => s.setActiveModule);
@@ -298,6 +304,7 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
         state={state}
         stateLabel={stateLabel}
         tick={readouts.tick}
+        backHref={backHref}
       />
 
       {/* ── Center: 3D Pathway Visualization — full-screen, panels float over ── */}

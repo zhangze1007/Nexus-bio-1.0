@@ -41,50 +41,57 @@
 .mono  { font-family: var(--font-mono); }
 
 /*
- * IDE Shell grid — sidebar is now position:fixed (overlay), so the
- * first column is a static 80px spacer matching the collapsed sidebar.
- * No CSS transition needed; Framer Motion handles width animation.
+ * IDE Shell layout — single-container model.
+ *
+ * The sidebar is position:fixed (overlay, z-index: 50), so main content
+ * uses padding-left: 80px to leave space for the collapsed sidebar strip.
+ * No CSS grid column switching — no reflow when sidebar expands/collapses.
+ *
+ * z-index hierarchy:
+ *   Content:  10
+ *   Backdrop: 45
+ *   Sidebar:  50
+ *   Topbar:   60
  */
 .nb-ide-shell {
   position: fixed;
   inset: 0;
   background: #000000;
-  display: grid;
-  grid-template-columns: 80px minmax(0, 1fr);
-  grid-template-rows: 56px minmax(0, 1fr) auto;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
 }
 
 .nb-ide-topbar {
-  grid-column: 1 / -1;
-  grid-row: 1;
   height: 56px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 0 16px;
+  padding: 0 16px 0 96px; /* 80px sidebar + 16px gap */
   background: rgba(0,0,0,0.8);
   border-bottom: 1px solid #1a1a1a;
   backdrop-filter: blur(10px);
   /* Topbar sits above the fixed sidebar panel */
   position: relative;
-  z-index: 55;
+  z-index: 60;
+  flex-shrink: 0;
 }
 
-/* Sidebar is position:fixed in the component — no grid placement. */
+/* Sidebar is position:fixed in the component — not in flow. */
 
 .nb-ide-main {
-  grid-column: 2;
-  grid-row: 2;
+  flex: 1;
   position: relative;
   overflow: hidden;
   background: #000000;
+  margin-left: 80px; /* collapsed sidebar width */
+  z-index: 10;
 }
 
 .nb-ide-console {
-  grid-column: 2;
-  grid-row: 3;
+  flex-shrink: 0;
+  margin-left: 80px; /* collapsed sidebar width */
 }
 
 .nb-tool-shell__body {
@@ -115,25 +122,18 @@
 }
 
 @media (max-width: 960px) {
-  .nb-ide-shell {
-    /* Remove sidebar spacer column on mobile — sidebar is full overlay */
-    grid-template-columns: 1fr;
-    grid-template-rows: 56px minmax(0, 1fr) auto;
-  }
-
   .nb-ide-topbar {
+    /* Remove sidebar spacer padding on mobile — sidebar is full overlay */
     padding: 0 12px;
   }
 
   .nb-ide-main {
-    grid-column: 1;
-    grid-row: 2;
+    margin-left: 0;
     overflow: auto;
   }
 
   .nb-ide-console {
-    grid-column: 1;
-    grid-row: 3;
+    margin-left: 0;
   }
 }
 

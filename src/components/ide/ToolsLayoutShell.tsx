@@ -7,16 +7,18 @@
  *   • IDESidebar  — persistent, position:fixed overlay
  *   • IDETopBar   — breadcrumb + mode toggle + console button
  *   • IDEConsole  — collapsible output panel
+ *   • NavigationProvider — unified handleBack() for all children
  *
  * The {children} slot receives the individual tool page content,
  * which transitions smoothly via AnimatePresence.
  *
- * Architecture:
- *   CSS Grid (same as old IDEShell):
- *     Col: [80px sidebar-spacer] [1fr main]
- *     Row: [56px topbar] [1fr canvas] [auto console]
+ * Layout model:
+ *   The main content area uses padding-left: 80px to reserve space for
+ *   the collapsed sidebar (position: fixed). No CSS grid-template-columns
+ *   switching means no reflow when sidebar expands/collapses.
  *
- * The sidebar is position:fixed and not part of grid flow.
+ * z-index hierarchy (globals.css):
+ *   Content: 10  |  Backdrop: 45  |  Sidebar: 50  |  Topbar: 60
  */
 
 import { usePathname } from 'next/navigation';
@@ -25,6 +27,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import IDESidebar from './IDESidebar';
 import IDETopBar from './IDETopBar';
 import IDEConsole from './IDEConsole';
+import { NavigationProvider } from '../../contexts/NavigationContext';
 import { useUIStore } from '../../store/uiStore';
 
 interface ToolsLayoutShellProps {
@@ -41,13 +44,13 @@ export default function ToolsLayoutShell({ children }: ToolsLayoutShellProps) {
   //   /tools/pathd    → 'pathd'
   const moduleId = deriveModuleId(pathname);
 
-  // Auto-collapse sidebar when navigating to a new tool (prevents "black screen" glitch)
+  // Auto-collapse sidebar on route change ONLY if expanded.
+  // This prevents the backdrop from lingering during page transition
+  // (the "black screen" glitch).
   const prevPathRef = useRef(pathname);
   useEffect(() => {
     if (pathname !== prevPathRef.current) {
       prevPathRef.current = pathname;
-      // If sidebar is expanded, collapse it on route change to prevent
-      // the backdrop lingering during page transition
       if (!sidebarCollapsed) {
         useUIStore.getState().toggleSidebarCollapsed();
       }
@@ -55,37 +58,39 @@ export default function ToolsLayoutShell({ children }: ToolsLayoutShellProps) {
   }, [pathname, sidebarCollapsed]);
 
   return (
-    <div className="nb-ide-shell">
-      {/* TopBar — row 1, spans all columns. Always mounted. */}
-      <IDETopBar moduleId={moduleId ?? ''} />
+    <NavigationProvider>
+      <div className="nb-ide-shell">
+        {/* TopBar — fixed at top, z-index: 60. Always mounted. */}
+        <IDETopBar moduleId={moduleId ?? ''} />
 
-      {/* Sidebar — fixed overlay, not in grid flow. Always mounted. */}
-      <IDESidebar />
+        {/* Sidebar — fixed overlay, z-index: 50. Always mounted. */}
+        <IDESidebar />
 
-      {/* Main canvas — col 2, row 2. Content transitions smoothly. */}
-      <main className="nb-ide-main" role="main" aria-label="Tool workspace">
-        {/*
-         * initial={false}: Skip mount animation on first render to avoid
-         * flash-of-empty-state when navigating directly to a tool URL.
-         * mode="wait": Ensure exit animation completes before enter begins.
-         */}
-        <AnimatePresence mode="wait" initial={false}>
-          <motion.div
-            key={pathname}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15, ease: 'easeInOut' }}
-            style={{ position: 'absolute', inset: 0 }}
-          >
-            {children}
-          </motion.div>
-        </AnimatePresence>
-      </main>
+        {/* Main canvas — fills remaining space after topbar. */}
+        <main className="nb-ide-main" role="main" aria-label="Tool workspace">
+          {/*
+           * initial={false}: Skip mount animation on first render to avoid
+           * flash-of-empty-state when navigating directly to a tool URL.
+           * mode="wait": Ensure exit animation completes before enter begins.
+           */}
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={pathname}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15, ease: 'easeInOut' }}
+              style={{ position: 'absolute', inset: 0 }}
+            >
+              {children}
+            </motion.div>
+          </AnimatePresence>
+        </main>
 
-      {/* Console — col 2, row 3. Always mounted. */}
-      <IDEConsole />
-    </div>
+        {/* Console — bottom panel. Always mounted. */}
+        <IDEConsole />
+      </div>
+    </NavigationProvider>
   );
 }
 
