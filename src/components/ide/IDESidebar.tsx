@@ -82,7 +82,7 @@ export default function IDESidebar() {
               zIndex: Z_BACKDROP,
               cursor: 'pointer',
             }}
-            aria-hidden
+            aria-hidden={true}
           />
         )}
       </AnimatePresence>
@@ -91,6 +91,7 @@ export default function IDESidebar() {
       <motion.aside
         role="navigation"
         aria-label="Tool navigation"
+        aria-expanded={!collapsed}
         animate={{ width: collapsed ? W_COLLAPSED : W_EXPANDED }}
         transition={SPRING}
         style={{
@@ -149,6 +150,7 @@ export default function IDESidebar() {
             <motion.div
               animate={{ opacity: collapsed ? 0 : 1 }}
               transition={{ duration: collapsed ? 0.1 : 0.25, delay: collapsed ? 0 : 0.08 }}
+              aria-hidden={collapsed}
               style={{
                 minWidth: 0,
                 pointerEvents: collapsed ? 'none' : 'auto',
@@ -203,6 +205,7 @@ export default function IDESidebar() {
                 <motion.p
                   animate={{ opacity: collapsed ? 0 : 1, height: collapsed ? 0 : 'auto' }}
                   transition={{ duration: 0.15 }}
+                  aria-hidden={collapsed}
                   style={{
                     margin: collapsed ? 0 : '0 0 8px',
                     padding: '0 4px',
@@ -272,6 +275,7 @@ export default function IDESidebar() {
                             duration: collapsed ? 0.1 : 0.2,
                             delay: collapsed ? 0 : 0.06,
                           }}
+                          aria-hidden={collapsed}
                           style={{
                             minWidth: 0,
                             pointerEvents: collapsed ? 'none' : 'auto',
