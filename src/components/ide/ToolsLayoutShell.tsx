@@ -19,7 +19,7 @@
  *   No CSS grid-template-columns switching means no reflow.
  *
  * z-index hierarchy (globals.css):
- *   Content: 10  |  Backdrop: 45  |  Sidebar: 50  |  Topbar: 60
+ *   Content: 10  |  Backdrop: 80  |  Sidebar: 90  |  Topbar: 100
  */
 
 import { usePathname } from 'next/navigation';

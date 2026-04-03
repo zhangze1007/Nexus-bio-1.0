@@ -43,15 +43,15 @@
 /*
  * IDE Shell layout — single-container model.
  *
- * The sidebar is position:fixed (overlay, z-index: 50), so main content
+ * The sidebar is position:fixed (overlay, z-index: 90), so main content
  * uses padding-left: 80px to leave space for the collapsed sidebar strip.
  * No CSS grid column switching — no reflow when sidebar expands/collapses.
  *
  * z-index hierarchy:
  *   Content:  10
- *   Backdrop: 45
- *   Sidebar:  50
- *   Topbar:   60
+ *   Backdrop: 80
+ *   Sidebar:  90
+ *   Topbar:   100
  */
 .nb-ide-shell {
   position: fixed;
@@ -74,7 +74,7 @@
   backdrop-filter: blur(10px);
   /* Topbar sits above the fixed sidebar panel */
   position: relative;
-  z-index: 60;
+  z-index: 100;
   flex-shrink: 0;
 }
 
