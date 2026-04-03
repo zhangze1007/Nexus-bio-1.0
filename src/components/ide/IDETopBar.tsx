@@ -3,7 +3,6 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Home, Terminal, LayoutGrid } from 'lucide-react';
 import { useUIStore } from '../../store/uiStore';
-import { useNavigation } from '../../contexts/NavigationContext';
 import { getToolDefinition, TOOL_DEFINITIONS } from '../tools/shared/toolRegistry';
 import { T } from './tokens';
 import DisplayModeToggle, { useDisplayMode } from './shared/DisplayModeToggle';
