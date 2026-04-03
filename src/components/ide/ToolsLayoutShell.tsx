@@ -13,13 +13,13 @@
  * which transitions smoothly via AnimatePresence.
  *
  * Layout model:
- *   The main content area uses padding-left: 80px to reserve space for
- *   the collapsed sidebar (position: fixed) on Workbench pages.
- *   On the Directory page (/tools), sidebar is hidden and no offset is applied.
+ *   The sidebar is fully hidden when collapsed (width: 0) and overlays
+ *   content when expanded (position: fixed, width: 320px).
+ *   Main content has no left offset — it fills the full viewport.
  *   No CSS grid-template-columns switching means no reflow.
  *
  * z-index hierarchy (globals.css):
- *   Content: 10  |  Backdrop: 80  |  Sidebar: 90  |  Topbar: 100
+ *   Content: 10  |  Backdrop: 85  |  Topbar: 90  |  Sidebar: 100
  */
 
 import { usePathname } from 'next/navigation';
@@ -80,10 +80,10 @@ export default function ToolsLayoutShell({ children }: ToolsLayoutShellProps) {
   return (
     <NavigationProvider>
       <div className="nb-ide-shell" aria-keyshortcuts="Control+Backslash">
-        {/* TopBar — fixed at top, z-index: 60. Always mounted. */}
+        {/* TopBar — fixed at top, z-index: 90. Always mounted. */}
         <IDETopBar moduleId={moduleId ?? ''} />
 
-        {/* Sidebar — fixed overlay, z-index: 50. Only on Workbench (/tools/[id]). */}
+        {/* Sidebar — fixed overlay, z-index: 100. Only on Workbench (/tools/[id]). */}
         {isWorkbench && <IDESidebar />}
 
         {/* Main canvas — fills remaining space after topbar. */}

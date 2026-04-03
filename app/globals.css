@@ -43,15 +43,15 @@
 /*
  * IDE Shell layout — single-container model.
  *
- * The sidebar is position:fixed (overlay, z-index: 90), so main content
- * uses padding-left: 80px to leave space for the collapsed sidebar strip.
- * No CSS grid column switching — no reflow when sidebar expands/collapses.
+ * The sidebar is position:fixed (overlay, z-index: 100). When collapsed
+ * it is fully hidden (width: 0). Main content has no left offset — it
+ * occupies the entire viewport width. No CSS grid column switching.
  *
  * z-index hierarchy:
  *   Content:  10
- *   Backdrop: 80
- *   Sidebar:  90
- *   Topbar:   100
+ *   Backdrop: 85
+ *   Topbar:   90
+ *   Sidebar:  100
  */
 .nb-ide-shell {
   position: fixed;
@@ -68,13 +68,12 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 0 16px 0 96px; /* 80px sidebar + 16px gap */
+  padding: 0 16px;
   background: rgba(0,0,0,0.8);
   border-bottom: 1px solid #1a1a1a;
   backdrop-filter: blur(10px);
-  /* Topbar sits above the fixed sidebar panel */
   position: relative;
-  z-index: 100;
+  z-index: 90;
   flex-shrink: 0;
 }
 
@@ -85,13 +84,13 @@
   position: relative;
   overflow: hidden;
   background: #000000;
-  padding-left: 80px; /* collapsed sidebar width — fixed offset */
+  padding-left: 0;
   z-index: 10;
 }
 
 .nb-ide-console {
   flex-shrink: 0;
-  padding-left: 80px; /* collapsed sidebar width — fixed offset */
+  padding-left: 0;
 }
 
 .nb-tool-shell__body {
@@ -123,17 +122,11 @@
 
 @media (max-width: 960px) {
   .nb-ide-topbar {
-    /* Remove sidebar spacer padding on mobile — sidebar is full overlay */
     padding: 0 12px;
   }
 
   .nb-ide-main {
-    padding-left: 0;
     overflow: auto;
-  }
-
-  .nb-ide-console {
-    padding-left: 0;
   }
 }
 
