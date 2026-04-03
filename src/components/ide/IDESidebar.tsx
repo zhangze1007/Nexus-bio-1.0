@@ -11,10 +11,10 @@
  *   • layout prop on motion.aside ensures cross-route layout stability.
  *
  * z-index hierarchy:
- *   Z_BACKDROP (45) — translucent blur layer sits above main content
+ *   Z_BACKDROP (80) — translucent blur layer sits above main content
  *                      but below the sidebar panel.
- *   Z_SIDEBAR  (50) — the panel itself is the topmost interactive layer,
- *                      below the topbar (60) and any future modals (≥ 70).
+ *   Z_SIDEBAR  (90) — the panel itself is the topmost interactive layer,
+ *                      below the topbar (100) and any future modals (≥ 110).
  *
  * Spring config rationale:
  *   stiffness: 300, damping: 30 — models a fast, critically-damped spring
@@ -24,6 +24,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useCallback } from 'react';
 import { ChevronLeft, ChevronRight, LayoutGrid } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUIStore } from '../../store/uiStore';
@@ -42,8 +43,8 @@ export const W_COLLAPSED = 80;
 /** Expanded width — full labels & sections. */
 export const W_EXPANDED  = 320;
 
-const Z_BACKDROP = 45;
-const Z_SIDEBAR  = 50;
+const Z_BACKDROP = 80;
+const Z_SIDEBAR  = 90;
 
 /** Height of IDETopBar defined in globals.css (.nb-ide-topbar). */
 const TOPBAR_H = 56;
@@ -61,6 +62,28 @@ export default function IDESidebar() {
   const pathname  = usePathname();
   const collapsed = useUIStore((s) => s.sidebarCollapsed);
   const toggle    = useUIStore((s) => s.toggleSidebarCollapsed);
+
+  /**
+   * Full-Height Hotzone handler:
+   *   • Collapsed → click anywhere on sidebar expands it
+   *   • Expanded  → click on a link/button navigates; click on empty space collapses
+   */
+  const handleSidebarClick = useCallback(
+    (e: React.MouseEvent<HTMLElement>) => {
+      if (collapsed) {
+        // Prevent any link navigation when collapsed; expand instead
+        e.preventDefault();
+        toggle();
+      } else {
+        // Expanded: collapse only when clicking empty (non-interactive) area
+        const target = e.target as HTMLElement;
+        if (!target.closest('a, button')) {
+          toggle();
+        }
+      }
+    },
+    [collapsed, toggle],
+  );
 
   return (
     <>
@@ -99,6 +122,7 @@ export default function IDESidebar() {
         aria-expanded={!collapsed}
         animate={{ width: collapsed ? W_COLLAPSED : W_EXPANDED }}
         transition={SPRING}
+        onClick={handleSidebarClick}
         style={{
           position: 'fixed',
           top: TOPBAR_H,
@@ -112,6 +136,7 @@ export default function IDESidebar() {
           overflowY: 'auto',
           overflowX: 'hidden',
           willChange: 'width',
+          cursor: 'pointer',
         }}
       >
         {/* ── Header ─────────────────────────────────────────────── */}
