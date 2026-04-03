@@ -2,7 +2,6 @@
 import { useState, useMemo } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
-import IDEShell from '../ide/IDEShell';
 import AlgorithmInsight from '../ide/shared/AlgorithmInsight';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
@@ -551,7 +550,7 @@ export default function CellFreePage() {
   }, [sim]);
 
   return (
-    <IDEShell moduleId="cellfree">
+    <>
       <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', background: PANEL_BG }}>
         <AlgorithmInsight
           title="Cell-Free Sandbox (CFPS)"
@@ -836,6 +835,6 @@ export default function CellFreePage() {
           <ExportButton label="Export Time Series CSV" data={exportData} filename="cellfree-timeseries" format="csv" />
         </div>
       </div>
-    </IDEShell>
+    </>
   );
 }

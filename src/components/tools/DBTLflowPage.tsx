@@ -1,6 +1,5 @@
 'use client';
 import { useState, useMemo } from 'react';
-import IDEShell from '../ide/IDEShell';
 import AlgorithmInsight from '../ide/shared/AlgorithmInsight';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
@@ -343,7 +342,7 @@ export default function DBTLflowPage() {
 
   /* ── Render ── */
   return (
-    <IDEShell moduleId="dbtlflow">
+    <>
       <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', background: '#050505' }}>
         <AlgorithmInsight
           title="Design-Build-Test-Learn Tracker"
@@ -881,6 +880,6 @@ export default function DBTLflowPage() {
           <ExportButton label="Export CSV" data={iterations} filename="dbtlflow-iterations" format="csv" />
         </div>
       </div>
-    </IDEShell>
+    </>
   );
 }

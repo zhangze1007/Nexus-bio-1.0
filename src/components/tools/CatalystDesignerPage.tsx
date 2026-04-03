@@ -1,6 +1,5 @@
 'use client';
 import { useState, useMemo } from 'react';
-import IDEShell from '../ide/IDEShell';
 import AlgorithmInsight from '../ide/shared/AlgorithmInsight';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
@@ -667,7 +666,7 @@ export default function CatalystDesignerPage() {
   /* ── Render ──────────────────────────────────────────────────────── */
 
   return (
-    <IDEShell moduleId="catdes">
+    <>
       <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column' }}>
 
         {/* Algorithm Insight */}
@@ -915,6 +914,6 @@ export default function CatalystDesignerPage() {
 
         </div>
       </div>
-    </IDEShell>
+    </>
   );
 }

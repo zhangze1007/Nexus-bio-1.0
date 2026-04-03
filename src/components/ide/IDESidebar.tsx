@@ -6,13 +6,15 @@
  *   • position: fixed — sidebar is an independent compositing layer.
  *   • Width is animated via Framer Motion spring, NOT CSS grid column,
  *     so the main content never reflows.
- *   • Backdrop overlay uses AnimatePresence for smooth fade in/out.
+ *   • Backdrop overlay uses AnimatePresence (initial={false}) for smooth
+ *     fade in/out without first-render flash.
+ *   • layout prop on motion.aside ensures cross-route layout stability.
  *
- * z-index rationale:
- *   Z_BACKDROP (40) — translucent blur layer sits above main content
+ * z-index hierarchy:
+ *   Z_BACKDROP (45) — translucent blur layer sits above main content
  *                      but below the sidebar panel.
  *   Z_SIDEBAR  (50) — the panel itself is the topmost interactive layer,
- *                      below any future modals (z ≥ 60).
+ *                      below the topbar (60) and any future modals (≥ 70).
  *
  * Spring config rationale:
  *   stiffness: 300, damping: 30 — models a fast, critically-damped spring
@@ -40,7 +42,7 @@ export const W_COLLAPSED = 80;
 /** Expanded width — full labels & sections. */
 export const W_EXPANDED  = 320;
 
-const Z_BACKDROP = 40;
+const Z_BACKDROP = 45;
 const Z_SIDEBAR  = 50;
 
 /** Height of IDETopBar defined in globals.css (.nb-ide-topbar). */
@@ -63,7 +65,8 @@ export default function IDESidebar() {
   return (
     <>
       {/* ── Backdrop blur overlay (AnimatePresence for enter/exit) ── */}
-      <AnimatePresence>
+      {/* initial={false} prevents flash on first render / SSR hydration */}
+      <AnimatePresence initial={false}>
         {!collapsed && (
           <motion.div
             key="sidebar-backdrop"
@@ -89,6 +92,7 @@ export default function IDESidebar() {
 
       {/* ── Sidebar panel (spring-animated width) ────────────────── */}
       <motion.aside
+        layout
         role="navigation"
         aria-label="Tool navigation"
         aria-expanded={!collapsed}

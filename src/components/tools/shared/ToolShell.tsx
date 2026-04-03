@@ -1,8 +1,10 @@
 /**
  * ToolShell — Unified BentoGrid wrapper for all Nexus-Bio tool pages.
  *
- * Replaces the old IDEShell + AlgorithmInsight + 3-panel-flexbox pattern
- * with a CSS Grid "bento" layout on a pure #000 canvas.
+ * Provides a CSS Grid "bento" layout on a pure #000 canvas.
+ * Navigation (back button, breadcrumbs) is handled by the persistent
+ * IDETopBar in the shared tools layout — ToolShell only renders the
+ * module info bar + bento grid + optional footer.
  *
  * Design principles (Rauch × Victor):
  *   • Black canvas, no hard borders — separation via spacing and glass
@@ -25,9 +27,8 @@
  */
 'use client';
 import { useEffect, type ReactNode } from 'react';
-import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { ArrowLeft, LayoutGrid } from 'lucide-react';
+import { LayoutGrid } from 'lucide-react';
 import { useToolStore } from '../../../store/toolStore';
 import { getToolDefinition } from './toolRegistry';
 import { T } from '../../ide/tokens';
@@ -72,13 +73,13 @@ export default function ToolShell({
       background: '#000000',
       fontFamily: T.SANS,
     }}>
-      {/* ── Header ─────────────────────────────────────────── */}
+      {/* ── Module Info Bar ──────────────────────────────────── */}
       <motion.header
         initial={{ opacity: 0, y: -6 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
         style={{
-          padding: '12px 16px',
+          padding: '8px 16px',
           display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap',
           flexShrink: 0,
           borderBottom: '1px solid rgba(255,255,255,0.08)',
@@ -86,52 +87,29 @@ export default function ToolShell({
           backdropFilter: 'blur(18px)',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-          <Link
-            href="/tools"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              minHeight: '34px',
-              padding: '0 12px',
-              borderRadius: '10px',
-              border: '1px solid rgba(255,255,255,0.08)',
-              background: 'rgba(255,255,255,0.03)',
-              color: 'rgba(255,255,255,0.5)',
-              textDecoration: 'none',
-              fontFamily: T.SANS,
-              fontSize: '12px',
-            }}
-          >
-            <ArrowLeft size={13} />
-            Tools
-          </Link>
-
-          <div style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px',
-            minHeight: '34px',
-            padding: '0 12px',
-            borderRadius: '10px',
-            border: '1px solid rgba(255,255,255,0.08)',
-            background: `${NEON}14`,
-            color: NEON,
-            fontFamily: T.MONO,
-            fontSize: '10px',
-            fontWeight: 700,
-            letterSpacing: '0.08em',
-            textTransform: 'uppercase',
-          }}>
-            <LayoutGrid size={13} />
-            {tool?.shortLabel ?? moduleId}
-          </div>
+        <div style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '6px',
+          minHeight: '30px',
+          padding: '0 10px',
+          borderRadius: '10px',
+          border: '1px solid rgba(255,255,255,0.08)',
+          background: `${NEON}14`,
+          color: NEON,
+          fontFamily: T.MONO,
+          fontSize: '10px',
+          fontWeight: 700,
+          letterSpacing: '0.08em',
+          textTransform: 'uppercase',
+        }}>
+          <LayoutGrid size={13} />
+          {tool?.shortLabel ?? moduleId}
         </div>
 
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{
-            fontFamily: T.SANS, fontSize: '14px', fontWeight: 700,
+            fontFamily: T.SANS, fontSize: '13px', fontWeight: 700,
             color: 'rgba(255,255,255,0.9)',
             letterSpacing: '-0.01em',
           }}>
@@ -141,7 +119,7 @@ export default function ToolShell({
             <div style={{
               fontFamily: T.SANS, fontSize: '11px',
               color: 'rgba(255,255,255,0.35)',
-              marginTop: '3px',
+              marginTop: '2px',
             }}>
               {description}
             </div>

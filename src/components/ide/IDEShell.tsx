@@ -1,18 +1,16 @@
 'use client';
 /**
- * Nexus-Bio IDE Shell
+ * Nexus-Bio IDE Shell (legacy — kept for reference).
  *
- * Layout (CSS Grid):
- *   Col: [80px sidebar-spacer] [1fr main]
- *   Row: [56px topbar] [1fr canvas] [auto console]
+ * Layout model: flexbox column with padding-left for sidebar spacer.
+ * The sidebar is position:fixed (overlay) — expanding it never triggers reflow.
  *
- * The 80px first column is a static spacer matching the collapsed
- * sidebar width. The sidebar itself is position:fixed (overlay) and
- * is NOT part of the grid flow — expanding it never triggers reflow.
+ * z-index hierarchy:
+ *   Content: 10  |  Backdrop: 45  |  Sidebar: 50  |  Topbar: 60
  *
- * TopBar:  spans all columns, row 1
- * Canvas:  col 2, row 2
- * Console: col 2, row 3 (collapsible, 0 or 180px)
+ * NOTE: For /tools/* routes, ToolsLayoutShell (via app/tools/layout.tsx)
+ * provides the persistent shell instead. This component is only used
+ * if a tool is rendered outside the /tools route tree.
  */
 
 import IDESidebar from './IDESidebar';
@@ -28,18 +26,18 @@ interface IDEShellProps {
 export default function IDEShell({ moduleId, children, topBarActions }: IDEShellProps) {
   return (
     <div className="nb-ide-shell">
-      {/* TopBar — row 1, spans all columns */}
+      {/* TopBar — z-index: 60 */}
       <IDETopBar moduleId={moduleId} actions={topBarActions} />
 
-      {/* Sidebar — fixed overlay, not in grid flow */}
+      {/* Sidebar — fixed overlay, z-index: 50 */}
       <IDESidebar />
 
-      {/* Main canvas — col 2, row 2 */}
+      {/* Main canvas */}
       <main className="nb-ide-main" role="main" aria-label="Tool workspace">
         {children}
       </main>
 
-      {/* Console — col 2, row 3 */}
+      {/* Console — bottom panel */}
       <IDEConsole />
     </div>
   );

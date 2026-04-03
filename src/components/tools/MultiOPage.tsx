@@ -1,6 +1,5 @@
 'use client';
 import { useState, useMemo, useCallback } from 'react';
-import IDEShell from '../ide/IDEShell';
 import AlgorithmInsight from '../ide/shared/AlgorithmInsight';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
@@ -325,7 +324,7 @@ export default function MultiOPage() {
   );
 
   return (
-    <IDEShell moduleId="multio">
+    <>
       <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', background: PANEL_BG }}>
         <AlgorithmInsight
           title="Biological Foundation Model"
@@ -892,6 +891,6 @@ export default function MultiOPage() {
           <ExportButton label="Export Significant JSON" data={significant} filename="multio-significant" format="json" />
         </div>
       </div>
-    </IDEShell>
+    </>
   );
 }
