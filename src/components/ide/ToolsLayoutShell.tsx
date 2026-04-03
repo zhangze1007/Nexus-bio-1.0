@@ -64,6 +64,11 @@ export default function ToolsLayoutShell({ children }: ToolsLayoutShellProps) {
 
       {/* Main canvas — col 2, row 2. Content transitions smoothly. */}
       <main className="nb-ide-main" role="main" aria-label="Tool workspace">
+        {/*
+         * initial={false}: Skip mount animation on first render to avoid
+         * flash-of-empty-state when navigating directly to a tool URL.
+         * mode="wait": Ensure exit animation completes before enter begins.
+         */}
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={pathname}

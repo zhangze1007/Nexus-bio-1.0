@@ -239,6 +239,8 @@ export default function ToolsDirectoryPage() {
   }
 
   return (
+    // position:absolute + inset:0 fills the nb-ide-main container provided
+    // by the persistent ToolsLayoutShell (app/tools/layout.tsx)
     <div style={{ position: 'absolute', inset: 0, background: '#000000', color: '#f5f7fb', overflow: 'auto' }}>
       <main>
         <section style={{ padding: '32px 18px 20px' }}>
