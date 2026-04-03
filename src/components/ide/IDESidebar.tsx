@@ -1,81 +1,178 @@
 'use client';
+/**
+ * Nexus-Bio IDE Sidebar — Apple-style overlay with Framer Motion
+ *
+ * Performance model:
+ *   • position: fixed — sidebar is an independent compositing layer.
+ *   • Width is animated via Framer Motion spring, NOT CSS grid column,
+ *     so the main content never reflows.
+ *   • Backdrop overlay uses AnimatePresence for smooth fade in/out.
+ *
+ * z-index rationale:
+ *   Z_BACKDROP (40) — translucent blur layer sits above main content
+ *                      but below the sidebar panel.
+ *   Z_SIDEBAR  (50) — the panel itself is the topmost interactive layer,
+ *                      below any future modals (z ≥ 60).
+ *
+ * Spring config rationale:
+ *   stiffness: 300, damping: 30 — models a fast, critically-damped spring
+ *   that decelerates naturally (≈ Apple HIG). Higher stiffness = snappier
+ *   response; damping 30 prevents oscillation while keeping a soft tail.
+ */
+
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ChevronLeft, ChevronRight, LayoutGrid } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useUIStore } from '../../store/uiStore';
 import { TOOL_DEFINITIONS, TOOL_DIRECTIONS } from '../tools/shared/toolRegistry';
 import { T } from '../ide/tokens';
 
+// ── Design tokens ──────────────────────────────────────────────────────
 const SANS  = T.SANS;
 const BRAND = T.BRAND;
-
 const BORDER = 'rgba(255,255,255,0.08)';
 const LABEL  = 'rgba(255,255,255,0.28)';
 const VALUE  = 'rgba(255,255,255,0.9)';
 
+/** Collapsed width — icon-only strip (≈ 80 px). */
+export const W_COLLAPSED = 80;
+/** Expanded width — full labels & sections. */
+export const W_EXPANDED  = 320;
+
+const Z_BACKDROP = 40;
+const Z_SIDEBAR  = 50;
+
+/** Height of IDETopBar defined in globals.css (.nb-ide-topbar). */
+const TOPBAR_H = 56;
+
+/** Spring physics: stiffness 300 + damping 30 → fast yet organic. */
+const SPRING: { type: 'spring'; stiffness: number; damping: number } = {
+  type: 'spring',
+  stiffness: 300,
+  damping: 30,
+};
+
+// ── Component ──────────────────────────────────────────────────────────
+
 export default function IDESidebar() {
-  const pathname = usePathname();
+  const pathname  = usePathname();
   const collapsed = useUIStore((s) => s.sidebarCollapsed);
-  const toggle = useUIStore((s) => s.toggleSidebarCollapsed);
+  const toggle    = useUIStore((s) => s.toggleSidebarCollapsed);
 
   return (
-    <aside className="nb-ide-sidebar" role="navigation" aria-label="Tool navigation">
-      <div
+    <>
+      {/* ── Backdrop blur overlay (AnimatePresence for enter/exit) ── */}
+      <AnimatePresence>
+        {!collapsed && (
+          <motion.div
+            key="sidebar-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={toggle}
+            className="backdrop-blur-md bg-black/20"
+            style={{
+              position: 'fixed',
+              top: TOPBAR_H,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              zIndex: Z_BACKDROP,
+              cursor: 'pointer',
+            }}
+            aria-hidden
+          />
+        )}
+      </AnimatePresence>
+
+      {/* ── Sidebar panel (spring-animated width) ────────────────── */}
+      <motion.aside
+        role="navigation"
+        aria-label="Tool navigation"
+        animate={{ width: collapsed ? W_COLLAPSED : W_EXPANDED }}
+        transition={SPRING}
         style={{
-          position: 'relative',
+          position: 'fixed',
+          top: TOPBAR_H,
+          left: 0,
+          bottom: 0,
+          zIndex: Z_SIDEBAR,
           display: 'flex',
-          alignItems: 'center',
-          justifyContent: collapsed ? 'center' : 'space-between',
-          gap: '10px',
-          padding: collapsed ? '14px 10px' : '14px 16px',
-          borderBottom: `1px solid ${BORDER}`,
+          flexDirection: 'column',
+          background: '#050505',
+          borderRight: '1px solid #1f1f1f',
+          overflowY: 'auto',
+          overflowX: 'hidden',
+          willChange: 'width',
         }}
       >
-        <Link
-          href="/tools"
+        {/* ── Header ─────────────────────────────────────────────── */}
+        <div
           style={{
+            position: 'relative',
             display: 'flex',
             alignItems: 'center',
-            gap: '10px',
-            textDecoration: 'none',
-            minWidth: 0,
+            justifyContent: collapsed ? 'center' : 'space-between',
+            gap: 10,
+            padding: collapsed ? '14px 10px' : '14px 16px',
+            borderBottom: `1px solid ${BORDER}`,
           }}
         >
-          <div
+          <Link
+            href="/tools"
             style={{
-              width: '30px',
-              height: '30px',
-              borderRadius: '10px',
-              background: 'rgba(255,255,255,0.06)',
-              border: '1px solid rgba(255,255,255,0.14)',
-              display: 'grid',
-              placeItems: 'center',
-              flexShrink: 0,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              textDecoration: 'none',
+              minWidth: 0,
             }}
           >
-            <LayoutGrid size={14} style={{ color: 'rgba(255,255,255,0.75)' }} />
-          </div>
-          {!collapsed && (
-            <div style={{ minWidth: 0 }}>
-              <div style={{ fontFamily: BRAND, fontSize: '13px', fontWeight: 700, color: VALUE }}>
+            <div
+              style={{
+                width: 30,
+                height: 30,
+                borderRadius: 10,
+                background: 'rgba(255,255,255,0.06)',
+                border: '1px solid rgba(255,255,255,0.14)',
+                display: 'grid',
+                placeItems: 'center',
+                flexShrink: 0,
+              }}
+            >
+              <LayoutGrid size={14} style={{ color: 'rgba(255,255,255,0.75)' }} />
+            </div>
+
+            {/* Brand text — smooth opacity fade during expand/collapse */}
+            <motion.div
+              animate={{ opacity: collapsed ? 0 : 1 }}
+              transition={{ duration: collapsed ? 0.1 : 0.25, delay: collapsed ? 0 : 0.08 }}
+              style={{
+                minWidth: 0,
+                pointerEvents: collapsed ? 'none' : 'auto',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              <div style={{ fontFamily: BRAND, fontSize: 13, fontWeight: 700, color: VALUE }}>
                 Nexus-Bio
               </div>
-              <div style={{ fontFamily: SANS, fontSize: '10px', color: LABEL }}>
+              <div style={{ fontFamily: SANS, fontSize: 10, color: LABEL }}>
                 Tools Directory
               </div>
-            </div>
-          )}
-        </Link>
+            </motion.div>
+          </Link>
 
-        {!collapsed && (
+          {/* Toggle button */}
           <button
             type="button"
             onClick={toggle}
-            title="Collapse sidebar"
+            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             style={{
-              width: '30px',
-              height: '30px',
-              borderRadius: '10px',
+              width: collapsed ? 24 : 30,
+              height: collapsed ? 24 : 30,
+              borderRadius: collapsed ? 8 : 10,
               border: `1px solid ${BORDER}`,
               background: 'rgba(255,255,255,0.04)',
               color: LABEL,
@@ -83,106 +180,111 @@ export default function IDESidebar() {
               display: 'grid',
               placeItems: 'center',
               flexShrink: 0,
+              ...(collapsed
+                ? { position: 'absolute' as const, top: 14, right: 8 }
+                : {}),
             }}
           >
-            <ChevronLeft size={14} />
+            {collapsed ? <ChevronRight size={12} /> : <ChevronLeft size={14} />}
           </button>
-        )}
+        </div>
 
-        {collapsed && (
-          <button
-            type="button"
-            onClick={toggle}
-            title="Expand sidebar"
-            style={{
-              position: 'absolute',
-              top: '14px',
-              right: '8px',
-              width: '24px',
-              height: '24px',
-              borderRadius: '8px',
-              border: `1px solid ${BORDER}`,
-              background: 'rgba(255,255,255,0.04)',
-              color: LABEL,
-              cursor: 'pointer',
-              display: 'grid',
-              placeItems: 'center',
-            }}
-          >
-            <ChevronRight size={12} />
-          </button>
-        )}
-      </div>
+        {/* ── Navigation list ────────────────────────────────────── */}
+        <nav style={{ flex: 1, paddingBottom: 12 }}>
+          {TOOL_DIRECTIONS.map((direction) => {
+            const tools = TOOL_DEFINITIONS.filter((t) => t.direction === direction);
 
-      <nav className="nb-ide-sidebar-nav">
-        {TOOL_DIRECTIONS.map((direction) => {
-          const tools = TOOL_DEFINITIONS.filter((tool) => tool.direction === direction);
-
-          return (
-            <section key={direction} style={{ padding: collapsed ? '10px 8px 0' : '12px 12px 0' }}>
-              {!collapsed && (
-                <p
+            return (
+              <section
+                key={direction}
+                style={{ padding: collapsed ? '10px 8px 0' : '12px 12px 0' }}
+              >
+                {/* Direction label — opacity fade, zero-height when collapsed */}
+                <motion.p
+                  animate={{ opacity: collapsed ? 0 : 1, height: collapsed ? 0 : 'auto' }}
+                  transition={{ duration: 0.15 }}
                   style={{
-                    margin: '0 0 8px',
+                    margin: collapsed ? 0 : '0 0 8px',
                     padding: '0 4px',
                     fontFamily: SANS,
-                    fontSize: '10px',
+                    fontSize: 10,
                     textTransform: 'uppercase',
                     letterSpacing: '0.1em',
                     color: 'rgba(255,255,255,0.2)',
+                    overflow: 'hidden',
+                    pointerEvents: collapsed ? 'none' : 'auto',
                   }}
                 >
                   {direction}
-                </p>
-              )}
+                </motion.p>
 
-              <div style={{ display: 'grid', gap: '6px' }}>
-                {tools.map((tool) => {
-                  const Icon = tool.icon;
-                  const isActive = pathname?.startsWith(tool.href);
+                <div style={{ display: 'grid', gap: 6 }}>
+                  {tools.map((tool) => {
+                    const Icon     = tool.icon;
+                    const isActive = pathname?.startsWith(tool.href);
 
-                  return (
-                    <Link
-                      key={tool.id}
-                      href={tool.href}
-                      title={collapsed ? `${tool.shortLabel} — ${tool.name}` : undefined}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '10px',
-                        padding: collapsed ? '10px 8px' : '10px 12px',
-                        textDecoration: 'none',
-                        borderRadius: '14px',
-                        border: isActive ? '1px solid rgba(255,255,255,0.18)' : '1px solid rgba(255,255,255,0.06)',
-                        background: isActive ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.03)',
-                        minWidth: 0,
-                        justifyContent: collapsed ? 'center' : 'flex-start',
-                      }}
-                    >
-                      <div
+                    return (
+                      <Link
+                        key={tool.id}
+                        href={tool.href}
+                        title={collapsed ? `${tool.shortLabel} — ${tool.name}` : undefined}
                         style={{
-                          width: '30px',
-                          height: '30px',
-                          borderRadius: '10px',
-                          display: 'grid',
-                          placeItems: 'center',
-                          background: isActive ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.05)',
-                          flexShrink: 0,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 10,
+                          padding: collapsed ? '10px 8px' : '10px 12px',
+                          textDecoration: 'none',
+                          borderRadius: 14,
+                          border: isActive
+                            ? '1px solid rgba(255,255,255,0.18)'
+                            : '1px solid rgba(255,255,255,0.06)',
+                          background: isActive
+                            ? 'rgba(255,255,255,0.04)'
+                            : 'rgba(255,255,255,0.03)',
+                          minWidth: 0,
+                          justifyContent: collapsed ? 'center' : 'flex-start',
                         }}
                       >
-                        <Icon size={14} style={{ color: isActive ? '#ffffff' : LABEL }} />
-                      </div>
+                        {/* Icon container — always visible */}
+                        <div
+                          style={{
+                            width: 30,
+                            height: 30,
+                            borderRadius: 10,
+                            display: 'grid',
+                            placeItems: 'center',
+                            background: isActive
+                              ? 'rgba(255,255,255,0.12)'
+                              : 'rgba(255,255,255,0.05)',
+                            flexShrink: 0,
+                          }}
+                        >
+                          <Icon
+                            size={14}
+                            style={{ color: isActive ? '#ffffff' : LABEL }}
+                          />
+                        </div>
 
-                      {!collapsed && (
-                        <div style={{ minWidth: 0 }}>
+                        {/* Label text — smooth opacity fade */}
+                        <motion.div
+                          animate={{ opacity: collapsed ? 0 : 1 }}
+                          transition={{
+                            duration: collapsed ? 0.1 : 0.2,
+                            delay: collapsed ? 0 : 0.06,
+                          }}
+                          style={{
+                            minWidth: 0,
+                            pointerEvents: collapsed ? 'none' : 'auto',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
                           <div
                             style={{
                               fontFamily: SANS,
-                              fontSize: '11px',
+                              fontSize: 11,
                               fontWeight: 600,
                               color: isActive ? '#ffffff' : 'rgba(255,255,255,0.55)',
                               lineHeight: 1.25,
-                              whiteSpace: 'nowrap',
                               overflow: 'hidden',
                               textOverflow: 'ellipsis',
                             }}
@@ -192,26 +294,27 @@ export default function IDESidebar() {
                           <div
                             style={{
                               fontFamily: SANS,
-                              fontSize: '10px',
-                              color: isActive ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.2)',
+                              fontSize: 10,
+                              color: isActive
+                                ? 'rgba(255,255,255,0.5)'
+                                : 'rgba(255,255,255,0.2)',
                               lineHeight: 1.2,
-                              whiteSpace: 'nowrap',
                               overflow: 'hidden',
                               textOverflow: 'ellipsis',
                             }}
                           >
                             {tool.name}
                           </div>
-                        </div>
-                      )}
-                    </Link>
-                  );
-                })}
-              </div>
-            </section>
-          );
-        })}
-      </nav>
-    </aside>
+                        </motion.div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </section>
+            );
+          })}
+        </nav>
+      </motion.aside>
+    </>
   );
 }
