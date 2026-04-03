@@ -1,13 +1,13 @@
-import { redirect } from 'next/navigation';
 import type { Metadata } from 'next';
+import MetabolicEngClient from './MetabolicEngClient';
 
 export const metadata: Metadata = {
-  title: 'Pathway & Enzyme Design | Nexus-Bio',
+  title: 'Metabolic Engineering Lab | Nexus-Bio',
   description:
-    'Redirecting to the unified Pathway & Enzyme Design workbench.',
+    'Real-time flux balance analysis, Michaelis-Menten kinetics simulation, and cytoplasm fluid dynamics for metabolic pathway engineering.',
 };
 
-// LAB merged into PATHD — redirect for backward compatibility
+// Server Component — only renders the client shell (no WebGL here)
 export default function Page() {
-  redirect('/tools/pathd');
+  return <MetabolicEngClient />;
 }
