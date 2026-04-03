@@ -1,6 +1,5 @@
 'use client';
 import { useState, useMemo, useRef } from 'react';
-import IDEShell from '../ide/IDEShell';
 import AlgorithmInsight from '../ide/shared/AlgorithmInsight';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
@@ -351,7 +350,7 @@ export default function FBASimPage() {
   const exportData = simMode === 'single' ? singleResult : communityResult;
 
   return (
-    <IDEShell moduleId="fbasim">
+    <>
       <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', background: '#000000' }}>
         <AlgorithmInsight
           title={simMode === 'single' ? 'Flux Balance Analysis' : 'Community FBA — Multi-species'}
@@ -585,6 +584,6 @@ export default function FBASimPage() {
           <ExportButton label="Export SVG" data={null} filename={`fbasim-${simMode}-chart`} format="svg" svgRef={chartRef} />
         </div>
       </div>
-    </IDEShell>
+    </>
   );
 }

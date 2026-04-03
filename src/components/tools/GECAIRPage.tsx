@@ -1,6 +1,5 @@
 'use client';
 import { useState, useMemo } from 'react';
-import IDEShell from '../ide/IDEShell';
 import AlgorithmInsight from '../ide/shared/AlgorithmInsight';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
@@ -138,7 +137,7 @@ export default function GECAIRPage() {
   }), [gateType, inputA, inputB, finalOutput, noiseScore]);
 
   return (
-    <IDEShell moduleId="gecair">
+    <>
       <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', background: '#050505' }}>
         <AlgorithmInsight
           title="Gene Circuit AI Reasoner"
@@ -230,6 +229,6 @@ export default function GECAIRPage() {
           <ExportButton label="Export JSON" data={exportData} filename="gecair-circuit" format="json" />
         </div>
       </div>
-    </IDEShell>
+    </>
   );
 }

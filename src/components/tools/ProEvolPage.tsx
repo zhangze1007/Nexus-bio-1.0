@@ -1,6 +1,5 @@
 'use client';
 import { useState, useMemo, useCallback } from 'react';
-import IDEShell from '../ide/IDEShell';
 import AlgorithmInsight from '../ide/shared/AlgorithmInsight';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
@@ -131,7 +130,7 @@ export default function ProEvolPage() {
   );
 
   return (
-    <IDEShell moduleId="proevol">
+    <>
       <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', background: '#050505' }}>
         <AlgorithmInsight
           title="Directed Evolution Simulator"
@@ -229,6 +228,6 @@ export default function ProEvolPage() {
           <ExportButton label="Export CSV" data={trajectory} filename="proevol-trajectory" format="csv" />
         </div>
       </div>
-    </IDEShell>
+    </>
   );
 }

@@ -1,5 +1,6 @@
 'use client';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { Home, Terminal, LayoutGrid } from 'lucide-react';
 import { useUIStore } from '../../store/uiStore';
 import { getToolDefinition, TOOL_DEFINITIONS } from '../tools/shared/toolRegistry';
@@ -19,12 +20,14 @@ interface IDETopBarProps {
 }
 
 export default function IDETopBar({ moduleId, actions }: IDETopBarProps) {
+  const pathname = usePathname();
   const toggleConsole = useUIStore((s) => s.toggleConsole);
   const consoleOpen = useUIStore((s) => s.consoleOpen);
   const consoleEntries = useUIStore((s) => s.consoleEntries);
   const errorCount = consoleEntries.filter((entry) => entry.level === 'error').length;
   const tool = getToolDefinition(moduleId);
   const [displayMode] = useDisplayMode();
+  const isDirectory = !moduleId || pathname === '/tools' || pathname === '/tools/';
   const adjacentTools = tool
     ? TOOL_DEFINITIONS.filter((candidate) =>
         candidate.id !== tool.id &&
@@ -63,7 +66,7 @@ export default function IDETopBar({ moduleId, actions }: IDETopBarProps) {
               alignItems: 'center',
               gap: '6px',
               textDecoration: 'none',
-              color: LABEL,
+              color: isDirectory ? VALUE : LABEL,
               fontFamily: SANS,
               fontSize: '11px',
             }}
@@ -72,11 +75,15 @@ export default function IDETopBar({ moduleId, actions }: IDETopBarProps) {
             Tools
           </Link>
 
-          <span style={{ color: 'rgba(255,255,255,0.16)' }}>/</span>
+          {!isDirectory && (
+            <>
+              <span style={{ color: 'rgba(255,255,255,0.16)' }}>/</span>
 
-          <span style={{ fontFamily: MONO, fontSize: '10px', color: 'rgba(255,255,255,0.28)', textTransform: 'uppercase' }}>
-            {tool?.shortLabel ?? moduleId}
-          </span>
+              <span style={{ fontFamily: MONO, fontSize: '10px', color: 'rgba(255,255,255,0.28)', textTransform: 'uppercase' }}>
+                {tool?.shortLabel ?? moduleId}
+              </span>
+            </>
+          )}
 
           {tool && (
             <>

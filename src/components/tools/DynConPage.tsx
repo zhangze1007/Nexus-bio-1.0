@@ -1,6 +1,5 @@
 'use client';
 import { useState, useMemo, useRef } from 'react';
-import IDEShell from '../ide/IDEShell';
 import AlgorithmInsight from '../ide/shared/AlgorithmInsight';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
@@ -234,7 +233,7 @@ export default function DynConPage() {
 
   /* ── Render ─────────────────────────────────────────────────────────────── */
   return (
-    <IDEShell moduleId="dyncon">
+    <>
       <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', background: PANEL_BG }}>
         <AlgorithmInsight
           title="Dynamic Control Simulator"
@@ -413,6 +412,6 @@ export default function DynConPage() {
         </>
         )}
       </div>
-    </IDEShell>
+    </>
   );
 }

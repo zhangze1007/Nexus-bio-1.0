@@ -1,6 +1,5 @@
 'use client';
 import { useState, useMemo } from 'react';
-import IDEShell from '../ide/IDEShell';
 import AlgorithmInsight from '../ide/shared/AlgorithmInsight';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
@@ -75,7 +74,7 @@ export default function GenMIMPage() {
   const offTargetRisk = schedule.filter(t => t.knockdown_efficiency < 0.9).length / Math.max(schedule.length, 1);
 
   return (
-    <IDEShell moduleId="genmim">
+    <>
       <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', background: '#000000' }}>
         <AlgorithmInsight
           title="Gene Minimization via CRISPRi"
@@ -201,6 +200,6 @@ export default function GenMIMPage() {
           <ExportButton label="Export All Targets CSV" data={CRISPRI_TARGETS} filename="genmim-targets" format="csv" />
         </div>
       </div>
-    </IDEShell>
+    </>
   );
 }
