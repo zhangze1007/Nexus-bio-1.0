@@ -52,7 +52,7 @@ const DIRECTION_CLUSTER_RECIPES: Record<ToolDirection, {
   'Pathway & Design': {
     demoLabel: '3D pathway storytelling and intervention entry',
     researchLabel: 'Route inspection, node drill-down, and downstream execution',
-    spotlight: ['pathd', 'metabolic-eng'],
+    spotlight: ['pathd', 'catdes'],
   },
   'Structure & Enzyme': {
     demoLabel: 'Candidate enzyme showcase with structure-backed ranking',

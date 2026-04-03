@@ -615,7 +615,7 @@ function Scene({ nodes, edges, onNodeClick, selectedNodeId, roughnessTexture, gl
     const vHalfRad = (cameraFov / 2) * Math.PI / 180;
     const hHalfRad = Math.atan(Math.tan(vHalfRad) * aspect); // horizontal half-FOV from aspect
     const MIN_DISTANCE = 5;
-    const VIEWPORT_PADDING = 1.45;
+    const VIEWPORT_PADDING = 1.55; // Ensures full pathway network fits viewport without manual zoom-out
     const distForX = (sz.x / 2) / Math.tan(hHalfRad);
     const distForY = (sz.y / 2) / Math.tan(vHalfRad);
     const dist = Math.max(distForX, distForY, MIN_DISTANCE) * VIEWPORT_PADDING + (sz.z / 2);
@@ -652,9 +652,10 @@ function Scene({ nodes, edges, onNodeClick, selectedNodeId, roughnessTexture, gl
       <directionalLight position={[4, 10, 6]}  intensity={0.30 * glowMultiplier} color="#FFFFFF" />
       <directionalLight position={[-8, -2, -6]} intensity={0.08} color="#111111" />
       <pointLight position={[centroid.x, centroid.y + 6, centroid.z]} intensity={0.18 * glowMultiplier} color="#FFFFFF" distance={28} decay={2} />
-      <fog attach="fog" args={['#000000', 22, 52]} />
+      <fog attach="fog" args={['#000000', 30, 70]} />
 
-      <OrbitControls ref={controlsRef as React.Ref<never>} makeDefault enableZoom autoRotate={!interact && !hovId && !selectedNodeId} autoRotateSpeed={0.12} zoomSpeed={0.45} minDistance={6} maxDistance={24} enablePan={false} onStart={onStart} onEnd={onEnd} target={centroid} />
+      {/* maxDistance 50 accommodates large AI-generated pathway networks without clipping */}
+      <OrbitControls ref={controlsRef as React.Ref<never>} makeDefault enableZoom autoRotate={!interact && !hovId && !selectedNodeId} autoRotateSpeed={0.12} zoomSpeed={0.45} minDistance={6} maxDistance={50} enablePan={false} onStart={onStart} onEnd={onEnd} target={centroid} />
       <SpatialReference stressIndex={stressIndex} centroid={centroid} />
 
       <AmbientParticles />
@@ -757,7 +758,7 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, 
     box.getCenter(center);
     box.getSize(sz);
     const vHalfRad = (44 / 2) * Math.PI / 180;
-    const dist = Math.max(sz.x / 2 / Math.tan(vHalfRad), sz.y / 2 / Math.tan(vHalfRad), 5) * 1.45 + sz.z / 2;
+    const dist = Math.max(sz.x / 2 / Math.tan(vHalfRad), sz.y / 2 / Math.tan(vHalfRad), 5) * 1.55 + sz.z / 2;
     return { position: [center.x, center.y + sz.y * 0.08, center.z + dist] as [number, number, number], fov: 44 };
   }, [safeNodes]);
 

@@ -25,7 +25,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useCallback } from 'react';
-import { ChevronLeft, ChevronRight, LayoutGrid } from 'lucide-react';
+import { LayoutGrid } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUIStore } from '../../store/uiStore';
 import { TOOL_DEFINITIONS, TOOL_DIRECTIONS } from '../tools/shared/toolRegistry';
@@ -202,29 +202,6 @@ export default function IDESidebar() {
             </motion.div>
           </Link>
 
-          {/* Toggle button */}
-          <button
-            type="button"
-            onClick={toggle}
-            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            style={{
-              width: collapsed ? 24 : 30,
-              height: collapsed ? 24 : 30,
-              borderRadius: collapsed ? 8 : 10,
-              border: `1px solid ${BORDER}`,
-              background: 'rgba(255,255,255,0.04)',
-              color: LABEL,
-              cursor: 'pointer',
-              display: 'grid',
-              placeItems: 'center',
-              flexShrink: 0,
-              ...(collapsed
-                ? { position: 'absolute' as const, top: 14, right: 8 }
-                : {}),
-            }}
-          >
-            {collapsed ? <ChevronRight size={12} /> : <ChevronLeft size={14} />}
-          </button>
         </div>
 
         {/* ── Navigation list ────────────────────────────────────── */}
@@ -257,7 +234,7 @@ export default function IDESidebar() {
                   {direction}
                 </motion.p>
 
-                <div style={{ display: 'grid', gap: 6 }}>
+                <div style={{ display: 'grid', gap: collapsed ? 2 : 6 }}>
                   {tools.map((tool) => {
                     const Icon     = tool.icon;
                     const isActive = pathname?.startsWith(tool.href);
@@ -267,42 +244,60 @@ export default function IDESidebar() {
                         key={tool.id}
                         href={tool.href}
                         title={collapsed ? `${tool.shortLabel} — ${tool.name}` : undefined}
+                        onClick={(e) => {
+                          // Prevent sidebar expand/collapse when clicking a tool icon
+                          e.stopPropagation();
+                        }}
                         style={{
                           display: 'flex',
                           alignItems: 'center',
                           gap: 10,
-                          padding: collapsed ? '10px 8px' : '10px 12px',
+                          padding: collapsed ? '8px 0' : '10px 12px',
                           textDecoration: 'none',
-                          borderRadius: 14,
-                          border: isActive
-                            ? '1px solid rgba(255,255,255,0.18)'
-                            : '1px solid rgba(255,255,255,0.06)',
-                          background: isActive
-                            ? 'rgba(255,255,255,0.04)'
-                            : 'rgba(255,255,255,0.03)',
+                          borderRadius: collapsed ? 0 : 14,
+                          border: collapsed
+                            ? 'none'
+                            : isActive
+                              ? '1px solid rgba(255,255,255,0.18)'
+                              : '1px solid rgba(255,255,255,0.06)',
+                          background: collapsed
+                            ? 'transparent'
+                            : isActive
+                              ? 'rgba(255,255,255,0.04)'
+                              : 'rgba(255,255,255,0.03)',
                           minWidth: 0,
                           justifyContent: collapsed ? 'center' : 'flex-start',
                         }}
                       >
-                        {/* Icon container — always visible */}
-                        <div
-                          style={{
-                            width: 30,
-                            height: 30,
-                            borderRadius: 10,
-                            display: 'grid',
-                            placeItems: 'center',
-                            background: isActive
-                              ? 'rgba(255,255,255,0.12)'
-                              : 'rgba(255,255,255,0.05)',
-                            flexShrink: 0,
-                          }}
-                        >
+                        {/* Icon — pure icon when collapsed, boxed when expanded */}
+                        {collapsed ? (
                           <Icon
-                            size={14}
-                            style={{ color: isActive ? '#ffffff' : LABEL }}
+                            size={16}
+                            style={{
+                              color: isActive ? '#ffffff' : LABEL,
+                              flexShrink: 0,
+                            }}
                           />
-                        </div>
+                        ) : (
+                          <div
+                            style={{
+                              width: 30,
+                              height: 30,
+                              borderRadius: 10,
+                              display: 'grid',
+                              placeItems: 'center',
+                              background: isActive
+                                ? 'rgba(255,255,255,0.12)'
+                                : 'rgba(255,255,255,0.05)',
+                              flexShrink: 0,
+                            }}
+                          >
+                            <Icon
+                              size={14}
+                              style={{ color: isActive ? '#ffffff' : LABEL }}
+                            />
+                          </div>
+                        )}
 
                         {/* Label text — smooth opacity fade */}
                         <motion.div
