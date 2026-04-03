@@ -28,9 +28,10 @@
 'use client';
 import { useEffect, type ReactNode } from 'react';
 import { motion } from 'framer-motion';
-import { LayoutGrid } from 'lucide-react';
+import { LayoutGrid, ChevronLeft } from 'lucide-react';
 import { useToolStore } from '../../../store/toolStore';
 import { getToolDefinition } from './toolRegistry';
+import { useNavigation } from '../../../contexts/NavigationContext';
 import { T } from '../../ide/tokens';
 
 const NEON = '#FFFFFF';
@@ -60,6 +61,7 @@ export default function ToolShell({
 }: ToolShellProps) {
   const setActiveModule = useToolStore(s => s.setActiveModule);
   const tool = getToolDefinition(moduleId);
+  const { handleBack } = useNavigation();
 
   useEffect(() => {
     setActiveModule(moduleId);
@@ -87,6 +89,30 @@ export default function ToolShell({
           backdropFilter: 'blur(18px)',
         }}
       >
+        <button
+          type="button"
+          onClick={handleBack}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '4px',
+            minHeight: '30px',
+            padding: '0 8px',
+            borderRadius: '10px',
+            border: '1px solid rgba(255,255,255,0.08)',
+            background: 'rgba(255,255,255,0.03)',
+            color: 'rgba(255,255,255,0.4)',
+            cursor: 'pointer',
+            fontFamily: T.SANS,
+            fontSize: '10px',
+            flexShrink: 0,
+          }}
+          title="Back to Tools"
+        >
+          <ChevronLeft size={12} />
+          Tools
+        </button>
+
         <div style={{
           display: 'inline-flex',
           alignItems: 'center',
