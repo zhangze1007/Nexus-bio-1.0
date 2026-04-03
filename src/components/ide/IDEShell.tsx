@@ -3,11 +3,14 @@
  * Nexus-Bio IDE Shell
  *
  * Layout (CSS Grid):
- *   Col: [64–220px animated sidebar] [1fr main]
- *   Row: [48px topbar] [1fr canvas] [auto console]
+ *   Col: [80px sidebar-spacer] [1fr main]
+ *   Row: [56px topbar] [1fr canvas] [auto console]
+ *
+ * The 80px first column is a static spacer matching the collapsed
+ * sidebar width. The sidebar itself is position:fixed (overlay) and
+ * is NOT part of the grid flow — expanding it never triggers reflow.
  *
  * TopBar:  spans all columns, row 1
- * Sidebar: col 1, rows 2-3 (full height minus topbar)
  * Canvas:  col 2, row 2
  * Console: col 2, row 3 (collapsible, 0 or 180px)
  */
@@ -15,8 +18,6 @@
 import IDESidebar from './IDESidebar';
 import IDETopBar from './IDETopBar';
 import IDEConsole from './IDEConsole';
-import { useUIStore } from '../../store/uiStore';
-import type { CSSProperties } from 'react';
 
 interface IDEShellProps {
   moduleId: string;
@@ -25,20 +26,12 @@ interface IDEShellProps {
 }
 
 export default function IDEShell({ moduleId, children, topBarActions }: IDEShellProps) {
-  const sidebarCollapsed = useUIStore(s => s.sidebarCollapsed);
-  const sidebarWidth = sidebarCollapsed ? 72 : 264;
-
   return (
-    <div
-      className="nb-ide-shell"
-      style={{
-        '--nb-sidebar-width': `${sidebarWidth}px`,
-      } as CSSProperties}
-    >
-      {/* TopBar — row 1, full width */}
+    <div className="nb-ide-shell">
+      {/* TopBar — row 1, spans all columns */}
       <IDETopBar moduleId={moduleId} actions={topBarActions} />
 
-      {/* Sidebar — col 1, rows 2-3 */}
+      {/* Sidebar — fixed overlay, not in grid flow */}
       <IDESidebar />
 
       {/* Main canvas — col 2, row 2 */}

@@ -40,15 +40,19 @@
 .serif { font-family: var(--font-sans); font-weight: 700; }
 .mono  { font-family: var(--font-mono); }
 
+/*
+ * IDE Shell grid — sidebar is now position:fixed (overlay), so the
+ * first column is a static 80px spacer matching the collapsed sidebar.
+ * No CSS transition needed; Framer Motion handles width animation.
+ */
 .nb-ide-shell {
   position: fixed;
   inset: 0;
   background: #000000;
   display: grid;
-  grid-template-columns: var(--nb-sidebar-width) minmax(0, 1fr);
+  grid-template-columns: 80px minmax(0, 1fr);
   grid-template-rows: 56px minmax(0, 1fr) auto;
   overflow: hidden;
-  transition: grid-template-columns 0.25s cubic-bezier(0.4,0,0.2,1);
 }
 
 .nb-ide-topbar {
@@ -63,24 +67,12 @@
   background: rgba(0,0,0,0.8);
   border-bottom: 1px solid #1a1a1a;
   backdrop-filter: blur(10px);
-}
-
-.nb-ide-sidebar {
-  grid-column: 1;
-  grid-row: 2 / 4;
-  display: flex;
-  flex-direction: column;
-  background: #050505;
-  border-right: 1px solid #1f1f1f;
-  overflow-y: auto;
-  overflow-x: hidden;
+  /* Topbar sits above the fixed sidebar panel */
   position: relative;
+  z-index: 55;
 }
 
-.nb-ide-sidebar-nav {
-  flex: 1;
-  padding-bottom: 12px;
-}
+/* Sidebar is position:fixed in the component — no grid placement. */
 
 .nb-ide-main {
   grid-column: 2;
@@ -101,7 +93,6 @@
 
 .nb-pagination button:focus-visible,
 .nb-ide-topbar button:focus-visible,
-.nb-ide-sidebar a:focus-visible,
 .nb-tool-card button:focus-visible,
 .nb-directory-layout button:focus-visible,
 .nb-directory-layout a:focus-visible,
@@ -125,37 +116,24 @@
 
 @media (max-width: 960px) {
   .nb-ide-shell {
+    /* Remove sidebar spacer column on mobile — sidebar is full overlay */
     grid-template-columns: 1fr;
-    grid-template-rows: 56px auto minmax(0, 1fr) auto;
+    grid-template-rows: 56px minmax(0, 1fr) auto;
   }
 
   .nb-ide-topbar {
     padding: 0 12px;
   }
 
-  .nb-ide-sidebar {
-    grid-column: 1;
-    grid-row: 2;
-    border-right: none;
-    border-bottom: 1px solid rgba(255,255,255,0.08);
-    max-height: 180px;
-  }
-
   .nb-ide-main {
     grid-column: 1;
-    grid-row: 3;
+    grid-row: 2;
     overflow: auto;
   }
 
   .nb-ide-console {
     grid-column: 1;
-    grid-row: 4;
-  }
-
-  .nb-ide-sidebar-nav {
-    display: grid;
-    gap: 8px;
-    padding-bottom: 16px;
+    grid-row: 3;
   }
 }
 
