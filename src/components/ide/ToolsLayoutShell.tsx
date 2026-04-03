@@ -79,7 +79,7 @@ export default function ToolsLayoutShell({ children }: ToolsLayoutShellProps) {
 
   return (
     <NavigationProvider>
-      <div className="nb-ide-shell">
+      <div className="nb-ide-shell" aria-keyshortcuts="Control+Backslash">
         {/* TopBar — fixed at top, z-index: 60. Always mounted. */}
         <IDETopBar moduleId={moduleId ?? ''} />
 
