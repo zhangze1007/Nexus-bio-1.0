@@ -28,6 +28,7 @@ import NodePanel from '../NodePanel';
 import { metabolicMachine, STATE_LABELS } from '../../machines/metabolicMachine';
 import type { FBAWorkerIn, FBAWorkerOut } from '../../workers/fbaWorker';
 import { useUIStore } from '../../store/uiStore';
+import { useToolStore } from '../../store/toolStore';
 import pathwayNodes from '../../data/pathwayData.json';
 import type { PathwayNode, PathwayEdge } from '../../types';
 import { T } from '../ide/tokens';
@@ -123,6 +124,14 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
   const [snapshot, send] = useMachine(metabolicMachine);
   const { params, readouts, rateHistory } = snapshot.context;
   const state = snapshot.value as 'idle' | 'simulating' | 'stress_test' | 'equilibrium';
+
+  // ── Track active module for cross-module state ──────────────────
+  const setActiveModule = useToolStore(s => s.setActiveModule);
+  useEffect(() => {
+    const moduleId = embedded ? 'pathd' : 'metabolic-eng';
+    setActiveModule(moduleId);
+    return () => setActiveModule(null);
+  }, [embedded, setActiveModule]);
 
   // ── Zustand: node selection + AI-generated pathway ───────────────
   const selectedNode    = useUIStore(s => s.selectedNode);
@@ -272,7 +281,7 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
 
   return (
     <div style={{
-      position: embedded ? 'absolute' : 'fixed', inset:0,
+      position: 'absolute', inset:0,
       background:'#000000',
       overflow:'hidden', userSelect:'none',
     }}>
