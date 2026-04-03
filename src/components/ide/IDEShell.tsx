@@ -15,7 +15,6 @@
 
 import IDESidebar from './IDESidebar';
 import IDETopBar from './IDETopBar';
-import IDEConsole from './IDEConsole';
 
 interface IDEShellProps {
   moduleId: string;
@@ -36,9 +35,6 @@ export default function IDEShell({ moduleId, children, topBarActions }: IDEShell
       <main className="nb-ide-main" role="main" aria-label="Tool workspace">
         {children}
       </main>
-
-      {/* Console — bottom panel */}
-      <IDEConsole />
     </div>
   );
 }

@@ -85,13 +85,13 @@
   position: relative;
   overflow: hidden;
   background: #000000;
-  margin-left: 80px; /* collapsed sidebar width */
+  padding-left: 80px; /* collapsed sidebar width — fixed offset */
   z-index: 10;
 }
 
 .nb-ide-console {
   flex-shrink: 0;
-  margin-left: 80px; /* collapsed sidebar width */
+  padding-left: 80px; /* collapsed sidebar width — fixed offset */
 }
 
 .nb-tool-shell__body {
@@ -128,12 +128,12 @@
   }
 
   .nb-ide-main {
-    margin-left: 0;
+    padding-left: 0;
     overflow: auto;
   }
 
   .nb-ide-console {
-    margin-left: 0;
+    padding-left: 0;
   }
 }
 

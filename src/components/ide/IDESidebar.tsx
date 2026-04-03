@@ -93,6 +93,7 @@ export default function IDESidebar() {
       {/* ── Sidebar panel (spring-animated width) ────────────────── */}
       <motion.aside
         layout
+        layoutId="nexus-sidebar"
         role="navigation"
         aria-label="Tool navigation"
         aria-expanded={!collapsed}
