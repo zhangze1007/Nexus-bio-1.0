@@ -26,6 +26,7 @@ import { T } from '../ide/tokens';
 
 const STORAGE_KEY = 'nexus-bio-favorite-tools';
 
+type ShellFilter = 'All' | 'ide' | 'bento';
 type SortMode = 'name' | 'category' | 'workflow';
 
 const DIRECTION_NOTES: Record<string, string> = {
@@ -51,7 +52,7 @@ const DIRECTION_CLUSTER_RECIPES: Record<ToolDirection, {
   'Pathway & Design': {
     demoLabel: '3D pathway storytelling and intervention entry',
     researchLabel: 'Route inspection, node drill-down, and downstream execution',
-    spotlight: ['pathd', 'metabolic-eng'],
+    spotlight: ['pathd', 'catdes'],
   },
   'Structure & Enzyme': {
     demoLabel: 'Candidate enzyme showcase with structure-backed ranking',
@@ -114,6 +115,7 @@ export default function ToolsDirectoryPage() {
   const initialTool = searchParams.get('tool');
   const [query, setQuery] = useState('');
   const [direction, setDirection] = useState<ToolDirection | 'All'>('All');
+  const [shellFilter, setShellFilter] = useState<ShellFilter>('All');
   const [sortMode, setSortMode] = useState<SortMode>('workflow');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(6);
@@ -155,12 +157,13 @@ export default function ToolsDirectoryPage() {
       return [...TOOL_DEFINITIONS]
       .filter((tool) => matchesQuery(tool, query))
       .filter((tool) => direction === 'All' || tool.direction === direction)
+      .filter((tool) => shellFilter === 'All' || tool.shell === shellFilter)
       .sort((a, b) => compareBy(sortMode, a).localeCompare(compareBy(sortMode, b)));
-  }, [direction, query, sortMode]);
+  }, [direction, query, shellFilter, sortMode]);
 
   useEffect(() => {
     setPage(1);
-  }, [query, direction, sortMode]);
+  }, [query, direction, shellFilter, sortMode]);
 
   useEffect(() => {
     if (!filteredTools.some((tool) => tool.id === selectedToolId)) {
@@ -202,6 +205,24 @@ export default function ToolsDirectoryPage() {
     const start = (safeRelatedPage - 1) * relatedPageSize;
     return relatedTools.slice(start, start + relatedPageSize);
   }, [relatedTools, safeRelatedPage]);
+  const directionClusters = useMemo(
+    () => TOOL_DIRECTIONS.map((currentDirection) => ({
+      direction: currentDirection,
+      tools: TOOL_DEFINITIONS
+        .filter((tool) => tool.direction === currentDirection)
+        .sort((a, b) => {
+          const aIndex = DIRECTION_CLUSTER_RECIPES[currentDirection].spotlight.indexOf(a.id);
+          const bIndex = DIRECTION_CLUSTER_RECIPES[currentDirection].spotlight.indexOf(b.id);
+          const aScore = aIndex === -1 ? 99 : aIndex;
+          const bScore = bIndex === -1 ? 99 : bIndex;
+          return aScore - bScore || a.name.localeCompare(b.name);
+        })
+        .slice(0, displayMode === 'demo' ? 2 : 4),
+      total: TOOL_DEFINITIONS.filter((tool) => tool.direction === currentDirection).length,
+      strong3d: TOOL_DEFINITIONS.filter((tool) => tool.direction === currentDirection && tool.threeDPotential === 'strong').length,
+    })),
+    [displayMode],
+  );
 
   function toggleFavorite(toolId: string) {
     setFavoriteIds((prev) =>
@@ -222,7 +243,7 @@ export default function ToolsDirectoryPage() {
     // by the persistent ToolsLayoutShell (app/tools/layout.tsx)
     <div style={{ position: 'absolute', inset: 0, background: '#000000', color: '#f5f7fb', overflow: 'auto' }}>
       <main>
-        <section style={{ padding: '36px 28px 40px' }}>
+        <section style={{ padding: '32px 18px 20px' }}>
           <div style={{ maxWidth: '1480px', margin: '0 auto' }}>
             <div
               style={{
@@ -262,16 +283,14 @@ export default function ToolsDirectoryPage() {
                       letterSpacing: '-0.045em',
                     }}
                   >
-                    A scientific workbench<br />
-                    Entry point for every<br />
-                    Nexus-Bio tool.
+                    A single scientific workbench entry point for every Nexus-Bio tool.
                   </h1>
                   <p
                     style={{
                       margin: 0,
                       maxWidth: '72ch',
                       fontFamily: T.SANS,
-                      fontSize: '13px',
+                      fontSize: '15px',
                       lineHeight: 1.7,
                       color: 'rgba(255,255,255,0.55)',
                     }}
@@ -342,6 +361,86 @@ export default function ToolsDirectoryPage() {
                 </div>
                 <DisplayModeToggle />
               </div>
+
+              <section
+                style={{
+                  borderRadius: '20px',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  background: '#050505',
+                  padding: '16px',
+                }}
+              >
+                <p style={{ margin: '0 0 12px', fontFamily: T.MONO, fontSize: '10px', color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase' }}>
+                  Direction clusters
+                </p>
+                <div style={{ display: 'grid', gap: '12px', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
+                  {directionClusters.map((cluster) => (
+                    <div
+                      key={cluster.direction}
+                      style={{
+                        borderRadius: '18px',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        background: direction === cluster.direction ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.02)',
+                        padding: '14px',
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', marginBottom: '8px' }}>
+                        <div>
+                          <p style={{ margin: '0 0 4px', fontFamily: T.SANS, fontSize: '13px', fontWeight: 700 }}>{cluster.direction}</p>
+                          <p style={{ margin: 0, fontFamily: T.MONO, fontSize: '10px', color: 'rgba(255,255,255,0.3)' }}>
+                            {cluster.total} tools · {cluster.strong3d} strong 3D
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setDirection(cluster.direction)}
+                          style={{
+                            minHeight: '30px',
+                            padding: '0 10px',
+                            borderRadius: '999px',
+                            border: '1px solid rgba(255,255,255,0.08)',
+                            background: 'rgba(255,255,255,0.03)',
+                            color: 'rgba(255,255,255,0.55)',
+                            cursor: 'pointer',
+                            fontFamily: T.MONO,
+                            fontSize: '10px',
+                          }}
+                        >
+                          Open
+                        </button>
+                      </div>
+                      <p style={{ margin: '0 0 10px', fontFamily: T.SANS, fontSize: '12px', lineHeight: 1.6, color: 'rgba(255,255,255,0.45)' }}>
+                        {displayMode === 'demo'
+                          ? DIRECTION_CLUSTER_RECIPES[cluster.direction].demoLabel
+                          : DIRECTION_CLUSTER_RECIPES[cluster.direction].researchLabel}
+                      </p>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                        {cluster.tools.map((tool) => (
+                          <Link
+                            key={tool.id}
+                            href={tool.href}
+                            style={{
+                              minHeight: '28px',
+                              padding: '0 10px',
+                              borderRadius: '999px',
+                              border: '1px solid rgba(255,255,255,0.08)',
+                              background: tool.threeDPotential === 'strong' ? 'rgba(147,203,82,0.10)' : 'rgba(255,255,255,0.03)',
+                              color: tool.threeDPotential === 'strong' ? 'rgba(147,203,82,0.95)' : 'rgba(255,255,255,0.55)',
+                              textDecoration: 'none',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              fontFamily: T.MONO,
+                              fontSize: '10px',
+                            }}
+                          >
+                            {tool.shortLabel}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
 
               <div className="nb-directory-layout" style={{ display: 'grid', gridTemplateColumns: '280px minmax(0, 1fr) 320px', gap: '18px' }}>
                 <aside
@@ -418,6 +517,39 @@ export default function ToolsDirectoryPage() {
                                   fontFamily: T.SANS,
                                   fontSize: '12px',
                                   textAlign: 'left',
+                                }}
+                              >
+                                {item}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      <div>
+                        <p style={{ margin: '0 0 8px', fontFamily: T.MONO, fontSize: '10px', color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase' }}>
+                          Shell type
+                        </p>
+                        <div style={{ display: 'grid', gap: '8px', gridTemplateColumns: '1fr 1fr 1fr' }}>
+                          {(['All', 'ide', 'bento'] as const).map((item) => {
+                            const active = item === shellFilter;
+                            return (
+                              <button
+                                key={item}
+                                type="button"
+                                onClick={() => setShellFilter(item)}
+                                aria-pressed={active}
+                                style={{
+                                  minHeight: '36px',
+                                  borderRadius: '12px',
+                                  border: active ? '1px solid rgba(255,255,255,0.18)' : '1px solid rgba(255,255,255,0.1)',
+                                  background: active ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.03)',
+                                  color: active ? '#ffffff' : 'rgba(255,255,255,0.5)',
+                                  cursor: 'pointer',
+                                  fontFamily: T.MONO,
+                                  fontSize: '11px',
+                                  textTransform: 'uppercase',
+                                  letterSpacing: '0.06em',
                                 }}
                               >
                                 {item}
@@ -655,12 +787,13 @@ export default function ToolsDirectoryPage() {
                           {filteredTools.length} tool{filteredTools.length === 1 ? '' : 's'} match the current query and filter state.
                         </p>
                       </div>
-                      {(query || direction !== 'All') && (
+                      {(query || direction !== 'All' || shellFilter !== 'All') && (
                         <button
                           type="button"
                           onClick={() => {
                             setQuery('');
                             setDirection('All');
+                            setShellFilter('All');
                             setSortMode('workflow');
                           }}
                           style={{
@@ -688,7 +821,7 @@ export default function ToolsDirectoryPage() {
                         />
                       </div>
                     ) : (
-                      <div className="nb-directory-cards" style={{ display: 'grid', gap: '14px', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', padding: '18px' }}>
+                      <div className="nb-directory-cards" style={{ display: 'grid', gap: '12px', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', padding: '16px' }}>
                         {pagedTools.map((tool) => {
                           const Icon = tool.icon;
                           const isSelected = tool.id === selectedToolId;
@@ -706,7 +839,7 @@ export default function ToolsDirectoryPage() {
                                 borderRadius: '18px',
                                 border: isSelected ? '1px solid rgba(255,255,255,0.18)' : '1px solid rgba(255,255,255,0.08)',
                                 background: isSelected ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.03)',
-                                padding: '18px',
+                                padding: '16px',
                                 boxShadow: isSelected ? '0 12px 36px rgba(7,15,24,0.42)' : 'none',
                               }}
                             >
@@ -730,10 +863,10 @@ export default function ToolsDirectoryPage() {
                                     <p style={{ margin: '0 0 4px', fontFamily: T.MONO, fontSize: '10px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)' }}>
                                       {tool.shortLabel} · {tool.direction}
                                     </p>
-                                    <h2 style={{ margin: '0 0 6px', fontFamily: T.SANS, fontSize: '15px', lineHeight: 1.25, letterSpacing: '-0.02em' }}>
+                                    <h2 style={{ margin: '0 0 6px', fontFamily: T.SANS, fontSize: '17px', lineHeight: 1.25, letterSpacing: '-0.02em' }}>
                                       {tool.name}
                                     </h2>
-                                    <p style={{ margin: 0, fontFamily: T.SANS, fontSize: '12px', lineHeight: 1.65, color: 'rgba(255,255,255,0.55)' }}>
+                                    <p style={{ margin: 0, fontFamily: T.SANS, fontSize: '13px', lineHeight: 1.65, color: 'rgba(255,255,255,0.55)' }}>
                                       {tool.summary}
                                     </p>
                                   </div>
@@ -833,7 +966,7 @@ export default function ToolsDirectoryPage() {
                                     color: '#ffffff',
                                     cursor: 'pointer',
                                     fontFamily: T.SANS,
-                                    fontSize: '12px',
+                                    fontSize: '13px',
                                     fontWeight: 600,
                                   }}
                                 >
@@ -854,7 +987,7 @@ export default function ToolsDirectoryPage() {
                                     alignItems: 'center',
                                     gap: '8px',
                                     fontFamily: T.SANS,
-                                    fontSize: '12px',
+                                    fontSize: '13px',
                                     fontWeight: 700,
                                   }}
                                 >
