@@ -67,9 +67,15 @@ export default function IDESidebar() {
    * Full-Height Hotzone handler:
    *   • Collapsed → click anywhere on sidebar expands it
    *   • Expanded  → click on a link/button navigates; click on empty space collapses
+   *
+   * Keyboard accessibility: we only intercept pointer clicks (detail > 0).
+   * Keyboard-triggered events (Enter/Space on links) pass through normally.
    */
   const handleSidebarClick = useCallback(
     (e: React.MouseEvent<HTMLElement>) => {
+      // detail === 0 means keyboard-triggered "click" → let it pass through
+      if (e.detail === 0) return;
+
       if (collapsed) {
         // Prevent any link navigation when collapsed; expand instead
         e.preventDefault();
@@ -136,7 +142,7 @@ export default function IDESidebar() {
           overflowY: 'auto',
           overflowX: 'hidden',
           willChange: 'width',
-          cursor: 'pointer',
+          cursor: collapsed ? 'pointer' : 'default',
         }}
       >
         {/* ── Header ─────────────────────────────────────────────── */}
