@@ -103,7 +103,7 @@ export default function IDESidebar() {
             role="button"
             aria-label="Open sidebar"
             tabIndex={0}
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } }}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); toggle(); } }}
             style={{
               position: 'fixed',
               top: TOPBAR_H,
