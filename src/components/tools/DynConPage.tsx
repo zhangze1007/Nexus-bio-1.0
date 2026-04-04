@@ -275,7 +275,7 @@ export default function DynConPage() {
                   <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE }}>{rbsMapping.rbsStrength.toFixed(2)}</span>
                 </div>
                 <div style={{ height: '6px', borderRadius: '3px', background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
-                  <div style={{ height: '100%', width: `${rbsMapping.rbsStrength * 100}%`, borderRadius: '3px', background: '#F0FDFA', transition: 'width 0.3s ease' }} />
+                  <div style={{ height: '100%', width: `${rbsMapping.rbsStrength * 100}%`, borderRadius: '3px', background: 'linear-gradient(90deg, #00FFFF, #FF00FF)', boxShadow: '0 0 6px rgba(0,255,255,0.2)', transition: 'width 0.3s ease' }} />
                 </div>
               </div>
               {/* DNA Sequence */}
@@ -343,10 +343,10 @@ export default function DynConPage() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '8px' }}>
                 <span style={{
                   width: '8px', height: '8px', borderRadius: '50%',
-                  background: convergence.isStable ? 'rgba(80,200,120,0.9)' : 'rgba(255,80,80,0.9)',
-                  boxShadow: convergence.isStable ? '0 0 6px rgba(80,200,120,0.4)' : '0 0 6px rgba(255,80,80,0.4)',
+                  background: convergence.isStable ? '#39FF14' : '#FF3131',
+                  boxShadow: convergence.isStable ? '0 0 6px rgba(57,255,20,0.4)' : '0 0 6px rgba(255,49,49,0.4)',
                 }} />
-                <span style={{ fontFamily: T.SANS, fontSize: '11px', color: convergence.isStable ? 'rgba(80,200,120,0.9)' : 'rgba(255,80,80,0.9)' }}>
+                <span style={{ fontFamily: T.SANS, fontSize: '11px', color: convergence.isStable ? '#39FF14' : '#FF3131' }}>
                   {convergence.isStable ? 'Stable' : 'Unstable'}
                 </span>
               </div>
@@ -366,10 +366,15 @@ export default function DynConPage() {
                     height: '100%', borderRadius: '4px', transition: 'width 0.3s ease',
                     width: `${Math.min(1, burden.burdenIndex) * 100}%`,
                     background: burden.burdenIndex < 0.3
-                      ? 'rgba(80,200,120,0.8)'
+                      ? '#39FF14'
                       : burden.burdenIndex < 0.6
-                        ? 'rgba(255,139,31,0.8)'
-                        : 'rgba(255,80,80,0.8)',
+                        ? 'linear-gradient(90deg, #00FFFF, #FF00FF)'
+                        : '#FF3131',
+                    boxShadow: burden.burdenIndex < 0.3
+                      ? '0 0 6px rgba(57,255,20,0.3)'
+                      : burden.burdenIndex < 0.6
+                        ? '0 0 6px rgba(0,255,255,0.2)'
+                        : '0 0 6px rgba(255,49,49,0.3)',
                   }} />
                 </div>
               </div>
@@ -379,10 +384,10 @@ export default function DynConPage() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '8px' }}>
                 <span style={{
                   width: '8px', height: '8px', borderRadius: '50%',
-                  background: burden.isViable ? 'rgba(80,200,120,0.9)' : 'rgba(255,80,80,0.9)',
-                  boxShadow: burden.isViable ? '0 0 6px rgba(80,200,120,0.4)' : '0 0 6px rgba(255,80,80,0.4)',
+                  background: burden.isViable ? '#39FF14' : '#FF3131',
+                  boxShadow: burden.isViable ? '0 0 6px rgba(57,255,20,0.4)' : '0 0 6px rgba(255,49,49,0.4)',
                 }} />
-                <span style={{ fontFamily: T.SANS, fontSize: '11px', color: burden.isViable ? 'rgba(80,200,120,0.9)' : 'rgba(255,80,80,0.9)' }}>
+                <span style={{ fontFamily: T.SANS, fontSize: '11px', color: burden.isViable ? '#39FF14' : '#FF3131' }}>
                   {burden.isViable ? 'Viable' : 'Non-viable'}
                 </span>
               </div>

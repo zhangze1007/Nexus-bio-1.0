@@ -110,7 +110,7 @@ function ParamSlider({ def, value, onChange, forceRef }: SliderProps) {
       {/* Track */}
       <div style={{ position:'relative', height:'20px', display:'flex', alignItems:'center' }}>
         <div style={{ position:'absolute', left:0, right:0, height:'3px', borderRadius:'2px', background:'rgba(255,255,255,0.06)' }}>
-          <div style={{ width:`${pct}%`, height:'100%', borderRadius:'2px', background:'rgba(255,255,255,0.7)', transition:'width 0.08s' }} />
+          <div style={{ width:`${pct}%`, height:'100%', borderRadius:'2px', background:'linear-gradient(90deg, #00FFFF, #FF00FF)', boxShadow:'0 0 6px rgba(0,255,255,0.2), 0 0 6px rgba(255,0,255,0.2)', transition:'width 0.08s' }} />
         </div>
         <input
           type="range"
@@ -216,7 +216,7 @@ export default function ToolOverlay({
             <motion.div
               animate={{ opacity:[0.4, 1, 0.4] }}
               transition={{ duration:1.5, repeat:Infinity }}
-              style={{ width:'5px', height:'5px', borderRadius:'50%', background:'rgba(255,255,255,0.65)' }}
+              style={{ width:'5px', height:'5px', borderRadius:'50%', background:'#39FF14', boxShadow:'0 0 6px rgba(57,255,20,0.5)' }}
             />
             <span style={{ fontFamily: T.MONO, fontSize:'8px', fontWeight:600, color:'rgba(255,255,255,0.65)', letterSpacing:'0.1em' }}>
               {stateLabel}
