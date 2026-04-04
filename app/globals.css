@@ -90,13 +90,14 @@
   position: relative;
   overflow: hidden;
   background: #000000;
-  padding-left: 80px; /* collapsed sidebar width — fixed offset */
+  /* Content offset is on the absolutely-positioned motion.div (left: 80px),
+     not on this container, because padding is ignored by absolute children. */
   z-index: 10;
 }
 
 .nb-ide-console {
   flex-shrink: 0;
-  padding-left: 80px; /* collapsed sidebar width — fixed offset */
+  padding-left: 80px; /* collapsed sidebar width — for in-flow console */
 }
 
 .nb-tool-shell__body {
@@ -133,8 +134,18 @@
   }
 
   .nb-ide-main {
-    padding-left: 0;
     overflow: auto;
+  }
+
+  /* On mobile/tablet, content uses full width — sidebar is overlay-only */
+  .nb-workbench-content {
+    left: 0 !important;
+  }
+
+  /* Hide collapsed sidebar strip on mobile — only show when expanded (toggled) */
+  .nb-ide-sidebar--collapsed {
+    visibility: hidden;
+    pointer-events: none;
   }
 
   .nb-ide-console {

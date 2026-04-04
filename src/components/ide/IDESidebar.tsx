@@ -109,6 +109,7 @@ export default function IDESidebar() {
         role="navigation"
         aria-label="Tool navigation"
         aria-expanded={!collapsed}
+        className={collapsed ? 'nb-ide-sidebar nb-ide-sidebar--collapsed' : 'nb-ide-sidebar'}
         animate={{ width: collapsed ? W_COLLAPSED : W_EXPANDED }}
         transition={SPRING}
         onClick={handleSidebarClick}
@@ -158,7 +159,6 @@ export default function IDESidebar() {
               textDecoration: 'none',
               minWidth: 0,
               justifyContent: collapsed ? 'center' : 'flex-start',
-              width: collapsed ? '100%' : 'auto',
             }}
           >
             <div
