@@ -71,7 +71,7 @@ export default function ModuleCard({
       }}
       className="nb-tool-card"
     >
-      {/* ── LIVE signal ── */}
+      {/* ── LIVE signal with wave ripple ── */}
       {showSignal && (
         <div style={{
           position: 'absolute',
@@ -82,14 +82,41 @@ export default function ModuleCard({
           gap: '6px',
           zIndex: 2,
         }}>
+          {/* Dot container with ripple */}
           <span style={{
+            position: 'relative',
             width: '6px',
             height: '6px',
-            borderRadius: '50%',
-            background: NEON_ORANGE,
-            animation: 'signal-breathe 2.5s ease-in-out infinite',
             flexShrink: 0,
-          }} />
+            display: 'inline-block',
+          }}>
+            {/* Expanding ripple ring */}
+            <span style={{
+              position: 'absolute',
+              inset: 0,
+              borderRadius: '50%',
+              border: '1px solid',
+              borderColor: NEON_ORANGE,
+              animation: 'signal-ripple 2s ease-out infinite',
+            }} />
+            {/* Second ripple ring (delayed) */}
+            <span style={{
+              position: 'absolute',
+              inset: 0,
+              borderRadius: '50%',
+              border: '1px solid',
+              borderColor: NEON_ORANGE,
+              animation: 'signal-ripple 2s ease-out infinite 1s',
+            }} />
+            {/* Core dot */}
+            <span style={{
+              position: 'absolute',
+              inset: 0,
+              borderRadius: '50%',
+              background: NEON_ORANGE,
+              animation: 'signal-breathe 2.5s ease-in-out infinite',
+            }} />
+          </span>
           <span style={{
             fontFamily: T.MONO,
             fontSize: '8px',

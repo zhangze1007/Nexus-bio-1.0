@@ -1,25 +1,19 @@
 'use client';
 /**
- * Nexus-Bio IDE Sidebar — Apple-style overlay with Framer Motion
+ * Nexus-Bio IDE Sidebar — collapsed icon strip + expanded overlay.
  *
- * Performance model:
- *   • position: fixed — sidebar is an independent compositing layer.
- *   • Width is animated via Framer Motion spring, NOT CSS grid column,
- *     so the main content never reflows.
- *   • Backdrop overlay uses AnimatePresence (initial={false}) for smooth
- *     fade in/out without first-render flash.
- *   • layout prop on motion.aside ensures cross-route layout stability.
+ * Layout model:
+ *   Collapsed (80 px) — always visible, icon-only, centered icons.
+ *   Expanded  (320 px) — spring-animated overlay with labels.
+ *   Content offsets via padding-left: 80px (CSS in globals.css).
+ *
+ * Click behaviour:
+ *   Collapsed: clicking an icon navigates. Clicking empty space does nothing.
+ *   Expanded:  clicking an icon navigates. Clicking empty space collapses.
  *
  * z-index hierarchy:
- *   Z_BACKDROP (80) — translucent blur layer sits above main content
- *                      but below the sidebar panel.
- *   Z_SIDEBAR  (90) — the panel itself is the topmost interactive layer,
- *                      below the topbar (100) and any future modals (≥ 110).
- *
- * Spring config rationale:
- *   stiffness: 300, damping: 30 — models a fast, critically-damped spring
- *   that decelerates naturally (≈ Apple HIG). Higher stiffness = snappier
- *   response; damping 30 prevents oscillation while keeping a soft tail.
+ *   Z_BACKDROP (80) — translucent blur layer
+ *   Z_SIDEBAR  (90) — the panel itself
  */
 
 import Link from 'next/link';
@@ -38,8 +32,8 @@ const BORDER = 'rgba(255,255,255,0.08)';
 const LABEL  = 'rgba(255,255,255,0.28)';
 const VALUE  = 'rgba(255,255,255,0.9)';
 
-/** Collapsed width — fully hidden (0 px). Sidebar is overlay-only. */
-export const W_COLLAPSED = 0;
+/** Collapsed width — icon-only strip (80 px). */
+export const W_COLLAPSED = 80;
 /** Expanded width — full labels & sections. */
 export const W_EXPANDED  = 320;
 
@@ -64,18 +58,15 @@ export default function IDESidebar() {
   const toggle    = useUIStore((s) => s.toggleSidebarCollapsed);
 
   /**
-   * Sidebar click handler (expanded state only):
-   *   • Expanded  → click on empty (non-interactive) area collapses sidebar
-   *   • Collapsed → no action (icons navigate directly, header icon expands)
-   *
-   * Keyboard accessibility: we only intercept pointer clicks (detail > 0).
+   * Sidebar click handler:
+   *   Collapsed → do nothing (empty space ignored, icons navigate directly)
+   *   Expanded  → collapse when clicking empty (non-interactive) area
    */
   const handleSidebarClick = useCallback(
     (e: React.MouseEvent<HTMLElement>) => {
       if (e.detail === 0) return;           // keyboard "click" — pass through
-      if (collapsed) return;                // collapsed: no empty-space toggle
+      if (collapsed) return;                // collapsed: ignore empty-space clicks
 
-      // Expanded: collapse when clicking non-interactive area
       const target = e.target as HTMLElement;
       if (!target.closest('a, button')) {
         toggle();
@@ -86,7 +77,7 @@ export default function IDESidebar() {
 
   return (
     <>
-      {/* ── Backdrop blur overlay ── */}
+      {/* ── Backdrop blur overlay (expanded only) ── */}
       <AnimatePresence initial={false}>
         {!collapsed && (
           <motion.div
@@ -111,53 +102,63 @@ export default function IDESidebar() {
         )}
       </AnimatePresence>
 
-      {/* ── Sidebar panel — overlay, only visible when expanded ── */}
-      <AnimatePresence initial={false}>
-        {!collapsed && (
-          <motion.aside
-            key="sidebar-panel"
-            role="navigation"
-            aria-label="Tool navigation"
-            initial={{ x: -W_EXPANDED }}
-            animate={{ x: 0 }}
-            exit={{ x: -W_EXPANDED }}
-            transition={SPRING}
-            onClick={handleSidebarClick}
-            style={{
-              position: 'fixed',
-              top: TOPBAR_H,
-              left: 0,
-              bottom: 0,
-              width: W_EXPANDED,
-              zIndex: Z_SIDEBAR,
-              display: 'flex',
-              flexDirection: 'column',
-              background: '#050505',
-              borderRight: '1px solid #1f1f1f',
-              overflowY: 'auto',
-              overflowX: 'hidden',
-            }}
-          >
+      {/* ── Sidebar panel (always rendered, animated width) ── */}
+      <motion.aside
+        layout
+        layoutId="nexus-sidebar"
+        role="navigation"
+        aria-label="Tool navigation"
+        aria-expanded={!collapsed}
+        animate={{ width: collapsed ? W_COLLAPSED : W_EXPANDED }}
+        transition={SPRING}
+        onClick={handleSidebarClick}
+        style={{
+          position: 'fixed',
+          top: TOPBAR_H,
+          left: 0,
+          bottom: 0,
+          zIndex: Z_SIDEBAR,
+          display: 'flex',
+          flexDirection: 'column',
+          background: '#050505',
+          borderRight: '1px solid #1f1f1f',
+          overflowY: 'auto',
+          overflowX: 'hidden',
+          scrollbarWidth: 'none',
+          willChange: 'width',
+          cursor: collapsed ? 'default' : 'default',
+        }}
+      >
         {/* ── Header ─────────────────────────────────────────────── */}
         <div
           style={{
             position: 'relative',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between',
+            justifyContent: collapsed ? 'center' : 'space-between',
             gap: 10,
-            padding: '14px 16px',
+            padding: collapsed ? '14px 0' : '14px 16px',
             borderBottom: `1px solid ${BORDER}`,
           }}
         >
           <Link
             href="/tools"
+            onClick={(e) => {
+              if (collapsed) {
+                // Collapsed: toggle sidebar open (don't navigate)
+                e.preventDefault();
+                toggle();
+              }
+              e.stopPropagation();
+            }}
             style={{
               display: 'flex',
               alignItems: 'center',
               gap: 10,
               textDecoration: 'none',
               minWidth: 0,
+              justifyContent: collapsed ? 'center' : 'flex-start',
+              width: collapsed ? '100%' : 'auto',
             }}
           >
             <div
@@ -165,8 +166,8 @@ export default function IDESidebar() {
                 width: 30,
                 height: 30,
                 borderRadius: 10,
-                background: 'rgba(255,255,255,0.06)',
-                border: '1px solid rgba(255,255,255,0.14)',
+                background: 'rgba(255,255,255,0.05)',
+                border: `1px solid ${BORDER}`,
                 display: 'grid',
                 placeItems: 'center',
                 flexShrink: 0,
@@ -175,17 +176,27 @@ export default function IDESidebar() {
               <LayoutGrid size={14} style={{ color: 'rgba(255,255,255,0.75)' }} />
             </div>
 
-            {/* Brand text */}
-            <div style={{ minWidth: 0, whiteSpace: 'nowrap' }}>
+            {/* Brand text — hidden when collapsed */}
+            <motion.div
+              animate={{ opacity: collapsed ? 0 : 1 }}
+              transition={{ duration: collapsed ? 0.1 : 0.25, delay: collapsed ? 0 : 0.08 }}
+              aria-hidden={collapsed}
+              style={{
+                width: collapsed ? 0 : 'auto',
+                overflow: 'hidden',
+                minWidth: 0,
+                pointerEvents: collapsed ? 'none' : 'auto',
+                whiteSpace: 'nowrap',
+              }}
+            >
               <div style={{ fontFamily: BRAND, fontSize: 13, fontWeight: 700, color: VALUE }}>
                 Nexus-Bio
               </div>
               <div style={{ fontFamily: SANS, fontSize: 10, color: LABEL }}>
                 Tools Directory
               </div>
-            </div>
+            </motion.div>
           </Link>
-
         </div>
 
         {/* ── Navigation list ────────────────────────────────────── */}
@@ -196,24 +207,29 @@ export default function IDESidebar() {
             return (
               <section
                 key={direction}
-                style={{ padding: '12px 12px 0' }}
+                style={{ padding: collapsed ? '10px 8px 0' : '12px 12px 0' }}
               >
-                {/* Direction label */}
-                <p
+                {/* Direction label — hidden when collapsed */}
+                <motion.p
+                  animate={{ opacity: collapsed ? 0 : 1, height: collapsed ? 0 : 'auto' }}
+                  transition={{ duration: 0.15 }}
+                  aria-hidden={collapsed}
                   style={{
-                    margin: '0 0 8px',
+                    margin: collapsed ? 0 : '0 0 8px',
                     padding: '0 4px',
                     fontFamily: SANS,
                     fontSize: 10,
                     textTransform: 'uppercase',
                     letterSpacing: '0.1em',
                     color: 'rgba(255,255,255,0.2)',
+                    overflow: 'hidden',
+                    pointerEvents: collapsed ? 'none' : 'auto',
                   }}
                 >
                   {direction}
-                </p>
+                </motion.p>
 
-                <div style={{ display: 'grid', gap: 6 }}>
+                <div style={{ display: 'grid', gap: collapsed ? 2 : 6 }}>
                   {tools.map((tool) => {
                     const Icon     = tool.icon;
                     const isActive = pathname?.startsWith(tool.href);
@@ -222,26 +238,36 @@ export default function IDESidebar() {
                       <Link
                         key={tool.id}
                         href={tool.href}
+                        title={collapsed ? `${tool.shortLabel} — ${tool.name}` : undefined}
                         onClick={(e) => {
-                          e.stopPropagation();
+                          // Collapsed: navigate directly (don't expand sidebar)
+                          // Expanded: navigate + stop propagation so sidebar doesn't collapse
+                          if (!collapsed) e.stopPropagation();
                         }}
+                        className="nb-tool-icon"
                         style={{
                           display: 'flex',
                           alignItems: 'center',
                           gap: 10,
-                          padding: '10px 12px',
+                          padding: collapsed ? '4px 0' : '10px 12px',
                           textDecoration: 'none',
-                          borderRadius: 14,
-                          border: isActive
-                            ? '1px solid rgba(255,139,31,0.20)'
-                            : '1px solid rgba(255,255,255,0.06)',
-                          background: isActive
-                            ? 'rgba(255,139,31,0.06)'
-                            : 'rgba(255,255,255,0.03)',
+                          borderRadius: collapsed ? 0 : 14,
+                          border: collapsed
+                            ? 'none'
+                            : isActive
+                              ? '1px solid rgba(255,139,31,0.20)'
+                              : '1px solid rgba(255,255,255,0.06)',
+                          background: collapsed
+                            ? 'transparent'
+                            : isActive
+                              ? 'rgba(255,139,31,0.06)'
+                              : 'rgba(255,255,255,0.03)',
                           minWidth: 0,
+                          justifyContent: collapsed ? 'center' : 'flex-start',
+                          transition: 'background 0.15s, border-color 0.15s',
                         }}
                       >
-                        {/* Icon box with square */}
+                        {/* Icon box — 30×30 rounded square, always visible */}
                         <div
                           style={{
                             width: 30,
@@ -254,7 +280,7 @@ export default function IDESidebar() {
                               : 'rgba(255,255,255,0.05)',
                             border: isActive
                               ? '1px solid rgba(255,139,31,0.25)'
-                              : '1px solid rgba(255,255,255,0.06)',
+                              : `1px solid ${BORDER}`,
                             flexShrink: 0,
                           }}
                         >
@@ -264,8 +290,22 @@ export default function IDESidebar() {
                           />
                         </div>
 
-                        {/* Label text */}
-                        <div style={{ minWidth: 0, whiteSpace: 'nowrap' }}>
+                        {/* Label text — hidden when collapsed via width:0 */}
+                        <motion.div
+                          animate={{ opacity: collapsed ? 0 : 1 }}
+                          transition={{
+                            duration: collapsed ? 0.1 : 0.2,
+                            delay: collapsed ? 0 : 0.06,
+                          }}
+                          aria-hidden={collapsed}
+                          style={{
+                            width: collapsed ? 0 : 'auto',
+                            overflow: 'hidden',
+                            minWidth: 0,
+                            pointerEvents: collapsed ? 'none' : 'auto',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
                           <div
                             style={{
                               fontFamily: SANS,
@@ -293,7 +333,7 @@ export default function IDESidebar() {
                           >
                             {tool.name}
                           </div>
-                        </div>
+                        </motion.div>
                       </Link>
                     );
                   })}
@@ -302,9 +342,7 @@ export default function IDESidebar() {
             );
           })}
         </nav>
-          </motion.aside>
-        )}
-      </AnimatePresence>
+      </motion.aside>
     </>
   );
 }

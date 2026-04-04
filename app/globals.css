@@ -73,7 +73,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 0 16px;
+  padding: 0 16px 0 96px; /* 80px sidebar + 16px gap */
   background: rgba(0,0,0,0.8);
   border-bottom: 1px solid #1a1a1a;
   backdrop-filter: blur(10px);
@@ -83,20 +83,20 @@
   flex-shrink: 0;
 }
 
-/* Sidebar is position:fixed overlay — not in flow. */
+/* Sidebar is position:fixed — not in flow. Content offset via padding-left. */
 
 .nb-ide-main {
   flex: 1;
   position: relative;
   overflow: hidden;
   background: #000000;
-  /* No padding-left: sidebar is overlay-only, content uses full width */
+  padding-left: 80px; /* collapsed sidebar width — fixed offset */
   z-index: 10;
 }
 
 .nb-ide-console {
   flex-shrink: 0;
-  /* No padding-left: sidebar is overlay-only */
+  padding-left: 80px; /* collapsed sidebar width — fixed offset */
 }
 
 .nb-tool-shell__body {
@@ -128,11 +128,17 @@
 
 @media (max-width: 960px) {
   .nb-ide-topbar {
+    /* Remove sidebar spacer padding on mobile — sidebar is full overlay */
     padding: 0 12px;
   }
 
   .nb-ide-main {
+    padding-left: 0;
     overflow: auto;
+  }
+
+  .nb-ide-console {
+    padding-left: 0;
   }
 }
 
