@@ -239,9 +239,12 @@ export default function IDESidebar() {
                         href={tool.href}
                         title={collapsed ? `${tool.shortLabel} — ${tool.name}` : undefined}
                         onClick={(e) => {
-                          // Collapsed: navigate directly (don't expand sidebar)
-                          // Expanded: navigate + stop propagation so sidebar doesn't collapse
-                          if (!collapsed) e.stopPropagation();
+                          if (collapsed) {
+                            // Collapsed: open sidebar instead of navigating
+                            e.preventDefault();
+                            toggle();
+                          }
+                          e.stopPropagation();
                         }}
                         className="nb-tool-icon"
                         style={{
