@@ -172,8 +172,8 @@ export default function IDESidebar() {
                 width: 30,
                 height: 30,
                 borderRadius: 10,
-                background: 'rgba(255,255,255,0.06)',
-                border: '1px solid rgba(255,255,255,0.14)',
+                background: collapsed ? 'transparent' : 'rgba(255,255,255,0.06)',
+                border: collapsed ? 'none' : '1px solid rgba(255,255,255,0.14)',
                 display: 'grid',
                 placeItems: 'center',
                 flexShrink: 0,
@@ -189,6 +189,8 @@ export default function IDESidebar() {
               aria-hidden={collapsed}
               style={{
                 minWidth: 0,
+                width: collapsed ? 0 : 'auto',
+                overflow: 'hidden',
                 pointerEvents: collapsed ? 'none' : 'auto',
                 whiteSpace: 'nowrap',
               }}
