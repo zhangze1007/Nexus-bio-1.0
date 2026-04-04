@@ -79,7 +79,7 @@ export default function IDETopBar({ moduleId, actions }: IDETopBarProps) {
             <>
               <span style={{ color: 'rgba(255,255,255,0.16)' }}>/</span>
 
-              <span style={{ fontFamily: MONO, fontSize: '10px', color: 'rgba(255,255,255,0.28)', textTransform: 'uppercase' }}>
+              <span style={{ fontFamily: MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase' }}>
                 {tool?.shortLabel ?? moduleId}
               </span>
             </>
