@@ -55,7 +55,7 @@ export default function ToolsLayoutShell({ children }: ToolsLayoutShellProps) {
     if (pathname !== prevPathRef.current) {
       prevPathRef.current = pathname;
       if (!sidebarCollapsed) {
-        useUIStore.getState().toggleSidebarCollapsed();
+        useUIStore.setState({ sidebarCollapsed: true });
       }
     }
   }, [pathname, sidebarCollapsed]);
@@ -74,13 +74,15 @@ export default function ToolsLayoutShell({ children }: ToolsLayoutShellProps) {
           {/*
            * initial={false}: Skip mount animation on first render to avoid
            * flash-of-empty-state when navigating directly to a tool URL.
-           * mode="wait": Ensure exit animation completes before enter begins.
+           *
+           * Cross-fade mode (no mode="wait"): Old and new page overlap during
+           * transition to avoid black flash between routes.
            *
            * left offset: On workbench pages the collapsed sidebar occupies
            * W_COLLAPSED px on the left. The motion.div uses explicit left
            * instead of inset:0 so content starts after the sidebar, not under it.
            */}
-          <AnimatePresence mode="wait" initial={false}>
+          <AnimatePresence initial={false}>
             <motion.div
               key={pathname}
               initial={{ opacity: 0 }}

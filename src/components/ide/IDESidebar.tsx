@@ -256,9 +256,12 @@ export default function IDESidebar() {
                         href={tool.href}
                         title={collapsed ? `${tool.shortLabel} — ${tool.name}` : undefined}
                         onClick={(e) => {
-                          // In collapsed state, let click bubble to sidebar handler
-                          // which will preventDefault and expand the sidebar
-                          if (!collapsed) {
+                          if (collapsed) {
+                            // Prevent Next.js Link navigation when collapsed;
+                            // let click bubble to parent which will expand sidebar.
+                            e.preventDefault();
+                          } else {
+                            // Expanded: stop propagation so sidebar doesn't collapse
                             e.stopPropagation();
                           }
                         }}
@@ -285,6 +288,7 @@ export default function IDESidebar() {
                       >
                         {/* Icon — always in a visible rounded box */}
                         <div
+                          className="nb-tool-icon"
                           style={{
                             width: 30,
                             height: 30,
@@ -300,6 +304,7 @@ export default function IDESidebar() {
                                 : '1px solid rgba(255,255,255,0.08)'
                               : 'none',
                             flexShrink: 0,
+                            transition: 'background 0.1s ease',
                           }}
                         >
                           <Icon

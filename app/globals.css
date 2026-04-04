@@ -102,6 +102,11 @@
   display: none;
 }
 
+/* Tool icon active/pressed feedback — subtle brightness on tap */
+.nb-tool-icon:active {
+  background: rgba(255,255,255,0.18) !important;
+}
+
 .nb-workbench .nb-ide-console {
   padding-left: 80px; /* collapsed sidebar width */
 }
