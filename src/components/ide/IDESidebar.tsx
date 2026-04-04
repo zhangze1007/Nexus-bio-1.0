@@ -212,7 +212,10 @@ export default function IDESidebar() {
             return (
               <section
                 key={direction}
-                style={{ padding: collapsed ? '10px 8px 0' : '12px 12px 0' }}
+                style={{
+                  padding: collapsed ? '10px 8px 0' : '12px 12px 0',
+                  borderTop: collapsed ? '1px solid rgba(255,255,255,0.06)' : 'none',
+                }}
               >
                 {/* Direction label — opacity fade, zero-height when collapsed */}
                 <motion.p
