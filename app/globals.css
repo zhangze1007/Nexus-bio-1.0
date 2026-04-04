@@ -36,8 +36,8 @@
   --color-text-4:    rgba(255,255,255,0.18);
   --color-accent:    rgba(255,255,255,0.78);
 
-  /* Accent gradient — Cyan→Magenta */
-  --accent-gradient: linear-gradient(45deg, #00FFFF, #FF00FF);
+  /* Accent gradient — Blue→Orange */
+  --accent-gradient: linear-gradient(90deg, #4A7CFF, #FF8B1F);
   --neon-success:    #39FF14;
   --neon-danger:     #FF3131;
 }

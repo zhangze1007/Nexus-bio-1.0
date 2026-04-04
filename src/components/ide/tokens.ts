@@ -23,9 +23,9 @@ export const T = {
   P_ROSE:  '#F8D8E4',
   P_LEMON: '#F4F0C0',
 
-  // Neon accent colors
-  NEON_CYAN:    '#00FFFF',
-  NEON_MAGENTA: '#FF00FF',
+  // Neon accent colors — Blue→Orange gradient
+  NEON_BLUE:    '#4A7CFF',
+  NEON_ORANGE:  '#FF8B1F',
   NEON_SUCCESS: '#39FF14',
   NEON_DANGER:  '#FF3131',
 

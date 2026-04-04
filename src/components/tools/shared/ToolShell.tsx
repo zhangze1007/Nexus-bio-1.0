@@ -34,7 +34,7 @@ import { getToolDefinition } from './toolRegistry';
 import { useNavigation } from '../../../contexts/NavigationContext';
 import { T } from '../../ide/tokens';
 
-const NEON_CYAN = '#00FFFF';
+const NEON_ACCENT = '#FF8B1F';
 
 export interface ToolShellProps {
   moduleId: string;
@@ -120,9 +120,9 @@ export default function ToolShell({
           minHeight: '30px',
           padding: '0 10px',
           borderRadius: '10px',
-          border: '1px solid rgba(0,255,255,0.15)',
-          background: 'rgba(0,255,255,0.06)',
-          color: NEON_CYAN,
+          border: '1px solid rgba(255,139,31,0.20)',
+          background: 'rgba(255,139,31,0.08)',
+          color: NEON_ACCENT,
           fontFamily: T.MONO,
           fontSize: '10px',
           fontWeight: 700,
@@ -198,9 +198,9 @@ export default function ToolShell({
 export const TOOL_TOKENS = {
   MONO: "'JetBrains Mono','Fira Code',monospace" as const,
   SANS: "'Inter',-apple-system,sans-serif" as const,
-  NEON: '#00FFFF',
-  NEON_CYAN: '#00FFFF',
-  NEON_MAGENTA: '#FF00FF',
+  NEON: '#FF8B1F',
+  NEON_BLUE: '#4A7CFF',
+  NEON_ORANGE: '#FF8B1F',
   NEON_SUCCESS: '#39FF14',
   NEON_DANGER: '#FF3131',
   BG: '#000',

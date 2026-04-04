@@ -275,7 +275,7 @@ export default function DynConPage() {
                   <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE }}>{rbsMapping.rbsStrength.toFixed(2)}</span>
                 </div>
                 <div style={{ height: '6px', borderRadius: '3px', background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
-                  <div style={{ height: '100%', width: `${rbsMapping.rbsStrength * 100}%`, borderRadius: '3px', background: 'linear-gradient(90deg, #00FFFF, #FF00FF)', boxShadow: '0 0 6px rgba(0,255,255,0.2)', transition: 'width 0.3s ease' }} />
+                  <div style={{ height: '100%', width: `${rbsMapping.rbsStrength * 100}%`, borderRadius: '3px', background: 'linear-gradient(90deg, #4A7CFF, #FF8B1F)', boxShadow: '0 0 6px rgba(74,124,255,0.2)', transition: 'width 0.3s ease' }} />
                 </div>
               </div>
               {/* DNA Sequence */}
@@ -368,12 +368,12 @@ export default function DynConPage() {
                     background: burden.burdenIndex < 0.3
                       ? '#39FF14'
                       : burden.burdenIndex < 0.6
-                        ? 'linear-gradient(90deg, #00FFFF, #FF00FF)'
+                        ? 'linear-gradient(90deg, #4A7CFF, #FF8B1F)'
                         : '#FF3131',
                     boxShadow: burden.burdenIndex < 0.3
                       ? '0 0 6px rgba(57,255,20,0.3)'
                       : burden.burdenIndex < 0.6
-                        ? '0 0 6px rgba(0,255,255,0.2)'
+                        ? '0 0 6px rgba(74,124,255,0.2)'
                         : '0 0 6px rgba(255,49,49,0.3)',
                   }} />
                 </div>

@@ -110,7 +110,7 @@ function ParamSlider({ def, value, onChange, forceRef }: SliderProps) {
       {/* Track */}
       <div style={{ position:'relative', height:'20px', display:'flex', alignItems:'center' }}>
         <div style={{ position:'absolute', left:0, right:0, height:'3px', borderRadius:'2px', background:'rgba(255,255,255,0.06)' }}>
-          <div style={{ width:`${pct}%`, height:'100%', borderRadius:'2px', background:'linear-gradient(90deg, #00FFFF, #FF00FF)', boxShadow:'0 0 6px rgba(0,255,255,0.2), 0 0 6px rgba(255,0,255,0.2)', transition:'width 0.08s' }} />
+          <div style={{ width:`${pct}%`, height:'100%', borderRadius:'2px', background:'linear-gradient(90deg, #4A7CFF, #FF8B1F)', boxShadow:'0 0 6px rgba(74,124,255,0.2), 0 0 6px rgba(255,139,31,0.2)', transition:'width 0.08s' }} />
         </div>
         <input
           type="range"

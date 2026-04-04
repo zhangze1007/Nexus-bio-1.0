@@ -1,9 +1,9 @@
 /**
  * ModuleCard — BentoGrid cell component.
  *
- * A glassmorphism card with Cyan→Magenta backlight glow and
- * optional neon-green active border. Features "ANALYSIS" live
- * signal indicator with breathing pulse animation.
+ * A glassmorphism card with Blue→Orange backlight glow and
+ * warm frosted-glass aesthetic. Features "LIVE" signal indicator
+ * with orange breathing pulse animation.
  *
  * Designed for the #000 background aesthetic with zero hard borders —
  * separation is achieved via spacing and subtle glow.
@@ -13,9 +13,8 @@ import { motion } from 'framer-motion';
 import type { CSSProperties, ReactNode } from 'react';
 import { T } from '../../ide/tokens';
 
-const NEON_CYAN    = T.NEON_CYAN;
-const NEON_SUCCESS = T.NEON_SUCCESS;
-const BLUR         = 'blur(20px)';
+const NEON_ORANGE  = T.NEON_ORANGE;
+const BLUR         = 'blur(16px)';
 
 interface ModuleCardProps {
   children: ReactNode;
@@ -33,7 +32,7 @@ interface ModuleCardProps {
   rowSpan?: number;
   /** Remove all padding (for full-bleed visualizations) */
   flush?: boolean;
-  /** Show ANALYSIS live signal (default: true) */
+  /** Show LIVE signal (default: true) */
   showSignal?: boolean;
 }
 
@@ -53,13 +52,13 @@ export default function ModuleCard({
         gridRow: rowSpan ? `span ${rowSpan}` : undefined,
         borderRadius: '18px',
         background: 'rgba(255,255,255,0.05)',
-        backdropFilter: active ? BLUR : 'none',
-        WebkitBackdropFilter: active ? BLUR : 'none',
+        backdropFilter: BLUR,
+        WebkitBackdropFilter: BLUR,
         border: active
-          ? `1px solid rgba(0,255,255,0.25)`
-          : '1px solid rgba(255,255,255,0.06)',
+          ? '1px solid rgba(255,139,31,0.25)'
+          : '1px solid rgba(255,255,255,0.08)',
         boxShadow: active
-          ? `0 0 20px rgba(0,255,255,0.08), 0 0 20px rgba(255,0,255,0.06)`
+          ? '0 0 20px rgba(255,139,31,0.10), 0 0 20px rgba(74,124,255,0.06)'
           : 'none',
         padding: flush ? 0 : '18px',
         overflow: 'hidden',
@@ -72,35 +71,35 @@ export default function ModuleCard({
       }}
       className="nb-tool-card"
     >
-      {/* ── ANALYSIS live signal ── */}
+      {/* ── LIVE signal ── */}
       {showSignal && (
         <div style={{
           position: 'absolute',
-          top: flush ? '8px' : '6px',
-          right: flush ? '10px' : '8px',
+          top: flush ? '10px' : '8px',
+          right: flush ? '12px' : '10px',
           display: 'flex',
           alignItems: 'center',
-          gap: '5px',
+          gap: '6px',
           zIndex: 2,
         }}>
           <span style={{
-            fontFamily: T.MONO,
-            fontSize: '7px',
-            fontWeight: 600,
-            letterSpacing: '0.12em',
-            textTransform: 'uppercase',
-            color: `${NEON_SUCCESS}80`,
-          }}>
-            ANALYSIS
-          </span>
-          <span style={{
-            width: '5px',
-            height: '5px',
+            width: '6px',
+            height: '6px',
             borderRadius: '50%',
-            background: NEON_SUCCESS,
+            background: NEON_ORANGE,
             animation: 'signal-breathe 2.5s ease-in-out infinite',
             flexShrink: 0,
           }} />
+          <span style={{
+            fontFamily: T.MONO,
+            fontSize: '8px',
+            fontWeight: 600,
+            letterSpacing: '0.1em',
+            textTransform: 'uppercase',
+            color: 'rgba(255,255,255,0.45)',
+          }}>
+            LIVE
+          </span>
         </div>
       )}
 
@@ -108,7 +107,7 @@ export default function ModuleCard({
         <div style={{
           fontFamily: T.SANS, fontSize: '9px', fontWeight: 500,
           textTransform: 'uppercase', letterSpacing: '0.12em',
-          color: active ? NEON_CYAN : 'rgba(255,255,255,0.3)',
+          color: active ? NEON_ORANGE : 'rgba(255,255,255,0.3)',
           marginBottom: flush ? 0 : '10px',
           padding: flush ? '12px 14px 0' : 0,
           flexShrink: 0,
