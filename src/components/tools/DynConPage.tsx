@@ -3,6 +3,7 @@ import { useState, useMemo, useRef, useEffect } from 'react';
 import AlgorithmInsight from '../ide/shared/AlgorithmInsight';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
+import DemoBanner from '../ide/shared/DemoBanner';
 import { useUIStore } from '../../store/uiStore';
 import { useToolStore } from '../../store/toolStore';
 import SimErrorBanner from '../ide/shared/SimErrorBanner';
@@ -274,6 +275,9 @@ export default function DynConPage() {
           description="Fed-batch bioreactor with PID-controlled DO₂ and Hill-function negative feedback on ADS expression. RK4 integration."
           formula="f(FPP) = Vmax·Kd^n / (Kd^n + FPP^n)"
         />
+        <div style={{ padding: '0 16px' }}>
+          <DemoBanner context="Artemisinin biosynthesis PID control (Ro et al. 2006)" />
+        </div>
 
         {simError ? (
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px' }}>

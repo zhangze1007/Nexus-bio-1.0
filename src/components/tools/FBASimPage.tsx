@@ -3,6 +3,7 @@ import { useState, useMemo, useRef, useEffect } from 'react';
 import AlgorithmInsight from '../ide/shared/AlgorithmInsight';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
+import DemoBanner from '../ide/shared/DemoBanner';
 import SimErrorBanner from '../ide/shared/SimErrorBanner';
 import { usePersistedState } from '../ide/shared/usePersistedState';
 import { useUIStore } from '../../store/uiStore';
@@ -399,6 +400,9 @@ export default function FBASimPage() {
             ? 'max cᵀv s.t. Sv=0, lb≤v≤ub'
             : 'S_com = [S₁, 0, E₁; 0, S₂, E₂]'}
         />
+        <div style={{ padding: '0 16px 4px' }}>
+          <DemoBanner context="E. coli central metabolism (glycolysis + TCA)" />
+        </div>
 
         {/* Mode toggle */}
         <div style={{ padding: '0 16px 8px', display: 'flex', gap: '4px', flexShrink: 0 }}>

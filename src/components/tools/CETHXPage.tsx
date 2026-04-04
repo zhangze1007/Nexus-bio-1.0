@@ -6,6 +6,7 @@ import ModuleCard from './shared/ModuleCard';
 import TactileSlider from './shared/TactileSlider';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
+import DemoBanner from '../ide/shared/DemoBanner';
 import { PATHWAY_STEPS, computeThermo } from '../../data/mockCETHX';
 import type { PathwayKey } from '../../data/mockCETHX';
 import { useToolStore } from '../../store/toolStore';
@@ -174,6 +175,7 @@ export default function CETHXPage() {
       gap={6}
       footer={
         <>
+          <DemoBanner context="Glycolysis / TCA / Pentose Phosphate thermodynamics" />
           <ExportButton label="Export JSON" data={thermo} filename="cethx-thermodynamics" format="json" />
           <ExportButton label="Export CSV" data={thermo.steps} filename="cethx-steps" format="csv" />
         </>
