@@ -243,7 +243,7 @@ export default function DynConPage() {
       appendConsole({
         level: 'info',
         module: 'DYNCON',
-        message: `ODE sim complete — Kp=${kp} Ki=${ki} Kd=${kd} SP=${setpoint} | Product=${productTiter.toFixed(2)} g/L | RMSE=${doRmse.toFixed(3)} | ${convergence.converged ? 'Converged' : 'Not converged'}`,
+        message: `ODE sim complete — Kp=${kp} Ki=${ki} Kd=${kd} SP=${setpoint} | Product=${productTiter.toFixed(2)} g/L | RMSE=${doRmse.toFixed(3)} | ${convergence.isStable ? 'Stable' : 'Unstable'}`,
       });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -259,7 +259,7 @@ export default function DynConPage() {
         product: last.product,
         dissolvedO2: last.dissolvedO2,
         kp, ki, kd, setpoint,
-        converged: convergence.converged,
+        converged: convergence.isStable,
         timestamp: Date.now(),
       });
     }

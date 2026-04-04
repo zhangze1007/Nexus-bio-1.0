@@ -368,7 +368,7 @@ export default function FBASimPage() {
       appendConsole({
         level: 'info',
         module: 'FBASIM',
-        message: `Community FBA — E.coli μ=${communityResult.ecoli.growthRate.toFixed(4)} | Yeast μ=${communityResult.yeast.growthRate.toFixed(4)} | Mutualism=${communityResult.mutualismIndex.toFixed(2)}`,
+        message: `Community FBA — E.coli μ=${communityResult.ecoli.growthRate.toFixed(4)} | Yeast μ=${communityResult.yeast.growthRate.toFixed(4)} | Community μ=${communityResult.communityGrowthRate.toFixed(4)}`,
       });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
