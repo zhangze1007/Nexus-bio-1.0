@@ -29,8 +29,7 @@ const INPUT_BORDER = 'rgba(255,255,255,0.08)';
 const INPUT_TEXT = 'rgba(255,255,255,0.7)';
 const GLASS: React.CSSProperties = {
   borderRadius: '24px',
-  backdropFilter: 'blur(10px)',
-  background: 'rgba(255,255,255,0.04)',
+  background: 'rgba(255,255,255,0.05)',
   border: '1px solid rgba(255,255,255,0.08)',
 };
 
