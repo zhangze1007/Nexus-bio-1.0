@@ -11,7 +11,7 @@ const SANS = T.SANS;
 const MONO = T.MONO;
 
 const BORDER = 'rgba(255,255,255,0.08)';
-const LABEL  = 'rgba(255,255,255,0.28)';
+const LABEL  = 'rgba(255,255,255,0.45)';
 const VALUE  = 'rgba(255,255,255,0.9)';
 
 interface IDETopBarProps {

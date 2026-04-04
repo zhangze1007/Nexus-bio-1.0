@@ -23,7 +23,7 @@ import { T, TOOL_RESULT_PALETTE} from '../ide/tokens';
 /* ── Design Tokens ─────────────────────────────────────────────────────────── */
 const PANEL_BG = '#000000';
 const BORDER = 'rgba(255,255,255,0.06)';
-const LABEL = 'rgba(255,255,255,0.28)';
+const LABEL = 'rgba(255,255,255,0.45)';
 const VALUE = 'rgba(255,255,255,0.65)';
 
 const GLASS: React.CSSProperties = {

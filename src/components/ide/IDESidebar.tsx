@@ -35,7 +35,7 @@ import { T } from '../ide/tokens';
 const SANS  = T.SANS;
 const BRAND = T.BRAND;
 const BORDER = 'rgba(255,255,255,0.08)';
-const LABEL  = 'rgba(255,255,255,0.28)';
+const LABEL  = 'rgba(255,255,255,0.45)';
 const VALUE  = 'rgba(255,255,255,0.9)';
 
 /** Collapsed width — icon-only strip (≈ 80 px). */

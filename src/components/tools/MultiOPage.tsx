@@ -41,7 +41,7 @@ const LAYER_COLORS: Record<OmicsLayer, string> = {
 
 const PANEL_BG = '#000000';
 const BORDER = 'rgba(255,255,255,0.06)';
-const LABEL = 'rgba(255,255,255,0.28)';
+const LABEL = 'rgba(255,255,255,0.45)';
 const VALUE = 'rgba(255,255,255,0.65)';
 const INPUT_BG = 'rgba(255,255,255,0.05)';
 const INPUT_BORDER = 'rgba(255,255,255,0.08)';
