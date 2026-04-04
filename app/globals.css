@@ -97,6 +97,11 @@
   flex-shrink: 0;
 }
 
+/* Hide sidebar scrollbar — scroll via gesture / mouse wheel only */
+.nb-ide-shell aside::-webkit-scrollbar {
+  display: none;
+}
+
 .nb-workbench .nb-ide-console {
   padding-left: 80px; /* collapsed sidebar width */
 }

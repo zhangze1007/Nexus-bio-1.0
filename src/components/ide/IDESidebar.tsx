@@ -141,6 +141,8 @@ export default function IDESidebar() {
           borderRight: '1px solid #1f1f1f',
           overflowY: 'auto',
           overflowX: 'hidden',
+          scrollbarWidth: 'none',        /* Firefox */
+          msOverflowStyle: 'none',       /* IE / old Edge */
           willChange: 'width',
           cursor: collapsed ? 'pointer' : 'default',
         }}
@@ -172,8 +174,12 @@ export default function IDESidebar() {
                 width: 30,
                 height: 30,
                 borderRadius: 10,
-                background: collapsed ? 'transparent' : 'rgba(255,255,255,0.06)',
-                border: collapsed ? 'none' : '1px solid rgba(255,255,255,0.14)',
+                background: collapsed
+                  ? 'rgba(255,255,255,0.05)'
+                  : 'rgba(255,255,255,0.06)',
+                border: collapsed
+                  ? '1px solid rgba(255,255,255,0.08)'
+                  : '1px solid rgba(255,255,255,0.14)',
                 display: 'grid',
                 placeItems: 'center',
                 flexShrink: 0,
@@ -250,8 +256,11 @@ export default function IDESidebar() {
                         href={tool.href}
                         title={collapsed ? `${tool.shortLabel} — ${tool.name}` : undefined}
                         onClick={(e) => {
-                          // Prevent sidebar expand/collapse when clicking a tool icon
-                          e.stopPropagation();
+                          // In collapsed state, let click bubble to sidebar handler
+                          // which will preventDefault and expand the sidebar
+                          if (!collapsed) {
+                            e.stopPropagation();
+                          }
                         }}
                         style={{
                           display: 'flex',
