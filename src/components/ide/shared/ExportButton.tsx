@@ -63,17 +63,17 @@ export default function ExportButton({ label, data, filename, format = 'json', s
       style={{
         display: 'flex', alignItems: 'center', gap: '6px',
         padding: '5px 12px',
-        background: 'rgba(0,0,0,0.04)',
-        border: '1px solid rgba(0,0,0,0.10)',
+        background: 'rgba(255,255,255,0.04)',
+        border: '1px solid rgba(255,255,255,0.10)',
         borderRadius: '8px',
-        color: disabled ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.55)',
+        color: disabled ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.55)',
         fontFamily: SANS,
         fontSize: '11px',
         cursor: disabled ? 'not-allowed' : 'pointer',
         transition: 'all 0.15s',
       }}
-      onMouseEnter={e => { if (!disabled) (e.currentTarget as HTMLElement).style.background = 'rgba(0,0,0,0.08)'; }}
-      onMouseLeave={e => { if (!disabled) (e.currentTarget as HTMLElement).style.background = 'rgba(0,0,0,0.04)'; }}
+      onMouseEnter={e => { if (!disabled) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)'; }}
+      onMouseLeave={e => { if (!disabled) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'; }}
     >
       <Download size={11} />
       {label}

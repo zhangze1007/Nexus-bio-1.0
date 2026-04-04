@@ -1,10 +1,13 @@
 'use client';
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import AlgorithmInsight from '../ide/shared/AlgorithmInsight';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
+import DemoBanner from '../ide/shared/DemoBanner';
 import SimErrorBanner from '../ide/shared/SimErrorBanner';
 import { usePersistedState } from '../ide/shared/usePersistedState';
+import { useUIStore } from '../../store/uiStore';
+import { useToolStore } from '../../store/toolStore';
 import {
   METABOLIC_NODES, FLUX_EDGES, REACTION_DEFS, runFBA,
   YEAST_NODES, YEAST_FLUX_EDGES, YEAST_REACTION_DEFS, SHARED_METABOLITES,
@@ -349,6 +352,42 @@ export default function FBASimPage() {
 
   const exportData = simMode === 'single' ? singleResult : communityResult;
 
+  /* ── Console logging ─────────────────────────────────────────────────── */
+  const appendConsole = useUIStore((s) => s.appendConsole);
+  useEffect(() => {
+    const error = simMode === 'single' ? singleError : communityError;
+    if (error) {
+      appendConsole({ level: 'error', module: 'FBASIM', message: `FBA error: ${error}` });
+    } else if (simMode === 'single') {
+      appendConsole({
+        level: 'info',
+        module: 'FBASIM',
+        message: `FBA complete — μ=${singleResult.growthRate.toFixed(4)} h⁻¹ | ATP=${singleResult.atpYield.toFixed(1)} mol/mol | C-eff=${singleResult.carbonEfficiency.toFixed(1)}% | KO=[${knockouts.join(',')||'none'}]`,
+      });
+    } else {
+      appendConsole({
+        level: 'info',
+        module: 'FBASIM',
+        message: `Community FBA — E.coli μ=${communityResult.ecoli.growthRate.toFixed(4)} | Yeast μ=${communityResult.yeast.growthRate.toFixed(4)} | Community μ=${communityResult.communityGrowthRate.toFixed(4)}`,
+      });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [singleResult, communityResult, simMode]);
+
+  /* ── Sync to global toolStore ────────────────────────────────────────── */
+  const setFBA = useToolStore((s) => s.setFBA);
+  useEffect(() => {
+    if (!singleError) {
+      setFBA({
+        growthRate: singleResult.growthRate,
+        fluxes: singleResult.fluxes,
+        objective: singleResult.growthRate,
+        timestamp: Date.now(),
+      });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [singleResult]);
+
   return (
     <>
       <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', background: '#000000' }}>
@@ -361,6 +400,9 @@ export default function FBASimPage() {
             ? 'max cᵀv s.t. Sv=0, lb≤v≤ub'
             : 'S_com = [S₁, 0, E₁; 0, S₂, E₂]'}
         />
+        <div style={{ padding: '0 16px 4px' }}>
+          <DemoBanner context="E. coli central metabolism (glycolysis + TCA)" />
+        </div>
 
         {/* Mode toggle */}
         <div style={{ padding: '0 16px 8px', display: 'flex', gap: '4px', flexShrink: 0 }}>
