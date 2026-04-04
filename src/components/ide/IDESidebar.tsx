@@ -38,8 +38,8 @@ const BORDER = 'rgba(255,255,255,0.08)';
 const LABEL  = 'rgba(255,255,255,0.28)';
 const VALUE  = 'rgba(255,255,255,0.9)';
 
-/** Collapsed width — icon-only strip (≈ 80 px). */
-export const W_COLLAPSED = 80;
+/** Collapsed width — fully hidden (0 px). Sidebar is overlay-only. */
+export const W_COLLAPSED = 0;
 /** Expanded width — full labels & sections. */
 export const W_EXPANDED  = 320;
 
@@ -86,8 +86,7 @@ export default function IDESidebar() {
 
   return (
     <>
-      {/* ── Backdrop blur overlay (AnimatePresence for enter/exit) ── */}
-      {/* initial={false} prevents flash on first render / SSR hydration */}
+      {/* ── Backdrop blur overlay ── */}
       <AnimatePresence initial={false}>
         {!collapsed && (
           <motion.div
@@ -112,112 +111,80 @@ export default function IDESidebar() {
         )}
       </AnimatePresence>
 
-      {/* ── Sidebar panel (spring-animated width) ────────────────── */}
-      <motion.aside
-        layout
-        layoutId="nexus-sidebar"
-        role="navigation"
-        aria-label="Tool navigation"
-        aria-expanded={!collapsed}
-        animate={{ width: collapsed ? W_COLLAPSED : W_EXPANDED }}
-        transition={SPRING}
-        onClick={handleSidebarClick}
-        style={{
-          position: 'fixed',
-          top: TOPBAR_H,
-          left: 0,
-          bottom: 0,
-          zIndex: Z_SIDEBAR,
-          display: 'flex',
-          flexDirection: 'column',
-          background: '#050505',
-          borderRight: '1px solid #1f1f1f',
-          overflowY: 'auto',
-          overflowX: 'hidden',
-          willChange: 'width',
-          cursor: 'default',
-        }}
-      >
+      {/* ── Sidebar panel — overlay, only visible when expanded ── */}
+      <AnimatePresence initial={false}>
+        {!collapsed && (
+          <motion.aside
+            key="sidebar-panel"
+            role="navigation"
+            aria-label="Tool navigation"
+            initial={{ x: -W_EXPANDED }}
+            animate={{ x: 0 }}
+            exit={{ x: -W_EXPANDED }}
+            transition={SPRING}
+            onClick={handleSidebarClick}
+            style={{
+              position: 'fixed',
+              top: TOPBAR_H,
+              left: 0,
+              bottom: 0,
+              width: W_EXPANDED,
+              zIndex: Z_SIDEBAR,
+              display: 'flex',
+              flexDirection: 'column',
+              background: '#050505',
+              borderRight: '1px solid #1f1f1f',
+              overflowY: 'auto',
+              overflowX: 'hidden',
+            }}
+          >
         {/* ── Header ─────────────────────────────────────────────── */}
         <div
           style={{
             position: 'relative',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: collapsed ? 'center' : 'space-between',
+            justifyContent: 'space-between',
             gap: 10,
-            padding: collapsed ? '14px 10px' : '14px 16px',
+            padding: '14px 16px',
             borderBottom: `1px solid ${BORDER}`,
           }}
         >
-          {/* When collapsed, icon is an expand trigger; when expanded, it navigates to /tools */}
-          {collapsed ? (
-            <button
-              type="button"
-              onClick={(e) => { e.stopPropagation(); toggle(); }}
-              aria-label="Expand sidebar"
+          <Link
+            href="/tools"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              textDecoration: 'none',
+              minWidth: 0,
+            }}
+          >
+            <div
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10,
-                background: 'none',
-                border: 'none',
-                padding: 0,
-                cursor: 'pointer',
+                width: 30,
+                height: 30,
+                borderRadius: 10,
+                background: 'rgba(255,255,255,0.06)',
+                border: '1px solid rgba(255,255,255,0.14)',
+                display: 'grid',
+                placeItems: 'center',
+                flexShrink: 0,
               }}
             >
-              <div
-                style={{
-                  width: 30,
-                  height: 30,
-                  borderRadius: 10,
-                  background: 'rgba(255,255,255,0.06)',
-                  border: '1px solid rgba(255,255,255,0.14)',
-                  display: 'grid',
-                  placeItems: 'center',
-                  flexShrink: 0,
-                }}
-              >
-                <LayoutGrid size={14} style={{ color: 'rgba(255,255,255,0.75)' }} />
-              </div>
-            </button>
-          ) : (
-            <Link
-              href="/tools"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10,
-                textDecoration: 'none',
-                minWidth: 0,
-              }}
-            >
-              <div
-                style={{
-                  width: 30,
-                  height: 30,
-                  borderRadius: 10,
-                  background: 'rgba(255,255,255,0.06)',
-                  border: '1px solid rgba(255,255,255,0.14)',
-                  display: 'grid',
-                  placeItems: 'center',
-                  flexShrink: 0,
-                }}
-              >
-                <LayoutGrid size={14} style={{ color: 'rgba(255,255,255,0.75)' }} />
-              </div>
+              <LayoutGrid size={14} style={{ color: 'rgba(255,255,255,0.75)' }} />
+            </div>
 
-              {/* Brand text */}
-              <div style={{ minWidth: 0, whiteSpace: 'nowrap' }}>
-                <div style={{ fontFamily: BRAND, fontSize: 13, fontWeight: 700, color: VALUE }}>
-                  Nexus-Bio
-                </div>
-                <div style={{ fontFamily: SANS, fontSize: 10, color: LABEL }}>
-                  Tools Directory
-                </div>
+            {/* Brand text */}
+            <div style={{ minWidth: 0, whiteSpace: 'nowrap' }}>
+              <div style={{ fontFamily: BRAND, fontSize: 13, fontWeight: 700, color: VALUE }}>
+                Nexus-Bio
               </div>
-            </Link>
-          )}
+              <div style={{ fontFamily: SANS, fontSize: 10, color: LABEL }}>
+                Tools Directory
+              </div>
+            </div>
+          </Link>
 
         </div>
 
@@ -229,29 +196,24 @@ export default function IDESidebar() {
             return (
               <section
                 key={direction}
-                style={{ padding: collapsed ? '10px 8px 0' : '12px 12px 0' }}
+                style={{ padding: '12px 12px 0' }}
               >
-                {/* Direction label — opacity fade, zero-height when collapsed */}
-                <motion.p
-                  animate={{ opacity: collapsed ? 0 : 1, height: collapsed ? 0 : 'auto' }}
-                  transition={{ duration: 0.15 }}
-                  aria-hidden={collapsed}
+                {/* Direction label */}
+                <p
                   style={{
-                    margin: collapsed ? 0 : '0 0 8px',
+                    margin: '0 0 8px',
                     padding: '0 4px',
                     fontFamily: SANS,
                     fontSize: 10,
                     textTransform: 'uppercase',
                     letterSpacing: '0.1em',
                     color: 'rgba(255,255,255,0.2)',
-                    overflow: 'hidden',
-                    pointerEvents: collapsed ? 'none' : 'auto',
                   }}
                 >
                   {direction}
-                </motion.p>
+                </p>
 
-                <div style={{ display: 'grid', gap: collapsed ? 2 : 6 }}>
+                <div style={{ display: 'grid', gap: 6 }}>
                   {tools.map((tool) => {
                     const Icon     = tool.icon;
                     const isActive = pathname?.startsWith(tool.href);
@@ -260,98 +222,50 @@ export default function IDESidebar() {
                       <Link
                         key={tool.id}
                         href={tool.href}
-                        title={collapsed ? `${tool.shortLabel} — ${tool.name}` : undefined}
                         onClick={(e) => {
-                          // Prevent sidebar expand/collapse when clicking a tool icon
                           e.stopPropagation();
                         }}
                         style={{
                           display: 'flex',
                           alignItems: 'center',
                           gap: 10,
-                          padding: collapsed ? '4px 0' : '10px 12px',
+                          padding: '10px 12px',
                           textDecoration: 'none',
-                          borderRadius: collapsed ? 0 : 14,
-                          border: collapsed
-                            ? 'none'
-                            : isActive
-                              ? '1px solid rgba(255,139,31,0.20)'
-                              : '1px solid rgba(255,255,255,0.06)',
-                          background: collapsed
-                            ? 'transparent'
-                            : isActive
-                              ? 'rgba(255,139,31,0.06)'
-                              : 'rgba(255,255,255,0.03)',
+                          borderRadius: 14,
+                          border: isActive
+                            ? '1px solid rgba(255,139,31,0.20)'
+                            : '1px solid rgba(255,255,255,0.06)',
+                          background: isActive
+                            ? 'rgba(255,139,31,0.06)'
+                            : 'rgba(255,255,255,0.03)',
                           minWidth: 0,
-                          justifyContent: collapsed ? 'center' : 'flex-start',
                         }}
                       >
-                        {/* Icon — boxed in both collapsed and expanded states */}
-                        {collapsed ? (
-                          <div
-                            style={{
-                              width: 30,
-                              height: 30,
-                              borderRadius: 10,
-                              display: 'grid',
-                              placeItems: 'center',
-                              background: isActive
-                                ? 'rgba(255,139,31,0.12)'
-                                : 'rgba(255,255,255,0.05)',
-                              border: isActive
-                                ? '1px solid rgba(255,139,31,0.25)'
-                                : '1px solid rgba(255,255,255,0.08)',
-                              flexShrink: 0,
-                            }}
-                          >
-                            <Icon
-                              size={14}
-                              style={{
-                                color: isActive ? '#FF8B1F' : LABEL,
-                                flexShrink: 0,
-                              }}
-                            />
-                          </div>
-                        ) : (
-                          <div
-                            style={{
-                              width: 30,
-                              height: 30,
-                              borderRadius: 10,
-                              display: 'grid',
-                              placeItems: 'center',
-                              background: isActive
-                                ? 'rgba(255,139,31,0.12)'
-                                : 'rgba(255,255,255,0.05)',
-                              border: isActive
-                                ? '1px solid rgba(255,139,31,0.25)'
-                                : '1px solid rgba(255,255,255,0.06)',
-                              flexShrink: 0,
-                            }}
-                          >
-                            <Icon
-                              size={14}
-                              style={{ color: isActive ? '#FF8B1F' : LABEL }}
-                            />
-                          </div>
-                        )}
-
-                        {/* Label text — hidden when collapsed for proper centering */}
-                        <motion.div
-                          animate={{ opacity: collapsed ? 0 : 1 }}
-                          transition={{
-                            duration: collapsed ? 0.1 : 0.2,
-                            delay: collapsed ? 0 : 0.06,
-                          }}
-                          aria-hidden={collapsed}
+                        {/* Icon box with square */}
+                        <div
                           style={{
-                            width: collapsed ? 0 : 'auto',
-                            minWidth: 0,
-                            overflow: 'hidden',
-                            pointerEvents: collapsed ? 'none' : 'auto',
-                            whiteSpace: 'nowrap',
+                            width: 30,
+                            height: 30,
+                            borderRadius: 10,
+                            display: 'grid',
+                            placeItems: 'center',
+                            background: isActive
+                              ? 'rgba(255,139,31,0.12)'
+                              : 'rgba(255,255,255,0.05)',
+                            border: isActive
+                              ? '1px solid rgba(255,139,31,0.25)'
+                              : '1px solid rgba(255,255,255,0.06)',
+                            flexShrink: 0,
                           }}
                         >
+                          <Icon
+                            size={14}
+                            style={{ color: isActive ? '#FF8B1F' : LABEL }}
+                          />
+                        </div>
+
+                        {/* Label text */}
+                        <div style={{ minWidth: 0, whiteSpace: 'nowrap' }}>
                           <div
                             style={{
                               fontFamily: SANS,
@@ -379,7 +293,7 @@ export default function IDESidebar() {
                           >
                             {tool.name}
                           </div>
-                        </motion.div>
+                        </div>
                       </Link>
                     );
                   })}
@@ -388,7 +302,9 @@ export default function IDESidebar() {
             );
           })}
         </nav>
-      </motion.aside>
+          </motion.aside>
+        )}
+      </AnimatePresence>
     </>
   );
 }

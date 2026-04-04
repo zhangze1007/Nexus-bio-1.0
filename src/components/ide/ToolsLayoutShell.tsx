@@ -83,12 +83,11 @@ export default function ToolsLayoutShell({ children }: ToolsLayoutShellProps) {
         {/* Sidebar — fixed overlay, z-index: 50. Only on Workbench (/tools/[id]). */}
         {isWorkbench && <IDESidebar />}
 
-        {/* Main canvas — fills remaining space after topbar. */}
+        {/* Main canvas — fills remaining space after topbar. Full width. */}
         <main
           className="nb-ide-main"
           role="main"
           aria-label="Tool workspace"
-          style={isWorkbench ? undefined : { paddingLeft: 0, marginLeft: 0 }}
         >
           {/*
            * initial={false}: Skip mount animation on first render to avoid

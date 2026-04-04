@@ -1,8 +1,9 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, LayoutGrid } from 'lucide-react';
+import { Home, LayoutGrid, Menu } from 'lucide-react';
 import { getToolDefinition } from '../tools/shared/toolRegistry';
+import { useUIStore } from '../../store/uiStore';
 import { T } from './tokens';
 
 const SANS = T.SANS;
@@ -20,10 +21,37 @@ export default function IDETopBar({ moduleId, actions }: IDETopBarProps) {
   const pathname = usePathname();
   const tool = getToolDefinition(moduleId);
   const isDirectory = !moduleId || pathname === '/tools' || pathname === '/tools/';
+  const isWorkbench = !!moduleId && !isDirectory;
+  const toggleSidebar = useUIStore((s) => s.toggleSidebarCollapsed);
 
   return (
     <header className="nb-ide-topbar">
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flex: 1, flexWrap: 'wrap' }}>
+        {/* Sidebar toggle — only on workbench pages */}
+        {isWorkbench && (
+          <button
+            type="button"
+            onClick={toggleSidebar}
+            aria-label="Toggle sidebar"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 30,
+              height: 30,
+              borderRadius: 8,
+              background: 'rgba(255,255,255,0.06)',
+              border: '1px solid rgba(255,255,255,0.10)',
+              color: 'rgba(255,255,255,0.6)',
+              cursor: 'pointer',
+              flexShrink: 0,
+              marginRight: 4,
+            }}
+          >
+            <Menu size={14} />
+          </button>
+        )}
+
         <Link
           href="/"
           style={{
