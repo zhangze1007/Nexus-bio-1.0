@@ -239,11 +239,9 @@ export default function IDESidebar() {
                         href={tool.href}
                         title={collapsed ? `${tool.shortLabel} — ${tool.name}` : undefined}
                         onClick={(e) => {
-                          if (collapsed) {
-                            // Collapsed: open sidebar instead of navigating
-                            e.preventDefault();
-                            toggle();
-                          }
+                          // Always stop propagation so the sidebar's
+                          // handleSidebarClick (blank-space toggle) doesn't fire.
+                          // Icons navigate directly in both collapsed & expanded states.
                           e.stopPropagation();
                         }}
                         className="nb-tool-icon"
