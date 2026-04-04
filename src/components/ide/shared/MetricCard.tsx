@@ -23,7 +23,7 @@ export default function MetricCard({ label, value, unit, delta, warning, highlig
     <div style={{
       padding: '12px 14px',
       background: highlight ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.03)',
-      border: `1px solid ${highlight ? 'rgba(0,255,255,0.12)' : 'rgba(255,255,255,0.06)'}`,
+      border: `1px solid ${highlight ? 'rgba(255,139,31,0.15)' : 'rgba(255,255,255,0.06)'}`,
       borderRadius: '12px',
     }}>
       <p style={{ fontFamily: SANS, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.07em', color: 'rgba(255,255,255,0.4)', margin: '0 0 6px' }}>

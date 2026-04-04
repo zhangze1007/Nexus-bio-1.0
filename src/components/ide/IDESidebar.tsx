@@ -252,32 +252,49 @@ export default function IDESidebar() {
                           display: 'flex',
                           alignItems: 'center',
                           gap: 10,
-                          padding: collapsed ? '8px 0' : '10px 12px',
+                          padding: collapsed ? '4px 0' : '10px 12px',
                           textDecoration: 'none',
                           borderRadius: collapsed ? 0 : 14,
                           border: collapsed
                             ? 'none'
                             : isActive
-                              ? '1px solid rgba(255,255,255,0.18)'
+                              ? '1px solid rgba(255,139,31,0.20)'
                               : '1px solid rgba(255,255,255,0.06)',
                           background: collapsed
                             ? 'transparent'
                             : isActive
-                              ? 'rgba(255,255,255,0.04)'
+                              ? 'rgba(255,139,31,0.06)'
                               : 'rgba(255,255,255,0.03)',
                           minWidth: 0,
                           justifyContent: collapsed ? 'center' : 'flex-start',
                         }}
                       >
-                        {/* Icon — pure icon when collapsed, boxed when expanded */}
+                        {/* Icon — boxed in both collapsed and expanded states */}
                         {collapsed ? (
-                          <Icon
-                            size={16}
+                          <div
                             style={{
-                              color: isActive ? '#ffffff' : LABEL,
+                              width: 30,
+                              height: 30,
+                              borderRadius: 10,
+                              display: 'grid',
+                              placeItems: 'center',
+                              background: isActive
+                                ? 'rgba(255,139,31,0.12)'
+                                : 'rgba(255,255,255,0.05)',
+                              border: isActive
+                                ? '1px solid rgba(255,139,31,0.25)'
+                                : '1px solid rgba(255,255,255,0.08)',
                               flexShrink: 0,
                             }}
-                          />
+                          >
+                            <Icon
+                              size={14}
+                              style={{
+                                color: isActive ? '#FF8B1F' : LABEL,
+                                flexShrink: 0,
+                              }}
+                            />
+                          </div>
                         ) : (
                           <div
                             style={{
@@ -287,14 +304,17 @@ export default function IDESidebar() {
                               display: 'grid',
                               placeItems: 'center',
                               background: isActive
-                                ? 'rgba(255,255,255,0.12)'
+                                ? 'rgba(255,139,31,0.12)'
                                 : 'rgba(255,255,255,0.05)',
+                              border: isActive
+                                ? '1px solid rgba(255,139,31,0.25)'
+                                : '1px solid rgba(255,255,255,0.06)',
                               flexShrink: 0,
                             }}
                           >
                             <Icon
                               size={14}
-                              style={{ color: isActive ? '#ffffff' : LABEL }}
+                              style={{ color: isActive ? '#FF8B1F' : LABEL }}
                             />
                           </div>
                         )}
