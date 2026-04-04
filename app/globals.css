@@ -68,7 +68,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 0 16px 0 96px; /* 80px sidebar + 16px gap */
+  padding: 0 16px;
   background: rgba(0,0,0,0.8);
   border-bottom: 1px solid #1a1a1a;
   backdrop-filter: blur(10px);
@@ -78,6 +78,11 @@
   flex-shrink: 0;
 }
 
+/* When sidebar is present (workbench pages), offset topbar & console */
+.nb-workbench .nb-ide-topbar {
+  padding-left: 96px; /* 80px sidebar + 16px gap */
+}
+
 /* Sidebar is position:fixed in the component — not in flow. */
 
 .nb-ide-main {
@@ -85,13 +90,15 @@
   position: relative;
   overflow: hidden;
   background: #000000;
-  padding-left: 80px; /* collapsed sidebar width — fixed offset */
   z-index: 10;
 }
 
 .nb-ide-console {
   flex-shrink: 0;
-  padding-left: 80px; /* collapsed sidebar width — fixed offset */
+}
+
+.nb-workbench .nb-ide-console {
+  padding-left: 80px; /* collapsed sidebar width */
 }
 
 .nb-tool-shell__body {
@@ -122,17 +129,17 @@
 }
 
 @media (max-width: 960px) {
-  .nb-ide-topbar {
+  .nb-ide-topbar,
+  .nb-workbench .nb-ide-topbar {
     /* Remove sidebar spacer padding on mobile — sidebar is full overlay */
     padding: 0 12px;
   }
 
   .nb-ide-main {
-    padding-left: 0;
     overflow: auto;
   }
 
-  .nb-ide-console {
+  .nb-workbench .nb-ide-console {
     padding-left: 0;
   }
 }

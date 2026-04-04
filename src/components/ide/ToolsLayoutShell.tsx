@@ -24,7 +24,7 @@
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import IDESidebar from './IDESidebar';
+import IDESidebar, { W_COLLAPSED } from './IDESidebar';
 import IDETopBar from './IDETopBar';
 import IDEConsole from './IDEConsole';
 import { NavigationProvider } from '../../contexts/NavigationContext';
@@ -44,6 +44,9 @@ export default function ToolsLayoutShell({ children }: ToolsLayoutShellProps) {
   //   /tools/pathd    → 'pathd'
   const moduleId = deriveModuleId(pathname);
 
+  // Sidebar only appears on workbench pages (/tools/[id]), not directory (/tools).
+  const isWorkbench = moduleId !== null;
+
   // Auto-collapse sidebar on route change ONLY if expanded.
   // This prevents the backdrop from lingering during page transition
   // (the "black screen" glitch).
@@ -59,12 +62,12 @@ export default function ToolsLayoutShell({ children }: ToolsLayoutShellProps) {
 
   return (
     <NavigationProvider>
-      <div className="nb-ide-shell">
+      <div className={`nb-ide-shell${isWorkbench ? ' nb-workbench' : ''}`}>
         {/* TopBar — fixed at top, z-index: 100. Always mounted. */}
         <IDETopBar moduleId={moduleId ?? ''} />
 
-        {/* Sidebar — fixed overlay, z-index: 90. Always mounted. */}
-        <IDESidebar />
+        {/* Sidebar — fixed overlay, z-index: 90. Only on workbench pages. */}
+        {isWorkbench && <IDESidebar />}
 
         {/* Main canvas — fills remaining space after topbar. */}
         <main className="nb-ide-main" role="main" aria-label="Tool workspace">
@@ -72,6 +75,10 @@ export default function ToolsLayoutShell({ children }: ToolsLayoutShellProps) {
            * initial={false}: Skip mount animation on first render to avoid
            * flash-of-empty-state when navigating directly to a tool URL.
            * mode="wait": Ensure exit animation completes before enter begins.
+           *
+           * left offset: On workbench pages the collapsed sidebar occupies
+           * W_COLLAPSED px on the left. The motion.div uses explicit left
+           * instead of inset:0 so content starts after the sidebar, not under it.
            */}
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
@@ -80,7 +87,13 @@ export default function ToolsLayoutShell({ children }: ToolsLayoutShellProps) {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15, ease: 'easeInOut' }}
-              style={{ position: 'absolute', inset: 0 }}
+              style={{
+                position: 'absolute',
+                top: 0,
+                right: 0,
+                bottom: 0,
+                left: isWorkbench ? W_COLLAPSED : 0,
+              }}
             >
               {children}
             </motion.div>

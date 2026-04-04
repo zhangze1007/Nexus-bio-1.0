@@ -274,35 +274,30 @@ export default function IDESidebar() {
                           justifyContent: collapsed ? 'center' : 'flex-start',
                         }}
                       >
-                        {/* Icon — pure icon when collapsed, boxed when expanded */}
-                        {collapsed ? (
+                        {/* Icon — always in a visible rounded box */}
+                        <div
+                          style={{
+                            width: 30,
+                            height: 30,
+                            borderRadius: 10,
+                            display: 'grid',
+                            placeItems: 'center',
+                            background: isActive
+                              ? 'rgba(255,255,255,0.12)'
+                              : 'rgba(255,255,255,0.05)',
+                            border: collapsed
+                              ? isActive
+                                ? '1px solid rgba(255,255,255,0.18)'
+                                : '1px solid rgba(255,255,255,0.08)'
+                              : 'none',
+                            flexShrink: 0,
+                          }}
+                        >
                           <Icon
-                            size={16}
-                            style={{
-                              color: isActive ? '#ffffff' : LABEL,
-                              flexShrink: 0,
-                            }}
+                            size={14}
+                            style={{ color: isActive ? '#ffffff' : LABEL }}
                           />
-                        ) : (
-                          <div
-                            style={{
-                              width: 30,
-                              height: 30,
-                              borderRadius: 10,
-                              display: 'grid',
-                              placeItems: 'center',
-                              background: isActive
-                                ? 'rgba(255,255,255,0.12)'
-                                : 'rgba(255,255,255,0.05)',
-                              flexShrink: 0,
-                            }}
-                          >
-                            <Icon
-                              size={14}
-                              style={{ color: isActive ? '#ffffff' : LABEL }}
-                            />
-                          </div>
-                        )}
+                        </div>
 
                         {/* Label text — smooth opacity fade */}
                         <motion.div
@@ -314,6 +309,8 @@ export default function IDESidebar() {
                           aria-hidden={collapsed}
                           style={{
                             minWidth: 0,
+                            width: collapsed ? 0 : 'auto',
+                            overflow: 'hidden',
                             pointerEvents: collapsed ? 'none' : 'auto',
                             whiteSpace: 'nowrap',
                           }}
