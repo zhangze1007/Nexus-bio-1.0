@@ -73,7 +73,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 0 16px 0 96px; /* 80px sidebar + 16px gap */
+  padding: 0 16px;
   background: rgba(0,0,0,0.8);
   border-bottom: 1px solid #1a1a1a;
   backdrop-filter: blur(10px);
@@ -83,21 +83,19 @@
   flex-shrink: 0;
 }
 
-/* Sidebar is position:fixed — not in flow. Content offset via padding-left. */
+/* Sidebar is position:fixed overlay — not in flow. No content offset needed. */
 
 .nb-ide-main {
   flex: 1;
   position: relative;
   overflow: hidden;
   background: #000000;
-  /* Content offset is on the absolutely-positioned motion.div (left: 80px),
-     not on this container, because padding is ignored by absolute children. */
+  /* No sidebar offset — sidebar is a pure overlay drawer. */
   z-index: 10;
 }
 
 .nb-ide-console {
   flex-shrink: 0;
-  padding-left: 80px; /* collapsed sidebar width — for in-flow console */
 }
 
 .nb-tool-shell__body {
@@ -135,17 +133,6 @@
 
   .nb-ide-main {
     overflow: auto;
-  }
-
-  /* On mobile/tablet, content uses full width — sidebar is overlay-only */
-  .nb-workbench-content {
-    left: 0 !important;
-  }
-
-  /* Hide collapsed sidebar strip on mobile — only show when expanded (toggled) */
-  .nb-ide-sidebar--collapsed {
-    visibility: hidden;
-    pointer-events: none;
   }
 
   .nb-ide-console {

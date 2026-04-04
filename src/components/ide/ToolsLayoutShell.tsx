@@ -25,7 +25,7 @@
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import IDESidebar, { W_COLLAPSED } from './IDESidebar';
+import IDESidebar from './IDESidebar';
 import IDETopBar from './IDETopBar';
 import IDEConsole from './IDEConsole';
 import { NavigationProvider } from '../../contexts/NavigationContext';
@@ -88,7 +88,6 @@ export default function ToolsLayoutShell({ children }: ToolsLayoutShellProps) {
           className="nb-ide-main"
           role="main"
           aria-label="Tool workspace"
-          style={isWorkbench ? undefined : { paddingLeft: 0 }}
           data-workbench={isWorkbench || undefined}
         >
           {/*
@@ -104,8 +103,7 @@ export default function ToolsLayoutShell({ children }: ToolsLayoutShellProps) {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.12, ease: 'easeInOut' }}
-              className={isWorkbench ? 'nb-workbench-content' : undefined}
-              style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: isWorkbench ? W_COLLAPSED : 0 }}
+              style={{ position: 'absolute', inset: 0 }}
             >
               {children}
             </motion.div>
