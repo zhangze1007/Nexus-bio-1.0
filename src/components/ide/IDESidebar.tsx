@@ -228,7 +228,11 @@ export default function IDESidebar() {
                   {direction}
                 </motion.p>
 
-                <div style={{ display: 'grid', gap: collapsed ? 2 : 6 }}>
+                <div style={{
+                  display: 'grid',
+                  gap: 6,
+                  justifyItems: collapsed ? 'center' : undefined,
+                }}>
                   {tools.map((tool) => {
                     const Icon     = tool.icon;
                     const isActive = pathname?.startsWith(tool.href);
@@ -249,9 +253,9 @@ export default function IDESidebar() {
                           display: 'flex',
                           alignItems: 'center',
                           gap: 10,
-                          padding: collapsed ? '4px 0' : '10px 12px',
+                          padding: collapsed ? 0 : '10px 12px',
                           textDecoration: 'none',
-                          borderRadius: collapsed ? 0 : 14,
+                          borderRadius: collapsed ? 10 : 14,
                           border: collapsed
                             ? 'none'
                             : isActive
@@ -263,6 +267,8 @@ export default function IDESidebar() {
                               ? 'rgba(255,139,31,0.06)'
                               : 'rgba(255,255,255,0.03)',
                           minWidth: 0,
+                          width: collapsed ? 30 : undefined,
+                          height: collapsed ? 30 : undefined,
                           justifyContent: collapsed ? 'center' : 'flex-start',
                           transition: 'background 0.15s, border-color 0.15s',
                         }}
