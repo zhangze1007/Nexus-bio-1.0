@@ -13,6 +13,10 @@ import { motion } from 'framer-motion';
 import type { CSSProperties, ReactNode } from 'react';
 import { T } from '../../ide/tokens';
 
+const NEON_CYAN    = T.NEON_CYAN;
+const NEON_SUCCESS = T.NEON_SUCCESS;
+const BLUR         = 'blur(20px)';
+
 interface ModuleCardProps {
   children: ReactNode;
   /** Grid area name (maps to ToolShell gridTemplateAreas) */
@@ -49,13 +53,13 @@ export default function ModuleCard({
         gridRow: rowSpan ? `span ${rowSpan}` : undefined,
         borderRadius: '18px',
         background: 'rgba(255,255,255,0.05)',
-        backdropFilter: active ? 'blur(20px)' : 'none',
-        WebkitBackdropFilter: active ? 'blur(20px)' : 'none',
+        backdropFilter: active ? BLUR : 'none',
+        WebkitBackdropFilter: active ? BLUR : 'none',
         border: active
-          ? '1px solid rgba(0,255,255,0.25)'
+          ? `1px solid rgba(0,255,255,0.25)`
           : '1px solid rgba(255,255,255,0.06)',
         boxShadow: active
-          ? '0 0 20px rgba(0,255,255,0.08), 0 0 20px rgba(255,0,255,0.06)'
+          ? `0 0 20px rgba(0,255,255,0.08), 0 0 20px rgba(255,0,255,0.06)`
           : 'none',
         padding: flush ? 0 : '18px',
         overflow: 'hidden',
@@ -85,7 +89,7 @@ export default function ModuleCard({
             fontWeight: 600,
             letterSpacing: '0.12em',
             textTransform: 'uppercase',
-            color: 'rgba(57,255,20,0.5)',
+            color: `${NEON_SUCCESS}80`,
           }}>
             ANALYSIS
           </span>
@@ -93,7 +97,7 @@ export default function ModuleCard({
             width: '5px',
             height: '5px',
             borderRadius: '50%',
-            background: '#39FF14',
+            background: NEON_SUCCESS,
             animation: 'signal-breathe 2.5s ease-in-out infinite',
             flexShrink: 0,
           }} />
@@ -104,7 +108,7 @@ export default function ModuleCard({
         <div style={{
           fontFamily: T.SANS, fontSize: '9px', fontWeight: 500,
           textTransform: 'uppercase', letterSpacing: '0.12em',
-          color: active ? '#00FFFF' : 'rgba(255,255,255,0.3)',
+          color: active ? NEON_CYAN : 'rgba(255,255,255,0.3)',
           marginBottom: flush ? 0 : '10px',
           padding: flush ? '12px 14px 0' : 0,
           flexShrink: 0,
