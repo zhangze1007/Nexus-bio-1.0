@@ -1,8 +1,9 @@
 'use client';
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import AlgorithmInsight from '../ide/shared/AlgorithmInsight';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
+import { useUIStore } from '../../store/uiStore';
 import SimErrorBanner from '../ide/shared/SimErrorBanner';
 import { usePersistedState } from '../ide/shared/usePersistedState';
 import {
@@ -230,6 +231,21 @@ export default function DynConPage() {
 
   const currentFPP = last?.fpp ?? 0;
   const currentADS = last?.adsExpression ?? 0;
+
+  /* ── Console logging ─────────────────────────────────────────────────── */
+  const appendConsole = useUIStore((s) => s.appendConsole);
+  useEffect(() => {
+    if (simError) {
+      appendConsole({ level: 'error', module: 'DYNCON', message: `Simulation error: ${simError}` });
+    } else if (trajectory.length > 0) {
+      appendConsole({
+        level: 'info',
+        module: 'DYNCON',
+        message: `ODE sim complete — Kp=${kp} Ki=${ki} Kd=${kd} SP=${setpoint} | Product=${productTiter.toFixed(2)} g/L | RMSE=${doRmse.toFixed(3)} | ${convergence.converged ? 'Converged' : 'Not converged'}`,
+      });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trajectory, simError]);
 
   /* ── Render ─────────────────────────────────────────────────────────────── */
   return (

@@ -9,6 +9,7 @@ import ExportButton from '../ide/shared/ExportButton';
 import { PATHWAY_STEPS, computeThermo } from '../../data/mockCETHX';
 import type { PathwayKey } from '../../data/mockCETHX';
 import { useToolStore } from '../../store/toolStore';
+import { useUIStore } from '../../store/uiStore';
 
 // ── Breathing Waterfall Chart ──────────────────────────────────────────
 
@@ -149,6 +150,17 @@ export default function CETHXPage() {
       timestamp: Date.now(),
     });
   }, [thermo, pathway, tempC, pH, setCETHX]);
+
+  // Console logging
+  const appendConsole = useUIStore((s) => s.appendConsole);
+  useEffect(() => {
+    appendConsole({
+      level: thermo.gibbs_free_energy < 0 ? 'info' : 'warn',
+      module: 'CETHX',
+      message: `Thermo — ${pathway} @ ${tempC}°C pH${pH} | ΔG'=${thermo.gibbs_free_energy.toFixed(1)} kJ/mol | ATP=${thermo.atp_yield.toFixed(1)} | η=${thermo.efficiency.toFixed(1)}%`,
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [thermo]);
 
   return (
     <ToolShell
