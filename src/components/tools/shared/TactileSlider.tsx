@@ -10,7 +10,7 @@ import { useRef, useCallback, useState } from 'react';
 import { motion, useMotionValue, useTransform, useSpring } from 'framer-motion';
 import { T } from '../../ide/tokens';
 
-const NEON  = '#39FF14';
+const NEON  = '#00FFFF';
 const TRACK = 'rgba(255,255,255,0.06)';
 
 interface TactileSliderProps {

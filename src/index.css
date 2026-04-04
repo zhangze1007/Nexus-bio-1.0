@@ -39,26 +39,35 @@
   --font-serif:  'Inter', -apple-system, sans-serif;
   --font-sans:   'Inter', -apple-system, sans-serif;
 
-  /* ── Legacy compat: accent vars remapped to monochrome ── */
+  /* ── Accent gradient — Cyan→Magenta 45° ── */
+  --accent-gradient: linear-gradient(45deg, #00FFFF, #FF00FF);
+  --accent-cyan:     #00FFFF;
+  --accent-magenta:  #FF00FF;
+
+  /* ── Semantic neon colors ── */
+  --neon-success:    #39FF14;
+  --neon-danger:     #FF3131;
+
+  /* ── Legacy compat ── */
   --accent-primary:        #FFFFFF;
   --accent-secondary:      rgba(255,255,255,0.55);
   --accent-primary-rgb:    255 255 255;
   --accent-secondary-rgb:  200 200 200;
   --white:                 #FFFFFF;
 
-  /* Color names preserved but remapped to neutral grays */
-  --cyan:          rgba(255,255,255,0.80);
-  --cyan-dim:      rgba(255,255,255,0.06);
-  --cyan-glow:     rgba(255,255,255,0.12);
-  --magenta:       rgba(255,255,255,0.70);
-  --magenta-dim:   rgba(255,255,255,0.05);
+  /* Color names preserved but remapped to neon palette */
+  --cyan:          #00FFFF;
+  --cyan-dim:      rgba(0,255,255,0.06);
+  --cyan-glow:     rgba(0,255,255,0.12);
+  --magenta:       #FF00FF;
+  --magenta-dim:   rgba(255,0,255,0.05);
   --amber:         rgba(255,255,255,0.75);
   --amber-dim:     rgba(255,255,255,0.05);
   --amber-glow:    rgba(255,255,255,0.10);
-  --emerald:       rgba(255,255,255,0.75);
-  --emerald-dim:   rgba(255,255,255,0.05);
-  --risk-red:      rgba(255,255,255,0.55);
-  --risk-red-dim:  rgba(255,255,255,0.04);
+  --emerald:       #39FF14;
+  --emerald-dim:   rgba(57,255,20,0.05);
+  --risk-red:      #FF3131;
+  --risk-red-dim:  rgba(255,49,49,0.04);
 }
 
 /* ── Base reset ── */
@@ -196,12 +205,63 @@ h1, h2, h3, h4 {
 .surface-elevated { background: var(--bg-elevated); border: 0.5px solid var(--border); }
 .divider          { border-top: 0.5px solid var(--border); }
 
-/* ── Glow-pulse (monochrome) ── */
+/* ── Glow-pulse (neon green) ── */
 @keyframes glow-pulse {
-  0%, 100% { box-shadow: 0 0 6px rgba(255,255,255,0.07); }
-  50%       { box-shadow: 0 0 14px rgba(255,255,255,0.14); }
+  0%, 100% { box-shadow: 0 0 6px rgba(57,255,20,0.15); }
+  50%       { box-shadow: 0 0 14px rgba(57,255,20,0.35); }
 }
 .glow-pulse { animation: glow-pulse 2.5s ease-in-out infinite; }
+
+/* ── ANALYSIS signal breathing animation ── */
+@keyframes signal-breathe {
+  0%, 100% {
+    box-shadow: 0 0 4px rgba(57,255,20,0.4), 0 0 8px rgba(57,255,20,0.2);
+    opacity: 1;
+  }
+  50% {
+    box-shadow: 0 0 8px rgba(57,255,20,0.7), 0 0 16px rgba(57,255,20,0.35);
+    opacity: 0.7;
+  }
+}
+
+/* ── Neon progress bar ── */
+.nb-progress-track {
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255,255,255,0.06);
+  overflow: hidden;
+  position: relative;
+}
+
+.nb-progress-fill {
+  height: 100%;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #00FFFF, #FF00FF);
+  box-shadow: 0 0 8px rgba(0,255,255,0.3), 0 0 8px rgba(255,0,255,0.3);
+  transition: width 0.4s ease;
+}
+
+/* ── Glass glow card backlight ── */
+.nb-tool-card {
+  position: relative;
+}
+
+.nb-tool-card::after {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  z-index: -1;
+  border-radius: inherit;
+  opacity: 0.12;
+  background: linear-gradient(45deg, rgba(0,255,255,0.3), rgba(255,0,255,0.3));
+  filter: blur(30px);
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.nb-tool-card:hover::after {
+  opacity: 0.2;
+}
 
 /* ── Audit trail panel ── */
 .audit-trail-panel {

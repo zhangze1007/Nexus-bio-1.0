@@ -24,7 +24,7 @@
   --space-8: 32px; --space-10: 40px; --space-12: 48px;
   --space-16: 64px; --space-20: 80px; --space-24: 96px;
 
-  /* Color tokens — monochrome dark workbench */
+  /* Color tokens — neon dark workbench */
   --color-bg:        #000000;
   --color-surface:   #050505;
   --color-surface-2: #0A0A0A;
@@ -35,6 +35,11 @@
   --color-text-3:    rgba(255,255,255,0.4);
   --color-text-4:    rgba(255,255,255,0.18);
   --color-accent:    rgba(255,255,255,0.78);
+
+  /* Accent gradient — Cyan→Magenta */
+  --accent-gradient: linear-gradient(45deg, #00FFFF, #FF00FF);
+  --neon-success:    #39FF14;
+  --neon-danger:     #FF3131;
 }
 
 .serif { font-family: var(--font-sans); font-weight: 700; }
