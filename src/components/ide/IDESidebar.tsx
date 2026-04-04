@@ -286,32 +286,35 @@ export default function IDESidebar() {
                           justifyContent: collapsed ? 'center' : 'flex-start',
                         }}
                       >
-                        {/* Icon — always in a visible rounded box */}
-                        <div
-                          className="nb-tool-icon"
-                          style={{
-                            width: 30,
-                            height: 30,
-                            borderRadius: 10,
-                            display: 'grid',
-                            placeItems: 'center',
-                            background: isActive
-                              ? 'rgba(255,255,255,0.12)'
-                              : 'rgba(255,255,255,0.05)',
-                            border: collapsed
-                              ? isActive
-                                ? '1px solid rgba(255,255,255,0.18)'
-                                : '1px solid rgba(255,255,255,0.08)'
-                              : 'none',
-                            flexShrink: 0,
-                            transition: 'background 0.1s ease',
-                          }}
-                        >
+                        {/* Icon — pure icon when collapsed, boxed when expanded */}
+                        {collapsed ? (
                           <Icon
-                            size={14}
-                            style={{ color: isActive ? '#ffffff' : LABEL }}
+                            size={16}
+                            style={{
+                              color: isActive ? '#ffffff' : LABEL,
+                              flexShrink: 0,
+                            }}
                           />
-                        </div>
+                        ) : (
+                          <div
+                            style={{
+                              width: 30,
+                              height: 30,
+                              borderRadius: 10,
+                              display: 'grid',
+                              placeItems: 'center',
+                              background: isActive
+                                ? 'rgba(255,255,255,0.12)'
+                                : 'rgba(255,255,255,0.05)',
+                              flexShrink: 0,
+                            }}
+                          >
+                            <Icon
+                              size={14}
+                              style={{ color: isActive ? '#ffffff' : LABEL }}
+                            />
+                          </div>
+                        )}
 
                         {/* Label text — smooth opacity fade */}
                         <motion.div
