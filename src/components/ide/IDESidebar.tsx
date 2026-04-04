@@ -64,28 +64,21 @@ export default function IDESidebar() {
   const toggle    = useUIStore((s) => s.toggleSidebarCollapsed);
 
   /**
-   * Full-Height Hotzone handler:
-   *   • Collapsed → click anywhere on sidebar expands it
-   *   • Expanded  → click on a link/button navigates; click on empty space collapses
+   * Sidebar click handler (expanded state only):
+   *   • Expanded  → click on empty (non-interactive) area collapses sidebar
+   *   • Collapsed → no action (icons navigate directly, header icon expands)
    *
    * Keyboard accessibility: we only intercept pointer clicks (detail > 0).
-   * Keyboard-triggered events (Enter/Space on links) pass through normally.
    */
   const handleSidebarClick = useCallback(
     (e: React.MouseEvent<HTMLElement>) => {
-      // detail === 0 means keyboard-triggered "click" → let it pass through
-      if (e.detail === 0) return;
+      if (e.detail === 0) return;           // keyboard "click" — pass through
+      if (collapsed) return;                // collapsed: no empty-space toggle
 
-      if (collapsed) {
-        // Prevent any link navigation when collapsed; expand instead
-        e.preventDefault();
+      // Expanded: collapse when clicking non-interactive area
+      const target = e.target as HTMLElement;
+      if (!target.closest('a, button')) {
         toggle();
-      } else {
-        // Expanded: collapse only when clicking empty (non-interactive) area
-        const target = e.target as HTMLElement;
-        if (!target.closest('a, button')) {
-          toggle();
-        }
       }
     },
     [collapsed, toggle],
@@ -142,7 +135,7 @@ export default function IDESidebar() {
           overflowY: 'auto',
           overflowX: 'hidden',
           willChange: 'width',
-          cursor: collapsed ? 'pointer' : 'default',
+          cursor: 'default',
         }}
       >
         {/* ── Header ─────────────────────────────────────────────── */}
@@ -157,50 +150,74 @@ export default function IDESidebar() {
             borderBottom: `1px solid ${BORDER}`,
           }}
         >
-          <Link
-            href="/tools"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10,
-              textDecoration: 'none',
-              minWidth: 0,
-            }}
-          >
-            <div
+          {/* When collapsed, icon is an expand trigger; when expanded, it navigates to /tools */}
+          {collapsed ? (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); toggle(); }}
+              aria-label="Expand sidebar"
               style={{
-                width: 30,
-                height: 30,
-                borderRadius: 10,
-                background: 'rgba(255,255,255,0.06)',
-                border: '1px solid rgba(255,255,255,0.14)',
-                display: 'grid',
-                placeItems: 'center',
-                flexShrink: 0,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                background: 'none',
+                border: 'none',
+                padding: 0,
+                cursor: 'pointer',
               }}
             >
-              <LayoutGrid size={14} style={{ color: 'rgba(255,255,255,0.75)' }} />
-            </div>
-
-            {/* Brand text — smooth opacity fade during expand/collapse */}
-            <motion.div
-              animate={{ opacity: collapsed ? 0 : 1 }}
-              transition={{ duration: collapsed ? 0.1 : 0.25, delay: collapsed ? 0 : 0.08 }}
-              aria-hidden={collapsed}
+              <div
+                style={{
+                  width: 30,
+                  height: 30,
+                  borderRadius: 10,
+                  background: 'rgba(255,255,255,0.06)',
+                  border: '1px solid rgba(255,255,255,0.14)',
+                  display: 'grid',
+                  placeItems: 'center',
+                  flexShrink: 0,
+                }}
+              >
+                <LayoutGrid size={14} style={{ color: 'rgba(255,255,255,0.75)' }} />
+              </div>
+            </button>
+          ) : (
+            <Link
+              href="/tools"
               style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                textDecoration: 'none',
                 minWidth: 0,
-                pointerEvents: collapsed ? 'none' : 'auto',
-                whiteSpace: 'nowrap',
               }}
             >
-              <div style={{ fontFamily: BRAND, fontSize: 13, fontWeight: 700, color: VALUE }}>
-                Nexus-Bio
+              <div
+                style={{
+                  width: 30,
+                  height: 30,
+                  borderRadius: 10,
+                  background: 'rgba(255,255,255,0.06)',
+                  border: '1px solid rgba(255,255,255,0.14)',
+                  display: 'grid',
+                  placeItems: 'center',
+                  flexShrink: 0,
+                }}
+              >
+                <LayoutGrid size={14} style={{ color: 'rgba(255,255,255,0.75)' }} />
               </div>
-              <div style={{ fontFamily: SANS, fontSize: 10, color: LABEL }}>
-                Tools Directory
+
+              {/* Brand text */}
+              <div style={{ minWidth: 0, whiteSpace: 'nowrap' }}>
+                <div style={{ fontFamily: BRAND, fontSize: 13, fontWeight: 700, color: VALUE }}>
+                  Nexus-Bio
+                </div>
+                <div style={{ fontFamily: SANS, fontSize: 10, color: LABEL }}>
+                  Tools Directory
+                </div>
               </div>
-            </motion.div>
-          </Link>
+            </Link>
+          )}
 
         </div>
 
@@ -319,7 +336,7 @@ export default function IDESidebar() {
                           </div>
                         )}
 
-                        {/* Label text — smooth opacity fade */}
+                        {/* Label text — hidden when collapsed for proper centering */}
                         <motion.div
                           animate={{ opacity: collapsed ? 0 : 1 }}
                           transition={{
@@ -328,7 +345,9 @@ export default function IDESidebar() {
                           }}
                           aria-hidden={collapsed}
                           style={{
+                            width: collapsed ? 0 : 'auto',
                             minWidth: 0,
+                            overflow: 'hidden',
                             pointerEvents: collapsed ? 'none' : 'auto',
                             whiteSpace: 'nowrap',
                           }}

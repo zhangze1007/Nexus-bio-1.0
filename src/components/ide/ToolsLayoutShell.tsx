@@ -48,18 +48,15 @@ export default function ToolsLayoutShell({ children }: ToolsLayoutShellProps) {
   const moduleId = deriveModuleId(pathname);
   const isWorkbench = moduleId !== null;
 
-  // Auto-collapse sidebar on route change ONLY if expanded.
-  // This prevents the backdrop from lingering during page transition
-  // (the "black screen" glitch).
+  // Auto-collapse sidebar on route change.
+  // Uses setState directly (not toggle) to ensure deterministic collapse.
   const prevPathRef = useRef(pathname);
   useEffect(() => {
     if (pathname !== prevPathRef.current) {
       prevPathRef.current = pathname;
-      if (!sidebarCollapsed) {
-        useUIStore.getState().toggleSidebarCollapsed();
-      }
+      useUIStore.setState({ sidebarCollapsed: true });
     }
-  }, [pathname, sidebarCollapsed]);
+  }, [pathname]);
 
   // Ctrl+\ shortcut — toggle console (dev mode only)
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
@@ -96,15 +93,16 @@ export default function ToolsLayoutShell({ children }: ToolsLayoutShellProps) {
           {/*
            * initial={false}: Skip mount animation on first render to avoid
            * flash-of-empty-state when navigating directly to a tool URL.
-           * mode="wait": Ensure exit animation completes before enter begins.
+           * Cross-fade (no mode="wait"): Old and new pages overlap briefly
+           * to prevent black screen flash between tool switches.
            */}
-          <AnimatePresence mode="wait" initial={false}>
+          <AnimatePresence initial={false}>
             <motion.div
               key={pathname}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.15, ease: 'easeInOut' }}
+              transition={{ duration: 0.12, ease: 'easeInOut' }}
               style={{ position: 'absolute', inset: 0 }}
             >
               {children}
