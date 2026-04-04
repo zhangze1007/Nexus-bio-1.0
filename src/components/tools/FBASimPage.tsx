@@ -6,6 +6,7 @@ import ExportButton from '../ide/shared/ExportButton';
 import SimErrorBanner from '../ide/shared/SimErrorBanner';
 import { usePersistedState } from '../ide/shared/usePersistedState';
 import { useUIStore } from '../../store/uiStore';
+import { useToolStore } from '../../store/toolStore';
 import {
   METABOLIC_NODES, FLUX_EDGES, REACTION_DEFS, runFBA,
   YEAST_NODES, YEAST_FLUX_EDGES, YEAST_REACTION_DEFS, SHARED_METABOLITES,
@@ -371,6 +372,20 @@ export default function FBASimPage() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [singleResult, communityResult, simMode]);
+
+  /* ── Sync to global toolStore ────────────────────────────────────────── */
+  const setFBA = useToolStore((s) => s.setFBA);
+  useEffect(() => {
+    if (!singleError) {
+      setFBA({
+        growthRate: singleResult.growthRate,
+        fluxes: singleResult.fluxes,
+        objective: singleResult.growthRate,
+        timestamp: Date.now(),
+      });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [singleResult]);
 
   return (
     <>

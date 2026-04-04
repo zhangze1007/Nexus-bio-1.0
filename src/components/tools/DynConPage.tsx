@@ -4,6 +4,7 @@ import AlgorithmInsight from '../ide/shared/AlgorithmInsight';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
 import { useUIStore } from '../../store/uiStore';
+import { useToolStore } from '../../store/toolStore';
 import SimErrorBanner from '../ide/shared/SimErrorBanner';
 import { usePersistedState } from '../ide/shared/usePersistedState';
 import {
@@ -242,6 +243,23 @@ export default function DynConPage() {
         level: 'info',
         module: 'DYNCON',
         message: `ODE sim complete — Kp=${kp} Ki=${ki} Kd=${kd} SP=${setpoint} | Product=${productTiter.toFixed(2)} g/L | RMSE=${doRmse.toFixed(3)} | ${convergence.converged ? 'Converged' : 'Not converged'}`,
+      });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trajectory, simError]);
+
+  /* ── Sync to global toolStore ────────────────────────────────────────── */
+  const setDynCon = useToolStore((s) => s.setDynCon);
+  useEffect(() => {
+    if (last && !simError) {
+      setDynCon({
+        biomass: last.biomass,
+        substrate: last.substrate,
+        product: last.product,
+        dissolvedO2: last.dissolvedO2,
+        kp, ki, kd, setpoint,
+        converged: convergence.converged,
+        timestamp: Date.now(),
       });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
