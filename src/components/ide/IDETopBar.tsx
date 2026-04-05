@@ -2,14 +2,18 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Home, LayoutGrid, Menu } from 'lucide-react';
+import { Home, Terminal, LayoutGrid } from 'lucide-react';
+import { useUIStore } from '../../store/uiStore';
 import { getToolDefinition } from '../tools/shared/toolRegistry';
 import { useUIStore } from '../../store/uiStore';
 import { T } from './tokens';
+import DisplayModeToggle from './shared/DisplayModeToggle';
 
 const SANS = T.SANS;
 const MONO = T.MONO;
 
-const LABEL  = 'rgba(255,255,255,0.28)';
+const BORDER = 'rgba(255,255,255,0.08)';
+const LABEL  = 'rgba(255,255,255,0.45)';
 const VALUE  = 'rgba(255,255,255,0.9)';
 
 interface IDETopBarProps {
@@ -19,6 +23,10 @@ interface IDETopBarProps {
 
 export default function IDETopBar({ moduleId, actions }: IDETopBarProps) {
   const pathname = usePathname();
+  const toggleConsole = useUIStore((s) => s.toggleConsole);
+  const consoleOpen = useUIStore((s) => s.consoleOpen);
+  const consoleEntries = useUIStore((s) => s.consoleEntries);
+  const errorCount = consoleEntries.filter((entry) => entry.level === 'error').length;
   const tool = getToolDefinition(moduleId);
   const isDirectory = !moduleId || pathname === '/tools' || pathname === '/tools/';
   const isWorkbench = !!moduleId && !isDirectory;
@@ -52,6 +60,7 @@ export default function IDETopBar({ moduleId, actions }: IDETopBarProps) {
           </button>
         )}
 
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flex: 1 }}>
         <Link
           href="/"
           style={{
@@ -86,26 +95,19 @@ export default function IDETopBar({ moduleId, actions }: IDETopBarProps) {
           Tools
         </Link>
 
+        {!isDirectory && (
+          <>
+            <span style={{ color: 'rgba(255,255,255,0.16)' }}>/</span>
+
+            <span style={{ fontFamily: MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase' }}>
+              {tool?.shortLabel ?? moduleId}
+            </span>
+          </>
+        )}
+
         {tool && (
           <>
-            {/* Workflow Stage (Direction) */}
-            <span style={{ color: 'rgba(255,255,255,0.16)' }}>/</span>
-            <Link
-              href={`/tools?direction=${encodeURIComponent(tool.direction)}`}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                textDecoration: 'none',
-                color: 'rgba(255,255,255,0.45)',
-                fontFamily: SANS,
-                fontSize: '11px',
-              }}
-            >
-              {tool.direction}
-            </Link>
-
-            {/* Tool Name */}
-            <span style={{ color: 'rgba(255,255,255,0.16)' }}>/</span>
+            <span style={{ color: 'rgba(255,255,255,0.16)' }}>·</span>
             <span
               style={{
                 minWidth: 0,
@@ -122,22 +124,52 @@ export default function IDETopBar({ moduleId, actions }: IDETopBarProps) {
             </span>
           </>
         )}
-
-        {!isDirectory && !tool && (
-          <>
-            <span style={{ color: 'rgba(255,255,255,0.16)' }}>/</span>
-            <span style={{ fontFamily: MONO, fontSize: '10px', color: 'rgba(255,255,255,0.28)', textTransform: 'uppercase' }}>
-              {moduleId}
-            </span>
-          </>
-        )}
       </div>
 
-      {actions && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-          {actions}
-        </div>
-      )}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+        <DisplayModeToggle />
+        {actions}
+        <button
+          type="button"
+          onClick={toggleConsole}
+          aria-pressed={consoleOpen}
+          aria-label="Toggle console"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            minHeight: '36px',
+            padding: '0 12px',
+            borderRadius: '10px',
+            border: `1px solid ${consoleOpen ? 'rgba(255,255,255,0.15)' : BORDER}`,
+            background: consoleOpen ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.03)',
+            color: errorCount > 0 ? 'rgba(255,140,126,0.95)' : VALUE,
+            fontFamily: SANS,
+            fontSize: '12px',
+            cursor: 'pointer',
+          }}
+        >
+          <Terminal size={13} />
+          Console
+          <span
+            style={{
+              minWidth: '22px',
+              height: '22px',
+              borderRadius: '999px',
+              border: `1px solid ${errorCount > 0 ? 'rgba(255,140,126,0.28)' : 'rgba(255,255,255,0.08)'}`,
+              background: errorCount > 0 ? 'rgba(255,140,126,0.12)' : 'rgba(255,255,255,0.04)',
+              color: errorCount > 0 ? 'rgba(255,140,126,0.92)' : LABEL,
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontFamily: MONO,
+              fontSize: '10px',
+            }}
+          >
+            {consoleEntries.length}
+          </span>
+        </button>
+      </div>
     </header>
   );
 }

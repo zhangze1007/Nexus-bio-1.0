@@ -73,7 +73,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 0 16px 0 96px; /* 80px sidebar + 16px gap */
+  padding: 0 16px;
   background: rgba(0,0,0,0.8);
   border-bottom: 1px solid #1a1a1a;
   backdrop-filter: blur(10px);
@@ -84,6 +84,12 @@
 }
 
 /* Sidebar is position:fixed — not in flow. Content offset via padding-left. */
+/* When sidebar is present (workbench pages), offset topbar & console */
+.nb-workbench .nb-ide-topbar {
+  padding-left: 96px; /* 80px sidebar + 16px gap */
+}
+
+/* Sidebar is position:fixed in the component — not in flow. */
 
 .nb-ide-main {
   flex: 1;
@@ -98,6 +104,20 @@
 .nb-ide-console {
   flex-shrink: 0;
   padding-left: 80px; /* collapsed sidebar width — for in-flow console */
+}
+
+/* Hide sidebar scrollbar — scroll via gesture / mouse wheel only */
+.nb-ide-shell aside::-webkit-scrollbar {
+  display: none;
+}
+
+/* Tool icon active/pressed feedback — subtle brightness on tap */
+.nb-tool-icon:active {
+  background: rgba(255,255,255,0.18) !important;
+}
+
+.nb-workbench .nb-ide-console {
+  padding-left: 80px; /* collapsed sidebar width */
 }
 
 .nb-tool-shell__body {
@@ -128,7 +148,8 @@
 }
 
 @media (max-width: 960px) {
-  .nb-ide-topbar {
+  .nb-ide-topbar,
+  .nb-workbench .nb-ide-topbar {
     /* Remove sidebar spacer padding on mobile — sidebar is full overlay */
     padding: 0 12px;
   }
@@ -149,6 +170,7 @@
   }
 
   .nb-ide-console {
+  .nb-workbench .nb-ide-console {
     padding-left: 0;
   }
 }

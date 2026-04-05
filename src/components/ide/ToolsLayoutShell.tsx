@@ -4,9 +4,9 @@
  *
  * This component lives in the shared app/tools/layout.tsx and is NEVER
  * unmounted when navigating between tool pages. It provides:
- *   • IDESidebar  — persistent, position:fixed overlay (Workbench only)
- *   • IDETopBar   — breadcrumb + direction pill
- *   • IDEConsole  — dev-mode only, toggled via Ctrl+\
+ *   • IDESidebar  — persistent, position:fixed overlay
+ *   • IDETopBar   — breadcrumb + mode toggle + console button
+ *   • IDEConsole  — collapsible output panel
  *   • NavigationProvider — unified handleBack() for all children
  *
  * The {children} slot receives the individual tool page content,
@@ -14,16 +14,15 @@
  *
  * Layout model:
  *   The main content area uses padding-left: 80px to reserve space for
- *   the collapsed sidebar (position: fixed) on Workbench pages.
- *   On the Directory page (/tools), sidebar is hidden and no offset is applied.
- *   No CSS grid-template-columns switching means no reflow.
+ *   the collapsed sidebar (position: fixed). No CSS grid-template-columns
+ *   switching means no reflow when sidebar expands/collapses.
  *
  * z-index hierarchy (globals.css):
  *   Content: 10  |  Backdrop: 80  |  Sidebar: 90  |  Topbar: 100
  */
 
 import { usePathname } from 'next/navigation';
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import IDESidebar, { W_COLLAPSED } from './IDESidebar';
 import IDETopBar from './IDETopBar';
@@ -38,14 +37,14 @@ interface ToolsLayoutShellProps {
 export default function ToolsLayoutShell({ children }: ToolsLayoutShellProps) {
   const pathname = usePathname();
   const sidebarCollapsed = useUIStore((s) => s.sidebarCollapsed);
-  const devMode = useUIStore((s) => s.devMode);
-  const consoleOpen = useUIStore((s) => s.consoleOpen);
 
   // Derive moduleId from the current path:
   //   /tools          → null (directory page)
   //   /tools/cethx    → 'cethx'
   //   /tools/pathd    → 'pathd'
   const moduleId = deriveModuleId(pathname);
+
+  // Sidebar only appears on workbench pages (/tools/[id]), not directory (/tools).
   const isWorkbench = moduleId !== null;
 
   // Auto-collapse sidebar on route change.
@@ -58,29 +57,13 @@ export default function ToolsLayoutShell({ children }: ToolsLayoutShellProps) {
     }
   }, [pathname]);
 
-  // Ctrl+\ shortcut — toggle console (dev mode only)
-  const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if (e.ctrlKey && e.key === '\\') {
-      e.preventDefault();
-      const store = useUIStore.getState();
-      if (store.devMode) {
-        store.toggleConsole();
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleKeyDown]);
-
   return (
     <NavigationProvider>
-      <div className="nb-ide-shell" aria-keyshortcuts="Control+Backslash">
-        {/* TopBar — fixed at top, z-index: 60. Always mounted. */}
+      <div className={`nb-ide-shell${isWorkbench ? ' nb-workbench' : ''}`}>
+        {/* TopBar — fixed at top, z-index: 100. Always mounted. */}
         <IDETopBar moduleId={moduleId ?? ''} />
 
-        {/* Sidebar — fixed overlay, z-index: 50. Only on Workbench (/tools/[id]). */}
+        {/* Sidebar — fixed overlay, z-index: 90. Only on workbench pages. */}
         {isWorkbench && <IDESidebar />}
 
         {/* Main canvas — fills remaining space after topbar. */}
@@ -112,8 +95,8 @@ export default function ToolsLayoutShell({ children }: ToolsLayoutShellProps) {
           </AnimatePresence>
         </main>
 
-        {/* Console — dev-mode only, toggled via Ctrl+\ */}
-        {devMode && consoleOpen && <IDEConsole />}
+        {/* Console — bottom panel. Always mounted. */}
+        <IDEConsole />
       </div>
     </NavigationProvider>
   );

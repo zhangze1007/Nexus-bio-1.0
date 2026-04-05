@@ -1,8 +1,11 @@
 'use client';
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import AlgorithmInsight from '../ide/shared/AlgorithmInsight';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
+import DemoBanner from '../ide/shared/DemoBanner';
+import { useUIStore } from '../../store/uiStore';
+import { useToolStore } from '../../store/toolStore';
 import SimErrorBanner from '../ide/shared/SimErrorBanner';
 import { usePersistedState } from '../ide/shared/usePersistedState';
 import {
@@ -21,7 +24,7 @@ import { T, TOOL_RESULT_PALETTE} from '../ide/tokens';
 /* ── Design Tokens ─────────────────────────────────────────────────────────── */
 const PANEL_BG = '#000000';
 const BORDER = 'rgba(255,255,255,0.06)';
-const LABEL = 'rgba(255,255,255,0.28)';
+const LABEL = 'rgba(255,255,255,0.45)';
 const VALUE = 'rgba(255,255,255,0.65)';
 
 const GLASS: React.CSSProperties = {
@@ -230,6 +233,38 @@ export default function DynConPage() {
   const currentFPP = last?.fpp ?? 0;
   const currentADS = last?.adsExpression ?? 0;
 
+  /* ── Console logging ─────────────────────────────────────────────────── */
+  const appendConsole = useUIStore((s) => s.appendConsole);
+  useEffect(() => {
+    if (simError) {
+      appendConsole({ level: 'error', module: 'DYNCON', message: `Simulation error: ${simError}` });
+    } else if (trajectory.length > 0) {
+      appendConsole({
+        level: 'info',
+        module: 'DYNCON',
+        message: `ODE sim complete — Kp=${kp} Ki=${ki} Kd=${kd} SP=${setpoint} | Product=${productTiter.toFixed(2)} g/L | RMSE=${doRmse.toFixed(3)} | ${convergence.isStable ? 'Stable' : 'Unstable'}`,
+      });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trajectory, simError]);
+
+  /* ── Sync to global toolStore ────────────────────────────────────────── */
+  const setDynCon = useToolStore((s) => s.setDynCon);
+  useEffect(() => {
+    if (last && !simError) {
+      setDynCon({
+        biomass: last.biomass,
+        substrate: last.substrate,
+        product: last.product,
+        dissolvedO2: last.dissolvedO2,
+        kp, ki, kd, setpoint,
+        converged: convergence.isStable,
+        timestamp: Date.now(),
+      });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trajectory, simError]);
+
   /* ── Render ─────────────────────────────────────────────────────────────── */
   return (
     <>
@@ -239,6 +274,9 @@ export default function DynConPage() {
           description="Fed-batch bioreactor with PID-controlled DO₂ and Hill-function negative feedback on ADS expression. RK4 integration."
           formula="f(FPP) = Vmax·Kd^n / (Kd^n + FPP^n)"
         />
+        <div style={{ padding: '0 16px' }}>
+          <DemoBanner context="Artemisinin biosynthesis PID control (Ro et al. 2006)" />
+        </div>
 
         {simError ? (
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px' }}>
