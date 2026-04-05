@@ -362,6 +362,105 @@ export default function ToolsDirectoryPage() {
                 <DisplayModeToggle />
               </div>
 
+              {/* ── 4-Stage Workflow Flow Guide ────────────────────────── */}
+              <section
+                style={{
+                  borderRadius: '20px',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  background: '#050505',
+                  padding: '16px 18px',
+                }}
+              >
+                <p style={{ margin: '0 0 14px', fontFamily: T.MONO, fontSize: '10px', color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase' }}>
+                  Workflow Path
+                </p>
+                <div style={{ display: 'flex', alignItems: 'stretch', gap: '0', overflowX: 'auto' }}>
+                  {([
+                    {
+                      stage: 1,
+                      label: 'Discover',
+                      tagline: 'Papers → Evidence → Route',
+                      desc: 'Import literature, extract pathway context, and decide which tools to use.',
+                      color: '#C8E8F0',
+                      bgColor: 'rgba(200,232,240,0.06)',
+                      borderColor: 'rgba(200,232,240,0.2)',
+                      directions: ['Research Intake'] as ToolDirection[],
+                      toolIds: ['litsearch', 'paper-analyzer', 'genbio-ai'],
+                    },
+                    {
+                      stage: 2,
+                      label: 'Design',
+                      tagline: 'Pathway → Structure → Candidate',
+                      desc: 'Map routes, inspect enzyme nodes, and rank structural candidates.',
+                      color: '#C8E0D0',
+                      bgColor: 'rgba(200,224,208,0.06)',
+                      borderColor: 'rgba(200,224,208,0.2)',
+                      directions: ['Pathway & Design', 'Structure & Enzyme'] as ToolDirection[],
+                      toolIds: ['pathd', 'catdes', 'proevol'],
+                    },
+                    {
+                      stage: 3,
+                      label: 'Simulate',
+                      tagline: 'Flux → Dynamics → Omics',
+                      desc: 'Run FBA, PID bioreactor control, thermodynamics, and multi-omics analysis.',
+                      color: '#DDD0E8',
+                      bgColor: 'rgba(221,208,232,0.06)',
+                      borderColor: 'rgba(221,208,232,0.2)',
+                      directions: ['Dynamic & System', 'Omics & Spatial'] as ToolDirection[],
+                      toolIds: ['fbasim', 'dyncon', 'cethx'],
+                    },
+                    {
+                      stage: 4,
+                      label: 'Validate',
+                      tagline: 'Cell-free → DBTL → Learn',
+                      desc: 'Translate candidates into cell-free experiments, DBTL loops, and construct generation.',
+                      color: '#E8DCC8',
+                      bgColor: 'rgba(232,220,200,0.06)',
+                      borderColor: 'rgba(232,220,200,0.2)',
+                      directions: ['Validation & DBTL', 'AI Assistant'] as ToolDirection[],
+                      toolIds: ['cellfree', 'dbtlflow', 'genmim'],
+                    },
+                  ] as const).map((s, i, arr) => (
+                    <React.Fragment key={s.stage}>
+                      <button
+                        type="button"
+                        onClick={() => setDirection(s.directions[0])}
+                        style={{
+                          flex: '1 1 0',
+                          minWidth: '160px',
+                          padding: '14px 16px',
+                          borderRadius: '16px',
+                          border: `1px solid ${s.borderColor}`,
+                          background: s.bgColor,
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                          <span style={{ fontFamily: T.MONO, fontSize: '9px', fontWeight: 700, color: s.color, opacity: 0.7 }}>
+                            STAGE {s.stage}
+                          </span>
+                        </div>
+                        <p style={{ margin: '0 0 4px', fontFamily: T.SANS, fontSize: '14px', fontWeight: 700, color: s.color }}>
+                          {s.label}
+                        </p>
+                        <p style={{ margin: '0 0 8px', fontFamily: T.MONO, fontSize: '9px', color: 'rgba(255,255,255,0.35)' }}>
+                          {s.tagline}
+                        </p>
+                        <p style={{ margin: 0, fontFamily: T.SANS, fontSize: '11px', lineHeight: 1.5, color: 'rgba(255,255,255,0.4)' }}>
+                          {s.desc}
+                        </p>
+                      </button>
+                      {i < arr.length - 1 && (
+                        <div style={{ display: 'flex', alignItems: 'center', padding: '0 6px', flexShrink: 0, color: 'rgba(255,255,255,0.15)', fontSize: '18px' }}>
+                          →
+                        </div>
+                      )}
+                    </React.Fragment>
+                  ))}
+                </div>
+              </section>
+
               <section
                 style={{
                   borderRadius: '20px',

@@ -382,6 +382,7 @@ export default function FBASimPage() {
         growthRate: singleResult.growthRate,
         fluxes: singleResult.fluxes,
         objective: singleResult.growthRate,
+        shadowPrices: singleResult.shadowPrices,
         timestamp: Date.now(),
       });
     }
@@ -394,7 +395,7 @@ export default function FBASimPage() {
         <AlgorithmInsight
           title={simMode === 'single' ? 'Flux Balance Analysis' : 'Community FBA — Multi-species'}
           description={simMode === 'single'
-            ? 'Linear programming maximizes objective flux subject to stoichiometric constraints and reaction bounds.'
+            ? 'Stoichiometric flux model scales E. coli iJO1366 flux proportions from glucose/oxygen uptake rates, with shadow prices computed via central finite differences (∂μ/∂uptake).'
             : 'Composite stoichiometric matrix S_com couples two host organisms through shared exchange reactions in an environmental pool.'}
           formula={simMode === 'single'
             ? 'max cᵀv s.t. Sv=0, lb≤v≤ub'
@@ -509,6 +510,15 @@ export default function FBASimPage() {
                 <MetricCard label="NADH Production" value={singleResult.nadhProduction} unit="mmol/gDW/h" />
                 <MetricCard label="Carbon Efficiency" value={singleResult.carbonEfficiency} unit="%" />
                 <MetricCard label="Feasible" value={singleResult.feasible ? 'YES' : 'NO'} />
+              </div>
+
+              <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '0 0 8px' }}>
+                Shadow Prices (∂μ/∂uptake)
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
+                <MetricCard label="∂μ/∂Glucose" value={singleResult.shadowPrices.glc.toFixed(4)} unit="h⁻¹·gDW/mmol" />
+                <MetricCard label="∂μ/∂Oxygen"  value={singleResult.shadowPrices.o2.toFixed(4)}  unit="h⁻¹·gDW/mmol" />
+                <MetricCard label="∂μ/∂ATP"     value={singleResult.shadowPrices.atp.toFixed(4)} unit="h⁻¹·gDW/mmol" />
               </div>
 
               <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '0 0 8px' }}>

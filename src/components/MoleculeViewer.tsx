@@ -72,7 +72,7 @@ export default function MoleculeViewer({ nodeId, pubchemCID, searchName, molBloc
         if (cancelled) return;
 
         const viewer = window.$3Dmol.createViewer(containerRef.current, {
-          backgroundColor: 'white', antialias: true,
+          backgroundColor: '0x0d0f14', antialias: true,
         });
         viewerRef.current = viewer;
 
@@ -142,26 +142,26 @@ export default function MoleculeViewer({ nodeId, pubchemCID, searchName, molBloc
         : 'Ball-stick keeps atoms and bonds balanced for general inspection and presentation.';
 
   return (
-    <div style={{ width: '100%', height: `${height}px`, position: 'relative', borderRadius: '20px', overflow: 'hidden', background: '#ffffff', border: '1px solid rgba(0,0,0,0.08)', boxShadow: '0 2px 12px rgba(0,0,0,0.12)' }}>
-      <div ref={containerRef} style={{ width: '100%', height: '100%', background: '#ffffff' }} />
+    <div style={{ width: '100%', height: `${height}px`, position: 'relative', borderRadius: '20px', overflow: 'hidden', background: '#0d0f14', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 2px 16px rgba(0,0,0,0.5)' }}>
+      <div ref={containerRef} style={{ width: '100%', height: '100%', background: '#0d0f14' }} />
 
       {status === 'loading' && (
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', background: '#ffffff', pointerEvents: 'none' }}>
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', background: '#0d0f14', pointerEvents: 'none' }}>
           <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-          <Loader2 size={16} style={{ color: '#6495ED', animation: 'spin 1s linear infinite' }} />
-          <span style={{ color: 'rgba(0,0,0,0.35)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1" }}>
+          <Loader2 size={16} style={{ color: '#C8E8F0', animation: 'spin 1s linear infinite' }} />
+          <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1" }}>
             {searchName ? `Searching PubChem for "${searchName}"...` : 'Loading 3D conformer...'}
           </span>
         </div>
       )}
 
       {status === 'error' && (
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', background: '#ffffff' }}>
-          <AlertCircle size={14} style={{ color: 'rgba(180,60,60,0.5)' }} />
-          <span style={{ color: 'rgba(0,0,0,0.35)', fontSize: '11px' }}>Structure not found in PubChem</span>
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', background: '#0d0f14' }}>
+          <AlertCircle size={14} style={{ color: 'rgba(240,160,160,0.7)' }} />
+          <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px' }}>Structure not found in PubChem</span>
           {pubchemLink && (
             <a href={pubchemLink} target="_blank" rel="noopener noreferrer"
-              style={{ color: '#6495ED', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", display: 'flex', alignItems: 'center', gap: '3px' }}>
+              style={{ color: '#C8E8F0', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", display: 'flex', alignItems: 'center', gap: '3px' }}>
               Search PubChem manually <ExternalLink size={8} />
             </a>
           )}
@@ -181,9 +181,9 @@ export default function MoleculeViewer({ nodeId, pubchemCID, searchName, molBloc
                 type="button"
                 onClick={() => setRenderMode(mode.key)}
                 style={{
-                  border: '1px solid rgba(0,0,0,0.08)',
-                  background: renderMode === mode.key ? '#111111' : 'rgba(255,255,255,0.86)',
-                  color: renderMode === mode.key ? '#ffffff' : 'rgba(0,0,0,0.5)',
+                  border: '1px solid rgba(255,255,255,0.12)',
+                  background: renderMode === mode.key ? 'rgba(200,232,240,0.18)' : 'rgba(255,255,255,0.06)',
+                  color: renderMode === mode.key ? '#C8E8F0' : 'rgba(255,255,255,0.45)',
                   fontSize: '9px',
                   borderRadius: '999px',
                   padding: '3px 7px',
@@ -195,7 +195,7 @@ export default function MoleculeViewer({ nodeId, pubchemCID, searchName, molBloc
             ))}
           </div>
           <div style={{ position: 'absolute', top: '8px', left: '10px', pointerEvents: 'none' }}>
-            <span style={{ color: 'rgba(0,0,0,0.3)', fontSize: '9px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", background: 'rgba(255,255,255,0.85)', padding: '2px 6px', borderRadius: '8px' }}>
+            <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '9px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", background: 'rgba(0,0,0,0.45)', padding: '2px 6px', borderRadius: '8px' }}>
               {label || searchName || nodeId}
               {displayCID && ` · CID ${displayCID}`}
             </span>
@@ -203,9 +203,9 @@ export default function MoleculeViewer({ nodeId, pubchemCID, searchName, molBloc
           {pubchemLink && (
             <div style={{ position: 'absolute', top: '8px', right: '10px' }}>
               <a href={pubchemLink} target="_blank" rel="noopener noreferrer"
-                style={{ color: 'rgba(0,0,0,0.25)', fontSize: '9px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", display: 'flex', alignItems: 'center', gap: '3px', textDecoration: 'none', background: 'rgba(255,255,255,0.85)', padding: '2px 6px', borderRadius: '8px' }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(0,0,0,0.7)'; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(0,0,0,0.25)'; }}>
+                style={{ color: 'rgba(255,255,255,0.35)', fontSize: '9px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", display: 'flex', alignItems: 'center', gap: '3px', textDecoration: 'none', background: 'rgba(0,0,0,0.45)', padding: '2px 6px', borderRadius: '8px' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(200,232,240,0.9)'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.35)'; }}>
                 PubChem <ExternalLink size={8} />
               </a>
             </div>
@@ -214,7 +214,7 @@ export default function MoleculeViewer({ nodeId, pubchemCID, searchName, molBloc
             <button
               type="button"
               onClick={() => setSpinEnabled(!spinEnabled)}
-              style={{ color: 'rgba(0,0,0,0.45)', fontSize: '9px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", background: 'rgba(255,255,255,0.85)', padding: '2px 8px', borderRadius: '999px', border: '1px solid rgba(0,0,0,0.08)', cursor: 'pointer', pointerEvents: 'auto' }}
+              style={{ color: 'rgba(255,255,255,0.5)', fontSize: '9px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", background: 'rgba(0,0,0,0.45)', padding: '2px 8px', borderRadius: '999px', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer', pointerEvents: 'auto' }}
             >
               {spinEnabled ? 'Auto spin' : 'Static'}
             </button>
@@ -224,23 +224,23 @@ export default function MoleculeViewer({ nodeId, pubchemCID, searchName, molBloc
 
       {status === 'ready' && (
         <div style={{ position: 'absolute', left: '10px', right: '10px', bottom: '40px', pointerEvents: 'none' }}>
-          <div style={{ padding: '8px 10px', borderRadius: '12px', background: 'rgba(255,255,255,0.82)', border: '1px solid rgba(0,0,0,0.08)' }}>
-            <p style={{ margin: '0 0 4px', color: 'rgba(0,0,0,0.32)', fontSize: '9px', fontFamily: "'Public Sans',sans-serif", textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+          <div style={{ padding: '8px 10px', borderRadius: '12px', background: 'rgba(0,0,0,0.55)', border: '1px solid rgba(255,255,255,0.08)', backdropFilter: 'blur(8px)' }}>
+            <p style={{ margin: '0 0 4px', color: 'rgba(255,255,255,0.3)', fontSize: '9px', fontFamily: "'Public Sans',sans-serif", textTransform: 'uppercase', letterSpacing: '0.08em' }}>
               Structure trace
             </p>
-            <p style={{ margin: '0 0 6px', color: 'rgba(0,0,0,0.62)', fontSize: '10px', lineHeight: 1.5, fontFamily: "'Public Sans',sans-serif" }}>
+            <p style={{ margin: '0 0 6px', color: 'rgba(255,255,255,0.65)', fontSize: '10px', lineHeight: 1.5, fontFamily: "'Public Sans',sans-serif" }}>
               {traceText}
             </p>
             <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-              <span style={{ padding: '2px 6px', borderRadius: '999px', background: 'rgba(0,0,0,0.05)', color: 'rgba(0,0,0,0.5)', fontSize: '9px', fontFamily: "'Public Sans',sans-serif" }}>
+              <span style={{ padding: '2px 6px', borderRadius: '999px', background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.45)', fontSize: '9px', fontFamily: "'Public Sans',sans-serif" }}>
                 {sourceLabel}
               </span>
               {displayCID && (
-                <span style={{ padding: '2px 6px', borderRadius: '999px', background: 'rgba(0,0,0,0.05)', color: 'rgba(0,0,0,0.5)', fontSize: '9px', fontFamily: "'Public Sans',sans-serif" }}>
+                <span style={{ padding: '2px 6px', borderRadius: '999px', background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.45)', fontSize: '9px', fontFamily: "'Public Sans',sans-serif" }}>
                   resolved CID {displayCID}
                 </span>
               )}
-              <span style={{ padding: '2px 6px', borderRadius: '999px', background: 'rgba(0,0,0,0.05)', color: 'rgba(0,0,0,0.5)', fontSize: '9px', fontFamily: "'Public Sans',sans-serif" }}>
+              <span style={{ padding: '2px 6px', borderRadius: '999px', background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.45)', fontSize: '9px', fontFamily: "'Public Sans',sans-serif" }}>
                 mode {renderMode}
               </span>
             </div>

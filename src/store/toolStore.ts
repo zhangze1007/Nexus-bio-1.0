@@ -34,6 +34,7 @@ export interface FBASnapshot {
   growthRate: number;
   fluxes: Record<string, number>;
   objective: number;
+  shadowPrices: { glc: number; o2: number; atp: number };
   timestamp: number;
 }
 

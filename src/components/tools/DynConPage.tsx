@@ -248,6 +248,9 @@ export default function DynConPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trajectory, simError]);
 
+  /* ── Read FBA snapshot from toolStore ────────────────────────────────── */
+  const fba = useToolStore((s) => s.fba);
+
   /* ── Sync to global toolStore ────────────────────────────────────────── */
   const setDynCon = useToolStore((s) => s.setDynCon);
   useEffect(() => {
@@ -274,7 +277,20 @@ export default function DynConPage() {
           description="Fed-batch bioreactor with PID-controlled DO₂ and Hill-function negative feedback on ADS expression. RK4 integration."
           formula="f(FPP) = Vmax·Kd^n / (Kd^n + FPP^n)"
         />
-        <div style={{ padding: '0 16px' }}>
+        <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          {fba && (
+            <div role="status" style={{ padding: '6px 14px', background: 'rgba(74,124,255,0.06)', border: '1px solid rgba(74,124,255,0.2)', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
+              <span style={{ fontFamily: T.MONO, fontSize: '9px', fontWeight: 700, padding: '2px 8px', borderRadius: '999px', background: 'rgba(74,124,255,0.12)', border: '1px solid rgba(74,124,255,0.28)', color: 'rgba(120,170,255,0.95)', textTransform: 'uppercase', letterSpacing: '0.06em', flexShrink: 0 }}>
+                FBASim
+              </span>
+              <span style={{ fontFamily: T.SANS, fontSize: '11px', color: 'rgba(255,255,255,0.55)' }}>
+                {'✓ Flux data loaded — '}
+                <span style={{ fontFamily: T.MONO, color: 'rgba(120,170,255,0.85)' }}>
+                  {`μ=${fba.growthRate.toFixed(4)} h⁻¹ · ∂μ/∂Glc=${fba.shadowPrices.glc.toFixed(4)} · ∂μ/∂O₂=${fba.shadowPrices.o2.toFixed(4)}`}
+                </span>
+              </span>
+            </div>
+          )}
           <DemoBanner context="Artemisinin biosynthesis PID control (Ro et al. 2006)" />
         </div>
 

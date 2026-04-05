@@ -123,14 +123,14 @@ const createProceduralTexture = () => {
 // ─── Risk thresholds (shared with NodePanel) ──────────────────────────
 const HIGH_RISK_THRESHOLD = 0.7;
 
-// ─── BIO_THEME_COLORS — aligned with Design System 2.0 (Dark Mode 2.0) ─
+// ─── BIO_THEME_COLORS — Pastel tones per CLAUDE.md design system ─────────
 export const BIO_THEME_COLORS = {
-  CYAN:   '#FFFFFF',  // Metabolite — bright white
-  GREEN:  '#D0D0D0',  // Gene / target yield — light gray
-  RED:    '#787878',  // Impurity / risk — dark gray
-  AMBER:  '#A8A8A8',  // Enzyme — medium gray
-  PURPLE: '#909090',  // Intermediate / complex — gray
-  PINK:   '#B8B8B8',  // Cofactor — light-medium gray
+  CYAN:   '#C8E8F0',  // Metabolite — pastel sky blue
+  GREEN:  '#C8E0D0',  // Gene / target yield — pastel mint green
+  RED:    '#F0C8C8',  // Impurity / risk — pastel rose red
+  AMBER:  '#E8DCC8',  // Enzyme — pastel warm amber
+  PURPLE: '#DDD0E8',  // Intermediate / complex — pastel lavender
+  PINK:   '#F0D0E4',  // Cofactor — pastel pink
 } as const;
 
 // Map each nodeType to its semantic BIO_THEME color
@@ -586,7 +586,7 @@ function FluxParticles({ edges, nodes, flowSpeed, glowMultiplier }: {
 }
 
 // ─── Scene — unified lighting, integrated depth ────────────────────────
-function Scene({ nodes, edges, onNodeClick, selectedNodeId, roughnessTexture, glowMultiplier, flowSpeed, stressIndex, viewMode }: { nodes:PathwayNode[]; edges:PathwayEdge[]; onNodeClick:(n:PathwayNode)=>void; selectedNodeId:string|null; roughnessTexture:THREE.Texture | null; glowMultiplier:number; flowSpeed:number; stressIndex:number; viewMode: SceneViewMode; }) {
+function Scene({ nodes, edges, onNodeClick, selectedNodeId, roughnessTexture, glowMultiplier, flowSpeed, stressIndex, viewMode, resetSignal }: { nodes:PathwayNode[]; edges:PathwayEdge[]; onNodeClick:(n:PathwayNode)=>void; selectedNodeId:string|null; roughnessTexture:THREE.Texture | null; glowMultiplier:number; flowSpeed:number; stressIndex:number; viewMode: SceneViewMode; resetSignal?: number; }) {
   const [hovId, setHovId]       = useState<string|null>(null);
   const [interact, setInteract] = useState(false);
   const controlsRef = useRef<OrbitControlsHandle | null>(null);
@@ -628,7 +628,10 @@ function Scene({ nodes, edges, onNodeClick, selectedNodeId, roughnessTexture, gl
       controlsRef.current.target.copy(centroid);
       controlsRef.current.update();
     }
-  }, [centroid, camOffset, camera]);
+    // When resetSignal fires, also clear interact so auto-rotate resumes
+    if (resetSignal) setInteract(false);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [centroid, camOffset, camera, resetSignal]);
 
   const cc = useMemo(() => {
     const c: Record<string,number> = {};
@@ -695,6 +698,7 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, 
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('ready');
   const [rendererMode, setRendererMode] = useState<RendererMode>('loading');
   const [viewMode, setViewMode] = useState<SceneViewMode>('network');
+  const [resetSignal, setResetSignal] = useState(0);
   const mountedRef = useRef(true);
   const roughnessTexture = useMemo(() => createProceduralTexture(), []);
 
@@ -815,6 +819,27 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, 
               ))}
             </div>
           )}
+          <button
+            type="button"
+            onClick={() => setResetSignal(s => s + 1)}
+            title="Reset camera to default view"
+            style={{
+              pointerEvents: 'auto',
+              minHeight: '24px',
+              padding: '0 9px',
+              borderRadius: '999px',
+              border: '1px solid rgba(255,255,255,0.10)',
+              background: 'rgba(255,255,255,0.04)',
+              color: 'rgba(255,255,255,0.45)',
+              fontSize: '9px',
+              fontWeight: 700,
+              letterSpacing: '0.04em',
+              textTransform: 'uppercase',
+              cursor: 'pointer',
+            }}
+          >
+            ↺ Reset
+          </button>
           {fallbackLabel && (
             <span style={{ ...getRendererTone(rendererMode), fontSize:'9px', fontFamily:"'Public Sans',sans-serif", padding:'2px 8px', borderRadius:'99px', letterSpacing:'0.04em', fontWeight:700 }}>
               {fallbackLabel}
@@ -932,7 +957,7 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, 
           dpr={[1, 1.5]} performance={{ min: 0.5 }} style={{ background: 'transparent', pointerEvents: 'auto' }}
         >
           <ResizeHandler />
-          <Scene nodes={safeNodes} edges={safeEdges} onNodeClick={onNodeClick} selectedNodeId={selectedNodeId ?? null} roughnessTexture={roughnessTexture} glowMultiplier={glowMultiplier} flowSpeed={flowSpeed} stressIndex={stressIndex} viewMode={viewMode} />
+          <Scene nodes={safeNodes} edges={safeEdges} onNodeClick={onNodeClick} selectedNodeId={selectedNodeId ?? null} roughnessTexture={roughnessTexture} glowMultiplier={glowMultiplier} flowSpeed={flowSpeed} stressIndex={stressIndex} viewMode={viewMode} resetSignal={resetSignal} />
         </Canvas>
       </SceneErrorBoundary>
     </div>

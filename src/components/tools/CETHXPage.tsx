@@ -163,6 +163,8 @@ export default function CETHXPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [thermo]);
 
+  const fba = useToolStore(s => s.fba);
+
   return (
     <ToolShell
       moduleId="cethx"
@@ -175,6 +177,19 @@ export default function CETHXPage() {
       gap={6}
       footer={
         <>
+          {fba && (
+            <div role="status" style={{ padding: '6px 14px', background: 'rgba(74,124,255,0.06)', border: '1px solid rgba(74,124,255,0.2)', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
+              <span style={{ fontFamily: T.MONO, fontSize: '9px', fontWeight: 700, padding: '2px 8px', borderRadius: '999px', background: 'rgba(74,124,255,0.12)', border: '1px solid rgba(74,124,255,0.28)', color: 'rgba(120,170,255,0.95)', textTransform: 'uppercase', letterSpacing: '0.06em', flexShrink: 0 }}>
+                FBASim
+              </span>
+              <span style={{ fontFamily: T.SANS, fontSize: '11px', color: 'rgba(255,255,255,0.55)' }}>
+                {'✓ Flux data loaded — '}
+                <span style={{ fontFamily: T.MONO, color: 'rgba(120,170,255,0.85)' }}>
+                  {`μ=${fba.growthRate.toFixed(4)} h⁻¹ · ∂μ/∂Glc=${fba.shadowPrices.glc.toFixed(4)} · ∂μ/∂O₂=${fba.shadowPrices.o2.toFixed(4)}`}
+                </span>
+              </span>
+            </div>
+          )}
           <DemoBanner context="Glycolysis / TCA / Pentose Phosphate thermodynamics" />
           <ExportButton label="Export JSON" data={thermo} filename="cethx-thermodynamics" format="json" />
           <ExportButton label="Export CSV" data={thermo.steps} filename="cethx-steps" format="csv" />

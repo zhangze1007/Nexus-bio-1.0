@@ -6,7 +6,7 @@ import ModuleCard from './shared/ModuleCard';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
 import { MOCK_RESULTS } from '../../data/mockNEXAI';
-import type { NEXAIResult, CitationNode } from '../../types';
+import type { NEXAIResult, CitationNode, GeneratedPathway } from '../../types';
 import { useUIStore } from '../../store/uiStore';
 
 // ── Full-bleed Citation Graph ──────────────────────────────────────────
@@ -193,6 +193,58 @@ const PRESET_QUERIES = [
   'Dynamic regulation strategies for isoprenoid overproduction',
 ];
 
+// ── Extract year from a citation string (e.g. "Ro et al., 2006.") ───────
+function extractYear(citation?: string): number | null {
+  if (!citation) return null;
+  const m = citation.match(/\b(19|20)\d{2}\b/);
+  return m ? parseInt(m[0]) : null;
+}
+
+// ── Build NEXAIResult from Axon pathway JSON ─────────────────────────────
+function pathwayToResult(pathway: GeneratedPathway, query: string, provider: string): NEXAIResult {
+  const nodes = (pathway.nodes || []).slice(0, 14);
+  const bottlenecks = (pathway as any).bottleneck_enzymes || [];
+  const axon = (pathway as any).axon_interaction;
+
+  // Map pathway nodes → CitationNode for the graph
+  const W = 600, H = 420;
+  const citations: CitationNode[] = nodes.map((n, i) => {
+    // Use 3D position projected to 2D, clamped to canvas
+    const rawX = n.position ? n.position[0] * 45 + W / 2 : 60 + ((i * 115) % (W - 120));
+    const rawY = n.position ? n.position[1] * 30 + H / 2 : 50 + Math.floor(i / 5) * 110 + (i % 2) * 28;
+    return {
+      id: n.id,
+      title: n.label + (n.summary ? ' — ' + n.summary.slice(0, 70) : ''),
+      authors: n.citation || 'Axon · Nexus-Bio analysis',
+      year: extractYear(n.citation) ?? new Date().getFullYear(),
+      relevance: n.confidenceScore ?? 0.75,
+      x: Math.max(40, Math.min(W - 40, rawX)),
+      y: Math.max(40, Math.min(H - 40, rawY)),
+    };
+  });
+
+  // Build answer text
+  let answer = '';
+  if (axon?.question) {
+    answer = axon.question;
+    if (bottlenecks.length > 0) {
+      const bList = bottlenecks
+        .map((b: any) => `${b.enzyme} (${b.efficiency_percent}% efficiency, ${b.yield_loss_percent}% yield loss)`)
+        .join('; ');
+      answer += `\n\nBottleneck enzymes identified: ${bList}.`;
+      if (axon.options?.length) answer += ` Recommended: ${axon.options.join(' or ')}.`;
+    }
+  } else if (bottlenecks.length > 0) {
+    const b = bottlenecks[0];
+    answer = `Axon identified ${nodes.length} pathway nodes for "${query}". Primary bottleneck: ${b.enzyme} at ${b.efficiency_percent}% efficiency (${b.yield_loss_percent}% yield loss). ${b.evidence || ''}`;
+  } else {
+    answer = `Axon mapped ${nodes.length} nodes across the ${query} pathway. Confidence: ${((nodes.reduce((s: number, n: any) => s + (n.confidenceScore ?? 0.7), 0) / Math.max(nodes.length, 1)) * 100).toFixed(0)}%. Source: ${provider}.`;
+  }
+
+  const avgConfidence = nodes.reduce((s, n) => s + (n.confidenceScore ?? 0.7), 0) / Math.max(nodes.length, 1);
+  return { query, answer, citations, confidence: avgConfidence, generatedAt: Date.now() };
+}
+
 // ── Main Page ──────────────────────────────────────────────────────────
 
 export default function NEXAIPage() {
@@ -207,33 +259,41 @@ export default function NEXAIPage() {
     if (!query.trim()) return;
     setHistory(prev => [query, ...prev.slice(0, 19)]);
     setLoading(true);
-    appendConsole({ level: 'info', module: 'nexai', message: 'Query: "' + query.slice(0, 60) + (query.length > 60 ? '…' : '') + '"' });
-
-    const prompt = 'You are a synthetic biology and metabolic engineering expert. Answer the following research question with scientific precision. Provide a detailed, evidence-based answer (2–4 paragraphs). Include specific mechanisms, data points, and cite relevant research where appropriate.\n\nQuestion: ' + query;
+    appendConsole({ level: 'info', module: 'nexai', message: `Query: "${query.slice(0, 60)}${query.length > 60 ? '…' : ''}"` });
 
     try {
-      const res = await fetch('/api/gemini', {
+      // Call Axon in searchQuery mode — returns enriched pathway JSON
+      const res = await fetch('/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+        body: JSON.stringify({ searchQuery: query }),
       });
 
       const data = await res.json();
-      const answer = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      const provider: string = data?.meta?.provider ?? 'groq';
 
-      if (res.ok && answer) {
-        const mockBase = MOCK_RESULTS[mockIndex % MOCK_RESULTS.length];
-        setResult({ ...mockBase, query, answer, confidence: 0.85 + Math.random() * 0.1, generatedAt: Date.now() });
-        appendConsole({ level: 'success', module: 'nexai', message: 'Answer generated (' + (data.meta?.provider ?? 'groq') + ')' });
+      if (!res.ok || !rawText) throw new Error(data?.error ?? `HTTP ${res.status}`);
+
+      // Try to parse as Axon pathway JSON
+      let pathway: GeneratedPathway | null = null;
+      try {
+        const parsed = JSON.parse(rawText);
+        if (parsed?.nodes?.length) pathway = parsed as GeneratedPathway;
+      } catch { /* not JSON — fall through to text mode */ }
+
+      if (pathway) {
+        setResult(pathwayToResult(pathway, query, provider));
+        const bottlenecks = (pathway as any).bottleneck_enzymes?.length ?? 0;
+        appendConsole({ level: 'success', module: 'nexai', message: `Axon: ${pathway.nodes.length} nodes · ${bottlenecks} bottleneck(s) · ${provider}` });
       } else {
-        const err = data?.error ?? ('HTTP ' + res.status);
-        appendConsole({ level: 'warn', module: 'nexai', message: 'API error — ' + err });
-        const mockResult = MOCK_RESULTS[mockIndex % MOCK_RESULTS.length];
-        setResult({ ...mockResult, query, generatedAt: Date.now() });
-        setMockIndex(i => i + 1);
+        // Plain text answer (non-pathway question)
+        setResult({ query, answer: rawText.slice(0, 1200), citations: [], confidence: 0.75, generatedAt: Date.now() });
+        appendConsole({ level: 'success', module: 'nexai', message: `Axon: text response · ${provider}` });
       }
     } catch (e) {
-      appendConsole({ level: 'warn', module: 'nexai', message: 'Network error — ' + String(e).slice(0, 60) });
+      appendConsole({ level: 'warn', module: 'nexai', message: `API unavailable — ${String(e).slice(0, 60)} — using demo data` });
+      // Last-resort mock fallback
       const mockResult = MOCK_RESULTS[mockIndex % MOCK_RESULTS.length];
       setResult({ ...mockResult, query, generatedAt: Date.now() });
       setMockIndex(i => i + 1);

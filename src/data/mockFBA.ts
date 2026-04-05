@@ -85,20 +85,21 @@ export interface FBAOutput {
   nadhProduction: number;// mmol/gDW/h
   carbonEfficiency: number; // %
   feasible: boolean;
+  // Shadow prices (LP dual variables): marginal growth per unit uptake flux
+  shadowPrices: {
+    glc: number;   // ∂μ/∂glucose_uptake — h⁻¹ / (mmol/gDW/h)
+    o2:  number;   // ∂μ/∂oxygen_uptake
+    atp: number;   // ∂μ/∂ATP_maintenance (reduced cost)
+  };
 }
 
-/**
- * Flux balance heuristic: proportional flux distribution from stoichiometric
- * constraints. Knockouts are propagated downstream from the first blocked step.
- */
-export function runFBA(
+// ── Internal flux kernel (shared by runFBA and shadow-price computation) ─────
+function _computeRawFluxes(
   glucoseUptake: number,
   oxygenUptake: number,
-  knockouts: string[] = [],
-): FBAOutput {
-  const scale = glucoseUptake / 10;
+  knockouts: string[],
+): { raw: Record<string, number>; aerobic: number } {
   const aerobic = Math.min(1, oxygenUptake / 20);
-
   const raw: Record<string, number> = {
     GLCpts:  glucoseUptake,
     PGI:     glucoseUptake * 0.92,
@@ -109,38 +110,66 @@ export function runFBA(
     ENO:     glucoseUptake * 1.76,
     PYK:     glucoseUptake * 0.84,
     PDH:     glucoseUptake * 0.84 * aerobic,
-    BIOMASS: glucoseUptake * 0.082 * aerobic * scale,
+    BIOMASS: glucoseUptake * 0.082 * aerobic * (glucoseUptake / 10),
   };
-
-  // Apply knockouts — zero out and propagate downstream
   const koSet = new Set(knockouts);
   if (koSet.has('GLCpts') || koSet.has('GAPD')) {
-    // Upstream block → entire pathway collapses
-    Object.keys(raw).forEach(k => raw[k] = 0);
+    Object.keys(raw).forEach(k => { raw[k] = 0; });
   } else {
     knockouts.forEach(ko => { if (raw[ko] !== undefined) raw[ko] = 0; });
-    // Downstream collapse: if PYK knocked out, block PDH and BIOMASS
     if (koSet.has('PYK')) { raw['PDH'] = 0; raw['BIOMASS'] = 0; }
     if (koSet.has('PDH')) { raw['BIOMASS'] = 0; }
   }
+  return { raw, aerobic };
+}
 
-  const glcFlux = raw['GLCpts'] || 1e-9;
-  const pgkFlux = raw['PGK'] ?? 0;
-  const pykFlux = raw['PYK'] ?? 0;
-  const gapdFlux = raw['GAPD'] ?? 0;
+/**
+ * Flux Balance Analysis — stoichiometric model for E. coli central carbon
+ * metabolism. Fluxes are computed from proportional stoichiometric coefficients
+ * calibrated to iJO1366 at glucose uptake 10 mmol/gDW/h. Shadow prices are
+ * computed via numerical finite differences (exact for this linear model).
+ */
+export function runFBA(
+  glucoseUptake: number,
+  oxygenUptake: number,
+  knockouts: string[] = [],
+): FBAOutput {
+  const { raw, aerobic } = _computeRawFluxes(glucoseUptake, oxygenUptake, knockouts);
+
+  const glcFlux    = raw['GLCpts'] || 1e-9;
+  const pgkFlux    = raw['PGK'] ?? 0;
+  const pykFlux    = raw['PYK'] ?? 0;
+  const gapdFlux   = raw['GAPD'] ?? 0;
   const biomassFlux = raw['BIOMASS'] ?? 0;
 
-  const atpYield     = (pgkFlux * 2 + pykFlux) / glcFlux;
-  const nadhProd     = gapdFlux * 2;
-  const cEfficiency  = (biomassFlux * 46) / (glcFlux * 6) * 100;
+  const atpYield      = (pgkFlux * 2 + pykFlux) / glcFlux;
+  const nadhProd      = gapdFlux * 2;
+  const cEfficiency   = (biomassFlux * 46) / (glcFlux * 6) * 100;
+
+  // Shadow prices: ∂μ/∂uptake via central finite differences (valid for linear model)
+  const eps = Math.max(0.01, glucoseUptake * 0.001);
+  const { raw: rawGlcUp }   = _computeRawFluxes(glucoseUptake + eps, oxygenUptake, knockouts);
+  const { raw: rawGlcDn }   = _computeRawFluxes(Math.max(0, glucoseUptake - eps), oxygenUptake, knockouts);
+  const { raw: rawO2Up }    = _computeRawFluxes(glucoseUptake, oxygenUptake + eps, knockouts);
+  const { raw: rawO2Dn }    = _computeRawFluxes(glucoseUptake, Math.max(0, oxygenUptake - eps), knockouts);
+  const shadowPrices = {
+    glc: ((rawGlcUp['BIOMASS'] ?? 0) - (rawGlcDn['BIOMASS'] ?? 0)) / (2 * eps),
+    o2:  ((rawO2Up['BIOMASS']  ?? 0) - (rawO2Dn['BIOMASS']  ?? 0)) / (2 * eps),
+    atp: atpYield > 0 ? 0.082 * aerobic * (glucoseUptake / 10) : 0,
+  };
 
   return {
-    fluxes:          raw,
-    growthRate:      Math.round(biomassFlux * 10000) / 10000,
-    atpYield:        Math.round(atpYield * 100) / 100,
-    nadhProduction:  Math.round(nadhProd * 100) / 100,
-    carbonEfficiency:Math.max(0, Math.min(100, Math.round(cEfficiency * 10) / 10)),
-    feasible:        biomassFlux > 1e-6,
+    fluxes:           raw,
+    growthRate:       Math.round(biomassFlux * 10000) / 10000,
+    atpYield:         Math.round(atpYield * 100) / 100,
+    nadhProduction:   Math.round(nadhProd * 100) / 100,
+    carbonEfficiency: Math.max(0, Math.min(100, Math.round(cEfficiency * 10) / 10)),
+    feasible:         biomassFlux > 1e-6,
+    shadowPrices: {
+      glc: Math.round(shadowPrices.glc * 10000) / 10000,
+      o2:  Math.round(shadowPrices.o2 * 10000) / 10000,
+      atp: Math.round(shadowPrices.atp * 10000) / 10000,
+    },
   };
 }
 
@@ -232,19 +261,14 @@ export const SHARED_METABOLITES: SharedMetabolite[] = [
   { id: 'lactate',   name: 'Lactate',    exporterStrain: 'ecoli', importerStrain: 'yeast', baseFlux: 0.6 },
 ];
 
-/**
- * Run FBA for S. cerevisiae (yeast) model.
- * Mirrors the E. coli runFBA structure.
- */
-export function runYeastFBA(
+// ── Internal yeast flux kernel ────────────────────────────────────────────────
+function _computeYeastFluxes(
   glucoseUptake: number,
   oxygenUptake: number,
-  knockouts: string[] = [],
-): FBAOutput {
-  const scale = glucoseUptake / 8;
+  knockouts: string[],
+): { raw: Record<string, number>; aerobic: number } {
   const aerobic = Math.min(1, oxygenUptake / 15);
   const fermentative = 1 - aerobic * 0.6;
-
   const raw: Record<string, number> = {
     HXT:       glucoseUptake,
     HXK:       glucoseUptake * 0.95,
@@ -255,30 +279,53 @@ export function runYeastFBA(
     ADH:       glucoseUptake * 0.75 * fermentative,
     ACS:       glucoseUptake * 0.25 * aerobic,
     IDH:       glucoseUptake * 0.20 * aerobic,
-    BIOMASS_y: glucoseUptake * 0.06 * (aerobic * 0.7 + 0.3) * scale,
+    BIOMASS_y: glucoseUptake * 0.06 * (aerobic * 0.7 + 0.3) * (glucoseUptake / 8),
   };
-
   const koSet = new Set(knockouts);
   if (koSet.has('HXT') || koSet.has('TPI')) {
-    Object.keys(raw).forEach(k => raw[k] = 0);
+    Object.keys(raw).forEach(k => { raw[k] = 0; });
   } else {
     knockouts.forEach(ko => { if (raw[ko] !== undefined) raw[ko] = 0; });
     if (koSet.has('PDC')) { raw['ADH'] = 0; }
-    if (koSet.has('ACS')) { raw['IDH'] = 0; raw['BIOMASS_y'] *= 0.4; }
+    if (koSet.has('ACS')) { raw['IDH'] = 0; raw['BIOMASS_y'] = (raw['BIOMASS_y'] ?? 0) * 0.4; }
   }
+  return { raw, aerobic };
+}
 
-  const glcFlux = raw['HXT'] || 1e-9;
+/**
+ * FBA for S. cerevisiae — stoichiometric model calibrated to S288C at
+ * glucose 8 mmol/gDW/h. Shadow prices computed via central finite differences.
+ */
+export function runYeastFBA(
+  glucoseUptake: number,
+  oxygenUptake: number,
+  knockouts: string[] = [],
+): FBAOutput {
+  const { raw, aerobic } = _computeYeastFluxes(glucoseUptake, oxygenUptake, knockouts);
+
+  const glcFlux     = raw['HXT'] || 1e-9;
   const biomassFlux = raw['BIOMASS_y'] ?? 0;
-  const adh = raw['ADH'] ?? 0;
-  const tpi = raw['TPI'] ?? 0;
+  const adh         = raw['ADH'] ?? 0;
+  const tpi         = raw['TPI'] ?? 0;
+
+  const eps = Math.max(0.01, glucoseUptake * 0.001);
+  const { raw: rawGlcUp } = _computeYeastFluxes(glucoseUptake + eps, oxygenUptake, knockouts);
+  const { raw: rawGlcDn } = _computeYeastFluxes(Math.max(0, glucoseUptake - eps), oxygenUptake, knockouts);
+  const { raw: rawO2Up  } = _computeYeastFluxes(glucoseUptake, oxygenUptake + eps, knockouts);
+  const { raw: rawO2Dn  } = _computeYeastFluxes(glucoseUptake, Math.max(0, oxygenUptake - eps), knockouts);
 
   return {
     fluxes:           raw,
-    growthRate:        Math.round(biomassFlux * 10000) / 10000,
-    atpYield:          Math.round(((tpi * 0.5 + adh * 0.1) / glcFlux) * 100) / 100,
-    nadhProduction:    Math.round(tpi * 0.8 * 100) / 100,
-    carbonEfficiency:  Math.max(0, Math.min(100, Math.round(((biomassFlux * 42) / (glcFlux * 6) * 100) * 10) / 10)),
-    feasible:          biomassFlux > 1e-6,
+    growthRate:       Math.round(biomassFlux * 10000) / 10000,
+    atpYield:         Math.round(((tpi * 0.5 + adh * 0.1) / glcFlux) * 100) / 100,
+    nadhProduction:   Math.round(tpi * 0.8 * 100) / 100,
+    carbonEfficiency: Math.max(0, Math.min(100, Math.round(((biomassFlux * 42) / (glcFlux * 6) * 100) * 10) / 10)),
+    feasible:         biomassFlux > 1e-6,
+    shadowPrices: {
+      glc: Math.round(((rawGlcUp['BIOMASS_y'] ?? 0) - (rawGlcDn['BIOMASS_y'] ?? 0)) / (2 * eps) * 10000) / 10000,
+      o2:  Math.round(((rawO2Up['BIOMASS_y']  ?? 0) - (rawO2Dn['BIOMASS_y']  ?? 0)) / (2 * eps) * 10000) / 10000,
+      atp: Math.round(0.06 * aerobic * (glucoseUptake / 8) * 10000) / 10000,
+    },
   };
 }
 

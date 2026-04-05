@@ -56,7 +56,7 @@ export default function ProteinViewer({ pdbId, alphafoldId, label }: { pdbId: st
         containerRef.current.innerHTML = '';
 
         const viewer = window.$3Dmol.createViewer(containerRef.current, {
-          backgroundColor: 'white', antialias: true,
+          backgroundColor: '0x0d0f14', antialias: true,
         });
         viewerRef.current = viewer;
 
@@ -108,7 +108,7 @@ export default function ProteinViewer({ pdbId, alphafoldId, label }: { pdbId: st
             if (viewerRef.current) { try { viewerRef.current.clear(); } catch {} }
             containerRef.current!.innerHTML = '';
             const viewer2 = window.$3Dmol.createViewer(containerRef.current!, {
-              backgroundColor: 'white', antialias: true,
+              backgroundColor: '0x0d0f14', antialias: true,
             });
             viewerRef.current = viewer2;
             await new Promise<void>((resolve, reject) => {
@@ -134,10 +134,10 @@ export default function ProteinViewer({ pdbId, alphafoldId, label }: { pdbId: st
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-      <div style={{ position: 'relative', width: '100%', height: '280px', borderRadius: '20px', overflow: 'hidden', background: '#ffffff', border: '1px solid rgba(0,0,0,0.08)', boxShadow: '0 2px 12px rgba(0,0,0,0.15)' }}>
+      <div style={{ position: 'relative', width: '100%', height: '280px', borderRadius: '20px', overflow: 'hidden', background: '#0d0f14', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 2px 16px rgba(0,0,0,0.5)' }}>
         <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
         {status === 'loading' && (
-          <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#ffffff', gap: '12px', overflow: 'hidden' }}>
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#0d0f14', gap: '12px', overflow: 'hidden' }}>
             <style>{`
               @keyframes dissolve-float {
                 0%   { transform: translate(var(--tx), 40px) scale(0); opacity: 0; }
@@ -173,18 +173,18 @@ export default function ProteinViewer({ pdbId, alphafoldId, label }: { pdbId: st
               <div style={{ position: 'absolute', inset: '14px', borderRadius: '50%', background: 'rgba(0,83,214,0.12)', animation: 'pulse 1.5s ease-in-out infinite' }} />
             </div>
             <div style={{ textAlign: 'center' }}>
-              <p style={{ color: 'rgba(0,0,0,0.5)', fontSize: '11px', fontFamily: "'Inter', -apple-system, sans-serif", fontWeight: 600, margin: '0 0 3px' }}>
+              <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '11px', fontFamily: "'Inter', -apple-system, sans-serif", fontWeight: 600, margin: '0 0 3px' }}>
                 {useAF ? 'Predicting structure' : 'Loading structure'}
               </p>
-              <p style={{ color: 'rgba(0,0,0,0.25)', fontSize: '10px', fontFamily: "'Inter', -apple-system, sans-serif", margin: 0, fontFeatureSettings: "'tnum' 1" }}>
+              <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', fontFamily: "'Inter', -apple-system, sans-serif", margin: 0, fontFeatureSettings: "'tnum' 1" }}>
                 {useAF ? `AlphaFold · ${alphafoldId}` : `RCSB PDB · ${pdbId}`}
               </p>
             </div>
           </div>
         )}
         {status === 'error' && (
-          <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#ffffff', gap: '8px' }}>
-            <span style={{ color: 'rgba(150,60,60,0.6)', fontSize: '12px' }}>Structure unavailable</span>
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#0d0f14', gap: '8px' }}>
+            <span style={{ color: 'rgba(240,160,160,0.7)', fontSize: '12px' }}>Structure unavailable</span>
           </div>
         )}
         {status === 'ready' && (
@@ -200,9 +200,9 @@ export default function ProteinViewer({ pdbId, alphafoldId, label }: { pdbId: st
                   type="button"
                   onClick={() => setRenderMode(mode.key as 'cartoon' | 'surface' | 'confidence')}
                   style={{
-                    border: '1px solid rgba(0,0,0,0.08)',
-                    background: renderMode === mode.key ? '#111111' : 'rgba(255,255,255,0.86)',
-                    color: renderMode === mode.key ? '#ffffff' : 'rgba(0,0,0,0.5)',
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    background: renderMode === mode.key ? 'rgba(200,232,240,0.18)' : 'rgba(255,255,255,0.06)',
+                    color: renderMode === mode.key ? '#C8E8F0' : 'rgba(255,255,255,0.45)',
                     fontSize: '9px',
                     borderRadius: '999px',
                     padding: '3px 7px',
@@ -214,16 +214,16 @@ export default function ProteinViewer({ pdbId, alphafoldId, label }: { pdbId: st
               ))}
             </div>
             <div style={{ position: 'absolute', top: '8px', left: '10px', pointerEvents: 'none' }}>
-              <span style={{ color: 'rgba(0,0,0,0.35)', fontSize: '9px', fontFamily: "'Inter', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1", background: 'rgba(255,255,255,0.8)', padding: '2px 6px', borderRadius: '8px' }}>
+              <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '9px', fontFamily: "'Inter', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1", background: 'rgba(0,0,0,0.45)', padding: '2px 6px', borderRadius: '8px' }}>
                 {useAF ? `AF-${alphafoldId}` : pdbId}
               </span>
             </div>
             <div style={{ position: 'absolute', bottom: '8px', right: '10px' }}>
               <a href={useAF ? `https://alphafold.ebi.ac.uk/entry/${alphafoldId}` : `https://www.rcsb.org/structure/${pdbId}`}
                 target="_blank" rel="noopener noreferrer"
-                style={{ color: 'rgba(0,0,0,0.3)', fontSize: '9px', fontFamily: "'Inter', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1", display: 'flex', alignItems: 'center', gap: '3px', textDecoration: 'none', background: 'rgba(255,255,255,0.8)', padding: '2px 6px', borderRadius: '8px' }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(0,0,0,0.7)'; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(0,0,0,0.3)'; }}>
+                style={{ color: 'rgba(255,255,255,0.35)', fontSize: '9px', fontFamily: "'Inter', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1", display: 'flex', alignItems: 'center', gap: '3px', textDecoration: 'none', background: 'rgba(0,0,0,0.45)', padding: '2px 6px', borderRadius: '8px' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(200,232,240,0.9)'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.35)'; }}>
                 {useAF ? 'AlphaFold DB' : 'RCSB PDB'} <ExternalLink size={8} />
               </a>
             </div>
