@@ -47,18 +47,15 @@ export default function ToolsLayoutShell({ children }: ToolsLayoutShellProps) {
   // Sidebar only appears on workbench pages (/tools/[id]), not directory (/tools).
   const isWorkbench = moduleId !== null;
 
-  // Auto-collapse sidebar on route change ONLY if expanded.
-  // This prevents the backdrop from lingering during page transition
-  // (the "black screen" glitch).
+  // Auto-collapse sidebar on route change.
+  // Uses setState directly (not toggle) to ensure deterministic collapse.
   const prevPathRef = useRef(pathname);
   useEffect(() => {
     if (pathname !== prevPathRef.current) {
       prevPathRef.current = pathname;
-      if (!sidebarCollapsed) {
-        useUIStore.setState({ sidebarCollapsed: true });
-      }
+      useUIStore.setState({ sidebarCollapsed: true });
     }
-  }, [pathname, sidebarCollapsed]);
+  }, [pathname]);
 
   return (
     <NavigationProvider>
@@ -70,17 +67,18 @@ export default function ToolsLayoutShell({ children }: ToolsLayoutShellProps) {
         {isWorkbench && <IDESidebar />}
 
         {/* Main canvas — fills remaining space after topbar. */}
-        <main className="nb-ide-main" role="main" aria-label="Tool workspace">
+        <main
+          className="nb-ide-main"
+          role="main"
+          aria-label="Tool workspace"
+          style={isWorkbench ? undefined : { paddingLeft: 0 }}
+          data-workbench={isWorkbench || undefined}
+        >
           {/*
            * initial={false}: Skip mount animation on first render to avoid
            * flash-of-empty-state when navigating directly to a tool URL.
-           *
-           * Cross-fade mode (no mode="wait"): Old and new page overlap during
-           * transition to avoid black flash between routes.
-           *
-           * left offset: On workbench pages the collapsed sidebar occupies
-           * W_COLLAPSED px on the left. The motion.div uses explicit left
-           * instead of inset:0 so content starts after the sidebar, not under it.
+           * Cross-fade (no mode="wait"): Old and new pages overlap briefly
+           * to prevent black screen flash between tool switches.
            */}
           <AnimatePresence initial={false}>
             <motion.div
@@ -88,14 +86,9 @@ export default function ToolsLayoutShell({ children }: ToolsLayoutShellProps) {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.15, ease: 'easeInOut' }}
-              style={{
-                position: 'absolute',
-                top: 0,
-                right: 0,
-                bottom: 0,
-                left: isWorkbench ? W_COLLAPSED : 0,
-              }}
+              transition={{ duration: 0.12, ease: 'easeInOut' }}
+              className={isWorkbench ? 'nb-workbench-content' : undefined}
+              style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: isWorkbench ? W_COLLAPSED : 0 }}
             >
               {children}
             </motion.div>

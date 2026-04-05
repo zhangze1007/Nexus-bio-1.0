@@ -15,15 +15,15 @@ interface MetricCardProps {
 
 export default function MetricCard({ label, value, unit, delta, warning, highlight }: MetricCardProps) {
   const deltaColor = delta === undefined ? undefined
-    : delta > 0 ? 'rgba(80,200,120,0.9)'
-    : delta < 0 ? 'rgba(255,100,80,0.9)'
+    : delta > 0 ? '#39FF14'
+    : delta < 0 ? '#FF3131'
     : 'rgba(255,255,255,0.35)';
 
   return (
     <div style={{
       padding: '12px 14px',
       background: highlight ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.03)',
-      border: `1px solid ${highlight ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.06)'}`,
+      border: `1px solid ${highlight ? 'rgba(255,139,31,0.15)' : 'rgba(255,255,255,0.06)'}`,
       borderRadius: '12px',
     }}>
       <p style={{ fontFamily: SANS, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.07em', color: 'rgba(255,255,255,0.4)', margin: '0 0 6px' }}>
@@ -43,7 +43,7 @@ export default function MetricCard({ label, value, unit, delta, warning, highlig
         )}
       </div>
       {warning && (
-        <p style={{ fontFamily: SANS, fontSize: '10px', color: 'rgba(255,180,60,0.85)', margin: '4px 0 0', lineHeight: 1.4 }}>
+        <p style={{ fontFamily: SANS, fontSize: '10px', color: '#FF3131', margin: '4px 0 0', lineHeight: 1.4 }}>
           ⚠ {warning}
         </p>
       )}

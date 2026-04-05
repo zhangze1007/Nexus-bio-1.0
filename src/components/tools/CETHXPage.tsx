@@ -315,15 +315,18 @@ export default function CETHXPage() {
                 {thermo.efficiency.toFixed(1)}%
               </motion.span>
             </div>
-            <div style={{ width: '100%', height: '4px', borderRadius: '2px', background: 'rgba(255,255,255,0.04)' }}>
+            <div style={{ width: '100%', height: '4px', borderRadius: '2px', background: 'rgba(255,255,255,0.06)' }}>
               <motion.div
                 animate={{ width: `${Math.min(100, thermo.efficiency)}%` }}
                 transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                 style={{
                   height: '100%', borderRadius: '2px',
                   background: thermo.efficiency > 50
-                    ? `linear-gradient(90deg, ${T.NEON}60, ${T.NEON})`
-                    : 'linear-gradient(90deg, rgba(255,139,31,0.4), rgba(255,139,31,0.9))',
+                    ? 'linear-gradient(90deg, #4A7CFF, #FF8B1F)'
+                    : 'linear-gradient(90deg, rgba(255,49,49,0.4), rgba(255,49,49,0.9))',
+                  boxShadow: thermo.efficiency > 50
+                    ? '0 0 6px rgba(74,124,255,0.3), 0 0 6px rgba(255,139,31,0.3)'
+                    : '0 0 6px rgba(255,49,49,0.3)',
                 }}
               />
             </div>

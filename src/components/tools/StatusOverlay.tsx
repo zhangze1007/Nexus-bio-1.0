@@ -144,7 +144,7 @@ function FluxGauge({ value, label }: { value: number; label: string }) {
         <motion.div
           animate={{ width:`${pct}%` }}
           transition={{ duration:0.3 }}
-          style={{ height:'100%', borderRadius:'2px', background:'rgba(255,255,255,0.75)' }}
+          style={{ height:'100%', borderRadius:'2px', background:'linear-gradient(90deg, #4A7CFF, #FF8B1F)', boxShadow:'0 0 6px rgba(74,124,255,0.25), 0 0 6px rgba(255,139,31,0.25)' }}
         />
       </div>
     </div>

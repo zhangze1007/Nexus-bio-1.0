@@ -98,8 +98,8 @@ export const useUIStore = create<UIState>()(
     consoleEntries: [],
     consoleOpen: false,
 
-    // IDE Sidebar
-    sidebarCollapsed: false,
+    // IDE Sidebar — starts collapsed (icon strip only)
+    sidebarCollapsed: true,
 
     // ── Actions ────────────────────────────────────────────────────────
 

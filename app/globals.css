@@ -24,7 +24,7 @@
   --space-8: 32px; --space-10: 40px; --space-12: 48px;
   --space-16: 64px; --space-20: 80px; --space-24: 96px;
 
-  /* Color tokens — monochrome dark workbench */
+  /* Color tokens — neon dark workbench */
   --color-bg:        #000000;
   --color-surface:   #050505;
   --color-surface-2: #0A0A0A;
@@ -35,6 +35,11 @@
   --color-text-3:    rgba(255,255,255,0.4);
   --color-text-4:    rgba(255,255,255,0.18);
   --color-accent:    rgba(255,255,255,0.78);
+
+  /* Accent gradient — Blue→Orange */
+  --accent-gradient: linear-gradient(90deg, #4A7CFF, #FF8B1F);
+  --neon-success:    #39FF14;
+  --neon-danger:     #FF3131;
 }
 
 .serif { font-family: var(--font-sans); font-weight: 700; }
@@ -78,6 +83,7 @@
   flex-shrink: 0;
 }
 
+/* Sidebar is position:fixed — not in flow. Content offset via padding-left. */
 /* When sidebar is present (workbench pages), offset topbar & console */
 .nb-workbench .nb-ide-topbar {
   padding-left: 96px; /* 80px sidebar + 16px gap */
@@ -90,11 +96,14 @@
   position: relative;
   overflow: hidden;
   background: #000000;
+  /* Content offset is on the absolutely-positioned motion.div (left: 80px),
+     not on this container, because padding is ignored by absolute children. */
   z-index: 10;
 }
 
 .nb-ide-console {
   flex-shrink: 0;
+  padding-left: 80px; /* collapsed sidebar width — for in-flow console */
 }
 
 /* Hide sidebar scrollbar — scroll via gesture / mouse wheel only */
@@ -149,6 +158,18 @@
     overflow: auto;
   }
 
+  /* On mobile/tablet, content uses full width — sidebar is overlay-only */
+  .nb-workbench-content {
+    left: 0 !important;
+  }
+
+  /* Hide collapsed sidebar strip on mobile — only show when expanded (toggled) */
+  .nb-ide-sidebar--collapsed {
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .nb-ide-console {
   .nb-workbench .nb-ide-console {
     padding-left: 0;
   }
