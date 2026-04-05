@@ -8,21 +8,18 @@ import dynamic from 'next/dynamic';
 import TopNav from '../../src/components/TopNav';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useEffect, useRef } from 'react';
+import { useWorkbenchStore } from '../../src/store/workbenchStore';
 
 const SemanticSearch = dynamic(
   () => import('../../src/components/SemanticSearch'),
   { ssr: false }
 );
-const PaperAnalyzer = dynamic(
-  () => import('../../src/components/PaperAnalyzer'),
-  { ssr: false }
-);
-
 export default function ResearchClient() {
   const params = useSearchParams();
   const q = params.get('q') ?? '';
   const router = useRouter();
   const searchEventRef = useRef<CustomEvent | null>(null);
+  const setDraftAnalyzeInput = useWorkbenchStore((s) => s.setDraftAnalyzeInput);
 
   // Auto-fire search if q param present
   useEffect(() => {
@@ -39,6 +36,7 @@ export default function ResearchClient() {
         <SemanticSearch
           initialQuery={q}
           onAnalyzePaper={(text) => {
+            setDraftAnalyzeInput(text);
             router.push('/analyze');
             setTimeout(() => {
               window.dispatchEvent(new CustomEvent('autoFillAnalyzer', { detail: { text } }));

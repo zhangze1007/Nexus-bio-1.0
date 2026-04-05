@@ -26,13 +26,13 @@
  *   </ToolShell>
  */
 'use client';
-import { useEffect, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { motion } from 'framer-motion';
 import { LayoutGrid, ChevronLeft } from 'lucide-react';
-import { useToolStore } from '../../../store/toolStore';
 import { getToolDefinition } from './toolRegistry';
 import { useNavigation } from '../../../contexts/NavigationContext';
 import { T } from '../../ide/tokens';
+import WorkbenchInlineContext from '../../workbench/WorkbenchInlineContext';
 
 const NEON_ACCENT = '#FF8B1F';
 
@@ -52,21 +52,21 @@ export interface ToolShellProps {
   children: ReactNode;
   /** Extra footer content (export buttons) */
   footer?: ReactNode;
+  workbenchSummary?: string;
+  workbenchCompact?: boolean;
+  workbenchSimulated?: boolean;
 }
 
 export default function ToolShell({
   moduleId, title, description, formula,
   grid, columns, rows, gap = 6,
   children, footer,
+  workbenchSummary,
+  workbenchCompact = true,
+  workbenchSimulated = false,
 }: ToolShellProps) {
-  const setActiveModule = useToolStore(s => s.setActiveModule);
   const tool = getToolDefinition(moduleId);
   const { handleBack } = useNavigation();
-
-  useEffect(() => {
-    setActiveModule(moduleId);
-    return () => setActiveModule(null);
-  }, [moduleId, setActiveModule]);
 
   return (
     <div className="nb-tool-shell" style={{
@@ -169,13 +169,32 @@ export default function ToolShell({
       {/* ── BentoGrid ──────────────────────────────────────── */}
       <div className="nb-tool-shell__body" style={{
         flex: 1, minHeight: 0, padding: `${gap}px`,
-        display: 'grid',
-        gridTemplateAreas: grid,
-        gridTemplateColumns: columns ?? '1fr',
-        gridTemplateRows: rows ?? '1fr',
+        display: 'flex',
+        flexDirection: 'column',
         gap: `${gap}px`,
       }}>
-        {children}
+        {workbenchSummary && (
+          <WorkbenchInlineContext
+            toolId={moduleId}
+            title={tool?.name ?? title}
+            summary={workbenchSummary}
+            compact={workbenchCompact}
+            isSimulated={workbenchSimulated}
+          />
+        )}
+        <div
+          style={{
+            flex: 1,
+            minHeight: 0,
+            display: 'grid',
+            gridTemplateAreas: grid,
+            gridTemplateColumns: columns ?? '1fr',
+            gridTemplateRows: rows ?? '1fr',
+            gap: `${gap}px`,
+          }}
+        >
+          {children}
+        </div>
       </div>
 
       {/* ── Footer ─────────────────────────────────────────── */}

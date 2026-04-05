@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
-import ToolsDirectoryPage from '../../src/components/tools/ToolsDirectoryPage';
+import WorkbenchDirectoryPage from '../../src/components/workbench/WorkbenchDirectoryPage';
 
 export const metadata: Metadata = {
   title: 'Tools Directory | Nexus-Bio',
@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 export default function Page() {
   return (
     <Suspense fallback={null}>
-      <ToolsDirectoryPage />
+      <WorkbenchDirectoryPage />
     </Suspense>
   );
 }

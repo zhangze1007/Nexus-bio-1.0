@@ -1,12 +1,14 @@
 'use client';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import AlgorithmInsight from '../ide/shared/AlgorithmInsight';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
 import SimErrorBanner from '../ide/shared/SimErrorBanner';
 import { CRISPRI_TARGETS, greedyKnockdownSchedule } from '../../data/mockGenMIM';
 import type { CRISPRiTarget } from '../../types';
+import { useWorkbenchStore } from '../../store/workbenchStore';
 import { T, TOOL_RESULT_PALETTE} from '../ide/tokens';
+import WorkbenchInlineContext from '../workbench/WorkbenchInlineContext';
 
 function GenomeMap({ targets, selected }: { targets: CRISPRiTarget[]; selected: CRISPRiTarget[] }) {
   const W = 440, H = 120;
@@ -56,9 +58,32 @@ function GenomeMap({ targets, selected }: { targets: CRISPRiTarget[]; selected: 
 }
 
 export default function GenMIMPage() {
+  const project = useWorkbenchStore((s) => s.project);
+  const analyzeArtifact = useWorkbenchStore((s) => s.analyzeArtifact);
+  const fbaPayload = useWorkbenchStore((s) => s.toolPayloads.fbasim);
+  const dynconPayload = useWorkbenchStore((s) => s.toolPayloads.dyncon);
+  const setToolPayload = useWorkbenchStore((s) => s.setToolPayload);
   const [efficiency, setEfficiency] = useState(0.8);
   const [maxTargets, setMaxTargets] = useState(5);
   const [protectEssential, setProtectEssential] = useState(true);
+  const recommendedEfficiency = useMemo(() => {
+    const value = 0.72
+      + (fbaPayload?.result.feasible ? 0.08 : 0)
+      + (dynconPayload?.result.stable ? 0.04 : -0.03);
+    return Math.min(1, Math.max(0.5, Math.round(value * 100) / 100));
+  }, [dynconPayload?.result.stable, fbaPayload?.result.feasible]);
+  const recommendedTargets = useMemo(() => {
+    const count = 3
+      + (analyzeArtifact?.bottleneckAssumptions.length ?? 0)
+      + ((fbaPayload?.result.carbonEfficiency ?? 0) > 60 ? 1 : 0);
+    return Math.min(15, Math.max(1, count));
+  }, [analyzeArtifact?.bottleneckAssumptions.length, fbaPayload?.result.carbonEfficiency]);
+
+  useEffect(() => {
+    setEfficiency(recommendedEfficiency);
+    setMaxTargets(recommendedTargets);
+    setProtectEssential((dynconPayload?.result.doRmse ?? 0.05) <= 0.08);
+  }, [dynconPayload?.result.doRmse, recommendedEfficiency, recommendedTargets]);
 
   const { data: schedule, error: simError } = useMemo(() => {
     try {
@@ -72,6 +97,38 @@ export default function GenMIMPage() {
   const avgEfficiency = schedule.length > 0
     ? schedule.reduce((a, t) => a + t.knockdown_efficiency, 0) / schedule.length : 0;
   const offTargetRisk = schedule.filter(t => t.knockdown_efficiency < 0.9).length / Math.max(schedule.length, 1);
+
+  useEffect(() => {
+    setToolPayload('genmim', {
+      toolId: 'genmim',
+      targetProduct: analyzeArtifact?.targetProduct || project?.targetProduct || project?.title || 'Target Product',
+      sourceArtifactId: analyzeArtifact?.id,
+      efficiencyThreshold: efficiency,
+      maxTargets,
+      protectEssential,
+      result: {
+        selectedTargets: schedule.length,
+        growthImpact,
+        avgEfficiency,
+        offTargetRisk,
+        topGenes: schedule.slice(0, 5).map((target) => target.gene),
+      },
+      updatedAt: Date.now(),
+    });
+  }, [
+    analyzeArtifact?.id,
+    analyzeArtifact?.targetProduct,
+    avgEfficiency,
+    efficiency,
+    growthImpact,
+    maxTargets,
+    offTargetRisk,
+    project?.targetProduct,
+    project?.title,
+    protectEssential,
+    schedule,
+    setToolPayload,
+  ]);
 
   return (
     <>
@@ -89,6 +146,14 @@ export default function GenMIMPage() {
         <div className="nb-tool-panels" style={{ flex: 1 }}>
           {/* Input panel */}
           <div className="nb-tool-sidebar" style={{ width: '240px', borderRight: '1px solid rgba(255,255,255,0.06)', background: '#000000' }}>
+            <WorkbenchInlineContext
+              toolId="genmim"
+              title="Gene Minimization"
+              summary="Translate analyzed bottlenecks into chassis-level genome minimization hypotheses so Stage 3 interventions remain linked to the same project object."
+              compact
+              isSimulated={!analyzeArtifact}
+            />
+
             <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '0 0 12px' }}>
               CRISPRi Parameters
             </p>

@@ -1,5 +1,5 @@
 'use client';
-import { useState, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import AlgorithmInsight from '../ide/shared/AlgorithmInsight';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
@@ -27,6 +27,9 @@ import type {
   MutagenesisResult,
   EnzymeStructure,
 } from '../../services/CatalystDesignerEngine';
+import { useWorkbenchStore } from '../../store/workbenchStore';
+import WorkbenchInlineContext from '../workbench/WorkbenchInlineContext';
+import { buildCatalystSeed } from './shared/workbenchDataflow';
 import { T, TOOL_RESULT_PALETTE} from '../ide/tokens';
 
 /* ── Design Tokens ────────────────────────────────────────────────── */
@@ -646,21 +649,82 @@ function MutagenesisView({ result, enzyme }: { result: MutagenesisResult; enzyme
    ══════════════════════════════════════════════════════════════════════ */
 
 export default function CatalystDesignerPage() {
+  const project = useWorkbenchStore((s) => s.project);
+  const analyzeArtifact = useWorkbenchStore((s) => s.analyzeArtifact);
+  const fbaPayload = useWorkbenchStore((s) => s.toolPayloads.fbasim);
+  const cethxPayload = useWorkbenchStore((s) => s.toolPayloads.cethx);
+  const dbtlPayload = useWorkbenchStore((s) => s.toolPayloads.dbtlflow);
+  const setToolPayload = useWorkbenchStore((s) => s.setToolPayload);
   const [selectedEnzyme, setSelectedEnzyme] = useState<number>(2);
   const [viewMode, setViewMode] = useState<ViewMode>('Binding');
+  const recommendedSeed = useMemo(
+    () => buildCatalystSeed(project, analyzeArtifact, fbaPayload, cethxPayload, dbtlPayload),
+    [analyzeArtifact?.generatedAt, analyzeArtifact?.id, cethxPayload?.updatedAt, dbtlPayload?.feedbackSource, dbtlPayload?.result.improvementRate, dbtlPayload?.result.latestPhase, dbtlPayload?.result.passRate, dbtlPayload?.updatedAt, fbaPayload?.updatedAt, project?.id, project?.updatedAt],
+  );
+
+  useEffect(() => {
+    setSelectedEnzyme(recommendedSeed.enzymeIndex);
+  }, [recommendedSeed.enzymeIndex]);
 
   const enzyme = ENZYME_STRUCTURES[selectedEnzyme];
   const { data: binding, error: simError } = useMemo(() => {
     try { return { data: predictBindingAffinity(enzyme), error: null as string | null }; }
     catch (e) { return { data: predictBindingAffinity(ENZYME_STRUCTURES[selectedEnzyme]), error: e instanceof Error ? e.message : 'Binding prediction failed' }; }
   }, [enzyme]);
-  const sequences = useMemo(() => designSequences(enzyme, 10), [enzyme]);
-  const drain = useMemo(() => estimateMetabolicDrain(enzyme, 0.5), [enzyme]);
+  const sequences = useMemo(() => designSequences(enzyme, recommendedSeed.designCount), [enzyme, recommendedSeed.designCount]);
+  const drain = useMemo(() => estimateMetabolicDrain(enzyme, recommendedSeed.requiredFlux), [enzyme, recommendedSeed.requiredFlux]);
   const balance = useMemo(() => balancePathway(PATHWAY_STEPS), []);
   const pareto = useMemo(() => rankPathways(PATHWAY_CANDIDATES), []);
   const mutagenesis = useMemo(() => predictMutagenesisSites(enzyme, 5), [enzyme]);
 
   const bestPathway = pareto.candidates.find(c => c.id === pareto.bestOverall);
+  useEffect(() => {
+    if (simError) return;
+    setToolPayload('catdes', {
+      toolId: 'catdes',
+      targetProduct: analyzeArtifact?.targetProduct || project?.targetProduct || project?.title || 'Target Product',
+      sourceArtifactId: analyzeArtifact?.id,
+      selectedEnzymeId: enzyme.id,
+      selectedEnzymeName: enzyme.name,
+      selectedView: viewMode,
+      requiredFlux: recommendedSeed.requiredFlux,
+      designCount: recommendedSeed.designCount,
+      result: {
+        bindingKd: binding.predictedKd,
+        overallBinding: binding.overallScore,
+        bestSequenceScore: sequences.designs[0]?.score ?? 0,
+        bestCAI: sequences.designs[0]?.cai ?? 0,
+        totalMetabolicDrain: drain.totalMetabolicDrain,
+        growthPenalty: drain.growthPenalty,
+        isViable: drain.isViable,
+        bestPathway: bestPathway?.name ?? 'No ranked pathway',
+        topMutationSites: mutagenesis.sites.filter((site) => site.predictedEffect === 'beneficial').length,
+        recommendation: drain.recommendation,
+      },
+      updatedAt: Date.now(),
+    });
+  }, [
+    analyzeArtifact?.id,
+    analyzeArtifact?.targetProduct,
+    bestPathway?.name,
+    binding.overallScore,
+    binding.predictedKd,
+    drain.growthPenalty,
+    drain.isViable,
+    drain.recommendation,
+    drain.totalMetabolicDrain,
+    enzyme.id,
+    enzyme.name,
+    mutagenesis.sites,
+    project?.targetProduct,
+    project?.title,
+    recommendedSeed.designCount,
+    recommendedSeed.requiredFlux,
+    sequences.designs,
+    setToolPayload,
+    simError,
+    viewMode,
+  ]);
 
   /* ── Render ──────────────────────────────────────────────────────── */
 
@@ -674,6 +738,15 @@ export default function CatalystDesignerPage() {
           description="AlphaFold 3-inspired binding prediction → ProteinMPNN sequence design → FBA flux coupling → Church-method balancing → Pareto multi-objective ranking → ESM-2 mutagenesis"
           formula="Kd = exp(ΔG_bind/RT) | ΔΔG = Σ BLOSUM(wt,mut)"
         />
+        <div style={{ padding: '0 16px 10px' }}>
+          <WorkbenchInlineContext
+            toolId="catdes"
+            title="Catalyst Design"
+            summary="Catalyst design consumes flux, thermodynamic, and pathway evidence together, so sequence proposals, mutagenesis sites, and viability scoring stay synchronized with the current research object instead of drifting into isolated enzyme demos."
+            compact
+            isSimulated={!analyzeArtifact}
+          />
+        </div>
 
         {simError && (
           <div style={{ padding: '0 16px 8px' }}><SimErrorBanner message={simError} /></div>

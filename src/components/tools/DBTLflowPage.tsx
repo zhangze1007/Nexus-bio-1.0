@@ -1,5 +1,5 @@
 'use client';
-import { useState, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import AlgorithmInsight from '../ide/shared/AlgorithmInsight';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
@@ -21,6 +21,9 @@ import type {
   GibsonAssemblyPlan,
   ProvenanceRecord,
 } from '../../types';
+import { useWorkbenchStore } from '../../store/workbenchStore';
+import WorkbenchInlineContext from '../workbench/WorkbenchInlineContext';
+import { buildDBTLDraft } from './shared/workbenchDataflow';
 import { T, TOOL_RESULT_PALETTE} from '../ide/tokens';
 
 /* ── Design Tokens ── */
@@ -181,6 +184,12 @@ function CycleProgressRing({
 /* ── Main Page Component ── */
 export default function DBTLflowPage() {
   const generator = useMemo(() => new ProtocolGenerator(), []);
+  const project = useWorkbenchStore((s) => s.project);
+  const analyzeArtifact = useWorkbenchStore((s) => s.analyzeArtifact);
+  const catalystPayload = useWorkbenchStore((s) => s.toolPayloads.catdes);
+  const dynconPayload = useWorkbenchStore((s) => s.toolPayloads.dyncon);
+  const cellfreePayload = useWorkbenchStore((s) => s.toolPayloads.cellfree);
+  const setToolPayload = useWorkbenchStore((s) => s.setToolPayload);
 
   // Iteration state (preserved)
   const [iterations, setIterations] = useState<DBTLIteration[]>(INITIAL_ITERATIONS);
@@ -188,6 +197,17 @@ export default function DBTLflowPage() {
   const [result, setResult] = useState('');
   const [unit, setUnit] = useState('mg/L');
   const [passed, setPassed] = useState(true);
+  const liveDraft = useMemo(
+    () => buildDBTLDraft(project, analyzeArtifact, catalystPayload, dynconPayload, cellfreePayload),
+    [analyzeArtifact?.generatedAt, analyzeArtifact?.id, catalystPayload?.updatedAt, cellfreePayload?.updatedAt, dynconPayload?.updatedAt, project?.id, project?.updatedAt],
+  );
+
+  useEffect(() => {
+    setHypothesis(liveDraft.hypothesis);
+    setResult(String(liveDraft.result));
+    setUnit(liveDraft.unit);
+    setPassed(liveDraft.passed);
+  }, [liveDraft.hypothesis, liveDraft.passed, liveDraft.result, liveDraft.unit]);
 
   // Protocol state
   const [generatedProtocol, setGeneratedProtocol] = useState<GeneratedProtocol | null>(null);
@@ -196,22 +216,98 @@ export default function DBTLflowPage() {
   // Feedback loop state
   const [feedbackResult, setFeedbackResult] = useState<FeedbackLoopResult | null>(null);
   const [feedbackLoading, setFeedbackLoading] = useState(false);
+  const [feedbackError, setFeedbackError] = useState<string | null>(null);
+  const liveIteration = useMemo<DBTLIteration>(() => ({
+    id: iterations.length + 1,
+    phase: liveDraft.phase,
+    hypothesis: liveDraft.hypothesis,
+    result: liveDraft.result,
+    unit: liveDraft.unit,
+    passed: liveDraft.passed,
+    notes: `Live handoff: ${liveDraft.notes}`,
+  }), [iterations.length, liveDraft]);
+  const displayIterations = useMemo(() => {
+    const latest = iterations[iterations.length - 1];
+    if (
+      latest
+      && latest.hypothesis === liveIteration.hypothesis
+      && latest.result === liveIteration.result
+      && latest.unit === liveIteration.unit
+    ) {
+      return iterations;
+    }
+    return [...iterations, liveIteration];
+  }, [iterations, liveIteration]);
+  const committedIterations = iterations;
+  const committedBestIteration = committedIterations.reduce((a, b) => (b.result > a.result ? b : a), committedIterations[0]);
+  const committedImprovementRate =
+    committedIterations.length > 1
+      ? ((committedIterations[committedIterations.length - 1].result - committedIterations[0].result) / committedIterations.length).toFixed(2)
+      : '0';
+  const committedPassRate = ((committedIterations.filter(i => i.passed).length / committedIterations.length) * 100).toFixed(0);
+  const latestCommittedIteration = committedIterations[committedIterations.length - 1];
+  const hasCommittedFeedback = iterations.length > INITIAL_ITERATIONS.length || Boolean(feedbackResult);
 
   // Derived values (preserved)
-  const bestIteration = iterations.reduce((a, b) => (b.result > a.result ? b : a), iterations[0]);
+  const bestIteration = displayIterations.reduce((a, b) => (b.result > a.result ? b : a), displayIterations[0]);
   const improvementRate =
-    iterations.length > 1
-      ? ((iterations[iterations.length - 1].result - iterations[0].result) / iterations.length).toFixed(2)
+    displayIterations.length > 1
+      ? ((displayIterations[displayIterations.length - 1].result - displayIterations[0].result) / displayIterations.length).toFixed(2)
       : '0';
-  const passRate = ((iterations.filter(i => i.passed).length / iterations.length) * 100).toFixed(0);
+  const passRate = ((displayIterations.filter(i => i.passed).length / displayIterations.length) * 100).toFixed(0);
 
-  const latestIteration = iterations[iterations.length - 1];
+  const latestIteration = displayIterations[displayIterations.length - 1];
   const currentPhase: DBTLPhase = latestIteration?.phase ?? 'Design';
+  const feedbackGateLabel = hasCommittedFeedback
+    ? `Committed feedback unlocked · iteration #${latestCommittedIteration?.id ?? '—'} now eligible to reseed upstream tools`
+    : 'Draft-only feedback · upstream reseeding remains locked until a new iteration is committed';
+
+  useEffect(() => {
+    setToolPayload('dbtlflow', {
+      toolId: 'dbtlflow',
+      targetProduct: analyzeArtifact?.targetProduct || project?.targetProduct || project?.title || 'Target Product',
+      sourceArtifactId: analyzeArtifact?.id,
+      proposedPhase: liveDraft.phase,
+      draftHypothesis: liveDraft.hypothesis,
+      measuredResult: liveDraft.result,
+      unit: liveDraft.unit,
+      passed: liveDraft.passed,
+      feedbackSource: hasCommittedFeedback ? 'committed' : 'draft',
+      feedbackIterationId: latestCommittedIteration?.id ?? null,
+      result: {
+        bestIteration: committedBestIteration.id,
+        improvementRate: parseFloat(committedImprovementRate),
+        passRate: parseFloat(committedPassRate),
+        latestPhase: latestCommittedIteration?.phase ?? currentPhase,
+        learnedParameters: liveDraft.learnedParameters,
+      },
+      updatedAt: Date.now(),
+    });
+  }, [
+    analyzeArtifact?.id,
+    analyzeArtifact?.targetProduct,
+    committedBestIteration.id,
+    committedImprovementRate,
+    committedPassRate,
+    currentPhase,
+    hasCommittedFeedback,
+    liveDraft.hypothesis,
+    liveDraft.learnedParameters,
+    liveDraft.passed,
+    liveDraft.phase,
+    liveDraft.result,
+    liveDraft.unit,
+    latestCommittedIteration?.id,
+    latestCommittedIteration?.phase,
+    project?.targetProduct,
+    project?.title,
+    setToolPayload,
+  ]);
 
   /* ── Handlers ── */
   function addIteration() {
     if (!hypothesis.trim() || !result.trim()) return;
-    setIterations(prev => appendIteration(prev, hypothesis, parseFloat(result), unit, passed));
+    setIterations(prev => appendIteration(prev, hypothesis, parseFloat(result), unit, passed, liveDraft.notes));
     setHypothesis('');
     setResult('');
   }
@@ -240,16 +336,19 @@ export default function DBTLflowPage() {
     const file = e.target.files?.[0];
     if (!file || !latestIteration) return;
     setFeedbackLoading(true);
+    setFeedbackError(null);
     const reader = new FileReader();
-    reader.onload = () => {
+    reader.onload = async () => {
       const csvText = reader.result as string;
       try {
-        const fbResult = AutomatedFeedbackLoop(csvText, latestIteration, 10, 20);
+        const fbResult = await AutomatedFeedbackLoop(csvText, latestIteration, 10, 20);
         setFeedbackResult(fbResult);
-      } catch {
+      } catch (error) {
         setFeedbackResult(null);
+        setFeedbackError(error instanceof Error ? error.message : 'Authority-backed DBTL validation failed');
+      } finally {
+        setFeedbackLoading(false);
       }
-      setFeedbackLoading(false);
     };
     reader.readAsText(file);
   }
@@ -348,6 +447,56 @@ export default function DBTLflowPage() {
           description="Iterative experimental optimization. Each cycle records a hypothesis, measured result, and learning for the next design."
           formula="Cycle: D→B→T→L→D'"
         />
+
+        <div style={{ padding: '0 16px 10px' }}>
+          <WorkbenchInlineContext
+            toolId="dbtlflow"
+            title="DBTL Workflow"
+            summary="DBTL is the governed feedback engine of the workbench: only committed Learn output is allowed to reseed upstream tools, so experiment feedback stays traceable, reviewable, and safe to trust."
+            compact
+            isSimulated={!analyzeArtifact}
+          />
+        </div>
+
+        <div style={{ padding: '0 16px 10px' }}>
+          <div
+            style={{
+              borderRadius: '14px',
+              border: `1px solid ${hasCommittedFeedback ? 'rgba(158,215,199,0.22)' : 'rgba(255,192,128,0.24)'}`,
+              background: hasCommittedFeedback ? 'rgba(158,215,199,0.10)' : 'rgba(255,192,128,0.08)',
+              padding: '10px 12px',
+              display: 'grid',
+              gap: '4px',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <span style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                Closed-loop gate
+              </span>
+              <span
+                style={{
+                  padding: '3px 8px',
+                  borderRadius: '999px',
+                  border: `1px solid ${hasCommittedFeedback ? 'rgba(158,215,199,0.3)' : 'rgba(255,192,128,0.3)'}`,
+                  background: hasCommittedFeedback ? 'rgba(158,215,199,0.16)' : 'rgba(255,192,128,0.14)',
+                  color: hasCommittedFeedback ? 'rgba(224,244,238,0.92)' : 'rgba(255,219,180,0.92)',
+                  fontFamily: T.MONO,
+                  fontSize: '10px',
+                  letterSpacing: '0.05em',
+                  textTransform: 'uppercase',
+                }}
+              >
+                {hasCommittedFeedback ? 'Feedback Applied' : 'Awaiting Commit'}
+              </span>
+            </div>
+            <div style={{ fontFamily: T.SANS, fontSize: '12px', color: VALUE, lineHeight: 1.6 }}>
+              {feedbackGateLabel}
+            </div>
+            <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, lineHeight: 1.5 }}>
+              committed pass rate {committedPassRate}% · committed improvement {committedImprovementRate} · latest committed phase {latestCommittedIteration?.phase ?? 'Design'}
+            </div>
+          </div>
+        </div>
 
         <div className="nb-tool-panels" style={{ flex: 1 }}>
 
@@ -658,7 +807,7 @@ export default function DBTLflowPage() {
           {/* ═══════ CENTER: Progress Ring + Timeline ═══════ */}
           <div style={{ flex: 1, overflow: 'auto', background: '#050505', padding: '12px', display: 'flex', flexDirection: 'column' }}>
             <div style={{ ...GLASS, padding: '8px 16px', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '16px' }}>
-              <CycleProgressRing currentPhase={currentPhase} iterationCount={iterations.length} />
+              <CycleProgressRing currentPhase={currentPhase} iterationCount={displayIterations.length} />
 
               {/* Phase legend */}
               <div style={{ flex: 1, display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
@@ -691,7 +840,7 @@ export default function DBTLflowPage() {
             </div>
 
             <div style={{ flex: 1, minHeight: 0 }}>
-              <Timeline iterations={iterations} />
+              <Timeline iterations={displayIterations} />
             </div>
           </div>
 
@@ -703,7 +852,7 @@ export default function DBTLflowPage() {
             {/* Campaign Summary (preserved) */}
             <p style={sectionLabel}>Campaign Summary</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px' }}>
-              <MetricCard label="Total Iterations" value={iterations.length} highlight />
+              <MetricCard label="Total Iterations" value={displayIterations.length} highlight />
               <MetricCard label="Best Titer" value={bestIteration?.result ?? 0} unit={bestIteration?.unit} />
               <MetricCard label="Avg Improvement" value={improvementRate} unit={bestIteration?.unit + '/cycle'} />
               <MetricCard label="Pass Rate" value={passRate} unit="%" />
@@ -737,6 +886,12 @@ export default function DBTLflowPage() {
                   style={{ display: 'none' }}
                 />
               </label>
+
+              {feedbackError && (
+                <div style={{ marginBottom: '12px' }}>
+                  <SimErrorBanner message={feedbackError} />
+                </div>
+              )}
 
               {/* Feedback Results */}
               {feedbackResult && (
@@ -875,8 +1030,8 @@ export default function DBTLflowPage() {
           borderTop: `1px solid ${BORDER}`, padding: '8px 16px',
           display: 'flex', gap: '8px', flexShrink: 0, background: PANEL_BG,
         }}>
-          <ExportButton label="Export JSON" data={iterations} filename="dbtlflow-iterations" format="json" />
-          <ExportButton label="Export CSV" data={iterations} filename="dbtlflow-iterations" format="csv" />
+          <ExportButton label="Export JSON" data={displayIterations} filename="dbtlflow-iterations" format="json" />
+          <ExportButton label="Export CSV" data={displayIterations} filename="dbtlflow-iterations" format="csv" />
         </div>
       </div>
     </>

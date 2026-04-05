@@ -5,7 +5,8 @@ import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
 import DemoBanner from '../ide/shared/DemoBanner';
 import { useUIStore } from '../../store/uiStore';
-import { useToolStore } from '../../store/toolStore';
+import { useWorkbenchStore } from '../../store/workbenchStore';
+import WorkbenchInlineContext from '../workbench/WorkbenchInlineContext';
 import SimErrorBanner from '../ide/shared/SimErrorBanner';
 import { usePersistedState } from '../ide/shared/usePersistedState';
 import {
@@ -19,6 +20,7 @@ import {
   hillFeedback,
 } from '../../data/mockDynCon';
 import type { ODEState, HillParams } from '../../types';
+import { buildDynConSeed } from './shared/workbenchDataflow';
 import { T, TOOL_RESULT_PALETTE} from '../ide/tokens';
 
 /* ── Design Tokens ─────────────────────────────────────────────────────────── */
@@ -193,6 +195,13 @@ function StatRow({ label, value, unit }: { label: string; value: string | number
    ══════════════════════════════════════════════════════════════════════════════ */
 export default function DynConPage() {
   const chartRef = useRef<SVGSVGElement>(null);
+  const project = useWorkbenchStore((s) => s.project);
+  const analyzeArtifact = useWorkbenchStore((s) => s.analyzeArtifact);
+  const fbaPayload = useWorkbenchStore((s) => s.toolPayloads.fbasim);
+  const cethxPayload = useWorkbenchStore((s) => s.toolPayloads.cethx);
+  const catalystPayload = useWorkbenchStore((s) => s.toolPayloads.catdes);
+  const dbtlPayload = useWorkbenchStore((s) => s.toolPayloads.dbtlflow);
+  const setToolPayload = useWorkbenchStore((s) => s.setToolPayload);
   /* ── PID state (persisted) ─────────────────────────────────────────────── */
   const [kp, setKp] = usePersistedState('nexus-bio:dyncon:kp', DEFAULT_CONTROLLER.kp);
   const [ki, setKi] = usePersistedState('nexus-bio:dyncon:ki', DEFAULT_CONTROLLER.ki);
@@ -203,6 +212,35 @@ export default function DynConPage() {
   const [vmax, setVmax] = usePersistedState('nexus-bio:dyncon:vmax', DEFAULT_HILL.Vmax);
   const [hillKd, setHillKd] = usePersistedState('nexus-bio:dyncon:hillKd', DEFAULT_HILL.Kd);
   const [hillN, setHillN] = usePersistedState('nexus-bio:dyncon:hillN', DEFAULT_HILL.n);
+  const recommendedSeed = useMemo(
+    () => buildDynConSeed(fbaPayload, cethxPayload, catalystPayload, dbtlPayload),
+    [catalystPayload?.updatedAt, cethxPayload?.updatedAt, dbtlPayload?.feedbackSource, dbtlPayload?.result.improvementRate, dbtlPayload?.result.latestPhase, dbtlPayload?.result.passRate, dbtlPayload?.updatedAt, fbaPayload?.updatedAt],
+  );
+
+  useEffect(() => {
+    setKp(recommendedSeed.controller.kp);
+    setKi(recommendedSeed.controller.ki);
+    setKd(recommendedSeed.controller.kd);
+    setSetpoint(recommendedSeed.controller.setpoint);
+    setVmax(recommendedSeed.hill.vmax);
+    setHillKd(recommendedSeed.hill.kd);
+    setHillN(recommendedSeed.hill.n);
+  }, [
+    recommendedSeed.controller.kd,
+    recommendedSeed.controller.ki,
+    recommendedSeed.controller.kp,
+    recommendedSeed.controller.setpoint,
+    recommendedSeed.hill.kd,
+    recommendedSeed.hill.n,
+    recommendedSeed.hill.vmax,
+    setHillKd,
+    setHillN,
+    setKd,
+    setKi,
+    setKp,
+    setSetpoint,
+    setVmax,
+  ]);
 
   const hill: HillParams = useMemo(() => ({ Vmax: vmax, Kd: hillKd, n: hillN }), [vmax, hillKd, hillN]);
 
@@ -248,25 +286,32 @@ export default function DynConPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trajectory, simError]);
 
-  /* ── Read FBA snapshot from toolStore ────────────────────────────────── */
-  const fba = useToolStore((s) => s.fba);
+  /* ── Read FBA snapshot from canonical workbench state ────────────────── */
+  const fba = fbaPayload;
 
-  /* ── Sync to global toolStore ────────────────────────────────────────── */
-  const setDynCon = useToolStore((s) => s.setDynCon);
   useEffect(() => {
     if (last && !simError) {
-      setDynCon({
-        biomass: last.biomass,
-        substrate: last.substrate,
-        product: last.product,
-        dissolvedO2: last.dissolvedO2,
-        kp, ki, kd, setpoint,
-        converged: convergence.isStable,
-        timestamp: Date.now(),
+      const now = Date.now();
+      setToolPayload('dyncon', {
+        toolId: 'dyncon',
+        targetProduct: analyzeArtifact?.targetProduct || project?.targetProduct || project?.title || 'Target Product',
+        sourceArtifactId: analyzeArtifact?.id,
+        controller: { kp, ki, kd, setpoint },
+        hill: { vmax, kd: hillKd, n: hillN },
+        result: {
+          productTiter,
+          productivity,
+          doRmse,
+          stable: convergence.isStable,
+          burdenIndex: burden.burdenIndex,
+          currentFPP,
+          adsExpression: currentADS,
+          rbsPart: rbsMapping.rbsName,
+        },
+        updatedAt: now,
       });
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [trajectory, simError]);
+  }, [analyzeArtifact?.id, analyzeArtifact?.targetProduct, burden.burdenIndex, convergence.isStable, currentADS, currentFPP, doRmse, hillKd, hillN, kd, ki, kp, last, productTiter, productivity, project?.targetProduct, project?.title, rbsMapping.rbsName, setToolPayload, setpoint, simError, vmax]);
 
   /* ── Render ─────────────────────────────────────────────────────────────── */
   return (
@@ -278,6 +323,13 @@ export default function DynConPage() {
           formula="f(FPP) = Vmax·Kd^n / (Kd^n + FPP^n)"
         />
         <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <WorkbenchInlineContext
+            toolId="dyncon"
+            title="Dynamic Control"
+            summary="Dynamic control inherits bottlenecks, thermodynamic stress, catalyst burden, and DBTL feedback so controller tuning reflects the latest pathway reality instead of freezing around an old operating point."
+            compact
+            isSimulated={!analyzeArtifact}
+          />
           {fba && (
             <div role="status" style={{ padding: '6px 14px', background: 'rgba(74,124,255,0.06)', border: '1px solid rgba(74,124,255,0.2)', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
               <span style={{ fontFamily: T.MONO, fontSize: '9px', fontWeight: 700, padding: '2px 8px', borderRadius: '999px', background: 'rgba(74,124,255,0.12)', border: '1px solid rgba(74,124,255,0.28)', color: 'rgba(120,170,255,0.95)', textTransform: 'uppercase', letterSpacing: '0.06em', flexShrink: 0 }}>
@@ -286,7 +338,7 @@ export default function DynConPage() {
               <span style={{ fontFamily: T.SANS, fontSize: '11px', color: 'rgba(255,255,255,0.55)' }}>
                 {'✓ Flux data loaded — '}
                 <span style={{ fontFamily: T.MONO, color: 'rgba(120,170,255,0.85)' }}>
-                  {`μ=${fba.growthRate.toFixed(4)} h⁻¹ · ∂μ/∂Glc=${fba.shadowPrices.glc.toFixed(4)} · ∂μ/∂O₂=${fba.shadowPrices.o2.toFixed(4)}`}
+                  {`μ=${fba.result.growthRate.toFixed(4)} h⁻¹ · ∂μ/∂Glc=${fba.result.shadowPrices.glc.toFixed(4)} · ∂μ/∂O₂=${fba.result.shadowPrices.o2.toFixed(4)}`}
                 </span>
               </span>
             </div>

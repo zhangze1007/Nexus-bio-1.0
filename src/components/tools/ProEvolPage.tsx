@@ -1,12 +1,14 @@
 'use client';
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import AlgorithmInsight from '../ide/shared/AlgorithmInsight';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
 import SimErrorBanner from '../ide/shared/SimErrorBanner';
 import { FITNESS_LANDSCAPE, generateEvolutionTrajectory, STARTING_SEQUENCE } from '../../data/mockProEvol';
 import type { FitnessPoint } from '../../types';
+import { useWorkbenchStore } from '../../store/workbenchStore';
 import { T } from '../ide/tokens';
+import WorkbenchInlineContext from '../workbench/WorkbenchInlineContext';
 
 // Dark theme tokens
 const PANEL_BG = '#000000';
@@ -105,10 +107,28 @@ function ParamSlider({ label, value, min, max, step = 1, onChange, unit }: {
 }
 
 export default function ProEvolPage() {
+  const project = useWorkbenchStore((s) => s.project);
+  const analyzeArtifact = useWorkbenchStore((s) => s.analyzeArtifact);
+  const catalystPayload = useWorkbenchStore((s) => s.toolPayloads.catdes);
+  const cethxPayload = useWorkbenchStore((s) => s.toolPayloads.cethx);
+  const fbaPayload = useWorkbenchStore((s) => s.toolPayloads.fbasim);
+  const setToolPayload = useWorkbenchStore((s) => s.setToolPayload);
   const [mutationRate, setMutationRate] = useState(5);
   const [rounds, setRounds] = useState(100);
   const [running, setRunning] = useState(false);
   const [trajectory, setTrajectory] = useState<FitnessPoint[]>([{ mutationCount: 0, fitness: 0.08, sequence: STARTING_SEQUENCE.slice(0, 20) + '...' }]);
+  const recommendedMutationRate = useMemo(() => {
+    const rate = 4
+      + (catalystPayload?.result.topMutationSites ?? 2) * 0.9
+      + (cethxPayload?.result.efficiency ?? 0) / 35;
+    return Math.min(20, Math.max(1, Math.round(rate)));
+  }, [catalystPayload?.result.topMutationSites, cethxPayload?.result.efficiency]);
+  const recommendedRounds = useMemo(() => {
+    const depth = 80
+      + (fbaPayload?.result.carbonEfficiency ?? 40)
+      + (catalystPayload?.result.bestCAI ?? 0.6) * 60;
+    return Math.min(500, Math.max(20, Math.round(depth / 10) * 10));
+  }, [catalystPayload?.result.bestCAI, fbaPayload?.result.carbonEfficiency]);
 
   const run = useCallback(() => {
     setRunning(true);
@@ -119,6 +139,13 @@ export default function ProEvolPage() {
     }, 0);
   }, [mutationRate, rounds]);
 
+  useEffect(() => {
+    setMutationRate(recommendedMutationRate);
+    setRounds(recommendedRounds);
+    setTrajectory(generateEvolutionTrajectory(recommendedMutationRate / 100, recommendedRounds));
+    setRunning(false);
+  }, [recommendedMutationRate, recommendedRounds]);
+
   const bestFitness = useMemo(() => Math.max(...trajectory.map(p => p.fitness)), [trajectory]);
   const beneficialMutations = useMemo(() =>
     trajectory.filter((p, i) => i > 0 && p.fitness > trajectory[i - 1].fitness).length,
@@ -128,6 +155,35 @@ export default function ProEvolPage() {
     trajectory.find(p => p.fitness === bestFitness)?.sequence ?? '',
     [trajectory, bestFitness]
   );
+
+  useEffect(() => {
+    setToolPayload('proevol', {
+      toolId: 'proevol',
+      targetProduct: analyzeArtifact?.targetProduct || project?.targetProduct || project?.title || 'Target Product',
+      sourceArtifactId: analyzeArtifact?.id,
+      mutationRate,
+      rounds,
+      result: {
+        bestFitness,
+        beneficialMutations,
+        trajectoryLength: trajectory.length,
+        bestSequence,
+      },
+      updatedAt: Date.now(),
+    });
+  }, [
+    analyzeArtifact?.id,
+    analyzeArtifact?.targetProduct,
+    bestFitness,
+    bestSequence,
+    beneficialMutations,
+    mutationRate,
+    project?.targetProduct,
+    project?.title,
+    rounds,
+    setToolPayload,
+    trajectory.length,
+  ]);
 
   return (
     <>
@@ -141,6 +197,14 @@ export default function ProEvolPage() {
         <div className="nb-tool-panels" style={{ flex: 1 }}>
           {/* Input panel */}
           <div className="nb-tool-sidebar" style={{ width: '240px', borderRight: `1px solid ${BORDER}`, background: PANEL_BG }}>
+            <WorkbenchInlineContext
+              toolId="proevol"
+              title="Protein Evolution Simulator"
+              summary="Push enzyme candidates from Analyze into directed-evolution hypotheses so mutation rounds stay connected to pathway bottlenecks instead of running as an isolated simulator."
+              compact
+              isSimulated={!analyzeArtifact}
+            />
+
             <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: LABEL, margin: '0 0 12px' }}>
               Evolution Parameters
             </p>

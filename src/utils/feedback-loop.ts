@@ -15,7 +15,8 @@ import type {
   QCFlag,
   DBTLIteration,
 } from '../types';
-import { runFBA } from '../data/mockFBA';
+import { findBenchmarkByTarget } from '../data/experimentalBenchmarks';
+import { solveAuthorityFBA } from '../services/FBAAuthorityClient';
 
 // ── CSV Parser ────────────────────────────────────────────────────────────────
 export function parseCSVData(csvText: string): TestDataRow[] {
@@ -51,18 +52,27 @@ export function parseCSVData(csvText: string): TestDataRow[] {
 // ── QC Validation Gate ────────────────────────────────────────────────────────
 // Uses FBA to compute the theoretical maximum yield. If measured exceeds
 // theoretical, flag as "Sensor Anomaly".
-export function validateAgainstFBA(
+export async function validateAgainstFBA(
   data: TestDataRow[],
   glucoseUptake: number = 10,
   oxygenUptake: number = 20,
-): QCFlag[] {
-  const fbaResult = runFBA(glucoseUptake, oxygenUptake, []);
+  targetHint?: string,
+): Promise<QCFlag[]> {
+  const fbaResult = await solveAuthorityFBA({
+    objective: 'product',
+    glucoseUptake,
+    oxygenUptake,
+    knockouts: [],
+  });
+  const benchmark = findBenchmarkByTarget(targetHint);
 
   // Theoretical max yield estimate (mg/L):
   // Carbon efficiency × substrate × molecular weight scaling
   // Artemisinin MW ≈ 282 g/mol, Glucose MW = 180 g/mol
-  const theoreticalMaxYield =
-    (fbaResult.carbonEfficiency / 100) * glucoseUptake * 180 * 0.8;
+  const mechanisticYield = (fbaResult.carbonEfficiency / 100) * glucoseUptake * 180 * 0.8;
+  const theoreticalMaxYield = benchmark
+    ? Math.min(benchmark.theoreticalYieldMgL, mechanisticYield * 1.1)
+    : mechanisticYield;
 
   const flags: QCFlag[] = [];
 
@@ -184,12 +194,12 @@ function runMOO(
 }
 
 // ── Main Feedback Loop Function ───────────────────────────────────────────────
-export function AutomatedFeedbackLoop(
+export async function AutomatedFeedbackLoop(
   csvText: string,
   currentIteration: DBTLIteration,
   glucoseUptake: number = 10,
   oxygenUptake: number = 20,
-): FeedbackLoopResult {
+): Promise<FeedbackLoopResult> {
   // 1. Parse uploaded data
   const data = parseCSVData(csvText);
   if (data.length === 0) {
@@ -216,7 +226,7 @@ export function AutomatedFeedbackLoop(
   const worstIdx = yields.indexOf(Math.min(...yields));
 
   // 3. QC validation gate — check against FBA theoretical max
-  const qcFlags = validateAgainstFBA(data, glucoseUptake, oxygenUptake);
+  const qcFlags = await validateAgainstFBA(data, glucoseUptake, oxygenUptake, currentIteration.hypothesis);
 
   // 4. Run Multi-Objective Optimization
   const suggestions = runMOO(data, currentIteration);

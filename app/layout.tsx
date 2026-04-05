@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import WorkbenchSyncProvider from '../src/components/workbench/WorkbenchSyncProvider';
 
 export const metadata: Metadata = {
   title: 'Nexus-Bio | Next-Gen Bio-Intelligent Architecture',
@@ -40,6 +41,7 @@ export default function RootLayout({
         />
       </head>
       <body>
+        <WorkbenchSyncProvider />
         <div id="root">{children}</div>
       </body>
     </html>

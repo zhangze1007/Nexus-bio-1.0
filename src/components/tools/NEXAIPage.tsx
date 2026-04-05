@@ -1,13 +1,14 @@
 'use client';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ToolShell, { TOOL_TOKENS as T } from './shared/ToolShell';
 import ModuleCard from './shared/ModuleCard';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
-import { MOCK_RESULTS } from '../../data/mockNEXAI';
 import type { NEXAIResult, CitationNode, GeneratedPathway } from '../../types';
 import { useUIStore } from '../../store/uiStore';
+import { useWorkbenchStore } from '../../store/workbenchStore';
+import WorkbenchInlineContext from '../workbench/WorkbenchInlineContext';
 
 // ── Full-bleed Citation Graph ──────────────────────────────────────────
 
@@ -245,15 +246,142 @@ function pathwayToResult(pathway: GeneratedPathway, query: string, provider: str
   return { query, answer, citations, confidence: avgConfidence, generatedAt: Date.now() };
 }
 
+function buildContextualResult({
+  query,
+  projectTitle,
+  targetProduct,
+  analyzeArtifact,
+  evidenceItems,
+  selectedEvidenceIds,
+  nextToolIds,
+}: {
+  query: string;
+  projectTitle?: string;
+  targetProduct?: string;
+  analyzeArtifact?: {
+    targetProduct: string;
+    pathwayCandidates: Array<{ label: string; description: string }>;
+    bottleneckAssumptions: Array<{ label: string; detail: string }>;
+    enzymeCandidates: Array<{ label: string; rationale: string }>;
+    thermodynamicConcerns: string[];
+    recommendedNextTools: string[];
+  } | null;
+  evidenceItems: Array<{
+    id: string;
+    title: string;
+    authors: string[];
+    year?: string;
+    abstract: string;
+  }>;
+  selectedEvidenceIds: string[];
+  nextToolIds: string[];
+}): NEXAIResult {
+  const scopedEvidence = evidenceItems.filter((item) => selectedEvidenceIds.includes(item.id));
+  const activeEvidence = (scopedEvidence.length > 0 ? scopedEvidence : evidenceItems).slice(0, 6);
+  const citations: CitationNode[] = activeEvidence.map((item, index) => ({
+    id: item.id,
+    title: item.title,
+    authors: item.authors.join(', ') || 'Workbench evidence',
+    year: Number.parseInt(item.year ?? '', 10) || 2024,
+    relevance: Math.max(0.38, 0.88 - index * 0.08),
+    x: 90 + (index % 3) * 180,
+    y: 90 + Math.floor(index / 3) * 150,
+  }));
+
+  const target = analyzeArtifact?.targetProduct || targetProduct || projectTitle || 'current project';
+  const topPathway = analyzeArtifact?.pathwayCandidates[0];
+  const topBottleneck = analyzeArtifact?.bottleneckAssumptions[0];
+  const topEnzyme = analyzeArtifact?.enzymeCandidates[0];
+  const thermodynamicConcern = analyzeArtifact?.thermodynamicConcerns[0];
+  const recommendedTool = analyzeArtifact?.recommendedNextTools[0] || nextToolIds[0] || 'pathd';
+  const confidence = Math.min(
+    0.92,
+    0.42
+      + (activeEvidence.length > 0 ? 0.18 : 0)
+      + (topBottleneck ? 0.15 : 0)
+      + (topPathway ? 0.1 : 0)
+      + (thermodynamicConcern ? 0.07 : 0),
+  );
+
+  const lines = [
+    `Axon synthesized a project-scoped answer for "${query}" using the current Nexus-Bio evidence graph rather than a canned fallback.`,
+    `Target focus: ${target}.`,
+    topPathway ? `Primary pathway candidate: ${topPathway.label}. ${topPathway.description}` : 'No structured pathway candidate has been committed yet.',
+    topBottleneck ? `Leading bottleneck: ${topBottleneck.label}. ${topBottleneck.detail}` : 'No explicit bottleneck has been committed yet.',
+    topEnzyme ? `Highest-priority enzyme candidate: ${topEnzyme.label}. ${topEnzyme.rationale}` : 'No enzyme candidate has been prioritized yet.',
+    thermodynamicConcern ? `Thermodynamic concern: ${thermodynamicConcern}` : 'No dominant thermodynamic penalty is currently flagged.',
+    `Recommended next move: ${recommendedTool.toUpperCase()}.`,
+    activeEvidence.length > 0
+      ? `Evidence basis: ${activeEvidence.map((item) => item.title).join(' · ')}.`
+      : 'Evidence basis is currently thin; add Research evidence to strengthen the answer.',
+  ];
+
+  return {
+    query,
+    answer: lines.join('\n\n'),
+    citations,
+    confidence,
+    generatedAt: Date.now(),
+  };
+}
+
 // ── Main Page ──────────────────────────────────────────────────────────
 
 export default function NEXAIPage() {
   const appendConsole = useUIStore(s => s.appendConsole);
+  const project = useWorkbenchStore((s) => s.project);
+  const analyzeArtifact = useWorkbenchStore((s) => s.analyzeArtifact);
+  const evidenceItems = useWorkbenchStore((s) => s.evidenceItems);
+  const selectedEvidenceIds = useWorkbenchStore((s) => s.selectedEvidenceIds);
+  const nextRecommendations = useWorkbenchStore((s) => s.nextRecommendations);
+  const setToolPayload = useWorkbenchStore((s) => s.setToolPayload);
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<NEXAIResult | null>(null);
-  const [mockIndex, setMockIndex] = useState(0);
+  const [resultMode, setResultMode] = useState<'pathway' | 'text' | 'idle'>('idle');
   const [history, setHistory] = useState<string[]>([]);
+
+  const contextPrompt = useMemo(() => {
+    if (analyzeArtifact) {
+      const bottleneck = analyzeArtifact.bottleneckAssumptions[0]?.label ?? 'current pathway bottleneck';
+      return `What are the highest-risk assumptions for ${analyzeArtifact.targetProduct}, especially around ${bottleneck}, and which tool should I run next?`;
+    }
+    if (project?.targetProduct) {
+      return `Summarize the best next step for the ${project.targetProduct} program using the current evidence bundle.`;
+    }
+    return '';
+  }, [analyzeArtifact, project?.targetProduct]);
+
+  useEffect(() => {
+    if (contextPrompt && !query.trim() && !result && history.length === 0) {
+      setQuery(contextPrompt);
+    }
+  }, [contextPrompt, history.length, query, result]);
+
+  useEffect(() => {
+    setToolPayload('nexai', {
+      toolId: 'nexai',
+      targetProduct: analyzeArtifact?.targetProduct ?? project?.targetProduct ?? 'Scientific workbench',
+      sourceArtifactId: analyzeArtifact?.id,
+      query: query || contextPrompt,
+      result: {
+        confidence: result?.confidence ?? 0,
+        citations: result?.citations.length ?? 0,
+        answerPreview: result?.answer.slice(0, 180) ?? '',
+        mode: result ? resultMode : 'idle',
+      },
+      updatedAt: Date.now(),
+    });
+  }, [
+    analyzeArtifact?.id,
+    analyzeArtifact?.targetProduct,
+    contextPrompt,
+    project?.targetProduct,
+    query,
+    result,
+    resultMode,
+    setToolPayload,
+  ]);
 
   async function runQuery() {
     if (!query.trim()) return;
@@ -261,12 +389,25 @@ export default function NEXAIPage() {
     setLoading(true);
     appendConsole({ level: 'info', module: 'nexai', message: `Query: "${query.slice(0, 60)}${query.length > 60 ? '…' : ''}"` });
 
+    const contextualQuery = analyzeArtifact
+      ? [
+          query,
+          '',
+          'Workbench context:',
+          `Target product: ${analyzeArtifact.targetProduct}`,
+          `Pathway candidates: ${analyzeArtifact.pathwayCandidates.length}`,
+          `Evidence bundle size: ${selectedEvidenceIds.length}`,
+          `Top bottleneck: ${analyzeArtifact.bottleneckAssumptions[0]?.label ?? 'Not specified'}`,
+          `Thermodynamic concern: ${analyzeArtifact.thermodynamicConcerns[0] ?? 'Not specified'}`,
+        ].join('\n')
+      : query;
+
     try {
       // Call Axon in searchQuery mode — returns enriched pathway JSON
       const res = await fetch('/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ searchQuery: query }),
+        body: JSON.stringify({ searchQuery: contextualQuery }),
       });
 
       const data = await res.json();
@@ -284,19 +425,27 @@ export default function NEXAIPage() {
 
       if (pathway) {
         setResult(pathwayToResult(pathway, query, provider));
+        setResultMode('pathway');
         const bottlenecks = (pathway as any).bottleneck_enzymes?.length ?? 0;
         appendConsole({ level: 'success', module: 'nexai', message: `Axon: ${pathway.nodes.length} nodes · ${bottlenecks} bottleneck(s) · ${provider}` });
       } else {
         // Plain text answer (non-pathway question)
         setResult({ query, answer: rawText.slice(0, 1200), citations: [], confidence: 0.75, generatedAt: Date.now() });
+        setResultMode('text');
         appendConsole({ level: 'success', module: 'nexai', message: `Axon: text response · ${provider}` });
       }
     } catch (e) {
-      appendConsole({ level: 'warn', module: 'nexai', message: `API unavailable — ${String(e).slice(0, 60)} — using demo data` });
-      // Last-resort mock fallback
-      const mockResult = MOCK_RESULTS[mockIndex % MOCK_RESULTS.length];
-      setResult({ ...mockResult, query, generatedAt: Date.now() });
-      setMockIndex(i => i + 1);
+      appendConsole({ level: 'warn', module: 'nexai', message: `API unavailable — ${String(e).slice(0, 80)} — using contextual synthesis` });
+      setResult(buildContextualResult({
+        query,
+        projectTitle: project?.title,
+        targetProduct: project?.targetProduct,
+        analyzeArtifact,
+        evidenceItems,
+        selectedEvidenceIds,
+        nextToolIds: nextRecommendations.map((item) => item.toolId),
+      }));
+      setResultMode('text');
     }
     setLoading(false);
   }
@@ -318,6 +467,37 @@ export default function NEXAIPage() {
       {/* ── Presets & Citations ──────────────────────────────── */}
       <ModuleCard area="presets" title="Quick Queries">
         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, overflowY: 'auto' }}>
+          <WorkbenchInlineContext
+            toolId="nexai"
+            title="Axon"
+            summary="Cross-stage copilot for literature synthesis, bottleneck interpretation, and tool routing across the active Nexus-Bio project."
+            compact
+            isSimulated={!analyzeArtifact}
+          />
+
+          {contextPrompt && (
+            <button
+              onClick={() => setQuery(contextPrompt)}
+              style={{
+                display: 'block',
+                width: '100%',
+                textAlign: 'left',
+                padding: '7px 10px',
+                background: `${T.NEON}08`,
+                border: `1px solid ${T.NEON}20`,
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontFamily: T.SANS,
+                fontSize: '10px',
+                lineHeight: 1.5,
+                color: T.NEON,
+                marginBottom: '4px',
+              }}
+            >
+              Use current workbench context
+            </button>
+          )}
+
           {PRESET_QUERIES.map((q, i) => (
             <motion.button
               key={i}

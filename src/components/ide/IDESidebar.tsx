@@ -22,7 +22,8 @@ import { useCallback } from 'react';
 import { LayoutGrid } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUIStore } from '../../store/uiStore';
-import { TOOL_DEFINITIONS, TOOL_DIRECTIONS } from '../tools/shared/toolRegistry';
+import { TOOL_DEFINITIONS } from '../tools/shared/toolRegistry';
+import { CROSS_STAGE_TOOL_IDS, WORKBENCH_STAGES } from '../tools/shared/workbenchConfig';
 import { T } from '../ide/tokens';
 
 // ── Design tokens ──────────────────────────────────────────────────────
@@ -205,12 +206,12 @@ export default function IDESidebar() {
 
         {/* ── Navigation list ────────────────────────────────────── */}
         <nav style={{ flex: 1, paddingBottom: 12 }}>
-          {TOOL_DIRECTIONS.map((direction) => {
-            const tools = TOOL_DEFINITIONS.filter((t) => t.direction === direction);
+          {WORKBENCH_STAGES.map((stage) => {
+            const tools = TOOL_DEFINITIONS.filter((t) => stage.toolIds.includes(t.id));
 
             return (
               <section
-                key={direction}
+                key={stage.id}
                 style={{
                   padding: collapsed ? '10px 8px 0' : '12px 12px 0',
                   borderTop: collapsed ? '1px solid rgba(255,255,255,0.06)' : 'none',
@@ -233,7 +234,7 @@ export default function IDESidebar() {
                     pointerEvents: collapsed ? 'none' : 'auto',
                   }}
                 >
-                  {direction}
+                  {stage.shortLabel} · {stage.label}
                 </motion.p>
 
                 <div style={{
@@ -359,6 +360,136 @@ export default function IDESidebar() {
               </section>
             );
           })}
+
+          <section
+            style={{
+              padding: collapsed ? '10px 8px 0' : '12px 12px 0',
+              borderTop: collapsed ? '1px solid rgba(255,255,255,0.06)' : 'none',
+            }}
+          >
+            <motion.p
+              animate={{ opacity: collapsed ? 0 : 1, height: collapsed ? 0 : 'auto' }}
+              transition={{ duration: 0.15 }}
+              aria-hidden={collapsed}
+              style={{
+                margin: collapsed ? 0 : '0 0 8px',
+                padding: '0 4px',
+                fontFamily: SANS,
+                fontSize: 10,
+                textTransform: 'uppercase',
+                letterSpacing: '0.1em',
+                color: 'rgba(255,255,255,0.2)',
+                overflow: 'hidden',
+                pointerEvents: collapsed ? 'none' : 'auto',
+              }}
+            >
+              Copilot
+            </motion.p>
+
+            <div style={{ display: 'grid', gap: 6, justifyItems: collapsed ? 'center' : undefined }}>
+              {TOOL_DEFINITIONS.filter((tool) => CROSS_STAGE_TOOL_IDS.includes(tool.id as (typeof CROSS_STAGE_TOOL_IDS)[number])).map((tool) => {
+                const Icon = tool.icon;
+                const isActive = pathname?.startsWith(tool.href);
+
+                return (
+                  <Link
+                    key={tool.id}
+                    href={tool.href}
+                    title={collapsed ? `${tool.shortLabel} — ${tool.name}` : undefined}
+                    onClick={(e) => {
+                      if (collapsed) {
+                        e.preventDefault();
+                      } else {
+                        e.stopPropagation();
+                      }
+                    }}
+                    className="nb-tool-icon"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 10,
+                      padding: collapsed ? 0 : '10px 12px',
+                      textDecoration: 'none',
+                      borderRadius: collapsed ? 10 : 14,
+                      border: collapsed
+                        ? 'none'
+                        : isActive
+                          ? '1px solid rgba(255,139,31,0.20)'
+                          : '1px solid rgba(255,255,255,0.06)',
+                      background: collapsed
+                        ? 'transparent'
+                        : isActive
+                          ? 'rgba(255,139,31,0.06)'
+                          : 'rgba(255,255,255,0.03)',
+                      minWidth: 0,
+                      width: collapsed ? 30 : undefined,
+                      height: collapsed ? 30 : undefined,
+                      justifyContent: collapsed ? 'center' : 'flex-start',
+                      transition: 'background 0.15s, border-color 0.15s',
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 30,
+                        height: 30,
+                        borderRadius: 10,
+                        display: 'grid',
+                        placeItems: 'center',
+                        background: isActive
+                          ? 'rgba(255,139,31,0.12)'
+                          : 'rgba(255,255,255,0.05)',
+                        border: isActive
+                          ? '1px solid rgba(255,139,31,0.25)'
+                          : `1px solid ${BORDER}`,
+                        flexShrink: 0,
+                      }}
+                    >
+                      <Icon size={14} style={{ color: isActive ? '#FF8B1F' : LABEL }} />
+                    </div>
+
+                    <motion.div
+                      animate={{ opacity: collapsed ? 0 : 1 }}
+                      transition={{ duration: collapsed ? 0.1 : 0.2, delay: collapsed ? 0 : 0.06 }}
+                      aria-hidden={collapsed}
+                      style={{
+                        width: collapsed ? 0 : 'auto',
+                        overflow: 'hidden',
+                        minWidth: 0,
+                        pointerEvents: collapsed ? 'none' : 'auto',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontFamily: SANS,
+                          fontSize: 11,
+                          fontWeight: 600,
+                          color: isActive ? '#ffffff' : 'rgba(255,255,255,0.55)',
+                          lineHeight: 1.25,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                        }}
+                      >
+                        {tool.shortLabel}
+                      </div>
+                      <div
+                        style={{
+                          fontFamily: SANS,
+                          fontSize: 10,
+                          color: isActive ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.2)',
+                          lineHeight: 1.2,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                        }}
+                      >
+                        {tool.name}
+                      </div>
+                    </motion.div>
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
         </nav>
       </motion.aside>
     </>

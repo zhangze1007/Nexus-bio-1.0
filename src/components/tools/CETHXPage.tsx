@@ -9,8 +9,9 @@ import ExportButton from '../ide/shared/ExportButton';
 import DemoBanner from '../ide/shared/DemoBanner';
 import { PATHWAY_STEPS, computeThermo } from '../../data/mockCETHX';
 import type { PathwayKey } from '../../data/mockCETHX';
-import { useToolStore } from '../../store/toolStore';
 import { useUIStore } from '../../store/uiStore';
+import { useWorkbenchStore } from '../../store/workbenchStore';
+import { buildCETHXSeed } from './shared/workbenchDataflow';
 
 // ── Breathing Waterfall Chart ──────────────────────────────────────────
 
@@ -131,26 +132,53 @@ const PATHWAYS: { id: PathwayKey; label: string; desc: string }[] = [
 // ── Main Page ──────────────────────────────────────────────────────────
 
 export default function CETHXPage() {
+  const project = useWorkbenchStore((s) => s.project);
+  const analyzeArtifact = useWorkbenchStore((s) => s.analyzeArtifact);
+  const pathdPayload = useWorkbenchStore((s) => s.toolPayloads.pathd);
+  const fbaPayload = useWorkbenchStore((s) => s.toolPayloads.fbasim);
+  const setToolPayload = useWorkbenchStore((s) => s.setToolPayload);
   const [pathway, setPathway] = useState<PathwayKey>('glycolysis');
   const [tempC, setTempC] = useState(37);
   const [pH, setPH] = useState(7.4);
+  const recommendedSeed = useMemo(
+    () => buildCETHXSeed(project, analyzeArtifact, fbaPayload, pathdPayload),
+    [analyzeArtifact?.generatedAt, analyzeArtifact?.id, fbaPayload?.updatedAt, pathdPayload?.updatedAt, project?.id, project?.updatedAt],
+  );
+
+  useEffect(() => {
+    setPathway(recommendedSeed.pathway);
+    setTempC(recommendedSeed.tempC);
+    setPH(recommendedSeed.pH);
+  }, [recommendedSeed.pH, recommendedSeed.pathway, recommendedSeed.tempC]);
 
   const thermo = useMemo(() =>
     computeThermo(PATHWAY_STEPS[pathway], tempC, pH),
     [pathway, tempC, pH]
   );
 
-  // Sync to global store
-  const setCETHX = useToolStore(s => s.setCETHX);
   useEffect(() => {
-    setCETHX({
-      pathway, tempC, pH,
-      gibbsTotal: thermo.gibbs_free_energy,
-      atpYield: thermo.atp_yield,
-      efficiency: thermo.efficiency,
-      timestamp: Date.now(),
+    const now = Date.now();
+    const limitingStep = [...thermo.steps]
+      .sort((left, right) => right.deltaG - left.deltaG)[0]
+      ?.step ?? null;
+    setToolPayload('cethx', {
+      toolId: 'cethx',
+      targetProduct: analyzeArtifact?.targetProduct || project?.targetProduct || project?.title || 'Target Product',
+      sourceArtifactId: analyzeArtifact?.id,
+      pathway,
+      tempC,
+      pH,
+      result: {
+        atpYield: thermo.atp_yield,
+        nadhYield: thermo.nadh_yield,
+        gibbsFreeEnergy: thermo.gibbs_free_energy,
+        entropyProduction: thermo.entropy_production,
+        efficiency: thermo.efficiency,
+        limitingStep,
+      },
+      updatedAt: now,
     });
-  }, [thermo, pathway, tempC, pH, setCETHX]);
+  }, [analyzeArtifact?.id, analyzeArtifact?.targetProduct, pathway, pH, project?.targetProduct, project?.title, setToolPayload, tempC, thermo]);
 
   // Console logging
   const appendConsole = useUIStore((s) => s.appendConsole);
@@ -163,7 +191,7 @@ export default function CETHXPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [thermo]);
 
-  const fba = useToolStore(s => s.fba);
+  const fba = fbaPayload;
 
   return (
     <ToolShell
@@ -175,6 +203,8 @@ export default function CETHXPage() {
       columns="240px 1fr 220px"
       rows="2fr 1fr"
       gap={6}
+      workbenchSummary="Thermodynamic feasibility engine that translates pathway context and FBA constraints into Delta-G, ATP/NADH yield, and limiting-step evidence for downstream catalyst and control design."
+      workbenchSimulated={!analyzeArtifact}
       footer={
         <>
           {fba && (
@@ -185,7 +215,7 @@ export default function CETHXPage() {
               <span style={{ fontFamily: T.SANS, fontSize: '11px', color: 'rgba(255,255,255,0.55)' }}>
                 {'✓ Flux data loaded — '}
                 <span style={{ fontFamily: T.MONO, color: 'rgba(120,170,255,0.85)' }}>
-                  {`μ=${fba.growthRate.toFixed(4)} h⁻¹ · ∂μ/∂Glc=${fba.shadowPrices.glc.toFixed(4)} · ∂μ/∂O₂=${fba.shadowPrices.o2.toFixed(4)}`}
+                  {`μ=${fba.result.growthRate.toFixed(4)} h⁻¹ · ∂μ/∂Glc=${fba.result.shadowPrices.glc.toFixed(4)} · ∂μ/∂O₂=${fba.result.shadowPrices.o2.toFixed(4)}`}
                 </span>
               </span>
             </div>

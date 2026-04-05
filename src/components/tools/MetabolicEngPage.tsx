@@ -25,10 +25,11 @@ import ToolOverlay from './ToolOverlay';
 import StatusOverlay from './StatusOverlay';
 import ThreeScene from '../ThreeScene';
 import NodePanel from '../NodePanel';
+import WorkbenchInlineContext from '../workbench/WorkbenchInlineContext';
 import { metabolicMachine, STATE_LABELS } from '../../machines/metabolicMachine';
 import type { FBAWorkerIn, FBAWorkerOut } from '../../workers/fbaWorker';
 import { useUIStore } from '../../store/uiStore';
-import { useToolStore } from '../../store/toolStore';
+import { useWorkbenchStore } from '../../store/workbenchStore';
 import { useNavigation } from '../../contexts/NavigationContext';
 import pathwayNodes from '../../data/pathwayData.json';
 import type { PathwayNode, PathwayEdge } from '../../types';
@@ -43,6 +44,16 @@ const DEMO_EDGES: PathwayEdge[] = [
   { start: 'amorpha_4_11_diene', end: 'artemisinic_acid',     direction: 'forward' },
   { start: 'artemisinic_acid',   end: 'artemisinin',          direction: 'forward' },
 ];
+
+function inferPathwayTarget(nodes: PathwayNode[]) {
+  const preferred = [...nodes].reverse().find((node) => node.nodeType !== 'enzyme' && node.nodeType !== 'gene');
+  return preferred?.label ?? nodes[nodes.length - 1]?.label ?? 'Target Product';
+}
+
+function inferRouteLabel(nodes: PathwayNode[]) {
+  const terminal = inferPathwayTarget(nodes);
+  return `${terminal} route`;
+}
 
 // ── Top bar component ──────────────────────────────────────────────────
 
@@ -127,17 +138,12 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
   const [snapshot, send] = useMachine(metabolicMachine);
   const { params, readouts, rateHistory } = snapshot.context;
   const state = snapshot.value as 'idle' | 'simulating' | 'stress_test' | 'equilibrium';
+  const project = useWorkbenchStore((s) => s.project);
+  const analyzeArtifact = useWorkbenchStore((s) => s.analyzeArtifact);
+  const setToolPayload = useWorkbenchStore((s) => s.setToolPayload);
 
   // ── Unified navigation — resolves back target based on current path ──
   const { backHref } = useNavigation();
-
-  // ── Track active module for cross-module state ──────────────────
-  const setActiveModule = useToolStore(s => s.setActiveModule);
-  useEffect(() => {
-    const moduleId = embedded ? 'pathd' : 'metabolic-eng';
-    setActiveModule(moduleId);
-    return () => setActiveModule(null);
-  }, [embedded, setActiveModule]);
 
   // ── Zustand: node selection + AI-generated pathway ───────────────
   const selectedNode    = useUIStore(s => s.selectedNode);
@@ -148,6 +154,50 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
   // Use AI-generated pathway when available; fall back to demo Artemisinin data
   const activeNodes = (aiNodes && aiNodes.length > 0) ? aiNodes : (pathwayNodes as PathwayNode[]);
   const activeEdges = (aiEdges && aiEdges.length > 0) ? aiEdges : DEMO_EDGES;
+  const derivedTarget = useMemo(
+    () => analyzeArtifact?.targetProduct || project?.targetProduct || project?.title || inferPathwayTarget(activeNodes),
+    [activeNodes, analyzeArtifact?.targetProduct, project?.targetProduct, project?.title],
+  );
+  const activeRouteLabel = useMemo(
+    () => analyzeArtifact?.pathwayCandidates[0]?.label || inferRouteLabel(activeNodes),
+    [activeNodes, analyzeArtifact?.pathwayCandidates],
+  );
+
+  useEffect(() => {
+    setToolPayload('pathd', {
+      toolId: 'pathd',
+      targetProduct: derivedTarget,
+      sourceArtifactId: analyzeArtifact?.id,
+      activeRouteLabel,
+      nodeCount: activeNodes.length,
+      edgeCount: activeEdges.length,
+      selectedNodeId: selectedNode?.id ?? null,
+      result: {
+        pathwayCandidates: analyzeArtifact?.pathwayCandidates.length ?? 1,
+        bottleneckCount: analyzeArtifact?.bottleneckAssumptions.length ?? 0,
+        enzymeCandidates: analyzeArtifact?.enzymeCandidates.length ?? 0,
+        thermodynamicConcerns: analyzeArtifact?.thermodynamicConcerns.length ?? 0,
+        highlightedNode: selectedNode?.label ?? null,
+        recommendedNextTool: analyzeArtifact?.recommendedNextTools[0] ?? 'fbasim',
+        evidenceLinked: Boolean(analyzeArtifact?.id),
+      },
+      updatedAt: Date.now(),
+    });
+  }, [
+    activeEdges.length,
+    activeNodes.length,
+    activeRouteLabel,
+    analyzeArtifact?.bottleneckAssumptions.length,
+    analyzeArtifact?.enzymeCandidates.length,
+    analyzeArtifact?.id,
+    analyzeArtifact?.pathwayCandidates.length,
+    analyzeArtifact?.recommendedNextTools,
+    analyzeArtifact?.thermodynamicConcerns.length,
+    derivedTarget,
+    selectedNode?.id,
+    selectedNode?.label,
+    setToolPayload,
+  ]);
 
   // ── ThreeScene: computed props from simulation params ─────────────
   // glowMultiplier: default enzyme=5 → 1.0 (mid); enzyme=20 → 2.0 (max); pH/temp deviate → dims
@@ -306,6 +356,28 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
         tick={readouts.tick}
         backHref={backHref}
       />
+
+      <div
+        style={{
+          position: 'absolute',
+          top: '64px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: 'min(560px, calc(100vw - 32px))',
+          zIndex: 18,
+          pointerEvents: 'none',
+        }}
+      >
+        <div style={{ pointerEvents: 'auto' }}>
+          <WorkbenchInlineContext
+            toolId="pathd"
+            title="Pathway & Enzyme Design"
+            summary="PATHD is now an audited Stage 1 object generator: pathway routes, bottleneck assumptions, enzyme candidates, and the active node focus are written back into the workbench so simulation and control tools can inherit the current design state instead of replaying an old plan."
+            compact
+            isSimulated={!analyzeArtifact}
+          />
+        </div>
+      </div>
 
       {/* ── Center: 3D Pathway Visualization — full-screen, panels float over ── */}
       <div style={{ position:'absolute', inset:0, zIndex:5, pointerEvents:'auto' }}>

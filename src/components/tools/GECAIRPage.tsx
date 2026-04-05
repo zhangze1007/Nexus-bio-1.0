@@ -1,12 +1,14 @@
 'use client';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import AlgorithmInsight from '../ide/shared/AlgorithmInsight';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
 import SimErrorBanner from '../ide/shared/SimErrorBanner';
 import { CIRCUIT_NODES, LOGIC_GATES, hillInhibition, hillActivation } from '../../data/mockGECAIR';
 import type { GateType } from '../../data/mockGECAIR';
+import { useWorkbenchStore } from '../../store/workbenchStore';
 import { T, TOOL_RESULT_PALETTE} from '../ide/tokens';
+import WorkbenchInlineContext from '../workbench/WorkbenchInlineContext';
 
 // Dark theme tokens
 const PANEL_BG = '#000000';
@@ -115,9 +117,34 @@ const TRUTH_TABLE = [
 ];
 
 export default function GECAIRPage() {
+  const project = useWorkbenchStore((s) => s.project);
+  const analyzeArtifact = useWorkbenchStore((s) => s.analyzeArtifact);
+  const catalystPayload = useWorkbenchStore((s) => s.toolPayloads.catdes);
+  const dynconPayload = useWorkbenchStore((s) => s.toolPayloads.dyncon);
+  const setToolPayload = useWorkbenchStore((s) => s.setToolPayload);
   const [inputA, setInputA] = useState(0.8);
   const [inputB, setInputB] = useState(0.3);
   const [gateType, setGateType] = useState<GateType>('NOT');
+  const recommendedGate = useMemo<GateType>(() => {
+    if ((catalystPayload?.result.totalMetabolicDrain ?? 0) > 0.45) return 'NAND';
+    if (dynconPayload?.result.stable && catalystPayload?.result.isViable) return 'AND';
+    if ((dynconPayload?.result.doRmse ?? 0) > 0.08) return 'OR';
+    return 'NOT';
+  }, [catalystPayload?.result.isViable, catalystPayload?.result.totalMetabolicDrain, dynconPayload?.result.doRmse, dynconPayload?.result.stable]);
+  const recommendedInputA = useMemo(
+    () => Math.min(1, Math.max(0, dynconPayload?.controller.setpoint ?? 0.6)),
+    [dynconPayload?.controller.setpoint],
+  );
+  const recommendedInputB = useMemo(
+    () => Math.min(1, Math.max(0, (catalystPayload?.result.totalMetabolicDrain ?? 0.3) + 0.15)),
+    [catalystPayload?.result.totalMetabolicDrain],
+  );
+
+  useEffect(() => {
+    setInputA(recommendedInputA);
+    setInputB(recommendedInputB);
+    setGateType(recommendedGate);
+  }, [recommendedGate, recommendedInputA, recommendedInputB]);
 
   const outA = hillInhibition(inputA);
   const outB = hillInhibition(outA);
@@ -136,6 +163,38 @@ export default function GECAIRPage() {
     noiseScore: noiseScore.toFixed(4),
   }), [gateType, inputA, inputB, finalOutput, noiseScore]);
 
+  useEffect(() => {
+    setToolPayload('gecair', {
+      toolId: 'gecair',
+      targetProduct: analyzeArtifact?.targetProduct || project?.targetProduct || project?.title || 'Target Product',
+      sourceArtifactId: analyzeArtifact?.id,
+      gateType,
+      inputA,
+      inputB,
+      result: {
+        outputLevel: finalOutput,
+        nodeAOutput: outA,
+        nodeBOutput: outB,
+        noiseScore,
+        circuitComplexity: CIRCUIT_NODES.reduce((sum, node) => sum + node.parts.length, 0),
+      },
+      updatedAt: Date.now(),
+    });
+  }, [
+    analyzeArtifact?.id,
+    analyzeArtifact?.targetProduct,
+    finalOutput,
+    gateType,
+    inputA,
+    inputB,
+    noiseScore,
+    outA,
+    outB,
+    project?.targetProduct,
+    project?.title,
+    setToolPayload,
+  ]);
+
   return (
     <>
       <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', background: '#050505' }}>
@@ -148,6 +207,14 @@ export default function GECAIRPage() {
         <div className="nb-tool-panels" style={{ flex: 1 }}>
           {/* Input panel */}
           <div className="nb-tool-sidebar" style={{ width: '240px', borderRight: `1px solid ${BORDER}`, background: PANEL_BG }}>
+            <WorkbenchInlineContext
+              toolId="gecair"
+              title="Gene Circuit AI Reasoner"
+              summary="Turn bottleneck and control objectives into interpretable circuit logic so Stage 3 design decisions stay connected to upstream evidence and downstream control work."
+              compact
+              isSimulated={!analyzeArtifact}
+            />
+
             <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: LABEL, margin: '0 0 12px' }}>
               Input Signals
             </p>

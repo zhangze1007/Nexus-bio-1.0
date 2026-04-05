@@ -29,6 +29,8 @@ import IDETopBar from './IDETopBar';
 import IDEConsole from './IDEConsole';
 import { NavigationProvider } from '../../contexts/NavigationContext';
 import { useUIStore } from '../../store/uiStore';
+import WorkbenchStatusBar from '../workbench/WorkbenchStatusBar';
+import { useWorkbenchStore } from '../../store/workbenchStore';
 
 interface ToolsLayoutShellProps {
   children: React.ReactNode;
@@ -36,7 +38,6 @@ interface ToolsLayoutShellProps {
 
 export default function ToolsLayoutShell({ children }: ToolsLayoutShellProps) {
   const pathname = usePathname();
-  const sidebarCollapsed = useUIStore((s) => s.sidebarCollapsed);
 
   // Derive moduleId from the current path:
   //   /tools          → null (directory page)
@@ -57,11 +58,17 @@ export default function ToolsLayoutShell({ children }: ToolsLayoutShellProps) {
     }
   }, [pathname]);
 
+  useEffect(() => {
+    useWorkbenchStore.getState().visitTool(moduleId);
+  }, [moduleId]);
+
   return (
     <NavigationProvider>
       <div className={`nb-ide-shell${isWorkbench ? ' nb-workbench' : ''}`}>
         {/* TopBar — fixed at top, z-index: 100. Always mounted. */}
         <IDETopBar moduleId={moduleId ?? ''} />
+
+        <WorkbenchStatusBar moduleId={moduleId} />
 
         {/* Sidebar — fixed overlay, z-index: 90. Only on workbench pages. */}
         {isWorkbench && <IDESidebar />}

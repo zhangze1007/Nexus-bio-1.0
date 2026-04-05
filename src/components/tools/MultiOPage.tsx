@@ -1,5 +1,5 @@
 'use client';
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import AlgorithmInsight from '../ide/shared/AlgorithmInsight';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
@@ -29,7 +29,9 @@ import type {
   PerturbationResult,
   InternalThought,
 } from '../../types';
+import { useWorkbenchStore } from '../../store/workbenchStore';
 import { T, TOOL_RESULT_PALETTE} from '../ide/tokens';
+import WorkbenchInlineContext from '../workbench/WorkbenchInlineContext';
 
 /* ── Design Tokens ────────────────────────────────────────────────── */
 
@@ -54,6 +56,24 @@ const GLASS: React.CSSProperties = {
 };
 
 type ViewMode = 'Embedding' | 'Volcano' | 'Table' | 'MOFA+' | 'VAE' | 'Efficiency';
+
+function canonicalGeneToken(value: string) {
+  return value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+}
+
+function findPreferredGene(candidates: string[]) {
+  const availableGenes = OMICS_DATA.map((row) => row.gene);
+  const availableTokens = new Map(availableGenes.map((gene) => [canonicalGeneToken(gene), gene]));
+  for (const candidate of candidates) {
+    const token = canonicalGeneToken(candidate);
+    if (!token) continue;
+    const exact = availableTokens.get(token);
+    if (exact) return exact;
+    const partial = availableGenes.find((gene) => token.includes(canonicalGeneToken(gene)) || canonicalGeneToken(gene).includes(token));
+    if (partial) return partial;
+  }
+  return availableGenes[0] ?? '';
+}
 
 /* ── VolcanoPlot (preserved) ──────────────────────────────────────── */
 
@@ -230,6 +250,9 @@ function EmbeddingScatter({ embeddings, fcThreshold, activeLayers }: {
 /* ── Main Component ───────────────────────────────────────────────── */
 
 export default function MultiOPage() {
+  const project = useWorkbenchStore((s) => s.project);
+  const analyzeArtifact = useWorkbenchStore((s) => s.analyzeArtifact);
+  const setToolPayload = useWorkbenchStore((s) => s.setToolPayload);
   /* Layer toggles */
   const [showTranscript, setShowTranscript] = useState(true);
   const [showProtein, setShowProtein] = useState(true);
@@ -300,6 +323,20 @@ export default function MultiOPage() {
 
   /* Gene list for perturbation dropdown */
   const geneNames = useMemo(() => [...new Set(OMICS_DATA.map(r => r.gene))], []);
+  const preferredGene = useMemo(
+    () => findPreferredGene([
+      analyzeArtifact?.bottleneckAssumptions?.[0]?.label ?? '',
+      analyzeArtifact?.enzymeCandidates?.[0]?.label ?? '',
+      analyzeArtifact?.targetProduct ?? '',
+      project?.targetProduct ?? '',
+    ]),
+    [
+      analyzeArtifact?.bottleneckAssumptions,
+      analyzeArtifact?.enzymeCandidates,
+      analyzeArtifact?.targetProduct,
+      project?.targetProduct,
+    ],
+  );
 
   /* Correlation label helper */
   const corrLabel = (a: OmicsLayer, b: OmicsLayer) => {
@@ -311,6 +348,55 @@ export default function MultiOPage() {
     const result = model.simulatePerturbation(selectedGene, perturbedExpr);
     setPerturbResult(result);
   }, [model, selectedGene, perturbedExpr]);
+
+  useEffect(() => {
+    if (preferredGene) {
+      setSelectedGene(preferredGene);
+      setVaePerturbGene(preferredGene);
+    }
+  }, [preferredGene]);
+
+  useEffect(() => {
+    const topEfficiency = [...efficiencyScores].sort((left, right) => right.score - left.score)[0];
+    setToolPayload('multio', {
+      toolId: 'multio',
+      targetProduct: analyzeArtifact?.targetProduct || project?.targetProduct || project?.title || 'Target Product',
+      sourceArtifactId: analyzeArtifact?.id,
+      selectedGene,
+      activeView: viewMode,
+      thresholds: {
+        fc: fcThreshold,
+        pv: pvThreshold,
+      },
+      result: {
+        significantCount: significant.length,
+        dominantLayer: bottleneck.dominant_layer,
+        bottleneckGene: selectedGene,
+        bottleneckConfidence: bottleneck.confidence,
+        mofaVarianceExplained: mofaResult.totalVarianceExplained,
+        topEfficiencyGene: topEfficiency?.gene ?? '—',
+        topEfficiencyScore: topEfficiency?.score ?? 0,
+        vaeElbo: vaeResult.elbo,
+      },
+      updatedAt: Date.now(),
+    });
+  }, [
+    analyzeArtifact?.id,
+    analyzeArtifact?.targetProduct,
+    bottleneck.confidence,
+    bottleneck.dominant_layer,
+    efficiencyScores,
+    fcThreshold,
+    mofaResult.totalVarianceExplained,
+    project?.targetProduct,
+    project?.title,
+    pvThreshold,
+    selectedGene,
+    setToolPayload,
+    significant.length,
+    vaeResult.elbo,
+    viewMode,
+  ]);
 
   /* Section label helper */
   const SectionLabel = ({ children }: { children: React.ReactNode }) => (
@@ -342,6 +428,14 @@ export default function MultiOPage() {
             width: '240px', flexShrink: 0, overflowY: 'auto', padding: '16px',
             borderRight: `1px solid ${BORDER}`, background: PANEL_BG,
           }}>
+            <WorkbenchInlineContext
+              toolId="multio"
+              title="Multi-Omics Integrator"
+              summary="Integrate transcript, protein, and metabolite layers against the active pathway object so Stage 4 evidence can feed bottlenecks back into the workbench."
+              compact
+              isSimulated={!analyzeArtifact}
+            />
+
             {/* Data Layers */}
             <SectionLabel>Data Layers</SectionLabel>
             {([

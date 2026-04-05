@@ -7,13 +7,15 @@ import DemoBanner from '../ide/shared/DemoBanner';
 import SimErrorBanner from '../ide/shared/SimErrorBanner';
 import { usePersistedState } from '../ide/shared/usePersistedState';
 import { useUIStore } from '../../store/uiStore';
-import { useToolStore } from '../../store/toolStore';
+import { useWorkbenchStore } from '../../store/workbenchStore';
+import WorkbenchInlineContext from '../workbench/WorkbenchInlineContext';
 import {
-  METABOLIC_NODES, FLUX_EDGES, REACTION_DEFS, runFBA,
+  METABOLIC_NODES, FLUX_EDGES, REACTION_DEFS,
   YEAST_NODES, YEAST_FLUX_EDGES, YEAST_REACTION_DEFS, SHARED_METABOLITES,
-  calculateCommunityFlux,
 } from '../../data/mockFBA';
 import type { FBAOutput, CommunityFBAOutput } from '../../data/mockFBA';
+import { buildFBASeed } from './shared/workbenchDataflow';
+import { solveAuthorityCommunityFBA, solveAuthorityFBA } from '../../services/FBAAuthorityClient';
 import { T, TOOL_RESULT_PALETTE} from '../ide/tokens';
 
 // ── Pastel palette ──
@@ -30,6 +32,55 @@ const COLORS = {
 };
 
 type SimMode = 'single' | 'community';
+
+function round(value: number) {
+  return Math.round(value * 10) / 10;
+}
+
+function createEmptyFBAOutput(): FBAOutput {
+  return {
+    fluxes: Object.fromEntries(REACTION_DEFS.map((reaction) => [reaction.id, 0])),
+    growthRate: 0,
+    atpYield: 0,
+    nadhProduction: 0,
+    carbonEfficiency: 0,
+    feasible: false,
+    shadowPrices: {
+      glc: 0,
+      o2: 0,
+      atp: 0,
+    },
+  };
+}
+
+function createEmptyCommunityOutput(): CommunityFBAOutput {
+  return {
+    ecoli: createEmptyFBAOutput(),
+    yeast: {
+      fluxes: Object.fromEntries(YEAST_REACTION_DEFS.map((reaction) => [reaction.id, 0])),
+      growthRate: 0,
+      atpYield: 0,
+      nadhProduction: 0,
+      carbonEfficiency: 0,
+      feasible: false,
+      shadowPrices: {
+        glc: 0,
+        o2: 0,
+        atp: 0,
+      },
+    },
+    exchangeFluxes: SHARED_METABOLITES.map((metabolite) => ({
+      id: `EX_${metabolite.id}`,
+      metabolite: metabolite.name,
+      fromStrain: metabolite.exporterStrain,
+      toStrain: metabolite.importerStrain,
+      flux: 0,
+    })),
+    communityGrowthRate: 0,
+    communityBiomassObjective: 0,
+    feasible: false,
+  };
+}
 
 function ParamSlider({ label, value, min, max, step = 0.5, onChange, unit, accentColor }: {
   label: string; value: number; min: number; max: number; step?: number;
@@ -298,6 +349,11 @@ function StrainPanel({ label, color, borderColor, accentColor, glucoseUptake, ox
 export default function FBASimPage() {
   const [simMode, setSimMode] = useState<SimMode>('single');
   const chartRef = useRef<SVGSVGElement>(null);
+  const project = useWorkbenchStore((s) => s.project);
+  const analyzeArtifact = useWorkbenchStore((s) => s.analyzeArtifact);
+  const pathdPayload = useWorkbenchStore((s) => s.toolPayloads.pathd);
+  const dbtlPayload = useWorkbenchStore((s) => s.toolPayloads.dbtlflow);
+  const setToolPayload = useWorkbenchStore((s) => s.setToolPayload);
 
   // Single-species state (persisted)
   const [glucoseUptake, setGlucoseUptake] = usePersistedState('nexus-bio:fba:glucose', 10);
@@ -312,24 +368,108 @@ export default function FBASimPage() {
   const [yeastGlucose, setYeastGlucose] = usePersistedState('nexus-bio:fba:yeast-glucose', 8);
   const [yeastOxygen, setYeastOxygen] = usePersistedState('nexus-bio:fba:yeast-oxygen', 6);
   const [yeastKO, setYeastKO] = useState<string[]>([]);
+  const [singleResult, setSingleResult] = useState<FBAOutput>(() => createEmptyFBAOutput());
+  const [singleError, setSingleError] = useState<string | null>(null);
+  const [singleLoading, setSingleLoading] = useState(true);
+  const [communityResult, setCommunityResult] = useState<CommunityFBAOutput>(() => createEmptyCommunityOutput());
+  const [communityError, setCommunityError] = useState<string | null>(null);
+  const [communityLoading, setCommunityLoading] = useState(true);
+  const recommendedSeed = useMemo(
+    () => buildFBASeed(project, analyzeArtifact, dbtlPayload, pathdPayload),
+    [analyzeArtifact?.generatedAt, analyzeArtifact?.id, dbtlPayload?.feedbackSource, dbtlPayload?.result.improvementRate, dbtlPayload?.result.latestPhase, dbtlPayload?.result.passRate, dbtlPayload?.updatedAt, pathdPayload?.updatedAt, project?.id, project?.updatedAt],
+  );
 
-  // Single-species FBA
-  const { data: singleResult, error: singleError } = useMemo(() => {
-    try {
-      return { data: runFBA(glucoseUptake, oxygenUptake, knockouts), error: null as string | null };
-    } catch (e) {
-      return { data: runFBA(10, 12, []), error: e instanceof Error ? e.message : 'FBA simulation failed' };
-    }
-  }, [glucoseUptake, oxygenUptake, knockouts]);
+  useEffect(() => {
+    setSimMode(recommendedSeed.mode);
+    setObjective(recommendedSeed.objective);
+    setGlucoseUptake(recommendedSeed.glucoseUptake);
+    setOxygenUptake(recommendedSeed.oxygenUptake);
+    setKnockouts(recommendedSeed.knockouts);
+    setEcoliGlucose(Math.max(3, round(recommendedSeed.glucoseUptake * 0.58)));
+    setEcoliOxygen(Math.max(3, round(recommendedSeed.oxygenUptake * 0.65)));
+    setYeastGlucose(Math.max(2, round(recommendedSeed.glucoseUptake * 0.42)));
+    setYeastOxygen(Math.max(2, round(recommendedSeed.oxygenUptake * 0.45)));
+    setEcoliKO(recommendedSeed.knockouts.slice(0, 1));
+    setYeastKO(recommendedSeed.knockouts.slice(1));
+  }, [
+    recommendedSeed.glucoseUptake,
+    recommendedSeed.knockouts,
+    recommendedSeed.mode,
+    recommendedSeed.objective,
+    recommendedSeed.oxygenUptake,
+    setEcoliGlucose,
+    setEcoliOxygen,
+    setGlucoseUptake,
+    setOxygenUptake,
+    setObjective,
+    setYeastGlucose,
+    setYeastOxygen,
+  ]);
 
-  // Community FBA
-  const { data: communityResult, error: communityError } = useMemo<{ data: CommunityFBAOutput; error: string | null }>(() => {
-    try {
-      return { data: calculateCommunityFlux(ecoliGlucose, ecoliOxygen, ecoliKO, yeastGlucose, yeastOxygen, yeastKO), error: null };
-    } catch (e) {
-      return { data: calculateCommunityFlux(10, 12, [], 8, 6, []), error: e instanceof Error ? e.message : 'Community FBA failed' };
-    }
-  }, [ecoliGlucose, ecoliOxygen, ecoliKO, yeastGlucose, yeastOxygen, yeastKO]);
+  useEffect(() => {
+    const controller = new AbortController();
+    setSingleLoading(true);
+    setSingleError(null);
+
+    solveAuthorityFBA(
+      {
+        objective,
+        glucoseUptake,
+        oxygenUptake,
+        knockouts,
+      },
+      controller.signal,
+    ).then((result) => {
+      setSingleResult(result);
+      setSingleError(null);
+    }).catch((error) => {
+      if (controller.signal.aborted) return;
+      setSingleResult(createEmptyFBAOutput());
+      setSingleError(error instanceof Error ? error.message : 'Authoritative FBA solve failed');
+    }).finally(() => {
+      if (!controller.signal.aborted) {
+        setSingleLoading(false);
+      }
+    });
+
+    return () => controller.abort();
+  }, [glucoseUptake, knockouts, objective, oxygenUptake]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    setCommunityLoading(true);
+    setCommunityError(null);
+
+    solveAuthorityCommunityFBA(
+      {
+        objective,
+        ecoli: {
+          glucoseUptake: ecoliGlucose,
+          oxygenUptake: ecoliOxygen,
+          knockouts: ecoliKO,
+        },
+        yeast: {
+          glucoseUptake: yeastGlucose,
+          oxygenUptake: yeastOxygen,
+          knockouts: yeastKO,
+        },
+      },
+      controller.signal,
+    ).then((result) => {
+      setCommunityResult(result);
+      setCommunityError(null);
+    }).catch((error) => {
+      if (controller.signal.aborted) return;
+      setCommunityResult(createEmptyCommunityOutput());
+      setCommunityError(error instanceof Error ? error.message : 'Authority-backed community FBA failed');
+    }).finally(() => {
+      if (!controller.signal.aborted) {
+        setCommunityLoading(false);
+      }
+    });
+
+    return () => controller.abort();
+  }, [ecoliGlucose, ecoliKO, ecoliOxygen, objective, yeastGlucose, yeastKO, yeastOxygen]);
 
   const top5 = useMemo(() => {
     return REACTION_DEFS
@@ -355,6 +495,9 @@ export default function FBASimPage() {
   /* ── Console logging ─────────────────────────────────────────────────── */
   const appendConsole = useUIStore((s) => s.appendConsole);
   useEffect(() => {
+    if ((simMode === 'single' && singleLoading) || (simMode === 'community' && communityLoading)) {
+      return;
+    }
     const error = simMode === 'single' ? singleError : communityError;
     if (error) {
       appendConsole({ level: 'error', module: 'FBASIM', message: `FBA error: ${error}` });
@@ -372,22 +515,71 @@ export default function FBASimPage() {
       });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [singleResult, communityResult, simMode]);
+  }, [appendConsole, communityError, communityLoading, communityResult, simMode, singleError, singleLoading, singleResult]);
 
-  /* ── Sync to global toolStore ────────────────────────────────────────── */
-  const setFBA = useToolStore((s) => s.setFBA);
   useEffect(() => {
-    if (!singleError) {
-      setFBA({
-        growthRate: singleResult.growthRate,
-        fluxes: singleResult.fluxes,
-        objective: singleResult.growthRate,
-        shadowPrices: singleResult.shadowPrices,
-        timestamp: Date.now(),
-      });
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [singleResult]);
+    const now = Date.now();
+    const activeResult = simMode === 'single'
+      ? singleResult
+      : {
+          fluxes: communityResult.ecoli.fluxes,
+          growthRate: communityResult.communityGrowthRate,
+          atpYield: (communityResult.ecoli.atpYield + communityResult.yeast.atpYield) / 2,
+          nadhProduction: (communityResult.ecoli.nadhProduction + communityResult.yeast.nadhProduction) / 2,
+          carbonEfficiency: (communityResult.ecoli.carbonEfficiency + communityResult.yeast.carbonEfficiency) / 2,
+          feasible: communityResult.feasible,
+          shadowPrices: {
+            glc: (communityResult.ecoli.shadowPrices.glc + communityResult.yeast.shadowPrices.glc) / 2,
+            o2: (communityResult.ecoli.shadowPrices.o2 + communityResult.yeast.shadowPrices.o2) / 2,
+            atp: (communityResult.ecoli.shadowPrices.atp + communityResult.yeast.shadowPrices.atp) / 2,
+          },
+        };
+
+    if (singleLoading || communityLoading) return;
+    if (singleError && simMode === 'single') return;
+    if (communityError && simMode === 'community') return;
+
+    setToolPayload('fbasim', {
+      toolId: 'fbasim',
+      targetProduct: recommendedSeed.targetProduct,
+      pathwayFocus: recommendedSeed.pathwayFocus,
+      sourceArtifactId: analyzeArtifact?.id,
+      mode: simMode,
+      objective,
+      glucoseUptake,
+      oxygenUptake,
+      knockouts,
+      result: {
+        growthRate: activeResult.growthRate,
+        atpYield: activeResult.atpYield,
+        nadhProduction: activeResult.nadhProduction,
+        carbonEfficiency: activeResult.carbonEfficiency,
+        feasible: activeResult.feasible,
+        shadowPrices: activeResult.shadowPrices,
+        topFluxes: Object.entries(activeResult.fluxes)
+          .sort((left, right) => Math.abs(right[1]) - Math.abs(left[1]))
+          .slice(0, 5)
+          .map(([reactionId, flux]) => ({ reactionId, flux })),
+      },
+      updatedAt: now,
+    });
+  }, [
+    analyzeArtifact?.id,
+    communityLoading,
+    communityError,
+    communityResult,
+    glucoseUptake,
+    knockouts,
+    objective,
+    oxygenUptake,
+    recommendedSeed.pathwayFocus,
+    recommendedSeed.targetProduct,
+    setToolPayload,
+    simMode,
+    singleLoading,
+    singleError,
+    singleResult,
+  ]);
 
   return (
     <>
@@ -395,12 +587,21 @@ export default function FBASimPage() {
         <AlgorithmInsight
           title={simMode === 'single' ? 'Flux Balance Analysis' : 'Community FBA — Multi-species'}
           description={simMode === 'single'
-            ? 'Stoichiometric flux model scales E. coli iJO1366 flux proportions from glucose/oxygen uptake rates, with shadow prices computed via central finite differences (∂μ/∂uptake).'
-            : 'Composite stoichiometric matrix S_com couples two host organisms through shared exchange reactions in an environmental pool.'}
+            ? 'Server-side GLPK solves a stoichiometric LP for the current host context, then revalidates glucose and oxygen shadow prices with finite-difference reruns so downstream tools inherit an authority-backed flux state.'
+            : 'Two server-side host LPs are solved independently and then coupled through an exchange pool, so community feasibility is derived from live strain-level optima rather than a browser-only mock.'}
           formula={simMode === 'single'
             ? 'max cᵀv s.t. Sv=0, lb≤v≤ub'
             : 'S_com = [S₁, 0, E₁; 0, S₂, E₂]'}
         />
+        <div style={{ padding: '0 16px 8px' }}>
+          <WorkbenchInlineContext
+            toolId="fbasim"
+            title="Flux Simulation"
+            summary="Flux simulation turns the current pathway object into quantitative growth, ATP, and carbon-efficiency constraints so downstream thermodynamics, catalyst design, and control layers do not keep operating on stale assumptions."
+            compact
+            isSimulated={!analyzeArtifact}
+          />
+        </div>
         <div style={{ padding: '0 16px 4px' }}>
           <DemoBanner context="E. coli central metabolism (glycolysis + TCA)" />
         </div>
@@ -426,6 +627,36 @@ export default function FBASimPage() {
         )}
         {communityError && simMode === 'community' && (
           <div style={{ padding: '0 16px 8px' }}><SimErrorBanner message={communityError} /></div>
+        )}
+        {singleLoading && simMode === 'single' && (
+          <div style={{ padding: '0 16px 8px' }}>
+            <div style={{
+              padding: '8px 12px',
+              borderRadius: '12px',
+              border: '1px solid rgba(81,81,205,0.22)',
+              background: 'rgba(81,81,205,0.08)',
+              color: 'rgba(240,245,255,0.78)',
+              fontFamily: T.SANS,
+              fontSize: '11px',
+            }}>
+              Authority engine recomputing server-side LP for the current pathway context.
+            </div>
+          </div>
+        )}
+        {communityLoading && simMode === 'community' && (
+          <div style={{ padding: '0 16px 8px' }}>
+            <div style={{
+              padding: '8px 12px',
+              borderRadius: '12px',
+              border: '1px solid rgba(81,81,205,0.22)',
+              background: 'rgba(81,81,205,0.08)',
+              color: 'rgba(240,245,255,0.78)',
+              fontFamily: T.SANS,
+              fontSize: '11px',
+            }}>
+              Authority engine recomputing coupled host LPs and exchange fluxes on the server.
+            </div>
+          </div>
         )}
 
         {/* ── SINGLE MODE ── */}

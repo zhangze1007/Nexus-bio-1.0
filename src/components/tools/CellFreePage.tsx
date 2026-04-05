@@ -1,5 +1,5 @@
 'use client';
-import { useState, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import AlgorithmInsight from '../ide/shared/AlgorithmInsight';
@@ -16,6 +16,9 @@ import type {
   GeneConstruct,
   CFSParameters,
 } from '../../services/CellFreeEngine';
+import { useWorkbenchStore } from '../../store/workbenchStore';
+import WorkbenchInlineContext from '../workbench/WorkbenchInlineContext';
+import { buildCellFreeSeed } from './shared/workbenchDataflow';
 import { T, TOOL_RESULT_PALETTE} from '../ide/tokens';
 
 /* ── Design Tokens ────────────────────────────────────────────────── */
@@ -525,8 +528,25 @@ function ReactorTwin3D({ result, constructs, params }: { result: CFSFullResult; 
 /* ── Main Component ───────────────────────────────────────────────── */
 
 export default function CellFreePage() {
-  const constructs = useMemo(() => generateDefaultConstructs(), []);
-  const params = useMemo(() => generateDefaultParameters(), []);
+  const project = useWorkbenchStore((s) => s.project);
+  const analyzeArtifact = useWorkbenchStore((s) => s.analyzeArtifact);
+  const catalystPayload = useWorkbenchStore((s) => s.toolPayloads.catdes);
+  const dynconPayload = useWorkbenchStore((s) => s.toolPayloads.dyncon);
+  const cethxPayload = useWorkbenchStore((s) => s.toolPayloads.cethx);
+  const dbtlPayload = useWorkbenchStore((s) => s.toolPayloads.dbtlflow);
+  const setToolPayload = useWorkbenchStore((s) => s.setToolPayload);
+  const [constructs, setConstructs] = useState<GeneConstruct[]>(() => generateDefaultConstructs());
+  const [params, setParams] = useState<CFSParameters>(() => generateDefaultParameters());
+  const recommendedSeed = useMemo(
+    () => buildCellFreeSeed(project, analyzeArtifact, catalystPayload, dynconPayload, cethxPayload, dbtlPayload),
+    [analyzeArtifact?.generatedAt, analyzeArtifact?.id, catalystPayload?.updatedAt, cethxPayload?.updatedAt, dbtlPayload?.feedbackSource, dbtlPayload?.result.improvementRate, dbtlPayload?.result.latestPhase, dbtlPayload?.result.passRate, dbtlPayload?.updatedAt, dynconPayload?.updatedAt, project?.id, project?.updatedAt],
+  );
+
+  useEffect(() => {
+    setConstructs(recommendedSeed.constructs);
+    setParams(recommendedSeed.params);
+  }, [recommendedSeed]);
+
   const { data: result, error: simError } = useMemo(() => {
     try { return { data: runFullCFSPipeline(constructs, params), error: null as string | null }; }
     catch (e) { return { data: runFullCFSPipeline([], generateDefaultParameters()), error: e instanceof Error ? e.message : 'CFS pipeline failed' }; }
@@ -537,6 +557,48 @@ export default function CellFreePage() {
   const sim = result.simulation;
   const fit = result.fitting;
   const iviv = result.iviv;
+  const invitroMaxProtein = useMemo(
+    () => Math.max(...sim.steadyState.map((entry) => entry.maxProtein), 0),
+    [sim.steadyState],
+  );
+
+  useEffect(() => {
+    if (simError) return;
+    setToolPayload('cellfree', {
+      toolId: 'cellfree',
+      targetProduct: analyzeArtifact?.targetProduct || project?.targetProduct || project?.title || 'Target Product',
+      sourceArtifactId: analyzeArtifact?.id,
+      targetConstruct: constructs[1]?.name || constructs[0]?.name || 'Primary construct',
+      constructCount: constructs.length,
+      temperature: params.temperature,
+      simulationTime: params.simulationTime,
+      result: {
+        totalProteinYield: sim.totalProteinYield,
+        energyDepletionTime: sim.energyDepletionTime,
+        isResourceLimited: sim.isResourceLimited,
+        invitroMaxProtein,
+        invivoExpression: iviv?.invivo_expression ?? null,
+        confidence: iviv?.confidence ?? null,
+      },
+      updatedAt: Date.now(),
+    });
+  }, [
+    analyzeArtifact?.id,
+    analyzeArtifact?.targetProduct,
+    constructs,
+    invitroMaxProtein,
+    iviv?.confidence,
+    iviv?.invivo_expression,
+    params.simulationTime,
+    params.temperature,
+    project?.targetProduct,
+    project?.title,
+    setToolPayload,
+    sim.energyDepletionTime,
+    sim.isResourceLimited,
+    sim.totalProteinYield,
+    simError,
+  ]);
 
   const exportData = useMemo(() => {
     const rows: Record<string, unknown>[] = [];
@@ -556,6 +618,15 @@ export default function CellFreePage() {
           description="Resource-aware TX-TL ODE simulation → plate-reader Michaelis-Menten fitting → in-vitro-to-in-vivo translation prediction"
           formula="dP/dt = k_tl · [mRNA] · R_free / (K_tl + R_free)"
         />
+        <div style={{ padding: '0 16px 10px' }}>
+          <WorkbenchInlineContext
+            toolId="cellfree"
+            title="Cell-Free Prototyping"
+            summary="Cell-free prototyping acts as the pre-build gate for catalyst and control decisions, keeping construct count, resource limits, and translation confidence attached to the same project lineage before anything is promoted into DBTL."
+            compact
+            isSimulated={!analyzeArtifact}
+          />
+        </div>
 
         {simError && (
           <div style={{ padding: '0 16px 8px' }}><SimErrorBanner message={simError} /></div>

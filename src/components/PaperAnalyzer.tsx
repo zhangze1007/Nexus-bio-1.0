@@ -11,9 +11,12 @@ import {
   AxonInteraction, BottleneckEnzyme, DeNovoDesignStrategy,
 } from '../types';
 import { BIO_THEME_COLORS } from './ThreeScene';
+import type { StructuredAnalysisPayload } from '../store/workbenchStore';
 
 interface PaperAnalyzerProps {
   onPathwayGenerated: (nodes: PathwayNode[], edges: PathwayEdge[]) => void;
+  onStructuredAnalysis?: (payload: StructuredAnalysisPayload) => void;
+  initialText?: string;
 }
 
 /** Assign a semantic color from BIO_THEME_COLORS based on nodeType and risk. */
@@ -261,8 +264,12 @@ function classifyError(message: string): string {
   return message || 'Something went wrong. Please try again.';
 }
 
-export default function PaperAnalyzer({ onPathwayGenerated }: PaperAnalyzerProps) {
-  const [text, setText] = useState('');
+export default function PaperAnalyzer({
+  onPathwayGenerated,
+  onStructuredAnalysis,
+  initialText,
+}: PaperAnalyzerProps) {
+  const [text, setText] = useState(initialText ?? '');
   const [mode, setMode] = useState<InputMode>('text');
   const [expanded, setExpanded] = useState(false);
   const [analysisState, setAnalysisState] = useState<AnalysisState>('idle');
@@ -296,6 +303,14 @@ export default function PaperAnalyzer({ onPathwayGenerated }: PaperAnalyzerProps
     window.addEventListener('autoFillAnalyzer', handler as EventListener);
     return () => window.removeEventListener('autoFillAnalyzer', handler as EventListener);
   }, []);
+
+  useEffect(() => {
+    if (!initialText?.trim()) return;
+    setText(initialText);
+    setMode('text');
+    setAnalysisState('idle');
+    setErrorMsg(null);
+  }, [initialText]);
 
   // Cleanup on unmount
   useEffect(() => () => { abortRef.current?.abort(); }, []);
@@ -407,6 +422,16 @@ export default function PaperAnalyzer({ onPathwayGenerated }: PaperAnalyzerProps
       const interaction = p.axon_interaction as AxonInteraction | undefined;
       const bottlenecks = Array.isArray(p.bottleneck_enzymes) ? p.bottleneck_enzymes as BottleneckEnzyme[] : [];
       const strategies = Array.isArray(p.de_novo_design_strategies) ? p.de_novo_design_strategies as DeNovoDesignStrategy[] : [];
+      const structuredPayload: StructuredAnalysisPayload = {
+        nodes: pathway.nodes,
+        edges: pathway.edges,
+        bottlenecks,
+        designStrategies: strategies,
+        interaction: interaction ?? null,
+        sourceProvider: provider ?? null,
+      };
+
+      onStructuredAnalysis?.(structuredPayload);
 
       // Progressive disclosure: if Axon has a Socratic question, show it first
       if (interaction?.question) {
@@ -631,7 +656,7 @@ export default function PaperAnalyzer({ onPathwayGenerated }: PaperAnalyzerProps
               </div>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                 <a
-                  href="/tools?direction=Pathway%20%26%20Design&tool=pathd"
+                  href="/tools/pathd"
                   style={{
                     minHeight: '32px',
                     padding: '0 12px',
@@ -648,7 +673,7 @@ export default function PaperAnalyzer({ onPathwayGenerated }: PaperAnalyzerProps
                   Open PATHD workbench
                 </a>
                 <a
-                  href="/tools?direction=Research%20Intake"
+                  href="/tools"
                   style={{
                     minHeight: '32px',
                     padding: '0 12px',

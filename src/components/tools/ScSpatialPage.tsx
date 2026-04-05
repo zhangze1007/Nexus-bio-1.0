@@ -1,5 +1,5 @@
 'use client';
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import AlgorithmInsight from '../ide/shared/AlgorithmInsight';
@@ -12,6 +12,8 @@ import { SC_SPATIAL_DATA, GENE_LIST, CLUSTER_LABELS } from '../../data/mockScSpa
 import { runFullPipeline } from '../../services/ScSpatialEngine';
 import type { ScSpatialAnalysisResult, HighYieldCluster, MoranResult } from '../../services/ScSpatialEngine';
 import { T, TOOL_RESULT_PALETTE} from '../ide/tokens';
+import WorkbenchInlineContext from '../workbench/WorkbenchInlineContext';
+import { useWorkbenchStore } from '../../store/workbenchStore';
 
 /* ── Design Tokens ────────────────────────────────────────────────── */
 
@@ -38,6 +40,23 @@ const CLUSTER_COLORS: Record<number, string> = {
 };
 
 type ViewMode = 'Spatial' | 'Spatial3D' | 'UMAP' | 'Trajectory' | 'Efficiency' | 'Table';
+
+function canonicalGeneToken(value: string) {
+  return value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+}
+
+function findPreferredSpatialGene(candidates: string[]) {
+  const availableTokens = new Map(GENE_LIST.map((gene) => [canonicalGeneToken(gene), gene]));
+  for (const candidate of candidates) {
+    const token = canonicalGeneToken(candidate);
+    if (!token) continue;
+    const exact = availableTokens.get(token);
+    if (exact) return exact;
+    const partial = GENE_LIST.find((gene) => token.includes(canonicalGeneToken(gene)) || canonicalGeneToken(gene).includes(token));
+    if (partial) return partial;
+  }
+  return GENE_LIST[0] ?? 'ADS';
+}
 
 /* ── Section Label (same as MultiOPage) ───────────────────────────── */
 
@@ -545,6 +564,9 @@ function EfficiencyChart({ highYield }: { highYield: HighYieldCluster[] }) {
 /* ── Main Component ───────────────────────────────────────────────── */
 
 export default function ScSpatialPage() {
+  const project = useWorkbenchStore((s) => s.project);
+  const analyzeArtifact = useWorkbenchStore((s) => s.analyzeArtifact);
+  const setToolPayload = useWorkbenchStore((s) => s.setToolPayload);
   const { data: analysis, error: simError } = useMemo(() => {
     try { return { data: runFullPipeline(SC_SPATIAL_DATA), error: null as string | null }; }
     catch (e) { return { data: runFullPipeline(SC_SPATIAL_DATA), error: e instanceof Error ? e.message : 'Pipeline failed' }; }
@@ -586,6 +608,17 @@ export default function ScSpatialPage() {
       .sort((a, b) => b.moranI - a.moranI)
       .slice(0, 5),
   [analysis]);
+  const preferredGene = useMemo(
+    () =>
+      findPreferredSpatialGene([
+        analyzeArtifact?.enzymeCandidates[0]?.label ?? '',
+        analyzeArtifact?.bottleneckAssumptions[0]?.label ?? '',
+        analyzeArtifact?.pathwayCandidates[0]?.label ?? '',
+        project?.targetProduct ?? '',
+      ]),
+    [analyzeArtifact, project?.targetProduct],
+  );
+  const highestYieldCluster = analysis.highYieldClusters[0] ?? null;
   const spatialTraceSummary = useMemo(() => {
     const clusterLabel = selectedCluster !== null ? CLUSTER_LABELS[selectedCluster] : 'All clusters';
     const moranLead = topMoran[0];
@@ -599,6 +632,51 @@ export default function ScSpatialPage() {
 
   const convergenceIter = analysis.vae.convergenceHistory.length;
   const finalLoss = analysis.vae.convergenceHistory[convergenceIter - 1];
+
+  useEffect(() => {
+    if (preferredGene) {
+      setHighlightGene(preferredGene);
+    }
+  }, [preferredGene]);
+
+  useEffect(() => {
+    if (highestYieldCluster) {
+      setSelectedCluster(highestYieldCluster.clusterId);
+    }
+  }, [highestYieldCluster]);
+
+  useEffect(() => {
+    setToolPayload('scspatial', {
+      toolId: 'scspatial',
+      targetProduct: analyzeArtifact?.targetProduct ?? project?.targetProduct ?? 'Cell state atlas',
+      sourceArtifactId: analyzeArtifact?.id,
+      selectedCluster,
+      highlightGene,
+      activeView: viewMode,
+      result: {
+        totalCells: analysis.qc.totalCells,
+        passedCells: analysis.qc.passedCells,
+        topSpatialGene: topMoran[0]?.gene ?? highlightGene,
+        topMoranI: topMoran[0]?.moranI ?? 0,
+        highestYieldCluster: highestYieldCluster?.label ?? 'Not identified',
+        latentDim: analysis.vae.latentDim,
+      },
+      updatedAt: Date.now(),
+    });
+  }, [
+    analysis.qc.passedCells,
+    analysis.qc.totalCells,
+    analysis.vae.latentDim,
+    analyzeArtifact?.id,
+    analyzeArtifact?.targetProduct,
+    highlightGene,
+    highestYieldCluster,
+    project?.targetProduct,
+    selectedCluster,
+    setToolPayload,
+    topMoran,
+    viewMode,
+  ]);
 
   return (
     <>
@@ -620,6 +698,14 @@ export default function ScSpatialPage() {
             width: '240px', flexShrink: 0, overflowY: 'auto', padding: '16px',
             borderRight: `1px solid ${BORDER}`, background: PANEL_BG,
           }}>
+            <WorkbenchInlineContext
+              toolId="scspatial"
+              title="Single-Cell & Spatial Transcriptomics"
+              summary="Map pathway signatures and yield-relevant markers back onto cell states and tissue niches so the iteration loop can identify where production actually concentrates."
+              compact
+              isSimulated={!analyzeArtifact}
+            />
+
             {/* QC Summary */}
             <SectionLabel>QC Summary</SectionLabel>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '16px' }}>

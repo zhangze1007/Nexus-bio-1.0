@@ -14,6 +14,7 @@ import EmptyState from './ide/shared/EmptyState';
 import Pagination from './ide/shared/Pagination';
 
 import { T } from './ide/tokens';
+import { useWorkbenchStore } from '../store/workbenchStore';
 
 const SANS = T.SANS;
 const MONO = T.MONO;
@@ -337,21 +338,21 @@ interface SemanticSearchProps {
 function suggestToolRoute(article: Article) {
   const text = `${article.title} ${article.abstract} ${article.pathway ?? ''}`.toLowerCase();
   if (text.includes('single-cell') || text.includes('spatial') || text.includes('transcriptom')) {
-    return { href: '/tools?direction=Omics%20%26%20Spatial&tool=scspatial', label: 'Open SCSPATIAL' };
+    return { href: '/tools/scspatial', label: 'Open SCSPATIAL' };
   }
   if (text.includes('cell-free') || text.includes('tx-tl') || text.includes('iviv')) {
-    return { href: '/tools?direction=Validation%20%26%20DBTL&tool=cellfree', label: 'Open Cell-Free Sandbox' };
+    return { href: '/tools/cellfree', label: 'Open Cell-Free Sandbox' };
   }
   if (text.includes('protein') || text.includes('enzyme') || text.includes('catalyst') || text.includes('binding')) {
-    return { href: '/tools?direction=Structure%20%26%20Enzyme&tool=catdes', label: 'Open Catalyst Designer' };
+    return { href: '/tools/catdes', label: 'Open Catalyst Designer' };
   }
   if (text.includes('control') || text.includes('circuit') || text.includes('feedback')) {
-    return { href: '/tools?direction=Dynamic%20%26%20System&tool=dyncon', label: 'Open Dynamic Control' };
+    return { href: '/tools/dyncon', label: 'Open Dynamic Control' };
   }
   if (text.includes('thermodynamic') || text.includes('energy') || text.includes('delta g')) {
-    return { href: '/tools?direction=Dynamic%20%26%20System&tool=cethx', label: 'Open Thermodynamics Engine' };
+    return { href: '/tools/cethx', label: 'Open Thermodynamics Engine' };
   }
-  return { href: '/tools?direction=Pathway%20%26%20Design&tool=pathd', label: 'Open PATHD' };
+  return { href: '/tools/pathd', label: 'Open PATHD' };
 }
 
 export default function SemanticSearch({ onAnalyzePaper, initialQuery }: SemanticSearchProps) {
@@ -369,6 +370,32 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
     () => Object.fromEntries(SOURCE_DEFINITIONS.map((source) => [source.key, 'idle'])),
   );
   const didAutoSearch = useRef(false);
+  const evidenceItems = useWorkbenchStore((s) => s.evidenceItems);
+  const selectedEvidenceIds = useWorkbenchStore((s) => s.selectedEvidenceIds);
+  const upsertEvidence = useWorkbenchStore((s) => s.upsertEvidence);
+  const toggleEvidenceSelection = useWorkbenchStore((s) => s.toggleEvidenceSelection);
+  const prepareAnalyzeFromEvidence = useWorkbenchStore((s) => s.prepareAnalyzeFromEvidence);
+
+  const evidenceIdByKey = useMemo(() => {
+    return new Map(
+      evidenceItems.map((item) => [
+        `${item.doi || item.url || item.title}`.toLowerCase(),
+        item.id,
+      ]),
+    );
+  }, [evidenceItems]);
+
+  const selectedEvidenceItems = useMemo(() => {
+    return evidenceItems.filter((item) => selectedEvidenceIds.includes(item.id));
+  }, [evidenceItems, selectedEvidenceIds]);
+
+  const selectedEvidenceBySource = useMemo(() => {
+    return selectedEvidenceItems.reduce<Record<string, typeof selectedEvidenceItems>>((acc, item) => {
+      const key = item.source || item.journal || 'Unlabeled source';
+      acc[key] = acc[key] ? [...acc[key], item] : [item];
+      return acc;
+    }, {});
+  }, [selectedEvidenceItems]);
 
   useEffect(() => {
     if (initialQuery && !didAutoSearch.current) {
@@ -469,35 +496,55 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
     await runSearch(query);
   };
 
+  const persistArticleEvidence = useCallback((article: Article, options?: { select?: boolean }) => {
+    return upsertEvidence(
+      {
+        sourceKind: 'literature',
+        title: article.title,
+        abstract: article.abstract,
+        authors: article.authors,
+        journal: article.journal,
+        year: article.year,
+        doi: article.doi,
+        url: article.url,
+        source: article.source,
+        query: query.trim() || initialQuery || undefined,
+      },
+      { select: options?.select ?? true },
+    );
+  }, [initialQuery, query, upsertEvidence]);
+
   const handleAnalyze = (article: Article) => {
     if (!onAnalyzePaper) return;
-    onAnalyzePaper(`Title: ${article.title}\nAuthors: ${article.authors.join(', ')}\nJournal: ${article.journal} (${article.year})\nAbstract: ${article.abstract}`);
-    document.getElementById('analyzer')?.scrollIntoView({ behavior: 'smooth' });
+    const evidenceId = persistArticleEvidence(article, { select: true });
+    const prepared = prepareAnalyzeFromEvidence([evidenceId]);
+    onAnalyzePaper(
+      prepared || `Title: ${article.title}\nAuthors: ${article.authors.join(', ')}\nJournal: ${article.journal} (${article.year})\nAbstract: ${article.abstract}`,
+    );
   };
 
-  const SendButton = ({ article }: { article: Article }) => (
-    onAnalyzePaper && article.abstract ? (
-      <button
-        type="button"
-        onClick={() => handleAnalyze(article)}
-        title="Send abstract to analyzer"
-        style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          width: '34px',
-          height: '34px',
-          background: 'rgba(255,255,255,0.04)',
-          color: 'rgba(255,255,255,0.55)',
-          border: '1px solid rgba(255,255,255,0.08)',
-          borderRadius: '999px',
-          cursor: 'pointer',
-        }}
-      >
-        <Send size={15} strokeWidth={2} />
-      </button>
-    ) : null
-  );
+  const handleAnalyzeBundle = () => {
+    if (!onAnalyzePaper || selectedEvidenceIds.length === 0) return;
+    const prepared = prepareAnalyzeFromEvidence();
+    if (!prepared) return;
+    onAnalyzePaper(prepared);
+  };
+
+  const saveButtonLabel = (article: Article) => {
+    const evidenceId = evidenceIdByKey.get(`${article.doi || article.url || article.title}`.toLowerCase());
+    if (!evidenceId) return 'Save evidence';
+    return selectedEvidenceIds.includes(evidenceId) ? 'Selected' : 'Saved';
+  };
+
+  const handleSaveToggle = (article: Article) => {
+    const key = `${article.doi || article.url || article.title}`.toLowerCase();
+    const evidenceId = evidenceIdByKey.get(key);
+    if (evidenceId) {
+      toggleEvidenceSelection(evidenceId);
+      return;
+    }
+    persistArticleEvidence(article, { select: true });
+  };
 
   return (
     <section
@@ -589,6 +636,104 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
 
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
 
+        {(evidenceItems.length > 0 || selectedEvidenceIds.length > 0) && (
+          <div
+            style={{
+              marginBottom: '28px',
+              borderRadius: '22px',
+              border: '1px solid rgba(255,255,255,0.08)',
+              background: 'linear-gradient(135deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02))',
+              padding: '16px',
+              display: 'grid',
+              gap: '14px',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
+              <div style={{ display: 'grid', gap: '4px' }}>
+                <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '10px', fontFamily: MONO, textTransform: 'uppercase', letterSpacing: '0.12em', margin: 0 }}>
+                  Evidence bundle
+                </p>
+                <p style={{ color: '#ffffff', fontSize: '16px', fontWeight: 600, letterSpacing: '-0.02em', margin: 0 }}>
+                  {selectedEvidenceIds.length} selected · {evidenceItems.length} saved
+                </p>
+                <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '13px', lineHeight: 1.7, margin: 0, maxWidth: '72ch' }}>
+                  Save the papers that define your target project, then send the selected bundle to Analyze as a traceable evidence package.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleAnalyzeBundle}
+                disabled={!onAnalyzePaper || selectedEvidenceIds.length === 0}
+                style={{
+                  minHeight: '38px',
+                  padding: '0 14px',
+                  borderRadius: '999px',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  background: selectedEvidenceIds.length > 0 ? '#f4f7fb' : 'rgba(255,255,255,0.05)',
+                  color: selectedEvidenceIds.length > 0 ? '#000000' : 'rgba(255,255,255,0.35)',
+                  cursor: selectedEvidenceIds.length > 0 ? 'pointer' : 'not-allowed',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  fontFamily: SANS,
+                  fontSize: '12px',
+                  fontWeight: 700,
+                }}
+              >
+                <Send size={14} />
+                Send Selected To Analyze
+              </button>
+            </div>
+
+            {selectedEvidenceItems.length > 0 && (
+              <div style={{ display: 'grid', gap: '10px' }}>
+                {Object.entries(selectedEvidenceBySource).map(([source, items]) => (
+                  <div
+                    key={source}
+                    style={{
+                      borderRadius: '18px',
+                      border: '1px solid rgba(255,255,255,0.07)',
+                      background: 'rgba(255,255,255,0.03)',
+                      padding: '12px 14px',
+                      display: 'grid',
+                      gap: '8px',
+                    }}
+                  >
+                    <p style={{ color: 'rgba(255,255,255,0.28)', fontSize: '10px', fontFamily: MONO, textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>
+                      {source}
+                    </p>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      {items.map((item) => (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => toggleEvidenceSelection(item.id)}
+                          style={{
+                            minHeight: '30px',
+                            padding: '0 10px',
+                            borderRadius: '999px',
+                            border: '1px solid rgba(255,255,255,0.08)',
+                            background: 'rgba(255,255,255,0.04)',
+                            color: 'rgba(255,255,255,0.7)',
+                            cursor: 'pointer',
+                            fontFamily: SANS,
+                            fontSize: '11px',
+                            maxWidth: '100%',
+                          }}
+                          title="Toggle evidence selection"
+                        >
+                          {item.title}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {showShowcase && (
           <div style={{ marginBottom: '28px' }}>
             <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '10px', fontFamily: MONO, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '14px' }}>
@@ -666,15 +811,32 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
                         <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '13px', lineHeight: 1.75, margin: '0 0 12px' }}>
                           {highlightKeywords(paper.abstract, extractKeywords(paper.title, paper.abstract))}
                         </p>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' }}>
-                          <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '11px', fontFamily: MONO, margin: 0 }}>
-                            {paper.pathway}
-                          </p>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <a
-                              href={paper.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' }}>
+                            <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '11px', fontFamily: MONO, margin: 0 }}>
+                              {paper.pathway}
+                            </p>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <button
+                                type="button"
+                                onClick={() => handleSaveToggle(paper)}
+                                style={{
+                                  minHeight: '34px',
+                                  padding: '0 10px',
+                                  borderRadius: '999px',
+                                  border: '1px solid rgba(255,255,255,0.08)',
+                                  background: 'rgba(255,255,255,0.03)',
+                                  color: saveButtonLabel(paper) === 'Selected' ? '#ffffff' : 'rgba(255,255,255,0.55)',
+                                  cursor: 'pointer',
+                                  fontFamily: SANS,
+                                  fontSize: '11px',
+                                }}
+                              >
+                                {saveButtonLabel(paper)}
+                              </button>
+                              <a
+                                href={paper.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
                               style={{
                                 width: '34px',
                                 height: '34px',
@@ -685,12 +847,32 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
                                 display: 'grid',
                                 placeItems: 'center',
                               }}
-                            >
-                              <ExternalLink size={14} />
-                            </a>
-                            <SendButton article={paper} />
+                              >
+                                <ExternalLink size={14} />
+                              </a>
+                              {onAnalyzePaper && paper.abstract && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleAnalyze(paper)}
+                                  title="Send abstract to analyzer"
+                                  style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    width: '34px',
+                                    height: '34px',
+                                    background: 'rgba(255,255,255,0.04)',
+                                    color: 'rgba(255,255,255,0.55)',
+                                    border: '1px solid rgba(255,255,255,0.08)',
+                                    borderRadius: '999px',
+                                    cursor: 'pointer',
+                                  }}
+                                >
+                                  <Send size={15} strokeWidth={2} />
+                                </button>
+                              )}
+                            </div>
                           </div>
-                        </div>
                       </div>
                     )}
                   </article>
@@ -974,6 +1156,25 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
                                   DOI: {article.doi}
                                 </span>
                               )}
+                              <button
+                                type="button"
+                                onClick={() => handleSaveToggle(article)}
+                                style={{
+                                  minHeight: '30px',
+                                  padding: '0 10px',
+                                  borderRadius: '999px',
+                                  border: '1px solid rgba(255,255,255,0.08)',
+                                  background: 'rgba(255,255,255,0.03)',
+                                  color: saveButtonLabel(article) === 'Selected' ? '#ffffff' : 'rgba(255,255,255,0.6)',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  fontFamily: SANS,
+                                  fontSize: '11px',
+                                  cursor: 'pointer',
+                                }}
+                              >
+                                {saveButtonLabel(article)}
+                              </button>
                               <a
                                 href={suggestToolRoute(article).href}
                                 style={{
@@ -993,7 +1194,27 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
                                 {suggestToolRoute(article).label}
                               </a>
                             </div>
-                            <SendButton article={article} />
+                            {onAnalyzePaper && article.abstract && (
+                              <button
+                                type="button"
+                                onClick={() => handleAnalyze(article)}
+                                title="Send abstract to analyzer"
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  width: '34px',
+                                  height: '34px',
+                                  background: 'rgba(255,255,255,0.04)',
+                                  color: 'rgba(255,255,255,0.55)',
+                                  border: '1px solid rgba(255,255,255,0.08)',
+                                  borderRadius: '999px',
+                                  cursor: 'pointer',
+                                }}
+                              >
+                                <Send size={15} strokeWidth={2} />
+                              </button>
+                            )}
                           </div>
                         </div>
                       )}
