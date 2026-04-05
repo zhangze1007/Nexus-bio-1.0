@@ -1,11 +1,9 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, LayoutGrid, Menu } from 'lucide-react';
-import { Home, Terminal, LayoutGrid } from 'lucide-react';
+import { Home, LayoutGrid, Menu, Terminal } from 'lucide-react';
 import { useUIStore } from '../../store/uiStore';
 import { getToolDefinition } from '../tools/shared/toolRegistry';
-import { useUIStore } from '../../store/uiStore';
 import { T } from './tokens';
 import DisplayModeToggle from './shared/DisplayModeToggle';
 
@@ -124,6 +122,7 @@ export default function IDETopBar({ moduleId, actions }: IDETopBarProps) {
             </span>
           </>
         )}
+      </div>
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>

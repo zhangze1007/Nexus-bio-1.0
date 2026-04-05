@@ -189,8 +189,6 @@ export default function IDESidebar() {
                 width: collapsed ? 0 : 'auto',
                 overflow: 'hidden',
                 minWidth: 0,
-                width: collapsed ? 0 : 'auto',
-                overflow: 'hidden',
                 pointerEvents: collapsed ? 'none' : 'auto',
                 whiteSpace: 'nowrap',
               }}
@@ -322,8 +320,6 @@ export default function IDESidebar() {
                             width: collapsed ? 0 : 'auto',
                             overflow: 'hidden',
                             minWidth: 0,
-                            width: collapsed ? 0 : 'auto',
-                            overflow: 'hidden',
                             pointerEvents: collapsed ? 'none' : 'auto',
                             whiteSpace: 'nowrap',
                           }}
