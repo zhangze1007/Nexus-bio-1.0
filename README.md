@@ -31,12 +31,12 @@ Paste a paper → AI extracts pathway → 3D visualization
 | Paper Analyzer | AI extracts metabolic nodes, edges, and evidence from any research paper |
 | Atomic Pathway | Interactive 3D pathway visualization with pLDDT confidence coloring |
 | Database Research | Parallel search across 6 academic databases (PubMed, Semantic Scholar, OpenAlex, Europe PMC, bioRxiv, CORE) |
-| Node Panel | 3-tab scientific workbench: Overview · Structure · Kinetics |
-| Protein Structure | AlphaFold pLDDT coloring + RCSB PDB experimental structures |
-| Molecular Structure | Real 3D conformers from PubChem (dynamic name search) |
+| Node Panel | 3-tab scientific workbench: Overview · Structure · Analysis |
+| Protein Structure | AlphaFold pLDDT coloring + RCSB PDB experimental structures via 3Dmol.js |
+| Molecular Structure | Real 3D conformers from PubChem (CID lookup + dynamic name search) |
 | Cell Imagery | Microscopy reference images from Wikipedia, Cell Image Library, EMBL-EBI IDR |
-| Kinetic Simulation | Michaelis-Menten + RK4 ODE simulation for enzyme nodes |
-| Thermodynamics | Gibbs free energy (ΔG) calculation for metabolite nodes |
+| Kinetic Simulation | Michaelis-Menten kinetics + RK4 ODE numerical integration for enzyme nodes |
+| Thermodynamics | Gibbs free energy (ΔG°) estimation using group contribution method for metabolite nodes |
 
 ---
 
@@ -75,9 +75,14 @@ src/components/
 
 **AI Fallback Chain**
 ```
-Groq llama-3.3-70b-versatile → Groq llama3-70b-8192
-→ Gemini 2.0-flash-lite → Gemini 1.5-flash → 503
+1. Groq llama-3.3-70b-versatile   (primary — fastest)
+2. Groq llama3-70b-8192           (Groq backup)
+3. Gemini 2.0-flash-lite          (Google fallback)
+4. Gemini 1.5-flash               (final fallback)
+5. 503 error                      (all providers down)
 ```
+
+All AI calls go through `api/gemini.ts` (Edge Runtime). Groq is always tried first — never call Gemini directly as primary.
 
 ---
 

@@ -102,6 +102,16 @@ GEMINI_API_KEY  ← Google Gemini API key
 
 ---
 
+## GOTCHAS（Claude 经常犯的错误）
+
+1. **背景色** — 永远不要用 `#FFFFFF`, `#F5F7FA`, `#F2F5F8` 或任何浅色背景。只用深色主题：`#0d0f14`, `#10131a`
+2. **Mock 响应** — 永远不要返回硬编码的 mock 数据，无论用户输入什么。所有响应必须基于真实输入动态生成
+3. **禁止修改的文件** — 永远不要修改这些文件：`IDEShell.tsx`, `IDETopBar.tsx`, `IDESidebar.tsx`, `ProEvolPage.tsx`, `GECAIRPage.tsx`, `DBTLflowPage.tsx`
+4. **API 调用顺序** — 永远是：Groq llama-3.3-70b FIRST，Gemini 作为 fallback SECOND。不要颠倒
+5. **科学算法** — 每个工具必须使用真实的科学算法，不能用占位符计算（placeholder calculations）
+
+---
+
 ## 已知问题和注意事项
 
 1. `ThreeScene.tsx` 用 `meshLambertMaterial` — 不要改回 `meshStandardMaterial`，会白色闪烁
