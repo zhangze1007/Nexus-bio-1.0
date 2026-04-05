@@ -26,73 +26,196 @@ const PART_COLORS: Record<string, string> = {
   terminator: 'rgba(200,100,255,0.7)',
 };
 
+function resolveGateOutput(a: number, b: number, gateType: GateType) {
+  if (gateType === 'AND') return hillActivation(Math.min(a, b));
+  if (gateType === 'OR') return hillActivation(Math.max(a, b));
+  if (gateType === 'NAND') return hillInhibition(Math.min(a, b));
+  return hillInhibition(a);
+}
+
 function CircuitSVG({ inputA, inputB, gateType }: { inputA: number; inputB: number; gateType: GateType }) {
   const outA = hillInhibition(inputA);
-  const outB = hillInhibition(outA);
-  const outC = hillInhibition(outB);
-  const andOut = gateType === 'AND' ? hillActivation(Math.min(outA, outB)) :
-    gateType === 'OR' ? hillActivation(Math.max(outA, outB)) :
-    gateType === 'NAND' ? hillInhibition(Math.min(outA, outB)) :
-    hillInhibition(inputA);
-  const finalOutput = andOut;
+  const outB = hillInhibition(inputB);
+  const outC = resolveGateOutput(outA, outB, gateType);
+  const finalOutput = outC;
+  const W = 720;
+  const H = 430;
+  const heatLeft = 42;
+  const heatTop = 54;
+  const heatSize = 246;
+  const grid = 12;
 
-  function sigBar(x: number, y: number, value: number, label: string) {
-    return (
-      <g>
-        <rect x={x} y={y} width={40} height={8} fill="rgba(255,255,255,0.06)" rx="2" />
-        <rect x={x} y={y} width={Math.max(2, value * 40)} height={8} fill="rgba(147,203,82,0.6)" rx="2" />
-        <text x={x + 44} y={y + 7} fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.5)">
-          {label} {(value * 100).toFixed(0)}%
-        </text>
-      </g>
-    );
+  const heat = Array.from({ length: grid }, (_, yi) =>
+    Array.from({ length: grid }, (_, xi) => {
+      const a = xi / (grid - 1);
+      const b = 1 - yi / (grid - 1);
+      return resolveGateOutput(hillInhibition(a), hillInhibition(b), gateType);
+    }),
+  );
+
+  function signalColor(value: number) {
+    const warm = 255 * value;
+    const cool = 140 + 80 * (1 - value);
+    return `rgba(${Math.round(90 + warm * 0.6)}, ${Math.round(120 + warm * 0.35)}, ${Math.round(cool)}, ${0.25 + value * 0.6})`;
   }
 
+  function responseCurve(inputId: 'A' | 'B') {
+    const pts: string[] = [];
+    for (let i = 0; i <= 48; i += 1) {
+      const xValue = i / 48;
+      const yValue = hillInhibition(xValue);
+      const x = 348 + xValue * 148;
+      const y = 118 - yValue * 72;
+      pts.push(`${x},${y}`);
+    }
+    const markerInput = inputId === 'A' ? inputA : inputB;
+    const markerOutput = hillInhibition(markerInput);
+    return {
+      points: pts.join(' '),
+      markerX: 348 + markerInput * 148,
+      markerY: 118 - markerOutput * 72,
+      markerOutput,
+    };
+  }
+
+  const curveA = responseCurve('A');
+  const curveB = responseCurve('B');
+  const nodeRows = [
+    { label: 'Sensor A', value: outA, tone: 'rgba(81,81,205,0.9)', detail: 'Hill repression from input A' },
+    { label: 'Sensor B', value: outB, tone: 'rgba(255,139,31,0.9)', detail: 'Hill repression from input B' },
+    { label: `${gateType} Output`, value: outC, tone: 'rgba(120,255,180,0.9)', detail: 'Combined gate expression state' },
+  ];
+
   return (
-    <svg role="img" aria-label="Chart" viewBox="0 0 480 420" style={{ width: '100%', height: '100%' }}>
-      <rect width="480" height="420" fill="#050505" />
-      <text x="240" y="20" textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.3)">
-        Synthetic Gene Circuit — {gateType} Gate Mode
+    <svg role="img" aria-label="Chart" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
+      <rect width={W} height={H} fill="#050505" rx="18" />
+      <text x="24" y="26" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.26)">
+        LOGIC OPERATING SURFACE
       </text>
-      <text x="20" y="70" fontFamily={T.MONO} fontSize="9" fill="rgba(255,255,255,0.4)">INPUT A</text>
-      {sigBar(20, 76, inputA, '')}
-      <text x="20" y="115" fontFamily={T.MONO} fontSize="9" fill="rgba(255,255,255,0.4)">INPUT B</text>
-      {sigBar(20, 121, inputB, '')}
-      {CIRCUIT_NODES.slice(0, 3).map((node, ni) => {
-        const y = 160 + ni * 70;
-        const levels = [outA, outB, outC];
-        const lvl = levels[ni] ?? 0;
+      <text x="24" y="42" fontFamily={T.SANS} fontSize="12" fill="rgba(255,255,255,0.72)">
+        {gateType} gate response across the current two-input regime
+      </text>
+
+      <rect x={heatLeft} y={heatTop} width={heatSize} height={heatSize} rx="16" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" />
+      {heat.map((row, yi) =>
+        row.map((value, xi) => {
+          const cell = heatSize / grid;
+          return (
+            <rect
+              key={`${xi}-${yi}`}
+              x={heatLeft + xi * cell + 1}
+              y={heatTop + yi * cell + 1}
+              width={cell - 2}
+              height={cell - 2}
+              rx="3"
+              fill={signalColor(value)}
+            />
+          );
+        }),
+      )}
+      <circle
+        cx={heatLeft + inputA * heatSize}
+        cy={heatTop + (1 - inputB) * heatSize}
+        r="7"
+        fill="none"
+        stroke="rgba(255,255,255,0.95)"
+        strokeWidth="2"
+      />
+      <circle
+        cx={heatLeft + inputA * heatSize}
+        cy={heatTop + (1 - inputB) * heatSize}
+        r="2.5"
+        fill="rgba(255,255,255,0.95)"
+      />
+      <text x={heatLeft + heatSize / 2} y={heatTop + heatSize + 26} textAnchor="middle" fontFamily={T.MONO} fontSize="9" fill="rgba(255,255,255,0.28)">
+        Input A fraction
+      </text>
+      <text x={16} y={heatTop + heatSize / 2} textAnchor="middle" fontFamily={T.MONO} fontSize="9" fill="rgba(255,255,255,0.28)" transform={`rotate(-90, 16, ${heatTop + heatSize / 2})`}>
+        Input B fraction
+      </text>
+      {[0, 0.5, 1].map((tick, i) => (
+        <g key={i}>
+          <text x={heatLeft + tick * heatSize} y={heatTop + heatSize + 12} textAnchor={tick === 0 ? 'start' : tick === 1 ? 'end' : 'middle'} fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.2)">
+            {(tick * 100).toFixed(0)}%
+          </text>
+          <text x={heatLeft - 8} y={heatTop + (1 - tick) * heatSize + 3} textAnchor="end" fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.2)">
+            {(tick * 100).toFixed(0)}%
+          </text>
+        </g>
+      ))}
+
+      <rect x="324" y="54" width="180" height="92" rx="16" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" />
+      <text x="338" y="74" fontFamily={T.MONO} fontSize="9" fill="rgba(255,255,255,0.24)">
+        TRANSFER CURVES
+      </text>
+      <polyline points={curveA.points} fill="none" stroke="rgba(81,81,205,0.95)" strokeWidth="2" />
+      <polyline points={curveB.points} fill="none" stroke="rgba(255,139,31,0.95)" strokeWidth="2" />
+      <circle cx={curveA.markerX} cy={curveA.markerY} r="4" fill="rgba(81,81,205,1)" />
+      <circle cx={curveB.markerX} cy={curveB.markerY} r="4" fill="rgba(255,139,31,1)" />
+      <text x="348" y="133" fontFamily={T.MONO} fontSize="8" fill="rgba(81,81,205,0.95)">
+        A sensor {(curveA.markerOutput * 100).toFixed(0)}%
+      </text>
+      <text x="430" y="133" fontFamily={T.MONO} fontSize="8" fill="rgba(255,139,31,0.95)">
+        B sensor {(curveB.markerOutput * 100).toFixed(0)}%
+      </text>
+
+      <rect x="324" y="164" width="180" height="136" rx="16" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" />
+      <text x="338" y="184" fontFamily={T.MONO} fontSize="9" fill="rgba(255,255,255,0.24)">
+        NODE STATE LEDGER
+      </text>
+      {nodeRows.map((row, index) => {
+        const y = 208 + index * 34;
         return (
-          <g key={node.id}>
-            <text x="20" y={y - 4} fontFamily={T.MONO} fontSize="9" fill="rgba(255,255,255,0.35)">
-              {['Node A (LacI)', 'Node B (TetR)', 'Node C (cI)'][ni]}
+          <g key={row.label}>
+            <text x="338" y={y} fontFamily={T.SANS} fontSize="11" fill="rgba(255,255,255,0.68)">
+              {row.label}
             </text>
-            {node.parts.map((part, pi) => (
-              <rect key={part.id} x={20 + pi * 52} y={y} width={48} height={22}
-                fill={PART_COLORS[part.type] ?? 'rgba(255,255,255,0.2)'}
-                fillOpacity={0.2} stroke={PART_COLORS[part.type] ?? 'rgba(255,255,255,0.2)'}
-                strokeWidth={1} rx="2"
-              />
-            ))}
-            {node.parts.map((part, pi) => (
-              <text key={`t-${part.id}`} x={44 + pi * 52} y={y + 14} textAnchor="middle"
-                fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.55)">
-                {part.label}
-              </text>
-            ))}
-            {sigBar(240, y + 6, lvl, `→ ${(lvl * 100).toFixed(0)}%`)}
+            <rect x="338" y={y + 8} width="132" height="8" rx="999" fill="rgba(255,255,255,0.08)" />
+            <rect x="338" y={y + 8} width={Math.max(6, row.value * 132)} height="8" rx="999" fill={row.tone} />
+            <text x="476" y={y + 15} textAnchor="end" fontFamily={T.MONO} fontSize="9" fill="rgba(255,255,255,0.55)">
+              {(row.value * 100).toFixed(1)}%
+            </text>
+            <text x="338" y={y + 27} fontFamily={T.SANS} fontSize="9" fill="rgba(255,255,255,0.32)">
+              {row.detail}
+            </text>
           </g>
         );
       })}
-      <text x="20" y="382" fontFamily={T.MONO} fontSize="9" fill="rgba(255,255,255,0.4)">OUTPUT (GFP)</text>
-      {sigBar(20, 388, finalOutput, '')}
-      <text x={20 + Math.max(2, finalOutput * 40) + 48} y="396" fontFamily={T.MONO} fontSize="11"
-        fill={finalOutput > 0.5 ? 'rgba(120,255,180,0.9)' : 'rgba(255,255,255,0.3)'}>
-        {(finalOutput * 100).toFixed(1)}% expression
+
+      <rect x="42" y="330" width="462" height="76" rx="18" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" />
+      <text x="58" y="350" fontFamily={T.MONO} fontSize="9" fill="rgba(255,255,255,0.24)">
+        GENETIC ARCHITECTURE
       </text>
-      <line x1="60" y1="84" x2="60" y2="155" stroke="rgba(255,255,255,0.1)" strokeDasharray="3 3" />
-      <line x1="240" y1="182" x2="240" y2="225" stroke="rgba(255,255,255,0.08)" />
-      <line x1="240" y1="252" x2="240" y2="295" stroke="rgba(255,255,255,0.08)" />
+      {CIRCUIT_NODES.slice(0, 3).map((node, ni) => {
+        const y = 365 + ni * 16;
+        return (
+          <g key={node.id}>
+            <text x="58" y={y} fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.38)">
+              {['Sensor A', 'Sensor B', 'Output cassette'][ni]}
+            </text>
+            {node.parts.map((part, pi) => (
+              <g key={part.id}>
+                <rect
+                  x={132 + pi * 70}
+                  y={y - 10}
+                  width="62"
+                  height="12"
+                  rx="6"
+                  fill="rgba(0,0,0,0.28)"
+                  stroke={PART_COLORS[part.type] ?? 'rgba(255,255,255,0.2)'}
+                  strokeWidth="1.1"
+                />
+                <text x={163 + pi * 70} y={y - 1} textAnchor="middle" fontFamily={T.MONO} fontSize="7" fill="rgba(255,255,255,0.7)">
+                  {part.label}
+                </text>
+              </g>
+            ))}
+          </g>
+        );
+      })}
+      <path d="M 286 361 C 312 361, 318 361, 338 361" stroke="rgba(81,81,205,0.55)" strokeWidth="1.5" fill="none" />
+      <path d="M 286 377 C 312 377, 318 377, 338 377" stroke="rgba(255,139,31,0.55)" strokeWidth="1.5" fill="none" />
+      <path d="M 338 361 C 364 361, 380 377, 404 377" stroke="rgba(120,255,180,0.45)" strokeWidth="1.5" fill="none" strokeDasharray="4 3" />
     </svg>
   );
 }
@@ -149,13 +272,13 @@ export default function GECAIRPage() {
   }, [recommendedGate, recommendedInputA, recommendedInputB]);
 
   const outA = hillInhibition(inputA);
-  const outB = hillInhibition(outA);
-  const finalOutput = gateType === 'AND' ? hillActivation(Math.min(outA, outB))
-    : gateType === 'OR' ? hillActivation(Math.max(outA, outB))
-    : gateType === 'NAND' ? hillInhibition(Math.min(outA, outB))
-    : hillInhibition(inputA);
+  const outB = hillInhibition(inputB);
+  const finalOutput = resolveGateOutput(outA, outB, gateType);
 
-  const noiseScore = Math.abs(hillInhibition(inputA + 0.05) - finalOutput);
+  const noiseScore = Math.max(
+    Math.abs(resolveGateOutput(hillInhibition(Math.min(1, inputA + 0.05)), outB, gateType) - finalOutput),
+    Math.abs(resolveGateOutput(outA, hillInhibition(Math.min(1, inputB + 0.05)), gateType) - finalOutput),
+  );
 
   const exportData = useMemo(() => ({
     gateType,

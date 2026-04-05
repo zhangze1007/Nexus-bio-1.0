@@ -79,8 +79,8 @@ function findPreferredGene(candidates: string[]) {
 
 /* ── VolcanoPlot (preserved) ──────────────────────────────────────── */
 
-function VolcanoPlot({ data, fcThreshold, pvThreshold }: {
-  data: OmicsRow[]; fcThreshold: number; pvThreshold: number;
+function VolcanoPlot({ data, fcThreshold, pvThreshold, highlightedGene }: {
+  data: OmicsRow[]; fcThreshold: number; pvThreshold: number; highlightedGene?: string;
 }) {
   const W = 360, H = 300, PAD = 36;
   const fcMax = 6, pvMax = 5;
@@ -101,20 +101,48 @@ function VolcanoPlot({ data, fcThreshold, pvThreshold }: {
         stroke="rgba(255,255,255,0.08)" strokeWidth={1} strokeDasharray="4 3" />
       <line x1={fcLineR} y1={PAD} x2={fcLineR} y2={H - PAD}
         stroke="rgba(255,255,255,0.08)" strokeWidth={1} strokeDasharray="4 3" />
+      <rect
+        x={fcLineR}
+        y={PAD}
+        width={W - PAD - fcLineR}
+        height={pvLine - PAD}
+        fill="rgba(147,203,82,0.06)"
+      />
+      <rect
+        x={PAD}
+        y={PAD}
+        width={fcLineL - PAD}
+        height={pvLine - PAD}
+        fill="rgba(250,128,114,0.06)"
+      />
       {data.map(row => {
         const fc = row.fold_change ?? 0;
         const pv = row.pValue ?? 1;
         const sig = pv < pvThreshold && Math.abs(fc) > fcThreshold;
         const up = fc > 0;
+        const isHighlighted = row.gene === highlightedGene;
         const color = sig
           ? (up ? 'rgba(147,203,82,0.85)' : 'rgba(250,128,114,0.85)')
           : 'rgba(255,255,255,0.18)';
         return (
-          <circle key={row.id}
-            cx={xPos(fc)} cy={yPos(pv)} r={sig ? 4 : 2.5}
-            fill={color}>
-            <title>{row.gene}: FC={fc.toFixed(2)}, p={pv.toFixed(4)}</title>
-          </circle>
+          <g key={row.id}>
+            {isHighlighted && (
+              <circle cx={xPos(fc)} cy={yPos(pv)} r={8} fill="none" stroke="rgba(255,139,31,0.9)" strokeWidth={1.4} />
+            )}
+            <circle
+              cx={xPos(fc)}
+              cy={yPos(pv)}
+              r={isHighlighted ? 5.5 : sig ? 4 : 2.5}
+              fill={color}
+            >
+              <title>{row.gene}: FC={fc.toFixed(2)}, p={pv.toFixed(4)}</title>
+            </circle>
+            {isHighlighted && (
+              <text x={xPos(fc)} y={yPos(pv) - 10} textAnchor="middle" fontFamily={T.MONO} fontSize="7" fill="rgba(255,139,31,0.92)">
+                {row.gene}
+              </text>
+            )}
+          </g>
         );
       })}
       <line x1={PAD} y1={H - PAD} x2={W - PAD} y2={H - PAD} stroke="rgba(255,255,255,0.1)" />
@@ -128,6 +156,9 @@ function VolcanoPlot({ data, fcThreshold, pvThreshold }: {
       </text>
       <text x={W - PAD} y={H - PAD + 12} textAnchor="end" fontFamily={T.MONO} fontSize="7" fill="rgba(255,255,255,0.2)">+{fcMax}</text>
       <text x={PAD} y={H - PAD + 12} textAnchor="start" fontFamily={T.MONO} fontSize="7" fill="rgba(255,255,255,0.2)">-{fcMax}</text>
+      <text x={W - PAD - 4} y={PAD + 12} textAnchor="end" fontFamily={T.MONO} fontSize="7" fill="rgba(147,203,82,0.74)">
+        productive-significant
+      </text>
     </svg>
   );
 }
@@ -155,10 +186,12 @@ const COLUMNS: TableColumn<OmicsRow>[] = [
 
 /* ── 3D→2D Embedding Scatter (SVG) ───────────────────────────────── */
 
-function EmbeddingScatter({ embeddings, fcThreshold, activeLayers }: {
+function EmbeddingScatter({ embeddings, fcThreshold, activeLayers, highlightedGene, bottleneckGene }: {
   embeddings: EmbeddingPoint[];
   fcThreshold: number;
   activeLayers: Record<OmicsLayer, boolean>;
+  highlightedGene?: string;
+  bottleneckGene?: string;
 }) {
   const W = 520, H = 420, PAD = 44;
 
@@ -194,10 +227,24 @@ function EmbeddingScatter({ embeddings, fcThreshold, activeLayers }: {
   }, []);
 
   const GRID_COUNT = 8;
+  const centroids = useMemo(() => {
+    const groups: Record<OmicsLayer, { sx: number; sy: number; n: number }> = {
+      transcriptomics: { sx: 0, sy: 0, n: 0 },
+      proteomics: { sx: 0, sy: 0, n: 0 },
+      metabolomics: { sx: 0, sy: 0, n: 0 },
+    };
+    projected.forEach((point) => {
+      groups[point.layer].sx += point.sx;
+      groups[point.layer].sy += point.sy;
+      groups[point.layer].n += 1;
+    });
+    return groups;
+  }, [projected]);
 
   return (
     <svg role="img" aria-label="Chart" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
       <rect width={W} height={H} fill="#050505" rx={12} />
+      <rect x={PAD} y={PAD} width={W - PAD * 2} height={H - PAD * 2} fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.06)" rx={12} />
       {/* Grid */}
       {Array.from({ length: GRID_COUNT + 1 }).map((_, i) => {
         const x = PAD + (i / GRID_COUNT) * (W - PAD * 2);
@@ -222,18 +269,42 @@ function EmbeddingScatter({ embeddings, fcThreshold, activeLayers }: {
       {/* Points */}
       {projected.map(p => {
         const sig = (geneFC[p.gene] ?? 0) > fcThreshold;
+        const isHighlighted = p.gene === highlightedGene || p.gene === bottleneckGene;
         return (
-          <circle
-            key={p.id}
-            cx={p.sx}
-            cy={p.sy}
-            r={sig ? 6 : 4}
-            fill={LAYER_COLORS[p.layer]}
-            opacity={sig ? 1.0 : 0.7}
-            style={{ transition: 'opacity 0.2s' }}
-          >
-            <title>{p.gene} [{p.layer}] val={p.normalizedValue.toFixed(2)}</title>
-          </circle>
+          <g key={p.id}>
+            {isHighlighted && (
+              <circle
+                cx={p.sx}
+                cy={p.sy}
+                r={10}
+                fill="none"
+                stroke={p.gene === bottleneckGene ? 'rgba(255,139,31,0.88)' : 'rgba(240,253,250,0.8)'}
+                strokeWidth={1.4}
+              />
+            )}
+            <circle
+              cx={p.sx}
+              cy={p.sy}
+              r={isHighlighted ? 7 : sig ? 6 : 4}
+              fill={LAYER_COLORS[p.layer]}
+              opacity={sig || isHighlighted ? 1.0 : 0.7}
+              style={{ transition: 'opacity 0.2s' }}
+            >
+              <title>{p.gene} [{p.layer}] val={p.normalizedValue.toFixed(2)}</title>
+            </circle>
+          </g>
+        );
+      })}
+      {(['transcriptomics', 'proteomics', 'metabolomics'] as OmicsLayer[]).map((layer) => {
+        const centroid = centroids[layer];
+        if (!centroid.n || !activeLayers[layer]) return null;
+        return (
+          <g key={`centroid-${layer}`}>
+            <circle cx={centroid.sx / centroid.n} cy={centroid.sy / centroid.n} r={11} fill="none" stroke={`${LAYER_COLORS[layer]}`} strokeWidth={1.1} strokeDasharray="4 3" />
+            <text x={centroid.sx / centroid.n} y={centroid.sy / centroid.n - 14} textAnchor="middle" fontFamily={T.MONO} fontSize="7" fill={LAYER_COLORS[layer]}>
+              {layer.slice(0, 5)}
+            </text>
+          </g>
         );
       })}
       {/* Legend */}
@@ -245,6 +316,9 @@ function EmbeddingScatter({ embeddings, fcThreshold, activeLayers }: {
           </text>
         </g>
       ))}
+      <text x={PAD} y={PAD - 12} fontFamily={T.MONO} fontSize="7" fill={LABEL}>
+        Highlight ring = current bottleneck or selected perturbation gene
+      </text>
     </svg>
   );
 }
@@ -651,7 +725,7 @@ export default function MultiOPage() {
             {viewMode === 'Volcano' && (
               <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
                 <div style={{ width: '100%', maxWidth: '520px', aspectRatio: '360/300' }}>
-                  <VolcanoPlot data={filtered} fcThreshold={fcThreshold} pvThreshold={pvThreshold} />
+                  <VolcanoPlot data={filtered} fcThreshold={fcThreshold} pvThreshold={pvThreshold} highlightedGene={selectedGene} />
                 </div>
               </div>
             )}
@@ -662,6 +736,8 @@ export default function MultiOPage() {
                     embeddings={embeddings}
                     fcThreshold={fcThreshold}
                     activeLayers={activeLayers}
+                    highlightedGene={selectedGene}
+                    bottleneckGene={significant[0]?.gene ?? selectedGene}
                   />
                 </div>
               </div>

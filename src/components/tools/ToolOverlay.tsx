@@ -186,19 +186,29 @@ export default function ToolOverlay({
         position:'absolute', left:'20px', top:'50%',
         transform:'translateY(-50%)',
         width:'240px', zIndex:10,
-        background: PATHD_THEME.panelGradientStrong,
-        backdropFilter:'blur(40px)',
-        WebkitBackdropFilter:'blur(40px)',
+        background: PATHD_THEME.panelGlassStrong,
+        backdropFilter:'blur(28px)',
+        WebkitBackdropFilter:'blur(28px)',
         borderRadius:'18px',
         border:`1px solid ${PATHD_THEME.panelBorder}`,
-        borderTop:`1.5px solid ${PATHD_THEME.panelBorderStrong}`,
+        borderTop:`1px solid rgba(255,255,255,0.12)`,
         boxShadow:'0 18px 42px rgba(0,0,0,0.26), inset 0 1px 0 rgba(255,255,255,0.05)',
         padding:'18px 16px',
         userSelect:'none',
       }}
     >
+      <div
+        aria-hidden
+        style={{
+          position: 'absolute',
+          inset: 0,
+          borderRadius: '18px',
+          background: PATHD_THEME.panelSheen,
+          pointerEvents: 'none',
+        }}
+      />
       {/* Header */}
-      <div style={{ marginBottom:'16px' }}>
+      <div style={{ marginBottom:'16px', position:'relative', zIndex:1 }}>
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
           <span style={{ fontFamily: T.MONO, fontSize:'9px', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.12em', color:'rgba(255,255,255,0.25)' }}>
             TOOL CABINET
@@ -233,7 +243,7 @@ export default function ToolOverlay({
       </div>
 
       {/* Parameter sliders */}
-      <div>
+      <div style={{ position:'relative', zIndex:1 }}>
         {PARAM_DEFS.map(def => (
           <ParamSlider
             key={def.key}

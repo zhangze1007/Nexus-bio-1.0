@@ -18,7 +18,7 @@ import { buildCETHXSeed } from './shared/workbenchDataflow';
 // ── Breathing Waterfall Chart ──────────────────────────────────────────
 
 function BreathingWaterfall({ steps }: { steps: ReturnType<typeof computeThermo>['steps'] }) {
-  const W = 520, H = 340, PAD = { top: 28, right: 24, bottom: 48, left: 56 };
+  const W = 520, H = 356, PAD = { top: 42, right: 26, bottom: 62, left: 58 };
   const innerW = W - PAD.left - PAD.right;
   const innerH = H - PAD.top - PAD.bottom;
 
@@ -26,97 +26,187 @@ function BreathingWaterfall({ steps }: { steps: ReturnType<typeof computeThermo>
   const maxG = Math.max(0, ...steps.map(s => s.cumulative), ...steps.map(s => s.deltaG));
   const range = maxG - minG || 1;
   function yPos(v: number) { return PAD.top + innerH - ((v - minG) / range) * innerH; }
-  const barW = Math.max(12, innerW / steps.length - 6);
+  const barW = Math.max(18, innerW / steps.length - 10);
+  const limitingStep = [...steps].sort((left, right) => right.deltaG - left.deltaG)[0];
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
-      {/* Zero line */}
+      <rect x="0" y="0" width={W} height={H} rx="14" fill="#05070b" />
+      <rect
+        x={PAD.left - 22}
+        y={PAD.top - 18}
+        width={innerW + 34}
+        height={innerH + 30}
+        rx="14"
+        fill="rgba(255,255,255,0.02)"
+        stroke="rgba(255,255,255,0.06)"
+      />
+      {[0, 0.25, 0.5, 0.75, 1].map((tick) => {
+        const y = PAD.top + tick * innerH;
+        return (
+          <line
+            key={`grid-${tick}`}
+            x1={PAD.left}
+            y1={y}
+            x2={W - PAD.right}
+            y2={y}
+            stroke="rgba(255,255,255,0.045)"
+            strokeWidth={0.8}
+          />
+        );
+      })}
       <line x1={PAD.left} y1={yPos(0)} x2={W - PAD.right} y2={yPos(0)}
         stroke="rgba(255,255,255,0.08)" strokeWidth={1} />
 
-      {/* Cumulative trace */}
+      <text x={PAD.left} y={18} fontFamily={T.SANS} fontSize="9" fill={PATHD_THEME.label} letterSpacing="0.12em">
+        THERMODYNAMIC WATERFALL
+      </text>
+      <text x={PAD.left} y={30} fontFamily={T.SANS} fontSize="11" fill={PATHD_THEME.value}>
+        Stepwise free-energy burden with cumulative load and ATP-coupled events
+      </text>
+
       <motion.polyline
         initial={{ pathLength: 0 }}
         animate={{ pathLength: 1 }}
-        transition={{ duration: 1.2, ease: 'easeOut' }}
+        transition={{ duration: 0.9, ease: 'easeOut' }}
         points={steps.map((s, i) => {
           const x = PAD.left + (i / steps.length) * innerW + barW / 2;
           return `${x},${yPos(s.cumulative)}`;
         }).join(' ')}
-        fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth={1.5} strokeDasharray="4 2"
+        fill="none" stroke="rgba(240,248,255,0.52)" strokeWidth={1.7} strokeDasharray="4 2"
       />
 
-      {/* Breathing bars — each animates height independently */}
       {steps.map((step, i) => {
         const x = PAD.left + (i / steps.length) * innerW + 2;
         const isNeg = step.deltaG < 0;
         const color = step.atpYield > 0
-          ? T.NEON
-          : isNeg ? 'rgba(147,203,82,0.75)' : 'rgba(255,80,80,0.65)';
+          ? PATHD_THEME.orange
+          : isNeg ? 'rgba(147,203,82,0.78)' : 'rgba(250,128,114,0.72)';
         const topY = Math.min(yPos(step.cumulative), yPos(step.cumulative - step.deltaG));
         const h = Math.abs(yPos(step.cumulative) - yPos(step.cumulative - step.deltaG));
+        const cx = x + (barW - 4) / 2;
+        const isLimiting = step.step === limitingStep?.step;
 
         return (
-          <motion.rect
-            key={step.step + i}
-            x={x}
-            width={barW - 4}
-            rx={3}
-            fill={color}
-            initial={{ y: yPos(0), height: 0, opacity: 0 }}
-            animate={{
-              y: topY,
-              height: h,
-              opacity: [0.55, 0.8, 0.55],
-            }}
-            transition={{
-              y: { type: 'spring', stiffness: 200, damping: 25, delay: i * 0.06 },
-              height: { type: 'spring', stiffness: 200, damping: 25, delay: i * 0.06 },
-              opacity: {
-                duration: 3,
-                repeat: Infinity,
-                ease: 'easeInOut',
-                delay: i * 0.15,
-              },
-            }}
-          />
+          <g key={step.step + i}>
+            <rect
+              x={x}
+              y={topY}
+              width={barW - 4}
+              height={h}
+              rx={4}
+              fill={color}
+              opacity={0.82}
+            />
+            <rect
+              x={x}
+              y={topY}
+              width={barW - 4}
+              height={h}
+              rx={4}
+              fill="none"
+              stroke={isLimiting ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.12)'}
+              strokeWidth={isLimiting ? 1.4 : 0.8}
+            />
+            <circle cx={cx} cy={yPos(step.cumulative)} r={3.5} fill="rgba(247,249,255,0.95)" />
+            {step.atpYield > 0 && (
+              <text
+                x={cx}
+                y={topY - 8}
+                textAnchor="middle"
+                fontFamily={T.MONO}
+                fontSize="7"
+                fill={PATHD_THEME.orange}
+              >
+                ATP +{step.atpYield.toFixed(0)}
+              </text>
+            )}
+            {isLimiting && (
+              <>
+                <line
+                  x1={cx}
+                  y1={topY - 10}
+                  x2={cx}
+                  y2={PAD.top - 6}
+                  stroke="rgba(255,255,255,0.24)"
+                  strokeDasharray="4 3"
+                />
+                <text
+                  x={cx}
+                  y={PAD.top - 14}
+                  textAnchor="middle"
+                  fontFamily={T.MONO}
+                  fontSize="7"
+                  fill="rgba(255,255,255,0.72)"
+                >
+                  LIMITING
+                </text>
+              </>
+            )}
+          </g>
         );
       })}
 
-      {/* Step labels */}
       {steps.map((step, i) => {
         const x = PAD.left + (i / steps.length) * innerW + barW / 2;
         return (
-          <text key={'lbl' + i} x={x} y={H - 6} textAnchor="middle"
-            fontFamily={T.MONO} fontSize="7" fill="rgba(255,255,255,0.2)"
-            transform={`rotate(-40,${x},${H - 6})`}>
-            {step.step.slice(0, 10)}
-          </text>
+          <g key={`lbl${i}`}>
+            <text
+              x={x}
+              y={H - 18}
+              textAnchor="middle"
+              fontFamily={T.MONO}
+              fontSize="7"
+              fill="rgba(255,255,255,0.34)"
+              transform={`rotate(-38,${x},${H - 18})`}
+            >
+              {step.step.slice(0, 12)}
+            </text>
+            <text
+              x={x}
+              y={H - 34}
+              textAnchor="middle"
+              fontFamily={T.MONO}
+              fontSize="7"
+              fill={step.deltaG < 0 ? 'rgba(147,203,82,0.82)' : 'rgba(250,128,114,0.82)'}
+            >
+              {step.deltaG > 0 ? '+' : ''}{step.deltaG.toFixed(1)}
+            </text>
+          </g>
         );
       })}
 
-      {/* Y-axis ticks */}
       {[-40, -20, 0, 20].map(v => v >= minG && v <= maxG ? (
         <g key={v}>
           <line x1={PAD.left - 4} y1={yPos(v)} x2={PAD.left} y2={yPos(v)} stroke="rgba(255,255,255,0.08)" />
-          <text x={PAD.left - 8} y={yPos(v) + 3} textAnchor="end" fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.2)">
+          <text x={PAD.left - 8} y={yPos(v) + 3} textAnchor="end" fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.28)">
             {v}
           </text>
         </g>
       ) : null)}
 
-      <text x={10} y={H / 2} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.15)"
+      <text x={10} y={H / 2} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.18)"
         transform={`rotate(-90,10,${H / 2})`}>ΔG (kJ/mol)</text>
 
-      {/* Legend */}
+      <g transform={`translate(${W - 174}, 14)`}>
+        <rect width="154" height="54" rx="10" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.08)" />
+        <text x="12" y="17" fontFamily={T.MONO} fontSize="7" fill={PATHD_THEME.label}>CURRENT LIMITING STEP</text>
+        <text x="12" y="31" fontFamily={T.SANS} fontSize="11" fill={PATHD_THEME.value}>
+          {limitingStep?.step ?? '—'}
+        </text>
+        <text x="12" y="45" fontFamily={T.MONO} fontSize="8" fill="rgba(250,128,114,0.82)">
+          ΔG {limitingStep ? `${limitingStep.deltaG > 0 ? '+' : ''}${limitingStep.deltaG.toFixed(1)} kJ/mol` : '—'}
+        </text>
+      </g>
+
       {[
-        { color: 'rgba(147,203,82,0.75)', label: 'Exergonic' },
-        { color: 'rgba(255,80,80,0.65)', label: 'Endergonic' },
-        { color: T.NEON, label: 'ATP step' },
+        { color: 'rgba(147,203,82,0.78)', label: 'Exergonic' },
+        { color: 'rgba(250,128,114,0.72)', label: 'Endergonic' },
+        { color: PATHD_THEME.orange, label: 'ATP-coupled' },
       ].map((l, i) => (
-        <g key={l.label} transform={`translate(${PAD.left + i * 100},${PAD.top - 14})`}>
-          <rect width={10} height={8} rx={2} fill={l.color} opacity={0.7} />
-          <text x={14} y={8} fontFamily={T.SANS} fontSize="8" fill="rgba(255,255,255,0.25)">{l.label}</text>
+        <g key={l.label} transform={`translate(${PAD.left + i * 104},${PAD.top - 16})`}>
+          <rect width={10} height={8} rx={2} fill={l.color} opacity={0.78} />
+          <text x={14} y={8} fontFamily={T.SANS} fontSize={8} fill="rgba(255,255,255,0.28)">{l.label}</text>
         </g>
       ))}
     </svg>

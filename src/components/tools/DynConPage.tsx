@@ -50,75 +50,158 @@ const SERIES = [
 /* ── Time-Series SVG (6 series) ────────────────────────────────────────────── */
 function TimeSeriesSVG({ trajectory, setpoint, svgRef }: { trajectory: ODEState[]; setpoint: number; svgRef?: React.RefObject<SVGSVGElement | null> }) {
   if (trajectory.length < 2) return null;
-  const W = 420, H = 300, PAD = 40;
-
-  const maxValues: Record<string, number> = {};
-  SERIES.forEach(s => {
-    maxValues[s.key] = Math.max(
-      0.001,
-      ...trajectory.map(t => {
-        const v = t[s.key as keyof ODEState];
-        return (typeof v === 'number' ? v : 0);
-      }),
-    );
-  });
-
-  function normalize(val: number, key: string) {
-    const m = maxValues[key] ?? 1;
-    return m > 0 ? val / m : 0;
-  }
+  const W = 620;
+  const H = 470;
+  const PAD_X = 54;
+  const laneH = 52;
+  const laneGap = 16;
+  const plotTop = 42;
+  const lanes = [
+    {
+      key: 'product',
+      label: 'Product',
+      color: 'rgba(120,255,180,0.92)',
+      max: Math.max(0.001, ...trajectory.map((point) => point.product)),
+      unit: 'g/L',
+    },
+    {
+      key: 'biomass',
+      label: 'Biomass',
+      color: 'rgba(81,81,205,0.92)',
+      max: Math.max(0.001, ...trajectory.map((point) => point.biomass)),
+      unit: 'g/L',
+    },
+    {
+      key: 'substrate',
+      label: 'Substrate',
+      color: 'rgba(255,139,31,0.92)',
+      max: Math.max(0.001, ...trajectory.map((point) => point.substrate)),
+      unit: 'g/L',
+    },
+    {
+      key: 'dissolvedO2',
+      label: 'DO₂',
+      color: 'rgba(95,68,74,0.9)',
+      max: 1,
+      unit: 'sat.',
+    },
+    {
+      key: 'fpp',
+      label: 'FPP',
+      color: '#FFFB1F',
+      max: Math.max(0.001, ...trajectory.map((point) => point.fpp)),
+      unit: 'μM',
+    },
+    {
+      key: 'adsExpression',
+      label: 'ADS',
+      color: '#F0FDFA',
+      max: Math.max(0.001, ...trajectory.map((point) => point.adsExpression)),
+      unit: 'a.u.',
+    },
+  ] as const;
 
   const tMax = trajectory[trajectory.length - 1].time;
+  const plotWidth = W - PAD_X - 28;
 
-  function toSVG(t: ODEState, key: string) {
-    const raw = t[key as keyof ODEState];
-    const v = typeof raw === 'number' ? raw : 0;
-    const x = PAD + (t.time / tMax) * (W - PAD);
-    const y = H - PAD - normalize(v, key) * (H - PAD * 2);
+  function laneY(index: number) {
+    return plotTop + index * (laneH + laneGap);
+  }
+
+  function normalize(value: number, max: number) {
+    return max > 0 ? value / max : 0;
+  }
+
+  function toPoint(t: ODEState, laneIndex: number, key: keyof ODEState, max: number) {
+    const raw = t[key];
+    const value = typeof raw === 'number' ? raw : 0;
+    const x = PAD_X + (t.time / tMax) * plotWidth;
+    const y = laneY(laneIndex) + laneH - normalize(value, max) * laneH;
     return `${x},${y}`;
   }
 
-  const spNorm = normalize(setpoint, 'dissolvedO2');
-  const spY = H - PAD - spNorm * (H - PAD * 2);
-
   return (
-    <svg ref={svgRef} role="img" aria-label="Chart" viewBox={`0 0 ${W + 100} ${H + 20}`} style={{ width: '100%', height: '100%' }}>
-      <rect width={W + 100} height={H + 20} fill="#050505" />
-      {[0.25, 0.5, 0.75, 1.0].map(f => (
-        <g key={f}>
-          <line x1={PAD} y1={H - PAD - f * (H - PAD * 2)} x2={W} y2={H - PAD - f * (H - PAD * 2)}
-            stroke="rgba(255,255,255,0.04)" strokeWidth={1} />
-          <text x={PAD - 4} y={H - PAD - f * (H - PAD * 2) + 4} fontFamily={T.MONO} fontSize="8"
-            textAnchor="end" fill="rgba(255,255,255,0.2)">{(f * 100).toFixed(0)}%</text>
-        </g>
-      ))}
-      {/* DO₂ setpoint dashed line */}
-      <line x1={PAD} y1={spY} x2={W} y2={spY}
-        stroke="rgba(95,68,74,0.3)" strokeWidth={1} strokeDasharray="4 4" />
-      {SERIES.map(s => (
-        <polyline key={s.key}
-          points={trajectory.map(t => toSVG(t, s.key)).join(' ')}
-          fill="none" stroke={s.color} strokeWidth={1.5}
-        />
-      ))}
-      <line x1={PAD} y1={H - PAD} x2={W} y2={H - PAD} stroke="rgba(255,255,255,0.1)" />
-      {[0, 25, 50, 75, 100].map(h => {
-        const x = PAD + (h / 100) * (W - PAD);
-        return <text key={h} x={x} y={H - PAD + 14} fontFamily={T.MONO} fontSize="8" textAnchor="middle" fill="rgba(255,255,255,0.2)">{h}h</text>;
+    <svg ref={svgRef} role="img" aria-label="Chart" viewBox={`0 0 ${W} ${H + 36}`} style={{ width: '100%', height: '100%' }}>
+      <rect width={W} height={H + 36} fill="#050505" rx="18" />
+      <text x="22" y="22" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.24)">
+        Closed-loop trajectory
+      </text>
+      <text x="22" y="36" fontFamily={T.SANS} fontSize="12" fill="rgba(255,255,255,0.72)">
+        Shared timeline for product, host state, oxygen control, precursor load, and expression
+      </text>
+
+      {lanes.map((lane, index) => {
+        const y = laneY(index);
+        const points = trajectory.map((point) => toPoint(point, index, lane.key, lane.max)).join(' ');
+        const lastValue = trajectory[trajectory.length - 1][lane.key] as number;
+        const markerX = PAD_X + plotWidth;
+        const markerY = y + laneH - normalize(lastValue, lane.max) * laneH;
+        const setpointY = lane.key === 'dissolvedO2'
+          ? y + laneH - normalize(setpoint, lane.max) * laneH
+          : null;
+        const toxicityY = lane.key === 'fpp'
+          ? y + laneH - normalize(DEFAULT_PARAMS.fppToxicThreshold, lane.max) * laneH
+          : null;
+
+        return (
+          <g key={lane.key}>
+            <rect x={PAD_X} y={y} width={plotWidth} height={laneH} rx="12" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.05)" />
+            {[0.25, 0.5, 0.75].map((fraction) => (
+              <line
+                key={fraction}
+                x1={PAD_X}
+                y1={y + laneH - fraction * laneH}
+                x2={PAD_X + plotWidth}
+                y2={y + laneH - fraction * laneH}
+                stroke="rgba(255,255,255,0.04)"
+                strokeWidth="1"
+              />
+            ))}
+            {setpointY !== null ? (
+              <>
+                <rect x={PAD_X} y={setpointY - 6} width={plotWidth} height={12} fill="rgba(95,68,74,0.08)" />
+                <line x1={PAD_X} y1={setpointY} x2={PAD_X + plotWidth} y2={setpointY} stroke="rgba(95,68,74,0.45)" strokeDasharray="4 4" />
+              </>
+            ) : null}
+            {toxicityY !== null ? (
+              <line x1={PAD_X} y1={toxicityY} x2={PAD_X + plotWidth} y2={toxicityY} stroke="rgba(255,49,49,0.35)" strokeDasharray="5 4" />
+            ) : null}
+            <polyline points={points} fill="none" stroke={lane.color} strokeWidth="2" />
+            <circle cx={markerX} cy={markerY} r="4" fill={lane.color} />
+            <text x="20" y={y + 14} fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.24)">
+              {lane.label}
+            </text>
+            <text x="20" y={y + 28} fontFamily={T.SANS} fontSize="10" fill="rgba(255,255,255,0.62)">
+              {(lastValue ?? 0).toFixed(lane.key === 'fpp' ? 1 : 2)} {lane.unit}
+            </text>
+            <text x={PAD_X + plotWidth + 8} y={y + 14} fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.2)">
+              {lane.max.toFixed(lane.key === 'fpp' ? 0 : 1)}
+            </text>
+            <text x={PAD_X + plotWidth + 8} y={y + laneH} fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.16)">
+              0
+            </text>
+          </g>
+        );
       })}
-      {SERIES.map((s, i) => (
-        <g key={s.key} transform={`translate(${W + 10}, ${20 + i * 20})`}>
-          <line x1={0} y1={6} x2={14} y2={6} stroke={s.color} strokeWidth={2} />
-          <text x={18} y={10} fontFamily={T.SANS} fontSize="9" fill="rgba(255,255,255,0.45)">{s.label}</text>
-        </g>
-      ))}
+
+      {[0, 25, 50, 75, 100].map((tick) => {
+        const x = PAD_X + (tick / 100) * plotWidth;
+        return (
+          <g key={tick}>
+            <line x1={x} y1={plotTop + lanes.length * (laneH + laneGap) - laneGap} x2={x} y2={plotTop + lanes.length * (laneH + laneGap) - laneGap + 6} stroke="rgba(255,255,255,0.08)" />
+            <text x={x} y={plotTop + lanes.length * (laneH + laneGap) - laneGap + 18} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.22)">
+              {tick}h
+            </text>
+          </g>
+        );
+      })}
     </svg>
   );
 }
 
 /* ── Hill Feedback Curve (mini SVG) ────────────────────────────────────────── */
 function HillCurveSVG({ hill, currentFPP }: { hill: HillParams; currentFPP: number }) {
-  const W = 420, H = 100, PAD = 36;
+  const W = 520, H = 120, PAD = 44;
   const fppMax = 200;
   const pts: string[] = [];
   for (let i = 0; i <= 100; i++) {
@@ -131,19 +214,26 @@ function HillCurveSVG({ hill, currentFPP }: { hill: HillParams; currentFPP: numb
   const markerX = PAD + (Math.min(currentFPP, fppMax) / fppMax) * (W - PAD * 2);
 
   return (
-    <svg role="img" aria-label="Chart" viewBox={`0 0 ${W} ${H + 10}`} style={{ width: '100%', height: '120px' }}>
-      <rect width={W} height={H + 10} fill="#050505" />
+    <svg role="img" aria-label="Chart" viewBox={`0 0 ${W} ${H + 10}`} style={{ width: '100%', height: '132px' }}>
+      <rect width={W} height={H + 10} fill="#050505" rx="18" />
       {/* axes */}
       <line x1={PAD} y1={H - PAD + 4} x2={W - PAD} y2={H - PAD + 4} stroke="rgba(255,255,255,0.08)" />
       <line x1={PAD} y1={PAD - 8} x2={PAD} y2={H - PAD + 4} stroke="rgba(255,255,255,0.08)" />
       {/* curve */}
-      <polyline points={pts.join(' ')} fill="none" stroke="#F0FDFA" strokeWidth={1.8} />
+      <rect x={PAD} y={PAD - 8} width={W - PAD * 2} height={H - PAD * 2 + 12} fill="rgba(255,255,255,0.02)" rx="14" />
+      <polyline points={pts.join(' ')} fill="none" stroke="#F0FDFA" strokeWidth={2.2} />
       {/* current FPP marker */}
       <line x1={markerX} y1={PAD - 8} x2={markerX} y2={H - PAD + 4}
         stroke="rgba(255,251,31,0.5)" strokeWidth={1} strokeDasharray="3 3" />
       <circle cx={markerX} cy={H - PAD + 4 - (hillFeedback(Math.min(currentFPP, fppMax), hill) / hill.Vmax) * (H - PAD * 2 + 4)}
         r={3} fill="#FFFB1F" />
       {/* labels */}
+      <text x="20" y="18" fontFamily={T.MONO} fontSize="9" fill="rgba(255,255,255,0.24)">
+        Repression response
+      </text>
+      <text x="20" y="32" fontFamily={T.SANS} fontSize="11" fill="rgba(255,255,255,0.5)">
+        Operating point of the current precursor pool on the Hill feedback curve
+      </text>
       <text x={W / 2} y={H + 6} fontFamily={T.MONO} fontSize="8" textAnchor="middle" fill={LABEL}>FPP (μM)</text>
       <text x={10} y={(PAD + H - PAD) / 2} fontFamily={T.MONO} fontSize="8" textAnchor="middle" fill={LABEL}
         transform={`rotate(-90, 10, ${(PAD + H - PAD) / 2})`}>ADS</text>

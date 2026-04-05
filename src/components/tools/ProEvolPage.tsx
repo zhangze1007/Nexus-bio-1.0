@@ -31,61 +31,143 @@ function fitnessColor(v: number): string {
 function FitnessHeatmap({ trajectory }: { trajectory: FitnessPoint[] }) {
   const CELL = 16;
   const N = 20;
-  const W = N * CELL + 2, H = N * CELL + 2;
+  const W = 430;
+  const H = 470;
+  const LAND_H = 250;
+  const TRACE_TOP = 304;
+  const TRACE_H = 120;
+  const tracePadX = 42;
+  const tracePadY = 18;
+  const heatX = 36;
+  const heatY = 38;
+
   const lastPt = trajectory[trajectory.length - 1];
-  const pathPts = trajectory.slice(-15);
+  const bestFitness = Math.max(...trajectory.map((point) => point.fitness), 0);
+  const bestStep = trajectory.findIndex((point) => point.fitness === bestFitness);
+  let basinX = 0;
+  let basinY = 0;
+  let basinValue = -1;
+  FITNESS_LANDSCAPE.forEach((row, y) => {
+    row.forEach((value, x) => {
+      if (value > basinValue) {
+        basinValue = value;
+        basinX = x;
+        basinY = y;
+      }
+    });
+  });
+
+  const pathPoints = trajectory.map((point, index) => {
+    const x = tracePadX + (index / Math.max(trajectory.length - 1, 1)) * (W - tracePadX * 2);
+    const y = TRACE_TOP + TRACE_H - tracePadY - point.fitness * (TRACE_H - tracePadY * 2);
+    return `${x},${y}`;
+  }).join(' ');
 
   return (
-    <svg role="img" aria-label="Chart" viewBox={`0 0 ${W + 80} ${H + 60}`} style={{ width: '100%', height: '100%' }}>
-      <rect width={W + 80} height={H + 60} fill="#050505" />
+    <svg role="img" aria-label="Chart" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
+      <rect width={W} height={H} rx={14} fill="#05070b" />
+      <rect x={22} y={24} width={W - 44} height={LAND_H} rx={14} fill="rgba(255,255,255,0.025)" stroke="rgba(255,255,255,0.06)" />
+      <text x={36} y={18} fontFamily={T.SANS} fontSize="9" fill={LABEL} letterSpacing="0.12em">
+        FITNESS LANDSCAPE
+      </text>
+      <text x={36} y={30} fontFamily={T.SANS} fontSize="11" fill={VALUE}>
+        Sequence ruggedness map with adaptive basin and realized fitness trace
+      </text>
+
       {FITNESS_LANDSCAPE.map((row, y) =>
         row.map((v, x) => (
           <rect key={`${x}-${y}`}
-            x={1 + x * CELL} y={1 + y * CELL}
+            x={heatX + x * CELL} y={heatY + y * CELL}
             width={CELL - 1} height={CELL - 1}
             fill={fitnessColor(v)} fillOpacity={0.85}
           />
         ))
       )}
-      {pathPts.length > 1 && (
-        <polyline
-          points={pathPts.map((_, i) => {
-            const idx = trajectory.length - pathPts.length + i;
-            const t = trajectory[idx];
-            const x = 1 + (t.mutationCount % N) * CELL + CELL / 2;
-            const y = 1 + Math.floor(t.mutationCount / N) * CELL + CELL / 2;
-            return `${x},${y}`;
-          }).join(' ')}
-          fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth={2}
-          strokeDasharray="4 2"
-        />
-      )}
-      {lastPt && (() => {
-        const x = 1 + (lastPt.mutationCount % N) * CELL + CELL / 2;
-        const y = 1 + Math.floor(lastPt.mutationCount / N) * CELL + CELL / 2;
+
+      <rect
+        x={heatX + basinX * CELL - 3}
+        y={heatY + basinY * CELL - 3}
+        width={CELL + 5}
+        height={CELL + 5}
+        rx={5}
+        fill="none"
+        stroke="rgba(255,255,255,0.86)"
+        strokeWidth={1.4}
+      />
+      <text x={heatX + basinX * CELL + CELL / 2} y={heatY + basinY * CELL - 8} textAnchor="middle" fontFamily={T.MONO} fontSize="7" fill="rgba(255,255,255,0.82)">
+        best basin
+      </text>
+
+      <rect x={22} y={TRACE_TOP} width={W - 44} height={TRACE_H + 26} rx={14} fill="rgba(255,255,255,0.025)" stroke="rgba(255,255,255,0.06)" />
+      {[0, 0.25, 0.5, 0.75, 1].map((tick) => {
+        const y = TRACE_TOP + TRACE_H - tracePadY - tick * (TRACE_H - tracePadY * 2);
         return (
-          <>
-            <circle cx={x} cy={y} r={6} fill="none" stroke="rgba(255,255,255,0.9)" strokeWidth={2} />
-            <circle cx={x} cy={y} r={2} fill="rgba(255,255,255,0.9)" />
-          </>
+          <g key={`tick-${tick}`}>
+            <line x1={tracePadX} y1={y} x2={W - tracePadX} y2={y} stroke="rgba(255,255,255,0.05)" />
+            <text x={tracePadX - 8} y={y + 3} textAnchor="end" fontFamily={T.MONO} fontSize="7" fill="rgba(255,255,255,0.3)">
+              {tick.toFixed(2)}
+            </text>
+          </g>
         );
-      })()}
+      })}
+      <polyline points={pathPoints} fill="none" stroke="rgba(147,203,82,0.9)" strokeWidth={2.2} />
+      <line
+        x1={tracePadX}
+        y1={TRACE_TOP + TRACE_H - tracePadY - basinValue * (TRACE_H - tracePadY * 2)}
+        x2={W - tracePadX}
+        y2={TRACE_TOP + TRACE_H - tracePadY - basinValue * (TRACE_H - tracePadY * 2)}
+        stroke="rgba(255,255,255,0.16)"
+        strokeDasharray="5 4"
+      />
+      {trajectory.map((point, index) => {
+        const x = tracePadX + (index / Math.max(trajectory.length - 1, 1)) * (W - tracePadX * 2);
+        const y = TRACE_TOP + TRACE_H - tracePadY - point.fitness * (TRACE_H - tracePadY * 2);
+        const isLead = index === bestStep;
+        const isCurrent = index === trajectory.length - 1;
+        return (
+          <g key={`pt-${index}`}>
+            <circle cx={x} cy={y} r={isLead || isCurrent ? 4 : 2.7} fill={isLead ? '#F0FDFA' : isCurrent ? '#FF8B1F' : 'rgba(147,203,82,0.68)'} />
+            {(isLead || isCurrent) && (
+              <text
+                x={x}
+                y={y - 8}
+                textAnchor="middle"
+                fontFamily={T.MONO}
+                fontSize="7"
+                fill={isLead ? 'rgba(240,253,250,0.88)' : 'rgba(255,139,31,0.88)'}
+              >
+                {isLead ? 'lead' : 'current'}
+              </text>
+            )}
+          </g>
+        );
+      })}
+      <text x={tracePadX} y={TRACE_TOP + 14} fontFamily={T.MONO} fontSize="7" fill={LABEL}>Fitness trace</text>
+      <text x={W - tracePadX} y={TRACE_TOP + 14} textAnchor="end" fontFamily={T.MONO} fontSize="7" fill={LABEL}>
+        best achievable {basinValue.toFixed(3)}
+      </text>
+      <text x={W / 2} y={H - 12} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.26)">
+        Accepted evolution checkpoints
+      </text>
       <defs>
         <linearGradient id="fitScale" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor={fitnessColor(1)} />
           <stop offset="100%" stopColor={fitnessColor(0)} />
         </linearGradient>
       </defs>
-      <rect x={W + 10} y={1} width={16} height={H} fill="url(#fitScale)" />
-      <text x={W + 30} y={8} fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.4)">1.0</text>
-      <text x={W + 30} y={H} fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.4)">0.0</text>
-      <text x={W + 10} y={H + 20} fontFamily={T.SANS} fontSize="9" fill="rgba(255,255,255,0.3)">Fitness</text>
-      <text x={W / 2} y={H + 40} textAnchor="middle" fontFamily={T.MONO} fontSize="9" fill="rgba(255,255,255,0.25)">
-        Mutation position (x)
+      <rect x={W - 48} y={48} width={12} height={130} fill="url(#fitScale)" rx={4} />
+      <text x={W - 30} y={54} fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.4)">1.0</text>
+      <text x={W - 30} y={178} fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.4)">0.0</text>
+      <text x={W - 48} y={194} fontFamily={T.SANS} fontSize="9" fill="rgba(255,255,255,0.3)">Fitness</text>
+      <text x={heatX + 72} y={LAND_H + 16} fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.26)">
+        Mutational coordinate X
       </text>
-      <text x={-H / 2} y={W + 70} textAnchor="middle" fontFamily={T.MONO} fontSize="9" fill="rgba(255,255,255,0.25)"
-        transform="rotate(-90)">
-        Mutation position (y)
+      <text x={22} y={LAND_H / 2 + 10} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.26)"
+        transform={`rotate(-90,22,${LAND_H / 2 + 10})`}>
+        Mutational coordinate Y
+      </text>
+      <text x={W - 42} y={TRACE_TOP + TRACE_H + 18} textAnchor="end" fontFamily={T.MONO} fontSize="7" fill="rgba(255,255,255,0.28)">
+        {lastPt ? `${lastPt.mutationCount} accepted rounds` : '0 accepted rounds'}
       </text>
     </svg>
   );

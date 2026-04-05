@@ -12,6 +12,8 @@ import WorkbenchInlineContext from '../workbench/WorkbenchInlineContext';
 import ScientificHero from './shared/ScientificHero';
 import { PATHD_THEME } from '../workbench/workbenchTheme';
 
+const AXON_ACCENT = PATHD_THEME.blue;
+
 // ── Full-bleed Citation Graph ──────────────────────────────────────────
 
 function CitationGraph({ citations, onNodeClick }: {
@@ -20,26 +22,75 @@ function CitationGraph({ citations, onNodeClick }: {
 }) {
   const W = 640, H = 480;
   const [hovered, setHovered] = useState<string | null>(null);
+  const sorted = [...citations].sort((left, right) => left.year - right.year);
+  const yearMin = Math.min(...sorted.map((citation) => citation.year), sorted[0]?.year ?? 2020);
+  const yearMax = Math.max(...sorted.map((citation) => citation.year), sorted[sorted.length - 1]?.year ?? yearMin + 1);
+  const yearRange = Math.max(yearMax - yearMin, 1);
 
-  const nodes = citations.map((c, i) => ({
-    ...c,
-    x: c.x ?? (60 + ((i * 110) % (W - 120))),
-    y: c.y ?? (50 + Math.floor(i / 5) * 120 + (i % 2) * 30),
-    r: 14 + c.relevance * 20,
-  }));
+  const nodes = sorted.map((citation, index) => {
+    const x = 68 + ((citation.year - yearMin) / yearRange) * (W - 136);
+    const lane = index % 4;
+    const relevanceY = 104 + (1 - citation.relevance) * 188;
+    const laneOffset = lane % 2 === 0 ? -18 : 18;
+    return {
+      ...citation,
+      x,
+      y: relevanceY + laneOffset,
+      r: 11 + citation.relevance * 11,
+      lane,
+    };
+  });
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
-      {/* Edges */}
-      {nodes.map((n, i) =>
-        nodes.slice(i + 1, i + 3).map((m, j) => (
-          <line key={`e-${i}-${j}`}
-            x1={n.x} y1={n.y} x2={m.x} y2={m.y}
-            stroke={`rgba(57,255,20,${0.04 + n.relevance * 0.06})`} strokeWidth={1}
+      <rect width={W} height={H} rx={16} fill="#05070b" />
+      <rect x="24" y="24" width={W - 48} height={H - 48} rx="18" fill="rgba(255,255,255,0.025)" stroke="rgba(255,255,255,0.06)" />
+      <text x="40" y="22" fontFamily={T.SANS} fontSize="10" fill="rgba(205,214,236,0.6)" letterSpacing="0.12em">
+        LITERATURE SUPPORT MAP
+      </text>
+      <text x="40" y="36" fontFamily={T.SANS} fontSize="12" fill="rgba(247,249,255,0.92)">
+        Publications positioned by year and relevance, with bridge citations highlighted
+      </text>
+
+      {[0, 0.25, 0.5, 0.75, 1].map((tick) => {
+        const y = 92 + tick * 220;
+        return (
+          <g key={`g-${tick}`}>
+            <line x1="52" y1={y} x2={W - 52} y2={y} stroke="rgba(255,255,255,0.045)" />
+            <text x="46" y={y + 3} textAnchor="end" fontFamily={T.MONO} fontSize="7" fill="rgba(255,255,255,0.28)">
+              {(1 - tick).toFixed(2)}
+            </text>
+          </g>
+        );
+      })}
+      <line x1="52" y1="330" x2={W - 52} y2="330" stroke="rgba(255,255,255,0.12)" />
+      {Array.from({ length: Math.min(6, yearRange + 1) }).map((_, index, arr) => {
+        const year = Math.round(yearMin + (index / Math.max(arr.length - 1, 1)) * yearRange);
+        const x = 68 + ((year - yearMin) / yearRange) * (W - 136);
+        return (
+          <g key={`year-${year}`}>
+            <line x1={x} y1="330" x2={x} y2="336" stroke="rgba(255,255,255,0.12)" />
+            <text x={x} y="350" textAnchor="middle" fontFamily={T.MONO} fontSize="7" fill="rgba(255,255,255,0.28)">
+              {year}
+            </text>
+          </g>
+        );
+      })}
+
+      {nodes.map((node, index) =>
+        nodes.slice(index + 1).filter((candidate) => Math.abs(candidate.year - node.year) <= 4 && Math.abs(candidate.relevance - node.relevance) <= 0.22).slice(0, 2).map((peer, edgeIndex) => (
+          <line
+            key={`edge-${index}-${edgeIndex}`}
+            x1={node.x}
+            y1={node.y}
+            x2={peer.x}
+            y2={peer.y}
+            stroke="rgba(74,124,255,0.18)"
+            strokeWidth={0.9}
           />
         ))
       )}
-      {/* Nodes */}
+
       {nodes.map(n => {
         const isHov = hovered === n.id;
         return (
@@ -48,36 +99,37 @@ function CitationGraph({ citations, onNodeClick }: {
             onMouseLeave={() => setHovered(null)}
             onClick={() => onNodeClick?.(n)}
             style={{ cursor: 'pointer' }}>
-            {/* Glow */}
-            {isHov && (
-              <circle cx={n.x} cy={n.y} r={n.r + 10}
-                fill="none" stroke={T.NEON} strokeWidth={1}
-                opacity={0.2}
-              />
-            )}
+            <line x1={n.x} y1="330" x2={n.x} y2={n.y + n.r + 4} stroke="rgba(255,255,255,0.08)" strokeDasharray="3 4" />
             <circle cx={n.x} cy={n.y} r={n.r}
-              fill={`rgba(57,255,20,${0.06 + n.relevance * 0.1})`}
-              stroke={isHov ? T.NEON : `rgba(57,255,20,${0.2 + n.relevance * 0.3})`}
-              strokeWidth={isHov ? 2 : 1}
+              fill={isHov ? 'rgba(74,124,255,0.24)' : 'rgba(18,26,40,0.88)'}
+              stroke={isHov ? 'rgba(255,139,31,0.9)' : 'rgba(74,124,255,0.46)'}
+              strokeWidth={isHov ? 1.8 : 1.1}
             />
             <text x={n.x} y={n.y + 4} textAnchor="middle"
-              fontFamily={T.MONO} fontSize="9" fill={isHov ? T.NEON : 'rgba(255,255,255,0.6)'}>
+              fontFamily={T.MONO} fontSize="9" fill={isHov ? 'rgba(255,244,230,0.96)' : 'rgba(255,255,255,0.72)'}>
               {n.year}
             </text>
+            <text x={n.x} y={n.y + n.r + 16} textAnchor="middle" fontFamily={T.SANS} fontSize="8" fill="rgba(205,214,236,0.62)">
+              {n.title.slice(0, 14)}{n.title.length > 14 ? '…' : ''}
+            </text>
             {isHov && (
-              <foreignObject x={n.x + n.r + 6} y={n.y - 36} width={220} height={80}>
+              <foreignObject x={Math.min(n.x + n.r + 8, W - 248)} y={Math.max(n.y - 48, 48)} width={220} height={92}>
                 <div style={{
-                  background: 'rgba(0,0,0,0.92)',
-                  border: `1px solid ${T.NEON}30`,
-                  borderRadius: '10px',
+                  background: 'rgba(9,12,18,0.88)',
+                  border: `1px solid rgba(255,255,255,0.08)`,
+                  borderRadius: '12px',
                   padding: '8px 10px',
-                  backdropFilter: 'blur(12px)',
+                  backdropFilter: 'blur(14px)',
+                  boxShadow: '0 18px 34px rgba(0,0,0,0.28)',
                 }}>
-                  <p style={{ fontFamily: T.SANS, fontSize: '10px', color: 'rgba(255,255,255,0.8)', margin: '0 0 3px', lineHeight: 1.4 }}>
-                    {n.title.slice(0, 80)}…
+                  <p style={{ fontFamily: T.SANS, fontSize: '10px', color: 'rgba(255,255,255,0.84)', margin: '0 0 3px', lineHeight: 1.45 }}>
+                    {n.title.slice(0, 80)}{n.title.length > 80 ? '…' : ''}
                   </p>
-                  <p style={{ fontFamily: T.MONO, fontSize: '8px', color: T.NEON, margin: 0 }}>
+                  <p style={{ fontFamily: T.MONO, fontSize: '8px', color: 'rgba(74,124,255,0.86)', margin: '0 0 4px' }}>
                     Relevance: {(n.relevance * 100).toFixed(0)}%
+                  </p>
+                  <p style={{ fontFamily: T.SANS, fontSize: '9px', color: 'rgba(205,214,236,0.6)', margin: 0 }}>
+                    Bridge this citation into the active evidence bundle if it should steer the current project route.
                   </p>
                 </div>
               </foreignObject>
@@ -85,8 +137,8 @@ function CitationGraph({ citations, onNodeClick }: {
           </g>
         );
       })}
-      <text x={14} y={H - 12} fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.1)">
-        Citation Network — node size = relevance
+      <text x={14} y={H - 12} fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.18)">
+        Y-axis = citation relevance · X-axis = publication year
       </text>
     </svg>
   );
@@ -141,8 +193,8 @@ function FloatingCLI({ query, setQuery, onSubmit, loading, history }: {
         borderRadius: '14px',
         background: 'rgba(0,0,0,0.85)',
         backdropFilter: 'blur(16px)',
-        border: `1px solid ${loading ? `${T.NEON}40` : 'rgba(255,255,255,0.06)'}`,
-        boxShadow: loading ? `0 0 30px ${T.NEON}10` : '0 4px 20px rgba(0,0,0,0.5)',
+        border: `1px solid ${loading ? `${AXON_ACCENT}40` : 'rgba(255,255,255,0.06)'}`,
+        boxShadow: loading ? `0 0 30px ${AXON_ACCENT}10` : '0 4px 20px rgba(0,0,0,0.5)',
         padding: '10px 14px',
         display: 'flex', alignItems: 'center', gap: '10px',
         zIndex: 10,
@@ -150,7 +202,7 @@ function FloatingCLI({ query, setQuery, onSubmit, loading, history }: {
     >
       <span style={{
         fontFamily: T.MONO, fontSize: '12px', fontWeight: 700,
-        color: loading ? T.NEON : 'rgba(255,255,255,0.3)',
+        color: loading ? AXON_ACCENT : 'rgba(255,255,255,0.3)',
         flexShrink: 0,
       }}>
         {loading ? '⟳' : '›'}
@@ -166,7 +218,7 @@ function FloatingCLI({ query, setQuery, onSubmit, loading, history }: {
           flex: 1, background: 'transparent', border: 'none', outline: 'none',
           fontFamily: T.MONO, fontSize: '12px',
           color: 'rgba(255,255,255,0.85)',
-          caretColor: T.NEON,
+          caretColor: AXON_ACCENT,
         }}
       />
       <motion.button
@@ -177,9 +229,9 @@ function FloatingCLI({ query, setQuery, onSubmit, loading, history }: {
         style={{
           padding: '5px 14px', borderRadius: '8px', cursor: 'pointer',
           fontFamily: T.MONO, fontSize: '10px', fontWeight: 600,
-          background: loading ? 'transparent' : `${T.NEON}15`,
-          border: `1px solid ${loading ? 'rgba(255,255,255,0.06)' : `${T.NEON}30`}`,
-          color: loading ? 'rgba(255,255,255,0.3)' : T.NEON,
+          background: loading ? 'transparent' : `${AXON_ACCENT}15`,
+          border: `1px solid ${loading ? 'rgba(255,255,255,0.06)' : `${AXON_ACCENT}30`}`,
+          color: loading ? 'rgba(255,255,255,0.3)' : AXON_ACCENT,
         }}
       >
         {loading ? 'searching…' : '⏎ ask'}
@@ -531,14 +583,14 @@ export default function NEXAIPage() {
                 width: '100%',
                 textAlign: 'left',
                 padding: '7px 10px',
-                background: `${T.NEON}08`,
-                border: `1px solid ${T.NEON}20`,
+                background: `${AXON_ACCENT}08`,
+                border: `1px solid ${AXON_ACCENT}20`,
                 borderRadius: '8px',
                 cursor: 'pointer',
                 fontFamily: T.SANS,
                 fontSize: '10px',
                 lineHeight: 1.5,
-                color: T.NEON,
+                color: AXON_ACCENT,
                 marginBottom: '4px',
               }}
             >
@@ -554,11 +606,11 @@ export default function NEXAIPage() {
               style={{
                 display: 'block', width: '100%', textAlign: 'left',
                 padding: '7px 10px',
-                background: query === q ? `${T.NEON}08` : 'transparent',
-                border: query === q ? `1px solid ${T.NEON}20` : '1px solid rgba(255,255,255,0.03)',
+                background: query === q ? `${AXON_ACCENT}08` : 'transparent',
+                border: query === q ? `1px solid ${AXON_ACCENT}20` : '1px solid rgba(255,255,255,0.03)',
                 borderRadius: '8px', cursor: 'pointer',
                 fontFamily: T.SANS, fontSize: '10px', lineHeight: 1.5,
-                color: query === q ? T.NEON : 'rgba(255,255,255,0.45)',
+                color: query === q ? AXON_ACCENT : 'rgba(255,255,255,0.45)',
               }}
             >
               {q}
@@ -588,7 +640,7 @@ export default function NEXAIPage() {
                     <span style={{ fontFamily: T.SANS, fontSize: '8px', color: 'rgba(255,255,255,0.3)' }}>
                       {c.authors.split(',')[0]} et al. {c.year}
                     </span>
-                    <span style={{ fontFamily: T.MONO, fontSize: '8px', color: T.NEON }}>
+                    <span style={{ fontFamily: T.MONO, fontSize: '8px', color: AXON_ACCENT }}>
                       {(c.relevance * 100).toFixed(0)}%
                     </span>
                   </div>
@@ -640,7 +692,7 @@ export default function NEXAIPage() {
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                <span style={{ fontFamily: T.MONO, fontSize: '9px', color: T.NEON }}>AXON</span>
+                <span style={{ fontFamily: T.MONO, fontSize: '9px', color: AXON_ACCENT }}>AXON</span>
                 <span style={{
                   fontFamily: T.MONO, fontSize: '8px', padding: '2px 6px',
                   background: 'rgba(147,203,82,0.08)', border: '1px solid rgba(147,203,82,0.15)',

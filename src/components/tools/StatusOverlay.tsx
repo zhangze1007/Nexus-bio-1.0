@@ -184,18 +184,28 @@ export default function StatusOverlay({
         position:'absolute', right:'20px', top:'50%',
         transform:'translateY(-50%)',
         width:'230px', zIndex:10,
-        background: PATHD_THEME.panelGradientStrong,
-        backdropFilter:'blur(40px)',
-        WebkitBackdropFilter:'blur(40px)',
+        background: PATHD_THEME.panelGlassStrong,
+        backdropFilter:'blur(28px)',
+        WebkitBackdropFilter:'blur(28px)',
         borderRadius:'18px',
         border:`1px solid ${PATHD_THEME.panelBorder}`,
-        borderTop:`1.5px solid ${PATHD_THEME.panelBorderStrong}`,
+        borderTop:`1px solid rgba(255,255,255,0.12)`,
         boxShadow:'0 18px 42px rgba(0,0,0,0.26), inset 0 1px 0 rgba(255,255,255,0.05)',
         padding:'18px 16px',
       }}
     >
+      <div
+        aria-hidden
+        style={{
+          position: 'absolute',
+          inset: 0,
+          borderRadius: '18px',
+          background: PATHD_THEME.panelSheen,
+          pointerEvents: 'none',
+        }}
+      />
       {/* Header */}
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'12px' }}>
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'12px', position:'relative', zIndex:1 }}>
         <span style={{ fontFamily: T.MONO, fontSize:'9px', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.12em', color:'rgba(255,255,255,0.25)' }}>
           READOUTS
         </span>
@@ -205,7 +215,7 @@ export default function StatusOverlay({
       </div>
 
       {/* Reaction rate sparkline */}
-      <div style={{ marginBottom:'10px' }}>
+      <div style={{ marginBottom:'10px', position:'relative', zIndex:1 }}>
         <div style={{ display:'flex', alignItems:'baseline', justifyContent:'space-between', marginBottom:'4px' }}>
           <span style={{ fontFamily: T.SANS, fontSize:'9px', color:'rgba(255,255,255,0.32)' }}>Reaction Rate v</span>
           <div style={{ display:'flex', alignItems:'baseline', gap:'2px' }}>
@@ -222,7 +232,7 @@ export default function StatusOverlay({
         <Sparkline data={rateHistory} height={40} />
       </div>
 
-      <div style={{ borderTop:'0.5px solid rgba(255,255,255,0.06)', paddingTop:'10px', marginBottom:'8px' }}>
+      <div style={{ borderTop:'0.5px solid rgba(255,255,255,0.06)', paddingTop:'10px', marginBottom:'8px', position:'relative', zIndex:1 }}>
         <DataRow label="ATP Yield"   value={readouts.atpYield}         unit="mol/mol"  decimals={2} />
         <DataRow label="NADPH Rate"  value={readouts.nadphRate}        unit="μmol/min" decimals={2} />
         <DataRow label="Carbon Eff." value={readouts.carbonEfficiency} unit="%"        decimals={1} />
@@ -231,11 +241,15 @@ export default function StatusOverlay({
       </div>
 
       {/* Flux balance + stress gauges */}
-      <FluxGauge value={readouts.fluxBalance}   label="Flux Balance" />
-      <FluxGauge value={1-readouts.stressIndex} label="Cellular Fitness" />
+      <div style={{ position:'relative', zIndex:1 }}>
+        <FluxGauge value={readouts.fluxBalance}   label="Flux Balance" />
+        <FluxGauge value={1-readouts.stressIndex} label="Cellular Fitness" />
+      </div>
 
       {/* Cofactor matrix */}
-      <CofactorMatrix readouts={readouts} />
+      <div style={{ position:'relative', zIndex:1 }}>
+        <CofactorMatrix readouts={readouts} />
+      </div>
 
       {/* Equilibrium notice */}
       <AnimatePresence>

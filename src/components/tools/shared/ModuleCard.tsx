@@ -59,8 +59,8 @@ export default function ModuleCard({
           ? `1px solid ${PATHD_THEME.panelBorderStrong}`
           : `1px solid ${PATHD_THEME.panelBorder}`,
         boxShadow: active
-          ? `0 0 22px rgba(255,139,31,0.10), 0 0 24px rgba(74,124,255,0.08)`
-          : '0 14px 32px rgba(0,0,0,0.16)',
+          ? '0 16px 36px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.08)'
+          : '0 14px 32px rgba(0,0,0,0.16), inset 0 1px 0 rgba(255,255,255,0.06)',
         padding: flush ? 0 : '18px',
         overflow: 'hidden',
         display: 'flex',
@@ -72,6 +72,15 @@ export default function ModuleCard({
       }}
       className="nb-tool-card"
     >
+      <div
+        aria-hidden
+        style={{
+          position: 'absolute',
+          inset: 0,
+          background: PATHD_THEME.panelSheen,
+          pointerEvents: 'none',
+        }}
+      />
       {/* ── LIVE signal with wave ripple ── */}
       {showSignal && (
         <div style={{
@@ -139,11 +148,15 @@ export default function ModuleCard({
           marginBottom: flush ? 0 : '10px',
           padding: flush ? '12px 14px 0' : 0,
           flexShrink: 0,
+          position: 'relative',
+          zIndex: 1,
         }}>
           {title}
         </div>
       )}
-      {children}
+      <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, flex: 1 }}>
+        {children}
+      </div>
     </motion.div>
   );
 }

@@ -94,72 +94,76 @@ const SectionLabel = ({ children }: { children: React.ReactNode }) => (
 /* ── Binding Radar SVG ────────────────────────────────────────────── */
 
 function BindingRadar({ result }: { result: BindingAffinityResult }) {
-  const W = 520, H = 460, CX = W / 2, CY = 190, R = 120;
+  const W = 520, H = 460;
   const axes = [
     { label: 'Distance', value: result.distanceScore },
     { label: 'Orientation', value: result.orientationScore },
     { label: 'vdW', value: result.vdwScore },
     { label: 'Electrostatic', value: result.electrostaticScore },
   ];
-  const n = axes.length;
-  const poly = axes.map((a, i) => {
-    const angle = (Math.PI * 2 * i) / n - Math.PI / 2;
-    return `${CX + Math.cos(angle) * R * a.value},${CY + Math.sin(angle) * R * a.value}`;
-  }).join(' ');
 
   return (
     <svg role="img" aria-label="Chart" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
       <rect width={W} height={H} fill="#050505" rx={12} />
-      {[0.25, 0.5, 0.75, 1].map(s => (
-        <polygon key={s}
-          points={axes.map((_, i) => {
-            const a = (Math.PI * 2 * i) / n - Math.PI / 2;
-            return `${CX + Math.cos(a) * R * s},${CY + Math.sin(a) * R * s}`;
-          }).join(' ')}
-          fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={0.5} />
-      ))}
-      {axes.map((_, i) => {
-        const a = (Math.PI * 2 * i) / n - Math.PI / 2;
+      <rect x="20" y="24" width="220" height="154" rx="14" fill="rgba(255,255,255,0.025)" stroke="rgba(255,255,255,0.06)" />
+      <text x="36" y="18" fontFamily={T.SANS} fontSize="9" fill={LABEL} letterSpacing="0.12em">ACTIVE-SITE DIAGNOSTICS</text>
+      <text x="36" y="32" fontFamily={T.SANS} fontSize="11" fill={VALUE}>Binding dimensions against optimal docking envelope</text>
+      {axes.map((ax, index) => {
+        const y = 56 + index * 28;
+        const width = ax.value * 136;
         return (
-          <line key={i} x1={CX} y1={CY}
-            x2={CX + Math.cos(a) * R} y2={CY + Math.sin(a) * R}
-            stroke="rgba(255,255,255,0.08)" strokeWidth={0.5} />
-        );
-      })}
-      <polygon points={poly} fill="rgba(240,253,250,0.18)" stroke={PHASE_COLORS.binding} strokeWidth={1.5} />
-      {axes.map((ax, i) => {
-        const a = (Math.PI * 2 * i) / n - Math.PI / 2;
-        const lx = CX + Math.cos(a) * (R + 22);
-        const ly = CY + Math.sin(a) * (R + 22);
-        const vx = CX + Math.cos(a) * R * ax.value;
-        const vy = CY + Math.sin(a) * R * ax.value;
-        return (
-          <g key={i}>
-            <circle cx={vx} cy={vy} r={4} fill={PHASE_COLORS.binding} />
-            <text x={lx} y={ly} textAnchor="middle" dominantBaseline="middle"
-              fontFamily={T.SANS} fontSize="9" fill={VALUE}>{ax.label}</text>
-            <text x={lx} y={ly + 12} textAnchor="middle"
-              fontFamily={T.MONO} fontSize="8" fill={LABEL}>{ax.value.toFixed(3)}</text>
+          <g key={ax.label}>
+            <text x="36" y={y} fontFamily={T.SANS} fontSize="9" fill={LABEL}>{ax.label}</text>
+            <rect x="122" y={y - 8} width="136" height="10" rx="5" fill="rgba(255,255,255,0.05)" />
+            <rect x="122" y={y - 8} width={width} height="10" rx="5" fill={PHASE_COLORS.binding} opacity="0.82" />
+            <line x1="230" y1={y - 12} x2="230" y2={y + 4} stroke="rgba(255,255,255,0.3)" strokeDasharray="3 2" />
+            <text x="270" y={y} fontFamily={T.MONO} fontSize="8" fill={VALUE}>{ax.value.toFixed(3)}</text>
           </g>
         );
       })}
-      <text x={CX} y={CY - 8} textAnchor="middle" fontFamily={T.MONO} fontSize="22"
-        fill="rgba(255,255,255,0.85)">{result.overallScore.toFixed(3)}</text>
-      <text x={CX} y={CY + 14} textAnchor="middle" fontFamily={T.SANS} fontSize="9" fill={LABEL}>
-        Overall Score
+      <rect x="268" y="24" width="232" height="154" rx="14" fill="rgba(255,255,255,0.025)" stroke="rgba(255,255,255,0.06)" />
+      <text x="284" y="52" fontFamily={T.MONO} fontSize="28" fill="rgba(247,249,255,0.92)">{result.overallScore.toFixed(3)}</text>
+      <text x="284" y="67" fontFamily={T.SANS} fontSize="9" fill={LABEL}>overall catalytic fit</text>
+      <text x="284" y="104" fontFamily={T.SANS} fontSize="9" fill={LABEL}>Predicted Kd</text>
+      <text x="284" y="118" fontFamily={T.MONO} fontSize="14" fill={VALUE}>{result.predictedKd.toFixed(2)} μM</text>
+      <text x="392" y="104" fontFamily={T.SANS} fontSize="9" fill={LABEL}>Binding energy</text>
+      <text x="392" y="118" fontFamily={T.MONO} fontSize="14" fill={VALUE}>{result.bindingEnergy.toFixed(2)} kcal/mol</text>
+      <text x="284" y="148" fontFamily={T.SANS} fontSize="9" fill="rgba(255,255,255,0.42)">
+        {result.interpretation}
       </text>
-      <text x={CX - 80} y={CY + R + 52} fontFamily={T.SANS} fontSize="9" fill={LABEL}>
-        Predicted Kd
+
+      <rect x="20" y="198" width="480" height="226" rx="14" fill="rgba(255,255,255,0.025)" stroke="rgba(255,255,255,0.06)" />
+      <text x="36" y="218" fontFamily={T.MONO} fontSize="8" fill={LABEL}>BINDING ENERGY DECOMPOSITION</text>
+      {[
+        { label: 'Distance fit', value: result.distanceScore, color: '#F0FDFA' },
+        { label: 'Orientation fit', value: result.orientationScore, color: '#5151CD' },
+        { label: 'vdW packing', value: result.vdwScore, color: '#FF8B1F' },
+        { label: 'Electrostatic complementarity', value: result.electrostaticScore, color: '#93CB52' },
+      ].map((item, index) => {
+        const x = 42 + index * 112;
+        const height = item.value * 112;
+        return (
+          <g key={item.label}>
+            <rect x={x} y={338 - height} width="48" height={height} rx="8" fill={item.color} opacity="0.82" />
+            <rect x={x} y="226" width="48" height="112" rx="8" fill="none" stroke="rgba(255,255,255,0.08)" />
+            <text x={x + 24} y="352" textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill={VALUE}>{item.value.toFixed(2)}</text>
+            <text x={x + 24} y="372" textAnchor="middle" fontFamily={T.SANS} fontSize="8" fill={LABEL}>
+              {item.label.length > 13 ? `${item.label.slice(0, 12)}…` : item.label}
+            </text>
+          </g>
+        );
+      })}
+      <line x1="314" y1="234" x2="314" y2="394" stroke="rgba(255,255,255,0.08)" />
+      <text x="332" y="242" fontFamily={T.MONO} fontSize="8" fill={LABEL}>Design note</text>
+      <text x="332" y="260" fontFamily={T.SANS} fontSize="10" fill={VALUE}>
+        Use residues with the weakest bars as first-pass mutagenesis targets.
       </text>
-      <text x={CX - 80} y={CY + R + 66} fontFamily={T.MONO} fontSize="13"
-        fill={VALUE}>{result.predictedKd.toFixed(2)} μM</text>
-      <text x={CX + 40} y={CY + R + 52} fontFamily={T.SANS} fontSize="9" fill={LABEL}>
-        Binding Energy
+      <text x="332" y="278" fontFamily={T.SANS} fontSize="10" fill={VALUE}>
+        A score above 0.80 means the catalytic pocket is already close to
       </text>
-      <text x={CX + 40} y={CY + R + 66} fontFamily={T.MONO} fontSize="13"
-        fill={VALUE}>{result.bindingEnergy.toFixed(2)} kcal/mol</text>
-      <text x={CX} y={CY + R + 88} textAnchor="middle" fontFamily={T.SANS} fontSize="9"
-        fill="rgba(255,255,255,0.4)">{result.interpretation}</text>
+      <text x="332" y="292" fontFamily={T.SANS} fontSize="10" fill={VALUE}>
+        a viable wet-lab prototype, so effort should move to stability and flux.
+      </text>
     </svg>
   );
 }
@@ -265,20 +269,20 @@ function SequenceView({ result }: { result: SequenceDesignResult }) {
 
 function FluxCostView({ result }: { result: MetabolicDrainResult }) {
   const W = 520, H = 420;
-  const barY = 60, barH = 28, barW = 380;
+  const barY = 74, barH = 30, barW = 380;
   const total = result.atpCost + result.nadphCost + result.ribosomeBurden * 100;
   const atpW = total > 0 ? (result.atpCost / total) * barW : 0;
   const nadW = total > 0 ? (result.nadphCost / total) * barW : 0;
   const ribW = barW - atpW - nadW;
-  const gaugeAngle = result.totalMetabolicDrain * 180;
   const viabilityColor = result.isViable
     ? result.growthPenalty < 10 ? '#93CB52' : '#FFFB1F'
     : 'rgba(255,120,120,0.8)';
   return (
     <svg role="img" aria-label="Chart" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
       <rect width={W} height={H} fill="#050505" rx={12} />
-      <text x={70} y={barY - 12} fontFamily={T.SANS} fontSize="9" fill={LABEL}>
-        Cost Breakdown (ATP / NADPH / Ribosome)
+      <rect x="20" y="22" width="480" height="140" rx="14" fill="rgba(255,255,255,0.025)" stroke="rgba(255,255,255,0.06)" />
+      <text x={70} y={barY - 18} fontFamily={T.SANS} fontSize="9" fill={LABEL}>
+        RESOURCE BURDEN LEDGER (ATP / NADPH / RIBOSOME)
       </text>
       <rect x={70} y={barY} width={atpW} height={barH} fill={PHASE_COLORS.flux} rx={4} />
       <rect x={70 + atpW} y={barY} width={nadW} height={barH} fill={PHASE_COLORS.balancing} rx={0} />
@@ -292,54 +296,30 @@ function FluxCostView({ result }: { result: MetabolicDrainResult }) {
         <text x={70 + atpW + nadW / 2} y={barY + barH / 2 + 4} textAnchor="middle"
           fontFamily={T.MONO} fontSize="9" fill="#000000">NADPH {result.nadphCost.toFixed(1)}</text>
       )}
+      <rect x="20" y="186" width="480" height="198" rx="14" fill="rgba(255,255,255,0.025)" stroke="rgba(255,255,255,0.06)" />
+      <text x="36" y="206" fontFamily={T.MONO} fontSize="8" fill={LABEL}>DRAIN AND VIABILITY WINDOWS</text>
+      <text x="36" y="238" fontFamily={T.MONO} fontSize="28" fill={VALUE}>
+        {(result.totalMetabolicDrain * 100).toFixed(1)}%
+      </text>
+      <text x="36" y="252" fontFamily={T.SANS} fontSize="9" fill={LABEL}>total metabolic drain</text>
+      <rect x="36" y="274" width="280" height="18" rx="9" fill="rgba(255,255,255,0.05)" />
+      <rect x="36" y="274" width={Math.min(280, result.totalMetabolicDrain * 280)} height="18" rx="9" fill="rgba(255,139,31,0.82)" />
+      <line x1="232" y1="268" x2="232" y2="298" stroke="rgba(255,255,255,0.24)" strokeDasharray="4 3" />
+      <text x="232" y="262" textAnchor="middle" fontFamily={T.MONO} fontSize="7" fill={LABEL}>target limit</text>
 
-      {/* Gauge */}
-      <g transform={`translate(${W / 2}, 230)`}>
-        {[0, 0.25, 0.5, 0.75, 1].map(t => {
-          const a = t * Math.PI;
-          return (
-            <g key={t}>
-              <line x1={Math.cos(Math.PI - a) * 80} y1={-Math.sin(Math.PI - a) * 80}
-                x2={Math.cos(Math.PI - a) * 90} y2={-Math.sin(Math.PI - a) * 90}
-                stroke="rgba(255,255,255,0.15)" strokeWidth={1} />
-              <text x={Math.cos(Math.PI - a) * 100} y={-Math.sin(Math.PI - a) * 100 + 3}
-                textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill={LABEL}>
-                {(t * 100).toFixed(0)}%
-              </text>
-            </g>
-          );
-        })}
-        <path d={`M -90 0 A 90 90 0 0 1 90 0`} fill="none"
-          stroke="rgba(255,255,255,0.06)" strokeWidth={12} strokeLinecap="round" />
-        <path d={`M -90 0 A 90 90 0 0 1 90 0`} fill="none"
-          stroke={PHASE_COLORS.flux} strokeWidth={12} strokeLinecap="round"
-          strokeDasharray={`${gaugeAngle * (Math.PI / 180) * 90} 999`}
-          opacity={0.7} />
-        {(() => {
-          const a = Math.PI - (result.totalMetabolicDrain * Math.PI);
-          const nx = Math.cos(a) * 70, ny = -Math.sin(a) * 70;
-          return <line x1={0} y1={0} x2={nx} y2={ny} stroke={VALUE} strokeWidth={2} strokeLinecap="round" />;
-        })()}
-        <circle cx={0} cy={0} r={4} fill={VALUE} />
-        <text x={0} y={-30} textAnchor="middle" fontFamily={T.MONO} fontSize="20" fill={VALUE}>
-          {(result.totalMetabolicDrain * 100).toFixed(1)}%
-        </text>
-        <text x={0} y={-14} textAnchor="middle" fontFamily={T.SANS} fontSize="9" fill={LABEL}>
-          Metabolic Drain
-        </text>
-      </g>
+      <text x="36" y="330" fontFamily={T.SANS} fontSize="9" fill={LABEL}>Growth penalty</text>
+      <rect x="36" y="338" width="280" height="14" rx="7" fill="rgba(255,255,255,0.05)" />
+      <rect x="36" y="338" width={Math.min(280, (result.growthPenalty / 30) * 280)} height="14" rx="7" fill={viabilityColor} />
+      <text x="324" y="349" fontFamily={T.MONO} fontSize="9" fill={VALUE}>{result.growthPenalty.toFixed(1)}%</text>
 
-      {/* Growth penalty */}
-      <g transform={`translate(${W / 2}, 300)`}>
-        <rect x={-100} y={0} width={200} height={28} rx={8}
-          fill="rgba(255,255,255,0.03)" stroke={BORDER} />
-        <circle cx={-80} cy={14} r={5} fill={viabilityColor} />
-        <text x={-68} y={18} fontFamily={T.SANS} fontSize="10" fill={VALUE}>
-          Growth penalty: {result.growthPenalty.toFixed(1)}%
-        </text>
-      </g>
-      <text x={W / 2} y={360} textAnchor="middle" fontFamily={T.SANS} fontSize="9"
-        fill="rgba(255,255,255,0.35)">{result.recommendation}</text>
+      <rect x="346" y="226" width="134" height="106" rx="12" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.07)" />
+      <text x="360" y="246" fontFamily={T.MONO} fontSize="7" fill={LABEL}>VIABILITY STATUS</text>
+      <text x="360" y="270" fontFamily={T.SANS} fontSize="18" fill={viabilityColor}>
+        {result.isViable ? 'Prototype viable' : 'Redesign required'}
+      </text>
+      <text x="360" y="294" fontFamily={T.SANS} fontSize="10" fill={VALUE}>
+        {result.recommendation}
+      </text>
     </svg>
   );
 }

@@ -91,8 +91,10 @@ export default function ToolShell({
           display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap',
           flexShrink: 0,
           borderBottom: `1px solid ${PATHD_THEME.panelBorder}`,
-          background: 'linear-gradient(180deg, rgba(9,12,18,0.96) 0%, rgba(10,12,18,0.88) 100%)',
+          background: PATHD_THEME.panelGlassStrong,
           backdropFilter: 'blur(18px)',
+          WebkitBackdropFilter: 'blur(18px)',
+          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
         }}
       >
         <button
@@ -123,15 +125,15 @@ export default function ToolShell({
           display: 'inline-flex',
           alignItems: 'center',
           gap: '6px',
-          minHeight: '30px',
-          padding: '0 10px',
-          borderRadius: '10px',
-          border: `1px solid ${PATHD_THEME.panelBorderStrong}`,
-          background: PATHD_THEME.panelGradientSoft,
-          color: NEON_ACCENT,
-          fontFamily: T.MONO,
-          fontSize: '10px',
-          fontWeight: 700,
+            minHeight: '30px',
+            padding: '0 10px',
+            borderRadius: '10px',
+            border: `1px solid ${PATHD_THEME.panelBorder}`,
+            background: PATHD_THEME.chipNeutral,
+            color: PATHD_THEME.orange,
+            fontFamily: T.MONO,
+            fontSize: '10px',
+            fontWeight: 700,
           letterSpacing: '0.08em',
           textTransform: 'uppercase',
         }}>
@@ -162,8 +164,8 @@ export default function ToolShell({
           <div style={{
             fontFamily: T.MONO, fontSize: '10px',
             color: PATHD_THEME.label,
-            padding: '6px 10px',
-            background: PATHD_THEME.chipNeutral,
+          padding: '6px 10px',
+            background: 'rgba(255,255,255,0.045)',
             border: `1px solid ${PATHD_THEME.panelBorder}`,
             borderRadius: '10px',
           }}>
@@ -211,7 +213,9 @@ export default function ToolShell({
           padding: '6px 16px',
           display: 'flex', gap: '8px', flexShrink: 0,
           borderTop: `1px solid ${PATHD_THEME.panelBorder}`,
-          background: 'linear-gradient(180deg, rgba(10,12,18,0.9) 0%, rgba(9,12,18,0.96) 100%)',
+          background: PATHD_THEME.panelGlassStrong,
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
         }}>
           {footer}
         </div>

@@ -1,7 +1,5 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
-import { Canvas } from '@react-three/fiber';
-import { OrbitControls } from '@react-three/drei';
 import AlgorithmInsight from '../ide/shared/AlgorithmInsight';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
@@ -442,64 +440,74 @@ function ReactorTwin3D({ result, constructs, params }: { result: CFSFullResult; 
   const maxYield = Math.max(...result.simulation.steadyState.map(entry => entry.maxProtein), 1);
   const energyPool = params.initialEnergy.atp + params.initialEnergy.gtp + params.initialEnergy.pep;
   const depletionRatio = Math.min(1, result.simulation.energyDepletionTime / params.simulationTime);
+  const reactorHeight = 240;
+  const vesselTop = 72;
+  const fillHeight = Math.max(36, depletionRatio * 142);
 
   return (
     <div style={{ width: '100%', height: '100%', minHeight: '420px', borderRadius: '18px', overflow: 'hidden', border: `1px solid ${BORDER}`, background: '#050505', position: 'relative' }}>
-      <Canvas camera={{ position: [0, 5.5, 12], fov: 45 }}>
-        <color attach="background" args={['#050505']} />
-        <ambientLight intensity={0.72} />
-        <directionalLight position={[6, 8, 7]} intensity={1.0} />
-        <pointLight position={[-4, 4, 2]} intensity={0.45} color="#5151CD" />
-        <gridHelper args={[18, 12, '#1f1f1f', '#111111']} position={[0, -2.1, 0]} />
+      <svg role="img" aria-label="Chart" viewBox="0 0 720 420" style={{ width: '100%', height: '100%' }}>
+        <rect width="720" height="420" fill="#05070b" />
+        <rect x="26" y="24" width="668" height="372" rx="18" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.06)" />
+        <text x="44" y="20" fontFamily={T.SANS} fontSize="10" fill={LABEL} letterSpacing="0.12em">CELL-FREE REACTOR TWIN</text>
+        <text x="44" y="34" fontFamily={T.SANS} fontSize="12" fill={VALUE}>Resource state, construct yield, and IVIV translation in one reactor-facing schematic</text>
 
-        <mesh position={[0, -1.1, 0]}>
-          <cylinderGeometry args={[2.8, 2.8, 2.3, 40, 1, true]} />
-          <meshStandardMaterial color="#111111" transparent opacity={0.35} metalness={0.15} roughness={0.55} />
-        </mesh>
-        <mesh position={[0, -0.35 + depletionRatio * 0.65, 0]}>
-          <cylinderGeometry args={[2.4, 2.4, Math.max(0.45, depletionRatio * 1.4), 36]} />
-          <meshStandardMaterial color="#93CB52" emissive="#93CB52" emissiveIntensity={0.12} transparent opacity={0.42} />
-        </mesh>
+        <rect x="54" y={vesselTop} width="156" height={reactorHeight} rx="22" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.08)" />
+        <rect x="66" y={vesselTop + reactorHeight - fillHeight - 12} width="132" height={fillHeight} rx="18" fill="rgba(147,203,82,0.32)" stroke="rgba(147,203,82,0.42)" />
+        <line x1="66" y1={vesselTop + reactorHeight - fillHeight - 12} x2="198" y2={vesselTop + reactorHeight - fillHeight - 12} stroke="rgba(147,203,82,0.9)" strokeDasharray="4 3" />
+        <text x="76" y={vesselTop + reactorHeight + 24} fontFamily={T.MONO} fontSize="8" fill={LABEL}>reaction volume</text>
+        <text x="76" y={vesselTop + reactorHeight + 38} fontFamily={T.MONO} fontSize="10" fill={VALUE}>{(depletionRatio * 100).toFixed(0)}% energy-support window</text>
 
         {constructs.map((construct, index) => {
           const steady = steadyMap[construct.id];
           const normalized = steady ? steady.maxProtein / maxYield : 0.15;
-          const height = 0.8 + normalized * 2.8;
-          const x = -3.8 + index * 1.9;
+          const height = 42 + normalized * 128;
+          const x = 272 + index * 86;
+          const y = 290 - height;
           return (
-            <group key={construct.id} position={[x, -0.6 + height / 2, 3.4]}>
-              <mesh>
-                <boxGeometry args={[0.9, height, 0.9]} />
-                <meshStandardMaterial color={GENE_COLORS[index % GENE_COLORS.length]} emissive={GENE_COLORS[index % GENE_COLORS.length]} emissiveIntensity={0.18} />
-              </mesh>
-              <mesh position={[0, height / 2 + 0.2, 0]}>
-                <sphereGeometry args={[0.12, 10, 10]} />
-                <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={0.2} />
-              </mesh>
-            </group>
+            <g key={construct.id}>
+              <rect x={x} y={y} width="34" height={height} rx="10" fill={GENE_COLORS[index % GENE_COLORS.length]} opacity="0.86" />
+              <rect x={x} y={y} width="34" height={height} rx="10" fill="none" stroke="rgba(255,255,255,0.12)" />
+              <text x={x + 17} y="312" textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill={VALUE}>{construct.name.slice(0, 6)}</text>
+              <text x={x + 17} y={y - 8} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill={VALUE}>{steady ? steady.maxProtein.toFixed(1) : '0.0'}</text>
+            </g>
           );
         })}
+        <text x="272" y="332" fontFamily={T.SANS} fontSize="9" fill={LABEL}>Construct yield skyline</text>
 
         {[
-          { label: 'ATP', value: params.initialEnergy.atp / energyPool, x: 4.2, z: -1.4, color: '#FFFB1F' },
-          { label: 'GTP', value: params.initialEnergy.gtp / energyPool, x: 5.3, z: -1.4, color: '#FF8B1F' },
-          { label: 'PEP', value: params.initialEnergy.pep / energyPool, x: 6.4, z: -1.4, color: '#FA8072' },
-        ].map(res => (
-          <mesh key={res.label} position={[res.x, -1.6 + res.value * 1.8, res.z]}>
-            <boxGeometry args={[0.55, Math.max(0.35, res.value * 3), 0.55]} />
-            <meshStandardMaterial color={res.color} emissive={res.color} emissiveIntensity={0.18} />
-          </mesh>
-        ))}
+          { label: 'ATP', value: params.initialEnergy.atp / energyPool, x: 546, color: '#FFFB1F' },
+          { label: 'GTP', value: params.initialEnergy.gtp / energyPool, x: 596, color: '#FF8B1F' },
+          { label: 'PEP', value: params.initialEnergy.pep / energyPool, x: 646, color: '#FA8072' },
+        ].map((resource) => {
+          const height = 46 + resource.value * 118;
+          return (
+            <g key={resource.label}>
+              <rect x={resource.x} y={290 - height} width="26" height={height} rx="8" fill={resource.color} opacity="0.82" />
+              <text x={resource.x + 13} y="312" textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill={VALUE}>{resource.label}</text>
+            </g>
+          );
+        })}
+        <text x="546" y="332" fontFamily={T.SANS} fontSize="9" fill={LABEL}>Resource reservoirs</text>
 
-        <OrbitControls enablePan={false} minDistance={8} maxDistance={20} />
-      </Canvas>
+        <rect x="246" y="62" width="448" height="70" rx="14" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.06)" />
+        <text x="264" y="82" fontFamily={T.MONO} fontSize="8" fill={LABEL}>TRANSLATION SUMMARY</text>
+        <text x="264" y="104" fontFamily={T.SANS} fontSize="12" fill={VALUE}>
+          {result.simulation.totalProteinYield.toFixed(1)} nM in vitro total yield · {result.simulation.energyDepletionTime.toFixed(0)} min depletion horizon
+        </text>
+        <text x="264" y="122" fontFamily={T.SANS} fontSize="10" fill="rgba(205,214,236,0.62)">
+          {result.iviv
+            ? `IVIV confidence ${(result.iviv.confidence * 100).toFixed(0)}% with predicted in vivo expression ${result.iviv.invivo_expression.toFixed(1)} nM`
+            : 'IVIV prediction unavailable until fitting converges.'}
+        </text>
+      </svg>
 
       <div style={{ position: 'absolute', top: '10px', left: '12px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
         <span style={{ padding: '3px 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.06)', color: VALUE, fontSize: '9px', fontFamily: T.MONO }}>
-          Center tank = active reaction volume
+          Reactor body = active TX-TL volume
         </span>
         <span style={{ padding: '3px 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.06)', color: VALUE, fontSize: '9px', fontFamily: T.MONO }}>
-          Towers = construct yield
+          Yield skyline = construct-level protein output
         </span>
       </div>
       <div style={{ position: 'absolute', top: '10px', right: '12px', width: 'min(260px, calc(100% - 24px))' }}>

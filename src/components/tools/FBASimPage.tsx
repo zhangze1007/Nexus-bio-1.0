@@ -103,7 +103,7 @@ function ParamSlider({ label, value, min, max, step = 0.5, onChange, unit, accen
   );
 }
 
-const W = 340, H = 640;
+const W = 392, H = 650;
 const SUBSYSTEM_COLORS: Record<string, string> = {
   Glycolysis: 'rgba(81,81,205,0.7)',
   TCA: 'rgba(120,255,180,0.7)',
@@ -124,11 +124,21 @@ function FluxMap({ result, nodes, edges, knockouts, compact, svgRef }: {
   const nodeMap = Object.fromEntries(nodes.map(n => [n.id, n]));
   const koSet = new Set(knockouts);
   const [hovered, setHovered] = useState<string | null>(null);
-  const viewH = compact ? 480 : H;
+  const viewH = compact ? 500 : H;
 
   return (
     <svg ref={svgRef} role="img" aria-label="Chart" viewBox={`0 0 ${W} ${viewH}`} style={{ width: '100%', height: '100%', maxHeight: '100%' }}>
-      <rect width={W} height={viewH} fill="transparent" />
+      <rect width={W} height={viewH} fill="#05070b" rx={16} />
+      <rect x="20" y="22" width={W - 40} height={viewH - 44} rx="18" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.06)" />
+      <rect x="34" y="60" width="112" height={viewH - 110} rx="14" fill="rgba(74,124,255,0.05)" stroke="rgba(74,124,255,0.12)" />
+      <rect x="166" y="60" width="92" height={viewH - 110} rx="14" fill="rgba(147,203,82,0.045)" stroke="rgba(147,203,82,0.1)" />
+      <rect x="276" y="60" width="82" height={viewH - 110} rx="14" fill="rgba(255,139,31,0.045)" stroke="rgba(255,139,31,0.1)" />
+      <text x="46" y="48" fontFamily={T.MONO} fontSize="8" fill="rgba(74,124,255,0.72)">GLYCOLYSIS</text>
+      <text x="186" y="48" fontFamily={T.MONO} fontSize="8" fill="rgba(147,203,82,0.72)">TCA</text>
+      <text x="290" y="48" fontFamily={T.MONO} fontSize="8" fill="rgba(255,139,31,0.72)">ENERGY</text>
+      <text x="34" y={viewH - 18} fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.24)">
+        flux bands encode mmol·gDW⁻¹·h⁻¹
+      </text>
       {edges.map(edge => {
         const from = nodeMap[edge.from];
         const to = nodeMap[edge.to];
@@ -141,15 +151,26 @@ function FluxMap({ result, nodes, edges, knockouts, compact, svgRef }: {
           : normalized > 0.3 ? 'rgba(120,180,255,0.7)'
           : 'rgba(255,255,255,0.2)';
         const strokeW = isKO ? 1 : 1.5 + normalized * 5;
-        const mx = (from.x + to.x) / 2;
-        const my = (from.y + to.y) / 2;
+        const x1 = from.x + 52;
+        const y1 = from.y + 70;
+        const x2 = to.x + 52;
+        const y2 = to.y + 70;
+        const curve = Math.abs(x1 - x2) > 24 ? 28 : 12;
+        const mx = (x1 + x2) / 2 + (x2 > x1 ? curve * 0.35 : -curve * 0.35);
+        const my = (y1 + y2) / 2;
         return (
           <g key={edge.reactionId}>
-            <line x1={from.x + 20} y1={from.y + 20} x2={to.x + 20} y2={to.y + 20}
-              stroke={color} strokeWidth={strokeW} strokeLinecap="round"
+            <path
+              d={`M ${x1} ${y1} C ${x1 + curve} ${y1}, ${x2 - curve} ${y2}, ${x2} ${y2}`}
+              fill="none"
+              stroke={color}
+              strokeWidth={strokeW}
+              strokeLinecap="round"
               strokeDasharray={isKO ? '4 3' : undefined}
-              style={{ transition: 'stroke-width 0.3s, stroke 0.3s' }} />
-            <text x={mx + 28} y={my + 20} fill={isKO ? 'rgba(255,80,80,0.5)' : 'rgba(255,255,255,0.4)'}
+              style={{ transition: 'stroke-width 0.3s, stroke 0.3s' }}
+            />
+            <rect x={mx - 16} y={my - 8} width="32" height="16" rx="8" fill="rgba(8,10,15,0.82)" stroke={isKO ? 'rgba(255,80,80,0.26)' : 'rgba(255,255,255,0.08)'} />
+            <text x={mx} y={my + 3} fill={isKO ? 'rgba(255,80,80,0.62)' : 'rgba(255,255,255,0.48)'}
               fontFamily={T.MONO} fontSize="8" textAnchor="middle">
               {isKO ? '—' : flux.toFixed(1)}
             </text>
@@ -162,19 +183,29 @@ function FluxMap({ result, nodes, edges, knockouts, compact, svgRef }: {
         return (
           <g key={node.id} onMouseEnter={() => setHovered(node.id)} onMouseLeave={() => setHovered(null)}
             style={{ cursor: 'pointer' }}>
-            <circle cx={node.x + 20} cy={node.y + 20} r={isActive ? 18 : 14}
-              fill="rgba(255,255,255,0.07)" stroke={subsystemColor}
-              strokeWidth={isActive ? 2 : 1}
-              style={{ transition: 'all 0.2s' }} />
-            <text x={node.x + 20} y={node.y + 25} textAnchor="middle"
-              fontFamily={T.MONO} fontSize="9" fill="rgba(255,255,255,0.85)">
+            <rect
+              x={node.x + 24}
+              y={node.y + 54}
+              width={56}
+              height={30}
+              rx={10}
+              fill="rgba(10,14,20,0.92)"
+              stroke={isActive ? 'rgba(255,255,255,0.34)' : subsystemColor}
+              strokeWidth={isActive ? 1.8 : 1}
+              style={{ transition: 'all 0.2s' }}
+            />
+            <rect x={node.x + 30} y={node.y + 77} width={44} height={2.4} rx={1.2} fill={subsystemColor} opacity={0.72} />
+            <text x={node.x + 52} y={node.y + 68} textAnchor="middle"
+              fontFamily={T.MONO} fontSize="8.5" fill="rgba(255,255,255,0.85)">
               {node.label}
             </text>
           </g>
         );
       })}
-      <text x={W / 2} y={viewH - 10} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.3)">
-        μ = {result.growthRate.toFixed(4)} h⁻¹
+      <rect x={W - 128} y={22} width="92" height="44" rx="12" fill="rgba(255,255,255,0.035)" stroke="rgba(255,255,255,0.08)" />
+      <text x={W - 114} y={40} fontFamily={T.MONO} fontSize="7" fill="rgba(255,255,255,0.3)">BIOMASS OBJECTIVE</text>
+      <text x={W - 114} y={56} fontFamily={T.MONO} fontSize="12" fill="rgba(247,249,255,0.92)">
+        μ = {result.growthRate.toFixed(4)}
       </text>
     </svg>
   );
@@ -216,11 +247,6 @@ function SharedMetaboliteBus({ exchangeFluxes }: {
         Shared Environmental Pool
       </p>
 
-      <style>{`
-        @keyframes flowRight { from { stroke-dashoffset: 24; } to { stroke-dashoffset: 0; } }
-        @keyframes flowLeft  { from { stroke-dashoffset: -24; } to { stroke-dashoffset: 0; } }
-      `}</style>
-
       {exchangeFluxes.map((ex) => {
         const isRightFlow = ex.fromStrain === 'ecoli';
         const normalized = Math.abs(ex.flux) / maxFlux;
@@ -250,10 +276,8 @@ function SharedMetaboliteBus({ exchangeFluxes }: {
               <line x1="8" y1="6" x2="100%" y2="6"
                 stroke={`url(#grad-${ex.id})`}
                 strokeWidth={strokeW}
-                strokeDasharray="6 6"
                 strokeLinecap="round"
                 style={{
-                  animation: `${isRightFlow ? 'flowRight' : 'flowLeft'} ${1.5 / Math.max(0.3, normalized)}s linear infinite`,
                   opacity: ex.flux > 0.01 ? 0.85 : 0.2,
                 }}
               />

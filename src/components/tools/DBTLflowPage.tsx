@@ -55,25 +55,30 @@ const PHASES: DBTLPhase[] = ['Design', 'Build', 'Test', 'Learn'];
 /* ── Timeline (preserved) ── */
 function Timeline({ iterations }: { iterations: DBTLIteration[] }) {
   const maxResult = Math.max(...iterations.map(i => i.result));
+  const targetThreshold = maxResult * 0.72;
 
   return (
     <svg role="img" aria-label="Chart"
       viewBox={`0 0 520 ${Math.max(360, iterations.length * 60 + 40)}`}
       style={{ width: '100%', height: '100%' }}
     >
-      <rect width="520" height={Math.max(360, iterations.length * 60 + 40)} fill="#050505" />
+      <rect width="520" height={Math.max(360, iterations.length * 60 + 40)} fill="#05070b" rx="14" />
+      <rect x="18" y="18" width="484" height={Math.max(320, iterations.length * 60)} rx="14" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.06)" />
+      <text x="36" y="14" fontFamily={T.SANS} fontSize="9" fill={LABEL} letterSpacing="0.12em">DBTL AUDIT TIMELINE</text>
+      <text x="36" y="28" fontFamily={T.SANS} fontSize="11" fill={VALUE}>Iteration trace with phase identity, result magnitude, and pass gate</text>
       {iterations.length > 1 && (
         <polyline
           points={iterations
             .map((it, i) => `${160 + (it.result / maxResult) * 280},${30 + i * 60 + 20}`)
             .join(' ')}
           fill="none"
-          stroke="rgba(255,255,255,0.1)"
-          strokeWidth={1}
+          stroke="rgba(255,255,255,0.18)"
+          strokeWidth={1.2}
           strokeDasharray="4 3"
         />
       )}
       <line x1={160} y1={20} x2={160} y2={30 + iterations.length * 60} stroke="rgba(255,255,255,0.08)" />
+      <line x1={160 + (targetThreshold / maxResult) * 280} y1={20} x2={160 + (targetThreshold / maxResult) * 280} y2={30 + iterations.length * 60} stroke="rgba(255,139,31,0.24)" strokeDasharray="5 4" />
       {iterations.map((it, i) => {
         const y = 30 + i * 60;
         const barW = (it.result / maxResult) * 280;
@@ -106,6 +111,9 @@ function Timeline({ iterations }: { iterations: DBTLIteration[] }) {
           </g>
         );
       })}
+      <text x={160 + (targetThreshold / maxResult) * 280 + 4} y={18} fontFamily={T.MONO} fontSize="7" fill="rgba(255,139,31,0.78)">
+        target band
+      </text>
       <text x={160} y={30 + iterations.length * 60 + 16} fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.2)">
         0
       </text>

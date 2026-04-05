@@ -12,49 +12,151 @@ import WorkbenchInlineContext from '../workbench/WorkbenchInlineContext';
 import ScientificHero from './shared/ScientificHero';
 import { PATHD_THEME } from '../workbench/workbenchTheme';
 
-function GenomeMap({ targets, selected }: { targets: CRISPRiTarget[]; selected: CRISPRiTarget[] }) {
-  const W = 440, H = 120;
-  const selectedIds = new Set(selected.map(t => t.gene));
+function GenomeMap({
+  targets,
+  selected,
+  efficiencyThreshold,
+}: {
+  targets: CRISPRiTarget[];
+  selected: CRISPRiTarget[];
+  efficiencyThreshold: number;
+}) {
+  const W = 720;
+  const H = 320;
+  const genomeH = 118;
+  const plotTop = 156;
+  const plotH = 122;
+  const selectedIds = new Set(selected.map((target) => target.gene));
+  const selectedEfficiency = selected.map((target) => target.knockdown_efficiency);
+  const avgSelectedEfficiency = selectedEfficiency.length > 0
+    ? selectedEfficiency.reduce((sum, value) => sum + value, 0) / selectedEfficiency.length
+    : 0;
+  const maxImpact = Math.max(...targets.map((target) => Math.abs(target.growth_impact ?? 0)), 0.01);
+
+  function plotX(efficiency: number) {
+    return 62 + efficiency * 284;
+  }
+
+  function plotY(impact: number) {
+    const normalized = (impact + maxImpact) / (maxImpact * 2);
+    return plotTop + plotH - normalized * plotH;
+  }
 
   return (
     <svg role="img" aria-label="Chart" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
-      <rect width={W} height={H} fill="#050505" />
-      <rect x={20} y={H / 2 - 6} width={W - 40} height={12} rx="6"
-        fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.1)" strokeWidth={1} />
-      <text x={20} y={H / 2 + 22} fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.2)">0</text>
-      <text x={W - 30} y={H / 2 + 22} fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.2)">4.6 Mb</text>
-      {targets.map(t => {
-        const x = 20 + (t.position / 4641) * (W - 40);
-        const isSelected = selectedIds.has(t.gene);
-        const isEssential = t.essential;
+      <rect width={W} height={H} fill="#050505" rx="18" />
+      <text x="22" y="24" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.24)">
+        Chassis selection surface
+      </text>
+      <text x="22" y="40" fontFamily={T.SANS} fontSize="12" fill="rgba(255,255,255,0.72)">
+        Genome occupancy and CRISPRi decision space for the active chassis program
+      </text>
+
+      <rect x="22" y="56" width="676" height={genomeH} rx="16" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" />
+      <rect x={42} y={108} width={W - 84} height={14} rx="999"
+        fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.08)" strokeWidth={1} />
+      <text x="42" y="144" fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.22)">0 Mb</text>
+      <text x={W - 42} y="144" textAnchor="end" fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.22)">4.64 Mb</text>
+      {targets.map((target) => {
+        const x = 42 + (target.position / 4641) * (W - 84);
+        const isSelected = selectedIds.has(target.gene);
+        const isEssential = target.essential;
         const color = isEssential
           ? 'rgba(255,139,31,0.8)'
           : isSelected
-          ? 'rgba(255,80,80,0.8)'
-          : 'rgba(147,203,82,0.55)';
-        const y = H / 2 - (isSelected || isEssential ? 22 : 12);
+            ? 'rgba(255,80,80,0.8)'
+            : 'rgba(147,203,82,0.55)';
+        const y = 107 - (isSelected || isEssential ? 30 : 16);
         return (
-          <g key={t.gene}>
-            <line x1={x} y1={H / 2 - 6} x2={x} y2={y + 6} stroke={color} strokeWidth={1.5} />
+          <g key={target.gene}>
+            <line x1={x} y1={108} x2={x} y2={y + 6} stroke={color} strokeWidth={isSelected ? 1.8 : 1.3} />
             <polygon points={`${x},${y} ${x - 3},${y + 6} ${x + 3},${y + 6}`} fill={color} />
             {(isSelected || isEssential) && (
               <text x={x} y={y - 3} textAnchor="middle" fontFamily={T.MONO} fontSize="7" fill={color}>
-                {t.gene}
+                {target.gene}
               </text>
             )}
           </g>
         );
       })}
       {[
-        { color: 'rgba(255,139,31,0.8)', label: 'Essential' },
-        { color: 'rgba(255,80,80,0.8)',  label: 'Knocked down' },
-        { color: 'rgba(147,203,82,0.55)', label: 'Candidate' },
-      ].map((l, i) => (
-        <g key={l.label} transform={`translate(${20 + i * 120},${H - 16})`}>
-          <line x1={0} y1={4} x2={12} y2={4} stroke={l.color} strokeWidth={2} />
-          <text x={16} y={8} fontFamily={T.SANS} fontSize="8" fill="rgba(255,255,255,0.35)">{l.label}</text>
+        { color: 'rgba(255,139,31,0.8)', label: 'Essential gene' },
+        { color: 'rgba(255,80,80,0.8)', label: 'Selected knockdown' },
+        { color: 'rgba(147,203,82,0.55)', label: 'Candidate locus' },
+      ].map((legend, index) => (
+        <g key={legend.label} transform={`translate(${42 + index * 156},148)`}>
+          <line x1={0} y1={4} x2={12} y2={4} stroke={legend.color} strokeWidth={2} />
+          <text x={16} y={8} fontFamily={T.SANS} fontSize="8" fill="rgba(255,255,255,0.35)">{legend.label}</text>
         </g>
       ))}
+
+      <rect x="22" y={plotTop} width="332" height="142" rx="16" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" />
+      <text x="42" y={plotTop + 20} fontFamily={T.MONO} fontSize="9" fill="rgba(255,255,255,0.24)">
+        Selection frontier
+      </text>
+      <text x="42" y={plotTop + 34} fontFamily={T.SANS} fontSize="11" fill="rgba(255,255,255,0.46)">
+        KD efficiency vs growth penalty
+      </text>
+      <line x1="62" y1={plotTop + plotH} x2="346" y2={plotTop + plotH} stroke="rgba(255,255,255,0.08)" />
+      <line x1="62" y1={plotTop} x2="62" y2={plotTop + plotH} stroke="rgba(255,255,255,0.08)" />
+      <line x1={plotX(efficiencyThreshold)} y1={plotTop} x2={plotX(efficiencyThreshold)} y2={plotTop + plotH} stroke="rgba(81,124,255,0.4)" strokeDasharray="4 4" />
+      <line x1="62" y1={plotY(0)} x2="346" y2={plotY(0)} stroke="rgba(255,255,255,0.05)" strokeDasharray="3 4" />
+      {targets.map((target) => {
+        const isSelected = selectedIds.has(target.gene);
+        const x = plotX(target.knockdown_efficiency);
+        const y = plotY(target.growth_impact ?? 0);
+        const color = target.essential
+          ? 'rgba(255,139,31,0.9)'
+          : isSelected
+            ? 'rgba(255,80,80,0.95)'
+            : 'rgba(147,203,82,0.42)';
+        return (
+          <g key={`${target.gene}-scatter`}>
+            <circle cx={x} cy={y} r={isSelected ? 4.8 : 3.4} fill={color} stroke={isSelected ? 'rgba(255,255,255,0.75)' : 'none'} strokeWidth="1" />
+            {isSelected ? (
+              <text x={x + 7} y={y - 6} fontFamily={T.MONO} fontSize="7" fill="rgba(255,255,255,0.65)">
+                {target.gene}
+              </text>
+            ) : null}
+          </g>
+        );
+      })}
+      <text x="204" y={plotTop + plotH + 22} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.2)">
+        Knockdown efficiency
+      </text>
+      <text x="18" y={plotTop + plotH / 2} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.2)" transform={`rotate(-90, 18, ${plotTop + plotH / 2})`}>
+        Growth impact
+      </text>
+      <text x={plotX(efficiencyThreshold) + 4} y={plotTop + 12} fontFamily={T.MONO} fontSize="7" fill="rgba(81,124,255,0.55)">
+        KD threshold
+      </text>
+      {[-maxImpact, 0, maxImpact].map((tick, index) => (
+        <text key={index} x="54" y={plotY(tick) + 3} textAnchor="end" fontFamily={T.MONO} fontSize="7" fill="rgba(255,255,255,0.2)">
+          {(tick * 100).toFixed(0)}%
+        </text>
+      ))}
+      {[0.5, 0.75, 1].map((tick, index) => (
+        <text key={index} x={plotX(tick)} y={plotTop + plotH + 12} textAnchor="middle" fontFamily={T.MONO} fontSize="7" fill="rgba(255,255,255,0.2)">
+          {(tick * 100).toFixed(0)}
+        </text>
+      ))}
+
+      <rect x="372" y={plotTop} width="326" height="142" rx="16" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" />
+      <text x="392" y={plotTop + 20} fontFamily={T.MONO} fontSize="9" fill="rgba(255,255,255,0.24)">
+        Program summary
+      </text>
+      <text x="392" y={plotTop + 38} fontFamily={T.SANS} fontSize="22" fontWeight="700" fill="rgba(255,255,255,0.9)">
+        {selected.length} target{selected.length === 1 ? '' : 's'}
+      </text>
+      <text x="392" y={plotTop + 56} fontFamily={T.SANS} fontSize="11" fill="rgba(255,255,255,0.36)">
+        avg KD {(avgSelectedEfficiency * 100).toFixed(0)}% · threshold {(efficiencyThreshold * 100).toFixed(0)}%
+      </text>
+      <rect x="392" y={plotTop + 72} width="276" height="10" rx="999" fill="rgba(255,255,255,0.08)" />
+      <rect x="392" y={plotTop + 72} width={Math.max(8, avgSelectedEfficiency * 276)} height="10" rx="999" fill="rgba(81,124,255,0.9)" />
+      <rect x="392" y={plotTop + 100} width="276" height="10" rx="999" fill="rgba(255,255,255,0.08)" />
+      <rect x="392" y={plotTop + 100} width={Math.max(8, (selected.length / Math.max(1, targets.length)) * 276)} height="10" rx="999" fill="rgba(255,80,80,0.85)" />
+      <text x="392" y={plotTop + 69} fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.3)">Average knockdown efficiency</text>
+      <text x="392" y={plotTop + 97} fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.3)">Genome coverage of selected intervention set</text>
     </svg>
   );
 }
@@ -262,7 +364,7 @@ export default function GenMIMPage() {
               <p style={{ fontFamily: T.MONO, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.25)', margin: '0 0 8px' }}>
                 E. coli K-12 Genome Map
               </p>
-              <GenomeMap targets={CRISPRI_TARGETS} selected={schedule} />
+              <GenomeMap targets={CRISPRI_TARGETS} selected={schedule} efficiencyThreshold={efficiency} />
             </div>
             <div style={{ flex: 1, padding: '12px' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>

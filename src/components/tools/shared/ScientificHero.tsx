@@ -65,20 +65,34 @@ export default function ScientificHero({
       style={{
         borderRadius: '22px',
         border: `1px solid ${PATHD_THEME.panelBorder}`,
-        background: PATHD_THEME.panelGradient,
-        boxShadow: '0 18px 48px rgba(0,0,0,0.22)',
-        padding: '16px 18px',
+        background: PATHD_THEME.panelGradientSoft,
+        boxShadow: '0 18px 40px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.06)',
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
+        padding: '14px 16px',
         display: 'grid',
-        gap: '14px',
+        gap: '12px',
+        position: 'relative',
       }}
     >
+      <div
+        aria-hidden
+        style={{
+          position: 'absolute',
+          inset: 0,
+          background: PATHD_THEME.panelSheen,
+          pointerEvents: 'none',
+        }}
+      />
       <div
         className="nb-scientific-hero__top"
         style={{
           display: 'grid',
-          gap: '14px',
+          gap: '12px',
           gridTemplateColumns: aside ? 'minmax(0, 1.3fr) minmax(260px, 0.7fr)' : 'minmax(0, 1fr)',
           alignItems: 'start',
+          position: 'relative',
+          zIndex: 1,
         }}
       >
         <div style={{ display: 'grid', gap: '10px' }}>
@@ -97,11 +111,11 @@ export default function ScientificHero({
             <div
               style={{
                 fontFamily: T.SANS,
-                fontSize: '24px',
+                fontSize: '22px',
                 fontWeight: 700,
                 color: PATHD_THEME.value,
                 letterSpacing: '-0.04em',
-                lineHeight: 1.05,
+                lineHeight: 1.08,
               }}
             >
               {title}
@@ -109,10 +123,10 @@ export default function ScientificHero({
             <div
               style={{
                 fontFamily: T.SANS,
-                fontSize: '13px',
+                fontSize: '12px',
                 color: PATHD_THEME.label,
-                lineHeight: 1.7,
-                maxWidth: '72ch',
+                lineHeight: 1.62,
+                maxWidth: '76ch',
               }}
             >
               {summary}
@@ -132,7 +146,7 @@ export default function ScientificHero({
             style={{
               borderRadius: '18px',
               border: `1px solid ${PATHD_THEME.panelBorder}`,
-              background: PATHD_THEME.panelGradientSoft,
+              background: PATHD_THEME.panelGlass,
               padding: '12px 14px',
               display: 'grid',
               gap: '8px',
@@ -148,8 +162,10 @@ export default function ScientificHero({
         className="nb-scientific-hero__signals"
         style={{
           display: 'grid',
-          gap: '10px',
+          gap: '8px',
           gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+          position: 'relative',
+          zIndex: 1,
         }}
       >
         {signals.map((signal) => {
@@ -162,9 +178,10 @@ export default function ScientificHero({
                 borderRadius: '16px',
                 border: `1px solid ${style.border}`,
                 background: style.background,
-                padding: '12px 14px',
+                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
+                padding: '10px 12px',
                 display: 'grid',
-                gap: '6px',
+                gap: '5px',
                 minWidth: 0,
               }}
             >
@@ -182,7 +199,7 @@ export default function ScientificHero({
               <div
                 style={{
                   fontFamily: T.SANS,
-                  fontSize: '15px',
+                  fontSize: '14px',
                   fontWeight: 700,
                   color: style.color,
                   letterSpacing: '-0.02em',
@@ -194,9 +211,9 @@ export default function ScientificHero({
                 <div
                   style={{
                     fontFamily: T.SANS,
-                    fontSize: '11px',
+                    fontSize: '10px',
                     color: PATHD_THEME.label,
-                    lineHeight: 1.55,
+                    lineHeight: 1.5,
                   }}
                 >
                   {signal.detail}

@@ -163,6 +163,7 @@ function SpatialMap({ cells, selectedCluster, highlightGene, showQCFailed }: {
   return (
     <svg role="img" aria-label="Chart" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
       <rect width={W} height={H} fill="#050505" rx={12} />
+      <rect x={PAD} y={PAD} width={W - PAD * 2} height={H - PAD * 2} fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.06)" rx={12} />
       {Array.from({ length: GRID + 1 }).map((_, i) => {
         const gx = PAD + (i / GRID) * (W - PAD * 2);
         const gy = PAD + (i / GRID) * (H - PAD * 2);
@@ -181,6 +182,9 @@ function SpatialMap({ cells, selectedCluster, highlightGene, showQCFailed }: {
       <text x={12} y={H / 2} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill={LABEL}
         transform={`rotate(-90,12,${H / 2})`}>
         Spatial Y (μm)
+      </text>
+      <text x={PAD} y={PAD - 12} fontFamily={T.MONO} fontSize="7" fill={LABEL}>
+        Tissue section map · marker intensity follows {highlightGene || 'cluster identity'}
       </text>
       {cells.map(cell => {
         if (!showQCFailed && !cell.qcPass) return null;
@@ -201,13 +205,18 @@ function SpatialMap({ cells, selectedCluster, highlightGene, showQCFailed }: {
           );
         }
         return (
-          <circle key={cell.id} cx={cx} cy={cy}
-            r={highlightGene ? 3 + intensity * 3 : 4}
-            fill={!highlightGene ? CLUSTER_COLORS[cell.cluster] : color}
-            opacity={0.85}
-            style={{ transition: 'opacity 0.2s' }}>
-            <title>{cell.id} [{cell.cellType}] {highlightGene}={expr.toFixed(2)}</title>
-          </circle>
+          <g key={cell.id}>
+            {selectedCluster !== null && cell.cluster === selectedCluster && (
+              <circle cx={cx} cy={cy} r={highlightGene ? 5 + intensity * 3 : 5.5} fill="none" stroke="rgba(255,255,255,0.16)" strokeWidth={0.9} />
+            )}
+            <circle cx={cx} cy={cy}
+              r={highlightGene ? 3 + intensity * 3 : 4}
+              fill={!highlightGene ? CLUSTER_COLORS[cell.cluster] : color}
+              opacity={0.85}
+              style={{ transition: 'opacity 0.2s' }}>
+              <title>{cell.id} [{cell.cellType}] {highlightGene}={expr.toFixed(2)}</title>
+            </circle>
+          </g>
         );
       })}
       {/* Legend */}
@@ -221,6 +230,20 @@ function SpatialMap({ cells, selectedCluster, highlightGene, showQCFailed }: {
           </text>
         </g>
       ))}
+      {highlightGene && (
+        <g transform={`translate(${W - 44}, ${PAD + 104})`}>
+          <defs>
+            <linearGradient id="spatial-gene-scale" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="rgba(147,203,82,1)" />
+              <stop offset="100%" stopColor="rgba(147,203,82,0.2)" />
+            </linearGradient>
+          </defs>
+          <rect x="0" y="0" width="10" height="88" rx="4" fill="url(#spatial-gene-scale)" />
+          <text x="16" y="8" fontFamily={T.MONO} fontSize="7" fill={VALUE}>{geneMax.toFixed(1)}</text>
+          <text x="16" y="86" fontFamily={T.MONO} fontSize="7" fill={LABEL}>0</text>
+          <text x="-2" y="102" fontFamily={T.MONO} fontSize="7" fill={LABEL}>{highlightGene}</text>
+        </g>
+      )}
     </svg>
   );
 }
@@ -323,6 +346,7 @@ function UMAPScatter({ analysis, selectedCluster }: {
   return (
     <svg role="img" aria-label="Chart" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
       <rect width={W} height={H} fill="#050505" rx={12} />
+      <rect x={PAD} y={PAD} width={W - PAD * 2} height={H - PAD * 2} fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.06)" rx={12} />
       {Array.from({ length: GRID + 1 }).map((_, i) => {
         const gx = PAD + (i / GRID) * (W - PAD * 2);
         const gy = PAD + (i / GRID) * (H - PAD * 2);
@@ -341,6 +365,9 @@ function UMAPScatter({ analysis, selectedCluster }: {
       <text x={12} y={H / 2} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill={LABEL}
         transform={`rotate(-90,12,${H / 2})`}>
         UMAP-2
+      </text>
+      <text x={PAD} y={PAD - 12} fontFamily={T.MONO} fontSize="7" fill={LABEL}>
+        Cluster manifold with centroid labels anchored to the current single-cell program
       </text>
       {projected.map(p => {
         if (selectedCluster !== null && p.cluster !== selectedCluster) return null;
@@ -363,6 +390,16 @@ function UMAPScatter({ analysis, selectedCluster }: {
           </text>
         );
       })}
+      {selectedCluster !== null && centroids[selectedCluster] && (
+        <circle
+          cx={centroids[selectedCluster].sx}
+          cy={centroids[selectedCluster].sy}
+          r={22}
+          fill="none"
+          stroke="rgba(255,255,255,0.2)"
+          strokeDasharray="5 4"
+        />
+      )}
     </svg>
   );
 }
