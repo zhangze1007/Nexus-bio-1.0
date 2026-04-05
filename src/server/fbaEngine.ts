@@ -1,4 +1,6 @@
-import GLPKFactory, { type GLPK, type LP } from 'glpk.js/node';
+import path from 'node:path';
+import { pathToFileURL } from 'node:url';
+import type { GLPK, LP } from 'glpk.js/node';
 import { SHARED_METABOLITES, type CommunityFBAOutput, type FBAOutput } from '../data/mockFBA';
 
 export type FBAObjective = 'biomass' | 'atp' | 'product';
@@ -47,8 +49,26 @@ type NetworkSpec = {
 
 let glpkPromise: Promise<GLPK> | null = null;
 
+async function resolveGlpkFactory() {
+  const moduleUrl = pathToFileURL(
+    path.join(process.cwd(), 'node_modules', 'glpk.js', 'dist', 'glpk.js'),
+  ).href;
+  const module = await import(/* webpackIgnore: true */ moduleUrl);
+  const candidate = (
+    typeof module === 'function'
+      ? module
+      : (module as { default?: unknown }).default
+  ) as (() => Promise<GLPK>) | undefined;
+
+  if (typeof candidate !== 'function') {
+    throw new Error('GLPK factory is unavailable in the current server runtime');
+  }
+
+  return candidate;
+}
+
 function getGlpk() {
-  glpkPromise ??= GLPKFactory();
+  glpkPromise ??= resolveGlpkFactory().then((factory) => factory());
   return glpkPromise;
 }
 

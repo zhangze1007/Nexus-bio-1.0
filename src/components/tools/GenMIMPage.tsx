@@ -9,6 +9,8 @@ import type { CRISPRiTarget } from '../../types';
 import { useWorkbenchStore } from '../../store/workbenchStore';
 import { T, TOOL_RESULT_PALETTE} from '../ide/tokens';
 import WorkbenchInlineContext from '../workbench/WorkbenchInlineContext';
+import ScientificHero from './shared/ScientificHero';
+import { PATHD_THEME } from '../workbench/workbenchTheme';
 
 function GenomeMap({ targets, selected }: { targets: CRISPRiTarget[]; selected: CRISPRiTarget[] }) {
   const W = 440, H = 120;
@@ -132,12 +134,59 @@ export default function GenMIMPage() {
 
   return (
     <>
-      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', background: '#000000' }}>
+      <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', background: '#000000', minHeight: '100%', flex: 1 }}>
         <AlgorithmInsight
           title="Gene Minimization via CRISPRi"
           description="Greedy knockdown scheduling: ranks non-essential genes by knockdown efficiency, bounded by max targets and growth tolerance."
           formula="score = KD_eff + (1 + GI) × 0.3"
         />
+
+        <div style={{ padding: '0 16px 10px' }}>
+          <ScientificHero
+            eyebrow="Stage 3 · Chassis Minimization"
+            title="Minimal chassis decisions with explicit growth tradeoffs"
+            summary="GENMIM now foregrounds the chassis question instead of burying it in a schedule table. You can read immediately how many targets are being proposed, how much growth is being sacrificed, and whether the current protection policy is conservative enough for the active project."
+            aside={
+              <>
+                <div style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                  Current minimization policy
+                </div>
+                <div style={{ fontFamily: T.SANS, fontSize: '13px', color: PATHD_THEME.value, fontWeight: 700 }}>
+                  {protectEssential ? 'Essential genes protected' : 'Aggressive pruning mode'}
+                </div>
+                <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.label, lineHeight: 1.55 }}>
+                  This policy is already influenced by flux feasibility and control stability so genome reduction does not detach from the rest of the workbench.
+                </div>
+              </>
+            }
+            signals={[
+              {
+                label: 'Selected Targets',
+                value: `${schedule.length}`,
+                detail: `Max target budget ${maxTargets} under the current efficiency threshold`,
+                tone: schedule.length > 6 ? 'warm' : 'cool',
+              },
+              {
+                label: 'Growth Impact',
+                value: `${(growthImpact * 100).toFixed(1)}%`,
+                detail: Math.abs(growthImpact) > 0.4 ? 'This schedule is expensive in host fitness and should be treated cautiously.' : 'Predicted host penalty remains in a manageable chassis-engineering band.',
+                tone: Math.abs(growthImpact) > 0.4 ? 'alert' : 'cool',
+              },
+              {
+                label: 'Average KD',
+                value: `${(avgEfficiency * 100).toFixed(1)}%`,
+                detail: `Off-target risk ${(offTargetRisk * 100).toFixed(0)}% across the current guide schedule`,
+                tone: avgEfficiency > 0.85 ? 'cool' : 'warm',
+              },
+              {
+                label: 'Lead Gene',
+                value: schedule[0]?.gene ?? 'Pending',
+                detail: schedule[0] ? `${schedule[0].phenotype} · GI ${((schedule[0].growth_impact ?? 0) * 100).toFixed(0)}%` : 'No knockdown schedule has been generated yet.',
+                tone: 'neutral',
+              },
+            ]}
+          />
+        </div>
 
         {simError && (
           <div style={{ padding: '0 16px 8px' }}><SimErrorBanner message={simError} /></div>
@@ -208,14 +257,14 @@ export default function GenMIMPage() {
           </div>
 
           {/* Engine view — genome map + table */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#050505' }}>
+          <div className="nb-tool-center" style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#050505', minWidth: 0 }}>
             <div style={{ padding: '16px', borderBottom: '1px solid rgba(255,255,255,0.06)', flexShrink: 0 }}>
               <p style={{ fontFamily: T.MONO, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.25)', margin: '0 0 8px' }}>
                 E. coli K-12 Genome Map
               </p>
               <GenomeMap targets={CRISPRI_TARGETS} selected={schedule} />
             </div>
-            <div style={{ flex: 1, overflowY: 'auto', padding: '12px' }}>
+            <div style={{ flex: 1, padding: '12px' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>

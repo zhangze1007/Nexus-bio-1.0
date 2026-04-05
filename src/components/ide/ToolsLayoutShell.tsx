@@ -68,8 +68,6 @@ export default function ToolsLayoutShell({ children }: ToolsLayoutShellProps) {
         {/* TopBar — fixed at top, z-index: 100. Always mounted. */}
         <IDETopBar moduleId={moduleId ?? ''} />
 
-        <WorkbenchStatusBar moduleId={moduleId} />
-
         {/* Sidebar — fixed overlay, z-index: 90. Only on workbench pages. */}
         {isWorkbench && <IDESidebar />}
 
@@ -95,8 +93,14 @@ export default function ToolsLayoutShell({ children }: ToolsLayoutShellProps) {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.12, ease: 'easeInOut' }}
               className={isWorkbench ? 'nb-workbench-content' : undefined}
-              style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: isWorkbench ? W_COLLAPSED : 0 }}
+              style={{
+                position: 'relative',
+                minHeight: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+              }}
             >
+              <WorkbenchStatusBar moduleId={moduleId} />
               {children}
             </motion.div>
           </AnimatePresence>

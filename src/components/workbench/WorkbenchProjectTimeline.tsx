@@ -5,15 +5,16 @@ import { Database, GitBranchPlus, ShieldCheck } from 'lucide-react';
 import { useWorkbenchStore } from '../../store/workbenchStore';
 import { T } from '../ide/tokens';
 import { getAuthoritySummary, getAuthorityTier } from './workbenchTrust';
+import { PATHD_THEME } from './workbenchTheme';
 
 interface WorkbenchProjectTimelineProps {
   title?: string;
   limit?: number;
 }
 
-const BORDER = 'rgba(255,255,255,0.08)';
-const LABEL = 'rgba(255,255,255,0.42)';
-const VALUE = 'rgba(255,255,255,0.88)';
+const BORDER = PATHD_THEME.panelBorder;
+const LABEL = PATHD_THEME.label;
+const VALUE = PATHD_THEME.value;
 
 function formatTime(timestamp: number) {
   return new Date(timestamp).toLocaleString([], {
@@ -25,10 +26,10 @@ function formatTime(timestamp: number) {
 }
 
 function authorityColor(tier: ReturnType<typeof getAuthorityTier>) {
-  if (tier === 'experiment-backed') return 'rgba(158,215,199,0.92)';
-  if (tier === 'evidence-linked') return 'rgba(242,214,162,0.92)';
-  if (tier === 'contextual') return 'rgba(205,214,255,0.92)';
-  return 'rgba(255,192,128,0.92)';
+  if (tier === 'experiment-backed') return PATHD_THEME.orange;
+  if (tier === 'evidence-linked') return PATHD_THEME.blue;
+  if (tier === 'contextual') return PATHD_THEME.indigo;
+  return PATHD_THEME.liveRed;
 }
 
 export default function WorkbenchProjectTimeline({
@@ -53,7 +54,7 @@ export default function WorkbenchProjectTimeline({
   return (
     <section style={{ display: 'grid', gap: '10px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-        <GitBranchPlus size={14} color="rgba(255,255,255,0.72)" />
+        <GitBranchPlus size={14} color={PATHD_THEME.blue} />
         <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
           {title}
         </div>
@@ -63,7 +64,7 @@ export default function WorkbenchProjectTimeline({
               padding: '3px 8px',
               borderRadius: '999px',
               border: `1px solid ${BORDER}`,
-              background: 'rgba(255,255,255,0.04)',
+              background: PATHD_THEME.chipNeutral,
               color: LABEL,
               fontFamily: T.MONO,
               fontSize: '10px',
@@ -79,7 +80,7 @@ export default function WorkbenchProjectTimeline({
           style={{
             borderRadius: '16px',
             border: `1px solid ${BORDER}`,
-            background: 'rgba(255,255,255,0.03)',
+            background: PATHD_THEME.panelGradientSoft,
             padding: '12px 14px',
             display: 'flex',
             alignItems: 'center',
@@ -103,7 +104,7 @@ export default function WorkbenchProjectTimeline({
           style={{
             borderRadius: '16px',
             border: `1px solid ${BORDER}`,
-            background: 'rgba(255,255,255,0.03)',
+            background: PATHD_THEME.panelGradientSoft,
             padding: '12px 14px',
             display: 'grid',
             gap: '6px',
@@ -132,7 +133,7 @@ export default function WorkbenchProjectTimeline({
                 padding: '4px 8px',
                 borderRadius: '999px',
                 border: `1px solid ${BORDER}`,
-                background: 'rgba(255,255,255,0.04)',
+                background: PATHD_THEME.chipNeutral,
                 color: 'rgba(255,255,255,0.76)',
                 fontFamily: T.MONO,
                 fontSize: '10px',
@@ -145,7 +146,7 @@ export default function WorkbenchProjectTimeline({
                 padding: '4px 8px',
                 borderRadius: '999px',
                 border: `1px solid ${BORDER}`,
-                background: 'rgba(255,255,255,0.04)',
+                background: PATHD_THEME.chipNeutral,
                 color: 'rgba(255,255,255,0.76)',
                 fontFamily: T.MONO,
                 fontSize: '10px',

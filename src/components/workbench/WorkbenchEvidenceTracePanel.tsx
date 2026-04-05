@@ -7,15 +7,16 @@ import { T } from '../ide/tokens';
 import { TOOL_BY_ID } from '../tools/shared/toolRegistry';
 import { getDependencyTrace } from '../tools/shared/workbenchGraph';
 import { getAuthorityTier } from './workbenchTrust';
+import { PATHD_THEME } from './workbenchTheme';
 
 interface WorkbenchEvidenceTracePanelProps {
   toolId?: string | null;
   title?: string;
 }
 
-const BORDER = 'rgba(255,255,255,0.08)';
-const LABEL = 'rgba(255,255,255,0.42)';
-const VALUE = 'rgba(255,255,255,0.88)';
+const BORDER = PATHD_THEME.panelBorder;
+const LABEL = PATHD_THEME.label;
+const VALUE = PATHD_THEME.value;
 
 export default function WorkbenchEvidenceTracePanel({
   toolId = null,
@@ -56,14 +57,14 @@ export default function WorkbenchEvidenceTracePanel({
           style={{
             borderRadius: '16px',
             border: `1px solid ${BORDER}`,
-            background: 'rgba(255,255,255,0.03)',
+            background: PATHD_THEME.panelGradientSoft,
             padding: '12px 14px',
             display: 'grid',
             gap: '8px',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <BookMarked size={14} color="rgba(255,255,255,0.72)" />
+            <BookMarked size={14} color={PATHD_THEME.blue} />
             <span style={{ fontFamily: T.SANS, fontSize: '13px', color: VALUE, fontWeight: 700 }}>
               Evidence Bundle
             </span>
@@ -79,14 +80,14 @@ export default function WorkbenchEvidenceTracePanel({
           style={{
             borderRadius: '16px',
             border: `1px solid ${BORDER}`,
-            background: 'rgba(255,255,255,0.03)',
+            background: PATHD_THEME.panelGradientSoft,
             padding: '12px 14px',
             display: 'grid',
             gap: '8px',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <FlaskConical size={14} color="rgba(255,255,255,0.72)" />
+            <FlaskConical size={14} color={PATHD_THEME.indigo} />
             <span style={{ fontFamily: T.SANS, fontSize: '13px', color: VALUE, fontWeight: 700 }}>
               Analyze Artifact
             </span>
@@ -105,14 +106,14 @@ export default function WorkbenchEvidenceTracePanel({
           style={{
             borderRadius: '16px',
             border: `1px solid ${BORDER}`,
-            background: 'rgba(255,255,255,0.03)',
+            background: PATHD_THEME.panelGradientSoft,
             padding: '12px 14px',
             display: 'grid',
             gap: '8px',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Workflow size={14} color="rgba(255,255,255,0.72)" />
+            <Workflow size={14} color={PATHD_THEME.orange} />
             <span style={{ fontFamily: T.SANS, fontSize: '13px', color: VALUE, fontWeight: 700 }}>
               Execution Trace
             </span>
@@ -124,8 +125,8 @@ export default function WorkbenchEvidenceTracePanel({
                   style={{
                     padding: '4px 8px',
                     borderRadius: '999px',
-                    border: `1px solid ${entry.run ? 'rgba(158,215,199,0.22)' : BORDER}`,
-                    background: entry.run ? 'rgba(158,215,199,0.10)' : 'rgba(255,255,255,0.03)',
+                    border: `1px solid ${entry.run ? PATHD_THEME.chipBorder : BORDER}`,
+                    background: entry.run ? PATHD_THEME.chipCool : PATHD_THEME.chipNeutral,
                     color: VALUE,
                     fontFamily: T.MONO,
                     fontSize: '10px',
@@ -139,7 +140,7 @@ export default function WorkbenchEvidenceTracePanel({
                       padding: '4px 8px',
                       borderRadius: '999px',
                       border: `1px solid ${BORDER}`,
-                      background: 'rgba(255,255,255,0.04)',
+                      background: PATHD_THEME.chipNeutral,
                       color: LABEL,
                       fontFamily: T.MONO,
                       fontSize: '10px',
@@ -149,7 +150,7 @@ export default function WorkbenchEvidenceTracePanel({
                     {getAuthorityTier(entry.run)}
                   </span>
                 )}
-                {index < executionTrace.length - 1 && <ArrowRight size={12} color="rgba(255,255,255,0.38)" />}
+                {index < executionTrace.length - 1 && <ArrowRight size={12} color={PATHD_THEME.orange} />}
               </span>
             )) : (
               <div style={{ fontFamily: T.SANS, fontSize: '12px', color: LABEL, lineHeight: 1.6 }}>

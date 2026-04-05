@@ -7,6 +7,8 @@ import DemoBanner from '../ide/shared/DemoBanner';
 import { useUIStore } from '../../store/uiStore';
 import { useWorkbenchStore } from '../../store/workbenchStore';
 import WorkbenchInlineContext from '../workbench/WorkbenchInlineContext';
+import { PATHD_THEME } from '../workbench/workbenchTheme';
+import ScientificHero from './shared/ScientificHero';
 import SimErrorBanner from '../ide/shared/SimErrorBanner';
 import { usePersistedState } from '../ide/shared/usePersistedState';
 import {
@@ -316,7 +318,7 @@ export default function DynConPage() {
   /* ── Render ─────────────────────────────────────────────────────────────── */
   return (
     <>
-      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', background: PANEL_BG }}>
+      <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', background: PANEL_BG, minHeight: '100%', flex: 1 }}>
         <AlgorithmInsight
           title="Dynamic Control Simulator"
           description="Fed-batch bioreactor with PID-controlled DO₂ and Hill-function negative feedback on ADS expression. RK4 integration."
@@ -343,6 +345,50 @@ export default function DynConPage() {
               </span>
             </div>
           )}
+          <ScientificHero
+            eyebrow="Stage 3 · Chassis Control"
+            title="Controller behavior is tied to the current metabolic burden"
+            summary="DYNCON turns pathway risk into operating policy. PID tuning, Hill repression, and genetic-part mapping are treated as one control package so the page behaves like a scientific control surface for a living system, not a disconnected slider set."
+            aside={
+              <>
+                <div style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                  Control bridge
+                </div>
+                <div style={{ fontFamily: T.SANS, fontSize: '13px', color: PATHD_THEME.value, fontWeight: 700 }}>
+                  {rbsMapping.rbsName} · gain {rbsMapping.controlGain.toFixed(2)}
+                </div>
+                <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.label, lineHeight: 1.55 }}>
+                  Controller gains are translated into a concrete RBS choice, so the workbench keeps one foot in executable biology.
+                </div>
+              </>
+            }
+            signals={[
+              {
+                label: 'Product Titer',
+                value: `${productTiter.toFixed(2)} g/L`,
+                detail: `${productivity.toFixed(2)} g/L/h productivity under the current controller settings.`,
+                tone: productTiter > 10 ? 'cool' : 'warm',
+              },
+              {
+                label: 'Control Stability',
+                value: convergence.isStable ? 'Stable' : 'Unstable',
+                detail: `DO₂ RMSE ${doRmse.toFixed(3)} against setpoint ${setpoint.toFixed(2)}`,
+                tone: convergence.isStable ? 'cool' : 'alert',
+              },
+              {
+                label: 'Burden Index',
+                value: burden.burdenIndex.toFixed(2),
+                detail: `Current FPP ${currentFPP.toFixed(2)} μM · ADS expression ${currentADS.toFixed(2)}`,
+                tone: burden.burdenIndex < 0.45 ? 'cool' : 'warm',
+              },
+              {
+                label: 'Repression Curve',
+                value: `Vmax ${vmax.toFixed(2)} · n ${hillN.toFixed(1)}`,
+                detail: `Hill Kd ${hillKd.toFixed(1)} μM defines how quickly repression engages as pathway pressure rises.`,
+                tone: 'neutral',
+              },
+            ]}
+          />
           <DemoBanner context="Artemisinin biosynthesis PID control (Ro et al. 2006)" />
         </div>
 
@@ -380,8 +426,8 @@ export default function DynConPage() {
                   <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>RBS Strength</span>
                   <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE }}>{rbsMapping.rbsStrength.toFixed(2)}</span>
                 </div>
-                <div style={{ height: '6px', borderRadius: '3px', background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
-                  <div style={{ height: '100%', width: `${rbsMapping.rbsStrength * 100}%`, borderRadius: '3px', background: 'linear-gradient(90deg, #4A7CFF, #FF8B1F)', boxShadow: '0 0 6px rgba(74,124,255,0.2)', transition: 'width 0.3s ease' }} />
+                <div style={{ height: `${PATHD_THEME.progressHeight}px`, borderRadius: `${PATHD_THEME.progressRadius}px`, background: PATHD_THEME.progressTrack, overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${rbsMapping.rbsStrength * 100}%`, borderRadius: `${PATHD_THEME.progressRadius}px`, background: PATHD_THEME.progressGradient, boxShadow: PATHD_THEME.progressGlow, transition: 'width 0.3s ease' }} />
                 </div>
               </div>
               {/* DNA Sequence */}
@@ -408,7 +454,7 @@ export default function DynConPage() {
           </div>
 
           {/* ═══════ CENTER (flex) ═══════ */}
-          <div style={{ flex: 1, overflow: 'hidden', background: '#050505', display: 'flex', flexDirection: 'column' }}>
+          <div className="nb-tool-center" style={{ flex: 1, background: '#050505', display: 'flex', flexDirection: 'column', minWidth: 0 }}>
             {/* Main time-series plot */}
             <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px 12px 0' }}>
               <TimeSeriesSVG trajectory={trajectory} setpoint={setpoint} svgRef={chartRef} />
@@ -467,19 +513,19 @@ export default function DynConPage() {
                   <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>Burden Index</span>
                   <span style={{ fontFamily: T.MONO, fontSize: '12px', fontWeight: 600, color: VALUE }}>{burden.burdenIndex.toFixed(3)}</span>
                 </div>
-                <div style={{ height: '8px', borderRadius: '4px', background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+                <div style={{ height: `${PATHD_THEME.progressHeight + 2}px`, borderRadius: `${PATHD_THEME.progressRadius}px`, background: PATHD_THEME.progressTrack, overflow: 'hidden' }}>
                   <div style={{
-                    height: '100%', borderRadius: '4px', transition: 'width 0.3s ease',
+                    height: '100%', borderRadius: `${PATHD_THEME.progressRadius}px`, transition: 'width 0.3s ease',
                     width: `${Math.min(1, burden.burdenIndex) * 100}%`,
                     background: burden.burdenIndex < 0.3
                       ? '#39FF14'
                       : burden.burdenIndex < 0.6
-                        ? 'linear-gradient(90deg, #4A7CFF, #FF8B1F)'
+                        ? PATHD_THEME.progressGradient
                         : '#FF3131',
                     boxShadow: burden.burdenIndex < 0.3
                       ? '0 0 6px rgba(57,255,20,0.3)'
                       : burden.burdenIndex < 0.6
-                        ? '0 0 6px rgba(74,124,255,0.2)'
+                        ? PATHD_THEME.progressGlow
                         : '0 0 6px rgba(255,49,49,0.3)',
                   }} />
                 </div>

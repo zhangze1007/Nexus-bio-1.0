@@ -33,6 +33,7 @@ import { getToolDefinition } from './toolRegistry';
 import { useNavigation } from '../../../contexts/NavigationContext';
 import { T } from '../../ide/tokens';
 import WorkbenchInlineContext from '../../workbench/WorkbenchInlineContext';
+import { PATHD_THEME } from '../../workbench/workbenchTheme';
 
 const NEON_ACCENT = '#FF8B1F';
 
@@ -55,6 +56,7 @@ export interface ToolShellProps {
   workbenchSummary?: string;
   workbenchCompact?: boolean;
   workbenchSimulated?: boolean;
+  hero?: ReactNode;
 }
 
 export default function ToolShell({
@@ -64,19 +66,23 @@ export default function ToolShell({
   workbenchSummary,
   workbenchCompact = true,
   workbenchSimulated = false,
+  hero,
 }: ToolShellProps) {
   const tool = getToolDefinition(moduleId);
   const { handleBack } = useNavigation();
 
   return (
     <div className="nb-tool-shell" style={{
-      position: 'absolute', inset: 0,
+      position: 'relative',
       display: 'flex', flexDirection: 'column',
       background: '#000000',
       fontFamily: T.SANS,
+      flex: 1,
+      minHeight: '100%',
     }}>
       {/* ── Module Info Bar ──────────────────────────────────── */}
       <motion.header
+        className="nb-tool-shell__header"
         initial={{ opacity: 0, y: -6 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
@@ -84,8 +90,8 @@ export default function ToolShell({
           padding: '8px 16px',
           display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap',
           flexShrink: 0,
-          borderBottom: '1px solid rgba(255,255,255,0.08)',
-          background: 'rgba(0,0,0,0.84)',
+          borderBottom: `1px solid ${PATHD_THEME.panelBorder}`,
+          background: 'linear-gradient(180deg, rgba(9,12,18,0.96) 0%, rgba(10,12,18,0.88) 100%)',
           backdropFilter: 'blur(18px)',
         }}
       >
@@ -99,9 +105,9 @@ export default function ToolShell({
             minHeight: '30px',
             padding: '0 8px',
             borderRadius: '10px',
-            border: '1px solid rgba(255,255,255,0.08)',
-            background: 'rgba(255,255,255,0.03)',
-            color: 'rgba(255,255,255,0.4)',
+            border: `1px solid ${PATHD_THEME.panelBorder}`,
+            background: PATHD_THEME.chipNeutral,
+            color: PATHD_THEME.label,
             cursor: 'pointer',
             fontFamily: T.SANS,
             fontSize: '10px',
@@ -120,8 +126,8 @@ export default function ToolShell({
           minHeight: '30px',
           padding: '0 10px',
           borderRadius: '10px',
-          border: '1px solid rgba(255,139,31,0.20)',
-          background: 'rgba(255,139,31,0.08)',
+          border: `1px solid ${PATHD_THEME.panelBorderStrong}`,
+          background: PATHD_THEME.panelGradientSoft,
           color: NEON_ACCENT,
           fontFamily: T.MONO,
           fontSize: '10px',
@@ -136,7 +142,7 @@ export default function ToolShell({
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{
             fontFamily: T.SANS, fontSize: '13px', fontWeight: 700,
-            color: 'rgba(255,255,255,0.9)',
+            color: PATHD_THEME.value,
             letterSpacing: '-0.01em',
           }}>
             {tool?.name ?? title}
@@ -144,7 +150,7 @@ export default function ToolShell({
           {description && (
             <div style={{
               fontFamily: T.SANS, fontSize: '11px',
-              color: 'rgba(255,255,255,0.35)',
+              color: PATHD_THEME.label,
               marginTop: '2px',
             }}>
               {description}
@@ -155,10 +161,10 @@ export default function ToolShell({
         {formula && (
           <div style={{
             fontFamily: T.MONO, fontSize: '10px',
-            color: 'rgba(255,255,255,0.2)',
+            color: PATHD_THEME.label,
             padding: '6px 10px',
-            background: 'rgba(255,255,255,0.02)',
-            border: '1px solid rgba(255,255,255,0.06)',
+            background: PATHD_THEME.chipNeutral,
+            border: `1px solid ${PATHD_THEME.panelBorder}`,
             borderRadius: '10px',
           }}>
             {formula}
@@ -182,7 +188,9 @@ export default function ToolShell({
             isSimulated={workbenchSimulated}
           />
         )}
+        {hero}
         <div
+          className="nb-tool-shell__grid"
           style={{
             flex: 1,
             minHeight: 0,
@@ -199,11 +207,11 @@ export default function ToolShell({
 
       {/* ── Footer ─────────────────────────────────────────── */}
         {footer && (
-        <div style={{
+        <div className="nb-tool-shell__footer" style={{
           padding: '6px 16px',
           display: 'flex', gap: '8px', flexShrink: 0,
-          borderTop: '1px solid rgba(255,255,255,0.08)',
-          background: 'rgba(0,0,0,0.84)',
+          borderTop: `1px solid ${PATHD_THEME.panelBorder}`,
+          background: 'linear-gradient(180deg, rgba(10,12,18,0.9) 0%, rgba(9,12,18,0.96) 100%)',
         }}>
           {footer}
         </div>

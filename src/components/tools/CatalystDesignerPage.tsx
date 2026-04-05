@@ -31,6 +31,8 @@ import { useWorkbenchStore } from '../../store/workbenchStore';
 import WorkbenchInlineContext from '../workbench/WorkbenchInlineContext';
 import { buildCatalystSeed } from './shared/workbenchDataflow';
 import { T, TOOL_RESULT_PALETTE} from '../ide/tokens';
+import ScientificHero from './shared/ScientificHero';
+import { PATHD_THEME } from '../workbench/workbenchTheme';
 
 /* ── Design Tokens ────────────────────────────────────────────────── */
 
@@ -730,7 +732,7 @@ export default function CatalystDesignerPage() {
 
   return (
     <>
-      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column' }}>
+      <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', minHeight: '100%', flex: 1 }}>
 
         {/* Algorithm Insight */}
         <AlgorithmInsight
@@ -745,6 +747,52 @@ export default function CatalystDesignerPage() {
             summary="Catalyst design consumes flux, thermodynamic, and pathway evidence together, so sequence proposals, mutagenesis sites, and viability scoring stay synchronized with the current research object instead of drifting into isolated enzyme demos."
             compact
             isSimulated={!analyzeArtifact}
+          />
+        </div>
+        <div style={{ padding: '0 16px 10px' }}>
+          <ScientificHero
+            eyebrow="Stage 2 · Catalyst & Enzyme Optimization"
+            title={`${enzyme.name} as the current catalytic bottleneck`}
+            summary="Catalyst Designer should feel less like a grab-bag of molecular widgets and more like a decision deck: binding confidence, sequence proposals, mutational leverage, and pathway viability are surfaced together so redesign decisions stay scientifically coherent."
+            aside={
+              <>
+                <div style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                  Route pressure
+                </div>
+                <div style={{ fontFamily: T.SANS, fontSize: '13px', color: PATHD_THEME.value, fontWeight: 700 }}>
+                  {recommendedSeed.requiredFlux.toFixed(2)} required flux · {recommendedSeed.designCount} sequence proposal(s)
+                </div>
+                <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.label, lineHeight: 1.55 }}>
+                  Flux and thermodynamic context from upstream tools are now visible here before any sequence is trusted.
+                </div>
+              </>
+            }
+            signals={[
+              {
+                label: 'Predicted Kd',
+                value: `${binding.predictedKd.toFixed(2)} μM`,
+                detail: `Overall binding score ${binding.overallScore.toFixed(2)} for ${enzyme.name}`,
+                tone: binding.predictedKd < 10 ? 'cool' : 'warm',
+              },
+              {
+                label: 'Best Sequence',
+                value: `${sequences.designs[0]?.score.toFixed(2) ?? '0.00'} score`,
+                detail: `CAI ${sequences.designs[0]?.cai.toFixed(2) ?? '0.00'} · GC ${(sequences.designs[0]?.gcContent ?? 0).toFixed(1)}%`,
+                tone: 'cool',
+              },
+              {
+                label: 'Growth Penalty',
+                value: `${drain.growthPenalty.toFixed(1)}%`,
+                detail: drain.recommendation,
+                tone: drain.isViable ? 'warm' : 'alert',
+              },
+              {
+                label: 'Mutation Leverage',
+                value: `${mutagenesis.sites.filter((site) => site.predictedEffect === 'beneficial').length} beneficial sites`,
+                detail: `${bestPathway?.name ?? 'No ranked pathway'} remains the leading pathway candidate in the current design window.`,
+                tone: 'neutral',
+              },
+            ]}
           />
         </div>
 
@@ -848,11 +896,11 @@ export default function CatalystDesignerPage() {
           </div>
 
           {/* ── CENTER CANVAS ─────────────────────────────────────── */}
-          <div style={{
+          <div className="nb-tool-center" style={{
             flex: 1, display: 'flex', flexDirection: 'column',
-            background: '#0c0e14', overflow: 'hidden',
+            background: '#0c0e14', minWidth: 0,
           }}>
-            <div style={{ flex: 1, overflow: 'auto', position: 'relative' }}>
+            <div style={{ flex: 1, position: 'relative' }}>
               {viewMode === 'Binding' && (
                 <div style={{ padding: 16 }}>
                   <BindingRadar result={binding} />
@@ -897,10 +945,10 @@ export default function CatalystDesignerPage() {
           </div>
 
           {/* ── RIGHT PANEL ───────────────────────────────────────── */}
-          <div style={{
+          <div className="nb-tool-right" style={{
             width: 260, minWidth: 260, background: PANEL_BG,
             borderLeft: `1px solid ${BORDER}`, padding: '14px 12px',
-            overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 16,
+            display: 'flex', flexDirection: 'column', gap: 16,
           }}>
             {/* Design Summary */}
             <div>

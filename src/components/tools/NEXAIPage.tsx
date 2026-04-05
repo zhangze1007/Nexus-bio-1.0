@@ -9,6 +9,8 @@ import type { NEXAIResult, CitationNode, GeneratedPathway } from '../../types';
 import { useUIStore } from '../../store/uiStore';
 import { useWorkbenchStore } from '../../store/workbenchStore';
 import WorkbenchInlineContext from '../workbench/WorkbenchInlineContext';
+import ScientificHero from './shared/ScientificHero';
+import { PATHD_THEME } from '../workbench/workbenchTheme';
 
 // ── Full-bleed Citation Graph ──────────────────────────────────────────
 
@@ -460,6 +462,52 @@ export default function NEXAIPage() {
       columns="200px 1fr 200px"
       rows="1fr 1fr"
       gap={6}
+      hero={
+        <ScientificHero
+          eyebrow="Cross-Stage · Research Copilot"
+          title="Evidence-grounded synthesis for the active workbench object"
+          summary="Axon now opens as a decision surface rather than a blank chat box. The page foregrounds what it currently knows, how confident that knowledge is, how much evidence is attached, and whether the answer is coming from a live pathway graph or contextual scientific synthesis."
+          aside={
+            <>
+              <div style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                Current scope
+              </div>
+              <div style={{ fontFamily: T.SANS, fontSize: '13px', color: PATHD_THEME.value, fontWeight: 700 }}>
+                {analyzeArtifact?.targetProduct ?? project?.targetProduct ?? project?.title ?? 'Scientific workbench'}
+              </div>
+              <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.label, lineHeight: 1.55 }}>
+                {contextPrompt || 'Ask Axon to synthesize evidence, explain a bottleneck, or route the next scientific action.'}
+              </div>
+            </>
+          }
+          signals={[
+            {
+              label: 'Answer Mode',
+              value: result ? resultMode.toUpperCase() : 'IDLE',
+              detail: resultMode === 'pathway' ? 'Live pathway graph answer from the analysis route.' : resultMode === 'text' ? 'Contextual scientific synthesis grounded in the current project graph.' : 'No active answer yet.',
+              tone: resultMode === 'pathway' ? 'cool' : resultMode === 'text' ? 'warm' : 'neutral',
+            },
+            {
+              label: 'Confidence',
+              value: result ? `${(result.confidence * 100).toFixed(0)}%` : '—',
+              detail: `${selectedEvidenceIds.length} selected evidence item(s) · ${nextRecommendations.length} queued next-step recommendation(s)`,
+              tone: result && result.confidence > 0.75 ? 'cool' : 'neutral',
+            },
+            {
+              label: 'Citations',
+              value: `${result?.citations.length ?? 0}`,
+              detail: evidenceItems.length ? `Workbench evidence graph currently holds ${evidenceItems.length} saved item(s).` : 'No saved evidence yet; Research intake will strengthen citation-grounded answers.',
+              tone: 'neutral',
+            },
+            {
+              label: 'Recent Query',
+              value: (query || history[0] || contextPrompt || 'Pending').slice(0, 44),
+              detail: loading ? 'Axon is currently synthesizing a response.' : 'Recent query state remains part of the same canonical workbench object graph.',
+              tone: loading ? 'alert' : 'neutral',
+            },
+          ]}
+        />
+      }
       footer={
         <ExportButton label="Export Result" data={result} filename="nexai-result" format="json" disabled={!result} />
       }

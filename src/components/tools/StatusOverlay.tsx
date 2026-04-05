@@ -15,6 +15,7 @@ import type { SimReadouts, SimParams } from '../../machines/metabolicMachine';
 import { STATE_LABELS, michaelisRate } from '../../machines/metabolicMachine';
 import type { MachineState } from '../../machines/metabolicMachine';
 import { T } from '../ide/tokens';
+import { PATHD_THEME } from '../workbench/workbenchTheme';
 
 // ── Sparkline SVG ──────────────────────────────────────────────────────
 
@@ -63,7 +64,7 @@ function Sparkline({ data, height = 36 }: {
         opacity={0.8}
       />
       {/* Live cursor dot */}
-      <circle cx={lastX} cy={lastY} r="2.5" fill="rgba(255,255,255,0.9)">
+      <circle cx={lastX} cy={lastY} r="2.5" fill={PATHD_THEME.liveRed}>
         <animate attributeName="r" values="2.5;4;2.5" dur="1.5s" repeatCount="indefinite"/>
         <animate attributeName="opacity" values="0.9;0.4;0.9" dur="1.5s" repeatCount="indefinite"/>
       </circle>
@@ -140,11 +141,11 @@ function FluxGauge({ value, label }: { value: number; label: string }) {
         <span style={{ fontFamily: T.SANS, fontSize:'9px', color:'rgba(255,255,255,0.32)' }}>{label}</span>
         <span style={{ fontFamily: T.MONO, fontSize:'10px', color:'rgba(255,255,255,0.65)', fontWeight:700 }}>{pct.toFixed(0)}%</span>
       </div>
-      <div style={{ height:'4px', borderRadius:'2px', background:'rgba(255,255,255,0.06)', overflow:'hidden' }}>
+      <div style={{ height:`${PATHD_THEME.progressHeight}px`, borderRadius:`${PATHD_THEME.progressRadius}px`, background:PATHD_THEME.progressTrack, overflow:'hidden' }}>
         <motion.div
           animate={{ width:`${pct}%` }}
           transition={{ duration:0.3 }}
-          style={{ height:'100%', borderRadius:'2px', background:'linear-gradient(90deg, #4A7CFF, #FF8B1F)', boxShadow:'0 0 6px rgba(74,124,255,0.25), 0 0 6px rgba(255,139,31,0.25)' }}
+          style={{ height:'100%', borderRadius:`${PATHD_THEME.progressRadius}px`, background:PATHD_THEME.progressGradient, boxShadow:PATHD_THEME.progressGlow }}
         />
       </div>
     </div>
@@ -175,6 +176,7 @@ export default function StatusOverlay({
 
   return (
     <motion.div
+      className="nb-pathd-floating-panel nb-pathd-floating-panel--right"
       animate={{ x: 0, opacity: 1 }}
       initial={{ x: 30, opacity: 0 }}
       transition={{ duration: 0.5, ease:[0.22,1,0.36,1] }}
@@ -182,13 +184,13 @@ export default function StatusOverlay({
         position:'absolute', right:'20px', top:'50%',
         transform:'translateY(-50%)',
         width:'230px', zIndex:10,
-        background:'rgba(0,0,0,0.72)',
+        background: PATHD_THEME.panelGradientStrong,
         backdropFilter:'blur(40px)',
         WebkitBackdropFilter:'blur(40px)',
-        borderRadius:'14px',
-        border:'1px solid rgba(255,255,255,0.1)',
-        borderTop:'1.5px solid rgba(255,255,255,0.22)',
-        boxShadow:'0 0 0 0.5px rgba(255,255,255,0.04), inset 0 1px 0 rgba(255,255,255,0.06)',
+        borderRadius:'18px',
+        border:`1px solid ${PATHD_THEME.panelBorder}`,
+        borderTop:`1.5px solid ${PATHD_THEME.panelBorderStrong}`,
+        boxShadow:'0 18px 42px rgba(0,0,0,0.26), inset 0 1px 0 rgba(255,255,255,0.05)',
         padding:'18px 16px',
       }}
     >

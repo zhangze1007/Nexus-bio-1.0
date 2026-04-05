@@ -17,8 +17,6 @@
 import { useEffect, useRef, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMachine } from '@xstate/react';
-import { Dna, ChevronLeft } from 'lucide-react';
-import Link from 'next/link';
 import FluidSimCanvas from './FluidSimCanvas';
 import type { FluidForce } from './FluidSimCanvas';
 import ToolOverlay from './ToolOverlay';
@@ -26,11 +24,12 @@ import StatusOverlay from './StatusOverlay';
 import ThreeScene from '../ThreeScene';
 import NodePanel from '../NodePanel';
 import WorkbenchInlineContext from '../workbench/WorkbenchInlineContext';
-import { metabolicMachine, STATE_LABELS } from '../../machines/metabolicMachine';
+import ScientificHero from './shared/ScientificHero';
+import { PATHD_THEME } from '../workbench/workbenchTheme';
+import { metabolicMachine } from '../../machines/metabolicMachine';
 import type { FBAWorkerIn, FBAWorkerOut } from '../../workers/fbaWorker';
 import { useUIStore } from '../../store/uiStore';
 import { useWorkbenchStore } from '../../store/workbenchStore';
-import { useNavigation } from '../../contexts/NavigationContext';
 import pathwayNodes from '../../data/pathwayData.json';
 import type { PathwayNode, PathwayEdge } from '../../types';
 import { T } from '../ide/tokens';
@@ -55,83 +54,6 @@ function inferRouteLabel(nodes: PathwayNode[]) {
   return `${terminal} route`;
 }
 
-// ── Top bar component ──────────────────────────────────────────────────
-
-interface TopBarProps {
-  state:      string;
-  stateLabel: string;
-  tick:       number;
-  backHref:   string;
-}
-
-function TopBar({ state, stateLabel, tick, backHref }: TopBarProps) {
-  const backLabel = backHref === '/tools' ? 'Tools' : 'Home';
-  return (
-    <div style={{
-      position:'absolute', top:0, left:0, right:0, zIndex:20,
-      height:'52px', display:'flex', alignItems:'center',
-      justifyContent:'space-between', padding:'0 20px',
-      background:'rgba(0,0,0,0.85)',
-      backdropFilter:'blur(24px)',
-      WebkitBackdropFilter:'blur(24px)',
-      borderBottom:'1px solid rgba(255,255,255,0.06)',
-    }}>
-      {/* Left: back + logo */}
-      <div style={{ display:'flex', alignItems:'center', gap:'16px' }}>
-        <Link href={backHref} style={{ display:'flex', alignItems:'center', gap:'6px', textDecoration:'none', color:'rgba(226,232,240,0.35)', transition:'color 0.2s' }}
-          onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = 'rgba(226,232,240,0.8)'}
-          onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'rgba(226,232,240,0.35)'}
-        >
-          <ChevronLeft size={13} />
-          <span style={{ fontFamily: T.SANS, fontSize:'10px', letterSpacing:'0.03em' }}>{backLabel}</span>
-        </Link>
-        <div style={{ width:'1px', height:'16px', background:'rgba(255,255,255,0.07)' }} />
-        <div style={{ display:'flex', alignItems:'center', gap:'8px' }}>
-          <div style={{ width:'22px', height:'22px', borderRadius:'7px', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.12)', display:'flex', alignItems:'center', justifyContent:'center' }}>
-            <Dna size={11} style={{ color:'rgba(255,255,255,0.65)' }} />
-          </div>
-          <div>
-            <div style={{ fontFamily: T.SANS, fontSize:'11px', fontWeight:600, color:'rgba(226,232,240,0.85)', letterSpacing:'-0.01em' }}>Metabolic Eng. Lab</div>
-            <div style={{ fontFamily: T.MONO, fontSize:'8px', color:'rgba(226,232,240,0.25)', letterSpacing:'0.08em', textTransform:'uppercase' }}>nexus-bio · /tools/metabolic-eng</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Center: state label */}
-      <motion.div
-        key={state}
-        initial={{ opacity:0, y:-8, letterSpacing:'0.3em' }}
-        animate={{ opacity:1, y:0, letterSpacing:'0.2em' }}
-        transition={{ duration:0.55, ease:[0.22,1,0.36,1] }}
-        style={{
-          fontFamily: T.MONO, fontSize:'11px', fontWeight:700,
-          textTransform:'uppercase', color:'rgba(255,255,255,0.75)',
-          letterSpacing:'0.2em',
-          padding:'4px 14px', borderRadius:'100px',
-          background:'rgba(255,255,255,0.05)',
-          border:'1px solid rgba(255,255,255,0.12)',
-        }}
-      >
-        {stateLabel}
-      </motion.div>
-
-      {/* Right: system metrics */}
-      <div style={{ display:'flex', gap:'20px', alignItems:'center' }}>
-        {[
-          { l:'TICK',     v: tick.toString().padStart(6,'0') },
-          { l:'INSTANCE', v: '8K' },
-          { l:'FSM',      v: state.toUpperCase() },
-        ].map(({ l, v }) => (
-          <div key={l} style={{ textAlign:'right' }}>
-            <div style={{ fontFamily: T.MONO, fontSize:'8px', color:'rgba(226,232,240,0.2)', textTransform:'uppercase', letterSpacing:'0.1em' }}>{l}</div>
-            <div style={{ fontFamily: T.MONO, fontSize:'11px', color:'rgba(226,232,240,0.55)', fontVariantNumeric:'tabular-nums' }}>{v}</div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 // ── Main orchestrator ──────────────────────────────────────────────────
 
 export default function MetabolicEngPage({ embedded = false }: { embedded?: boolean } = {}) {
@@ -141,9 +63,6 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
   const project = useWorkbenchStore((s) => s.project);
   const analyzeArtifact = useWorkbenchStore((s) => s.analyzeArtifact);
   const setToolPayload = useWorkbenchStore((s) => s.setToolPayload);
-
-  // ── Unified navigation — resolves back target based on current path ──
-  const { backHref } = useNavigation();
 
   // ── Zustand: node selection + AI-generated pathway ───────────────
   const selectedNode    = useUIStore(s => s.selectedNode);
@@ -333,11 +252,11 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
     return () => window.removeEventListener('mousemove', onMouseMove);
   }, [state]);
 
-  const stateLabel = STATE_LABELS[state];
-
   return (
     <div style={{
-      position: 'absolute', inset:0,
+      position: 'relative',
+      minHeight: '860px',
+      flex: 1,
       background:'#000000',
       overflow:'hidden', userSelect:'none',
     }}>
@@ -349,23 +268,18 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
         state={state}
       />
 
-      {/* ── Top bar ── */}
-      <TopBar
-        state={state}
-        stateLabel={stateLabel}
-        tick={readouts.tick}
-        backHref={backHref}
-      />
-
       <div
+        className="nb-pathd-hero-stack"
         style={{
           position: 'absolute',
-          top: '64px',
+          top: '16px',
           left: '50%',
           transform: 'translateX(-50%)',
-          width: 'min(560px, calc(100vw - 32px))',
+          width: 'min(760px, calc(100vw - 32px))',
           zIndex: 18,
           pointerEvents: 'none',
+          display: 'grid',
+          gap: '8px',
         }}
       >
         <div style={{ pointerEvents: 'auto' }}>
@@ -375,6 +289,54 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
             summary="PATHD is now an audited Stage 1 object generator: pathway routes, bottleneck assumptions, enzyme candidates, and the active node focus are written back into the workbench so simulation and control tools can inherit the current design state instead of replaying an old plan."
             compact
             isSimulated={!analyzeArtifact}
+          />
+        </div>
+        <div style={{ pointerEvents: 'auto' }}>
+          <ScientificHero
+            eyebrow="Stage 1 · Pathway & Enzyme Design"
+            title={`${activeRouteLabel} is the current design object`}
+            summary="PATHD should read like the front door to the whole scientific program. This page now surfaces the active route, bottleneck pressure, enzyme opportunity, and next tool handoff before the scientist dives into the 3D pathway graph."
+            aside={
+              <>
+                <div style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                  Current focus
+                </div>
+                <div style={{ fontFamily: T.SANS, fontSize: '13px', color: PATHD_THEME.value, fontWeight: 700 }}>
+                  {selectedNode?.label ?? derivedTarget}
+                </div>
+                <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.label, lineHeight: 1.55 }}>
+                  {selectedNode
+                    ? 'A specific pathway node is in focus, so downstream interpretation should respect this current design emphasis.'
+                    : 'No node is pinned yet; the route remains the active object at pathway scale.'}
+                </div>
+              </>
+            }
+            signals={[
+              {
+                label: 'Target Product',
+                value: derivedTarget,
+                detail: `${activeNodes.length} nodes · ${activeEdges.length} edges in the current executable route graph`,
+                tone: 'cool',
+              },
+              {
+                label: 'Bottlenecks',
+                value: `${analyzeArtifact?.bottleneckAssumptions.length ?? 0}`,
+                detail: analyzeArtifact?.bottleneckAssumptions[0]?.label ?? 'No structured bottleneck has been injected from Analyze yet.',
+                tone: (analyzeArtifact?.bottleneckAssumptions.length ?? 0) > 0 ? 'warm' : 'neutral',
+              },
+              {
+                label: 'Enzyme Candidates',
+                value: `${analyzeArtifact?.enzymeCandidates.length ?? 0}`,
+                detail: analyzeArtifact?.enzymeCandidates[0]?.label ?? 'No enzyme candidate has been prioritized yet.',
+                tone: 'neutral',
+              },
+              {
+                label: 'Next Tool',
+                value: (analyzeArtifact?.recommendedNextTools[0] ?? 'fbasim').toUpperCase(),
+                detail: 'PATHD now makes the next scientific handoff explicit instead of leaving the route as a dead-end visualization.',
+                tone: 'warm',
+              },
+            ]}
           />
         </div>
       </div>
@@ -396,7 +358,7 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
       </div>
 
       {/* ── Left tool panel ── */}
-      <div style={{ position:'absolute', inset:0, top:'52px', zIndex:10, pointerEvents:'none' }}>
+      <div style={{ position:'absolute', inset:0, zIndex:10, pointerEvents:'none' }}>
         <div style={{ pointerEvents:'auto' }}>
           <ToolOverlay
             params={params}
@@ -413,7 +375,7 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
       </div>
 
       {/* ── Right status panel ── */}
-      <div style={{ position:'absolute', inset:0, top:'52px', zIndex:10, pointerEvents:'none' }}>
+      <div style={{ position:'absolute', inset:0, zIndex:10, pointerEvents:'none' }}>
         <div style={{ pointerEvents:'auto' }}>
           <StatusOverlay
             readouts={readouts}

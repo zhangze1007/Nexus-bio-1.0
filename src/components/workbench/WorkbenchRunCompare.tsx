@@ -7,6 +7,7 @@ import { T } from '../ide/tokens';
 import { TOOL_BY_ID } from '../tools/shared/toolRegistry';
 import type { WorkbenchStageId } from '../tools/shared/workbenchConfig';
 import { getAuthorityTier } from './workbenchTrust';
+import { PATHD_THEME } from './workbenchTheme';
 
 interface WorkbenchRunCompareProps {
   toolId?: string | null;
@@ -14,9 +15,9 @@ interface WorkbenchRunCompareProps {
   title?: string;
 }
 
-const BORDER = 'rgba(255,255,255,0.08)';
-const LABEL = 'rgba(255,255,255,0.42)';
-const VALUE = 'rgba(255,255,255,0.88)';
+const BORDER = PATHD_THEME.panelBorder;
+const LABEL = PATHD_THEME.label;
+const VALUE = PATHD_THEME.value;
 
 function formatTime(timestamp: number) {
   return new Date(timestamp).toLocaleString([], {
@@ -73,7 +74,7 @@ export default function WorkbenchRunCompare({
   return (
     <section style={{ display: 'grid', gap: '10px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <GitCompareArrows size={14} color="rgba(255,255,255,0.72)" />
+        <GitCompareArrows size={14} color={PATHD_THEME.orange} />
         <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
           {title}
         </div>
@@ -86,7 +87,7 @@ export default function WorkbenchRunCompare({
             style={{
               borderRadius: '16px',
               border: `1px solid ${BORDER}`,
-              background: index === 0 ? 'rgba(142,211,199,0.10)' : 'rgba(255,255,255,0.03)',
+              background: index === 0 ? PATHD_THEME.panelGradient : PATHD_THEME.panelGradientSoft,
               padding: '12px 14px',
               display: 'grid',
               gap: '6px',
@@ -108,9 +109,9 @@ export default function WorkbenchRunCompare({
                 style={{
                   padding: '3px 8px',
                   borderRadius: '999px',
-                  border: `1px solid ${run.isSimulated ? 'rgba(255,192,128,0.28)' : 'rgba(158,215,199,0.24)'}`,
-                  background: run.isSimulated ? 'rgba(255,192,128,0.10)' : 'rgba(158,215,199,0.12)',
-                  color: VALUE,
+                  border: `1px solid ${run.isSimulated ? PATHD_THEME.chipBorderWarm : PATHD_THEME.chipBorder}`,
+                  background: run.isSimulated ? PATHD_THEME.chipWarm : PATHD_THEME.chipCool,
+                  color: PATHD_THEME.chipText,
                   fontFamily: T.MONO,
                   fontSize: '10px',
                 }}
@@ -133,7 +134,7 @@ export default function WorkbenchRunCompare({
           style={{
             borderRadius: '14px',
             border: `1px solid ${BORDER}`,
-            background: 'rgba(255,255,255,0.03)',
+            background: PATHD_THEME.panelGradientSoft,
             padding: '10px 12px',
             display: 'flex',
             alignItems: 'center',
@@ -141,7 +142,7 @@ export default function WorkbenchRunCompare({
             flexWrap: 'wrap',
           }}
         >
-          <Gauge size={13} color="rgba(255,255,255,0.72)" />
+          <Gauge size={13} color={PATHD_THEME.blue} />
           <span style={{ fontFamily: T.SANS, fontSize: '12px', color: VALUE, fontWeight: 600 }}>
             {subject}
           </span>

@@ -249,6 +249,37 @@ function initializeSchema(db: SqliteDb) {
       updated_at INTEGER NOT NULL
     );
   `);
+
+  ensureLegacyColumns(db);
+}
+
+function hasColumn(db: SqliteDb, tableName: string, columnName: string) {
+  const rows = db.prepare(`PRAGMA table_info(${tableName})`).all() as Array<{ name: string }>;
+  return rows.some((row) => row.name === columnName);
+}
+
+function ensureLegacyColumns(db: SqliteDb) {
+  if (!hasColumn(db, 'sync_audit', 'project_id')) {
+    db.exec(`ALTER TABLE sync_audit ADD COLUMN project_id TEXT NOT NULL DEFAULT '${DEFAULT_PROJECT_ID}'`);
+  }
+  if (!hasColumn(db, 'sync_audit', 'actor_id')) {
+    db.exec(`ALTER TABLE sync_audit ADD COLUMN actor_id TEXT NOT NULL DEFAULT '${SYSTEM_ACTOR_ID}'`);
+  }
+  if (!hasColumn(db, 'sync_audit', 'revision')) {
+    db.exec('ALTER TABLE sync_audit ADD COLUMN revision INTEGER NOT NULL DEFAULT 0');
+  }
+  if (!hasColumn(db, 'sync_audit', 'action')) {
+    db.exec("ALTER TABLE sync_audit ADD COLUMN action TEXT NOT NULL DEFAULT 'legacy-sync'");
+  }
+  if (!hasColumn(db, 'sync_audit', 'status')) {
+    db.exec("ALTER TABLE sync_audit ADD COLUMN status TEXT NOT NULL DEFAULT 'ok'");
+  }
+  if (!hasColumn(db, 'sync_audit', 'detail')) {
+    db.exec('ALTER TABLE sync_audit ADD COLUMN detail TEXT');
+  }
+  if (!hasColumn(db, 'sync_audit', 'created_at')) {
+    db.exec('ALTER TABLE sync_audit ADD COLUMN created_at INTEGER NOT NULL DEFAULT 0');
+  }
 }
 
 function ensureActor(db: SqliteDb, actorId: string) {

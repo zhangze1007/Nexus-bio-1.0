@@ -252,14 +252,7 @@ export default function IDESidebar() {
                         href={tool.href}
                         title={collapsed ? `${tool.shortLabel} — ${tool.name}` : undefined}
                         onClick={(e) => {
-                          if (collapsed) {
-                            // Prevent Next.js Link navigation when collapsed;
-                            // let click bubble to parent which will expand sidebar.
-                            e.preventDefault();
-                          } else {
-                            // Expanded: stop propagation so sidebar doesn't collapse
-                            e.stopPropagation();
-                          }
+                          e.stopPropagation();
                         }}
                         className="nb-tool-icon"
                         style={{
@@ -397,11 +390,7 @@ export default function IDESidebar() {
                     href={tool.href}
                     title={collapsed ? `${tool.shortLabel} — ${tool.name}` : undefined}
                     onClick={(e) => {
-                      if (collapsed) {
-                        e.preventDefault();
-                      } else {
-                        e.stopPropagation();
-                      }
+                      e.stopPropagation();
                     }}
                     className="nb-tool-icon"
                     style={{

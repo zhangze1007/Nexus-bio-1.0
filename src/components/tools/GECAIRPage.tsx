@@ -9,6 +9,8 @@ import type { GateType } from '../../data/mockGECAIR';
 import { useWorkbenchStore } from '../../store/workbenchStore';
 import { T, TOOL_RESULT_PALETTE} from '../ide/tokens';
 import WorkbenchInlineContext from '../workbench/WorkbenchInlineContext';
+import ScientificHero from './shared/ScientificHero';
+import { PATHD_THEME } from '../workbench/workbenchTheme';
 
 // Dark theme tokens
 const PANEL_BG = '#000000';
@@ -197,12 +199,59 @@ export default function GECAIRPage() {
 
   return (
     <>
-      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', background: '#050505' }}>
+      <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', background: '#050505', minHeight: '100%', flex: 1 }}>
         <AlgorithmInsight
           title="Gene Circuit AI Reasoner"
           description="Hill-function kinetics model promoter activity. Inhibition gates use Hill repression; activation uses Hill induction."
           formula="f(x) = Kⁿ/(Kⁿ+xⁿ)"
         />
+
+        <div style={{ padding: '0 16px 10px' }}>
+          <ScientificHero
+            eyebrow="Stage 3 · Gene Circuit Programming"
+            title={`${gateType} logic for the current chassis objective`}
+            summary="GECAIR now reads as a control-design page rather than a circuit toy. The important question is whether the selected logic stabilizes the current pathway and burden context, not just whether the gate truth table looks correct."
+            aside={
+              <>
+                <div style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                  Recommended logic
+                </div>
+                <div style={{ fontFamily: T.SANS, fontSize: '13px', color: PATHD_THEME.value, fontWeight: 700 }}>
+                  {recommendedGate} gate from current burden and control context
+                </div>
+                <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.label, lineHeight: 1.55 }}>
+                  Catalyst burden and controller stability are already being used here to bias the circuit topology instead of leaving logic selection arbitrary.
+                </div>
+              </>
+            }
+            signals={[
+              {
+                label: 'Output Expression',
+                value: `${(finalOutput * 100).toFixed(1)}%`,
+                detail: `Node A ${(outA * 100).toFixed(0)}% · Node B ${(outB * 100).toFixed(0)}% through the present gate sequence`,
+                tone: finalOutput > 0.5 ? 'cool' : 'warm',
+              },
+              {
+                label: 'Noise Sensitivity',
+                value: noiseScore.toFixed(4),
+                detail: noiseScore > 0.05 ? 'Circuit is sensitive to small input perturbations and may need insulation.' : 'Noise remains in a manageable range for this design.',
+                tone: noiseScore > 0.05 ? 'alert' : 'cool',
+              },
+              {
+                label: 'Input Envelope',
+                value: `A ${(inputA * 100).toFixed(0)} · B ${(inputB * 100).toFixed(0)}`,
+                detail: 'These inputs are seeded from the current control and catalyst state, not manually invented defaults.',
+                tone: 'neutral',
+              },
+              {
+                label: 'Circuit Complexity',
+                value: `${CIRCUIT_NODES.reduce((sum, node) => sum + node.parts.length, 0)} parts`,
+                detail: 'Part count remains visible so logic ambition stays grounded in buildability.',
+                tone: 'neutral',
+              },
+            ]}
+          />
+        </div>
 
         <div className="nb-tool-panels" style={{ flex: 1 }}>
           {/* Input panel */}
@@ -273,7 +322,7 @@ export default function GECAIRPage() {
           </div>
 
           {/* Engine view */}
-          <div style={{ flex: 1, overflow: 'hidden', background: '#050505', padding: '8px' }}>
+          <div className="nb-tool-center" style={{ flex: 1, background: '#050505', padding: '8px', minWidth: 0 }}>
             <CircuitSVG inputA={inputA} inputB={inputB} gateType={gateType} />
           </div>
 

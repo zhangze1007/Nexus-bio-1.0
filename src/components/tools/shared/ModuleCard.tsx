@@ -12,8 +12,8 @@
 import { motion } from 'framer-motion';
 import type { CSSProperties, ReactNode } from 'react';
 import { T } from '../../ide/tokens';
+import { PATHD_THEME } from '../../workbench/workbenchTheme';
 
-const NEON_ORANGE  = T.NEON_ORANGE;
 const BLUR         = 'blur(16px)';
 
 interface ModuleCardProps {
@@ -45,21 +45,22 @@ export default function ModuleCard({
       layout
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
+      whileHover={{ y: -2 }}
       transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
       style={{
         gridArea: area,
         gridColumn: colSpan ? `span ${colSpan}` : undefined,
         gridRow: rowSpan ? `span ${rowSpan}` : undefined,
         borderRadius: '18px',
-        background: 'rgba(255,255,255,0.05)',
+        background: PATHD_THEME.panelGradientSoft,
         backdropFilter: BLUR,
         WebkitBackdropFilter: BLUR,
         border: active
-          ? '1px solid rgba(255,139,31,0.25)'
-          : '1px solid rgba(255,255,255,0.08)',
+          ? `1px solid ${PATHD_THEME.panelBorderStrong}`
+          : `1px solid ${PATHD_THEME.panelBorder}`,
         boxShadow: active
-          ? '0 0 20px rgba(255,139,31,0.10), 0 0 20px rgba(74,124,255,0.06)'
-          : 'none',
+          ? `0 0 22px rgba(255,139,31,0.10), 0 0 24px rgba(74,124,255,0.08)`
+          : '0 14px 32px rgba(0,0,0,0.16)',
         padding: flush ? 0 : '18px',
         overflow: 'hidden',
         display: 'flex',
@@ -96,7 +97,7 @@ export default function ModuleCard({
               inset: 0,
               borderRadius: '50%',
               border: '1px solid',
-              borderColor: NEON_ORANGE,
+              borderColor: PATHD_THEME.liveRed,
               animation: 'signal-ripple 2s ease-out infinite',
             }} />
             {/* Second ripple ring (delayed) */}
@@ -105,7 +106,7 @@ export default function ModuleCard({
               inset: 0,
               borderRadius: '50%',
               border: '1px solid',
-              borderColor: NEON_ORANGE,
+              borderColor: PATHD_THEME.liveRed,
               animation: 'signal-ripple 2s ease-out infinite 1s',
             }} />
             {/* Core dot */}
@@ -113,7 +114,7 @@ export default function ModuleCard({
               position: 'absolute',
               inset: 0,
               borderRadius: '50%',
-              background: NEON_ORANGE,
+              background: PATHD_THEME.liveRed,
               animation: 'signal-breathe 2.5s ease-in-out infinite',
             }} />
           </span>
@@ -134,7 +135,7 @@ export default function ModuleCard({
         <div style={{
           fontFamily: T.SANS, fontSize: '9px', fontWeight: 500,
           textTransform: 'uppercase', letterSpacing: '0.12em',
-          color: active ? NEON_ORANGE : 'rgba(255,255,255,0.3)',
+          color: active ? PATHD_THEME.orange : 'rgba(255,255,255,0.3)',
           marginBottom: flush ? 0 : '10px',
           padding: flush ? '12px 14px 0' : 0,
           flexShrink: 0,

@@ -9,6 +9,7 @@ import { usePersistedState } from '../ide/shared/usePersistedState';
 import { useUIStore } from '../../store/uiStore';
 import { useWorkbenchStore } from '../../store/workbenchStore';
 import WorkbenchInlineContext from '../workbench/WorkbenchInlineContext';
+import ScientificHero from './shared/ScientificHero';
 import {
   METABOLIC_NODES, FLUX_EDGES, REACTION_DEFS,
   YEAST_NODES, YEAST_FLUX_EDGES, YEAST_REACTION_DEFS, SHARED_METABOLITES,
@@ -583,7 +584,7 @@ export default function FBASimPage() {
 
   return (
     <>
-      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', background: '#000000' }}>
+      <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', background: '#000000', minHeight: '100%', flex: 1 }}>
         <AlgorithmInsight
           title={simMode === 'single' ? 'Flux Balance Analysis' : 'Community FBA — Multi-species'}
           description={simMode === 'single'
@@ -600,6 +601,81 @@ export default function FBASimPage() {
             summary="Flux simulation turns the current pathway object into quantitative growth, ATP, and carbon-efficiency constraints so downstream thermodynamics, catalyst design, and control layers do not keep operating on stale assumptions."
             compact
             isSimulated={!analyzeArtifact}
+          />
+        </div>
+        <div style={{ padding: '0 16px 10px' }}>
+          <ScientificHero
+            eyebrow={`Stage 2 · ${simMode === 'single' ? 'Host Flux Solve' : 'Community Flux Solve'}`}
+            title={simMode === 'single' ? 'Authority-backed metabolic flux state' : 'Coupled host exchange and community feasibility'}
+            summary={simMode === 'single'
+              ? 'FBASim is the first point where the pathway object becomes a constrained production model. The key question is no longer “can the route exist,” but “what does it cost the host and which uptake constraints dominate the present solution.”'
+              : 'Community mode promotes the pathway into a multi-host systems question. Exchange flux, strain balance, and shared-pool feasibility become explicit so later tools can inherit a real ecological operating state.'}
+            aside={
+              <>
+                <div style={{ fontFamily: T.MONO, fontSize: '10px', color: 'rgba(205,214,236,0.6)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                  Current route focus
+                </div>
+                <div style={{ fontFamily: T.SANS, fontSize: '13px', color: 'rgba(247,249,255,0.92)', fontWeight: 700 }}>
+                  {recommendedSeed.pathwayFocus || recommendedSeed.targetProduct}
+                </div>
+                <div style={{ fontFamily: T.SANS, fontSize: '11px', color: 'rgba(205,214,236,0.6)', lineHeight: 1.55 }}>
+                  Objective {objective === 'biomass' ? 'maximizes biomass resilience' : objective === 'atp' ? 'prioritizes energetic yield' : 'pushes product-oriented flux through the current route'}.
+                </div>
+              </>
+            }
+            signals={simMode === 'single'
+              ? [
+                  {
+                    label: 'Growth Rate',
+                    value: `${singleResult.growthRate.toFixed(4)} h⁻¹`,
+                    detail: singleLoading ? 'Server authority solve is recomputing this host state.' : singleResult.feasible ? 'Host remains feasible under the present uptake and objective settings.' : 'Infeasible host state under the current constraints.',
+                    tone: singleResult.feasible ? 'cool' : 'alert',
+                  },
+                  {
+                    label: 'Carbon Efficiency',
+                    value: `${singleResult.carbonEfficiency.toFixed(1)}%`,
+                    detail: `${singleResult.atpYield.toFixed(2)} ATP yield · ${singleResult.nadhProduction.toFixed(2)} NADH production`,
+                    tone: singleResult.carbonEfficiency >= 50 ? 'cool' : 'warm',
+                  },
+                  {
+                    label: 'Primary Constraint',
+                    value: `∂μ/∂Glc ${singleResult.shadowPrices.glc.toFixed(4)}`,
+                    detail: `O₂ shadow ${singleResult.shadowPrices.o2.toFixed(4)} · ATP shadow ${singleResult.shadowPrices.atp.toFixed(4)}`,
+                    tone: 'neutral',
+                  },
+                  {
+                    label: 'Top Active Route',
+                    value: top5[0]?.id ?? 'Pending',
+                    detail: top5[0] ? `${Math.abs(top5[0].flux).toFixed(2)} mmol/gDW/h through the strongest reaction channel.` : 'No active reactions ranked yet.',
+                    tone: 'neutral',
+                  },
+                ]
+              : [
+                  {
+                    label: 'Community Growth',
+                    value: `${communityResult.communityGrowthRate.toFixed(4)} h⁻¹`,
+                    detail: communityLoading ? 'Coupled authority solve is recomputing both hosts and the exchange pool.' : communityResult.feasible ? 'Both hosts can satisfy the coupled exchange constraints.' : 'The coupled host system is currently infeasible.',
+                    tone: communityResult.feasible ? 'cool' : 'alert',
+                  },
+                  {
+                    label: 'Biomass Objective',
+                    value: `${communityResult.communityBiomassObjective.toFixed(3)}`,
+                    detail: `E. coli ${communityResult.ecoli.growthRate.toFixed(3)} · Yeast ${communityResult.yeast.growthRate.toFixed(3)}`,
+                    tone: 'neutral',
+                  },
+                  {
+                    label: 'Shared Exchange',
+                    value: `${communityResult.exchangeFluxes.filter((entry) => Math.abs(entry.flux) > 0.01).length} active links`,
+                    detail: communityResult.exchangeFluxes[0] ? `${communityResult.exchangeFluxes[0].metabolite} ${communityResult.exchangeFluxes[0].flux.toFixed(2)} mmol/h` : 'No exchange fluxes detected yet.',
+                    tone: 'warm',
+                  },
+                  {
+                    label: 'Pathway Focus',
+                    value: recommendedSeed.pathwayFocus || recommendedSeed.targetProduct,
+                    detail: 'This route focus is what downstream thermodynamics and catalyst design will inherit from the current systems solve.',
+                    tone: 'neutral',
+                  },
+                ]}
           />
         </div>
         <div style={{ padding: '0 16px 4px' }}>
@@ -723,7 +799,7 @@ export default function FBASimPage() {
             </div>
 
             {/* Engine view — SVG flux map */}
-            <div style={{ flex: 1, position: 'relative', overflow: 'hidden', background: '#050505', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div className="nb-tool-center" style={{ flex: 1, position: 'relative', background: '#050505', display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: 0 }}>
               <div style={{ height: '100%', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <FluxMap result={singleResult} nodes={METABOLIC_NODES} edges={FLUX_EDGES} knockouts={knockouts} svgRef={chartRef} />
               </div>
@@ -787,7 +863,7 @@ export default function FBASimPage() {
         {simMode === 'community' && (
           <div className="nb-tool-panels" style={{ flex: 1 }}>
             {/* Strain A (E. coli) sidebar */}
-            <div style={{ width: '220px', flexShrink: 0, overflowY: 'auto', padding: '12px' }}>
+            <div className="nb-tool-sidebar" style={{ width: '220px', flexShrink: 0, padding: '12px' }}>
               <StrainPanel
                 label="E. coli (Strain A)"
                 color={COLORS.strainABg} borderColor={COLORS.strainABorder} accentColor={COLORS.strainA}
@@ -799,7 +875,7 @@ export default function FBASimPage() {
             </div>
 
             {/* Center: dual flux maps + shared bus */}
-            <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '12px', padding: '12px' }}>
+            <div className="nb-tool-center" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '12px', padding: '12px', minWidth: 0 }}>
               {/* Community objective banner */}
               <GlassContainer color={COLORS.sharedBg} borderColor={COLORS.sharedBorder}
                 style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -839,7 +915,7 @@ export default function FBASimPage() {
             </div>
 
             {/* Strain B (S. cerevisiae) sidebar */}
-            <div style={{ width: '220px', flexShrink: 0, overflowY: 'auto', padding: '12px' }}>
+            <div className="nb-tool-right" style={{ width: '220px', flexShrink: 0, padding: '12px' }}>
               <StrainPanel
                 label="S. cerevisiae (Strain B)"
                 color={COLORS.strainBBg} borderColor={COLORS.strainBBorder} accentColor={COLORS.strainB}

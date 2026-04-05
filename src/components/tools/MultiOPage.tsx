@@ -32,6 +32,8 @@ import type {
 import { useWorkbenchStore } from '../../store/workbenchStore';
 import { T, TOOL_RESULT_PALETTE} from '../ide/tokens';
 import WorkbenchInlineContext from '../workbench/WorkbenchInlineContext';
+import ScientificHero from './shared/ScientificHero';
+import { PATHD_THEME } from '../workbench/workbenchTheme';
 
 /* ── Design Tokens ────────────────────────────────────────────────── */
 
@@ -410,7 +412,7 @@ export default function MultiOPage() {
 
   return (
     <>
-      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', background: PANEL_BG }}>
+      <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', background: PANEL_BG, minHeight: '100%', flex: 1 }}>
         <AlgorithmInsight
           title="Biological Foundation Model"
           description="Multi-head attention across transcript / protein / metabolite latent embeddings. Bottleneck analysis identifies rate-limiting omics layer. Perturbation simulator predicts downstream metabolite shifts."
@@ -421,11 +423,60 @@ export default function MultiOPage() {
           <div style={{ padding: '0 16px 8px' }}><SimErrorBanner message={simError} /></div>
         )}
 
+        <div style={{ padding: '0 16px 10px' }}>
+          <ScientificHero
+            eyebrow="Stage 4 · Multi-Omics Integration"
+            title="Result-centered omics synthesis instead of isolated plots"
+            summary="MULTIO now behaves like a scientific mining surface: significant genes, dominant omics layer, perturbation outlook, and efficiency context sit above the visualization layer so the researcher can decide what matters before diving into individual plots."
+            aside={
+              <>
+                <div style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                  Current analytical lens
+                </div>
+                <div style={{ fontFamily: T.SANS, fontSize: '13px', color: PATHD_THEME.value, fontWeight: 700 }}>
+                  {viewMode} · {Object.values(activeLayers).filter(Boolean).length}/3 omics layers active
+                </div>
+                <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.label, lineHeight: 1.55 }}>
+                  The current lens is anchored to {analyzeArtifact?.targetProduct ?? project?.targetProduct ?? project?.title ?? 'the active project object'}, so bottleneck claims stay attached to the same scientific context.
+                </div>
+              </>
+            }
+            signals={[
+              {
+                label: 'Significant Signals',
+                value: `${significant.length}`,
+                detail: `${upregulated} upregulated · ${downregulated} downregulated under current thresholds`,
+                tone: significant.length > 12 ? 'warm' : 'cool',
+              },
+              {
+                label: 'Dominant Layer',
+                value: bottleneck.dominant_layer,
+                detail: `Confidence ${(bottleneck.confidence * 100).toFixed(0)}% for the leading bottleneck interpretation`,
+                tone: 'cool',
+              },
+              {
+                label: 'Lead Gene',
+                value: significant[0]?.gene ?? selectedGene,
+                detail: perturbResult
+                  ? `Perturbation predicts ${perturbResult.predicted_yield_change_percent >= 0 ? '+' : ''}${perturbResult.predicted_yield_change_percent.toFixed(1)}% yield shift`
+                  : 'Use perturbation simulation to translate omics findings into intervention hypotheses.',
+                tone: perturbResult && perturbResult.predicted_yield_change_percent < 0 ? 'alert' : 'neutral',
+              },
+              {
+                label: 'Best Efficiency Score',
+                value: `${Math.max(...efficiencyScores.map((entry) => entry.score)).toFixed(2)}`,
+                detail: 'Efficiency scores let omics interpretation stay tied to production relevance, not just statistical significance.',
+                tone: 'neutral',
+              },
+            ]}
+          />
+        </div>
+
         <div className="nb-tool-panels" style={{ flex: 1 }}>
 
           {/* ── LEFT SIDEBAR (240px) ──────────────────────────────── */}
-          <div style={{
-            width: '240px', flexShrink: 0, overflowY: 'auto', padding: '16px',
+          <div className="nb-tool-sidebar" style={{
+            width: '240px', flexShrink: 0, padding: '16px',
             borderRight: `1px solid ${BORDER}`, background: PANEL_BG,
           }}>
             <WorkbenchInlineContext
@@ -591,7 +642,7 @@ export default function MultiOPage() {
           </div>
 
           {/* ── CENTER ENGINE ────────────────────────────────────── */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#050505' }}>
+          <div className="nb-tool-center" style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#050505', minWidth: 0 }}>
             {viewMode === 'Table' && (
               <div style={{ flex: 1, overflow: 'auto' }}>
                 <DataTable<OmicsRow> columns={COLUMNS} rows={filtered} maxRows={50} />
@@ -618,7 +669,7 @@ export default function MultiOPage() {
 
             {/* ── MOFA+ Factor Analysis ───────────────────────────── */}
             {viewMode === 'MOFA+' && (
-              <div style={{ flex: 1, overflowY: 'auto', padding: '20px' }}>
+              <div style={{ flex: 1, padding: '20px' }}>
                 {/* Summary metrics */}
                 <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
                   <div style={{ ...GLASS, borderRadius: '14px', padding: '12px 16px', flex: '1 0 120px' }}>
@@ -754,7 +805,7 @@ export default function MultiOPage() {
 
             {/* ── Metabolic Efficiency ────────────────────────────── */}
             {viewMode === 'Efficiency' && (
-              <div style={{ flex: 1, overflowY: 'auto', padding: '20px' }}>
+              <div style={{ flex: 1, padding: '20px' }}>
                 <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
                   <div style={{ ...GLASS, borderRadius: '14px', padding: '12px 16px', flex: '1 0 140px' }}>
                     <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL, display: 'block' }}>Avg Efficiency</span>
@@ -807,8 +858,8 @@ export default function MultiOPage() {
           </div>
 
           {/* ── RIGHT PANEL (260px) ──────────────────────────────── */}
-          <div style={{
-            width: '260px', flexShrink: 0, overflowY: 'auto', padding: '16px',
+          <div className="nb-tool-right" style={{
+            width: '260px', flexShrink: 0, padding: '16px',
             borderLeft: `1px solid ${BORDER}`, background: PANEL_BG,
           }}>
             {/* Enrichment Summary */}

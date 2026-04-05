@@ -4,9 +4,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import ToolShell, { TOOL_TOKENS as T } from './shared/ToolShell';
 import ModuleCard from './shared/ModuleCard';
 import TactileSlider from './shared/TactileSlider';
+import ScientificHero from './shared/ScientificHero';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
 import DemoBanner from '../ide/shared/DemoBanner';
+import { PATHD_THEME } from '../workbench/workbenchTheme';
 import { PATHWAY_STEPS, computeThermo } from '../../data/mockCETHX';
 import type { PathwayKey } from '../../data/mockCETHX';
 import { useUIStore } from '../../store/uiStore';
@@ -205,6 +207,64 @@ export default function CETHXPage() {
       gap={6}
       workbenchSummary="Thermodynamic feasibility engine that translates pathway context and FBA constraints into Delta-G, ATP/NADH yield, and limiting-step evidence for downstream catalyst and control design."
       workbenchSimulated={!analyzeArtifact}
+      hero={
+        <ScientificHero
+          eyebrow="Stage 2 · Thermodynamic Feasibility"
+          title={`${PATHWAYS.find((entry) => entry.id === pathway)?.label ?? pathway} under live pathway constraints`}
+          summary="CETHX turns the active route into an energy ledger. Instead of treating thermodynamics as a side calculation, it exposes the limiting reaction, total free-energy burden, and ATP/NADH tradeoff that should steer catalyst redesign and dynamic control."
+          aside={fba ? (
+            <>
+              <div style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                Linked authority flux state
+              </div>
+              <div style={{ fontFamily: T.SANS, fontSize: '13px', color: PATHD_THEME.value, fontWeight: 700 }}>
+                {`μ=${fba.result.growthRate.toFixed(4)} h⁻¹ · ηC=${fba.result.carbonEfficiency.toFixed(1)}%`}
+              </div>
+              <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.label, lineHeight: 1.55 }}>
+                Shadow prices stay attached here so Delta-G decisions do not drift away from the current host flux regime.
+              </div>
+            </>
+          ) : (
+            <>
+              <div style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                Flux linkage
+              </div>
+              <div style={{ fontFamily: T.SANS, fontSize: '13px', color: PATHD_THEME.value, fontWeight: 700 }}>
+                Awaiting upstream authority solve
+              </div>
+              <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.label, lineHeight: 1.55 }}>
+                Thermodynamic interpretation is live, but shadow-price context becomes stronger once FBASim has completed the current route.
+              </div>
+            </>
+          )}
+          signals={[
+            {
+              label: 'Net Delta-G',
+              value: `${thermo.gibbs_free_energy.toFixed(1)} kJ/mol`,
+              detail: thermo.gibbs_free_energy < 0 ? 'Thermodynamically favorable at the current operating point.' : 'Positive free-energy burden indicates stronger push or redesign is needed.',
+              tone: thermo.gibbs_free_energy < 0 ? 'cool' : 'warm',
+            },
+            {
+              label: 'Efficiency',
+              value: `${thermo.efficiency.toFixed(1)}%`,
+              detail: `${thermo.atp_yield.toFixed(1)} ATP · ${thermo.nadh_yield.toFixed(1)} NADH`,
+              tone: thermo.efficiency > 50 ? 'cool' : 'warm',
+            },
+            {
+              label: 'Limiting Step',
+              value: thermo.steps.slice().sort((left, right) => right.deltaG - left.deltaG)[0]?.step ?? 'Pending',
+              detail: 'This is the reaction most likely to constrain downstream catalyst or control choices.',
+              tone: 'neutral',
+            },
+            {
+              label: 'Operating Window',
+              value: `${tempC.toFixed(0)}°C · pH ${pH.toFixed(1)}`,
+              detail: 'The current temperature and pH define the exact Delta-G correction applied to the active route.',
+              tone: 'neutral',
+            },
+          ]}
+        />
+      }
       footer={
         <>
           {fba && (
@@ -228,7 +288,7 @@ export default function CETHXPage() {
     >
       {/* ── Sidebar: Pathway + Sliders ──────────────────────── */}
       <ModuleCard area="side" title="Parameters" active={true}>
-        <div style={{ flex: 1, overflowY: 'auto', paddingTop: '4px' }}>
+        <div style={{ flex: 1, paddingTop: '4px' }}>
           {/* Pathway selector */}
           <div style={{ marginBottom: '16px' }}>
             {PATHWAYS.map(p => (
@@ -299,7 +359,7 @@ export default function CETHXPage() {
 
       {/* ── Bottom-left: Step breakdown ─────────────────────── */}
       <ModuleCard area="steps" title="Step Breakdown">
-        <div style={{ flex: 1, overflowY: 'auto' }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2px' }}>
           {thermo.steps.map((s, i) => (
             <motion.div
               key={s.step + i}
@@ -360,18 +420,18 @@ export default function CETHXPage() {
                 {thermo.efficiency.toFixed(1)}%
               </motion.span>
             </div>
-            <div style={{ width: '100%', height: '4px', borderRadius: '2px', background: 'rgba(255,255,255,0.06)' }}>
+            <div style={{ width: '100%', height: `${PATHD_THEME.progressHeight}px`, borderRadius: `${PATHD_THEME.progressRadius}px`, background: PATHD_THEME.progressTrack }}>
               <motion.div
                 animate={{ width: `${Math.min(100, thermo.efficiency)}%` }}
                 transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                 style={{
-                  height: '100%', borderRadius: '2px',
+                  height: '100%', borderRadius: `${PATHD_THEME.progressRadius}px`,
                   background: thermo.efficiency > 50
-                    ? 'linear-gradient(90deg, #4A7CFF, #FF8B1F)'
-                    : 'linear-gradient(90deg, rgba(255,49,49,0.4), rgba(255,49,49,0.9))',
+                    ? PATHD_THEME.progressGradient
+                    : 'linear-gradient(90deg, rgba(255,0,51,0.45), rgba(255,0,51,0.95))',
                   boxShadow: thermo.efficiency > 50
-                    ? '0 0 6px rgba(74,124,255,0.3), 0 0 6px rgba(255,139,31,0.3)'
-                    : '0 0 6px rgba(255,49,49,0.3)',
+                    ? PATHD_THEME.progressGlow
+                    : '0 0 8px rgba(255,0,51,0.32)',
                 }}
               />
             </div>

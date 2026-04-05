@@ -7,6 +7,7 @@ import { useWorkbenchStore } from '../../store/workbenchStore';
 import { T } from '../ide/tokens';
 import { TOOL_BY_ID } from '../tools/shared/toolRegistry';
 import { getFreshnessMap, getAuthoritySummary, getAuthorityTier, getToolFreshness } from './workbenchTrust';
+import { PATHD_THEME } from './workbenchTheme';
 
 interface WorkbenchDecisionTracePanelProps {
   toolId?: string | null;
@@ -14,9 +15,9 @@ interface WorkbenchDecisionTracePanelProps {
   limit?: number;
 }
 
-const BORDER = 'rgba(255,255,255,0.08)';
-const LABEL = 'rgba(255,255,255,0.42)';
-const VALUE = 'rgba(255,255,255,0.88)';
+const BORDER = PATHD_THEME.panelBorder;
+const LABEL = PATHD_THEME.label;
+const VALUE = PATHD_THEME.value;
 
 export default function WorkbenchDecisionTracePanel({
   toolId = null,
@@ -65,7 +66,7 @@ export default function WorkbenchDecisionTracePanel({
   return (
     <section style={{ display: 'grid', gap: '10px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <Compass size={14} color="rgba(255,255,255,0.72)" />
+        <Compass size={14} color={PATHD_THEME.blue} />
         <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
           {title}
         </div>
@@ -75,14 +76,14 @@ export default function WorkbenchDecisionTracePanel({
         style={{
           borderRadius: '16px',
           border: `1px solid ${BORDER}`,
-          background: 'rgba(255,255,255,0.03)',
+          background: PATHD_THEME.panelGradientSoft,
           padding: '12px 14px',
           display: 'grid',
           gap: '8px',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-          <ShieldCheck size={13} color="rgba(255,255,255,0.72)" />
+          <ShieldCheck size={13} color={PATHD_THEME.orange} />
           <span style={{ fontFamily: T.SANS, fontSize: '13px', color: VALUE, fontWeight: 700 }}>
             Current decision basis
           </span>
@@ -115,7 +116,7 @@ export default function WorkbenchDecisionTracePanel({
               style={{
                 borderRadius: '16px',
                 border: `1px solid ${BORDER}`,
-                background: 'rgba(255,255,255,0.03)',
+                background: PATHD_THEME.panelGradientSoft,
                 padding: '12px 14px',
                 display: 'grid',
                 gap: '6px',
@@ -124,7 +125,7 @@ export default function WorkbenchDecisionTracePanel({
             >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <WandSparkles size={13} color="rgba(255,255,255,0.72)" />
+                  <WandSparkles size={13} color={PATHD_THEME.indigo} />
                   <span style={{ fontFamily: T.SANS, fontSize: '13px', color: VALUE, fontWeight: 700 }}>
                     {tool.name}
                   </span>
@@ -143,7 +144,7 @@ export default function WorkbenchDecisionTracePanel({
                     padding: '3px 8px',
                     borderRadius: '999px',
                     border: `1px solid ${BORDER}`,
-                    background: 'rgba(255,255,255,0.04)',
+                    background: PATHD_THEME.chipNeutral,
                     color: 'rgba(255,255,255,0.76)',
                     fontFamily: T.MONO,
                     fontSize: '10px',

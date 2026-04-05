@@ -24,6 +24,8 @@ import type {
 import { useWorkbenchStore } from '../../store/workbenchStore';
 import WorkbenchInlineContext from '../workbench/WorkbenchInlineContext';
 import { buildDBTLDraft } from './shared/workbenchDataflow';
+import { PATHD_THEME } from '../workbench/workbenchTheme';
+import ScientificHero from './shared/ScientificHero';
 import { T, TOOL_RESULT_PALETTE} from '../ide/tokens';
 
 /* ── Design Tokens ── */
@@ -124,10 +126,8 @@ function CycleProgressRing({
 }) {
   const phaseIndex = PHASES.indexOf(currentPhase);
   const progress = (phaseIndex + 1) / PHASES.length; // 0.25 → 1.0
-  const color = PHASE_PASTEL[currentPhase] ?? '#5151CD';
-
   const size = 140;
-  const stroke = 8;
+  const stroke = 10;
   const radius = (size - stroke) / 2;
   const circumference = 2 * Math.PI * radius;
   const dashOffset = circumference * (1 - progress);
@@ -135,15 +135,22 @@ function CycleProgressRing({
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '16px 0' }}>
       <svg role="img" aria-label="Chart" width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
+        <defs>
+          <linearGradient id="pathd-progress-ring" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor={PATHD_THEME.blue} />
+            <stop offset="50%" stopColor={PATHD_THEME.indigo} />
+            <stop offset="100%" stopColor={PATHD_THEME.orange} />
+          </linearGradient>
+        </defs>
         {/* Track */}
         <circle
           cx={size / 2} cy={size / 2} r={radius}
-          fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={stroke}
+          fill="none" stroke={PATHD_THEME.progressTrack} strokeWidth={stroke}
         />
         {/* Progress arc */}
         <circle
           cx={size / 2} cy={size / 2} r={radius}
-          fill="none" stroke={color} strokeWidth={stroke}
+          fill="none" stroke="url(#pathd-progress-ring)" strokeWidth={stroke}
           strokeLinecap="round"
           strokeDasharray={circumference}
           strokeDashoffset={dashOffset}
@@ -163,7 +170,7 @@ function CycleProgressRing({
       }}>
         <span style={{
           fontFamily: T.SANS, fontSize: '11px', fontWeight: 600,
-          color, letterSpacing: '0.04em',
+          color: PATHD_THEME.orange, letterSpacing: '0.04em',
         }}>
           {currentPhase.toUpperCase()}
         </span>
@@ -441,7 +448,7 @@ export default function DBTLflowPage() {
   /* ── Render ── */
   return (
     <>
-      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', background: '#050505' }}>
+      <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', background: '#050505', minHeight: '100%', flex: 1 }}>
         <AlgorithmInsight
           title="Design-Build-Test-Learn Tracker"
           description="Iterative experimental optimization. Each cycle records a hypothesis, measured result, and learning for the next design."
@@ -455,6 +462,53 @@ export default function DBTLflowPage() {
             summary="DBTL is the governed feedback engine of the workbench: only committed Learn output is allowed to reseed upstream tools, so experiment feedback stays traceable, reviewable, and safe to trust."
             compact
             isSimulated={!analyzeArtifact}
+          />
+        </div>
+
+        <div style={{ padding: '0 16px 10px' }}>
+          <ScientificHero
+            eyebrow="Stage 4 · Test, Learn, Reseed"
+            title="Closed-loop iteration is now an explicit governed object"
+            summary="DBTLflow is no longer just a list of experiments. It is the workbench’s decision gate: draft learning stays visible, committed learning becomes canonical, and only canonical learning is allowed to reseed upstream design, simulation, and control steps."
+            aside={
+              <>
+                <div style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                  Current loop status
+                </div>
+                <div style={{ fontFamily: T.SANS, fontSize: '13px', color: PATHD_THEME.value, fontWeight: 700 }}>
+                  {hasCommittedFeedback ? 'Committed learn loop is active' : 'Draft learn loop awaiting commit'}
+                </div>
+                <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.label, lineHeight: 1.55 }}>
+                  {feedbackGateLabel}
+                </div>
+              </>
+            }
+            signals={[
+              {
+                label: 'Current Phase',
+                value: currentPhase,
+                detail: `${displayIterations.length} total recorded iterations in the visible cycle.`,
+                tone: 'neutral',
+              },
+              {
+                label: 'Pass Rate',
+                value: `${passRate}%`,
+                detail: `Committed pass rate ${committedPassRate}% across the canonical reviewable record.`,
+                tone: Number(passRate) >= 70 ? 'cool' : 'warm',
+              },
+              {
+                label: 'Best Result',
+                value: `${bestIteration.result} ${bestIteration.unit}`,
+                detail: bestIteration.hypothesis,
+                tone: 'cool',
+              },
+              {
+                label: 'Improvement Velocity',
+                value: `${improvementRate}/${unit}`,
+                detail: hasCommittedFeedback ? 'Upstream reseeding is unlocked for the latest committed learning package.' : 'Learning is still visible, but not yet cleared for upstream reseeding.',
+                tone: hasCommittedFeedback ? 'warm' : 'alert',
+              },
+            ]}
           />
         </div>
 
@@ -501,8 +555,8 @@ export default function DBTLflowPage() {
         <div className="nb-tool-panels" style={{ flex: 1 }}>
 
           {/* ═══════ LEFT PANEL: Input + Protocol ═══════ */}
-          <div style={{
-            width: '260px', flexShrink: 0, overflowY: 'auto', padding: '16px',
+          <div className="nb-tool-sidebar" style={{
+            width: '260px', flexShrink: 0, padding: '16px',
             borderRight: `1px solid ${BORDER}`, background: PANEL_BG,
           }}>
             <p style={sectionLabel}>Add Iteration</p>
@@ -805,7 +859,7 @@ export default function DBTLflowPage() {
           </div>
 
           {/* ═══════ CENTER: Progress Ring + Timeline ═══════ */}
-          <div style={{ flex: 1, overflow: 'auto', background: '#050505', padding: '12px', display: 'flex', flexDirection: 'column' }}>
+          <div className="nb-tool-center" style={{ flex: 1, background: '#050505', padding: '12px', display: 'flex', flexDirection: 'column', minWidth: 0 }}>
             <div style={{ ...GLASS, padding: '8px 16px', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '16px' }}>
               <CycleProgressRing currentPhase={currentPhase} iterationCount={displayIterations.length} />
 
@@ -845,8 +899,8 @@ export default function DBTLflowPage() {
           </div>
 
           {/* ═══════ RIGHT PANEL: Campaign Summary + Automation Control Center ═══════ */}
-          <div style={{
-            width: '260px', flexShrink: 0, overflowY: 'auto', padding: '16px',
+          <div className="nb-tool-right" style={{
+            width: '260px', flexShrink: 0, padding: '16px',
             borderLeft: `1px solid ${BORDER}`, background: PANEL_BG,
           }}>
             {/* Campaign Summary (preserved) */}

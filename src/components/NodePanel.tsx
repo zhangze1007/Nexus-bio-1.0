@@ -12,6 +12,7 @@ import ThermodynamicsPanel from './ThermodynamicsPanel';
 import CellImageViewer from './CellImageViewer';
 import ProteinViewer from './ProteinViewer';
 import { getToolDefinition } from './tools/shared/toolRegistry';
+import { PATHD_THEME } from './workbench/workbenchTheme';
 
 // ── Compliance thresholds ─────────────────────────────────────────────
 const HIGH_RISK_THRESHOLD = 0.7;
@@ -374,35 +375,39 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
             style={{
               position: 'fixed', top: 0, right: 0, height: '100%', width: '100%', maxWidth: '440px',
               zIndex: 50, display: 'flex', flexDirection: 'column',
-              background: 'rgba(0,0,0,0.92)',
+              background: PATHD_THEME.panelGradientStrong,
               backdropFilter: 'blur(28px)',
               WebkitBackdropFilter: 'blur(28px)',
-              borderLeft: '1px solid rgba(255,255,255,0.08)',
+              borderLeft: `1px solid ${PATHD_THEME.panelBorder}`,
+              boxShadow: '-18px 0 40px rgba(0,0,0,0.28)',
               fontFamily: UI_SANS,
             }}
           >
             {/* Header */}
-            <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+            <div style={{ padding: '16px 20px', borderBottom: `1px solid ${PATHD_THEME.panelBorder}` }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
-                  <div style={{ width: '10px', height: '10px', borderRadius: '50%', flexShrink: 0, background: 'rgba(255,255,255,0.35)', border: '1px solid rgba(255,255,255,0.2)' }} />
+                  <div style={{ width: '10px', height: '10px', borderRadius: '50%', flexShrink: 0, background: PATHD_THEME.orange, border: `1px solid ${PATHD_THEME.panelBorderStrong}`, boxShadow: '0 0 10px rgba(255,139,31,0.35)' }} />
                   <div style={{ minWidth: 0 }}>
-                    <h2 style={{ color: '#ffffff', fontSize: '14px', fontWeight: 600, margin: 0, letterSpacing: '-0.01em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    <div style={{ color: PATHD_THEME.label, fontSize: '10px', marginBottom: '4px', fontFamily: UI_MONO, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                      Active graph object
+                    </div>
+                    <h2 style={{ color: PATHD_THEME.value, fontSize: '14px', fontWeight: 700, margin: 0, letterSpacing: '-0.01em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {node.label}
                     </h2>
                     {node.canonicalLabel && node.canonicalLabel !== node.label && (
-                      <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '11px', margin: '2px 0 0', fontStyle: 'italic' }}>{node.canonicalLabel}</p>
+                      <p style={{ color: PATHD_THEME.label, fontSize: '11px', margin: '2px 0 0', fontStyle: 'italic' }}>{node.canonicalLabel}</p>
                     )}
                   </div>
                 </div>
                 <button onClick={onClose}
-                  style={{ color: 'rgba(255,255,255,0.6)', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer', padding: '4px', flexShrink: 0, display: 'flex', borderRadius: '6px', transition: 'border-color 300ms ease-out, filter 300ms ease-out' }}
+                  style={{ color: PATHD_THEME.value, background: PATHD_THEME.chipNeutral, border: `1px solid ${PATHD_THEME.panelBorder}`, cursor: 'pointer', padding: '4px', flexShrink: 0, display: 'flex', borderRadius: '8px', transition: 'border-color 300ms ease-out, filter 300ms ease-out' }}
                   onMouseEnter={e => {
-                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.2)';
+                    (e.currentTarget as HTMLElement).style.borderColor = PATHD_THEME.panelBorderStrong;
                     (e.currentTarget as HTMLElement).style.filter = 'brightness(1.08)';
                   }}
                   onMouseLeave={e => {
-                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)';
+                    (e.currentTarget as HTMLElement).style.borderColor = PATHD_THEME.panelBorder;
                     (e.currentTarget as HTMLElement).style.filter = 'brightness(1)';
                   }}>
                   <X size={15} />
@@ -410,27 +415,27 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
               </div>
 
               {/* Tab bar */}
-              <div style={{ display: 'flex', gap: '4px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', padding: '4px', border: '1px solid rgba(255,255,255,0.08)' }}>
+              <div style={{ display: 'flex', gap: '4px', background: PATHD_THEME.panelGradientSoft, borderRadius: '10px', padding: '4px', border: `1px solid ${PATHD_THEME.panelBorder}` }}>
                 {tabs.map(tab => (
                   <button key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
                     onMouseEnter={e => {
                       if (activeTab !== tab.id) {
-                        (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.2)';
+                        (e.currentTarget as HTMLElement).style.borderColor = PATHD_THEME.panelBorderStrong;
                         (e.currentTarget as HTMLElement).style.filter = 'brightness(1.05)';
                       }
                     }}
                     onMouseLeave={e => {
                       if (activeTab !== tab.id) {
-                        (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)';
+                        (e.currentTarget as HTMLElement).style.borderColor = PATHD_THEME.panelBorder;
                         (e.currentTarget as HTMLElement).style.filter = 'brightness(1)';
                       }
                     }}
                     style={{
                       flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px',
-                      padding: '6px 8px', borderRadius: '6px', border: `1px solid ${activeTab === tab.id ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.08)'}`, cursor: 'pointer',
-                      background: activeTab === tab.id ? 'rgba(255,255,255,0.06)' : 'transparent',
-                      color: activeTab === tab.id ? '#ffffff' : 'rgba(255,255,255,0.55)',
+                      padding: '6px 8px', borderRadius: '8px', border: `1px solid ${activeTab === tab.id ? PATHD_THEME.panelBorderStrong : PATHD_THEME.panelBorder}`, cursor: 'pointer',
+                      background: activeTab === tab.id ? PATHD_THEME.panelGradientStrong : 'transparent',
+                      color: activeTab === tab.id ? PATHD_THEME.value : PATHD_THEME.label,
                       fontSize: '11px', fontWeight: activeTab === tab.id ? 600 : 400,
                       transition: 'border-color 300ms ease-out, filter 300ms ease-out, color 300ms ease-out',
                     }}>
@@ -460,6 +465,29 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                         </span>
                       </div>
                     )}
+                  </div>
+
+                  <div style={{
+                    padding: '12px 14px',
+                    borderRadius: '18px',
+                    background: PATHD_THEME.panelGradientSoft,
+                    border: `1px solid ${PATHD_THEME.panelBorder}`,
+                  }}>
+                    <div style={{ color: PATHD_THEME.label, fontSize: '10px', fontFamily: UI_MONO, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>
+                      Scientific role in the current route
+                    </div>
+                    <div style={{ color: PATHD_THEME.value, fontSize: '13px', fontWeight: 700, lineHeight: 1.45, marginBottom: '6px' }}>
+                      {isEnzyme
+                        ? 'This node is acting as a catalytic control point in the active pathway.'
+                        : isMetabolite
+                          ? 'This node is acting as a metabolic state checkpoint in the active route.'
+                          : 'This node is acting as a genetic or contextual regulator around the active route.'}
+                    </div>
+                    <div style={{ color: PATHD_THEME.label, fontSize: '11px', lineHeight: 1.6 }}>
+                      {recommendedTools[0]
+                        ? `The next strongest workbench handoff from this node is ${recommendedTools[0].shortLabel} — ${recommendedTools[0].direction}.`
+                        : 'No downstream handoff has been inferred for this node yet.'}
+                    </div>
                   </div>
 
                   {/* ─── Purity Status Badge — always visible ──────────────────────── */}

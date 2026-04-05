@@ -23,15 +23,16 @@ import WorkbenchExperimentLedger from './WorkbenchExperimentLedger';
 import WorkbenchProjectTimeline from './WorkbenchProjectTimeline';
 import WorkbenchRunCompare from './WorkbenchRunCompare';
 import { getFreshnessMap, getToolFreshness } from './workbenchTrust';
+import { PATHD_THEME } from './workbenchTheme';
 
 interface WorkbenchStatusBarProps {
   moduleId: string | null;
 }
 
-const SURFACE = 'rgba(6,9,14,0.84)';
-const BORDER = 'rgba(255,255,255,0.08)';
-const LABEL = 'rgba(255,255,255,0.42)';
-const VALUE = 'rgba(255,255,255,0.88)';
+const SURFACE = 'linear-gradient(180deg, rgba(9,12,18,0.96) 0%, rgba(10,12,18,0.9) 100%)';
+const BORDER = PATHD_THEME.panelBorder;
+const LABEL = PATHD_THEME.label;
+const VALUE = PATHD_THEME.value;
 
 function getStageStatusColor(status: 'pending' | 'active' | 'complete') {
   if (status === 'complete') return '#9ED7C7';
@@ -105,14 +106,24 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
     }
     return 'Move through the four-stage synthetic biology workflow without losing object context.';
   }, [analyzeArtifact, moduleId, stage]);
+  const executionSummary = moduleId
+    ? freshness.status === 'fresh'
+      ? 'Fresh against current upstream context'
+      : freshness.status === 'stale'
+        ? `Stale after ${freshness.blockingToolIds.map((id) => id.toUpperCase()).join(', ')}`
+        : freshness.status === 'awaiting-upstream'
+          ? 'Awaiting rerun with newer upstream data'
+          : 'No auditable run yet'
+    : 'Follow the stage rail and audit trail to validate each transition.';
+  const visibleNextTools = nextTools.slice(0, 3);
 
   return (
     <>
       <section
         style={{
-          padding: '10px 16px 12px',
+          padding: '8px 16px 10px',
           display: 'grid',
-          gap: '10px',
+          gap: '8px',
           background: SURFACE,
           borderBottom: `1px solid ${BORDER}`,
           backdropFilter: 'blur(18px)',
@@ -133,15 +144,15 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: '8px',
-                    minHeight: '34px',
-                    padding: '0 12px',
+                    minHeight: '32px',
+                    padding: '0 10px',
                     borderRadius: '999px',
-                    border: `1px solid ${isActive ? `${entry.accent}55` : BORDER}`,
-                    background: isActive ? `${entry.accent}18` : 'rgba(255,255,255,0.03)',
+                    border: `1px solid ${isActive ? PATHD_THEME.panelBorderStrong : BORDER}`,
+                    background: isActive ? PATHD_THEME.panelGradientSoft : PATHD_THEME.chipNeutral,
                     color: isActive ? VALUE : 'rgba(255,255,255,0.62)',
                     textDecoration: 'none',
                     fontFamily: T.SANS,
-                    fontSize: '12px',
+                    fontSize: '11px',
                     fontWeight: 600,
                   }}
                 >
@@ -166,18 +177,18 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
               <Link
                 href="/research"
                 style={{
-                  minHeight: '34px',
-                  padding: '0 12px',
+                  minHeight: '32px',
+                  padding: '0 10px',
                   borderRadius: '999px',
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '6px',
                   textDecoration: 'none',
                   border: `1px solid ${BORDER}`,
-                  background: 'rgba(255,255,255,0.03)',
+                  background: PATHD_THEME.chipNeutral,
                   color: 'rgba(255,255,255,0.68)',
                   fontFamily: T.SANS,
-                  fontSize: '12px',
+                  fontSize: '11px',
                 }}
               >
                 <BookOpenText size={13} />
@@ -186,18 +197,18 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
               <Link
                 href="/analyze"
                 style={{
-                  minHeight: '34px',
-                  padding: '0 12px',
+                  minHeight: '32px',
+                  padding: '0 10px',
                   borderRadius: '999px',
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '6px',
                   textDecoration: 'none',
                   border: `1px solid ${BORDER}`,
-                  background: 'rgba(255,255,255,0.03)',
+                  background: PATHD_THEME.chipNeutral,
                   color: 'rgba(255,255,255,0.68)',
                   fontFamily: T.SANS,
-                  fontSize: '12px',
+                  fontSize: '11px',
                 }}
               >
                 <Microscope size={13} />
@@ -206,18 +217,18 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
               <Link
                 href="/tools/nexai"
                 style={{
-                  minHeight: '34px',
-                  padding: '0 12px',
+                  minHeight: '32px',
+                  padding: '0 10px',
                   borderRadius: '999px',
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '6px',
                   textDecoration: 'none',
-                  border: `1px solid rgba(158,215,199,0.24)`,
-                  background: 'rgba(158,215,199,0.10)',
+                  border: `1px solid ${PATHD_THEME.panelBorderStrong}`,
+                  background: PATHD_THEME.panelGradientSoft,
                   color: VALUE,
                   fontFamily: T.SANS,
-                  fontSize: '12px',
+                  fontSize: '11px',
                 }}
               >
                 <BrainCircuit size={13} />
@@ -227,18 +238,18 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                 type="button"
                 onClick={() => setDrawerOpen((open) => !open)}
                 style={{
-                  minHeight: '34px',
-                  padding: '0 12px',
+                  minHeight: '32px',
+                  padding: '0 10px',
                   borderRadius: '999px',
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '6px',
-                  border: `1px solid ${drawerOpen ? 'rgba(158,215,199,0.35)' : BORDER}`,
-                  background: drawerOpen ? 'rgba(158,215,199,0.12)' : 'rgba(255,255,255,0.03)',
+                  border: `1px solid ${drawerOpen ? PATHD_THEME.panelBorderStrong : BORDER}`,
+                  background: drawerOpen ? PATHD_THEME.panelGradientSoft : PATHD_THEME.chipNeutral,
                   color: drawerOpen ? VALUE : 'rgba(255,255,255,0.68)',
                   cursor: 'pointer',
                   fontFamily: T.SANS,
-                  fontSize: '12px',
+                  fontSize: '11px',
                 }}
               >
                 <Layers3 size={13} />
@@ -250,18 +261,18 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
           <div
             style={{
               display: 'grid',
-              gap: '12px',
-              gridTemplateColumns: 'minmax(280px, 1.2fr) minmax(260px, 0.9fr) minmax(260px, 1fr)',
+              gap: '8px',
+              gridTemplateColumns: 'minmax(280px, 1.4fr) repeat(auto-fit, minmax(170px, 1fr))',
             }}
           >
             <div
               style={{
-                borderRadius: '16px',
+                borderRadius: '14px',
                 border: `1px solid ${BORDER}`,
-                background: 'rgba(255,255,255,0.03)',
-                padding: '12px 14px',
+                background: PATHD_THEME.panelGradientSoft,
+                padding: '10px 12px',
                 display: 'grid',
-                gap: '8px',
+                gap: '6px',
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
@@ -270,29 +281,29 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                 </span>
                 <span
                   style={{
-                    padding: '3px 8px',
+                    padding: '2px 7px',
                     borderRadius: '999px',
-                    border: `1px solid ${project?.isDemo ? 'rgba(255,192,128,0.28)' : 'rgba(158,215,199,0.22)'}`,
-                    background: project?.isDemo ? 'rgba(255,192,128,0.10)' : 'rgba(158,215,199,0.12)',
-                    color: project?.isDemo ? 'rgba(255,214,166,0.92)' : 'rgba(224,244,238,0.92)',
+                    border: `1px solid ${project?.isDemo ? PATHD_THEME.chipBorderWarm : PATHD_THEME.chipBorder}`,
+                    background: project?.isDemo ? PATHD_THEME.chipWarm : PATHD_THEME.chipCool,
+                    color: project?.isDemo ? 'rgba(255,222,190,0.94)' : PATHD_THEME.chipText,
                     fontFamily: T.MONO,
-                    fontSize: '10px',
+                    fontSize: '9px',
                     letterSpacing: '0.05em',
                     textTransform: 'uppercase',
                   }}
                 >
-                  {project?.isDemo ? 'Demo Context' : 'Project Context'}
+                  {project?.isDemo ? 'Demo' : 'Project'}
                 </span>
                 {stage && (
                   <span
                     style={{
-                      padding: '3px 8px',
+                      padding: '2px 7px',
                       borderRadius: '999px',
-                      border: `1px solid ${stage.accent}44`,
-                      background: `${stage.accent}14`,
+                      border: `1px solid ${PATHD_THEME.chipBorder}`,
+                      background: PATHD_THEME.chipCool,
                       color: VALUE,
                       fontFamily: T.MONO,
-                      fontSize: '10px',
+                      fontSize: '9px',
                       letterSpacing: '0.05em',
                       textTransform: 'uppercase',
                     }}
@@ -300,26 +311,11 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                     {stage.shortLabel}
                   </span>
                 )}
-                <span
-                  style={{
-                    padding: '3px 8px',
-                    borderRadius: '999px',
-                    border: `1px solid ${syncStatus === 'error' ? 'rgba(250,128,114,0.3)' : syncStatus === 'saving' ? 'rgba(242,214,162,0.28)' : 'rgba(158,215,199,0.22)'}`,
-                    background: syncStatus === 'error' ? 'rgba(250,128,114,0.10)' : syncStatus === 'saving' ? 'rgba(242,214,162,0.12)' : 'rgba(158,215,199,0.10)',
-                    color: syncStatus === 'error' ? 'rgba(255,196,184,0.92)' : VALUE,
-                    fontFamily: T.MONO,
-                    fontSize: '10px',
-                    letterSpacing: '0.05em',
-                    textTransform: 'uppercase',
-                  }}
-                >
-                  {syncStatus === 'error' ? 'Server Attention' : syncStatus === 'saving' ? 'Syncing' : 'Canonical'}
-                </span>
               </div>
-              <div style={{ fontFamily: T.SANS, fontSize: '15px', fontWeight: 700, color: VALUE, letterSpacing: '-0.01em' }}>
+              <div style={{ fontFamily: T.SANS, fontSize: '14px', fontWeight: 700, color: VALUE, letterSpacing: '-0.01em' }}>
                 {project?.title ?? 'Scientific workbench context not yet initialized'}
               </div>
-              <div style={{ fontFamily: T.SANS, fontSize: '12px', color: LABEL, lineHeight: 1.6 }}>
+              <div style={{ fontFamily: T.SANS, fontSize: '11px', color: LABEL, lineHeight: 1.55 }}>
                 {analyzeArtifact
                   ? `${analyzeArtifact.targetProduct} · ${analyzeArtifact.nodes.length} nodes · ${analyzeArtifact.edges.length} edges`
                   : project?.summary ?? 'Start in Research or Analyze to create a traceable project object.'}
@@ -328,101 +324,94 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
 
             <div
               style={{
-                borderRadius: '16px',
+                borderRadius: '14px',
                 border: `1px solid ${BORDER}`,
-                background: 'rgba(255,255,255,0.03)',
-                padding: '12px 14px',
+                background: PATHD_THEME.panelGradientSoft,
+                padding: '10px 12px',
                 display: 'grid',
-                gap: '8px',
+                gap: '6px',
               }}
             >
               <span style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                Source & Evidence
+                Evidence
               </span>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', flexWrap: 'wrap' }}>
-                <span style={{ fontFamily: T.SANS, fontSize: '22px', color: VALUE, fontWeight: 700 }}>
-                  {selectedEvidence.length}
-                </span>
-                <span style={{ fontFamily: T.SANS, fontSize: '12px', color: LABEL }}>
-                  selected evidence item(s)
-                </span>
+              <div style={{ fontFamily: T.SANS, fontSize: '16px', color: VALUE, fontWeight: 700 }}>
+                {selectedEvidence.length}
               </div>
-              <div style={{ fontFamily: T.SANS, fontSize: '12px', color: LABEL, lineHeight: 1.6 }}>
+              <div style={{ fontFamily: T.SANS, fontSize: '11px', color: LABEL, lineHeight: 1.55 }}>
                 {selectedEvidence.length
                   ? selectedEvidence[0]?.title
                   : project?.isDemo
-                    ? 'No evidence bundle injected yet. Demo fallback is active.'
-                    : 'Research bundle ready to be attached from the evidence drawer.'}
+                    ? 'Demo fallback is active.'
+                    : 'Research bundle ready to attach.'}
               </div>
             </div>
 
             <div
               style={{
-                borderRadius: '16px',
+                borderRadius: '14px',
                 border: `1px solid ${BORDER}`,
-                background: 'rgba(255,255,255,0.03)',
-                padding: '12px 14px',
+                background: PATHD_THEME.panelGradientSoft,
+                padding: '10px 12px',
                 display: 'grid',
-                gap: '8px',
+                gap: '6px',
               }}
             >
               <span style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
                 Stage Focus
               </span>
-              <div style={{ fontFamily: T.SANS, fontSize: '13px', color: VALUE, fontWeight: 600 }}>
+              <div style={{ fontFamily: T.SANS, fontSize: '12px', color: VALUE, fontWeight: 600 }}>
                 {stage?.label ?? 'Flowchart skeleton ready'}
               </div>
-              <div style={{ fontFamily: T.SANS, fontSize: '12px', color: LABEL, lineHeight: 1.6 }}>
+              <div style={{ fontFamily: T.SANS, fontSize: '11px', color: LABEL, lineHeight: 1.55 }}>
                 {stageSummary}
               </div>
-              <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, lineHeight: 1.6 }}>
-                {syncLabel} · {backendMeta?.runArtifactCount ?? runArtifacts.length} immutable run artifact(s) · {backendMeta?.experimentCount ?? experimentRecords.length} experiment record(s) · {backendMeta?.memberCount ?? collaborators.length} collaborator(s)
+            </div>
+
+            <div
+              style={{
+                borderRadius: '14px',
+                border: `1px solid ${BORDER}`,
+                background: PATHD_THEME.panelGradientSoft,
+                padding: '10px 12px',
+                display: 'grid',
+                gap: '6px',
+              }}
+            >
+              <span style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                Integrity
+              </span>
+              <div style={{ fontFamily: T.SANS, fontSize: '12px', color: VALUE, fontWeight: 600 }}>
+                {executionSummary}
               </div>
-              <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, lineHeight: 1.6 }}>
-                {feedbackLabel}
-              </div>
-              <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, lineHeight: 1.6 }}>
-                {collaboratorLabel}
-              </div>
-              <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, lineHeight: 1.6 }}>
-                {experimentLabel}
-              </div>
-              <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, lineHeight: 1.6 }}>
-                {moduleId
-                  ? freshness.status === 'fresh'
-                    ? 'Execution integrity · fresh against newest upstream runs'
-                    : freshness.status === 'stale'
-                      ? `Execution integrity · stale after ${freshness.blockingToolIds.map((id) => id.toUpperCase()).join(', ')} updated`
-                      : freshness.status === 'awaiting-upstream'
-                        ? 'Execution integrity · upstream inputs changed but this tool has not been rerun'
-                        : 'Execution integrity · no auditable run recorded yet'
-                  : 'Execution integrity · follow the timeline to verify each stage against canonical runs'}
+              <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, lineHeight: 1.5 }}>
+                {syncLabel} · {backendMeta?.runArtifactCount ?? runArtifacts.length} runs · {backendMeta?.experimentCount ?? experimentRecords.length} experiments
               </div>
             </div>
           </div>
 
-          {nextTools.length > 0 && (
+          {visibleNextTools.length > 0 && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
               <span style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
                 Next Step
               </span>
-              {nextTools.slice(0, 4).map((tool) => (
+              {visibleNextTools.map((tool) => (
                 <Link
                   key={tool.id}
                   href={tool.href}
                   style={{
-                    minHeight: '32px',
-                    padding: '0 12px',
+                    minHeight: '30px',
+                    padding: '0 10px',
                     borderRadius: '999px',
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: '6px',
                     textDecoration: 'none',
-                    border: `1px solid ${BORDER}`,
-                    background: 'rgba(255,255,255,0.04)',
+                    border: `1px solid ${PATHD_THEME.chipBorder}`,
+                    background: PATHD_THEME.chipNeutral,
                     color: 'rgba(255,255,255,0.76)',
                     fontFamily: T.SANS,
-                    fontSize: '12px',
+                    fontSize: '11px',
                   }}
                 >
                   {tool.shortLabel}
@@ -471,7 +460,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                 width: 'min(360px, calc(100vw - 24px))',
                 borderRadius: '22px',
                 border: `1px solid ${BORDER}`,
-                background: 'rgba(7,10,14,0.94)',
+                background: 'linear-gradient(180deg, rgba(10,12,18,0.98) 0%, rgba(13,16,24,0.96) 100%)',
                 backdropFilter: 'blur(24px)',
                 WebkitBackdropFilter: 'blur(24px)',
                 boxShadow: '0 24px 80px rgba(0,0,0,0.38)',
@@ -506,7 +495,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                     height: 30,
                     borderRadius: '999px',
                     border: `1px solid ${BORDER}`,
-                    background: 'rgba(255,255,255,0.04)',
+                    background: PATHD_THEME.chipNeutral,
                     color: 'rgba(255,255,255,0.58)',
                     cursor: 'pointer',
                   }}
@@ -524,7 +513,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                     style={{
                       borderRadius: '14px',
                       border: `1px solid ${BORDER}`,
-                      background: 'rgba(255,255,255,0.03)',
+                      background: PATHD_THEME.panelGradientSoft,
                       padding: '10px 12px',
                       display: 'grid',
                       gap: '4px',
@@ -550,7 +539,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                       style={{
                         borderRadius: '14px',
                         border: `1px solid ${BORDER}`,
-                        background: freshness.status === 'stale' ? 'rgba(255,192,128,0.10)' : 'rgba(255,255,255,0.03)',
+                        background: freshness.status === 'stale' ? PATHD_THEME.chipWarm : PATHD_THEME.panelGradientSoft,
                         padding: '10px 12px',
                         display: 'grid',
                         gap: '4px',
@@ -580,7 +569,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                     style={{
                       borderRadius: '14px',
                       border: `1px solid ${BORDER}`,
-                      background: 'rgba(255,255,255,0.03)',
+                      background: PATHD_THEME.panelGradientSoft,
                       padding: '10px 12px',
                       display: 'grid',
                       gap: '4px',
@@ -612,7 +601,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                       style={{
                         borderRadius: '14px',
                         border: `1px solid ${BORDER}`,
-                        background: 'rgba(255,255,255,0.03)',
+                        background: PATHD_THEME.panelGradientSoft,
                         padding: '10px 12px',
                         display: 'grid',
                         gap: '4px',
@@ -644,7 +633,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                       style={{
                         borderRadius: '14px',
                         border: `1px solid ${BORDER}`,
-                        background: 'rgba(255,255,255,0.03)',
+                        background: PATHD_THEME.panelGradientSoft,
                         padding: '10px 12px',
                         display: 'grid',
                         gap: '6px',
@@ -712,7 +701,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                         style={{
                           borderRadius: '14px',
                           border: `1px solid ${BORDER}`,
-                          background: 'rgba(255,255,255,0.03)',
+                          background: PATHD_THEME.panelGradientSoft,
                           padding: '10px 12px',
                           display: 'grid',
                           gap: '4px',
@@ -753,7 +742,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                         style={{
                           borderRadius: '14px',
                           border: `1px solid ${BORDER}`,
-                          background: 'rgba(255,255,255,0.03)',
+                          background: PATHD_THEME.panelGradientSoft,
                           padding: '10px 12px',
                           display: 'flex',
                           alignItems: 'center',

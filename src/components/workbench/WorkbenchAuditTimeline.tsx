@@ -7,6 +7,7 @@ import { T } from '../ide/tokens';
 import { TOOL_BY_ID } from '../tools/shared/toolRegistry';
 import { getDownstreamToolIds, getUpstreamToolIds } from '../tools/shared/workbenchGraph';
 import type { WorkbenchStageId } from '../tools/shared/workbenchConfig';
+import { PATHD_THEME } from './workbenchTheme';
 
 interface WorkbenchAuditTimelineProps {
   toolId?: string | null;
@@ -16,9 +17,9 @@ interface WorkbenchAuditTimelineProps {
   compact?: boolean;
 }
 
-const BORDER = 'rgba(255,255,255,0.08)';
-const LABEL = 'rgba(255,255,255,0.42)';
-const VALUE = 'rgba(255,255,255,0.88)';
+const BORDER = PATHD_THEME.panelBorder;
+const LABEL = PATHD_THEME.label;
+const VALUE = PATHD_THEME.value;
 
 type TimelineEvent = {
   id: string;
@@ -42,13 +43,13 @@ function formatTime(timestamp: number) {
 function getKindAccent(kind: TimelineEvent['kind']) {
   switch (kind) {
     case 'evidence':
-      return '#BFDDAE';
+      return PATHD_THEME.blue;
     case 'analysis':
-      return '#E6B9C8';
+      return PATHD_THEME.indigo;
     case 'run':
-      return '#8ED3C7';
+      return PATHD_THEME.orange;
     default:
-      return '#F0C56B';
+      return PATHD_THEME.liveRed;
   }
 }
 
@@ -169,7 +170,7 @@ export default function WorkbenchAuditTimeline({
             style={{
               borderRadius: compact ? '14px' : '16px',
               border: `1px solid ${BORDER}`,
-              background: 'rgba(255,255,255,0.03)',
+              background: PATHD_THEME.panelGradientSoft,
               padding: compact ? '10px 12px' : '12px 14px',
               display: 'grid',
               gap: '6px',
@@ -181,7 +182,7 @@ export default function WorkbenchAuditTimeline({
               style={{
                 position: 'absolute',
                 inset: 0,
-                background: `linear-gradient(90deg, ${accent}14, transparent 45%)`,
+                background: `linear-gradient(90deg, ${accent}18, transparent 45%)`,
                 pointerEvents: 'none',
               }}
             />
@@ -193,7 +194,7 @@ export default function WorkbenchAuditTimeline({
                     height: compact ? '22px' : '24px',
                     borderRadius: '999px',
                     border: `1px solid ${accent}55`,
-                    background: `${accent}18`,
+                    background: `${accent}22`,
                     display: 'inline-flex',
                     alignItems: 'center',
                     justifyContent: 'center',

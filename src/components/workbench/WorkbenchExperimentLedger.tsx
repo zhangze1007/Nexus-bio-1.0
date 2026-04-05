@@ -6,41 +6,42 @@ import { useWorkbenchStore } from '../../store/workbenchStore';
 import { T } from '../ide/tokens';
 import { buildExperimentLedger, getAuthorityTier } from './workbenchTrust';
 import { TOOL_BY_ID } from '../tools/shared/toolRegistry';
+import { PATHD_THEME } from './workbenchTheme';
 
 interface WorkbenchExperimentLedgerProps {
   title?: string;
   limit?: number;
 }
 
-const BORDER = 'rgba(255,255,255,0.08)';
-const LABEL = 'rgba(255,255,255,0.42)';
-const VALUE = 'rgba(255,255,255,0.88)';
+const BORDER = PATHD_THEME.panelBorder;
+const LABEL = PATHD_THEME.label;
+const VALUE = PATHD_THEME.value;
 
 function getStatusStyle(status: 'recorded' | 'committed' | 'attention' | 'draft') {
   if (status === 'committed') {
     return {
-      border: 'rgba(158,215,199,0.26)',
-      background: 'rgba(158,215,199,0.12)',
-      color: 'rgba(224,244,238,0.92)',
+      border: PATHD_THEME.chipBorder,
+      background: PATHD_THEME.chipCool,
+      color: PATHD_THEME.chipText,
     };
   }
   if (status === 'attention') {
     return {
-      border: 'rgba(255,192,128,0.28)',
-      background: 'rgba(255,192,128,0.12)',
-      color: 'rgba(255,226,186,0.92)',
+      border: PATHD_THEME.chipBorderWarm,
+      background: PATHD_THEME.chipWarm,
+      color: 'rgba(255,228,194,0.94)',
     };
   }
   if (status === 'draft') {
     return {
-      border: 'rgba(242,214,162,0.24)',
-      background: 'rgba(242,214,162,0.12)',
-      color: 'rgba(255,236,198,0.9)',
+      border: PATHD_THEME.chipBorderWarm,
+      background: PATHD_THEME.panelGradientSoft,
+      color: PATHD_THEME.value,
     };
   }
   return {
     border: 'rgba(255,255,255,0.12)',
-    background: 'rgba(255,255,255,0.05)',
+    background: PATHD_THEME.chipNeutral,
     color: VALUE,
   };
 }
@@ -68,7 +69,7 @@ export default function WorkbenchExperimentLedger({
   return (
     <section style={{ display: 'grid', gap: '10px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <ClipboardList size={14} color="rgba(255,255,255,0.72)" />
+        <ClipboardList size={14} color={PATHD_THEME.orange} />
         <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
           {title}
         </div>
@@ -85,7 +86,7 @@ export default function WorkbenchExperimentLedger({
             style={{
               borderRadius: '16px',
               border: `1px solid ${BORDER}`,
-              background: 'rgba(255,255,255,0.03)',
+              background: PATHD_THEME.panelGradientSoft,
               padding: '12px 14px',
               display: 'grid',
               gap: '8px',
@@ -149,7 +150,7 @@ export default function WorkbenchExperimentLedger({
                     padding: '4px 8px',
                     borderRadius: '999px',
                     border: `1px solid ${BORDER}`,
-                    background: 'rgba(255,255,255,0.04)',
+                    background: PATHD_THEME.chipNeutral,
                     color: 'rgba(255,255,255,0.76)',
                     fontFamily: T.MONO,
                     fontSize: '10px',

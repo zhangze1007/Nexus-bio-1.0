@@ -20,6 +20,8 @@ import { useWorkbenchStore } from '../../store/workbenchStore';
 import WorkbenchInlineContext from '../workbench/WorkbenchInlineContext';
 import { buildCellFreeSeed } from './shared/workbenchDataflow';
 import { T, TOOL_RESULT_PALETTE} from '../ide/tokens';
+import ScientificHero from './shared/ScientificHero';
+import { PATHD_THEME } from '../workbench/workbenchTheme';
 
 /* ── Design Tokens ────────────────────────────────────────────────── */
 
@@ -612,7 +614,7 @@ export default function CellFreePage() {
 
   return (
     <>
-      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', background: PANEL_BG }}>
+      <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', background: PANEL_BG, minHeight: '100%', flex: 1 }}>
         <AlgorithmInsight
           title="Cell-Free Sandbox (CFPS)"
           description="Resource-aware TX-TL ODE simulation → plate-reader Michaelis-Menten fitting → in-vitro-to-in-vivo translation prediction"
@@ -628,6 +630,53 @@ export default function CellFreePage() {
           />
         </div>
 
+        <div style={{ padding: '0 16px 10px' }}>
+          <ScientificHero
+            eyebrow="Stage 4 · Pre-Build Validation"
+            title="Cell-free prototyping as the last fast gate before DBTL"
+            summary="Cell-free should read like a decision bench, not just a simulation output. Yield, depletion timing, in-vitro-to-in-vivo confidence, and construct count are elevated here so the scientist can quickly judge whether a design deserves promotion into slower experimental loops."
+            aside={
+              <>
+                <div style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                  Current bench setup
+                </div>
+                <div style={{ fontFamily: T.SANS, fontSize: '13px', color: PATHD_THEME.value, fontWeight: 700 }}>
+                  {constructs.length} constructs · {params.temperature}°C · {params.simulationTime} min
+                </div>
+                <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.label, lineHeight: 1.55 }}>
+                  The reaction window and construct stack shown here are now directly inherited from catalyst, thermodynamic, and DBTL context.
+                </div>
+              </>
+            }
+            signals={[
+              {
+                label: 'Total Yield',
+                value: `${sim.totalProteinYield.toFixed(1)} nM`,
+                detail: `${invitroMaxProtein.toFixed(1)} nM max single-construct expression in the current run.`,
+                tone: sim.totalProteinYield > 100 ? 'cool' : 'warm',
+              },
+              {
+                label: 'Depletion Gate',
+                value: `${sim.energyDepletionTime.toFixed(0)} min`,
+                detail: sim.isResourceLimited ? 'Resource limitation is the dominant reason this run should be treated cautiously.' : 'Resources hold long enough for this run to act as a meaningful pre-build check.',
+                tone: sim.isResourceLimited ? 'alert' : 'cool',
+              },
+              {
+                label: 'IVIV Confidence',
+                value: iviv ? `${(iviv.confidence * 100).toFixed(0)}%` : 'Pending',
+                detail: iviv ? `${iviv.invivo_expression.toFixed(1)} predicted in vivo expression` : 'Switch to the IvIv lens to estimate translation into cellular expression.',
+                tone: iviv && iviv.confidence > 0.65 ? 'cool' : 'neutral',
+              },
+              {
+                label: 'Current Lens',
+                value: viewMode,
+                detail: 'The active view changes how the same canonical run is interpreted, but not which run is considered current.',
+                tone: 'neutral',
+              },
+            ]}
+          />
+        </div>
+
         {simError && (
           <div style={{ padding: '0 16px 8px' }}><SimErrorBanner message={simError} /></div>
         )}
@@ -635,8 +684,8 @@ export default function CellFreePage() {
         <div className="nb-tool-panels" style={{ flex: 1 }}>
 
           {/* ── LEFT SIDEBAR (240px) ──────────────────────────────── */}
-          <div style={{
-            width: '240px', flexShrink: 0, overflowY: 'auto', padding: '16px',
+          <div className="nb-tool-sidebar" style={{
+            width: '240px', flexShrink: 0, padding: '16px',
             borderRight: `1px solid ${BORDER}`, background: PANEL_BG,
           }}>
             {/* Gene Constructs */}
@@ -714,7 +763,7 @@ export default function CellFreePage() {
           </div>
 
           {/* ── CENTER ENGINE ────────────────────────────────────── */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#050505' }}>
+          <div className="nb-tool-center" style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#050505', minWidth: 0 }}>
             {viewMode === 'TimeCourse' && (
               <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
                 <div style={{ width: '100%', maxWidth: '600px' }}>
@@ -737,7 +786,7 @@ export default function CellFreePage() {
               </div>
             )}
             {viewMode === 'IvIv' && (
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'auto', padding: '16px', gap: '16px' }}>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '16px', gap: '16px' }}>
                 <div style={{ width: '100%', maxWidth: '600px', margin: '0 auto' }}>
                   <IvIvChart result={result} />
                 </div>
@@ -773,8 +822,8 @@ export default function CellFreePage() {
           </div>
 
           {/* ── RIGHT PANEL (260px) ──────────────────────────────── */}
-          <div style={{
-            width: '260px', flexShrink: 0, overflowY: 'auto', padding: '16px',
+          <div className="nb-tool-right" style={{
+            width: '260px', flexShrink: 0, padding: '16px',
             borderLeft: `1px solid ${BORDER}`, background: PANEL_BG,
           }}>
             {/* Simulation Summary */}

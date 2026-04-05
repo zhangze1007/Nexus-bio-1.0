@@ -14,6 +14,8 @@ import type { ScSpatialAnalysisResult, HighYieldCluster, MoranResult } from '../
 import { T, TOOL_RESULT_PALETTE} from '../ide/tokens';
 import WorkbenchInlineContext from '../workbench/WorkbenchInlineContext';
 import { useWorkbenchStore } from '../../store/workbenchStore';
+import ScientificHero from './shared/ScientificHero';
+import { PATHD_THEME } from '../workbench/workbenchTheme';
 
 /* ── Design Tokens ────────────────────────────────────────────────── */
 
@@ -680,12 +682,61 @@ export default function ScSpatialPage() {
 
   return (
     <>
-      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', background: PANEL_BG }}>
+      <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', background: PANEL_BG, minHeight: '100%', flex: 1 }}>
         <AlgorithmInsight
           title="Single-Cell & Spatial Transcriptomics"
           description="QC → HVG selection → Louvain clustering → PAGA trajectory → Moran's I spatial autocorrelation → scVAE latent embedding with batch correction"
           formula="I = (N/W) × Σᵢⱼ wᵢⱼ(xᵢ−x̄)(xⱼ−x̄) / Σᵢ(xᵢ−x̄)²"
         />
+
+        <div style={{ padding: '0 16px 10px' }}>
+          <ScientificHero
+            eyebrow="Stage 4 · Single-Cell & Spatial Evidence"
+            title="Where the pathway is actually active across cells and tissue"
+            summary="SCSPATIAL now opens with the scientific question first: which cell state and niche are carrying production-relevant expression, how strong that spatial restriction is, and whether the current cluster focus is actually the one worth chasing."
+            aside={
+              <>
+                <div style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                  Current spatial lens
+                </div>
+                <div style={{ fontFamily: T.SANS, fontSize: '13px', color: PATHD_THEME.value, fontWeight: 700 }}>
+                  {viewMode} · {selectedCluster !== null ? CLUSTER_LABELS[selectedCluster] : 'All clusters'}
+                </div>
+                <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.label, lineHeight: 1.55 }}>
+                  {spatialTraceSummary.summary}
+                </div>
+              </>
+            }
+            signals={[
+              {
+                label: 'QC Pass',
+                value: `${analysis.qc.passedCells}/${analysis.qc.totalCells}`,
+                detail: `${analysis.qc.filteredCells} cells filtered out during QC`,
+                tone: analysis.qc.passedCells / analysis.qc.totalCells > 0.8 ? 'cool' : 'warm',
+              },
+              {
+                label: 'Top Spatial Gene',
+                value: topMoran[0]?.gene ?? highlightGene,
+                detail: topMoran[0] ? `Moran's I ${topMoran[0].moranI.toFixed(3)}` : 'No spatially restricted feature is currently flagged.',
+                tone: topMoran[0]?.isSpatiallyRestricted ? 'cool' : 'neutral',
+              },
+              {
+                label: 'Highest-Yield Cluster',
+                value: highestYieldCluster?.label ?? 'Pending',
+                detail: highestYieldCluster
+                  ? `${highestYieldCluster.nCells} cells · eff ${highestYieldCluster.avgMetabolicEfficiency.toFixed(2)} · prod ${highestYieldCluster.avgProductivity.toFixed(2)}`
+                  : 'No dominant high-yield cluster identified yet.',
+                tone: highestYieldCluster ? 'warm' : 'neutral',
+              },
+              {
+                label: 'Latent Model',
+                value: `${analysis.vae.latentDim}D`,
+                detail: `Final VAE loss ${finalLoss?.loss.toFixed(3) ?? '0.000'} after ${convergenceIter} iterations`,
+                tone: 'neutral',
+              },
+            ]}
+          />
+        </div>
 
         {simError && (
           <div style={{ padding: '0 16px 8px' }}><SimErrorBanner message={simError} /></div>
@@ -694,8 +745,8 @@ export default function ScSpatialPage() {
         <div className="nb-tool-panels" style={{ flex: 1 }}>
 
           {/* ── LEFT SIDEBAR (240px) ──────────────────────────────── */}
-          <div style={{
-            width: '240px', flexShrink: 0, overflowY: 'auto', padding: '16px',
+          <div className="nb-tool-sidebar" style={{
+            width: '240px', flexShrink: 0, padding: '16px',
             borderRight: `1px solid ${BORDER}`, background: PANEL_BG,
           }}>
             <WorkbenchInlineContext
@@ -811,7 +862,7 @@ export default function ScSpatialPage() {
           </div>
 
           {/* ── CENTER ENGINE ────────────────────────────────────── */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#050505' }}>
+          <div className="nb-tool-center" style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#050505', minWidth: 0 }}>
             {viewMode === 'Spatial' && (
               <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
                 <div style={{ width: '100%', maxWidth: '600px' }}>
@@ -903,8 +954,8 @@ export default function ScSpatialPage() {
           </div>
 
           {/* ── RIGHT PANEL (260px) ──────────────────────────────── */}
-          <div style={{
-            width: '260px', flexShrink: 0, overflowY: 'auto', padding: '16px',
+          <div className="nb-tool-right" style={{
+            width: '260px', flexShrink: 0, padding: '16px',
             borderLeft: `1px solid ${BORDER}`, background: PANEL_BG,
           }}>
             {/* VAE Metrics */}

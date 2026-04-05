@@ -18,6 +18,7 @@ import type { FluidForce } from './FluidSimCanvas';
 import type { MachineState } from '../../machines/metabolicMachine';
 import { STATE_LABELS } from '../../machines/metabolicMachine';
 import { T } from '../ide/tokens';
+import { PATHD_THEME } from '../workbench/workbenchTheme';
 
 // ── Parameter definitions ──────────────────────────────────────────────
 
@@ -109,8 +110,8 @@ function ParamSlider({ def, value, onChange, forceRef }: SliderProps) {
 
       {/* Track */}
       <div style={{ position:'relative', height:'20px', display:'flex', alignItems:'center' }}>
-        <div style={{ position:'absolute', left:0, right:0, height:'3px', borderRadius:'2px', background:'rgba(255,255,255,0.06)' }}>
-          <div style={{ width:`${pct}%`, height:'100%', borderRadius:'2px', background:'linear-gradient(90deg, #4A7CFF, #FF8B1F)', boxShadow:'0 0 6px rgba(74,124,255,0.2), 0 0 6px rgba(255,139,31,0.2)', transition:'width 0.08s' }} />
+        <div style={{ position:'absolute', left:0, right:0, height:`${PATHD_THEME.progressHeight}px`, borderRadius:`${PATHD_THEME.progressRadius}px`, background:PATHD_THEME.progressTrack }}>
+          <div style={{ width:`${pct}%`, height:'100%', borderRadius:`${PATHD_THEME.progressRadius}px`, background:PATHD_THEME.progressGradient, boxShadow:PATHD_THEME.progressGlow, transition:'width 0.08s' }} />
         </div>
         <input
           type="range"
@@ -178,19 +179,20 @@ export default function ToolOverlay({
 
   return (
     <motion.div
+      className="nb-pathd-floating-panel nb-pathd-floating-panel--left"
       animate={panelVariants[state]}
       transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
       style={{
         position:'absolute', left:'20px', top:'50%',
         transform:'translateY(-50%)',
         width:'240px', zIndex:10,
-        background:'rgba(0,0,0,0.72)',
+        background: PATHD_THEME.panelGradientStrong,
         backdropFilter:'blur(40px)',
         WebkitBackdropFilter:'blur(40px)',
-        borderRadius:'14px',
-        border:'1px solid rgba(255,255,255,0.1)',
-        borderTop:'1.5px solid rgba(255,255,255,0.22)',
-        boxShadow:'0 0 0 0.5px rgba(255,255,255,0.04), inset 0 1px 0 rgba(255,255,255,0.06)',
+        borderRadius:'18px',
+        border:`1px solid ${PATHD_THEME.panelBorder}`,
+        borderTop:`1.5px solid ${PATHD_THEME.panelBorderStrong}`,
+        boxShadow:'0 18px 42px rgba(0,0,0,0.26), inset 0 1px 0 rgba(255,255,255,0.05)',
         padding:'18px 16px',
         userSelect:'none',
       }}
@@ -216,7 +218,7 @@ export default function ToolOverlay({
             <motion.div
               animate={{ opacity:[0.4, 1, 0.4] }}
               transition={{ duration:1.5, repeat:Infinity }}
-              style={{ width:'5px', height:'5px', borderRadius:'50%', background:'#39FF14', boxShadow:'0 0 6px rgba(57,255,20,0.5)' }}
+              style={{ width:'5px', height:'5px', borderRadius:'50%', background:PATHD_THEME.liveRed, boxShadow:'0 0 6px rgba(255,0,51,0.55)' }}
             />
             <span style={{ fontFamily: T.MONO, fontSize:'8px', fontWeight:600, color:'rgba(255,255,255,0.65)', letterSpacing:'0.1em' }}>
               {stateLabel}

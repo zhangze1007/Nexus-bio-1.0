@@ -9,6 +9,8 @@ import type { FitnessPoint } from '../../types';
 import { useWorkbenchStore } from '../../store/workbenchStore';
 import { T } from '../ide/tokens';
 import WorkbenchInlineContext from '../workbench/WorkbenchInlineContext';
+import ScientificHero from './shared/ScientificHero';
+import { PATHD_THEME } from '../workbench/workbenchTheme';
 
 // Dark theme tokens
 const PANEL_BG = '#000000';
@@ -187,12 +189,59 @@ export default function ProEvolPage() {
 
   return (
     <>
-      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', background: '#050505' }}>
+      <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', background: '#050505', minHeight: '100%', flex: 1 }}>
         <AlgorithmInsight
           title="Directed Evolution Simulator"
           description="Monte Carlo sampling traverses the fitness landscape via Metropolis criterion. Accepts unfavorable mutations with probability e^(ΔF/T)."
           formula="P(accept) = min(1, e^(ΔF/kT))"
         />
+
+        <div style={{ padding: '0 16px 10px' }}>
+          <ScientificHero
+            eyebrow="Stage 2 · Directed Evolution"
+            title="Evolution search guided by current pathway pressure"
+            summary="PROEVOL is no longer just a heatmap explorer. Mutation rate, rounds, beneficial hits, and best sequence are surfaced as a proper optimization story so the researcher can judge whether this enzyme is improving fast enough to deserve another iteration."
+            aside={
+              <>
+                <div style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                  Search policy
+                </div>
+                <div style={{ fontFamily: T.SANS, fontSize: '13px', color: PATHD_THEME.value, fontWeight: 700 }}>
+                  {mutationRate}% mutation rate · {rounds} rounds
+                </div>
+                <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.label, lineHeight: 1.55 }}>
+                  Search depth is already being seeded by catalyst and flux context, so evolution is tied to pathway need instead of arbitrary exploration.
+                </div>
+              </>
+            }
+            signals={[
+              {
+                label: 'Best Fitness',
+                value: bestFitness.toFixed(4),
+                detail: `Trajectory length ${trajectory.length} with ${beneficialMutations} beneficial steps`,
+                tone: bestFitness > 0.6 ? 'cool' : 'warm',
+              },
+              {
+                label: 'Beneficial Steps',
+                value: `${beneficialMutations}`,
+                detail: beneficialMutations > 10 ? 'The search is finding productive moves frequently enough to justify continued evolution.' : 'Improvement is sparse; consider redesigning mutational scope.',
+                tone: beneficialMutations > 10 ? 'cool' : 'warm',
+              },
+              {
+                label: 'Best Sequence',
+                value: bestSequence.slice(0, 16) || 'Pending',
+                detail: bestSequence ? 'The current lead sequence remains visible as the working evolutionary winner.' : 'No winner sequence recorded yet.',
+                tone: 'neutral',
+              },
+              {
+                label: 'Landscape Pressure',
+                value: `${recommendedMutationRate}% recommended`,
+                detail: `${recommendedRounds} recommended rounds derived from upstream catalyst and flux context`,
+                tone: 'neutral',
+              },
+            ]}
+          />
+        </div>
 
         <div className="nb-tool-panels" style={{ flex: 1 }}>
           {/* Input panel */}
@@ -250,7 +299,7 @@ export default function ProEvolPage() {
           </div>
 
           {/* Engine view — heatmap */}
-          <div style={{ flex: 1, overflow: 'hidden', background: '#050505', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+          <div className="nb-tool-center" style={{ flex: 1, background: '#050505', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px', minWidth: 0 }}>
             <FitnessHeatmap trajectory={trajectory} />
           </div>
 
