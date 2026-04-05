@@ -169,7 +169,7 @@
     pointer-events: none;
   }
 
-  .nb-ide-console {
+  .nb-ide-console,
   .nb-workbench .nb-ide-console {
     padding-left: 0;
   }
