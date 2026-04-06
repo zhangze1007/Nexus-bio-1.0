@@ -1,5 +1,6 @@
 'use client';
 import { useState, useMemo, useCallback, useEffect } from 'react';
+import { computeConvexHull, expandHull } from '../../utils/vizUtils';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import AlgorithmInsight from '../ide/shared/AlgorithmInsight';
@@ -366,9 +367,37 @@ function UMAPScatter({ analysis, selectedCluster }: {
         transform={`rotate(-90,12,${H / 2})`}>
         UMAP-2
       </text>
+      <defs>
+        <filter id="umap-hull-blur" x="-30%" y="-30%" width="160%" height="160%">
+          <feGaussianBlur stdDeviation="6" />
+        </filter>
+      </defs>
       <text x={PAD} y={PAD - 12} fontFamily={T.MONO} fontSize="7" fill={LABEL}>
         Cluster manifold with centroid labels anchored to the current single-cell program
       </text>
+      {/* Scanpy-style convex hull cluster territories */}
+      {(() => {
+        const byCluster: Record<number, Array<{ sx: number; sy: number }>> = {};
+        projected.forEach(p => {
+          if (!byCluster[p.cluster]) byCluster[p.cluster] = [];
+          byCluster[p.cluster].push({ sx: p.sx, sy: p.sy });
+        });
+        return Object.entries(byCluster)
+          .filter(([, pts]) => pts.length >= 3)
+          .map(([k, pts]) => {
+            const clk = Number(k);
+            if (selectedCluster !== null && selectedCluster !== clk) return null;
+            const color = CLUSTER_COLORS[clk] ?? '#888';
+            const hull = expandHull(computeConvexHull(pts), 14);
+            const poly = hull.map(p => `${p.sx.toFixed(1)},${p.sy.toFixed(1)}`).join(' ');
+            return (
+              <g key={`hull-${k}`}>
+                <polygon points={poly} fill={color} opacity={0.14} filter="url(#umap-hull-blur)" />
+                <polygon points={poly} fill={color} opacity={0.05} stroke={color} strokeWidth={1.2} strokeOpacity={0.32} />
+              </g>
+            );
+          });
+      })()}
       {projected.map(p => {
         if (selectedCluster !== null && p.cluster !== selectedCluster) return null;
         return (

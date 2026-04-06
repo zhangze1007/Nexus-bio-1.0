@@ -1,6 +1,4 @@
-import path from 'node:path';
-import { pathToFileURL } from 'node:url';
-import type { GLPK, LP } from 'glpk.js/node';
+import { solveLPSimplex } from './simplexLP';
 import { SHARED_METABOLITES, type CommunityFBAOutput, type FBAOutput } from '../data/mockFBA';
 
 export type FBAObjective = 'biomass' | 'atp' | 'product';
@@ -47,31 +45,6 @@ type NetworkSpec = {
   ) => Omit<FBAOutput, 'shadowPrices'>;
 };
 
-let glpkPromise: Promise<GLPK> | null = null;
-
-async function resolveGlpkFactory() {
-  const moduleUrl = pathToFileURL(
-    path.join(process.cwd(), 'node_modules', 'glpk.js', 'dist', 'glpk.js'),
-  ).href;
-  const module = await import(/* webpackIgnore: true */ moduleUrl);
-  const candidate = (
-    typeof module === 'function'
-      ? module
-      : (module as { default?: unknown }).default
-  ) as (() => Promise<GLPK>) | undefined;
-
-  if (typeof candidate !== 'function') {
-    throw new Error('GLPK factory is unavailable in the current server runtime');
-  }
-
-  return candidate;
-}
-
-function getGlpk() {
-  glpkPromise ??= resolveGlpkFactory().then((factory) => factory());
-  return glpkPromise;
-}
-
 function round(value: number, digits = 4) {
   const factor = 10 ** digits;
   return Math.round(value * factor) / factor;
@@ -115,14 +88,14 @@ const ECOLI_NETWORK: NetworkSpec = {
       { name: 'BIOMASS', coef: 0.15 },
     ],
   },
-  deriveMetrics: (vars, request, status, objectiveValue) => {
+  deriveMetrics: (vars, _request, status, objectiveValue) => {
     const glc = vars.GLCpts ?? 0;
     const biomass = vars.BIOMASS ?? 0;
     const product = vars.PRODUCT ?? 0;
     const atpYield = glc > 1e-9 ? ((vars.GAPD ?? 0) + (vars.PYK ?? 0) - (vars.PFK ?? 0) + (vars.PDH ?? 0) * 0.5) / glc : 0;
     const carbonEfficiency = glc > 1e-9 ? (((biomass * 4.6) + (product * 6)) / (glc * 6)) * 100 : 0;
     const growthRate = biomass * 0.061;
-    const feasible = [2, 5].includes(status) && objectiveValue > 1e-6;
+    const feasible = status === 2 && objectiveValue > 1e-6;
     return {
       fluxes: {
         GLCpts: round(vars.GLCpts ?? 0),
@@ -183,14 +156,14 @@ const YEAST_NETWORK: NetworkSpec = {
       { name: 'BIOMASS_y', coef: 0.15 },
     ],
   },
-  deriveMetrics: (vars, request, status, objectiveValue) => {
+  deriveMetrics: (vars, _request, status, objectiveValue) => {
     const glc = vars.HXT ?? 0;
     const biomass = vars.BIOMASS_y ?? 0;
     const product = vars.PRODUCT_y ?? 0;
     const atpYield = glc > 1e-9 ? ((vars.TPI ?? 0) + (vars.ADH ?? 0) * 0.4 + (vars.IDH ?? 0) - (vars.PFK_y ?? 0)) / glc : 0;
     const carbonEfficiency = glc > 1e-9 ? (((biomass * 4.2) + (product * 5.6)) / (glc * 6)) * 100 : 0;
     const growthRate = biomass * 0.045;
-    const feasible = [2, 5].includes(status) && objectiveValue > 1e-6;
+    const feasible = status === 2 && objectiveValue > 1e-6;
     return {
       fluxes: {
         HXT: round(vars.HXT ?? 0),
@@ -219,60 +192,76 @@ const NETWORKS: Record<FBASpecies, NetworkSpec> = {
   yeast: YEAST_NETWORK,
 };
 
-function buildProblem(glpk: GLPK, network: NetworkSpec, request: SingleSpeciesFBARequest): LP {
+/**
+ * Build and solve an LP for the given network and request using the
+ * pure-TypeScript simplex solver (no native binaries or WASM).
+ */
+function buildAndSolve(
+  network: NetworkSpec,
+  request: SingleSpeciesFBARequest,
+): { vars: Record<string, number>; status: number; z: number } {
   const knockoutSet = new Set(request.knockouts ?? []);
-  return {
-    name: `${network.species}-${request.objective}`,
-    objective: {
-      direction: glpk.GLP_MAX,
-      name: request.objective,
-      vars: network.objectives[request.objective],
-    },
-    subjectTo: network.constraints.map((constraint) => ({
-      name: constraint.name,
-      vars: constraint.vars,
-      bnds: { type: glpk.GLP_FX, lb: 0, ub: 0 },
-    })),
-    bounds: network.reactions.map((reaction) => {
-      const rawUb = typeof reaction.ub === 'function' ? reaction.ub(request) : reaction.ub;
-      if (knockoutSet.has(reaction.id)) {
-        return { name: reaction.id, type: glpk.GLP_FX, lb: 0, ub: 0 };
-      }
-      return {
-        name: reaction.id,
-        type: glpk.GLP_DB,
-        lb: reaction.lb,
-        ub: rawUb,
-      };
-    }),
-  };
+  const rxnIds = network.reactions.map((r) => r.id);
+  const n = rxnIds.length;
+  const nameToIdx = new Map(rxnIds.map((id, i) => [id, i]));
+
+  // Objective vector
+  const c = new Array<number>(n).fill(0);
+  for (const { name, coef } of network.objectives[request.objective]) {
+    const idx = nameToIdx.get(name);
+    if (idx !== undefined) c[idx] = coef;
+  }
+
+  // Stoichiometric constraint matrix and RHS (b = 0 for FBA)
+  const m = network.constraints.length;
+  const A: number[][] = Array.from({ length: m }, () => new Array<number>(n).fill(0));
+  const b = new Array<number>(m).fill(0);
+  for (let i = 0; i < m; i++) {
+    for (const { name, coef } of network.constraints[i].vars) {
+      const idx = nameToIdx.get(name);
+      if (idx !== undefined) A[i][idx] = coef;
+    }
+  }
+
+  // Variable bounds
+  const lb = new Array<number>(n).fill(0);
+  const ub = rxnIds.map((id, i) => {
+    if (knockoutSet.has(id)) return 0;
+    const rxn = network.reactions[i];
+    return typeof rxn.ub === 'function' ? rxn.ub(request) : rxn.ub;
+  });
+
+  const result = solveLPSimplex({ c, A, b, ub, lb });
+
+  const vars: Record<string, number> = {};
+  for (let i = 0; i < n; i++) vars[rxnIds[i]] = result.x[i];
+
+  // status 2 = optimal (mirrors GLPK GLP_OPT), 4 = infeasible
+  return { vars, status: result.feasible ? 2 : 4, z: result.z };
 }
 
 async function solveNetwork(request: SingleSpeciesFBARequest): Promise<FBAOutput> {
-  const glpk = await getGlpk();
   const network = NETWORKS[request.species];
-  const problem = buildProblem(glpk, network, request);
-  const solved = glpk.solve(problem, { msglev: glpk.GLP_MSG_OFF, presol: true });
-  const vars = solved.result.vars ?? {};
-  const status = solved.result.status;
-  const base = network.deriveMetrics(vars, request, status, solved.result.z ?? 0);
+
+  const { vars, status, z } = buildAndSolve(network, request);
+  const base = network.deriveMetrics(vars, request, status, z);
+
   const epsilon = Math.max(0.05, request.glucoseUptake * 0.01);
 
-  const solveGrowth = async (next: SingleSpeciesFBARequest) => {
-    const nextProblem = buildProblem(glpk, network, next);
-    const nextSolved = glpk.solve(nextProblem, { msglev: glpk.GLP_MSG_OFF, presol: true });
-    return network.deriveMetrics(nextSolved.result.vars ?? {}, next, nextSolved.result.status, nextSolved.result.z ?? 0).growthRate;
+  const growthAt = (next: SingleSpeciesFBARequest) => {
+    const { vars: v, status: s, z: zNext } = buildAndSolve(network, next);
+    return network.deriveMetrics(v, next, s, zNext).growthRate;
   };
 
-  const glucoseShadow = (
-    await solveGrowth({ ...request, glucoseUptake: request.glucoseUptake + epsilon })
-    - await solveGrowth({ ...request, glucoseUptake: Math.max(0, request.glucoseUptake - epsilon) })
-  ) / (2 * epsilon);
+  const glucoseShadow =
+    (growthAt({ ...request, glucoseUptake: request.glucoseUptake + epsilon }) -
+      growthAt({ ...request, glucoseUptake: Math.max(0, request.glucoseUptake - epsilon) })) /
+    (2 * epsilon);
 
-  const oxygenShadow = (
-    await solveGrowth({ ...request, oxygenUptake: request.oxygenUptake + epsilon })
-    - await solveGrowth({ ...request, oxygenUptake: Math.max(0, request.oxygenUptake - epsilon) })
-  ) / (2 * epsilon);
+  const oxygenShadow =
+    (growthAt({ ...request, oxygenUptake: request.oxygenUptake + epsilon }) -
+      growthAt({ ...request, oxygenUptake: Math.max(0, request.oxygenUptake - epsilon) })) /
+    (2 * epsilon);
 
   return {
     ...base,
@@ -339,14 +328,8 @@ export async function solveAuthorityCommunityFBA(request: CommunityFBARequest): 
   const communityObjective = round((1 - alpha) * adjustedEcoliGrowth + alpha * adjustedYeastGrowth, 4);
 
   return {
-    ecoli: {
-      ...ecoli,
-      growthRate: adjustedEcoliGrowth,
-    },
-    yeast: {
-      ...yeast,
-      growthRate: adjustedYeastGrowth,
-    },
+    ecoli: { ...ecoli, growthRate: adjustedEcoliGrowth },
+    yeast: { ...yeast, growthRate: adjustedYeastGrowth },
     exchangeFluxes,
     communityGrowthRate: communityObjective,
     communityBiomassObjective: communityObjective,

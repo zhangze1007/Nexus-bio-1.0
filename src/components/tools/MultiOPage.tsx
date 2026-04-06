@@ -1,5 +1,6 @@
 'use client';
 import { useState, useMemo, useCallback, useEffect } from 'react';
+import { computeConvexHull, expandHull } from '../../utils/vizUtils';
 import AlgorithmInsight from '../ide/shared/AlgorithmInsight';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
@@ -266,6 +267,32 @@ function EmbeddingScatter({ embeddings, fcThreshold, activeLayers, highlightedGe
         transform={`rotate(-90,12,${H / 2})`}>
         UMAP-2 (projected)
       </text>
+      {/* Omics-layer convex hull territories */}
+      {(() => {
+        type Layer = 'transcriptomics' | 'proteomics' | 'metabolomics';
+        const byLayer: Record<Layer, Array<{sx: number; sy: number}>> = {
+          transcriptomics: [], proteomics: [], metabolomics: [],
+        };
+        projected.forEach(p => byLayer[p.layer as Layer]?.push({ sx: p.sx, sy: p.sy }));
+        return (Object.entries(byLayer) as Array<[Layer, Array<{sx: number; sy: number}>]>)
+          .filter(([layer, pts]) => pts.length >= 3 && activeLayers[layer])
+          .map(([layer, pts]) => {
+            const color = LAYER_COLORS[layer];
+            const hull = expandHull(computeConvexHull(pts), 14);
+            const poly = hull.map(p => `${p.sx.toFixed(1)},${p.sy.toFixed(1)}`).join(' ');
+            return (
+              <g key={`hull-${layer}`}>
+                <defs>
+                  <filter id={`omics-blur-${layer}`} x="-30%" y="-30%" width="160%" height="160%">
+                    <feGaussianBlur stdDeviation="6" />
+                  </filter>
+                </defs>
+                <polygon points={poly} fill={color} opacity={0.13} filter={`url(#omics-blur-${layer})`} />
+                <polygon points={poly} fill={color} opacity={0.04} stroke={color} strokeWidth={1.2} strokeOpacity={0.30} />
+              </g>
+            );
+          });
+      })()}
       {/* Points */}
       {projected.map(p => {
         const sig = (geneFC[p.gene] ?? 0) > fcThreshold;

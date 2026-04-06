@@ -66,13 +66,27 @@ function GenomeMap({
           : isSelected
             ? 'rgba(255,80,80,0.8)'
             : 'rgba(147,203,82,0.55)';
-        const y = 107 - (isSelected || isEssential ? 30 : 16);
+        // IGV-style horizontal arrow gene body
+        const prominent = isSelected || isEssential;
+        const aw = prominent ? 18 : 12; // arrow total width
+        const ah = prominent ? 7 : 5;   // arrow height
+        const tip = prominent ? 5 : 4;  // arrowhead extent
+        const yBase = prominent ? 70 : 87; // y above chromosome
+        const arrowPath = [
+          `M ${(x - aw / 2).toFixed(1)} ${yBase}`,
+          `L ${(x + aw / 2 - tip).toFixed(1)} ${yBase}`,
+          `L ${(x + aw / 2).toFixed(1)} ${(yBase + ah / 2).toFixed(1)}`,
+          `L ${(x + aw / 2 - tip).toFixed(1)} ${yBase + ah}`,
+          `L ${(x - aw / 2).toFixed(1)} ${yBase + ah}`,
+          'Z',
+        ].join(' ');
         return (
           <g key={target.gene}>
-            <line x1={x} y1={108} x2={x} y2={y + 6} stroke={color} strokeWidth={isSelected ? 1.8 : 1.3} />
-            <polygon points={`${x},${y} ${x - 3},${y + 6} ${x + 3},${y + 6}`} fill={color} />
-            {(isSelected || isEssential) && (
-              <text x={x} y={y - 3} textAnchor="middle" fontFamily={T.MONO} fontSize="7" fill={color}>
+            <line x1={x} y1={108} x2={x} y2={yBase + ah}
+              stroke={color} strokeWidth={prominent ? 1.4 : 1.0} strokeOpacity={0.45} />
+            <path d={arrowPath} fill={color} />
+            {prominent && (
+              <text x={x} y={yBase - 3} textAnchor="middle" fontFamily={T.MONO} fontSize="7" fill={color}>
                 {target.gene}
               </text>
             )}
@@ -85,7 +99,8 @@ function GenomeMap({
         { color: 'rgba(147,203,82,0.55)', label: 'Candidate locus' },
       ].map((legend, index) => (
         <g key={legend.label} transform={`translate(${42 + index * 156},148)`}>
-          <line x1={0} y1={4} x2={12} y2={4} stroke={legend.color} strokeWidth={2} />
+          {/* IGV-style arrow legend marker */}
+          <path d="M 0 2 L 7 2 L 7 0 L 12 4 L 7 8 L 7 6 L 0 6 Z" fill={legend.color} />
           <text x={16} y={8} fontFamily={T.SANS} fontSize="8" fill="rgba(255,255,255,0.35)">{legend.label}</text>
         </g>
       ))}

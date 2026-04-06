@@ -43,6 +43,15 @@ function CitationGraph({ citations, onNodeClick }: {
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
+      <defs>
+        <filter id="nexai-glow" x="-60%" y="-60%" width="220%" height="220%">
+          <feGaussianBlur stdDeviation="4" result="blur" />
+          <feComposite in="SourceGraphic" in2="blur" operator="over" />
+        </filter>
+        <filter id="nexai-node-glow" x="-80%" y="-80%" width="260%" height="260%">
+          <feGaussianBlur stdDeviation="3" />
+        </filter>
+      </defs>
       <rect width={W} height={H} rx={16} fill="#05070b" />
       <rect x="24" y="24" width={W - 48} height={H - 48} rx="18" fill="rgba(255,255,255,0.025)" stroke="rgba(255,255,255,0.06)" />
       <text x="40" y="22" fontFamily={T.SANS} fontSize="10" fill="rgba(205,214,236,0.6)" letterSpacing="0.12em">
@@ -77,18 +86,25 @@ function CitationGraph({ citations, onNodeClick }: {
         );
       })}
 
+      {/* Curved arc bridge citation edges */}
       {nodes.map((node, index) =>
-        nodes.slice(index + 1).filter((candidate) => Math.abs(candidate.year - node.year) <= 4 && Math.abs(candidate.relevance - node.relevance) <= 0.22).slice(0, 2).map((peer, edgeIndex) => (
-          <line
-            key={`edge-${index}-${edgeIndex}`}
-            x1={node.x}
-            y1={node.y}
-            x2={peer.x}
-            y2={peer.y}
-            stroke="rgba(74,124,255,0.18)"
-            strokeWidth={0.9}
-          />
-        ))
+        nodes.slice(index + 1)
+          .filter((candidate) => Math.abs(candidate.year - node.year) <= 4 && Math.abs(candidate.relevance - node.relevance) <= 0.22)
+          .slice(0, 2)
+          .map((peer, edgeIndex) => {
+            const mx = (node.x + peer.x) / 2;
+            const my = Math.min(node.y, peer.y) - 28 - Math.abs(node.x - peer.x) * 0.15;
+            const combined = (node.relevance + peer.relevance) / 2;
+            return (
+              <path
+                key={`arc-${index}-${edgeIndex}`}
+                d={`M ${node.x} ${node.y} Q ${mx} ${my} ${peer.x} ${peer.y}`}
+                fill="none"
+                stroke={combined > 0.7 ? 'rgba(74,124,255,0.32)' : 'rgba(74,124,255,0.14)'}
+                strokeWidth={combined > 0.7 ? 1.2 : 0.7}
+              />
+            );
+          })
       )}
 
       {nodes.map(n => {
@@ -100,10 +116,16 @@ function CitationGraph({ citations, onNodeClick }: {
             onClick={() => onNodeClick?.(n)}
             style={{ cursor: 'pointer' }}>
             <line x1={n.x} y1="330" x2={n.x} y2={n.y + n.r + 4} stroke="rgba(255,255,255,0.08)" strokeDasharray="3 4" />
+            {/* Glow halo for high-relevance nodes */}
+            {n.relevance > 0.7 && (
+              <circle cx={n.x} cy={n.y} r={n.r + 4}
+                fill={isHov ? 'rgba(255,139,31,0.18)' : 'rgba(74,124,255,0.18)'}
+                filter="url(#nexai-node-glow)" />
+            )}
             <circle cx={n.x} cy={n.y} r={n.r}
               fill={isHov ? 'rgba(74,124,255,0.24)' : 'rgba(18,26,40,0.88)'}
-              stroke={isHov ? 'rgba(255,139,31,0.9)' : 'rgba(74,124,255,0.46)'}
-              strokeWidth={isHov ? 1.8 : 1.1}
+              stroke={isHov ? 'rgba(255,139,31,0.9)' : n.relevance > 0.7 ? 'rgba(74,124,255,0.72)' : 'rgba(74,124,255,0.46)'}
+              strokeWidth={isHov ? 1.8 : n.relevance > 0.7 ? 1.5 : 1.1}
             />
             <text x={n.x} y={n.y + 4} textAnchor="middle"
               fontFamily={T.MONO} fontSize="9" fill={isHov ? 'rgba(255,244,230,0.96)' : 'rgba(255,255,255,0.72)'}>

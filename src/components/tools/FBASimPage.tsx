@@ -128,6 +128,20 @@ function FluxMap({ result, nodes, edges, knockouts, compact, svgRef }: {
 
   return (
     <svg ref={svgRef} role="img" aria-label="Chart" viewBox={`0 0 ${W} ${viewH}`} style={{ width: '100%', height: '100%', maxHeight: '100%' }}>
+      <defs>
+        <marker id="fba-arrow-hi" markerWidth="7" markerHeight="7" refX="5.5" refY="3.5" orient="auto">
+          <polygon points="0 0.5, 6.5 3.5, 0 6.5" fill="rgba(147,203,82,0.85)" />
+        </marker>
+        <marker id="fba-arrow-md" markerWidth="7" markerHeight="7" refX="5.5" refY="3.5" orient="auto">
+          <polygon points="0 0.5, 6.5 3.5, 0 6.5" fill="rgba(120,180,255,0.7)" />
+        </marker>
+        <marker id="fba-arrow-lo" markerWidth="7" markerHeight="7" refX="5.5" refY="3.5" orient="auto">
+          <polygon points="0 0.5, 6.5 3.5, 0 6.5" fill="rgba(255,255,255,0.2)" />
+        </marker>
+        <marker id="fba-arrow-ko" markerWidth="7" markerHeight="7" refX="5.5" refY="3.5" orient="auto">
+          <polygon points="0 0.5, 6.5 3.5, 0 6.5" fill="rgba(255,80,80,0.5)" />
+        </marker>
+      </defs>
       <rect width={W} height={viewH} fill="#05070b" rx={16} />
       <rect x="20" y="22" width={W - 40} height={viewH - 44} rx="18" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.06)" />
       <rect x="34" y="60" width="112" height={viewH - 110} rx="14" fill="rgba(74,124,255,0.05)" stroke="rgba(74,124,255,0.12)" />
@@ -167,6 +181,7 @@ function FluxMap({ result, nodes, edges, knockouts, compact, svgRef }: {
               strokeWidth={strokeW}
               strokeLinecap="round"
               strokeDasharray={isKO ? '4 3' : undefined}
+              markerEnd={isKO ? 'url(#fba-arrow-ko)' : normalized > 0.6 ? 'url(#fba-arrow-hi)' : normalized > 0.3 ? 'url(#fba-arrow-md)' : 'url(#fba-arrow-lo)'}
               style={{ transition: 'stroke-width 0.3s, stroke 0.3s' }}
             />
             <rect x={mx - 16} y={my - 8} width="32" height="16" rx="8" fill="rgba(8,10,15,0.82)" stroke={isKO ? 'rgba(255,80,80,0.26)' : 'rgba(255,255,255,0.08)'} />
