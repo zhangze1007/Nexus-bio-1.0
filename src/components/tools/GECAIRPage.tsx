@@ -26,6 +26,16 @@ const PART_COLORS: Record<string, string> = {
   terminator: 'rgba(200,100,255,0.7)',
 };
 
+function viridisColor(t: number): string {
+  const stops: [number, number, number][] = [
+    [68, 1, 84], [49, 104, 142], [53, 183, 121], [144, 215, 67], [253, 231, 37],
+  ];
+  const scaled = Math.max(0, Math.min(1, t)) * 4;
+  const lo = Math.floor(scaled), hi = Math.min(4, lo + 1), f = scaled - lo;
+  const [r1, g1, b1] = stops[lo], [r2, g2, b2] = stops[hi];
+  return `rgb(${Math.round(r1 + (r2 - r1) * f)},${Math.round(g1 + (g2 - g1) * f)},${Math.round(b1 + (b2 - b1) * f)})`;
+}
+
 function resolveGateOutput(a: number, b: number, gateType: GateType) {
   if (gateType === 'AND') return hillActivation(Math.min(a, b));
   if (gateType === 'OR') return hillActivation(Math.max(a, b));
@@ -37,31 +47,29 @@ function CircuitSVG({ inputA, inputB, gateType }: { inputA: number; inputB: numb
   const outA = hillInhibition(inputA);
   const outB = hillInhibition(inputB);
   const outC = resolveGateOutput(outA, outB, gateType);
-  const finalOutput = outC;
   const W = 720;
-  const H = 430;
-  const heatLeft = 42;
-  const heatTop = 54;
-  const heatSize = 246;
-  const grid = 12;
+  const H = 500;
 
-  const heat = Array.from({ length: grid }, (_, yi) =>
-    Array.from({ length: grid }, (_, xi) => {
-      const a = xi / (grid - 1);
-      const b = 1 - yi / (grid - 1);
+  // ── SBOL circuit layout ──
+  const bbY = 108;   // backbone Y center
+  const bbX1 = 52, bbX2 = 308;
+  const exprLevel = outC; // expression level 0-1
+
+  // Phase space heatmap (30×30 viridis)
+  const PS_LEFT = 42, PS_TOP = 158, PS_SIZE = 260, GRID = 30;
+  const cellSize = PS_SIZE / GRID;
+  const phaseHeat = Array.from({ length: GRID }, (_, yi) =>
+    Array.from({ length: GRID }, (_, xi) => {
+      const a = xi / (GRID - 1);
+      const b = 1 - yi / (GRID - 1);
       return resolveGateOutput(hillInhibition(a), hillInhibition(b), gateType);
-    }),
+    })
   );
 
-  function signalColor(value: number) {
-    const warm = 255 * value;
-    const cool = 140 + 80 * (1 - value);
-    return `rgba(${Math.round(90 + warm * 0.6)}, ${Math.round(120 + warm * 0.35)}, ${Math.round(cool)}, ${0.25 + value * 0.6})`;
-  }
-
+  // Right panel: transfer curves
   function responseCurve(inputId: 'A' | 'B') {
     const pts: string[] = [];
-    for (let i = 0; i <= 48; i += 1) {
+    for (let i = 0; i <= 48; i++) {
       const xValue = i / 48;
       const yValue = hillInhibition(xValue);
       const x = 348 + xValue * 148;
@@ -81,141 +89,182 @@ function CircuitSVG({ inputA, inputB, gateType }: { inputA: number; inputB: numb
   const curveA = responseCurve('A');
   const curveB = responseCurve('B');
   const nodeRows = [
-    { label: 'Sensor A', value: outA, tone: 'rgba(81,81,205,0.9)', detail: 'Hill repression from input A' },
-    { label: 'Sensor B', value: outB, tone: 'rgba(255,139,31,0.9)', detail: 'Hill repression from input B' },
-    { label: `${gateType} Output`, value: outC, tone: 'rgba(120,255,180,0.9)', detail: 'Combined gate expression state' },
+    { label: 'Sensor A', value: outA, tone: '#E41A1C', detail: 'Hill repression from input A' },
+    { label: 'Sensor B', value: outB, tone: '#FF7F00', detail: 'Hill repression from input B' },
+    { label: `${gateType} Output`, value: outC, tone: '#4DAF4A', detail: 'Combined gate expression state' },
   ];
 
   return (
     <svg role="img" aria-label="Chart" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
       <rect width={W} height={H} fill="#050505" rx="18" />
-      <text x="24" y="26" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.26)">
-        LOGIC OPERATING SURFACE
-      </text>
-      <text x="24" y="42" fontFamily={T.SANS} fontSize="12" fill="rgba(255,255,255,0.72)">
-        {gateType} gate response across the current two-input regime
+      <text x="24" y="22" fontFamily={T.MONO} fontSize="9" fill="rgba(255,255,255,0.26)">GENE CIRCUIT · SBOL NOTATION</text>
+      <text x="24" y="36" fontFamily={T.SANS} fontSize="11" fill="rgba(255,255,255,0.72)">
+        {gateType} gate — biological parts and 2D phase space response
       </text>
 
-      <rect x={heatLeft} y={heatTop} width={heatSize} height={heatSize} rx="16" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" />
-      {heat.map((row, yi) =>
-        row.map((value, xi) => {
-          const cell = heatSize / grid;
-          return (
-            <rect
-              key={`${xi}-${yi}`}
-              x={heatLeft + xi * cell + 1}
-              y={heatTop + yi * cell + 1}
-              width={cell - 2}
-              height={cell - 2}
-              rx="3"
-              fill={signalColor(value)}
-            />
-          );
-        }),
+      {/* ── SBOL circuit diagram ── */}
+      <rect x={bbX1 - 8} y={bbY - 44} width={bbX2 - bbX1 + 16} height={96} rx="12"
+        fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.07)" />
+      <text x={bbX1 - 4} y={bbY - 36} fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.25)">
+        GENETIC ARCHITECTURE
+      </text>
+      {/* Backbone line */}
+      <line x1={bbX1} y1={bbY} x2={bbX2} y2={bbY} stroke="rgba(255,255,255,0.3)" strokeWidth="2" />
+
+      {/* Promoter — purple filled pentagon/arrow at x=65 */}
+      <polygon
+        points={`65,${bbY} 80,${bbY} 80,${bbY - 22} 90,${bbY - 12} 80,${bbY - 2} 80,${bbY - 22}`}
+        fill="rgba(152,78,163,0.85)" stroke="#984EA3" strokeWidth="1"
+      />
+      <text x={77} y={bbY + 14} textAnchor="middle" fontFamily={T.MONO} fontSize="7" fill="#984EA3">P</text>
+
+      {/* RBS — blue half-circle arc above backbone at x=116 */}
+      <path d={`M 106,${bbY} A 10 10 0 0 1 126,${bbY}`}
+        fill="rgba(55,126,184,0.8)" stroke="#377EB8" strokeWidth="1" />
+      <text x={116} y={bbY + 14} textAnchor="middle" fontFamily={T.MONO} fontSize="7" fill="#377EB8">RBS</text>
+
+      {/* CDS — orange arrow rectangle at x=148 */}
+      <polygon
+        points={`138,${bbY - 16} 190,${bbY - 16} 206,${bbY} 190,${bbY + 16} 138,${bbY + 16}`}
+        fill={`rgba(255,127,0,${0.3 + exprLevel * 0.55})`}
+        stroke="#FF7F00" strokeWidth="1.2"
+      />
+      <text x={172} y={bbY + 4} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill="#FF7F00">{gateType}</text>
+
+      {/* Terminator — red T-shape at x=252 */}
+      <line x1={252} y1={bbY - 20} x2={252} y2={bbY + 2} stroke="#E41A1C" strokeWidth="2.5" />
+      <line x1={240} y1={bbY - 20} x2={264} y2={bbY - 20} stroke="#E41A1C" strokeWidth="2.5" />
+      <text x={252} y={bbY + 14} textAnchor="middle" fontFamily={T.MONO} fontSize="7" fill="#E41A1C">T</text>
+
+      {/* Output arrow at right end */}
+      <line x1={bbX2} y1={bbY} x2={bbX2 + 18} y2={bbY} stroke="rgba(255,255,255,0.25)" strokeWidth="1.5" markerEnd="url(#gecair-arrow)" />
+      <defs>
+        <marker id="gecair-arrow" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+          <polygon points="0 0.5, 5.5 3, 0 5.5" fill="rgba(255,255,255,0.3)" />
+        </marker>
+      </defs>
+      <text x={bbX2 + 22} y={bbY + 4} fontFamily={T.MONO} fontSize="7" fill="rgba(255,255,255,0.28)">{(outC * 100).toFixed(0)}%</text>
+
+      {/* ── 2D Phase Space heatmap (viridis, 30×30) ── */}
+      <text x={PS_LEFT} y={PS_TOP - 10} fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.26)">
+        PHASE SPACE · Output = {viridisColor(0).includes('68') ? 'low' : ''} → high (viridis)
+      </text>
+      <rect x={PS_LEFT - 2} y={PS_TOP - 2} width={PS_SIZE + 4} height={PS_SIZE + 4} rx="10"
+        fill="none" stroke="rgba(255,255,255,0.07)" />
+      {phaseHeat.map((row, yi) =>
+        row.map((val, xi) => (
+          <rect
+            key={`ps-${xi}-${yi}`}
+            x={PS_LEFT + xi * cellSize}
+            y={PS_TOP + yi * cellSize}
+            width={cellSize}
+            height={cellSize}
+            fill={viridisColor(val)}
+            opacity={0.9}
+          />
+        ))
       )}
-      <circle
-        cx={heatLeft + inputA * heatSize}
-        cy={heatTop + (1 - inputB) * heatSize}
-        r="7"
-        fill="none"
-        stroke="rgba(255,255,255,0.95)"
-        strokeWidth="2"
+      {/* Crosshair at current (inputA, inputB) */}
+      <line
+        x1={PS_LEFT + inputA * PS_SIZE} y1={PS_TOP}
+        x2={PS_LEFT + inputA * PS_SIZE} y2={PS_TOP + PS_SIZE}
+        stroke="rgba(255,255,255,0.6)" strokeWidth="1" strokeDasharray="3 2"
+      />
+      <line
+        x1={PS_LEFT} y1={PS_TOP + (1 - inputB) * PS_SIZE}
+        x2={PS_LEFT + PS_SIZE} y2={PS_TOP + (1 - inputB) * PS_SIZE}
+        stroke="rgba(255,255,255,0.6)" strokeWidth="1" strokeDasharray="3 2"
       />
       <circle
-        cx={heatLeft + inputA * heatSize}
-        cy={heatTop + (1 - inputB) * heatSize}
-        r="2.5"
-        fill="rgba(255,255,255,0.95)"
+        cx={PS_LEFT + inputA * PS_SIZE}
+        cy={PS_TOP + (1 - inputB) * PS_SIZE}
+        r={6} fill="none" stroke="white" strokeWidth="1.8"
       />
-      <text x={heatLeft + heatSize / 2} y={heatTop + heatSize + 26} textAnchor="middle" fontFamily={T.MONO} fontSize="9" fill="rgba(255,255,255,0.28)">
-        Input A fraction
-      </text>
-      <text x={16} y={heatTop + heatSize / 2} textAnchor="middle" fontFamily={T.MONO} fontSize="9" fill="rgba(255,255,255,0.28)" transform={`rotate(-90, 16, ${heatTop + heatSize / 2})`}>
-        Input B fraction
-      </text>
-      {[0, 0.5, 1].map((tick, i) => (
-        <g key={i}>
-          <text x={heatLeft + tick * heatSize} y={heatTop + heatSize + 12} textAnchor={tick === 0 ? 'start' : tick === 1 ? 'end' : 'middle'} fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.2)">
-            {(tick * 100).toFixed(0)}%
-          </text>
-          <text x={heatLeft - 8} y={heatTop + (1 - tick) * heatSize + 3} textAnchor="end" fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.2)">
-            {(tick * 100).toFixed(0)}%
-          </text>
+      {/* Axes */}
+      <text x={PS_LEFT + PS_SIZE / 2} y={PS_TOP + PS_SIZE + 16} textAnchor="middle"
+        fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.28)">Input A (0→1)</text>
+      <text x={PS_LEFT - 14} y={PS_TOP + PS_SIZE / 2} textAnchor="middle"
+        fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.28)"
+        transform={`rotate(-90,${PS_LEFT - 14},${PS_TOP + PS_SIZE / 2})`}>Input B (0→1)</text>
+      {/* Tick marks */}
+      {[0, 0.5, 1].map((tick) => (
+        <g key={tick}>
+          <text x={PS_LEFT + tick * PS_SIZE} y={PS_TOP + PS_SIZE + 8}
+            textAnchor="middle" fontFamily={T.MONO} fontSize="7" fill="rgba(255,255,255,0.2)">{tick.toFixed(1)}</text>
+          <text x={PS_LEFT - 4} y={PS_TOP + (1 - tick) * PS_SIZE + 3}
+            textAnchor="end" fontFamily={T.MONO} fontSize="7" fill="rgba(255,255,255,0.2)">{tick.toFixed(1)}</text>
         </g>
       ))}
+      {/* Viridis color bar */}
+      <defs>
+        <linearGradient id="gecair-viridis" x1="0" y1="1" x2="0" y2="0">
+          <stop offset="0%" stopColor={viridisColor(0)} />
+          <stop offset="25%" stopColor={viridisColor(0.25)} />
+          <stop offset="50%" stopColor={viridisColor(0.5)} />
+          <stop offset="75%" stopColor={viridisColor(0.75)} />
+          <stop offset="100%" stopColor={viridisColor(1)} />
+        </linearGradient>
+      </defs>
+      <rect x={PS_LEFT + PS_SIZE + 8} y={PS_TOP} width="10" height={PS_SIZE}
+        fill="url(#gecair-viridis)" rx="3" />
+      <text x={PS_LEFT + PS_SIZE + 22} y={PS_TOP + 6} fontFamily={T.MONO} fontSize="7" fill="rgba(255,255,255,0.3)">1.0</text>
+      <text x={PS_LEFT + PS_SIZE + 22} y={PS_TOP + PS_SIZE + 2} fontFamily={T.MONO} fontSize="7" fill="rgba(255,255,255,0.3)">0.0</text>
 
-      <rect x="324" y="54" width="180" height="92" rx="16" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" />
-      <text x="338" y="74" fontFamily={T.MONO} fontSize="9" fill="rgba(255,255,255,0.24)">
-        TRANSFER CURVES
+      {/* ── Right: Transfer curves ── */}
+      <rect x="324" y="54" width="382" height="92" rx="16" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" />
+      <text x="338" y="74" fontFamily={T.MONO} fontSize="9" fill="rgba(255,255,255,0.24)">TRANSFER CURVES</text>
+      <polyline points={curveA.points} fill="none" stroke="#E41A1C" strokeWidth="2" />
+      <polyline points={curveB.points} fill="none" stroke="#FF7F00" strokeWidth="2" />
+      <circle cx={curveA.markerX} cy={curveA.markerY} r="4" fill="#E41A1C" />
+      <circle cx={curveB.markerX} cy={curveB.markerY} r="4" fill="#FF7F00" />
+      <text x="348" y="133" fontFamily={T.MONO} fontSize="8" fill="rgba(228,26,28,0.9)">
+        A: {(curveA.markerOutput * 100).toFixed(0)}%
       </text>
-      <polyline points={curveA.points} fill="none" stroke="rgba(81,81,205,0.95)" strokeWidth="2" />
-      <polyline points={curveB.points} fill="none" stroke="rgba(255,139,31,0.95)" strokeWidth="2" />
-      <circle cx={curveA.markerX} cy={curveA.markerY} r="4" fill="rgba(81,81,205,1)" />
-      <circle cx={curveB.markerX} cy={curveB.markerY} r="4" fill="rgba(255,139,31,1)" />
-      <text x="348" y="133" fontFamily={T.MONO} fontSize="8" fill="rgba(81,81,205,0.95)">
-        A sensor {(curveA.markerOutput * 100).toFixed(0)}%
-      </text>
-      <text x="430" y="133" fontFamily={T.MONO} fontSize="8" fill="rgba(255,139,31,0.95)">
-        B sensor {(curveB.markerOutput * 100).toFixed(0)}%
+      <text x="420" y="133" fontFamily={T.MONO} fontSize="8" fill="rgba(255,127,0,0.9)">
+        B: {(curveB.markerOutput * 100).toFixed(0)}%
       </text>
 
-      <rect x="324" y="164" width="180" height="136" rx="16" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" />
-      <text x="338" y="184" fontFamily={T.MONO} fontSize="9" fill="rgba(255,255,255,0.24)">
+      <rect x="324" y="164" width="382" height="160" rx="16" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" />
+      <text x="338" y="182" fontFamily={T.MONO} fontSize="9" fill="rgba(255,255,255,0.24)">
         NODE STATE LEDGER
       </text>
       {nodeRows.map((row, index) => {
-        const y = 208 + index * 34;
+        const y = 204 + index * 40;
         return (
           <g key={row.label}>
             <text x="338" y={y} fontFamily={T.SANS} fontSize="11" fill="rgba(255,255,255,0.68)">
               {row.label}
             </text>
-            <rect x="338" y={y + 8} width="132" height="8" rx="999" fill="rgba(255,255,255,0.08)" />
-            <rect x="338" y={y + 8} width={Math.max(6, row.value * 132)} height="8" rx="999" fill={row.tone} />
-            <text x="476" y={y + 15} textAnchor="end" fontFamily={T.MONO} fontSize="9" fill="rgba(255,255,255,0.55)">
+            <rect x="338" y={y + 8} width="220" height="10" rx="999" fill="rgba(255,255,255,0.06)" />
+            <rect x="338" y={y + 8} width={Math.max(8, row.value * 220)} height="10" rx="999" fill={row.tone} opacity={0.85} />
+            <text x="564" y={y + 17} textAnchor="end" fontFamily={T.MONO} fontSize="9" fontWeight="600" fill="rgba(255,255,255,0.65)">
               {(row.value * 100).toFixed(1)}%
             </text>
-            <text x="338" y={y + 27} fontFamily={T.SANS} fontSize="9" fill="rgba(255,255,255,0.32)">
+            <text x="338" y={y + 31} fontFamily={T.SANS} fontSize="9" fill="rgba(255,255,255,0.28)">
               {row.detail}
             </text>
           </g>
         );
       })}
 
-      <rect x="42" y="330" width="462" height="76" rx="18" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" />
-      <text x="58" y="350" fontFamily={T.MONO} fontSize="9" fill="rgba(255,255,255,0.24)">
-        GENETIC ARCHITECTURE
+      {/* SBOL Legend */}
+      <rect x="324" y="340" width="382" height="140" rx="16" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.07)" />
+      <text x="338" y="358" fontFamily={T.MONO} fontSize="9" fill="rgba(255,255,255,0.24)">SBOL2 NOTATION LEGEND</text>
+      {[
+        { label: 'Promoter',   color: '#984EA3', shape: 'pentagon' },
+        { label: 'RBS',        color: '#377EB8', shape: 'arc' },
+        { label: 'CDS/Gate',   color: '#FF7F00', shape: 'arrow' },
+        { label: 'Terminator', color: '#E41A1C', shape: 'T' },
+      ].map((item, i) => (
+        <g key={item.label} transform={`translate(338,${372 + i * 26})`}>
+          <rect width="10" height="10" rx="2" fill={item.color} opacity={0.8} />
+          <text x="16" y="9" fontFamily={T.SANS} fontSize="10" fill="rgba(255,255,255,0.55)">{item.label}</text>
+          <text x="100" y="9" fontFamily={T.MONO} fontSize="9" fill="rgba(255,255,255,0.28)">{item.shape}</text>
+        </g>
+      ))}
+      <text x="338" y="476" fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.2)">
+        Expression level → CDS height · Phase space → viridis output
       </text>
-      {CIRCUIT_NODES.slice(0, 3).map((node, ni) => {
-        const y = 365 + ni * 16;
-        return (
-          <g key={node.id}>
-            <text x="58" y={y} fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.38)">
-              {['Sensor A', 'Sensor B', 'Output cassette'][ni]}
-            </text>
-            {node.parts.map((part, pi) => (
-              <g key={part.id}>
-                <rect
-                  x={132 + pi * 70}
-                  y={y - 10}
-                  width="62"
-                  height="12"
-                  rx="6"
-                  fill="rgba(0,0,0,0.28)"
-                  stroke={PART_COLORS[part.type] ?? 'rgba(255,255,255,0.2)'}
-                  strokeWidth="1.1"
-                />
-                <text x={163 + pi * 70} y={y - 1} textAnchor="middle" fontFamily={T.MONO} fontSize="7" fill="rgba(255,255,255,0.7)">
-                  {part.label}
-                </text>
-              </g>
-            ))}
-          </g>
-        );
-      })}
-      <path d="M 286 361 C 312 361, 318 361, 338 361" stroke="rgba(81,81,205,0.55)" strokeWidth="1.5" fill="none" />
-      <path d="M 286 377 C 312 377, 318 377, 338 377" stroke="rgba(255,139,31,0.55)" strokeWidth="1.5" fill="none" />
-      <path d="M 338 361 C 364 361, 380 377, 404 377" stroke="rgba(120,255,180,0.45)" strokeWidth="1.5" fill="none" strokeDasharray="4 3" />
     </svg>
   );
 }

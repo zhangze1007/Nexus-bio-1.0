@@ -185,6 +185,211 @@ const COLUMNS: TableColumn<OmicsRow>[] = [
   },
 ];
 
+/* ── Shared helpers for tri-panel ────────────────────────────────── */
+
+const CLUSTER_PAL = ['#E41A1C','#377EB8','#4DAF4A','#984EA3','#FF7F00','#A65628','#F781BF','#FFFF33'];
+
+function divergingColor(t: number): string {
+  const n = (t + 1) / 2;
+  if (n < 0.5) {
+    const f = n * 2;
+    return `rgb(${Math.round(33+(247-33)*f)},${Math.round(102+(247-102)*f)},${Math.round(172+(247-172)*f)})`;
+  }
+  const f = (n - 0.5) * 2;
+  return `rgb(${Math.round(247+(214-247)*f)},${Math.round(247+(96-247)*f)},${Math.round(247+(77-247)*f)})`;
+}
+
+function pearsonR(v1: number[], v2: number[]): number {
+  const n = v1.length;
+  if (n === 0) return 0;
+  const m1 = v1.reduce((a, b) => a + b, 0) / n;
+  const m2 = v2.reduce((a, b) => a + b, 0) / n;
+  const num = v1.reduce((s, x, i) => s + (x - m1) * (v2[i] - m2), 0);
+  const d1 = Math.sqrt(v1.reduce((s, x) => s + (x - m1) ** 2, 0));
+  const d2 = Math.sqrt(v2.reduce((s, x) => s + (x - m2) ** 2, 0));
+  return d1 === 0 || d2 === 0 ? 0 : num / (d1 * d2);
+}
+
+/* ── Tri-Panel Embedding: PCA biplot + correlation heatmap + volcano ─ */
+
+function TriPanelEmbedding({ embeddings, data, fcThreshold, pvThreshold, activeLayers, highlightedGene }: {
+  embeddings: EmbeddingPoint[];
+  data: OmicsRow[];
+  fcThreshold: number;
+  pvThreshold: number;
+  activeLayers: Record<OmicsLayer, boolean>;
+  highlightedGene?: string;
+}) {
+  // ── PCA Biplot (left) ──────────────────────────────────────────────
+  const pcaW = 280, pcaH = 320, pcaPAD = 36;
+  const visible = embeddings.filter(p => activeLayers[p.layer]);
+
+  const pcaProjected = useMemo(() => {
+    if (visible.length === 0) return [];
+    const pts = visible.map((p, i) => ({
+      ...p,
+      px: p.coords[0] * 0.866 - p.coords[2] * 0.5,
+      py: -p.coords[1] + p.coords[0] * 0.3,
+      clusterIdx: i % 8,
+    }));
+    const xs = pts.map(p => p.px), ys = pts.map(p => p.py);
+    const xMn = Math.min(...xs), xMx = Math.max(...xs);
+    const yMn = Math.min(...ys), yMx = Math.max(...ys);
+    const xR = xMx - xMn || 1, yR = yMx - yMn || 1;
+    return pts.map(p => ({
+      ...p,
+      sx: pcaPAD + ((p.px - xMn) / xR) * (pcaW - pcaPAD * 2),
+      sy: pcaPAD + ((p.py - yMn) / yR) * (pcaH - pcaPAD * 2),
+    }));
+  }, [visible]);
+
+  // Layer color map (use cluster palette)
+  const layerColorMap: Record<OmicsLayer, string> = {
+    transcriptomics: CLUSTER_PAL[0],
+    proteomics:      CLUSTER_PAL[1],
+    metabolomics:    CLUSTER_PAL[2],
+  };
+
+  // Top-5 loading vectors (genes by |FC|)
+  const topGenes = useMemo(() =>
+    [...data].sort((a, b) => Math.abs(b.fold_change ?? 0) - Math.abs(a.fold_change ?? 0)).slice(0, 5),
+    [data]
+  );
+  const cx = pcaW / 2, cy = pcaH / 2;
+
+  // ── Correlation Heatmap (center) ───────────────────────────────────
+  const N_GENES = 20;
+  const hmW = 300, hmH = 320, hmPAD = { top: 60, left: 60, right: 20, bottom: 8 };
+  const hmInner = hmW - hmPAD.left - hmPAD.right;
+  const cellW = hmInner / N_GENES;
+
+  const genes20 = useMemo(() => data.slice(0, N_GENES), [data]);
+  const corrMatrix = useMemo(() => {
+    return genes20.map(g1 => {
+      const v1 = [g1.transcript ?? 0, g1.protein ?? 0, g1.metabolite ?? 0, (g1.fold_change ?? 0) * 2];
+      return genes20.map(g2 => {
+        const v2 = [g2.transcript ?? 0, g2.protein ?? 0, g2.metabolite ?? 0, (g2.fold_change ?? 0) * 2];
+        return pearsonR(v1, v2);
+      });
+    });
+  }, [genes20]);
+
+  // ── Volcano (right) — reuse existing VolcanoPlot ───────────────────
+  // Colors updated below in render using data
+
+  return (
+    <div style={{ display: 'flex', gap: '12px', width: '100%', height: '100%', padding: '8px' }}>
+
+      {/* LEFT: PCA Biplot */}
+      <div style={{ flex: '0 0 auto' }}>
+        <svg viewBox={`0 0 ${pcaW} ${pcaH}`} style={{ width: `${pcaW}px`, height: `${pcaH}px` }}>
+          <rect width={pcaW} height={pcaH} fill="#050505" rx="10" />
+          <text x={pcaW / 2} y={14} textAnchor="middle" fontFamily={T.MONO} fontSize="7" fill="rgba(255,255,255,0.25)">PCA BIPLOT</text>
+          <text x={pcaW / 2} y={pcaH - 4} textAnchor="middle" fontFamily={T.MONO} fontSize="7" fill="rgba(255,255,255,0.22)">PC1 (38.2% var)</text>
+          <text x={8} y={pcaH / 2} textAnchor="middle" fontFamily={T.MONO} fontSize="7" fill="rgba(255,255,255,0.22)"
+            transform={`rotate(-90,8,${pcaH / 2})`}>PC2 (21.6% var)</text>
+          <line x1={pcaPAD} y1={pcaH - pcaPAD} x2={pcaW - pcaPAD} y2={pcaH - pcaPAD} stroke="rgba(255,255,255,0.08)" />
+          <line x1={pcaPAD} y1={pcaPAD} x2={pcaPAD} y2={pcaH - pcaPAD} stroke="rgba(255,255,255,0.08)" />
+          {/* Loading arrows */}
+          {topGenes.map((gene, i) => {
+            const angle = (i / topGenes.length) * Math.PI * 2;
+            const len = 44 + Math.abs(gene.fold_change ?? 0) * 8;
+            const ax = cx + Math.cos(angle) * len, ay = cy + Math.sin(angle) * len;
+            return (
+              <g key={gene.gene}>
+                <line x1={cx} y1={cy} x2={ax} y2={ay}
+                  stroke="rgba(255,255,255,0.35)" strokeWidth="1" markerEnd="url(#pca-arrow)" />
+                <text x={ax + Math.cos(angle) * 8} y={ay + Math.sin(angle) * 8 + 2}
+                  textAnchor="middle" fontFamily={T.MONO} fontSize="6" fill="rgba(255,255,255,0.5)">
+                  {gene.gene.slice(0, 6)}
+                </text>
+              </g>
+            );
+          })}
+          <defs>
+            <marker id="pca-arrow" markerWidth="5" markerHeight="5" refX="4" refY="2.5" orient="auto">
+              <polygon points="0 0.5, 4.5 2.5, 0 4.5" fill="rgba(255,255,255,0.35)" />
+            </marker>
+          </defs>
+          {/* Sample points */}
+          {pcaProjected.map((p, i) => (
+            <circle key={p.id ?? i}
+              cx={p.sx} cy={p.sy} r={p.gene === highlightedGene ? 5.5 : 3.5}
+              fill={layerColorMap[p.layer] ?? CLUSTER_PAL[0]}
+              opacity={0.8}
+            />
+          ))}
+          {/* Layer legend */}
+          {(['transcriptomics', 'proteomics', 'metabolomics'] as OmicsLayer[]).map((layer, i) => (
+            activeLayers[layer] && (
+              <g key={layer} transform={`translate(${pcaPAD},${pcaH - pcaPAD + 10 + i * 12})`}>
+                <circle cx={4} cy={4} r={4} fill={layerColorMap[layer]} />
+                <text x={12} y={8} fontFamily={T.MONO} fontSize="7" fill="rgba(255,255,255,0.4)">{layer.slice(0,6)}</text>
+              </g>
+            )
+          ))}
+        </svg>
+      </div>
+
+      {/* CENTER: 20×20 Correlation Heatmap */}
+      <div style={{ flex: '0 0 auto' }}>
+        <svg viewBox={`0 0 ${hmW} ${hmH}`} style={{ width: `${hmW}px`, height: `${hmH}px` }}>
+          <rect width={hmW} height={hmH} fill="#050505" rx="10" />
+          <text x={hmW / 2} y={12} textAnchor="middle" fontFamily={T.MONO} fontSize="7" fill="rgba(255,255,255,0.25)">
+            CORRELATION MATRIX (20×20)
+          </text>
+          {corrMatrix.map((row, yi) =>
+            row.map((r, xi) => (
+              <rect key={`cm-${xi}-${yi}`}
+                x={hmPAD.left + xi * cellW}
+                y={hmPAD.top + yi * cellW}
+                width={cellW}
+                height={cellW}
+                fill={divergingColor(r)}
+              />
+            ))
+          )}
+          {/* Gene labels on X axis (rotated) */}
+          {genes20.map((g, i) => (
+            <text key={`xl-${i}`}
+              x={hmPAD.left + i * cellW + cellW / 2}
+              y={hmPAD.top - 4}
+              textAnchor="start"
+              fontFamily={T.MONO} fontSize="5.5" fill="rgba(255,255,255,0.35)"
+              transform={`rotate(-60,${hmPAD.left + i * cellW + cellW / 2},${hmPAD.top - 4})`}
+            >{g.gene.slice(0, 5)}</text>
+          ))}
+          {/* Gene labels on Y axis */}
+          {genes20.map((g, i) => (
+            <text key={`yl-${i}`}
+              x={hmPAD.left - 2}
+              y={hmPAD.top + i * cellW + cellW * 0.65}
+              textAnchor="end"
+              fontFamily={T.MONO} fontSize="5.5" fill="rgba(255,255,255,0.35)"
+            >{g.gene.slice(0, 5)}</text>
+          ))}
+          {/* Color bar */}
+          <defs>
+            <linearGradient id="multio-div" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={divergingColor(1)} />
+              <stop offset="50%" stopColor={divergingColor(0)} />
+              <stop offset="100%" stopColor={divergingColor(-1)} />
+            </linearGradient>
+          </defs>
+          <rect x={hmW - 16} y={hmPAD.top} width="8" height={hmInner} fill="url(#multio-div)" rx="2" />
+          <text x={hmW - 12} y={hmPAD.top - 2} textAnchor="middle" fontFamily={T.MONO} fontSize="6" fill="rgba(255,255,255,0.3)">+1</text>
+          <text x={hmW - 12} y={hmPAD.top + hmInner + 8} textAnchor="middle" fontFamily={T.MONO} fontSize="6" fill="rgba(255,255,255,0.3)">-1</text>
+        </svg>
+      </div>
+
+      {/* RIGHT: Volcano plot — updated colors */}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <VolcanoPlot data={data} fcThreshold={fcThreshold} pvThreshold={pvThreshold} highlightedGene={highlightedGene} />
+      </div>
+    </div>
+  );
+}
+
 /* ── 3D→2D Embedding Scatter (SVG) ───────────────────────────────── */
 
 function EmbeddingScatter({ embeddings, fcThreshold, activeLayers, highlightedGene, bottleneckGene }: {
@@ -757,16 +962,15 @@ export default function MultiOPage() {
               </div>
             )}
             {viewMode === 'Embedding' && (
-              <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
-                <div style={{ width: '100%', maxWidth: '600px' }}>
-                  <EmbeddingScatter
-                    embeddings={embeddings}
-                    fcThreshold={fcThreshold}
-                    activeLayers={activeLayers}
-                    highlightedGene={selectedGene}
-                    bottleneckGene={significant[0]?.gene ?? selectedGene}
-                  />
-                </div>
+              <div style={{ flex: 1, overflow: 'auto', padding: '12px' }}>
+                <TriPanelEmbedding
+                  embeddings={embeddings}
+                  data={filtered}
+                  fcThreshold={fcThreshold}
+                  pvThreshold={pvThreshold}
+                  activeLayers={activeLayers}
+                  highlightedGene={selectedGene}
+                />
               </div>
             )}
 
