@@ -222,13 +222,25 @@ function FloatingCLI({ query, setQuery, onSubmit, loading, history }: {
         zIndex: 10,
       }}
     >
-      <span style={{
-        fontFamily: T.MONO, fontSize: '12px', fontWeight: 700,
-        color: loading ? AXON_ACCENT : 'rgba(255,255,255,0.3)',
-        flexShrink: 0,
-      }}>
-        {loading ? '⟳' : '›'}
-      </span>
+      {loading ? (
+        <span style={{ display: 'flex', gap: '3px', alignItems: 'center', flexShrink: 0 }}>
+          {[0, 1, 2].map(i => (
+            <motion.span
+              key={i}
+              animate={{ opacity: [0.2, 1, 0.2] }}
+              transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.22 }}
+              style={{
+                display: 'block', width: '5px', height: '5px', borderRadius: '50%',
+                background: AXON_ACCENT,
+              }}
+            />
+          ))}
+        </span>
+      ) : (
+        <span style={{ fontFamily: T.MONO, fontSize: '12px', fontWeight: 700, color: 'rgba(255,255,255,0.3)', flexShrink: 0 }}>
+          ›
+        </span>
+      )}
       <input
         ref={inputRef}
         value={query}
@@ -510,6 +522,29 @@ export default function NEXAIPage() {
         setResultMode('text');
         appendConsole({ level: 'success', module: 'nexai', message: `Axon: text response · ${provider}` });
       }
+
+      // Fetch real citations from Semantic Scholar (best-effort)
+      try {
+        const ssUrl = `https://api.semanticscholar.org/graph/v1/paper/search?query=${encodeURIComponent(query.slice(0, 100))}&fields=title,authors,year,citationCount&limit=5`;
+        const ssRes = await fetch(ssUrl);
+        if (ssRes.ok) {
+          const ssData = await ssRes.json();
+          const ssCitations: import('../../types').CitationNode[] = (ssData.data ?? []).map((p: Record<string, unknown>, i: number) => ({
+            id: (p.paperId as string) ?? `ss-${i}`,
+            title: (p.title as string) ?? 'Unknown title',
+            authors: ((p.authors as {name:string}[]) ?? []).map((a) => a.name).join(', ') || 'Unknown authors',
+            year: (p.year as number) ?? new Date().getFullYear(),
+            relevance: Math.max(0.1, 1 - i * 0.16),
+          }));
+          if (ssCitations.length > 0) {
+            setResult(prev => prev ? {
+              ...prev,
+              citations: [...ssCitations, ...prev.citations.filter(c => !ssCitations.find(s => s.id === c.id))].slice(0, 10),
+            } : prev);
+            appendConsole({ level: 'info', module: 'nexai', message: `Semantic Scholar: ${ssCitations.length} real citation(s) loaded` });
+          }
+        }
+      } catch { /* Semantic Scholar optional */ }
     } catch (e) {
       appendConsole({ level: 'warn', module: 'nexai', message: `API unavailable — ${String(e).slice(0, 80)} — using contextual synthesis` });
       setResult(buildContextualResult({

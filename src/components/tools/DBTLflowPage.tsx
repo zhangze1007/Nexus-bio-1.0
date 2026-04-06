@@ -69,12 +69,13 @@ function Timeline({ iterations }: { iterations: DBTLIteration[] }) {
       {iterations.length > 1 && (
         <polyline
           points={iterations
-            .map((it, i) => `${160 + (it.result / maxResult) * 280},${30 + i * 60 + 20}`)
+            .map((it, i) => `${160 + (it.result / maxResult) * 280},${30 + i * 60 + 33}`)
             .join(' ')}
           fill="none"
-          stroke="rgba(255,255,255,0.18)"
-          strokeWidth={1.2}
-          strokeDasharray="4 3"
+          stroke="#FF7F00"
+          strokeWidth={1.8}
+          strokeDasharray="4 2"
+          strokeOpacity={0.75}
         />
       )}
       <line x1={160} y1={20} x2={160} y2={30 + iterations.length * 60} stroke="rgba(255,255,255,0.08)" />
