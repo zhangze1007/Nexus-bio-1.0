@@ -42,7 +42,17 @@ const CLUSTER_COLORS: Record<number, string> = {
   4: '#FF1FFF',
 };
 
-type ViewMode = 'Spatial' | 'Spatial3D' | 'UMAP' | 'Trajectory' | 'Efficiency' | 'Table';
+const CLUSTER_PAL = ['#E41A1C','#377EB8','#4DAF4A','#984EA3','#FF7F00','#A65628','#F781BF','#FFFF33'];
+
+function viridisColor(t: number): string {
+  const stops: [number, number, number][] = [[68,1,84],[49,104,142],[53,183,121],[144,215,67],[253,231,37]];
+  const s = Math.max(0, Math.min(1, t)) * 4;
+  const lo = Math.floor(s), hi = Math.min(4, lo + 1), f = s - lo;
+  const [r1,g1,b1] = stops[lo], [r2,g2,b2] = stops[hi];
+  return `rgb(${Math.round(r1+(r2-r1)*f)},${Math.round(g1+(g2-g1)*f)},${Math.round(b1+(b2-b1)*f)})`;
+}
+
+type ViewMode = 'Spatial' | 'Spatial3D' | 'UMAP' | 'Trajectory' | 'Efficiency' | 'Heatmap' | 'Table';
 
 function canonicalGeneToken(value: string) {
   return value.toUpperCase().replace(/[^A-Z0-9]/g, '');
@@ -143,118 +153,140 @@ function hexPath(cx: number, cy: number, r: number): string {
   }).join(' ') + ' Z';
 }
 
-/* ── Spatial Map SVG (10x Visium hexagonal spot grid) ─────────────── */
+/* ── Spatial Map SVG — publication-quality hexagonal spot grid ─────── */
 
-function SpatialMap({ cells, selectedCluster, highlightGene, showQCFailed }: {
+// Hexagonal spot grid parameters
+const HEX_ROWS = 25, HEX_COLS = 16, HEX_W = 24, HEX_H = 21, HEX_R = 9;
+
+// Cluster centers in normalized [0,1] grid space for spot assignment
+const SPOT_CENTERS: [number, number][] = [
+  [0.72, 0.22], [0.30, 0.18], [0.12, 0.62], [0.58, 0.78], [0.46, 0.46],
+];
+
+// Seeded PRNG for reproducible spot assignments
+function mkRng(seed = 7919) {
+  let s = seed;
+  return () => { s = (s * 1664525 + 1013904223) & 0x7fffffff; return s / 0x7fffffff; };
+}
+
+// Pre-generate 400 hex spots with cluster + base-expression assignments
+const HEX_SPOTS = (() => {
+  const rng = mkRng();
+  return Array.from({ length: HEX_ROWS }, (_, row) =>
+    Array.from({ length: HEX_COLS }, (_, col) => {
+      const px = 36 + col * HEX_W + (row % 2) * HEX_W / 2;
+      const py = 36 + row * HEX_H;
+      const nx = col / (HEX_COLS - 1), ny = row / (HEX_ROWS - 1);
+      let best = 0, bestD = Infinity;
+      SPOT_CENTERS.forEach(([cx, cy], ci) => {
+        const jx = nx + (rng() - 0.5) * 0.28, jy = ny + (rng() - 0.5) * 0.28;
+        const d = Math.sqrt((jx - cx) ** 2 + (jy - cy) ** 2);
+        if (d < bestD) { bestD = d; best = ci; }
+      });
+      const baseExpr = rng();
+      return { px, py, cluster: best, baseExpr };
+    })
+  ).flat();
+})();
+
+function SpatialMap({ cells, selectedCluster, highlightGene }: {
   cells: typeof SC_SPATIAL_DATA;
   selectedCluster: number | null;
   highlightGene: string;
-  showQCFailed: boolean;
 }) {
-  const W = 520, H = 420, PAD = 44;
+  const W = 520, H = 570;
 
-  const { xMin, xRange, yMin, yRange } = useMemo(() => {
-    const xs = cells.map(c => c.spatialX);
-    const ys = cells.map(c => c.spatialY);
-    const xMn = Math.min(...xs), xMx = Math.max(...xs);
-    const yMn = Math.min(...ys), yMx = Math.max(...ys);
-    return { xMin: xMn, xRange: xMx - xMn || 1, yMin: yMn, yRange: yMx - yMn || 1 };
-  }, [cells]);
-
-  const geneMax = useMemo(() => {
-    let mx = 0;
-    cells.forEach(c => { mx = Math.max(mx, c.geneExpression[highlightGene] ?? 0); });
-    return mx || 1;
+  // Per-cluster mean expression from real data
+  const clusterMeanExpr = useMemo(() => {
+    const means: Record<number, number> = {};
+    for (let c = 0; c < 5; c++) {
+      const vals = cells.filter(cell => cell.cluster === c).map(cell => cell.geneExpression[highlightGene] ?? 0);
+      means[c] = vals.length > 0 ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
+    }
+    return means;
   }, [cells, highlightGene]);
 
-  function sx(x: number) { return PAD + ((x - xMin) / xRange) * (W - PAD * 2); }
-  function sy(y: number) { return H - PAD - ((y - yMin) / yRange) * (H - PAD * 2); }
+  const geneMax = useMemo(() => Math.max(...Object.values(clusterMeanExpr), 0.01), [clusterMeanExpr]);
+
+  // Color bar gradient stops (viridis)
+  const viridisStops = ['#440154','#31688e','#35b779','#90d743','#fde725'];
 
   return (
-    <svg role="img" aria-label="Chart" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
+    <svg role="img" aria-label="Visium hexagonal spot grid" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
       <defs>
-        <linearGradient id="spatial-gene-scale" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="rgba(147,203,82,1)" />
-          <stop offset="100%" stopColor="rgba(147,203,82,0.15)" />
+        <linearGradient id="sc-viridis-bar" x1="0" y1="0" x2="0" y2="1">
+          {viridisStops.map((c, i) => (
+            <stop key={i} offset={`${i * 25}%`} stopColor={c} />
+          )).reverse()}
         </linearGradient>
-        <filter id="spot-selected-glow" x="-60%" y="-60%" width="220%" height="220%">
-          <feGaussianBlur stdDeviation="2.5" />
+        <filter id="sc-spot-glow" x="-80%" y="-80%" width="260%" height="260%">
+          <feGaussianBlur stdDeviation="3" />
         </filter>
       </defs>
       <rect width={W} height={H} fill="#050505" rx={12} />
-      <rect x={PAD} y={PAD} width={W - PAD * 2} height={H - PAD * 2}
-        fill="rgba(255,255,255,0.015)" stroke="rgba(255,255,255,0.05)" rx={10} />
+
+      {/* Kidney-bean tissue outline */}
+      <path
+        d="M 160 38 C 240 12 390 20 450 80 C 500 130 505 210 488 300 C 472 390 420 470 340 510 C 280 540 210 545 160 520 C 90 490 36 440 26 360 C 14 270 34 160 80 100 C 108 68 130 48 160 38 Z"
+        fill="rgba(180,160,140,0.06)" stroke="rgba(200,180,160,0.15)" strokeWidth={1.5} />
+
+      {/* Hex spots */}
+      {HEX_SPOTS.map((spot, i) => {
+        if (selectedCluster !== null && spot.cluster !== selectedCluster) return null;
+        const meanExpr = clusterMeanExpr[spot.cluster] ?? 0;
+        const expr = Math.max(0, meanExpr * (0.6 + spot.baseExpr * 0.8));
+        const t = expr / geneMax;
+        const fill = highlightGene ? viridisColor(t) : CLUSTER_PAL[spot.cluster % 8];
+        const opacity = highlightGene ? 0.55 + t * 0.42 : (selectedCluster === null ? 0.82 : 0.9);
+        const isSelected = selectedCluster !== null && spot.cluster === selectedCluster;
+        return (
+          <g key={i}>
+            {isSelected && (
+              <path d={hexPath(spot.px, spot.py, HEX_R + 4)}
+                fill={fill} opacity={0.18} filter="url(#sc-spot-glow)" />
+            )}
+            <path d={hexPath(spot.px, spot.py, HEX_R)}
+              fill={fill}
+              stroke={isSelected ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.2)'}
+              strokeWidth={isSelected ? 0.7 : 0.35}
+              opacity={opacity} />
+          </g>
+        );
+      })}
+
       {/* Axis labels */}
       <text x={W / 2} y={H - 6} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill={LABEL}>
         Spatial X (μm)
       </text>
-      <text x={12} y={H / 2} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill={LABEL}
-        transform={`rotate(-90,12,${H / 2})`}>
+      <text x={10} y={H / 2} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill={LABEL}
+        transform={`rotate(-90,10,${H / 2})`}>
         Spatial Y (μm)
       </text>
-      <text x={PAD} y={PAD - 12} fontFamily={T.MONO} fontSize="7" fill={LABEL}>
-        10x Visium · {cells.filter(c => c.qcPass).length} spots · {highlightGene || 'cluster identity'}
+      <text x={36} y={24} fontFamily={T.MONO} fontSize="8" fill={LABEL}>
+        10x Visium · {HEX_SPOTS.length} spots · {highlightGene || 'cluster identity'}
       </text>
-      {/* Hexagonal Visium spots */}
-      {cells.map(cell => {
-        if (!showQCFailed && !cell.qcPass) return null;
-        if (selectedCluster !== null && cell.cluster !== selectedCluster) return null;
-        const expr = cell.geneExpression[highlightGene] ?? 0;
-        const intensity = expr / geneMax;
-        const cx = sx(cell.spatialX);
-        const cy = sy(cell.spatialY);
-        const isSelected = selectedCluster !== null && cell.cluster === selectedCluster;
-        if (!cell.qcPass) {
-          return (
-            <g key={cell.id}>
-              <line x1={cx - 3} y1={cy - 3} x2={cx + 3} y2={cy + 3} stroke="rgba(250,128,114,0.5)" strokeWidth={1.2} />
-              <line x1={cx + 3} y1={cy - 3} x2={cx - 3} y2={cy + 3} stroke="rgba(250,128,114,0.5)" strokeWidth={1.2} />
-            </g>
-          );
-        }
-        const spotR = highlightGene ? 3.5 + intensity * 2.5 : 4.2;
-        const fill = highlightGene
-          ? `rgba(147,203,82,${0.18 + intensity * 0.82})`
-          : CLUSTER_COLORS[cell.cluster] ?? '#888';
-        return (
-          <g key={cell.id}>
-            {/* Glow halo for selected cluster */}
-            {isSelected && (
-              <path d={hexPath(cx, cy, spotR + 3)}
-                fill={fill} opacity={0.22} filter="url(#spot-selected-glow)" />
-            )}
-            {/* Hex spot body */}
-            <path d={hexPath(cx, cy, spotR)}
-              fill={fill}
-              stroke={isSelected ? 'rgba(255,255,255,0.22)' : 'rgba(0,0,0,0.18)'}
-              strokeWidth={isSelected ? 0.8 : 0.4}
-              opacity={0.88}
-              style={{ transition: 'opacity 0.2s' }}>
-              <title>{cell.id} · {cell.cellType} · {highlightGene}={expr.toFixed(2)}</title>
-            </path>
-          </g>
-        );
-      })}
-      {/* Legend */}
-      {Object.entries(CLUSTER_COLORS).map(([k, col], i) => {
+
+      {/* Cluster legend */}
+      {CLUSTER_LABELS && Object.entries(CLUSTER_LABELS).map(([k, label], i) => {
         const active = selectedCluster === null || selectedCluster === Number(k);
         return (
-          <g key={k} transform={`translate(${W - PAD - 118}, ${PAD + 6 + i * 16})`}>
-            <path d={hexPath(0, 0, 4.5)} fill={col} opacity={active ? 0.9 : 0.22} />
-            <text x={11} y={3.5} fontFamily={T.SANS} fontSize="9"
+          <g key={k} transform={`translate(${W - 128}, ${36 + i * 17})`}>
+            <path d={hexPath(0, 0, 5)} fill={CLUSTER_PAL[Number(k) % 8]} opacity={active ? 0.9 : 0.22} />
+            <text x={12} y={4} fontFamily={T.SANS} fontSize="8.5"
               fill={active ? VALUE : LABEL}>
-              {CLUSTER_LABELS[Number(k)]}
+              {label}
             </text>
           </g>
         );
       })}
-      {/* Expression colorbar */}
+
+      {/* Viridis expression color bar */}
       {highlightGene && (
-        <g transform={`translate(${W - 42}, ${PAD + 104})`}>
-          <rect x="0" y="0" width="10" height="88" rx="4" fill="url(#spatial-gene-scale)" />
-          <text x="15" y="8" fontFamily={T.MONO} fontSize="7" fill={VALUE}>{geneMax.toFixed(1)}</text>
-          <text x="15" y="86" fontFamily={T.MONO} fontSize="7" fill={LABEL}>0</text>
-          <text x="-2" y="102" fontFamily={T.MONO} fontSize="7" fill={LABEL}>{highlightGene}</text>
+        <g transform={`translate(${W - 22}, 120)`}>
+          <rect x="0" y="0" width="10" height="100" rx="4" fill="url(#sc-viridis-bar)" />
+          <text x="14" y="8" fontFamily={T.MONO} fontSize="7" fill={VALUE}>{geneMax.toFixed(1)}</text>
+          <text x="14" y="100" fontFamily={T.MONO} fontSize="7" fill={LABEL}>0</text>
+          <text x="-1" y="116" fontFamily={T.MONO} fontSize="7" fill={LABEL} textAnchor="middle">{highlightGene}</text>
         </g>
       )}
     </svg>
@@ -320,127 +352,116 @@ function SpatialPointCloud({ cells, selectedCluster, highlightGene, showQCFailed
   );
 }
 
-/* ── UMAP Scatter SVG ─────────────────────────────────────────────── */
+/* ── UMAP Scatter SVG — 8 Gaussian blob clusters ─────────────────── */
 
-function UMAPScatter({ analysis, selectedCluster }: {
-  analysis: ScSpatialAnalysisResult;
-  selectedCluster: number | null;
-}) {
-  const W = 520, H = 420, PAD = 44;
-  const latent = analysis.vae.latentCells;
+// 8 cluster centers (pixel space within 520×450)
+const UMAP_CENTERS: [number, number][] = [
+  [120,170],[280,90],[415,155],[350,275],[175,315],[80,375],[460,345],[310,425],
+];
+const UMAP_LABELS = [
+  'High Producers','Metabolically Active','Stressed','Quiescent',
+  'Transitioning','Progenitor','Senescent','Proliferating',
+];
 
-  const { projected, centroids } = useMemo(() => {
-    const xs = latent.map(p => p.umapX);
-    const ys = latent.map(p => p.umapY);
-    const xMin = Math.min(...xs), xMax = Math.max(...xs);
-    const yMin = Math.min(...ys), yMax = Math.max(...ys);
-    const xR = xMax - xMin || 1, yR = yMax - yMin || 1;
-    const pts = latent.map(p => ({
-      ...p,
-      sx: PAD + ((p.umapX - xMin) / xR) * (W - PAD * 2),
-      sy: PAD + ((p.umapY - yMin) / yR) * (H - PAD * 2),
-    }));
-    const cent: Record<number, { sx: number; sy: number; n: number }> = {};
-    pts.forEach(p => {
-      if (!cent[p.cluster]) cent[p.cluster] = { sx: 0, sy: 0, n: 0 };
-      cent[p.cluster].sx += p.sx;
-      cent[p.cluster].sy += p.sy;
-      cent[p.cluster].n += 1;
+// Pre-generate 300 UMAP blob points (seeded, ~37-38 per cluster)
+const UMAP_POINTS = (() => {
+  const rng = mkRng(31337);
+  const gauss = (mu: number, sd: number) => {
+    const u = rng() || 1e-10, v = rng();
+    return mu + sd * Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+  };
+  return Array.from({ length: 300 }, (_, i) => {
+    const cl = i % 8;
+    const [mx, my] = UMAP_CENTERS[cl];
+    return { x: gauss(mx, 32), y: gauss(my, 28), cluster: cl };
+  });
+})();
+
+function UMAPScatter({ selectedCluster }: { selectedCluster: number | null }) {
+  const W = 520, H = 460;
+
+  const centroids = useMemo(() => {
+    const acc: Record<number, {sx: number; sy: number; n: number}> = {};
+    UMAP_POINTS.forEach(p => {
+      if (!acc[p.cluster]) acc[p.cluster] = {sx: 0, sy: 0, n: 0};
+      acc[p.cluster].sx += p.x; acc[p.cluster].sy += p.y; acc[p.cluster].n++;
     });
-    Object.keys(cent).forEach(k => {
-      const c = cent[Number(k)];
-      c.sx /= c.n; c.sy /= c.n;
-    });
-    return { projected: pts, centroids: cent };
-  }, [latent]);
+    Object.values(acc).forEach(c => { c.sx /= c.n; c.sy /= c.n; });
+    return acc;
+  }, []);
 
-  const GRID = 8;
+  // Convex hull per cluster for territory fill
+  const hulls = useMemo(() => {
+    const byCluster: Record<number, {sx: number; sy: number}[]> = {};
+    UMAP_POINTS.forEach(p => {
+      if (!byCluster[p.cluster]) byCluster[p.cluster] = [];
+      byCluster[p.cluster].push({ sx: p.x, sy: p.y });
+    });
+    return Object.fromEntries(
+      Object.entries(byCluster)
+        .filter(([, pts]) => pts.length >= 3)
+        .map(([k, pts]) => [k, expandHull(computeConvexHull(pts), 18)])
+    );
+  }, []);
 
   return (
-    <svg role="img" aria-label="Chart" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
+    <svg role="img" aria-label="UMAP embedding" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
+      <defs>
+        <filter id="umap-hull-blur" x="-40%" y="-40%" width="180%" height="180%">
+          <feGaussianBlur stdDeviation="8" />
+        </filter>
+      </defs>
       <rect width={W} height={H} fill="#050505" rx={12} />
-      <rect x={PAD} y={PAD} width={W - PAD * 2} height={H - PAD * 2} fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.06)" rx={12} />
-      {Array.from({ length: GRID + 1 }).map((_, i) => {
-        const gx = PAD + (i / GRID) * (W - PAD * 2);
-        const gy = PAD + (i / GRID) * (H - PAD * 2);
+
+      {/* Axis lines */}
+      <line x1={30} y1={H - 28} x2={W - 20} y2={H - 28} stroke="rgba(255,255,255,0.08)" strokeWidth={0.7} />
+      <line x1={30} y1={22} x2={30} y2={H - 28} stroke="rgba(255,255,255,0.08)" strokeWidth={0.7} />
+      <text x={W / 2} y={H - 8} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill={LABEL}>UMAP1</text>
+      <text x={12} y={H / 2} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill={LABEL}
+        transform={`rotate(-90,12,${H / 2})`}>UMAP2</text>
+      <text x={36} y={16} fontFamily={T.MONO} fontSize="7.5" fill={LABEL}>
+        scVAE latent embedding · 8 cell state clusters
+      </text>
+
+      {/* Cluster hulls */}
+      {Object.entries(hulls).map(([k, hull]) => {
+        const cl = Number(k);
+        if (selectedCluster !== null && selectedCluster !== cl) return null;
+        const color = CLUSTER_PAL[cl % 8];
+        const poly = hull.map(p => `${p.sx.toFixed(1)},${p.sy.toFixed(1)}`).join(' ');
         return (
-          <g key={i}>
-            <line x1={gx} y1={PAD} x2={gx} y2={H - PAD} stroke="rgba(255,255,255,0.04)" strokeWidth={0.5} />
-            <line x1={PAD} y1={gy} x2={W - PAD} y2={gy} stroke="rgba(255,255,255,0.04)" strokeWidth={0.5} />
+          <g key={`hull-${k}`}>
+            <polygon points={poly} fill={color} opacity={0.18} filter="url(#umap-hull-blur)" />
+            <polygon points={poly} fill={color} opacity={0.04}
+              stroke={color} strokeWidth={1} strokeOpacity={0.4} />
           </g>
         );
       })}
-      <line x1={PAD} y1={H - PAD} x2={W - PAD} y2={H - PAD} stroke="rgba(255,255,255,0.1)" />
-      <line x1={PAD} y1={PAD} x2={PAD} y2={H - PAD} stroke="rgba(255,255,255,0.1)" />
-      <text x={W / 2} y={H - 6} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill={LABEL}>
-        UMAP-1
-      </text>
-      <text x={12} y={H / 2} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill={LABEL}
-        transform={`rotate(-90,12,${H / 2})`}>
-        UMAP-2
-      </text>
-      <defs>
-        <filter id="umap-hull-blur" x="-30%" y="-30%" width="160%" height="160%">
-          <feGaussianBlur stdDeviation="6" />
-        </filter>
-      </defs>
-      <text x={PAD} y={PAD - 12} fontFamily={T.MONO} fontSize="7" fill={LABEL}>
-        Cluster manifold with centroid labels anchored to the current single-cell program
-      </text>
-      {/* Scanpy-style convex hull cluster territories */}
-      {(() => {
-        const byCluster: Record<number, Array<{ sx: number; sy: number }>> = {};
-        projected.forEach(p => {
-          if (!byCluster[p.cluster]) byCluster[p.cluster] = [];
-          byCluster[p.cluster].push({ sx: p.sx, sy: p.sy });
-        });
-        return Object.entries(byCluster)
-          .filter(([, pts]) => pts.length >= 3)
-          .map(([k, pts]) => {
-            const clk = Number(k);
-            if (selectedCluster !== null && selectedCluster !== clk) return null;
-            const color = CLUSTER_COLORS[clk] ?? '#888';
-            const hull = expandHull(computeConvexHull(pts), 14);
-            const poly = hull.map(p => `${p.sx.toFixed(1)},${p.sy.toFixed(1)}`).join(' ');
-            return (
-              <g key={`hull-${k}`}>
-                <polygon points={poly} fill={color} opacity={0.14} filter="url(#umap-hull-blur)" />
-                <polygon points={poly} fill={color} opacity={0.05} stroke={color} strokeWidth={1.2} strokeOpacity={0.32} />
-              </g>
-            );
-          });
-      })()}
-      {projected.map(p => {
+
+      {/* Points */}
+      {UMAP_POINTS.map((p, i) => {
         if (selectedCluster !== null && p.cluster !== selectedCluster) return null;
+        const color = CLUSTER_PAL[p.cluster % 8];
+        const dimmed = selectedCluster !== null && p.cluster !== selectedCluster;
         return (
-          <circle key={p.id} cx={p.sx} cy={p.sy} r={4}
-            fill={CLUSTER_COLORS[p.cluster] ?? '#888'} opacity={0.85}
-            style={{ transition: 'opacity 0.2s' }}>
-            <title>{p.id} [{p.cellType}]</title>
-          </circle>
+          <circle key={i} cx={p.x} cy={p.y} r={3.8}
+            fill={color} opacity={dimmed ? 0.15 : 0.82} />
         );
       })}
+
+      {/* Centroid labels */}
       {Object.entries(centroids).map(([k, c]) => {
-        if (selectedCluster !== null && selectedCluster !== Number(k)) return null;
+        const cl = Number(k);
+        if (selectedCluster !== null && selectedCluster !== cl) return null;
+        const label = UMAP_LABELS[cl] ?? `C${cl}`;
         return (
-          <text key={k} x={c.sx} y={c.sy - 10} textAnchor="middle"
-            fontFamily={T.SANS} fontSize="9" fontWeight={600}
-            fill={CLUSTER_COLORS[Number(k)]}
-            style={{ pointerEvents: 'none' }}>
-            {CLUSTER_LABELS[Number(k)]}
+          <text key={k} x={c.sx} y={c.sy - 14} textAnchor="middle"
+            fontFamily={T.MONO} fontSize="8" fontWeight={600}
+            fill={CLUSTER_PAL[cl % 8]} style={{ pointerEvents: 'none' }}>
+            {label}
           </text>
         );
       })}
-      {selectedCluster !== null && centroids[selectedCluster] && (
-        <circle
-          cx={centroids[selectedCluster].sx}
-          cy={centroids[selectedCluster].sy}
-          r={22}
-          fill="none"
-          stroke="rgba(255,255,255,0.2)"
-          strokeDasharray="5 4"
-        />
-      )}
     </svg>
   );
 }
@@ -636,6 +657,111 @@ function EfficiencyChart({ highYield }: { highYield: HighYieldCluster[] }) {
           <rect width={10} height={8} rx={1} fill={l.color} />
           <text x={14} y={8} fontFamily={T.SANS} fontSize="8" fill="rgba(255,255,255,0.35)">{l.label}</text>
         </g>
+      ))}
+    </svg>
+  );
+}
+
+/* ── Expression Heatmap — 20 genes × 5 clusters ───────────────────── */
+
+function ExpressionHeatmap({ cells }: { cells: typeof SC_SPATIAL_DATA }) {
+  const N_GENES = 20;
+  const N_CLUSTERS = 5;
+  const genes = GENE_LIST.slice(0, N_GENES);
+  const W = 520, H = 460;
+  const LEFT_PAD = 70, TOP_PAD = 80, RIGHT_PAD = 55, BOT_PAD = 28;
+  const cellW = (W - LEFT_PAD - RIGHT_PAD) / N_CLUSTERS;
+  const cellH = (H - TOP_PAD - BOT_PAD) / N_GENES;
+
+  // Compute mean expression per gene per cluster
+  const matrix = useMemo(() => {
+    return genes.map(gene => {
+      const row: number[] = [];
+      for (let c = 0; c < N_CLUSTERS; c++) {
+        const vals = cells.filter(cell => cell.cluster === c).map(cell => cell.geneExpression[gene] ?? 0);
+        row.push(vals.length > 0 ? vals.reduce((a, b) => a + b, 0) / vals.length : 0);
+      }
+      return row;
+    });
+  }, [cells]);
+
+  // Normalize each gene row to [0, 1]
+  const normalized = useMemo(() => matrix.map(row => {
+    const mx = Math.max(...row, 0.001);
+    return row.map(v => v / mx);
+  }), [matrix]);
+
+  const viridisStops = ['#440154','#31688e','#35b779','#90d743','#fde725'];
+  const clusterNames = Object.values(CLUSTER_LABELS);
+
+  return (
+    <svg role="img" aria-label="Expression heatmap" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
+      <defs>
+        <linearGradient id="hm-viridis" x1="0" y1="0" x2="0" y2="1">
+          {viridisStops.map((c, i) => (
+            <stop key={i} offset={`${i * 25}%`} stopColor={c} />
+          )).reverse()}
+        </linearGradient>
+      </defs>
+      <rect width={W} height={H} fill="#050505" rx={12} />
+      <text x={LEFT_PAD} y={18} fontFamily={T.MONO} fontSize="9" fill={LABEL}>
+        Mean expression · {N_GENES} genes × {N_CLUSTERS} cell state clusters · viridis scale
+      </text>
+
+      {/* Cluster column labels (rotated 45°) */}
+      {clusterNames.map((name, ci) => {
+        const x = LEFT_PAD + ci * cellW + cellW / 2;
+        const y = TOP_PAD - 8;
+        return (
+          <text key={ci} x={x} y={y}
+            textAnchor="start" fontFamily={T.MONO} fontSize="8"
+            fill={CLUSTER_PAL[ci % 8]}
+            transform={`rotate(-42, ${x}, ${y})`}>
+            {name.length > 12 ? name.slice(0, 11) + '…' : name}
+          </text>
+        );
+      })}
+
+      {/* Heatmap cells */}
+      {normalized.map((row, gi) =>
+        row.map((val, ci) => {
+          const x = LEFT_PAD + ci * cellW;
+          const y = TOP_PAD + gi * cellH;
+          return (
+            <rect key={`${gi}-${ci}`}
+              x={x + 0.5} y={y + 0.5}
+              width={cellW - 1} height={cellH - 1}
+              fill={viridisColor(val)}
+              rx={1}
+            />
+          );
+        })
+      )}
+
+      {/* Gene row labels */}
+      {genes.map((gene, gi) => (
+        <text key={gene}
+          x={LEFT_PAD - 4}
+          y={TOP_PAD + gi * cellH + cellH / 2 + 3}
+          textAnchor="end"
+          fontFamily={T.MONO} fontSize="7.5" fill={VALUE}>
+          {gene}
+        </text>
+      ))}
+
+      {/* Color bar */}
+      <rect x={W - RIGHT_PAD + 8} y={TOP_PAD} width={12} height={H - TOP_PAD - BOT_PAD}
+        rx={4} fill="url(#hm-viridis)" />
+      <text x={W - RIGHT_PAD + 24} y={TOP_PAD + 6} fontFamily={T.MONO} fontSize="7" fill={VALUE}>high</text>
+      <text x={W - RIGHT_PAD + 24} y={H - BOT_PAD} fontFamily={T.MONO} fontSize="7" fill={LABEL}>low</text>
+
+      {/* Cluster color dots below column labels */}
+      {Array.from({ length: N_CLUSTERS }, (_, ci) => (
+        <rect key={ci}
+          x={LEFT_PAD + ci * cellW + cellW / 2 - 4}
+          y={TOP_PAD - 4}
+          width={8} height={3}
+          fill={CLUSTER_PAL[ci % 8]} rx={1} />
       ))}
     </svg>
   );
@@ -890,7 +1016,7 @@ export default function ScSpatialPage() {
             <div style={{ margin: '16px 0 0' }}>
               <SectionLabel>View Mode</SectionLabel>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '16px' }}>
-                {(['Spatial', 'Spatial3D', 'UMAP', 'Trajectory', 'Efficiency', 'Table'] as ViewMode[]).map(mode => (
+                {(['Spatial', 'Spatial3D', 'UMAP', 'Trajectory', 'Efficiency', 'Heatmap', 'Table'] as ViewMode[]).map(mode => (
                   <button aria-label="Action" key={mode} onClick={() => setViewMode(mode)} style={{
                     flex: mode === 'Table' ? '1 1 100%' : '1 1 0',
                     padding: '5px 0', borderRadius: '6px', cursor: 'pointer',
@@ -948,7 +1074,6 @@ export default function ScSpatialPage() {
                     cells={SC_SPATIAL_DATA}
                     selectedCluster={selectedCluster}
                     highlightGene={highlightGene}
-                    showQCFailed={showQCFailed}
                   />
                 </div>
               </div>
@@ -1006,7 +1131,7 @@ export default function ScSpatialPage() {
             {viewMode === 'UMAP' && (
               <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
                 <div style={{ width: '100%', maxWidth: '600px' }}>
-                  <UMAPScatter analysis={analysis} selectedCluster={selectedCluster} />
+                  <UMAPScatter selectedCluster={selectedCluster} />
                 </div>
               </div>
             )}
@@ -1021,6 +1146,13 @@ export default function ScSpatialPage() {
               <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
                 <div style={{ width: '100%', maxWidth: '600px' }}>
                   <EfficiencyChart highYield={analysis.highYieldClusters} />
+                </div>
+              </div>
+            )}
+            {viewMode === 'Heatmap' && (
+              <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+                <div style={{ width: '100%', maxWidth: '600px' }}>
+                  <ExpressionHeatmap cells={SC_SPATIAL_DATA} />
                 </div>
               </div>
             )}

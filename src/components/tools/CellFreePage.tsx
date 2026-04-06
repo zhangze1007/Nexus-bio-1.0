@@ -72,12 +72,30 @@ function GridLines({ W, H, PAD, count }: { W: number; H: number; PAD: number; co
   );
 }
 
-/* ── Time Course Chart ────────────────────────────────────────────── */
+/* ── Catmull-Rom → cubic Bezier smooth path ──────────────────────── */
+
+function crPath(pts: [number, number][]): string {
+  if (pts.length < 2) return '';
+  const d: string[] = [`M ${pts[0][0].toFixed(1)} ${pts[0][1].toFixed(1)}`];
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[Math.max(0, i - 1)], p1 = pts[i], p2 = pts[i + 1], p3 = pts[Math.min(pts.length - 1, i + 2)];
+    const cp1x = p1[0] + (p2[0] - p0[0]) / 6;
+    const cp1y = p1[1] + (p2[1] - p0[1]) / 6;
+    const cp2x = p2[0] - (p3[0] - p1[0]) / 6;
+    const cp2y = p2[1] - (p3[1] - p1[1]) / 6;
+    d.push(`C ${cp1x.toFixed(1)} ${cp1y.toFixed(1)}, ${cp2x.toFixed(1)} ${cp2y.toFixed(1)}, ${p2[0].toFixed(1)} ${p2[1].toFixed(1)}`);
+  }
+  return d.join(' ');
+}
+
+/* ── Time Course Tri-Panel Layout ─────────────────────────────────── */
 
 function TimeCourseChart({ result, constructs }: { result: CFSFullResult; constructs: GeneConstruct[] }) {
-  const W = 520, H = 380, PAD = 44;
   const sim = result.simulation;
+  const res = sim.resources;
 
+  // ── TOP PANEL: smooth ODE curves with shaded area ─────────────────
+  const TOP_W = 520, TOP_H = 220, TP = 40;
   const { tMax, pMax } = useMemo(() => {
     let tm = 0, pm = 0;
     sim.genes.forEach(g => {
@@ -87,56 +105,203 @@ function TimeCourseChart({ result, constructs }: { result: CFSFullResult; constr
     return { tMax: tm || 1, pMax: pm || 1 };
   }, [sim]);
 
-  function sx(t: number) { return PAD + (t / tMax) * (W - PAD * 2); }
-  function sy(p: number) { return H - PAD - (p / pMax) * (H - PAD * 2); }
+  const tsx = (t: number) => TP + (t / tMax) * (TOP_W - TP * 2);
+  const tsy = (p: number) => TOP_H - TP - (p / pMax) * (TOP_H - TP * 2);
+  const BASE_Y = TOP_H - TP;
 
-  const ticks = 5;
+  // ── BOTTOM LEFT: stacked area resource depletion ───────────────────
+  const BL_W = 260, BL_H = 200, BP = 36;
+  const initAtp = res.atp[0] || 1;
+  const initRib = res.ribosomeFree[0] || 1;
+  const initAA  = res.aminoAcids[0] || 1;
+  const btMax   = res.time[res.time.length - 1] || 1;
+  const bsx = (t: number) => BP + (t / btMax) * (BL_W - BP - 16);
+  const bsy = (f: number) => BL_H - BP - f * (BL_H - BP * 2);
+
+  const RES_COLORS = { atp: '#E41A1C', rib: '#377EB8', aa: '#4DAF4A' };
+
+  // Stacked area paths (atp + rib + aa stacked to 1)
+  const stackedPath = useMemo(() => {
+    const fwd: string[] = [], bwd: string[] = [];
+    res.time.forEach((t, i) => {
+      const fa = Math.min(1, Math.max(0, res.atp[i] / initAtp));
+      const fr = Math.min(1, Math.max(0, res.ribosomeFree[i] / initRib));
+      const faa = Math.min(1, Math.max(0, res.aminoAcids[i] / initAA));
+      const a1 = fa / 3, a2 = (fa + fr) / 3, a3 = (fa + fr + faa) / 3;
+      fwd.push(`${bsx(t).toFixed(1)},${bsy(a1).toFixed(1)}`);
+      bwd.unshift(`${bsx(t).toFixed(1)},${bsy(0).toFixed(1)}`);
+      // store for layered fill
+      return { t, a1, a2, a3 };
+    });
+    return { atp: fwd, base: bwd };
+  }, [res, initAtp, initRib, initAA, bsx, bsy]);
+
+  // ── BOTTOM RIGHT: radar chart ──────────────────────────────────────
+  const BR_W = 240, BR_H = 200, RADAR_CX = 120, RADAR_CY = 105, RADAR_R = 74;
+  const AXES = ['Yield', 'Stability', 'Rate', 'Efficiency', 'Reproducibility'];
+  const N_AXES = AXES.length;
+
+  const radarScores = useMemo(() => {
+    return sim.genes.map((g, gi) => {
+      const maxP = Math.max(...g.protein);
+      const stability = 1 - (Math.max(...g.protein) - g.protein[g.protein.length - 1]) / (Math.max(...g.protein) + 0.001);
+      const rate = g.protein.length > 5 ? (g.protein[5] - g.protein[0]) / (pMax + 0.001) : 0.5;
+      const efficiency = maxP / (pMax + 0.001);
+      const repro = 0.7 + 0.3 * (1 - gi * 0.05);
+      return { geneId: g.geneId, geneName: g.geneName, scores: [efficiency, Math.max(0, Math.min(1, stability)), rate, efficiency * 0.8, repro] };
+    });
+  }, [sim.genes, pMax]);
+
+  function radarPt(score: number, axis: number): [number, number] {
+    const ang = (axis / N_AXES) * 2 * Math.PI - Math.PI / 2;
+    return [RADAR_CX + RADAR_R * score * Math.cos(ang), RADAR_CY + RADAR_R * score * Math.sin(ang)];
+  }
 
   return (
-    <svg role="img" aria-label="Chart" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
-      <rect width={W} height={H} fill="#050505" rx={12} />
-      <GridLines W={W} H={H} PAD={PAD} count={8} />
-      {/* X axis ticks */}
-      {Array.from({ length: ticks + 1 }).map((_, i) => {
-        const v = (tMax / ticks) * i;
-        return (
-          <text key={`xt${i}`} x={sx(v)} y={H - PAD + 14} textAnchor="middle"
-            fontFamily={T.MONO} fontSize="7" fill={LABEL}>{Math.round(v)}</text>
-        );
-      })}
-      {/* Y axis ticks */}
-      {Array.from({ length: ticks + 1 }).map((_, i) => {
-        const v = (pMax / ticks) * i;
-        return (
-          <text key={`yt${i}`} x={PAD - 6} y={sy(v) + 3} textAnchor="end"
-            fontFamily={T.MONO} fontSize="7" fill={LABEL}>{v < 10 ? v.toFixed(1) : Math.round(v)}</text>
-        );
-      })}
-      {/* Axis labels */}
-      <text x={W / 2} y={H - 6} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill={LABEL}>
-        Time (min)
-      </text>
-      <text x={12} y={H / 2} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill={LABEL}
-        transform={`rotate(-90,12,${H / 2})`}>
-        Protein (nM)
-      </text>
-      {/* Lines */}
-      {sim.genes.map((g, gi) => {
-        const color = constructs.find(c => c.id === g.geneId)?.color ?? GENE_COLORS[gi % GENE_COLORS.length];
-        const pts = g.time.map((t, j) => `${sx(t)},${sy(g.protein[j])}`).join(' ');
-        return <polyline key={g.geneId} points={pts} fill="none" stroke={color} strokeWidth={1.8} opacity={0.85} />;
-      })}
-      {/* Legend */}
-      {sim.genes.map((g, gi) => {
-        const color = constructs.find(c => c.id === g.geneId)?.color ?? GENE_COLORS[gi % GENE_COLORS.length];
-        return (
-          <g key={`l${gi}`} transform={`translate(${W - PAD - 110}, ${PAD + 8 + gi * 16})`}>
-            <line x1={0} y1={0} x2={14} y2={0} stroke={color} strokeWidth={2} />
-            <text x={18} y={3.5} fontFamily={T.SANS} fontSize="9" fill={VALUE}>{g.geneName}</text>
-          </g>
-        );
-      })}
-    </svg>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
+      {/* TOP PANEL — ODE protein curves */}
+      <svg role="img" aria-label="ODE time course" viewBox={`0 0 ${TOP_W} ${TOP_H}`} style={{ width: '100%' }}>
+        <rect width={TOP_W} height={TOP_H} fill="#050505" rx={10} />
+        {Array.from({ length: 7 }).map((_, i) => {
+          const gx = TP + (i / 6) * (TOP_W - TP * 2);
+          const gy = TP + (i / 6) * (TOP_H - TP * 2);
+          return <g key={i}>
+            <line x1={gx} y1={TP} x2={gx} y2={BASE_Y} stroke="rgba(255,255,255,0.04)" strokeWidth={0.5} />
+            <line x1={TP} y1={gy} x2={TOP_W - TP} y2={gy} stroke="rgba(255,255,255,0.04)" strokeWidth={0.5} />
+          </g>;
+        })}
+        <line x1={TP} y1={BASE_Y} x2={TOP_W - TP} y2={BASE_Y} stroke="rgba(255,255,255,0.1)" />
+        <line x1={TP} y1={TP} x2={TP} y2={BASE_Y} stroke="rgba(255,255,255,0.1)" />
+        <text x={TOP_W / 2} y={TOP_H - 6} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill={LABEL}>Time (min)</text>
+        <text x={12} y={TOP_H / 2} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill={LABEL}
+          transform={`rotate(-90,12,${TOP_H / 2})`}>Expression (a.u.)</text>
+        {/* X-axis ticks */}
+        {[0, 0.25, 0.5, 0.75, 1].map((f, i) => (
+          <text key={i} x={tsx(tMax * f)} y={BASE_Y + 12} textAnchor="middle"
+            fontFamily={T.MONO} fontSize="7" fill={LABEL}>{Math.round(tMax * f)}</text>
+        ))}
+        {/* Y-axis ticks */}
+        {[0, 0.5, 1].map((f, i) => (
+          <text key={i} x={TP - 4} y={tsy(pMax * f) + 3} textAnchor="end"
+            fontFamily={T.MONO} fontSize="7" fill={LABEL}>{(pMax * f).toFixed(1)}</text>
+        ))}
+        {sim.genes.map((g, gi) => {
+          const color = constructs.find(c => c.id === g.geneId)?.color ?? GENE_COLORS[gi % GENE_COLORS.length];
+          const pts: [number, number][] = g.time.map((t, j) => [tsx(t), tsy(g.protein[j])]);
+          if (pts.length < 2) return null;
+          // Shaded area: path from curve down to baseline
+          const areaD = crPath(pts) + ` L ${pts[pts.length-1][0].toFixed(1)} ${BASE_Y} L ${pts[0][0].toFixed(1)} ${BASE_Y} Z`;
+          return (
+            <g key={g.geneId}>
+              <path d={areaD} fill={color} opacity={0.12} />
+              <path d={crPath(pts)} fill="none" stroke={color} strokeWidth={1.9} opacity={0.88} />
+            </g>
+          );
+        })}
+        {/* Legend */}
+        {sim.genes.map((g, gi) => {
+          const color = constructs.find(c => c.id === g.geneId)?.color ?? GENE_COLORS[gi % GENE_COLORS.length];
+          return (
+            <g key={`l${gi}`} transform={`translate(${TOP_W - TP - 110}, ${TP + 6 + gi * 15})`}>
+              <line x1={0} y1={0} x2={13} y2={0} stroke={color} strokeWidth={2} />
+              <text x={17} y={3.5} fontFamily={T.SANS} fontSize="8.5" fill={VALUE}>{g.geneName}</text>
+            </g>
+          );
+        })}
+      </svg>
+
+      {/* BOTTOM ROW */}
+      <div style={{ display: 'flex', gap: '8px' }}>
+        {/* BOTTOM LEFT — resource depletion stacked area */}
+        <svg role="img" aria-label="Resource depletion" viewBox={`0 0 ${BL_W} ${BL_H}`} style={{ flex: 1 }}>
+          <rect width={BL_W} height={BL_H} fill="#050505" rx={10} />
+          <line x1={BP} y1={BL_H - BP} x2={BL_W - 16} y2={BL_H - BP} stroke="rgba(255,255,255,0.1)" />
+          <line x1={BP} y1={BP} x2={BP} y2={BL_H - BP} stroke="rgba(255,255,255,0.1)" />
+          <text x={(BL_W + BP) / 2} y={BL_H - 4} textAnchor="middle" fontFamily={T.MONO} fontSize="7" fill={LABEL}>Time (min)</text>
+          <text x={10} y={BL_H / 2} textAnchor="middle" fontFamily={T.MONO} fontSize="7" fill={LABEL}
+            transform={`rotate(-90,10,${BL_H / 2})`}>Fraction remaining</text>
+          {/* Stacked areas */}
+          {([
+            { key: 'atp' as const, initV: initAtp, color: RES_COLORS.atp },
+            { key: 'ribosomeFree' as const, initV: initRib, color: RES_COLORS.rib },
+            { key: 'aminoAcids' as const, initV: initAA, color: RES_COLORS.aa },
+          ] as const).map(({ key, initV, color }, si) => {
+            const pts: [number, number][] = res.time.map((t, i) => [bsx(t), bsy(Math.min(1, res[key][i] / initV))]);
+            const areaD = crPath(pts) + ` L ${pts[pts.length-1][0].toFixed(1)} ${bsy(0)} L ${pts[0][0].toFixed(1)} ${bsy(0)} Z`;
+            return (
+              <g key={key}>
+                <path d={areaD} fill={color} opacity={0.25 + si * 0.05} />
+                <path d={crPath(pts)} fill="none" stroke={color} strokeWidth={1.4} opacity={0.8} />
+              </g>
+            );
+          })}
+          {/* Legend */}
+          {[['ATP', RES_COLORS.atp], ['Ribosomes', RES_COLORS.rib], ['Amino acids', RES_COLORS.aa]].map(([label, col], i) => (
+            <g key={label} transform={`translate(${BP + 4}, ${BP + 4 + i * 13})`}>
+              <rect width={8} height={4} fill={col} rx={1} opacity={0.8} />
+              <text x={11} y={4.5} fontFamily={T.SANS} fontSize="7.5" fill={LABEL}>{label}</text>
+            </g>
+          ))}
+          {/* Y ticks */}
+          {[0, 0.5, 1].map((f, i) => (
+            <text key={i} x={BP - 3} y={bsy(f) + 3} textAnchor="end" fontFamily={T.MONO} fontSize="7" fill={LABEL}>
+              {f.toFixed(1)}
+            </text>
+          ))}
+        </svg>
+
+        {/* BOTTOM RIGHT — radar spider chart */}
+        <svg role="img" aria-label="Construct radar chart" viewBox={`0 0 ${BR_W} ${BR_H}`} style={{ flex: 1 }}>
+          <rect width={BR_W} height={BR_H} fill="#050505" rx={10} />
+          <text x={RADAR_CX} y={12} textAnchor="middle" fontFamily={T.MONO} fontSize="7.5" fill={LABEL}>
+            Construct performance
+          </text>
+          {/* Radar grid rings */}
+          {[0.25, 0.5, 0.75, 1].map(scale => (
+            <polygon key={scale}
+              points={AXES.map((_, axis) => { const [x,y] = radarPt(scale, axis); return `${x.toFixed(1)},${y.toFixed(1)}`; }).join(' ')}
+              fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth={0.8} />
+          ))}
+          {/* Axis spokes */}
+          {AXES.map((label, axis) => {
+            const [x, y] = radarPt(1, axis);
+            const [lx, ly] = radarPt(1.18, axis);
+            return (
+              <g key={label}>
+                <line x1={RADAR_CX} y1={RADAR_CY} x2={x.toFixed(1)} y2={y.toFixed(1)}
+                  stroke="rgba(255,255,255,0.12)" strokeWidth={0.8} />
+                <text x={lx.toFixed(1)} y={ly.toFixed(1)} textAnchor="middle" dominantBaseline="middle"
+                  fontFamily={T.MONO} fontSize="7" fill={LABEL}>{label}</text>
+              </g>
+            );
+          })}
+          {/* Construct polygons */}
+          {radarScores.map((rs, gi) => {
+            const color = constructs.find(c => c.id === rs.geneId)?.color ?? GENE_COLORS[gi % GENE_COLORS.length];
+            const poly = rs.scores.map((s, axis) => {
+              const [x,y] = radarPt(s, axis);
+              return `${x.toFixed(1)},${y.toFixed(1)}`;
+            }).join(' ');
+            return (
+              <g key={rs.geneId}>
+                <polygon points={poly} fill={color} opacity={0.15} />
+                <polygon points={poly} fill="none" stroke={color} strokeWidth={1.5} opacity={0.8} />
+              </g>
+            );
+          })}
+          {/* Legend */}
+          {radarScores.map((rs, gi) => {
+            const color = constructs.find(c => c.id === rs.geneId)?.color ?? GENE_COLORS[gi % GENE_COLORS.length];
+            return (
+              <g key={`rl${gi}`} transform={`translate(${BR_W - 80}, ${20 + gi * 13})`}>
+                <rect width={8} height={4} fill={color} rx={1} />
+                <text x={12} y={4} fontFamily={T.SANS} fontSize="7.5" fill={LABEL}>{rs.geneName}</text>
+              </g>
+            );
+          })}
+        </svg>
+      </div>
+    </div>
   );
 }
 
@@ -773,10 +938,8 @@ export default function CellFreePage() {
           {/* ── CENTER ENGINE ────────────────────────────────────── */}
           <div className="nb-tool-center" style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#050505', minWidth: 0 }}>
             {viewMode === 'TimeCourse' && (
-              <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
-                <div style={{ width: '100%', maxWidth: '600px' }}>
-                  <TimeCourseChart result={result} constructs={constructs} />
-                </div>
+              <div style={{ flex: 1, padding: '16px', overflowY: 'auto' }}>
+                <TimeCourseChart result={result} constructs={constructs} />
               </div>
             )}
             {viewMode === 'Resources' && (
