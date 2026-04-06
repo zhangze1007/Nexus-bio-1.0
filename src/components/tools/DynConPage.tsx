@@ -46,7 +46,7 @@ const SERIES = [
   { key: 'product',       label: 'Product',   color: 'rgba(191,220,205,0.88)', unit: 'g/L' },
   { key: 'dissolvedO2',   label: 'DO₂',       color: 'rgba(175,195,214,0.88)', unit: 'sat.' },
   { key: 'fpp',           label: 'FPP',       color: 'rgba(232,163,161,0.9)',  unit: 'μM' },
-  { key: 'adsExpression', label: 'ADS Expr',  color: 'rgba(36,29,24,0.78)',    unit: 'a.u.' },
+  { key: 'adsExpression', label: 'ADS Expr',  color: 'rgba(207,196,227,0.92)', unit: 'a.u.' },
 ] as const;
 
 /* ── Catmull-Rom → SVG path helper ─────────────────────────────────────────── */
@@ -78,7 +78,7 @@ function TimeSeriesSVG({ trajectory, setpoint, svgRef }: { trajectory: ODEState[
     { key: 'substrate',     label: 'Substrate', color: 'rgba(231,199,169,0.92)', max: Math.max(0.001, ...trajectory.map((point) => point.substrate)),      unit: 'g/L'  },
     { key: 'dissolvedO2',   label: 'DO₂',       color: 'rgba(175,195,214,0.9)',  max: 1,                                                                    unit: 'sat.' },
     { key: 'fpp',           label: 'FPP',       color: 'rgba(232,163,161,0.94)', max: Math.max(0.001, ...trajectory.map((point) => point.fpp)),             unit: 'μM'   },
-    { key: 'adsExpression', label: 'ADS',       color: 'rgba(36,29,24,0.88)',    max: Math.max(0.001, ...trajectory.map((point) => point.adsExpression)),   unit: 'a.u.' },
+    { key: 'adsExpression', label: 'ADS',       color: 'rgba(207,196,227,0.92)', max: Math.max(0.001, ...trajectory.map((point) => point.adsExpression)),   unit: 'a.u.' },
   ] as const;
 
   const tMax = trajectory[trajectory.length - 1].time;

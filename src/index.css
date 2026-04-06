@@ -309,6 +309,78 @@ h1, h2, h3, h4 {
   opacity: 0.18;
 }
 
+/* ══════════════════════════════════════════════════════════════════
+   TOOL PANEL — 3-column split layout
+   sidebar (params) | center (chart, sticky) | right (results)
+
+   The critical requirement: user adjusts parameters in the left
+   column while the chart in the center column STAYS VISIBLE at
+   all times. Sidebars scroll independently.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* Container — establishes the 3-column flex row */
+.nb-tool-panels {
+  display: flex;
+  flex-direction: row;
+  flex: 1;
+  min-height: 0;          /* allow flex children to shrink below content size */
+  overflow: hidden;
+  align-items: stretch;
+}
+
+/* Left params sidebar — scrolls independently */
+.nb-tool-sidebar {
+  flex-shrink: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 14px 12px;
+  /* width set via inline style per tool (typically 240–260px) */
+}
+
+/* Center chart — DOES NOT SCROLL — always in view */
+.nb-tool-center {
+  flex: 1;
+  min-width: 0;           /* prevent flex overflow */
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  /* sticky-chart behaviour: the chart SVG fills this column        */
+  /* and the column itself never overflows — params scroll beside   */
+  /* it without pushing it off screen                              */
+}
+
+/* Right results panel — scrolls independently */
+.nb-tool-right {
+  flex-shrink: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 14px 12px;
+  /* width set via inline style per tool (typically 220–280px) */
+}
+
+/* Responsive: on narrow screens collapse to single column so
+   chart is still readable (params move above chart) */
+@media (max-width: 900px) {
+  .nb-tool-panels {
+    flex-direction: column;
+    overflow: auto;
+  }
+
+  .nb-tool-sidebar,
+  .nb-tool-right {
+    width: 100% !important;
+    max-height: 280px;
+    border-right: none !important;
+    border-left: none !important;
+    border-bottom: 1px solid rgba(34,40,48,0.10);
+  }
+
+  .nb-tool-center {
+    min-height: 360px;
+  }
+}
+
 /* ── Audit trail panel ── */
 .audit-trail-panel {
   background: rgba(8,8,8,0.94);

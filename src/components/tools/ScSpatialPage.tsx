@@ -282,15 +282,36 @@ function SpatialMap({ cells, selectedCluster, highlightGene }: {
         );
       })}
 
-      {/* Viridis expression color bar */}
+      {/* ── Viridis expression colorbar (when gene is selected) ── */}
       {highlightGene && (
-        <g transform={`translate(${W - 22}, 120)`}>
-          <rect x="0" y="0" width="10" height="100" rx="4" fill="url(#sc-viridis-bar)" />
-          <text x="14" y="8" fontFamily={T.MONO} fontSize="7" fill={VALUE}>{geneMax.toFixed(1)}</text>
-          <text x="14" y="100" fontFamily={T.MONO} fontSize="7" fill={LABEL}>0</text>
-          <text x="-1" y="116" fontFamily={T.MONO} fontSize="7" fill={LABEL} textAnchor="middle">{highlightGene}</text>
+        <g transform={`translate(${W - 28}, 120)`}>
+          <rect x="0" y="0" width="10" height="120" rx="3" fill="url(#sc-viridis-bar)" />
+          {/* Tick marks */}
+          {[{t: 0, v: geneMax.toFixed(2)}, {t: 0.5, v: (geneMax/2).toFixed(2)}, {t: 1, v: '0'}].map(({t, v}) => {
+            const y = t * 120;
+            return (
+              <g key={v}>
+                <line x1="10" y1={y} x2="14" y2={y} stroke={LABEL} strokeWidth={0.7} />
+                <text x="17" y={y + 3} fontFamily={T.MONO} fontSize="6.5" fill={LABEL}>{v}</text>
+              </g>
+            );
+          })}
+          <text x="5" y="-4" textAnchor="middle" fontFamily={T.MONO} fontSize="6.5" fill={LABEL}>
+            {highlightGene}
+          </text>
         </g>
       )}
+
+      {/* ── Scale bar — 500 μm reference (Nature/10x Genomics standard) ── */}
+      {/* Bar width = ~55px ≈ 500 μm at typical Visium capture area scale */}
+      <g transform={`translate(32, ${H - 22})`}>
+        <line x1="0" y1="0" x2="55" y2="0" stroke="rgba(255,255,255,0.55)" strokeWidth="1.5" />
+        <line x1="0" y1="-3" x2="0" y2="3" stroke="rgba(255,255,255,0.55)" strokeWidth="1.2" />
+        <line x1="55" y1="-3" x2="55" y2="3" stroke="rgba(255,255,255,0.55)" strokeWidth="1.2" />
+        <text x="27.5" y="-5" textAnchor="middle" fontFamily={T.MONO} fontSize="7" fill="rgba(255,255,255,0.5)">
+          500 μm
+        </text>
+      </g>
     </svg>
   );
 }
@@ -751,11 +772,33 @@ function ExpressionHeatmap({ cells }: { cells: typeof SC_SPATIAL_DATA }) {
         </text>
       ))}
 
-      {/* Color bar */}
-      <rect x={W - RIGHT_PAD + 8} y={TOP_PAD} width={12} height={H - TOP_PAD - BOT_PAD}
-        rx={4} fill="url(#hm-viridis)" />
-      <text x={W - RIGHT_PAD + 24} y={TOP_PAD + 6} fontFamily={T.MONO} fontSize="7" fill={VALUE}>high</text>
-      <text x={W - RIGHT_PAD + 24} y={H - BOT_PAD} fontFamily={T.MONO} fontSize="7" fill={LABEL}>low</text>
+      {/* ── Publication colorbar — viridis scale with labelled ticks ── */}
+      {/* Matches Nature/10x Genomics figure standard: bar + 3 tick marks + unit label */}
+      <rect x={W - RIGHT_PAD + 8} y={TOP_PAD} width={10} height={H - TOP_PAD - BOT_PAD}
+        rx={3} fill="url(#hm-viridis)" />
+      {/* Tick marks + labels at 0, 0.5, 1 */}
+      {[{t: 0, label: '1.0'}, {t: 0.5, label: '0.5'}, {t: 1, label: '0'}].map(({ t, label }) => {
+        const y = TOP_PAD + t * (H - TOP_PAD - BOT_PAD);
+        return (
+          <g key={label}>
+            <line x1={W - RIGHT_PAD + 18} y1={y} x2={W - RIGHT_PAD + 22} y2={y}
+              stroke={LABEL} strokeWidth={0.7} />
+            <text x={W - RIGHT_PAD + 25} y={y + 3}
+              fontFamily={T.MONO} fontSize="6.5" fill={LABEL}>{label}</text>
+          </g>
+        );
+      })}
+      {/* Unit label */}
+      <text
+        x={W - RIGHT_PAD + 14} y={TOP_PAD - 8}
+        textAnchor="middle" fontFamily={T.MONO} fontSize="6.5" fill={LABEL}>
+        norm.
+      </text>
+      {/* Scale note bottom */}
+      <text x={W - RIGHT_PAD + 14} y={H - BOT_PAD + 14}
+        textAnchor="middle" fontFamily={T.MONO} fontSize="6.5" fill={LABEL}>
+        expr.
+      </text>
 
       {/* Cluster color dots below column labels */}
       {Array.from({ length: N_CLUSTERS }, (_, ci) => (

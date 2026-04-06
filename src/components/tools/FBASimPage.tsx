@@ -22,17 +22,20 @@ import { PATHD_THEME } from '../workbench/workbenchTheme';
 import ScientificFigureFrame from './shared/ScientificFigureFrame';
 import ScientificMethodStrip from './shared/ScientificMethodStrip';
 
-// ── Pastel palette ──
+// ── Publication-quality palette (ColorBrewer Set1 / Nature convention) ──
+// E. coli → warm red-orange (standard in metabolic engineering literature)
+// Yeast   → steel blue (Saccharomyces cerevisiae conventional colour)
+// Shared  → muted green (exchange/shared metabolite pool)
 const COLORS = {
-  strainA: '#FF1FFF',
-  strainB: '#F0FDFA',
-  sharedPool: '#5151CD',
-  strainABg: 'rgba(255,31,255,0.06)',
-  strainBBg: 'rgba(240,253,250,0.06)',
-  sharedBg: 'rgba(81,81,205,0.06)',
-  strainABorder: 'rgba(255,31,255,0.20)',
-  strainBBorder: 'rgba(240,253,250,0.20)',
-  sharedBorder: 'rgba(81,81,205,0.20)',
+  strainA: '#E41A1C',                      // ColorBrewer Set1 red   (E. coli)
+  strainB: '#377EB8',                      // ColorBrewer Set1 blue  (S. cerevisiae)
+  sharedPool: '#4DAF4A',                   // ColorBrewer Set1 green (exchange pool)
+  strainABg: 'rgba(228,26,28,0.07)',
+  strainBBg: 'rgba(55,126,184,0.07)',
+  sharedBg: 'rgba(77,175,74,0.07)',
+  strainABorder: 'rgba(228,26,28,0.28)',
+  strainBBorder: 'rgba(55,126,184,0.28)',
+  sharedBorder: 'rgba(77,175,74,0.28)',
 };
 
 type SimMode = 'single' | 'community';

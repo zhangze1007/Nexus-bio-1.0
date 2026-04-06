@@ -370,17 +370,30 @@ function TriPanelEmbedding({ embeddings, data, fcThreshold, pvThreshold, activeL
               fontFamily={T.MONO} fontSize="5.5" fill="rgba(255,255,255,0.35)"
             >{g.gene.slice(0, 5)}</text>
           ))}
-          {/* Color bar */}
+          {/* ── Publication colorbar — RdBu diverging scale ── */}
+          {/* Standard for fold-change / z-score heatmaps (Nature, Science) */}
           <defs>
             <linearGradient id="multio-div" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={divergingColor(1)} />
-              <stop offset="50%" stopColor={divergingColor(0)} />
+              <stop offset="0%"   stopColor={divergingColor(1)} />
+              <stop offset="50%"  stopColor={divergingColor(0)} />
               <stop offset="100%" stopColor={divergingColor(-1)} />
             </linearGradient>
           </defs>
           <rect x={hmW - 16} y={hmPAD.top} width="8" height={hmInner} fill="url(#multio-div)" rx="2" />
-          <text x={hmW - 12} y={hmPAD.top - 2} textAnchor="middle" fontFamily={T.MONO} fontSize="6" fill="rgba(255,255,255,0.3)">+1</text>
-          <text x={hmW - 12} y={hmPAD.top + hmInner + 8} textAnchor="middle" fontFamily={T.MONO} fontSize="6" fill="rgba(255,255,255,0.3)">-1</text>
+          {/* Tick marks at +1, 0, -1 */}
+          {[{t: 0, label: '+1'}, {t: 0.5, label: '0'}, {t: 1, label: '−1'}].map(({t, label}) => {
+            const y = hmPAD.top + t * hmInner;
+            return (
+              <g key={label}>
+                <line x1={hmW - 8} y1={y} x2={hmW - 5} y2={y} stroke="rgba(255,255,255,0.25)" strokeWidth={0.7} />
+                <text x={hmW - 3} y={y + 3} fontFamily={T.MONO} fontSize="6" fill="rgba(255,255,255,0.35)">{label}</text>
+              </g>
+            );
+          })}
+          {/* Unit label */}
+          <text x={hmW - 12} y={hmPAD.top - 6} textAnchor="middle" fontFamily={T.MONO} fontSize="6" fill="rgba(255,255,255,0.22)">
+            z
+          </text>
         </svg>
       </div>
 

@@ -38,14 +38,31 @@ function viridisColor(t: number): string {
   return `rgb(${Math.round(r1 + (r2 - r1) * f)},${Math.round(g1 + (g2 - g1) * f)},${Math.round(b1 + (b2 - b1) * f)})`;
 }
 
+/**
+ * resolveGateOutput — combinatorial promoter gate model.
+ *
+ * Inputs a, b are repressor-inhibited expression levels (0–1, from hillInhibition).
+ * These are ALREADY transformed — do NOT apply Hill functions again (double-Hill
+ * transformation collapses the dynamic range to ~0.2–0.3, losing discriminability).
+ *
+ * AND:  a · b       (joint probability; both expression channels must be high)
+ * OR:   a + b − a·b (union probability; at least one channel sufficient)
+ * NAND: 1 − a·b     (complement of AND)
+ * NOT:  hillInhibition(a) applied to raw input (single repressor)
+ *
+ * Reference: Buchler et al. (2003) PNAS — combinatorial gene regulation
+ */
 function resolveGateOutput(a: number, b: number, gateType: GateType) {
-  if (gateType === 'AND') return hillActivation(Math.min(a, b));
-  if (gateType === 'OR') return hillActivation(Math.max(a, b));
-  if (gateType === 'NAND') return hillInhibition(Math.min(a, b));
-  return hillInhibition(a);
+  if (gateType === 'AND')  return a * b;
+  if (gateType === 'OR')   return a + b - a * b;
+  if (gateType === 'NAND') return 1 - a * b;
+  return hillInhibition(a);  // NOT: re-apply Hill repression to raw signal
 }
 
 function CircuitSVG({ inputA, inputB, gateType }: { inputA: number; inputB: number; gateType: GateType }) {
+  // outA / outB are the repressed signal levels from each input repressor.
+  // resolveGateOutput combines these repressed signals directly — it does NOT
+  // apply hillInhibition again internally, so there is no double-transformation.
   const outA = hillInhibition(inputA);
   const outB = hillInhibition(inputB);
   const outC = resolveGateOutput(outA, outB, gateType);
