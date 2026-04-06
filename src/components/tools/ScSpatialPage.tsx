@@ -132,7 +132,18 @@ const CELL_COLUMNS: TableColumn<CellRow>[] = [
   },
 ];
 
-/* ── Spatial Map SVG ──────────────────────────────────────────────── */
+/* ── Visium-style hexagonal spot helper ───────────────────────────── */
+
+function hexPath(cx: number, cy: number, r: number): string {
+  return Array.from({ length: 6 }, (_, i) => {
+    const angle = (Math.PI / 180) * (60 * i - 30); // pointy-top
+    const x = (cx + r * Math.cos(angle)).toFixed(2);
+    const y = (cy + r * Math.sin(angle)).toFixed(2);
+    return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
+  }).join(' ') + ' Z';
+}
+
+/* ── Spatial Map SVG (10x Visium hexagonal spot grid) ─────────────── */
 
 function SpatialMap({ cells, selectedCluster, highlightGene, showQCFailed }: {
   cells: typeof SC_SPATIAL_DATA;
@@ -159,24 +170,21 @@ function SpatialMap({ cells, selectedCluster, highlightGene, showQCFailed }: {
   function sx(x: number) { return PAD + ((x - xMin) / xRange) * (W - PAD * 2); }
   function sy(y: number) { return H - PAD - ((y - yMin) / yRange) * (H - PAD * 2); }
 
-  const GRID = 8;
-
   return (
     <svg role="img" aria-label="Chart" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
+      <defs>
+        <linearGradient id="spatial-gene-scale" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="rgba(147,203,82,1)" />
+          <stop offset="100%" stopColor="rgba(147,203,82,0.15)" />
+        </linearGradient>
+        <filter id="spot-selected-glow" x="-60%" y="-60%" width="220%" height="220%">
+          <feGaussianBlur stdDeviation="2.5" />
+        </filter>
+      </defs>
       <rect width={W} height={H} fill="#050505" rx={12} />
-      <rect x={PAD} y={PAD} width={W - PAD * 2} height={H - PAD * 2} fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.06)" rx={12} />
-      {Array.from({ length: GRID + 1 }).map((_, i) => {
-        const gx = PAD + (i / GRID) * (W - PAD * 2);
-        const gy = PAD + (i / GRID) * (H - PAD * 2);
-        return (
-          <g key={i}>
-            <line x1={gx} y1={PAD} x2={gx} y2={H - PAD} stroke="rgba(255,255,255,0.04)" strokeWidth={0.5} />
-            <line x1={PAD} y1={gy} x2={W - PAD} y2={gy} stroke="rgba(255,255,255,0.04)" strokeWidth={0.5} />
-          </g>
-        );
-      })}
-      <line x1={PAD} y1={H - PAD} x2={W - PAD} y2={H - PAD} stroke="rgba(255,255,255,0.1)" />
-      <line x1={PAD} y1={PAD} x2={PAD} y2={H - PAD} stroke="rgba(255,255,255,0.1)" />
+      <rect x={PAD} y={PAD} width={W - PAD * 2} height={H - PAD * 2}
+        fill="rgba(255,255,255,0.015)" stroke="rgba(255,255,255,0.05)" rx={10} />
+      {/* Axis labels */}
       <text x={W / 2} y={H - 6} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill={LABEL}>
         Spatial X (μm)
       </text>
@@ -185,63 +193,67 @@ function SpatialMap({ cells, selectedCluster, highlightGene, showQCFailed }: {
         Spatial Y (μm)
       </text>
       <text x={PAD} y={PAD - 12} fontFamily={T.MONO} fontSize="7" fill={LABEL}>
-        Tissue section map · marker intensity follows {highlightGene || 'cluster identity'}
+        10x Visium · {cells.filter(c => c.qcPass).length} spots · {highlightGene || 'cluster identity'}
       </text>
+      {/* Hexagonal Visium spots */}
       {cells.map(cell => {
         if (!showQCFailed && !cell.qcPass) return null;
         if (selectedCluster !== null && cell.cluster !== selectedCluster) return null;
         const expr = cell.geneExpression[highlightGene] ?? 0;
         const intensity = expr / geneMax;
-        const color = highlightGene
-          ? `rgba(147,203,82,${0.2 + intensity * 0.8})`
-          : CLUSTER_COLORS[cell.cluster] ?? '#888';
         const cx = sx(cell.spatialX);
         const cy = sy(cell.spatialY);
+        const isSelected = selectedCluster !== null && cell.cluster === selectedCluster;
         if (!cell.qcPass) {
           return (
             <g key={cell.id}>
-              <line x1={cx - 3} y1={cy - 3} x2={cx + 3} y2={cy + 3} stroke="rgba(250,128,114,0.6)" strokeWidth={1.5} />
-              <line x1={cx + 3} y1={cy - 3} x2={cx - 3} y2={cy + 3} stroke="rgba(250,128,114,0.6)" strokeWidth={1.5} />
+              <line x1={cx - 3} y1={cy - 3} x2={cx + 3} y2={cy + 3} stroke="rgba(250,128,114,0.5)" strokeWidth={1.2} />
+              <line x1={cx + 3} y1={cy - 3} x2={cx - 3} y2={cy + 3} stroke="rgba(250,128,114,0.5)" strokeWidth={1.2} />
             </g>
           );
         }
+        const spotR = highlightGene ? 3.5 + intensity * 2.5 : 4.2;
+        const fill = highlightGene
+          ? `rgba(147,203,82,${0.18 + intensity * 0.82})`
+          : CLUSTER_COLORS[cell.cluster] ?? '#888';
         return (
           <g key={cell.id}>
-            {selectedCluster !== null && cell.cluster === selectedCluster && (
-              <circle cx={cx} cy={cy} r={highlightGene ? 5 + intensity * 3 : 5.5} fill="none" stroke="rgba(255,255,255,0.16)" strokeWidth={0.9} />
+            {/* Glow halo for selected cluster */}
+            {isSelected && (
+              <path d={hexPath(cx, cy, spotR + 3)}
+                fill={fill} opacity={0.22} filter="url(#spot-selected-glow)" />
             )}
-            <circle cx={cx} cy={cy}
-              r={highlightGene ? 3 + intensity * 3 : 4}
-              fill={!highlightGene ? CLUSTER_COLORS[cell.cluster] : color}
-              opacity={0.85}
+            {/* Hex spot body */}
+            <path d={hexPath(cx, cy, spotR)}
+              fill={fill}
+              stroke={isSelected ? 'rgba(255,255,255,0.22)' : 'rgba(0,0,0,0.18)'}
+              strokeWidth={isSelected ? 0.8 : 0.4}
+              opacity={0.88}
               style={{ transition: 'opacity 0.2s' }}>
-              <title>{cell.id} [{cell.cellType}] {highlightGene}={expr.toFixed(2)}</title>
-            </circle>
+              <title>{cell.id} · {cell.cellType} · {highlightGene}={expr.toFixed(2)}</title>
+            </path>
           </g>
         );
       })}
       {/* Legend */}
-      {Object.entries(CLUSTER_COLORS).map(([k, col], i) => (
-        <g key={k} transform={`translate(${W - PAD - 120}, ${PAD + 6 + i * 16})`}>
-          <circle cx={0} cy={0} r={4} fill={col}
-            opacity={selectedCluster === null || selectedCluster === Number(k) ? 1 : 0.25} />
-          <text x={10} y={3.5} fontFamily={T.SANS} fontSize="9"
-            fill={selectedCluster === null || selectedCluster === Number(k) ? VALUE : LABEL}>
-            {CLUSTER_LABELS[Number(k)]}
-          </text>
-        </g>
-      ))}
+      {Object.entries(CLUSTER_COLORS).map(([k, col], i) => {
+        const active = selectedCluster === null || selectedCluster === Number(k);
+        return (
+          <g key={k} transform={`translate(${W - PAD - 118}, ${PAD + 6 + i * 16})`}>
+            <path d={hexPath(0, 0, 4.5)} fill={col} opacity={active ? 0.9 : 0.22} />
+            <text x={11} y={3.5} fontFamily={T.SANS} fontSize="9"
+              fill={active ? VALUE : LABEL}>
+              {CLUSTER_LABELS[Number(k)]}
+            </text>
+          </g>
+        );
+      })}
+      {/* Expression colorbar */}
       {highlightGene && (
-        <g transform={`translate(${W - 44}, ${PAD + 104})`}>
-          <defs>
-            <linearGradient id="spatial-gene-scale" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="rgba(147,203,82,1)" />
-              <stop offset="100%" stopColor="rgba(147,203,82,0.2)" />
-            </linearGradient>
-          </defs>
+        <g transform={`translate(${W - 42}, ${PAD + 104})`}>
           <rect x="0" y="0" width="10" height="88" rx="4" fill="url(#spatial-gene-scale)" />
-          <text x="16" y="8" fontFamily={T.MONO} fontSize="7" fill={VALUE}>{geneMax.toFixed(1)}</text>
-          <text x="16" y="86" fontFamily={T.MONO} fontSize="7" fill={LABEL}>0</text>
+          <text x="15" y="8" fontFamily={T.MONO} fontSize="7" fill={VALUE}>{geneMax.toFixed(1)}</text>
+          <text x="15" y="86" fontFamily={T.MONO} fontSize="7" fill={LABEL}>0</text>
           <text x="-2" y="102" fontFamily={T.MONO} fontSize="7" fill={LABEL}>{highlightGene}</text>
         </g>
       )}
