@@ -34,6 +34,8 @@ import { useWorkbenchStore } from '../../store/workbenchStore';
 import { T, TOOL_RESULT_PALETTE} from '../ide/tokens';
 import WorkbenchInlineContext from '../workbench/WorkbenchInlineContext';
 import ScientificHero from './shared/ScientificHero';
+import ScientificFigureFrame from './shared/ScientificFigureFrame';
+import ScientificMethodStrip from './shared/ScientificMethodStrip';
 import { PATHD_THEME } from '../workbench/workbenchTheme';
 
 /* ── Design Tokens ────────────────────────────────────────────────── */
@@ -44,18 +46,18 @@ const LAYER_COLORS: Record<OmicsLayer, string> = {
   metabolomics:    '#FA8072',
 };
 
-const PANEL_BG = '#000000';
-const BORDER = 'rgba(255,255,255,0.06)';
-const LABEL = 'rgba(255,255,255,0.45)';
-const VALUE = 'rgba(255,255,255,0.65)';
-const INPUT_BG = 'rgba(255,255,255,0.05)';
-const INPUT_BORDER = 'rgba(255,255,255,0.08)';
-const INPUT_TEXT = 'rgba(255,255,255,0.7)';
+const PANEL_BG = PATHD_THEME.sepiaPanelMuted;
+const BORDER = PATHD_THEME.paperBorder;
+const LABEL = PATHD_THEME.paperLabel;
+const VALUE = PATHD_THEME.paperValue;
+const INPUT_BG = PATHD_THEME.paperSurfaceStrong;
+const INPUT_BORDER = PATHD_THEME.paperBorder;
+const INPUT_TEXT = PATHD_THEME.paperValue;
 
 const GLASS: React.CSSProperties = {
   borderRadius: '24px',
-  background: 'rgba(255,255,255,0.05)',
-  border: '1px solid rgba(255,255,255,0.08)',
+  background: PATHD_THEME.paperSurfaceStrong,
+  border: `1px solid ${PATHD_THEME.paperBorder}`,
 };
 
 type ViewMode = 'Embedding' | 'Volcano' | 'Table' | 'MOFA+' | 'VAE' | 'Efficiency';
@@ -614,6 +616,48 @@ export default function MultiOPage() {
   const downregulated = significant.filter(r => (r.fold_change ?? 0) < 0).length;
 
   const thoughts = useMemo(() => model.getThoughts(), [model, perturbResult]);
+  const figureMeta = useMemo(() => {
+    if (viewMode === 'Embedding') {
+      return {
+        eyebrow: 'Figure A · Cross-Layer Embedding',
+        title: 'Transcript, protein, and metabolite structure aligned in one figure field',
+        caption: 'The center canvas is framed as an integrative figure plate: latent structure first, bottleneck signal second, and pathway relevance always visible.',
+      };
+    }
+    if (viewMode === 'Volcano') {
+      return {
+        eyebrow: 'Figure B · Differential Signal Map',
+        title: `${selectedGene} highlighted against fold-change and significance thresholds`,
+        caption: 'Volcano view is treated as a comparative panel, emphasizing threshold logic and current bottleneck focus rather than acting as a detached QC plot.',
+      };
+    }
+    if (viewMode === 'MOFA+') {
+      return {
+        eyebrow: 'Figure C · Factor Decomposition',
+        title: 'Shared latent factors explaining multi-omics variance',
+        caption: 'Factor analysis is translated into a publication-style comparative panel where per-layer contribution, top genes, and interpretation stay in the same frame.',
+      };
+    }
+    if (viewMode === 'VAE') {
+      return {
+        eyebrow: 'Figure D · Variational Latent Space',
+        title: 'Latent embedding and convergence viewed as one model figure',
+        caption: 'The variational model should read like a model-results plate: embedding geometry above, optimization trace below, with no context loss between them.',
+      };
+    }
+    if (viewMode === 'Efficiency') {
+      return {
+        eyebrow: 'Figure E · Metabolic Efficiency Ledger',
+        title: 'Ranked entities ordered by production-relevant efficiency',
+        caption: 'Efficiency ranking connects latent integration back to decision-making, turning the center panel into a prioritization figure rather than a generic sortable list.',
+      };
+    }
+    return {
+      eyebrow: 'Figure F · Omics Appendix Table',
+      title: 'Auditable row-level evidence beneath the same thresholds',
+      caption: 'The table behaves like a supplementary figure appendix that remains tied to the same significance thresholds and highlighted bottleneck gene.',
+    };
+  }, [selectedGene, viewMode]);
 
   const activeLayers: Record<OmicsLayer, boolean> = {
     transcriptomics: showTranscript,
@@ -778,6 +822,32 @@ export default function MultiOPage() {
           />
         </div>
 
+        <div style={{ padding: '0 16px 10px' }}>
+          <ScientificMethodStrip
+            label="Integration Figure Grammar"
+            items={[
+              {
+                title: 'Input layers',
+                detail: 'Transcriptomics, proteomics, and metabolomics should be presented as distinct evidence sources with clear color and label separation.',
+                accent: PATHD_THEME.coral,
+                note: 'Input matrix',
+              },
+              {
+                title: 'Latent integration',
+                detail: 'The model bridge itself is part of the interface language, so factor models and embeddings must sit visibly between raw layers and decisions.',
+                accent: PATHD_THEME.sky,
+                note: 'Model bridge',
+              },
+              {
+                title: 'Decision output',
+                detail: 'The page should end in actionable bottleneck, perturbation, and efficiency readouts, not isolated analytics for their own sake.',
+                accent: PATHD_THEME.mint,
+                note: 'Research output',
+              },
+            ]}
+          />
+        </div>
+
         <div className="nb-tool-panels" style={{ flex: 1 }}>
 
           {/* ── LEFT SIDEBAR (240px) ──────────────────────────────── */}
@@ -803,10 +873,10 @@ export default function MultiOPage() {
               <button aria-label="Action" key={label} onClick={() => set(!val)} style={{
                 display: 'flex', alignItems: 'center', gap: '8px',
                 width: '100%', padding: '7px 10px', marginBottom: '6px',
-                background: val ? 'rgba(255,255,255,0.06)' : 'transparent',
-                border: `1px solid ${val ? 'rgba(255,255,255,0.15)' : BORDER}`,
+                background: val ? 'rgba(175,195,214,0.22)' : INPUT_BG,
+                border: `1px solid ${val ? 'rgba(175,195,214,0.34)' : BORDER}`,
                 borderRadius: '8px', cursor: 'pointer',
-                color: val ? INPUT_TEXT : 'rgba(255,255,255,0.4)',
+                color: val ? INPUT_TEXT : LABEL,
                 fontFamily: T.SANS, fontSize: '11px', textAlign: 'left',
               }}>
                 <span style={{
@@ -824,9 +894,9 @@ export default function MultiOPage() {
               {(['Embedding', 'Volcano', 'Table', 'MOFA+', 'VAE', 'Efficiency'] as ViewMode[]).map(mode => (
                 <button aria-label="Action" key={mode} onClick={() => setViewMode(mode)} style={{
                   flex: '1 0 30%', padding: '5px 0', borderRadius: '6px', cursor: 'pointer',
-                  fontFamily: T.SANS, fontSize: '9px', border: 'none',
-                  background: viewMode === mode ? 'rgba(255,255,255,0.12)' : INPUT_BG,
-                  color: viewMode === mode ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.4)',
+                  fontFamily: T.SANS, fontSize: '9px', border: `1px solid ${viewMode === mode ? 'rgba(175,195,214,0.34)' : INPUT_BORDER}`,
+                  background: viewMode === mode ? 'rgba(175,195,214,0.22)' : INPUT_BG,
+                  color: viewMode === mode ? VALUE : LABEL,
                 }}>
                   {mode}
                 </button>
@@ -837,8 +907,8 @@ export default function MultiOPage() {
             <SectionLabel>Thresholds</SectionLabel>
             <div style={{ marginBottom: '12px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                <span style={{ fontFamily: T.SANS, fontSize: '11px', color: 'rgba(255,255,255,0.45)' }}>|FC| &gt;</span>
-                <span style={{ fontFamily: T.MONO, fontSize: '11px', color: 'rgba(255,255,255,0.55)' }}>{fcThreshold.toFixed(1)}</span>
+                <span style={{ fontFamily: T.SANS, fontSize: '11px', color: LABEL }}>|FC| &gt;</span>
+                <span style={{ fontFamily: T.MONO, fontSize: '11px', color: VALUE }}>{fcThreshold.toFixed(1)}</span>
               </div>
               <input aria-label="Parameter slider" type="range" min={0.5} max={5} step={0.1} value={fcThreshold}
                 onChange={e => setFcThreshold(parseFloat(e.target.value))}
@@ -846,8 +916,8 @@ export default function MultiOPage() {
             </div>
             <div style={{ marginBottom: '16px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                <span style={{ fontFamily: T.SANS, fontSize: '11px', color: 'rgba(255,255,255,0.45)' }}>p &lt;</span>
-                <span style={{ fontFamily: T.MONO, fontSize: '11px', color: 'rgba(255,255,255,0.55)' }}>{pvThreshold.toFixed(3)}</span>
+                <span style={{ fontFamily: T.SANS, fontSize: '11px', color: LABEL }}>p &lt;</span>
+                <span style={{ fontFamily: T.MONO, fontSize: '11px', color: VALUE }}>{pvThreshold.toFixed(3)}</span>
               </div>
               <input aria-label="Parameter slider" type="range" min={0.001} max={0.1} step={0.001} value={pvThreshold}
                 onChange={e => setPvThreshold(parseFloat(e.target.value))}
@@ -935,7 +1005,7 @@ export default function MultiOPage() {
                         {i + 1}. {step.step}
                       </span>
                       <p style={{
-                        fontFamily: T.SANS, fontSize: '9px', color: 'rgba(255,255,255,0.45)',
+                        fontFamily: T.SANS, fontSize: '9px', color: LABEL,
                         margin: '2px 0 0', lineHeight: '1.35',
                       }}>
                         {step.description}
@@ -948,35 +1018,52 @@ export default function MultiOPage() {
           </div>
 
           {/* ── CENTER ENGINE ────────────────────────────────────── */}
-          <div className="nb-tool-center" style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#050505', minWidth: 0 }}>
-            {viewMode === 'Table' && (
-              <div style={{ flex: 1, overflow: 'auto' }}>
-                <DataTable<OmicsRow> columns={COLUMNS} rows={filtered} maxRows={50} />
-              </div>
-            )}
-            {viewMode === 'Volcano' && (
-              <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
-                <div style={{ width: '100%', maxWidth: '520px', aspectRatio: '360/300' }}>
-                  <VolcanoPlot data={filtered} fcThreshold={fcThreshold} pvThreshold={pvThreshold} highlightedGene={selectedGene} />
+          <div className="nb-tool-center" style={{ flex: 1, display: 'flex', flexDirection: 'column', background: PANEL_BG, minWidth: 0, padding: '16px', overflow: 'auto' }}>
+            <ScientificFigureFrame
+              eyebrow={figureMeta.eyebrow}
+              title={figureMeta.title}
+              caption={figureMeta.caption}
+              minHeight="100%"
+              legend={[
+                { label: 'View', value: viewMode, accent: PATHD_THEME.apricot },
+                { label: 'Bottleneck', value: bottleneck.dominant_layer, accent: LAYER_COLORS[bottleneck.dominant_layer] },
+                { label: 'Gene', value: selectedGene, accent: PATHD_THEME.lilac },
+                { label: 'Significant', value: `${significant.length}`, accent: PATHD_THEME.mint },
+              ]}
+              footer={
+                <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.paperMuted, lineHeight: 1.55 }}>
+                  The integration frame keeps latent model structure, thresholding logic, and intervention-oriented output in one continuous reading path.
                 </div>
-              </div>
-            )}
-            {viewMode === 'Embedding' && (
-              <div style={{ flex: 1, overflow: 'auto', padding: '12px' }}>
-                <TriPanelEmbedding
-                  embeddings={embeddings}
-                  data={filtered}
-                  fcThreshold={fcThreshold}
-                  pvThreshold={pvThreshold}
-                  activeLayers={activeLayers}
-                  highlightedGene={selectedGene}
-                />
-              </div>
-            )}
+              }
+            >
+              {viewMode === 'Table' && (
+                <div style={{ minHeight: '520px', overflow: 'auto' }}>
+                  <DataTable<OmicsRow> columns={COLUMNS} rows={filtered} maxRows={50} />
+                </div>
+              )}
+              {viewMode === 'Volcano' && (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '520px' }}>
+                  <div style={{ width: '100%', maxWidth: '560px', aspectRatio: '360/300' }}>
+                    <VolcanoPlot data={filtered} fcThreshold={fcThreshold} pvThreshold={pvThreshold} highlightedGene={selectedGene} />
+                  </div>
+                </div>
+              )}
+              {viewMode === 'Embedding' && (
+                <div style={{ minHeight: '520px', overflow: 'auto' }}>
+                  <TriPanelEmbedding
+                    embeddings={embeddings}
+                    data={filtered}
+                    fcThreshold={fcThreshold}
+                    pvThreshold={pvThreshold}
+                    activeLayers={activeLayers}
+                    highlightedGene={selectedGene}
+                  />
+                </div>
+              )}
 
-            {/* ── MOFA+ Factor Analysis ───────────────────────────── */}
-            {viewMode === 'MOFA+' && (
-              <div style={{ flex: 1, padding: '20px' }}>
+              {/* ── MOFA+ Factor Analysis ───────────────────────────── */}
+              {viewMode === 'MOFA+' && (
+              <div style={{ minHeight: '520px', padding: '20px' }}>
                 {/* Summary metrics */}
                 <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
                   <div style={{ ...GLASS, borderRadius: '14px', padding: '12px 16px', flex: '1 0 120px' }}>
@@ -1014,12 +1101,10 @@ export default function MultiOPage() {
                       return (
                         <div key={layer} style={{ marginBottom: '5px' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
-                            <span style={{ fontFamily: T.SANS, fontSize: '9px', color: 'rgba(255,255,255,0.4)' }}>
-                              {layer.slice(0, 5)}
-                            </span>
+                            <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL }}>{layer.slice(0, 5)}</span>
                             <span style={{ fontFamily: T.MONO, fontSize: '9px', color: VALUE }}>{pct.toFixed(1)}%</span>
                           </div>
-                          <div style={{ width: '100%', height: '5px', borderRadius: '3px', background: 'rgba(255,255,255,0.06)' }}>
+                          <div style={{ width: '100%', height: '5px', borderRadius: '3px', background: PATHD_THEME.paperSurfaceMuted }}>
                             <div style={{ width: `${Math.min(100, pct)}%`, height: '100%', borderRadius: '3px', background: LAYER_COLORS[layer] }} />
                           </div>
                         </div>
@@ -1030,23 +1115,23 @@ export default function MultiOPage() {
                       {f.topGenes.slice(0, 4).map(g => (
                         <span key={g.gene} style={{
                           fontFamily: T.MONO, fontSize: '8px', padding: '2px 6px', borderRadius: '6px',
-                          background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.55)',
+                          background: PATHD_THEME.paperSurfaceMuted, color: VALUE,
                         }}>
                           {g.gene} ({g.loading.toFixed(2)})
                         </span>
                       ))}
                     </div>
-                    <p style={{ fontFamily: T.SANS, fontSize: '9px', color: 'rgba(255,255,255,0.35)', margin: '6px 0 0', lineHeight: '1.3' }}>
+                    <p style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL, margin: '6px 0 0', lineHeight: '1.3' }}>
                       {f.interpretation}
                     </p>
                   </div>
                 ))}
               </div>
-            )}
+              )}
 
-            {/* ── VAE Latent Space ────────────────────────────────── */}
-            {viewMode === 'VAE' && (
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+              {/* ── VAE Latent Space ────────────────────────────────── */}
+              {viewMode === 'VAE' && (
+              <div style={{ minHeight: '520px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                 {/* VAE Latent scatter */}
                 <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
                   <div style={{ width: '100%', maxWidth: '560px' }}>
@@ -1108,11 +1193,11 @@ export default function MultiOPage() {
                   })()}
                 </div>
               </div>
-            )}
+              )}
 
-            {/* ── Metabolic Efficiency ────────────────────────────── */}
-            {viewMode === 'Efficiency' && (
-              <div style={{ flex: 1, padding: '20px' }}>
+              {/* ── Metabolic Efficiency ────────────────────────────── */}
+              {viewMode === 'Efficiency' && (
+              <div style={{ minHeight: '520px', padding: '20px' }}>
                 <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
                   <div style={{ ...GLASS, borderRadius: '14px', padding: '12px 16px', flex: '1 0 140px' }}>
                     <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL, display: 'block' }}>Avg Efficiency</span>
@@ -1161,7 +1246,8 @@ export default function MultiOPage() {
                   );
                 })}
               </div>
-            )}
+              )}
+            </ScientificFigureFrame>
           </div>
 
           {/* ── RIGHT PANEL (260px) ──────────────────────────────── */}

@@ -20,23 +20,25 @@ import { buildCellFreeSeed } from './shared/workbenchDataflow';
 import { T, TOOL_RESULT_PALETTE} from '../ide/tokens';
 import ScientificHero from './shared/ScientificHero';
 import { PATHD_THEME } from '../workbench/workbenchTheme';
+import ScientificFigureFrame from './shared/ScientificFigureFrame';
+import ScientificMethodStrip from './shared/ScientificMethodStrip';
 
 /* ── Design Tokens ────────────────────────────────────────────────── */
 
-const PANEL_BG = '#000000';
-const BORDER = 'rgba(255,255,255,0.06)';
-const LABEL = 'rgba(255,255,255,0.45)';
-const VALUE = 'rgba(255,255,255,0.65)';
-const INPUT_BG = 'rgba(255,255,255,0.05)';
-const INPUT_BORDER = 'rgba(255,255,255,0.08)';
-const INPUT_TEXT = 'rgba(255,255,255,0.7)';
+const PANEL_BG = PATHD_THEME.sepiaPanelMuted;
+const BORDER = PATHD_THEME.paperBorder;
+const LABEL = PATHD_THEME.paperLabel;
+const VALUE = PATHD_THEME.paperValue;
+const INPUT_BG = PATHD_THEME.paperSurfaceStrong;
+const INPUT_BORDER = PATHD_THEME.paperBorder;
+const INPUT_TEXT = PATHD_THEME.paperValue;
 const GLASS: React.CSSProperties = {
   borderRadius: '24px',
-  background: 'rgba(255,255,255,0.05)',
-  border: '1px solid rgba(255,255,255,0.08)',
+  background: PATHD_THEME.paperSurfaceStrong,
+  border: `1px solid ${PATHD_THEME.paperBorder}`,
 };
 
-const GENE_COLORS = ['#F0FDFA', '#5151CD', '#FA8072', '#FFFB1F', '#FF1FFF'];
+const GENE_COLORS = [PATHD_THEME.mint, PATHD_THEME.sky, PATHD_THEME.coral, PATHD_THEME.apricot, PATHD_THEME.lilac];
 
 type ViewMode = 'TimeCourse' | 'Resources' | 'Fitting' | 'IvIv' | 'Reactor3D';
 
@@ -784,6 +786,41 @@ export default function CellFreePage() {
     });
     return rows;
   }, [sim]);
+  const figureMeta = useMemo(() => {
+    if (viewMode === 'TimeCourse') {
+      return {
+        eyebrow: 'Expression timecourse',
+        title: 'Protein production, resource depletion, and construct quality are read as one figure',
+        caption: 'The timecourse lens is treated as a figure plate rather than a simulator canvas, so expression, depletion, and comparative construct quality live inside one evidence surface.',
+      };
+    }
+    if (viewMode === 'Resources') {
+      return {
+        eyebrow: 'Resource ledger',
+        title: 'ATP, ribosome, and amino-acid drawdown define the real viability of the run',
+        caption: 'This lens foregrounds resource exhaustion as the governing constraint for whether a construct bundle should be promoted into slower experimental loops.',
+      };
+    }
+    if (viewMode === 'Fitting') {
+      return {
+        eyebrow: 'Plate fitting',
+        title: 'Parameter-fit quality sits inside the same workbench story as simulation output',
+        caption: 'Fitting is presented as evidence for how trustworthy the cell-free readout is, not as a detached analytics tab.',
+      };
+    }
+    if (viewMode === 'IvIv') {
+      return {
+        eyebrow: 'Translation bridge',
+        title: 'In-vitro to in-vivo translation confidence becomes a publication-style evidence panel',
+        caption: 'The bridge lens keeps predicted in-vivo expression, confidence, and rationale in one place so promotion decisions stay legible and defensible.',
+      };
+    }
+    return {
+      eyebrow: 'Reactor twin',
+      title: 'The digital twin reframes the run as a spatial bench instrument',
+      caption: 'Construct output, energy pools, and reactor geometry are consolidated into a single interpretive stage rather than a decorative 3D tab.',
+    };
+  }, [viewMode]);
 
   return (
     <>
@@ -850,6 +887,32 @@ export default function CellFreePage() {
           />
         </div>
 
+        <div style={{ padding: '0 16px 10px' }}>
+          <ScientificMethodStrip
+            label="Cell-free bench"
+            items={[
+              {
+                title: 'Construct register',
+                detail: 'The left rail keeps construct identity, promoter, and DNA load visible so each run is read as a bench setup rather than a generic parameter set.',
+                accent: PATHD_THEME.apricot,
+                note: `${constructs.length} constructs`,
+              },
+              {
+                title: 'Figure lens',
+                detail: 'Timecourse, resource, fitting, translation, and reactor-twin views now share one framed figure language instead of behaving like unrelated tabs.',
+                accent: PATHD_THEME.sky,
+                note: viewMode,
+              },
+              {
+                title: 'Promotion evidence',
+                detail: 'Yield, depletion gate, and translation confidence remain exposed on the page so DBTL promotion can be judged without leaving the workbench.',
+                accent: PATHD_THEME.mint,
+                note: `${sim.totalProteinYield.toFixed(1)} nM total yield`,
+              },
+            ]}
+          />
+        </div>
+
         {simError && (
           <div style={{ padding: '0 16px 8px' }}><SimErrorBanner message={simError} /></div>
         )}
@@ -893,9 +956,9 @@ export default function CellFreePage() {
               {(['TimeCourse', 'Resources', 'Fitting', 'IvIv', 'Reactor3D'] as ViewMode[]).map(mode => (
                 <button aria-label="Action" key={mode} onClick={() => setViewMode(mode)} style={{
                   flex: '1 1 0', padding: '5px 0', borderRadius: '6px', cursor: 'pointer',
-                  fontFamily: T.SANS, fontSize: '10px', border: 'none',
-                  background: viewMode === mode ? 'rgba(255,255,255,0.12)' : INPUT_BG,
-                  color: viewMode === mode ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.4)',
+                  fontFamily: T.SANS, fontSize: '10px', border: `1px solid ${viewMode === mode ? 'rgba(175,195,214,0.34)' : INPUT_BORDER}`,
+                  background: viewMode === mode ? 'rgba(175,195,214,0.22)' : INPUT_BG,
+                  color: viewMode === mode ? VALUE : LABEL,
                 }}>
                   {mode}
                 </button>
@@ -936,60 +999,83 @@ export default function CellFreePage() {
           </div>
 
           {/* ── CENTER ENGINE ────────────────────────────────────── */}
-          <div className="nb-tool-center" style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#050505', minWidth: 0 }}>
-            {viewMode === 'TimeCourse' && (
-              <div style={{ flex: 1, padding: '16px', overflowY: 'auto' }}>
-                <TimeCourseChart result={result} constructs={constructs} />
-              </div>
-            )}
-            {viewMode === 'Resources' && (
-              <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
-                <div style={{ width: '100%', maxWidth: '600px' }}>
-                  <ResourceChart result={result} />
-                </div>
-              </div>
-            )}
-            {viewMode === 'Fitting' && (
-              <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
-                <div style={{ width: '100%', maxWidth: '600px' }}>
-                  <FittingChart result={result} />
-                </div>
-              </div>
-            )}
-            {viewMode === 'IvIv' && (
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '16px', gap: '16px' }}>
-                <div style={{ width: '100%', maxWidth: '600px', margin: '0 auto' }}>
-                  <IvIvChart result={result} />
-                </div>
-                {iviv && (
-                  <div style={{ ...GLASS, borderRadius: '16px', padding: '14px 18px', maxWidth: '600px', margin: '0 auto', width: '100%' }}>
-                    <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: LABEL, margin: '0 0 6px' }}>
-                      Reasoning
-                    </p>
-                    <p style={{ fontFamily: T.SANS, fontSize: '11px', color: VALUE, margin: 0, lineHeight: 1.6 }}>
-                      {iviv.reasoning}
-                    </p>
+          <div className="nb-tool-center" style={{ flex: 1, display: 'flex', flexDirection: 'column', background: PANEL_BG, minWidth: 0, padding: '12px' }}>
+            <ScientificFigureFrame
+              eyebrow={figureMeta.eyebrow}
+              title={figureMeta.title}
+              caption={figureMeta.caption}
+              legend={[
+                { label: 'Lens', value: viewMode, accent: PATHD_THEME.sky },
+                { label: 'Constructs', value: `${constructs.length}`, accent: PATHD_THEME.apricot },
+                { label: 'Yield', value: `${sim.totalProteinYield.toFixed(1)} nM`, accent: PATHD_THEME.mint },
+                { label: 'Depletion', value: `${sim.energyDepletionTime.toFixed(0)} min`, accent: PATHD_THEME.coral },
+              ]}
+              footer={
+                <div style={{ display: 'grid', gap: '6px' }}>
+                  <div style={{ fontFamily: T.SANS, fontSize: '11px', color: VALUE, lineHeight: 1.55 }}>
+                    The figure surface is now stable across lenses, so scientists can switch from expression to depletion to IVIV translation without feeling like they left the same experiment.
                   </div>
-                )}
-              </div>
-            )}
-            {viewMode === 'Reactor3D' && (
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '16px', gap: '10px' }}>
-                <div style={{ maxWidth: '760px', margin: '0 auto', width: '100%' }}>
-                  <div style={{ padding: '8px 12px', borderRadius: '14px', border: `1px solid ${BORDER}`, background: 'rgba(255,255,255,0.04)' }}>
-                    <p style={{ margin: '0 0 3px', color: VALUE, fontSize: '11px', fontFamily: T.SANS }}>
-                      Reactor 3D turns the CFPS run into a digital twin: construct yield, energy pool and depletion timing are mapped into one spatial scene.
-                    </p>
-                    <p style={{ margin: 0, color: LABEL, fontSize: '9px', fontFamily: T.MONO }}>
-                      center tank = resource state · rear towers = expression output · right bars = ATP / GTP / PEP allocation
-                    </p>
+                  <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL }}>
+                    setup {params.temperature}°C · {params.simulationTime} min · {sim.isResourceLimited ? 'resource-limited run' : 'resources adequate for promotion review'}
                   </div>
                 </div>
-                <div style={{ flex: 1, minHeight: '420px', maxWidth: '760px', margin: '0 auto', width: '100%' }}>
-                  <ReactorTwin3D result={result} constructs={constructs} params={params} />
+              }
+              minHeight="100%"
+            >
+              {viewMode === 'TimeCourse' && (
+                <div style={{ padding: '4px 0', overflowY: 'auto' }}>
+                  <TimeCourseChart result={result} constructs={constructs} />
                 </div>
-              </div>
-            )}
+              )}
+              {viewMode === 'Resources' && (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '8px 0' }}>
+                  <div style={{ width: '100%', maxWidth: '600px' }}>
+                    <ResourceChart result={result} />
+                  </div>
+                </div>
+              )}
+              {viewMode === 'Fitting' && (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '8px 0' }}>
+                  <div style={{ width: '100%', maxWidth: '600px' }}>
+                    <FittingChart result={result} />
+                  </div>
+                </div>
+              )}
+              {viewMode === 'IvIv' && (
+                <div style={{ display: 'flex', flexDirection: 'column', padding: '8px 0', gap: '16px' }}>
+                  <div style={{ width: '100%', maxWidth: '600px', margin: '0 auto' }}>
+                    <IvIvChart result={result} />
+                  </div>
+                  {iviv && (
+                    <div style={{ ...GLASS, borderRadius: '16px', padding: '14px 18px', maxWidth: '600px', margin: '0 auto', width: '100%' }}>
+                      <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: LABEL, margin: '0 0 6px' }}>
+                        Reasoning
+                      </p>
+                      <p style={{ fontFamily: T.SANS, fontSize: '11px', color: VALUE, margin: 0, lineHeight: 1.6 }}>
+                        {iviv.reasoning}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+              {viewMode === 'Reactor3D' && (
+                <div style={{ display: 'flex', flexDirection: 'column', padding: '8px 0', gap: '10px' }}>
+                  <div style={{ maxWidth: '760px', margin: '0 auto', width: '100%' }}>
+                    <div style={{ padding: '8px 12px', borderRadius: '14px', border: `1px solid ${BORDER}`, background: PATHD_THEME.paperSurfaceMuted }}>
+                      <p style={{ margin: '0 0 3px', color: VALUE, fontSize: '11px', fontFamily: T.SANS }}>
+                        Reactor 3D turns the CFPS run into a digital twin: construct yield, energy pool and depletion timing are mapped into one spatial scene.
+                      </p>
+                      <p style={{ margin: 0, color: LABEL, fontSize: '9px', fontFamily: T.MONO }}>
+                        center tank = resource state · rear towers = expression output · right bars = ATP / GTP / PEP allocation
+                      </p>
+                    </div>
+                  </div>
+                  <div style={{ minHeight: '420px', maxWidth: '760px', margin: '0 auto', width: '100%' }}>
+                    <ReactorTwin3D result={result} constructs={constructs} params={params} />
+                  </div>
+                </div>
+              )}
+            </ScientificFigureFrame>
           </div>
 
           {/* ── RIGHT PANEL (260px) ──────────────────────────────── */}

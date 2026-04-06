@@ -35,10 +35,10 @@ const BORDER = PATHD_THEME.paperBorder;
 const BORDER_STRONG = PATHD_THEME.paperBorderStrong;
 const VALUE = PATHD_THEME.paperValue;
 const LABEL = PATHD_THEME.paperLabel;
-const SURFACE = 'rgba(255,255,255,0.68)';
-const SURFACE_SOFT = 'rgba(255,255,255,0.56)';
-const SURFACE_TINT = 'rgba(255,255,255,0.44)';
-const SHADOW = '0 18px 44px rgba(41,46,53,0.06)';
+const SURFACE = PATHD_THEME.paperSurfaceStrong;
+const SURFACE_SOFT = PATHD_THEME.paperSurfaceMuted;
+const SURFACE_TINT = 'rgba(255,255,255,0.9)';
+const SHADOW = '0 18px 44px rgba(96,74,56,0.10)';
 
 const DIRECTION_ACCENTS: Record<ToolDirection | 'All', string> = {
   All: PATHD_THEME.sky,
@@ -267,7 +267,7 @@ export default function ToolsDirectoryPage() {
   return (
     // position:absolute + inset:0 fills the nb-ide-main container provided
     // by the persistent ToolsLayoutShell (app/tools/layout.tsx)
-    <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, #f7f2ec 0%, #efe8de 100%)', color: '#20252b', overflow: 'auto' }}>
+    <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(180deg, ${PATHD_THEME.sepiaPanelMuted} 0%, ${PATHD_THEME.sepiaPanel} 100%)`, color: VALUE, overflow: 'auto' }}>
       <main>
         <section style={{ padding: '32px 18px 20px' }}>
           <div style={{ maxWidth: '1480px', margin: '0 auto' }}>

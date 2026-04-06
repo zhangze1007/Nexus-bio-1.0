@@ -119,7 +119,7 @@ function CofactorMatrix({ readouts }: { readouts: SimReadouts }) {
   return (
       <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'6px', marginTop:'8px' }}>
       {items.map(({ l, v, u, opacity }) => (
-        <div key={l} style={{ padding:'8px 6px', borderRadius:'10px', background:'rgba(255,255,255,0.52)', border:`0.5px solid ${PATHD_THEME.paperBorder}`, textAlign:'center' }}>
+        <div key={l} style={{ padding:'8px 6px', borderRadius:'10px', background:PATHD_THEME.paperSurfaceStrong, border:`0.5px solid ${PATHD_THEME.paperBorder}`, textAlign:'center' }}>
           <div style={{ fontFamily: T.MONO, fontSize:'11px', fontWeight:700, color:opacity > 0.7 ? PATHD_THEME.paperValue : PATHD_THEME.paperLabel, fontVariantNumeric:'tabular-nums' }}>
             {v.toFixed(1)}
           </div>
@@ -184,7 +184,7 @@ export default function StatusOverlay({
         position:'absolute', right:'20px', top:'50%',
         transform:'translateY(-50%)',
         width:'230px', zIndex:10,
-        background: PATHD_THEME.paperSurfaceStrong,
+        background: PATHD_THEME.sepiaPanelMuted,
         backdropFilter:'blur(28px)',
         WebkitBackdropFilter:'blur(28px)',
         borderRadius:'20px',

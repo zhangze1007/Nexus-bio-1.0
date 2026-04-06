@@ -73,7 +73,7 @@ export default function ToolShell({
     <div className="nb-tool-shell" style={{
       position: 'relative',
       display: 'flex', flexDirection: 'column',
-      background: `linear-gradient(180deg, ${PATHD_THEME.paperElevated} 0%, ${PATHD_THEME.paperWarm} 100%)`,
+      background: `linear-gradient(180deg, ${PATHD_THEME.sepiaPanelMuted} 0%, ${PATHD_THEME.sepiaPanel} 100%)`,
       fontFamily: T.SANS,
       flex: 1,
       minHeight: '100%',
@@ -88,11 +88,11 @@ export default function ToolShell({
           padding: '10px 20px',
           display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap',
           flexShrink: 0,
-          borderBottom: `1px solid ${PATHD_THEME.paperBorder}`,
-          background: PATHD_THEME.paperSurfaceStrong,
+          borderBottom: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
+          background: PATHD_THEME.sepiaPanelMuted,
           backdropFilter: 'blur(18px)',
           WebkitBackdropFilter: 'blur(18px)',
-          boxShadow: '0 10px 30px rgba(32,37,43,0.05), inset 0 1px 0 rgba(255,255,255,0.5)',
+          boxShadow: '0 10px 30px rgba(96,74,56,0.08), inset 0 1px 0 rgba(255,255,255,0.28)',
         }}
       >
         <button
@@ -106,7 +106,7 @@ export default function ToolShell({
             padding: '0 8px',
             borderRadius: '10px',
             border: `1px solid ${PATHD_THEME.paperBorder}`,
-            background: PATHD_THEME.paperSurface,
+            background: PATHD_THEME.paperElevated,
             color: PATHD_THEME.paperLabel,
             cursor: 'pointer',
             fontFamily: T.SANS,
@@ -163,7 +163,7 @@ export default function ToolShell({
             fontFamily: T.MONO, fontSize: '10px',
             color: PATHD_THEME.paperValue,
           padding: '6px 10px',
-            background: 'rgba(191, 220, 205, 0.22)',
+            background: PATHD_THEME.paperSurfaceStrong,
             border: `1px solid ${PATHD_THEME.paperBorder}`,
             borderRadius: '10px',
           }}>
@@ -210,8 +210,8 @@ export default function ToolShell({
         <div className="nb-tool-shell__footer" style={{
           padding: '10px 20px',
           display: 'flex', gap: '8px', flexShrink: 0,
-          borderTop: `1px solid ${PATHD_THEME.paperBorder}`,
-          background: PATHD_THEME.paperSurfaceStrong,
+          borderTop: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
+          background: PATHD_THEME.sepiaPanelMuted,
           backdropFilter: 'blur(16px)',
           WebkitBackdropFilter: 'blur(16px)',
         }}>
@@ -237,8 +237,8 @@ export const TOOL_TOKENS = {
   MINT: PATHD_THEME.mint,
   SKY: PATHD_THEME.sky,
   LILAC: PATHD_THEME.lilac,
-  BG: PATHD_THEME.paperWarm,
-  CARD_BG: PATHD_THEME.panelGlass,
+  BG: PATHD_THEME.sepiaPanel,
+  CARD_BG: PATHD_THEME.paperSurfaceStrong,
   BORDER: PATHD_THEME.paperBorder,
   LABEL: PATHD_THEME.paperLabel,
   VALUE: PATHD_THEME.paperValue,

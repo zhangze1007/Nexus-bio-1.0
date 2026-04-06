@@ -18,6 +18,9 @@ import type { FBAOutput, CommunityFBAOutput } from '../../data/mockFBA';
 import { buildFBASeed } from './shared/workbenchDataflow';
 import { solveAuthorityCommunityFBA, solveAuthorityFBA } from '../../services/FBAAuthorityClient';
 import { T, TOOL_RESULT_PALETTE} from '../ide/tokens';
+import { PATHD_THEME } from '../workbench/workbenchTheme';
+import ScientificFigureFrame from './shared/ScientificFigureFrame';
+import ScientificMethodStrip from './shared/ScientificMethodStrip';
 
 // ── Pastel palette ──
 const COLORS = {
@@ -595,6 +598,20 @@ export default function FBASimPage() {
   }, [singleResult]);
 
   const maxTopFlux = Math.abs(top5[0]?.flux ?? 1) || 1;
+  const figureMeta = useMemo(() => {
+    if (simMode === 'single') {
+      return {
+        eyebrow: 'Figure A · Host Flux State',
+        title: 'Constraint-resolved flux map for the active host context',
+        caption: 'The central flux map is framed as a model figure: objective, uptake limits, and shadow-price interpretation are treated as part of the same scientific panel.',
+      };
+    }
+    return {
+      eyebrow: 'Figure B · Community Exchange Model',
+      title: 'Coupled host-state and shared metabolite exchange',
+      caption: 'Community mode becomes a multi-panel model figure where strain-specific optima and shared-pool exchange are read together instead of across disconnected cards.',
+    };
+  }, [simMode]);
 
   function toggleKO(id: string) {
     setKnockouts(prev => prev.includes(id) ? prev.filter(k => k !== id) : [...prev, id]);
@@ -699,7 +716,7 @@ export default function FBASimPage() {
 
   return (
     <>
-      <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', background: '#000000', minHeight: '100%', flex: 1 }}>
+      <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', background: PATHD_THEME.sepiaPanelMuted, minHeight: '100%', flex: 1 }}>
         <AlgorithmInsight
           title={simMode === 'single' ? 'Flux Balance Analysis' : 'Community FBA — Multi-species'}
           description={simMode === 'single'
@@ -793,6 +810,32 @@ export default function FBASimPage() {
                 ]}
           />
         </div>
+
+        <div style={{ padding: '0 16px 10px' }}>
+          <ScientificMethodStrip
+            label="Model Analysis Grammar"
+            items={[
+              {
+                title: 'Constraint setup',
+                detail: 'Objective, uptake limits, and knockout state should read like the methods legend for the current flux solve.',
+                accent: PATHD_THEME.apricot,
+                note: 'Model inputs',
+              },
+              {
+                title: 'Flux figure',
+                detail: 'The network map is the primary scientific canvas and should carry the main burden of interpretation, not act as a middle-column ornament.',
+                accent: PATHD_THEME.sky,
+                note: 'Primary canvas',
+              },
+              {
+                title: 'Readout ledger',
+                detail: 'Growth, ATP, carbon efficiency, and top reactions belong as an attached evidence ledger around the same model figure.',
+                accent: PATHD_THEME.mint,
+                note: 'Integrated readout',
+              },
+            ]}
+          />
+        </div>
         <div style={{ padding: '0 16px 4px' }}>
           <DemoBanner context="E. coli central metabolism (glycolysis + TCA)" />
         </div>
@@ -854,7 +897,7 @@ export default function FBASimPage() {
         {simMode === 'single' && (
           <div className="nb-tool-panels" style={{ flex: 1 }}>
             {/* Input panel */}
-            <div className="nb-tool-sidebar" style={{ width: '240px', borderRight: '1px solid rgba(255,255,255,0.06)', background: '#000000' }}>
+            <div className="nb-tool-sidebar" style={{ width: '240px', borderRight: `1px solid ${PATHD_THEME.paperBorder}`, background: PATHD_THEME.sepiaPanelMuted }}>
               <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '0 0 12px' }}>
                 Simulation Parameters
               </p>
@@ -869,8 +912,8 @@ export default function FBASimPage() {
                 <button aria-label="Action" key={opt} onClick={() => setObjective(opt)} style={{
                   display: 'block', width: '100%', textAlign: 'left',
                   padding: '6px 10px', marginBottom: '4px',
-                  background: objective === opt ? 'rgba(255,255,255,0.06)' : 'transparent',
-                  border: `1px solid ${objective === opt ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.06)'}`,
+                  background: objective === opt ? PATHD_THEME.paperSurfaceStrong : 'rgba(255,255,255,0.34)',
+                  border: `1px solid ${objective === opt ? PATHD_THEME.paperBorderStrong : PATHD_THEME.paperBorder}`,
                   borderRadius: '8px',
                   color: objective === opt ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.4)',
                   fontFamily: T.SANS, fontSize: '11px', cursor: 'pointer',
@@ -914,14 +957,34 @@ export default function FBASimPage() {
             </div>
 
             {/* Engine view — SVG flux map */}
-            <div className="nb-tool-center" style={{ flex: 1, position: 'relative', background: '#050505', display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: 0 }}>
-              <div style={{ height: '100%', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <FluxMap result={singleResult} nodes={METABOLIC_NODES} edges={FLUX_EDGES} knockouts={knockouts} svgRef={chartRef} />
-              </div>
+            <div className="nb-tool-center" style={{ flex: 1, position: 'relative', background: PATHD_THEME.sepiaPanelMuted, display: 'flex', alignItems: 'stretch', justifyContent: 'center', minWidth: 0, padding: '16px' }}>
+              <ScientificFigureFrame
+                eyebrow={figureMeta.eyebrow}
+                title={figureMeta.title}
+                caption={figureMeta.caption}
+                minHeight="100%"
+                legend={[
+                  { label: 'Objective', value: objective, accent: PATHD_THEME.apricot },
+                  { label: 'Glucose', value: `${glucoseUptake.toFixed(1)} mmol/gDW/h`, accent: PATHD_THEME.coral },
+                  { label: 'Oxygen', value: `${oxygenUptake.toFixed(1)} mmol/gDW/h`, accent: PATHD_THEME.sky },
+                  { label: 'Knockouts', value: knockouts.length ? knockouts.join(', ') : 'none', accent: PATHD_THEME.mint },
+                ]}
+                footer={
+                  <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.paperMuted, lineHeight: 1.55 }}>
+                    {singleResult.feasible
+                      ? 'Shadow prices and top-flux readouts should be interpreted as annotations on this same model figure, not as detached KPI tiles.'
+                      : 'The current solve is infeasible, so the figure is functioning as a rejection surface rather than a success dashboard.'}
+                  </div>
+                }
+              >
+                <div style={{ minHeight: '540px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <FluxMap result={singleResult} nodes={METABOLIC_NODES} edges={FLUX_EDGES} knockouts={knockouts} svgRef={chartRef} />
+                </div>
+              </ScientificFigureFrame>
             </div>
 
             {/* Results panel */}
-            <div className="nb-tool-right" style={{ width: '240px', borderLeft: '1px solid rgba(255,255,255,0.06)', background: '#000000' }}>
+            <div className="nb-tool-right" style={{ width: '240px', borderLeft: `1px solid ${PATHD_THEME.paperBorder}`, background: PATHD_THEME.sepiaPanelMuted }}>
               <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '0 0 12px' }}>
                 Results
               </p>
@@ -990,43 +1053,60 @@ export default function FBASimPage() {
             </div>
 
             {/* Center: dual flux maps + shared bus */}
-            <div className="nb-tool-center" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '12px', padding: '12px', minWidth: 0 }}>
-              {/* Community objective banner */}
-              <GlassContainer color={COLORS.sharedBg} borderColor={COLORS.sharedBorder}
-                style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontFamily: T.SANS, fontSize: '11px', color: 'rgba(255,255,255,0.55)' }}>
-                  Community Biomass Objective
-                </span>
-                <span style={{ fontFamily: T.MONO, fontSize: '14px', fontWeight: 600, color: COLORS.sharedPool, textAlign: 'right' }}>
-                  μ_com = {communityResult.communityGrowthRate.toFixed(4)} h⁻¹
-                </span>
-              </GlassContainer>
-
-              {/* Dual flux maps */}
-              <div style={{ display: 'flex', gap: '12px', flex: 1, minHeight: 0 }}>
-                <GlassContainer color={COLORS.strainABg} borderColor={COLORS.strainABorder}
-                  style={{ flex: 1, padding: '8px', display: 'flex', flexDirection: 'column' }}>
-                  <p style={{ fontFamily: T.MONO, fontSize: '9px', color: COLORS.strainA, margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                    E. coli Network
-                  </p>
-                  <div style={{ flex: 1, minHeight: 0 }}>
-                    <FluxMap result={communityResult.ecoli} nodes={METABOLIC_NODES} edges={FLUX_EDGES} knockouts={ecoliKO} compact />
+            <div className="nb-tool-center" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '12px', padding: '16px', minWidth: 0, background: PATHD_THEME.sepiaPanelMuted }}>
+              <ScientificFigureFrame
+                eyebrow={figureMeta.eyebrow}
+                title={figureMeta.title}
+                caption={figureMeta.caption}
+                minHeight="100%"
+                legend={[
+                  { label: 'Objective', value: objective, accent: PATHD_THEME.apricot },
+                  { label: 'Community growth', value: `${communityResult.communityGrowthRate.toFixed(4)} h⁻¹`, accent: PATHD_THEME.mint },
+                  { label: 'E. coli KOs', value: ecoliKO.length ? ecoliKO.join(', ') : 'none', accent: COLORS.strainA },
+                  { label: 'Yeast KOs', value: yeastKO.length ? yeastKO.join(', ') : 'none', accent: COLORS.strainB },
+                ]}
+                footer={
+                  <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.paperMuted, lineHeight: 1.55 }}>
+                    Community view is framed as a comparative systems figure: two host states above, shared exchange below, and growth coupling visible as one model story.
                   </div>
-                </GlassContainer>
+                }
+              >
+                <div style={{ display: 'grid', gap: '12px', minHeight: '540px' }}>
+                  <GlassContainer color={COLORS.sharedBg} borderColor={COLORS.sharedBorder}
+                    style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ fontFamily: T.SANS, fontSize: '11px', color: 'rgba(255,255,255,0.55)' }}>
+                      Community Biomass Objective
+                    </span>
+                    <span style={{ fontFamily: T.MONO, fontSize: '14px', fontWeight: 600, color: COLORS.sharedPool, textAlign: 'right' }}>
+                      μ_com = {communityResult.communityGrowthRate.toFixed(4)} h⁻¹
+                    </span>
+                  </GlassContainer>
 
-                <GlassContainer color={COLORS.strainBBg} borderColor={COLORS.strainBBorder}
-                  style={{ flex: 1, padding: '8px', display: 'flex', flexDirection: 'column' }}>
-                  <p style={{ fontFamily: T.MONO, fontSize: '9px', color: COLORS.strainB, margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                    S. cerevisiae Network
-                  </p>
-                  <div style={{ flex: 1, minHeight: 0 }}>
-                    <FluxMap result={communityResult.yeast} nodes={YEAST_NODES} edges={YEAST_FLUX_EDGES} knockouts={yeastKO} compact />
+                  <div style={{ display: 'flex', gap: '12px', flex: 1, minHeight: 0 }}>
+                    <GlassContainer color={COLORS.strainABg} borderColor={COLORS.strainABorder}
+                      style={{ flex: 1, padding: '8px', display: 'flex', flexDirection: 'column' }}>
+                      <p style={{ fontFamily: T.MONO, fontSize: '9px', color: COLORS.strainA, margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                        E. coli Network
+                      </p>
+                      <div style={{ flex: 1, minHeight: 0 }}>
+                        <FluxMap result={communityResult.ecoli} nodes={METABOLIC_NODES} edges={FLUX_EDGES} knockouts={ecoliKO} compact />
+                      </div>
+                    </GlassContainer>
+
+                    <GlassContainer color={COLORS.strainBBg} borderColor={COLORS.strainBBorder}
+                      style={{ flex: 1, padding: '8px', display: 'flex', flexDirection: 'column' }}>
+                      <p style={{ fontFamily: T.MONO, fontSize: '9px', color: COLORS.strainB, margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                        S. cerevisiae Network
+                      </p>
+                      <div style={{ flex: 1, minHeight: 0 }}>
+                        <FluxMap result={communityResult.yeast} nodes={YEAST_NODES} edges={YEAST_FLUX_EDGES} knockouts={yeastKO} compact />
+                      </div>
+                    </GlassContainer>
                   </div>
-                </GlassContainer>
-              </div>
 
-              {/* Shared metabolite bus */}
-              <SharedMetaboliteBus exchangeFluxes={communityResult.exchangeFluxes} />
+                  <SharedMetaboliteBus exchangeFluxes={communityResult.exchangeFluxes} />
+                </div>
+              </ScientificFigureFrame>
             </div>
 
             {/* Strain B (S. cerevisiae) sidebar */}
@@ -1044,7 +1124,7 @@ export default function FBASimPage() {
         )}
 
         {/* Export bar */}
-        <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', padding: '8px 16px', display: 'flex', gap: '8px', flexShrink: 0, background: '#000000' }}>
+        <div style={{ borderTop: `1px solid ${PATHD_THEME.paperBorder}`, padding: '8px 16px', display: 'flex', gap: '8px', flexShrink: 0, background: PATHD_THEME.sepiaPanelMuted }}>
           <ExportButton label="Export JSON" data={exportData} filename={`fbasim-${simMode}-result`} format="json" />
           <ExportButton label="Export CSV" data={
             simMode === 'single'

@@ -41,15 +41,15 @@ export default function IDEConsole() {
       height: '180px',
       display: 'flex',
       flexDirection: 'column',
-      background: PATHD_THEME.paperSurfaceStrong,
-      borderTop: `1px solid ${PATHD_THEME.paperBorder}`,
-      boxShadow: '0 -10px 30px rgba(32,37,43,0.05)',
+      background: PATHD_THEME.sepiaPanelMuted,
+      borderTop: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
+      boxShadow: '0 -10px 30px rgba(96,74,56,0.08)',
     }}>
       {/* Header */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '5px 12px',
-        borderBottom: `1px solid ${PATHD_THEME.paperBorder}`,
+        borderBottom: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
         flexShrink: 0,
       }}>
         <span style={{ fontFamily: MONO, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: PATHD_THEME.paperLabel }}>
@@ -81,7 +81,7 @@ export default function IDEConsole() {
               <div key={entry.id} style={{
                 display: 'flex', alignItems: 'flex-start', gap: '8px',
                 padding: '3px 12px',
-                background: LEVEL_BG[entry.level],
+                background: PATHD_THEME.paperSurfaceStrong,
                 borderLeft: `2px solid ${LEVEL_COLORS[entry.level]}`,
                 marginBottom: '1px',
               }}>

@@ -25,6 +25,7 @@ import ThreeScene from '../ThreeScene';
 import NodePanel from '../NodePanel';
 import WorkbenchInlineContext from '../workbench/WorkbenchInlineContext';
 import ScientificHero from './shared/ScientificHero';
+import ScientificMethodStrip from './shared/ScientificMethodStrip';
 import { PATHD_THEME } from '../workbench/workbenchTheme';
 import { metabolicMachine } from '../../machines/metabolicMachine';
 import type { FBAWorkerIn, FBAWorkerOut } from '../../workers/fbaWorker';
@@ -257,7 +258,7 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
       position: 'relative',
       minHeight: '860px',
       flex: 1,
-      background:'#000000',
+      background: 'radial-gradient(circle at top, rgba(207,196,227,0.18), transparent 28%), radial-gradient(circle at bottom right, rgba(191,220,205,0.14), transparent 26%), linear-gradient(180deg, #0d0a09 0%, #050505 100%)',
       overflow:'hidden', userSelect:'none',
     }}>
       {/* ── Core viewport: fluid background ── */}
@@ -339,6 +340,31 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
             ]}
           />
         </div>
+        <div style={{ pointerEvents: 'auto' }}>
+          <ScientificMethodStrip
+            label="Pathway workbench"
+            items={[
+              {
+                title: 'Route object',
+                detail: 'The active route is treated as the canonical scientific object, so every downstream handoff inherits the same graph rather than rebuilding assumptions from scratch.',
+                accent: PATHD_THEME.apricot,
+                note: `${activeNodes.length} nodes · ${activeEdges.length} edges`,
+              },
+              {
+                title: '3D scientific canvas',
+                detail: 'The immersive pathway graph remains the main stage, but it is now framed by clear evidence and handoff language instead of reading like a standalone visual demo.',
+                accent: PATHD_THEME.sky,
+                note: selectedNode?.label ?? derivedTarget,
+              },
+              {
+                title: 'Execution handoff',
+                detail: 'Bottlenecks, enzyme candidates, and next-tool routing stay visible so the page behaves like the front door to the rest of the workbench.',
+                accent: PATHD_THEME.mint,
+                note: (analyzeArtifact?.recommendedNextTools[0] ?? 'fbasim').toUpperCase(),
+              },
+            ]}
+          />
+        </div>
       </div>
 
       {/* ── Center: 3D Pathway Visualization — full-screen, panels float over ── */}
@@ -394,21 +420,24 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
             onClick={handleStart}
             style={{
               position:'absolute', bottom:'28px', left:'50%', transform:'translateX(-50%)',
-              fontFamily: T.MONO, fontSize:'10px', color:'rgba(226,232,240,0.45)',
+              fontFamily: T.MONO, fontSize:'10px', color:PATHD_THEME.paperLabel,
               textTransform:'uppercase', letterSpacing:'0.15em', zIndex:25,
-              background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.12)',
+              background:'rgba(255,255,255,0.92)', border:`1px solid ${PATHD_THEME.paperBorder}`,
               borderRadius:'100px', padding:'8px 20px', cursor:'pointer',
-              transition:'color 0.2s, border-color 0.2s, background 0.2s',
+              transition:'color 0.2s, border-color 0.2s, background 0.2s, box-shadow 0.2s',
+              boxShadow:'0 12px 28px rgba(96,74,56,0.16)',
             }}
             onMouseEnter={e => {
-              (e.currentTarget as HTMLElement).style.color = '#fff';
-              (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.3)';
-              (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)';
+              (e.currentTarget as HTMLElement).style.color = PATHD_THEME.paperValue;
+              (e.currentTarget as HTMLElement).style.borderColor = 'rgba(175,195,214,0.34)';
+              (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.98)';
+              (e.currentTarget as HTMLElement).style.boxShadow = '0 16px 34px rgba(96,74,56,0.22)';
             }}
             onMouseLeave={e => {
-              (e.currentTarget as HTMLElement).style.color = 'rgba(226,232,240,0.45)';
-              (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.12)';
-              (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)';
+              (e.currentTarget as HTMLElement).style.color = PATHD_THEME.paperLabel;
+              (e.currentTarget as HTMLElement).style.borderColor = PATHD_THEME.paperBorder;
+              (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.92)';
+              (e.currentTarget as HTMLElement).style.boxShadow = '0 12px 28px rgba(96,74,56,0.16)';
             }}
           >
             ▶ Start Simulation

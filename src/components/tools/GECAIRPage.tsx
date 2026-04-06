@@ -11,19 +11,21 @@ import { T, TOOL_RESULT_PALETTE} from '../ide/tokens';
 import WorkbenchInlineContext from '../workbench/WorkbenchInlineContext';
 import ScientificHero from './shared/ScientificHero';
 import { PATHD_THEME } from '../workbench/workbenchTheme';
+import ScientificFigureFrame from './shared/ScientificFigureFrame';
+import ScientificMethodStrip from './shared/ScientificMethodStrip';
 
 // Dark theme tokens
-const PANEL_BG = '#000000';
-const BORDER = 'rgba(255,255,255,0.06)';
-const LABEL = 'rgba(255,255,255,0.45)';
-const VALUE = 'rgba(255,255,255,0.65)';
-const INPUT_BORDER = 'rgba(255,255,255,0.08)';
+const PANEL_BG = PATHD_THEME.sepiaPanelMuted;
+const BORDER = PATHD_THEME.paperBorder;
+const LABEL = PATHD_THEME.paperLabel;
+const VALUE = PATHD_THEME.paperValue;
+const INPUT_BORDER = PATHD_THEME.paperBorder;
 
 const PART_COLORS: Record<string, string> = {
-  promoter: 'rgba(81,81,205,0.8)',
-  rbs: 'rgba(255,139,31,0.8)',
-  cds: 'rgba(120,255,180,0.8)',
-  terminator: 'rgba(200,100,255,0.7)',
+  promoter: PATHD_THEME.lilac,
+  rbs: PATHD_THEME.sky,
+  cds: PATHD_THEME.apricot,
+  terminator: PATHD_THEME.coral,
 };
 
 function viridisColor(t: number): string {
@@ -89,9 +91,9 @@ function CircuitSVG({ inputA, inputB, gateType }: { inputA: number; inputB: numb
   const curveA = responseCurve('A');
   const curveB = responseCurve('B');
   const nodeRows = [
-    { label: 'Sensor A', value: outA, tone: '#E41A1C', detail: 'Hill repression from input A' },
-    { label: 'Sensor B', value: outB, tone: '#FF7F00', detail: 'Hill repression from input B' },
-    { label: `${gateType} Output`, value: outC, tone: '#4DAF4A', detail: 'Combined gate expression state' },
+    { label: 'Sensor A', value: outA, tone: PATHD_THEME.coral, detail: 'Hill repression from input A' },
+    { label: 'Sensor B', value: outB, tone: PATHD_THEME.apricot, detail: 'Hill repression from input B' },
+    { label: `${gateType} Output`, value: outC, tone: PATHD_THEME.mint, detail: 'Combined gate expression state' },
   ];
 
   return (
@@ -114,27 +116,27 @@ function CircuitSVG({ inputA, inputB, gateType }: { inputA: number; inputB: numb
       {/* Promoter — purple filled pentagon/arrow at x=65 */}
       <polygon
         points={`65,${bbY} 80,${bbY} 80,${bbY - 22} 90,${bbY - 12} 80,${bbY - 2} 80,${bbY - 22}`}
-        fill="rgba(152,78,163,0.85)" stroke="#984EA3" strokeWidth="1"
+        fill="rgba(207,196,227,0.85)" stroke={PART_COLORS.promoter} strokeWidth="1"
       />
-      <text x={77} y={bbY + 14} textAnchor="middle" fontFamily={T.MONO} fontSize="7" fill="#984EA3">P</text>
+      <text x={77} y={bbY + 14} textAnchor="middle" fontFamily={T.MONO} fontSize="7" fill={PART_COLORS.promoter}>P</text>
 
       {/* RBS — blue half-circle arc above backbone at x=116 */}
       <path d={`M 106,${bbY} A 10 10 0 0 1 126,${bbY}`}
-        fill="rgba(55,126,184,0.8)" stroke="#377EB8" strokeWidth="1" />
-      <text x={116} y={bbY + 14} textAnchor="middle" fontFamily={T.MONO} fontSize="7" fill="#377EB8">RBS</text>
+        fill="rgba(175,195,214,0.82)" stroke={PART_COLORS.rbs} strokeWidth="1" />
+      <text x={116} y={bbY + 14} textAnchor="middle" fontFamily={T.MONO} fontSize="7" fill={PART_COLORS.rbs}>RBS</text>
 
       {/* CDS — orange arrow rectangle at x=148 */}
       <polygon
         points={`138,${bbY - 16} 190,${bbY - 16} 206,${bbY} 190,${bbY + 16} 138,${bbY + 16}`}
-        fill={`rgba(255,127,0,${0.3 + exprLevel * 0.55})`}
-        stroke="#FF7F00" strokeWidth="1.2"
+        fill={`rgba(231,199,169,${0.3 + exprLevel * 0.55})`}
+        stroke={PART_COLORS.cds} strokeWidth="1.2"
       />
-      <text x={172} y={bbY + 4} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill="#FF7F00">{gateType}</text>
+      <text x={172} y={bbY + 4} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill={PART_COLORS.cds}>{gateType}</text>
 
       {/* Terminator — red T-shape at x=252 */}
-      <line x1={252} y1={bbY - 20} x2={252} y2={bbY + 2} stroke="#E41A1C" strokeWidth="2.5" />
-      <line x1={240} y1={bbY - 20} x2={264} y2={bbY - 20} stroke="#E41A1C" strokeWidth="2.5" />
-      <text x={252} y={bbY + 14} textAnchor="middle" fontFamily={T.MONO} fontSize="7" fill="#E41A1C">T</text>
+      <line x1={252} y1={bbY - 20} x2={252} y2={bbY + 2} stroke={PART_COLORS.terminator} strokeWidth="2.5" />
+      <line x1={240} y1={bbY - 20} x2={264} y2={bbY - 20} stroke={PART_COLORS.terminator} strokeWidth="2.5" />
+      <text x={252} y={bbY + 14} textAnchor="middle" fontFamily={T.MONO} fontSize="7" fill={PART_COLORS.terminator}>T</text>
 
       {/* Output arrow at right end */}
       <line x1={bbX2} y1={bbY} x2={bbX2 + 18} y2={bbY} stroke="rgba(255,255,255,0.25)" strokeWidth="1.5" markerEnd="url(#gecair-arrow)" />
@@ -213,14 +215,14 @@ function CircuitSVG({ inputA, inputB, gateType }: { inputA: number; inputB: numb
       {/* ── Right: Transfer curves ── */}
       <rect x="324" y="54" width="382" height="92" rx="16" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" />
       <text x="338" y="74" fontFamily={T.MONO} fontSize="9" fill="rgba(255,255,255,0.24)">TRANSFER CURVES</text>
-      <polyline points={curveA.points} fill="none" stroke="#E41A1C" strokeWidth="2" />
-      <polyline points={curveB.points} fill="none" stroke="#FF7F00" strokeWidth="2" />
-      <circle cx={curveA.markerX} cy={curveA.markerY} r="4" fill="#E41A1C" />
-      <circle cx={curveB.markerX} cy={curveB.markerY} r="4" fill="#FF7F00" />
-      <text x="348" y="133" fontFamily={T.MONO} fontSize="8" fill="rgba(228,26,28,0.9)">
+      <polyline points={curveA.points} fill="none" stroke={PATHD_THEME.coral} strokeWidth="2" />
+      <polyline points={curveB.points} fill="none" stroke={PATHD_THEME.apricot} strokeWidth="2" />
+      <circle cx={curveA.markerX} cy={curveA.markerY} r="4" fill={PATHD_THEME.coral} />
+      <circle cx={curveB.markerX} cy={curveB.markerY} r="4" fill={PATHD_THEME.apricot} />
+      <text x="348" y="133" fontFamily={T.MONO} fontSize="8" fill="rgba(232,163,161,0.9)">
         A: {(curveA.markerOutput * 100).toFixed(0)}%
       </text>
-      <text x="420" y="133" fontFamily={T.MONO} fontSize="8" fill="rgba(255,127,0,0.9)">
+      <text x="420" y="133" fontFamily={T.MONO} fontSize="8" fill="rgba(231,199,169,0.95)">
         B: {(curveB.markerOutput * 100).toFixed(0)}%
       </text>
 
@@ -251,10 +253,10 @@ function CircuitSVG({ inputA, inputB, gateType }: { inputA: number; inputB: numb
       <rect x="324" y="340" width="382" height="140" rx="16" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.07)" />
       <text x="338" y="358" fontFamily={T.MONO} fontSize="9" fill="rgba(255,255,255,0.24)">SBOL2 NOTATION LEGEND</text>
       {[
-        { label: 'Promoter',   color: '#984EA3', shape: 'pentagon' },
-        { label: 'RBS',        color: '#377EB8', shape: 'arc' },
-        { label: 'CDS/Gate',   color: '#FF7F00', shape: 'arrow' },
-        { label: 'Terminator', color: '#E41A1C', shape: 'T' },
+        { label: 'Promoter',   color: PART_COLORS.promoter, shape: 'pentagon' },
+        { label: 'RBS',        color: PART_COLORS.rbs, shape: 'arc' },
+        { label: 'CDS/Gate',   color: PART_COLORS.cds, shape: 'arrow' },
+        { label: 'Terminator', color: PART_COLORS.terminator, shape: 'T' },
       ].map((item, i) => (
         <g key={item.label} transform={`translate(338,${372 + i * 26})`}>
           <rect width="10" height="10" rx="2" fill={item.color} opacity={0.8} />
@@ -336,6 +338,11 @@ export default function GECAIRPage() {
     output: finalOutput.toFixed(3),
     noiseScore: noiseScore.toFixed(4),
   }), [gateType, inputA, inputB, finalOutput, noiseScore]);
+  const figureMeta = useMemo(() => ({
+    eyebrow: 'Circuit figure',
+    title: `${gateType} logic is framed as a control-system figure with parts, response space, and state ledger`,
+    caption: 'The main panel keeps genetic architecture, transfer behavior, and combinatorial output in one evidence surface so gate choice reads like a scientific design decision instead of a toy toggle.',
+  }), [gateType]);
 
   useEffect(() => {
     setToolPayload('gecair', {
@@ -371,7 +378,7 @@ export default function GECAIRPage() {
 
   return (
     <>
-      <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', background: '#050505', minHeight: '100%', flex: 1 }}>
+      <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', background: PANEL_BG, minHeight: '100%', flex: 1 }}>
         <AlgorithmInsight
           title="Gene Circuit AI Reasoner"
           description="Hill-function kinetics model promoter activity. Inhibition gates use Hill repression; activation uses Hill induction."
@@ -425,6 +432,32 @@ export default function GECAIRPage() {
           />
         </div>
 
+        <div style={{ padding: '0 16px 10px' }}>
+          <ScientificMethodStrip
+            label="Circuit design bench"
+            items={[
+              {
+                title: 'Input envelope',
+                detail: 'The controller and catalyst state seed the gate inputs so circuit design starts from system pressure instead of abstract binary examples.',
+                accent: PATHD_THEME.sky,
+                note: `A ${(inputA * 100).toFixed(0)}% · B ${(inputB * 100).toFixed(0)}%`,
+              },
+              {
+                title: 'Logic architecture',
+                detail: 'Promoter, RBS, CDS, terminator, and phase-space response are grouped into one publication-style figure rather than split across dashboard cards.',
+                accent: PATHD_THEME.lilac,
+                note: `${gateType} gate`,
+              },
+              {
+                title: 'Stability readout',
+                detail: 'Noise sensitivity and output level remain visible next to the figure so buildability and control quality stay attached to the same decision.',
+                accent: PATHD_THEME.mint,
+                note: `noise ${noiseScore.toFixed(4)}`,
+              },
+            ]}
+          />
+        </div>
+
         <div className="nb-tool-panels" style={{ flex: 1 }}>
           {/* Input panel */}
           <div className="nb-tool-sidebar" style={{ width: '240px', borderRight: `1px solid ${BORDER}`, background: PANEL_BG }}>
@@ -450,8 +483,8 @@ export default function GECAIRPage() {
               <button aria-label="Action" key={gate} onClick={() => setGateType(gate)} style={{
                 display: 'block', width: '100%', textAlign: 'left',
                 padding: '6px 10px', marginBottom: '4px',
-                background: gateType === gate ? 'rgba(255,255,255,0.08)' : 'transparent',
-                border: `1px solid ${gateType === gate ? 'rgba(255,255,255,0.18)' : INPUT_BORDER}`,
+                background: gateType === gate ? 'rgba(207,196,227,0.22)' : PATHD_THEME.paperSurfaceStrong,
+                border: `1px solid ${gateType === gate ? 'rgba(207,196,227,0.34)' : INPUT_BORDER}`,
                 borderRadius: '8px',
                 color: gateType === gate ? VALUE : LABEL,
                 fontFamily: T.SANS, fontSize: '11px', cursor: 'pointer',
@@ -480,9 +513,9 @@ export default function GECAIRPage() {
                     : gateType === 'NAND' ? !(a && b) ? 1 : 0
                     : 1 - a;
                   return (
-                    <tr key={i} style={{ background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)' }}>
+                    <tr key={i} style={{ background: i % 2 === 0 ? 'transparent' : PATHD_THEME.paperSurfaceMuted }}>
                       {[row.A, row.B, out].map((v, j) => (
-                        <td key={j} style={{ fontFamily: T.MONO, fontSize: '10px', textAlign: 'center', padding: '4px', color: v ? 'rgba(120,220,160,0.85)' : 'rgba(255,255,255,0.25)' }}>
+                        <td key={j} style={{ fontFamily: T.MONO, fontSize: '10px', textAlign: 'center', padding: '4px', color: v ? PATHD_THEME.mint : LABEL }}>
                           {v ? '1' : '0'}
                         </td>
                       ))}
@@ -494,8 +527,33 @@ export default function GECAIRPage() {
           </div>
 
           {/* Engine view */}
-          <div className="nb-tool-center" style={{ flex: 1, background: '#050505', padding: '8px', minWidth: 0 }}>
-            <CircuitSVG inputA={inputA} inputB={inputB} gateType={gateType} />
+          <div className="nb-tool-center" style={{ flex: 1, background: PANEL_BG, padding: '12px', minWidth: 0 }}>
+            <ScientificFigureFrame
+              eyebrow={figureMeta.eyebrow}
+              title={figureMeta.title}
+              caption={figureMeta.caption}
+              legend={[
+                { label: 'Gate', value: gateType, accent: PATHD_THEME.lilac },
+                { label: 'Input A', value: `${(inputA * 100).toFixed(0)}%`, accent: PATHD_THEME.coral },
+                { label: 'Input B', value: `${(inputB * 100).toFixed(0)}%`, accent: PATHD_THEME.apricot },
+                { label: 'Output', value: `${(finalOutput * 100).toFixed(1)}%`, accent: PATHD_THEME.mint },
+              ]}
+              footer={
+                <div style={{ display: 'grid', gap: '6px' }}>
+                  <div style={{ fontFamily: T.SANS, fontSize: '11px', color: VALUE, lineHeight: 1.55 }}>
+                    The page now treats the circuit as a scientific control object: architecture, phase space, transfer response, and node state are presented as one figure so logic choice can be defended from first principles.
+                  </div>
+                  <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL }}>
+                    recommended gate {recommendedGate} · node outputs {(outA * 100).toFixed(0)} / {(outB * 100).toFixed(0)} · noise {noiseScore.toFixed(4)}
+                  </div>
+                </div>
+              }
+              minHeight="100%"
+            >
+              <div style={{ minHeight: '500px' }}>
+                <CircuitSVG inputA={inputA} inputB={inputB} gateType={gateType} />
+              </div>
+            </ScientificFigureFrame>
           </div>
 
           {/* Results panel */}
@@ -509,6 +567,25 @@ export default function GECAIRPage() {
               <MetricCard label="Node B Output" value={(outB * 100).toFixed(1)} unit="%" />
               <MetricCard label="Noise Sensitivity" value={noiseScore.toFixed(4)} warning={noiseScore > 0.05 ? 'High noise sensitivity — consider insulator parts' : undefined} />
               <MetricCard label="Circuit Complexity" value={CIRCUIT_NODES.reduce((a, n) => a + n.parts.length, 0)} unit="parts" />
+            </div>
+
+            <div style={{
+              marginTop: '12px',
+              padding: '12px',
+              borderRadius: '12px',
+              border: `1px solid ${BORDER}`,
+              background: PATHD_THEME.paperSurfaceStrong,
+              display: 'grid',
+              gap: '6px',
+            }}>
+              <div style={{ fontFamily: T.MONO, fontSize: '9px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                Recommendation
+              </div>
+              <div style={{ fontFamily: T.SANS, fontSize: '11px', color: VALUE, lineHeight: 1.55 }}>
+                {recommendedGate === gateType
+                  ? 'The active gate agrees with the system-derived recommendation, so the control story is internally coherent.'
+                  : 'The active gate differs from the system-derived recommendation, which is useful when stress-testing alternative logic before build.'}
+              </div>
             </div>
           </div>
         </div>

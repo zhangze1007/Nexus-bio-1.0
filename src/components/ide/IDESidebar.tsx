@@ -97,7 +97,7 @@ export default function IDESidebar() {
               zIndex: Z_BACKDROP,
               backdropFilter: 'blur(10px)',
               WebkitBackdropFilter: 'blur(10px)',
-              background: 'rgba(32,37,43,0.12)',
+              background: 'rgba(96,74,56,0.12)',
               cursor: 'pointer',
             }}
             aria-hidden={true}
@@ -124,9 +124,9 @@ export default function IDESidebar() {
           zIndex: Z_SIDEBAR,
           display: 'flex',
           flexDirection: 'column',
-          background: PATHD_THEME.paperSurfaceStrong,
-          borderRight: `1px solid ${BORDER}`,
-          boxShadow: '16px 0 40px rgba(32,37,43,0.06)',
+          background: PATHD_THEME.sepiaPanelMuted,
+          borderRight: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
+          boxShadow: '16px 0 40px rgba(96,74,56,0.08)',
           overflowY: 'auto',
           overflowX: 'hidden',
           scrollbarWidth: 'none',        /* Firefox */

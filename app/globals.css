@@ -25,16 +25,16 @@
   --space-16: 64px; --space-20: 80px; --space-24: 96px;
 
   /* Scientific workbench palette */
-  --color-bg:        #f4efe8;
-  --color-surface:   #fbf8f4;
-  --color-surface-2: #f0eae2;
-  --color-border:    rgba(34,40,48,0.10);
-  --color-border-2:  rgba(34,40,48,0.18);
-  --color-text-1:    #20252b;
-  --color-text-2:    rgba(78,85,95,0.78);
-  --color-text-3:    rgba(78,85,95,0.56);
-  --color-text-4:    rgba(78,85,95,0.32);
-  --color-accent:    #20252b;
+  --color-bg:        #d7c1af;
+  --color-surface:   #ffffff;
+  --color-surface-2: #fcf7f1;
+  --color-border:    rgba(114,87,64,0.16);
+  --color-border-2:  rgba(114,87,64,0.26);
+  --color-text-1:    #241d18;
+  --color-text-2:    rgba(96,74,56,0.76);
+  --color-text-3:    rgba(96,74,56,0.54);
+  --color-text-4:    rgba(96,74,56,0.30);
+  --color-accent:    #241d18;
 
   --color-coral:     #e8a3a1;
   --color-apricot:   #e7c7a9;
@@ -67,9 +67,9 @@
   position: fixed;
   inset: 0;
   background:
-    radial-gradient(circle at top left, rgba(191,220,205,0.16), transparent 32%),
-    radial-gradient(circle at top right, rgba(207,196,227,0.16), transparent 28%),
-    linear-gradient(180deg, #f7f2ec 0%, #efe8de 100%);
+    radial-gradient(circle at top left, rgba(191,220,205,0.18), transparent 30%),
+    radial-gradient(circle at top right, rgba(207,196,227,0.16), transparent 26%),
+    linear-gradient(180deg, #ddc8b7 0%, #c5aa91 100%);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -82,8 +82,8 @@
   justify-content: space-between;
   gap: 12px;
   padding: 0 16px;
-  background: rgba(251,248,244,0.84);
-  border-bottom: 1px solid rgba(34,40,48,0.08);
+  background: rgba(215,193,175,0.92);
+  border-bottom: 1px solid rgba(114,87,64,0.18);
   backdrop-filter: blur(18px);
   /* Topbar sits above the fixed sidebar panel */
   position: relative;
@@ -104,7 +104,7 @@
   position: relative;
   overflow: auto;
   background:
-    linear-gradient(180deg, rgba(251,248,244,0.78) 0%, rgba(240,234,226,0.88) 100%);
+    linear-gradient(180deg, rgba(215,193,175,0.88) 0%, rgba(197,170,145,0.94) 100%);
   z-index: 10;
   min-height: 0;
 }
@@ -125,7 +125,7 @@
 
 /* Tool icon active/pressed feedback — subtle brightness on tap */
 .nb-tool-icon:active {
-  background: rgba(255,255,255,0.18) !important;
+  background: rgba(255,255,255,0.44) !important;
 }
 
 .nb-workbench .nb-ide-console {

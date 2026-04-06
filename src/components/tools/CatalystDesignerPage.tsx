@@ -32,22 +32,24 @@ import WorkbenchInlineContext from '../workbench/WorkbenchInlineContext';
 import { buildCatalystSeed } from './shared/workbenchDataflow';
 import { T, TOOL_RESULT_PALETTE} from '../ide/tokens';
 import ScientificHero from './shared/ScientificHero';
+import ScientificFigureFrame from './shared/ScientificFigureFrame';
+import ScientificMethodStrip from './shared/ScientificMethodStrip';
 import { PATHD_THEME } from '../workbench/workbenchTheme';
 
 /* ── Design Tokens ────────────────────────────────────────────────── */
 
-const PANEL_BG = '#000000';
-const BORDER = 'rgba(255,255,255,0.06)';
-const LABEL = 'rgba(255,255,255,0.45)';
-const VALUE = 'rgba(255,255,255,0.65)';
-const INPUT_BG = 'rgba(255,255,255,0.05)';
-const INPUT_BORDER = 'rgba(255,255,255,0.08)';
-const INPUT_TEXT = 'rgba(255,255,255,0.7)';
+const PANEL_BG = PATHD_THEME.sepiaPanelMuted;
+const BORDER = PATHD_THEME.paperBorder;
+const LABEL = PATHD_THEME.paperLabel;
+const VALUE = PATHD_THEME.paperValue;
+const INPUT_BG = PATHD_THEME.paperSurfaceStrong;
+const INPUT_BORDER = PATHD_THEME.paperBorder;
+const INPUT_TEXT = PATHD_THEME.paperValue;
 
 const GLASS: React.CSSProperties = {
   borderRadius: '24px',
-  background: 'rgba(255,255,255,0.05)',
-  border: '1px solid rgba(255,255,255,0.08)',
+  background: PATHD_THEME.paperSurfaceStrong,
+  border: `1px solid ${PATHD_THEME.paperBorder}`,
 };
 
 const PHASE_COLORS: Record<string, string> = {
@@ -771,6 +773,48 @@ export default function CatalystDesignerPage() {
   const mutagenesis = useMemo(() => predictMutagenesisSites(enzyme, 5), [enzyme]);
 
   const bestPathway = pareto.candidates.find(c => c.id === pareto.bestOverall);
+  const figureMeta = useMemo(() => {
+    if (viewMode === 'Binding') {
+      return {
+        eyebrow: 'Figure A · Active-Site Fit',
+        title: `${enzyme.name} binding geometry and catalytic residue context`,
+        caption: 'Binding view is framed as a scientific figure panel, keeping affinity, residue support, and local active-site logic together instead of distributing them across unrelated cards.',
+      };
+    }
+    if (viewMode === 'Sequences') {
+      return {
+        eyebrow: 'Figure B · Sequence Proposal Plate',
+        title: 'Designed sequence variants ranked for expression and catalytic fit',
+        caption: 'Sequence proposals are presented as a candidate plate, so rank, CAI, GC balance, and rationale read like a design figure rather than an export list.',
+      };
+    }
+    if (viewMode === 'FluxCost') {
+      return {
+        eyebrow: 'Figure C · Route Burden',
+        title: 'Catalyst choice translated into metabolic burden and viability',
+        caption: 'Flux-cost analysis ties the enzyme decision back to host-level burden, making route feasibility a first-class figure within the design bench.',
+      };
+    }
+    if (viewMode === 'Balancer') {
+      return {
+        eyebrow: 'Figure D · Pathway Balancing',
+        title: 'Stepwise balancing and stoichiometric pressure across the route',
+        caption: 'Balancing view should read as a pathway figure with intervention context, not as an isolated engineering utility.',
+      };
+    }
+    if (viewMode === 'Pareto') {
+      return {
+        eyebrow: 'Figure E · Multi-Objective Tradeoff',
+        title: 'Pareto frontier for catalyst and route prioritization',
+        caption: 'Trade-off view promotes the design decision itself into the center panel, aligning pathway viability, catalytic fit, and optimization pressure in one evidence frame.',
+      };
+    }
+    return {
+      eyebrow: 'Figure F · Mutational Leverage',
+      title: 'Directed mutagenesis opportunities around catalytic bottlenecks',
+      caption: 'Mutagenesis is presented as a leverage figure: where to edit, why that site matters, and how the predicted effect maps onto the current catalyst selection.',
+    };
+  }, [enzyme.name, viewMode]);
   useEffect(() => {
     if (simError) return;
     setToolPayload('catdes', {
@@ -887,6 +931,32 @@ export default function CatalystDesignerPage() {
           />
         </div>
 
+        <div style={{ padding: '0 16px 10px' }}>
+          <ScientificMethodStrip
+            label="Candidate Bench Grammar"
+            items={[
+              {
+                title: 'Binding and structure',
+                detail: 'A candidate page should open on catalytic geometry and residue context, because structure is part of the argument for why this enzyme matters.',
+                accent: PATHD_THEME.coral,
+                note: 'Structure-backed fit',
+              },
+              {
+                title: 'Sequence and mutation deck',
+                detail: 'Designed variants and beneficial sites should read like a curated candidate plate, not a stack of export-ready rows.',
+                accent: PATHD_THEME.lilac,
+                note: 'Candidate comparison',
+              },
+              {
+                title: 'Host viability check',
+                detail: 'Catalyst selection is incomplete until burden, balancing, and route-level feasibility are visible beside the candidate evidence.',
+                accent: PATHD_THEME.mint,
+                note: 'System viability',
+              },
+            ]}
+          />
+        </div>
+
         {simError && (
           <div style={{ padding: '0 16px 8px' }}><SimErrorBanner message={simError} /></div>
         )}
@@ -989,38 +1059,56 @@ export default function CatalystDesignerPage() {
           {/* ── CENTER CANVAS ─────────────────────────────────────── */}
           <div className="nb-tool-center" style={{
             flex: 1, display: 'flex', flexDirection: 'column',
-            background: '#0c0e14', minWidth: 0,
+            background: PANEL_BG, minWidth: 0, padding: '16px',
           }}>
-            <div style={{ flex: 1, position: 'relative' }}>
-              {viewMode === 'Binding' && (
-                <div style={{ padding: 16 }}>
-                  <BindingRadar result={binding} />
-                  <ActiveSitePlot overallScore={binding.overallScore} />
-                  <div style={{ marginTop: 8 }}>
-                    <SectionLabel>Catalytic Residues — {enzyme.name}</SectionLabel>
-                    <ResidueTable enzyme={enzyme} />
+            <div style={{ flex: 1, position: 'relative', minHeight: 0 }}>
+              <ScientificFigureFrame
+                eyebrow={figureMeta.eyebrow}
+                title={figureMeta.title}
+                caption={figureMeta.caption}
+                minHeight="100%"
+                legend={[
+                  { label: 'View', value: viewMode, accent: PATHD_THEME.apricot },
+                  { label: 'Catalyst', value: enzyme.name, accent: PATHD_THEME.coral },
+                  { label: 'Route', value: bestPathway?.name ?? 'Pending', accent: PATHD_THEME.mint },
+                  { label: 'Required flux', value: `${recommendedSeed.requiredFlux.toFixed(2)}`, accent: PATHD_THEME.sky },
+                ]}
+                footer={
+                  <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.paperMuted, lineHeight: 1.55 }}>
+                    Candidate evidence is kept in one figure frame so catalytic fit, design proposals, and host-level burden can be compared as one decision surface.
                   </div>
-                </div>
-              )}
-              {viewMode === 'Sequences' && <SequenceView result={sequences} />}
-              {viewMode === 'FluxCost' && (
-                <div style={{ padding: 16 }}>
-                  <FluxCostView result={drain} />
-                </div>
-              )}
-              {viewMode === 'Balancer' && (
-                <div style={{ padding: 16 }}>
-                  <BalancerView result={balance} />
-                </div>
-              )}
-              {viewMode === 'Pareto' && (
-                <div style={{ padding: 16 }}>
-                  <ParetoView result={pareto} />
-                </div>
-              )}
-              {viewMode === 'Mutagenesis' && (
-                <MutagenesisView result={mutagenesis} enzyme={enzyme} />
-              )}
+                }
+              >
+                {viewMode === 'Binding' && (
+                  <div style={{ padding: 8 }}>
+                    <BindingRadar result={binding} />
+                    <ActiveSitePlot overallScore={binding.overallScore} />
+                    <div style={{ marginTop: 8 }}>
+                      <SectionLabel>Catalytic Residues — {enzyme.name}</SectionLabel>
+                      <ResidueTable enzyme={enzyme} />
+                    </div>
+                  </div>
+                )}
+                {viewMode === 'Sequences' && <SequenceView result={sequences} />}
+                {viewMode === 'FluxCost' && (
+                  <div style={{ padding: 8 }}>
+                    <FluxCostView result={drain} />
+                  </div>
+                )}
+                {viewMode === 'Balancer' && (
+                  <div style={{ padding: 8 }}>
+                    <BalancerView result={balance} />
+                  </div>
+                )}
+                {viewMode === 'Pareto' && (
+                  <div style={{ padding: 8 }}>
+                    <ParetoView result={pareto} />
+                  </div>
+                )}
+                {viewMode === 'Mutagenesis' && (
+                  <MutagenesisView result={mutagenesis} enzyme={enzyme} />
+                )}
+              </ScientificFigureFrame>
             </div>
 
             {/* Export bar */}
@@ -1088,7 +1176,7 @@ export default function CatalystDesignerPage() {
                     }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
                         <span style={{
-                          fontFamily: T.MONO, fontSize: '9px', color: PANEL_BG, fontWeight: 700,
+                          fontFamily: T.MONO, fontSize: '9px', color: VALUE, fontWeight: 700,
                           background: color, padding: '1px 6px', borderRadius: 6,
                         }}>{a.step}</span>
                         <span style={{

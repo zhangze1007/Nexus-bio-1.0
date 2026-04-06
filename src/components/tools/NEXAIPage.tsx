@@ -11,6 +11,8 @@ import { useWorkbenchStore } from '../../store/workbenchStore';
 import WorkbenchInlineContext from '../workbench/WorkbenchInlineContext';
 import ScientificHero from './shared/ScientificHero';
 import { PATHD_THEME } from '../workbench/workbenchTheme';
+import ScientificFigureFrame from './shared/ScientificFigureFrame';
+import ScientificMethodStrip from './shared/ScientificMethodStrip';
 
 const AXON_ACCENT = PATHD_THEME.blue;
 
@@ -100,7 +102,7 @@ function CitationGraph({ citations, onNodeClick }: {
                 key={`arc-${index}-${edgeIndex}`}
                 d={`M ${node.x} ${node.y} Q ${mx} ${my} ${peer.x} ${peer.y}`}
                 fill="none"
-                stroke={combined > 0.7 ? 'rgba(74,124,255,0.32)' : 'rgba(74,124,255,0.14)'}
+                stroke={combined > 0.7 ? 'rgba(175,195,214,0.32)' : 'rgba(175,195,214,0.16)'}
                 strokeWidth={combined > 0.7 ? 1.2 : 0.7}
               />
             );
@@ -119,12 +121,12 @@ function CitationGraph({ citations, onNodeClick }: {
             {/* Glow halo for high-relevance nodes */}
             {n.relevance > 0.7 && (
               <circle cx={n.x} cy={n.y} r={n.r + 4}
-                fill={isHov ? 'rgba(255,139,31,0.18)' : 'rgba(74,124,255,0.18)'}
+                fill={isHov ? 'rgba(231,199,169,0.22)' : 'rgba(175,195,214,0.18)'}
                 filter="url(#nexai-node-glow)" />
             )}
             <circle cx={n.x} cy={n.y} r={n.r}
-              fill={isHov ? 'rgba(74,124,255,0.24)' : 'rgba(18,26,40,0.88)'}
-              stroke={isHov ? 'rgba(255,139,31,0.9)' : n.relevance > 0.7 ? 'rgba(74,124,255,0.72)' : 'rgba(74,124,255,0.46)'}
+              fill={isHov ? 'rgba(175,195,214,0.24)' : 'rgba(18,26,40,0.88)'}
+              stroke={isHov ? 'rgba(231,199,169,0.9)' : n.relevance > 0.7 ? 'rgba(175,195,214,0.72)' : 'rgba(175,195,214,0.46)'}
               strokeWidth={isHov ? 1.8 : n.relevance > 0.7 ? 1.5 : 1.1}
             />
             <text x={n.x} y={n.y + 4} textAnchor="middle"
@@ -147,7 +149,7 @@ function CitationGraph({ citations, onNodeClick }: {
                   <p style={{ fontFamily: T.SANS, fontSize: '10px', color: 'rgba(255,255,255,0.84)', margin: '0 0 3px', lineHeight: 1.45 }}>
                     {n.title.slice(0, 80)}{n.title.length > 80 ? '…' : ''}
                   </p>
-                  <p style={{ fontFamily: T.MONO, fontSize: '8px', color: 'rgba(74,124,255,0.86)', margin: '0 0 4px' }}>
+                  <p style={{ fontFamily: T.MONO, fontSize: '8px', color: 'rgba(175,195,214,0.9)', margin: '0 0 4px' }}>
                     Relevance: {(n.relevance * 100).toFixed(0)}%
                   </p>
                   <p style={{ fontFamily: T.SANS, fontSize: '9px', color: 'rgba(205,214,236,0.6)', margin: 0 }}>
@@ -213,10 +215,10 @@ function FloatingCLI({ query, setQuery, onSubmit, loading, history }: {
       style={{
         position: 'absolute', bottom: '16px', left: '16px', right: '16px',
         borderRadius: '14px',
-        background: 'rgba(0,0,0,0.85)',
+        background: 'rgba(255,255,255,0.94)',
         backdropFilter: 'blur(16px)',
-        border: `1px solid ${loading ? `${AXON_ACCENT}40` : 'rgba(255,255,255,0.06)'}`,
-        boxShadow: loading ? `0 0 30px ${AXON_ACCENT}10` : '0 4px 20px rgba(0,0,0,0.5)',
+        border: `1px solid ${loading ? 'rgba(175,195,214,0.34)' : PATHD_THEME.paperBorder}`,
+        boxShadow: loading ? '0 0 22px rgba(175,195,214,0.16)' : '0 10px 24px rgba(96,74,56,0.14)',
         padding: '10px 14px',
         display: 'flex', alignItems: 'center', gap: '10px',
         zIndex: 10,
@@ -237,7 +239,7 @@ function FloatingCLI({ query, setQuery, onSubmit, loading, history }: {
           ))}
         </span>
       ) : (
-        <span style={{ fontFamily: T.MONO, fontSize: '12px', fontWeight: 700, color: 'rgba(255,255,255,0.3)', flexShrink: 0 }}>
+        <span style={{ fontFamily: T.MONO, fontSize: '12px', fontWeight: 700, color: PATHD_THEME.paperLabel, flexShrink: 0 }}>
           ›
         </span>
       )}
@@ -251,7 +253,7 @@ function FloatingCLI({ query, setQuery, onSubmit, loading, history }: {
         style={{
           flex: 1, background: 'transparent', border: 'none', outline: 'none',
           fontFamily: T.MONO, fontSize: '12px',
-          color: 'rgba(255,255,255,0.85)',
+          color: PATHD_THEME.paperValue,
           caretColor: AXON_ACCENT,
         }}
       />
@@ -263,9 +265,9 @@ function FloatingCLI({ query, setQuery, onSubmit, loading, history }: {
         style={{
           padding: '5px 14px', borderRadius: '8px', cursor: 'pointer',
           fontFamily: T.MONO, fontSize: '10px', fontWeight: 600,
-          background: loading ? 'transparent' : `${AXON_ACCENT}15`,
-          border: `1px solid ${loading ? 'rgba(255,255,255,0.06)' : `${AXON_ACCENT}30`}`,
-          color: loading ? 'rgba(255,255,255,0.3)' : AXON_ACCENT,
+          background: loading ? PATHD_THEME.paperSurfaceMuted : 'rgba(175,195,214,0.22)',
+          border: `1px solid ${loading ? PATHD_THEME.paperBorder : 'rgba(175,195,214,0.34)'}`,
+          color: loading ? PATHD_THEME.paperLabel : PATHD_THEME.paperValue,
         }}
       >
         {loading ? 'searching…' : '⏎ ask'}
@@ -572,50 +574,75 @@ export default function NEXAIPage() {
       rows="1fr 1fr"
       gap={6}
       hero={
-        <ScientificHero
-          eyebrow="Cross-Stage · Research Copilot"
-          title="Evidence-grounded synthesis for the active workbench object"
-          summary="Axon now opens as a decision surface rather than a blank chat box. The page foregrounds what it currently knows, how confident that knowledge is, how much evidence is attached, and whether the answer is coming from a live pathway graph or contextual scientific synthesis."
-          aside={
-            <>
-              <div style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                Current scope
-              </div>
-              <div style={{ fontFamily: T.SANS, fontSize: '13px', color: PATHD_THEME.value, fontWeight: 700 }}>
-                {analyzeArtifact?.targetProduct ?? project?.targetProduct ?? project?.title ?? 'Scientific workbench'}
-              </div>
-              <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.label, lineHeight: 1.55 }}>
-                {contextPrompt || 'Ask Axon to synthesize evidence, explain a bottleneck, or route the next scientific action.'}
-              </div>
-            </>
-          }
-          signals={[
-            {
-              label: 'Answer Mode',
-              value: result ? resultMode.toUpperCase() : 'IDLE',
-              detail: resultMode === 'pathway' ? 'Live pathway graph answer from the analysis route.' : resultMode === 'text' ? 'Contextual scientific synthesis grounded in the current project graph.' : 'No active answer yet.',
-              tone: resultMode === 'pathway' ? 'cool' : resultMode === 'text' ? 'warm' : 'neutral',
-            },
-            {
-              label: 'Confidence',
-              value: result ? `${(result.confidence * 100).toFixed(0)}%` : '—',
-              detail: `${selectedEvidenceIds.length} selected evidence item(s) · ${nextRecommendations.length} queued next-step recommendation(s)`,
-              tone: result && result.confidence > 0.75 ? 'cool' : 'neutral',
-            },
-            {
-              label: 'Citations',
-              value: `${result?.citations.length ?? 0}`,
-              detail: evidenceItems.length ? `Workbench evidence graph currently holds ${evidenceItems.length} saved item(s).` : 'No saved evidence yet; Research intake will strengthen citation-grounded answers.',
-              tone: 'neutral',
-            },
-            {
-              label: 'Recent Query',
-              value: (query || history[0] || contextPrompt || 'Pending').slice(0, 44),
-              detail: loading ? 'Axon is currently synthesizing a response.' : 'Recent query state remains part of the same canonical workbench object graph.',
-              tone: loading ? 'alert' : 'neutral',
-            },
-          ]}
-        />
+        <>
+          <ScientificHero
+            eyebrow="Cross-Stage · Research Copilot"
+            title="Evidence-grounded synthesis for the active workbench object"
+            summary="Axon now opens as a decision surface rather than a blank chat box. The page foregrounds what it currently knows, how confident that knowledge is, how much evidence is attached, and whether the answer is coming from a live pathway graph or contextual scientific synthesis."
+            aside={
+              <>
+                <div style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                  Current scope
+                </div>
+                <div style={{ fontFamily: T.SANS, fontSize: '13px', color: PATHD_THEME.value, fontWeight: 700 }}>
+                  {analyzeArtifact?.targetProduct ?? project?.targetProduct ?? project?.title ?? 'Scientific workbench'}
+                </div>
+                <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.label, lineHeight: 1.55 }}>
+                  {contextPrompt || 'Ask Axon to synthesize evidence, explain a bottleneck, or route the next scientific action.'}
+                </div>
+              </>
+            }
+            signals={[
+              {
+                label: 'Answer Mode',
+                value: result ? resultMode.toUpperCase() : 'IDLE',
+                detail: resultMode === 'pathway' ? 'Live pathway graph answer from the analysis route.' : resultMode === 'text' ? 'Contextual scientific synthesis grounded in the current project graph.' : 'No active answer yet.',
+                tone: resultMode === 'pathway' ? 'cool' : resultMode === 'text' ? 'warm' : 'neutral',
+              },
+              {
+                label: 'Confidence',
+                value: result ? `${(result.confidence * 100).toFixed(0)}%` : '—',
+                detail: `${selectedEvidenceIds.length} selected evidence item(s) · ${nextRecommendations.length} queued next-step recommendation(s)`,
+                tone: result && result.confidence > 0.75 ? 'cool' : 'neutral',
+              },
+              {
+                label: 'Citations',
+                value: `${result?.citations.length ?? 0}`,
+                detail: evidenceItems.length ? `Workbench evidence graph currently holds ${evidenceItems.length} saved item(s).` : 'No saved evidence yet; Research intake will strengthen citation-grounded answers.',
+                tone: 'neutral',
+              },
+              {
+                label: 'Recent Query',
+                value: (query || history[0] || contextPrompt || 'Pending').slice(0, 44),
+                detail: loading ? 'Axon is currently synthesizing a response.' : 'Recent query state remains part of the same canonical workbench object graph.',
+                tone: loading ? 'alert' : 'neutral',
+              },
+            ]}
+          />
+          <ScientificMethodStrip
+            label="Research synthesis desk"
+            items={[
+              {
+                title: 'Prompt context',
+                detail: 'The active target product, evidence graph, and queued next-step recommendations now seed the research prompt so Axon starts from the workbench state.',
+                accent: PATHD_THEME.apricot,
+                note: `${selectedEvidenceIds.length} selected evidence item(s)`,
+              },
+              {
+                title: 'Citation canvas',
+                detail: 'The graph acts like a living figure: literature structure, answer synthesis, and command input are kept inside one visual reading surface.',
+                accent: PATHD_THEME.sky,
+                note: `${result?.citations.length ?? 0} citation nodes`,
+              },
+              {
+                title: 'Action routing',
+                detail: 'Result mode, confidence, and recent query history remain attached so Axon behaves like a research desk tied to execution, not a detached chat pane.',
+                accent: PATHD_THEME.mint,
+                note: result ? resultMode : 'idle',
+              },
+            ]}
+          />
+        </>
       }
       footer={
         <ExportButton label="Export Result" data={result} filename="nexai-result" format="json" disabled={!result} />
@@ -640,14 +667,14 @@ export default function NEXAIPage() {
                 width: '100%',
                 textAlign: 'left',
                 padding: '7px 10px',
-                background: `${AXON_ACCENT}08`,
-                border: `1px solid ${AXON_ACCENT}20`,
+                background: 'rgba(175,195,214,0.2)',
+                border: '1px solid rgba(175,195,214,0.34)',
                 borderRadius: '8px',
                 cursor: 'pointer',
                 fontFamily: T.SANS,
                 fontSize: '10px',
                 lineHeight: 1.5,
-                color: AXON_ACCENT,
+                color: PATHD_THEME.paperValue,
                 marginBottom: '4px',
               }}
             >
@@ -663,11 +690,11 @@ export default function NEXAIPage() {
               style={{
                 display: 'block', width: '100%', textAlign: 'left',
                 padding: '7px 10px',
-                background: query === q ? `${AXON_ACCENT}08` : 'transparent',
-                border: query === q ? `1px solid ${AXON_ACCENT}20` : '1px solid rgba(255,255,255,0.03)',
+                background: query === q ? 'rgba(175,195,214,0.2)' : PATHD_THEME.paperSurfaceStrong,
+                border: query === q ? '1px solid rgba(175,195,214,0.34)' : `1px solid ${PATHD_THEME.paperBorder}`,
                 borderRadius: '8px', cursor: 'pointer',
                 fontFamily: T.SANS, fontSize: '10px', lineHeight: 1.5,
-                color: query === q ? AXON_ACCENT : 'rgba(255,255,255,0.45)',
+                color: query === q ? PATHD_THEME.paperValue : PATHD_THEME.paperLabel,
               }}
             >
               {q}
@@ -679,7 +706,7 @@ export default function NEXAIPage() {
             <>
               <div style={{
                 fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase',
-                letterSpacing: '0.1em', color: 'rgba(255,255,255,0.2)',
+                letterSpacing: '0.1em', color: PATHD_THEME.paperLabel,
                 margin: '14px 0 6px', padding: '0 2px',
               }}>
                 Citations ({result.citations.length})
@@ -688,16 +715,17 @@ export default function NEXAIPage() {
                 <div key={c.id} style={{
                   padding: '6px 8px',
                   borderRadius: '8px',
-                  background: 'rgba(255,255,255,0.02)',
+                  background: PATHD_THEME.paperSurfaceMuted,
+                  border: `1px solid ${PATHD_THEME.paperBorder}`,
                 }}>
-                  <p style={{ fontFamily: T.SANS, fontSize: '9px', color: 'rgba(255,255,255,0.5)', margin: '0 0 2px', lineHeight: 1.4 }}>
+                  <p style={{ fontFamily: T.SANS, fontSize: '9px', color: PATHD_THEME.paperValue, margin: '0 0 2px', lineHeight: 1.4 }}>
                     {c.title.slice(0, 60)}…
                   </p>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ fontFamily: T.SANS, fontSize: '8px', color: 'rgba(255,255,255,0.3)' }}>
+                    <span style={{ fontFamily: T.SANS, fontSize: '8px', color: PATHD_THEME.paperLabel }}>
                       {c.authors.split(',')[0]} et al. {c.year}
                     </span>
-                    <span style={{ fontFamily: T.MONO, fontSize: '8px', color: AXON_ACCENT }}>
+                    <span style={{ fontFamily: T.MONO, fontSize: '8px', color: PATHD_THEME.paperValue }}>
                       {(c.relevance * 100).toFixed(0)}%
                     </span>
                   </div>
@@ -710,70 +738,83 @@ export default function NEXAIPage() {
 
       {/* ── Center: Graph + Floating CLI + Answer ───────────── */}
       <ModuleCard area="graph" flush style={{ position: 'relative' }}>
-        {/* Full-bleed citation graph background */}
-        <div style={{
-          flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          padding: '12px', overflow: 'hidden',
-        }}>
-          {result ? (
-            <CitationGraph citations={result.citations} />
-          ) : (
-            <div style={{ textAlign: 'center' }}>
-              <p style={{ fontFamily: T.MONO, fontSize: '32px', color: 'rgba(255,255,255,0.04)', margin: '0 0 8px' }}>⬡</p>
-              <p style={{ fontFamily: T.SANS, fontSize: '12px', color: 'rgba(255,255,255,0.15)' }}>
-                Ask Axon a research question
-              </p>
-              <p style={{ fontFamily: T.MONO, fontSize: '9px', color: 'rgba(255,255,255,0.08)', marginTop: '4px' }}>
-                press / to focus the command line
-              </p>
+        <ScientificFigureFrame
+          eyebrow="Citation canvas"
+          title="Literature structure, answer synthesis, and command input are framed as one research figure"
+          caption="Axon now behaves like a scientific synthesis desk: the citation network forms the canvas, the answer sits as an evidence annotation, and the command line remains attached to the same figure."
+          legend={[
+            { label: 'Mode', value: result ? resultMode : 'idle', accent: PATHD_THEME.lilac },
+            { label: 'Confidence', value: result ? `${(result.confidence * 100).toFixed(0)}%` : '—', accent: PATHD_THEME.mint },
+            { label: 'Citations', value: `${result?.citations.length ?? 0}`, accent: PATHD_THEME.sky },
+            { label: 'History', value: `${history.length}`, accent: PATHD_THEME.apricot },
+          ]}
+          minHeight="100%"
+        >
+          <div style={{ position: 'relative', minHeight: '520px' }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              padding: '12px', overflow: 'hidden',
+            }}>
+              {result ? (
+                <CitationGraph citations={result.citations} />
+              ) : (
+                <div style={{ textAlign: 'center' }}>
+                  <p style={{ fontFamily: T.MONO, fontSize: '32px', color: 'rgba(36,29,24,0.08)', margin: '0 0 8px' }}>⬡</p>
+                  <p style={{ fontFamily: T.SANS, fontSize: '12px', color: PATHD_THEME.paperLabel }}>
+                    Ask Axon a research question
+                  </p>
+                  <p style={{ fontFamily: T.MONO, fontSize: '9px', color: PATHD_THEME.paperMuted, marginTop: '4px' }}>
+                    press / to focus the command line
+                  </p>
+                </div>
+              )}
             </div>
-          )}
-        </div>
 
-        {/* Answer overlay (top, translucent) */}
-        <AnimatePresence>
-          {result && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              style={{
-                position: 'absolute', top: '12px', left: '12px', right: '12px',
-                maxHeight: '40%', overflowY: 'auto',
-                borderRadius: '12px',
-                background: 'rgba(0,0,0,0.8)',
-                backdropFilter: 'blur(12px)',
-                border: '1px solid rgba(255,255,255,0.04)',
-                padding: '12px 14px',
-                zIndex: 5,
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                <span style={{ fontFamily: T.MONO, fontSize: '9px', color: AXON_ACCENT }}>AXON</span>
-                <span style={{
-                  fontFamily: T.MONO, fontSize: '8px', padding: '2px 6px',
-                  background: 'rgba(147,203,82,0.08)', border: '1px solid rgba(147,203,82,0.15)',
-                  borderRadius: '6px', color: 'rgba(147,203,82,0.7)',
-                }}>
-                  {(result.confidence * 100).toFixed(0)}%
-                </span>
-              </div>
-              <p style={{
-                fontFamily: T.SANS, fontSize: '11px', color: 'rgba(255,255,255,0.65)',
-                lineHeight: 1.7, margin: 0,
-              }}>
-                {result.answer}
-              </p>
-            </motion.div>
-          )}
-        </AnimatePresence>
+            <AnimatePresence>
+              {result && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  style={{
+                    position: 'absolute', top: '12px', left: '12px', right: '12px',
+                    maxHeight: '40%', overflowY: 'auto',
+                    borderRadius: '12px',
+                    background: 'rgba(255,255,255,0.92)',
+                    backdropFilter: 'blur(12px)',
+                    border: `1px solid ${PATHD_THEME.paperBorder}`,
+                    padding: '12px 14px',
+                    zIndex: 5,
+                    boxShadow: '0 12px 30px rgba(96,74,56,0.14)',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                    <span style={{ fontFamily: T.MONO, fontSize: '9px', color: PATHD_THEME.paperLabel }}>AXON</span>
+                    <span style={{
+                      fontFamily: T.MONO, fontSize: '8px', padding: '2px 6px',
+                      background: 'rgba(191,220,205,0.18)', border: '1px solid rgba(191,220,205,0.32)',
+                      borderRadius: '6px', color: PATHD_THEME.paperValue,
+                    }}>
+                      {(result.confidence * 100).toFixed(0)}%
+                    </span>
+                  </div>
+                  <p style={{
+                    fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.paperValue,
+                    lineHeight: 1.7, margin: 0,
+                  }}>
+                    {result.answer}
+                  </p>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-        {/* Floating CLI at bottom */}
-        <FloatingCLI
-          query={query} setQuery={setQuery}
-          onSubmit={runQuery} loading={loading}
-          history={history}
-        />
+            <FloatingCLI
+              query={query} setQuery={setQuery}
+              onSubmit={runQuery} loading={loading}
+              history={history}
+            />
+          </div>
+        </ScientificFigureFrame>
       </ModuleCard>
 
       {/* ── Right: Stats ────────────────────────────────────── */}
@@ -789,7 +830,7 @@ export default function NEXAIPage() {
             <div style={{ marginTop: '12px' }}>
               <div style={{
                 fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase',
-                letterSpacing: '0.1em', color: 'rgba(255,255,255,0.2)', marginBottom: '6px',
+                letterSpacing: '0.1em', color: PATHD_THEME.paperLabel, marginBottom: '6px',
               }}>
                 History ({history.length})
               </div>
@@ -802,7 +843,7 @@ export default function NEXAIPage() {
                     display: 'block', width: '100%', textAlign: 'left',
                     padding: '4px 6px', marginBottom: '2px',
                     background: 'transparent', border: 'none', cursor: 'pointer',
-                    fontFamily: T.MONO, fontSize: '8px', color: 'rgba(255,255,255,0.25)',
+                    fontFamily: T.MONO, fontSize: '8px', color: PATHD_THEME.paperLabel,
                     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                   }}
                 >
@@ -811,6 +852,24 @@ export default function NEXAIPage() {
               ))}
             </div>
           )}
+
+          <div style={{
+            padding: '12px',
+            borderRadius: '12px',
+            border: `1px solid ${PATHD_THEME.paperBorder}`,
+            background: PATHD_THEME.paperSurfaceMuted,
+            display: 'grid',
+            gap: '6px',
+          }}>
+            <div style={{ fontFamily: T.MONO, fontSize: '9px', color: PATHD_THEME.paperLabel, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              Axon posture
+            </div>
+            <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.paperValue, lineHeight: 1.55 }}>
+              {result
+                ? 'Axon is now framed as a synthesis desk that turns literature structure into route-level scientific guidance.'
+                : 'This panel will become an evidence-backed routing summary once a query is run.'}
+            </div>
+          </div>
         </div>
       </ModuleCard>
     </ToolShell>

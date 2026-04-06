@@ -9,6 +9,8 @@ import { useWorkbenchStore } from '../../store/workbenchStore';
 import WorkbenchInlineContext from '../workbench/WorkbenchInlineContext';
 import { PATHD_THEME } from '../workbench/workbenchTheme';
 import ScientificHero from './shared/ScientificHero';
+import ScientificFigureFrame from './shared/ScientificFigureFrame';
+import ScientificMethodStrip from './shared/ScientificMethodStrip';
 import SimErrorBanner from '../ide/shared/SimErrorBanner';
 import { usePersistedState } from '../ide/shared/usePersistedState';
 import {
@@ -26,25 +28,25 @@ import { buildDynConSeed } from './shared/workbenchDataflow';
 import { T, TOOL_RESULT_PALETTE} from '../ide/tokens';
 
 /* ── Design Tokens ─────────────────────────────────────────────────────────── */
-const PANEL_BG = '#000000';
-const BORDER = 'rgba(255,255,255,0.06)';
-const LABEL = 'rgba(255,255,255,0.45)';
-const VALUE = 'rgba(255,255,255,0.65)';
+const PANEL_BG = PATHD_THEME.sepiaPanelMuted;
+const BORDER = PATHD_THEME.paperBorder;
+const LABEL = PATHD_THEME.paperLabel;
+const VALUE = PATHD_THEME.paperValue;
 
 const GLASS: React.CSSProperties = {
   borderRadius: '24px',
-  background: 'rgba(255,255,255,0.05)',
-  border: '1px solid rgba(255,255,255,0.08)',
+  background: PATHD_THEME.paperSurfaceStrong,
+  border: `1px solid ${PATHD_THEME.paperBorder}`,
 };
 
 /* ── Series definitions (6 state variables) ────────────────────────────────── */
 const SERIES = [
-  { key: 'biomass',       label: 'Biomass',   color: 'rgba(81,81,205,0.8)',  unit: 'g/L' },
-  { key: 'substrate',     label: 'Substrate', color: 'rgba(255,139,31,0.8)',   unit: 'g/L' },
-  { key: 'product',       label: 'Product',   color: 'rgba(120,255,180,0.8)',  unit: 'g/L' },
-  { key: 'dissolvedO2',   label: 'DO₂',       color: 'rgba(95,68,74,0.7)',  unit: 'sat.' },
-  { key: 'fpp',           label: 'FPP',       color: '#FFFB1F',               unit: 'μM' },
-  { key: 'adsExpression', label: 'ADS Expr',  color: '#F0FDFA',               unit: 'a.u.' },
+  { key: 'biomass',       label: 'Biomass',   color: 'rgba(207,196,227,0.82)', unit: 'g/L' },
+  { key: 'substrate',     label: 'Substrate', color: 'rgba(231,199,169,0.88)', unit: 'g/L' },
+  { key: 'product',       label: 'Product',   color: 'rgba(191,220,205,0.88)', unit: 'g/L' },
+  { key: 'dissolvedO2',   label: 'DO₂',       color: 'rgba(175,195,214,0.88)', unit: 'sat.' },
+  { key: 'fpp',           label: 'FPP',       color: 'rgba(232,163,161,0.9)',  unit: 'μM' },
+  { key: 'adsExpression', label: 'ADS Expr',  color: 'rgba(36,29,24,0.78)',    unit: 'a.u.' },
 ] as const;
 
 /* ── Catmull-Rom → SVG path helper ─────────────────────────────────────────── */
@@ -71,12 +73,12 @@ function TimeSeriesSVG({ trajectory, setpoint, svgRef }: { trajectory: ODEState[
   const laneGap = 16;
   const plotTop = 42;
   const lanes = [
-    { key: 'product',       label: 'Product',   color: 'rgba(120,255,180,0.92)', max: Math.max(0.001, ...trajectory.map((point) => point.product)),       unit: 'g/L'  },
-    { key: 'biomass',       label: 'Biomass',   color: 'rgba(81,81,205,0.92)',   max: Math.max(0.001, ...trajectory.map((point) => point.biomass)),        unit: 'g/L'  },
-    { key: 'substrate',     label: 'Substrate', color: 'rgba(255,139,31,0.92)',  max: Math.max(0.001, ...trajectory.map((point) => point.substrate)),      unit: 'g/L'  },
-    { key: 'dissolvedO2',   label: 'DO₂',       color: 'rgba(95,168,255,0.9)',   max: 1,                                                                    unit: 'sat.' },
-    { key: 'fpp',           label: 'FPP',       color: '#FFFB1F',                max: Math.max(0.001, ...trajectory.map((point) => point.fpp)),             unit: 'μM'   },
-    { key: 'adsExpression', label: 'ADS',       color: '#F0FDFA',                max: Math.max(0.001, ...trajectory.map((point) => point.adsExpression)),   unit: 'a.u.' },
+    { key: 'product',       label: 'Product',   color: 'rgba(191,220,205,0.92)', max: Math.max(0.001, ...trajectory.map((point) => point.product)),       unit: 'g/L'  },
+    { key: 'biomass',       label: 'Biomass',   color: 'rgba(207,196,227,0.92)', max: Math.max(0.001, ...trajectory.map((point) => point.biomass)),        unit: 'g/L'  },
+    { key: 'substrate',     label: 'Substrate', color: 'rgba(231,199,169,0.92)', max: Math.max(0.001, ...trajectory.map((point) => point.substrate)),      unit: 'g/L'  },
+    { key: 'dissolvedO2',   label: 'DO₂',       color: 'rgba(175,195,214,0.9)',  max: 1,                                                                    unit: 'sat.' },
+    { key: 'fpp',           label: 'FPP',       color: 'rgba(232,163,161,0.94)', max: Math.max(0.001, ...trajectory.map((point) => point.fpp)),             unit: 'μM'   },
+    { key: 'adsExpression', label: 'ADS',       color: 'rgba(36,29,24,0.88)',    max: Math.max(0.001, ...trajectory.map((point) => point.adsExpression)),   unit: 'a.u.' },
   ] as const;
 
   const tMax = trajectory[trajectory.length - 1].time;
@@ -195,9 +197,9 @@ function TimeSeriesSVG({ trajectory, setpoint, svgRef }: { trajectory: ODEState[
       <text x={PP_X - 2} y={PP_Y + PP_H + 8} textAnchor="middle" fontFamily={T.MONO} fontSize="5" fill="rgba(255,255,255,0.25)">P</text>
       <text x={PP_X + PP_W} y={PP_Y + PP_H + 8} textAnchor="end" fontFamily={T.MONO} fontSize="5" fill="rgba(255,255,255,0.25)">→</text>
       <text x={PP_X - 2} y={PP_Y} fontFamily={T.MONO} fontSize="5" fill="rgba(255,255,255,0.25)">R↑</text>
-      {ppPath && <path d={ppPath} fill="none" stroke="rgba(255,251,31,0.7)" strokeWidth="1.2" />}
+      {ppPath && <path d={ppPath} fill="none" stroke="rgba(232,163,161,0.7)" strokeWidth="1.2" />}
       {ppPts.length > 0 && (
-        <circle cx={ppPts[ppPts.length - 1][0]} cy={ppPts[ppPts.length - 1][1]} r="2.5" fill="#FFFB1F" />
+        <circle cx={ppPts[ppPts.length - 1][0]} cy={ppPts[ppPts.length - 1][1]} r="2.5" fill={PATHD_THEME.coral} />
       )}
     </svg>
   );
@@ -225,12 +227,12 @@ function HillCurveSVG({ hill, currentFPP }: { hill: HillParams; currentFPP: numb
       <line x1={PAD} y1={PAD - 8} x2={PAD} y2={H - PAD + 4} stroke="rgba(255,255,255,0.08)" />
       {/* curve */}
       <rect x={PAD} y={PAD - 8} width={W - PAD * 2} height={H - PAD * 2 + 12} fill="rgba(255,255,255,0.02)" rx="14" />
-      <polyline points={pts.join(' ')} fill="none" stroke="#F0FDFA" strokeWidth={2.2} />
+      <polyline points={pts.join(' ')} fill="none" stroke={PATHD_THEME.mint} strokeWidth={2.2} />
       {/* current FPP marker */}
       <line x1={markerX} y1={PAD - 8} x2={markerX} y2={H - PAD + 4}
-        stroke="rgba(255,251,31,0.5)" strokeWidth={1} strokeDasharray="3 3" />
+        stroke="rgba(232,163,161,0.5)" strokeWidth={1} strokeDasharray="3 3" />
       <circle cx={markerX} cy={H - PAD + 4 - (hillFeedback(Math.min(currentFPP, fppMax), hill) / hill.Vmax) * (H - PAD * 2 + 4)}
-        r={3} fill="#FFFB1F" />
+        r={3} fill={PATHD_THEME.coral} />
       {/* labels */}
       <text x="20" y="18" fontFamily={T.MONO} fontSize="9" fill="rgba(255,255,255,0.24)">
         Repression response
@@ -255,8 +257,8 @@ function ParamSlider({ label, value, min, max, step = 0.1, onChange, unit }: {
   return (
     <div style={{ marginBottom: '12px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-        <span style={{ fontFamily: T.SANS, fontSize: '11px', color: 'rgba(255,255,255,0.45)' }}>{label}</span>
-        <span style={{ fontFamily: T.MONO, fontSize: '11px', color: 'rgba(255,255,255,0.55)' }}>{value.toFixed(2)}{unit ? ` ${unit}` : ''}</span>
+        <span style={{ fontFamily: T.SANS, fontSize: '11px', color: LABEL }}>{label}</span>
+        <span style={{ fontFamily: T.MONO, fontSize: '11px', color: VALUE }}>{value.toFixed(2)}{unit ? ` ${unit}` : ''}</span>
       </div>
       <input aria-label="Parameter slider" type="range" min={min} max={max} step={step} value={value}
         onChange={e => onChange(parseFloat(e.target.value))}
@@ -268,7 +270,7 @@ function ParamSlider({ label, value, min, max, step = 0.1, onChange, unit }: {
 /* ── Section Header ────────────────────────────────────────────────────────── */
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '16px 0 8px' }}>
+    <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: LABEL, margin: '16px 0 8px' }}>
       {children}
     </p>
   );
@@ -366,6 +368,11 @@ export default function DynConPage() {
 
   const currentFPP = last?.fpp ?? 0;
   const currentADS = last?.adsExpression ?? 0;
+  const figureMeta = useMemo(() => ({
+    eyebrow: 'Controller figure',
+    title: 'Closed-loop bioreactor dynamics, Hill repression, and genetic-part mapping are read as one control figure',
+    caption: 'The page now treats trajectory, repression curve, burden response, and implementation bridge as one scientific control object instead of a collection of simulator widgets.',
+  }), []);
 
   /* ── Console logging ─────────────────────────────────────────────────── */
   const appendConsole = useUIStore((s) => s.appendConsole);
@@ -427,13 +434,13 @@ export default function DynConPage() {
             isSimulated={!analyzeArtifact}
           />
           {fba && (
-            <div role="status" style={{ padding: '6px 14px', background: 'rgba(74,124,255,0.06)', border: '1px solid rgba(74,124,255,0.2)', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
-              <span style={{ fontFamily: T.MONO, fontSize: '9px', fontWeight: 700, padding: '2px 8px', borderRadius: '999px', background: 'rgba(74,124,255,0.12)', border: '1px solid rgba(74,124,255,0.28)', color: 'rgba(120,170,255,0.95)', textTransform: 'uppercase', letterSpacing: '0.06em', flexShrink: 0 }}>
+            <div role="status" style={{ padding: '6px 14px', background: 'rgba(175,195,214,0.14)', border: '1px solid rgba(175,195,214,0.28)', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
+              <span style={{ fontFamily: T.MONO, fontSize: '9px', fontWeight: 700, padding: '2px 8px', borderRadius: '999px', background: 'rgba(175,195,214,0.22)', border: '1px solid rgba(175,195,214,0.34)', color: VALUE, textTransform: 'uppercase', letterSpacing: '0.06em', flexShrink: 0 }}>
                 FBASim
               </span>
-              <span style={{ fontFamily: T.SANS, fontSize: '11px', color: 'rgba(255,255,255,0.55)' }}>
+              <span style={{ fontFamily: T.SANS, fontSize: '11px', color: LABEL }}>
                 {'✓ Flux data loaded — '}
-                <span style={{ fontFamily: T.MONO, color: 'rgba(120,170,255,0.85)' }}>
+                <span style={{ fontFamily: T.MONO, color: VALUE }}>
                   {`μ=${fba.result.growthRate.toFixed(4)} h⁻¹ · ∂μ/∂Glc=${fba.result.shadowPrices.glc.toFixed(4)} · ∂μ/∂O₂=${fba.result.shadowPrices.o2.toFixed(4)}`}
                 </span>
               </span>
@@ -483,6 +490,29 @@ export default function DynConPage() {
               },
             ]}
           />
+          <ScientificMethodStrip
+            label="Control bench"
+            items={[
+              {
+                title: 'Policy tuning',
+                detail: 'PID gains, setpoint, and Hill repression parameters are treated as one operating policy rather than separate slider families.',
+                accent: PATHD_THEME.apricot,
+                note: `Kp ${kp.toFixed(2)} · Ki ${ki.toFixed(2)} · Kd ${kd.toFixed(2)}`,
+              },
+              {
+                title: 'Dynamic figure',
+                detail: 'The main panel combines the closed-loop trajectory and repression curve so system behavior reads as a scientific control figure.',
+                accent: PATHD_THEME.sky,
+                note: convergence.isStable ? 'stable regime' : 'unstable regime',
+              },
+              {
+                title: 'Implementation bridge',
+                detail: 'Controller gain is translated into an RBS part and burden readout so simulation choices stay grounded in executable biology.',
+                accent: PATHD_THEME.mint,
+                note: rbsMapping.rbsName,
+              },
+            ]}
+          />
           <DemoBanner context="Artemisinin biosynthesis PID control (Ro et al. 2006)" />
         </div>
 
@@ -525,7 +555,7 @@ export default function DynConPage() {
                 </div>
               </div>
               {/* DNA Sequence */}
-              <p style={{ fontFamily: T.MONO, fontSize: '10px', color: '#5151CD', wordBreak: 'break-all', lineHeight: 1.5, margin: '8px 0 0', opacity: 0.85 }}>
+              <p style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.sky, wordBreak: 'break-all', lineHeight: 1.5, margin: '8px 0 0', opacity: 0.85 }}>
                 {rbsMapping.sequence}
               </p>
             </div>
@@ -540,26 +570,49 @@ export default function DynConPage() {
               ['Feed conc', `${DEFAULT_PARAMS.feedConc} g/L`],
               ['FPP toxic', `${DEFAULT_PARAMS.fppToxicThreshold} μM`],
             ] as const).map(([k, v]) => (
-              <div key={k} style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', borderBottom: `1px solid rgba(255,255,255,0.04)` }}>
-                <span style={{ fontFamily: T.MONO, fontSize: '10px', color: 'rgba(255,255,255,0.4)' }}>{k}</span>
-                <span style={{ fontFamily: T.MONO, fontSize: '10px', color: 'rgba(255,255,255,0.6)' }}>{v}</span>
+              <div key={k} style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', borderBottom: `1px solid ${BORDER}` }}>
+                <span style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL }}>{k}</span>
+                <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE }}>{v}</span>
               </div>
             ))}
           </div>
 
           {/* ═══════ CENTER (flex) ═══════ */}
-          <div className="nb-tool-center" style={{ flex: 1, background: '#050505', display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-            {/* Main time-series plot */}
-            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px 12px 0' }}>
-              <TimeSeriesSVG trajectory={trajectory} setpoint={setpoint} svgRef={chartRef} />
-            </div>
-            {/* Hill feedback mini-curve */}
-            <div style={{ flexShrink: 0, padding: '0 12px 8px' }}>
-              <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.3)', margin: '4px 0 2px 4px' }}>
-                Hill Feedback Curve — f(FPP)
-              </p>
-              <HillCurveSVG hill={hill} currentFPP={currentFPP} />
-            </div>
+          <div className="nb-tool-center" style={{ flex: 1, background: PANEL_BG, display: 'flex', flexDirection: 'column', minWidth: 0, padding: '12px' }}>
+            <ScientificFigureFrame
+              eyebrow={figureMeta.eyebrow}
+              title={figureMeta.title}
+              caption={figureMeta.caption}
+              legend={[
+                { label: 'Setpoint', value: `${setpoint.toFixed(2)} sat.`, accent: PATHD_THEME.sky },
+                { label: 'Stability', value: convergence.isStable ? 'Stable' : 'Unstable', accent: convergence.isStable ? PATHD_THEME.mint : PATHD_THEME.coral },
+                { label: 'Titer', value: `${productTiter.toFixed(2)} g/L`, accent: PATHD_THEME.mint },
+                { label: 'RBS', value: rbsMapping.rbsName, accent: PATHD_THEME.lilac },
+              ]}
+              footer={
+                <div style={{ display: 'grid', gap: '6px' }}>
+                  <div style={{ fontFamily: T.SANS, fontSize: '11px', color: VALUE, lineHeight: 1.55 }}>
+                    The central figure now lets controller behavior, repression logic, and implementation mapping be read as one scientific control story instead of a simulator trace plus a detached helper chart.
+                  </div>
+                  <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL }}>
+                    burden {burden.burdenIndex.toFixed(3)} · DO₂ RMSE {doRmse.toFixed(3)} · FPP {currentFPP.toFixed(2)} μM
+                  </div>
+                </div>
+              }
+              minHeight="100%"
+            >
+              <div style={{ display: 'grid', gap: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <TimeSeriesSVG trajectory={trajectory} setpoint={setpoint} svgRef={chartRef} />
+                </div>
+                <div>
+                  <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.08em', color: LABEL, margin: '4px 0 2px 4px' }}>
+                    Hill Feedback Curve — f(FPP)
+                  </p>
+                  <HillCurveSVG hill={hill} currentFPP={currentFPP} />
+                </div>
+              </div>
+            </ScientificFigureFrame>
           </div>
 
           {/* ═══════ RIGHT PANEL (280px) ═══════ */}
@@ -589,10 +642,10 @@ export default function DynConPage() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '8px' }}>
                 <span style={{
                   width: '8px', height: '8px', borderRadius: '50%',
-                  background: convergence.isStable ? '#39FF14' : '#FF3131',
-                  boxShadow: convergence.isStable ? '0 0 6px rgba(57,255,20,0.4)' : '0 0 6px rgba(255,49,49,0.4)',
+                  background: convergence.isStable ? PATHD_THEME.mint : PATHD_THEME.coral,
+                  boxShadow: convergence.isStable ? '0 0 6px rgba(191,220,205,0.4)' : '0 0 6px rgba(232,163,161,0.4)',
                 }} />
-                <span style={{ fontFamily: T.SANS, fontSize: '11px', color: convergence.isStable ? '#39FF14' : '#FF3131' }}>
+                <span style={{ fontFamily: T.SANS, fontSize: '11px', color: convergence.isStable ? VALUE : PATHD_THEME.coral }}>
                   {convergence.isStable ? 'Stable' : 'Unstable'}
                 </span>
               </div>
@@ -612,15 +665,15 @@ export default function DynConPage() {
                     height: '100%', borderRadius: `${PATHD_THEME.progressRadius}px`, transition: 'width 0.3s ease',
                     width: `${Math.min(1, burden.burdenIndex) * 100}%`,
                     background: burden.burdenIndex < 0.3
-                      ? '#39FF14'
+                      ? PATHD_THEME.mint
                       : burden.burdenIndex < 0.6
                         ? PATHD_THEME.progressGradient
-                        : '#FF3131',
+                        : PATHD_THEME.coral,
                     boxShadow: burden.burdenIndex < 0.3
-                      ? '0 0 6px rgba(57,255,20,0.3)'
+                      ? '0 0 6px rgba(191,220,205,0.3)'
                       : burden.burdenIndex < 0.6
                         ? PATHD_THEME.progressGlow
-                        : '0 0 6px rgba(255,49,49,0.3)',
+                        : '0 0 6px rgba(232,163,161,0.3)',
                   }} />
                 </div>
               </div>
@@ -630,14 +683,14 @@ export default function DynConPage() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '8px' }}>
                 <span style={{
                   width: '8px', height: '8px', borderRadius: '50%',
-                  background: burden.isViable ? '#39FF14' : '#FF3131',
-                  boxShadow: burden.isViable ? '0 0 6px rgba(57,255,20,0.4)' : '0 0 6px rgba(255,49,49,0.4)',
+                  background: burden.isViable ? PATHD_THEME.mint : PATHD_THEME.coral,
+                  boxShadow: burden.isViable ? '0 0 6px rgba(191,220,205,0.4)' : '0 0 6px rgba(232,163,161,0.4)',
                 }} />
-                <span style={{ fontFamily: T.SANS, fontSize: '11px', color: burden.isViable ? '#39FF14' : '#FF3131' }}>
+                <span style={{ fontFamily: T.SANS, fontSize: '11px', color: burden.isViable ? VALUE : PATHD_THEME.coral }}>
                   {burden.isViable ? 'Viable' : 'Non-viable'}
                 </span>
               </div>
-              <p style={{ fontFamily: T.SANS, fontSize: '10px', fontStyle: 'italic', color: 'rgba(255,255,255,0.35)', lineHeight: 1.45, margin: '8px 0 0' }}>
+              <p style={{ fontFamily: T.SANS, fontSize: '10px', fontStyle: 'italic', color: LABEL, lineHeight: 1.45, margin: '8px 0 0' }}>
                 {burden.recommendation}
               </p>
             </div>
@@ -649,6 +702,25 @@ export default function DynConPage() {
               <StatRow label="Current FPP" value={currentFPP} unit="μM" />
               <StatRow label="Current ADS" value={currentADS} unit="a.u." />
               <StatRow label="Toxicity" value={last?.toxicity ?? 0} />
+            </div>
+
+            <div style={{
+              marginTop: '12px',
+              padding: '12px',
+              borderRadius: '12px',
+              border: `1px solid ${BORDER}`,
+              background: PATHD_THEME.paperSurfaceStrong,
+              display: 'grid',
+              gap: '6px',
+            }}>
+              <div style={{ fontFamily: T.MONO, fontSize: '9px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                Readout
+              </div>
+              <div style={{ fontFamily: T.SANS, fontSize: '11px', color: VALUE, lineHeight: 1.55 }}>
+                {convergence.isStable
+                  ? 'The controller is behaving like a viable operating policy rather than a fragile simulator-only tuning.'
+                  : 'The current gain package still behaves like an unstable experimental policy, so the figure encourages retuning before downstream commitment.'}
+              </div>
             </div>
           </div>
         </div>

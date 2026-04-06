@@ -11,15 +11,17 @@ import { T } from '../ide/tokens';
 import WorkbenchInlineContext from '../workbench/WorkbenchInlineContext';
 import ScientificHero from './shared/ScientificHero';
 import { PATHD_THEME } from '../workbench/workbenchTheme';
+import ScientificFigureFrame from './shared/ScientificFigureFrame';
+import ScientificMethodStrip from './shared/ScientificMethodStrip';
 
 // Dark theme tokens
-const PANEL_BG = '#000000';
-const BORDER = 'rgba(255,255,255,0.06)';
-const LABEL = 'rgba(255,255,255,0.45)';
-const VALUE = 'rgba(255,255,255,0.65)';
-const INPUT_BG = 'rgba(255,255,255,0.05)';
-const INPUT_BORDER = 'rgba(255,255,255,0.08)';
-const INPUT_TEXT = 'rgba(255,255,255,0.7)';
+const PANEL_BG = PATHD_THEME.sepiaPanelMuted;
+const BORDER = PATHD_THEME.paperBorder;
+const LABEL = PATHD_THEME.paperLabel;
+const VALUE = PATHD_THEME.paperValue;
+const INPUT_BG = PATHD_THEME.paperSurfaceStrong;
+const INPUT_BORDER = PATHD_THEME.paperBorder;
+const INPUT_TEXT = PATHD_THEME.paperValue;
 
 function viridisColor(t: number): string {
   const stops: [number, number, number][] = [
@@ -274,6 +276,15 @@ export default function ProEvolPage() {
     trajectory.find(p => p.fitness === bestFitness)?.sequence ?? '',
     [trajectory, bestFitness]
   );
+  const diversityIndex = useMemo(
+    () => (trajectory.length > 1 ? (new Set(trajectory.map((point) => Math.round(point.fitness * 100))).size / trajectory.length) : 0),
+    [trajectory],
+  );
+  const figureMeta = useMemo(() => ({
+    eyebrow: 'Evolution landscape',
+    title: 'Adaptive search is framed as a lead-candidate figure, not a simulator chart',
+    caption: 'The ruggedness map, accepted path, best basin, and current winning sequence are read together so the scientist can decide whether directed evolution is still earning its place in the pipeline.',
+  }), []);
 
   useEffect(() => {
     setToolPayload('proevol', {
@@ -306,7 +317,7 @@ export default function ProEvolPage() {
 
   return (
     <>
-      <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', background: '#050505', minHeight: '100%', flex: 1 }}>
+      <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', background: PANEL_BG, minHeight: '100%', flex: 1 }}>
         <AlgorithmInsight
           title="Directed Evolution Simulator"
           description="Monte Carlo sampling traverses the fitness landscape via Metropolis criterion. Accepts unfavorable mutations with probability e^(ΔF/T)."
@@ -360,6 +371,32 @@ export default function ProEvolPage() {
           />
         </div>
 
+        <div style={{ padding: '0 16px 10px' }}>
+          <ScientificMethodStrip
+            label="Evolution bench"
+            items={[
+              {
+                title: 'Search policy',
+                detail: 'Mutation rate and search depth are derived from catalyst and pathway pressure so exploration starts from the current engineering context.',
+                accent: PATHD_THEME.apricot,
+                note: `${mutationRate}% mutation · ${rounds} rounds`,
+              },
+              {
+                title: 'Landscape figure',
+                detail: 'The main canvas reads like a publication panel: basin geometry, accepted path, and lead checkpoint are exposed together.',
+                accent: PATHD_THEME.sky,
+                note: `${trajectory.length} accepted checkpoints`,
+              },
+              {
+                title: 'Lead sequence',
+                detail: 'Winning sequence and diversity stay visible as evidence, so improvement can be judged against exploration breadth rather than raw score alone.',
+                accent: PATHD_THEME.mint,
+                note: `${beneficialMutations} beneficial steps`,
+              },
+            ]}
+          />
+        </div>
+
         <div className="nb-tool-panels" style={{ flex: 1 }}>
           {/* Input panel */}
           <div className="nb-tool-sidebar" style={{ width: '240px', borderRight: `1px solid ${BORDER}`, background: PANEL_BG }}>
@@ -382,7 +419,7 @@ export default function ProEvolPage() {
               Starting Sequence
             </p>
             <div style={{
-              fontFamily: T.MONO, fontSize: '9px', color: 'rgba(255,255,255,0.4)',
+              fontFamily: T.MONO, fontSize: '9px', color: LABEL,
               wordBreak: 'break-all', lineHeight: 1.5,
               background: INPUT_BG, padding: '8px',
               border: `1px solid ${INPUT_BORDER}`, borderRadius: '8px',
@@ -393,11 +430,12 @@ export default function ProEvolPage() {
 
             <button aria-label="Action" onClick={run} disabled={running} style={{
               width: '100%', padding: '8px',
-              background: running ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.06)',
+              background: running ? PATHD_THEME.paperSurfaceMuted : PATHD_THEME.paperSurfaceStrong,
               border: `1px solid ${INPUT_BORDER}`,
               borderRadius: '8px',
-              color: running ? 'rgba(255,255,255,0.25)' : VALUE,
+              color: running ? LABEL : VALUE,
               fontFamily: T.SANS, fontSize: '11px', cursor: running ? 'not-allowed' : 'pointer',
+              boxShadow: running ? 'none' : '0 10px 20px rgba(96,74,56,0.08)',
             }}>
               {running ? 'Evolving...' : 'Run Evolution'}
             </button>
@@ -406,18 +444,43 @@ export default function ProEvolPage() {
               Best Sequence
             </p>
             <div style={{
-              fontFamily: T.MONO, fontSize: '9px', color: 'rgba(120,220,160,0.8)',
+              fontFamily: T.MONO, fontSize: '9px', color: VALUE,
               wordBreak: 'break-all', lineHeight: 1.5,
-              background: 'rgba(120,220,160,0.06)', padding: '8px',
-              border: '1px solid rgba(120,220,160,0.2)', borderRadius: '8px',
+              background: 'rgba(191,220,205,0.2)', padding: '8px',
+              border: `1px solid ${PATHD_THEME.chipBorder}`, borderRadius: '8px',
             }}>
               {bestSequence}
             </div>
           </div>
 
           {/* Engine view — heatmap */}
-          <div className="nb-tool-center" style={{ flex: 1, background: '#050505', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px', minWidth: 0 }}>
-            <FitnessHeatmap trajectory={trajectory} />
+          <div className="nb-tool-center" style={{ flex: 1, background: PANEL_BG, display: 'flex', alignItems: 'stretch', justifyContent: 'center', padding: '16px', minWidth: 0 }}>
+            <ScientificFigureFrame
+              eyebrow={figureMeta.eyebrow}
+              title={figureMeta.title}
+              caption={figureMeta.caption}
+              legend={[
+                { label: 'Mutation rate', value: `${mutationRate}%`, accent: PATHD_THEME.apricot },
+                { label: 'Rounds', value: `${rounds}`, accent: PATHD_THEME.lilac },
+                { label: 'Best fitness', value: bestFitness.toFixed(4), accent: PATHD_THEME.mint },
+                { label: 'Diversity', value: diversityIndex.toFixed(3), accent: PATHD_THEME.coral },
+              ]}
+              footer={
+                <div style={{ display: 'grid', gap: '6px' }}>
+                  <div style={{ fontFamily: T.SANS, fontSize: '11px', color: VALUE, lineHeight: 1.55 }}>
+                    The figure emphasizes whether the current winning sequence is emerging from broad exploration or a narrow local basin. That distinction matters more than a single peak score when deciding whether to continue evolution or redesign the enzyme.
+                  </div>
+                  <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, lineHeight: 1.5 }}>
+                    current lead: {bestSequence.slice(0, 24) || 'pending'} · recommended baseline {recommendedMutationRate}% / {recommendedRounds} rounds
+                  </div>
+                </div>
+              }
+              minHeight="100%"
+            >
+              <div style={{ minHeight: '460px' }}>
+                <FitnessHeatmap trajectory={trajectory} />
+              </div>
+            </ScientificFigureFrame>
           </div>
 
           {/* Results panel */}
@@ -429,14 +492,14 @@ export default function ProEvolPage() {
               <MetricCard label="Best Fitness" value={bestFitness.toFixed(4)} highlight />
               <MetricCard label="Beneficial Mutations" value={beneficialMutations} />
               <MetricCard label="Evolution Steps" value={trajectory.length} unit="pts" />
-              <MetricCard label="Diversity Index" value={(trajectory.length > 1 ? (new Set(trajectory.map(p => Math.round(p.fitness * 100))).size / trajectory.length) : 0).toFixed(3)} />
+              <MetricCard label="Diversity Index" value={diversityIndex.toFixed(3)} />
             </div>
 
             <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: LABEL, margin: '0 0 8px' }}>
               Fitness Trajectory
             </p>
             <svg role="img" aria-label="Chart" viewBox="0 0 200 60" style={{ width: '100%', height: '60px' }}>
-              <rect width="200" height="60" fill="rgba(255,255,255,0.03)" rx="4" />
+              <rect width="200" height="60" fill={PATHD_THEME.paperSurfaceMuted} rx="4" />
               {trajectory.length > 1 && (
                 <polyline
                   points={trajectory.map((p, i) => {
@@ -444,12 +507,31 @@ export default function ProEvolPage() {
                     const y = 58 - p.fitness * 54;
                     return `${x},${y}`;
                   }).join(' ')}
-                  fill="none" stroke="rgba(120,220,160,0.6)" strokeWidth={1.5}
+                  fill="none" stroke={PATHD_THEME.mint} strokeWidth={1.5}
                 />
               )}
-              <text x="2" y="56" fontFamily={T.MONO} fontSize="7" fill="rgba(255,255,255,0.25)">0</text>
-              <text x="2" y="8"  fontFamily={T.MONO} fontSize="7" fill="rgba(255,255,255,0.25)">1</text>
+              <text x="2" y="56" fontFamily={T.MONO} fontSize="7" fill={LABEL}>0</text>
+              <text x="2" y="8"  fontFamily={T.MONO} fontSize="7" fill={LABEL}>1</text>
             </svg>
+
+            <div style={{
+              marginTop: '12px',
+              padding: '12px',
+              borderRadius: '12px',
+              border: `1px solid ${BORDER}`,
+              background: PATHD_THEME.paperSurfaceStrong,
+              display: 'grid',
+              gap: '6px',
+            }}>
+              <div style={{ fontFamily: T.MONO, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.08em', color: LABEL }}>
+                Interpretation
+              </div>
+              <div style={{ fontFamily: T.SANS, fontSize: '11px', color: VALUE, lineHeight: 1.55 }}>
+                {beneficialMutations > 10
+                  ? 'The search is still discovering enough improving moves to justify another directed-evolution cycle.'
+                  : 'Improvement is flattening. The page now makes it easier to see when redesign may be more valuable than additional search.'}
+              </div>
+            </div>
           </div>
         </div>
 

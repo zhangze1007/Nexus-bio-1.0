@@ -18,8 +18,8 @@ import { PATHD_THEME } from './workbenchTheme';
 const BORDER = PATHD_THEME.paperBorder;
 const LABEL = PATHD_THEME.paperLabel;
 const VALUE = PATHD_THEME.paperValue;
-const SURFACE = 'rgba(255,255,255,0.66)';
-const SURFACE_SOFT = 'rgba(255,255,255,0.56)';
+const SURFACE = PATHD_THEME.paperSurfaceStrong;
+const SURFACE_SOFT = PATHD_THEME.paperSurfaceMuted;
 
 export default function WorkbenchDirectoryPage() {
   const project = useWorkbenchStore((s) => s.project);
@@ -43,7 +43,7 @@ export default function WorkbenchDirectoryPage() {
       style={{
         position: 'relative',
         minHeight: '100%',
-        background: 'linear-gradient(180deg, #f7f2ec 0%, #efe7dc 100%)',
+        background: `linear-gradient(180deg, ${PATHD_THEME.sepiaPanelMuted} 0%, ${PATHD_THEME.sepiaPanel} 100%)`,
         color: VALUE,
         flex: 1,
       }}
@@ -54,7 +54,7 @@ export default function WorkbenchDirectoryPage() {
             style={{
               borderRadius: '28px',
               border: `1px solid ${BORDER}`,
-              background: `linear-gradient(180deg, ${PATHD_THEME.paperSurfaceStrong} 0%, ${PATHD_THEME.paperWarm} 100%)`,
+              background: `linear-gradient(180deg, ${PATHD_THEME.sepiaPanelMuted} 0%, ${PATHD_THEME.sepiaPanel} 100%)`,
               padding: '24px',
               display: 'grid',
               gap: '16px',
@@ -204,7 +204,7 @@ export default function WorkbenchDirectoryPage() {
                 style={{
                   borderRadius: '24px',
                   border: `1px solid ${BORDER}`,
-                  background: `linear-gradient(135deg, rgba(255,255,255,0.76) 0%, ${stage.accent}24 56%, rgba(255,255,255,0.62) 100%)`,
+                  background: `linear-gradient(135deg, ${PATHD_THEME.sepiaPanelMuted} 0%, ${stage.accent}22 56%, ${PATHD_THEME.sepiaPanel} 100%)`,
                   padding: '18px',
                   display: 'grid',
                   gap: '14px',
@@ -433,7 +433,7 @@ export default function WorkbenchDirectoryPage() {
             style={{
               borderRadius: '24px',
               border: `1px solid ${BORDER}`,
-              background: `linear-gradient(180deg, ${PATHD_THEME.paperSurfaceStrong} 0%, ${PATHD_THEME.paperWarm} 100%)`,
+              background: `linear-gradient(180deg, ${PATHD_THEME.sepiaPanelMuted} 0%, ${PATHD_THEME.sepiaPanel} 100%)`,
               padding: '18px',
               display: 'grid',
               gap: '16px',

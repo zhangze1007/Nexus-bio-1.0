@@ -3,8 +3,7 @@
  *
  * A scientific figure plate for workbench modules.
  *
- * Cards stay dark enough for dense visualizations, but the framing is
- * now driven by the scientific palette rather than generic black glass.
+ * Cards now read as white figure sheets seated inside a sepia workbench frame.
  */
 'use client';
 import { motion } from 'framer-motion';
@@ -48,13 +47,13 @@ export default function ModuleCard({
         gridColumn: colSpan ? `span ${colSpan}` : undefined,
         gridRow: rowSpan ? `span ${rowSpan}` : undefined,
         borderRadius: '20px',
-        background: PATHD_THEME.panelGradient,
+        background: PATHD_THEME.paperSurfaceStrong,
         border: active
-          ? `1px solid ${PATHD_THEME.panelBorderStrong}`
-          : `1px solid ${PATHD_THEME.panelBorder}`,
+          ? `1px solid ${PATHD_THEME.paperBorderStrong}`
+          : `1px solid ${PATHD_THEME.paperBorder}`,
         boxShadow: active
-          ? '0 18px 36px rgba(16,20,24,0.18), inset 0 1px 0 rgba(255,255,255,0.07)'
-          : '0 16px 32px rgba(16,20,24,0.14), inset 0 1px 0 rgba(255,255,255,0.05)',
+          ? '0 18px 36px rgba(96,74,56,0.12), inset 0 1px 0 rgba(255,255,255,0.82)'
+          : '0 16px 32px rgba(96,74,56,0.08), inset 0 1px 0 rgba(255,255,255,0.78)',
         padding: flush ? 0 : '18px',
         overflow: 'hidden',
         display: 'flex',
@@ -71,7 +70,7 @@ export default function ModuleCard({
         style={{
           position: 'absolute',
           inset: 0,
-          background: PATHD_THEME.figureBackdrop,
+          background: 'linear-gradient(135deg, rgba(231,199,169,0.08) 0%, rgba(255,255,255,0) 42%, rgba(207,196,227,0.08) 100%)',
           pointerEvents: 'none',
         }}
       />
@@ -127,7 +126,7 @@ export default function ModuleCard({
             fontWeight: 600,
             letterSpacing: '0.1em',
             textTransform: 'uppercase',
-            color: PATHD_THEME.label,
+            color: PATHD_THEME.paperLabel,
           }}>
             LIVE
           </span>
@@ -138,7 +137,7 @@ export default function ModuleCard({
         <div style={{
           fontFamily: T.SANS, fontSize: '9px', fontWeight: 500,
           textTransform: 'uppercase', letterSpacing: '0.12em',
-          color: active ? PATHD_THEME.apricot : PATHD_THEME.label,
+          color: active ? PATHD_THEME.paperValue : PATHD_THEME.paperLabel,
           marginBottom: flush ? 0 : '10px',
           padding: flush ? '12px 14px 0' : 0,
           flexShrink: 0,

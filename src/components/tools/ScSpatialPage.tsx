@@ -16,22 +16,24 @@ import { T, TOOL_RESULT_PALETTE} from '../ide/tokens';
 import WorkbenchInlineContext from '../workbench/WorkbenchInlineContext';
 import { useWorkbenchStore } from '../../store/workbenchStore';
 import ScientificHero from './shared/ScientificHero';
+import ScientificFigureFrame from './shared/ScientificFigureFrame';
+import ScientificMethodStrip from './shared/ScientificMethodStrip';
 import { PATHD_THEME } from '../workbench/workbenchTheme';
 
 /* ── Design Tokens ────────────────────────────────────────────────── */
 
-const PANEL_BG = '#000000';
-const BORDER = 'rgba(255,255,255,0.06)';
-const LABEL = 'rgba(255,255,255,0.45)';
-const VALUE = 'rgba(255,255,255,0.65)';
-const INPUT_BG = 'rgba(255,255,255,0.05)';
-const INPUT_BORDER = 'rgba(255,255,255,0.08)';
-const INPUT_TEXT = 'rgba(255,255,255,0.7)';
+const PANEL_BG = PATHD_THEME.sepiaPanelMuted;
+const BORDER = PATHD_THEME.paperBorder;
+const LABEL = PATHD_THEME.paperLabel;
+const VALUE = PATHD_THEME.paperValue;
+const INPUT_BG = PATHD_THEME.paperSurfaceStrong;
+const INPUT_BORDER = PATHD_THEME.paperBorder;
+const INPUT_TEXT = PATHD_THEME.paperValue;
 
 const GLASS: React.CSSProperties = {
   borderRadius: '24px',
-  background: 'rgba(255,255,255,0.05)',
-  border: '1px solid rgba(255,255,255,0.08)',
+  background: PATHD_THEME.paperSurfaceStrong,
+  border: `1px solid ${PATHD_THEME.paperBorder}`,
 };
 
 const CLUSTER_COLORS: Record<number, string> = {
@@ -838,6 +840,56 @@ export default function ScSpatialPage() {
 
   const convergenceIter = analysis.vae.convergenceHistory.length;
   const finalLoss = analysis.vae.convergenceHistory[convergenceIter - 1];
+  const activeClusterLabel = selectedCluster !== null ? CLUSTER_LABELS[selectedCluster] : 'All clusters';
+  const figureMeta = useMemo(() => {
+    if (viewMode === 'Spatial') {
+      return {
+        eyebrow: 'Figure A · Spot-Level Spatial Atlas',
+        title: `${highlightGene} expression mapped across ${activeClusterLabel}`,
+        caption: 'A publication-style spot map should foreground tissue architecture, gene-localized signal, and cluster identity together instead of separating them into unrelated widgets.',
+      };
+    }
+    if (viewMode === 'Spatial3D') {
+      return {
+        eyebrow: 'Figure B · Spatial Depth Reconstruction',
+        title: `${highlightGene} signal lifted into a 3D tissue context`,
+        caption: 'Depth is used here as an analysis axis, not as decoration, so cluster position, pseudotime, and marker intensity can be read in a single spatial frame.',
+      };
+    }
+    if (viewMode === 'UMAP') {
+      return {
+        eyebrow: 'Figure C · Cell-State Embedding',
+        title: 'Latent cell-state separation and cluster continuity',
+        caption: 'The embedding panel behaves like a figure companion to the tissue map, translating spatial neighborhoods into state-space structure without losing cluster identity.',
+      };
+    }
+    if (viewMode === 'Trajectory') {
+      return {
+        eyebrow: 'Figure D · Trajectory Inference',
+        title: 'Branching structure across productive and stressed cell fates',
+        caption: 'Trajectory view emphasizes branch points and path divergence as a scientific explanation layer rather than a generic alternate chart tab.',
+      };
+    }
+    if (viewMode === 'Efficiency') {
+      return {
+        eyebrow: 'Figure E · Yield-Relevant Cell States',
+        title: 'Production-relevant clusters ranked by metabolic efficiency',
+        caption: 'Efficiency view links the single-cell atlas back to the engineering question: which state is actually worth prioritizing for validation and redesign.',
+      };
+    }
+    if (viewMode === 'Heatmap') {
+      return {
+        eyebrow: 'Figure F · Marker Structure',
+        title: 'Expression heatmap arranged as a comparative figure plate',
+        caption: 'Heatmap stays in the same scientific frame so marker contrast, cluster grouping, and pathway relevance read as one figure system.',
+      };
+    }
+    return {
+      eyebrow: 'Figure G · Cell Ledger',
+      title: 'Auditable per-cell table with the same contextual labels',
+      caption: 'Even the table view is treated as a scientific appendix surface, tied to the same cluster, QC, and marker context as the visual panels.',
+    };
+  }, [activeClusterLabel, highlightGene, viewMode]);
 
   useEffect(() => {
     if (preferredGene) {
@@ -942,6 +994,32 @@ export default function ScSpatialPage() {
           />
         </div>
 
+        <div style={{ padding: '0 16px 10px' }}>
+          <ScientificMethodStrip
+            label="Spatial Figure Grammar"
+            items={[
+              {
+                title: 'Spot-level tissue map',
+                detail: 'Keep the low-resolution atlas readable first: tissue silhouette, cluster assignment, and scale bar should be legible before any extra controls.',
+                accent: PATHD_THEME.sky,
+                note: 'Visium-style context',
+              },
+              {
+                title: 'Cell-resolved inference',
+                detail: 'High-resolution interpretation belongs beside the atlas as a refinement layer, not hidden in a separate product mode.',
+                accent: PATHD_THEME.lilac,
+                note: 'Inference bridge',
+              },
+              {
+                title: 'Histology and state linkage',
+                detail: 'Spatial signal must always be tied back to cell state, QC, and production-relevant marker evidence.',
+                accent: PATHD_THEME.mint,
+                note: 'Evidence-linked readout',
+              },
+            ]}
+          />
+        </div>
+
         {simError && (
           <div style={{ padding: '0 16px 8px' }}><SimErrorBanner message={simError} /></div>
         )}
@@ -975,10 +1053,10 @@ export default function ScSpatialPage() {
             <button aria-label="Action" onClick={() => setShowQCFailed(!showQCFailed)} style={{
               display: 'flex', alignItems: 'center', gap: '8px',
               width: '100%', padding: '7px 10px', marginBottom: '16px',
-              background: showQCFailed ? 'rgba(250,128,114,0.12)' : 'transparent',
-              border: `1px solid ${showQCFailed ? 'rgba(250,128,114,0.3)' : BORDER}`,
+              background: showQCFailed ? 'rgba(232,163,161,0.18)' : INPUT_BG,
+              border: `1px solid ${showQCFailed ? 'rgba(232,163,161,0.34)' : BORDER}`,
               borderRadius: '8px', cursor: 'pointer',
-              color: showQCFailed ? 'rgba(250,128,114,0.85)' : 'rgba(255,255,255,0.4)',
+              color: showQCFailed ? VALUE : LABEL,
               fontFamily: T.SANS, fontSize: '10px', textAlign: 'left',
             }}>
               <span style={{
@@ -995,10 +1073,10 @@ export default function ScSpatialPage() {
               <button aria-label="Action" key={cs.cluster} onClick={() => toggleCluster(cs.cluster)} style={{
                 display: 'flex', alignItems: 'center', gap: '8px',
                 width: '100%', padding: '7px 10px', marginBottom: '5px',
-                background: selectedCluster === cs.cluster ? 'rgba(255,255,255,0.06)' : 'transparent',
-                border: `1px solid ${selectedCluster === cs.cluster ? 'rgba(255,255,255,0.15)' : BORDER}`,
+                background: selectedCluster === cs.cluster ? 'rgba(175,195,214,0.22)' : INPUT_BG,
+                border: `1px solid ${selectedCluster === cs.cluster ? 'rgba(175,195,214,0.34)' : BORDER}`,
                 borderRadius: '8px', cursor: 'pointer',
-                color: selectedCluster === cs.cluster ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.4)',
+                color: selectedCluster === cs.cluster ? VALUE : LABEL,
                 fontFamily: T.SANS, fontSize: '11px', textAlign: 'left',
               }}>
                 <span style={{
@@ -1020,9 +1098,9 @@ export default function ScSpatialPage() {
                   <button aria-label="Action" key={mode} onClick={() => setViewMode(mode)} style={{
                     flex: mode === 'Table' ? '1 1 100%' : '1 1 0',
                     padding: '5px 0', borderRadius: '6px', cursor: 'pointer',
-                    fontFamily: T.SANS, fontSize: '10px', border: 'none',
-                    background: viewMode === mode ? 'rgba(255,255,255,0.12)' : INPUT_BG,
-                    color: viewMode === mode ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.4)',
+                    fontFamily: T.SANS, fontSize: '10px', border: `1px solid ${viewMode === mode ? 'rgba(175,195,214,0.34)' : INPUT_BORDER}`,
+                    background: viewMode === mode ? 'rgba(175,195,214,0.22)' : INPUT_BG,
+                    color: viewMode === mode ? VALUE : LABEL,
                   }}>
                     {mode}
                   </button>
@@ -1066,101 +1144,91 @@ export default function ScSpatialPage() {
           </div>
 
           {/* ── CENTER ENGINE ────────────────────────────────────── */}
-          <div className="nb-tool-center" style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#050505', minWidth: 0 }}>
-            {viewMode === 'Spatial' && (
-              <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
-                <div style={{ width: '100%', maxWidth: '600px' }}>
-                  <SpatialMap
-                    cells={SC_SPATIAL_DATA}
-                    selectedCluster={selectedCluster}
-                    highlightGene={highlightGene}
-                  />
+          <div className="nb-tool-center" style={{ flex: 1, display: 'flex', flexDirection: 'column', background: PANEL_BG, minWidth: 0, padding: '16px', overflow: 'auto' }}>
+            <ScientificFigureFrame
+              eyebrow={figureMeta.eyebrow}
+              title={figureMeta.title}
+              caption={figureMeta.caption}
+              minHeight="100%"
+              legend={[
+                { label: 'View', value: viewMode, accent: PATHD_THEME.apricot },
+                { label: 'Cluster', value: activeClusterLabel, accent: selectedCluster !== null ? CLUSTER_COLORS[selectedCluster] : PATHD_THEME.sky },
+                { label: 'Marker', value: highlightGene, accent: PATHD_THEME.lilac },
+                { label: 'QC', value: `${analysis.qc.passedCells}/${analysis.qc.totalCells} kept`, accent: PATHD_THEME.mint },
+              ]}
+              footer={
+                <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.paperMuted, lineHeight: 1.55 }}>
+                  {spatialTraceSummary.summary}
                 </div>
-              </div>
-            )}
-            {viewMode === 'Spatial3D' && (
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '16px', gap: '10px' }}>
-                <div style={{ maxWidth: '760px', margin: '0 auto', width: '100%' }}>
-                  <div style={{ padding: '8px 12px', borderRadius: '14px', border: `1px solid ${BORDER}`, background: 'rgba(255,255,255,0.04)' }}>
-                    <p style={{ margin: '0 0 3px', color: VALUE, fontSize: '11px', fontFamily: T.SANS }}>
-                      Spatial 3D mode lifts cells into depth so cluster location and marker intensity can be inspected together.
-                    </p>
-                    <p style={{ margin: 0, color: LABEL, fontSize: '9px', fontFamily: T.MONO }}>
-                      rotate = tissue context · height = {highlightGene} expression / pseudotime
-                    </p>
-                  </div>
-                </div>
-                <div style={{ flex: 1, minHeight: '420px', maxWidth: '760px', margin: '0 auto', width: '100%' }}>
-                  <div style={{ position: 'relative' }}>
-                    <SpatialPointCloud
+              }
+            >
+              {viewMode === 'Spatial' && (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '520px' }}>
+                  <div style={{ width: '100%', maxWidth: '640px' }}>
+                    <SpatialMap
                       cells={SC_SPATIAL_DATA}
                       selectedCluster={selectedCluster}
                       highlightGene={highlightGene}
-                      showQCFailed={showQCFailed}
                     />
-                    <div style={{ position: 'absolute', top: '10px', right: '12px', width: 'min(260px, calc(100% - 24px))' }}>
-                      <div style={{ padding: '10px 12px', borderRadius: '14px', border: `1px solid ${BORDER}`, background: 'rgba(0,0,0,0.56)', backdropFilter: 'blur(10px)' }}>
-                        <p style={{ margin: '0 0 6px', color: LABEL, fontSize: '9px', fontFamily: T.MONO, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                          Evidence trace
-                        </p>
-                        <p style={{ margin: '0 0 8px', color: VALUE, fontSize: '10px', lineHeight: 1.55, fontFamily: T.SANS }}>
-                          {spatialTraceSummary.summary}
-                        </p>
-                        <div style={{ display: 'grid', gap: '6px' }}>
-                          <span style={{ padding: '3px 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.05)', color: VALUE, fontSize: '9px', fontFamily: T.MONO }}>
-                            cluster · {spatialTraceSummary.clusterLabel}
-                          </span>
-                          <span style={{ padding: '3px 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.05)', color: VALUE, fontSize: '9px', fontFamily: T.MONO }}>
-                            QC kept · {analysis.qc.totalCells - analysis.qc.filteredCells}/{analysis.qc.totalCells}
-                          </span>
-                          <span style={{ padding: '3px 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.05)', color: VALUE, fontSize: '9px', fontFamily: T.MONO }}>
-                            silhouette · {analysis.clusters.silhouetteScore.toFixed(3)}
-                          </span>
-                          {topMoran[0] && (
-                            <span style={{ padding: '3px 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.05)', color: VALUE, fontSize: '9px', fontFamily: T.MONO }}>
-                              Moran top · {topMoran[0].gene} ({topMoran[0].moranI.toFixed(3)})
-                            </span>
-                          )}
-                        </div>
-                      </div>
+                  </div>
+                </div>
+              )}
+              {viewMode === 'Spatial3D' && (
+                <div style={{ display: 'grid', gap: '12px' }}>
+                  <div style={{ padding: '10px 12px', borderRadius: '14px', border: `1px solid ${PATHD_THEME.paperBorder}`, background: PATHD_THEME.paperSurfaceMuted }}>
+                    <p style={{ margin: '0 0 3px', color: PATHD_THEME.paperValue, fontSize: '11px', fontFamily: T.SANS }}>
+                      Spatial 3D mode translates the 2D atlas into a tissue-depth figure where cluster neighborhood and marker intensity can be inspected together.
+                    </p>
+                    <p style={{ margin: 0, color: PATHD_THEME.paperLabel, fontSize: '9px', fontFamily: T.MONO }}>
+                      rotate = tissue context · height = {highlightGene} expression / pseudotime
+                    </p>
+                  </div>
+                  <div style={{ minHeight: '500px', maxWidth: '760px', margin: '0 auto', width: '100%' }}>
+                    <div style={{ position: 'relative' }}>
+                      <SpatialPointCloud
+                        cells={SC_SPATIAL_DATA}
+                        selectedCluster={selectedCluster}
+                        highlightGene={highlightGene}
+                        showQCFailed={showQCFailed}
+                      />
                     </div>
                   </div>
                 </div>
-              </div>
-            )}
-            {viewMode === 'UMAP' && (
-              <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
-                <div style={{ width: '100%', maxWidth: '600px' }}>
-                  <UMAPScatter selectedCluster={selectedCluster} />
+              )}
+              {viewMode === 'UMAP' && (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '520px' }}>
+                  <div style={{ width: '100%', maxWidth: '640px' }}>
+                    <UMAPScatter selectedCluster={selectedCluster} />
+                  </div>
                 </div>
-              </div>
-            )}
-            {viewMode === 'Trajectory' && (
-              <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
-                <div style={{ width: '100%', maxWidth: '600px' }}>
-                  <TrajectoryView analysis={analysis} />
+              )}
+              {viewMode === 'Trajectory' && (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '520px' }}>
+                  <div style={{ width: '100%', maxWidth: '640px' }}>
+                    <TrajectoryView analysis={analysis} />
+                  </div>
                 </div>
-              </div>
-            )}
-            {viewMode === 'Efficiency' && (
-              <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
-                <div style={{ width: '100%', maxWidth: '600px' }}>
-                  <EfficiencyChart highYield={analysis.highYieldClusters} />
+              )}
+              {viewMode === 'Efficiency' && (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '520px' }}>
+                  <div style={{ width: '100%', maxWidth: '640px' }}>
+                    <EfficiencyChart highYield={analysis.highYieldClusters} />
+                  </div>
                 </div>
-              </div>
-            )}
-            {viewMode === 'Heatmap' && (
-              <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
-                <div style={{ width: '100%', maxWidth: '600px' }}>
-                  <ExpressionHeatmap cells={SC_SPATIAL_DATA} />
+              )}
+              {viewMode === 'Heatmap' && (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '520px' }}>
+                  <div style={{ width: '100%', maxWidth: '640px' }}>
+                    <ExpressionHeatmap cells={SC_SPATIAL_DATA} />
+                  </div>
                 </div>
-              </div>
-            )}
-            {viewMode === 'Table' && (
-              <div style={{ flex: 1, overflow: 'auto' }}>
-                <DataTable<CellRow> columns={CELL_COLUMNS} rows={cellRows} maxRows={50} />
-              </div>
-            )}
+              )}
+              {viewMode === 'Table' && (
+                <div style={{ minHeight: '520px', overflow: 'auto' }}>
+                  <DataTable<CellRow> columns={CELL_COLUMNS} rows={cellRows} maxRows={50} />
+                </div>
+              )}
+            </ScientificFigureFrame>
           </div>
 
           {/* ── RIGHT PANEL (260px) ──────────────────────────────── */}

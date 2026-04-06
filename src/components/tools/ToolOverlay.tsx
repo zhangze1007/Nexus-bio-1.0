@@ -186,7 +186,7 @@ export default function ToolOverlay({
         position:'absolute', left:'20px', top:'50%',
         transform:'translateY(-50%)',
         width:'240px', zIndex:10,
-        background: PATHD_THEME.paperSurfaceStrong,
+        background: PATHD_THEME.sepiaPanelMuted,
         backdropFilter:'blur(28px)',
         WebkitBackdropFilter:'blur(28px)',
         borderRadius:'20px',
@@ -281,7 +281,7 @@ export default function ToolOverlay({
       </div>
 
       {/* Michaelis-Menten preview formula */}
-      <div style={{ marginTop:'14px', padding:'10px', borderRadius:'12px', background:'rgba(255,255,255,0.54)', border:`0.5px solid ${PATHD_THEME.paperBorder}` }}>
+      <div style={{ marginTop:'14px', padding:'10px', borderRadius:'12px', background:PATHD_THEME.paperSurfaceStrong, border:`0.5px solid ${PATHD_THEME.paperBorder}` }}>
         <span style={{ fontFamily: T.MONO, fontSize:'9px', color:PATHD_THEME.paperLabel, display:'block', marginBottom:'4px', textTransform:'uppercase', letterSpacing:'0.08em' }}>
           Kinetics Preview
         </span>

@@ -11,6 +11,8 @@ import { T, TOOL_RESULT_PALETTE} from '../ide/tokens';
 import WorkbenchInlineContext from '../workbench/WorkbenchInlineContext';
 import ScientificHero from './shared/ScientificHero';
 import { PATHD_THEME } from '../workbench/workbenchTheme';
+import ScientificFigureFrame from './shared/ScientificFigureFrame';
+import ScientificMethodStrip from './shared/ScientificMethodStrip';
 
 function GenomeMap({
   targets,
@@ -45,17 +47,17 @@ function GenomeMap({
   }
 
   function geneColor(t: CRISPRiTarget): string {
-    if (selectedIds.has(t.gene)) return 'rgba(255,255,255,0.1)';
-    if (t.essential) return '#E41A1C';
-    if (t.knockdown_efficiency < efficiencyThreshold) return '#FF7F00';
-    return '#4DAF4A';
+    if (selectedIds.has(t.gene)) return 'rgba(175,195,214,0.22)';
+    if (t.essential) return PATHD_THEME.coral;
+    if (t.knockdown_efficiency < efficiencyThreshold) return PATHD_THEME.apricot;
+    return PATHD_THEME.mint;
   }
 
   const LEGEND = [
-    { color: '#E41A1C', label: 'Essential' },
-    { color: '#FF7F00', label: 'Below threshold' },
-    { color: '#4DAF4A', label: 'Candidate' },
-    { color: 'rgba(255,255,255,0.18)', label: 'Suppressed' },
+    { color: PATHD_THEME.coral, label: 'Essential' },
+    { color: PATHD_THEME.apricot, label: 'Below threshold' },
+    { color: PATHD_THEME.mint, label: 'Candidate' },
+    { color: 'rgba(175,195,214,0.3)', label: 'Suppressed' },
   ];
 
   return (
@@ -134,7 +136,7 @@ function GenomeMap({
         const depth = t.knockdown_efficiency * 55;
         const d = mkArc(a1, a2, R_EFF, R_EFF - depth);
         if (!d) return null;
-        const color = selectedIds.has(t.gene) ? '#FF7F00' : '#377EB8';
+        const color = selectedIds.has(t.gene) ? PATHD_THEME.apricot : PATHD_THEME.sky;
         return <path key={`eff-${t.gene}`} d={d} fill={color} opacity={0.72} />;
       })}
 
@@ -160,7 +162,7 @@ function GenomeMap({
       {LEGEND.map((item, i) => (
         <g key={item.label} transform={`translate(${22 + i * 128}, ${H - 22})`}>
           <rect width={9} height={9} fill={item.color} rx="2" />
-          <text x={13} y={8.5} fontFamily={T.SANS} fontSize="8.5" fill="rgba(255,255,255,0.38)">
+          <text x={13} y={8.5} fontFamily={T.SANS} fontSize="8.5" fill="rgba(255,255,255,0.5)">
             {item.label}
           </text>
         </g>
@@ -215,6 +217,11 @@ export default function GenMIMPage() {
   const avgEfficiency = schedule.length > 0
     ? schedule.reduce((a, t) => a + t.knockdown_efficiency, 0) / schedule.length : 0;
   const offTargetRisk = schedule.filter(t => t.knockdown_efficiency < 0.9).length / Math.max(schedule.length, 1);
+  const figureMeta = useMemo(() => ({
+    eyebrow: 'Genome minimization map',
+    title: 'CRISPRi target landscape, selected schedule, and viability ledger are read as one chassis figure',
+    caption: 'The page now treats chassis minimization as a genome-scale scientific figure rather than a parameter form, so suppression logic, viability, and target evidence stay in one reading surface.',
+  }), []);
 
   useEffect(() => {
     setToolPayload('genmim', {
@@ -250,7 +257,7 @@ export default function GenMIMPage() {
 
   return (
     <>
-      <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', background: '#000000', minHeight: '100%', flex: 1 }}>
+      <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', background: PATHD_THEME.sepiaPanelMuted, minHeight: '100%', flex: 1 }}>
         <AlgorithmInsight
           title="Gene Minimization via CRISPRi"
           description="Greedy knockdown scheduling: ranks non-essential genes by knockdown efficiency, bounded by max targets and growth tolerance."
@@ -304,13 +311,39 @@ export default function GenMIMPage() {
           />
         </div>
 
+        <div style={{ padding: '0 16px 10px' }}>
+          <ScientificMethodStrip
+            label="Chassis bench"
+            items={[
+              {
+                title: 'Suppression policy',
+                detail: 'Efficiency threshold, target budget, and essential-gene protection now read as one minimization policy rather than disconnected control toggles.',
+                accent: PATHD_THEME.apricot,
+                note: `${maxTargets} target budget · ${(efficiency * 100).toFixed(0)}% minimum KD`,
+              },
+              {
+                title: 'Genome figure',
+                detail: 'The circular genome map becomes the main scientific figure, with selected targets, essential regions, and knockdown strength on one chassis canvas.',
+                accent: PATHD_THEME.sky,
+                note: `${schedule.length} selected targets`,
+              },
+              {
+                title: 'Viability ledger',
+                detail: 'Growth impact, average efficiency, and off-target burden remain visible so genome reduction stays grounded in host survival.',
+                accent: PATHD_THEME.mint,
+                note: `${(avgEfficiency * 100).toFixed(1)}% average KD`,
+              },
+            ]}
+          />
+        </div>
+
         {simError && (
           <div style={{ padding: '0 16px 8px' }}><SimErrorBanner message={simError} /></div>
         )}
 
         <div className="nb-tool-panels" style={{ flex: 1 }}>
           {/* Input panel */}
-          <div className="nb-tool-sidebar" style={{ width: '240px', borderRight: '1px solid rgba(255,255,255,0.06)', background: '#000000' }}>
+          <div className="nb-tool-sidebar" style={{ width: '240px', borderRight: `1px solid ${PATHD_THEME.paperBorder}`, background: PATHD_THEME.sepiaPanelMuted }}>
             <WorkbenchInlineContext
               toolId="genmim"
               title="Gene Minimization"
@@ -319,7 +352,7 @@ export default function GenMIMPage() {
               isSimulated={!analyzeArtifact}
             />
 
-            <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '0 0 12px' }}>
+            <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: PATHD_THEME.paperLabel, margin: '0 0 12px' }}>
               CRISPRi Parameters
             </p>
 
@@ -329,8 +362,8 @@ export default function GenMIMPage() {
             ].map(s => (
               <div key={s.label} style={{ marginBottom: '12px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                  <span style={{ fontFamily: T.SANS, fontSize: '11px', color: 'rgba(255,255,255,0.45)' }}>{s.label}</span>
-                  <span style={{ fontFamily: T.MONO, fontSize: '11px', color: 'rgba(255,255,255,0.55)' }}>{s.display(s.value)}</span>
+                  <span style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.paperLabel }}>{s.label}</span>
+                  <span style={{ fontFamily: T.MONO, fontSize: '11px', color: PATHD_THEME.paperValue }}>{s.display(s.value)}</span>
                 </div>
                 <input aria-label="Parameter slider" type="range" min={s.min} max={s.max} step={s.step} value={s.value}
                   onChange={e => s.set(parseFloat(e.target.value) as never)}
@@ -341,31 +374,31 @@ export default function GenMIMPage() {
             <button aria-label="Action" onClick={() => setProtectEssential(!protectEssential)} style={{
               display: 'flex', alignItems: 'center', gap: '8px',
               width: '100%', padding: '7px 10px', marginBottom: '16px',
-              background: protectEssential ? 'rgba(255,139,31,0.1)' : 'transparent',
-              border: `1px solid ${protectEssential ? 'rgba(255,139,31,0.25)' : 'rgba(255,255,255,0.06)'}`,
+              background: protectEssential ? 'rgba(231,199,169,0.18)' : PATHD_THEME.paperSurfaceStrong,
+              border: `1px solid ${protectEssential ? 'rgba(231,199,169,0.34)' : PATHD_THEME.paperBorder}`,
               borderRadius: '8px', cursor: 'pointer',
-              color: protectEssential ? 'rgba(255,139,31,0.9)' : 'rgba(255,255,255,0.35)',
+              color: protectEssential ? PATHD_THEME.paperValue : PATHD_THEME.paperLabel,
               fontFamily: T.SANS, fontSize: '11px', textAlign: 'left',
             }}>
-              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: protectEssential ? 'rgba(200,140,20,0.8)' : 'transparent', border: '1px solid rgba(200,140,20,0.5)', flexShrink: 0 }} />
+              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: protectEssential ? PATHD_THEME.apricot : 'transparent', border: `1px solid ${PATHD_THEME.apricot}`, flexShrink: 0 }} />
               Protect essential genes
             </button>
 
-            <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '0 0 8px' }}>
+            <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: PATHD_THEME.paperLabel, margin: '0 0 8px' }}>
               Knockdown Schedule ({schedule.length} targets)
             </p>
             {schedule.map(t => (
               <div key={t.gene} style={{
                 padding: '6px 8px', marginBottom: '4px',
-                background: 'rgba(255,80,80,0.06)',
-                border: '1px solid rgba(255,80,80,0.2)',
+                background: 'rgba(232,163,161,0.12)',
+                border: '1px solid rgba(232,163,161,0.28)',
                 borderRadius: '8px',
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ fontFamily: T.MONO, fontSize: '10px', color: 'rgba(255,120,120,0.9)' }}>{t.gene}</span>
-                  <span style={{ fontFamily: T.MONO, fontSize: '10px', color: 'rgba(255,255,255,0.45)' }}>{(t.knockdown_efficiency * 100).toFixed(0)}% KD</span>
+                  <span style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.paperValue }}>{t.gene}</span>
+                  <span style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.paperLabel }}>{(t.knockdown_efficiency * 100).toFixed(0)}% KD</span>
                 </div>
-                <div style={{ fontFamily: T.SANS, fontSize: '10px', color: 'rgba(255,255,255,0.35)', marginTop: '2px' }}>
+                <div style={{ fontFamily: T.SANS, fontSize: '10px', color: PATHD_THEME.paperLabel, marginTop: '2px' }}>
                   {t.phenotype} · GI: {((t.growth_impact ?? 0) * 100).toFixed(0)}%
                 </div>
               </div>
@@ -373,46 +406,66 @@ export default function GenMIMPage() {
           </div>
 
           {/* Engine view — genome map + table */}
-          <div className="nb-tool-center" style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#050505', minWidth: 0 }}>
-            <div style={{ padding: '16px', borderBottom: '1px solid rgba(255,255,255,0.06)', flexShrink: 0 }}>
-              <p style={{ fontFamily: T.MONO, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.25)', margin: '0 0 8px' }}>
-                E. coli K-12 Genome Map
-              </p>
-              <GenomeMap targets={CRISPRI_TARGETS} selected={schedule} efficiencyThreshold={efficiency} />
-            </div>
-            <div style={{ flex: 1, padding: '12px' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-                    {['Gene', 'Position', 'Essential', 'KD Eff.', 'Phenotype', 'Growth ΔΔ'].map(h => (
-                      <th key={h} style={{ fontFamily: T.MONO, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'rgba(255,255,255,0.3)', padding: '5px 8px', textAlign: 'left' }}>
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {CRISPRI_TARGETS.map((t, i) => {
-                    const isSelected = schedule.some(s => s.gene === t.gene);
-                    return (
-                      <tr key={t.gene} style={{ background: isSelected ? 'rgba(255,80,80,0.04)' : i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)' }}>
-                        <td style={{ fontFamily: T.MONO, fontSize: '10px', padding: '4px 8px', color: isSelected ? 'rgba(255,120,120,0.85)' : 'rgba(255,255,255,0.55)' }}>{t.gene}</td>
-                        <td style={{ fontFamily: T.MONO, fontSize: '10px', padding: '4px 8px', color: 'rgba(255,255,255,0.35)' }}>{t.position.toLocaleString()}</td>
-                        <td style={{ fontFamily: T.MONO, fontSize: '10px', padding: '4px 8px', color: t.essential ? 'rgba(255,139,31,0.8)' : 'rgba(255,255,255,0.25)' }}>{t.essential ? '⚠ YES' : 'no'}</td>
-                        <td style={{ fontFamily: T.MONO, fontSize: '10px', padding: '4px 8px', color: 'rgba(255,255,255,0.55)' }}>{t.essential ? '—' : `${(t.knockdown_efficiency * 100).toFixed(0)}%`}</td>
-                        <td style={{ fontFamily: T.SANS, fontSize: '10px', padding: '4px 8px', color: 'rgba(255,255,255,0.4)' }}>{t.phenotype}</td>
-                        <td style={{ fontFamily: T.MONO, fontSize: '10px', padding: '4px 8px', color: 'rgba(255,255,255,0.4)' }}>{t.essential ? '—' : `${((t.growth_impact ?? 0) * 100).toFixed(0)}%`}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+          <div className="nb-tool-center" style={{ flex: 1, display: 'flex', flexDirection: 'column', background: PATHD_THEME.sepiaPanelMuted, minWidth: 0, padding: '12px' }}>
+            <ScientificFigureFrame
+              eyebrow={figureMeta.eyebrow}
+              title={figureMeta.title}
+              caption={figureMeta.caption}
+              legend={[
+                { label: 'Targets', value: `${schedule.length}`, accent: PATHD_THEME.coral },
+                { label: 'Protection', value: protectEssential ? 'Essential on' : 'Aggressive', accent: PATHD_THEME.apricot },
+                { label: 'Avg KD', value: `${(avgEfficiency * 100).toFixed(1)}%`, accent: PATHD_THEME.mint },
+                { label: 'Growth', value: `${(growthImpact * 100).toFixed(1)}%`, accent: PATHD_THEME.sky },
+              ]}
+              footer={
+                <div style={{ display: 'grid', gap: '6px' }}>
+                  <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.paperValue, lineHeight: 1.55 }}>
+                    The page now keeps the selected schedule, full target ledger, and circular genome context in one figure so chassis-minimization decisions can be defended visually and biologically.
+                  </div>
+                  <div style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.paperLabel }}>
+                    recommended baseline {recommendedTargets} targets · {(recommendedEfficiency * 100).toFixed(0)}% KD · off-target {(offTargetRisk * 100).toFixed(0)}%
+                  </div>
+                </div>
+              }
+              minHeight="100%"
+            >
+              <div style={{ paddingBottom: '12px', borderBottom: `1px solid ${PATHD_THEME.paperBorder}`, flexShrink: 0 }}>
+                <GenomeMap targets={CRISPRI_TARGETS} selected={schedule} efficiencyThreshold={efficiency} />
+              </div>
+              <div style={{ paddingTop: '12px', overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ borderBottom: `1px solid ${PATHD_THEME.paperBorderStrong}` }}>
+                      {['Gene', 'Position', 'Essential', 'KD Eff.', 'Phenotype', 'Growth ΔΔ'].map(h => (
+                        <th key={h} style={{ fontFamily: T.MONO, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.06em', color: PATHD_THEME.paperLabel, padding: '5px 8px', textAlign: 'left' }}>
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {CRISPRI_TARGETS.map((t, i) => {
+                      const isSelected = schedule.some(s => s.gene === t.gene);
+                      return (
+                        <tr key={t.gene} style={{ background: isSelected ? 'rgba(232,163,161,0.10)' : i % 2 === 0 ? 'transparent' : PATHD_THEME.paperSurfaceMuted }}>
+                          <td style={{ fontFamily: T.MONO, fontSize: '10px', padding: '4px 8px', color: isSelected ? PATHD_THEME.paperValue : PATHD_THEME.paperValue }}>{t.gene}</td>
+                          <td style={{ fontFamily: T.MONO, fontSize: '10px', padding: '4px 8px', color: PATHD_THEME.paperLabel }}>{t.position.toLocaleString()}</td>
+                          <td style={{ fontFamily: T.MONO, fontSize: '10px', padding: '4px 8px', color: t.essential ? PATHD_THEME.apricot : PATHD_THEME.paperLabel }}>{t.essential ? 'YES' : 'no'}</td>
+                          <td style={{ fontFamily: T.MONO, fontSize: '10px', padding: '4px 8px', color: PATHD_THEME.paperValue }}>{t.essential ? '—' : `${(t.knockdown_efficiency * 100).toFixed(0)}%`}</td>
+                          <td style={{ fontFamily: T.SANS, fontSize: '10px', padding: '4px 8px', color: PATHD_THEME.paperLabel }}>{t.phenotype}</td>
+                          <td style={{ fontFamily: T.MONO, fontSize: '10px', padding: '4px 8px', color: PATHD_THEME.paperLabel }}>{t.essential ? '—' : `${((t.growth_impact ?? 0) * 100).toFixed(0)}%`}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </ScientificFigureFrame>
           </div>
 
           {/* Results panel */}
-          <div className="nb-tool-right" style={{ width: '200px', borderLeft: '1px solid rgba(255,255,255,0.06)', background: '#000000' }}>
-            <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '0 0 12px' }}>
+          <div className="nb-tool-right" style={{ width: '200px', borderLeft: `1px solid ${PATHD_THEME.paperBorder}`, background: PATHD_THEME.sepiaPanelMuted }}>
+            <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: PATHD_THEME.paperLabel, margin: '0 0 12px' }}>
               Predicted Impact
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -422,10 +475,29 @@ export default function GenMIMPage() {
               <MetricCard label="Avg KD Efficiency" value={(avgEfficiency * 100).toFixed(1)} unit="%" />
               <MetricCard label="Off-target Risk" value={(offTargetRisk * 100).toFixed(0)} unit="%" />
             </div>
+
+            <div style={{
+              marginTop: '12px',
+              padding: '12px',
+              borderRadius: '12px',
+              border: `1px solid ${PATHD_THEME.paperBorder}`,
+              background: PATHD_THEME.paperSurfaceStrong,
+              display: 'grid',
+              gap: '6px',
+            }}>
+              <div style={{ fontFamily: T.MONO, fontSize: '9px', color: PATHD_THEME.paperLabel, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                Readout
+              </div>
+              <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.paperValue, lineHeight: 1.55 }}>
+                {protectEssential
+                  ? 'The current schedule is conservative enough to behave like a viable chassis-editing proposal rather than an aggressive pruning experiment.'
+                  : 'Aggressive pruning is enabled, so this schedule should be interpreted as a stress-test of the chassis boundary rather than a default plan.'}
+              </div>
+            </div>
           </div>
         </div>
 
-        <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', padding: '8px 16px', display: 'flex', gap: '8px', flexShrink: 0, background: '#000000' }}>
+        <div style={{ borderTop: `1px solid ${PATHD_THEME.paperBorder}`, padding: '8px 16px', display: 'flex', gap: '8px', flexShrink: 0, background: PATHD_THEME.sepiaPanelMuted }}>
           <ExportButton label="Export Schedule JSON" data={schedule} filename="genmim-schedule" format="json" />
           <ExportButton label="Export All Targets CSV" data={CRISPRI_TARGETS} filename="genmim-targets" format="csv" />
         </div>
