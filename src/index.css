@@ -310,6 +310,39 @@ h1, h2, h3, h4 {
 }
 
 /* ══════════════════════════════════════════════════════════════════
+   TOOL PAGE WRAPPER — fills bounded viewport height
+   ══════════════════════════════════════════════════════════════════ */
+
+.nb-tool-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;           /* bounded — not min-height, no overflow growth */
+  overflow: hidden;
+}
+
+/* All flex children ABOVE the panels: use their natural height, don't grow */
+.nb-tool-page > :not(.nb-tool-panels) {
+  flex-shrink: 0;
+}
+
+/* The panels: fill all remaining space after compact headers */
+.nb-tool-page > .nb-tool-panels {
+  flex: 1;
+  min-height: 0;
+}
+
+/* ── Hide verbose above-fold context sections ── */
+/* ScientificHero (~180px) and ScientificMethodStrip (~100px) push the chart   */
+/* below the fold. They are informative but shouldn't eat the work canvas.      */
+/* The "paper notebook" context is preserved via AlgorithmInsight + InlineCtx. */
+.nb-tool-page .nb-scientific-hero {
+  display: none;
+}
+.nb-tool-page .nb-method-strip {
+  display: none;
+}
+
+/* ══════════════════════════════════════════════════════════════════
    TOOL PANEL — 3-column split layout
    sidebar (params) | center (chart, sticky) | right (results)
 
@@ -359,26 +392,75 @@ h1, h2, h3, h4 {
   /* width set via inline style per tool (typically 220–280px) */
 }
 
-/* Responsive: on narrow screens collapse to single column so
-   chart is still readable (params move above chart) */
-@media (max-width: 900px) {
-  .nb-tool-panels {
-    flex-direction: column;
-    overflow: auto;
-  }
+/* Responsive breakpoints for tool panels are handled in app/globals.css (768px) */
 
-  .nb-tool-sidebar,
-  .nb-tool-right {
-    width: 100% !important;
-    max-height: 280px;
-    border-right: none !important;
-    border-left: none !important;
-    border-bottom: 1px solid rgba(34,40,48,0.10);
-  }
+/* ══════════════════════════════════════════════════════════════════
+   PATHD GRADIENT SLIDER
+   Silky smooth range input with mint→sky→lilac→coral gradient fill.
+   The gradient fills from left to current value via --val CSS property
+   set by JS (no re-render needed for the visual fill — only the
+   deferred computation triggers React re-render).
+   ══════════════════════════════════════════════════════════════════ */
 
-  .nb-tool-center {
-    min-height: 360px;
-  }
+.nb-pathd-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 999px;
+  outline: none;
+  cursor: pointer;
+  will-change: background;         /* hint GPU to composite separately */
+  transition: none;                /* no CSS delay — position is instant */
+  /* Fill left of thumb with PATHD gradient; right of thumb with track */
+  background: linear-gradient(
+    90deg,
+    #BFDCCD 0%,
+    #AFC3D6 40%,
+    #CFC4E3 72%,
+    #E8A3A1 var(--val, 0%),
+    rgba(34,40,48,0.12) var(--val, 0%)
+  );
+}
+
+/* ── Thumb — webkit ── */
+.nb-pathd-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  border: 2px solid #AFC3D6;   /* sky accent */
+  box-shadow: 0 1px 4px rgba(32,37,43,0.20), 0 0 0 3px rgba(175,195,214,0.12);
+  cursor: grab;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.1s;
+}
+.nb-pathd-slider::-webkit-slider-thumb:hover {
+  border-color: #CFC4E3;       /* lilac on hover */
+  box-shadow: 0 1px 6px rgba(32,37,43,0.22), 0 0 0 5px rgba(207,196,227,0.18);
+}
+.nb-pathd-slider:active::-webkit-slider-thumb {
+  cursor: grabbing;
+  transform: scale(1.15);
+  border-color: #E7C7A9;       /* apricot when pressed */
+  box-shadow: 0 2px 8px rgba(32,37,43,0.24), 0 0 0 6px rgba(231,199,169,0.18);
+}
+
+/* ── Thumb — Firefox ── */
+.nb-pathd-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  border: 2px solid #AFC3D6;
+  box-shadow: 0 1px 4px rgba(32,37,43,0.20);
+  cursor: grab;
+}
+.nb-pathd-slider::-moz-range-track {
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(34,40,48,0.10);
 }
 
 /* ── Audit trail panel ── */

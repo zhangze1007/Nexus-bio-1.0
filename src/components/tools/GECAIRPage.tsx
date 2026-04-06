@@ -1,5 +1,5 @@
 'use client';
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useTransition, useRef } from 'react';
 import AlgorithmInsight from '../ide/shared/AlgorithmInsight';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
@@ -292,15 +292,32 @@ function ParamSlider({ label, value, min, max, step = 0.05, onChange }: {
   label: string; value: number; min: number; max: number; step?: number;
   onChange: (v: number) => void;
 }) {
+  const [localVal, setLocalVal] = useState(value);
+  const [, startTransition] = useTransition();
+  const trackRef = useRef<HTMLInputElement>(null);
+  const pct = ((localVal - min) / (max - min)) * 100;
   return (
-    <div style={{ marginBottom: '12px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+    <div style={{ marginBottom: '14px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
         <span style={{ fontFamily: T.SANS, fontSize: '11px', color: LABEL }}>{label}</span>
-        <span style={{ fontFamily: T.MONO, fontSize: '11px', color: VALUE }}>{(value * 100).toFixed(0)}%</span>
+        <span style={{ fontFamily: T.MONO, fontSize: '11px', fontWeight: 600, color: VALUE }}>
+          {(localVal * 100).toFixed(0)}%
+        </span>
       </div>
-      <input aria-label="Parameter slider" type="range" min={min} max={max} step={step} value={value}
-        onChange={e => onChange(parseFloat(e.target.value))}
-        style={{ width: '100%', accentColor: 'rgba(120,180,255,0.8)', cursor: 'pointer' }} />
+      <input
+        ref={trackRef}
+        aria-label={label}
+        type="range" min={min} max={max} step={step} value={localVal}
+        className="nb-pathd-slider"
+        style={{ '--val': `${pct}%` } as React.CSSProperties}
+        onChange={e => {
+          const v = parseFloat(e.target.value);
+          const p = ((v - min) / (max - min)) * 100;
+          trackRef.current?.style.setProperty('--val', `${p}%`);
+          setLocalVal(v);
+          startTransition(() => onChange(v));
+        }}
+      />
     </div>
   );
 }
@@ -395,7 +412,7 @@ export default function GECAIRPage() {
 
   return (
     <>
-      <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', background: PANEL_BG, minHeight: '100%', flex: 1 }}>
+      <div className="nb-tool-page" style={{ background: PANEL_BG }}>
         <AlgorithmInsight
           title="Gene Circuit AI Reasoner"
           description="Hill-function kinetics model promoter activity. Inhibition gates use Hill repression; activation uses Hill induction."

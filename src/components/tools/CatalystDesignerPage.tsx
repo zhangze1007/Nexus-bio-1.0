@@ -867,7 +867,7 @@ export default function CatalystDesignerPage() {
 
   return (
     <>
-      <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', minHeight: '100%', flex: 1 }}>
+      <div className="nb-tool-page">
 
         {/* Algorithm Insight */}
         <AlgorithmInsight

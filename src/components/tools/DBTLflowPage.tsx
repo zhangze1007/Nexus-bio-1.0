@@ -464,7 +464,7 @@ export default function DBTLflowPage() {
   /* ── Render ── */
   return (
     <>
-      <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', background: PANEL_BG, minHeight: '100%', flex: 1 }}>
+      <div className="nb-tool-page" style={{ background: PANEL_BG }}>
         <AlgorithmInsight
           title="Design-Build-Test-Learn Tracker"
           description="Iterative experimental optimization. Each cycle records a hypothesis, measured result, and learning for the next design."

@@ -981,7 +981,7 @@ export default function ScSpatialPage() {
 
   return (
     <>
-      <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', background: PANEL_BG, minHeight: '100%', flex: 1 }}>
+      <div className="nb-tool-page" style={{ background: PANEL_BG }}>
         <AlgorithmInsight
           title="Single-Cell & Spatial Transcriptomics"
           description="QC → HVG selection → Louvain clustering → PAGA trajectory → Moran's I spatial autocorrelation → scVAE latent embedding with batch correction"

@@ -18,6 +18,7 @@ interface ScientificMethodStripProps {
 export default function ScientificMethodStrip({ label, items }: ScientificMethodStripProps) {
   return (
     <section
+      className="nb-method-strip"
       style={{
         display: 'grid',
         gap: '10px',

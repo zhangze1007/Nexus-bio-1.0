@@ -257,7 +257,7 @@ export default function GenMIMPage() {
 
   return (
     <>
-      <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', background: PATHD_THEME.sepiaPanelMuted, minHeight: '100%', flex: 1 }}>
+      <div className="nb-tool-page" style={{ background: PATHD_THEME.sepiaPanelMuted }}>
         <AlgorithmInsight
           title="Gene Minimization via CRISPRi"
           description="Greedy knockdown scheduling: ranks non-essential genes by knockdown efficiency, bounded by max targets and growth tolerance."
@@ -367,7 +367,8 @@ export default function GenMIMPage() {
                 </div>
                 <input aria-label="Parameter slider" type="range" min={s.min} max={s.max} step={s.step} value={s.value}
                   onChange={e => s.set(parseFloat(e.target.value) as never)}
-                  style={{ width: '100%', accentColor: 'rgba(120,180,255,0.8)' }} />
+                  className="nb-pathd-slider"
+                  style={{ '--val': `${((s.value - s.min) / (s.max - s.min)) * 100}%` } as React.CSSProperties} />
               </div>
             ))}
 

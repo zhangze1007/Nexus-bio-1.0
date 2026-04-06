@@ -317,7 +317,7 @@ export default function ProEvolPage() {
 
   return (
     <>
-      <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', background: PANEL_BG, minHeight: '100%', flex: 1 }}>
+      <div className="nb-tool-page" style={{ background: PANEL_BG }}>
         <AlgorithmInsight
           title="Directed Evolution Simulator"
           description="Monte Carlo sampling traverses the fitness landscape via Metropolis criterion. Accepts unfavorable mutations with probability e^(ΔF/T)."

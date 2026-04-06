@@ -775,7 +775,7 @@ export default function MultiOPage() {
 
   return (
     <>
-      <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', background: PANEL_BG, minHeight: '100%', flex: 1 }}>
+      <div className="nb-tool-page" style={{ background: PANEL_BG }}>
         <AlgorithmInsight
           title="Biological Foundation Model"
           description="Multi-head attention across transcript / protein / metabolite latent embeddings. Bottleneck analysis identifies rate-limiting omics layer. Perturbation simulator predicts downstream metabolite shifts."
@@ -925,7 +925,8 @@ export default function MultiOPage() {
               </div>
               <input aria-label="Parameter slider" type="range" min={0.5} max={5} step={0.1} value={fcThreshold}
                 onChange={e => setFcThreshold(parseFloat(e.target.value))}
-                style={{ width: '100%', accentColor: LAYER_COLORS.proteomics }} />
+                className="nb-pathd-slider"
+                style={{ '--val': `${((fcThreshold - 0.5) / 4.5) * 100}%` } as React.CSSProperties} />
             </div>
             <div style={{ marginBottom: '16px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
@@ -934,7 +935,8 @@ export default function MultiOPage() {
               </div>
               <input aria-label="Parameter slider" type="range" min={0.001} max={0.1} step={0.001} value={pvThreshold}
                 onChange={e => setPvThreshold(parseFloat(e.target.value))}
-                style={{ width: '100%', accentColor: LAYER_COLORS.proteomics }} />
+                className="nb-pathd-slider"
+                style={{ '--val': `${((pvThreshold - 0.001) / 0.099) * 100}%` } as React.CSSProperties} />
             </div>
 
             {/* Perturbation Simulator */}
@@ -960,7 +962,8 @@ export default function MultiOPage() {
               </div>
               <input aria-label="Parameter slider" type="range" min={-4} max={8} step={0.1} value={perturbedExpr}
                 onChange={e => setPerturbedExpr(parseFloat(e.target.value))}
-                style={{ width: '100%', accentColor: LAYER_COLORS.metabolomics }} />
+                className="nb-pathd-slider"
+                style={{ '--val': `${((perturbedExpr + 4) / 12) * 100}%` } as React.CSSProperties} />
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ fontFamily: T.MONO, fontSize: '8px', color: LABEL }}>-4</span>
                 <span style={{ fontFamily: T.MONO, fontSize: '8px', color: LABEL }}>+8</span>

@@ -109,8 +109,14 @@
   min-height: 0;
 }
 
+/* ── Workbench pages: stop page-level scroll, bound to viewport ── */
+/* The 3-column tool panels must fill the remaining height without  */
+/* being pushed below the fold by header content.                   */
 .nb-workbench .nb-ide-main {
   padding-left: 80px;
+  overflow: hidden;        /* no full-page scroll on tool pages */
+  display: flex;
+  flex-direction: column;
 }
 
 .nb-ide-console {
@@ -160,7 +166,9 @@
 .nb-workbench-content {
   position: relative !important;
   inset: auto !important;
-  min-height: 100%;
+  /* flex: 1 + min-height: 0 = fills parent exactly without growing past viewport */
+  flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
 }
@@ -205,33 +213,8 @@
     grid-template-columns: minmax(0, 1fr) !important;
   }
 
-  .nb-tool-panels {
-    flex-direction: column !important;
-    overflow: visible !important;
-  }
-
-  .nb-tool-center {
-    order: 1;
-    min-height: 420px;
-  }
-
-  .nb-tool-sidebar {
-    order: 2;
-  }
-
-  .nb-tool-right {
-    order: 3;
-  }
-
-  .nb-tool-sidebar,
-  .nb-tool-right {
-    width: 100% !important;
-    max-width: 100% !important;
-    border-right: none !important;
-    border-left: none !important;
-    border-top: 1px solid rgba(255,255,255,0.06);
-    padding: 14px !important;
-  }
+  /* nb-tool-panels stays horizontal at 1320px — only collapse at narrow screens */
+  /* (moved to 768px breakpoint below so laptops get the 3-column layout)      */
 
   .nb-pathd-hero-stack {
     width: min(700px, calc(100vw - 32px)) !important;
@@ -255,6 +238,38 @@
   }
 }
 
+/* ── Narrow screens: collapse 3-column → single scrollable column ── */
+@media (max-width: 768px) {
+  .nb-tool-panels {
+    flex-direction: column !important;
+    overflow: auto !important;   /* allow scroll on mobile */
+  }
+
+  .nb-tool-center {
+    order: 1;
+    min-height: 380px;
+  }
+
+  .nb-tool-sidebar {
+    order: 2;
+    max-height: none !important;
+  }
+
+  .nb-tool-right {
+    order: 3;
+  }
+
+  .nb-tool-sidebar,
+  .nb-tool-right {
+    width: 100% !important;
+    max-width: 100% !important;
+    border-right: none !important;
+    border-left: none !important;
+    border-top: 1px solid rgba(34,40,48,0.08);
+    padding: 14px !important;
+  }
+}
+
 @media (max-width: 960px) {
   .nb-ide-topbar,
   .nb-workbench .nb-ide-topbar {
@@ -263,6 +278,11 @@
   }
 
   .nb-ide-main {
+    overflow: auto;
+  }
+
+  /* Restore scroll on very small workbench screens */
+  .nb-workbench .nb-ide-main {
     overflow: auto;
   }
 

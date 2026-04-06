@@ -824,7 +824,7 @@ export default function CellFreePage() {
 
   return (
     <>
-      <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', background: PANEL_BG, minHeight: '100%', flex: 1 }}>
+      <div className="nb-tool-page" style={{ background: PANEL_BG }}>
         <AlgorithmInsight
           title="Cell-Free Sandbox (CFPS)"
           description="Resource-aware TX-TL ODE simulation → plate-reader Michaelis-Menten fitting → in-vitro-to-in-vivo translation prediction"
