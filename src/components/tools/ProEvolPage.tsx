@@ -21,11 +21,14 @@ const INPUT_BG = 'rgba(255,255,255,0.05)';
 const INPUT_BORDER = 'rgba(255,255,255,0.08)';
 const INPUT_TEXT = 'rgba(255,255,255,0.7)';
 
-function fitnessColor(v: number): string {
-  const r = Math.round(30 + v * 180);
-  const g = Math.round(10 + v * 200);
-  const b = Math.round(60 + v * 60);
-  return `rgb(${r},${g},${b})`;
+function viridisColor(t: number): string {
+  const stops: [number, number, number][] = [
+    [68, 1, 84], [49, 104, 142], [53, 183, 121], [144, 215, 67], [253, 231, 37],
+  ];
+  const scaled = Math.max(0, Math.min(1, t)) * 4;
+  const lo = Math.floor(scaled), hi = Math.min(4, lo + 1), f = scaled - lo;
+  const [r1, g1, b1] = stops[lo], [r2, g2, b2] = stops[hi];
+  return `rgb(${Math.round(r1 + (r2 - r1) * f)},${Math.round(g1 + (g2 - g1) * f)},${Math.round(b1 + (b2 - b1) * f)})`;
 }
 
 function FitnessHeatmap({ trajectory }: { trajectory: FitnessPoint[] }) {
@@ -57,6 +60,29 @@ function FitnessHeatmap({ trajectory }: { trajectory: FitnessPoint[] }) {
     });
   });
 
+  // Compute contour segments (simplified marching squares)
+  const CONTOUR_LEVELS = [0.2, 0.4, 0.6, 0.8];
+  const contourSegments: { x1: number; y1: number; x2: number; y2: number }[] = [];
+  CONTOUR_LEVELS.forEach(level => {
+    FITNESS_LANDSCAPE.forEach((row, y) => {
+      row.forEach((v, x) => {
+        const above = v >= level;
+        if (x + 1 < row.length && (row[x + 1] >= level) !== above) {
+          contourSegments.push({
+            x1: heatX + (x + 1) * CELL, y1: heatY + y * CELL,
+            x2: heatX + (x + 1) * CELL, y2: heatY + (y + 1) * CELL,
+          });
+        }
+        if (y + 1 < FITNESS_LANDSCAPE.length && (FITNESS_LANDSCAPE[y + 1][x] >= level) !== above) {
+          contourSegments.push({
+            x1: heatX + x * CELL,       y1: heatY + (y + 1) * CELL,
+            x2: heatX + (x + 1) * CELL, y2: heatY + (y + 1) * CELL,
+          });
+        }
+      });
+    });
+  });
+
   const pathPoints = trajectory.map((point, index) => {
     const x = tracePadX + (index / Math.max(trajectory.length - 1, 1)) * (W - tracePadX * 2);
     const y = TRACE_TOP + TRACE_H - tracePadY - point.fitness * (TRACE_H - tracePadY * 2);
@@ -79,10 +105,16 @@ function FitnessHeatmap({ trajectory }: { trajectory: FitnessPoint[] }) {
           <rect key={`${x}-${y}`}
             x={heatX + x * CELL} y={heatY + y * CELL}
             width={CELL - 1} height={CELL - 1}
-            fill={fitnessColor(v)} fillOpacity={0.85}
+            fill={viridisColor(v)} fillOpacity={0.9}
           />
         ))
       )}
+      {contourSegments.map((seg, i) => (
+        <line key={`cs-${i}`}
+          x1={seg.x1} y1={seg.y1} x2={seg.x2} y2={seg.y2}
+          stroke="rgba(255,255,255,0.35)" strokeWidth={0.8}
+        />
+      ))}
 
       <rect
         x={heatX + basinX * CELL - 3}
@@ -151,8 +183,11 @@ function FitnessHeatmap({ trajectory }: { trajectory: FitnessPoint[] }) {
       </text>
       <defs>
         <linearGradient id="fitScale" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={fitnessColor(1)} />
-          <stop offset="100%" stopColor={fitnessColor(0)} />
+          <stop offset="0%"   stopColor={viridisColor(1)} />
+          <stop offset="25%"  stopColor={viridisColor(0.75)} />
+          <stop offset="50%"  stopColor={viridisColor(0.5)} />
+          <stop offset="75%"  stopColor={viridisColor(0.25)} />
+          <stop offset="100%" stopColor={viridisColor(0)} />
         </linearGradient>
       </defs>
       <rect x={W - 48} y={48} width={12} height={130} fill="url(#fitScale)" rx={4} />

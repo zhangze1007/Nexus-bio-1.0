@@ -47,6 +47,20 @@ const SERIES = [
   { key: 'adsExpression', label: 'ADS Expr',  color: '#F0FDFA',               unit: 'a.u.' },
 ] as const;
 
+/* ── Catmull-Rom → SVG path helper ─────────────────────────────────────────── */
+function crPath(pts: [number, number][]): string {
+  if (pts.length < 2) return '';
+  const p = [pts[0], ...pts, pts[pts.length - 1]];
+  let d = `M ${p[1][0].toFixed(1)} ${p[1][1].toFixed(1)}`;
+  for (let i = 1; i < p.length - 2; i++) {
+    const [x0, y0] = p[i - 1], [x1, y1] = p[i], [x2, y2] = p[i + 1], [x3, y3] = p[i + 2];
+    const cp1x = x1 + (x2 - x0) / 6, cp1y = y1 + (y2 - y0) / 6;
+    const cp2x = x2 - (x3 - x1) / 6, cp2y = y2 - (y3 - y1) / 6;
+    d += ` C ${cp1x.toFixed(1)} ${cp1y.toFixed(1)}, ${cp2x.toFixed(1)} ${cp2y.toFixed(1)}, ${x2.toFixed(1)} ${y2.toFixed(1)}`;
+  }
+  return d;
+}
+
 /* ── Time-Series SVG (6 series) ────────────────────────────────────────────── */
 function TimeSeriesSVG({ trajectory, setpoint, svgRef }: { trajectory: ODEState[]; setpoint: number; svgRef?: React.RefObject<SVGSVGElement | null> }) {
   if (trajectory.length < 2) return null;
@@ -57,68 +71,34 @@ function TimeSeriesSVG({ trajectory, setpoint, svgRef }: { trajectory: ODEState[
   const laneGap = 16;
   const plotTop = 42;
   const lanes = [
-    {
-      key: 'product',
-      label: 'Product',
-      color: 'rgba(120,255,180,0.92)',
-      max: Math.max(0.001, ...trajectory.map((point) => point.product)),
-      unit: 'g/L',
-    },
-    {
-      key: 'biomass',
-      label: 'Biomass',
-      color: 'rgba(81,81,205,0.92)',
-      max: Math.max(0.001, ...trajectory.map((point) => point.biomass)),
-      unit: 'g/L',
-    },
-    {
-      key: 'substrate',
-      label: 'Substrate',
-      color: 'rgba(255,139,31,0.92)',
-      max: Math.max(0.001, ...trajectory.map((point) => point.substrate)),
-      unit: 'g/L',
-    },
-    {
-      key: 'dissolvedO2',
-      label: 'DO₂',
-      color: 'rgba(95,68,74,0.9)',
-      max: 1,
-      unit: 'sat.',
-    },
-    {
-      key: 'fpp',
-      label: 'FPP',
-      color: '#FFFB1F',
-      max: Math.max(0.001, ...trajectory.map((point) => point.fpp)),
-      unit: 'μM',
-    },
-    {
-      key: 'adsExpression',
-      label: 'ADS',
-      color: '#F0FDFA',
-      max: Math.max(0.001, ...trajectory.map((point) => point.adsExpression)),
-      unit: 'a.u.',
-    },
+    { key: 'product',       label: 'Product',   color: 'rgba(120,255,180,0.92)', max: Math.max(0.001, ...trajectory.map((point) => point.product)),       unit: 'g/L'  },
+    { key: 'biomass',       label: 'Biomass',   color: 'rgba(81,81,205,0.92)',   max: Math.max(0.001, ...trajectory.map((point) => point.biomass)),        unit: 'g/L'  },
+    { key: 'substrate',     label: 'Substrate', color: 'rgba(255,139,31,0.92)',  max: Math.max(0.001, ...trajectory.map((point) => point.substrate)),      unit: 'g/L'  },
+    { key: 'dissolvedO2',   label: 'DO₂',       color: 'rgba(95,168,255,0.9)',   max: 1,                                                                    unit: 'sat.' },
+    { key: 'fpp',           label: 'FPP',       color: '#FFFB1F',                max: Math.max(0.001, ...trajectory.map((point) => point.fpp)),             unit: 'μM'   },
+    { key: 'adsExpression', label: 'ADS',       color: '#F0FDFA',                max: Math.max(0.001, ...trajectory.map((point) => point.adsExpression)),   unit: 'a.u.' },
   ] as const;
 
   const tMax = trajectory[trajectory.length - 1].time;
   const plotWidth = W - PAD_X - 28;
+  // Phase portrait inset dimensions
+  const PP_X = W - 118, PP_Y = plotTop + 2, PP_W = 104, PP_H = 80;
 
-  function laneY(index: number) {
-    return plotTop + index * (laneH + laneGap);
-  }
-
-  function normalize(value: number, max: number) {
-    return max > 0 ? value / max : 0;
-  }
-
-  function toPoint(t: ODEState, laneIndex: number, key: keyof ODEState, max: number) {
-    const raw = t[key];
+  function laneY(index: number) { return plotTop + index * (laneH + laneGap); }
+  function normalize(value: number, max: number) { return max > 0 ? value / max : 0; }
+  function toXY(pt: ODEState, laneIndex: number, key: keyof ODEState, max: number): [number, number] {
+    const raw = pt[key];
     const value = typeof raw === 'number' ? raw : 0;
-    const x = PAD_X + (t.time / tMax) * plotWidth;
-    const y = laneY(laneIndex) + laneH - normalize(value, max) * laneH;
-    return `${x},${y}`;
+    return [PAD_X + (pt.time / tMax) * plotWidth, laneY(laneIndex) + laneH - normalize(value, max) * laneH];
   }
+
+  // Phase portrait: product vs fpp
+  const productMax = lanes[0].max, fppMax = lanes[4].max;
+  const ppPts: [number, number][] = trajectory.map(pt => [
+    PP_X + (normalize(pt.product, productMax)) * PP_W,
+    PP_Y + PP_H - (normalize(pt.fpp, fppMax)) * PP_H,
+  ]);
+  const ppPath = crPath(ppPts);
 
   return (
     <svg ref={svgRef} role="img" aria-label="Chart" viewBox={`0 0 ${W} ${H + 36}`} style={{ width: '100%', height: '100%' }}>
@@ -132,54 +112,59 @@ function TimeSeriesSVG({ trajectory, setpoint, svgRef }: { trajectory: ODEState[
 
       {lanes.map((lane, index) => {
         const y = laneY(index);
-        const points = trajectory.map((point) => toPoint(point, index, lane.key, lane.max)).join(' ');
+        const coords: [number, number][] = trajectory.map(pt => toXY(pt, index, lane.key, lane.max));
         const lastValue = trajectory[trajectory.length - 1][lane.key] as number;
         const markerX = PAD_X + plotWidth;
         const markerY = y + laneH - normalize(lastValue, lane.max) * laneH;
         const setpointY = lane.key === 'dissolvedO2'
-          ? y + laneH - normalize(setpoint, lane.max) * laneH
-          : null;
+          ? y + laneH - normalize(setpoint, lane.max) * laneH : null;
         const toxicityY = lane.key === 'fpp'
-          ? y + laneH - normalize(DEFAULT_PARAMS.fppToxicThreshold, lane.max) * laneH
-          : null;
+          ? y + laneH - normalize(DEFAULT_PARAMS.fppToxicThreshold, lane.max) * laneH : null;
+
+        // Confidence band: ±5% of laneH
+        const sigma = laneH * 0.05;
+        const bandPath = coords.length > 1
+          ? crPath(coords.map(([x, cy]) => [x, cy - sigma] as [number, number]))
+            + ' '
+            + crPath([...coords].reverse().map(([x, cy]) => [x, cy + sigma] as [number, number])).replace('M', 'L')
+            + ' Z'
+          : '';
+        const smoothPath = crPath(coords);
+        // Extract base color for band fill
+        const bandColor = lane.color.startsWith('rgba')
+          ? lane.color.replace(/[\d.]+\)$/, '0.10)')
+          : lane.color + '1a';
 
         return (
           <g key={lane.key}>
             <rect x={PAD_X} y={y} width={plotWidth} height={laneH} rx="12" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.05)" />
             {[0.25, 0.5, 0.75].map((fraction) => (
-              <line
-                key={fraction}
-                x1={PAD_X}
-                y1={y + laneH - fraction * laneH}
-                x2={PAD_X + plotWidth}
-                y2={y + laneH - fraction * laneH}
-                stroke="rgba(255,255,255,0.04)"
-                strokeWidth="1"
-              />
+              <line key={fraction} x1={PAD_X} y1={y + laneH - fraction * laneH}
+                x2={PAD_X + plotWidth} y2={y + laneH - fraction * laneH}
+                stroke="rgba(255,255,255,0.04)" strokeWidth="1" />
             ))}
-            {setpointY !== null ? (
+            {setpointY !== null && (
               <>
-                <rect x={PAD_X} y={setpointY - 6} width={plotWidth} height={12} fill="rgba(95,68,74,0.08)" />
-                <line x1={PAD_X} y1={setpointY} x2={PAD_X + plotWidth} y2={setpointY} stroke="rgba(95,68,74,0.45)" strokeDasharray="4 4" />
+                <rect x={PAD_X} y={setpointY - 6} width={plotWidth} height={12} fill="rgba(95,168,255,0.06)" />
+                <line x1={PAD_X} y1={setpointY} x2={PAD_X + plotWidth} y2={setpointY} stroke="rgba(95,168,255,0.4)" strokeDasharray="4 4" />
               </>
-            ) : null}
-            {toxicityY !== null ? (
+            )}
+            {toxicityY !== null && (
               <line x1={PAD_X} y1={toxicityY} x2={PAD_X + plotWidth} y2={toxicityY} stroke="rgba(255,49,49,0.35)" strokeDasharray="5 4" />
-            ) : null}
-            <polyline points={points} fill="none" stroke={lane.color} strokeWidth="2" />
+            )}
+            {/* Confidence band */}
+            {bandPath && <path d={bandPath} fill={bandColor} stroke="none" />}
+            {/* Smooth Catmull-Rom curve */}
+            <path d={smoothPath} fill="none" stroke={lane.color} strokeWidth="2" />
             <circle cx={markerX} cy={markerY} r="4" fill={lane.color} />
-            <text x="20" y={y + 14} fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.24)">
-              {lane.label}
-            </text>
+            <text x="20" y={y + 14} fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.24)">{lane.label}</text>
             <text x="20" y={y + 28} fontFamily={T.SANS} fontSize="10" fill="rgba(255,255,255,0.62)">
               {(lastValue ?? 0).toFixed(lane.key === 'fpp' ? 1 : 2)} {lane.unit}
             </text>
             <text x={PAD_X + plotWidth + 8} y={y + 14} fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.2)">
               {lane.max.toFixed(lane.key === 'fpp' ? 0 : 1)}
             </text>
-            <text x={PAD_X + plotWidth + 8} y={y + laneH} fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.16)">
-              0
-            </text>
+            <text x={PAD_X + plotWidth + 8} y={y + laneH} fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.16)">0</text>
           </g>
         );
       })}
@@ -188,13 +173,32 @@ function TimeSeriesSVG({ trajectory, setpoint, svgRef }: { trajectory: ODEState[
         const x = PAD_X + (tick / 100) * plotWidth;
         return (
           <g key={tick}>
-            <line x1={x} y1={plotTop + lanes.length * (laneH + laneGap) - laneGap} x2={x} y2={plotTop + lanes.length * (laneH + laneGap) - laneGap + 6} stroke="rgba(255,255,255,0.08)" />
-            <text x={x} y={plotTop + lanes.length * (laneH + laneGap) - laneGap + 18} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.22)">
+            <line x1={x} y1={plotTop + lanes.length * (laneH + laneGap) - laneGap}
+              x2={x} y2={plotTop + lanes.length * (laneH + laneGap) - laneGap + 6}
+              stroke="rgba(255,255,255,0.08)" />
+            <text x={x} y={plotTop + lanes.length * (laneH + laneGap) - laneGap + 18}
+              textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.22)">
               {tick}h
             </text>
           </g>
         );
       })}
+
+      {/* Phase portrait inset (P vs FPP) */}
+      <rect x={PP_X - 4} y={PP_Y - 12} width={PP_W + 8} height={PP_H + 22} rx="8"
+        fill="rgba(0,0,0,0.7)" stroke="rgba(255,255,255,0.08)" />
+      <text x={PP_X + PP_W / 2} y={PP_Y - 4} textAnchor="middle" fontFamily={T.MONO} fontSize="6" fill="rgba(255,255,255,0.3)">
+        PHASE PORTRAIT
+      </text>
+      <line x1={PP_X} y1={PP_Y} x2={PP_X} y2={PP_Y + PP_H} stroke="rgba(255,255,255,0.1)" />
+      <line x1={PP_X} y1={PP_Y + PP_H} x2={PP_X + PP_W} y2={PP_Y + PP_H} stroke="rgba(255,255,255,0.1)" />
+      <text x={PP_X - 2} y={PP_Y + PP_H + 8} textAnchor="middle" fontFamily={T.MONO} fontSize="5" fill="rgba(255,255,255,0.25)">P</text>
+      <text x={PP_X + PP_W} y={PP_Y + PP_H + 8} textAnchor="end" fontFamily={T.MONO} fontSize="5" fill="rgba(255,255,255,0.25)">→</text>
+      <text x={PP_X - 2} y={PP_Y} fontFamily={T.MONO} fontSize="5" fill="rgba(255,255,255,0.25)">R↑</text>
+      {ppPath && <path d={ppPath} fill="none" stroke="rgba(255,251,31,0.7)" strokeWidth="1.2" />}
+      {ppPts.length > 0 && (
+        <circle cx={ppPts[ppPts.length - 1][0]} cy={ppPts[ppPts.length - 1][1]} r="2.5" fill="#FFFB1F" />
+      )}
     </svg>
   );
 }

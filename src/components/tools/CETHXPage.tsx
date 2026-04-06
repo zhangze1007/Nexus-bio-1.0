@@ -17,6 +17,19 @@ import { buildCETHXSeed } from './shared/workbenchDataflow';
 
 // ── Breathing Waterfall Chart ──────────────────────────────────────────
 
+function catmullRomPath(pts: [number, number][]): string {
+  if (pts.length < 2) return '';
+  const p = [pts[0], ...pts, pts[pts.length - 1]];
+  let d = `M ${p[1][0].toFixed(1)} ${p[1][1].toFixed(1)}`;
+  for (let i = 1; i < p.length - 2; i++) {
+    const [x0, y0] = p[i - 1], [x1, y1] = p[i], [x2, y2] = p[i + 1], [x3, y3] = p[i + 2];
+    const cp1x = x1 + (x2 - x0) / 6, cp1y = y1 + (y2 - y0) / 6;
+    const cp2x = x2 - (x3 - x1) / 6, cp2y = y2 - (y3 - y1) / 6;
+    d += ` C ${cp1x.toFixed(1)} ${cp1y.toFixed(1)}, ${cp2x.toFixed(1)} ${cp2y.toFixed(1)}, ${x2.toFixed(1)} ${y2.toFixed(1)}`;
+  }
+  return d;
+}
+
 function BreathingWaterfall({ steps }: { steps: ReturnType<typeof computeThermo>['steps'] }) {
   const W = 520, H = 356, PAD = { top: 42, right: 26, bottom: 62, left: 58 };
   const innerW = W - PAD.left - PAD.right;
@@ -28,6 +41,12 @@ function BreathingWaterfall({ steps }: { steps: ReturnType<typeof computeThermo>
   function yPos(v: number) { return PAD.top + innerH - ((v - minG) / range) * innerH; }
   const barW = Math.max(18, innerW / steps.length - 10);
   const limitingStep = [...steps].sort((left, right) => right.deltaG - left.deltaG)[0];
+
+  // Energy landscape Catmull-Rom spline through cumulative ΔG points
+  const splinePts: [number, number][] = steps.map((s, i) => [
+    PAD.left + (i / steps.length) * innerW + barW / 2,
+    yPos(s.cumulative),
+  ]);
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
@@ -79,9 +98,10 @@ function BreathingWaterfall({ steps }: { steps: ReturnType<typeof computeThermo>
       {steps.map((step, i) => {
         const x = PAD.left + (i / steps.length) * innerW + 2;
         const isNeg = step.deltaG < 0;
+        const isInfeasible = step.deltaG > 0;
         const color = step.atpYield > 0
           ? PATHD_THEME.orange
-          : isNeg ? 'rgba(147,203,82,0.78)' : 'rgba(250,128,114,0.72)';
+          : isNeg ? 'rgba(147,203,82,0.78)' : '#E41A1C';
         const topY = Math.min(yPos(step.cumulative), yPos(step.cumulative - step.deltaG));
         const h = Math.abs(yPos(step.cumulative) - yPos(step.cumulative - step.deltaG));
         const cx = x + (barW - 4) / 2;
@@ -105,11 +125,23 @@ function BreathingWaterfall({ steps }: { steps: ReturnType<typeof computeThermo>
               height={h}
               rx={4}
               fill="none"
-              stroke={isLimiting ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.12)'}
+              stroke={isLimiting ? 'rgba(255,255,255,0.7)' : isInfeasible ? 'rgba(228,26,28,0.5)' : 'rgba(255,255,255,0.12)'}
               strokeWidth={isLimiting ? 1.4 : 0.8}
             />
             <circle cx={cx} cy={yPos(step.cumulative)} r={3.5} fill="rgba(247,249,255,0.95)" />
-            {step.atpYield > 0 && (
+            {isInfeasible && (
+              <text
+                x={cx}
+                y={topY - 5}
+                textAnchor="middle"
+                fontFamily={T.MONO}
+                fontSize="6"
+                fill="#E41A1C"
+              >
+                INFEASIBLE
+              </text>
+            )}
+            {step.atpYield > 0 && !isInfeasible && (
               <text
                 x={cx}
                 y={topY - 8}
@@ -146,6 +178,17 @@ function BreathingWaterfall({ steps }: { steps: ReturnType<typeof computeThermo>
           </g>
         );
       })}
+
+      {/* Energy landscape spline overlay */}
+      {splinePts.length > 1 && (
+        <path
+          d={catmullRomPath(splinePts)}
+          fill="none"
+          stroke="#FF7F00"
+          strokeWidth={2}
+          strokeOpacity={0.85}
+        />
+      )}
 
       {steps.map((step, i) => {
         const x = PAD.left + (i / steps.length) * innerW + barW / 2;
@@ -201,11 +244,14 @@ function BreathingWaterfall({ steps }: { steps: ReturnType<typeof computeThermo>
 
       {[
         { color: 'rgba(147,203,82,0.78)', label: 'Exergonic' },
-        { color: 'rgba(250,128,114,0.72)', label: 'Endergonic' },
+        { color: '#E41A1C', label: 'Infeasible (ΔG>0)' },
         { color: PATHD_THEME.orange, label: 'ATP-coupled' },
+        { color: '#FF7F00', label: 'Energy landscape', line: true },
       ].map((l, i) => (
-        <g key={l.label} transform={`translate(${PAD.left + i * 104},${PAD.top - 16})`}>
-          <rect width={10} height={8} rx={2} fill={l.color} opacity={0.78} />
+        <g key={l.label} transform={`translate(${PAD.left + i * 100},${PAD.top - 16})`}>
+          {l.line
+            ? <line x1={0} y1={4} x2={10} y2={4} stroke={l.color} strokeWidth={2} />
+            : <rect width={10} height={8} rx={2} fill={l.color} opacity={0.78} />}
           <text x={14} y={8} fontFamily={T.SANS} fontSize={8} fill="rgba(255,255,255,0.28)">{l.label}</text>
         </g>
       ))}
