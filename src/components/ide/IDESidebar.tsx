@@ -25,13 +25,14 @@ import { useUIStore } from '../../store/uiStore';
 import { TOOL_DEFINITIONS } from '../tools/shared/toolRegistry';
 import { CROSS_STAGE_TOOL_IDS, WORKBENCH_STAGES } from '../tools/shared/workbenchConfig';
 import { T } from '../ide/tokens';
+import { PATHD_THEME } from '../workbench/workbenchTheme';
 
 // ── Design tokens ──────────────────────────────────────────────────────
 const SANS  = T.SANS;
 const BRAND = T.BRAND;
-const BORDER = 'rgba(255,255,255,0.08)';
-const LABEL  = 'rgba(255,255,255,0.45)';
-const VALUE  = 'rgba(255,255,255,0.9)';
+const BORDER = PATHD_THEME.paperBorder;
+const LABEL  = PATHD_THEME.paperLabel;
+const VALUE  = PATHD_THEME.paperValue;
 
 /** Collapsed width — icon-only strip (80 px). */
 export const W_COLLAPSED = 80;
@@ -42,7 +43,7 @@ const Z_BACKDROP = 80;
 const Z_SIDEBAR  = 90;
 
 /** Height of IDETopBar defined in globals.css (.nb-ide-topbar). */
-const TOPBAR_H = 56;
+const TOPBAR_H = 60;
 
 /** Spring physics: stiffness 300 + damping 30 → fast yet organic. */
 const SPRING: { type: 'spring'; stiffness: number; damping: number } = {
@@ -87,7 +88,6 @@ export default function IDESidebar() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             onClick={toggle}
-            className="backdrop-blur-md bg-black/20"
             style={{
               position: 'fixed',
               top: TOPBAR_H,
@@ -95,6 +95,9 @@ export default function IDESidebar() {
               right: 0,
               bottom: 0,
               zIndex: Z_BACKDROP,
+              backdropFilter: 'blur(10px)',
+              WebkitBackdropFilter: 'blur(10px)',
+              background: 'rgba(32,37,43,0.12)',
               cursor: 'pointer',
             }}
             aria-hidden={true}
@@ -121,8 +124,9 @@ export default function IDESidebar() {
           zIndex: Z_SIDEBAR,
           display: 'flex',
           flexDirection: 'column',
-          background: '#050505',
-          borderRight: '1px solid #1f1f1f',
+          background: PATHD_THEME.paperSurfaceStrong,
+          borderRight: `1px solid ${BORDER}`,
+          boxShadow: '16px 0 40px rgba(32,37,43,0.06)',
           overflowY: 'auto',
           overflowX: 'hidden',
           scrollbarWidth: 'none',        /* Firefox */
@@ -168,17 +172,17 @@ export default function IDESidebar() {
                 height: 30,
                 borderRadius: 10,
                 background: collapsed
-                  ? 'rgba(255,255,255,0.05)'
-                  : 'rgba(255,255,255,0.06)',
+                  ? 'rgba(255,255,255,0.5)'
+                  : 'rgba(231,199,169,0.24)',
                 border: collapsed
-                  ? '1px solid rgba(255,255,255,0.08)'
-                  : '1px solid rgba(255,255,255,0.14)',
+                  ? `1px solid ${BORDER}`
+                  : '1px solid rgba(231,199,169,0.32)',
                 display: 'grid',
                 placeItems: 'center',
                 flexShrink: 0,
               }}
             >
-              <LayoutGrid size={14} style={{ color: 'rgba(255,255,255,0.75)' }} />
+              <LayoutGrid size={14} style={{ color: VALUE }} />
             </div>
 
             {/* Brand text — hidden when collapsed */}
@@ -214,7 +218,7 @@ export default function IDESidebar() {
                 key={stage.id}
                 style={{
                   padding: collapsed ? '10px 8px 0' : '12px 12px 0',
-                  borderTop: collapsed ? '1px solid rgba(255,255,255,0.06)' : 'none',
+                  borderTop: collapsed ? `1px solid ${BORDER}` : 'none',
                 }}
               >
                 {/* Direction label — hidden when collapsed */}
@@ -229,7 +233,7 @@ export default function IDESidebar() {
                     fontSize: 10,
                     textTransform: 'uppercase',
                     letterSpacing: '0.1em',
-                    color: 'rgba(255,255,255,0.2)',
+                    color: PATHD_THEME.paperMuted,
                     overflow: 'hidden',
                     pointerEvents: collapsed ? 'none' : 'auto',
                   }}
@@ -265,13 +269,13 @@ export default function IDESidebar() {
                           border: collapsed
                             ? 'none'
                             : isActive
-                              ? '1px solid rgba(255,139,31,0.20)'
-                              : '1px solid rgba(255,255,255,0.06)',
+                              ? '1px solid rgba(231,199,169,0.36)'
+                              : `1px solid ${BORDER}`,
                           background: collapsed
                             ? 'transparent'
                             : isActive
-                              ? 'rgba(255,139,31,0.06)'
-                              : 'rgba(255,255,255,0.03)',
+                              ? `${stage.accent}33`
+                              : 'rgba(255,255,255,0.45)',
                           minWidth: 0,
                           width: collapsed ? 30 : undefined,
                           height: collapsed ? 30 : undefined,
@@ -288,17 +292,17 @@ export default function IDESidebar() {
                             display: 'grid',
                             placeItems: 'center',
                             background: isActive
-                              ? 'rgba(255,139,31,0.12)'
-                              : 'rgba(255,255,255,0.05)',
+                              ? `${stage.accent}55`
+                              : 'rgba(255,255,255,0.58)',
                             border: isActive
-                              ? '1px solid rgba(255,139,31,0.25)'
+                              ? `1px solid ${stage.accent}`
                               : `1px solid ${BORDER}`,
                             flexShrink: 0,
                           }}
                         >
                           <Icon
                             size={14}
-                            style={{ color: isActive ? '#FF8B1F' : LABEL }}
+                            style={{ color: isActive ? VALUE : LABEL }}
                           />
                         </div>
 
@@ -323,7 +327,7 @@ export default function IDESidebar() {
                               fontFamily: SANS,
                               fontSize: 11,
                               fontWeight: 600,
-                              color: isActive ? '#ffffff' : 'rgba(255,255,255,0.55)',
+                              color: isActive ? VALUE : PATHD_THEME.paperLabel,
                               lineHeight: 1.25,
                               overflow: 'hidden',
                               textOverflow: 'ellipsis',
@@ -336,8 +340,8 @@ export default function IDESidebar() {
                               fontFamily: SANS,
                               fontSize: 10,
                               color: isActive
-                                ? 'rgba(255,255,255,0.5)'
-                                : 'rgba(255,255,255,0.2)',
+                                ? PATHD_THEME.paperMuted
+                                : 'rgba(78,85,95,0.48)',
                               lineHeight: 1.2,
                               overflow: 'hidden',
                               textOverflow: 'ellipsis',
@@ -357,7 +361,7 @@ export default function IDESidebar() {
           <section
             style={{
               padding: collapsed ? '10px 8px 0' : '12px 12px 0',
-              borderTop: collapsed ? '1px solid rgba(255,255,255,0.06)' : 'none',
+              borderTop: collapsed ? `1px solid ${BORDER}` : 'none',
             }}
           >
             <motion.p
@@ -371,7 +375,7 @@ export default function IDESidebar() {
                 fontSize: 10,
                 textTransform: 'uppercase',
                 letterSpacing: '0.1em',
-                color: 'rgba(255,255,255,0.2)',
+                color: PATHD_THEME.paperMuted,
                 overflow: 'hidden',
                 pointerEvents: collapsed ? 'none' : 'auto',
               }}
@@ -403,13 +407,13 @@ export default function IDESidebar() {
                       border: collapsed
                         ? 'none'
                         : isActive
-                          ? '1px solid rgba(255,139,31,0.20)'
-                          : '1px solid rgba(255,255,255,0.06)',
+                          ? '1px solid rgba(207,196,227,0.38)'
+                          : `1px solid ${BORDER}`,
                       background: collapsed
                         ? 'transparent'
                         : isActive
-                          ? 'rgba(255,139,31,0.06)'
-                          : 'rgba(255,255,255,0.03)',
+                          ? 'rgba(207,196,227,0.26)'
+                          : 'rgba(255,255,255,0.45)',
                       minWidth: 0,
                       width: collapsed ? 30 : undefined,
                       height: collapsed ? 30 : undefined,
@@ -425,15 +429,15 @@ export default function IDESidebar() {
                         display: 'grid',
                         placeItems: 'center',
                         background: isActive
-                          ? 'rgba(255,139,31,0.12)'
-                          : 'rgba(255,255,255,0.05)',
+                          ? 'rgba(207,196,227,0.4)'
+                          : 'rgba(255,255,255,0.58)',
                         border: isActive
-                          ? '1px solid rgba(255,139,31,0.25)'
+                          ? '1px solid rgba(207,196,227,0.5)'
                           : `1px solid ${BORDER}`,
                         flexShrink: 0,
                       }}
                     >
-                      <Icon size={14} style={{ color: isActive ? '#FF8B1F' : LABEL }} />
+                      <Icon size={14} style={{ color: isActive ? VALUE : LABEL }} />
                     </div>
 
                     <motion.div
@@ -453,7 +457,7 @@ export default function IDESidebar() {
                           fontFamily: SANS,
                           fontSize: 11,
                           fontWeight: 600,
-                          color: isActive ? '#ffffff' : 'rgba(255,255,255,0.55)',
+                          color: isActive ? VALUE : PATHD_THEME.paperLabel,
                           lineHeight: 1.25,
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
@@ -465,7 +469,7 @@ export default function IDESidebar() {
                         style={{
                           fontFamily: SANS,
                           fontSize: 10,
-                          color: isActive ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.2)',
+                          color: isActive ? PATHD_THEME.paperMuted : 'rgba(78,85,95,0.48)',
                           lineHeight: 1.2,
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',

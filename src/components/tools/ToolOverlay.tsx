@@ -100,11 +100,11 @@ function ParamSlider({ def, value, onChange, forceRef }: SliderProps) {
   return (
     <div style={{ marginBottom: '14px' }}>
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'5px' }}>
-        <span style={{ fontFamily: T.SANS, fontSize:'10px', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.08em', color:'rgba(255,255,255,0.35)' }}>
+        <span style={{ fontFamily: T.SANS, fontSize:'10px', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.08em', color:PATHD_THEME.paperLabel }}>
           {def.label}
         </span>
-        <span style={{ fontFamily: T.MONO, fontSize:'13px', fontWeight:600, color:'rgba(255,255,255,0.75)', textAlign:'right', minWidth:'72px' }}>
-          {value.toFixed(def.step < 1 ? 1 : 0)}<span style={{ fontSize:'9px', color:'rgba(255,255,255,0.28)', marginLeft:'2px' }}>{def.unit}</span>
+        <span style={{ fontFamily: T.MONO, fontSize:'13px', fontWeight:600, color:PATHD_THEME.paperValue, textAlign:'right', minWidth:'72px' }}>
+          {value.toFixed(def.step < 1 ? 1 : 0)}<span style={{ fontSize:'9px', color:PATHD_THEME.paperMuted, marginLeft:'2px' }}>{def.unit}</span>
         </span>
       </div>
 
@@ -129,14 +129,14 @@ function ParamSlider({ def, value, onChange, forceRef }: SliderProps) {
       <style>{`
         input[type=range]::-webkit-slider-thumb{
           -webkit-appearance:none; width:12px; height:12px;
-          border-radius:50%; background:rgba(255,255,255,0.85);
-          box-shadow:0 0 6px rgba(255,255,255,0.3);
+          border-radius:50%; background:${PATHD_THEME.paperElevated};
+          box-shadow:0 0 0 1px rgba(34,40,48,0.12), 0 0 8px rgba(175,195,214,0.24);
           border:none; cursor:pointer;
         }
         input[type=range]::-moz-range-thumb{
           width:12px; height:12px; border-radius:50%;
-          background:rgba(255,255,255,0.85); border:none; cursor:pointer;
-          box-shadow:0 0 6px rgba(255,255,255,0.3);
+          background:${PATHD_THEME.paperElevated}; border:none; cursor:pointer;
+          box-shadow:0 0 0 1px rgba(34,40,48,0.12), 0 0 8px rgba(175,195,214,0.24);
         }
       `}</style>
     </div>
@@ -155,15 +155,15 @@ function ActionBtn({ label, brightness = 0.7, onClick, disabled = false }: {
       disabled={disabled}
       style={{
         flex:1, padding:'8px 0', borderRadius:'8px', cursor: disabled ? 'not-allowed' : 'pointer',
-        background: `rgba(255,255,255,${disabled ? 0.03 : 0.05})`,
-        border: `0.5px solid rgba(255,255,255,${disabled ? 0.05 : alpha * 0.4})`,
-        color: `rgba(255,255,255,${alpha})`,
+        background: disabled ? 'rgba(255,255,255,0.34)' : 'rgba(255,255,255,0.58)',
+        border: `0.5px solid rgba(34,40,48,${disabled ? 0.05 : alpha * 0.24})`,
+        color: disabled ? PATHD_THEME.paperMuted : PATHD_THEME.paperValue,
         fontFamily: T.MONO, fontSize:'10px', fontWeight:600,
         textTransform:'uppercase', letterSpacing:'0.08em',
         transition:'all 0.15s',
       }}
-      onMouseEnter={e => { if (!disabled) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.09)'; }}
-      onMouseLeave={e => { if (!disabled) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.05)'; }}
+      onMouseEnter={e => { if (!disabled) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.78)'; }}
+      onMouseLeave={e => { if (!disabled) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.58)'; }}
     >
       {label}
     </button>
@@ -186,13 +186,13 @@ export default function ToolOverlay({
         position:'absolute', left:'20px', top:'50%',
         transform:'translateY(-50%)',
         width:'240px', zIndex:10,
-        background: PATHD_THEME.panelGlassStrong,
+        background: PATHD_THEME.paperSurfaceStrong,
         backdropFilter:'blur(28px)',
         WebkitBackdropFilter:'blur(28px)',
-        borderRadius:'18px',
-        border:`1px solid ${PATHD_THEME.panelBorder}`,
-        borderTop:`1px solid rgba(255,255,255,0.12)`,
-        boxShadow:'0 18px 42px rgba(0,0,0,0.26), inset 0 1px 0 rgba(255,255,255,0.05)',
+        borderRadius:'20px',
+        border:`1px solid ${PATHD_THEME.paperBorder}`,
+        borderTop:`1px solid rgba(255,255,255,0.5)`,
+        boxShadow:'0 18px 42px rgba(32,37,43,0.08), inset 0 1px 0 rgba(255,255,255,0.48)',
         padding:'18px 16px',
         userSelect:'none',
       }}
@@ -202,16 +202,16 @@ export default function ToolOverlay({
         style={{
           position: 'absolute',
           inset: 0,
-          borderRadius: '18px',
-          background: PATHD_THEME.panelSheen,
+          borderRadius: '20px',
+          background: 'linear-gradient(135deg, rgba(191,220,205,0.12) 0%, rgba(175,195,214,0.08) 55%, rgba(231,199,169,0.12) 100%)',
           pointerEvents: 'none',
         }}
       />
       {/* Header */}
       <div style={{ marginBottom:'16px', position:'relative', zIndex:1 }}>
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-          <span style={{ fontFamily: T.MONO, fontSize:'9px', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.12em', color:'rgba(255,255,255,0.25)' }}>
-            TOOL CABINET
+          <span style={{ fontFamily: T.MONO, fontSize:'9px', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.12em', color:PATHD_THEME.paperLabel }}>
+            Method Rail
           </span>
           {/* FSM state indicator */}
           <motion.div
@@ -221,22 +221,22 @@ export default function ToolOverlay({
             style={{
               display:'flex', alignItems:'center', gap:'5px',
               padding:'2px 8px', borderRadius:'100px',
-              background:'rgba(255,255,255,0.05)',
-              border:'0.5px solid rgba(255,255,255,0.12)',
+              background:'rgba(255,255,255,0.62)',
+              border:`0.5px solid ${PATHD_THEME.paperBorder}`,
             }}
           >
             <motion.div
               animate={{ opacity:[0.4, 1, 0.4] }}
               transition={{ duration:1.5, repeat:Infinity }}
-              style={{ width:'5px', height:'5px', borderRadius:'50%', background:PATHD_THEME.liveRed, boxShadow:'0 0 6px rgba(255,0,51,0.55)' }}
+              style={{ width:'5px', height:'5px', borderRadius:'50%', background:PATHD_THEME.liveRed, boxShadow:'0 0 6px rgba(232,163,161,0.48)' }}
             />
-            <span style={{ fontFamily: T.MONO, fontSize:'8px', fontWeight:600, color:'rgba(255,255,255,0.65)', letterSpacing:'0.1em' }}>
+            <span style={{ fontFamily: T.MONO, fontSize:'8px', fontWeight:600, color:PATHD_THEME.paperValue, letterSpacing:'0.1em' }}>
               {stateLabel}
             </span>
           </motion.div>
         </div>
-        <div style={{ marginTop:'8px', borderBottom:'0.5px solid rgba(255,255,255,0.06)', paddingBottom:'12px' }}>
-          <span style={{ fontFamily: T.SANS, fontSize:'12px', fontWeight:600, color:'rgba(255,255,255,0.6)' }}>
+        <div style={{ marginTop:'8px', borderBottom:`0.5px solid ${PATHD_THEME.paperBorder}`, paddingBottom:'12px' }}>
+          <span style={{ fontFamily: T.SANS, fontSize:'12px', fontWeight:600, color:PATHD_THEME.paperValue }}>
             Metabolic Parameters
           </span>
         </div>
@@ -256,7 +256,7 @@ export default function ToolOverlay({
       </div>
 
       {/* Divider */}
-      <div style={{ borderTop:'0.5px solid rgba(255,255,255,0.06)', margin:'12px 0' }} />
+      <div style={{ borderTop:`0.5px solid ${PATHD_THEME.paperBorder}`, margin:'12px 0' }} />
 
       {/* Action buttons */}
       <div style={{ display:'flex', gap:'6px', marginBottom:'8px' }}>
@@ -281,15 +281,15 @@ export default function ToolOverlay({
       </div>
 
       {/* Michaelis-Menten preview formula */}
-      <div style={{ marginTop:'14px', padding:'10px', borderRadius:'10px', background:'rgba(255,255,255,0.02)', border:'0.5px solid rgba(255,255,255,0.06)' }}>
-        <span style={{ fontFamily: T.MONO, fontSize:'9px', color:'rgba(255,255,255,0.22)', display:'block', marginBottom:'4px', textTransform:'uppercase', letterSpacing:'0.08em' }}>
+      <div style={{ marginTop:'14px', padding:'10px', borderRadius:'12px', background:'rgba(255,255,255,0.54)', border:`0.5px solid ${PATHD_THEME.paperBorder}` }}>
+        <span style={{ fontFamily: T.MONO, fontSize:'9px', color:PATHD_THEME.paperLabel, display:'block', marginBottom:'4px', textTransform:'uppercase', letterSpacing:'0.08em' }}>
           Kinetics Preview
         </span>
-        <span style={{ fontFamily: T.MONO, fontSize:'10px', color:'rgba(255,255,255,0.5)' }}>
+        <span style={{ fontFamily: T.MONO, fontSize:'10px', color:PATHD_THEME.paperValue }}>
           v = Vmax·[S] / (Km+[S])
         </span>
         <br />
-        <span style={{ fontFamily: T.MONO, fontSize:'10px', color:'rgba(255,255,255,0.28)' }}>
+        <span style={{ fontFamily: T.MONO, fontSize:'10px', color:PATHD_THEME.paperMuted }}>
           = {params.vmax.toFixed(1)} · {params.substrate} / ({params.km.toFixed(1)} + {params.substrate})
         </span>
       </div>

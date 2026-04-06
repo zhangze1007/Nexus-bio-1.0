@@ -7,8 +7,8 @@
  * module info bar + bento grid + optional footer.
  *
  * Design principles (Rauch × Victor):
- *   • Black canvas, no hard borders — separation via spacing and glass
- *   • Neon-green (#39FF14) for active/focus states
+ *   • Paper substrate with scientific framing
+ *   • Palette accents are coral / apricot / mint / sky / lilac
  *   • Immediate feedback — every parameter change is visible instantly
  *   • Progressive disclosure via collapsible ModuleCards
  *
@@ -34,8 +34,6 @@ import { useNavigation } from '../../../contexts/NavigationContext';
 import { T } from '../../ide/tokens';
 import WorkbenchInlineContext from '../../workbench/WorkbenchInlineContext';
 import { PATHD_THEME } from '../../workbench/workbenchTheme';
-
-const NEON_ACCENT = '#FF8B1F';
 
 export interface ToolShellProps {
   moduleId: string;
@@ -75,7 +73,7 @@ export default function ToolShell({
     <div className="nb-tool-shell" style={{
       position: 'relative',
       display: 'flex', flexDirection: 'column',
-      background: '#000000',
+      background: `linear-gradient(180deg, ${PATHD_THEME.paperElevated} 0%, ${PATHD_THEME.paperWarm} 100%)`,
       fontFamily: T.SANS,
       flex: 1,
       minHeight: '100%',
@@ -87,14 +85,14 @@ export default function ToolShell({
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
         style={{
-          padding: '8px 16px',
+          padding: '10px 20px',
           display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap',
           flexShrink: 0,
-          borderBottom: `1px solid ${PATHD_THEME.panelBorder}`,
-          background: PATHD_THEME.panelGlassStrong,
+          borderBottom: `1px solid ${PATHD_THEME.paperBorder}`,
+          background: PATHD_THEME.paperSurfaceStrong,
           backdropFilter: 'blur(18px)',
           WebkitBackdropFilter: 'blur(18px)',
-          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
+          boxShadow: '0 10px 30px rgba(32,37,43,0.05), inset 0 1px 0 rgba(255,255,255,0.5)',
         }}
       >
         <button
@@ -107,9 +105,9 @@ export default function ToolShell({
             minHeight: '30px',
             padding: '0 8px',
             borderRadius: '10px',
-            border: `1px solid ${PATHD_THEME.panelBorder}`,
-            background: PATHD_THEME.chipNeutral,
-            color: PATHD_THEME.label,
+            border: `1px solid ${PATHD_THEME.paperBorder}`,
+            background: PATHD_THEME.paperSurface,
+            color: PATHD_THEME.paperLabel,
             cursor: 'pointer',
             fontFamily: T.SANS,
             fontSize: '10px',
@@ -128,9 +126,9 @@ export default function ToolShell({
             minHeight: '30px',
             padding: '0 10px',
             borderRadius: '10px',
-            border: `1px solid ${PATHD_THEME.panelBorder}`,
-            background: PATHD_THEME.chipNeutral,
-            color: PATHD_THEME.orange,
+            border: `1px solid ${PATHD_THEME.paperBorder}`,
+            background: 'rgba(231, 199, 169, 0.24)',
+            color: PATHD_THEME.paperValue,
             fontFamily: T.MONO,
             fontSize: '10px',
             fontWeight: 700,
@@ -144,7 +142,7 @@ export default function ToolShell({
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{
             fontFamily: T.SANS, fontSize: '13px', fontWeight: 700,
-            color: PATHD_THEME.value,
+            color: PATHD_THEME.paperValue,
             letterSpacing: '-0.01em',
           }}>
             {tool?.name ?? title}
@@ -152,7 +150,7 @@ export default function ToolShell({
           {description && (
             <div style={{
               fontFamily: T.SANS, fontSize: '11px',
-              color: PATHD_THEME.label,
+              color: PATHD_THEME.paperLabel,
               marginTop: '2px',
             }}>
               {description}
@@ -163,10 +161,10 @@ export default function ToolShell({
         {formula && (
           <div style={{
             fontFamily: T.MONO, fontSize: '10px',
-            color: PATHD_THEME.label,
+            color: PATHD_THEME.paperValue,
           padding: '6px 10px',
-            background: 'rgba(255,255,255,0.045)',
-            border: `1px solid ${PATHD_THEME.panelBorder}`,
+            background: 'rgba(191, 220, 205, 0.22)',
+            border: `1px solid ${PATHD_THEME.paperBorder}`,
             borderRadius: '10px',
           }}>
             {formula}
@@ -176,10 +174,10 @@ export default function ToolShell({
 
       {/* ── BentoGrid ──────────────────────────────────────── */}
       <div className="nb-tool-shell__body" style={{
-        flex: 1, minHeight: 0, padding: `${gap}px`,
+        flex: 1, minHeight: 0, padding: `${Math.max(gap, 10)}px 14px 16px`,
         display: 'flex',
         flexDirection: 'column',
-        gap: `${gap}px`,
+        gap: `${Math.max(gap, 10)}px`,
       }}>
         {workbenchSummary && (
           <WorkbenchInlineContext
@@ -200,7 +198,7 @@ export default function ToolShell({
             gridTemplateAreas: grid,
             gridTemplateColumns: columns ?? '1fr',
             gridTemplateRows: rows ?? '1fr',
-            gap: `${gap}px`,
+            gap: `${Math.max(gap, 10)}px`,
           }}
         >
           {children}
@@ -210,10 +208,10 @@ export default function ToolShell({
       {/* ── Footer ─────────────────────────────────────────── */}
         {footer && (
         <div className="nb-tool-shell__footer" style={{
-          padding: '6px 16px',
+          padding: '10px 20px',
           display: 'flex', gap: '8px', flexShrink: 0,
-          borderTop: `1px solid ${PATHD_THEME.panelBorder}`,
-          background: PATHD_THEME.panelGlassStrong,
+          borderTop: `1px solid ${PATHD_THEME.paperBorder}`,
+          background: PATHD_THEME.paperSurfaceStrong,
           backdropFilter: 'blur(16px)',
           WebkitBackdropFilter: 'blur(16px)',
         }}>
@@ -227,18 +225,23 @@ export default function ToolShell({
 // ── Re-export design tokens for consumers ──────────────────────────────
 
 export const TOOL_TOKENS = {
-  MONO: "'JetBrains Mono','Fira Code',monospace" as const,
-  SANS: "'Inter',-apple-system,sans-serif" as const,
-  NEON: '#FF8B1F',
-  NEON_BLUE: '#4A7CFF',
-  NEON_ORANGE: '#FF8B1F',
-  NEON_SUCCESS: '#39FF14',
-  NEON_DANGER: '#FF3131',
-  BG: '#000',
-  CARD_BG: 'rgba(255,255,255,0.05)',
-  BORDER: 'rgba(255,255,255,0.06)',
-  LABEL: 'rgba(255,255,255,0.3)',
-  VALUE: 'rgba(255,255,255,0.75)',
-  DIM: 'rgba(255,255,255,0.18)',
-  INPUT_BG: 'rgba(255,255,255,0.05)',
+  MONO: "'IBM Plex Mono','JetBrains Mono','Fira Code',monospace" as const,
+  SANS: "'Public Sans',-apple-system,sans-serif" as const,
+  NEON: PATHD_THEME.apricot,
+  NEON_BLUE: PATHD_THEME.sky,
+  NEON_ORANGE: PATHD_THEME.apricot,
+  NEON_SUCCESS: PATHD_THEME.mint,
+  NEON_DANGER: PATHD_THEME.coral,
+  CORAL: PATHD_THEME.coral,
+  APRICOT: PATHD_THEME.apricot,
+  MINT: PATHD_THEME.mint,
+  SKY: PATHD_THEME.sky,
+  LILAC: PATHD_THEME.lilac,
+  BG: PATHD_THEME.paperWarm,
+  CARD_BG: PATHD_THEME.panelGlass,
+  BORDER: PATHD_THEME.paperBorder,
+  LABEL: PATHD_THEME.paperLabel,
+  VALUE: PATHD_THEME.paperValue,
+  DIM: PATHD_THEME.paperMuted,
+  INPUT_BG: PATHD_THEME.paperSurface,
 } as const;

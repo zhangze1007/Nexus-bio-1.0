@@ -4,70 +4,68 @@
 @tailwind utilities;
 
 /* ═══════════════════════════════════════════════════════════════
-   NEXUS-BIO — SILICON B&W DESIGN TOKENS
-   Strict palette: #000000 / #0A0A0A / #FFFFFF
-   Two fonts: Inter Bold 700 (headers) + JetBrains Mono (data)
-   Exception: 'Space Grotesk' brand name on hero only
+   NEXUS-BIO — SCIENTIFIC WORKBENCH TOKENS
+   Palette: coral / apricot / mint / sky / lilac + paper neutrals
    ═══════════════════════════════════════════════════════════════ */
 
 :root {
   /* ── Background ── */
-  --bg-base:           #000000;
-  --bg-surface:        #0A0A0A;
-  --bg-elevated:       #111111;
-  --bg-overlay:        #181818;
+  --bg-base:           #f4efe8;
+  --bg-surface:        #fbf8f4;
+  --bg-elevated:       #f0eae2;
+  --bg-overlay:        #e8e0d6;
 
-  --bg-base-rgb:       0 0 0;
-  --bg-surface-rgb:    10 10 10;
-  --bg-elevated-rgb:   17 17 17;
+  --bg-base-rgb:       244 239 232;
+  --bg-surface-rgb:    251 248 244;
+  --bg-elevated-rgb:   240 234 226;
 
   /* ── Text ── */
-  --text-primary:      #FFFFFF;
-  --text-secondary:    rgba(255,255,255,0.55);
-  --text-muted:        rgba(255,255,255,0.28);
-  --text-faint:        rgba(255,255,255,0.12);
+  --text-primary:      #20252b;
+  --text-secondary:    rgba(78,85,95,0.78);
+  --text-muted:        rgba(78,85,95,0.56);
+  --text-faint:        rgba(78,85,95,0.22);
 
   /* ── Borders ── */
-  --border:            rgba(255,255,255,0.1);
-  --border-hover:      rgba(255,255,255,0.22);
-  --border-active:     rgba(255,255,255,0.35);
+  --border:            rgba(34,40,48,0.10);
+  --border-hover:      rgba(34,40,48,0.18);
+  --border-active:     rgba(34,40,48,0.26);
 
   /* ── Typography ── */
-  --font-header: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-mono:   'JetBrains Mono', 'Fira Code', 'SFMono-Regular', ui-monospace, monospace;
+  --font-header: 'Public Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono:   'IBM Plex Mono', 'JetBrains Mono', 'Fira Code', 'SFMono-Regular', ui-monospace, monospace;
   --font-brand:  'Space Grotesk', -apple-system, sans-serif;
-  --font-serif:  'Inter', -apple-system, sans-serif;
-  --font-sans:   'Inter', -apple-system, sans-serif;
+  --font-serif:  'Source Serif 4', Georgia, serif;
+  --font-sans:   'Public Sans', -apple-system, sans-serif;
 
-  /* ── Accent gradient — Blue→Orange ── */
-  --accent-gradient: linear-gradient(90deg, #4A7CFF, #FF8B1F);
-  --accent-blue:     #4A7CFF;
-  --accent-orange:   #FF8B1F;
+  /* ── Accent gradient ── */
+  --accent-gradient: linear-gradient(90deg, #BFDCCD, #AFC3D6 40%, #CFC4E3 72%, #E8A3A1);
+  --accent-blue:     #AFC3D6;
+  --accent-orange:   #E7C7A9;
 
-  /* ── Semantic neon colors ── */
-  --neon-success:    #39FF14;
-  --neon-danger:     #FF3131;
+  /* ── Semantic palette ── */
+  --neon-success:    #BFDCCD;
+  --neon-danger:     #E8A3A1;
 
   /* ── Legacy compat ── */
-  --accent-primary:        #FFFFFF;
-  --accent-secondary:      rgba(255,255,255,0.55);
-  --accent-primary-rgb:    255 255 255;
-  --accent-secondary-rgb:  200 200 200;
-  --white:                 #FFFFFF;
+  --accent-primary:        #20252b;
+  --accent-secondary:      rgba(78,85,95,0.68);
+  --accent-primary-rgb:    32 37 43;
+  --accent-secondary-rgb:  78 85 95;
+  --white:                 #FBF8F4;
 
   /* Color names — mapped to accent palette */
-  --cyan:          #4A7CFF;
-  --cyan-dim:      rgba(74,124,255,0.06);
-  --cyan-glow:     rgba(74,124,255,0.12);
-  --magenta:       #FF8B1F;
-  --magenta-dim:   rgba(255,139,31,0.05);
-  --amber:         #FF8B1F;
-  --amber-dim:     rgba(255,139,31,0.05);
-  --amber-glow:    rgba(255,139,31,0.10);
-  --emerald:       #39FF14;
-  --emerald-dim:   rgba(57,255,20,0.05);
-  --risk-red:      #FF3131;
-  --risk-red-dim:  rgba(255,49,49,0.04);
+  --cyan:          #AFC3D6;
+  --cyan-dim:      rgba(175,195,214,0.10);
+  --cyan-glow:     rgba(175,195,214,0.16);
+  --magenta:       #CFC4E3;
+  --magenta-dim:   rgba(207,196,227,0.10);
+  --amber:         #E7C7A9;
+  --amber-dim:     rgba(231,199,169,0.10);
+  --amber-glow:    rgba(231,199,169,0.16);
+  --emerald:       #BFDCCD;
+  --emerald-dim:   rgba(191,220,205,0.10);
+  --risk-red:      #E8A3A1;
+  --risk-red-dim:  rgba(232,163,161,0.10);
 }
 
 /* ── Base reset ── */
@@ -94,7 +92,7 @@ body::before {
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  opacity: 0.01;
+  opacity: 0.015;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   background-size: 256px 256px;
 }
@@ -110,20 +108,20 @@ body::before {
 @layer components {
   .glass-panel {
     @apply backdrop-blur-xl;
-    border: 0.5px solid rgba(255,255,255,0.08);
-    background: rgba(10,10,10,0.82);
+    border: 0.5px solid rgba(34,40,48,0.08);
+    background: rgba(251,248,244,0.82);
     box-shadow:
-      inset 0 1px 0 rgba(255,255,255,0.04),
-      0 24px 64px rgba(0,0,0,0.7);
+      inset 0 1px 0 rgba(255,255,255,0.5),
+      0 18px 48px rgba(32,37,43,0.08);
   }
 
   .glass-panel-cyber {
     @apply backdrop-blur-xl;
-    border: 0.5px solid rgba(255,255,255,0.08);
-    background: rgba(10,10,10,0.85);
+    border: 0.5px solid rgba(34,40,48,0.08);
+    background: rgba(248,243,237,0.88);
     box-shadow:
-      inset 0 1px 0 rgba(255,255,255,0.04),
-      0 24px 64px rgba(0,0,0,0.7);
+      inset 0 1px 0 rgba(255,255,255,0.5),
+      0 18px 48px rgba(32,37,43,0.08);
   }
 
   /* Audit badge — monochrome */
@@ -138,21 +136,21 @@ body::before {
     font-weight: 500;
     letter-spacing: 0.05em;
     text-transform: uppercase;
-    background: rgba(255,255,255,0.05);
-    border: 0.5px solid rgba(255,255,255,0.15);
-    color: rgba(255,255,255,0.58);
+    background: rgba(255,255,255,0.5);
+    border: 0.5px solid rgba(34,40,48,0.14);
+    color: rgba(78,85,95,0.76);
     cursor: pointer;
     transition: all 0.2s;
   }
 
   .audit-badge:hover {
-    background: rgba(255,255,255,0.09);
-    border-color: rgba(255,255,255,0.28);
-    color: rgba(255,255,255,0.85);
+    background: rgba(255,255,255,0.72);
+    border-color: rgba(34,40,48,0.24);
+    color: rgba(32,37,43,0.92);
   }
 
-  .audit-badge-amber { color: rgba(255,255,255,0.65); }
-  .audit-badge-risk  { color: rgba(255,255,255,0.45); }
+  .audit-badge-amber { color: rgba(136,111,82,0.82); }
+  .audit-badge-risk  { color: rgba(152,92,89,0.82); }
 
   .data-cell {
     font-family: var(--font-mono);
@@ -191,14 +189,14 @@ h1, h2, h3, h4 {
 /* ── Scrollbar ── */
 ::-webkit-scrollbar { width: 3px; height: 3px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.22); }
+::-webkit-scrollbar-thumb { background: rgba(34,40,48,0.12); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(34,40,48,0.24); }
 
 /* ── Selection ── */
-::selection { background: rgba(255,255,255,0.14); color: #FFFFFF; }
+::selection { background: rgba(175,195,214,0.3); color: #20252b; }
 
 /* ── Focus ring ── */
-*:focus-visible { outline: 1px solid rgba(255,255,255,0.38); outline-offset: 2px; }
+*:focus-visible { outline: 1px solid rgba(175,195,214,0.56); outline-offset: 2px; }
 
 /* ── Surface cards ── */
 .surface          { background: var(--bg-surface);  border: 0.5px solid var(--border); }
@@ -207,19 +205,19 @@ h1, h2, h3, h4 {
 
 /* ── Glow-pulse (orange accent) ── */
 @keyframes glow-pulse {
-  0%, 100% { box-shadow: 0 0 6px rgba(255,139,31,0.15); }
-  50%       { box-shadow: 0 0 14px rgba(255,139,31,0.35); }
+  0%, 100% { box-shadow: 0 0 6px rgba(175,195,214,0.18); }
+  50%       { box-shadow: 0 0 14px rgba(207,196,227,0.24); }
 }
 .glow-pulse { animation: glow-pulse 2.5s ease-in-out infinite; }
 
 /* ── LIVE signal breathing animation (orange) ── */
 @keyframes signal-breathe {
   0%, 100% {
-    box-shadow: 0 0 4px rgba(255,139,31,0.4), 0 0 8px rgba(255,139,31,0.2);
+    box-shadow: 0 0 4px rgba(232,163,161,0.35), 0 0 8px rgba(232,163,161,0.18);
     opacity: 1;
   }
   50% {
-    box-shadow: 0 0 8px rgba(255,139,31,0.7), 0 0 16px rgba(255,139,31,0.35);
+    box-shadow: 0 0 8px rgba(232,163,161,0.55), 0 0 16px rgba(232,163,161,0.26);
     opacity: 0.7;
   }
 }
@@ -240,7 +238,7 @@ h1, h2, h3, h4 {
 .nb-progress-track {
   height: 4px;
   border-radius: 2px;
-  background: rgba(255,255,255,0.06);
+  background: rgba(34,40,48,0.08);
   overflow: hidden;
   position: relative;
 }
@@ -248,8 +246,8 @@ h1, h2, h3, h4 {
 .nb-progress-fill {
   height: 100%;
   border-radius: 2px;
-  background: linear-gradient(90deg, #4A7CFF, #FF8B1F);
-  box-shadow: 0 0 10px rgba(74,124,255,0.4), 0 0 10px rgba(255,139,31,0.4), 0 0 20px rgba(255,139,31,0.15);
+  background: linear-gradient(90deg, #BFDCCD, #AFC3D6 40%, #CFC4E3 72%, #E8A3A1);
+  box-shadow: 0 0 10px rgba(175,195,214,0.28), 0 0 10px rgba(207,196,227,0.2), 0 0 20px rgba(232,163,161,0.14);
   transition: width 0.4s ease;
   position: relative;
   overflow: hidden;

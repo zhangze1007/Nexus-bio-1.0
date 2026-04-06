@@ -3,9 +3,9 @@
 
 /* ── Global typographic reset ── */
 :root {
-  --font-serif: 'Inter', -apple-system, sans-serif;
-  --font-sans:  'Inter', -apple-system, sans-serif;
-  --font-mono:  'JetBrains Mono', 'Fira Code', 'Fira Mono', monospace;
+  --font-serif: 'Source Serif 4', Georgia, serif;
+  --font-sans:  'Public Sans', -apple-system, sans-serif;
+  --font-mono:  'IBM Plex Mono', 'JetBrains Mono', 'Fira Code', monospace;
 
   /* Typographic scale */
   --text-xs:   0.6875rem;
@@ -24,22 +24,27 @@
   --space-8: 32px; --space-10: 40px; --space-12: 48px;
   --space-16: 64px; --space-20: 80px; --space-24: 96px;
 
-  /* Color tokens — neon dark workbench */
-  --color-bg:        #000000;
-  --color-surface:   #050505;
-  --color-surface-2: #0A0A0A;
-  --color-border:    rgba(255,255,255,0.10);
-  --color-border-2:  #1f1f1f;
-  --color-text-1:    rgba(255,255,255,0.95);
-  --color-text-2:    rgba(255,255,255,0.65);
-  --color-text-3:    rgba(255,255,255,0.4);
-  --color-text-4:    rgba(255,255,255,0.18);
-  --color-accent:    rgba(255,255,255,0.78);
+  /* Scientific workbench palette */
+  --color-bg:        #f4efe8;
+  --color-surface:   #fbf8f4;
+  --color-surface-2: #f0eae2;
+  --color-border:    rgba(34,40,48,0.10);
+  --color-border-2:  rgba(34,40,48,0.18);
+  --color-text-1:    #20252b;
+  --color-text-2:    rgba(78,85,95,0.78);
+  --color-text-3:    rgba(78,85,95,0.56);
+  --color-text-4:    rgba(78,85,95,0.32);
+  --color-accent:    #20252b;
 
-  /* Accent gradient — Blue→Orange */
-  --accent-gradient: linear-gradient(90deg, #4A7CFF, #FF8B1F);
-  --neon-success:    #39FF14;
-  --neon-danger:     #FF3131;
+  --color-coral:     #e8a3a1;
+  --color-apricot:   #e7c7a9;
+  --color-mint:      #bfdccd;
+  --color-sky:       #afc3d6;
+  --color-lilac:     #cfc4e3;
+
+  --accent-gradient: linear-gradient(90deg, #bfdccd, #afc3d6 40%, #cfc4e3 72%, #e8a3a1);
+  --neon-success:    #bfdccd;
+  --neon-danger:     #e8a3a1;
 }
 
 .serif { font-family: var(--font-sans); font-weight: 700; }
@@ -61,22 +66,25 @@
 .nb-ide-shell {
   position: fixed;
   inset: 0;
-  background: #000000;
+  background:
+    radial-gradient(circle at top left, rgba(191,220,205,0.16), transparent 32%),
+    radial-gradient(circle at top right, rgba(207,196,227,0.16), transparent 28%),
+    linear-gradient(180deg, #f7f2ec 0%, #efe8de 100%);
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
 
 .nb-ide-topbar {
-  height: 56px;
+  height: 60px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   padding: 0 16px;
-  background: rgba(0,0,0,0.8);
-  border-bottom: 1px solid #1a1a1a;
-  backdrop-filter: blur(10px);
+  background: rgba(251,248,244,0.84);
+  border-bottom: 1px solid rgba(34,40,48,0.08);
+  backdrop-filter: blur(18px);
   /* Topbar sits above the fixed sidebar panel */
   position: relative;
   z-index: 100;
@@ -95,7 +103,8 @@
   flex: 1;
   position: relative;
   overflow: auto;
-  background: #000000;
+  background:
+    linear-gradient(180deg, rgba(251,248,244,0.78) 0%, rgba(240,234,226,0.88) 100%);
   z-index: 10;
   min-height: 0;
 }
@@ -164,7 +173,7 @@
 .nb-directory-layout input:focus-visible,
 .nb-directory-layout select:focus-visible,
 .nb-tool-shell a:focus-visible {
-  outline: 2px solid rgba(255,255,255,0.38);
+  outline: 2px solid rgba(175,195,214,0.52);
   outline-offset: 2px;
 }
 

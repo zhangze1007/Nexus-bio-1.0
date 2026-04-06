@@ -15,9 +15,11 @@ import WorkbenchRunCompare from './WorkbenchRunCompare';
 import { getFreshnessMap } from './workbenchTrust';
 import { PATHD_THEME } from './workbenchTheme';
 
-const BORDER = PATHD_THEME.panelBorder;
-const LABEL = PATHD_THEME.label;
-const VALUE = PATHD_THEME.value;
+const BORDER = PATHD_THEME.paperBorder;
+const LABEL = PATHD_THEME.paperLabel;
+const VALUE = PATHD_THEME.paperValue;
+const SURFACE = 'rgba(255,255,255,0.66)';
+const SURFACE_SOFT = 'rgba(255,255,255,0.56)';
 
 export default function WorkbenchDirectoryPage() {
   const project = useWorkbenchStore((s) => s.project);
@@ -37,17 +39,26 @@ export default function WorkbenchDirectoryPage() {
   );
 
   return (
-    <div style={{ position: 'relative', minHeight: '100%', background: '#05070b', color: VALUE, flex: 1 }}>
+    <div
+      style={{
+        position: 'relative',
+        minHeight: '100%',
+        background: 'linear-gradient(180deg, #f7f2ec 0%, #efe7dc 100%)',
+        color: VALUE,
+        flex: 1,
+      }}
+    >
       <main style={{ padding: '32px 18px 40px' }}>
         <div style={{ maxWidth: '1440px', margin: '0 auto', display: 'grid', gap: '20px' }}>
           <section
             style={{
               borderRadius: '28px',
               border: `1px solid ${BORDER}`,
-              background: PATHD_THEME.panelGradient,
+              background: `linear-gradient(180deg, ${PATHD_THEME.paperSurfaceStrong} 0%, ${PATHD_THEME.paperWarm} 100%)`,
               padding: '24px',
               display: 'grid',
               gap: '16px',
+              boxShadow: '0 18px 44px rgba(41,46,53,0.06)',
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
@@ -75,7 +86,7 @@ export default function WorkbenchDirectoryPage() {
                     gap: '7px',
                     textDecoration: 'none',
                     border: `1px solid ${BORDER}`,
-                    background: PATHD_THEME.chipNeutral,
+                    background: SURFACE_SOFT,
                     color: VALUE,
                     fontFamily: T.SANS,
                     fontSize: '13px',
@@ -96,7 +107,7 @@ export default function WorkbenchDirectoryPage() {
                     gap: '7px',
                     textDecoration: 'none',
                     border: `1px solid ${BORDER}`,
-                    background: PATHD_THEME.chipNeutral,
+                    background: SURFACE_SOFT,
                     color: VALUE,
                     fontFamily: T.SANS,
                     fontSize: '13px',
@@ -166,7 +177,7 @@ export default function WorkbenchDirectoryPage() {
                   style={{
                     borderRadius: '18px',
                     border: `1px solid ${BORDER}`,
-                    background: PATHD_THEME.panelGradientSoft,
+                    background: SURFACE,
                     padding: '14px 16px',
                     display: 'grid',
                     gap: '6px',
@@ -193,10 +204,11 @@ export default function WorkbenchDirectoryPage() {
                 style={{
                   borderRadius: '24px',
                   border: `1px solid ${BORDER}`,
-                  background: `linear-gradient(135deg, rgba(74,124,255,0.08) 0%, ${stage.accent}10 42%, rgba(255,139,31,0.06) 100%)`,
+                  background: `linear-gradient(135deg, rgba(255,255,255,0.76) 0%, ${stage.accent}24 56%, rgba(255,255,255,0.62) 100%)`,
                   padding: '18px',
                   display: 'grid',
                   gap: '14px',
+                  boxShadow: '0 16px 34px rgba(41,46,53,0.05)',
                 }}
               >
                 <div style={{ display: 'grid', gap: '6px' }}>
@@ -205,8 +217,8 @@ export default function WorkbenchDirectoryPage() {
                       style={{
                         padding: '4px 9px',
                         borderRadius: '999px',
-                        border: `1px solid ${PATHD_THEME.chipBorder}`,
-                        background: PATHD_THEME.chipCool,
+                        border: `1px solid ${stage.accent}66`,
+                        background: `${stage.accent}33`,
                         color: VALUE,
                         fontFamily: T.MONO,
                         fontSize: '10px',
@@ -224,7 +236,7 @@ export default function WorkbenchDirectoryPage() {
                         padding: '4px 9px',
                         borderRadius: '999px',
                         border: `1px solid ${BORDER}`,
-                        background: PATHD_THEME.chipNeutral,
+                        background: SURFACE_SOFT,
                         color: LABEL,
                         fontFamily: T.MONO,
                         fontSize: '10px',
@@ -239,7 +251,7 @@ export default function WorkbenchDirectoryPage() {
                         padding: '4px 9px',
                         borderRadius: '999px',
                         border: `1px solid ${BORDER}`,
-                        background: PATHD_THEME.chipNeutral,
+                        background: SURFACE_SOFT,
                         color: LABEL,
                         fontFamily: T.MONO,
                         fontSize: '10px',
@@ -270,8 +282,8 @@ export default function WorkbenchDirectoryPage() {
                           gap: '6px',
                           textDecoration: 'none',
                           border: `1px solid ${BORDER}`,
-                          background: PATHD_THEME.chipNeutral,
-                          color: 'rgba(255,255,255,0.78)',
+                          background: SURFACE_SOFT,
+                          color: VALUE,
                           fontFamily: T.SANS,
                           fontSize: '12px',
                         }}
@@ -300,7 +312,7 @@ export default function WorkbenchDirectoryPage() {
                         style={{
                           borderRadius: '18px',
                           border: `1px solid ${BORDER}`,
-                          background: PATHD_THEME.panelGradientSoft,
+                          background: SURFACE,
                           padding: '14px 15px',
                           display: 'grid',
                           gap: '8px',
@@ -325,16 +337,16 @@ export default function WorkbenchDirectoryPage() {
                                 }`,
                                 background:
                                   freshnessByTool[tool.id]?.status === 'fresh'
-                                    ? PATHD_THEME.chipCool
+                                    ? `${PATHD_THEME.mint}33`
                                     : freshnessByTool[tool.id]?.status === 'stale'
-                                      ? PATHD_THEME.chipWarm
-                                      : PATHD_THEME.chipNeutral,
+                                      ? `${PATHD_THEME.coral}22`
+                                      : SURFACE_SOFT,
                                 color:
                                   freshnessByTool[tool.id]?.status === 'fresh'
-                                    ? PATHD_THEME.chipText
+                                    ? VALUE
                                     : freshnessByTool[tool.id]?.status === 'stale'
-                                      ? 'rgba(255,228,194,0.94)'
-                                      : 'rgba(255,255,255,0.62)',
+                                      ? VALUE
+                                      : LABEL,
                                 fontFamily: T.MONO,
                                 fontSize: '10px',
                                 textTransform: 'uppercase',
@@ -342,7 +354,7 @@ export default function WorkbenchDirectoryPage() {
                             >
                               {freshnessByTool[tool.id]?.status ?? 'not-run'}
                             </span>
-                            <ArrowUpRight size={13} color="rgba(255,255,255,0.5)" />
+                            <ArrowUpRight size={13} color={LABEL} />
                           </div>
                         </div>
                         <div style={{ fontFamily: T.SANS, fontSize: '14px', fontWeight: 700, color: VALUE }}>
@@ -369,14 +381,14 @@ export default function WorkbenchDirectoryPage() {
             style={{
               borderRadius: '24px',
               border: `1px solid ${BORDER}`,
-              background: PATHD_THEME.panelGradientSoft,
+              background: SURFACE,
               padding: '18px',
               display: 'grid',
               gap: '12px',
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Layers3 size={16} color="rgba(255,255,255,0.7)" />
+              <Layers3 size={16} color={LABEL} />
               <div style={{ fontFamily: T.SANS, fontSize: '18px', fontWeight: 700, color: VALUE }}>
                 Cross-stage intelligence
               </div>
@@ -395,7 +407,7 @@ export default function WorkbenchDirectoryPage() {
                     style={{
                       borderRadius: '18px',
                       border: `1px solid ${BORDER}`,
-                      background: PATHD_THEME.panelGradientSoft,
+                      background: SURFACE_SOFT,
                       padding: '14px 15px',
                       display: 'grid',
                       gap: '8px',
@@ -421,7 +433,7 @@ export default function WorkbenchDirectoryPage() {
             style={{
               borderRadius: '24px',
               border: `1px solid ${BORDER}`,
-              background: PATHD_THEME.panelGradient,
+              background: `linear-gradient(180deg, ${PATHD_THEME.paperSurfaceStrong} 0%, ${PATHD_THEME.paperWarm} 100%)`,
               padding: '18px',
               display: 'grid',
               gap: '16px',

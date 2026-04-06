@@ -24,11 +24,36 @@ import {
   type ToolDefinition,
 } from './shared/toolRegistry';
 import { T } from '../ide/tokens';
+import { PATHD_THEME } from '../workbench/workbenchTheme';
 
 const STORAGE_KEY = 'nexus-bio-favorite-tools';
 
 type ShellFilter = 'All' | 'ide' | 'bento';
 type SortMode = 'name' | 'category' | 'workflow';
+
+const BORDER = PATHD_THEME.paperBorder;
+const BORDER_STRONG = PATHD_THEME.paperBorderStrong;
+const VALUE = PATHD_THEME.paperValue;
+const LABEL = PATHD_THEME.paperLabel;
+const SURFACE = 'rgba(255,255,255,0.68)';
+const SURFACE_SOFT = 'rgba(255,255,255,0.56)';
+const SURFACE_TINT = 'rgba(255,255,255,0.44)';
+const SHADOW = '0 18px 44px rgba(41,46,53,0.06)';
+
+const DIRECTION_ACCENTS: Record<ToolDirection | 'All', string> = {
+  All: PATHD_THEME.sky,
+  'Research Intake': PATHD_THEME.sky,
+  'Pathway & Design': PATHD_THEME.apricot,
+  'Structure & Enzyme': PATHD_THEME.coral,
+  'Dynamic & System': PATHD_THEME.lilac,
+  'Omics & Spatial': PATHD_THEME.sky,
+  'Validation & DBTL': PATHD_THEME.mint,
+  'AI Assistant': PATHD_THEME.lilac,
+};
+
+function getDirectionAccent(direction: ToolDirection | 'All') {
+  return DIRECTION_ACCENTS[direction];
+}
 
 const DIRECTION_NOTES: Record<string, string> = {
   'Research Intake': 'Use this layer to move from papers, citations, and evidence into a concrete tool route.',
@@ -242,7 +267,7 @@ export default function ToolsDirectoryPage() {
   return (
     // position:absolute + inset:0 fills the nb-ide-main container provided
     // by the persistent ToolsLayoutShell (app/tools/layout.tsx)
-    <div style={{ position: 'absolute', inset: 0, background: '#000000', color: '#f5f7fb', overflow: 'auto' }}>
+    <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, #f7f2ec 0%, #efe8de 100%)', color: '#20252b', overflow: 'auto' }}>
       <main>
         <section style={{ padding: '32px 18px 20px' }}>
           <div style={{ maxWidth: '1480px', margin: '0 auto' }}>
@@ -270,7 +295,7 @@ export default function ToolsDirectoryPage() {
                       fontSize: '11px',
                       letterSpacing: '0.12em',
                       textTransform: 'uppercase',
-                      color: 'rgba(255,255,255,0.25)',
+                      color: LABEL,
                     }}
                   >
                     Tools Directory
@@ -293,7 +318,7 @@ export default function ToolsDirectoryPage() {
                       fontFamily: T.SANS,
                       fontSize: '15px',
                       lineHeight: 1.7,
-                      color: 'rgba(255,255,255,0.55)',
+                      color: LABEL,
                     }}
                   >
                     {displayMode === 'demo'
@@ -318,18 +343,19 @@ export default function ToolsDirectoryPage() {
                       key={item.label}
                       style={{
                         borderRadius: '18px',
-                        border: '1px solid rgba(255,255,255,0.08)',
-                        background: 'linear-gradient(180deg, #050505, #050505)',
+                        border: `1px solid ${BORDER}`,
+                        background: SURFACE,
                         padding: '16px 18px',
+                        boxShadow: SHADOW,
                       }}
                     >
-                      <p style={{ margin: '0 0 8px', fontFamily: T.MONO, fontSize: '10px', color: 'rgba(255,255,255,0.25)' }}>
+                      <p style={{ margin: '0 0 8px', fontFamily: T.MONO, fontSize: '10px', color: LABEL }}>
                         {item.label}
                       </p>
-                      <p style={{ margin: '0 0 4px', fontFamily: T.SANS, fontSize: '28px', fontWeight: 700 }}>
+                      <p style={{ margin: '0 0 4px', fontFamily: T.SANS, fontSize: '28px', fontWeight: 700, color: VALUE }}>
                         {item.value}
                       </p>
-                      <p style={{ margin: 0, fontFamily: T.SANS, fontSize: '12px', color: 'rgba(255,255,255,0.35)' }}>
+                      <p style={{ margin: 0, fontFamily: T.SANS, fontSize: '12px', color: LABEL }}>
                         {item.note}
                       </p>
                     </div>
@@ -346,15 +372,16 @@ export default function ToolsDirectoryPage() {
                   flexWrap: 'wrap',
                   padding: '16px 18px',
                   borderRadius: '20px',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  background: '#050505',
+                  border: `1px solid ${BORDER}`,
+                  background: SURFACE,
+                  boxShadow: SHADOW,
                 }}
               >
                 <div>
-                  <p style={{ margin: '0 0 6px', fontFamily: T.MONO, fontSize: '10px', color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase' }}>
+                  <p style={{ margin: '0 0 6px', fontFamily: T.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase' }}>
                     Display mode
                   </p>
-                  <p style={{ margin: 0, fontFamily: T.SANS, fontSize: '13px', lineHeight: 1.6, color: 'rgba(255,255,255,0.55)' }}>
+                  <p style={{ margin: 0, fontFamily: T.SANS, fontSize: '13px', lineHeight: 1.6, color: LABEL }}>
                     {displayMode === 'demo'
                       ? 'Highlights direction clusters and high-signal entry points for presentation and walkthroughs.'
                       : 'Keeps evidence, compare context, adjacency, and workflow fit visible for detailed research use.'}
@@ -367,12 +394,13 @@ export default function ToolsDirectoryPage() {
               <section
                 style={{
                   borderRadius: '20px',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  background: '#050505',
+                  border: `1px solid ${BORDER}`,
+                  background: SURFACE,
                   padding: '16px 18px',
+                  boxShadow: SHADOW,
                 }}
               >
-                <p style={{ margin: '0 0 14px', fontFamily: T.MONO, fontSize: '10px', color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase' }}>
+                <p style={{ margin: '0 0 14px', fontFamily: T.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase' }}>
                   Workflow Path
                 </p>
                 <div style={{ display: 'flex', alignItems: 'stretch', gap: '0', overflowX: 'auto' }}>
@@ -382,9 +410,9 @@ export default function ToolsDirectoryPage() {
                       label: 'Discover',
                       tagline: 'Papers → Evidence → Route',
                       desc: 'Import literature, extract pathway context, and decide which tools to use.',
-                      color: '#C8E8F0',
-                      bgColor: 'rgba(200,232,240,0.06)',
-                      borderColor: 'rgba(200,232,240,0.2)',
+                      color: PATHD_THEME.sky,
+                      bgColor: 'rgba(175,195,214,0.20)',
+                      borderColor: 'rgba(175,195,214,0.44)',
                       directions: ['Research Intake'] as ToolDirection[],
                       toolIds: ['litsearch', 'paper-analyzer', 'genbio-ai'],
                     },
@@ -393,9 +421,9 @@ export default function ToolsDirectoryPage() {
                       label: 'Design',
                       tagline: 'Pathway → Structure → Candidate',
                       desc: 'Map routes, inspect enzyme nodes, and rank structural candidates.',
-                      color: '#C8E0D0',
-                      bgColor: 'rgba(200,224,208,0.06)',
-                      borderColor: 'rgba(200,224,208,0.2)',
+                      color: PATHD_THEME.apricot,
+                      bgColor: 'rgba(231,199,169,0.20)',
+                      borderColor: 'rgba(231,199,169,0.44)',
                       directions: ['Pathway & Design', 'Structure & Enzyme'] as ToolDirection[],
                       toolIds: ['pathd', 'catdes', 'proevol'],
                     },
@@ -404,9 +432,9 @@ export default function ToolsDirectoryPage() {
                       label: 'Simulate',
                       tagline: 'Flux → Dynamics → Omics',
                       desc: 'Run FBA, PID bioreactor control, thermodynamics, and multi-omics analysis.',
-                      color: '#DDD0E8',
-                      bgColor: 'rgba(221,208,232,0.06)',
-                      borderColor: 'rgba(221,208,232,0.2)',
+                      color: PATHD_THEME.lilac,
+                      bgColor: 'rgba(207,196,227,0.20)',
+                      borderColor: 'rgba(207,196,227,0.44)',
                       directions: ['Dynamic & System', 'Omics & Spatial'] as ToolDirection[],
                       toolIds: ['fbasim', 'dyncon', 'cethx'],
                     },
@@ -415,9 +443,9 @@ export default function ToolsDirectoryPage() {
                       label: 'Validate',
                       tagline: 'Cell-free → DBTL → Learn',
                       desc: 'Translate candidates into cell-free experiments, DBTL loops, and construct generation.',
-                      color: '#E8DCC8',
-                      bgColor: 'rgba(232,220,200,0.06)',
-                      borderColor: 'rgba(232,220,200,0.2)',
+                      color: PATHD_THEME.mint,
+                      bgColor: 'rgba(191,220,205,0.22)',
+                      borderColor: 'rgba(191,220,205,0.44)',
                       directions: ['Validation & DBTL', 'AI Assistant'] as ToolDirection[],
                       toolIds: ['cellfree', 'dbtlflow', 'genmim'],
                     },
@@ -438,22 +466,22 @@ export default function ToolsDirectoryPage() {
                         }}
                       >
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                          <span style={{ fontFamily: T.MONO, fontSize: '9px', fontWeight: 700, color: s.color, opacity: 0.7 }}>
+                          <span style={{ fontFamily: T.MONO, fontSize: '9px', fontWeight: 700, color: VALUE, opacity: 0.82 }}>
                             STAGE {s.stage}
                           </span>
                         </div>
                         <p style={{ margin: '0 0 4px', fontFamily: T.SANS, fontSize: '14px', fontWeight: 700, color: s.color }}>
                           {s.label}
                         </p>
-                        <p style={{ margin: '0 0 8px', fontFamily: T.MONO, fontSize: '9px', color: 'rgba(255,255,255,0.35)' }}>
+                        <p style={{ margin: '0 0 8px', fontFamily: T.MONO, fontSize: '9px', color: LABEL }}>
                           {s.tagline}
                         </p>
-                        <p style={{ margin: 0, fontFamily: T.SANS, fontSize: '11px', lineHeight: 1.5, color: 'rgba(255,255,255,0.4)' }}>
+                        <p style={{ margin: 0, fontFamily: T.SANS, fontSize: '11px', lineHeight: 1.5, color: LABEL }}>
                           {s.desc}
                         </p>
                       </button>
                       {i < arr.length - 1 && (
-                        <div style={{ display: 'flex', alignItems: 'center', padding: '0 6px', flexShrink: 0, color: 'rgba(255,255,255,0.15)', fontSize: '18px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', padding: '0 6px', flexShrink: 0, color: LABEL, fontSize: '18px' }}>
                           →
                         </div>
                       )}
@@ -465,12 +493,13 @@ export default function ToolsDirectoryPage() {
               <section
                 style={{
                   borderRadius: '20px',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  background: '#050505',
+                  border: `1px solid ${BORDER}`,
+                  background: SURFACE,
                   padding: '16px',
+                  boxShadow: SHADOW,
                 }}
               >
-                <p style={{ margin: '0 0 12px', fontFamily: T.MONO, fontSize: '10px', color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase' }}>
+                <p style={{ margin: '0 0 12px', fontFamily: T.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase' }}>
                   Direction clusters
                 </p>
                 <div style={{ display: 'grid', gap: '12px', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
@@ -479,15 +508,15 @@ export default function ToolsDirectoryPage() {
                       key={cluster.direction}
                       style={{
                         borderRadius: '18px',
-                        border: '1px solid rgba(255,255,255,0.08)',
-                        background: direction === cluster.direction ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.02)',
+                        border: `1px solid ${direction === cluster.direction ? BORDER_STRONG : BORDER}`,
+                        background: direction === cluster.direction ? `${getDirectionAccent(cluster.direction)}2a` : SURFACE_SOFT,
                         padding: '14px',
                       }}
                     >
                       <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', marginBottom: '8px' }}>
                         <div>
-                          <p style={{ margin: '0 0 4px', fontFamily: T.SANS, fontSize: '13px', fontWeight: 700 }}>{cluster.direction}</p>
-                          <p style={{ margin: 0, fontFamily: T.MONO, fontSize: '10px', color: 'rgba(255,255,255,0.3)' }}>
+                          <p style={{ margin: '0 0 4px', fontFamily: T.SANS, fontSize: '13px', fontWeight: 700, color: VALUE }}>{cluster.direction}</p>
+                          <p style={{ margin: 0, fontFamily: T.MONO, fontSize: '10px', color: LABEL }}>
                             {cluster.total} tools · {cluster.strong3d} strong 3D
                           </p>
                         </div>
@@ -498,9 +527,9 @@ export default function ToolsDirectoryPage() {
                             minHeight: '30px',
                             padding: '0 10px',
                             borderRadius: '999px',
-                            border: '1px solid rgba(255,255,255,0.08)',
-                            background: 'rgba(255,255,255,0.03)',
-                            color: 'rgba(255,255,255,0.55)',
+                            border: `1px solid ${BORDER}`,
+                            background: SURFACE_TINT,
+                            color: VALUE,
                             cursor: 'pointer',
                             fontFamily: T.MONO,
                             fontSize: '10px',
@@ -509,7 +538,7 @@ export default function ToolsDirectoryPage() {
                           Open
                         </button>
                       </div>
-                      <p style={{ margin: '0 0 10px', fontFamily: T.SANS, fontSize: '12px', lineHeight: 1.6, color: 'rgba(255,255,255,0.45)' }}>
+                      <p style={{ margin: '0 0 10px', fontFamily: T.SANS, fontSize: '12px', lineHeight: 1.6, color: LABEL }}>
                         {displayMode === 'demo'
                           ? DIRECTION_CLUSTER_RECIPES[cluster.direction].demoLabel
                           : DIRECTION_CLUSTER_RECIPES[cluster.direction].researchLabel}
@@ -523,9 +552,9 @@ export default function ToolsDirectoryPage() {
                               minHeight: '28px',
                               padding: '0 10px',
                               borderRadius: '999px',
-                              border: '1px solid rgba(255,255,255,0.08)',
-                              background: tool.threeDPotential === 'strong' ? 'rgba(147,203,82,0.10)' : 'rgba(255,255,255,0.03)',
-                              color: tool.threeDPotential === 'strong' ? 'rgba(147,203,82,0.95)' : 'rgba(255,255,255,0.55)',
+                              border: `1px solid ${BORDER}`,
+                              background: tool.threeDPotential === 'strong' ? `${PATHD_THEME.mint}2f` : SURFACE_TINT,
+                              color: tool.threeDPotential === 'strong' ? VALUE : LABEL,
                               textDecoration: 'none',
                               display: 'inline-flex',
                               alignItems: 'center',
@@ -557,12 +586,13 @@ export default function ToolsDirectoryPage() {
                   <section
                     style={{
                       borderRadius: '20px',
-                      border: '1px solid rgba(255,255,255,0.08)',
-                      background: '#050505',
+                      border: `1px solid ${BORDER}`,
+                      background: SURFACE,
                       padding: '16px',
+                      boxShadow: SHADOW,
                     }}
                   >
-                    <p style={{ margin: '0 0 12px', fontFamily: T.MONO, fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)' }}>
+                    <p style={{ margin: '0 0 12px', fontFamily: T.MONO, fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', color: LABEL }}>
                       Find a tool
                     </p>
                     <label style={{ display: 'block', marginBottom: '12px' }}>
@@ -570,7 +600,7 @@ export default function ToolsDirectoryPage() {
                       <div style={{ position: 'relative' }}>
                         <Search
                           size={16}
-                          style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.36)' }}
+                          style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: LABEL }}
                         />
                         <input
                           aria-label="Search tools"
@@ -581,9 +611,9 @@ export default function ToolsDirectoryPage() {
                             width: '100%',
                             minHeight: '44px',
                             borderRadius: '14px',
-                            border: '1px solid rgba(255,255,255,0.1)',
-                            background: 'rgba(255,255,255,0.04)',
-                            color: '#ffffff',
+                            border: `1px solid ${BORDER}`,
+                            background: SURFACE_SOFT,
+                            color: VALUE,
                             padding: '0 14px 0 40px',
                             fontFamily: T.SANS,
                             fontSize: '13px',
@@ -594,7 +624,7 @@ export default function ToolsDirectoryPage() {
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                       <div>
-                        <p style={{ margin: '0 0 8px', fontFamily: T.MONO, fontSize: '10px', color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase' }}>
+                        <p style={{ margin: '0 0 8px', fontFamily: T.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase' }}>
                           Direction
                         </p>
                         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
@@ -610,9 +640,9 @@ export default function ToolsDirectoryPage() {
                                   minHeight: '34px',
                                   padding: '0 12px',
                                   borderRadius: '999px',
-                                  border: active ? '1px solid rgba(255,255,255,0.18)' : '1px solid rgba(255,255,255,0.1)',
-                                  background: active ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.03)',
-                                  color: active ? '#ffffff' : 'rgba(255,255,255,0.5)',
+                                  border: `1px solid ${active ? BORDER_STRONG : BORDER}`,
+                                  background: active ? `${getDirectionAccent(item)}2a` : SURFACE_TINT,
+                                  color: active ? VALUE : LABEL,
                                   cursor: 'pointer',
                                   fontFamily: T.SANS,
                                   fontSize: '12px',
@@ -627,7 +657,7 @@ export default function ToolsDirectoryPage() {
                       </div>
 
                       <div>
-                        <p style={{ margin: '0 0 8px', fontFamily: T.MONO, fontSize: '10px', color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase' }}>
+                        <p style={{ margin: '0 0 8px', fontFamily: T.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase' }}>
                           Shell type
                         </p>
                         <div style={{ display: 'grid', gap: '8px', gridTemplateColumns: '1fr 1fr 1fr' }}>
@@ -642,9 +672,9 @@ export default function ToolsDirectoryPage() {
                                 style={{
                                   minHeight: '36px',
                                   borderRadius: '12px',
-                                  border: active ? '1px solid rgba(255,255,255,0.18)' : '1px solid rgba(255,255,255,0.1)',
-                                  background: active ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.03)',
-                                  color: active ? '#ffffff' : 'rgba(255,255,255,0.5)',
+                                  border: `1px solid ${active ? BORDER_STRONG : BORDER}`,
+                                  background: active ? `${PATHD_THEME.sky}24` : SURFACE_TINT,
+                                  color: active ? VALUE : LABEL,
                                   cursor: 'pointer',
                                   fontFamily: T.MONO,
                                   fontSize: '11px',
@@ -660,11 +690,11 @@ export default function ToolsDirectoryPage() {
                       </div>
 
                       <label>
-                        <p style={{ margin: '0 0 8px', fontFamily: T.MONO, fontSize: '10px', color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase' }}>
+                        <p style={{ margin: '0 0 8px', fontFamily: T.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase' }}>
                           Sort
                         </p>
                         <div style={{ position: 'relative' }}>
-                          <SlidersHorizontal size={14} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.34)' }} />
+                          <SlidersHorizontal size={14} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: LABEL }} />
                           <select
                             aria-label="Sort tools"
                             value={sortMode}
@@ -673,9 +703,9 @@ export default function ToolsDirectoryPage() {
                               width: '100%',
                               minHeight: '42px',
                               borderRadius: '14px',
-                              border: '1px solid rgba(255,255,255,0.1)',
-                              background: 'rgba(255,255,255,0.04)',
-                              color: '#ffffff',
+                              border: `1px solid ${BORDER}`,
+                              background: SURFACE_SOFT,
+                              color: VALUE,
                               padding: '0 14px 0 38px',
                               fontFamily: T.SANS,
                               fontSize: '13px',
@@ -693,30 +723,31 @@ export default function ToolsDirectoryPage() {
                   <section
                     style={{
                       borderRadius: '20px',
-                      border: '1px solid rgba(255,255,255,0.08)',
-                      background: '#050505',
+                      border: `1px solid ${BORDER}`,
+                      background: SURFACE,
                       padding: '16px',
+                      boxShadow: SHADOW,
                     }}
                   >
-                    <p style={{ margin: '0 0 12px', fontFamily: T.MONO, fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)' }}>
+                    <p style={{ margin: '0 0 12px', fontFamily: T.MONO, fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', color: LABEL }}>
                       Active state
                     </p>
                     <div style={{ display: 'grid', gap: '10px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
-                        <span style={{ fontFamily: T.SANS, fontSize: '13px', color: 'rgba(255,255,255,0.55)' }}>Display mode</span>
-                        <span style={{ fontFamily: T.MONO, fontSize: '12px', color: '#ffffff' }}>{displayMode}</span>
+                        <span style={{ fontFamily: T.SANS, fontSize: '13px', color: LABEL }}>Display mode</span>
+                        <span style={{ fontFamily: T.MONO, fontSize: '12px', color: VALUE }}>{displayMode}</span>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
-                        <span style={{ fontFamily: T.SANS, fontSize: '13px', color: 'rgba(255,255,255,0.55)' }}>Favorites</span>
-                        <span style={{ fontFamily: T.MONO, fontSize: '12px', color: '#ffffff' }}>{favoriteIds.length}</span>
+                        <span style={{ fontFamily: T.SANS, fontSize: '13px', color: LABEL }}>Favorites</span>
+                        <span style={{ fontFamily: T.MONO, fontSize: '12px', color: VALUE }}>{favoriteIds.length}</span>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
-                        <span style={{ fontFamily: T.SANS, fontSize: '13px', color: 'rgba(255,255,255,0.55)' }}>Compare tray</span>
-                        <span style={{ fontFamily: T.MONO, fontSize: '12px', color: '#ffffff' }}>{compareIds.length}/2</span>
+                        <span style={{ fontFamily: T.SANS, fontSize: '13px', color: LABEL }}>Compare tray</span>
+                        <span style={{ fontFamily: T.MONO, fontSize: '12px', color: VALUE }}>{compareIds.length}/2</span>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
-                        <span style={{ fontFamily: T.SANS, fontSize: '13px', color: 'rgba(255,255,255,0.55)' }}>Current page</span>
-                        <span style={{ fontFamily: T.MONO, fontSize: '12px', color: '#ffffff' }}>{safePage}/{totalPages}</span>
+                        <span style={{ fontFamily: T.SANS, fontSize: '13px', color: LABEL }}>Current page</span>
+                        <span style={{ fontFamily: T.MONO, fontSize: '12px', color: VALUE }}>{safePage}/{totalPages}</span>
                       </div>
                     </div>
                   </section>
@@ -724,12 +755,13 @@ export default function ToolsDirectoryPage() {
                   <section
                     style={{
                       borderRadius: '20px',
-                      border: '1px solid rgba(255,255,255,0.08)',
-                      background: '#050505',
+                      border: `1px solid ${BORDER}`,
+                      background: SURFACE,
                       padding: '16px',
+                      boxShadow: SHADOW,
                     }}
                   >
-                    <p style={{ margin: '0 0 10px', fontFamily: T.MONO, fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)' }}>
+                    <p style={{ margin: '0 0 10px', fontFamily: T.MONO, fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', color: LABEL }}>
                       Research directions
                     </p>
                     <div style={{ display: 'grid', gap: '8px' }}>
@@ -744,14 +776,14 @@ export default function ToolsDirectoryPage() {
                               textAlign: 'left',
                               padding: '10px 12px',
                               borderRadius: '14px',
-                              border: active ? '1px solid rgba(255,255,255,0.16)' : '1px solid rgba(255,255,255,0.08)',
-                              background: active ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.02)',
-                              color: active ? '#ffffff' : 'rgba(255,255,255,0.55)',
+                              border: `1px solid ${active ? BORDER_STRONG : BORDER}`,
+                              background: active ? `${getDirectionAccent(item)}28` : SURFACE_TINT,
+                              color: active ? VALUE : LABEL,
                               cursor: 'pointer',
                             }}
                           >
                             <div style={{ fontFamily: T.SANS, fontSize: '12px', fontWeight: 700, marginBottom: '4px' }}>{item}</div>
-                            <div style={{ fontFamily: T.SANS, fontSize: '11px', lineHeight: 1.5, color: active ? 'rgba(255,255,255,0.55)' : 'rgba(255,255,255,0.35)' }}>
+                            <div style={{ fontFamily: T.SANS, fontSize: '11px', lineHeight: 1.5, color: LABEL }}>
                               {DIRECTION_NOTES[item]}
                             </div>
                           </button>
@@ -773,17 +805,18 @@ export default function ToolsDirectoryPage() {
                     <div
                       style={{
                         borderRadius: '20px',
-                        border: '1px solid rgba(255,255,255,0.08)',
-                        background: '#050505',
+                        border: `1px solid ${BORDER}`,
+                        background: SURFACE,
                         padding: '14px 16px',
+                        boxShadow: SHADOW,
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
                         <div>
-                          <p style={{ margin: '0 0 4px', fontFamily: T.MONO, fontSize: '10px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)' }}>
+                          <p style={{ margin: '0 0 4px', fontFamily: T.MONO, fontSize: '10px', textTransform: 'uppercase', color: LABEL }}>
                             Compare tray
                           </p>
-                          <p style={{ margin: 0, fontFamily: T.SANS, fontSize: '13px', color: 'rgba(255,255,255,0.55)' }}>
+                          <p style={{ margin: 0, fontFamily: T.SANS, fontSize: '13px', color: LABEL }}>
                             Pin up to two tools to compare category, outputs, and shell model side by side.
                           </p>
                         </div>
@@ -794,9 +827,9 @@ export default function ToolsDirectoryPage() {
                             minHeight: '36px',
                             padding: '0 12px',
                             borderRadius: '10px',
-                            border: '1px solid rgba(255,255,255,0.1)',
-                            background: 'rgba(255,255,255,0.03)',
-                            color: 'rgba(255,255,255,0.5)',
+                            border: `1px solid ${BORDER}`,
+                            background: SURFACE_TINT,
+                            color: VALUE,
                             cursor: 'pointer',
                             fontFamily: T.SANS,
                             fontSize: '12px',
@@ -811,8 +844,8 @@ export default function ToolsDirectoryPage() {
                             key={tool.id}
                             style={{
                               borderRadius: '16px',
-                              border: '1px solid rgba(255,255,255,0.08)',
-                              background: 'rgba(255,255,255,0.03)',
+                              border: `1px solid ${BORDER}`,
+                              background: SURFACE_SOFT,
                               padding: '14px',
                             }}
                           >
@@ -826,9 +859,9 @@ export default function ToolsDirectoryPage() {
                                   width: '28px',
                                   height: '28px',
                                   borderRadius: '999px',
-                                  border: '1px solid rgba(255,255,255,0.08)',
-                                  background: 'rgba(255,255,255,0.04)',
-                                  color: 'rgba(255,255,255,0.55)',
+                                  border: `1px solid ${BORDER}`,
+                                  background: SURFACE_TINT,
+                                  color: VALUE,
                                   cursor: 'pointer',
                                   display: 'grid',
                                   placeItems: 'center',
@@ -845,10 +878,10 @@ export default function ToolsDirectoryPage() {
                                 ['Best for', tool.focus],
                               ].map(([label, value]) => (
                                 <div key={label}>
-                                  <dt style={{ fontFamily: T.MONO, fontSize: '10px', color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase', marginBottom: '4px' }}>
+                                  <dt style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase', marginBottom: '4px' }}>
                                     {label}
                                   </dt>
-                                  <dd style={{ margin: 0, fontFamily: T.SANS, fontSize: '13px', color: 'rgba(255,255,255,0.65)', lineHeight: 1.55 }}>
+                                  <dd style={{ margin: 0, fontFamily: T.SANS, fontSize: '13px', color: VALUE, lineHeight: 1.55 }}>
                                     {value}
                                   </dd>
                                 </div>
@@ -863,9 +896,10 @@ export default function ToolsDirectoryPage() {
                   <div
                     style={{
                       borderRadius: '20px',
-                      border: '1px solid rgba(255,255,255,0.08)',
-                      background: '#050505',
+                      border: `1px solid ${BORDER}`,
+                      background: SURFACE,
                       overflow: 'hidden',
+                      boxShadow: SHADOW,
                     }}
                   >
                     <div
@@ -876,14 +910,14 @@ export default function ToolsDirectoryPage() {
                         gap: '12px',
                         flexWrap: 'wrap',
                         padding: '16px',
-                        borderBottom: '1px solid rgba(255,255,255,0.08)',
+                        borderBottom: `1px solid ${BORDER}`,
                       }}
                     >
                       <div>
-                        <p style={{ margin: '0 0 4px', fontFamily: T.MONO, fontSize: '10px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)' }}>
+                        <p style={{ margin: '0 0 4px', fontFamily: T.MONO, fontSize: '10px', textTransform: 'uppercase', color: LABEL }}>
                           Matching tools
                         </p>
-                        <p style={{ margin: 0, fontFamily: T.SANS, fontSize: '14px', color: 'rgba(255,255,255,0.65)' }}>
+                        <p style={{ margin: 0, fontFamily: T.SANS, fontSize: '14px', color: LABEL }}>
                           {filteredTools.length} tool{filteredTools.length === 1 ? '' : 's'} match the current query and filter state.
                         </p>
                       </div>
@@ -900,9 +934,9 @@ export default function ToolsDirectoryPage() {
                             minHeight: '36px',
                             padding: '0 12px',
                             borderRadius: '10px',
-                            border: '1px solid rgba(255,255,255,0.1)',
-                            background: 'rgba(255,255,255,0.03)',
-                            color: 'rgba(255,255,255,0.5)',
+                            border: `1px solid ${BORDER}`,
+                            background: SURFACE_TINT,
+                            color: VALUE,
                             cursor: 'pointer',
                             fontFamily: T.SANS,
                             fontSize: '12px',
@@ -937,10 +971,10 @@ export default function ToolsDirectoryPage() {
                                 gap: '14px',
                                 minHeight: '100%',
                                 borderRadius: '18px',
-                                border: isSelected ? '1px solid rgba(255,255,255,0.18)' : '1px solid rgba(255,255,255,0.08)',
-                                background: isSelected ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.03)',
+                                border: `1px solid ${isSelected ? BORDER_STRONG : BORDER}`,
+                                background: isSelected ? `${getDirectionAccent(tool.direction)}22` : SURFACE_SOFT,
                                 padding: '16px',
-                                boxShadow: isSelected ? '0 12px 36px rgba(7,15,24,0.42)' : 'none',
+                                boxShadow: isSelected ? SHADOW : 'none',
                               }}
                             >
                               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
@@ -950,23 +984,23 @@ export default function ToolsDirectoryPage() {
                                       width: '42px',
                                       height: '42px',
                                       borderRadius: '14px',
-                                      border: '1px solid rgba(255,255,255,0.08)',
-                                      background: 'rgba(255,255,255,0.04)',
+                                      border: `1px solid ${BORDER}`,
+                                      background: SURFACE_TINT,
                                       display: 'grid',
                                       placeItems: 'center',
                                       flexShrink: 0,
                                     }}
                                   >
-                                    <Icon size={18} style={{ color: isSelected ? '#ffffff' : 'rgba(255,255,255,0.5)' }} />
+                                    <Icon size={18} style={{ color: isSelected ? VALUE : LABEL }} />
                                   </div>
                                   <div style={{ minWidth: 0 }}>
-                                    <p style={{ margin: '0 0 4px', fontFamily: T.MONO, fontSize: '10px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)' }}>
+                                    <p style={{ margin: '0 0 4px', fontFamily: T.MONO, fontSize: '10px', textTransform: 'uppercase', color: LABEL }}>
                                       {tool.shortLabel} · {tool.direction}
                                     </p>
-                                    <h2 style={{ margin: '0 0 6px', fontFamily: T.SANS, fontSize: '17px', lineHeight: 1.25, letterSpacing: '-0.02em' }}>
+                                    <h2 style={{ margin: '0 0 6px', fontFamily: T.SANS, fontSize: '17px', lineHeight: 1.25, letterSpacing: '-0.02em', color: VALUE }}>
                                       {tool.name}
                                     </h2>
-                                    <p style={{ margin: 0, fontFamily: T.SANS, fontSize: '13px', lineHeight: 1.65, color: 'rgba(255,255,255,0.55)' }}>
+                                    <p style={{ margin: 0, fontFamily: T.SANS, fontSize: '13px', lineHeight: 1.65, color: LABEL }}>
                                       {tool.summary}
                                     </p>
                                   </div>
@@ -982,9 +1016,9 @@ export default function ToolsDirectoryPage() {
                                       width: '34px',
                                       height: '34px',
                                       borderRadius: '999px',
-                                      border: '1px solid rgba(255,255,255,0.08)',
-                                      background: isFavorite ? 'rgba(255,212,92,0.14)' : 'rgba(255,255,255,0.03)',
-                                      color: isFavorite ? 'rgba(255,212,92,0.92)' : 'rgba(255,255,255,0.45)',
+                                      border: `1px solid ${BORDER}`,
+                                      background: isFavorite ? `${PATHD_THEME.coral}24` : SURFACE_TINT,
+                                      color: VALUE,
                                       cursor: 'pointer',
                                       display: 'grid',
                                       placeItems: 'center',
@@ -1001,9 +1035,9 @@ export default function ToolsDirectoryPage() {
                                       width: '34px',
                                       height: '34px',
                                       borderRadius: '999px',
-                                      border: '1px solid rgba(255,255,255,0.08)',
-                                      background: isCompared ? 'rgba(143,239,197,0.14)' : 'rgba(255,255,255,0.03)',
-                                      color: isCompared ? 'rgba(143,239,197,0.95)' : 'rgba(255,255,255,0.45)',
+                                      border: `1px solid ${BORDER}`,
+                                      background: isCompared ? `${PATHD_THEME.mint}26` : SURFACE_TINT,
+                                      color: VALUE,
                                       cursor: 'pointer',
                                       display: 'grid',
                                       placeItems: 'center',
@@ -1022,9 +1056,9 @@ export default function ToolsDirectoryPage() {
                                       minHeight: '28px',
                                       padding: '0 10px',
                                       borderRadius: '999px',
-                                      border: '1px solid rgba(255,255,255,0.08)',
-                                      background: 'rgba(255,255,255,0.03)',
-                                      color: 'rgba(255,255,255,0.5)',
+                                      border: `1px solid ${BORDER}`,
+                                      background: SURFACE_TINT,
+                                      color: LABEL,
                                       fontFamily: T.MONO,
                                       fontSize: '10px',
                                       display: 'inline-flex',
@@ -1039,9 +1073,9 @@ export default function ToolsDirectoryPage() {
                                     minHeight: '28px',
                                     padding: '0 10px',
                                     borderRadius: '999px',
-                                    border: '1px solid rgba(255,255,255,0.08)',
-                                    background: tool.threeDPotential === 'strong' ? 'rgba(147,203,82,0.14)' : tool.threeDPotential === 'supporting' ? 'rgba(81,81,205,0.14)' : 'rgba(255,255,255,0.03)',
-                                    color: tool.threeDPotential === 'strong' ? 'rgba(147,203,82,0.92)' : tool.threeDPotential === 'supporting' ? 'rgba(160,160,255,0.92)' : 'rgba(255,255,255,0.45)',
+                                    border: `1px solid ${BORDER}`,
+                                    background: tool.threeDPotential === 'strong' ? `${PATHD_THEME.mint}28` : tool.threeDPotential === 'supporting' ? `${PATHD_THEME.lilac}28` : SURFACE_TINT,
+                                    color: VALUE,
                                     fontFamily: T.MONO,
                                     fontSize: '10px',
                                     display: 'inline-flex',
@@ -1061,9 +1095,9 @@ export default function ToolsDirectoryPage() {
                                     minHeight: '38px',
                                     padding: '0 14px',
                                     borderRadius: '12px',
-                                    border: isSelected ? '1px solid rgba(255,255,255,0.18)' : '1px solid rgba(255,255,255,0.1)',
-                                    background: isSelected ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.04)',
-                                    color: '#ffffff',
+                                    border: `1px solid ${isSelected ? BORDER_STRONG : BORDER}`,
+                                    background: isSelected ? `${getDirectionAccent(tool.direction)}28` : SURFACE_TINT,
+                                    color: VALUE,
                                     cursor: 'pointer',
                                     fontFamily: T.SANS,
                                     fontSize: '13px',
@@ -1079,9 +1113,9 @@ export default function ToolsDirectoryPage() {
                                     minHeight: '38px',
                                     padding: '0 14px',
                                     borderRadius: '12px',
-                                    border: '1px solid rgba(255,255,255,0.12)',
-                                    background: '#f4f7fb',
-                                    color: '#000000',
+                                    border: `1px solid ${BORDER_STRONG}`,
+                                    background: `${getDirectionAccent(tool.direction)}36`,
+                                    color: VALUE,
                                     textDecoration: 'none',
                                     display: 'inline-flex',
                                     alignItems: 'center',
@@ -1126,52 +1160,53 @@ export default function ToolsDirectoryPage() {
                   <section
                     style={{
                       borderRadius: '20px',
-                      border: '1px solid rgba(255,255,255,0.08)',
-                      background: '#050505',
+                      border: `1px solid ${BORDER}`,
+                      background: SURFACE,
                       padding: '18px',
+                      boxShadow: SHADOW,
                     }}
                   >
-                    <p style={{ margin: '0 0 12px', fontFamily: T.MONO, fontSize: '10px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)' }}>
+                    <p style={{ margin: '0 0 12px', fontFamily: T.MONO, fontSize: '10px', textTransform: 'uppercase', color: LABEL }}>
                       Selected tool
                     </p>
                     {selectedTool ? (
                       <>
-                          <p style={{ margin: '0 0 6px', fontFamily: T.MONO, fontSize: '10px', color: 'rgba(255,255,255,0.25)' }}>
+                          <p style={{ margin: '0 0 6px', fontFamily: T.MONO, fontSize: '10px', color: LABEL }}>
                           {selectedTool.shortLabel} · {selectedTool.direction}
                           </p>
-                        <h2 style={{ margin: '0 0 10px', fontFamily: T.SANS, fontSize: '22px', lineHeight: 1.15, letterSpacing: '-0.03em' }}>
+                        <h2 style={{ margin: '0 0 10px', fontFamily: T.SANS, fontSize: '22px', lineHeight: 1.15, letterSpacing: '-0.03em', color: VALUE }}>
                           {selectedTool.name}
                         </h2>
-                        <p style={{ margin: '0 0 16px', fontFamily: T.SANS, fontSize: '14px', lineHeight: 1.7, color: 'rgba(255,255,255,0.55)' }}>
+                        <p style={{ margin: '0 0 16px', fontFamily: T.SANS, fontSize: '14px', lineHeight: 1.7, color: LABEL }}>
                           {selectedTool.summary}
                         </p>
 
                         <div style={{ display: 'grid', gap: '12px' }}>
-                          <div style={{ borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)', padding: '14px' }}>
-                            <p style={{ margin: '0 0 6px', fontFamily: T.MONO, fontSize: '10px', color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase' }}>
+                          <div style={{ borderRadius: '16px', border: `1px solid ${BORDER}`, background: SURFACE_SOFT, padding: '14px' }}>
+                            <p style={{ margin: '0 0 6px', fontFamily: T.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase' }}>
                               {displayMode === 'demo' ? 'Story fit' : 'Best for'}
                             </p>
-                            <p style={{ margin: 0, fontFamily: T.SANS, fontSize: '13px', lineHeight: 1.65, color: 'rgba(255,255,255,0.65)' }}>
+                            <p style={{ margin: 0, fontFamily: T.SANS, fontSize: '13px', lineHeight: 1.65, color: VALUE }}>
                               {displayMode === 'demo'
                                 ? DIRECTION_CLUSTER_RECIPES[selectedTool.direction].demoLabel
                                 : selectedTool.focus}
                             </p>
                           </div>
 
-                          <div style={{ borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)', padding: '14px' }}>
-                            <p style={{ margin: '0 0 6px', fontFamily: T.MONO, fontSize: '10px', color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase' }}>
+                          <div style={{ borderRadius: '16px', border: `1px solid ${BORDER}`, background: SURFACE_SOFT, padding: '14px' }}>
+                            <p style={{ margin: '0 0 6px', fontFamily: T.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase' }}>
                               {displayMode === 'demo' ? 'Direction cluster' : 'Direction fit'}
                             </p>
-                            <p style={{ margin: '0 0 8px', fontFamily: T.SANS, fontSize: '13px', lineHeight: 1.65, color: 'rgba(255,255,255,0.65)' }}>
+                            <p style={{ margin: '0 0 8px', fontFamily: T.SANS, fontSize: '13px', lineHeight: 1.65, color: VALUE }}>
                               {selectedTool.direction} · {selectedTool.mode} mode · {selectedTool.shell.toUpperCase()} shell
                             </p>
-                            <p style={{ margin: 0, fontFamily: T.MONO, fontSize: '10px', color: selectedTool.threeDPotential === 'strong' ? 'rgba(147,203,82,0.9)' : selectedTool.threeDPotential === 'supporting' ? 'rgba(160,160,255,0.9)' : 'rgba(255,255,255,0.35)' }}>
+                            <p style={{ margin: 0, fontFamily: T.MONO, fontSize: '10px', color: selectedTool.threeDPotential === 'strong' ? VALUE : LABEL }}>
                               3D potential: {selectedTool.threeDPotential}
                             </p>
                           </div>
 
-                          <div style={{ borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)', padding: '14px' }}>
-                            <p style={{ margin: '0 0 6px', fontFamily: T.MONO, fontSize: '10px', color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase' }}>
+                          <div style={{ borderRadius: '16px', border: `1px solid ${BORDER}`, background: SURFACE_SOFT, padding: '14px' }}>
+                            <p style={{ margin: '0 0 6px', fontFamily: T.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase' }}>
                               {displayMode === 'demo' ? 'Guided route' : 'Workflow map'}
                             </p>
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
@@ -1186,9 +1221,9 @@ export default function ToolsDirectoryPage() {
                                     minHeight: '28px',
                                     padding: '0 10px',
                                     borderRadius: '999px',
-                                    border: '1px solid rgba(255,255,255,0.08)',
-                                    background: step.active ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.02)',
-                                    color: step.active ? '#ffffff' : 'rgba(255,255,255,0.35)',
+                                    border: `1px solid ${BORDER}`,
+                                    background: step.active ? `${getDirectionAccent(selectedTool.direction)}26` : SURFACE_TINT,
+                                    color: step.active ? VALUE : LABEL,
                                     display: 'inline-flex',
                                     alignItems: 'center',
                                     fontFamily: T.MONO,
@@ -1196,19 +1231,19 @@ export default function ToolsDirectoryPage() {
                                   }}>
                                     {step.label}
                                   </span>
-                                  {index < 3 && <span style={{ color: 'rgba(255,255,255,0.18)', fontSize: '10px' }}>→</span>}
+                                  {index < 3 && <span style={{ color: LABEL, fontSize: '10px' }}>→</span>}
                                 </div>
                               ))}
                             </div>
                           </div>
 
-                          <div style={{ borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)', padding: '14px' }}>
-                            <p style={{ margin: '0 0 8px', fontFamily: T.MONO, fontSize: '10px', color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase' }}>
+                          <div style={{ borderRadius: '16px', border: `1px solid ${BORDER}`, background: SURFACE_SOFT, padding: '14px' }}>
+                            <p style={{ margin: '0 0 8px', fontFamily: T.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase' }}>
                               {displayMode === 'demo' ? 'What this shows best' : 'Outputs you can expect'}
                             </p>
                             <ul style={{ margin: 0, paddingLeft: '18px', display: 'grid', gap: '8px' }}>
                               {(displayMode === 'demo' ? selectedTool.outputs.slice(0, 2) : selectedTool.outputs).map((output) => (
-                                <li key={output} style={{ fontFamily: T.SANS, fontSize: '13px', lineHeight: 1.55, color: 'rgba(255,255,255,0.65)' }}>
+                                <li key={output} style={{ fontFamily: T.SANS, fontSize: '13px', lineHeight: 1.55, color: VALUE }}>
                                   {output}
                                 </li>
                               ))}
@@ -1216,8 +1251,8 @@ export default function ToolsDirectoryPage() {
                           </div>
 
                           {displayMode === 'research' && selectedTool.relatedRoutes && selectedTool.relatedRoutes.length > 0 && (
-                            <div style={{ borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)', padding: '14px' }}>
-                              <p style={{ margin: '0 0 8px', fontFamily: T.MONO, fontSize: '10px', color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase' }}>
+                            <div style={{ borderRadius: '16px', border: `1px solid ${BORDER}`, background: SURFACE_SOFT, padding: '14px' }}>
+                              <p style={{ margin: '0 0 8px', fontFamily: T.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase' }}>
                                 Related routes
                               </p>
                               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
@@ -1229,9 +1264,9 @@ export default function ToolsDirectoryPage() {
                                       minHeight: '32px',
                                       padding: '0 10px',
                                       borderRadius: '999px',
-                                      border: '1px solid rgba(255,255,255,0.08)',
-                                      background: 'rgba(255,255,255,0.02)',
-                                      color: 'rgba(255,255,255,0.55)',
+                                      border: `1px solid ${BORDER}`,
+                                      background: SURFACE_TINT,
+                                      color: VALUE,
                                       textDecoration: 'none',
                                       display: 'inline-flex',
                                       alignItems: 'center',
@@ -1247,8 +1282,8 @@ export default function ToolsDirectoryPage() {
                           )}
 
                           {relatedTools.length > 0 && (
-                            <div style={{ borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)', padding: '14px' }}>
-                              <p style={{ margin: '0 0 8px', fontFamily: T.MONO, fontSize: '10px', color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase' }}>
+                            <div style={{ borderRadius: '16px', border: `1px solid ${BORDER}`, background: SURFACE_SOFT, padding: '14px' }}>
+                              <p style={{ margin: '0 0 8px', fontFamily: T.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase' }}>
                                 {displayMode === 'demo' ? 'Continue with' : 'Adjacent tools'}
                               </p>
                               <div style={{ display: 'grid', gap: '8px' }}>
@@ -1258,17 +1293,17 @@ export default function ToolsDirectoryPage() {
                                     href={tool.href}
                                     style={{
                                       borderRadius: '12px',
-                                      border: '1px solid rgba(255,255,255,0.08)',
-                                      background: 'rgba(255,255,255,0.02)',
+                                      border: `1px solid ${BORDER}`,
+                                      background: SURFACE_TINT,
                                       padding: '10px 12px',
                                       textDecoration: 'none',
-                                      color: '#ffffff',
+                                      color: VALUE,
                                     }}
                                   >
                                     <div style={{ fontFamily: T.SANS, fontSize: '12px', fontWeight: 700, marginBottom: '3px' }}>
                                       {tool.shortLabel} · {tool.name}
                                     </div>
-                                    <div style={{ fontFamily: T.SANS, fontSize: '11px', lineHeight: 1.5, color: 'rgba(255,255,255,0.45)' }}>
+                                    <div style={{ fontFamily: T.SANS, fontSize: '11px', lineHeight: 1.5, color: LABEL }}>
                                       {tool.focus}
                                     </div>
                                   </Link>
@@ -1293,9 +1328,9 @@ export default function ToolsDirectoryPage() {
                             style={{
                               minHeight: '42px',
                               borderRadius: '14px',
-                              border: '1px solid rgba(255,255,255,0.1)',
-                              background: '#f4f7fb',
-                              color: '#000000',
+                              border: `1px solid ${BORDER_STRONG}`,
+                              background: `${getDirectionAccent(selectedTool.direction)}36`,
+                              color: VALUE,
                               textDecoration: 'none',
                               display: 'inline-flex',
                               alignItems: 'center',
@@ -1318,12 +1353,13 @@ export default function ToolsDirectoryPage() {
                   <section
                     style={{
                       borderRadius: '20px',
-                      border: '1px solid rgba(255,255,255,0.08)',
-                      background: '#050505',
+                      border: `1px solid ${BORDER}`,
+                      background: SURFACE,
                       padding: '18px',
+                      boxShadow: SHADOW,
                     }}
                   >
-                    <p style={{ margin: '0 0 10px', fontFamily: T.MONO, fontSize: '10px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)' }}>
+                    <p style={{ margin: '0 0 10px', fontFamily: T.MONO, fontSize: '10px', textTransform: 'uppercase', color: LABEL }}>
                       Why this structure
                     </p>
                     <div style={{ display: 'grid', gap: '10px' }}>
@@ -1333,8 +1369,8 @@ export default function ToolsDirectoryPage() {
                         'Right column: selected-tool detail or compare context prevents context loss.',
                       ].map((line) => (
                         <div key={line} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-                          <CheckCircle2 size={15} style={{ color: 'rgba(143,239,197,0.95)', marginTop: '2px', flexShrink: 0 }} />
-                          <p style={{ margin: 0, fontFamily: T.SANS, fontSize: '13px', lineHeight: 1.6, color: 'rgba(255,255,255,0.55)' }}>
+                          <CheckCircle2 size={15} style={{ color: VALUE, marginTop: '2px', flexShrink: 0 }} />
+                          <p style={{ margin: 0, fontFamily: T.SANS, fontSize: '13px', lineHeight: 1.6, color: LABEL }}>
                             {line}
                           </p>
                         </div>

@@ -18,10 +18,10 @@ interface WorkbenchInlineContextProps {
   isSimulated?: boolean;
 }
 
-const BORDER = PATHD_THEME.panelBorder;
-const SURFACE = PATHD_THEME.panelGradientSoft;
-const LABEL = PATHD_THEME.label;
-const VALUE = PATHD_THEME.value;
+const BORDER = PATHD_THEME.paperBorder;
+const SURFACE = PATHD_THEME.paperSurfaceStrong;
+const LABEL = PATHD_THEME.paperLabel;
+const VALUE = PATHD_THEME.paperValue;
 
 export default function WorkbenchInlineContext({
   toolId,
@@ -95,9 +95,9 @@ export default function WorkbenchInlineContext({
           style={{
             padding: '3px 8px',
             borderRadius: '999px',
-            border: `1px solid ${(isSimulated || project?.isDemo) ? PATHD_THEME.chipBorderWarm : PATHD_THEME.chipBorder}`,
-            background: (isSimulated || project?.isDemo) ? PATHD_THEME.chipWarm : PATHD_THEME.chipCool,
-            color: (isSimulated || project?.isDemo) ? 'rgba(255,222,190,0.94)' : PATHD_THEME.chipText,
+            border: `1px solid ${(isSimulated || project?.isDemo) ? PATHD_THEME.chipBorderWarm : PATHD_THEME.paperBorder}`,
+            background: (isSimulated || project?.isDemo) ? 'rgba(231,199,169,0.22)' : 'rgba(175,195,214,0.2)',
+            color: PATHD_THEME.paperValue,
             fontFamily: T.MONO,
             fontSize: '9px',
             letterSpacing: '0.05em',
@@ -155,7 +155,7 @@ export default function WorkbenchInlineContext({
                 padding: '4px 8px',
                 borderRadius: '999px',
                 border: `1px solid ${BORDER}`,
-                background: PATHD_THEME.chipNeutral,
+                background: 'rgba(255,255,255,0.55)',
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '6px',
@@ -240,7 +240,7 @@ export default function WorkbenchInlineContext({
           style={{
             borderRadius: '12px',
             border: `1px solid ${BORDER}`,
-            background: PATHD_THEME.chipNeutral,
+            background: 'rgba(255,255,255,0.62)',
             padding: '10px 12px',
             display: 'grid',
             gap: '4px',
@@ -313,8 +313,8 @@ export default function WorkbenchInlineContext({
               gap: '6px',
               textDecoration: 'none',
               border: `1px solid ${BORDER}`,
-              background: PATHD_THEME.chipNeutral,
-              color: 'rgba(255,255,255,0.72)',
+              background: 'rgba(255,255,255,0.56)',
+              color: PATHD_THEME.paperValue,
               fontFamily: T.SANS,
               fontSize: '11px',
             }}

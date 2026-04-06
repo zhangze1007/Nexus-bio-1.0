@@ -2,6 +2,7 @@
 
 import { T } from '../tokens';
 import { usePersistedState } from './usePersistedState';
+import { PATHD_THEME } from '../../workbench/workbenchTheme';
 
 export type DisplayMode = 'demo' | 'research';
 
@@ -20,8 +21,8 @@ export default function DisplayModeToggle() {
         gap: '4px',
         padding: '2px',
         borderRadius: '999px',
-        border: '1px solid rgba(255,255,255,0.08)',
-        background: 'rgba(255,255,255,0.03)',
+        border: `1px solid ${PATHD_THEME.paperBorder}`,
+        background: PATHD_THEME.paperSurface,
       }}
     >
       {([
@@ -37,8 +38,8 @@ export default function DisplayModeToggle() {
             padding: '0 10px',
             borderRadius: '999px',
             border: 'none',
-            background: displayMode === mode.key ? '#ffffff' : 'transparent',
-            color: displayMode === mode.key ? '#000000' : 'rgba(255,255,255,0.55)',
+            background: displayMode === mode.key ? PATHD_THEME.sky : 'transparent',
+            color: displayMode === mode.key ? PATHD_THEME.ink : PATHD_THEME.paperMuted,
             cursor: 'pointer',
             fontFamily: T.SANS,
             fontSize: '11px',

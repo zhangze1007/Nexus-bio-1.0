@@ -6,13 +6,14 @@ import { useUIStore } from '../../store/uiStore';
 import { getToolDefinition } from '../tools/shared/toolRegistry';
 import { T } from './tokens';
 import DisplayModeToggle from './shared/DisplayModeToggle';
+import { PATHD_THEME } from '../workbench/workbenchTheme';
 
 const SANS = T.SANS;
 const MONO = T.MONO;
 
-const BORDER = 'rgba(255,255,255,0.08)';
-const LABEL  = 'rgba(255,255,255,0.45)';
-const VALUE  = 'rgba(255,255,255,0.9)';
+const BORDER = PATHD_THEME.paperBorder;
+const LABEL  = PATHD_THEME.paperLabel;
+const VALUE  = PATHD_THEME.paperValue;
 
 interface IDETopBarProps {
   moduleId: string;
@@ -46,9 +47,9 @@ export default function IDETopBar({ moduleId, actions }: IDETopBarProps) {
               width: 30,
               height: 30,
               borderRadius: 8,
-              background: 'rgba(255,255,255,0.06)',
-              border: '1px solid rgba(255,255,255,0.10)',
-              color: 'rgba(255,255,255,0.6)',
+              background: PATHD_THEME.paperSurface,
+              border: `1px solid ${BORDER}`,
+              color: LABEL,
               cursor: 'pointer',
               flexShrink: 0,
               marginRight: 4,
@@ -75,7 +76,7 @@ export default function IDETopBar({ moduleId, actions }: IDETopBarProps) {
           Home
         </Link>
 
-        <span style={{ color: 'rgba(255,255,255,0.16)' }}>/</span>
+        <span style={{ color: PATHD_THEME.paperMuted }}>/</span>
 
         <Link
           href="/tools"
@@ -95,7 +96,7 @@ export default function IDETopBar({ moduleId, actions }: IDETopBarProps) {
 
         {!isDirectory && (
           <>
-            <span style={{ color: 'rgba(255,255,255,0.16)' }}>/</span>
+            <span style={{ color: PATHD_THEME.paperMuted }}>/</span>
 
             <span style={{ fontFamily: MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase' }}>
               {tool?.shortLabel ?? moduleId}
@@ -105,7 +106,7 @@ export default function IDETopBar({ moduleId, actions }: IDETopBarProps) {
 
         {tool && (
           <>
-            <span style={{ color: 'rgba(255,255,255,0.16)' }}>·</span>
+            <span style={{ color: PATHD_THEME.paperMuted }}>·</span>
             <span
               style={{
                 minWidth: 0,
@@ -140,9 +141,9 @@ export default function IDETopBar({ moduleId, actions }: IDETopBarProps) {
             minHeight: '36px',
             padding: '0 12px',
             borderRadius: '10px',
-            border: `1px solid ${consoleOpen ? 'rgba(255,255,255,0.15)' : BORDER}`,
-            background: consoleOpen ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.03)',
-            color: errorCount > 0 ? 'rgba(255,140,126,0.95)' : VALUE,
+            border: `1px solid ${consoleOpen ? PATHD_THEME.paperBorderStrong : BORDER}`,
+            background: consoleOpen ? PATHD_THEME.paperSurfaceMuted : PATHD_THEME.paperSurface,
+            color: errorCount > 0 ? PATHD_THEME.coral : VALUE,
             fontFamily: SANS,
             fontSize: '12px',
             cursor: 'pointer',
@@ -155,9 +156,9 @@ export default function IDETopBar({ moduleId, actions }: IDETopBarProps) {
               minWidth: '22px',
               height: '22px',
               borderRadius: '999px',
-              border: `1px solid ${errorCount > 0 ? 'rgba(255,140,126,0.28)' : 'rgba(255,255,255,0.08)'}`,
-              background: errorCount > 0 ? 'rgba(255,140,126,0.12)' : 'rgba(255,255,255,0.04)',
-              color: errorCount > 0 ? 'rgba(255,140,126,0.92)' : LABEL,
+              border: `1px solid ${errorCount > 0 ? 'rgba(232,163,161,0.3)' : BORDER}`,
+              background: errorCount > 0 ? 'rgba(232,163,161,0.14)' : 'rgba(255,255,255,0.62)',
+              color: errorCount > 0 ? PATHD_THEME.coral : LABEL,
               display: 'inline-flex',
               alignItems: 'center',
               justifyContent: 'center',

@@ -2,22 +2,23 @@
 import { useRef, useEffect } from 'react';
 import { X, Trash2 } from 'lucide-react';
 import { useUIStore } from '../../store/uiStore';
+import { PATHD_THEME } from '../workbench/workbenchTheme';
 
-const MONO = "'JetBrains Mono','Fira Code',monospace";
-const SANS = "'Inter',-apple-system,sans-serif";
+const MONO = "'IBM Plex Mono','JetBrains Mono','Fira Code',monospace";
+const SANS = "'Public Sans',-apple-system,sans-serif";
 
 const LEVEL_COLORS = {
-  info:    'rgba(120,180,255,0.7)',
-  warn:    'rgba(255,190,60,0.8)',
-  error:   'rgba(255,80,60,0.85)',
-  success: 'rgba(80,220,120,0.8)',
+  info:    PATHD_THEME.sky,
+  warn:    PATHD_THEME.apricot,
+  error:   PATHD_THEME.coral,
+  success: PATHD_THEME.mint,
 };
 
 const LEVEL_BG = {
-  info:    'rgba(120,180,255,0.08)',
-  warn:    'rgba(255,190,60,0.08)',
-  error:   'rgba(255,80,60,0.08)',
-  success: 'rgba(80,220,120,0.08)',
+  info:    'rgba(175,195,214,0.16)',
+  warn:    'rgba(231,199,169,0.16)',
+  error:   'rgba(232,163,161,0.16)',
+  success: 'rgba(191,220,205,0.16)',
 };
 
 export default function IDEConsole() {
@@ -40,25 +41,26 @@ export default function IDEConsole() {
       height: '180px',
       display: 'flex',
       flexDirection: 'column',
-      background: '#070c12',
-      borderTop: '1px solid rgba(255,255,255,0.08)',
+      background: PATHD_THEME.paperSurfaceStrong,
+      borderTop: `1px solid ${PATHD_THEME.paperBorder}`,
+      boxShadow: '0 -10px 30px rgba(32,37,43,0.05)',
     }}>
       {/* Header */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '5px 12px',
-        borderBottom: '1px solid rgba(255,255,255,0.05)',
+        borderBottom: `1px solid ${PATHD_THEME.paperBorder}`,
         flexShrink: 0,
       }}>
-        <span style={{ fontFamily: MONO, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.3)' }}>
+        <span style={{ fontFamily: MONO, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: PATHD_THEME.paperLabel }}>
           Output Console · {consoleEntries.length} entries
         </span>
         <div style={{ display: 'flex', gap: '4px' }}>
-          <button onClick={clearConsole} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.25)', padding: '2px', display: 'flex' }}
+          <button onClick={clearConsole} style={{ background: 'none', border: 'none', cursor: 'pointer', color: PATHD_THEME.paperLabel, padding: '2px', display: 'flex' }}
             title="Clear console">
             <Trash2 size={11} />
           </button>
-          <button onClick={toggleConsole} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.25)', padding: '2px', display: 'flex' }}
+          <button onClick={toggleConsole} style={{ background: 'none', border: 'none', cursor: 'pointer', color: PATHD_THEME.paperLabel, padding: '2px', display: 'flex' }}
             title="Close console">
             <X size={11} />
           </button>
@@ -68,7 +70,7 @@ export default function IDEConsole() {
       {/* Entries */}
       <div ref={bodyRef} style={{ flex: 1, overflowY: 'auto', padding: '4px 0' }}>
         {consoleEntries.length === 0 ? (
-          <p style={{ fontFamily: MONO, fontSize: '10px', color: 'rgba(255,255,255,0.15)', padding: '8px 12px', margin: 0 }}>
+          <p style={{ fontFamily: MONO, fontSize: '10px', color: PATHD_THEME.paperMuted, padding: '8px 12px', margin: 0 }}>
             No output yet.
           </p>
         ) : (
@@ -83,12 +85,12 @@ export default function IDEConsole() {
                 borderLeft: `2px solid ${LEVEL_COLORS[entry.level]}`,
                 marginBottom: '1px',
               }}>
-                <span style={{ fontFamily: MONO, fontSize: '9px', color: 'rgba(255,255,255,0.2)', flexShrink: 0, marginTop: '1px' }}>{ts}</span>
+                <span style={{ fontFamily: MONO, fontSize: '9px', color: PATHD_THEME.paperMuted, flexShrink: 0, marginTop: '1px' }}>{ts}</span>
                 <span style={{ fontFamily: MONO, fontSize: '9px', color: LEVEL_COLORS[entry.level], flexShrink: 0, textTransform: 'uppercase', marginTop: '1px' }}>
                   [{entry.level}]
                 </span>
-                <span style={{ fontFamily: MONO, fontSize: '9px', color: 'rgba(255,255,255,0.2)', flexShrink: 0, marginTop: '1px' }}>{entry.module}</span>
-                <span style={{ fontFamily: SANS, fontSize: '11px', color: 'rgba(255,255,255,0.65)', flex: 1, lineHeight: 1.4 }}>{entry.message}</span>
+                <span style={{ fontFamily: MONO, fontSize: '9px', color: PATHD_THEME.paperMuted, flexShrink: 0, marginTop: '1px' }}>{entry.module}</span>
+                <span style={{ fontFamily: SANS, fontSize: '11px', color: PATHD_THEME.paperValue, flex: 1, lineHeight: 1.4 }}>{entry.message}</span>
               </div>
             );
           })

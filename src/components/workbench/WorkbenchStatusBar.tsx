@@ -29,15 +29,15 @@ interface WorkbenchStatusBarProps {
   moduleId: string | null;
 }
 
-const SURFACE = 'linear-gradient(180deg, rgba(9,12,18,0.96) 0%, rgba(10,12,18,0.9) 100%)';
-const BORDER = PATHD_THEME.panelBorder;
-const LABEL = PATHD_THEME.label;
-const VALUE = PATHD_THEME.value;
+const SURFACE = `linear-gradient(180deg, ${PATHD_THEME.paperSurfaceStrong} 0%, ${PATHD_THEME.paperWarm} 100%)`;
+const BORDER = PATHD_THEME.paperBorder;
+const LABEL = PATHD_THEME.paperLabel;
+const VALUE = PATHD_THEME.paperValue;
 
 function getStageStatusColor(status: 'pending' | 'active' | 'complete') {
-  if (status === 'complete') return '#9ED7C7';
-  if (status === 'active') return '#F2D6A2';
-  return 'rgba(255,255,255,0.22)';
+  if (status === 'complete') return PATHD_THEME.mint;
+  if (status === 'active') return PATHD_THEME.apricot;
+  return 'rgba(78,85,95,0.22)';
 }
 
 export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps) {
@@ -128,6 +128,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
           borderBottom: `1px solid ${BORDER}`,
           backdropFilter: 'blur(18px)',
           WebkitBackdropFilter: 'blur(18px)',
+          boxShadow: '0 10px 30px rgba(32,37,43,0.05)',
           flexShrink: 0,
         }}
       >
@@ -147,9 +148,9 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                     minHeight: '32px',
                     padding: '0 10px',
                     borderRadius: '999px',
-                    border: `1px solid ${isActive ? PATHD_THEME.panelBorderStrong : BORDER}`,
-                    background: isActive ? PATHD_THEME.panelGradientSoft : PATHD_THEME.chipNeutral,
-                    color: isActive ? VALUE : 'rgba(255,255,255,0.62)',
+                    border: `1px solid ${isActive ? PATHD_THEME.paperBorderStrong : BORDER}`,
+                    background: isActive ? `${entry.accent}44` : 'rgba(255,255,255,0.56)',
+                    color: isActive ? VALUE : PATHD_THEME.paperLabel,
                     textDecoration: 'none',
                     fontFamily: T.SANS,
                     fontSize: '11px',
@@ -162,7 +163,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                       height: '8px',
                       borderRadius: '999px',
                       background: getStageStatusColor(checkpoint?.status ?? 'pending'),
-                      boxShadow: `0 0 12px ${getStageStatusColor(checkpoint?.status ?? 'pending')}55`,
+                      boxShadow: `0 0 12px ${getStageStatusColor(checkpoint?.status ?? 'pending')}66`,
                     }}
                   />
                   {entry.shortLabel}
@@ -185,8 +186,8 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                   gap: '6px',
                   textDecoration: 'none',
                   border: `1px solid ${BORDER}`,
-                  background: PATHD_THEME.chipNeutral,
-                  color: 'rgba(255,255,255,0.68)',
+                  background: 'rgba(255,255,255,0.56)',
+                  color: PATHD_THEME.paperLabel,
                   fontFamily: T.SANS,
                   fontSize: '11px',
                 }}
@@ -205,8 +206,8 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                   gap: '6px',
                   textDecoration: 'none',
                   border: `1px solid ${BORDER}`,
-                  background: PATHD_THEME.chipNeutral,
-                  color: 'rgba(255,255,255,0.68)',
+                  background: 'rgba(255,255,255,0.56)',
+                  color: PATHD_THEME.paperLabel,
                   fontFamily: T.SANS,
                   fontSize: '11px',
                 }}
@@ -224,8 +225,8 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                   alignItems: 'center',
                   gap: '6px',
                   textDecoration: 'none',
-                  border: `1px solid ${PATHD_THEME.panelBorderStrong}`,
-                  background: PATHD_THEME.panelGradientSoft,
+                  border: `1px solid ${PATHD_THEME.paperBorderStrong}`,
+                  background: 'rgba(207,196,227,0.34)',
                   color: VALUE,
                   fontFamily: T.SANS,
                   fontSize: '11px',
@@ -244,9 +245,9 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '6px',
-                  border: `1px solid ${drawerOpen ? PATHD_THEME.panelBorderStrong : BORDER}`,
-                  background: drawerOpen ? PATHD_THEME.panelGradientSoft : PATHD_THEME.chipNeutral,
-                  color: drawerOpen ? VALUE : 'rgba(255,255,255,0.68)',
+                  border: `1px solid ${drawerOpen ? PATHD_THEME.paperBorderStrong : BORDER}`,
+                  background: drawerOpen ? 'rgba(175,195,214,0.28)' : 'rgba(255,255,255,0.56)',
+                  color: drawerOpen ? VALUE : PATHD_THEME.paperLabel,
                   cursor: 'pointer',
                   fontFamily: T.SANS,
                   fontSize: '11px',
@@ -269,7 +270,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
               style={{
                 borderRadius: '14px',
                 border: `1px solid ${BORDER}`,
-                background: PATHD_THEME.panelGradientSoft,
+                background: 'rgba(255,255,255,0.62)',
                 padding: '10px 12px',
                 display: 'grid',
                 gap: '6px',
@@ -281,11 +282,11 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                 </span>
                 <span
                   style={{
-                    padding: '2px 7px',
-                    borderRadius: '999px',
-                    border: `1px solid ${project?.isDemo ? PATHD_THEME.chipBorderWarm : PATHD_THEME.chipBorder}`,
-                    background: project?.isDemo ? PATHD_THEME.chipWarm : PATHD_THEME.chipCool,
-                    color: project?.isDemo ? 'rgba(255,222,190,0.94)' : PATHD_THEME.chipText,
+                      padding: '2px 7px',
+                      borderRadius: '999px',
+                      border: `1px solid ${project?.isDemo ? PATHD_THEME.chipBorderWarm : PATHD_THEME.paperBorder}`,
+                      background: project?.isDemo ? 'rgba(231,199,169,0.24)' : 'rgba(175,195,214,0.22)',
+                      color: VALUE,
                     fontFamily: T.MONO,
                     fontSize: '9px',
                     letterSpacing: '0.05em',
@@ -299,8 +300,8 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                     style={{
                       padding: '2px 7px',
                       borderRadius: '999px',
-                      border: `1px solid ${PATHD_THEME.chipBorder}`,
-                      background: PATHD_THEME.chipCool,
+                      border: `1px solid ${PATHD_THEME.paperBorder}`,
+                      background: 'rgba(191,220,205,0.22)',
                       color: VALUE,
                       fontFamily: T.MONO,
                       fontSize: '9px',
@@ -326,7 +327,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
               style={{
                 borderRadius: '14px',
                 border: `1px solid ${BORDER}`,
-                background: PATHD_THEME.panelGradientSoft,
+                background: 'rgba(255,255,255,0.62)',
                 padding: '10px 12px',
                 display: 'grid',
                 gap: '6px',
@@ -351,7 +352,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
               style={{
                 borderRadius: '14px',
                 border: `1px solid ${BORDER}`,
-                background: PATHD_THEME.panelGradientSoft,
+                background: 'rgba(255,255,255,0.62)',
                 padding: '10px 12px',
                 display: 'grid',
                 gap: '6px',
@@ -372,7 +373,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
               style={{
                 borderRadius: '14px',
                 border: `1px solid ${BORDER}`,
-                background: PATHD_THEME.panelGradientSoft,
+                background: 'rgba(255,255,255,0.62)',
                 padding: '10px 12px',
                 display: 'grid',
                 gap: '6px',
@@ -408,8 +409,8 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                     gap: '6px',
                     textDecoration: 'none',
                     border: `1px solid ${PATHD_THEME.chipBorder}`,
-                    background: PATHD_THEME.chipNeutral,
-                    color: 'rgba(255,255,255,0.76)',
+                    background: 'rgba(255,255,255,0.56)',
+                    color: PATHD_THEME.paperValue,
                     fontFamily: T.SANS,
                     fontSize: '11px',
                   }}
@@ -440,7 +441,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
               style={{
                 position: 'fixed',
                 inset: 0,
-                background: 'rgba(0,0,0,0.32)',
+                background: 'rgba(55, 53, 49, 0.18)',
                 border: 'none',
                 zIndex: 85,
                 cursor: 'pointer',
@@ -460,10 +461,10 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                 width: 'min(360px, calc(100vw - 24px))',
                 borderRadius: '22px',
                 border: `1px solid ${BORDER}`,
-                background: 'linear-gradient(180deg, rgba(10,12,18,0.98) 0%, rgba(13,16,24,0.96) 100%)',
+                background: `linear-gradient(180deg, ${PATHD_THEME.paperSurfaceStrong} 0%, ${PATHD_THEME.paperWarm} 100%)`,
                 backdropFilter: 'blur(24px)',
                 WebkitBackdropFilter: 'blur(24px)',
-                boxShadow: '0 24px 80px rgba(0,0,0,0.38)',
+                boxShadow: '0 24px 80px rgba(52, 48, 43, 0.16)',
                 zIndex: 90,
                 overflow: 'hidden',
                 display: 'flex',
@@ -495,8 +496,8 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                     height: 30,
                     borderRadius: '999px',
                     border: `1px solid ${BORDER}`,
-                    background: PATHD_THEME.chipNeutral,
-                    color: 'rgba(255,255,255,0.58)',
+                    background: 'rgba(255,255,255,0.56)',
+                    color: LABEL,
                     cursor: 'pointer',
                   }}
                 >
@@ -513,7 +514,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                     style={{
                       borderRadius: '14px',
                       border: `1px solid ${BORDER}`,
-                      background: PATHD_THEME.panelGradientSoft,
+                      background: 'rgba(255,255,255,0.58)',
                       padding: '10px 12px',
                       display: 'grid',
                       gap: '4px',
@@ -539,7 +540,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                       style={{
                         borderRadius: '14px',
                         border: `1px solid ${BORDER}`,
-                        background: freshness.status === 'stale' ? PATHD_THEME.chipWarm : PATHD_THEME.panelGradientSoft,
+                        background: freshness.status === 'stale' ? 'rgba(232,163,161,0.18)' : 'rgba(255,255,255,0.58)',
                         padding: '10px 12px',
                         display: 'grid',
                         gap: '4px',
@@ -569,7 +570,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                     style={{
                       borderRadius: '14px',
                       border: `1px solid ${BORDER}`,
-                      background: PATHD_THEME.panelGradientSoft,
+                      background: 'rgba(255,255,255,0.58)',
                       padding: '10px 12px',
                       display: 'grid',
                       gap: '4px',
@@ -601,7 +602,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                       style={{
                         borderRadius: '14px',
                         border: `1px solid ${BORDER}`,
-                        background: PATHD_THEME.panelGradientSoft,
+                        background: 'rgba(255,255,255,0.58)',
                         padding: '10px 12px',
                         display: 'grid',
                         gap: '4px',
@@ -633,7 +634,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                       style={{
                         borderRadius: '14px',
                         border: `1px solid ${BORDER}`,
-                        background: PATHD_THEME.panelGradientSoft,
+                        background: 'rgba(255,255,255,0.58)',
                         padding: '10px 12px',
                         display: 'grid',
                         gap: '6px',
@@ -701,7 +702,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                         style={{
                           borderRadius: '14px',
                           border: `1px solid ${BORDER}`,
-                          background: PATHD_THEME.panelGradientSoft,
+                          background: 'rgba(255,255,255,0.58)',
                           padding: '10px 12px',
                           display: 'grid',
                           gap: '4px',
@@ -742,7 +743,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                         style={{
                           borderRadius: '14px',
                           border: `1px solid ${BORDER}`,
-                          background: PATHD_THEME.panelGradientSoft,
+                          background: 'rgba(255,255,255,0.58)',
                           padding: '10px 12px',
                           display: 'flex',
                           alignItems: 'center',

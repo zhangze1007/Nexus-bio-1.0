@@ -63,15 +63,15 @@ export default function ScientificHero({
     <section
       className="nb-scientific-hero"
       style={{
-        borderRadius: '22px',
-        border: `1px solid ${PATHD_THEME.panelBorder}`,
-        background: PATHD_THEME.panelGradientSoft,
-        boxShadow: '0 18px 40px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.06)',
-        backdropFilter: 'blur(16px)',
-        WebkitBackdropFilter: 'blur(16px)',
-        padding: '14px 16px',
+        borderRadius: '24px',
+        border: `1px solid ${PATHD_THEME.paperBorder}`,
+        background: `linear-gradient(180deg, ${PATHD_THEME.paperElevated} 0%, ${PATHD_THEME.paperSurfaceStrong} 100%)`,
+        boxShadow: '0 18px 48px rgba(32,37,43,0.08), inset 0 1px 0 rgba(255,255,255,0.5)',
+        backdropFilter: 'blur(18px)',
+        WebkitBackdropFilter: 'blur(18px)',
+        padding: '18px 20px',
         display: 'grid',
-        gap: '12px',
+        gap: '16px',
         position: 'relative',
       }}
     >
@@ -80,7 +80,7 @@ export default function ScientificHero({
         style={{
           position: 'absolute',
           inset: 0,
-          background: PATHD_THEME.panelSheen,
+          background: 'linear-gradient(135deg, rgba(231,199,169,0.16) 0%, rgba(191,220,205,0.08) 48%, rgba(207,196,227,0.14) 100%)',
           pointerEvents: 'none',
         }}
       />
@@ -88,7 +88,7 @@ export default function ScientificHero({
         className="nb-scientific-hero__top"
         style={{
           display: 'grid',
-          gap: '12px',
+          gap: '16px',
           gridTemplateColumns: aside ? 'minmax(0, 1.3fr) minmax(260px, 0.7fr)' : 'minmax(0, 1fr)',
           alignItems: 'start',
           position: 'relative',
@@ -101,7 +101,7 @@ export default function ScientificHero({
               style={{
                 fontFamily: T.MONO,
                 fontSize: '10px',
-                color: PATHD_THEME.label,
+                color: PATHD_THEME.paperLabel,
                 textTransform: 'uppercase',
                 letterSpacing: '0.12em',
               }}
@@ -111,9 +111,9 @@ export default function ScientificHero({
             <div
               style={{
                 fontFamily: T.SANS,
-                fontSize: '22px',
+                fontSize: '24px',
                 fontWeight: 700,
-                color: PATHD_THEME.value,
+                color: PATHD_THEME.paperValue,
                 letterSpacing: '-0.04em',
                 lineHeight: 1.08,
               }}
@@ -124,7 +124,7 @@ export default function ScientificHero({
               style={{
                 fontFamily: T.SANS,
                 fontSize: '12px',
-                color: PATHD_THEME.label,
+                color: PATHD_THEME.paperMuted,
                 lineHeight: 1.62,
                 maxWidth: '76ch',
               }}
@@ -145,9 +145,9 @@ export default function ScientificHero({
             className="nb-scientific-hero__aside"
             style={{
               borderRadius: '18px',
-              border: `1px solid ${PATHD_THEME.panelBorder}`,
-              background: PATHD_THEME.panelGlass,
-              padding: '12px 14px',
+              border: `1px solid ${PATHD_THEME.paperBorder}`,
+              background: 'rgba(231, 199, 169, 0.16)',
+              padding: '14px 16px',
               display: 'grid',
               gap: '8px',
               minWidth: 0,
@@ -162,7 +162,7 @@ export default function ScientificHero({
         className="nb-scientific-hero__signals"
         style={{
           display: 'grid',
-          gap: '8px',
+          gap: '10px',
           gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
           position: 'relative',
           zIndex: 1,
@@ -175,11 +175,11 @@ export default function ScientificHero({
               key={`${signal.label}-${signal.value}`}
               className="nb-scientific-hero__signal"
               style={{
-                borderRadius: '16px',
+                borderRadius: '18px',
                 border: `1px solid ${style.border}`,
                 background: style.background,
-                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
-                padding: '10px 12px',
+                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.4)',
+                padding: '12px 14px',
                 display: 'grid',
                 gap: '5px',
                 minWidth: 0,
@@ -189,7 +189,7 @@ export default function ScientificHero({
                 style={{
                   fontFamily: T.MONO,
                   fontSize: '10px',
-                  color: PATHD_THEME.label,
+                  color: PATHD_THEME.paperLabel,
                   textTransform: 'uppercase',
                   letterSpacing: '0.08em',
                 }}
@@ -199,7 +199,7 @@ export default function ScientificHero({
               <div
                 style={{
                   fontFamily: T.SANS,
-                  fontSize: '14px',
+                  fontSize: '15px',
                   fontWeight: 700,
                   color: style.color,
                   letterSpacing: '-0.02em',
@@ -212,7 +212,7 @@ export default function ScientificHero({
                   style={{
                     fontFamily: T.SANS,
                     fontSize: '10px',
-                    color: PATHD_THEME.label,
+                    color: PATHD_THEME.paperMuted,
                     lineHeight: 1.5,
                   }}
                 >

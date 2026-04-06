@@ -1,26 +1,22 @@
 /**
  * ModuleCard — BentoGrid cell component.
  *
- * A glassmorphism card with Blue→Orange backlight glow and
- * warm frosted-glass aesthetic. Features "LIVE" signal indicator
- * with orange breathing pulse animation.
+ * A scientific figure plate for workbench modules.
  *
- * Designed for the #000 background aesthetic with zero hard borders —
- * separation is achieved via spacing and subtle glow.
+ * Cards stay dark enough for dense visualizations, but the framing is
+ * now driven by the scientific palette rather than generic black glass.
  */
 'use client';
 import { motion } from 'framer-motion';
 import type { CSSProperties, ReactNode } from 'react';
-import { T } from '../../ide/tokens';
 import { PATHD_THEME } from '../../workbench/workbenchTheme';
-
-const BLUR         = 'blur(16px)';
+import { T } from '../../ide/tokens';
 
 interface ModuleCardProps {
   children: ReactNode;
   /** Grid area name (maps to ToolShell gridTemplateAreas) */
   area?: string;
-  /** Highlights border with neon accent */
+  /** Highlights border with contextual accent */
   active?: boolean;
   /** Optional title rendered at top-left */
   title?: string;
@@ -32,13 +28,13 @@ interface ModuleCardProps {
   rowSpan?: number;
   /** Remove all padding (for full-bleed visualizations) */
   flush?: boolean;
-  /** Show LIVE signal (default: true) */
+  /** Show LIVE signal (default: false) */
   showSignal?: boolean;
 }
 
 export default function ModuleCard({
   children, area, active, title, style, colSpan, rowSpan, flush,
-  showSignal = true,
+  showSignal = false,
 }: ModuleCardProps) {
   return (
     <motion.div
@@ -51,16 +47,14 @@ export default function ModuleCard({
         gridArea: area,
         gridColumn: colSpan ? `span ${colSpan}` : undefined,
         gridRow: rowSpan ? `span ${rowSpan}` : undefined,
-        borderRadius: '18px',
-        background: PATHD_THEME.panelGradientSoft,
-        backdropFilter: BLUR,
-        WebkitBackdropFilter: BLUR,
+        borderRadius: '20px',
+        background: PATHD_THEME.panelGradient,
         border: active
           ? `1px solid ${PATHD_THEME.panelBorderStrong}`
           : `1px solid ${PATHD_THEME.panelBorder}`,
         boxShadow: active
-          ? '0 16px 36px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.08)'
-          : '0 14px 32px rgba(0,0,0,0.16), inset 0 1px 0 rgba(255,255,255,0.06)',
+          ? '0 18px 36px rgba(16,20,24,0.18), inset 0 1px 0 rgba(255,255,255,0.07)'
+          : '0 16px 32px rgba(16,20,24,0.14), inset 0 1px 0 rgba(255,255,255,0.05)',
         padding: flush ? 0 : '18px',
         overflow: 'hidden',
         display: 'flex',
@@ -77,7 +71,7 @@ export default function ModuleCard({
         style={{
           position: 'absolute',
           inset: 0,
-          background: PATHD_THEME.panelSheen,
+          background: PATHD_THEME.figureBackdrop,
           pointerEvents: 'none',
         }}
       />
@@ -133,7 +127,7 @@ export default function ModuleCard({
             fontWeight: 600,
             letterSpacing: '0.1em',
             textTransform: 'uppercase',
-            color: 'rgba(255,255,255,0.45)',
+            color: PATHD_THEME.label,
           }}>
             LIVE
           </span>
@@ -144,7 +138,7 @@ export default function ModuleCard({
         <div style={{
           fontFamily: T.SANS, fontSize: '9px', fontWeight: 500,
           textTransform: 'uppercase', letterSpacing: '0.12em',
-          color: active ? PATHD_THEME.orange : 'rgba(255,255,255,0.3)',
+          color: active ? PATHD_THEME.apricot : PATHD_THEME.label,
           marginBottom: flush ? 0 : '10px',
           padding: flush ? '12px 14px 0' : 0,
           flexShrink: 0,
