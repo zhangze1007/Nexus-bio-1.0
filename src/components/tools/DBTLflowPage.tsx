@@ -520,7 +520,7 @@ export default function DBTLflowPage() {
           formula="Cycle: D→B→T→L→D'"
         />
 
-        <div style={{ padding: '0 16px 10px' }}>
+        <div style={{ padding: '0 16px 6px' }}>
           <WorkbenchInlineContext
             toolId="dbtlflow"
             title="DBTL Workflow"
@@ -530,7 +530,7 @@ export default function DBTLflowPage() {
           />
         </div>
 
-        <div style={{ padding: '0 16px 10px' }}>
+        <div style={{ padding: '0 16px 4px' }}>
           <ScientificHero
             eyebrow="Stage 4 · Test, Learn, Reseed"
             title="Closed-loop iteration is now an explicit governed object"
@@ -577,30 +577,30 @@ export default function DBTLflowPage() {
           />
         </div>
 
-        <div style={{ padding: '0 16px 10px' }}>
+        <div style={{ padding: '0 16px 6px' }}>
           <div
             style={{
               borderRadius: '14px',
               border: `1px solid ${hasCommittedFeedback ? 'rgba(158,215,199,0.22)' : 'rgba(255,192,128,0.24)'}`,
               background: hasCommittedFeedback ? 'rgba(158,215,199,0.10)' : 'rgba(255,192,128,0.08)',
-              padding: '10px 12px',
+              padding: '8px 10px',
               display: 'grid',
-              gap: '4px',
+              gap: '3px',
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-              <span style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              <span style={{ fontFamily: T.MONO, fontSize: '9px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                 Closed-loop gate
               </span>
               <span
                 style={{
-                  padding: '3px 8px',
+                  padding: '2px 7px',
                   borderRadius: '999px',
                   border: `1px solid ${hasCommittedFeedback ? 'rgba(158,215,199,0.3)' : 'rgba(255,192,128,0.3)'}`,
                   background: hasCommittedFeedback ? 'rgba(158,215,199,0.16)' : 'rgba(255,192,128,0.14)',
                   color: hasCommittedFeedback ? 'rgba(224,244,238,0.92)' : 'rgba(255,219,180,0.92)',
                   fontFamily: T.MONO,
-                  fontSize: '10px',
+                  fontSize: '9px',
                   letterSpacing: '0.05em',
                   textTransform: 'uppercase',
                 }}
@@ -608,16 +608,16 @@ export default function DBTLflowPage() {
                 {hasCommittedFeedback ? 'Feedback Applied' : 'Awaiting Commit'}
               </span>
             </div>
-            <div style={{ fontFamily: T.SANS, fontSize: '12px', color: VALUE, lineHeight: 1.6 }}>
+            <div style={{ fontFamily: T.SANS, fontSize: '11px', color: VALUE, lineHeight: 1.45 }}>
               {feedbackGateLabel}
             </div>
-            <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, lineHeight: 1.5 }}>
+            <div style={{ fontFamily: T.MONO, fontSize: '9px', color: LABEL, lineHeight: 1.4 }}>
               committed pass rate {committedPassRate}% · committed improvement {committedImprovementRate} · latest committed phase {latestCommittedIteration?.phase ?? 'Design'}
             </div>
           </div>
         </div>
 
-        <div style={{ padding: '0 16px 10px' }}>
+        <div style={{ padding: '0 16px 4px' }}>
           <ScientificMethodStrip
             label="Campaign bench"
             items={[
@@ -643,7 +643,7 @@ export default function DBTLflowPage() {
           />
         </div>
 
-        <div style={{ padding: '0 16px 10px' }}>
+        <div style={{ padding: '0 16px 6px' }}>
           <div
             style={{
               borderRadius: '14px',
@@ -657,25 +657,25 @@ export default function DBTLflowPage() {
                 : draftIteration
                   ? 'rgba(175,195,214,0.10)'
                   : 'rgba(191,220,205,0.10)',
-              padding: '10px 12px',
+              padding: '8px 10px',
               display: 'grid',
-              gap: '4px',
+              gap: '3px',
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-              <span style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              <span style={{ fontFamily: T.MONO, fontSize: '9px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                 Draft + action status
               </span>
               {draftIteration && (
                 <span
                   style={{
-                    padding: '3px 8px',
+                    padding: '2px 7px',
                     borderRadius: '999px',
                     border: '1px solid rgba(175,195,214,0.34)',
                     background: 'rgba(175,195,214,0.16)',
                     color: VALUE,
                     fontFamily: T.MONO,
-                    fontSize: '10px',
+                    fontSize: '9px',
                     letterSpacing: '0.05em',
                     textTransform: 'uppercase',
                   }}
@@ -684,13 +684,13 @@ export default function DBTLflowPage() {
                 </span>
               )}
             </div>
-            <div style={{ fontFamily: T.SANS, fontSize: '12px', color: VALUE, lineHeight: 1.55 }}>
+            <div style={{ fontFamily: T.SANS, fontSize: '11px', color: VALUE, lineHeight: 1.45 }}>
               {activityMessage
                 ?? (draftIteration
                   ? `The figure and campaign cards are previewing your current draft at ${draftIteration.result.toFixed(1)} ${draftIteration.unit} before commit.`
                   : 'Commit a new iteration or generate a protocol to create a visible experimental artifact.')}
             </div>
-            <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL }}>
+            <div style={{ fontFamily: T.MONO, fontSize: '9px', color: LABEL }}>
               {draftIteration
                 ? `${draftIteration.phase} preview · ${draftIteration.passed ? 'pass' : 'fail'} gate · commit required for canonical history`
                 : 'canonical history updates only after + Add Iteration'}

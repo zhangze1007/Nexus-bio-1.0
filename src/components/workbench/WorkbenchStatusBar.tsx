@@ -116,14 +116,45 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
           : 'No auditable run yet'
     : 'Follow the stage rail and audit trail to validate each transition.';
   const visibleNextTools = nextTools.slice(0, 3);
+  const compactHeader = Boolean(moduleId);
+  const compactExecutionSummary = moduleId
+    ? freshness.status === 'fresh'
+      ? 'Fresh'
+      : freshness.status === 'stale'
+        ? `Stale after ${freshness.blockingToolIds.map((id) => id.toUpperCase()).join(', ')}`
+        : freshness.status === 'awaiting-upstream'
+          ? 'Awaiting rerun'
+          : 'No auditable run'
+    : executionSummary;
+  const compactSummaryItems = useMemo(
+    () => [
+      {
+        label: 'Object',
+        value: analyzeArtifact?.targetProduct || project?.targetProduct || project?.title || 'No active project',
+      },
+      {
+        label: 'Evidence',
+        value: `${selectedEvidence.length} selected`,
+      },
+      {
+        label: 'Stage',
+        value: stage?.label ?? 'Workbench flow',
+      },
+      {
+        label: 'Freshness',
+        value: compactExecutionSummary,
+      },
+    ],
+    [analyzeArtifact?.targetProduct, compactExecutionSummary, project?.targetProduct, project?.title, selectedEvidence.length, stage?.label],
+  );
 
   return (
     <>
       <section
         style={{
-          padding: '8px 16px 10px',
+          padding: compactHeader ? '5px 12px 6px' : '8px 16px 10px',
           display: 'grid',
-          gap: '8px',
+          gap: compactHeader ? '5px' : '8px',
           background: SURFACE,
           borderBottom: `1px solid ${BORDER}`,
           backdropFilter: 'blur(18px)',
@@ -133,7 +164,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
         }}
       >
         <div style={{ display: 'grid', gap: '8px', gridTemplateColumns: 'minmax(0, 1fr)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: compactHeader ? '6px' : '10px', flexWrap: 'wrap' }}>
             {WORKBENCH_STAGES.map((entry) => {
               const checkpoint = checkpoints.find((item) => item.id === entry.id);
               const isActive = stage?.id === entry.id || (!moduleId && currentStageId === entry.id);
@@ -145,15 +176,15 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: '8px',
-                    minHeight: '32px',
-                    padding: '0 10px',
+                    minHeight: compactHeader ? '28px' : '32px',
+                    padding: compactHeader ? '0 8px' : '0 10px',
                     borderRadius: '999px',
                     border: `1px solid ${isActive ? PATHD_THEME.paperBorderStrong : BORDER}`,
                   background: isActive ? `${entry.accent}44` : PATHD_THEME.paperSurfaceStrong,
                     color: isActive ? VALUE : PATHD_THEME.paperLabel,
                     textDecoration: 'none',
                     fontFamily: T.SANS,
-                    fontSize: '11px',
+                    fontSize: compactHeader ? '10px' : '11px',
                     fontWeight: 600,
                   }}
                 >
@@ -167,9 +198,11 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                     }}
                   />
                   {entry.shortLabel}
-                  <span style={{ color: LABEL, fontSize: '11px', fontWeight: 500 }}>
-                    {entry.label}
-                  </span>
+                  {!compactHeader && (
+                    <span style={{ color: LABEL, fontSize: '11px', fontWeight: 500 }}>
+                      {entry.label}
+                    </span>
+                  )}
                 </Link>
               );
             })}
@@ -178,8 +211,8 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
               <Link
                 href="/research"
                 style={{
-                  minHeight: '32px',
-                  padding: '0 10px',
+                  minHeight: compactHeader ? '28px' : '32px',
+                  padding: compactHeader ? '0 8px' : '0 10px',
                   borderRadius: '999px',
                   display: 'inline-flex',
                   alignItems: 'center',
@@ -189,7 +222,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                   background: PATHD_THEME.paperSurfaceStrong,
                   color: PATHD_THEME.paperLabel,
                   fontFamily: T.SANS,
-                  fontSize: '11px',
+                  fontSize: compactHeader ? '10px' : '11px',
                 }}
               >
                 <BookOpenText size={13} />
@@ -198,8 +231,8 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
               <Link
                 href="/analyze"
                 style={{
-                  minHeight: '32px',
-                  padding: '0 10px',
+                  minHeight: compactHeader ? '28px' : '32px',
+                  padding: compactHeader ? '0 8px' : '0 10px',
                   borderRadius: '999px',
                   display: 'inline-flex',
                   alignItems: 'center',
@@ -209,7 +242,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                   background: PATHD_THEME.paperSurfaceStrong,
                   color: PATHD_THEME.paperLabel,
                   fontFamily: T.SANS,
-                  fontSize: '11px',
+                  fontSize: compactHeader ? '10px' : '11px',
                 }}
               >
                 <Microscope size={13} />
@@ -218,8 +251,8 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
               <Link
                 href="/tools/nexai"
                 style={{
-                  minHeight: '32px',
-                  padding: '0 10px',
+                  minHeight: compactHeader ? '28px' : '32px',
+                  padding: compactHeader ? '0 8px' : '0 10px',
                   borderRadius: '999px',
                   display: 'inline-flex',
                   alignItems: 'center',
@@ -229,7 +262,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                   background: 'rgba(207,196,227,0.34)',
                   color: VALUE,
                   fontFamily: T.SANS,
-                  fontSize: '11px',
+                  fontSize: compactHeader ? '10px' : '11px',
                 }}
               >
                 <BrainCircuit size={13} />
@@ -239,8 +272,8 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                 type="button"
                 onClick={() => setDrawerOpen((open) => !open)}
                 style={{
-                  minHeight: '32px',
-                  padding: '0 10px',
+                  minHeight: compactHeader ? '28px' : '32px',
+                  padding: compactHeader ? '0 8px' : '0 10px',
                   borderRadius: '999px',
                   display: 'inline-flex',
                   alignItems: 'center',
@@ -250,7 +283,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                   color: drawerOpen ? VALUE : PATHD_THEME.paperLabel,
                   cursor: 'pointer',
                   fontFamily: T.SANS,
-                  fontSize: '11px',
+                  fontSize: compactHeader ? '10px' : '11px',
                 }}
               >
                 <Layers3 size={13} />
@@ -259,137 +292,176 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
             </div>
           </div>
 
-          <div
-            style={{
-              display: 'grid',
-              gap: '8px',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))',
-            }}
-          >
-            <div
-              style={{
-                borderRadius: '14px',
-                border: `1px solid ${BORDER}`,
-                background: PATHD_THEME.paperSurfaceStrong,
-                padding: '10px 12px',
-                display: 'grid',
-                gap: '6px',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                <span style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                  Current Object
-                </span>
-                <span
+          {compactHeader ? (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
+              {compactSummaryItems.map((item) => (
+                <div
+                  key={item.label}
                   style={{
-                      padding: '2px 7px',
-                      borderRadius: '999px',
-                      border: `1px solid ${project?.isDemo ? PATHD_THEME.chipBorderWarm : PATHD_THEME.paperBorder}`,
-                      background: project?.isDemo ? 'rgba(231,199,169,0.24)' : 'rgba(175,195,214,0.22)',
-                      color: VALUE,
-                    fontFamily: T.MONO,
-                    fontSize: '9px',
-                    letterSpacing: '0.05em',
-                    textTransform: 'uppercase',
+                    padding: '3px 7px',
+                    minHeight: '24px',
+                    maxWidth: '100%',
+                    borderRadius: '999px',
+                    border: `1px solid ${BORDER}`,
+                    background: PATHD_THEME.paperSurfaceStrong,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
                   }}
                 >
-                  {project?.isDemo ? 'Demo' : 'Project'}
-                </span>
-                {stage && (
+                  <span style={{ fontFamily: T.MONO, fontSize: '8px', color: LABEL, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                    {item.label}
+                  </span>
                   <span
                     style={{
-                      padding: '2px 7px',
-                      borderRadius: '999px',
-                      border: `1px solid ${PATHD_THEME.paperBorder}`,
-                      background: 'rgba(191,220,205,0.22)',
+                      fontFamily: T.SANS,
+                      fontSize: '9px',
                       color: VALUE,
+                      fontWeight: 600,
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      maxWidth: item.label === 'Freshness' ? '24ch' : '18ch',
+                    }}
+                  >
+                    {item.value}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div
+              style={{
+                display: 'grid',
+                gap: '8px',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))',
+              }}
+            >
+              <div
+                style={{
+                  borderRadius: '14px',
+                  border: `1px solid ${BORDER}`,
+                  background: PATHD_THEME.paperSurfaceStrong,
+                  padding: '10px 12px',
+                  display: 'grid',
+                  gap: '6px',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  <span style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                    Current Object
+                  </span>
+                  <span
+                    style={{
+                        padding: '2px 7px',
+                        borderRadius: '999px',
+                        border: `1px solid ${project?.isDemo ? PATHD_THEME.chipBorderWarm : PATHD_THEME.paperBorder}`,
+                        background: project?.isDemo ? 'rgba(231,199,169,0.24)' : 'rgba(175,195,214,0.22)',
+                        color: VALUE,
                       fontFamily: T.MONO,
                       fontSize: '9px',
                       letterSpacing: '0.05em',
                       textTransform: 'uppercase',
                     }}
                   >
-                    {stage.shortLabel}
+                    {project?.isDemo ? 'Demo' : 'Project'}
                   </span>
-                )}
+                  {stage && (
+                    <span
+                      style={{
+                        padding: '2px 7px',
+                        borderRadius: '999px',
+                        border: `1px solid ${PATHD_THEME.paperBorder}`,
+                        background: 'rgba(191,220,205,0.22)',
+                        color: VALUE,
+                        fontFamily: T.MONO,
+                        fontSize: '9px',
+                        letterSpacing: '0.05em',
+                        textTransform: 'uppercase',
+                      }}
+                    >
+                      {stage.shortLabel}
+                    </span>
+                  )}
+                </div>
+                <div style={{ fontFamily: T.SANS, fontSize: '14px', fontWeight: 700, color: VALUE, letterSpacing: '-0.01em' }}>
+                  {project?.title ?? 'Scientific workbench context not yet initialized'}
+                </div>
+                <div style={{ fontFamily: T.SANS, fontSize: '11px', color: LABEL, lineHeight: 1.55 }}>
+                  {analyzeArtifact
+                    ? `${analyzeArtifact.targetProduct} · ${analyzeArtifact.nodes.length} nodes · ${analyzeArtifact.edges.length} edges`
+                    : project?.summary ?? 'Start in Research or Analyze to create a traceable project object.'}
+                </div>
               </div>
-              <div style={{ fontFamily: T.SANS, fontSize: '14px', fontWeight: 700, color: VALUE, letterSpacing: '-0.01em' }}>
-                {project?.title ?? 'Scientific workbench context not yet initialized'}
-              </div>
-              <div style={{ fontFamily: T.SANS, fontSize: '11px', color: LABEL, lineHeight: 1.55 }}>
-                {analyzeArtifact
-                  ? `${analyzeArtifact.targetProduct} · ${analyzeArtifact.nodes.length} nodes · ${analyzeArtifact.edges.length} edges`
-                  : project?.summary ?? 'Start in Research or Analyze to create a traceable project object.'}
-              </div>
-            </div>
 
-            <div
-              style={{
-                borderRadius: '14px',
-                border: `1px solid ${BORDER}`,
-                background: PATHD_THEME.paperSurfaceStrong,
-                padding: '10px 12px',
-                display: 'grid',
-                gap: '6px',
-              }}
-            >
-              <span style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                Evidence
-              </span>
-              <div style={{ fontFamily: T.SANS, fontSize: '16px', color: VALUE, fontWeight: 700 }}>
-                {selectedEvidence.length}
+              <div
+                style={{
+                  borderRadius: '14px',
+                  border: `1px solid ${BORDER}`,
+                  background: PATHD_THEME.paperSurfaceStrong,
+                  padding: '10px 12px',
+                  display: 'grid',
+                  gap: '6px',
+                }}
+              >
+                <span style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                  Evidence
+                </span>
+                <div style={{ fontFamily: T.SANS, fontSize: '16px', color: VALUE, fontWeight: 700 }}>
+                  {selectedEvidence.length}
+                </div>
+                <div style={{ fontFamily: T.SANS, fontSize: '11px', color: LABEL, lineHeight: 1.55 }}>
+                  {selectedEvidence.length
+                    ? selectedEvidence[0]?.title
+                    : project?.isDemo
+                      ? 'Demo fallback is active.'
+                      : 'Research bundle ready to attach.'}
+                </div>
               </div>
-              <div style={{ fontFamily: T.SANS, fontSize: '11px', color: LABEL, lineHeight: 1.55 }}>
-                {selectedEvidence.length
-                  ? selectedEvidence[0]?.title
-                  : project?.isDemo
-                    ? 'Demo fallback is active.'
-                    : 'Research bundle ready to attach.'}
-              </div>
-            </div>
 
-            <div
-              style={{
-                borderRadius: '14px',
-                border: `1px solid ${BORDER}`,
-                background: PATHD_THEME.paperSurfaceStrong,
-                padding: '10px 12px',
-                display: 'grid',
-                gap: '6px',
-              }}
-            >
-              <span style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                Stage Focus
-              </span>
-              <div style={{ fontFamily: T.SANS, fontSize: '12px', color: VALUE, fontWeight: 600 }}>
-                {stage?.label ?? 'Flowchart skeleton ready'}
+              <div
+                style={{
+                  borderRadius: '14px',
+                  border: `1px solid ${BORDER}`,
+                  background: PATHD_THEME.paperSurfaceStrong,
+                  padding: '10px 12px',
+                  display: 'grid',
+                  gap: '6px',
+                }}
+              >
+                <span style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                  Stage Focus
+                </span>
+                <div style={{ fontFamily: T.SANS, fontSize: '12px', color: VALUE, fontWeight: 600 }}>
+                  {stage?.label ?? 'Flowchart skeleton ready'}
+                </div>
+                <div style={{ fontFamily: T.SANS, fontSize: '11px', color: LABEL, lineHeight: 1.55 }}>
+                  {stageSummary}
+                </div>
               </div>
-              <div style={{ fontFamily: T.SANS, fontSize: '11px', color: LABEL, lineHeight: 1.55 }}>
-                {stageSummary}
-              </div>
-            </div>
 
-            <div
-              style={{
-                borderRadius: '14px',
-                border: `1px solid ${BORDER}`,
-                background: PATHD_THEME.paperSurfaceStrong,
-                padding: '10px 12px',
-                display: 'grid',
-                gap: '6px',
-              }}
-            >
-              <span style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                Integrity
-              </span>
-              <div style={{ fontFamily: T.SANS, fontSize: '12px', color: VALUE, fontWeight: 600 }}>
-                {executionSummary}
-              </div>
-              <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, lineHeight: 1.5 }}>
-                {syncLabel} · {backendMeta?.runArtifactCount ?? runArtifacts.length} runs · {backendMeta?.experimentCount ?? experimentRecords.length} experiments
+              <div
+                style={{
+                  borderRadius: '14px',
+                  border: `1px solid ${BORDER}`,
+                  background: PATHD_THEME.paperSurfaceStrong,
+                  padding: '10px 12px',
+                  display: 'grid',
+                  gap: '6px',
+                }}
+              >
+                <span style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                  Integrity
+                </span>
+                <div style={{ fontFamily: T.SANS, fontSize: '12px', color: VALUE, fontWeight: 600 }}>
+                  {executionSummary}
+                </div>
+                <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, lineHeight: 1.5 }}>
+                  {syncLabel} · {backendMeta?.runArtifactCount ?? runArtifacts.length} runs · {backendMeta?.experimentCount ?? experimentRecords.length} experiments
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           {visibleNextTools.length > 0 && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
@@ -401,8 +473,8 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                   key={tool.id}
                   href={tool.href}
                   style={{
-                    minHeight: '30px',
-                    padding: '0 10px',
+                    minHeight: compactHeader ? '26px' : '30px',
+                    padding: compactHeader ? '0 8px' : '0 10px',
                     borderRadius: '999px',
                     display: 'inline-flex',
                     alignItems: 'center',
@@ -412,7 +484,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                     background: 'rgba(255,255,255,0.56)',
                     color: PATHD_THEME.paperValue,
                     fontFamily: T.SANS,
-                    fontSize: '11px',
+                    fontSize: compactHeader ? '10px' : '11px',
                   }}
                 >
                   {tool.shortLabel}

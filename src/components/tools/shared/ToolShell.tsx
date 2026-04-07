@@ -85,8 +85,8 @@ export default function ToolShell({
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
         style={{
-          padding: '10px 20px',
-          display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap',
+          padding: '8px 16px',
+          display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap',
           flexShrink: 0,
           borderBottom: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
           background: PATHD_THEME.sepiaPanelMuted,
@@ -102,15 +102,15 @@ export default function ToolShell({
             display: 'inline-flex',
             alignItems: 'center',
             gap: '4px',
-            minHeight: '30px',
-            padding: '0 8px',
+            minHeight: '28px',
+            padding: '0 7px',
             borderRadius: '10px',
             border: `1px solid ${PATHD_THEME.paperBorder}`,
             background: PATHD_THEME.paperElevated,
             color: PATHD_THEME.paperLabel,
             cursor: 'pointer',
             fontFamily: T.SANS,
-            fontSize: '10px',
+            fontSize: '9px',
             flexShrink: 0,
           }}
           title="Back to Tools"
@@ -123,14 +123,14 @@ export default function ToolShell({
           display: 'inline-flex',
           alignItems: 'center',
           gap: '6px',
-            minHeight: '30px',
-            padding: '0 10px',
+            minHeight: '28px',
+            padding: '0 8px',
             borderRadius: '10px',
             border: `1px solid ${PATHD_THEME.paperBorder}`,
             background: 'rgba(231, 199, 169, 0.24)',
             color: PATHD_THEME.paperValue,
             fontFamily: T.MONO,
-            fontSize: '10px',
+            fontSize: '9px',
             fontWeight: 700,
           letterSpacing: '0.08em',
           textTransform: 'uppercase',
@@ -141,7 +141,7 @@ export default function ToolShell({
 
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{
-            fontFamily: T.SANS, fontSize: '13px', fontWeight: 700,
+            fontFamily: T.SANS, fontSize: '12px', fontWeight: 700,
             color: PATHD_THEME.paperValue,
             letterSpacing: '-0.01em',
           }}>
@@ -149,7 +149,7 @@ export default function ToolShell({
           </div>
           {description && (
             <div style={{
-              fontFamily: T.SANS, fontSize: '11px',
+              fontFamily: T.SANS, fontSize: '10px',
               color: PATHD_THEME.paperLabel,
               marginTop: '2px',
             }}>
@@ -160,9 +160,9 @@ export default function ToolShell({
 
         {formula && (
           <div style={{
-            fontFamily: T.MONO, fontSize: '10px',
+            fontFamily: T.MONO, fontSize: '9px',
             color: PATHD_THEME.paperValue,
-          padding: '6px 10px',
+          padding: '5px 8px',
             background: PATHD_THEME.paperSurfaceStrong,
             border: `1px solid ${PATHD_THEME.paperBorder}`,
             borderRadius: '10px',
@@ -174,10 +174,10 @@ export default function ToolShell({
 
       {/* ── BentoGrid ──────────────────────────────────────── */}
       <div className="nb-tool-shell__body" style={{
-        flex: 1, minHeight: 0, padding: `${Math.max(gap, 10)}px 14px 16px`,
+        flex: 1, minHeight: 0, padding: `${Math.max(gap, 8)}px 12px 12px`,
         display: 'flex',
         flexDirection: 'column',
-        gap: `${Math.max(gap, 10)}px`,
+        gap: `${Math.max(gap, 8)}px`,
       }}>
         {workbenchSummary && (
           <WorkbenchInlineContext

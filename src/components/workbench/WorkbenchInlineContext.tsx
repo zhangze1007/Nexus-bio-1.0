@@ -72,14 +72,15 @@ export default function WorkbenchInlineContext({
 
   return (
     <div
+      className={`nb-workbench-inline-context${compact ? ' nb-workbench-inline-context--compact' : ''}`}
       style={{
         borderRadius: compact ? '16px' : '18px',
         border: `1px solid ${BORDER}`,
         background: SURFACE,
-        padding: compact ? '12px' : '14px 16px',
+        padding: compact ? '9px 10px' : '14px 16px',
         display: 'grid',
-        gap: compact ? '10px' : '12px',
-        marginBottom: compact ? '14px' : '16px',
+        gap: compact ? '8px' : '12px',
+        marginBottom: compact ? '10px' : '16px',
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap' }}>
@@ -87,19 +88,19 @@ export default function WorkbenchInlineContext({
           <span style={{ fontFamily: T.MONO, fontSize: '9px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
             {stage?.shortLabel ?? 'Workbench'} context
           </span>
-          <span style={{ fontFamily: T.SANS, fontSize: compact ? '13px' : '14px', color: VALUE, fontWeight: 700 }}>
+          <span style={{ fontFamily: T.SANS, fontSize: compact ? '12px' : '14px', color: VALUE, fontWeight: 700 }}>
             {project?.targetProduct || analyzeArtifact?.targetProduct || project?.title || 'No active project object'}
           </span>
         </div>
         <span
           style={{
-            padding: '3px 8px',
+            padding: compact ? '2px 7px' : '3px 8px',
             borderRadius: '999px',
             border: `1px solid ${(isSimulated || project?.isDemo) ? PATHD_THEME.chipBorderWarm : PATHD_THEME.paperBorder}`,
             background: (isSimulated || project?.isDemo) ? 'rgba(231,199,169,0.22)' : 'rgba(175,195,214,0.2)',
             color: PATHD_THEME.paperValue,
             fontFamily: T.MONO,
-            fontSize: '9px',
+            fontSize: compact ? '8px' : '9px',
             letterSpacing: '0.05em',
             textTransform: 'uppercase',
           }}
@@ -113,7 +114,7 @@ export default function WorkbenchInlineContext({
           fontFamily: T.SANS,
           fontSize: compact ? '10px' : '12px',
           color: LABEL,
-          lineHeight: compact ? 1.5 : 1.6,
+          lineHeight: compact ? 1.4 : 1.6,
           ...(compact
             ? {
                 display: '-webkit-box',
@@ -129,22 +130,26 @@ export default function WorkbenchInlineContext({
 
       {(isSimulated || project?.isDemo) && (
         <div
+          className="nb-workbench-inline-context__simulated"
           style={{
-            borderRadius: '12px',
+            borderRadius: compact ? '10px' : '12px',
             border: `1px solid ${PATHD_THEME.chipBorderWarm}`,
             background: 'rgba(231,199,169,0.12)',
-            padding: compact ? '8px 10px' : '10px 12px',
-            display: 'grid',
-            gap: '4px',
+            padding: compact ? '6px 8px' : '10px 12px',
+            display: compact ? 'flex' : 'grid',
+            alignItems: compact ? 'center' : undefined,
+            gap: compact ? '6px' : '4px',
+            flexWrap: 'wrap',
           }}
         >
           <div
             style={{
               fontFamily: T.MONO,
-              fontSize: '9px',
+              fontSize: compact ? '8px' : '9px',
               color: VALUE,
               textTransform: 'uppercase',
               letterSpacing: '0.08em',
+              flexShrink: 0,
             }}
           >
             Demo / simulated context
@@ -152,9 +157,19 @@ export default function WorkbenchInlineContext({
           <div
             style={{
               fontFamily: T.SANS,
-              fontSize: compact ? '10px' : '11px',
+              fontSize: compact ? '9px' : '11px',
               color: LABEL,
-              lineHeight: 1.55,
+              lineHeight: compact ? 1.4 : 1.55,
+              ...(compact
+                ? {
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical' as const,
+                    overflow: 'hidden',
+                    flex: 1,
+                    minWidth: '220px',
+                  }
+                : {}),
             }}
           >
             Outputs on this page may come from local models or bundled synthetic datasets until a project-linked evidence bundle or live analysis artifact is attached.
@@ -166,7 +181,6 @@ export default function WorkbenchInlineContext({
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
           {[
             { label: 'Evidence', value: `${selectedEvidenceIds.length} selected` },
-            { label: 'Bottleneck', value: bottleneck?.label ?? 'Awaiting analyze artifact' },
             {
               label: 'Feedback',
               value: committedFeedback
@@ -183,18 +197,19 @@ export default function WorkbenchInlineContext({
                     ? 'Awaiting rerun'
                     : 'No auditable run',
             },
+            { label: 'Bottleneck', value: bottleneck?.label ?? 'Awaiting analyze artifact' },
           ].map((item) => (
             <div
               key={item.label}
               style={{
-                padding: '4px 8px',
+                padding: '3px 7px',
                 borderRadius: '999px',
                 border: `1px solid ${BORDER}`,
                 background: 'rgba(255,255,255,0.55)',
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: '6px',
-                minHeight: '24px',
+                gap: '5px',
+                minHeight: '22px',
                 maxWidth: '100%',
               }}
             >

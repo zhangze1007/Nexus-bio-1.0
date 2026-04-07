@@ -114,7 +114,7 @@
 /* being pushed below the fold by header content.                   */
 .nb-workbench .nb-ide-main {
   padding-left: 80px;
-  overflow: hidden;        /* no full-page scroll on tool pages */
+  overflow: auto;
   display: flex;
   flex-direction: column;
 }
@@ -178,9 +178,9 @@
 .nb-workbench-content {
   position: relative !important;
   inset: auto !important;
-  /* flex: 1 + min-height: 0 = fills parent exactly without growing past viewport */
-  flex: 1;
-  min-height: 0;
+  /* Tool pages need to grow vertically so the full dashboard can scroll. */
+  flex: 0 0 auto;
+  min-height: 100%;
   display: flex;
   flex-direction: column;
 }
@@ -360,33 +360,58 @@
 /* ═══ Tool page internal panels — responsive ═══ */
 .nb-tool-panels {
   display: flex;
-  flex: 1;
-  overflow: hidden;
-  min-height: 0;
+  flex: 0 0 auto;
+  overflow: visible;
+  min-height: min(960px, calc(100vh - 190px));
   align-items: stretch;
 }
 
 .nb-tool-sidebar {
   flex-shrink: 0;
   overflow-x: hidden;
-  overflow-y: auto !important;
+  overflow-y: visible !important;
   padding: 16px;
   min-height: 0;
+  align-self: stretch;
 }
 
 .nb-tool-center {
-  flex: 1;
+  flex: 1 1 auto;
   min-width: 0;
-  overflow: auto !important;
-  min-height: 0;
+  overflow: visible !important;
+  min-height: min(960px, calc(100vh - 190px));
 }
 
 .nb-tool-right {
   flex-shrink: 0;
   overflow-x: hidden;
-  overflow-y: auto !important;
+  overflow-y: visible !important;
   padding: 16px;
   min-height: 0;
+  align-self: stretch;
+}
+
+.nb-tool-page,
+.nb-tool-shell {
+  flex: 0 0 auto !important;
+  min-height: 100%;
+  height: auto !important;
+  overflow: visible !important;
+}
+
+.nb-tool-page > .nb-tool-panels {
+  flex: 0 0 auto !important;
+}
+
+.nb-tool-shell__body {
+  flex: 0 0 auto !important;
+  overflow: visible !important;
+}
+
+.nb-tool-shell__grid {
+  flex: 0 0 auto !important;
+  min-height: min(960px, calc(100vh - 190px));
+  align-content: start;
 }
 
 @media (max-width: 960px) {
@@ -395,12 +420,12 @@
     border-bottom: 1px solid rgba(255,255,255,0.06);
     max-height: none;
     flex-shrink: 0;
-    overflow-y: auto !important;
+    overflow-y: visible !important;
   }
 
   .nb-tool-center {
     min-height: 300px;
-    overflow: auto !important;
+    overflow: visible !important;
   }
 
   /* Ensure SVG charts scale down */
