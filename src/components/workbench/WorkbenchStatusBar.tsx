@@ -263,7 +263,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
             style={{
               display: 'grid',
               gap: '8px',
-              gridTemplateColumns: 'minmax(280px, 1.4fr) repeat(auto-fit, minmax(170px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))',
             }}
           >
             <div

@@ -828,8 +828,15 @@ export default function ScSpatialPage() {
   const [showQCFailed, setShowQCFailed] = useState(false);
   const [highlightGene, setHighlightGene] = useState<string>('ADS');
 
+  const filteredCells = useMemo(
+    () => SC_SPATIAL_DATA.filter((cell) =>
+      (showQCFailed || cell.qcPass) && (selectedCluster === null || cell.cluster === selectedCluster),
+    ),
+    [selectedCluster, showQCFailed],
+  );
+
   const cellRows: CellRow[] = useMemo(() =>
-    SC_SPATIAL_DATA.map(c => ({
+    filteredCells.map(c => ({
       id: c.id,
       barcode: c.barcode,
       cluster: c.cluster,
@@ -839,15 +846,15 @@ export default function ScSpatialPage() {
       mitoPercent: c.mitoPercent,
       pseudotime: c.pseudotime,
     })),
-  []);
+  [filteredCells]);
 
   const exportCells = useMemo(() =>
-    SC_SPATIAL_DATA.map(c => ({
+    filteredCells.map(c => ({
       id: c.id, barcode: c.barcode, cluster: c.cluster, cellType: c.cellType,
       totalCounts: c.totalCounts, nGenes: c.nGenes, mitoPercent: c.mitoPercent,
       pseudotime: c.pseudotime, spatialX: c.spatialX, spatialY: c.spatialY,
     })),
-  []);
+  [filteredCells]);
 
   const toggleCluster = useCallback((cl: number) => {
     setSelectedCluster(prev => prev === cl ? null : cl);

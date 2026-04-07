@@ -230,6 +230,8 @@ export default function DBTLflowPage() {
   // Protocol state
   const [generatedProtocol, setGeneratedProtocol] = useState<GeneratedProtocol | null>(null);
   const [protocolExpanded, setProtocolExpanded] = useState(false);
+  const [activityMessage, setActivityMessage] = useState<string | null>(null);
+  const [activityTone, setActivityTone] = useState<'info' | 'success' | 'error'>('info');
 
   // Feedback loop state
   const [feedbackResult, setFeedbackResult] = useState<FeedbackLoopResult | null>(null);
@@ -244,18 +246,32 @@ export default function DBTLflowPage() {
     passed: liveDraft.passed,
     notes: `Live handoff: ${liveDraft.notes}`,
   }), [iterations.length, liveDraft]);
+  const parsedDraftResult = Number.parseFloat(result);
+  const draftIteration = useMemo<DBTLIteration | null>(() => {
+    if (!hypothesis.trim() || !result.trim() || Number.isNaN(parsedDraftResult)) return null;
+    return {
+      id: iterations.length + 1,
+      phase: PHASES[iterations.length % PHASES.length],
+      hypothesis: hypothesis.trim(),
+      result: parsedDraftResult,
+      unit: unit.trim() || liveDraft.unit,
+      passed,
+      notes: `Draft iteration preview: ${liveDraft.notes}`,
+    };
+  }, [hypothesis, iterations.length, liveDraft.notes, liveDraft.unit, parsedDraftResult, passed, result, unit]);
   const displayIterations = useMemo(() => {
+    const activeIteration = draftIteration ?? liveIteration;
     const latest = iterations[iterations.length - 1];
     if (
       latest
-      && latest.hypothesis === liveIteration.hypothesis
-      && latest.result === liveIteration.result
-      && latest.unit === liveIteration.unit
+      && latest.hypothesis === activeIteration.hypothesis
+      && latest.result === activeIteration.result
+      && latest.unit === activeIteration.unit
     ) {
       return iterations;
     }
-    return [...iterations, liveIteration];
-  }, [iterations, liveIteration]);
+    return [...iterations, activeIteration];
+  }, [draftIteration, iterations, liveIteration]);
   const committedIterations = iterations;
   const committedBestIteration = committedIterations.reduce((a, b) => (b.result > a.result ? b : a), committedIterations[0]);
   const committedImprovementRate =
@@ -330,16 +346,27 @@ export default function DBTLflowPage() {
   /* ── Handlers ── */
   function addIteration() {
     if (!hypothesis.trim() || !result.trim()) return;
-    setIterations(prev => appendIteration(prev, hypothesis, parseFloat(result), unit, passed, liveDraft.notes));
+    const numericResult = Number.parseFloat(result);
+    if (Number.isNaN(numericResult)) {
+      setActivityTone('error');
+      setActivityMessage('Iteration not added. Result must be a valid number.');
+      return;
+    }
+    setIterations(prev => appendIteration(prev, hypothesis.trim(), numericResult, unit.trim() || liveDraft.unit, passed, liveDraft.notes));
     setHypothesis('');
     setResult('');
+    setActivityTone('success');
+    setActivityMessage(`Iteration #${iterations.length + 1} committed to the ledger at ${numericResult.toFixed(1)} ${unit.trim() || liveDraft.unit}.`);
   }
 
   function handleGenerateProtocol() {
-    if (!latestIteration) return;
-    const proto = generator.generate(latestIteration);
+    const protocolSource = draftIteration ?? latestIteration;
+    if (!protocolSource) return;
+    const proto = generator.generate(protocolSource);
     setGeneratedProtocol(proto);
     setProtocolExpanded(true);
+    setActivityTone('success');
+    setActivityMessage(`Protocol generated for ${protocolSource.phase.toLowerCase()} iteration #${protocolSource.id}.`);
   }
 
   function handleDownloadProtocol() {
@@ -387,9 +414,14 @@ export default function DBTLflowPage() {
   ], []);
 
   function handleSBOLExport() {
-    const doc = serializePartsToSBOL(SHOWCASE_PARTS, 'ADS_Expression_Cassette');
+    const constructName = hypothesis.trim()
+      ? hypothesis.trim().slice(0, 48).replace(/[^a-z0-9]+/gi, '_')
+      : 'ADS_Expression_Cassette';
+    const doc = serializePartsToSBOL(SHOWCASE_PARTS, constructName);
     setSbolDoc(doc);
     setSbolValidation(validateSBOL(doc));
+    setActivityTone('success');
+    setActivityMessage(`SBOL package generated with ${doc.components.length} components and ${doc.interactions.length} interactions.`);
   }
 
   function handleDownloadSBOL(format: 'xml' | 'turtle') {
@@ -410,14 +442,31 @@ export default function DBTLflowPage() {
   const [assemblyProvenance, setAssemblyProvenance] = useState<ProvenanceRecord[]>([]);
   const [seqInput, setSeqInput] = useState('');
   const [assemblyExpanded, setAssemblyExpanded] = useState(false);
+  const [assemblyError, setAssemblyError] = useState<string | null>(null);
   const DEMO_SEQ = 'ATGCTTCAGCTTTTCAAGGATGCTTCAGCTTTTCAAGGATCCAATTTTGGTAACGCCAGGTTTTCTCCTCTTCCTGGTTTTCAAGGATGCTTCAGCAATTTTGATTTCAAGGATCCAATTTTGGTAACGCCAGGTTTTCTCCTCTTCCTGGTTTTCAAGGATGCTTCAGCTTTTCAAGGATCCAATTTTGGTAACGCCAGGTTTTCTCCTCTTCCTGGAAGCTTCAGCTTTTCAAGGATCCAATTTTGGTAACGCCAGGTTTTCTCCTCTTCCTGGTTTTCAAGGATGCTTCAGCTTTTCAAGGATCCAATTTTGGTAACGCCAGGTTTTCTCCTCTTCCTGGAAGCTTCAGCTTTTCAAGGATCCAATTTTGGTAACGCCAGGTTTTCTCCTCTTCCTGGAAGCTTCAGCTTTTCAAGGATCCAATTTTGGTAACGCCAGGTTTTCTCCTCTTCCTGGAAGCTTCAGCTTTTCAAGGATCCAATTTTGGTAACGCCAGGTTTTCTCCTCTTCCTGGTTTTCAAGGATGCTTCAGCTTTTCAAGGATCCAATTTTGGTAACGCCAGGTTTTCTCCTCTTCCTGGTTTTCAAGGATGCTTCAGCTTTTCAAGGATCCAATTTTGGTAACGCCAGGTTTTCTCCTCTTCCTGGTTTTCAAGGATGCTTCAGCTTTTCAAGGATCCAATTTTGGTAACGCCAGGTTTTCTCCTCTTCCTGGTTTTCAAGGATGCTTCAGCTTTTCAAGGATCCAATTTTGGTAACGCCAGGTTTTCTCCTCTTCCTGGAAGCTTCAGCTTTTCAAGGATCCAATTTTGGTAACGCCAGGTTTTCTCCTCTTCCTGGAAGCTTCAGCTTTTCAAGGATCCAATTTTGGTAACGCCAGGTTTTCTCCTCTTCCTGGAAGCTTCAGCTTTTCAAGGATCCAATTTTGGTAACGCCAGGTTTTCTCCTCTTCCTGGTTTTCAAGGATGCTTCAGCTTTTCAAGGATCCAATTTTGGTAACGCCAGGTTTTCTCCTCTTCCTGGTTTTCAAGGATGCTTCAGCTTTTCAAGGATCCAATTTTGGTAACGCCAGGTTTTCTCCTCTTCCTGGAAGCTTCAGCTTTTCAAGGATCCAATTTTGGTAACGCCAGGTTTTCTCCTCTTCCTGGTTTTCAAGGATGCTTCAGCTTTTCAAGGATCCAATTTTGGTAACGCCAGGTTTTCTCCTCTTCCTGG';
 
   function handlePlanAssembly() {
-    const seq = seqInput.trim() || DEMO_SEQ;
+    const rawSequence = seqInput.trim().toUpperCase();
+    if (rawSequence && /[^ATCG]/.test(rawSequence)) {
+      setAssemblyError('Assembly planning accepts DNA sequences with A, T, C, and G only.');
+      setActivityTone('error');
+      setActivityMessage('Assembly plan not generated. Remove non-DNA characters and try again.');
+      return;
+    }
+    const seq = rawSequence || DEMO_SEQ;
+    if (rawSequence && seq.length < 100) {
+      setAssemblyError('Assembly planning needs at least 100 bp of DNA to build a meaningful fragment map.');
+      setActivityTone('error');
+      setActivityMessage('Assembly plan not generated. Provide a longer DNA sequence or use the demo cassette.');
+      return;
+    }
+    setAssemblyError(null);
     const plan = planGibsonAssembly(seq, 'ADS_Cassette', { maxFragmentLength: 800, overlapLength: 30 });
     setAssemblyPlan(plan);
     setAssemblyProvenance(generateProvenanceRecords(plan));
     setAssemblyExpanded(true);
+    setActivityTone('success');
+    setActivityMessage(`Assembly plan generated for ${plan.fragments.length} fragments with ${plan.primers.length} primers.`);
   }
 
   function handleDownloadPrimers() {
@@ -592,6 +641,61 @@ export default function DBTLflowPage() {
               },
             ]}
           />
+        </div>
+
+        <div style={{ padding: '0 16px 10px' }}>
+          <div
+            style={{
+              borderRadius: '14px',
+              border: `1px solid ${activityTone === 'error'
+                ? 'rgba(232,163,161,0.34)'
+                : draftIteration
+                  ? 'rgba(175,195,214,0.32)'
+                  : 'rgba(191,220,205,0.32)'}`,
+              background: activityTone === 'error'
+                ? 'rgba(232,163,161,0.10)'
+                : draftIteration
+                  ? 'rgba(175,195,214,0.10)'
+                  : 'rgba(191,220,205,0.10)',
+              padding: '10px 12px',
+              display: 'grid',
+              gap: '4px',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <span style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                Draft + action status
+              </span>
+              {draftIteration && (
+                <span
+                  style={{
+                    padding: '3px 8px',
+                    borderRadius: '999px',
+                    border: '1px solid rgba(175,195,214,0.34)',
+                    background: 'rgba(175,195,214,0.16)',
+                    color: VALUE,
+                    fontFamily: T.MONO,
+                    fontSize: '10px',
+                    letterSpacing: '0.05em',
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  Previewing draft iteration #{draftIteration.id}
+                </span>
+              )}
+            </div>
+            <div style={{ fontFamily: T.SANS, fontSize: '12px', color: VALUE, lineHeight: 1.55 }}>
+              {activityMessage
+                ?? (draftIteration
+                  ? `The figure and campaign cards are previewing your current draft at ${draftIteration.result.toFixed(1)} ${draftIteration.unit} before commit.`
+                  : 'Commit a new iteration or generate a protocol to create a visible experimental artifact.')}
+            </div>
+            <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL }}>
+              {draftIteration
+                ? `${draftIteration.phase} preview · ${draftIteration.passed ? 'pass' : 'fail'} gate · commit required for canonical history`
+                : 'canonical history updates only after + Add Iteration'}
+            </div>
+          </div>
         </div>
 
         <div className="nb-tool-panels" style={{ flex: 1 }}>
@@ -803,6 +907,11 @@ export default function DBTLflowPage() {
                 rows={2}
                 style={{ ...inputBase, fontFamily: T.MONO, fontSize: '10px', resize: 'vertical', marginBottom: '8px' }}
               />
+              {assemblyError && (
+                <div style={{ marginBottom: '8px' }}>
+                  <SimErrorBanner message={assemblyError} />
+                </div>
+              )}
               <button aria-label="Action" onClick={handlePlanAssembly} style={{
                 width: '100%', padding: '8px',
                 background: 'rgba(191,220,205,0.2)',

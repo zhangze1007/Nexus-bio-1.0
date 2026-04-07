@@ -37,11 +37,39 @@ interface Article {
 
 type SortMode = 'citations' | 'year' | 'title';
 type SourceStatus = 'idle' | 'loading' | 'ready' | 'error';
+const SOURCE_TIMEOUT_MS = 8000;
 
 interface SourceDefinition {
   key: string;
   label: string;
   fetcher: (query: string) => Promise<Article[]>;
+}
+
+async function fetchJsonOrThrow(url: string) {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), SOURCE_TIMEOUT_MS);
+  try {
+    const response = await fetch(url, { signal: controller.signal });
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    return await response.json();
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
+}
+
+function decodeOpenAlexAbstract(index: Record<string, number[]> | null | undefined) {
+  if (!index || typeof index !== 'object') return '';
+  const positionedTerms = Object.entries(index)
+    .flatMap(([term, positions]) =>
+      Array.isArray(positions)
+        ? positions.map((position) => [position, term] as const)
+        : [],
+    )
+    .sort((left, right) => left[0] - right[0]);
+
+  return positionedTerms.map(([, term]) => term).join(' ');
 }
 
 const SHOWCASE_PAPERS: Article[] = [
@@ -194,13 +222,11 @@ function mergeUniqueArticles(existing: Article[], incoming: Article[]) {
 }
 
 async function fetchPubMed(query: string): Promise<Article[]> {
-  const search = await fetch(`https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=${encodeURIComponent(query)}+AND+(synthetic+biology+OR+metabolic+engineering+OR+fermentation)&retmax=3&sort=relevance&retmode=json`);
-  const searchData = await search.json();
+  const searchData = await fetchJsonOrThrow(`https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=${encodeURIComponent(query)}+AND+(synthetic+biology+OR+metabolic+engineering+OR+fermentation)&retmax=3&sort=relevance&retmode=json`);
   const ids: string[] = searchData.esearchresult?.idlist || [];
   if (!ids.length) return [];
 
-  const summary = await fetch(`https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id=${ids.join(',')}&retmode=json`);
-  const summaryData = await summary.json();
+  const summaryData = await fetchJsonOrThrow(`https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id=${ids.join(',')}&retmode=json`);
 
   return Promise.all((summaryData.result?.uids || []).map(async (uid: string) => {
     const item = summaryData.result[uid];
@@ -226,8 +252,7 @@ async function fetchPubMed(query: string): Promise<Article[]> {
 }
 
 async function fetchEuropePMC(query: string): Promise<Article[]> {
-  const response = await fetch(`https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=${encodeURIComponent(query)}+AND+(TITLE_ABS:"metabolic engineering" OR TITLE_ABS:"synthetic biology")&format=json&pageSize=3&sort=CITED`);
-  const data = await response.json();
+  const data = await fetchJsonOrThrow(`https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=${encodeURIComponent(query)}+AND+(TITLE_ABS:"metabolic engineering" OR TITLE_ABS:"synthetic biology")&format=json&pageSize=3&sort=CITED`);
   return (data.resultList?.result || []).map((item: any) => ({
     id: `epmc-${item.id}`,
     title: item.title || '',
@@ -244,8 +269,7 @@ async function fetchEuropePMC(query: string): Promise<Article[]> {
 }
 
 async function fetchSemanticScholar(query: string): Promise<Article[]> {
-  const response = await fetch(`https://api.semanticscholar.org/graph/v1/paper/search?query=${encodeURIComponent(query)}&fields=title,abstract,authors,year,journal,externalIds,citationCount,isOpenAccess,venue&limit=3`);
-  const data = await response.json();
+  const data = await fetchJsonOrThrow(`https://api.semanticscholar.org/graph/v1/paper/search?query=${encodeURIComponent(query)}&fields=title,abstract,authors,year,journal,externalIds,citationCount,isOpenAccess,venue&limit=3`);
   return (data.data || []).map((item: any) => ({
     id: `ss-${item.paperId}`,
     title: item.title || '',
@@ -262,19 +286,18 @@ async function fetchSemanticScholar(query: string): Promise<Article[]> {
 }
 
 async function fetchOpenAlex(query: string): Promise<Article[]> {
-  const response = await fetch(`https://api.openalex.org/works?search=${encodeURIComponent(query)}&filter=concepts.display_name:Biology|Biochemistry|Biotechnology&per-page=3&sort=cited_by_count:desc&mailto=nexusbio@research.com`);
-  const data = await response.json();
+  const data = await fetchJsonOrThrow(`https://api.openalex.org/works?search=${encodeURIComponent(query)}&per-page=3&sort=cited_by_count:desc&mailto=nexusbio@research.com`);
   return (data.results || []).map((item: any) => {
     const doi = item.doi?.replace('https://doi.org/', '') || '';
     return {
       id: `oa-${item.id}`,
       title: item.title || '',
-      abstract: item.abstract || '',
+      abstract: decodeOpenAlexAbstract(item.abstract_inverted_index),
       authors: item.authorships?.slice(0, 3).map((author: any) => author.author?.display_name || '') || [],
       journal: item.primary_location?.source?.display_name || '',
       year: item.publication_year?.toString() || '',
       doi,
-      url: item.doi || '',
+      url: item.primary_location?.landing_page_url || item.doi || item.id || '',
       source: 'OpenAlex',
       citationCount: item.cited_by_count,
       openAccess: item.open_access?.is_oa,
@@ -283,8 +306,7 @@ async function fetchOpenAlex(query: string): Promise<Article[]> {
 }
 
 async function fetchBioRxiv(query: string): Promise<Article[]> {
-  const response = await fetch(`https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=${encodeURIComponent(query)}+AND+SRC:PPR&format=json&pageSize=3&sort=FIRST_PDATE:desc`);
-  const data = await response.json();
+  const data = await fetchJsonOrThrow(`https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=${encodeURIComponent(query)}+AND+SRC:PPR&format=json&pageSize=3&sort=FIRST_PDATE:desc`);
   return (data.resultList?.result || []).map((item: any) => ({
     id: `biorxiv-${item.id}`,
     title: item.title || '',
@@ -302,8 +324,7 @@ async function fetchBioRxiv(query: string): Promise<Article[]> {
 
 async function fetchCORE(query: string): Promise<Article[]> {
   try {
-    const response = await fetch(`https://api.core.ac.uk/v3/search/works?q=${encodeURIComponent(query)}&limit=3`);
-    const data = await response.json();
+    const data = await fetchJsonOrThrow(`https://api.core.ac.uk/v3/search/works?q=${encodeURIComponent(query)}&limit=3`);
     return (data.results || []).map((item: any) => ({
       id: `core-${item.id}`,
       title: item.title || '',
@@ -789,6 +810,7 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
                         type="button"
                         onClick={() => toggleExpand(paper.id)}
                         aria-expanded={isExpanded}
+                        aria-label={isExpanded ? `Collapse ${paper.title}` : `Expand ${paper.title}`}
                         style={{
                           width: '34px',
                           height: '34px',
@@ -851,11 +873,12 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
                                 <ExternalLink size={14} />
                               </a>
                               {onAnalyzePaper && paper.abstract && (
-                                <button
-                                  type="button"
-                                  onClick={() => handleAnalyze(paper)}
-                                  title="Send abstract to analyzer"
-                                  style={{
+                              <button
+                                type="button"
+                                onClick={() => handleAnalyze(paper)}
+                                aria-label={`Send ${paper.title} abstract to analyzer`}
+                                title="Send abstract to analyzer"
+                                style={{
                                     display: 'inline-flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
@@ -1126,6 +1149,7 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
                               type="button"
                               onClick={() => toggleExpand(article.id)}
                               aria-expanded={isExpanded}
+                              aria-label={isExpanded ? `Collapse ${article.title}` : `Expand ${article.title}`}
                               style={{
                                 width: '34px',
                                 height: '34px',
@@ -1198,6 +1222,7 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
                               <button
                                 type="button"
                                 onClick={() => handleAnalyze(article)}
+                                aria-label={`Send ${article.title} abstract to analyzer`}
                                 title="Send abstract to analyzer"
                                 style={{
                                   display: 'inline-flex',

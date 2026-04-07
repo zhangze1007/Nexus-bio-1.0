@@ -258,6 +258,7 @@ function FloatingCLI({ query, setQuery, onSubmit, loading, history }: {
         }}
       />
       <motion.button
+        aria-label="Submit Axon query"
         onClick={onSubmit}
         disabled={loading || !query.trim()}
         whileHover={{ scale: 1.05 }}
@@ -430,6 +431,7 @@ export default function NEXAIPage() {
   const [result, setResult] = useState<NEXAIResult | null>(null);
   const [resultMode, setResultMode] = useState<'pathway' | 'text' | 'idle'>('idle');
   const [history, setHistory] = useState<string[]>([]);
+  const isUngrounded = Boolean(result) && result.citations.length === 0;
 
   const contextPrompt = useMemo(() => {
     if (analyzeArtifact) {
@@ -478,6 +480,15 @@ export default function NEXAIPage() {
     setHistory(prev => [query, ...prev.slice(0, 19)]);
     setLoading(true);
     appendConsole({ level: 'info', module: 'nexai', message: `Query: "${query.slice(0, 60)}${query.length > 60 ? '…' : ''}"` });
+    const contextualSeed = buildContextualResult({
+      query,
+      projectTitle: project?.title,
+      targetProduct: project?.targetProduct,
+      analyzeArtifact,
+      evidenceItems,
+      selectedEvidenceIds,
+      nextToolIds: nextRecommendations.map((item) => item.toolId),
+    });
 
     const contextualQuery = analyzeArtifact
       ? [
@@ -520,7 +531,14 @@ export default function NEXAIPage() {
         appendConsole({ level: 'success', module: 'nexai', message: `Axon: ${pathway.nodes.length} nodes · ${bottlenecks} bottleneck(s) · ${provider}` });
       } else {
         // Plain text answer (non-pathway question)
-        setResult({ query, answer: rawText.slice(0, 1200), citations: [], confidence: 0.75, generatedAt: Date.now() });
+        const seededCitations = contextualSeed.citations.slice(0, 6);
+        setResult({
+          query,
+          answer: rawText.slice(0, 1200),
+          citations: seededCitations,
+          confidence: seededCitations.length > 0 ? Math.max(0.62, contextualSeed.confidence * 0.8) : 0.48,
+          generatedAt: Date.now(),
+        });
         setResultMode('text');
         appendConsole({ level: 'success', module: 'nexai', message: `Axon: text response · ${provider}` });
       }
@@ -549,15 +567,7 @@ export default function NEXAIPage() {
       } catch { /* Semantic Scholar optional */ }
     } catch (e) {
       appendConsole({ level: 'warn', module: 'nexai', message: `API unavailable — ${String(e).slice(0, 80)} — using contextual synthesis` });
-      setResult(buildContextualResult({
-        query,
-        projectTitle: project?.title,
-        targetProduct: project?.targetProduct,
-        analyzeArtifact,
-        evidenceItems,
-        selectedEvidenceIds,
-        nextToolIds: nextRecommendations.map((item) => item.toolId),
-      }));
+      setResult(contextualSeed);
       setResultMode('text');
     }
     setLoading(false);
@@ -608,8 +618,12 @@ export default function NEXAIPage() {
               {
                 label: 'Citations',
                 value: `${result?.citations.length ?? 0}`,
-                detail: evidenceItems.length ? `Workbench evidence graph currently holds ${evidenceItems.length} saved item(s).` : 'No saved evidence yet; Research intake will strengthen citation-grounded answers.',
-                tone: 'neutral',
+                detail: result && result.citations.length === 0
+                  ? 'No visible citations are attached to this answer yet. Treat it as ungrounded synthesis until Research evidence is attached.'
+                  : evidenceItems.length
+                    ? `Workbench evidence graph currently holds ${evidenceItems.length} saved item(s).`
+                    : 'No saved evidence yet; Research intake will strengthen citation-grounded answers.',
+                tone: result && result.citations.length === 0 ? 'alert' : 'neutral',
               },
               {
                 label: 'Recent Query',
@@ -797,7 +811,27 @@ export default function NEXAIPage() {
                     }}>
                       {(result.confidence * 100).toFixed(0)}%
                     </span>
+                    {isUngrounded && (
+                      <span
+                        style={{
+                          fontFamily: T.MONO,
+                          fontSize: '8px',
+                          padding: '2px 6px',
+                          background: 'rgba(232,163,161,0.18)',
+                          border: '1px solid rgba(232,163,161,0.34)',
+                          borderRadius: '6px',
+                          color: PATHD_THEME.paperValue,
+                        }}
+                      >
+                        ungrounded
+                      </span>
+                    )}
                   </div>
+                  {isUngrounded && (
+                    <p style={{ fontFamily: T.SANS, fontSize: '10px', color: PATHD_THEME.paperLabel, lineHeight: 1.55, margin: '0 0 8px' }}>
+                      This answer has no visible citation nodes yet. Add Research evidence or rerun with a pathway-style query before treating it as decision-grade guidance.
+                    </p>
+                  )}
                   <p style={{
                     fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.paperValue,
                     lineHeight: 1.7, margin: 0,
@@ -866,7 +900,9 @@ export default function NEXAIPage() {
             </div>
             <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.paperValue, lineHeight: 1.55 }}>
               {result
-                ? 'Axon is now framed as a synthesis desk that turns literature structure into route-level scientific guidance.'
+                ? isUngrounded
+                  ? 'Axon returned a synthesis, but it is not yet citation-backed in the visible evidence graph.'
+                  : 'Axon is now framed as a synthesis desk that turns literature structure into route-level scientific guidance.'
                 : 'This panel will become an evidence-backed routing summary once a query is run.'}
             </div>
           </div>

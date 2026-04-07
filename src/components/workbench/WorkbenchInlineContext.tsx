@@ -127,6 +127,41 @@ export default function WorkbenchInlineContext({
         {summary}
       </div>
 
+      {(isSimulated || project?.isDemo) && (
+        <div
+          style={{
+            borderRadius: '12px',
+            border: `1px solid ${PATHD_THEME.chipBorderWarm}`,
+            background: 'rgba(231,199,169,0.12)',
+            padding: compact ? '8px 10px' : '10px 12px',
+            display: 'grid',
+            gap: '4px',
+          }}
+        >
+          <div
+            style={{
+              fontFamily: T.MONO,
+              fontSize: '9px',
+              color: VALUE,
+              textTransform: 'uppercase',
+              letterSpacing: '0.08em',
+            }}
+          >
+            Demo / simulated context
+          </div>
+          <div
+            style={{
+              fontFamily: T.SANS,
+              fontSize: compact ? '10px' : '11px',
+              color: LABEL,
+              lineHeight: 1.55,
+            }}
+          >
+            Outputs on this page may come from local models or bundled synthetic datasets until a project-linked evidence bundle or live analysis artifact is attached.
+          </div>
+        </div>
+      )}
+
       {compact ? (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
           {[

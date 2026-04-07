@@ -163,6 +163,18 @@
   align-self: stretch;
 }
 
+/* Tool workbench pages use the compact inline context above the fold.
+   The larger hero/method-strip sections are still mounted by the pages,
+   but they must stay hidden here so they do not push the working controls
+   out of the bounded viewport. Inline component display styles require
+   !important to restore the intended compact layout. */
+.nb-tool-page .nb-scientific-hero,
+.nb-tool-page .nb-method-strip,
+.nb-tool-shell__body > .nb-scientific-hero,
+.nb-tool-shell__body > .nb-method-strip {
+  display: none !important;
+}
+
 .nb-workbench-content {
   position: relative !important;
   inset: auto !important;
@@ -349,27 +361,32 @@
 .nb-tool-panels {
   display: flex;
   flex: 1;
-  overflow: visible;
+  overflow: hidden;
   min-height: 0;
   align-items: stretch;
 }
 
 .nb-tool-sidebar {
   flex-shrink: 0;
-  overflow-y: visible !important;
+  overflow-x: hidden;
+  overflow-y: auto !important;
   padding: 16px;
+  min-height: 0;
 }
 
 .nb-tool-center {
   flex: 1;
   min-width: 0;
-  overflow: visible !important;
+  overflow: auto !important;
+  min-height: 0;
 }
 
 .nb-tool-right {
   flex-shrink: 0;
-  overflow-y: visible !important;
+  overflow-x: hidden;
+  overflow-y: auto !important;
   padding: 16px;
+  min-height: 0;
 }
 
 @media (max-width: 960px) {
@@ -378,12 +395,12 @@
     border-bottom: 1px solid rgba(255,255,255,0.06);
     max-height: none;
     flex-shrink: 0;
-    overflow-y: visible !important;
+    overflow-y: auto !important;
   }
 
   .nb-tool-center {
     min-height: 300px;
-    overflow: visible !important;
+    overflow: auto !important;
   }
 
   /* Ensure SVG charts scale down */
@@ -411,6 +428,10 @@
 
   .nb-pathd-floating-panel--right {
     bottom: 12px !important;
+  }
+
+  .nb-pathd-overlay-idle-start {
+    display: none !important;
   }
 
   .nb-tool-sidebar,

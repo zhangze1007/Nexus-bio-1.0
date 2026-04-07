@@ -13,11 +13,10 @@ import type {
 
 type SqliteDb = BetterSqlite3.Database;
 
-const STORE_DIR = path.join(process.cwd(), '.nexus');
-const DB_PATH = path.join(STORE_DIR, 'workbench.db');
-const LEGACY_JSON_PATH = path.join(STORE_DIR, 'workbench-state.json');
 const DEFAULT_PROJECT_ID = 'default-workbench';
 const SYSTEM_ACTOR_ID = 'system';
+const LOCAL_STORE_DIR = path.join(process.cwd(), '.nexus');
+const SERVERLESS_STORE_DIR = path.join('/tmp', '.nexus');
 
 const EMPTY_STATE: WorkbenchCanonicalState = {
   schemaVersion: 1,
@@ -44,6 +43,18 @@ let singletonDb: SqliteDb | null = null;
 
 function now() {
   return Date.now();
+}
+
+function resolveStoreDir() {
+  return process.env.VERCEL ? SERVERLESS_STORE_DIR : LOCAL_STORE_DIR;
+}
+
+function resolveDbPath() {
+  return path.join(resolveStoreDir(), 'workbench.db');
+}
+
+function resolveLegacyJsonPath() {
+  return path.join(resolveStoreDir(), 'workbench-state.json');
 }
 
 function toPayloadRecord(payload: WorkbenchRunArtifact['payloadSnapshot']) {
@@ -439,13 +450,13 @@ async function migrateLegacyJsonIfNeeded(db: SqliteDb) {
   if (hasProjectState.count > 0) return;
 
   try {
-    await access(LEGACY_JSON_PATH);
+    await access(resolveLegacyJsonPath());
   } catch {
     return;
   }
 
   try {
-    const raw = await readFile(LEGACY_JSON_PATH, 'utf8');
+    const raw = await readFile(resolveLegacyJsonPath(), 'utf8');
     const parsed = sanitizeWorkbenchState(JSON.parse(raw));
     if (!parsed) return;
     writeProjectState(db, resolveProjectId(undefined, parsed), SYSTEM_ACTOR_ID, parsed, 'legacy-json-migration', 'migrated legacy JSON snapshot into collaborative project state');
@@ -469,13 +480,13 @@ function migrateLegacyCanonicalIfNeeded(db: SqliteDb) {
 
 function getDb() {
   if (singletonDb) return singletonDb;
-  singletonDb = new BetterSqlite3(DB_PATH);
+  singletonDb = new BetterSqlite3(resolveDbPath());
   initializeSchema(singletonDb);
   return singletonDb;
 }
 
 export async function getWorkbenchDb() {
-  await mkdir(STORE_DIR, { recursive: true });
+  await mkdir(resolveStoreDir(), { recursive: true });
   const db = getDb();
   migrateLegacyCanonicalIfNeeded(db);
   await migrateLegacyJsonIfNeeded(db);
@@ -560,7 +571,7 @@ export function getBackendMeta(db: SqliteDb, projectId?: string | null, actorId?
     kind: 'sqlite' as const,
     driver: 'better-sqlite3' as const,
     scope: 'project' as const,
-    path: DB_PATH,
+    path: resolveDbPath(),
     projectId: resolvedProjectId,
     actorId: resolvedActorId,
     revision: projectState?.revision ?? 0,

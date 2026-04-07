@@ -945,11 +945,11 @@ export default function FBASimPage() {
               {REACTION_DEFS.map(r => {
                 const isKO = knockouts.includes(r.id);
                 return (
-                  <button aria-label="Action" key={r.id} onClick={() => toggleKO(r.id)} style={{
+                  <button aria-label={`${isKO ? 'Remove' : 'Apply'} ${r.id} knockout`} aria-pressed={isKO} key={r.id} onClick={() => toggleKO(r.id)} style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                     width: '100%', padding: '5px 8px', marginBottom: '3px',
-                    background: isKO ? 'rgba(255,80,80,0.08)' : 'transparent',
-                    border: `1px solid ${isKO ? 'rgba(255,80,80,0.3)' : 'rgba(255,255,255,0.06)'}`,
+                    background: isKO ? 'rgba(255,80,80,0.14)' : 'transparent',
+                    border: `1px solid ${isKO ? 'rgba(255,80,80,0.38)' : 'rgba(255,255,255,0.06)'}`,
                     borderRadius: '6px', cursor: 'pointer',
                   }}>
                     <span style={{ fontFamily: T.MONO, fontSize: '10px', color: isKO ? 'rgba(255,120,120,0.9)' : 'rgba(255,255,255,0.5)' }}>{r.id}</span>
@@ -962,14 +962,35 @@ export default function FBASimPage() {
                 );
               })}
               {knockouts.length > 0 && (
-                <button aria-label="Action" onClick={() => setKnockouts([])} style={{
-                  display: 'block', width: '100%', marginTop: '6px',
-                  padding: '5px 8px', background: 'transparent',
-                  border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px',
-                  color: 'rgba(255,255,255,0.3)', fontFamily: T.SANS, fontSize: '10px', cursor: 'pointer',
-                }}>
-                  Clear all knockouts
-                </button>
+                <>
+                  <div
+                    style={{
+                      marginTop: '6px',
+                      marginBottom: '6px',
+                      padding: '8px 10px',
+                      borderRadius: '8px',
+                      border: '1px solid rgba(255,80,80,0.24)',
+                      background: 'rgba(255,80,80,0.10)',
+                      display: 'grid',
+                      gap: '3px',
+                    }}
+                  >
+                    <span style={{ fontFamily: T.MONO, fontSize: '9px', color: 'rgba(255,190,190,0.92)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                      Active perturbations
+                    </span>
+                    <span style={{ fontFamily: T.SANS, fontSize: '10px', color: 'rgba(255,255,255,0.72)', lineHeight: 1.5 }}>
+                      {knockouts.join(', ')} applied. The LP has been recomputed with those reactions clamped to zero flux.
+                    </span>
+                  </div>
+                  <button aria-label="Clear all knockouts" onClick={() => setKnockouts([])} style={{
+                    display: 'block', width: '100%', marginTop: '6px',
+                    padding: '5px 8px', background: 'transparent',
+                    border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px',
+                    color: 'rgba(255,255,255,0.3)', fontFamily: T.SANS, fontSize: '10px', cursor: 'pointer',
+                  }}>
+                    Clear all knockouts
+                  </button>
+                </>
               )}
             </div>
 

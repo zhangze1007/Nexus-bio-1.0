@@ -591,7 +591,10 @@ export default function PaperAnalyzer({
                 </button>
               )}
 
-              <button onClick={() => setExpanded(!expanded)}
+              <button
+                type="button"
+                aria-label={expanded ? 'Collapse upload options' : 'Expand upload options'}
+                onClick={() => setExpanded(!expanded)}
                 style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '5px 10px', borderRadius: '16px', background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', fontSize: '12px', cursor: 'pointer' }}
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#ffffff'; (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.05)'; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.3)'; (e.currentTarget as HTMLElement).style.background = 'none'; }}>
@@ -615,6 +618,8 @@ export default function PaperAnalyzer({
 
             {/* Send button */}
             <button
+              type="button"
+              aria-label="Analyze pathway"
               onClick={handleAnalyze}
               disabled={analysisState === 'analyzing' || !canAnalyze}
               title="Analyze pathway (Enter)"

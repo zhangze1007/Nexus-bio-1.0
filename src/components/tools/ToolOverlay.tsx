@@ -145,12 +145,13 @@ function ParamSlider({ def, value, onChange, forceRef }: SliderProps) {
 
 // ── Action button ──────────────────────────────────────────────────────
 
-function ActionBtn({ label, brightness = 0.7, onClick, disabled = false }: {
-  label: string; brightness?: number; onClick: () => void; disabled?: boolean;
+function ActionBtn({ label, brightness = 0.7, onClick, disabled = false, className }: {
+  label: string; brightness?: number; onClick: () => void; disabled?: boolean; className?: string;
 }) {
   const alpha = disabled ? 0.15 : brightness;
   return (
     <button
+      className={className}
       onClick={onClick}
       disabled={disabled}
       style={{
@@ -261,7 +262,7 @@ export default function ToolOverlay({
       {/* Action buttons */}
       <div style={{ display:'flex', gap:'6px', marginBottom:'8px' }}>
         {state === 'idle' && (
-          <ActionBtn label="▶ Start" brightness={0.85} onClick={onStart} />
+          <ActionBtn label="▶ Start" brightness={0.85} onClick={onStart} className="nb-pathd-overlay-idle-start" />
         )}
         {state === 'simulating' && (
           <>
