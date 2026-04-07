@@ -15,11 +15,11 @@ import WorkbenchRunCompare from './WorkbenchRunCompare';
 import { getFreshnessMap } from './workbenchTrust';
 import { PATHD_THEME } from './workbenchTheme';
 
-const BORDER = PATHD_THEME.paperBorder;
-const LABEL = PATHD_THEME.paperLabel;
-const VALUE = PATHD_THEME.paperValue;
-const SURFACE = PATHD_THEME.paperSurfaceStrong;
-const SURFACE_SOFT = PATHD_THEME.paperSurfaceMuted;
+const BORDER = PATHD_THEME.sepiaPanelBorder;
+const LABEL = PATHD_THEME.label;
+const VALUE = PATHD_THEME.value;
+const SURFACE = PATHD_THEME.panelGlassStrong;
+const SURFACE_SOFT = PATHD_THEME.panelSurface;
 
 export default function WorkbenchDirectoryPage() {
   const project = useWorkbenchStore((s) => s.project);
@@ -58,7 +58,7 @@ export default function WorkbenchDirectoryPage() {
               padding: '24px',
               display: 'grid',
               gap: '16px',
-              boxShadow: '0 18px 44px rgba(41,46,53,0.06)',
+              boxShadow: '0 18px 44px rgba(0,0,0,0.26)',
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
@@ -208,7 +208,7 @@ export default function WorkbenchDirectoryPage() {
                   padding: '18px',
                   display: 'grid',
                   gap: '14px',
-                  boxShadow: '0 16px 34px rgba(41,46,53,0.05)',
+                  boxShadow: '0 16px 34px rgba(0,0,0,0.24)',
                 }}
               >
                 <div style={{ display: 'grid', gap: '6px' }}>

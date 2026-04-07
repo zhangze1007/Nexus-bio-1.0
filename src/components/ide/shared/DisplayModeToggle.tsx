@@ -21,8 +21,8 @@ export default function DisplayModeToggle() {
         gap: '4px',
         padding: '2px',
         borderRadius: '999px',
-        border: `1px solid ${PATHD_THEME.paperBorder}`,
-        background: PATHD_THEME.paperSurface,
+        border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
+        background: PATHD_THEME.panelGlassStrong,
       }}
     >
       {([
@@ -39,7 +39,7 @@ export default function DisplayModeToggle() {
             borderRadius: '999px',
             border: 'none',
             background: displayMode === mode.key ? PATHD_THEME.sky : 'transparent',
-            color: displayMode === mode.key ? PATHD_THEME.ink : PATHD_THEME.paperMuted,
+            color: displayMode === mode.key ? PATHD_THEME.ink : PATHD_THEME.label,
             cursor: 'pointer',
             fontFamily: T.SANS,
             fontSize: '11px',

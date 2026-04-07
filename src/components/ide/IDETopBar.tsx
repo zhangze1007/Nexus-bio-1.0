@@ -11,9 +11,9 @@ import { PATHD_THEME } from '../workbench/workbenchTheme';
 const SANS = T.SANS;
 const MONO = T.MONO;
 
-const BORDER = PATHD_THEME.paperBorder;
-const LABEL  = PATHD_THEME.paperLabel;
-const VALUE  = PATHD_THEME.paperValue;
+const BORDER = PATHD_THEME.sepiaPanelBorder;
+const LABEL  = PATHD_THEME.label;
+const VALUE  = PATHD_THEME.value;
 
 interface IDETopBarProps {
   moduleId: string;
@@ -47,8 +47,8 @@ export default function IDETopBar({ moduleId, actions }: IDETopBarProps) {
               width: 30,
               height: 30,
               borderRadius: 8,
-              background: PATHD_THEME.paperElevated,
-              border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
+              background: PATHD_THEME.panelGlassStrong,
+              border: `1px solid ${BORDER}`,
               color: LABEL,
               cursor: 'pointer',
               flexShrink: 0,
@@ -76,7 +76,7 @@ export default function IDETopBar({ moduleId, actions }: IDETopBarProps) {
           Home
         </Link>
 
-        <span style={{ color: PATHD_THEME.paperMuted }}>/</span>
+        <span style={{ color: PATHD_THEME.label }}>/</span>
 
         <Link
           href="/tools"
@@ -96,7 +96,7 @@ export default function IDETopBar({ moduleId, actions }: IDETopBarProps) {
 
         {!isDirectory && (
           <>
-            <span style={{ color: PATHD_THEME.paperMuted }}>/</span>
+            <span style={{ color: PATHD_THEME.label }}>/</span>
 
             <span style={{ fontFamily: MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase' }}>
               {tool?.shortLabel ?? moduleId}
@@ -106,7 +106,7 @@ export default function IDETopBar({ moduleId, actions }: IDETopBarProps) {
 
         {tool && (
           <>
-            <span style={{ color: PATHD_THEME.paperMuted }}>·</span>
+            <span style={{ color: PATHD_THEME.label }}>·</span>
             <span
               style={{
                 minWidth: 0,
@@ -141,8 +141,8 @@ export default function IDETopBar({ moduleId, actions }: IDETopBarProps) {
             minHeight: '36px',
             padding: '0 12px',
             borderRadius: '10px',
-            border: `1px solid ${consoleOpen ? PATHD_THEME.paperBorderStrong : PATHD_THEME.sepiaPanelBorder}`,
-            background: PATHD_THEME.paperElevated,
+            border: `1px solid ${consoleOpen ? PATHD_THEME.panelBorderStrong : BORDER}`,
+            background: PATHD_THEME.panelGlassStrong,
             color: errorCount > 0 ? PATHD_THEME.coral : VALUE,
             fontFamily: SANS,
             fontSize: '12px',
@@ -156,8 +156,8 @@ export default function IDETopBar({ moduleId, actions }: IDETopBarProps) {
               minWidth: '22px',
               height: '22px',
               borderRadius: '999px',
-              border: `1px solid ${errorCount > 0 ? 'rgba(232,163,161,0.3)' : PATHD_THEME.paperBorder}`,
-              background: errorCount > 0 ? 'rgba(232,163,161,0.14)' : PATHD_THEME.paperSurfaceMuted,
+              border: `1px solid ${errorCount > 0 ? 'rgba(232,163,161,0.3)' : BORDER}`,
+              background: errorCount > 0 ? 'rgba(232,163,161,0.14)' : PATHD_THEME.panelSurface,
               color: errorCount > 0 ? PATHD_THEME.coral : LABEL,
               display: 'inline-flex',
               alignItems: 'center',

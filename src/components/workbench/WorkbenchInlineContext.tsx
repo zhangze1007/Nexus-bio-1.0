@@ -18,10 +18,10 @@ interface WorkbenchInlineContextProps {
   isSimulated?: boolean;
 }
 
-const BORDER = PATHD_THEME.paperBorder;
-const SURFACE = PATHD_THEME.paperSurfaceStrong;
-const LABEL = PATHD_THEME.paperLabel;
-const VALUE = PATHD_THEME.paperValue;
+const BORDER = PATHD_THEME.sepiaPanelBorder;
+const SURFACE = PATHD_THEME.panelGlassStrong;
+const LABEL = PATHD_THEME.label;
+const VALUE = PATHD_THEME.value;
 
 export default function WorkbenchInlineContext({
   toolId,
@@ -96,9 +96,9 @@ export default function WorkbenchInlineContext({
           style={{
             padding: compact ? '2px 7px' : '3px 8px',
             borderRadius: '999px',
-            border: `1px solid ${(isSimulated || project?.isDemo) ? PATHD_THEME.chipBorderWarm : PATHD_THEME.paperBorder}`,
+            border: `1px solid ${(isSimulated || project?.isDemo) ? PATHD_THEME.chipBorderWarm : BORDER}`,
             background: (isSimulated || project?.isDemo) ? 'rgba(231,199,169,0.22)' : 'rgba(175,195,214,0.2)',
-            color: PATHD_THEME.paperValue,
+            color: VALUE,
             fontFamily: T.MONO,
             fontSize: compact ? '8px' : '9px',
             letterSpacing: '0.05em',
@@ -205,7 +205,7 @@ export default function WorkbenchInlineContext({
                 padding: '3px 7px',
                 borderRadius: '999px',
                 border: `1px solid ${BORDER}`,
-                background: 'rgba(255,255,255,0.55)',
+                background: PATHD_THEME.panelSurface,
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '5px',

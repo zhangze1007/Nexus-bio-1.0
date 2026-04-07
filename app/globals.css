@@ -67,9 +67,9 @@
   position: fixed;
   inset: 0;
   background:
-    radial-gradient(circle at top left, rgba(191,220,205,0.16), transparent 32%),
-    radial-gradient(circle at top right, rgba(207,196,227,0.16), transparent 28%),
-    linear-gradient(180deg, #f7f2ec 0%, #efe8de 100%);
+    radial-gradient(circle at top left, rgba(191,220,205,0.12), transparent 32%),
+    radial-gradient(circle at top right, rgba(207,196,227,0.12), transparent 28%),
+    linear-gradient(180deg, #050505 0%, #0a0a0a 56%, #000000 100%);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -82,8 +82,8 @@
   justify-content: space-between;
   gap: 12px;
   padding: 0 16px;
-  background: rgba(251,248,244,0.84);
-  border-bottom: 1px solid rgba(34,40,48,0.08);
+  background: rgba(5,5,5,0.86);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
   backdrop-filter: blur(18px);
   /* Topbar sits above the fixed sidebar panel */
   position: relative;
@@ -104,7 +104,9 @@
   position: relative;
   overflow: auto;
   background:
-    linear-gradient(180deg, rgba(251,248,244,0.78) 0%, rgba(240,234,226,0.88) 100%);
+    radial-gradient(circle at top left, rgba(191,220,205,0.08), transparent 34%),
+    radial-gradient(circle at top right, rgba(207,196,227,0.08), transparent 28%),
+    linear-gradient(180deg, #050505 0%, #0a0a0a 62%, #000000 100%);
   z-index: 10;
   min-height: 0;
 }

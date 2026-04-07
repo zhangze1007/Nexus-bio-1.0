@@ -43,7 +43,7 @@ export default function IDEConsole() {
       flexDirection: 'column',
       background: PATHD_THEME.sepiaPanelMuted,
       borderTop: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
-      boxShadow: '0 -10px 30px rgba(96,74,56,0.08)',
+      boxShadow: '0 -10px 30px rgba(0,0,0,0.28)',
     }}>
       {/* Header */}
       <div style={{
@@ -52,15 +52,15 @@ export default function IDEConsole() {
         borderBottom: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
         flexShrink: 0,
       }}>
-        <span style={{ fontFamily: MONO, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: PATHD_THEME.paperLabel }}>
+        <span style={{ fontFamily: MONO, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: PATHD_THEME.label }}>
           Output Console · {consoleEntries.length} entries
         </span>
         <div style={{ display: 'flex', gap: '4px' }}>
-          <button onClick={clearConsole} style={{ background: 'none', border: 'none', cursor: 'pointer', color: PATHD_THEME.paperLabel, padding: '2px', display: 'flex' }}
+          <button onClick={clearConsole} style={{ background: 'none', border: 'none', cursor: 'pointer', color: PATHD_THEME.label, padding: '2px', display: 'flex' }}
             title="Clear console">
             <Trash2 size={11} />
           </button>
-          <button onClick={toggleConsole} style={{ background: 'none', border: 'none', cursor: 'pointer', color: PATHD_THEME.paperLabel, padding: '2px', display: 'flex' }}
+          <button onClick={toggleConsole} style={{ background: 'none', border: 'none', cursor: 'pointer', color: PATHD_THEME.label, padding: '2px', display: 'flex' }}
             title="Close console">
             <X size={11} />
           </button>
@@ -70,7 +70,7 @@ export default function IDEConsole() {
       {/* Entries */}
       <div ref={bodyRef} style={{ flex: 1, overflowY: 'auto', padding: '4px 0' }}>
         {consoleEntries.length === 0 ? (
-          <p style={{ fontFamily: MONO, fontSize: '10px', color: PATHD_THEME.paperMuted, padding: '8px 12px', margin: 0 }}>
+          <p style={{ fontFamily: MONO, fontSize: '10px', color: 'rgba(226,232,240,0.42)', padding: '8px 12px', margin: 0 }}>
             No output yet.
           </p>
         ) : (
@@ -81,16 +81,16 @@ export default function IDEConsole() {
               <div key={entry.id} style={{
                 display: 'flex', alignItems: 'flex-start', gap: '8px',
                 padding: '3px 12px',
-                background: PATHD_THEME.paperSurfaceStrong,
+                background: PATHD_THEME.panelGlassStrong,
                 borderLeft: `2px solid ${LEVEL_COLORS[entry.level]}`,
                 marginBottom: '1px',
               }}>
-                <span style={{ fontFamily: MONO, fontSize: '9px', color: PATHD_THEME.paperMuted, flexShrink: 0, marginTop: '1px' }}>{ts}</span>
+                <span style={{ fontFamily: MONO, fontSize: '9px', color: 'rgba(226,232,240,0.42)', flexShrink: 0, marginTop: '1px' }}>{ts}</span>
                 <span style={{ fontFamily: MONO, fontSize: '9px', color: LEVEL_COLORS[entry.level], flexShrink: 0, textTransform: 'uppercase', marginTop: '1px' }}>
                   [{entry.level}]
                 </span>
-                <span style={{ fontFamily: MONO, fontSize: '9px', color: PATHD_THEME.paperMuted, flexShrink: 0, marginTop: '1px' }}>{entry.module}</span>
-                <span style={{ fontFamily: SANS, fontSize: '11px', color: PATHD_THEME.paperValue, flex: 1, lineHeight: 1.4 }}>{entry.message}</span>
+                <span style={{ fontFamily: MONO, fontSize: '9px', color: 'rgba(226,232,240,0.42)', flexShrink: 0, marginTop: '1px' }}>{entry.module}</span>
+                <span style={{ fontFamily: SANS, fontSize: '11px', color: PATHD_THEME.value, flex: 1, lineHeight: 1.4 }}>{entry.message}</span>
               </div>
             );
           })

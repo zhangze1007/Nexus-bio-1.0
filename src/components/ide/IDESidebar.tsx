@@ -30,9 +30,9 @@ import { PATHD_THEME } from '../workbench/workbenchTheme';
 // ── Design tokens ──────────────────────────────────────────────────────
 const SANS  = T.SANS;
 const BRAND = T.BRAND;
-const BORDER = PATHD_THEME.paperBorder;
-const LABEL  = PATHD_THEME.paperLabel;
-const VALUE  = PATHD_THEME.paperValue;
+const BORDER = PATHD_THEME.sepiaPanelBorder;
+const LABEL  = PATHD_THEME.label;
+const VALUE  = PATHD_THEME.value;
 
 /** Collapsed width — icon-only strip (80 px). */
 export const W_COLLAPSED = 80;
@@ -97,7 +97,7 @@ export default function IDESidebar() {
               zIndex: Z_BACKDROP,
               backdropFilter: 'blur(10px)',
               WebkitBackdropFilter: 'blur(10px)',
-              background: 'rgba(96,74,56,0.12)',
+              background: 'rgba(0,0,0,0.46)',
               cursor: 'pointer',
             }}
             aria-hidden={true}
@@ -126,7 +126,7 @@ export default function IDESidebar() {
           flexDirection: 'column',
           background: PATHD_THEME.sepiaPanelMuted,
           borderRight: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
-          boxShadow: '16px 0 40px rgba(96,74,56,0.08)',
+          boxShadow: '16px 0 40px rgba(0,0,0,0.32)',
           overflowY: 'auto',
           overflowX: 'hidden',
           scrollbarWidth: 'none',        /* Firefox */
@@ -172,11 +172,11 @@ export default function IDESidebar() {
                 height: 30,
                 borderRadius: 10,
                 background: collapsed
-                  ? 'rgba(255,255,255,0.5)'
-                  : 'rgba(231,199,169,0.24)',
+                  ? 'rgba(255,255,255,0.08)'
+                  : 'rgba(231,199,169,0.14)',
                 border: collapsed
                   ? `1px solid ${BORDER}`
-                  : '1px solid rgba(231,199,169,0.32)',
+                  : '1px solid rgba(231,199,169,0.22)',
                 display: 'grid',
                 placeItems: 'center',
                 flexShrink: 0,
@@ -233,7 +233,7 @@ export default function IDESidebar() {
                     fontSize: 10,
                     textTransform: 'uppercase',
                     letterSpacing: '0.1em',
-                    color: PATHD_THEME.paperMuted,
+                    color: 'rgba(226,232,240,0.42)',
                     overflow: 'hidden',
                     pointerEvents: collapsed ? 'none' : 'auto',
                   }}
@@ -269,13 +269,13 @@ export default function IDESidebar() {
                           border: collapsed
                             ? 'none'
                             : isActive
-                              ? '1px solid rgba(231,199,169,0.36)'
-                              : `1px solid ${BORDER}`,
+                            ? '1px solid rgba(231,199,169,0.36)'
+                            : `1px solid ${BORDER}`,
                           background: collapsed
                             ? 'transparent'
                             : isActive
                               ? `${stage.accent}33`
-                              : 'rgba(255,255,255,0.45)',
+                              : PATHD_THEME.panelGlass,
                           minWidth: 0,
                           width: collapsed ? 30 : undefined,
                           height: collapsed ? 30 : undefined,
@@ -293,7 +293,7 @@ export default function IDESidebar() {
                             placeItems: 'center',
                             background: isActive
                               ? `${stage.accent}55`
-                              : 'rgba(255,255,255,0.58)',
+                              : PATHD_THEME.panelGlassStrong,
                             border: isActive
                               ? `1px solid ${stage.accent}`
                               : `1px solid ${BORDER}`,
@@ -327,7 +327,7 @@ export default function IDESidebar() {
                               fontFamily: SANS,
                               fontSize: 11,
                               fontWeight: 600,
-                              color: isActive ? VALUE : PATHD_THEME.paperLabel,
+                              color: isActive ? VALUE : LABEL,
                               lineHeight: 1.25,
                               overflow: 'hidden',
                               textOverflow: 'ellipsis',
@@ -340,8 +340,8 @@ export default function IDESidebar() {
                               fontFamily: SANS,
                               fontSize: 10,
                               color: isActive
-                                ? PATHD_THEME.paperMuted
-                                : 'rgba(78,85,95,0.48)',
+                                ? 'rgba(226,232,240,0.48)'
+                                : 'rgba(226,232,240,0.42)',
                               lineHeight: 1.2,
                               overflow: 'hidden',
                               textOverflow: 'ellipsis',
@@ -375,7 +375,7 @@ export default function IDESidebar() {
                 fontSize: 10,
                 textTransform: 'uppercase',
                 letterSpacing: '0.1em',
-                color: PATHD_THEME.paperMuted,
+                color: 'rgba(226,232,240,0.42)',
                 overflow: 'hidden',
                 pointerEvents: collapsed ? 'none' : 'auto',
               }}
@@ -413,7 +413,7 @@ export default function IDESidebar() {
                         ? 'transparent'
                         : isActive
                           ? 'rgba(207,196,227,0.26)'
-                          : 'rgba(255,255,255,0.45)',
+                          : PATHD_THEME.panelGlass,
                       minWidth: 0,
                       width: collapsed ? 30 : undefined,
                       height: collapsed ? 30 : undefined,
@@ -430,7 +430,7 @@ export default function IDESidebar() {
                         placeItems: 'center',
                         background: isActive
                           ? 'rgba(207,196,227,0.4)'
-                          : 'rgba(255,255,255,0.58)',
+                          : PATHD_THEME.panelGlassStrong,
                         border: isActive
                           ? '1px solid rgba(207,196,227,0.5)'
                           : `1px solid ${BORDER}`,
@@ -457,7 +457,7 @@ export default function IDESidebar() {
                           fontFamily: SANS,
                           fontSize: 11,
                           fontWeight: 600,
-                          color: isActive ? VALUE : PATHD_THEME.paperLabel,
+                          color: isActive ? VALUE : LABEL,
                           lineHeight: 1.25,
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
@@ -469,7 +469,7 @@ export default function IDESidebar() {
                         style={{
                           fontFamily: SANS,
                           fontSize: 10,
-                          color: isActive ? PATHD_THEME.paperMuted : 'rgba(78,85,95,0.48)',
+                          color: isActive ? 'rgba(226,232,240,0.48)' : 'rgba(226,232,240,0.42)',
                           lineHeight: 1.2,
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',

@@ -105,9 +105,9 @@ export default function ToolShell({
             minHeight: '28px',
             padding: '0 7px',
             borderRadius: '10px',
-            border: `1px solid ${PATHD_THEME.paperBorder}`,
-            background: PATHD_THEME.paperElevated,
-            color: PATHD_THEME.paperLabel,
+            border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
+            background: PATHD_THEME.panelGlassStrong,
+            color: PATHD_THEME.label,
             cursor: 'pointer',
             fontFamily: T.SANS,
             fontSize: '9px',
@@ -126,9 +126,9 @@ export default function ToolShell({
             minHeight: '28px',
             padding: '0 8px',
             borderRadius: '10px',
-            border: `1px solid ${PATHD_THEME.paperBorder}`,
+            border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
             background: 'rgba(231, 199, 169, 0.24)',
-            color: PATHD_THEME.paperValue,
+            color: PATHD_THEME.value,
             fontFamily: T.MONO,
             fontSize: '9px',
             fontWeight: 700,
@@ -142,7 +142,7 @@ export default function ToolShell({
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{
             fontFamily: T.SANS, fontSize: '12px', fontWeight: 700,
-            color: PATHD_THEME.paperValue,
+            color: PATHD_THEME.value,
             letterSpacing: '-0.01em',
           }}>
             {tool?.name ?? title}
@@ -150,7 +150,7 @@ export default function ToolShell({
           {description && (
             <div style={{
               fontFamily: T.SANS, fontSize: '10px',
-              color: PATHD_THEME.paperLabel,
+              color: PATHD_THEME.label,
               marginTop: '2px',
             }}>
               {description}
@@ -161,10 +161,10 @@ export default function ToolShell({
         {formula && (
           <div style={{
             fontFamily: T.MONO, fontSize: '9px',
-            color: PATHD_THEME.paperValue,
+            color: PATHD_THEME.value,
           padding: '5px 8px',
-            background: PATHD_THEME.paperSurfaceStrong,
-            border: `1px solid ${PATHD_THEME.paperBorder}`,
+            background: PATHD_THEME.panelGlassStrong,
+            border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
             borderRadius: '10px',
           }}>
             {formula}

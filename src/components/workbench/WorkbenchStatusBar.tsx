@@ -30,14 +30,16 @@ interface WorkbenchStatusBarProps {
 }
 
 const SURFACE = `linear-gradient(180deg, ${PATHD_THEME.sepiaPanelMuted} 0%, ${PATHD_THEME.sepiaPanel} 100%)`;
-const BORDER = PATHD_THEME.paperBorder;
-const LABEL = PATHD_THEME.paperLabel;
-const VALUE = PATHD_THEME.paperValue;
+const BORDER = PATHD_THEME.sepiaPanelBorder;
+const LABEL = PATHD_THEME.label;
+const VALUE = PATHD_THEME.value;
+const CARD_BG = PATHD_THEME.panelGlassStrong;
+const CARD_BG_SOFT = PATHD_THEME.panelSurface;
 
 function getStageStatusColor(status: 'pending' | 'active' | 'complete') {
   if (status === 'complete') return PATHD_THEME.mint;
   if (status === 'active') return PATHD_THEME.apricot;
-  return 'rgba(78,85,95,0.22)';
+  return 'rgba(226,232,240,0.18)';
 }
 
 export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps) {
@@ -179,9 +181,9 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                     minHeight: compactHeader ? '28px' : '32px',
                     padding: compactHeader ? '0 8px' : '0 10px',
                     borderRadius: '999px',
-                    border: `1px solid ${isActive ? PATHD_THEME.paperBorderStrong : BORDER}`,
-                  background: isActive ? `${entry.accent}44` : PATHD_THEME.paperSurfaceStrong,
-                    color: isActive ? VALUE : PATHD_THEME.paperLabel,
+                    border: `1px solid ${isActive ? PATHD_THEME.panelBorderStrong : BORDER}`,
+                  background: isActive ? `${entry.accent}33` : CARD_BG,
+                    color: VALUE,
                     textDecoration: 'none',
                     fontFamily: T.SANS,
                     fontSize: compactHeader ? '10px' : '11px',
@@ -219,8 +221,8 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                   gap: '6px',
                   textDecoration: 'none',
                   border: `1px solid ${BORDER}`,
-                  background: PATHD_THEME.paperSurfaceStrong,
-                  color: PATHD_THEME.paperLabel,
+                  background: CARD_BG,
+                  color: LABEL,
                   fontFamily: T.SANS,
                   fontSize: compactHeader ? '10px' : '11px',
                 }}
@@ -239,8 +241,8 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                   gap: '6px',
                   textDecoration: 'none',
                   border: `1px solid ${BORDER}`,
-                  background: PATHD_THEME.paperSurfaceStrong,
-                  color: PATHD_THEME.paperLabel,
+                  background: CARD_BG,
+                  color: LABEL,
                   fontFamily: T.SANS,
                   fontSize: compactHeader ? '10px' : '11px',
                 }}
@@ -258,7 +260,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                   alignItems: 'center',
                   gap: '6px',
                   textDecoration: 'none',
-                  border: `1px solid ${PATHD_THEME.paperBorderStrong}`,
+                  border: `1px solid ${PATHD_THEME.panelBorderStrong}`,
                   background: 'rgba(207,196,227,0.34)',
                   color: VALUE,
                   fontFamily: T.SANS,
@@ -278,9 +280,9 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '6px',
-                  border: `1px solid ${drawerOpen ? PATHD_THEME.paperBorderStrong : BORDER}`,
-                  background: drawerOpen ? 'rgba(175,195,214,0.28)' : PATHD_THEME.paperSurfaceStrong,
-                  color: drawerOpen ? VALUE : PATHD_THEME.paperLabel,
+                  border: `1px solid ${drawerOpen ? PATHD_THEME.panelBorderStrong : BORDER}`,
+                  background: drawerOpen ? 'rgba(175,195,214,0.18)' : CARD_BG,
+                  color: VALUE,
                   cursor: 'pointer',
                   fontFamily: T.SANS,
                   fontSize: compactHeader ? '10px' : '11px',
@@ -303,7 +305,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                     maxWidth: '100%',
                     borderRadius: '999px',
                     border: `1px solid ${BORDER}`,
-                    background: PATHD_THEME.paperSurfaceStrong,
+                    background: CARD_BG_SOFT,
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: '6px',
@@ -341,7 +343,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                 style={{
                   borderRadius: '14px',
                   border: `1px solid ${BORDER}`,
-                  background: PATHD_THEME.paperSurfaceStrong,
+                  background: CARD_BG,
                   padding: '10px 12px',
                   display: 'grid',
                   gap: '6px',
@@ -355,7 +357,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                     style={{
                         padding: '2px 7px',
                         borderRadius: '999px',
-                        border: `1px solid ${project?.isDemo ? PATHD_THEME.chipBorderWarm : PATHD_THEME.paperBorder}`,
+                        border: `1px solid ${project?.isDemo ? PATHD_THEME.chipBorderWarm : BORDER}`,
                         background: project?.isDemo ? 'rgba(231,199,169,0.24)' : 'rgba(175,195,214,0.22)',
                         color: VALUE,
                       fontFamily: T.MONO,
@@ -371,7 +373,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                       style={{
                         padding: '2px 7px',
                         borderRadius: '999px',
-                        border: `1px solid ${PATHD_THEME.paperBorder}`,
+                        border: `1px solid ${BORDER}`,
                         background: 'rgba(191,220,205,0.22)',
                         color: VALUE,
                         fontFamily: T.MONO,
@@ -398,7 +400,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                 style={{
                   borderRadius: '14px',
                   border: `1px solid ${BORDER}`,
-                  background: PATHD_THEME.paperSurfaceStrong,
+                  background: CARD_BG,
                   padding: '10px 12px',
                   display: 'grid',
                   gap: '6px',
@@ -423,7 +425,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                 style={{
                   borderRadius: '14px',
                   border: `1px solid ${BORDER}`,
-                  background: PATHD_THEME.paperSurfaceStrong,
+                  background: CARD_BG,
                   padding: '10px 12px',
                   display: 'grid',
                   gap: '6px',
@@ -444,7 +446,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                 style={{
                   borderRadius: '14px',
                   border: `1px solid ${BORDER}`,
-                  background: PATHD_THEME.paperSurfaceStrong,
+                  background: CARD_BG,
                   padding: '10px 12px',
                   display: 'grid',
                   gap: '6px',
@@ -481,8 +483,8 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                     gap: '6px',
                     textDecoration: 'none',
                     border: `1px solid ${PATHD_THEME.chipBorder}`,
-                    background: 'rgba(255,255,255,0.56)',
-                    color: PATHD_THEME.paperValue,
+                    background: CARD_BG_SOFT,
+                    color: VALUE,
                     fontFamily: T.SANS,
                     fontSize: compactHeader ? '10px' : '11px',
                   }}
@@ -568,7 +570,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                     height: 30,
                     borderRadius: '999px',
                     border: `1px solid ${BORDER}`,
-                    background: 'rgba(255,255,255,0.56)',
+                    background: CARD_BG,
                     color: LABEL,
                     cursor: 'pointer',
                   }}
@@ -586,7 +588,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                     style={{
                       borderRadius: '14px',
                       border: `1px solid ${BORDER}`,
-                      background: 'rgba(255,255,255,0.58)',
+                      background: CARD_BG,
                       padding: '10px 12px',
                       display: 'grid',
                       gap: '4px',
@@ -612,7 +614,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                       style={{
                         borderRadius: '14px',
                         border: `1px solid ${BORDER}`,
-                        background: freshness.status === 'stale' ? 'rgba(232,163,161,0.18)' : 'rgba(255,255,255,0.58)',
+                        background: freshness.status === 'stale' ? 'rgba(232,163,161,0.18)' : CARD_BG,
                         padding: '10px 12px',
                         display: 'grid',
                         gap: '4px',
@@ -642,7 +644,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                     style={{
                       borderRadius: '14px',
                       border: `1px solid ${BORDER}`,
-                      background: 'rgba(255,255,255,0.58)',
+                      background: CARD_BG,
                       padding: '10px 12px',
                       display: 'grid',
                       gap: '4px',
@@ -674,7 +676,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                       style={{
                         borderRadius: '14px',
                         border: `1px solid ${BORDER}`,
-                        background: 'rgba(255,255,255,0.58)',
+                        background: CARD_BG,
                         padding: '10px 12px',
                         display: 'grid',
                         gap: '4px',
@@ -706,7 +708,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                       style={{
                         borderRadius: '14px',
                         border: `1px solid ${BORDER}`,
-                        background: 'rgba(255,255,255,0.58)',
+                        background: CARD_BG,
                         padding: '10px 12px',
                         display: 'grid',
                         gap: '6px',
@@ -774,7 +776,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                         style={{
                           borderRadius: '14px',
                           border: `1px solid ${BORDER}`,
-                          background: 'rgba(255,255,255,0.58)',
+                          background: CARD_BG,
                           padding: '10px 12px',
                           display: 'grid',
                           gap: '4px',
@@ -815,7 +817,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                         style={{
                           borderRadius: '14px',
                           border: `1px solid ${BORDER}`,
-                          background: 'rgba(255,255,255,0.58)',
+                          background: CARD_BG,
                           padding: '10px 12px',
                           display: 'flex',
                           alignItems: 'center',
