@@ -4,9 +4,46 @@
 
 Synthetic biology AI platform. Built by Zhang Ze Foo (Malaysia, STPM student on gap year) in 48 hours on a tablet.
 
-**Core workflow:**
+**Core workflow — 4-stage research cycle:**
 ```
-Paste paper → AI extracts metabolic pathway → 3D visualization → click node → structure / simulation
+INPUT: Target Molecular Product
+         │
+STAGE 1: DESIGN & DISCOVERY
+  LAB (basic research) ◄──────────────────────────┐
+       │ path blueprint data                       │
+       ▼                                           │
+  PATHD: Pathway & Enzyme Design Navigator         │
+       │ thermodynamic parameters ─────────────────┘
+         │
+STAGE 2: SIMULATION & COMPONENT OPTIMIZATION
+  FBAsim (flux balance analysis) ─┐
+  CETHX (thermodynamics)  ────────┴─► identify bottlenecks
+                                              │
+                                              ▼
+                                   PROEVOL (protein evolution)
+                                              │
+                                              ▼
+                                   CATDES (enzyme design)
+                                              │ optimized sequence
+STAGE 3: CHASSIS ENGINEERING & CONTROL       │
+  GENMIM (genome minimization) ──► efficient chassis
+                                        │
+                                        ▼
+                              GECAIR (gene circuit design)
+                                        │
+                                        ▼
+                              DYNCON (dynamic feedback control)
+                                        │ build instructions
+STAGE 4: TEST, ANALYZE & ITERATE        │
+  DBTLflow → CFS (cell-free screening)
+           → DBTL (actual cell construction & testing)
+           → MULTIO (multi-omics integration)
+           → SCSPATIAL (single-cell & spatial omics)
+           → DBTLflow (learned optimization params)
+                │
+                └──► feedback ──► INPUT (next iteration)
+
+NEXAI: AI Multi-Module Research Assistant  ← available across all stages
 ```
 
 **Live URL:** nexus-bio-1-0.vercel.app  
