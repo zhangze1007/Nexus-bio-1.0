@@ -64,8 +64,8 @@ export default function ScientificHero({
       className="nb-scientific-hero"
       style={{
         borderRadius: '24px',
-        border: `1px solid ${PATHD_THEME.paperBorder}`,
-        background: `linear-gradient(180deg, ${PATHD_THEME.paperElevated} 0%, ${PATHD_THEME.paperSurfaceStrong} 100%)`,
+        border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
+        background: `linear-gradient(180deg, ${PATHD_THEME.panelGlassStrong} 0%, ${PATHD_THEME.panelSurface} 100%)`,
         boxShadow: '0 18px 48px rgba(32,37,43,0.08), inset 0 1px 0 rgba(255,255,255,0.5)',
         backdropFilter: 'blur(18px)',
         WebkitBackdropFilter: 'blur(18px)',
@@ -101,7 +101,7 @@ export default function ScientificHero({
               style={{
                 fontFamily: T.MONO,
                 fontSize: '10px',
-                color: PATHD_THEME.paperLabel,
+                color: PATHD_THEME.label,
                 textTransform: 'uppercase',
                 letterSpacing: '0.12em',
               }}
@@ -113,7 +113,7 @@ export default function ScientificHero({
                 fontFamily: T.SANS,
                 fontSize: '24px',
                 fontWeight: 700,
-                color: PATHD_THEME.paperValue,
+                color: PATHD_THEME.value,
                 letterSpacing: '-0.04em',
                 lineHeight: 1.08,
               }}
@@ -145,7 +145,7 @@ export default function ScientificHero({
             className="nb-scientific-hero__aside"
             style={{
               borderRadius: '18px',
-              border: `1px solid ${PATHD_THEME.paperBorder}`,
+              border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
               background: 'rgba(231, 199, 169, 0.16)',
               padding: '14px 16px',
               display: 'grid',
@@ -189,7 +189,7 @@ export default function ScientificHero({
                 style={{
                   fontFamily: T.MONO,
                   fontSize: '10px',
-                  color: PATHD_THEME.paperLabel,
+                  color: PATHD_THEME.label,
                   textTransform: 'uppercase',
                   letterSpacing: '0.08em',
                 }}

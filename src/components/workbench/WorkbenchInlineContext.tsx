@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowUpRight, BrainCircuit, Microscope } from 'lucide-react';
 import { TOOL_BY_ID } from '../tools/shared/toolRegistry';
 import { getNextToolIds, getStageForTool } from '../tools/shared/workbenchConfig';
@@ -39,6 +39,32 @@ export default function WorkbenchInlineContext({
   const runArtifacts = useWorkbenchStore((s) => s.runArtifacts);
   const stage = getStageForTool(toolId);
   const loggedRef = useRef(false);
+  const [hoveredBtn, setHoveredBtn] = useState<string | null>(null);
+
+  const dimBtn: React.CSSProperties = {
+    minHeight: '30px',
+    padding: '0 10px',
+    borderRadius: '999px',
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '6px',
+    textDecoration: 'none',
+    border: '1px solid rgba(255,255,255,0.14)',
+    background: 'rgba(255,255,255,0.10)',
+    color: 'rgba(255,255,255,0.55)',
+    fontFamily: T.SANS,
+    fontSize: '11px',
+    fontWeight: 600,
+    transition: 'all 0.18s',
+    cursor: 'pointer',
+  };
+
+  const brightBtn: React.CSSProperties = {
+    ...dimBtn,
+    background: 'rgba(255,255,255,0.90)',
+    border: '1px solid rgba(255,255,255,0.90)',
+    color: '#111318',
+  };
 
   useEffect(() => {
     if (loggedRef.current) return;
@@ -290,7 +316,7 @@ export default function WorkbenchInlineContext({
           style={{
             borderRadius: '12px',
             border: `1px solid ${BORDER}`,
-            background: 'rgba(255,255,255,0.62)',
+            background: PATHD_THEME.panelSurface,
             padding: '10px 12px',
             display: 'grid',
             gap: '4px',
@@ -311,20 +337,9 @@ export default function WorkbenchInlineContext({
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
         <Link
           href="/analyze"
-          style={{
-            minHeight: '30px',
-            padding: '0 10px',
-            borderRadius: '999px',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px',
-            textDecoration: 'none',
-            border: `1px solid ${BORDER}`,
-            background: PATHD_THEME.chipNeutral,
-            color: VALUE,
-            fontFamily: T.SANS,
-            fontSize: '11px',
-          }}
+          style={hoveredBtn === 'analyze' ? brightBtn : dimBtn}
+          onMouseEnter={() => setHoveredBtn('analyze')}
+          onMouseLeave={() => setHoveredBtn(null)}
         >
           <Microscope size={12} />
           Analyze
@@ -332,20 +347,9 @@ export default function WorkbenchInlineContext({
         {toolId !== 'nexai' && (
           <Link
             href="/tools/nexai"
-            style={{
-              minHeight: '30px',
-              padding: '0 10px',
-              borderRadius: '999px',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              textDecoration: 'none',
-              border: `1px solid ${PATHD_THEME.panelBorderStrong}`,
-              background: PATHD_THEME.panelGradientSoft,
-              color: VALUE,
-              fontFamily: T.SANS,
-              fontSize: '11px',
-            }}
+            style={hoveredBtn === 'axon' ? brightBtn : dimBtn}
+            onMouseEnter={() => setHoveredBtn('axon')}
+            onMouseLeave={() => setHoveredBtn(null)}
           >
             <BrainCircuit size={12} />
             Ask Axon
@@ -354,20 +358,9 @@ export default function WorkbenchInlineContext({
         {nextTool && (
           <Link
             href={nextTool.href}
-            style={{
-              minHeight: '30px',
-              padding: '0 10px',
-              borderRadius: '999px',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              textDecoration: 'none',
-              border: `1px solid ${BORDER}`,
-              background: 'rgba(255,255,255,0.56)',
-              color: PATHD_THEME.paperValue,
-              fontFamily: T.SANS,
-              fontSize: '11px',
-            }}
+            style={hoveredBtn === 'next' ? brightBtn : dimBtn}
+            onMouseEnter={() => setHoveredBtn('next')}
+            onMouseLeave={() => setHoveredBtn(null)}
           >
             Next: {nextTool.shortLabel}
             <ArrowUpRight size={11} />

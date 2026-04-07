@@ -24,8 +24,8 @@ export default function ScientificMethodStrip({ label, items }: ScientificMethod
         gap: '10px',
         padding: '12px 16px',
         borderRadius: '18px',
-        border: `1px solid ${PATHD_THEME.paperBorder}`,
-        background: PATHD_THEME.paperSurfaceStrong,
+        border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
+        background: PATHD_THEME.panelSurface,
         boxShadow: '0 14px 30px rgba(96,74,56,0.07), inset 0 1px 0 rgba(255,255,255,0.78)',
       }}
     >
@@ -35,7 +35,7 @@ export default function ScientificMethodStrip({ label, items }: ScientificMethod
           fontSize: '10px',
           letterSpacing: '0.12em',
           textTransform: 'uppercase',
-          color: PATHD_THEME.paperLabel,
+          color: PATHD_THEME.label,
         }}
       >
         {label}
@@ -46,8 +46,8 @@ export default function ScientificMethodStrip({ label, items }: ScientificMethod
             key={`${item.title}-${index}`}
             style={{
               borderRadius: '14px',
-              border: `1px solid ${PATHD_THEME.paperBorder}`,
-              background: PATHD_THEME.paperSurfaceMuted,
+              border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
+              background: PATHD_THEME.panelInset,
               padding: '12px',
               display: 'grid',
               gap: '6px',
@@ -60,7 +60,7 @@ export default function ScientificMethodStrip({ label, items }: ScientificMethod
                   height: '22px',
                   borderRadius: '999px',
                   background: item.accent ?? PATHD_THEME.sky,
-                  color: PATHD_THEME.paperValue,
+                  color: PATHD_THEME.value,
                   display: 'inline-flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -77,7 +77,7 @@ export default function ScientificMethodStrip({ label, items }: ScientificMethod
                   fontFamily: T.SANS,
                   fontSize: '12px',
                   fontWeight: 700,
-                  color: PATHD_THEME.paperValue,
+                  color: PATHD_THEME.value,
                 }}
               >
                 {item.title}
@@ -100,7 +100,7 @@ export default function ScientificMethodStrip({ label, items }: ScientificMethod
                   fontSize: '9px',
                   letterSpacing: '0.05em',
                   textTransform: 'uppercase',
-                  color: PATHD_THEME.paperLabel,
+                  color: PATHD_THEME.label,
                 }}
               >
                 {item.note}

@@ -22,20 +22,20 @@ import { PATHD_THEME } from '../workbench/workbenchTheme';
 import ScientificFigureFrame from './shared/ScientificFigureFrame';
 import ScientificMethodStrip from './shared/ScientificMethodStrip';
 
-// ── Publication-quality palette (ColorBrewer Set1 / Nature convention) ──
-// E. coli → warm red-orange (standard in metabolic engineering literature)
-// Yeast   → steel blue (Saccharomyces cerevisiae conventional colour)
-// Shared  → muted green (exchange/shared metabolite pool)
+// ── 5-color scientific palette (coral / sky / mint / lilac / apricot) ──
+// E. coli → coral (warm, distinctive)
+// Yeast   → sky blue (cool, contrasts coral)
+// Shared  → mint (neutral exchange pool)
 const COLORS = {
-  strainA: '#E41A1C',                      // ColorBrewer Set1 red   (E. coli)
-  strainB: '#377EB8',                      // ColorBrewer Set1 blue  (S. cerevisiae)
-  sharedPool: '#4DAF4A',                   // ColorBrewer Set1 green (exchange pool)
-  strainABg: 'rgba(228,26,28,0.07)',
-  strainBBg: 'rgba(55,126,184,0.07)',
-  sharedBg: 'rgba(77,175,74,0.07)',
-  strainABorder: 'rgba(228,26,28,0.28)',
-  strainBBorder: 'rgba(55,126,184,0.28)',
-  sharedBorder: 'rgba(77,175,74,0.28)',
+  strainA: '#E8A3A1',                      // coral   (E. coli)
+  strainB: '#AFC3D6',                      // sky     (S. cerevisiae)
+  sharedPool: '#BFDCCD',                   // mint    (exchange pool)
+  strainABg: 'rgba(232,163,161,0.07)',
+  strainBBg: 'rgba(175,195,214,0.07)',
+  sharedBg: 'rgba(191,220,205,0.07)',
+  strainABorder: 'rgba(232,163,161,0.28)',
+  strainBBorder: 'rgba(175,195,214,0.28)',
+  sharedBorder: 'rgba(191,220,205,0.28)',
 };
 
 type SimMode = 'single' | 'community';
@@ -100,8 +100,8 @@ function ParamSlider({ label, value, min, max, step = 0.5, onChange, unit }: {
   return (
     <div style={{ marginBottom: '14px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
-        <span style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.paperLabel }}>{label}</span>
-        <span style={{ fontFamily: T.MONO, fontSize: '11px', fontWeight: 600, color: PATHD_THEME.paperValue }}>
+        <span style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.label }}>{label}</span>
+        <span style={{ fontFamily: T.MONO, fontSize: '11px', fontWeight: 600, color: PATHD_THEME.value }}>
           {localVal.toFixed(1)}{unit ? ` ${unit}` : ''}
         </span>
       </div>
@@ -124,12 +124,12 @@ function ParamSlider({ label, value, min, max, step = 0.5, onChange, unit }: {
 }
 
 const W = 480, H = 640;
-// Publication-quality cluster palette
+// 5-color scientific palette for subsystem nodes
 const SUBSYSTEM_COLORS: Record<string, string> = {
-  Glycolysis:   '#E41A1C',
-  TCA:          '#377EB8',
-  Energy:       '#4DAF4A',
-  Fermentation: '#984EA3',
+  Glycolysis:   '#E8A3A1',   // coral
+  TCA:          '#AFC3D6',   // sky
+  Energy:       '#BFDCCD',   // mint
+  Fermentation: '#CFC4E3',   // lilac
 };
 
 function runForceLayout(
@@ -914,7 +914,7 @@ export default function FBASimPage() {
         {simMode === 'single' && (
           <div className="nb-tool-panels" style={{ flex: 1 }}>
             {/* Input panel */}
-            <div className="nb-tool-sidebar" style={{ width: '240px', borderRight: `1px solid ${PATHD_THEME.paperBorder}`, background: PATHD_THEME.sepiaPanelMuted }}>
+            <div className="nb-tool-sidebar" style={{ width: '240px', borderRight: `1px solid ${PATHD_THEME.sepiaPanelBorder}`, background: PATHD_THEME.sepiaPanelMuted }}>
               <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '0 0 12px' }}>
                 Simulation Parameters
               </p>
@@ -929,8 +929,8 @@ export default function FBASimPage() {
                 <button aria-label="Action" key={opt} onClick={() => setObjective(opt)} style={{
                   display: 'block', width: '100%', textAlign: 'left',
                   padding: '6px 10px', marginBottom: '4px',
-                  background: objective === opt ? PATHD_THEME.paperSurfaceStrong : 'rgba(255,255,255,0.34)',
-                  border: `1px solid ${objective === opt ? PATHD_THEME.paperBorderStrong : PATHD_THEME.paperBorder}`,
+                  background: objective === opt ? PATHD_THEME.panelSurface : 'rgba(255,255,255,0.34)',
+                  border: `1px solid ${objective === opt ? PATHD_THEME.panelBorderStrong : PATHD_THEME.sepiaPanelBorder}`,
                   borderRadius: '8px',
                   color: objective === opt ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.4)',
                   fontFamily: T.SANS, fontSize: '11px', cursor: 'pointer',
@@ -1022,7 +1022,7 @@ export default function FBASimPage() {
             </div>
 
             {/* Results panel */}
-            <div className="nb-tool-right" style={{ width: '240px', borderLeft: `1px solid ${PATHD_THEME.paperBorder}`, background: PATHD_THEME.sepiaPanelMuted }}>
+            <div className="nb-tool-right" style={{ width: '240px', borderLeft: `1px solid ${PATHD_THEME.sepiaPanelBorder}`, background: PATHD_THEME.sepiaPanelMuted }}>
               <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '0 0 12px' }}>
                 Results
               </p>
@@ -1162,7 +1162,7 @@ export default function FBASimPage() {
         )}
 
         {/* Export bar */}
-        <div style={{ borderTop: `1px solid ${PATHD_THEME.paperBorder}`, padding: '8px 16px', display: 'flex', gap: '8px', flexShrink: 0, background: PATHD_THEME.sepiaPanelMuted }}>
+        <div style={{ borderTop: `1px solid ${PATHD_THEME.sepiaPanelBorder}`, padding: '8px 16px', display: 'flex', gap: '8px', flexShrink: 0, background: PATHD_THEME.sepiaPanelMuted }}>
           <ExportButton label="Export JSON" data={exportData} filename={`fbasim-${simMode}-result`} format="json" />
           <ExportButton label="Export CSV" data={
             simMode === 'single'

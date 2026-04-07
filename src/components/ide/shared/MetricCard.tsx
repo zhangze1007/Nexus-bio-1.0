@@ -23,10 +23,10 @@ export default function MetricCard({ label, value, unit, delta, warning, highlig
   return (
     <div style={{
       padding: '14px 14px 12px',
-      background: highlight ? 'rgba(255,249,242,0.98)' : PATHD_THEME.paperSurfaceStrong,
-      border: `1px solid ${highlight ? 'rgba(231,199,169,0.36)' : PATHD_THEME.paperBorder}`,
+      background: highlight ? 'rgba(191,220,205,0.10)' : PATHD_THEME.panelSurface,
+      border: `1px solid ${highlight ? 'rgba(191,220,205,0.28)' : PATHD_THEME.sepiaPanelBorder}`,
       borderRadius: '14px',
-      boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.78)',
+      boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
     }}>
       <p style={{ fontFamily: SANS, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.09em', color: PATHD_THEME.label, margin: '0 0 8px' }}>
         {label}

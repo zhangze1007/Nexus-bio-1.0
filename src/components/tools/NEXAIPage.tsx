@@ -179,6 +179,7 @@ function FloatingCLI({ query, setQuery, onSubmit, loading, history }: {
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [histIdx, setHistIdx] = useState(-1);
+  const [btnHovered, setBtnHovered] = useState(false);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -215,10 +216,10 @@ function FloatingCLI({ query, setQuery, onSubmit, loading, history }: {
       style={{
         position: 'absolute', bottom: '16px', left: '16px', right: '16px',
         borderRadius: '14px',
-        background: 'rgba(255,255,255,0.94)',
+        background: PATHD_THEME.panelGlassStrong,
         backdropFilter: 'blur(16px)',
-        border: `1px solid ${loading ? 'rgba(175,195,214,0.34)' : PATHD_THEME.paperBorder}`,
-        boxShadow: loading ? '0 0 22px rgba(175,195,214,0.16)' : '0 10px 24px rgba(96,74,56,0.14)',
+        border: `1px solid ${loading ? 'rgba(175,195,214,0.34)' : PATHD_THEME.sepiaPanelBorder}`,
+        boxShadow: loading ? '0 0 22px rgba(175,195,214,0.16)' : '0 10px 24px rgba(0,0,0,0.32)',
         padding: '10px 14px',
         display: 'flex', alignItems: 'center', gap: '10px',
         zIndex: 10,
@@ -239,7 +240,7 @@ function FloatingCLI({ query, setQuery, onSubmit, loading, history }: {
           ))}
         </span>
       ) : (
-        <span style={{ fontFamily: T.MONO, fontSize: '12px', fontWeight: 700, color: PATHD_THEME.paperLabel, flexShrink: 0 }}>
+        <span style={{ fontFamily: T.MONO, fontSize: '12px', fontWeight: 700, color: PATHD_THEME.label, flexShrink: 0 }}>
           ›
         </span>
       )}
@@ -253,7 +254,7 @@ function FloatingCLI({ query, setQuery, onSubmit, loading, history }: {
         style={{
           flex: 1, background: 'transparent', border: 'none', outline: 'none',
           fontFamily: T.MONO, fontSize: '12px',
-          color: PATHD_THEME.paperValue,
+          color: PATHD_THEME.value,
           caretColor: AXON_ACCENT,
         }}
       />
@@ -261,14 +262,19 @@ function FloatingCLI({ query, setQuery, onSubmit, loading, history }: {
         aria-label="Submit Axon query"
         onClick={onSubmit}
         disabled={loading || !query.trim()}
-        whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
+        onMouseEnter={() => setBtnHovered(true)}
+        onMouseLeave={() => setBtnHovered(false)}
         style={{
-          padding: '5px 14px', borderRadius: '8px', cursor: 'pointer',
+          padding: '5px 16px', borderRadius: '20px', cursor: (loading || !query.trim()) ? 'not-allowed' : 'pointer',
           fontFamily: T.MONO, fontSize: '10px', fontWeight: 600,
-          background: loading ? PATHD_THEME.paperSurfaceMuted : 'rgba(175,195,214,0.22)',
-          border: `1px solid ${loading ? PATHD_THEME.paperBorder : 'rgba(175,195,214,0.34)'}`,
-          color: loading ? PATHD_THEME.paperLabel : PATHD_THEME.paperValue,
+          background: loading ? PATHD_THEME.panelInset : (btnHovered ? '#ffffff' : 'rgba(255,255,255,0.88)'),
+          border: loading ? `1px solid ${PATHD_THEME.sepiaPanelBorder}` : 'none',
+          color: loading ? PATHD_THEME.label : '#111318',
+          opacity: (!loading && !query.trim()) ? 0.45 : 1,
+          boxShadow: (!loading && btnHovered) ? '0 2px 12px rgba(0,0,0,0.22)' : 'none',
+          transition: 'background 0.15s, box-shadow 0.15s',
+          flexShrink: 0,
         }}
       >
         {loading ? 'searching…' : '⏎ ask'}
@@ -688,7 +694,7 @@ export default function NEXAIPage() {
                 fontFamily: T.SANS,
                 fontSize: '10px',
                 lineHeight: 1.5,
-                color: PATHD_THEME.paperValue,
+                color: PATHD_THEME.value,
                 marginBottom: '4px',
               }}
             >
@@ -704,11 +710,11 @@ export default function NEXAIPage() {
               style={{
                 display: 'block', width: '100%', textAlign: 'left',
                 padding: '7px 10px',
-                background: query === q ? 'rgba(175,195,214,0.2)' : PATHD_THEME.paperSurfaceStrong,
-                border: query === q ? '1px solid rgba(175,195,214,0.34)' : `1px solid ${PATHD_THEME.paperBorder}`,
+                background: query === q ? 'rgba(175,195,214,0.2)' : PATHD_THEME.panelSurface,
+                border: query === q ? '1px solid rgba(175,195,214,0.34)' : `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
                 borderRadius: '8px', cursor: 'pointer',
                 fontFamily: T.SANS, fontSize: '10px', lineHeight: 1.5,
-                color: query === q ? PATHD_THEME.paperValue : PATHD_THEME.paperLabel,
+                color: query === q ? PATHD_THEME.value : PATHD_THEME.label,
               }}
             >
               {q}
@@ -720,7 +726,7 @@ export default function NEXAIPage() {
             <>
               <div style={{
                 fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase',
-                letterSpacing: '0.1em', color: PATHD_THEME.paperLabel,
+                letterSpacing: '0.1em', color: PATHD_THEME.label,
                 margin: '14px 0 6px', padding: '0 2px',
               }}>
                 Citations ({result.citations.length})
@@ -729,17 +735,17 @@ export default function NEXAIPage() {
                 <div key={c.id} style={{
                   padding: '6px 8px',
                   borderRadius: '8px',
-                  background: PATHD_THEME.paperSurfaceMuted,
-                  border: `1px solid ${PATHD_THEME.paperBorder}`,
+                  background: PATHD_THEME.panelInset,
+                  border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
                 }}>
-                  <p style={{ fontFamily: T.SANS, fontSize: '9px', color: PATHD_THEME.paperValue, margin: '0 0 2px', lineHeight: 1.4 }}>
+                  <p style={{ fontFamily: T.SANS, fontSize: '9px', color: PATHD_THEME.value, margin: '0 0 2px', lineHeight: 1.4 }}>
                     {c.title.slice(0, 60)}…
                   </p>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ fontFamily: T.SANS, fontSize: '8px', color: PATHD_THEME.paperLabel }}>
+                    <span style={{ fontFamily: T.SANS, fontSize: '8px', color: PATHD_THEME.label }}>
                       {c.authors.split(',')[0]} et al. {c.year}
                     </span>
-                    <span style={{ fontFamily: T.MONO, fontSize: '8px', color: PATHD_THEME.paperValue }}>
+                    <span style={{ fontFamily: T.MONO, fontSize: '8px', color: PATHD_THEME.value }}>
                       {(c.relevance * 100).toFixed(0)}%
                     </span>
                   </div>
@@ -774,10 +780,10 @@ export default function NEXAIPage() {
               ) : (
                 <div style={{ textAlign: 'center' }}>
                   <p style={{ fontFamily: T.MONO, fontSize: '32px', color: 'rgba(36,29,24,0.08)', margin: '0 0 8px' }}>⬡</p>
-                  <p style={{ fontFamily: T.SANS, fontSize: '12px', color: PATHD_THEME.paperLabel }}>
+                  <p style={{ fontFamily: T.SANS, fontSize: '12px', color: PATHD_THEME.label }}>
                     Ask Axon a research question
                   </p>
-                  <p style={{ fontFamily: T.MONO, fontSize: '9px', color: PATHD_THEME.paperMuted, marginTop: '4px' }}>
+                  <p style={{ fontFamily: T.MONO, fontSize: '9px', color: PATHD_THEME.label, marginTop: '4px' }}>
                     press / to focus the command line
                   </p>
                 </div>
@@ -794,20 +800,20 @@ export default function NEXAIPage() {
                     position: 'absolute', top: '12px', left: '12px', right: '12px',
                     maxHeight: '40%', overflowY: 'auto',
                     borderRadius: '12px',
-                    background: 'rgba(255,255,255,0.92)',
+                    background: PATHD_THEME.panelGlassStrong,
                     backdropFilter: 'blur(12px)',
-                    border: `1px solid ${PATHD_THEME.paperBorder}`,
+                    border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
                     padding: '12px 14px',
                     zIndex: 5,
-                    boxShadow: '0 12px 30px rgba(96,74,56,0.14)',
+                    boxShadow: '0 12px 30px rgba(0,0,0,0.32)',
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                    <span style={{ fontFamily: T.MONO, fontSize: '9px', color: PATHD_THEME.paperLabel }}>AXON</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: '9px', color: PATHD_THEME.label }}>AXON</span>
                     <span style={{
                       fontFamily: T.MONO, fontSize: '8px', padding: '2px 6px',
                       background: 'rgba(191,220,205,0.18)', border: '1px solid rgba(191,220,205,0.32)',
-                      borderRadius: '6px', color: PATHD_THEME.paperValue,
+                      borderRadius: '6px', color: PATHD_THEME.value,
                     }}>
                       {(result.confidence * 100).toFixed(0)}%
                     </span>
@@ -820,7 +826,7 @@ export default function NEXAIPage() {
                           background: 'rgba(232,163,161,0.18)',
                           border: '1px solid rgba(232,163,161,0.34)',
                           borderRadius: '6px',
-                          color: PATHD_THEME.paperValue,
+                          color: PATHD_THEME.value,
                         }}
                       >
                         ungrounded
@@ -828,12 +834,12 @@ export default function NEXAIPage() {
                     )}
                   </div>
                   {isUngrounded && (
-                    <p style={{ fontFamily: T.SANS, fontSize: '10px', color: PATHD_THEME.paperLabel, lineHeight: 1.55, margin: '0 0 8px' }}>
+                    <p style={{ fontFamily: T.SANS, fontSize: '10px', color: PATHD_THEME.label, lineHeight: 1.55, margin: '0 0 8px' }}>
                       This answer has no visible citation nodes yet. Add Research evidence or rerun with a pathway-style query before treating it as decision-grade guidance.
                     </p>
                   )}
                   <p style={{
-                    fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.paperValue,
+                    fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.value,
                     lineHeight: 1.7, margin: 0,
                   }}>
                     {result.answer}
@@ -864,7 +870,7 @@ export default function NEXAIPage() {
             <div style={{ marginTop: '12px' }}>
               <div style={{
                 fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase',
-                letterSpacing: '0.1em', color: PATHD_THEME.paperLabel, marginBottom: '6px',
+                letterSpacing: '0.1em', color: PATHD_THEME.label, marginBottom: '6px',
               }}>
                 History ({history.length})
               </div>
@@ -877,7 +883,7 @@ export default function NEXAIPage() {
                     display: 'block', width: '100%', textAlign: 'left',
                     padding: '4px 6px', marginBottom: '2px',
                     background: 'transparent', border: 'none', cursor: 'pointer',
-                    fontFamily: T.MONO, fontSize: '8px', color: PATHD_THEME.paperLabel,
+                    fontFamily: T.MONO, fontSize: '8px', color: PATHD_THEME.label,
                     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                   }}
                 >
@@ -890,15 +896,15 @@ export default function NEXAIPage() {
           <div style={{
             padding: '12px',
             borderRadius: '12px',
-            border: `1px solid ${PATHD_THEME.paperBorder}`,
-            background: PATHD_THEME.paperSurfaceMuted,
+            border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
+            background: PATHD_THEME.panelInset,
             display: 'grid',
             gap: '6px',
           }}>
-            <div style={{ fontFamily: T.MONO, fontSize: '9px', color: PATHD_THEME.paperLabel, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            <div style={{ fontFamily: T.MONO, fontSize: '9px', color: PATHD_THEME.label, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
               Axon posture
             </div>
-            <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.paperValue, lineHeight: 1.55 }}>
+            <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.value, lineHeight: 1.55 }}>
               {result
                 ? isUngrounded
                   ? 'Axon returned a synthesis, but it is not yet citation-backed in the visible evidence graph.'

@@ -41,23 +41,23 @@ import { PATHD_THEME } from '../workbench/workbenchTheme';
 /* ── Design Tokens ────────────────────────────────────────────────── */
 
 const LAYER_COLORS: Record<OmicsLayer, string> = {
-  transcriptomics: '#FF1FFF',
-  proteomics:      '#5151CD',
-  metabolomics:    '#FA8072',
+  transcriptomics: '#CFC4E3',   // lilac
+  proteomics:      '#AFC3D6',   // sky
+  metabolomics:    '#E8A3A1',   // coral
 };
 
 const PANEL_BG = PATHD_THEME.sepiaPanelMuted;
-const BORDER = PATHD_THEME.paperBorder;
-const LABEL = PATHD_THEME.paperLabel;
-const VALUE = PATHD_THEME.paperValue;
-const INPUT_BG = PATHD_THEME.paperSurfaceStrong;
-const INPUT_BORDER = PATHD_THEME.paperBorder;
-const INPUT_TEXT = PATHD_THEME.paperValue;
+const BORDER = PATHD_THEME.sepiaPanelBorder;
+const LABEL = PATHD_THEME.label;
+const VALUE = PATHD_THEME.value;
+const INPUT_BG = PATHD_THEME.panelInset;
+const INPUT_BORDER = PATHD_THEME.sepiaPanelBorder;
+const INPUT_TEXT = PATHD_THEME.value;
 
 const GLASS: React.CSSProperties = {
   borderRadius: '24px',
-  background: PATHD_THEME.paperSurfaceStrong,
-  border: `1px solid ${PATHD_THEME.paperBorder}`,
+  background: PATHD_THEME.panelSurface,
+  border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
 };
 
 type ViewMode = 'Embedding' | 'Volcano' | 'Table' | 'MOFA+' | 'VAE' | 'Efficiency';
@@ -972,10 +972,12 @@ export default function MultiOPage() {
             <button aria-label="Action" onClick={handleSimulate} style={{
               width: '100%', padding: '7px 0', borderRadius: '8px', cursor: 'pointer',
               fontFamily: T.SANS, fontSize: '11px', fontWeight: 600,
-              border: `1px solid ${LAYER_COLORS.metabolomics}40`,
-              background: `${LAYER_COLORS.metabolomics}18`,
-              color: LAYER_COLORS.metabolomics,
-            }}>
+              border: 'none', background: 'rgba(255,255,255,0.88)', color: '#111318',
+              transition: 'all 0.15s',
+            }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#ffffff'; (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 12px rgba(0,0,0,0.22)'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.88)'; (e.currentTarget as HTMLElement).style.boxShadow = 'none'; }}
+            >
               Simulate
             </button>
 
@@ -1120,7 +1122,7 @@ export default function MultiOPage() {
                             <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL }}>{layer.slice(0, 5)}</span>
                             <span style={{ fontFamily: T.MONO, fontSize: '9px', color: VALUE }}>{pct.toFixed(1)}%</span>
                           </div>
-                          <div style={{ width: '100%', height: '5px', borderRadius: '3px', background: PATHD_THEME.paperSurfaceMuted }}>
+                          <div style={{ width: '100%', height: '5px', borderRadius: '3px', background: PATHD_THEME.panelInset }}>
                             <div style={{ width: `${Math.min(100, pct)}%`, height: '100%', borderRadius: '3px', background: LAYER_COLORS[layer] }} />
                           </div>
                         </div>
@@ -1131,7 +1133,7 @@ export default function MultiOPage() {
                       {f.topGenes.slice(0, 4).map(g => (
                         <span key={g.gene} style={{
                           fontFamily: T.MONO, fontSize: '8px', padding: '2px 6px', borderRadius: '6px',
-                          background: PATHD_THEME.paperSurfaceMuted, color: VALUE,
+                          background: PATHD_THEME.panelInset, color: VALUE,
                         }}>
                           {g.gene} ({g.loading.toFixed(2)})
                         </span>

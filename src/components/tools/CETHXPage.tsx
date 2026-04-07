@@ -464,10 +464,10 @@ export default function CETHXPage() {
                 style={{
                   display: 'block', width: '100%', textAlign: 'left',
                   padding: '8px 10px', marginBottom: '4px',
-                  background: pathway === p.id ? 'rgba(231,199,169,0.22)' : PATHD_THEME.paperSurfaceStrong,
+                  background: pathway === p.id ? 'rgba(231,199,169,0.22)' : PATHD_THEME.panelSurface,
                   border: pathway === p.id
                     ? `1px solid rgba(231,199,169,0.34)`
-                    : `1px solid ${PATHD_THEME.paperBorder}`,
+                    : `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
                   borderRadius: '10px', cursor: 'pointer',
                 }}
               >
@@ -504,7 +504,7 @@ export default function CETHXPage() {
       <ModuleCard area="main" flush>
         <div style={{
           flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          padding: '16px', background: PATHD_THEME.paperSurfaceMuted,
+          padding: '16px', background: PATHD_THEME.panelInset,
         }}>
           <ScientificFigureFrame
             eyebrow="Thermodynamic waterfall"
@@ -556,7 +556,7 @@ export default function CETHXPage() {
               style={{
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                 padding: '4px 0',
-                borderBottom: `1px solid ${PATHD_THEME.paperBorder}`,
+                borderBottom: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
               }}
             >
               <span style={{
@@ -591,7 +591,7 @@ export default function CETHXPage() {
           <div style={{
             marginTop: '8px', padding: '10px',
             borderRadius: '12px',
-            background: PATHD_THEME.paperSurfaceMuted,
+            background: PATHD_THEME.panelInset,
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
               <span style={{ fontFamily: T.SANS, fontSize: '9px', color: T.LABEL }}>Efficiency</span>
@@ -627,8 +627,8 @@ export default function CETHXPage() {
           <div style={{
             padding: '12px',
             borderRadius: '12px',
-            border: `1px solid ${PATHD_THEME.paperBorder}`,
-            background: PATHD_THEME.paperSurfaceMuted,
+            border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
+            background: PATHD_THEME.panelInset,
             display: 'grid',
             gap: '6px',
           }}>

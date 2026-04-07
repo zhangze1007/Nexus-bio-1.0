@@ -31,14 +31,16 @@ const STORAGE_KEY = 'nexus-bio-favorite-tools';
 type ShellFilter = 'All' | 'ide' | 'bento';
 type SortMode = 'name' | 'category' | 'workflow';
 
-const BORDER = PATHD_THEME.paperBorder;
-const BORDER_STRONG = PATHD_THEME.paperBorderStrong;
-const VALUE = PATHD_THEME.paperValue;
-const LABEL = PATHD_THEME.paperLabel;
-const SURFACE = PATHD_THEME.paperSurfaceStrong;
-const SURFACE_SOFT = PATHD_THEME.paperSurfaceMuted;
-const SURFACE_TINT = 'rgba(255,255,255,0.9)';
-const SHADOW = '0 18px 44px rgba(96,74,56,0.10)';
+const BORDER = PATHD_THEME.sepiaPanelBorder;
+const BORDER_STRONG = PATHD_THEME.panelBorderStrong;
+const VALUE = PATHD_THEME.value;
+const LABEL = PATHD_THEME.label;
+const SURFACE = PATHD_THEME.panelSurface;
+const SURFACE_SOFT = PATHD_THEME.panelInset;
+const SURFACE_TINT = 'rgba(255,255,255,0.90)';
+const SHADOW = '0 2px 16px rgba(0,0,0,0.28)';
+// Dark text for white-pill buttons
+const BTN_TEXT = '#111318';
 
 const DIRECTION_ACCENTS: Record<ToolDirection | 'All', string> = {
   All: PATHD_THEME.sky,
@@ -529,7 +531,7 @@ export default function ToolsDirectoryPage() {
                             borderRadius: '999px',
                             border: `1px solid ${BORDER}`,
                             background: SURFACE_TINT,
-                            color: VALUE,
+                            color: BTN_TEXT,
                             cursor: 'pointer',
                             fontFamily: T.MONO,
                             fontSize: '10px',
@@ -829,7 +831,7 @@ export default function ToolsDirectoryPage() {
                             borderRadius: '10px',
                             border: `1px solid ${BORDER}`,
                             background: SURFACE_TINT,
-                            color: VALUE,
+                            color: BTN_TEXT,
                             cursor: 'pointer',
                             fontFamily: T.SANS,
                             fontSize: '12px',
@@ -936,7 +938,7 @@ export default function ToolsDirectoryPage() {
                             borderRadius: '10px',
                             border: `1px solid ${BORDER}`,
                             background: SURFACE_TINT,
-                            color: VALUE,
+                            color: BTN_TEXT,
                             cursor: 'pointer',
                             fontFamily: T.SANS,
                             fontSize: '12px',

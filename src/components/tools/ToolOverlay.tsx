@@ -100,11 +100,11 @@ function ParamSlider({ def, value, onChange, forceRef }: SliderProps) {
   return (
     <div style={{ marginBottom: '14px' }}>
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'5px' }}>
-        <span style={{ fontFamily: T.SANS, fontSize:'10px', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.08em', color:PATHD_THEME.paperLabel }}>
+        <span style={{ fontFamily: T.SANS, fontSize:'10px', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.08em', color:PATHD_THEME.label }}>
           {def.label}
         </span>
-        <span style={{ fontFamily: T.MONO, fontSize:'13px', fontWeight:600, color:PATHD_THEME.paperValue, textAlign:'right', minWidth:'72px' }}>
-          {value.toFixed(def.step < 1 ? 1 : 0)}<span style={{ fontSize:'9px', color:PATHD_THEME.paperMuted, marginLeft:'2px' }}>{def.unit}</span>
+        <span style={{ fontFamily: T.MONO, fontSize:'13px', fontWeight:600, color:PATHD_THEME.value, textAlign:'right', minWidth:'72px' }}>
+          {value.toFixed(def.step < 1 ? 1 : 0)}<span style={{ fontSize:'9px', color:PATHD_THEME.label, marginLeft:'2px' }}>{def.unit}</span>
         </span>
       </div>
 
@@ -156,15 +156,15 @@ function ActionBtn({ label, brightness = 0.7, onClick, disabled = false, classNa
       disabled={disabled}
       style={{
         flex:1, padding:'8px 0', borderRadius:'8px', cursor: disabled ? 'not-allowed' : 'pointer',
-        background: disabled ? 'rgba(255,255,255,0.34)' : 'rgba(255,255,255,0.58)',
-        border: `0.5px solid rgba(34,40,48,${disabled ? 0.05 : alpha * 0.24})`,
-        color: disabled ? PATHD_THEME.paperMuted : PATHD_THEME.paperValue,
+        background: disabled ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.88)',
+        border: `0.5px solid rgba(255,255,255,${disabled ? 0.08 : 0.9})`,
+        color: disabled ? 'rgba(255,255,255,0.35)' : '#111318',
         fontFamily: T.MONO, fontSize:'10px', fontWeight:600,
         textTransform:'uppercase', letterSpacing:'0.08em',
         transition:'all 0.15s',
       }}
-      onMouseEnter={e => { if (!disabled) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.78)'; }}
-      onMouseLeave={e => { if (!disabled) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.58)'; }}
+      onMouseEnter={e => { if (!disabled) { (e.currentTarget as HTMLElement).style.background = '#ffffff'; (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 12px rgba(0,0,0,0.22)'; }}}
+      onMouseLeave={e => { if (!disabled) { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.88)'; (e.currentTarget as HTMLElement).style.boxShadow = 'none'; }}}
     >
       {label}
     </button>
@@ -191,7 +191,7 @@ export default function ToolOverlay({
         backdropFilter:'blur(28px)',
         WebkitBackdropFilter:'blur(28px)',
         borderRadius:'20px',
-        border:`1px solid ${PATHD_THEME.paperBorder}`,
+        border:`1px solid ${PATHD_THEME.sepiaPanelBorder}`,
         borderTop:`1px solid rgba(255,255,255,0.5)`,
         boxShadow:'0 18px 42px rgba(32,37,43,0.08), inset 0 1px 0 rgba(255,255,255,0.48)',
         padding:'18px 16px',
@@ -211,7 +211,7 @@ export default function ToolOverlay({
       {/* Header */}
       <div style={{ marginBottom:'16px', position:'relative', zIndex:1 }}>
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-          <span style={{ fontFamily: T.MONO, fontSize:'9px', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.12em', color:PATHD_THEME.paperLabel }}>
+          <span style={{ fontFamily: T.MONO, fontSize:'9px', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.12em', color:PATHD_THEME.label }}>
             Method Rail
           </span>
           {/* FSM state indicator */}
@@ -223,7 +223,7 @@ export default function ToolOverlay({
               display:'flex', alignItems:'center', gap:'5px',
               padding:'2px 8px', borderRadius:'100px',
               background:'rgba(255,255,255,0.62)',
-              border:`0.5px solid ${PATHD_THEME.paperBorder}`,
+              border:`0.5px solid ${PATHD_THEME.sepiaPanelBorder}`,
             }}
           >
             <motion.div
@@ -231,13 +231,13 @@ export default function ToolOverlay({
               transition={{ duration:1.5, repeat:Infinity }}
               style={{ width:'5px', height:'5px', borderRadius:'50%', background:PATHD_THEME.liveRed, boxShadow:'0 0 6px rgba(232,163,161,0.48)' }}
             />
-            <span style={{ fontFamily: T.MONO, fontSize:'8px', fontWeight:600, color:PATHD_THEME.paperValue, letterSpacing:'0.1em' }}>
+            <span style={{ fontFamily: T.MONO, fontSize:'8px', fontWeight:600, color:PATHD_THEME.value, letterSpacing:'0.1em' }}>
               {stateLabel}
             </span>
           </motion.div>
         </div>
-        <div style={{ marginTop:'8px', borderBottom:`0.5px solid ${PATHD_THEME.paperBorder}`, paddingBottom:'12px' }}>
-          <span style={{ fontFamily: T.SANS, fontSize:'12px', fontWeight:600, color:PATHD_THEME.paperValue }}>
+        <div style={{ marginTop:'8px', borderBottom:`0.5px solid ${PATHD_THEME.sepiaPanelBorder}`, paddingBottom:'12px' }}>
+          <span style={{ fontFamily: T.SANS, fontSize:'12px', fontWeight:600, color:PATHD_THEME.value }}>
             Metabolic Parameters
           </span>
         </div>
@@ -257,7 +257,7 @@ export default function ToolOverlay({
       </div>
 
       {/* Divider */}
-      <div style={{ borderTop:`0.5px solid ${PATHD_THEME.paperBorder}`, margin:'12px 0' }} />
+      <div style={{ borderTop:`0.5px solid ${PATHD_THEME.sepiaPanelBorder}`, margin:'12px 0' }} />
 
       {/* Action buttons */}
       <div style={{ display:'flex', gap:'6px', marginBottom:'8px' }}>
@@ -282,15 +282,15 @@ export default function ToolOverlay({
       </div>
 
       {/* Michaelis-Menten preview formula */}
-      <div style={{ marginTop:'14px', padding:'10px', borderRadius:'12px', background:PATHD_THEME.paperSurfaceStrong, border:`0.5px solid ${PATHD_THEME.paperBorder}` }}>
-        <span style={{ fontFamily: T.MONO, fontSize:'9px', color:PATHD_THEME.paperLabel, display:'block', marginBottom:'4px', textTransform:'uppercase', letterSpacing:'0.08em' }}>
+      <div style={{ marginTop:'14px', padding:'10px', borderRadius:'12px', background:PATHD_THEME.panelSurface, border:`0.5px solid ${PATHD_THEME.sepiaPanelBorder}` }}>
+        <span style={{ fontFamily: T.MONO, fontSize:'9px', color:PATHD_THEME.label, display:'block', marginBottom:'4px', textTransform:'uppercase', letterSpacing:'0.08em' }}>
           Kinetics Preview
         </span>
-        <span style={{ fontFamily: T.MONO, fontSize:'10px', color:PATHD_THEME.paperValue }}>
+        <span style={{ fontFamily: T.MONO, fontSize:'10px', color:PATHD_THEME.value }}>
           v = Vmax·[S] / (Km+[S])
         </span>
         <br />
-        <span style={{ fontFamily: T.MONO, fontSize:'10px', color:PATHD_THEME.paperMuted }}>
+        <span style={{ fontFamily: T.MONO, fontSize:'10px', color:PATHD_THEME.label }}>
           = {params.vmax.toFixed(1)} · {params.substrate} / ({params.km.toFixed(1)} + {params.substrate})
         </span>
       </div>

@@ -47,13 +47,13 @@ export default function ModuleCard({
         gridColumn: colSpan ? `span ${colSpan}` : undefined,
         gridRow: rowSpan ? `span ${rowSpan}` : undefined,
         borderRadius: '20px',
-        background: PATHD_THEME.paperSurfaceStrong,
+        background: PATHD_THEME.panelSurface,
         border: active
-          ? `1px solid ${PATHD_THEME.paperBorderStrong}`
-          : `1px solid ${PATHD_THEME.paperBorder}`,
+          ? `1px solid ${PATHD_THEME.panelBorderStrong}`
+          : `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
         boxShadow: active
-          ? '0 18px 36px rgba(96,74,56,0.12), inset 0 1px 0 rgba(255,255,255,0.82)'
-          : '0 16px 32px rgba(96,74,56,0.08), inset 0 1px 0 rgba(255,255,255,0.78)',
+          ? '0 2px 24px rgba(0,0,0,0.38), inset 0 1px 0 rgba(255,255,255,0.08)'
+          : '0 2px 16px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.06)',
         padding: flush ? 0 : '18px',
         overflow: 'hidden',
         display: 'flex',
@@ -126,7 +126,7 @@ export default function ModuleCard({
             fontWeight: 600,
             letterSpacing: '0.1em',
             textTransform: 'uppercase',
-            color: PATHD_THEME.paperLabel,
+            color: PATHD_THEME.label,
           }}>
             LIVE
           </span>
@@ -137,7 +137,7 @@ export default function ModuleCard({
         <div style={{
           fontFamily: T.SANS, fontSize: '9px', fontWeight: 500,
           textTransform: 'uppercase', letterSpacing: '0.12em',
-          color: active ? PATHD_THEME.paperValue : PATHD_THEME.paperLabel,
+          color: active ? PATHD_THEME.value : PATHD_THEME.label,
           marginBottom: flush ? 0 : '10px',
           padding: flush ? '12px 14px 0' : 0,
           flexShrink: 0,

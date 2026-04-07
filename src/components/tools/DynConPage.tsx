@@ -29,14 +29,14 @@ import { T, TOOL_RESULT_PALETTE} from '../ide/tokens';
 
 /* ── Design Tokens ─────────────────────────────────────────────────────────── */
 const PANEL_BG = PATHD_THEME.sepiaPanelMuted;
-const BORDER = PATHD_THEME.paperBorder;
-const LABEL = PATHD_THEME.paperLabel;
-const VALUE = PATHD_THEME.paperValue;
+const BORDER = PATHD_THEME.sepiaPanelBorder;
+const LABEL = PATHD_THEME.label;
+const VALUE = PATHD_THEME.value;
 
 const GLASS: React.CSSProperties = {
   borderRadius: '24px',
-  background: PATHD_THEME.paperSurfaceStrong,
-  border: `1px solid ${PATHD_THEME.paperBorder}`,
+  background: PATHD_THEME.panelSurface,
+  border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
 };
 
 /* ── Series definitions (6 state variables) ────────────────────────────────── */
@@ -726,7 +726,7 @@ export default function DynConPage() {
               padding: '12px',
               borderRadius: '12px',
               border: `1px solid ${BORDER}`,
-              background: PATHD_THEME.paperSurfaceStrong,
+              background: PATHD_THEME.panelSurface,
               display: 'grid',
               gap: '6px',
             }}>

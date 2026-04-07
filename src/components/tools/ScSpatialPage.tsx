@@ -23,28 +23,28 @@ import { PATHD_THEME } from '../workbench/workbenchTheme';
 /* ── Design Tokens ────────────────────────────────────────────────── */
 
 const PANEL_BG = PATHD_THEME.sepiaPanelMuted;
-const BORDER = PATHD_THEME.paperBorder;
-const LABEL = PATHD_THEME.paperLabel;
-const VALUE = PATHD_THEME.paperValue;
-const INPUT_BG = PATHD_THEME.paperSurfaceStrong;
-const INPUT_BORDER = PATHD_THEME.paperBorder;
-const INPUT_TEXT = PATHD_THEME.paperValue;
+const BORDER = PATHD_THEME.sepiaPanelBorder;
+const LABEL = PATHD_THEME.label;
+const VALUE = PATHD_THEME.value;
+const INPUT_BG = PATHD_THEME.panelInset;
+const INPUT_BORDER = PATHD_THEME.sepiaPanelBorder;
+const INPUT_TEXT = PATHD_THEME.value;
 
 const GLASS: React.CSSProperties = {
   borderRadius: '24px',
-  background: PATHD_THEME.paperSurfaceStrong,
-  border: `1px solid ${PATHD_THEME.paperBorder}`,
+  background: PATHD_THEME.panelSurface,
+  border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
 };
 
 const CLUSTER_COLORS: Record<number, string> = {
-  0: '#F0FDFA',
-  1: '#5151CD',
-  2: '#FA8072',
-  3: '#FFFB1F',
-  4: '#FF1FFF',
+  0: '#BFDCCD',   // mint
+  1: '#AFC3D6',   // sky
+  2: '#E8A3A1',   // coral
+  3: '#E7C7A9',   // apricot
+  4: '#CFC4E3',   // lilac
 };
 
-const CLUSTER_PAL = ['#E41A1C','#377EB8','#4DAF4A','#984EA3','#FF7F00','#A65628','#F781BF','#FFFF33'];
+const CLUSTER_PAL = ['#E8A3A1','#AFC3D6','#BFDCCD','#CFC4E3','#E7C7A9','#E8A3A1','#AFC3D6','#BFDCCD'];
 
 function viridisColor(t: number): string {
   const stops: [number, number, number][] = [[68,1,84],[49,104,142],[53,183,121],[144,215,67],[253,231,37]];
@@ -1225,11 +1225,11 @@ export default function ScSpatialPage() {
               )}
               {viewMode === 'Spatial3D' && (
                 <div style={{ display: 'grid', gap: '12px' }}>
-                  <div style={{ padding: '10px 12px', borderRadius: '14px', border: `1px solid ${PATHD_THEME.paperBorder}`, background: PATHD_THEME.paperSurfaceMuted }}>
-                    <p style={{ margin: '0 0 3px', color: PATHD_THEME.paperValue, fontSize: '11px', fontFamily: T.SANS }}>
+                  <div style={{ padding: '10px 12px', borderRadius: '14px', border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`, background: PATHD_THEME.panelInset }}>
+                    <p style={{ margin: '0 0 3px', color: PATHD_THEME.value, fontSize: '11px', fontFamily: T.SANS }}>
                       Spatial 3D mode translates the 2D atlas into a tissue-depth figure where cluster neighborhood and marker intensity can be inspected together.
                     </p>
-                    <p style={{ margin: 0, color: PATHD_THEME.paperLabel, fontSize: '9px', fontFamily: T.MONO }}>
+                    <p style={{ margin: 0, color: PATHD_THEME.label, fontSize: '9px', fontFamily: T.MONO }}>
                       rotate = tissue context · height = {highlightGene} expression / pseudotime
                     </p>
                   </div>

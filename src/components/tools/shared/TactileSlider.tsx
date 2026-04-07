@@ -7,10 +7,11 @@
  */
 'use client';
 import { useRef, useCallback, useState } from 'react';
-import { motion, useMotionValue, useTransform, useSpring } from 'framer-motion';
+import { motion, useSpring } from 'framer-motion';
 import { T } from '../../ide/tokens';
+import { PATHD_THEME } from '../../workbench/workbenchTheme';
 
-const NEON  = '#FF8B1F';
+const NEON  = PATHD_THEME.sky;   // sky blue thumb accent
 const TRACK = 'rgba(255,255,255,0.06)';
 
 interface TactileSliderProps {
@@ -102,13 +103,15 @@ export default function TactileSlider({
         }} />
 
         {/* Filled track */}
-        <motion.div
+        <div
           style={{
             position: 'absolute', left: 0, height: '3px',
-            borderRadius: '2px', background: color,
+            borderRadius: '2px',
+            background: PATHD_THEME.progressGradient,
+            width: `${pct}%`,
+            opacity: dragging ? 1 : 0.7,
+            transition: 'width 0.08s ease, opacity 0.15s',
           }}
-          animate={{ width: `${pct}%`, opacity: dragging ? 1 : 0.6 }}
-          transition={{ type: 'spring', stiffness: 500, damping: 35 }}
         />
 
         {/* Glow */}
@@ -117,7 +120,7 @@ export default function TactileSlider({
             position: 'absolute',
             left: `calc(${pct}% - 14px)`,
             width: '28px', height: '28px', borderRadius: '50%',
-            background: color,
+            background: 'rgba(175,195,214,0.6)',
             filter: 'blur(10px)',
             pointerEvents: 'none',
             opacity: glowOpacity,

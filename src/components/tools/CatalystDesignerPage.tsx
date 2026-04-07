@@ -39,26 +39,26 @@ import { PATHD_THEME } from '../workbench/workbenchTheme';
 /* ── Design Tokens ────────────────────────────────────────────────── */
 
 const PANEL_BG = PATHD_THEME.sepiaPanelMuted;
-const BORDER = PATHD_THEME.paperBorder;
-const LABEL = PATHD_THEME.paperLabel;
-const VALUE = PATHD_THEME.paperValue;
-const INPUT_BG = PATHD_THEME.paperSurfaceStrong;
-const INPUT_BORDER = PATHD_THEME.paperBorder;
-const INPUT_TEXT = PATHD_THEME.paperValue;
+const BORDER = PATHD_THEME.sepiaPanelBorder;
+const LABEL = PATHD_THEME.label;
+const VALUE = PATHD_THEME.value;
+const INPUT_BG = PATHD_THEME.panelInset;
+const INPUT_BORDER = PATHD_THEME.sepiaPanelBorder;
+const INPUT_TEXT = PATHD_THEME.value;
 
 const GLASS: React.CSSProperties = {
   borderRadius: '24px',
-  background: PATHD_THEME.paperSurfaceStrong,
-  border: `1px solid ${PATHD_THEME.paperBorder}`,
+  background: PATHD_THEME.panelSurface,
+  border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
 };
 
 const PHASE_COLORS: Record<string, string> = {
-  binding:     '#F0FDFA',
-  sequence:    '#5151CD',
-  flux:        '#FFFB1F',
-  balancing:   '#FA8072',
-  pareto:      '#FF1FFF',
-  mutagenesis: '#93CB52',
+  binding:     '#BFDCCD',   // mint
+  sequence:    '#AFC3D6',   // sky
+  flux:        '#E7C7A9',   // apricot
+  balancing:   '#E8A3A1',   // coral
+  pareto:      '#CFC4E3',   // lilac
+  mutagenesis: '#BFDCCD',   // mint
 };
 
 const PHASE_MAP: Record<string, string> = {
@@ -1074,7 +1074,7 @@ export default function CatalystDesignerPage() {
                   { label: 'Required flux', value: `${recommendedSeed.requiredFlux.toFixed(2)}`, accent: PATHD_THEME.sky },
                 ]}
                 footer={
-                  <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.paperMuted, lineHeight: 1.55 }}>
+                  <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.label, lineHeight: 1.55 }}>
                     Candidate evidence is kept in one figure frame so catalytic fit, design proposals, and host-level burden can be compared as one decision surface.
                   </div>
                 }

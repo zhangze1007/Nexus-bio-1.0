@@ -24,7 +24,7 @@ function Sparkline({ data, height = 36 }: {
 }) {
   if (data.length < 2) return (
     <div style={{ height, display:'flex', alignItems:'center', justifyContent:'center' }}>
-      <span style={{ fontFamily: T.MONO, fontSize:'9px', color:PATHD_THEME.paperMuted }}>AWAITING DATA</span>
+      <span style={{ fontFamily: T.MONO, fontSize:'9px', color:PATHD_THEME.label }}>AWAITING DATA</span>
     </div>
   );
 
@@ -39,7 +39,7 @@ function Sparkline({ data, height = 36 }: {
   }).join(' ');
 
   const lastX = w, lastY = h - ((data[data.length-1] - min) / range) * (h - 4) - 2;
-  const sparkColor = PATHD_THEME.paperValue;
+  const sparkColor = PATHD_THEME.value;
 
   return (
     <svg viewBox={`0 0 ${w} ${h}`} style={{ width:'100%', height, display:'block' }}>
@@ -80,9 +80,9 @@ function DataRow({ label, value, unit, decimals = 2 }: {
   return (
     <div style={{
       display:'flex', alignItems:'center', justifyContent:'space-between',
-      padding:'5px 0', borderBottom:`1px solid ${PATHD_THEME.paperBorder}`,
+      padding:'5px 0', borderBottom:`1px solid ${PATHD_THEME.sepiaPanelBorder}`,
     }}>
-      <span style={{ fontFamily: T.SANS, fontSize:'10px', color:PATHD_THEME.paperLabel, fontWeight:500 }}>
+      <span style={{ fontFamily: T.SANS, fontSize:'10px', color:PATHD_THEME.label, fontWeight:500 }}>
         {label}
       </span>
       <div style={{ display:'flex', alignItems:'baseline', gap:'3px' }}>
@@ -93,7 +93,7 @@ function DataRow({ label, value, unit, decimals = 2 }: {
           transition={{ duration:0.15 }}
           style={{
             fontFamily: T.MONO, fontSize:'13px', fontWeight:600,
-            color:PATHD_THEME.paperValue,
+            color:PATHD_THEME.value,
             textAlign:'right',
             fontVariantNumeric:'tabular-nums',
           }}
@@ -101,7 +101,7 @@ function DataRow({ label, value, unit, decimals = 2 }: {
           {value.toFixed(decimals)}
         </motion.span>
         {unit && (
-          <span style={{ fontFamily: T.MONO, fontSize:'9px', color:PATHD_THEME.paperMuted }}>{unit}</span>
+          <span style={{ fontFamily: T.MONO, fontSize:'9px', color:PATHD_THEME.label }}>{unit}</span>
         )}
       </div>
     </div>
@@ -119,12 +119,12 @@ function CofactorMatrix({ readouts }: { readouts: SimReadouts }) {
   return (
       <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'6px', marginTop:'8px' }}>
       {items.map(({ l, v, u, opacity }) => (
-        <div key={l} style={{ padding:'8px 6px', borderRadius:'10px', background:PATHD_THEME.paperSurfaceStrong, border:`0.5px solid ${PATHD_THEME.paperBorder}`, textAlign:'center' }}>
-          <div style={{ fontFamily: T.MONO, fontSize:'11px', fontWeight:700, color:opacity > 0.7 ? PATHD_THEME.paperValue : PATHD_THEME.paperLabel, fontVariantNumeric:'tabular-nums' }}>
+        <div key={l} style={{ padding:'8px 6px', borderRadius:'10px', background:PATHD_THEME.panelSurface, border:`0.5px solid ${PATHD_THEME.sepiaPanelBorder}`, textAlign:'center' }}>
+          <div style={{ fontFamily: T.MONO, fontSize:'11px', fontWeight:700, color:opacity > 0.7 ? PATHD_THEME.value : PATHD_THEME.label, fontVariantNumeric:'tabular-nums' }}>
             {v.toFixed(1)}
           </div>
-          <div style={{ fontFamily: T.SANS, fontSize:'8px', color:PATHD_THEME.paperLabel, marginTop:'2px' }}>{l}</div>
-          <div style={{ fontFamily: T.MONO, fontSize:'7px', color:PATHD_THEME.paperMuted }}>{u}</div>
+          <div style={{ fontFamily: T.SANS, fontSize:'8px', color:PATHD_THEME.label, marginTop:'2px' }}>{l}</div>
+          <div style={{ fontFamily: T.MONO, fontSize:'7px', color:PATHD_THEME.label }}>{u}</div>
         </div>
       ))}
     </div>
@@ -138,8 +138,8 @@ function FluxGauge({ value, label }: { value: number; label: string }) {
   return (
     <div style={{ marginTop:'6px' }}>
       <div style={{ display:'flex', justifyContent:'space-between', marginBottom:'4px' }}>
-        <span style={{ fontFamily: T.SANS, fontSize:'9px', color:PATHD_THEME.paperLabel }}>{label}</span>
-        <span style={{ fontFamily: T.MONO, fontSize:'10px', color:PATHD_THEME.paperValue, fontWeight:700 }}>{pct.toFixed(0)}%</span>
+        <span style={{ fontFamily: T.SANS, fontSize:'9px', color:PATHD_THEME.label }}>{label}</span>
+        <span style={{ fontFamily: T.MONO, fontSize:'10px', color:PATHD_THEME.value, fontWeight:700 }}>{pct.toFixed(0)}%</span>
       </div>
       <div style={{ height:`${PATHD_THEME.progressHeight}px`, borderRadius:`${PATHD_THEME.progressRadius}px`, background:PATHD_THEME.progressTrack, overflow:'hidden' }}>
         <motion.div
@@ -188,7 +188,7 @@ export default function StatusOverlay({
         backdropFilter:'blur(28px)',
         WebkitBackdropFilter:'blur(28px)',
         borderRadius:'20px',
-        border:`1px solid ${PATHD_THEME.paperBorder}`,
+        border:`1px solid ${PATHD_THEME.sepiaPanelBorder}`,
         borderTop:`1px solid rgba(255,255,255,0.5)`,
         boxShadow:'0 18px 42px rgba(32,37,43,0.08), inset 0 1px 0 rgba(255,255,255,0.48)',
         padding:'18px 16px',
@@ -206,10 +206,10 @@ export default function StatusOverlay({
       />
       {/* Header */}
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'12px', position:'relative', zIndex:1 }}>
-        <span style={{ fontFamily: T.MONO, fontSize:'9px', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.12em', color:PATHD_THEME.paperLabel }}>
+        <span style={{ fontFamily: T.MONO, fontSize:'9px', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.12em', color:PATHD_THEME.label }}>
           Readout Ledger
         </span>
-        <span style={{ fontFamily: T.MONO, fontSize:'8px', color:PATHD_THEME.paperMuted, fontVariantNumeric:'tabular-nums' }}>
+        <span style={{ fontFamily: T.MONO, fontSize:'8px', color:PATHD_THEME.label, fontVariantNumeric:'tabular-nums' }}>
           T:{readouts.tick.toString().padStart(5,'0')}
         </span>
       </div>
@@ -217,22 +217,22 @@ export default function StatusOverlay({
       {/* Reaction rate sparkline */}
       <div style={{ marginBottom:'10px', position:'relative', zIndex:1 }}>
         <div style={{ display:'flex', alignItems:'baseline', justifyContent:'space-between', marginBottom:'4px' }}>
-          <span style={{ fontFamily: T.SANS, fontSize:'9px', color:PATHD_THEME.paperLabel }}>Reaction Rate v</span>
+          <span style={{ fontFamily: T.SANS, fontSize:'9px', color:PATHD_THEME.label }}>Reaction Rate v</span>
           <div style={{ display:'flex', alignItems:'baseline', gap:'2px' }}>
             <motion.span
               key={Math.round(readouts.reactionRate * 10)}
               initial={{ opacity:0 }} animate={{ opacity:1 }}
-              style={{ fontFamily: T.MONO, fontSize:'16px', fontWeight:700, color:PATHD_THEME.paperValue, fontVariantNumeric:'tabular-nums' }}
+              style={{ fontFamily: T.MONO, fontSize:'16px', fontWeight:700, color:PATHD_THEME.value, fontVariantNumeric:'tabular-nums' }}
             >
               {readouts.reactionRate.toFixed(2)}
             </motion.span>
-            <span style={{ fontFamily: T.MONO, fontSize:'9px', color:PATHD_THEME.paperMuted }}>μmol/min</span>
+            <span style={{ fontFamily: T.MONO, fontSize:'9px', color:PATHD_THEME.label }}>μmol/min</span>
           </div>
         </div>
         <Sparkline data={rateHistory} height={40} />
       </div>
 
-      <div style={{ borderTop:`0.5px solid ${PATHD_THEME.paperBorder}`, paddingTop:'10px', marginBottom:'8px', position:'relative', zIndex:1 }}>
+      <div style={{ borderTop:`0.5px solid ${PATHD_THEME.sepiaPanelBorder}`, paddingTop:'10px', marginBottom:'8px', position:'relative', zIndex:1 }}>
         <DataRow label="ATP Yield"   value={readouts.atpYield}         unit="mol/mol"  decimals={2} />
         <DataRow label="NADPH Rate"  value={readouts.nadphRate}        unit="μmol/min" decimals={2} />
         <DataRow label="Carbon Eff." value={readouts.carbonEfficiency} unit="%"        decimals={1} />
@@ -258,14 +258,14 @@ export default function StatusOverlay({
             initial={{ opacity:0, y:6 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0 }}
             style={{
               marginTop:'12px', padding:'8px 10px', borderRadius:'10px',
-              background:'rgba(191,220,205,0.18)', border:`0.5px solid ${PATHD_THEME.paperBorder}`,
+              background:'rgba(191,220,205,0.18)', border:`0.5px solid ${PATHD_THEME.sepiaPanelBorder}`,
               textAlign:'center',
             }}
           >
-            <span style={{ fontFamily: T.MONO, fontSize:'9px', color:PATHD_THEME.paperValue, textTransform:'uppercase', letterSpacing:'0.1em' }}>
+            <span style={{ fontFamily: T.MONO, fontSize:'9px', color:PATHD_THEME.value, textTransform:'uppercase', letterSpacing:'0.1em' }}>
               Steady State Reached
             </span>
-            <div style={{ fontFamily: T.MONO, fontSize:'8px', color:PATHD_THEME.paperLabel, marginTop:'2px' }}>
+            <div style={{ fontFamily: T.MONO, fontSize:'8px', color:PATHD_THEME.label, marginTop:'2px' }}>
               σ² = {variance.toFixed(4)} (stable)
             </div>
           </motion.div>
@@ -275,13 +275,13 @@ export default function StatusOverlay({
             initial={{ opacity:0, y:6 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0 }}
             style={{
               marginTop:'12px', padding:'8px 10px', borderRadius:'10px',
-              background:'rgba(232,163,161,0.18)', border:`0.5px solid ${PATHD_THEME.paperBorder}`,
+              background:'rgba(232,163,161,0.18)', border:`0.5px solid ${PATHD_THEME.sepiaPanelBorder}`,
               textAlign:'center',
             }}
           >
             <motion.span
               animate={{ opacity:[1,0.4,1] }} transition={{ duration:0.7, repeat:Infinity }}
-              style={{ fontFamily: T.MONO, fontSize:'9px', color:PATHD_THEME.paperValue, textTransform:'uppercase', letterSpacing:'0.1em' }}
+              style={{ fontFamily: T.MONO, fontSize:'9px', color:PATHD_THEME.value, textTransform:'uppercase', letterSpacing:'0.1em' }}
             >
               Stress Test Active
             </motion.span>

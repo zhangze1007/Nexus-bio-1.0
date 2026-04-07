@@ -36,8 +36,8 @@ export default function ScientificFigureFrame({
         gap: '12px',
         padding: '14px',
         borderRadius: '20px',
-        border: `1px solid ${PATHD_THEME.paperBorder}`,
-        background: PATHD_THEME.paperSurfaceStrong,
+        border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
+        background: PATHD_THEME.panelSurface,
         boxShadow: '0 16px 34px rgba(96,74,56,0.08), inset 0 1px 0 rgba(255,255,255,0.82)',
         minHeight,
       }}
@@ -47,7 +47,7 @@ export default function ScientificFigureFrame({
           display: 'grid',
           gap: '4px',
           paddingBottom: '10px',
-          borderBottom: `1px solid ${PATHD_THEME.paperBorder}`,
+          borderBottom: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
         }}
       >
         <div
@@ -56,7 +56,7 @@ export default function ScientificFigureFrame({
             fontSize: '10px',
             letterSpacing: '0.12em',
             textTransform: 'uppercase',
-            color: PATHD_THEME.paperLabel,
+            color: PATHD_THEME.label,
           }}
         >
           {eyebrow}
@@ -66,7 +66,7 @@ export default function ScientificFigureFrame({
             fontFamily: T.SANS,
             fontSize: '15px',
             fontWeight: 700,
-            color: PATHD_THEME.paperValue,
+            color: PATHD_THEME.value,
             letterSpacing: '-0.02em',
           }}
         >
@@ -92,7 +92,7 @@ export default function ScientificFigureFrame({
             display: 'grid',
             gap: '10px',
             paddingTop: '10px',
-            borderTop: `1px solid ${PATHD_THEME.paperBorder}`,
+            borderTop: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
           }}
         >
           {legend.length > 0 && (
@@ -104,8 +104,8 @@ export default function ScientificFigureFrame({
                     minHeight: '28px',
                     padding: '0 10px',
                     borderRadius: '999px',
-                    border: `1px solid ${PATHD_THEME.paperBorder}`,
-                    background: PATHD_THEME.paperSurfaceMuted,
+                    border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
+                    background: PATHD_THEME.panelInset,
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: '6px',
@@ -126,7 +126,7 @@ export default function ScientificFigureFrame({
                       fontSize: '9px',
                       letterSpacing: '0.06em',
                       textTransform: 'uppercase',
-                      color: PATHD_THEME.paperLabel,
+                      color: PATHD_THEME.label,
                     }}
                   >
                     {item.label}
@@ -135,7 +135,7 @@ export default function ScientificFigureFrame({
                     style={{
                       fontFamily: T.SANS,
                       fontSize: '10px',
-                      color: PATHD_THEME.paperValue,
+                      color: PATHD_THEME.value,
                       fontWeight: 600,
                     }}
                   >

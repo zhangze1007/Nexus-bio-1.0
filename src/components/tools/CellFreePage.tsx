@@ -26,16 +26,16 @@ import ScientificMethodStrip from './shared/ScientificMethodStrip';
 /* ── Design Tokens ────────────────────────────────────────────────── */
 
 const PANEL_BG = PATHD_THEME.sepiaPanelMuted;
-const BORDER = PATHD_THEME.paperBorder;
-const LABEL = PATHD_THEME.paperLabel;
-const VALUE = PATHD_THEME.paperValue;
-const INPUT_BG = PATHD_THEME.paperSurfaceStrong;
-const INPUT_BORDER = PATHD_THEME.paperBorder;
-const INPUT_TEXT = PATHD_THEME.paperValue;
+const BORDER = PATHD_THEME.sepiaPanelBorder;
+const LABEL = PATHD_THEME.label;
+const VALUE = PATHD_THEME.value;
+const INPUT_BG = PATHD_THEME.panelInset;
+const INPUT_BORDER = PATHD_THEME.sepiaPanelBorder;
+const INPUT_TEXT = PATHD_THEME.value;
 const GLASS: React.CSSProperties = {
   borderRadius: '24px',
-  background: PATHD_THEME.paperSurfaceStrong,
-  border: `1px solid ${PATHD_THEME.paperBorder}`,
+  background: PATHD_THEME.panelSurface,
+  border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
 };
 
 const GENE_COLORS = [PATHD_THEME.mint, PATHD_THEME.sky, PATHD_THEME.coral, PATHD_THEME.apricot, PATHD_THEME.lilac];
@@ -120,7 +120,7 @@ function TimeCourseChart({ result, constructs }: { result: CFSFullResult; constr
   const bsx = (t: number) => BP + (t / btMax) * (BL_W - BP - 16);
   const bsy = (f: number) => BL_H - BP - f * (BL_H - BP * 2);
 
-  const RES_COLORS = { atp: '#E41A1C', rib: '#377EB8', aa: '#4DAF4A' };
+  const RES_COLORS = { atp: '#E8A3A1', rib: '#AFC3D6', aa: '#BFDCCD' };  // coral / sky / mint
 
   // Stacked area paths (atp + rib + aa stacked to 1)
   const stackedPath = useMemo(() => {
@@ -328,11 +328,11 @@ function ResourceChart({ result }: { result: CFSFullResult }) {
   function sy(f: number) { return H - PAD - f * (H - PAD * 2); }
 
   const series: { key: keyof typeof initials; label: string; color: string }[] = [
-    { key: 'ribosomeFree', label: 'Ribosome (free)', color: '#F0FDFA' },
-    { key: 'atp', label: 'ATP', color: '#FFFB1F' },
-    { key: 'gtp', label: 'GTP', color: '#5151CD' },
-    { key: 'pep', label: 'PEP', color: '#FA8072' },
-    { key: 'aminoAcids', label: 'Amino Acids', color: '#FF1FFF' },
+    { key: 'ribosomeFree', label: 'Ribosome (free)', color: '#BFDCCD' },   // mint
+    { key: 'atp',          label: 'ATP',             color: '#E8A3A1' },   // coral
+    { key: 'gtp',          label: 'GTP',             color: '#AFC3D6' },   // sky
+    { key: 'pep',          label: 'PEP',             color: '#E7C7A9' },   // apricot
+    { key: 'aminoAcids',   label: 'Amino Acids',     color: '#CFC4E3' },   // lilac
   ];
 
   return (
@@ -437,21 +437,21 @@ function FittingChart({ result }: { result: CFSFullResult }) {
       {curve.filter((_, i) => i % 3 === 0).map((p, i) => (
         <g key={`dp${i}`}>
           <line x1={sx(p.concentration)} y1={sy(p.rate * 0.9)} x2={sx(p.concentration)} y2={sy(p.rate * 1.1)}
-            stroke="rgba(147,203,82,0.4)" strokeWidth={1} />
+            stroke="rgba(191,220,205,0.4)" strokeWidth={1} />
           <circle cx={sx(p.concentration)} cy={sy(p.rate)} r={3}
-            fill="rgba(147,203,82,0.8)" stroke="rgba(147,203,82,0.4)" strokeWidth={0.5} />
+            fill="rgba(191,220,205,0.8)" stroke="rgba(191,220,205,0.4)" strokeWidth={0.5} />
         </g>
       ))}
       {/* Fitted curve */}
       <polyline
         points={curve.map(p => `${sx(p.concentration)},${sy(p.rate)}`).join(' ')}
-        fill="none" stroke="#F0FDFA" strokeWidth={1.8} opacity={0.85}
+        fill="none" stroke="#BFDCCD" strokeWidth={1.8} opacity={0.85}
       />
       {/* Vmax line */}
       <line x1={PAD} y1={sy(fit.vmax)} x2={W - PAD} y2={sy(fit.vmax)}
-        stroke="rgba(255,251,31,0.4)" strokeWidth={1} strokeDasharray="4,3" />
+        stroke="rgba(231,199,169,0.4)" strokeWidth={1} strokeDasharray="4,3" />
       <text x={W - PAD - 4} y={sy(fit.vmax) - 4} textAnchor="end"
-        fontFamily={T.MONO} fontSize="7" fill="rgba(255,251,31,0.7)">Vmax={fit.vmax.toFixed(2)}</text>
+        fontFamily={T.MONO} fontSize="7" fill="rgba(231,199,169,0.9)">Vmax={fit.vmax.toFixed(2)}</text>
       {/* Stats text */}
       <text x={PAD + 8} y={PAD + 14} fontFamily={T.MONO} fontSize="8" fill={VALUE}>
         Vmax={fit.vmax.toFixed(2)} [{fit.vmax_ci[0].toFixed(2)}, {fit.vmax_ci[1].toFixed(2)}]
@@ -529,14 +529,14 @@ function IvIvChart({ result }: { result: CFSFullResult }) {
       <rect width={W} height={H} fill="#050505" rx={12} />
       {/* Bar chart */}
       <rect x={PAD + 40} y={barBaseY - barH(invitro)} width={barW} height={barH(invitro)}
-        fill="#5151CD" rx={4} opacity={0.8} />
+        fill="#AFC3D6" rx={4} opacity={0.8} />
       <text x={PAD + 40 + barW / 2} y={barBaseY + 14} textAnchor="middle"
         fontFamily={T.SANS} fontSize="9" fill={VALUE}>In vitro</text>
       <text x={PAD + 40 + barW / 2} y={barBaseY - barH(invitro) - 6} textAnchor="middle"
         fontFamily={T.MONO} fontSize="8" fill={VALUE}>{invitro.toFixed(1)} nM</text>
 
       <rect x={PAD + 40 + barW + barGap} y={barBaseY - barH(invivo)} width={barW} height={barH(invivo)}
-        fill="#F0FDFA" rx={4} opacity={0.8} />
+        fill="#BFDCCD" rx={4} opacity={0.8} />
       <text x={PAD + 40 + barW + barGap + barW / 2} y={barBaseY + 14} textAnchor="middle"
         fontFamily={T.SANS} fontSize="9" fill={VALUE}>In vivo (pred)</text>
       <text x={PAD + 40 + barW + barGap + barW / 2} y={barBaseY - barH(invivo) - 6} textAnchor="middle"
@@ -559,9 +559,9 @@ function IvIvChart({ result }: { result: CFSFullResult }) {
           <g key={`cf${i}`}>
             <text x={corrLeft} y={y + 4} fontFamily={T.SANS} fontSize="7" fill={LABEL}>{c.factor}</text>
             <rect x={corrLeft} y={y + 8} width={bw} height={8}
-              fill={positive ? 'rgba(147,203,82,0.5)' : 'rgba(255,100,80,0.5)'} rx={2} />
+              fill={positive ? 'rgba(191,220,205,0.5)' : 'rgba(232,163,161,0.5)'} rx={2} />
             <text x={corrLeft + bw + 4} y={y + 16} fontFamily={T.MONO} fontSize="7"
-              fill={positive ? 'rgba(147,203,82,0.8)' : 'rgba(255,100,80,0.8)'}>
+              fill={positive ? 'rgba(191,220,205,0.9)' : 'rgba(232,163,161,0.9)'}>
               {c.adjustment > 0 ? '+' : ''}{c.adjustment.toFixed(2)}
             </text>
           </g>
@@ -585,7 +585,7 @@ function IvIvChart({ result }: { result: CFSFullResult }) {
             <path d={`M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy}`}
               fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={6} />
             <path d={`M ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2}`}
-              fill="none" stroke="#F0FDFA" strokeWidth={6} strokeLinecap="round" />
+              fill="none" stroke="#BFDCCD" strokeWidth={6} strokeLinecap="round" />
             <text x={cx} y={cy - 4} textAnchor="middle" fontFamily={T.MONO} fontSize="14" fontWeight={700} fill={VALUE}>
               {(iviv.confidence * 100).toFixed(0)}%
             </text>
@@ -643,9 +643,9 @@ function ReactorTwin3D({ result, constructs, params }: { result: CFSFullResult; 
         <text x="272" y="332" fontFamily={T.SANS} fontSize="9" fill={LABEL}>Construct yield skyline</text>
 
         {[
-          { label: 'ATP', value: params.initialEnergy.atp / energyPool, x: 546, color: '#FFFB1F' },
-          { label: 'GTP', value: params.initialEnergy.gtp / energyPool, x: 596, color: '#FF8B1F' },
-          { label: 'PEP', value: params.initialEnergy.pep / energyPool, x: 646, color: '#FA8072' },
+          { label: 'ATP', value: params.initialEnergy.atp / energyPool, x: 546, color: '#E8A3A1' },   // coral
+          { label: 'GTP', value: params.initialEnergy.gtp / energyPool, x: 596, color: '#AFC3D6' },   // sky
+          { label: 'PEP', value: params.initialEnergy.pep / energyPool, x: 646, color: '#E7C7A9' },   // apricot
         ].map((resource) => {
           const height = 46 + resource.value * 118;
           return (
@@ -1061,7 +1061,7 @@ export default function CellFreePage() {
               {viewMode === 'Reactor3D' && (
                 <div style={{ display: 'flex', flexDirection: 'column', padding: '8px 0', gap: '10px' }}>
                   <div style={{ maxWidth: '760px', margin: '0 auto', width: '100%' }}>
-                    <div style={{ padding: '8px 12px', borderRadius: '14px', border: `1px solid ${BORDER}`, background: PATHD_THEME.paperSurfaceMuted }}>
+                    <div style={{ padding: '8px 12px', borderRadius: '14px', border: `1px solid ${BORDER}`, background: PATHD_THEME.panelInset }}>
                       <p style={{ margin: '0 0 3px', color: VALUE, fontSize: '11px', fontFamily: T.SANS }}>
                         Reactor 3D turns the CFPS run into a digital twin: construct yield, energy pool and depletion timing are mapped into one spatial scene.
                       </p>
