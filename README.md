@@ -2,7 +2,7 @@
 
 **Next-Gen Bio-Intelligent Architecture**
 
-A synthetic biology research platform that extracts metabolic pathways from scientific literature and renders them as interactive 3D visualizations — integrating AI analysis, molecular structures, protein data, and kinetic simulation in a single unified interface.
+An AI-powered synthetic biology platform with 13 specialized simulation tools. The core workflow extracts metabolic pathways from scientific literature and renders them as interactive 3D visualizations — integrating AI analysis, molecular structures, protein data, kinetic simulation, flux analysis, and multi-omics in a single unified interface.
 
 > Built by a gap-year student in Malaysia, on a tablet, in under 48 hours.
 
@@ -18,71 +18,87 @@ Showcase pathway: Artemisinin biosynthesis in engineered *S. cerevisiae* — Ro 
 
 ## What It Does
 
-**Research Workflow**
+**Core Research Workflow**
 ```
-Paste a paper → AI extracts pathway → 3D visualization
+Paste a paper → AI (Axon) extracts metabolic pathway → 3D visualization
 → Click any node → Molecular structure + Kinetic simulation
 ```
 
-**Core Features**
+**Pathway Visualization Core**
 
 | Module | Description |
 |--------|-------------|
-| Paper Analyzer | AI extracts metabolic nodes, edges, and evidence from any research paper |
-| Atomic Pathway | Interactive 3D pathway visualization with pLDDT confidence coloring |
+| Paper Analyzer | AI (Axon) extracts metabolic nodes, edges, bottleneck enzymes, and evidence from research papers |
+| 3D Pathway Viewer | Interactive 3D pathway with GLSL shaders, pastel palette, pLDDT confidence coloring |
 | Database Research | Parallel search across 6 academic databases (PubMed, Semantic Scholar, OpenAlex, Europe PMC, bioRxiv, CORE) |
 | Node Panel | 3-tab scientific workbench: Overview · Structure · Analysis |
-| Protein Structure | AlphaFold pLDDT coloring + RCSB PDB experimental structures via 3Dmol.js |
-| Molecular Structure | Real 3D conformers from PubChem (CID lookup + dynamic name search) |
+| Protein Structure | AlphaFold pLDDT coloring + RCSB PDB structures via 3Dmol.js |
+| Molecular Structure | Real 3D conformers from PubChem (CID lookup + name search) |
 | Cell Imagery | Microscopy reference images from Wikipedia, Cell Image Library, EMBL-EBI IDR |
-| Kinetic Simulation | Michaelis-Menten kinetics + RK4 ODE numerical integration for enzyme nodes |
+| Kinetic Simulation | Michaelis-Menten kinetics + RK4 ODE solver for enzyme nodes |
 | Thermodynamics | Gibbs free energy (ΔG°) estimation using group contribution method for metabolite nodes |
+
+---
+
+## 13 Specialized Tools
+
+| Tool | Route | Description |
+|------|-------|-------------|
+| **Pathway Designer** | `/tools/pathd` | Main 3D metabolic pathway lab — paper-to-3D workflow with DBTL cycle integration, XState FSM, 60 Hz FBA worker |
+| **Metabolic Engineering Lab** | `/tools/metabolic-eng` | Full metabolic lab with 3D FluidSim canvas, NodePanel, ThreeScene; entry point for full Axon analysis |
+| **Catalyst Designer** | `/tools/catdes` | Enzyme design: binding affinity radar, sequence design, flux cost analysis, Pareto front, mutagenesis targeting |
+| **Cell-Free Simulation** | `/tools/cellfree` | Cell-free system simulation: gene construct design, parameter tuning, expression yield prediction |
+| **Cell Thermodynamics** | `/tools/cethx` | Thermodynamic cascade: waterfall ΔG chart, ATP accounting, pathway feasibility analysis |
+| **DBTL Flow** | `/tools/dbtlflow` | Design-Build-Test-Learn cycle tracker: iteration waterfall, protocol generation, SBOL serialization |
+| **Dynamic Control** | `/tools/dyncon` | Bioreactor simulation: Hill function feedback loops, RK4 ODE integration, setpoint convergence analysis |
+| **FBA Simulator** | `/tools/fbasim` | Flux Balance Analysis: single-species + community FBA (co-culture), knockout/overexpression strategies, shadow prices, carbon efficiency |
+| **Gene Circuit Reasoner** | `/tools/gecair` | Gene circuit design: logic gate modeling, Hill curve analysis, circuit dynamics, gate efficiency scoring |
+| **Gene Minimization** | `/tools/genmim` | Genome minimization: CRISPRi knockdown scheduling, chromosome map, efficiency heatmap, greedy optimization |
+| **Multi-Omics** | `/tools/multio` | Multi-omics integration: VAE/UMAP embeddings, volcano plots, MOFA+ factor analysis, perturbation prediction |
+| **NEX-AI Research Agent** | `/tools/nexai` | AI-powered literature agent: citation network graph (year×relevance scatter), Socratic questioning, literature support map |
+| **Protein Evolution** | `/tools/proevol` | Directed evolution: fitness landscape heatmap, evolution trajectory, adaptive basin climbing, sequence diversity tracking |
+| **Single-Cell Spatial** | `/tools/scspatial` | Spatial transcriptomics: hexagonal Visium spot grid, UMAP/3D spatial visualization, cluster efficiency, gene expression heatmap |
 
 ---
 
 ## Tech Stack
 
 ```
-Frontend     React + TypeScript + Next.js 15 + Tailwind CSS v3 + Framer Motion
-3D           Three.js + @react-three/fiber + @react-three/drei
-             Custom GLSL shaders (organic volume terrain)
-             3Dmol.js (protein + molecular rendering)
+Frontend     React 19 + TypeScript + Next.js 15 (App Router) + Tailwind CSS v3 + Framer Motion
+3D           Three.js 0.183 + @react-three/fiber 9.5 + @react-three/drei 10.7
+             Custom GLSL shaders (organic volume terrain, fluid simulation)
+             3Dmol.js (protein + molecular rendering, CDN)
 AI           Groq llama-3.3-70b (primary) → Gemini 2.0-flash (fallback)
+State        Zustand 5 + XState 5 state machines
+DB           better-sqlite3 (workbench experiment ledger)
 Data         PubChem · AlphaFold EBI · RCSB PDB · 6 academic databases
 Deploy       Vercel (Edge Runtime API routes)
 ```
 
 ---
 
-## Architecture
+## AI Architecture
+
+All AI requests go through `app/api/analyze/route.ts` (Edge Runtime). The system prompt is "Axon" — a predictive design core that extracts pathway data, detects bottleneck enzymes, and proposes de novo design strategies.
+
+**Groq is always primary. Gemini is always fallback. This order must never be reversed.**
 
 ```
-api/
-├── gemini.ts       AI endpoint — Groq primary + Gemini fallback chain
-├── alphafold.ts    AlphaFold CORS proxy (EBI)
-└── pubchem.ts      PubChem 3D SDF proxy (CID + name search)
-
-src/components/
-├── ThreeScene.tsx          3D pathway — GLSL shaders, pastel palette
-├── NodePanel.tsx           Scientific workbench (3 tabs)
-├── PaperAnalyzer.tsx       AI paper analysis + pathway generation
-├── SemanticSearch.tsx      6-database parallel literature search
-├── MoleculeViewer.tsx      PubChem small molecule 3D
-├── CellImageViewer.tsx     Microscopy image search (3 sources)
-├── KineticPanel.tsx        Enzyme kinetics — MM equation + RK4 ODE
-└── ThermodynamicsPanel.tsx Metabolite thermodynamics — ΔG calculation
+1. Groq  llama-3.3-70b-versatile    primary (1000 req/day)
+2. Groq  llama3-70b-8192            Groq backup
+3. Gemini gemini-2.0-flash-lite     Google fallback (250 req/day)
+4. Gemini gemini-1.5-flash          final fallback
+5. 503 error                        all providers down
 ```
 
-**AI Fallback Chain**
-```
-1. Groq llama-3.3-70b-versatile   (primary — fastest)
-2. Groq llama3-70b-8192           (Groq backup)
-3. Gemini 2.0-flash-lite          (Google fallback)
-4. Gemini 1.5-flash               (final fallback)
-5. 503 error                      (all providers down)
-```
+Supporting API routes:
 
-All AI calls go through `api/gemini.ts` (Edge Runtime). Groq is always tried first — never call Gemini directly as primary.
+| Route | Purpose |
+|-------|---------|
+| `app/api/alphafold` | CORS proxy — EBI AlphaFold PDB structures |
+| `app/api/pubchem` | CORS proxy — PubChem 3D SDF conformers |
+| `app/api/fba` | Simplex LP solver — single-species and community FBA |
+| `app/api/workbench` | Project state sync — revision control + audit trail |
 
 ---
 
@@ -102,18 +118,18 @@ GEMINI_API_KEY=your_gemini_key
 
 ```bash
 npm run dev
+# runs at http://localhost:3000
 ```
 
-> Get a free Groq API key at [console.groq.com](https://console.groq.com)
+Get a free Groq API key at [console.groq.com](https://console.groq.com)
 
 ---
 
-## Design Principles
+## Deployment
 
-- **Scientific credibility** — Every AI-generated node has an evidence trace linked to source text
-- **Progressive disclosure** — Core information first, details on demand
-- **Workflow continuity** — Each feature is the entry point to the next
-- **Visual integrity** — Quality is never sacrificed for functionality
+Deployed on Vercel (Hobby plan). API routes run on Edge Runtime except `fba` and `workbench` which require Node.js runtime for the LP solver and SQLite.
+
+Environment variables (`GROQ_API_KEY`, `GEMINI_API_KEY`) are set in the Vercel dashboard — never committed to the repository.
 
 ---
 
@@ -123,15 +139,23 @@ The default pathway demonstrates artemisinin biosynthesis — a landmark synthet
 
 **Ro et al., 2006. *Nature* 440, 940–943**
 
-7 metabolic nodes · Acetyl-CoA → HMG-CoA → Mevalonate → FPP → Amorphadiene → Artemisinic Acid → Artemisinin
+7 nodes · Acetyl-CoA → HMG-CoA → Mevalonate → FPP → Amorphadiene → Artemisinic Acid → Artemisinin
+
+---
+
+## Design Principles
+
+- **Scientific credibility** — Every AI-generated node has an evidence trace and audit trail
+- **Predictive design** — Axon detects bottleneck enzymes and proposes structure-level interventions
+- **Progressive disclosure** — Core information first, details on demand
+- **Workflow continuity** — Each tool is an entry point to the next
+- **Visual integrity** — Dark theme, pastel palette, real algorithms — quality is never sacrificed
 
 ---
 
 ## About
 
 Built by **Zhang Ze Foo** — a pre-university student in Malaysia on a gap year after completing STPM (A-level equivalent).
-
-This project was built to demonstrate that meaningful scientific tools can be created by individuals without formal CS training, using AI as an execution layer.
 
 **Contact**
 - Email: fuchanze@gmail.com
@@ -142,10 +166,6 @@ This project was built to demonstrate that meaningful scientific tools can be cr
 ## Copilot Agent & Firewall
 
 If you use the GitHub Copilot coding agent on this repo and the workflow fails with `HTTP/2 GOAWAY connection terminated` or a firewall-blocked warning, see **[docs/firewall.md](docs/firewall.md)** for a step-by-step fix.
-
-Key references:
-- Allowlist configuration: <https://gh.io/copilot/firewall-config>
-- Copilot setup steps: <https://gh.io/copilot/actions-setup-steps>
 
 ---
 

@@ -1,133 +1,290 @@
 # Nexus-Bio 1.0 — Claude Code Context
 
-## 项目背景
-合成生物学代谢通路可视化平台。由 Zhang Ze Foo（马来西亚 STPM 学生）在 gap year 期间用华为平板在 48 小时内 build 完成。
+## Project Background
 
-**核心工作流：**
+Synthetic biology AI platform. Built by Zhang Ze Foo (Malaysia, STPM student on gap year) in 48 hours on a tablet.
+
+**Core workflow:**
 ```
-论文 → AI 提取代谢通路 → 3D 可视化 → 点击节点 → 结构/模拟
+Paste paper → AI extracts metabolic pathway → 3D visualization → click node → structure / simulation
 ```
 
-**网站地址：** nexus-bio-1-0.vercel.app  
-**GitHub：** github.com/zhangze1007/Nexus-bio-1.0  
-**品牌名：** Nexus-Bio（不是 SynPath Bio，不要改这个名字）
+**Live URL:** nexus-bio-1-0.vercel.app  
+**GitHub:** github.com/zhangze1007/Nexus-bio-1.0  
+**Brand name:** Nexus-Bio (never rename to SynPath Bio or anything else)
 
 ---
 
-## 技术栈
+## Tech Stack
 
 ```
-前端：React + TypeScript + Vite + Tailwind CSS v3 + Framer Motion
-3D：  Three.js + @react-three/fiber + @react-three/drei + 3Dmol.js (CDN)
-AI：  Groq API (primary) + Gemini API (fallback)
-部署：Vercel (Hobby plan, free tier)
+Frontend   React 19 + TypeScript + Next.js 15 (App Router) + Tailwind CSS v3 + Framer Motion
+3D         Three.js 0.183 + @react-three/fiber 9.5 + @react-three/drei 10.7 + 3Dmol.js (CDN)
+AI         Groq API (primary) + Gemini API (fallback)
+State      Zustand 5 (uiStore, workbenchStore) + XState 5 (metabolicMachine, analysisMachine)
+DB         better-sqlite3 (workbench project ledger, server-side only)
+Deploy     Vercel (Hobby plan, free tier, Edge Runtime)
 ```
 
 ---
 
-## 目录结构
+## Project Structure
 
 ```
 /
-├── api/
-│   ├── gemini.ts        ← AI endpoint (Edge Runtime, Groq primary + Gemini fallback)
-│   ├── alphafold.ts     ← AlphaFold CORS proxy
-│   └── pubchem.ts       ← PubChem SDF proxy (by CID or name search)
+├── app/                              Next.js 15 App Router
+│   ├── layout.tsx                    Root layout (wraps WorkbenchSyncProvider)
+│   ├── page.tsx                      Home — exports App component
+│   ├── analyze/
+│   │   ├── page.tsx
+│   │   └── AnalyzeClient.tsx
+│   ├── contact/
+│   │   ├── page.tsx
+│   │   └── ContactClient.tsx
+│   ├── research/
+│   │   ├── page.tsx
+│   │   └── ResearchClient.tsx
+│   ├── terms/page.tsx
+│   ├── privacy/page.tsx
+│   ├── api/                          Edge Runtime API routes
+│   │   ├── analyze/route.ts          ← PRIMARY AI endpoint (Groq → Gemini fallback chain)
+│   │   ├── gemini/route.ts           ← Re-exports analyze/route (legacy alias)
+│   │   ├── alphafold/route.ts        AlphaFold EBI CORS proxy
+│   │   ├── pubchem/route.ts          PubChem 3D SDF lookup
+│   │   ├── fba/route.ts              Flux Balance Analysis engine (Node.js runtime)
+│   │   └── workbench/route.ts        Workbench state sync & project ledger
+│   └── tools/
+│       ├── page.tsx                  Tools directory index
+│       ├── layout.tsx                Tools shell layout
+│       ├── catdes/                   Catalyst Designer
+│       ├── cellfree/                 Cell-Free Simulation
+│       ├── cethx/                    Cell Thermodynamics
+│       ├── dbtlflow/                 DBTL Cycle Tracker
+│       ├── dyncon/                   Dynamic Control
+│       ├── fbasim/                   Flux Balance Analysis
+│       ├── gecair/                   Gene Circuit Reasoner
+│       ├── genmim/                   Gene Minimization
+│       ├── metabolic-eng/            Metabolic Engineering Lab
+│       ├── multio/                   Multi-Omics Integration
+│       ├── nexai/                    AI Research Agent
+│       ├── pathd/                    Pathway Designer (wraps MetabolicEngPage)
+│       ├── proevol/                  Protein Evolution
+│       └── scspatial/                Single-Cell Spatial
+│
 ├── src/
-│   ├── App.tsx          ← 主应用，无 PDBExplorer section（已整合进 NodePanel）
-│   ├── types.ts         ← PathwayNode, PathwayEdge, MolecularStructure 等
-│   └── components/
-│       ├── Hero.tsx              ← 导航 + 主页
-│       ├── ThreeScene.tsx        ← 3D pathway 可视化（pastel palette，Lambert materials）
-│       ├── NodePanel.tsx         ← 3-tab 科研工作台（Overview/Structure/Kinetics）
-│       ├── PaperAnalyzer.tsx     ← AI 论文分析（Groq primary）
-│       ├── SemanticSearch.tsx    ← 6数据库并行搜索
-│       ├── MoleculeViewer.tsx    ← PubChem 小分子 3D（白色背景）
-│       ├── CellImageViewer.tsx   ← 细胞显微图像（Wikipedia+CIL+IDR 三源并行）
-│       ├── KineticPanel.tsx      ← 酶动力学模拟（MM + RK4 ODE）
-│       ├── ThermodynamicsPanel.tsx ← 代谢物热力学（ΔG 计算）
-│       ├── PDBExplorer.tsx       ← 蛋白质结构（已整合进 NodePanel，独立文件保留）
-│       ├── ContactFlow.tsx       ← 联系方式
-│       └── DevModePanel.tsx      ← 开发者模式
-├── vercel.json          ← 不要修改
-├── terms.html
-└── privacy.html
+│   ├── App.tsx                       Main application root
+│   ├── types.ts                      Core interfaces: PathwayNode, PathwayEdge, GeneratedPathway
+│   ├── components/
+│   │   ├── Hero.tsx
+│   │   ├── ThreeScene.tsx            3D pathway visualization (GLSL shaders, pastel palette)
+│   │   ├── NodePanel.tsx             3-tab scientific workbench
+│   │   ├── PaperAnalyzer.tsx         AI paper analysis (Groq primary)
+│   │   ├── SemanticSearch.tsx        6-database parallel search
+│   │   ├── MoleculeViewer.tsx        PubChem 3D small molecules
+│   │   ├── CellImageViewer.tsx       Microscopy image search
+│   │   ├── KineticPanel.tsx          Michaelis-Menten kinetics + RK4 ODE
+│   │   ├── ThermodynamicsPanel.tsx   ΔG free energy calculation
+│   │   ├── ProteinViewer.tsx         3Dmol.js protein rendering
+│   │   ├── ide/
+│   │   │   ├── IDEShell.tsx          ← FORBIDDEN: never modify
+│   │   │   ├── IDETopBar.tsx         ← FORBIDDEN: never modify
+│   │   │   ├── IDESidebar.tsx        ← FORBIDDEN: never modify
+│   │   │   ├── ToolsLayoutShell.tsx
+│   │   │   ├── tokens.ts             Design tokens (colors, spacing, typography)
+│   │   │   └── shared/               Shared IDE components (DataTable, MetricCard, Pagination…)
+│   │   ├── tools/
+│   │   │   ├── CATDESPage.tsx        Catalyst Designer
+│   │   │   ├── CellFreePage.tsx      Cell-free simulation
+│   │   │   ├── CETHXPage.tsx         Cell thermodynamics
+│   │   │   ├── DBTLflowPage.tsx      ← FORBIDDEN: never modify
+│   │   │   ├── DynConPage.tsx        Dynamic control
+│   │   │   ├── FBASimPage.tsx        Flux Balance Analysis
+│   │   │   ├── GECAIRPage.tsx        ← FORBIDDEN: never modify
+│   │   │   ├── GenMIMPage.tsx        Gene minimization
+│   │   │   ├── MetabolicEngPage.tsx  Main 3D lab (ThreeScene + NodePanel + DBTL)
+│   │   │   ├── MultiOPage.tsx        Multi-omics integration
+│   │   │   ├── NEXAIPage.tsx         AI research agent
+│   │   │   ├── PathDPage.tsx         Wraps MetabolicEngPage
+│   │   │   ├── ProEvolPage.tsx       ← FORBIDDEN: never modify
+│   │   │   ├── ScSpatialPage.tsx     Single-cell spatial
+│   │   │   └── shared/               toolRegistry.ts, toolSchemas.ts, workbenchConfig.ts
+│   │   └── workbench/
+│   │       ├── WorkbenchSyncProvider.tsx   Root provider (wraps entire app)
+│   │       ├── WorkbenchExperimentLedger.tsx
+│   │       ├── WorkbenchDecisionTracePanel.tsx
+│   │       ├── WorkbenchEvidenceTracePanel.tsx
+│   │       ├── WorkbenchAuditTimeline.tsx
+│   │       └── workbenchTheme.ts     Sepia/paper design tokens
+│   ├── data/                         Mock data + pathway JSON
+│   │   ├── pathwayData.json          Artemisinin showcase pathway
+│   │   └── mock*.ts                  Per-tool mock datasets
+│   ├── machines/
+│   │   ├── metabolicMachine.ts       XState FSM for metabolic lab
+│   │   └── analysisMachine.ts
+│   ├── server/
+│   │   ├── fbaEngine.ts              LP simplex solver
+│   │   └── workbenchDb.ts            better-sqlite3 ledger
+│   ├── services/                     Per-tool simulation engines
+│   ├── store/
+│   │   ├── uiStore.ts                Zustand UI state
+│   │   └── workbenchStore.ts         Zustand workbench state
+│   └── utils/
+│       ├── kinetics.ts               Michaelis-Menten + RK4
+│       ├── thermodynamics.ts         ΔG group contribution
+│       └── vizUtils.ts               Convex hull, visualization primitives
+│
+├── .claude/commands/
+│   └── nexus-bio-viz.md              Visualization upgrade skill (/nexus-bio-viz)
+├── __tests__/                        Jest unit tests
+├── vercel.json                       ← Do not modify
+├── next.config.js
+├── tailwind.config.js
+└── package.json
 ```
 
 ---
 
-## 关键设计决定（不要改）
+## All 13 Tool Pages
 
-### 颜色系统
+| # | Route | Component | What It Does |
+|---|-------|-----------|--------------|
+| 1 | `/tools/pathd` | `PathDPage.tsx` | Pathway Designer — wraps MetabolicEngPage; main 3D metabolic pathway lab with DBTL integration |
+| 2 | `/tools/metabolic-eng` | `MetabolicEngPage.tsx` | Full metabolic lab: 3D FluidSim canvas, NodePanel, ThreeScene, XState FSM, 60 Hz FBA worker |
+| 3 | `/tools/catdes` | `CatalystDesignerPage.tsx` | Enzyme design: binding affinity radar, sequence design, flux cost, Pareto front, mutagenesis targeting |
+| 4 | `/tools/cellfree` | `CellFreePage.tsx` | Cell-free system simulation: gene construct design, expression yield prediction |
+| 5 | `/tools/cethx` | `CETHXPage.tsx` | Cell thermodynamics: waterfall ΔG cascade, ATP accounting, pathway feasibility |
+| 6 | `/tools/dbtlflow` | `DBTLflowPage.tsx` | DBTL cycle tracker: iteration waterfall, protocol generation, SBOL serialization |
+| 7 | `/tools/dyncon` | `DynConPage.tsx` | Dynamic control: bioreactor simulation, Hill function feedback, RK4 ODE, convergence analysis |
+| 8 | `/tools/fbasim` | `FBASimPage.tsx` | Flux Balance Analysis: single + community FBA, knockout/OE strategies, shadow prices, carbon efficiency |
+| 9 | `/tools/gecair` | `GECAIRPage.tsx` | Gene circuit reasoner: logic gate design, Hill curve modeling, circuit dynamics, gate efficiency |
+| 10 | `/tools/genmim` | `GenMIMPage.tsx` | Gene minimization: CRISPRi knockdown scheduling, genome map, efficiency heatmap, greedy optimization |
+| 11 | `/tools/multio` | `MultiOPage.tsx` | Multi-omics: VAE/UMAP embeddings, volcano plots, MOFA+ factors, perturbation prediction |
+| 12 | `/tools/nexai` | `NEXAIPage.tsx` | AI research agent: citation network graph (year×relevance scatter), Socratic questioning, literature support map |
+| 13 | `/tools/proevol` | `ProEvolPage.tsx` | Protein evolution: fitness landscape heatmap, evolution trajectory, basin climbing, sequence diversity |
+| 14 | `/tools/scspatial` | `ScSpatialPage.tsx` | Single-cell spatial: hexagonal spot grid, UMAP/3D spatial viz, cluster efficiency, gene expression heatmap |
+
+---
+
+## API Architecture
+
+### AI Endpoint — `app/api/analyze/route.ts` (Edge Runtime)
+
+The primary AI endpoint. Uses the "Axon" system prompt (predictive design core). Request order is **fixed and must never be reversed**:
+
 ```
-节点颜色：Pastel tones（#C8D8E8, #C8E0D0, #DDD0E8, #E8DCC8 等）
-背景：#111318 → #16181c 渐变
-网格：#2c2c2c / #1e1e1e
-材质：meshLambertMaterial（不用 meshStandardMaterial，避免白色闪烁）
-Tone mapping：THREE.LinearToneMapping（不用 ACES，会导致高光爆白）
+1. Groq  llama-3.3-70b-versatile    ← PRIMARY (1000 req/day, fastest)
+2. Groq  llama3-70b-8192            ← Groq backup
+3. Gemini gemini-2.0-flash-lite     ← Google fallback (250 req/day)
+4. Gemini gemini-1.5-flash          ← Final fallback
+5. 503 error                        ← All providers down
 ```
 
-### NodePanel Tab 系统
+`app/api/gemini/route.ts` is just a legacy re-export alias — all logic lives in `analyze/route.ts`.
+
+### Supporting API Routes
+
+| Route | Runtime | Purpose |
+|-------|---------|---------|
+| `app/api/alphafold/route.ts` | Edge | CORS proxy for EBI AlphaFold — input: `?id=<UniProtID>`, output: PDB text |
+| `app/api/pubchem/route.ts` | Edge | PubChem 3D SDF — mode 1: `?cid=<CID>`, mode 2: `?name=<compound>` |
+| `app/api/fba/route.ts` | Node.js | FBA solver (simplex LP) — single-species + community FBA |
+| `app/api/workbench/route.ts` | Node.js | Workbench project sync — GET/PUT with revision conflict detection |
+
+---
+
+## Environment Variables
+
+Set in Vercel dashboard. Never hardcode in source.
+
 ```
-Tab 1: Overview    — Summary + Evidence Trace + Connections（折叠）+ External IDs
-Tab 2: Structure   — 智能切换：
-                     酶节点 + ENZYME_ALPHAFOLD → AlphaFold/RCSB 旋转蛋白质
-                     核酸 → RCSB_STRUCTURES 参考结构
-                     代谢物分子 → PubChem 3D conformer
-                     生物实体（cell/tissue等）→ CellImageViewer 显微图像
-Tab 3: Analysis    — 酶 → KineticPanel（MM + RK4）
-                     代谢物 → ThermodynamicsPanel（ΔG）
+GROQ_API_KEY      Groq API authorization (used in app/api/analyze/route.ts)
+GEMINI_API_KEY    Google Gemini authorization (used in app/api/analyze/route.ts)
 ```
 
-### API 架构
+`NODE_ENV` and `VERCEL` are set automatically by the platform.
+
+---
+
+## GOTCHAS — Things You Must Never Do
+
+1. **No light backgrounds** — Never use `#FFFFFF`, `#F5F7FA`, `#F2F5F8`, or any light color. Dark theme only: `#0d0f14`, `#10131a`, `#050505`.
+
+2. **No hardcoded mock responses** — All AI-generated content must be dynamically derived from real input. Never return hardcoded pathway data regardless of input.
+
+3. **Never modify forbidden files:**
+   - `src/components/ide/IDEShell.tsx`
+   - `src/components/ide/IDETopBar.tsx`
+   - `src/components/ide/IDESidebar.tsx`
+   - `src/components/tools/ProEvolPage.tsx`
+   - `src/components/tools/GECAIRPage.tsx`
+   - `src/components/tools/DBTLflowPage.tsx`
+
+4. **Never reverse the Groq → Gemini API order** — Groq is always primary. Gemini is always fallback. No exceptions.
+
+5. **Real scientific algorithms only** — every tool must implement the actual math (MM kinetics, RK4 ODE, LP simplex, ΔG group contribution). No placeholder calculations.
+
+6. **meshLambertMaterial only in Three.js** — never use `meshStandardMaterial`. It causes white bloom under the current tone mapping (`THREE.LinearToneMapping`).
+
+7. **3Dmol.js is CDN-only** — loaded from `https://3Dmol.org/build/3Dmol-min.js`. It is not an npm package.
+
+8. **AlphaFold and PubChem are proxied** — always call `/api/alphafold` and `/api/pubchem`, never fetch EBI or PubChem directly from the browser (CORS).
+
+---
+
+## Visualization Standards
+
+The `/nexus-bio-viz` skill (`.claude/commands/nexus-bio-viz.md`) defines standards for upgrading tool visualizations.
+
+**Design rules (all non-negotiable):**
+- Dark background only: `#050505` or `#05070b` for SVG canvases
+- Pastel accent palette: `#C8D8E8`, `#C8E0D0`, `#DDD0E8`, `#E8DCC8`, `#93CB52`, `#5151CD`, `#FA8072`
+- `meshLambertMaterial` for all Three.js geometry
+- Real algorithms only — no placeholder math
+- Convex hulls via `computeConvexHull` + `expandHull` from `src/utils/vizUtils.ts`
+- SVG directed edges use `<marker>` in `<defs>` for arrowheads
+- Never hardcode final values — compute from props/state
+
+**Per-tool visualization targets:**
+
+| Tool | Target Aesthetic |
+|------|-----------------|
+| ScSpatial | 10x Visium hexagonal spot grid, UMAP with convex hull cluster territories |
+| MultiO | VAE/UMAP scatter with per-layer convex hull halos, volcano with gene labels |
+| FBAsim | Escher-style: subsystem background rects, flux-width Bezier edges with arrowhead markers |
+| ProEvol | Viridis-palette heatmap with marching-squares contour lines, peak markers |
+| GECAIR | Hill curve with area fill, logic surface heatmap with isocontours |
+| GenMIM | IGV-style horizontal arrow gene bodies on chromosome ideogram |
+| NEXAI | Year×relevance scatter, quadratic arc bridge edges, glow halos on high-relevance nodes |
+| DBTLflow | Circular 4-arc progress ring, iteration waterfall |
+| DynCon | Multi-lane time-series with setpoint bands, RK4 trajectory |
+| CETHX | Waterfall ΔG cascade with ATP-step highlights |
+
+---
+
+## NodePanel Tab System
+
 ```
-api/gemini.ts (Edge Runtime):
-  Groq llama-3.3-70b-versatile (primary)
-  → Groq llama3-70b-8192 (backup)
-  → Gemini 2.0-flash-lite
-  → Gemini 1.5-flash
-  → 503 error
+Tab 1: Overview    Summary + Evidence Trace + Connections (collapsible) + External IDs
+Tab 2: Structure   Smart switching:
+                     enzyme + ENZYME_ALPHAFOLD entry  →  AlphaFold/RCSB rotating protein (3Dmol.js)
+                     nucleic acid                     →  RCSB structures
+                     metabolite                       →  PubChem 3D conformer
+                     cell / tissue / bio entity       →  CellImageViewer microscopy
+Tab 3: Analysis    enzyme     →  KineticPanel (MM + RK4 ODE)
+                   metabolite →  ThermodynamicsPanel (ΔG group contribution)
 ```
 
 ---
 
-## Environment Variables（Vercel 里设置，不要在代码里 hardcode）
+## Showcase Pathway Data
+
+Artemisinin biosynthesis — Ro et al., *Nature* 2006 (7 nodes):
 
 ```
-GROQ_API_KEY    ← Groq API key
-GEMINI_API_KEY  ← Google Gemini API key
+acetyl_coa → hmg_coa → mevalonate → fpp → amorpha_4_11_diene → artemisinic_acid → artemisinin
 ```
 
-**重要：永远不要把 API key 写进代码或让用户在聊天里发送 key。**
-
----
-
-## GOTCHAS（Claude 经常犯的错误）
-
-1. **背景色** — 永远不要用 `#FFFFFF`, `#F5F7FA`, `#F2F5F8` 或任何浅色背景。只用深色主题：`#0d0f14`, `#10131a`
-2. **Mock 响应** — 永远不要返回硬编码的 mock 数据，无论用户输入什么。所有响应必须基于真实输入动态生成
-3. **禁止修改的文件** — 永远不要修改这些文件：`IDEShell.tsx`, `IDETopBar.tsx`, `IDESidebar.tsx`, `ProEvolPage.tsx`, `GECAIRPage.tsx`, `DBTLflowPage.tsx`
-4. **API 调用顺序** — 永远是：Groq llama-3.3-70b FIRST，Gemini 作为 fallback SECOND。不要颠倒
-5. **科学算法** — 每个工具必须使用真实的科学算法，不能用占位符计算（placeholder calculations）
-
----
-
-## 已知问题和注意事项
-
-1. `ThreeScene.tsx` 用 `meshLambertMaterial` — 不要改回 `meshStandardMaterial`，会白色闪烁
-2. AlphaFold 通过 `/api/alphafold` proxy — 不能直接 fetch EBI，有 CORS
-3. PubChem 通过 `/api/pubchem` proxy — 同上
-4. `vercel.json` 有 rewrites for `/terms` 和 `/privacy` — 不要删
-5. 3Dmol.js 从 CDN 加载（`https://3Dmol.org/build/3Dmol-min.js`）— 不是 npm 包
-
----
-
-## 展示节点数据（pathwayData.json）
-
-Artemisinin 生物合成通路（Ro et al., Nature 2006）：
-- acetyl_coa → hmg_coa → mevalonate → fpp → amorpha_4_11_diene → artemisinic_acid → artemisinin
-
-AlphaFold 数据：
+AlphaFold entries:
 ```typescript
 const ENZYME_ALPHAFOLD = {
   amorpha_4_11_diene: { afId: 'Q9AR04', pdbId: '2ON5' },
@@ -137,7 +294,7 @@ const ENZYME_ALPHAFOLD = {
 };
 ```
 
-PubChem CIDs：
+PubChem CIDs:
 ```typescript
 const SHOWCASE_PUBCHEM_CIDS = {
   acetyl_coa: 444493, hmg_coa: 439400, mevalonate: 441,
@@ -148,21 +305,15 @@ const SHOWCASE_PUBCHEM_CIDS = {
 
 ---
 
-## 用户体验原则（Zhang Ze 的要求）
+## Workbench Architecture
 
-1. **极致视觉质感** — 不能为了功能降低设计品质
-2. **科研可信度** — AI 生成内容必须有溯源，Evidence Trace 是核心
-3. **Progressive Disclosure** — 核心信息先显示，细节点击展开
-4. **工作流串联** — 每个功能是下一个的入口，不是孤立的 section
-5. **诚实告知** — 没有 3D 结构时告诉用户为什么，而不是只显示 error
+Better-SQLite3 ledger (`src/server/workbenchDb.ts`) stores project state server-side. Synced via `app/api/workbench/route.ts` (GET/PUT with revision conflict detection). `WorkbenchSyncProvider` wraps the entire app tree and manages state via Zustand (`src/store/workbenchStore.ts`).
+
+Features: project versioning, experiment ledger, actor/member tracking, immutable audit trail.
 
 ---
 
-## 联系方式（ContactFlow）
+## Contact
+
 - Email: fuchanze@gmail.com
 - LinkedIn: linkedin.com/in/zhangze-foo-3575ba359
-
----
-
-## 当前状态
-网站功能完整，已部署在 Vercel。正在进入测试和优化阶段，准备 LinkedIn launch。
