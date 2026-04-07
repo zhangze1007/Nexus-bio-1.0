@@ -18,13 +18,72 @@ Showcase pathway: Artemisinin biosynthesis in engineered *S. cerevisiae* — Ro 
 
 ## What It Does
 
+Nexus-Bio implements a full 4-stage synthetic biology design cycle — from target molecule to optimized, validated construct — with NEXAI (AI research assistant) available across every stage.
+
 **Core Research Workflow**
+
 ```
-Paste a paper → AI (Axon) extracts metabolic pathway → 3D visualization
-→ Click any node → Molecular structure + Kinetic simulation
+INPUT: Target Molecular Product
+         │
+         ▼
+┌─────────────────────────────────────────────────────┐
+│  STAGE 1: DESIGN & DISCOVERY                        │
+│                                                     │
+│  LAB (basic research) ◄──────────────────────────┐  │
+│       │  path blueprint data                     │  │
+│       ▼                                          │  │
+│  PATHD: Pathway & Enzyme Design Navigator        │  │
+│       │  thermodynamic parameters ───────────────┘  │
+└───────┼─────────────────────────────────────────────┘
+        │
+        ▼
+┌─────────────────────────────────────────────────────┐
+│  STAGE 2: SIMULATION & COMPONENT OPTIMIZATION       │
+│                                                     │
+│  FBAsim (flux balance) ─┐                           │
+│  CETHX (thermodynamics) ─┴─► identify bottlenecks   │
+│                                    │                │
+│                                    ▼                │
+│                          PROEVOL (protein evolution) │
+│                                    │                │
+│                                    ▼                │
+│                          CATDES (enzyme design)      │
+│                                    │ optimized seq  │
+└────────────────────────────────────┼────────────────┘
+                                     │
+                                     ▼
+┌─────────────────────────────────────────────────────┐
+│  STAGE 3: CHASSIS ENGINEERING & CONTROL             │
+│                                                     │
+│  GENMIM (genome minimization) ──► provide chassis   │
+│                                        │            │
+│                                        ▼            │
+│                              GECAIR (gene circuits)  │
+│                                        │            │
+│                                        ▼            │
+│                              DYNCON (dynamic control)│
+│                                        │ build instr│
+└────────────────────────────────────────┼────────────┘
+                                         │
+                                         ▼
+┌─────────────────────────────────────────────────────┐
+│  STAGE 4: TEST, ANALYZE & ITERATE                   │
+│                                                     │
+│  DBTLflow → CFS (cell-free screening)               │
+│           → DBTL (cell construction & testing)      │
+│           → MULTIO (multi-omics analysis)           │
+│           → SCSPATIAL (single-cell spatial omics)   │
+│           → DBTLflow (learned optimization)         │
+└──────────────────────┬──────────────────────────────┘
+                       │ feedback: learned optimization
+                       └──────────────────────────────► INPUT
+
+         ╔══════════════════════════════╗
+         ║  NEXAI: AI Research Assistant║  ← connects to all stages
+         ╚══════════════════════════════╝
 ```
 
-**Pathway Visualization Core**
+**Pathway Visualization Core (Stage 1 Entry Point)**
 
 | Module | Description |
 |--------|-------------|
