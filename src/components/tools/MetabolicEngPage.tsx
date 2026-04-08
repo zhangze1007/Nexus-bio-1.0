@@ -14,7 +14,7 @@
  *   Desktop: 60 FPS  |  Mobile MatePad 11.5: 45 FPS (dpr capped at 1.2)
  */
 
-import { useEffect, useRef, useCallback, useMemo, useState } from 'react';
+import { useEffect, useRef, useCallback, useMemo, useState, useLayoutEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMachine } from '@xstate/react';
 import FluidSimCanvas from './FluidSimCanvas';
@@ -68,6 +68,8 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
   // ── Dismissible center dashboards — let user clear the view of the 3D canvas
   const [heroDismissed, setHeroDismissed] = useState(embedded);
   const [methodStripDismissed, setMethodStripDismissed] = useState(embedded);
+  const stageRef = useRef<HTMLDivElement | null>(null);
+  const [embeddedStageHeight, setEmbeddedStageHeight] = useState<number | null>(null);
 
   // ── Zustand: node selection + AI-generated pathway ───────────────
   const selectedNode    = useUIStore(s => s.selectedNode);
@@ -122,6 +124,37 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
     selectedNode?.label,
     setToolPayload,
   ]);
+
+  useLayoutEffect(() => {
+    if (!embedded) return;
+
+    const updateStageHeight = () => {
+      const stage = stageRef.current;
+      if (!stage) return;
+
+      const availableHeight = window.innerHeight - stage.getBoundingClientRect().top - 16;
+      const nextHeight = Math.max(560, Math.min(860, Math.floor(availableHeight)));
+      setEmbeddedStageHeight((current) => (current === nextHeight ? current : nextHeight));
+    };
+
+    updateStageHeight();
+    const rafId = window.requestAnimationFrame(updateStageHeight);
+    window.addEventListener('resize', updateStageHeight);
+
+    const resizeObserver = typeof ResizeObserver !== 'undefined'
+      ? new ResizeObserver(() => updateStageHeight())
+      : null;
+
+    if (resizeObserver && stageRef.current?.parentElement) {
+      resizeObserver.observe(stageRef.current.parentElement);
+    }
+
+    return () => {
+      window.cancelAnimationFrame(rafId);
+      window.removeEventListener('resize', updateStageHeight);
+      resizeObserver?.disconnect();
+    };
+  }, [embedded]);
 
   // ── ThreeScene: computed props from simulation params ─────────────
   // glowMultiplier: default enzyme=5 → 1.0 (mid); enzyme=20 → 2.0 (max); pH/temp deviate → dims
@@ -265,13 +298,17 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
   }, [state]);
 
   return (
-    <div style={{
-      position: 'relative',
-      minHeight: '860px',
-      flex: 1,
-      background: 'radial-gradient(circle at top, rgba(207,196,227,0.18), transparent 28%), radial-gradient(circle at bottom right, rgba(191,220,205,0.14), transparent 26%), linear-gradient(180deg, #0d0a09 0%, #050505 100%)',
-      overflow:'hidden', userSelect:'none',
-    }}>
+    <div
+      ref={stageRef}
+      style={{
+        position: 'relative',
+        minHeight: embedded ? `${embeddedStageHeight ?? 560}px` : '860px',
+        height: embedded ? `${embeddedStageHeight ?? 560}px` : undefined,
+        flex: 1,
+        background: 'radial-gradient(circle at top, rgba(207,196,227,0.18), transparent 28%), radial-gradient(circle at bottom right, rgba(191,220,205,0.14), transparent 26%), linear-gradient(180deg, #0d0a09 0%, #050505 100%)',
+        overflow:'hidden', userSelect:'none',
+      }}
+    >
       {/* ── Core viewport: fluid background ── */}
       <FluidSimCanvas
         forceRef={forceRef}

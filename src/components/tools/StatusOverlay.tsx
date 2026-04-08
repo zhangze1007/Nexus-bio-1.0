@@ -9,7 +9,7 @@
  *   - Animated counter transitions (Framer Motion)
  */
 
-import { useCallback, useRef } from 'react';
+import { useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { SimReadouts, SimParams } from '../../machines/metabolicMachine';
 import { STATE_LABELS, michaelisRate } from '../../machines/metabolicMachine';
@@ -17,6 +17,7 @@ import type { MachineState } from '../../machines/metabolicMachine';
 import { T } from '../ide/tokens';
 import { PATHD_THEME } from '../workbench/workbenchTheme';
 import { PATHD_FLOATING_PANEL_SHEEN, PATHD_FLOATING_PANEL_SURFACE } from './shared/pathdFloatingPanelStyles';
+import { usePathdFloatingPanelScroll } from './shared/usePathdFloatingPanelScroll';
 
 // ── Sparkline SVG ──────────────────────────────────────────────────────
 
@@ -167,16 +168,14 @@ export default function StatusOverlay({
 }: StatusOverlayProps) {
   const isStress   = state === 'stress_test';
   const previewRate = michaelisRate(params);
-  const containPanelInteraction = useCallback((event: React.SyntheticEvent<HTMLDivElement>) => {
-    event.stopPropagation();
-  }, []);
-  const handlePanelWheel = useCallback((event: React.WheelEvent<HTMLDivElement>) => {
-    event.stopPropagation();
-    const panel = event.currentTarget;
-    if (panel.scrollHeight > panel.clientHeight) {
-      panel.scrollTop += event.deltaY;
-    }
-  }, []);
+  const {
+    containPanelInteraction,
+    handlePanelWheel,
+    handleTouchStart,
+    handleTouchMove,
+    handleTouchEnd,
+    resetTouchState,
+  } = usePathdFloatingPanelScroll();
 
   const variance = rateHistory.length > 10
     ? rateHistory.slice(-20).reduce((s, v, _, a) => {
@@ -206,8 +205,10 @@ export default function StatusOverlay({
       }}
       onWheelCapture={handlePanelWheel}
       onPointerDownCapture={containPanelInteraction}
-      onTouchStartCapture={containPanelInteraction}
-      onTouchMoveCapture={containPanelInteraction}
+      onTouchStartCapture={handleTouchStart}
+      onTouchMoveCapture={handleTouchMove}
+      onTouchEndCapture={handleTouchEnd}
+      onTouchCancelCapture={resetTouchState}
     >
       <div
         aria-hidden

@@ -20,6 +20,7 @@ import { STATE_LABELS } from '../../machines/metabolicMachine';
 import { T } from '../ide/tokens';
 import { PATHD_THEME } from '../workbench/workbenchTheme';
 import { PATHD_FLOATING_PANEL_SHEEN, PATHD_FLOATING_PANEL_SURFACE } from './shared/pathdFloatingPanelStyles';
+import { usePathdFloatingPanelScroll } from './shared/usePathdFloatingPanelScroll';
 
 // ── Parameter definitions ──────────────────────────────────────────────
 
@@ -179,16 +180,14 @@ export default function ToolOverlay({
   params, state, onParam, onStart, onPause, onReset, onStress, onResume, forceRef,
 }: ToolOverlayProps) {
   const stateLabel = STATE_LABELS[state];
-  const containPanelInteraction = useCallback((event: React.SyntheticEvent<HTMLDivElement>) => {
-    event.stopPropagation();
-  }, []);
-  const handlePanelWheel = useCallback((event: React.WheelEvent<HTMLDivElement>) => {
-    event.stopPropagation();
-    const panel = event.currentTarget;
-    if (panel.scrollHeight > panel.clientHeight) {
-      panel.scrollTop += event.deltaY;
-    }
-  }, []);
+  const {
+    containPanelInteraction,
+    handlePanelWheel,
+    handleTouchStart,
+    handleTouchMove,
+    handleTouchEnd,
+    resetTouchState,
+  } = usePathdFloatingPanelScroll();
 
   return (
     <motion.div
@@ -211,8 +210,10 @@ export default function ToolOverlay({
       }}
       onWheelCapture={handlePanelWheel}
       onPointerDownCapture={containPanelInteraction}
-      onTouchStartCapture={containPanelInteraction}
-      onTouchMoveCapture={containPanelInteraction}
+      onTouchStartCapture={handleTouchStart}
+      onTouchMoveCapture={handleTouchMove}
+      onTouchEndCapture={handleTouchEnd}
+      onTouchCancelCapture={resetTouchState}
     >
       <div
         aria-hidden
