@@ -141,7 +141,7 @@
 }
 
 .nb-tool-shell__body {
-  overflow: visible;
+  overflow: hidden;
 }
 
 .nb-tool-shell__header,
@@ -362,16 +362,16 @@
 /* ═══ Tool page internal panels — responsive ═══ */
 .nb-tool-panels {
   display: flex;
-  flex: 0 0 auto;
-  overflow: visible;
-  min-height: min(960px, calc(100vh - 190px));
+  flex: 1 1 auto;
+  overflow: hidden;
+  min-height: 0;
   align-items: stretch;
 }
 
 .nb-tool-sidebar {
   flex-shrink: 0;
   overflow-x: hidden;
-  overflow-y: visible !important;
+  overflow-y: auto !important;
   padding: 16px;
   min-height: 0;
   align-self: stretch;
@@ -380,14 +380,14 @@
 .nb-tool-center {
   flex: 1 1 auto;
   min-width: 0;
-  overflow: visible !important;
-  min-height: min(960px, calc(100vh - 190px));
+  overflow: hidden !important;
+  min-height: 0;
 }
 
 .nb-tool-right {
   flex-shrink: 0;
   overflow-x: hidden;
-  overflow-y: visible !important;
+  overflow-y: auto !important;
   padding: 16px;
   min-height: 0;
   align-self: stretch;
@@ -395,24 +395,26 @@
 
 .nb-tool-page,
 .nb-tool-shell {
-  flex: 0 0 auto !important;
-  min-height: 100%;
-  height: auto !important;
-  overflow: visible !important;
+  flex: 1 1 auto !important;
+  min-height: 0;
+  height: 100% !important;
+  overflow: hidden !important;
 }
 
 .nb-tool-page > .nb-tool-panels {
-  flex: 0 0 auto !important;
+  flex: 1 1 auto !important;
+  min-height: 0;
 }
 
 .nb-tool-shell__body {
-  flex: 0 0 auto !important;
-  overflow: visible !important;
+  flex: 1 1 auto !important;
+  min-height: 0;
+  overflow: hidden !important;
 }
 
 .nb-tool-shell__grid {
-  flex: 0 0 auto !important;
-  min-height: min(960px, calc(100vh - 190px));
+  flex: 1 1 auto !important;
+  min-height: 0;
   align-content: start;
 }
 
@@ -422,18 +424,110 @@
     border-bottom: 1px solid rgba(255,255,255,0.06);
     max-height: none;
     flex-shrink: 0;
-    overflow-y: visible !important;
+    overflow-y: auto !important;
   }
 
   .nb-tool-center {
     min-height: 300px;
-    overflow: visible !important;
+    overflow: hidden !important;
   }
 
   /* Ensure SVG charts scale down */
   .nb-tool-panels svg {
     max-width: 100%;
     height: auto;
+  }
+}
+
+.nb-tool-panels__tablet-aux {
+  display: none;
+}
+
+@media (min-width: 769px) and (max-width: 1080px) {
+  .nb-tool-panels--hybrid-shell {
+    flex-direction: column !important;
+    gap: 10px;
+    overflow: hidden !important;
+  }
+
+  .nb-tool-panels--hybrid-shell > .nb-tool-sidebar,
+  .nb-tool-panels--hybrid-shell > .nb-tool-right {
+    display: none !important;
+  }
+
+  .nb-tool-panels--hybrid-shell > .nb-tool-center {
+    min-height: min(560px, 60vh);
+  }
+
+  .nb-tool-panels__tablet-aux {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 0 12px 12px;
+    flex: 0 0 auto;
+  }
+
+  .nb-tool-panels__tablet-aux-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .nb-tool-panels__tablet-aux-toggle {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    padding: 4px;
+    min-width: min(320px, 100%);
+    border-radius: 14px;
+    background: rgba(31,37,44,0.86);
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+
+  .nb-tool-panels__tablet-aux-toggle button {
+    min-height: 38px;
+    padding: 0 12px;
+    border: none;
+    border-radius: 10px;
+    background: transparent;
+    color: rgba(217,225,235,0.68);
+    font-family: 'Public Sans', -apple-system, sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+  }
+
+  .nb-tool-panels__tablet-aux-toggle button[data-active="true"] {
+    background: rgba(175,195,214,0.18);
+    color: rgba(250,246,240,0.96);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+  }
+
+  .nb-tool-panels__tablet-aux-frame {
+    border-radius: 18px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(10,10,10,0.72);
+    overflow: hidden;
+    max-height: min(34vh, 340px);
+  }
+
+  .nb-tool-panels__tablet-pane {
+    height: 100%;
+    overflow: auto;
+    padding: 12px;
+  }
+
+  .nb-tool-panels__tablet-pane .nb-tool-sidebar,
+  .nb-tool-panels__tablet-pane .nb-tool-right {
+    width: 100% !important;
+    max-width: 100% !important;
+    border: none !important;
+    padding: 0 !important;
+    background: transparent !important;
+    overflow: visible !important;
   }
 }
 
@@ -467,9 +561,13 @@
   }
 
   /* Touch-friendly targets */
-  .nb-tool-panels button,
-  .nb-tool-panels input[type="range"] {
+  .nb-tool-panels button {
     min-height: 44px;
+    min-width: 44px;
+  }
+
+  .nb-tool-panels input[type="range"] {
+    min-height: 28px;
     min-width: 44px;
   }
 

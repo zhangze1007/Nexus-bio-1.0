@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react';
 import { Loader2, Play, Info, RotateCcw } from 'lucide-react';
 import { calcDeltaG, calcKeq, calcMassBalance, R } from '../utils/thermodynamics';
+import ResearchAnswerRenderer from './tools/shared/ResearchAnswerRenderer';
 
 interface ThermoPanelProps {
   nodeLabel: string;
@@ -85,7 +86,10 @@ Actual ΔG = ${dG.toFixed(2)} kJ/mol
 Keq = ${Keq.toExponential(3)}
 Reaction is ${dG < 0 ? 'spontaneous (exergonic)' : 'non-spontaneous (endergonic)'}
 
-In 3-4 sentences explain: (1) whether this reaction proceeds spontaneously under these conditions, (2) how far from equilibrium the system is, (3) what this means for flux through this metabolite in the pathway, (4) one practical implication for metabolic engineering or drug targeting.` }] }],
+Address: (1) whether this reaction proceeds spontaneously under these conditions, (2) how far from equilibrium the system is, (3) what this means for flux through this metabolite in the pathway, (4) one practical implication for metabolic engineering or drug targeting.
+
+Respond in short researcher-facing prose with the headings Summary, Key observations, Interpretation, and Recommended next steps.
+Do not return JSON, code fences, or developer-style logs.` }] }],
           generationConfig: { maxOutputTokens: 280, temperature: 0.2 },
         }),
         signal: abortRef.current.signal,
@@ -200,7 +204,7 @@ In 3-4 sentences explain: (1) whether this reaction proceeds spontaneously under
                 <Loader2 size={12} style={{ color: 'rgba(200,224,208,0.4)', animation: 'spin 1s linear infinite' }} />
                 <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '11px' }}>Analysing thermodynamics...</span>
               </div>
-            : <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '12px', lineHeight: 1.7, margin: 0 }}>{ai.text}</p>
+            : <ResearchAnswerRenderer answer={ai.text} />
           }
         </div>
       )}

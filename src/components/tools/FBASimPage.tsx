@@ -1,5 +1,5 @@
 'use client';
-import { useState, useMemo, useRef, useEffect, useTransition } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import AlgorithmInsight from '../ide/shared/AlgorithmInsight';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
@@ -21,6 +21,7 @@ import { T, TOOL_RESULT_PALETTE} from '../ide/tokens';
 import { PATHD_THEME } from '../workbench/workbenchTheme';
 import ScientificFigureFrame from './shared/ScientificFigureFrame';
 import ScientificMethodStrip from './shared/ScientificMethodStrip';
+import WorkbenchRangeSlider from './shared/WorkbenchRangeSlider';
 
 // ── 5-color scientific palette (coral / sky / mint / lilac / apricot) ──
 // E. coli → coral (warm, distinctive)
@@ -93,33 +94,17 @@ function ParamSlider({ label, value, min, max, step = 0.5, onChange, unit }: {
   label: string; value: number; min: number; max: number; step?: number;
   onChange: (v: number) => void; unit?: string; accentColor?: string;
 }) {
-  const [localVal, setLocalVal] = useState(value);
-  const [, startTransition] = useTransition();
-  const trackRef = useRef<HTMLInputElement>(null);
-  const pct = ((localVal - min) / (max - min)) * 100;
   return (
-    <div style={{ marginBottom: '14px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
-        <span style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.label }}>{label}</span>
-        <span style={{ fontFamily: T.MONO, fontSize: '11px', fontWeight: 600, color: PATHD_THEME.value }}>
-          {localVal.toFixed(1)}{unit ? ` ${unit}` : ''}
-        </span>
-      </div>
-      <input
-        ref={trackRef}
-        aria-label={label}
-        type="range" min={min} max={max} step={step} value={localVal}
-        className="nb-pathd-slider"
-        style={{ '--val': `${pct}%` } as React.CSSProperties}
-        onChange={e => {
-          const v = parseFloat(e.target.value);
-          const p = ((v - min) / (max - min)) * 100;
-          trackRef.current?.style.setProperty('--val', `${p}%`);
-          setLocalVal(v);
-          startTransition(() => onChange(v));
-        }}
-      />
-    </div>
+    <WorkbenchRangeSlider
+      label={label}
+      value={value}
+      min={min}
+      max={max}
+      step={step}
+      unit={unit}
+      onChange={onChange}
+      formatValue={(nextValue) => nextValue.toFixed(1)}
+    />
   );
 }
 

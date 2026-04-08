@@ -19,6 +19,7 @@ import ScientificHero from './shared/ScientificHero';
 import ScientificFigureFrame from './shared/ScientificFigureFrame';
 import ScientificMethodStrip from './shared/ScientificMethodStrip';
 import { PATHD_THEME } from '../workbench/workbenchTheme';
+import HybridWorkbenchPanels from './shared/HybridWorkbenchPanels';
 
 /* ── Design Tokens ────────────────────────────────────────────────── */
 
@@ -1074,10 +1075,11 @@ export default function ScSpatialPage() {
           <div style={{ padding: '0 16px 8px' }}><SimErrorBanner message={simError} /></div>
         )}
 
-        <div className="nb-tool-panels" style={{ flex: 1 }}>
-
-          {/* ── LEFT SIDEBAR (240px) ──────────────────────────────── */}
-          <div className="nb-tool-sidebar" style={{
+        <HybridWorkbenchPanels
+          leftLabel="Cluster Controls"
+          rightLabel="Spatial Ledger"
+          leftPanel={(
+            <div className="nb-tool-sidebar" style={{
             width: '240px', flexShrink: 0, padding: '16px',
             borderRight: `1px solid ${BORDER}`, background: PANEL_BG,
           }}>
@@ -1191,10 +1193,10 @@ export default function ScSpatialPage() {
                 </span>
               </div>
             </div>
-          </div>
-
-          {/* ── CENTER ENGINE ────────────────────────────────────── */}
-          <div className="nb-tool-center" style={{ flex: 1, display: 'flex', flexDirection: 'column', background: PANEL_BG, minWidth: 0, padding: '16px', overflow: 'auto' }}>
+            </div>
+          )}
+          centerPanel={(
+            <div className="nb-tool-center" style={{ flex: 1, display: 'flex', flexDirection: 'column', background: PANEL_BG, minWidth: 0, padding: '16px', overflow: 'auto' }}>
             <ScientificFigureFrame
               eyebrow={figureMeta.eyebrow}
               title={figureMeta.title}
@@ -1279,10 +1281,10 @@ export default function ScSpatialPage() {
                 </div>
               )}
             </ScientificFigureFrame>
-          </div>
-
-          {/* ── RIGHT PANEL (260px) ──────────────────────────────── */}
-          <div className="nb-tool-right" style={{
+            </div>
+          )}
+          rightPanel={(
+            <div className="nb-tool-right" style={{
             width: '260px', flexShrink: 0, padding: '16px',
             borderLeft: `1px solid ${BORDER}`, background: PANEL_BG,
           }}>
@@ -1476,8 +1478,9 @@ export default function ScSpatialPage() {
                 );
               })}
             </div>
-          </div>
-        </div>
+            </div>
+          )}
+        />
 
         {/* ── Bottom Export Bar ──────────────────────────────────── */}
         <div style={{

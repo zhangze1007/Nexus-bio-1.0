@@ -16,6 +16,7 @@ import { STATE_LABELS, michaelisRate } from '../../machines/metabolicMachine';
 import type { MachineState } from '../../machines/metabolicMachine';
 import { T } from '../ide/tokens';
 import { PATHD_THEME } from '../workbench/workbenchTheme';
+import { PATHD_FLOATING_PANEL_SHEEN, PATHD_FLOATING_PANEL_SURFACE } from './shared/pathdFloatingPanelStyles';
 
 // ── Sparkline SVG ──────────────────────────────────────────────────────
 
@@ -184,23 +185,14 @@ export default function StatusOverlay({
         position:'absolute', right:'20px', top:'50%',
         transform:'translateY(-50%)',
         width:'230px', zIndex:10,
-        background: 'rgba(10,12,16,0.52)',
-        backdropFilter:'blur(24px) saturate(140%)',
-        WebkitBackdropFilter:'blur(24px) saturate(140%)',
-        borderRadius:'20px',
-        border:'1px solid rgba(255,255,255,0.12)',
-        boxShadow:'0 18px 42px rgba(0,0,0,0.38)',
         padding:'18px 16px',
+        ...PATHD_FLOATING_PANEL_SURFACE,
       }}
     >
       <div
         aria-hidden
         style={{
-          position: 'absolute',
-          inset: 0,
-          borderRadius: '20px',
-          background: 'linear-gradient(135deg, rgba(207,196,227,0.06) 0%, rgba(175,195,214,0.04) 48%, rgba(191,220,205,0.06) 100%)',
-          pointerEvents: 'none',
+          ...PATHD_FLOATING_PANEL_SHEEN,
         }}
       />
       {/* Header */}

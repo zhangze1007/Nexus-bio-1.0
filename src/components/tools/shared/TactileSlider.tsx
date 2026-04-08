@@ -29,6 +29,7 @@ export default function TactileSlider({
   label, value, min, max, step, unit = '', onChange,
 }: TactileSliderProps) {
   const trackRef = useRef<HTMLDivElement>(null);
+  const activePointerIdRef = useRef<number | null>(null);
   const [dragging, setDragging] = useState(false);
   const [hovering, setHovering] = useState(false);
 
@@ -45,17 +46,22 @@ export default function TactileSlider({
   }, [min, max, step, onChange]);
 
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    trackRef.current?.setPointerCapture(e.pointerId);
+    activePointerIdRef.current = e.pointerId;
     setDragging(true);
     resolve(e.clientX);
   }, [resolve]);
 
   const handlePointerMove = useCallback((e: React.PointerEvent) => {
-    if (!dragging) return;
+    if (!dragging || activePointerIdRef.current !== e.pointerId) return;
     resolve(e.clientX);
   }, [dragging, resolve]);
 
-  const handlePointerUp = useCallback(() => {
+  const handlePointerUp = useCallback((e?: React.PointerEvent) => {
+    if (e && trackRef.current?.hasPointerCapture(e.pointerId)) {
+      trackRef.current.releasePointerCapture(e.pointerId);
+    }
+    activePointerIdRef.current = null;
     setDragging(false);
   }, []);
 
@@ -84,7 +90,7 @@ export default function TactileSlider({
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
         onMouseEnter={() => setHovering(true)}
-        onMouseLeave={() => { setHovering(false); setDragging(false); }}
+        onMouseLeave={() => { setHovering(false); }}
         style={{
           position: 'relative', width: '100%', height: '18px',
           cursor: 'pointer', touchAction: 'none',

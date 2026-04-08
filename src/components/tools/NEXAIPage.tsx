@@ -13,6 +13,7 @@ import ScientificHero from './shared/ScientificHero';
 import { PATHD_THEME } from '../workbench/workbenchTheme';
 import ScientificFigureFrame from './shared/ScientificFigureFrame';
 import ScientificMethodStrip from './shared/ScientificMethodStrip';
+import ResearchAnswerRenderer from './shared/ResearchAnswerRenderer';
 
 const AXON_ACCENT = PATHD_THEME.blue;
 
@@ -170,12 +171,13 @@ function CitationGraph({ citations, onNodeClick }: {
 
 // ── Floating CLI Overlay ───────────────────────────────────────────────
 
-function FloatingCLI({ query, setQuery, onSubmit, loading, history }: {
+function FloatingCLI({ query, setQuery, onSubmit, loading, history, placeholder }: {
   query: string;
   setQuery: (q: string) => void;
   onSubmit: () => void;
   loading: boolean;
   history: string[];
+  placeholder: string;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [histIdx, setHistIdx] = useState(-1);
@@ -193,6 +195,7 @@ function FloatingCLI({ query, setQuery, onSubmit, loading, history }: {
   }, []);
 
   const handleKey = (e: React.KeyboardEvent) => {
+    if ((e.nativeEvent as KeyboardEvent).isComposing || e.keyCode === 229) return;
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); onSubmit(); }
     if (e.key === 'ArrowUp') {
       e.preventDefault();
@@ -215,12 +218,11 @@ function FloatingCLI({ query, setQuery, onSubmit, loading, history }: {
       transition={{ type: 'spring', stiffness: 300, damping: 30 }}
       style={{
         position: 'absolute', bottom: '16px', left: '16px', right: '16px',
-        borderRadius: '14px',
-        background: PATHD_THEME.panelGlassStrong,
-        backdropFilter: 'blur(16px)',
-        border: `1px solid ${loading ? 'rgba(175,195,214,0.34)' : PATHD_THEME.sepiaPanelBorder}`,
-        boxShadow: loading ? '0 0 22px rgba(175,195,214,0.16)' : '0 10px 24px rgba(0,0,0,0.32)',
-        padding: '10px 14px',
+        borderRadius: '22px',
+        background: '#050505',
+        border: `1px solid ${loading ? 'rgba(175,195,214,0.2)' : 'rgba(255,255,255,0.08)'}`,
+        boxShadow: loading ? '0 18px 48px rgba(12,20,30,0.34)' : '0 18px 48px rgba(4,10,16,0.24)',
+        padding: '8px',
         display: 'flex', alignItems: 'center', gap: '10px',
         zIndex: 10,
       }}
@@ -240,22 +242,25 @@ function FloatingCLI({ query, setQuery, onSubmit, loading, history }: {
           ))}
         </span>
       ) : (
-        <span style={{ fontFamily: T.MONO, fontSize: '12px', fontWeight: 700, color: PATHD_THEME.label, flexShrink: 0 }}>
-          ›
+        <span style={{ fontFamily: T.MONO, fontSize: '11px', fontWeight: 700, color: PATHD_THEME.label, flexShrink: 0, padding: '0 10px' }}>
+          /
         </span>
       )}
       <input
         ref={inputRef}
+        className="nb-nexai-ask-input"
         value={query}
         onChange={e => { setQuery(e.target.value); setHistIdx(-1); }}
         onKeyDown={handleKey}
-        placeholder="Ask Axon anything… (press / to focus)"
+        placeholder={placeholder}
+        enterKeyHint="search"
         disabled={loading}
         style={{
-          flex: 1, background: 'transparent', border: 'none', outline: 'none',
-          fontFamily: T.MONO, fontSize: '12px',
+          flex: 1, minHeight: '44px', background: 'transparent', border: 'none', outline: 'none',
+          fontFamily: T.SANS, fontSize: '14px',
           color: PATHD_THEME.value,
           caretColor: AXON_ACCENT,
+          letterSpacing: '-0.01em',
         }}
       />
       <motion.button
@@ -266,10 +271,14 @@ function FloatingCLI({ query, setQuery, onSubmit, loading, history }: {
         onMouseEnter={() => setBtnHovered(true)}
         onMouseLeave={() => setBtnHovered(false)}
         style={{
-          padding: '5px 16px', borderRadius: '20px', cursor: (loading || !query.trim()) ? 'not-allowed' : 'pointer',
-          fontFamily: T.MONO, fontSize: '10px', fontWeight: 600,
-          background: loading ? PATHD_THEME.panelInset : (btnHovered ? '#ffffff' : 'rgba(255,255,255,0.88)'),
-          border: loading ? `1px solid ${PATHD_THEME.sepiaPanelBorder}` : 'none',
+          minHeight: '44px',
+          minWidth: '110px',
+          padding: '0 18px',
+          borderRadius: '16px',
+          cursor: (loading || !query.trim()) ? 'not-allowed' : 'pointer',
+          fontFamily: T.SANS, fontSize: '13px', fontWeight: 700,
+          background: loading ? 'rgba(255,255,255,0.08)' : (btnHovered ? '#ffffff' : '#f4f7fb'),
+          border: 'none',
           color: loading ? PATHD_THEME.label : '#111318',
           opacity: (!loading && !query.trim()) ? 0.45 : 1,
           boxShadow: (!loading && btnHovered) ? '0 2px 12px rgba(0,0,0,0.22)' : 'none',
@@ -277,7 +286,7 @@ function FloatingCLI({ query, setQuery, onSubmit, loading, history }: {
           flexShrink: 0,
         }}
       >
-        {loading ? 'searching…' : '⏎ ask'}
+        {loading ? 'Searching' : 'Ask Axon'}
       </motion.button>
     </motion.div>
   );
@@ -451,12 +460,6 @@ export default function NEXAIPage() {
   }, [analyzeArtifact, project?.targetProduct]);
 
   useEffect(() => {
-    if (contextPrompt && !query.trim() && !result && history.length === 0) {
-      setQuery(contextPrompt);
-    }
-  }, [contextPrompt, history.length, query, result]);
-
-  useEffect(() => {
     setToolPayload('nexai', {
       toolId: 'nexai',
       targetProduct: analyzeArtifact?.targetProduct ?? project?.targetProduct ?? 'Scientific workbench',
@@ -482,12 +485,13 @@ export default function NEXAIPage() {
   ]);
 
   async function runQuery() {
-    if (!query.trim()) return;
-    setHistory(prev => [query, ...prev.slice(0, 19)]);
+    const activeQuery = query.trim();
+    if (!activeQuery) return;
+    setHistory(prev => [activeQuery, ...prev.slice(0, 19)]);
     setLoading(true);
-    appendConsole({ level: 'info', module: 'nexai', message: `Query: "${query.slice(0, 60)}${query.length > 60 ? '…' : ''}"` });
+    appendConsole({ level: 'info', module: 'nexai', message: `Query: "${activeQuery.slice(0, 60)}${activeQuery.length > 60 ? '…' : ''}"` });
     const contextualSeed = buildContextualResult({
-      query,
+      query: activeQuery,
       projectTitle: project?.title,
       targetProduct: project?.targetProduct,
       analyzeArtifact,
@@ -498,7 +502,7 @@ export default function NEXAIPage() {
 
     const contextualQuery = analyzeArtifact
       ? [
-          query,
+          activeQuery,
           '',
           'Workbench context:',
           `Target product: ${analyzeArtifact.targetProduct}`,
@@ -507,7 +511,7 @@ export default function NEXAIPage() {
           `Top bottleneck: ${analyzeArtifact.bottleneckAssumptions[0]?.label ?? 'Not specified'}`,
           `Thermodynamic concern: ${analyzeArtifact.thermodynamicConcerns[0] ?? 'Not specified'}`,
         ].join('\n')
-      : query;
+      : activeQuery;
 
     try {
       // Call Axon in searchQuery mode — returns enriched pathway JSON
@@ -531,7 +535,7 @@ export default function NEXAIPage() {
       } catch { /* not JSON — fall through to text mode */ }
 
       if (pathway) {
-        setResult(pathwayToResult(pathway, query, provider));
+        setResult(pathwayToResult(pathway, activeQuery, provider));
         setResultMode('pathway');
         const bottlenecks = (pathway as any).bottleneck_enzymes?.length ?? 0;
         appendConsole({ level: 'success', module: 'nexai', message: `Axon: ${pathway.nodes.length} nodes · ${bottlenecks} bottleneck(s) · ${provider}` });
@@ -539,7 +543,7 @@ export default function NEXAIPage() {
         // Plain text answer (non-pathway question)
         const seededCitations = contextualSeed.citations.slice(0, 6);
         setResult({
-          query,
+          query: activeQuery,
           answer: rawText.slice(0, 1200),
           citations: seededCitations,
           confidence: seededCitations.length > 0 ? Math.max(0.62, contextualSeed.confidence * 0.8) : 0.48,
@@ -551,7 +555,7 @@ export default function NEXAIPage() {
 
       // Fetch real citations from Semantic Scholar (best-effort)
       try {
-        const ssUrl = `https://api.semanticscholar.org/graph/v1/paper/search?query=${encodeURIComponent(query.slice(0, 100))}&fields=title,authors,year,citationCount&limit=5`;
+        const ssUrl = `https://api.semanticscholar.org/graph/v1/paper/search?query=${encodeURIComponent(activeQuery.slice(0, 100))}&fields=title,authors,year,citationCount&limit=5`;
         const ssRes = await fetch(ssUrl);
         if (ssRes.ok) {
           const ssData = await ssRes.json();
@@ -838,12 +842,7 @@ export default function NEXAIPage() {
                       This answer has no visible citation nodes yet. Add Research evidence or rerun with a pathway-style query before treating it as decision-grade guidance.
                     </p>
                   )}
-                  <p style={{
-                    fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.value,
-                    lineHeight: 1.7, margin: 0,
-                  }}>
-                    {result.answer}
-                  </p>
+                  <ResearchAnswerRenderer answer={result.answer} compact />
                 </motion.div>
               )}
             </AnimatePresence>
@@ -852,6 +851,7 @@ export default function NEXAIPage() {
               query={query} setQuery={setQuery}
               onSubmit={runQuery} loading={loading}
               history={history}
+              placeholder={contextPrompt || 'Ask Axon anything…'}
             />
           </div>
         </ScientificFigureFrame>

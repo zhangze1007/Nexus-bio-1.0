@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { Loader2, Play, RotateCcw, Info } from 'lucide-react';
 import { mmVelocity, runRK4, type SimResult } from '../utils/kinetics';
+import ResearchAnswerRenderer from './tools/shared/ResearchAnswerRenderer';
 
 interface KineticPanelProps {
   nodeLabel: string;
@@ -143,7 +144,10 @@ ${inhibited ? `Inhibitor: Ki=${Ki} mM, [I]=${I} mM (competitive inhibition)` : '
 Results after ${duration} min: Final [Substrate]=${finalS.toFixed(3)} mM, Final [Product]=${finalP.toFixed(3)} mM
 Peak velocity=${maxV.toFixed(4)}, Steady-state velocity=${steadyV.toFixed(4)} μmol/min/mg
 
-In 3-4 sentences, explain: (1) what this means biologically for this enzyme, (2) whether the reaction reaches steady state, (3) how substrate saturation affects the pathway, ${inhibited ? '(4) the impact of the inhibitor on pathway flux.' : '(4) one practical implication for metabolic engineering.'}
+Address: (1) what this means biologically for this enzyme, (2) whether the reaction reaches steady state, (3) how substrate saturation affects the pathway, ${inhibited ? '(4) the impact of the inhibitor on pathway flux.' : '(4) one practical implication for metabolic engineering.'}
+
+Respond in short researcher-facing prose with the headings Summary, Key observations, Interpretation, and Recommended next steps.
+Do not return JSON, code fences, or developer-style logs.
 
 Be specific and scientific. No generic statements.`;
 
@@ -292,7 +296,7 @@ Be specific and scientific. No generic statements.`;
                 <Loader2 size={12} style={{ color: 'rgba(200,216,232,0.4)', animation: 'spin 1s linear infinite' }} />
                 <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '11px' }}>Analyzing results...</span>
               </div>
-            : <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '12px', lineHeight: 1.7, margin: 0 }}>{ai.text}</p>
+            : <ResearchAnswerRenderer answer={ai.text} />
           }
         </div>
       )}

@@ -406,21 +406,24 @@ h1, h2, h3, h4 {
   -webkit-appearance: none;
   appearance: none;
   width: 100%;
-  height: 4px;
+  height: 18px;
+  margin: 0;
   border-radius: 999px;
   outline: none;
   cursor: pointer;
-  will-change: background;         /* hint GPU to composite separately */
-  transition: none;                /* no CSS delay — position is instant */
-  /* Fill left of thumb with PATHD gradient; right of thumb with track */
-  background: linear-gradient(
-    90deg,
-    #BFDCCD 0%,
-    #AFC3D6 40%,
-    #CFC4E3 72%,
-    #E8A3A1 var(--val, 0%),
-    rgba(34,40,48,0.12) var(--val, 0%)
-  );
+  touch-action: pan-y;
+  -webkit-tap-highlight-color: transparent;
+  will-change: background;
+  transition: none;
+  background:
+    linear-gradient(90deg, #BFDCCD 0%, #AFC3D6 42%, #CFC4E3 72%, #E8A3A1 100%) left center / var(--val, 0%) 6px no-repeat,
+    rgba(34,40,48,0.18) left center / 100% 6px no-repeat;
+}
+
+.nb-pathd-slider::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 999px;
+  background: transparent;
 }
 
 /* ── Thumb — webkit ── */
@@ -458,9 +461,88 @@ h1, h2, h3, h4 {
   cursor: grab;
 }
 .nb-pathd-slider::-moz-range-track {
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(34,40,48,0.18);
+}
+.nb-pathd-slider::-moz-range-progress {
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #BFDCCD 0%, #AFC3D6 42%, #CFC4E3 72%, #E8A3A1 100%);
+}
+
+.nb-tool-panels input[type="range"]:not(.nb-pathd-slider) {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 18px;
+  margin: 0;
+  border-radius: 999px;
+  outline: none;
+  cursor: pointer;
+  touch-action: pan-y;
+  -webkit-tap-highlight-color: transparent;
+  background: rgba(34,40,48,0.18) left center / 100% 4px no-repeat;
+}
+
+.nb-tool-panels input[type="range"]:not(.nb-pathd-slider)::-webkit-slider-runnable-track {
   height: 4px;
   border-radius: 999px;
-  background: rgba(34,40,48,0.10);
+  background: transparent;
+}
+
+.nb-tool-panels input[type="range"]:not(.nb-pathd-slider)::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  border: 2px solid #AFC3D6;
+  box-shadow: 0 1px 4px rgba(32,37,43,0.20), 0 0 0 3px rgba(175,195,214,0.10);
+}
+
+.nb-tool-panels input[type="range"]:not(.nb-pathd-slider)::-moz-range-track {
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(34,40,48,0.18);
+}
+
+.nb-tool-panels input[type="range"]:not(.nb-pathd-slider)::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  border: 2px solid #AFC3D6;
+  box-shadow: 0 1px 4px rgba(32,37,43,0.20);
+}
+
+.nb-nexai-ask-input::placeholder {
+  color: rgba(217,225,235,0.46);
+}
+
+.nb-ide-sidebar .lucide-layout-grid,
+.nb-ide-topbar .lucide-layout-grid,
+.nb-tool-shell__header .lucide-layout-grid {
+  display: block;
+  aspect-ratio: 1 / 1;
+  pointer-events: none;
+  shape-rendering: geometricPrecision;
+}
+
+.nb-ide-sidebar .lucide-layout-grid {
+  width: 14px;
+  height: 14px;
+}
+
+.nb-ide-topbar .lucide-layout-grid {
+  width: 12px;
+  height: 12px;
+}
+
+.nb-tool-shell__header .lucide-layout-grid {
+  width: 13px;
+  height: 13px;
 }
 
 /* ── Audit trail panel ── */

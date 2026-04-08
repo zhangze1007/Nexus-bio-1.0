@@ -19,6 +19,7 @@ import type { MachineState } from '../../machines/metabolicMachine';
 import { STATE_LABELS } from '../../machines/metabolicMachine';
 import { T } from '../ide/tokens';
 import { PATHD_THEME } from '../workbench/workbenchTheme';
+import { PATHD_FLOATING_PANEL_SHEEN, PATHD_FLOATING_PANEL_SURFACE } from './shared/pathdFloatingPanelStyles';
 
 // ── Parameter definitions ──────────────────────────────────────────────
 
@@ -114,6 +115,7 @@ function ParamSlider({ def, value, onChange, forceRef }: SliderProps) {
           <div style={{ width:`${pct}%`, height:'100%', borderRadius:`${PATHD_THEME.progressRadius}px`, background:PATHD_THEME.progressGradient, boxShadow:PATHD_THEME.progressGlow, transition:'width 0.08s' }} />
         </div>
         <input
+          className="nb-tool-overlay-slider"
           type="range"
           min={def.min} max={def.max} step={def.step}
           value={value}
@@ -127,13 +129,13 @@ function ParamSlider({ def, value, onChange, forceRef }: SliderProps) {
       </div>
 
       <style>{`
-        input[type=range]::-webkit-slider-thumb{
+        .nb-tool-overlay-slider::-webkit-slider-thumb{
           -webkit-appearance:none; width:12px; height:12px;
           border-radius:50%; background:${PATHD_THEME.paperElevated};
           box-shadow:0 0 0 1px rgba(34,40,48,0.12), 0 0 8px rgba(175,195,214,0.24);
           border:none; cursor:pointer;
         }
-        input[type=range]::-moz-range-thumb{
+        .nb-tool-overlay-slider::-moz-range-thumb{
           width:12px; height:12px; border-radius:50%;
           background:${PATHD_THEME.paperElevated}; border:none; cursor:pointer;
           box-shadow:0 0 0 1px rgba(34,40,48,0.12), 0 0 8px rgba(175,195,214,0.24);
@@ -187,24 +189,15 @@ export default function ToolOverlay({
         position:'absolute', left:'20px', top:'50%',
         transform:'translateY(-50%)',
         width:'240px', zIndex:10,
-        background: 'rgba(10,12,16,0.52)',
-        backdropFilter:'blur(24px) saturate(140%)',
-        WebkitBackdropFilter:'blur(24px) saturate(140%)',
-        borderRadius:'20px',
-        border:'1px solid rgba(255,255,255,0.12)',
-        boxShadow:'0 18px 42px rgba(0,0,0,0.38)',
         padding:'18px 16px',
         userSelect:'none',
+        ...PATHD_FLOATING_PANEL_SURFACE,
       }}
     >
       <div
         aria-hidden
         style={{
-          position: 'absolute',
-          inset: 0,
-          borderRadius: '20px',
-          background: 'linear-gradient(135deg, rgba(191,220,205,0.06) 0%, rgba(175,195,214,0.04) 55%, rgba(207,196,227,0.06) 100%)',
-          pointerEvents: 'none',
+          ...PATHD_FLOATING_PANEL_SHEEN,
         }}
       />
       {/* Header */}
