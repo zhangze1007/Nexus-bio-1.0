@@ -1,18 +1,17 @@
 /**
- * TactileSlider — Framer Motion animated range input.
+ * TactileSlider — unified PATHD gradient range input.
  *
- * Replaces bare <input type="range"> with a custom track + thumb
- * that pulses on interaction and shows neon-green (#39FF14) active state.
- * Renders at 60 fps via Framer Motion spring physics.
+ * Silky-smooth pointer-driven slider with zero animation lag: the fill
+ * and thumb are positioned directly from state so dragging back and forth
+ * tracks the cursor exactly. Matches the .nb-pathd-slider CSS slider so
+ * every slider across the app looks identical.
  */
 'use client';
 import { useRef, useCallback, useState } from 'react';
-import { motion, useSpring } from 'framer-motion';
 import { T } from '../../ide/tokens';
 import { PATHD_THEME } from '../../workbench/workbenchTheme';
 
-const NEON  = PATHD_THEME.sky;   // sky blue thumb accent
-const TRACK = 'rgba(255,255,255,0.06)';
+const TRACK = PATHD_THEME.progressTrack;
 
 interface TactileSliderProps {
   label: string;
@@ -22,24 +21,18 @@ interface TactileSliderProps {
   step: number;
   unit?: string;
   onChange: (v: number) => void;
+  /** Deprecated — kept for API compatibility; ignored. */
   color?: string;
 }
 
 export default function TactileSlider({
-  label, value, min, max, step, unit = '', onChange, color = NEON,
+  label, value, min, max, step, unit = '', onChange,
 }: TactileSliderProps) {
   const trackRef = useRef<HTMLDivElement>(null);
   const [dragging, setDragging] = useState(false);
   const [hovering, setHovering] = useState(false);
 
-  const pct = ((value - min) / (max - min)) * 100;
-
-  const thumbScale = useSpring(dragging ? 1.6 : hovering ? 1.2 : 1, {
-    stiffness: 400, damping: 25,
-  });
-  const glowOpacity = useSpring(dragging ? 0.5 : hovering ? 0.25 : 0, {
-    stiffness: 300, damping: 30,
-  });
+  const pct = Math.max(0, Math.min(100, ((value - min) / (max - min)) * 100));
 
   const resolve = useCallback((clientX: number) => {
     const el = trackRef.current;
@@ -69,16 +62,18 @@ export default function TactileSlider({
   return (
     <div style={{ marginBottom: '14px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-        <span style={{ fontFamily: T.SANS, fontSize: '10px', color: 'rgba(255,255,255,0.5)' }}>
+        <span style={{ fontFamily: T.SANS, fontSize: '10px', color: PATHD_THEME.label }}>
           {label}
         </span>
-        <motion.span
-          style={{ fontFamily: T.MONO, fontSize: '10px', color: 'rgba(255,255,255,0.7)' }}
-          animate={{ color: dragging ? color : 'rgba(255,255,255,0.7)' }}
-          transition={{ duration: 0.15 }}
+        <span
+          style={{
+            fontFamily: T.MONO,
+            fontSize: '10px',
+            color: PATHD_THEME.value,
+          }}
         >
           {value.toFixed(step < 1 ? 1 : 0)}{unit}
-        </motion.span>
+        </span>
       </div>
 
       {/* Track */}
@@ -91,53 +86,44 @@ export default function TactileSlider({
         onMouseEnter={() => setHovering(true)}
         onMouseLeave={() => { setHovering(false); setDragging(false); }}
         style={{
-          position: 'relative', width: '100%', height: '28px',
+          position: 'relative', width: '100%', height: '18px',
           cursor: 'pointer', touchAction: 'none',
           display: 'flex', alignItems: 'center',
         }}
       >
         {/* Background track */}
         <div style={{
-          position: 'absolute', left: 0, right: 0, height: '3px',
-          borderRadius: '2px', background: TRACK,
+          position: 'absolute', left: 0, right: 0, height: `${PATHD_THEME.progressHeight}px`,
+          borderRadius: `${PATHD_THEME.progressRadius}px`, background: TRACK,
         }} />
 
-        {/* Filled track */}
+        {/* Filled track — instant, no transition */}
         <div
           style={{
-            position: 'absolute', left: 0, height: '3px',
-            borderRadius: '2px',
+            position: 'absolute', left: 0, height: `${PATHD_THEME.progressHeight}px`,
+            borderRadius: `${PATHD_THEME.progressRadius}px`,
             background: PATHD_THEME.progressGradient,
             width: `${pct}%`,
-            opacity: dragging ? 1 : 0.7,
-            transition: 'width 0.08s ease, opacity 0.15s',
+            boxShadow: dragging || hovering ? PATHD_THEME.progressGlow : 'none',
           }}
         />
 
-        {/* Glow */}
-        <motion.div
+        {/* Thumb — instant, white with sky border to match nb-pathd-slider */}
+        <div
           style={{
             position: 'absolute',
-            left: `calc(${pct}% - 14px)`,
-            width: '28px', height: '28px', borderRadius: '50%',
-            background: 'rgba(175,195,214,0.6)',
-            filter: 'blur(10px)',
+            left: `calc(${pct}% - 7px)`,
+            width: '14px', height: '14px', borderRadius: '50%',
+            background: '#FFFFFF',
+            border: `2px solid ${PATHD_THEME.sky}`,
+            boxShadow: dragging
+              ? `0 2px 8px rgba(32,37,43,0.32), 0 0 0 6px rgba(175,195,214,0.22)`
+              : hovering
+                ? `0 1px 6px rgba(32,37,43,0.24), 0 0 0 4px rgba(175,195,214,0.14)`
+                : `0 1px 4px rgba(32,37,43,0.20), 0 0 0 3px rgba(175,195,214,0.1)`,
+            transform: dragging ? 'scale(1.15)' : 'scale(1)',
+            transition: 'box-shadow 0.15s, transform 0.1s',
             pointerEvents: 'none',
-            opacity: glowOpacity,
-          }}
-        />
-
-        {/* Thumb */}
-        <motion.div
-          style={{
-            position: 'absolute',
-            left: `calc(${pct}% - 6px)`,
-            width: '12px', height: '12px', borderRadius: '50%',
-            background: '#000',
-            border: `2px solid ${color}`,
-            boxShadow: dragging ? `0 0 12px ${color}80` : 'none',
-            pointerEvents: 'none',
-            scale: thumbScale,
           }}
         />
       </div>

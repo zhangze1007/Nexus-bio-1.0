@@ -14,7 +14,7 @@
  *   Desktop: 60 FPS  |  Mobile MatePad 11.5: 45 FPS (dpr capped at 1.2)
  */
 
-import { useEffect, useRef, useCallback, useMemo } from 'react';
+import { useEffect, useRef, useCallback, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMachine } from '@xstate/react';
 import FluidSimCanvas from './FluidSimCanvas';
@@ -64,6 +64,10 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
   const project = useWorkbenchStore((s) => s.project);
   const analyzeArtifact = useWorkbenchStore((s) => s.analyzeArtifact);
   const setToolPayload = useWorkbenchStore((s) => s.setToolPayload);
+
+  // ── Dismissible center dashboards — let user clear the view of the 3D canvas
+  const [heroDismissed, setHeroDismissed] = useState(false);
+  const [methodStripDismissed, setMethodStripDismissed] = useState(false);
 
   // ── Zustand: node selection + AI-generated pathway ───────────────
   const selectedNode    = useUIStore(s => s.selectedNode);
@@ -292,11 +296,13 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
             isSimulated={!analyzeArtifact}
           />
         </div>
-        <div style={{ pointerEvents: 'auto' }}>
+        {!heroDismissed && <div style={{ pointerEvents: 'auto' }}>
           <ScientificHero
             eyebrow="Stage 1 · Pathway & Enzyme Design"
             title={`${activeRouteLabel} is the current design object`}
             summary="PATHD should read like the front door to the whole scientific program. This page now surfaces the active route, bottleneck pressure, enzyme opportunity, and next tool handoff before the scientist dives into the 3D pathway graph."
+            dismissible
+            onDismiss={() => setHeroDismissed(true)}
             aside={
               <>
                 <div style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
@@ -339,10 +345,12 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
               },
             ]}
           />
-        </div>
-        <div style={{ pointerEvents: 'auto' }}>
+        </div>}
+        {!methodStripDismissed && <div style={{ pointerEvents: 'auto' }}>
           <ScientificMethodStrip
             label="Pathway workbench"
+            dismissible
+            onDismiss={() => setMethodStripDismissed(true)}
             items={[
               {
                 title: 'Route object',
@@ -364,7 +372,41 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
               },
             ]}
           />
-        </div>
+        </div>}
+        {(heroDismissed || methodStripDismissed) && (
+          <div style={{ pointerEvents: 'auto', display: 'flex', justifyContent: 'flex-end' }}>
+            <button
+              type="button"
+              onClick={() => { setHeroDismissed(false); setMethodStripDismissed(false); }}
+              style={{
+                padding: '5px 12px',
+                borderRadius: '100px',
+                background: 'rgba(10,12,16,0.52)',
+                border: '1px solid rgba(255,255,255,0.14)',
+                backdropFilter: 'blur(16px)',
+                WebkitBackdropFilter: 'blur(16px)',
+                color: PATHD_THEME.label,
+                fontFamily: T.MONO,
+                fontSize: '9px',
+                fontWeight: 600,
+                textTransform: 'uppercase',
+                letterSpacing: '0.1em',
+                cursor: 'pointer',
+                transition: 'background 0.15s, color 0.15s',
+              }}
+              onMouseEnter={e => {
+                (e.currentTarget as HTMLElement).style.background = 'rgba(10,12,16,0.72)';
+                (e.currentTarget as HTMLElement).style.color = PATHD_THEME.value;
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLElement).style.background = 'rgba(10,12,16,0.52)';
+                (e.currentTarget as HTMLElement).style.color = PATHD_THEME.label;
+              }}
+            >
+              ↺ Restore dashboard
+            </button>
+          </div>
+        )}
       </div>
 
       {/* ── Center: 3D Pathway Visualization — full-screen, panels float over ── */}
@@ -420,24 +462,20 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
             onClick={handleStart}
             style={{
               position:'absolute', bottom:'28px', left:'50%', transform:'translateX(-50%)',
-              fontFamily: T.MONO, fontSize:'10px', color:PATHD_THEME.paperLabel,
+              fontFamily: T.MONO, fontSize:'10px', color:'#111318',
               textTransform:'uppercase', letterSpacing:'0.15em', zIndex:25,
-              background:'rgba(255,255,255,0.92)', border:`1px solid ${PATHD_THEME.paperBorder}`,
+              background:'rgba(255,255,255,0.88)', border:'none',
               borderRadius:'100px', padding:'8px 20px', cursor:'pointer',
-              transition:'color 0.2s, border-color 0.2s, background 0.2s, box-shadow 0.2s',
-              boxShadow:'0 12px 28px rgba(96,74,56,0.16)',
+              transition:'background 0.2s, box-shadow 0.2s',
+              boxShadow:'0 12px 28px rgba(0,0,0,0.32)',
             }}
             onMouseEnter={e => {
-              (e.currentTarget as HTMLElement).style.color = PATHD_THEME.paperValue;
-              (e.currentTarget as HTMLElement).style.borderColor = 'rgba(175,195,214,0.34)';
-              (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.98)';
-              (e.currentTarget as HTMLElement).style.boxShadow = '0 16px 34px rgba(96,74,56,0.22)';
+              (e.currentTarget as HTMLElement).style.background = '#ffffff';
+              (e.currentTarget as HTMLElement).style.boxShadow = '0 16px 34px rgba(0,0,0,0.4)';
             }}
             onMouseLeave={e => {
-              (e.currentTarget as HTMLElement).style.color = PATHD_THEME.paperLabel;
-              (e.currentTarget as HTMLElement).style.borderColor = PATHD_THEME.paperBorder;
-              (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.92)';
-              (e.currentTarget as HTMLElement).style.boxShadow = '0 12px 28px rgba(96,74,56,0.16)';
+              (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.88)';
+              (e.currentTarget as HTMLElement).style.boxShadow = '0 12px 28px rgba(0,0,0,0.32)';
             }}
           >
             ▶ Start Simulation

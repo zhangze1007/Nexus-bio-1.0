@@ -80,7 +80,7 @@ function DataRow({ label, value, unit, decimals = 2 }: {
   return (
     <div style={{
       display:'flex', alignItems:'center', justifyContent:'space-between',
-      padding:'5px 0', borderBottom:`1px solid ${PATHD_THEME.sepiaPanelBorder}`,
+      padding:'5px 0', borderBottom:'1px solid rgba(255,255,255,0.06)',
     }}>
       <span style={{ fontFamily: T.SANS, fontSize:'10px', color:PATHD_THEME.label, fontWeight:500 }}>
         {label}
@@ -119,7 +119,7 @@ function CofactorMatrix({ readouts }: { readouts: SimReadouts }) {
   return (
       <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'6px', marginTop:'8px' }}>
       {items.map(({ l, v, u, opacity }) => (
-        <div key={l} style={{ padding:'8px 6px', borderRadius:'10px', background:PATHD_THEME.panelSurface, border:`0.5px solid ${PATHD_THEME.sepiaPanelBorder}`, textAlign:'center' }}>
+        <div key={l} style={{ padding:'8px 6px', borderRadius:'10px', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.10)', textAlign:'center' }}>
           <div style={{ fontFamily: T.MONO, fontSize:'11px', fontWeight:700, color:opacity > 0.7 ? PATHD_THEME.value : PATHD_THEME.label, fontVariantNumeric:'tabular-nums' }}>
             {v.toFixed(1)}
           </div>
@@ -184,13 +184,12 @@ export default function StatusOverlay({
         position:'absolute', right:'20px', top:'50%',
         transform:'translateY(-50%)',
         width:'230px', zIndex:10,
-        background: PATHD_THEME.sepiaPanelMuted,
-        backdropFilter:'blur(28px)',
-        WebkitBackdropFilter:'blur(28px)',
+        background: 'rgba(10,12,16,0.52)',
+        backdropFilter:'blur(24px) saturate(140%)',
+        WebkitBackdropFilter:'blur(24px) saturate(140%)',
         borderRadius:'20px',
-        border:`1px solid ${PATHD_THEME.sepiaPanelBorder}`,
-        borderTop:`1px solid rgba(255,255,255,0.5)`,
-        boxShadow:'0 18px 42px rgba(32,37,43,0.08), inset 0 1px 0 rgba(255,255,255,0.48)',
+        border:'1px solid rgba(255,255,255,0.12)',
+        boxShadow:'0 18px 42px rgba(0,0,0,0.38)',
         padding:'18px 16px',
       }}
     >
@@ -200,7 +199,7 @@ export default function StatusOverlay({
           position: 'absolute',
           inset: 0,
           borderRadius: '20px',
-          background: 'linear-gradient(135deg, rgba(207,196,227,0.12) 0%, rgba(175,195,214,0.08) 48%, rgba(191,220,205,0.1) 100%)',
+          background: 'linear-gradient(135deg, rgba(207,196,227,0.06) 0%, rgba(175,195,214,0.04) 48%, rgba(191,220,205,0.06) 100%)',
           pointerEvents: 'none',
         }}
       />
@@ -232,7 +231,7 @@ export default function StatusOverlay({
         <Sparkline data={rateHistory} height={40} />
       </div>
 
-      <div style={{ borderTop:`0.5px solid ${PATHD_THEME.sepiaPanelBorder}`, paddingTop:'10px', marginBottom:'8px', position:'relative', zIndex:1 }}>
+      <div style={{ borderTop:'1px solid rgba(255,255,255,0.08)', paddingTop:'10px', marginBottom:'8px', position:'relative', zIndex:1 }}>
         <DataRow label="ATP Yield"   value={readouts.atpYield}         unit="mol/mol"  decimals={2} />
         <DataRow label="NADPH Rate"  value={readouts.nadphRate}        unit="μmol/min" decimals={2} />
         <DataRow label="Carbon Eff." value={readouts.carbonEfficiency} unit="%"        decimals={1} />
@@ -258,7 +257,7 @@ export default function StatusOverlay({
             initial={{ opacity:0, y:6 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0 }}
             style={{
               marginTop:'12px', padding:'8px 10px', borderRadius:'10px',
-              background:'rgba(191,220,205,0.18)', border:`0.5px solid ${PATHD_THEME.sepiaPanelBorder}`,
+              background:'rgba(191,220,205,0.14)', border:'1px solid rgba(191,220,205,0.28)',
               textAlign:'center',
             }}
           >
@@ -275,7 +274,7 @@ export default function StatusOverlay({
             initial={{ opacity:0, y:6 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0 }}
             style={{
               marginTop:'12px', padding:'8px 10px', borderRadius:'10px',
-              background:'rgba(232,163,161,0.18)', border:`0.5px solid ${PATHD_THEME.sepiaPanelBorder}`,
+              background:'rgba(232,163,161,0.14)', border:'1px solid rgba(232,163,161,0.28)',
               textAlign:'center',
             }}
           >

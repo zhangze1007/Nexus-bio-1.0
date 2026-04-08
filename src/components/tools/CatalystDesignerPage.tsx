@@ -96,7 +96,7 @@ const SectionLabel = ({ children }: { children: React.ReactNode }) => (
 /* ── Binding Radar SVG ────────────────────────────────────────────── */
 
 function BindingRadar({ result }: { result: BindingAffinityResult }) {
-  const W = 520, H = 460;
+  const W = 560, H = 460;
   const axes = [
     { label: 'Distance', value: result.distanceScore },
     { label: 'Orientation', value: result.orientationScore },
@@ -104,67 +104,93 @@ function BindingRadar({ result }: { result: BindingAffinityResult }) {
     { label: 'Electrostatic', value: result.electrostaticScore },
   ];
 
+  // Left box: diagnostics (label + bar + value all inside)
+  const LEFT_X = 20, LEFT_W = 248;
+  const BAR_X = 116, BAR_W = 100;                         // bar: 116..216
+  const BAR_MARKER = BAR_X + Math.round(BAR_W * 0.95);    // 95% marker inside bar
+  const VAL_X = BAR_X + BAR_W + 8;                        // value text: 224
+
+  // Right box: overall score + predicted Kd + binding energy
+  const RIGHT_X = 284, RIGHT_W = 256;
+  const RIGHT_INNER = RIGHT_X + 16;                       // text starts at 300
+
   return (
     <svg role="img" aria-label="Chart" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
       <rect width={W} height={H} fill="#050505" rx={12} />
-      <rect x="20" y="24" width="220" height="154" rx="14" fill="rgba(255,255,255,0.025)" stroke="rgba(255,255,255,0.06)" />
-      <text x="36" y="18" fontFamily={T.SANS} fontSize="9" fill={LABEL} letterSpacing="0.12em">ACTIVE-SITE DIAGNOSTICS</text>
-      <text x="36" y="32" fontFamily={T.SANS} fontSize="11" fill={VALUE}>Binding dimensions against optimal docking envelope</text>
+
+      {/* ── Left box: ACTIVE-SITE DIAGNOSTICS ── */}
+      <rect x={LEFT_X} y="24" width={LEFT_W} height="154" rx="14" fill="rgba(255,255,255,0.025)" stroke="rgba(255,255,255,0.06)" />
+      <text x={LEFT_X + 16} y="44" fontFamily={T.SANS} fontSize="9" fill={LABEL} letterSpacing="0.12em">ACTIVE-SITE DIAGNOSTICS</text>
+      <text x={LEFT_X + 16} y="60" fontFamily={T.SANS} fontSize="10" fill={VALUE}>Binding dimensions vs. optimal envelope</text>
       {axes.map((ax, index) => {
-        const y = 56 + index * 28;
-        const width = ax.value * 136;
+        const y = 86 + index * 22;
+        const width = ax.value * BAR_W;
         return (
           <g key={ax.label}>
-            <text x="36" y={y} fontFamily={T.SANS} fontSize="9" fill={LABEL}>{ax.label}</text>
-            <rect x="122" y={y - 8} width="136" height="10" rx="5" fill="rgba(255,255,255,0.05)" />
-            <rect x="122" y={y - 8} width={width} height="10" rx="5" fill={PHASE_COLORS.binding} opacity="0.82" />
-            <line x1="230" y1={y - 12} x2="230" y2={y + 4} stroke="rgba(255,255,255,0.3)" strokeDasharray="3 2" />
-            <text x="270" y={y} fontFamily={T.MONO} fontSize="8" fill={VALUE}>{ax.value.toFixed(3)}</text>
+            <text x={LEFT_X + 16} y={y + 3} fontFamily={T.SANS} fontSize="9" fill={LABEL}>{ax.label}</text>
+            <rect x={BAR_X} y={y - 5} width={BAR_W} height="8" rx="4" fill="rgba(255,255,255,0.05)" />
+            <rect x={BAR_X} y={y - 5} width={width} height="8" rx="4" fill={PHASE_COLORS.binding} opacity="0.82" />
+            <line x1={BAR_MARKER} y1={y - 9} x2={BAR_MARKER} y2={y + 7} stroke="rgba(255,255,255,0.3)" strokeDasharray="3 2" />
+            <text x={VAL_X} y={y + 3} fontFamily={T.MONO} fontSize="9" fill={VALUE}>{ax.value.toFixed(3)}</text>
           </g>
         );
       })}
-      <rect x="268" y="24" width="232" height="154" rx="14" fill="rgba(255,255,255,0.025)" stroke="rgba(255,255,255,0.06)" />
-      <text x="284" y="52" fontFamily={T.MONO} fontSize="28" fill="rgba(247,249,255,0.92)">{result.overallScore.toFixed(3)}</text>
-      <text x="284" y="67" fontFamily={T.SANS} fontSize="9" fill={LABEL}>overall catalytic fit</text>
-      <text x="284" y="104" fontFamily={T.SANS} fontSize="9" fill={LABEL}>Predicted Kd</text>
-      <text x="284" y="118" fontFamily={T.MONO} fontSize="14" fill={VALUE}>{result.predictedKd.toFixed(2)} μM</text>
-      <text x="392" y="104" fontFamily={T.SANS} fontSize="9" fill={LABEL}>Binding energy</text>
-      <text x="392" y="118" fontFamily={T.MONO} fontSize="14" fill={VALUE}>{result.bindingEnergy.toFixed(2)} kcal/mol</text>
-      <text x="284" y="148" fontFamily={T.SANS} fontSize="9" fill="rgba(255,255,255,0.42)">
-        {result.interpretation}
+
+      {/* ── Right box: overall score ── */}
+      <rect x={RIGHT_X} y="24" width={RIGHT_W} height="154" rx="14" fill="rgba(255,255,255,0.025)" stroke="rgba(255,255,255,0.06)" />
+      <text x={RIGHT_INNER} y="44" fontFamily={T.SANS} fontSize="9" fill={LABEL} letterSpacing="0.12em">CATALYTIC FIT</text>
+      <text x={RIGHT_INNER} y="86" fontFamily={T.MONO} fontSize="32" fill="rgba(247,249,255,0.92)">{result.overallScore.toFixed(3)}</text>
+      <text x={RIGHT_INNER} y="102" fontFamily={T.SANS} fontSize="9" fill={LABEL}>overall catalytic fit</text>
+
+      <text x={RIGHT_INNER} y="130" fontFamily={T.SANS} fontSize="9" fill={LABEL}>Predicted Kd</text>
+      <text x={RIGHT_INNER} y="146" fontFamily={T.MONO} fontSize="13" fill={VALUE}>{result.predictedKd.toFixed(2)} μM</text>
+      <text x={RIGHT_INNER + 112} y="130" fontFamily={T.SANS} fontSize="9" fill={LABEL}>Binding energy</text>
+      <text x={RIGHT_INNER + 112} y="146" fontFamily={T.MONO} fontSize="13" fill={VALUE}>{result.bindingEnergy.toFixed(2)} kcal/mol</text>
+      <text x={RIGHT_INNER} y="168" fontFamily={T.SANS} fontSize="9" fill="rgba(255,255,255,0.5)">
+        {(result.interpretation || '').slice(0, 48)}
       </text>
 
-      <rect x="20" y="198" width="480" height="226" rx="14" fill="rgba(255,255,255,0.025)" stroke="rgba(255,255,255,0.06)" />
-      <text x="36" y="218" fontFamily={T.MONO} fontSize="8" fill={LABEL}>BINDING ENERGY DECOMPOSITION</text>
+      {/* ── Bottom box: BINDING ENERGY DECOMPOSITION ── */}
+      <rect x={LEFT_X} y="198" width={W - 2 * LEFT_X} height="226" rx="14" fill="rgba(255,255,255,0.025)" stroke="rgba(255,255,255,0.06)" />
+      <text x={LEFT_X + 16} y="218" fontFamily={T.MONO} fontSize="8" fill={LABEL} letterSpacing="0.08em">BINDING ENERGY DECOMPOSITION</text>
       {[
-        { label: 'Distance fit', value: result.distanceScore, color: '#F0FDFA' },
-        { label: 'Orientation fit', value: result.orientationScore, color: '#5151CD' },
-        { label: 'vdW packing', value: result.vdwScore, color: '#FF8B1F' },
-        { label: 'Electrostatic complementarity', value: result.electrostaticScore, color: '#93CB52' },
+        { label: 'Distance fit',         value: result.distanceScore,      color: PATHD_THEME.mint },
+        { label: 'Orientation fit',      value: result.orientationScore,   color: PATHD_THEME.sky },
+        { label: 'vdW packing',          value: result.vdwScore,           color: PATHD_THEME.apricot },
+        { label: 'Electrostatic compl.', value: result.electrostaticScore, color: PATHD_THEME.lilac },
       ].map((item, index) => {
-        const x = 42 + index * 112;
+        const x = 42 + index * 64;
         const height = item.value * 112;
         return (
           <g key={item.label}>
             <rect x={x} y={338 - height} width="48" height={height} rx="8" fill={item.color} opacity="0.82" />
             <rect x={x} y="226" width="48" height="112" rx="8" fill="none" stroke="rgba(255,255,255,0.08)" />
             <text x={x + 24} y="352" textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill={VALUE}>{item.value.toFixed(2)}</text>
-            <text x={x + 24} y="372" textAnchor="middle" fontFamily={T.SANS} fontSize="8" fill={LABEL}>
-              {item.label.length > 13 ? `${item.label.slice(0, 12)}…` : item.label}
+            <text x={x + 24} y="372" textAnchor="middle" fontFamily={T.SANS} fontSize="7" fill={LABEL}>
+              {item.label.length > 15 ? `${item.label.slice(0, 14)}…` : item.label}
             </text>
           </g>
         );
       })}
-      <line x1="314" y1="234" x2="314" y2="394" stroke="rgba(255,255,255,0.08)" />
-      <text x="332" y="242" fontFamily={T.MONO} fontSize="8" fill={LABEL}>Design note</text>
-      <text x="332" y="260" fontFamily={T.SANS} fontSize="10" fill={VALUE}>
-        Use residues with the weakest bars as first-pass mutagenesis targets.
+      <line x1="312" y1="234" x2="312" y2="410" stroke="rgba(255,255,255,0.08)" />
+      <text x="328" y="244" fontFamily={T.MONO} fontSize="8" fill={LABEL} letterSpacing="0.08em">DESIGN NOTE</text>
+      <text x="328" y="266" fontFamily={T.SANS} fontSize="10" fill={VALUE}>
+        Use the weakest bars as first-pass
       </text>
-      <text x="332" y="278" fontFamily={T.SANS} fontSize="10" fill={VALUE}>
-        A score above 0.80 means the catalytic pocket is already close to
+      <text x="328" y="280" fontFamily={T.SANS} fontSize="10" fill={VALUE}>
+        mutagenesis targets.
       </text>
-      <text x="332" y="292" fontFamily={T.SANS} fontSize="10" fill={VALUE}>
-        a viable wet-lab prototype, so effort should move to stability and flux.
+      <text x="328" y="306" fontFamily={T.SANS} fontSize="10" fill={LABEL}>
+        A score &gt; 0.80 means the catalytic
+      </text>
+      <text x="328" y="320" fontFamily={T.SANS} fontSize="10" fill={LABEL}>
+        pocket is already close to a viable
+      </text>
+      <text x="328" y="334" fontFamily={T.SANS} fontSize="10" fill={LABEL}>
+        wet-lab prototype, so effort should
+      </text>
+      <text x="328" y="348" fontFamily={T.SANS} fontSize="10" fill={LABEL}>
+        move to stability and flux.
       </text>
     </svg>
   );

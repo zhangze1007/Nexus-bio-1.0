@@ -187,13 +187,12 @@ export default function ToolOverlay({
         position:'absolute', left:'20px', top:'50%',
         transform:'translateY(-50%)',
         width:'240px', zIndex:10,
-        background: PATHD_THEME.sepiaPanelMuted,
-        backdropFilter:'blur(28px)',
-        WebkitBackdropFilter:'blur(28px)',
+        background: 'rgba(10,12,16,0.52)',
+        backdropFilter:'blur(24px) saturate(140%)',
+        WebkitBackdropFilter:'blur(24px) saturate(140%)',
         borderRadius:'20px',
-        border:`1px solid ${PATHD_THEME.sepiaPanelBorder}`,
-        borderTop:`1px solid rgba(255,255,255,0.5)`,
-        boxShadow:'0 18px 42px rgba(32,37,43,0.08), inset 0 1px 0 rgba(255,255,255,0.48)',
+        border:'1px solid rgba(255,255,255,0.12)',
+        boxShadow:'0 18px 42px rgba(0,0,0,0.38)',
         padding:'18px 16px',
         userSelect:'none',
       }}
@@ -204,7 +203,7 @@ export default function ToolOverlay({
           position: 'absolute',
           inset: 0,
           borderRadius: '20px',
-          background: 'linear-gradient(135deg, rgba(191,220,205,0.12) 0%, rgba(175,195,214,0.08) 55%, rgba(231,199,169,0.12) 100%)',
+          background: 'linear-gradient(135deg, rgba(191,220,205,0.06) 0%, rgba(175,195,214,0.04) 55%, rgba(207,196,227,0.06) 100%)',
           pointerEvents: 'none',
         }}
       />
@@ -222,8 +221,8 @@ export default function ToolOverlay({
             style={{
               display:'flex', alignItems:'center', gap:'5px',
               padding:'2px 8px', borderRadius:'100px',
-              background:'rgba(255,255,255,0.62)',
-              border:`0.5px solid ${PATHD_THEME.sepiaPanelBorder}`,
+              background:'rgba(255,255,255,0.06)',
+              border:'1px solid rgba(255,255,255,0.12)',
             }}
           >
             <motion.div
@@ -236,7 +235,7 @@ export default function ToolOverlay({
             </span>
           </motion.div>
         </div>
-        <div style={{ marginTop:'8px', borderBottom:`0.5px solid ${PATHD_THEME.sepiaPanelBorder}`, paddingBottom:'12px' }}>
+        <div style={{ marginTop:'8px', borderBottom:'1px solid rgba(255,255,255,0.08)', paddingBottom:'12px' }}>
           <span style={{ fontFamily: T.SANS, fontSize:'12px', fontWeight:600, color:PATHD_THEME.value }}>
             Metabolic Parameters
           </span>
@@ -257,10 +256,10 @@ export default function ToolOverlay({
       </div>
 
       {/* Divider */}
-      <div style={{ borderTop:`0.5px solid ${PATHD_THEME.sepiaPanelBorder}`, margin:'12px 0' }} />
+      <div style={{ borderTop:'1px solid rgba(255,255,255,0.08)', margin:'12px 0', position:'relative', zIndex:1 }} />
 
       {/* Action buttons */}
-      <div style={{ display:'flex', gap:'6px', marginBottom:'8px' }}>
+      <div style={{ display:'flex', gap:'6px', marginBottom:'8px', position:'relative', zIndex:1 }}>
         {state === 'idle' && (
           <ActionBtn label="▶ Start" brightness={0.85} onClick={onStart} className="nb-pathd-overlay-idle-start" />
         )}
@@ -282,7 +281,7 @@ export default function ToolOverlay({
       </div>
 
       {/* Michaelis-Menten preview formula */}
-      <div style={{ marginTop:'14px', padding:'10px', borderRadius:'12px', background:PATHD_THEME.panelSurface, border:`0.5px solid ${PATHD_THEME.sepiaPanelBorder}` }}>
+      <div style={{ marginTop:'14px', padding:'10px', borderRadius:'12px', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.10)', position:'relative', zIndex:1 }}>
         <span style={{ fontFamily: T.MONO, fontSize:'9px', color:PATHD_THEME.label, display:'block', marginBottom:'4px', textTransform:'uppercase', letterSpacing:'0.08em' }}>
           Kinetics Preview
         </span>
