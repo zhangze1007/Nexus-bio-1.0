@@ -9,6 +9,7 @@ import { PathwayNode, PathwayEdge } from '../types';
 type Vec3 = [number, number, number];
 type RendererMode = 'loading' | 'webgpu' | 'webgl2' | 'webgl' | 'error';
 type SceneViewMode = 'network' | 'flow' | 'risk';
+type OpticalInsetBox = { top: number; right: number; bottom: number; left: number };
 type ConfigurableRenderer = {
   setSize: (w: number, h: number, updateStyle?: boolean) => void;
   toneMapping: THREE.ToneMapping;
@@ -17,6 +18,41 @@ type ConfigurableRenderer = {
 };
 
 const INIT_TIMEOUT_MS = 2000;
+const CAMERA_FRAME_PADDING = 1.44;
+const CAMERA_ELEVATION_RATIO = 0.04;
+
+function normalizeOpticalInsets(
+  fullscreen: boolean,
+  insets?: Partial<OpticalInsetBox>,
+): OpticalInsetBox {
+  const defaults = fullscreen
+    ? { top: 22, right: 22, bottom: 22, left: 22 }
+    : { top: 58, right: 22, bottom: 24, left: 22 };
+  return {
+    top: Math.max(0, insets?.top ?? defaults.top),
+    right: Math.max(0, insets?.right ?? defaults.right),
+    bottom: Math.max(0, insets?.bottom ?? defaults.bottom),
+    left: Math.max(0, insets?.left ?? defaults.left),
+  };
+}
+
+function getBoundsCenterAndSize(nodes: PathwayNode[]) {
+  const box = new THREE.Box3();
+  nodes.forEach((node) => {
+    if (node && Array.isArray(node.position) && node.position.length === 3) {
+      box.expandByPoint(new THREE.Vector3(...(node.position as [number, number, number])));
+    }
+  });
+
+  const center = new THREE.Vector3();
+  const size = new THREE.Vector3();
+  if (!box.isEmpty()) {
+    box.getCenter(center);
+    box.getSize(size);
+  }
+
+  return { center, size, box };
+}
 
 function withTimeout<T>(promise: Promise<T>, label: string): Promise<T> {
   return new Promise<T>((resolve, reject) => {
@@ -389,13 +425,13 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov
         </mesh>
       ))}
 
-      <Html position={[0, -(nodeRadius * 1.2), 0]} center style={{ pointerEvents: 'none', whiteSpace: 'nowrap' }}>
+      <Html position={[0, -(nodeRadius * 0.82), 0]} center style={{ pointerEvents: 'none', whiteSpace: 'nowrap' }}>
         <div style={{
           color: hov || sel ? '#fff' : 'rgba(160,180,200,0.55)',
-          fontSize: '10px', fontWeight: sel ? 600 : 400,
-          fontFamily: "'JetBrains Mono', 'Fira Code', monospace", letterSpacing: '0.02em',
+          fontSize: '9px', fontWeight: sel ? 600 : 500,
+          fontFamily: "'JetBrains Mono', 'Fira Code', monospace", letterSpacing: '0.01em',
           textShadow: '0 1px 12px rgba(0,0,0,0.9), 0 0 24px rgba(0,0,0,0.7)',
-          padding: '2px 7px', background: sel ? 'rgba(200,216,232,0.07)' : 'transparent',
+          padding: '2px 6px', background: sel ? 'rgba(200,216,232,0.08)' : 'transparent',
           borderRadius: '4px', border: sel ? '1px solid rgba(200,216,232,0.14)' : '1px solid transparent',
           transition: 'color 0.2s',
         }}>{lbl}</div>
@@ -586,7 +622,7 @@ function FluxParticles({ edges, nodes, flowSpeed, glowMultiplier }: {
 }
 
 // ─── Scene — unified lighting, integrated depth ────────────────────────
-function Scene({ nodes, edges, onNodeClick, selectedNodeId, roughnessTexture, glowMultiplier, flowSpeed, stressIndex, viewMode, resetSignal }: { nodes:PathwayNode[]; edges:PathwayEdge[]; onNodeClick:(n:PathwayNode)=>void; selectedNodeId:string|null; roughnessTexture:THREE.Texture | null; glowMultiplier:number; flowSpeed:number; stressIndex:number; viewMode: SceneViewMode; resetSignal?: number; }) {
+function Scene({ nodes, edges, onNodeClick, selectedNodeId, roughnessTexture, glowMultiplier, flowSpeed, stressIndex, viewMode, resetSignal, opticalInsets }: { nodes:PathwayNode[]; edges:PathwayEdge[]; onNodeClick:(n:PathwayNode)=>void; selectedNodeId:string|null; roughnessTexture:THREE.Texture | null; glowMultiplier:number; flowSpeed:number; stressIndex:number; viewMode: SceneViewMode; resetSignal?: number; opticalInsets: OpticalInsetBox; }) {
   const [hovId, setHovId]       = useState<string|null>(null);
   const [interact, setInteract] = useState(false);
   const controlsRef = useRef<OrbitControlsHandle | null>(null);
@@ -602,24 +638,18 @@ function Scene({ nodes, edges, onNodeClick, selectedNodeId, roughnessTexture, gl
   const cameraFov = (camera as THREE.PerspectiveCamera).fov ?? 44;
 
   const { centroid, camOffset } = useMemo(() => {
-    const box = new THREE.Box3();
-    nodes.forEach(n => {
-      if (n && Array.isArray(n.position) && n.position.length === 3) {
-        box.expandByPoint(new THREE.Vector3(...(n.position as [number,number,number])));
-      }
-    });
-    const center = new THREE.Vector3();
-    const sz     = new THREE.Vector3();
-    if (!box.isEmpty()) { box.getCenter(center); box.getSize(sz); }
+    const { center, size } = getBoundsCenterAndSize(nodes);
+    const labelAwareSize = size.clone();
+    labelAwareSize.x += Math.min(2.2, Math.max(1.2, size.x * 0.16));
+    labelAwareSize.y += Math.min(1.2, Math.max(0.8, size.y * 0.18));
     // Derive actual half-FOV from the camera's vertical FOV and viewport aspect ratio
     const vHalfRad = (cameraFov / 2) * Math.PI / 180;
     const hHalfRad = Math.atan(Math.tan(vHalfRad) * aspect); // horizontal half-FOV from aspect
     const MIN_DISTANCE = 5;
-    const VIEWPORT_PADDING = 1.55; // Ensures full pathway network fits viewport without manual zoom-out
-    const distForX = (sz.x / 2) / Math.tan(hHalfRad);
-    const distForY = (sz.y / 2) / Math.tan(vHalfRad);
-    const dist = Math.max(distForX, distForY, MIN_DISTANCE) * VIEWPORT_PADDING + (sz.z / 2);
-    return { centroid: center, camOffset: { y: sz.y * 0.08, z: dist } };
+    const distForX = (labelAwareSize.x / 2) / Math.tan(hHalfRad);
+    const distForY = (labelAwareSize.y / 2) / Math.tan(vHalfRad);
+    const dist = Math.max(distForX, distForY, MIN_DISTANCE) * CAMERA_FRAME_PADDING + (labelAwareSize.z / 2);
+    return { centroid: center, camOffset: { y: size.y * CAMERA_ELEVATION_RATIO, z: dist } };
   }, [nodes, aspect, cameraFov]);
   useEffect(() => {
     camera.position.set(centroid.x, centroid.y + camOffset.y, centroid.z + camOffset.z);
@@ -631,7 +661,7 @@ function Scene({ nodes, edges, onNodeClick, selectedNodeId, roughnessTexture, gl
     // When resetSignal fires, also clear interact so auto-rotate resumes
     if (resetSignal) setInteract(false);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [centroid, camOffset, camera, resetSignal]);
+  }, [camera, camOffset, centroid, resetSignal]);
 
   const cc = useMemo(() => {
     const c: Record<string,number> = {};
@@ -692,9 +722,9 @@ function ResizeHandler() {
 }
 
 // ─── Main Component — loading fallback and scene unified ─────────────
-interface Props { nodes:PathwayNode[]; onNodeClick:(node:PathwayNode)=>void; edges?:PathwayEdge[]; selectedNodeId?:string|null; glowMultiplier?:number; flowSpeed?:number; fullscreen?:boolean; stressIndex?:number; }
+interface Props { nodes:PathwayNode[]; onNodeClick:(node:PathwayNode)=>void; edges?:PathwayEdge[]; selectedNodeId?:string|null; glowMultiplier?:number; flowSpeed?:number; fullscreen?:boolean; stressIndex?:number; opticalInsets?: Partial<OpticalInsetBox>; }
 
-export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, glowMultiplier = 1, flowSpeed = 1, fullscreen = false, stressIndex = 0 }: Props) {
+export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, glowMultiplier = 1, flowSpeed = 1, fullscreen = false, stressIndex = 0, opticalInsets }: Props) {
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('ready');
   const [rendererMode, setRendererMode] = useState<RendererMode>('loading');
   const [viewMode, setViewMode] = useState<SceneViewMode>('network');
@@ -709,6 +739,10 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, 
 
   const safeNodes = useMemo(() => Array.isArray(nodes) ? nodes.filter(isRenderableNode) : [], [nodes]);
   const safeEdges = useMemo(() => Array.isArray(edges) ? edges : [], [edges]);
+  const resolvedOpticalInsets = useMemo(
+    () => normalizeOpticalInsets(fullscreen, opticalInsets),
+    [fullscreen, opticalInsets],
+  );
   const fallbackLabel = getRendererLabel(rendererMode);
   const riskNodes = useMemo(() => safeNodes.filter(node => (node.risk_score ?? 0) >= HIGH_RISK_THRESHOLD).length, [safeNodes]);
   const spontaneousEdges = useMemo(() => safeEdges.filter(edge => (edge.predicted_delta_G_kJ_mol ?? 0) < 0).length, [safeEdges]);
@@ -751,19 +785,14 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, 
 
   // Compute initial camera position from node bounding box so Canvas starts centered on the cluster
   const initialCamPos = useMemo(() => {
-    const box = new THREE.Box3();
-    safeNodes.forEach(n => {
-      if (Array.isArray(n.position) && n.position.length === 3)
-        box.expandByPoint(new THREE.Vector3(...(n.position as [number, number, number])));
-    });
-    if (box.isEmpty()) return { position: [0, 0.3, 12] as [number, number, number], fov: 44 };
-    const center = new THREE.Vector3();
-    const sz = new THREE.Vector3();
-    box.getCenter(center);
-    box.getSize(sz);
+    const { center, size, box } = getBoundsCenterAndSize(safeNodes);
+    if (box.isEmpty()) return { position: [0, 0.2, 11] as [number, number, number], fov: 44 };
+    const labelAwareSize = size.clone();
+    labelAwareSize.x += Math.min(2.2, Math.max(1.2, size.x * 0.16));
+    labelAwareSize.y += Math.min(1.2, Math.max(0.8, size.y * 0.18));
     const vHalfRad = (44 / 2) * Math.PI / 180;
-    const dist = Math.max(sz.x / 2 / Math.tan(vHalfRad), sz.y / 2 / Math.tan(vHalfRad), 5) * 1.55 + sz.z / 2;
-    return { position: [center.x, center.y + sz.y * 0.08, center.z + dist] as [number, number, number], fov: 44 };
+    const dist = Math.max(labelAwareSize.x / 2 / Math.tan(vHalfRad), labelAwareSize.y / 2 / Math.tan(vHalfRad), 5) * CAMERA_FRAME_PADDING + labelAwareSize.z / 2;
+    return { position: [center.x, center.y + size.y * CAMERA_ELEVATION_RATIO, center.z + dist] as [number, number, number], fov: 44 };
   }, [safeNodes]);
 
   return (
@@ -849,7 +878,7 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, 
         </div>
       </div>
 
-      <div style={{ pointerEvents: 'none', position:'absolute', bottom:'13px', left:'13px', zIndex:10 }}>
+      <div style={{ pointerEvents: 'none', position:'absolute', bottom:`${resolvedOpticalInsets.bottom}px`, left:`${resolvedOpticalInsets.left}px`, zIndex:10 }}>
         <p style={{ color:'rgba(255,255,255,0.12)', fontSize:'8px', fontFamily:"'Public Sans',sans-serif", fontWeight:700, margin:'0 0 4px', letterSpacing:'0.07em', textTransform:'uppercase' }}>
           {viewMode === 'risk' ? 'RISK NODES' : viewMode === 'flow' ? 'FLUX EDGES' : 'CONFIDENCE'}
         </p>
@@ -875,39 +904,39 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, 
         style={{
           pointerEvents: 'none',
           position: 'absolute',
-          top: fullscreen ? '14px' : '56px',
-          left: '13px',
+          top: `${resolvedOpticalInsets.top}px`,
+          right: `${resolvedOpticalInsets.right}px`,
           zIndex: 10,
-          width: 'min(320px, calc(100% - 26px))',
-          borderRadius: '14px',
-          border: '1px solid rgba(255,255,255,0.08)',
-          background: 'rgba(0,0,0,0.58)',
-          padding: '12px',
+          width: 'min(264px, calc(100% - 32px))',
+          borderRadius: '13px',
+          border: '1px solid rgba(255,255,255,0.07)',
+          background: 'rgba(0,0,0,0.48)',
+          padding: '10px 11px',
           backdropFilter: 'blur(10px)',
         }}
       >
         <p style={{ margin: '0 0 6px', color: 'rgba(255,255,255,0.22)', fontSize: '8px', fontFamily: "'Public Sans',sans-serif", fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
           {modeTrace.label}
         </p>
-        <p style={{ margin: '0 0 8px', color: 'rgba(255,255,255,0.78)', fontSize: '11px', lineHeight: 1.55, fontFamily: "'Public Sans',sans-serif" }}>
+        <p style={{ margin: '0 0 8px', color: 'rgba(255,255,255,0.72)', fontSize: '10px', lineHeight: 1.55, fontFamily: "'Public Sans',sans-serif" }}>
           {modeTrace.summary}
         </p>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          <span style={{ minHeight: '24px', padding: '0 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.55)', display: 'inline-flex', alignItems: 'center', fontSize: '9px', fontFamily: "'Public Sans',sans-serif" }}>
+          <span style={{ minHeight: '22px', padding: '0 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.55)', display: 'inline-flex', alignItems: 'center', fontSize: '9px', fontFamily: "'Public Sans',sans-serif" }}>
             {selectedNode ? `${selectedNode.label}` : 'No node selected'}
           </span>
-          <span style={{ minHeight: '24px', padding: '0 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.55)', display: 'inline-flex', alignItems: 'center', fontSize: '9px', fontFamily: "'Public Sans',sans-serif" }}>
+          <span style={{ minHeight: '22px', padding: '0 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.55)', display: 'inline-flex', alignItems: 'center', fontSize: '9px', fontFamily: "'Public Sans',sans-serif" }}>
             {modeTrace.metric}
           </span>
           {selectedNode?.citation && (
-            <span style={{ minHeight: '24px', padding: '0 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.55)', display: 'inline-flex', alignItems: 'center', fontSize: '9px', fontFamily: "'Public Sans',sans-serif" }}>
+            <span style={{ minHeight: '22px', padding: '0 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.55)', display: 'inline-flex', alignItems: 'center', fontSize: '9px', fontFamily: "'Public Sans',sans-serif" }}>
               {selectedNode.citation}
             </span>
           )}
         </div>
       </div>
 
-      <div style={{ pointerEvents: 'none', position:'absolute', bottom:'13px', right:'13px', zIndex:10, background:'rgba(0,0,0,0.5)', padding:'8px 12px', borderRadius:'10px', border:'1px solid rgba(255,255,255,0.06)' }}>
+      <div style={{ pointerEvents: 'none', position:'absolute', bottom:`${resolvedOpticalInsets.bottom}px`, right:`${resolvedOpticalInsets.right}px`, zIndex:10, background:'rgba(0,0,0,0.5)', padding:'8px 12px', borderRadius:'10px', border:'1px solid rgba(255,255,255,0.06)' }}>
         <p style={{ color:'rgba(255,255,255,0.25)', fontSize:'8px', fontFamily:"'Public Sans',sans-serif", fontWeight:700, margin:'0 0 6px', letterSpacing:'0.07em', textTransform:'uppercase' }}>Node Types</p>
         {[
           { c: BIO_THEME_COLORS.CYAN,   l:'Metabolite', s:'●' },
@@ -957,7 +986,7 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, 
           dpr={[1, 1.5]} performance={{ min: 0.5 }} style={{ background: 'transparent', pointerEvents: 'auto' }}
         >
           <ResizeHandler />
-          <Scene nodes={safeNodes} edges={safeEdges} onNodeClick={onNodeClick} selectedNodeId={selectedNodeId ?? null} roughnessTexture={roughnessTexture} glowMultiplier={glowMultiplier} flowSpeed={flowSpeed} stressIndex={stressIndex} viewMode={viewMode} resetSignal={resetSignal} />
+          <Scene nodes={safeNodes} edges={safeEdges} onNodeClick={onNodeClick} selectedNodeId={selectedNodeId ?? null} roughnessTexture={roughnessTexture} glowMultiplier={glowMultiplier} flowSpeed={flowSpeed} stressIndex={stressIndex} viewMode={viewMode} resetSignal={resetSignal} opticalInsets={resolvedOpticalInsets} />
         </Canvas>
       </SceneErrorBoundary>
     </div>

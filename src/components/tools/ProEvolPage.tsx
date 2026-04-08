@@ -13,6 +13,7 @@ import ScientificHero from './shared/ScientificHero';
 import { PATHD_THEME } from '../workbench/workbenchTheme';
 import ScientificFigureFrame from './shared/ScientificFigureFrame';
 import ScientificMethodStrip from './shared/ScientificMethodStrip';
+import WorkbenchRangeSlider from './shared/WorkbenchRangeSlider';
 
 // Dark theme tokens
 const PANEL_BG = PATHD_THEME.sepiaPanelMuted;
@@ -215,15 +216,15 @@ function ParamSlider({ label, value, min, max, step = 1, onChange, unit }: {
   onChange: (v: number) => void; unit?: string;
 }) {
   return (
-    <div style={{ marginBottom: '12px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-        <span style={{ fontFamily: T.SANS, fontSize: '11px', color: LABEL }}>{label}</span>
-        <span style={{ fontFamily: T.MONO, fontSize: '11px', color: VALUE }}>{value}{unit}</span>
-      </div>
-      <input aria-label="Parameter slider" type="range" min={min} max={max} step={step} value={value}
-        onChange={e => onChange(Number(e.target.value))}
-        style={{ width: '100%', accentColor: 'rgba(120,180,255,0.8)', cursor: 'pointer' }} />
-    </div>
+    <WorkbenchRangeSlider
+      label={label}
+      value={value}
+      min={min}
+      max={max}
+      step={step}
+      onChange={onChange}
+      formatValue={(nextValue) => `${nextValue.toFixed(step < 1 ? 1 : 0)}${unit ?? ''}`}
+    />
   );
 }
 

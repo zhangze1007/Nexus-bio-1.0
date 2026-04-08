@@ -103,13 +103,13 @@ export default function WorkbenchInlineContext({
         borderRadius: compact ? '16px' : '18px',
         border: `1px solid ${BORDER}`,
         background: SURFACE,
-        padding: compact ? '9px 10px' : '14px 16px',
+        padding: compact ? '10px 11px' : '14px 16px',
         display: 'grid',
-        gap: compact ? '8px' : '12px',
+        gap: compact ? '10px' : '12px',
         marginBottom: compact ? '10px' : '16px',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', alignItems: compact ? 'flex-start' : 'center', justifyContent: 'space-between', gap: compact ? '10px' : '8px', flexWrap: 'wrap' }}>
         <div style={{ display: 'grid', gap: '4px' }}>
           <span style={{ fontFamily: T.MONO, fontSize: '9px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
             {stage?.shortLabel ?? 'Workbench'} context
@@ -144,7 +144,7 @@ export default function WorkbenchInlineContext({
           ...(compact
             ? {
                 display: '-webkit-box',
-                WebkitLineClamp: 2,
+                WebkitLineClamp: 3,
                 WebkitBoxOrient: 'vertical' as const,
                 overflow: 'hidden',
               }
@@ -162,10 +162,8 @@ export default function WorkbenchInlineContext({
             border: `1px solid ${PATHD_THEME.chipBorderWarm}`,
             background: 'rgba(231,199,169,0.12)',
             padding: compact ? '6px 8px' : '10px 12px',
-            display: compact ? 'flex' : 'grid',
-            alignItems: compact ? 'center' : undefined,
+            display: 'grid',
             gap: compact ? '6px' : '4px',
-            flexWrap: 'wrap',
           }}
         >
           <div
@@ -175,7 +173,6 @@ export default function WorkbenchInlineContext({
               color: VALUE,
               textTransform: 'uppercase',
               letterSpacing: '0.08em',
-              flexShrink: 0,
             }}
           >
             Demo / simulated context
@@ -186,16 +183,6 @@ export default function WorkbenchInlineContext({
               fontSize: compact ? '9px' : '11px',
               color: LABEL,
               lineHeight: compact ? 1.4 : 1.55,
-              ...(compact
-                ? {
-                    display: '-webkit-box',
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: 'vertical' as const,
-                    overflow: 'hidden',
-                    flex: 1,
-                    minWidth: '220px',
-                  }
-                : {}),
             }}
           >
             Outputs on this page may come from local models or bundled synthetic datasets until a project-linked evidence bundle or live analysis artifact is attached.
@@ -204,7 +191,7 @@ export default function WorkbenchInlineContext({
       )}
 
       {compact ? (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'flex-start' }}>
           {[
             { label: 'Evidence', value: `${selectedEvidenceIds.length} selected` },
             {
@@ -228,14 +215,14 @@ export default function WorkbenchInlineContext({
             <div
               key={item.label}
               style={{
-                padding: '3px 7px',
+                padding: '4px 8px',
                 borderRadius: '999px',
                 border: `1px solid ${BORDER}`,
                 background: PATHD_THEME.panelSurface,
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: '5px',
-                minHeight: '22px',
+                gap: '6px',
+                minHeight: '24px',
                 maxWidth: '100%',
               }}
             >
@@ -250,7 +237,7 @@ export default function WorkbenchInlineContext({
                   whiteSpace: 'nowrap',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
-                  maxWidth: '28ch',
+                  maxWidth: '26ch',
                 }}
               >
                 {item.value}

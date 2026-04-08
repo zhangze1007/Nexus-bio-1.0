@@ -366,8 +366,8 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
         <>
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            onClick={onClose}
-            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)', zIndex: 40 }}
+            aria-hidden="true"
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)', zIndex: 40, pointerEvents: 'none' }}
           />
           <motion.div
             initial={{ x: '100%', opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: '100%', opacity: 0 }}
@@ -381,6 +381,7 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
               borderLeft: `1px solid ${PATHD_THEME.panelBorder}`,
               boxShadow: '-18px 0 40px rgba(0,0,0,0.28)',
               fontFamily: UI_SANS,
+              pointerEvents: 'auto',
             }}
           >
             {/* Header */}
@@ -1033,15 +1034,13 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
               })()}
 
               {/* ── TAB 3: ANALYSIS ── */}
-              {activeTab === 'analysis' && (
-                <>
-                  {isEnzyme ? (
-                    <KineticPanel nodeLabel={node.label} nodeId={node.id} />
-                  ) : (
-                    <ThermodynamicsPanel nodeLabel={node.label} nodeId={node.id} />
-                  )}
-                </>
-              )}
+              <div style={{ display: activeTab === 'analysis' ? 'block' : 'none' }}>
+                {isEnzyme ? (
+                  <KineticPanel key={node.id} nodeLabel={node.label} nodeId={node.id} />
+                ) : (
+                  <ThermodynamicsPanel key={node.id} nodeLabel={node.label} nodeId={node.id} />
+                )}
+              </div>
             </div>
           </motion.div>
         </>

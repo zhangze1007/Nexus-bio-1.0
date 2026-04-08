@@ -4,6 +4,7 @@ import { useState, useRef } from 'react';
 import { Loader2, Play, Info, RotateCcw } from 'lucide-react';
 import { calcDeltaG, calcKeq, calcMassBalance, R } from '../utils/thermodynamics';
 import ResearchAnswerRenderer from './tools/shared/ResearchAnswerRenderer';
+import { buildThermodynamicFallbackInterpretation } from '../utils/pathdAnalysisFallback';
 
 interface ThermoPanelProps {
   nodeLabel: string;
@@ -71,7 +72,8 @@ export default function ThermodynamicsPanel({ nodeLabel, nodeId }: ThermoPanelPr
 
     // AI interpretation
     abortRef.current?.abort();
-    abortRef.current = new AbortController();
+    const controller = new AbortController();
+    abortRef.current = controller;
     setAi({ text: '', loading: true });
 
     try {
@@ -92,11 +94,44 @@ Respond in short researcher-facing prose with the headings Summary, Key observat
 Do not return JSON, code fences, or developer-style logs.` }] }],
           generationConfig: { maxOutputTokens: 280, temperature: 0.2 },
         }),
-        signal: abortRef.current.signal,
+        signal: controller.signal,
       });
+      if (!res.ok) throw new Error(`Gemini request failed with ${res.status}`);
       const data = await res.json();
-      setAi({ text: data.candidates?.[0]?.content?.parts?.[0]?.text || '', loading: false });
-    } catch { setAi({ text: '', loading: false }); }
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      setAi({
+        text: text.trim() || buildThermodynamicFallbackInterpretation({
+          dG,
+          dG0,
+          keq: Keq,
+          nodeLabel,
+          productConcentrations: pArr,
+          reactantConcentrations: rArr,
+          sim,
+          spontaneous: dG < 0,
+          substrateStart: S0,
+          temperatureKelvin: T,
+        }),
+        loading: false,
+      });
+    } catch (error) {
+      if (controller.signal.aborted || (error instanceof Error && error.name === 'AbortError')) return;
+      setAi({
+        text: buildThermodynamicFallbackInterpretation({
+          dG,
+          dG0,
+          keq: Keq,
+          nodeLabel,
+          productConcentrations: pArr,
+          reactantConcentrations: rArr,
+          sim,
+          spontaneous: dG < 0,
+          substrateStart: S0,
+          temperatureKelvin: T,
+        }),
+        loading: false,
+      });
+    }
   };
 
   const InputF = ({ label, value, unit, onChange, type = 'number', hint }: {

@@ -66,8 +66,8 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
   const setToolPayload = useWorkbenchStore((s) => s.setToolPayload);
 
   // ── Dismissible center dashboards — let user clear the view of the 3D canvas
-  const [heroDismissed, setHeroDismissed] = useState(false);
-  const [methodStripDismissed, setMethodStripDismissed] = useState(false);
+  const [heroDismissed, setHeroDismissed] = useState(embedded);
+  const [methodStripDismissed, setMethodStripDismissed] = useState(embedded);
 
   // ── Zustand: node selection + AI-generated pathway ───────────────
   const selectedNode    = useUIStore(s => s.selectedNode);
@@ -135,6 +135,13 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
   const flowSpeed = useMemo(() =>
     Math.max(0.3, Math.min(2.5, (params.substrate / 100) * (10 / Math.max(0.5, params.km)) * 1.25)),
     [params.substrate, params.km]
+  );
+
+  const sceneOpticalInsets = useMemo(
+    () => (embedded
+      ? { top: 28, right: 440, bottom: 44, left: 28 }
+      : undefined),
+    [embedded],
   );
 
   // ── Fluid force ref — zero allocation on RAF ──────────────────────
@@ -274,17 +281,21 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
       />
 
       <div
-        className="nb-pathd-hero-stack"
+        className="nb-pathd-hero-stack nb-pathd-hero-stack--rail"
         style={{
           position: 'absolute',
-          top: '16px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: 'min(760px, calc(100vw - 32px))',
+          top: '18px',
+          right: '24px',
+          left: 'auto',
+          transform: 'none',
+          width: 'clamp(300px, calc(100vw - 392px), 340px)',
           zIndex: 18,
           pointerEvents: 'none',
           display: 'grid',
           gap: '8px',
+          maxHeight: 'calc(100% - 36px)',
+          overflowY: 'auto',
+          paddingRight: '4px',
         }}
       >
         <div style={{ pointerEvents: 'auto' }}>
@@ -421,6 +432,7 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
             flowSpeed={flowSpeed}
             stressIndex={readouts.stressIndex}
             fullscreen
+            opticalInsets={sceneOpticalInsets}
           />
         </div>
       </div>

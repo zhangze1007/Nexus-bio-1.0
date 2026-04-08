@@ -4,6 +4,7 @@ import { useState, useRef, useCallback } from 'react';
 import { Loader2, Play, RotateCcw, Info } from 'lucide-react';
 import { mmVelocity, runRK4, type SimResult } from '../utils/kinetics';
 import ResearchAnswerRenderer from './tools/shared/ResearchAnswerRenderer';
+import { buildKineticFallbackInterpretation } from '../utils/pathdAnalysisFallback';
 
 interface KineticPanelProps {
   nodeLabel: string;
@@ -128,7 +129,8 @@ export default function KineticPanel({ nodeLabel, nodeId }: KineticPanelProps) {
 
   const interpretWithAI = async (res: SimResult) => {
     abortRef.current?.abort();
-    abortRef.current = new AbortController();
+    const controller = new AbortController();
+    abortRef.current = controller;
     setAi({ text: '', loading: true });
 
     const finalS = res.substrate[res.substrate.length - 1];
@@ -159,13 +161,49 @@ Be specific and scientific. No generic statements.`;
           contents: [{ parts: [{ text: prompt }] }],
           generationConfig: { maxOutputTokens: 300, temperature: 0.2 },
         }),
-        signal: abortRef.current.signal,
+        signal: controller.signal,
       });
+      if (!res2.ok) throw new Error(`Gemini request failed with ${res2.status}`);
       const data = await res2.json();
       const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-      setAi({ text, loading: false });
-    } catch {
-      setAi({ text: '', loading: false });
+      setAi({
+        text: text.trim() || buildKineticFallbackInterpretation({
+          nodeLabel,
+          duration,
+          finalProduct: finalP,
+          finalSubstrate: finalS,
+          inhibited,
+          inhibitorConcentration: I,
+          inhibitorStrength: Ki,
+          km: Km,
+          maxVelocity: maxV,
+          peakVelocity: maxV,
+          steadyVelocity: steadyV,
+          substrate: S0,
+          vmax: Vmax,
+        }),
+        loading: false,
+      });
+    } catch (error) {
+      if (controller.signal.aborted || (error instanceof Error && error.name === 'AbortError')) return;
+      setAi({
+        text: buildKineticFallbackInterpretation({
+          nodeLabel,
+          duration,
+          finalProduct: finalP,
+          finalSubstrate: finalS,
+          inhibited,
+          inhibitorConcentration: I,
+          inhibitorStrength: Ki,
+          km: Km,
+          maxVelocity: maxV,
+          peakVelocity: maxV,
+          steadyVelocity: steadyV,
+          substrate: S0,
+          vmax: Vmax,
+        }),
+        loading: false,
+      });
     }
   };
 

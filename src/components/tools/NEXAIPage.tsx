@@ -1,6 +1,6 @@
 'use client';
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import ToolShell, { TOOL_TOKENS as T } from './shared/ToolShell';
 import ModuleCard from './shared/ModuleCard';
 import MetricCard from '../ide/shared/MetricCard';
@@ -445,6 +445,7 @@ export default function NEXAIPage() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<NEXAIResult | null>(null);
   const [resultMode, setResultMode] = useState<'pathway' | 'text' | 'idle'>('idle');
+  const [surfaceView, setSurfaceView] = useState<'answer' | 'evidence'>('answer');
   const [history, setHistory] = useState<string[]>([]);
   const isUngrounded = Boolean(result) && result.citations.length === 0;
 
@@ -537,6 +538,7 @@ export default function NEXAIPage() {
       if (pathway) {
         setResult(pathwayToResult(pathway, activeQuery, provider));
         setResultMode('pathway');
+        setSurfaceView('answer');
         const bottlenecks = (pathway as any).bottleneck_enzymes?.length ?? 0;
         appendConsole({ level: 'success', module: 'nexai', message: `Axon: ${pathway.nodes.length} nodes · ${bottlenecks} bottleneck(s) · ${provider}` });
       } else {
@@ -550,6 +552,7 @@ export default function NEXAIPage() {
           generatedAt: Date.now(),
         });
         setResultMode('text');
+        setSurfaceView('answer');
         appendConsole({ level: 'success', module: 'nexai', message: `Axon: text response · ${provider}` });
       }
 
@@ -579,6 +582,7 @@ export default function NEXAIPage() {
       appendConsole({ level: 'warn', module: 'nexai', message: `API unavailable — ${String(e).slice(0, 80)} — using contextual synthesis` });
       setResult(contextualSeed);
       setResultMode('text');
+      setSurfaceView('answer');
     }
     setLoading(false);
   }
@@ -763,56 +767,118 @@ export default function NEXAIPage() {
       {/* ── Center: Graph + Floating CLI + Answer ───────────── */}
       <ModuleCard area="graph" flush style={{ position: 'relative' }}>
         <ScientificFigureFrame
-          eyebrow="Citation canvas"
-          title="Literature structure, answer synthesis, and command input are framed as one research figure"
-          caption="Axon now behaves like a scientific synthesis desk: the citation network forms the canvas, the answer sits as an evidence annotation, and the command line remains attached to the same figure."
+          eyebrow={result && surfaceView === 'evidence' ? 'Evidence map' : 'Research brief'}
+          title={result
+            ? 'Researchers read the written synthesis first, then inspect the citation map as supporting evidence'
+            : 'Ask Axon for a workbench-grounded research brief'}
+          caption={result
+            ? 'The primary surface now opens on prose and structured takeaways. The citation network remains available as an evidence-oriented view when the user wants to inspect support structure.'
+            : 'Axon opens as a text-first research desk. Once a result exists, the written brief becomes the default reading surface and the evidence map stays available on demand.'}
           legend={[
             { label: 'Mode', value: result ? resultMode : 'idle', accent: PATHD_THEME.lilac },
+            { label: 'Surface', value: result ? surfaceView : 'answer', accent: PATHD_THEME.apricot },
             { label: 'Confidence', value: result ? `${(result.confidence * 100).toFixed(0)}%` : '—', accent: PATHD_THEME.mint },
             { label: 'Citations', value: `${result?.citations.length ?? 0}`, accent: PATHD_THEME.sky },
-            { label: 'History', value: `${history.length}`, accent: PATHD_THEME.apricot },
+            { label: 'History', value: `${history.length}`, accent: PATHD_THEME.lilac },
           ]}
           minHeight="100%"
         >
-          <div style={{ position: 'relative', minHeight: '520px' }}>
-            <div style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              padding: '12px', overflow: 'hidden',
-            }}>
-              {result ? (
-                <CitationGraph citations={result.citations} />
-              ) : (
-                <div style={{ textAlign: 'center' }}>
-                  <p style={{ fontFamily: T.MONO, fontSize: '32px', color: 'rgba(36,29,24,0.08)', margin: '0 0 8px' }}>⬡</p>
-                  <p style={{ fontFamily: T.SANS, fontSize: '12px', color: PATHD_THEME.label }}>
-                    Ask Axon a research question
-                  </p>
-                  <p style={{ fontFamily: T.MONO, fontSize: '9px', color: PATHD_THEME.label, marginTop: '4px' }}>
-                    press / to focus the command line
-                  </p>
+          <div
+            style={{
+              position: 'relative',
+              minHeight: '520px',
+              padding: '12px 12px 92px',
+              display: 'grid',
+              gridTemplateRows: result ? 'auto minmax(0, 1fr)' : '1fr',
+              gap: '12px',
+            }}
+          >
+            {result && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' }}>
+                <div style={{ fontFamily: T.MONO, fontSize: '9px', color: PATHD_THEME.label, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                  Primary reading surface
                 </div>
-              )}
-            </div>
-
-            <AnimatePresence>
-              {result && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
+                <div
                   style={{
-                    position: 'absolute', top: '12px', left: '12px', right: '12px',
-                    maxHeight: '40%', overflowY: 'auto',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '4px',
                     borderRadius: '12px',
+                    border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
+                    background: PATHD_THEME.panelSurface,
+                  }}
+                >
+                  {([
+                    ['answer', 'Written answer'],
+                    ['evidence', 'Evidence map'],
+                  ] as const).map(([view, label]) => (
+                    <button
+                      key={view}
+                      type="button"
+                      onClick={() => setSurfaceView(view)}
+                      aria-pressed={surfaceView === view}
+                      style={{
+                        minHeight: '34px',
+                        padding: '0 12px',
+                        borderRadius: '10px',
+                        border: 'none',
+                        cursor: 'pointer',
+                        fontFamily: T.SANS,
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        background: surfaceView === view ? 'rgba(175,195,214,0.18)' : 'transparent',
+                        color: surfaceView === view ? PATHD_THEME.value : PATHD_THEME.label,
+                      }}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div style={{ minHeight: 0, display: 'flex' }}>
+              {!result ? (
+                <div
+                  style={{
+                    flex: 1,
+                    display: 'grid',
+                    placeItems: 'center',
+                    borderRadius: '18px',
+                    border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
+                    background: PATHD_THEME.panelSurface,
+                    textAlign: 'center',
+                    padding: '24px',
+                  }}
+                >
+                  <div>
+                    <p style={{ fontFamily: T.MONO, fontSize: '32px', color: 'rgba(36,29,24,0.08)', margin: '0 0 8px' }}>⬡</p>
+                    <p style={{ fontFamily: T.SANS, fontSize: '12px', color: PATHD_THEME.label }}>
+                      Ask Axon a research question
+                    </p>
+                    <p style={{ fontFamily: T.MONO, fontSize: '9px', color: PATHD_THEME.label, marginTop: '4px' }}>
+                      press / to focus the command line
+                    </p>
+                  </div>
+                </div>
+              ) : surfaceView === 'answer' ? (
+                <div
+                  style={{
+                    flex: 1,
+                    minHeight: 0,
+                    overflowY: 'auto',
+                    borderRadius: '18px',
                     background: PATHD_THEME.panelGlassStrong,
                     backdropFilter: 'blur(12px)',
                     border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
-                    padding: '12px 14px',
-                    zIndex: 5,
-                    boxShadow: '0 12px 30px rgba(0,0,0,0.32)',
+                    padding: '16px 18px',
+                    boxShadow: '0 16px 36px rgba(0,0,0,0.24)',
+                    display: 'grid',
+                    gap: '12px',
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                     <span style={{ fontFamily: T.MONO, fontSize: '9px', color: PATHD_THEME.label }}>AXON</span>
                     <span style={{
                       fontFamily: T.MONO, fontSize: '8px', padding: '2px 6px',
@@ -820,6 +886,17 @@ export default function NEXAIPage() {
                       borderRadius: '6px', color: PATHD_THEME.value,
                     }}>
                       {(result.confidence * 100).toFixed(0)}%
+                    </span>
+                    <span style={{
+                      fontFamily: T.MONO,
+                      fontSize: '8px',
+                      padding: '2px 6px',
+                      background: 'rgba(175,195,214,0.14)',
+                      border: '1px solid rgba(175,195,214,0.26)',
+                      borderRadius: '6px',
+                      color: PATHD_THEME.value,
+                    }}>
+                      {result.citations.length} citation node{result.citations.length === 1 ? '' : 's'}
                     </span>
                     {isUngrounded && (
                       <span
@@ -838,14 +915,52 @@ export default function NEXAIPage() {
                     )}
                   </div>
                   {isUngrounded && (
-                    <p style={{ fontFamily: T.SANS, fontSize: '10px', color: PATHD_THEME.label, lineHeight: 1.55, margin: '0 0 8px' }}>
-                      This answer has no visible citation nodes yet. Add Research evidence or rerun with a pathway-style query before treating it as decision-grade guidance.
+                    <p style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.label, lineHeight: 1.6, margin: 0 }}>
+                      This answer does not yet have visible citation support. Treat it as contextual synthesis until Research evidence is attached or a citation-backed rerun is completed.
                     </p>
                   )}
-                  <ResearchAnswerRenderer answer={result.answer} compact />
-                </motion.div>
+                  <ResearchAnswerRenderer answer={result.answer} />
+                </div>
+              ) : (
+                <div
+                  style={{
+                    flex: 1,
+                    minHeight: 0,
+                    overflow: 'hidden',
+                    borderRadius: '18px',
+                    border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
+                    background: PATHD_THEME.panelSurface,
+                    display: 'grid',
+                    gridTemplateRows: 'auto minmax(0, 1fr)',
+                    gap: '10px',
+                    padding: '14px',
+                  }}
+                >
+                  <div style={{ display: 'grid', gap: '6px' }}>
+                    <div style={{ fontFamily: T.MONO, fontSize: '9px', color: PATHD_THEME.label, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                      Citation support map
+                    </div>
+                    <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.label, lineHeight: 1.55 }}>
+                      The graph stays available as a secondary evidence view for inspecting publication clustering, recency, and bridge citations behind the written answer.
+                    </div>
+                  </div>
+                  <div style={{ minHeight: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                    {result.citations.length > 0 ? (
+                      <CitationGraph citations={result.citations} />
+                    ) : (
+                      <div style={{ textAlign: 'center', padding: '24px' }}>
+                        <div style={{ fontFamily: T.MONO, fontSize: '11px', color: PATHD_THEME.label, marginBottom: '6px' }}>
+                          No evidence map yet
+                        </div>
+                        <div style={{ fontFamily: T.SANS, fontSize: '12px', color: PATHD_THEME.value, lineHeight: 1.6 }}>
+                          Attach Research evidence or rerun with a literature-backed query to populate the citation surface.
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
               )}
-            </AnimatePresence>
+            </div>
 
             <FloatingCLI
               query={query} setQuery={setQuery}
