@@ -19,7 +19,7 @@ type ConfigurableRenderer = {
 };
 
 const INIT_TIMEOUT_MS = 2000;
-const CAMERA_FRAME_PADDING = 1.44;
+const CAMERA_FRAME_PADDING = 1.38;
 const CAMERA_ELEVATION_RATIO = 0.04;
 const OPTICAL_CENTER_WEIGHT_X = 0.82;
 const OPTICAL_CENTER_WEIGHT_Y = 0.58;
@@ -453,13 +453,13 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov
         </mesh>
       ))}
 
-      <Html position={[0, -(nodeRadius * 0.56), 0]} center style={{ pointerEvents: 'none', whiteSpace: 'nowrap' }}>
+      <Html position={[0, -(nodeRadius * 0.4), 0]} center style={{ pointerEvents: 'none', whiteSpace: 'nowrap' }}>
         <div style={{
           color: hov || sel ? '#fff' : 'rgba(160,180,200,0.55)',
-          fontSize: '8.5px', fontWeight: sel ? 600 : 500,
+          fontSize: '8.25px', fontWeight: sel ? 600 : 500,
           fontFamily: "'JetBrains Mono', 'Fira Code', monospace", letterSpacing: '0.01em',
           textShadow: '0 1px 12px rgba(0,0,0,0.9), 0 0 24px rgba(0,0,0,0.7)',
-          padding: '2px 5px', background: sel ? 'rgba(200,216,232,0.08)' : 'transparent',
+          padding: '2px 4px', background: sel ? 'rgba(200,216,232,0.08)' : 'transparent',
           borderRadius: '4px', border: sel ? '1px solid rgba(200,216,232,0.14)' : '1px solid transparent',
           transition: 'color 0.2s',
         }}>{lbl}</div>
@@ -700,8 +700,8 @@ function Scene({ nodes, edges, onNodeClick, selectedNodeId, roughnessTexture, gl
   }, [nodes, aspect, cameraFov, opticalInsets, viewportSize.height, viewportSize.width]);
   useEffect(() => {
     camera.position.set(
-      centroid.x + opticalTargetOffset.x * 0.18,
-      centroid.y + camOffset.y + opticalTargetOffset.y * 0.12,
+      centroid.x + opticalTargetOffset.x * 0.08,
+      centroid.y + camOffset.y + opticalTargetOffset.y * 0.04,
       centroid.z + camOffset.z,
     );
     camera.lookAt(opticalTarget);
@@ -857,8 +857,8 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, 
       : new THREE.Vector3();
     return {
       position: [
-        center.x + initialOpticalOffset.x * 0.18,
-        center.y + size.y * CAMERA_ELEVATION_RATIO + initialOpticalOffset.y * 0.12,
+        center.x + initialOpticalOffset.x * 0.08,
+        center.y + size.y * CAMERA_ELEVATION_RATIO + initialOpticalOffset.y * 0.04,
         center.z + dist,
       ] as [number, number, number],
       fov: 44,
@@ -978,11 +978,11 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, 
           right: tracePlacement === 'top-right' ? `${resolvedOpticalInsets.right}px` : 'auto',
           left: tracePlacement === 'top-left' ? `${resolvedOpticalInsets.left}px` : 'auto',
           zIndex: 10,
-          width: 'min(232px, calc(100% - 32px))',
+          width: 'min(208px, calc(100% - 32px))',
           borderRadius: '16px',
           border: '1px solid rgba(255,255,255,0.09)',
           background: 'linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(242,247,252,0.06) 22%, rgba(8,10,14,0.48) 100%)',
-          padding: '9px 10px',
+          padding: '8px 10px',
           backdropFilter: 'blur(14px) saturate(125%)',
           WebkitBackdropFilter: 'blur(14px) saturate(125%)',
           boxShadow: '0 14px 34px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.10)',
@@ -991,7 +991,7 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, 
         <p style={{ margin: '0 0 6px', color: 'rgba(255,255,255,0.22)', fontSize: '8px', fontFamily: "'Public Sans',sans-serif", fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
           {modeTrace.label}
         </p>
-        <p style={{ margin: '0 0 8px', color: 'rgba(255,255,255,0.68)', fontSize: '10px', lineHeight: 1.52, fontFamily: "'Public Sans',sans-serif" }}>
+        <p style={{ margin: '0 0 8px', color: 'rgba(255,255,255,0.68)', fontSize: '9.5px', lineHeight: 1.5, fontFamily: "'Public Sans',sans-serif" }}>
           {modeTrace.summary}
         </p>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>

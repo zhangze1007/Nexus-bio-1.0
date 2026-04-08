@@ -161,10 +161,12 @@ interface StatusOverlayProps {
   rateHistory: number[];
   params:      SimParams;
   state:       MachineState;
+  width?:      number;
+  bottomOffset?: number;
 }
 
 export default function StatusOverlay({
-  readouts, rateHistory, params, state,
+  readouts, rateHistory, params, state, width = 230, bottomOffset = 18,
 }: StatusOverlayProps) {
   const isStress   = state === 'stress_test';
   const previewRate = michaelisRate(params);
@@ -191,10 +193,11 @@ export default function StatusOverlay({
       initial={{ x: 30, opacity: 0 }}
       transition={{ duration: 0.5, ease:[0.22,1,0.36,1] }}
       style={{
-        position:'absolute', right:'20px', top:'50%',
-        transform:'translateY(-50%)',
-        width:'230px', zIndex:10,
-        maxHeight:'min(46vh, 430px)',
+        position:'absolute', right:'20px', top:'auto',
+        bottom:`${bottomOffset}px`,
+        transform:'none',
+        width:`${width}px`, zIndex:10,
+        maxHeight:'min(39vh, 352px)',
         padding:'18px 16px',
         overflowX:'hidden',
         overflowY:'auto',

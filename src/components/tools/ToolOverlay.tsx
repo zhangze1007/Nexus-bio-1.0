@@ -13,6 +13,7 @@
 
 import { useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
+import { Activity, Pause, Play, RotateCcw, type LucideIcon } from 'lucide-react';
 import type { SimParams } from '../../machines/metabolicMachine';
 import type { FluidForce } from './FluidSimCanvas';
 import type { MachineState } from '../../machines/metabolicMachine';
@@ -65,6 +66,8 @@ interface ToolOverlayProps {
   onStress:   () => void;
   onResume:   () => void;
   forceRef:   React.MutableRefObject<FluidForce | null>;
+  width?:     number;
+  bottomOffset?: number;
 }
 
 // ── Slider component ───────────────────────────────────────────────────
@@ -148,27 +151,68 @@ function ParamSlider({ def, value, onChange, forceRef }: SliderProps) {
 
 // ── Action button ──────────────────────────────────────────────────────
 
-function ActionBtn({ label, brightness = 0.7, onClick, disabled = false, className }: {
-  label: string; brightness?: number; onClick: () => void; disabled?: boolean; className?: string;
+function ActionBtn({ label, icon: Icon, tone = 'neutral', onClick, disabled = false, className }: {
+  label: string; icon: LucideIcon; tone?: 'neutral' | 'primary' | 'stress'; onClick: () => void; disabled?: boolean; className?: string;
 }) {
-  const alpha = disabled ? 0.15 : brightness;
+  const toneStyles = disabled
+    ? {
+        background: 'rgba(255,255,255,0.10)',
+        border: '0.5px solid rgba(255,255,255,0.08)',
+        color: 'rgba(255,255,255,0.35)',
+      }
+    : tone === 'primary'
+      ? {
+          background: 'rgba(255,255,255,0.88)',
+          border: '0.5px solid rgba(255,255,255,0.88)',
+          color: '#111318',
+        }
+      : tone === 'stress'
+        ? {
+            background: 'rgba(232,163,161,0.18)',
+            border: '0.5px solid rgba(232,163,161,0.34)',
+            color: 'rgba(255,238,238,0.88)',
+          }
+        : {
+            background: 'rgba(255,255,255,0.12)',
+            border: '0.5px solid rgba(255,255,255,0.16)',
+            color: 'rgba(255,255,255,0.84)',
+          };
   return (
     <button
       className={className}
       onClick={onClick}
       disabled={disabled}
       style={{
-        flex:1, padding:'8px 0', borderRadius:'8px', cursor: disabled ? 'not-allowed' : 'pointer',
-        background: disabled ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.88)',
-        border: `0.5px solid rgba(255,255,255,${disabled ? 0.08 : 0.9})`,
-        color: disabled ? 'rgba(255,255,255,0.35)' : '#111318',
+        flex:1,
+        minHeight:'34px',
+        padding:'0 10px',
+        borderRadius:'10px',
+        cursor: disabled ? 'not-allowed' : 'pointer',
         fontFamily: T.MONO, fontSize:'10px', fontWeight:600,
         textTransform:'uppercase', letterSpacing:'0.08em',
         transition:'all 0.15s',
+        display:'inline-flex',
+        alignItems:'center',
+        justifyContent:'center',
+        gap:'6px',
+        ...toneStyles,
       }}
-      onMouseEnter={e => { if (!disabled) { (e.currentTarget as HTMLElement).style.background = '#ffffff'; (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 12px rgba(0,0,0,0.22)'; }}}
-      onMouseLeave={e => { if (!disabled) { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.88)'; (e.currentTarget as HTMLElement).style.boxShadow = 'none'; }}}
+      onMouseEnter={e => {
+        if (!disabled) {
+          (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 12px rgba(0,0,0,0.22)';
+          if (tone === 'primary') (e.currentTarget as HTMLElement).style.background = '#ffffff';
+          if (tone === 'neutral') (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.18)';
+          if (tone === 'stress') (e.currentTarget as HTMLElement).style.background = 'rgba(232,163,161,0.24)';
+        }
+      }}
+      onMouseLeave={e => {
+        if (!disabled) {
+          (e.currentTarget as HTMLElement).style.boxShadow = 'none';
+          (e.currentTarget as HTMLElement).style.background = toneStyles.background;
+        }
+      }}
     >
+      <Icon size={12} strokeWidth={2} aria-hidden="true" />
       {label}
     </button>
   );
@@ -177,7 +221,7 @@ function ActionBtn({ label, brightness = 0.7, onClick, disabled = false, classNa
 // ── Main export ────────────────────────────────────────────────────────
 
 export default function ToolOverlay({
-  params, state, onParam, onStart, onPause, onReset, onStress, onResume, forceRef,
+  params, state, onParam, onStart, onPause, onReset, onStress, onResume, forceRef, width = 240, bottomOffset = 18,
 }: ToolOverlayProps) {
   const stateLabel = STATE_LABELS[state];
   const {
@@ -195,10 +239,11 @@ export default function ToolOverlay({
       animate={panelVariants[state]}
       transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
       style={{
-        position:'absolute', left:'20px', top:'50%',
-        transform:'translateY(-50%)',
-        width:'240px', zIndex:10,
-        maxHeight:'min(46vh, 430px)',
+        position:'absolute', left:'20px', top:'auto',
+        bottom:`${bottomOffset}px`,
+        transform:'none',
+        width:`${width}px`, zIndex:10,
+        maxHeight:'min(41vh, 372px)',
         padding:'18px 16px',
         userSelect:'none',
         overflowX:'hidden',
@@ -275,23 +320,23 @@ export default function ToolOverlay({
       {/* Action buttons */}
       <div style={{ display:'flex', gap:'6px', marginBottom:'8px', position:'relative', zIndex:1 }}>
         {state === 'idle' && (
-          <ActionBtn label="▶ Start" brightness={0.85} onClick={onStart} className="nb-pathd-overlay-idle-start" />
+          <ActionBtn label="Start" icon={Play} tone="primary" onClick={onStart} className="nb-pathd-overlay-idle-start" />
         )}
         {state === 'simulating' && (
           <>
-            <ActionBtn label="⏸ Pause"  brightness={0.5} onClick={onPause}  />
-            <ActionBtn label="⚡ Stress" brightness={0.4} onClick={onStress} />
+            <ActionBtn label="Pause" icon={Pause} onClick={onPause} />
+            <ActionBtn label="Stress" icon={Activity} tone="stress" onClick={onStress} />
           </>
         )}
         {state === 'stress_test' && (
-          <ActionBtn label="↩ Resume" brightness={0.7} onClick={onResume} />
+          <ActionBtn label="Resume" icon={Play} onClick={onResume} />
         )}
         {state === 'equilibrium' && (
-          <ActionBtn label="↺ Restart" brightness={0.7} onClick={onStart} />
+          <ActionBtn label="Restart" icon={RotateCcw} onClick={onStart} />
         )}
       </div>
       <div style={{ display:'flex', gap:'6px' }}>
-        <ActionBtn label="Reset" brightness={0.3} onClick={onReset} disabled={state === 'idle'} />
+        <ActionBtn label="Reset" icon={RotateCcw} onClick={onReset} disabled={state === 'idle'} />
       </div>
 
       {/* Michaelis-Menten preview formula */}

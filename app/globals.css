@@ -231,7 +231,7 @@
   /* (moved to 768px breakpoint below so laptops get the 3-column layout)      */
 
   .nb-pathd-hero-stack--rail {
-    width: clamp(276px, calc(100vw - 360px), 312px) !important;
+    width: clamp(248px, calc(100vw - 420px), 272px) !important;
     right: 16px !important;
     left: auto !important;
     transform: none !important;
@@ -241,8 +241,8 @@
     top: auto !important;
     bottom: 18px !important;
     transform: none !important;
-    width: min(240px, calc(50vw - 22px)) !important;
-    max-height: 42vh;
+    width: min(228px, calc(50vw - 24px)) !important;
+    max-height: 40vh;
     overflow-x: hidden;
     overflow-y: auto;
   }
@@ -353,7 +353,7 @@
   }
 
   .nb-pathd-hero-stack--rail {
-    width: min(312px, calc(100vw - 24px)) !important;
+    width: min(272px, calc(100vw - 24px)) !important;
     top: 12px !important;
     right: 12px !important;
     left: auto !important;
@@ -361,7 +361,7 @@
   }
 
   .nb-pathd-floating-panel {
-    width: min(220px, calc(50vw - 18px)) !important;
+    width: min(214px, calc(50vw - 18px)) !important;
     bottom: 12px !important;
   }
 }

@@ -55,6 +55,12 @@ function inferRouteLabel(nodes: PathwayNode[]) {
   return `${terminal} route`;
 }
 
+const PATHD_LEFT_PANEL_WIDTH = 228;
+const PATHD_RIGHT_PANEL_WIDTH = 218;
+const PATHD_SUPPORT_RAIL_WIDTH = 272;
+const PATHD_SCENE_GUTTER = 28;
+const PATHD_PANEL_BOTTOM = 18;
+
 // ── Main orchestrator ──────────────────────────────────────────────────
 
 export default function MetabolicEngPage({ embedded = false }: { embedded?: boolean } = {}) {
@@ -171,10 +177,13 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
   );
 
   const sceneOpticalInsets = useMemo(
-    () => (embedded
-      ? { top: 24, right: 332, bottom: 132, left: 40 }
-      : undefined),
-    [embedded],
+    () => ({
+      top: 22,
+      right: Math.round(PATHD_SUPPORT_RAIL_WIDTH * 0.72),
+      bottom: PATHD_PANEL_BOTTOM + 54,
+      left: Math.round(PATHD_LEFT_PANEL_WIDTH * 0.42),
+    }),
+    [],
   );
 
   // ── Fluid force ref — zero allocation on RAF ──────────────────────
@@ -321,25 +330,25 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
         className="nb-pathd-hero-stack nb-pathd-hero-stack--rail"
         style={{
           position: 'absolute',
-          top: '14px',
+          top: '16px',
           right: '18px',
           left: 'auto',
           transform: 'none',
-          width: 'clamp(276px, calc(100vw - 428px), 312px)',
-          zIndex: 18,
+          width: `${PATHD_SUPPORT_RAIL_WIDTH}px`,
+          zIndex: 14,
           pointerEvents: 'none',
           display: 'grid',
-          gap: '6px',
-          maxHeight: embedded ? 'min(42vh, 340px)' : 'calc(100% - 28px)',
+          gap: '8px',
+          maxHeight: embedded ? 'min(34vh, 300px)' : 'min(33vh, 300px)',
           overflowY: 'auto',
-          paddingRight: '4px',
+          paddingRight: '2px',
         }}
       >
         <div style={{ pointerEvents: 'auto' }}>
           <WorkbenchInlineContext
             toolId="pathd"
             title="Pathway & Enzyme Design"
-            summary="PATHD is now an audited Stage 1 object generator: pathway routes, bottleneck assumptions, enzyme candidates, and the active node focus are written back into the workbench so simulation and control tools can inherit the current design state instead of replaying an old plan."
+            summary="PATHD keeps the active route, evidence state, and bottleneck focus visible while the pathway itself remains the main scientific figure."
             compact
             isSimulated={!analyzeArtifact}
           />
@@ -488,6 +497,8 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
             onStress={handleStress}
             onResume={handleResume}
             forceRef={forceRef}
+            width={PATHD_LEFT_PANEL_WIDTH}
+            bottomOffset={PATHD_PANEL_BOTTOM}
           />
         </div>
       </div>
@@ -500,6 +511,8 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
             rateHistory={rateHistory}
             params={params}
             state={state}
+            width={PATHD_RIGHT_PANEL_WIDTH}
+            bottomOffset={PATHD_PANEL_BOTTOM}
           />
         </div>
       </div>
