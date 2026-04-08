@@ -139,7 +139,7 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
 
   const sceneOpticalInsets = useMemo(
     () => (embedded
-      ? { top: 28, right: 440, bottom: 44, left: 28 }
+      ? { top: 24, right: 332, bottom: 132, left: 40 }
       : undefined),
     [embedded],
   );
@@ -284,16 +284,16 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
         className="nb-pathd-hero-stack nb-pathd-hero-stack--rail"
         style={{
           position: 'absolute',
-          top: '18px',
-          right: '24px',
+          top: '14px',
+          right: '18px',
           left: 'auto',
           transform: 'none',
-          width: 'clamp(300px, calc(100vw - 392px), 340px)',
+          width: 'clamp(276px, calc(100vw - 428px), 312px)',
           zIndex: 18,
           pointerEvents: 'none',
           display: 'grid',
-          gap: '8px',
-          maxHeight: 'calc(100% - 36px)',
+          gap: '6px',
+          maxHeight: embedded ? 'min(42vh, 340px)' : 'calc(100% - 28px)',
           overflowY: 'auto',
           paddingRight: '4px',
         }}
@@ -433,6 +433,7 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
             stressIndex={readouts.stressIndex}
             fullscreen
             opticalInsets={sceneOpticalInsets}
+            tracePlacement="top-left"
           />
         </div>
       </div>

@@ -179,6 +179,16 @@ export default function ToolOverlay({
   params, state, onParam, onStart, onPause, onReset, onStress, onResume, forceRef,
 }: ToolOverlayProps) {
   const stateLabel = STATE_LABELS[state];
+  const containPanelInteraction = useCallback((event: React.SyntheticEvent<HTMLDivElement>) => {
+    event.stopPropagation();
+  }, []);
+  const handlePanelWheel = useCallback((event: React.WheelEvent<HTMLDivElement>) => {
+    event.stopPropagation();
+    const panel = event.currentTarget;
+    if (panel.scrollHeight > panel.clientHeight) {
+      panel.scrollTop += event.deltaY;
+    }
+  }, []);
 
   return (
     <motion.div
@@ -189,10 +199,20 @@ export default function ToolOverlay({
         position:'absolute', left:'20px', top:'50%',
         transform:'translateY(-50%)',
         width:'240px', zIndex:10,
+        maxHeight:'min(46vh, 430px)',
         padding:'18px 16px',
         userSelect:'none',
+        overflowX:'hidden',
+        overflowY:'auto',
+        WebkitOverflowScrolling:'touch',
+        overscrollBehavior:'contain',
+        touchAction:'pan-y',
         ...PATHD_FLOATING_PANEL_SURFACE,
       }}
+      onWheelCapture={handlePanelWheel}
+      onPointerDownCapture={containPanelInteraction}
+      onTouchStartCapture={containPanelInteraction}
+      onTouchMoveCapture={containPanelInteraction}
     >
       <div
         aria-hidden

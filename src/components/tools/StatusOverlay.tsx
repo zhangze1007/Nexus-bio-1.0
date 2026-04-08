@@ -9,7 +9,7 @@
  *   - Animated counter transitions (Framer Motion)
  */
 
-import { useRef } from 'react';
+import { useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { SimReadouts, SimParams } from '../../machines/metabolicMachine';
 import { STATE_LABELS, michaelisRate } from '../../machines/metabolicMachine';
@@ -167,6 +167,16 @@ export default function StatusOverlay({
 }: StatusOverlayProps) {
   const isStress   = state === 'stress_test';
   const previewRate = michaelisRate(params);
+  const containPanelInteraction = useCallback((event: React.SyntheticEvent<HTMLDivElement>) => {
+    event.stopPropagation();
+  }, []);
+  const handlePanelWheel = useCallback((event: React.WheelEvent<HTMLDivElement>) => {
+    event.stopPropagation();
+    const panel = event.currentTarget;
+    if (panel.scrollHeight > panel.clientHeight) {
+      panel.scrollTop += event.deltaY;
+    }
+  }, []);
 
   const variance = rateHistory.length > 10
     ? rateHistory.slice(-20).reduce((s, v, _, a) => {
@@ -185,9 +195,19 @@ export default function StatusOverlay({
         position:'absolute', right:'20px', top:'50%',
         transform:'translateY(-50%)',
         width:'230px', zIndex:10,
+        maxHeight:'min(46vh, 430px)',
         padding:'18px 16px',
+        overflowX:'hidden',
+        overflowY:'auto',
+        WebkitOverflowScrolling:'touch',
+        overscrollBehavior:'contain',
+        touchAction:'pan-y',
         ...PATHD_FLOATING_PANEL_SURFACE,
       }}
+      onWheelCapture={handlePanelWheel}
+      onPointerDownCapture={containPanelInteraction}
+      onTouchStartCapture={containPanelInteraction}
+      onTouchMoveCapture={containPanelInteraction}
     >
       <div
         aria-hidden

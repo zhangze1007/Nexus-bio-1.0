@@ -10,6 +10,7 @@ type Vec3 = [number, number, number];
 type RendererMode = 'loading' | 'webgpu' | 'webgl2' | 'webgl' | 'error';
 type SceneViewMode = 'network' | 'flow' | 'risk';
 type OpticalInsetBox = { top: number; right: number; bottom: number; left: number };
+type TracePlacement = 'top-right' | 'top-left';
 type ConfigurableRenderer = {
   setSize: (w: number, h: number, updateStyle?: boolean) => void;
   toneMapping: THREE.ToneMapping;
@@ -20,6 +21,8 @@ type ConfigurableRenderer = {
 const INIT_TIMEOUT_MS = 2000;
 const CAMERA_FRAME_PADDING = 1.44;
 const CAMERA_ELEVATION_RATIO = 0.04;
+const OPTICAL_CENTER_WEIGHT_X = 0.82;
+const OPTICAL_CENTER_WEIGHT_Y = 0.58;
 
 function normalizeOpticalInsets(
   fullscreen: boolean,
@@ -52,6 +55,31 @@ function getBoundsCenterAndSize(nodes: PathwayNode[]) {
   }
 
   return { center, size, box };
+}
+
+function getOpticalTargetOffset(args: {
+  width: number;
+  height: number;
+  distance: number;
+  cameraFov: number;
+  insets: OpticalInsetBox;
+}) {
+  const { width, height, distance, cameraFov, insets } = args;
+  if (width <= 0 || height <= 0 || distance <= 0) return new THREE.Vector3();
+
+  const aspect = width / height;
+  const vHalfRad = (cameraFov / 2) * Math.PI / 180;
+  const hHalfRad = Math.atan(Math.tan(vHalfRad) * aspect);
+  const frustumHalfWidth = Math.tan(hHalfRad) * distance;
+  const frustumHalfHeight = Math.tan(vHalfRad) * distance;
+  const desiredScreenShiftX = (insets.left - insets.right) / width;
+  const desiredScreenShiftY = (insets.bottom - insets.top) / height;
+
+  return new THREE.Vector3(
+    -desiredScreenShiftX * frustumHalfWidth * OPTICAL_CENTER_WEIGHT_X,
+    -desiredScreenShiftY * frustumHalfHeight * OPTICAL_CENTER_WEIGHT_Y,
+    0,
+  );
 }
 
 function withTimeout<T>(promise: Promise<T>, label: string): Promise<T> {
@@ -425,13 +453,13 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov
         </mesh>
       ))}
 
-      <Html position={[0, -(nodeRadius * 0.82), 0]} center style={{ pointerEvents: 'none', whiteSpace: 'nowrap' }}>
+      <Html position={[0, -(nodeRadius * 0.56), 0]} center style={{ pointerEvents: 'none', whiteSpace: 'nowrap' }}>
         <div style={{
           color: hov || sel ? '#fff' : 'rgba(160,180,200,0.55)',
-          fontSize: '9px', fontWeight: sel ? 600 : 500,
+          fontSize: '8.5px', fontWeight: sel ? 600 : 500,
           fontFamily: "'JetBrains Mono', 'Fira Code', monospace", letterSpacing: '0.01em',
           textShadow: '0 1px 12px rgba(0,0,0,0.9), 0 0 24px rgba(0,0,0,0.7)',
-          padding: '2px 6px', background: sel ? 'rgba(200,216,232,0.08)' : 'transparent',
+          padding: '2px 5px', background: sel ? 'rgba(200,216,232,0.08)' : 'transparent',
           borderRadius: '4px', border: sel ? '1px solid rgba(200,216,232,0.14)' : '1px solid transparent',
           transition: 'color 0.2s',
         }}>{lbl}</div>
@@ -524,19 +552,27 @@ const PathEdge = React.memo(function PathEdge({ edge, s, e, active, color, flowS
 
 // ─── Scroll-Sync Camera 【关键修复】：镜头居中算法，绝不跑偏 ──────────────
 type OrbitControlsHandle = { target: THREE.Vector3; update(): void };
-function ScrollSyncCamera({ nodes, selectedId, interact, controlsRef, centroid }: { nodes: PathwayNode[]; selectedId: string | null; interact: boolean; controlsRef: React.RefObject<OrbitControlsHandle | null>; centroid: THREE.Vector3 }) {
+function ScrollSyncCamera({ nodes, selectedId, interact, controlsRef, centroid, opticalOffset }: {
+  nodes: PathwayNode[];
+  selectedId: string | null;
+  interact: boolean;
+  controlsRef: React.RefObject<OrbitControlsHandle | null>;
+  centroid: THREE.Vector3;
+  opticalOffset: THREE.Vector3;
+}) {
   const { camera } = useThree();
   const targetLookAt = useRef(new THREE.Vector3().copy(centroid));
 
   useEffect(() => {
     if (selectedId) {
       const node = nodes.find(n => n.id === selectedId);
-      if (node && Array.isArray(node.position)) targetLookAt.current.set(...node.position);
+      if (node && Array.isArray(node.position)) {
+        targetLookAt.current.set(...node.position).add(opticalOffset);
+      }
     } else {
-      // 默认看向计算好的分子质心
       targetLookAt.current.copy(centroid);
     }
-  }, [selectedId, nodes, centroid]);
+  }, [centroid, nodes, opticalOffset, selectedId]);
 
   useFrame((_, dt) => {
     if (interact || !(camera instanceof THREE.PerspectiveCamera)) return;
@@ -637,31 +673,45 @@ function Scene({ nodes, edges, onNodeClick, selectedNodeId, roughnessTexture, gl
   const aspect = viewportSize.width / (viewportSize.height || 1);
   const cameraFov = (camera as THREE.PerspectiveCamera).fov ?? 44;
 
-  const { centroid, camOffset } = useMemo(() => {
+  const { centroid, camOffset, opticalTarget, opticalTargetOffset } = useMemo(() => {
     const { center, size } = getBoundsCenterAndSize(nodes);
     const labelAwareSize = size.clone();
     labelAwareSize.x += Math.min(2.2, Math.max(1.2, size.x * 0.16));
     labelAwareSize.y += Math.min(1.2, Math.max(0.8, size.y * 0.18));
-    // Derive actual half-FOV from the camera's vertical FOV and viewport aspect ratio
     const vHalfRad = (cameraFov / 2) * Math.PI / 180;
     const hHalfRad = Math.atan(Math.tan(vHalfRad) * aspect); // horizontal half-FOV from aspect
     const MIN_DISTANCE = 5;
     const distForX = (labelAwareSize.x / 2) / Math.tan(hHalfRad);
     const distForY = (labelAwareSize.y / 2) / Math.tan(vHalfRad);
     const dist = Math.max(distForX, distForY, MIN_DISTANCE) * CAMERA_FRAME_PADDING + (labelAwareSize.z / 2);
-    return { centroid: center, camOffset: { y: size.y * CAMERA_ELEVATION_RATIO, z: dist } };
-  }, [nodes, aspect, cameraFov]);
+    const opticalTargetOffset = getOpticalTargetOffset({
+      width: viewportSize.width,
+      height: viewportSize.height,
+      distance: dist,
+      cameraFov,
+      insets: opticalInsets,
+    });
+    return {
+      centroid: center,
+      camOffset: { y: size.y * CAMERA_ELEVATION_RATIO, z: dist },
+      opticalTarget: center.clone().add(opticalTargetOffset),
+      opticalTargetOffset,
+    };
+  }, [nodes, aspect, cameraFov, opticalInsets, viewportSize.height, viewportSize.width]);
   useEffect(() => {
-    camera.position.set(centroid.x, centroid.y + camOffset.y, centroid.z + camOffset.z);
-    camera.lookAt(centroid);
+    camera.position.set(
+      centroid.x + opticalTargetOffset.x * 0.18,
+      centroid.y + camOffset.y + opticalTargetOffset.y * 0.12,
+      centroid.z + camOffset.z,
+    );
+    camera.lookAt(opticalTarget);
     if (controlsRef.current) {
-      controlsRef.current.target.copy(centroid);
+      controlsRef.current.target.copy(opticalTarget);
       controlsRef.current.update();
     }
-    // When resetSignal fires, also clear interact so auto-rotate resumes
     if (resetSignal) setInteract(false);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [camera, camOffset, centroid, resetSignal]);
+  }, [camera, camOffset, centroid, opticalTarget, opticalTargetOffset, resetSignal]);
 
   const cc = useMemo(() => {
     const c: Record<string,number> = {};
@@ -688,7 +738,7 @@ function Scene({ nodes, edges, onNodeClick, selectedNodeId, roughnessTexture, gl
       <fog attach="fog" args={['#000000', 30, 70]} />
 
       {/* maxDistance 50 accommodates large AI-generated pathway networks without clipping */}
-      <OrbitControls ref={controlsRef as React.Ref<never>} makeDefault enableZoom autoRotate={!interact && !hovId && !selectedNodeId} autoRotateSpeed={0.12} zoomSpeed={0.45} minDistance={6} maxDistance={50} enablePan={false} onStart={onStart} onEnd={onEnd} target={centroid} />
+      <OrbitControls ref={controlsRef as React.Ref<never>} makeDefault enableZoom autoRotate={!interact && !hovId && !selectedNodeId} autoRotateSpeed={0.12} zoomSpeed={0.45} minDistance={6} maxDistance={50} enablePan={false} onStart={onStart} onEnd={onEnd} target={opticalTarget} />
       <SpatialReference stressIndex={stressIndex} centroid={centroid} />
 
       <AmbientParticles />
@@ -696,7 +746,7 @@ function Scene({ nodes, edges, onNodeClick, selectedNodeId, roughnessTexture, gl
       {ed.map(e => <PathEdge key={e.key} edge={e.edge} s={e.s.position} e={e.e.position} active={e.active} color={e.color} flowSpeed={flowSpeed} viewMode={viewMode} />)}
       {nodes.map(n => <MolNode key={n.id} node={n} hov={hovId===n.id} sel={selectedNodeId===n.id} cc={cc[n.id]??0} onClick={onNodeClick} onHov={setHovId} roughnessTexture={roughnessTexture} flowSpeed={flowSpeed} glowMultiplier={glowMultiplier} stressIndex={stressIndex} viewMode={viewMode} />)}
 
-      <ScrollSyncCamera nodes={nodes} selectedId={selectedNodeId} interact={interact} controlsRef={controlsRef} centroid={centroid} />
+      <ScrollSyncCamera nodes={nodes} selectedId={selectedNodeId} interact={interact} controlsRef={controlsRef} centroid={opticalTarget} opticalOffset={opticalTargetOffset} />
     </>
   );
 }
@@ -722,9 +772,9 @@ function ResizeHandler() {
 }
 
 // ─── Main Component — loading fallback and scene unified ─────────────
-interface Props { nodes:PathwayNode[]; onNodeClick:(node:PathwayNode)=>void; edges?:PathwayEdge[]; selectedNodeId?:string|null; glowMultiplier?:number; flowSpeed?:number; fullscreen?:boolean; stressIndex?:number; opticalInsets?: Partial<OpticalInsetBox>; }
+interface Props { nodes:PathwayNode[]; onNodeClick:(node:PathwayNode)=>void; edges?:PathwayEdge[]; selectedNodeId?:string|null; glowMultiplier?:number; flowSpeed?:number; fullscreen?:boolean; stressIndex?:number; opticalInsets?: Partial<OpticalInsetBox>; tracePlacement?: TracePlacement; }
 
-export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, glowMultiplier = 1, flowSpeed = 1, fullscreen = false, stressIndex = 0, opticalInsets }: Props) {
+export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, glowMultiplier = 1, flowSpeed = 1, fullscreen = false, stressIndex = 0, opticalInsets, tracePlacement = 'top-right' }: Props) {
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('ready');
   const [rendererMode, setRendererMode] = useState<RendererMode>('loading');
   const [viewMode, setViewMode] = useState<SceneViewMode>('network');
@@ -791,9 +841,29 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, 
     labelAwareSize.x += Math.min(2.2, Math.max(1.2, size.x * 0.16));
     labelAwareSize.y += Math.min(1.2, Math.max(0.8, size.y * 0.18));
     const vHalfRad = (44 / 2) * Math.PI / 180;
-    const dist = Math.max(labelAwareSize.x / 2 / Math.tan(vHalfRad), labelAwareSize.y / 2 / Math.tan(vHalfRad), 5) * CAMERA_FRAME_PADDING + labelAwareSize.z / 2;
-    return { position: [center.x, center.y + size.y * CAMERA_ELEVATION_RATIO, center.z + dist] as [number, number, number], fov: 44 };
-  }, [safeNodes]);
+    const aspect = typeof window !== 'undefined'
+      ? Math.max(window.innerWidth, 1) / Math.max(window.innerHeight, 1)
+      : 1.6;
+    const hHalfRad = Math.atan(Math.tan(vHalfRad) * aspect);
+    const dist = Math.max(labelAwareSize.x / 2 / Math.tan(hHalfRad), labelAwareSize.y / 2 / Math.tan(vHalfRad), 5) * CAMERA_FRAME_PADDING + labelAwareSize.z / 2;
+    const initialOpticalOffset = typeof window !== 'undefined'
+      ? getOpticalTargetOffset({
+          width: Math.max(window.innerWidth, 1),
+          height: Math.max(window.innerHeight, 1),
+          distance: dist,
+          cameraFov: 44,
+          insets: resolvedOpticalInsets,
+        })
+      : new THREE.Vector3();
+    return {
+      position: [
+        center.x + initialOpticalOffset.x * 0.18,
+        center.y + size.y * CAMERA_ELEVATION_RATIO + initialOpticalOffset.y * 0.12,
+        center.z + dist,
+      ] as [number, number, number],
+      fov: 44,
+    };
+  }, [resolvedOpticalInsets, safeNodes]);
 
   return (
     <div style={{
@@ -905,20 +975,23 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, 
           pointerEvents: 'none',
           position: 'absolute',
           top: `${resolvedOpticalInsets.top}px`,
-          right: `${resolvedOpticalInsets.right}px`,
+          right: tracePlacement === 'top-right' ? `${resolvedOpticalInsets.right}px` : 'auto',
+          left: tracePlacement === 'top-left' ? `${resolvedOpticalInsets.left}px` : 'auto',
           zIndex: 10,
-          width: 'min(264px, calc(100% - 32px))',
-          borderRadius: '13px',
-          border: '1px solid rgba(255,255,255,0.07)',
-          background: 'rgba(0,0,0,0.48)',
-          padding: '10px 11px',
-          backdropFilter: 'blur(10px)',
+          width: 'min(232px, calc(100% - 32px))',
+          borderRadius: '16px',
+          border: '1px solid rgba(255,255,255,0.09)',
+          background: 'linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(242,247,252,0.06) 22%, rgba(8,10,14,0.48) 100%)',
+          padding: '9px 10px',
+          backdropFilter: 'blur(14px) saturate(125%)',
+          WebkitBackdropFilter: 'blur(14px) saturate(125%)',
+          boxShadow: '0 14px 34px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.10)',
         }}
       >
         <p style={{ margin: '0 0 6px', color: 'rgba(255,255,255,0.22)', fontSize: '8px', fontFamily: "'Public Sans',sans-serif", fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
           {modeTrace.label}
         </p>
-        <p style={{ margin: '0 0 8px', color: 'rgba(255,255,255,0.72)', fontSize: '10px', lineHeight: 1.55, fontFamily: "'Public Sans',sans-serif" }}>
+        <p style={{ margin: '0 0 8px', color: 'rgba(255,255,255,0.68)', fontSize: '10px', lineHeight: 1.52, fontFamily: "'Public Sans',sans-serif" }}>
           {modeTrace.summary}
         </p>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
@@ -936,7 +1009,7 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, 
         </div>
       </div>
 
-      <div style={{ pointerEvents: 'none', position:'absolute', bottom:`${resolvedOpticalInsets.bottom}px`, right:`${resolvedOpticalInsets.right}px`, zIndex:10, background:'rgba(0,0,0,0.5)', padding:'8px 12px', borderRadius:'10px', border:'1px solid rgba(255,255,255,0.06)' }}>
+      <div style={{ pointerEvents: 'none', position:'absolute', bottom:`${resolvedOpticalInsets.bottom}px`, right:`${resolvedOpticalInsets.right}px`, zIndex:10, background:'rgba(0,0,0,0.42)', padding:'8px 12px', borderRadius:'10px', border:'1px solid rgba(255,255,255,0.06)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}>
         <p style={{ color:'rgba(255,255,255,0.25)', fontSize:'8px', fontFamily:"'Public Sans',sans-serif", fontWeight:700, margin:'0 0 6px', letterSpacing:'0.07em', textTransform:'uppercase' }}>Node Types</p>
         {[
           { c: BIO_THEME_COLORS.CYAN,   l:'Metabolite', s:'●' },

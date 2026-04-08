@@ -231,7 +231,7 @@
   /* (moved to 768px breakpoint below so laptops get the 3-column layout)      */
 
   .nb-pathd-hero-stack--rail {
-    width: clamp(300px, calc(100vw - 320px), 336px) !important;
+    width: clamp(276px, calc(100vw - 360px), 312px) !important;
     right: 16px !important;
     left: auto !important;
     transform: none !important;
@@ -243,7 +243,8 @@
     transform: none !important;
     width: min(240px, calc(50vw - 22px)) !important;
     max-height: 42vh;
-    overflow: auto;
+    overflow-x: hidden;
+    overflow-y: auto;
   }
 
   .nb-pathd-floating-panel--left {
@@ -352,7 +353,7 @@
   }
 
   .nb-pathd-hero-stack--rail {
-    width: min(340px, calc(100vw - 24px)) !important;
+    width: min(312px, calc(100vw - 24px)) !important;
     top: 12px !important;
     right: 12px !important;
     left: auto !important;
@@ -447,6 +448,14 @@
 
 .nb-tool-panels__tablet-aux {
   display: none;
+}
+
+.nb-pathd-floating-panel {
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
 }
 
 @media (min-width: 769px) and (max-width: 1080px) {

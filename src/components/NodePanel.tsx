@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 // 注入了 ShieldAlert 用于合规面板
 import { X, Download, FileText, Hash, Link2, ChevronDown, ChevronUp, Atom, Activity, Thermometer, ExternalLink, ShieldAlert, AlertTriangle, CheckCircle, Circle, Scissors, ArrowUp } from 'lucide-react';
@@ -312,6 +312,7 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
   const [activeTab, setActiveTab] = useState<TabId>('overview');
   const [showConnections, setShowConnections] = useState(false);
   const [showRawData, setShowRawData] = useState(false);
+  const panelRef = useRef<HTMLDivElement | null>(null);
 
   const connections = useMemo(() => {
     if (!node || !allEdges) return [];
@@ -349,6 +350,28 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
   const hasInsufficientCofactorData = !isFinalTarget && !node?.cofactor_balance;
   const hasInsufficientSepData = !isFinalTarget && (node?.separation_cost_index === undefined || node?.separation_cost_index === null);
 
+  useEffect(() => {
+    if (!node) return undefined;
+
+    const handlePointerDown = (event: PointerEvent) => {
+      const panel = panelRef.current;
+      if (!panel) return;
+      if (panel.contains(event.target as Node)) return;
+      onClose();
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+    };
+
+    document.addEventListener('pointerdown', handlePointerDown, true);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown, true);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [node, onClose]);
+
   // Tab definitions
   const tabs = [
     { id: 'overview' as TabId, label: 'Overview', icon: <FileText size={12} /> },
@@ -375,14 +398,18 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
             style={{
               position: 'fixed', top: 0, right: 0, height: '100%', width: '100%', maxWidth: '440px',
               zIndex: 50, display: 'flex', flexDirection: 'column',
-              background: PATHD_THEME.panelGradientStrong,
-              backdropFilter: 'blur(28px)',
-              WebkitBackdropFilter: 'blur(28px)',
-              borderLeft: `1px solid ${PATHD_THEME.panelBorder}`,
-              boxShadow: '-18px 0 40px rgba(0,0,0,0.28)',
+              background: 'linear-gradient(180deg, rgba(255,255,255,0.15) 0%, rgba(247,251,255,0.08) 12%, rgba(25,31,37,0.9) 100%)',
+              backdropFilter: 'blur(30px) saturate(138%)',
+              WebkitBackdropFilter: 'blur(30px) saturate(138%)',
+              borderLeft: '1px solid rgba(255,255,255,0.18)',
+              boxShadow: '-18px 0 44px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.14)',
               fontFamily: UI_SANS,
               pointerEvents: 'auto',
             }}
+            ref={panelRef}
+            role="dialog"
+            aria-modal="false"
+            aria-label={node.label}
           >
             {/* Header */}
             <div style={{ padding: '16px 20px', borderBottom: `1px solid ${PATHD_THEME.panelBorder}` }}>
@@ -402,13 +429,16 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                   </div>
                 </div>
                 <button onClick={onClose}
-                  style={{ color: PATHD_THEME.value, background: PATHD_THEME.chipNeutral, border: `1px solid ${PATHD_THEME.panelBorder}`, cursor: 'pointer', padding: '4px', flexShrink: 0, display: 'flex', borderRadius: '8px', transition: 'border-color 300ms ease-out, filter 300ms ease-out' }}
+                  aria-label="Close sidebar"
+                  style={{ color: PATHD_THEME.value, background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)', cursor: 'pointer', padding: '8px', flexShrink: 0, display: 'flex', borderRadius: '12px', transition: 'border-color 300ms ease-out, filter 300ms ease-out, background 300ms ease-out' }}
                   onMouseEnter={e => {
-                    (e.currentTarget as HTMLElement).style.borderColor = PATHD_THEME.panelBorderStrong;
+                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.28)';
+                    (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.16)';
                     (e.currentTarget as HTMLElement).style.filter = 'brightness(1.08)';
                   }}
                   onMouseLeave={e => {
-                    (e.currentTarget as HTMLElement).style.borderColor = PATHD_THEME.panelBorder;
+                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.18)';
+                    (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.12)';
                     (e.currentTarget as HTMLElement).style.filter = 'brightness(1)';
                   }}>
                   <X size={15} />
