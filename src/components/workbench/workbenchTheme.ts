@@ -4,10 +4,13 @@ export const PATHD_THEME = {
   mint: '#BFDCCD',
   sky: '#AFC3D6',
   lilac: '#CFC4E3',
-  blue: '#AFC3D6',
-  orange: '#E7C7A9',
-  indigo: '#CFC4E3',
-  liveRed: '#E8A3A1',
+  // Legacy aliases — identical to coral/apricot/mint/sky/lilac above.
+  // Retained because FORBIDDEN files (DBTLflowPage, GECAIRPage, ProEvolPage)
+  // reference them. New code should use the canonical names.
+  /** @deprecated Use `sky` */ blue: '#AFC3D6',
+  /** @deprecated Use `apricot` */ orange: '#E7C7A9',
+  /** @deprecated Use `lilac` */ indigo: '#CFC4E3',
+  /** @deprecated Use `coral` */ liveRed: '#E8A3A1',
   // ── Legacy "paper" tokens, remapped to dark-theme equivalents ──
   // Retained so forbidden tool pages (DBTLflow, GECAIR, ProEvol) and any other
   // consumer auto-inherit the unified dark look without file edits. Keys are kept.
