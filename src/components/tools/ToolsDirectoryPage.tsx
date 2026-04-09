@@ -280,119 +280,7 @@ export default function ToolsDirectoryPage() {
                 gridTemplateColumns: 'minmax(0, 1fr)',
               }}
             >
-              <header
-                style={{
-                  display: 'grid',
-                  gap: '18px',
-                  gridTemplateColumns: 'minmax(0, 1.45fr) minmax(280px, 0.85fr)',
-                  alignItems: 'end',
-                }}
-                className="nb-directory-hero"
-              >
-                <div>
-                  <p
-                    style={{
-                      margin: '0 0 10px',
-                      fontFamily: T.MONO,
-                      fontSize: '11px',
-                      letterSpacing: '0.12em',
-                      textTransform: 'uppercase',
-                      color: LABEL,
-                    }}
-                  >
-                    Tools Directory
-                  </p>
-                  <h1
-                    style={{
-                      margin: '0 0 12px',
-                      fontFamily: T.SANS,
-                      fontSize: 'clamp(2rem, 5vw, 3.6rem)',
-                      lineHeight: 1.03,
-                      letterSpacing: '-0.045em',
-                    }}
-                  >
-                    A single scientific workbench entry point for every Nexus-Bio tool.
-                  </h1>
-                  <p
-                    style={{
-                      margin: 0,
-                      maxWidth: '72ch',
-                      fontFamily: T.SANS,
-                      fontSize: '15px',
-                      lineHeight: 1.7,
-                      color: LABEL,
-                    }}
-                  >
-                    {displayMode === 'demo'
-                      ? 'Browse by research direction, open the strongest demo paths, and move through the platform without losing story flow.'
-                      : 'Find a module, understand what it does, compare it against another tool, and enter the correct route without guessing. The directory keeps the center on task fit rather than visual noise.'}
-                  </p>
-                </div>
-
-                <div
-                  style={{
-                    display: 'grid',
-                    gap: '12px',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-                  }}
-                >
-                    {[
-                      { label: 'Tools', value: TOOL_DEFINITIONS.length, note: 'All routes indexed' },
-                      { label: 'Directions', value: TOOL_DIRECTIONS.length, note: 'Grouped by research workflow' },
-                      { label: '3D-ready', value: TOOL_DEFINITIONS.filter((tool) => tool.threeDPotential !== 'none').length, note: 'Strong or supporting spatial models' },
-                    ].map((item) => (
-                    <div
-                      key={item.label}
-                      style={{
-                        borderRadius: '18px',
-                        border: `1px solid ${BORDER}`,
-                        background: SURFACE,
-                        padding: '16px 18px',
-                        boxShadow: SHADOW,
-                      }}
-                    >
-                      <p style={{ margin: '0 0 8px', fontFamily: T.MONO, fontSize: '10px', color: LABEL }}>
-                        {item.label}
-                      </p>
-                      <p style={{ margin: '0 0 4px', fontFamily: T.SANS, fontSize: '28px', fontWeight: 700, color: VALUE }}>
-                        {item.value}
-                      </p>
-                      <p style={{ margin: 0, fontFamily: T.SANS, fontSize: '12px', color: LABEL }}>
-                        {item.note}
-                      </p>
-                    </div>
-                    ))}
-                </div>
-              </header>
-
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: '16px',
-                  flexWrap: 'wrap',
-                  padding: '16px 18px',
-                  borderRadius: '20px',
-                  border: `1px solid ${BORDER}`,
-                  background: SURFACE,
-                  boxShadow: SHADOW,
-                }}
-              >
-                <div>
-                  <p style={{ margin: '0 0 6px', fontFamily: T.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase' }}>
-                    Display mode
-                  </p>
-                  <p style={{ margin: 0, fontFamily: T.SANS, fontSize: '13px', lineHeight: 1.6, color: LABEL }}>
-                    {displayMode === 'demo'
-                      ? 'Highlights direction clusters and high-signal entry points for presentation and walkthroughs.'
-                      : 'Keeps evidence, compare context, adjacency, and workflow fit visible for detailed research use.'}
-                  </p>
-                </div>
-                <DisplayModeToggle />
-              </div>
-
-              {/* ── 4-Stage Workflow Flow Guide ────────────────────────── */}
+              {/* P2.3: merged hero + mode toggle + 4-stage workflow into a single dense section */}
               <section
                 style={{
                   borderRadius: '20px',
@@ -402,9 +290,23 @@ export default function ToolsDirectoryPage() {
                   boxShadow: SHADOW,
                 }}
               >
-                <p style={{ margin: '0 0 14px', fontFamily: T.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase' }}>
-                  Workflow Path
-                </p>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginBottom: '14px', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <p style={{ margin: 0, fontFamily: T.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase' }}>
+                      Tools Directory
+                    </p>
+                    {[
+                      { label: 'Tools', value: TOOL_DEFINITIONS.length },
+                      { label: 'Directions', value: TOOL_DIRECTIONS.length },
+                      { label: '3D', value: TOOL_DEFINITIONS.filter((tool) => tool.threeDPotential !== 'none').length },
+                    ].map((item) => (
+                      <span key={item.label} style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE, padding: '3px 8px', borderRadius: '8px', border: `1px solid ${BORDER}`, background: SURFACE }}>
+                        {item.value} {item.label}
+                      </span>
+                    ))}
+                  </div>
+                  <DisplayModeToggle />
+                </div>
                 <div style={{ display: 'flex', alignItems: 'stretch', gap: '0', overflowX: 'auto' }}>
                   {([
                     {
@@ -490,21 +392,8 @@ export default function ToolsDirectoryPage() {
                     </React.Fragment>
                   ))}
                 </div>
-              </section>
-
-              <section
-                style={{
-                  borderRadius: '20px',
-                  border: `1px solid ${BORDER}`,
-                  background: SURFACE,
-                  padding: '16px',
-                  boxShadow: SHADOW,
-                }}
-              >
-                <p style={{ margin: '0 0 12px', fontFamily: T.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase' }}>
-                  Direction clusters
-                </p>
-                <div style={{ display: 'grid', gap: '12px', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
+                {/* Direction clusters (merged into workflow section — P2.3) */}
+                <div style={{ display: 'grid', gap: '12px', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', marginTop: '16px' }}>
                   {directionClusters.map((cluster) => (
                     <div
                       key={cluster.direction}
