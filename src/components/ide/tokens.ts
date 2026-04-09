@@ -15,13 +15,27 @@ export const T = {
   MONO:  "'IBM Plex Mono','JetBrains Mono','Fira Code',monospace",
   BRAND: "'Space Grotesk',-apple-system,sans-serif",
 
+  // P2.2 — Tufte: canonical 5-stop typography scale (px)
+  // Use ONLY these sizes in tool pages. If you need something else, extend the scale.
+  FS_XS:  '10px',  // metadata, captions, footnotes
+  FS_SM:  '12px',  // body, descriptions, secondary labels
+  FS_MD:  '14px',  // primary labels, controls
+  FS_LG:  '18px',  // section headings
+  FS_XL:  '24px',  // hero titles
+
+  // P2.2 — Tufte: canonical 5-stop padding/spacing scale (px)
+  SP_XS:  4,   // tight inner padding
+  SP_SM:  8,   // gap between tightly-coupled elements
+  SP_MD:  16,  // card padding, section gaps
+  SP_LG:  24,  // between sections
+  SP_XL:  32,  // page-level margins
+
   // Pastel palette
   P_MINT:  '#BFDCCD',
   P_SKY:   '#AFC3D6',
   P_LAVEN: '#CFC4E3',
   P_PEACH: '#E7C7A9',
   P_ROSE:  '#E8A3A1',
-  P_LEMON: '#E7C7A9',
 
   // Compatibility accents mapped to the scientific palette
   NEON_BLUE:    '#AFC3D6',
