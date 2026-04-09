@@ -609,7 +609,7 @@ export default function FBASimPage() {
       };
     }
     return {
-      eyebrow: 'Figure B · Community Exchange Model',
+      eyebrow: 'Figure B · Two-Species Exchange Comparison',
       title: 'Coupled host-state and shared metabolite exchange',
       caption: 'Community mode becomes a multi-panel model figure where strain-specific optima and shared-pool exchange are read together instead of across disconnected cards.',
     };
@@ -720,7 +720,7 @@ export default function FBASimPage() {
     <>
       <div className="nb-tool-page" style={{ background: PATHD_THEME.sepiaPanelMuted }}>
         <AlgorithmInsight
-          title={simMode === 'single' ? 'Flux Balance Analysis' : 'Community FBA — Multi-species'}
+          title={simMode === 'single' ? 'Flux Balance Analysis' : 'Two-Species Flux Comparison'}
           description={simMode === 'single'
             ? 'Server-side GLPK solves a stoichiometric LP for the current host context, then revalidates glucose and oxygen shadow prices with finite-difference reruns so downstream tools inherit an authority-backed flux state.'
             : 'Two server-side host LPs are solved independently and then coupled through an exchange pool, so community feasibility is derived from live strain-level optima rather than a browser-only mock.'}
@@ -852,7 +852,7 @@ export default function FBASimPage() {
               color: simMode === mode ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.35)',
               fontFamily: T.SANS, fontSize: '11px', cursor: 'pointer', transition: 'all 0.2s',
             }}>
-              {mode === 'single' ? 'Single Species' : 'Community'}
+              {mode === 'single' ? 'Single Species' : 'Two-Species Comparison'}
             </button>
           ))}
         </div>
@@ -860,6 +860,22 @@ export default function FBASimPage() {
         {/* Error banners */}
         {singleError && simMode === 'single' && (
           <div style={{ padding: '0 16px 8px' }}><SimErrorBanner message={singleError} /></div>
+        )}
+        {simMode === 'community' && (
+          <div style={{ padding: '0 16px 8px' }}>
+            <div style={{
+              padding: '8px 12px',
+              borderRadius: '12px',
+              border: '1px solid rgba(250,128,114,0.28)',
+              background: 'rgba(250,128,114,0.08)',
+              color: 'rgba(255,228,220,0.85)',
+              fontFamily: T.SANS,
+              fontSize: '11px',
+              lineHeight: 1.5,
+            }}>
+              <strong style={{ color: 'rgba(255,200,190,0.95)' }}>Method note:</strong> This mode runs two independent single-species FBA solves (E. coli and yeast) and compares their exchange fluxes. It is <em>not</em> a joint community LP (e.g. SteadyCom / cFBA) — shared-pool stoichiometric coupling is not enforced. Treat outputs as a side-by-side flux comparison, not a microbiome model.
+            </div>
+          </div>
         )}
         {communityError && simMode === 'community' && (
           <div style={{ padding: '0 16px 8px' }}><SimErrorBanner message={communityError} /></div>
@@ -890,7 +906,7 @@ export default function FBASimPage() {
               fontFamily: T.SANS,
               fontSize: '11px',
             }}>
-              Authority engine recomputing coupled host LPs and exchange fluxes on the server.
+              Solving two independent single-species LPs and comparing their exchange fluxes (not a joint stoichiometric optimization).
             </div>
           </div>
         )}

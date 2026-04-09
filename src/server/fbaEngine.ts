@@ -283,6 +283,11 @@ export async function solveAuthorityFBA(request: SingleSpeciesFBARequest): Promi
   });
 }
 
+// NOTE: This is NOT a joint community LP (no SteadyCom / cFBA coupling).
+// It runs two independent single-species solves and post-hoc scales pre-defined
+// shared-metabolite exchange fluxes by each strain's growth/efficiency. UI surfaces
+// this as "Two-Species Flux Comparison" with a method-note banner. Do not interpret
+// the output as a microbiome stoichiometric optimum.
 export async function solveAuthorityCommunityFBA(request: CommunityFBARequest): Promise<CommunityFBAOutput> {
   const alpha = clamp(request.alpha ?? 0.5, 0, 1);
   const ecoli = await solveAuthorityFBA({

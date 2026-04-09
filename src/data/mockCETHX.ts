@@ -43,13 +43,16 @@ export const PATHWAY_STEPS: Record<PathwayKey, ThermoStep[]> = {
   ppp: PPP_STEPS,
 };
 
-// Van't Hoff ΔG' = ΔG° + RT·ln(Q) temperature correction
-export function correctedDeltaG(deltaG: number, tempC: number, pH: number): number {
-  const R = 0.008314; // kJ/mol/K
-  const T = tempC + 273.15;
-  const pHcorrection = (pH - 7.0) * (-2.303 * R * T);
-  const tempFactor = T / 298.15;
-  return deltaG * tempFactor + pHcorrection * 0.1;
+// Reference ΔG°' values (pH 7, 25°C, I = 0.25 M) from Lehninger / NIST.
+// HONEST DEMO MODE: we deliberately do NOT apply ad-hoc temperature/pH "corrections"
+// here. A scientifically valid transform requires the Alberty Legendre transform
+// with per-reaction proton stoichiometry and ionic-strength-corrected formation
+// energies (e.g. eQuilibrator API). The previous implementation multiplied ΔG° by
+// (T/298.15) and added a hand-tuned "* 0.1" pH term, both of which are incorrect.
+// Until eQuilibrator integration lands, we surface the reference value unchanged
+// and the UI must label outputs as "Lehninger reference ΔG°' — demo only".
+export function correctedDeltaG(deltaG: number, _tempC: number, _pH: number): number {
+  return deltaG;
 }
 
 export function computeThermo(steps: ThermoStep[], tempC: number, pH: number) {
@@ -61,16 +64,32 @@ export function computeThermo(steps: ThermoStep[], tempC: number, pH: number) {
   let cum = 0;
   corrected.forEach(s => { cum += s.deltaG; s.cumulative = cum; });
 
+  // ATP/NADH yields are taken directly from the curated reference table.
+  // We previously inferred NADH yield from "deltaG < -10 kJ/mol" which has no
+  // biochemical basis; that heuristic has been removed. NADH yield is now an
+  // explicit per-step field (defaults to 0 when omitted by the data source).
   const atpNet = steps.reduce((a, s) => a + s.atpYield, 0);
-  const nadhYield = steps.filter(s => s.atpYield === 0 && s.deltaG < -10).length * 2;
+  const nadhYield = steps.reduce((a, s) => a + ((s as ThermoStep & { nadhYield?: number }).nadhYield ?? 0), 0);
   const totalDeltaG = cum;
-  const efficiency = Math.max(0, Math.min(1, -totalDeltaG / 2870 * 100)); // vs glucose combustion
+  // Fraction of glucose combustion enthalpy (-2870 kJ/mol) captured as -ΔG along
+  // the modelled segment. Bounded to [0,1]; this is an order-of-magnitude
+  // illustration, not a true thermodynamic efficiency.
+  const efficiency = Math.max(0, Math.min(1, -totalDeltaG / 2870));
+
+  // Total Gibbs energy dissipated along the pathway (kJ per mol substrate).
+  // The previous field "entropy_production = -ΔG / T" is dimensionally a single
+  // entropy change (kJ/mol/K), NOT a rate (which would require a flux). We expose
+  // both quantities under honest names.
+  const T = tempC + 273.15;
+  const dissipationKJ = -totalDeltaG;
+  const entropyChange = dissipationKJ / T; // kJ/(mol·K), per mol substrate processed
 
   return {
     steps: corrected,
     atp_yield: atpNet,
     nadh_yield: nadhYield,
-    entropy_production: -totalDeltaG / (tempC + 273.15),
+    entropy_production: entropyChange, // retained key for backward compat (now honest units)
+    dissipation_kJ_per_mol: dissipationKJ,
     gibbs_free_energy: totalDeltaG,
     efficiency,
   };
