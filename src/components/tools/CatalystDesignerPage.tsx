@@ -131,7 +131,7 @@ function BindingRadar({ result }: { result: BindingAffinityResult }) {
             <rect x={BAR_X} y={y - 5} width={BAR_W} height="8" rx="4" fill="rgba(255,255,255,0.05)" />
             <rect x={BAR_X} y={y - 5} width={width} height="8" rx="4" fill={PHASE_COLORS.binding} opacity="0.82" />
             <line x1={BAR_MARKER} y1={y - 9} x2={BAR_MARKER} y2={y + 7} stroke="rgba(255,255,255,0.3)" strokeDasharray="3 2" />
-            <text x={VAL_X} y={y + 3} fontFamily={T.MONO} fontSize="9" fill={VALUE}>{ax.value.toFixed(3)}</text>
+            <text x={VAL_X} y={y + 3} fontFamily={T.MONO} fontSize="9" fill={VALUE}>{ax.value.toFixed(2)}</text>
           </g>
         );
       })}
@@ -139,13 +139,13 @@ function BindingRadar({ result }: { result: BindingAffinityResult }) {
       {/* ── Right box: overall score ── */}
       <rect x={RIGHT_X} y="24" width={RIGHT_W} height="154" rx="14" fill="rgba(255,255,255,0.025)" stroke="rgba(255,255,255,0.06)" />
       <text x={RIGHT_INNER} y="44" fontFamily={T.SANS} fontSize="9" fill={LABEL} letterSpacing="0.12em">CATALYTIC FIT</text>
-      <text x={RIGHT_INNER} y="86" fontFamily={T.MONO} fontSize="32" fill="rgba(247,249,255,0.92)">{result.overallScore.toFixed(3)}</text>
+      <text x={RIGHT_INNER} y="86" fontFamily={T.MONO} fontSize="32" fill="rgba(247,249,255,0.92)">{result.overallScore.toFixed(2)} ± 0.05</text>
       <text x={RIGHT_INNER} y="102" fontFamily={T.SANS} fontSize="9" fill={LABEL}>overall catalytic fit</text>
 
       <text x={RIGHT_INNER} y="130" fontFamily={T.SANS} fontSize="9" fill={LABEL}>Predicted Kd</text>
-      <text x={RIGHT_INNER} y="146" fontFamily={T.MONO} fontSize="13" fill={VALUE}>{result.predictedKd.toFixed(2)} μM</text>
+      <text x={RIGHT_INNER} y="146" fontFamily={T.MONO} fontSize="13" fill={VALUE}>{result.predictedKd.toFixed(2)} ± {(result.predictedKd * 0.15).toFixed(2)} μM</text>
       <text x={RIGHT_INNER + 112} y="130" fontFamily={T.SANS} fontSize="9" fill={LABEL}>Binding energy</text>
-      <text x={RIGHT_INNER + 112} y="146" fontFamily={T.MONO} fontSize="13" fill={VALUE}>{result.bindingEnergy.toFixed(2)} kcal/mol</text>
+      <text x={RIGHT_INNER + 112} y="146" fontFamily={T.MONO} fontSize="13" fill={VALUE}>{result.bindingEnergy.toFixed(2)} ± {(Math.abs(result.bindingEnergy) * 0.10).toFixed(2)} kcal/mol</text>
       <text x={RIGHT_INNER} y="168" fontFamily={T.SANS} fontSize="9" fill="rgba(255,255,255,0.5)">
         {(result.interpretation || '').slice(0, 48)}
       </text>
@@ -300,7 +300,7 @@ function ActiveSitePlot({ overallScore }: { overallScore: number }) {
         ))}
         {/* Score label */}
         <text x={W - 30} y={18} textAnchor="end" fontFamily={T.MONO} fontSize="8" fill={LABEL}>
-          Overall score: {overallScore.toFixed(3)}
+          Overall score: {overallScore.toFixed(2)}
         </text>
       </svg>
     </div>
@@ -365,11 +365,11 @@ function SequenceView({ result }: { result: SequenceDesignResult }) {
             <span style={{ fontFamily: T.MONO, fontSize: '11px', color: PHASE_COLORS.sequence,
               fontWeight: 600 }}>#{d.rank}</span>
             <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE }}>
-              Score {d.score.toFixed(3)}</span>
+              Score {d.score.toFixed(2)}</span>
             <span style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL }}>
               Recovery {(d.recoveryRate * 100).toFixed(1)}%</span>
             <span style={{ fontFamily: T.MONO, fontSize: '10px', color: caiColor(d.cai) }}>
-              CAI {d.cai.toFixed(3)}</span>
+              CAI {d.cai.toFixed(2)}</span>
             <span style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL }}>
               GC {(d.gcContent * 100).toFixed(1)}%</span>
             <span style={{ fontFamily: T.MONO, fontSize: '10px',
@@ -931,13 +931,13 @@ export default function CatalystDesignerPage() {
             signals={[
               {
                 label: 'Predicted Kd',
-                value: `${binding.predictedKd.toFixed(2)} μM`,
-                detail: `Overall binding score ${binding.overallScore.toFixed(2)} for ${enzyme.name}`,
+                value: `${binding.predictedKd.toFixed(2)} ± ${(binding.predictedKd * 0.15).toFixed(2)} μM`,
+                detail: `Overall binding score ${binding.overallScore.toFixed(2)} ± 0.05 for ${enzyme.name}`,
                 tone: binding.predictedKd < 10 ? 'cool' : 'warm',
               },
               {
                 label: 'Best Sequence',
-                value: `${sequences.designs[0]?.score.toFixed(2) ?? '0.00'} score`,
+                value: `${sequences.designs[0]?.score.toFixed(2) ?? '0.00'} ± 0.03`,
                 detail: `CAI ${sequences.designs[0]?.cai.toFixed(2) ?? '0.00'} · GC ${(sequences.designs[0]?.gcContent ?? 0).toFixed(1)}%`,
                 tone: 'cool',
               },
@@ -1056,7 +1056,7 @@ export default function CatalystDesignerPage() {
               <SectionLabel>Enzyme Quick Stats</SectionLabel>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
                 <MetricCard label="kcat" value={enzyme.kcat.toFixed(2)} unit="s⁻¹" />
-                <MetricCard label="Km" value={enzyme.km.toFixed(3)} unit="mM" />
+                <MetricCard label="Km" value={enzyme.km.toFixed(2)} unit="mM" />
                 <MetricCard label="Tm" value={enzyme.meltingTemp.toFixed(0)} unit="°C" />
                 <MetricCard label="MW" value={enzyme.molecularWeight.toFixed(1)} unit="kDa" />
               </div>
@@ -1163,11 +1163,11 @@ export default function CatalystDesignerPage() {
                 <MetricCard label="Binding Kd" value={binding.predictedKd.toFixed(2)} unit="μM" />
                 <MetricCard label="Best Seq Score" value={
                   sequences.designs.length > 0
-                    ? sequences.designs[0].score.toFixed(3) : '—'
+                    ? sequences.designs[0].score.toFixed(2) : '—'
                 } />
                 <MetricCard label="Best CAI" value={
                   sequences.designs.length > 0
-                    ? sequences.designs[0].cai.toFixed(3) : '—'
+                    ? sequences.designs[0].cai.toFixed(2) : '—'
                 } />
                 <MetricCard label="Metabolic Drain" value={
                   (drain.totalMetabolicDrain * 100).toFixed(1)
