@@ -157,7 +157,34 @@ function inferCommunityMode(contextText: string) {
   return /community|consortium|co culture|coculture|microbial community/.test(contextText);
 }
 
-export function inferPathwayKeyFromContext(project?: ProjectLike | null, artifact?: AnalyzeArtifactLike | null): PathwayKey {
+// P1.3: flux-driven pathway inference. When an FBA payload with topFluxes is
+// available we sum absolute flux by subsystem and pick the pathway whose
+// corresponding subsystem carries more flux. Falls back to text-heuristic
+// when no FBA result is present.
+export function inferPathwayKeyFromContext(
+  project?: ProjectLike | null,
+  artifact?: AnalyzeArtifactLike | null,
+  fba?: FBAWorkbenchPayload | null,
+): PathwayKey {
+  // 1. Flux-driven (data-based) — preferred when available
+  if (fba?.result?.topFluxes?.length) {
+    const reactionLookup = new Map(REACTION_DEFS.map(r => [r.id, r.subsystem]));
+    const subsystemFlux: Record<string, number> = { Glycolysis: 0, TCA: 0, PPP: 0 };
+    for (const f of fba.result.topFluxes) {
+      const sub = reactionLookup.get(f.reactionId);
+      if (sub && sub in subsystemFlux) {
+        subsystemFlux[sub] += Math.abs(f.flux);
+      }
+    }
+    const best = Object.entries(subsystemFlux).sort((a, b) => b[1] - a[1])[0];
+    if (best && best[1] > 0) {
+      if (best[0] === 'TCA') return 'tca';
+      if (best[0] === 'PPP') return 'ppp';
+      return 'glycolysis';
+    }
+  }
+
+  // 2. Text-heuristic fallback (no FBA data yet)
   const target = normalize(getTargetProduct(project, artifact));
   const contextText = collectContextText(project, artifact);
   if (/nadph|ribose|pentose|ppp/.test(contextText)) return 'ppp';
@@ -176,7 +203,7 @@ export function buildFBASeed(
   const targetProduct = getTargetProduct(project, artifact);
   const contextText = normalize([collectContextText(project, artifact), collectPathDText(pathd)].filter(Boolean).join(' '));
   const benchmark = findBenchmarkByTarget(targetProduct);
-  const pathwayFocus = inferPathwayKeyFromContext(project, artifact);
+  const pathwayFocus = inferPathwayKeyFromContext(project, artifact, null);
   const bottleneckCount = Math.max(artifact?.bottleneckAssumptions?.length ?? 0, pathd?.result.bottleneckCount ?? 0);
   const concernCount = Math.max(artifact?.thermodynamicConcerns?.length ?? 0, pathd?.result.thermodynamicConcerns ?? 0);
   const candidateCount = Math.max(artifact?.pathwayCandidates?.length ?? 0, pathd?.result.pathwayCandidates ?? 0);
@@ -247,7 +274,7 @@ export function buildCETHXSeed(
   fba?: FBAWorkbenchPayload | null,
   pathd?: PathDWorkbenchPayload | null,
 ): CETHXSeed {
-  let pathway = inferPathwayKeyFromContext(project, artifact);
+  let pathway = inferPathwayKeyFromContext(project, artifact, fba);
   const benchmark = findBenchmarkByTarget(getTargetProduct(project, artifact));
   const pathwayText = collectPathDText(pathd);
   if (/pentose|nadph|ppp/.test(pathwayText)) pathway = 'ppp';
@@ -313,7 +340,7 @@ export function buildCatalystSeed(
 ): CatalystSeed {
   const target = normalize(getTargetProduct(project, artifact));
   const contextText = collectContextText(project, artifact);
-  const pathway = cethx?.pathway ?? inferPathwayKeyFromContext(project, artifact);
+  const pathway = cethx?.pathway ?? inferPathwayKeyFromContext(project, artifact, fba);
   const feedback = getCommittedDBTLFeedback(dbtl);
   const scored = ENZYME_STRUCTURES.map((enzyme, index) => ({
     index,
