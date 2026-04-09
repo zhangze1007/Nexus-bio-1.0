@@ -1,6 +1,6 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { PATHD_THEME } from '../../workbench/workbenchTheme';
 import { T } from '../../ide/tokens';
 
@@ -25,21 +25,9 @@ interface ScientificHeroProps {
   onDismiss?: () => void;
 }
 
+// P2.1 — Tufte: eliminated sub-threshold color differences between neutral/cool/warm.
+// Only alert carries a visually distinct palette (salmon) because it requires user attention.
 function toneStyle(tone: ScientificSignalTone = 'neutral') {
-  if (tone === 'cool') {
-    return {
-      border: 'rgba(175,195,214,0.34)',
-      background: 'rgba(175,195,214,0.14)',
-      color: 'rgba(234,242,252,0.96)',
-    };
-  }
-  if (tone === 'warm') {
-    return {
-      border: 'rgba(231,199,169,0.34)',
-      background: 'rgba(231,199,169,0.14)',
-      color: 'rgba(248,228,196,0.96)',
-    };
-  }
   if (tone === 'alert') {
     return {
       border: 'rgba(232,163,161,0.34)',
@@ -47,9 +35,10 @@ function toneStyle(tone: ScientificSignalTone = 'neutral') {
       color: 'rgba(252,222,220,0.96)',
     };
   }
+  // neutral / cool / warm — unified muted style
   return {
-    border: 'rgba(207,196,227,0.28)',
-    background: 'rgba(207,196,227,0.10)',
+    border: 'rgba(200,200,216,0.28)',
+    background: 'rgba(200,200,216,0.10)',
     color: PATHD_THEME.value,
   };
 }
@@ -64,6 +53,41 @@ export default function ScientificHero({
   dismissible = false,
   onDismiss,
 }: ScientificHeroProps) {
+  // P2.1: default collapsed to a compact 28px lineage bar; expand on click
+  const [collapsed, setCollapsed] = useState(true);
+
+  if (collapsed) {
+    return (
+      <section
+        className="nb-scientific-hero nb-scientific-hero--collapsed"
+        onClick={() => setCollapsed(false)}
+        style={{
+          borderRadius: '14px',
+          border: '1px solid rgba(255,255,255,0.10)',
+          background: 'rgba(10,12,16,0.40)',
+          padding: '6px 14px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+          cursor: 'pointer',
+          height: '28px',
+          overflow: 'hidden',
+          transition: 'background 0.15s',
+        }}
+      >
+        <span style={{ fontFamily: T.MONO, fontSize: '9px', color: PATHD_THEME.label, textTransform: 'uppercase', letterSpacing: '0.10em', flexShrink: 0 }}>
+          {eyebrow}
+        </span>
+        <span style={{ fontFamily: T.SANS, fontSize: '11px', fontWeight: 600, color: PATHD_THEME.value, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>
+          {title}
+        </span>
+        <span style={{ fontFamily: T.MONO, fontSize: '9px', color: PATHD_THEME.label, marginLeft: 'auto', flexShrink: 0 }}>
+          ▸ expand
+        </span>
+      </section>
+    );
+  }
+
   return (
     <section
       className="nb-scientific-hero"
@@ -90,6 +114,34 @@ export default function ScientificHero({
           pointerEvents: 'none',
         }}
       />
+      {/* Collapse button (always visible in expanded state) */}
+      <button
+        type="button"
+        aria-label="Collapse hero panel"
+        onClick={() => setCollapsed(true)}
+        style={{
+          position: 'absolute',
+          top: '12px',
+          right: dismissible ? '42px' : '12px',
+          width: '24px',
+          height: '24px',
+          borderRadius: '50%',
+          background: 'rgba(255,255,255,0.08)',
+          border: '1px solid rgba(255,255,255,0.14)',
+          color: PATHD_THEME.label,
+          cursor: 'pointer',
+          fontFamily: T.MONO,
+          fontSize: '10px',
+          lineHeight: 1,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 3,
+        }}
+        title="Collapse"
+      >
+        ▴
+      </button>
       {dismissible && onDismiss ? (
         <button
           type="button"
