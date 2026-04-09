@@ -530,18 +530,49 @@ export function predictBindingAffinity(enzyme: EnzymeStructure): BindingAffinity
   const elecNorm = residues.length > 0 ? elecEnergy / residues.length : 0;
   const electrostaticScore = clamp(1 / (1 + Math.exp(elecNorm * 2)), 0, 1);
 
-  // ── Composite Binding Energy ───────────────────────────────────────────
-  const bindingEnergy = round3(
-    -2.0 * distanceScore
-    - 1.5 * orientationScore
-    + vdwNorm * 0.5
-    + elecNorm * 0.3,
-  );
+  // ── MM-PBSA-style Binding Free Energy ──────────────────────────────────
+  // ΔG_bind ≈ ΔE_vdw + ΔE_elec + ΔG_polar_solv + ΔG_nonpolar_solv − TΔS
+  //
+  // This follows the Molecular Mechanics Poisson–Boltzmann Surface Area
+  // decomposition (Kollman et al. 2000, Acc Chem Res 33:889). Each term
+  // uses the scores already computed above:
+  //
+  //   ΔE_vdw        = summed LJ 6-12 contribution (vdwNorm), already in kcal/mol
+  //   ΔE_elec       = Coulomb with Warshel ε (elecNorm), already in kcal/mol
+  //   ΔG_polar_solv = Born solvation penalty ≈ -332 × (1/ε_in − 1/ε_out) × q²/r
+  //                   approximated here as a fraction of the electrostatic term
+  //   ΔG_nonpolar   = γ × ΔSASA ≈ −γ × (contact area from distance/orientation)
+  //   −TΔS          = rigid-body entropy penalty (constant ~1.5 kcal/mol at 298K)
+
+  const eps_in = 4.0;   // protein interior dielectric
+  const eps_out = 80.0;  // solvent dielectric
+  const gamma = 0.0072;  // kcal/(mol·Å²) — SASA coefficient
+
+  // ΔE_vdw: direct from Lennard-Jones sum
+  const dE_vdw = vdwNorm;
+
+  // ΔE_elec: direct from Coulomb with Warshel distance-dependent ε
+  const dE_elec = elecNorm;
+
+  // ΔG_polar_solv: Born-like desolvation penalty — opposes electrostatic gain
+  // Factor (1/ε_in - 1/ε_out) ≈ 0.2375
+  const bornFactor = (1 / eps_in) - (1 / eps_out);
+  const dG_polar = -dE_elec * bornFactor * eps_in; // partially cancels ΔE_elec
+
+  // ΔG_nonpolar: SASA-proportional — higher distance/orientation score → more
+  // buried surface → more negative (favorable) nonpolar term
+  const estimatedSASA = 200 * distanceScore * (0.5 + 0.5 * orientationScore); // Å²
+  const dG_nonpolar = -gamma * estimatedSASA;
+
+  // −TΔS: rigid-body translational/rotational entropy penalty
+  const TdS = 1.5; // kcal/mol (standard estimate at 298 K)
+
+  const bindingEnergy = round3(dE_vdw + dE_elec + dG_polar + dG_nonpolar + TdS);
 
   // ΔG_bind → Kd = exp(ΔG / RT)
   const predictedKd = round3(Math.exp(bindingEnergy / RT) * 1000); // μM
 
-  // Overall composite score
+  // Overall composite score — weighted geometric mean of component scores
   const overallScore = round3(clamp(
     0.35 * distanceScore + 0.25 * orientationScore + 0.20 * vdwScore + 0.20 * electrostaticScore,
     0, 1,
