@@ -500,24 +500,61 @@ export default function FBASimPage() {
     [analyzeArtifact?.generatedAt, analyzeArtifact?.id, dbtlPayload?.feedbackSource, dbtlPayload?.result.improvementRate, dbtlPayload?.result.latestPhase, dbtlPayload?.result.passRate, dbtlPayload?.updatedAt, pathdPayload?.updatedAt, project?.id, project?.updatedAt],
   );
 
+  // P1.2: track the seed signature that was last applied. Without this, every
+  // upstream update silently overwrites persisted local edits (E. coli / yeast
+  // glucose & oxygen) — non-monotonic and surprising. We now (a) only re-seed
+  // when the upstream signature actually changes and (b) surface a dismissible
+  // notice when the new seed is replacing locally-modified persisted values.
+  const seedSignature = useMemo(
+    () => `${recommendedSeed.mode}|${recommendedSeed.objective}|${recommendedSeed.glucoseUptake}|${recommendedSeed.oxygenUptake}|${recommendedSeed.knockouts.join(',')}`,
+    [recommendedSeed.glucoseUptake, recommendedSeed.knockouts, recommendedSeed.mode, recommendedSeed.objective, recommendedSeed.oxygenUptake],
+  );
+  const lastAppliedSeedRef = useRef<string | null>(null);
+  const [seedOverwriteNotice, setSeedOverwriteNotice] = useState<string | null>(null);
+
   useEffect(() => {
+    if (lastAppliedSeedRef.current === seedSignature) return;
+
+    const expectedEcoliGlc = Math.max(3, round(recommendedSeed.glucoseUptake * 0.58));
+    const expectedEcoliO2  = Math.max(3, round(recommendedSeed.oxygenUptake  * 0.65));
+    const expectedYeastGlc = Math.max(2, round(recommendedSeed.glucoseUptake * 0.42));
+    const expectedYeastO2  = Math.max(2, round(recommendedSeed.oxygenUptake  * 0.45));
+
+    // Detect divergence: only meaningful after we have applied at least one seed.
+    if (lastAppliedSeedRef.current !== null) {
+      const localDiverged =
+        ecoliGlucose !== expectedEcoliGlc ||
+        ecoliOxygen  !== expectedEcoliO2  ||
+        yeastGlucose !== expectedYeastGlc ||
+        yeastOxygen  !== expectedYeastO2;
+      if (localDiverged) {
+        setSeedOverwriteNotice('Upstream FBA seed has changed and your local Two-Species uptake edits were just replaced. Re-apply manual values if needed.');
+      }
+    }
+
     setSimMode(recommendedSeed.mode);
     setObjective(recommendedSeed.objective);
     setGlucoseUptake(recommendedSeed.glucoseUptake);
     setOxygenUptake(recommendedSeed.oxygenUptake);
     setKnockouts(recommendedSeed.knockouts);
-    setEcoliGlucose(Math.max(3, round(recommendedSeed.glucoseUptake * 0.58)));
-    setEcoliOxygen(Math.max(3, round(recommendedSeed.oxygenUptake * 0.65)));
-    setYeastGlucose(Math.max(2, round(recommendedSeed.glucoseUptake * 0.42)));
-    setYeastOxygen(Math.max(2, round(recommendedSeed.oxygenUptake * 0.45)));
+    setEcoliGlucose(expectedEcoliGlc);
+    setEcoliOxygen(expectedEcoliO2);
+    setYeastGlucose(expectedYeastGlc);
+    setYeastOxygen(expectedYeastO2);
     setEcoliKO(recommendedSeed.knockouts.slice(0, 1));
     setYeastKO(recommendedSeed.knockouts.slice(1));
+    lastAppliedSeedRef.current = seedSignature;
   }, [
+    seedSignature,
     recommendedSeed.glucoseUptake,
     recommendedSeed.knockouts,
     recommendedSeed.mode,
     recommendedSeed.objective,
     recommendedSeed.oxygenUptake,
+    ecoliGlucose,
+    ecoliOxygen,
+    yeastGlucose,
+    yeastOxygen,
     setEcoliGlucose,
     setEcoliOxygen,
     setGlucoseUptake,
@@ -874,6 +911,41 @@ export default function FBASimPage() {
               lineHeight: 1.5,
             }}>
               <strong style={{ color: 'rgba(255,200,190,0.95)' }}>Method note:</strong> This mode runs two independent single-species FBA solves (E. coli and yeast) and compares their exchange fluxes. It is <em>not</em> a joint community LP (e.g. SteadyCom / cFBA) — shared-pool stoichiometric coupling is not enforced. Treat outputs as a side-by-side flux comparison, not a microbiome model.
+            </div>
+          </div>
+        )}
+        {seedOverwriteNotice && (
+          <div style={{ padding: '0 16px 8px' }}>
+            <div style={{
+              padding: '8px 12px',
+              borderRadius: '12px',
+              border: '1px solid rgba(232, 180, 90, 0.45)',
+              background: 'rgba(232, 180, 90, 0.10)',
+              color: 'rgba(255, 230, 190, 0.9)',
+              fontFamily: T.SANS,
+              fontSize: '11px',
+              display: 'flex',
+              gap: '8px',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}>
+              <span>{seedOverwriteNotice}</span>
+              <button
+                aria-label="Dismiss"
+                onClick={() => setSeedOverwriteNotice(null)}
+                style={{
+                  fontFamily: T.MONO,
+                  fontSize: '10px',
+                  padding: '3px 8px',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(255,255,255,0.18)',
+                  background: 'transparent',
+                  color: 'rgba(255,255,255,0.8)',
+                  cursor: 'pointer',
+                }}
+              >
+                Dismiss
+              </button>
             </div>
           </div>
         )}
