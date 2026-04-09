@@ -1,8 +1,10 @@
 'use client';
+import type { CSSProperties } from 'react';
 import { Download } from 'lucide-react';
 import { T } from '../tokens';
 
 const SANS = T.SANS;
+type ControlVarsStyle = CSSProperties & Record<`--${string}`, string>;
 
 interface ExportButtonProps {
   label: string;
@@ -60,20 +62,28 @@ export default function ExportButton({ label, data, filename, format = 'json', s
     <button
       onClick={handleClick}
       disabled={disabled}
+      className="nb-ui-control"
       style={{
         display: 'flex', alignItems: 'center', gap: '6px',
         padding: '5px 12px',
-        background: 'rgba(255,255,255,0.04)',
-        border: '1px solid rgba(255,255,255,0.10)',
+        background: 'var(--nb-control-bg)',
+        border: '1px solid var(--nb-control-border)',
         borderRadius: '8px',
-        color: disabled ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.55)',
+        color: 'var(--nb-control-color)',
         fontFamily: SANS,
         fontSize: '11px',
         cursor: disabled ? 'not-allowed' : 'pointer',
-        transition: 'all 0.15s',
-      }}
-      onMouseEnter={e => { if (!disabled) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)'; }}
-      onMouseLeave={e => { if (!disabled) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'; }}
+        transition: 'background 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease',
+        ['--nb-control-bg' as const]: 'rgba(255,255,255,0.04)',
+        ['--nb-control-border' as const]: 'rgba(255,255,255,0.10)',
+        ['--nb-control-color' as const]: disabled ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.58)',
+        ['--nb-control-hover-bg' as const]: disabled ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.94)',
+        ['--nb-control-hover-border' as const]: disabled ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.94)',
+        ['--nb-control-hover-color' as const]: disabled ? 'rgba(255,255,255,0.2)' : '#111318',
+        ['--nb-control-active-bg' as const]: disabled ? 'rgba(255,255,255,0.04)' : '#ffffff',
+        ['--nb-control-active-border' as const]: disabled ? 'rgba(255,255,255,0.10)' : '#ffffff',
+        ['--nb-control-active-color' as const]: disabled ? 'rgba(255,255,255,0.2)' : '#111318',
+      } as ControlVarsStyle}
     >
       <Download size={11} />
       {label}

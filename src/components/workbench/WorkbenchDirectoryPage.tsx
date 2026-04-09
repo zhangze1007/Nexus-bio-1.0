@@ -1,5 +1,6 @@
 'use client';
 
+import type { CSSProperties } from 'react';
 import Link from 'next/link';
 import { ArrowUpRight, Beaker, Layers3, Microscope } from 'lucide-react';
 import { T } from '../ide/tokens';
@@ -20,6 +21,7 @@ const LABEL = PATHD_THEME.label;
 const VALUE = PATHD_THEME.value;
 const SURFACE = PATHD_THEME.panelGlassStrong;
 const SURFACE_SOFT = PATHD_THEME.panelSurface;
+type ControlVarsStyle = CSSProperties & Record<`--${string}`, string>;
 
 export default function WorkbenchDirectoryPage() {
   const project = useWorkbenchStore((s) => s.project);
@@ -273,6 +275,7 @@ export default function WorkbenchDirectoryPage() {
                       <Link
                         key={entry.href}
                         href={entry.href}
+                        className="nb-ui-control"
                         style={{
                           minHeight: '34px',
                           padding: '0 12px',
@@ -281,12 +284,21 @@ export default function WorkbenchDirectoryPage() {
                           alignItems: 'center',
                           gap: '6px',
                           textDecoration: 'none',
-                          border: `1px solid ${BORDER}`,
-                          background: SURFACE_SOFT,
-                          color: VALUE,
+                          border: '1px solid var(--nb-control-border)',
+                          background: 'var(--nb-control-bg)',
+                          color: 'var(--nb-control-color)',
                           fontFamily: T.SANS,
                           fontSize: '12px',
-                        }}
+                          ['--nb-control-bg' as const]: SURFACE_SOFT,
+                          ['--nb-control-border' as const]: BORDER,
+                          ['--nb-control-color' as const]: VALUE,
+                          ['--nb-control-hover-bg' as const]: '#ffffff',
+                          ['--nb-control-hover-border' as const]: '#ffffff',
+                          ['--nb-control-hover-color' as const]: PATHD_THEME.ink,
+                          ['--nb-control-active-bg' as const]: '#ffffff',
+                          ['--nb-control-active-border' as const]: '#ffffff',
+                          ['--nb-control-active-color' as const]: PATHD_THEME.ink,
+                        } as ControlVarsStyle}
                       >
                         {entry.label}
                         <ArrowUpRight size={12} />
@@ -366,8 +378,40 @@ export default function WorkbenchDirectoryPage() {
                         <div style={{ fontFamily: T.SANS, fontSize: '11px', color: LABEL, lineHeight: 1.55 }}>
                           {freshnessByTool[tool.id]?.summary ?? 'No execution integrity signal yet.'}
                         </div>
-                        <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL }}>
-                          {tool.outputs.slice(0, 2).join(' · ')}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', marginTop: 'auto' }}>
+                          <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, minWidth: 0 }}>
+                            {tool.outputs.slice(0, 2).join(' · ')}
+                          </div>
+                          <span
+                            className="nb-ui-control"
+                            style={{
+                              minHeight: '36px',
+                              padding: '0 14px',
+                              borderRadius: '12px',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '7px',
+                              border: '1px solid var(--nb-control-border)',
+                              background: 'var(--nb-control-bg)',
+                              color: 'var(--nb-control-color)',
+                              fontFamily: T.SANS,
+                              fontSize: '12px',
+                              fontWeight: 700,
+                              flexShrink: 0,
+                              ['--nb-control-bg' as const]: '#ffffff',
+                              ['--nb-control-border' as const]: '#ffffff',
+                              ['--nb-control-color' as const]: PATHD_THEME.ink,
+                              ['--nb-control-hover-bg' as const]: '#ffffff',
+                              ['--nb-control-hover-border' as const]: '#ffffff',
+                              ['--nb-control-hover-color' as const]: PATHD_THEME.ink,
+                              ['--nb-control-active-bg' as const]: '#f6f6f6',
+                              ['--nb-control-active-border' as const]: '#ffffff',
+                              ['--nb-control-active-color' as const]: PATHD_THEME.ink,
+                            } as ControlVarsStyle}
+                          >
+                            Enter
+                            <ArrowUpRight size={13} />
+                          </span>
                         </div>
                       </Link>
                     );

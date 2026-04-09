@@ -11,6 +11,8 @@ type RendererMode = 'loading' | 'webgpu' | 'webgl2' | 'webgl' | 'error';
 type SceneViewMode = 'network' | 'flow' | 'risk';
 type OpticalInsetBox = { top: number; right: number; bottom: number; left: number };
 type TracePlacement = 'top-right' | 'top-left';
+type TraceLayout = { top?: number; right?: number; left?: number; width?: number };
+type ControlVarsStyle = React.CSSProperties & Record<`--${string}`, string>;
 type ConfigurableRenderer = {
   setSize: (w: number, h: number, updateStyle?: boolean) => void;
   toneMapping: THREE.ToneMapping;
@@ -772,9 +774,9 @@ function ResizeHandler() {
 }
 
 // ─── Main Component — loading fallback and scene unified ─────────────
-interface Props { nodes:PathwayNode[]; onNodeClick:(node:PathwayNode)=>void; edges?:PathwayEdge[]; selectedNodeId?:string|null; glowMultiplier?:number; flowSpeed?:number; fullscreen?:boolean; stressIndex?:number; opticalInsets?: Partial<OpticalInsetBox>; tracePlacement?: TracePlacement; }
+interface Props { nodes:PathwayNode[]; onNodeClick:(node:PathwayNode)=>void; edges?:PathwayEdge[]; selectedNodeId?:string|null; glowMultiplier?:number; flowSpeed?:number; fullscreen?:boolean; stressIndex?:number; opticalInsets?: Partial<OpticalInsetBox>; tracePlacement?: TracePlacement; traceLayout?: TraceLayout; }
 
-export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, glowMultiplier = 1, flowSpeed = 1, fullscreen = false, stressIndex = 0, opticalInsets, tracePlacement = 'top-right' }: Props) {
+export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, glowMultiplier = 1, flowSpeed = 1, fullscreen = false, stressIndex = 0, opticalInsets, tracePlacement = 'top-right', traceLayout }: Props) {
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('ready');
   const [rendererMode, setRendererMode] = useState<RendererMode>('loading');
   const [viewMode, setViewMode] = useState<SceneViewMode>('network');
@@ -792,6 +794,19 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, 
   const resolvedOpticalInsets = useMemo(
     () => normalizeOpticalInsets(fullscreen, opticalInsets),
     [fullscreen, opticalInsets],
+  );
+  const resolvedTraceLayout = useMemo(
+    () => ({
+      top: traceLayout?.top ?? resolvedOpticalInsets.top,
+      left: tracePlacement === 'top-left'
+        ? traceLayout?.left ?? resolvedOpticalInsets.left
+        : traceLayout?.left,
+      right: tracePlacement === 'top-right'
+        ? traceLayout?.right ?? resolvedOpticalInsets.right
+        : traceLayout?.right,
+      width: traceLayout?.width,
+    }),
+    [resolvedOpticalInsets.left, resolvedOpticalInsets.right, resolvedOpticalInsets.top, traceLayout, tracePlacement],
   );
   const fallbackLabel = getRendererLabel(rendererMode);
   const riskNodes = useMemo(() => safeNodes.filter(node => (node.risk_score ?? 0) >= HIGH_RISK_THRESHOLD).length, [safeNodes]);
@@ -898,20 +913,30 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, 
                   key={mode.key}
                   type="button"
                   onClick={() => setViewMode(mode.key)}
+                  className="nb-ui-control"
                   style={{
                     pointerEvents: 'auto',
                     minHeight: '24px',
                     padding: '0 9px',
                     borderRadius: '999px',
-                    border: 'none',
-                    background: viewMode === mode.key ? mode.active : 'transparent',
-                    color: viewMode === mode.key ? '#000000' : 'rgba(255,255,255,0.45)',
+                    border: '1px solid var(--nb-control-border)',
+                    background: 'var(--nb-control-bg)',
+                    color: 'var(--nb-control-color)',
                     fontSize: '9px',
                     fontWeight: 700,
                     letterSpacing: '0.04em',
                     textTransform: 'uppercase',
                     cursor: 'pointer',
-                  }}
+                    ['--nb-control-bg' as const]: viewMode === mode.key ? mode.active : 'transparent',
+                    ['--nb-control-border' as const]: viewMode === mode.key ? mode.active : 'transparent',
+                    ['--nb-control-color' as const]: viewMode === mode.key ? '#000000' : 'rgba(255,255,255,0.45)',
+                    ['--nb-control-hover-bg' as const]: '#ffffff',
+                    ['--nb-control-hover-border' as const]: '#ffffff',
+                    ['--nb-control-hover-color' as const]: '#111318',
+                    ['--nb-control-active-bg' as const]: '#ffffff',
+                    ['--nb-control-active-border' as const]: '#ffffff',
+                    ['--nb-control-active-color' as const]: '#111318',
+                  } as ControlVarsStyle}
                 >
                   {mode.label}
                 </button>
@@ -922,20 +947,30 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, 
             type="button"
             onClick={() => setResetSignal(s => s + 1)}
             title="Reset camera to default view"
+            className="nb-ui-control"
             style={{
               pointerEvents: 'auto',
               minHeight: '24px',
               padding: '0 9px',
               borderRadius: '999px',
-              border: '1px solid rgba(255,255,255,0.10)',
-              background: 'rgba(255,255,255,0.04)',
-              color: 'rgba(255,255,255,0.45)',
+              border: '1px solid var(--nb-control-border)',
+              background: 'var(--nb-control-bg)',
+              color: 'var(--nb-control-color)',
               fontSize: '9px',
               fontWeight: 700,
               letterSpacing: '0.04em',
               textTransform: 'uppercase',
               cursor: 'pointer',
-            }}
+              ['--nb-control-bg' as const]: 'rgba(255,255,255,0.04)',
+              ['--nb-control-border' as const]: 'rgba(255,255,255,0.10)',
+              ['--nb-control-color' as const]: 'rgba(255,255,255,0.45)',
+              ['--nb-control-hover-bg' as const]: '#ffffff',
+              ['--nb-control-hover-border' as const]: '#ffffff',
+              ['--nb-control-hover-color' as const]: '#111318',
+              ['--nb-control-active-bg' as const]: '#ffffff',
+              ['--nb-control-active-border' as const]: '#ffffff',
+              ['--nb-control-active-color' as const]: '#111318',
+            } as ControlVarsStyle}
           >
             ↺ Reset
           </button>
@@ -974,11 +1009,13 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, 
         style={{
           pointerEvents: 'none',
           position: 'absolute',
-          top: `${resolvedOpticalInsets.top}px`,
-          right: tracePlacement === 'top-right' ? `${resolvedOpticalInsets.right}px` : 'auto',
-          left: tracePlacement === 'top-left' ? `${resolvedOpticalInsets.left}px` : 'auto',
+          top: `${resolvedTraceLayout.top}px`,
+          right: tracePlacement === 'top-right' && resolvedTraceLayout.right !== undefined ? `${resolvedTraceLayout.right}px` : 'auto',
+          left: tracePlacement === 'top-left' && resolvedTraceLayout.left !== undefined ? `${resolvedTraceLayout.left}px` : 'auto',
           zIndex: 10,
-          width: 'min(208px, calc(100% - 32px))',
+          width: resolvedTraceLayout.width
+            ? `min(${resolvedTraceLayout.width}px, calc(100% - 32px))`
+            : 'min(208px, calc(100% - 32px))',
           borderRadius: '16px',
           border: '1px solid rgba(255,255,255,0.09)',
           background: 'linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(242,247,252,0.06) 22%, rgba(8,10,14,0.48) 100%)',

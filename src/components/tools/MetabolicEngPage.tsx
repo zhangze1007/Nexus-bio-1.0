@@ -14,7 +14,7 @@
  *   Desktop: 60 FPS  |  Mobile MatePad 11.5: 45 FPS (dpr capped at 1.2)
  */
 
-import { useEffect, useRef, useCallback, useMemo, useState, useLayoutEffect } from 'react';
+import { useEffect, useRef, useCallback, useMemo, useState, useLayoutEffect, type CSSProperties } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMachine } from '@xstate/react';
 import FluidSimCanvas from './FluidSimCanvas';
@@ -58,8 +58,9 @@ function inferRouteLabel(nodes: PathwayNode[]) {
 const PATHD_LEFT_PANEL_WIDTH = 228;
 const PATHD_RIGHT_PANEL_WIDTH = 218;
 const PATHD_SUPPORT_RAIL_WIDTH = 272;
-const PATHD_SCENE_GUTTER = 28;
+const PATHD_SCENE_GUTTER = 20;
 const PATHD_PANEL_BOTTOM = 18;
+type ControlVarsStyle = CSSProperties & Record<`--${string}`, string>;
 
 // ── Main orchestrator ──────────────────────────────────────────────────
 
@@ -93,6 +94,45 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
   const activeRouteLabel = useMemo(
     () => analyzeArtifact?.pathwayCandidates[0]?.label || inferRouteLabel(activeNodes),
     [activeNodes, analyzeArtifact?.pathwayCandidates],
+  );
+  const recommendedNextTool = (analyzeArtifact?.recommendedNextTools[0] ?? 'fbasim').toUpperCase();
+  const supportCards = useMemo(
+    () => [
+      {
+        eyebrow: 'Stage 1 Context',
+        value: derivedTarget,
+        body: analyzeArtifact
+          ? `Analyze-linked route active · ${activeRouteLabel}`
+          : 'Simulated route active until an Analyze artifact is attached.',
+        chips: [analyzeArtifact ? 'Analyze-linked' : 'Simulated context', 'Pathway hero'],
+      },
+      {
+        eyebrow: 'Route Object',
+        value: selectedNode?.label ?? activeRouteLabel,
+        body: selectedNode
+          ? 'Node focus stays explicit while the pathway remains the main scientific figure.'
+          : 'Route-level focus remains visible without turning the dashboard into the main stage.',
+        chips: [`${activeNodes.length} nodes`, `${activeEdges.length} edges`],
+      },
+      {
+        eyebrow: 'Next Handoff',
+        value: recommendedNextTool,
+        body: analyzeArtifact?.bottleneckAssumptions[0]?.label ?? 'No structured bottleneck has been injected yet; use PATHD to choose the next simulation handoff.',
+        chips: [
+          `${analyzeArtifact?.bottleneckAssumptions.length ?? 0} bottlenecks`,
+          `${analyzeArtifact?.enzymeCandidates.length ?? 0} enzyme candidates`,
+        ],
+      },
+    ],
+    [
+      activeEdges.length,
+      activeNodes.length,
+      activeRouteLabel,
+      analyzeArtifact,
+      derivedTarget,
+      recommendedNextTool,
+      selectedNode?.label,
+    ],
   );
 
   useEffect(() => {
@@ -177,13 +217,20 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
   );
 
   const sceneOpticalInsets = useMemo(
-    () => ({
-      top: 22,
-      right: Math.round(PATHD_SUPPORT_RAIL_WIDTH * 0.72),
-      bottom: PATHD_PANEL_BOTTOM + 54,
-      left: Math.round(PATHD_LEFT_PANEL_WIDTH * 0.42),
-    }),
-    [],
+    () => (embedded
+      ? {
+          top: 24,
+          right: Math.round(PATHD_RIGHT_PANEL_WIDTH * 0.4),
+          bottom: PATHD_PANEL_BOTTOM + 54,
+          left: Math.round(PATHD_LEFT_PANEL_WIDTH * 0.26),
+        }
+      : {
+          top: 22,
+          right: Math.round(PATHD_SUPPORT_RAIL_WIDTH * 0.72),
+          bottom: PATHD_PANEL_BOTTOM + 54,
+          left: Math.round(PATHD_LEFT_PANEL_WIDTH * 0.42),
+        }),
+    [embedded],
   );
 
   // ── Fluid force ref — zero allocation on RAF ──────────────────────
@@ -326,145 +373,229 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
         state={state}
       />
 
-      <div
-        className="nb-pathd-hero-stack nb-pathd-hero-stack--rail"
-        style={{
-          position: 'absolute',
-          top: '16px',
-          right: '18px',
-          left: 'auto',
-          transform: 'none',
-          width: `${PATHD_SUPPORT_RAIL_WIDTH}px`,
-          zIndex: 14,
-          pointerEvents: 'none',
-          display: 'grid',
-          gap: '8px',
-          maxHeight: embedded ? 'min(34vh, 300px)' : 'min(33vh, 300px)',
-          overflowY: 'auto',
-          paddingRight: '2px',
-        }}
-      >
-        <div style={{ pointerEvents: 'auto' }}>
-          <WorkbenchInlineContext
-            toolId="pathd"
-            title="Pathway & Enzyme Design"
-            summary="PATHD keeps the active route, evidence state, and bottleneck focus visible while the pathway itself remains the main scientific figure."
-            compact
-            isSimulated={!analyzeArtifact}
-          />
-        </div>
-        {!heroDismissed && <div style={{ pointerEvents: 'auto' }}>
-          <ScientificHero
-            eyebrow="Stage 1 · Pathway & Enzyme Design"
-            title={`${activeRouteLabel} is the current design object`}
-            summary="PATHD should read like the front door to the whole scientific program. This page now surfaces the active route, bottleneck pressure, enzyme opportunity, and next tool handoff before the scientist dives into the 3D pathway graph."
-            dismissible
-            onDismiss={() => setHeroDismissed(true)}
-            aside={
-              <>
-                <div style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                  Current focus
+      {embedded ? (
+        <div className="nb-pathd-support-dock">
+          <div className="nb-pathd-support-dock__grid">
+            {supportCards.map((card) => (
+              <div
+                key={card.eyebrow}
+                className="nb-pathd-support-dock__card"
+                style={{
+                  borderRadius: '18px',
+                  border: '1px solid rgba(255,255,255,0.12)',
+                  background: 'linear-gradient(180deg, rgba(255,255,255,0.12) 0%, rgba(247,250,253,0.08) 16%, rgba(10,12,16,0.58) 100%)',
+                  boxShadow: '0 18px 34px rgba(0,0,0,0.24), inset 0 1px 0 rgba(255,255,255,0.10)',
+                  backdropFilter: 'blur(18px) saturate(135%)',
+                  WebkitBackdropFilter: 'blur(18px) saturate(135%)',
+                  padding: '12px 13px',
+                  display: 'grid',
+                  gap: '8px',
+                }}
+              >
+                <div style={{ display: 'grid', gap: '4px' }}>
+                  <div
+                    style={{
+                      fontFamily: T.MONO,
+                      fontSize: '9px',
+                      letterSpacing: '0.10em',
+                      textTransform: 'uppercase',
+                      color: PATHD_THEME.label,
+                    }}
+                  >
+                    {card.eyebrow}
+                  </div>
+                  <div
+                    style={{
+                      fontFamily: T.SANS,
+                      fontSize: '13px',
+                      fontWeight: 700,
+                      color: PATHD_THEME.value,
+                      lineHeight: 1.2,
+                    }}
+                  >
+                    {card.value}
+                  </div>
                 </div>
-                <div style={{ fontFamily: T.SANS, fontSize: '13px', color: PATHD_THEME.value, fontWeight: 700 }}>
-                  {selectedNode?.label ?? derivedTarget}
+                <div
+                  style={{
+                    fontFamily: T.SANS,
+                    fontSize: '10.5px',
+                    lineHeight: 1.5,
+                    color: PATHD_THEME.label,
+                  }}
+                >
+                  {card.body}
                 </div>
-                <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.label, lineHeight: 1.55 }}>
-                  {selectedNode
-                    ? 'A specific pathway node is in focus, so downstream interpretation should respect this current design emphasis.'
-                    : 'No node is pinned yet; the route remains the active object at pathway scale.'}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                  {card.chips.map((chip) => (
+                    <span
+                      key={chip}
+                      style={{
+                        minHeight: '24px',
+                        padding: '0 8px',
+                        borderRadius: '999px',
+                        border: '1px solid rgba(255,255,255,0.12)',
+                        background: 'rgba(255,255,255,0.10)',
+                        color: PATHD_THEME.value,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        fontFamily: T.MONO,
+                        fontSize: '8px',
+                        letterSpacing: '0.05em',
+                        textTransform: 'uppercase',
+                      }}
+                    >
+                      {chip}
+                    </span>
+                  ))}
                 </div>
-              </>
-            }
-            signals={[
-              {
-                label: 'Target Product',
-                value: derivedTarget,
-                detail: `${activeNodes.length} nodes · ${activeEdges.length} edges in the current executable route graph`,
-                tone: 'cool',
-              },
-              {
-                label: 'Bottlenecks',
-                value: `${analyzeArtifact?.bottleneckAssumptions.length ?? 0}`,
-                detail: analyzeArtifact?.bottleneckAssumptions[0]?.label ?? 'No structured bottleneck has been injected from Analyze yet.',
-                tone: (analyzeArtifact?.bottleneckAssumptions.length ?? 0) > 0 ? 'warm' : 'neutral',
-              },
-              {
-                label: 'Enzyme Candidates',
-                value: `${analyzeArtifact?.enzymeCandidates.length ?? 0}`,
-                detail: analyzeArtifact?.enzymeCandidates[0]?.label ?? 'No enzyme candidate has been prioritized yet.',
-                tone: 'neutral',
-              },
-              {
-                label: 'Next Tool',
-                value: (analyzeArtifact?.recommendedNextTools[0] ?? 'fbasim').toUpperCase(),
-                detail: 'PATHD now makes the next scientific handoff explicit instead of leaving the route as a dead-end visualization.',
-                tone: 'warm',
-              },
-            ]}
-          />
-        </div>}
-        {!methodStripDismissed && <div style={{ pointerEvents: 'auto' }}>
-          <ScientificMethodStrip
-            label="Pathway workbench"
-            dismissible
-            onDismiss={() => setMethodStripDismissed(true)}
-            items={[
-              {
-                title: 'Route object',
-                detail: 'The active route is treated as the canonical scientific object, so every downstream handoff inherits the same graph rather than rebuilding assumptions from scratch.',
-                accent: PATHD_THEME.apricot,
-                note: `${activeNodes.length} nodes · ${activeEdges.length} edges`,
-              },
-              {
-                title: '3D scientific canvas',
-                detail: 'The immersive pathway graph remains the main stage, but it is now framed by clear evidence and handoff language instead of reading like a standalone visual demo.',
-                accent: PATHD_THEME.sky,
-                note: selectedNode?.label ?? derivedTarget,
-              },
-              {
-                title: 'Execution handoff',
-                detail: 'Bottlenecks, enzyme candidates, and next-tool routing stay visible so the page behaves like the front door to the rest of the workbench.',
-                accent: PATHD_THEME.mint,
-                note: (analyzeArtifact?.recommendedNextTools[0] ?? 'fbasim').toUpperCase(),
-              },
-            ]}
-          />
-        </div>}
-        {(heroDismissed || methodStripDismissed) && (
-          <div style={{ pointerEvents: 'auto', display: 'flex', justifyContent: 'flex-end' }}>
-            <button
-              type="button"
-              onClick={() => { setHeroDismissed(false); setMethodStripDismissed(false); }}
-              style={{
-                padding: '5px 12px',
-                borderRadius: '100px',
-                background: 'rgba(10,12,16,0.52)',
-                border: '1px solid rgba(255,255,255,0.14)',
-                backdropFilter: 'blur(16px)',
-                WebkitBackdropFilter: 'blur(16px)',
-                color: PATHD_THEME.label,
-                fontFamily: T.MONO,
-                fontSize: '9px',
-                fontWeight: 600,
-                textTransform: 'uppercase',
-                letterSpacing: '0.1em',
-                cursor: 'pointer',
-                transition: 'background 0.15s, color 0.15s',
-              }}
-              onMouseEnter={e => {
-                (e.currentTarget as HTMLElement).style.background = 'rgba(10,12,16,0.72)';
-                (e.currentTarget as HTMLElement).style.color = PATHD_THEME.value;
-              }}
-              onMouseLeave={e => {
-                (e.currentTarget as HTMLElement).style.background = 'rgba(10,12,16,0.52)';
-                (e.currentTarget as HTMLElement).style.color = PATHD_THEME.label;
-              }}
-            >
-              ↺ Restore dashboard
-            </button>
+              </div>
+            ))}
           </div>
-        )}
-      </div>
+        </div>
+      ) : (
+        <div
+          className="nb-pathd-hero-stack nb-pathd-hero-stack--rail"
+          style={{
+            position: 'absolute',
+            top: '16px',
+            right: '18px',
+            left: 'auto',
+            transform: 'none',
+            width: `${PATHD_SUPPORT_RAIL_WIDTH}px`,
+            zIndex: 14,
+            pointerEvents: 'none',
+            display: 'grid',
+            gap: '8px',
+            maxHeight: embedded ? 'min(34vh, 300px)' : 'min(33vh, 300px)',
+            overflowY: 'auto',
+            paddingRight: '2px',
+          }}
+        >
+          <div style={{ pointerEvents: 'auto' }}>
+            <WorkbenchInlineContext
+              toolId="pathd"
+              title="Pathway & Enzyme Design"
+              summary="PATHD keeps the active route, evidence state, and bottleneck focus visible while the pathway itself remains the main scientific figure."
+              compact
+              isSimulated={!analyzeArtifact}
+            />
+          </div>
+          {!heroDismissed && <div style={{ pointerEvents: 'auto' }}>
+            <ScientificHero
+              eyebrow="Stage 1 · Pathway & Enzyme Design"
+              title={`${activeRouteLabel} is the current design object`}
+              summary="PATHD should read like the front door to the whole scientific program. This page now surfaces the active route, bottleneck pressure, enzyme opportunity, and next tool handoff before the scientist dives into the 3D pathway graph."
+              dismissible
+              onDismiss={() => setHeroDismissed(true)}
+              aside={
+                <>
+                  <div style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                    Current focus
+                  </div>
+                  <div style={{ fontFamily: T.SANS, fontSize: '13px', color: PATHD_THEME.value, fontWeight: 700 }}>
+                    {selectedNode?.label ?? derivedTarget}
+                  </div>
+                  <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.label, lineHeight: 1.55 }}>
+                    {selectedNode
+                      ? 'A specific pathway node is in focus, so downstream interpretation should respect this current design emphasis.'
+                      : 'No node is pinned yet; the route remains the active object at pathway scale.'}
+                  </div>
+                </>
+              }
+              signals={[
+                {
+                  label: 'Target Product',
+                  value: derivedTarget,
+                  detail: `${activeNodes.length} nodes · ${activeEdges.length} edges in the current executable route graph`,
+                  tone: 'cool',
+                },
+                {
+                  label: 'Bottlenecks',
+                  value: `${analyzeArtifact?.bottleneckAssumptions.length ?? 0}`,
+                  detail: analyzeArtifact?.bottleneckAssumptions[0]?.label ?? 'No structured bottleneck has been injected from Analyze yet.',
+                  tone: (analyzeArtifact?.bottleneckAssumptions.length ?? 0) > 0 ? 'warm' : 'neutral',
+                },
+                {
+                  label: 'Enzyme Candidates',
+                  value: `${analyzeArtifact?.enzymeCandidates.length ?? 0}`,
+                  detail: analyzeArtifact?.enzymeCandidates[0]?.label ?? 'No enzyme candidate has been prioritized yet.',
+                  tone: 'neutral',
+                },
+                {
+                  label: 'Next Tool',
+                  value: recommendedNextTool,
+                  detail: 'PATHD now makes the next scientific handoff explicit instead of leaving the route as a dead-end visualization.',
+                  tone: 'warm',
+                },
+              ]}
+            />
+          </div>}
+          {!methodStripDismissed && <div style={{ pointerEvents: 'auto' }}>
+            <ScientificMethodStrip
+              label="Pathway workbench"
+              dismissible
+              onDismiss={() => setMethodStripDismissed(true)}
+              items={[
+                {
+                  title: 'Route object',
+                  detail: 'The active route is treated as the canonical scientific object, so every downstream handoff inherits the same graph rather than rebuilding assumptions from scratch.',
+                  accent: PATHD_THEME.apricot,
+                  note: `${activeNodes.length} nodes · ${activeEdges.length} edges`,
+                },
+                {
+                  title: '3D scientific canvas',
+                  detail: 'The immersive pathway graph remains the main stage, but it is now framed by clear evidence and handoff language instead of reading like a standalone visual demo.',
+                  accent: PATHD_THEME.sky,
+                  note: selectedNode?.label ?? derivedTarget,
+                },
+                {
+                  title: 'Execution handoff',
+                  detail: 'Bottlenecks, enzyme candidates, and next-tool routing stay visible so the page behaves like the front door to the rest of the workbench.',
+                  accent: PATHD_THEME.mint,
+                  note: recommendedNextTool,
+                },
+              ]}
+            />
+          </div>}
+          {(heroDismissed || methodStripDismissed) && (
+            <div style={{ pointerEvents: 'auto', display: 'flex', justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                className="nb-ui-control"
+                onClick={() => { setHeroDismissed(false); setMethodStripDismissed(false); }}
+                style={{
+                  padding: '5px 12px',
+                  borderRadius: '100px',
+                  background: 'var(--nb-control-bg)',
+                  border: '1px solid var(--nb-control-border)',
+                  backdropFilter: 'blur(16px)',
+                  WebkitBackdropFilter: 'blur(16px)',
+                  color: 'var(--nb-control-color)',
+                  fontFamily: T.MONO,
+                  fontSize: '9px',
+                  fontWeight: 600,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.1em',
+                  cursor: 'pointer',
+                  transition: 'background 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease',
+                  ['--nb-control-bg' as const]: 'rgba(10,12,16,0.52)',
+                  ['--nb-control-border' as const]: 'rgba(255,255,255,0.14)',
+                  ['--nb-control-color' as const]: PATHD_THEME.label,
+                  ['--nb-control-hover-bg' as const]: '#ffffff',
+                  ['--nb-control-hover-border' as const]: '#ffffff',
+                  ['--nb-control-hover-color' as const]: PATHD_THEME.ink,
+                  ['--nb-control-active-bg' as const]: '#ffffff',
+                  ['--nb-control-active-border' as const]: '#ffffff',
+                  ['--nb-control-active-color' as const]: PATHD_THEME.ink,
+                } as ControlVarsStyle}
+              >
+                Restore dashboard
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ── Center: 3D Pathway Visualization — full-screen, panels float over ── */}
       <div style={{ position:'absolute', inset:0, zIndex:5, pointerEvents:'auto' }}>
@@ -480,6 +611,7 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
             fullscreen
             opticalInsets={sceneOpticalInsets}
             tracePlacement="top-left"
+            traceLayout={embedded ? { top: 16, left: PATHD_SCENE_GUTTER, width: PATHD_LEFT_PANEL_WIDTH } : undefined}
           />
         </div>
       </div>

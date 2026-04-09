@@ -26,7 +26,7 @@
  *   </ToolShell>
  */
 'use client';
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { motion } from 'framer-motion';
 import { LayoutGrid, ChevronLeft } from 'lucide-react';
 import { getToolDefinition } from './toolRegistry';
@@ -34,6 +34,7 @@ import { useNavigation } from '../../../contexts/NavigationContext';
 import { T } from '../../ide/tokens';
 import WorkbenchInlineContext from '../../workbench/WorkbenchInlineContext';
 import { PATHD_THEME } from '../../workbench/workbenchTheme';
+type ControlVarsStyle = CSSProperties & Record<`--${string}`, string>;
 
 export interface ToolShellProps {
   moduleId: string;
@@ -98,6 +99,7 @@ export default function ToolShell({
         <button
           type="button"
           onClick={handleBack}
+          className="nb-ui-control"
           style={{
             display: 'inline-flex',
             alignItems: 'center',
@@ -105,14 +107,23 @@ export default function ToolShell({
             minHeight: '28px',
             padding: '0 7px',
             borderRadius: '10px',
-            border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
-            background: PATHD_THEME.panelGlassStrong,
-            color: PATHD_THEME.label,
+            border: '1px solid var(--nb-control-border)',
+            background: 'var(--nb-control-bg)',
+            color: 'var(--nb-control-color)',
             cursor: 'pointer',
             fontFamily: T.SANS,
             fontSize: '9px',
             flexShrink: 0,
-          }}
+            ['--nb-control-bg' as const]: PATHD_THEME.panelGlassStrong,
+            ['--nb-control-border' as const]: PATHD_THEME.sepiaPanelBorder,
+            ['--nb-control-color' as const]: PATHD_THEME.label,
+            ['--nb-control-hover-bg' as const]: 'rgba(255,255,255,0.94)',
+            ['--nb-control-hover-border' as const]: 'rgba(255,255,255,0.94)',
+            ['--nb-control-hover-color' as const]: PATHD_THEME.ink,
+            ['--nb-control-active-bg' as const]: '#ffffff',
+            ['--nb-control-active-border' as const]: '#ffffff',
+            ['--nb-control-active-color' as const]: PATHD_THEME.ink,
+          } as ControlVarsStyle}
           title="Back to Tools"
         >
           <ChevronLeft size={12} />

@@ -11,7 +11,7 @@
  * proportional to delta magnitude (Raycaster-equivalent via forceRef)
  */
 
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, type CSSProperties } from 'react';
 import { motion } from 'framer-motion';
 import { Activity, Pause, Play, RotateCcw, type LucideIcon } from 'lucide-react';
 import type { SimParams } from '../../machines/metabolicMachine';
@@ -22,6 +22,7 @@ import { T } from '../ide/tokens';
 import { PATHD_THEME } from '../workbench/workbenchTheme';
 import { PATHD_FLOATING_PANEL_SHEEN, PATHD_FLOATING_PANEL_SURFACE } from './shared/pathdFloatingPanelStyles';
 import { usePathdFloatingPanelScroll } from './shared/usePathdFloatingPanelScroll';
+type ControlVarsStyle = CSSProperties & Record<`--${string}`, string>;
 
 // ── Parameter definitions ──────────────────────────────────────────────
 
@@ -157,29 +158,29 @@ function ActionBtn({ label, icon: Icon, tone = 'neutral', onClick, disabled = fa
   const toneStyles = disabled
     ? {
         background: 'rgba(255,255,255,0.10)',
-        border: '0.5px solid rgba(255,255,255,0.08)',
+        border: 'rgba(255,255,255,0.08)',
         color: 'rgba(255,255,255,0.35)',
       }
     : tone === 'primary'
       ? {
           background: 'rgba(255,255,255,0.88)',
-          border: '0.5px solid rgba(255,255,255,0.88)',
+          border: 'rgba(255,255,255,0.88)',
           color: '#111318',
         }
       : tone === 'stress'
         ? {
             background: 'rgba(232,163,161,0.18)',
-            border: '0.5px solid rgba(232,163,161,0.34)',
+            border: 'rgba(232,163,161,0.34)',
             color: 'rgba(255,238,238,0.88)',
           }
         : {
             background: 'rgba(255,255,255,0.12)',
-            border: '0.5px solid rgba(255,255,255,0.16)',
+            border: 'rgba(255,255,255,0.16)',
             color: 'rgba(255,255,255,0.84)',
           };
   return (
     <button
-      className={className}
+      className={['nb-ui-control', className].filter(Boolean).join(' ')}
       onClick={onClick}
       disabled={disabled}
       style={{
@@ -190,27 +191,24 @@ function ActionBtn({ label, icon: Icon, tone = 'neutral', onClick, disabled = fa
         cursor: disabled ? 'not-allowed' : 'pointer',
         fontFamily: T.MONO, fontSize:'10px', fontWeight:600,
         textTransform:'uppercase', letterSpacing:'0.08em',
-        transition:'all 0.15s',
+        transition:'background 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease',
         display:'inline-flex',
         alignItems:'center',
         justifyContent:'center',
         gap:'6px',
-        ...toneStyles,
-      }}
-      onMouseEnter={e => {
-        if (!disabled) {
-          (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 12px rgba(0,0,0,0.22)';
-          if (tone === 'primary') (e.currentTarget as HTMLElement).style.background = '#ffffff';
-          if (tone === 'neutral') (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.18)';
-          if (tone === 'stress') (e.currentTarget as HTMLElement).style.background = 'rgba(232,163,161,0.24)';
-        }
-      }}
-      onMouseLeave={e => {
-        if (!disabled) {
-          (e.currentTarget as HTMLElement).style.boxShadow = 'none';
-          (e.currentTarget as HTMLElement).style.background = toneStyles.background;
-        }
-      }}
+        border: '0.5px solid var(--nb-control-border)',
+        background: 'var(--nb-control-bg)',
+        color: 'var(--nb-control-color)',
+        ['--nb-control-bg' as const]: toneStyles.background,
+        ['--nb-control-border' as const]: toneStyles.border,
+        ['--nb-control-color' as const]: toneStyles.color,
+        ['--nb-control-hover-bg' as const]: disabled ? toneStyles.background : '#ffffff',
+        ['--nb-control-hover-border' as const]: disabled ? toneStyles.border : '#ffffff',
+        ['--nb-control-hover-color' as const]: disabled ? toneStyles.color : '#111318',
+        ['--nb-control-active-bg' as const]: disabled ? toneStyles.background : '#ffffff',
+        ['--nb-control-active-border' as const]: disabled ? toneStyles.border : '#ffffff',
+        ['--nb-control-active-color' as const]: disabled ? toneStyles.color : '#111318',
+      } as ControlVarsStyle}
     >
       <Icon size={12} strokeWidth={2} aria-hidden="true" />
       {label}

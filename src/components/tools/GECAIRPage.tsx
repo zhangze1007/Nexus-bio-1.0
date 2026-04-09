@@ -1,5 +1,5 @@
 'use client';
-import { useState, useMemo, useEffect, useTransition, useRef } from 'react';
+import { useState, useMemo, useEffect, useTransition, useRef, type CSSProperties } from 'react';
 import AlgorithmInsight from '../ide/shared/AlgorithmInsight';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
@@ -20,6 +20,7 @@ const BORDER = PATHD_THEME.paperBorder;
 const LABEL = PATHD_THEME.paperLabel;
 const VALUE = PATHD_THEME.paperValue;
 const INPUT_BORDER = PATHD_THEME.paperBorder;
+type ControlVarsStyle = CSSProperties & Record<`--${string}`, string>;
 
 const PART_COLORS: Record<string, string> = {
   promoter: PATHD_THEME.lilac,
@@ -514,15 +515,24 @@ export default function GECAIRPage() {
               Output Gate Type
             </p>
             {(['NOT', 'AND', 'OR', 'NAND'] as GateType[]).map(gate => (
-              <button aria-label="Action" key={gate} onClick={() => setGateType(gate)} style={{
+              <button aria-label="Action" key={gate} onClick={() => setGateType(gate)} className="nb-ui-control" style={{
                 display: 'block', width: '100%', textAlign: 'left',
                 padding: '6px 10px', marginBottom: '4px',
-                background: gateType === gate ? 'rgba(207,196,227,0.22)' : PATHD_THEME.paperSurfaceStrong,
-                border: `1px solid ${gateType === gate ? 'rgba(207,196,227,0.34)' : INPUT_BORDER}`,
+                background: 'var(--nb-control-bg)',
+                border: '1px solid var(--nb-control-border)',
                 borderRadius: '8px',
-                color: gateType === gate ? VALUE : LABEL,
+                color: 'var(--nb-control-color)',
                 fontFamily: T.SANS, fontSize: '11px', cursor: 'pointer',
-              }}>
+                ['--nb-control-bg' as const]: gateType === gate ? 'rgba(207,196,227,0.22)' : PATHD_THEME.paperSurfaceStrong,
+                ['--nb-control-border' as const]: gateType === gate ? 'rgba(207,196,227,0.34)' : INPUT_BORDER,
+                ['--nb-control-color' as const]: gateType === gate ? VALUE : LABEL,
+                ['--nb-control-hover-bg' as const]: '#ffffff',
+                ['--nb-control-hover-border' as const]: '#ffffff',
+                ['--nb-control-hover-color' as const]: '#111318',
+                ['--nb-control-active-bg' as const]: '#ffffff',
+                ['--nb-control-active-border' as const]: '#ffffff',
+                ['--nb-control-active-color' as const]: '#111318',
+              } as ControlVarsStyle}>
                 {gate} Gate
               </button>
             ))}

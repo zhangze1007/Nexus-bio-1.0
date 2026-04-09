@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { ArrowUpRight, BrainCircuit, Microscope } from 'lucide-react';
 import { TOOL_BY_ID } from '../tools/shared/toolRegistry';
 import { getNextToolIds, getStageForTool } from '../tools/shared/workbenchConfig';
@@ -39,31 +39,35 @@ export default function WorkbenchInlineContext({
   const runArtifacts = useWorkbenchStore((s) => s.runArtifacts);
   const stage = getStageForTool(toolId);
   const loggedRef = useRef(false);
-  const [hoveredBtn, setHoveredBtn] = useState<string | null>(null);
 
-  const dimBtn: React.CSSProperties = {
-    minHeight: '30px',
-    padding: '0 10px',
-    borderRadius: '999px',
+  const actionBtn: React.CSSProperties & Record<`--${string}`, string> = {
+    minHeight: compact ? '34px' : '30px',
+    padding: compact ? '0 12px' : '0 10px',
+    borderRadius: compact ? '12px' : '999px',
     display: 'inline-flex',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: '6px',
     textDecoration: 'none',
-    border: '1px solid rgba(255,255,255,0.14)',
-    background: 'rgba(255,255,255,0.10)',
-    color: 'rgba(255,255,255,0.55)',
+    border: '1px solid var(--nb-control-border)',
+    background: 'var(--nb-control-bg)',
+    color: 'var(--nb-control-color)',
     fontFamily: T.SANS,
-    fontSize: '11px',
-    fontWeight: 600,
-    transition: 'all 0.18s',
+    fontSize: compact ? '10px' : '11px',
+    fontWeight: 700,
+    transition: 'background 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease',
     cursor: 'pointer',
-  };
-
-  const brightBtn: React.CSSProperties = {
-    ...dimBtn,
-    background: 'rgba(255,255,255,0.90)',
-    border: '1px solid rgba(255,255,255,0.90)',
-    color: '#111318',
+    width: compact ? '100%' : undefined,
+    minWidth: 0,
+    ['--nb-control-bg']: 'rgba(255,255,255,0.10)',
+    ['--nb-control-border']: 'rgba(255,255,255,0.14)',
+    ['--nb-control-color']: 'rgba(255,255,255,0.60)',
+    ['--nb-control-hover-bg']: 'rgba(255,255,255,0.94)',
+    ['--nb-control-hover-border']: 'rgba(255,255,255,0.94)',
+    ['--nb-control-hover-color']: '#111318',
+    ['--nb-control-active-bg']: '#ffffff',
+    ['--nb-control-active-border']: '#ffffff',
+    ['--nb-control-active-color']: '#111318',
   };
 
   useEffect(() => {
@@ -95,6 +99,26 @@ export default function WorkbenchInlineContext({
     [analyzeArtifact, project, runArtifacts, toolId],
   );
   const committedFeedback = dbtlPayload?.feedbackSource === 'committed' ? dbtlPayload : null;
+  const compactItems = [
+    { label: 'Evidence', value: `${selectedEvidenceIds.length} selected` },
+    {
+      label: 'Feedback',
+      value: committedFeedback
+        ? `DBTL ${committedFeedback.result.latestPhase} · pass ${committedFeedback.result.passRate.toFixed(0)}%`
+        : 'No committed DBTL feedback',
+    },
+    {
+      label: 'Freshness',
+      value: freshness.status === 'fresh'
+        ? 'Fresh'
+        : freshness.status === 'stale'
+          ? `Stale after ${freshness.blockingToolIds.map((id) => id.toUpperCase()).join(', ')}`
+          : freshness.status === 'awaiting-upstream'
+            ? 'Awaiting rerun'
+            : 'No auditable run',
+    },
+    { label: 'Bottleneck', value: bottleneck?.label ?? 'Awaiting analyze artifact' },
+  ];
 
   return (
     <div
@@ -103,10 +127,11 @@ export default function WorkbenchInlineContext({
         borderRadius: compact ? '16px' : '18px',
         border: `1px solid ${BORDER}`,
         background: SURFACE,
-        padding: compact ? '10px 11px' : '14px 16px',
+        padding: compact ? '12px' : '14px 16px',
         display: 'grid',
-        gap: compact ? '10px' : '12px',
+        gap: compact ? '12px' : '12px',
         marginBottom: compact ? '10px' : '16px',
+        minWidth: 0,
       }}
     >
       <div style={{ display: 'flex', alignItems: compact ? 'flex-start' : 'center', justifyContent: 'space-between', gap: compact ? '10px' : '8px', flexWrap: 'wrap' }}>
@@ -136,9 +161,10 @@ export default function WorkbenchInlineContext({
       </div>
 
       <div
+        className="nb-workbench-inline-context__summary"
         style={{
           fontFamily: T.SANS,
-          fontSize: compact ? '10px' : '12px',
+          fontSize: compact ? '10.5px' : '12px',
           color: LABEL,
           lineHeight: compact ? 1.4 : 1.6,
           ...(compact
@@ -191,53 +217,38 @@ export default function WorkbenchInlineContext({
       )}
 
       {compact ? (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'flex-start' }}>
-          {[
-            { label: 'Evidence', value: `${selectedEvidenceIds.length} selected` },
-            {
-              label: 'Feedback',
-              value: committedFeedback
-                ? `DBTL ${committedFeedback.result.latestPhase} · pass ${committedFeedback.result.passRate.toFixed(0)}%`
-                : 'No committed DBTL feedback',
-            },
-            {
-              label: 'Freshness',
-              value: freshness.status === 'fresh'
-                ? 'Fresh'
-                : freshness.status === 'stale'
-                  ? `Stale after ${freshness.blockingToolIds.map((id) => id.toUpperCase()).join(', ')}`
-                  : freshness.status === 'awaiting-upstream'
-                    ? 'Awaiting rerun'
-                    : 'No auditable run',
-            },
-            { label: 'Bottleneck', value: bottleneck?.label ?? 'Awaiting analyze artifact' },
-          ].map((item) => (
+        <div className="nb-workbench-inline-context__metrics nb-workbench-inline-context__metrics--compact" style={{ display: 'grid', gap: '6px' }}>
+          {compactItems.map((item) => (
             <div
               key={item.label}
+              className="nb-workbench-inline-context__metric nb-workbench-inline-context__metric--compact"
               style={{
-                padding: '4px 8px',
-                borderRadius: '999px',
+                padding: '7px 9px',
+                borderRadius: '12px',
                 border: `1px solid ${BORDER}`,
                 background: PATHD_THEME.panelSurface,
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                minHeight: '24px',
+                display: 'grid',
+                gap: '4px',
+                minHeight: 'unset',
                 maxWidth: '100%',
+                minWidth: 0,
               }}
             >
-              <span style={{ fontFamily: T.MONO, fontSize: '8px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              <span
+                className="nb-workbench-inline-context__metric-label"
+                style={{ fontFamily: T.MONO, fontSize: '8px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}
+              >
                 {item.label}
               </span>
               <span
+                className="nb-workbench-inline-context__metric-value"
                 style={{
                   fontFamily: T.SANS,
                   fontSize: '10px',
                   color: VALUE,
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  maxWidth: '26ch',
+                  lineHeight: 1.4,
+                  whiteSpace: 'normal',
+                  overflowWrap: 'anywhere',
                 }}
               >
                 {item.value}
@@ -321,12 +332,20 @@ export default function WorkbenchInlineContext({
         </div>
       )}
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+      <div
+        className={`nb-workbench-inline-context__actions${compact ? ' nb-workbench-inline-context__actions--compact' : ''}`}
+        style={{
+          display: compact ? 'grid' : 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          flexWrap: compact ? undefined : 'wrap',
+          gridTemplateColumns: compact ? '1fr' : undefined,
+        }}
+      >
         <Link
           href="/analyze"
-          style={hoveredBtn === 'analyze' ? brightBtn : dimBtn}
-          onMouseEnter={() => setHoveredBtn('analyze')}
-          onMouseLeave={() => setHoveredBtn(null)}
+          className="nb-ui-control nb-workbench-inline-context__action"
+          style={actionBtn}
         >
           <Microscope size={12} />
           Analyze
@@ -334,9 +353,8 @@ export default function WorkbenchInlineContext({
         {toolId !== 'nexai' && (
           <Link
             href="/tools/nexai"
-            style={hoveredBtn === 'axon' ? brightBtn : dimBtn}
-            onMouseEnter={() => setHoveredBtn('axon')}
-            onMouseLeave={() => setHoveredBtn(null)}
+            className="nb-ui-control nb-workbench-inline-context__action"
+            style={actionBtn}
           >
             <BrainCircuit size={12} />
             Ask Axon
@@ -345,9 +363,8 @@ export default function WorkbenchInlineContext({
         {nextTool && (
           <Link
             href={nextTool.href}
-            style={hoveredBtn === 'next' ? brightBtn : dimBtn}
-            onMouseEnter={() => setHoveredBtn('next')}
-            onMouseLeave={() => setHoveredBtn(null)}
+            className="nb-ui-control nb-workbench-inline-context__action"
+            style={actionBtn}
           >
             Next: {nextTool.shortLabel}
             <ArrowUpRight size={11} />
