@@ -61,7 +61,7 @@ const GLASS: React.CSSProperties = {
   border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
 };
 
-type ViewMode = 'Embedding' | 'Volcano' | 'Table' | 'MOFA+' | 'VAE' | 'Efficiency';
+type ViewMode = 'Embedding' | 'Volcano' | 'Table' | 'Factors' | 'Latent' | 'Efficiency';
 
 function canonicalGeneToken(value: string) {
   return value.toUpperCase().replace(/[^A-Z0-9]/g, '');
@@ -482,11 +482,11 @@ function EmbeddingScatter({ embeddings, fcThreshold, activeLayers, highlightedGe
       <line x1={PAD} y1={H - PAD} x2={W - PAD} y2={H - PAD} stroke="rgba(255,255,255,0.1)" />
       <line x1={PAD} y1={PAD} x2={PAD} y2={H - PAD} stroke="rgba(255,255,255,0.1)" />
       <text x={W / 2} y={H - 6} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill={LABEL}>
-        UMAP-1 (projected)
+        Embed-1 (linear projection)
       </text>
       <text x={12} y={H / 2} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill={LABEL}
         transform={`rotate(-90,12,${H / 2})`}>
-        UMAP-2 (projected)
+        Embed-2 (linear projection)
       </text>
       {/* Omics-layer convex hull territories */}
       {(() => {
@@ -603,7 +603,7 @@ export default function MultiOPage() {
   const bottleneck = useMemo(() => model.analyzeBottleneck(), [model]);
   const correlations = useMemo(() => model.computeCorrelationMatrix(), [model]);
 
-  /* MOI Engine — MOFA+ / VAE / Efficiency */
+  /* MOI Engine — ALS factors / linear embedding / Efficiency (see MOIEngine.ts header for honest method names) */
   const mofaResult = useMemo(() => extractMOFAFactors(OMICS_DATA, 5), []);
   const vaeResult = useMemo(() => trainMultimodalVAE(OMICS_DATA, 8, 0.5, 100, 0.005), []);
   const efficiencyScores = useMemo(() => computeMetabolicEfficiency(OMICS_DATA), []);
@@ -645,14 +645,14 @@ export default function MultiOPage() {
         caption: 'Volcano view is treated as a comparative panel, emphasizing threshold logic and current bottleneck focus rather than acting as a detached QC plot.',
       };
     }
-    if (viewMode === 'MOFA+') {
+    if (viewMode === 'Factors') {
       return {
         eyebrow: 'Figure C · Factor Decomposition',
         title: 'Shared latent factors explaining multi-omics variance',
         caption: 'Factor analysis is translated into a publication-style comparative panel where per-layer contribution, top genes, and interpretation stay in the same frame.',
       };
     }
-    if (viewMode === 'VAE') {
+    if (viewMode === 'Latent') {
       return {
         eyebrow: 'Figure D · Variational Latent Space',
         title: 'Latent embedding and convergence viewed as one model figure',
@@ -906,7 +906,7 @@ export default function MultiOPage() {
             {/* View Mode Tabs */}
             <SectionLabel>View Mode</SectionLabel>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '16px' }}>
-              {(['Embedding', 'Volcano', 'Table', 'MOFA+', 'VAE', 'Efficiency'] as ViewMode[]).map(mode => (
+              {(['Embedding', 'Volcano', 'Table', 'Factors', 'Latent', 'Efficiency'] as ViewMode[]).map(mode => (
                 <button aria-label="Action" key={mode} onClick={() => setViewMode(mode)} style={{
                   flex: '1 0 30%', padding: '5px 0', borderRadius: '6px', cursor: 'pointer',
                   fontFamily: T.SANS, fontSize: '9px', border: `1px solid ${viewMode === mode ? 'rgba(175,195,214,0.34)' : INPUT_BORDER}`,
@@ -1082,7 +1082,7 @@ export default function MultiOPage() {
               )}
 
               {/* ── MOFA+ Factor Analysis ───────────────────────────── */}
-              {viewMode === 'MOFA+' && (
+              {viewMode === 'Factors' && (
               <div style={{ minHeight: '520px', padding: '20px' }}>
                 {/* Summary metrics */}
                 <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
@@ -1150,7 +1150,7 @@ export default function MultiOPage() {
               )}
 
               {/* ── VAE Latent Space ────────────────────────────────── */}
-              {viewMode === 'VAE' && (
+              {viewMode === 'Latent' && (
               <div style={{ minHeight: '520px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                 {/* VAE Latent scatter */}
                 <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
@@ -1368,14 +1368,14 @@ export default function MultiOPage() {
             <SectionLabel>Internal Thoughts</SectionLabel>
 
             {/* MOI Engine Metrics */}
-            {(viewMode === 'MOFA+' || viewMode === 'VAE' || viewMode === 'Efficiency') && (
+            {(viewMode === 'Factors' || viewMode === 'Latent' || viewMode === 'Efficiency') && (
               <div style={{ ...GLASS, borderRadius: '14px', padding: '10px', marginBottom: '16px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0' }}>
-                  <span style={{ fontFamily: T.SANS, fontSize: '9px', color: 'rgba(255,255,255,0.45)' }}>MOFA+ Factors</span>
+                  <span style={{ fontFamily: T.SANS, fontSize: '9px', color: 'rgba(255,255,255,0.45)' }}>ALS Factors</span>
                   <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE, textAlign: 'right' }}>{mofaResult.factors.length}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', borderTop: `1px solid ${BORDER}` }}>
-                  <span style={{ fontFamily: T.SANS, fontSize: '9px', color: 'rgba(255,255,255,0.45)' }}>VAE ELBO</span>
+                  <span style={{ fontFamily: T.SANS, fontSize: '9px', color: 'rgba(255,255,255,0.45)' }}>Embed loss</span>
                   <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE, textAlign: 'right' }}>{vaeResult.elbo.toFixed(3)}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', borderTop: `1px solid ${BORDER}` }}>

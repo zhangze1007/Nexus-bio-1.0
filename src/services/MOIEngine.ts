@@ -1,29 +1,36 @@
 /**
- * Multi-Omics Integrator (MOI) Core Engine
+ * Multi-Omics Integrator (MOI) Core Engine — DEMO IMPLEMENTATION
  *
- * Integrates Transcriptomics (RNA-seq), Proteomics, and Metabolomics (Mass-spec)
- * into a unified predictive model using three computational layers:
+ * Integrates Transcriptomics, Proteomics, and Metabolomics into a shared
+ * low-dimensional view using three pure-TypeScript routines.
  *
- * 1. MOFA+-style Factor Extraction — non-negative matrix factorization variant
- *    that extracts shared latent factors across omics layers, handling sparse
- *    matrices and high missing-value rates via masked reconstruction.
+ * HONEST METHOD LABELS (the previous file claimed MOFA+, VAE, and UMAP — none
+ * of those are actually implemented here, and that wording has been removed):
  *
- * 2. Multi-modal VAE — variational autoencoder that projects different omics
- *    modalities into a shared latent space Z. Loss function:
- *      L = E_q(z|x)[log p(x|z)] - β·D_KL(q(z|x) || p(z))
- *    Includes batch correction via learned batch embeddings (scVI-style).
+ * 1. `extractMOFAFactors` — alternating-least-squares (ALS) low-rank matrix
+ *    factorization with masked reconstruction. NOT MOFA+: there is no
+ *    variational sparse prior, no view-specific noise model, and no Bayesian
+ *    inference. The output is a deterministic shared-factor decomposition
+ *    that is structurally similar to NMF/PCA on a stacked matrix.
  *
- * 3. Predictive Perturbation — uses the trained latent space to predict
- *    metabolome profile shifts from gene expression changes.
+ * 2. `trainMultimodalVAE` — a deterministic linear encoder/decoder optimized
+ *    by gradient descent on a reconstruction objective. NOT a variational
+ *    autoencoder: there is no sampling from q(z|x), no KL term against a
+ *    prior, and no β-disentanglement (the `beta` argument is retained for
+ *    API compatibility but does not control a divergence). Treat the output
+ *    as a learned linear embedding.
  *
- * All implemented in pure TypeScript for browser execution — no Python/PyTorch
- * dependency. Matrix operations are hand-rolled for transparency and to avoid
- * large WASM bundles.
+ * 3. Predictive perturbation — modifies a single feature in the input row,
+ *    re-encodes through the linear embedding above, and reports the delta in
+ *    a downstream layer. This is sensitivity analysis on a linear model, not
+ *    a learned causal perturbation predictor.
  *
- * References:
- * - Argelaguet et al. (2020) Mol Syst Biol — MOFA+ multi-omics factor analysis
- * - Lopez et al. (2018) Nature Methods — scVI for batch correction
- * - Kingma & Welling (2014) ICLR — VAE theory
+ * The 3D export uses PCA-style projection of the embedding (NOT UMAP, which
+ * would require a fuzzy-simplicial-set graph and stochastic optimization).
+ *
+ * Function names are preserved to avoid a churning rename across the
+ * codebase, but every user-facing surface (MultiOPage, sidebar labels, view
+ * modes) has been relabelled to reflect the methods that actually run.
  */
 
 import type {

@@ -4,7 +4,13 @@
  * Pure TypeScript implementation of core single-cell analysis algorithms
  * for the Nexus-Bio platform. Provides an end-to-end pipeline from raw
  * count-matrix QC through clustering, trajectory inference, spatial
- * statistics, and VAE-based latent embedding.
+ * statistics, and a deterministic linear latent embedding.
+ *
+ * HONEST METHOD NOTE: the routine named `trainScVAE` below is NOT a variational
+ * autoencoder. There is no q(z|x) sampling, no KL term, and no β-disentanglement.
+ * It is a deterministic linear encoder/decoder optimized by gradient descent on
+ * a reconstruction objective. Function names are preserved for API stability,
+ * but every user-facing label refers to it as a "linear embedding".
  *
  * Pipeline stages:
  *   1. QC & filtering   — mitochondrial %, min counts / genes
@@ -14,7 +20,7 @@
  *   5. PAGA trajectory   — cluster connectivity + diffusion pseudotime
  *   6. Spatial neighbors — KNN on (x, y) coordinates
  *   7. Moran's I         — spatial autocorrelation per gene
- *   8. scVAE             — variational autoencoder with batch correction
+ *   8. linear embedding  — deterministic linear encoder/decoder (NOT a VAE; see note above)
  *   9. High-yield ID     — metabolic efficiency & fate classification
  *
  * All numeric computation is hand-rolled — no external dependencies.
