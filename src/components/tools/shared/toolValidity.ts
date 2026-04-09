@@ -38,7 +38,7 @@ export const TOOL_VALIDITY: Record<string, ToolValidity> = {
   proevol:      { level: 'partial', caption: 'Fitness landscape and basin-climbing trajectory are real; sequence diversity uses a heuristic mutation model.' },
 
   // Stage 3 — chassis & control
-  genmim:       { level: 'demo',    caption: 'CRISPRi schedule is a greedy ranker over a curated essentiality table; no Wagner network propagation.' },
+  genmim:       { level: 'partial', caption: 'Greedy CRISPRi ranker is real (score = KD_eff + (1+GI)×0.3); viability uses additive growth-impact (no epistatic/Wagner network interactions).' },
   gecair:       { level: 'partial', caption: 'Hill curves and logic gate dynamics are real; circuit topology library is curated.' },
   dyncon:       { level: 'partial', caption: 'Hill feedback + Monod growth + RK4 ODE are textbook-correct; bioreactor parameters are reference values.' },
 

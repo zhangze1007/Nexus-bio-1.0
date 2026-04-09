@@ -26,6 +26,13 @@ export const CRISPRI_TARGETS: CRISPRiTarget[] = [
   { gene: 'adhE',  position: 1414,  essential: false, knockdown_efficiency: 0.93, phenotype: 'Ethanol OFF',    growth_impact: -0.01 },
 ];
 
+// Greedy CRISPRi target selector (confirmed real, P1.4 review).
+// Scores each candidate as score = KD_eff + (1 + growth_impact) × 0.3
+// to maximize knockdown potency while penalizing host fitness cost.
+// Limitation: growth viability is modelled as additive per-gene impacts.
+// This is valid when knockdown targets are non-interacting but breaks
+// under epistasis; a future upgrade would incorporate a Wagner-style
+// essentiality network that captures synthetic interactions.
 export function greedyKnockdownSchedule(
   targets: CRISPRiTarget[],
   maxTargets: number,
@@ -36,7 +43,6 @@ export function greedyKnockdownSchedule(
     .filter(t => !(protectEssential && t.essential))
     .filter(t => t.knockdown_efficiency >= efficiencyThreshold)
     .sort((a, b) => {
-      // Maximize knockdown efficiency, minimize growth impact
       const scoreA = a.knockdown_efficiency + (1 + (a.growth_impact ?? 0)) * 0.3;
       const scoreB = b.knockdown_efficiency + (1 + (b.growth_impact ?? 0)) * 0.3;
       return scoreB - scoreA;
