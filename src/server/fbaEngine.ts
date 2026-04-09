@@ -1,5 +1,6 @@
 import { solveLPSimplex } from './simplexLP';
 import { SHARED_METABOLITES, type CommunityFBAOutput, type FBAOutput } from '../data/mockFBA';
+import { IJO1366_REACTIONS, IJO1366_METABOLITES, IJO1366_STATS } from '../data/iJO1366Subset';
 
 export type FBAObjective = 'biomass' | 'atp' | 'product';
 export type FBASpecies = 'ecoli' | 'yeast';
@@ -339,5 +340,90 @@ export async function solveAuthorityCommunityFBA(request: CommunityFBARequest): 
     communityGrowthRate: communityObjective,
     communityBiomassObjective: communityObjective,
     feasible: ecoli.feasible || yeast.feasible,
+  };
+}
+
+// ── P3.1: Expanded FBA using iJO1366 subset (~95 rxns, ~78 metabolites) ──
+// This uses the real stoichiometric matrix from the genome-scale model rather
+// than the hand-written 10-reaction toy networks above.
+
+export interface ExpandedFBARequest {
+  objective: 'biomass' | 'product';
+  glucoseUptake: number;
+  oxygenUptake: number;
+  knockouts?: string[];
+}
+
+export interface ExpandedFBAOutput {
+  fluxes: Record<string, number>;
+  growthRate: number;
+  objectiveValue: number;
+  feasible: boolean;
+  stats: typeof IJO1366_STATS;
+  subsystemFluxSums: Record<string, number>;
+}
+
+export async function solveExpandedFBA(request: ExpandedFBARequest): Promise<ExpandedFBAOutput> {
+  const knockoutSet = new Set(request.knockouts ?? []);
+  const rxns = IJO1366_REACTIONS;
+  const mets = IJO1366_METABOLITES;
+  const n = rxns.length;
+  const m = mets.length;
+  const metIdx = new Map(mets.map((id, i) => [id, i]));
+  const rxnIds = rxns.map(r => r.id);
+
+  // Objective: maximize BIOMASS (or PRODUCT)
+  const c = new Array<number>(n).fill(0);
+  const objRxn = request.objective === 'product' ? 'PRODUCT' : 'BIOMASS';
+  const objIdx = rxnIds.indexOf(objRxn);
+  if (objIdx >= 0) c[objIdx] = 1;
+
+  // Stoichiometric matrix: S · v = 0 (mass balance)
+  const A: number[][] = Array.from({ length: m }, () => new Array<number>(n).fill(0));
+  const b = new Array<number>(m).fill(0);
+  for (let j = 0; j < n; j++) {
+    for (const [met, coef] of Object.entries(rxns[j].stoichiometry)) {
+      const i = metIdx.get(met);
+      if (i !== undefined) A[i][j] = coef;
+    }
+  }
+
+  // Bounds
+  const lb = rxns.map(r => r.lb);
+  const ub = rxns.map((r, j) => {
+    if (knockoutSet.has(r.id)) return 0;
+    // Apply user glucose/oxygen uptake to exchange reactions
+    if (r.id === 'EX_glc_e') return -clamp(request.glucoseUptake, 0, 25);
+    if (r.id === 'EX_o2_e') return -clamp(request.oxygenUptake, 0, 25);
+    return r.ub;
+  });
+  // Fix EX_glc_e lower bound to match uptake (negative = uptake in exchange convention)
+  const glcIdx = rxnIds.indexOf('EX_glc_e');
+  if (glcIdx >= 0) lb[glcIdx] = -clamp(request.glucoseUptake, 0, 25);
+  const o2Idx = rxnIds.indexOf('EX_o2_e');
+  if (o2Idx >= 0) lb[o2Idx] = -clamp(request.oxygenUptake, 0, 25);
+
+  const result = solveLPSimplex({ c, A, b, ub, lb });
+
+  const fluxes: Record<string, number> = {};
+  for (let j = 0; j < n; j++) fluxes[rxnIds[j]] = round(result.x[j]);
+
+  // Subsystem flux sums
+  const subsystemFluxSums: Record<string, number> = {};
+  for (let j = 0; j < n; j++) {
+    const sub = rxns[j].subsystem;
+    subsystemFluxSums[sub] = (subsystemFluxSums[sub] ?? 0) + Math.abs(result.x[j]);
+  }
+  for (const key of Object.keys(subsystemFluxSums)) {
+    subsystemFluxSums[key] = round(subsystemFluxSums[key], 2);
+  }
+
+  return {
+    fluxes,
+    growthRate: round(fluxes.BIOMASS * 0.061),
+    objectiveValue: round(result.z),
+    feasible: result.feasible && result.z > 1e-6,
+    stats: IJO1366_STATS,
+    subsystemFluxSums,
   };
 }
