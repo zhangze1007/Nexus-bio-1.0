@@ -213,11 +213,12 @@ export default function ToolShell({
       </motion.header>
 
       {/* ── BentoGrid ──────────────────────────────────────── */}
+      {/* P3.4: fixed token padding (SP_SM=8, SP_MD=16) instead of dynamic Math.max */}
       <div className="nb-tool-shell__body" style={{
-        flex: 1, minHeight: 0, padding: `${Math.max(gap, 8)}px 12px 12px`,
+        flex: 1, minHeight: 0, padding: '8px 16px 16px',
         display: 'flex',
         flexDirection: 'column',
-        gap: `${Math.max(gap, 8)}px`,
+        gap: '8px',
       }}>
         {workbenchSummary && (
           <WorkbenchInlineContext
@@ -238,7 +239,7 @@ export default function ToolShell({
             gridTemplateAreas: grid,
             gridTemplateColumns: columns ?? '1fr',
             gridTemplateRows: rows ?? '1fr',
-            gap: `${Math.max(gap, 10)}px`,
+            gap: '8px',
           }}
         >
           {children}
@@ -248,7 +249,7 @@ export default function ToolShell({
       {/* ── Footer ─────────────────────────────────────────── */}
         {footer && (
         <div className="nb-tool-shell__footer" style={{
-          padding: '10px 20px',
+          padding: '8px 16px',
           display: 'flex', gap: '8px', flexShrink: 0,
           borderTop: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
           background: PATHD_THEME.sepiaPanelMuted,
