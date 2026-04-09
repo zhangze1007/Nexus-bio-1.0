@@ -255,9 +255,35 @@ export default function GenMIMPage() {
     setToolPayload,
   ]);
 
+  const upstreamMissing: string[] = [];
+  if (!fbaPayload) upstreamMissing.push('FBASim');
+  if (!dynconPayload) upstreamMissing.push('DynCon');
+
   return (
     <>
       <div className="nb-tool-page" style={{ background: PATHD_THEME.sepiaPanelMuted }}>
+        {upstreamMissing.length > 0 && (
+          <div style={{ padding: '10px 16px 0' }}>
+            <div style={{
+              padding: '10px 14px',
+              borderRadius: '12px',
+              border: '1px solid rgba(180, 150, 100, 0.50)',
+              background: 'rgba(232, 220, 200, 0.32)',
+              color: '#6a4f1c',
+              fontFamily: T.SANS,
+              fontSize: '11px',
+              lineHeight: 1.55,
+            }}>
+              <strong>Upstream payload missing:</strong>{' '}
+              Run <em>{upstreamMissing.join(' and ')}</em> first so the
+              CRISPRi schedule is conditioned on real flux feasibility and
+              controller stability. The current view falls back to neutral
+              defaults (efficiency 0.72, no DO-stability bonus) and will
+              upgrade automatically once those tools have run in this
+              workbench session.
+            </div>
+          </div>
+        )}
         <AlgorithmInsight
           title="Gene Minimization via CRISPRi"
           description="Greedy knockdown scheduling: ranks non-essential genes by knockdown efficiency, bounded by max targets and growth tolerance."
