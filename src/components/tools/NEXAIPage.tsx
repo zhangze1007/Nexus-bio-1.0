@@ -352,85 +352,6 @@ function pathwayToResult(pathway: GeneratedPathway, query: string, provider: str
   return { query, answer, citations, confidence: avgConfidence, generatedAt: Date.now() };
 }
 
-function buildContextualResult({
-  query,
-  projectTitle,
-  targetProduct,
-  analyzeArtifact,
-  evidenceItems,
-  selectedEvidenceIds,
-  nextToolIds,
-}: {
-  query: string;
-  projectTitle?: string;
-  targetProduct?: string;
-  analyzeArtifact?: {
-    targetProduct: string;
-    pathwayCandidates: Array<{ label: string; description: string }>;
-    bottleneckAssumptions: Array<{ label: string; detail: string }>;
-    enzymeCandidates: Array<{ label: string; rationale: string }>;
-    thermodynamicConcerns: string[];
-    recommendedNextTools: string[];
-  } | null;
-  evidenceItems: Array<{
-    id: string;
-    title: string;
-    authors: string[];
-    year?: string;
-    abstract: string;
-  }>;
-  selectedEvidenceIds: string[];
-  nextToolIds: string[];
-}): NEXAIResult {
-  const scopedEvidence = evidenceItems.filter((item) => selectedEvidenceIds.includes(item.id));
-  const activeEvidence = (scopedEvidence.length > 0 ? scopedEvidence : evidenceItems).slice(0, 6);
-  const citations: CitationNode[] = activeEvidence.map((item, index) => ({
-    id: item.id,
-    title: item.title,
-    authors: item.authors.join(', ') || 'Workbench evidence',
-    year: Number.parseInt(item.year ?? '', 10) || 2024,
-    relevance: Math.max(0.38, 0.88 - index * 0.08),
-    x: 90 + (index % 3) * 180,
-    y: 90 + Math.floor(index / 3) * 150,
-  }));
-
-  const target = analyzeArtifact?.targetProduct || targetProduct || projectTitle || 'current project';
-  const topPathway = analyzeArtifact?.pathwayCandidates[0];
-  const topBottleneck = analyzeArtifact?.bottleneckAssumptions[0];
-  const topEnzyme = analyzeArtifact?.enzymeCandidates[0];
-  const thermodynamicConcern = analyzeArtifact?.thermodynamicConcerns[0];
-  const recommendedTool = analyzeArtifact?.recommendedNextTools[0] || nextToolIds[0] || 'pathd';
-  const confidence = Math.min(
-    0.92,
-    0.42
-      + (activeEvidence.length > 0 ? 0.18 : 0)
-      + (topBottleneck ? 0.15 : 0)
-      + (topPathway ? 0.1 : 0)
-      + (thermodynamicConcern ? 0.07 : 0),
-  );
-
-  const lines = [
-    `Axon synthesized a project-scoped answer for "${query}" using the current Nexus-Bio evidence graph rather than a canned fallback.`,
-    `Target focus: ${target}.`,
-    topPathway ? `Primary pathway candidate: ${topPathway.label}. ${topPathway.description}` : 'No structured pathway candidate has been committed yet.',
-    topBottleneck ? `Leading bottleneck: ${topBottleneck.label}. ${topBottleneck.detail}` : 'No explicit bottleneck has been committed yet.',
-    topEnzyme ? `Highest-priority enzyme candidate: ${topEnzyme.label}. ${topEnzyme.rationale}` : 'No enzyme candidate has been prioritized yet.',
-    thermodynamicConcern ? `Thermodynamic concern: ${thermodynamicConcern}` : 'No dominant thermodynamic penalty is currently flagged.',
-    `Recommended next move: ${recommendedTool.toUpperCase()}.`,
-    activeEvidence.length > 0
-      ? `Evidence basis: ${activeEvidence.map((item) => item.title).join(' · ')}.`
-      : 'Evidence basis is currently thin; add Research evidence to strengthen the answer.',
-  ];
-
-  return {
-    query,
-    answer: lines.join('\n\n'),
-    citations,
-    confidence,
-    generatedAt: Date.now(),
-  };
-}
-
 // ── Main Page ──────────────────────────────────────────────────────────
 
 export default function NEXAIPage() {
@@ -447,6 +368,7 @@ export default function NEXAIPage() {
   const [resultMode, setResultMode] = useState<'pathway' | 'text' | 'idle'>('idle');
   const [surfaceView, setSurfaceView] = useState<'answer' | 'evidence'>('answer');
   const [history, setHistory] = useState<string[]>([]);
+  const [apiError, setApiError] = useState<string | null>(null);
   const isUngrounded = Boolean(result) && result.citations.length === 0;
 
   const contextPrompt = useMemo(() => {
@@ -490,17 +412,11 @@ export default function NEXAIPage() {
     if (!activeQuery) return;
     setHistory(prev => [activeQuery, ...prev.slice(0, 19)]);
     setLoading(true);
+    setApiError(null);
     appendConsole({ level: 'info', module: 'nexai', message: `Query: "${activeQuery.slice(0, 60)}${activeQuery.length > 60 ? '…' : ''}"` });
-    const contextualSeed = buildContextualResult({
-      query: activeQuery,
-      projectTitle: project?.title,
-      targetProduct: project?.targetProduct,
-      analyzeArtifact,
-      evidenceItems,
-      selectedEvidenceIds,
-      nextToolIds: nextRecommendations.map((item) => item.toolId),
-    });
 
+    // Inject workbench context into the prompt as a real upstream signal — this is
+    // not a fake response, it is real context that the LLM consumes alongside the question.
     const contextualQuery = analyzeArtifact
       ? [
           activeQuery,
@@ -515,7 +431,8 @@ export default function NEXAIPage() {
       : activeQuery;
 
     try {
-      // Call Axon in searchQuery mode — returns enriched pathway JSON
+      // Call Axon (Groq llama-3.3-70b-versatile via /api/analyze) — the ONLY source of answers.
+      // No template fallback. If this fails, the user sees an honest error, not a synthesized impostor.
       const res = await fetch('/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -542,13 +459,14 @@ export default function NEXAIPage() {
         const bottlenecks = (pathway as any).bottleneck_enzymes?.length ?? 0;
         appendConsole({ level: 'success', module: 'nexai', message: `Axon: ${pathway.nodes.length} nodes · ${bottlenecks} bottleneck(s) · ${provider}` });
       } else {
-        // Plain text answer (non-pathway question)
-        const seededCitations = contextualSeed.citations.slice(0, 6);
+        // Plain text answer (non-pathway question) — straight from Groq, no contextual blending.
+        // Confidence is fixed at 0.75 as an LLM-estimated baseline; will be displayed with a
+        // "LLM-estimated" caveat in the UI.
         setResult({
           query: activeQuery,
           answer: rawText.slice(0, 1200),
-          citations: seededCitations,
-          confidence: seededCitations.length > 0 ? Math.max(0.62, contextualSeed.confidence * 0.8) : 0.48,
+          citations: [],
+          confidence: 0.75,
           generatedAt: Date.now(),
         });
         setResultMode('text');
@@ -556,13 +474,14 @@ export default function NEXAIPage() {
         appendConsole({ level: 'success', module: 'nexai', message: `Axon: text response · ${provider}` });
       }
 
-      // Fetch real citations from Semantic Scholar (best-effort)
+      // Fetch real citations from Semantic Scholar (best-effort, independent of Groq).
+      // This is a real external API, not a mock — it loads actual papers.
       try {
         const ssUrl = `https://api.semanticscholar.org/graph/v1/paper/search?query=${encodeURIComponent(activeQuery.slice(0, 100))}&fields=title,authors,year,citationCount&limit=5`;
         const ssRes = await fetch(ssUrl);
         if (ssRes.ok) {
           const ssData = await ssRes.json();
-          const ssCitations: import('../../types').CitationNode[] = (ssData.data ?? []).map((p: Record<string, unknown>, i: number) => ({
+          const ssCitations: CitationNode[] = (ssData.data ?? []).map((p: Record<string, unknown>, i: number) => ({
             id: (p.paperId as string) ?? `ss-${i}`,
             title: (p.title as string) ?? 'Unknown title',
             authors: ((p.authors as {name:string}[]) ?? []).map((a) => a.name).join(', ') || 'Unknown authors',
@@ -579,9 +498,11 @@ export default function NEXAIPage() {
         }
       } catch { /* Semantic Scholar optional */ }
     } catch (e) {
-      appendConsole({ level: 'warn', module: 'nexai', message: `API unavailable — ${String(e).slice(0, 80)} — using contextual synthesis` });
-      setResult(contextualSeed);
-      setResultMode('text');
+      const errMsg = e instanceof Error ? e.message : String(e);
+      appendConsole({ level: 'error', module: 'nexai', message: `Groq API unavailable — ${errMsg.slice(0, 120)}` });
+      setApiError(`Groq API unavailable — ${errMsg}. Please verify GROQ_API_KEY is configured and try again.`);
+      setResult(null);
+      setResultMode('idle');
       setSurfaceView('answer');
     }
     setLoading(false);
@@ -838,7 +759,29 @@ export default function NEXAIPage() {
               </div>
             )}
 
-            <div style={{ minHeight: 0, display: 'flex' }}>
+            <div style={{ minHeight: 0, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {apiError && (
+                <div
+                  role="alert"
+                  style={{
+                    flex: '0 0 auto',
+                    borderRadius: '14px',
+                    border: '1px solid rgba(250,128,114,0.42)',
+                    background: 'rgba(250,128,114,0.12)',
+                    padding: '12px 16px',
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '12px',
+                  }}
+                >
+                  <span style={{ fontFamily: T.MONO, fontSize: '11px', fontWeight: 700, color: '#FA8072', letterSpacing: '0.08em' }}>
+                    GROQ ERROR
+                  </span>
+                  <p style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.value, lineHeight: 1.6, margin: 0 }}>
+                    {apiError}
+                  </p>
+                </div>
+              )}
               {!result ? (
                 <div
                   style={{
@@ -855,7 +798,7 @@ export default function NEXAIPage() {
                   <div>
                     <p style={{ fontFamily: T.MONO, fontSize: '32px', color: 'rgba(36,29,24,0.08)', margin: '0 0 8px' }}>⬡</p>
                     <p style={{ fontFamily: T.SANS, fontSize: '12px', color: PATHD_THEME.label }}>
-                      Ask Axon a research question
+                      {apiError ? 'Axon needs the Groq API to answer — please try again' : 'Ask Axon a research question'}
                     </p>
                     <p style={{ fontFamily: T.MONO, fontSize: '9px', color: PATHD_THEME.label, marginTop: '4px' }}>
                       press / to focus the command line
