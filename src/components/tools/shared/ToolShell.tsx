@@ -30,6 +30,7 @@ import type { CSSProperties, ReactNode } from 'react';
 import { motion } from 'framer-motion';
 import { LayoutGrid, ChevronLeft } from 'lucide-react';
 import { getToolDefinition } from './toolRegistry';
+import { getToolValidity, type ValidityLevel } from './toolValidity';
 import { useNavigation } from '../../../contexts/NavigationContext';
 import { T } from '../../ide/tokens';
 import WorkbenchInlineContext from '../../workbench/WorkbenchInlineContext';
@@ -68,7 +69,14 @@ export default function ToolShell({
   hero,
 }: ToolShellProps) {
   const tool = getToolDefinition(moduleId);
+  const validity = getToolValidity(moduleId);
   const { handleBack } = useNavigation();
+
+  const validityStyles: Record<ValidityLevel, { bg: string; border: string; color: string; label: string }> = {
+    real:    { bg: 'rgba(147, 203, 82, 0.16)',  border: 'rgba(147, 203, 82, 0.45)',  color: '#5d8a2f', label: 'REAL' },
+    partial: { bg: 'rgba(232, 220, 200, 0.32)', border: 'rgba(180, 150, 100, 0.50)', color: '#8a6a30', label: 'PARTIAL' },
+    demo:    { bg: 'rgba(250, 128, 114, 0.16)', border: 'rgba(250, 128, 114, 0.50)', color: '#a8453a', label: 'DEMO' },
+  };
 
   return (
     <div className="nb-tool-shell" style={{
@@ -168,6 +176,27 @@ export default function ToolShell({
             </div>
           )}
         </div>
+
+        {validity && (
+          <div
+            title={validity.caption}
+            style={{
+              fontFamily: T.MONO,
+              fontSize: '9px',
+              fontWeight: 700,
+              letterSpacing: '0.10em',
+              padding: '5px 9px',
+              borderRadius: '10px',
+              background: validityStyles[validity.level].bg,
+              border: `1px solid ${validityStyles[validity.level].border}`,
+              color: validityStyles[validity.level].color,
+              cursor: 'help',
+              flexShrink: 0,
+            }}
+          >
+            {validityStyles[validity.level].label}
+          </div>
+        )}
 
         {formula && (
           <div style={{

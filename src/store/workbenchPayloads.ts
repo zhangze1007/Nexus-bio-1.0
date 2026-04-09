@@ -1,7 +1,26 @@
 import type { PathwayKey } from '../data/mockCETHX';
 import type { DBTLPhase } from '../types';
 
-export interface PathDWorkbenchPayload {
+/**
+ * Validity tag attached to every workbench payload (P0.4 from REVIEW_REPORT.md).
+ * - 'real'    : algorithm matches its scientific name end-to-end
+ * - 'partial' : core math is real, parameters/coupling are placeholders
+ * - 'demo'    : visualization is real, but underlying numbers are reference
+ *               tables or heuristic stand-ins
+ *
+ * The canonical default per tool lives in
+ * src/components/tools/shared/toolValidity.ts and is rendered as a badge
+ * in ToolShell. Individual payloads MAY override the default at runtime
+ * (e.g. when a tool successfully fetches live data and upgrades from 'demo'
+ * to 'partial').
+ */
+export type PayloadValidity = 'real' | 'partial' | 'demo';
+
+export interface WorkbenchPayloadBase {
+  validity?: PayloadValidity;
+}
+
+export interface PathDWorkbenchPayload extends WorkbenchPayloadBase {
   toolId: 'pathd';
   targetProduct: string;
   sourceArtifactId?: string;
@@ -21,7 +40,7 @@ export interface PathDWorkbenchPayload {
   updatedAt: number;
 }
 
-export interface FBAWorkbenchPayload {
+export interface FBAWorkbenchPayload extends WorkbenchPayloadBase {
   toolId: 'fbasim';
   targetProduct: string;
   pathwayFocus: string;
@@ -50,7 +69,7 @@ export interface FBAWorkbenchPayload {
   updatedAt: number;
 }
 
-export interface CETHXWorkbenchPayload {
+export interface CETHXWorkbenchPayload extends WorkbenchPayloadBase {
   toolId: 'cethx';
   targetProduct: string;
   sourceArtifactId?: string;
@@ -68,7 +87,7 @@ export interface CETHXWorkbenchPayload {
   updatedAt: number;
 }
 
-export interface CatalystWorkbenchPayload {
+export interface CatalystWorkbenchPayload extends WorkbenchPayloadBase {
   toolId: 'catdes';
   targetProduct: string;
   sourceArtifactId?: string;
@@ -92,7 +111,7 @@ export interface CatalystWorkbenchPayload {
   updatedAt: number;
 }
 
-export interface DynConWorkbenchPayload {
+export interface DynConWorkbenchPayload extends WorkbenchPayloadBase {
   toolId: 'dyncon';
   targetProduct: string;
   sourceArtifactId?: string;
@@ -120,7 +139,7 @@ export interface DynConWorkbenchPayload {
   updatedAt: number;
 }
 
-export interface CellFreeWorkbenchPayload {
+export interface CellFreeWorkbenchPayload extends WorkbenchPayloadBase {
   toolId: 'cellfree';
   targetProduct: string;
   sourceArtifactId?: string;
@@ -139,7 +158,7 @@ export interface CellFreeWorkbenchPayload {
   updatedAt: number;
 }
 
-export interface DBTLWorkbenchPayload {
+export interface DBTLWorkbenchPayload extends WorkbenchPayloadBase {
   toolId: 'dbtlflow';
   targetProduct: string;
   sourceArtifactId?: string;
@@ -160,7 +179,7 @@ export interface DBTLWorkbenchPayload {
   updatedAt: number;
 }
 
-export interface ProEvolWorkbenchPayload {
+export interface ProEvolWorkbenchPayload extends WorkbenchPayloadBase {
   toolId: 'proevol';
   targetProduct: string;
   sourceArtifactId?: string;
@@ -175,7 +194,7 @@ export interface ProEvolWorkbenchPayload {
   updatedAt: number;
 }
 
-export interface GECAIRWorkbenchPayload {
+export interface GECAIRWorkbenchPayload extends WorkbenchPayloadBase {
   toolId: 'gecair';
   targetProduct: string;
   sourceArtifactId?: string;
@@ -192,7 +211,7 @@ export interface GECAIRWorkbenchPayload {
   updatedAt: number;
 }
 
-export interface GenMIMWorkbenchPayload {
+export interface GenMIMWorkbenchPayload extends WorkbenchPayloadBase {
   toolId: 'genmim';
   targetProduct: string;
   sourceArtifactId?: string;
@@ -209,7 +228,7 @@ export interface GenMIMWorkbenchPayload {
   updatedAt: number;
 }
 
-export interface MultiOWorkbenchPayload {
+export interface MultiOWorkbenchPayload extends WorkbenchPayloadBase {
   toolId: 'multio';
   targetProduct: string;
   sourceArtifactId?: string;
@@ -232,7 +251,7 @@ export interface MultiOWorkbenchPayload {
   updatedAt: number;
 }
 
-export interface ScSpatialWorkbenchPayload {
+export interface ScSpatialWorkbenchPayload extends WorkbenchPayloadBase {
   toolId: 'scspatial';
   targetProduct: string;
   sourceArtifactId?: string;
@@ -250,7 +269,7 @@ export interface ScSpatialWorkbenchPayload {
   updatedAt: number;
 }
 
-export interface NEXAIWorkbenchPayload {
+export interface NEXAIWorkbenchPayload extends WorkbenchPayloadBase {
   toolId: 'nexai';
   targetProduct: string;
   sourceArtifactId?: string;
