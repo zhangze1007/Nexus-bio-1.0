@@ -16,7 +16,8 @@ import Hero from './components/Hero';
 import TopNav from './components/TopNav';
 import DevModePanel from './components/DevModePanel';
 import FeaturesArchitecture from './components/FeaturesArchitecture';
-import { Mail, Linkedin, ArrowRight, Dna, ShieldCheck, Zap, BarChart3 } from 'lucide-react';
+import HomeInteractiveCard from './components/HomeInteractiveCard';
+import { Mail, Linkedin, Dna, ShieldCheck, Zap, BarChart3 } from 'lucide-react';
 
 // ── Design tokens ──────────────────────────────────────────────────────
 const H = "'Inter',-apple-system,sans-serif";
@@ -35,60 +36,6 @@ function Reveal({ children, delay = 0, style }: {
       transition={{ duration: 0.6, delay, ease: [0.22, 1, 0.36, 1] }}>
       {children}
     </motion.div>
-  );
-}
-
-// ── Contact card ───────────────────────────────────────────────────────
-function ContactCard({
-  href, icon, label, title, subtitle, cta, external,
-}: {
-  href: string; icon: React.ReactNode; label: string; title: string;
-  subtitle: string; cta: string; external?: boolean;
-}) {
-  return (
-    <a
-      href={href}
-      target={external ? '_blank' : undefined}
-      rel={external ? 'noopener noreferrer' : undefined}
-      style={{
-        display: 'flex', flexDirection: 'column', padding: '28px',
-        textDecoration: 'none',
-        background: 'rgba(255,255,255,0.02)',
-        border: '0.5px solid rgba(255,255,255,0.08)',
-        transition: 'all 0.2s',
-      }}
-      onMouseEnter={e => {
-        const el = e.currentTarget as HTMLElement;
-        el.style.background = 'rgba(255,255,255,0.045)';
-        el.style.borderColor = 'rgba(255,255,255,0.18)';
-      }}
-      onMouseLeave={e => {
-        const el = e.currentTarget as HTMLElement;
-        el.style.background = 'rgba(255,255,255,0.02)';
-        el.style.borderColor = 'rgba(255,255,255,0.08)';
-      }}>
-      <div style={{
-        width: '36px', height: '36px', borderRadius: '8px',
-        background: 'rgba(255,255,255,0.05)',
-        border: '0.5px solid rgba(255,255,255,0.10)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        marginBottom: '20px',
-      }}>
-        {icon}
-      </div>
-      <p style={{ fontFamily: MONO, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.28)', margin: '0 0 6px' }}>
-        {label}
-      </p>
-      <p style={{ fontFamily: H, fontSize: '15px', fontWeight: 600, color: '#FFFFFF', margin: '0 0 6px', letterSpacing: '-0.01em' }}>
-        {title}
-      </p>
-      <p style={{ fontFamily: H, fontSize: '12px', color: 'rgba(255,255,255,0.32)', margin: '0 0 20px', lineHeight: 1.55, flex: 1 }}>
-        {subtitle}
-      </p>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'rgba(255,255,255,0.38)', fontSize: '12px', fontFamily: H }}>
-        {cta} <ArrowRight size={11} />
-      </div>
-    </a>
   );
 }
 
@@ -120,21 +67,21 @@ export default function App() {
             </Reveal>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(260px,1fr))', gap: '0', maxWidth: '640px', border: '0.5px solid rgba(255,255,255,0.08)' }}>
-              <ContactCard
+              <HomeInteractiveCard
                 href="mailto:fuchanze@gmail.com"
                 icon={<Mail size={16} style={{ color: 'rgba(255,255,255,0.55)' }} />}
                 label="Email"
                 title="fuchanze@gmail.com"
-                subtitle="Research collaborations · Consulting · General inquiries"
-                cta="Send email"
+                description="Research collaborations · Consulting · General inquiries"
+                footer="Send email"
               />
-              <ContactCard
+              <HomeInteractiveCard
                 href="https://www.linkedin.com/in/zhangze-foo-3575ba359"
                 icon={<Linkedin size={16} style={{ color: 'rgba(255,255,255,0.55)' }} />}
                 label="LinkedIn"
                 title="Zhang Ze Foo"
-                subtitle="Founder · Synthetic Biology & Metabolic Engineering · Nexus-Bio"
-                cta="View profile"
+                description="Founder · Synthetic Biology & Metabolic Engineering · Nexus-Bio"
+                footer="View profile"
                 external
               />
             </div>
