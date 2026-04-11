@@ -53,11 +53,11 @@ const RESEARCH_PALETTE = {
   textFaint: 'rgba(226,232,240,0.3)',
   active: '#F4F7FB',
   activeSurface: 'rgba(232,238,248,0.12)',
-  ready: '#97E1C3',
-  readySurface: 'rgba(151,225,195,0.12)',
-  warning: '#F1C68A',
-  warningSurface: 'rgba(241,198,138,0.12)',
-  warningBorder: 'rgba(241,198,138,0.24)',
+  ready: '#D1E7E1',
+  readySurface: 'rgba(209,231,225,0.10)',
+  warning: '#E5D0AA',
+  warningSurface: 'rgba(229,208,170,0.10)',
+  warningBorder: 'rgba(229,208,170,0.20)',
   shadow: '0 22px 70px rgba(3,8,18,0.34)',
 } as const;
 
@@ -970,20 +970,6 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
                         </p>
                         <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '13px', margin: 0 }}>
                           {paper.authors.join(', ')} et al.
-                        </p>
-                        <p
-                          style={{
-                            color: RESEARCH_PALETTE.textSoft,
-                            fontSize: '13px',
-                            lineHeight: 1.72,
-                            margin: '12px 0 0',
-                            display: '-webkit-box',
-                            WebkitLineClamp: 3,
-                            WebkitBoxOrient: 'vertical',
-                            overflow: 'hidden',
-                          }}
-                        >
-                          {paper.abstract}
                         </p>
                         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '10px' }}>
                           <a
