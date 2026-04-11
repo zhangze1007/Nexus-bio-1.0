@@ -740,7 +740,7 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
           <h2 style={{ color: RESEARCH_PALETTE.text, fontSize: 'clamp(26px, 4vw, 38px)', fontWeight: 700, letterSpacing: '-0.04em', marginBottom: '10px', lineHeight: 1.08 }}>
             Database Research
           </h2>
-          <p style={{ color: RESEARCH_PALETTE.textMuted, fontSize: '15px', lineHeight: 1.7, maxWidth: '74ch', margin: 0 }}>
+          <p style={{ color: RESEARCH_PALETTE.textMuted, fontSize: '15px', lineHeight: 1.7, maxWidth: '92ch', margin: 0 }}>
             Search across PubMed, Europe PMC, Semantic Scholar, OpenAlex, bioRxiv, and CORE from one literature desk. Nexus-Bio prioritizes open-access and publicly reachable research where available, surfaces live metadata from connected sources, and flags source gaps honestly when a service is limited or unavailable.
           </p>
         </div>
