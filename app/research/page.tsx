@@ -4,7 +4,7 @@ import ResearchClient from './ResearchClient';
 
 export const metadata: Metadata = {
   title: 'Research | Nexus-Bio',
-  description: 'Search 200M+ papers across PubMed, Semantic Scholar, OpenAlex, and more.',
+  description: 'Search across connected scientific literature sources, with live metadata and open-access routing where available.',
 };
 
 export default function Page() {

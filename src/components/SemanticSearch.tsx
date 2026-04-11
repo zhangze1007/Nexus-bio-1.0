@@ -38,12 +38,43 @@ interface Article {
 type SortMode = 'citations' | 'year' | 'title';
 type SourceStatus = 'idle' | 'loading' | 'ready' | 'error';
 const SOURCE_TIMEOUT_MS = 8000;
+const SOURCE_RESULT_LIMIT = 5;
+
+const RESEARCH_PALETTE = {
+  page: 'radial-gradient(circle at top, rgba(105,132,188,0.12) 0%, rgba(105,132,188,0.04) 18%, transparent 38%), #050810',
+  surface: 'rgba(9,13,20,0.9)',
+  surfaceRaised: 'rgba(13,18,27,0.92)',
+  surfaceSoft: 'rgba(255,255,255,0.038)',
+  border: 'rgba(255,255,255,0.08)',
+  borderStrong: 'rgba(255,255,255,0.14)',
+  text: '#F4F7FB',
+  textMuted: 'rgba(226,232,240,0.7)',
+  textSoft: 'rgba(226,232,240,0.52)',
+  textFaint: 'rgba(226,232,240,0.3)',
+  active: '#F4F7FB',
+  activeSurface: 'rgba(232,238,248,0.12)',
+  ready: '#97E1C3',
+  readySurface: 'rgba(151,225,195,0.12)',
+  warning: '#F1C68A',
+  warningSurface: 'rgba(241,198,138,0.12)',
+  warningBorder: 'rgba(241,198,138,0.24)',
+  shadow: '0 22px 70px rgba(3,8,18,0.34)',
+} as const;
 
 interface SourceDefinition {
   key: string;
   label: string;
   fetcher: (query: string) => Promise<Article[]>;
 }
+
+const SOURCE_DESCRIPTORS: Record<string, { kind: string; access: string }> = {
+  'PubMed': { kind: 'Biomedical index', access: 'Abstracts and metadata' },
+  'Europe PMC': { kind: 'Literature aggregator', access: 'OA flags and landing pages' },
+  'Semantic Scholar': { kind: 'Literature graph', access: 'Metadata and citation graph' },
+  'OpenAlex': { kind: 'Scholarly catalog', access: 'Metadata and OA routing' },
+  'bioRxiv': { kind: 'Preprint feed', access: 'Public preprints' },
+  'CORE': { kind: 'Repository aggregator', access: 'Open repository content' },
+};
 
 async function fetchJsonOrThrow(url: string) {
   const controller = new AbortController();
@@ -57,6 +88,18 @@ async function fetchJsonOrThrow(url: string) {
   } finally {
     window.clearTimeout(timeoutId);
   }
+}
+
+function describeSourceIssue(error: unknown) {
+  if (error instanceof DOMException && error.name === 'AbortError') {
+    return 'timed out';
+  }
+
+  const message = error instanceof Error ? error.message : String(error ?? '');
+  if (message.includes('429')) return 'rate limited';
+  if (message.includes('403')) return 'blocked';
+  if (message.includes('404')) return 'not found';
+  return 'unavailable';
 }
 
 function decodeOpenAlexAbstract(index: Record<string, number[]> | null | undefined) {
@@ -222,7 +265,7 @@ function mergeUniqueArticles(existing: Article[], incoming: Article[]) {
 }
 
 async function fetchPubMed(query: string): Promise<Article[]> {
-  const searchData = await fetchJsonOrThrow(`https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=${encodeURIComponent(query)}+AND+(synthetic+biology+OR+metabolic+engineering+OR+fermentation)&retmax=3&sort=relevance&retmode=json`);
+  const searchData = await fetchJsonOrThrow(`https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=${encodeURIComponent(query)}+AND+(synthetic+biology+OR+metabolic+engineering+OR+fermentation)&retmax=${SOURCE_RESULT_LIMIT}&sort=relevance&retmode=json`);
   const ids: string[] = searchData.esearchresult?.idlist || [];
   if (!ids.length) return [];
 
@@ -252,7 +295,7 @@ async function fetchPubMed(query: string): Promise<Article[]> {
 }
 
 async function fetchEuropePMC(query: string): Promise<Article[]> {
-  const data = await fetchJsonOrThrow(`https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=${encodeURIComponent(query)}+AND+(TITLE_ABS:"metabolic engineering" OR TITLE_ABS:"synthetic biology")&format=json&pageSize=3&sort=CITED`);
+  const data = await fetchJsonOrThrow(`https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=${encodeURIComponent(query)}&format=json&pageSize=${SOURCE_RESULT_LIMIT}`);
   return (data.resultList?.result || []).map((item: any) => ({
     id: `epmc-${item.id}`,
     title: item.title || '',
@@ -269,7 +312,7 @@ async function fetchEuropePMC(query: string): Promise<Article[]> {
 }
 
 async function fetchSemanticScholar(query: string): Promise<Article[]> {
-  const data = await fetchJsonOrThrow(`https://api.semanticscholar.org/graph/v1/paper/search?query=${encodeURIComponent(query)}&fields=title,abstract,authors,year,journal,externalIds,citationCount,isOpenAccess,venue&limit=3`);
+  const data = await fetchJsonOrThrow(`https://api.semanticscholar.org/graph/v1/paper/search?query=${encodeURIComponent(query)}&fields=title,abstract,authors,year,journal,externalIds,citationCount,isOpenAccess,venue&limit=${SOURCE_RESULT_LIMIT}`);
   return (data.data || []).map((item: any) => ({
     id: `ss-${item.paperId}`,
     title: item.title || '',
@@ -286,7 +329,7 @@ async function fetchSemanticScholar(query: string): Promise<Article[]> {
 }
 
 async function fetchOpenAlex(query: string): Promise<Article[]> {
-  const data = await fetchJsonOrThrow(`https://api.openalex.org/works?search=${encodeURIComponent(query)}&per-page=3&sort=cited_by_count:desc&mailto=nexusbio@research.com`);
+  const data = await fetchJsonOrThrow(`https://api.openalex.org/works?search=${encodeURIComponent(query)}&per-page=${SOURCE_RESULT_LIMIT}&mailto=nexusbio@research.com`);
   return (data.results || []).map((item: any) => {
     const doi = item.doi?.replace('https://doi.org/', '') || '';
     return {
@@ -306,7 +349,7 @@ async function fetchOpenAlex(query: string): Promise<Article[]> {
 }
 
 async function fetchBioRxiv(query: string): Promise<Article[]> {
-  const data = await fetchJsonOrThrow(`https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=${encodeURIComponent(query)}+AND+SRC:PPR&format=json&pageSize=3&sort=FIRST_PDATE:desc`);
+  const data = await fetchJsonOrThrow(`https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=${encodeURIComponent(query)}+AND+SRC:PPR&format=json&pageSize=${SOURCE_RESULT_LIMIT}&sort=FIRST_PDATE:desc`);
   return (data.resultList?.result || []).map((item: any) => ({
     id: `biorxiv-${item.id}`,
     title: item.title || '',
@@ -323,23 +366,19 @@ async function fetchBioRxiv(query: string): Promise<Article[]> {
 }
 
 async function fetchCORE(query: string): Promise<Article[]> {
-  try {
-    const data = await fetchJsonOrThrow(`https://api.core.ac.uk/v3/search/works?q=${encodeURIComponent(query)}&limit=3`);
-    return (data.results || []).map((item: any) => ({
-      id: `core-${item.id}`,
-      title: item.title || '',
-      abstract: item.abstract || '',
-      authors: item.authors?.slice(0, 3).map((author: any) => author.name || '') || [],
-      journal: item.journals?.[0]?.title || '',
-      year: item.yearPublished?.toString() || '',
-      doi: item.doi || '',
-      url: item.downloadUrl || '',
-      source: 'CORE',
-      openAccess: true,
-    }));
-  } catch {
-    return [];
-  }
+  const data = await fetchJsonOrThrow(`https://api.core.ac.uk/v3/search/works?q=${encodeURIComponent(query)}&limit=${SOURCE_RESULT_LIMIT}`);
+  return (data.results || []).map((item: any) => ({
+    id: `core-${item.id}`,
+    title: item.title || '',
+    abstract: item.abstract || '',
+    authors: item.authors?.slice(0, 3).map((author: any) => author.name || '') || [],
+    journal: item.journals?.[0]?.title || '',
+    year: item.yearPublished?.toString() || '',
+    doi: item.doi || '',
+    url: item.downloadUrl || '',
+    source: 'CORE',
+    openAccess: true,
+  }));
 }
 
 const SOURCE_DEFINITIONS: SourceDefinition[] = [
@@ -380,16 +419,18 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
   const [query, setQuery] = useState(initialQuery ?? '');
   const [results, setResults] = useState<Article[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [showShowcase, setShowShowcase] = useState(!initialQuery);
   const [sourceFilter, setSourceFilter] = useState<'All' | string>('All');
   const [sortMode, setSortMode] = useState<SortMode>('citations');
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(6);
+  const [pageSize, setPageSize] = useState(8);
   const [sourceState, setSourceState] = useState<Record<string, SourceStatus>>(
     () => Object.fromEntries(SOURCE_DEFINITIONS.map((source) => [source.key, 'idle'])),
   );
+  const [sourceIssues, setSourceIssues] = useState<Record<string, string>>({});
   const didAutoSearch = useRef(false);
   const evidenceItems = useWorkbenchStore((s) => s.evidenceItems);
   const selectedEvidenceIds = useWorkbenchStore((s) => s.selectedEvidenceIds);
@@ -460,13 +501,30 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
   }, [filteredResults, pageSize, safePage]);
 
   const failingSources = useMemo(
-    () => Object.entries(sourceState).filter(([, state]) => state === 'error').map(([source]) => source),
-    [sourceState],
+    () => Object.entries(sourceState)
+      .filter(([, state]) => state === 'error')
+      .map(([source]) => ({ source, issue: sourceIssues[source] || 'unavailable' })),
+    [sourceIssues, sourceState],
   );
 
   const completedSources = useMemo(
     () => Object.values(sourceState).filter((state) => state === 'ready' || state === 'error').length,
     [sourceState],
+  );
+
+  const successfulSources = useMemo(
+    () => Object.values(sourceState).filter((state) => state === 'ready').length,
+    [sourceState],
+  );
+
+  const openAccessCount = useMemo(
+    () => results.filter((article) => article.openAccess).length,
+    [results],
+  );
+
+  const preprintCount = useMemo(
+    () => results.filter((article) => article.isPreprint).length,
+    [results],
   );
 
   const toggleExpand = (id: string) => {
@@ -485,6 +543,7 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
     setShowShowcase(true);
     setSourceFilter('All');
     setSortMode('citations');
+    setSourceIssues({});
     setSourceState(Object.fromEntries(SOURCE_DEFINITIONS.map((source) => [source.key, 'idle'])));
   }, []);
 
@@ -497,6 +556,7 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
     setExpandedIds(new Set());
     setShowShowcase(false);
     setSourceFilter('All');
+    setSourceIssues({});
     setSourceState(Object.fromEntries(SOURCE_DEFINITIONS.map((source) => [source.key, 'loading'])));
 
     await Promise.allSettled(SOURCE_DEFINITIONS.map(async (source) => {
@@ -504,8 +564,9 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
         const articles = await source.fetcher(nextQuery);
         setResults((prev) => mergeUniqueArticles(prev, articles));
         setSourceState((prev) => ({ ...prev, [source.key]: 'ready' }));
-      } catch {
+      } catch (error) {
         setSourceState((prev) => ({ ...prev, [source.key]: 'error' }));
+        setSourceIssues((prev) => ({ ...prev, [source.key]: describeSourceIssue(error) }));
       }
     }));
 
@@ -572,21 +633,62 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
       className="px-4 py-24"
       id="search"
       style={{
-        background: '#000000',
+        background: RESEARCH_PALETTE.page,
         fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
       }}
     >
       <div className="max-w-5xl mx-auto">
         <div style={{ marginBottom: '28px' }}>
-          <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '11px', fontFamily: MONO, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '10px' }}>
+          <p style={{ color: RESEARCH_PALETTE.textFaint, fontSize: '11px', fontFamily: MONO, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '10px' }}>
             Literature workbench
           </p>
-          <h2 style={{ color: '#ffffff', fontSize: 'clamp(26px, 4vw, 38px)', fontWeight: 700, letterSpacing: '-0.04em', marginBottom: '10px', lineHeight: 1.08 }}>
+          <h2 style={{ color: RESEARCH_PALETTE.text, fontSize: 'clamp(26px, 4vw, 38px)', fontWeight: 700, letterSpacing: '-0.04em', marginBottom: '10px', lineHeight: 1.08 }}>
             Database Research
           </h2>
-          <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '15px', lineHeight: 1.7, maxWidth: '70ch' }}>
-            Search six academic sources in parallel, then filter, sort, page, and send the right abstract into the analyzer without losing result position.
+          <p style={{ color: RESEARCH_PALETTE.textMuted, fontSize: '15px', lineHeight: 1.7, maxWidth: '74ch', margin: 0 }}>
+            Search across PubMed, Europe PMC, Semantic Scholar, OpenAlex, bioRxiv, and CORE from one literature desk. Nexus-Bio prioritizes open-access and publicly reachable research where available, surfaces live metadata from connected sources, and flags source gaps honestly when a service is limited or unavailable.
           </p>
+        </div>
+
+        <div
+          style={{
+            marginBottom: '22px',
+            borderRadius: '20px',
+            border: `1px solid ${RESEARCH_PALETTE.border}`,
+            background: 'linear-gradient(180deg, rgba(255,255,255,0.045) 0%, rgba(255,255,255,0.02) 100%)',
+            padding: '14px 16px',
+            boxShadow: RESEARCH_PALETTE.shadow,
+          }}
+        >
+          <p style={{ margin: '0 0 12px', color: RESEARCH_PALETTE.textSoft, fontSize: '13px', lineHeight: 1.7, maxWidth: '76ch' }}>
+            Connected sources include biomedical indexes, literature aggregators, preprints, and repository-fed open-access records. Curated landmark papers remain separate from the live query stream so background reading never gets mixed into current search results.
+          </p>
+
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            {SOURCE_DEFINITIONS.map((source) => (
+              <div
+                key={source.key}
+                style={{
+                  minHeight: '32px',
+                  padding: '0 10px',
+                  borderRadius: '999px',
+                  border: `1px solid ${RESEARCH_PALETTE.border}`,
+                  background: 'rgba(255,255,255,0.035)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  color: RESEARCH_PALETTE.textSoft,
+                  fontSize: '11px',
+                  lineHeight: 1,
+                }}
+              >
+                <span style={{ color: RESEARCH_PALETTE.textMuted, fontWeight: 600 }}>{source.label}</span>
+                <span style={{ color: RESEARCH_PALETTE.textFaint }}>
+                  {SOURCE_DESCRIPTORS[source.key]?.kind}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
 
         <form
@@ -594,30 +696,37 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
           style={{
             position: 'relative',
             marginBottom: '26px',
-            borderRadius: '22px',
-            border: '1px solid rgba(255,255,255,0.08)',
-            background: '#050505',
-            padding: '8px',
-            boxShadow: '0 18px 48px rgba(4,10,16,0.24)',
+            borderRadius: '20px',
+            border: `1px solid ${isSearchFocused ? 'rgba(255,255,255,0.2)' : RESEARCH_PALETTE.border}`,
+            background: isSearchFocused
+              ? 'rgba(12,17,26,0.96)'
+              : RESEARCH_PALETTE.surface,
+            padding: '6px',
+            boxShadow: isSearchFocused
+              ? '0 0 0 3px rgba(255,255,255,0.035), 0 20px 52px rgba(4,10,16,0.34)'
+              : '0 16px 40px rgba(4,10,16,0.24)',
+            transition: 'border-color 0.22s ease, box-shadow 0.22s ease, background 0.22s ease',
           }}
         >
-          <div style={{ position: 'absolute', left: '20px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
-            <Search size={16} style={{ color: 'rgba(255,255,255,0.25)' }} />
+          <div style={{ position: 'absolute', left: '18px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
+            <Search size={16} style={{ color: isSearchFocused ? RESEARCH_PALETTE.textMuted : RESEARCH_PALETTE.textFaint, transition: 'color 0.2s ease' }} />
           </div>
 
           <input
             type="text"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
+            onFocus={() => setIsSearchFocused(true)}
+            onBlur={() => setIsSearchFocused(false)}
             placeholder="Search artemisinin biosynthesis, lactic acid fermentation, CRISPR metabolic engineering..."
             aria-label="Search across scientific databases"
             style={{
               width: '100%',
-              minHeight: '52px',
-              padding: '0 152px 0 48px',
+              minHeight: '48px',
+              padding: '0 140px 0 44px',
               background: 'transparent',
               border: 'none',
-              color: '#ffffff',
+              color: RESEARCH_PALETTE.text,
               fontSize: '14px',
               outline: 'none',
               letterSpacing: '-0.01em',
@@ -630,16 +739,16 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
             disabled={isSearching}
             style={{
               position: 'absolute',
-              right: '8px',
-              top: '8px',
-              bottom: '8px',
-              minWidth: '120px',
-              padding: '0 18px',
-              background: isSearching ? 'rgba(255,255,255,0.08)' : '#f4f7fb',
-              color: isSearching ? 'rgba(255,255,255,0.3)' : '#000000',
+              right: '6px',
+              top: '6px',
+              bottom: '6px',
+              minWidth: '108px',
+              padding: '0 16px',
+              background: isSearching ? 'rgba(255,255,255,0.08)' : RESEARCH_PALETTE.active,
+              color: isSearching ? RESEARCH_PALETTE.textFaint : '#050810',
               border: 'none',
-              borderRadius: '16px',
-              fontSize: '13px',
+              borderRadius: '14px',
+              fontSize: '12px',
               fontWeight: 700,
               cursor: isSearching ? 'not-allowed' : 'pointer',
               display: 'flex',
@@ -648,25 +757,67 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
               gap: '8px',
               letterSpacing: '-0.01em',
               fontFamily: 'inherit',
+              transition: 'transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease',
+              boxShadow: isSearching ? 'none' : '0 10px 28px rgba(244,247,251,0.14)',
             }}
+            className="nb-research-primary-control"
           >
             {isSearching ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <Search size={14} />}
             {isSearching ? 'Searching' : 'Search'}
           </button>
         </form>
 
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        <style>{`
+          @keyframes spin { to { transform: rotate(360deg); } }
+
+          .nb-research-control,
+          .nb-research-primary-control {
+            transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+          }
+
+          .nb-research-control:hover:not(:disabled),
+          .nb-research-control:focus-visible:not(:disabled) {
+            border-color: rgba(255,255,255,0.18) !important;
+            background: rgba(255,255,255,0.09) !important;
+            color: #ffffff !important;
+            box-shadow: 0 0 0 3px rgba(255,255,255,0.03) !important;
+            outline: none;
+          }
+
+          .nb-research-primary-control:hover:not(:disabled),
+          .nb-research-primary-control:focus-visible:not(:disabled) {
+            background: #ffffff !important;
+            color: #050810 !important;
+            transform: translateY(-1px);
+            box-shadow: 0 14px 32px rgba(244,247,251,0.18) !important;
+            outline: none;
+          }
+
+          .nb-research-select {
+            transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+          }
+
+          .nb-research-select:hover,
+          .nb-research-select:focus-visible {
+            border-color: rgba(255,255,255,0.18) !important;
+            background: rgba(255,255,255,0.08) !important;
+            color: #ffffff !important;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(255,255,255,0.03) !important;
+          }
+        `}</style>
 
         {(evidenceItems.length > 0 || selectedEvidenceIds.length > 0) && (
           <div
             style={{
               marginBottom: '28px',
               borderRadius: '22px',
-              border: '1px solid rgba(255,255,255,0.08)',
-              background: 'linear-gradient(135deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02))',
+              border: `1px solid ${RESEARCH_PALETTE.border}`,
+              background: 'linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.025))',
               padding: '16px',
               display: 'grid',
               gap: '14px',
+              boxShadow: RESEARCH_PALETTE.shadow,
             }}
           >
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
@@ -686,13 +837,14 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
                 type="button"
                 onClick={handleAnalyzeBundle}
                 disabled={!onAnalyzePaper || selectedEvidenceIds.length === 0}
+                className="nb-research-primary-control"
                 style={{
                   minHeight: '38px',
                   padding: '0 14px',
                   borderRadius: '999px',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  background: selectedEvidenceIds.length > 0 ? '#f4f7fb' : 'rgba(255,255,255,0.05)',
-                  color: selectedEvidenceIds.length > 0 ? '#000000' : 'rgba(255,255,255,0.35)',
+                  border: `1px solid ${RESEARCH_PALETTE.border}`,
+                  background: selectedEvidenceIds.length > 0 ? RESEARCH_PALETTE.active : 'rgba(255,255,255,0.05)',
+                  color: selectedEvidenceIds.length > 0 ? '#050810' : RESEARCH_PALETTE.textFaint,
                   cursor: selectedEvidenceIds.length > 0 ? 'pointer' : 'not-allowed',
                   display: 'inline-flex',
                   alignItems: 'center',
@@ -730,13 +882,14 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
                           key={item.id}
                           type="button"
                           onClick={() => toggleEvidenceSelection(item.id)}
+                          className="nb-research-control"
                           style={{
                             minHeight: '30px',
                             padding: '0 10px',
                             borderRadius: '999px',
-                            border: '1px solid rgba(255,255,255,0.08)',
+                            border: `1px solid ${RESEARCH_PALETTE.border}`,
                             background: 'rgba(255,255,255,0.04)',
-                            color: 'rgba(255,255,255,0.7)',
+                            color: RESEARCH_PALETTE.textMuted,
                             cursor: 'pointer',
                             fontFamily: SANS,
                             fontSize: '11px',
@@ -757,8 +910,11 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
 
         {showShowcase && (
           <div style={{ marginBottom: '28px' }}>
-            <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '10px', fontFamily: MONO, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '14px' }}>
-              Landmark papers
+            <p style={{ color: RESEARCH_PALETTE.textFaint, fontSize: '10px', fontFamily: MONO, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '6px' }}>
+              Curated background reading
+            </p>
+            <p style={{ margin: '0 0 14px', color: RESEARCH_PALETTE.textSoft, fontSize: '13px', lineHeight: 1.7, maxWidth: '68ch' }}>
+              These landmark papers are curated reference points for the platform and remain separate from live query results.
             </p>
             <div style={{ display: 'grid', gap: '10px' }}>
               {SHOWCASE_PAPERS.map((paper) => {
@@ -768,8 +924,8 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
                     key={paper.id}
                     style={{
                       borderRadius: '18px',
-                      border: '1px solid rgba(255,255,255,0.08)',
-                      background: '#050505',
+                      border: `1px solid ${RESEARCH_PALETTE.border}`,
+                      background: RESEARCH_PALETTE.surface,
                       padding: '18px 20px',
                     }}
                   >
@@ -788,13 +944,14 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
                         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '10px' }}>
                           <a
                             href={suggestToolRoute(paper).href}
+                            className="nb-research-control"
                             style={{
                               minHeight: '30px',
                               padding: '0 10px',
                               borderRadius: '999px',
-                              border: '1px solid rgba(255,255,255,0.08)',
-                              background: 'rgba(147,203,82,0.10)',
-                              color: 'rgba(255,255,255,0.72)',
+                              border: `1px solid ${RESEARCH_PALETTE.border}`,
+                              background: RESEARCH_PALETTE.activeSurface,
+                              color: RESEARCH_PALETTE.textMuted,
                               display: 'inline-flex',
                               alignItems: 'center',
                               textDecoration: 'none',
@@ -811,13 +968,14 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
                         onClick={() => toggleExpand(paper.id)}
                         aria-expanded={isExpanded}
                         aria-label={isExpanded ? `Collapse ${paper.title}` : `Expand ${paper.title}`}
+                        className="nb-research-control"
                         style={{
                           width: '34px',
                           height: '34px',
                           borderRadius: '999px',
-                          border: '1px solid rgba(255,255,255,0.08)',
+                          border: `1px solid ${RESEARCH_PALETTE.border}`,
                           background: 'rgba(255,255,255,0.03)',
-                          color: 'rgba(255,255,255,0.5)',
+                          color: RESEARCH_PALETTE.textSoft,
                           cursor: 'pointer',
                           display: 'grid',
                           placeItems: 'center',
@@ -841,11 +999,12 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
                               <button
                                 type="button"
                                 onClick={() => handleSaveToggle(paper)}
+                                className="nb-research-control"
                                 style={{
                                   minHeight: '34px',
                                   padding: '0 10px',
                                   borderRadius: '999px',
-                                  border: '1px solid rgba(255,255,255,0.08)',
+                                  border: `1px solid ${RESEARCH_PALETTE.border}`,
                                   background: 'rgba(255,255,255,0.03)',
                                   color: saveButtonLabel(paper) === 'Selected' ? '#ffffff' : 'rgba(255,255,255,0.55)',
                                   cursor: 'pointer',
@@ -859,13 +1018,14 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
                                 href={paper.url}
                                 target="_blank"
                                 rel="noopener noreferrer"
+                                className="nb-research-control"
                               style={{
                                 width: '34px',
                                 height: '34px',
                                 borderRadius: '999px',
-                                border: '1px solid rgba(255,255,255,0.08)',
+                                border: `1px solid ${RESEARCH_PALETTE.border}`,
                                 background: 'rgba(255,255,255,0.03)',
-                                color: 'rgba(255,255,255,0.55)',
+                                color: RESEARCH_PALETTE.textSoft,
                                 display: 'grid',
                                 placeItems: 'center',
                               }}
@@ -878,6 +1038,7 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
                                 onClick={() => handleAnalyze(paper)}
                                 aria-label={`Send ${paper.title} abstract to analyzer`}
                                 title="Send abstract to analyzer"
+                                className="nb-research-control"
                                 style={{
                                     display: 'inline-flex',
                                     alignItems: 'center',
@@ -885,8 +1046,8 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
                                     width: '34px',
                                     height: '34px',
                                     background: 'rgba(255,255,255,0.04)',
-                                    color: 'rgba(255,255,255,0.55)',
-                                    border: '1px solid rgba(255,255,255,0.08)',
+                                    color: RESEARCH_PALETTE.textSoft,
+                                    border: `1px solid ${RESEARCH_PALETTE.border}`,
                                     borderRadius: '999px',
                                     cursor: 'pointer',
                                   }}
@@ -909,9 +1070,10 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
           <div
             style={{
               borderRadius: '22px',
-              border: '1px solid rgba(255,255,255,0.08)',
-              background: '#050505',
+              border: `1px solid ${RESEARCH_PALETTE.border}`,
+              background: RESEARCH_PALETTE.surface,
               overflow: 'hidden',
+              boxShadow: RESEARCH_PALETTE.shadow,
             }}
           >
             <div
@@ -920,34 +1082,72 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
                 gap: '14px',
                 gridTemplateColumns: 'minmax(0, 1fr)',
                 padding: '16px',
-                borderBottom: '1px solid rgba(255,255,255,0.08)',
+                borderBottom: `1px solid ${RESEARCH_PALETTE.border}`,
               }}
             >
+              <div
+                style={{
+                  display: 'grid',
+                  gap: '10px',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+                }}
+              >
+                {[
+                  { label: 'Connected sources', value: `${SOURCE_DEFINITIONS.length}`, detail: 'Live public services' },
+                  { label: 'Successful responses', value: `${successfulSources}/${SOURCE_DEFINITIONS.length}`, detail: 'Returned this query' },
+                  { label: 'Unique papers', value: `${results.length}`, detail: 'Deduplicated stream' },
+                  { label: 'Accessible flags', value: `${openAccessCount} OA · ${preprintCount} preprint`, detail: 'As flagged by sources' },
+                ].map((item) => (
+                  <div
+                    key={item.label}
+                    style={{
+                      borderRadius: '16px',
+                      border: `1px solid ${RESEARCH_PALETTE.border}`,
+                      background: 'rgba(255,255,255,0.035)',
+                      padding: '12px 14px',
+                      display: 'grid',
+                      gap: '4px',
+                    }}
+                  >
+                    <p style={{ margin: 0, fontFamily: MONO, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.08em', color: RESEARCH_PALETTE.textFaint }}>
+                      {item.label}
+                    </p>
+                    <p style={{ margin: 0, fontFamily: SANS, fontSize: '16px', fontWeight: 600, letterSpacing: '-0.02em', color: RESEARCH_PALETTE.text }}>
+                      {item.value}
+                    </p>
+                    <p style={{ margin: 0, fontFamily: SANS, fontSize: '12px', color: RESEARCH_PALETTE.textSoft }}>
+                      {item.detail}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
                 <div>
-                  <p style={{ margin: '0 0 4px', fontFamily: MONO, fontSize: '10px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)' }}>
+                  <p style={{ margin: '0 0 4px', fontFamily: MONO, fontSize: '10px', textTransform: 'uppercase', color: RESEARCH_PALETTE.textFaint }}>
                     Search state
                   </p>
-                  <p style={{ margin: 0, fontFamily: SANS, fontSize: '14px', color: 'rgba(255,255,255,0.65)' }}>
-                    {filteredResults.length} result{filteredResults.length === 1 ? '' : 's'}
+                  <p style={{ margin: 0, fontFamily: SANS, fontSize: '14px', color: RESEARCH_PALETTE.textMuted }}>
+                    {filteredResults.length} unique result{filteredResults.length === 1 ? '' : 's'}
                     {sourceFilter !== 'All' ? ` from ${sourceFilter}` : ''}
-                    {isSearching ? ` · ${completedSources}/${SOURCE_DEFINITIONS.length} sources responded` : ''}
+                    {isSearching ? ` · ${completedSources}/${SOURCE_DEFINITIONS.length} sources settled` : ''}
                   </p>
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontFamily: MONO, fontSize: '10px', color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontFamily: MONO, fontSize: '10px', color: RESEARCH_PALETTE.textFaint, textTransform: 'uppercase' }}>
                     Source
                     <select
+                      className="nb-research-select"
                       aria-label="Filter by source"
                       value={sourceFilter}
                       onChange={(event) => setSourceFilter(event.target.value)}
                       style={{
                         minHeight: '36px',
                         borderRadius: '10px',
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        background: 'rgba(255,255,255,0.05)',
-                        color: '#ffffff',
+                        border: `1px solid ${RESEARCH_PALETTE.borderStrong}`,
+                        background: 'rgba(255,255,255,0.04)',
+                        color: RESEARCH_PALETTE.text,
                         padding: '0 10px',
                         fontFamily: SANS,
                         fontSize: '12px',
@@ -962,18 +1162,19 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
                     </select>
                   </label>
 
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontFamily: MONO, fontSize: '10px', color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontFamily: MONO, fontSize: '10px', color: RESEARCH_PALETTE.textFaint, textTransform: 'uppercase' }}>
                     Sort
                     <select
+                      className="nb-research-select"
                       aria-label="Sort results"
                       value={sortMode}
                       onChange={(event) => setSortMode(event.target.value as SortMode)}
                       style={{
                         minHeight: '36px',
                         borderRadius: '10px',
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        background: 'rgba(255,255,255,0.05)',
-                        color: '#ffffff',
+                        border: `1px solid ${RESEARCH_PALETTE.borderStrong}`,
+                        background: 'rgba(255,255,255,0.04)',
+                        color: RESEARCH_PALETTE.text,
                         padding: '0 10px',
                         fontFamily: SANS,
                         fontSize: '12px',
@@ -988,13 +1189,14 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
                   <button
                     type="button"
                     onClick={clearSearch}
+                    className="nb-research-control"
                     style={{
                       minHeight: '36px',
                       padding: '0 12px',
                       borderRadius: '10px',
-                      border: '1px solid rgba(255,255,255,0.1)',
-                      background: 'rgba(255,255,255,0.03)',
-                      color: 'rgba(255,255,255,0.55)',
+                      border: `1px solid ${RESEARCH_PALETTE.borderStrong}`,
+                      background: 'rgba(255,255,255,0.035)',
+                      color: RESEARCH_PALETTE.textSoft,
                       cursor: 'pointer',
                       fontFamily: SANS,
                       fontSize: '12px',
@@ -1010,12 +1212,17 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
                   const state = sourceState[source.key];
                   const isActive = sourceFilter === source.key;
                   const color = state === 'error'
-                    ? 'rgba(255,140,126,0.9)'
+                    ? RESEARCH_PALETTE.warning
                     : state === 'ready'
-                      ? 'rgba(143,239,197,0.9)'
+                      ? RESEARCH_PALETTE.ready
                       : state === 'loading'
-                        ? 'rgba(255,255,255,0.7)'
-                        : 'rgba(255,255,255,0.25)';
+                        ? RESEARCH_PALETTE.textMuted
+                        : RESEARCH_PALETTE.textFaint;
+                  const background = state === 'error'
+                    ? RESEARCH_PALETTE.warningSurface
+                    : state === 'ready'
+                      ? RESEARCH_PALETTE.readySurface
+                      : 'rgba(255,255,255,0.03)';
 
                   return (
                     <button
@@ -1023,12 +1230,13 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
                       type="button"
                       onClick={() => setSourceFilter((prev) => (prev === source.key ? 'All' : source.key))}
                       aria-pressed={isActive}
+                      className="nb-research-control"
                       style={{
                         minHeight: '34px',
                         padding: '0 10px',
                         borderRadius: '999px',
-                        border: `1px solid ${isActive ? color : 'rgba(255,255,255,0.08)'}`,
-                        background: isActive ? `${color.replace('0.9', '0.14')}` : 'rgba(255,255,255,0.03)',
+                        border: `1px solid ${isActive ? color : RESEARCH_PALETTE.border}`,
+                        background: isActive ? background : 'rgba(255,255,255,0.03)',
                         color,
                         cursor: 'pointer',
                         fontFamily: MONO,
@@ -1045,11 +1253,11 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
                           height: '8px',
                           borderRadius: '999px',
                           background: color,
-                          boxShadow: state === 'loading' ? `0 0 0 4px ${color.replace('0.9', '0.18')}` : 'none',
+                          boxShadow: state === 'loading' ? `0 0 0 4px rgba(255,255,255,0.08)` : 'none',
                         }}
                       />
                       {source.label}
-                      <span style={{ color: 'rgba(255,255,255,0.35)' }}>{sourceCounts[source.key] || 0}</span>
+                      <span style={{ color: RESEARCH_PALETTE.textSoft }}>{sourceCounts[source.key] || 0}</span>
                     </button>
                   );
                 })}
@@ -1062,18 +1270,18 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
                     alignItems: 'flex-start',
                     gap: '10px',
                     borderRadius: '14px',
-                    border: '1px solid rgba(255,140,126,0.22)',
-                    background: 'rgba(255,140,126,0.08)',
+                    border: `1px solid ${RESEARCH_PALETTE.warningBorder}`,
+                    background: RESEARCH_PALETTE.warningSurface,
                     padding: '12px 14px',
                   }}
                 >
-                  <AlertCircle size={16} style={{ color: 'rgba(255,140,126,0.92)', marginTop: '2px', flexShrink: 0 }} />
+                  <AlertCircle size={16} style={{ color: RESEARCH_PALETTE.warning, marginTop: '2px', flexShrink: 0 }} />
                   <div>
-                    <p style={{ margin: '0 0 4px', fontFamily: SANS, fontSize: '13px', fontWeight: 600, color: '#ffffff' }}>
+                    <p style={{ margin: '0 0 4px', fontFamily: SANS, fontSize: '13px', fontWeight: 600, color: RESEARCH_PALETTE.text }}>
                       Partial results
                     </p>
-                    <p style={{ margin: 0, fontFamily: SANS, fontSize: '12px', lineHeight: 1.6, color: 'rgba(255,255,255,0.55)' }}>
-                      Some sources did not respond for this query: {failingSources.join(', ')}.
+                    <p style={{ margin: 0, fontFamily: SANS, fontSize: '12px', lineHeight: 1.6, color: RESEARCH_PALETTE.textSoft }}>
+                      Some connected sources were limited for this query: {failingSources.map(({ source, issue }) => `${source} (${issue})`).join(', ')}. The result stream below reflects the remaining live responses.
                     </p>
                   </div>
                 </div>
@@ -1099,8 +1307,8 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
                         key={article.id}
                         style={{
                           borderRadius: '18px',
-                          border: `1px solid ${isExpanded ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.08)'}`,
-                          background: isExpanded ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.03)',
+                          border: `1px solid ${isExpanded ? RESEARCH_PALETTE.borderStrong : RESEARCH_PALETTE.border}`,
+                          background: isExpanded ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.03)',
                           padding: '18px 20px',
                         }}
                       >
@@ -1130,13 +1338,14 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
                                 href={article.url}
                                 target="_blank"
                                 rel="noopener noreferrer"
+                                className="nb-research-control"
                                 style={{
                                   width: '34px',
                                   height: '34px',
                                   borderRadius: '999px',
-                                  border: '1px solid rgba(255,255,255,0.08)',
+                                  border: `1px solid ${RESEARCH_PALETTE.border}`,
                                   background: 'rgba(255,255,255,0.03)',
-                                  color: 'rgba(255,255,255,0.55)',
+                                  color: RESEARCH_PALETTE.textSoft,
                                   display: 'grid',
                                   placeItems: 'center',
                                 }}
@@ -1150,13 +1359,14 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
                               onClick={() => toggleExpand(article.id)}
                               aria-expanded={isExpanded}
                               aria-label={isExpanded ? `Collapse ${article.title}` : `Expand ${article.title}`}
+                              className="nb-research-control"
                               style={{
                                 width: '34px',
                                 height: '34px',
                                 borderRadius: '999px',
-                                border: '1px solid rgba(255,255,255,0.08)',
+                                border: `1px solid ${RESEARCH_PALETTE.border}`,
                                 background: 'rgba(255,255,255,0.03)',
-                                color: 'rgba(255,255,255,0.55)',
+                                color: RESEARCH_PALETTE.textSoft,
                                 cursor: 'pointer',
                                 display: 'grid',
                                 placeItems: 'center',
@@ -1183,11 +1393,12 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
                               <button
                                 type="button"
                                 onClick={() => handleSaveToggle(article)}
+                                className="nb-research-control"
                                 style={{
                                   minHeight: '30px',
                                   padding: '0 10px',
                                   borderRadius: '999px',
-                                  border: '1px solid rgba(255,255,255,0.08)',
+                                  border: `1px solid ${RESEARCH_PALETTE.border}`,
                                   background: 'rgba(255,255,255,0.03)',
                                   color: saveButtonLabel(article) === 'Selected' ? '#ffffff' : 'rgba(255,255,255,0.6)',
                                   display: 'inline-flex',
@@ -1201,13 +1412,14 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
                               </button>
                               <a
                                 href={suggestToolRoute(article).href}
+                                className="nb-research-control"
                                 style={{
                                   minHeight: '30px',
                                   padding: '0 10px',
                                   borderRadius: '999px',
-                                  border: '1px solid rgba(255,255,255,0.08)',
-                                  background: 'rgba(147,203,82,0.10)',
-                                  color: 'rgba(255,255,255,0.72)',
+                                  border: `1px solid ${RESEARCH_PALETTE.border}`,
+                                  background: RESEARCH_PALETTE.activeSurface,
+                                  color: RESEARCH_PALETTE.textMuted,
                                   display: 'inline-flex',
                                   alignItems: 'center',
                                   textDecoration: 'none',
@@ -1224,6 +1436,7 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
                                 onClick={() => handleAnalyze(article)}
                                 aria-label={`Send ${article.title} abstract to analyzer`}
                                 title="Send abstract to analyzer"
+                                className="nb-research-control"
                                 style={{
                                   display: 'inline-flex',
                                   alignItems: 'center',
@@ -1231,8 +1444,8 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
                                   width: '34px',
                                   height: '34px',
                                   background: 'rgba(255,255,255,0.04)',
-                                  color: 'rgba(255,255,255,0.55)',
-                                  border: '1px solid rgba(255,255,255,0.08)',
+                                  color: RESEARCH_PALETTE.textSoft,
+                                  border: `1px solid ${RESEARCH_PALETTE.border}`,
                                   borderRadius: '999px',
                                   cursor: 'pointer',
                                 }}
