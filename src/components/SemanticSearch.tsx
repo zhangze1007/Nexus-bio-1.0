@@ -719,15 +719,10 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
         <form
           onSubmit={handleSearch}
           style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
+            position: 'relative',
             width: '100%',
-            maxWidth: '660px',
             marginBottom: '26px',
-            padding: '0 20px',
-            minHeight: '58px',
-            borderRadius: '30px',
+            borderRadius: '20px',
             border: isSearchFocused
               ? '1px solid rgba(255,255,255,0.3)'
               : '1px solid rgba(255,255,255,0.09)',
@@ -736,13 +731,16 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
               : 'rgba(255,255,255,0.04)',
             backdropFilter: 'blur(24px)',
             WebkitBackdropFilter: 'blur(24px)',
+            padding: '6px',
             boxShadow: isSearchFocused
               ? '0 0 0 4px rgba(255,255,255,0.04), 0 18px 48px rgba(0,0,0,0.34), inset 0 1px 0 rgba(255,255,255,0.05)'
               : '0 12px 36px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.04)',
             transition: 'all 0.25s cubic-bezier(0.22,1,0.36,1)',
           }}
         >
-          <Search size={16} style={{ color: isSearchFocused ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.25)', flexShrink: 0, transition: 'color 0.2s' }} />
+          <div style={{ position: 'absolute', left: '18px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
+            <Search size={16} style={{ color: isSearchFocused ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.25)', transition: 'color 0.2s' }} />
+          </div>
 
           <input
             type="text"
@@ -750,18 +748,19 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
             onChange={(event) => setQuery(event.target.value)}
             onFocus={() => setIsSearchFocused(true)}
             onBlur={() => setIsSearchFocused(false)}
-            placeholder="Search pathways, enzymes, literature…"
+            placeholder="Search artemisinin biosynthesis, lactic acid fermentation, CRISPR metabolic engineering..."
             aria-label="Search across scientific databases"
             style={{
-              flex: 1,
-              background: 'none',
+              width: '100%',
+              minHeight: '48px',
+              padding: '0 140px 0 44px',
+              background: 'transparent',
               border: 'none',
               outline: 'none',
-              fontFamily: SANS,
-              fontSize: '15px',
-              fontWeight: 400,
               color: '#E2E8F0',
+              fontSize: '14px',
               letterSpacing: '-0.01em',
+              fontFamily: SANS,
             }}
           />
 
@@ -769,25 +768,31 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
             type="submit"
             disabled={isSearching}
             style={{
+              position: 'absolute',
+              right: '6px',
+              top: '6px',
+              bottom: '6px',
+              minWidth: '108px',
+              padding: '0 16px',
+              background: isSearching ? 'rgba(255,255,255,0.08)' : '#ffffff',
+              color: isSearching ? RESEARCH_PALETTE.textFaint : '#0a0a0a',
+              border: 'none',
+              borderRadius: '14px',
+              fontSize: '12px',
+              fontWeight: 700,
+              cursor: isSearching ? 'not-allowed' : 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: '6px',
-              padding: '8px 18px',
-              borderRadius: '20px',
-              flexShrink: 0,
-              background: query.trim()
-                ? '#ffffff'
-                : 'rgba(255,255,255,0.07)',
-              border: 'none',
-              color: query.trim() ? '#0a0a0a' : 'rgba(255,255,255,0.2)',
-              fontFamily: MONO,
-              fontSize: '11px',
-              fontWeight: 500,
-              cursor: query.trim() && !isSearching ? 'pointer' : 'default',
+              justifyContent: 'center',
+              gap: '8px',
+              letterSpacing: '-0.01em',
+              fontFamily: SANS,
+              transition: 'transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease',
+              boxShadow: isSearching ? 'none' : '0 10px 28px rgba(255,255,255,0.14)',
             }}
             className="nb-research-primary-control"
           >
-            {isSearching ? <Loader2 size={11} style={{ animation: 'spin 1s linear infinite' }} /> : <Search size={11} />}
+            {isSearching ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <Search size={14} />}
             {isSearching ? 'Searching' : 'Search'}
           </button>
         </form>
@@ -814,7 +819,7 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
             background: #ffffff !important;
             color: #0a0a0a !important;
             transform: translateY(-1px) !important;
-            box-shadow: 0 14px 32px rgba(255,255,255,0.14) !important;
+            box-shadow: 0 14px 32px rgba(255,255,255,0.18) !important;
             outline: none;
           }
 
@@ -965,6 +970,20 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
                         </p>
                         <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '13px', margin: 0 }}>
                           {paper.authors.join(', ')} et al.
+                        </p>
+                        <p
+                          style={{
+                            color: RESEARCH_PALETTE.textSoft,
+                            fontSize: '13px',
+                            lineHeight: 1.72,
+                            margin: '12px 0 0',
+                            display: '-webkit-box',
+                            WebkitLineClamp: 3,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden',
+                          }}
+                        >
+                          {paper.abstract}
                         </p>
                         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '10px' }}>
                           <a
