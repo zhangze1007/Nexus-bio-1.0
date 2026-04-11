@@ -23,12 +23,14 @@ interface Article {
   id: string;
   title: string;
   abstract: string;
+  whyItMatters?: string;
   authors: string[];
   journal: string;
   year: string;
   doi: string;
   url: string;
   source: string;
+  pmid?: string;
   citationCount?: number;
   openAccess?: boolean;
   isPreprint?: boolean;
@@ -119,70 +121,85 @@ const SHOWCASE_PAPERS: Article[] = [
   {
     id: 'showcase1',
     title: 'Construction of a genetic toggle switch in Escherichia coli',
+    whyItMatters:
+      'This paper introduced one of the defining constructs of early synthetic biology: a bistable genetic toggle switch in Escherichia coli. By coupling mutually repressing transcriptional regulators, it established engineered biological memory as a programmable design principle rather than a theoretical possibility.',
     authors: ['Gardner T.S.', 'Cantor C.R.', 'Collins J.J.'],
     journal: 'Nature',
     year: '2000',
     abstract:
-      'This paper introduced one of the defining constructs of early synthetic biology: a bistable genetic toggle switch in Escherichia coli. By coupling mutually repressing transcriptional regulators, the authors showed that cellular state could be switched and remembered, establishing engineered biological memory as a programmable design principle rather than a theoretical possibility.',
+      'This paper introduced one of the defining constructs of early synthetic biology: a bistable genetic toggle switch in Escherichia coli. By coupling mutually repressing transcriptional regulators, it established engineered biological memory as a programmable design principle rather than a theoretical possibility.',
     doi: '10.1038/35002131',
     url: 'https://pubmed.ncbi.nlm.nih.gov/10659857/',
     source: 'Nature',
+    pmid: '10659857',
     openAccess: false,
     pathway: 'Focus: bistable gene-memory circuits',
   },
   {
     id: 'showcase2',
     title: 'A synthetic oscillatory network of transcriptional regulators',
+    whyItMatters:
+      'The repressilator established synthetic biological oscillation as an engineered design target. By wiring three transcriptional repressors into a closed loop, it showed that living cells could be programmed to produce rhythmic gene-expression dynamics.',
     authors: ['Elowitz M.B.', 'Leibler S.'],
     journal: 'Nature',
     year: '2000',
     abstract:
-      'The repressilator established synthetic biological oscillation as an engineered design target. By wiring three transcriptional repressors into a closed loop, the authors showed that living cells could be programmed to produce rhythmic gene-expression dynamics, making time-dependent control a concrete design object for synthetic circuits.',
+      'The repressilator established synthetic biological oscillation as an engineered design target. By wiring three transcriptional repressors into a closed loop, it showed that living cells could be programmed to produce rhythmic gene-expression dynamics.',
     doi: '10.1038/35002125',
     url: 'https://pubmed.ncbi.nlm.nih.gov/10659856/',
     source: 'Nature',
+    pmid: '10659856',
     openAccess: false,
     pathway: 'Focus: oscillatory gene-network design',
   },
   {
     id: 'showcase3',
     title: 'A synthetic multicellular system for programmed pattern formation',
+    whyItMatters:
+      'This work showed that engineered sender-receiver bacterial populations could be programmed to generate spatial patterns rather than only single-cell logic outputs. It expanded synthetic biology toward multicellular coordination, communication, and emergent structure as deliberately designable phenomena.',
     authors: ['Basu S.', 'Gerchman Y.', 'Collins C.H.', 'Arnold F.H.', 'Weiss R.'],
     journal: 'Nature',
     year: '2005',
     abstract:
-      'This work showed that engineered sender-receiver bacterial populations could be programmed to generate spatial patterns rather than only single-cell logic outputs. It expanded synthetic biology from intracellular circuits toward multicellular coordination, communication, and emergent structure as deliberately designable phenomena.',
+      'This work showed that engineered sender-receiver bacterial populations could be programmed to generate spatial patterns rather than only single-cell logic outputs. It expanded synthetic biology toward multicellular coordination, communication, and emergent structure as deliberately designable phenomena.',
     doi: '10.1038/nature03461',
     url: 'https://pubmed.ncbi.nlm.nih.gov/15858574/',
     source: 'Nature',
+    pmid: '15858574',
     openAccess: false,
     pathway: 'Focus: multicellular signaling and pattern formation',
   },
   {
     id: 'showcase4',
     title: 'Programming cells by multiplex genome engineering and accelerated evolution',
+    whyItMatters:
+      'Multiplex automated genome engineering demonstrated that cells could be reprogrammed at scale rather than one edit at a time. The paper connected combinatorial genome editing directly to adaptive search and accelerated strain optimization.',
     authors: ['Wang H.H.', 'Isaacs F.J.', 'Carr P.A.', 'Sun Z.Z.', 'Xu G.', 'Forest C.R.', 'Church G.M.'],
     journal: 'Nature',
     year: '2009',
     abstract:
-      'Multiplex automated genome engineering demonstrated that cells could be reprogrammed at scale rather than one edit at a time. The paper connected combinatorial genome editing directly to adaptive search and accelerated strain optimization, making high-throughput intervention design a practical engineering strategy.',
+      'Multiplex automated genome engineering demonstrated that cells could be reprogrammed at scale rather than one edit at a time. The paper connected combinatorial genome editing directly to adaptive search and accelerated strain optimization.',
     doi: '10.1038/nature08187',
     url: 'https://pubmed.ncbi.nlm.nih.gov/19633652/',
     source: 'Nature',
+    pmid: '19633652',
     openAccess: false,
     pathway: 'Focus: multiplex genome editing and adaptive search',
   },
   {
     id: 'showcase5',
     title: 'Creation of a bacterial cell controlled by a chemically synthesized genome',
+    whyItMatters:
+      'This study demonstrated that a chemically synthesized bacterial genome could be assembled and used to control a living cell. It marked a major boundary-crossing moment by showing that whole-genome construction was a practical foundation for synthetic cell engineering.',
     authors: ['Gibson D.G.', 'Glass J.I.', 'Lartigue C.', 'Noskov V.N.', 'Chuang R.-Y.', 'Algire M.A.', 'Benders G.A.', 'et al.'],
     journal: 'Science',
     year: '2010',
     abstract:
-      'This study demonstrated that a chemically synthesized bacterial genome could be assembled and used to control a living cell. It marked a major boundary-crossing moment for the field by showing that whole-genome construction was not just a conceptual milestone, but a practical foundation for synthetic cell engineering.',
+      'This study demonstrated that a chemically synthesized bacterial genome could be assembled and used to control a living cell. It marked a major boundary-crossing moment by showing that whole-genome construction was a practical foundation for synthetic cell engineering.',
     doi: '10.1126/science.1190719',
     url: 'https://pubmed.ncbi.nlm.nih.gov/20488990/',
     source: 'Science',
+    pmid: '20488990',
     openAccess: false,
     pathway: 'Focus: whole-genome synthesis and synthetic cells',
   },
@@ -289,6 +306,14 @@ function mergeUniqueArticles(existing: Article[], incoming: Article[]) {
   return merged;
 }
 
+async function fetchPubMedAbstractText(pmid: string): Promise<string> {
+  const response = await fetch(`https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=${pmid}&rettype=abstract&retmode=xml`);
+  const xml = new DOMParser().parseFromString(await response.text(), 'text/xml');
+  return Array.from(xml.querySelectorAll('AbstractText'))
+    .map((element) => element.textContent || '')
+    .join(' ');
+}
+
 async function fetchPubMed(query: string): Promise<Article[]> {
   const searchData = await fetchJsonOrThrow(`https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=${encodeURIComponent(query)}+AND+(synthetic+biology+OR+metabolic+engineering+OR+fermentation)&retmax=${SOURCE_RESULT_LIMIT}&sort=relevance&retmode=json`);
   const ids: string[] = searchData.esearchresult?.idlist || [];
@@ -300,15 +325,14 @@ async function fetchPubMed(query: string): Promise<Article[]> {
     const item = summaryData.result[uid];
     let abstract = '';
     try {
-      const response = await fetch(`https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=${uid}&rettype=abstract&retmode=xml`);
-      const xml = new DOMParser().parseFromString(await response.text(), 'text/xml');
-      abstract = Array.from(xml.querySelectorAll('AbstractText')).map((element) => element.textContent || '').join(' ');
+      abstract = await fetchPubMedAbstractText(uid);
     } catch {}
 
     return {
       id: `pm-${uid}`,
       title: item.title || '',
       abstract,
+      pmid: uid,
       authors: item.authors?.slice(0, 3).map((author: { name: string }) => author.name) || [],
       journal: item.source || '',
       year: item.pubdate?.split(' ')[0] || '',
@@ -456,6 +480,9 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
     () => Object.fromEntries(SOURCE_DEFINITIONS.map((source) => [source.key, 'idle'])),
   );
   const [sourceIssues, setSourceIssues] = useState<Record<string, string>>({});
+  const [showcaseAbstracts, setShowcaseAbstracts] = useState<Record<string, string>>({});
+  const [showcaseAbstractState, setShowcaseAbstractState] = useState<Record<string, SourceStatus>>({});
+  const [showcaseAbstractErrors, setShowcaseAbstractErrors] = useState<Record<string, string>>({});
   const didAutoSearch = useRef(false);
   const evidenceItems = useWorkbenchStore((s) => s.evidenceItems);
   const selectedEvidenceIds = useWorkbenchStore((s) => s.selectedEvidenceIds);
@@ -603,6 +630,36 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
     await runSearch(query);
   };
 
+  const loadShowcaseAbstract = useCallback(async (article: Article) => {
+    if (!article.pmid) return '';
+    if (showcaseAbstractState[article.id] === 'loading') return showcaseAbstracts[article.id] || '';
+    if (showcaseAbstracts[article.id]) return showcaseAbstracts[article.id];
+
+    setShowcaseAbstractState((prev) => ({ ...prev, [article.id]: 'loading' }));
+    setShowcaseAbstractErrors((prev) => {
+      const next = { ...prev };
+      delete next[article.id];
+      return next;
+    });
+
+    try {
+      const abstract = await fetchPubMedAbstractText(article.pmid);
+      if (!abstract) {
+        throw new Error('empty abstract');
+      }
+      setShowcaseAbstracts((prev) => ({ ...prev, [article.id]: abstract }));
+      setShowcaseAbstractState((prev) => ({ ...prev, [article.id]: 'ready' }));
+      return abstract;
+    } catch {
+      setShowcaseAbstractState((prev) => ({ ...prev, [article.id]: 'error' }));
+      setShowcaseAbstractErrors((prev) => ({
+        ...prev,
+        [article.id]: 'Original abstract could not be loaded from the source right now.',
+      }));
+      return '';
+    }
+  }, [showcaseAbstractState, showcaseAbstracts]);
+
   const persistArticleEvidence = useCallback((article: Article, options?: { select?: boolean }) => {
     return upsertEvidence(
       {
@@ -621,12 +678,22 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
     );
   }, [initialQuery, query, upsertEvidence]);
 
-  const handleAnalyze = (article: Article) => {
+  const handleAnalyze = async (article: Article) => {
     if (!onAnalyzePaper) return;
-    const evidenceId = persistArticleEvidence(article, { select: true });
+    const resolvedAbstract = article.pmid
+      ? (showcaseAbstracts[article.id] || await loadShowcaseAbstract(article) || article.abstract)
+      : article.abstract;
+    const preparedArticle = { ...article, abstract: resolvedAbstract };
+    const evidenceId = persistArticleEvidence(preparedArticle, { select: true });
     const prepared = prepareAnalyzeFromEvidence([evidenceId]);
     onAnalyzePaper(
-      prepared || `Title: ${article.title}\nAuthors: ${article.authors.join(', ')}\nJournal: ${article.journal} (${article.year})\nAbstract: ${article.abstract}`,
+      prepared || [
+        `Title: ${article.title}`,
+        `Authors: ${article.authors.join(', ')}`,
+        `Journal: ${article.journal} (${article.year})`,
+        article.whyItMatters ? `Why it matters: ${article.whyItMatters}` : null,
+        resolvedAbstract ? `Abstract: ${resolvedAbstract}` : null,
+      ].filter(Boolean).join('\n'),
     );
   };
 
@@ -643,14 +710,17 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
     return selectedEvidenceIds.includes(evidenceId) ? 'Selected' : 'Saved';
   };
 
-  const handleSaveToggle = (article: Article) => {
+  const handleSaveToggle = async (article: Article) => {
     const key = `${article.doi || article.url || article.title}`.toLowerCase();
     const evidenceId = evidenceIdByKey.get(key);
     if (evidenceId) {
       toggleEvidenceSelection(evidenceId);
       return;
     }
-    persistArticleEvidence(article, { select: true });
+    const resolvedAbstract = article.pmid
+      ? (showcaseAbstracts[article.id] || await loadShowcaseAbstract(article) || article.abstract)
+      : article.abstract;
+    persistArticleEvidence({ ...article, abstract: resolvedAbstract }, { select: true });
   };
 
   return (
@@ -995,7 +1065,12 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
                       </div>
                       <button
                         type="button"
-                        onClick={() => toggleExpand(paper.id)}
+                        onClick={() => {
+                          toggleExpand(paper.id);
+                          if (!isExpanded) {
+                            void loadShowcaseAbstract(paper);
+                          }
+                        }}
                         aria-expanded={isExpanded}
                         aria-label={isExpanded ? `Collapse ${paper.title}` : `Expand ${paper.title}`}
                         className="nb-research-control"
@@ -1018,9 +1093,35 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
 
                     {isExpanded && (
                       <div style={{ marginTop: '14px', paddingTop: '14px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-                        <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '13px', lineHeight: 1.75, margin: '0 0 12px' }}>
-                          {highlightKeywords(paper.abstract, extractKeywords(paper.title, paper.abstract))}
-                        </p>
+                        <div style={{ display: 'grid', gap: '12px', marginBottom: '12px' }}>
+                          <div style={{ display: 'grid', gap: '6px' }}>
+                            <p style={{ color: RESEARCH_PALETTE.textFaint, fontSize: '10px', fontFamily: MONO, letterSpacing: '0.08em', textTransform: 'uppercase', margin: 0 }}>
+                              Why it matters
+                            </p>
+                            <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '13px', lineHeight: 1.75, margin: 0 }}>
+                              {paper.whyItMatters || paper.abstract}
+                            </p>
+                          </div>
+
+                          <div style={{ display: 'grid', gap: '6px' }}>
+                            <p style={{ color: RESEARCH_PALETTE.textFaint, fontSize: '10px', fontFamily: MONO, letterSpacing: '0.08em', textTransform: 'uppercase', margin: 0 }}>
+                              Original abstract
+                            </p>
+                            {showcaseAbstractState[paper.id] === 'loading' ? (
+                              <p style={{ color: RESEARCH_PALETTE.textSoft, fontSize: '13px', lineHeight: 1.75, margin: 0 }}>
+                                Loading original abstract from PubMed…
+                              </p>
+                            ) : showcaseAbstracts[paper.id] ? (
+                              <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '13px', lineHeight: 1.8, margin: 0 }}>
+                                {highlightKeywords(showcaseAbstracts[paper.id], extractKeywords(paper.title, showcaseAbstracts[paper.id]))}
+                              </p>
+                            ) : (
+                              <p style={{ color: RESEARCH_PALETTE.textSoft, fontSize: '13px', lineHeight: 1.75, margin: 0 }}>
+                                {showcaseAbstractErrors[paper.id] || 'Original abstract unavailable.'}
+                              </p>
+                            )}
+                          </div>
+                        </div>
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' }}>
                             <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '11px', fontFamily: MONO, margin: 0 }}>
                               {paper.pathway}
@@ -1028,7 +1129,7 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                               <button
                                 type="button"
-                                onClick={() => handleSaveToggle(paper)}
+                                onClick={() => { void handleSaveToggle(paper); }}
                                 className="nb-research-control"
                                 style={{
                                   minHeight: '34px',
@@ -1065,7 +1166,7 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
                               {onAnalyzePaper && paper.abstract && (
                               <button
                                 type="button"
-                                onClick={() => handleAnalyze(paper)}
+                                onClick={() => { void handleAnalyze(paper); }}
                                 aria-label={`Send ${paper.title} abstract to analyzer`}
                                 title="Send abstract to analyzer"
                                 className="nb-research-control"
@@ -1409,6 +1510,9 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
 
                       {isExpanded && article.abstract && (
                         <div style={{ marginTop: '14px', paddingTop: '14px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                          <p style={{ color: RESEARCH_PALETTE.textFaint, fontSize: '10px', fontFamily: MONO, letterSpacing: '0.08em', textTransform: 'uppercase', margin: '0 0 6px' }}>
+                            Original abstract
+                          </p>
                           <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '13px', lineHeight: 1.8, margin: '0 0 12px' }}>
                             {highlightKeywords(article.abstract, extractKeywords(article.title, article.abstract))}
                           </p>
@@ -1422,7 +1526,7 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
                               )}
                               <button
                                 type="button"
-                                onClick={() => handleSaveToggle(article)}
+                                onClick={() => { void handleSaveToggle(article); }}
                                 className="nb-research-control"
                                 style={{
                                   minHeight: '30px',
@@ -1463,7 +1567,7 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
                             {onAnalyzePaper && article.abstract && (
                               <button
                                 type="button"
-                                onClick={() => handleAnalyze(article)}
+                                onClick={() => { void handleAnalyze(article); }}
                                 aria-label={`Send ${article.title} abstract to analyzer`}
                                 title="Send abstract to analyzer"
                                 className="nb-research-control"
