@@ -68,6 +68,9 @@ export interface HomeInteractiveCardProps {
   external?: boolean;
   children?: ReactNode;
   style?: CSSProperties;
+  labelStyle?: CSSProperties;
+  titleStyle?: CSSProperties;
+  descriptionStyle?: CSSProperties;
   showArrow?: boolean;
   focusable?: boolean;
 }
@@ -82,6 +85,9 @@ export default function HomeInteractiveCard({
   external,
   children,
   style,
+  labelStyle,
+  titleStyle,
+  descriptionStyle,
   showArrow = Boolean(href),
   focusable = !href,
 }: HomeInteractiveCardProps) {
@@ -132,6 +138,7 @@ export default function HomeInteractiveCard({
           letterSpacing: '0.1em',
           color: 'rgba(255,255,255,0.28)',
           margin: '0 0 6px',
+          ...labelStyle,
         }}
       >
         {label}
@@ -145,6 +152,7 @@ export default function HomeInteractiveCard({
           margin: '0 0 8px',
           lineHeight: 1.35,
           letterSpacing: '-0.01em',
+          ...titleStyle,
         }}
       >
         {title}
@@ -156,6 +164,7 @@ export default function HomeInteractiveCard({
           color: 'rgba(255,255,255,0.34)',
           margin: 0,
           lineHeight: 1.6,
+          ...descriptionStyle,
         }}
       >
         {description}
