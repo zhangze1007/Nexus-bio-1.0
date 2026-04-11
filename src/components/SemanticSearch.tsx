@@ -41,7 +41,7 @@ const SOURCE_TIMEOUT_MS = 8000;
 const SOURCE_RESULT_LIMIT = 5;
 
 const RESEARCH_PALETTE = {
-  page: 'radial-gradient(circle at top, rgba(105,132,188,0.12) 0%, rgba(105,132,188,0.04) 18%, transparent 38%), #050810',
+  page: '#000000',
   surface: 'rgba(9,13,20,0.9)',
   surfaceRaised: 'rgba(13,18,27,0.92)',
   surfaceSoft: 'rgba(255,255,255,0.038)',
@@ -118,48 +118,73 @@ function decodeOpenAlexAbstract(index: Record<string, number[]> | null | undefin
 const SHOWCASE_PAPERS: Article[] = [
   {
     id: 'showcase1',
-    title: 'Production of the antimalarial drug precursor artemisinic acid in engineered yeast',
-    authors: ['Ro D.K.', 'Paradise E.M.', 'Ouellet M.', 'Keasling J.D.'],
+    title: 'Construction of a genetic toggle switch in Escherichia coli',
+    authors: ['Gardner T.S.', 'Cantor C.R.', 'Collins J.J.'],
     journal: 'Nature',
-    year: '2006',
+    year: '2000',
     abstract:
-      'We engineered Saccharomyces cerevisiae to produce high titres of artemisinic acid. The engineered yeast expresses amorphadiene synthase and a novel plant cytochrome P450, CYP71AV1, along with its cognate cytochrome P450 reductase to catalyze three oxidation steps to artemisinic acid. This work established the foundation for industrial-scale production of the antimalarial compound.',
-    doi: '10.1038/nature04640',
-    url: 'https://pubmed.ncbi.nlm.nih.gov/16612385/',
+      'A synthetic bistable gene circuit was engineered in E. coli to demonstrate switch-like memory, controlled state transitions, and modular genetic logic in living cells.',
+    doi: '10.1038/35002131',
+    url: 'https://pubmed.ncbi.nlm.nih.gov/10659857/',
     source: 'Nature',
-    citationCount: 2847,
     openAccess: false,
-    pathway: 'Acetyl-CoA → FPP → Amorphadiene → Artemisinic Acid',
+    pathway: 'Focus: bistable gene-memory circuits',
   },
   {
     id: 'showcase2',
-    title: 'Complete biosynthesis of opioids in yeast',
-    authors: ['Galanie S.', 'Thodey K.', 'Smolke C.D.'],
-    journal: 'Science',
-    year: '2015',
+    title: 'A synthetic oscillatory network of transcriptional regulators',
+    authors: ['Elowitz M.B.', 'Leibler S.'],
+    journal: 'Nature',
+    year: '2000',
     abstract:
-      'We engineered Saccharomyces cerevisiae to produce the selected opioid compounds thebaine and hydrocodone starting from glucose. We combined enzyme discovery, enzyme engineering, and pathway and strain optimization to realize the 15-step biochemical pathway in yeast.',
-    doi: '10.1126/science.aac9373',
-    url: 'https://pubmed.ncbi.nlm.nih.gov/26272907/',
-    source: 'Science',
-    citationCount: 1203,
+      'The repressilator established synthetic biological oscillation as an engineered design target, showing that transcriptional circuits could be built to generate tunable dynamic behavior.',
+    doi: '10.1038/35002125',
+    url: 'https://pubmed.ncbi.nlm.nih.gov/10659856/',
+    source: 'Nature',
     openAccess: false,
-    pathway: 'Glucose → Tyrosine → L-DOPA → Reticuline → Thebaine',
+    pathway: 'Focus: oscillatory gene-network design',
   },
   {
     id: 'showcase3',
-    title: 'Microbial production of fatty-acid-derived fuels and chemicals from plant biomass',
-    authors: ['Steen E.J.', 'Kang Y.', 'Keasling J.D.'],
+    title: 'A synthetic multicellular system for programmed pattern formation',
+    authors: ['Basu S.', 'Gerchman Y.', 'Collins C.H.', 'Arnold F.H.', 'Weiss R.'],
     journal: 'Nature',
+    year: '2005',
+    abstract:
+      'Sender-receiver bacterial populations were programmed to generate spatial patterning, making synthetic multicellular communication and emergent biological structure experimentally tractable.',
+    doi: '10.1038/nature03461',
+    url: 'https://pubmed.ncbi.nlm.nih.gov/15858574/',
+    source: 'Nature',
+    openAccess: false,
+    pathway: 'Focus: multicellular signaling and pattern formation',
+  },
+  {
+    id: 'showcase4',
+    title: 'Programming cells by multiplex genome engineering and accelerated evolution',
+    authors: ['Wang H.H.', 'Isaacs F.J.', 'Carr P.A.', 'Sun Z.Z.', 'Xu G.', 'Forest C.R.', 'Church G.M.'],
+    journal: 'Nature',
+    year: '2009',
+    abstract:
+      'Multiplex automated genome engineering demonstrated that cells could be systematically reprogrammed at scale, linking combinatorial editing directly to adaptive search and accelerated strain optimization.',
+    doi: '10.1038/nature08187',
+    url: 'https://pubmed.ncbi.nlm.nih.gov/19633652/',
+    source: 'Nature',
+    openAccess: false,
+    pathway: 'Focus: multiplex genome editing and adaptive search',
+  },
+  {
+    id: 'showcase5',
+    title: 'Creation of a bacterial cell controlled by a chemically synthesized genome',
+    authors: ['Gibson D.G.', 'Glass J.I.', 'Lartigue C.', 'Noskov V.N.', 'Chuang R.-Y.', 'Algire M.A.', 'Benders G.A.', 'et al.'],
+    journal: 'Science',
     year: '2010',
     abstract:
-      'We engineered Escherichia coli to produce structurally tailored fatty esters, fatty alcohols, and waxes directly from simple sugars. The key was to engineer the cells to overproduce fatty acids and to express enzymes that convert the fatty acids to the desired products.',
-    doi: '10.1038/nature08721',
-    url: 'https://pubmed.ncbi.nlm.nih.gov/20057858/',
-    source: 'Nature',
-    citationCount: 1876,
+      'A chemically synthesized bacterial genome was assembled and used to control a living cell, establishing whole-genome construction as a practical foundation for synthetic cell engineering.',
+    doi: '10.1126/science.1190719',
+    url: 'https://pubmed.ncbi.nlm.nih.gov/20488990/',
+    source: 'Science',
     openAccess: false,
-    pathway: 'Glucose → Acetyl-CoA → Fatty Acids → Biodiesel',
+    pathway: 'Focus: whole-genome synthesis and synthetic cells',
   },
 ];
 
@@ -661,7 +686,7 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
           }}
         >
           <p style={{ margin: '0 0 12px', color: RESEARCH_PALETTE.textSoft, fontSize: '13px', lineHeight: 1.7, maxWidth: '76ch' }}>
-            Connected sources include biomedical indexes, literature aggregators, preprints, and repository-fed open-access records. Curated landmark papers remain separate from the live query stream so background reading never gets mixed into current search results.
+            Connected sources include biomedical indexes, literature aggregators, preprints, and repository-fed open-access records. Five curated synthetic biology classics remain separate from the live query stream so background reading never gets mixed into current search results.
           </p>
 
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
@@ -694,23 +719,30 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
         <form
           onSubmit={handleSearch}
           style={{
-            position: 'relative',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            width: '100%',
+            maxWidth: '660px',
             marginBottom: '26px',
-            borderRadius: '20px',
-            border: `1px solid ${isSearchFocused ? 'rgba(255,255,255,0.2)' : RESEARCH_PALETTE.border}`,
+            padding: '0 20px',
+            minHeight: '58px',
+            borderRadius: '30px',
+            border: isSearchFocused
+              ? '1px solid rgba(255,255,255,0.3)'
+              : '1px solid rgba(255,255,255,0.1)',
             background: isSearchFocused
-              ? 'rgba(12,17,26,0.96)'
-              : RESEARCH_PALETTE.surface,
-            padding: '6px',
+              ? 'rgba(15,18,25,0.88)'
+              : 'rgba(15,18,25,0.72)',
+            backdropFilter: 'blur(32px) saturate(1.5)',
+            WebkitBackdropFilter: 'blur(32px) saturate(1.5)',
             boxShadow: isSearchFocused
-              ? '0 0 0 3px rgba(255,255,255,0.035), 0 20px 52px rgba(4,10,16,0.34)'
-              : '0 16px 40px rgba(4,10,16,0.24)',
-            transition: 'border-color 0.22s ease, box-shadow 0.22s ease, background 0.22s ease',
+              ? '0 0 0 4px rgba(255,255,255,0.05), 0 24px 64px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.06)'
+              : '0 12px 40px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.04)',
+            transition: 'all 0.25s cubic-bezier(0.22,1,0.36,1)',
           }}
         >
-          <div style={{ position: 'absolute', left: '18px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
-            <Search size={16} style={{ color: isSearchFocused ? RESEARCH_PALETTE.textMuted : RESEARCH_PALETTE.textFaint, transition: 'color 0.2s ease' }} />
-          </div>
+          <Search size={16} style={{ color: isSearchFocused ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.25)', flexShrink: 0, transition: 'color 0.2s' }} />
 
           <input
             type="text"
@@ -718,19 +750,18 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
             onChange={(event) => setQuery(event.target.value)}
             onFocus={() => setIsSearchFocused(true)}
             onBlur={() => setIsSearchFocused(false)}
-            placeholder="Search artemisinin biosynthesis, lactic acid fermentation, CRISPR metabolic engineering..."
+            placeholder="Search pathways, enzymes, literature…"
             aria-label="Search across scientific databases"
             style={{
-              width: '100%',
-              minHeight: '48px',
-              padding: '0 140px 0 44px',
-              background: 'transparent',
+              flex: 1,
+              background: 'none',
               border: 'none',
-              color: RESEARCH_PALETTE.text,
-              fontSize: '14px',
               outline: 'none',
+              fontFamily: SANS,
+              fontSize: '15px',
+              fontWeight: 400,
+              color: '#E2E8F0',
               letterSpacing: '-0.01em',
-              fontFamily: 'inherit',
             }}
           />
 
@@ -738,31 +769,27 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
             type="submit"
             disabled={isSearching}
             style={{
-              position: 'absolute',
-              right: '6px',
-              top: '6px',
-              bottom: '6px',
-              minWidth: '108px',
-              padding: '0 16px',
-              background: isSearching ? 'rgba(255,255,255,0.08)' : RESEARCH_PALETTE.active,
-              color: isSearching ? RESEARCH_PALETTE.textFaint : '#050810',
-              border: 'none',
-              borderRadius: '14px',
-              fontSize: '12px',
-              fontWeight: 700,
-              cursor: isSearching ? 'not-allowed' : 'pointer',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              letterSpacing: '-0.01em',
-              fontFamily: 'inherit',
-              transition: 'transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease',
-              boxShadow: isSearching ? 'none' : '0 10px 28px rgba(244,247,251,0.14)',
+              gap: '6px',
+              padding: '8px 18px',
+              borderRadius: '20px',
+              flexShrink: 0,
+              background: query.trim()
+                ? 'rgba(255,255,255,0.08)'
+                : 'rgba(255,255,255,0.04)',
+              border: query.trim()
+                ? '1px solid rgba(255,255,255,0.25)'
+                : '1px solid rgba(255,255,255,0.07)',
+              color: query.trim() ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.2)',
+              fontFamily: MONO,
+              fontSize: '11px',
+              fontWeight: 500,
+              cursor: query.trim() && !isSearching ? 'pointer' : 'default',
             }}
             className="nb-research-primary-control"
           >
-            {isSearching ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <Search size={14} />}
+            {isSearching ? <Loader2 size={11} style={{ animation: 'spin 1s linear infinite' }} /> : <Search size={11} />}
             {isSearching ? 'Searching' : 'Search'}
           </button>
         </form>
@@ -786,10 +813,11 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
 
           .nb-research-primary-control:hover:not(:disabled),
           .nb-research-primary-control:focus-visible:not(:disabled) {
-            background: #ffffff !important;
-            color: #050810 !important;
-            transform: translateY(-1px);
-            box-shadow: 0 14px 32px rgba(244,247,251,0.18) !important;
+            border-color: rgba(255,255,255,0.28) !important;
+            background: rgba(255,255,255,0.1) !important;
+            color: rgba(255,255,255,0.9) !important;
+            transform: translateY(-1px) !important;
+            box-shadow: none !important;
             outline: none;
           }
 
@@ -911,10 +939,10 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
         {showShowcase && (
           <div style={{ marginBottom: '28px' }}>
             <p style={{ color: RESEARCH_PALETTE.textFaint, fontSize: '10px', fontFamily: MONO, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '6px' }}>
-              Curated background reading
+              Synthetic biology landmarks
             </p>
             <p style={{ margin: '0 0 14px', color: RESEARCH_PALETTE.textSoft, fontSize: '13px', lineHeight: 1.7, maxWidth: '68ch' }}>
-              These landmark papers are curated reference points for the platform and remain separate from live query results.
+              These five classic papers are curated reference points for synthetic biology and remain separate from live query results.
             </p>
             <div style={{ display: 'grid', gap: '10px' }}>
               {SHOWCASE_PAPERS.map((paper) => {
