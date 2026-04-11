@@ -21,223 +21,314 @@ interface EngineBlock {
   label: string;
   title: string;
   description: string;
-  formulas: string[];
+  models: Array<{
+    name: string;
+    detail: string;
+  }>;
   notes: string[];
   icon: LucideIcon;
 }
 
 const ENGINE_BLOCKS: EngineBlock[] = [
   {
-    label: 'Constraint',
-    title: 'Flux',
+    label: 'Safety',
+    title: 'Cellular Solvency & Toxicity',
     description:
-      'Pathway performance is solved as a constrained stoichiometric system so growth, production, and resource pressure remain on one quantitative state.',
-    formulas: [
-      'max cᵀv',
-      'Sv = 0,  l ≤ v ≤ u',
-      '∂μ/∂x = shadow price(x)',
+      'Host tolerance, energetic solvency, and impurity burden are read as one viability envelope so route promise never detaches from what a cell can actually sustain.',
+    models: [
+      {
+        name: 'Toxicity window',
+        detail: 'Exposure is judged against viability thresholds rather than generic hazard flags.',
+      },
+      {
+        name: 'Cellular solvency',
+        detail: 'Energy demand, impurity load, and growth pressure remain visible inside one viability picture.',
+      },
     ],
     notes: [
-      'Backs FBASIM growth, ATP yield, and shadow-price readouts.',
-      'This remains the platform’s primary mass-balance engine.',
+      'Defines whether a route is biologically tolerable before downstream ranking begins.',
+      'Keeps pathway ambition grounded in host survivability and burden.',
     ],
-    icon: Activity,
+    icon: AlertTriangle,
+  },
+  {
+    label: 'Purification',
+    title: 'Downstream Processing (DSP) Intelligence',
+    description:
+      'Purification difficulty is treated as an engineering cost through structural similarity, co-elution pressure, and separation burden rather than left for downstream surprise.',
+    models: [
+      {
+        name: 'Similarity screening',
+        detail: 'Fingerprint similarity estimates separation conflict and purification ambiguity.',
+      },
+      {
+        name: 'Separation burden',
+        detail: 'DSP cost stays attached to the route instead of surfacing only at the end.',
+      },
+    ],
+    notes: [
+      'Keeps downstream processing visible at the same level as upstream pathway design.',
+      'Preserves one of Nexus-Bio’s signature engineering distinctions.',
+    ],
+    icon: Layers,
   },
   {
     label: 'Yield',
-    title: 'Carbon ROI',
+    title: 'Genetic ROI & Carbon Efficiency',
     description:
-      'Carbon retention is treated as a first-class economic signal, not a side metric, so atom economy and diversion penalties stay visible during route choice.',
-    formulas: [
-      'η_C = (C_product / C_substrate) × 100%',
-      'AE = retained atoms / input atoms',
+      'Carbon retention is treated as an engineering return signal so atom economy, diversion loss, and chassis burden stay visible during route choice.',
+    models: [
+      {
+        name: 'Carbon retention',
+        detail: 'Product yield is judged by retained carbon, not only by headline titer or flux volume.',
+      },
+      {
+        name: 'Genetic ROI',
+        detail: 'Genetic burden and wasted atoms are read as engineering loss against pathway return.',
+      },
     ],
     notes: [
-      'The older ROI framing is still meaningful when anchored to carbon efficiency.',
-      'PATHD and FBASIM both surface this as route pressure, not marketing language.',
+      'Owns route economics rather than stoichiometric feasibility.',
+      'Keeps ROI grounded in measurable carbon efficiency instead of generic optimization language.',
     ],
     icon: Zap,
+  },
+  {
+    label: 'Constraint',
+    title: 'Stoichiometric Flux Solver',
+    description:
+      'Pathway performance is solved as a constrained stoichiometric system so growth, production, and limiting resources remain on one quantitative state.',
+    models: [
+      {
+        name: 'Steady-state LP',
+        detail: 'Constraint-based flux optimization runs under stoichiometric balance and bounded exchange.',
+      },
+      {
+        name: 'Shadow-price sensitivity',
+        detail: 'Dual sensitivities expose which substrates and cofactors are limiting the design.',
+      },
+    ],
+    notes: [
+      'Backs FBASIM growth, ATP yield, and shadow-price readouts.',
+      'Owns mass-balance solution, not route economics or thermodynamic plausibility.',
+    ],
+    icon: Activity,
   },
   {
     label: 'Energy',
     title: 'Cofactor Ledger',
     description:
-      'ATP, NADH, and NADPH accounting stays attached to pathway nodes and burden ledgers so energetic solvency can be read directly from the design surface.',
-    formulas: [
-      'ATP_net = Σ ATP_i',
-      'NADPH_net = Σ NADPH_i',
+      'ATP, NADH, and NADPH accounting stays attached to pathway nodes and burden ledgers so energetic cost is readable directly from the design surface.',
+    models: [
+      {
+        name: 'ATP accounting',
+        detail: 'Energetic turnover is accumulated across reactions instead of hidden behind aggregate scores.',
+      },
+      {
+        name: 'Redox accounting',
+        detail: 'Reducing-equivalent demand stays visible when routes compete for the same cofactor pool.',
+      },
     ],
     notes: [
-      'This is still one of the most distinctive Nexus-Bio signatures.',
-      'The live product uses it in PATHD, Catalyst burden, and thermodynamic interpretation.',
+      'Owns energetic bookkeeping rather than reaction-level feasibility.',
+      'Remains one of the clearest quantitative signatures in the platform.',
     ],
     icon: Zap,
   },
   {
     label: 'Feasibility',
-    title: 'Thermo Load',
+    title: 'Thermodynamic Feasibility',
     description:
-      'Free-energy burden is evaluated explicitly so route plausibility is grounded in chemical driving force rather than only topology or visual appeal.',
-    formulas: [
-      'ΔG = ΔG° + RT ln(Q)',
-      'K_eq = e^(−ΔG°/RT)',
+      'Free-energy plausibility is evaluated explicitly so route viability is grounded in driving force, reversibility, and reaction slack rather than topology alone.',
+    models: [
+      {
+        name: 'Gibbs free energy',
+        detail: 'Reaction favorability is interpreted against the current concentration state, not just network shape.',
+      },
+      {
+        name: 'Reaction reversibility',
+        detail: 'Thermodynamic slack and equilibrium pressure remain visible at the reaction level.',
+      },
     ],
     notes: [
-      'CETHX and PATHD analysis both still depend on this core expression.',
-      'The old thermodynamic language stays, but with cleaner naming.',
+      'Owns reaction plausibility rather than host toxicity or cofactor bookkeeping.',
+      'Keeps route chemistry legible inside PATHD and thermodynamic analysis.',
     ],
     icon: Activity,
   },
   {
-    label: 'Purification',
-    title: 'DSP Intelligence',
-    description:
-      'Purification risk is modeled as a real engineering penalty through structural similarity and separation difficulty, not left for downstream surprises.',
-    formulas: [
-      'sim ≈ Tanimoto(fp₁, fp₂)',
-      'separation_cost_index ∈ [0,1]',
-    ],
-    notes: [
-      'DSP survives from the older site because it still exists in PATHD, Analyze, and node evidence.',
-      'Physicochemical similarity and co-elution risk remain part of the platform identity.',
-    ],
-    icon: Layers,
-  },
-  {
-    label: 'Safety',
-    title: 'Toxicity Window',
-    description:
-      'Host tolerance and impurity risk are treated as threshold problems with explicit IC50 or growth-impact windows when the data supports them.',
-    formulas: [
-      'risk_score ∈ [0,1]',
-      'IC50 = arg where growth ≤ 50%',
-    ],
-    notes: [
-      'This extends the older solvency-and-toxicity idea into a clearer threshold card.',
-      'PATHD and PaperAnalyzer still attach toxicity to node-level evidence.',
-    ],
-    icon: AlertTriangle,
-  },
-  {
     label: 'Dynamics',
-    title: 'Control Dynamics',
+    title: 'Regulatory Control Dynamics',
     description:
       'Time-dependent pathway behavior is modeled with enzyme kinetics, Hill regulation, Monod growth, and RK4 integration so stability is treated as a control problem.',
-    formulas: [
-      'v = Vmax[S] / (Km + [S])',
-      'f(x) = Kⁿ / (Kⁿ + xⁿ)',
-      'μ = μmax·S/(Ks+S)·O/(Ko+O)',
+    models: [
+      {
+        name: 'Kinetic regulation',
+        detail: 'Michaelis-Menten and Hill responses define the local logic of enzyme and circuit control.',
+      },
+      {
+        name: 'Control response',
+        detail: 'Monod growth and RK4 time-stepping keep stability, lag, and overshoot legible.',
+      },
     ],
     notes: [
-      'Used across PATHD kinetics, GECAIR logic, and DYNCON bioreactor control.',
-      'This is the platform’s main time-evolution layer.',
+      'Owns closed-loop behavior across PATHD kinetics, GECAIR, and DYNCON.',
+      'Distinct from cell-free validation, which focuses on resource-coupled assay behavior.',
     ],
     icon: Gauge,
   },
   {
     label: 'Catalysis',
-    title: 'Catalyst Search',
+    title: 'Catalyst Design & Ranking',
     description:
-      'Catalyst selection couples binding energy, sequence plausibility, burden, and route ranking so enzyme choices remain tied to system viability.',
-    formulas: [
-      'K_d = exp(ΔG_bind / RT)',
-      'ΔΔG ≈ Σ BLOSUM(wt, mut)',
-      'rank = Pareto(ΔG, yield, burden)',
+      'Catalyst choice couples binding plausibility, sequence design, and multi-objective ranking so enzyme selection remains tied to system viability.',
+    models: [
+      {
+        name: 'Binding design',
+        detail: 'Affinity and structural fit act as design constraints within catalyst selection.',
+      },
+      {
+        name: 'Pareto ranking',
+        detail: 'Candidates are compared across burden, yield, and route quality at the same time.',
+      },
     ],
     notes: [
-      'CATDES still combines structure and system cost in one reasoning surface.',
-      'The card keeps the premium molecular-engineering identity without becoming a tool summary.',
+      'Owns catalyst choice, not the adaptive search that follows it.',
+      'Keeps molecular design tied to pathway-level trade-offs.',
     ],
     icon: Sparkles,
   },
   {
     label: 'Search',
-    title: 'Evolution Search',
+    title: 'Directed Evolution Search',
     description:
-      'Adaptive improvement is modeled as an explicit search process with basin-climbing acceptance rather than a vague “AI optimization” claim.',
-    formulas: [
-      'P_accept = min(1, e^(ΔF/kT))',
-      'best basin = argmax F(x, y)',
+      'Directed evolution is modeled as an explicit search over fitness landscapes, with acceptance dynamics and basin structure kept readable in the design loop.',
+    models: [
+      {
+        name: 'Acceptance schedule',
+        detail: 'Candidate steps are accepted against a temperature-controlled fitness landscape.',
+      },
+      {
+        name: 'Fitness landscape',
+        detail: 'Search quality is evaluated by basin structure, not only by a single end-point score.',
+      },
     ],
     notes: [
-      'PROEVOL’s fitness-landscape logic is distinct enough to remain visible as its own engine.',
-      'Search temperature and fitness acceptance remain legible, not hidden behind narrative copy.',
+      'Owns adaptive search over sequence space rather than catalyst ranking or intervention choice.',
+      'Keeps evolutionary exploration legible at the architecture level.',
     ],
     icon: Dna,
   },
   {
     label: 'Selection',
-    title: 'Intervention Logic',
+    title: 'Genetic Intervention Scoring',
     description:
-      'Genome and control interventions are ranked with explicit viability penalties so design choice stays readable instead of disappearing into heuristic black boxes.',
-    formulas: [
-      'score = KD_eff + (1 + GI) × 0.3',
-      'GI = Σ growth_impact_i',
+      'Genome and control interventions are ranked with explicit knockdown efficiency and viability penalties so design choice stays readable instead of disappearing into heuristics.',
+    models: [
+      {
+        name: 'Intervention ranking',
+        detail: 'Interventions are scored with explicit knockdown efficiency and growth-impact terms.',
+      },
+      {
+        name: 'Growth-impact penalty',
+        detail: 'Selection stays readable because the growth-cost tradeoff is surfaced directly.',
+      },
     ],
     notes: [
-      'GENMIM still uses a real greedy CRISPRi ranker with stated limits.',
-      'Intervention scoring deserves its own card instead of being buried under evolution or control.',
+      'Owns intervention choice rather than catalyst design or evolution search.',
+      'Keeps CRISPRi-style prioritization quantitative and bounded.',
     ],
     icon: Activity,
   },
   {
     label: 'Validation',
-    title: 'TXTL Dynamics',
+    title: 'Cell-Free TXTL Validation',
     description:
-      'Cell-free validation is modeled as a resource-aware TX-TL system with fitting and in-vitro to in-vivo translation, not just a downstream checkbox.',
-    formulas: [
-      'dP_i/dt = k_tl,i·[mRNA_i]·R_free / (K_tl,i + R_free)',
-      'dATP/dt = −k_consumeΣtranslation + k_regen[PEP] − k_decay[ATP]',
+      'Cell-free validation is modeled as a resource-aware TXTL system so expression burden, reagent depletion, and translation capacity remain measurable before in vivo transfer.',
+    models: [
+      {
+        name: 'TXTL resource model',
+        detail: 'Protein synthesis is tied to ribosome and transcript competition instead of a flat yield lookup.',
+      },
+      {
+        name: 'Energy regeneration',
+        detail: 'Expression demand is balanced against depletion and regeneration inside the assay mix.',
+      },
     ],
     notes: [
-      'The cell-free engine contributes real dynamic structure even where parts of the pipeline remain approximate.',
-      'Keeping this visible prevents validation from feeling like a generic final stage.',
+      'Owns assay-scale validation rather than pathway-scale control dynamics.',
+      'Keeps TXTL visible as a quantitative bridge between design and experiment.',
     ],
     icon: Zap,
   },
   {
     label: 'Inference',
-    title: 'Omics Inference',
+    title: 'Omics & Spatial Inference',
     description:
-      'Omics interpretation uses low-rank factorization, linear embeddings, and spatial autocorrelation to turn assay layers into structured bottleneck evidence.',
-    formulas: [
-      'X_v ≈ ZW_vᵀ',
-      'I = (N/W)·Σᵢⱼ wᵢⱼ(xᵢ−x̄)(xⱼ−x̄) / Σᵢ(xᵢ−x̄)²',
+      'Omics interpretation uses low-rank factorization, linear embeddings, and spatial autocorrelation to turn assay and spatial layers into structured bottleneck evidence.',
+    models: [
+      {
+        name: 'Latent factor model',
+        detail: 'Latent factors compress assay layers into interpretable biological pressure axes.',
+      },
+      {
+        name: 'Spatial autocorrelation',
+        detail: 'Local structure is surfaced quantitatively rather than treated as visual decoration.',
+      },
     ],
     notes: [
-      'MULTIO and SCSPATIAL share this evidence-reading family even when method honesty differs by tool.',
-      'This keeps omics and spatial statistics visible without forcing them into a stage diagram.',
+      'Owns evidence extraction from assay layers rather than generative pathway design.',
+      'Keeps omics and spatial statistics visible as one quantitative inference family.',
     ],
     icon: Layers,
   },
 ];
 
-function FormulaStack({ formulas }: { formulas: string[] }) {
+function ModelStack({ models }: { models: EngineBlock['models'] }) {
   return (
     <div
       style={{
         display: 'flex',
         flexDirection: 'column',
-        gap: '8px',
-        padding: '14px 14px 12px',
+        gap: '10px',
+        padding: '14px',
         borderRadius: '14px',
         background: 'linear-gradient(180deg, rgba(255,255,255,0.045) 0%, rgba(255,255,255,0.018) 100%)',
         border: '0.5px solid rgba(255,255,255,0.09)',
       }}
     >
-      {formulas.map((formula) => (
+      {models.map((model) => (
         <div
-          key={formula}
+          key={model.name}
           style={{
-            fontFamily: MONO,
-            fontSize: '11px',
-            lineHeight: 1.55,
-            color: 'rgba(255,255,255,0.74)',
-            letterSpacing: '-0.01em',
-            wordBreak: 'break-word',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '4px',
           }}
         >
-          {formula}
+          <span
+            style={{
+              fontFamily: HEADER,
+              fontSize: '11px',
+              fontWeight: 600,
+              lineHeight: 1.4,
+              color: 'rgba(255,255,255,0.84)',
+              letterSpacing: '-0.01em',
+            }}
+          >
+            {model.name}
+          </span>
+          <span
+            style={{
+              fontFamily: HEADER,
+              fontSize: '11px',
+              lineHeight: 1.6,
+              color: 'rgba(255,255,255,0.46)',
+              letterSpacing: '-0.005em',
+            }}
+          >
+            {model.detail}
+          </span>
         </div>
       ))}
     </div>
@@ -262,10 +353,13 @@ function EngineCard({ block, index }: { block: EngineBlock; index: number }) {
         label={block.label}
         title={block.title}
         description={block.description}
+        labelStyle={{ color: 'rgba(255,255,255,0.32)', marginBottom: '7px' }}
+        titleStyle={{ fontSize: '17px', fontWeight: 650, marginBottom: '10px', letterSpacing: '-0.016em' }}
+        descriptionStyle={{ color: 'rgba(255,255,255,0.4)' }}
         focusable
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-          <FormulaStack formulas={block.formulas} />
+          <ModelStack models={block.models} />
           <div style={{ display: 'flex', flexDirection: 'column', gap: '9px' }}>
             {block.notes.map((note) => (
               <div key={note} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
@@ -281,9 +375,9 @@ function EngineCard({ block, index }: { block: EngineBlock; index: number }) {
                 />
                 <span
                   style={{
-                    fontFamily: MONO,
+                    fontFamily: HEADER,
                     fontSize: '11px',
-                    color: 'rgba(255,255,255,0.31)',
+                    color: 'rgba(255,255,255,0.36)',
                     lineHeight: 1.62,
                   }}
                 >
@@ -352,7 +446,7 @@ export default function FeaturesArchitecture() {
               textTransform: 'uppercase',
             }}
           >
-            Representative formulas below are drawn from the live codebase; detailed real / partial / demo labeling remains in-tool.
+            Model families below are derived from the live codebase; detailed real / partial / demo labeling remains in-tool.
           </p>
         </motion.div>
 
