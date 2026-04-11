@@ -41,11 +41,11 @@ const SOURCE_TIMEOUT_MS = 8000;
 const SOURCE_RESULT_LIMIT = 5;
 
 const RESEARCH_PALETTE = {
-  page: '#000000',
-  surface: 'rgba(9,13,20,0.9)',
-  surfaceRaised: 'rgba(13,18,27,0.92)',
-  surfaceSoft: 'rgba(255,255,255,0.038)',
-  border: 'rgba(255,255,255,0.08)',
+  page: '#0a0a0a',
+  surface: 'rgba(255,255,255,0.04)',
+  surfaceRaised: 'rgba(255,255,255,0.05)',
+  surfaceSoft: 'rgba(255,255,255,0.035)',
+  border: 'rgba(255,255,255,0.09)',
   borderStrong: 'rgba(255,255,255,0.14)',
   text: '#F4F7FB',
   textMuted: 'rgba(226,232,240,0.7)',
@@ -123,7 +123,7 @@ const SHOWCASE_PAPERS: Article[] = [
     journal: 'Nature',
     year: '2000',
     abstract:
-      'A synthetic bistable gene circuit was engineered in E. coli to demonstrate switch-like memory, controlled state transitions, and modular genetic logic in living cells.',
+      'This paper introduced one of the defining constructs of early synthetic biology: a bistable genetic toggle switch in Escherichia coli. By coupling mutually repressing transcriptional regulators, the authors showed that cellular state could be switched and remembered, establishing engineered biological memory as a programmable design principle rather than a theoretical possibility.',
     doi: '10.1038/35002131',
     url: 'https://pubmed.ncbi.nlm.nih.gov/10659857/',
     source: 'Nature',
@@ -137,7 +137,7 @@ const SHOWCASE_PAPERS: Article[] = [
     journal: 'Nature',
     year: '2000',
     abstract:
-      'The repressilator established synthetic biological oscillation as an engineered design target, showing that transcriptional circuits could be built to generate tunable dynamic behavior.',
+      'The repressilator established synthetic biological oscillation as an engineered design target. By wiring three transcriptional repressors into a closed loop, the authors showed that living cells could be programmed to produce rhythmic gene-expression dynamics, making time-dependent control a concrete design object for synthetic circuits.',
     doi: '10.1038/35002125',
     url: 'https://pubmed.ncbi.nlm.nih.gov/10659856/',
     source: 'Nature',
@@ -151,7 +151,7 @@ const SHOWCASE_PAPERS: Article[] = [
     journal: 'Nature',
     year: '2005',
     abstract:
-      'Sender-receiver bacterial populations were programmed to generate spatial patterning, making synthetic multicellular communication and emergent biological structure experimentally tractable.',
+      'This work showed that engineered sender-receiver bacterial populations could be programmed to generate spatial patterns rather than only single-cell logic outputs. It expanded synthetic biology from intracellular circuits toward multicellular coordination, communication, and emergent structure as deliberately designable phenomena.',
     doi: '10.1038/nature03461',
     url: 'https://pubmed.ncbi.nlm.nih.gov/15858574/',
     source: 'Nature',
@@ -165,7 +165,7 @@ const SHOWCASE_PAPERS: Article[] = [
     journal: 'Nature',
     year: '2009',
     abstract:
-      'Multiplex automated genome engineering demonstrated that cells could be systematically reprogrammed at scale, linking combinatorial editing directly to adaptive search and accelerated strain optimization.',
+      'Multiplex automated genome engineering demonstrated that cells could be reprogrammed at scale rather than one edit at a time. The paper connected combinatorial genome editing directly to adaptive search and accelerated strain optimization, making high-throughput intervention design a practical engineering strategy.',
     doi: '10.1038/nature08187',
     url: 'https://pubmed.ncbi.nlm.nih.gov/19633652/',
     source: 'Nature',
@@ -179,7 +179,7 @@ const SHOWCASE_PAPERS: Article[] = [
     journal: 'Science',
     year: '2010',
     abstract:
-      'A chemically synthesized bacterial genome was assembled and used to control a living cell, establishing whole-genome construction as a practical foundation for synthetic cell engineering.',
+      'This study demonstrated that a chemically synthesized bacterial genome could be assembled and used to control a living cell. It marked a major boundary-crossing moment for the field by showing that whole-genome construction was not just a conceptual milestone, but a practical foundation for synthetic cell engineering.',
     doi: '10.1126/science.1190719',
     url: 'https://pubmed.ncbi.nlm.nih.gov/20488990/',
     source: 'Science',
@@ -730,15 +730,15 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
             borderRadius: '30px',
             border: isSearchFocused
               ? '1px solid rgba(255,255,255,0.3)'
-              : '1px solid rgba(255,255,255,0.1)',
+              : '1px solid rgba(255,255,255,0.09)',
             background: isSearchFocused
-              ? 'rgba(15,18,25,0.88)'
-              : 'rgba(15,18,25,0.72)',
-            backdropFilter: 'blur(32px) saturate(1.5)',
-            WebkitBackdropFilter: 'blur(32px) saturate(1.5)',
+              ? 'rgba(255,255,255,0.06)'
+              : 'rgba(255,255,255,0.04)',
+            backdropFilter: 'blur(24px)',
+            WebkitBackdropFilter: 'blur(24px)',
             boxShadow: isSearchFocused
-              ? '0 0 0 4px rgba(255,255,255,0.05), 0 24px 64px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.06)'
-              : '0 12px 40px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.04)',
+              ? '0 0 0 4px rgba(255,255,255,0.04), 0 18px 48px rgba(0,0,0,0.34), inset 0 1px 0 rgba(255,255,255,0.05)'
+              : '0 12px 36px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.04)',
             transition: 'all 0.25s cubic-bezier(0.22,1,0.36,1)',
           }}
         >
@@ -776,12 +776,10 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
               borderRadius: '20px',
               flexShrink: 0,
               background: query.trim()
-                ? 'rgba(255,255,255,0.08)'
-                : 'rgba(255,255,255,0.04)',
-              border: query.trim()
-                ? '1px solid rgba(255,255,255,0.25)'
-                : '1px solid rgba(255,255,255,0.07)',
-              color: query.trim() ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.2)',
+                ? '#ffffff'
+                : 'rgba(255,255,255,0.07)',
+              border: 'none',
+              color: query.trim() ? '#0a0a0a' : 'rgba(255,255,255,0.2)',
               fontFamily: MONO,
               fontSize: '11px',
               fontWeight: 500,
@@ -813,11 +811,10 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
 
           .nb-research-primary-control:hover:not(:disabled),
           .nb-research-primary-control:focus-visible:not(:disabled) {
-            border-color: rgba(255,255,255,0.28) !important;
-            background: rgba(255,255,255,0.1) !important;
-            color: rgba(255,255,255,0.9) !important;
+            background: #ffffff !important;
+            color: #0a0a0a !important;
             transform: translateY(-1px) !important;
-            box-shadow: none !important;
+            box-shadow: 0 14px 32px rgba(255,255,255,0.14) !important;
             outline: none;
           }
 
