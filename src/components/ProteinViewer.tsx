@@ -2,32 +2,7 @@
 
 import { useRef, useState, useEffect } from 'react';
 import { ExternalLink } from 'lucide-react';
-
-declare global { interface Window { $3Dmol: any; } }
-
-const THREEDMOL_CDNS = [
-  'https://cdnjs.cloudflare.com/ajax/libs/3Dmol/2.5.3/3Dmol-min.js',
-  'https://3Dmol.org/build/3Dmol-min.js',
-];
-
-function load3Dmol(): Promise<void> {
-  if (window.$3Dmol) return Promise.resolve();
-
-  return THREEDMOL_CDNS.reduce<Promise<void>>(
-    (chain, url) =>
-      chain.catch(
-        () =>
-          new Promise<void>((resolve, reject) => {
-            const s = document.createElement('script');
-            s.src = url;
-            s.onload = () => (window.$3Dmol ? resolve() : reject(new Error('3Dmol not defined')));
-            s.onerror = () => reject(new Error(`Failed to load ${url}`));
-            document.head.appendChild(s);
-          }),
-      ),
-    Promise.reject<void>(),
-  );
-}
+import { load3Dmol } from '../hooks/use3Dmol';
 
 export default function ProteinViewer({ pdbId, alphafoldId, label }: { pdbId: string; alphafoldId?: string; label: string }) {
   const containerRef = useRef<HTMLDivElement>(null);

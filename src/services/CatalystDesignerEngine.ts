@@ -44,6 +44,7 @@ export interface EnzymeStructure {
   name: string;
   ecNumber: string;
   uniprotId: string;
+  pdbId?: string;
   sequence: string;
   length: number;
   catalyticResidues: CatalyticResidue[];
