@@ -115,7 +115,7 @@ INPUT: Target Molecular Product
 | **Gene Minimization** | `/tools/genmim` | Genome minimization: CRISPRi knockdown scheduling, chromosome map, efficiency heatmap, greedy optimization |
 | **Multi-Omics** | `/tools/multio` | Multi-omics integration: VAE/UMAP embeddings, volcano plots, MOFA+ factor analysis, perturbation prediction |
 | **NEX-AI Research Agent** | `/tools/nexai` | AI-powered literature agent: citation network graph (year×relevance scatter), Socratic questioning, literature support map |
-| **Protein Evolution** | `/tools/proevol` | Directed evolution: fitness landscape heatmap, evolution trajectory, adaptive basin climbing, sequence diversity tracking |
+| **Protein Evolution** | `/tools/proevol` | Directed evolution campaign workbench: variant libraries, survivor selection, lineage tracking, diversity/convergence analysis, next-round strategy |
 | **Single-Cell Spatial** | `/tools/scspatial` | Spatial transcriptomics: hexagonal Visium spot grid, UMAP/3D spatial visualization, cluster efficiency, gene expression heatmap |
 
 ---

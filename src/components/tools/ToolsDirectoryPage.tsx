@@ -84,7 +84,7 @@ const DIRECTION_CLUSTER_RECIPES: Record<ToolDirection, {
   },
   'Structure & Enzyme': {
     demoLabel: 'Candidate enzyme showcase with structure-backed ranking',
-    researchLabel: 'Catalyst comparison, structure review, and mutation strategy',
+    researchLabel: 'Catalyst comparison, structure review, and evolution campaign strategy',
     spotlight: ['catdes', 'proevol'],
   },
   'Dynamic & System': {

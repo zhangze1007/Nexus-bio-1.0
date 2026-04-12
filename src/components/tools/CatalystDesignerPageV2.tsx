@@ -673,8 +673,8 @@ export default function CatalystDesignerPageV2() {
             enzyme={enzyme}
             renderMode={renderMode}
             spinEnabled={spinEnabled}
-            onResidueClick={(pos, name) => setSelectedResidue({ position: pos, name })}
-            highlightResidues={selectedResidue ? [selectedResidue.position] : undefined}
+            onResidueClick={(data) => setSelectedResidue({ position: data.position, name: data.name })}
+            selectedResidue={selectedResidue?.position ?? null}
             style={{ height: '100%' }}
           />
           {/* Render mode controls */}

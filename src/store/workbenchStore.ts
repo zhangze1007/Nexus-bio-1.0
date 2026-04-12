@@ -224,7 +224,7 @@ function summarizePayload<K extends keyof WorkbenchToolPayloadMap>(toolId: K, pa
     }
     case 'proevol': {
       const data = payload as WorkbenchToolPayloadMap['proevol'];
-      return `Protein evolution · ${data.rounds} rounds · fitness ${data.result.bestFitness.toFixed(2)}`;
+      return `PROEVOL ${data.targetProtein} · round ${data.currentRound}/${data.totalRounds} · lead ${data.result.leadVariantName}`;
     }
     case 'gecair': {
       const data = payload as WorkbenchToolPayloadMap['gecair'];
@@ -253,6 +253,7 @@ function summarizePayload<K extends keyof WorkbenchToolPayloadMap>(toolId: K, pa
 
 function inferToolSimulation(payload: WorkbenchToolPayloadMap[keyof WorkbenchToolPayloadMap]) {
   if (!payload) return true;
+  if ('validity' in payload && payload.validity === 'demo') return true;
   if ('result' in payload && payload.result && typeof payload.result === 'object') {
     if ('mode' in payload.result) {
       return payload.result.mode === 'mock' || payload.result.mode === 'idle';

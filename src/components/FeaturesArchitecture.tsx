@@ -199,23 +199,23 @@ const ENGINE_BLOCKS: EngineBlock[] = [
     icon: Sparkles,
   },
   {
-    label: 'Search',
-    title: 'Directed Evolution Search',
+    label: 'Evolution',
+    title: 'Directed Evolution Campaigns',
     description:
-      'Directed evolution is modeled as an explicit search over fitness landscapes, with acceptance dynamics and basin structure kept readable in the design loop.',
+      'Directed evolution is framed as a campaign over variant populations, where rounds, survivor families, lineage persistence, and next-round strategy matter more than a single abstract landscape score.',
     models: [
       {
-        name: 'Acceptance schedule',
-        detail: 'Candidate steps are accepted against a temperature-controlled fitness landscape.',
+        name: 'Round selection',
+        detail: 'Each library is filtered into survivors and rejected branches under an explicit stability and burden-aware campaign rule.',
       },
       {
-        name: 'Fitness landscape',
-        detail: 'Search quality is evaluated by basin structure, not only by a single end-point score.',
+        name: 'Lineage monitoring',
+        detail: 'Campaign quality is judged by lineage persistence, mutation accumulation, diversity retention, and convergence signals.',
       },
     ],
     notes: [
-      'Owns adaptive search over sequence space rather than catalyst ranking or intervention choice.',
-      'Keeps evolutionary exploration legible at the architecture level.',
+      'Owns evolution campaign management rather than catalyst design logic or residue-level interpretation.',
+      'Keeps survivor families and next-round decisions legible at the architecture level.',
     ],
     icon: Dna,
   },

@@ -183,13 +183,24 @@ export interface ProEvolWorkbenchPayload extends WorkbenchPayloadBase {
   toolId: 'proevol';
   targetProduct: string;
   sourceArtifactId?: string;
-  mutationRate: number;
-  rounds: number;
+  campaignName: string;
+  targetProtein: string;
+  wildTypeLabel: string;
+  currentRound: number;
+  totalRounds: number;
+  librarySize: number;
+  survivorCount: number;
+  selectionStringency: number;
+  provenance: 'simulated' | 'inferred' | 'literature-backed' | 'user-supplied';
   result: {
-    bestFitness: number;
-    beneficialMutations: number;
-    trajectoryLength: number;
-    bestSequence: string;
+    leadVariantName: string;
+    leadVariantScore: number;
+    leadMutationString: string;
+    selectedThisRound: number;
+    rejectedThisRound: number;
+    diversityIndex: number;
+    convergenceState: string;
+    recommendation: string;
   };
   updatedAt: number;
 }

@@ -35,7 +35,7 @@ export const TOOL_VALIDITY: Record<string, ToolValidity> = {
   fbasim:       { level: 'partial', caption: 'Single-species FBA uses a real two-phase simplex LP. Two-Species mode runs two independent LPs and post-hoc scales exchange fluxes — NOT a joint community LP.' },
   cethx:        { level: 'demo',    caption: 'ΔG°\u0027 values are Lehninger reference (pH 7, 25°C). No live Alberty pH/T transform — eQuilibrator integration pending.' },
   catdes:       { level: 'partial', caption: 'Distance / orientation / VdW / electrostatic scoring is real (Warshel ε); residue weights are curated reference values.' },
-  proevol:      { level: 'partial', caption: 'Fitness landscape and basin-climbing trajectory are real; sequence diversity uses a heuristic mutation model.' },
+  proevol:      { level: 'partial', caption: 'Campaign scoring, survivor selection, lineage tracking, and next-round recommendations are deterministic modeled heuristics; outputs are simulated/inferred decision support, not wet-lab measurements.' },
 
   // Stage 3 — chassis & control
   genmim:       { level: 'partial', caption: 'Greedy CRISPRi ranker is real (score = KD_eff + (1+GI)×0.3); viability uses additive growth-impact (no epistatic/Wagner network interactions).' },
