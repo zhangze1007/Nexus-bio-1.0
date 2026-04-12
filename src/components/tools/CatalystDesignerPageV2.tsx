@@ -35,7 +35,9 @@ import ScientificHero from './shared/ScientificHero';
 import ScientificFigureFrame from './shared/ScientificFigureFrame';
 import ScientificMethodStrip from './shared/ScientificMethodStrip';
 import { PATHD_THEME } from '../workbench/workbenchTheme';
-import CatalystViewer3D from '../molecular/CatalystViewer3D';
+import CatalystViewer3D, { kdToQuality, bindingColorCSS } from '../molecular/CatalystViewer3D';
+import type { ResidueClickData } from '../molecular/CatalystViewer3D';
+import type { MutagenesisSite } from '../../services/CatalystDesignerEngine';
 
 /* ── Design Tokens (ported from V1) ──────────────────────────────── */
 
@@ -503,7 +505,8 @@ export default function CatalystDesignerPageV2() {
   const [viewMode, setViewMode] = useState<ViewMode>('Binding');
   const [renderMode, setRenderMode] = useState<'cartoon' | 'surface' | 'confidence'>('cartoon');
   const [spinEnabled, setSpinEnabled] = useState(true);
-  const [selectedResidue, setSelectedResidue] = useState<{ position: number; name: string } | null>(null);
+  const [selectedResidue, setSelectedResidue] = useState<ResidueClickData | null>(null);
+  const [pendingMutation, setPendingMutation] = useState<string | null>(null);
 
   /* ── Workbench seed ──────────────────────────────────────────── */
   const recommendedSeed = useMemo(
@@ -526,8 +529,11 @@ export default function CatalystDesignerPageV2() {
   const bestPathway = pareto.candidates.find(c => c.id === pareto.bestOverall);
 
   /* ── Residue detail for inspector ────────────────────────────── */
-  const selectedCatalyticResidue = selectedResidue
-    ? enzyme.catalyticResidues.find(r => r.position === selectedResidue.position)
+  const selectedCatalyticResidue = selectedResidue?.catalyticResidue ?? null;
+
+  /* ── Mutagenesis site for selected residue ──────────────────── */
+  const selectedMutagenesisSite: MutagenesisSite | null = selectedResidue
+    ? mutagenesis.sites.find(s => s.position === selectedResidue.position) ?? null
     : null;
 
   /* ── Figure metadata for ScientificFigureFrame ───────────────── */
@@ -635,7 +641,7 @@ export default function CatalystDesignerPageV2() {
         <SectionLabel>Enzyme</SectionLabel>
         <select
           value={selectedEnzymeIdx}
-          onChange={e => { setSelectedEnzymeIdx(Number(e.target.value)); setSelectedResidue(null); }}
+          onChange={e => { setSelectedEnzymeIdx(Number(e.target.value)); setSelectedResidue(null); setPendingMutation(null); }}
           style={{
             fontFamily: T.SANS, fontSize: '12px', fontWeight: 600,
             color: VALUE, background: INPUT_BG, border: `1px solid ${INPUT_BORDER}`,
@@ -673,8 +679,9 @@ export default function CatalystDesignerPageV2() {
             enzyme={enzyme}
             renderMode={renderMode}
             spinEnabled={spinEnabled}
-            onResidueClick={(data) => setSelectedResidue({ position: data.position, name: data.name })}
+            onResidueClick={(data) => { setSelectedResidue(data); setPendingMutation(null); }}
             selectedResidue={selectedResidue?.position ?? null}
+            bindingQuality={kdToQuality(binding.predictedKd)}
             style={{ height: '100%' }}
           />
           {/* Render mode controls */}
@@ -701,10 +708,13 @@ export default function CatalystDesignerPageV2() {
           </div>
         </div>
 
-        {/* Inspector Panel */}
+        {/* Inspector Panel — glassmorphism */}
         <div style={{
           flex: '0 0 38%', minWidth: 0,
-          background: PANEL_BG, border: `1px solid ${BORDER}`, borderRadius: 20,
+          background: 'rgba(13,15,20,0.72)',
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
+          border: `1px solid ${BORDER}`, borderRadius: 20,
           padding: 14, display: 'flex', flexDirection: 'column', gap: 14,
           overflow: 'auto',
         }}>
@@ -713,8 +723,19 @@ export default function CatalystDesignerPageV2() {
             <div>
               <SectionLabel>Selected Residue</SectionLabel>
               <div style={{ ...GLASS, borderRadius: 14, padding: '10px 12px' }}>
-                <div style={{ fontFamily: T.MONO, fontSize: '14px', color: VALUE, fontWeight: 700, marginBottom: 4 }}>
-                  {selectedResidue.name}
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 4 }}>
+                  <span style={{ fontFamily: T.MONO, fontSize: '14px', color: VALUE, fontWeight: 700 }}>
+                    {selectedResidue.name}
+                  </span>
+                  <span style={{ fontFamily: T.MONO, fontSize: '9px', color: LABEL }}>
+                    pos {selectedResidue.position}
+                  </span>
+                  {selectedResidue.isCatalytic && (
+                    <span style={{
+                      fontFamily: T.MONO, fontSize: '7px', color: '#93CB52',
+                      background: 'rgba(147,203,82,0.12)', padding: '1px 5px', borderRadius: 4,
+                    }}>catalytic</span>
+                  )}
                 </div>
                 {selectedCatalyticResidue ? (
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
@@ -728,11 +749,87 @@ export default function CatalystDesignerPageV2() {
                     <span style={{ fontFamily: T.MONO, fontSize: '10px', color: Math.abs(selectedCatalyticResidue.pKaShift) > 0.5 ? '#FA8072' : VALUE }}>
                       {selectedCatalyticResidue.pKaShift > 0 ? '+' : ''}{selectedCatalyticResidue.pKaShift.toFixed(2)}
                     </span>
+                    {selectedResidue.distanceToSubstrate != null && (
+                      <>
+                        <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL }}>→ Substrate</span>
+                        <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE }}>{selectedResidue.distanceToSubstrate.toFixed(1)} Å</span>
+                      </>
+                    )}
                   </div>
                 ) : (
                   <p style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL, margin: 0 }}>
-                    Non-catalytic residue at position {selectedResidue.position}
+                    Non-catalytic residue — {selectedResidue.residueLetter} at position {selectedResidue.position}
                   </p>
+                )}
+              </div>
+
+              {/* Mutation Dropdown */}
+              <div style={{ marginTop: 8 }}>
+                <SectionLabel>Mutate to…</SectionLabel>
+                <select
+                  value={pendingMutation ?? ''}
+                  onChange={e => setPendingMutation(e.target.value || null)}
+                  style={{
+                    width: '100%', fontFamily: T.MONO, fontSize: '11px',
+                    color: INPUT_TEXT, background: INPUT_BG, border: `1px solid ${INPUT_BORDER}`,
+                    borderRadius: 10, padding: '5px 8px', cursor: 'pointer',
+                  }}
+                >
+                  <option value="">— select amino acid —</option>
+                  {['A','R','N','D','C','E','Q','G','H','I','L','K','M','F','P','S','T','W','Y','V']
+                    .filter(aa => aa !== selectedResidue.residueLetter)
+                    .map(aa => {
+                      const names: Record<string, string> = {
+                        A:'Ala',R:'Arg',N:'Asn',D:'Asp',C:'Cys',E:'Glu',Q:'Gln',G:'Gly',
+                        H:'His',I:'Ile',L:'Leu',K:'Lys',M:'Met',F:'Phe',P:'Pro',S:'Ser',
+                        T:'Thr',W:'Trp',Y:'Tyr',V:'Val',
+                      };
+                      const isSuggested = selectedMutagenesisSite?.suggestedMutants.includes(aa);
+                      return (
+                        <option key={aa} value={aa}>
+                          {aa} ({names[aa]}) {isSuggested ? '★ suggested' : ''}
+                        </option>
+                      );
+                    })}
+                </select>
+
+                {/* Predicted impact card */}
+                {pendingMutation && (
+                  <div style={{ ...GLASS, borderRadius: 12, padding: '8px 10px', marginTop: 6 }}>
+                    <div style={{ fontFamily: T.MONO, fontSize: '11px', color: VALUE, marginBottom: 4 }}>
+                      {selectedResidue.residueLetter}{selectedResidue.position}{pendingMutation}
+                    </div>
+                    {selectedMutagenesisSite && selectedMutagenesisSite.suggestedMutants.includes(pendingMutation) ? (
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3 }}>
+                        <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL }}>Δkcat</span>
+                        <span style={{ fontFamily: T.MONO, fontSize: '10px', color: selectedMutagenesisSite.predictedDeltaKcat > 1 ? '#93CB52' : '#FA8072' }}>
+                          {selectedMutagenesisSite.predictedDeltaKcat.toFixed(2)}×
+                        </span>
+                        <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL }}>ΔKm</span>
+                        <span style={{ fontFamily: T.MONO, fontSize: '10px', color: selectedMutagenesisSite.predictedDeltaKm < 1 ? '#93CB52' : '#FA8072' }}>
+                          {selectedMutagenesisSite.predictedDeltaKm.toFixed(2)}×
+                        </span>
+                        <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL }}>Effect</span>
+                        <span style={{ fontFamily: T.MONO, fontSize: '10px', color:
+                          selectedMutagenesisSite.predictedEffect === 'beneficial' ? '#93CB52' :
+                          selectedMutagenesisSite.predictedEffect === 'neutral' ? '#FFFB1F' : '#FA8072'
+                        }}>
+                          {selectedMutagenesisSite.predictedEffect}
+                        </span>
+                        <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL }}>Confidence</span>
+                        <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE }}>
+                          {(selectedMutagenesisSite.confidence * 100).toFixed(0)}%
+                        </span>
+                      </div>
+                    ) : (
+                      <p style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL, margin: 0 }}>
+                        No screening data for this substitution.
+                      </p>
+                    )}
+                    <p style={{ fontFamily: T.SANS, fontSize: '7px', color: 'rgba(255,255,255,0.25)', margin: '6px 0 0', fontStyle: 'italic' }}>
+                      BLOSUM62 heuristic screening score — not rigorous ΔΔG
+                    </p>
+                  </div>
                 )}
               </div>
             </div>
@@ -749,20 +846,43 @@ export default function CatalystDesignerPageV2() {
           <div>
             <SectionLabel>Quick Stats</SectionLabel>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <MetricCard label="Kd" value={binding.predictedKd.toFixed(2)} unit="μM" />
-                <span style={{ fontFamily: T.MONO, fontSize: '10px', color: kdQ.color }}>{kdQ.icon} {kdQ.label}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
+                <div style={{ flex: 1 }}>
+                  <MetricCard label="Kd" value={binding.predictedKd.toFixed(2)} unit="μM" />
+                </div>
+                <span style={{
+                  fontFamily: T.MONO, fontSize: '9px', color: bindingColorCSS(kdToQuality(binding.predictedKd)),
+                  padding: '2px 6px', borderRadius: 6,
+                  background: `${bindingColorCSS(kdToQuality(binding.predictedKd))}18`,
+                  whiteSpace: 'nowrap', flexShrink: 0, marginLeft: 6,
+                }}>{kdQ.icon} {kdQ.label}</span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <MetricCard label="kcat" value={enzyme.kcat.toFixed(2)} unit="s⁻¹" />
-                <span style={{ fontFamily: T.MONO, fontSize: '10px', color: kcatQ.color }}>{kcatQ.icon} {kcatQ.label}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
+                <div style={{ flex: 1 }}>
+                  <MetricCard label="kcat" value={enzyme.kcat.toFixed(2)} unit="s⁻¹" />
+                </div>
+                <span style={{
+                  fontFamily: T.MONO, fontSize: '9px', color: kcatQ.color,
+                  padding: '2px 6px', borderRadius: 6,
+                  background: `${kcatQ.color}18`,
+                  whiteSpace: 'nowrap', flexShrink: 0, marginLeft: 6,
+                }}>{kcatQ.icon} {kcatQ.label}</span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <MetricCard label="Km" value={enzyme.km.toFixed(3)} unit="mM" />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
+                <div style={{ flex: 1 }}>
+                  <MetricCard label="Km" value={enzyme.km.toFixed(3)} unit="mM" />
+                </div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <MetricCard label="Fit" value={binding.overallScore.toFixed(2)} />
-                <span style={{ fontFamily: T.MONO, fontSize: '10px', color: fitQ.color }}>{fitQ.icon} {fitQ.label}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
+                <div style={{ flex: 1 }}>
+                  <MetricCard label="Fit" value={binding.overallScore.toFixed(2)} />
+                </div>
+                <span style={{
+                  fontFamily: T.MONO, fontSize: '9px', color: fitQ.color,
+                  padding: '2px 6px', borderRadius: 6,
+                  background: `${fitQ.color}18`,
+                  whiteSpace: 'nowrap', flexShrink: 0, marginLeft: 6,
+                }}>{fitQ.icon} {fitQ.label}</span>
               </div>
             </div>
           </div>

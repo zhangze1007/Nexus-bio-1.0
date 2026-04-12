@@ -30,7 +30,7 @@ function bindingColor(quality: number): number {
   return (r << 16) | (g << 8) | 0x40;
 }
 
-function bindingColorCSS(quality: number): string {
+export function bindingColorCSS(quality: number): string {
   const q = Math.max(0, Math.min(1, quality));
   const r = Math.round(255 * (1 - q));
   const g = Math.round(200 * q);
@@ -38,7 +38,7 @@ function bindingColorCSS(quality: number): string {
 }
 
 /** Map Kd (µM) to a 0-1 binding quality. Lower Kd = better binding. */
-function kdToQuality(kd: number): number {
+export function kdToQuality(kd: number): number {
   // log-scale: Kd=0.1→1.0, Kd=10→0.5, Kd=1000→0.15, Kd=10000→0.0
   if (kd <= 0) return 1;
   return Math.max(0, Math.min(1, 1 - Math.log10(kd) / 4));
