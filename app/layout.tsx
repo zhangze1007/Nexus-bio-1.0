@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import './globals.css';
 import WorkbenchSyncProvider from '../src/components/workbench/WorkbenchSyncProvider';
 
@@ -40,7 +41,9 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <WorkbenchSyncProvider />
+        <Suspense fallback={null}>
+          <WorkbenchSyncProvider />
+        </Suspense>
         <div id="root">{children}</div>
       </body>
     </html>
