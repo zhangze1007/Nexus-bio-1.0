@@ -15,6 +15,7 @@
  */
 
 import { useEffect, useRef, useCallback, useMemo, useState, useLayoutEffect, type CSSProperties } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMachine } from '@xstate/react';
 import FluidSimCanvas from './FluidSimCanvas';
@@ -29,6 +30,9 @@ import ScientificMethodStrip from './shared/ScientificMethodStrip';
 import { PATHD_THEME } from '../workbench/workbenchTheme';
 import { metabolicMachine } from '../../machines/metabolicMachine';
 import type { FBAWorkerIn, FBAWorkerOut } from '../../workers/fbaWorker';
+import WorkflowArtifactDebugPanel from '../workflow/WorkflowArtifactDebugPanel';
+import { deriveAnalyzeCompatibilityProjection } from '../../domain/workflowArtifactAdapters';
+import type { WorkflowArtifact } from '../../domain/workflowArtifact';
 import { useUIStore } from '../../store/uiStore';
 import { useWorkbenchStore } from '../../store/workbenchStore';
 import pathwayNodes from '../../data/pathwayData.json';
@@ -61,15 +65,77 @@ const PATHD_SUPPORT_RAIL_WIDTH = 272;
 const PATHD_SCENE_GUTTER = 20;
 const PATHD_PANEL_BOTTOM = 18;
 type ControlVarsStyle = CSSProperties & Record<`--${string}`, string>;
+type PathdGraphSource = 'persisted' | 'in-memory' | 'compatibility-projection' | 'ui-graph' | 'demo' | 'none';
+
+function ArtifactRouteState({
+  title,
+  message,
+  artifact,
+  embedded,
+}: {
+  title: string;
+  message: string;
+  artifact: WorkflowArtifact | null;
+  embedded: boolean;
+}) {
+  return (
+    <div
+      style={{
+        minHeight: embedded ? '560px' : '100vh',
+        background: 'radial-gradient(circle at top, rgba(207,196,227,0.18), transparent 28%), radial-gradient(circle at bottom right, rgba(191,220,205,0.14), transparent 26%), linear-gradient(180deg, #0d0a09 0%, #050505 100%)',
+        display: 'grid',
+        placeItems: 'center',
+        padding: embedded ? '28px' : '40px 24px',
+      }}
+    >
+      <div
+        style={{
+          width: 'min(760px, 100%)',
+          borderRadius: '28px',
+          border: '1px solid rgba(255,255,255,0.1)',
+          background: 'linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03))',
+          boxShadow: '0 28px 64px rgba(0,0,0,0.34)',
+          padding: '22px',
+          display: 'grid',
+          gap: '16px',
+        }}
+      >
+        <div style={{ display: 'grid', gap: '8px' }}>
+          <div style={{ fontFamily: T.MONO, fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: PATHD_THEME.label }}>
+            Canonical PATHD route
+          </div>
+          <h2 style={{ margin: 0, fontFamily: T.SANS, fontSize: '28px', lineHeight: 1.1, color: PATHD_THEME.value }}>
+            {title}
+          </h2>
+          <p style={{ margin: 0, fontFamily: T.SANS, fontSize: '14px', lineHeight: 1.65, color: PATHD_THEME.label }}>
+            {message}
+          </p>
+        </div>
+
+        <WorkflowArtifactDebugPanel
+          artifact={artifact}
+          graphSource="none"
+          compatibilityProjectionActive={false}
+          title="PATHD workflow debug"
+        />
+      </div>
+    </div>
+  );
+}
 
 // ── Main orchestrator ──────────────────────────────────────────────────
 
 export default function MetabolicEngPage({ embedded = false }: { embedded?: boolean } = {}) {
+  const searchParams = useSearchParams();
+  const routeArtifactId = searchParams.get('artifact');
   const [snapshot, send] = useMachine(metabolicMachine);
   const { params, readouts, rateHistory } = snapshot.context;
   const state = snapshot.value as 'idle' | 'simulating' | 'stress_test' | 'equilibrium';
   const project = useWorkbenchStore((s) => s.project);
+  const workflowArtifact = useWorkbenchStore((s) => s.workflowArtifact);
   const analyzeArtifact = useWorkbenchStore((s) => s.analyzeArtifact);
+  const artifactLoadState = useWorkbenchStore((s) => s.artifactLoadState);
+  const artifactLoadError = useWorkbenchStore((s) => s.artifactLoadError);
   const setToolPayload = useWorkbenchStore((s) => s.setToolPayload);
 
   // ── Dismissible center dashboards — let user clear the view of the 3D canvas
@@ -81,30 +147,157 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
   // ── Zustand: node selection + AI-generated pathway ───────────────
   const selectedNode    = useUIStore(s => s.selectedNode);
   const setSelectedNode = useUIStore(s => s.setSelectedNode);
+  const setAiPathway    = useUIStore(s => s.setAiPathway);
   const aiNodes         = useUIStore(s => s.aiNodes);
   const aiEdges         = useUIStore(s => s.aiEdges);
+  const compiledWorkflowArtifact = workflowArtifact?.status === 'compiled' ? workflowArtifact : null;
+  const routeObservedArtifact = routeArtifactId && workflowArtifact?.id === routeArtifactId ? workflowArtifact : null;
+  const routeCompiledArtifact = routeArtifactId && compiledWorkflowArtifact?.id === routeArtifactId
+    ? compiledWorkflowArtifact
+    : null;
+  const localCompiledArtifact = !routeArtifactId ? compiledWorkflowArtifact : null;
+  const compatibilityGraph = analyzeArtifact && analyzeArtifact.nodes.length > 0
+    ? { nodes: analyzeArtifact.nodes, edges: analyzeArtifact.edges }
+    : null;
+  const uiGraph = aiNodes && aiNodes.length > 0 && aiEdges && aiEdges.length > 0
+    ? { nodes: aiNodes, edges: aiEdges }
+    : null;
+  const demoGraph = { nodes: pathwayNodes as PathwayNode[], edges: DEMO_EDGES };
+  const resolvedGraph = useMemo(() => {
+    if (routeArtifactId) {
+      if (routeCompiledArtifact?.atomicPathwayGraph) {
+        return {
+          source: artifactLoadState === 'loading' ? 'in-memory' : 'persisted',
+          nodes: routeCompiledArtifact.atomicPathwayGraph.nodes as PathwayNode[],
+          edges: routeCompiledArtifact.atomicPathwayGraph.edges as PathwayEdge[],
+          workflowArtifact: routeCompiledArtifact,
+        };
+      }
+      return {
+        source: 'none' as const,
+        nodes: [] as PathwayNode[],
+        edges: [] as PathwayEdge[],
+        workflowArtifact: null,
+      };
+    }
 
-  // Use AI-generated pathway when available; fall back to demo Artemisinin data
-  const activeNodes = (aiNodes && aiNodes.length > 0) ? aiNodes : (pathwayNodes as PathwayNode[]);
-  const activeEdges = (aiEdges && aiEdges.length > 0) ? aiEdges : DEMO_EDGES;
+    if (localCompiledArtifact?.atomicPathwayGraph) {
+      return {
+        source: 'in-memory' as const,
+        nodes: localCompiledArtifact.atomicPathwayGraph.nodes as PathwayNode[],
+        edges: localCompiledArtifact.atomicPathwayGraph.edges as PathwayEdge[],
+        workflowArtifact: localCompiledArtifact,
+      };
+    }
+
+    if (compatibilityGraph) {
+      return {
+        source: 'compatibility-projection' as const,
+        nodes: compatibilityGraph.nodes,
+        edges: compatibilityGraph.edges,
+        workflowArtifact: null,
+      };
+    }
+
+    if (uiGraph) {
+      return {
+        source: 'ui-graph' as const,
+        nodes: uiGraph.nodes,
+        edges: uiGraph.edges,
+        workflowArtifact: null,
+      };
+    }
+
+    return {
+      source: 'demo' as const,
+      nodes: demoGraph.nodes,
+      edges: demoGraph.edges,
+      workflowArtifact: null,
+    };
+  }, [
+    artifactLoadState,
+    compatibilityGraph,
+    demoGraph.edges,
+    demoGraph.nodes,
+    localCompiledArtifact,
+    routeArtifactId,
+    routeCompiledArtifact,
+    uiGraph,
+  ]);
+  const activeWorkflowArtifact = resolvedGraph.workflowArtifact;
+  const activeAnalyzeArtifact = useMemo(
+    () => activeWorkflowArtifact ? deriveAnalyzeCompatibilityProjection(activeWorkflowArtifact) : analyzeArtifact,
+    [activeWorkflowArtifact, analyzeArtifact],
+  );
+  const graphSource = resolvedGraph.source as PathdGraphSource;
+  const compatibilityProjectionActive = graphSource === 'compatibility-projection';
+  const activeNodes = resolvedGraph.nodes;
+  const activeEdges = resolvedGraph.edges;
+  const routeArtifactState = useMemo(() => {
+    if (!routeArtifactId) return null;
+    if (artifactLoadState === 'loading' && !routeCompiledArtifact) {
+      return {
+        title: 'Loading canonical artifact',
+        message: `PATHD is resolving artifact ${routeArtifactId}. Demo and UI graph fallbacks are disabled while a canonical artifact route is active.`,
+      };
+    }
+    if (artifactLoadState === 'empty') {
+      return {
+        title: 'Artifact not found',
+        message: `No persisted workflow artifact was found for ${routeArtifactId}. PATHD will not reconstruct a missing artifact route from local UI state or demo data.`,
+      };
+    }
+    if (artifactLoadState === 'error') {
+      return {
+        title: 'Artifact load failed',
+        message: artifactLoadError ?? `PATHD could not load canonical artifact ${routeArtifactId}.`,
+      };
+    }
+    if (!routeObservedArtifact) {
+      return {
+        title: 'Artifact unavailable',
+        message: `Artifact ${routeArtifactId} has not resolved into a canonical PATHD object yet.`,
+      };
+    }
+    if (routeObservedArtifact.status !== 'compiled') {
+      return {
+        title: 'Artifact not compiled',
+        message: `Artifact ${routeArtifactId} is currently ${routeObservedArtifact.status}. Analyze must compile and save successfully before PATHD can open it.`,
+      };
+    }
+    if (!routeObservedArtifact.atomicPathwayGraph || routeObservedArtifact.atomicPathwayGraph.nodes.length === 0) {
+      return {
+        title: 'Artifact graph is empty',
+        message: `Artifact ${routeArtifactId} does not contain an atomic pathway graph yet, so PATHD cannot render the route.`,
+      };
+    }
+    return null;
+  }, [artifactLoadError, artifactLoadState, routeArtifactId, routeCompiledArtifact, routeObservedArtifact]);
   const derivedTarget = useMemo(
-    () => analyzeArtifact?.targetProduct || project?.targetProduct || project?.title || inferPathwayTarget(activeNodes),
-    [activeNodes, analyzeArtifact?.targetProduct, project?.targetProduct, project?.title],
+    () => activeAnalyzeArtifact?.targetProduct || project?.targetProduct || project?.title || inferPathwayTarget(activeNodes),
+    [activeAnalyzeArtifact?.targetProduct, activeNodes, project?.targetProduct, project?.title],
   );
   const activeRouteLabel = useMemo(
-    () => analyzeArtifact?.pathwayCandidates[0]?.label || inferRouteLabel(activeNodes),
-    [activeNodes, analyzeArtifact?.pathwayCandidates],
+    () => activeAnalyzeArtifact?.pathwayCandidates[0]?.label || inferRouteLabel(activeNodes),
+    [activeAnalyzeArtifact?.pathwayCandidates, activeNodes],
   );
-  const recommendedNextTool = (analyzeArtifact?.recommendedNextTools[0] ?? 'fbasim').toUpperCase();
+  const recommendedNextTool = (activeAnalyzeArtifact?.recommendedNextTools[0] ?? 'fbasim').toUpperCase();
   const supportCards = useMemo(
     () => [
       {
         eyebrow: 'Stage 1 Context',
         value: derivedTarget,
-        body: analyzeArtifact
-          ? `Analyze-linked route active · ${activeRouteLabel}`
-          : 'Simulated route active until an Analyze artifact is attached.',
-        chips: [analyzeArtifact ? 'Analyze-linked' : 'Simulated context', 'Pathway hero'],
+        body: activeWorkflowArtifact
+          ? `Canonical artifact route active · ${activeRouteLabel}`
+          : activeAnalyzeArtifact
+            ? `Compatibility projection active · ${activeRouteLabel}`
+            : graphSource === 'ui-graph'
+              ? 'Renderer-local UI graph active until a canonical artifact is attached.'
+              : 'Simulated route active until an Analyze artifact is attached.',
+        chips: [
+          activeWorkflowArtifact ? 'Canonical artifact' : activeAnalyzeArtifact ? 'Compatibility projection' : graphSource === 'ui-graph' ? 'UI graph' : 'Simulated context',
+          'Pathway hero',
+        ],
       },
       {
         eyebrow: 'Route Object',
@@ -117,54 +310,71 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
       {
         eyebrow: 'Next Handoff',
         value: recommendedNextTool,
-        body: analyzeArtifact?.bottleneckAssumptions[0]?.label ?? 'No structured bottleneck has been injected yet; use PATHD to choose the next simulation handoff.',
+        body: activeAnalyzeArtifact?.bottleneckAssumptions[0]?.label ?? 'No structured bottleneck has been injected yet; use PATHD to choose the next simulation handoff.',
         chips: [
-          `${analyzeArtifact?.bottleneckAssumptions.length ?? 0} bottlenecks`,
-          `${analyzeArtifact?.enzymeCandidates.length ?? 0} enzyme candidates`,
+          `${activeAnalyzeArtifact?.bottleneckAssumptions.length ?? 0} bottlenecks`,
+          `${activeAnalyzeArtifact?.enzymeCandidates.length ?? 0} enzyme candidates`,
         ],
       },
     ],
     [
       activeEdges.length,
+      activeAnalyzeArtifact,
       activeNodes.length,
       activeRouteLabel,
-      analyzeArtifact,
+      activeWorkflowArtifact,
       derivedTarget,
+      graphSource,
       recommendedNextTool,
       selectedNode?.label,
     ],
   );
 
   useEffect(() => {
+    if (!activeWorkflowArtifact?.atomicPathwayGraph) return;
+    setAiPathway(
+      activeWorkflowArtifact.atomicPathwayGraph.nodes,
+      activeWorkflowArtifact.atomicPathwayGraph.edges,
+    );
+  }, [activeWorkflowArtifact?.atomicPathwayGraph, activeWorkflowArtifact?.id, activeWorkflowArtifact?.version, setAiPathway]);
+
+  useEffect(() => {
+    if (!selectedNode) return;
+    if (activeNodes.some((node) => node.id === selectedNode.id)) return;
+    setSelectedNode(null);
+  }, [activeNodes, selectedNode, setSelectedNode]);
+
+  useEffect(() => {
     setToolPayload('pathd', {
       toolId: 'pathd',
       targetProduct: derivedTarget,
-      sourceArtifactId: analyzeArtifact?.id,
+      sourceArtifactId: activeWorkflowArtifact?.id ?? activeAnalyzeArtifact?.id,
       activeRouteLabel,
       nodeCount: activeNodes.length,
       edgeCount: activeEdges.length,
       selectedNodeId: selectedNode?.id ?? null,
       result: {
-        pathwayCandidates: analyzeArtifact?.pathwayCandidates.length ?? 1,
-        bottleneckCount: analyzeArtifact?.bottleneckAssumptions.length ?? 0,
-        enzymeCandidates: analyzeArtifact?.enzymeCandidates.length ?? 0,
-        thermodynamicConcerns: analyzeArtifact?.thermodynamicConcerns.length ?? 0,
+        pathwayCandidates: activeAnalyzeArtifact?.pathwayCandidates.length ?? 1,
+        bottleneckCount: activeAnalyzeArtifact?.bottleneckAssumptions.length ?? 0,
+        enzymeCandidates: activeAnalyzeArtifact?.enzymeCandidates.length ?? 0,
+        thermodynamicConcerns: activeAnalyzeArtifact?.thermodynamicConcerns.length ?? 0,
         highlightedNode: selectedNode?.label ?? null,
-        recommendedNextTool: analyzeArtifact?.recommendedNextTools[0] ?? 'fbasim',
-        evidenceLinked: Boolean(analyzeArtifact?.id),
+        recommendedNextTool: activeAnalyzeArtifact?.recommendedNextTools[0] ?? 'fbasim',
+        evidenceLinked: Boolean(activeWorkflowArtifact?.id ?? activeAnalyzeArtifact?.id),
       },
       updatedAt: Date.now(),
     });
   }, [
     activeEdges.length,
+    activeAnalyzeArtifact?.bottleneckAssumptions.length,
+    activeAnalyzeArtifact?.enzymeCandidates.length,
+    activeAnalyzeArtifact?.id,
     activeNodes.length,
     activeRouteLabel,
-    analyzeArtifact?.bottleneckAssumptions.length,
-    analyzeArtifact?.enzymeCandidates.length,
-    analyzeArtifact?.id,
-    analyzeArtifact?.pathwayCandidates.length,
-    analyzeArtifact?.recommendedNextTools,
-    analyzeArtifact?.thermodynamicConcerns.length,
+    activeAnalyzeArtifact?.pathwayCandidates.length,
+    activeAnalyzeArtifact?.recommendedNextTools,
+    activeAnalyzeArtifact?.thermodynamicConcerns.length,
+    activeWorkflowArtifact?.id,
     derivedTarget,
     selectedNode?.id,
     selectedNode?.label,
@@ -353,6 +563,17 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
     return () => window.removeEventListener('mousemove', onMouseMove);
   }, [state]);
 
+  if (routeArtifactState) {
+    return (
+      <ArtifactRouteState
+        title={routeArtifactState.title}
+        message={routeArtifactState.message}
+        artifact={routeObservedArtifact}
+        embedded={embedded}
+      />
+    );
+  }
+
   return (
     <div
       ref={stageRef}
@@ -375,6 +596,14 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
 
       {embedded ? (
         <div className="nb-pathd-support-dock">
+          <div style={{ marginBottom: '10px' }}>
+            <WorkflowArtifactDebugPanel
+              artifact={activeWorkflowArtifact}
+              graphSource={graphSource}
+              compatibilityProjectionActive={compatibilityProjectionActive}
+              title="PATHD workflow debug"
+            />
+          </div>
           <div className="nb-pathd-support-dock__grid">
             {supportCards.map((card) => (
               <div
@@ -473,12 +702,20 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
           }}
         >
           <div style={{ pointerEvents: 'auto' }}>
+            <WorkflowArtifactDebugPanel
+              artifact={activeWorkflowArtifact}
+              graphSource={graphSource}
+              compatibilityProjectionActive={compatibilityProjectionActive}
+              title="PATHD workflow debug"
+            />
+          </div>
+          <div style={{ pointerEvents: 'auto' }}>
             <WorkbenchInlineContext
               toolId="pathd"
               title="Pathway & Enzyme Design"
               summary="PATHD keeps the active route, evidence state, and bottleneck focus visible while the pathway itself remains the main scientific figure."
               compact
-              isSimulated={!analyzeArtifact}
+              isSimulated={graphSource === 'demo'}
             />
           </div>
           {!heroDismissed && <div style={{ pointerEvents: 'auto' }}>
@@ -512,14 +749,14 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
                 },
                 {
                   label: 'Bottlenecks',
-                  value: `${analyzeArtifact?.bottleneckAssumptions.length ?? 0}`,
-                  detail: analyzeArtifact?.bottleneckAssumptions[0]?.label ?? 'No structured bottleneck has been injected from Analyze yet.',
-                  tone: (analyzeArtifact?.bottleneckAssumptions.length ?? 0) > 0 ? 'warm' : 'neutral',
+                  value: `${activeAnalyzeArtifact?.bottleneckAssumptions.length ?? 0}`,
+                  detail: activeAnalyzeArtifact?.bottleneckAssumptions[0]?.label ?? 'No structured bottleneck has been injected from Analyze yet.',
+                  tone: (activeAnalyzeArtifact?.bottleneckAssumptions.length ?? 0) > 0 ? 'warm' : 'neutral',
                 },
                 {
                   label: 'Enzyme Candidates',
-                  value: `${analyzeArtifact?.enzymeCandidates.length ?? 0}`,
-                  detail: analyzeArtifact?.enzymeCandidates[0]?.label ?? 'No enzyme candidate has been prioritized yet.',
+                  value: `${activeAnalyzeArtifact?.enzymeCandidates.length ?? 0}`,
+                  detail: activeAnalyzeArtifact?.enzymeCandidates[0]?.label ?? 'No enzyme candidate has been prioritized yet.',
                   tone: 'neutral',
                 },
                 {

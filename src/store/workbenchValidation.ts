@@ -1,5 +1,10 @@
 import { isValidEdge, isValidNode } from '../types';
 import type {
+  WorkflowArtifact,
+  WorkflowArtifactEdge,
+  WorkflowArtifactNode,
+} from '../domain/workflowArtifact';
+import type {
   WorkbenchBackendMeta,
   WorkbenchCollaborator,
   WorkbenchExperimentRecord,
@@ -120,6 +125,147 @@ function sanitizeAnalyzeArtifact(value: unknown): WorkbenchAnalyzeArtifact | nul
   };
 }
 
+function sanitizeWorkflowArtifactNode(value: unknown): WorkflowArtifactNode | null {
+  if (!isRecord(value) || typeof value.id !== 'string') return null;
+  const role = value.role;
+  if (
+    role !== 'metabolite'
+    && role !== 'enzyme'
+    && role !== 'gene'
+    && role !== 'cofactor'
+    && role !== 'intermediate'
+    && role !== 'impurity'
+    && role !== 'hypothesis'
+  ) {
+    return null;
+  }
+  return {
+    ...(value as unknown as WorkflowArtifactNode),
+    id: asString(value.id),
+    label: asString(value.label),
+    summary: asString(value.summary),
+    citation: asString(value.citation),
+    color: asString(value.color),
+    role,
+  };
+}
+
+function sanitizeWorkflowArtifactEdge(value: unknown): WorkflowArtifactEdge | null {
+  if (!isRecord(value) || typeof value.start !== 'string' || typeof value.end !== 'string') return null;
+  const role = value.role;
+  if (
+    role !== 'evidence-backed-transition'
+    && role !== 'inferred-transition'
+    && role !== 'catalysis'
+    && role !== 'regulation'
+    && role !== 'abstraction'
+  ) {
+    return null;
+  }
+  const key = asString(value.key);
+  if (!key) return null;
+  return {
+    ...(value as unknown as WorkflowArtifactEdge),
+    start: asString(value.start),
+    end: asString(value.end),
+    key,
+    role,
+  };
+}
+
+function sanitizeWorkflowArtifact(value: unknown): WorkflowArtifact | null {
+  if (!isRecord(value) || typeof value.id !== 'string') return null;
+  const status = value.status === 'compiled' || value.status === 'error' ? value.status : 'draft';
+  const sourcePage = value.sourcePage === 'research' || value.sourcePage === 'pathd' ? value.sourcePage : 'analyze';
+  const intake = isRecord(value.intake) ? value.intake : {};
+  const provenance = isRecord(value.provenance) ? value.provenance : {};
+  const workbench = isRecord(value.workbench) ? value.workbench : {};
+  const atomicPathwayGraph = isRecord(value.atomicPathwayGraph)
+    ? {
+        nodes: (Array.isArray(value.atomicPathwayGraph.nodes) ? value.atomicPathwayGraph.nodes : [])
+          .map(sanitizeWorkflowArtifactNode)
+          .filter(Boolean) as WorkflowArtifactNode[],
+        edges: (Array.isArray(value.atomicPathwayGraph.edges) ? value.atomicPathwayGraph.edges : [])
+          .map(sanitizeWorkflowArtifactEdge)
+          .filter(Boolean) as WorkflowArtifactEdge[],
+      }
+    : null;
+
+  return {
+    id: value.id,
+    schemaVersion: Math.max(1, asNumber(value.schemaVersion, 1)),
+    version: Math.max(0, asNumber(value.version)),
+    status,
+    sourcePage,
+    intake: {
+      sourceQuery: typeof intake.sourceQuery === 'string' ? intake.sourceQuery : undefined,
+      targetMolecule: typeof intake.targetMolecule === 'string' ? intake.targetMolecule : undefined,
+      projectIntent: typeof intake.projectIntent === 'string' ? intake.projectIntent : undefined,
+      rawAnalyzeInput: asString(intake.rawAnalyzeInput),
+    },
+    evidencePackets: (Array.isArray(value.evidencePackets) ? value.evidencePackets : []).map((packet) => {
+      if (!isRecord(packet) || typeof packet.id !== 'string') return null;
+      return {
+        id: packet.id,
+        sourceKind: packet.sourceKind === 'analysis' || packet.sourceKind === 'tool' || packet.sourceKind === 'system' ? packet.sourceKind : 'literature',
+        title: asString(packet.title),
+        abstract: asString(packet.abstract),
+        authors: asStringArray(packet.authors),
+        journal: typeof packet.journal === 'string' ? packet.journal : undefined,
+        year: typeof packet.year === 'string' ? packet.year : undefined,
+        doi: typeof packet.doi === 'string' ? packet.doi : undefined,
+        url: typeof packet.url === 'string' ? packet.url : undefined,
+        source: typeof packet.source === 'string' ? packet.source : undefined,
+        query: typeof packet.query === 'string' ? packet.query : undefined,
+      };
+    }).filter(Boolean) as WorkflowArtifact['evidencePackets'],
+    atomicPathwayGraph,
+    candidateRoutes: (Array.isArray(value.candidateRoutes) ? value.candidateRoutes : []).map((route) => {
+      if (!isRecord(route) || typeof route.id !== 'string') return null;
+      return {
+        id: route.id,
+        label: asString(route.label),
+        nodeIds: asStringArray(route.nodeIds),
+        edgeKeys: asStringArray(route.edgeKeys),
+        rank: Math.max(1, asNumber(route.rank, 1)),
+      };
+    }).filter(Boolean) as WorkflowArtifact['candidateRoutes'],
+    provenance: {
+      compiledFrom:
+        provenance.compiledFrom === 'literature-bundle'
+        || provenance.compiledFrom === 'pdf'
+        || provenance.compiledFrom === 'image'
+        || provenance.compiledFrom === 'url'
+          ? provenance.compiledFrom
+          : 'manual-text',
+      evidencePacketIds: asStringArray(provenance.evidencePacketIds),
+      sourceProvider: typeof provenance.sourceProvider === 'string' ? provenance.sourceProvider : undefined,
+    },
+    workbench: {
+      scientificStage:
+        workbench.scientificStage === 'simulate-optimize'
+        || workbench.scientificStage === 'engineer-host'
+        || workbench.scientificStage === 'test-learn'
+          ? workbench.scientificStage
+          : 'design',
+    },
+    thermodynamics: isRecord(value.thermodynamics)
+      ? {
+          status: 'placeholder',
+          concerns: asStringArray(value.thermodynamics.concerns),
+        }
+      : undefined,
+    flux: isRecord(value.flux)
+      ? {
+          status: 'placeholder',
+          notes: asStringArray(value.flux.notes),
+        }
+      : undefined,
+    createdAt: asNumber(value.createdAt, Date.now()),
+    updatedAt: asNumber(value.updatedAt, Date.now()),
+  };
+}
+
 function sanitizeToolRun(value: unknown): WorkbenchToolRun | null {
   if (!isRecord(value) || typeof value.id !== 'string' || typeof value.toolId !== 'string') return null;
   return {
@@ -217,10 +363,12 @@ export function sanitizeWorkbenchState(value: unknown): WorkbenchCanonicalState 
     schemaVersion: 1,
     revision: Math.max(0, asNumber(value.revision)),
     lastMutationAt: Math.max(0, asNumber(value.lastMutationAt)),
+    activeArtifactId: typeof value.activeArtifactId === 'string' ? value.activeArtifactId : null,
     project: sanitizeProject(value.project),
     evidenceItems: (Array.isArray(value.evidenceItems) ? value.evidenceItems : []).map(sanitizeEvidenceItem).filter(Boolean) as WorkbenchEvidenceItem[],
     selectedEvidenceIds: asStringArray(value.selectedEvidenceIds),
     draftAnalyzeInput: asString(value.draftAnalyzeInput),
+    workflowArtifact: sanitizeWorkflowArtifact(value.workflowArtifact),
     analyzeArtifact: sanitizeAnalyzeArtifact(value.analyzeArtifact),
     toolRuns: (Array.isArray(value.toolRuns) ? value.toolRuns : []).map(sanitizeToolRun).filter(Boolean) as WorkbenchToolRun[],
     toolPayloads: sanitizeToolPayloads(value.toolPayloads),

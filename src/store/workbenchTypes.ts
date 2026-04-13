@@ -7,6 +7,7 @@ import type {
 } from '../types';
 import type { WorkbenchToolPayloadMap } from './workbenchPayloads';
 import type { WorkbenchStageId } from '../components/tools/shared/workbenchConfig';
+import type { WorkflowArtifact } from '../domain/workflowArtifact';
 
 export type EvidenceSourceKind = 'literature' | 'analysis' | 'tool' | 'system';
 
@@ -197,10 +198,12 @@ export interface WorkbenchCanonicalState {
   schemaVersion: number;
   revision: number;
   lastMutationAt: number;
+  activeArtifactId: string | null;
   project: WorkbenchProjectBrief | null;
   evidenceItems: WorkbenchEvidenceItem[];
   selectedEvidenceIds: string[];
   draftAnalyzeInput: string;
+  workflowArtifact: WorkflowArtifact | null;
   analyzeArtifact: WorkbenchAnalyzeArtifact | null;
   toolRuns: WorkbenchToolRun[];
   toolPayloads: WorkbenchToolPayloadMap;

@@ -38,9 +38,6 @@ export default function ResearchClient() {
           onAnalyzePaper={(text) => {
             setDraftAnalyzeInput(text);
             router.push('/analyze');
-            setTimeout(() => {
-              window.dispatchEvent(new CustomEvent('autoFillAnalyzer', { detail: { text } }));
-            }, 500);
           }}
         />
       </div>

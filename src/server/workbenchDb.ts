@@ -12,6 +12,9 @@ import type {
 } from '../store/workbenchTypes';
 
 type SqliteDb = BetterSqlite3.Database;
+type ScopeResolveOptions = {
+  forceExplicit?: boolean;
+};
 
 const DEFAULT_PROJECT_ID = 'default-workbench';
 const SYSTEM_ACTOR_ID = 'system';
@@ -22,10 +25,12 @@ const EMPTY_STATE: WorkbenchCanonicalState = {
   schemaVersion: 1,
   revision: 0,
   lastMutationAt: 0,
+  activeArtifactId: null,
   project: null,
   evidenceItems: [],
   selectedEvidenceIds: [],
   draftAnalyzeInput: '',
+  workflowArtifact: null,
   analyzeArtifact: null,
   toolRuns: [],
   toolPayloads: {},
@@ -63,8 +68,8 @@ function toPayloadRecord(payload: WorkbenchRunArtifact['payloadSnapshot']) {
     : {};
 }
 
-function resolveProjectId(projectId?: string | null, state?: WorkbenchCanonicalState | null) {
-  const candidate = state?.project?.id ?? projectId;
+function resolveProjectId(projectId?: string | null, state?: WorkbenchCanonicalState | null, options?: ScopeResolveOptions) {
+  const candidate = options?.forceExplicit ? projectId : state?.project?.id ?? projectId;
   return candidate && candidate.trim().length > 0 ? candidate.trim() : DEFAULT_PROJECT_ID;
 }
 
@@ -73,11 +78,11 @@ function resolveActorId(actorId?: string | null) {
 }
 
 function inferProjectTitle(state: WorkbenchCanonicalState) {
-  return state.project?.title || state.analyzeArtifact?.title || 'Synthetic Biology Program';
+  return state.project?.title || state.analyzeArtifact?.title || state.workflowArtifact?.intake.targetMolecule || 'Synthetic Biology Program';
 }
 
 function inferTargetProduct(state: WorkbenchCanonicalState) {
-  return state.analyzeArtifact?.targetProduct || state.project?.targetProduct || 'Target Product';
+  return state.analyzeArtifact?.targetProduct || state.workflowArtifact?.intake.targetMolecule || state.project?.targetProduct || 'Target Product';
 }
 
 function inferProjectStatus(state: WorkbenchCanonicalState) {
@@ -493,8 +498,14 @@ export async function getWorkbenchDb() {
   return db;
 }
 
-export function readProjectState(db: SqliteDb, projectId?: string | null): WorkbenchCanonicalState {
-  const resolvedProjectId = resolveProjectId(projectId);
+export function projectStateExists(db: SqliteDb, projectId?: string | null, options?: ScopeResolveOptions) {
+  const resolvedProjectId = resolveProjectId(projectId, undefined, options);
+  const row = db.prepare('SELECT 1 as present FROM project_state WHERE project_id = ?').get(resolvedProjectId) as { present?: number } | undefined;
+  return Boolean(row?.present);
+}
+
+export function readProjectState(db: SqliteDb, projectId?: string | null, options?: ScopeResolveOptions): WorkbenchCanonicalState {
+  const resolvedProjectId = resolveProjectId(projectId, undefined, options);
   const row = db.prepare('SELECT state_json FROM project_state WHERE project_id = ?').get(resolvedProjectId) as { state_json?: string } | undefined;
   if (!row?.state_json) return EMPTY_STATE;
   try {
@@ -511,8 +522,9 @@ export function writeProjectState(
   state: WorkbenchCanonicalState,
   action = 'sync',
   detail = 'project state updated',
+  options?: ScopeResolveOptions,
 ) {
-  const resolvedProjectId = resolveProjectId(projectId, state);
+  const resolvedProjectId = resolveProjectId(projectId, state, options);
   const resolvedActorId = resolveActorId(actorId);
   const timestamp = now();
 
@@ -556,8 +568,8 @@ export function writeProjectState(
   tx();
 }
 
-export function getBackendMeta(db: SqliteDb, projectId?: string | null, actorId?: string | null) {
-  const resolvedProjectId = resolveProjectId(projectId);
+export function getBackendMeta(db: SqliteDb, projectId?: string | null, actorId?: string | null, options?: ScopeResolveOptions) {
+  const resolvedProjectId = resolveProjectId(projectId, undefined, options);
   const resolvedActorId = resolveActorId(actorId);
   const projectState = db.prepare('SELECT revision, updated_at FROM project_state WHERE project_id = ?').get(resolvedProjectId) as { revision?: number; updated_at?: number } | undefined;
   const runArtifactCount = db.prepare('SELECT COUNT(*) as count FROM project_run_artifact_index WHERE project_id = ?').get(resolvedProjectId) as { count: number };
@@ -585,9 +597,9 @@ export function getBackendMeta(db: SqliteDb, projectId?: string | null, actorId?
   };
 }
 
-export function listSyncAudit(db: SqliteDb, projectId?: string | null, limit = 12): WorkbenchSyncAuditEntry[] {
+export function listSyncAudit(db: SqliteDb, projectId?: string | null, limit = 12, options?: ScopeResolveOptions): WorkbenchSyncAuditEntry[] {
   const safeLimit = Math.max(1, Math.min(limit, 50));
-  const resolvedProjectId = resolveProjectId(projectId);
+  const resolvedProjectId = resolveProjectId(projectId, undefined, options);
   const rows = db.prepare(`
     SELECT id, project_id, actor_id, revision, action, status, detail, created_at
     FROM sync_audit
@@ -617,9 +629,9 @@ export function listSyncAudit(db: SqliteDb, projectId?: string | null, limit = 1
   }));
 }
 
-export function listCanonicalHistory(db: SqliteDb, projectId?: string | null, limit = 16): WorkbenchHistoryEntry[] {
+export function listCanonicalHistory(db: SqliteDb, projectId?: string | null, limit = 16, options?: ScopeResolveOptions): WorkbenchHistoryEntry[] {
   const safeLimit = Math.max(1, Math.min(limit, 64));
-  const resolvedProjectId = resolveProjectId(projectId);
+  const resolvedProjectId = resolveProjectId(projectId, undefined, options);
   const rows = db.prepare(`
     SELECT
       project_id,
@@ -663,9 +675,9 @@ export function listCanonicalHistory(db: SqliteDb, projectId?: string | null, li
   }));
 }
 
-export function listProjectMembers(db: SqliteDb, projectId?: string | null, limit = 24): WorkbenchCollaborator[] {
+export function listProjectMembers(db: SqliteDb, projectId?: string | null, limit = 24, options?: ScopeResolveOptions): WorkbenchCollaborator[] {
   const safeLimit = Math.max(1, Math.min(limit, 64));
-  const resolvedProjectId = resolveProjectId(projectId);
+  const resolvedProjectId = resolveProjectId(projectId, undefined, options);
   const rows = db.prepare(`
     SELECT pm.actor_id, a.display_name, pm.role, pm.last_seen_at
     FROM project_members pm
@@ -688,9 +700,9 @@ export function listProjectMembers(db: SqliteDb, projectId?: string | null, limi
   }));
 }
 
-export function listExperimentRecords(db: SqliteDb, projectId?: string | null, limit = 24): WorkbenchExperimentRecord[] {
+export function listExperimentRecords(db: SqliteDb, projectId?: string | null, limit = 24, options?: ScopeResolveOptions): WorkbenchExperimentRecord[] {
   const safeLimit = Math.max(1, Math.min(limit, 64));
-  const resolvedProjectId = resolveProjectId(projectId);
+  const resolvedProjectId = resolveProjectId(projectId, undefined, options);
   const rows = db.prepare(`
     SELECT
       record_id,

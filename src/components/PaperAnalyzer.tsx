@@ -15,8 +15,10 @@ import type { StructuredAnalysisPayload } from '../store/workbenchStore';
 
 interface PaperAnalyzerProps {
   onPathwayGenerated: (nodes: PathwayNode[], edges: PathwayEdge[]) => void;
-  onStructuredAnalysis?: (payload: StructuredAnalysisPayload) => void;
+  onStructuredAnalysis?: (payload: StructuredAnalysisPayload) => void | Promise<void>;
   initialText?: string;
+  pathdHref?: string | null;
+  pathdEnabled?: boolean;
 }
 
 /** Assign a semantic color from BIO_THEME_COLORS based on nodeType and risk. */
@@ -268,6 +270,8 @@ export default function PaperAnalyzer({
   onPathwayGenerated,
   onStructuredAnalysis,
   initialText,
+  pathdHref,
+  pathdEnabled = false,
 }: PaperAnalyzerProps) {
   const [text, setText] = useState(initialText ?? '');
   const [mode, setMode] = useState<InputMode>('text');
@@ -292,17 +296,6 @@ export default function PaperAnalyzer({
   const imageInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<AbortController | null>(null);
-
-  useEffect(() => {
-    const handler = (e: CustomEvent) => {
-      setText(e.detail.text);
-      setMode('text');
-      setAnalysisState('idle');
-      setErrorMsg(null);
-    };
-    window.addEventListener('autoFillAnalyzer', handler as EventListener);
-    return () => window.removeEventListener('autoFillAnalyzer', handler as EventListener);
-  }, []);
 
   useEffect(() => {
     if (!initialText?.trim()) return;
@@ -431,7 +424,7 @@ export default function PaperAnalyzer({
         sourceProvider: provider ?? null,
       };
 
-      onStructuredAnalysis?.(structuredPayload);
+      await onStructuredAnalysis?.(structuredPayload);
 
       // Progressive disclosure: if Axon has a Socratic question, show it first
       if (interaction?.question) {
@@ -660,23 +653,41 @@ export default function PaperAnalyzer({
                 </p>
               </div>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                <a
-                  href="/tools/pathd"
-                  style={{
-                    minHeight: '32px',
-                    padding: '0 12px',
-                    borderRadius: '999px',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    background: 'rgba(147,203,82,0.10)',
-                    color: 'rgba(255,255,255,0.75)',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    textDecoration: 'none',
-                    fontSize: '11px',
-                  }}
-                >
-                  Open PATHD workbench
-                </a>
+                {pathdEnabled && pathdHref ? (
+                  <a
+                    href={pathdHref}
+                    style={{
+                      minHeight: '32px',
+                      padding: '0 12px',
+                      borderRadius: '999px',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      background: 'rgba(147,203,82,0.10)',
+                      color: 'rgba(255,255,255,0.75)',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      textDecoration: 'none',
+                      fontSize: '11px',
+                    }}
+                  >
+                    Open PATHD workbench
+                  </a>
+                ) : (
+                  <span
+                    style={{
+                      minHeight: '32px',
+                      padding: '0 12px',
+                      borderRadius: '999px',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      background: 'rgba(255,255,255,0.03)',
+                      color: 'rgba(255,255,255,0.42)',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      fontSize: '11px',
+                    }}
+                  >
+                    Save compiled artifact to open PATHD
+                  </span>
+                )}
                 <a
                   href="/tools"
                   style={{

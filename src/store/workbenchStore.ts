@@ -3,6 +3,8 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import type { BottleneckEnzyme, DeNovoDesignStrategy, PathwayEdge, PathwayNode } from '../types';
+import type { WorkflowArtifact } from '../domain/workflowArtifact';
+import { deriveAnalyzeCompatibilityProjection } from '../domain/workflowArtifactAdapters';
 import type { WorkbenchToolPayloadMap } from './workbenchPayloads';
 import {
   sanitizeWorkbenchHistory,
@@ -52,6 +54,13 @@ export type {
   WorkbenchRunArtifact,
   WorkbenchToolRun,
 } from './workbenchTypes';
+export type {
+  ProductSourcePage,
+  ScientificStage,
+  WorkflowArtifact,
+  WorkflowArtifactStatus,
+  WorkflowEvidencePacket,
+} from '../domain/workflowArtifact';
 
 interface WorkbenchState extends WorkbenchCanonicalState {
   currentToolId: string | null;
@@ -66,19 +75,22 @@ interface WorkbenchState extends WorkbenchCanonicalState {
   hydratedFromServer: boolean;
   lastServerSyncAt: number | null;
   lastServerSyncedRevision: number;
+  artifactLoadState: 'idle' | 'loading' | 'ready' | 'empty' | 'error';
+  artifactLoadError: string | null;
+  artifactRequestedId: string | null;
   ensureProject: (seed?: Partial<WorkbenchProjectBrief>) => void;
   upsertEvidence: (item: Omit<WorkbenchEvidenceItem, 'id' | 'savedAt'>, options?: { select?: boolean }) => string;
   toggleEvidenceSelection: (id: string) => void;
   prepareAnalyzeFromEvidence: (ids?: string[]) => string;
   setDraftAnalyzeInput: (text: string) => void;
-  setAnalyzeArtifact: (artifact: WorkbenchAnalyzeArtifact) => void;
+  persistWorkflowArtifact: (artifact: WorkflowArtifact) => Promise<WorkflowArtifact>;
   visitTool: (toolId: string | null) => void;
   addToolRun: (run: Omit<WorkbenchToolRun, 'id' | 'createdAt' | 'stageId'> & { stageId?: WorkbenchStageId | null }) => void;
   setToolPayload: <K extends keyof WorkbenchToolPayloadMap>(toolId: K, payload: WorkbenchToolPayloadMap[K]) => void;
   seedDemoProject: (toolId?: string | null) => void;
   applyCanonicalState: (state: WorkbenchCanonicalState, options?: { markHydrated?: boolean; synced?: boolean; conflict?: boolean }) => void;
-  loadFromServer: () => Promise<void>;
-  syncToServer: () => Promise<void>;
+  loadFromServer: (options?: { artifactId?: string | null }) => Promise<void>;
+  syncToServer: (options?: { artifactId?: string | null }) => Promise<void>;
   resetWorkbench: () => void;
 }
 
@@ -269,10 +281,11 @@ function createRunArtifact<K extends keyof WorkbenchToolPayloadMap>(
   options?: { revalidated?: boolean },
 ): WorkbenchRunArtifact {
   const stageId = getStageForTool(toolId)?.id ?? null;
+  const analyzeArtifact = getAnalyzeArtifactForState(state);
   const execution = buildExecutionSnapshot({
     toolId,
     project: state.project,
-    analyzeArtifact: state.analyzeArtifact,
+    analyzeArtifact,
     runArtifacts: state.runArtifacts,
   });
   const summary = summarizePayload(toolId, payload);
@@ -281,8 +294,8 @@ function createRunArtifact<K extends keyof WorkbenchToolPayloadMap>(
     id: createId('run'),
     toolId,
     stageId,
-    targetProduct: payload?.targetProduct ?? state.analyzeArtifact?.targetProduct ?? state.project?.targetProduct ?? 'Target Product',
-    sourceArtifactId: payload?.sourceArtifactId ?? state.analyzeArtifact?.id,
+    targetProduct: payload?.targetProduct ?? analyzeArtifact?.targetProduct ?? state.project?.targetProduct ?? 'Target Product',
+    sourceArtifactId: payload?.sourceArtifactId ?? analyzeArtifact?.id,
     upstreamArtifactIds: execution.upstreamArtifactIds,
     execution,
     summary: options?.revalidated ? `${summary} · context refreshed` : summary,
@@ -297,10 +310,12 @@ function buildCanonicalSlice(state: Pick<
   | 'schemaVersion'
   | 'revision'
   | 'lastMutationAt'
+  | 'activeArtifactId'
   | 'project'
   | 'evidenceItems'
   | 'selectedEvidenceIds'
   | 'draftAnalyzeInput'
+  | 'workflowArtifact'
   | 'analyzeArtifact'
   | 'toolRuns'
   | 'toolPayloads'
@@ -312,10 +327,12 @@ function buildCanonicalSlice(state: Pick<
     schemaVersion: state.schemaVersion,
     revision: state.revision,
     lastMutationAt: state.lastMutationAt,
+    activeArtifactId: state.activeArtifactId,
     project: state.project,
     evidenceItems: state.evidenceItems,
     selectedEvidenceIds: state.selectedEvidenceIds,
     draftAnalyzeInput: state.draftAnalyzeInput,
+    workflowArtifact: state.workflowArtifact,
     analyzeArtifact: state.analyzeArtifact,
     toolRuns: state.toolRuns,
     toolPayloads: state.toolPayloads,
@@ -339,11 +356,15 @@ function touchState(state: WorkbenchState, patch: Partial<WorkbenchCanonicalStat
 async function requestCanonicalState(
   method: 'GET' | 'PUT',
   state?: WorkbenchCanonicalState,
-  options?: { projectId?: string | null },
+  options?: { projectId?: string | null; artifactId?: string | null },
 ) {
   const actorId = getWorkbenchActorId();
-  const projectId = state?.project?.id ?? options?.projectId ?? DEFAULT_PROJECT_SYNC_SCOPE;
-  const response = await fetch('/api/workbench', {
+  const projectId = options?.projectId ?? state?.project?.id ?? DEFAULT_PROJECT_SYNC_SCOPE;
+  const artifactId = options?.artifactId ?? state?.activeArtifactId ?? state?.workflowArtifact?.id ?? null;
+  const url = artifactId
+    ? `/api/workbench?artifact=${encodeURIComponent(artifactId)}`
+    : '/api/workbench';
+  const response = await fetch(url, {
     method,
     headers: {
       'Content-Type': 'application/json',
@@ -383,6 +404,51 @@ async function requestCanonicalState(
     experimentRecords: sanitizeWorkbenchExperimentRecords(payload?.experiments),
     auditLog: sanitizeWorkbenchAuditLog(payload?.audit),
     historyLog: sanitizeWorkbenchHistory(payload?.history),
+  };
+}
+
+function getAnalyzeArtifactForState(state: Pick<WorkbenchState, 'workflowArtifact' | 'analyzeArtifact'>) {
+  return state.workflowArtifact
+    ? deriveAnalyzeCompatibilityProjection(state.workflowArtifact)
+    : state.analyzeArtifact;
+}
+
+function buildCanonicalPatchFromWorkflowArtifact(
+  state: WorkbenchState,
+  artifact: WorkflowArtifact,
+): Partial<WorkbenchCanonicalState> {
+  const analyzeArtifact = deriveAnalyzeCompatibilityProjection(artifact);
+  const project = state.project ?? {
+    id: createId('project'),
+    title: analyzeArtifact.title,
+    summary: analyzeArtifact.summary,
+    targetProduct: analyzeArtifact.targetProduct,
+    status: 'active' as const,
+    isDemo: false,
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  };
+
+  return {
+    activeArtifactId: artifact.id || null,
+    workflowArtifact: artifact,
+    analyzeArtifact,
+    project: {
+      ...project,
+      title: project.isDemo ? analyzeArtifact.title : project.title || analyzeArtifact.title,
+      summary: analyzeArtifact.summary,
+      targetProduct: analyzeArtifact.targetProduct,
+      sourceQuery: artifact.intake.sourceQuery ?? project.sourceQuery,
+      status: 'active',
+      isDemo: false,
+      updatedAt: Date.now(),
+    },
+    checkpoints: buildCheckpoints('stage-1', analyzeArtifact, state.toolRuns),
+    nextRecommendations: buildRecommendationsFromToolIds(
+      analyzeArtifact.recommendedNextTools,
+      'analysis',
+      'Recommended from canonical workflow artifact',
+    ),
   };
 }
 
@@ -447,10 +513,12 @@ const initialState: Pick<
   | 'schemaVersion'
   | 'revision'
   | 'lastMutationAt'
+  | 'activeArtifactId'
   | 'project'
   | 'evidenceItems'
   | 'selectedEvidenceIds'
   | 'draftAnalyzeInput'
+  | 'workflowArtifact'
   | 'analyzeArtifact'
   | 'toolRuns'
   | 'toolPayloads'
@@ -469,14 +537,19 @@ const initialState: Pick<
   | 'hydratedFromServer'
   | 'lastServerSyncAt'
   | 'lastServerSyncedRevision'
+  | 'artifactLoadState'
+  | 'artifactLoadError'
+  | 'artifactRequestedId'
 > = {
   schemaVersion: WORKBENCH_SCHEMA_VERSION,
   revision: 0,
   lastMutationAt: 0,
+  activeArtifactId: null,
   project: null,
   evidenceItems: [],
   selectedEvidenceIds: [],
   draftAnalyzeInput: '',
+  workflowArtifact: null,
   analyzeArtifact: null,
   toolRuns: [],
   toolPayloads: {},
@@ -495,6 +568,9 @@ const initialState: Pick<
   hydratedFromServer: false,
   lastServerSyncAt: null,
   lastServerSyncedRevision: 0,
+  artifactLoadState: 'idle',
+  artifactLoadError: null,
+  artifactRequestedId: null,
 };
 
 export const useWorkbenchStore = create<WorkbenchState>()(
@@ -606,7 +682,7 @@ export const useWorkbenchStore = create<WorkbenchState>()(
         set((currentState) => touchState(currentState, {
           draftAnalyzeInput: composed,
           selectedEvidenceIds: targetIds,
-          checkpoints: buildCheckpoints('stage-1', currentState.analyzeArtifact, currentState.toolRuns),
+          checkpoints: buildCheckpoints('stage-1', getAnalyzeArtifactForState(currentState), currentState.toolRuns),
         }));
 
         set({ currentStageId: 'stage-1' });
@@ -617,44 +693,65 @@ export const useWorkbenchStore = create<WorkbenchState>()(
         set((state) => touchState(state, { draftAnalyzeInput: text }));
       },
 
-      setAnalyzeArtifact: (artifact) => {
-        const nextRecommendations = buildRecommendationsFromToolIds(
-          artifact.recommendedNextTools,
-          'analysis',
-          'Recommended from Analyze output',
-        );
-        set((state) => {
-          const project = state.project ?? {
-            id: createId('project'),
-            title: artifact.title,
-            summary: artifact.summary,
-            targetProduct: artifact.targetProduct,
-            status: 'active' as const,
-            isDemo: false,
-            createdAt: Date.now(),
-            updatedAt: Date.now(),
-          };
-
-          const updatedProject: WorkbenchProjectBrief = {
-            ...project,
-            title: project.isDemo ? artifact.title : project.title || artifact.title,
-            summary: artifact.summary,
-            targetProduct: artifact.targetProduct,
-            status: 'active',
-            isDemo: false,
-            updatedAt: Date.now(),
-          };
-
-          return {
-            ...touchState(state, {
-              project: updatedProject,
-              analyzeArtifact: artifact,
-              checkpoints: buildCheckpoints('stage-1', artifact, state.toolRuns),
-              nextRecommendations,
-            }),
-            currentStageId: 'stage-1',
-          };
+      persistWorkflowArtifact: async (artifact) => {
+        const state = get();
+        const previousArtifact = state.workflowArtifact?.id === artifact.id
+          ? state.workflowArtifact
+          : null;
+        const candidate: WorkflowArtifact = {
+          ...artifact,
+          status: artifact.status === 'error' ? 'error' : 'compiled',
+          version: (previousArtifact?.version ?? 0) + 1,
+          createdAt: previousArtifact?.createdAt ?? artifact.createdAt ?? Date.now(),
+          updatedAt: Date.now(),
+          sourcePage: 'analyze',
+        };
+        const patch = buildCanonicalPatchFromWorkflowArtifact(state, candidate);
+        const canonicalState = buildCanonicalSlice({
+          ...state,
+          ...patch,
         });
+
+        set({
+          syncStatus: 'saving',
+          syncError: null,
+          artifactLoadState: 'loading',
+          artifactLoadError: null,
+          artifactRequestedId: candidate.id || null,
+        });
+
+        const { canonicalState: savedState, backendMeta, collaborators, experimentRecords, auditLog, historyLog } = await requestCanonicalState('PUT', canonicalState, {
+          artifactId: candidate.id || null,
+          projectId: canonicalState.project?.id ?? DEFAULT_PROJECT_SYNC_SCOPE,
+        });
+        const savedArtifact = savedState.workflowArtifact;
+        if (!savedArtifact) {
+          throw new Error('Canonical artifact save completed without a persisted workflow artifact');
+        }
+
+        set((currentState) => ({
+          ...currentState,
+          ...savedState,
+          analyzeArtifact: savedState.workflowArtifact
+            ? deriveAnalyzeCompatibilityProjection(savedState.workflowArtifact)
+            : savedState.analyzeArtifact,
+          backendMeta,
+          collaborators,
+          experimentRecords,
+          syncAuditLog: auditLog,
+          historyLog,
+          syncStatus: 'synced',
+          syncError: null,
+          hydratedFromServer: true,
+          lastServerSyncAt: Date.now(),
+          lastServerSyncedRevision: savedState.revision,
+          artifactLoadState: 'ready',
+          artifactLoadError: null,
+          artifactRequestedId: savedArtifact.id,
+          currentStageId: 'stage-1',
+        }));
+
+        return savedArtifact;
       },
 
       visitTool: (toolId) => {
@@ -662,7 +759,7 @@ export const useWorkbenchStore = create<WorkbenchState>()(
           set((state) => ({
             currentToolId: null,
             currentStageId: null,
-            checkpoints: buildCheckpoints(null, state.analyzeArtifact, state.toolRuns),
+            checkpoints: buildCheckpoints(null, getAnalyzeArtifactForState(state), state.toolRuns),
           }));
           return;
         }
@@ -691,7 +788,7 @@ export const useWorkbenchStore = create<WorkbenchState>()(
           return {
             ...touchState(state, {
               toolRuns,
-              checkpoints: buildCheckpoints(stage?.id ?? null, state.analyzeArtifact, toolRuns),
+              checkpoints: buildCheckpoints(stage?.id ?? null, getAnalyzeArtifactForState(state), toolRuns),
               nextRecommendations: buildRecommendationsFromToolIds(
                 getNextToolIds(toolId),
                 'flow',
@@ -721,7 +818,7 @@ export const useWorkbenchStore = create<WorkbenchState>()(
           ].slice(0, TOOL_RUN_LIMIT);
           return touchState(state, {
             toolRuns,
-            checkpoints: buildCheckpoints(state.currentStageId, state.analyzeArtifact, toolRuns),
+            checkpoints: buildCheckpoints(state.currentStageId, getAnalyzeArtifactForState(state), toolRuns),
           });
         });
       },
@@ -733,7 +830,7 @@ export const useWorkbenchStore = create<WorkbenchState>()(
           const nextExecution = buildExecutionSnapshot({
             toolId,
             project: state.project,
-            analyzeArtifact: state.analyzeArtifact,
+            analyzeArtifact: getAnalyzeArtifactForState(state),
             runArtifacts: state.runArtifacts,
           });
           const payloadStable = stableSerialize(previousPayload) === stableSerialize(payload);
@@ -766,7 +863,7 @@ export const useWorkbenchStore = create<WorkbenchState>()(
             },
             runArtifacts: [runArtifact, ...state.runArtifacts].slice(0, RUN_ARTIFACT_LIMIT),
             toolRuns,
-            checkpoints: buildCheckpoints(state.currentStageId, state.analyzeArtifact, toolRuns),
+            checkpoints: buildCheckpoints(state.currentStageId, getAnalyzeArtifactForState(state), toolRuns),
             nextRecommendations: buildRecommendationsFromToolIds(
               getNextToolIds(toolId),
               'tool',
@@ -791,7 +888,7 @@ export const useWorkbenchStore = create<WorkbenchState>()(
               createdAt: now,
               updatedAt: now,
             },
-            checkpoints: buildCheckpoints(stage?.id ?? null, state.analyzeArtifact, state.toolRuns),
+            checkpoints: buildCheckpoints(stage?.id ?? null, getAnalyzeArtifactForState(state), state.toolRuns),
           }),
           currentStageId: state.currentStageId ?? stage?.id ?? null,
         }));
@@ -800,9 +897,14 @@ export const useWorkbenchStore = create<WorkbenchState>()(
       applyCanonicalState: (incomingState, options) => {
         const sanitized = sanitizeWorkbenchState(incomingState);
         if (!sanitized) return;
+        const derivedAnalyzeArtifact = sanitized.workflowArtifact
+          ? deriveAnalyzeCompatibilityProjection(sanitized.workflowArtifact)
+          : sanitized.analyzeArtifact;
         set((state) => ({
           ...state,
           ...sanitized,
+          activeArtifactId: sanitized.activeArtifactId ?? sanitized.workflowArtifact?.id ?? null,
+          analyzeArtifact: derivedAnalyzeArtifact,
           syncStatus: options?.conflict ? 'conflict' : options?.synced ? 'synced' : state.syncStatus,
           syncError: null,
           hydratedFromServer: options?.markHydrated ? true : state.hydratedFromServer,
@@ -811,14 +913,35 @@ export const useWorkbenchStore = create<WorkbenchState>()(
         }));
       },
 
-      loadFromServer: async () => {
-        set({ syncStatus: 'loading', syncError: null });
+      loadFromServer: async (options) => {
+        const artifactId = options?.artifactId ?? null;
+        set({
+          syncStatus: 'loading',
+          syncError: null,
+          artifactLoadState: artifactId ? 'loading' : get().artifactLoadState,
+          artifactLoadError: artifactId ? null : get().artifactLoadError,
+          artifactRequestedId: artifactId,
+        });
         try {
           const { canonicalState, backendMeta, collaborators, experimentRecords, auditLog, historyLog } = await requestCanonicalState('GET', undefined, {
-            projectId: get().project?.id ?? DEFAULT_PROJECT_SYNC_SCOPE,
+            artifactId,
+            projectId: artifactId ? undefined : get().project?.id ?? DEFAULT_PROJECT_SYNC_SCOPE,
           });
+          const derivedAnalyzeArtifact = canonicalState.workflowArtifact
+            ? deriveAnalyzeCompatibilityProjection(canonicalState.workflowArtifact)
+            : canonicalState.analyzeArtifact;
           set((state) => {
-            if (canonicalState.revision < state.revision) {
+            const currentArtifact = artifactId ? state.workflowArtifact : null;
+            const incomingArtifact = artifactId ? canonicalState.workflowArtifact : null;
+            const persistedArtifactIsNewer = Boolean(
+              artifactId
+              && currentArtifact
+              && incomingArtifact
+              && currentArtifact.id === incomingArtifact.id
+              && incomingArtifact.version > currentArtifact.version
+            );
+
+            if (canonicalState.revision < state.revision && !persistedArtifactIsNewer) {
               return {
                 backendMeta,
                 collaborators,
@@ -830,11 +953,16 @@ export const useWorkbenchStore = create<WorkbenchState>()(
                 hydratedFromServer: true,
                 lastServerSyncAt: Date.now(),
                 lastServerSyncedRevision: canonicalState.revision,
+                artifactLoadState: artifactId ? 'ready' : state.artifactLoadState,
+                artifactLoadError: null,
+                artifactRequestedId: artifactId,
               };
             }
             return {
               ...state,
               ...canonicalState,
+              activeArtifactId: canonicalState.activeArtifactId ?? canonicalState.workflowArtifact?.id ?? state.activeArtifactId,
+              analyzeArtifact: derivedAnalyzeArtifact,
               backendMeta,
               collaborators,
               experimentRecords,
@@ -845,29 +973,50 @@ export const useWorkbenchStore = create<WorkbenchState>()(
               hydratedFromServer: true,
               lastServerSyncAt: Date.now(),
               lastServerSyncedRevision: canonicalState.revision,
+              artifactLoadState: artifactId ? 'ready' : state.artifactLoadState,
+              artifactLoadError: null,
+              artifactRequestedId: artifactId,
             };
           });
         } catch (error) {
+          const status = error && typeof error === 'object' && 'status' in error
+            ? Number((error as { status?: unknown }).status)
+            : null;
           set({
-            syncStatus: 'error',
-            syncError: error instanceof Error ? error.message : 'Failed to load canonical workbench state',
+            syncStatus: status === 404 ? 'synced' : 'error',
+            syncError: status === 404
+              ? null
+              : error instanceof Error ? error.message : 'Failed to load canonical workbench state',
             hydratedFromServer: true,
+            artifactLoadState: artifactId ? (status === 404 ? 'empty' : 'error') : get().artifactLoadState,
+            artifactLoadError: artifactId
+              ? error instanceof Error ? error.message : 'Failed to resolve canonical workflow artifact'
+              : get().artifactLoadError,
+            artifactRequestedId: artifactId,
+            workflowArtifact: status === 404 && artifactId ? null : get().workflowArtifact,
+            analyzeArtifact: status === 404 && artifactId ? null : get().analyzeArtifact,
+            activeArtifactId: status === 404 && artifactId ? null : get().activeArtifactId,
           });
         }
       },
 
-      syncToServer: async () => {
+      syncToServer: async (options) => {
         const state = get();
         if (!state.hydratedFromServer) return;
         const canonicalState = buildCanonicalSlice(state);
         set({ syncStatus: 'saving', syncError: null });
         try {
           const { canonicalState: savedState, backendMeta, collaborators, experimentRecords, auditLog, historyLog } = await requestCanonicalState('PUT', canonicalState, {
+            artifactId: options?.artifactId ?? canonicalState.activeArtifactId,
             projectId: canonicalState.project?.id ?? DEFAULT_PROJECT_SYNC_SCOPE,
           });
           set((currentState) => ({
             ...currentState,
             ...savedState,
+            activeArtifactId: savedState.activeArtifactId ?? savedState.workflowArtifact?.id ?? currentState.activeArtifactId,
+            analyzeArtifact: savedState.workflowArtifact
+              ? deriveAnalyzeCompatibilityProjection(savedState.workflowArtifact)
+              : savedState.analyzeArtifact,
             backendMeta,
             collaborators,
             experimentRecords,
@@ -902,6 +1051,10 @@ export const useWorkbenchStore = create<WorkbenchState>()(
             set((currentState) => ({
               ...currentState,
               ...conflictState,
+              activeArtifactId: conflictState.activeArtifactId ?? conflictState.workflowArtifact?.id ?? currentState.activeArtifactId,
+              analyzeArtifact: conflictState.workflowArtifact
+                ? deriveAnalyzeCompatibilityProjection(conflictState.workflowArtifact)
+                : conflictState.analyzeArtifact,
               backendMeta,
               collaborators,
               experimentRecords,
@@ -932,13 +1085,20 @@ export const useWorkbenchStore = create<WorkbenchState>()(
     }),
     {
       name: 'nexus-bio-workbench',
-      version: 2,
+      version: 3,
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => buildCanonicalSlice(state),
       merge: (persistedState, currentState) => {
         const sanitized = sanitizeWorkbenchState(persistedState);
         return sanitized
-          ? { ...currentState, ...sanitized }
+          ? {
+              ...currentState,
+              ...sanitized,
+              activeArtifactId: sanitized.activeArtifactId ?? sanitized.workflowArtifact?.id ?? null,
+              analyzeArtifact: sanitized.workflowArtifact
+                ? deriveAnalyzeCompatibilityProjection(sanitized.workflowArtifact)
+                : sanitized.analyzeArtifact,
+            }
           : currentState;
       },
     },
