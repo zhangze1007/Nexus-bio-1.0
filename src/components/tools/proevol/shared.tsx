@@ -18,6 +18,12 @@ export const PROEVOL_THEME = {
   apricot: PATHD_THEME.apricot,
   sky: PATHD_THEME.sky,
   lilac: PATHD_THEME.lilac,
+  riskLow: PATHD_THEME.riskLow,
+  riskMedium: PATHD_THEME.riskMedium,
+  riskHigh: PATHD_THEME.riskHigh,
+  successLow: PATHD_THEME.successLow,
+  successMedium: PATHD_THEME.successMedium,
+  successHigh: PATHD_THEME.successHigh,
 };
 
 export function formatSigned(value: number, digits = 1) {
@@ -30,9 +36,9 @@ export function formatPercent(value: number, digits = 0) {
 }
 
 export function toneColor(tone: 'neutral' | 'cool' | 'warm' | 'alert') {
-  if (tone === 'cool') return PROEVOL_THEME.mint;
-  if (tone === 'warm') return PROEVOL_THEME.apricot;
-  if (tone === 'alert') return PROEVOL_THEME.coral;
+  if (tone === 'cool') return PROEVOL_THEME.successHigh;
+  if (tone === 'warm') return PROEVOL_THEME.riskMedium;
+  if (tone === 'alert') return PROEVOL_THEME.riskHigh;
   return PROEVOL_THEME.sky;
 }
 

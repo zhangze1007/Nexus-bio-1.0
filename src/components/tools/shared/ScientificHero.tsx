@@ -25,21 +25,36 @@ interface ScientificHeroProps {
   onDismiss?: () => void;
 }
 
-// P2.1 — Tufte: eliminated sub-threshold color differences between neutral/cool/warm.
-// Only alert carries a visually distinct palette (salmon) because it requires user attention.
 function toneStyle(tone: ScientificSignalTone = 'neutral') {
-  if (tone === 'alert') {
+  if (tone === 'cool') {
     return {
-      border: 'rgba(232,163,161,0.34)',
-      background: 'rgba(232,163,161,0.14)',
-      color: 'rgba(252,222,220,0.96)',
+      border: `${PATHD_THEME.successMedium}55`,
+      background: `${PATHD_THEME.successLow}18`,
+      color: PATHD_THEME.successHigh,
+      detailColor: 'rgba(210, 238, 220, 0.82)',
     };
   }
-  // neutral / cool / warm — unified muted style
+  if (tone === 'warm') {
+    return {
+      border: `${PATHD_THEME.riskMedium}52`,
+      background: `${PATHD_THEME.riskLow}18`,
+      color: PATHD_THEME.riskMedium,
+      detailColor: 'rgba(241, 220, 184, 0.84)',
+    };
+  }
+  if (tone === 'alert') {
+    return {
+      border: `${PATHD_THEME.riskHigh}60`,
+      background: `${PATHD_THEME.riskHigh}1f`,
+      color: '#FFB1AC',
+      detailColor: 'rgba(255, 204, 198, 0.86)',
+    };
+  }
   return {
     border: 'rgba(200,200,216,0.28)',
     background: 'rgba(200,200,216,0.10)',
     color: PATHD_THEME.value,
+    detailColor: 'rgba(234,240,248,0.7)',
   };
 }
 
@@ -309,7 +324,7 @@ export default function ScientificHero({
                   style={{
                     fontFamily: T.SANS,
                     fontSize: '10px',
-                    color: 'rgba(234,240,248,0.7)',
+                    color: style.detailColor,
                     lineHeight: 1.5,
                   }}
                 >

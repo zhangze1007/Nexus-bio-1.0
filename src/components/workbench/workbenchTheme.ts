@@ -4,6 +4,12 @@ export const PATHD_THEME = {
   mint: '#BFDCCD',
   sky: '#AFC3D6',
   lilac: '#CFC4E3',
+  riskLow: '#D9BC5D',
+  riskMedium: '#E58F46',
+  riskHigh: '#D96562',
+  successLow: '#88A9C8',
+  successMedium: '#86C2C6',
+  successHigh: '#9ECE7E',
   // Legacy aliases — identical to coral/apricot/mint/sky/lilac above.
   // Retained because FORBIDDEN files (DBTLflowPage, GECAIRPage, ProEvolPage)
   // reference them. New code should use the canonical names.

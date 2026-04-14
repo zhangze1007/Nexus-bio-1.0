@@ -17,9 +17,23 @@ import { PATHD_THEME } from './workbench/workbenchTheme';
 // ── Compliance thresholds ─────────────────────────────────────────────
 const HIGH_RISK_THRESHOLD = 0.7;
 const MODERATE_RISK_THRESHOLD = 0.3;
+const STRONG_SUCCESS_THRESHOLD = 0.75;
+const MODERATE_SUCCESS_THRESHOLD = 0.45;
 import { T } from './ide/tokens';
 const UI_SANS = T.SANS;
 const UI_MONO = T.MONO;
+
+function riskMetricColor(value: number) {
+  if (value >= HIGH_RISK_THRESHOLD) return PATHD_THEME.riskHigh;
+  if (value >= MODERATE_RISK_THRESHOLD) return PATHD_THEME.riskMedium;
+  return PATHD_THEME.riskLow;
+}
+
+function successMetricColor(value: number) {
+  if (value >= STRONG_SUCCESS_THRESHOLD) return PATHD_THEME.successHigh;
+  if (value >= MODERATE_SUCCESS_THRESHOLD) return PATHD_THEME.successMedium;
+  return PATHD_THEME.successLow;
+}
 
 // ── AlphaFold IDs for showcase enzymes ────────────────────────────────
 const ENZYME_ALPHAFOLD: Record<string, { afId: string; pdbId: string; name: string }> = {
@@ -94,18 +108,26 @@ const EDGE_TYPE_LABELS: Record<EdgeRelationshipType, string> = {
 
 function ConfidenceBar({ score }: { score: number }) {
   const pct = Math.round(score * 100);
-  const opacity = score >= 0.8 ? 0.85 : score >= 0.6 ? 0.6 : 0.35;
-  const color = `rgba(255,255,255,${opacity})`;
+  const color = successMetricColor(score);
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
-        <span style={{ fontFamily: "'Inter', -apple-system, sans-serif", fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'rgba(255,255,255,0.22)' }}>
+        <span style={{ fontFamily: "'Inter', -apple-system, sans-serif", fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: PATHD_THEME.label }}>
           AI Confidence
         </span>
         <span style={{ fontFamily: "'Inter', -apple-system, sans-serif", fontSize: '13px', color, fontWeight: 700, fontFeatureSettings: "'tnum' 1" }}>{pct}%</span>
       </div>
       <div style={{ height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '2px' }}>
-        <div style={{ width: `${pct}%`, height: '100%', background: color, borderRadius: '2px', transition: 'width 0.5s cubic-bezier(0.22,1,0.36,1)' }} />
+        <div
+          style={{
+            width: `${pct}%`,
+            height: '100%',
+            background: `linear-gradient(90deg, ${PATHD_THEME.successLow} 0%, ${PATHD_THEME.successMedium} 58%, ${PATHD_THEME.successHigh} 100%)`,
+            borderRadius: '2px',
+            boxShadow: `0 0 10px ${color}33`,
+            transition: 'width 0.5s cubic-bezier(0.22,1,0.36,1)',
+          }}
+        />
       </div>
     </div>
   );
@@ -143,10 +165,10 @@ function PLDDTHistogram({ nodes, currentNodeId }: { nodes?: PathwayNode[]; curre
 
     const binColor = (idx: number): string => {
       const midpoint = idx * 10 + 5;
-      if (midpoint < 50) return 'rgba(255,255,255,0.22)';
-      if (midpoint < 70) return 'rgba(255,255,255,0.40)';
-      if (midpoint < 90) return 'rgba(255,255,255,0.60)';
-      return 'rgba(255,255,255,0.80)';
+      if (midpoint < 50) return `${PATHD_THEME.successLow}66`;
+      if (midpoint < 70) return `${PATHD_THEME.successMedium}80`;
+      if (midpoint < 90) return `${PATHD_THEME.successHigh}99`;
+      return `${PATHD_THEME.successHigh}cc`;
     };
 
     return { binCounts, mean, max, n, binColor };
@@ -190,14 +212,14 @@ function PLDDTHistogram({ nodes, currentNodeId }: { nodes?: PathwayNode[]; curre
             position: 'absolute',
             left: `${(meanBinX / BINS) * 100}%`,
             top: 0, bottom: 0, width: '1px',
-            background: 'rgba(255,255,255,0.35)',
+            background: `${PATHD_THEME.successMedium}80`,
             zIndex: 10,
             pointerEvents: 'none',
           }}>
             <span style={{
               position: 'absolute', top: '-1px', left: '3px',
               fontFamily: "'Inter', -apple-system, sans-serif", fontSize: '8px',
-              color: 'rgba(255,255,255,0.5)', fontFeatureSettings: "'tnum' 1",
+              color: `${PATHD_THEME.successMedium}cc`, fontFeatureSettings: "'tnum' 1",
               whiteSpace: 'nowrap',
             }}>μ</span>
           </div>
@@ -216,7 +238,7 @@ function PLDDTHistogram({ nodes, currentNodeId }: { nodes?: PathwayNode[]; curre
                   borderRadius: '3px 3px 0 0',
                   opacity: count > 0 ? (isCurrentNode ? 1.0 : 0.65) : 0.08,
                   transition: 'height 0.45s cubic-bezier(0.22,1,0.36,1), opacity 0.3s',
-                  outline: isCurrentNode ? '1px solid rgba(255,255,255,0.35)' : 'none',
+                  outline: isCurrentNode ? `1px solid ${PATHD_THEME.successHigh}66` : 'none',
                 }} />
               </div>
             );
@@ -248,6 +270,10 @@ function Divider() { return <div style={{ borderTop: '1px solid rgba(255,255,255
 function AuditTrailBadge({ text, riskScore }: { text: string | null; riskScore?: number }) {
   const [open, setOpen] = useState(false);
   if (!text) return null;
+  const riskAccent = riskScore === undefined ? 'rgba(255,255,255,0.5)' : riskMetricColor(riskScore);
+  const badgeBackground = riskScore === undefined ? 'rgba(255,255,255,0.04)' : `${riskAccent}12`;
+  const badgeBorder = riskScore === undefined ? 'rgba(255,255,255,0.12)' : `${riskAccent}44`;
+  const badgeText = riskScore === undefined ? 'rgba(255,255,255,0.6)' : `${riskAccent}dd`;
 
   return (
     <div>
@@ -257,17 +283,17 @@ function AuditTrailBadge({ text, riskScore }: { text: string | null; riskScore?:
         style={{
           display: 'inline-flex', alignItems: 'center', gap: '6px',
           padding: '4px 10px', borderRadius: '100px', cursor: 'pointer',
-          background: 'rgba(255,255,255,0.04)', border: '0.5px solid rgba(255,255,255,0.12)',
-          color: 'rgba(255,255,255,0.6)', fontFamily: UI_MONO, fontSize: '10px',
+          background: badgeBackground, border: `0.5px solid ${badgeBorder}`,
+          color: badgeText, fontFamily: UI_MONO, fontSize: '10px',
           fontWeight: 500, letterSpacing: '0.05em', textTransform: 'uppercase',
           transition: 'all 0.2s',
         }}
-        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)'; }}
-        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'; }}
+        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = riskScore === undefined ? 'rgba(255,255,255,0.08)' : `${riskAccent}1d`; }}
+        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = badgeBackground; }}
         aria-expanded={open}
         aria-label="Toggle audit trail"
       >
-        <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'rgba(255,255,255,0.5)', flexShrink: 0 }} />
+        <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: riskAccent, flexShrink: 0 }} />
         Audit Trail
         <span style={{ opacity: 0.6, fontSize: '9px' }}>{open ? '▲' : '▼'}</span>
       </button>
@@ -285,13 +311,13 @@ function AuditTrailBadge({ text, riskScore }: { text: string | null; riskScore?:
             <div style={{
               marginTop: '8px', padding: '12px 14px', borderRadius: '10px',
               background: 'rgba(0,0,0,0.92)',
-              border: '0.5px solid rgba(255,255,255,0.10)',
+              border: `0.5px solid ${badgeBorder}`,
               fontFamily: UI_MONO, fontSize: '11px', color: 'rgba(255,255,255,0.55)',
               lineHeight: 1.7, backdropFilter: 'blur(12px)',
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
-                <span style={{ width: '4px', height: '4px', borderRadius: '50%', background: 'rgba(255,255,255,0.45)', display: 'inline-block' }} />
-                <span style={{ fontFamily: UI_MONO, fontSize: '9px', fontWeight: 600, color: 'rgba(255,255,255,0.45)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                <span style={{ width: '4px', height: '4px', borderRadius: '50%', background: riskAccent, display: 'inline-block' }} />
+                <span style={{ fontFamily: UI_MONO, fontSize: '9px', fontWeight: 600, color: badgeText, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
                   Verifiable Source Trace
                 </span>
               </div>
@@ -349,6 +375,19 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
   const hasInsufficientCarbonData = !isFinalTarget && (node?.carbon_efficiency === undefined || node?.carbon_efficiency === null || node?.carbon_efficiency === 0);
   const hasInsufficientCofactorData = !isFinalTarget && !node?.cofactor_balance;
   const hasInsufficientSepData = !isFinalTarget && (node?.separation_cost_index === undefined || node?.separation_cost_index === null);
+  const riskValue = node?.risk_score ?? 0;
+  const separationValue = node?.separation_cost_index ?? 0;
+  const carbonEfficiencyNormalized = node?.carbon_efficiency !== undefined ? Math.max(0, Math.min(1, node.carbon_efficiency / 100)) : 0;
+  const riskAccent = riskMetricColor(riskValue);
+  const separationAccent = riskMetricColor(separationValue);
+  const carbonAccent = successMetricColor(carbonEfficiencyNormalized);
+  const statusAccent = node?.nodeType === 'impurity'
+    ? PATHD_THEME.riskHigh
+    : node?.nodeType === 'intermediate'
+      ? PATHD_THEME.riskMedium
+      : !hasInsufficientRiskData && riskValue > MODERATE_RISK_THRESHOLD
+        ? riskAccent
+        : PATHD_THEME.successHigh;
 
   useEffect(() => {
     if (!node) return undefined;
@@ -523,11 +562,11 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
 
                   {/* ─── Purity Status Badge — always visible ──────────────────────── */}
                   <div style={{ padding: '10px 14px', borderRadius: '16px', marginBottom: '12px',
-                    background: 'rgba(255,255,255,0.04)',
-                    border: '1px solid rgba(255,255,255,0.1)',
+                    background: `${statusAccent}12`,
+                    border: `1px solid ${statusAccent}33`,
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ display: 'flex', alignItems: 'center', color: 'rgba(255,255,255,0.5)', flexShrink: 0 }}>
+                      <span style={{ display: 'flex', alignItems: 'center', color: statusAccent, flexShrink: 0 }}>
                         {node.nodeType === 'impurity' || (node.risk_score && node.risk_score > MODERATE_RISK_THRESHOLD)
                           ? <AlertTriangle size={14} />
                           : node.nodeType === 'intermediate'
@@ -536,14 +575,14 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                       </span>
                       <div>
                         <span style={{ fontSize: '12px', fontWeight: 700, fontFamily: "'Inter', -apple-system, sans-serif",
-                          color: 'rgba(255,255,255,0.85)',
+                          color: statusAccent,
                         }}>
                           {node.nodeType === 'impurity' ? 'Impurity — Purification Risk'
                             : (node.risk_score && node.risk_score > MODERATE_RISK_THRESHOLD) ? 'Elevated Commercial Risk'
                             : node.nodeType === 'intermediate' ? 'Pathway Intermediate'
                             : 'Verified High-Yield'}
                         </span>
-                        <span style={{ display: 'block', fontSize: '10px', color: 'rgba(255,255,255,0.4)', marginTop: '2px', fontFamily: "'Inter', -apple-system, sans-serif" }}>
+                        <span style={{ display: 'block', fontSize: '10px', color: `${statusAccent}cc`, marginTop: '2px', fontFamily: "'Inter', -apple-system, sans-serif" }}>
                           {node.nodeType === 'impurity'
                             ? 'This compound requires separation from the target product'
                             : (node.risk_score && node.risk_score > MODERATE_RISK_THRESHOLD)
@@ -559,7 +598,7 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                   {/* ─── Commercial Risk & Compliance Panel ──────────────────────── */}
                   <div style={{ padding: '14px 16px', borderRadius: '20px', background: 'rgba(255,255,255,0.03)', border: '0.5px solid rgba(255,255,255,0.07)', marginBottom: '16px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                      <ShieldAlert size={14} color="rgba(255,255,255,0.45)" />
+                      <ShieldAlert size={14} color={PATHD_THEME.riskMedium} />
                       <span style={{ fontSize: '11px', fontWeight: 800, color: '#FFFFFF', letterSpacing: '0.03em', fontFamily: UI_SANS }}>COMMERCIAL RISK & COMPLIANCE</span>
                     </div>
 
@@ -572,7 +611,7 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                             Inference Pending
                           </span>
                         ) : (
-                          <span style={{ fontWeight: 600, fontFamily: UI_MONO, color: 'rgba(255,255,255,0.65)' }}>
+                          <span style={{ fontWeight: 600, fontFamily: UI_MONO, color: riskAccent }}>
                             {((node.risk_score ?? 0) * 100).toFixed(0)}%
                           </span>
                         )}
@@ -581,7 +620,15 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                         <div style={{ height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '2px' }} />
                       ) : (
                         <div style={{ height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '2px' }}>
-                          <div style={{ width: `${(node.risk_score ?? 0) * 100}%`, height: '100%', borderRadius: '2px', background: 'rgba(255,255,255,0.75)' }} />
+                          <div
+                            style={{
+                              width: `${(node.risk_score ?? 0) * 100}%`,
+                              height: '100%',
+                              borderRadius: '2px',
+                              background: `linear-gradient(90deg, ${PATHD_THEME.riskLow} 0%, ${PATHD_THEME.riskMedium} 58%, ${PATHD_THEME.riskHigh} 100%)`,
+                              boxShadow: `0 0 10px ${riskAccent}30`,
+                            }}
+                          />
                         </div>
                       )}
                     </div>
@@ -597,9 +644,9 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                         ) : (
                           <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontFamily: UI_MONO }}>
                             {(node.separation_cost_index ?? 0) > HIGH_RISK_THRESHOLD && (
-                              <span style={{ color: 'rgba(255,255,255,0.5)', fontWeight: 700, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>High Separation Cost</span>
+                              <span style={{ color: PATHD_THEME.riskHigh, fontWeight: 700, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>High Separation Cost</span>
                             )}
-                            <span style={{ fontWeight: 600, color: 'rgba(255,255,255,0.65)' }}>
+                            <span style={{ fontWeight: 600, color: separationAccent }}>
                               {((node.separation_cost_index ?? 0) * 100).toFixed(0)}%
                             </span>
                           </span>
@@ -609,7 +656,15 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                         <div style={{ height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '2px' }} />
                       ) : (
                         <div style={{ height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '2px' }}>
-                          <div style={{ width: `${(node.separation_cost_index ?? 0) * 100}%`, height: '100%', borderRadius: '2px', background: 'rgba(255,255,255,0.75)' }} />
+                          <div
+                            style={{
+                              width: `${(node.separation_cost_index ?? 0) * 100}%`,
+                              height: '100%',
+                              borderRadius: '2px',
+                              background: `linear-gradient(90deg, ${PATHD_THEME.riskLow} 0%, ${PATHD_THEME.riskMedium} 58%, ${PATHD_THEME.riskHigh} 100%)`,
+                              boxShadow: `0 0 10px ${separationAccent}30`,
+                            }}
+                          />
                         </div>
                       )}
                     </div>
@@ -617,11 +672,11 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                     {/* Toxicity Impact */}
                     {node.toxicity_impact && (
                       <div style={{ padding: '10px 12px', borderRadius: '12px', marginBottom: '12px',
-                        background: 'rgba(255,255,255,0.02)',
-                        border: '0.5px solid rgba(255,255,255,0.06)',
+                        background: `${PATHD_THEME.riskHigh}12`,
+                        border: `0.5px solid ${PATHD_THEME.riskHigh}33`,
                       }}>
-                        <span style={{ display: 'block', fontSize: '9px', color: 'rgba(255,255,255,0.35)', marginBottom: '4px', fontWeight: 700, textTransform: 'uppercase', fontFamily: "'Inter', -apple-system, sans-serif" }}>Potential Toxicity Analysis</span>
-                        <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '11px', fontWeight: 500, margin: 0, lineHeight: 1.5, fontFamily: "'Inter', -apple-system, sans-serif" }}>
+                        <span style={{ display: 'block', fontSize: '9px', color: `${PATHD_THEME.riskHigh}cc`, marginBottom: '4px', fontWeight: 700, textTransform: 'uppercase', fontFamily: "'Inter', -apple-system, sans-serif" }}>Potential Toxicity Analysis</span>
+                        <p style={{ color: 'rgba(255,214,210,0.78)', fontSize: '11px', fontWeight: 500, margin: 0, lineHeight: 1.5, fontFamily: "'Inter', -apple-system, sans-serif" }}>
                           {node.toxicity_impact}
                         </p>
                       </div>
@@ -673,12 +728,20 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                       <div style={{ marginBottom: '12px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: '#9CA3AF', marginBottom: '6px', fontFamily: UI_MONO }}>
                           <span>Carbon Efficiency (Atom Economy)</span>
-                          <span style={{ fontWeight: 600, fontFamily: UI_MONO, color: 'rgba(255,255,255,0.65)' }}>
+                          <span style={{ fontWeight: 600, fontFamily: UI_MONO, color: carbonAccent }}>
                             {node.carbon_efficiency.toFixed(1)}%
                           </span>
                         </div>
                         <div style={{ height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '2px' }}>
-                          <div style={{ width: `${node.carbon_efficiency}%`, height: '100%', borderRadius: '2px', background: 'rgba(255,255,255,0.75)' }} />
+                          <div
+                            style={{
+                              width: `${node.carbon_efficiency}%`,
+                              height: '100%',
+                              borderRadius: '2px',
+                              background: `linear-gradient(90deg, ${PATHD_THEME.successLow} 0%, ${PATHD_THEME.successMedium} 58%, ${PATHD_THEME.successHigh} 100%)`,
+                              boxShadow: `0 0 10px ${carbonAccent}30`,
+                            }}
+                          />
                         </div>
                       </div>
                     )}
@@ -782,7 +845,7 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                                     </p>
                                   </div>
                                   {edge.confidenceScore !== undefined && (
-                                    <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', fontFamily: "'Inter', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1", flexShrink: 0 }}>{Math.round(edge.confidenceScore * 100)}%</span>
+                                    <span style={{ color: successMetricColor(edge.confidenceScore), fontSize: '10px', fontFamily: "'Inter', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1", flexShrink: 0 }}>{Math.round(edge.confidenceScore * 100)}%</span>
                                   )}
                                 </div>
                               );
@@ -893,9 +956,9 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                             <div style={{ marginBottom: '8px' }}>
                               <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: "'Inter', -apple-system, sans-serif", fontWeight: 700 }}>Atom Economy (Carbon Efficiency)</span>
                               <div style={{
-                                color: node.atom_economy >= 80 ? BIO_THEME_COLORS.GREEN
-                                  : node.atom_economy >= 50 ? BIO_THEME_COLORS.AMBER
-                                  : BIO_THEME_COLORS.RED,
+                                color: node.atom_economy >= 80 ? PATHD_THEME.successHigh
+                                  : node.atom_economy >= 50 ? PATHD_THEME.successMedium
+                                  : PATHD_THEME.successLow,
                                 marginTop: '2px',
                               }}>
                                 {node.atom_economy.toFixed(1)}%
@@ -910,13 +973,13 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                           {node.dsp_bottleneck && (
                             <div style={{ marginBottom: '8px' }}>
                               <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: "'Inter', -apple-system, sans-serif", fontWeight: 700 }}>DSP Bottleneck</span>
-                              <div style={{ color: BIO_THEME_COLORS.AMBER, marginTop: '2px' }}>{node.dsp_bottleneck}</div>
+                              <div style={{ color: PATHD_THEME.riskMedium, marginTop: '2px' }}>{node.dsp_bottleneck}</div>
                             </div>
                           )}
                           {node.ic50_toxicity && (
                             <div>
                               <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: "'Inter', -apple-system, sans-serif", fontWeight: 700 }}>IC50 Toxicity</span>
-                              <div style={{ color: BIO_THEME_COLORS.RED, marginTop: '2px' }}>{node.ic50_toxicity}</div>
+                              <div style={{ color: PATHD_THEME.riskHigh, marginTop: '2px' }}>{node.ic50_toxicity}</div>
                             </div>
                           )}
                         </div>
