@@ -30,7 +30,6 @@ import ScientificMethodStrip from './shared/ScientificMethodStrip';
 import { PATHD_THEME } from '../workbench/workbenchTheme';
 import { metabolicMachine } from '../../machines/metabolicMachine';
 import type { FBAWorkerIn, FBAWorkerOut } from '../../workers/fbaWorker';
-import WorkflowArtifactDebugPanel from '../workflow/WorkflowArtifactDebugPanel';
 import { deriveAnalyzeCompatibilityProjection } from '../../domain/workflowArtifactAdapters';
 import type { WorkflowArtifact } from '../../domain/workflowArtifact';
 import { useUIStore } from '../../store/uiStore';
@@ -65,7 +64,6 @@ const PATHD_SUPPORT_RAIL_WIDTH = 272;
 const PATHD_SCENE_GUTTER = 20;
 const PATHD_PANEL_BOTTOM = 18;
 type ControlVarsStyle = CSSProperties & Record<`--${string}`, string>;
-type PathdGraphSource = 'persisted' | 'in-memory' | 'compatibility-projection' | 'ui-graph' | 'demo' | 'none';
 
 function ArtifactRouteState({
   title,
@@ -111,13 +109,6 @@ function ArtifactRouteState({
             {message}
           </p>
         </div>
-
-        <WorkflowArtifactDebugPanel
-          artifact={artifact}
-          graphSource="none"
-          compatibilityProjectionActive={false}
-          title="PATHD workflow debug"
-        />
       </div>
     </div>
   );
@@ -229,8 +220,7 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
     () => activeWorkflowArtifact ? deriveAnalyzeCompatibilityProjection(activeWorkflowArtifact) : analyzeArtifact,
     [activeWorkflowArtifact, analyzeArtifact],
   );
-  const graphSource = resolvedGraph.source as PathdGraphSource;
-  const compatibilityProjectionActive = graphSource === 'compatibility-projection';
+  const graphSource = resolvedGraph.source;
   const activeNodes = resolvedGraph.nodes;
   const activeEdges = resolvedGraph.edges;
   const routeArtifactState = useMemo(() => {
@@ -596,14 +586,6 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
 
       {embedded ? (
         <div className="nb-pathd-support-dock">
-          <div style={{ marginBottom: '10px' }}>
-            <WorkflowArtifactDebugPanel
-              artifact={activeWorkflowArtifact}
-              graphSource={graphSource}
-              compatibilityProjectionActive={compatibilityProjectionActive}
-              title="PATHD workflow debug"
-            />
-          </div>
           <div className="nb-pathd-support-dock__grid">
             {supportCards.map((card) => (
               <div
@@ -701,14 +683,6 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
             paddingRight: '2px',
           }}
         >
-          <div style={{ pointerEvents: 'auto' }}>
-            <WorkflowArtifactDebugPanel
-              artifact={activeWorkflowArtifact}
-              graphSource={graphSource}
-              compatibilityProjectionActive={compatibilityProjectionActive}
-              title="PATHD workflow debug"
-            />
-          </div>
           <div style={{ pointerEvents: 'auto' }}>
             <WorkbenchInlineContext
               toolId="pathd"
