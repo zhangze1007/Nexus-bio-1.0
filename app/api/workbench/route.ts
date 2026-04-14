@@ -18,12 +18,32 @@ import {
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+function normalizeNonEmptyId(value: string | null | undefined) {
+  if (typeof value !== 'string') return undefined;
+  const normalized = value.trim();
+  return normalized.length > 0 ? normalized : undefined;
+}
+
+function summarizeWorkflowArtifactDebug(artifact: WorkflowArtifact | null | undefined) {
+  if (!artifact) return null;
+  return {
+    id: normalizeNonEmptyId(artifact.id) ?? null,
+    status: artifact.status,
+    schemaVersion: artifact.schemaVersion,
+    version: artifact.version,
+    hasGraph: Boolean(artifact.atomicPathwayGraph),
+    nodeCount: artifact.atomicPathwayGraph?.nodes.length ?? 0,
+    edgeCount: artifact.atomicPathwayGraph?.edges.length ?? 0,
+    evidencePacketCount: artifact.evidencePackets.length,
+  };
+}
+
 function getProjectScope(request: Request) {
   const url = new URL(request.url);
   const headerProjectId = request.headers.get('x-workbench-project-id');
   const headerActorId = request.headers.get('x-workbench-actor-id');
   return {
-    artifactId: url.searchParams.get('artifact')?.trim() || undefined,
+    artifactId: normalizeNonEmptyId(url.searchParams.get('artifact')),
     projectId: headerProjectId && headerProjectId.trim().length > 0 ? headerProjectId.trim() : undefined,
     actorId: headerActorId && headerActorId.trim().length > 0 ? headerActorId.trim() : undefined,
   };
@@ -60,11 +80,34 @@ export async function PUT(request: Request) {
   const db = await getWorkbenchDb();
   const needsArtifactScope = Boolean(scopedArtifactId || incoming.activeArtifactId || incoming.workflowArtifact);
   const resolvedArtifactId = scopedArtifactId
-    ?? incoming.activeArtifactId
-    ?? incoming.workflowArtifact?.id?.trim()
-    ?? (incoming.workflowArtifact ? `artifact-${randomUUID()}` : undefined);
-  const scopeId = resolvedArtifactId ?? incoming.project?.id ?? scopedProjectId ?? 'default-workbench';
-  const explicitScope = resolvedArtifactId ? { forceExplicit: true as const } : undefined;
+    || normalizeNonEmptyId(incoming.activeArtifactId)
+    || normalizeNonEmptyId(incoming.workflowArtifact?.id)
+    || (incoming.workflowArtifact ? `artifact-${randomUUID()}` : undefined);
+  if (needsArtifactScope && !resolvedArtifactId) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: 'Artifact-scoped persistence could not resolve a stable artifact ID',
+      },
+      { status: 500 },
+    );
+  }
+  const scopeId = needsArtifactScope
+    ? resolvedArtifactId
+    : incoming.project?.id ?? scopedProjectId ?? 'default-workbench';
+  const explicitScope = needsArtifactScope ? { forceExplicit: true as const } : undefined;
+  if (needsArtifactScope) {
+    console.info('[api/workbench] canonical artifact save request payload', {
+      scopedArtifactId: scopedArtifactId ?? null,
+      resolvedArtifactId: resolvedArtifactId ?? null,
+      scopeId: scopeId ?? null,
+      explicitScope: true,
+      incomingState: {
+        activeArtifactId: normalizeNonEmptyId(incoming.activeArtifactId) ?? null,
+        workflowArtifact: summarizeWorkflowArtifactDebug(incoming.workflowArtifact),
+      },
+    });
+  }
   const current = readProjectState(db, scopeId, explicitScope);
   if (incoming.revision < current.revision) {
     return NextResponse.json(
@@ -133,6 +176,17 @@ export async function PUT(request: Request) {
     `client synced revision ${nextState.revision}`,
     explicitScope,
   );
+  if (needsArtifactScope) {
+    console.info('[api/workbench] canonical artifact save response payload', {
+      ok: true,
+      state: {
+        activeArtifactId: nextState.activeArtifactId ?? null,
+        workflowArtifact: summarizeWorkflowArtifactDebug(nextState.workflowArtifact),
+      },
+      scopeId,
+      explicitScope: true,
+    });
+  }
   return NextResponse.json({
     ok: true,
     state: nextState,

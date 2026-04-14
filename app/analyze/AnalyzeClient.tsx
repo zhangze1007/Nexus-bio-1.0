@@ -33,6 +33,20 @@ const ThreeScene = dynamic(
 const MONO = "'JetBrains Mono', 'Fira Code', monospace";
 const SANS = "'Inter', -apple-system, sans-serif";
 
+function summarizeWorkflowArtifactDebug(artifact: WorkflowArtifact | null | undefined) {
+  if (!artifact) return null;
+  return {
+    id: artifact.id || null,
+    status: artifact.status,
+    version: artifact.version,
+    schemaVersion: artifact.schemaVersion,
+    hasGraph: Boolean(artifact.atomicPathwayGraph),
+    nodeCount: artifact.atomicPathwayGraph?.nodes.length ?? 0,
+    edgeCount: artifact.atomicPathwayGraph?.edges.length ?? 0,
+    evidencePacketCount: artifact.evidencePackets.length,
+  };
+}
+
 function toWorkflowEvidencePackets(items: ReturnType<typeof useWorkbenchStore.getState>['evidenceItems']): WorkflowEvidencePacket[] {
   return items.map((item) => ({
     id: item.id,
@@ -77,6 +91,11 @@ export default function AnalyzeClient() {
 
   useEffect(() => {
     setPersistedArtifactId(routeArtifactId);
+  }, [routeArtifactId]);
+
+  useEffect(() => {
+    if (!routeArtifactId || typeof window === 'undefined') return;
+    console.info('[analyze] final router URL', window.location.pathname + window.location.search);
   }, [routeArtifactId]);
 
   useEffect(() => {
@@ -164,13 +183,35 @@ export default function AnalyzeClient() {
       sourceProvider: payload.sourceProvider,
     });
 
+    console.info('[analyze] compiled artifact before save', summarizeWorkflowArtifactDebug(nextDraft));
+    if (!nextDraft.atomicPathwayGraph || nextDraft.atomicPathwayGraph.nodes.length === 0) {
+      const message = 'Analyze compile did not produce a valid atomic pathway graph to persist';
+      setPersistError(message);
+      setDraftArtifact({
+        ...nextDraft,
+        status: 'error',
+        updatedAt: Date.now(),
+      });
+      throw new Error(message);
+    }
+
     setDraftArtifact(nextDraft);
     setPersistError(null);
 
     try {
       const savedArtifact = await persistWorkflowArtifact(nextDraft);
+      const installedState = useWorkbenchStore.getState();
+      console.info('[analyze] installed workflow artifact after save', {
+        workflowArtifact: summarizeWorkflowArtifactDebug(installedState.workflowArtifact),
+        activeArtifactId: installedState.activeArtifactId ?? null,
+      });
       setPersistedArtifactId(savedArtifact.id);
-      router.replace(`/analyze?artifact=${encodeURIComponent(savedArtifact.id)}`, { scroll: false });
+      const nextAnalyzeUrl = `/analyze?artifact=${encodeURIComponent(savedArtifact.id)}`;
+      console.info('[analyze] replacing URL after save', {
+        artifactId: savedArtifact.id,
+        nextAnalyzeUrl,
+      });
+      router.replace(nextAnalyzeUrl, { scroll: false });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to save compiled workflow artifact';
       setPersistError(message);

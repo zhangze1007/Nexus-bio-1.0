@@ -353,6 +353,38 @@ function touchState(state: WorkbenchState, patch: Partial<WorkbenchCanonicalStat
   };
 }
 
+function normalizeNonEmptyId(value: string | null | undefined) {
+  if (typeof value !== 'string') return null;
+  const normalized = value.trim();
+  return normalized.length > 0 ? normalized : null;
+}
+
+function summarizeWorkflowArtifactDebug(artifact: WorkflowArtifact | null | undefined) {
+  if (!artifact) return null;
+  return {
+    id: normalizeNonEmptyId(artifact.id),
+    status: artifact.status,
+    schemaVersion: artifact.schemaVersion,
+    version: artifact.version,
+    hasGraph: Boolean(artifact.atomicPathwayGraph),
+    nodeCount: artifact.atomicPathwayGraph?.nodes.length ?? 0,
+    edgeCount: artifact.atomicPathwayGraph?.edges.length ?? 0,
+    evidencePacketCount: artifact.evidencePackets.length,
+    candidateRouteCount: artifact.candidateRoutes.length,
+    scientificStage: artifact.workbench.scientificStage,
+  };
+}
+
+function isValidPersistedWorkflowArtifact(artifact: WorkflowArtifact | null | undefined): artifact is WorkflowArtifact {
+  return Boolean(
+    artifact
+    && normalizeNonEmptyId(artifact.id)
+    && artifact.status === 'compiled'
+    && artifact.atomicPathwayGraph
+    && artifact.atomicPathwayGraph.nodes.length > 0,
+  );
+}
+
 async function requestCanonicalState(
   method: 'GET' | 'PUT',
   state?: WorkbenchCanonicalState,
@@ -360,10 +392,25 @@ async function requestCanonicalState(
 ) {
   const actorId = getWorkbenchActorId();
   const projectId = options?.projectId ?? state?.project?.id ?? DEFAULT_PROJECT_SYNC_SCOPE;
-  const artifactId = options?.artifactId ?? state?.activeArtifactId ?? state?.workflowArtifact?.id ?? null;
+  const artifactId = normalizeNonEmptyId(
+    options?.artifactId
+    ?? state?.activeArtifactId
+    ?? state?.workflowArtifact?.id
+    ?? null,
+  );
   const url = artifactId
     ? `/api/workbench?artifact=${encodeURIComponent(artifactId)}`
     : '/api/workbench';
+  const requestBody = method === 'PUT' ? { state } : undefined;
+  const isCanonicalArtifactSave = method === 'PUT' && Boolean(state?.workflowArtifact);
+  if (isCanonicalArtifactSave) {
+    console.info('[workbench] canonical save request payload', {
+      url,
+      projectId,
+      artifactId,
+      state: requestBody?.state,
+    });
+  }
   const response = await fetch(url, {
     method,
     headers: {
@@ -372,9 +419,12 @@ async function requestCanonicalState(
       'x-workbench-project-id': projectId,
     },
     cache: 'no-store',
-    body: method === 'PUT' ? JSON.stringify({ state }) : undefined,
+    body: requestBody ? JSON.stringify(requestBody) : undefined,
   });
   const payload = await response.json().catch(() => ({}));
+  if (isCanonicalArtifactSave) {
+    console.info('[workbench] canonical save response payload', payload);
+  }
   if (!response.ok) {
     const error = payload?.error ?? `${method} /api/workbench failed (${response.status})`;
     const conflictState = sanitizeWorkbenchState(payload?.state);
@@ -706,6 +756,17 @@ export const useWorkbenchStore = create<WorkbenchState>()(
           updatedAt: Date.now(),
           sourcePage: 'analyze',
         };
+        console.info('[workbench] compiled artifact before save', summarizeWorkflowArtifactDebug(candidate));
+        if (!candidate.atomicPathwayGraph || candidate.atomicPathwayGraph.nodes.length === 0) {
+          const message = 'Compiled workflow artifact is missing an atomic pathway graph';
+          set({
+            syncStatus: 'error',
+            syncError: message,
+            artifactLoadState: 'error',
+            artifactLoadError: message,
+          });
+          throw new Error(message);
+        }
         const patch = buildCanonicalPatchFromWorkflowArtifact(state, candidate);
         const canonicalState = buildCanonicalSlice({
           ...state,
@@ -717,41 +778,88 @@ export const useWorkbenchStore = create<WorkbenchState>()(
           syncError: null,
           artifactLoadState: 'loading',
           artifactLoadError: null,
-          artifactRequestedId: candidate.id || null,
+          artifactRequestedId: normalizeNonEmptyId(candidate.id),
         });
 
-        const { canonicalState: savedState, backendMeta, collaborators, experimentRecords, auditLog, historyLog } = await requestCanonicalState('PUT', canonicalState, {
-          artifactId: candidate.id || null,
-          projectId: canonicalState.project?.id ?? DEFAULT_PROJECT_SYNC_SCOPE,
-        });
-        const savedArtifact = savedState.workflowArtifact;
-        if (!savedArtifact) {
-          throw new Error('Canonical artifact save completed without a persisted workflow artifact');
+        try {
+          const { canonicalState: savedState, backendMeta, collaborators, experimentRecords, auditLog, historyLog } = await requestCanonicalState('PUT', canonicalState, {
+            artifactId: normalizeNonEmptyId(candidate.id),
+            projectId: canonicalState.project?.id ?? DEFAULT_PROJECT_SYNC_SCOPE,
+          });
+          const savedArtifact = savedState.workflowArtifact;
+          console.info('[workbench] persisted artifact returned from API', {
+            workflowArtifact: summarizeWorkflowArtifactDebug(savedArtifact),
+            activeArtifactId: savedState.activeArtifactId ?? null,
+          });
+          if (!isValidPersistedWorkflowArtifact(savedArtifact)) {
+            const message = 'Canonical artifact save failed: response did not include a valid persisted WorkflowArtifact';
+            set({
+              syncStatus: 'error',
+              syncError: message,
+              artifactLoadState: 'error',
+              artifactLoadError: message,
+            });
+            throw new Error(message);
+          }
+
+          set((currentState) => ({
+            ...currentState,
+            ...savedState,
+            analyzeArtifact: savedState.workflowArtifact
+              ? deriveAnalyzeCompatibilityProjection(savedState.workflowArtifact)
+              : savedState.analyzeArtifact,
+            backendMeta,
+            collaborators,
+            experimentRecords,
+            syncAuditLog: auditLog,
+            historyLog,
+            syncStatus: 'synced',
+            syncError: null,
+            hydratedFromServer: true,
+            lastServerSyncAt: Date.now(),
+            lastServerSyncedRevision: savedState.revision,
+            artifactLoadState: 'ready',
+            artifactLoadError: null,
+            artifactRequestedId: savedArtifact.id,
+            currentStageId: 'stage-1',
+          }));
+
+          const installedState = get();
+          console.info('[workbench] installed workflow artifact after save', {
+            workflowArtifact: summarizeWorkflowArtifactDebug(installedState.workflowArtifact),
+            activeArtifactId: installedState.activeArtifactId ?? null,
+          });
+          if (
+            !isValidPersistedWorkflowArtifact(installedState.workflowArtifact)
+            || installedState.workflowArtifact.id !== savedArtifact.id
+            || installedState.activeArtifactId !== savedArtifact.id
+          ) {
+            const message = 'Canonical artifact save succeeded but the persisted WorkflowArtifact was not installed into client state';
+            set({
+              syncStatus: 'error',
+              syncError: message,
+              artifactLoadState: 'error',
+              artifactLoadError: message,
+            });
+            throw new Error(message);
+          }
+
+          return installedState.workflowArtifact;
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'Failed to persist canonical workflow artifact';
+          console.error('[workbench] canonical artifact save failed', {
+            error: message,
+            workflowArtifact: summarizeWorkflowArtifactDebug(candidate),
+          });
+          set((currentState) => ({
+            syncStatus: 'error',
+            syncError: message,
+            artifactLoadState: 'error',
+            artifactLoadError: message,
+            artifactRequestedId: normalizeNonEmptyId(candidate.id) ?? currentState.artifactRequestedId,
+          }));
+          throw (error instanceof Error ? error : new Error(message));
         }
-
-        set((currentState) => ({
-          ...currentState,
-          ...savedState,
-          analyzeArtifact: savedState.workflowArtifact
-            ? deriveAnalyzeCompatibilityProjection(savedState.workflowArtifact)
-            : savedState.analyzeArtifact,
-          backendMeta,
-          collaborators,
-          experimentRecords,
-          syncAuditLog: auditLog,
-          historyLog,
-          syncStatus: 'synced',
-          syncError: null,
-          hydratedFromServer: true,
-          lastServerSyncAt: Date.now(),
-          lastServerSyncedRevision: savedState.revision,
-          artifactLoadState: 'ready',
-          artifactLoadError: null,
-          artifactRequestedId: savedArtifact.id,
-          currentStageId: 'stage-1',
-        }));
-
-        return savedArtifact;
       },
 
       visitTool: (toolId) => {
