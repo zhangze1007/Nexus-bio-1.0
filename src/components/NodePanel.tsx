@@ -339,6 +339,7 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
   const [showConnections, setShowConnections] = useState(false);
   const [showRawData, setShowRawData] = useState(false);
   const panelRef = useRef<HTMLDivElement | null>(null);
+  const outsideCloseReadyAtRef = useRef(0);
 
   const connections = useMemo(() => {
     if (!node || !allEdges) return [];
@@ -391,11 +392,18 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
 
   useEffect(() => {
     if (!node) return undefined;
+    // Ignore the opening gesture so the same node click cannot immediately
+    // re-enter the outside-click handler and collapse the panel.
+    outsideCloseReadyAtRef.current = performance.now() + 180;
 
     const handlePointerDown = (event: PointerEvent) => {
+      if (performance.now() < outsideCloseReadyAtRef.current) return;
       const panel = panelRef.current;
       if (!panel) return;
-      if (panel.contains(event.target as Node)) return;
+      const target = event.target;
+      if (target instanceof Node && panel.contains(target)) return;
+      const eventPath = typeof event.composedPath === 'function' ? event.composedPath() : [];
+      if (eventPath.includes(panel)) return;
       onClose();
     };
 
