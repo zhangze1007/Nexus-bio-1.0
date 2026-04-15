@@ -42,8 +42,26 @@ const ROLE_LABEL: Record<SBOLRole, string> = {
 const SO_URI_PREFIX = 'http://identifiers.org/SO:';
 const SBO_URI_PREFIX = 'http://identifiers.org/biomodels.sbo/';
 
-// ── UUID generator (browser-safe, no crypto dependency) ───────────────────────
+// ── UUID generator ────────────────────────────────────────────────────────────
+// Prefer the platform CSPRNG (crypto.randomUUID) — Math.random has weak entropy
+// and predictable collisions, which matters for provenance barcoding where
+// every tube must have a globally unique identifier.
 function generateUUID(): string {
+  const cryptoObj: Crypto | undefined =
+    typeof globalThis !== 'undefined' ? (globalThis as { crypto?: Crypto }).crypto : undefined;
+  if (cryptoObj && typeof cryptoObj.randomUUID === 'function') {
+    return cryptoObj.randomUUID();
+  }
+  if (cryptoObj && typeof cryptoObj.getRandomValues === 'function') {
+    const bytes = new Uint8Array(16);
+    cryptoObj.getRandomValues(bytes);
+    bytes[6] = (bytes[6] & 0x0f) | 0x40; // version 4
+    bytes[8] = (bytes[8] & 0x3f) | 0x80; // variant 10xx
+    const hex: string[] = [];
+    for (let i = 0; i < 16; i++) hex.push(bytes[i].toString(16).padStart(2, '0'));
+    return `${hex.slice(0, 4).join('')}-${hex.slice(4, 6).join('')}-${hex.slice(6, 8).join('')}-${hex.slice(8, 10).join('')}-${hex.slice(10, 16).join('')}`;
+  }
+  // Final fallback — environments without Web Crypto. Still RFC 4122 v4 shape.
   const hex = '0123456789abcdef';
   let uuid = '';
   for (let i = 0; i < 36; i++) {
