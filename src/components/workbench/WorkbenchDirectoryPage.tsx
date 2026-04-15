@@ -504,36 +504,38 @@ export default function WorkbenchDirectoryPage() {
             ))}
           </div>
 
-          <section
-            style={{
-              borderRadius: '22px',
-              border: `1px solid ${BORDER}`,
-              background: SURFACE,
-              padding: '16px',
-              display: 'grid',
-              gap: '12px',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Layers3 size={16} color={LABEL} />
-              <div style={{ fontFamily: T.SANS, fontSize: '17px', fontWeight: 700, color: VALUE }}>
-                Cross-stage intelligence
+          {CROSS_STAGE_TOOL_IDS.length > 0 && (
+            <section
+              style={{
+                borderRadius: '22px',
+                border: `1px solid ${BORDER}`,
+                background: SURFACE,
+                padding: '16px',
+                display: 'grid',
+                gap: '12px',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Layers3 size={16} color={LABEL} />
+                <div style={{ fontFamily: T.SANS, fontSize: '17px', fontWeight: 700, color: VALUE }}>
+                  Cross-stage intelligence
+                </div>
               </div>
-            </div>
-            <div style={{ fontFamily: T.SANS, fontSize: '12px', color: LABEL, lineHeight: 1.6, maxWidth: '68ch' }}>
-              Keep Axon close as a supporting synthesis layer, but let the stage tools remain the main path through the launcher.
-            </div>
-            <div style={{ display: 'grid', gap: '12px', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' }}>
-              {CROSS_STAGE_TOOL_IDS.map((toolId) => (
-                <LauncherToolCard
-                  key={toolId}
-                  toolId={toolId}
-                  signal={getLauncherSignal(freshnessByTool[toolId]?.status)}
-                  surface={SURFACE_SOFT}
-                />
-              ))}
-            </div>
-          </section>
+              <div style={{ fontFamily: T.SANS, fontSize: '12px', color: LABEL, lineHeight: 1.6, maxWidth: '68ch' }}>
+                Keep Axon close as a supporting synthesis layer, but let the stage tools remain the main path through the launcher.
+              </div>
+              <div style={{ display: 'grid', gap: '12px', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' }}>
+                {CROSS_STAGE_TOOL_IDS.map((toolId) => (
+                  <LauncherToolCard
+                    key={toolId}
+                    toolId={toolId}
+                    signal={getLauncherSignal(freshnessByTool[toolId]?.status)}
+                    surface={SURFACE_SOFT}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
         </div>
       </main>
     </div>

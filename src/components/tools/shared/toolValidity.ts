@@ -45,8 +45,8 @@ export const TOOL_VALIDITY: Record<string, ToolValidity> = {
   // Stage 4 — DBTL
   cellfree:     { level: 'demo',    caption: 'Cell-free expression yield uses a curated lookup; no live TXTL kinetic model.' },
   dbtlflow:     { level: 'partial', caption: 'Iteration ledger and SBOL serialization are real; learning loop weights are heuristic.' },
-  multio:       { level: 'demo',    caption: 'Routines named MOFA+/VAE/UMAP are actually ALS factorization, a deterministic linear encoder, and PCA-style projection. Names corrected in UI.' },
-  scspatial:    { level: 'demo',    caption: 'QC, normalization, HVG, Louvain, PAGA, Moran I are real; "scVAE" is a deterministic linear encoder, not a variational autoencoder.' },
+  multio:       { level: 'demo',    caption: 'Integration uses deterministic factor decomposition and linear embeddings. Legacy MOFA+/VAE/UMAP labels have been removed from the UI.' },
+  scspatial:    { level: 'partial', caption: 'h5ad ingestion, spatial coordinates, Moran I, neighborhood graphs, PAGA, and UMAP are real when dataset fields are present. Missing spatial metadata downgrades the page to partial mode.' },
 
   // Cross-stage
   nexai:        { level: 'real',    caption: 'Answers come exclusively from Groq llama-3.3-70b-versatile via /api/analyze. No client-side template fallback.' },

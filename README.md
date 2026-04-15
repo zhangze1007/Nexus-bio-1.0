@@ -113,10 +113,10 @@ INPUT: Target Molecular Product
 | **FBA Simulator** | `/tools/fbasim` | Flux Balance Analysis: single-species + community FBA (co-culture), knockout/overexpression strategies, shadow prices, carbon efficiency |
 | **Gene Circuit Reasoner** | `/tools/gecair` | Gene circuit design: logic gate modeling, Hill curve analysis, circuit dynamics, gate efficiency scoring |
 | **Gene Minimization** | `/tools/genmim` | Genome minimization: CRISPRi knockdown scheduling, chromosome map, efficiency heatmap, greedy optimization |
-| **Multi-Omics** | `/tools/multio` | Multi-omics integration: VAE/UMAP embeddings, volcano plots, MOFA+ factor analysis, perturbation prediction |
+| **Multi-Omics** | `/tools/multio` | Multi-omics integration: projected embeddings, volcano plots, factor decomposition, perturbation prediction |
 | **NEX-AI Research Agent** | `/tools/nexai` | AI-powered literature agent: citation network graph (year×relevance scatter), Socratic questioning, literature support map |
 | **Protein Evolution** | `/tools/proevol` | Directed evolution campaign workbench: variant libraries, survivor selection, lineage tracking, diversity/convergence analysis, next-round strategy |
-| **Single-Cell Spatial** | `/tools/scspatial` | Spatial transcriptomics: hexagonal Visium spot grid, UMAP/3D spatial visualization, cluster efficiency, gene expression heatmap |
+| **Single-Cell Spatial** | `/tools/scspatial` | Spatial transcriptomics: normalized artifact ingest, spatial/3D visualization, PAGA trajectory, hotspot and gene expression analysis |
 
 ---
 
@@ -128,6 +128,25 @@ Frontend     React 19 + TypeScript + Next.js 15 (App Router) + Tailwind CSS v3 +
              Custom GLSL shaders (organic volume terrain, fluid simulation)
              3Dmol.js (protein + molecular rendering, CDN)
 AI           Groq llama-3.3-70b (primary) → Gemini 2.0-flash (fallback)
+
+## SCSPATIAL Sidecar
+
+Real `.h5ad` ingest for SCSPATIAL uses a Python sidecar. Install the sidecar dependencies before uploading spatial datasets:
+
+```bash
+python3 -m venv .venv-scspatial
+.venv-scspatial/bin/pip install -r requirements-scspatial-sidecar.txt
+```
+
+If `.venv-scspatial` exists, the SCSPATIAL sidecar will pick it up automatically.
+
+If `python3-venv` is unavailable, you can install the packages into a repo-local target directory instead:
+
+```bash
+python3 -m pip install --target .nexus/scspatial-pydeps -r requirements-scspatial-sidecar.txt
+```
+
+If `.nexus/scspatial-pydeps` exists, the SCSPATIAL sidecar will add it to `PYTHONPATH` automatically.
 State        Zustand 5 + XState 5 state machines
 DB           better-sqlite3 (workbench experiment ledger)
 Data         PubChem · AlphaFold EBI · RCSB PDB · 6 academic databases

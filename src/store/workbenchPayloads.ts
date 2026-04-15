@@ -1,5 +1,6 @@
 import type { PathwayKey } from '../data/mockCETHX';
 import type { DBTLPhase } from '../types';
+import type { ScSpatialDatasetMeta, ScSpatialViewMode } from '../types/scspatial';
 
 /**
  * Validity tag attached to every workbench payload (P0.4 from REVIEW_REPORT.md).
@@ -17,7 +18,7 @@ import type { DBTLPhase } from '../types';
 export type PayloadValidity = 'real' | 'partial' | 'demo';
 
 export interface WorkbenchPayloadBase {
-  validity?: PayloadValidity;
+  validity: PayloadValidity;
 }
 
 export interface PathDWorkbenchPayload extends WorkbenchPayloadBase {
@@ -264,18 +265,23 @@ export interface MultiOWorkbenchPayload extends WorkbenchPayloadBase {
 
 export interface ScSpatialWorkbenchPayload extends WorkbenchPayloadBase {
   toolId: 'scspatial';
+  artifactId: string;
   targetProduct: string;
   sourceArtifactId?: string;
-  selectedCluster: number | null;
+  source: 'upload' | 'bundled-demo';
+  datasetMeta: ScSpatialDatasetMeta;
+  selectedCluster: string | null;
+  selectedCellId: string | null;
   highlightGene: string;
-  activeView: string;
+  activeView: ScSpatialViewMode;
+  exportableArtifacts: Array<'cluster-annotations-csv' | 'hotspots-csv' | 'viewport-png'>;
   result: {
     totalCells: number;
     passedCells: number;
     topSpatialGene: string;
     topMoranI: number;
     highestYieldCluster: string;
-    latentDim: number;
+    hotspotCount: number;
   };
   updatedAt: number;
 }

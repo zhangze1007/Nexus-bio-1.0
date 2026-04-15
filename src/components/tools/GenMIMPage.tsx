@@ -225,6 +225,7 @@ export default function GenMIMPage() {
 
   useEffect(() => {
     setToolPayload('genmim', {
+      validity: 'partial',
       toolId: 'genmim',
       targetProduct: analyzeArtifact?.targetProduct || project?.targetProduct || project?.title || 'Target Product',
       sourceArtifactId: analyzeArtifact?.id,

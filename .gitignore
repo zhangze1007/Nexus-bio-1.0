@@ -39,3 +39,11 @@ next-env.d.ts
 
 # Local scientific workbench database
 .nexus/
+
+# Local Python virtual environments
+.venv/
+.venv-scspatial/
+
+# Python bytecode
+__pycache__/
+*.pyc

@@ -81,6 +81,7 @@ export interface ClusterResult {
 
 export interface PAGAResult {
   connectivities: number[][];
+  clusterPseudotime: number[];
   branchingPoints: {
     cluster: number;
     label: string;
@@ -710,6 +711,7 @@ export function computePAGA(cells: CellRecord[], clusters: ClusterResult): PAGAR
 
   return {
     connectivities,
+    clusterPseudotime: Array.from(pseudotime),
     branchingPoints,
     pseudotimeRange: [ptMin, ptMaxFinal],
     rootCluster,
@@ -1263,9 +1265,7 @@ export function runFullPipeline(cells: CellRecord[]): ScSpatialAnalysisResult {
   // Propagate pseudotime from PAGA back to cells
   const withPseudotime = clustered.map(c => ({
     ...c,
-    pseudotime: paga.pseudotimeRange[1] > 0
-      ? (paga.connectivities[c.cluster]?.[paga.rootCluster] ?? 0.5)
-      : 0,
+    pseudotime: paga.clusterPseudotime[c.cluster] ?? 0,
   }));
 
   // 6. Spatial neighbors

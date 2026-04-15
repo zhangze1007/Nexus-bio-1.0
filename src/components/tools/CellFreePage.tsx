@@ -743,6 +743,7 @@ export default function CellFreePage() {
   useEffect(() => {
     if (simError) return;
     setToolPayload('cellfree', {
+      validity: 'demo',
       toolId: 'cellfree',
       targetProduct: analyzeArtifact?.targetProduct || project?.targetProduct || project?.title || 'Target Product',
       sourceArtifactId: analyzeArtifact?.id,

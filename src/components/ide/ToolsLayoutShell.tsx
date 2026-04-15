@@ -21,6 +21,7 @@
  *   Content: 10  |  Backdrop: 80  |  Sidebar: 90  |  Topbar: 100
  */
 
+import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -108,8 +109,55 @@ export default function ToolsLayoutShell({ children }: ToolsLayoutShellProps) {
 
         {/* Console — bottom panel. Always mounted. */}
         <IDEConsole />
+
+        {/*
+         * Floating Copilot entry point (PR-2a).
+         *
+         * The audit calls for a global Ask-Axon shortcut reachable from any
+         * tool. The natural home would be the left rail, but IDESidebar.tsx
+         * is FORBIDDEN to modify (CLAUDE.md). We instead anchor the entry
+         * point to the shared tools shell so every /tools/* page gets it
+         * without touching forbidden chrome.
+         *
+         * Hidden on /tools/nexai itself (user is already there) and on the
+         * directory page (no module context to carry into the prompt).
+         */}
+        {isWorkbench && moduleId !== 'nexai' && <CopilotFloatingButton />}
       </div>
     </NavigationProvider>
+  );
+}
+
+function CopilotFloatingButton() {
+  return (
+    <Link
+      href="/tools/nexai"
+      aria-label="Ask Axon Copilot"
+      data-testid="nexai-floating-copilot"
+      style={{
+        position: 'fixed',
+        right: '24px',
+        bottom: '84px',
+        zIndex: 95,
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '8px',
+        padding: '10px 16px',
+        borderRadius: '999px',
+        background: 'linear-gradient(135deg, rgba(175,195,214,0.92), rgba(231,199,169,0.88))',
+        color: '#111318',
+        fontFamily: 'var(--font-sans, system-ui)',
+        fontSize: '12px',
+        fontWeight: 700,
+        letterSpacing: '0.02em',
+        textDecoration: 'none',
+        boxShadow: '0 10px 28px rgba(4,10,16,0.45), 0 2px 6px rgba(0,0,0,0.35)',
+        border: '1px solid rgba(255,255,255,0.22)',
+      }}
+    >
+      <span aria-hidden style={{ fontFamily: 'monospace', fontSize: '14px' }}>⬡</span>
+      <span>Ask Axon</span>
+    </Link>
   );
 }
 

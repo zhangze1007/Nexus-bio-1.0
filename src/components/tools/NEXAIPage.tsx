@@ -1,5 +1,19 @@
 'use client';
-import { useState, useRef, useEffect, useMemo } from 'react';
+/**
+ * NEXAIPage — Axon Copilot surface.
+ *
+ * Post-audit composition: prompt → result → evidence → raw-output drawer.
+ * The heavy-lifting components live in ./nexai/. This page owns only:
+ *   • workbench context injection into the prompt
+ *   • Groq/Gemini call via /api/analyze (and the Semantic Scholar sidecar)
+ *   • parseError plumbing (PR-1 meta field) through to ResultPanel
+ *   • workbench payload sync
+ *
+ * The audit's deferred pieces (agentic orchestrator, automation drawer,
+ * external literature API expansion, evidence tree viz) are NOT started
+ * here — see PR-2b / PR-3 notes.
+ */
+import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import ToolShell, { TOOL_TOKENS as T } from './shared/ToolShell';
 import ModuleCard from './shared/ModuleCard';
@@ -13,310 +27,30 @@ import ScientificHero from './shared/ScientificHero';
 import { PATHD_THEME } from '../workbench/workbenchTheme';
 import ScientificFigureFrame from './shared/ScientificFigureFrame';
 import ScientificMethodStrip from './shared/ScientificMethodStrip';
-import ResearchAnswerRenderer from './shared/ResearchAnswerRenderer';
-
-const AXON_ACCENT = PATHD_THEME.blue;
-
-// ── Full-bleed Citation Graph ──────────────────────────────────────────
-
-function CitationGraph({ citations, onNodeClick }: {
-  citations: CitationNode[];
-  onNodeClick?: (c: CitationNode) => void;
-}) {
-  const W = 640, H = 480;
-  const [hovered, setHovered] = useState<string | null>(null);
-  const sorted = [...citations].sort((left, right) => left.year - right.year);
-  const yearMin = Math.min(...sorted.map((citation) => citation.year), sorted[0]?.year ?? 2020);
-  const yearMax = Math.max(...sorted.map((citation) => citation.year), sorted[sorted.length - 1]?.year ?? yearMin + 1);
-  const yearRange = Math.max(yearMax - yearMin, 1);
-
-  const nodes = sorted.map((citation, index) => {
-    const x = 68 + ((citation.year - yearMin) / yearRange) * (W - 136);
-    const lane = index % 4;
-    const relevanceY = 104 + (1 - citation.relevance) * 188;
-    const laneOffset = lane % 2 === 0 ? -18 : 18;
-    return {
-      ...citation,
-      x,
-      y: relevanceY + laneOffset,
-      r: 11 + citation.relevance * 11,
-      lane,
-    };
-  });
-
-  return (
-    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
-      <defs>
-        <filter id="nexai-glow" x="-60%" y="-60%" width="220%" height="220%">
-          <feGaussianBlur stdDeviation="4" result="blur" />
-          <feComposite in="SourceGraphic" in2="blur" operator="over" />
-        </filter>
-        <filter id="nexai-node-glow" x="-80%" y="-80%" width="260%" height="260%">
-          <feGaussianBlur stdDeviation="3" />
-        </filter>
-      </defs>
-      <rect width={W} height={H} rx={16} fill="#05070b" />
-      <rect x="24" y="24" width={W - 48} height={H - 48} rx="18" fill="rgba(255,255,255,0.025)" stroke="rgba(255,255,255,0.06)" />
-      <text x="40" y="22" fontFamily={T.SANS} fontSize="10" fill="rgba(205,214,236,0.6)" letterSpacing="0.12em">
-        LITERATURE SUPPORT MAP
-      </text>
-      <text x="40" y="36" fontFamily={T.SANS} fontSize="12" fill="rgba(247,249,255,0.92)">
-        Publications positioned by year and relevance, with bridge citations highlighted
-      </text>
-
-      {[0, 0.25, 0.5, 0.75, 1].map((tick) => {
-        const y = 92 + tick * 220;
-        return (
-          <g key={`g-${tick}`}>
-            <line x1="52" y1={y} x2={W - 52} y2={y} stroke="rgba(255,255,255,0.045)" />
-            <text x="46" y={y + 3} textAnchor="end" fontFamily={T.MONO} fontSize="7" fill="rgba(255,255,255,0.28)">
-              {(1 - tick).toFixed(2)}
-            </text>
-          </g>
-        );
-      })}
-      <line x1="52" y1="330" x2={W - 52} y2="330" stroke="rgba(255,255,255,0.12)" />
-      {Array.from({ length: Math.min(6, yearRange + 1) }).map((_, index, arr) => {
-        const year = Math.round(yearMin + (index / Math.max(arr.length - 1, 1)) * yearRange);
-        const x = 68 + ((year - yearMin) / yearRange) * (W - 136);
-        return (
-          <g key={`year-${year}`}>
-            <line x1={x} y1="330" x2={x} y2="336" stroke="rgba(255,255,255,0.12)" />
-            <text x={x} y="350" textAnchor="middle" fontFamily={T.MONO} fontSize="7" fill="rgba(255,255,255,0.28)">
-              {year}
-            </text>
-          </g>
-        );
-      })}
-
-      {/* Curved arc bridge citation edges */}
-      {nodes.map((node, index) =>
-        nodes.slice(index + 1)
-          .filter((candidate) => Math.abs(candidate.year - node.year) <= 4 && Math.abs(candidate.relevance - node.relevance) <= 0.22)
-          .slice(0, 2)
-          .map((peer, edgeIndex) => {
-            const mx = (node.x + peer.x) / 2;
-            const my = Math.min(node.y, peer.y) - 28 - Math.abs(node.x - peer.x) * 0.15;
-            const combined = (node.relevance + peer.relevance) / 2;
-            return (
-              <path
-                key={`arc-${index}-${edgeIndex}`}
-                d={`M ${node.x} ${node.y} Q ${mx} ${my} ${peer.x} ${peer.y}`}
-                fill="none"
-                stroke={combined > 0.7 ? 'rgba(175,195,214,0.32)' : 'rgba(175,195,214,0.16)'}
-                strokeWidth={combined > 0.7 ? 1.2 : 0.7}
-              />
-            );
-          })
-      )}
-
-      {nodes.map(n => {
-        const isHov = hovered === n.id;
-        return (
-          <g key={n.id}
-            onMouseEnter={() => setHovered(n.id)}
-            onMouseLeave={() => setHovered(null)}
-            onClick={() => onNodeClick?.(n)}
-            style={{ cursor: 'pointer' }}>
-            <line x1={n.x} y1="330" x2={n.x} y2={n.y + n.r + 4} stroke="rgba(255,255,255,0.08)" strokeDasharray="3 4" />
-            {/* Glow halo for high-relevance nodes */}
-            {n.relevance > 0.7 && (
-              <circle cx={n.x} cy={n.y} r={n.r + 4}
-                fill={isHov ? 'rgba(231,199,169,0.22)' : 'rgba(175,195,214,0.18)'}
-                filter="url(#nexai-node-glow)" />
-            )}
-            <circle cx={n.x} cy={n.y} r={n.r}
-              fill={isHov ? 'rgba(175,195,214,0.24)' : 'rgba(18,26,40,0.88)'}
-              stroke={isHov ? 'rgba(231,199,169,0.9)' : n.relevance > 0.7 ? 'rgba(175,195,214,0.72)' : 'rgba(175,195,214,0.46)'}
-              strokeWidth={isHov ? 1.8 : n.relevance > 0.7 ? 1.5 : 1.1}
-            />
-            <text x={n.x} y={n.y + 4} textAnchor="middle"
-              fontFamily={T.MONO} fontSize="9" fill={isHov ? 'rgba(255,244,230,0.96)' : 'rgba(255,255,255,0.72)'}>
-              {n.year}
-            </text>
-            <text x={n.x} y={n.y + n.r + 16} textAnchor="middle" fontFamily={T.SANS} fontSize="8" fill="rgba(205,214,236,0.62)">
-              {n.title.slice(0, 14)}{n.title.length > 14 ? '…' : ''}
-            </text>
-            {isHov && (
-              <foreignObject x={Math.min(n.x + n.r + 8, W - 248)} y={Math.max(n.y - 48, 48)} width={220} height={92}>
-                <div style={{
-                  background: 'rgba(9,12,18,0.88)',
-                  border: `1px solid rgba(255,255,255,0.08)`,
-                  borderRadius: '12px',
-                  padding: '8px 10px',
-                  backdropFilter: 'blur(14px)',
-                  boxShadow: '0 18px 34px rgba(0,0,0,0.28)',
-                }}>
-                  <p style={{ fontFamily: T.SANS, fontSize: '10px', color: 'rgba(255,255,255,0.84)', margin: '0 0 3px', lineHeight: 1.45 }}>
-                    {n.title.slice(0, 80)}{n.title.length > 80 ? '…' : ''}
-                  </p>
-                  <p style={{ fontFamily: T.MONO, fontSize: '8px', color: 'rgba(175,195,214,0.9)', margin: '0 0 4px' }}>
-                    Relevance: {(n.relevance * 100).toFixed(0)}%
-                  </p>
-                  <p style={{ fontFamily: T.SANS, fontSize: '9px', color: 'rgba(205,214,236,0.6)', margin: 0 }}>
-                    Bridge this citation into the active evidence bundle if it should steer the current project route.
-                  </p>
-                </div>
-              </foreignObject>
-            )}
-          </g>
-        );
-      })}
-      <text x={14} y={H - 12} fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.18)">
-        Y-axis = citation relevance · X-axis = publication year
-      </text>
-    </svg>
-  );
-}
-
-// ── Floating CLI Overlay ───────────────────────────────────────────────
-
-function FloatingCLI({ query, setQuery, onSubmit, loading, history, placeholder }: {
-  query: string;
-  setQuery: (q: string) => void;
-  onSubmit: () => void;
-  loading: boolean;
-  history: string[];
-  placeholder: string;
-}) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [histIdx, setHistIdx] = useState(-1);
-  const [btnHovered, setBtnHovered] = useState(false);
-
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === '/' && e.target === document.body) {
-        e.preventDefault();
-        inputRef.current?.focus();
-      }
-    };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, []);
-
-  const handleKey = (e: React.KeyboardEvent) => {
-    if ((e.nativeEvent as KeyboardEvent).isComposing || e.keyCode === 229) return;
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); onSubmit(); }
-    if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      const newIdx = Math.min(histIdx + 1, history.length - 1);
-      setHistIdx(newIdx);
-      if (history[newIdx]) setQuery(history[newIdx]);
-    }
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      const newIdx = Math.max(histIdx - 1, -1);
-      setHistIdx(newIdx);
-      setQuery(newIdx < 0 ? '' : (history[newIdx] ?? ''));
-    }
-  };
-
-  return (
-    <motion.div
-      initial={{ y: 20, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-      style={{
-        position: 'absolute', bottom: '16px', left: '16px', right: '16px',
-        borderRadius: '22px',
-        background: '#050505',
-        border: `1px solid ${loading ? 'rgba(175,195,214,0.2)' : 'rgba(255,255,255,0.08)'}`,
-        boxShadow: loading ? '0 18px 48px rgba(12,20,30,0.34)' : '0 18px 48px rgba(4,10,16,0.24)',
-        padding: '8px',
-        display: 'flex', alignItems: 'center', gap: '10px',
-        zIndex: 10,
-      }}
-    >
-      {loading ? (
-        <span style={{ display: 'flex', gap: '3px', alignItems: 'center', flexShrink: 0 }}>
-          {[0, 1, 2].map(i => (
-            <motion.span
-              key={i}
-              animate={{ opacity: [0.2, 1, 0.2] }}
-              transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.22 }}
-              style={{
-                display: 'block', width: '5px', height: '5px', borderRadius: '50%',
-                background: AXON_ACCENT,
-              }}
-            />
-          ))}
-        </span>
-      ) : (
-        <span style={{ fontFamily: T.MONO, fontSize: '11px', fontWeight: 700, color: PATHD_THEME.label, flexShrink: 0, padding: '0 10px' }}>
-          /
-        </span>
-      )}
-      <input
-        ref={inputRef}
-        className="nb-nexai-ask-input"
-        value={query}
-        onChange={e => { setQuery(e.target.value); setHistIdx(-1); }}
-        onKeyDown={handleKey}
-        placeholder={placeholder}
-        enterKeyHint="search"
-        disabled={loading}
-        style={{
-          flex: 1, minHeight: '44px', background: 'transparent', border: 'none', outline: 'none',
-          fontFamily: T.SANS, fontSize: '14px',
-          color: PATHD_THEME.value,
-          caretColor: AXON_ACCENT,
-          letterSpacing: '-0.01em',
-        }}
-      />
-      <motion.button
-        aria-label="Submit Axon query"
-        onClick={onSubmit}
-        disabled={loading || !query.trim()}
-        whileTap={{ scale: 0.95 }}
-        onMouseEnter={() => setBtnHovered(true)}
-        onMouseLeave={() => setBtnHovered(false)}
-        style={{
-          minHeight: '44px',
-          minWidth: '110px',
-          padding: '0 18px',
-          borderRadius: '16px',
-          cursor: (loading || !query.trim()) ? 'not-allowed' : 'pointer',
-          fontFamily: T.SANS, fontSize: '13px', fontWeight: 700,
-          background: loading ? 'rgba(255,255,255,0.08)' : (btnHovered ? '#ffffff' : '#f4f7fb'),
-          border: 'none',
-          color: loading ? PATHD_THEME.label : '#111318',
-          opacity: (!loading && !query.trim()) ? 0.45 : 1,
-          boxShadow: (!loading && btnHovered) ? '0 2px 12px rgba(0,0,0,0.22)' : 'none',
-          transition: 'background 0.15s, box-shadow 0.15s',
-          flexShrink: 0,
-        }}
-      >
-        {loading ? 'Searching' : 'Ask Axon'}
-      </motion.button>
-    </motion.div>
-  );
-}
-
-// ── Preset Chips ───────────────────────────────────────────────────────
+import PromptInput from './nexai/PromptInput';
+import ResultPanel, { ParseErrorInfo } from './nexai/ResultPanel';
+import EvidencePanel from './nexai/EvidencePanel';
+import RawJsonDrawer from './nexai/RawJsonDrawer';
 
 const PRESET_QUERIES = [
-  'How does tHMGR improve artemisinin precursor supply?',
-  'Key bottlenecks in the artemisinin biosynthesis pathway?',
-  'Dynamic regulation strategies for isoprenoid overproduction',
+  'Summarise current pathway bottlenecks and recommend the next tool to run.',
+  'Compare the evidence for two candidate enzymes in the active workbench.',
+  'Explain the thermodynamic risk in the current pathway using attached evidence.',
 ];
 
-// ── Extract year from a citation string (e.g. "Ro et al., 2006.") ───────
 function extractYear(citation?: string): number | null {
   if (!citation) return null;
   const m = citation.match(/\b(19|20)\d{2}\b/);
   return m ? parseInt(m[0]) : null;
 }
 
-// ── Build NEXAIResult from Axon pathway JSON ─────────────────────────────
 function pathwayToResult(pathway: GeneratedPathway, query: string, provider: string): NEXAIResult {
   const nodes = (pathway.nodes || []).slice(0, 14);
   const bottlenecks = (pathway as any).bottleneck_enzymes || [];
   const axon = (pathway as any).axon_interaction;
 
-  // Map pathway nodes → CitationNode for the graph
   const W = 600, H = 420;
   const citations: CitationNode[] = nodes.map((n, i) => {
-    // Use 3D position projected to 2D, clamped to canvas
     const rawX = n.position ? n.position[0] * 45 + W / 2 : 60 + ((i * 115) % (W - 120));
     const rawY = n.position ? n.position[1] * 30 + H / 2 : 50 + Math.floor(i / 5) * 110 + (i % 2) * 28;
     return {
@@ -330,7 +64,6 @@ function pathwayToResult(pathway: GeneratedPathway, query: string, provider: str
     };
   });
 
-  // Build answer text
   let answer = '';
   if (axon?.question) {
     answer = axon.question;
@@ -352,7 +85,8 @@ function pathwayToResult(pathway: GeneratedPathway, query: string, provider: str
   return { query, answer, citations, confidence: avgConfidence, generatedAt: Date.now() };
 }
 
-// ── Main Page ──────────────────────────────────────────────────────────
+type ResultMode = 'pathway' | 'text' | 'idle';
+type SurfaceView = 'answer' | 'evidence';
 
 export default function NEXAIPage() {
   const appendConsole = useUIStore(s => s.appendConsole);
@@ -362,14 +96,22 @@ export default function NEXAIPage() {
   const selectedEvidenceIds = useWorkbenchStore((s) => s.selectedEvidenceIds);
   const nextRecommendations = useWorkbenchStore((s) => s.nextRecommendations);
   const setToolPayload = useWorkbenchStore((s) => s.setToolPayload);
+
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<NEXAIResult | null>(null);
-  const [resultMode, setResultMode] = useState<'pathway' | 'text' | 'idle'>('idle');
-  const [surfaceView, setSurfaceView] = useState<'answer' | 'evidence'>('answer');
+  const [resultMode, setResultMode] = useState<ResultMode>('idle');
+  const [surfaceView, setSurfaceView] = useState<SurfaceView>('answer');
   const [history, setHistory] = useState<string[]>([]);
   const [apiError, setApiError] = useState<string | null>(null);
-  const isUngrounded = Boolean(result) && result.citations.length === 0;
+
+  // PR-1 meta plumbing — the backend tells us when structured parsing
+  // failed. We surface it to ResultPanel and RawJsonDrawer so the failure
+  // is visible rather than silently coerced.
+  const [parseError, setParseError] = useState<ParseErrorInfo | null>(null);
+  const [rawText, setRawText] = useState<string | null>(null);
+  const [provider, setProvider] = useState<string | null>(null);
+  const [rawDrawerOpen, setRawDrawerOpen] = useState(false);
 
   const contextPrompt = useMemo(() => {
     if (analyzeArtifact) {
@@ -384,6 +126,7 @@ export default function NEXAIPage() {
 
   useEffect(() => {
     setToolPayload('nexai', {
+      validity: 'real',
       toolId: 'nexai',
       targetProduct: analyzeArtifact?.targetProduct ?? project?.targetProduct ?? 'Scientific workbench',
       sourceArtifactId: analyzeArtifact?.id,
@@ -413,10 +156,9 @@ export default function NEXAIPage() {
     setHistory(prev => [activeQuery, ...prev.slice(0, 19)]);
     setLoading(true);
     setApiError(null);
+    setParseError(null);
     appendConsole({ level: 'info', module: 'nexai', message: `Query: "${activeQuery.slice(0, 60)}${activeQuery.length > 60 ? '…' : ''}"` });
 
-    // Inject workbench context into the prompt as a real upstream signal — this is
-    // not a fake response, it is real context that the LLM consumes alongside the question.
     const contextualQuery = analyzeArtifact
       ? [
           activeQuery,
@@ -431,8 +173,6 @@ export default function NEXAIPage() {
       : activeQuery;
 
     try {
-      // Call Axon (Groq llama-3.3-70b-versatile via /api/analyze) — the ONLY source of answers.
-      // No template fallback. If this fails, the user sees an honest error, not a synthesized impostor.
       const res = await fetch('/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -440,42 +180,60 @@ export default function NEXAIPage() {
       });
 
       const data = await res.json();
-      const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-      const provider: string = data?.meta?.provider ?? 'groq';
+      const answerText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      const meta = data?.meta ?? {};
+      const resolvedProvider: string = meta.provider ?? 'groq';
+      const backendParseError: ParseErrorInfo | null = meta.parseError
+        ? {
+            code: meta.parseError.code as ParseErrorInfo['code'],
+            message: meta.parseError.message ?? 'Backend could not parse model output as JSON',
+          }
+        : null;
 
-      if (!res.ok || !rawText) throw new Error(data?.error ?? `HTTP ${res.status}`);
+      if (!res.ok || !answerText) throw new Error(data?.error ?? `HTTP ${res.status}`);
 
-      // Try to parse as Axon pathway JSON
+      setRawText(answerText);
+      setProvider(resolvedProvider);
+      setParseError(backendParseError);
+
       let pathway: GeneratedPathway | null = null;
-      try {
-        const parsed = JSON.parse(rawText);
-        if (parsed?.nodes?.length) pathway = parsed as GeneratedPathway;
-      } catch { /* not JSON — fall through to text mode */ }
+      if (!backendParseError || backendParseError.code === 'NO_OBJECT') {
+        try {
+          const parsed = JSON.parse(answerText);
+          if (parsed?.nodes?.length) pathway = parsed as GeneratedPathway;
+        } catch { /* prose answer — fine */ }
+      }
 
       if (pathway) {
-        setResult(pathwayToResult(pathway, activeQuery, provider));
+        setResult(pathwayToResult(pathway, activeQuery, resolvedProvider));
         setResultMode('pathway');
         setSurfaceView('answer');
         const bottlenecks = (pathway as any).bottleneck_enzymes?.length ?? 0;
-        appendConsole({ level: 'success', module: 'nexai', message: `Axon: ${pathway.nodes.length} nodes · ${bottlenecks} bottleneck(s) · ${provider}` });
+        appendConsole({ level: 'success', module: 'nexai', message: `Axon: ${pathway.nodes.length} nodes · ${bottlenecks} bottleneck(s) · ${resolvedProvider}` });
       } else {
-        // Plain text answer (non-pathway question) — straight from Groq, no contextual blending.
-        // Confidence is fixed at 0.75 as an LLM-estimated baseline; will be displayed with a
-        // "LLM-estimated" caveat in the UI.
+        // Plain text or malformed — both render via ResultPanel, which
+        // branches on parseError. We still set a result so confidence,
+        // citation, and recent-query UI have something to display.
         setResult({
           query: activeQuery,
-          answer: rawText.slice(0, 1200),
+          answer: answerText.slice(0, 1200),
           citations: [],
           confidence: 0.75,
           generatedAt: Date.now(),
         });
         setResultMode('text');
         setSurfaceView('answer');
-        appendConsole({ level: 'success', module: 'nexai', message: `Axon: text response · ${provider}` });
+        if (backendParseError && backendParseError.code !== 'NO_OBJECT') {
+          appendConsole({
+            level: 'warn',
+            module: 'nexai',
+            message: `Axon: ${backendParseError.code} — raw output preserved · ${resolvedProvider}`,
+          });
+        } else {
+          appendConsole({ level: 'success', module: 'nexai', message: `Axon: text response · ${resolvedProvider}` });
+        }
       }
 
-      // Fetch real citations from Semantic Scholar (best-effort, independent of Groq).
-      // This is a real external API, not a mock — it loads actual papers.
       try {
         const ssUrl = `https://api.semanticscholar.org/graph/v1/paper/search?query=${encodeURIComponent(activeQuery.slice(0, 100))}&fields=title,authors,year,citationCount&limit=5`;
         const ssRes = await fetch(ssUrl);
@@ -508,11 +266,15 @@ export default function NEXAIPage() {
     setLoading(false);
   }
 
+  const isUngrounded = Boolean(result) && result.citations.length === 0;
+  const malformedParse =
+    parseError && (parseError.code === 'INVALID_SYNTAX' || parseError.code === 'EMPTY');
+
   return (
     <ToolShell
       moduleId="nexai"
       title="Axon"
-      description="Semantic search across PubMed, UniProt, ChEMBL, Reactome, KEGG — synthesized by Groq"
+      description="Plain-language research copilot — synthesises evidence, bottlenecks, and next-step routing"
       formula="score = α·semantic_sim + β·citation_weight"
       grid="'presets graph stats' 'presets graph stats'"
       columns="200px 1fr 200px"
@@ -522,8 +284,8 @@ export default function NEXAIPage() {
         <>
           <ScientificHero
             eyebrow="Cross-Stage · Research Copilot"
-            title="Evidence-grounded synthesis for the active workbench object"
-            summary="Axon now opens as a decision surface rather than a blank chat box. The page foregrounds what it currently knows, how confident that knowledge is, how much evidence is attached, and whether the answer is coming from a live pathway graph or contextual scientific synthesis."
+            title="Plain-language copilot for the active workbench object"
+            summary="Ask Axon in your own words. The page opens on a text-first reading surface — summary, observations, and recommended next steps — with the evidence map and raw JSON kept one click away for the researchers who want them."
             aside={
               <>
                 <div style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
@@ -533,7 +295,7 @@ export default function NEXAIPage() {
                   {analyzeArtifact?.targetProduct ?? project?.targetProduct ?? project?.title ?? 'Scientific workbench'}
                 </div>
                 <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.label, lineHeight: 1.55 }}>
-                  {contextPrompt || 'Ask Axon to synthesize evidence, explain a bottleneck, or route the next scientific action.'}
+                  {contextPrompt || 'Ask Axon to synthesise evidence, explain a bottleneck, or route the next scientific action.'}
                 </div>
               </>
             }
@@ -541,8 +303,12 @@ export default function NEXAIPage() {
               {
                 label: 'Answer Mode',
                 value: result ? resultMode.toUpperCase() : 'IDLE',
-                detail: resultMode === 'pathway' ? 'Live pathway graph answer from the analysis route.' : resultMode === 'text' ? 'Contextual scientific synthesis grounded in the current project graph.' : 'No active answer yet.',
-                tone: resultMode === 'pathway' ? 'cool' : resultMode === 'text' ? 'warm' : 'neutral',
+                detail: resultMode === 'pathway'
+                  ? 'Structured pathway JSON from the analysis route.'
+                  : resultMode === 'text'
+                    ? (malformedParse ? 'Model returned malformed structured output; raw fallback shown.' : 'Plain-language research synthesis.')
+                    : 'No active answer yet.',
+                tone: malformedParse ? 'alert' : resultMode === 'pathway' ? 'cool' : resultMode === 'text' ? 'warm' : 'neutral',
               },
               {
                 label: 'Confidence',
@@ -563,7 +329,7 @@ export default function NEXAIPage() {
               {
                 label: 'Recent Query',
                 value: (query || history[0] || contextPrompt || 'Pending').slice(0, 44),
-                detail: loading ? 'Axon is currently synthesizing a response.' : 'Recent query state remains part of the same canonical workbench object graph.',
+                detail: loading ? 'Axon is currently synthesising a response.' : 'Recent query state remains part of the canonical workbench object graph.',
                 tone: loading ? 'alert' : 'neutral',
               },
             ]}
@@ -573,21 +339,21 @@ export default function NEXAIPage() {
             items={[
               {
                 title: 'Prompt context',
-                detail: 'The active target product, evidence graph, and queued next-step recommendations now seed the research prompt so Axon starts from the workbench state.',
+                detail: 'The active target product, evidence graph, and queued next-step recommendations seed the research prompt so Axon starts from the workbench state.',
                 accent: PATHD_THEME.apricot,
                 note: `${selectedEvidenceIds.length} selected evidence item(s)`,
               },
               {
-                title: 'Citation canvas',
-                detail: 'The graph acts like a living figure: literature structure, answer synthesis, and command input are kept inside one visual reading surface.',
+                title: 'Reading surface',
+                detail: 'The written synthesis is the default reading plane. Evidence graph and raw structured output remain one click away for power users.',
                 accent: PATHD_THEME.sky,
                 note: `${result?.citations.length ?? 0} citation nodes`,
               },
               {
-                title: 'Action routing',
-                detail: 'Result mode, confidence, and recent query history remain attached so Axon behaves like a research desk tied to execution, not a detached chat pane.',
+                title: 'Structured contract',
+                detail: 'When the model fails to produce the structured envelope we asked for, the failure is surfaced explicitly rather than coerced into a plausible brief.',
                 accent: PATHD_THEME.mint,
-                note: result ? resultMode : 'idle',
+                note: malformedParse ? (parseError!.code) : (parseError?.code === 'NO_OBJECT' ? 'prose' : 'ok'),
               },
             ]}
           />
@@ -597,7 +363,7 @@ export default function NEXAIPage() {
         <ExportButton label="Export Result" data={result} filename="nexai-result" format="json" disabled={!result} />
       }
     >
-      {/* ── Presets & Citations ──────────────────────────────── */}
+      {/* ── Left rail: quick queries + citation index ──────── */}
       <ModuleCard area="presets" title="Quick Queries">
         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, overflowY: 'auto' }}>
           <WorkbenchInlineContext
@@ -650,8 +416,7 @@ export default function NEXAIPage() {
             </motion.button>
           ))}
 
-          {/* Citation list when result exists */}
-          {result && (
+          {result && result.citations.length > 0 && (
             <>
               <div style={{
                 fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase',
@@ -685,35 +450,45 @@ export default function NEXAIPage() {
         </div>
       </ModuleCard>
 
-      {/* ── Center: Graph + Floating CLI + Answer ───────────── */}
-      <ModuleCard area="graph" flush style={{ position: 'relative' }}>
+      {/* ── Center: reading surface (prompt → result → evidence → raw) ── */}
+      <ModuleCard area="graph" flush>
         <ScientificFigureFrame
           eyebrow={result && surfaceView === 'evidence' ? 'Evidence map' : 'Research brief'}
           title={result
-            ? 'Researchers read the written synthesis first, then inspect the citation map as supporting evidence'
+            ? 'Read the written synthesis first, then inspect the evidence map'
             : 'Ask Axon for a workbench-grounded research brief'}
           caption={result
-            ? 'The primary surface now opens on prose and structured takeaways. The citation network remains available as an evidence-oriented view when the user wants to inspect support structure.'
-            : 'Axon opens as a text-first research desk. Once a result exists, the written brief becomes the default reading surface and the evidence map stays available on demand.'}
+            ? 'The primary surface opens on prose and structured takeaways. The citation network and raw model response remain available as secondary views.'
+            : 'Axon opens as a text-first research desk. Once a result exists, the written brief becomes the default reading surface; evidence and raw JSON stay available on demand.'}
           legend={[
             { label: 'Mode', value: result ? resultMode : 'idle', accent: PATHD_THEME.lilac },
             { label: 'Surface', value: result ? surfaceView : 'answer', accent: PATHD_THEME.apricot },
             { label: 'Confidence', value: result ? `${(result.confidence * 100).toFixed(0)}%` : '—', accent: PATHD_THEME.mint },
             { label: 'Citations', value: `${result?.citations.length ?? 0}`, accent: PATHD_THEME.sky },
-            { label: 'History', value: `${history.length}`, accent: PATHD_THEME.lilac },
+            { label: 'Parse', value: parseError?.code === 'NO_OBJECT' ? 'prose' : parseError?.code ?? 'ok', accent: PATHD_THEME.lilac },
           ]}
           minHeight="100%"
         >
           <div
             style={{
-              position: 'relative',
-              minHeight: '520px',
-              padding: '12px 12px 92px',
+              padding: '12px',
               display: 'grid',
-              gridTemplateRows: result ? 'auto minmax(0, 1fr)' : '1fr',
+              gridTemplateRows: 'auto auto minmax(0, 1fr) auto',
               gap: '12px',
+              minHeight: '560px',
             }}
           >
+            <PromptInput
+              query={query}
+              setQuery={setQuery}
+              onSubmit={runQuery}
+              loading={loading}
+              history={history}
+              placeholder={contextPrompt || undefined}
+              examples={PRESET_QUERIES}
+              hideExamples={Boolean(result)}
+            />
+
             {result && (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' }}>
                 <div style={{ fontFamily: T.MONO, fontSize: '9px', color: PATHD_THEME.label, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
@@ -740,7 +515,7 @@ export default function NEXAIPage() {
                       onClick={() => setSurfaceView(view)}
                       aria-pressed={surfaceView === view}
                       style={{
-                        minHeight: '34px',
+                        minHeight: '32px',
                         padding: '0 12px',
                         borderRadius: '10px',
                         border: 'none',
@@ -759,171 +534,40 @@ export default function NEXAIPage() {
               </div>
             )}
 
-            <div style={{ minHeight: 0, display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {apiError && (
-                <div
-                  role="alert"
-                  style={{
-                    flex: '0 0 auto',
-                    borderRadius: '14px',
-                    border: '1px solid rgba(250,128,114,0.42)',
-                    background: 'rgba(250,128,114,0.12)',
-                    padding: '12px 16px',
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    gap: '12px',
-                  }}
-                >
-                  <span style={{ fontFamily: T.MONO, fontSize: '11px', fontWeight: 700, color: '#FA8072', letterSpacing: '0.08em' }}>
-                    GROQ ERROR
-                  </span>
-                  <p style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.value, lineHeight: 1.6, margin: 0 }}>
-                    {apiError}
-                  </p>
-                </div>
-              )}
-              {!result ? (
-                <div
-                  style={{
-                    flex: 1,
-                    display: 'grid',
-                    placeItems: 'center',
-                    borderRadius: '18px',
-                    border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
-                    background: PATHD_THEME.panelSurface,
-                    textAlign: 'center',
-                    padding: '24px',
-                  }}
-                >
-                  <div>
-                    <p style={{ fontFamily: T.MONO, fontSize: '32px', color: 'rgba(36,29,24,0.08)', margin: '0 0 8px' }}>⬡</p>
-                    <p style={{ fontFamily: T.SANS, fontSize: '12px', color: PATHD_THEME.label }}>
-                      {apiError ? 'Axon needs the Groq API to answer — please try again' : 'Ask Axon a research question'}
-                    </p>
-                    <p style={{ fontFamily: T.MONO, fontSize: '9px', color: PATHD_THEME.label, marginTop: '4px' }}>
-                      press / to focus the command line
-                    </p>
-                  </div>
-                </div>
-              ) : surfaceView === 'answer' ? (
-                <div
-                  style={{
-                    flex: 1,
-                    minHeight: 0,
-                    overflowY: 'auto',
-                    borderRadius: '18px',
-                    background: PATHD_THEME.panelGlassStrong,
-                    backdropFilter: 'blur(12px)',
-                    border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
-                    padding: '16px 18px',
-                    boxShadow: '0 16px 36px rgba(0,0,0,0.24)',
-                    display: 'grid',
-                    gap: '12px',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                    <span style={{ fontFamily: T.MONO, fontSize: '9px', color: PATHD_THEME.label }}>AXON</span>
-                    <span style={{
-                      fontFamily: T.MONO, fontSize: '8px', padding: '2px 6px',
-                      background: 'rgba(191,220,205,0.18)', border: '1px solid rgba(191,220,205,0.32)',
-                      borderRadius: '6px', color: PATHD_THEME.value,
-                    }}>
-                      {(result.confidence * 100).toFixed(0)}%
-                    </span>
-                    <span style={{
-                      fontFamily: T.MONO,
-                      fontSize: '8px',
-                      padding: '2px 6px',
-                      background: 'rgba(175,195,214,0.14)',
-                      border: '1px solid rgba(175,195,214,0.26)',
-                      borderRadius: '6px',
-                      color: PATHD_THEME.value,
-                    }}>
-                      {result.citations.length} citation node{result.citations.length === 1 ? '' : 's'}
-                    </span>
-                    {isUngrounded && (
-                      <span
-                        style={{
-                          fontFamily: T.MONO,
-                          fontSize: '8px',
-                          padding: '2px 6px',
-                          background: 'rgba(232,163,161,0.18)',
-                          border: '1px solid rgba(232,163,161,0.34)',
-                          borderRadius: '6px',
-                          color: PATHD_THEME.value,
-                        }}
-                      >
-                        ungrounded
-                      </span>
-                    )}
-                  </div>
-                  {isUngrounded && (
-                    <p style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.label, lineHeight: 1.6, margin: 0 }}>
-                      This answer does not yet have visible citation support. Treat it as contextual synthesis until Research evidence is attached or a citation-backed rerun is completed.
-                    </p>
-                  )}
-                  <ResearchAnswerRenderer answer={result.answer} />
-                </div>
+            <div style={{ minHeight: 0, overflowY: 'auto' }}>
+              {surfaceView === 'evidence' && result ? (
+                <EvidencePanel citations={result.citations} />
               ) : (
-                <div
-                  style={{
-                    flex: 1,
-                    minHeight: 0,
-                    overflow: 'hidden',
-                    borderRadius: '18px',
-                    border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
-                    background: PATHD_THEME.panelSurface,
-                    display: 'grid',
-                    gridTemplateRows: 'auto minmax(0, 1fr)',
-                    gap: '10px',
-                    padding: '14px',
-                  }}
-                >
-                  <div style={{ display: 'grid', gap: '6px' }}>
-                    <div style={{ fontFamily: T.MONO, fontSize: '9px', color: PATHD_THEME.label, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                      Citation support map
-                    </div>
-                    <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.label, lineHeight: 1.55 }}>
-                      The graph stays available as a secondary evidence view for inspecting publication clustering, recency, and bridge citations behind the written answer.
-                    </div>
-                  </div>
-                  <div style={{ minHeight: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-                    {result.citations.length > 0 ? (
-                      <CitationGraph citations={result.citations} />
-                    ) : (
-                      <div style={{ textAlign: 'center', padding: '24px' }}>
-                        <div style={{ fontFamily: T.MONO, fontSize: '11px', color: PATHD_THEME.label, marginBottom: '6px' }}>
-                          No evidence map yet
-                        </div>
-                        <div style={{ fontFamily: T.SANS, fontSize: '12px', color: PATHD_THEME.value, lineHeight: 1.6 }}>
-                          Attach Research evidence or rerun with a literature-backed query to populate the citation surface.
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
+                <ResultPanel
+                  result={result}
+                  rawText={rawText}
+                  parseError={parseError}
+                  loading={loading}
+                  apiError={apiError}
+                />
               )}
             </div>
 
-            <FloatingCLI
-              query={query} setQuery={setQuery}
-              onSubmit={runQuery} loading={loading}
-              history={history}
-              placeholder={contextPrompt || 'Ask Axon anything…'}
+            <RawJsonDrawer
+              open={rawDrawerOpen}
+              onToggle={setRawDrawerOpen}
+              rawText={rawText}
+              provider={provider}
+              parseError={parseError}
+              isProse={parseError?.code === 'NO_OBJECT'}
             />
           </div>
         </ScientificFigureFrame>
       </ModuleCard>
 
-      {/* ── Right: Stats ────────────────────────────────────── */}
+      {/* ── Right rail: stats + posture ──────────────────── */}
       <ModuleCard area="stats" title="Query Stats">
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
           <MetricCard label="Confidence" value={result ? (result.confidence * 100).toFixed(0) + '%' : '—'} highlight={!!result} />
           <MetricCard label="Citations" value={result?.citations.length ?? 0} />
           <MetricCard label="Databases" value={6} unit="sources" />
-          <MetricCard label="Model" value="llama-3.3" />
+          <MetricCard label="Model" value={provider ?? 'llama-3.3'} />
 
-          {/* History */}
           {history.length > 0 && (
             <div style={{ marginTop: '12px' }}>
               <div style={{
@@ -964,9 +608,11 @@ export default function NEXAIPage() {
             </div>
             <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.value, lineHeight: 1.55 }}>
               {result
-                ? isUngrounded
-                  ? 'Axon returned a synthesis, but it is not yet citation-backed in the visible evidence graph.'
-                  : 'Axon is now framed as a synthesis desk that turns literature structure into route-level scientific guidance.'
+                ? malformedParse
+                  ? 'Model returned malformed structured output — the raw response is preserved in the drawer for manual inspection.'
+                  : isUngrounded
+                    ? 'Axon returned a synthesis, but it is not yet citation-backed in the visible evidence graph.'
+                    : 'Axon is framed as a synthesis desk that turns literature structure into route-level scientific guidance.'
                 : 'This panel will become an evidence-backed routing summary once a query is run.'}
             </div>
           </div>

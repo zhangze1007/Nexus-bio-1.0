@@ -61,7 +61,11 @@ export const WORKBENCH_STAGES: WorkbenchStageDefinition[] = [
   },
 ];
 
-export const CROSS_STAGE_TOOL_IDS = ['nexai'] as const;
+// NEXAI is being repositioned from a "cross-stage tool" into a dedicated
+// Copilot surface (see audit P0.10). The list is intentionally empty for now
+// — the `/tools/nexai` route stays live, but it no longer renders inside
+// the launcher / sidebar / status-bar cross-stage sections.
+export const CROSS_STAGE_TOOL_IDS = [] as const;
 
 export const TOOL_STAGE_MAP = WORKBENCH_STAGES.reduce<Record<string, WorkbenchStageId>>((acc, stage) => {
   stage.toolIds.forEach((toolId) => {

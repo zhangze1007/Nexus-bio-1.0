@@ -320,6 +320,7 @@ function sanitizeToolPayloads(value: unknown): WorkbenchToolPayloadMap {
   if (!isRecord(value)) return {};
   const entries = Object.entries(value).filter(([key, payload]) => {
     if (!VALID_PAYLOAD_KEYS.has(key) || !isRecord(payload)) return false;
+    if (payload.validity !== 'real' && payload.validity !== 'partial' && payload.validity !== 'demo') return false;
     return typeof payload.toolId === 'string' && typeof payload.updatedAt === 'number';
   });
   return Object.fromEntries(entries) as WorkbenchToolPayloadMap;

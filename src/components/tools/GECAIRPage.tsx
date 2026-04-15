@@ -381,6 +381,7 @@ export default function GECAIRPage() {
 
   useEffect(() => {
     setToolPayload('gecair', {
+      validity: 'partial',
       toolId: 'gecair',
       targetProduct: analyzeArtifact?.targetProduct || project?.targetProduct || project?.title || 'Target Product',
       sourceArtifactId: analyzeArtifact?.id,

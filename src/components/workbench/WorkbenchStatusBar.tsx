@@ -803,39 +803,41 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                   )}
                 </section>
 
-                <section style={{ display: 'grid', gap: '8px' }}>
-                  <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                    Cross-Stage Intelligence
-                  </div>
-                  {CROSS_STAGE_TOOL_IDS.map((toolId) => {
-                    const tool = TOOL_BY_ID[toolId];
-                    if (!tool) return null;
-                    return (
-                      <Link
-                        key={toolId}
-                        href={tool.href}
-                        style={{
-                          borderRadius: '14px',
-                          border: `1px solid ${BORDER}`,
-                          background: CARD_BG,
-                          padding: '10px 12px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          gap: '10px',
-                          textDecoration: 'none',
-                          color: VALUE,
-                          fontFamily: T.SANS,
-                          fontSize: '12px',
-                          fontWeight: 600,
-                        }}
-                      >
-                        <span>{tool.name}</span>
-                        <Workflow size={13} />
-                      </Link>
-                    );
-                  })}
-                </section>
+                {CROSS_STAGE_TOOL_IDS.length > 0 && (
+                  <section style={{ display: 'grid', gap: '8px' }}>
+                    <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                      Cross-Stage Intelligence
+                    </div>
+                    {CROSS_STAGE_TOOL_IDS.map((toolId) => {
+                      const tool = TOOL_BY_ID[toolId];
+                      if (!tool) return null;
+                      return (
+                        <Link
+                          key={toolId}
+                          href={tool.href}
+                          style={{
+                            borderRadius: '14px',
+                            border: `1px solid ${BORDER}`,
+                            background: CARD_BG,
+                            padding: '10px 12px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            gap: '10px',
+                            textDecoration: 'none',
+                            color: VALUE,
+                            fontFamily: T.SANS,
+                            fontSize: '12px',
+                            fontWeight: 600,
+                          }}
+                        >
+                          <span>{tool.name}</span>
+                          <Workflow size={13} />
+                        </Link>
+                      );
+                    })}
+                  </section>
+                )}
               </div>
             </motion.aside>
           </>

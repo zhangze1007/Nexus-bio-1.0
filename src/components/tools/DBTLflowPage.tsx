@@ -303,6 +303,7 @@ export default function DBTLflowPage() {
 
   useEffect(() => {
     setToolPayload('dbtlflow', {
+      validity: 'partial',
       toolId: 'dbtlflow',
       targetProduct: analyzeArtifact?.targetProduct || project?.targetProduct || project?.title || 'Target Product',
       sourceArtifactId: analyzeArtifact?.id,

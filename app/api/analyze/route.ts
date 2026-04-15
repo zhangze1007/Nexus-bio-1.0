@@ -40,6 +40,15 @@ const GROQ_BASE = 'https://api.groq.com/openai/v1/chat/completions';
 const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 const TIMEOUT_MS = 12000;
 
+// ── Input safety limits ──
+// MAX_PROMPT_CHARS bounds the assembled user prompt before it reaches the
+// model; MAX_SEARCH_QUERY_CHARS bounds the dynamic-search short input.
+// Values are conservative — Groq llama-3.3-70b accepts ~32k tokens but
+// we want to stay well below provider rate-limit thresholds and leave
+// room for the system prompt.
+export const MAX_PROMPT_CHARS = 24_000;
+export const MAX_SEARCH_QUERY_CHARS = 500;
+
 const AXON_SYSTEM_PROMPT = `You are Axon, the predictive design core of Nexus-Bio — a de novo metabolic design agent inspired by the rigor of computational protein design.
 Your mission: do not merely extract pathway data. Predict where the pathway will fail, and propose structure-level interventions to fix it.
 
@@ -89,31 +98,43 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   ]);
 }
 
-function parseJsonFromText(raw: string): JsonRecord | null {
-  try {
-    return JSON.parse(raw) as JsonRecord;
-  } catch {
-    // Continue with loose extraction.
+type ParseFailureCode = 'EMPTY' | 'NO_OBJECT' | 'INVALID_SYNTAX';
+
+interface ParseOutcome {
+  value: JsonRecord | null;
+  error?: { code: ParseFailureCode; message: string };
+}
+
+function parseJsonFromText(raw: string): ParseOutcome {
+  if (typeof raw !== 'string' || raw.trim().length === 0) {
+    return { value: null, error: { code: 'EMPTY', message: 'Model returned empty output' } };
   }
 
+  // Strategy 1: direct.
+  try {
+    return { value: JSON.parse(raw) as JsonRecord };
+  } catch { /* fall through */ }
+
+  // Strategy 2: strip markdown fences.
   const stripped = raw.replace(/```(?:json)?\s*/gi, '').replace(/```\s*/g, '').trim();
-  try {
-    return JSON.parse(stripped) as JsonRecord;
-  } catch {
-    // Continue with brace slicing.
+  if (stripped !== raw) {
+    try {
+      return { value: JSON.parse(stripped) as JsonRecord };
+    } catch { /* fall through */ }
   }
 
+  // Strategy 3: outermost brace slice.
   const first = raw.indexOf('{');
   const last = raw.lastIndexOf('}');
-  if (first !== -1 && last > first) {
-    try {
-      return JSON.parse(raw.slice(first, last + 1)) as JsonRecord;
-    } catch {
-      return null;
-    }
+  if (first === -1 || last <= first) {
+    return { value: null, error: { code: 'NO_OBJECT', message: 'Model output contained no JSON object' } };
   }
 
-  return null;
+  try {
+    return { value: JSON.parse(raw.slice(first, last + 1)) as JsonRecord };
+  } catch {
+    return { value: null, error: { code: 'INVALID_SYNTAX', message: 'Model output contained malformed JSON' } };
+  }
 }
 
 function readNumber(value: unknown): number | null {
@@ -133,9 +154,23 @@ function hasDesignFields(value: unknown): boolean {
     && typeof v.substrate_specificity_tuning === 'string';
 }
 
-function enrichAxonOutput(raw: string): string {
-  const parsed = parseJsonFromText(raw);
-  if (!parsed || !Array.isArray(parsed.nodes)) return raw;
+interface EnrichResult {
+  text: string;
+  parseError?: { code: ParseFailureCode; message: string };
+}
+
+function enrichAxonOutput(raw: string): EnrichResult {
+  const outcome = parseJsonFromText(raw);
+  const parsed = outcome.value;
+  if (!parsed) {
+    // Preserve the raw text so the existing frontend formatter can fall back
+    // to plain-text rendering, but tell callers the parse failed.
+    return { text: raw, parseError: outcome.error };
+  }
+  if (!Array.isArray(parsed.nodes)) {
+    // Valid JSON but not a pathway shape — pass through unchanged.
+    return { text: raw };
+  }
 
   const nodes = parsed.nodes.filter((n): n is JsonRecord => !!n && typeof n === 'object');
   const bottlenecks = nodes
@@ -224,7 +259,7 @@ function enrichAxonOutput(raw: string): string {
     disclosure_phase: 'socratic',
   };
 
-  return JSON.stringify(parsed, null, 2);
+  return { text: JSON.stringify(parsed, null, 2) };
 }
 
 function getParts(body: GeminiRequestBody): GeminiPart[] {
@@ -258,6 +293,32 @@ function extractPrompt(body: GeminiRequestBody): string {
 
 function withSystemPrompt(prompt: string): string {
   return `${AXON_SYSTEM_PROMPT}\n\nUser request:\n${prompt}`;
+}
+
+// Escape characters that could survive the LLM round-trip and end up rendered
+// as raw HTML by a downstream surface that forgets to sanitize. Cheap defense
+// in depth — does not protect against prompt injection (use length cap +
+// delimiter discipline for that).
+export function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// Strip null bytes and bound length. Returns the cleaned string and a flag
+// for whether truncation happened so the caller can warn.
+export function sanitizePromptInput(
+  raw: string,
+  maxChars: number,
+): { value: string; truncated: boolean } {
+  const stripped = raw.replace(/\u0000/g, '').replace(/\r\n/g, '\n');
+  if (stripped.length <= maxChars) {
+    return { value: stripped, truncated: false };
+  }
+  return { value: stripped.slice(0, maxChars), truncated: true };
 }
 
 function buildGeminiBodyWithSystemPrompt(body: GeminiRequestBody): GeminiRequestBody {
@@ -478,13 +539,20 @@ export async function POST(req: NextRequest) {
 
   // ── Dynamic search query mode ──
   // When searchQuery is provided, build the full Senior ME prompt server-side
-  const searchQuery = typeof rawBody.searchQuery === 'string' ? rawBody.searchQuery.trim() : '';
+  const rawSearchQuery = typeof rawBody.searchQuery === 'string' ? rawBody.searchQuery.trim() : '';
 
   let body: GeminiRequestBody;
   let prompt: string;
+  let truncated = false;
 
-  if (searchQuery) {
-    prompt = buildDynamicPrompt(searchQuery);
+  if (rawSearchQuery) {
+    if (rawSearchQuery.length > MAX_SEARCH_QUERY_CHARS) {
+      return jsonResponse({
+        error: `searchQuery exceeds ${MAX_SEARCH_QUERY_CHARS} characters`,
+      }, 413);
+    }
+    const safeQuery = escapeHtml(sanitizePromptInput(rawSearchQuery, MAX_SEARCH_QUERY_CHARS).value);
+    prompt = buildDynamicPrompt(safeQuery);
     body = {
       contents: [{ parts: [{ text: withSystemPrompt(prompt) }] }],
       generationConfig: { temperature: 0.1, maxOutputTokens: 4096 },
@@ -497,33 +565,54 @@ export async function POST(req: NextRequest) {
       return jsonResponse({ error: 'Missing contents array or searchQuery' }, 400);
     }
 
-    prompt = withSystemPrompt(extractPrompt(body));
-    if (!prompt) {
+    const extracted = extractPrompt(body);
+    if (!extracted) {
       return jsonResponse({ error: 'No prompt text found' }, 400);
     }
+
+    const cleaned = sanitizePromptInput(extracted, MAX_PROMPT_CHARS);
+    truncated = cleaned.truncated;
+    prompt = withSystemPrompt(cleaned.value);
   }
 
-  const textOnlyRequest = searchQuery ? true : isTextOnlyRequest(body);
+  // Final hard cap — withSystemPrompt adds the Axon header on top.
+  if (prompt.length > MAX_PROMPT_CHARS + AXON_SYSTEM_PROMPT.length + 64) {
+    return jsonResponse({
+      error: `Prompt exceeds ${MAX_PROMPT_CHARS} characters after assembly`,
+    }, 413);
+  }
 
-  if (!searchQuery && hasMultimodalContent(body) && !geminiKey) {
+  const textOnlyRequest = rawSearchQuery ? true : isTextOnlyRequest(body);
+
+  if (!rawSearchQuery && hasMultimodalContent(body) && !geminiKey) {
     return jsonResponse({
       error: 'This request includes non-text content such as an image or file and requires GEMINI_API_KEY. Please configure it in your environment variables.',
     }, 503);
   }
+
+  const buildMeta = (provider: 'groq' | 'gemini', enriched: EnrichResult) => {
+    const meta: Record<string, unknown> = { provider };
+    if (rawSearchQuery) meta.searchQuery = rawSearchQuery;
+    if (truncated) meta.truncated = true;
+    if (enriched.parseError) meta.parseError = enriched.parseError;
+    return meta;
+  };
 
   // ── Try Groq first ──
   if (groqKey && textOnlyRequest) {
     const groqResult = await tryGroq(prompt, groqKey);
     if (groqResult) {
       const enriched = enrichAxonOutput(groqResult);
-      // Return in Gemini-compatible format so frontend doesn't need to change
+      // Return in Gemini-compatible format so frontend doesn't need to change.
+      // `meta.parseError` is additive — old clients ignore it; new clients can
+      // detect that the candidate text is the raw model output, not enriched.
       return jsonResponse({
         candidates: [{
           content: {
-            parts: [{ text: enriched }]
+            parts: [{ text: enriched.text }]
           }
         }],
-        meta: { provider: 'groq', searchQuery: searchQuery || undefined }
+        meta: buildMeta('groq', enriched)
       });
     }
   }
@@ -536,10 +625,10 @@ export async function POST(req: NextRequest) {
       return jsonResponse({
         candidates: [{
           content: {
-            parts: [{ text: enriched }]
+            parts: [{ text: enriched.text }]
           }
         }],
-        meta: { provider: 'gemini', searchQuery: searchQuery || undefined }
+        meta: buildMeta('gemini', enriched)
       });
     }
   }

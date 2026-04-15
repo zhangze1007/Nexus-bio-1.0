@@ -336,6 +336,7 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
 
   useEffect(() => {
     setToolPayload('pathd', {
+      validity: graphSource === 'demo' ? 'demo' : 'partial',
       toolId: 'pathd',
       targetProduct: derivedTarget,
       sourceArtifactId: activeWorkflowArtifact?.id ?? activeAnalyzeArtifact?.id,

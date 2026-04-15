@@ -398,6 +398,7 @@ export default function DynConPage() {
     if (last && !simError) {
       const now = Date.now();
       setToolPayload('dyncon', {
+        validity: 'partial',
         toolId: 'dyncon',
         targetProduct: analyzeArtifact?.targetProduct || project?.targetProduct || project?.title || 'Target Product',
         sourceArtifactId: analyzeArtifact?.id,

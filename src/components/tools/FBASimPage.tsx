@@ -712,6 +712,7 @@ export default function FBASimPage() {
     if (communityError && simMode === 'community') return;
 
     setToolPayload('fbasim', {
+      validity: 'partial',
       toolId: 'fbasim',
       targetProduct: recommendedSeed.targetProduct,
       pathwayFocus: recommendedSeed.pathwayFocus,

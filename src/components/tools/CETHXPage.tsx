@@ -303,6 +303,7 @@ export default function CETHXPage() {
   useEffect(() => {
     const now = Date.now();
     setToolPayload('cethx', {
+      validity: 'demo',
       toolId: 'cethx',
       targetProduct: analyzeArtifact?.targetProduct || project?.targetProduct || project?.title || 'Target Product',
       sourceArtifactId: analyzeArtifact?.id,

@@ -31,6 +31,7 @@ import type {
   InternalThought,
 } from '../../types';
 import { useWorkbenchStore } from '../../store/workbenchStore';
+import { useUIStore } from '../../store/uiStore';
 import { T, TOOL_RESULT_PALETTE} from '../ide/tokens';
 import WorkbenchInlineContext from '../workbench/WorkbenchInlineContext';
 import ScientificHero from './shared/ScientificHero';
@@ -62,6 +63,15 @@ const GLASS: React.CSSProperties = {
 };
 
 type ViewMode = 'Embedding' | 'Volcano' | 'Table' | 'Factors' | 'Latent' | 'Efficiency';
+
+const VIEW_MODE_LABELS: Record<ViewMode, string> = {
+  Embedding: 'Embedding',
+  Volcano: 'Volcano',
+  Table: 'Table',
+  Factors: 'Decomposition',
+  Latent: 'Projection',
+  Efficiency: 'Efficiency',
+};
 
 function canonicalGeneToken(value: string) {
   return value.toUpperCase().replace(/[^A-Z0-9]/g, '');
@@ -577,6 +587,7 @@ export default function MultiOPage() {
   const project = useWorkbenchStore((s) => s.project);
   const analyzeArtifact = useWorkbenchStore((s) => s.analyzeArtifact);
   const setToolPayload = useWorkbenchStore((s) => s.setToolPayload);
+  const devMode = useUIStore((s) => s.devMode);
   /* Layer toggles */
   const [showTranscript, setShowTranscript] = useState(true);
   const [showProtein, setShowProtein] = useState(true);
@@ -648,15 +659,15 @@ export default function MultiOPage() {
     if (viewMode === 'Factors') {
       return {
         eyebrow: 'Figure C · Factor Decomposition',
-        title: 'Shared latent factors explaining multi-omics variance',
-        caption: 'Factor analysis is translated into a publication-style comparative panel where per-layer contribution, top genes, and interpretation stay in the same frame.',
+        title: 'Cross-layer factors explaining multi-omics variance',
+        caption: 'Factor decomposition is translated into a publication-style comparative panel where per-layer contribution, top genes, and interpretation stay in the same frame.',
       };
     }
     if (viewMode === 'Latent') {
       return {
-        eyebrow: 'Figure D · Variational Latent Space',
-        title: 'Latent embedding and convergence viewed as one model figure',
-        caption: 'The variational model should read like a model-results plate: embedding geometry above, optimization trace below, with no context loss between them.',
+        eyebrow: 'Figure D · Projected Embedding',
+        title: 'Projected embedding and optimization trace viewed as one model figure',
+        caption: 'The projected view should read like a model-results plate: embedding geometry above, optimization trace below, with no context loss between them.',
       };
     }
     if (viewMode === 'Efficiency') {
@@ -725,6 +736,7 @@ export default function MultiOPage() {
   useEffect(() => {
     const topEfficiency = [...efficiencyScores].sort((left, right) => right.score - left.score)[0];
     setToolPayload('multio', {
+      validity: 'demo',
       toolId: 'multio',
       targetProduct: analyzeArtifact?.targetProduct || project?.targetProduct || project?.title || 'Target Product',
       sourceArtifactId: analyzeArtifact?.id,
@@ -779,7 +791,7 @@ export default function MultiOPage() {
       <div className="nb-tool-page" style={{ background: PANEL_BG }}>
         <AlgorithmInsight
           title="Biological Foundation Model"
-          description="Multi-head attention across transcript / protein / metabolite latent embeddings. Bottleneck analysis identifies rate-limiting omics layer. Perturbation simulator predicts downstream metabolite shifts."
+          description="Multi-head attention across transcript / protein / metabolite representations. Bottleneck analysis identifies the rate-limiting omics layer, and the perturbation simulator estimates downstream metabolite shifts."
           formula="z = Softmax(QKᵀ/√d)·V  |  ΔG = −RT ln(K)"
         />
 
@@ -798,7 +810,7 @@ export default function MultiOPage() {
                   Current analytical lens
                 </div>
                 <div style={{ fontFamily: T.SANS, fontSize: '13px', color: PATHD_THEME.value, fontWeight: 700 }}>
-                  {viewMode} · {Object.values(activeLayers).filter(Boolean).length}/3 omics layers active
+                  {VIEW_MODE_LABELS[viewMode]} · {Object.values(activeLayers).filter(Boolean).length}/3 omics layers active
                 </div>
                 <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.label, lineHeight: 1.55 }}>
                   The current lens is anchored to {analyzeArtifact?.targetProduct ?? project?.targetProduct ?? project?.title ?? 'the active project object'}, so bottleneck claims stay attached to the same scientific context.
@@ -847,8 +859,8 @@ export default function MultiOPage() {
                 note: 'Input matrix',
               },
               {
-                title: 'Latent integration',
-                detail: 'The model bridge itself is part of the interface language, so factor models and embeddings must sit visibly between raw layers and decisions.',
+                title: 'Cross-layer integration',
+                detail: 'The model bridge itself is part of the interface language, so factor summaries and projected views must sit visibly between raw layers and decisions.',
                 accent: PATHD_THEME.sky,
                 note: 'Model bridge',
               },
@@ -913,7 +925,7 @@ export default function MultiOPage() {
                   background: viewMode === mode ? 'rgba(175,195,214,0.22)' : INPUT_BG,
                   color: viewMode === mode ? VALUE : LABEL,
                 }}>
-                  {mode}
+                  {VIEW_MODE_LABELS[mode]}
                 </button>
               ))}
             </div>
@@ -1045,14 +1057,14 @@ export default function MultiOPage() {
               caption={figureMeta.caption}
               minHeight="100%"
               legend={[
-                { label: 'View', value: viewMode, accent: PATHD_THEME.apricot },
+                { label: 'View', value: VIEW_MODE_LABELS[viewMode], accent: PATHD_THEME.apricot },
                 { label: 'Bottleneck', value: bottleneck.dominant_layer, accent: LAYER_COLORS[bottleneck.dominant_layer] },
                 { label: 'Gene', value: selectedGene, accent: PATHD_THEME.lilac },
                 { label: 'Significant', value: `${significant.length}`, accent: PATHD_THEME.mint },
               ]}
               footer={
                 <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.paperMuted, lineHeight: 1.55 }}>
-                  The integration frame keeps latent model structure, thresholding logic, and intervention-oriented output in one continuous reading path.
+                  The integration frame keeps cross-layer model structure, thresholding logic, and intervention-oriented output in one continuous reading path.
                 </div>
               }
             >
@@ -1093,7 +1105,7 @@ export default function MultiOPage() {
                     </span>
                   </div>
                   <div style={{ ...GLASS, borderRadius: '14px', padding: '12px 16px', flex: '1 0 120px' }}>
-                    <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL, display: 'block' }}>Convergence</span>
+                    <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL, display: 'block' }}>Optimization Steps</span>
                     <span style={{ fontFamily: T.MONO, fontSize: '18px', fontWeight: 700, color: VALUE }}>
                       {mofaResult.convergenceIterations} iter
                     </span>
@@ -1168,8 +1180,8 @@ export default function MultiOPage() {
                           <rect width={W} height={H} fill="#050505" rx={12} />
                           <line x1={PAD} y1={H - PAD} x2={W - PAD} y2={H - PAD} stroke="rgba(255,255,255,0.1)" />
                           <line x1={PAD} y1={PAD} x2={PAD} y2={H - PAD} stroke="rgba(255,255,255,0.1)" />
-                          <text x={W / 2} y={H - 6} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill={LABEL}>Latent Z₁</text>
-                          <text x={12} y={H / 2} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill={LABEL} transform={`rotate(-90,12,${H / 2})`}>Latent Z₂</text>
+                          <text x={W / 2} y={H - 6} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill={LABEL}>Projection 1</text>
+                          <text x={12} y={H / 2} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill={LABEL} transform={`rotate(-90,12,${H / 2})`}>Projection 2</text>
                           {pts.map((p, i) => {
                             const cx = PAD + ((xs[i] - xMin) / xR) * (W - PAD * 2);
                             const cy = H - PAD - ((ys[i] - yMin) / yR) * (H - PAD * 2);
@@ -1364,78 +1376,80 @@ export default function MultiOPage() {
               ))}
             </div>
 
-            {/* Internal Thoughts */}
-            <SectionLabel>Internal Thoughts</SectionLabel>
+            {devMode && (
+              <>
+                <SectionLabel>Developer Notes</SectionLabel>
 
-            {/* MOI Engine Metrics */}
-            {(viewMode === 'Factors' || viewMode === 'Latent' || viewMode === 'Efficiency') && (
-              <div style={{ ...GLASS, borderRadius: '14px', padding: '10px', marginBottom: '16px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0' }}>
-                  <span style={{ fontFamily: T.SANS, fontSize: '9px', color: 'rgba(255,255,255,0.45)' }}>ALS Factors</span>
-                  <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE, textAlign: 'right' }}>{mofaResult.factors.length}</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', borderTop: `1px solid ${BORDER}` }}>
-                  <span style={{ fontFamily: T.SANS, fontSize: '9px', color: 'rgba(255,255,255,0.45)' }}>Embed loss</span>
-                  <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE, textAlign: 'right' }}>{vaeResult.elbo.toFixed(3)}</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', borderTop: `1px solid ${BORDER}` }}>
-                  <span style={{ fontFamily: T.SANS, fontSize: '9px', color: 'rgba(255,255,255,0.45)' }}>Recon Loss</span>
-                  <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE, textAlign: 'right' }}>{vaeResult.reconLoss.toFixed(4)}</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', borderTop: `1px solid ${BORDER}` }}>
-                  <span style={{ fontFamily: T.SANS, fontSize: '9px', color: 'rgba(255,255,255,0.45)' }}>KL Divergence</span>
-                  <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE, textAlign: 'right' }}>{vaeResult.klDivergence.toFixed(4)}</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', borderTop: `1px solid ${BORDER}` }}>
-                  <span style={{ fontFamily: T.SANS, fontSize: '9px', color: 'rgba(255,255,255,0.45)' }}>Latent Dim</span>
-                  <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE, textAlign: 'right' }}>{vaeResult.latentDim}</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', borderTop: `1px solid ${BORDER}` }}>
-                  <span style={{ fontFamily: T.SANS, fontSize: '9px', color: 'rgba(255,255,255,0.45)' }}>Batch Correction</span>
-                  <span style={{ fontFamily: T.MONO, fontSize: '10px', color: vaeResult.batchCorrectionApplied ? 'rgba(147,203,82,0.9)' : LABEL, textAlign: 'right' }}>
-                    {vaeResult.batchCorrectionApplied ? 'Yes' : 'No'}
-                  </span>
-                </div>
-              </div>
-            )}
-            <div style={{
-              maxHeight: '220px', overflowY: 'auto',
-              display: 'flex', flexDirection: 'column', gap: '6px',
-            }}>
-              {(thoughts.length > 0 ? thoughts.slice(-5) : []).map((t, i) => (
-                <div key={i} style={{
-                  ...GLASS, borderRadius: '10px', padding: '8px 10px',
-                }}>
-                  <p style={{
-                    fontFamily: T.MONO, fontSize: '9px', color: 'rgba(255,255,255,0.55)',
-                    margin: 0, lineHeight: '1.4', whiteSpace: 'pre-wrap',
-                  }}>
-                    {t.thought}
-                  </p>
-                  <div style={{ display: 'flex', gap: '4px', marginTop: '4px', flexWrap: 'wrap' }}>
-                    {t.layer_context.map(l => (
-                      <span key={l} style={{
-                        fontFamily: T.MONO, fontSize: '7px', padding: '1px 5px',
-                        borderRadius: '4px', background: `${LAYER_COLORS[l]}20`,
-                        color: LAYER_COLORS[l],
-                      }}>
-                        {l.slice(0, 5)}
+                {(viewMode === 'Factors' || viewMode === 'Latent' || viewMode === 'Efficiency') && (
+                  <div style={{ ...GLASS, borderRadius: '14px', padding: '10px', marginBottom: '16px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0' }}>
+                      <span style={{ fontFamily: T.SANS, fontSize: '9px', color: 'rgba(255,255,255,0.45)' }}>Factor Count</span>
+                      <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE, textAlign: 'right' }}>{mofaResult.factors.length}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', borderTop: `1px solid ${BORDER}` }}>
+                      <span style={{ fontFamily: T.SANS, fontSize: '9px', color: 'rgba(255,255,255,0.45)' }}>Objective</span>
+                      <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE, textAlign: 'right' }}>{vaeResult.elbo.toFixed(3)}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', borderTop: `1px solid ${BORDER}` }}>
+                      <span style={{ fontFamily: T.SANS, fontSize: '9px', color: 'rgba(255,255,255,0.45)' }}>Reconstruction</span>
+                      <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE, textAlign: 'right' }}>{vaeResult.reconLoss.toFixed(4)}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', borderTop: `1px solid ${BORDER}` }}>
+                      <span style={{ fontFamily: T.SANS, fontSize: '9px', color: 'rgba(255,255,255,0.45)' }}>Regularizer</span>
+                      <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE, textAlign: 'right' }}>{vaeResult.klDivergence.toFixed(4)}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', borderTop: `1px solid ${BORDER}` }}>
+                      <span style={{ fontFamily: T.SANS, fontSize: '9px', color: 'rgba(255,255,255,0.45)' }}>Projection Dims</span>
+                      <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE, textAlign: 'right' }}>{vaeResult.latentDim}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', borderTop: `1px solid ${BORDER}` }}>
+                      <span style={{ fontFamily: T.SANS, fontSize: '9px', color: 'rgba(255,255,255,0.45)' }}>Batch Correction</span>
+                      <span style={{ fontFamily: T.MONO, fontSize: '10px', color: vaeResult.batchCorrectionApplied ? 'rgba(255,139,31,0.9)' : LABEL, textAlign: 'right' }}>
+                        {vaeResult.batchCorrectionApplied ? 'Applied' : 'Not applied'}
                       </span>
-                    ))}
+                    </div>
                   </div>
-                  <span style={{
-                    fontFamily: T.MONO, fontSize: '7px', color: LABEL, display: 'block', marginTop: '3px',
-                  }}>
-                    → {t.action_taken}
-                  </span>
+                )}
+                <div style={{
+                  maxHeight: '220px', overflowY: 'auto',
+                  display: 'flex', flexDirection: 'column', gap: '6px',
+                }}>
+                  {(thoughts.length > 0 ? thoughts.slice(-5) : []).map((t, i) => (
+                    <div key={i} style={{
+                      ...GLASS, borderRadius: '10px', padding: '8px 10px',
+                    }}>
+                      <p style={{
+                        fontFamily: T.MONO, fontSize: '9px', color: 'rgba(255,255,255,0.55)',
+                        margin: 0, lineHeight: '1.4', whiteSpace: 'pre-wrap',
+                      }}>
+                        {t.thought}
+                      </p>
+                      <div style={{ display: 'flex', gap: '4px', marginTop: '4px', flexWrap: 'wrap' }}>
+                        {t.layer_context.map(l => (
+                          <span key={l} style={{
+                            fontFamily: T.MONO, fontSize: '7px', padding: '1px 5px',
+                            borderRadius: '4px', background: `${LAYER_COLORS[l]}20`,
+                            color: LAYER_COLORS[l],
+                          }}>
+                            {l.slice(0, 5)}
+                          </span>
+                        ))}
+                      </div>
+                      <span style={{
+                        fontFamily: T.MONO, fontSize: '7px', color: LABEL, display: 'block', marginTop: '3px',
+                      }}>
+                        → {t.action_taken}
+                      </span>
+                    </div>
+                  ))}
+                  {thoughts.length === 0 && (
+                    <p style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL, fontStyle: 'italic', margin: 0 }}>
+                      Run a simulation to see Axon's reasoning…
+                    </p>
+                  )}
                 </div>
-              ))}
-              {thoughts.length === 0 && (
-                <p style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL, fontStyle: 'italic', margin: 0 }}>
-                  Run a simulation to see Axon's reasoning…
-                </p>
-              )}
-            </div>
+              </>
+            )}
             </div>
           )}
         />

@@ -10,8 +10,9 @@ interface ExportButtonProps {
   label: string;
   data: unknown;
   filename: string;
-  format?: 'json' | 'csv' | 'svg';
+  format?: 'json' | 'csv' | 'svg' | 'png';
   svgRef?: React.RefObject<SVGSVGElement | null>;
+  canvasRef?: React.RefObject<HTMLCanvasElement | null>;
   disabled?: boolean;
 }
 
@@ -27,8 +28,8 @@ function toCSV(data: unknown): string {
   return [headers.join(','), ...rows].join('\n');
 }
 
-export default function ExportButton({ label, data, filename, format = 'json', svgRef, disabled }: ExportButtonProps) {
-  function handleClick() {
+export default function ExportButton({ label, data, filename, format = 'json', svgRef, canvasRef, disabled }: ExportButtonProps) {
+  async function handleClick() {
     if (disabled) return;
 
     // SVG export: serialize the referenced SVG element
@@ -44,6 +45,41 @@ export default function ExportButton({ label, data, filename, format = 'json', s
       a.download = `${filename}.svg`;
       a.click();
       URL.revokeObjectURL(url);
+      return;
+    }
+
+    if (format === 'png') {
+      const canvasEl = canvasRef?.current;
+      if (canvasEl) {
+        const a = document.createElement('a');
+        a.href = canvasEl.toDataURL('image/png');
+        a.download = `${filename}.png`;
+        a.click();
+        return;
+      }
+
+      const svgEl = svgRef?.current;
+      if (!svgEl) return;
+      const serializer = new XMLSerializer();
+      const svgString = serializer.serializeToString(svgEl);
+      const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const image = new Image();
+      image.onload = () => {
+        const canvas = document.createElement('canvas');
+        const bbox = svgEl.getBoundingClientRect();
+        canvas.width = Math.max(1, Math.round(bbox.width || 1200));
+        canvas.height = Math.max(1, Math.round(bbox.height || 900));
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+        ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+        const a = document.createElement('a');
+        a.href = canvas.toDataURL('image/png');
+        a.download = `${filename}.png`;
+        a.click();
+        URL.revokeObjectURL(url);
+      };
+      image.src = url;
       return;
     }
 

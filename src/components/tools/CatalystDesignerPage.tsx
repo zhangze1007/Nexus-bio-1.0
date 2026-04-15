@@ -844,6 +844,7 @@ export default function CatalystDesignerPage() {
   useEffect(() => {
     if (simError) return;
     setToolPayload('catdes', {
+      validity: 'partial',
       toolId: 'catdes',
       targetProduct: analyzeArtifact?.targetProduct || project?.targetProduct || project?.title || 'Target Product',
       sourceArtifactId: analyzeArtifact?.id,
