@@ -21,10 +21,33 @@ export type ProEvolProvenanceKind =
   | 'literature-backed'
   | 'user-supplied';
 
+/**
+ * `bandSemantic` is the contract every chart uses to decide how to render
+ * uncertainty bands around frequency / Shannon / top-share lines.
+ *
+ *   - 'measurement' → bands are 95% CIs across real biological replicates.
+ *                     Render as solid fill, label as "95% CI".
+ *   - 'modeled'     → bands are spread across deterministic model draws
+ *                     (no real replicates exist). Render as hatched / dashed,
+ *                     label as "model spread", never "CI" or "confidence".
+ *
+ * This decoupling is the truth boundary: even if a future pipeline upgrades
+ * `validity` to `'partial'`, charts MUST keep `bandSemantic = 'modeled'`
+ * until per-replicate read counts are actually supplied by a user.
+ */
+export type ProEvolBandSemantic = 'measurement' | 'modeled';
+
 export interface ProEvolProvenance {
   kind: ProEvolProvenanceKind;
   validity: ProEvolValidity;
+  /** How chart layer should label and style uncertainty bands. */
+  bandSemantic: ProEvolBandSemantic;
+  /** True iff the per-replicate read counts on this artifact were synthesized
+   *  (deterministic model draws), not supplied as wet-lab measurement. */
+  isModeled: boolean;
   source: string;
+  /** Number of replicate columns on the artifact. When `isModeled` is true,
+   *  these are model draws, not biological replicates. */
   replicateCount: number;
   sequencingDepthPerSample?: number;
   statisticalNotes: string[];
@@ -132,7 +155,14 @@ export function isProEvolArtifact(value: unknown): value is ProEvolArtifact {
   );
 }
 
-/** Best-known validity for a given provenance kind when none is explicitly provided. */
+/**
+ * Best-known validity for a given provenance kind when none is explicitly provided.
+ *
+ * Truth boundary: `'real'` means experiment-backed counts. Any artifact whose
+ * counts are synthesized — even from literature-backed upstream context — is
+ * capped at `'partial'`. The validity tier upgrades to `'real'` only when an
+ * actual user upload supplies per-replicate read counts.
+ */
 export function defaultValidityForProvenance(kind: ProEvolProvenanceKind): ProEvolValidity {
   if (kind === 'user-supplied') return 'real';
   if (kind === 'literature-backed') return 'partial';
@@ -278,7 +308,11 @@ export function campaignToArtifact({
   });
 
   const provenanceKind: ProEvolProvenanceKind = campaign.provenance;
+  // Adapter outputs are always synthesized — there is no upload path in this build.
+  // Validity is therefore capped at 'partial' even for literature-backed kinds, and
+  // bandSemantic is locked to 'modeled' so charts cannot accidentally claim CIs.
   const validity = defaultValidityForProvenance(provenanceKind);
+  const cappedValidity: ProEvolValidity = validity === 'real' ? 'partial' : validity;
 
   return {
     version: PROEVOL_ARTIFACT_VERSION,
@@ -303,32 +337,29 @@ export function campaignToArtifact({
     variants,
     provenance: {
       kind: provenanceKind,
-      validity,
+      validity: cappedValidity,
+      bandSemantic: 'modeled',
+      isModeled: true,
       source:
         provenanceKind === 'simulated'
-          ? 'Nexus-Bio internal campaign engine (deterministic seed)'
+          ? 'Engine adapter · deterministic model draws (no wet-lab data)'
           : provenanceKind === 'inferred'
-            ? 'Inferred from upstream Nexus-Bio workbench context'
+            ? 'Engine adapter · inferred from upstream Nexus-Bio context (no wet-lab data)'
             : provenanceKind === 'literature-backed'
-              ? 'Inferred with literature-backed evidence trace'
+              ? 'Engine adapter · literature-shaped model draws (no wet-lab data)'
               : 'User-supplied campaign artifact',
       replicateCount,
       sequencingDepthPerSample,
-      statisticalNotes:
-        validity === 'real'
-          ? [
-            'Frequencies derived from supplied per-replicate read counts.',
-            'Confidence intervals computed via per-replicate variance, two-sided 95%.',
-          ]
-          : [
-            'Read counts are deterministically synthesized from engine composite scores.',
-            'Confidence intervals reflect synthesized replicate variance, not wet-lab measurement.',
-          ],
+      statisticalNotes: [
+        'Per-round read counts are deterministic model draws synthesized from engine composite scores.',
+        'Bands around frequency, Shannon and top-share lines represent spread across model draws — not biological-replicate confidence intervals.',
+        'Frequencies use Laplace pseudocount (+1) before normalization so low-count variants remain traceable.',
+      ],
       generatedAt: Date.now(),
       notes:
-        validity === 'demo'
-          ? 'No experimental upload detected. Counts and statistical bands reflect the campaign engine model only.'
-          : undefined,
+        cappedValidity === 'demo'
+          ? 'No upstream workbench context detected. Every chart on this page is downstream of the engine model only.'
+          : 'Counts on this artifact were not measured. Treat all bands as model spread, not measurement uncertainty.',
     },
   };
 }

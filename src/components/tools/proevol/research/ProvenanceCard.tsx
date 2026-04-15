@@ -44,6 +44,7 @@ export default function ProvenanceCard({ provenance }: { provenance: ProEvolProv
         </div>
         <ValidityIndicator
           validity={provenance.validity}
+          bandSemantic={provenance.bandSemantic}
           source={provenance.source}
           replicateCount={provenance.replicateCount}
           compact
@@ -58,18 +59,21 @@ export default function ProvenanceCard({ provenance }: { provenance: ProEvolProv
         }}
       >
         <ProvenanceStat label="Provenance kind" value={provenance.kind} />
-        <ProvenanceStat label="Replicates" value={`${provenance.replicateCount}`} />
         <ProvenanceStat
-          label="Sequencing depth"
+          label={provenance.bandSemantic === 'modeled' ? 'Model draws' : 'Replicates'}
+          value={`${provenance.replicateCount}`}
+        />
+        <ProvenanceStat
+          label="Modeled depth"
           value={
             provenance.sequencingDepthPerSample
-              ? `${(provenance.sequencingDepthPerSample / 1000).toFixed(0)}k reads / sample`
+              ? `${(provenance.sequencingDepthPerSample / 1000).toFixed(0)}k reads / draw`
               : '—'
           }
         />
         <ProvenanceStat
-          label="Stat. method"
-          value={provenance.statisticalNotes[0]?.split('.')[0] ?? '—'}
+          label="Band semantic"
+          value={provenance.bandSemantic === 'measurement' ? '95% CI' : 'model spread'}
         />
       </div>
 

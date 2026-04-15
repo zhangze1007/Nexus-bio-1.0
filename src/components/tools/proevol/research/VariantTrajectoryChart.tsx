@@ -7,9 +7,11 @@ import {
 import { rechartsGrid, rechartsTick, TOOLTIP_STYLE, FONT, SERIES_PALETTE } from '../../../charts/chartTheme';
 import { PROEVOL_THEME } from '../shared';
 import type { VariantTrajectory } from '../../../../services/proevolAnalysis';
+import type { ProEvolBandSemantic } from '../../../../domain/proevolArtifact';
 
 interface VariantTrajectoryChartProps {
   trajectories: VariantTrajectory[];
+  bandSemantic: ProEvolBandSemantic;
   highlightVariantId?: string | null;
   onSelectVariant?: (variantId: string) => void;
 }
@@ -19,26 +21,43 @@ interface MergedRow {
   [key: string]: number;
 }
 
-function CustomTooltip({ active, payload, label }: any) {
-  if (!active || !payload?.length) return null;
-  return (
-    <div style={TOOLTIP_STYLE}>
-      <div style={{ marginBottom: 4, fontFamily: FONT.MONO, color: 'rgba(255,255,255,0.5)', fontSize: 10 }}>
-        Round {label}
+function buildTooltip(bandSemantic: ProEvolBandSemantic) {
+  const bandLabel = bandSemantic === 'measurement' ? '95% CI' : 'model spread';
+  return function CustomTooltip({ active, payload, label }: any) {
+    if (!active || !payload?.length) return null;
+    const rows = payload.filter(
+      (entry: any) =>
+        !entry.dataKey?.endsWith('__band')
+        && !entry.dataKey?.endsWith('__lower')
+        && !entry.dataKey?.endsWith('__upper'),
+    );
+    return (
+      <div style={TOOLTIP_STYLE}>
+        <div style={{ marginBottom: 4, fontFamily: FONT.MONO, color: 'rgba(255,255,255,0.5)', fontSize: 10 }}>
+          Round {label}
+        </div>
+        {rows.map((entry: any) => {
+          const lower = entry.payload?.[`${entry.dataKey}__lower`];
+          const upper = entry.payload?.[`${entry.dataKey}__upper`];
+          return (
+            <div key={entry.dataKey} style={{ fontFamily: FONT.MONO, color: entry.color, fontSize: 11 }}>
+              {entry.name}: {(entry.value * 100).toFixed(2)}%
+              {typeof lower === 'number' && typeof upper === 'number' ? (
+                <span style={{ color: 'rgba(255,255,255,0.5)', marginLeft: 6 }}>
+                  {bandLabel} [{(lower * 100).toFixed(2)}–{(upper * 100).toFixed(2)}%]
+                </span>
+              ) : null}
+            </div>
+          );
+        })}
       </div>
-      {payload
-        .filter((entry: any) => !entry.dataKey?.endsWith('__band'))
-        .map((entry: any) => (
-          <div key={entry.dataKey} style={{ fontFamily: FONT.MONO, color: entry.color, fontSize: 11 }}>
-            {entry.name}: {(entry.value * 100).toFixed(2)}%
-          </div>
-        ))}
-    </div>
-  );
+    );
+  };
 }
 
 export default function VariantTrajectoryChart({
   trajectories,
+  bandSemantic,
   highlightVariantId,
   onSelectVariant,
 }: VariantTrajectoryChartProps) {
@@ -95,7 +114,7 @@ export default function VariantTrajectoryChart({
                 offset: 10,
               }}
             />
-            <Tooltip content={<CustomTooltip />} />
+            <Tooltip content={buildTooltip(bandSemantic)} />
             {trajectories.map((trajectory, index) => {
               const color = SERIES_PALETTE[index % SERIES_PALETTE.length];
               const isHighlighted =

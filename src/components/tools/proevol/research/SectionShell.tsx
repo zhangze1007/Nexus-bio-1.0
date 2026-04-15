@@ -4,12 +4,15 @@ import type { ReactNode } from 'react';
 import { T } from '../../../ide/tokens';
 import { PROEVOL_THEME } from '../shared';
 
+export type SectionTone = 'primary' | 'demoted';
+
 interface SectionShellProps {
   index: number;
   kicker: string;
   title: string;
   description?: string;
   actions?: ReactNode;
+  tone?: SectionTone;
   children: ReactNode;
 }
 
@@ -19,18 +22,24 @@ export default function SectionShell({
   title,
   description,
   actions,
+  tone = 'primary',
   children,
 }: SectionShellProps) {
+  const isDemoted = tone === 'demoted';
   return (
     <section
       style={{
         display: 'grid',
-        gap: '14px',
-        padding: '18px 20px',
-        borderRadius: '22px',
-        border: `1px solid ${PROEVOL_THEME.borderStrong}`,
-        background: 'linear-gradient(180deg, rgba(14,17,22,0.92) 0%, rgba(9,11,15,0.92) 100%)',
-        boxShadow: '0 24px 56px rgba(0,0,0,0.32)',
+        gap: isDemoted ? '10px' : '16px',
+        padding: isDemoted ? '14px 18px' : '22px 24px',
+        borderRadius: isDemoted ? '16px' : '22px',
+        border: `1px solid ${isDemoted ? PROEVOL_THEME.border : PROEVOL_THEME.borderStrong}`,
+        background: isDemoted
+          ? 'rgba(10,12,16,0.55)'
+          : 'rgba(11,13,18,0.78)',
+        boxShadow: isDemoted
+          ? '0 10px 24px rgba(0,0,0,0.18)'
+          : '0 22px 52px rgba(0,0,0,0.30)',
       }}
     >
       <header
@@ -40,25 +49,25 @@ export default function SectionShell({
           alignItems: 'flex-start',
           justifyContent: 'space-between',
           flexWrap: 'wrap',
-          paddingBottom: '12px',
+          paddingBottom: isDemoted ? '8px' : '14px',
           borderBottom: `1px solid ${PROEVOL_THEME.border}`,
         }}
       >
-        <div style={{ display: 'flex', gap: '14px', alignItems: 'flex-start', minWidth: 0 }}>
+        <div style={{ display: 'flex', gap: isDemoted ? '10px' : '14px', alignItems: 'flex-start', minWidth: 0 }}>
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              width: '34px',
-              height: '34px',
-              borderRadius: '12px',
-              border: `1px solid ${PROEVOL_THEME.borderStrong}`,
-              background: 'rgba(255,255,255,0.04)',
+              width: isDemoted ? '26px' : '32px',
+              height: isDemoted ? '26px' : '32px',
+              borderRadius: isDemoted ? '8px' : '10px',
+              border: `1px solid ${PROEVOL_THEME.border}`,
+              background: 'rgba(255,255,255,0.03)',
               fontFamily: T.MONO,
-              fontSize: '13px',
+              fontSize: isDemoted ? '10px' : '12px',
               fontWeight: 700,
-              color: PROEVOL_THEME.value,
+              color: isDemoted ? PROEVOL_THEME.muted : PROEVOL_THEME.value,
               flexShrink: 0,
             }}
           >
@@ -79,11 +88,11 @@ export default function SectionShell({
             <div
               style={{
                 fontFamily: T.SANS,
-                fontSize: '20px',
+                fontSize: isDemoted ? '15px' : '22px',
                 fontWeight: 700,
                 color: PROEVOL_THEME.value,
                 letterSpacing: '-0.03em',
-                lineHeight: 1.2,
+                lineHeight: 1.18,
               }}
             >
               {title}
@@ -92,10 +101,10 @@ export default function SectionShell({
               <div
                 style={{
                   fontFamily: T.SANS,
-                  fontSize: '12px',
+                  fontSize: isDemoted ? '11px' : '12.5px',
                   color: PROEVOL_THEME.muted,
                   lineHeight: 1.6,
-                  maxWidth: '760px',
+                  maxWidth: isDemoted ? '640px' : '780px',
                 }}
               >
                 {description}

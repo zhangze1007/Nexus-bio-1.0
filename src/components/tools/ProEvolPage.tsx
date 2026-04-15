@@ -1,12 +1,10 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import AlgorithmInsight from '../ide/shared/AlgorithmInsight';
 import ExportButton from '../ide/shared/ExportButton';
 import { useWorkbenchStore } from '../../store/workbenchStore';
 import { PATHD_THEME } from '../workbench/workbenchTheme';
 import { T } from '../ide/tokens';
-import WorkbenchInlineContext from '../workbench/WorkbenchInlineContext';
 import { buildProEvolCampaignInput } from '../../data/proevolMockCampaign';
 import { buildProEvolCampaign } from '../../services/ProEvolCampaignEngine';
 import { campaignToArtifact } from '../../domain/proevolArtifact';
@@ -22,7 +20,8 @@ import ActivityLandscapePanel from './proevol/ActivityLandscapePanel';
 import { PROEVOL_THEME } from './proevol/shared';
 
 import SectionShell from './proevol/research/SectionShell';
-import ValidityIndicator from './proevol/research/ValidityIndicator';
+import TruthHeader from './proevol/research/TruthHeader';
+import EvidenceStatRail from './proevol/research/EvidenceStatRail';
 import ProvenanceCard from './proevol/research/ProvenanceCard';
 import VariantTrajectoryChart from './proevol/research/VariantTrajectoryChart';
 import MullerPlot from './proevol/research/MullerPlot';
@@ -31,112 +30,6 @@ import DiversityConvergenceCurve from './proevol/research/DiversityConvergenceCu
 import VariantEvidenceTable from './proevol/research/VariantEvidenceTable';
 
 const PANEL_BG = PATHD_THEME.sepiaPanelMuted;
-
-function metricChip(label: string, value: string, detail: string, accent: string) {
-  return (
-    <div
-      key={label}
-      style={{
-        minWidth: 0,
-        padding: '10px 12px',
-        borderRadius: '14px',
-        border: `1px solid ${PROEVOL_THEME.border}`,
-        background: 'rgba(255,255,255,0.03)',
-        display: 'grid',
-        gap: '4px',
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-        <span style={{ width: 7, height: 7, borderRadius: 999, background: accent }} />
-        <span
-          style={{
-            fontFamily: T.MONO,
-            fontSize: 9,
-            color: PROEVOL_THEME.label,
-            letterSpacing: '0.1em',
-            textTransform: 'uppercase',
-          }}
-        >
-          {label}
-        </span>
-      </div>
-      <div
-        style={{
-          fontFamily: T.SANS,
-          fontSize: 17,
-          fontWeight: 700,
-          color: PROEVOL_THEME.value,
-          letterSpacing: '-0.03em',
-        }}
-      >
-        {value}
-      </div>
-      <div style={{ fontFamily: T.SANS, fontSize: 10, color: PROEVOL_THEME.muted, lineHeight: 1.5 }}>
-        {detail}
-      </div>
-    </div>
-  );
-}
-
-function chartCard({ title, subtitle, children, footnote }: {
-  title: string;
-  subtitle: string;
-  children: React.ReactNode;
-  footnote?: string;
-}) {
-  return (
-    <div
-      style={{
-        display: 'grid',
-        gap: '12px',
-        padding: '16px 18px',
-        borderRadius: '18px',
-        border: `1px solid ${PROEVOL_THEME.border}`,
-        background: 'rgba(8,11,16,0.55)',
-        minWidth: 0,
-      }}
-    >
-      <div style={{ display: 'grid', gap: '4px' }}>
-        <div
-          style={{
-            fontFamily: T.MONO,
-            fontSize: 9,
-            color: PROEVOL_THEME.label,
-            letterSpacing: '0.12em',
-            textTransform: 'uppercase',
-          }}
-        >
-          {title}
-        </div>
-        <div
-          style={{
-            fontFamily: T.SANS,
-            fontSize: 12,
-            color: PROEVOL_THEME.muted,
-            lineHeight: 1.55,
-          }}
-        >
-          {subtitle}
-        </div>
-      </div>
-      <div>{children}</div>
-      {footnote ? (
-        <div
-          style={{
-            fontFamily: T.SANS,
-            fontSize: 10,
-            color: PROEVOL_THEME.muted,
-            lineHeight: 1.5,
-            paddingTop: 4,
-            borderTop: `1px dashed ${PROEVOL_THEME.border}`,
-          }}
-        >
-          {footnote}
-        </div>
-      ) : null}
-    </div>
-  );
-}
 
 export default function ProEvolPage() {
   const project = useWorkbenchStore((state) => state.project);
@@ -151,7 +44,9 @@ export default function ProEvolPage() {
   const [survivorCount, setSurvivorCount] = useState(5);
   const [selectionStringency, setSelectionStringency] = useState(0.65);
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
+  const [decisionOpen, setDecisionOpen] = useState(false);
   const [auxOpen, setAuxOpen] = useState(false);
+  const [briefOpen, setBriefOpen] = useState(false);
 
   const campaignInput = useMemo(
     () => buildProEvolCampaignInput({
@@ -187,6 +82,7 @@ export default function ProEvolPage() {
     [campaign, targetProduct],
   );
   const research = useMemo(() => buildProEvolResearchSummary(artifact), [artifact]);
+  const bandSemantic = artifact.provenance.bandSemantic;
 
   const focusedVariant =
     (selectedVariantId ? campaign.variantIndex[selectedVariantId] : undefined)
@@ -244,12 +140,13 @@ export default function ProEvolPage() {
         family: trajectory.familyLabel,
         round: point.roundNumber,
         frequency: point.frequency,
-        ciLower: point.lower,
-        ciUpper: point.upper,
+        bandLower: point.lower,
+        bandUpper: point.upper,
+        bandSemantic,
         totalReads: point.totalReads,
       })),
     ),
-    [research.trajectories],
+    [bandSemantic, research.trajectories],
   );
   const enrichmentExport = useMemo(
     () => research.enrichment.map((entry) => ({
@@ -259,177 +156,127 @@ export default function ProEvolPage() {
       mutations: entry.mutationString,
       mutationBurden: entry.mutationBurden,
       finalFrequency: entry.finalFrequency,
-      ciLower: entry.finalFrequencyCi.lower,
-      ciUpper: entry.finalFrequencyCi.upper,
+      bandLower: entry.finalFrequencyCi.lower,
+      bandUpper: entry.finalFrequencyCi.upper,
+      bandSemantic,
       log2EnrichmentVsWildType: entry.log2EnrichmentVsWildType,
       log2EnrichmentAcrossRounds: entry.log2EnrichmentAcrossRounds,
       meanSelectionCoefficient: entry.meanSelectionCoefficient,
       totalReadsLastRound: entry.totalReadsLastRound,
     })),
-    [research.enrichment],
+    [bandSemantic, research.enrichment],
   );
   const diversityExport = useMemo(
     () => research.diversity.map((point) => ({
       round: point.roundNumber,
       shannonBits: point.shannonBits.mean,
-      shannonLower: point.shannonBits.lower,
-      shannonUpper: point.shannonBits.upper,
+      shannonBandLower: point.shannonBits.lower,
+      shannonBandUpper: point.shannonBits.upper,
       topShare: point.topShare.mean,
-      topShareLower: point.topShare.lower,
-      topShareUpper: point.topShare.upper,
+      topShareBandLower: point.topShare.lower,
+      topShareBandUpper: point.topShare.upper,
+      bandSemantic,
       effectiveVariantCount: point.effectiveVariantCount,
       observedVariantCount: point.observedVariantCount,
     })),
-    [research.diversity],
+    [bandSemantic, research.diversity],
   );
   const artifactExport = useMemo(() => artifact, [artifact]);
 
-  // ── Section 01 ──────────────────────────────────────────────────────────
-  const briefMetrics = (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px' }}>
-      {metricChip(
-        'Rounds',
-        `${campaign.currentRound} / ${campaign.totalRounds}`,
-        `${campaign.librarySize} variants × ${campaign.totalRounds} rounds`,
-        PROEVOL_THEME.sky,
-      )}
-      {metricChip(
-        'Replicates',
-        `${artifact.provenance.replicateCount}`,
-        artifact.provenance.sequencingDepthPerSample
-          ? `${(artifact.provenance.sequencingDepthPerSample / 1000).toFixed(0)}k reads / sample`
-          : 'No depth recorded',
-        PROEVOL_THEME.lilac,
-      )}
-      {metricChip(
-        'Last-round Shannon',
-        research.lastRoundShannon ? `${research.lastRoundShannon.mean.toFixed(2)} bits` : '—',
-        research.lastRoundShannon
-          ? `[${research.lastRoundShannon.lower.toFixed(2)}–${research.lastRoundShannon.upper.toFixed(2)}]`
-          : 'awaiting data',
-        PROEVOL_THEME.mint,
-      )}
-      {metricChip(
-        'Top-1 share',
-        research.lastRoundTopShare
-          ? `${(research.lastRoundTopShare.mean * 100).toFixed(1)}%`
-          : '—',
-        research.lastRoundTopShare
-          ? `[${(research.lastRoundTopShare.lower * 100).toFixed(1)}–${(research.lastRoundTopShare.upper * 100).toFixed(1)}%]`
-          : 'awaiting data',
-        PROEVOL_THEME.coral,
-      )}
-      {metricChip(
-        'Lead variant',
-        campaign.leadVariant.name,
-        campaign.leadVariant.mutationString,
-        PROEVOL_THEME.apricot,
-      )}
-    </div>
-  );
+  const exportSuffix = bandSemantic === 'modeled' ? '-modeled' : '-experiment';
 
   return (
     <div className="nb-tool-page" style={{ background: PANEL_BG, minHeight: '100%' }}>
-      <AlgorithmInsight
-        title="PROEVOL Research Workbench"
-        description="Variant frequencies are derived from per-replicate read counts on a normalized proevol.campaign.v1 artifact. Diversity (Shannon), top-1 share, log₂ enrichment vs wild type, and per-round selection coefficient drive the scientific evidence layer; engine-level composite scores remain visible only as decision-support context."
-        formula="Shannon = −Σ pᵢ log₂ pᵢ   ·   sₜ ≈ ln(fₜ / fₜ₋₁)   ·   log₂ enrichmentᵥ = log₂(fᵥ,last / f_WT,last)"
-      />
-
-      <div style={{ padding: '0 16px 10px' }}>
-        <WorkbenchInlineContext
-          toolId="proevol"
-          title="Protein Evolution Research Workbench"
-          summary="PROEVOL now reads a normalized campaign artifact, surfaces real frequency-derived statistics with replicate confidence intervals, and gates every chart with explicit data-validity boundaries before presenting decision-support recommendations."
-          compact
-          isSimulated={artifact.provenance.validity !== 'real'}
-        />
-      </div>
-
       <div
         style={{
           display: 'grid',
-          gap: '16px',
-          padding: '0 16px 16px',
+          gap: '18px',
+          padding: '16px 16px 18px',
         }}
       >
-        {/* ─────────────────────────  SECTION 01  ───────────────────────── */}
-        <SectionShell
-          index={1}
-          kicker="Stage 2 · Directed Evolution Campaign"
-          title="Campaign brief & data readiness"
-          description="Before any chart is interpreted, the page resolves what the campaign is, where the data came from, and what level of scientific claim the rest of the page is allowed to make."
-          actions={(
-            <ValidityIndicator
-              validity={artifact.provenance.validity}
-              source={artifact.provenance.source}
-              replicateCount={artifact.provenance.replicateCount}
+        {/* ─────────────────  TRUTH HEADER  ───────────────── */}
+        <TruthHeader
+          campaignName={campaign.name}
+          targetProduct={targetProduct}
+          provenance={artifact.provenance}
+          actions={
+            <ExportButton
+              label="Artifact JSON"
+              data={artifactExport}
+              filename={`proevol-artifact${exportSuffix}`}
+              format="json"
             />
-          )}
+          }
+        />
+
+        {/* ─────────────────  SECTION 01 · BRIEF (compact)  ───────────────── */}
+        <details
+          open={briefOpen}
+          onToggle={(event) => setBriefOpen((event.currentTarget as HTMLDetailsElement).open)}
+          style={{
+            border: `1px solid ${PROEVOL_THEME.border}`,
+            borderRadius: '14px',
+            background: 'rgba(10,12,16,0.55)',
+            padding: '12px 16px',
+          }}
         >
-          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.4fr) minmax(280px, 0.85fr)', gap: '14px' }}>
-            <div style={{ display: 'grid', gap: '14px', minWidth: 0 }}>
-              {briefMetrics}
+          <summary
+            style={{
+              cursor: 'pointer',
+              listStyle: 'none',
+              display: 'grid',
+              gridTemplateColumns: 'auto minmax(0, 1fr) auto',
+              gap: '14px',
+              alignItems: 'center',
+            }}
+          >
+            <span style={kickerStyle}>01 · Campaign brief</span>
+            <span
+              style={{
+                fontFamily: T.SANS,
+                fontSize: '12px',
+                color: PROEVOL_THEME.muted,
+                lineHeight: 1.5,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {campaign.targetProtein} · WT {campaign.wildTypeLabel} · {campaign.hostSystem} · {campaign.screeningSystem} · stringency {campaign.selectionStringency.toFixed(2)} · {campaign.currentRound}/{campaign.totalRounds} rounds
+            </span>
+            <span
+              style={{
+                fontFamily: T.MONO,
+                fontSize: '10px',
+                color: PROEVOL_THEME.muted,
+              }}
+            >
+              {briefOpen ? 'collapse ▴' : 'expand ▾'}
+            </span>
+          </summary>
+          <div
+            style={{
+              marginTop: '12px',
+              display: 'grid',
+              gridTemplateColumns: 'minmax(0, 1.4fr) minmax(280px, 0.95fr)',
+              gap: '14px',
+            }}
+          >
+            <div style={{ display: 'grid', gap: '12px', minWidth: 0 }}>
               <div
                 style={{
                   display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
                   gap: '8px',
-                  padding: '14px 16px',
-                  borderRadius: '14px',
-                  border: `1px solid ${PROEVOL_THEME.border}`,
-                  background: 'rgba(255,255,255,0.025)',
                 }}
               >
-                <div
-                  style={{
-                    fontFamily: T.MONO,
-                    fontSize: 9,
-                    color: PROEVOL_THEME.label,
-                    letterSpacing: '0.12em',
-                    textTransform: 'uppercase',
-                  }}
-                >
-                  Campaign brief
-                </div>
-                <div style={{ fontFamily: T.SANS, fontSize: 13, color: PROEVOL_THEME.value, fontWeight: 600, lineHeight: 1.5 }}>
-                  {campaign.name}
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '8px' }}>
-                  <BriefField label="Target protein" value={campaign.targetProtein} />
-                  <BriefField label="Wild type" value={campaign.wildTypeLabel} />
-                  <BriefField label="Host system" value={campaign.hostSystem} />
-                  <BriefField label="Screening assay" value={campaign.screeningSystem} />
-                  <BriefField label="Selection pressure" value={campaign.selectionPressure} />
-                  <BriefField label="Objective" value={campaign.optimizationObjective.summary} />
-                </div>
+                <BriefField label="Target protein" value={campaign.targetProtein} />
+                <BriefField label="Wild type" value={campaign.wildTypeLabel} />
+                <BriefField label="Host system" value={campaign.hostSystem} />
+                <BriefField label="Screening assay" value={campaign.screeningSystem} />
+                <BriefField label="Selection pressure" value={campaign.selectionPressure} />
+                <BriefField label="Objective" value={campaign.optimizationObjective.summary} />
               </div>
-            </div>
-            <ProvenanceCard provenance={artifact.provenance} />
-          </div>
-
-          <details
-            style={{
-              marginTop: '14px',
-              border: `1px solid ${PROEVOL_THEME.border}`,
-              borderRadius: '12px',
-              background: 'rgba(255,255,255,0.02)',
-            }}
-          >
-            <summary
-              style={{
-                cursor: 'pointer',
-                listStyle: 'none',
-                padding: '10px 14px',
-                fontFamily: T.MONO,
-                fontSize: 10,
-                letterSpacing: '0.1em',
-                textTransform: 'uppercase',
-                color: PROEVOL_THEME.label,
-              }}
-            >
-              Campaign sliders & starting sequence
-            </summary>
-            <div style={{ padding: '0 14px 14px' }}>
               <EvolutionCampaignContextCard
                 campaign={campaign}
                 totalRounds={totalRounds}
@@ -442,131 +289,113 @@ export default function ProEvolPage() {
                 onSelectionStringencyChange={setSelectionStringency}
               />
             </div>
-          </details>
-        </SectionShell>
+            <ProvenanceCard provenance={artifact.provenance} />
+          </div>
+        </details>
 
-        {/* ─────────────────────────  SECTION 02  ───────────────────────── */}
+        {/* ─────────────────  SECTION 02 · EVIDENCE CENTER (DOMINANT)  ───────────────── */}
         <SectionShell
           index={2}
-          kicker="Scientific Evidence Layer"
-          title="Variant trajectories, family dynamics, and statistical signal"
-          description="This is the page's primary evidence layer. Every panel is computed from the artifact's per-replicate read counts using frequency-first statistics. Engine composite scores are intentionally absent here — they appear only in the decision strip below."
+          kicker="Scientific evidence layer"
+          title="Variant trajectories, family dynamics, statistical signal"
+          description="Every panel below is computed from the artifact's per-round read counts using frequency-first statistics. Bands carry the same semantic as the Truth Header above. Engine composite scores are intentionally absent from this section — they appear only in the demoted decision strip."
         >
+          {/* 02A — Trajectory hero with stat rail */}
+          <div
+            style={{
+              display: 'grid',
+              gap: '14px',
+              gridTemplateColumns: 'minmax(0, 2.4fr) minmax(220px, 0.9fr)',
+            }}
+          >
+            <ChartShell
+              title="Variant trajectory · top 6"
+              subtitle="Per-round variant frequency for the six variants with highest peak share. Click a chip or evidence-table row to focus the trajectory across all panels."
+              footnote={`Frequencies use Laplace pseudocount (+1) before normalization. Hover for ${
+                bandSemantic === 'modeled' ? 'model spread' : '95% CI'
+              } range.`}
+              isHero
+            >
+              <VariantTrajectoryChart
+                trajectories={research.topVariants}
+                bandSemantic={bandSemantic}
+                highlightVariantId={selectedVariantId}
+                onSelectVariant={setSelectedVariantId}
+              />
+            </ChartShell>
+            <EvidenceStatRail research={research} bandSemantic={bandSemantic} />
+          </div>
+
+          {/* 02B — Family share + diversity */}
           <div
             style={{
               display: 'grid',
               gap: '14px',
               gridTemplateColumns: 'minmax(0, 1.1fr) minmax(0, 0.9fr)',
+              marginTop: '16px',
             }}
           >
-            {chartCard({
-              title: 'Variant trajectory · top 6',
-              subtitle:
-                'Per-round variant frequency (mean ± 95% CI across replicates) for the six variants with highest peak share. Click a chip to focus.',
-              children: (
-                <VariantTrajectoryChart
-                  trajectories={research.topVariants}
-                  highlightVariantId={selectedVariantId}
-                  onSelectVariant={setSelectedVariantId}
-                />
-              ),
-              footnote: 'Frequencies use Laplace pseudocount (+1) before normalization to keep low-count variants traceable.',
-            })}
-
-            {chartCard({
-              title: 'Family share · Muller-style stack',
-              subtitle:
-                'Stacked, normalized share per family across rounds. Reveals lineage extinction, fixation, or the emergence of a dominant clone.',
-              children: <MullerPlot data={research.familyShares} />,
-              footnote: 'Family share is the per-replicate mean over variant frequencies, then renormalized to 100%.',
-            })}
-          </div>
-
-          <div
-            style={{
-              display: 'grid',
-              gap: '14px',
-              gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)',
-              marginTop: '14px',
-            }}
-          >
-            {chartCard({
-              title: 'Enrichment vs. mutation burden',
-              subtitle:
-                'Each circle is a variant. Above the dashed line = enriched relative to wild type at the final round. Bubble area scales with final frequency.',
-              children: (
-                <EnrichmentBurdenScatter
-                  entries={research.enrichment}
-                  highlightVariantId={selectedVariantId}
-                  onSelectVariant={setSelectedVariantId}
-                />
-              ),
-              footnote: 'Variants with high burden but negative enrichment are candidates for stability rescue or rejection from the next library.',
-            })}
-
-            {chartCard({
-              title: 'Diversity & convergence',
-              subtitle:
-                'Left axis: Shannon entropy across all variants (replicate CI band). Right axis: top-1 frequency. A widening gap signals premature collapse.',
-              children: <DiversityConvergenceCurve data={research.diversity} />,
-              footnote:
+            <ChartShell
+              title="Family share · Muller-style stack"
+              subtitle="Stacked, normalized share per family across rounds. Reveals lineage extinction, fixation, or the emergence of a dominant clone."
+              footnote="Family share is the mean across model draws over variant frequencies, then renormalized to 100%."
+            >
+              <MullerPlot data={research.familyShares} />
+            </ChartShell>
+            <ChartShell
+              title="Diversity & convergence"
+              subtitle="Left axis: Shannon entropy across all variants. Right axis: top-1 frequency. A widening gap signals premature collapse."
+              footnote={
                 research.shannonDelta < -0.15
-                  ? 'Shannon dropped sharply between the last two rounds — the next-round panel should consider broadening exploration.'
+                  ? 'Shannon dropped sharply between the last two rounds — broadening exploration is the conservative next move.'
                   : research.shannonDelta > 0.15
                     ? 'Shannon increased between the last two rounds — exploration is still active.'
-                    : 'Shannon is stable across the last two rounds.',
-            })}
+                    : 'Shannon is stable across the last two rounds.'
+              }
+            >
+              <DiversityConvergenceCurve data={research.diversity} bandSemantic={bandSemantic} />
+            </ChartShell>
           </div>
 
+          {/* 02C — Enrichment scatter (full width) */}
+          <div style={{ marginTop: '16px' }}>
+            <ChartShell
+              title="Enrichment vs. mutation burden"
+              subtitle="Each circle is a variant. Above the dashed line = enriched relative to wild type at the final round. Bubble area scales with final frequency."
+              footnote="Variants with high burden but negative enrichment are candidates for stability rescue or rejection from the next library."
+            >
+              <EnrichmentBurdenScatter
+                entries={research.enrichment}
+                highlightVariantId={selectedVariantId}
+                onSelectVariant={setSelectedVariantId}
+              />
+            </ChartShell>
+          </div>
+
+          {/* 02D — Variant evidence table */}
           <div
             style={{
-              marginTop: '14px',
-              padding: '14px 16px',
-              borderRadius: '18px',
+              marginTop: '16px',
+              padding: '16px 18px',
+              borderRadius: '16px',
               border: `1px solid ${PROEVOL_THEME.border}`,
-              background: 'rgba(8,11,16,0.55)',
+              background: 'rgba(255,255,255,0.015)',
               display: 'grid',
               gap: '12px',
             }}
           >
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: '12px',
-                flexWrap: 'wrap',
-              }}
-            >
-              <div style={{ display: 'grid', gap: '4px' }}>
-                <div
-                  style={{
-                    fontFamily: T.MONO,
-                    fontSize: 9,
-                    color: PROEVOL_THEME.label,
-                    letterSpacing: '0.12em',
-                    textTransform: 'uppercase',
-                  }}
-                >
-                  Variant evidence table
-                </div>
-                <div
-                  style={{
-                    fontFamily: T.SANS,
-                    fontSize: 12,
-                    color: PROEVOL_THEME.muted,
-                    lineHeight: 1.5,
-                  }}
-                >
-                  Click a row to focus the variant across the trajectory chart, scatter, and the decision strip.
-                </div>
+            <div style={{ display: 'grid', gap: '4px' }}>
+              <div style={kickerStyle}>Variant evidence table · top 12 by log₂ enrichment vs WT</div>
+              <div
+                style={{
+                  fontFamily: T.SANS,
+                  fontSize: '12px',
+                  color: PROEVOL_THEME.muted,
+                  lineHeight: 1.55,
+                }}
+              >
+                Click a row to focus the variant across the trajectory chart, the scatter, and the demoted decision strip.
               </div>
-              <ValidityIndicator
-                validity={artifact.provenance.validity}
-                source={artifact.provenance.source}
-                replicateCount={artifact.provenance.replicateCount}
-                compact
-              />
             </div>
             <VariantEvidenceTable
               entries={research.enrichment}
@@ -576,13 +405,14 @@ export default function ProEvolPage() {
           </div>
         </SectionShell>
 
-        {/* ─────────────────────────  SECTION 03  ───────────────────────── */}
+        {/* ─────────────────  SECTION 03 · DECISION (DEMOTED, COLLAPSED)  ───────────────── */}
         <SectionShell
           index={3}
-          kicker="Decision & Next-Round Strategy"
+          kicker="Decision support · downstream of evidence"
           title="What should the campaign do next?"
-          description="Selection-decision and next-round recommendations are decision-support outputs from the heuristic engine, gated by the validity badge. They are presented alongside the focused variant so the user can audit the recommendation against the underlying evidence."
-          actions={(
+          tone="demoted"
+          description="Heuristic recommendations from the campaign engine. They are not derived from the evidence layer above — they should be audited against it. Open to read the full rationale."
+          actions={
             <span
               style={{
                 fontFamily: T.MONO,
@@ -596,28 +426,82 @@ export default function ProEvolPage() {
                 background: 'rgba(255,255,255,0.04)',
               }}
             >
-              decision-support · {artifact.provenance.validity}
+              heuristic · {artifact.provenance.validity}
             </span>
-          )}
+          }
         >
-          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.05fr) minmax(0, 0.95fr)', gap: '14px' }}>
-            <NextRoundRecommendationCard campaign={campaign} />
-            <SelectionDecisionCard campaign={campaign} focusedVariant={focusedVariant} />
+          {/* Always-visible one-line digest */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'minmax(0, 1fr) auto',
+              gap: '14px',
+              alignItems: 'center',
+              padding: '12px 14px',
+              borderRadius: '12px',
+              border: `1px solid ${PROEVOL_THEME.border}`,
+              background: 'rgba(255,255,255,0.02)',
+            }}
+          >
+            <div style={{ display: 'grid', gap: '3px', minWidth: 0 }}>
+              <div style={kickerStyle}>recommendation · {campaign.nextRoundRecommendation.action}</div>
+              <div
+                style={{
+                  fontFamily: T.SANS,
+                  fontSize: '13px',
+                  color: PROEVOL_THEME.value,
+                  fontWeight: 600,
+                  lineHeight: 1.45,
+                }}
+              >
+                {campaign.nextRoundRecommendation.title} · {campaign.nextRoundRecommendation.summary}
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setDecisionOpen((value) => !value)}
+              style={{
+                cursor: 'pointer',
+                fontFamily: T.MONO,
+                fontSize: 10,
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+                padding: '6px 12px',
+                borderRadius: '8px',
+                border: `1px solid ${PROEVOL_THEME.border}`,
+                background: 'rgba(255,255,255,0.04)',
+                color: PROEVOL_THEME.value,
+              }}
+            >
+              {decisionOpen ? 'collapse ▴' : 'rationale ▾'}
+            </button>
           </div>
 
-          <div style={{ marginTop: '14px' }}>
-            <LeadVariantCard campaign={campaign} />
-          </div>
+          {decisionOpen ? (
+            <div style={{ display: 'grid', gap: '12px', marginTop: '12px' }}>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'minmax(0, 1.05fr) minmax(0, 0.95fr)',
+                  gap: '12px',
+                }}
+              >
+                <NextRoundRecommendationCard campaign={campaign} />
+                <SelectionDecisionCard campaign={campaign} focusedVariant={focusedVariant} />
+              </div>
+              <LeadVariantCard campaign={campaign} />
+            </div>
+          ) : null}
         </SectionShell>
 
-        {/* ─────────────────────────  AUXILIARY  ───────────────────────── */}
+        {/* ─────────────────  AUXILIARY  ───────────────── */}
         <details
           open={auxOpen}
           onToggle={(event) => setAuxOpen((event.currentTarget as HTMLDetailsElement).open)}
           style={{
             border: `1px solid ${PROEVOL_THEME.border}`,
-            borderRadius: '18px',
-            background: 'rgba(8,11,16,0.5)',
+            borderRadius: '14px',
+            background: 'rgba(10,12,16,0.45)',
             padding: '12px 16px',
           }}
         >
@@ -636,9 +520,7 @@ export default function ProEvolPage() {
             }}
           >
             <span>Auxiliary detail · lineage trace, library table, engine landscape</span>
-            <span style={{ color: PROEVOL_THEME.muted }}>
-              {auxOpen ? '▾' : '▸'}
-            </span>
+            <span style={{ color: PROEVOL_THEME.muted }}>{auxOpen ? '▾' : '▸'}</span>
           </summary>
           <div style={{ display: 'grid', gap: '14px', paddingTop: '14px' }}>
             <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: '14px' }}>
@@ -661,44 +543,112 @@ export default function ProEvolPage() {
           </div>
         </details>
 
-        {/* ─────────────────────────  EXPORTS  ───────────────────────── */}
+        {/* ─────────────────  EXPORTS  ───────────────── */}
         <div
           style={{
             display: 'flex',
             flexWrap: 'wrap',
             gap: '8px',
-            padding: '14px 16px',
-            borderRadius: '14px',
+            alignItems: 'center',
+            padding: '12px 14px',
+            borderRadius: '12px',
             border: `1px solid ${PROEVOL_THEME.border}`,
-            background: 'rgba(8,11,16,0.45)',
+            background: 'rgba(10,12,16,0.4)',
           }}
         >
+          <span style={{ ...kickerStyle, marginRight: '4px' }}>Exports · band semantic = {bandSemantic}</span>
           <ExportButton
-            label="Export trajectory CSV"
+            label="Trajectory CSV"
             data={trajectoryExport}
-            filename="proevol-trajectories"
+            filename={`proevol-trajectories${exportSuffix}`}
             format="csv"
           />
           <ExportButton
-            label="Export enrichment table CSV"
+            label="Enrichment CSV"
             data={enrichmentExport}
-            filename="proevol-enrichment"
+            filename={`proevol-enrichment${exportSuffix}`}
             format="csv"
           />
           <ExportButton
-            label="Export diversity curve CSV"
+            label="Diversity CSV"
             data={diversityExport}
-            filename="proevol-diversity"
+            filename={`proevol-diversity${exportSuffix}`}
             format="csv"
           />
           <ExportButton
-            label="Export campaign artifact JSON"
+            label="Artifact JSON"
             data={artifactExport}
-            filename="proevol-campaign-artifact"
+            filename={`proevol-artifact${exportSuffix}`}
             format="json"
           />
         </div>
       </div>
+    </div>
+  );
+}
+
+const kickerStyle = {
+  fontFamily: T.MONO,
+  fontSize: '9px',
+  color: PROEVOL_THEME.label,
+  letterSpacing: '0.12em',
+  textTransform: 'uppercase' as const,
+};
+
+function ChartShell({
+  title,
+  subtitle,
+  children,
+  footnote,
+  isHero = false,
+}: {
+  title: string;
+  subtitle: string;
+  children: React.ReactNode;
+  footnote?: string;
+  isHero?: boolean;
+}) {
+  return (
+    <div
+      style={{
+        display: 'grid',
+        gap: '12px',
+        padding: isHero ? '18px 20px' : '16px 18px',
+        borderRadius: '16px',
+        border: `1px solid ${PROEVOL_THEME.border}`,
+        background: isHero ? 'rgba(8,11,16,0.62)' : 'rgba(8,11,16,0.5)',
+        minWidth: 0,
+      }}
+    >
+      <div style={{ display: 'grid', gap: '4px' }}>
+        <div style={kickerStyle}>{title}</div>
+        <div
+          style={{
+            fontFamily: T.SANS,
+            fontSize: 12.5,
+            color: PROEVOL_THEME.muted,
+            lineHeight: 1.55,
+            maxWidth: '760px',
+          }}
+        >
+          {subtitle}
+        </div>
+      </div>
+      <div>{children}</div>
+      {footnote ? (
+        <div
+          style={{
+            fontFamily: T.SANS,
+            fontSize: 10.5,
+            color: PROEVOL_THEME.muted,
+            lineHeight: 1.55,
+            paddingTop: 6,
+            borderTop: `1px dashed ${PROEVOL_THEME.border}`,
+          }}
+        >
+          {footnote}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -716,17 +666,7 @@ function BriefField({ label, value }: { label: string; value: string }) {
         minWidth: 0,
       }}
     >
-      <div
-        style={{
-          fontFamily: T.MONO,
-          fontSize: 9,
-          color: PROEVOL_THEME.label,
-          letterSpacing: '0.08em',
-          textTransform: 'uppercase',
-        }}
-      >
-        {label}
-      </div>
+      <div style={kickerStyle}>{label}</div>
       <div
         style={{
           fontFamily: T.SANS,

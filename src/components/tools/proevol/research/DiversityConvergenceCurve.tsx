@@ -6,9 +6,11 @@ import {
 import { rechartsGrid, rechartsTick, TOOLTIP_STYLE, FONT, ACCENT } from '../../../charts/chartTheme';
 import { PROEVOL_THEME } from '../shared';
 import type { DiversityRoundPoint } from '../../../../services/proevolAnalysis';
+import type { ProEvolBandSemantic } from '../../../../domain/proevolArtifact';
 
 interface DiversityConvergenceCurveProps {
   data: DiversityRoundPoint[];
+  bandSemantic: ProEvolBandSemantic;
 }
 
 interface Row {
@@ -22,32 +24,36 @@ interface Row {
   topShareUpper: number;
 }
 
-function CustomTooltip({ active, payload, label }: any) {
-  if (!active || !payload?.length) return null;
-  const row = payload[0]?.payload as Row | undefined;
-  if (!row) return null;
-  return (
-    <div style={TOOLTIP_STYLE}>
-      <div style={{ fontFamily: FONT.MONO, color: 'rgba(255,255,255,0.5)', fontSize: 10 }}>
-        Round {label}
+function buildTooltip(bandSemantic: ProEvolBandSemantic) {
+  const bandLabel = bandSemantic === 'measurement' ? '95% CI' : 'model spread';
+  return function CustomTooltip({ active, payload, label }: any) {
+    if (!active || !payload?.length) return null;
+    const row = payload[0]?.payload as Row | undefined;
+    if (!row) return null;
+    return (
+      <div style={TOOLTIP_STYLE}>
+        <div style={{ fontFamily: FONT.MONO, color: 'rgba(255,255,255,0.5)', fontSize: 10 }}>
+          Round {label}
+        </div>
+        <div style={{ fontFamily: FONT.MONO, fontSize: 11, color: ACCENT.mint }}>
+          Shannon · {row.shannon.toFixed(2)} bits
+          <span style={{ color: 'rgba(255,255,255,0.5)' }}>
+            {' '}{bandLabel} [{row.shannonLower.toFixed(2)}–{row.shannonUpper.toFixed(2)}]
+          </span>
+        </div>
+        <div style={{ fontFamily: FONT.MONO, fontSize: 11, color: ACCENT.coral }}>
+          Top-1 share · {(row.topShare * 100).toFixed(1)}%
+          <span style={{ color: 'rgba(255,255,255,0.5)' }}>
+            {' '}{bandLabel} [{(row.topShareLower * 100).toFixed(1)}–{(row.topShareUpper * 100).toFixed(1)}%]
+          </span>
+        </div>
       </div>
-      <div style={{ fontFamily: FONT.MONO, fontSize: 11, color: ACCENT.mint }}>
-        Shannon · {row.shannon.toFixed(2)} bits
-        <span style={{ color: 'rgba(255,255,255,0.5)' }}>
-          {' '}[{row.shannonLower.toFixed(2)}–{row.shannonUpper.toFixed(2)}]
-        </span>
-      </div>
-      <div style={{ fontFamily: FONT.MONO, fontSize: 11, color: ACCENT.coral }}>
-        Top-1 share · {(row.topShare * 100).toFixed(1)}%
-        <span style={{ color: 'rgba(255,255,255,0.5)' }}>
-          {' '}[{(row.topShareLower * 100).toFixed(1)}–{(row.topShareUpper * 100).toFixed(1)}%]
-        </span>
-      </div>
-    </div>
-  );
+    );
+  };
 }
 
-export default function DiversityConvergenceCurve({ data }: DiversityConvergenceCurveProps) {
+export default function DiversityConvergenceCurve({ data, bandSemantic }: DiversityConvergenceCurveProps) {
+  const isModeled = bandSemantic === 'modeled';
   if (!data.length) {
     return (
       <div
@@ -128,7 +134,7 @@ export default function DiversityConvergenceCurve({ data }: DiversityConvergence
               offset: 10,
             }}
           />
-          <Tooltip content={<CustomTooltip />} />
+          <Tooltip content={buildTooltip(bandSemantic)} />
           <Legend
             wrapperStyle={{ fontFamily: FONT.MONO, fontSize: 10, color: 'rgba(255,255,255,0.55)' }}
             iconSize={8}
@@ -137,11 +143,15 @@ export default function DiversityConvergenceCurve({ data }: DiversityConvergence
             yAxisId="shannon"
             type="monotone"
             dataKey="shannonBand"
-            stroke="none"
+            stroke={isModeled ? ACCENT.mint : 'none'}
+            strokeWidth={isModeled ? 1 : 0}
+            strokeDasharray={isModeled ? '3 3' : undefined}
+            strokeOpacity={isModeled ? 0.45 : 0}
             fill={ACCENT.mint}
-            fillOpacity={0.16}
+            fillOpacity={isModeled ? 0.07 : 0.16}
             isAnimationActive={false}
             legendType="none"
+            name={isModeled ? 'Shannon model spread' : 'Shannon 95% CI'}
           />
           <Line
             yAxisId="shannon"

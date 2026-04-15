@@ -2,40 +2,63 @@
 
 import { T } from '../../../ide/tokens';
 import { PROEVOL_THEME } from '../shared';
-import type { ProEvolValidity } from '../../../../domain/proevolArtifact';
+import type {
+  ProEvolBandSemantic,
+  ProEvolValidity,
+} from '../../../../domain/proevolArtifact';
 
 interface ValidityIndicatorProps {
   validity: ProEvolValidity;
+  bandSemantic: ProEvolBandSemantic;
   source: string;
   replicateCount: number;
   compact?: boolean;
 }
 
-const VALIDITY_COPY: Record<ProEvolValidity, { label: string; tone: string; explanation: string }> = {
-  real: {
-    label: 'REAL DATA',
-    tone: PROEVOL_THEME.successHigh,
-    explanation: 'Frequencies and confidence intervals are derived from supplied per-replicate read counts.',
-  },
-  partial: {
-    label: 'PARTIAL · INFERRED',
-    tone: PROEVOL_THEME.riskLow,
-    explanation: 'Counts inferred from upstream Nexus-Bio context. Statistical bands use synthesized replicate variance.',
-  },
-  demo: {
-    label: 'DEMO · SIMULATED',
+interface ValidityCopy {
+  label: string;
+  tone: string;
+  explanation: string;
+}
+
+function copyFor(validity: ProEvolValidity, bandSemantic: ProEvolBandSemantic): ValidityCopy {
+  // Truth boundary: 'EXPERIMENT-BACKED' is reserved for actual measurement.
+  // Modeled artifacts always read as 'MODEL-DERIVED', regardless of validity tier,
+  // so the UI never accidentally claims wet-lab uncertainty.
+  if (bandSemantic === 'measurement' && validity === 'real') {
+    return {
+      label: 'EXPERIMENT-BACKED',
+      tone: PROEVOL_THEME.successHigh,
+      explanation:
+        'Frequencies and bands are derived from supplied per-replicate read counts. Bands are 95% CIs across biological replicates.',
+    };
+  }
+  if (validity === 'partial') {
+    return {
+      label: 'MODEL-DERIVED · CONTEXT',
+      tone: PROEVOL_THEME.riskLow,
+      explanation:
+        'Counts are model draws shaped by upstream Nexus-Bio context. Bands represent spread across model draws, not biological replicates.',
+    };
+  }
+  return {
+    label: 'MODEL-DERIVED · DEMO',
     tone: PROEVOL_THEME.riskMedium,
-    explanation: 'Counts are deterministically synthesized from the engine model. Not experimental measurement.',
-  },
-};
+    explanation:
+      'No upstream context. Counts and bands come from the campaign engine only — treat as illustrative, not measurement.',
+  };
+}
 
 export default function ValidityIndicator({
   validity,
+  bandSemantic,
   source,
   replicateCount,
   compact = false,
 }: ValidityIndicatorProps) {
-  const copy = VALIDITY_COPY[validity];
+  const copy = copyFor(validity, bandSemantic);
+  const isModeled = bandSemantic === 'modeled';
+  const replicateNoun = isModeled ? 'model draw' : 'replicate';
   return (
     <div
       style={{
@@ -78,7 +101,7 @@ export default function ValidityIndicator({
               color: PROEVOL_THEME.muted,
             }}
           >
-            n = {replicateCount} replicate{replicateCount === 1 ? '' : 's'}
+            n = {replicateCount} {replicateNoun}{replicateCount === 1 ? '' : 's'}
           </span>
         ) : null}
       </div>

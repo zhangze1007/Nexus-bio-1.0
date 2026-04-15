@@ -252,9 +252,11 @@ GEMINI_API_KEY    Google Gemini authorization (used in app/api/analyze/route.ts)
    - `src/components/ide/IDEShell.tsx`
    - `src/components/ide/IDETopBar.tsx`
    - `src/components/ide/IDESidebar.tsx`
-   - `src/components/tools/ProEvolPage.tsx`
    - `src/components/tools/GECAIRPage.tsx`
    - `src/components/tools/DBTLflowPage.tsx`
+
+   *(`ProEvolPage.tsx` and the `src/components/tools/proevol/` subtree are unlocked
+   for the active PROEVOL research-workbench reconstruction.)*
 
 4. **Never reverse the Groq → Gemini API order** — Groq is always primary. Gemini is always fallback. No exceptions.
 
