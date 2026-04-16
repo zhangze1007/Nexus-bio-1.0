@@ -53,7 +53,9 @@ describe('ResultPanel', () => {
     expect(screen.queryByTestId('nexai-parse-error-banner')).toBeNull();
     expect(screen.queryByTestId('nexai-result-raw-fallback')).toBeNull();
     expect(screen.queryByTestId('nexai-result-ungrounded-note')).toBeNull();
-    expect(screen.getByText(/Summary/i)).toBeTruthy();
+    // At least one "Summary" occurrence — the section heading, independent
+    // of whether the prose also includes the word.
+    expect(screen.getAllByText(/Summary/i).length).toBeGreaterThan(0);
   });
 
   it('shows malformed banner and raw fallback when backend reports INVALID_SYNTAX', () => {

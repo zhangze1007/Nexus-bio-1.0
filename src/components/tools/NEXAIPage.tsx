@@ -13,7 +13,7 @@
  * external literature API expansion, evidence tree viz) are NOT started
  * here — see PR-2b / PR-3 notes.
  */
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { motion } from 'framer-motion';
 import ToolShell, { TOOL_TOKENS as T } from './shared/ToolShell';
 import ModuleCard from './shared/ModuleCard';
@@ -31,6 +31,10 @@ import PromptInput from './nexai/PromptInput';
 import ResultPanel, { ParseErrorInfo } from './nexai/ResultPanel';
 import EvidencePanel from './nexai/EvidencePanel';
 import RawJsonDrawer from './nexai/RawJsonDrawer';
+import AutomationDrawer from './nexai/AutomationDrawer';
+import { AxonOrchestrator, type AxonTask } from '../../services/AxonOrchestrator';
+import { buildDefaultAdapters } from '../../services/axonAdapters';
+import { routeIntent, type IntentRoute } from '../../services/axonIntentRouter';
 
 const PRESET_QUERIES = [
   'Summarise current pathway bottlenecks and recommend the next tool to run.',
@@ -113,6 +117,24 @@ export default function NEXAIPage() {
   const [provider, setProvider] = useState<string | null>(null);
   const [rawDrawerOpen, setRawDrawerOpen] = useState(false);
 
+  // PR-2b — agentic mode.
+  //
+  // Off by default. When on, qualifying prompts are routed through the
+  // AxonOrchestrator and surfaced in the AutomationDrawer. Non-qualifying
+  // prompts still follow the PR-2a copilot flow, so enabling the toggle
+  // never silently breaks normal usage.
+  const [agenticMode, setAgenticMode] = useState(false);
+  const [tasks, setTasks] = useState<AxonTask[]>([]);
+  const [routeHint, setRouteHint] = useState<IntentRoute | null>(null);
+  const orchestratorRef = useRef<AxonOrchestrator | null>(null);
+  if (!orchestratorRef.current) orchestratorRef.current = new AxonOrchestrator();
+  const adaptersRef = useRef(buildDefaultAdapters());
+
+  useEffect(() => {
+    const orchestrator = orchestratorRef.current!;
+    return orchestrator.subscribe(setTasks);
+  }, []);
+
   const contextPrompt = useMemo(() => {
     if (analyzeArtifact) {
       const bottleneck = analyzeArtifact.bottleneckAssumptions[0]?.label ?? 'current pathway bottleneck';
@@ -150,10 +172,66 @@ export default function NEXAIPage() {
     setToolPayload,
   ]);
 
+  function enqueueAndRun(opts: { tool: 'pathd' | 'fbasim'; label: string; input: unknown }) {
+    const orchestrator = orchestratorRef.current!;
+    const task = orchestrator.enqueue(opts);
+    appendConsole({
+      level: 'info',
+      module: 'nexai',
+      message: `Axon queued ${opts.tool} task · ${task.id}`,
+    });
+    // Fire-and-forget: the orchestrator subscription already re-renders
+    // the drawer on transitions. We do not block the copilot answer on
+    // adapter completion — that would merge two UX timelines.
+    void orchestrator.runNext(adaptersRef.current).then((finished) => {
+      if (!finished) return;
+      if (finished.status === 'done') {
+        appendConsole({
+          level: 'success',
+          module: 'nexai',
+          message: `Axon ${finished.tool} task complete · ${finished.id}`,
+        });
+      } else if (finished.status === 'error') {
+        appendConsole({
+          level: 'error',
+          module: 'nexai',
+          message: `Axon ${finished.tool} task failed · ${finished.error ?? 'unknown error'}`,
+        });
+      }
+    });
+  }
+
   async function runQuery() {
     const activeQuery = query.trim();
     if (!activeQuery) return;
     setHistory(prev => [activeQuery, ...prev.slice(0, 19)]);
+
+    // PR-2b routing gate. When agentic mode is on, try to classify the
+    // query as an automatable PATHD/FBASIM task. Conservative: a classified
+    // intent enqueues *in addition to* the normal copilot response — the
+    // user still sees the plain-language brief, and the drawer shows the
+    // background task. Non-automatable prompts just take the copilot path.
+    if (agenticMode) {
+      const targetProduct = analyzeArtifact?.targetProduct ?? project?.targetProduct;
+      const route = routeIntent(activeQuery, { targetProduct });
+      setRouteHint(route);
+      if (route.kind === 'pathd') {
+        enqueueAndRun({
+          tool: 'pathd',
+          label: `Design pathway for ${route.targetProduct}`,
+          input: { targetProduct: route.targetProduct, hint: activeQuery },
+        });
+      } else if (route.kind === 'fbasim') {
+        enqueueAndRun({
+          tool: 'fbasim',
+          label: `Flux-balance simulation (${route.params.species}, ${route.params.objective})`,
+          input: route.params,
+        });
+      }
+    } else {
+      setRouteHint(null);
+    }
+
     setLoading(true);
     setApiError(null);
     setParseError(null);
@@ -462,6 +540,7 @@ export default function NEXAIPage() {
             : 'Axon opens as a text-first research desk. Once a result exists, the written brief becomes the default reading surface; evidence and raw JSON stay available on demand.'}
           legend={[
             { label: 'Mode', value: result ? resultMode : 'idle', accent: PATHD_THEME.lilac },
+            { label: 'Agentic', value: agenticMode ? `on · ${tasks.length} task${tasks.length === 1 ? '' : 's'}` : 'off', accent: PATHD_THEME.mint },
             { label: 'Surface', value: result ? surfaceView : 'answer', accent: PATHD_THEME.apricot },
             { label: 'Confidence', value: result ? `${(result.confidence * 100).toFixed(0)}%` : '—', accent: PATHD_THEME.mint },
             { label: 'Citations', value: `${result?.citations.length ?? 0}`, accent: PATHD_THEME.sky },
@@ -473,11 +552,74 @@ export default function NEXAIPage() {
             style={{
               padding: '12px',
               display: 'grid',
-              gridTemplateRows: 'auto auto minmax(0, 1fr) auto',
+              gridTemplateRows: 'auto auto auto minmax(0, 1fr) auto auto',
               gap: '12px',
               minHeight: '560px',
             }}
           >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '10px',
+                flexWrap: 'wrap',
+                padding: '6px 10px',
+                borderRadius: '12px',
+                border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
+                background: PATHD_THEME.panelSurface,
+              }}
+            >
+              <div style={{ display: 'grid', gap: '2px' }}>
+                <span style={{ fontFamily: T.MONO, fontSize: '9px', letterSpacing: '0.08em', textTransform: 'uppercase', color: PATHD_THEME.label }}>
+                  Axon mode
+                </span>
+                <span style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.value, lineHeight: 1.5 }}>
+                  {agenticMode
+                    ? 'Agentic — qualifying PATHD / FBASIM prompts are queued as real tool runs.'
+                    : 'Copilot — plain-language synthesis only. Raw JSON and automation stay out of the way.'}
+                </span>
+                {agenticMode && routeHint && routeHint.kind === 'none' && (
+                  <span
+                    data-testid="nexai-route-hint-none"
+                    style={{ fontFamily: T.MONO, fontSize: '9px', color: PATHD_THEME.label }}
+                  >
+                    Not routed — {routeHint.reason}
+                  </span>
+                )}
+                {agenticMode && routeHint && routeHint.kind !== 'none' && (
+                  <span
+                    data-testid={`nexai-route-hint-${routeHint.kind}`}
+                    style={{ fontFamily: T.MONO, fontSize: '9px', color: PATHD_THEME.value }}
+                  >
+                    Routed to {routeHint.kind.toUpperCase()} — {routeHint.reason}
+                  </span>
+                )}
+              </div>
+              <button
+                type="button"
+                data-testid="nexai-agentic-toggle"
+                aria-pressed={agenticMode}
+                onClick={() => setAgenticMode((v) => !v)}
+                style={{
+                  minHeight: '30px',
+                  padding: '0 12px',
+                  borderRadius: '10px',
+                  border: `1px solid ${agenticMode ? 'rgba(147,203,82,0.42)' : PATHD_THEME.sepiaPanelBorder}`,
+                  background: agenticMode ? 'rgba(147,203,82,0.18)' : 'transparent',
+                  color: agenticMode ? PATHD_THEME.value : PATHD_THEME.label,
+                  fontFamily: T.MONO,
+                  fontSize: '10px',
+                  fontWeight: 700,
+                  letterSpacing: '0.08em',
+                  textTransform: 'uppercase',
+                  cursor: 'pointer',
+                }}
+              >
+                {agenticMode ? 'Agentic on' : 'Agentic off'}
+              </button>
+            </div>
+
             <PromptInput
               query={query}
               setQuery={setQuery}
@@ -548,13 +690,21 @@ export default function NEXAIPage() {
               )}
             </div>
 
-            <RawJsonDrawer
-              open={rawDrawerOpen}
-              onToggle={setRawDrawerOpen}
-              rawText={rawText}
-              provider={provider}
-              parseError={parseError}
-              isProse={parseError?.code === 'NO_OBJECT'}
+            {rawText && (
+              <RawJsonDrawer
+                open={rawDrawerOpen}
+                onToggle={setRawDrawerOpen}
+                rawText={rawText}
+                provider={provider}
+                parseError={parseError}
+                isProse={parseError?.code === 'NO_OBJECT'}
+              />
+            )}
+
+            <AutomationDrawer
+              enabled={agenticMode}
+              tasks={tasks}
+              onClear={() => orchestratorRef.current?.clearTerminal()}
             />
           </div>
         </ScientificFigureFrame>

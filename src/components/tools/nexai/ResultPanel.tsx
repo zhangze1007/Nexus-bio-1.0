@@ -219,7 +219,12 @@ export default function ResultPanel({
           {rawText ?? result.answer}
         </pre>
       ) : (
-        <ResearchAnswerRenderer answer={result.answer} />
+        // In pathway mode the page stores a one-sentence synopsis in
+        // result.answer for previews (workbench payload, posture card).
+        // For the reading surface we prefer the full enriched rawText so
+        // formatResearchAnswer's structured path can build real Summary /
+        // Observations / Next-steps sections instead of a single-line brief.
+        <ResearchAnswerRenderer answer={rawText ?? result.answer} />
       )}
     </div>
   );
