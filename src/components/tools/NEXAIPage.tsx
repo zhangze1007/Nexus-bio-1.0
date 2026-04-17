@@ -32,7 +32,10 @@ import ResultPanel, { ParseErrorInfo } from './nexai/ResultPanel';
 import EvidencePanel from './nexai/EvidencePanel';
 import RawJsonDrawer from './nexai/RawJsonDrawer';
 import AutomationDrawer from './nexai/AutomationDrawer';
+import AxonLogPanel from '../ide/AxonLogPanel';
+import AxonPlanPanel from '../ide/AxonPlanPanel';
 import { routeIntent, type IntentRoute } from '../../services/axonIntentRouter';
+import { buildWorkbenchCopilotContext } from '../../services/axonContext';
 import { useAxonOrchestrator } from '../../providers/AxonOrchestratorProvider';
 
 const PRESET_QUERIES = [
@@ -124,7 +127,18 @@ export default function NEXAIPage() {
   // now owns the orchestrator, adapter registry, and writeback — this
   // page is just one of several consumers.
   const axon = useAxonOrchestrator();
-  const { tasks, agenticMode, toggleAgenticMode, enqueueAndRun: axonEnqueueAndRun, clearTerminal } = axon;
+  const {
+    tasks,
+    agenticMode,
+    toggleAgenticMode,
+    clearTerminal,
+    cancelTask,
+    retryTask,
+    reorderTask,
+    logs,
+    activePlan,
+    planAndRun,
+  } = axon;
   const [routeHint, setRouteHint] = useState<IntentRoute | null>(null);
 
   const contextPrompt = useMemo(() => {
@@ -164,37 +178,48 @@ export default function NEXAIPage() {
     setToolPayload,
   ]);
 
-  function enqueueAndRun(opts: { tool: 'pathd' | 'fbasim'; label: string; input: unknown }) {
-    axonEnqueueAndRun(opts);
-  }
-
   async function runQuery() {
     const activeQuery = query.trim();
     if (!activeQuery) return;
     setHistory(prev => [activeQuery, ...prev.slice(0, 19)]);
 
-    // PR-2b routing gate. When agentic mode is on, try to classify the
-    // query as an automatable PATHD/FBASIM task. Conservative: a classified
-    // intent enqueues *in addition to* the normal copilot response — the
-    // user still sees the plain-language brief, and the drawer shows the
-    // background task. Non-automatable prompts just take the copilot path.
+    // PR-4: routing + planning gate. When agentic mode is on we (a) run
+    // the lightweight intent router to keep the existing route-hint chip
+    // working, and (b) hand the query to the deterministic planner so
+    // multi-step requests (e.g. "design a pathway and run FBA on it")
+    // get a dependency-aware plan instead of a single-tool enqueue. The
+    // planner emits a 0-step plan with a warning when neither keyword
+    // matches, so it is safe to call unconditionally here.
     if (agenticMode) {
       const targetProduct = analyzeArtifact?.targetProduct ?? project?.targetProduct;
       const route = routeIntent(activeQuery, { targetProduct });
       setRouteHint(route);
-      if (route.kind === 'pathd') {
-        enqueueAndRun({
-          tool: 'pathd',
-          label: `Design pathway for ${route.targetProduct}`,
-          input: { targetProduct: route.targetProduct, hint: activeQuery },
-        });
-      } else if (route.kind === 'fbasim') {
-        enqueueAndRun({
-          tool: 'fbasim',
-          label: `Flux-balance simulation (${route.params.species}, ${route.params.objective})`,
-          input: route.params,
-        });
-      }
+      const copilotContext = buildWorkbenchCopilotContext({
+        targetProduct: null,
+        project: project
+          ? { title: project.title, targetProduct: project.targetProduct }
+          : null,
+        analyzeArtifact: analyzeArtifact
+          ? {
+              targetProduct: analyzeArtifact.targetProduct,
+              bottleneckAssumptions: analyzeArtifact.bottleneckAssumptions,
+              thermodynamicConcerns: analyzeArtifact.thermodynamicConcerns,
+              pathwayCandidates: analyzeArtifact.pathwayCandidates,
+            }
+          : null,
+        evidenceItems: evidenceItems.map((e) => ({
+          id: e.id,
+          title: e.title,
+          year: e.year,
+        })),
+        selectedEvidenceIds,
+        nextRecommendations: nextRecommendations.map((r) => ({
+          toolId: r.toolId,
+          reason: r.reason,
+        })),
+        currentToolId: 'nexai',
+      });
+      planAndRun({ request: activeQuery, context: copilotContext });
     } else {
       setRouteHint(null);
     }
@@ -671,7 +696,39 @@ export default function NEXAIPage() {
               enabled={agenticMode}
               tasks={tasks}
               onClear={clearTerminal}
+              onCancel={cancelTask}
+              onRetry={retryTask}
+              onReorder={reorderTask}
             />
+            {agenticMode && (
+              <AxonPlanPanel plan={activePlan} />
+            )}
+            {agenticMode && (
+              <div
+                data-testid="nexai-axon-log"
+                style={{
+                  borderRadius: '14px',
+                  border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
+                  background: PATHD_THEME.panelInset,
+                  padding: '12px 14px',
+                  display: 'grid',
+                  gap: '10px',
+                }}
+              >
+                <div
+                  style={{
+                    fontFamily: T.MONO,
+                    fontSize: '10px',
+                    letterSpacing: '0.08em',
+                    textTransform: 'uppercase',
+                    color: PATHD_THEME.label,
+                  }}
+                >
+                  Execution trace
+                </div>
+                <AxonLogPanel logs={logs} maxRows={60} />
+              </div>
+            )}
           </div>
         </ScientificFigureFrame>
       </ModuleCard>

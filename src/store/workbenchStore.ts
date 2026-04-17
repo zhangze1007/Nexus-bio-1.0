@@ -27,6 +27,8 @@ import type {
   StageCheckpoint,
   StructuredAnalysisPayload,
   WorkbenchAnalyzeArtifact,
+  WorkbenchAxonLogEntry,
+  WorkbenchAxonPlanRecord,
   WorkbenchBackendMeta,
   WorkbenchCanonicalState,
   WorkbenchCollaborator,
@@ -41,6 +43,9 @@ import type {
 
 export type {
   AxonRunRecord,
+  WorkbenchAxonLogEntry,
+  WorkbenchAxonPlanRecord,
+  WorkbenchAxonPlanStepRecord,
   BottleneckAssumption,
   EnzymeCandidateSummary,
   EvidenceSourceKind,
@@ -71,6 +76,8 @@ interface WorkbenchState extends WorkbenchCanonicalState {
   collaborators: WorkbenchCollaborator[];
   experimentRecords: WorkbenchExperimentRecord[];
   axonRuns: AxonRunRecord[];
+  axonLogs: WorkbenchAxonLogEntry[];
+  axonPlan: WorkbenchAxonPlanRecord | null;
   syncAuditLog: WorkbenchSyncAuditEntry[];
   historyLog: WorkbenchHistoryEntry[];
   syncStatus: 'idle' | 'loading' | 'saving' | 'synced' | 'error' | 'conflict';
@@ -91,6 +98,14 @@ interface WorkbenchState extends WorkbenchCanonicalState {
   addToolRun: (run: Omit<WorkbenchToolRun, 'id' | 'createdAt' | 'stageId'> & { stageId?: WorkbenchStageId | null }) => void;
   appendAxonRun: (record: AxonRunRecord) => void;
   clearAxonRuns: () => void;
+  appendAxonLog: (entry: WorkbenchAxonLogEntry) => void;
+  clearAxonLogs: () => void;
+  setAxonPlan: (plan: WorkbenchAxonPlanRecord | null) => void;
+  updateAxonPlanStep: (
+    planId: string,
+    stepId: string,
+    patch: Partial<WorkbenchAxonPlanRecord['steps'][number]>,
+  ) => void;
   setToolPayload: <K extends keyof WorkbenchToolPayloadMap>(toolId: K, payload: WorkbenchToolPayloadMap[K]) => void;
   seedDemoProject: (toolId?: string | null) => void;
   applyCanonicalState: (state: WorkbenchCanonicalState, options?: { markHydrated?: boolean; synced?: boolean; conflict?: boolean }) => void;
@@ -104,6 +119,7 @@ const WORKBENCH_SCHEMA_VERSION = 1;
 const RUN_ARTIFACT_LIMIT = 160;
 const TOOL_RUN_LIMIT = 120;
 const AXON_RUN_LIMIT = 80;
+const AXON_LOG_LIMIT = 400;
 const WORKBENCH_ACTOR_KEY = 'nexus-bio:workbench-actor-id';
 const DEFAULT_PROJECT_SYNC_SCOPE = 'default-workbench';
 
@@ -587,6 +603,8 @@ const initialState: Pick<
   | 'collaborators'
   | 'experimentRecords'
   | 'axonRuns'
+  | 'axonLogs'
+  | 'axonPlan'
   | 'syncAuditLog'
   | 'historyLog'
   | 'syncStatus'
@@ -619,6 +637,8 @@ const initialState: Pick<
   collaborators: [],
   experimentRecords: [],
   axonRuns: [],
+  axonLogs: [],
+  axonPlan: null,
   syncAuditLog: [],
   historyLog: [],
   syncStatus: 'idle',
@@ -947,6 +967,35 @@ export const useWorkbenchStore = create<WorkbenchState>()(
 
       clearAxonRuns: () => {
         set({ axonRuns: [] });
+      },
+
+      appendAxonLog: (entry) => {
+        set((state) => ({
+          axonLogs: [entry, ...state.axonLogs].slice(0, AXON_LOG_LIMIT),
+        }));
+      },
+
+      clearAxonLogs: () => {
+        set({ axonLogs: [] });
+      },
+
+      setAxonPlan: (plan) => {
+        set({ axonPlan: plan });
+      },
+
+      updateAxonPlanStep: (planId, stepId, patch) => {
+        set((state) => {
+          const plan = state.axonPlan;
+          if (!plan || plan.id !== planId) return state;
+          return {
+            axonPlan: {
+              ...plan,
+              steps: plan.steps.map((s) =>
+                s.id === stepId ? { ...s, ...patch } : s,
+              ),
+            },
+          };
+        });
       },
 
       setToolPayload: (toolId, payload) => {

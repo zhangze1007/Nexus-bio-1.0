@@ -18,6 +18,7 @@
  * deferred to PR-3 on purpose. The UI shows what the orchestrator can
  * honestly report today.
  */
+import type { CSSProperties } from 'react';
 import { motion } from 'framer-motion';
 import type { AxonTask, AxonTaskStatus } from '../../../services/AxonOrchestrator';
 import { TOOL_TOKENS as T } from '../shared/ToolShell';
@@ -28,6 +29,27 @@ export interface AutomationDrawerProps {
   /** When false the drawer does not render. This is the feature flag. */
   enabled: boolean;
   onClear?: () => void;
+  /** PR-4: explicit queue controls. */
+  onCancel?: (taskId: string) => void;
+  onRetry?: (taskId: string) => void;
+  onReorder?: (taskId: string, newIndex: number) => { ok: boolean; reason?: string };
+}
+
+function controlBtn(disabled: boolean): CSSProperties {
+  return {
+    fontFamily: T.MONO,
+    fontSize: '9px',
+    padding: '2px 6px',
+    borderRadius: '5px',
+    border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
+    background: disabled ? 'transparent' : 'rgba(10,14,22,0.35)',
+    color: disabled ? PATHD_THEME.label : PATHD_THEME.value,
+    cursor: disabled ? 'not-allowed' : 'pointer',
+    opacity: disabled ? 0.5 : 1,
+    letterSpacing: '0.05em',
+    textTransform: 'uppercase',
+    minWidth: '20px',
+  };
 }
 
 function statusTone(status: AxonTaskStatus): { bg: string; border: string; fg: string; label: string } {
@@ -40,6 +62,8 @@ function statusTone(status: AxonTaskStatus): { bg: string; border: string; fg: s
       return { bg: 'rgba(147,203,82,0.16)', border: 'rgba(147,203,82,0.34)', fg: PATHD_THEME.value, label: 'Done' };
     case 'error':
       return { bg: 'rgba(250,128,114,0.16)', border: 'rgba(250,128,114,0.42)', fg: '#FA8072', label: 'Error' };
+    case 'cancelled':
+      return { bg: 'rgba(255,255,255,0.06)', border: 'rgba(255,255,255,0.16)', fg: PATHD_THEME.label, label: 'Cancelled' };
   }
 }
 
@@ -77,8 +101,19 @@ function summariseResult(task: AxonTask): string | null {
   return null;
 }
 
-export default function AutomationDrawer({ tasks, enabled, onClear }: AutomationDrawerProps) {
+export default function AutomationDrawer({
+  tasks,
+  enabled,
+  onClear,
+  onCancel,
+  onRetry,
+  onReorder,
+}: AutomationDrawerProps) {
   if (!enabled) return null;
+
+  // Pending-order indexes used for reorder button guards. Computed once
+  // per render so each row can find its own position without scanning.
+  const pendingIds = tasks.filter((t) => t.status === 'pending').map((t) => t.id);
 
   const pending = tasks.filter((t) => t.status === 'pending').length;
   const running = tasks.filter((t) => t.status === 'running').length;
@@ -209,16 +244,76 @@ export default function AutomationDrawer({ tasks, enabled, onClear }: Automation
                     </div>
                   )}
                 </div>
-                <span
-                  style={{
-                    fontFamily: T.MONO, fontSize: '9px',
-                    padding: '3px 8px', borderRadius: '6px',
-                    background: 'rgba(10,14,22,0.35)', color: tone.fg,
-                    letterSpacing: '0.08em', textTransform: 'uppercase',
-                  }}
-                >
-                  {tone.label}
-                </span>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
+                  <span
+                    style={{
+                      fontFamily: T.MONO, fontSize: '9px',
+                      padding: '3px 8px', borderRadius: '6px',
+                      background: 'rgba(10,14,22,0.35)', color: tone.fg,
+                      letterSpacing: '0.08em', textTransform: 'uppercase',
+                    }}
+                  >
+                    {tone.label}
+                  </span>
+                  <div style={{ display: 'flex', gap: '4px' }}>
+                    {task.status === 'pending' && onReorder && pendingIds.length > 1 && (
+                      <>
+                        <button
+                          type="button"
+                          data-testid={`nexai-automation-reorder-up-${task.id}`}
+                          title="Move earlier"
+                          aria-label="Move task earlier"
+                          onClick={() => {
+                            const idx = pendingIds.indexOf(task.id);
+                            if (idx > 0) onReorder(task.id, idx - 1);
+                          }}
+                          disabled={pendingIds.indexOf(task.id) === 0}
+                          style={controlBtn(pendingIds.indexOf(task.id) === 0)}
+                        >
+                          ↑
+                        </button>
+                        <button
+                          type="button"
+                          data-testid={`nexai-automation-reorder-down-${task.id}`}
+                          title="Move later"
+                          aria-label="Move task later"
+                          onClick={() => {
+                            const idx = pendingIds.indexOf(task.id);
+                            if (idx < pendingIds.length - 1) onReorder(task.id, idx + 1);
+                          }}
+                          disabled={pendingIds.indexOf(task.id) === pendingIds.length - 1}
+                          style={controlBtn(pendingIds.indexOf(task.id) === pendingIds.length - 1)}
+                        >
+                          ↓
+                        </button>
+                      </>
+                    )}
+                    {(task.status === 'pending' || task.status === 'running') && onCancel && (
+                      <button
+                        type="button"
+                        data-testid={`nexai-automation-cancel-${task.id}`}
+                        title="Cancel task"
+                        aria-label="Cancel task"
+                        onClick={() => onCancel(task.id)}
+                        style={controlBtn(false)}
+                      >
+                        Cancel
+                      </button>
+                    )}
+                    {(task.status === 'error' || task.status === 'cancelled') && onRetry && (
+                      <button
+                        type="button"
+                        data-testid={`nexai-automation-retry-${task.id}`}
+                        title="Retry task"
+                        aria-label="Retry task"
+                        onClick={() => onRetry(task.id)}
+                        style={controlBtn(false)}
+                      >
+                        Retry
+                      </button>
+                    )}
+                  </div>
+                </div>
               </motion.div>
             );
           })}

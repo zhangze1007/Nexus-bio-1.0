@@ -21,6 +21,7 @@
 import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import AutomationDrawer from '../tools/nexai/AutomationDrawer';
+import AxonLogPanel from './AxonLogPanel';
 import { useAxonOrchestratorOptional } from '../../providers/AxonOrchestratorProvider';
 import { PATHD_THEME } from '../workbench/workbenchTheme';
 
@@ -35,7 +36,7 @@ export default function GlobalAutomationDock() {
   if (!axon.agenticMode) return null;
   if (pathname.startsWith('/tools/nexai')) return null;
 
-  const { tasks, clearTerminal } = axon;
+  const { tasks, clearTerminal, cancelTask, retryTask, reorderTask, logs } = axon;
   const running = tasks.filter((t) => t.status === 'running').length;
   const pending = tasks.filter((t) => t.status === 'pending').length;
 
@@ -94,11 +95,42 @@ export default function GlobalAutomationDock() {
         </span>
       </button>
       {expanded && (
-        <AutomationDrawer
-          tasks={tasks}
-          enabled
-          onClear={clearTerminal}
-        />
+        <div style={{ display: 'grid', gap: '8px' }}>
+          <AutomationDrawer
+            tasks={tasks}
+            enabled
+            onClear={clearTerminal}
+            onCancel={cancelTask}
+            onRetry={retryTask}
+            onReorder={reorderTask}
+          />
+          <div
+            data-testid="global-automation-dock-log"
+            style={{
+              borderRadius: '14px',
+              border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
+              background: PATHD_THEME.panelInset,
+              padding: '10px 12px',
+              display: 'grid',
+              gap: '8px',
+              maxHeight: '280px',
+              overflowY: 'auto',
+            }}
+          >
+            <div
+              style={{
+                fontFamily: 'var(--font-mono, monospace)',
+                fontSize: '10px',
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+                color: PATHD_THEME.label,
+              }}
+            >
+              Execution trace
+            </div>
+            <AxonLogPanel logs={logs} maxRows={40} compact />
+          </div>
+        </div>
       )}
     </div>
   );

@@ -199,6 +199,57 @@ export interface AxonRunRecord {
   error: string | null;
 }
 
+/**
+ * PR-4: compact snapshot of an Axon plan, stored on the workbench so
+ * plans survive navigation between tools. The planner produces richer
+ * objects (see `axonPlanner.ts`) — this is the shape the store keeps.
+ */
+export interface WorkbenchAxonPlanStepRecord {
+  id: string;
+  title: string;
+  tool: 'pathd' | 'fbasim';
+  objective: string;
+  inputSummary: string;
+  expectedOutput: string;
+  dependsOn: string[];
+  status:
+    | 'planned'
+    | 'enqueued'
+    | 'running'
+    | 'done'
+    | 'error'
+    | 'cancelled'
+    | 'unsupported';
+  reason: string;
+  taskId?: string;
+}
+
+export interface WorkbenchAxonPlanRecord {
+  id: string;
+  createdAt: number;
+  origin: 'user' | 'auto';
+  request: string;
+  steps: WorkbenchAxonPlanStepRecord[];
+  warnings: string[];
+  depth: number;
+}
+
+/**
+ * PR-4: single trace entry surfaced in the shared live-log panel.
+ * Mirrors `AxonLogEntry` from `axonExecutionLog.ts`; kept here so the
+ * store has no runtime dependency on the services layer.
+ */
+export interface WorkbenchAxonLogEntry {
+  id: string;
+  timestamp: number;
+  phase: string;
+  message: string;
+  taskId?: string;
+  planId?: string;
+  tool?: string;
+  metadata?: Record<string, unknown>;
+}
+
 export interface WorkbenchExperimentRecord {
   recordId: string;
   projectId: string;
