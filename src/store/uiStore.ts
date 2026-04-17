@@ -52,6 +52,9 @@ interface UIState {
   // ── IDE Sidebar ───────────────────────────────────────────────────────
   sidebarCollapsed: boolean;
 
+  // ── Copilot slide-over ──────────────────────────────────────────────
+  copilotOpen: boolean;
+
   // ── Actions ──────────────────────────────────────────────────────────
   setSelectedNode: (node: PathwayNode | null) => void;
   setAiPathway: (nodes: PathwayNode[], edges: PathwayEdge[]) => void;
@@ -67,6 +70,8 @@ interface UIState {
   clearConsole: () => void;
   toggleConsole: () => void;
   toggleSidebarCollapsed: () => void;
+  setCopilotOpen: (open: boolean) => void;
+  toggleCopilot: () => void;
 }
 
 // ── Store ──────────────────────────────────────────────────────────────
@@ -100,6 +105,9 @@ export const useUIStore = create<UIState>()(
 
     // IDE Sidebar — starts collapsed (icon strip only)
     sidebarCollapsed: true,
+
+    // Copilot slide-over — closed by default
+    copilotOpen: false,
 
     // ── Actions ────────────────────────────────────────────────────────
 
@@ -141,6 +149,9 @@ export const useUIStore = create<UIState>()(
     toggleConsole: () => set((s) => ({ consoleOpen: !s.consoleOpen })),
 
     toggleSidebarCollapsed: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
+
+    setCopilotOpen: (open) => set({ copilotOpen: open }),
+    toggleCopilot: () => set((s) => ({ copilotOpen: !s.copilotOpen })),
   }))
 );
 

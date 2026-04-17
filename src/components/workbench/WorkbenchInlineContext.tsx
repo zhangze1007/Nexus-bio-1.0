@@ -6,6 +6,7 @@ import { ArrowUpRight, BrainCircuit, Microscope } from 'lucide-react';
 import { TOOL_BY_ID } from '../tools/shared/toolRegistry';
 import { getNextToolIds, getStageForTool } from '../tools/shared/workbenchConfig';
 import { useWorkbenchStore } from '../../store/workbenchStore';
+import { useUIStore } from '../../store/uiStore';
 import { T } from '../ide/tokens';
 import { getToolFreshness } from './workbenchTrust';
 import { PATHD_THEME } from './workbenchTheme';
@@ -351,14 +352,16 @@ export default function WorkbenchInlineContext({
           Analyze
         </Link>
         {toolId !== 'nexai' && (
-          <Link
-            href="/tools/nexai"
+          <button
+            type="button"
+            onClick={() => useUIStore.getState().setCopilotOpen(true)}
+            data-testid="workbench-inline-ask-axon"
             className="nb-ui-control nb-workbench-inline-context__action"
-            style={actionBtn}
+            style={{ ...actionBtn, cursor: 'pointer' }}
           >
             <BrainCircuit size={12} />
             Ask Axon
-          </Link>
+          </button>
         )}
         {nextTool && (
           <Link

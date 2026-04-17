@@ -351,9 +351,8 @@ export default function NEXAIPage() {
   return (
     <ToolShell
       moduleId="nexai"
-      title="Axon"
-      description="Plain-language research copilot — synthesises evidence, bottlenecks, and next-step routing"
-      formula="score = α·semantic_sim + β·citation_weight"
+      title="Axon Copilot"
+      description="Nexus-Bio hub surface — ask in plain language across every tool and workbench object"
       grid="'presets graph stats' 'presets graph stats'"
       columns="200px 1fr 200px"
       rows="1fr 1fr"
@@ -361,9 +360,9 @@ export default function NEXAIPage() {
       hero={
         <>
           <ScientificHero
-            eyebrow="Cross-Stage · Research Copilot"
-            title="Plain-language copilot for the active workbench object"
-            summary="Ask Axon in your own words. The page opens on a text-first reading surface — summary, observations, and recommended next steps — with the evidence map and raw JSON kept one click away for the researchers who want them."
+            eyebrow="Nexus-Bio Hub · Axon Copilot"
+            title="Central copilot for the whole platform"
+            summary="Axon is the hub surface, not a tool page. Ask in plain language — this full view is the deep reading room; the slide-over (⌘K from any tool) is the quick-access variant. Both hit the same synthesis pipeline."
             aside={
               <>
                 <div style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label, textTransform: 'uppercase', letterSpacing: '0.08em' }}>

@@ -21,17 +21,21 @@
  *   Content: 10  |  Backdrop: 80  |  Sidebar: 90  |  Topbar: 100
  */
 
-import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import IDESidebar, { W_COLLAPSED } from './IDESidebar';
 import IDETopBar from './IDETopBar';
 import IDEConsole from './IDEConsole';
+import CopilotSlideOver from './CopilotSlideOver';
 import { NavigationProvider } from '../../contexts/NavigationContext';
 import { useUIStore } from '../../store/uiStore';
 import WorkbenchStatusBar from '../workbench/WorkbenchStatusBar';
 import { useWorkbenchStore } from '../../store/workbenchStore';
+
+function openCopilot() {
+  useUIStore.getState().setCopilotOpen(true);
+}
 
 interface ToolsLayoutShellProps {
   children: React.ReactNode;
@@ -62,6 +66,19 @@ export default function ToolsLayoutShell({ children }: ToolsLayoutShellProps) {
   useEffect(() => {
     useWorkbenchStore.getState().visitTool(moduleId);
   }, [moduleId]);
+
+  // Global Ctrl+K / Cmd+K toggles the Axon copilot overlay.
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const mod = e.ctrlKey || e.metaKey;
+      if (mod && (e.key === 'k' || e.key === 'K')) {
+        e.preventDefault();
+        useUIStore.getState().toggleCopilot();
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
 
   return (
     <NavigationProvider>
@@ -111,18 +128,22 @@ export default function ToolsLayoutShell({ children }: ToolsLayoutShellProps) {
         <IDEConsole />
 
         {/*
-         * Floating Copilot entry point (PR-2a).
+         * Floating Copilot entry point.
          *
-         * The audit calls for a global Ask-Axon shortcut reachable from any
-         * tool. The natural home would be the left rail, but IDESidebar.tsx
-         * is FORBIDDEN to modify (CLAUDE.md). We instead anchor the entry
-         * point to the shared tools shell so every /tools/* page gets it
-         * without touching forbidden chrome.
-         *
-         * Hidden on /tools/nexai itself (user is already there) and on the
-         * directory page (no module context to carry into the prompt).
+         * Primary hub entry across every /tools/* page. Opens the
+         * CopilotSlideOver overlay instead of navigating to /tools/nexai,
+         * so the current workbench stays mounted beneath the copilot.
+         * Hidden on the directory page (no module context) and on
+         * /tools/nexai itself (the full view is already on screen).
          */}
         {isWorkbench && moduleId !== 'nexai' && <CopilotFloatingButton />}
+
+        {/*
+         * Copilot overlay — always mounted here (not per-page) so its local
+         * state survives cross-tool navigation. Visibility is driven by
+         * uiStore.copilotOpen; AnimatePresence inside handles the transition.
+         */}
+        <CopilotSlideOver />
       </div>
     </NavigationProvider>
   );
@@ -130,8 +151,9 @@ export default function ToolsLayoutShell({ children }: ToolsLayoutShellProps) {
 
 function CopilotFloatingButton() {
   return (
-    <Link
-      href="/tools/nexai"
+    <button
+      type="button"
+      onClick={openCopilot}
       aria-label="Ask Axon Copilot"
       data-testid="nexai-floating-copilot"
       style={{
@@ -150,14 +172,27 @@ function CopilotFloatingButton() {
         fontSize: '12px',
         fontWeight: 700,
         letterSpacing: '0.02em',
-        textDecoration: 'none',
+        cursor: 'pointer',
         boxShadow: '0 10px 28px rgba(4,10,16,0.45), 0 2px 6px rgba(0,0,0,0.35)',
         border: '1px solid rgba(255,255,255,0.22)',
       }}
     >
       <span aria-hidden style={{ fontFamily: 'monospace', fontSize: '14px' }}>⬡</span>
       <span>Ask Axon</span>
-    </Link>
+      <span
+        aria-hidden
+        style={{
+          fontFamily: 'monospace',
+          fontSize: '10px',
+          padding: '2px 6px',
+          borderRadius: '6px',
+          background: 'rgba(17,19,24,0.18)',
+          color: '#111318',
+        }}
+      >
+        ⌘K
+      </span>
+    </button>
   );
 }
 

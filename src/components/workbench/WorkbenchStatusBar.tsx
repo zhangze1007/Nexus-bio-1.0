@@ -15,6 +15,7 @@ import {
   type WorkbenchStageId,
 } from '../tools/shared/workbenchConfig';
 import { useWorkbenchStore } from '../../store/workbenchStore';
+import { useUIStore } from '../../store/uiStore';
 import { T } from '../ide/tokens';
 import WorkbenchAuditTimeline from './WorkbenchAuditTimeline';
 import WorkbenchDecisionTracePanel from './WorkbenchDecisionTracePanel';
@@ -250,8 +251,10 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                 <Microscope size={13} />
                 Analyze
               </Link>
-              <Link
-                href="/tools/nexai"
+              <button
+                type="button"
+                onClick={() => useUIStore.getState().setCopilotOpen(true)}
+                data-testid="workbench-axon-copilot"
                 style={{
                   minHeight: compactHeader ? '28px' : '32px',
                   padding: compactHeader ? '0 8px' : '0 10px',
@@ -259,7 +262,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '6px',
-                  textDecoration: 'none',
+                  cursor: 'pointer',
                   border: `1px solid ${PATHD_THEME.panelBorderStrong}`,
                   background: 'rgba(207,196,227,0.34)',
                   color: VALUE,
@@ -269,7 +272,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
               >
                 <BrainCircuit size={13} />
                 {analyzeArtifact?.targetProduct ? `Axon: ${analyzeArtifact.targetProduct}` : 'Axon Copilot'}
-              </Link>
+              </button>
               <button
                 type="button"
                 onClick={() => setDrawerOpen((open) => !open)}
