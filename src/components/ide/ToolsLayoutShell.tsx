@@ -28,10 +28,12 @@ import IDESidebar, { W_COLLAPSED } from './IDESidebar';
 import IDETopBar from './IDETopBar';
 import IDEConsole from './IDEConsole';
 import CopilotSlideOver from './CopilotSlideOver';
+import GlobalAutomationDock from './GlobalAutomationDock';
 import { NavigationProvider } from '../../contexts/NavigationContext';
 import { useUIStore } from '../../store/uiStore';
 import WorkbenchStatusBar from '../workbench/WorkbenchStatusBar';
 import { useWorkbenchStore } from '../../store/workbenchStore';
+import { AxonOrchestratorProvider } from '../../providers/AxonOrchestratorProvider';
 
 function openCopilot() {
   useUIStore.getState().setCopilotOpen(true);
@@ -82,6 +84,7 @@ export default function ToolsLayoutShell({ children }: ToolsLayoutShellProps) {
 
   return (
     <NavigationProvider>
+      <AxonOrchestratorProvider>
       <div className={`nb-ide-shell${isWorkbench ? ' nb-workbench' : ''}`}>
         {/* TopBar — fixed at top, z-index: 100. Always mounted. */}
         <IDETopBar moduleId={moduleId ?? ''} />
@@ -144,7 +147,16 @@ export default function ToolsLayoutShell({ children }: ToolsLayoutShellProps) {
          * uiStore.copilotOpen; AnimatePresence inside handles the transition.
          */}
         <CopilotSlideOver />
+
+        {/*
+         * Global automation dock — visible on every /tools/* route when
+         * agentic mode is ON, so the user can see the shared queue
+         * while navigating between tools. Self-gates: renders nothing
+         * when agentic mode is OFF, preserving the non-agentic UX.
+         */}
+        <GlobalAutomationDock />
       </div>
+      </AxonOrchestratorProvider>
     </NavigationProvider>
   );
 }

@@ -22,6 +22,7 @@ import {
 import { getUpstreamToolIds } from '../components/tools/shared/workbenchGraph';
 import { buildExecutionSnapshot } from '../components/workbench/workbenchExecution';
 import type {
+  AxonRunRecord,
   NextStepRecommendation,
   StageCheckpoint,
   StructuredAnalysisPayload,
@@ -39,6 +40,7 @@ import type {
 } from './workbenchTypes';
 
 export type {
+  AxonRunRecord,
   BottleneckAssumption,
   EnzymeCandidateSummary,
   EvidenceSourceKind,
@@ -68,6 +70,7 @@ interface WorkbenchState extends WorkbenchCanonicalState {
   backendMeta: WorkbenchBackendMeta | null;
   collaborators: WorkbenchCollaborator[];
   experimentRecords: WorkbenchExperimentRecord[];
+  axonRuns: AxonRunRecord[];
   syncAuditLog: WorkbenchSyncAuditEntry[];
   historyLog: WorkbenchHistoryEntry[];
   syncStatus: 'idle' | 'loading' | 'saving' | 'synced' | 'error' | 'conflict';
@@ -86,6 +89,8 @@ interface WorkbenchState extends WorkbenchCanonicalState {
   persistWorkflowArtifact: (artifact: WorkflowArtifact) => Promise<WorkflowArtifact>;
   visitTool: (toolId: string | null) => void;
   addToolRun: (run: Omit<WorkbenchToolRun, 'id' | 'createdAt' | 'stageId'> & { stageId?: WorkbenchStageId | null }) => void;
+  appendAxonRun: (record: AxonRunRecord) => void;
+  clearAxonRuns: () => void;
   setToolPayload: <K extends keyof WorkbenchToolPayloadMap>(toolId: K, payload: WorkbenchToolPayloadMap[K]) => void;
   seedDemoProject: (toolId?: string | null) => void;
   applyCanonicalState: (state: WorkbenchCanonicalState, options?: { markHydrated?: boolean; synced?: boolean; conflict?: boolean }) => void;
@@ -98,6 +103,7 @@ const STAGE_IDS: WorkbenchStageId[] = ['stage-1', 'stage-2', 'stage-3', 'stage-4
 const WORKBENCH_SCHEMA_VERSION = 1;
 const RUN_ARTIFACT_LIMIT = 160;
 const TOOL_RUN_LIMIT = 120;
+const AXON_RUN_LIMIT = 80;
 const WORKBENCH_ACTOR_KEY = 'nexus-bio:workbench-actor-id';
 const DEFAULT_PROJECT_SYNC_SCOPE = 'default-workbench';
 
@@ -580,6 +586,7 @@ const initialState: Pick<
   | 'backendMeta'
   | 'collaborators'
   | 'experimentRecords'
+  | 'axonRuns'
   | 'syncAuditLog'
   | 'historyLog'
   | 'syncStatus'
@@ -611,6 +618,7 @@ const initialState: Pick<
   backendMeta: null,
   collaborators: [],
   experimentRecords: [],
+  axonRuns: [],
   syncAuditLog: [],
   historyLog: [],
   syncStatus: 'idle',
@@ -929,6 +937,16 @@ export const useWorkbenchStore = create<WorkbenchState>()(
             checkpoints: buildCheckpoints(state.currentStageId, getAnalyzeArtifactForState(state), toolRuns),
           });
         });
+      },
+
+      appendAxonRun: (record) => {
+        set((state) => ({
+          axonRuns: [record, ...state.axonRuns].slice(0, AXON_RUN_LIMIT),
+        }));
+      },
+
+      clearAxonRuns: () => {
+        set({ axonRuns: [] });
       },
 
       setToolPayload: (toolId, payload) => {

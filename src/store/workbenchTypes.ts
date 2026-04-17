@@ -177,6 +177,28 @@ export interface WorkbenchCollaborator {
   lastSeenAt: number;
 }
 
+/**
+ * Structured summary of a terminal Axon orchestrator task. Written by
+ * the axonWriteback layer when a PATHD or FBASIM automation run
+ * finishes. Lives in workbench state so it is visible across every
+ * tool page, not just NEXAI.
+ */
+export interface AxonRunRecord {
+  taskId: string;
+  tool: 'pathd' | 'fbasim';
+  status: 'done' | 'error';
+  label: string;
+  summary: string;
+  timestamp: number;
+  provenance: {
+    createdAt: number;
+    startedAt?: number;
+    retryCount: number;
+  };
+  resultPreview: Record<string, unknown> | null;
+  error: string | null;
+}
+
 export interface WorkbenchExperimentRecord {
   recordId: string;
   projectId: string;

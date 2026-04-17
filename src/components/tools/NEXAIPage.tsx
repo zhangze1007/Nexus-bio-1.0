@@ -13,7 +13,7 @@
  * external literature API expansion, evidence tree viz) are NOT started
  * here — see PR-2b / PR-3 notes.
  */
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import ToolShell, { TOOL_TOKENS as T } from './shared/ToolShell';
 import ModuleCard from './shared/ModuleCard';
@@ -32,9 +32,8 @@ import ResultPanel, { ParseErrorInfo } from './nexai/ResultPanel';
 import EvidencePanel from './nexai/EvidencePanel';
 import RawJsonDrawer from './nexai/RawJsonDrawer';
 import AutomationDrawer from './nexai/AutomationDrawer';
-import { AxonOrchestrator, type AxonTask } from '../../services/AxonOrchestrator';
-import { buildDefaultAdapters } from '../../services/axonAdapters';
 import { routeIntent, type IntentRoute } from '../../services/axonIntentRouter';
+import { useAxonOrchestrator } from '../../providers/AxonOrchestratorProvider';
 
 const PRESET_QUERIES = [
   'Summarise current pathway bottlenecks and recommend the next tool to run.',
@@ -117,23 +116,16 @@ export default function NEXAIPage() {
   const [provider, setProvider] = useState<string | null>(null);
   const [rawDrawerOpen, setRawDrawerOpen] = useState(false);
 
-  // PR-2b — agentic mode.
+  // PR-3 — agentic mode + queue now come from the shared provider.
   //
-  // Off by default. When on, qualifying prompts are routed through the
-  // AxonOrchestrator and surfaced in the AutomationDrawer. Non-qualifying
-  // prompts still follow the PR-2a copilot flow, so enabling the toggle
-  // never silently breaks normal usage.
-  const [agenticMode, setAgenticMode] = useState(false);
-  const [tasks, setTasks] = useState<AxonTask[]>([]);
+  // Before PR-3 the orchestrator lived in a local useRef here, so the
+  // queue vanished on cross-tool navigation and the AutomationDrawer
+  // only worked on this page. The provider at ToolsLayoutShell level
+  // now owns the orchestrator, adapter registry, and writeback — this
+  // page is just one of several consumers.
+  const axon = useAxonOrchestrator();
+  const { tasks, agenticMode, toggleAgenticMode, enqueueAndRun: axonEnqueueAndRun, clearTerminal } = axon;
   const [routeHint, setRouteHint] = useState<IntentRoute | null>(null);
-  const orchestratorRef = useRef<AxonOrchestrator | null>(null);
-  if (!orchestratorRef.current) orchestratorRef.current = new AxonOrchestrator();
-  const adaptersRef = useRef(buildDefaultAdapters());
-
-  useEffect(() => {
-    const orchestrator = orchestratorRef.current!;
-    return orchestrator.subscribe(setTasks);
-  }, []);
 
   const contextPrompt = useMemo(() => {
     if (analyzeArtifact) {
@@ -173,32 +165,7 @@ export default function NEXAIPage() {
   ]);
 
   function enqueueAndRun(opts: { tool: 'pathd' | 'fbasim'; label: string; input: unknown }) {
-    const orchestrator = orchestratorRef.current!;
-    const task = orchestrator.enqueue(opts);
-    appendConsole({
-      level: 'info',
-      module: 'nexai',
-      message: `Axon queued ${opts.tool} task · ${task.id}`,
-    });
-    // Fire-and-forget: the orchestrator subscription already re-renders
-    // the drawer on transitions. We do not block the copilot answer on
-    // adapter completion — that would merge two UX timelines.
-    void orchestrator.runNext(adaptersRef.current).then((finished) => {
-      if (!finished) return;
-      if (finished.status === 'done') {
-        appendConsole({
-          level: 'success',
-          module: 'nexai',
-          message: `Axon ${finished.tool} task complete · ${finished.id}`,
-        });
-      } else if (finished.status === 'error') {
-        appendConsole({
-          level: 'error',
-          module: 'nexai',
-          message: `Axon ${finished.tool} task failed · ${finished.error ?? 'unknown error'}`,
-        });
-      }
-    });
+    axonEnqueueAndRun(opts);
   }
 
   async function runQuery() {
@@ -599,7 +566,7 @@ export default function NEXAIPage() {
                 type="button"
                 data-testid="nexai-agentic-toggle"
                 aria-pressed={agenticMode}
-                onClick={() => setAgenticMode((v) => !v)}
+                onClick={toggleAgenticMode}
                 style={{
                   minHeight: '30px',
                   padding: '0 12px',
@@ -703,7 +670,7 @@ export default function NEXAIPage() {
             <AutomationDrawer
               enabled={agenticMode}
               tasks={tasks}
-              onClear={() => orchestratorRef.current?.clearTerminal()}
+              onClear={clearTerminal}
             />
           </div>
         </ScientificFigureFrame>

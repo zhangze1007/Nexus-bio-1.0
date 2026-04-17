@@ -13,13 +13,19 @@
  *
  * z-index: 96 — above the floating button (95), below topbar (100).
  */
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Maximize2 } from 'lucide-react';
 import { T } from './tokens';
 import { PATHD_THEME } from '../workbench/workbenchTheme';
 import { useUIStore } from '../../store/uiStore';
+import { useWorkbenchStore } from '../../store/workbenchStore';
+import { useAxonOrchestratorOptional } from '../../providers/AxonOrchestratorProvider';
+import {
+  buildWorkbenchCopilotContext,
+  composeCopilotQuery,
+} from '../../services/axonContext';
 import ResearchAnswerRenderer from '../tools/shared/ResearchAnswerRenderer';
 
 const SLIDE_WIDTH = 420;
@@ -27,6 +33,62 @@ const SLIDE_WIDTH = 420;
 export default function CopilotSlideOver() {
   const open = useUIStore((s) => s.copilotOpen);
   const close = () => useUIStore.getState().setCopilotOpen(false);
+
+  // Workbench context — pulled field-by-field so the component only
+  // re-renders when the narrow slice we feed into the copilot changes.
+  const project = useWorkbenchStore((s) => s.project);
+  const analyzeArtifact = useWorkbenchStore((s) => s.analyzeArtifact);
+  const evidenceItems = useWorkbenchStore((s) => s.evidenceItems);
+  const selectedEvidenceIds = useWorkbenchStore((s) => s.selectedEvidenceIds);
+  const nextRecommendations = useWorkbenchStore((s) => s.nextRecommendations);
+  const currentToolId = useWorkbenchStore((s) => s.currentToolId);
+
+  const axon = useAxonOrchestratorOptional();
+
+  const workbenchContext = useMemo(
+    () =>
+      buildWorkbenchCopilotContext({
+        targetProduct: null,
+        project: project
+          ? { title: project.title, targetProduct: project.targetProduct }
+          : null,
+        analyzeArtifact: analyzeArtifact
+          ? {
+              targetProduct: analyzeArtifact.targetProduct,
+              bottleneckAssumptions: analyzeArtifact.bottleneckAssumptions,
+              thermodynamicConcerns: analyzeArtifact.thermodynamicConcerns,
+              pathwayCandidates: analyzeArtifact.pathwayCandidates,
+            }
+          : null,
+        evidenceItems: evidenceItems.map((e) => ({
+          id: e.id,
+          title: e.title,
+          year: e.year,
+        })),
+        selectedEvidenceIds,
+        nextRecommendations: nextRecommendations.map((r) => ({
+          toolId: r.toolId,
+          reason: r.reason,
+        })),
+        currentToolId,
+      }),
+    [
+      project,
+      analyzeArtifact,
+      evidenceItems,
+      selectedEvidenceIds,
+      nextRecommendations,
+      currentToolId,
+    ],
+  );
+
+  const queueCounts = useMemo(() => {
+    const tasks = axon?.tasks ?? [];
+    return {
+      running: tasks.filter((t) => t.status === 'running').length,
+      pending: tasks.filter((t) => t.status === 'pending').length,
+    };
+  }, [axon?.tasks]);
 
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
@@ -58,10 +120,11 @@ export default function CopilotSlideOver() {
     setLoading(true);
     setError(null);
     try {
+      const composedQuery = composeCopilotQuery(q, workbenchContext);
       const res = await fetch('/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ searchQuery: q }),
+        body: JSON.stringify({ searchQuery: composedQuery }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error ?? `HTTP ${res.status}`);
@@ -149,7 +212,25 @@ export default function CopilotSlideOver() {
                   Ask anything about the active research
                 </span>
               </div>
-              <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
+              <div style={{ display: 'flex', gap: '6px', flexShrink: 0, alignItems: 'center' }}>
+                {axon?.agenticMode && (queueCounts.running > 0 || queueCounts.pending > 0) && (
+                  <span
+                    data-testid="copilot-queue-badge"
+                    title="Agentic queue status"
+                    style={{
+                      fontFamily: T.MONO,
+                      fontSize: '9px',
+                      padding: '4px 8px',
+                      borderRadius: '8px',
+                      border: '1px solid rgba(175,195,214,0.34)',
+                      background: 'rgba(175,195,214,0.14)',
+                      color: PATHD_THEME.value,
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {queueCounts.running}R · {queueCounts.pending}Q
+                  </span>
+                )}
                 <Link
                   href="/tools/nexai"
                   onClick={close}
@@ -257,6 +338,73 @@ export default function CopilotSlideOver() {
                 >
                   {loading ? 'Asking…' : 'Ask'}
                 </button>
+              </div>
+              {/*
+               * Context indicator — surfaces the workbench state that will
+               * be appended to the next prompt. When no context is active,
+               * show a muted "no active context" hint so users know the
+               * copilot is running without grounding.
+               */}
+              <div
+                data-testid="copilot-context-indicator"
+                data-has-context={workbenchContext.hasContext || undefined}
+                title={
+                  workbenchContext.hasContext
+                    ? 'Your next question will include this bounded workbench context.'
+                    : 'No workbench context available — the copilot will answer generically.'
+                }
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  marginTop: '10px',
+                  padding: '6px 10px',
+                  borderRadius: '10px',
+                  border: `1px solid ${
+                    workbenchContext.hasContext
+                      ? 'rgba(175,195,214,0.32)'
+                      : 'rgba(255,255,255,0.06)'
+                  }`,
+                  background: workbenchContext.hasContext
+                    ? 'rgba(175,195,214,0.08)'
+                    : 'transparent',
+                  fontFamily: T.MONO,
+                  fontSize: '9px',
+                  color: workbenchContext.hasContext
+                    ? PATHD_THEME.value
+                    : PATHD_THEME.label,
+                  lineHeight: 1.4,
+                }}
+              >
+                <span
+                  aria-hidden
+                  style={{
+                    width: '6px',
+                    height: '6px',
+                    borderRadius: '50%',
+                    background: workbenchContext.hasContext
+                      ? PATHD_THEME.blue
+                      : 'rgba(175,195,214,0.28)',
+                    flexShrink: 0,
+                  }}
+                />
+                <span style={{ textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                  {workbenchContext.hasContext ? 'Using context' : 'No context'}
+                </span>
+                <span
+                  style={{
+                    color: PATHD_THEME.label,
+                    textTransform: 'none',
+                    letterSpacing: 0,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    minWidth: 0,
+                    flex: 1,
+                  }}
+                >
+                  {workbenchContext.summaryOneLine}
+                </span>
               </div>
             </div>
 

@@ -169,6 +169,17 @@ export class AxonOrchestrator {
     if (this.tasks.length !== before) this.notify();
   }
 
+  /**
+   * Replace the entire task list. Used by the provider when hydrating
+   * queue state from session storage. Never called during normal
+   * operation — this is deliberately named `restoreTasks` (not
+   * `setTasks`) to signal that it is persistence-layer glue.
+   */
+  restoreTasks(tasks: AxonTask[]): void {
+    this.tasks = tasks.map((task) => ({ ...task }));
+    this.notify();
+  }
+
   // ── Execution ────────────────────────────────────────────────
 
   /**
