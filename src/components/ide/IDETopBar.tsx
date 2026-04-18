@@ -5,7 +5,6 @@ import { Home, LayoutGrid, Menu, Terminal } from 'lucide-react';
 import { useUIStore } from '../../store/uiStore';
 import { getToolDefinition } from '../tools/shared/toolRegistry';
 import { T } from './tokens';
-import DisplayModeToggle from './shared/DisplayModeToggle';
 import { PATHD_THEME } from '../workbench/workbenchTheme';
 
 const SANS = T.SANS;
@@ -127,7 +126,12 @@ export default function IDETopBar({ moduleId, actions }: IDETopBarProps) {
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-        <DisplayModeToggle />
+        {/*
+         * DisplayModeToggle intentionally NOT rendered globally. Pages with real
+         * mode-level differences (currently only /tools directory) must mount it
+         * themselves. This prevents interaction theatre on pages where clicking
+         * Demo/Research has no real effect.
+         */}
         {actions}
         <button
           type="button"
