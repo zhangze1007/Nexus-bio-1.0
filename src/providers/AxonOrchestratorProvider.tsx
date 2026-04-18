@@ -64,6 +64,14 @@ import {
   type AutonomyLoop,
 } from '../services/axonAutonomyLoop';
 import type { WorkbenchCopilotContext } from '../services/axonContext';
+import {
+  classifyAxonDomain,
+  type AxonDomainClassification,
+} from '../services/axonDomainClassifier';
+import {
+  buildAxonSession,
+  type AxonSession,
+} from '../services/axonSessionView';
 import { useWorkbenchStore } from '../store/workbenchStore';
 import { useUIStore } from '../store/uiStore';
 
@@ -79,9 +87,12 @@ export interface AxonPlanAndRunOptions {
 }
 
 export interface AxonPlanAndRunResult {
-  plan: AxonPlan;
+  plan: AxonPlan | null;
   enqueuedStepIds: string[];
   skippedStepIds: string[];
+  classification: AxonDomainClassification;
+  /** Reason the planner was short-circuited, if any. */
+  shortCircuit?: 'off-domain' | 'no-prose-eligible' | null;
 }
 
 export interface AxonOrchestratorContextValue {
@@ -115,6 +126,15 @@ export interface AxonOrchestratorContextValue {
 
   /** PR-4: autonomy seam — ships disabled. */
   autonomy: AutonomyLoop;
+
+  /** PR-5: last domain classification emitted by planAndRun. */
+  lastClassification: AxonDomainClassification | null;
+  /** PR-5: the last user request that entered planAndRun (for session title). */
+  lastRequest: string | null;
+  /** PR-5: the workbench context snapshot attached to the last plan call. */
+  lastContext: WorkbenchCopilotContext | null;
+  /** PR-5: derived session view — never fabricated, always grounded in logs/plan/tasks. */
+  session: AxonSession;
 }
 
 const AxonOrchestratorContext = createContext<AxonOrchestratorContextValue | null>(null);
@@ -147,6 +167,9 @@ export function AxonOrchestratorProvider({
   const [hadInterruptedTasks, setHadInterruptedTasks] = useState(false);
   const [logs, setLogs] = useState<AxonLogEntry[]>([]);
   const [activePlan, setActivePlan] = useState<AxonPlan | null>(null);
+  const [lastClassification, setLastClassification] = useState<AxonDomainClassification | null>(null);
+  const [lastRequest, setLastRequest] = useState<string | null>(null);
+  const [lastContext, setLastContext] = useState<WorkbenchCopilotContext | null>(null);
   const hydratedRef = useRef(false);
   const appendConsole = useUIStore((s) => s.appendConsole);
   const appendAxonRun = useWorkbenchStore((s) => s.appendAxonRun);
@@ -379,6 +402,64 @@ export function AxonOrchestratorProvider({
   }
 
   function planAndRun(opts: AxonPlanAndRunOptions): AxonPlanAndRunResult {
+    const classification = classifyAxonDomain(opts.request);
+    setLastClassification(classification);
+    setLastRequest(opts.request);
+    setLastContext(opts.context);
+
+    pushLog(
+      'info',
+      `Domain classified as "${classification.category}". ${classification.reason}`,
+      {
+        metadata: {
+          category: classification.category,
+          signals: classification.signals.slice(0, 4).join(',') || 'none',
+          shouldPlan: classification.shouldPlan,
+        },
+      },
+    );
+
+    // PR-5 honesty gate: off-domain queries never reach the biosynthesis
+    // planner. We clear any previous plan so the session viewer shows
+    // only the advisory card — no half-executed state carries over.
+    if (classification.category === 'off-domain') {
+      setActivePlan(null);
+      setAxonPlanStore(null);
+      pushLog(
+        'info',
+        'Planner skipped — request outside Nexus-Bio scope.',
+        { metadata: { reason: 'off-domain' } },
+      );
+      return {
+        plan: null,
+        enqueuedStepIds: [],
+        skippedStepIds: [],
+        classification,
+        shortCircuit: 'off-domain',
+      };
+    }
+
+    // Non-pathway but answerable (scientific-adjacent / workbench-ops /
+    // ambiguous / general-knowledge) — no planner run, no tool enqueue,
+    // classification is surfaced to the session viewer so the UI can
+    // explain why no steps will execute.
+    if (!classification.shouldPlan) {
+      setActivePlan(null);
+      setAxonPlanStore(null);
+      pushLog(
+        'info',
+        `Planner skipped — category "${classification.category}" does not trigger tool execution.`,
+        { metadata: { reason: 'no-plan-for-category' } },
+      );
+      return {
+        plan: null,
+        enqueuedStepIds: [],
+        skippedStepIds: [],
+        classification,
+        shortCircuit: 'no-prose-eligible',
+      };
+    }
+
     const plan = buildAxonPlan(opts.request, opts.context, {
       isSupported: (tool) => registry.isSupported(tool),
     });
@@ -454,7 +535,7 @@ export function AxonOrchestratorProvider({
       { planId: plan.id, metadata: opts.context.hasContext ? { summary: opts.context.summaryOneLine } : { summary: 'none' } },
     );
 
-    return { plan, enqueuedStepIds, skippedStepIds };
+    return { plan, enqueuedStepIds, skippedStepIds, classification, shortCircuit: null };
   }
 
   function cancelTask(id: string) {
@@ -522,6 +603,42 @@ export function AxonOrchestratorProvider({
     orchestrator.clearTerminal();
   }
 
+  // PR-5: derived session view. Memoised against the inputs that already
+  // drive re-renders (tasks, logs, plan, classification) so downstream
+  // consumers don't have to recompute. The session is the single
+  // canonical projection of "what is Axon doing right now?".
+  const evidenceSavedCount = useWorkbenchStore((s) => s.evidenceItems.length);
+  const session = useMemo<AxonSession>(() => {
+    const context = lastContext
+      ? {
+          targetProduct: lastContext.targetProduct,
+          evidenceTotal: lastContext.evidenceTotal,
+          evidenceSelected: lastContext.evidenceSelected,
+          summary: lastContext.summaryOneLine,
+        }
+      : null;
+    return buildAxonSession({
+      plan: activePlan,
+      tasks,
+      logs,
+      domain: lastClassification,
+      evidenceRegistry,
+      evidenceSavedCount,
+      currentToolId: lastContext?.currentToolId ?? null,
+      hadInterruptedTasks,
+      context,
+    });
+  }, [
+    activePlan,
+    tasks,
+    logs,
+    lastClassification,
+    evidenceRegistry,
+    evidenceSavedCount,
+    lastContext,
+    hadInterruptedTasks,
+  ]);
+
   const value: AxonOrchestratorContextValue = {
     tasks,
     agenticMode,
@@ -540,6 +657,10 @@ export function AxonOrchestratorProvider({
     reorderTask,
     evidenceRegistry,
     autonomy,
+    lastClassification,
+    lastRequest,
+    lastContext,
+    session,
   };
 
   return (

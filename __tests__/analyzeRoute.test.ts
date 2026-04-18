@@ -5,7 +5,11 @@ import {
   MAX_SEARCH_QUERY_CHARS,
   escapeHtml,
   sanitizePromptInput,
+  AXON_PROSE_SYSTEM_PROMPT,
+  withProseSystemPrompt,
+  offDomainRefusalText,
 } from '../app/api/analyze/route';
+import { classifyAxonDomain } from '../src/services/axonDomainClassifier';
 
 describe('escapeHtml', () => {
   it('escapes the five canonical HTML metacharacters', () => {
@@ -52,6 +56,70 @@ describe('sanitizePromptInput', () => {
     const { value, truncated } = sanitizePromptInput(exact, 50);
     expect(value).toBe(exact);
     expect(truncated).toBe(false);
+  });
+});
+
+describe('PR-5 prose prompt', () => {
+  it('explicitly instructs the model NOT to return pathway JSON', () => {
+    // The prose prompt is what guards queries like "explain kinetics"
+    // from being forced into biosynthesis JSON output.
+    expect(AXON_PROSE_SYSTEM_PROMPT).toMatch(/do not return pathway json/i);
+    expect(AXON_PROSE_SYSTEM_PROMPT).toMatch(/never produce a json object/i);
+  });
+
+  it('tells the model to answer in plain prose and cap length', () => {
+    expect(AXON_PROSE_SYSTEM_PROMPT).toMatch(/plain prose/i);
+    expect(AXON_PROSE_SYSTEM_PROMPT).toMatch(/short|3–6 sentences|3-6 sentences/i);
+  });
+
+  it('wraps the user question with a labelled delimiter', () => {
+    const prompt = withProseSystemPrompt('Explain kinetics briefly');
+    expect(prompt.startsWith(AXON_PROSE_SYSTEM_PROMPT)).toBe(true);
+    expect(prompt).toMatch(/user question:\s*\nexplain kinetics briefly/i);
+  });
+});
+
+describe('PR-5 off-domain refusal', () => {
+  it('surfaces the classifier reason in the refusal text', () => {
+    const c = classifyAxonDomain('Who is Donald Trump');
+    expect(c.category).toBe('off-domain');
+    const refusal = offDomainRefusalText('Who is Donald Trump', c.reason);
+    expect(refusal).toMatch(/outside Nexus-Bio's scope/i);
+    expect(refusal).toContain(c.reason);
+    expect(refusal).toContain('Donald Trump');
+  });
+
+  it('never fabricates a pathway or enzyme for the off-domain subject', () => {
+    const refusal = offDomainRefusalText('Who is Donald Trump', 'off-domain signal');
+    // Honesty invariant — the refusal must NOT pretend the off-domain
+    // subject has a pathway, ΔG, flux, or enzyme associated with it.
+    expect(refusal).not.toMatch(/biosynthesis pathway for donald/i);
+    expect(refusal).not.toMatch(/enzyme for donald/i);
+    expect(refusal).not.toMatch(/flux.*donald/i);
+    expect(refusal).not.toMatch(/ΔG/);
+  });
+
+  it('truncates very long queries in the echoed text', () => {
+    const long = 'x'.repeat(200);
+    const refusal = offDomainRefusalText(long, 'too long');
+    // Confirm we did not paste the full 200 chars back verbatim.
+    expect(refusal.includes('x'.repeat(200))).toBe(false);
+    expect(refusal).toMatch(/…/);
+  });
+
+  it('is a non-empty string for every off-domain classifier signal', () => {
+    const samples = [
+      'Who is Donald Trump',
+      "What's the weather in Kuala Lumpur today",
+      'Taylor Swift concert tour dates',
+    ];
+    for (const s of samples) {
+      const c = classifyAxonDomain(s);
+      expect(c.category).toBe('off-domain');
+      const refusal = offDomainRefusalText(s, c.reason);
+      expect(typeof refusal).toBe('string');
+      expect(refusal.length).toBeGreaterThan(50);
+    }
   });
 });
 

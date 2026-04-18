@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { classifyAxonDomain } from '../../../src/services/axonDomainClassifier';
 
 export const runtime = 'edge';
 
@@ -295,6 +296,34 @@ function withSystemPrompt(prompt: string): string {
   return `${AXON_SYSTEM_PROMPT}\n\nUser request:\n${prompt}`;
 }
 
+// PR-5 prose system prompt — used when the query is scientific-adjacent,
+// workbench-ops, or ambiguous. We deliberately do NOT force the
+// biosynthesis JSON schema here; forcing it would hallucinate pathway
+// output for non-pathway questions. The response is plain prose and the
+// frontend already renders prose via NO_OBJECT parseError.
+export const AXON_PROSE_SYSTEM_PROMPT = `You are Axon, the scientific copilot of Nexus-Bio — a synthetic biology research platform.
+
+The user's question has been classified as scientific-adjacent, workbench-oriented, or ambiguous — NOT a pathway design request. Do not return pathway JSON. Do not fabricate enzyme efficiencies, ΔG values, or citations.
+
+Answer in plain prose:
+  • Keep it short (3–6 sentences).
+  • If the question is ambiguous, ask one clarifying question.
+  • If the question is about the workbench, ground the answer in the supplied workbench-context lines; do not invent additional state.
+  • If the answer would require data you do not have, say so plainly.
+  • Never produce a JSON object as the full response.`;
+
+export function withProseSystemPrompt(prompt: string): string {
+  return `${AXON_PROSE_SYSTEM_PROMPT}\n\nUser question:\n${prompt}`;
+}
+
+// PR-5 canned off-domain refusal. We never reach a model for these —
+// both because it wastes provider quota and because the honesty rule
+// says: do not force off-domain input through a scientific prompt.
+export function offDomainRefusalText(query: string, reason: string): string {
+  const trimmed = query.length > 120 ? `${query.slice(0, 117)}…` : query;
+  return `I can't help with that here — this request falls outside Nexus-Bio's scope (${reason}).\n\nNexus-Bio is a synthetic biology research platform. I can help with pathway design, flux balance analysis, enzyme engineering, thermodynamic feasibility, and workbench-grounded questions about your current project. If you meant a scientific angle on "${trimmed}", rephrase with the pathway, enzyme, or flux-analysis intent and I'll route it through the right tool.`;
+}
+
 // Escape characters that could survive the LLM round-trip and end up rendered
 // as raw HTML by a downstream surface that forgets to sanitize. Cheap defense
 // in depth — does not protect against prompt injection (use length cap +
@@ -321,17 +350,24 @@ export function sanitizePromptInput(
   return { value: stripped.slice(0, maxChars), truncated: true };
 }
 
-function buildGeminiBodyWithSystemPrompt(body: GeminiRequestBody): GeminiRequestBody {
+function buildGeminiBodyWithSystemPrompt(
+  body: GeminiRequestBody,
+  systemPrompt: string = AXON_SYSTEM_PROMPT,
+): GeminiRequestBody {
   return {
     ...body,
     systemInstruction: {
-      parts: [{ text: AXON_SYSTEM_PROMPT }],
+      parts: [{ text: systemPrompt }],
     },
   };
 }
 
 // ── Try Groq first (OpenAI-compatible format) ──
-async function tryGroq(prompt: string, apiKey: string): Promise<string | null> {
+async function tryGroq(
+  prompt: string,
+  apiKey: string,
+  systemPrompt: string = AXON_SYSTEM_PROMPT,
+): Promise<string | null> {
   for (const model of GROQ_MODELS) {
     try {
       const res = await withTimeout(
@@ -344,7 +380,7 @@ async function tryGroq(prompt: string, apiKey: string): Promise<string | null> {
           body: JSON.stringify({
             model,
             messages: [
-              { role: 'system', content: AXON_SYSTEM_PROMPT },
+              { role: 'system', content: systemPrompt },
               { role: 'user', content: prompt },
             ],
             temperature: 0.1,
@@ -371,11 +407,15 @@ async function tryGroq(prompt: string, apiKey: string): Promise<string | null> {
 }
 
 // ── Try Gemini as fallback ──
-async function tryGemini(body: GeminiRequestBody, apiKey: string): Promise<string | null> {
+async function tryGemini(
+  body: GeminiRequestBody,
+  apiKey: string,
+  systemPrompt: string = AXON_SYSTEM_PROMPT,
+): Promise<string | null> {
   for (const model of GEMINI_MODELS) {
     try {
       const geminiBody = {
-        ...buildGeminiBodyWithSystemPrompt(body),
+        ...buildGeminiBodyWithSystemPrompt(body, systemPrompt),
         generationConfig: {
           maxOutputTokens: 4096,
           temperature: 0.1,
@@ -545,6 +585,62 @@ export async function POST(req: NextRequest) {
   let prompt: string;
   let truncated = false;
 
+  // PR-5: classify before building any prompt. Off-domain never reaches a
+  // model; scientific-adjacent / workbench-ops / ambiguous use the prose
+  // prompt instead of the biosynthesis JSON schema; scientific-pathway
+  // keeps the original biosynthesis prompt chain.
+  let classificationSource: string | null = null;
+  if (rawSearchQuery) {
+    classificationSource = rawSearchQuery;
+  } else {
+    const body0 = rawBody as GeminiRequestBody;
+    if (Array.isArray(body0?.contents)) {
+      const extracted = extractPrompt(body0);
+      if (extracted) classificationSource = extracted;
+    }
+  }
+  const classification = classificationSource
+    ? classifyAxonDomain(classificationSource)
+    : null;
+
+  if (classification && classification.category === 'off-domain') {
+    const refusal = offDomainRefusalText(classificationSource!, classification.reason);
+    return jsonResponse({
+      candidates: [{ content: { parts: [{ text: refusal }] } }],
+      meta: {
+        provider: 'none',
+        domain: {
+          category: classification.category,
+          reason: classification.reason,
+          signals: classification.signals,
+        },
+        parseError: { code: 'NO_OBJECT', message: 'Off-domain query — no pathway output produced.' },
+      },
+    });
+  }
+
+  if (classification && classification.category === 'general-knowledge' && !classification.allowProseAnswer) {
+    const refusal = offDomainRefusalText(
+      classificationSource!,
+      'short generic query with no scientific context',
+    );
+    return jsonResponse({
+      candidates: [{ content: { parts: [{ text: refusal }] } }],
+      meta: {
+        provider: 'none',
+        domain: {
+          category: classification.category,
+          reason: classification.reason,
+          signals: classification.signals,
+        },
+        parseError: { code: 'NO_OBJECT', message: 'General-knowledge query — routed to refusal, not biosynthesis.' },
+      },
+    });
+  }
+
+  const useBiosynthesisPrompt = !classification || classification.allowBiosynthesisPrompt;
+  const activeSystemPrompt = useBiosynthesisPrompt ? AXON_SYSTEM_PROMPT : AXON_PROSE_SYSTEM_PROMPT;
+
   if (rawSearchQuery) {
     if (rawSearchQuery.length > MAX_SEARCH_QUERY_CHARS) {
       return jsonResponse({
@@ -552,11 +648,19 @@ export async function POST(req: NextRequest) {
       }, 413);
     }
     const safeQuery = escapeHtml(sanitizePromptInput(rawSearchQuery, MAX_SEARCH_QUERY_CHARS).value);
-    prompt = buildDynamicPrompt(safeQuery);
-    body = {
-      contents: [{ parts: [{ text: withSystemPrompt(prompt) }] }],
-      generationConfig: { temperature: 0.1, maxOutputTokens: 4096 },
-    };
+    if (useBiosynthesisPrompt) {
+      prompt = buildDynamicPrompt(safeQuery);
+      body = {
+        contents: [{ parts: [{ text: withSystemPrompt(prompt) }] }],
+        generationConfig: { temperature: 0.1, maxOutputTokens: 4096 },
+      };
+    } else {
+      prompt = safeQuery;
+      body = {
+        contents: [{ parts: [{ text: withProseSystemPrompt(prompt) }] }],
+        generationConfig: { temperature: 0.1, maxOutputTokens: 1024 },
+      };
+    }
   } else {
     // Legacy mode: Gemini-format request body with contents array
     body = rawBody as GeminiRequestBody;
@@ -572,7 +676,9 @@ export async function POST(req: NextRequest) {
 
     const cleaned = sanitizePromptInput(extracted, MAX_PROMPT_CHARS);
     truncated = cleaned.truncated;
-    prompt = withSystemPrompt(cleaned.value);
+    prompt = useBiosynthesisPrompt
+      ? withSystemPrompt(cleaned.value)
+      : withProseSystemPrompt(cleaned.value);
   }
 
   // Final hard cap — withSystemPrompt adds the Axon header on top.
@@ -595,17 +701,27 @@ export async function POST(req: NextRequest) {
     if (rawSearchQuery) meta.searchQuery = rawSearchQuery;
     if (truncated) meta.truncated = true;
     if (enriched.parseError) meta.parseError = enriched.parseError;
+    if (classification) {
+      meta.domain = {
+        category: classification.category,
+        reason: classification.reason,
+        signals: classification.signals,
+      };
+    }
     return meta;
   };
 
   // ── Try Groq first ──
   if (groqKey && textOnlyRequest) {
-    const groqResult = await tryGroq(prompt, groqKey);
+    const groqResult = await tryGroq(prompt, groqKey, activeSystemPrompt);
     if (groqResult) {
-      const enriched = enrichAxonOutput(groqResult);
-      // Return in Gemini-compatible format so frontend doesn't need to change.
-      // `meta.parseError` is additive — old clients ignore it; new clients can
-      // detect that the candidate text is the raw model output, not enriched.
+      // PR-5: only enrich (biosynthesis schema fixup) when we actually
+      // asked for biosynthesis output. Prose responses are passed
+      // through unchanged with a NO_OBJECT marker so the frontend
+      // renders them as text.
+      const enriched: EnrichResult = useBiosynthesisPrompt
+        ? enrichAxonOutput(groqResult)
+        : { text: groqResult, parseError: { code: 'NO_OBJECT', message: 'Prose response — pathway schema not requested.' } };
       return jsonResponse({
         candidates: [{
           content: {
@@ -619,9 +735,11 @@ export async function POST(req: NextRequest) {
 
   // ── Fallback to Gemini ──
   if (geminiKey) {
-    const geminiResult = await tryGemini(body, geminiKey);
+    const geminiResult = await tryGemini(body, geminiKey, activeSystemPrompt);
     if (geminiResult) {
-      const enriched = enrichAxonOutput(geminiResult);
+      const enriched: EnrichResult = useBiosynthesisPrompt
+        ? enrichAxonOutput(geminiResult)
+        : { text: geminiResult, parseError: { code: 'NO_OBJECT', message: 'Prose response — pathway schema not requested.' } };
       return jsonResponse({
         candidates: [{
           content: {

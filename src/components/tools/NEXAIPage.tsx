@@ -34,9 +34,11 @@ import RawJsonDrawer from './nexai/RawJsonDrawer';
 import AutomationDrawer from './nexai/AutomationDrawer';
 import AxonLogPanel from '../ide/AxonLogPanel';
 import AxonPlanPanel from '../ide/AxonPlanPanel';
+import AgentSessionViewer from '../ide/AgentSessionViewer';
 import { routeIntent, type IntentRoute } from '../../services/axonIntentRouter';
 import { buildWorkbenchCopilotContext } from '../../services/axonContext';
 import { useAxonOrchestrator } from '../../providers/AxonOrchestratorProvider';
+import { domainCategoryLabel } from '../../services/axonDomainClassifier';
 
 const PRESET_QUERIES = [
   'Summarise current pathway bottlenecks and recommend the next tool to run.',
@@ -92,7 +94,7 @@ function pathwayToResult(pathway: GeneratedPathway, query: string, provider: str
 }
 
 type ResultMode = 'pathway' | 'text' | 'idle';
-type SurfaceView = 'answer' | 'evidence';
+type SurfaceView = 'answer' | 'evidence' | 'session';
 
 export default function NEXAIPage() {
   const appendConsole = useUIStore(s => s.appendConsole);
@@ -138,8 +140,20 @@ export default function NEXAIPage() {
     logs,
     activePlan,
     planAndRun,
+    session,
+    lastClassification,
   } = axon;
   const [routeHint, setRouteHint] = useState<IntentRoute | null>(null);
+  const [secondaryOpen, setSecondaryOpen] = useState(false);
+
+  // PR-5: when agentic mode flips on and a session already has activity,
+  // default the reading surface to 'session' so the viewer is the first
+  // thing users see. When it flips off, fall back to 'answer'.
+  useEffect(() => {
+    if (!agenticMode && surfaceView === 'session') {
+      setSurfaceView('answer');
+    }
+  }, [agenticMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const contextPrompt = useMemo(() => {
     if (analyzeArtifact) {
@@ -220,6 +234,8 @@ export default function NEXAIPage() {
         currentToolId: 'nexai',
       });
       planAndRun({ request: activeQuery, context: copilotContext });
+      // PR-5: session viewer is the center of gravity when agentic is on.
+      setSurfaceView('session');
     } else {
       setRouteHint(null);
     }
@@ -622,7 +638,7 @@ export default function NEXAIPage() {
               hideExamples={Boolean(result)}
             />
 
-            {result && (
+            {(result || agenticMode) && (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' }}>
                 <div style={{ fontFamily: T.MONO, fontSize: '9px', color: PATHD_THEME.label, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
                   Primary reading surface
@@ -639,14 +655,16 @@ export default function NEXAIPage() {
                   }}
                 >
                   {([
-                    ['answer', 'Written answer'],
-                    ['evidence', 'Evidence map'],
-                  ] as const).map(([view, label]) => (
+                    ...(agenticMode ? [['session', 'Agent session'] as const] : []),
+                    ['answer', 'Written answer'] as const,
+                    ['evidence', 'Evidence map'] as const,
+                  ]).map(([view, label]) => (
                     <button
                       key={view}
                       type="button"
                       onClick={() => setSurfaceView(view)}
                       aria-pressed={surfaceView === view}
+                      data-testid={`nexai-surface-${view}`}
                       style={{
                         minHeight: '32px',
                         padding: '0 12px',
@@ -668,7 +686,9 @@ export default function NEXAIPage() {
             )}
 
             <div style={{ minHeight: 0, overflowY: 'auto' }}>
-              {surfaceView === 'evidence' && result ? (
+              {surfaceView === 'session' && agenticMode ? (
+                <AgentSessionViewer session={session} />
+              ) : surfaceView === 'evidence' && result ? (
                 <EvidencePanel citations={result.citations} />
               ) : (
                 <ResultPanel
@@ -701,32 +721,72 @@ export default function NEXAIPage() {
               onReorder={reorderTask}
             />
             {agenticMode && (
-              <AxonPlanPanel plan={activePlan} />
-            )}
-            {agenticMode && (
               <div
-                data-testid="nexai-axon-log"
+                data-testid="nexai-secondary-panels"
                 style={{
                   borderRadius: '14px',
                   border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
                   background: PATHD_THEME.panelInset,
-                  padding: '12px 14px',
+                  padding: '8px 10px',
                   display: 'grid',
-                  gap: '10px',
+                  gap: '8px',
                 }}
               >
-                <div
+                <button
+                  type="button"
+                  data-testid="nexai-secondary-toggle"
+                  aria-expanded={secondaryOpen}
+                  onClick={() => setSecondaryOpen((v) => !v)}
                   style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '4px 6px',
+                    background: 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: PATHD_THEME.label,
                     fontFamily: T.MONO,
                     fontSize: '10px',
                     letterSpacing: '0.08em',
                     textTransform: 'uppercase',
-                    color: PATHD_THEME.label,
                   }}
                 >
-                  Execution trace
-                </div>
-                <AxonLogPanel logs={logs} maxRows={60} />
+                  <span aria-hidden>{secondaryOpen ? '▾' : '▸'}</span>
+                  <span>
+                    Secondary panels · Plan · Execution trace
+                    {lastClassification ? ` · ${domainCategoryLabel(lastClassification.category)}` : ''}
+                  </span>
+                </button>
+                {secondaryOpen && (
+                  <div style={{ display: 'grid', gap: '10px' }}>
+                    <AxonPlanPanel plan={activePlan} />
+                    <div
+                      data-testid="nexai-axon-log"
+                      style={{
+                        borderRadius: '12px',
+                        border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
+                        background: 'rgba(5,7,11,0.35)',
+                        padding: '10px 12px',
+                        display: 'grid',
+                        gap: '8px',
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontFamily: T.MONO,
+                          fontSize: '10px',
+                          letterSpacing: '0.08em',
+                          textTransform: 'uppercase',
+                          color: PATHD_THEME.label,
+                        }}
+                      >
+                        Execution trace
+                      </div>
+                      <AxonLogPanel logs={logs} maxRows={60} />
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
