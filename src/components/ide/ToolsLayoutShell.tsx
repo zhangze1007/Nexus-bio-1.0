@@ -65,6 +65,37 @@ export default function ToolsLayoutShell({ children }: ToolsLayoutShellProps) {
     }
   }, [pathname]);
 
+  // Sidebar stay-open guard.
+  //
+  // IDESidebar (forbidden, cannot edit) attaches onClick={handleSidebarClick}
+  // to the entire <aside>. When the sidebar is expanded, ANY click on dead
+  // space (header padding, section dividers, direction labels, gaps between
+  // tool cards) matches !target.closest('a, button') and fires toggle() →
+  // collapse. Tablet/mobile tap imprecision triggers this before the user
+  // has meaningfully interacted. The sidebar appears to "auto-collapse".
+  //
+  // This capture-phase listener suppresses the accidental toggle while
+  // preserving:
+  //   • collapsed → expanded tap-anywhere-to-open (we only guard when
+  //     aria-expanded="true")
+  //   • link/button clicks (we let them through)
+  //   • backdrop click-outside (backdrop is a sibling of aside, not a
+  //     descendant, so the closest('aside') check skips it)
+  //   • menu-button explicit close (menu button lives in IDETopBar)
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      const target = e.target;
+      if (!(target instanceof Element)) return;
+      const aside = target.closest('aside[role="navigation"]');
+      if (!aside) return;
+      if (target.closest('a, button')) return;
+      if (aside.getAttribute('aria-expanded') !== 'true') return;
+      e.stopImmediatePropagation();
+    };
+    document.addEventListener('click', handler, true);
+    return () => document.removeEventListener('click', handler, true);
+  }, []);
+
   useEffect(() => {
     useWorkbenchStore.getState().visitTool(moduleId);
   }, [moduleId]);
