@@ -2,12 +2,13 @@
 
 import {
   ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, Cell,
-  ResponsiveContainer, ZAxis, ReferenceLine,
+  ResponsiveContainer, ZAxis,
 } from 'recharts';
 import type { ParetoFrontResult, PathwayCandidate } from '../../services/CatalystDesignerEngine';
 import {
-  ACCENT, COOL, FONT, TOOLTIP_STYLE, CHART_CONTAINER,
-  SECTION_LABEL, rechartsGrid, rechartsTick, fmt2,
+  ACCENT, FONT, TOOLTIP_STYLE, CHART_CONTAINER,
+  SECTION_LABEL, rechartsGrid, rechartsTick, rechartsAxisTitle,
+  rechartsAxisLine, SCI_PALETTE, fmt2, axisLabel,
 } from './chartTheme';
 
 /* ── Glassmorphism Tooltip ────────────────────────────────────── */
@@ -29,10 +30,32 @@ function ParetoTooltip({ active, payload }: any) {
         <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.5)', fontFamily: FONT.SANS }}>Cost</span>
         <span style={{ fontFamily: FONT.MONO, color: ACCENT.apricot }}>{fmt2(data.scores.metabolicCost)}</span>
         <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.5)', fontFamily: FONT.SANS }}>Rank</span>
-        <span style={{ fontFamily: FONT.MONO, color: data.paretoRank === 0 ? ACCENT.green : 'rgba(250,246,240,0.96)' }}>
+        <span style={{ fontFamily: FONT.MONO, color: data.paretoRank === 0 ? SCI_PALETTE.green : 'rgba(250,246,240,0.96)' }}>
           {data.paretoRank === 0 ? 'Pareto-optimal' : `Rank ${data.paretoRank}`}
         </span>
       </div>
+    </div>
+  );
+}
+
+/* ── Legend Swatch ────────────────────────────────────────────── */
+
+function LegendSwatch({ color, label, strong, muted }: { color: string; label: string; strong?: boolean; muted?: boolean }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+      <span style={{
+        width: 10, height: 10, borderRadius: '50%',
+        background: color, opacity: muted ? 0.6 : 1,
+        border: strong ? '1px solid #ffffff' : 'none',
+      }} />
+      <span style={{
+        fontFamily: FONT.SANS,
+        fontSize: 10,
+        color: muted ? 'rgba(232,238,248,0.62)' : 'rgba(232,238,248,0.88)',
+        fontWeight: strong ? 600 : 500,
+      }}>
+        {label}
+      </span>
     </div>
   );
 }
@@ -68,37 +91,56 @@ export default function ParetoChart({ result }: ParetoChartProps) {
   /* Pareto front line (sorted by x) */
   const frontSorted = [...paretoFront].sort((a, b) => a.scores.thermodynamic - b.scores.thermodynamic);
 
+  /* Semantic colors pulled from Okabe-Ito-adapted SCI palette. */
+  const frontColor = SCI_PALETTE.blue;
+  const bestColor = SCI_PALETTE.orange;
+  const nonFrontColor = SCI_PALETTE.slate;
+
   return (
     <div style={{ ...CHART_CONTAINER, background: '#050505', padding: 16 }}>
       <p style={SECTION_LABEL}>PARETO FRONT — MULTI-OBJECTIVE RANKING</p>
-      <p style={{ fontFamily: FONT.SANS, fontSize: 10, color: 'rgba(250,246,240,0.96)', margin: '-6px 0 12px' }}>
-        Thermodynamic score vs. yield (circle size ∝ 1/metabolic cost)
+      <p style={{ fontFamily: FONT.SANS, fontSize: 10, color: 'rgba(232,238,248,0.82)', margin: '-6px 0 4px' }}>
+        Thermodynamic vs. yield score · circle area ∝ 1/(metabolic cost)
+      </p>
+      <p style={{ fontFamily: FONT.SANS, fontSize: 9, color: 'rgba(232,238,248,0.55)', margin: '0 0 12px' }}>
+        Scores are single-point estimates from the design engine — no uncertainty is visualised here because the underlying engine does not emit replicate intervals.
       </p>
 
       <div style={{ width: '100%', height: 280 }}>
         <ResponsiveContainer width="100%" height="100%">
-          <ScatterChart margin={{ top: 12, right: 20, left: 10, bottom: 24 }}>
+          <ScatterChart margin={{ top: 14, right: 24, left: 12, bottom: 32 }}>
             <CartesianGrid {...rechartsGrid} />
             <XAxis
               dataKey="x"
               type="number"
               domain={[xMin, xMax]}
               tick={rechartsTick}
-              axisLine={{ stroke: 'rgba(255,255,255,0.1)' }}
+              axisLine={rechartsAxisLine}
               tickLine={false}
-              name="Thermodynamic"
-              label={{ value: 'Thermodynamic Score', position: 'insideBottom', offset: -8, style: { ...rechartsTick, fontSize: 9 } }}
+              name="Thermodynamic score"
+              label={{
+                value: axisLabel('Thermodynamic score', '0–1'),
+                position: 'insideBottom',
+                offset: -8,
+                style: rechartsAxisTitle,
+              }}
             />
             <YAxis
               dataKey="y"
               type="number"
               domain={[yMin, yMax]}
               tick={rechartsTick}
-              axisLine={{ stroke: 'rgba(255,255,255,0.1)' }}
+              axisLine={rechartsAxisLine}
               tickLine={false}
-              width={40}
-              name="Yield"
-              label={{ value: 'Yield Score', angle: -90, position: 'insideLeft', offset: 4, style: { ...rechartsTick, fontSize: 9 } }}
+              width={52}
+              name="Yield score"
+              label={{
+                value: axisLabel('Yield score', '0–1'),
+                angle: -90,
+                position: 'insideLeft',
+                offset: 4,
+                style: rechartsAxisTitle,
+              }}
             />
             <ZAxis dataKey="z" range={[60, 400]} />
             <Tooltip content={<ParetoTooltip />} cursor={false} />
@@ -106,10 +148,10 @@ export default function ParetoChart({ result }: ParetoChartProps) {
               {scatterData.map((entry, i) => (
                 <Cell
                   key={i}
-                  fill={entry.isBest ? ACCENT.yellow : entry.isFront ? ACCENT.lilac : 'rgba(255,255,255,0.15)'}
-                  fillOpacity={entry.isFront ? 0.85 : 0.35}
-                  stroke={entry.isBest ? '#fff' : entry.isFront ? ACCENT.lilac : 'none'}
-                  strokeWidth={entry.isBest ? 2 : entry.isFront ? 1 : 0}
+                  fill={entry.isBest ? bestColor : entry.isFront ? frontColor : nonFrontColor}
+                  fillOpacity={entry.isBest ? 0.92 : entry.isFront ? 0.78 : 0.28}
+                  stroke={entry.isBest ? '#ffffff' : entry.isFront ? frontColor : 'rgba(184,196,214,0.35)'}
+                  strokeWidth={entry.isBest ? 2 : entry.isFront ? 1.25 : 0.75}
                 />
               ))}
             </Scatter>
@@ -117,23 +159,33 @@ export default function ParetoChart({ result }: ParetoChartProps) {
         </ResponsiveContainer>
       </div>
 
-      {/* ── Legend: candidate names ── */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
+      {/* ── Legend: category + candidate names ── */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '10px 0 6px', flexWrap: 'wrap' }}>
+        <LegendSwatch color={bestColor} label="Best overall" strong />
+        <LegendSwatch color={frontColor} label="Pareto-optimal" />
+        <LegendSwatch color={nonFrontColor} label="Dominated" muted />
+      </div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
         {candidates.map(c => {
           const isFront = frontIds.has(c.id);
           const isBest = c.id === bestOverall;
+          const chipColor = isBest ? bestColor : isFront ? frontColor : nonFrontColor;
           return (
             <div key={c.id} style={{
-              display: 'flex', alignItems: 'center', gap: 4,
-              padding: '2px 8px', borderRadius: 8,
-              background: isBest ? 'rgba(255,251,31,0.1)' : isFront ? 'rgba(207,196,227,0.1)' : 'rgba(255,255,255,0.03)',
-              border: `1px solid ${isBest ? 'rgba(255,251,31,0.3)' : isFront ? 'rgba(207,196,227,0.2)' : 'rgba(255,255,255,0.06)'}`,
+              display: 'flex', alignItems: 'center', gap: 6,
+              padding: '2px 10px', borderRadius: 8,
+              background: `${chipColor}14`,
+              border: `1px solid ${chipColor}${isFront || isBest ? '55' : '22'}`,
             }}>
-              {isBest && <span style={{ fontSize: 10 }}>★</span>}
-              <span style={{ fontFamily: FONT.SANS, fontSize: 9, color: isFront ? 'rgba(250,246,240,0.96)' : 'rgba(217,225,235,0.68)' }}>
+              {isBest && <span style={{ fontSize: 10, color: bestColor }}>★</span>}
+              <span style={{
+                fontFamily: FONT.SANS,
+                fontSize: 10,
+                color: isFront ? 'rgba(232,238,248,0.92)' : 'rgba(232,238,248,0.6)',
+              }}>
                 {c.name}
               </span>
-              <span style={{ fontFamily: FONT.MONO, fontSize: 8, color: 'rgba(217,225,235,0.48)' }}>
+              <span style={{ fontFamily: FONT.MONO, fontSize: 9, color: 'rgba(232,238,248,0.48)' }}>
                 R{c.paretoRank}
               </span>
             </div>

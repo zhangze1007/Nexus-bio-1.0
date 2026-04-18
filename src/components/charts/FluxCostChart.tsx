@@ -1,30 +1,11 @@
 'use client';
 
-import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell,
-  ResponsiveContainer, LabelList,
-} from 'recharts';
 import type { MetabolicDrainResult } from '../../services/CatalystDesignerEngine';
 import {
-  ACCENT, WARM, FONT, TOOLTIP_STYLE, CHART_CONTAINER,
-  SECTION_LABEL, rechartsGrid, rechartsTick, fmt2,
+  FONT, CHART_CONTAINER, SECTION_LABEL,
+  SCI_PALETTE, fmt2,
 } from './chartTheme';
-
-/* ── Glassmorphism Tooltip ────────────────────────────────────── */
-
-function GlassTooltip({ active, payload, label }: any) {
-  if (!active || !payload?.length) return null;
-  return (
-    <div style={TOOLTIP_STYLE}>
-      <p style={{ margin: 0, fontSize: 10, color: 'rgba(255,255,255,0.5)', fontFamily: FONT.SANS }}>{label}</p>
-      {payload.map((entry: any, i: number) => (
-        <p key={i} style={{ margin: '2px 0 0', fontFamily: FONT.MONO, color: entry.color || entry.fill }}>
-          {typeof entry.value === 'number' ? fmt2(entry.value) : entry.value}
-        </p>
-      ))}
-    </div>
-  );
-}
+import { ErrorBarChart } from './primitives';
 
 /* ── Progress Bar ─────────────────────────────────────────────── */
 
@@ -37,12 +18,12 @@ function ProgressBar({ value, max, color, limitAt }: { value: number; max: numbe
       {limitPct != null && (
         <div style={{
           position: 'absolute', left: `${limitPct}%`, top: -3, bottom: -3, width: 1,
-          borderLeft: '2px dashed rgba(255,255,255,0.3)',
+          borderLeft: '2px dashed rgba(232,238,248,0.55)',
         }}>
           <span style={{
             position: 'absolute', top: -14, left: -16, fontFamily: FONT.MONO,
-            fontSize: 7, color: 'rgba(255,255,255,0.4)', whiteSpace: 'nowrap',
-          }}>limit</span>
+            fontSize: 8, color: 'rgba(232,238,248,0.6)', whiteSpace: 'nowrap',
+          }}>viability limit</span>
         </div>
       )}
     </div>
@@ -56,15 +37,24 @@ interface FluxCostChartProps {
 }
 
 export default function FluxCostChart({ result }: FluxCostChartProps) {
+  /**
+   * Burden series rendered in distinct, accessible colors.
+   *
+   * IMPORTANT: MetabolicDrainResult is a single-point estimate — there are
+   * no replicates on the engine side, so we do not pass `lower`/`upper`.
+   * ErrorBarChart respects that and renders without whiskers. If the
+   * engine later emits replicate-aware intervals, populating `lower/upper`
+   * here is the only change needed.
+   */
   const burdenData = [
-    { name: 'ATP', value: result.atpCost, fill: ACCENT.apricot },
-    { name: 'NADPH', value: result.nadphCost, fill: ACCENT.coral },
-    { name: 'Ribosome', value: result.ribosomeBurden * 100, fill: ACCENT.lilac },
+    { name: 'ATP', value: result.atpCost, color: SCI_PALETTE.orange },
+    { name: 'NADPH', value: result.nadphCost, color: SCI_PALETTE.magenta },
+    { name: 'Ribosome', value: result.ribosomeBurden * 100, color: SCI_PALETTE.blue },
   ];
 
   const viabilityColor = result.isViable
-    ? result.growthPenalty < 10 ? ACCENT.green : ACCENT.yellow
-    : WARM.red;
+    ? result.growthPenalty < 10 ? SCI_PALETTE.green : SCI_PALETTE.yellow
+    : SCI_PALETTE.vermilion;
 
   const drainPct = result.totalMetabolicDrain * 100;
 
@@ -73,31 +63,21 @@ export default function FluxCostChart({ result }: FluxCostChartProps) {
 
       {/* ── Resource Burden Ledger ── */}
       <p style={SECTION_LABEL}>RESOURCE BURDEN LEDGER</p>
-      <p style={{ fontFamily: FONT.SANS, fontSize: 10, color: 'rgba(250,246,240,0.96)', margin: '-6px 0 12px' }}>
-        ATP / NADPH / Ribosome allocation
+      <p style={{ fontFamily: FONT.SANS, fontSize: 10, color: 'rgba(232,238,248,0.82)', margin: '-6px 0 4px' }}>
+        ATP (mol/mol enzyme) · NADPH (mol/mol enzyme) · Ribosome (% pool × 100)
+      </p>
+      <p style={{ fontFamily: FONT.SANS, fontSize: 9, color: 'rgba(232,238,248,0.55)', margin: '0 0 10px' }}>
+        Bars share an axis for visual comparison but carry heterogeneous units — hover each bar for its native quantity. Engine emits single-point estimates, so no whiskers are drawn.
       </p>
 
-      <div style={{ width: '100%', height: 140 }}>
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={burdenData} margin={{ top: 8, right: 40, left: 10, bottom: 4 }} barSize={32}>
-            <CartesianGrid vertical={false} {...rechartsGrid} />
-            <XAxis dataKey="name" tick={rechartsTick} axisLine={{ stroke: 'rgba(255,255,255,0.1)' }} tickLine={false} />
-            <YAxis tick={rechartsTick} axisLine={{ stroke: 'rgba(255,255,255,0.1)' }} tickLine={false} width={36} />
-            <Tooltip content={<GlassTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
-            <Bar dataKey="value" radius={[6, 6, 0, 0]}>
-              {burdenData.map((entry, i) => (
-                <Cell key={i} fill={entry.fill} fillOpacity={0.82} />
-              ))}
-              <LabelList
-                dataKey="value"
-                position="top"
-                formatter={(v: number) => fmt2(v)}
-                style={{ fontFamily: FONT.MONO, fontSize: 10, fill: 'rgba(250,246,240,0.96)' }}
-              />
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
+      <ErrorBarChart
+        data={burdenData}
+        yQuantity="Burden"
+        yUnit="native units · see caption"
+        height={160}
+        showValueLabels
+        formatValue={fmt2}
+      />
 
       {/* ── Drain & Viability ── */}
       <div style={{
@@ -126,18 +106,18 @@ export default function FluxCostChart({ result }: FluxCostChartProps) {
         </div>
 
         {/* Drain progress bar */}
-        <p style={{ fontFamily: FONT.SANS, fontSize: 9, color: 'rgba(217,225,235,0.68)', margin: '0 0 4px' }}>Metabolic drain</p>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+        <p style={{ fontFamily: FONT.SANS, fontSize: 10, color: 'rgba(232,238,248,0.78)', margin: '0 0 4px' }}>Metabolic drain (%)</p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
           <div style={{ flex: 1 }}>
-            <ProgressBar value={drainPct} max={100} color="rgba(255,139,31,0.82)" limitAt={82} />
+            <ProgressBar value={drainPct} max={100} color={SCI_PALETTE.orange} limitAt={82} />
           </div>
-          <span style={{ fontFamily: FONT.MONO, fontSize: 10, color: 'rgba(250,246,240,0.96)', flexShrink: 0 }}>
+          <span style={{ fontFamily: FONT.MONO, fontSize: 10, color: 'rgba(240,244,252,0.92)', flexShrink: 0 }}>
             {fmt2(drainPct)}%
           </span>
         </div>
 
         {/* Growth penalty bar */}
-        <p style={{ fontFamily: FONT.SANS, fontSize: 9, color: 'rgba(217,225,235,0.68)', margin: '0 0 4px' }}>Growth penalty</p>
+        <p style={{ fontFamily: FONT.SANS, fontSize: 10, color: 'rgba(232,238,248,0.78)', margin: '0 0 4px' }}>Growth penalty (%)</p>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div style={{ flex: 1 }}>
             <ProgressBar value={result.growthPenalty} max={30} color={viabilityColor} />

@@ -7,7 +7,8 @@ import {
 import type { PathwayBalanceResult } from '../../services/CatalystDesignerEngine';
 import {
   ACCENT, FONT, TOOLTIP_STYLE, CHART_CONTAINER,
-  SECTION_LABEL, rechartsGrid, rechartsTick, fmt2,
+  SECTION_LABEL, rechartsGrid, rechartsTick, rechartsAxisTitle,
+  rechartsAxisLine, SCI_PALETTE, LINE, MARKER, fmt2, axisLabel,
 } from './chartTheme';
 
 /* ── Glassmorphism Tooltip ────────────────────────────────────── */
@@ -16,12 +17,12 @@ function GlassTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
     <div style={TOOLTIP_STYLE}>
-      <p style={{ margin: 0, fontSize: 10, color: 'rgba(255,255,255,0.5)', fontFamily: FONT.SANS }}>
+      <p style={{ margin: 0, fontSize: 10, color: 'rgba(232,238,248,0.65)', fontFamily: FONT.SANS }}>
         Iteration {label}
       </p>
       {payload.map((entry: any, i: number) => (
-        <p key={i} style={{ margin: '2px 0 0', fontFamily: FONT.MONO, color: entry.color }}>
-          {entry.name}: {fmt2(entry.value as number)}
+        <p key={i} style={{ margin: '2px 0 0', fontFamily: FONT.MONO, fontSize: 11, color: entry.color }}>
+          {entry.name}: {fmt2(entry.value as number)} mM
         </p>
       ))}
     </div>
@@ -32,21 +33,21 @@ function GlassTooltip({ active, payload, label }: any) {
 
 function PipelineNode({ enzyme, adjustedKcat, toxRatio, intermediateConc, isLast, flux }:
   { enzyme: string; adjustedKcat: number; toxRatio: number; intermediateConc: number; isLast: boolean; flux: number }) {
-  const intColor = toxRatio > 0.8 ? ACCENT.coral : toxRatio > 0.5 ? ACCENT.yellow : ACCENT.green;
+  const intColor = toxRatio > 0.8 ? SCI_PALETTE.vermilion : toxRatio > 0.5 ? SCI_PALETTE.yellow : SCI_PALETTE.green;
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 0, flexShrink: 0 }}>
       {/* Enzyme node */}
       <div style={{
-        width: 52, height: 52, borderRadius: '50%',
-        border: `1.5px solid ${ACCENT.coral}`,
-        background: 'rgba(255,255,255,0.04)',
+        width: 56, height: 56, borderRadius: '50%',
+        border: `1.5px solid ${SCI_PALETTE.blue}`,
+        background: `${SCI_PALETTE.blue}10`,
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
       }}>
-        <span style={{ fontFamily: FONT.MONO, fontSize: 8, color: 'rgba(250,246,240,0.96)', fontWeight: 600 }}>
+        <span style={{ fontFamily: FONT.MONO, fontSize: 9, color: 'rgba(240,244,252,0.96)', fontWeight: 600 }}>
           {enzyme.toUpperCase()}
         </span>
-        <span style={{ fontFamily: FONT.MONO, fontSize: 7, color: 'rgba(217,225,235,0.68)' }}>
-          kcat {fmt2(adjustedKcat)}
+        <span style={{ fontFamily: FONT.MONO, fontSize: 8, color: 'rgba(232,238,248,0.72)' }}>
+          k<sub>cat</sub> {fmt2(adjustedKcat)} s⁻¹
         </span>
       </div>
 
@@ -109,10 +110,10 @@ export default function BalancerChart({ result }: BalancerChartProps) {
         </div>
         <div style={{
           padding: '3px 10px', borderRadius: 10,
-          background: result.isBalanced ? 'rgba(147,203,82,0.12)' : 'rgba(250,128,114,0.12)',
-          border: `1px solid ${result.isBalanced ? ACCENT.green : ACCENT.coral}`,
+          background: result.isBalanced ? `${SCI_PALETTE.green}1f` : `${SCI_PALETTE.vermilion}1f`,
+          border: `1px solid ${result.isBalanced ? SCI_PALETTE.green : SCI_PALETTE.vermilion}`,
         }}>
-          <span style={{ fontFamily: FONT.MONO, fontSize: 9, color: result.isBalanced ? ACCENT.green : ACCENT.coral }}>
+          <span style={{ fontFamily: FONT.MONO, fontSize: 10, color: result.isBalanced ? SCI_PALETTE.green : SCI_PALETTE.vermilion }}>
             {result.isBalanced ? 'Balanced' : 'Imbalanced'}
           </span>
         </div>
@@ -140,37 +141,52 @@ export default function BalancerChart({ result }: BalancerChartProps) {
       {convergenceData.length > 1 && (
         <>
           <p style={{ ...SECTION_LABEL, marginTop: 12 }}>CONVERGENCE HISTORY</p>
-          <p style={{ fontFamily: FONT.SANS, fontSize: 10, color: 'rgba(250,246,240,0.96)', margin: '-6px 0 8px' }}>
-            Iterations vs. max intermediate concentration
+          <p style={{ fontFamily: FONT.SANS, fontSize: 10, color: 'rgba(232,238,248,0.82)', margin: '-6px 0 4px' }}>
+            LP iterations vs. max intermediate concentration
+          </p>
+          <p style={{ fontFamily: FONT.SANS, fontSize: 9, color: 'rgba(232,238,248,0.55)', margin: '0 0 10px' }}>
+            Single deterministic optimization trace — no confidence band is drawn because a confidence band would imply repeated runs that do not exist.
           </p>
 
-          <div style={{ width: '100%', height: 140 }}>
+          <div style={{ width: '100%', height: 160 }}>
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={convergenceData} margin={{ top: 4, right: 16, left: 10, bottom: 4 }}>
+              <LineChart data={convergenceData} margin={{ top: 8, right: 20, left: 12, bottom: 24 }}>
                 <CartesianGrid {...rechartsGrid} />
                 <XAxis
                   dataKey="iter"
                   tick={rechartsTick}
-                  axisLine={{ stroke: 'rgba(255,255,255,0.1)' }}
+                  axisLine={rechartsAxisLine}
                   tickLine={false}
-                  label={{ value: 'Iteration', position: 'insideBottom', offset: -2, style: { ...rechartsTick, fontSize: 9 } }}
+                  label={{
+                    value: axisLabel('LP iteration'),
+                    position: 'insideBottom',
+                    offset: -6,
+                    style: rechartsAxisTitle,
+                  }}
                 />
                 <YAxis
                   tick={rechartsTick}
-                  axisLine={{ stroke: 'rgba(255,255,255,0.1)' }}
+                  axisLine={rechartsAxisLine}
                   tickLine={false}
-                  width={40}
-                  label={{ value: 'Max [conc] mM', angle: -90, position: 'insideLeft', offset: 4, style: { ...rechartsTick, fontSize: 9 } }}
+                  width={56}
+                  label={{
+                    value: axisLabel('Max [intermediate]', 'mM'),
+                    angle: -90,
+                    position: 'insideLeft',
+                    offset: 4,
+                    style: rechartsAxisTitle,
+                  }}
                 />
                 <Tooltip content={<GlassTooltip />} />
                 <Line
                   type="monotone"
                   dataKey="maxConc"
-                  name="Max Conc"
-                  stroke={ACCENT.coral}
-                  strokeWidth={2}
-                  dot={{ fill: ACCENT.coral, r: 3, strokeWidth: 0 }}
-                  activeDot={{ r: 5, fill: ACCENT.coral, stroke: '#fff', strokeWidth: 1.5 }}
+                  name="Max [intermediate]"
+                  stroke={SCI_PALETTE.vermilion}
+                  strokeWidth={LINE.primary}
+                  dot={{ fill: SCI_PALETTE.vermilion, r: MARKER.secondary, strokeWidth: 0 }}
+                  activeDot={{ r: MARKER.active, fill: SCI_PALETTE.vermilion, stroke: '#fff', strokeWidth: 1.5 }}
+                  isAnimationActive={false}
                 />
               </LineChart>
             </ResponsiveContainer>
