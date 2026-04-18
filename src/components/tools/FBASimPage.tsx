@@ -19,6 +19,7 @@ import { buildFBASeed } from './shared/workbenchDataflow';
 import { solveAuthorityCommunityFBA, solveAuthorityFBA } from '../../services/FBAAuthorityClient';
 import { T, TOOL_RESULT_PALETTE} from '../ide/tokens';
 import { PATHD_THEME } from '../workbench/workbenchTheme';
+import { SCI_PALETTE, SCI_PASTEL } from '../charts/chartTheme';
 import ScientificFigureFrame from './shared/ScientificFigureFrame';
 import ScientificMethodStrip from './shared/ScientificMethodStrip';
 import WorkbenchRangeSlider from './shared/WorkbenchRangeSlider';
@@ -109,13 +110,22 @@ function ParamSlider({ label, value, min, max, step = 0.5, onChange, unit }: {
 }
 
 const W = 480, H = 640;
-// 5-color scientific palette for subsystem nodes
+// Subsystem palette — pulled from chartTheme.SCI_PASTEL for cross-tool consistency.
+// Pastel tier is appropriate here: subsystems are categorical/exploratory, not
+// stats-bearing, and the softness matches the dark lab aesthetic.
 const SUBSYSTEM_COLORS: Record<string, string> = {
-  Glycolysis:   '#E8A3A1',   // coral
-  TCA:          '#AFC3D6',   // sky
-  Energy:       '#BFDCCD',   // mint
-  Fermentation: '#CFC4E3',   // lilac
+  Glycolysis:   SCI_PASTEL.coral,
+  TCA:          SCI_PASTEL.periwinkle,
+  Energy:       SCI_PASTEL.teal,
+  Fermentation: SCI_PASTEL.lavender,
 };
+
+// Forward / reverse flux colors — Okabe-Ito green + vermilion. Replaces the
+// earlier ColorBrewer red/green pair, which is unsafe under deuteranopia /
+// protanopia (the most common CVDs). The new pair holds ≥ 3:1 luminance
+// separation so direction reads correctly without color perception.
+const FLUX_FWD_COLOR = SCI_PALETTE.green;
+const FLUX_REV_COLOR = SCI_PALETTE.vermilion;
 
 function runForceLayout(
   nodes: { id: string; subsystem: string }[],
@@ -205,10 +215,10 @@ function FluxMap({ result, nodes, edges, knockouts, compact, svgRef }: {
     <svg ref={svgRef} role="img" aria-label="Chart" viewBox={`0 0 ${W} ${viewH}`} style={{ width: '100%', height: '100%', maxHeight: '100%' }}>
       <defs>
         <marker id="fba-fwd"  markerWidth="7" markerHeight="7" refX="5.5" refY="3.5" orient="auto">
-          <polygon points="0 0.5, 6.5 3.5, 0 6.5" fill="#4DAF4A" />
+          <polygon points="0 0.5, 6.5 3.5, 0 6.5" fill={FLUX_FWD_COLOR} />
         </marker>
         <marker id="fba-rev"  markerWidth="7" markerHeight="7" refX="5.5" refY="3.5" orient="auto">
-          <polygon points="0 0.5, 6.5 3.5, 0 6.5" fill="#E41A1C" />
+          <polygon points="0 0.5, 6.5 3.5, 0 6.5" fill={FLUX_REV_COLOR} />
         </marker>
         <marker id="fba-zero" markerWidth="7" markerHeight="7" refX="5.5" refY="3.5" orient="auto">
           <polygon points="0 0.5, 6.5 3.5, 0 6.5" fill="rgba(255,255,255,0.18)" />
@@ -223,9 +233,9 @@ function FluxMap({ result, nodes, edges, knockouts, compact, svgRef }: {
       </defs>
       <rect width={W} height={viewH} fill="#05070b" rx={16} />
 
-      {/* Subnetwork region labels */}
-      <text x="28" y="22" fontFamily={T.MONO} fontSize="8" fill="rgba(228,26,28,0.6)">● GLYCOLYSIS</text>
-      <text x="200" y="22" fontFamily={T.MONO} fontSize="8" fill="rgba(55,126,184,0.6)">● TCA CYCLE</text>
+      {/* Subnetwork region labels — match SUBSYSTEM_COLORS so legend matches nodes */}
+      <text x="28" y="22" fontFamily={T.MONO} fontSize="8" fill={SUBSYSTEM_COLORS.Glycolysis} opacity={0.75}>● GLYCOLYSIS</text>
+      <text x="200" y="22" fontFamily={T.MONO} fontSize="8" fill={SUBSYSTEM_COLORS.TCA} opacity={0.75}>● TCA CYCLE</text>
       <text x="28" y={viewH - 12} fontFamily={T.MONO} fontSize="7" fill="rgba(255,255,255,0.2)">
         Flux: mmol·gDW⁻¹·h⁻¹ · Node size ∝ flux magnitude · Edge color encodes direction
       </text>
@@ -241,7 +251,7 @@ function FluxMap({ result, nodes, edges, knockouts, compact, svgRef }: {
         const isReverse = rawFlux < 0;
         const color = isKO ? 'rgba(255,80,80,0.55)'
           : flux < 0.01 ? 'rgba(255,255,255,0.15)'
-          : isReverse ? '#E41A1C' : '#4DAF4A';
+          : isReverse ? FLUX_REV_COLOR : FLUX_FWD_COLOR;
         const strokeW = Math.min(8, 1 + normalized * 5);
         const mx = (from.x + to.x) / 2;
         const my = (from.y + to.y) / 2;
