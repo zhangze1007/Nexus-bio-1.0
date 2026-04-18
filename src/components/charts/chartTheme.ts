@@ -186,6 +186,27 @@ export const BAND = {
 } as const;
 
 /**
+ * Semantic state colors — pass / fail / warn. Pulled from `SCI_PALETTE`
+ * so red/green pairs survive deuteranopia and protanopia (the common CVDs).
+ * Use these for pass/fail ledgers, exergonic/endergonic bars, feasibility
+ * rejections — anywhere a binary or traffic-light state is encoded in hue.
+ *
+ * Paired `_RGB` triples let you compose `rgba(${SEMANTIC_RGB.pass}, 0.6)`
+ * without a runtime hex-to-rgb converter.
+ */
+export const SEMANTIC = {
+  pass: SCI_PALETTE.green,       // '#009E73'
+  fail: SCI_PALETTE.vermilion,   // '#D55E00'
+  warn: SCI_PALETTE.orange,      // '#E69F00'
+} as const;
+
+export const SEMANTIC_RGB = {
+  pass: '0, 158, 115',
+  fail: '213, 94, 0',
+  warn: '230, 159, 0',
+} as const;
+
+/**
  * Scatter-point defaults. The thin white stroke lifts pastel / low-saturation
  * hues off a `#050505` canvas without overpowering the fill — apply as
  * Recharts `<Cell>` defaults or on hand-rolled SVG circles.

@@ -18,6 +18,7 @@ import { useWorkbenchStore } from '../../store/workbenchStore';
 import WorkbenchInlineContext from '../workbench/WorkbenchInlineContext';
 import { buildCellFreeSeed } from './shared/workbenchDataflow';
 import { T, TOOL_RESULT_PALETTE} from '../ide/tokens';
+import { SEMANTIC_RGB } from '../charts/chartTheme';
 import ScientificHero from './shared/ScientificHero';
 import { PATHD_THEME } from '../workbench/workbenchTheme';
 import ScientificFigureFrame from './shared/ScientificFigureFrame';
@@ -364,8 +365,8 @@ function ResourceChart({ result }: { result: CFSFullResult }) {
       {depTime > 0 && depTime < tMax && (
         <>
           <line x1={sx(depTime)} y1={PAD} x2={sx(depTime)} y2={H - PAD}
-            stroke="rgba(255,100,80,0.5)" strokeWidth={1} strokeDasharray="4,3" />
-          <text x={sx(depTime) + 4} y={PAD + 12} fontFamily={T.MONO} fontSize="7" fill="rgba(255,100,80,0.7)">
+            stroke={`rgba(${SEMANTIC_RGB.fail}, 0.5)`} strokeWidth={1} strokeDasharray="4,3" />
+          <text x={sx(depTime) + 4} y={PAD + 12} fontFamily={T.MONO} fontSize="7" fill={`rgba(${SEMANTIC_RGB.fail}, 0.78)`}>
             Depletion
           </text>
         </>
@@ -481,7 +482,7 @@ function FittingChart({ result }: { result: CFSFullResult }) {
         const yp = resTop + resH / 2 - (r / rMaxRes) * (resH / 2 - 4);
         return (
           <circle key={`res${i}`} cx={xp} cy={yp} r={2}
-            fill={r > 0 ? 'rgba(147,203,82,0.6)' : 'rgba(255,100,80,0.6)'} />
+            fill={r > 0 ? `rgba(${SEMANTIC_RGB.pass}, 0.72)` : `rgba(${SEMANTIC_RGB.fail}, 0.72)`} />
         );
       })}
       <text x={PAD + 4} y={resTop + 10} fontFamily={T.MONO} fontSize="7" fill={LABEL}>Residuals</text>
@@ -621,8 +622,8 @@ function ReactorTwin3D({ result, constructs, params }: { result: CFSFullResult; 
         <text x="44" y="34" fontFamily={T.SANS} fontSize="12" fill={VALUE}>Resource state, construct yield, and IVIV translation in one reactor-facing schematic</text>
 
         <rect x="54" y={vesselTop} width="156" height={reactorHeight} rx="22" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.08)" />
-        <rect x="66" y={vesselTop + reactorHeight - fillHeight - 12} width="132" height={fillHeight} rx="18" fill="rgba(147,203,82,0.32)" stroke="rgba(147,203,82,0.42)" />
-        <line x1="66" y1={vesselTop + reactorHeight - fillHeight - 12} x2="198" y2={vesselTop + reactorHeight - fillHeight - 12} stroke="rgba(147,203,82,0.9)" strokeDasharray="4 3" />
+        <rect x="66" y={vesselTop + reactorHeight - fillHeight - 12} width="132" height={fillHeight} rx="18" fill={`rgba(${SEMANTIC_RGB.pass}, 0.32)`} stroke={`rgba(${SEMANTIC_RGB.pass}, 0.48)`} />
+        <line x1="66" y1={vesselTop + reactorHeight - fillHeight - 12} x2="198" y2={vesselTop + reactorHeight - fillHeight - 12} stroke={`rgba(${SEMANTIC_RGB.pass}, 0.85)`} strokeDasharray="4 3" />
         <text x="76" y={vesselTop + reactorHeight + 24} fontFamily={T.MONO} fontSize="8" fill={LABEL}>reaction volume</text>
         <text x="76" y={vesselTop + reactorHeight + 38} fontFamily={T.MONO} fontSize="10" fill={VALUE}>{(depletionRatio * 100).toFixed(0)}% energy-support window</text>
 
@@ -1147,7 +1148,7 @@ export default function CellFreePage() {
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
                     <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>R²</span>
-                    <span style={{ fontFamily: T.MONO, fontSize: '9px', color: 'rgba(147,203,82,0.9)' }}>
+                    <span style={{ fontFamily: T.MONO, fontSize: '9px', color: `rgba(${SEMANTIC_RGB.pass}, 0.92)` }}>
                       {fit.r_squared.toFixed(4)}
                     </span>
                   </div>
@@ -1194,7 +1195,7 @@ export default function CellFreePage() {
                     <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Confidence</span>
                     <span style={{
                       fontFamily: T.MONO, fontSize: '9px',
-                      color: iviv.confidence > 0.7 ? 'rgba(147,203,82,0.9)' : iviv.confidence > 0.4 ? 'rgba(255,139,31,0.85)' : 'rgba(255,100,80,0.85)',
+                      color: iviv.confidence > 0.7 ? `rgba(${SEMANTIC_RGB.pass}, 0.92)` : iviv.confidence > 0.4 ? `rgba(${SEMANTIC_RGB.warn}, 0.9)` : `rgba(${SEMANTIC_RGB.fail}, 0.9)`,
                     }}>
                       {(iviv.confidence * 100).toFixed(0)}%
                     </span>

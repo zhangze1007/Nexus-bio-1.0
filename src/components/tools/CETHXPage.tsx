@@ -11,6 +11,7 @@ import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
 import DemoBanner from '../ide/shared/DemoBanner';
 import { PATHD_THEME } from '../workbench/workbenchTheme';
+import { SEMANTIC, SEMANTIC_RGB } from '../charts/chartTheme';
 import { PATHWAY_STEPS, computeThermo } from '../../data/mockCETHX';
 import type { PathwayKey } from '../../data/mockCETHX';
 import { useUIStore } from '../../store/uiStore';
@@ -103,7 +104,7 @@ function BreathingWaterfall({ steps }: { steps: ReturnType<typeof computeThermo>
         const isInfeasible = step.deltaG > 0;
         const color = step.atpYield > 0
           ? PATHD_THEME.orange
-          : isNeg ? 'rgba(147,203,82,0.78)' : '#E41A1C';
+          : isNeg ? `rgba(${SEMANTIC_RGB.pass}, 0.82)` : SEMANTIC.fail;
         const topY = Math.min(yPos(step.cumulative), yPos(step.cumulative - step.deltaG));
         const h = Math.abs(yPos(step.cumulative) - yPos(step.cumulative - step.deltaG));
         const cx = x + (barW - 4) / 2;
@@ -127,7 +128,7 @@ function BreathingWaterfall({ steps }: { steps: ReturnType<typeof computeThermo>
               height={h}
               rx={4}
               fill="none"
-              stroke={isLimiting ? 'rgba(255,255,255,0.7)' : isInfeasible ? 'rgba(228,26,28,0.5)' : 'rgba(255,255,255,0.12)'}
+              stroke={isLimiting ? 'rgba(255,255,255,0.7)' : isInfeasible ? `rgba(${SEMANTIC_RGB.fail}, 0.55)` : 'rgba(255,255,255,0.12)'}
               strokeWidth={isLimiting ? 1.4 : 0.8}
             />
             <circle cx={cx} cy={yPos(step.cumulative)} r={3.5} fill="rgba(247,249,255,0.95)" />
@@ -138,7 +139,7 @@ function BreathingWaterfall({ steps }: { steps: ReturnType<typeof computeThermo>
                 textAnchor="middle"
                 fontFamily={T.MONO}
                 fontSize="6"
-                fill="#E41A1C"
+                fill={SEMANTIC.fail}
               >
                 INFEASIBLE
               </text>
@@ -213,7 +214,7 @@ function BreathingWaterfall({ steps }: { steps: ReturnType<typeof computeThermo>
               textAnchor="middle"
               fontFamily={T.MONO}
               fontSize="7"
-              fill={step.deltaG < 0 ? 'rgba(147,203,82,0.82)' : 'rgba(250,128,114,0.82)'}
+              fill={step.deltaG < 0 ? `rgba(${SEMANTIC_RGB.pass}, 0.85)` : `rgba(${SEMANTIC_RGB.fail}, 0.85)`}
             >
               {step.deltaG > 0 ? '+' : ''}{step.deltaG.toFixed(1)}
             </text>
@@ -239,14 +240,14 @@ function BreathingWaterfall({ steps }: { steps: ReturnType<typeof computeThermo>
         <text x="12" y="31" fontFamily={T.SANS} fontSize="11" fill={PATHD_THEME.value}>
           {limitingStep?.step ?? '—'}
         </text>
-        <text x="12" y="45" fontFamily={T.MONO} fontSize="8" fill="rgba(250,128,114,0.82)">
+        <text x="12" y="45" fontFamily={T.MONO} fontSize="8" fill={`rgba(${SEMANTIC_RGB.fail}, 0.85)`}>
           ΔG {limitingStep ? `${limitingStep.deltaG > 0 ? '+' : ''}${limitingStep.deltaG.toFixed(1)} kJ/mol` : '—'}
         </text>
       </g>
 
       {[
-        { color: 'rgba(147,203,82,0.78)', label: 'Exergonic' },
-        { color: '#E41A1C', label: 'Infeasible (ΔG>0)' },
+        { color: `rgba(${SEMANTIC_RGB.pass}, 0.82)`, label: 'Exergonic' },
+        { color: SEMANTIC.fail, label: 'Infeasible (ΔG>0)' },
         { color: PATHD_THEME.orange, label: 'ATP-coupled' },
         { color: '#FF7F00', label: 'Energy landscape', line: true },
       ].map((l, i) => (

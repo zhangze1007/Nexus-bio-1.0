@@ -27,6 +27,7 @@ import { buildDBTLDraft } from './shared/workbenchDataflow';
 import { PATHD_THEME } from '../workbench/workbenchTheme';
 import ScientificHero from './shared/ScientificHero';
 import { T, TOOL_RESULT_PALETTE} from '../ide/tokens';
+import { SEMANTIC_RGB } from '../charts/chartTheme';
 import ScientificFigureFrame from './shared/ScientificFigureFrame';
 import ScientificMethodStrip from './shared/ScientificMethodStrip';
 
@@ -100,16 +101,16 @@ function Timeline({ iterations }: { iterations: DBTLIteration[] }) {
               {it.hypothesis.slice(0, 40)}{it.hypothesis.length > 40 ? '…' : ''}
             </text>
             <rect x={160} y={y + 28} width={barW} height={10} rx="2"
-              fill={it.passed ? 'rgba(147,203,82,0.4)' : 'rgba(255,80,80,0.3)'}
-              stroke={it.passed ? 'rgba(147,203,82,0.7)' : 'rgba(255,80,80,0.5)'}
+              fill={it.passed ? `rgba(${SEMANTIC_RGB.pass}, 0.42)` : `rgba(${SEMANTIC_RGB.fail}, 0.36)`}
+              stroke={it.passed ? `rgba(${SEMANTIC_RGB.pass}, 0.72)` : `rgba(${SEMANTIC_RGB.fail}, 0.58)`}
               strokeWidth={1}
             />
             <text x={160 + barW + 6} y={y + 38} fontFamily={T.MONO} fontSize="9"
-              fill={it.passed ? 'rgba(147,203,82,0.8)' : 'rgba(255,100,80,0.7)'}>
+              fill={it.passed ? `rgba(${SEMANTIC_RGB.pass}, 0.85)` : `rgba(${SEMANTIC_RGB.fail}, 0.78)`}>
               {it.result} {it.unit}
             </text>
             <circle cx={440} cy={y + 22} r={5}
-              fill={it.passed ? 'rgba(147,203,82,0.7)' : 'rgba(255,80,80,0.6)'} />
+              fill={it.passed ? `rgba(${SEMANTIC_RGB.pass}, 0.75)` : `rgba(${SEMANTIC_RGB.fail}, 0.7)`} />
             <line x1={4} y1={y + 52} x2={480} y2={y + 52} stroke="rgba(255,255,255,0.04)" />
           </g>
         );
