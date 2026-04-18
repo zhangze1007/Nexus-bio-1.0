@@ -93,9 +93,15 @@ describe('PR-5 off-domain refusal', () => {
     const refusal = offDomainRefusalText('Who is Donald Trump', 'off-domain signal');
     // Honesty invariant — the refusal must NOT pretend the off-domain
     // subject has a pathway, ΔG, flux, or enzyme associated with it.
-    expect(refusal).not.toMatch(/biosynthesis pathway for donald/i);
+    // Honesty check: refusal must not ATTRIBUTE a pathway / enzyme /
+    // flux / ΔG value to the off-domain subject. Mere lexical
+    // co-occurrence in an explanatory sentence ("I can help with
+    // pathway design … on \"Donald Trump\" …") is fine; the invariant
+    // is that we never write "Donald's pathway is …" or similar.
+    expect(refusal).not.toMatch(/pathway for donald/i);
     expect(refusal).not.toMatch(/enzyme for donald/i);
-    expect(refusal).not.toMatch(/flux.*donald/i);
+    expect(refusal).not.toMatch(/flux for donald/i);
+    expect(refusal).not.toMatch(/donald trump(?:'s|\s+has|\s+is a)\s+(pathway|enzyme|flux|metabolite|gene|protein)/i);
     expect(refusal).not.toMatch(/ΔG/);
   });
 
