@@ -70,6 +70,41 @@ export const SCI_SERIES = [
 ] as const;
 
 /**
+ * Pastel categorical palette — Plotly-"Pastel" inspired, tuned for dark bg.
+ *
+ * Complements `SCI_PALETTE` for exploratory / design-forward charts where
+ * aesthetic softness matters more than CVD-safe distinguishability. For
+ * statistical / publication-grade work prefer `SCI_PALETTE` / `SCI_SERIES`.
+ * Each hue still clears ≥ 3:1 contrast against `#050505`.
+ */
+export const SCI_PASTEL = {
+  teal:        '#7FC7C9',
+  lavender:    '#C9A8E8',
+  coral:       '#F0A58A',
+  periwinkle:  '#A8BEEF',
+  olive:       '#9FCC7A',
+  pink:        '#F29BBC',
+  butter:      '#F0D884',
+  mauve:       '#C6A890',
+} as const;
+
+/**
+ * Ordered pastel palette — use when stable series-to-color mapping is desired
+ * under the pastel aesthetic (e.g. CellFree yield curves, DYNCON multi-lane
+ * time series, exploratory overlays).
+ */
+export const SCI_PASTEL_SERIES = [
+  SCI_PASTEL.teal,
+  SCI_PASTEL.lavender,
+  SCI_PASTEL.coral,
+  SCI_PASTEL.periwinkle,
+  SCI_PASTEL.olive,
+  SCI_PASTEL.pink,
+  SCI_PASTEL.butter,
+  SCI_PASTEL.mauve,
+] as const;
+
+/**
  * Legacy categorical palette — preserved for visual continuity in charts not
  * yet migrated to SCI_SERIES. New charts should prefer SCI_SERIES.
  */
@@ -148,6 +183,19 @@ export const BAND = {
   fillOpacity: 0.22,
   fillOpacityMuted: 0.10,
   strokeOpacity: 0.55,
+} as const;
+
+/**
+ * Scatter-point defaults. The thin white stroke lifts pastel / low-saturation
+ * hues off a `#050505` canvas without overpowering the fill — apply as
+ * Recharts `<Cell>` defaults or on hand-rolled SVG circles.
+ */
+export const SCATTER = {
+  stroke: 'rgba(255,255,255,0.18)',
+  strokeWidth: 0.75,
+  fillOpacity: 0.72,
+  activeStroke: 'rgba(255,255,255,0.6)',
+  activeStrokeWidth: 1.25,
 } as const;
 
 /* ── Tooltip (Glassmorphism) ─────────────────────────────────── */

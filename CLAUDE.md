@@ -248,25 +248,15 @@ GEMINI_API_KEY    Google Gemini authorization (used in app/api/analyze/route.ts)
 
 2. **No hardcoded mock responses** — All AI-generated content must be dynamically derived from real input. Never return hardcoded pathway data regardless of input.
 
-3. **Never modify forbidden files:**
-   - `src/components/ide/IDEShell.tsx`
-   - `src/components/ide/IDETopBar.tsx`
-   - `src/components/ide/IDESidebar.tsx`
-   - `src/components/tools/GECAIRPage.tsx`
-   - `src/components/tools/DBTLflowPage.tsx`
+3. **Never reverse the Groq → Gemini API order** — Groq is always primary. Gemini is always fallback. No exceptions.
 
-   *(`ProEvolPage.tsx` and the `src/components/tools/proevol/` subtree are unlocked
-   for the active PROEVOL research-workbench reconstruction.)*
+4. **Real scientific algorithms only** — every tool must implement the actual math (MM kinetics, RK4 ODE, LP simplex, ΔG group contribution). No placeholder calculations.
 
-4. **Never reverse the Groq → Gemini API order** — Groq is always primary. Gemini is always fallback. No exceptions.
+5. **meshLambertMaterial only in Three.js** — never use `meshStandardMaterial`. It causes white bloom under the current tone mapping (`THREE.LinearToneMapping`).
 
-5. **Real scientific algorithms only** — every tool must implement the actual math (MM kinetics, RK4 ODE, LP simplex, ΔG group contribution). No placeholder calculations.
+6. **3Dmol.js is CDN-only** — loaded from `https://3Dmol.org/build/3Dmol-min.js`. It is not an npm package.
 
-6. **meshLambertMaterial only in Three.js** — never use `meshStandardMaterial`. It causes white bloom under the current tone mapping (`THREE.LinearToneMapping`).
-
-7. **3Dmol.js is CDN-only** — loaded from `https://3Dmol.org/build/3Dmol-min.js`. It is not an npm package.
-
-8. **AlphaFold and PubChem are proxied** — always call `/api/alphafold` and `/api/pubchem`, never fetch EBI or PubChem directly from the browser (CORS).
+7. **AlphaFold and PubChem are proxied** — always call `/api/alphafold` and `/api/pubchem`, never fetch EBI or PubChem directly from the browser (CORS).
 
 ---
 
