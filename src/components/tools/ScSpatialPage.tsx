@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, type CSSProperties, type ChangeEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, type ChangeEvent } from 'react';
 import { HelpCircle, RefreshCcw } from 'lucide-react';
 import ExportButton from '../ide/shared/ExportButton';
 import ScSpatialControlRail from './scspatial/ScSpatialControlRail';
@@ -12,14 +12,32 @@ import { SCSPATIAL_VIEW_LABELS } from './scspatial/scSpatialPalette';
 import { ingestScSpatialDemo, ingestScSpatialFile, queryScSpatial } from '../../services/ScSpatialAuthorityClient';
 import { useScSpatialStore } from '../../store/scSpatialStore';
 import { useWorkbenchStore } from '../../store/workbenchStore';
-import { PATHD_THEME } from '../workbench/workbenchTheme';
 
-function validityBadgeClass(validity: 'real' | 'partial' | 'demo' | null) {
-  if (validity === 'real') return styles.badgeReal;
-  if (validity === 'partial') return styles.badgePartial;
-  if (validity === 'demo') return styles.badgeDemo;
-  return styles.badgePartial;
+function readyClass(validity: 'real' | 'partial' | 'demo' | null, loadState: string) {
+  if (loadState === 'uploading' || loadState === 'querying') return styles.readyIdle;
+  if (validity === 'real') return styles.readyReal;
+  if (validity === 'partial') return styles.readyPartial;
+  if (validity === 'demo') return styles.readyDemo;
+  return styles.readyIdle;
 }
+
+function readyLabel(validity: 'real' | 'partial' | 'demo' | null, loadState: string) {
+  if (loadState === 'uploading') return 'Loading…';
+  if (loadState === 'querying') return 'Computing…';
+  if (loadState === 'error') return 'Error';
+  if (validity === 'real') return 'Ready';
+  if (validity === 'partial') return 'Partial';
+  if (validity === 'demo') return 'Demo';
+  return 'Idle';
+}
+
+const VIEW_OPTIONS: Array<{ value: 'spatial-2d' | 'spatial-3d' | 'umap' | 'trajectory' | 'table'; label: string }> = [
+  { value: 'spatial-2d', label: 'View: Spatial Context' },
+  { value: 'spatial-3d', label: 'View: 3D Spatial' },
+  { value: 'umap', label: 'View: Feature Embedding' },
+  { value: 'trajectory', label: 'View: Trajectory' },
+  { value: 'table', label: 'View: Cell Table' },
+];
 
 export default function ScSpatialPage() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -154,13 +172,6 @@ export default function ScSpatialPage() {
     validity,
   ]);
 
-  const subtitle = useMemo(() => {
-    if (datasetMeta) {
-      return `Normalized artifact ${datasetMeta.datasetName} is active. The center canvas stays focused on real spatial structure, while the right rail tracks hotspots, coexpression, and provenance.`;
-    }
-    return 'Upload a .h5ad file to normalize it into the platform JSON artifact, then inspect spatial structure, hotspots, and cell-level evidence without exposing h5ad internals to the UI.';
-  }, [datasetMeta]);
-
   const selectionSummary = useMemo(() => {
     if (!query) {
       return 'No normalized artifact is loaded.';
@@ -171,27 +182,24 @@ export default function ScSpatialPage() {
     return `Current SCSPATIAL selection: ${view}, gene ${query.selection.selectedGene || 'not selected'}, cluster ${cluster}, cell ${cell}.`;
   }, [query]);
 
-  const rootStyle = useMemo(() => ({
-    ['--sc-bg' as const]: PATHD_THEME.sepiaPanelMuted,
-    ['--sc-surface' as const]: PATHD_THEME.panelSurface,
-    ['--sc-inset' as const]: PATHD_THEME.panelInset,
-    ['--sc-border' as const]: PATHD_THEME.sepiaPanelBorder,
-    ['--sc-border-strong' as const]: PATHD_THEME.panelBorderStrong,
-    ['--sc-value' as const]: PATHD_THEME.value,
-    ['--sc-label' as const]: PATHD_THEME.label,
-    ['--sc-muted' as const]: PATHD_THEME.paperMuted,
-    ['--sc-risk-low' as const]: PATHD_THEME.riskLow,
-    ['--sc-risk-medium' as const]: PATHD_THEME.riskMedium,
-    ['--sc-risk-high' as const]: PATHD_THEME.riskHigh,
-    ['--sc-mint' as const]: PATHD_THEME.mint,
-    ['--sc-sky' as const]: PATHD_THEME.sky,
-    ['--sc-lilac' as const]: PATHD_THEME.lilac,
-    ['--sc-coral' as const]: PATHD_THEME.coral,
-    ['--sc-apricot' as const]: PATHD_THEME.apricot,
-  }) as CSSProperties, []);
+  const artifactChipLabel = useMemo(() => {
+    if (datasetMeta?.artifactId) return datasetMeta.artifactId;
+    if (artifactId) return artifactId;
+    return 'NONE';
+  }, [datasetMeta, artifactId]);
+
+  const viewAvailability = datasetMeta?.availableViews;
+  const availableViewOptions = VIEW_OPTIONS.filter((option) => {
+    if (!viewAvailability) return true;
+    if (option.value === 'spatial-2d') return viewAvailability.spatial2d;
+    if (option.value === 'spatial-3d') return viewAvailability.spatial3d;
+    if (option.value === 'umap') return viewAvailability.umap;
+    if (option.value === 'trajectory') return viewAvailability.trajectory;
+    return viewAvailability.table;
+  });
 
   return (
-    <div className={styles.root} style={rootStyle}>
+    <div className={styles.root}>
       <p className={styles.srOnly} aria-live="polite">
         {selectionSummary}
       </p>
@@ -205,26 +213,40 @@ export default function ScSpatialPage() {
 
       <header className={styles.header}>
         <div className={styles.headerTitle}>
-          <div className={styles.eyebrow}>SCSPATIAL</div>
-          <h1 className={styles.title}>Single-Cell &amp; Spatial Transcriptomics</h1>
-          <p className={styles.subtitle}>{subtitle}</p>
-          {error ? <p className={styles.subtitle} role="alert">{error}</p> : null}
+          <h1 className={styles.title}>SCSPATIAL</h1>
+          <div className={styles.headerArtifact}>
+            <span className={styles.headerArtifactLabel}>Artifact:</span>
+            <span className={styles.headerChip}>{artifactChipLabel}</span>
+          </div>
         </div>
         <div className={styles.headerActions}>
-          <span className={`${styles.badge} ${validityBadgeClass(validity)}`}>
-            {validity ?? 'idle'}
+          <span className={`${styles.readyIndicator} ${readyClass(validity, loadState)}`}>
+            <span className={styles.readyDot} />
+            {readyLabel(validity, loadState)}
           </span>
-          {datasetMeta ? <span className={styles.badge}>{datasetMeta.fileName}</span> : null}
-          <button type="button" className={styles.button} onClick={toggleHelp}>
-            <HelpCircle size={16} />
+          <select
+            className={styles.viewSelect}
+            value={viewMode}
+            onChange={(event) => setViewModeStore(event.target.value as typeof viewMode)}
+            disabled={!datasetMeta}
+            aria-label="Switch SCSPATIAL view"
+          >
+            {(availableViewOptions.length > 0 ? availableViewOptions : VIEW_OPTIONS).map((option) => (
+              <option key={option.value} value={option.value}>{option.label}</option>
+            ))}
+          </select>
+          <button type="button" className={styles.headerIconButton} onClick={toggleHelp}>
+            <HelpCircle size={13} />
             Help
           </button>
-          <button type="button" className={styles.button} onClick={reset}>
-            <RefreshCcw size={16} />
+          <button type="button" className={styles.headerIconButton} onClick={reset}>
+            <RefreshCcw size={13} />
             Reset
           </button>
         </div>
       </header>
+
+      {error ? <div className={styles.errorBanner} role="alert">{error}</div> : null}
 
       <div className={styles.layout}>
         <ScSpatialControlRail
