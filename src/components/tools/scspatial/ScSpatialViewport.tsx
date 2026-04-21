@@ -8,6 +8,7 @@ import DataTable, { type TableColumn } from '../../ide/shared/DataTable';
 import EmptyState from '../../ide/shared/EmptyState';
 import type { ScSpatialPointDatum, ScSpatialQueryResponse } from '../../../types/scspatial';
 import { colorForCluster, SCSPATIAL_VIEW_LABELS } from './scSpatialPalette';
+import { computeConvexHull, expandHull } from '../../../utils/vizUtils';
 import styles from './ScSpatialWorkbench.module.css';
 
 interface ScSpatialViewportProps {
@@ -280,135 +281,471 @@ function SpatialPointCloud({
 
 /* ── Analysis strip panels (grounded in real query data) ──────────── */
 
-function SpatialThumbnailPanel({ query }: { query: ScSpatialQueryResponse }) {
+/**
+ * Panel A — Tissue context map.
+ *
+ * Renders a shrunk version of the spatial point cloud with a cluster-hull
+ * boundary overlay (via computeConvexHull + expandHull, the shared
+ * Nexus-Bio viz primitive). Mirrors the "sample location" panel common
+ * in spatial transcriptomics figures (10x Visium-style cartoons).
+ */
+function SpatialContextPanel({ query }: { query: ScSpatialQueryResponse }) {
   const points = query.centerView.points;
   if (points.length === 0) {
     return <div className={styles.analysisFigure} />;
   }
+
+  const sampled = points.length > 700 ? points.filter((_, i) => i % Math.ceil(points.length / 700) === 0) : points;
   const bounds = getBounds(points);
-  const padding = 8;
+  const padding = Math.max(bounds.width, bounds.height) * 0.08;
   const viewBox = `${bounds.minX - padding} ${bounds.minY - padding} ${bounds.width + padding * 2} ${bounds.height + padding * 2}`;
+
+  // Tissue outline from the full convex hull (so it stays stable even when
+  // a cluster filter is applied to centerView.points).
+  const hullPoints = sampled.map((p) => ({ sx: p.x, sy: p.y }));
+  const hull = expandHull(computeConvexHull(hullPoints), padding * 0.35);
+  const hullPath = hull.length
+    ? `M ${hull.map((p) => `${p.sx.toFixed(2)} ${p.sy.toFixed(2)}`).join(' L ')} Z`
+    : '';
+
+  // ROI box: tight bounding box of the selected cluster if any.
+  const selectedClusterId = query.rightPanel.selectedClusterSummary?.clusterId;
+  const selectedPoints = selectedClusterId !== undefined
+    ? sampled.filter((p) => p.clusterId === selectedClusterId)
+    : [];
+  const roi = selectedPoints.length > 0 ? getBounds(selectedPoints) : null;
+
   return (
     <div className={styles.analysisFigure}>
-      <svg viewBox={viewBox} style={{ width: '100%', height: '100%' }} preserveAspectRatio="xMidYMid meet">
+      <svg viewBox={viewBox} preserveAspectRatio="xMidYMid meet">
         <rect
           x={bounds.minX - padding}
           y={bounds.minY - padding}
           width={bounds.width + padding * 2}
           height={bounds.height + padding * 2}
-          fill="#f9fafb"
+          fill="#f8fafc"
         />
-        {points.slice(0, 800).map((point) => (
+        {/* tissue outline */}
+        {hullPath ? (
+          <path
+            d={hullPath}
+            fill="#eef2f7"
+            stroke="#cbd5e1"
+            strokeWidth={Math.max(bounds.width, bounds.height) * 0.004}
+          />
+        ) : null}
+        {sampled.map((point) => (
           <circle
             key={point.id}
             cx={point.x}
             cy={point.y}
-            r={1.4}
+            r={Math.max(bounds.width, bounds.height) * 0.007}
             fill={colorForCluster(point.clusterId)}
-            opacity={0.8}
+            opacity={selectedClusterId === undefined || point.clusterId === selectedClusterId ? 0.82 : 0.25}
           />
         ))}
+        {/* ROI box */}
+        {roi ? (
+          <rect
+            x={roi.minX - roi.width * 0.08}
+            y={roi.minY - roi.height * 0.08}
+            width={roi.width * 1.16}
+            height={roi.height * 1.16}
+            fill="none"
+            stroke="#E6194B"
+            strokeWidth={Math.max(bounds.width, bounds.height) * 0.006}
+            strokeDasharray={`${Math.max(bounds.width, bounds.height) * 0.02} ${Math.max(bounds.width, bounds.height) * 0.012}`}
+          />
+        ) : null}
+        {/* axes label anchors for orientation */}
+        <text
+          x={bounds.minX - padding * 0.5}
+          y={bounds.minY - padding * 0.2}
+          fontSize={Math.max(bounds.width, bounds.height) * 0.028}
+          fill="#475569"
+          fontFamily="var(--font-mono)"
+        >
+          {query.datasetMeta.cellCount.toLocaleString()} cells
+        </text>
+      </svg>
+    </div>
+  );
+}
+
+/**
+ * Panel B — Marker gene × domain heatmap.
+ *
+ * Classic Seurat/Scanpy dotplot-style marker figure. For each domain we
+ * collect its top marker genes, then draw a cluster × gene grid colored
+ * by the gene's rank within that cluster's top list (stronger = higher
+ * rank). Genes also flagged as spatial hotspots get a darker accent.
+ */
+function MarkerHeatmapPanel({ query }: { query: ScSpatialQueryResponse }) {
+  const clusters = query.rightPanel.clusterSummaries.slice(0, 8);
+  if (clusters.length === 0) {
+    return <div className={styles.analysisFigure} />;
+  }
+
+  // Collect the union of top genes, preserving order of first appearance,
+  // trimmed to 10 for a readable grid.
+  const seen = new Set<string>();
+  const genes: string[] = [];
+  for (const cluster of clusters) {
+    for (const gene of cluster.topGenes) {
+      if (!seen.has(gene)) {
+        seen.add(gene);
+        genes.push(gene);
+      }
+    }
+  }
+  const trimmedGenes = genes.slice(0, 10);
+
+  if (trimmedGenes.length === 0) {
+    return <div className={styles.analysisFigure} />;
+  }
+
+  const hotspotMap = new Map(query.rightPanel.hotspots.map((h) => [h.geneSymbol, h.moranI]));
+  const maxMoran = Math.max(...query.rightPanel.hotspots.map((h) => Math.abs(h.moranI)), 0.01);
+
+  const marginL = 58;
+  const marginR = 12;
+  const marginT = 8;
+  const marginB = 28;
+  const W = 320;
+  const H = 150;
+  const gridW = W - marginL - marginR;
+  const gridH = H - marginT - marginB;
+  const cellW = gridW / trimmedGenes.length;
+  const cellH = gridH / clusters.length;
+
+  /** Purple→teal→yellow ramp (Viridis-like, CVD-safe). */
+  const ramp = (t: number) => {
+    const stops = [
+      { at: 0.0, c: [240, 243, 250] },  // very pale for "absent"
+      { at: 0.3, c: [197, 205, 227] },
+      { at: 0.55, c: [102, 133, 181] },
+      { at: 0.8, c: [58, 91, 143] },
+      { at: 1.0, c: [28, 54, 99] },
+    ];
+    for (let i = 1; i < stops.length; i++) {
+      if (t <= stops[i].at) {
+        const prev = stops[i - 1];
+        const next = stops[i];
+        const u = (t - prev.at) / (next.at - prev.at);
+        const r = Math.round(prev.c[0] + (next.c[0] - prev.c[0]) * u);
+        const g = Math.round(prev.c[1] + (next.c[1] - prev.c[1]) * u);
+        const b = Math.round(prev.c[2] + (next.c[2] - prev.c[2]) * u);
+        return `rgb(${r},${g},${b})`;
+      }
+    }
+    return 'rgb(28,54,99)';
+  };
+
+  return (
+    <div className={styles.analysisFigure}>
+      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet">
+        <rect width={W} height={H} fill="#ffffff" />
+        {/* frame */}
         <rect
-          x={bounds.minX - padding / 2}
-          y={bounds.minY - padding / 2}
-          width={bounds.width + padding}
-          height={bounds.height + padding}
+          x={marginL}
+          y={marginT}
+          width={gridW}
+          height={gridH}
           fill="none"
-          stroke="#E6194B"
-          strokeWidth={0.6}
-          strokeDasharray="2 1.5"
+          stroke="#111827"
+          strokeWidth={0.5}
         />
-      </svg>
-    </div>
-  );
-}
-
-function ClusterCompositionPanel({ query }: { query: ScSpatialQueryResponse }) {
-  const clusters = query.rightPanel.clusterSummaries;
-  if (clusters.length === 0) {
-    return <div className={styles.analysisFigure} />;
-  }
-  const max = Math.max(...clusters.map((c) => c.cellCount), 1);
-  return (
-    <div className={styles.analysisFigure}>
-      <svg viewBox="0 0 100 100" style={{ width: '100%', height: '100%' }} preserveAspectRatio="none">
-        <rect width="100" height="100" fill="#ffffff" />
-        {/* axis */}
-        <line x1="10" y1="85" x2="95" y2="85" stroke="#9ca3af" strokeWidth="0.3" />
-        <line x1="10" y1="10" x2="10" y2="85" stroke="#9ca3af" strokeWidth="0.3" />
-        {clusters.slice(0, 8).map((cluster, idx) => {
-          const total = Math.min(clusters.length, 8);
-          const barWidth = 72 / total;
-          const x = 12 + idx * barWidth;
-          const height = (cluster.cellCount / max) * 70;
-          return (
-            <g key={cluster.clusterLabel}>
+        {/* heatmap cells */}
+        {clusters.map((cluster, rIdx) => (
+          trimmedGenes.map((gene, cIdx) => {
+            const rank = cluster.topGenes.indexOf(gene);
+            const present = rank >= 0;
+            const intensity = present ? 1 - rank / Math.max(cluster.topGenes.length, 1) : 0;
+            const moran = hotspotMap.get(gene) ?? 0;
+            const bump = Math.abs(moran) / maxMoran * 0.3;
+            const t = Math.min(1, intensity + (present ? bump : 0));
+            return (
               <rect
-                x={x + barWidth * 0.15}
-                y={85 - height}
-                width={barWidth * 0.7}
-                height={height}
-                fill={colorForCluster(cluster.clusterId)}
-                stroke="#374151"
-                strokeWidth={0.15}
+                key={`${cluster.clusterId}-${gene}`}
+                x={marginL + cIdx * cellW}
+                y={marginT + rIdx * cellH}
+                width={cellW}
+                height={cellH}
+                fill={ramp(t)}
+                stroke="#ffffff"
+                strokeWidth={0.6}
               />
-              <text
-                x={x + barWidth / 2}
-                y={92}
-                textAnchor="middle"
-                fontSize="2.8"
-                fill="#4b5563"
-              >
-                {cluster.clusterLabel.length > 6 ? `${cluster.clusterLabel.slice(0, 5)}…` : cluster.clusterLabel}
-              </text>
-            </g>
-          );
-        })}
-        <text x="5" y="10" fontSize="3" fill="#4b5563" transform="rotate(-90 5 10)">Cells</text>
-      </svg>
-    </div>
-  );
-}
-
-function ExpressionDistributionPanel({ query }: { query: ScSpatialQueryResponse }) {
-  const clusters = query.rightPanel.clusterSummaries;
-  if (clusters.length === 0) {
-    return <div className={styles.analysisFigure} />;
-  }
-  const max = Math.max(...clusters.map((c) => c.meanExpression), 0.01);
-  return (
-    <div className={styles.analysisFigure}>
-      <svg viewBox="0 0 100 100" style={{ width: '100%', height: '100%' }} preserveAspectRatio="none">
-        <rect width="100" height="100" fill="#ffffff" />
-        <line x1="12" y1="85" x2="95" y2="85" stroke="#9ca3af" strokeWidth="0.3" />
-        <line x1="12" y1="10" x2="12" y2="85" stroke="#9ca3af" strokeWidth="0.3" />
-        {/* Y-axis ticks */}
-        {[0, 0.25, 0.5, 0.75, 1].map((t) => (
-          <g key={t}>
-            <line x1="11" y1={85 - t * 70} x2="12" y2={85 - t * 70} stroke="#9ca3af" strokeWidth="0.3" />
-            <text x="10" y={86 - t * 70} fontSize="2.4" fill="#6b7280" textAnchor="end">{(t * max).toFixed(1)}</text>
+            );
+          })
+        ))}
+        {/* row labels with cluster swatches */}
+        {clusters.map((cluster, rIdx) => (
+          <g key={`row-${cluster.clusterId}`}>
+            <rect
+              x={marginL - 14}
+              y={marginT + rIdx * cellH + cellH / 2 - 3}
+              width={6}
+              height={6}
+              fill={colorForCluster(cluster.clusterId)}
+              stroke="#111827"
+              strokeWidth={0.3}
+            />
+            <text
+              x={marginL - 18}
+              y={marginT + rIdx * cellH + cellH / 2 + 2.5}
+              fontSize={8}
+              fill="#111827"
+              textAnchor="end"
+              fontFamily="var(--font-mono)"
+            >
+              {cluster.clusterLabel.length > 7 ? `${cluster.clusterLabel.slice(0, 6)}…` : cluster.clusterLabel}
+            </text>
           </g>
         ))}
-        {clusters.slice(0, 6).map((cluster, idx) => {
-          const total = Math.min(clusters.length, 6);
-          const slot = 78 / total;
-          const cx = 14 + idx * slot + slot / 2;
-          const h = (cluster.meanExpression / max) * 70;
-          const top = 85 - h;
-          const bulge = Math.min(slot * 0.28, 6);
-          // Violin-like shape: ellipse bounded by mean
-          const path = `M ${cx} 85 Q ${cx - bulge} ${(85 + top) / 2}, ${cx} ${top} Q ${cx + bulge} ${(85 + top) / 2}, ${cx} 85 Z`;
+        {/* column labels (gene symbols, rotated) */}
+        {trimmedGenes.map((gene, cIdx) => (
+          <text
+            key={`col-${gene}`}
+            x={marginL + cIdx * cellW + cellW / 2}
+            y={marginT + gridH + 4}
+            fontSize={7.2}
+            fill="#111827"
+            textAnchor="end"
+            fontFamily="var(--font-mono)"
+            fontStyle="italic"
+            transform={`rotate(-45 ${marginL + cIdx * cellW + cellW / 2} ${marginT + gridH + 4})`}
+          >
+            {gene.length > 8 ? `${gene.slice(0, 7)}…` : gene}
+          </text>
+        ))}
+        {/* axis title */}
+        <text
+          x={marginL - 44}
+          y={marginT - 1}
+          fontSize={7.5}
+          fill="#374151"
+          fontFamily="var(--font-mono)"
+          fontWeight={700}
+        >
+          Domain
+        </text>
+      </svg>
+    </div>
+  );
+}
+
+/**
+ * Panel C — Expression distribution box plot per domain.
+ *
+ * Real Tukey box-and-whisker plot: quartiles (Q1, median, Q3), whiskers
+ * bounded by 1.5×IQR, and outlier dots — all computed from the actual
+ * per-cell expression values in query.centerView.points grouped by
+ * clusterId. No synthetic shapes.
+ */
+interface BoxStats {
+  clusterId: number;
+  clusterLabel: string;
+  min: number;
+  q1: number;
+  median: number;
+  q3: number;
+  whiskerLow: number;
+  whiskerHigh: number;
+  outliers: number[];
+  n: number;
+}
+
+function computeBoxStats(values: number[]): Omit<BoxStats, 'clusterId' | 'clusterLabel'> {
+  const sorted = [...values].sort((a, b) => a - b);
+  const n = sorted.length;
+  const quantile = (p: number) => {
+    if (n === 0) return 0;
+    const pos = (n - 1) * p;
+    const lo = Math.floor(pos);
+    const hi = Math.ceil(pos);
+    if (lo === hi) return sorted[lo];
+    return sorted[lo] + (sorted[hi] - sorted[lo]) * (pos - lo);
+  };
+  const q1 = quantile(0.25);
+  const median = quantile(0.5);
+  const q3 = quantile(0.75);
+  const iqr = q3 - q1;
+  const lowerFence = q1 - 1.5 * iqr;
+  const upperFence = q3 + 1.5 * iqr;
+  const whiskerLow = sorted.find((v) => v >= lowerFence) ?? sorted[0] ?? 0;
+  const whiskerHigh = [...sorted].reverse().find((v) => v <= upperFence) ?? sorted[n - 1] ?? 0;
+  const outliers = sorted.filter((v) => v < lowerFence || v > upperFence);
+  return {
+    min: sorted[0] ?? 0,
+    q1,
+    median,
+    q3,
+    whiskerLow,
+    whiskerHigh,
+    outliers,
+    n,
+  };
+}
+
+function BoxPlotPanel({ query }: { query: ScSpatialQueryResponse }) {
+  const points = query.centerView.points;
+
+  const stats: BoxStats[] = useMemo(() => {
+    const byCluster = new Map<number, { label: string; values: number[] }>();
+    for (const pt of points) {
+      const bucket = byCluster.get(pt.clusterId) ?? { label: pt.clusterLabel, values: [] };
+      bucket.values.push(pt.expression);
+      byCluster.set(pt.clusterId, bucket);
+    }
+    return Array.from(byCluster.entries())
+      .map(([clusterId, bucket]) => ({
+        clusterId,
+        clusterLabel: bucket.label,
+        ...computeBoxStats(bucket.values),
+      }))
+      .filter((s) => s.n > 0)
+      .sort((a, b) => a.clusterId - b.clusterId)
+      .slice(0, 8);
+  }, [points]);
+
+  if (stats.length === 0) {
+    return <div className={styles.analysisFigure} />;
+  }
+
+  const globalMin = Math.min(...stats.map((s) => Math.min(s.whiskerLow, s.min, ...s.outliers.slice(0, 8))));
+  const globalMax = Math.max(...stats.map((s) => Math.max(s.whiskerHigh, ...s.outliers.slice(0, 8))));
+  const range = Math.max(globalMax - globalMin, 0.001);
+  const padLo = range * 0.08;
+  const padHi = range * 0.08;
+  const yMin = globalMin - padLo;
+  const yMax = globalMax + padHi;
+
+  const W = 320;
+  const H = 150;
+  const marginL = 34;
+  const marginR = 10;
+  const marginT = 10;
+  const marginB = 28;
+  const plotW = W - marginL - marginR;
+  const plotH = H - marginT - marginB;
+
+  const xFor = (idx: number) => marginL + plotW * ((idx + 0.5) / stats.length);
+  const yFor = (v: number) => marginT + plotH * (1 - (v - yMin) / (yMax - yMin));
+  const boxW = Math.min(plotW / stats.length * 0.55, 22);
+
+  const yTicks = [yMin, yMin + (yMax - yMin) * 0.25, yMin + (yMax - yMin) * 0.5, yMin + (yMax - yMin) * 0.75, yMax];
+
+  return (
+    <div className={styles.analysisFigure}>
+      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet">
+        <rect width={W} height={H} fill="#ffffff" />
+        {/* gridlines */}
+        {yTicks.map((t, idx) => (
+          <line
+            key={`grid-${idx}`}
+            x1={marginL}
+            y1={yFor(t)}
+            x2={W - marginR}
+            y2={yFor(t)}
+            stroke="#f1f5f9"
+            strokeWidth={0.5}
+          />
+        ))}
+        {/* axes */}
+        <line x1={marginL} y1={marginT} x2={marginL} y2={marginT + plotH} stroke="#111827" strokeWidth={0.6} />
+        <line x1={marginL} y1={marginT + plotH} x2={W - marginR} y2={marginT + plotH} stroke="#111827" strokeWidth={0.6} />
+        {/* y ticks */}
+        {yTicks.map((t, idx) => (
+          <g key={`tick-${idx}`}>
+            <line x1={marginL - 2} y1={yFor(t)} x2={marginL} y2={yFor(t)} stroke="#111827" strokeWidth={0.5} />
+            <text
+              x={marginL - 3}
+              y={yFor(t) + 2}
+              fontSize={7}
+              fill="#475569"
+              textAnchor="end"
+              fontFamily="var(--font-mono)"
+            >
+              {t.toFixed(1)}
+            </text>
+          </g>
+        ))}
+        <text
+          x={8}
+          y={marginT + plotH / 2}
+          fontSize={7.5}
+          fill="#374151"
+          fontFamily="var(--font-mono)"
+          fontWeight={700}
+          textAnchor="middle"
+          transform={`rotate(-90 8 ${marginT + plotH / 2})`}
+        >
+          Expression
+        </text>
+        {/* boxes */}
+        {stats.map((s, idx) => {
+          const x = xFor(idx);
+          const color = colorForCluster(s.clusterId);
           return (
-            <g key={cluster.clusterLabel}>
-              <path d={path} fill={colorForCluster(cluster.clusterId)} stroke="#111827" strokeWidth="0.2" opacity={0.85} />
+            <g key={s.clusterId}>
+              {/* lower whisker */}
+              <line x1={x} y1={yFor(s.whiskerLow)} x2={x} y2={yFor(s.q1)} stroke="#111827" strokeWidth={0.5} />
+              <line x1={x - boxW * 0.3} y1={yFor(s.whiskerLow)} x2={x + boxW * 0.3} y2={yFor(s.whiskerLow)} stroke="#111827" strokeWidth={0.5} />
+              {/* upper whisker */}
+              <line x1={x} y1={yFor(s.whiskerHigh)} x2={x} y2={yFor(s.q3)} stroke="#111827" strokeWidth={0.5} />
+              <line x1={x - boxW * 0.3} y1={yFor(s.whiskerHigh)} x2={x + boxW * 0.3} y2={yFor(s.whiskerHigh)} stroke="#111827" strokeWidth={0.5} />
+              {/* IQR box */}
+              <rect
+                x={x - boxW / 2}
+                y={yFor(s.q3)}
+                width={boxW}
+                height={Math.max(1, yFor(s.q1) - yFor(s.q3))}
+                fill={color}
+                fillOpacity={0.55}
+                stroke="#111827"
+                strokeWidth={0.6}
+              />
+              {/* median */}
+              <line
+                x1={x - boxW / 2}
+                y1={yFor(s.median)}
+                x2={x + boxW / 2}
+                y2={yFor(s.median)}
+                stroke="#111827"
+                strokeWidth={1.1}
+              />
+              {/* outliers (limit to 6 each side for clutter) */}
+              {s.outliers.slice(0, 12).map((o, oIdx) => (
+                <circle
+                  key={`out-${oIdx}`}
+                  cx={x}
+                  cy={yFor(o)}
+                  r={1.1}
+                  fill="none"
+                  stroke="#111827"
+                  strokeWidth={0.35}
+                />
+              ))}
+              {/* x label */}
               <text
-                x={cx}
-                y={92}
+                x={x}
+                y={marginT + plotH + 9}
+                fontSize={7}
+                fill="#111827"
                 textAnchor="middle"
-                fontSize="2.8"
-                fill="#4b5563"
+                fontFamily="var(--font-mono)"
               >
-                {cluster.clusterLabel.length > 6 ? `${cluster.clusterLabel.slice(0, 5)}…` : cluster.clusterLabel}
+                {s.clusterLabel.length > 6 ? `${s.clusterLabel.slice(0, 5)}…` : s.clusterLabel}
+              </text>
+              <text
+                x={x}
+                y={marginT + plotH + 17}
+                fontSize={6}
+                fill="#6b7280"
+                textAnchor="middle"
+                fontFamily="var(--font-mono)"
+              >
+                n={s.n}
               </text>
             </g>
           );
@@ -420,28 +757,31 @@ function ExpressionDistributionPanel({ query }: { query: ScSpatialQueryResponse 
 
 function AnalysisStrip({ query }: { query: ScSpatialQueryResponse }) {
   const selectedGene = query.selection.selectedGene;
+  const selectedCluster = query.rightPanel.selectedClusterSummary?.clusterLabel;
   return (
     <div className={styles.analysisStrip}>
       <div className={styles.analysisPanel}>
-        <h3 className={styles.analysisTitle}>A. Target Spatial Location</h3>
+        <h3 className={styles.analysisTitle}>A. Tissue Context</h3>
         <p className={styles.analysisCaption}>
-          Spatial footprint of the current selection, colored by cluster assignment.
+          {selectedCluster
+            ? `Spatial footprint with ROI highlighted for ${selectedCluster}.`
+            : 'Tissue boundary from convex hull of all cells; domains colored by cluster.'}
         </p>
-        <SpatialThumbnailPanel query={query} />
+        <SpatialContextPanel query={query} />
       </div>
       <div className={styles.analysisPanel}>
-        <h3 className={styles.analysisTitle}>B. Cluster Composition</h3>
+        <h3 className={styles.analysisTitle}>B. Domain × Marker Gene Heatmap</h3>
         <p className={styles.analysisCaption}>
-          Cell count per cluster after current filters. Color-matched to the main view.
+          Top marker genes by domain; intensity encodes rank within each cluster, accented by spatial autocorrelation.
         </p>
-        <ClusterCompositionPanel query={query} />
+        <MarkerHeatmapPanel query={query} />
       </div>
       <div className={styles.analysisPanel}>
-        <h3 className={styles.analysisTitle}>C. Domain Expression Distribution</h3>
+        <h3 className={styles.analysisTitle}>C. Expression by Domain</h3>
         <p className={styles.analysisCaption}>
-          Mean expression of {selectedGene || 'target gene'} across identified domains.
+          Tukey box plot of {selectedGene || 'target gene'} expression per domain: IQR, median, 1.5×IQR whiskers, outliers.
         </p>
-        <ExpressionDistributionPanel query={query} />
+        <BoxPlotPanel query={query} />
       </div>
     </div>
   );
