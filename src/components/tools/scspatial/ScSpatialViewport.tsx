@@ -102,6 +102,24 @@ function ScatterViewport({
   const [zoom, setZoom] = useState(1);
   const bounds = useMemo(() => getBounds(points), [points]);
 
+  // Group points by cluster for hull overlays (Scanpy-style cluster territories).
+  const clusterGroups = useMemo(() => {
+    const map = new Map<number, { label: string; pts: ScSpatialPointDatum[] }>();
+    for (const p of points) {
+      const bucket = map.get(p.clusterId) ?? { label: p.clusterLabel, pts: [] };
+      bucket.pts.push(p);
+      map.set(p.clusterId, bucket);
+    }
+    const span = Math.max(bounds.width, bounds.height);
+    return Array.from(map.entries()).map(([id, { label, pts }]) => {
+      const hullIn = pts.map((p) => ({ sx: p.x, sy: p.y }));
+      const hull = hullIn.length >= 3
+        ? expandHull(computeConvexHull(hullIn), span * 0.018)
+        : [];
+      return { id, label, pts, hull };
+    });
+  }, [points, bounds]);
+
   if (points.length === 0) {
     return (
       <div className={styles.viewportStage}>
@@ -110,9 +128,40 @@ function ScatterViewport({
     );
   }
 
-  const padding = 24 / zoom;
-  const viewBox = `${bounds.minX - padding} ${bounds.minY - padding} ${bounds.width + padding * 2} ${bounds.height + padding * 2}`;
   const isSpatial = viewMode === 'spatial-2d';
+
+  // Publication-quality figure: fixed SVG canvas with margins, axis lines,
+  // tick marks, gridlines, and cluster hulls. Data → pixel via linear scale.
+  const W = 640;
+  const H = 440;
+  const marginL = 46;
+  const marginR = 14;
+  const marginT = 16;
+  const marginB = 38;
+  const plotW = W - marginL - marginR;
+  const plotH = H - marginT - marginB;
+
+  // zoom narrows the data window around the midpoint.
+  const cx = (bounds.minX + bounds.maxX) / 2;
+  const cy = (bounds.minY + bounds.maxY) / 2;
+  const halfW = (bounds.width / 2) / zoom;
+  const halfH = (bounds.height / 2) / zoom;
+  const viewMinX = cx - halfW;
+  const viewMaxX = cx + halfW;
+  const viewMinY = cy - halfH;
+  const viewMaxY = cy + halfH;
+  const viewSpanX = Math.max(viewMaxX - viewMinX, 1e-6);
+  const viewSpanY = Math.max(viewMaxY - viewMinY, 1e-6);
+
+  const xScale = (x: number) => marginL + ((x - viewMinX) / viewSpanX) * plotW;
+  const yScale = (y: number) => marginT + (1 - (y - viewMinY) / viewSpanY) * plotH;
+
+  const tickFractions = [0, 0.25, 0.5, 0.75, 1];
+  const xTickValues = tickFractions.map((t) => viewMinX + t * viewSpanX);
+  const yTickValues = tickFractions.map((t) => viewMinY + t * viewSpanY);
+
+  const hullPath = (hull: { sx: number; sy: number }[]) =>
+    `M ${hull.map((p) => `${xScale(p.sx).toFixed(2)} ${yScale(p.sy).toFixed(2)}`).join(' L ')} Z`;
 
   return (
     <div className={styles.viewportStage}>
@@ -128,27 +177,66 @@ function ScatterViewport({
       <svg
         ref={svgRef}
         className={styles.viewportSvg}
-        viewBox={viewBox}
+        viewBox={`0 0 ${W} ${H}`}
+        preserveAspectRatio="xMidYMid meet"
         role="img"
         aria-label={`${xLabel} versus ${yLabel} scatter plot`}
       >
-        <rect
-          x={bounds.minX - padding}
-          y={bounds.minY - padding}
-          width={bounds.width + padding * 2}
-          height={bounds.height + padding * 2}
-          fill="#ffffff"
-        />
+        <rect width={W} height={H} fill="#ffffff" />
+        {/* plot background */}
+        <rect x={marginL} y={marginT} width={plotW} height={plotH} fill="#fbfcfd" />
+
+        {/* gridlines */}
+        {tickFractions.map((t, i) => (
+          <g key={`grid-${i}`}>
+            <line
+              x1={marginL + t * plotW}
+              y1={marginT}
+              x2={marginL + t * plotW}
+              y2={marginT + plotH}
+              stroke="#eef2f6"
+              strokeWidth={0.5}
+            />
+            <line
+              x1={marginL}
+              y1={marginT + t * plotH}
+              x2={marginL + plotW}
+              y2={marginT + t * plotH}
+              stroke="#eef2f6"
+              strokeWidth={0.5}
+            />
+          </g>
+        ))}
+
+        {/* cluster territories (convex hulls) */}
+        {clusterGroups.map((g) => {
+          if (g.hull.length < 3) return null;
+          const c = colorForCluster(g.id);
+          return (
+            <path
+              key={`hull-${g.id}`}
+              d={hullPath(g.hull)}
+              fill={c}
+              fillOpacity={0.08}
+              stroke={c}
+              strokeOpacity={0.55}
+              strokeWidth={0.9}
+              strokeDasharray="3 2"
+            />
+          );
+        })}
+
+        {/* scatter points */}
         {points.map((point) => (
           <circle
             key={point.id}
-            cx={point.x}
-            cy={point.y}
-            r={point.selected ? 3.2 : 2.0}
+            cx={xScale(point.x)}
+            cy={yScale(point.y)}
+            r={point.selected ? 4.2 : 2.4}
             fill={colorForCluster(point.clusterId)}
-            stroke={point.selected ? '#111827' : 'none'}
-            strokeWidth={point.selected ? 0.8 : 0}
-            opacity={point.selected ? 1 : 0.78}
+            stroke={point.selected ? '#111827' : '#ffffff'}
+            strokeWidth={point.selected ? 1.1 : 0.35}
+            opacity={point.selected ? 1 : 0.82}
             tabIndex={0}
             role="button"
             aria-label={`${point.id}, ${point.clusterLabel}, expression ${point.expression.toFixed(2)}`}
@@ -156,6 +244,110 @@ function ScatterViewport({
             onKeyDown={(event) => handlePointKeyDown(event, point.id, onSelectCell)}
           />
         ))}
+
+        {/* cluster centroid labels */}
+        {clusterGroups.map((g) => {
+          if (g.pts.length < 3) return null;
+          const mx = g.pts.reduce((a, p) => a + p.x, 0) / g.pts.length;
+          const my = g.pts.reduce((a, p) => a + p.y, 0) / g.pts.length;
+          return (
+            <text
+              key={`lbl-${g.id}`}
+              x={xScale(mx)}
+              y={yScale(my)}
+              fontSize={9}
+              fontWeight={600}
+              textAnchor="middle"
+              fill="#0f172a"
+              fontFamily="var(--font-mono)"
+              style={{ paintOrder: 'stroke', stroke: '#ffffff', strokeWidth: 2.5, strokeLinejoin: 'round' }}
+            >
+              {g.label.length > 14 ? `${g.label.slice(0, 13)}…` : g.label}
+            </text>
+          );
+        })}
+
+        {/* axes */}
+        <line x1={marginL} y1={marginT + plotH} x2={marginL + plotW} y2={marginT + plotH} stroke="#0f172a" strokeWidth={0.8} />
+        <line x1={marginL} y1={marginT} x2={marginL} y2={marginT + plotH} stroke="#0f172a" strokeWidth={0.8} />
+
+        {/* x ticks + labels */}
+        {xTickValues.map((v, i) => {
+          const x = marginL + tickFractions[i] * plotW;
+          return (
+            <g key={`xt-${i}`}>
+              <line x1={x} y1={marginT + plotH} x2={x} y2={marginT + plotH + 3} stroke="#0f172a" strokeWidth={0.6} />
+              <text
+                x={x}
+                y={marginT + plotH + 12}
+                fontSize={8}
+                textAnchor="middle"
+                fill="#475569"
+                fontFamily="var(--font-mono)"
+              >
+                {v.toFixed(1)}
+              </text>
+            </g>
+          );
+        })}
+
+        {/* y ticks + labels */}
+        {yTickValues.map((v, i) => {
+          const y = marginT + (1 - tickFractions[i]) * plotH;
+          return (
+            <g key={`yt-${i}`}>
+              <line x1={marginL - 3} y1={y} x2={marginL} y2={y} stroke="#0f172a" strokeWidth={0.6} />
+              <text
+                x={marginL - 5}
+                y={y + 3}
+                fontSize={8}
+                textAnchor="end"
+                fill="#475569"
+                fontFamily="var(--font-mono)"
+              >
+                {v.toFixed(1)}
+              </text>
+            </g>
+          );
+        })}
+
+        {/* axis titles */}
+        <text
+          x={marginL + plotW / 2}
+          y={H - 8}
+          fontSize={10}
+          fontWeight={700}
+          textAnchor="middle"
+          fill="#0f172a"
+          fontFamily="var(--font-mono)"
+        >
+          {xLabel}
+        </text>
+        <text
+          x={12}
+          y={marginT + plotH / 2}
+          fontSize={10}
+          fontWeight={700}
+          textAnchor="middle"
+          fill="#0f172a"
+          fontFamily="var(--font-mono)"
+          transform={`rotate(-90 12 ${marginT + plotH / 2})`}
+        >
+          {yLabel}
+        </text>
+
+        {/* n label in upper-right */}
+        <text
+          x={marginL + plotW - 4}
+          y={marginT + 10}
+          fontSize={8}
+          textAnchor="end"
+          fill="#475569"
+          fontFamily="var(--font-mono)"
+          fontStyle="italic"
+        >
+          n = {points.length.toLocaleString()}
+        </text>
       </svg>
 
       {isSpatial ? <ScaleBar /> : null}

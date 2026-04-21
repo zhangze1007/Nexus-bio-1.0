@@ -522,7 +522,7 @@
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-rows: minmax(220px, 1fr) 240px;
+  grid-template-rows: minmax(180px, 0.9fr) 280px;
   background: var(--sc-bg);
   overflow: hidden;
 }
@@ -530,7 +530,7 @@
 .viewportStageWrap {
   min-height: 0;
   position: relative;
-  padding: 12px var(--sc-space-3);
+  padding: 8px 14px;
   display: grid;
   place-items: center;
   overflow: hidden;
@@ -540,7 +540,8 @@
   position: relative;
   width: 100%;
   height: 100%;
-  max-width: 760px;
+  max-width: 600px;
+  max-height: 380px;
   display: flex;
   align-items: stretch;
   justify-content: stretch;
