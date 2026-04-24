@@ -31,14 +31,6 @@ function readyLabel(validity: 'real' | 'partial' | 'demo' | null, loadState: str
   return 'Idle';
 }
 
-const VIEW_OPTIONS: Array<{ value: 'spatial-2d' | 'spatial-3d' | 'umap' | 'trajectory' | 'table'; label: string }> = [
-  { value: 'spatial-2d', label: 'View: Spatial Context' },
-  { value: 'spatial-3d', label: 'View: 3D Spatial' },
-  { value: 'umap', label: 'View: Feature Embedding' },
-  { value: 'trajectory', label: 'View: Trajectory' },
-  { value: 'table', label: 'View: Cell Table' },
-];
-
 export default function ScSpatialPage() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -188,16 +180,6 @@ export default function ScSpatialPage() {
     return 'NONE';
   }, [datasetMeta, artifactId]);
 
-  const viewAvailability = datasetMeta?.availableViews;
-  const availableViewOptions = VIEW_OPTIONS.filter((option) => {
-    if (!viewAvailability) return true;
-    if (option.value === 'spatial-2d') return viewAvailability.spatial2d;
-    if (option.value === 'spatial-3d') return viewAvailability.spatial3d;
-    if (option.value === 'umap') return viewAvailability.umap;
-    if (option.value === 'trajectory') return viewAvailability.trajectory;
-    return viewAvailability.table;
-  });
-
   return (
     <div className={styles.root}>
       <p className={styles.srOnly} aria-live="polite">
@@ -224,17 +206,6 @@ export default function ScSpatialPage() {
             <span className={styles.readyDot} />
             {readyLabel(validity, loadState)}
           </span>
-          <select
-            className={styles.viewSelect}
-            value={viewMode}
-            onChange={(event) => setViewModeStore(event.target.value as typeof viewMode)}
-            disabled={!datasetMeta}
-            aria-label="Switch SCSPATIAL view"
-          >
-            {(availableViewOptions.length > 0 ? availableViewOptions : VIEW_OPTIONS).map((option) => (
-              <option key={option.value} value={option.value}>{option.label}</option>
-            ))}
-          </select>
           <button type="button" className={styles.headerIconButton} onClick={toggleHelp}>
             <HelpCircle size={13} />
             Help

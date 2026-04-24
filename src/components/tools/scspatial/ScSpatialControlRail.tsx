@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Database, FlaskConical, Layers3, Loader2, Search, UploadCloud } from 'lucide-react';
+import { FlaskConical, Layers3, Loader2, Search, UploadCloud } from 'lucide-react';
 import styles from './ScSpatialWorkbench.module.css';
 import { colorForCluster } from './scSpatialPalette';
 import type { ScSpatialAvailableViews } from '../../../types/scspatial';
@@ -33,12 +33,22 @@ interface ScSpatialControlRailProps {
   onToggleDeveloperMode: () => void;
 }
 
-const BIN_RESOLUTIONS: Array<{ value: 'spatial-2d' | 'spatial-3d' | 'umap' | 'table'; label: string; availKey: keyof ScSpatialAvailableViews }> = [
-  { value: 'spatial-2d', label: '2D Bin', availKey: 'spatial2d' },
-  { value: 'spatial-3d', label: '3D Bin', availKey: 'spatial3d' },
+const VIEW_BUTTONS: Array<{ value: 'spatial-2d' | 'spatial-3d' | 'umap' | 'trajectory' | 'table'; label: string; availKey: keyof ScSpatialAvailableViews }> = [
+  { value: 'spatial-2d', label: '2D', availKey: 'spatial2d' },
+  { value: 'spatial-3d', label: '3D', availKey: 'spatial3d' },
   { value: 'umap', label: 'UMAP', availKey: 'umap' },
-  { value: 'table', label: 'Cell', availKey: 'table' },
+  { value: 'trajectory', label: 'Traj.', availKey: 'trajectory' },
+  { value: 'table', label: 'Table', availKey: 'table' },
 ];
+
+function StepTitle({ n, children }: { n: number; children: React.ReactNode }) {
+  return (
+    <h2 className={styles.stepTitle}>
+      <span className={styles.stepNumber}>{n}</span>
+      {children}
+    </h2>
+  );
+}
 
 export default function ScSpatialControlRail({
   availableClusters,
@@ -77,7 +87,7 @@ export default function ScSpatialControlRail({
     <aside className={styles.rail} aria-label="SCSPATIAL controls">
       <div className={styles.railScroll}>
         <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>Dataset</h2>
+          <StepTitle n={1}>Load Data</StepTitle>
           <div className={styles.buttonRow}>
             <button type="button" className={styles.button} onClick={onPickFile} disabled={busy}>
               {busy ? <Loader2 size={13} /> : <UploadCloud size={13} />}
@@ -89,69 +99,20 @@ export default function ScSpatialControlRail({
             </button>
           </div>
           {datasetMeta ? (
-            <div className={styles.summaryGrid}>
-              <div className={styles.metricCard}>
-                <span className={styles.metricLabel}>Cells</span>
-                <span className={styles.metricValue}>{datasetMeta.cellCount}</span>
-              </div>
-              <div className={styles.metricCard}>
-                <span className={styles.metricLabel}>Genes</span>
-                <span className={styles.metricValue}>{datasetMeta.geneCount}</span>
-              </div>
-              <div className={styles.metricCard}>
-                <span className={styles.metricLabel}>Samples</span>
-                <span className={styles.metricValue}>{datasetMeta.sampleCount}</span>
-              </div>
-              <div className={styles.metricCard}>
-                <span className={styles.metricLabel}>Parser</span>
-                <span className={styles.metricDetail}>{datasetMeta.parserVersion}</span>
-              </div>
-            </div>
-          ) : null}
-          {datasetMeta ? (
-            <div className={styles.insightCard}>
-              <div className={styles.insightRow}>
-                <span>Source</span>
-                <span className={styles.insightStrong}>{datasetMeta.fileName}</span>
-              </div>
-              <div className={styles.insightRow}>
-                <span>Warnings</span>
-                <span className={styles.insightStrong}>{datasetMeta.warnings.length}</span>
-              </div>
-              <div className={styles.insightRow}>
-                <span>Missing</span>
-                <span className={styles.insightStrong}>{datasetMeta.missingFields.length}</span>
-              </div>
-              <div className={styles.insightRow}>
-                <span>Sample keys</span>
-                <span className={styles.insightStrong}>{datasetMeta.sampleMetadataKeys.length}</span>
-              </div>
+            <div className={styles.inlineStats}>
+              <span><strong>{datasetMeta.cellCount.toLocaleString()}</strong>cells</span>
+              <span><strong>{datasetMeta.geneCount.toLocaleString()}</strong>genes</span>
+              <span><strong>{datasetMeta.sampleCount}</strong>samples</span>
             </div>
           ) : null}
         </section>
 
         <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>Spatial Config</h2>
+          <StepTitle n={2}>View</StepTitle>
           <div>
-            <label className={styles.fieldLabel}>Target Overlay</label>
-            <select
-              aria-label="Target overlay"
-              className={styles.select}
-              value={selectedGene}
-              onChange={(event) => onSelectGene(event.target.value)}
-              disabled={availableGenes.length === 0 || busy}
-            >
-              {availableGenes.length === 0 ? (
-                <option value="">Gene Expression</option>
-              ) : availableGenes.map((gene) => (
-                <option key={gene} value={gene}>{gene} — Gene Expression</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className={styles.fieldLabel}>Bin Resolution</label>
-            <div className={styles.buttonRow}>
-              {BIN_RESOLUTIONS.map((option) => {
+            <label className={styles.fieldLabel}>Mode</label>
+            <div className={styles.chipRow}>
+              {VIEW_BUTTONS.map((option) => {
                 const available = viewAvailability[option.availKey];
                 return (
                   <button
@@ -169,16 +130,32 @@ export default function ScSpatialControlRail({
               })}
             </div>
           </div>
+          <div>
+            <label className={styles.fieldLabel}>Target Gene</label>
+            <select
+              aria-label="Target gene"
+              className={styles.select}
+              value={selectedGene}
+              onChange={(event) => onSelectGene(event.target.value)}
+              disabled={availableGenes.length === 0 || busy}
+            >
+              {availableGenes.length === 0 ? (
+                <option value="">— No genes loaded —</option>
+              ) : availableGenes.map((gene) => (
+                <option key={gene} value={gene}>{gene}</option>
+              ))}
+            </select>
+          </div>
         </section>
 
         <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>Feature Query</h2>
+          <StepTitle n={3}>Filter</StepTitle>
           <div className={styles.inputWithIcon}>
             <Search className={styles.inputIcon} size={12} />
             <input
               type="text"
               className={styles.input}
-              placeholder="Query genes (e.g. TGFB1)…"
+              placeholder="Search genes (e.g. TGFB1)…"
               value={geneQuery}
               onChange={(event) => setGeneQuery(event.target.value)}
               disabled={availableGenes.length === 0 || busy}
@@ -202,19 +179,7 @@ export default function ScSpatialControlRail({
               ))}
             </div>
           ) : null}
-          <div>
-            <label className={styles.fieldLabel}>Reference Set</label>
-            <select className={styles.select} defaultValue="" disabled>
-              <option value="">— Select Reference Set —</option>
-              <option>HALLMARK_EMT</option>
-              <option>GLYCOLYSIS</option>
-              <option>HYPOXIA_SIGNATURE</option>
-            </select>
-          </div>
-        </section>
-
-        <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>Clusters</h2>
+          <label className={styles.fieldLabel}>Clusters</label>
           <div className={styles.list}>
             <button
               type="button"
@@ -243,27 +208,35 @@ export default function ScSpatialControlRail({
           </div>
         </section>
 
-        <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>Workbench</h2>
-          <button
-            type="button"
-            className={`${styles.toggle} ${developerMode ? styles.toggleActive : ''}`}
-            onClick={onToggleDeveloperMode}
-          >
-            <Layers3 size={13} />
-            Developer mode
-          </button>
-          <div className={styles.insightCard}>
-            <div className={styles.insightRow}>
-              <span>Payload</span>
-              <span className={styles.insightStrong}><Database size={11} /> JSON</span>
+        <details className={styles.advancedDetails}>
+          <summary className={styles.advancedSummary}>Advanced</summary>
+          <div className={styles.advancedBody}>
+            <button
+              type="button"
+              className={`${styles.toggle} ${developerMode ? styles.toggleActive : ''}`}
+              onClick={onToggleDeveloperMode}
+            >
+              <Layers3 size={13} />
+              Developer mode
+            </button>
+            <div>
+              <label className={styles.fieldLabel}>Reference Set</label>
+              <select className={styles.select} defaultValue="" disabled>
+                <option value="">— Select Reference Set —</option>
+                <option>HALLMARK_EMT</option>
+                <option>GLYCOLYSIS</option>
+                <option>HYPOXIA_SIGNATURE</option>
+              </select>
             </div>
-            <div className={styles.insightRow}>
-              <span>Source</span>
-              <span className={styles.insightStrong}>{datasetMeta ? 'Normalized' : 'Empty'}</span>
-            </div>
+            {datasetMeta ? (
+              <div className={styles.inlineStats}>
+                <span><strong>{datasetMeta.warnings.length}</strong>warnings</span>
+                <span><strong>{datasetMeta.missingFields.length}</strong>missing</span>
+                <span>parser <strong style={{ fontSize: 10 }}>{datasetMeta.parserVersion}</strong></span>
+              </div>
+            ) : null}
           </div>
-        </section>
+        </details>
       </div>
     </aside>
   );

@@ -11,6 +11,14 @@ import { colorForCluster, SCSPATIAL_VIEW_LABELS } from './scSpatialPalette';
 import { computeConvexHull, expandHull } from '../../../utils/vizUtils';
 import styles from './ScSpatialWorkbench.module.css';
 
+type AnalysisTabKey = 'context' | 'marker' | 'distribution';
+
+const ANALYSIS_TABS: Array<{ key: AnalysisTabKey; label: string }> = [
+  { key: 'context', label: 'Tissue Context' },
+  { key: 'marker', label: 'Marker Heatmap' },
+  { key: 'distribution', label: 'Expression by Domain' },
+];
+
 interface ScSpatialViewportProps {
   canvasRef: MutableRefObject<HTMLCanvasElement | null>;
   loadState: 'idle' | 'uploading' | 'querying' | 'ready' | 'error';
@@ -948,32 +956,40 @@ function BoxPlotPanel({ query }: { query: ScSpatialQueryResponse }) {
 }
 
 function AnalysisStrip({ query }: { query: ScSpatialQueryResponse }) {
+  const [activeTab, setActiveTab] = useState<AnalysisTabKey>('context');
   const selectedGene = query.selection.selectedGene;
   const selectedCluster = query.rightPanel.selectedClusterSummary?.clusterLabel;
+
+  const caption =
+    activeTab === 'context'
+      ? selectedCluster
+        ? `Spatial footprint with ROI highlighted for ${selectedCluster}.`
+        : 'Tissue boundary from convex hull of all cells; domains colored by cluster.'
+      : activeTab === 'marker'
+      ? 'Top marker genes by domain; intensity encodes rank within each cluster, accented by spatial autocorrelation.'
+      : `Tukey box plot of ${selectedGene || 'target gene'} expression per domain: IQR, median, 1.5×IQR whiskers, outliers.`;
+
   return (
     <div className={styles.analysisStrip}>
-      <div className={styles.analysisPanel}>
-        <h3 className={styles.analysisTitle}>A. Tissue Context</h3>
-        <p className={styles.analysisCaption}>
-          {selectedCluster
-            ? `Spatial footprint with ROI highlighted for ${selectedCluster}.`
-            : 'Tissue boundary from convex hull of all cells; domains colored by cluster.'}
-        </p>
-        <SpatialContextPanel query={query} />
+      <div className={styles.analysisTabs} role="tablist" aria-label="Secondary analysis">
+        {ANALYSIS_TABS.map((tab) => (
+          <button
+            key={tab.key}
+            type="button"
+            role="tab"
+            aria-selected={activeTab === tab.key}
+            className={`${styles.analysisTab} ${activeTab === tab.key ? styles.analysisTabActive : ''}`}
+            onClick={() => setActiveTab(tab.key)}
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
       <div className={styles.analysisPanel}>
-        <h3 className={styles.analysisTitle}>B. Domain × Marker Gene Heatmap</h3>
-        <p className={styles.analysisCaption}>
-          Top marker genes by domain; intensity encodes rank within each cluster, accented by spatial autocorrelation.
-        </p>
-        <MarkerHeatmapPanel query={query} />
-      </div>
-      <div className={styles.analysisPanel}>
-        <h3 className={styles.analysisTitle}>C. Expression by Domain</h3>
-        <p className={styles.analysisCaption}>
-          Tukey box plot of {selectedGene || 'target gene'} expression per domain: IQR, median, 1.5×IQR whiskers, outliers.
-        </p>
-        <BoxPlotPanel query={query} />
+        <p className={styles.analysisCaption}>{caption}</p>
+        {activeTab === 'context' ? <SpatialContextPanel query={query} /> : null}
+        {activeTab === 'marker' ? <MarkerHeatmapPanel query={query} /> : null}
+        {activeTab === 'distribution' ? <BoxPlotPanel query={query} /> : null}
       </div>
     </div>
   );
@@ -1019,16 +1035,38 @@ export default function ScSpatialViewport({
   const isTrajectory = viewMode === 'trajectory';
   const is3D = viewMode === 'spatial-3d';
 
+  const topHotspot = query.rightPanel.hotspots[0];
+  const nCells = query.centerView.points.length;
+  const selectedClusterLabel = query.rightPanel.selectedClusterSummary?.clusterLabel;
+
   return (
     <section className={styles.viewport} aria-label="SCSPATIAL viewport">
       <div className={styles.viewportHeader}>
         <div className={styles.viewportTitle}>
           <h2>{SCSPATIAL_VIEW_LABELS[query.selection.viewMode]}</h2>
-          <p>
-            {query.selection.selectedGene
-              ? `${query.selection.selectedGene} drives the current readout.`
-              : 'Select a gene to inspect expression and spatial restriction.'}
-          </p>
+          <div className={styles.viewportHeadline}>
+            {query.selection.selectedGene ? (
+              <span><strong>{query.selection.selectedGene}</strong> readout</span>
+            ) : (
+              <span className={styles.viewportHeadlineMuted}>Select a gene to inspect expression</span>
+            )}
+            {topHotspot ? (
+              <>
+                <span className={styles.viewportHeadlineDivider} />
+                <span className={styles.viewportHeadlineMuted}>
+                  top hotspot <strong style={{ color: 'var(--sc-value)' }}>{topHotspot.geneSymbol}</strong> (I={topHotspot.moranI.toFixed(2)})
+                </span>
+              </>
+            ) : null}
+            {selectedClusterLabel ? (
+              <>
+                <span className={styles.viewportHeadlineDivider} />
+                <span className={styles.viewportHeadlineMuted}>cluster <strong style={{ color: 'var(--sc-value)' }}>{selectedClusterLabel}</strong></span>
+              </>
+            ) : null}
+            <span className={styles.viewportHeadlineDivider} />
+            <span className={styles.viewportHeadlineMuted}>n = {nCells.toLocaleString()} cells</span>
+          </div>
         </div>
       </div>
       <div className={styles.viewportBody}>
