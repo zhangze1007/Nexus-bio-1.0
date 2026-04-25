@@ -10,6 +10,7 @@ import { useUIStore } from '../../store/uiStore';
 import { T } from '../ide/tokens';
 import { getToolFreshness } from './workbenchTrust';
 import { PATHD_THEME } from './workbenchTheme';
+import { buildWorkflowHandoffSummary, workflowStatusLabel } from './workflowExperience';
 
 interface WorkbenchInlineContextProps {
   toolId: string;
@@ -23,6 +24,13 @@ const BORDER = PATHD_THEME.sepiaPanelBorder;
 const SURFACE = PATHD_THEME.panelGlassStrong;
 const LABEL = PATHD_THEME.label;
 const VALUE = PATHD_THEME.value;
+
+function handoffColor(status: string) {
+  if (status === 'available') return PATHD_THEME.mint;
+  if (status === 'blocked') return PATHD_THEME.coral;
+  if (status === 'demoOnly' || status === 'humanGate') return PATHD_THEME.apricot;
+  return LABEL;
+}
 
 export default function WorkbenchInlineContext({
   toolId,
@@ -38,6 +46,7 @@ export default function WorkbenchInlineContext({
   const addToolRun = useWorkbenchStore((s) => s.addToolRun);
   const dbtlPayload = useWorkbenchStore((s) => s.toolPayloads.dbtlflow);
   const runArtifacts = useWorkbenchStore((s) => s.runArtifacts);
+  const workflowControl = useWorkbenchStore((s) => s.workflowControl);
   const stage = getStageForTool(toolId);
   const loggedRef = useRef(false);
 
@@ -98,6 +107,10 @@ export default function WorkbenchInlineContext({
   const freshness = useMemo(
     () => getToolFreshness(runArtifacts, toolId, { project, analyzeArtifact }),
     [analyzeArtifact, project, runArtifacts, toolId],
+  );
+  const handoffSummary = useMemo(
+    () => buildWorkflowHandoffSummary(toolId, workflowControl, runArtifacts),
+    [runArtifacts, toolId, workflowControl],
   );
   const committedFeedback = dbtlPayload?.feedbackSource === 'committed' ? dbtlPayload : null;
   const compactItems = [
@@ -213,6 +226,59 @@ export default function WorkbenchInlineContext({
             }}
           >
             Outputs on this page may come from local models or bundled synthetic datasets until a project-linked evidence bundle or live analysis artifact is attached.
+          </div>
+        </div>
+      )}
+
+      {handoffSummary && (
+        <div
+          style={{
+            borderRadius: compact ? '10px' : '12px',
+            border: `1px solid ${BORDER}`,
+            background: PATHD_THEME.panelSurface,
+            padding: compact ? '8px 9px' : '10px 12px',
+            display: 'grid',
+            gap: compact ? '6px' : '8px',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap' }}>
+            <span style={{ fontFamily: T.MONO, fontSize: compact ? '8px' : '9px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              Tool handoff
+            </span>
+            <span
+              style={{
+                padding: '2px 7px',
+                borderRadius: '999px',
+                border: `1px solid ${BORDER}`,
+                background: PATHD_THEME.chipNeutral,
+                color: handoffColor(handoffSummary.availability),
+                fontFamily: T.MONO,
+                fontSize: compact ? '8px' : '9px',
+                textTransform: 'uppercase',
+                letterSpacing: '0.06em',
+              }}
+            >
+              {workflowStatusLabel(handoffSummary.availability)}
+            </span>
+          </div>
+          {handoffSummary.upstreamRows.length > 0 && (
+            <div style={{ display: 'grid', gap: '4px' }}>
+              {handoffSummary.upstreamRows.map((row) => (
+                <div key={`${row.toolId}-${row.artifactPath}`} style={{ fontFamily: T.SANS, fontSize: compact ? '9px' : '11px', color: LABEL, lineHeight: 1.45 }}>
+                  Requires {row.toolId.toUpperCase()} <span style={{ fontFamily: T.MONO, color: VALUE }}>{row.artifactPath}</span> · {row.present ? 'present' : workflowStatusLabel(row.status)}
+                </div>
+              ))}
+            </div>
+          )}
+          {handoffSummary.nextToolId && (
+            <div style={{ fontFamily: T.SANS, fontSize: compact ? '9px' : '11px', color: LABEL, lineHeight: 1.45 }}>
+              Next {handoffSummary.nextToolId.toUpperCase()} expects{' '}
+              <span style={{ fontFamily: T.MONO, color: VALUE }}>{handoffSummary.nextArtifactPath ?? 'a published artifact'}</span>
+              {' '}· {handoffSummary.nextArtifactPresent ? 'present' : workflowStatusLabel(handoffSummary.availability)}
+            </div>
+          )}
+          <div style={{ fontFamily: T.SANS, fontSize: compact ? '9px' : '11px', color: LABEL, lineHeight: 1.45 }}>
+            {handoffSummary.reason}
           </div>
         </div>
       )}
@@ -365,11 +431,11 @@ export default function WorkbenchInlineContext({
         )}
         {nextTool && (
           <Link
-            href={nextTool.href}
+            href={handoffSummary?.nextHref ?? nextTool.href}
             className="nb-ui-control nb-workbench-inline-context__action"
             style={actionBtn}
           >
-            Next: {nextTool.shortLabel}
+            Next: {handoffSummary?.nextToolId ? TOOL_BY_ID[handoffSummary.nextToolId]?.shortLabel ?? nextTool.shortLabel : nextTool.shortLabel}
             <ArrowUpRight size={11} />
           </Link>
         )}

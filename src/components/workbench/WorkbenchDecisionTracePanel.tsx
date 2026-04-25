@@ -8,6 +8,7 @@ import { T } from '../ide/tokens';
 import { TOOL_BY_ID } from '../tools/shared/toolRegistry';
 import { getFreshnessMap, getAuthoritySummary, getAuthorityTier, getToolFreshness } from './workbenchTrust';
 import { PATHD_THEME } from './workbenchTheme';
+import { workflowStatusLabel } from './workflowExperience';
 
 interface WorkbenchDecisionTracePanelProps {
   toolId?: string | null;
@@ -53,6 +54,7 @@ export default function WorkbenchDecisionTracePanel({
   );
 
   const recommendations = useMemo(() => nextRecommendations.slice(0, limit), [limit, nextRecommendations]);
+  const ledgerRuns = useMemo(() => runArtifacts.slice(0, limit), [limit, runArtifacts]);
   const recommendationFreshness = useMemo(
     () => getFreshnessMap(runArtifacts, recommendations.map((item) => item.toolId), { project, analyzeArtifact }),
     [analyzeArtifact, project, recommendations, runArtifacts],
@@ -183,6 +185,62 @@ export default function WorkbenchDecisionTracePanel({
             Analyze artifacts, run outputs, and DBTL feedback will accumulate here as an explicit decision chain.
           </div>
         )}
+      </div>
+
+      <div
+        style={{
+          borderRadius: '16px',
+          border: `1px solid ${BORDER}`,
+          background: PATHD_THEME.panelGradientSoft,
+          padding: '12px 14px',
+          display: 'grid',
+          gap: '8px',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          <ShieldCheck size={13} color={PATHD_THEME.mint} />
+          <span style={{ fontFamily: T.SANS, fontSize: '13px', color: VALUE, fontWeight: 700 }}>
+            DBTL decision ledger
+          </span>
+        </div>
+        <div style={{ display: 'grid', gap: '8px' }}>
+          {ledgerRuns.length ? ledgerRuns.map((run) => (
+            <div
+              key={run.id}
+              style={{
+                borderRadius: '12px',
+                border: `1px solid ${BORDER}`,
+                background: PATHD_THEME.panelSurface,
+                padding: '9px 10px',
+                display: 'grid',
+                gap: '5px',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap' }}>
+                <span style={{ fontFamily: T.SANS, fontSize: '12px', color: VALUE, fontWeight: 700 }}>
+                  {run.toolId.toUpperCase()} artifact generated
+                </span>
+                <span style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase' }}>
+                  {workflowStatusLabel(run.status ?? (run.isSimulated ? 'demoOnly' : 'ok'))}
+                </span>
+              </div>
+              <div style={{ fontFamily: T.SANS, fontSize: '11px', color: LABEL, lineHeight: 1.5 }}>
+                {run.summary}
+              </div>
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', fontFamily: T.MONO, fontSize: '9px', color: LABEL }}>
+                <span>evidence · {workflowDecision.missingEvidence.have}</span>
+                <span>confidence · {workflowDecision.latestRunToolId === run.toolId && workflowDecision.confidence !== null ? workflowDecision.confidence.toFixed(2) : 'n/a'}</span>
+                <span>uncertainty · {workflowDecision.latestRunToolId === run.toolId && workflowDecision.uncertainty !== null ? workflowDecision.uncertainty.toFixed(2) : 'unknown'}</span>
+                <span>human gate · {workflowDecision.latestRunToolId === run.toolId && workflowDecision.humanGateRequired ? 'yes' : 'no'}</span>
+                <span>next · {workflowDecision.nextRecommendedNode?.toUpperCase() ?? 'none'}</span>
+              </div>
+            </div>
+          )) : (
+            <div style={{ fontFamily: T.SANS, fontSize: '12px', color: LABEL, lineHeight: 1.55 }}>
+              Run PATHD to create the first auditable DBTL decision artifact.
+            </div>
+          )}
+        </div>
       </div>
 
       <div style={{ display: 'grid', gap: '10px' }}>

@@ -15,6 +15,7 @@ import {
 } from '../../domain/workflowContract';
 import { evaluateToolContract } from '../../services/workflowContractEvaluator';
 import type { WorkbenchToolPayloadMap } from '../../store/workbenchPayloads';
+import { workflowStatusLabel } from './workflowExperience';
 
 interface WorkbenchEvidenceTracePanelProps {
   toolId?: string | null;
@@ -120,6 +121,7 @@ export default function WorkbenchEvidenceTracePanel({
       run: runArtifacts.find((artifact) => artifact.toolId === id),
     }));
   }, [analyzeArtifact?.recommendedNextTools, runArtifacts, toolId]);
+  const latestRun = runArtifacts[0] ?? null;
 
   return (
     <section style={{ display: 'grid', gap: '10px' }}>
@@ -167,6 +169,36 @@ export default function WorkbenchEvidenceTracePanel({
           )}
         </div>
       )}
+
+      <div
+        style={{
+          borderRadius: '14px',
+          border: `1px solid ${BORDER}`,
+          background: PATHD_THEME.panelGradientSoft,
+          padding: '10px 12px',
+          display: 'grid',
+          gap: '6px',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          <Workflow size={13} color={PATHD_THEME.mint} />
+          <span style={{ fontFamily: T.SANS, fontSize: '12px', color: VALUE, fontWeight: 700 }}>
+            Decision ledger fields
+          </span>
+          <span style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase' }}>
+            {workflowStatusLabel(workflowControl.status)}
+          </span>
+        </div>
+        <div style={{ display: 'grid', gap: '4px', fontFamily: T.MONO, fontSize: '10px', color: LABEL, lineHeight: 1.5 }}>
+          <span>artifact · {latestRun ? `${latestRun.toolId.toUpperCase()} ${workflowStatusLabel(latestRun.status ?? (latestRun.isSimulated ? 'demoOnly' : 'ok'))}` : 'none'}</span>
+          <span>evidence used · {evidenceTrace.length ? evidenceTrace.map((item) => item.title).join(' / ') : 'none selected'}</span>
+          <span>confidence · {workflowControl.confidence === null ? 'unknown' : workflowControl.confidence.toFixed(2)}</span>
+          <span>uncertainty · {workflowControl.uncertainty === null ? 'unknown' : workflowControl.uncertainty.toFixed(2)}</span>
+          <span>human gate · {workflowControl.humanGateRequired ? 'required' : 'not required'}</span>
+          <span>next recommended · {workflowControl.nextRecommendedNode?.toUpperCase() ?? 'none'}</span>
+          <span>demo/simulated · {workflowControl.isDemoOnly ? 'yes' : 'no'}</span>
+        </div>
+      </div>
 
       <div style={{ display: 'grid', gap: '10px', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
         <div

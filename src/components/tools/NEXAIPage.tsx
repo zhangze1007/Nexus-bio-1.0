@@ -23,6 +23,7 @@ import type { NEXAIResult, CitationNode, GeneratedPathway } from '../../types';
 import { useUIStore } from '../../store/uiStore';
 import { useWorkbenchStore } from '../../store/workbenchStore';
 import WorkbenchInlineContext from '../workbench/WorkbenchInlineContext';
+import { workflowStatusLabel } from '../workbench/workflowExperience';
 import ScientificHero from './shared/ScientificHero';
 import { PATHD_THEME } from '../workbench/workbenchTheme';
 import ScientificFigureFrame from './shared/ScientificFigureFrame';
@@ -350,6 +351,15 @@ export default function NEXAIPage() {
   const isUngrounded = Boolean(result) && result.citations.length === 0;
   const malformedParse =
     parseError && (parseError.code === 'INVALID_SYNTAX' || parseError.code === 'EMPTY');
+  const workflowRisk = workflowControl.status === 'blocked'
+    ? 'Blocked upstream artifact'
+    : workflowControl.status === 'gated'
+      ? 'Human/evidence gate'
+      : workflowControl.status === 'demoOnly'
+        ? 'Demo/simulated output'
+        : workflowControl.uncertainty === null && workflowControl.currentToolId
+          ? 'Uncertainty unresolved'
+          : 'No active workflow gate';
 
   return (
     <ToolShell
@@ -803,6 +813,50 @@ export default function NEXAIPage() {
           <MetricCard label="Citations" value={result?.citations.length ?? 0} />
           <MetricCard label="Databases" value={6} unit="sources" />
           <MetricCard label="Model" value={provider ?? 'llama-3.3'} />
+
+          <div style={{
+            padding: '12px',
+            borderRadius: '12px',
+            border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
+            background: PATHD_THEME.panelInset,
+            display: 'grid',
+            gap: '8px',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap' }}>
+              <div style={{ fontFamily: T.MONO, fontSize: '9px', color: PATHD_THEME.label, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                Workflow supervisor
+              </div>
+              <span style={{
+                padding: '2px 7px',
+                borderRadius: '999px',
+                border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
+                background: PATHD_THEME.chipNeutral,
+                color: workflowControl.status === 'blocked' || workflowControl.status === 'gated' || workflowControl.status === 'demoOnly'
+                  ? PATHD_THEME.apricot
+                  : PATHD_THEME.value,
+                fontFamily: T.MONO,
+                fontSize: '8px',
+                textTransform: 'uppercase',
+                letterSpacing: '0.06em',
+              }}>
+                {workflowStatusLabel(workflowControl.status)}
+              </span>
+            </div>
+            <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.value, lineHeight: 1.55 }}>
+              {workflowControl.explanation}
+            </div>
+            <div style={{ display: 'grid', gap: '5px', fontFamily: T.MONO, fontSize: '9px', color: PATHD_THEME.label, lineHeight: 1.45 }}>
+              <span>state · {workflowControl.machineState}</span>
+              <span>current · {workflowControl.currentToolId?.toUpperCase() ?? 'NONE'}</span>
+              <span>next · {workflowControl.nextRecommendedNode?.toUpperCase() ?? 'NONE'}</span>
+              <span>risk · {workflowRisk}</span>
+              <span>confidence · {workflowControl.confidence === null ? 'unknown' : workflowControl.confidence.toFixed(2)}</span>
+              <span>uncertainty · {workflowControl.uncertainty === null ? 'unknown' : workflowControl.uncertainty.toFixed(2)}</span>
+              <span>missing evidence · {workflowControl.missingEvidence.have}/{workflowControl.missingEvidence.minRequired}{workflowControl.missingEvidence.kinds.length ? ` ${workflowControl.missingEvidence.kinds.join(', ')}` : ''}</span>
+              <span>demo/simulated · {workflowControl.isDemoOnly ? 'yes' : 'no'}</span>
+              <span>human gate · {workflowControl.humanGateRequired ? 'required' : 'not required'}</span>
+            </div>
+          </div>
 
           {history.length > 0 && (
             <div style={{ marginTop: '12px' }}>

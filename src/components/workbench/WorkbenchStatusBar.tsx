@@ -25,6 +25,11 @@ import WorkbenchProjectTimeline from './WorkbenchProjectTimeline';
 import WorkbenchRunCompare from './WorkbenchRunCompare';
 import { getFreshnessMap, getToolFreshness } from './workbenchTrust';
 import { PATHD_THEME } from './workbenchTheme';
+import {
+  buildWorkflowDashboardItems,
+  workflowStatusLabel,
+  type WorkflowExperienceStatus,
+} from './workflowExperience';
 
 interface WorkbenchStatusBarProps {
   moduleId: string | null;
@@ -41,6 +46,14 @@ function getStageStatusColor(status: 'pending' | 'active' | 'complete') {
   if (status === 'complete') return PATHD_THEME.mint;
   if (status === 'active') return PATHD_THEME.apricot;
   return 'rgba(226,232,240,0.18)';
+}
+
+function getWorkflowStatusColor(status: WorkflowExperienceStatus | string) {
+  if (status === 'complete') return PATHD_THEME.mint;
+  if (status === 'current' || status === 'next' || status === 'ready') return PATHD_THEME.sky;
+  if (status === 'blocked') return PATHD_THEME.coral;
+  if (status === 'demoOnly' || status === 'humanGate') return PATHD_THEME.apricot;
+  return 'rgba(226,232,240,0.22)';
 }
 
 export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps) {
@@ -60,6 +73,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
   const syncStatus = useWorkbenchStore((s) => s.syncStatus);
   const syncError = useWorkbenchStore((s) => s.syncError);
   const lastServerSyncAt = useWorkbenchStore((s) => s.lastServerSyncAt);
+  const workflowControl = useWorkbenchStore((s) => s.workflowControl);
 
   const stage = moduleId ? getStageForTool(moduleId) : getStageById(currentStageId);
   const selectedEvidence = evidenceItems.filter((item) => selectedEvidenceIds.includes(item.id));
@@ -147,9 +161,21 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
         label: 'Freshness',
         value: compactExecutionSummary,
       },
+      {
+        label: 'Workflow',
+        value: `${workflowStatusLabel(workflowControl.status)}${workflowControl.nextRecommendedNode ? ` -> ${workflowControl.nextRecommendedNode.toUpperCase()}` : ''}`,
+      },
     ],
-    [analyzeArtifact?.targetProduct, compactExecutionSummary, project?.targetProduct, project?.title, selectedEvidence.length, stage?.label],
+    [analyzeArtifact?.targetProduct, compactExecutionSummary, project?.targetProduct, project?.title, selectedEvidence.length, stage?.label, workflowControl.nextRecommendedNode, workflowControl.status],
   );
+  const workflowDashboardItems = useMemo(
+    () => buildWorkflowDashboardItems(workflowControl, runArtifacts),
+    [runArtifacts, workflowControl],
+  );
+  const workflowProgress = useMemo(() => {
+    const complete = workflowDashboardItems.filter((item) => item.id !== 'target' && item.id !== 'nexai' && item.status === 'complete').length;
+    return `${complete}/6`;
+  }, [workflowDashboardItems]);
 
   return (
     <>
@@ -467,6 +493,110 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
               </div>
             </div>
           )}
+
+          <div
+            style={{
+              borderRadius: compactHeader ? '14px' : '16px',
+              border: `1px solid ${BORDER}`,
+              background: CARD_BG,
+              padding: compactHeader ? '8px 10px' : '12px 14px',
+              display: 'grid',
+              gap: compactHeader ? '8px' : '10px',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                <Workflow size={14} color={getWorkflowStatusColor(workflowControl.status === 'gated' ? 'humanGate' : workflowControl.status)} />
+                <span style={{ fontFamily: T.SANS, fontSize: compactHeader ? '11px' : '13px', color: VALUE, fontWeight: 700 }}>
+                  Golden Path Dashboard
+                </span>
+                <span
+                  style={{
+                    padding: '2px 7px',
+                    borderRadius: '999px',
+                    border: `1px solid ${BORDER}`,
+                    background: CARD_BG_SOFT,
+                    color: getWorkflowStatusColor(workflowControl.status === 'gated' ? 'humanGate' : workflowControl.status),
+                    fontFamily: T.MONO,
+                    fontSize: compactHeader ? '8px' : '9px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.06em',
+                  }}
+                >
+                  {workflowStatusLabel(workflowControl.status)}
+                </span>
+              </div>
+              <div style={{ fontFamily: T.MONO, fontSize: compactHeader ? '8px' : '10px', color: LABEL }}>
+                progress {workflowProgress}
+                {workflowControl.nextRecommendedNode ? ` · next ${workflowControl.nextRecommendedNode.toUpperCase()}` : ''}
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'stretch', gap: '6px', flexWrap: 'wrap' }}>
+              {workflowDashboardItems.map((item) => {
+                const color = getWorkflowStatusColor(item.status);
+                const body = (
+                  <>
+                    <span
+                      style={{
+                        width: '8px',
+                        height: '8px',
+                        borderRadius: '999px',
+                        background: color,
+                        boxShadow: `0 0 10px ${color}66`,
+                        flex: '0 0 auto',
+                      }}
+                    />
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {item.label}
+                    </span>
+                    <span style={{ color: LABEL, textTransform: 'uppercase', fontSize: compactHeader ? '7px' : '8px' }}>
+                      {workflowStatusLabel(item.status)}
+                    </span>
+                  </>
+                );
+                const itemStyle: React.CSSProperties = {
+                  minHeight: compactHeader ? '28px' : '32px',
+                  maxWidth: '100%',
+                  padding: compactHeader ? '0 8px' : '0 10px',
+                  borderRadius: '999px',
+                  border: `1px solid ${item.status === 'current' || item.status === 'next' ? PATHD_THEME.panelBorderStrong : BORDER}`,
+                  background: item.status === 'current' || item.status === 'next' ? 'rgba(175,195,214,0.18)' : CARD_BG_SOFT,
+                  color: VALUE,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  fontFamily: T.SANS,
+                  fontSize: compactHeader ? '9px' : '10px',
+                  fontWeight: 700,
+                  textDecoration: 'none',
+                };
+                return item.href ? (
+                  <Link key={item.id} href={item.href} title={item.detail} style={itemStyle}>
+                    {body}
+                  </Link>
+                ) : (
+                  <div key={item.id} title={item.detail} style={itemStyle}>
+                    {body}
+                  </div>
+                );
+              })}
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', fontFamily: T.MONO, fontSize: compactHeader ? '8px' : '10px', color: LABEL }}>
+              {workflowControl.currentToolId && <span>current · {workflowControl.currentToolId.toUpperCase()}</span>}
+              {workflowControl.confidence !== null && <span>confidence · {workflowControl.confidence.toFixed(2)}</span>}
+              <span>uncertainty · {workflowControl.uncertainty === null ? 'unknown' : workflowControl.uncertainty.toFixed(2)}</span>
+              {workflowControl.humanGateRequired && <span style={{ color: PATHD_THEME.apricot }}>human gate</span>}
+              {workflowControl.isDemoOnly && <span style={{ color: PATHD_THEME.apricot }}>demo/simulated</span>}
+              {workflowControl.missingEvidence.minRequired > 0 && (
+                <span>
+                  missing evidence · {workflowControl.missingEvidence.have}/{workflowControl.missingEvidence.minRequired}
+                  {workflowControl.missingEvidence.kinds.length ? ` ${workflowControl.missingEvidence.kinds.join(', ')}` : ''}
+                </span>
+              )}
+            </div>
+          </div>
 
           {visibleNextTools.length > 0 && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
