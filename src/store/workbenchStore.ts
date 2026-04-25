@@ -504,6 +504,7 @@ function buildWorkflowControlSnapshot(
     explanation: runGateStatus && latestRun?.statusReason
       ? `${String(latestRun.toolId).toUpperCase()} did not advance: ${latestRun.statusReason}`
       : decision.explanation,
+    iteration: 0,
     updatedAt: Date.now(),
   };
 }
@@ -525,6 +526,7 @@ function createInitialWorkflowControl(now = Date.now()): WorkbenchWorkflowContro
     latestRunToolId: null,
     reasonCodes: ['NO_TARGET'],
     explanation: 'No target product set. Set a target via /research or /analyze, then run PATHD.',
+    iteration: 0,
     updatedAt: now,
   };
 }

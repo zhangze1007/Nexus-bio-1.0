@@ -58,6 +58,7 @@ const EMPTY_STATE: WorkbenchCanonicalState = {
     latestRunToolId: null,
     reasonCodes: ['NO_TARGET'],
     explanation: 'No target product set. Set a target via /research or /analyze, then run PATHD.',
+    iteration: 0,
     updatedAt: 0,
   },
 };

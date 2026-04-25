@@ -152,6 +152,12 @@ export interface WorkbenchWorkflowControlSnapshot {
   latestRunToolId: string | null;
   reasonCodes: string[];
   explanation: string;
+  /**
+   * Phase-2B.1 — DBTL iteration counter sourced from the workflow actor's
+   * context. Bumps on LOOP_BACK; preserved across SET_TARGET / *_DONE
+   * transitions. Lets the DBTL ledger group rows by Learn cycle.
+   */
+  iteration: number;
   updatedAt: number;
 }
 
@@ -182,6 +188,19 @@ export interface WorkbenchRunArtifact {
    * required step.
    */
   blockingUpstreamToolIds?: string[];
+  /**
+   * Phase-2B.1 — historical contract evaluation captured at the moment the
+   * run artifact was created. The DBTL Decision Trace panel reads these
+   * directly so older runs surface their own confidence / uncertainty /
+   * validity / human-gate status (not just the latest run's supervisor
+   * snapshot). All fields optional; older serialised projects read
+   * undefined and continue to work.
+   */
+  confidence?: number | null;
+  uncertainty?: number | null;
+  validity?: ValidityFloor | null;
+  humanGateRequired?: boolean;
+  iteration?: number;
 }
 
 export interface WorkbenchBackendMeta {

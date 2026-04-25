@@ -369,6 +369,21 @@ function sanitizeRunArtifact(value: unknown): WorkbenchRunArtifact | null {
     ...(asStringArray(value.blockingUpstreamToolIds).length
       ? { blockingUpstreamToolIds: asStringArray(value.blockingUpstreamToolIds) }
       : {}),
+    // Phase-2B.1 — historical contract evaluation fields. All optional;
+    // older serialised projects pass through with these undefined.
+    ...(typeof value.confidence === 'number' || value.confidence === null
+      ? { confidence: typeof value.confidence === 'number' ? value.confidence : null }
+      : {}),
+    ...(typeof value.uncertainty === 'number' || value.uncertainty === null
+      ? { uncertainty: typeof value.uncertainty === 'number' ? value.uncertainty : null }
+      : {}),
+    ...(value.validity === 'real' || value.validity === 'partial' || value.validity === 'demo' || value.validity === null
+      ? { validity: (value.validity ?? null) as WorkbenchRunArtifact['validity'] }
+      : {}),
+    ...(typeof value.humanGateRequired === 'boolean'
+      ? { humanGateRequired: value.humanGateRequired }
+      : {}),
+    ...(typeof value.iteration === 'number' ? { iteration: Math.max(0, value.iteration) } : {}),
   };
 }
 
@@ -390,6 +405,7 @@ function sanitizeWorkflowControl(value: unknown): WorkbenchWorkflowControlSnapsh
       latestRunToolId: null,
       reasonCodes: ['NO_TARGET'],
       explanation: 'No target product set. Set a target via /research or /analyze, then run PATHD.',
+      iteration: 0,
       updatedAt: Date.now(),
     };
   }
@@ -440,6 +456,7 @@ function sanitizeWorkflowControl(value: unknown): WorkbenchWorkflowControlSnapsh
     latestRunToolId: typeof value.latestRunToolId === 'string' ? value.latestRunToolId : null,
     reasonCodes: asStringArray(value.reasonCodes),
     explanation: asString(value.explanation),
+    iteration: Math.max(0, asNumber(value.iteration)),
     updatedAt: asNumber(value.updatedAt, Date.now()),
   };
 }

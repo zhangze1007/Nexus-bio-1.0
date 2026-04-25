@@ -24,6 +24,7 @@ const BASE_WORKFLOW: WorkbenchWorkflowControlSnapshot = {
   latestRunToolId: null,
   reasonCodes: ['CURRENT_TOOL_NOT_READY'],
   explanation: 'Run PATHD for the active target.',
+  iteration: 0,
   updatedAt: 1,
 };
 
