@@ -26,6 +26,8 @@
 
 import type { AxonTool } from './AxonOrchestrator';
 import type { WorkbenchCopilotContext } from './axonContext';
+import { GOLDEN_PATH_TOOL_IDS, type ToolId } from '../domain/workflowContract';
+import { getToolContract } from './workflowRegistry';
 
 export const MAX_PLAN_STEPS = 5;
 export const MAX_PLAN_DEPTH = 1;
@@ -102,6 +104,28 @@ const FBASIM_KEYWORDS = [
   'balance',
   'bottleneck',
 ];
+
+// Phase-1 — Workflow Control Plane: per-tool keyword bags. Keys are
+// ToolId; values are bag of phrases that nominate the tool. Co-located
+// here because contracts don't carry keywords yet (kept terse to
+// preserve existing planner behaviour for pathd / fbasim — see tests in
+// __tests__/axonPlanner.test.ts).
+const TOOL_KEYWORDS: Partial<Record<ToolId, readonly string[]>> = {
+  pathd: PATHD_KEYWORDS,
+  fbasim: FBASIM_KEYWORDS,
+  catdes: ['catalyst design', 'enzyme design', 'redesign catalyst', 'binding affinity', 'mutagenesis'],
+  dyncon: ['feedback control', 'dynamic control', 'controller', 'bioreactor', 'pid'],
+  cellfree: ['cell-free', 'cellfree', 'txtl', 'tx-tl', 'in-vitro prototype', 'cfps'],
+  dbtlflow: ['dbtl', 'design build test learn', 'iteration ledger', 'protocol generation'],
+  cethx: ['thermodynamic', 'delta g', 'gibbs free energy', 'atp yield'],
+  proevol: ['directed evolution', 'protein evolution', 'campaign', 'fitness landscape', 'survivor selection'],
+  genmim: ['genome minimization', 'crispri', 'gene minimization', 'chassis minimization'],
+  gecair: ['gene circuit', 'logic gate', 'hill curve', 'circuit topology'],
+  multio: ['multi-omics', 'multio', 'transcriptomics proteomics', 'volcano plot', 'mofa'],
+  scspatial: ['single-cell', 'spatial transcriptomics', 'visium', 'umap', 'paga'],
+  'metabolic-eng': ['metabolic engineering lab', '3d metabolic'],
+  nexai: ['research agent', 'literature synthesis', 'citation graph'],
+};
 
 function hasAny(text: string, keywords: string[]): boolean {
   return keywords.some((k) => text.includes(k));
@@ -222,6 +246,47 @@ export function buildAxonPlan(
         'Request aligns with pathway design; workbench has a target product or the request names one.',
       ),
     );
+  }
+
+  // Phase-1 extension: dispatch any other tool whose contract keywords
+  // appear in the request. Contract-only tools (no Axon adapter) are
+  // pushed as `unsupported` per the existing stepFor() rules. This makes
+  // the planner cover all 14 tools while keeping pathd / fbasim behavior
+  // bit-exact for the existing test matrix.
+  const alreadyEnqueued = new Set(steps.map((s) => s.tool));
+  for (const tool of Object.keys(TOOL_KEYWORDS) as ToolId[]) {
+    if (tool === 'pathd' || tool === 'fbasim') continue; // handled above
+    if (alreadyEnqueued.has(tool)) continue;
+    const bag = TOOL_KEYWORDS[tool] ?? [];
+    if (!hasAny(text, bag as string[])) continue;
+    if (steps.length >= MAX_PLAN_STEPS) break;
+    const contract = getToolContract(tool);
+    steps.push(
+      stepFor(
+        tool,
+        `${tool.toUpperCase()} — ${contract.primaryIntent}`,
+        contract.validityBaseline.reason,
+        context.targetProduct ? `target=${context.targetProduct}` : 'no target in context',
+        contract.outputArtifacts.map((a) => a.payloadPath).join(', ') || 'no declared outputs',
+        `Matched ${tool} contract keywords; ${contract.isGoldenPath ? 'golden-path' : 'sidecar'} step.`,
+      ),
+    );
+    alreadyEnqueued.add(tool);
+  }
+  // Surface contract-only successors of golden-path tools currently in
+  // the plan, so the user sees the next required step even when keywords
+  // don't trigger it explicitly. We don't actually push them — we just
+  // record a one-line warning so the UI can render them.
+  for (const tool of [...alreadyEnqueued]) {
+    const idx = GOLDEN_PATH_TOOL_IDS.indexOf(tool as never);
+    if (idx < 0 || idx === GOLDEN_PATH_TOOL_IDS.length - 1) continue;
+    const successor = GOLDEN_PATH_TOOL_IDS[idx + 1];
+    if (alreadyEnqueued.has(successor)) continue;
+    if (!support.isSupported(successor)) {
+      warnings.push(
+        `Successor "${successor}" on the golden path is contract-defined but has no adapter — run it manually.`,
+      );
+    }
   }
 
   // Even when no tool trigger fires, we still return a plan shell so

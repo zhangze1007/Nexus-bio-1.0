@@ -70,3 +70,37 @@ export const noopAutonomyLoop: AutonomyLoop = {
     };
   },
 };
+
+// ── Workflow Control Plane bridge ───────────────────────────────────────
+//
+// Phase-1 addition. The Axon autonomy loop above answers a narrow
+// question: "should the orchestrator auto-fire the next plan step?".
+// The Workflow Control Plane needs a richer surface: workflow state,
+// missing evidence, confidence/uncertainty, human gate, next recommended
+// node. We expose that surface here as a separate seam so consumers can
+// import a single module instead of reaching across services.
+
+import {
+  buildWorkflowDecision,
+  type WorkflowDecision,
+  type WorkflowSupervisorInput,
+} from './workflowSupervisor';
+
+export interface WorkflowSupervisorBridge {
+  readonly enabled: boolean;
+  readonly label: string;
+  decide(input: WorkflowSupervisorInput): WorkflowDecision;
+}
+
+/**
+ * Default bridge — delegates to the deterministic workflowSupervisor.
+ * Tests and provider wiring import this to reach the supervisor without
+ * pulling workflowSupervisor.ts into every call site.
+ */
+export const workflowSupervisorBridge: WorkflowSupervisorBridge = {
+  enabled: true,
+  label: 'Deterministic workflow supervisor (no LLM call)',
+  decide(input) {
+    return buildWorkflowDecision(input);
+  },
+};
