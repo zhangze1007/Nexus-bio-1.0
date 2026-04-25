@@ -110,6 +110,19 @@ export interface StructuredAnalysisPayload {
   sourceProvider?: string | null;
 }
 
+/**
+ * Phase-1 — Workflow Control Plane. `status` is the explicit gate signal
+ * the contract validator emits when `setToolPayload` runs:
+ *   - 'ok'        : payload satisfies the tool's contract.
+ *   - 'simulated' : tool's payload is demo-validity or runs on a demo project.
+ *   - 'blocked'   : required upstream artifacts are missing — UI must
+ *                   render the gate; downstream stage transitions refuse.
+ *   - 'gated'     : evidence requirement / human-gate triggered.
+ * Field is optional so older serialized projects (no status field) read
+ * as `undefined` — call sites treat undefined as `'ok'` for back-compat.
+ */
+export type WorkbenchRunStatus = 'ok' | 'simulated' | 'blocked' | 'gated';
+
 export interface WorkbenchRunArtifact {
   id: string;
   toolId: keyof WorkbenchToolPayloadMap;
@@ -128,6 +141,15 @@ export interface WorkbenchRunArtifact {
   payloadSnapshot: WorkbenchToolPayloadMap[keyof WorkbenchToolPayloadMap];
   createdAt: number;
   isSimulated: boolean;
+  status?: WorkbenchRunStatus;
+  /** Optional human-readable reason; used when status !== 'ok'. */
+  statusReason?: string;
+  /**
+   * When status='blocked', which upstream tool ids are missing required
+   * payloads. Surfaced by the Decision Trace panel to point at the next
+   * required step.
+   */
+  blockingUpstreamToolIds?: string[];
 }
 
 export interface WorkbenchBackendMeta {

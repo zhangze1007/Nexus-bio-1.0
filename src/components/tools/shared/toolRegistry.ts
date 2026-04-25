@@ -69,7 +69,30 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
     tags: ['3D', 'pathway', 'evidence', 'enzyme', 'workbench', 'kinetics', 'thermodynamics'],
     mode: 'design',
     threeDPotential: 'strong',
-    relatedRoutes: ['/tools/catdes'],
+    relatedRoutes: ['/tools/catdes', '/tools/metabolic-eng'],
+  },
+  // Phase-1 — Workflow Control Plane: `metabolic-eng` is an internal
+  // alias for PATHD's 3D lab page (see /tools/metabolic-eng → MetabolicEngPage).
+  // It was previously registered in TOOL_VALIDITY but absent from
+  // TOOL_DEFINITIONS, which produced a "ghost tool" reachable by route
+  // but invisible to the registry. Reinstating it here as a contract-only
+  // sidecar so registry / validity / contract are in lock-step.
+  {
+    id: 'metabolic-eng',
+    shortLabel: 'METABOLIC-ENG',
+    name: 'Metabolic Engineering Lab',
+    href: '/tools/metabolic-eng',
+    category: 'Pathway Engineering',
+    direction: 'Pathway & Design',
+    shell: 'ide',
+    icon: GitBranch,
+    summary: 'Full 3D metabolic lab — same engine as PATHD with live FBA hooks and force-directed layout.',
+    focus: 'Internal alias of PATHD; surfaced for legacy /tools/metabolic-eng route compatibility.',
+    outputs: ['3D pathway view', 'Live FBA overlay'],
+    tags: ['3D', 'pathway', 'lab', 'alias'],
+    mode: 'design',
+    threeDPotential: 'strong',
+    relatedRoutes: ['/tools/pathd'],
   },
 
   {

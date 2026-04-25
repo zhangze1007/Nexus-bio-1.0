@@ -96,3 +96,16 @@ export function getNextToolIds(toolId?: string | null): string[] {
   if (!toolId) return [];
   return getDependencyEdges({ toolId, direction: 'downstream' }).map((edge) => edge.toToolId);
 }
+
+/**
+ * Phase-1 — Workflow Control Plane: forward-required successors only.
+ * Filters the dependency graph to `kind: 'forward'` and `mode: 'required'`
+ * so callers can render "next required step" without conflating
+ * recommended branches and support edges.
+ */
+export function getNextRequiredToolIds(toolId?: string | null): string[] {
+  if (!toolId) return [];
+  return getDependencyEdges({ toolId, direction: 'downstream', includeSupport: false })
+    .filter((edge) => edge.kind === 'forward' && edge.mode === 'required')
+    .map((edge) => edge.toToolId);
+}
