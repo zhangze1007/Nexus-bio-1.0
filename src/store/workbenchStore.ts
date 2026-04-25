@@ -21,6 +21,12 @@ import {
 } from '../components/tools/shared/workbenchConfig';
 import { getUpstreamToolIds } from '../components/tools/shared/workbenchGraph';
 import { buildExecutionSnapshot } from '../components/workbench/workbenchExecution';
+import { tryGetToolContract } from '../services/workflowRegistry';
+import {
+  meetsValidityFloor,
+  type ValidityFloor,
+} from '../domain/workflowContract';
+import type { WorkbenchRunStatus } from './workbenchTypes';
 import type {
   AxonRunRecord,
   NextStepRecommendation,
@@ -285,6 +291,23 @@ function summarizePayload<K extends keyof WorkbenchToolPayloadMap>(toolId: K, pa
   }
 }
 
+/**
+ * Phase-1 — Workflow Control Plane. Returns true when the URL carries
+ * `?demo=1` (or the env flag NEXT_PUBLIC_AUTO_DEMO=1). All other entry
+ * paths must invoke `seedDemoProject` explicitly. Returning false on
+ * the server (window undefined) preserves SSR safety.
+ */
+function shouldAutoSeedDemo(): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    if (window.location.search.includes('demo=1')) return true;
+  } catch {
+    // Ignore — sandboxed iframes can throw on .search access.
+  }
+  if (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_AUTO_DEMO === '1') return true;
+  return false;
+}
+
 function inferToolSimulation(payload: WorkbenchToolPayloadMap[keyof WorkbenchToolPayloadMap]) {
   if (!payload) return true;
   if ('validity' in payload && payload.validity === 'demo') return true;
@@ -294,6 +317,67 @@ function inferToolSimulation(payload: WorkbenchToolPayloadMap[keyof WorkbenchToo
     }
   }
   return false;
+}
+
+/**
+ * Phase-1 — Workflow Control Plane. Given a tool id and the current
+ * latest-run map, return the contract gate decision:
+ *   - status: 'ok' | 'simulated' | 'blocked' | 'gated'
+ *   - blockingUpstreamToolIds: which upstream tools are missing or below floor
+ *   - reason: short prose for the UI
+ *
+ * Returns 'ok' when no contract is registered (sidecars without explicit
+ * required inputs collapse to this path).
+ */
+function evaluateContractStatus(
+  toolId: keyof WorkbenchToolPayloadMap,
+  payload: WorkbenchToolPayloadMap[keyof WorkbenchToolPayloadMap],
+  latestByTool: Map<string, WorkbenchRunArtifact>,
+): { status: WorkbenchRunStatus; blockingUpstreamToolIds: string[]; reason: string } {
+  const contract = tryGetToolContract(toolId as string);
+  if (!contract) {
+    return { status: 'ok', blockingUpstreamToolIds: [], reason: '' };
+  }
+  const blocking: string[] = [];
+  const reasons: string[] = [];
+
+  for (const ref of contract.requiredInputs) {
+    if (!ref.required) continue;
+    const upstream = latestByTool.get(ref.toolId);
+    if (!upstream) {
+      blocking.push(ref.toolId);
+      reasons.push(`${ref.toolId.toUpperCase()} payload missing`);
+      continue;
+    }
+    const upstreamPayload = upstream.payloadSnapshot as { validity?: ValidityFloor } | undefined;
+    const upstreamValidity = upstreamPayload?.validity ?? null;
+    const upstreamContract = tryGetToolContract(ref.toolId);
+    if (upstreamContract && upstreamValidity) {
+      if (!meetsValidityFloor(upstreamValidity, upstreamContract.validityBaseline.floor)) {
+        blocking.push(ref.toolId);
+        reasons.push(
+          `${ref.toolId.toUpperCase()} validity ${upstreamValidity} < floor ${upstreamContract.validityBaseline.floor}`,
+        );
+      }
+    }
+    if (upstream.status === 'blocked') {
+      blocking.push(ref.toolId);
+      reasons.push(`${ref.toolId.toUpperCase()} is itself blocked`);
+    }
+  }
+
+  if (blocking.length) {
+    return {
+      status: 'blocked',
+      blockingUpstreamToolIds: Array.from(new Set(blocking)),
+      reason: reasons.join('; '),
+    };
+  }
+
+  if (payload && 'validity' in payload && payload.validity === 'demo') {
+    return { status: 'simulated', blockingUpstreamToolIds: [], reason: 'payload validity is demo' };
+  }
+  return { status: 'ok', blockingUpstreamToolIds: [], reason: '' };
 }
 
 function createRunArtifact<K extends keyof WorkbenchToolPayloadMap>(
@@ -312,6 +396,24 @@ function createRunArtifact<K extends keyof WorkbenchToolPayloadMap>(
   });
   const summary = summarizePayload(toolId, payload);
 
+  // Phase-1 — Workflow Control Plane: contract gate. We compute the
+  // latest-run map once and ask the contract whether all required
+  // upstream payloads are present and meet the floor. The decision lands
+  // on the run artifact as `status` / `blockingUpstreamToolIds` so
+  // downstream UI (Decision Trace) can render it without rerunning the
+  // contract check.
+  const latestByTool = new Map<string, WorkbenchRunArtifact>();
+  state.runArtifacts.forEach((artifact) => {
+    if (!latestByTool.has(artifact.toolId)) latestByTool.set(artifact.toolId, artifact);
+  });
+  const contractDecision = evaluateContractStatus(toolId, payload, latestByTool);
+
+  const isSimulated =
+    contractDecision.status === 'blocked' ||
+    contractDecision.status === 'simulated' ||
+    inferToolSimulation(payload) ||
+    Boolean(state.project?.isDemo);
+
   return {
     id: createId('run'),
     toolId,
@@ -323,7 +425,13 @@ function createRunArtifact<K extends keyof WorkbenchToolPayloadMap>(
     summary: options?.revalidated ? `${summary} · context refreshed` : summary,
     payloadSnapshot: payload,
     createdAt: payload?.updatedAt ?? Date.now(),
-    isSimulated: inferToolSimulation(payload) || Boolean(state.project?.isDemo),
+    isSimulated,
+    status: contractDecision.status,
+    statusReason: contractDecision.reason || undefined,
+    blockingUpstreamToolIds:
+      contractDecision.blockingUpstreamToolIds.length > 0
+        ? contractDecision.blockingUpstreamToolIds
+        : undefined,
   };
 }
 
@@ -901,7 +1009,13 @@ export const useWorkbenchStore = create<WorkbenchState>()(
         }
 
         const stage = getStageForTool(toolId);
-        if (!get().project) {
+        // Phase-1 — Workflow Control Plane: silent demo seeding is gated.
+        // The previous behaviour auto-injected an Artemisinin demo project
+        // on the first tool visit, which let downstream tools paint
+        // "complete" against fabricated state. Now demo seeding only fires
+        // when the URL carries ?demo=1 (preserves the live deploy demo)
+        // or when explicitly invoked via the seedDemoProject action.
+        if (!get().project && shouldAutoSeedDemo()) {
           get().seedDemoProject(toolId);
         }
 
