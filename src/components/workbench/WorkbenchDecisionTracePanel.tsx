@@ -228,7 +228,11 @@ export default function WorkbenchDecisionTracePanel({
                 {run.summary}
               </div>
               <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', fontFamily: T.MONO, fontSize: '9px', color: LABEL }}>
-                <span>evidence · {workflowDecision.missingEvidence.have}</span>
+                <span>
+                  evidence · {run.evidenceSnapshot
+                    ? `${run.evidenceSnapshot.count}${run.evidenceSnapshot.missingEvidence.minRequired > 0 ? `/${run.evidenceSnapshot.missingEvidence.minRequired}` : ''} · ${workflowStatusLabel(run.evidenceSnapshot.status)}`
+                    : workflowDecision.missingEvidence.have}
+                </span>
                 <span>confidence · {run.confidence !== undefined && run.confidence !== null ? run.confidence.toFixed(2) : workflowDecision.latestRunToolId === run.toolId && workflowDecision.confidence !== null ? workflowDecision.confidence.toFixed(2) : 'n/a'}</span>
                 <span>uncertainty · {run.uncertainty !== undefined && run.uncertainty !== null ? run.uncertainty.toFixed(2) : workflowDecision.latestRunToolId === run.toolId && workflowDecision.uncertainty !== null ? workflowDecision.uncertainty.toFixed(2) : 'unknown'}</span>
                 <span>validity · {run.validity ?? (workflowDecision.latestRunToolId === run.toolId ? workflowDecision.validity ?? 'n/a' : 'n/a')}</span>

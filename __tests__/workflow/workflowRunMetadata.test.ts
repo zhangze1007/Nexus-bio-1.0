@@ -1,5 +1,10 @@
 /** @jest-environment node */
 import type { WorkbenchToolPayloadMap } from '../../src/store/workbenchPayloads';
+import type {
+  WorkbenchCanonicalState,
+  WorkbenchWorkflowControlSnapshot,
+} from '../../src/store/workbenchTypes';
+import { sanitizeWorkbenchState } from '../../src/store/workbenchValidation';
 
 type StoreModule = typeof import('../../src/store/workbenchStore');
 
@@ -180,6 +185,12 @@ describe('workflow run artifact metadata (R4)', () => {
       useWorkbenchStore.getState().loopBackWorkflow();
       expect(useWorkbenchStore.getState().workflowControl.iteration).toBe(1);
 
+      useWorkbenchStore.getState().upsertEvidence({
+        sourceKind: 'literature',
+        title: 'Limonene pathway evidence',
+        abstract: '',
+        authors: [],
+      }, { select: true });
       useWorkbenchStore.getState().setToolPayload('pathd', pathd(11));
       useWorkbenchStore.getState().setToolPayload('fbasim', fbasim(false, 0.77, 12));
 
@@ -196,6 +207,17 @@ describe('workflow run artifact metadata (R4)', () => {
         validity: 'partial',
         humanGateRequired: true,
         iteration: 1,
+        evidenceSnapshot: {
+          count: 1,
+          selectedCount: 1,
+          status: 'not-required',
+          missingEvidence: {
+            minRequired: 0,
+            have: 1,
+            kinds: [],
+            missingKinds: [],
+          },
+        },
       });
       expect(fbaRuns[1]).toMatchObject({
         status: 'ok',
@@ -204,6 +226,68 @@ describe('workflow run artifact metadata (R4)', () => {
         validity: 'partial',
         humanGateRequired: false,
         iteration: 0,
+        evidenceSnapshot: {
+          count: 0,
+          selectedCount: 0,
+          status: 'not-required',
+          missingEvidence: {
+            minRequired: 0,
+            have: 0,
+            kinds: [],
+            missingKinds: [],
+          },
+        },
+      });
+    });
+  });
+
+  it('sanitizer roundtrip preserves workflowControl and historical run metadata', () => {
+    withFreshStore(({ useWorkbenchStore }) => {
+      setTarget(useWorkbenchStore, 'limonene');
+      useWorkbenchStore.getState().setToolPayload('pathd', pathd(1));
+      useWorkbenchStore.getState().setToolPayload('fbasim', fbasim(true, 0.12, 2));
+
+      const persistedWorkflow: WorkbenchWorkflowControlSnapshot = {
+        ...useWorkbenchStore.getState().workflowControl,
+        machineState: 'cellfreeReady',
+        status: 'ready',
+        currentToolId: 'dbtlflow',
+        nextRecommendedNode: 'dbtlflow',
+        iteration: 4,
+        missingEvidence: { minRequired: 2, have: 1, kinds: ['literature'] },
+      };
+      const persisted = sanitizeWorkbenchState({
+        ...JSON.parse(JSON.stringify(useWorkbenchStore.getState())),
+        workflowControl: persistedWorkflow,
+      }) as WorkbenchCanonicalState;
+
+      expect(persisted.workflowControl).toMatchObject({
+        machineState: 'cellfreeReady',
+        currentToolId: 'dbtlflow',
+        nextRecommendedNode: 'dbtlflow',
+        iteration: 4,
+        missingEvidence: { minRequired: 2, have: 1, kinds: ['literature'] },
+      });
+      expect(persisted.runArtifacts[0]).toMatchObject({
+        confidence: 1,
+        uncertainty: 0.12,
+        validity: 'partial',
+        humanGateRequired: false,
+        iteration: 0,
+        evidenceSnapshot: {
+          count: 0,
+          selectedCount: 0,
+          status: 'not-required',
+        },
+      });
+
+      useWorkbenchStore.getState().applyCanonicalState(persisted, { markHydrated: true });
+      expect(useWorkbenchStore.getState().workflowControl).toMatchObject({
+        machineState: 'cellfreeReady',
+        currentToolId: 'dbtlflow',
+        nextRecommendedNode: 'dbtlflow',
+        iteration: 4,
+        missingEvidence: { minRequired: 2, have: 1, kinds: ['literature'] },
       });
     });
   });

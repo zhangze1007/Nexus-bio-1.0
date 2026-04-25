@@ -161,6 +161,20 @@ export interface WorkbenchWorkflowControlSnapshot {
   updatedAt: number;
 }
 
+export interface WorkbenchRunEvidenceSnapshot {
+  count: number;
+  selectedCount: number;
+  evidenceItemIds: string[];
+  selectedEvidenceIds: string[];
+  status: 'not-required' | 'satisfied' | 'missing';
+  missingEvidence: {
+    minRequired: number;
+    have: number;
+    kinds: EvidenceSourceKind[];
+    missingKinds: EvidenceSourceKind[];
+  };
+}
+
 export interface WorkbenchRunArtifact {
   id: string;
   toolId: keyof WorkbenchToolPayloadMap;
@@ -201,6 +215,7 @@ export interface WorkbenchRunArtifact {
   validity?: ValidityFloor | null;
   humanGateRequired?: boolean;
   iteration?: number;
+  evidenceSnapshot?: WorkbenchRunEvidenceSnapshot;
 }
 
 export interface WorkbenchBackendMeta {

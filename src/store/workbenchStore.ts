@@ -41,6 +41,7 @@ import {
 import type { WorkbenchRunStatus } from './workbenchTypes';
 import type {
   AxonRunRecord,
+  EvidenceSourceKind,
   NextStepRecommendation,
   StageCheckpoint,
   StructuredAnalysisPayload,
@@ -354,6 +355,47 @@ function payloadValidity(payload: WorkbenchToolPayloadMap[keyof WorkbenchToolPay
   if (!payload || typeof payload !== 'object' || !('validity' in payload)) return null;
   const validity = payload.validity;
   return validity === 'real' || validity === 'partial' || validity === 'demo' ? validity : null;
+}
+
+const EVIDENCE_SOURCE_KINDS: EvidenceSourceKind[] = ['literature', 'analysis', 'tool', 'system'];
+
+function buildRunEvidenceSnapshot(
+  state: Pick<WorkbenchState, 'evidenceItems' | 'selectedEvidenceIds'>,
+  toolId: keyof WorkbenchToolPayloadMap,
+): WorkbenchRunArtifact['evidenceSnapshot'] {
+  const contract = tryGetToolContract(toolId as string);
+  const count = state.evidenceItems.length;
+  const selectedEvidenceIds = state.selectedEvidenceIds.filter((id) =>
+    state.evidenceItems.some((item) => item.id === id),
+  );
+  const haveKinds = new Set(
+    state.evidenceItems
+      .map((item) => item.sourceKind)
+      .filter((kind): kind is EvidenceSourceKind => EVIDENCE_SOURCE_KINDS.includes(kind as EvidenceSourceKind)),
+  );
+  const requiredKinds = contract?.evidenceRequired.kinds ?? [];
+  const missingKinds = requiredKinds.filter((kind) => !haveKinds.has(kind));
+  const minRequired = contract?.evidenceRequired.minItems ?? 0;
+  const status =
+    minRequired === 0 && requiredKinds.length === 0
+      ? 'not-required'
+      : count >= minRequired && missingKinds.length === 0
+        ? 'satisfied'
+        : 'missing';
+
+  return {
+    count,
+    selectedCount: selectedEvidenceIds.length,
+    evidenceItemIds: state.evidenceItems.map((item) => item.id),
+    selectedEvidenceIds,
+    status,
+    missingEvidence: {
+      minRequired,
+      have: count,
+      kinds: requiredKinds,
+      missingKinds,
+    },
+  };
 }
 
 /**
@@ -737,6 +779,7 @@ function createRunArtifact<K extends keyof WorkbenchToolPayloadMap>(
     validity: contractDecision.validity ?? null,
     humanGateRequired: contractDecision.humanGateRequired,
     iteration: getWorkflowActor().getSnapshot().context.iteration,
+    evidenceSnapshot: buildRunEvidenceSnapshot(state, toolId),
   };
 }
 
@@ -1272,12 +1315,7 @@ export const useWorkbenchStore = create<WorkbenchState>()(
             analyzeArtifact: savedState.workflowArtifact
               ? deriveAnalyzeCompatibilityProjection(savedState.workflowArtifact)
               : savedState.analyzeArtifact,
-            workflowControl: buildWorkflowControlSnapshot({
-              ...savedState,
-              analyzeArtifact: savedState.workflowArtifact
-                ? deriveAnalyzeCompatibilityProjection(savedState.workflowArtifact)
-                : savedState.analyzeArtifact,
-            }),
+            workflowControl: savedState.workflowControl,
             backendMeta,
             collaborators,
             experimentRecords,
@@ -1579,10 +1617,7 @@ export const useWorkbenchStore = create<WorkbenchState>()(
           ...sanitized,
           activeArtifactId: sanitized.activeArtifactId ?? sanitized.workflowArtifact?.id ?? null,
           analyzeArtifact: derivedAnalyzeArtifact,
-          workflowControl: buildWorkflowControlSnapshot({
-            ...sanitized,
-            analyzeArtifact: derivedAnalyzeArtifact,
-          }),
+          workflowControl: sanitized.workflowControl,
           syncStatus: options?.conflict ? 'conflict' : options?.synced ? 'synced' : state.syncStatus,
           syncError: null,
           hydratedFromServer: options?.markHydrated ? true : state.hydratedFromServer,
@@ -1641,10 +1676,7 @@ export const useWorkbenchStore = create<WorkbenchState>()(
               ...canonicalState,
               activeArtifactId: canonicalState.activeArtifactId ?? canonicalState.workflowArtifact?.id ?? state.activeArtifactId,
               analyzeArtifact: derivedAnalyzeArtifact,
-              workflowControl: buildWorkflowControlSnapshot({
-                ...canonicalState,
-                analyzeArtifact: derivedAnalyzeArtifact,
-              }),
+              workflowControl: canonicalState.workflowControl,
               backendMeta,
               collaborators,
               experimentRecords,
@@ -1699,12 +1731,7 @@ export const useWorkbenchStore = create<WorkbenchState>()(
             analyzeArtifact: savedState.workflowArtifact
               ? deriveAnalyzeCompatibilityProjection(savedState.workflowArtifact)
               : savedState.analyzeArtifact,
-            workflowControl: buildWorkflowControlSnapshot({
-              ...savedState,
-              analyzeArtifact: savedState.workflowArtifact
-                ? deriveAnalyzeCompatibilityProjection(savedState.workflowArtifact)
-                : savedState.analyzeArtifact,
-            }),
+            workflowControl: savedState.workflowControl,
             backendMeta,
             collaborators,
             experimentRecords,
@@ -1743,12 +1770,7 @@ export const useWorkbenchStore = create<WorkbenchState>()(
               analyzeArtifact: conflictState.workflowArtifact
                 ? deriveAnalyzeCompatibilityProjection(conflictState.workflowArtifact)
                 : conflictState.analyzeArtifact,
-              workflowControl: buildWorkflowControlSnapshot({
-                ...conflictState,
-                analyzeArtifact: conflictState.workflowArtifact
-                  ? deriveAnalyzeCompatibilityProjection(conflictState.workflowArtifact)
-                  : conflictState.analyzeArtifact,
-              }),
+              workflowControl: conflictState.workflowControl,
               backendMeta,
               collaborators,
               experimentRecords,
@@ -1792,12 +1814,7 @@ export const useWorkbenchStore = create<WorkbenchState>()(
               analyzeArtifact: sanitized.workflowArtifact
                 ? deriveAnalyzeCompatibilityProjection(sanitized.workflowArtifact)
                 : sanitized.analyzeArtifact,
-              workflowControl: buildWorkflowControlSnapshot({
-                ...sanitized,
-                analyzeArtifact: sanitized.workflowArtifact
-                  ? deriveAnalyzeCompatibilityProjection(sanitized.workflowArtifact)
-                  : sanitized.analyzeArtifact,
-              }),
+              workflowControl: sanitized.workflowControl,
             }
           : currentState;
       },

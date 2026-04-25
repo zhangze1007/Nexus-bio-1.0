@@ -19,6 +19,7 @@ import type {
   WorkbenchEvidenceItem,
   WorkbenchProjectBrief,
   WorkbenchRunArtifact,
+  WorkbenchRunEvidenceSnapshot,
   WorkbenchSyncAuditEntry,
   WorkbenchToolRun,
   WorkbenchWorkflowControlSnapshot,
@@ -327,6 +328,30 @@ function sanitizeToolPayloads(value: unknown): WorkbenchToolPayloadMap {
   return Object.fromEntries(entries) as WorkbenchToolPayloadMap;
 }
 
+function sanitizeEvidenceSnapshot(value: unknown): WorkbenchRunEvidenceSnapshot | undefined {
+  if (!isRecord(value)) return undefined;
+  const missingEvidence: Record<string, unknown> = isRecord(value.missingEvidence) ? value.missingEvidence : {};
+  const status =
+    value.status === 'satisfied' ||
+    value.status === 'missing' ||
+    value.status === 'not-required'
+      ? value.status
+      : 'not-required';
+  return {
+    count: Math.max(0, asNumber(value.count)),
+    selectedCount: Math.max(0, asNumber(value.selectedCount)),
+    evidenceItemIds: asStringArray(value.evidenceItemIds),
+    selectedEvidenceIds: asStringArray(value.selectedEvidenceIds),
+    status,
+    missingEvidence: {
+      minRequired: Math.max(0, asNumber(missingEvidence.minRequired)),
+      have: Math.max(0, asNumber(missingEvidence.have)),
+      kinds: asStringArray(missingEvidence.kinds) as WorkbenchRunEvidenceSnapshot['missingEvidence']['kinds'],
+      missingKinds: asStringArray(missingEvidence.missingKinds) as WorkbenchRunEvidenceSnapshot['missingEvidence']['missingKinds'],
+    },
+  };
+}
+
 function sanitizeRunArtifact(value: unknown): WorkbenchRunArtifact | null {
   if (!isRecord(value) || typeof value.id !== 'string' || typeof value.toolId !== 'string' || !isRecord(value.payloadSnapshot)) return null;
   const execution = isRecord(value.execution)
@@ -352,6 +377,7 @@ function sanitizeRunArtifact(value: unknown): WorkbenchRunArtifact | null {
     value.status === 'demoOnly'
       ? value.status
       : undefined;
+  const evidenceSnapshot = sanitizeEvidenceSnapshot(value.evidenceSnapshot);
   return {
     id: value.id,
     toolId: value.toolId as WorkbenchRunArtifact['toolId'],
@@ -384,6 +410,7 @@ function sanitizeRunArtifact(value: unknown): WorkbenchRunArtifact | null {
       ? { humanGateRequired: value.humanGateRequired }
       : {}),
     ...(typeof value.iteration === 'number' ? { iteration: Math.max(0, value.iteration) } : {}),
+    ...(evidenceSnapshot ? { evidenceSnapshot } : {}),
   };
 }
 
