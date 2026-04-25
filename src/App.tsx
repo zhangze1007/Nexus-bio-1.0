@@ -59,10 +59,10 @@ export default function App() {
           <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
             <Reveal style={{ marginBottom: '48px' }}>
               <h2 style={{ fontFamily: H, fontSize: 'clamp(1.8rem,3.5vw,2.8rem)', fontWeight: 700, color: '#FFFFFF', letterSpacing: '-0.025em', lineHeight: 1.1, margin: '0 0 14px' }}>
-                Research Collaboration
+                Get in Touch
               </h2>
               <p style={{ fontFamily: H, fontSize: '14px', color: 'rgba(255,255,255,0.35)', margin: 0, lineHeight: 1.65, maxWidth: '420px' }}>
-                Open to platform walkthroughs, technical collaboration, pilot research projects, and serious product feedback.
+                Open to research collaborations, consulting inquiries, and investment discussions.
               </p>
             </Reveal>
 
@@ -72,7 +72,7 @@ export default function App() {
                 icon={<Mail size={16} style={{ color: 'rgba(255,255,255,0.55)' }} />}
                 label="Email"
                 title="fuchanze@gmail.com"
-                description="Platform demos · Research pilots · Technical collaboration"
+                description="Research collaborations · Consulting · General inquiries"
                 footer="Send email"
               />
               <HomeInteractiveCard
@@ -101,9 +101,9 @@ export default function App() {
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
               {[
-                { icon: <ShieldCheck size={10} />, label: '4-Stage Workbench' },
-                { icon: <Zap size={10} />, label: '13 Specialized Tools' },
-                { icon: <BarChart3 size={10} />, label: 'Evidence + Simulation' },
+                { icon: <ShieldCheck size={10} />, label: 'WCAG 2.2 AA' },
+                { icon: <Zap size={10} />, label: 'INP ≤ 50ms' },
+                { icon: <BarChart3 size={10} />, label: 'WebGL2 + FSM' },
               ].map(({ icon, label }) => (
                 <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '3px 8px', background: 'rgba(255,255,255,0.03)', border: '0.5px solid rgba(255,255,255,0.07)' }}>
                   <span style={{ color: 'rgba(255,255,255,0.25)' }}>{icon}</span>

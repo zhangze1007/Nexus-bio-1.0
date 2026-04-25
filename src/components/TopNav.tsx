@@ -16,7 +16,7 @@ const BRAND = "'Space Grotesk',-apple-system,sans-serif";
 const NAV_LINKS: [string, string][] = [
   ['Home',     '/'],
   ['Research', '/research'],
-  ['Workbench','/tools'],
+  ['Tools',    '/tools'],
   ['Analyze',  '/analyze'],
 ];
 
@@ -93,7 +93,7 @@ export default function TopNav() {
         background: 'rgba(34,211,238,0.05)',
         border: '1px solid rgba(255,255,255,0.07)',
       }}>
-        4-stage workflow
+        workbench
       </div>
     </nav>
   );

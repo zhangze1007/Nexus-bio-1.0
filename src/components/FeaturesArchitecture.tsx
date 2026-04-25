@@ -1,273 +1,337 @@
 'use client';
 
-import Link from 'next/link';
 import { motion, useInView } from 'framer-motion';
 import { useRef } from 'react';
 import {
   Activity,
-  BrainCircuit,
+  AlertTriangle,
   Dna,
-  FlaskConical,
   Gauge,
-  GitBranch,
-  Layers3,
+  Layers,
+  Sparkles,
+  Zap,
   type LucideIcon,
 } from 'lucide-react';
 import HomeInteractiveCard from './HomeInteractiveCard';
-import { TOOL_BY_ID } from './tools/shared/toolRegistry';
-import { WORKBENCH_STAGES } from './tools/shared/workbenchConfig';
 
-const HEADER = "'Public Sans',-apple-system,sans-serif";
-const MONO = "'IBM Plex Mono','JetBrains Mono','Fira Code',monospace";
-
-type StageOutputMap = Record<string, string[]>;
-
-const STAGE_OUTPUTS: StageOutputMap = {
-  'stage-1': ['Pathway object', 'Node evidence trace', 'Target intake'],
-  'stage-2': ['Flux + deltaG view', 'Catalyst ranking', 'Bottleneck signals'],
-  'stage-3': ['Chassis edits', 'Gene-circuit logic', 'Control stability'],
-  'stage-4': ['Cell-free validation', 'DBTL loop', 'Omics and spatial feedback'],
-};
+const HEADER = "'Inter',-apple-system,sans-serif";
+const MONO = "'JetBrains Mono','Fira Code',monospace";
 
 interface EngineBlock {
   label: string;
   title: string;
   description: string;
+  models: Array<{
+    name: string;
+    detail: string;
+  }>;
   notes: string[];
   icon: LucideIcon;
-  toolIds: string[];
 }
 
 const ENGINE_BLOCKS: EngineBlock[] = [
   {
-    label: 'Route Ranking',
-    title: 'Pathway design stays tied to yield, burden, and plausibility',
+    label: 'Safety',
+    title: 'Cellular Solvency & Toxicity',
     description:
-      'Stage 1 is not just a literature summary. Route ranking reads pathway length, cofactor burden, and thermodynamic feasibility together so the design surface already carries engineering judgment.',
-    notes: [
-      'Paper intake becomes a route object instead of a static note.',
-      'Node drill-down keeps evidence, structures, and local kinetics attached.',
+      'Host tolerance, energetic solvency, and impurity burden are read as one viability envelope so route promise never detaches from what a cell can actually sustain.',
+    models: [
+      {
+        name: 'Toxicity window',
+        detail: 'Exposure is judged against viability thresholds rather than generic hazard flags.',
+      },
+      {
+        name: 'Cellular solvency',
+        detail: 'Energy demand, impurity load, and growth pressure remain visible inside one viability picture.',
+      },
     ],
-    icon: GitBranch,
-    toolIds: ['pathd', 'cethx'],
+    notes: [
+      'Defines whether a route is biologically tolerable before downstream ranking begins.',
+      'Keeps pathway ambition grounded in host survivability and burden.',
+    ],
+    icon: AlertTriangle,
   },
   {
-    label: 'System Quantification',
-    title: 'Flux balance and thermodynamics turn route ideas into constraints',
+    label: 'Purification',
+    title: 'Downstream Processing (DSP) Intelligence',
     description:
-      'FBASIM and CETHX quantify whether a route is viable under growth, energy, and cofactor limits, so Stage 2 answers more than "can this reaction exist?".',
+      'Purification difficulty is treated as an engineering cost through structural similarity, co-elution pressure, and separation burden rather than left for downstream surprise.',
+    models: [
+      {
+        name: 'Similarity screening',
+        detail: 'Fingerprint similarity estimates separation conflict and purification ambiguity.',
+      },
+      {
+        name: 'Separation burden',
+        detail: 'DSP cost stays attached to the route instead of surfacing only at the end.',
+      },
+    ],
     notes: [
-      'Flux, ATP, and deltaG pressure remain visible in one workflow.',
-      'Bottlenecks can be carried forward into catalyst or chassis decisions.',
+      'Keeps downstream processing visible at the same level as upstream pathway design.',
+      'Preserves one of Nexus-Bio’s signature engineering distinctions.',
+    ],
+    icon: Layers,
+  },
+  {
+    label: 'Yield',
+    title: 'Genetic ROI & Carbon Efficiency',
+    description:
+      'Carbon retention is treated as an engineering return signal so atom economy, diversion loss, and chassis burden stay visible during route choice.',
+    models: [
+      {
+        name: 'Carbon retention',
+        detail: 'Product yield is judged by retained carbon, not only by headline titer or flux volume.',
+      },
+      {
+        name: 'Genetic ROI',
+        detail: 'Genetic burden and wasted atoms are read as engineering loss against pathway return.',
+      },
+    ],
+    notes: [
+      'Owns route economics rather than stoichiometric feasibility.',
+      'Keeps ROI grounded in measurable carbon efficiency instead of generic optimization language.',
+    ],
+    icon: Zap,
+  },
+  {
+    label: 'Constraint',
+    title: 'Stoichiometric Flux Solver',
+    description:
+      'Pathway performance is solved as a constrained stoichiometric system so growth, production, and limiting resources remain on one quantitative state.',
+    models: [
+      {
+        name: 'Steady-state LP',
+        detail: 'Constraint-based flux optimization runs under stoichiometric balance and bounded exchange.',
+      },
+      {
+        name: 'Shadow-price sensitivity',
+        detail: 'Dual sensitivities expose which substrates and cofactors are limiting the design.',
+      },
+    ],
+    notes: [
+      'Backs FBASIM growth, ATP yield, and shadow-price readouts.',
+      'Owns mass-balance solution, not route economics or thermodynamic plausibility.',
     ],
     icon: Activity,
-    toolIds: ['fbasim', 'cethx'],
   },
   {
-    label: 'Catalyst Programs',
-    title: 'Catalyst design and evolution are treated as campaigns, not isolated scores',
+    label: 'Energy',
+    title: 'Cofactor Ledger',
     description:
-      'CATDES and PROEVOL turn candidate enzymes into ranked design programs, where affinity, burden, library narrowing, and next-round strategy stay connected.',
-    notes: [
-      'The platform helps compare candidate enzymes inside the route context.',
-      'Directed evolution is framed as a multi-round decision surface.',
+      'ATP, NADH, and NADPH accounting stays attached to pathway nodes and burden ledgers so energetic cost is readable directly from the design surface.',
+    models: [
+      {
+        name: 'ATP accounting',
+        detail: 'Energetic turnover is accumulated across reactions instead of hidden behind aggregate scores.',
+      },
+      {
+        name: 'Redox accounting',
+        detail: 'Reducing-equivalent demand stays visible when routes compete for the same cofactor pool.',
+      },
     ],
-    icon: Dna,
-    toolIds: ['catdes', 'proevol'],
+    notes: [
+      'Owns energetic bookkeeping rather than reaction-level feasibility.',
+      'Remains one of the clearest quantitative signatures in the platform.',
+    ],
+    icon: Zap,
   },
   {
-    label: 'Control Layer',
-    title: 'Chassis, circuits, and dynamics sit in the main path, not on the side',
+    label: 'Feasibility',
+    title: 'Thermodynamic Feasibility',
     description:
-      'GENMIM, GECAIR, and DYNCON answer the next question after route design: what host edits and control logic are needed to keep the system stable in operation?',
+      'Free-energy plausibility is evaluated explicitly so route viability is grounded in driving force, reversibility, and reaction slack rather than topology alone.',
+    models: [
+      {
+        name: 'Gibbs free energy',
+        detail: 'Reaction favorability is interpreted against the current concentration state, not just network shape.',
+      },
+      {
+        name: 'Reaction reversibility',
+        detail: 'Thermodynamic slack and equilibrium pressure remain visible at the reaction level.',
+      },
+    ],
     notes: [
-      'Genome intervention, logic, and dynamic response form one layer.',
-      'Dynamic control is modeled as a stability problem, not a decorative chart.',
+      'Owns reaction plausibility rather than host toxicity or cofactor bookkeeping.',
+      'Keeps route chemistry legible inside PATHD and thermodynamic analysis.',
+    ],
+    icon: Activity,
+  },
+  {
+    label: 'Dynamics',
+    title: 'Regulatory Control Dynamics',
+    description:
+      'Time-dependent pathway behavior is modeled with enzyme kinetics, Hill regulation, Monod growth, and RK4 integration so stability is treated as a control problem.',
+    models: [
+      {
+        name: 'Kinetic regulation',
+        detail: 'Michaelis-Menten and Hill responses define the local logic of enzyme and circuit control.',
+      },
+      {
+        name: 'Control response',
+        detail: 'Monod growth and RK4 time-stepping keep stability, lag, and overshoot legible.',
+      },
+    ],
+    notes: [
+      'Owns closed-loop behavior across PATHD kinetics, GECAIR, and DYNCON.',
+      'Distinct from cell-free validation, which focuses on resource-coupled assay behavior.',
     ],
     icon: Gauge,
-    toolIds: ['genmim', 'gecair', 'dyncon'],
   },
   {
-    label: 'Validation Loop',
-    title: 'Cell-free and DBTL close the gap between design and experiment',
+    label: 'Catalysis',
+    title: 'Catalyst Design & Ranking',
     description:
-      'CELLFREE and DBTLflow make testing first-class. The site now emphasizes that validation is part of the product architecture, not a postscript after design.',
-    notes: [
-      'Fast assay-scale validation reduces the cost of wrong decisions.',
-      'The loop matters because Stage 4 can feed results back upstream.',
+      'Catalyst choice couples binding plausibility, sequence design, and multi-objective ranking so enzyme selection remains tied to system viability.',
+    models: [
+      {
+        name: 'Binding design',
+        detail: 'Affinity and structural fit act as design constraints within catalyst selection.',
+      },
+      {
+        name: 'Pareto ranking',
+        detail: 'Candidates are compared across burden, yield, and route quality at the same time.',
+      },
     ],
-    icon: FlaskConical,
-    toolIds: ['cellfree', 'dbtlflow'],
+    notes: [
+      'Owns catalyst choice, not the adaptive search that follows it.',
+      'Keeps molecular design tied to pathway-level trade-offs.',
+    ],
+    icon: Sparkles,
+  },
+  {
+    label: 'Evolution',
+    title: 'Directed Evolution Campaigns',
+    description:
+      'Directed evolution is framed as a campaign over variant populations, where rounds, survivor families, lineage persistence, and next-round strategy matter more than a single abstract landscape score.',
+    models: [
+      {
+        name: 'Round selection',
+        detail: 'Each library is filtered into survivors and rejected branches under an explicit stability and burden-aware campaign rule.',
+      },
+      {
+        name: 'Lineage monitoring',
+        detail: 'Campaign quality is judged by lineage persistence, mutation accumulation, diversity retention, and convergence signals.',
+      },
+    ],
+    notes: [
+      'Owns evolution campaign management rather than catalyst design logic or residue-level interpretation.',
+      'Keeps survivor families and next-round decisions legible at the architecture level.',
+    ],
+    icon: Dna,
+  },
+  {
+    label: 'Selection',
+    title: 'Genetic Intervention Scoring',
+    description:
+      'Genome and control interventions are ranked with explicit knockdown efficiency and viability penalties so design choice stays readable instead of disappearing into heuristics.',
+    models: [
+      {
+        name: 'Intervention ranking',
+        detail: 'Interventions are scored with explicit knockdown efficiency and growth-impact terms.',
+      },
+      {
+        name: 'Growth-impact penalty',
+        detail: 'Selection stays readable because the growth-cost tradeoff is surfaced directly.',
+      },
+    ],
+    notes: [
+      'Owns intervention choice rather than catalyst design or evolution search.',
+      'Keeps CRISPRi-style prioritization quantitative and bounded.',
+    ],
+    icon: Activity,
+  },
+  {
+    label: 'Validation',
+    title: 'Cell-Free TXTL Validation',
+    description:
+      'Cell-free validation is modeled as a resource-aware TXTL system so expression burden, reagent depletion, and translation capacity remain measurable before in vivo transfer.',
+    models: [
+      {
+        name: 'TXTL resource model',
+        detail: 'Protein synthesis is tied to ribosome and transcript competition instead of a flat yield lookup.',
+      },
+      {
+        name: 'Energy regeneration',
+        detail: 'Expression demand is balanced against depletion and regeneration inside the assay mix.',
+      },
+    ],
+    notes: [
+      'Owns assay-scale validation rather than pathway-scale control dynamics.',
+      'Keeps TXTL visible as a quantitative bridge between design and experiment.',
+    ],
+    icon: Zap,
   },
   {
     label: 'Inference',
-    title: 'Multi-omics and spatial layers feed the next design cycle',
+    title: 'Omics & Spatial Inference',
     description:
-      'MULTIO and SCSPATIAL turn later-stage assay data into actionable pressure signals, so the platform can move from descriptive plots back to route and host decisions.',
-    notes: [
-      'High-dimensional data is framed as comparative evidence, not decoration.',
-      'AI support helps synthesize, but the quantitative modules remain primary.',
+      'Omics interpretation uses low-rank factorization, linear embeddings, and spatial autocorrelation to turn assay and spatial layers into structured bottleneck evidence.',
+    models: [
+      {
+        name: 'Latent factor model',
+        detail: 'Latent factors compress assay layers into interpretable biological pressure axes.',
+      },
+      {
+        name: 'Spatial autocorrelation',
+        detail: 'Local structure is surfaced quantitatively rather than treated as visual decoration.',
+      },
     ],
-    icon: Layers3,
-    toolIds: ['multio', 'scspatial', 'nexai'],
+    notes: [
+      'Owns evidence extraction from assay layers rather than generative pathway design.',
+      'Keeps omics and spatial statistics visible as one quantitative inference family.',
+    ],
+    icon: Layers,
   },
 ];
 
-const PLATFORM_PRINCIPLES = [
-  {
-    label: 'One Research Object',
-    detail: 'The same pathway or construct should survive handoff between modules instead of being recreated from scratch in each page.',
-  },
-  {
-    label: 'Evidence Over Ornament',
-    detail: 'Scientific credibility comes from linked evidence, active constraints, and visible assumptions, not from generic dashboard cards.',
-  },
-  {
-    label: 'Iteration Is Core',
-    detail: 'Testing, omics, and spatial readouts should feed the next round of design rather than end as passive reports.',
-  },
-];
-
-function StageCard({
-  stage,
-  index,
-}: {
-  stage: typeof WORKBENCH_STAGES[number];
-  index: number;
-}) {
-  const ref = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { once: true, margin: '-70px' });
-  const defaultTool = TOOL_BY_ID[stage.defaultToolId];
-  const outputs = STAGE_OUTPUTS[stage.id] ?? [];
-
+function ModelStack({ models }: { models: EngineBlock['models'] }) {
   return (
-    <motion.div
-      ref={ref}
-      initial={{ opacity: 0, y: 28 }}
-      animate={inView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.58, delay: 0.08 * index, ease: [0.22, 1, 0.36, 1] }}
-      style={{ minHeight: '100%' }}
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '10px',
+        padding: '14px',
+        borderRadius: '14px',
+        background: 'linear-gradient(180deg, rgba(255,255,255,0.045) 0%, rgba(255,255,255,0.018) 100%)',
+        border: '0.5px solid rgba(255,255,255,0.09)',
+      }}
     >
-      <Link
-        href={defaultTool?.href ?? '/tools'}
-        className="nb-home-stage-card"
-        style={{
-          minHeight: '100%',
-          borderRadius: '22px',
-          border: '1px solid rgba(255,255,255,0.08)',
-          background: `linear-gradient(160deg, rgba(255,255,255,0.05) 0%, ${stage.accent}26 42%, rgba(255,255,255,0.025) 100%)`,
-          display: 'grid',
-          gap: '18px',
-          padding: '20px',
-          textDecoration: 'none',
-          boxShadow: '0 16px 36px rgba(0,0,0,0.18)',
-        }}
-      >
-        <div style={{ display: 'grid', gap: '8px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-            <span
-              style={{
-                padding: '4px 9px',
-                borderRadius: '999px',
-                border: `1px solid ${stage.accent}80`,
-                background: `${stage.accent}26`,
-                fontFamily: MONO,
-                fontSize: '10px',
-                color: 'rgba(255,255,255,0.84)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.08em',
-              }}
-            >
-              {stage.shortLabel}
-            </span>
-            <span
-              style={{
-                fontFamily: MONO,
-                fontSize: '10px',
-                color: 'rgba(255,255,255,0.34)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.08em',
-              }}
-            >
-              {stage.toolIds.length} tool{stage.toolIds.length > 1 ? 's' : ''}
-            </span>
-          </div>
-
-          <div
+      {models.map((model) => (
+        <div
+          key={model.name}
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '4px',
+          }}
+        >
+          <span
             style={{
               fontFamily: HEADER,
-              fontSize: '22px',
-              fontWeight: 700,
-              color: '#FFFFFF',
-              letterSpacing: '-0.02em',
-              lineHeight: 1.08,
+              fontSize: '11px',
+              fontWeight: 600,
+              lineHeight: 1.4,
+              color: 'rgba(255,255,255,0.84)',
+              letterSpacing: '-0.01em',
             }}
           >
-            {stage.label}
-          </div>
-
-          <div
+            {model.name}
+          </span>
+          <span
             style={{
               fontFamily: HEADER,
-              fontSize: '13px',
-              lineHeight: 1.68,
-              color: 'rgba(255,255,255,0.58)',
+              fontSize: '11px',
+              lineHeight: 1.6,
+              color: 'rgba(255,255,255,0.46)',
+              letterSpacing: '-0.005em',
             }}
           >
-            {stage.description}
-          </div>
+            {model.detail}
+          </span>
         </div>
-
-        <div style={{ display: 'grid', gap: '10px' }}>
-          <div style={{ fontFamily: MONO, fontSize: '10px', color: 'rgba(255,255,255,0.34)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-            Core outputs
-          </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-            {outputs.map((output) => (
-              <span
-                key={output}
-                style={{
-                  padding: '6px 10px',
-                  borderRadius: '999px',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  background: 'rgba(255,255,255,0.045)',
-                  fontFamily: HEADER,
-                  fontSize: '11px',
-                  color: 'rgba(255,255,255,0.72)',
-                }}
-              >
-                {output}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        <div style={{ display: 'grid', gap: '10px', marginTop: 'auto' }}>
-          <div style={{ fontFamily: MONO, fontSize: '10px', color: 'rgba(255,255,255,0.34)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-            Tools in this stage
-          </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-            {stage.toolIds.map((toolId) => (
-              <span
-                key={toolId}
-                style={{
-                  padding: '6px 10px',
-                  borderRadius: '10px',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  background: 'rgba(10,13,20,0.26)',
-                  fontFamily: MONO,
-                  fontSize: '10px',
-                  color: 'rgba(255,255,255,0.68)',
-                  letterSpacing: '0.03em',
-                }}
-              >
-                {TOOL_BY_ID[toolId]?.shortLabel ?? toolId.toUpperCase()}
-              </span>
-            ))}
-          </div>
-        </div>
-      </Link>
-    </motion.div>
+      ))}
+    </div>
   );
 }
 
@@ -281,32 +345,29 @@ function EngineCard({ block, index }: { block: EngineBlock; index: number }) {
       ref={ref}
       initial={{ opacity: 0, y: 28 }}
       animate={inView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.58, delay: 0.06 * index, ease: [0.22, 1, 0.36, 1] }}
+      transition={{ duration: 0.6, delay: 0.08 * index, ease: [0.22, 1, 0.36, 1] }}
       style={{ minHeight: '100%' }}
     >
       <HomeInteractiveCard
-        icon={<Icon size={16} style={{ color: 'rgba(255,255,255,0.66)' }} />}
+        icon={<Icon size={16} style={{ color: 'rgba(255,255,255,0.62)' }} />}
         label={block.label}
         title={block.title}
         description={block.description}
-        labelStyle={{ color: 'rgba(255,255,255,0.34)', marginBottom: '8px' }}
-        titleStyle={{ fontSize: '18px', fontWeight: 680, marginBottom: '10px', letterSpacing: '-0.02em' }}
-        descriptionStyle={{ color: 'rgba(255,255,255,0.42)' }}
+        labelStyle={{ color: 'rgba(255,255,255,0.32)', marginBottom: '7px' }}
+        titleStyle={{ fontSize: '17px', fontWeight: 650, marginBottom: '10px', letterSpacing: '-0.016em' }}
+        descriptionStyle={{ color: 'rgba(255,255,255,0.4)' }}
         focusable
-        style={{
-          border: '1px solid rgba(255,255,255,0.08)',
-          background: 'linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.02) 100%)',
-        }}
       >
-        <div style={{ display: 'grid', gap: '14px' }}>
-          <div style={{ display: 'grid', gap: '9px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <ModelStack models={block.models} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '9px' }}>
             {block.notes.map((note) => (
-              <div key={note} style={{ display: 'flex', alignItems: 'flex-start', gap: '9px' }}>
+              <div key={note} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
                 <div
                   style={{
-                    width: '4px',
-                    height: '4px',
-                    borderRadius: '999px',
+                    width: '3px',
+                    height: '3px',
+                    borderRadius: '50%',
                     background: 'rgba(255,255,255,0.34)',
                     marginTop: '8px',
                     flexShrink: 0,
@@ -316,34 +377,13 @@ function EngineCard({ block, index }: { block: EngineBlock; index: number }) {
                   style={{
                     fontFamily: HEADER,
                     fontSize: '11px',
-                    color: 'rgba(255,255,255,0.38)',
+                    color: 'rgba(255,255,255,0.36)',
                     lineHeight: 1.62,
                   }}
                 >
                   {note}
                 </span>
               </div>
-            ))}
-          </div>
-
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-            {block.toolIds.map((toolId) => (
-              <span
-                key={toolId}
-                style={{
-                  padding: '6px 9px',
-                  borderRadius: '999px',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  background: toolId === 'nexai' ? 'rgba(198,219,255,0.07)' : 'rgba(255,255,255,0.045)',
-                  fontFamily: MONO,
-                  fontSize: '10px',
-                  color: 'rgba(255,255,255,0.68)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.04em',
-                }}
-              >
-                {TOOL_BY_ID[toolId]?.shortLabel ?? toolId.toUpperCase()}
-              </span>
             ))}
           </div>
         </div>
@@ -358,230 +398,76 @@ export default function FeaturesArchitecture() {
 
   return (
     <section
-      id="workflow"
+      id="architecture"
       ref={sectionRef}
-      style={{ padding: 'clamp(72px,10vw,124px) clamp(16px,4vw,40px)', background: '#000' }}
+      style={{ padding: 'clamp(64px,10vw,120px) clamp(16px,4vw,40px)', background: '#000' }}
     >
-      <div style={{ maxWidth: '1280px', margin: '0 auto', display: 'grid', gap: '56px' }}>
-        <div style={{ display: 'grid', gap: '18px' }}>
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            animate={inView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-            style={{ display: 'grid', gap: '14px', maxWidth: '860px' }}
-          >
-            <span
-              style={{
-                fontFamily: MONO,
-                fontSize: '10px',
-                color: 'rgba(255,255,255,0.32)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.14em',
-              }}
-            >
-              4-stage platform architecture
-            </span>
-            <h2
-              style={{
-                fontFamily: HEADER,
-                fontSize: 'clamp(2rem,4vw,3.4rem)',
-                fontWeight: 700,
-                color: '#FFFFFF',
-                letterSpacing: '-0.03em',
-                lineHeight: 1.02,
-                margin: 0,
-              }}
-            >
-              The site now leads with the workflow the product actually implements
-            </h2>
-            <p
-              style={{
-                fontFamily: HEADER,
-                fontSize: '15px',
-                color: 'rgba(255,255,255,0.5)',
-                margin: 0,
-                lineHeight: 1.74,
-                maxWidth: '760px',
-              }}
-            >
-              The original website leaned heavily on individual features. This pass reshapes the
-              story around the Nexus-Bio workbench itself: a staged flow from route discovery to
-              simulation, chassis/control, and validation, with AI support layered on top rather
-              than replacing the quantitative tools underneath.
-            </p>
-          </motion.div>
-
-          <div className="nb-home-stage-grid">
-            {WORKBENCH_STAGES.map((stage, index) => (
-              <StageCard key={stage.id} stage={stage} index={index} />
-            ))}
-          </div>
-        </div>
-
-        <div style={{ display: 'grid', gap: '18px' }}>
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            animate={inView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.6, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
-            style={{ display: 'grid', gap: '14px', maxWidth: '860px' }}
-          >
-            <span
-              style={{
-                fontFamily: MONO,
-                fontSize: '10px',
-                color: 'rgba(255,255,255,0.32)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.14em',
-              }}
-            >
-              Quantitative engines
-            </span>
-            <h3
-              style={{
-                fontFamily: HEADER,
-                fontSize: 'clamp(1.6rem,3vw,2.4rem)',
-                fontWeight: 700,
-                color: '#FFFFFF',
-                letterSpacing: '-0.02em',
-                lineHeight: 1.08,
-                margin: 0,
-              }}
-            >
-              Core modules are explained as research decisions, not a flat tool list
-            </h3>
-            <p
-              style={{
-                fontFamily: HEADER,
-                fontSize: '14px',
-                color: 'rgba(255,255,255,0.48)',
-                margin: 0,
-                lineHeight: 1.72,
-                maxWidth: '780px',
-              }}
-            >
-              Each engine below is framed around the question it answers in the workflow, which
-              makes the website read closer to the PDF and the live product: serious, staged, and
-              grounded in constraints instead of feature slogans.
-            </p>
-          </motion.div>
-
-          <div className="nb-home-engine-grid">
-            {ENGINE_BLOCKS.map((block, index) => (
-              <EngineCard key={block.title} block={block} index={index} />
-            ))}
-          </div>
-        </div>
-
+      <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.6, delay: 0.12, ease: [0.22, 1, 0.36, 1] }}
-          style={{
-            borderRadius: '26px',
-            border: '1px solid rgba(255,255,255,0.08)',
-            background: 'linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.02) 100%)',
-            padding: '22px',
-            display: 'grid',
-            gap: '18px',
-          }}
+          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          style={{ marginBottom: '48px' }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-            <BrainCircuit size={16} color="rgba(255,255,255,0.52)" />
-            <span
-              style={{
-                fontFamily: MONO,
-                fontSize: '10px',
-                color: 'rgba(255,255,255,0.34)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.12em',
-              }}
-            >
-              Platform principles
-            </span>
-          </div>
-
-          <div className="nb-home-principle-grid">
-            {PLATFORM_PRINCIPLES.map((item) => (
-              <div
-                key={item.label}
-                style={{
-                  borderRadius: '18px',
-                  border: '1px solid rgba(255,255,255,0.07)',
-                  background: 'rgba(255,255,255,0.03)',
-                  padding: '16px',
-                  display: 'grid',
-                  gap: '8px',
-                }}
-              >
-                <div
-                  style={{
-                    fontFamily: HEADER,
-                    fontSize: '15px',
-                    fontWeight: 700,
-                    color: '#FFFFFF',
-                    letterSpacing: '-0.01em',
-                  }}
-                >
-                  {item.label}
-                </div>
-                <div
-                  style={{
-                    fontFamily: HEADER,
-                    fontSize: '13px',
-                    color: 'rgba(255,255,255,0.48)',
-                    lineHeight: 1.68,
-                  }}
-                >
-                  {item.detail}
-                </div>
-              </div>
-            ))}
-          </div>
+          <h2
+            style={{
+              fontFamily: HEADER,
+              fontSize: 'clamp(1.8rem,3.5vw,2.8rem)',
+              fontWeight: 700,
+              color: '#FFFFFF',
+              letterSpacing: '-0.025em',
+              lineHeight: 1.1,
+              margin: '0 0 14px',
+            }}
+          >
+            Engine Architecture
+          </h2>
+          <p
+            style={{
+              fontFamily: HEADER,
+              fontSize: '14px',
+              color: 'rgba(255,255,255,0.35)',
+              margin: '0 0 12px',
+              lineHeight: 1.65,
+              maxWidth: '760px',
+            }}
+          >
+            Nexus-Bio is powered by a matrix of quantitative engines behind the platform:
+            flux solvers, carbon and cofactor ledgers, DSP and toxicity screens, dynamic control,
+            catalytic search, and validation inference that all carry real computational identity.
+          </p>
+          <p
+            style={{
+              fontFamily: MONO,
+              fontSize: '11px',
+              color: 'rgba(255,255,255,0.26)',
+              margin: 0,
+              letterSpacing: '0.05em',
+              textTransform: 'uppercase',
+            }}
+          >
+            Model families below are derived from the live codebase; detailed real / partial / demo labeling remains in-tool.
+          </p>
         </motion.div>
+
+        <div className="nb-home-engine-grid">
+          {ENGINE_BLOCKS.map((block, index) => (
+            <EngineCard key={block.title} block={block} index={index} />
+          ))}
+        </div>
       </div>
 
       <style jsx>{`
-        .nb-home-stage-grid {
-          display: grid;
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-          gap: 14px;
-        }
-
-        .nb-home-stage-card {
-          transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
-        }
-
-        .nb-home-stage-card:hover,
-        .nb-home-stage-card:focus-visible {
-          transform: translateY(-2px);
-          border-color: rgba(255,255,255,0.16) !important;
-          box-shadow: 0 20px 40px rgba(0,0,0,0.24);
-          outline: none;
-        }
-
         .nb-home-engine-grid {
           display: grid;
           grid-template-columns: repeat(3, minmax(0, 1fr));
           gap: 0;
-          border: 1px solid rgba(255,255,255,0.08);
+          border: 0.5px solid rgba(255, 255, 255, 0.08);
         }
 
-        .nb-home-principle-grid {
-          display: grid;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
-          gap: 12px;
-        }
-
-        @media (max-width: 1080px) {
+        @media (max-width: 1100px) {
           .nb-home-engine-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
-          }
-        }
-
-        @media (max-width: 900px) {
-          .nb-home-stage-grid,
-          .nb-home-principle-grid {
-            grid-template-columns: minmax(0, 1fr);
           }
         }
 
