@@ -340,6 +340,22 @@ function inferToolSimulation(payload: WorkbenchToolPayloadMap[keyof WorkbenchToo
   return false;
 }
 
+type ContractStatusDecision = {
+  status: WorkbenchRunStatus;
+  blockingUpstreamToolIds: string[];
+  reason: string;
+  confidence: WorkbenchRunArtifact['confidence'];
+  uncertainty: WorkbenchRunArtifact['uncertainty'];
+  validity: WorkbenchRunArtifact['validity'];
+  humanGateRequired: boolean;
+};
+
+function payloadValidity(payload: WorkbenchToolPayloadMap[keyof WorkbenchToolPayloadMap]): WorkbenchRunArtifact['validity'] {
+  if (!payload || typeof payload !== 'object' || !('validity' in payload)) return null;
+  const validity = payload.validity;
+  return validity === 'real' || validity === 'partial' || validity === 'demo' ? validity : null;
+}
+
 /**
  * Phase-1 — Workflow Control Plane. Given a tool id and the current
  * latest-run map, return the contract gate decision:
@@ -355,14 +371,28 @@ function evaluateContractStatus(
   payload: WorkbenchToolPayloadMap[keyof WorkbenchToolPayloadMap],
   latestByTool: Map<string, WorkbenchRunArtifact>,
   projectIsDemo: boolean,
-): { status: WorkbenchRunStatus; blockingUpstreamToolIds: string[]; reason: string } {
+): ContractStatusDecision {
   const contract = tryGetToolContract(toolId as string);
   if (!contract) {
-    return { status: 'ok', blockingUpstreamToolIds: [], reason: '' };
+    return {
+      status: 'ok',
+      blockingUpstreamToolIds: [],
+      reason: '',
+      confidence: null,
+      uncertainty: null,
+      validity: payloadValidity(payload),
+      humanGateRequired: false,
+    };
   }
   const blocking: string[] = [];
   const reasons: string[] = [];
   const current = evaluateToolContract(contract, payload, { projectIsDemo });
+  const runMetadata = {
+    confidence: current.status.confidence ?? null,
+    uncertainty: current.status.uncertainty ?? null,
+    validity: current.status.validity ?? null,
+    humanGateRequired: contract.humanGatePolicy.requiredFor.length > 0,
+  };
 
   for (const ref of contract.requiredInputs) {
     if (!ref.required) continue;
@@ -403,6 +433,7 @@ function evaluateContractStatus(
       status: 'blocked',
       blockingUpstreamToolIds: Array.from(new Set(blocking)),
       reason: reasons.join('; '),
+      ...runMetadata,
     };
   }
 
@@ -411,18 +442,36 @@ function evaluateContractStatus(
       status: 'blocked',
       blockingUpstreamToolIds: [],
       reason: current.reason,
+      ...runMetadata,
     };
   }
 
   if (current.isSimulated) {
-    return { status: 'demoOnly', blockingUpstreamToolIds: [], reason: current.reason };
+    return {
+      status: 'demoOnly',
+      blockingUpstreamToolIds: [],
+      reason: current.reason,
+      ...runMetadata,
+      humanGateRequired: true,
+    };
   }
 
   if (!current.validityOk || !current.confidenceOk || !current.uncertaintyOk) {
-    return { status: 'gated', blockingUpstreamToolIds: [], reason: current.reason };
+    return {
+      status: 'gated',
+      blockingUpstreamToolIds: [],
+      reason: current.reason,
+      ...runMetadata,
+      humanGateRequired: true,
+    };
   }
 
-  return { status: 'ok', blockingUpstreamToolIds: [], reason: '' };
+  return {
+    status: 'ok',
+    blockingUpstreamToolIds: [],
+    reason: '',
+    ...runMetadata,
+  };
 }
 
 const STATE_AFTER_TOOL: Record<string, WorkflowStateValue> = {
@@ -683,6 +732,11 @@ function createRunArtifact<K extends keyof WorkbenchToolPayloadMap>(
       contractDecision.blockingUpstreamToolIds.length > 0
         ? contractDecision.blockingUpstreamToolIds
         : undefined,
+    confidence: contractDecision.confidence ?? null,
+    uncertainty: contractDecision.uncertainty ?? null,
+    validity: contractDecision.validity ?? null,
+    humanGateRequired: contractDecision.humanGateRequired,
+    iteration: getWorkflowActor().getSnapshot().context.iteration,
   };
 }
 

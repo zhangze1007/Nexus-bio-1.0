@@ -1,5 +1,5 @@
 import { GOLDEN_PATH_TOOL_IDS, type ToolId } from '../../domain/workflowContract';
-import { getGoldenPathSuccessor, tryGetToolContract } from '../../services/workflowRegistry';
+import { tryGetToolContract } from '../../services/workflowRegistry';
 import type { WorkbenchRunArtifact, WorkbenchWorkflowControlSnapshot } from '../../store/workbenchTypes';
 import { TOOL_BY_ID } from '../tools/shared/toolRegistry';
 
@@ -114,7 +114,7 @@ export function buildWorkflowDashboardItems(
     id: 'nexai',
     label: 'NEXAI',
     href: TOOL_BY_ID.nexai?.href,
-    status: workflow.machineState === 'dbtlCommitted' ? 'next' : 'pending',
+    status: workflow.nextRecommendedNode === 'nexai' ? 'next' : 'pending',
     detail: workflow.machineState === 'dbtlCommitted'
       ? 'Ready to explain the next DBTL cycle recommendation.'
       : 'Supervisor context updates as workflow evidence accumulates.',
@@ -144,7 +144,7 @@ export function buildWorkflowHandoffSummary(
       };
     });
 
-  const nextToolId = getGoldenPathSuccessor(contract.toolId);
+  const nextToolId = workflow.nextRecommendedNode;
   const nextContract = nextToolId ? tryGetToolContract(nextToolId) : undefined;
   const nextRequirement = nextContract?.requiredInputs.find((ref) => ref.toolId === contract.toolId && ref.required) ?? null;
   const currentRun = latestRunFor(toolId, runArtifacts);

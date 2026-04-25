@@ -8,7 +8,6 @@ import { TOOL_BY_ID } from '../tools/shared/toolRegistry';
 import {
   CROSS_STAGE_TOOL_IDS,
   getDefaultHrefForStage,
-  getNextToolIds,
   getStageById,
   getStageForTool,
   WORKBENCH_STAGES,
@@ -77,7 +76,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
 
   const stage = moduleId ? getStageForTool(moduleId) : getStageById(currentStageId);
   const selectedEvidence = evidenceItems.filter((item) => selectedEvidenceIds.includes(item.id));
-  const nextToolIds = moduleId ? getNextToolIds(moduleId) : analyzeArtifact?.recommendedNextTools ?? [];
+  const nextToolIds = workflowControl.nextRecommendedNode ? [workflowControl.nextRecommendedNode] : [];
   const nextTools = nextToolIds
     .map((toolId) => TOOL_BY_ID[toolId])
     .filter((tool): tool is NonNullable<typeof tool> => Boolean(tool));

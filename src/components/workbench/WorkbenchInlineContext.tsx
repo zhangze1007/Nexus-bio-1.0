@@ -1,10 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useRef } from 'react';
+import { useMemo } from 'react';
 import { ArrowUpRight, BrainCircuit, Microscope } from 'lucide-react';
 import { TOOL_BY_ID } from '../tools/shared/toolRegistry';
-import { getNextToolIds, getStageForTool } from '../tools/shared/workbenchConfig';
+import { getStageForTool } from '../tools/shared/workbenchConfig';
 import { useWorkbenchStore } from '../../store/workbenchStore';
 import { useUIStore } from '../../store/uiStore';
 import { T } from '../ide/tokens';
@@ -43,12 +43,10 @@ export default function WorkbenchInlineContext({
   const analyzeArtifact = useWorkbenchStore((s) => s.analyzeArtifact);
   const selectedEvidenceIds = useWorkbenchStore((s) => s.selectedEvidenceIds);
   const evidenceItems = useWorkbenchStore((s) => s.evidenceItems);
-  const addToolRun = useWorkbenchStore((s) => s.addToolRun);
   const dbtlPayload = useWorkbenchStore((s) => s.toolPayloads.dbtlflow);
   const runArtifacts = useWorkbenchStore((s) => s.runArtifacts);
   const workflowControl = useWorkbenchStore((s) => s.workflowControl);
   const stage = getStageForTool(toolId);
-  const loggedRef = useRef(false);
 
   const actionBtn: React.CSSProperties & Record<`--${string}`, string> = {
     minHeight: compact ? '34px' : '30px',
@@ -80,26 +78,15 @@ export default function WorkbenchInlineContext({
     ['--nb-control-active-color']: '#111318',
   };
 
-  useEffect(() => {
-    if (loggedRef.current) return;
-    loggedRef.current = true;
-    addToolRun({
-      toolId,
-      title,
-      summary,
-      isSimulated: isSimulated || Boolean(project?.isDemo),
-    });
-  }, [addToolRun, isSimulated, project?.isDemo, summary, title, toolId]);
-
   const evidenceTrace = useMemo(() => {
     const traceIds = analyzeArtifact?.evidenceTraceIds ?? selectedEvidenceIds;
     return evidenceItems.filter((item) => traceIds.includes(item.id)).slice(0, compact ? 1 : 2);
   }, [analyzeArtifact?.evidenceTraceIds, compact, evidenceItems, selectedEvidenceIds]);
 
   const bottleneck = analyzeArtifact?.bottleneckAssumptions[0];
-  const nextTool = getNextToolIds(toolId)
-    .map((nextId) => TOOL_BY_ID[nextId])
-    .find(Boolean);
+  const nextTool = workflowControl.nextRecommendedNode
+    ? TOOL_BY_ID[workflowControl.nextRecommendedNode]
+    : null;
   const latestRunArtifact = useMemo(
     () => runArtifacts.find((artifact) => artifact.toolId === toolId),
     [runArtifacts, toolId],

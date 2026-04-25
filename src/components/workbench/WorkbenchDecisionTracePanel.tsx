@@ -229,9 +229,11 @@ export default function WorkbenchDecisionTracePanel({
               </div>
               <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', fontFamily: T.MONO, fontSize: '9px', color: LABEL }}>
                 <span>evidence · {workflowDecision.missingEvidence.have}</span>
-                <span>confidence · {workflowDecision.latestRunToolId === run.toolId && workflowDecision.confidence !== null ? workflowDecision.confidence.toFixed(2) : 'n/a'}</span>
-                <span>uncertainty · {workflowDecision.latestRunToolId === run.toolId && workflowDecision.uncertainty !== null ? workflowDecision.uncertainty.toFixed(2) : 'unknown'}</span>
-                <span>human gate · {workflowDecision.latestRunToolId === run.toolId && workflowDecision.humanGateRequired ? 'yes' : 'no'}</span>
+                <span>confidence · {run.confidence !== undefined && run.confidence !== null ? run.confidence.toFixed(2) : workflowDecision.latestRunToolId === run.toolId && workflowDecision.confidence !== null ? workflowDecision.confidence.toFixed(2) : 'n/a'}</span>
+                <span>uncertainty · {run.uncertainty !== undefined && run.uncertainty !== null ? run.uncertainty.toFixed(2) : workflowDecision.latestRunToolId === run.toolId && workflowDecision.uncertainty !== null ? workflowDecision.uncertainty.toFixed(2) : 'unknown'}</span>
+                <span>validity · {run.validity ?? (workflowDecision.latestRunToolId === run.toolId ? workflowDecision.validity ?? 'n/a' : 'n/a')}</span>
+                <span>human gate · {run.humanGateRequired ?? (workflowDecision.latestRunToolId === run.toolId ? workflowDecision.humanGateRequired : false) ? 'yes' : 'no'}</span>
+                <span>iteration · {run.iteration ?? 'n/a'}</span>
                 <span>next · {workflowDecision.nextRecommendedNode?.toUpperCase() ?? 'none'}</span>
               </div>
             </div>
