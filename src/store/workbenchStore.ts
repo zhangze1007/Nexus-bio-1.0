@@ -22,10 +22,7 @@ import {
 import { getUpstreamToolIds } from '../components/tools/shared/workbenchGraph';
 import { buildExecutionSnapshot } from '../components/workbench/workbenchExecution';
 import { tryGetToolContract } from '../services/workflowRegistry';
-import {
-  meetsValidityFloor,
-  type ValidityFloor,
-} from '../domain/workflowContract';
+import { evaluateToolContract } from '../services/workflowContractEvaluator';
 import type { WorkbenchRunStatus } from './workbenchTypes';
 import type {
   AxonRunRecord,
@@ -333,6 +330,7 @@ function evaluateContractStatus(
   toolId: keyof WorkbenchToolPayloadMap,
   payload: WorkbenchToolPayloadMap[keyof WorkbenchToolPayloadMap],
   latestByTool: Map<string, WorkbenchRunArtifact>,
+  projectIsDemo: boolean,
 ): { status: WorkbenchRunStatus; blockingUpstreamToolIds: string[]; reason: string } {
   const contract = tryGetToolContract(toolId as string);
   if (!contract) {
@@ -340,6 +338,7 @@ function evaluateContractStatus(
   }
   const blocking: string[] = [];
   const reasons: string[] = [];
+  const current = evaluateToolContract(contract, payload, { projectIsDemo });
 
   for (const ref of contract.requiredInputs) {
     if (!ref.required) continue;
@@ -349,20 +348,29 @@ function evaluateContractStatus(
       reasons.push(`${ref.toolId.toUpperCase()} payload missing`);
       continue;
     }
-    const upstreamPayload = upstream.payloadSnapshot as { validity?: ValidityFloor } | undefined;
-    const upstreamValidity = upstreamPayload?.validity ?? null;
     const upstreamContract = tryGetToolContract(ref.toolId);
-    if (upstreamContract && upstreamValidity) {
-      if (!meetsValidityFloor(upstreamValidity, upstreamContract.validityBaseline.floor)) {
+    if (upstreamContract) {
+      const upstreamEval = evaluateToolContract(upstreamContract, upstream.payloadSnapshot, {
+        projectIsDemo: upstream.isSimulated,
+      });
+      if (
+        !upstreamEval.status.hasRequiredOutputs ||
+        !upstreamEval.validityOk ||
+        !upstreamEval.confidenceOk ||
+        !upstreamEval.uncertaintyOk ||
+        upstreamEval.isSimulated
+      ) {
         blocking.push(ref.toolId);
-        reasons.push(
-          `${ref.toolId.toUpperCase()} validity ${upstreamValidity} < floor ${upstreamContract.validityBaseline.floor}`,
-        );
+        reasons.push(`${ref.toolId.toUpperCase()} contract unsatisfied: ${upstreamEval.reason}`);
       }
     }
-    if (upstream.status === 'blocked') {
+    if (upstream.status === 'blocked' || upstream.status === 'gated') {
       blocking.push(ref.toolId);
-      reasons.push(`${ref.toolId.toUpperCase()} is itself blocked`);
+      reasons.push(`${ref.toolId.toUpperCase()} is itself ${upstream.status}`);
+    }
+    if (upstream.status === 'simulated') {
+      blocking.push(ref.toolId);
+      reasons.push(`${ref.toolId.toUpperCase()} is simulated`);
     }
   }
 
@@ -374,9 +382,22 @@ function evaluateContractStatus(
     };
   }
 
-  if (payload && 'validity' in payload && payload.validity === 'demo') {
-    return { status: 'simulated', blockingUpstreamToolIds: [], reason: 'payload validity is demo' };
+  if (!current.status.hasRequiredOutputs) {
+    return {
+      status: 'blocked',
+      blockingUpstreamToolIds: [],
+      reason: current.reason,
+    };
   }
+
+  if (current.isSimulated) {
+    return { status: 'simulated', blockingUpstreamToolIds: [], reason: current.reason };
+  }
+
+  if (!current.validityOk || !current.confidenceOk || !current.uncertaintyOk) {
+    return { status: 'gated', blockingUpstreamToolIds: [], reason: current.reason };
+  }
+
   return { status: 'ok', blockingUpstreamToolIds: [], reason: '' };
 }
 
@@ -406,7 +427,7 @@ function createRunArtifact<K extends keyof WorkbenchToolPayloadMap>(
   state.runArtifacts.forEach((artifact) => {
     if (!latestByTool.has(artifact.toolId)) latestByTool.set(artifact.toolId, artifact);
   });
-  const contractDecision = evaluateContractStatus(toolId, payload, latestByTool);
+  const contractDecision = evaluateContractStatus(toolId, payload, latestByTool, Boolean(state.project?.isDemo));
 
   const isSimulated =
     contractDecision.status === 'blocked' ||

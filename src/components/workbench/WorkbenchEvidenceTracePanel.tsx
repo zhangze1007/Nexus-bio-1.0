@@ -11,10 +11,9 @@ import { PATHD_THEME } from './workbenchTheme';
 import { tryGetToolContract } from '../../services/workflowRegistry';
 import {
   GOLDEN_PATH_TOOL_IDS,
-  meetsValidityFloor,
   type ToolId,
-  type ValidityFloor,
 } from '../../domain/workflowContract';
+import { evaluateToolContract } from '../../services/workflowContractEvaluator';
 import type { WorkbenchToolPayloadMap } from '../../store/workbenchPayloads';
 
 interface WorkbenchEvidenceTracePanelProps {
@@ -33,6 +32,7 @@ export default function WorkbenchEvidenceTracePanel({
   const selectedEvidenceIds = useWorkbenchStore((s) => s.selectedEvidenceIds);
   const evidenceItems = useWorkbenchStore((s) => s.evidenceItems);
   const analyzeArtifact = useWorkbenchStore((s) => s.analyzeArtifact);
+  const project = useWorkbenchStore((s) => s.project);
   const runArtifacts = useWorkbenchStore((s) => s.runArtifacts);
   const toolPayloads = useWorkbenchStore((s) => s.toolPayloads);
 
@@ -46,24 +46,29 @@ export default function WorkbenchEvidenceTracePanel({
       const contract = tryGetToolContract(tool);
       if (!contract) continue;
       const payload = toolPayloads[tool as keyof WorkbenchToolPayloadMap];
-      const validity =
-        (payload as { validity?: ValidityFloor } | undefined)?.validity ?? null;
-      const hasResult = Boolean(
-        payload && (payload as { result?: unknown }).result &&
-          typeof (payload as { result?: unknown }).result === 'object',
-      );
-      const meetsFloor =
-        validity !== null && meetsValidityFloor(validity, contract.validityBaseline.floor);
-      if (!hasResult || !meetsFloor) {
+      const evaluation = evaluateToolContract(contract, payload, {
+        evidence: evidenceItems.map((item) => ({ sourceKind: item.sourceKind })),
+        projectIsDemo: Boolean(project?.isDemo),
+      });
+      if (
+        !evaluation.status.hasRequiredOutputs ||
+        !evaluation.validityOk ||
+        !evaluation.confidenceOk ||
+        !evaluation.uncertaintyOk ||
+        evaluation.isSimulated
+      ) {
         const evidenceShort =
           contract.evidenceRequired.minItems > evidenceItems.length;
         const haveKinds = new Set(evidenceItems.map((e) => e.sourceKind));
         const missingKinds = contract.evidenceRequired.kinds.filter((k) => !haveKinds.has(k));
         return {
           toolId: tool as ToolId,
-          missingPayload: !hasResult,
-          validityShort: hasResult && !meetsFloor ? validity : null,
+          missingPayload: !evaluation.status.hasRequiredOutputs,
+          missingOutputPaths: evaluation.missingOutputPaths,
+          validityShort: evaluation.status.hasRequiredOutputs && !evaluation.validityOk ? evaluation.status.validity : null,
           floor: contract.validityBaseline.floor,
+          simulated: evaluation.isSimulated,
+          reason: evaluation.reason,
           evidenceShort,
           missingKinds,
           minItems: contract.evidenceRequired.minItems,
@@ -72,7 +77,7 @@ export default function WorkbenchEvidenceTracePanel({
       }
     }
     return null;
-  }, [evidenceItems, toolPayloads]);
+  }, [evidenceItems, project?.isDemo, toolPayloads]);
 
   const evidenceTrace = useMemo(() => {
     const traceIds = analyzeArtifact?.evidenceTraceIds?.length ? analyzeArtifact.evidenceTraceIds : selectedEvidenceIds;
@@ -126,6 +131,10 @@ export default function WorkbenchEvidenceTracePanel({
             {!gateRow.missingPayload && gateRow.validityShort && (
               <>Upgrade {gateRow.toolId.toUpperCase()} validity from {gateRow.validityShort} to {gateRow.floor}.</>
             )}
+            {!gateRow.missingPayload && !gateRow.validityShort && gateRow.simulated && (
+              <>Demo/simulated output cannot satisfy closed-loop execution.</>
+            )}
+            {!gateRow.missingPayload && !gateRow.validityShort && !gateRow.simulated && gateRow.reason}
           </div>
           {gateRow.evidenceShort && (
             <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL }}>

@@ -343,6 +343,13 @@ function sanitizeRunArtifact(value: unknown): WorkbenchRunArtifact | null {
         upstreamArtifactIds: asStringArray(value.upstreamArtifactIds),
         dependencySignature: '',
       };
+  const status =
+    value.status === 'ok' ||
+    value.status === 'simulated' ||
+    value.status === 'blocked' ||
+    value.status === 'gated'
+      ? value.status
+      : undefined;
   return {
     id: value.id,
     toolId: value.toolId as WorkbenchRunArtifact['toolId'],
@@ -355,6 +362,11 @@ function sanitizeRunArtifact(value: unknown): WorkbenchRunArtifact | null {
     payloadSnapshot: value.payloadSnapshot as unknown as WorkbenchRunArtifact['payloadSnapshot'],
     createdAt: asNumber(value.createdAt, Date.now()),
     isSimulated: Boolean(value.isSimulated),
+    ...(status ? { status } : {}),
+    ...(typeof value.statusReason === 'string' ? { statusReason: value.statusReason } : {}),
+    ...(asStringArray(value.blockingUpstreamToolIds).length
+      ? { blockingUpstreamToolIds: asStringArray(value.blockingUpstreamToolIds) }
+      : {}),
   };
 }
 

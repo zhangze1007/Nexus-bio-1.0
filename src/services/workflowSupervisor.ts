@@ -94,6 +94,10 @@ function describeMissingContract(toolId: ToolId, status: WorkflowToolStatus | un
     reasons.push(`no payload published for ${toolId.toUpperCase()}`);
   } else {
     if (!status.hasRequiredOutputs) reasons.push('required outputs missing');
+    if (status.missingOutputPaths?.length) {
+      reasons.push(`missing ${status.missingOutputPaths.join(', ')}`);
+    }
+    if (status.isSimulated) reasons.push('payload is demo/simulated');
     if (status.validity && !meetsValidityFloor(status.validity, contract.validityBaseline.floor)) {
       reasons.push(`validity ${status.validity} below floor ${contract.validityBaseline.floor}`);
     }
@@ -102,6 +106,9 @@ function describeMissingContract(toolId: ToolId, status: WorkflowToolStatus | un
       (status.confidence === null || status.confidence < contract.confidencePolicy.minToAdvance)
     ) {
       reasons.push(`confidence below ${contract.confidencePolicy.minToAdvance}`);
+    }
+    if (contract.uncertaintyPolicy.unboundedIsGate && status.uncertainty == null) {
+      reasons.push('uncertainty unresolved');
     }
   }
   return reasons.join('; ');
@@ -192,8 +199,10 @@ export function buildWorkflowDecision(input: WorkflowSupervisorInput): WorkflowD
     const predContract = getToolContract(predecessor);
     const predOk =
       predStatus?.hasRequiredOutputs &&
+      !predStatus.isSimulated &&
       predStatus.validity !== null &&
       meetsValidityFloor(predStatus.validity, predContract.validityBaseline.floor) &&
+      (!predContract.uncertaintyPolicy.unboundedIsGate || predStatus.uncertainty != null) &&
       (predContract.confidencePolicy.minToAdvance === null ||
         (predStatus.confidence !== null &&
           predStatus.confidence >= predContract.confidencePolicy.minToAdvance));
@@ -220,7 +229,7 @@ export function buildWorkflowDecision(input: WorkflowSupervisorInput): WorkflowD
   }
 
   // Gated by evidence requirement.
-  if (evidenceShort && evidenceReq.gateOnMissing) {
+  if ((evidenceShort || missingKinds.length > 0) && evidenceReq.gateOnMissing) {
     reasonCodes.push('EVIDENCE_GATE');
     return {
       status: 'gated',
@@ -236,7 +245,7 @@ export function buildWorkflowDecision(input: WorkflowSupervisorInput): WorkflowD
       validity: status?.validity ?? null,
       humanGateRequired: true,
       nextNodeIsContractOnly: !input.isAdapterRegistered(currentToolId),
-      explanation: `${currentToolId.toUpperCase()} requires ≥${evidenceReq.minItems} evidence items (${evidenceReq.kinds.join(', ')}). Currently have ${evidenceHave}.`,
+      explanation: `${currentToolId.toUpperCase()} requires ≥${evidenceReq.minItems} evidence items (${evidenceReq.kinds.join(', ')}). Currently have ${evidenceHave}${missingKinds.length ? `; missing ${missingKinds.join(', ')}` : ''}.`,
       reasonCodes,
     };
   }
@@ -244,8 +253,10 @@ export function buildWorkflowDecision(input: WorkflowSupervisorInput): WorkflowD
   // Current tool not yet satisfying its own contract.
   const currentContractOk =
     status?.hasRequiredOutputs &&
+    !status.isSimulated &&
     status.validity !== null &&
     meetsValidityFloor(status.validity, contract.validityBaseline.floor) &&
+    (!contract.uncertaintyPolicy.unboundedIsGate || status.uncertainty != null) &&
     (contract.confidencePolicy.minToAdvance === null ||
       (status.confidence !== null &&
         status.confidence >= contract.confidencePolicy.minToAdvance));

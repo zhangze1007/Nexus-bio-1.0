@@ -12,9 +12,9 @@ import {
   GOLDEN_PATH_TOOL_IDS,
   meetsValidityFloor,
   type ToolId,
-  type ValidityFloor,
 } from '../../domain/workflowContract';
 import { tryGetToolContract } from '../../services/workflowRegistry';
+import { evaluateToolContract } from '../../services/workflowContractEvaluator';
 import {
   buildWorkflowDecision,
   type WorkflowDecisionStatus,
@@ -38,32 +38,12 @@ const VALUE = PATHD_THEME.value;
 function statusFromPayload(
   toolId: ToolId,
   payload: WorkbenchToolPayloadMap[keyof WorkbenchToolPayloadMap] | undefined,
+  projectIsDemo: boolean,
 ): WorkflowToolStatus | undefined {
   if (!payload) return undefined;
-  const validity = (payload as { validity?: ValidityFloor }).validity ?? null;
-  // Confidence sourcing — read the contract's confidencePolicy.sourceField.
   const contract = tryGetToolContract(toolId);
-  let confidence: number | null = null;
-  if (contract?.confidencePolicy.sourceField) {
-    const path = contract.confidencePolicy.sourceField.split('.');
-    let cursor: unknown = payload;
-    for (const key of path) {
-      if (cursor && typeof cursor === 'object' && key in cursor) {
-        cursor = (cursor as Record<string, unknown>)[key];
-      } else {
-        cursor = null;
-        break;
-      }
-    }
-    if (typeof cursor === 'number') confidence = cursor;
-    else if (typeof cursor === 'boolean') confidence = cursor ? 1 : 0;
-  }
-  // hasRequiredOutputs — payload exists and has a `result` object.
-  const hasRequiredOutputs = Boolean(
-    (payload as { result?: unknown }).result &&
-      typeof (payload as { result?: unknown }).result === 'object',
-  );
-  return { validity, confidence, hasRequiredOutputs };
+  if (!contract) return undefined;
+  return evaluateToolContract(contract, payload, { projectIsDemo }).status;
 }
 
 // Walk the golden path and return the FSM state that matches the
@@ -93,7 +73,9 @@ function inferMachineState(
       contract.confidencePolicy.minToAdvance === null ||
       (status.confidence !== null &&
         status.confidence >= contract.confidencePolicy.minToAdvance);
-    if (!status.hasRequiredOutputs || !validityOk || !confidenceOk) break;
+    const uncertaintyOk =
+      !contract.uncertaintyPolicy.unboundedIsGate || status.uncertainty != null;
+    if (!status.hasRequiredOutputs || status.isSimulated || !validityOk || !confidenceOk || !uncertaintyOk) break;
     last = STATE_AFTER[tool];
   }
   return last;
@@ -128,8 +110,9 @@ export default function WorkbenchDecisionTracePanel({
   // payloads or evidence change.
   const workflowDecision = useMemo(() => {
     const toolStatus: Partial<Record<ToolId, WorkflowToolStatus>> = {};
+    const projectIsDemo = Boolean(project?.isDemo);
     for (const tool of GOLDEN_PATH_TOOL_IDS) {
-      const status = statusFromPayload(tool, toolPayloads[tool as keyof WorkbenchToolPayloadMap]);
+      const status = statusFromPayload(tool, toolPayloads[tool as keyof WorkbenchToolPayloadMap], projectIsDemo);
       if (status) toolStatus[tool] = status;
     }
     const hasTarget = Boolean(project?.targetProduct || analyzeArtifact?.targetProduct);
@@ -142,7 +125,7 @@ export default function WorkbenchDecisionTracePanel({
       // Phase-1: only PATHD and FBASim have real Axon adapters today.
       isAdapterRegistered: (id) => id === 'pathd' || id === 'fbasim',
     });
-  }, [analyzeArtifact?.targetProduct, evidenceItems, project?.targetProduct, toolPayloads]);
+  }, [analyzeArtifact?.targetProduct, evidenceItems, project?.isDemo, project?.targetProduct, toolPayloads]);
 
   const activeRun = useMemo(
     () => (toolId ? runArtifacts.find((artifact) => artifact.toolId === toolId) : runArtifacts[0] ?? null),

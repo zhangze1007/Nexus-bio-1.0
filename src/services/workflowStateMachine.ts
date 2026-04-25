@@ -34,7 +34,10 @@ export type WorkflowStateValue =
 export interface WorkflowToolStatus {
   validity: ValidityFloor | null;
   confidence: number | null;
+  uncertainty?: number | null;
   hasRequiredOutputs: boolean;
+  missingOutputPaths?: string[];
+  isSimulated?: boolean;
 }
 
 export interface WorkflowEvidence {
@@ -76,6 +79,7 @@ export function meetsContract(
   status: WorkflowToolStatus,
 ): boolean {
   if (!status.hasRequiredOutputs) return false;
+  if (status.isSimulated) return false;
   const contract = getToolContract(toolId);
   if (!status.validity) return false;
   if (!meetsValidityFloor(status.validity, contract.validityBaseline.floor)) return false;
@@ -84,6 +88,7 @@ export function meetsContract(
     if (status.confidence === null) return false;
     if (status.confidence < conf.minToAdvance) return false;
   }
+  if (contract.uncertaintyPolicy.unboundedIsGate && status.uncertainty == null) return false;
   return true;
 }
 
