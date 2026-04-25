@@ -22,6 +22,8 @@ import {
 import { getUpstreamToolIds } from '../components/tools/shared/workbenchGraph';
 import { buildExecutionSnapshot } from '../components/workbench/workbenchExecution';
 import { tryGetToolContract } from '../services/workflowRegistry';
+import { isAxonToolSupported } from '../services/axonAdapterRegistry';
+import type { AxonTool } from '../services/AxonOrchestrator';
 import { evaluateToolContract } from '../services/workflowContractEvaluator';
 import { buildWorkflowDecision } from '../services/workflowSupervisor';
 import {
@@ -464,7 +466,7 @@ function buildWorkflowControlSnapshot(
     targetProduct: state.project?.targetProduct ?? state.analyzeArtifact?.targetProduct ?? null,
     toolStatus,
     evidence: state.evidenceItems.map((item) => ({ id: item.id, sourceKind: item.sourceKind })),
-    isAdapterRegistered: (id) => id === 'pathd' || id === 'fbasim',
+    isAdapterRegistered: (id) => isAxonToolSupported(id as AxonTool),
   });
   const latestRun = runArtifacts[0] ?? null;
   const latestRunStatus = latestRun?.status ?? null;

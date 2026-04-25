@@ -81,3 +81,22 @@ export const DEFAULT_AXON_ADAPTERS: AxonAdapterRegistration[] = [
 export function buildDefaultAxonAdapterRegistry(): AxonAdapterRegistry {
   return createAxonAdapterRegistry(DEFAULT_AXON_ADAPTERS);
 }
+
+/**
+ * Phase-2B.1 — single source of truth for "does this tool have a real
+ * Axon adapter?". The workflow snapshot, planner, and supervisor all
+ * read this helper instead of duplicating the registered-tool list.
+ *
+ * The registry is built once and cached. If a future PR adds a new
+ * adapter to DEFAULT_AXON_ADAPTERS, this helper picks it up
+ * automatically — no parallel list to keep in sync.
+ */
+let cachedRegistry: AxonAdapterRegistry | null = null;
+function defaultRegistry(): AxonAdapterRegistry {
+  if (!cachedRegistry) cachedRegistry = buildDefaultAxonAdapterRegistry();
+  return cachedRegistry;
+}
+
+export function isAxonToolSupported(toolId: AxonTool): boolean {
+  return defaultRegistry().isSupported(toolId);
+}
