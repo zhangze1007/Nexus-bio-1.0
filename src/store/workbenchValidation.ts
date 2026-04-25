@@ -21,6 +21,7 @@ import type {
   WorkbenchRunArtifact,
   WorkbenchSyncAuditEntry,
   WorkbenchToolRun,
+  WorkbenchWorkflowControlSnapshot,
 } from './workbenchTypes';
 import type { WorkbenchToolPayloadMap } from './workbenchPayloads';
 
@@ -347,7 +348,8 @@ function sanitizeRunArtifact(value: unknown): WorkbenchRunArtifact | null {
     value.status === 'ok' ||
     value.status === 'simulated' ||
     value.status === 'blocked' ||
-    value.status === 'gated'
+    value.status === 'gated' ||
+    value.status === 'demoOnly'
       ? value.status
       : undefined;
   return {
@@ -370,6 +372,78 @@ function sanitizeRunArtifact(value: unknown): WorkbenchRunArtifact | null {
   };
 }
 
+function sanitizeWorkflowControl(value: unknown): WorkbenchWorkflowControlSnapshot {
+  if (!isRecord(value)) {
+    return {
+      machineState: 'idle',
+      status: 'idle',
+      currentToolId: null,
+      nextRecommendedNode: 'pathd',
+      missingEvidence: { minRequired: 0, have: 0, kinds: [] },
+      confidence: null,
+      uncertainty: null,
+      validity: null,
+      humanGateRequired: false,
+      nextNodeIsContractOnly: false,
+      isDemoOnly: false,
+      latestRunStatus: null,
+      latestRunToolId: null,
+      reasonCodes: ['NO_TARGET'],
+      explanation: 'No target product set. Set a target via /research or /analyze, then run PATHD.',
+      updatedAt: Date.now(),
+    };
+  }
+  const status =
+    value.status === 'ready' ||
+    value.status === 'blocked' ||
+    value.status === 'gated' ||
+    value.status === 'demoOnly' ||
+    value.status === 'complete'
+      ? value.status
+      : 'idle';
+  const latestRunStatus =
+    value.latestRunStatus === 'ok' ||
+    value.latestRunStatus === 'simulated' ||
+    value.latestRunStatus === 'blocked' ||
+    value.latestRunStatus === 'gated' ||
+    value.latestRunStatus === 'demoOnly'
+      ? value.latestRunStatus
+      : null;
+  return {
+    machineState:
+      value.machineState === 'targetSet' ||
+      value.machineState === 'pathdReady' ||
+      value.machineState === 'fbasimReady' ||
+      value.machineState === 'catdesReady' ||
+      value.machineState === 'dynconReady' ||
+      value.machineState === 'cellfreeReady' ||
+      value.machineState === 'dbtlCommitted'
+        ? value.machineState
+        : 'idle',
+    status,
+    currentToolId: typeof value.currentToolId === 'string' ? value.currentToolId as WorkbenchWorkflowControlSnapshot['currentToolId'] : null,
+    nextRecommendedNode: typeof value.nextRecommendedNode === 'string' ? value.nextRecommendedNode as WorkbenchWorkflowControlSnapshot['nextRecommendedNode'] : null,
+    missingEvidence: isRecord(value.missingEvidence)
+      ? {
+          minRequired: Math.max(0, asNumber(value.missingEvidence.minRequired)),
+          have: Math.max(0, asNumber(value.missingEvidence.have)),
+          kinds: asStringArray(value.missingEvidence.kinds),
+        }
+      : { minRequired: 0, have: 0, kinds: [] },
+    confidence: typeof value.confidence === 'number' ? value.confidence : null,
+    uncertainty: typeof value.uncertainty === 'number' ? value.uncertainty : null,
+    validity: value.validity === 'real' || value.validity === 'partial' || value.validity === 'demo' ? value.validity : null,
+    humanGateRequired: Boolean(value.humanGateRequired),
+    nextNodeIsContractOnly: Boolean(value.nextNodeIsContractOnly),
+    isDemoOnly: Boolean(value.isDemoOnly) || status === 'demoOnly',
+    latestRunStatus,
+    latestRunToolId: typeof value.latestRunToolId === 'string' ? value.latestRunToolId : null,
+    reasonCodes: asStringArray(value.reasonCodes),
+    explanation: asString(value.explanation),
+    updatedAt: asNumber(value.updatedAt, Date.now()),
+  };
+}
+
 export function sanitizeWorkbenchState(value: unknown): WorkbenchCanonicalState | null {
   if (!isRecord(value)) return null;
   return {
@@ -388,6 +462,7 @@ export function sanitizeWorkbenchState(value: unknown): WorkbenchCanonicalState 
     runArtifacts: (Array.isArray(value.runArtifacts) ? value.runArtifacts : []).map(sanitizeRunArtifact).filter(Boolean) as WorkbenchRunArtifact[],
     checkpoints: (Array.isArray(value.checkpoints) ? value.checkpoints : []).map(sanitizeCheckpoint).filter(Boolean) as StageCheckpoint[],
     nextRecommendations: (Array.isArray(value.nextRecommendations) ? value.nextRecommendations : []).map(sanitizeRecommendation).filter(Boolean) as NextStepRecommendation[],
+    workflowControl: sanitizeWorkflowControl(value.workflowControl),
   };
 }
 

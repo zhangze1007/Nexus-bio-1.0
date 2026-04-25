@@ -44,6 +44,7 @@ const NO_EVIDENCE: ToolContract['evidenceRequired'] = {
 
 const PATHD_CONTRACT: ToolContract = {
   toolId: 'pathd',
+  contractScope: 'workflow',
   stageId: 'stage-1',
   primaryIntent: 'design',
   requiredInputs: [],
@@ -68,6 +69,7 @@ const PATHD_CONTRACT: ToolContract = {
 
 const FBASIM_CONTRACT: ToolContract = {
   toolId: 'fbasim',
+  contractScope: 'workflow',
   stageId: 'stage-2',
   primaryIntent: 'simulate',
   requiredInputs: [
@@ -95,6 +97,7 @@ const FBASIM_CONTRACT: ToolContract = {
 
 const CATDES_CONTRACT: ToolContract = {
   toolId: 'catdes',
+  contractScope: 'workflow',
   stageId: 'stage-2',
   primaryIntent: 'optimize',
   requiredInputs: [
@@ -122,6 +125,7 @@ const CATDES_CONTRACT: ToolContract = {
 
 const DYNCON_CONTRACT: ToolContract = {
   toolId: 'dyncon',
+  contractScope: 'workflow',
   stageId: 'stage-3',
   primaryIntent: 'control',
   requiredInputs: [
@@ -149,6 +153,7 @@ const DYNCON_CONTRACT: ToolContract = {
 
 const CELLFREE_CONTRACT: ToolContract = {
   toolId: 'cellfree',
+  contractScope: 'workflow',
   stageId: 'stage-4',
   primaryIntent: 'validate',
   requiredInputs: [
@@ -176,6 +181,7 @@ const CELLFREE_CONTRACT: ToolContract = {
 
 const DBTLFLOW_CONTRACT: ToolContract = {
   toolId: 'dbtlflow',
+  contractScope: 'workflow',
   stageId: 'stage-4',
   primaryIntent: 'validate',
   requiredInputs: [
@@ -205,6 +211,7 @@ const DBTLFLOW_CONTRACT: ToolContract = {
 
 const METABOLIC_ENG_CONTRACT: ToolContract = {
   toolId: 'metabolic-eng',
+  contractScope: 'alias',
   stageId: 'stage-1',
   primaryIntent: 'design',
   requiredInputs: [],
@@ -225,6 +232,7 @@ const METABOLIC_ENG_CONTRACT: ToolContract = {
 
 const CETHX_CONTRACT: ToolContract = {
   toolId: 'cethx',
+  contractScope: 'sidecar',
   stageId: 'stage-2',
   primaryIntent: 'analyze',
   requiredInputs: [],
@@ -248,6 +256,7 @@ const CETHX_CONTRACT: ToolContract = {
 
 const PROEVOL_CONTRACT: ToolContract = {
   toolId: 'proevol',
+  contractScope: 'sidecar',
   stageId: 'stage-2',
   primaryIntent: 'optimize',
   requiredInputs: [],
@@ -269,6 +278,7 @@ const PROEVOL_CONTRACT: ToolContract = {
 
 const GENMIM_CONTRACT: ToolContract = {
   toolId: 'genmim',
+  contractScope: 'sidecar',
   stageId: 'stage-3',
   primaryIntent: 'engineer',
   requiredInputs: [],
@@ -289,6 +299,7 @@ const GENMIM_CONTRACT: ToolContract = {
 
 const GECAIR_CONTRACT: ToolContract = {
   toolId: 'gecair',
+  contractScope: 'sidecar',
   stageId: 'stage-3',
   primaryIntent: 'engineer',
   requiredInputs: [],
@@ -311,6 +322,7 @@ const GECAIR_CONTRACT: ToolContract = {
 
 const MULTIO_CONTRACT: ToolContract = {
   toolId: 'multio',
+  contractScope: 'sidecar',
   stageId: 'stage-4',
   primaryIntent: 'analyze',
   requiredInputs: [],
@@ -332,6 +344,7 @@ const MULTIO_CONTRACT: ToolContract = {
 
 const SCSPATIAL_CONTRACT: ToolContract = {
   toolId: 'scspatial',
+  contractScope: 'sidecar',
   stageId: 'stage-4',
   primaryIntent: 'analyze',
   requiredInputs: [],
@@ -352,6 +365,7 @@ const SCSPATIAL_CONTRACT: ToolContract = {
 
 const NEXAI_CONTRACT: ToolContract = {
   toolId: 'nexai',
+  contractScope: 'contractOnly',
   stageId: 'stage-1',
   primaryIntent: 'supervise',
   requiredInputs: [],

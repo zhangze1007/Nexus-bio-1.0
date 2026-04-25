@@ -5,7 +5,7 @@
  * of the workbench (contracts + machine state value + per-tool payloads +
  * evidence) the supervisor returns a structured decision:
  *
- *   - status: 'idle' | 'ready' | 'blocked' | 'gated' | 'complete'
+ *   - status: 'idle' | 'ready' | 'blocked' | 'gated' | 'demoOnly' | 'complete'
  *   - currentToolId: which step the user is on
  *   - nextRecommendedNode: next golden-path tool, or null at terminal
  *   - missingEvidence: evidence the next step requires but doesn't have
@@ -38,6 +38,7 @@ export type WorkflowDecisionStatus =
   | 'ready'
   | 'blocked'
   | 'gated'
+  | 'demoOnly'
   | 'complete';
 
 export interface WorkflowEvidenceLite {
@@ -260,6 +261,27 @@ export function buildWorkflowDecision(input: WorkflowSupervisorInput): WorkflowD
     (contract.confidencePolicy.minToAdvance === null ||
       (status.confidence !== null &&
         status.confidence >= contract.confidencePolicy.minToAdvance));
+
+  if (status?.isSimulated) {
+    reasonCodes.push('DEMO_ONLY');
+    return {
+      status: 'demoOnly',
+      currentToolId,
+      nextRecommendedNode: currentToolId,
+      missingEvidence: {
+        minRequired: evidenceReq.minItems,
+        have: evidenceHave,
+        kinds: missingKinds,
+      },
+      confidence: status.confidence ?? null,
+      uncertainty: status.uncertainty ?? null,
+      validity: status.validity ?? null,
+      humanGateRequired: true,
+      nextNodeIsContractOnly: !input.isAdapterRegistered(currentToolId),
+      explanation: `${currentToolId.toUpperCase()} produced demo/simulated output. It is visible for exploration but cannot advance closed-loop execution.`,
+      reasonCodes,
+    };
+  }
 
   if (!currentContractOk) {
     reasonCodes.push('CURRENT_TOOL_NOT_READY');

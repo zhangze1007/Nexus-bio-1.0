@@ -8,19 +8,6 @@ import { T } from '../ide/tokens';
 import { TOOL_BY_ID } from '../tools/shared/toolRegistry';
 import { getFreshnessMap, getAuthoritySummary, getAuthorityTier, getToolFreshness } from './workbenchTrust';
 import { PATHD_THEME } from './workbenchTheme';
-import {
-  GOLDEN_PATH_TOOL_IDS,
-  meetsValidityFloor,
-  type ToolId,
-} from '../../domain/workflowContract';
-import { tryGetToolContract } from '../../services/workflowRegistry';
-import { evaluateToolContract } from '../../services/workflowContractEvaluator';
-import {
-  buildWorkflowDecision,
-  type WorkflowDecisionStatus,
-} from '../../services/workflowSupervisor';
-import type { WorkflowStateValue, WorkflowToolStatus } from '../../services/workflowStateMachine';
-import type { WorkbenchToolPayloadMap } from '../../store/workbenchPayloads';
 
 interface WorkbenchDecisionTracePanelProps {
   toolId?: string | null;
@@ -32,61 +19,13 @@ const BORDER = PATHD_THEME.panelBorder;
 const LABEL = PATHD_THEME.label;
 const VALUE = PATHD_THEME.value;
 
-// Phase-1 — Workflow Control Plane: derive a WorkflowToolStatus snapshot
-// for one tool by reading its live payload. Returns null when the tool
-// has no payload yet (which the supervisor reads as "missing").
-function statusFromPayload(
-  toolId: ToolId,
-  payload: WorkbenchToolPayloadMap[keyof WorkbenchToolPayloadMap] | undefined,
-  projectIsDemo: boolean,
-): WorkflowToolStatus | undefined {
-  if (!payload) return undefined;
-  const contract = tryGetToolContract(toolId);
-  if (!contract) return undefined;
-  return evaluateToolContract(contract, payload, { projectIsDemo }).status;
-}
-
-// Walk the golden path and return the FSM state that matches the
-// furthest step whose payload satisfies its contract floor.
-function inferMachineState(
-  toolStatus: Partial<Record<ToolId, WorkflowToolStatus>>,
-  hasTarget: boolean,
-): WorkflowStateValue {
-  if (!hasTarget) return 'idle';
-  const STATE_AFTER: Record<string, WorkflowStateValue> = {
-    pathd: 'pathdReady',
-    fbasim: 'fbasimReady',
-    catdes: 'catdesReady',
-    dyncon: 'dynconReady',
-    cellfree: 'cellfreeReady',
-    dbtlflow: 'dbtlCommitted',
-  };
-  let last: WorkflowStateValue = 'targetSet';
-  for (const tool of GOLDEN_PATH_TOOL_IDS) {
-    const status = toolStatus[tool];
-    const contract = tryGetToolContract(tool);
-    if (!status || !contract) break;
-    const validityOk =
-      status.validity !== null &&
-      meetsValidityFloor(status.validity, contract.validityBaseline.floor);
-    const confidenceOk =
-      contract.confidencePolicy.minToAdvance === null ||
-      (status.confidence !== null &&
-        status.confidence >= contract.confidencePolicy.minToAdvance);
-    const uncertaintyOk =
-      !contract.uncertaintyPolicy.unboundedIsGate || status.uncertainty != null;
-    if (!status.hasRequiredOutputs || status.isSimulated || !validityOk || !confidenceOk || !uncertaintyOk) break;
-    last = STATE_AFTER[tool];
-  }
-  return last;
-}
-
-function statusColor(status: WorkflowDecisionStatus): string {
+function statusColor(status: string): string {
   switch (status) {
     case 'complete': return PATHD_THEME.mint;
     case 'ready': return PATHD_THEME.sky;
     case 'blocked': return PATHD_THEME.coral;
     case 'gated': return PATHD_THEME.apricot;
+    case 'demoOnly': return PATHD_THEME.orange;
     case 'idle':
     default: return PATHD_THEME.label;
   }
@@ -102,30 +41,7 @@ export default function WorkbenchDecisionTracePanel({
   const nextRecommendations = useWorkbenchStore((s) => s.nextRecommendations);
   const runArtifacts = useWorkbenchStore((s) => s.runArtifacts);
   const dbtlPayload = useWorkbenchStore((s) => s.toolPayloads.dbtlflow);
-  const toolPayloads = useWorkbenchStore((s) => s.toolPayloads);
-  const evidenceItems = useWorkbenchStore((s) => s.evidenceItems);
-
-  // Phase-1 — Workflow Control Plane: derive a supervisor decision from
-  // the live store snapshot. Pure function; rebuilds whenever tool
-  // payloads or evidence change.
-  const workflowDecision = useMemo(() => {
-    const toolStatus: Partial<Record<ToolId, WorkflowToolStatus>> = {};
-    const projectIsDemo = Boolean(project?.isDemo);
-    for (const tool of GOLDEN_PATH_TOOL_IDS) {
-      const status = statusFromPayload(tool, toolPayloads[tool as keyof WorkbenchToolPayloadMap], projectIsDemo);
-      if (status) toolStatus[tool] = status;
-    }
-    const hasTarget = Boolean(project?.targetProduct || analyzeArtifact?.targetProduct);
-    const machineState = inferMachineState(toolStatus, hasTarget);
-    return buildWorkflowDecision({
-      machineState,
-      targetProduct: project?.targetProduct ?? analyzeArtifact?.targetProduct ?? null,
-      toolStatus,
-      evidence: evidenceItems.map((item) => ({ id: item.id, sourceKind: item.sourceKind })),
-      // Phase-1: only PATHD and FBASim have real Axon adapters today.
-      isAdapterRegistered: (id) => id === 'pathd' || id === 'fbasim',
-    });
-  }, [analyzeArtifact?.targetProduct, evidenceItems, project?.isDemo, project?.targetProduct, toolPayloads]);
+  const workflowDecision = useWorkbenchStore((s) => s.workflowControl);
 
   const activeRun = useMemo(
     () => (toolId ? runArtifacts.find((artifact) => artifact.toolId === toolId) : runArtifacts[0] ?? null),

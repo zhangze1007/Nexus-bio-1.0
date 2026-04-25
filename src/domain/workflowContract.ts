@@ -115,8 +115,17 @@ export interface DemoPolicy {
   blockGoldenPath: boolean;
 }
 
+export type ToolContractScope =
+  | 'workflow'
+  | 'sidecar'
+  | 'contractOnly'
+  | 'demoOnly'
+  | 'alias';
+
 export interface ToolContract {
   toolId: ToolId;
+  /** Machine-readable execution role; prevents empty contracts from passing silently. */
+  contractScope: ToolContractScope;
   stageId: StageId;
   primaryIntent: PrimaryIntent;
   /** Tools whose payloads must exist before this tool can advance the golden path. */

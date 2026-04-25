@@ -21,6 +21,7 @@ import type {
   WorkbenchAnalyzeArtifact,
   WorkbenchEvidenceItem,
   WorkbenchProjectBrief,
+  WorkbenchWorkflowControlSnapshot,
 } from '../store/workbenchTypes';
 
 export interface WorkbenchContextSnapshot {
@@ -34,6 +35,22 @@ export interface WorkbenchContextSnapshot {
   selectedEvidenceIds: string[];
   nextRecommendations: Pick<NextStepRecommendation, 'toolId' | 'reason'>[];
   currentToolId: string | null;
+  workflowControl?: Pick<
+    WorkbenchWorkflowControlSnapshot,
+    | 'machineState'
+    | 'status'
+    | 'currentToolId'
+    | 'nextRecommendedNode'
+    | 'missingEvidence'
+    | 'confidence'
+    | 'uncertainty'
+    | 'humanGateRequired'
+    | 'isDemoOnly'
+    | 'latestRunStatus'
+    | 'latestRunToolId'
+    | 'reasonCodes'
+    | 'explanation'
+  > | null;
 }
 
 export interface WorkbenchCopilotContext {
@@ -43,6 +60,11 @@ export interface WorkbenchCopilotContext {
   evidenceSelected: number;
   nextToolIds: string[];
   currentToolId: string | null;
+  workflowStatus: string | null;
+  workflowCurrentToolId: string | null;
+  workflowNextRecommendedNode: string | null;
+  workflowHumanGateRequired: boolean;
+  workflowIsDemoOnly: boolean;
   /** Short pill text: "artemisinin · 3/5 evidence · stage pathd". */
   summaryOneLine: string;
   /**
@@ -81,7 +103,8 @@ export function buildWorkbenchCopilotContext(
     target ||
       evidenceTotal > 0 ||
       nextToolIds.length > 0 ||
-      snapshot.currentToolId,
+      snapshot.currentToolId ||
+      snapshot.workflowControl,
   );
 
   const summaryParts: string[] = [];
@@ -90,6 +113,7 @@ export function buildWorkbenchCopilotContext(
     summaryParts.push(`${evidenceSelected}/${evidenceTotal} evidence`);
   }
   if (snapshot.currentToolId) summaryParts.push(`on ${snapshot.currentToolId}`);
+  if (snapshot.workflowControl) summaryParts.push(`workflow ${snapshot.workflowControl.status}`);
   const summaryOneLine = summaryParts.join(' · ') || 'No active workbench context';
 
   const augmentationLines: string[] = [];
@@ -128,8 +152,31 @@ export function buildWorkbenchCopilotContext(
         `- Queued next steps: ${nextToolIds.join(', ')}`,
       );
     }
+    if (snapshot.workflowControl) {
+      const workflow = snapshot.workflowControl;
+      augmentationLines.push(`- Workflow state: ${workflow.status} (${workflow.machineState})`);
+      if (workflow.currentToolId || workflow.nextRecommendedNode) {
+        augmentationLines.push(
+          `- Workflow route: current ${workflow.currentToolId ?? 'none'}; next ${workflow.nextRecommendedNode ?? 'none'}`,
+        );
+      }
+      if (workflow.missingEvidence.minRequired > 0) {
+        augmentationLines.push(
+          `- Missing evidence: ${workflow.missingEvidence.have}/${workflow.missingEvidence.minRequired}${workflow.missingEvidence.kinds.length ? `; kinds ${workflow.missingEvidence.kinds.join(', ')}` : ''}`,
+        );
+      }
+      const confidence = workflow.confidence === null ? 'unknown' : workflow.confidence.toFixed(2);
+      const uncertainty = workflow.uncertainty === null ? 'unknown' : workflow.uncertainty.toFixed(2);
+      augmentationLines.push(`- Confidence/uncertainty: ${confidence}/${uncertainty}`);
+      augmentationLines.push(
+        `- Gates: human ${workflow.humanGateRequired ? 'required' : 'not required'}; demo/simulated ${workflow.isDemoOnly ? 'yes' : 'no'}; latest run ${workflow.latestRunToolId ?? 'none'}:${workflow.latestRunStatus ?? 'none'}`,
+      );
+      if (workflow.explanation) {
+        augmentationLines.push(`- Workflow supervisor note: ${truncate(workflow.explanation, MAX_BOTTLENECK_CHARS)}`);
+      }
+    }
     augmentationLines.push(
-      'Use this context to ground the answer; do not invent additional workbench state.',
+      'Act as workflow supervisor, evidence critic, uncertainty explainer, and next-step router; do not invent additional workbench state.',
     );
   }
 
@@ -140,6 +187,11 @@ export function buildWorkbenchCopilotContext(
     evidenceSelected,
     nextToolIds,
     currentToolId: snapshot.currentToolId,
+    workflowStatus: snapshot.workflowControl?.status ?? null,
+    workflowCurrentToolId: snapshot.workflowControl?.currentToolId ?? null,
+    workflowNextRecommendedNode: snapshot.workflowControl?.nextRecommendedNode ?? null,
+    workflowHumanGateRequired: Boolean(snapshot.workflowControl?.humanGateRequired),
+    workflowIsDemoOnly: Boolean(snapshot.workflowControl?.isDemoOnly),
     summaryOneLine,
     promptAugmentation: augmentationLines.join('\n'),
   };

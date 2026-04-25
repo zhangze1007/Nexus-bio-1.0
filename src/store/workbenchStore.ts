@@ -23,6 +23,13 @@ import { getUpstreamToolIds } from '../components/tools/shared/workbenchGraph';
 import { buildExecutionSnapshot } from '../components/workbench/workbenchExecution';
 import { tryGetToolContract } from '../services/workflowRegistry';
 import { evaluateToolContract } from '../services/workflowContractEvaluator';
+import { buildWorkflowDecision } from '../services/workflowSupervisor';
+import {
+  GOLDEN_PATH_TOOL_IDS,
+  meetsValidityFloor,
+  type ToolId,
+} from '../domain/workflowContract';
+import type { WorkflowStateValue, WorkflowToolStatus } from '../services/workflowStateMachine';
 import type { WorkbenchRunStatus } from './workbenchTypes';
 import type {
   AxonRunRecord,
@@ -39,6 +46,7 @@ import type {
   WorkbenchExperimentRecord,
   WorkbenchHistoryEntry,
   WorkbenchProjectBrief,
+  WorkbenchWorkflowControlSnapshot,
   WorkbenchRunArtifact,
   WorkbenchSyncAuditEntry,
   WorkbenchToolRun,
@@ -61,6 +69,7 @@ export type {
   WorkbenchEvidenceItem,
   WorkbenchHistoryEntry,
   WorkbenchProjectBrief,
+  WorkbenchWorkflowControlSnapshot,
   WorkbenchRunArtifact,
   WorkbenchToolRun,
 } from './workbenchTypes';
@@ -364,7 +373,7 @@ function evaluateContractStatus(
         reasons.push(`${ref.toolId.toUpperCase()} contract unsatisfied: ${upstreamEval.reason}`);
       }
     }
-    if (upstream.status === 'blocked' || upstream.status === 'gated') {
+    if (upstream.status === 'blocked' || upstream.status === 'gated' || upstream.status === 'demoOnly') {
       blocking.push(ref.toolId);
       reasons.push(`${ref.toolId.toUpperCase()} is itself ${upstream.status}`);
     }
@@ -391,7 +400,7 @@ function evaluateContractStatus(
   }
 
   if (current.isSimulated) {
-    return { status: 'simulated', blockingUpstreamToolIds: [], reason: current.reason };
+    return { status: 'demoOnly', blockingUpstreamToolIds: [], reason: current.reason };
   }
 
   if (!current.validityOk || !current.confidenceOk || !current.uncertaintyOk) {
@@ -399,6 +408,125 @@ function evaluateContractStatus(
   }
 
   return { status: 'ok', blockingUpstreamToolIds: [], reason: '' };
+}
+
+const STATE_AFTER_TOOL: Record<string, WorkflowStateValue> = {
+  pathd: 'pathdReady',
+  fbasim: 'fbasimReady',
+  catdes: 'catdesReady',
+  dyncon: 'dynconReady',
+  cellfree: 'cellfreeReady',
+  dbtlflow: 'dbtlCommitted',
+};
+
+function inferWorkflowMachineState(
+  toolStatus: Partial<Record<ToolId, WorkflowToolStatus>>,
+  hasTarget: boolean,
+): WorkflowStateValue {
+  if (!hasTarget) return 'idle';
+  let state: WorkflowStateValue = 'targetSet';
+  for (const tool of GOLDEN_PATH_TOOL_IDS) {
+    const status = toolStatus[tool];
+    const contract = tryGetToolContract(tool);
+    if (!status || !contract) break;
+    const validityOk =
+      status.validity !== null && meetsValidityFloor(status.validity, contract.validityBaseline.floor);
+    const confidenceOk =
+      contract.confidencePolicy.minToAdvance === null ||
+      (status.confidence !== null && status.confidence >= contract.confidencePolicy.minToAdvance);
+    const uncertaintyOk =
+      !contract.uncertaintyPolicy.unboundedIsGate || status.uncertainty != null;
+    if (!status.hasRequiredOutputs || status.isSimulated || !validityOk || !confidenceOk || !uncertaintyOk) break;
+    state = STATE_AFTER_TOOL[tool];
+  }
+  return state;
+}
+
+function buildWorkflowControlSnapshot(
+  state: Pick<WorkbenchState, 'project' | 'analyzeArtifact' | 'toolPayloads' | 'evidenceItems' | 'runArtifacts'>,
+  runArtifactsOverride?: WorkbenchRunArtifact[],
+): WorkbenchWorkflowControlSnapshot {
+  const runArtifacts = runArtifactsOverride ?? state.runArtifacts;
+  const toolStatus: Partial<Record<ToolId, WorkflowToolStatus>> = {};
+  const projectIsDemo = Boolean(state.project?.isDemo);
+  for (const tool of GOLDEN_PATH_TOOL_IDS) {
+    const contract = tryGetToolContract(tool);
+    const payload = state.toolPayloads[tool as keyof WorkbenchToolPayloadMap];
+    if (contract && payload) {
+      toolStatus[tool] = evaluateToolContract(contract, payload, { projectIsDemo }).status;
+    }
+  }
+
+  const hasTarget = Boolean(state.project?.targetProduct || state.analyzeArtifact?.targetProduct);
+  const machineState = inferWorkflowMachineState(toolStatus, hasTarget);
+  const decision = buildWorkflowDecision({
+    machineState,
+    targetProduct: state.project?.targetProduct ?? state.analyzeArtifact?.targetProduct ?? null,
+    toolStatus,
+    evidence: state.evidenceItems.map((item) => ({ id: item.id, sourceKind: item.sourceKind })),
+    isAdapterRegistered: (id) => id === 'pathd' || id === 'fbasim',
+  });
+  const latestRun = runArtifacts[0] ?? null;
+  const latestRunStatus = latestRun?.status ?? null;
+  const latestRunContract = latestRun ? tryGetToolContract(latestRun.toolId) : undefined;
+  const latestRunAffectsWorkflow = latestRunContract?.contractScope === 'workflow';
+  const runGateStatus =
+    latestRunAffectsWorkflow &&
+    (latestRunStatus === 'blocked' || latestRunStatus === 'gated' || latestRunStatus === 'demoOnly')
+      ? latestRunStatus
+      : null;
+  const status =
+    runGateStatus === 'demoOnly'
+      ? 'demoOnly'
+      : runGateStatus ?? decision.status;
+
+  return {
+    machineState,
+    status,
+    currentToolId: decision.currentToolId,
+    nextRecommendedNode:
+      runGateStatus === 'blocked'
+        ? ((latestRun?.blockingUpstreamToolIds?.[0] as ToolId | undefined) ?? decision.nextRecommendedNode)
+        : decision.nextRecommendedNode,
+    missingEvidence: decision.missingEvidence,
+    confidence: decision.confidence,
+    uncertainty: decision.uncertainty,
+    validity: decision.validity,
+    humanGateRequired: decision.humanGateRequired || status === 'gated' || status === 'demoOnly',
+    nextNodeIsContractOnly: decision.nextNodeIsContractOnly,
+    isDemoOnly: status === 'demoOnly',
+    latestRunStatus,
+    latestRunToolId: latestRun?.toolId ?? null,
+    reasonCodes: [
+      ...decision.reasonCodes,
+      ...(runGateStatus ? [`LATEST_RUN_${runGateStatus.toUpperCase()}`] : []),
+    ],
+    explanation: runGateStatus && latestRun?.statusReason
+      ? `${String(latestRun.toolId).toUpperCase()} did not advance: ${latestRun.statusReason}`
+      : decision.explanation,
+    updatedAt: Date.now(),
+  };
+}
+
+function createInitialWorkflowControl(now = Date.now()): WorkbenchWorkflowControlSnapshot {
+  return {
+    machineState: 'idle',
+    status: 'idle',
+    currentToolId: null,
+    nextRecommendedNode: 'pathd',
+    missingEvidence: { minRequired: 0, have: 0, kinds: [] },
+    confidence: null,
+    uncertainty: null,
+    validity: null,
+    humanGateRequired: false,
+    nextNodeIsContractOnly: false,
+    isDemoOnly: false,
+    latestRunStatus: null,
+    latestRunToolId: null,
+    reasonCodes: ['NO_TARGET'],
+    explanation: 'No target product set. Set a target via /research or /analyze, then run PATHD.',
+    updatedAt: now,
+  };
 }
 
 function createRunArtifact<K extends keyof WorkbenchToolPayloadMap>(
@@ -432,6 +560,7 @@ function createRunArtifact<K extends keyof WorkbenchToolPayloadMap>(
   const isSimulated =
     contractDecision.status === 'blocked' ||
     contractDecision.status === 'simulated' ||
+    contractDecision.status === 'demoOnly' ||
     inferToolSimulation(payload) ||
     Boolean(state.project?.isDemo);
 
@@ -473,6 +602,7 @@ function buildCanonicalSlice(state: Pick<
   | 'runArtifacts'
   | 'checkpoints'
   | 'nextRecommendations'
+  | 'workflowControl'
 >): WorkbenchCanonicalState {
   return {
     schemaVersion: state.schemaVersion,
@@ -490,6 +620,7 @@ function buildCanonicalSlice(state: Pick<
     runArtifacts: state.runArtifacts,
     checkpoints: state.checkpoints,
     nextRecommendations: state.nextRecommendations,
+    workflowControl: state.workflowControl,
   };
 }
 
@@ -726,6 +857,7 @@ const initialState: Pick<
   | 'runArtifacts'
   | 'checkpoints'
   | 'nextRecommendations'
+  | 'workflowControl'
   | 'currentToolId'
   | 'currentStageId'
   | 'backendMeta'
@@ -760,6 +892,7 @@ const initialState: Pick<
   runArtifacts: [],
   checkpoints: createEmptyCheckpoints(),
   nextRecommendations: [],
+  workflowControl: createInitialWorkflowControl(),
   currentToolId: null,
   currentStageId: null,
   backendMeta: null,
@@ -805,7 +938,10 @@ export const useWorkbenchStore = create<WorkbenchState>()(
                 createdAt: now,
                 updatedAt: now,
               };
-          return touchState(state, { project });
+          return touchState(state, {
+            project,
+            workflowControl: buildWorkflowControlSnapshot({ ...state, project }),
+          });
         });
       },
 
@@ -848,10 +984,17 @@ export const useWorkbenchStore = create<WorkbenchState>()(
             updatedAt: now,
           };
 
+          const nextProject = { ...project, updatedAt: now, sourceQuery: item.query ?? project.sourceQuery, isDemo: false };
+
           return touchState(state, {
-            project: { ...project, updatedAt: now, sourceQuery: item.query ?? project.sourceQuery, isDemo: false },
+            project: nextProject,
             evidenceItems,
             selectedEvidenceIds,
+            workflowControl: buildWorkflowControlSnapshot({
+              ...state,
+              project: nextProject,
+              evidenceItems,
+            }),
           });
         });
 
@@ -925,9 +1068,13 @@ export const useWorkbenchStore = create<WorkbenchState>()(
           throw new Error(message);
         }
         const patch = buildCanonicalPatchFromWorkflowArtifact(state, candidate);
-        const canonicalState = buildCanonicalSlice({
+        const patchedState = {
           ...state,
           ...patch,
+        };
+        const canonicalState = buildCanonicalSlice({
+          ...patchedState,
+          workflowControl: buildWorkflowControlSnapshot(patchedState),
         });
 
         set({
@@ -965,6 +1112,12 @@ export const useWorkbenchStore = create<WorkbenchState>()(
             analyzeArtifact: savedState.workflowArtifact
               ? deriveAnalyzeCompatibilityProjection(savedState.workflowArtifact)
               : savedState.analyzeArtifact,
+            workflowControl: buildWorkflowControlSnapshot({
+              ...savedState,
+              analyzeArtifact: savedState.workflowArtifact
+                ? deriveAnalyzeCompatibilityProjection(savedState.workflowArtifact)
+                : savedState.analyzeArtifact,
+            }),
             backendMeta,
             collaborators,
             experimentRecords,
@@ -1143,7 +1296,8 @@ export const useWorkbenchStore = create<WorkbenchState>()(
             analyzeArtifact: getAnalyzeArtifactForState(state),
             runArtifacts: state.runArtifacts,
           });
-          const payloadStable = stableSerialize(previousPayload) === stableSerialize(payload);
+          const previousComparablePayload = previousPayload ?? latestArtifactForTool?.payloadSnapshot;
+          const payloadStable = stableSerialize(previousComparablePayload) === stableSerialize(payload);
           const executionStable = latestArtifactForTool?.execution.dependencySignature === nextExecution.dependencySignature;
 
           if (payloadStable && executionStable) {
@@ -1165,20 +1319,38 @@ export const useWorkbenchStore = create<WorkbenchState>()(
             },
             ...state.toolRuns,
           ].slice(0, TOOL_RUN_LIMIT);
+          const contract = tryGetToolContract(toolId as string);
+          const blocksCanonicalPayload =
+            contract?.contractScope === 'workflow' && runArtifact.status !== 'ok';
+          const runArtifacts = [runArtifact, ...state.runArtifacts].slice(0, RUN_ARTIFACT_LIMIT);
+          const toolPayloads = blocksCanonicalPayload
+            ? state.toolPayloads
+            : {
+                ...state.toolPayloads,
+                [toolId]: payload,
+              };
+          const workflowControl = buildWorkflowControlSnapshot({
+            ...state,
+            toolPayloads,
+            runArtifacts,
+          }, runArtifacts);
+          const recommendationToolIds = blocksCanonicalPayload
+            ? runArtifact.blockingUpstreamToolIds ?? (workflowControl.nextRecommendedNode ? [workflowControl.nextRecommendedNode] : [])
+            : getNextToolIds(toolId);
 
           return touchState(state, {
-            toolPayloads: {
-              ...state.toolPayloads,
-              [toolId]: payload,
-            },
-            runArtifacts: [runArtifact, ...state.runArtifacts].slice(0, RUN_ARTIFACT_LIMIT),
+            toolPayloads,
+            runArtifacts,
             toolRuns,
             checkpoints: buildCheckpoints(state.currentStageId, getAnalyzeArtifactForState(state), toolRuns),
             nextRecommendations: buildRecommendationsFromToolIds(
-              getNextToolIds(toolId),
-              'tool',
-              `Live ${String(toolId).toUpperCase()} computation updated downstream recommendations`,
+              recommendationToolIds,
+              blocksCanonicalPayload ? 'flow' : 'tool',
+              blocksCanonicalPayload
+                ? runArtifact.statusReason ?? 'Workflow gate blocked downstream advancement'
+                : `Live ${String(toolId).toUpperCase()} computation updated downstream recommendations`,
             ),
+            workflowControl,
           });
         });
       },
@@ -1186,22 +1358,26 @@ export const useWorkbenchStore = create<WorkbenchState>()(
       seedDemoProject: (toolId) => {
         const stage = getStageForTool(toolId ?? null);
         const now = Date.now();
-        set((state) => ({
-          ...touchState(state, {
-            project: state.project ?? {
-              id: createId('project'),
-              title: 'Artemisinin Demonstration Program',
-              summary: 'Default fallback context used when no research project has been injected yet.',
-              targetProduct: 'Artemisinin',
-              status: 'draft',
-              isDemo: true,
-              createdAt: now,
-              updatedAt: now,
-            },
-            checkpoints: buildCheckpoints(stage?.id ?? null, getAnalyzeArtifactForState(state), state.toolRuns),
-          }),
-          currentStageId: state.currentStageId ?? stage?.id ?? null,
-        }));
+        set((state) => {
+          const project = state.project ?? {
+            id: createId('project'),
+            title: 'Artemisinin Demonstration Program',
+            summary: 'Default fallback context used when no research project has been injected yet.',
+            targetProduct: 'Artemisinin',
+            status: 'draft',
+            isDemo: true,
+            createdAt: now,
+            updatedAt: now,
+          };
+          return {
+            ...touchState(state, {
+              project,
+              checkpoints: buildCheckpoints(stage?.id ?? null, getAnalyzeArtifactForState(state), state.toolRuns),
+              workflowControl: buildWorkflowControlSnapshot({ ...state, project }),
+            }),
+            currentStageId: state.currentStageId ?? stage?.id ?? null,
+          };
+        });
       },
 
       applyCanonicalState: (incomingState, options) => {
@@ -1215,6 +1391,10 @@ export const useWorkbenchStore = create<WorkbenchState>()(
           ...sanitized,
           activeArtifactId: sanitized.activeArtifactId ?? sanitized.workflowArtifact?.id ?? null,
           analyzeArtifact: derivedAnalyzeArtifact,
+          workflowControl: buildWorkflowControlSnapshot({
+            ...sanitized,
+            analyzeArtifact: derivedAnalyzeArtifact,
+          }),
           syncStatus: options?.conflict ? 'conflict' : options?.synced ? 'synced' : state.syncStatus,
           syncError: null,
           hydratedFromServer: options?.markHydrated ? true : state.hydratedFromServer,
@@ -1273,6 +1453,10 @@ export const useWorkbenchStore = create<WorkbenchState>()(
               ...canonicalState,
               activeArtifactId: canonicalState.activeArtifactId ?? canonicalState.workflowArtifact?.id ?? state.activeArtifactId,
               analyzeArtifact: derivedAnalyzeArtifact,
+              workflowControl: buildWorkflowControlSnapshot({
+                ...canonicalState,
+                analyzeArtifact: derivedAnalyzeArtifact,
+              }),
               backendMeta,
               collaborators,
               experimentRecords,
@@ -1327,6 +1511,12 @@ export const useWorkbenchStore = create<WorkbenchState>()(
             analyzeArtifact: savedState.workflowArtifact
               ? deriveAnalyzeCompatibilityProjection(savedState.workflowArtifact)
               : savedState.analyzeArtifact,
+            workflowControl: buildWorkflowControlSnapshot({
+              ...savedState,
+              analyzeArtifact: savedState.workflowArtifact
+                ? deriveAnalyzeCompatibilityProjection(savedState.workflowArtifact)
+                : savedState.analyzeArtifact,
+            }),
             backendMeta,
             collaborators,
             experimentRecords,
@@ -1365,6 +1555,12 @@ export const useWorkbenchStore = create<WorkbenchState>()(
               analyzeArtifact: conflictState.workflowArtifact
                 ? deriveAnalyzeCompatibilityProjection(conflictState.workflowArtifact)
                 : conflictState.analyzeArtifact,
+              workflowControl: buildWorkflowControlSnapshot({
+                ...conflictState,
+                analyzeArtifact: conflictState.workflowArtifact
+                  ? deriveAnalyzeCompatibilityProjection(conflictState.workflowArtifact)
+                  : conflictState.analyzeArtifact,
+              }),
               backendMeta,
               collaborators,
               experimentRecords,
@@ -1408,6 +1604,12 @@ export const useWorkbenchStore = create<WorkbenchState>()(
               analyzeArtifact: sanitized.workflowArtifact
                 ? deriveAnalyzeCompatibilityProjection(sanitized.workflowArtifact)
                 : sanitized.analyzeArtifact,
+              workflowControl: buildWorkflowControlSnapshot({
+                ...sanitized,
+                analyzeArtifact: sanitized.workflowArtifact
+                  ? deriveAnalyzeCompatibilityProjection(sanitized.workflowArtifact)
+                  : sanitized.analyzeArtifact,
+              }),
             }
           : currentState;
       },

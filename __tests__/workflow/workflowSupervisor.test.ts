@@ -101,6 +101,26 @@ describe('workflowSupervisor — current tool ready / satisfied', () => {
     expect(decision.reasonCodes).toContain('CURRENT_TOOL_NOT_READY');
   });
 
+  it('returns demoOnly when the current node has simulated output', () => {
+    const decision = buildWorkflowDecision(
+      makeInput({
+        machineState: 'targetSet',
+        targetProduct: 'limonene',
+        toolStatus: {
+          pathd: {
+            ...PARTIAL_OK,
+            isSimulated: true,
+          },
+        },
+      }),
+    );
+    expect(decision.status).toBe('demoOnly');
+    expect(decision.currentToolId).toBe('pathd');
+    expect(decision.nextRecommendedNode).toBe('pathd');
+    expect(decision.humanGateRequired).toBe(true);
+    expect(decision.reasonCodes).toContain('DEMO_ONLY');
+  });
+
   it('returns ready/CURRENT_TOOL_SATISFIED with the successor when current is done', () => {
     const decision = buildWorkflowDecision(
       makeInput({

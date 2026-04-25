@@ -29,6 +29,11 @@ function emptyContext(): WorkbenchCopilotContext {
     evidenceSelected: 0,
     nextToolIds: [],
     currentToolId: null,
+    workflowStatus: null,
+    workflowCurrentToolId: null,
+    workflowNextRecommendedNode: null,
+    workflowHumanGateRequired: false,
+    workflowIsDemoOnly: false,
     summaryOneLine: 'No active workbench context',
     promptAugmentation: '',
   };

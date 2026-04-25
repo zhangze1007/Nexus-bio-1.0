@@ -19,6 +19,11 @@ const PARTIAL_OK: WorkflowToolStatus = {
   hasRequiredOutputs: true,
 };
 
+const DYNCON_OK: WorkflowToolStatus = {
+  ...PARTIAL_OK,
+  uncertainty: 0.1,
+};
+
 const DEMO_OK: WorkflowToolStatus = {
   validity: 'demo',
   confidence: 1,
@@ -65,7 +70,7 @@ describe('workflowStateMachine — golden path advancement', () => {
     actor.send({ type: 'CATDES_DONE', status: PARTIAL_OK });
     expect(snapshotValue(actor)).toBe('catdesReady');
 
-    actor.send({ type: 'DYNCON_DONE', status: PARTIAL_OK });
+    actor.send({ type: 'DYNCON_DONE', status: DYNCON_OK });
     expect(snapshotValue(actor)).toBe('dynconReady');
 
     // CellFree contract floor is 'demo' so partial is fine.
@@ -139,7 +144,7 @@ describe('workflowStateMachine — LOOP_BACK preserves evidence', () => {
     actor.send({ type: 'PATHD_DONE', status: PARTIAL_OK });
     actor.send({ type: 'FBASIM_DONE', status: PARTIAL_OK });
     actor.send({ type: 'CATDES_DONE', status: PARTIAL_OK });
-    actor.send({ type: 'DYNCON_DONE', status: PARTIAL_OK });
+    actor.send({ type: 'DYNCON_DONE', status: DYNCON_OK });
     actor.send({ type: 'CELLFREE_DONE', status: PARTIAL_OK });
     actor.send({ type: 'DBTL_COMMITTED', status: PARTIAL_OK });
     expect(snapshotValue(actor)).toBe('dbtlCommitted');

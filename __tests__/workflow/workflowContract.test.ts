@@ -70,6 +70,23 @@ describe('workflowRegistry — coverage', () => {
       expect(contract.primaryIntent.length).toBeGreaterThan(0);
     }
   });
+
+  it('every semantically incomplete executable contract is explicitly scoped out', () => {
+    for (const contract of Object.values(WORKFLOW_CONTRACTS)) {
+      expect(['workflow', 'sidecar', 'contractOnly', 'demoOnly', 'alias']).toContain(contract.contractScope);
+
+      if (contract.contractScope === 'workflow') {
+        expect(contract.outputArtifacts.length).toBeGreaterThan(0);
+        expect(contract.failureModes.length).toBeGreaterThan(0);
+        expect(contract.outputArtifacts.some((artifact) => artifact.payloadPath && artifact.rationale)).toBe(true);
+        continue;
+      }
+
+      if (contract.outputArtifacts.length === 0 || contract.failureModes.length === 0) {
+        expect(['sidecar', 'contractOnly', 'demoOnly', 'alias']).toContain(contract.contractScope);
+      }
+    }
+  });
 });
 
 describe('workflowRegistry — golden path', () => {
@@ -88,6 +105,7 @@ describe('workflowRegistry — golden path', () => {
     for (const id of TOOL_IDS) {
       const contract = getToolContract(id);
       expect(contract.isGoldenPath).toBe(isGoldenPathToolId(id));
+      expect(contract.contractScope === 'workflow').toBe(isGoldenPathToolId(id));
     }
   });
 

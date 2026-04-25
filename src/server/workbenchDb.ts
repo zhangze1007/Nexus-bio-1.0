@@ -42,6 +42,24 @@ const EMPTY_STATE: WorkbenchCanonicalState = {
     updatedAt: 0,
   })),
   nextRecommendations: [],
+  workflowControl: {
+    machineState: 'idle',
+    status: 'idle',
+    currentToolId: null,
+    nextRecommendedNode: 'pathd',
+    missingEvidence: { minRequired: 0, have: 0, kinds: [] },
+    confidence: null,
+    uncertainty: null,
+    validity: null,
+    humanGateRequired: false,
+    nextNodeIsContractOnly: false,
+    isDemoOnly: false,
+    latestRunStatus: null,
+    latestRunToolId: null,
+    reasonCodes: ['NO_TARGET'],
+    explanation: 'No target product set. Set a target via /research or /analyze, then run PATHD.',
+    updatedAt: 0,
+  },
 };
 
 let singletonDb: SqliteDb | null = null;

@@ -35,6 +35,7 @@ export default function WorkbenchEvidenceTracePanel({
   const project = useWorkbenchStore((s) => s.project);
   const runArtifacts = useWorkbenchStore((s) => s.runArtifacts);
   const toolPayloads = useWorkbenchStore((s) => s.toolPayloads);
+  const workflowControl = useWorkbenchStore((s) => s.workflowControl);
 
   // Phase-1 — Workflow Control Plane: list missing pieces the next
   // golden-path step would require. We walk the path; the first tool whose
@@ -42,6 +43,28 @@ export default function WorkbenchEvidenceTracePanel({
   // confidence below threshold) becomes the "current" step, and we
   // enumerate the gaps.
   const gateRow = useMemo(() => {
+    if (
+      workflowControl.status === 'blocked' ||
+      workflowControl.status === 'gated' ||
+      workflowControl.status === 'demoOnly'
+    ) {
+      const tool = workflowControl.nextRecommendedNode ?? workflowControl.currentToolId;
+      if (tool) {
+        return {
+          toolId: tool as ToolId,
+          missingPayload: workflowControl.status === 'blocked',
+          missingOutputPaths: [] as string[],
+          validityShort: workflowControl.validity,
+          floor: null,
+          simulated: workflowControl.isDemoOnly,
+          reason: workflowControl.explanation,
+          evidenceShort: workflowControl.missingEvidence.minRequired > workflowControl.missingEvidence.have,
+          missingKinds: workflowControl.missingEvidence.kinds,
+          minItems: workflowControl.missingEvidence.minRequired,
+          haveItems: workflowControl.missingEvidence.have,
+        };
+      }
+    }
     for (const tool of GOLDEN_PATH_TOOL_IDS) {
       const contract = tryGetToolContract(tool);
       if (!contract) continue;
@@ -77,7 +100,7 @@ export default function WorkbenchEvidenceTracePanel({
       }
     }
     return null;
-  }, [evidenceItems, project?.isDemo, toolPayloads]);
+  }, [evidenceItems, project?.isDemo, toolPayloads, workflowControl]);
 
   const evidenceTrace = useMemo(() => {
     const traceIds = analyzeArtifact?.evidenceTraceIds?.length ? analyzeArtifact.evidenceTraceIds : selectedEvidenceIds;
@@ -128,13 +151,13 @@ export default function WorkbenchEvidenceTracePanel({
           </div>
           <div style={{ fontFamily: T.SANS, fontSize: '12px', color: LABEL, lineHeight: 1.55 }}>
             {gateRow.missingPayload && `Run ${gateRow.toolId.toUpperCase()} to publish required outputs.`}
-            {!gateRow.missingPayload && gateRow.validityShort && (
+            {!gateRow.missingPayload && gateRow.validityShort && gateRow.floor && (
               <>Upgrade {gateRow.toolId.toUpperCase()} validity from {gateRow.validityShort} to {gateRow.floor}.</>
             )}
-            {!gateRow.missingPayload && !gateRow.validityShort && gateRow.simulated && (
+            {!gateRow.missingPayload && (!gateRow.validityShort || !gateRow.floor) && gateRow.simulated && (
               <>Demo/simulated output cannot satisfy closed-loop execution.</>
             )}
-            {!gateRow.missingPayload && !gateRow.validityShort && !gateRow.simulated && gateRow.reason}
+            {!gateRow.missingPayload && (!gateRow.validityShort || !gateRow.floor) && !gateRow.simulated && gateRow.reason}
           </div>
           {gateRow.evidenceShort && (
             <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL }}>

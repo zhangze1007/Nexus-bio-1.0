@@ -8,7 +8,8 @@ import type {
 import type { WorkbenchToolPayloadMap } from './workbenchPayloads';
 import type { WorkbenchStageId } from '../components/tools/shared/workbenchConfig';
 import type { WorkflowArtifact } from '../domain/workflowArtifact';
-import type { ToolId } from '../domain/workflowContract';
+import type { ToolId, ValidityFloor } from '../domain/workflowContract';
+import type { WorkflowStateValue } from '../services/workflowStateMachine';
 
 export type EvidenceSourceKind = 'literature' | 'analysis' | 'tool' | 'system';
 
@@ -121,7 +122,38 @@ export interface StructuredAnalysisPayload {
  * Field is optional so older serialized projects (no status field) read
  * as `undefined` — call sites treat undefined as `'ok'` for back-compat.
  */
-export type WorkbenchRunStatus = 'ok' | 'simulated' | 'blocked' | 'gated';
+export type WorkbenchRunStatus = 'ok' | 'simulated' | 'blocked' | 'gated' | 'demoOnly';
+
+export type WorkbenchWorkflowStatus =
+  | 'idle'
+  | 'ready'
+  | 'blocked'
+  | 'gated'
+  | 'demoOnly'
+  | 'complete';
+
+export interface WorkbenchWorkflowControlSnapshot {
+  machineState: WorkflowStateValue;
+  status: WorkbenchWorkflowStatus;
+  currentToolId: ToolId | null;
+  nextRecommendedNode: ToolId | null;
+  missingEvidence: {
+    minRequired: number;
+    have: number;
+    kinds: string[];
+  };
+  confidence: number | null;
+  uncertainty: number | null;
+  validity: ValidityFloor | null;
+  humanGateRequired: boolean;
+  nextNodeIsContractOnly: boolean;
+  isDemoOnly: boolean;
+  latestRunStatus: WorkbenchRunStatus | null;
+  latestRunToolId: string | null;
+  reasonCodes: string[];
+  explanation: string;
+  updatedAt: number;
+}
 
 export interface WorkbenchRunArtifact {
   id: string;
@@ -304,6 +336,7 @@ export interface WorkbenchCanonicalState {
   toolRuns: WorkbenchToolRun[];
   toolPayloads: WorkbenchToolPayloadMap;
   runArtifacts: WorkbenchRunArtifact[];
+  workflowControl: WorkbenchWorkflowControlSnapshot;
   checkpoints: StageCheckpoint[];
   nextRecommendations: NextStepRecommendation[];
 }

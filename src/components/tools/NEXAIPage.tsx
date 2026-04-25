@@ -36,7 +36,7 @@ import AxonLogPanel from '../ide/AxonLogPanel';
 import AxonPlanPanel from '../ide/AxonPlanPanel';
 import AgentSessionViewer from '../ide/AgentSessionViewer';
 import { routeIntent, type IntentRoute } from '../../services/axonIntentRouter';
-import { buildWorkbenchCopilotContext } from '../../services/axonContext';
+import { buildWorkbenchCopilotContext, composeCopilotQuery } from '../../services/axonContext';
 import { useAxonOrchestrator } from '../../providers/AxonOrchestratorProvider';
 import { domainCategoryLabel } from '../../services/axonDomainClassifier';
 
@@ -103,6 +103,7 @@ export default function NEXAIPage() {
   const evidenceItems = useWorkbenchStore((s) => s.evidenceItems);
   const selectedEvidenceIds = useWorkbenchStore((s) => s.selectedEvidenceIds);
   const nextRecommendations = useWorkbenchStore((s) => s.nextRecommendations);
+  const workflowControl = useWorkbenchStore((s) => s.workflowControl);
   const setToolPayload = useWorkbenchStore((s) => s.setToolPayload);
 
   const [query, setQuery] = useState('');
@@ -156,6 +157,9 @@ export default function NEXAIPage() {
   }, [agenticMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const contextPrompt = useMemo(() => {
+    if (workflowControl.status === 'blocked' || workflowControl.status === 'gated' || workflowControl.status === 'demoOnly') {
+      return `Review the current workflow gate (${workflowControl.status}) and explain what evidence or upstream node is required before ${workflowControl.nextRecommendedNode ?? workflowControl.currentToolId ?? 'the next tool'} can advance.`;
+    }
     if (analyzeArtifact) {
       const bottleneck = analyzeArtifact.bottleneckAssumptions[0]?.label ?? 'current pathway bottleneck';
       return `What are the highest-risk assumptions for ${analyzeArtifact.targetProduct}, especially around ${bottleneck}, and which tool should I run next?`;
@@ -164,11 +168,38 @@ export default function NEXAIPage() {
       return `Summarize the best next step for the ${project.targetProduct} program using the current evidence bundle.`;
     }
     return '';
-  }, [analyzeArtifact, project?.targetProduct]);
+  }, [analyzeArtifact, project?.targetProduct, workflowControl]);
+
+  const copilotContext = useMemo(() => buildWorkbenchCopilotContext({
+    targetProduct: null,
+    project: project
+      ? { title: project.title, targetProduct: project.targetProduct }
+      : null,
+    analyzeArtifact: analyzeArtifact
+      ? {
+          targetProduct: analyzeArtifact.targetProduct,
+          bottleneckAssumptions: analyzeArtifact.bottleneckAssumptions,
+          thermodynamicConcerns: analyzeArtifact.thermodynamicConcerns,
+          pathwayCandidates: analyzeArtifact.pathwayCandidates,
+        }
+      : null,
+    evidenceItems: evidenceItems.map((e) => ({
+      id: e.id,
+      title: e.title,
+      year: e.year,
+    })),
+    selectedEvidenceIds,
+    nextRecommendations: nextRecommendations.map((r) => ({
+      toolId: r.toolId,
+      reason: r.reason,
+    })),
+    currentToolId: 'nexai',
+    workflowControl,
+  }), [analyzeArtifact, evidenceItems, nextRecommendations, project, selectedEvidenceIds, workflowControl]);
 
   useEffect(() => {
     setToolPayload('nexai', {
-      validity: 'real',
+      validity: result ? 'real' : 'demo',
       toolId: 'nexai',
       targetProduct: analyzeArtifact?.targetProduct ?? project?.targetProduct ?? 'Scientific workbench',
       sourceArtifactId: analyzeArtifact?.id,
@@ -208,31 +239,6 @@ export default function NEXAIPage() {
       const targetProduct = analyzeArtifact?.targetProduct ?? project?.targetProduct;
       const route = routeIntent(activeQuery, { targetProduct });
       setRouteHint(route);
-      const copilotContext = buildWorkbenchCopilotContext({
-        targetProduct: null,
-        project: project
-          ? { title: project.title, targetProduct: project.targetProduct }
-          : null,
-        analyzeArtifact: analyzeArtifact
-          ? {
-              targetProduct: analyzeArtifact.targetProduct,
-              bottleneckAssumptions: analyzeArtifact.bottleneckAssumptions,
-              thermodynamicConcerns: analyzeArtifact.thermodynamicConcerns,
-              pathwayCandidates: analyzeArtifact.pathwayCandidates,
-            }
-          : null,
-        evidenceItems: evidenceItems.map((e) => ({
-          id: e.id,
-          title: e.title,
-          year: e.year,
-        })),
-        selectedEvidenceIds,
-        nextRecommendations: nextRecommendations.map((r) => ({
-          toolId: r.toolId,
-          reason: r.reason,
-        })),
-        currentToolId: 'nexai',
-      });
       planAndRun({ request: activeQuery, context: copilotContext });
       // PR-5: session viewer is the center of gravity when agentic is on.
       setSurfaceView('session');
@@ -245,18 +251,7 @@ export default function NEXAIPage() {
     setParseError(null);
     appendConsole({ level: 'info', module: 'nexai', message: `Query: "${activeQuery.slice(0, 60)}${activeQuery.length > 60 ? '…' : ''}"` });
 
-    const contextualQuery = analyzeArtifact
-      ? [
-          activeQuery,
-          '',
-          'Workbench context:',
-          `Target product: ${analyzeArtifact.targetProduct}`,
-          `Pathway candidates: ${analyzeArtifact.pathwayCandidates.length}`,
-          `Evidence bundle size: ${selectedEvidenceIds.length}`,
-          `Top bottleneck: ${analyzeArtifact.bottleneckAssumptions[0]?.label ?? 'Not specified'}`,
-          `Thermodynamic concern: ${analyzeArtifact.thermodynamicConcerns[0] ?? 'Not specified'}`,
-        ].join('\n')
-      : activeQuery;
+    const contextualQuery = composeCopilotQuery(activeQuery, copilotContext);
 
     try {
       const res = await fetch('/api/analyze', {
@@ -400,6 +395,14 @@ export default function NEXAIPage() {
                 value: result ? `${(result.confidence * 100).toFixed(0)}%` : '—',
                 detail: `${selectedEvidenceIds.length} selected evidence item(s) · ${nextRecommendations.length} queued next-step recommendation(s)`,
                 tone: result && result.confidence > 0.75 ? 'cool' : 'neutral',
+              },
+              {
+                label: 'Workflow',
+                value: workflowControl.status.toUpperCase(),
+                detail: workflowControl.nextRecommendedNode
+                  ? `Next node: ${workflowControl.nextRecommendedNode.toUpperCase()}${workflowControl.humanGateRequired ? ' · human gate' : ''}`
+                  : workflowControl.explanation,
+                tone: workflowControl.status === 'blocked' || workflowControl.status === 'gated' || workflowControl.status === 'demoOnly' ? 'alert' : 'neutral',
               },
               {
                 label: 'Citations',
