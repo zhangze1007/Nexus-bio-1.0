@@ -131,6 +131,7 @@ export default function WorkbenchDirectoryPage() {
   const runArtifacts = useWorkbenchStore((s) => s.runArtifacts);
   const toolRuns = useWorkbenchStore((s) => s.toolRuns);
   const currentToolId = useWorkbenchStore((s) => s.currentToolId);
+  const totalToolCount = WORKBENCH_STAGES.reduce((sum, stage) => sum + stage.toolIds.length, 0);
 
   const freshnessByTool = getFreshnessMap(
     runArtifacts,
@@ -196,6 +197,24 @@ export default function WorkbenchDirectoryPage() {
     },
   ];
 
+  const platformSignals = [
+    {
+      label: 'Workflow',
+      value: '4 connected stages',
+      detail: 'From literature intake to validation and iteration',
+    },
+    {
+      label: 'Modules',
+      value: `${totalToolCount} specialized tools`,
+      detail: 'Pathway, simulation, chassis, DBTL, omics, and more',
+    },
+    {
+      label: 'Continuity',
+      value: 'Evidence-carrying handoff',
+      detail: 'Project and Analyze context persist across the launcher',
+    },
+  ];
+
   return (
     <div
       style={{
@@ -225,10 +244,12 @@ export default function WorkbenchDirectoryPage() {
                   Workbench Launcher
                 </div>
                 <div style={{ fontFamily: T.SANS, fontSize: '32px', fontWeight: 700, letterSpacing: '-0.04em', color: VALUE, lineHeight: 1.02 }}>
-                  Enter a tool and continue the project
+                  Move through the 4-stage workbench without losing project context
                 </div>
                 <div style={{ fontFamily: T.SANS, fontSize: '14px', color: LABEL, maxWidth: '66ch', lineHeight: 1.65 }}>
-                  Nexus-Bio keeps project, evidence, and Analyze context attached so you can move into the next workbench without reorienting first.
+                  This launcher mirrors the Nexus-Bio architecture: start from research and analysis,
+                  continue into simulation and optimization, translate findings into chassis or control
+                  interventions, then close the loop with validation, DBTL, omics, and spatial readouts.
                 </div>
               </div>
 
@@ -293,9 +314,41 @@ export default function WorkbenchDirectoryPage() {
                   } as ControlVarsStyle}
                 >
                   <Beaker size={14} />
-                  Analyze Artifact
+                  Analyze Literature
                 </Link>
               </div>
+            </div>
+
+            <div
+              style={{
+                display: 'grid',
+                gap: '10px',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+              }}
+            >
+              {platformSignals.map((item) => (
+                <div
+                  key={item.label}
+                  style={{
+                    borderRadius: '16px',
+                    border: `1px solid ${BORDER}`,
+                    background: SURFACE_SOFT,
+                    padding: '12px 14px',
+                    display: 'grid',
+                    gap: '4px',
+                  }}
+                >
+                  <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                    {item.label}
+                  </div>
+                  <div style={{ fontFamily: T.SANS, fontSize: '15px', fontWeight: 700, color: VALUE }}>
+                    {item.value}
+                  </div>
+                  <div style={{ fontFamily: T.SANS, fontSize: '12px', color: LABEL, lineHeight: 1.55 }}>
+                    {item.detail}
+                  </div>
+                </div>
+              ))}
             </div>
 
             <div

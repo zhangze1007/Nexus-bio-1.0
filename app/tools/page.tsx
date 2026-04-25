@@ -3,9 +3,9 @@ import { Suspense } from 'react';
 import WorkbenchDirectoryPage from '../../src/components/workbench/WorkbenchDirectoryPage';
 
 export const metadata: Metadata = {
-  title: 'Tools Directory | Nexus-Bio',
+  title: 'Workbench Directory | Nexus-Bio',
   description:
-    'Browse, compare, and enter Nexus-Bio research tools through a unified scientific workbench directory.',
+    'Browse and enter the Nexus-Bio 4-stage research workbench across design, simulation, chassis engineering, and validation loops.',
 };
 
 export default function Page() {

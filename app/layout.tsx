@@ -4,15 +4,15 @@ import './globals.css';
 import WorkbenchSyncProvider from '../src/components/workbench/WorkbenchSyncProvider';
 
 export const metadata: Metadata = {
-  title: 'Nexus-Bio | Next-Gen Bio-Intelligent Architecture',
+  title: 'Nexus-Bio | Synthetic Biology Research Workbench',
   description:
-    'Nexus-Bio: AI-powered synthetic biology research platform. Extract metabolic pathways, visualize 3D molecular structures, and simulate enzyme kinetics from any research paper.',
+    'Nexus-Bio is a 4-stage synthetic biology research workbench for pathway design, simulation, chassis/control strategy, and validation loops.',
   keywords:
-    'Nexus-Bio, synthetic biology, metabolic pathway, AlphaFold, PubChem, enzyme kinetics, bioinformatics',
+    'Nexus-Bio, synthetic biology, research workbench, metabolic pathway, flux balance analysis, DBTL, omics, bioinformatics',
   openGraph: {
-    title: 'Nexus-Bio | Next-Gen Bio-Intelligent Architecture',
+    title: 'Nexus-Bio | Synthetic Biology Research Workbench',
     description:
-      'From literature to mechanistic insight — AI-powered metabolic pathway visualization and analysis.',
+      'From literature to validated pathway decisions across design, simulation, chassis engineering, and test loops.',
     type: 'website',
   },
   twitter: {
