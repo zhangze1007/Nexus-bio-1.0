@@ -24,6 +24,13 @@ import { buildExecutionSnapshot } from '../components/workbench/workbenchExecuti
 import { tryGetToolContract } from '../services/workflowRegistry';
 import { isAxonToolSupported } from '../services/axonAdapterRegistry';
 import type { AxonTool } from '../services/AxonOrchestrator';
+import {
+  createWorkflowActor,
+  GOLDEN_PATH_DONE_EVENT,
+  type WorkflowActor,
+  type WorkflowStateValue,
+  type WorkflowToolStatus,
+} from '../services/workflowStateMachine';
 import { evaluateToolContract } from '../services/workflowContractEvaluator';
 import { buildWorkflowDecision } from '../services/workflowSupervisor';
 import {
@@ -31,7 +38,6 @@ import {
   meetsValidityFloor,
   type ToolId,
 } from '../domain/workflowContract';
-import type { WorkflowStateValue, WorkflowToolStatus } from '../services/workflowStateMachine';
 import type { WorkbenchRunStatus } from './workbenchTypes';
 import type {
   AxonRunRecord,
@@ -121,6 +127,13 @@ interface WorkbenchState extends WorkbenchCanonicalState {
     patch: Partial<WorkbenchAxonPlanRecord['steps'][number]>,
   ) => void;
   setToolPayload: <K extends keyof WorkbenchToolPayloadMap>(toolId: K, payload: WorkbenchToolPayloadMap[K]) => void;
+  /**
+   * Phase-2B.1 (R2). Fires LOOP_BACK on the workflow actor (only valid
+   * from `dbtlCommitted`), bumps `iteration` on the snapshot, and
+   * clears golden-path tool payloads so the next iteration starts blank.
+   * Evidence and project are preserved.
+   */
+  loopBackWorkflow: () => void;
   seedDemoProject: (toolId?: string | null) => void;
   applyCanonicalState: (state: WorkbenchCanonicalState, options?: { markHydrated?: boolean; synced?: boolean; conflict?: boolean }) => void;
   loadFromServer: (options?: { artifactId?: string | null }) => Promise<void>;
@@ -444,6 +457,84 @@ function inferWorkflowMachineState(
   return state;
 }
 
+// ── Phase-2B.1 — Workflow actor (R2) ────────────────────────────────────
+//
+// The XState 5 actor at workflowStateMachine.ts is the authoritative
+// owner of `iteration` and the LOOP_BACK transition. We keep it as a
+// module-level singleton so the actor's state survives across React
+// re-renders and store mutations. Tests reset it via
+// `__resetWorkflowActorForTests` so each suite starts from a clean
+// `idle / iteration: 0` state.
+//
+// Convergence semantics: every `buildWorkflowControlSnapshot` calls
+// `syncWorkflowActor`, which fast-forwards the actor to the inferred
+// state by sending SET_TARGET / *_DONE events. Events that don't apply
+// in the actor's current state are silently ignored by XState (no
+// transition handler), so over-sending is safe.
+//
+// Project-change semantics: when `targetProduct` changes the actor is
+// reset so iteration / tool history don't bleed across projects. This is
+// stronger than CLEAR_TARGET (which only fires from `targetSet`) and
+// matches the user-visible "new program" lifecycle.
+
+let workflowActor: WorkflowActor | null = null;
+
+function getWorkflowActor(): WorkflowActor {
+  if (!workflowActor) {
+    workflowActor = createWorkflowActor();
+    workflowActor.start();
+  }
+  return workflowActor;
+}
+
+/** Test helper. Production code never calls this. */
+export function __resetWorkflowActorForTests(): void {
+  if (workflowActor) {
+    try {
+      workflowActor.stop();
+    } catch {
+      // ignore stop errors
+    }
+  }
+  workflowActor = null;
+}
+
+function syncWorkflowActor(
+  targetProduct: string | null,
+  toolStatus: Partial<Record<ToolId, WorkflowToolStatus>>,
+): WorkflowStateValue {
+  let actor = getWorkflowActor();
+  let ctx = actor.getSnapshot().context;
+
+  if (ctx.targetProduct !== null && ctx.targetProduct !== targetProduct) {
+    __resetWorkflowActorForTests();
+    actor = getWorkflowActor();
+    ctx = actor.getSnapshot().context;
+  }
+
+  if (targetProduct && ctx.targetProduct !== targetProduct) {
+    actor.send({ type: 'SET_TARGET', targetProduct });
+  }
+
+  for (const tool of GOLDEN_PATH_TOOL_IDS) {
+    const status = toolStatus[tool];
+    if (!status) continue;
+    const eventType = GOLDEN_PATH_DONE_EVENT[tool];
+    actor.send({ type: eventType as 'PATHD_DONE', status });
+  }
+
+  return actor.getSnapshot().value as WorkflowStateValue;
+}
+
+function dispatchEvidenceAdded(ids: string[]): void {
+  if (!ids.length) return;
+  getWorkflowActor().send({ type: 'EVIDENCE_ADDED', ids });
+}
+
+function dispatchLoopBack(): void {
+  getWorkflowActor().send({ type: 'LOOP_BACK' });
+}
+
 function buildWorkflowControlSnapshot(
   state: Pick<WorkbenchState, 'project' | 'analyzeArtifact' | 'toolPayloads' | 'evidenceItems' | 'runArtifacts'>,
   runArtifactsOverride?: WorkbenchRunArtifact[],
@@ -460,10 +551,16 @@ function buildWorkflowControlSnapshot(
   }
 
   const hasTarget = Boolean(state.project?.targetProduct || state.analyzeArtifact?.targetProduct);
-  const machineState = inferWorkflowMachineState(toolStatus, hasTarget);
+  const targetProduct = state.project?.targetProduct ?? state.analyzeArtifact?.targetProduct ?? null;
+  // Phase-2B.1 — actor is the authoritative owner of machine state and
+  // iteration. inferWorkflowMachineState is retained only as a fallback
+  // when the actor cannot be initialised (SSR / first paint).
+  const actorState = syncWorkflowActor(hasTarget ? targetProduct : null, toolStatus);
+  const machineState = hasTarget ? actorState : inferWorkflowMachineState(toolStatus, hasTarget);
+  const iteration = getWorkflowActor().getSnapshot().context.iteration;
   const decision = buildWorkflowDecision({
     machineState,
-    targetProduct: state.project?.targetProduct ?? state.analyzeArtifact?.targetProduct ?? null,
+    targetProduct,
     toolStatus,
     evidence: state.evidenceItems.map((item) => ({ id: item.id, sourceKind: item.sourceKind })),
     isAdapterRegistered: (id) => isAxonToolSupported(id as AxonTool),
@@ -506,7 +603,7 @@ function buildWorkflowControlSnapshot(
     explanation: runGateStatus && latestRun?.statusReason
       ? `${String(latestRun.toolId).toUpperCase()} did not advance: ${latestRun.statusReason}`
       : decision.explanation,
-    iteration: 0,
+    iteration,
     updatedAt: Date.now(),
   };
 }
@@ -990,6 +1087,11 @@ export const useWorkbenchStore = create<WorkbenchState>()(
 
           const nextProject = { ...project, updatedAt: now, sourceQuery: item.query ?? project.sourceQuery, isDemo: false };
 
+          // Phase-2B.1 (R2) — let the workflow actor know an evidence id
+          // joined the bundle. EVIDENCE_ADDED never moves the main FSM
+          // state; it only updates context for downstream observability.
+          if (!existing) dispatchEvidenceAdded([evidenceId]);
+
           return touchState(state, {
             project: nextProject,
             evidenceItems,
@@ -1354,6 +1456,34 @@ export const useWorkbenchStore = create<WorkbenchState>()(
                 ? runArtifact.statusReason ?? 'Workflow gate blocked downstream advancement'
                 : `Live ${String(toolId).toUpperCase()} computation updated downstream recommendations`,
             ),
+            workflowControl,
+          });
+        });
+      },
+
+      loopBackWorkflow: () => {
+        set((state) => {
+          // Only meaningful from dbtlCommitted. The actor's guard refuses
+          // any other source state, so over-invoking is a no-op.
+          const beforeIteration = getWorkflowActor().getSnapshot().context.iteration;
+          dispatchLoopBack();
+          const afterIteration = getWorkflowActor().getSnapshot().context.iteration;
+          if (afterIteration === beforeIteration) {
+            // Guard refused. No state change.
+            return state;
+          }
+          // Clear golden-path payloads so downstream rows reblank for the
+          // next iteration. Evidence + project persist by design.
+          const toolPayloads: WorkbenchToolPayloadMap = { ...state.toolPayloads };
+          for (const tool of GOLDEN_PATH_TOOL_IDS) {
+            delete toolPayloads[tool as keyof WorkbenchToolPayloadMap];
+          }
+          const workflowControl = buildWorkflowControlSnapshot({
+            ...state,
+            toolPayloads,
+          });
+          return touchState(state, {
+            toolPayloads,
             workflowControl,
           });
         });
