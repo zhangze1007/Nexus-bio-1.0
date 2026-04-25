@@ -1,13 +1,21 @@
 'use client';
 
 import { useMemo } from 'react';
-import { ArrowRight, BookMarked, FlaskConical, Workflow } from 'lucide-react';
+import { ArrowRight, BookMarked, FlaskConical, ShieldAlert, Workflow } from 'lucide-react';
 import { useWorkbenchStore } from '../../store/workbenchStore';
 import { T } from '../ide/tokens';
 import { TOOL_BY_ID } from '../tools/shared/toolRegistry';
 import { getDependencyTrace } from '../tools/shared/workbenchGraph';
 import { getAuthorityTier } from './workbenchTrust';
 import { PATHD_THEME } from './workbenchTheme';
+import { tryGetToolContract } from '../../services/workflowRegistry';
+import {
+  GOLDEN_PATH_TOOL_IDS,
+  meetsValidityFloor,
+  type ToolId,
+  type ValidityFloor,
+} from '../../domain/workflowContract';
+import type { WorkbenchToolPayloadMap } from '../../store/workbenchPayloads';
 
 interface WorkbenchEvidenceTracePanelProps {
   toolId?: string | null;
@@ -26,6 +34,45 @@ export default function WorkbenchEvidenceTracePanel({
   const evidenceItems = useWorkbenchStore((s) => s.evidenceItems);
   const analyzeArtifact = useWorkbenchStore((s) => s.analyzeArtifact);
   const runArtifacts = useWorkbenchStore((s) => s.runArtifacts);
+  const toolPayloads = useWorkbenchStore((s) => s.toolPayloads);
+
+  // Phase-1 — Workflow Control Plane: list missing pieces the next
+  // golden-path step would require. We walk the path; the first tool whose
+  // contract is unsatisfied (no payload, validity below floor, or
+  // confidence below threshold) becomes the "current" step, and we
+  // enumerate the gaps.
+  const gateRow = useMemo(() => {
+    for (const tool of GOLDEN_PATH_TOOL_IDS) {
+      const contract = tryGetToolContract(tool);
+      if (!contract) continue;
+      const payload = toolPayloads[tool as keyof WorkbenchToolPayloadMap];
+      const validity =
+        (payload as { validity?: ValidityFloor } | undefined)?.validity ?? null;
+      const hasResult = Boolean(
+        payload && (payload as { result?: unknown }).result &&
+          typeof (payload as { result?: unknown }).result === 'object',
+      );
+      const meetsFloor =
+        validity !== null && meetsValidityFloor(validity, contract.validityBaseline.floor);
+      if (!hasResult || !meetsFloor) {
+        const evidenceShort =
+          contract.evidenceRequired.minItems > evidenceItems.length;
+        const haveKinds = new Set(evidenceItems.map((e) => e.sourceKind));
+        const missingKinds = contract.evidenceRequired.kinds.filter((k) => !haveKinds.has(k));
+        return {
+          toolId: tool as ToolId,
+          missingPayload: !hasResult,
+          validityShort: hasResult && !meetsFloor ? validity : null,
+          floor: contract.validityBaseline.floor,
+          evidenceShort,
+          missingKinds,
+          minItems: contract.evidenceRequired.minItems,
+          haveItems: evidenceItems.length,
+        };
+      }
+    }
+    return null;
+  }, [evidenceItems, toolPayloads]);
 
   const evidenceTrace = useMemo(() => {
     const traceIds = analyzeArtifact?.evidenceTraceIds?.length ? analyzeArtifact.evidenceTraceIds : selectedEvidenceIds;
@@ -51,6 +98,43 @@ export default function WorkbenchEvidenceTracePanel({
       <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
         {title}
       </div>
+
+      {/* Phase-1 — Workflow Control Plane: missing-evidence / next-gate row.
+          Renders only when the supervisor sees a gap. */}
+      {gateRow && (
+        <div
+          style={{
+            borderRadius: '14px',
+            border: `1px solid ${BORDER}`,
+            background: PATHD_THEME.panelGradientSoft,
+            padding: '10px 12px',
+            display: 'grid',
+            gap: '4px',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <ShieldAlert size={13} color={PATHD_THEME.coral} />
+            <span style={{ fontFamily: T.SANS, fontSize: '12px', color: VALUE, fontWeight: 700 }}>
+              Next step needs:
+            </span>
+            <span style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.sky }}>
+              {gateRow.toolId.toUpperCase()}
+            </span>
+          </div>
+          <div style={{ fontFamily: T.SANS, fontSize: '12px', color: LABEL, lineHeight: 1.55 }}>
+            {gateRow.missingPayload && `Run ${gateRow.toolId.toUpperCase()} to publish required outputs.`}
+            {!gateRow.missingPayload && gateRow.validityShort && (
+              <>Upgrade {gateRow.toolId.toUpperCase()} validity from {gateRow.validityShort} to {gateRow.floor}.</>
+            )}
+          </div>
+          {gateRow.evidenceShort && (
+            <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL }}>
+              evidence · {gateRow.haveItems}/{gateRow.minItems}
+              {gateRow.missingKinds.length > 0 && ` · missing ${gateRow.missingKinds.join(', ')}`}
+            </div>
+          )}
+        </div>
+      )}
 
       <div style={{ display: 'grid', gap: '10px', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
         <div
