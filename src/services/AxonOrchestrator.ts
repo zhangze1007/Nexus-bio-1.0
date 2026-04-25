@@ -21,7 +21,13 @@
  * AutomationDrawer can subscribe without pulling in a state library.
  */
 
-export type AxonTool = 'pathd' | 'fbasim';
+// Phase 1 — Workflow Control Plane: AxonTool now spans all 14 registered
+// tool ids. Adapter coverage is intentionally narrower (PATHD + FBASim
+// only at present); the orchestrator surfaces "no adapter registered"
+// errors for any tool without one. See workflowRegistry.ts for the
+// declarative contract per id.
+import type { ToolId } from '../domain/workflowContract';
+export type AxonTool = ToolId;
 
 /**
  * `cancelled` is a PR-4 first-class status, distinct from `error`. An error

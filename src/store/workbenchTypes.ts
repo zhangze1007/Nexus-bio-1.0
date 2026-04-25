@@ -8,6 +8,7 @@ import type {
 import type { WorkbenchToolPayloadMap } from './workbenchPayloads';
 import type { WorkbenchStageId } from '../components/tools/shared/workbenchConfig';
 import type { WorkflowArtifact } from '../domain/workflowArtifact';
+import type { ToolId } from '../domain/workflowContract';
 
 export type EvidenceSourceKind = 'literature' | 'analysis' | 'tool' | 'system';
 
@@ -185,7 +186,7 @@ export interface WorkbenchCollaborator {
  */
 export interface AxonRunRecord {
   taskId: string;
-  tool: 'pathd' | 'fbasim';
+  tool: ToolId;
   status: 'done' | 'error';
   label: string;
   summary: string;
@@ -207,7 +208,7 @@ export interface AxonRunRecord {
 export interface WorkbenchAxonPlanStepRecord {
   id: string;
   title: string;
-  tool: 'pathd' | 'fbasim';
+  tool: ToolId;
   objective: string;
   inputSummary: string;
   expectedOutput: string;
