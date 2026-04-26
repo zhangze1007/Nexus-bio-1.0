@@ -407,11 +407,11 @@ export const TOOL_ASSUMPTIONS: Record<string, ToolAssumption[]> = {
   // ─────────────────────────────────────────────────────────────
   cellfree: [
     {
-      id: 'cellfree.parameters_curated',
+      id: 'cellfree.parameters_unsourced',
       toolId: 'cellfree',
       category: 'data',
       statement:
-        'Rate constants k_tx, k_tl, k_decay are curated reference values; not fit to user batch data.',
+        'k_tx, k_tl, k_decay reflect qualitative promoter/RBS strength ordering; no per-value paper-table citation.',
       severity: 'blocking',
     },
     {
