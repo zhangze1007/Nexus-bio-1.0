@@ -1,6 +1,7 @@
 'use client';
 import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { AlertTriangle } from 'lucide-react';
 import ToolShell, { TOOL_TOKENS as T } from './shared/ToolShell';
 import ModuleCard from './shared/ModuleCard';
 import TactileSlider from './shared/TactileSlider';
@@ -350,6 +351,20 @@ export default function CETHXPage() {
       workbenchSimulated={!analyzeArtifact}
       hero={
         <>
+          <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4 mb-4 flex items-start gap-3">
+            <AlertTriangle
+              className="text-amber-400 shrink-0 mt-0.5"
+              size={20}
+            />
+            <div className="text-amber-200 text-sm leading-relaxed">
+              <strong className="font-semibold">Demonstration Tool</strong>
+              {' — '}
+              CETHX uses simplified placeholder thermodynamics (uniform
+              pH factor, no Alberty transform). Outputs are for UI
+              illustration only and are not used in downstream inference.
+              For research-grade thermodynamics, consult eQuilibrator 3.
+            </div>
+          </div>
           <ScientificHero
             eyebrow="Stage 2 · Thermodynamic Feasibility"
             title={`${PATHWAYS.find((entry) => entry.id === pathway)?.label ?? pathway} under live pathway constraints`}
