@@ -77,9 +77,12 @@ Phase 3 adds workflow-level overrides.
   conflicts with a transient-state input is a Phase 2 problem and
   belongs in detector code, not in the schema.
 
-- **No payload migration.** The schema adds `provenance` as
+- **No payload migration.** The schema adds `runProvenance` as
   *optional* on existing payloads in Phase 1.3. Existing data without
-  provenance keeps working. New writes must populate it.
+  runProvenance keeps working. New writes must populate it. Field is
+  named `runProvenance` (not `provenance`) to avoid collision with
+  ProEvolWorkbenchPayload's pre-existing `provenance: 'simulated' |
+  'inferred' | ...` field.
 
 - **No tier upgrades.** Per the standing rule, tools currently marked
   `'demo'` (CETHX, community FBA mode, MultiO, CFS) stay `'demo'` in

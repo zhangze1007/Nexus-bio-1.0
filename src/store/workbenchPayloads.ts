@@ -1,5 +1,6 @@
 import type { PathwayKey } from '../data/mockCETHX';
 import type { DBTLPhase } from '../types';
+import type { ProvenanceEntry } from '../types/assumptions';
 import type { ScSpatialDatasetMeta, ScSpatialViewMode } from '../types/scspatial';
 
 /**
@@ -19,6 +20,7 @@ export type PayloadValidity = 'real' | 'partial' | 'demo';
 
 export interface WorkbenchPayloadBase {
   validity: PayloadValidity;
+  runProvenance?: ProvenanceEntry;
 }
 
 export interface PathDWorkbenchPayload extends WorkbenchPayloadBase {
