@@ -1,3 +1,37 @@
+/**
+ * @scientific_provenance
+ *
+ * REFERENCE:
+ *   MOCK_DATA: no peer-reviewed source.
+ *   For real implementation, see:
+ *   - eQuilibrator 3 (Beber et al. 2022, Nucleic Acids Research)
+ *     DOI: 10.1093/nar/gkab1106
+ *   - Alberty (2003) Thermodynamics of Biochemical Reactions
+ *
+ * NOT_IMPLEMENTED:
+ *   - Reaction-specific pKa-based pH transform (Alberty)
+ *   - Ionic strength correction (Debye-Hückel)
+ *   - Temperature dependence beyond linear T/298.15 scaling
+ *   - Group contribution method (Mavrovouniotis / Jankowski)
+ *   - Magnesium binding correction
+ *   - Compartment-specific ΔG' adjustments
+ *
+ * KNOWN_LIMITATIONS:
+ *   - The 0.1 uniform pH discount has no chemical basis;
+ *     it is a placeholder constant, not an Alberty transform.
+ *   - ATP/NADH yields are hardcoded values, not derived
+ *     from reaction stoichiometry.
+ *   - Output ΔG' values MUST NOT be used to make
+ *     thermodynamic feasibility decisions in research contexts.
+ *   - The reference table is intended for UI demonstration
+ *     of the CETHX workflow, not for quantitative analysis.
+ *
+ * VALIDITY_TIER: demo (per src/components/tools/shared/toolValidity.ts)
+ * BLOCKING_ASSUMPTIONS:
+ *   - cethx.uniform_ph_factor (severity: blocking)
+ *     See src/components/tools/shared/toolAssumptions.ts
+ */
+
 import type { ThermoStep } from '../types';
 
 // Glycolysis ΔG° values (kJ/mol) at standard conditions (pH 7, 25°C)
