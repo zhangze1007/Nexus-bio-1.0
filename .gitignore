@@ -40,6 +40,9 @@ next-env.d.ts
 # Local scientific workbench database
 .nexus/
 
+# Local Codex marker file
+.codex
+
 # Local Python virtual environments
 .venv/
 .venv-scspatial/
