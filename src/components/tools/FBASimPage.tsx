@@ -15,8 +15,9 @@ import {
   YEAST_NODES, YEAST_FLUX_EDGES, YEAST_REACTION_DEFS, SHARED_METABOLITES,
 } from '../../data/mockFBA';
 import type { FBAOutput, CommunityFBAOutput } from '../../data/mockFBA';
+import type { ProvenanceEntry } from '../../types/assumptions';
 import { buildFBASeed } from './shared/workbenchDataflow';
-import { solveAuthorityCommunityFBA, solveAuthorityFBA } from '../../services/FBAAuthorityClient';
+import { solveAuthorityCommunityFBA, solveAuthorityFBAWithProvenance } from '../../services/FBAAuthorityClient';
 import { T, TOOL_RESULT_PALETTE} from '../ide/tokens';
 import { PATHD_THEME } from '../workbench/workbenchTheme';
 import { SCI_PALETTE, SCI_PASTEL } from '../charts/chartTheme';
@@ -500,6 +501,7 @@ export default function FBASimPage() {
   const [yeastOxygen, setYeastOxygen] = usePersistedState('nexus-bio:fba:yeast-oxygen', 6);
   const [yeastKO, setYeastKO] = useState<string[]>([]);
   const [singleResult, setSingleResult] = useState<FBAOutput>(() => createEmptyFBAOutput());
+  const [singleRunProvenance, setSingleRunProvenance] = useState<ProvenanceEntry | undefined>(undefined);
   const [singleError, setSingleError] = useState<string | null>(null);
   const [singleLoading, setSingleLoading] = useState(true);
   const [communityResult, setCommunityResult] = useState<CommunityFBAOutput>(() => createEmptyCommunityOutput());
@@ -579,7 +581,7 @@ export default function FBASimPage() {
     setSingleLoading(true);
     setSingleError(null);
 
-    solveAuthorityFBA(
+    solveAuthorityFBAWithProvenance(
       {
         objective,
         glucoseUptake,
@@ -587,12 +589,14 @@ export default function FBASimPage() {
         knockouts,
       },
       controller.signal,
-    ).then((result) => {
+    ).then(({ result, provenance }) => {
       setSingleResult(result);
+      setSingleRunProvenance(provenance);
       setSingleError(null);
     }).catch((error) => {
       if (controller.signal.aborted) return;
       setSingleResult(createEmptyFBAOutput());
+      setSingleRunProvenance(undefined);
       setSingleError(error instanceof Error ? error.message : 'Authoritative FBA solve failed');
     }).finally(() => {
       if (!controller.signal.aborted) {
@@ -723,6 +727,7 @@ export default function FBASimPage() {
 
     setToolPayload('fbasim', {
       validity: 'partial',
+      runProvenance: simMode === 'single' ? singleRunProvenance : undefined,
       toolId: 'fbasim',
       targetProduct: recommendedSeed.targetProduct,
       pathwayFocus: recommendedSeed.pathwayFocus,
@@ -762,6 +767,7 @@ export default function FBASimPage() {
     singleLoading,
     singleError,
     singleResult,
+    singleRunProvenance,
   ]);
 
   return (

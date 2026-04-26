@@ -1,6 +1,12 @@
 import type { CommunityFBAOutput, FBAOutput } from '../data/mockFBA';
+import type { ProvenanceEntry } from '../types/assumptions';
 
 export type FBAObjective = 'biomass' | 'atp' | 'product';
+
+interface AuthorityResponse<T> {
+  result: T;
+  provenance?: ProvenanceEntry;
+}
 
 interface SingleAuthorityRequest {
   species?: 'ecoli' | 'yeast';
@@ -25,7 +31,7 @@ interface CommunityAuthorityRequest {
   };
 }
 
-async function requestAuthorityResult<T>(body: Record<string, unknown>, signal?: AbortSignal): Promise<T> {
+async function requestAuthorityResponse<T>(body: Record<string, unknown>, signal?: AbortSignal): Promise<AuthorityResponse<T>> {
   const response = await fetch('/api/fba', {
     method: 'POST',
     headers: {
@@ -41,11 +47,33 @@ async function requestAuthorityResult<T>(body: Record<string, unknown>, signal?:
     throw new Error(payload?.error ?? 'Authoritative FBA service failed');
   }
 
-  return payload.result as T;
+  return {
+    result: payload.result as T,
+    provenance: payload.provenance as ProvenanceEntry | undefined,
+  };
+}
+
+async function requestAuthorityResult<T>(body: Record<string, unknown>, signal?: AbortSignal): Promise<T> {
+  const payload = await requestAuthorityResponse<T>(body, signal);
+  return payload.result;
 }
 
 export function solveAuthorityFBA(request: SingleAuthorityRequest, signal?: AbortSignal) {
   return requestAuthorityResult<FBAOutput>(
+    {
+      mode: 'single',
+      species: request.species ?? 'ecoli',
+      objective: request.objective,
+      glucoseUptake: request.glucoseUptake,
+      oxygenUptake: request.oxygenUptake,
+      knockouts: request.knockouts ?? [],
+    },
+    signal,
+  );
+}
+
+export function solveAuthorityFBAWithProvenance(request: SingleAuthorityRequest, signal?: AbortSignal) {
+  return requestAuthorityResponse<FBAOutput>(
     {
       mode: 'single',
       species: request.species ?? 'ecoli',

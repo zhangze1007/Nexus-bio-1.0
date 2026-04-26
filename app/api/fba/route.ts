@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { solveAuthorityCommunityFBA, solveAuthorityFBA, type CommunityFBARequest, type FBAObjective, type FBASpecies } from '../../../src/server/fbaEngine';
+import { createProvenanceEntry } from '../../../src/utils/provenance';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -56,8 +57,23 @@ export async function POST(request: Request) {
       oxygenUptake: asNumber(input.oxygenUptake, 12),
       knockouts: asKnockouts(input.knockouts),
     });
+    const provenanceEntry = createProvenanceEntry({
+      toolId: 'fbasim-single',
+      outputAssumptions: [
+        'fbasim-single.steady_state',
+        'fbasim-single.biomass_objective',
+        'fbasim-single.no_regulation',
+        'fbasim-single.simplex_real',
+      ],
+      evidence: [{
+        id: `fba-${Date.now()}`,
+        source: 'computation',
+        reference: 'two-phase simplex LP on iJO1366Subset',
+        confidence: 'high',
+      }],
+    });
 
-    return NextResponse.json({ ok: true, mode: 'single', result });
+    return NextResponse.json({ ok: true, mode: 'single', result, provenance: provenanceEntry });
   } catch (error) {
     if (process.env.NODE_ENV !== 'production') {
       console.error('FBA route failed', error);
