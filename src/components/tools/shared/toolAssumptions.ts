@@ -15,6 +15,32 @@
  * Validity tiers (from toolValidity.ts) are NOT modified in this phase; an
  * honest assumption list does not by itself promote a tool from 'demo' to
  * 'partial'. Tier upgrades happen only after Phase-2 algorithm work.
+ *
+ * ───────────────────────────────────────────────────────────────
+ * NOTE: known registry-vs-code inconsistencies (resolve in Phase 2)
+ * ───────────────────────────────────────────────────────────────
+ *
+ * 1. CellFree (cellfree)
+ *    - toolValidity.ts caption claims:
+ *        "Cell-free expression yield uses a curated lookup; no live
+ *         TXTL kinetic model."
+ *    - But src/services/CellFreeEngine.ts actually implements a
+ *      resource-aware TX-TL ODE with refs to Noireaux 2003,
+ *      Jewett 2004, and Karzbrun 2011.
+ *    - Per Phase-1 strict-rule #2, the validity tier is NOT modified
+ *      here. The assumption list below reflects what the code really
+ *      does; tier calibration is a Phase-2 task.
+ *
+ * 2. FBAsim (fbasim) — split into sub-tier entries
+ *    - The legacy 'fbasim' entry is preserved verbatim to avoid
+ *      breaking any existing import call sites.
+ *    - 'fbasim-single' (partial) and 'fbasim-community' (demo) are
+ *      the canonical sub-tier entries going forward.
+ *    - 'fbasim-community.community_not_joint_lp' is 'blocking' here,
+ *      whereas the legacy 'fbasim.community_not_joint_lp' is only
+ *      'warning'. The sub-tier entry is authoritative for downstream
+ *      gating; the legacy entry is kept for backward compatibility
+ *      until Phase 2 migrates call sites.
  */
 
 import type { ToolAssumption } from '../../../types/assumptions';
@@ -103,6 +129,86 @@ export const TOOL_ASSUMPTIONS: Record<string, ToolAssumption[]> = {
       category: 'mathematical',
       statement:
         'Single-species solver is two-phase simplex LP on the iJO1366 subset (real implementation).',
+      severity: 'info',
+    },
+  ],
+
+  // Sub-tier: single-species mode of fbasim (canonical, partial)
+  'fbasim-single': [
+    {
+      id: 'fbasim-single.steady_state',
+      toolId: 'fbasim-single',
+      category: 'biological',
+      statement:
+        'Assumes the metabolic network is at steady state (dx/dt = 0); transient dynamics are not represented.',
+      severity: 'warning',
+    },
+    {
+      id: 'fbasim-single.biomass_objective',
+      toolId: 'fbasim-single',
+      category: 'biological',
+      statement:
+        'Default objective is biomass maximization; assumes evolutionary optimization for growth.',
+      severity: 'warning',
+    },
+    {
+      id: 'fbasim-single.no_regulation',
+      toolId: 'fbasim-single',
+      category: 'biological',
+      statement:
+        'No transcriptional or allosteric regulation; flux bounds come from stoichiometry only.',
+      severity: 'warning',
+    },
+    {
+      id: 'fbasim-single.simplex_real',
+      toolId: 'fbasim-single',
+      category: 'mathematical',
+      statement:
+        'Two-phase simplex LP on the iJO1366 subset (real implementation).',
+      severity: 'info',
+    },
+  ],
+
+  // Sub-tier: community/two-species mode of fbasim (canonical, demo)
+  'fbasim-community': [
+    {
+      id: 'fbasim-community.community_not_joint_lp',
+      toolId: 'fbasim-community',
+      category: 'mathematical',
+      statement:
+        'Two independent single-species LPs; exchange fluxes post-hoc scaled. NOT a joint community LP.',
+      severity: 'blocking',
+    },
+    {
+      id: 'fbasim-community.no_cross_feeding_stoich',
+      toolId: 'fbasim-community',
+      category: 'biological',
+      statement:
+        'No cross-feeding stoichiometry constraints between species; metabolite balance is not enforced.',
+      severity: 'warning',
+    },
+    {
+      id: 'fbasim-community.alpha_linear_blend',
+      toolId: 'fbasim-community',
+      category: 'mathematical',
+      statement:
+        'α parameter linearly mixes growth rates post-LP; no SteadyCom-style biomass coupling.',
+      severity: 'warning',
+    },
+    {
+      id: 'fbasim-community.exchange_flux_no_meaning',
+      toolId: 'fbasim-community',
+      category: 'biological',
+      statement:
+        'Cross-species exchange flux values have no biological meaning; for UI illustration only.',
+      severity: 'warning',
+    },
+    {
+      id: 'fbasim-community.inherits_single_assumptions',
+      toolId: 'fbasim-community',
+      category: 'biological',
+      statement:
+        'Inherits all fbasim-single biological assumptions (steady state, biomass objective, no regulation).',
       severity: 'info',
     },
   ],
