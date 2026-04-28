@@ -39,9 +39,9 @@ describe('ScSpatialControlRail', () => {
       />,
     );
 
-    expect((screen.getByRole('button', { name: '2D Spatial' }) as HTMLButtonElement).disabled).toBe(true);
-    expect((screen.getByRole('button', { name: '3D Spatial' }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole('button', { name: '2D' }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole('button', { name: '3D' }) as HTMLButtonElement).disabled).toBe(true);
     expect((screen.getByRole('button', { name: 'UMAP' }) as HTMLButtonElement).disabled).toBe(false);
-    expect(screen.getByText('partial-dataset.h5ad')).toBeTruthy();
+    expect(screen.getByText('test/1.0.0')).toBeTruthy();
   });
 });

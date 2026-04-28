@@ -47,7 +47,24 @@ export async function POST(request: Request) {
       };
 
       const result = await solveAuthorityCommunityFBA(payload);
-      return NextResponse.json({ ok: true, mode: 'community', result });
+      const provenanceEntry = createProvenanceEntry({
+        toolId: 'fbasim-community',
+        validityTier: 'demo',
+        outputAssumptions: [
+          'fbasim-community.community_not_joint_lp',
+          'fbasim-community.no_cross_feeding_stoich',
+          'fbasim-community.alpha_linear_blend',
+          'fbasim-community.exchange_flux_no_meaning',
+          'fbasim-community.inherits_single_assumptions',
+        ],
+        evidence: [{
+          id: `fba-community-${Date.now()}`,
+          source: 'computation',
+          reference: 'Two independent single-species LP solves with post-hoc exchange scaling; not a joint community LP.',
+          confidence: 'demo',
+        }],
+      });
+      return NextResponse.json({ ok: true, mode: 'community', result, provenance: provenanceEntry });
     }
 
     const result = await solveAuthorityFBA({

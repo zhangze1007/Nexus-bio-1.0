@@ -15,6 +15,8 @@ import type {
   CFSParameters,
 } from '../../services/CellFreeEngine';
 import { useWorkbenchStore } from '../../store/workbenchStore';
+import type { ProvenanceEntry } from '../../types/assumptions';
+import { createProvenanceEntry } from '../../utils/provenance';
 import WorkbenchInlineContext from '../workbench/WorkbenchInlineContext';
 import { buildCellFreeSeed } from './shared/workbenchDataflow';
 import { T, TOOL_RESULT_PALETTE} from '../ide/tokens';
@@ -743,8 +745,30 @@ export default function CellFreePage() {
 
   useEffect(() => {
     if (simError) return;
+    const now = Date.now();
+    const upstreamProvenance = [cethxPayload?.runProvenance, catalystPayload?.runProvenance, dynconPayload?.runProvenance]
+      .filter((entry): entry is ProvenanceEntry => Boolean(entry))
+      .map((entry) => `${entry.toolId}:${entry.timestamp}`);
     setToolPayload('cellfree', {
       validity: 'demo',
+      runProvenance: createProvenanceEntry({
+        toolId: 'cellfree',
+        outputAssumptions: [
+          'cellfree.parameters_unsourced',
+          'cellfree.tx_tl_kinetics_ref',
+          'cellfree.no_chassis_specificity',
+          'cellfree.lm_fitting_local',
+          'cellfree.iviv_mlp_unfit',
+        ],
+        evidence: [{
+          id: `cellfree-${now}`,
+          source: 'mock',
+          reference: 'MOCK_DATA: no calibrated source for the bundled cell-free parameter defaults.',
+          confidence: 'demo',
+          notes: 'Tier/code mismatch is preserved honestly; no parameter calibration or chassis-specific TXTL model is claimed.',
+        }],
+        upstreamProvenance,
+      }),
       toolId: 'cellfree',
       targetProduct: analyzeArtifact?.targetProduct || project?.targetProduct || project?.title || 'Target Product',
       sourceArtifactId: analyzeArtifact?.id,
@@ -760,12 +784,15 @@ export default function CellFreePage() {
         invivoExpression: iviv?.invivo_expression ?? null,
         confidence: iviv?.confidence ?? null,
       },
-      updatedAt: Date.now(),
+      updatedAt: now,
     });
   }, [
     analyzeArtifact?.id,
     analyzeArtifact?.targetProduct,
+    catalystPayload?.runProvenance,
     constructs,
+    cethxPayload?.runProvenance,
+    dynconPayload?.runProvenance,
     invitroMaxProtein,
     iviv?.confidence,
     iviv?.invivo_expression,

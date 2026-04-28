@@ -1,6 +1,25 @@
 /**
  * Multi-Omics Integrator (MOI) Core Engine — DEMO IMPLEMENTATION
  *
+ * REFERENCE:
+ *   MOCK_DATA: no peer-reviewed source for this TypeScript implementation.
+ *   The code is a deterministic local demonstration and does not implement
+ *   MOFA+, GPerturb, a production VAE, or UMAP.
+ *
+ * NOT_IMPLEMENTED:
+ *   - MOFA+ variational sparse factor model
+ *   - View-specific likelihood/noise model
+ *   - Production variational autoencoder training with autograd
+ *   - UMAP fuzzy-simplicial-set graph optimization
+ *   - Bayesian posterior uncertainty
+ *   - Causal perturbation model such as GPerturb
+ *
+ * KNOWN_LIMITATIONS:
+ *   - Factor scores come from ALS-style reconstruction, not MOFA+ inference.
+ *   - Embedding uncertainty fields are deterministic placeholders, not posterior intervals.
+ *   - Perturbation outputs are sensitivity-style projections, not causal predictions.
+ *   - Bundled mock omics rows are for UI demonstration only.
+ *
  * Integrates Transcriptomics, Proteomics, and Metabolomics into a shared
  * low-dimensional view using three pure-TypeScript routines.
  *
@@ -13,12 +32,11 @@
  *    inference. The output is a deterministic shared-factor decomposition
  *    that is structurally similar to NMF/PCA on a stacked matrix.
  *
- * 2. `trainMultimodalVAE` — a deterministic linear encoder/decoder optimized
- *    by gradient descent on a reconstruction objective. NOT a variational
- *    autoencoder: there is no sampling from q(z|x), no KL term against a
- *    prior, and no β-disentanglement (the `beta` argument is retained for
- *    API compatibility but does not control a divergence). Treat the output
- *    as a learned linear embedding.
+ * 2. `trainMultimodalVAE` — a deterministic seeded encoder/decoder optimized
+ *    by simplified gradient updates. NOT a production variational autoencoder:
+ *    there is no autograd, no learned posterior uncertainty, no validation
+ *    split, and no deployment-grade stochastic inference. Treat the output
+ *    as a learned local embedding.
  *
  * 3. Predictive perturbation — modifies a single feature in the input row,
  *    re-encodes through the linear embedding above, and reports the delta in
@@ -192,15 +210,17 @@ class SeededRNG {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// 1. MOFA+ Factor Extraction
+// 1. ALS Factor Decomposition (not MOFA+)
 // ══════════════════════════════════════════════════════════════════════════════
 
 /**
- * MOFA+-style multi-omics factor analysis.
+ * Deterministic ALS-style multi-omics factor decomposition.
  *
  * Uses alternating least squares (ALS) with masked reconstruction to extract
  * K latent factors from a multi-view data matrix. Handles sparse data and
  * missing values by masking them during the reconstruction loss computation.
+ * This is not MOFA+: no variational sparse prior, no Bayesian posterior, and
+ * no view-specific likelihood model are implemented.
  *
  * Model: X_v ≈ Z · W_v^T  for each view v ∈ {transcriptomics, proteomics, metabolomics}
  *
@@ -373,21 +393,21 @@ export function extractMOFAFactors(
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// 2. Multi-modal VAE
+// 2. Seeded Linear Embedding (API name retained; not production VAE)
 // ══════════════════════════════════════════════════════════════════════════════
 
 /**
- * Multi-modal Variational Autoencoder for multi-omics integration.
+ * Seeded encoder/decoder demonstration for multi-omics integration.
  *
  * Architecture:
  *   Encoder: x → h1 (128) → h2 (64) → [μ, log σ²] (latent_dim)
  *   Decoder: z → h3 (64) → h4 (128) → x̂ (3 omics values)
  *   Batch correction: one-hot batch ID → learned offset in latent space
  *
- * Loss: L = -E[log p(x|z)] + β·D_KL(q(z|x) || N(0,I))
+ * Loss: reconstruction error plus a local KL-style penalty.
  *
- * Training uses simplified gradient descent (no autograd — analytic gradients
- * for this shallow architecture).
+ * Training uses simplified deterministic updates (no autograd, no calibrated
+ * posterior uncertainty, no deployment-grade VAE inference).
  */
 
 interface VAEWeights {
@@ -496,11 +516,11 @@ function forward(
 }
 
 /**
- * Train the multi-modal VAE on omics data.
+ * Train the seeded linear embedding on omics data.
  *
  * @param data - OmicsRow[] input
  * @param latentDim - Dimensionality of latent space Z (default 8)
- * @param beta - β-VAE weight on KL term (default 0.5 for disentanglement)
+ * @param beta - Compatibility weight for the local KL-style penalty
  * @param epochs - Training epochs (default 100)
  * @param lr - Learning rate (default 0.005)
  * @param batchLabels - Optional batch IDs for batch correction
@@ -657,15 +677,15 @@ export function trainMultimodalVAE(
 /**
  * Predict metabolome profile shift from a gene expression perturbation.
  *
- * Uses the VAE latent space: modifies the gene's transcript value, re-encodes
- * through the learned encoder, and decodes the new metabolite prediction.
+ * Uses the learned local embedding: modifies the gene's transcript value,
+ * re-encodes through the learned encoder, and decodes the new metabolite prediction.
  * The latent shift vector indicates the direction and magnitude of change in
  * the biological manifold.
  *
  * @param geneId - Gene identifier (e.g., 'ADS')
  * @param foldChange - Log2 fold change to apply
  * @param data - Original omics data
- * @param vaeResult - Trained VAE result
+ * @param vaeResult - Trained embedding result; type name is retained for compatibility
  */
 export function predictPerturbation(
   geneId: string,
@@ -797,12 +817,12 @@ export function computeMetabolicEfficiency(data: OmicsRow[]): MetabolicEfficienc
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// 5. UMAP/t-SNE 3D Export with Metabolic Efficiency Coloring
+// 5. PCA-style 3D Export with Metabolic Efficiency Coloring
 // ══════════════════════════════════════════════════════════════════════════════
 
 /**
  * Export 3D embedding coordinates colored by metabolic efficiency.
- * Uses VAE latent space projected to 3D via PCA-like dimensionality reduction.
+ * Uses the local embedding projected to 3D via PCA-like dimensionality reduction.
  */
 export function exportEmbeddingsWithEfficiency(
   vaeResult: VAETrainingResult,

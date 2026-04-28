@@ -33,6 +33,7 @@ import {
 } from '../services/workflowStateMachine';
 import { evaluateToolContract } from '../services/workflowContractEvaluator';
 import { buildWorkflowDecision } from '../services/workflowSupervisor';
+import { canPassToDownstream } from '../utils/runtimeGating';
 import {
   GOLDEN_PATH_TOOL_IDS,
   meetsValidityFloor,
@@ -1532,9 +1533,16 @@ export const useWorkbenchStore = create<WorkbenchState>()(
             toolPayloads,
             runArtifacts,
           }, runArtifacts);
+          const downstreamToolIds = getNextToolIds(toolId);
+          const allowedDownstreamToolIds = downstreamToolIds.filter((nextToolId) =>
+            canPassToDownstream(payload, nextToolId).allowed,
+          );
+          const blockedDownstreamToolIds = downstreamToolIds.filter((nextToolId) =>
+            !canPassToDownstream(payload, nextToolId).allowed,
+          );
           const recommendationToolIds = blocksCanonicalPayload
             ? runArtifact.blockingUpstreamToolIds ?? (workflowControl.nextRecommendedNode ? [workflowControl.nextRecommendedNode] : [])
-            : getNextToolIds(toolId);
+            : allowedDownstreamToolIds;
 
           return touchState(state, {
             toolPayloads,
@@ -1546,7 +1554,9 @@ export const useWorkbenchStore = create<WorkbenchState>()(
               blocksCanonicalPayload ? 'flow' : 'tool',
               blocksCanonicalPayload
                 ? runArtifact.statusReason ?? 'Workflow gate blocked downstream advancement'
-                : `Live ${String(toolId).toUpperCase()} computation updated downstream recommendations`,
+                : blockedDownstreamToolIds.length > 0
+                  ? `Runtime gate blocked ${blockedDownstreamToolIds.map((id) => id.toUpperCase()).join(', ')} from this output`
+                  : `Live ${String(toolId).toUpperCase()} computation updated downstream recommendations`,
             ),
             workflowControl,
           });

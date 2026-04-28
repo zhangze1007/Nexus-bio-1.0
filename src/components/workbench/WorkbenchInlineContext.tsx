@@ -5,12 +5,16 @@ import { useMemo } from 'react';
 import { ArrowUpRight, BrainCircuit, Microscope } from 'lucide-react';
 import { TOOL_BY_ID } from '../tools/shared/toolRegistry';
 import { getStageForTool } from '../tools/shared/workbenchConfig';
+import { getUpstreamToolIds } from '../tools/shared/workbenchGraph';
+import RuntimeGatingNotice from '../tools/shared/RuntimeGatingNotice';
 import { useWorkbenchStore } from '../../store/workbenchStore';
+import type { WorkbenchToolPayloadMap } from '../../store/workbenchPayloads';
 import { useUIStore } from '../../store/uiStore';
 import { T } from '../ide/tokens';
 import { getToolFreshness } from './workbenchTrust';
 import { PATHD_THEME } from './workbenchTheme';
 import { buildWorkflowHandoffSummary, workflowStatusLabel } from './workflowExperience';
+import { canPassToDownstream } from '../../utils/runtimeGating';
 
 interface WorkbenchInlineContextProps {
   toolId: string;
@@ -44,6 +48,7 @@ export default function WorkbenchInlineContext({
   const selectedEvidenceIds = useWorkbenchStore((s) => s.selectedEvidenceIds);
   const evidenceItems = useWorkbenchStore((s) => s.evidenceItems);
   const dbtlPayload = useWorkbenchStore((s) => s.toolPayloads.dbtlflow);
+  const toolPayloads = useWorkbenchStore((s) => s.toolPayloads);
   const runArtifacts = useWorkbenchStore((s) => s.runArtifacts);
   const workflowControl = useWorkbenchStore((s) => s.workflowControl);
   const stage = getStageForTool(toolId);
@@ -99,6 +104,18 @@ export default function WorkbenchInlineContext({
     () => buildWorkflowHandoffSummary(toolId, workflowControl, runArtifacts),
     [runArtifacts, toolId, workflowControl],
   );
+  const runtimeGates = useMemo(() => {
+    return getUpstreamToolIds(toolId, { deep: false, includeSupport: false })
+      .map((sourceToolId) => {
+        const payload = toolPayloads[sourceToolId as keyof WorkbenchToolPayloadMap];
+        if (!payload) return null;
+        return {
+          sourceToolId,
+          decision: canPassToDownstream(payload, toolId),
+        };
+      })
+      .filter((entry): entry is { sourceToolId: string; decision: ReturnType<typeof canPassToDownstream> } => Boolean(entry));
+  }, [toolId, toolPayloads]);
   const committedFeedback = dbtlPayload?.feedbackSource === 'committed' ? dbtlPayload : null;
   const compactItems = [
     { label: 'Evidence', value: `${selectedEvidenceIds.length} selected` },
@@ -267,6 +284,20 @@ export default function WorkbenchInlineContext({
           <div style={{ fontFamily: T.SANS, fontSize: compact ? '9px' : '11px', color: LABEL, lineHeight: 1.45 }}>
             {handoffSummary.reason}
           </div>
+        </div>
+      )}
+
+      {runtimeGates.length > 0 && (
+        <div style={{ display: 'grid', gap: compact ? '6px' : '8px' }}>
+          {runtimeGates.map(({ sourceToolId, decision }) => (
+            <RuntimeGatingNotice
+              key={`${sourceToolId}-${toolId}`}
+              decision={decision}
+              sourceLabel={sourceToolId}
+              targetLabel={toolId}
+              compact={compact}
+            />
+          ))}
         </div>
       )}
 

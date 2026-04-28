@@ -3,14 +3,16 @@ import { TOOL_VALIDITY } from '../components/tools/shared/toolValidity';
 
 export function createProvenanceEntry(args: {
   toolId: string;
+  validityTier?: ProvenanceEntry['validityTier'];
   inputAssumptions?: string[];
   outputAssumptions?: string[];
   evidence?: Evidence[];
   upstreamProvenance?: string[];
 }): ProvenanceEntry {
   // Read validity tier from TOOL_VALIDITY at call time so the snapshot
-  // reflects the current tier. Fall back to 'partial' if unknown.
-  const tier = TOOL_VALIDITY[args.toolId]?.level ?? 'partial';
+  // reflects the current tier. Sub-tier callers can override when the
+  // shared registry only has the parent route (for example fbasim-community).
+  const tier = args.validityTier ?? TOOL_VALIDITY[args.toolId]?.level ?? 'partial';
   return {
     toolId: args.toolId,
     timestamp: Date.now(),

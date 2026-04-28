@@ -98,3 +98,16 @@ export function solveAuthorityCommunityFBA(request: CommunityAuthorityRequest, s
     signal,
   );
 }
+
+export function solveAuthorityCommunityFBAWithProvenance(request: CommunityAuthorityRequest, signal?: AbortSignal) {
+  return requestAuthorityResponse<CommunityFBAOutput>(
+    {
+      mode: 'community',
+      objective: request.objective,
+      alpha: request.alpha ?? 0.5,
+      ecoli: request.ecoli,
+      yeast: request.yeast,
+    },
+    signal,
+  );
+}

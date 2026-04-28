@@ -284,11 +284,28 @@ export async function solveAuthorityFBA(request: SingleSpeciesFBARequest): Promi
   });
 }
 
-// NOTE: This is NOT a joint community LP (no SteadyCom / cFBA coupling).
-// It runs two independent single-species solves and post-hoc scales pre-defined
-// shared-metabolite exchange fluxes by each strain's growth/efficiency. UI surfaces
-// this as "Two-Species Flux Comparison" with a method-note banner. Do not interpret
-// the output as a microbiome stoichiometric optimum.
+/**
+ * @scientific_provenance
+ *
+ * REFERENCE:
+ *   MOCK_DATA: no peer-reviewed source for this community wrapper.
+ *   The single-species LP solver is real, but this function is only a
+ *   two-species heuristic and is not SteadyCom, cFBA, or a joint community LP.
+ *
+ * NOT_IMPLEMENTED:
+ *   - Joint community stoichiometric matrix
+ *   - Species-specific biomass variables in one optimization problem
+ *   - Shared exchange metabolite mass-balance constraints
+ *   - Cross-feeding uptake/secretion coupling constraints
+ *   - Community objective with feasibility proof
+ *   - Community-level infeasibility diagnostics
+ *
+ * KNOWN_LIMITATIONS:
+ *   - Exchange fluxes are post-hoc scaled comparisons, not LP decision variables.
+ *   - Community growth is a linear blend of two independent host optima.
+ *   - Knockouts and uptake bounds do not propagate through shared metabolite pools.
+ *   - Outputs must not be interpreted as microbiome stoichiometric optima.
+ */
 export async function solveAuthorityCommunityFBA(request: CommunityFBARequest): Promise<CommunityFBAOutput> {
   const alpha = clamp(request.alpha ?? 0.5, 0, 1);
   const ecoli = await solveAuthorityFBA({

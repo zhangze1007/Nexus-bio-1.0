@@ -17,7 +17,9 @@ import { PATHWAY_STEPS, computeThermo } from '../../data/mockCETHX';
 import type { PathwayKey } from '../../data/mockCETHX';
 import { useUIStore } from '../../store/uiStore';
 import { useWorkbenchStore } from '../../store/workbenchStore';
+import type { ProvenanceEntry } from '../../types/assumptions';
 import { buildCETHXSeed } from './shared/workbenchDataflow';
+import { createProvenanceEntry } from '../../utils/provenance';
 
 // ── Breathing Waterfall Chart ──────────────────────────────────────────
 
@@ -304,8 +306,29 @@ export default function CETHXPage() {
 
   useEffect(() => {
     const now = Date.now();
+    const upstreamProvenance = [fbaPayload?.runProvenance, pathdPayload?.runProvenance]
+      .filter((entry): entry is ProvenanceEntry => Boolean(entry))
+      .map((entry) => `${entry.toolId}:${entry.timestamp}`);
     setToolPayload('cethx', {
       validity: 'demo',
+      runProvenance: createProvenanceEntry({
+        toolId: 'cethx',
+        outputAssumptions: [
+          'cethx.uniform_ph_factor',
+          'cethx.linear_temperature_only',
+          'cethx.no_ionic_strength_correction',
+          'cethx.lehninger_lookup',
+          'cethx.atp_yields_hardcoded',
+        ],
+        evidence: [{
+          id: `cethx-${now}`,
+          source: 'mock',
+          reference: 'MOCK_DATA: no peer-reviewed source for this placeholder thermodynamics calculation.',
+          confidence: 'demo',
+          notes: 'CETHX remains demo; output ΔG values are not for thermodynamic feasibility decisions.',
+        }],
+        upstreamProvenance,
+      }),
       toolId: 'cethx',
       targetProduct: analyzeArtifact?.targetProduct || project?.targetProduct || project?.title || 'Target Product',
       sourceArtifactId: analyzeArtifact?.id,
@@ -322,7 +345,7 @@ export default function CETHXPage() {
       },
       updatedAt: now,
     });
-  }, [analyzeArtifact?.id, analyzeArtifact?.targetProduct, pathway, pH, project?.targetProduct, project?.title, setToolPayload, tempC, thermo]);
+  }, [analyzeArtifact?.id, analyzeArtifact?.targetProduct, fbaPayload?.runProvenance, pathdPayload?.runProvenance, pathway, pH, project?.targetProduct, project?.title, setToolPayload, tempC, thermo]);
 
   // Console logging
   const appendConsole = useUIStore((s) => s.appendConsole);

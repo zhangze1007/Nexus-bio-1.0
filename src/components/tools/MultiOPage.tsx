@@ -30,8 +30,10 @@ import type {
   PerturbationResult,
   InternalThought,
 } from '../../types';
+import type { ProvenanceEntry } from '../../types/assumptions';
 import { useWorkbenchStore } from '../../store/workbenchStore';
 import { useUIStore } from '../../store/uiStore';
+import { createProvenanceEntry } from '../../utils/provenance';
 import { T, TOOL_RESULT_PALETTE} from '../ide/tokens';
 import WorkbenchInlineContext from '../workbench/WorkbenchInlineContext';
 import ScientificHero from './shared/ScientificHero';
@@ -586,6 +588,8 @@ function EmbeddingScatter({ embeddings, fcThreshold, activeLayers, highlightedGe
 export default function MultiOPage() {
   const project = useWorkbenchStore((s) => s.project);
   const analyzeArtifact = useWorkbenchStore((s) => s.analyzeArtifact);
+  const cellfreePayload = useWorkbenchStore((s) => s.toolPayloads.cellfree);
+  const dbtlPayload = useWorkbenchStore((s) => s.toolPayloads.dbtlflow);
   const setToolPayload = useWorkbenchStore((s) => s.setToolPayload);
   const devMode = useUIStore((s) => s.devMode);
   /* Layer toggles */
@@ -623,7 +627,7 @@ export default function MultiOPage() {
     [vaeResult, efficiencyScores],
   );
 
-  /* VAE perturbation state */
+  /* Local embedding perturbation state; API names are retained for compatibility. */
   const [vaePerturbGene, setVaePerturbGene] = useState<string>(OMICS_DATA[0]?.gene ?? '');
   const [vaePerturbFC, setVaePerturbFC] = useState<number>(2.0);
   const [vaePerturbResult, setVaePerturbResult] = useState<VAEPerturbationPrediction | null>(null);
@@ -734,9 +738,31 @@ export default function MultiOPage() {
   }, [preferredGene]);
 
   useEffect(() => {
+    const now = Date.now();
     const topEfficiency = [...efficiencyScores].sort((left, right) => right.score - left.score)[0];
+    const upstreamProvenance = [cellfreePayload?.runProvenance, dbtlPayload?.runProvenance]
+      .filter((entry): entry is ProvenanceEntry => Boolean(entry))
+      .map((entry) => `${entry.toolId}:${entry.timestamp}`);
     setToolPayload('multio', {
       validity: 'demo',
+      runProvenance: createProvenanceEntry({
+        toolId: 'multio',
+        outputAssumptions: [
+          'multio.not_mofa_plus',
+          'multio.not_vae',
+          'multio.no_umap',
+          'multio.deterministic_no_uncertainty',
+          'multio.linear_perturbation',
+        ],
+        evidence: [{
+          id: `multio-${now}`,
+          source: 'computation',
+          reference: 'Deterministic local computation: linear factor decomposition, linear projection, and sensitivity-style perturbation.',
+          confidence: 'demo',
+          notes: 'Uncertainty fields are placeholders from deterministic losses, not Bayesian posterior uncertainty.',
+        }],
+        upstreamProvenance,
+      }),
       toolId: 'multio',
       targetProduct: analyzeArtifact?.targetProduct || project?.targetProduct || project?.title || 'Target Product',
       sourceArtifactId: analyzeArtifact?.id,
@@ -756,13 +782,15 @@ export default function MultiOPage() {
         topEfficiencyScore: topEfficiency?.score ?? 0,
         vaeElbo: vaeResult.elbo,
       },
-      updatedAt: Date.now(),
+      updatedAt: now,
     });
   }, [
     analyzeArtifact?.id,
     analyzeArtifact?.targetProduct,
     bottleneck.confidence,
     bottleneck.dominant_layer,
+    cellfreePayload?.runProvenance,
+    dbtlPayload?.runProvenance,
     efficiencyScores,
     fcThreshold,
     mofaResult.totalVarianceExplained,
@@ -1093,7 +1121,7 @@ export default function MultiOPage() {
                 </div>
               )}
 
-              {/* ── MOFA+ Factor Analysis ───────────────────────────── */}
+              {/* ── ALS Factor Decomposition (not MOFA+) ────────────── */}
               {viewMode === 'Factors' && (
               <div style={{ minHeight: '520px', padding: '20px' }}>
                 {/* Summary metrics */}
@@ -1161,10 +1189,10 @@ export default function MultiOPage() {
               </div>
               )}
 
-              {/* ── VAE Latent Space ────────────────────────────────── */}
+              {/* ── Seeded Linear Embedding (not production VAE) ────── */}
               {viewMode === 'Latent' && (
               <div style={{ minHeight: '520px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                {/* VAE Latent scatter */}
+                {/* Local embedding scatter */}
                 <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
                   <div style={{ width: '100%', maxWidth: '560px' }}>
                     {(() => {

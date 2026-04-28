@@ -17,7 +17,7 @@ import {
 import type { FBAOutput, CommunityFBAOutput } from '../../data/mockFBA';
 import type { ProvenanceEntry } from '../../types/assumptions';
 import { buildFBASeed } from './shared/workbenchDataflow';
-import { solveAuthorityCommunityFBA, solveAuthorityFBAWithProvenance } from '../../services/FBAAuthorityClient';
+import { solveAuthorityCommunityFBAWithProvenance, solveAuthorityFBAWithProvenance } from '../../services/FBAAuthorityClient';
 import { T, TOOL_RESULT_PALETTE} from '../ide/tokens';
 import { PATHD_THEME } from '../workbench/workbenchTheme';
 import { SCI_PALETTE, SCI_PASTEL } from '../charts/chartTheme';
@@ -505,6 +505,7 @@ export default function FBASimPage() {
   const [singleError, setSingleError] = useState<string | null>(null);
   const [singleLoading, setSingleLoading] = useState(true);
   const [communityResult, setCommunityResult] = useState<CommunityFBAOutput>(() => createEmptyCommunityOutput());
+  const [communityRunProvenance, setCommunityRunProvenance] = useState<ProvenanceEntry | undefined>(undefined);
   const [communityError, setCommunityError] = useState<string | null>(null);
   const [communityLoading, setCommunityLoading] = useState(true);
   const recommendedSeed = useMemo(
@@ -612,7 +613,7 @@ export default function FBASimPage() {
     setCommunityLoading(true);
     setCommunityError(null);
 
-    solveAuthorityCommunityFBA(
+    solveAuthorityCommunityFBAWithProvenance(
       {
         objective,
         ecoli: {
@@ -627,12 +628,14 @@ export default function FBASimPage() {
         },
       },
       controller.signal,
-    ).then((result) => {
+    ).then(({ result, provenance }) => {
       setCommunityResult(result);
+      setCommunityRunProvenance(provenance);
       setCommunityError(null);
     }).catch((error) => {
       if (controller.signal.aborted) return;
       setCommunityResult(createEmptyCommunityOutput());
+      setCommunityRunProvenance(undefined);
       setCommunityError(error instanceof Error ? error.message : 'Authority-backed community FBA failed');
     }).finally(() => {
       if (!controller.signal.aborted) {
@@ -697,7 +700,7 @@ export default function FBASimPage() {
       appendConsole({
         level: 'info',
         module: 'FBASIM',
-        message: `Community FBA — E.coli μ=${communityResult.ecoli.growthRate.toFixed(4)} | Yeast μ=${communityResult.yeast.growthRate.toFixed(4)} | Community μ=${communityResult.communityGrowthRate.toFixed(4)}`,
+        message: `Two-species heuristic demo — E.coli μ=${communityResult.ecoli.growthRate.toFixed(4)} | Yeast μ=${communityResult.yeast.growthRate.toFixed(4)} | blended μ=${communityResult.communityGrowthRate.toFixed(4)}`,
       });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -726,8 +729,8 @@ export default function FBASimPage() {
     if (communityError && simMode === 'community') return;
 
     setToolPayload('fbasim', {
-      validity: 'partial',
-      runProvenance: simMode === 'single' ? singleRunProvenance : undefined,
+      validity: simMode === 'single' ? 'partial' : 'demo',
+      runProvenance: simMode === 'single' ? singleRunProvenance : communityRunProvenance,
       toolId: 'fbasim',
       targetProduct: recommendedSeed.targetProduct,
       pathwayFocus: recommendedSeed.pathwayFocus,
@@ -755,6 +758,7 @@ export default function FBASimPage() {
     analyzeArtifact?.id,
     communityLoading,
     communityError,
+    communityRunProvenance,
     communityResult,
     glucoseUptake,
     knockouts,
@@ -777,10 +781,10 @@ export default function FBASimPage() {
           title={simMode === 'single' ? 'Flux Balance Analysis' : 'Two-Species Flux Comparison'}
           description={simMode === 'single'
             ? 'Server-side GLPK solves a stoichiometric LP for the current host context, then revalidates glucose and oxygen shadow prices with finite-difference reruns so downstream tools inherit an authority-backed flux state.'
-            : 'Two server-side host LPs are solved independently and then coupled through an exchange pool, so community feasibility is derived from live strain-level optima rather than a browser-only mock.'}
+            : 'Two-species heuristic demo, not a joint community LP. Two server-side host LPs are solved independently and exchange values are compared with post-hoc scaling.'}
           formula={simMode === 'single'
             ? 'max cᵀv s.t. Sv=0, lb≤v≤ub'
-            : 'S_com = [S₁, 0, E₁; 0, S₂, E₂]'}
+            : 'μ_demo = (1-α)μ₁ + αμ₂; exchange = post-hoc scaled comparison'}
         />
         <div style={{ padding: '0 16px 8px' }}>
           <WorkbenchInlineContext
@@ -793,11 +797,11 @@ export default function FBASimPage() {
         </div>
         <div style={{ padding: '0 16px 10px' }}>
           <ScientificHero
-            eyebrow={`Stage 2 · ${simMode === 'single' ? 'Host Flux Solve' : 'Community Flux Solve'}`}
-            title={simMode === 'single' ? 'Authority-backed metabolic flux state' : 'Coupled host exchange and community feasibility'}
+            eyebrow={`Stage 2 · ${simMode === 'single' ? 'Host Flux Solve' : 'Two-Species Heuristic Demo'}`}
+            title={simMode === 'single' ? 'Authority-backed metabolic flux state' : 'Side-by-side host flux comparison'}
             summary={simMode === 'single'
               ? 'FBASim is the first point where the pathway object becomes a constrained production model. The key question is no longer “can the route exist,” but “what does it cost the host and which uptake constraints dominate the present solution.”'
-              : 'Community mode promotes the pathway into a multi-host systems question. Exchange flux, strain balance, and shared-pool feasibility become explicit so later tools can inherit a real ecological operating state.'}
+              : 'Community mode remains a two-species heuristic demo. It compares independent host solves and post-hoc exchange values; it does not create a shared stoichiometric pool or a real ecological operating state.'}
             aside={
               <>
                 <div style={{ fontFamily: T.MONO, fontSize: '10px', color: 'rgba(205,214,236,0.6)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
@@ -840,9 +844,9 @@ export default function FBASimPage() {
                 ]
               : [
                   {
-                    label: 'Community Growth',
+                    label: 'Blended Growth',
                     value: `${communityResult.communityGrowthRate.toFixed(4)} h⁻¹`,
-                    detail: communityLoading ? 'Coupled authority solve is recomputing both hosts and the exchange pool.' : communityResult.feasible ? 'Both hosts can satisfy the coupled exchange constraints.' : 'The coupled host system is currently infeasible.',
+                    detail: communityLoading ? 'Recomputing two independent host solves for the heuristic comparison.' : communityResult.feasible ? 'Both independent host solves are feasible before post-hoc exchange scaling.' : 'At least one independent host solve is infeasible.',
                     tone: communityResult.feasible ? 'cool' : 'alert',
                   },
                   {
@@ -927,7 +931,7 @@ export default function FBASimPage() {
               fontSize: '11px',
               lineHeight: 1.5,
             }}>
-              <strong style={{ color: 'rgba(255,200,190,0.95)' }}>Method note:</strong> This mode runs two independent single-species FBA solves (E. coli and yeast) and compares their exchange fluxes. It is <em>not</em> a joint community LP (e.g. SteadyCom / cFBA) — shared-pool stoichiometric coupling is not enforced. Treat outputs as a side-by-side flux comparison, not a microbiome model.
+              <strong style={{ color: 'rgba(255,200,190,0.95)' }}>Method note:</strong> Two-species heuristic demo, not a joint community LP. This mode runs two independent single-species FBA solves (E. coli and yeast) and compares their exchange fluxes. It is <em>not</em> a joint community LP (e.g. SteadyCom / cFBA) — shared-pool stoichiometric coupling is not enforced. Treat outputs as a side-by-side flux comparison, not a microbiome model.
             </div>
           </div>
         )}
