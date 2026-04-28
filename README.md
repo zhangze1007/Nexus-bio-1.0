@@ -247,6 +247,25 @@ If you use the GitHub Copilot coding agent on this repo and the workflow fails w
 
 ---
 
+## Trust and Limitations
+
+Nexus-Bio is a transparent synthetic biology learning workbench with mixed-validity modules (`real`, `partial`, `demo`). It is not an end-to-end research-grade platform and does not include wet-lab validation in this repository.
+
+Key limitations:
+- Some tools are explicitly demo-tier and assumption-gated.
+- Some algorithms are heuristic or simplified.
+- LLM-assisted evidence and recommendations require human scientific validation.
+
+Phase 3 public proof package:
+- [Phase 3 Decisions](docs/PHASE_3_DECISIONS.md)
+- [Artemisinin Trust-Gated Walkthrough](docs/ARTEMISININ_TRUST_GATED_WALKTHROUGH.md)
+- [Demo Video Script](docs/DEMO_VIDEO_SCRIPT.md)
+- [Portfolio Summary](docs/PORTFOLIO_SUMMARY.md)
+- [Personal Statement Snippet](docs/PERSONAL_STATEMENT_SNIPPET.md)
+- [Paper Draft](docs/PAPER_DRAFT.md)
+
+---
+
 ## License
 
 MIT License — open for research and educational use.
