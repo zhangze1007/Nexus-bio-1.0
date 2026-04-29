@@ -20,6 +20,7 @@ import {
   type WorkbenchStageId,
 } from '../components/tools/shared/workbenchConfig';
 import { getUpstreamToolIds } from '../components/tools/shared/workbenchGraph';
+import { TOOL_ASSUMPTIONS } from '../components/tools/shared/toolAssumptions';
 import { buildExecutionSnapshot } from '../components/workbench/workbenchExecution';
 import { tryGetToolContract } from '../services/workflowRegistry';
 import { isAxonToolSupported } from '../services/axonAdapterRegistry';
@@ -45,6 +46,10 @@ import {
   evaluateWorkbenchPayloadAdmission,
   inferAdmissionInputFromPayload,
 } from '../services/workbenchPayloadAdmission';
+import {
+  collectProvenanceIds,
+  withProvenanceSync,
+} from '../services/provenanceMiddleware';
 import type {
   AxonRunRecord,
   EvidenceSourceKind,
@@ -156,6 +161,7 @@ const AXON_RUN_LIMIT = 80;
 const AXON_LOG_LIMIT = 400;
 const WORKBENCH_ACTOR_KEY = 'nexus-bio:workbench-actor-id';
 const DEFAULT_PROJECT_SYNC_SCOPE = 'default-workbench';
+const PROVENANCE_MIDDLEWARE_TOOL_IDS = new Set(['pathd', 'dyncon', 'dbtlflow']);
 
 function createId(prefix: string) {
   return `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
@@ -851,6 +857,56 @@ function normalizeNonEmptyId(value: string | null | undefined) {
   return normalized.length > 0 ? normalized : null;
 }
 
+function isPayloadRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function payloadTimestamp(value: unknown): string | undefined {
+  if (!isPayloadRecord(value) || typeof value.updatedAt !== 'number' || !Number.isFinite(value.updatedAt)) {
+    return undefined;
+  }
+  return new Date(value.updatedAt).toISOString();
+}
+
+function outputAssumptionIdsForTool(toolId: string): string[] {
+  return (TOOL_ASSUMPTIONS[toolId] ?? []).map((assumption) => assumption.id);
+}
+
+function provenanceIdsForToolPayloads(
+  toolIds: readonly string[],
+  toolPayloads: WorkbenchToolPayloadMap,
+): string[] {
+  return Array.from(new Set(
+    toolIds.flatMap((upstreamToolId) =>
+      collectProvenanceIds(toolPayloads[upstreamToolId as keyof WorkbenchToolPayloadMap]),
+    ),
+  ));
+}
+
+function maybeAttachPayloadProvenance<K extends keyof WorkbenchToolPayloadMap>(
+  toolId: K,
+  payload: WorkbenchToolPayloadMap[K],
+  state: Pick<WorkbenchState, 'toolPayloads'>,
+): WorkbenchToolPayloadMap[K] {
+  const toolIdText = String(toolId);
+  if (!PROVENANCE_MIDDLEWARE_TOOL_IDS.has(toolIdText)) return payload;
+  if (isPayloadRecord(payload) && payload.runProvenance !== undefined) return payload;
+
+  const startedAt = payloadTimestamp(payload);
+  return withProvenanceSync(
+    payload,
+    {
+      toolId: toolIdText,
+      activityType: 'tool-run',
+      surface: 'payload',
+      outputAssumptionIds: outputAssumptionIdsForTool(toolIdText),
+      upstreamProvenanceIds: provenanceIdsForToolPayloads(getUpstreamToolIds(toolIdText), state.toolPayloads),
+      ...(startedAt ? { startedAt, completedAt: startedAt } : {}),
+    },
+    (currentPayload) => currentPayload,
+  ).payload;
+}
+
 function summarizeWorkflowArtifactDebug(artifact: WorkflowArtifact | null | undefined) {
   if (!artifact) return null;
   return {
@@ -1500,6 +1556,7 @@ export const useWorkbenchStore = create<WorkbenchState>()(
 
       setToolPayload: (toolId, payload) => {
         set((state) => {
+          const admittedPayload = maybeAttachPayloadProvenance(toolId, payload, state);
           const previousPayload = state.toolPayloads[toolId];
           const latestArtifactForTool = state.runArtifacts.find((artifact) => artifact.toolId === toolId);
           const nextExecution = buildExecutionSnapshot({
@@ -1509,20 +1566,20 @@ export const useWorkbenchStore = create<WorkbenchState>()(
             runArtifacts: state.runArtifacts,
           });
           const previousComparablePayload = previousPayload ?? latestArtifactForTool?.payloadSnapshot;
-          const payloadStable = stableSerialize(previousComparablePayload) === stableSerialize(payload);
+          const payloadStable = stableSerialize(previousComparablePayload) === stableSerialize(admittedPayload);
           const executionStable = latestArtifactForTool?.execution.dependencySignature === nextExecution.dependencySignature;
 
           if (payloadStable && executionStable) {
             return state;
           }
 
-          const runArtifact = createRunArtifact(state, toolId, payload, {
+          const runArtifact = createRunArtifact(state, toolId, admittedPayload, {
             revalidated: payloadStable && !executionStable,
           });
           const admission = evaluateWorkbenchPayloadAdmission({
             ...inferAdmissionInputFromPayload({
               toolId: String(toolId),
-              payload,
+              payload: admittedPayload,
               fallbackValidityTier: getToolValidity(String(toolId))?.level,
             }),
             mode: 'observe',
@@ -1547,7 +1604,7 @@ export const useWorkbenchStore = create<WorkbenchState>()(
             ? state.toolPayloads
             : {
                 ...state.toolPayloads,
-                [toolId]: payload,
+                [toolId]: admittedPayload,
               };
           const workflowControl = buildWorkflowControlSnapshot({
             ...state,
@@ -1556,10 +1613,10 @@ export const useWorkbenchStore = create<WorkbenchState>()(
           }, runArtifacts);
           const downstreamToolIds = getNextToolIds(toolId);
           const allowedDownstreamToolIds = downstreamToolIds.filter((nextToolId) =>
-            canPassToDownstream(payload, nextToolId).allowed,
+            canPassToDownstream(admittedPayload, nextToolId).allowed,
           );
           const blockedDownstreamToolIds = downstreamToolIds.filter((nextToolId) =>
-            !canPassToDownstream(payload, nextToolId).allowed,
+            !canPassToDownstream(admittedPayload, nextToolId).allowed,
           );
           const recommendationToolIds = blocksCanonicalPayload
             ? runArtifact.blockingUpstreamToolIds ?? (workflowControl.nextRecommendedNode ? [workflowControl.nextRecommendedNode] : [])

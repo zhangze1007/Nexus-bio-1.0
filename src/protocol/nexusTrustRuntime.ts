@@ -56,6 +56,7 @@ export interface ProvenanceEntry {
   provenanceId: string;
   toolId: string;
   activityType: ProvenanceActivityType;
+  surface?: ClaimSurface;
   startedAt: string;
   completedAt?: string;
   inputAssumptionIds: string[];
