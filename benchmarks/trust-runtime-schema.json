@@ -1,0 +1,189 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nexus-bio.local/schemas/trust-runtime-benchmark-cases.schema.json",
+  "title": "Nexus-Bio Trust Runtime Benchmark Corpus",
+  "type": "object",
+  "required": ["$schema", "cases"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "cases": {
+      "type": "array",
+      "minItems": 50,
+      "items": {
+        "$ref": "#/$defs/case"
+      }
+    }
+  },
+  "$defs": {
+    "case": {
+      "type": "object",
+      "required": [
+        "caseId",
+        "title",
+        "category",
+        "toolId",
+        "surface",
+        "claim",
+        "input",
+        "expected",
+        "riskTags",
+        "knownBad"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "caseId": {
+          "type": "string",
+          "pattern": "^TRB-[0-9]{3}$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 8
+        },
+        "category": {
+          "type": "string",
+          "enum": [
+            "truthful-partial",
+            "unsafe-demo",
+            "missing-evidence",
+            "uncertainty-unresolved",
+            "human-gate-required",
+            "known-bad-case",
+            "draft-output"
+          ]
+        },
+        "toolId": {
+          "type": "string",
+          "enum": [
+            "pathd",
+            "metabolic-eng",
+            "fbasim",
+            "cethx",
+            "catdes",
+            "proevol",
+            "dyncon",
+            "gecair",
+            "genmim",
+            "cellfree",
+            "dbtlflow",
+            "multio",
+            "scspatial",
+            "nexai"
+          ]
+        },
+        "surface": {
+          "type": "string",
+          "enum": [
+            "payload",
+            "export",
+            "recommendation",
+            "protocol",
+            "external-handoff"
+          ]
+        },
+        "claim": {
+          "type": "string",
+          "minLength": 12
+        },
+        "input": {
+          "$ref": "#/$defs/input"
+        },
+        "expected": {
+          "$ref": "#/$defs/expected"
+        },
+        "riskTags": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9-]+$"
+          },
+          "uniqueItems": true
+        },
+        "knownBad": {
+          "type": "boolean"
+        }
+      }
+    },
+    "input": {
+      "type": "object",
+      "required": [
+        "validityTier",
+        "hasProvenance",
+        "evidenceState",
+        "uncertaintyState",
+        "isDraft",
+        "humanGateRequired",
+        "humanGateSatisfied",
+        "notes"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "validityTier": {
+          "type": "string",
+          "enum": ["real", "partial", "demo"]
+        },
+        "hasProvenance": {
+          "type": "boolean"
+        },
+        "evidenceState": {
+          "type": "string",
+          "enum": ["present", "missing", "not-required"]
+        },
+        "uncertaintyState": {
+          "type": "string",
+          "enum": ["bounded", "unresolved", "not-applicable"]
+        },
+        "isDraft": {
+          "type": "boolean"
+        },
+        "humanGateRequired": {
+          "type": "boolean"
+        },
+        "humanGateSatisfied": {
+          "type": "boolean"
+        },
+        "notes": {
+          "type": "string",
+          "minLength": 8
+        }
+      }
+    },
+    "expected": {
+      "type": "object",
+      "required": ["status", "blockCode", "rationale"],
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["ok", "blocked", "gated", "demoOnly"]
+        },
+        "blockCode": {
+          "oneOf": [
+            {
+              "type": "string",
+              "enum": [
+                "MISSING_POLICY",
+                "TIER_NOT_ALLOWED_FOR_SURFACE",
+                "PROVENANCE_REQUIRED",
+                "HUMAN_GATE_REQUIRED",
+                "DRAFT_OUTPUT_NOT_EXPORTABLE",
+                "DEMO_OUTPUT_PROTOCOL_BLOCKED",
+                "EXTERNAL_HANDOFF_BLOCKED"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 12
+        }
+      }
+    }
+  }
+}

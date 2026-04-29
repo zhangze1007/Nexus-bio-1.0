@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "tsc --noEmit",
-    "test": "jest"
+    "test": "jest",
+    "benchmark:trust:validate": "node scripts/validateTrustBenchmarkCorpus.mjs"
   },
   "dependencies": {
     "@google/genai": "^1.29.0",

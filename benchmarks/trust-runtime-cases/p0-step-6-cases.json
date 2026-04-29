@@ -1,0 +1,1405 @@
+{
+  "$schema": "../trust-runtime-schema.json",
+  "cases": [
+    {
+      "caseId": "TRB-001",
+      "title": "PATHD partial payload remains inspectable",
+      "category": "truthful-partial",
+      "toolId": "pathd",
+      "surface": "payload",
+      "claim": "A partial pathway graph is shown as workbench context with its tier visible.",
+      "input": {
+        "validityTier": "partial",
+        "hasProvenance": true,
+        "evidenceState": "present",
+        "uncertaintyState": "bounded",
+        "isDraft": false,
+        "humanGateRequired": false,
+        "humanGateSatisfied": false,
+        "notes": "Exploratory payload only; no formal downstream claim is made."
+      },
+      "expected": {
+        "status": "ok",
+        "blockCode": null,
+        "rationale": "Partial payload visibility is allowed when provenance and evidence context are present."
+      },
+      "riskTags": ["truthful-partial", "payload-visible"],
+      "knownBad": false
+    },
+    {
+      "caseId": "TRB-002",
+      "title": "FBASim partial export with provenance",
+      "category": "truthful-partial",
+      "toolId": "fbasim",
+      "surface": "export",
+      "claim": "A single-species FBA table is exported as partial decision-support data.",
+      "input": {
+        "validityTier": "partial",
+        "hasProvenance": true,
+        "evidenceState": "present",
+        "uncertaintyState": "bounded",
+        "isDraft": false,
+        "humanGateRequired": false,
+        "humanGateSatisfied": false,
+        "notes": "The export is finalized and carries source provenance."
+      },
+      "expected": {
+        "status": "ok",
+        "blockCode": null,
+        "rationale": "Partial export is acceptable when it is not draft and includes provenance."
+      },
+      "riskTags": ["truthful-partial", "export-provenance"],
+      "knownBad": false
+    },
+    {
+      "caseId": "TRB-003",
+      "title": "CatDes partial recommendation with evidence",
+      "category": "truthful-partial",
+      "toolId": "catdes",
+      "surface": "recommendation",
+      "claim": "A catalyst ranking is surfaced as a partial recommendation with assumptions attached.",
+      "input": {
+        "validityTier": "partial",
+        "hasProvenance": true,
+        "evidenceState": "present",
+        "uncertaintyState": "bounded",
+        "isDraft": false,
+        "humanGateRequired": false,
+        "humanGateSatisfied": false,
+        "notes": "The recommendation remains framed as computational decision support."
+      },
+      "expected": {
+        "status": "ok",
+        "blockCode": null,
+        "rationale": "Partial recommendation is allowed when evidence and provenance are present."
+      },
+      "riskTags": ["truthful-partial", "recommendation"],
+      "knownBad": false
+    },
+    {
+      "caseId": "TRB-004",
+      "title": "DynCon partial payload with bounded uncertainty",
+      "category": "truthful-partial",
+      "toolId": "dyncon",
+      "surface": "payload",
+      "claim": "A control trajectory is shown in the workbench with bounded uncertainty.",
+      "input": {
+        "validityTier": "partial",
+        "hasProvenance": true,
+        "evidenceState": "present",
+        "uncertaintyState": "bounded",
+        "isDraft": false,
+        "humanGateRequired": false,
+        "humanGateSatisfied": false,
+        "notes": "The payload is not being converted into an external claim."
+      },
+      "expected": {
+        "status": "ok",
+        "blockCode": null,
+        "rationale": "Partial payloads with bounded uncertainty remain visible."
+      },
+      "riskTags": ["truthful-partial", "uncertainty-bounded"],
+      "knownBad": false
+    },
+    {
+      "caseId": "TRB-005",
+      "title": "DBTLflow partial protocol after human review",
+      "category": "truthful-partial",
+      "toolId": "dbtlflow",
+      "surface": "protocol",
+      "claim": "A DBTL protocol-like artifact is available after provenance and human review.",
+      "input": {
+        "validityTier": "partial",
+        "hasProvenance": true,
+        "evidenceState": "present",
+        "uncertaintyState": "bounded",
+        "isDraft": false,
+        "humanGateRequired": true,
+        "humanGateSatisfied": true,
+        "notes": "Human review is already satisfied for this corpus case."
+      },
+      "expected": {
+        "status": "ok",
+        "blockCode": null,
+        "rationale": "Protocol-like use is acceptable for partial output when provenance and human review are present."
+      },
+      "riskTags": ["truthful-partial", "protocol-reviewed"],
+      "knownBad": false
+    },
+    {
+      "caseId": "TRB-006",
+      "title": "SCSPATIAL partial external handoff after review",
+      "category": "truthful-partial",
+      "toolId": "scspatial",
+      "surface": "external-handoff",
+      "claim": "A spatial analysis summary is handed off externally with review and provenance.",
+      "input": {
+        "validityTier": "partial",
+        "hasProvenance": true,
+        "evidenceState": "present",
+        "uncertaintyState": "bounded",
+        "isDraft": false,
+        "humanGateRequired": true,
+        "humanGateSatisfied": true,
+        "notes": "The handoff is marked as reviewed and traceable."
+      },
+      "expected": {
+        "status": "ok",
+        "blockCode": null,
+        "rationale": "External handoff can proceed when partial validity, provenance, and human review are present."
+      },
+      "riskTags": ["truthful-partial", "external-reviewed"],
+      "knownBad": false
+    },
+    {
+      "caseId": "TRB-007",
+      "title": "ProEvol partial campaign export",
+      "category": "truthful-partial",
+      "toolId": "proevol",
+      "surface": "export",
+      "claim": "A protein evolution campaign table is exported as modeled decision support.",
+      "input": {
+        "validityTier": "partial",
+        "hasProvenance": true,
+        "evidenceState": "present",
+        "uncertaintyState": "bounded",
+        "isDraft": false,
+        "humanGateRequired": false,
+        "humanGateSatisfied": false,
+        "notes": "The file is not presented as measured wet-lab selection."
+      },
+      "expected": {
+        "status": "ok",
+        "blockCode": null,
+        "rationale": "Partial export is allowed with provenance and honest framing."
+      },
+      "riskTags": ["truthful-partial", "campaign-export"],
+      "knownBad": false
+    },
+    {
+      "caseId": "TRB-008",
+      "title": "GenMIM partial recommendation with provenance",
+      "category": "truthful-partial",
+      "toolId": "genmim",
+      "surface": "recommendation",
+      "claim": "A CRISPRi minimization schedule is recommended as partial computational guidance.",
+      "input": {
+        "validityTier": "partial",
+        "hasProvenance": true,
+        "evidenceState": "present",
+        "uncertaintyState": "bounded",
+        "isDraft": false,
+        "humanGateRequired": false,
+        "humanGateSatisfied": false,
+        "notes": "The recommendation carries computational assumptions."
+      },
+      "expected": {
+        "status": "ok",
+        "blockCode": null,
+        "rationale": "Partial recommendations can be surfaced when traceable and bounded."
+      },
+      "riskTags": ["truthful-partial", "genome-minimization"],
+      "knownBad": false
+    },
+    {
+      "caseId": "TRB-009",
+      "title": "CETHX demo payload remains demo-only",
+      "category": "unsafe-demo",
+      "toolId": "cethx",
+      "surface": "payload",
+      "claim": "A demo thermodynamics payload is visible only as exploratory output.",
+      "input": {
+        "validityTier": "demo",
+        "hasProvenance": true,
+        "evidenceState": "present",
+        "uncertaintyState": "unresolved",
+        "isDraft": false,
+        "humanGateRequired": false,
+        "humanGateSatisfied": false,
+        "notes": "The payload is not converted into a formal thermodynamic claim."
+      },
+      "expected": {
+        "status": "demoOnly",
+        "blockCode": null,
+        "rationale": "Demo payloads may remain visible but must stay clearly demo-only."
+      },
+      "riskTags": ["unsafe-demo", "demo-payload"],
+      "knownBad": false
+    },
+    {
+      "caseId": "TRB-010",
+      "title": "CellFree demo payload remains demo-only",
+      "category": "unsafe-demo",
+      "toolId": "cellfree",
+      "surface": "payload",
+      "claim": "A demo cell-free result is displayed as exploratory context only.",
+      "input": {
+        "validityTier": "demo",
+        "hasProvenance": true,
+        "evidenceState": "not-required",
+        "uncertaintyState": "unresolved",
+        "isDraft": false,
+        "humanGateRequired": false,
+        "humanGateSatisfied": false,
+        "notes": "The result is not promoted into a protocol-like artifact."
+      },
+      "expected": {
+        "status": "demoOnly",
+        "blockCode": null,
+        "rationale": "Demo payload visibility is allowed only as demo-only context."
+      },
+      "riskTags": ["unsafe-demo", "cellfree-demo"],
+      "knownBad": false
+    },
+    {
+      "caseId": "TRB-011",
+      "title": "MultiO demo payload remains demo-only",
+      "category": "unsafe-demo",
+      "toolId": "multio",
+      "surface": "payload",
+      "claim": "A demo multi-omics integration output is shown without external claims.",
+      "input": {
+        "validityTier": "demo",
+        "hasProvenance": true,
+        "evidenceState": "not-required",
+        "uncertaintyState": "unresolved",
+        "isDraft": false,
+        "humanGateRequired": false,
+        "humanGateSatisfied": false,
+        "notes": "The output stays inside the workbench as demo context."
+      },
+      "expected": {
+        "status": "demoOnly",
+        "blockCode": null,
+        "rationale": "Demo outputs may be visible but should not become formal claims."
+      },
+      "riskTags": ["unsafe-demo", "multio-demo"],
+      "knownBad": false
+    },
+    {
+      "caseId": "TRB-012",
+      "title": "CETHX demo recommendation is blocked",
+      "category": "unsafe-demo",
+      "toolId": "cethx",
+      "surface": "recommendation",
+      "claim": "A demo thermodynamics output is treated as a pathway recommendation.",
+      "input": {
+        "validityTier": "demo",
+        "hasProvenance": true,
+        "evidenceState": "present",
+        "uncertaintyState": "unresolved",
+        "isDraft": false,
+        "humanGateRequired": false,
+        "humanGateSatisfied": false,
+        "notes": "The surface is stronger than demo output should support."
+      },
+      "expected": {
+        "status": "blocked",
+        "blockCode": "TIER_NOT_ALLOWED_FOR_SURFACE",
+        "rationale": "Demo-tier outputs should not become formal recommendations."
+      },
+      "riskTags": ["unsafe-demo", "recommendation-risk"],
+      "knownBad": false
+    },
+    {
+      "caseId": "TRB-013",
+      "title": "CellFree demo protocol is blocked",
+      "category": "unsafe-demo",
+      "toolId": "cellfree",
+      "surface": "protocol",
+      "claim": "A demo cell-free result is converted into a protocol-like artifact.",
+      "input": {
+        "validityTier": "demo",
+        "hasProvenance": true,
+        "evidenceState": "not-required",
+        "uncertaintyState": "unresolved",
+        "isDraft": false,
+        "humanGateRequired": true,
+        "humanGateSatisfied": false,
+        "notes": "Protocol-like consumption is stricter than payload display."
+      },
+      "expected": {
+        "status": "blocked",
+        "blockCode": "DEMO_OUTPUT_PROTOCOL_BLOCKED",
+        "rationale": "Demo-tier output cannot become a protocol-like artifact."
+      },
+      "riskTags": ["unsafe-demo", "protocol-risk"],
+      "knownBad": false
+    },
+    {
+      "caseId": "TRB-014",
+      "title": "MultiO demo external handoff is blocked",
+      "category": "unsafe-demo",
+      "toolId": "multio",
+      "surface": "external-handoff",
+      "claim": "A demo multi-omics result is handed off to an external consumer.",
+      "input": {
+        "validityTier": "demo",
+        "hasProvenance": true,
+        "evidenceState": "not-required",
+        "uncertaintyState": "unresolved",
+        "isDraft": false,
+        "humanGateRequired": true,
+        "humanGateSatisfied": false,
+        "notes": "The output leaves the workbench despite demo validity."
+      },
+      "expected": {
+        "status": "blocked",
+        "blockCode": "EXTERNAL_HANDOFF_BLOCKED",
+        "rationale": "Demo-tier outputs should not be external handoffs."
+      },
+      "riskTags": ["unsafe-demo", "external-handoff-risk"],
+      "knownBad": false
+    },
+    {
+      "caseId": "TRB-015",
+      "title": "Community FBASim demo recommendation is blocked",
+      "category": "unsafe-demo",
+      "toolId": "fbasim",
+      "surface": "recommendation",
+      "claim": "A community-mode FBA demo exchange table is treated as a formal recommendation.",
+      "input": {
+        "validityTier": "demo",
+        "hasProvenance": true,
+        "evidenceState": "present",
+        "uncertaintyState": "unresolved",
+        "isDraft": false,
+        "humanGateRequired": false,
+        "humanGateSatisfied": false,
+        "notes": "Community exchange values are demo-tier and not formal recommendation material."
+      },
+      "expected": {
+        "status": "blocked",
+        "blockCode": "TIER_NOT_ALLOWED_FOR_SURFACE",
+        "rationale": "Demo-tier recommendation use is blocked."
+      },
+      "riskTags": ["unsafe-demo", "community-fba"],
+      "knownBad": false
+    },
+    {
+      "caseId": "TRB-016",
+      "title": "PATHD demo export is blocked",
+      "category": "unsafe-demo",
+      "toolId": "pathd",
+      "surface": "export",
+      "claim": "A demo pathway layout is exported as reusable route evidence.",
+      "input": {
+        "validityTier": "demo",
+        "hasProvenance": true,
+        "evidenceState": "missing",
+        "uncertaintyState": "unresolved",
+        "isDraft": false,
+        "humanGateRequired": false,
+        "humanGateSatisfied": false,
+        "notes": "The export surface is stronger than a demo route can support."
+      },
+      "expected": {
+        "status": "blocked",
+        "blockCode": "TIER_NOT_ALLOWED_FOR_SURFACE",
+        "rationale": "Demo-tier output should not become an exportable formal artifact."
+      },
+      "riskTags": ["unsafe-demo", "export-risk"],
+      "knownBad": false
+    },
+    {
+      "caseId": "TRB-017",
+      "title": "NEXAI recommendation missing evidence is blocked",
+      "category": "missing-evidence",
+      "toolId": "nexai",
+      "surface": "recommendation",
+      "claim": "A research answer is used as a recommendation without traceable evidence.",
+      "input": {
+        "validityTier": "real",
+        "hasProvenance": false,
+        "evidenceState": "missing",
+        "uncertaintyState": "not-applicable",
+        "isDraft": false,
+        "humanGateRequired": false,
+        "humanGateSatisfied": false,
+        "notes": "The answer lacks evidence trace for recommendation use."
+      },
+      "expected": {
+        "status": "blocked",
+        "blockCode": "PROVENANCE_REQUIRED",
+        "rationale": "Recommendation surfaces require traceable provenance."
+      },
+      "riskTags": ["missing-evidence", "nexai-recommendation"],
+      "knownBad": false
+    },
+    {
+      "caseId": "TRB-018",
+      "title": "PATHD export missing provenance is blocked",
+      "category": "missing-evidence",
+      "toolId": "pathd",
+      "surface": "export",
+      "claim": "A pathway export is created without a run provenance snapshot.",
+      "input": {
+        "validityTier": "partial",
+        "hasProvenance": false,
+        "evidenceState": "present",
+        "uncertaintyState": "bounded",
+        "isDraft": false,
+        "humanGateRequired": false,
+        "humanGateSatisfied": false,
+        "notes": "The evidence may exist, but the export cannot trace the run."
+      },
+      "expected": {
+        "status": "blocked",
+        "blockCode": "PROVENANCE_REQUIRED",
+        "rationale": "Exports require provenance even when evidence is otherwise present."
+      },
+      "riskTags": ["missing-evidence", "missing-provenance"],
+      "knownBad": false
+    },
+    {
+      "caseId": "TRB-019",
+      "title": "SCSPATIAL external handoff missing provenance is blocked",
+      "category": "missing-evidence",
+      "toolId": "scspatial",
+      "surface": "external-handoff",
+      "claim": "A spatial analysis bundle is handed off without provenance.",
+      "input": {
+        "validityTier": "partial",
+        "hasProvenance": false,
+        "evidenceState": "present",
+        "uncertaintyState": "bounded",
+        "isDraft": false,
+        "humanGateRequired": true,
+        "humanGateSatisfied": true,
+        "notes": "Human review does not replace missing provenance."
+      },
+      "expected": {
+        "status": "blocked",
+        "blockCode": "PROVENANCE_REQUIRED",
+        "rationale": "External handoff requires provenance."
+      },
+      "riskTags": ["missing-evidence", "external-handoff-risk"],
+      "knownBad": false
+    },
+    {
+      "caseId": "TRB-020",
+      "title": "CatDes recommendation missing provenance is blocked",
+      "category": "missing-evidence",
+      "toolId": "catdes",
+      "surface": "recommendation",
+      "claim": "A catalyst recommendation is shown without provenance.",
+      "input": {
+        "validityTier": "partial",
+        "hasProvenance": false,
+        "evidenceState": "present",
+        "uncertaintyState": "bounded",
+        "isDraft": false,
+        "humanGateRequired": false,
+        "humanGateSatisfied": false,
+        "notes": "Recommendation consumers need source traceability."
+      },
+      "expected": {
+        "status": "blocked",
+        "blockCode": "PROVENANCE_REQUIRED",
+        "rationale": "Recommendation surfaces require provenance."
+      },
+      "riskTags": ["missing-evidence", "recommendation-risk"],
+      "knownBad": false
+    },
+    {
+      "caseId": "TRB-021",
+      "title": "ProEvol export missing provenance is blocked",
+      "category": "missing-evidence",
+      "toolId": "proevol",
+      "surface": "export",
+      "claim": "A campaign export is created without provenance.",
+      "input": {
+        "validityTier": "partial",
+        "hasProvenance": false,
+        "evidenceState": "present",
+        "uncertaintyState": "bounded",
+        "isDraft": false,
+        "humanGateRequired": false,
+        "humanGateSatisfied": false,
+        "notes": "The campaign table cannot be traced to a run."
+      },
+      "expected": {
+        "status": "blocked",
+        "blockCode": "PROVENANCE_REQUIRED",
+        "rationale": "Exports require provenance to avoid context-free reuse."
+      },
+      "riskTags": ["missing-evidence", "campaign-export"],
+      "knownBad": false
+    },
+    {
+      "caseId": "TRB-022",
+      "title": "GenMIM recommendation missing evidence is blocked",
+      "category": "missing-evidence",
+      "toolId": "genmim",
+      "surface": "recommendation",
+      "claim": "A minimization schedule is recommended after evidence was dropped.",
+      "input": {
+        "validityTier": "partial",
+        "hasProvenance": false,
+        "evidenceState": "missing",
+        "uncertaintyState": "bounded",
+        "isDraft": false,
+        "humanGateRequired": false,
+        "humanGateSatisfied": false,
+        "notes": "The recommendation has neither evidence nor run provenance."
+      },
+      "expected": {
+        "status": "blocked",
+        "blockCode": "PROVENANCE_REQUIRED",
+        "rationale": "Missing traceability blocks recommendation use."
+      },
+      "riskTags": ["missing-evidence", "genome-minimization"],
+      "knownBad": false
+    },
+    {
+      "caseId": "TRB-023",
+      "title": "GECAIR export missing provenance is blocked",
+      "category": "missing-evidence",
+      "toolId": "gecair",
+      "surface": "export",
+      "claim": "A gene circuit export is created without provenance.",
+      "input": {
+        "validityTier": "partial",
+        "hasProvenance": false,
+        "evidenceState": "present",
+        "uncertaintyState": "bounded",
+        "isDraft": false,
+        "humanGateRequired": false,
+        "humanGateSatisfied": false,
+        "notes": "The exported circuit needs a traceable source."
+      },
+      "expected": {
+        "status": "blocked",
+        "blockCode": "PROVENANCE_REQUIRED",
+        "rationale": "Exports require source provenance."
+      },
+      "riskTags": ["missing-evidence", "circuit-export"],
+      "knownBad": false
+    },
+    {
+      "caseId": "TRB-024",
+      "title": "Metabolic-eng export missing provenance is blocked",
+      "category": "missing-evidence",
+      "toolId": "metabolic-eng",
+      "surface": "export",
+      "claim": "A legacy metabolic-eng route export is created without provenance.",
+      "input": {
+        "validityTier": "partial",
+        "hasProvenance": false,
+        "evidenceState": "present",
+        "uncertaintyState": "bounded",
+        "isDraft": false,
+        "humanGateRequired": false,
+        "humanGateSatisfied": false,
+        "notes": "The alias route must still preserve traceability."
+      },
+      "expected": {
+        "status": "blocked",
+        "blockCode": "PROVENANCE_REQUIRED",
+        "rationale": "Alias outputs require provenance on export surfaces."
+      },
+      "riskTags": ["missing-evidence", "legacy-alias"],
+      "knownBad": false
+    },
+    {
+      "caseId": "TRB-025",
+      "title": "FBASim unresolved uncertainty gates recommendation",
+      "category": "uncertainty-unresolved",
+      "toolId": "fbasim",
+      "surface": "recommendation",
+      "claim": "An FBA output with unresolved uncertainty is turned into a recommendation.",
+      "input": {
+        "validityTier": "partial",
+        "hasProvenance": true,
+        "evidenceState": "present",
+        "uncertaintyState": "unresolved",
+        "isDraft": false,
+        "humanGateRequired": true,
+        "humanGateSatisfied": false,
+        "notes": "The uncertainty state is not bounded for recommendation use."
+      },
+      "expected": {
+        "status": "gated",
+        "blockCode": "HUMAN_GATE_REQUIRED",
+        "rationale": "Unresolved uncertainty requires human review before recommendation use."
+      },
+      "riskTags": ["uncertainty-unresolved", "recommendation-risk"],
+      "knownBad": false
+    },
+    {
+      "caseId": "TRB-026",
+      "title": "CatDes unresolved uncertainty gates external handoff",
+      "category": "uncertainty-unresolved",
+      "toolId": "catdes",
+      "surface": "external-handoff",
+      "claim": "A catalyst design handoff has unresolved scoring uncertainty.",
+      "input": {
+        "validityTier": "partial",
+        "hasProvenance": true,
+        "evidenceState": "present",
+        "uncertaintyState": "unresolved",
+        "isDraft": false,
+        "humanGateRequired": true,
+        "humanGateSatisfied": false,
+        "notes": "The handoff leaves the workbench before uncertainty review."
+      },
+      "expected": {
+        "status": "gated",
+        "blockCode": "HUMAN_GATE_REQUIRED",
+        "rationale": "External handoff with unresolved uncertainty requires human gate."
+      },
+      "riskTags": ["uncertainty-unresolved", "external-handoff-risk"],
+      "knownBad": false
+    },
+    {
+      "caseId": "TRB-027",
+      "title": "DynCon unresolved uncertainty gates recommendation",
+      "category": "uncertainty-unresolved",
+      "toolId": "dyncon",
+      "surface": "recommendation",
+      "claim": "A control recommendation is made while stability uncertainty remains unresolved.",
+      "input": {
+        "validityTier": "partial",
+        "hasProvenance": true,
+        "evidenceState": "present",
+        "uncertaintyState": "unresolved",
+        "isDraft": false,
+        "humanGateRequired": true,
+        "humanGateSatisfied": false,
+        "notes": "The recommendation needs review of unresolved control uncertainty."
+      },
+      "expected": {
+        "status": "gated",
+        "blockCode": "HUMAN_GATE_REQUIRED",
+        "rationale": "Unresolved uncertainty gates recommendation use."
+      },
+      "riskTags": ["uncertainty-unresolved", "control"],
+      "knownBad": false
+    },
+    {
+      "caseId": "TRB-028",
+      "title": "ProEvol unresolved uncertainty gates export",
+      "category": "uncertainty-unresolved",
+      "toolId": "proevol",
+      "surface": "export",
+      "claim": "A campaign export is finalized before uncertainty review.",
+      "input": {
+        "validityTier": "partial",
+        "hasProvenance": true,
+        "evidenceState": "present",
+        "uncertaintyState": "unresolved",
+        "isDraft": false,
+        "humanGateRequired": true,
+        "humanGateSatisfied": false,
+        "notes": "The modeled campaign uncertainty is unresolved."
+      },
+      "expected": {
+        "status": "gated",
+        "blockCode": "HUMAN_GATE_REQUIRED",
+        "rationale": "Unresolved uncertainty should require review before export."
+      },
+      "riskTags": ["uncertainty-unresolved", "campaign-export"],
+      "knownBad": false
+    },
+    {
+      "caseId": "TRB-029",
+      "title": "GenMIM unresolved uncertainty gates recommendation",
+      "category": "uncertainty-unresolved",
+      "toolId": "genmim",
+      "surface": "recommendation",
+      "claim": "A minimization recommendation is made while viability uncertainty is unresolved.",
+      "input": {
+        "validityTier": "partial",
+        "hasProvenance": true,
+        "evidenceState": "present",
+        "uncertaintyState": "unresolved",
+        "isDraft": false,
+        "humanGateRequired": true,
+        "humanGateSatisfied": false,
+        "notes": "The target schedule has unresolved viability uncertainty."
+      },
+      "expected": {
+        "status": "gated",
+        "blockCode": "HUMAN_GATE_REQUIRED",
+        "rationale": "Human gate is required before recommendation use."
+      },
+      "riskTags": ["uncertainty-unresolved", "genome-minimization"],
+      "knownBad": false
+    },
+    {
+      "caseId": "TRB-030",
+      "title": "GECAIR unresolved uncertainty gates export",
+      "category": "uncertainty-unresolved",
+      "toolId": "gecair",
+      "surface": "export",
+      "claim": "A circuit export is created while parameter uncertainty remains unresolved.",
+      "input": {
+        "validityTier": "partial",
+        "hasProvenance": true,
+        "evidenceState": "present",
+        "uncertaintyState": "unresolved",
+        "isDraft": false,
+        "humanGateRequired": true,
+        "humanGateSatisfied": false,
+        "notes": "The circuit parameter uncertainty is not bounded."
+      },
+      "expected": {
+        "status": "gated",
+        "blockCode": "HUMAN_GATE_REQUIRED",
+        "rationale": "Unresolved uncertainty requires human review before export."
+      },
+      "riskTags": ["uncertainty-unresolved", "circuit-export"],
+      "knownBad": false
+    },
+    {
+      "caseId": "TRB-031",
+      "title": "SCSPATIAL unresolved uncertainty gates recommendation",
+      "category": "uncertainty-unresolved",
+      "toolId": "scspatial",
+      "surface": "recommendation",
+      "claim": "A spatial-cluster recommendation is made before uncertainty is resolved.",
+      "input": {
+        "validityTier": "partial",
+        "hasProvenance": true,
+        "evidenceState": "present",
+        "uncertaintyState": "unresolved",
+        "isDraft": false,
+        "humanGateRequired": true,
+        "humanGateSatisfied": false,
+        "notes": "The clustering or spatial metadata uncertainty remains unresolved."
+      },
+      "expected": {
+        "status": "gated",
+        "blockCode": "HUMAN_GATE_REQUIRED",
+        "rationale": "Recommendation use requires review when uncertainty is unresolved."
+      },
+      "riskTags": ["uncertainty-unresolved", "spatial-analysis"],
+      "knownBad": false
+    },
+    {
+      "caseId": "TRB-032",
+      "title": "PATHD unresolved uncertainty gates external handoff",
+      "category": "uncertainty-unresolved",
+      "toolId": "pathd",
+      "surface": "external-handoff",
+      "claim": "A pathway route is handed off externally before route uncertainty is resolved.",
+      "input": {
+        "validityTier": "partial",
+        "hasProvenance": true,
+        "evidenceState": "present",
+        "uncertaintyState": "unresolved",
+        "isDraft": false,
+        "humanGateRequired": true,
+        "humanGateSatisfied": false,
+        "notes": "The route is not ready for external consumption without review."
+      },
+      "expected": {
+        "status": "gated",
+        "blockCode": "HUMAN_GATE_REQUIRED",
+        "rationale": "External handoff with unresolved uncertainty requires human review."
+      },
+      "riskTags": ["uncertainty-unresolved", "external-handoff-risk"],
+      "knownBad": false
+    },
+    {
+      "caseId": "TRB-033",
+      "title": "DBTL protocol requires human gate",
+      "category": "human-gate-required",
+      "toolId": "dbtlflow",
+      "surface": "protocol",
+      "claim": "A DBTL protocol is generated before required human review.",
+      "input": {
+        "validityTier": "partial",
+        "hasProvenance": true,
+        "evidenceState": "present",
+        "uncertaintyState": "bounded",
+        "isDraft": false,
+        "humanGateRequired": true,
+        "humanGateSatisfied": false,
+        "notes": "The policy declares human review for protocol-like surfaces."
+      },
+      "expected": {
+        "status": "gated",
+        "blockCode": "HUMAN_GATE_REQUIRED",
+        "rationale": "Protocol surface requires human gate before use."
+      },
+      "riskTags": ["human-gate-required", "protocol-risk"],
+      "knownBad": false
+    },
+    {
+      "caseId": "TRB-034",
+      "title": "SCSPATIAL external handoff requires human gate",
+      "category": "human-gate-required",
+      "toolId": "scspatial",
+      "surface": "external-handoff",
+      "claim": "A spatial analysis handoff is attempted before human review.",
+      "input": {
+        "validityTier": "partial",
+        "hasProvenance": true,
+        "evidenceState": "present",
+        "uncertaintyState": "bounded",
+        "isDraft": false,
+        "humanGateRequired": true,
+        "humanGateSatisfied": false,
+        "notes": "External consumers require a reviewed handoff."
+      },
+      "expected": {
+        "status": "gated",
+        "blockCode": "HUMAN_GATE_REQUIRED",
+        "rationale": "External handoff requires human gate."
+      },
+      "riskTags": ["human-gate-required", "external-handoff-risk"],
+      "knownBad": false
+    },
+    {
+      "caseId": "TRB-035",
+      "title": "FBASim external handoff requires human gate",
+      "category": "human-gate-required",
+      "toolId": "fbasim",
+      "surface": "external-handoff",
+      "claim": "A flux table is handed off externally before review.",
+      "input": {
+        "validityTier": "partial",
+        "hasProvenance": true,
+        "evidenceState": "present",
+        "uncertaintyState": "bounded",
+        "isDraft": false,
+        "humanGateRequired": true,
+        "humanGateSatisfied": false,
+        "notes": "The handoff is traceable but not reviewed."
+      },
+      "expected": {
+        "status": "gated",
+        "blockCode": "HUMAN_GATE_REQUIRED",
+        "rationale": "Human gate is required for external handoff."
+      },
+      "riskTags": ["human-gate-required", "flux-handoff"],
+      "knownBad": false
+    },
+    {
+      "caseId": "TRB-036",
+      "title": "PATHD external handoff requires human gate",
+      "category": "human-gate-required",
+      "toolId": "pathd",
+      "surface": "external-handoff",
+      "claim": "A pathway route handoff is attempted before review.",
+      "input": {
+        "validityTier": "partial",
+        "hasProvenance": true,
+        "evidenceState": "present",
+        "uncertaintyState": "bounded",
+        "isDraft": false,
+        "humanGateRequired": true,
+        "humanGateSatisfied": false,
+        "notes": "The route is not reviewed for outside use."
+      },
+      "expected": {
+        "status": "gated",
+        "blockCode": "HUMAN_GATE_REQUIRED",
+        "rationale": "External handoff requires human gate."
+      },
+      "riskTags": ["human-gate-required", "route-handoff"],
+      "knownBad": false
+    },
+    {
+      "caseId": "TRB-037",
+      "title": "CatDes protocol requires human gate",
+      "category": "human-gate-required",
+      "toolId": "catdes",
+      "surface": "protocol",
+      "claim": "A catalyst design is turned into a protocol-like artifact before review.",
+      "input": {
+        "validityTier": "partial",
+        "hasProvenance": true,
+        "evidenceState": "present",
+        "uncertaintyState": "bounded",
+        "isDraft": false,
+        "humanGateRequired": true,
+        "humanGateSatisfied": false,
+        "notes": "The protocol-like surface requires review."
+      },
+      "expected": {
+        "status": "gated",
+        "blockCode": "HUMAN_GATE_REQUIRED",
+        "rationale": "Protocol-like output requires human gate."
+      },
+      "riskTags": ["human-gate-required", "protocol-risk"],
+      "knownBad": false
+    },
+    {
+      "caseId": "TRB-038",
+      "title": "ProEvol external handoff requires human gate",
+      "category": "human-gate-required",
+      "toolId": "proevol",
+      "surface": "external-handoff",
+      "claim": "A campaign recommendation package is handed off externally before review.",
+      "input": {
+        "validityTier": "partial",
+        "hasProvenance": true,
+        "evidenceState": "present",
+        "uncertaintyState": "bounded",
+        "isDraft": false,
+        "humanGateRequired": true,
+        "humanGateSatisfied": false,
+        "notes": "The modeled campaign output requires review for external use."
+      },
+      "expected": {
+        "status": "gated",
+        "blockCode": "HUMAN_GATE_REQUIRED",
+        "rationale": "External handoff requires human gate."
+      },
+      "riskTags": ["human-gate-required", "campaign-handoff"],
+      "knownBad": false
+    },
+    {
+      "caseId": "TRB-039",
+      "title": "GenMIM protocol requires human gate",
+      "category": "human-gate-required",
+      "toolId": "genmim",
+      "surface": "protocol",
+      "claim": "A minimization plan is used as protocol-like instruction before review.",
+      "input": {
+        "validityTier": "partial",
+        "hasProvenance": true,
+        "evidenceState": "present",
+        "uncertaintyState": "bounded",
+        "isDraft": false,
+        "humanGateRequired": true,
+        "humanGateSatisfied": false,
+        "notes": "Protocol-like use requires review even for partial output."
+      },
+      "expected": {
+        "status": "gated",
+        "blockCode": "HUMAN_GATE_REQUIRED",
+        "rationale": "Human gate is required before protocol-like use."
+      },
+      "riskTags": ["human-gate-required", "genome-minimization"],
+      "knownBad": false
+    },
+    {
+      "caseId": "TRB-040",
+      "title": "Metabolic-eng external handoff requires human gate",
+      "category": "human-gate-required",
+      "toolId": "metabolic-eng",
+      "surface": "external-handoff",
+      "claim": "A legacy metabolic-eng route handoff is attempted before review.",
+      "input": {
+        "validityTier": "partial",
+        "hasProvenance": true,
+        "evidenceState": "present",
+        "uncertaintyState": "bounded",
+        "isDraft": false,
+        "humanGateRequired": true,
+        "humanGateSatisfied": false,
+        "notes": "Alias status does not remove external review needs."
+      },
+      "expected": {
+        "status": "gated",
+        "blockCode": "HUMAN_GATE_REQUIRED",
+        "rationale": "External handoff requires human gate."
+      },
+      "riskTags": ["human-gate-required", "legacy-alias"],
+      "knownBad": false
+    },
+    {
+      "caseId": "TRB-041",
+      "title": "Community FBA fake exchange recommendation",
+      "category": "known-bad-case",
+      "toolId": "fbasim",
+      "surface": "recommendation",
+      "claim": "Community FBA fake exchange values are treated as a formal engineering recommendation.",
+      "input": {
+        "validityTier": "demo",
+        "hasProvenance": true,
+        "evidenceState": "present",
+        "uncertaintyState": "unresolved",
+        "isDraft": false,
+        "humanGateRequired": false,
+        "humanGateSatisfied": false,
+        "notes": "Community exchange is not a joint community LP result."
+      },
+      "expected": {
+        "status": "blocked",
+        "blockCode": "TIER_NOT_ALLOWED_FOR_SURFACE",
+        "rationale": "Demo community exchange values cannot become formal recommendations."
+      },
+      "riskTags": ["known-bad", "community-fba-fake-exchange"],
+      "knownBad": true
+    },
+    {
+      "caseId": "TRB-042",
+      "title": "CETHX fake dG prime feasibility claim",
+      "category": "known-bad-case",
+      "toolId": "cethx",
+      "surface": "recommendation",
+      "claim": "CETHX demo delta G prime output is treated as real thermodynamic feasibility.",
+      "input": {
+        "validityTier": "demo",
+        "hasProvenance": true,
+        "evidenceState": "present",
+        "uncertaintyState": "unresolved",
+        "isDraft": false,
+        "humanGateRequired": false,
+        "humanGateSatisfied": false,
+        "notes": "The thermodynamics output is demo-tier and should not become a real claim."
+      },
+      "expected": {
+        "status": "blocked",
+        "blockCode": "TIER_NOT_ALLOWED_FOR_SURFACE",
+        "rationale": "Demo thermodynamics should not become a real feasibility recommendation."
+      },
+      "riskTags": ["known-bad", "cethx-fake-dg-real-feasibility"],
+      "knownBad": true
+    },
+    {
+      "caseId": "TRB-043",
+      "title": "Stringly DBTL loop-back treated as typed learning",
+      "category": "known-bad-case",
+      "toolId": "dbtlflow",
+      "surface": "recommendation",
+      "claim": "A legacy stringly learned-parameter loop-back is treated as typed learning.",
+      "input": {
+        "validityTier": "partial",
+        "hasProvenance": true,
+        "evidenceState": "present",
+        "uncertaintyState": "unresolved",
+        "isDraft": false,
+        "humanGateRequired": true,
+        "humanGateSatisfied": false,
+        "notes": "Typed DBTL feedback is required before loop-back decisions."
+      },
+      "expected": {
+        "status": "gated",
+        "blockCode": "HUMAN_GATE_REQUIRED",
+        "rationale": "Loop-back learning requires typed feedback and human review."
+      },
+      "riskTags": ["known-bad", "stringly-dbtl-loopback"],
+      "knownBad": true
+    },
+    {
+      "caseId": "TRB-044",
+      "title": "Draft DBTL protocol export",
+      "category": "known-bad-case",
+      "toolId": "dbtlflow",
+      "surface": "protocol",
+      "claim": "A draft DBTL protocol is exported as if finalized.",
+      "input": {
+        "validityTier": "partial",
+        "hasProvenance": true,
+        "evidenceState": "present",
+        "uncertaintyState": "bounded",
+        "isDraft": true,
+        "humanGateRequired": true,
+        "humanGateSatisfied": false,
+        "notes": "Draft state should block protocol-like export."
+      },
+      "expected": {
+        "status": "blocked",
+        "blockCode": "DRAFT_OUTPUT_NOT_EXPORTABLE",
+        "rationale": "Draft protocol-like artifacts should not be exported."
+      },
+      "riskTags": ["known-bad", "draft-dbtl-protocol-export"],
+      "knownBad": true
+    },
+    {
+      "caseId": "TRB-045",
+      "title": "Demo MultiO external handoff",
+      "category": "known-bad-case",
+      "toolId": "multio",
+      "surface": "external-handoff",
+      "claim": "A demo MultiO output is used as an external handoff.",
+      "input": {
+        "validityTier": "demo",
+        "hasProvenance": true,
+        "evidenceState": "not-required",
+        "uncertaintyState": "unresolved",
+        "isDraft": false,
+        "humanGateRequired": true,
+        "humanGateSatisfied": false,
+        "notes": "Demo multi-omics output cannot leave as a formal claim."
+      },
+      "expected": {
+        "status": "blocked",
+        "blockCode": "EXTERNAL_HANDOFF_BLOCKED",
+        "rationale": "Demo output is blocked from external handoff."
+      },
+      "riskTags": ["known-bad", "demo-multio-external-handoff"],
+      "knownBad": true
+    },
+    {
+      "caseId": "TRB-046",
+      "title": "Missing provenance export",
+      "category": "known-bad-case",
+      "toolId": "pathd",
+      "surface": "export",
+      "claim": "A pathway export is produced without provenance.",
+      "input": {
+        "validityTier": "partial",
+        "hasProvenance": false,
+        "evidenceState": "present",
+        "uncertaintyState": "bounded",
+        "isDraft": false,
+        "humanGateRequired": false,
+        "humanGateSatisfied": false,
+        "notes": "Formal exports must remain traceable."
+      },
+      "expected": {
+        "status": "blocked",
+        "blockCode": "PROVENANCE_REQUIRED",
+        "rationale": "Missing provenance blocks export."
+      },
+      "riskTags": ["known-bad", "missing-provenance-export"],
+      "knownBad": true
+    },
+    {
+      "caseId": "TRB-047",
+      "title": "Demo CellFree protocol-like artifact",
+      "category": "known-bad-case",
+      "toolId": "cellfree",
+      "surface": "protocol",
+      "claim": "A demo CellFree result is used as a protocol-like artifact.",
+      "input": {
+        "validityTier": "demo",
+        "hasProvenance": true,
+        "evidenceState": "not-required",
+        "uncertaintyState": "unresolved",
+        "isDraft": false,
+        "humanGateRequired": true,
+        "humanGateSatisfied": false,
+        "notes": "Demo CellFree output should remain exploratory."
+      },
+      "expected": {
+        "status": "blocked",
+        "blockCode": "DEMO_OUTPUT_PROTOCOL_BLOCKED",
+        "rationale": "Demo output cannot generate protocol-like artifacts."
+      },
+      "riskTags": ["known-bad", "demo-cellfree-protocol-artifact"],
+      "knownBad": true
+    },
+    {
+      "caseId": "TRB-048",
+      "title": "NEXAI missing evidence recommendation",
+      "category": "known-bad-case",
+      "toolId": "nexai",
+      "surface": "recommendation",
+      "claim": "A NEXAI answer with missing evidence is used as a recommendation.",
+      "input": {
+        "validityTier": "real",
+        "hasProvenance": false,
+        "evidenceState": "missing",
+        "uncertaintyState": "not-applicable",
+        "isDraft": false,
+        "humanGateRequired": false,
+        "humanGateSatisfied": false,
+        "notes": "The answer lacks evidence trace needed for recommendation use."
+      },
+      "expected": {
+        "status": "blocked",
+        "blockCode": "PROVENANCE_REQUIRED",
+        "rationale": "Missing evidence trace blocks recommendation use."
+      },
+      "riskTags": ["known-bad", "nexai-missing-evidence-recommendation"],
+      "knownBad": true
+    },
+    {
+      "caseId": "TRB-049",
+      "title": "PATHD draft export is blocked",
+      "category": "draft-output",
+      "toolId": "pathd",
+      "surface": "export",
+      "claim": "A draft pathway graph is exported as reusable evidence.",
+      "input": {
+        "validityTier": "partial",
+        "hasProvenance": true,
+        "evidenceState": "present",
+        "uncertaintyState": "bounded",
+        "isDraft": true,
+        "humanGateRequired": false,
+        "humanGateSatisfied": false,
+        "notes": "Draft state should prevent export."
+      },
+      "expected": {
+        "status": "blocked",
+        "blockCode": "DRAFT_OUTPUT_NOT_EXPORTABLE",
+        "rationale": "Draft outputs are not exportable formal artifacts."
+      },
+      "riskTags": ["draft-output", "export-risk"],
+      "knownBad": false
+    },
+    {
+      "caseId": "TRB-050",
+      "title": "FBASim draft export is blocked",
+      "category": "draft-output",
+      "toolId": "fbasim",
+      "surface": "export",
+      "claim": "A draft flux table is exported before finalization.",
+      "input": {
+        "validityTier": "partial",
+        "hasProvenance": true,
+        "evidenceState": "present",
+        "uncertaintyState": "bounded",
+        "isDraft": true,
+        "humanGateRequired": false,
+        "humanGateSatisfied": false,
+        "notes": "The output has not been finalized."
+      },
+      "expected": {
+        "status": "blocked",
+        "blockCode": "DRAFT_OUTPUT_NOT_EXPORTABLE",
+        "rationale": "Draft export should be blocked."
+      },
+      "riskTags": ["draft-output", "export-risk"],
+      "knownBad": false
+    },
+    {
+      "caseId": "TRB-051",
+      "title": "CatDes draft export is blocked",
+      "category": "draft-output",
+      "toolId": "catdes",
+      "surface": "export",
+      "claim": "A draft catalyst ranking is exported before finalization.",
+      "input": {
+        "validityTier": "partial",
+        "hasProvenance": true,
+        "evidenceState": "present",
+        "uncertaintyState": "bounded",
+        "isDraft": true,
+        "humanGateRequired": false,
+        "humanGateSatisfied": false,
+        "notes": "The ranking remains a draft workbench state."
+      },
+      "expected": {
+        "status": "blocked",
+        "blockCode": "DRAFT_OUTPUT_NOT_EXPORTABLE",
+        "rationale": "Draft catalyst outputs are not exportable."
+      },
+      "riskTags": ["draft-output", "export-risk"],
+      "knownBad": false
+    },
+    {
+      "caseId": "TRB-052",
+      "title": "ProEvol draft export is blocked",
+      "category": "draft-output",
+      "toolId": "proevol",
+      "surface": "export",
+      "claim": "A draft campaign table is exported before review.",
+      "input": {
+        "validityTier": "partial",
+        "hasProvenance": true,
+        "evidenceState": "present",
+        "uncertaintyState": "bounded",
+        "isDraft": true,
+        "humanGateRequired": false,
+        "humanGateSatisfied": false,
+        "notes": "The campaign artifact is still draft."
+      },
+      "expected": {
+        "status": "blocked",
+        "blockCode": "DRAFT_OUTPUT_NOT_EXPORTABLE",
+        "rationale": "Draft campaign exports should be blocked."
+      },
+      "riskTags": ["draft-output", "export-risk"],
+      "knownBad": false
+    },
+    {
+      "caseId": "TRB-053",
+      "title": "DBTL draft protocol is blocked",
+      "category": "draft-output",
+      "toolId": "dbtlflow",
+      "surface": "protocol",
+      "claim": "A draft DBTL protocol-like output is consumed as protocol.",
+      "input": {
+        "validityTier": "partial",
+        "hasProvenance": true,
+        "evidenceState": "present",
+        "uncertaintyState": "bounded",
+        "isDraft": true,
+        "humanGateRequired": true,
+        "humanGateSatisfied": false,
+        "notes": "The protocol-like artifact is not finalized."
+      },
+      "expected": {
+        "status": "blocked",
+        "blockCode": "DRAFT_OUTPUT_NOT_EXPORTABLE",
+        "rationale": "Draft protocol-like outputs are not exportable or consumable."
+      },
+      "riskTags": ["draft-output", "protocol-risk"],
+      "knownBad": false
+    },
+    {
+      "caseId": "TRB-054",
+      "title": "GenMIM draft export is blocked",
+      "category": "draft-output",
+      "toolId": "genmim",
+      "surface": "export",
+      "claim": "A draft CRISPRi schedule is exported before finalization.",
+      "input": {
+        "validityTier": "partial",
+        "hasProvenance": true,
+        "evidenceState": "present",
+        "uncertaintyState": "bounded",
+        "isDraft": true,
+        "humanGateRequired": false,
+        "humanGateSatisfied": false,
+        "notes": "The schedule is still draft."
+      },
+      "expected": {
+        "status": "blocked",
+        "blockCode": "DRAFT_OUTPUT_NOT_EXPORTABLE",
+        "rationale": "Draft schedules should not be exported."
+      },
+      "riskTags": ["draft-output", "export-risk"],
+      "knownBad": false
+    },
+    {
+      "caseId": "TRB-055",
+      "title": "SCSPATIAL draft export is blocked",
+      "category": "draft-output",
+      "toolId": "scspatial",
+      "surface": "export",
+      "claim": "A draft spatial analysis export is created before finalization.",
+      "input": {
+        "validityTier": "partial",
+        "hasProvenance": true,
+        "evidenceState": "present",
+        "uncertaintyState": "bounded",
+        "isDraft": true,
+        "humanGateRequired": false,
+        "humanGateSatisfied": false,
+        "notes": "The analysis output has not been finalized."
+      },
+      "expected": {
+        "status": "blocked",
+        "blockCode": "DRAFT_OUTPUT_NOT_EXPORTABLE",
+        "rationale": "Draft analysis export should be blocked."
+      },
+      "riskTags": ["draft-output", "export-risk"],
+      "knownBad": false
+    },
+    {
+      "caseId": "TRB-056",
+      "title": "Metabolic-eng draft export is blocked",
+      "category": "draft-output",
+      "toolId": "metabolic-eng",
+      "surface": "export",
+      "claim": "A draft legacy route export is created before finalization.",
+      "input": {
+        "validityTier": "partial",
+        "hasProvenance": true,
+        "evidenceState": "present",
+        "uncertaintyState": "bounded",
+        "isDraft": true,
+        "humanGateRequired": false,
+        "humanGateSatisfied": false,
+        "notes": "The alias route output is still draft."
+      },
+      "expected": {
+        "status": "blocked",
+        "blockCode": "DRAFT_OUTPUT_NOT_EXPORTABLE",
+        "rationale": "Draft alias exports should be blocked."
+      },
+      "riskTags": ["draft-output", "export-risk"],
+      "knownBad": false
+    }
+  ]
+}
