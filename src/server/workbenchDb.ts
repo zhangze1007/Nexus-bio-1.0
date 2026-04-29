@@ -34,6 +34,7 @@ const EMPTY_STATE: WorkbenchCanonicalState = {
   analyzeArtifact: null,
   toolRuns: [],
   toolPayloads: {},
+  payloadAdmissionDecisionsByToolId: {},
   runArtifacts: [],
   checkpoints: ['stage-1', 'stage-2', 'stage-3', 'stage-4'].map((id) => ({
     id: id as WorkbenchCanonicalState['checkpoints'][number]['id'],

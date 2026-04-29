@@ -40,6 +40,11 @@ import {
   type ToolId,
 } from '../domain/workflowContract';
 import type { WorkbenchRunStatus } from './workbenchTypes';
+import { getToolValidity } from '../components/tools/shared/toolValidity';
+import {
+  evaluateWorkbenchPayloadAdmission,
+  inferAdmissionInputFromPayload,
+} from '../services/workbenchPayloadAdmission';
 import type {
   AxonRunRecord,
   EvidenceSourceKind,
@@ -802,6 +807,7 @@ function buildCanonicalSlice(state: Pick<
   | 'analyzeArtifact'
   | 'toolRuns'
   | 'toolPayloads'
+  | 'payloadAdmissionDecisionsByToolId'
   | 'runArtifacts'
   | 'checkpoints'
   | 'nextRecommendations'
@@ -820,6 +826,7 @@ function buildCanonicalSlice(state: Pick<
     analyzeArtifact: state.analyzeArtifact,
     toolRuns: state.toolRuns,
     toolPayloads: state.toolPayloads,
+    payloadAdmissionDecisionsByToolId: state.payloadAdmissionDecisionsByToolId,
     runArtifacts: state.runArtifacts,
     checkpoints: state.checkpoints,
     nextRecommendations: state.nextRecommendations,
@@ -1057,6 +1064,7 @@ const initialState: Pick<
   | 'analyzeArtifact'
   | 'toolRuns'
   | 'toolPayloads'
+  | 'payloadAdmissionDecisionsByToolId'
   | 'runArtifacts'
   | 'checkpoints'
   | 'nextRecommendations'
@@ -1092,6 +1100,7 @@ const initialState: Pick<
   analyzeArtifact: null,
   toolRuns: [],
   toolPayloads: {},
+  payloadAdmissionDecisionsByToolId: {},
   runArtifacts: [],
   checkpoints: createEmptyCheckpoints(),
   nextRecommendations: [],
@@ -1510,6 +1519,14 @@ export const useWorkbenchStore = create<WorkbenchState>()(
           const runArtifact = createRunArtifact(state, toolId, payload, {
             revalidated: payloadStable && !executionStable,
           });
+          const admission = evaluateWorkbenchPayloadAdmission({
+            ...inferAdmissionInputFromPayload({
+              toolId: String(toolId),
+              payload,
+              fallbackValidityTier: getToolValidity(String(toolId))?.level,
+            }),
+            mode: 'observe',
+          });
           const toolRuns = [
             {
               id: createId('toolrun'),
@@ -1550,6 +1567,10 @@ export const useWorkbenchStore = create<WorkbenchState>()(
 
           return touchState(state, {
             toolPayloads,
+            payloadAdmissionDecisionsByToolId: {
+              ...state.payloadAdmissionDecisionsByToolId,
+              [String(toolId)]: admission.decision,
+            },
             runArtifacts,
             toolRuns,
             checkpoints: buildCheckpoints(state.currentStageId, getAnalyzeArtifactForState(state), toolRuns),

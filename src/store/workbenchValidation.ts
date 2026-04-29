@@ -1,4 +1,11 @@
 import { isValidEdge, isValidNode } from '../types';
+import {
+  CLAIM_SURFACES as TRUST_CLAIM_SURFACES,
+  GATE_STATUSES as TRUST_GATE_STATUSES,
+  type ClaimSurface,
+  type GateDecision,
+  type GateStatus,
+} from '../protocol/nexusTrustRuntime';
 import type {
   WorkflowArtifact,
   WorkflowArtifactEdge,
@@ -40,6 +47,50 @@ function asNumber(value: unknown, fallback = 0) {
 
 function asStringArray(value: unknown) {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
+}
+
+function isClaimSurface(value: unknown): value is ClaimSurface {
+  return typeof value === 'string' && TRUST_CLAIM_SURFACES.includes(value as ClaimSurface);
+}
+
+function isGateStatus(value: unknown): value is GateStatus {
+  return typeof value === 'string' && TRUST_GATE_STATUSES.includes(value as GateStatus);
+}
+
+function sanitizeClaimSurfaces(value: unknown): ClaimSurface[] {
+  return Array.isArray(value) ? value.filter(isClaimSurface) : [];
+}
+
+function sanitizeGateDecision(value: unknown): GateDecision | null {
+  if (
+    !isRecord(value) ||
+    !isGateStatus(value.status) ||
+    typeof value.reason !== 'string' ||
+    !Array.isArray(value.allowedSurfaces) ||
+    !Array.isArray(value.blockedSurfaces)
+  ) {
+    return null;
+  }
+
+  return {
+    status: value.status,
+    ...(typeof value.blockCode === 'string' ? { blockCode: value.blockCode } : {}),
+    reason: value.reason,
+    allowedSurfaces: sanitizeClaimSurfaces(value.allowedSurfaces),
+    blockedSurfaces: sanitizeClaimSurfaces(value.blockedSurfaces),
+    ...(value.overridePath === 'human-review' || value.overridePath === 'not-allowed'
+      ? { overridePath: value.overridePath }
+      : {}),
+  };
+}
+
+function sanitizeGateDecisionMap(value: unknown): Record<string, GateDecision> {
+  if (!isRecord(value)) return {};
+  return Object.entries(value).reduce<Record<string, GateDecision>>((acc, [toolId, decision]) => {
+    const sanitized = sanitizeGateDecision(decision);
+    if (sanitized) acc[toolId] = sanitized;
+    return acc;
+  }, {});
 }
 
 function sanitizeProject(value: unknown): WorkbenchProjectBrief | null {
@@ -503,6 +554,7 @@ export function sanitizeWorkbenchState(value: unknown): WorkbenchCanonicalState 
     analyzeArtifact: sanitizeAnalyzeArtifact(value.analyzeArtifact),
     toolRuns: (Array.isArray(value.toolRuns) ? value.toolRuns : []).map(sanitizeToolRun).filter(Boolean) as WorkbenchToolRun[],
     toolPayloads: sanitizeToolPayloads(value.toolPayloads),
+    payloadAdmissionDecisionsByToolId: sanitizeGateDecisionMap(value.payloadAdmissionDecisionsByToolId),
     runArtifacts: (Array.isArray(value.runArtifacts) ? value.runArtifacts : []).map(sanitizeRunArtifact).filter(Boolean) as WorkbenchRunArtifact[],
     checkpoints: (Array.isArray(value.checkpoints) ? value.checkpoints : []).map(sanitizeCheckpoint).filter(Boolean) as StageCheckpoint[],
     nextRecommendations: (Array.isArray(value.nextRecommendations) ? value.nextRecommendations : []).map(sanitizeRecommendation).filter(Boolean) as NextStepRecommendation[],

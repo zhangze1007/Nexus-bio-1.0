@@ -9,6 +9,7 @@ import type { WorkbenchToolPayloadMap } from './workbenchPayloads';
 import type { WorkbenchStageId } from '../components/tools/shared/workbenchConfig';
 import type { WorkflowArtifact } from '../domain/workflowArtifact';
 import type { ToolId, ValidityFloor } from '../domain/workflowContract';
+import type { GateDecision } from '../protocol/nexusTrustRuntime';
 import type { WorkflowStateValue } from '../services/workflowStateMachine';
 
 export type EvidenceSourceKind = 'literature' | 'analysis' | 'tool' | 'system';
@@ -369,6 +370,7 @@ export interface WorkbenchCanonicalState {
   analyzeArtifact: WorkbenchAnalyzeArtifact | null;
   toolRuns: WorkbenchToolRun[];
   toolPayloads: WorkbenchToolPayloadMap;
+  payloadAdmissionDecisionsByToolId: Record<string, GateDecision>;
   runArtifacts: WorkbenchRunArtifact[];
   workflowControl: WorkbenchWorkflowControlSnapshot;
   checkpoints: StageCheckpoint[];
