@@ -33,7 +33,7 @@ export const TOOL_VALIDITY: Record<string, ToolValidity> = {
 
   // Stage 2 — simulation
   fbasim:       { level: 'partial', caption: 'Single-species FBA uses a real two-phase simplex LP. Two-Species mode runs two independent LPs and post-hoc scales exchange fluxes — NOT a joint community LP.' },
-  cethx:        { level: 'demo',    caption: 'ΔG°\u0027 values are Lehninger reference (pH 7, 25°C). No live Alberty pH/T transform — eQuilibrator integration pending.' },
+  cethx:        { level: 'demo',    caption: 'Lehninger/NIST reference ΔG°\u0027 values only. No condition-aware backend, uncertainty, ionic-strength, or pMg correction — eQuilibrator-style integration pending.' },
   catdes:       { level: 'partial', caption: 'Distance / orientation / VdW / electrostatic scoring is real (Warshel ε); residue weights are curated reference values.' },
   proevol:      { level: 'partial', caption: 'Campaign scoring, survivor selection, lineage tracking, and next-round recommendations are deterministic modeled heuristics; outputs are simulated/inferred decision support, not wet-lab measurements.' },
 

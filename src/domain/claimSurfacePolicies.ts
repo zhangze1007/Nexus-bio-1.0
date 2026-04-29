@@ -56,6 +56,24 @@ const SURFACE_POLICY_TEMPLATES: Record<ClaimSurface, SurfacePolicyTemplate> = {
   },
 };
 
+const CETHX_POLICY_RATIONALES: Partial<Record<ClaimSurface, string>> = {
+  payload:
+    'CETHX demo thermodynamics may remain visible as exploratory reference-table context, but it is not a condition-aware thermodynamics backend.',
+  export:
+    'CETHX exports must not carry demo reference delta G values as formal thermodynamic feasibility claims; formal export use requires at least partial validity and provenance.',
+  recommendation:
+    'CETHX recommendations require at least partial validity and provenance because demo reference thermodynamics lacks uncertainty, pH/ionic-strength/pMg transforms, and backend provenance.',
+  protocol:
+    'CETHX protocol-like use blocks demo thermodynamics because no condition-aware backend, uncertainty, or compound mapping currently supports operational thermodynamic claims.',
+  'external-handoff':
+    'CETHX external handoff blocks demo thermodynamics because reference-table values without uncertainty or backend provenance must not leave Nexus-Bio as formal feasibility evidence.',
+};
+
+function policyRationale(toolId: ToolId, surface: ClaimSurface, fallback: string): string {
+  if (toolId === 'cethx') return CETHX_POLICY_RATIONALES[surface] ?? fallback;
+  return fallback;
+}
+
 function buildClaimSurfacePolicy(
   toolId: ToolId,
   surface: ClaimSurface,
@@ -70,7 +88,7 @@ function buildClaimSurfacePolicy(
     ...(template.requiresHumanGate !== undefined ? { requiresHumanGate: template.requiresHumanGate } : {}),
     ...(template.denyIfDraft !== undefined ? { denyIfDraft: template.denyIfDraft } : {}),
     blockCode: template.blockCode,
-    rationale: template.rationale,
+    rationale: policyRationale(toolId, surface, template.rationale),
   };
 }
 

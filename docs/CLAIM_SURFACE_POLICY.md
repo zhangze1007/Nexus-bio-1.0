@@ -30,6 +30,8 @@ Community-mode FBASIM output is a mode-specific example of this boundary. Single
 
 Step 9B records that mode boundary in `src/domain/communityFbaBoundary.ts`. The policy catalog is still tool-level so it does not broadly downgrade single-species `fbasim`; the community helper marks recommendation, protocol, and external-handoff as formal surfaces blocked for demo community claims until a real joint community LP exists and is tested.
 
+CETHX is another tool-specific boundary. Step 10 records the current thermodynamics status in `src/domain/cethxThermodynamicsBoundary.ts`: CETHX may show demo reference-table payloads, but formal export, recommendation, protocol, and external-handoff thermodynamic claims require a future condition-aware backend with uncertainty and provenance.
+
 ## Files
 
 - `src/domain/claimSurfacePolicy.ts` defines `ClaimSurfacePolicy` and block codes.

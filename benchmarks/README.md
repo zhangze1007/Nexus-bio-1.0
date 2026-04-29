@@ -52,6 +52,8 @@ Known-bad cases exist so future policy evaluation can be tested against explicit
 
 The community FBA known-bad cases are claim-boundary regressions: illustrative two-species demo output must not become a formal recommendation, protocol, or external-handoff claim. They do not evaluate or imply a true joint community FBA solver.
 
+The CETHX cases are thermodynamics-claim regressions: reference-table demo output without condition-aware parameters, uncertainty, or backend provenance must not become a formal recommendation, protocol, or external-handoff claim. They do not evaluate or imply a real thermodynamics backend.
+
 ## Expected Labels
 
 `expected_labels.csv` is the answer key. Each JSON case must have exactly one CSV row with matching:

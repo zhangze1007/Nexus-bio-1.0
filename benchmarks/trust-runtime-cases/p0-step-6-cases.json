@@ -1400,6 +1400,56 @@
       },
       "riskTags": ["draft-output", "export-risk"],
       "knownBad": false
+    },
+    {
+      "caseId": "TRB-057",
+      "title": "CETHX missing condition parameters protocol is blocked",
+      "category": "missing-evidence",
+      "toolId": "cethx",
+      "surface": "protocol",
+      "claim": "A demo CETHX reference table is converted into a protocol despite missing condition-aware thermodynamic parameters.",
+      "input": {
+        "validityTier": "demo",
+        "hasProvenance": true,
+        "evidenceState": "present",
+        "uncertaintyState": "unresolved",
+        "isDraft": false,
+        "humanGateRequired": true,
+        "humanGateSatisfied": false,
+        "notes": "The output lacks ionic strength, pMg, backend calculation, and condition-aware delta G prime support."
+      },
+      "expected": {
+        "status": "blocked",
+        "blockCode": "DEMO_OUTPUT_PROTOCOL_BLOCKED",
+        "rationale": "Demo CETHX thermodynamics cannot become protocol-like thermodynamic claims."
+      },
+      "riskTags": ["missing-condition-parameters", "cethx-demo-thermodynamics"],
+      "knownBad": false
+    },
+    {
+      "caseId": "TRB-058",
+      "title": "CETHX missing uncertainty handoff is blocked",
+      "category": "missing-evidence",
+      "toolId": "cethx",
+      "surface": "external-handoff",
+      "claim": "A demo CETHX delta G value with no uncertainty is handed off as formal thermodynamic feasibility evidence.",
+      "input": {
+        "validityTier": "demo",
+        "hasProvenance": true,
+        "evidenceState": "present",
+        "uncertaintyState": "unresolved",
+        "isDraft": false,
+        "humanGateRequired": true,
+        "humanGateSatisfied": false,
+        "notes": "The output has no reaction-level uncertainty or backend provenance."
+      },
+      "expected": {
+        "status": "blocked",
+        "blockCode": "EXTERNAL_HANDOFF_BLOCKED",
+        "rationale": "Demo CETHX thermodynamics cannot leave Nexus-Bio as external feasibility evidence."
+      },
+      "riskTags": ["missing-uncertainty", "cethx-demo-thermodynamics"],
+      "knownBad": false
     }
   ]
 }

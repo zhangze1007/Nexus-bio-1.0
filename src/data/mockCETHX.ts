@@ -11,14 +11,15 @@
  * NOT_IMPLEMENTED:
  *   - Reaction-specific pKa-based pH transform (Alberty)
  *   - Ionic strength correction (Debye-Hückel)
- *   - Temperature dependence beyond linear T/298.15 scaling
+ *   - Condition-aware temperature transform
  *   - Group contribution method (Mavrovouniotis / Jankowski)
  *   - Magnesium binding correction
  *   - Compartment-specific ΔG' adjustments
+ *   - Reaction-level uncertainty calculation
  *
  * KNOWN_LIMITATIONS:
- *   - The 0.1 uniform pH discount has no chemical basis;
- *     it is a placeholder constant, not an Alberty transform.
+ *   - Current ΔG values are reference-table values displayed unchanged;
+ *     they are not condition-aware transformed ΔG' values.
  *   - ATP/NADH yields are hardcoded values, not derived
  *     from reaction stoichiometry.
  *   - Output ΔG' values MUST NOT be used to make
@@ -28,7 +29,10 @@
  *
  * VALIDITY_TIER: demo (per src/components/tools/shared/toolValidity.ts)
  * BLOCKING_ASSUMPTIONS:
- *   - cethx.uniform_ph_factor (severity: blocking)
+ *   - cethx.thermodynamics_demo_only (severity: blocking)
+ *   - cethx.missing_condition_aware_backend (severity: blocking)
+ *   - cethx.uncertainty_not_calculated (severity: blocking)
+ *   - cethx.uniform_ph_factor (legacy compatibility id, severity: blocking)
  *     See src/components/tools/shared/toolAssumptions.ts
  */
 

@@ -55,3 +55,5 @@ TRB-053,blocked,DRAFT_OUTPUT_NOT_EXPORTABLE,draft-output,dbtlflow,protocol,false
 TRB-054,blocked,DRAFT_OUTPUT_NOT_EXPORTABLE,draft-output,genmim,export,false
 TRB-055,blocked,DRAFT_OUTPUT_NOT_EXPORTABLE,draft-output,scspatial,export,false
 TRB-056,blocked,DRAFT_OUTPUT_NOT_EXPORTABLE,draft-output,metabolic-eng,export,false
+TRB-057,blocked,DEMO_OUTPUT_PROTOCOL_BLOCKED,missing-evidence,cethx,protocol,false
+TRB-058,blocked,EXTERNAL_HANDOFF_BLOCKED,missing-evidence,cethx,external-handoff,false

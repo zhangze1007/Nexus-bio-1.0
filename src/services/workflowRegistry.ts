@@ -76,7 +76,7 @@ const FBASIM_CONTRACT: ToolContract = {
     { toolId: 'pathd', payloadPath: 'result.pathwayCandidates', required: true, rationale: 'FBA needs a candidate pathway to constrain.' },
   ],
   optionalInputs: [
-    { toolId: 'cethx', payloadPath: 'result.gibbsFreeEnergy', required: false, rationale: 'Thermodynamic feasibility tightens flux bounds.' },
+    { toolId: 'cethx', payloadPath: 'result.gibbsFreeEnergy', required: false, rationale: 'Demo reference thermodynamics may annotate flux work; it is not a formal feasibility constraint.' },
   ],
   outputArtifacts: [
     { toolId: 'fbasim', payloadPath: 'result.topFluxes', required: true, rationale: 'Bottleneck signal for CatDes.' },
@@ -104,7 +104,7 @@ const CATDES_CONTRACT: ToolContract = {
     { toolId: 'fbasim', payloadPath: 'result.topFluxes', required: true, rationale: 'Catalyst targets are nominated by FBA bottlenecks.' },
   ],
   optionalInputs: [
-    { toolId: 'cethx', payloadPath: 'result.efficiency', required: false, rationale: 'Thermodynamic penalty informs catalyst weighting.' },
+    { toolId: 'cethx', payloadPath: 'result.efficiency', required: false, rationale: 'Demo reference thermodynamic stress informs heuristic catalyst weighting.' },
   ],
   outputArtifacts: [
     { toolId: 'catdes', payloadPath: 'result.bestSequenceScore', required: true, rationale: 'Best variant for DynCon expression seed.' },
@@ -237,14 +237,14 @@ const CETHX_CONTRACT: ToolContract = {
   primaryIntent: 'analyze',
   requiredInputs: [],
   optionalInputs: [
-    { toolId: 'pathd', payloadPath: 'result.pathwayCandidates', required: false, rationale: 'Pathway choice drives ΔG cascade selection.' },
-    { toolId: 'fbasim', payloadPath: 'result.topFluxes', required: false, rationale: 'Flux mix tightens the thermodynamic window.' },
+    { toolId: 'pathd', payloadPath: 'result.pathwayCandidates', required: false, rationale: 'Pathway choice selects the demo reference Delta-G cascade.' },
+    { toolId: 'fbasim', payloadPath: 'result.topFluxes', required: false, rationale: 'Flux context is attached for interpretation; it does not make CETHX condition-aware.' },
   ],
   outputArtifacts: [
-    { toolId: 'cethx', payloadPath: 'result.gibbsFreeEnergy', required: false, rationale: 'Optional input for CatDes scoring.' },
+    { toolId: 'cethx', payloadPath: 'result.gibbsFreeEnergy', required: false, rationale: 'Optional demo reference signal for CatDes scoring.' },
   ],
   evidenceRequired: NO_EVIDENCE,
-  validityBaseline: { floor: 'demo', reason: 'ΔG° values are Lehninger reference (pH 7, 25°C); no live Alberty pH/T transform yet.' },
+  validityBaseline: { floor: 'demo', reason: 'Lehninger/NIST reference ΔG° values only; no condition-aware backend, uncertainty, ionic-strength, or pMg correction.' },
   confidencePolicy: NO_CONFIDENCE,
   uncertaintyPolicy: NO_UNCERTAINTY,
   humanGatePolicy: NO_GATE,

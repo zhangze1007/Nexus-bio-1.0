@@ -215,11 +215,35 @@ export const TOOL_ASSUMPTIONS: Record<string, ToolAssumption[]> = {
 
   cethx: [
     {
+      id: 'cethx.thermodynamics_demo_only',
+      toolId: 'cethx',
+      category: 'mathematical',
+      statement:
+        'CETHX thermodynamics are demo-only reference bookkeeping until a real condition-aware backend is integrated.',
+      severity: 'blocking',
+    },
+    {
+      id: 'cethx.missing_condition_aware_backend',
+      toolId: 'cethx',
+      category: 'data',
+      statement:
+        'No eQuilibrator-style or equivalent backend calculates condition-aware delta G prime from pH, ionic strength, pMg, temperature, and compound mappings.',
+      severity: 'blocking',
+    },
+    {
+      id: 'cethx.uncertainty_not_calculated',
+      toolId: 'cethx',
+      category: 'mathematical',
+      statement:
+        'No reaction-level uncertainty is calculated, so CETHX demo values cannot support formal thermodynamic feasibility claims.',
+      severity: 'blocking',
+    },
+    {
       id: 'cethx.uniform_ph_factor',
       toolId: 'cethx',
       category: 'biological',
       statement:
-        'ΔG° pH/T transform uses a uniform 0.1 discount per pH unit; NOT a reaction-specific Alberty transform.',
+        'Legacy compatibility id: current CETHX does not calculate reaction-specific pH correction; reference ΔG°′ values are displayed unchanged, not as condition-aware transformed ΔG′.',
       severity: 'blocking',
     },
     {
@@ -227,7 +251,7 @@ export const TOOL_ASSUMPTIONS: Record<string, ToolAssumption[]> = {
       toolId: 'cethx',
       category: 'mathematical',
       statement:
-        'Temperature dependence is linear T/298.15; ignores enthalpy/entropy split and heat-capacity terms.',
+        'No condition-aware temperature transform is calculated; enthalpy/entropy split and heat-capacity terms are not modeled.',
       severity: 'warning',
     },
     {
@@ -235,7 +259,7 @@ export const TOOL_ASSUMPTIONS: Record<string, ToolAssumption[]> = {
       toolId: 'cethx',
       category: 'mathematical',
       statement:
-        'No Debye-Hückel ionic strength correction is applied to standard ΔG° values.',
+        'No Debye-Hückel ionic strength correction or pMg/magnesium binding correction is applied to reference ΔG°′ values.',
       severity: 'warning',
     },
     {

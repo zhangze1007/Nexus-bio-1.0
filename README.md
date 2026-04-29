@@ -97,7 +97,7 @@ INPUT: Target Molecular Product
 | Molecular Structure | Real 3D conformers from PubChem (CID lookup + name search) |
 | Cell Imagery | Microscopy reference images from Wikipedia, Cell Image Library, EMBL-EBI IDR |
 | Kinetic Simulation | Michaelis-Menten kinetics + RK4 ODE solver for enzyme nodes |
-| Thermodynamics | Gibbs free energy (ΔG°) estimation using group contribution method for metabolite nodes |
+| Thermodynamics | Demo Gibbs free energy (ΔG°) reference bookkeeping for metabolite nodes; not condition-aware backend output |
 
 ---
 
@@ -109,7 +109,7 @@ INPUT: Target Molecular Product
 | **Metabolic Engineering Lab** | `/tools/metabolic-eng` | Full metabolic lab with 3D FluidSim canvas, NodePanel, ThreeScene; entry point for full Axon analysis |
 | **Catalyst Designer** | `/tools/catdes` | Enzyme design: binding affinity radar, sequence design, flux cost analysis, Pareto front, mutagenesis targeting |
 | **Cell-Free Simulation** | `/tools/cellfree` | Cell-free system simulation: gene construct design, parameter tuning, expression yield prediction |
-| **Cell Thermodynamics** | `/tools/cethx` | Thermodynamic cascade: waterfall ΔG chart, ATP accounting, pathway feasibility analysis |
+| **Cell Thermodynamics** | `/tools/cethx` | Demo thermodynamics explainer: reference ΔG waterfall, ATP accounting, and explicit feasibility-claim boundary |
 | **DBTL Flow** | `/tools/dbtlflow` | Design-Build-Test-Learn cycle tracker: iteration waterfall, protocol generation, SBOL serialization |
 | **Dynamic Control** | `/tools/dyncon` | Bioreactor simulation: Hill function feedback loops, RK4 ODE integration, setpoint convergence analysis |
 | **FBA Simulator** | `/tools/fbasim` | Flux Balance Analysis: single-species simplex LP plus illustrative two-species demo mode, knockout/overexpression strategies, shadow prices, carbon efficiency |
