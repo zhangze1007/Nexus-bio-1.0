@@ -6,6 +6,9 @@ import { generateDefaultConstructs, generateDefaultParameters } from '../../../s
 import type { EnzymeStructure } from '../../../services/CatalystDesignerEngine';
 import type { CFSParameters, GeneConstruct } from '../../../services/CellFreeEngine';
 import type { DBTLPhase } from '../../../types';
+import type { ProvenanceEntry } from '../../../types/assumptions';
+import type { DBTLLearnedFeedback, DBTLLearnedMetrics, DBTLMetricSource } from '../../../types/dbtlFeedback';
+import { normalizeDBTLLearnedFeedback } from '../../../migrations/migrateDbtlFeedback';
 import type {
   CatalystWorkbenchPayload,
   CETHXWorkbenchPayload,
@@ -81,6 +84,8 @@ interface DBTLDraft {
   unit: string;
   passed: boolean;
   notes: string;
+  feedback: DBTLLearnedFeedback;
+  /** @deprecated Use feedback.learnedMetrics and feedback.sources instead. */
   learnedParameters: string[];
 }
 
@@ -101,23 +106,47 @@ function unique<T>(items: T[]) {
   return Array.from(new Set(items));
 }
 
-function parseLearnedMetric(learnedParameters: string[] | undefined, label: string) {
-  const match = learnedParameters?.find((item) => item.toLowerCase().startsWith(label.toLowerCase()));
-  if (!match) return null;
-  const numeric = match.match(/-?\d+(\.\d+)?/);
-  return numeric ? Number(numeric[0]) : null;
+function provenanceEntryId(provenance?: ProvenanceEntry) {
+  return provenance ? `${provenance.toolId}:${provenance.timestamp}` : undefined;
+}
+
+function sourceFromPayload(
+  payload:
+    | CatalystWorkbenchPayload
+    | DynConWorkbenchPayload
+    | CellFreeWorkbenchPayload
+    | DBTLWorkbenchPayload
+    | null
+    | undefined,
+  notes?: string,
+): DBTLMetricSource | null {
+  if (!payload) return null;
+  return {
+    derivedFromToolId: payload.toolId,
+    derivedAt: new Date(payload.updatedAt).toISOString(),
+    ...(provenanceEntryId(payload.runProvenance) ? { provenanceEntryId: provenanceEntryId(payload.runProvenance) } : {}),
+    ...(notes ? { notes } : {}),
+  };
 }
 
 function getCommittedDBTLFeedback(dbtl?: DBTLWorkbenchPayload | null) {
   if (!dbtl || dbtl.feedbackSource !== 'committed') return null;
+  const feedback = normalizeDBTLLearnedFeedback({
+    feedback: dbtl.result.feedback,
+    legacyLearnedParameters: dbtl.result.learnedParameters,
+    derivedFromToolId: dbtl.toolId,
+    provenanceEntryId: provenanceEntryId(dbtl.runProvenance),
+    now: new Date(dbtl.updatedAt).toISOString(),
+  });
+  const metrics = feedback.learnedMetrics;
   return {
     passRate: dbtl.result.passRate,
     improvementRate: dbtl.result.improvementRate,
     latestPhase: dbtl.result.latestPhase,
     measuredResult: dbtl.measuredResult,
-    drainPercent: parseLearnedMetric(dbtl.result.learnedParameters, 'drain'),
-    doRmse: parseLearnedMetric(dbtl.result.learnedParameters, 'DO RMSE'),
-    cfpsConfidence: parseLearnedMetric(dbtl.result.learnedParameters, 'CFPS confidence'),
+    drainPercent: metrics.drainPercent,
+    doRmse: metrics.doRmse,
+    cfpsConfidence: metrics.cfpsConfidence,
   };
 }
 
@@ -237,7 +266,7 @@ export function buildFBASeed(
   let objectiveSeed = objective;
   if (feedback) {
     if (feedback.passRate < 70 || feedback.latestPhase === 'Learn') {
-      objectiveSeed = feedback.drainPercent !== null && feedback.drainPercent > 30 ? 'atp' : 'biomass';
+      objectiveSeed = feedback.drainPercent !== undefined && feedback.drainPercent > 30 ? 'atp' : 'biomass';
       glucoseUptake = clampNumber(glucoseUptake - 0.8, 4, 20);
       oxygenUptake = clampNumber(oxygenUptake + 1.2, 2, 20);
       knockoutHints.push('PFK');
@@ -246,7 +275,7 @@ export function buildFBASeed(
       objectiveSeed = 'product';
       glucoseUptake = clampNumber(glucoseUptake + 0.9, 4, 20);
     }
-    if (feedback.doRmse !== null && feedback.doRmse > 0.08) {
+    if (feedback.doRmse !== undefined && feedback.doRmse > 0.08) {
       oxygenUptake = clampNumber(oxygenUptake + 0.9, 2, 20);
     }
   }
@@ -419,7 +448,7 @@ export function buildDynConSeed(
       setpoint = clampNumber(setpoint - 0.04, 0.2, 0.9);
       hillKd = clampNumber(hillKd + 12, 5, 200);
     }
-    if (feedback.doRmse !== null && feedback.doRmse > 0.08) {
+    if (feedback.doRmse !== undefined && feedback.doRmse > 0.08) {
       kd = clampNumber(kd + 0.04, 0.02, 1.5);
       setpoint = clampNumber(setpoint - 0.02, 0.2, 0.9);
     }
@@ -518,7 +547,7 @@ export function buildCellFreeSeed(
       params.ribosomeTotal = round(clampNumber(params.ribosomeTotal + 45, 300, 900));
       constructs[1].dnaConcentration = round(clampNumber(constructs[1].dnaConcentration - 1.5, 5, 28), 1);
     }
-    if (feedback.improvementRate > 0.5 && feedback.cfpsConfidence !== null && feedback.cfpsConfidence > 65) {
+    if (feedback.improvementRate > 0.5 && feedback.cfpsConfidence !== undefined && feedback.cfpsConfidence > 65) {
       params.ribosomeTotal = round(clampNumber(params.ribosomeTotal + 35, 300, 900));
       params.initialEnergy.atp = round(clampNumber(params.initialEnergy.atp + 0.15, 1.2, 4), 2);
     }
@@ -563,6 +592,30 @@ export function buildDBTLDraft(
     `DO RMSE ${round(dyncon?.result.doRmse ?? 0, 3)}`,
     `CFPS confidence ${round(confidence * 100, 0)}%`,
   ];
+  const learnedMetrics: DBTLLearnedMetrics = {};
+  if (catalyst) {
+    learnedMetrics.bindingKdUM = round(catalyst.result.bindingKd, 2);
+    learnedMetrics.drainPercent = round(catalyst.result.totalMetabolicDrain * 100, 1);
+    learnedMetrics.growthPenaltyPercent = round(catalyst.result.growthPenalty, 1);
+  }
+  if (dyncon) {
+    learnedMetrics.doRmse = round(dyncon.result.doRmse, 3);
+  }
+  if (cellfree?.result.confidence !== null && cellfree?.result.confidence !== undefined) {
+    learnedMetrics.cfpsConfidence = round(cellfree.result.confidence * 100, 0);
+    learnedMetrics.confidenceScore = round(cellfree.result.confidence, 3);
+  }
+  const sources = [
+    sourceFromPayload(catalyst, 'Catalyst metrics moved into DBTL typed feedback.'),
+    sourceFromPayload(dyncon, 'DynCon metrics moved into DBTL typed feedback.'),
+    sourceFromPayload(cellfree, 'CellFree metrics moved into DBTL typed feedback.'),
+  ].filter((source): source is DBTLMetricSource => source !== null);
+  const feedback: DBTLLearnedFeedback = {
+    learnedMetrics,
+    sources,
+    legacyText: learnedParameters,
+    schemaVersion: 'dbtl-feedback-v1',
+  };
 
   return {
     phase,
@@ -571,6 +624,7 @@ export function buildDBTLDraft(
     unit: 'mg/L',
     passed: confidence >= 0.6 && stable && viable,
     notes: `${targetProduct} draft generated from live Catalyst, DynCon, and Cell-Free outputs.`,
+    feedback,
     learnedParameters,
   };
 }

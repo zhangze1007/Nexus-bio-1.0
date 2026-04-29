@@ -283,7 +283,11 @@ function summarizePayload<K extends keyof WorkbenchToolPayloadMap>(toolId: K, pa
     }
     case 'dbtlflow': {
       const data = payload as WorkbenchToolPayloadMap['dbtlflow'];
-      return `DBTL ${data.proposedPhase} · pass ${data.passed ? 'yes' : 'no'} · ${data.result.learnedParameters.length} learned`;
+      const typedMetricCount = Object.values(data.result.feedback?.learnedMetrics ?? {})
+        .filter((value) => typeof value === 'number')
+        .length;
+      const legacyLearnedCount = data.result.learnedParameters?.length ?? 0;
+      return `DBTL ${data.proposedPhase} · pass ${data.passed ? 'yes' : 'no'} · ${typedMetricCount || legacyLearnedCount} learned`;
     }
     case 'proevol': {
       const data = payload as WorkbenchToolPayloadMap['proevol'];

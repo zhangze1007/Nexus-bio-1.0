@@ -192,7 +192,7 @@ const DBTLFLOW_CONTRACT: ToolContract = {
   ],
   outputArtifacts: [
     { toolId: 'dbtlflow', payloadPath: 'result.passRate', required: true, rationale: 'Loop-back signal feeding the next iteration.' },
-    { toolId: 'dbtlflow', payloadPath: 'result.learnedParameters', required: true, rationale: 'Learned weights consumed by upstream seeders.' },
+    { toolId: 'dbtlflow', payloadPath: 'result.feedback.learnedMetrics', required: true, rationale: 'Typed learned metrics consumed by upstream seeders.' },
   ],
   evidenceRequired: NO_EVIDENCE,
   validityBaseline: { floor: 'partial', reason: 'Iteration ledger and SBOL serialization are real; learning loop weights are heuristic.' },

@@ -163,6 +163,17 @@ const DBTL_OK: WorkbenchToolPayloadMap['dbtlflow'] = {
     improvementRate: 0.2,
     passRate: 0.8,
     latestPhase: 'Learn',
+    feedback: {
+      learnedMetrics: {},
+      sources: [
+        {
+          derivedFromToolId: 'dbtlflow',
+          derivedAt: '2026-04-29T00:00:00.000Z',
+        },
+      ],
+      legacyText: ['raise ADS expression'],
+      schemaVersion: 'dbtl-feedback-v1',
+    },
     learnedParameters: ['raise ADS expression'],
   },
   updatedAt: 6,
