@@ -1,10 +1,11 @@
 /**
- * OmicsFoundationModel — Biological embedding engine + perturbation simulator
+ * Deterministic omics integrator — local embedding and sensitivity sketch
  *
- * Inspired by Pushmeet Kohli's work at DeepMind on biological foundation models.
- * Maps RNA-seq, Proteomics, and Metabolomics into a shared latent space using
- * Z-score normalization + Log2 fold change, then applies multi-head attention
- * to identify which omics layer contains the bottleneck signal.
+ * Maps RNA-seq, proteomics, and metabolomics into a shared deterministic
+ * projection using Z-score normalization + log2 fold change, then applies
+ * variance/discordance/significance scoring to identify which omics layer
+ * contains the strongest local bottleneck signal. This is not a foundation
+ * model, Bayesian model, GP model, MOFA-like model, or VAE-like model.
  */
 
 import type {
@@ -67,9 +68,9 @@ function log2FoldChange(value: number, baseline: number): number {
   return Math.log2(value / baseline);
 }
 
-// ── UMAP-like dimensionality reduction (deterministic approximation) ─────────
-// Uses a simplified spectral embedding for consistent 3D coordinates.
-function computeUMAP3D(
+// ── Deterministic dimensionality reduction approximation ─────────────────────
+// Uses a simplified distance-preserving layout for consistent 3D coordinates.
+function computeProjection3D(
   matrix: number[][],
   seed: number = 42,
 ): [number, number, number][] {
@@ -132,7 +133,7 @@ function computeUMAP3D(
   );
 }
 
-// ── Multi-Head Attention Simulation ───────────────────────────────────────────
+// ── Layer-signal scoring ─────────────────────────────────────────────────────
 
 function computeAttentionWeights(data: OmicsRow[]): AttentionHead[] {
   const transcripts = data.map(d => d.transcript ?? 0);
@@ -209,7 +210,7 @@ function variance(values: number[]): number {
   return values.reduce((a, b) => a + (b - mean) ** 2, 0) / n;
 }
 
-// ── Main OmicsFoundationModel class ──────────────────────────────────────────
+// ── Main deterministic omics integration class ───────────────────────────────
 
 export class OmicsFoundationModel {
   private data: OmicsRow[];
@@ -237,7 +238,7 @@ export class OmicsFoundationModel {
 
   /**
    * Compute unified embeddings: maps all three omics layers into a shared
-   * latent space via Z-score normalization + Log2 fold change.
+   * deterministic projection via Z-score normalization + log2 fold change.
    */
   computeEmbeddings(): EmbeddingPoint[] {
     this.think(
@@ -257,8 +258,8 @@ export class OmicsFoundationModel {
     // Build feature matrix: [zT, zP, zM] for each gene
     const featureMatrix = this.data.map((_, i) => [zT[i], zP[i], zM[i]]);
 
-    // Compute UMAP-like 3D coordinates
-    const coords3D = computeUMAP3D(featureMatrix);
+    // Compute deterministic 3D coordinates.
+    const coords3D = computeProjection3D(featureMatrix);
 
     const points: EmbeddingPoint[] = [];
 
@@ -298,7 +299,7 @@ export class OmicsFoundationModel {
     }
 
     this.think(
-      `Embedded ${this.data.length} genes × 3 layers = ${points.length} points in shared latent space. Cross-modal distances preserved via spectral projection.`,
+      `Embedded ${this.data.length} genes × 3 layers = ${points.length} points in a shared deterministic projection. Cross-modal distances are approximated locally.`,
       ['transcriptomics', 'proteomics', 'metabolomics'],
       'embedding_complete',
     );
@@ -307,14 +308,14 @@ export class OmicsFoundationModel {
   }
 
   /**
-   * Multi-head attention analysis to identify which omics layer contains
+   * Layer-signal scoring to identify which omics layer contains
    * the primary bottleneck signal.
    */
   analyzeBottleneck(): BottleneckSignal {
     this.think(
-      'Deploying 4-head attention mechanism: Variance, Discordance, Significance, Bottleneck. Each head independently assesses which omics layer carries the strongest signal.',
+      'Running four deterministic layer-signal scores: variance, discordance, significance, and bottleneck. Each score checks which omics layer carries the strongest local signal.',
       ['transcriptomics', 'proteomics', 'metabolomics'],
-      'multi_head_attention',
+      'layer_signal_scoring',
     );
 
     const heads = computeAttentionWeights(this.data);
@@ -369,11 +370,11 @@ export class OmicsFoundationModel {
   }
 
   /**
-   * Genetic Perturbation Simulator — predicts downstream metabolite shifts
+   * Sensitivity sketch — estimates downstream metabolite shifts
    * when a gene's expression is manually adjusted.
    *
    * Reasoning chain:
-   * [Identify Gene] → [Map to Protein] → [Trace Metabolic Flux] → [Predict Yield Change]
+   * [Identify Gene] → [Map to Protein] → [Trace Local Flux Map] → [Estimate Yield Sensitivity]
    */
   simulatePerturbation(geneId: string, newExpression: number): PerturbationResult {
     const row = this.data.find(d => d.gene === geneId);
@@ -442,24 +443,24 @@ export class OmicsFoundationModel {
     const step3: ReasoningStep = {
       step: 'Trace Metabolic Flux',
       description: fluxDescription,
-      evidence: `Stoichiometric constraint model + pathway topology from KEGG`,
+      evidence: `Curated local flux-effect map plus pathway topology labels`,
     };
 
-    // Step 4: Predict Yield Change
+    // Step 4: Estimate Yield Sensitivity
     const yieldChange = fluxInfo
       ? delta * proteinScaling * fluxInfo.impact_factor * 8 // ~8% per log2 unit of flux change
       : delta * proteinScaling * 3;
 
     const step4: ReasoningStep = {
-      step: 'Predict Yield Change',
-      description: `Net predicted yield change: ${yieldChange > 0 ? '+' : ''}${yieldChange.toFixed(1)}%. ${Math.abs(yieldChange) > 20 ? 'Significant perturbation — validate with FBA.' : 'Moderate effect within normal engineering range.'}`,
-      evidence: `Linear flux-yield model with protein-scaling correction. Confidence degrades beyond ±2 log2 perturbation.`,
+      step: 'Estimate Yield Sensitivity',
+      description: `Demo yield sensitivity: ${yieldChange > 0 ? '+' : ''}${yieldChange.toFixed(1)}%. ${Math.abs(yieldChange) > 20 ? 'Large local sensitivity — validate with a real downstream model.' : 'Moderate sensitivity within the local sketch range.'}`,
+      evidence: `Linear flux-yield sketch with protein-scaling correction. Score degrades beyond ±2 log2 adjustment.`,
     };
 
     this.think(
-      `Perturbation of ${geneId} (${delta > 0 ? 'OE' : 'KD'} by ${Math.abs(delta).toFixed(1)} log2): ${protein} flux change propagates to ${metaboliteShifts.length} metabolites. Predicted yield shift: ${yieldChange.toFixed(1)}%.`,
+      `Sensitivity sketch for ${geneId} (${delta > 0 ? 'OE' : 'KD'} by ${Math.abs(delta).toFixed(1)} log2): ${protein} local flux change maps to ${metaboliteShifts.length} metabolites. Estimated demo yield shift: ${yieldChange.toFixed(1)}%.`,
       ['transcriptomics', 'proteomics', 'metabolomics'],
-      'perturbation_complete',
+      'sensitivity_sketch_complete',
     );
 
     return {

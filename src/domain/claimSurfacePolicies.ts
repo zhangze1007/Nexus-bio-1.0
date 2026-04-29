@@ -69,8 +69,22 @@ const CETHX_POLICY_RATIONALES: Partial<Record<ClaimSurface, string>> = {
     'CETHX external handoff blocks demo thermodynamics because reference-table values without uncertainty or backend provenance must not leave Nexus-Bio as formal feasibility evidence.',
 };
 
+const MULTIO_POLICY_RATIONALES: Partial<Record<ClaimSurface, string>> = {
+  payload:
+    'MultiO demo outputs may remain visible as exploratory deterministic integration, but they are not Bayesian, GP, MOFA, VAE, or reference-model-backed inference.',
+  export:
+    'MultiO exports must not carry demo deterministic projections as formal multi-omics inference; formal export use requires at least partial validity, provenance, and a real model boundary.',
+  recommendation:
+    'MultiO recommendations require at least partial validity and provenance because demo deterministic integration lacks posterior uncertainty and a reference-model backend.',
+  protocol:
+    'MultiO protocol-like use blocks demo output because no Bayesian/GP/MOFA/VAE backend, posterior uncertainty, or causal perturbation model currently supports operational claims.',
+  'external-handoff':
+    'MultiO external handoff blocks demo output because local deterministic projections must not leave Nexus-Bio as formal probabilistic or reference-model evidence.',
+};
+
 function policyRationale(toolId: ToolId, surface: ClaimSurface, fallback: string): string {
   if (toolId === 'cethx') return CETHX_POLICY_RATIONALES[surface] ?? fallback;
+  if (toolId === 'multio') return MULTIO_POLICY_RATIONALES[surface] ?? fallback;
   return fallback;
 }
 

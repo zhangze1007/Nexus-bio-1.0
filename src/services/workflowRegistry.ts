@@ -332,7 +332,7 @@ const MULTIO_CONTRACT: ToolContract = {
   ],
   outputArtifacts: [],
   evidenceRequired: NO_EVIDENCE,
-  validityBaseline: { floor: 'demo', reason: 'Integration uses deterministic factor decomposition and linear embeddings; legacy MOFA+/VAE/UMAP labels removed.' },
+  validityBaseline: { floor: 'demo', reason: 'Integration uses deterministic factor decomposition and linear embeddings; no Bayesian, GP, MOFA, VAE, or reference-model backend is implemented.' },
   confidencePolicy: { sourceField: 'result.bottleneckConfidence', minToAdvance: null },
   uncertaintyPolicy: NO_UNCERTAINTY,
   humanGatePolicy: NO_GATE,

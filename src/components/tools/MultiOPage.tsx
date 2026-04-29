@@ -577,7 +577,7 @@ function EmbeddingScatter({ embeddings, fcThreshold, activeLayers, highlightedGe
         </g>
       ))}
       <text x={PAD} y={PAD - 12} fontFamily={T.MONO} fontSize="7" fill={LABEL}>
-        Highlight ring = current bottleneck or selected perturbation gene
+        Highlight ring = current bottleneck or selected sensitivity gene
       </text>
     </svg>
   );
@@ -609,7 +609,7 @@ export default function MultiOPage() {
   const [perturbedExpr, setPerturbedExpr] = useState<number>(4);
   const [perturbResult, setPerturbResult] = useState<PerturbationResult | null>(null);
 
-  /* Foundation model */
+  /* Deterministic local integration model */
   const { data: model, error: simError } = useMemo(() => {
     try { return { data: new OmicsFoundationModel(OMICS_DATA), error: null as string | null }; }
     catch (e) { return { data: new OmicsFoundationModel(OMICS_DATA), error: e instanceof Error ? e.message : 'Model init failed' }; }
@@ -648,9 +648,9 @@ export default function MultiOPage() {
   const figureMeta = useMemo(() => {
     if (viewMode === 'Embedding') {
       return {
-        eyebrow: 'Figure A · Cross-Layer Embedding',
+        eyebrow: 'Figure A · Cross-Layer Projection',
         title: 'Transcript, protein, and metabolite structure aligned in one figure field',
-        caption: 'The center canvas is framed as an integrative figure plate: latent structure first, bottleneck signal second, and pathway relevance always visible.',
+        caption: 'The center canvas is framed as an integrative figure plate: deterministic projection first, bottleneck signal second, and pathway relevance always visible.',
       };
     }
     if (viewMode === 'Volcano') {
@@ -670,15 +670,15 @@ export default function MultiOPage() {
     if (viewMode === 'Latent') {
       return {
         eyebrow: 'Figure D · Projected Embedding',
-        title: 'Projected embedding and optimization trace viewed as one model figure',
-        caption: 'The projected view should read like a model-results plate: embedding geometry above, optimization trace below, with no context loss between them.',
+        title: 'Projected embedding and optimization trace viewed as one demo figure',
+        caption: 'The projected view should read like an exploratory results plate: embedding geometry above, optimization trace below, with no posterior uncertainty implied.',
       };
     }
     if (viewMode === 'Efficiency') {
       return {
         eyebrow: 'Figure E · Metabolic Efficiency Ledger',
         title: 'Ranked entities ordered by production-relevant efficiency',
-        caption: 'Efficiency ranking connects latent integration back to decision-making, turning the center panel into a prioritization figure rather than a generic sortable list.',
+        caption: 'Efficiency ranking connects deterministic integration back to exploratory prioritization, turning the center panel into a contextual table rather than a formal recommendation.',
       };
     }
     return {
@@ -748,6 +748,9 @@ export default function MultiOPage() {
       runProvenance: createProvenanceEntry({
         toolId: 'multio',
         outputAssumptions: [
+          'multio.deterministic_demo_only',
+          'multio.no_reference_model',
+          'multio.no_bayesian_gp_posterior',
           'multio.not_mofa_plus',
           'multio.not_vae',
           'multio.no_umap',
@@ -818,9 +821,9 @@ export default function MultiOPage() {
     <>
       <div className="nb-tool-page" style={{ background: PANEL_BG }}>
         <AlgorithmInsight
-          title="Biological Foundation Model"
-          description="Multi-head attention across transcript / protein / metabolite representations. Bottleneck analysis identifies the rate-limiting omics layer, and the perturbation simulator estimates downstream metabolite shifts."
-          formula="z = Softmax(QKᵀ/√d)·V  |  ΔG = −RT ln(K)"
+          title="Deterministic Multi-Omics Integration"
+          description="Z-score/log2 fold-change, ALS-style factors, deterministic projection, and sensitivity sketches. No Bayesian, MOFA, VAE, GP, or posterior model is running."
+          formula="z-score + ALS factors + linear projection | sensitivity Δ"
         />
 
         {simError && (
@@ -829,9 +832,9 @@ export default function MultiOPage() {
 
         <div style={{ padding: '0 16px 10px' }}>
           <ScientificHero
-            eyebrow="Stage 4 · Multi-Omics Integration"
+            eyebrow="Stage 4 · Deterministic Multi-Omics Demo"
             title="Result-centered omics synthesis instead of isolated plots"
-            summary="MULTIO now behaves like a scientific mining surface: significant genes, dominant omics layer, perturbation outlook, and efficiency context sit above the visualization layer so the researcher can decide what matters before diving into individual plots."
+            summary="MULTIO behaves as an exploratory integration surface: significant genes, deterministic layer signals, sensitivity sketches, and efficiency context sit above the visualization layer without claiming posterior uncertainty or a reference-model backend."
             aside={
               <>
                 <div style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
@@ -855,15 +858,15 @@ export default function MultiOPage() {
               {
                 label: 'Dominant Layer',
                 value: bottleneck.dominant_layer,
-                detail: `Confidence ${(bottleneck.confidence * 100).toFixed(0)}% for the leading bottleneck interpretation`,
+                detail: `Deterministic score ${(bottleneck.confidence * 100).toFixed(0)}% for the leading bottleneck interpretation`,
                 tone: 'cool',
               },
               {
                 label: 'Lead Gene',
                 value: significant[0]?.gene ?? selectedGene,
                 detail: perturbResult
-                  ? `Perturbation predicts ${perturbResult.predicted_yield_change_percent >= 0 ? '+' : ''}${perturbResult.predicted_yield_change_percent.toFixed(1)}% yield shift`
-                  : 'Use perturbation simulation to translate omics findings into intervention hypotheses.',
+                  ? `Sensitivity sketch estimates ${perturbResult.predicted_yield_change_percent >= 0 ? '+' : ''}${perturbResult.predicted_yield_change_percent.toFixed(1)}% demo yield shift`
+                  : 'Use the sensitivity sketch to explore how omics signals might relate to pathway context.',
                 tone: perturbResult && perturbResult.predicted_yield_change_percent < 0 ? 'alert' : 'neutral',
               },
               {
@@ -878,7 +881,7 @@ export default function MultiOPage() {
 
         <div style={{ padding: '0 16px 10px' }}>
           <ScientificMethodStrip
-            label="Integration Figure Grammar"
+            label="Deterministic Integration Grammar"
             items={[
               {
                 title: 'Input layers',
@@ -888,15 +891,15 @@ export default function MultiOPage() {
               },
               {
                 title: 'Cross-layer integration',
-                detail: 'The model bridge itself is part of the interface language, so factor summaries and projected views must sit visibly between raw layers and decisions.',
+                detail: 'ALS-style factors and projected views sit visibly between raw layers and exploratory readouts; no reference model or posterior inference is implied.',
                 accent: PATHD_THEME.sky,
-                note: 'Model bridge',
+                note: 'Demo bridge',
               },
               {
-                title: 'Decision output',
-                detail: 'The page should end in actionable bottleneck, perturbation, and efficiency readouts, not isolated analytics for their own sake.',
+                title: 'Exploratory output',
+                detail: 'The page ends in candidate bottleneck, sensitivity, and efficiency readouts, not formal recommendations or protocol claims.',
                 accent: PATHD_THEME.mint,
-                note: 'Research output',
+                note: 'Demo output',
               },
             ]}
           />
@@ -913,7 +916,7 @@ export default function MultiOPage() {
             <WorkbenchInlineContext
               toolId="multio"
               title="Multi-Omics Integrator"
-              summary="Integrate transcript, protein, and metabolite layers against the active pathway object so Stage 4 evidence can feed bottlenecks back into the workbench."
+              summary="Deterministically combine transcript, protein, and metabolite layers against the active pathway object so Stage 4 evidence can provide exploratory bottleneck context."
               compact
               isSimulated={!analyzeArtifact}
             />
@@ -981,8 +984,8 @@ export default function MultiOPage() {
                 style={{ '--val': `${((pvThreshold - 0.001) / 0.099) * 100}%` } as React.CSSProperties} />
             </div>
 
-            {/* Perturbation Simulator */}
-            <SectionLabel>Perturbation Simulator</SectionLabel>
+            {/* Sensitivity sketch */}
+            <SectionLabel>Sensitivity Sketch</SectionLabel>
             <select
               value={selectedGene}
               onChange={e => setSelectedGene(e.target.value)}
@@ -1020,19 +1023,19 @@ export default function MultiOPage() {
               onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#ffffff'; (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 12px rgba(0,0,0,0.22)'; }}
               onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.88)'; (e.currentTarget as HTMLElement).style.boxShadow = 'none'; }}
             >
-              Simulate
+              Run Sensitivity
             </button>
 
-            {/* Perturbation Results */}
+            {/* Sensitivity Results */}
             {perturbResult && (
               <div style={{ marginTop: '14px' }}>
-                <SectionLabel>Perturbation Result</SectionLabel>
+                <SectionLabel>Sensitivity Result</SectionLabel>
                 <div style={{
                   ...GLASS, borderRadius: '14px', padding: '10px', marginBottom: '10px',
                 }}>
                   {/* Yield change */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                    <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL }}>Yield Δ</span>
+                    <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL }}>Demo Yield Δ</span>
                     <span style={{
                       fontFamily: T.MONO, fontSize: '13px', fontWeight: 700,
                       color: perturbResult.predicted_yield_change_percent >= 0
@@ -1092,7 +1095,7 @@ export default function MultiOPage() {
               ]}
               footer={
                 <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.paperMuted, lineHeight: 1.55 }}>
-                  The integration frame keeps cross-layer model structure, thresholding logic, and intervention-oriented output in one continuous reading path.
+                  The integration frame keeps deterministic cross-layer structure, thresholding logic, and exploratory output in one continuous reading path.
                 </div>
               }
             >
@@ -1324,8 +1327,8 @@ export default function MultiOPage() {
               <MetricCard label="Total" value={OMICS_DATA.length} />
             </div>
 
-            {/* Attention Analysis */}
-            <SectionLabel>Attention Analysis</SectionLabel>
+            {/* Layer-signal analysis */}
+            <SectionLabel>Layer Signal Analysis</SectionLabel>
             <div style={{ ...GLASS, borderRadius: '14px', padding: '12px', marginBottom: '16px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                 <div>
@@ -1341,7 +1344,7 @@ export default function MultiOPage() {
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL, display: 'block', marginBottom: '2px' }}>
-                    Confidence
+                    Score
                   </span>
                   <span style={{ fontFamily: T.MONO, fontSize: '12px', color: VALUE }}>
                     {(bottleneck.confidence * 100).toFixed(0)}%

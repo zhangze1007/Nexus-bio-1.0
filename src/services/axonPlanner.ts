@@ -121,7 +121,7 @@ const TOOL_KEYWORDS: Partial<Record<ToolId, readonly string[]>> = {
   proevol: ['directed evolution', 'protein evolution', 'campaign', 'fitness landscape', 'survivor selection'],
   genmim: ['genome minimization', 'crispri', 'gene minimization', 'chassis minimization'],
   gecair: ['gene circuit', 'logic gate', 'hill curve', 'circuit topology'],
-  multio: ['multi-omics', 'multio', 'transcriptomics proteomics', 'volcano plot', 'mofa'],
+  multio: ['multi-omics', 'multio', 'transcriptomics proteomics', 'volcano plot', 'omics decomposition'],
   scspatial: ['single-cell', 'spatial transcriptomics', 'visium', 'umap', 'paga'],
   'metabolic-eng': ['metabolic engineering lab', '3d metabolic'],
   nexai: ['research agent', 'literature synthesis', 'citation graph'],

@@ -32,6 +32,8 @@ Step 9B records that mode boundary in `src/domain/communityFbaBoundary.ts`. The 
 
 CETHX is another tool-specific boundary. Step 10 records the current thermodynamics status in `src/domain/cethxThermodynamicsBoundary.ts`: CETHX may show demo reference-table payloads, but formal export, recommendation, protocol, and external-handoff thermodynamic claims require a future condition-aware backend with uncertainty and provenance.
 
+MultiO follows the same claim-surface pattern for model honesty. Step 11 records the current model status in `src/domain/multioModelBoundary.ts`: MultiO may show deterministic demo integration payloads, but formal export, recommendation, protocol, and external-handoff model claims require a future reference-model backend and real uncertainty semantics.
+
 ## Files
 
 - `src/domain/claimSurfacePolicy.ts` defines `ClaimSurfacePolicy` and block codes.

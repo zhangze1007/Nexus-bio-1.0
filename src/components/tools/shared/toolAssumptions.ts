@@ -493,6 +493,30 @@ export const TOOL_ASSUMPTIONS: Record<string, ToolAssumption[]> = {
 
   multio: [
     {
+      id: 'multio.deterministic_demo_only',
+      toolId: 'multio',
+      category: 'computational',
+      statement:
+        'MultiO is deterministic demo integration; formal model claims require a real reference backend.',
+      severity: 'blocking',
+    },
+    {
+      id: 'multio.no_reference_model',
+      toolId: 'multio',
+      category: 'data',
+      statement:
+        'No external reference-model backend is integrated; outputs are local exploratory projections.',
+      severity: 'blocking',
+    },
+    {
+      id: 'multio.no_bayesian_gp_posterior',
+      toolId: 'multio',
+      category: 'mathematical',
+      statement:
+        'No Bayesian or Gaussian-process posterior is computed; no credible uncertainty is available.',
+      severity: 'blocking',
+    },
+    {
       id: 'multio.not_mofa_plus',
       toolId: 'multio',
       category: 'mathematical',
@@ -521,16 +545,16 @@ export const TOOL_ASSUMPTIONS: Record<string, ToolAssumption[]> = {
       toolId: 'multio',
       category: 'mathematical',
       statement:
-        'All outputs are deterministic; no posterior uncertainty bands on factor loadings.',
-      severity: 'warning',
+        'All outputs are deterministic; no posterior uncertainty bands or credible intervals are calculated.',
+      severity: 'blocking',
     },
     {
       id: 'multio.linear_perturbation',
       toolId: 'multio',
       category: 'biological',
       statement:
-        'Perturbation prediction is sensitivity analysis on a linear embedding, not a learned causal model.',
-      severity: 'info',
+        'Perturbation output is sensitivity analysis on a local embedding, not a learned causal model.',
+      severity: 'warning',
     },
   ],
 

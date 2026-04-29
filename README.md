@@ -115,7 +115,7 @@ INPUT: Target Molecular Product
 | **FBA Simulator** | `/tools/fbasim` | Flux Balance Analysis: single-species simplex LP plus illustrative two-species demo mode, knockout/overexpression strategies, shadow prices, carbon efficiency |
 | **Gene Circuit Reasoner** | `/tools/gecair` | Gene circuit design: logic gate modeling, Hill curve analysis, circuit dynamics, gate efficiency scoring |
 | **Gene Minimization** | `/tools/genmim` | Genome minimization: CRISPRi knockdown scheduling, chromosome map, efficiency heatmap, greedy optimization |
-| **Multi-Omics** | `/tools/multio` | Multi-omics integration: projected embeddings, volcano plots, factor decomposition, perturbation prediction |
+| **Multi-Omics** | `/tools/multio` | Demo multi-omics integration: deterministic projections, volcano plots, factor decomposition, and sensitivity sketches |
 | **NEX-AI Research Agent** | `/tools/nexai` | AI-powered literature agent: citation network graph (year×relevance scatter), Socratic questioning, literature support map |
 | **Protein Evolution** | `/tools/proevol` | Directed evolution campaign workbench: variant libraries, survivor selection, lineage tracking, diversity/convergence analysis, next-round strategy |
 | **Single-Cell Spatial** | `/tools/scspatial` | Spatial transcriptomics: normalized artifact ingest, spatial/3D visualization, PAGA trajectory, hotspot and gene expression analysis |

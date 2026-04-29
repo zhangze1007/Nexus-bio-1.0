@@ -1450,6 +1450,81 @@
       },
       "riskTags": ["missing-uncertainty", "cethx-demo-thermodynamics"],
       "knownBad": false
+    },
+    {
+      "caseId": "TRB-059",
+      "title": "Deterministic MultiO Bayesian claim is blocked",
+      "category": "unsafe-demo",
+      "toolId": "multio",
+      "surface": "recommendation",
+      "claim": "A deterministic MultiO demo output is described as Bayesian, MOFA-like, and VAE-like inference for a formal recommendation.",
+      "input": {
+        "validityTier": "demo",
+        "hasProvenance": true,
+        "evidenceState": "present",
+        "uncertaintyState": "unresolved",
+        "isDraft": false,
+        "humanGateRequired": false,
+        "humanGateSatisfied": false,
+        "notes": "The output has no Bayesian, MOFA, VAE, GP, posterior uncertainty, or reference-model backend."
+      },
+      "expected": {
+        "status": "blocked",
+        "blockCode": "TIER_NOT_ALLOWED_FOR_SURFACE",
+        "rationale": "Demo deterministic MultiO output cannot become a formal model recommendation."
+      },
+      "riskTags": ["multio-demo-bayesian-claim", "unsafe-demo"],
+      "knownBad": false
+    },
+    {
+      "caseId": "TRB-060",
+      "title": "MultiO missing posterior protocol is blocked",
+      "category": "missing-evidence",
+      "toolId": "multio",
+      "surface": "protocol",
+      "claim": "A deterministic MultiO output with no posterior uncertainty is converted into a protocol-like model claim.",
+      "input": {
+        "validityTier": "demo",
+        "hasProvenance": true,
+        "evidenceState": "present",
+        "uncertaintyState": "unresolved",
+        "isDraft": false,
+        "humanGateRequired": true,
+        "humanGateSatisfied": false,
+        "notes": "No posterior variance, credible interval, or backend uncertainty is available."
+      },
+      "expected": {
+        "status": "blocked",
+        "blockCode": "DEMO_OUTPUT_PROTOCOL_BLOCKED",
+        "rationale": "Demo MultiO output cannot become a protocol-like model artifact."
+      },
+      "riskTags": ["missing-posterior-uncertainty", "multio-demo-model"],
+      "knownBad": false
+    },
+    {
+      "caseId": "TRB-061",
+      "title": "MultiO unavailable reference model export is blocked",
+      "category": "missing-evidence",
+      "toolId": "multio",
+      "surface": "export",
+      "claim": "A deterministic MultiO projection is exported as if backed by a live external reference model.",
+      "input": {
+        "validityTier": "demo",
+        "hasProvenance": true,
+        "evidenceState": "present",
+        "uncertaintyState": "unresolved",
+        "isDraft": false,
+        "humanGateRequired": false,
+        "humanGateSatisfied": false,
+        "notes": "No reference-model backend name, version, run metadata, or uncertainty semantics exist."
+      },
+      "expected": {
+        "status": "blocked",
+        "blockCode": "TIER_NOT_ALLOWED_FOR_SURFACE",
+        "rationale": "Demo MultiO output cannot be exported as formal reference-model evidence."
+      },
+      "riskTags": ["reference-model-unavailable", "multio-demo-export"],
+      "knownBad": false
     }
   ]
 }
