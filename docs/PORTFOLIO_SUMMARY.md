@@ -35,7 +35,7 @@ Nexus-Bio explicitly encodes uncertainty and method limitations in runtime objec
 
 ## Current Limitations
 
-- The platform is **not research-grade end to end**.
+- The platform is **not a validated scientific platform end to end**.
 - There is **no wet-lab validation** in this repository.
 - Some tools remain **demo-tier** with blocking assumptions.
 - Some outputs rely on **heuristic or simplified models**.

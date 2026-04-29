@@ -3,7 +3,7 @@
 ## 0:00–0:30 Opening
 
 Hi, I am presenting Nexus-Bio, an assumption-gated synthetic biology learning workbench.
-This is not a claim that every model here is research-grade.
+This is not a claim that every model here is a high-fidelity scientific implementation.
 The goal is to show a transparent runtime where validity, assumptions, and provenance are visible before users trust outputs.
 
 ## 0:30–1:00 Problem
@@ -35,6 +35,6 @@ The user can see where an output came from and why it should or should not be tr
 ## 4:00–5:00 Closing
 
 Nexus-Bio is currently a transparent learning workbench, not a fully validated research platform.
-The contribution is not that every model is research-grade.
+The contribution is not that every model is a high-fidelity scientific implementation.
 The contribution is that Nexus-Bio refuses to hide uncertainty.
 It makes trust boundaries explicit, so users can learn and iterate without confusing demonstration outputs with validated biological conclusions.

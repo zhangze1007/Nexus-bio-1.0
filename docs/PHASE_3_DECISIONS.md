@@ -36,5 +36,5 @@ Scope of what this demo demonstrates:
 
 What this demo does **not** demonstrate:
 - Real artemisinin optimization in wet-lab settings
-- Validated biological production outcomes
-- End-to-end research-grade performance across all modules
+- Experimentally confirmed biological production outcomes
+- End-to-end high-fidelity scientific performance across all modules

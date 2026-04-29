@@ -1,8 +1,10 @@
 # Nexus-Bio 1.0
 
-**Next-Gen Bio-Intelligent Architecture**
+**Assumption-Gated Scientific Inference Runtime**
 
-An AI-powered synthetic biology platform with 13 specialized simulation tools. The core workflow extracts metabolic pathways from scientific literature and renders them as interactive 3D visualizations — integrating AI analysis, molecular structures, protein data, kinetic simulation, flux analysis, and multi-omics in a single unified interface.
+Nexus-Bio is an assumption-gated scientific inference runtime for synthetic biology workflows. It organizes 13 specialized tool surfaces around explicit validity tiers, assumptions, provenance, and downstream trust gates so users can see which outputs are evidence-backed, heuristic, or demo-only.
+
+The core workflow extracts metabolic pathways from scientific literature and renders them as interactive 3D visualizations, integrating AI analysis, molecular structures, protein data, kinetic simulation, flux analysis, and multi-omics in one workbench while keeping method limits visible.
 
 > Built by a gap-year student in Malaysia, on a tablet, in under 48 hours.
 
@@ -18,7 +20,7 @@ Showcase pathway: Artemisinin biosynthesis in engineered *S. cerevisiae* — Ro 
 
 ## What It Does
 
-Nexus-Bio implements a full 4-stage synthetic biology design cycle — from target molecule to optimized, validated construct — with NEXAI (AI research assistant) available across every stage.
+Nexus-Bio implements a 4-stage synthetic biology workbench for moving from target molecule context to assumption-tracked design, simulation, and DBTL-style handoff. NEXAI (AI research assistant) is available across every stage, but LLM-assisted outputs remain subject to provenance and human review.
 
 **Core Research Workflow**
 
@@ -73,9 +75,9 @@ INPUT: Target Molecular Product
 │           → DBTL (cell construction & testing)      │
 │           → MULTIO (multi-omics analysis)           │
 │           → SCSPATIAL (single-cell spatial omics)   │
-│           → DBTLflow (learned optimization)         │
+│           → DBTLflow (iteration tracking)           │
 └──────────────────────┬──────────────────────────────┘
-                       │ feedback: learned optimization
+                       │ feedback: interpreted results
                        └──────────────────────────────► INPUT
 
          ╔══════════════════════════════╗
@@ -157,7 +159,7 @@ Deploy       Vercel (Edge Runtime API routes)
 
 ## AI Architecture
 
-All AI requests go through `app/api/analyze/route.ts` (Edge Runtime). The system prompt is "Axon" — a predictive design core that extracts pathway data, detects bottleneck enzymes, and proposes de novo design strategies.
+All AI requests go through `app/api/analyze/route.ts` (Edge Runtime). The system prompt is "Axon" — a design-support core that extracts pathway data, detects bottleneck enzymes, and proposes candidate strategy context for human review.
 
 **Groq is always primary. Gemini is always fallback. This order must never be reversed.**
 
@@ -224,10 +226,10 @@ The default pathway demonstrates artemisinin biosynthesis — a landmark synthet
 ## Design Principles
 
 - **Scientific credibility** — Every AI-generated node has an evidence trace and audit trail
-- **Predictive design** — Axon detects bottleneck enzymes and proposes structure-level interventions
+- **Assumption-aware design support** — Axon surfaces bottlenecks and candidate interventions with trust context
 - **Progressive disclosure** — Core information first, details on demand
 - **Workflow continuity** — Each tool is an entry point to the next
-- **Visual integrity** — Dark theme, pastel palette, real algorithms — quality is never sacrificed
+- **Visual integrity** — Dark theme, pastel palette, and clear method boundaries
 
 ---
 
@@ -249,7 +251,12 @@ If you use the GitHub Copilot coding agent on this repo and the workflow fails w
 
 ## Trust and Limitations
 
-Nexus-Bio is a transparent synthetic biology learning workbench with mixed-validity modules (`real`, `partial`, `demo`). It is not an end-to-end research-grade platform and does not include wet-lab validation in this repository.
+Nexus-Bio is a transparent synthetic biology learning workbench with mixed-validity modules (`real`, `partial`, `demo`). It is not an end-to-end validated scientific platform and does not include wet-lab validation in this repository.
+
+Trust-runtime thesis:
+- Nexus-Bio is an assumption-gated scientific inference runtime for synthetic biology workflows.
+- The workbench treats assumptions, evidence, provenance, and claim surfaces as runtime objects rather than marketing claims.
+- See [docs/TRUST_RUNTIME_THESIS.md](docs/TRUST_RUNTIME_THESIS.md) and [spec/nexus-trust-runtime-v0.md](spec/nexus-trust-runtime-v0.md) for the protocol foundation.
 
 Key limitations:
 - Some tools are explicitly demo-tier and assumption-gated.
