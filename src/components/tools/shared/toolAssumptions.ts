@@ -17,19 +17,16 @@
  * 'partial'. Tier upgrades happen only after Phase-2 algorithm work.
  *
  * ───────────────────────────────────────────────────────────────
- * NOTE: known registry-vs-code inconsistencies (resolve in Phase 2)
+ * NOTE: model-structure vs. parameter-sourcing boundaries
  * ───────────────────────────────────────────────────────────────
  *
  * 1. CellFree (cellfree)
- *    - toolValidity.ts caption claims:
- *        "Cell-free expression yield uses a curated lookup; no live
- *         TXTL kinetic model."
- *    - But src/services/CellFreeEngine.ts actually implements a
- *      resource-aware TX-TL ODE with refs to Noireaux 2003,
- *      Jewett 2004, and Karzbrun 2011.
- *    - Per Phase-1 strict-rule #2, the validity tier is NOT modified
- *      here. The assumption list below reflects what the code really
- *      does; tier calibration is a Phase-2 task.
+ *    - src/services/CellFreeEngine.ts implements a resource-aware
+ *      TX-TL ODE with refs to Noireaux 2003, Jewett 2004, and
+ *      Karzbrun 2011.
+ *    - The structure claim is separate from parameter sourcing,
+ *      calibration, and uncertainty. Tier remains unchanged unless
+ *      later parameter evidence justifies a mode-specific change.
  *
  * 2. FBAsim (fbasim) — split into sub-tier entries
  *    - The legacy 'fbasim' entry is preserved verbatim to avoid
@@ -431,11 +428,43 @@ export const TOOL_ASSUMPTIONS: Record<string, ToolAssumption[]> = {
   // ─────────────────────────────────────────────────────────────
   cellfree: [
     {
+      id: 'cellfree.model_structure_implemented',
+      toolId: 'cellfree',
+      category: 'mathematical',
+      statement:
+        'TX-TL ODE structure exists with resource and degradation terms; parameter confidence is separate.',
+      severity: 'info',
+    },
+    {
+      id: 'cellfree.parameters_partially_sourced',
+      toolId: 'cellfree',
+      category: 'data',
+      statement:
+        'Parameters mix repo defaults, heuristics, and broad references; per-value sourcing is incomplete.',
+      severity: 'blocking',
+    },
+    {
+      id: 'cellfree.calibration_not_established',
+      toolId: 'cellfree',
+      category: 'data',
+      statement:
+        'No calibration dataset establishes CellFree outputs as calibrated predictions.',
+      severity: 'blocking',
+    },
+    {
+      id: 'cellfree.uncertainty_not_quantified',
+      toolId: 'cellfree',
+      category: 'computational',
+      statement:
+        'No parameter or output uncertainty model quantifies CellFree prediction intervals.',
+      severity: 'blocking',
+    },
+    {
       id: 'cellfree.parameters_unsourced',
       toolId: 'cellfree',
       category: 'data',
       statement:
-        'k_tx, k_tl, k_decay reflect qualitative promoter/RBS strength ordering; no per-value paper-table citation.',
+        'Legacy boundary: k_tx, k_tl, and decay terms lack per-value paper-table citations.',
       severity: 'blocking',
     },
     {

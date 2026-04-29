@@ -34,6 +34,8 @@ CETHX is another tool-specific boundary. Step 10 records the current thermodynam
 
 MultiO follows the same claim-surface pattern for model honesty. Step 11 records the current model status in `src/domain/multioModelBoundary.ts`: MultiO may show deterministic demo integration payloads, but formal export, recommendation, protocol, and external-handoff model claims require a future reference-model backend and real uncertainty semantics.
 
+CellFree separates model structure from parameter sourcing. Step 12 records the current boundary in `src/domain/cellfreeParameterBoundary.ts`: CellFree implements a resource-aware TX-TL simulation structure, but many parameters are repo defaults or heuristics and calibration/uncertainty are not established. Payloads may remain visible as exploratory simulation context, while formal CellFree protocol, recommendation, export, and external-handoff claims require stronger parameter provenance.
+
 ## Files
 
 - `src/domain/claimSurfacePolicy.ts` defines `ClaimSurfacePolicy` and block codes.

@@ -1525,6 +1525,81 @@
       },
       "riskTags": ["reference-model-unavailable", "multio-demo-export"],
       "knownBad": false
+    },
+    {
+      "caseId": "TRB-062",
+      "title": "CellFree unsourced parameters handoff is blocked",
+      "category": "missing-evidence",
+      "toolId": "cellfree",
+      "surface": "external-handoff",
+      "claim": "A CellFree output with repo-default and heuristic parameters is handed off as formal parameter-supported evidence.",
+      "input": {
+        "validityTier": "demo",
+        "hasProvenance": true,
+        "evidenceState": "present",
+        "uncertaintyState": "unresolved",
+        "isDraft": false,
+        "humanGateRequired": true,
+        "humanGateSatisfied": false,
+        "notes": "The CellFree structure exists, but parameter provenance and uncertainty are incomplete."
+      },
+      "expected": {
+        "status": "blocked",
+        "blockCode": "EXTERNAL_HANDOFF_BLOCKED",
+        "rationale": "Demo CellFree output with incomplete parameter provenance cannot become an external handoff."
+      },
+      "riskTags": ["cellfree-parameters-partially-sourced", "missing-parameter-provenance"],
+      "knownBad": false
+    },
+    {
+      "caseId": "TRB-063",
+      "title": "CellFree calibration recommendation is blocked",
+      "category": "uncertainty-unresolved",
+      "toolId": "cellfree",
+      "surface": "recommendation",
+      "claim": "A CellFree heuristic confidence value is treated as a calibrated recommendation despite missing calibration and uncertainty.",
+      "input": {
+        "validityTier": "demo",
+        "hasProvenance": true,
+        "evidenceState": "present",
+        "uncertaintyState": "unresolved",
+        "isDraft": false,
+        "humanGateRequired": false,
+        "humanGateSatisfied": false,
+        "notes": "No calibration dataset or parameter uncertainty model supports a formal recommendation."
+      },
+      "expected": {
+        "status": "blocked",
+        "blockCode": "TIER_NOT_ALLOWED_FOR_SURFACE",
+        "rationale": "Demo CellFree heuristic confidence cannot become a formal calibrated recommendation."
+      },
+      "riskTags": ["cellfree-calibration-not-established", "cellfree-uncertainty-not-quantified"],
+      "knownBad": false
+    },
+    {
+      "caseId": "TRB-064",
+      "title": "CellFree structure payload remains demo-only",
+      "category": "truthful-partial",
+      "toolId": "cellfree",
+      "surface": "payload",
+      "claim": "A CellFree payload describes implemented TX-TL structure while preserving parameter-sourcing limits.",
+      "input": {
+        "validityTier": "demo",
+        "hasProvenance": true,
+        "evidenceState": "present",
+        "uncertaintyState": "unresolved",
+        "isDraft": false,
+        "humanGateRequired": false,
+        "humanGateSatisfied": false,
+        "notes": "The workbench payload remains exploratory while separating model structure from parameter sourcing."
+      },
+      "expected": {
+        "status": "demoOnly",
+        "blockCode": null,
+        "rationale": "CellFree structure metadata may remain visible as demo-level payload context."
+      },
+      "riskTags": ["cellfree-model-structure-implemented", "cellfree-demo-payload"],
+      "knownBad": false
     }
   ]
 }

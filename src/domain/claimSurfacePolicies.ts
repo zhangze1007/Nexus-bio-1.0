@@ -82,9 +82,23 @@ const MULTIO_POLICY_RATIONALES: Partial<Record<ClaimSurface, string>> = {
     'MultiO external handoff blocks demo output because local deterministic projections must not leave Nexus-Bio as formal probabilistic or reference-model evidence.',
 };
 
+const CELLFREE_POLICY_RATIONALES: Partial<Record<ClaimSurface, string>> = {
+  payload:
+    'CellFree payloads may show the implemented TX-TL simulation structure, but parameter sourcing, calibration, and uncertainty limits must remain visible.',
+  export:
+    'CellFree exports require at least partial validity and provenance because the current parameter pack is not fully sourced or calibrated.',
+  recommendation:
+    'CellFree recommendations require at least partial validity and provenance because confidence-like values are heuristic and uncertainty is not quantified.',
+  protocol:
+    'CellFree protocol-like use blocks demo outputs because implemented ODE structure alone does not establish sourced parameters, calibration, or operational readiness.',
+  'external-handoff':
+    'CellFree external handoff blocks demo outputs because incomplete parameter provenance and missing uncertainty must not leave Nexus-Bio as formal evidence.',
+};
+
 function policyRationale(toolId: ToolId, surface: ClaimSurface, fallback: string): string {
   if (toolId === 'cethx') return CETHX_POLICY_RATIONALES[surface] ?? fallback;
   if (toolId === 'multio') return MULTIO_POLICY_RATIONALES[surface] ?? fallback;
+  if (toolId === 'cellfree') return CELLFREE_POLICY_RATIONALES[surface] ?? fallback;
   return fallback;
 }
 

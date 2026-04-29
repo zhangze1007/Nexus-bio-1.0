@@ -60,3 +60,6 @@ TRB-058,blocked,EXTERNAL_HANDOFF_BLOCKED,missing-evidence,cethx,external-handoff
 TRB-059,blocked,TIER_NOT_ALLOWED_FOR_SURFACE,unsafe-demo,multio,recommendation,false
 TRB-060,blocked,DEMO_OUTPUT_PROTOCOL_BLOCKED,missing-evidence,multio,protocol,false
 TRB-061,blocked,TIER_NOT_ALLOWED_FOR_SURFACE,missing-evidence,multio,export,false
+TRB-062,blocked,EXTERNAL_HANDOFF_BLOCKED,missing-evidence,cellfree,external-handoff,false
+TRB-063,blocked,TIER_NOT_ALLOWED_FOR_SURFACE,uncertainty-unresolved,cellfree,recommendation,false
+TRB-064,demoOnly,,truthful-partial,cellfree,payload,false

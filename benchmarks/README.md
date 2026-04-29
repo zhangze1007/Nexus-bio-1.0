@@ -56,6 +56,8 @@ The CETHX cases are thermodynamics-claim regressions: reference-table demo outpu
 
 The MultiO cases are model-claim regressions: deterministic demo integration without a Bayesian, GP, MOFA, VAE, posterior-uncertainty, or reference-model backend must not become a formal recommendation, protocol, export, or external-handoff claim. They do not evaluate or imply a real probabilistic multi-omics backend.
 
+The CellFree cases are parameter-sourcing regressions: a resource-aware TX-TL simulation structure exists, but demo outputs with partially sourced/default parameters, missing calibration, or unquantified uncertainty must not become formal recommendation, protocol, export, or external-handoff claims. They do not evaluate or imply calibrated CellFree prediction.
+
 ## Expected Labels
 
 `expected_labels.csv` is the answer key. Each JSON case must have exactly one CSV row with matching:

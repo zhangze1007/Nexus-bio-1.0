@@ -144,6 +144,6 @@ describe('evaluateClaimSurfacePolicy benchmark corpus alignment', () => {
     }
 
     expect(mismatches).toEqual([]);
-    expect(cases).toHaveLength(61);
+    expect(cases).toHaveLength(64);
   });
 });

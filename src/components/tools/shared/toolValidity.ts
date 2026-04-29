@@ -43,7 +43,7 @@ export const TOOL_VALIDITY: Record<string, ToolValidity> = {
   dyncon:       { level: 'partial', caption: 'Hill feedback + Monod growth + RK4 ODE are textbook-correct; bioreactor parameters are reference values.' },
 
   // Stage 4 — DBTL
-  cellfree:     { level: 'demo',    caption: 'Cell-free expression yield uses a curated lookup; no live TXTL kinetic model.' },
+  cellfree:     { level: 'demo',    caption: 'Resource-aware TX-TL ODE structure exists; parameters, calibration, and uncertainty remain partially sourced or heuristic.' },
   dbtlflow:     { level: 'partial', caption: 'Iteration ledger and SBOL serialization are real; learning loop weights are heuristic.' },
   multio:       { level: 'demo',    caption: 'Deterministic demo integration only. No Bayesian, GP, MOFA, VAE, posterior uncertainty, or reference-model backend is implemented.' },
   scspatial:    { level: 'partial', caption: 'h5ad ingestion, spatial coordinates, Moran I, neighborhood graphs, PAGA, and UMAP are real when dataset fields are present. Missing spatial metadata downgrades the page to partial mode.' },

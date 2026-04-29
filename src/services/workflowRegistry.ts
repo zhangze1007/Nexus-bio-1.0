@@ -135,7 +135,7 @@ const DYNCON_CONTRACT: ToolContract = {
     { toolId: 'gecair', payloadPath: 'result.outputLevel', required: false, rationale: 'Gene-circuit dynamics inform controller bandwidth.' },
   ],
   outputArtifacts: [
-    { toolId: 'dyncon', payloadPath: 'result.stable', required: true, rationale: 'Stability flag gates CellFree validation.' },
+    { toolId: 'dyncon', payloadPath: 'result.stable', required: true, rationale: 'Stability flag gates CellFree simulation context.' },
     { toolId: 'dyncon', payloadPath: 'result.productTiter', required: true, rationale: 'Predicted titer for cell-free seed.' },
   ],
   evidenceRequired: NO_EVIDENCE,
@@ -163,11 +163,11 @@ const CELLFREE_CONTRACT: ToolContract = {
     { toolId: 'catdes', payloadPath: 'result.bestCAI', required: false, rationale: 'CAI feeds expression rate prior.' },
   ],
   outputArtifacts: [
-    { toolId: 'cellfree', payloadPath: 'result.confidence', required: true, rationale: 'CFPS confidence drives DBTL Build/Test gate.' },
-    { toolId: 'cellfree', payloadPath: 'result.invivoExpression', required: false, rationale: 'IVIV-translated yield estimate.' },
+    { toolId: 'cellfree', payloadPath: 'result.confidence', required: true, rationale: 'CFPS heuristic confidence informs the DBTL Build/Test gate.' },
+    { toolId: 'cellfree', payloadPath: 'result.invivoExpression', required: false, rationale: 'Heuristic IVIV-translated yield estimate.' },
   ],
   evidenceRequired: NO_EVIDENCE,
-  validityBaseline: { floor: 'demo', reason: 'Cell-free expression yield uses a curated lookup; no live TXTL kinetic model yet.' },
+  validityBaseline: { floor: 'demo', reason: 'Resource-aware TX-TL ODE structure exists, but parameter sourcing, calibration, and uncertainty remain incomplete.' },
   confidencePolicy: { sourceField: 'result.confidence', minToAdvance: 0.5 },
   uncertaintyPolicy: { sourceField: 'result.energyDepletionTime', unboundedIsGate: false },
   humanGatePolicy: { requiredFor: ['commit'], description: 'Operator must commit prototype results before they enter the DBTL ledger.' },
@@ -185,7 +185,7 @@ const DBTLFLOW_CONTRACT: ToolContract = {
   stageId: 'stage-4',
   primaryIntent: 'validate',
   requiredInputs: [
-    { toolId: 'cellfree', payloadPath: 'result.confidence', required: true, rationale: 'DBTL Test/Learn phases consume CFPS confidence.' },
+    { toolId: 'cellfree', payloadPath: 'result.confidence', required: true, rationale: 'DBTL Test/Learn phases consume CFPS heuristic confidence.' },
   ],
   optionalInputs: [
     { toolId: 'dyncon', payloadPath: 'result.productTiter', required: false, rationale: 'In-vivo titer estimate seeds Test scoring.' },

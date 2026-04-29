@@ -108,7 +108,7 @@ INPUT: Target Molecular Product
 | **Pathway Designer** | `/tools/pathd` | Main 3D metabolic pathway lab — paper-to-3D workflow with DBTL cycle integration, XState FSM, 60 Hz FBA worker |
 | **Metabolic Engineering Lab** | `/tools/metabolic-eng` | Full metabolic lab with 3D FluidSim canvas, NodePanel, ThreeScene; entry point for full Axon analysis |
 | **Catalyst Designer** | `/tools/catdes` | Enzyme design: binding affinity radar, sequence design, flux cost analysis, Pareto front, mutagenesis targeting |
-| **Cell-Free Simulation** | `/tools/cellfree` | Cell-free system simulation: gene construct design, parameter tuning, expression yield prediction |
+| **Cell-Free Simulation** | `/tools/cellfree` | Cell-free TX-TL simulation: gene construct design, parameter defaults, resource depletion, and heuristic expression estimates |
 | **Cell Thermodynamics** | `/tools/cethx` | Demo thermodynamics explainer: reference ΔG waterfall, ATP accounting, and explicit feasibility-claim boundary |
 | **DBTL Flow** | `/tools/dbtlflow` | Design-Build-Test-Learn cycle tracker: iteration waterfall, protocol generation, SBOL serialization |
 | **Dynamic Control** | `/tools/dyncon` | Bioreactor simulation: Hill function feedback loops, RK4 ODE integration, setpoint convergence analysis |

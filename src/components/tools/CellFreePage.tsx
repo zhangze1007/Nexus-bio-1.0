@@ -504,7 +504,7 @@ function IvIvChart({ result }: { result: CFSFullResult }) {
       <svg role="img" aria-label="Chart" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
         <rect width={W} height={H} fill="#050505" rx={12} />
         <text x={W / 2} y={H / 2} textAnchor="middle" fontFamily={T.SANS} fontSize="12" fill={LABEL}>
-          IvIv prediction unavailable — fitting required
+          IvIv estimate unavailable — fitting required
         </text>
       </svg>
     );
@@ -668,8 +668,8 @@ function ReactorTwin3D({ result, constructs, params }: { result: CFSFullResult; 
         </text>
         <text x="264" y="122" fontFamily={T.SANS} fontSize="10" fill="rgba(205,214,236,0.62)">
           {result.iviv
-            ? `IVIV confidence ${(result.iviv.confidence * 100).toFixed(0)}% with predicted in vivo expression ${result.iviv.invivo_expression.toFixed(1)} nM`
-            : 'IVIV prediction unavailable until fitting converges.'}
+            ? `Heuristic IVIV confidence ${(result.iviv.confidence * 100).toFixed(0)}% with estimated in vivo expression ${result.iviv.invivo_expression.toFixed(1)} nM`
+            : 'IVIV estimate unavailable until fitting converges.'}
         </text>
       </svg>
 
@@ -828,7 +828,7 @@ export default function CellFreePage() {
       return {
         eyebrow: 'Resource ledger',
         title: 'ATP, ribosome, and amino-acid drawdown define the real viability of the run',
-        caption: 'This lens foregrounds resource exhaustion as the governing constraint for whether a construct bundle should be promoted into slower experimental loops.',
+        caption: 'This lens foregrounds resource exhaustion as the governing constraint for whether a construct bundle should remain exploratory before slower experimental loops.',
       };
     }
     if (viewMode === 'Fitting') {
@@ -841,8 +841,8 @@ export default function CellFreePage() {
     if (viewMode === 'IvIv') {
       return {
         eyebrow: 'Translation bridge',
-        title: 'In-vitro to in-vivo translation confidence becomes a publication-style evidence panel',
-        caption: 'The bridge lens keeps predicted in-vivo expression, confidence, and rationale in one place so promotion decisions stay legible and defensible.',
+        title: 'In-vitro to in-vivo translation remains a heuristic estimate panel',
+        caption: 'The bridge lens keeps estimated in-vivo expression, heuristic confidence, and rationale in one place so parameter limits stay legible.',
       };
     }
     return {
@@ -857,14 +857,14 @@ export default function CellFreePage() {
       <div className="nb-tool-page" style={{ background: PANEL_BG }}>
         <AlgorithmInsight
           title="Cell-Free Sandbox (CFPS)"
-          description="Resource-aware TX-TL ODE simulation → plate-reader Michaelis-Menten fitting → in-vitro-to-in-vivo translation prediction"
+          description="Resource-aware TX-TL ODE simulation → plate-reader Michaelis-Menten fitting → heuristic in-vitro-to-in-vivo estimate"
           formula="dP/dt = k_tl · [mRNA] · R_free / (K_tl + R_free)"
         />
         <div style={{ padding: '0 16px 10px' }}>
           <WorkbenchInlineContext
             toolId="cellfree"
             title="Cell-Free Prototyping"
-            summary="Cell-free prototyping acts as the pre-build gate for catalyst and control decisions, keeping construct count, resource limits, and translation confidence attached to the same project lineage before anything is promoted into DBTL."
+            summary="Cell-free prototyping provides an exploratory pre-build signal, keeping construct count, resource limits, and heuristic translation confidence attached to the same project lineage before DBTL review."
             compact
             isSimulated={!analyzeArtifact}
           />
@@ -872,9 +872,9 @@ export default function CellFreePage() {
 
         <div style={{ padding: '0 16px 10px' }}>
           <ScientificHero
-            eyebrow="Stage 4 · Pre-Build Validation"
-            title="Cell-free prototyping as the last fast gate before DBTL"
-            summary="Cell-free should read like a decision bench, not just a simulation output. Yield, depletion timing, in-vitro-to-in-vivo confidence, and construct count are elevated here so the scientist can quickly judge whether a design deserves promotion into slower experimental loops."
+            eyebrow="Stage 4 · Pre-Build Simulation"
+            title="Cell-free prototyping as a fast exploratory gate before DBTL"
+            summary="Cell-free should read like a simulation bench, not a calibrated prediction. Yield, depletion timing, heuristic in-vitro-to-in-vivo confidence, and construct count are elevated here with parameter-sourcing limits visible."
             aside={
               <>
                 <div style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
@@ -898,13 +898,13 @@ export default function CellFreePage() {
               {
                 label: 'Depletion Gate',
                 value: `${sim.energyDepletionTime.toFixed(0)} min`,
-                detail: sim.isResourceLimited ? 'Resource limitation is the dominant reason this run should be treated cautiously.' : 'Resources hold long enough for this run to act as a meaningful pre-build check.',
+                detail: sim.isResourceLimited ? 'Resource limitation is the dominant reason this run should be treated cautiously.' : 'Resources hold long enough for this run to act as an exploratory pre-build signal.',
                 tone: sim.isResourceLimited ? 'alert' : 'cool',
               },
               {
                 label: 'IVIV Confidence',
                 value: iviv ? `${(iviv.confidence * 100).toFixed(0)}%` : 'Pending',
-                detail: iviv ? `${iviv.invivo_expression.toFixed(1)} predicted in vivo expression` : 'Switch to the IvIv lens to estimate translation into cellular expression.',
+                detail: iviv ? `${iviv.invivo_expression.toFixed(1)} estimated in vivo expression` : 'Switch to the IvIv lens to estimate translation into cellular expression.',
                 tone: iviv && iviv.confidence > 0.65 ? 'cool' : 'neutral',
               },
               {
@@ -934,8 +934,8 @@ export default function CellFreePage() {
                 note: viewMode,
               },
               {
-                title: 'Promotion evidence',
-                detail: 'Yield, depletion gate, and translation confidence remain exposed on the page so DBTL promotion can be judged without leaving the workbench.',
+                title: 'Boundary evidence',
+                detail: 'Yield, depletion gate, and heuristic translation confidence remain exposed alongside parameter-sourcing limits.',
                 accent: PATHD_THEME.mint,
                 note: `${sim.totalProteinYield.toFixed(1)} nM total yield`,
               },
@@ -1047,7 +1047,7 @@ export default function CellFreePage() {
                     The figure surface is now stable across lenses, so scientists can switch from expression to depletion to IVIV translation without feeling like they left the same experiment.
                   </div>
                   <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL }}>
-                    setup {params.temperature}°C · {params.simulationTime} min · {sim.isResourceLimited ? 'resource-limited run' : 'resources adequate for promotion review'}
+                    setup {params.temperature}°C · {params.simulationTime} min · {sim.isResourceLimited ? 'resource-limited run' : 'resources adequate for exploratory review'}
                   </div>
                 </div>
               }
@@ -1195,10 +1195,10 @@ export default function CellFreePage() {
               </>
             )}
 
-            {/* IvIv Prediction */}
+            {/* IvIv Estimate */}
             {iviv && (
               <>
-                <SectionLabel>IvIv Prediction</SectionLabel>
+                <SectionLabel>IvIv Estimate</SectionLabel>
                 <div style={{ ...GLASS, borderRadius: '14px', padding: '10px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
                     <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>In-vivo Expr</span>
