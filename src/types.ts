@@ -170,7 +170,7 @@ export interface FBAResult {
   feasible: boolean;
 }
 
-// ── Community FBA (Multi-species) ──
+// ── Two-species demo result types (not a joint community LP) ──
 export interface StrainConfig {
   id: string;
   name: string;

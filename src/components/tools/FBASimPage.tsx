@@ -636,7 +636,7 @@ export default function FBASimPage() {
       if (controller.signal.aborted) return;
       setCommunityResult(createEmptyCommunityOutput());
       setCommunityRunProvenance(undefined);
-      setCommunityError(error instanceof Error ? error.message : 'Authority-backed community FBA failed');
+      setCommunityError(error instanceof Error ? error.message : 'Authority-backed two-species demo failed');
     }).finally(() => {
       if (!controller.signal.aborted) {
         setCommunityLoading(false);

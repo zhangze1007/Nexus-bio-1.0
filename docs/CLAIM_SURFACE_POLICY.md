@@ -26,6 +26,8 @@ Protocols and external handoffs are the strictest surfaces. Demo outputs should 
 
 Demo outputs may be visible on the `payload` surface. They should not silently become formal claims on `protocol` or `external-handoff` surfaces. The catalog encodes that boundary by allowing demo on payloads while excluding demo from formal claim surfaces.
 
+Community-mode FBASIM output is a mode-specific example of this boundary. Single-species FBASIM remains the supported partial-validity LP path, while `fbasim-community` provenance is demo-only until a true joint community LP exists. Demo community output may be inspected as payload context, but it must not be treated as a formal recommendation, protocol, or external handoff.
+
 ## Files
 
 - `src/domain/claimSurfacePolicy.ts` defines `ClaimSurfacePolicy` and block codes.

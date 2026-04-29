@@ -192,7 +192,7 @@ export function computeFBAResult(glucoseUptake: number, oxygenUptake: number): F
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// ── COMMUNITY FBA: Multi-species metabolic modeling ─────────────────────────
+// ── Two-species demo: independent host solves plus illustrative exchange ────
 // ═══════════════════════════════════════════════════════════════════════════════
 
 // S. cerevisiae central carbon metabolism (simplified model)
@@ -339,9 +339,11 @@ export interface CommunityFBAOutput {
 }
 
 /**
- * Community FBA: Composite stoichiometric model S_com = [S1, 0, E1; 0, S2, E2].
- * Exchange reactions couple the two strain models through a shared environmental pool.
- * The community biomass objective balances growth rates with a weighted sum.
+ * Illustrative two-species demo.
+ *
+ * This is not a joint community LP. It computes independent host FBA
+ * outputs first, then scales exchange-like values and blends growth
+ * post hoc for visualization.
  */
 export function calculateCommunityFlux(
   ecoliGlucose: number,

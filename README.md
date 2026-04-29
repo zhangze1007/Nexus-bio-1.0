@@ -112,7 +112,7 @@ INPUT: Target Molecular Product
 | **Cell Thermodynamics** | `/tools/cethx` | Thermodynamic cascade: waterfall ΔG chart, ATP accounting, pathway feasibility analysis |
 | **DBTL Flow** | `/tools/dbtlflow` | Design-Build-Test-Learn cycle tracker: iteration waterfall, protocol generation, SBOL serialization |
 | **Dynamic Control** | `/tools/dyncon` | Bioreactor simulation: Hill function feedback loops, RK4 ODE integration, setpoint convergence analysis |
-| **FBA Simulator** | `/tools/fbasim` | Flux Balance Analysis: single-species + community FBA (co-culture), knockout/overexpression strategies, shadow prices, carbon efficiency |
+| **FBA Simulator** | `/tools/fbasim` | Flux Balance Analysis: single-species simplex LP plus illustrative two-species demo mode, knockout/overexpression strategies, shadow prices, carbon efficiency |
 | **Gene Circuit Reasoner** | `/tools/gecair` | Gene circuit design: logic gate modeling, Hill curve analysis, circuit dynamics, gate efficiency scoring |
 | **Gene Minimization** | `/tools/genmim` | Genome minimization: CRISPRi knockdown scheduling, chromosome map, efficiency heatmap, greedy optimization |
 | **Multi-Omics** | `/tools/multio` | Multi-omics integration: projected embeddings, volcano plots, factor decomposition, perturbation prediction |
@@ -177,7 +177,7 @@ Supporting API routes:
 |-------|---------|
 | `app/api/alphafold` | CORS proxy — EBI AlphaFold PDB structures |
 | `app/api/pubchem` | CORS proxy — PubChem 3D SDF conformers |
-| `app/api/fba` | Simplex LP solver — single-species and community FBA |
+| `app/api/fba` | Simplex LP solver - single-species FBA plus demo-only two-species comparison |
 | `app/api/workbench` | Project state sync — revision control + audit trail |
 
 ---
