@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "tsc --noEmit",
     "test": "jest",
-    "benchmark:trust:validate": "node scripts/validateTrustBenchmarkCorpus.mjs"
+    "benchmark:trust:validate": "node scripts/validateTrustBenchmarkCorpus.mjs",
+    "benchmark:trust:evaluate": "jest __tests__/trustPolicyEngineBenchmark.test.ts --runInBand"
   },
   "dependencies": {
     "@google/genai": "^1.29.0",
