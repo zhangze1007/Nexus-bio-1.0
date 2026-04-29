@@ -114,7 +114,7 @@ provenance: 'simulated' | 'inferred' | 'literature-backed' | 'user-supplied';
 其中明确记录：
 
 - 当前 CETHX 数据是 `MOCK_DATA: no peer-reviewed source`。
-- research-grade thermodynamics 应参考 eQuilibrator 3 和 Alberty (2003)。
+- higher-fidelity thermodynamics 应参考 eQuilibrator 3 和 Alberty (2003)。
 - 当前实现没有 reaction-specific pKa transform、Debye-Hückel ionic strength correction、group contribution method、magnesium binding correction 等。
 - 输出 ΔG' 值不能用于 research thermodynamic feasibility decision。
 
@@ -128,7 +128,7 @@ provenance: 'simulated' | 'inferred' | 'literature-backed' | 'user-supplied';
   - 没有 Alberty transform。
   - 输出只用于 UI illustration。
   - 不用于 downstream inference。
-  - research-grade thermodynamics 应 consult eQuilibrator 3。
+  - higher-fidelity thermodynamics 应 consult eQuilibrator 3。
 
 Phase 1.4 没有做：
 
@@ -322,4 +322,3 @@ docs/PHASE_1_CLOSING_REPORT.pdf
 ```
 
 按当前交付要求，这两个文件不 commit、不 push。
-

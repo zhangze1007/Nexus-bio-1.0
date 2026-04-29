@@ -2,7 +2,7 @@
 
 ## Abstract
 
-AI-assisted biology interfaces can make heterogeneous methods appear equally reliable, increasing the risk of over-trust and weak-evidence propagation. This paper drafts a trust runtime architecture, implemented in Nexus-Bio, that combines tool validity tiers, explicit assumption registries, provenance snapshots, and downstream gating decisions. The contribution is not a claim of full research-grade simulation across all modules. Instead, it is a runtime design that keeps uncertainty visible and machine-actionable during multi-tool workflow execution.
+AI-assisted biology interfaces can make heterogeneous methods appear equally reliable, increasing the risk of over-trust and weak-evidence propagation. This paper drafts a trust runtime architecture, implemented in Nexus-Bio, that combines tool validity tiers, explicit assumption registries, provenance snapshots, and downstream gating decisions. The contribution is not a claim of full high-fidelity biological simulation across all modules. Instead, it is a runtime design that keeps uncertainty visible and machine-actionable during multi-tool workflow execution.
 
 ## Introduction
 
@@ -73,7 +73,7 @@ This case demonstrates software trust behavior, not wet-lab optimization proof.
 ## Limitations
 
 - No wet-lab validation in this repository.
-- Not all modules are research-grade; several remain demo or partial.
+- Not all modules are high-fidelity scientific implementations; several remain demo or partial.
 - Some models are deterministic or heuristic simplifications.
 - LLM-mediated analysis still requires human scientific validation.
 - Public benchmark and ablation reporting are incomplete.
