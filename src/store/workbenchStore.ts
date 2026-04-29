@@ -161,7 +161,7 @@ const AXON_RUN_LIMIT = 80;
 const AXON_LOG_LIMIT = 400;
 const WORKBENCH_ACTOR_KEY = 'nexus-bio:workbench-actor-id';
 const DEFAULT_PROJECT_SYNC_SCOPE = 'default-workbench';
-const PROVENANCE_MIDDLEWARE_TOOL_IDS = new Set(['pathd', 'dyncon', 'dbtlflow']);
+const PROVENANCE_MIDDLEWARE_TOOL_IDS = new Set(['pathd', 'dyncon', 'dbtlflow', 'catdes']);
 
 function createId(prefix: string) {
   return `${prefix}-${Math.random().toString(36).slice(2, 10)}`;

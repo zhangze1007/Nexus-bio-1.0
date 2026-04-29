@@ -1,6 +1,6 @@
 # Provenance Middleware
 
-P1 Step 8A adds a small provenance middleware layer for tool payload writes. The goal is to make provenance capture consistent without changing scientific algorithms, UI behavior, or export/protocol enforcement.
+P1 Step 8A adds a small provenance middleware layer for tool payload writes. P1 Step 8B extends that coverage and adds local chain diagnostics. The goal is to make provenance capture more consistent without changing scientific algorithms, product behavior, or export/protocol enforcement.
 
 ## What It Does
 
@@ -41,6 +41,25 @@ Step 8A integrates provenance capture through the central workbench payload writ
 
 Only payloads that lack `runProvenance` are stamped. Existing provenance snapshots are preserved.
 
+## Step 8B Coverage
+
+Step 8B extends central provenance stamping to:
+
+- `catdes`
+
+Together with Step 8A and existing explicit tool payload provenance, the covered key paths are:
+
+- `pathd` through central payload admission metadata
+- `dyncon` through central payload admission metadata
+- `dbtlflow` through central payload admission metadata
+- `catdes` through central payload admission metadata
+- `fbasim` through its existing FBA run provenance payload
+- `cellfree` through its existing cell-free run provenance payload
+
+Existing `cethx` and `multio` payload paths also write explicit `runProvenance` snapshots. Step 8B does not re-wrap those tool pages because their payload builders already attach workflow-specific provenance.
+
+Duplicate entries are avoided by checking for an existing `runProvenance` field before central stamping. Payloads with existing provenance are preserved as-is, including older explicit snapshots.
+
 ## What It Does Not Do Yet
 
 - No Evidence panel redesign
@@ -58,9 +77,18 @@ The middleware also exposes local inspection helpers:
 - `collectProvenanceIds(payload)`
 - `getProvenanceChainLength(payload)`
 - `findMissingUpstreamProvenance(payload)`
+- `getProvenanceChainDiagnostics(payload)`
 
 These inspect only provenance available inside the payload. They do not query persisted workbench state, a server database, or a global graph.
 
-## Step 8B Direction
+`getProvenanceChainDiagnostics()` returns the local provenance IDs, chain length, missing upstream provenance IDs, and a boolean indicating whether any upstream references are missing locally. Missing upstream means an ID is referenced by a local provenance entry but is not present in the same payload's local `runProvenance` chain.
 
-Step 8B should extend coverage to at least six key tools total, add safe Evidence panel chain-length and missing-upstream display if appropriate, and later connect provenance snapshots to export/protocol gating. Homepage UI/UX should remain locked.
+The existing workbench decision trace panel now displays a minimal diagnostic row for run artifacts: provenance present/missing, local chain length, and missing upstream count when applicable. This is informational only and does not gate workflow behavior.
+
+## What The Diagnostics Do Not Prove
+
+The diagnostics do not prove wet-lab validity, scientific validation, external source verification, or full provenance completeness. They are local payload integrity checks only.
+
+## Step 8C Direction
+
+Step 8C should broaden coverage beyond the current key paths, enrich evidence/provenance panel visibility where useful, and later connect provenance snapshots to export/protocol gating. Homepage UI/UX should remain locked.

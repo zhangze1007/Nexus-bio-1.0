@@ -6,6 +6,7 @@ import {
   appendRunProvenance,
   collectProvenanceIds,
   findMissingUpstreamProvenance,
+  getProvenanceChainDiagnostics,
   getProvenanceChainLength,
   withProvenance,
   withProvenanceSync,
@@ -318,9 +319,15 @@ describe('provenance middleware', () => {
     expect(collectProvenanceIds(payload)).toEqual(['pathd:1', 'dyncon:2']);
     expect(getProvenanceChainLength(payload)).toBe(2);
     expect(findMissingUpstreamProvenance(payload)).toEqual(['missing:3']);
+    expect(getProvenanceChainDiagnostics(payload)).toEqual({
+      provenanceIds: ['pathd:1', 'dyncon:2'],
+      chainLength: 2,
+      missingUpstreamProvenanceIds: ['missing:3'],
+      hasMissingUpstream: true,
+    });
   });
 
-  it('adds runProvenance to initial pathd, dyncon, and dbtlflow store writes', () => {
+  it('adds runProvenance to initial pathd, catdes, dyncon, and dbtlflow store writes', () => {
     withFreshStore(({ useWorkbenchStore }) => {
       setTarget(useWorkbenchStore, 'limonene');
       useWorkbenchStore.getState().setToolPayload('pathd', pathd(1));
@@ -338,6 +345,16 @@ describe('provenance middleware', () => {
       expect(state.toolPayloads.dyncon?.runProvenance).toMatchObject({
         toolId: 'dyncon',
         outputAssumptions: ['dyncon.rk4_real', 'dyncon.parameters_reference', 'dyncon.no_noise'],
+      });
+      const catdesRun = state.runArtifacts.find((artifact) => artifact.toolId === 'catdes');
+      expect(state.toolPayloads.catdes?.runProvenance ?? catdesRun?.payloadSnapshot.runProvenance).toMatchObject({
+        toolId: 'catdes',
+        outputAssumptions: [
+          'catdes.warshel_dielectric',
+          'catdes.hand_tuned_weights',
+          'catdes.alphafold3_inspired',
+          'catdes.codon_table_yeast',
+        ],
       });
       const dbtlRun = state.runArtifacts.find((artifact) => artifact.toolId === 'dbtlflow');
       expect(dbtlRun?.payloadSnapshot).toMatchObject({

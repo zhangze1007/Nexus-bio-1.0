@@ -47,6 +47,15 @@ const RUN: WorkbenchRunArtifact = {
   payloadSnapshot: {
     toolId: 'fbasim',
     validity: 'partial',
+    runProvenance: {
+      toolId: 'fbasim',
+      timestamp: 1,
+      inputAssumptions: [],
+      outputAssumptions: ['fbasim.simplex_real'],
+      evidence: [],
+      validityTier: 'partial',
+      upstreamProvenance: ['missing:pathd:0'],
+    },
     updatedAt: 1,
   } as WorkbenchRunArtifact['payloadSnapshot'],
   createdAt: 1,
@@ -106,5 +115,8 @@ describe('WorkbenchDecisionTracePanel — historical ledger evidence', () => {
     expect(runScope.getByText(/uncertainty · 0\.14/i)).toBeTruthy();
     expect(runScope.getByText(/validity · partial/i)).toBeTruthy();
     expect(runScope.getByText(/iteration · 3/i)).toBeTruthy();
+    expect(runScope.getByText(/provenance · present/i)).toBeTruthy();
+    expect(runScope.getByText(/chain · 1/i)).toBeTruthy();
+    expect(runScope.getByText(/missing upstream · 1/i)).toBeTruthy();
   });
 });

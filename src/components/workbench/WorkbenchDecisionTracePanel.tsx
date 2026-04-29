@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useMemo } from 'react';
 import { ArrowUpRight, Compass, ShieldCheck, WandSparkles, Workflow } from 'lucide-react';
+import { getProvenanceChainDiagnostics } from '../../services/provenanceMiddleware';
 import { useWorkbenchStore } from '../../store/workbenchStore';
 import { T } from '../ide/tokens';
 import { TOOL_BY_ID } from '../tools/shared/toolRegistry';
@@ -204,44 +205,52 @@ export default function WorkbenchDecisionTracePanel({
           </span>
         </div>
         <div style={{ display: 'grid', gap: '8px' }}>
-          {ledgerRuns.length ? ledgerRuns.map((run) => (
-            <div
-              key={run.id}
-              style={{
-                borderRadius: '12px',
-                border: `1px solid ${BORDER}`,
-                background: PATHD_THEME.panelSurface,
-                padding: '9px 10px',
-                display: 'grid',
-                gap: '5px',
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap' }}>
-                <span style={{ fontFamily: T.SANS, fontSize: '12px', color: VALUE, fontWeight: 700 }}>
-                  {run.toolId.toUpperCase()} artifact generated
-                </span>
-                <span style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase' }}>
-                  {workflowStatusLabel(run.status ?? (run.isSimulated ? 'demoOnly' : 'ok'))}
-                </span>
+          {ledgerRuns.length ? ledgerRuns.map((run) => {
+            const provenanceDiagnostics = getProvenanceChainDiagnostics(run.payloadSnapshot);
+            return (
+              <div
+                key={run.id}
+                style={{
+                  borderRadius: '12px',
+                  border: `1px solid ${BORDER}`,
+                  background: PATHD_THEME.panelSurface,
+                  padding: '9px 10px',
+                  display: 'grid',
+                  gap: '5px',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap' }}>
+                  <span style={{ fontFamily: T.SANS, fontSize: '12px', color: VALUE, fontWeight: 700 }}>
+                    {run.toolId.toUpperCase()} artifact generated
+                  </span>
+                  <span style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase' }}>
+                    {workflowStatusLabel(run.status ?? (run.isSimulated ? 'demoOnly' : 'ok'))}
+                  </span>
+                </div>
+                <div style={{ fontFamily: T.SANS, fontSize: '11px', color: LABEL, lineHeight: 1.5 }}>
+                  {run.summary}
+                </div>
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', fontFamily: T.MONO, fontSize: '9px', color: LABEL }}>
+                  <span>
+                    evidence · {run.evidenceSnapshot
+                      ? `${run.evidenceSnapshot.count}${run.evidenceSnapshot.missingEvidence.minRequired > 0 ? `/${run.evidenceSnapshot.missingEvidence.minRequired}` : ''} · ${workflowStatusLabel(run.evidenceSnapshot.status)}`
+                      : workflowDecision.missingEvidence.have}
+                  </span>
+                  <span>confidence · {run.confidence !== undefined && run.confidence !== null ? run.confidence.toFixed(2) : workflowDecision.latestRunToolId === run.toolId && workflowDecision.confidence !== null ? workflowDecision.confidence.toFixed(2) : 'n/a'}</span>
+                  <span>uncertainty · {run.uncertainty !== undefined && run.uncertainty !== null ? run.uncertainty.toFixed(2) : workflowDecision.latestRunToolId === run.toolId && workflowDecision.uncertainty !== null ? workflowDecision.uncertainty.toFixed(2) : 'unknown'}</span>
+                  <span>validity · {run.validity ?? (workflowDecision.latestRunToolId === run.toolId ? workflowDecision.validity ?? 'n/a' : 'n/a')}</span>
+                  <span>human gate · {run.humanGateRequired ?? (workflowDecision.latestRunToolId === run.toolId ? workflowDecision.humanGateRequired : false) ? 'yes' : 'no'}</span>
+                  <span>iteration · {run.iteration ?? 'n/a'}</span>
+                  <span>next · {workflowDecision.nextRecommendedNode?.toUpperCase() ?? 'none'}</span>
+                  <span>provenance · {provenanceDiagnostics.chainLength > 0 ? 'present' : 'missing'}</span>
+                  <span>chain · {provenanceDiagnostics.chainLength}</span>
+                  {provenanceDiagnostics.hasMissingUpstream && (
+                    <span>missing upstream · {provenanceDiagnostics.missingUpstreamProvenanceIds.length}</span>
+                  )}
+                </div>
               </div>
-              <div style={{ fontFamily: T.SANS, fontSize: '11px', color: LABEL, lineHeight: 1.5 }}>
-                {run.summary}
-              </div>
-              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', fontFamily: T.MONO, fontSize: '9px', color: LABEL }}>
-                <span>
-                  evidence · {run.evidenceSnapshot
-                    ? `${run.evidenceSnapshot.count}${run.evidenceSnapshot.missingEvidence.minRequired > 0 ? `/${run.evidenceSnapshot.missingEvidence.minRequired}` : ''} · ${workflowStatusLabel(run.evidenceSnapshot.status)}`
-                    : workflowDecision.missingEvidence.have}
-                </span>
-                <span>confidence · {run.confidence !== undefined && run.confidence !== null ? run.confidence.toFixed(2) : workflowDecision.latestRunToolId === run.toolId && workflowDecision.confidence !== null ? workflowDecision.confidence.toFixed(2) : 'n/a'}</span>
-                <span>uncertainty · {run.uncertainty !== undefined && run.uncertainty !== null ? run.uncertainty.toFixed(2) : workflowDecision.latestRunToolId === run.toolId && workflowDecision.uncertainty !== null ? workflowDecision.uncertainty.toFixed(2) : 'unknown'}</span>
-                <span>validity · {run.validity ?? (workflowDecision.latestRunToolId === run.toolId ? workflowDecision.validity ?? 'n/a' : 'n/a')}</span>
-                <span>human gate · {run.humanGateRequired ?? (workflowDecision.latestRunToolId === run.toolId ? workflowDecision.humanGateRequired : false) ? 'yes' : 'no'}</span>
-                <span>iteration · {run.iteration ?? 'n/a'}</span>
-                <span>next · {workflowDecision.nextRecommendedNode?.toUpperCase() ?? 'none'}</span>
-              </div>
-            </div>
-          )) : (
+            );
+          }) : (
             <div style={{ fontFamily: T.SANS, fontSize: '12px', color: LABEL, lineHeight: 1.55 }}>
               Run PATHD to create the first auditable DBTL decision artifact.
             </div>

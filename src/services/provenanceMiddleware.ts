@@ -25,6 +25,13 @@ export interface WithProvenanceResult<TPayload> {
   provenanceEntry: ProvenanceEntry;
 }
 
+export interface ProvenanceChainDiagnostics {
+  provenanceIds: string[];
+  chainLength: number;
+  missingUpstreamProvenanceIds: string[];
+  hasMissingUpstream: boolean;
+}
+
 type ProvenanceLike = ProvenanceEntry | WorkbenchProvenanceEntry;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -200,4 +207,15 @@ export function findMissingUpstreamProvenance(payload: unknown): string[] {
   const localIds = new Set(collectProvenanceIds(payload));
   const referencedIds = unique(entries.flatMap(upstreamIdsFromEntry));
   return referencedIds.filter((id) => !localIds.has(id));
+}
+
+export function getProvenanceChainDiagnostics(payload: unknown): ProvenanceChainDiagnostics {
+  const provenanceIds = collectProvenanceIds(payload);
+  const missingUpstreamProvenanceIds = findMissingUpstreamProvenance(payload);
+  return {
+    provenanceIds,
+    chainLength: provenanceIds.length,
+    missingUpstreamProvenanceIds,
+    hasMissingUpstream: missingUpstreamProvenanceIds.length > 0,
+  };
 }
