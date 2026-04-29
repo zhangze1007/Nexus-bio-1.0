@@ -663,9 +663,9 @@ export default function FBASimPage() {
       };
     }
     return {
-      eyebrow: 'Figure B · Two-Species Exchange Comparison',
-      title: 'Coupled host-state and shared metabolite exchange',
-      caption: 'Community mode becomes a multi-panel model figure where strain-specific optima and shared-pool exchange are read together instead of across disconnected cards.',
+      eyebrow: 'Figure B · Two-Species Demo Exchange',
+      title: 'Independent host solves with illustrative exchange',
+      caption: 'Two-species demo mode becomes a comparative figure where strain-specific optima and post-hoc exchange-like values are read together without claiming shared-pool stoichiometric coupling.',
     };
   }, [simMode]);
 
@@ -778,7 +778,7 @@ export default function FBASimPage() {
     <>
       <div className="nb-tool-page" style={{ background: PATHD_THEME.sepiaPanelMuted }}>
         <AlgorithmInsight
-          title={simMode === 'single' ? 'Flux Balance Analysis' : 'Two-Species Flux Comparison'}
+          title={simMode === 'single' ? 'Flux Balance Analysis' : 'Two-Species Demo Comparison'}
           description={simMode === 'single'
             ? 'Server-side GLPK solves a stoichiometric LP for the current host context, then revalidates glucose and oxygen shadow prices with finite-difference reruns so downstream tools inherit an authority-backed flux state.'
             : 'Two-species heuristic demo, not a joint community LP. Two server-side host LPs are solved independently and exchange values are compared with post-hoc scaling.'}
@@ -844,19 +844,19 @@ export default function FBASimPage() {
                 ]
               : [
                   {
-                    label: 'Blended Growth',
+                    label: 'Demo Blended Growth',
                     value: `${communityResult.communityGrowthRate.toFixed(4)} h⁻¹`,
                     detail: communityLoading ? 'Recomputing two independent host solves for the heuristic comparison.' : communityResult.feasible ? 'Both independent host solves are feasible before post-hoc exchange scaling.' : 'At least one independent host solve is infeasible.',
                     tone: communityResult.feasible ? 'cool' : 'alert',
                   },
                   {
-                    label: 'Biomass Objective',
+                    label: 'Demo Biomass Blend',
                     value: `${communityResult.communityBiomassObjective.toFixed(3)}`,
                     detail: `E. coli ${communityResult.ecoli.growthRate.toFixed(3)} · Yeast ${communityResult.yeast.growthRate.toFixed(3)}`,
                     tone: 'neutral',
                   },
                   {
-                    label: 'Shared Exchange',
+                    label: 'Illustrative Exchange',
                     value: `${communityResult.exchangeFluxes.filter((entry) => Math.abs(entry.flux) > 0.01).length} active links`,
                     detail: communityResult.exchangeFluxes[0] ? `${communityResult.exchangeFluxes[0].metabolite} ${communityResult.exchangeFluxes[0].flux.toFixed(2)} mmol/h` : 'No exchange fluxes detected yet.',
                     tone: 'warm',
@@ -910,7 +910,7 @@ export default function FBASimPage() {
               color: simMode === mode ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.35)',
               fontFamily: T.SANS, fontSize: '11px', cursor: 'pointer', transition: 'all 0.2s',
             }}>
-              {mode === 'single' ? 'Single Species' : 'Two-Species Comparison'}
+              {mode === 'single' ? 'Single Species' : 'Two-Species Demo'}
             </button>
           ))}
         </div>
@@ -1193,13 +1193,13 @@ export default function FBASimPage() {
                 minHeight="100%"
                 legend={[
                   { label: 'Objective', value: objective, accent: PATHD_THEME.apricot },
-                  { label: 'Community growth', value: `${communityResult.communityGrowthRate.toFixed(4)} h⁻¹`, accent: PATHD_THEME.mint },
+                  { label: 'Demo blended growth', value: `${communityResult.communityGrowthRate.toFixed(4)} h⁻¹`, accent: PATHD_THEME.mint },
                   { label: 'E. coli KOs', value: ecoliKO.length ? ecoliKO.join(', ') : 'none', accent: COLORS.strainA },
                   { label: 'Yeast KOs', value: yeastKO.length ? yeastKO.join(', ') : 'none', accent: COLORS.strainB },
                 ]}
                 footer={
                   <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.paperMuted, lineHeight: 1.55 }}>
-                    Community view is framed as a comparative systems figure: two host states above, shared exchange below, and growth coupling visible as one model story.
+                    Two-species demo view compares independent host states and post-hoc exchange-like values; it does not assert a coupled community optimum.
                   </div>
                 }
               >
@@ -1207,10 +1207,10 @@ export default function FBASimPage() {
                   <GlassContainer color={COLORS.sharedBg} borderColor={COLORS.sharedBorder}
                     style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <span style={{ fontFamily: T.SANS, fontSize: '11px', color: 'rgba(255,255,255,0.55)' }}>
-                      Community Biomass Objective
+                      Demo Biomass Blend
                     </span>
                     <span style={{ fontFamily: T.MONO, fontSize: '14px', fontWeight: 600, color: COLORS.sharedPool, textAlign: 'right' }}>
-                      μ_com = {communityResult.communityGrowthRate.toFixed(4)} h⁻¹
+                      μ_demo = {communityResult.communityGrowthRate.toFixed(4)} h⁻¹
                     </span>
                   </GlassContainer>
 

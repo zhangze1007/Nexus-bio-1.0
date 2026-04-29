@@ -28,6 +28,8 @@ Demo outputs may be visible on the `payload` surface. They should not silently b
 
 Community-mode FBASIM output is a mode-specific example of this boundary. Single-species FBASIM remains the supported partial-validity LP path, while `fbasim-community` provenance is demo-only until a true joint community LP exists. Demo community output may be inspected as payload context, but it must not be treated as a formal recommendation, protocol, or external handoff.
 
+Step 9B records that mode boundary in `src/domain/communityFbaBoundary.ts`. The policy catalog is still tool-level so it does not broadly downgrade single-species `fbasim`; the community helper marks recommendation, protocol, and external-handoff as formal surfaces blocked for demo community claims until a real joint community LP exists and is tested.
+
 ## Files
 
 - `src/domain/claimSurfacePolicy.ts` defines `ClaimSurfacePolicy` and block codes.

@@ -45,7 +45,7 @@ Recommend B now.
 
 Keep the current community view only as a demo-only illustrative two-species comparison. Do not call it true community FBA, a joint community LP, SteadyCom-like, or a validated community model. Formal recommendation, protocol, export, and external-handoff claims from demo community output should remain blocked by claim-surface policy or future mode-specific policy.
 
-Recommend A later only if Step 9B deliberately implements and tests a true joint community LP. Recommend C if the product cannot make the demo-only boundary clear enough.
+Recommend A later only if a future Step 9C deliberately implements and tests a true joint community LP. Recommend C if the product cannot make the demo-only boundary clear enough.
 
 ## Decision Boundary
 
@@ -64,6 +64,18 @@ Not implemented now:
 - No shared exchange stoichiometric coupling.
 - No export, protocol, recommendation, or external-handoff runtime enforcement.
 - No UI redesign.
+
+## Step 9B Implementation
+
+Step 9B implements Route B as the current product boundary:
+
+- `src/domain/communityFbaBoundary.ts` records the mode-specific decision: single-species `fbasim` remains the partial-validity LP path, while `fbasim-community` is demo-only illustrative mode.
+- Community demo payloads may remain visible for exploratory `payload` use, but the boundary metadata marks recommendation, protocol, and external-handoff surfaces as blocked for formal community claims.
+- Existing `fbasim-community` assumptions remain the source of the scientific limitation: no joint community LP, no shared exchange stoichiometry, linear blend only, exchange-like values only, and inherited single-species assumptions.
+- The FBASim community UI labels now say "Two-Species Demo" and "Demo Biomass Blend" rather than implying a formal community objective.
+- The trust benchmark known-bad cases continue to block demo community output used as a formal recommendation.
+
+This implementation does not change the single-species FBA solver, the community heuristic computation, claim-surface runtime enforcement, exports, protocols, or routes. A future Step 9C may add mode-aware claim-surface policy handles if formal community output routing becomes explicit.
 
 ## Rollback Condition
 
