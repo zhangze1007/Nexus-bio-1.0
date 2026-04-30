@@ -1,0 +1,32 @@
+{
+  "schemaVersion": "experiment-record-v1",
+  "recordId": "example-er-wetlab-001",
+  "batchId": "example-batch-2026-04-a",
+  "sampleId": "example-sample-a1",
+  "constructId": "example-construct-ads-gfp",
+  "assayType": "product-titer",
+  "sourceType": "wet-lab",
+  "measurementUnit": "mg/L",
+  "instrument": "example-plate-reader-01",
+  "operator": "example-operator-01",
+  "startedAt": "2026-04-01T09:00:00.000Z",
+  "completedAt": "2026-04-01T13:00:00.000Z",
+  "timepoints": [
+    {
+      "timeHours": 0,
+      "value": 0,
+      "unit": "mg/L",
+      "replicateId": "replicate-a"
+    },
+    {
+      "timeHours": 4,
+      "value": 42.5,
+      "unit": "mg/L",
+      "replicateId": "replicate-a"
+    }
+  ],
+  "qcFlags": ["passed"],
+  "sourceFileId": "example-file-wetlab-csv",
+  "provenanceIds": ["example-provenance-import-001"],
+  "notes": "Fictional example only; not real wet-lab validation evidence."
+}

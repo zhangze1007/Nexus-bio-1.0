@@ -1,0 +1,22 @@
+{
+  "schemaVersion": "experiment-record-v1",
+  "recordId": "example-er-rejected-unitless",
+  "batchId": "example-batch-invalid-a",
+  "sampleId": "example-sample-invalid-a1",
+  "constructId": "example-construct-invalid",
+  "assayType": "product-titer",
+  "sourceType": "imported-csv",
+  "measurementUnit": "",
+  "instrument": "example-plate-reader-01",
+  "operator": "example-operator-01",
+  "startedAt": "2026-04-03T09:00:00.000Z",
+  "timepoints": [
+    {
+      "timeHours": 4,
+      "value": 20,
+      "unit": ""
+    }
+  ],
+  "qcFlags": ["missing-unit"],
+  "notes": "Invalid example: unit-less records must not influence DBTL feedback."
+}

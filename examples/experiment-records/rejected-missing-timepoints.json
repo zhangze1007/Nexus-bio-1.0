@@ -1,0 +1,16 @@
+{
+  "schemaVersion": "experiment-record-v1",
+  "recordId": "example-er-rejected-no-timepoints",
+  "batchId": "example-batch-invalid-b",
+  "sampleId": "example-sample-invalid-b1",
+  "constructId": "example-construct-invalid",
+  "assayType": "product-titer",
+  "sourceType": "imported-csv",
+  "measurementUnit": "mg/L",
+  "instrument": "example-plate-reader-01",
+  "operator": "example-operator-01",
+  "startedAt": "2026-04-03T09:00:00.000Z",
+  "timepoints": [],
+  "qcFlags": ["missing-timepoint"],
+  "notes": "Invalid example: records without timepoints must not influence DBTL feedback."
+}

@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "experiment-record-v1",
+  "recordId": "example-er-sim-001",
+  "batchId": "example-sim-batch-a",
+  "sampleId": "example-sim-sample-a1",
+  "constructId": "example-sim-construct",
+  "assayType": "product-titer",
+  "sourceType": "simulated-assay",
+  "measurementUnit": "mg/L",
+  "instrument": "nexus-bio-simulated-assay",
+  "operator": "nexus-bio-example-actor",
+  "startedAt": "2026-04-02T10:00:00.000Z",
+  "timepoints": [
+    {
+      "timeHours": 24,
+      "value": 38.2,
+      "unit": "mg/L",
+      "replicateId": "sim-replicate-a"
+    }
+  ],
+  "qcFlags": ["passed"],
+  "notes": "Simulated example only; not wet-lab data."
+}
