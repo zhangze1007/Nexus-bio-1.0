@@ -11,7 +11,9 @@
     "benchmark:trust:validate": "node scripts/validateTrustBenchmarkCorpus.mjs",
     "benchmark:trust:evaluate": "jest __tests__/trustPolicyEngineBenchmark.test.ts --runInBand",
     "benchmark:trust:report": "tsx scripts/generateTrustMetricsReport.ts",
-    "benchmark:public": "node scripts/runPublicBenchmark.mjs"
+    "benchmark:public": "node scripts/runPublicBenchmark.mjs",
+    "proof:check": "node scripts/checkProofPackage.mjs",
+    "proof:replay": "node scripts/replayProofPackage.mjs"
   },
   "dependencies": {
     "@google/genai": "^1.29.0",

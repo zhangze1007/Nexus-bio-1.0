@@ -1,0 +1,225 @@
+{
+  "schemaVersion": "proof-package-v1",
+  "packageName": "nexus-bio-trust-runtime-proof-package",
+  "runLabel": "local-dev",
+  "generatedAt": "2026-04-30T08:38:51.000Z",
+  "thesis": "Nexus-Bio is an assumption-gated scientific inference runtime for synthetic biology workflows.",
+  "contents": {
+    "specs": [
+      {
+        "label": "Trust runtime protocol",
+        "packagePath": "proof-package/specs/nexus-trust-runtime-v0.md",
+        "sourcePath": "spec/nexus-trust-runtime-v0.md"
+      },
+      {
+        "label": "PROV-DM mapping",
+        "packagePath": "proof-package/specs/prov-dm-mapping.md",
+        "sourcePath": "spec/prov-dm-mapping.md"
+      },
+      {
+        "label": "SBOL 3 mapping",
+        "packagePath": "proof-package/specs/sbol-3-mapping.md",
+        "sourcePath": "spec/sbol-3-mapping.md"
+      },
+      {
+        "label": "ExperimentRecordV1 spec",
+        "packagePath": "proof-package/specs/experiment-record-v1.md",
+        "sourcePath": "spec/experiment-record-v1.md"
+      },
+      {
+        "label": "LearnedDeltaPackV1 spec",
+        "packagePath": "proof-package/specs/learned-delta-pack-v1.md",
+        "sourcePath": "spec/learned-delta-pack-v1.md"
+      },
+      {
+        "label": "Specs index",
+        "packagePath": "proof-package/specs/README.md"
+      }
+    ],
+    "benchmark": [
+      {
+        "label": "Trust benchmark schema",
+        "packagePath": "proof-package/benchmark/trust-runtime-schema.json",
+        "sourcePath": "benchmarks/trust-runtime-schema.json"
+      },
+      {
+        "label": "Expected labels",
+        "packagePath": "proof-package/benchmark/expected_labels.csv",
+        "sourcePath": "benchmarks/expected_labels.csv"
+      },
+      {
+        "label": "P0 Step 6 benchmark cases",
+        "packagePath": "proof-package/benchmark/trust-runtime-cases/p0-step-6-cases.json",
+        "sourcePath": "benchmarks/trust-runtime-cases/p0-step-6-cases.json"
+      },
+      {
+        "label": "Benchmark replay shell script",
+        "packagePath": "proof-package/benchmark/run.sh"
+      },
+      {
+        "label": "Benchmark replay Node script",
+        "packagePath": "proof-package/benchmark/replay.mjs"
+      },
+      {
+        "label": "Benchmark index",
+        "packagePath": "proof-package/benchmark/README.md"
+      }
+    ],
+    "reports": [
+      {
+        "label": "Step 15 trust metrics latest report",
+        "packagePath": "proof-package/reports/trust-metrics-latest.json",
+        "sourcePath": "reports/trust-metrics/latest.json"
+      },
+      {
+        "label": "Step 17 public benchmark report",
+        "packagePath": "proof-package/reports/public-benchmark-report.json",
+        "sourcePath": "reports/public-benchmark/report.json"
+      },
+      {
+        "label": "Step 17 public benchmark summary CSV",
+        "packagePath": "proof-package/reports/public-benchmark-summary.csv",
+        "sourcePath": "reports/public-benchmark/summary.csv"
+      },
+      {
+        "label": "Step 17 public benchmark summary JSON",
+        "packagePath": "proof-package/reports/public-benchmark-summary.json",
+        "sourcePath": "reports/public-benchmark/summary.json"
+      },
+      {
+        "label": "Step 17 public benchmark raw CSV",
+        "packagePath": "proof-package/reports/public-benchmark-raw-results.csv",
+        "sourcePath": "reports/public-benchmark/raw-results.csv"
+      },
+      {
+        "label": "Step 17 public benchmark raw JSON",
+        "packagePath": "proof-package/reports/public-benchmark-raw-results.json",
+        "sourcePath": "reports/public-benchmark/raw-results.json"
+      },
+      {
+        "label": "Reports index",
+        "packagePath": "proof-package/reports/README.md"
+      }
+    ],
+    "examples": [
+      {
+        "label": "Safe showcase trace",
+        "packagePath": "proof-package/examples/safe-pathway.json",
+        "sourcePath": "examples/showcase/safe-pathway.json"
+      },
+      {
+        "label": "Blocked showcase trace",
+        "packagePath": "proof-package/examples/blocked-cethx-claim.json",
+        "sourcePath": "examples/showcase/blocked-cethx-claim.json"
+      },
+      {
+        "label": "Showcase one-page note",
+        "packagePath": "proof-package/examples/showcase-one-page.md",
+        "sourcePath": "docs/showcase-one-page.md"
+      },
+      {
+        "label": "Showcase script",
+        "packagePath": "proof-package/examples/showcase-script.md",
+        "sourcePath": "docs/showcase-script.md"
+      },
+      {
+        "label": "Showcase selection note",
+        "packagePath": "proof-package/examples/showcase-selection.md",
+        "sourcePath": "docs/showcase-selection.md"
+      },
+      {
+        "label": "Examples index",
+        "packagePath": "proof-package/examples/README.md"
+      }
+    ],
+    "provenance": [
+      {
+        "label": "Example provenance bundle",
+        "packagePath": "proof-package/provenance/example-provenance-bundle.json",
+        "sourcePath": "examples/sbol-prov-linked/example-provenance-bundle.json"
+      },
+      {
+        "label": "Example SBOL-aligned artifact",
+        "packagePath": "proof-package/provenance/example-sbol-artifact.json",
+        "sourcePath": "examples/sbol-prov-linked/example-sbol-artifact.json"
+      },
+      {
+        "label": "SBOL/PROV linked example README",
+        "packagePath": "proof-package/provenance/sbol-prov-linked-README.md",
+        "sourcePath": "examples/sbol-prov-linked/README.md"
+      },
+      {
+        "label": "Provenance middleware note",
+        "packagePath": "proof-package/provenance/PROVENANCE_MIDDLEWARE.md",
+        "sourcePath": "docs/PROVENANCE_MIDDLEWARE.md"
+      },
+      {
+        "label": "Provenance index",
+        "packagePath": "proof-package/provenance/README.md"
+      }
+    ],
+    "limitations": [
+      {
+        "label": "Proof package README",
+        "packagePath": "proof-package/README.md"
+      },
+      {
+        "label": "Proof package manifest",
+        "packagePath": "proof-package/manifest.json"
+      },
+      {
+        "label": "Replication guide",
+        "packagePath": "proof-package/replication-guide.md"
+      },
+      {
+        "label": "Replay guide",
+        "packagePath": "proof-package/replay.md"
+      },
+      {
+        "label": "Limitations",
+        "packagePath": "proof-package/limitations.md"
+      },
+      {
+        "label": "Demo and partial status table",
+        "packagePath": "proof-package/demo-status-table.md"
+      }
+    ],
+    "checks": [
+      {
+        "label": "Check documentation",
+        "packagePath": "proof-package/checks/README.md"
+      },
+      {
+        "label": "Proof package check script",
+        "sourcePath": "scripts/checkProofPackage.mjs"
+      },
+      {
+        "label": "Proof package replay script",
+        "sourcePath": "scripts/replayProofPackage.mjs"
+      },
+      {
+        "label": "Proof package test",
+        "sourcePath": "__tests__/proofPackage.test.ts"
+      }
+    ]
+  },
+  "replayCommands": [
+    "npm run benchmark:trust:validate",
+    "npm run benchmark:trust:evaluate",
+    "npm run benchmark:trust:report",
+    "npm run benchmark:public",
+    "npm run proof:check"
+  ],
+  "missingOrDeferred": [],
+  "nonClaims": [
+    "No wet-lab validation is claimed.",
+    "No scientific model validation is claimed.",
+    "No external validation is claimed.",
+    "No full SBOL compliance is claimed unless validated separately.",
+    "No statistical significance is claimed.",
+    "No completed human reviewer study is claimed.",
+    "No regulatory approval is claimed.",
+    "No production-grade safety certification is claimed.",
+    "No user traction is claimed."
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "displayId": "pathway-artemisinin-demo",
+  "type": "pathway",
+  "name": "Artemisinin pathway context",
+  "description": "SBOL-aligned pathway artifact for trust-runtime demonstration, not an experimentally confirmed biological design.",
+  "components": [
+    {
+      "displayId": "amorpha-4-11-diene-synthase",
+      "type": "enzyme"
+    },
+    {
+      "displayId": "farnesyl-pyrophosphate",
+      "type": "metabolite"
+    }
+  ],
+  "interactions": [
+    {
+      "displayId": "fpp-to-amorphadiene",
+      "type": "conversion",
+      "participants": ["farnesyl-pyrophosphate", "amorpha-4-11-diene-synthase"]
+    }
+  ],
+  "linkedProvenanceId": "provenance:pathd-run:001"
+}

@@ -264,6 +264,7 @@ Key limitations:
 - LLM-assisted evidence and recommendations require human scientific validation.
 
 Phase 3 public proof package:
+- [Public Proof Package](proof-package/README.md)
 - [Phase 3 Decisions](docs/PHASE_3_DECISIONS.md)
 - [Artemisinin Trust-Gated Walkthrough](docs/ARTEMISININ_TRUST_GATED_WALKTHROUGH.md)
 - [Demo Video Script](docs/DEMO_VIDEO_SCRIPT.md)

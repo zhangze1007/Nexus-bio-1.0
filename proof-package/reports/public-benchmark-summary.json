@@ -1,0 +1,41 @@
+[
+  {
+    "mode": "no-gating",
+    "totalCases": 74,
+    "unsafePropagationRate": 1,
+    "falseTrustRate": 1,
+    "falseBlockRate": 0,
+    "demoLeakageRate": 1,
+    "missingProvenanceLeakageRate": 1,
+    "unsafeExportPreventionRate": 0,
+    "knownBadPreventionRate": 0,
+    "reviewerCalibrationScore": null,
+    "meanTimeToSafeDecisionMs": null
+  },
+  {
+    "mode": "badge-only",
+    "totalCases": 74,
+    "unsafePropagationRate": 1,
+    "falseTrustRate": 1,
+    "falseBlockRate": 0,
+    "demoLeakageRate": 1,
+    "missingProvenanceLeakageRate": 1,
+    "unsafeExportPreventionRate": 0,
+    "knownBadPreventionRate": 0,
+    "reviewerCalibrationScore": null,
+    "meanTimeToSafeDecisionMs": null
+  },
+  {
+    "mode": "runtime-gating",
+    "totalCases": 74,
+    "unsafePropagationRate": 0,
+    "falseTrustRate": 0,
+    "falseBlockRate": 0,
+    "demoLeakageRate": 0,
+    "missingProvenanceLeakageRate": 0,
+    "unsafeExportPreventionRate": 1,
+    "knownBadPreventionRate": 1,
+    "reviewerCalibrationScore": null,
+    "meanTimeToSafeDecisionMs": null
+  }
+]

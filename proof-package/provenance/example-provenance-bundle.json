@@ -1,0 +1,32 @@
+{
+  "bundleId": "bundle:artemisinin-demo:001",
+  "entities": [
+    {
+      "id": "evidence:literature:artemisinin-context",
+      "type": "literature",
+      "title": "Artemisinin pathway context"
+    },
+    {
+      "id": "artifact:pathd:pathway:001",
+      "type": "SBOL-aligned pathway artifact",
+      "linkedProvenanceId": "provenance:pathd-run:001"
+    }
+  ],
+  "activities": [
+    {
+      "id": "provenance:pathd-run:001",
+      "type": "tool-run",
+      "toolId": "pathd",
+      "startedAt": "2026-04-29T00:00:00.000Z",
+      "used": ["evidence:literature:artemisinin-context"],
+      "generated": ["artifact:pathd:pathway:001"]
+    }
+  ],
+  "relationships": [
+    {
+      "type": "prov:wasGeneratedBy",
+      "entity": "artifact:pathd:pathway:001",
+      "activity": "provenance:pathd-run:001"
+    }
+  ]
+}

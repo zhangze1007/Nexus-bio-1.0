@@ -1,0 +1,51 @@
+#!/usr/bin/env node
+import { spawnSync } from 'node:child_process';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const repoRoot = path.resolve(__dirname, '..');
+
+const commands = [
+  ['npm', ['run', 'benchmark:trust:validate']],
+  ['npm', ['run', 'benchmark:trust:evaluate']],
+  ['npm', ['run', 'benchmark:trust:report']],
+  ['npm', ['run', 'benchmark:public']],
+];
+
+const reportCopies = [
+  ['reports/trust-metrics/latest.json', 'proof-package/reports/trust-metrics-latest.json'],
+  ['reports/public-benchmark/report.json', 'proof-package/reports/public-benchmark-report.json'],
+  ['reports/public-benchmark/summary.csv', 'proof-package/reports/public-benchmark-summary.csv'],
+  ['reports/public-benchmark/summary.json', 'proof-package/reports/public-benchmark-summary.json'],
+  ['reports/public-benchmark/raw-results.csv', 'proof-package/reports/public-benchmark-raw-results.csv'],
+  ['reports/public-benchmark/raw-results.json', 'proof-package/reports/public-benchmark-raw-results.json'],
+];
+
+function run(command, args) {
+  const result = spawnSync(command, args, {
+    cwd: repoRoot,
+    stdio: 'inherit',
+    shell: process.platform === 'win32',
+  });
+  if (result.status !== 0) {
+    process.exit(result.status ?? 1);
+  }
+}
+
+for (const [command, args] of commands) run(command, args);
+
+for (const [source, destination] of reportCopies) {
+  const sourcePath = path.join(repoRoot, source);
+  const destinationPath = path.join(repoRoot, destination);
+  fs.mkdirSync(path.dirname(destinationPath), { recursive: true });
+  fs.copyFileSync(sourcePath, destinationPath);
+}
+
+run('npm', ['run', 'proof:check']);
+
+console.log('proof replay complete');
+console.log('Reports are available in proof-package/reports/.');
+console.log('Limitations are documented in proof-package/limitations.md.');
