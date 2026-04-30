@@ -1,0 +1,34 @@
+{
+  "schemaVersion": "nobel-path-results-template-v1",
+  "status": "not-yet-run",
+  "resultBoundary": {
+    "realScientificResult": false,
+    "wetLabValidationClaimed": false,
+    "scientificValidationClaimed": false,
+    "externalValidationClaimed": false,
+    "statisticalSignificanceClaimed": false,
+    "nobelLevelResultClaimed": false
+  },
+  "datasetId": null,
+  "runLabel": null,
+  "arms": [
+    "no-gating",
+    "badge-only",
+    "runtime-gating"
+  ],
+  "nDesignBranches": null,
+  "invalidBranchReduction": null,
+  "unsafeDirectionReduction": null,
+  "decisionReproducibility": null,
+  "wastedIterationReduction": null,
+  "falseBlockRate": null,
+  "timeToSafeDecision": null,
+  "confidenceIntervals": [],
+  "limitations": [
+    "not-yet-run",
+    "no real dataset selected",
+    "no real scientific result yet",
+    "no wet-lab validation claimed"
+  ],
+  "rawDataPath": null
+}
