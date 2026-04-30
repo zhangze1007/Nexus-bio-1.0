@@ -10,7 +10,7 @@ Use Node.js with the repository JavaScript dependencies installed:
 npm install
 ```
 
-No external network call is required for proof replay after dependencies are installed. The replay commands use local benchmark cases, expected labels, policy code, and generated report scripts.
+No external network call is required for proof replay after dependencies are installed. The replay commands use local benchmark cases, expected labels, policy code, the Python reference implementation, and generated report scripts.
 
 ## Replay
 
@@ -26,8 +26,9 @@ This runs:
 2. `npm run benchmark:trust:evaluate`
 3. `npm run benchmark:trust:report`
 4. `npm run benchmark:public`
-5. report refresh into `proof-package/reports/`
-6. `npm run proof:check`
+5. `npm run reference:py:compare`
+6. report refresh into `proof-package/reports/`
+7. `npm run proof:check`
 
 If any command fails, replay exits non-zero and leaves the command output visible.
 
@@ -38,6 +39,7 @@ Read:
 - `proof-package/reports/trust-metrics-latest.json`
 - `proof-package/reports/public-benchmark-report.json`
 - `proof-package/reports/public-benchmark-summary.csv`
+- `proof-package/reports/second-implementation-consistency.json`
 - `proof-package/limitations.md`
 - `proof-package/demo-status-table.md`
 

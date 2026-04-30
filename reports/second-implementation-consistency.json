@@ -1,0 +1,34 @@
+{
+  "schemaVersion": "second-implementation-consistency-v1",
+  "generatedAt": "2026-04-30T09:12:48Z",
+  "runLabel": "local-dev",
+  "referenceImplementation": "python-stdlib",
+  "policySnapshot": "reference_impl_py/policies/claim_surface_policies.json",
+  "benchmarkCorpus": [
+    "benchmarks/trust-runtime-cases/p0-step-6-cases.json"
+  ],
+  "expectedLabelsPath": "benchmarks/expected_labels.csv",
+  "typescriptRuntimeResultsPath": "reports/public-benchmark/raw-results.json",
+  "totalCases": 74,
+  "typescriptRuntimeRowsFound": 74,
+  "pythonVsExpectedMatchingCases": 74,
+  "pythonVsExpectedAgreementRate": 1.0,
+  "pythonVsTypescriptComparedCases": 74,
+  "pythonVsTypescriptMatchingCases": 74,
+  "pythonVsTypescriptAgreementRate": 1.0,
+  "mismatchCount": 0,
+  "mismatches": [],
+  "limitations": [
+    "This is a local second implementation, not independent third-party validation.",
+    "The Python policy table is a copied local snapshot and is not automatically synced from TypeScript.",
+    "The report checks trust-runtime protocol decisions, not scientific model correctness.",
+    "No wet-lab validation, external validation, regulatory approval, or safety certification is claimed."
+  ],
+  "nonClaims": [
+    "No independent third-party validation is claimed.",
+    "No external validation is claimed.",
+    "No scientific validation is claimed.",
+    "No wet-lab validation is claimed.",
+    "No external adoption is claimed."
+  ]
+}

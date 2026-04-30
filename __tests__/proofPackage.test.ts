@@ -19,6 +19,8 @@ const requiredProofFiles = [
   'checks/README.md',
   'reports/trust-metrics-latest.json',
   'reports/public-benchmark-report.json',
+  'reports/second-implementation-consistency.json',
+  'reports/second-implementation-consistency.md',
   'examples/safe-pathway.json',
   'examples/blocked-cethx-claim.json',
   'provenance/example-provenance-bundle.json',
@@ -29,6 +31,7 @@ const requiredNonClaims = [
   'No wet-lab validation is claimed.',
   'No scientific model validation is claimed.',
   'No external validation is claimed.',
+  'No independent third-party validation is claimed.',
   'No full SBOL compliance is claimed unless validated separately.',
   'No statistical significance is claimed.',
   'No completed human reviewer study is claimed.',
@@ -107,10 +110,13 @@ describe('proof package', () => {
     const publicReport = readJson('reports/public-benchmark-report.json');
     const publicSummary = readJson('reports/public-benchmark-summary.json');
     const rawResults = readJson('reports/public-benchmark-raw-results.json');
+    const secondImplementation = readJson('reports/second-implementation-consistency.json');
     const benchmarkCases = readJson('benchmark/trust-runtime-cases/p0-step-6-cases.json');
 
     expect(isRecord(trustReport) && trustReport.schemaVersion).toBe('trust-metrics-v1');
     expect(isRecord(publicReport) && publicReport.schemaVersion).toBe('public-benchmark-v1');
+    expect(isRecord(secondImplementation) && secondImplementation.schemaVersion)
+      .toBe('second-implementation-consistency-v1');
     expect(Array.isArray(publicSummary)).toBe(true);
     expect(Array.isArray(rawResults)).toBe(true);
     expect(isRecord(benchmarkCases) && Array.isArray(benchmarkCases.cases)).toBe(true);

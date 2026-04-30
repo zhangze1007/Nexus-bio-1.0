@@ -6,6 +6,7 @@ This directory contains copied local-dev reports:
 - `public-benchmark-report.json`: Step 17 public baseline comparison metadata.
 - `public-benchmark-summary.csv` and `.json`: Step 17 per-mode summary.
 - `public-benchmark-raw-results.csv` and `.json`: Step 17 per-case, per-mode rows.
+- `second-implementation-consistency.json` and `.md`: Step 19 Python reference implementation consistency report.
 
 Refresh these files from repo-root generated reports with:
 

@@ -2,7 +2,7 @@
   "schemaVersion": "proof-package-v1",
   "packageName": "nexus-bio-trust-runtime-proof-package",
   "runLabel": "local-dev",
-  "generatedAt": "2026-04-30T08:38:51.000Z",
+  "generatedAt": "2026-04-30T09:07:56.000Z",
   "thesis": "Nexus-Bio is an assumption-gated scientific inference runtime for synthetic biology workflows.",
   "contents": {
     "specs": [
@@ -95,6 +95,16 @@
         "label": "Step 17 public benchmark raw JSON",
         "packagePath": "proof-package/reports/public-benchmark-raw-results.json",
         "sourcePath": "reports/public-benchmark/raw-results.json"
+      },
+      {
+        "label": "Step 19 Python reference implementation consistency JSON",
+        "packagePath": "proof-package/reports/second-implementation-consistency.json",
+        "sourcePath": "reports/second-implementation-consistency.json"
+      },
+      {
+        "label": "Step 19 Python reference implementation consistency Markdown",
+        "packagePath": "proof-package/reports/second-implementation-consistency.md",
+        "sourcePath": "reports/second-implementation-consistency.md"
       },
       {
         "label": "Reports index",
@@ -208,6 +218,7 @@
     "npm run benchmark:trust:evaluate",
     "npm run benchmark:trust:report",
     "npm run benchmark:public",
+    "npm run reference:py:compare",
     "npm run proof:check"
   ],
   "missingOrDeferred": [],
@@ -215,6 +226,7 @@
     "No wet-lab validation is claimed.",
     "No scientific model validation is claimed.",
     "No external validation is claimed.",
+    "No independent third-party validation is claimed.",
     "No full SBOL compliance is claimed unless validated separately.",
     "No statistical significance is claimed.",
     "No completed human reviewer study is claimed.",

@@ -14,6 +14,7 @@ This proof package is a local trust-runtime artifact. It shows that benchmark ca
 
 - The benchmark labels are curated local trust-runtime labels.
 - The reports are local benchmark outputs, not independent third-party reproduction.
+- The Python second implementation is a local reference implementation with a copied policy snapshot. It is not independent third-party validation.
 - No wet-lab validation is included.
 - No scientific model validation is included.
 - No external validation, regulatory approval, or production-grade safety certification is included.
@@ -22,13 +23,13 @@ This proof package is a local trust-runtime artifact. It shows that benchmark ca
 ## Proof Package Limitations
 
 - Replay assumes repo-root dependencies have been installed with `npm install`.
-- Replay runs local scripts and does not package an independent second implementation.
+- Replay runs local scripts and includes a local Python second implementation for protocol comparison, not a second scientific runtime.
 - The copied reports can be refreshed by `npm run proof:replay`; numbers must come from scripts, not manual edits.
 - The SBOL/PROV examples are alignment examples, not full validator-backed SBOL or PROV-DM compliance fixtures.
 
 ## Future Steps
 
-- Step 19 can add a second implementation for independent replay.
+- Step 19 adds a local Python second implementation for protocol replay; automatic policy snapshot generation remains future work.
 - Step 20 can support an external reviewer or pilot if real reviewers are involved.
 - Step 21 can define a policy DSL if the runtime rules need portable representation.
 - Step 22 can draft an open standard around the trust-runtime protocol.

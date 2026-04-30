@@ -6,7 +6,7 @@ This package lets reviewers verify Nexus-Bio trust-runtime behavior without rely
 
 - Trust-runtime protocol specs in `specs/`
 - Benchmark cases, expected labels, and schema in `benchmark/`
-- Step 15 trust metrics and Step 17 public baseline comparison reports in `reports/`
+- Step 15 trust metrics, Step 17 public baseline comparison, and Step 19 second-implementation consistency reports in `reports/`
 - Step 16 showcase examples in `examples/`
 - SBOL/PROV-linked provenance examples in `provenance/`
 - Limitations and tool status documentation in `limitations.md` and `demo-status-table.md`
@@ -18,6 +18,7 @@ This package lets reviewers verify Nexus-Bio trust-runtime behavior without rely
 - The benchmark corpus and expected labels are present and inspectable.
 - Runtime trust decisions can be replayed locally from repo-root commands.
 - Unsafe propagation cases can be inspected through raw and summary reports.
+- The Python reference implementation can compare its trust-runtime decisions with expected labels and TypeScript runtime-gating rows.
 - Tool validity tiers and limitations are visible in the same folder as the evidence.
 - Provenance and showcase examples can be inspected alongside the benchmark reports.
 
@@ -26,6 +27,7 @@ This package lets reviewers verify Nexus-Bio trust-runtime behavior without rely
 - No wet-lab validation is claimed.
 - No scientific model validation is claimed.
 - No external validation is claimed.
+- No independent third-party validation is claimed.
 - No regulatory approval or production-grade safety certification is claimed.
 - No full SBOL compliance is claimed unless validated separately.
 - No statistical significance or completed human reviewer study is claimed.
@@ -47,6 +49,7 @@ Inspect:
 - `proof-package/reports/trust-metrics-latest.json`
 - `proof-package/reports/public-benchmark-report.json`
 - `proof-package/reports/public-benchmark-summary.csv`
+- `proof-package/reports/second-implementation-consistency.json`
 - `proof-package/limitations.md`
 - `proof-package/demo-status-table.md`
 

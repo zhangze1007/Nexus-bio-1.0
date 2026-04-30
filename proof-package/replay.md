@@ -1,6 +1,6 @@
 # Replay
 
-The proof package replays from repository-root scripts. It does not contain a second trust-runtime implementation.
+The proof package replays from repository-root scripts. It includes a local Python second implementation for trust-runtime protocol comparison, but it is not a third-party implementation and does not reimplement scientific tools.
 
 Run:
 
@@ -8,7 +8,13 @@ Run:
 npm run proof:replay
 ```
 
-This command runs trust benchmark validation, policy benchmark evaluation, Step 15 trust metrics generation, Step 17 public benchmark generation, refreshes copied report artifacts in this folder, and then runs the proof package integrity check.
+This command runs trust benchmark validation, policy benchmark evaluation, Step 15 trust metrics generation, Step 17 public benchmark generation, Step 19 Python reference consistency comparison, refreshes copied report artifacts in this folder, and then runs the proof package integrity check.
+
+To run only the Python second implementation comparison:
+
+```bash
+npm run reference:py:compare
+```
 
 For the shorter integrity-only check:
 

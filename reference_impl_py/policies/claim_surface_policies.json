@@ -1,0 +1,68 @@
+{
+  "policySnapshotVersion": "step-19-local-snapshot-v1",
+  "copiedFrom": [
+    "src/domain/claimSurfacePolicies.ts",
+    "src/domain/claimSurfacePolicy.ts",
+    "src/services/trustPolicyEngine.ts"
+  ],
+  "generatedBy": "manual Step 19 copied snapshot",
+  "syncStatus": "not automatically synced; run the consistency report to detect drift",
+  "toolIds": [
+    "pathd",
+    "metabolic-eng",
+    "fbasim",
+    "cethx",
+    "catdes",
+    "proevol",
+    "dyncon",
+    "gecair",
+    "genmim",
+    "cellfree",
+    "dbtlflow",
+    "multio",
+    "scspatial",
+    "nexai"
+  ],
+  "surfacePolicies": {
+    "payload": {
+      "allowedTiers": ["real", "partial", "demo"],
+      "requiresProvenance": false,
+      "requiresHumanGate": false,
+      "denyIfDraft": false,
+      "blockCode": "TIER_NOT_ALLOWED_FOR_SURFACE",
+      "rationale": "Workbench payloads may remain visible for exploration, including demo-tier outputs, as long as formal claim surfaces stay gated separately."
+    },
+    "export": {
+      "allowedTiers": ["real", "partial"],
+      "requiresProvenance": true,
+      "requiresHumanGate": false,
+      "denyIfDraft": true,
+      "blockCode": "DRAFT_OUTPUT_NOT_EXPORTABLE",
+      "rationale": "Exports leave the immediate tool view and should carry at least partial validity, provenance, and a finalized output state."
+    },
+    "recommendation": {
+      "allowedTiers": ["real", "partial"],
+      "requiresProvenance": true,
+      "requiresHumanGate": false,
+      "denyIfDraft": false,
+      "blockCode": "TIER_NOT_ALLOWED_FOR_SURFACE",
+      "rationale": "Recommendations influence future work and should be backed by at least partial validity plus traceable provenance."
+    },
+    "protocol": {
+      "allowedTiers": ["real", "partial"],
+      "requiresProvenance": true,
+      "requiresHumanGate": true,
+      "denyIfDraft": true,
+      "blockCode": "DEMO_OUTPUT_PROTOCOL_BLOCKED",
+      "rationale": "Protocol-like artifacts can imply operational lab action, so demo-tier outputs are excluded and human review is declared for future enforcement."
+    },
+    "external-handoff": {
+      "allowedTiers": ["real", "partial"],
+      "requiresProvenance": true,
+      "requiresHumanGate": true,
+      "denyIfDraft": false,
+      "blockCode": "EXTERNAL_HANDOFF_BLOCKED",
+      "rationale": "External handoffs move claims outside Nexus-Bio and therefore require at least partial validity, provenance, and declared human review."
+    }
+  }
+}
