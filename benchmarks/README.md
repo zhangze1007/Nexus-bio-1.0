@@ -86,6 +86,19 @@ npm run benchmark:trust:validate
 
 The validator checks corpus integrity, required field presence, enum values, one-to-one CSV coverage, category coverage, surface coverage, status coverage, total case count, and required known-bad risk tags.
 
+## Falsification Metrics Report
+
+Step 15 derives a local trust-runtime report from this corpus and the policy evaluator:
+
+```bash
+npm run benchmark:trust:evaluate
+npm run benchmark:trust:report
+```
+
+The report is written to `reports/trust-metrics/latest.json`. It includes block rate, false block rate, missing provenance rate, unsafe export prevention rate, demo leakage rate, known-bad coverage rate, and evaluator mismatches if any appear.
+
+The report is a local development benchmark artifact. It is not wet-lab evidence, a scientific correctness guarantee, a third-party benchmark claim, or a safety certification.
+
 ## Current Limitation
 
-This is only a corpus and integrity validator. It does not call a runtime evaluator, enforce UI behavior, block exports, block protocols, or generate provenance middleware. No wet-lab validation is claimed.
+The corpus itself is static. The evaluator and report scripts exercise claim-surface policy behavior over those static cases, but they do not enforce UI behavior, block live exports, block live protocols, or generate provenance middleware. No wet-lab validation is claimed.

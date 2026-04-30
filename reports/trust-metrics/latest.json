@@ -1,0 +1,161 @@
+{
+  "schemaVersion": "trust-metrics-v1",
+  "generatedAt": "2026-04-30T03:33:36.200Z",
+  "runLabel": "local-dev",
+  "reportScope": "local-trust-runtime-benchmark",
+  "corpusVersion": "sha256:5425125fbab741e9",
+  "totalCases": 74,
+  "statusCounts": {
+    "totalCases": 74,
+    "ok": 10,
+    "blocked": 39,
+    "gated": 21,
+    "demoOnly": 4
+  },
+  "blockRate": 0.527,
+  "gateRate": 0.2838,
+  "demoOnlyRate": 0.0541,
+  "missingProvenanceRate": 0.1622,
+  "unsafeExportPreventionRate": 1,
+  "demoLeakageRate": 0,
+  "falseBlockRate": 0,
+  "knownBadCoverageRate": 1,
+  "mismatches": [],
+  "categoryBreakdown": {
+    "truthful-partial": {
+      "totalCases": 11,
+      "ok": 10,
+      "blocked": 0,
+      "gated": 0,
+      "demoOnly": 1
+    },
+    "unsafe-demo": {
+      "totalCases": 9,
+      "ok": 0,
+      "blocked": 6,
+      "gated": 0,
+      "demoOnly": 3
+    },
+    "missing-evidence": {
+      "totalCases": 16,
+      "ok": 0,
+      "blocked": 16,
+      "gated": 0,
+      "demoOnly": 0
+    },
+    "uncertainty-unresolved": {
+      "totalCases": 9,
+      "ok": 0,
+      "blocked": 1,
+      "gated": 8,
+      "demoOnly": 0
+    },
+    "human-gate-required": {
+      "totalCases": 12,
+      "ok": 0,
+      "blocked": 1,
+      "gated": 11,
+      "demoOnly": 0
+    },
+    "known-bad-case": {
+      "totalCases": 9,
+      "ok": 0,
+      "blocked": 7,
+      "gated": 2,
+      "demoOnly": 0
+    },
+    "draft-output": {
+      "totalCases": 8,
+      "ok": 0,
+      "blocked": 8,
+      "gated": 0,
+      "demoOnly": 0
+    }
+  },
+  "surfaceBreakdown": {
+    "payload": {
+      "totalCases": 6,
+      "ok": 2,
+      "blocked": 0,
+      "gated": 0,
+      "demoOnly": 4
+    },
+    "export": {
+      "totalCases": 18,
+      "ok": 2,
+      "blocked": 14,
+      "gated": 2,
+      "demoOnly": 0
+    },
+    "recommendation": {
+      "totalCases": 25,
+      "ok": 4,
+      "blocked": 13,
+      "gated": 8,
+      "demoOnly": 0
+    },
+    "protocol": {
+      "totalCases": 11,
+      "ok": 1,
+      "blocked": 7,
+      "gated": 3,
+      "demoOnly": 0
+    },
+    "external-handoff": {
+      "totalCases": 14,
+      "ok": 1,
+      "blocked": 5,
+      "gated": 8,
+      "demoOnly": 0
+    }
+  },
+  "knownBadSummary": {
+    "totalKnownBadCases": 9,
+    "preventedKnownBadCases": 9,
+    "leakedKnownBadCases": 0
+  },
+  "knownBadCoverage": {
+    "requiredTags": [
+      "community-fba-fake-exchange",
+      "cethx-fake-dg-real-feasibility",
+      "stringly-dbtl-loopback",
+      "draft-dbtl-protocol-export",
+      "demo-multio-external-handoff",
+      "missing-provenance-export",
+      "demo-cellfree-protocol-artifact",
+      "nexai-missing-evidence-recommendation"
+    ],
+    "representedTags": [
+      "community-fba-fake-exchange",
+      "cethx-fake-dg-real-feasibility",
+      "stringly-dbtl-loopback",
+      "draft-dbtl-protocol-export",
+      "demo-multio-external-handoff",
+      "missing-provenance-export",
+      "demo-cellfree-protocol-artifact",
+      "nexai-missing-evidence-recommendation"
+    ],
+    "missingTags": []
+  },
+  "progressionSummary": {
+    "expectedOkCases": 10,
+    "successfulProgressions": 10,
+    "falseBlockedCases": 0
+  },
+  "preventionSummary": {
+    "unsafeFormalSurfaceCases": 60,
+    "preventedUnsafeFormalSurfaceCases": 60,
+    "leakedUnsafeFormalSurfaceCases": 0
+  },
+  "missingProvenanceSummary": {
+    "detectedCases": 12,
+    "provenanceRequiredBlocks": 12
+  },
+  "limitations": [
+    "Local trust-runtime benchmark output only.",
+    "Does not validate wet-lab outcomes.",
+    "Does not guarantee scientific model correctness.",
+    "No third-party benchmark claim is made.",
+    "Does not certify regulatory or safety readiness."
+  ]
+}

@@ -1,0 +1,14 @@
+[
+  {
+    "generatedAt": "2026-04-30T03:33:36.200Z",
+    "runLabel": "local-dev",
+    "corpusVersion": "sha256:5425125fbab741e9",
+    "totalCases": 74,
+    "blockRate": 0.527,
+    "falseBlockRate": 0,
+    "unsafeExportPreventionRate": 1,
+    "demoLeakageRate": 0,
+    "missingProvenanceRate": 0.1622,
+    "mismatchCount": 0
+  }
+]
