@@ -2,136 +2,177 @@
 
 **Assumption-Gated Scientific Inference Runtime**
 
-Nexus-Bio is an assumption-gated scientific inference runtime for synthetic biology workflows. It organizes 13 specialized tool surfaces around explicit validity tiers, assumptions, provenance, and downstream trust gates so users can see which outputs are evidence-backed, heuristic, or demo-only.
+Nexus-Bio is an assumption-gated scientific inference runtime for synthetic biology workflows.
 
-The core workflow extracts metabolic pathways from scientific literature and renders them as interactive 3D visualizations, integrating AI analysis, molecular structures, protein data, kinetic simulation, flux analysis, and multi-omics in one workbench while keeping method limits visible.
+It wraps AI and computational-biology tool outputs with validity tiers, assumptions, evidence, provenance, claim-surface policy, and gate decisions. The goal is to make weak, demo, missing-evidence, or missing-provenance outputs visibly constrained before they become stronger downstream scientific claims.
 
-> Built by a gap-year student in Malaysia, on a tablet, in under 48 hours.
+The project is currently strongest as a trust-runtime, verification, and workflow-governance layer. The scientific tools are adapters and testbeds inside that runtime, not claims that every model is production-ready biology.
 
----
-
-## Live Demo
-
-**[nexus-bio-1-0.vercel.app](https://nexus-bio-1-0.vercel.app)**
-
-Showcase pathway: Artemisinin biosynthesis in engineered *S. cerevisiae* — Ro et al., *Nature* 2006
+Live demo: [nexus-bio-1-0.vercel.app](https://nexus-bio-1-0.vercel.app)
 
 ---
 
-## What It Does
+## What Nexus-Bio Is
 
-Nexus-Bio implements a 4-stage synthetic biology workbench for moving from target molecule context to assumption-tracked design, simulation, and DBTL-style handoff. NEXAI (AI research assistant) is available across every stage, but LLM-assisted outputs remain subject to provenance and human review.
+- A trust runtime for scientific AI workflows, centered on assumptions, evidence, provenance, claim surfaces, and gate decisions.
+- A synthetic biology workbench with scientific adapters for pathway analysis, FBA, thermodynamics, TX-TL, DBTL feedback, omics, and related workflows.
+- A proof and replay oriented repository with benchmark cases, expected labels, public baseline comparison, proof package checks, and a Python reference implementation.
+- An assumption-aware and provenance-aware environment for reviewing when outputs are `real`, `partial`, or `demo`, and what downstream surfaces remain allowed.
 
-**Core Research Workflow**
+## What Nexus-Bio Is Not
 
-```
-INPUT: Target Molecular Product
-         │
-         ▼
-┌─────────────────────────────────────────────────────┐
-│  STAGE 1: DESIGN & DISCOVERY                        │
-│                                                     │
-│  LAB (basic research) ◄──────────────────────────┐  │
-│       │  path blueprint data                     │  │
-│       ▼                                          │  │
-│  PATHD: Pathway & Enzyme Design Navigator        │  │
-│       │  thermodynamic parameters ───────────────┘  │
-└───────┼─────────────────────────────────────────────┘
-        │
-        ▼
-┌─────────────────────────────────────────────────────┐
-│  STAGE 2: SIMULATION & COMPONENT OPTIMIZATION       │
-│                                                     │
-│  FBAsim (flux balance) ─┐                           │
-│  CETHX (thermodynamics) ─┴─► identify bottlenecks   │
-│                                    │                │
-│                                    ▼                │
-│                          PROEVOL (protein evolution) │
-│                                    │                │
-│                                    ▼                │
-│                          CATDES (enzyme design)      │
-│                                    │ optimized seq  │
-└────────────────────────────────────┼────────────────┘
-                                     │
-                                     ▼
-┌─────────────────────────────────────────────────────┐
-│  STAGE 3: CHASSIS ENGINEERING & CONTROL             │
-│                                                     │
-│  GENMIM (genome minimization) ──► provide chassis   │
-│                                        │            │
-│                                        ▼            │
-│                              GECAIR (gene circuits)  │
-│                                        │            │
-│                                        ▼            │
-│                              DYNCON (dynamic control)│
-│                                        │ build instr│
-└────────────────────────────────────────┼────────────┘
-                                         │
-                                         ▼
-┌─────────────────────────────────────────────────────┐
-│  STAGE 4: TEST, ANALYZE & ITERATE                   │
-│                                                     │
-│  DBTLflow → CFS (cell-free screening)               │
-│           → DBTL (cell construction & testing)      │
-│           → MULTIO (multi-omics analysis)           │
-│           → SCSPATIAL (single-cell spatial omics)   │
-│           → DBTLflow (iteration tracking)           │
-└──────────────────────┬──────────────────────────────┘
-                       │ feedback: interpreted results
-                       └──────────────────────────────► INPUT
+- Not a wet-lab validated biofoundry.
+- Not an autonomous lab.
+- Not a production-grade scientific platform.
+- Not a replacement for domain expert review, biosafety review, regulatory review, or experimental validation.
+- Not claiming true community FBA unless a joint community LP exists.
+- Not claiming real thermodynamics unless a condition-aware backend with uncertainty, mapping, and provenance exists.
+- Not claiming Bayesian, GP, MOFA, VAE, or posterior-uncertainty MultiO behavior unless a corresponding backend exists.
+- Not claiming fully sourced or calibrated CellFree behavior unless parameter evidence, calibration, and uncertainty evidence exist.
+- Not claiming full SBOL compliance unless validated separately by appropriate SBOL tooling.
 
-         ╔══════════════════════════════╗
-         ║  NEXAI: AI Research Assistant║  ← connects to all stages
-         ╚══════════════════════════════╝
+## Why This Matters
+
+Scientific AI can sound confident even when assumptions, evidence, or provenance are weak. In biology, that can push users toward bad downstream decisions: exporting demo outputs, treating heuristic values as recommendations, or turning draft workflow context into protocol-like handoffs.
+
+Nexus-Bio treats trust metadata as runtime data. A payload can remain visible for exploration while a recommendation, export, protocol, or external handoff is blocked, gated, or marked demo-only.
+
+## Core Runtime Concepts
+
+| Concept | Meaning |
+| --- | --- |
+| `ValidityTier` | `real`, `partial`, or `demo` support for a tool output or assumption. |
+| `ClaimSurface` | Where an output is used: `payload`, `export`, `recommendation`, `protocol`, or `external-handoff`. |
+| `GateDecision` | Runtime decision: `ok`, `blocked`, `gated`, or `demoOnly`. |
+| `ToolAssumption` | A declared condition, limitation, or dependency introduced by a tool. |
+| `Evidence` | Source, dataset, simulation, user input, or review context supporting a value or decision. |
+| `ProvenanceEntry` | Trace of tool runs, imports, exports, human gates, or reviews and their upstream dependencies. |
+| `WorkflowContract` | Rule for what one tool or surface may receive from another. |
+| `ExperimentRecordV1` | Structured record for experimental or simulated assay context. |
+| `LearnedDeltaPack` | Reviewed DBTL feedback package used before applying learned changes. |
+| Policy DSL | Reviewable JSON policy for claim-surface gate decisions. |
+
+Protocol references:
+
+- [Nexus Trust Runtime Protocol v0](spec/nexus-trust-runtime-v0.md)
+- [Trust Runtime Thesis](docs/TRUST_RUNTIME_THESIS.md)
+- [Policy DSL v1](spec/policy-dsl-v1.md)
+- [Scientific Inference Trust Runtime Draft v1](spec/SITR-draft-v1.md)
+
+## Verification And Replay
+
+The commands below exist in `package.json`:
+
+```bash
+npm run benchmark:trust:validate
+npm run benchmark:trust:evaluate
+npm run benchmark:trust:report
+npm run benchmark:public
+npm run proof:check
+npm run proof:replay
+npm run reference:py:compare
+npm run policy:dsl:validate
+npm run lint
 ```
 
-**Pathway Visualization Core (Stage 1 Entry Point)**
+These commands verify local trust-runtime artifacts. They do not validate biological truth, wet-lab outcomes, or external adoption.
 
-| Module | Description |
-|--------|-------------|
-| Paper Analyzer | AI (Axon) extracts metabolic nodes, edges, bottleneck enzymes, and evidence from research papers |
-| 3D Pathway Viewer | Interactive 3D pathway with GLSL shaders, pastel palette, pLDDT confidence coloring |
-| Database Research | Parallel search across 6 academic databases (PubMed, Semantic Scholar, OpenAlex, Europe PMC, bioRxiv, CORE) |
-| Node Panel | 3-tab scientific workbench: Overview · Structure · Analysis |
-| Protein Structure | AlphaFold pLDDT coloring + RCSB PDB structures via 3Dmol.js |
-| Molecular Structure | Real 3D conformers from PubChem (CID lookup + name search) |
-| Cell Imagery | Microscopy reference images from Wikipedia, Cell Image Library, EMBL-EBI IDR |
-| Kinetic Simulation | Michaelis-Menten kinetics + RK4 ODE solver for enzyme nodes |
-| Thermodynamics | Demo Gibbs free energy (ΔG°) reference bookkeeping for metabolite nodes; not condition-aware backend output |
+## Proof Package
 
----
+The proof package is local-dev replayable evidence of trust-runtime behavior, not scientific validation.
 
-## 13 Specialized Tools
+- [Proof package README](proof-package/README.md)
+- [Proof package manifest](proof-package/manifest.json)
+- [Proof package limitations](proof-package/limitations.md)
+- [Demo and partial status table](proof-package/demo-status-table.md)
+- [Replication guide](proof-package/replication-guide.md)
+- [Replay instructions](proof-package/replay.md)
 
-| Tool | Route | Description |
-|------|-------|-------------|
-| **Pathway Designer** | `/tools/pathd` | Main 3D metabolic pathway lab — paper-to-3D workflow with DBTL cycle integration, XState FSM, 60 Hz FBA worker |
-| **Metabolic Engineering Lab** | `/tools/metabolic-eng` | Full metabolic lab with 3D FluidSim canvas, NodePanel, ThreeScene; entry point for full Axon analysis |
-| **Catalyst Designer** | `/tools/catdes` | Enzyme design: binding affinity radar, sequence design, flux cost analysis, Pareto front, mutagenesis targeting |
-| **Cell-Free Simulation** | `/tools/cellfree` | Cell-free TX-TL simulation: gene construct design, parameter defaults, resource depletion, and heuristic expression estimates |
-| **Cell Thermodynamics** | `/tools/cethx` | Demo thermodynamics explainer: reference ΔG waterfall, ATP accounting, and explicit feasibility-claim boundary |
-| **DBTL Flow** | `/tools/dbtlflow` | Design-Build-Test-Learn cycle tracker: iteration waterfall, protocol generation, SBOL serialization |
-| **Dynamic Control** | `/tools/dyncon` | Bioreactor simulation: Hill function feedback loops, RK4 ODE integration, setpoint convergence analysis |
-| **FBA Simulator** | `/tools/fbasim` | Flux Balance Analysis: single-species simplex LP plus illustrative two-species demo mode, knockout/overexpression strategies, shadow prices, carbon efficiency |
-| **Gene Circuit Reasoner** | `/tools/gecair` | Gene circuit design: logic gate modeling, Hill curve analysis, circuit dynamics, gate efficiency scoring |
-| **Gene Minimization** | `/tools/genmim` | Genome minimization: CRISPRi knockdown scheduling, chromosome map, efficiency heatmap, greedy optimization |
-| **Multi-Omics** | `/tools/multio` | Demo multi-omics integration: deterministic projections, volcano plots, factor decomposition, and sensitivity sketches |
-| **NEX-AI Research Agent** | `/tools/nexai` | AI-powered literature agent: citation network graph (year×relevance scatter), Socratic questioning, literature support map |
-| **Protein Evolution** | `/tools/proevol` | Directed evolution campaign workbench: variant libraries, survivor selection, lineage tracking, diversity/convergence analysis, next-round strategy |
-| **Single-Cell Spatial** | `/tools/scspatial` | Spatial transcriptomics: normalized artifact ingest, spatial/3D visualization, PAGA trajectory, hotspot and gene expression analysis |
+The package collects specs, benchmark assets, copied reports, examples, provenance notes, limitations, and replay checks in one reviewable place.
 
----
+## Benchmarks And Reports
 
-## Tech Stack
+These reports are local trust-runtime benchmark and consistency artifacts:
 
+- [Trust benchmark corpus](benchmarks/)
+- [Trust metrics report](reports/trust-metrics/latest.json)
+- [Falsification metrics note](docs/falsification-metrics.md)
+- [Public benchmark methods](docs/public-benchmark-methods.md)
+- [Public benchmark report](reports/public-benchmark/report.json)
+- [Second implementation consistency report](reports/second-implementation-consistency.json)
+- [Second implementation notes](docs/second-implementation.md)
+- [Python reference implementation](reference_impl_py/)
+
+The public baseline comparison evaluates `no-gating`, `badge-only`, and `runtime-gating` modes over the local trust-runtime corpus. It measures claim-surface governance behavior, not biological accuracy.
+
+## Policy DSL And SITR Draft
+
+- [Policy fixture](policy/trust-policy-v1.json)
+- [Policy DSL v1 specification](spec/policy-dsl-v1.md)
+- [SITR Draft v1](spec/SITR-draft-v1.md)
+- [SITR conformance levels](docs/sitr-conformance-levels.md)
+- [SITR conformance checklist](docs/sitr-conformance-checklist.md)
+- [External review protocol](docs/external-review-protocol.md)
+- [Reviewer pack](docs/reviewer-pack.md)
+- [External review templates](reports/external-review/)
+- [Turing path whitepaper](docs/turing-path-whitepaper.md)
+- [Adoption roadmap](docs/adoption-roadmap.md)
+- [Versioning policy](docs/versioning-policy.md)
+
+SITR is a draft proposal for a portable Scientific Inference Trust Runtime. It is not an official standard, not externally ratified, and not a safety certification.
+
+## Scientific Adapter Boundaries
+
+| Area | Current boundary |
+| --- | --- |
+| Community FBA | Demo or illustrative unless a joint community LP exists. See [proof-package/limitations.md](proof-package/limitations.md). |
+| CETHX | Demo or heuristic unless a condition-aware thermodynamics backend exists. See [proof-package/demo-status-table.md](proof-package/demo-status-table.md). |
+| MultiO | Deterministic demo integration unless a reference model and uncertainty backend exist. |
+| CellFree | Model structure and parameter sourcing are separated; calibration and uncertainty remain incomplete. |
+| DBTL loop-back | Typed deltas require review before application through ExperimentRecordV1 and LearnedDeltaPack boundaries. |
+
+## Workbench And Scientific Adapters
+
+The tools below are adapters and testbeds inside the trust runtime. Their validity tiers and allowed claim surfaces vary by tool and surface.
+
+| Adapter | Route | Boundary |
+| --- | --- | --- |
+| PATHD | `/tools/pathd` | Pathway and enzyme design navigator with trust-gated pathway context. |
+| Metabolic Engineering Lab | `/tools/metabolic-eng` | Backward-compatible PATHD-style lab route; not an independent stronger claim. |
+| FBASim | `/tools/fbasim` | Partial single-species simplex LP; community mode remains demo-only. |
+| CETHX | `/tools/cethx` | Demo thermodynamics explainer with explicit feasibility boundary. |
+| CellFree | `/tools/cellfree` | TX-TL structure with partial or heuristic parameter evidence. |
+| DBTLflow | `/tools/dbtlflow` | DBTL iteration ledger and typed feedback boundary. |
+| MultiO | `/tools/multio` | Demo multi-omics integration unless a reference model backend is added. |
+| SCSPATIAL | `/tools/scspatial` | Partial `.h5ad` sidecar-backed spatial workflow when required fields are present. |
+| CATDES | `/tools/catdes` | Catalyst design workbench with partial scoring boundaries. |
+| PROEVOL | `/tools/proevol` | Directed evolution campaign planning; not wet-lab campaign evidence. |
+| GECAIR | `/tools/gecair` | Gene circuit reasoning with partial topology and parameter assumptions. |
+| GENMIM | `/tools/genmim` | Genome minimization planning with simplified viability assumptions. |
+| DynCon | `/tools/dyncon` | Dynamic control simulations with parameter and calibration limits. |
+| NEXAI | `/tools/nexai` | Literature assistant whose outputs require evidence and human review. |
+
+## Local Development
+
+```bash
+git clone https://github.com/zhangze1007/Nexus-bio-1.0
+cd Nexus-bio-1.0
+npm install
+npm run dev
 ```
-Frontend     React 19 + TypeScript + Next.js 15 (App Router) + Tailwind CSS v3 + Framer Motion
-3D           Three.js 0.183 + @react-three/fiber 9.5 + @react-three/drei 10.7
-             Custom GLSL shaders (organic volume terrain, fluid simulation)
-             3Dmol.js (protein + molecular rendering, CDN)
-AI           Groq llama-3.3-70b (primary) → Gemini 2.0-flash (fallback)
 
-## SCSPATIAL Sidecar
+The dev server runs at `http://localhost:3000`.
+
+Create `.env.local` when using AI-backed routes:
+
+```bash
+GROQ_API_KEY=your_groq_key
+GEMINI_API_KEY=your_gemini_key
+```
+
+`app/api/analyze` uses Groq as primary and Gemini as fallback. Do not treat LLM-assisted outputs as validated scientific evidence.
+
+### SCSPATIAL Sidecar
 
 Real `.h5ad` ingest for SCSPATIAL uses a Python sidecar. Install the sidecar dependencies before uploading spatial datasets:
 
@@ -142,139 +183,56 @@ python3 -m venv .venv-scspatial
 
 If `.venv-scspatial` exists, the SCSPATIAL sidecar will pick it up automatically.
 
-If `python3-venv` is unavailable, you can install the packages into a repo-local target directory instead:
+If `python3-venv` is unavailable, install packages into a repo-local target directory instead:
 
 ```bash
 python3 -m pip install --target .nexus/scspatial-pydeps -r requirements-scspatial-sidecar.txt
 ```
 
-If `.nexus/scspatial-pydeps` exists, the SCSPATIAL sidecar will add it to `PYTHONPATH` automatically.
-State        Zustand 5 + XState 5 state machines
-DB           better-sqlite3 (workbench experiment ledger)
-Data         PubChem · AlphaFold EBI · RCSB PDB · 6 academic databases
-Deploy       Vercel (Edge Runtime API routes)
-```
+If `.nexus/scspatial-pydeps` exists, the SCSPATIAL sidecar adds it to `PYTHONPATH` automatically.
 
----
+### Deployment Notes
 
-## AI Architecture
+The app is deployed on Vercel. API routes use the runtime declared in their route files; Node runtime routes include FBA, workbench persistence, and SCSPATIAL sidecar surfaces.
 
-All AI requests go through `app/api/analyze/route.ts` (Edge Runtime). The system prompt is "Axon" — a design-support core that extracts pathway data, detects bottleneck enzymes, and proposes candidate strategy context for human review.
+Environment variables such as `GROQ_API_KEY` and `GEMINI_API_KEY` belong in the deployment environment and should not be committed.
 
-**Groq is always primary. Gemini is always fallback. This order must never be reversed.**
+## Repository Map
 
-```
-1. Groq  llama-3.3-70b-versatile    primary (1000 req/day)
-2. Groq  llama3-70b-8192            Groq backup
-3. Gemini gemini-2.0-flash-lite     Google fallback (250 req/day)
-4. Gemini gemini-1.5-flash          final fallback
-5. 503 error                        all providers down
-```
+- `app/`: Next.js routes, layouts, metadata, and API endpoints.
+- `src/`: React components, services, stores, server helpers, workers, and shared tool configuration.
+- `docs/`: trust-runtime, benchmark, review, roadmap, and adapter-boundary documentation.
+- `spec/`: trust-runtime protocol specs, Policy DSL, SITR draft, PROV-DM mapping, and SBOL-aligned mapping.
+- `benchmarks/`: trust-runtime benchmark corpus and expected labels.
+- `reports/`: local trust metrics, public benchmark outputs, second implementation report, and review templates.
+- `proof-package/`: replayable proof bundle for local trust-runtime behavior.
+- `reference_impl_py/`: Python stdlib reference implementation for policy and benchmark comparison.
+- `examples/`: showcase and example workflow materials.
 
-Supporting API routes:
+## Limitations
 
-| Route | Purpose |
-|-------|---------|
-| `app/api/alphafold` | CORS proxy — EBI AlphaFold PDB structures |
-| `app/api/pubchem` | CORS proxy — PubChem 3D SDF conformers |
-| `app/api/fba` | Simplex LP solver - single-species FBA plus demo-only two-species comparison |
-| `app/api/workbench` | Project state sync — revision control + audit trail |
+- No wet-lab validation claim is made.
+- No external validation claim is made unless a real external replay or reviewer result is added in the future.
+- No production safety certification is included.
+- Benchmark labels are curated local trust-runtime labels.
+- Proof package results are local-dev artifacts unless independently replayed and reported.
+- The Python reference implementation is local and does not prove third-party adoption.
+- Domain experts are needed for deeper scientific adapters, real experimental studies, biosafety review, and regulatory interpretation.
+- SBOL and PROV mappings are alignment notes unless separate validator-backed compliance evidence is added.
 
----
+## About / Origin Note
 
-## Local Development
+Nexus-Bio was built by Zhang Ze Foo, a pre-university student in Malaysia on a gap year after completing STPM, and then hardened through staged trust-runtime work. The origin story is part of the project context, but the repository should be evaluated by its inspectable artifacts, limitations, tests, and replay paths.
 
-```bash
-git clone https://github.com/zhangze1007/Nexus-bio-1.0
-cd Nexus-bio-1.0
-npm install
-```
+Contact:
 
-Create `.env.local`:
-```
-GROQ_API_KEY=your_groq_key
-GEMINI_API_KEY=your_gemini_key
-```
-
-```bash
-npm run dev
-# runs at http://localhost:3000
-```
-
-Get a free Groq API key at [console.groq.com](https://console.groq.com)
-
----
-
-## Deployment
-
-Deployed on Vercel (Hobby plan). API routes run on Edge Runtime except `fba` and `workbench` which require Node.js runtime for the LP solver and SQLite.
-
-Environment variables (`GROQ_API_KEY`, `GEMINI_API_KEY`) are set in the Vercel dashboard — never committed to the repository.
-
----
-
-## Showcase
-
-The default pathway demonstrates artemisinin biosynthesis — a landmark synthetic biology achievement that made malaria treatment affordable for 500 million patients.
-
-**Ro et al., 2006. *Nature* 440, 940–943**
-
-7 nodes · Acetyl-CoA → HMG-CoA → Mevalonate → FPP → Amorphadiene → Artemisinic Acid → Artemisinin
-
----
-
-## Design Principles
-
-- **Scientific credibility** — Every AI-generated node has an evidence trace and audit trail
-- **Assumption-aware design support** — Axon surfaces bottlenecks and candidate interventions with trust context
-- **Progressive disclosure** — Core information first, details on demand
-- **Workflow continuity** — Each tool is an entry point to the next
-- **Visual integrity** — Dark theme, pastel palette, and clear method boundaries
-
----
-
-## About
-
-Built by **Zhang Ze Foo** — a pre-university student in Malaysia on a gap year after completing STPM (A-level equivalent).
-
-**Contact**
 - Email: fuchanze@gmail.com
 - LinkedIn: [linkedin.com/in/zhangze-foo-3575ba359](https://linkedin.com/in/zhangze-foo-3575ba359)
 
----
+## Copilot Agent And Firewall
 
-## Copilot Agent & Firewall
-
-If you use the GitHub Copilot coding agent on this repo and the workflow fails with `HTTP/2 GOAWAY connection terminated` or a firewall-blocked warning, see **[docs/firewall.md](docs/firewall.md)** for a step-by-step fix.
-
----
-
-## Trust and Limitations
-
-Nexus-Bio is a transparent synthetic biology learning workbench with mixed-validity modules (`real`, `partial`, `demo`). It is not an end-to-end validated scientific platform and does not include wet-lab validation in this repository.
-
-Trust-runtime thesis:
-- Nexus-Bio is an assumption-gated scientific inference runtime for synthetic biology workflows.
-- The workbench treats assumptions, evidence, provenance, and claim surfaces as runtime objects rather than marketing claims.
-- See [docs/TRUST_RUNTIME_THESIS.md](docs/TRUST_RUNTIME_THESIS.md) and [spec/nexus-trust-runtime-v0.md](spec/nexus-trust-runtime-v0.md) for the protocol foundation.
-- See [spec/SITR-draft-v1.md](spec/SITR-draft-v1.md) for the draft Scientific Inference Trust Runtime open protocol proposal.
-
-Key limitations:
-- Some tools are explicitly demo-tier and assumption-gated.
-- Some algorithms are heuristic or simplified.
-- LLM-assisted evidence and recommendations require human scientific validation.
-
-Phase 3 public proof package:
-- [Public Proof Package](proof-package/README.md)
-- [Phase 3 Decisions](docs/PHASE_3_DECISIONS.md)
-- [Artemisinin Trust-Gated Walkthrough](docs/ARTEMISININ_TRUST_GATED_WALKTHROUGH.md)
-- [Demo Video Script](docs/DEMO_VIDEO_SCRIPT.md)
-- [Portfolio Summary](docs/PORTFOLIO_SUMMARY.md)
-- [Personal Statement Snippet](docs/PERSONAL_STATEMENT_SNIPPET.md)
-- [Paper Draft](docs/PAPER_DRAFT.md)
-
----
+If you use the GitHub Copilot coding agent on this repo and the workflow fails with `HTTP/2 GOAWAY connection terminated` or a firewall-blocked warning, see [docs/firewall.md](docs/firewall.md).
 
 ## License
 
-MIT License — open for research and educational use.
+MIT License - open for research and educational use.
