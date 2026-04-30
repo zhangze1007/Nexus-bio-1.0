@@ -1,0 +1,364 @@
+{
+  "schemaVersion": "policy-dsl-v1",
+  "policyId": "nexus-trust-policy-v1",
+  "description": "P3 Step 21 machine-checkable parity policy for Nexus-Bio claim-surface decisions. This data file mirrors the current TypeScript policy engine for review and conformance checks; it is not the production runtime source of truth yet.",
+  "rules": [
+    {
+      "ruleId": "policy-v1-unknown-tool",
+      "description": "Unknown tools are denied because no claim-surface policy exists.",
+      "priority": 10,
+      "when": [
+        {
+          "field": "toolId",
+          "operator": "notIn",
+          "value": [
+            "pathd",
+            "metabolic-eng",
+            "fbasim",
+            "cethx",
+            "catdes",
+            "proevol",
+            "dyncon",
+            "gecair",
+            "genmim",
+            "cellfree",
+            "dbtlflow",
+            "multio",
+            "scspatial",
+            "nexai"
+          ]
+        }
+      ],
+      "effect": "block",
+      "blockCode": "MISSING_POLICY",
+      "reason": "No claim-surface policy is defined for this tool.",
+      "overridePath": "not-allowed"
+    },
+    {
+      "ruleId": "policy-v1-unknown-surface",
+      "description": "Unknown claim surfaces are denied because no claim-surface policy exists.",
+      "priority": 20,
+      "when": [
+        {
+          "field": "surface",
+          "operator": "notIn",
+          "value": [
+            "payload",
+            "export",
+            "recommendation",
+            "protocol",
+            "external-handoff"
+          ]
+        }
+      ],
+      "effect": "block",
+      "blockCode": "MISSING_POLICY",
+      "reason": "No claim-surface policy is defined for this surface.",
+      "overridePath": "not-allowed"
+    },
+    {
+      "ruleId": "policy-v1-missing-validity-tier",
+      "description": "A validity tier is required before a claim-surface decision can be made.",
+      "priority": 30,
+      "when": [
+        {
+          "field": "validityTier",
+          "operator": "empty"
+        }
+      ],
+      "effect": "block",
+      "blockCode": "TIER_NOT_ALLOWED_FOR_SURFACE",
+      "reason": "A validity tier is required before this output can be evaluated.",
+      "overridePath": "not-allowed"
+    },
+    {
+      "ruleId": "policy-v1-invalid-validity-tier",
+      "description": "Unknown validity tiers are denied before formal claim use.",
+      "priority": 35,
+      "when": [
+        {
+          "field": "validityTier",
+          "operator": "exists"
+        },
+        {
+          "field": "validityTier",
+          "operator": "notIn",
+          "value": [
+            "real",
+            "partial",
+            "demo"
+          ]
+        }
+      ],
+      "effect": "block",
+      "blockCode": "TIER_NOT_ALLOWED_FOR_SURFACE",
+      "reason": "The validity tier is not allowed for this claim surface.",
+      "overridePath": "not-allowed"
+    },
+    {
+      "ruleId": "policy-v1-draft-formal-artifact",
+      "description": "Draft outputs cannot become exports or protocols where deny-if-draft policy applies.",
+      "priority": 40,
+      "when": [
+        {
+          "field": "isDraft",
+          "operator": "equals",
+          "value": true
+        },
+        {
+          "field": "surface",
+          "operator": "in",
+          "value": [
+            "export",
+            "protocol"
+          ]
+        }
+      ],
+      "effect": "block",
+      "blockCode": "DRAFT_OUTPUT_NOT_EXPORTABLE",
+      "reason": "Draft outputs must be finalized before export or protocol-like use.",
+      "overridePath": "human-review"
+    },
+    {
+      "ruleId": "policy-v1-demo-protocol-block",
+      "description": "Demo output cannot become a protocol-like artifact.",
+      "priority": 50,
+      "when": [
+        {
+          "field": "validityTier",
+          "operator": "equals",
+          "value": "demo"
+        },
+        {
+          "field": "surface",
+          "operator": "equals",
+          "value": "protocol"
+        }
+      ],
+      "effect": "block",
+      "blockCode": "DEMO_OUTPUT_PROTOCOL_BLOCKED",
+      "reason": "Demo output cannot be used to generate a protocol-like artifact.",
+      "overridePath": "not-allowed"
+    },
+    {
+      "ruleId": "policy-v1-demo-external-handoff-block",
+      "description": "Demo output cannot become an external handoff.",
+      "priority": 60,
+      "when": [
+        {
+          "field": "validityTier",
+          "operator": "equals",
+          "value": "demo"
+        },
+        {
+          "field": "surface",
+          "operator": "equals",
+          "value": "external-handoff"
+        }
+      ],
+      "effect": "block",
+      "blockCode": "EXTERNAL_HANDOFF_BLOCKED",
+      "reason": "Demo output cannot be used as an external handoff.",
+      "overridePath": "not-allowed"
+    },
+    {
+      "ruleId": "policy-v1-demo-formal-tier-block",
+      "description": "Demo output cannot become a formal export or recommendation.",
+      "priority": 70,
+      "when": [
+        {
+          "field": "validityTier",
+          "operator": "equals",
+          "value": "demo"
+        },
+        {
+          "field": "surface",
+          "operator": "in",
+          "value": [
+            "export",
+            "recommendation"
+          ]
+        }
+      ],
+      "effect": "block",
+      "blockCode": "TIER_NOT_ALLOWED_FOR_SURFACE",
+      "reason": "Demo output is not allowed on this formal claim surface.",
+      "overridePath": "not-allowed"
+    },
+    {
+      "ruleId": "policy-v1-formal-surface-provenance-required",
+      "description": "Formal non-payload surfaces require provenance once tier and draft checks pass.",
+      "priority": 80,
+      "when": [
+        {
+          "field": "surface",
+          "operator": "in",
+          "value": [
+            "export",
+            "recommendation",
+            "protocol",
+            "external-handoff"
+          ]
+        },
+        {
+          "field": "validityTier",
+          "operator": "in",
+          "value": [
+            "real",
+            "partial"
+          ]
+        },
+        {
+          "field": "provenanceIds",
+          "operator": "empty"
+        }
+      ],
+      "effect": "block",
+      "blockCode": "PROVENANCE_REQUIRED",
+      "reason": "Formal claim-surface use requires provenance before the claim can be used.",
+      "overridePath": "human-review"
+    },
+    {
+      "ruleId": "policy-v1-human-gate-rejected-formal-surface",
+      "description": "Protocol and external handoff surfaces block when human review is rejected.",
+      "priority": 90,
+      "when": [
+        {
+          "field": "surface",
+          "operator": "in",
+          "value": [
+            "protocol",
+            "external-handoff"
+          ]
+        },
+        {
+          "field": "humanGateStatus",
+          "operator": "equals",
+          "value": "rejected"
+        }
+      ],
+      "effect": "block",
+      "blockCode": "HUMAN_GATE_REQUIRED",
+      "reason": "Human review rejected this output for the requested claim surface.",
+      "overridePath": "not-allowed"
+    },
+    {
+      "ruleId": "policy-v1-human-gate-rejected-input-required",
+      "description": "Caller-declared human gate requirements block when review is rejected.",
+      "priority": 91,
+      "when": [
+        {
+          "field": "requiresHumanGate",
+          "operator": "equals",
+          "value": true
+        },
+        {
+          "field": "humanGateStatus",
+          "operator": "equals",
+          "value": "rejected"
+        }
+      ],
+      "effect": "block",
+      "blockCode": "HUMAN_GATE_REQUIRED",
+      "reason": "Human review rejected this output for the requested claim surface.",
+      "overridePath": "not-allowed"
+    },
+    {
+      "ruleId": "policy-v1-human-gate-pending-formal-surface",
+      "description": "Protocol and external handoff surfaces gate until human review is approved.",
+      "priority": 100,
+      "when": [
+        {
+          "field": "surface",
+          "operator": "in",
+          "value": [
+            "protocol",
+            "external-handoff"
+          ]
+        },
+        {
+          "field": "humanGateStatus",
+          "operator": "notEquals",
+          "value": "approved"
+        }
+      ],
+      "effect": "gate",
+      "blockCode": "HUMAN_GATE_REQUIRED",
+      "reason": "This claim surface requires approved human review.",
+      "overridePath": "human-review"
+    },
+    {
+      "ruleId": "policy-v1-human-gate-pending-input-required",
+      "description": "Caller-declared human gate requirements gate until review is approved.",
+      "priority": 110,
+      "when": [
+        {
+          "field": "requiresHumanGate",
+          "operator": "equals",
+          "value": true
+        },
+        {
+          "field": "humanGateStatus",
+          "operator": "notEquals",
+          "value": "approved"
+        }
+      ],
+      "effect": "gate",
+      "blockCode": "HUMAN_GATE_REQUIRED",
+      "reason": "This claim surface requires approved human review.",
+      "overridePath": "human-review"
+    },
+    {
+      "ruleId": "policy-v1-demo-payload-demo-only",
+      "description": "Demo outputs may remain visible only on payload surfaces.",
+      "priority": 120,
+      "when": [
+        {
+          "field": "validityTier",
+          "operator": "equals",
+          "value": "demo"
+        },
+        {
+          "field": "surface",
+          "operator": "equals",
+          "value": "payload"
+        }
+      ],
+      "effect": "demoOnly",
+      "reason": "Demo output is allowed on payload surfaces only as demo or exploratory context."
+    },
+    {
+      "ruleId": "policy-v1-valid-tier-allowed",
+      "description": "Real or partial outputs are allowed after all stricter gates have passed.",
+      "priority": 130,
+      "when": [
+        {
+          "field": "validityTier",
+          "operator": "in",
+          "value": [
+            "real",
+            "partial"
+          ]
+        },
+        {
+          "field": "surface",
+          "operator": "in",
+          "value": [
+            "payload",
+            "export",
+            "recommendation",
+            "protocol",
+            "external-handoff"
+          ]
+        }
+      ],
+      "effect": "allow",
+      "reason": "The output satisfies the policy checks for this claim surface."
+    }
+  ],
+  "defaultDecision": {
+    "effect": "block",
+    "blockCode": "MISSING_POLICY",
+    "reason": "No Policy DSL rule matched; default deny is applied."
+  }
+}
