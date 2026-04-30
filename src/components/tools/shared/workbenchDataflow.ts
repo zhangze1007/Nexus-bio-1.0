@@ -8,7 +8,8 @@ import type { CFSParameters, GeneConstruct } from '../../../services/CellFreeEng
 import type { DBTLPhase } from '../../../types';
 import type { ProvenanceEntry } from '../../../types/assumptions';
 import type { DBTLLearnedFeedback, DBTLLearnedMetrics, DBTLMetricSource } from '../../../types/dbtlFeedback';
-import { normalizeDBTLLearnedFeedback } from '../../../migrations/migrateDbtlFeedback';
+import type { LearnedDeltaPack } from '../../../types/learnedDelta';
+import { filterApprovedLearnedDeltaPacks } from '../../../services/learnedDeltaApplication';
 import type {
   CatalystWorkbenchPayload,
   CETHXWorkbenchPayload,
@@ -129,25 +130,35 @@ function sourceFromPayload(
   };
 }
 
-function getCommittedDBTLFeedback(dbtl?: DBTLWorkbenchPayload | null) {
-  if (!dbtl || dbtl.feedbackSource !== 'committed') return null;
-  const feedback = normalizeDBTLLearnedFeedback({
-    feedback: dbtl.result.feedback,
-    legacyLearnedParameters: dbtl.result.learnedParameters,
-    derivedFromToolId: dbtl.toolId,
-    provenanceEntryId: provenanceEntryId(dbtl.runProvenance),
-    now: new Date(dbtl.updatedAt).toISOString(),
-  });
-  const metrics = feedback.learnedMetrics;
-  return {
-    passRate: dbtl.result.passRate,
-    improvementRate: dbtl.result.improvementRate,
-    latestPhase: dbtl.result.latestPhase,
-    measuredResult: dbtl.measuredResult,
-    drainPercent: metrics.drainPercent,
-    doRmse: metrics.doRmse,
-    cfpsConfidence: metrics.cfpsConfidence,
-  };
+function getApprovedDeltaPacksForTool(
+  dbtl: DBTLWorkbenchPayload | null | undefined,
+  targetToolId: string,
+): LearnedDeltaPack[] {
+  if (!dbtl || dbtl.feedbackSource !== 'committed') return [];
+  return filterApprovedLearnedDeltaPacks(dbtl.result.learnedDeltaPacks ?? [])
+    .filter((pack) => pack.targetToolIds.includes(targetToolId));
+}
+
+function changedPriorAfter(
+  packs: LearnedDeltaPack[],
+  key: string,
+): number | undefined {
+  for (const pack of packs) {
+    const delta = pack.changedPriors[key];
+    if (delta && Number.isFinite(delta.after)) return delta.after;
+  }
+  return undefined;
+}
+
+function applyChangedPrior(
+  current: number,
+  packs: LearnedDeltaPack[],
+  key: string,
+  min: number,
+  max: number,
+): number {
+  const after = changedPriorAfter(packs, key);
+  return after === undefined ? current : clampNumber(after, min, max);
 }
 
 function getTargetProduct(project?: ProjectLike | null, artifact?: AnalyzeArtifactLike | null) {
@@ -236,7 +247,7 @@ export function buildFBASeed(
   const bottleneckCount = Math.max(artifact?.bottleneckAssumptions?.length ?? 0, pathd?.result.bottleneckCount ?? 0);
   const concernCount = Math.max(artifact?.thermodynamicConcerns?.length ?? 0, pathd?.result.thermodynamicConcerns ?? 0);
   const candidateCount = Math.max(artifact?.pathwayCandidates?.length ?? 0, pathd?.result.pathwayCandidates ?? 0);
-  const feedback = getCommittedDBTLFeedback(dbtl);
+  const approvedDeltas = getApprovedDeltaPacksForTool(dbtl, 'fbasim');
   const mode = inferCommunityMode(contextText) ? 'community' : 'single';
 
   const objective: FBASeed['objective'] =
@@ -263,22 +274,9 @@ export function buildFBASeed(
   if (/energy|atp/.test(contextText)) knockoutHints.push('PFK');
   if (/overflow|pyruvate|ferment/.test(contextText)) knockoutHints.push('ENO');
 
-  let objectiveSeed = objective;
-  if (feedback) {
-    if (feedback.passRate < 70 || feedback.latestPhase === 'Learn') {
-      objectiveSeed = feedback.drainPercent !== undefined && feedback.drainPercent > 30 ? 'atp' : 'biomass';
-      glucoseUptake = clampNumber(glucoseUptake - 0.8, 4, 20);
-      oxygenUptake = clampNumber(oxygenUptake + 1.2, 2, 20);
-      knockoutHints.push('PFK');
-    }
-    if (feedback.improvementRate > 0.5 && feedback.passRate >= 70) {
-      objectiveSeed = 'product';
-      glucoseUptake = clampNumber(glucoseUptake + 0.9, 4, 20);
-    }
-    if (feedback.doRmse !== undefined && feedback.doRmse > 0.08) {
-      oxygenUptake = clampNumber(oxygenUptake + 0.9, 2, 20);
-    }
-  }
+  const objectiveSeed = objective;
+  glucoseUptake = applyChangedPrior(glucoseUptake, approvedDeltas, 'fbasim.glucoseUptake', 4, 20);
+  oxygenUptake = applyChangedPrior(oxygenUptake, approvedDeltas, 'fbasim.oxygenUptake', 2, 20);
 
   const allowedKnockouts = new Set(
     REACTION_DEFS
@@ -370,7 +368,7 @@ export function buildCatalystSeed(
   const target = normalize(getTargetProduct(project, artifact));
   const contextText = collectContextText(project, artifact);
   const pathway = cethx?.pathway ?? inferPathwayKeyFromContext(project, artifact, fba);
-  const feedback = getCommittedDBTLFeedback(dbtl);
+  const approvedDeltas = getApprovedDeltaPacksForTool(dbtl, 'catdes');
   const scored = ENZYME_STRUCTURES.map((enzyme, index) => ({
     index,
     score: scoreEnzymeMatch(enzyme, contextText, target, pathway),
@@ -391,15 +389,8 @@ export function buildCatalystSeed(
     14,
   );
 
-  if (feedback) {
-    if (feedback.passRate < 70 || feedback.latestPhase === 'Learn') {
-      designCount = clampNumber(designCount + 2, 6, 14);
-      requiredFlux = clampNumber(requiredFlux - 0.2, 0.15, 3.2);
-    }
-    if (feedback.improvementRate > 0.5 && feedback.passRate >= 70) {
-      requiredFlux = clampNumber(requiredFlux + 0.18, 0.15, 3.2);
-    }
-  }
+  requiredFlux = applyChangedPrior(requiredFlux, approvedDeltas, 'catdes.requiredFlux', 0.15, 3.2);
+  designCount = Math.round(applyChangedPrior(designCount, approvedDeltas, 'catdes.designCount', 6, 14));
 
   return {
     enzymeIndex: enzymeIndex >= 0 ? enzymeIndex : 2,
@@ -415,7 +406,7 @@ export function buildDynConSeed(
   dbtl?: DBTLWorkbenchPayload | null,
 ): DynConSeed {
   const benchmark = findBenchmarkByTarget(catalyst?.targetProduct ?? fba?.targetProduct ?? cethx?.targetProduct);
-  const feedback = getCommittedDBTLFeedback(dbtl);
+  const approvedDeltas = getApprovedDeltaPacksForTool(dbtl, 'dyncon');
   let kp = clampNumber(
     1.5 + (cethx?.result.efficiency ?? 0) / 55 + (catalyst?.result.overallBinding ?? 0) * 1.8,
     0.5,
@@ -440,23 +431,13 @@ export function buildDynConSeed(
   let hillKd = clampNumber(35 + (catalyst?.result.totalMetabolicDrain ?? 0.2) * 80, 5, 200);
   let hillN = clampNumber(1.4 + (catalyst?.result.topMutationSites ?? 2) * 0.18, 1, 4);
 
-  if (feedback) {
-    if (feedback.passRate < 70 || feedback.latestPhase === 'Learn') {
-      kp = clampNumber(kp - 0.25, 0.5, 8);
-      ki = clampNumber(ki - 0.04, 0.05, 2.5);
-      kd = clampNumber(kd + 0.05, 0.02, 1.5);
-      setpoint = clampNumber(setpoint - 0.04, 0.2, 0.9);
-      hillKd = clampNumber(hillKd + 12, 5, 200);
-    }
-    if (feedback.doRmse !== undefined && feedback.doRmse > 0.08) {
-      kd = clampNumber(kd + 0.04, 0.02, 1.5);
-      setpoint = clampNumber(setpoint - 0.02, 0.2, 0.9);
-    }
-    if (feedback.improvementRate > 0.5 && feedback.passRate >= 70) {
-      vmax = clampNumber(vmax + 0.08, 0.2, 2);
-      hillN = clampNumber(hillN + 0.1, 1, 4);
-    }
-  }
+  kp = applyChangedPrior(kp, approvedDeltas, 'dyncon.controller.kp', 0.5, 8);
+  ki = applyChangedPrior(ki, approvedDeltas, 'dyncon.controller.ki', 0.05, 2.5);
+  kd = applyChangedPrior(kd, approvedDeltas, 'dyncon.controller.kd', 0.02, 1.5);
+  setpoint = applyChangedPrior(setpoint, approvedDeltas, 'dyncon.controller.setpoint', 0.2, 0.9);
+  vmax = applyChangedPrior(vmax, approvedDeltas, 'dyncon.hill.vmax', 0.2, 2);
+  hillKd = applyChangedPrior(hillKd, approvedDeltas, 'dyncon.hill.kd', 5, 200);
+  hillN = applyChangedPrior(hillN, approvedDeltas, 'dyncon.hill.n', 1, 4);
 
   return {
     controller: {
@@ -485,7 +466,7 @@ export function buildCellFreeSeed(
   const benchmark = findBenchmarkByTarget(targetProduct);
   const constructs = generateDefaultConstructs().map((construct) => ({ ...construct }));
   const params = generateDefaultParameters();
-  const feedback = getCommittedDBTLFeedback(dbtl);
+  const approvedDeltas = getApprovedDeltaPacksForTool(dbtl, 'cellfree');
 
   const primaryIndex = catalyst
     ? ENZYME_STRUCTURES.findIndex((enzyme) => enzyme.id === catalyst.selectedEnzymeId)
@@ -540,18 +521,9 @@ export function buildCellFreeSeed(
     45,
   ), 2);
 
-  if (feedback) {
-    if (feedback.passRate < 70 || feedback.latestPhase === 'Learn') {
-      params.temperature = Math.round(clampNumber(params.temperature - 2, 20, 42));
-      params.simulationTime = Math.round(clampNumber(params.simulationTime + 40, 180, 420));
-      params.ribosomeTotal = round(clampNumber(params.ribosomeTotal + 45, 300, 900));
-      constructs[1].dnaConcentration = round(clampNumber(constructs[1].dnaConcentration - 1.5, 5, 28), 1);
-    }
-    if (feedback.improvementRate > 0.5 && feedback.cfpsConfidence !== undefined && feedback.cfpsConfidence > 65) {
-      params.ribosomeTotal = round(clampNumber(params.ribosomeTotal + 35, 300, 900));
-      params.initialEnergy.atp = round(clampNumber(params.initialEnergy.atp + 0.15, 1.2, 4), 2);
-    }
-  }
+  params.temperature = Math.round(applyChangedPrior(params.temperature, approvedDeltas, 'cellfree.params.temperature', 20, 42));
+  params.simulationTime = Math.round(applyChangedPrior(params.simulationTime, approvedDeltas, 'cellfree.params.simulationTime', 180, 420));
+  params.ribosomeTotal = round(applyChangedPrior(params.ribosomeTotal, approvedDeltas, 'cellfree.params.ribosomeTotal', 300, 900));
 
   return { constructs, params };
 }

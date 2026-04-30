@@ -1,10 +1,12 @@
 /**
  * AutomatedFeedbackLoop — closed-loop DBTL data integration.
  *
- * Uploaded CSV/Excel test data is parsed into TestDataRow[], validated
- * against the FBA theoretical maximum yield, and fed into a deterministic
- * multi-objective heuristic that proposes the next iteration's parameter
- * changes. No Math.random — identical inputs yield identical suggestions.
+ * Uploaded CSV/Excel test data is first mapped into ExperimentRecordV1,
+ * then converted into TestDataRow[] only if the record carries enough assay
+ * metadata, units, instrument/operator context, and timepoints. Accepted rows
+ * are validated against the FBA theoretical maximum yield and fed into a
+ * deterministic multi-objective heuristic. No Math.random — identical inputs
+ * yield identical suggestions.
  *
  * Hardening priorities applied here:
  *   - CSV parser handles BOM, CRLF, quoted fields, and trailing commas
@@ -23,6 +25,13 @@ import type {
 } from '../types';
 import { findBenchmarkByTarget } from '../data/experimentalBenchmarks';
 import { solveAuthorityFBA } from '../services/FBAAuthorityClient';
+import {
+  mapCsvRowsToExperimentRecords,
+  parseExperimentCsvTextToRows,
+  type ExperimentCsvColumnMapping,
+  type RejectedExperimentCsvRow,
+} from '../importers/experimentCsvImporter';
+import type { ExperimentRecordV1 } from '../types/experimentRecord';
 
 // ── CSV parsing ───────────────────────────────────────────────────────────────
 /**
@@ -53,6 +62,26 @@ function splitCSVLine(line: string): string[] {
 const YIELD_COLUMN_ALIASES = ['yield_mg_l', 'yield', 'titer_mg_l', 'titer'];
 const BIOMASS_COLUMN_ALIASES = ['biomass_od600', 'biomass', 'od600', 'od_600'];
 const SUBSTRATE_COLUMN_ALIASES = ['substrate_consumed_mm', 'substrate', 'glucose_consumed', 'glucose_mm'];
+
+const DBTL_EXPERIMENT_CSV_MAPPING: ExperimentCsvColumnMapping = {
+  recordId: 'record_id',
+  batchId: 'batch_id',
+  sampleId: 'sample_id',
+  constructId: 'construct_id',
+  assayType: 'assay_type',
+  sourceType: 'source_type',
+  measurementUnit: 'measurement_unit',
+  instrument: 'instrument',
+  operator: 'operator',
+  startedAt: 'started_at',
+  completedAt: 'completed_at',
+  timeHours: 'time_hours',
+  value: 'value',
+  unit: 'unit',
+  replicateId: 'replicate_id',
+  qcFlags: 'qc_flags',
+  notes: 'notes',
+};
 
 /**
  * Parse a finite number from a CSV cell. Returns `null` on missing/NaN so the
@@ -119,6 +148,31 @@ export function parseCSVData(csvText: string): TestDataRow[] {
     });
   }
   return rows;
+}
+
+function experimentRecordsToTestDataRows(records: ExperimentRecordV1[]): TestDataRow[] {
+  return records.flatMap((record) => {
+    if (record.assayType !== 'product-titer') return [];
+    if (record.measurementUnit !== 'mg/L') return [];
+    return record.timepoints
+      .filter((timepoint) => timepoint.unit === 'mg/L')
+      .map((timepoint) => ({
+        sample_id: timepoint.replicateId ?? record.sampleId,
+        strain: record.constructId,
+        condition: record.batchId,
+        yield_mg_L: timepoint.value,
+        biomass_OD600: 0,
+        substrate_consumed_mM: 0,
+        timestamp: record.startedAt,
+      }));
+  });
+}
+
+function rejectedRowSummaries(rows: RejectedExperimentCsvRow[]): Array<{ rowIndex: number; reason: string }> {
+  return rows.map((row) => ({
+    rowIndex: row.rowIndex,
+    reason: row.reason,
+  }));
 }
 
 // ── Statistics helpers ────────────────────────────────────────────────────────
@@ -325,8 +379,23 @@ export async function AutomatedFeedbackLoop(
   oxygenUptake: number = 20,
 ): Promise<FeedbackLoopResult> {
   let data: TestDataRow[];
+  let sourceExperimentRecordIds: string[] = [];
+  let rejectedExperimentRows: Array<{ rowIndex: number; reason: string }> = [];
   try {
-    data = parseCSVData(csvText);
+    const parsedRows = parseExperimentCsvTextToRows(csvText);
+    const importResult = mapCsvRowsToExperimentRecords(parsedRows, DBTL_EXPERIMENT_CSV_MAPPING, {
+      defaultSourceType: 'imported-csv',
+      generateRecordId: (row, rowIndex) => {
+        const sampleId = row.sample_id?.trim();
+        const batchId = row.batch_id?.trim();
+        return sampleId && batchId
+          ? `experiment-record-v1:${batchId}:${sampleId}:${rowIndex}`
+          : `experiment-record-v1:row-${rowIndex}`;
+      },
+    });
+    sourceExperimentRecordIds = importResult.records.map((record) => record.recordId);
+    rejectedExperimentRows = rejectedRowSummaries(importResult.rejectedRows);
+    data = experimentRecordsToTestDataRows(importResult.records);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     return {
@@ -341,10 +410,14 @@ export async function AutomatedFeedbackLoop(
         predicted_improvement_percent: 0,
       }],
       optimization_objective: 'data_quality',
+      rejectedExperimentRows: [{ rowIndex: -1, reason: message }],
     };
   }
 
   if (data.length === 0) {
+    const rejectedReason = rejectedExperimentRows.length > 0
+      ? `Rejected ${rejectedExperimentRows.length} typed experiment row(s): ${rejectedExperimentRows[0].reason}`
+      : 'No product-titer ExperimentRecordV1 records with mg/L units were found.';
     return {
       iteration_id: currentIteration.id,
       test_summary: { mean_yield: 0, std_yield: 0, best_sample: 'N/A', worst_sample: 'N/A' },
@@ -353,10 +426,12 @@ export async function AutomatedFeedbackLoop(
         parameter: 'Data Quality',
         current_value: 0,
         suggested_value: 1,
-        rationale: 'No valid data rows found. Required columns: sample_id, strain, yield_mg_L (or yield), biomass_OD600 (or OD600).',
+        rationale: rejectedReason,
         predicted_improvement_percent: 0,
       }],
       optimization_objective: 'data_quality',
+      sourceExperimentRecordIds,
+      rejectedExperimentRows,
     };
   }
 
@@ -375,5 +450,7 @@ export async function AutomatedFeedbackLoop(
     qc_flags: qcFlags,
     next_iteration_suggestions: suggestions,
     optimization_objective: 'maximize_yield_minimize_burden',
+    sourceExperimentRecordIds,
+    rejectedExperimentRows,
   };
 }

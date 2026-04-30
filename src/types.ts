@@ -344,6 +344,11 @@ export interface FeedbackLoopResult {
   qc_flags: QCFlag[];
   next_iteration_suggestions: NextIterationSuggestion[];
   optimization_objective: string;
+  sourceExperimentRecordIds?: string[];
+  rejectedExperimentRows?: Array<{
+    rowIndex: number;
+    reason: string;
+  }>;
 }
 
 export interface QCFlag {

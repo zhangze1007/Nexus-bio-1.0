@@ -2,6 +2,7 @@ import type { PathwayKey } from '../data/mockCETHX';
 import type { DBTLPhase } from '../types';
 import type { ProvenanceEntry } from '../types/assumptions';
 import type { DBTLLearnedFeedback } from '../types/dbtlFeedback';
+import type { LearnedDeltaPack } from '../types/learnedDelta';
 import type { ScSpatialDatasetMeta, ScSpatialViewMode } from '../types/scspatial';
 
 /**
@@ -179,6 +180,7 @@ export interface DBTLWorkbenchPayload extends WorkbenchPayloadBase {
     passRate: number;
     latestPhase: DBTLPhase;
     feedback?: DBTLLearnedFeedback;
+    learnedDeltaPacks?: LearnedDeltaPack[];
     /**
      * @deprecated Use feedback.learnedMetrics and feedback.sources instead.
      * Kept only for migration/backward compatibility with old persisted project state.

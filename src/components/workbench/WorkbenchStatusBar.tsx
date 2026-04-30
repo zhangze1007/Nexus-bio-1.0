@@ -729,11 +729,11 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                     <div style={{ fontFamily: T.SANS, fontSize: '12px', color: VALUE, fontWeight: 600 }}>
                       {feedbackLabel}
                     </div>
-                    <div style={{ fontFamily: T.SANS, fontSize: '11px', color: LABEL, lineHeight: 1.55 }}>
-                      {dbtlPayload?.feedbackSource === 'committed'
-                        ? 'Upstream stage seeds are now allowed to incorporate the latest committed Learn cycle.'
-                        : 'Draft DBTL output remains visible, but upstream reseeding waits for a committed experiment loop.'}
-                    </div>
+	                    <div style={{ fontFamily: T.SANS, fontSize: '11px', color: LABEL, lineHeight: 1.55 }}>
+	                      {dbtlPayload?.feedbackSource === 'committed'
+	                        ? 'Upstream stage seeds require approved typed LearnedDeltaPacks before incorporating DBTL learning.'
+	                        : 'Draft DBTL output remains visible, but upstream reseeding waits for committed and approved typed learning.'}
+	                    </div>
                   </div>
                 </section>
 

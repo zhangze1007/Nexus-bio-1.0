@@ -58,6 +58,10 @@ The MultiO cases are model-claim regressions: deterministic demo integration wit
 
 The CellFree cases are parameter-sourcing regressions: a resource-aware TX-TL simulation structure exists, but demo outputs with partially sourced/default parameters, missing calibration, or unquantified uncertainty must not become formal recommendation, protocol, export, or external-handoff claims. They do not evaluate or imply calibrated CellFree prediction.
 
+The ExperimentRecordV1 / DBTL cases are assay-ingestion regressions: unit-less rows, missing timepoints, missing source metadata, and manual-review QC flags must not silently influence DBTL feedback. Fully typed simulated assays may be used only when labeled and traceable.
+
+The LearnedDeltaPack cases are loop-back regressions: pending, rejected, missing-source, or legacy string-only DBTL learning must not be applied as upstream seed changes. Approved typed deltas may support recommendation context only when experiment sources and human review state are explicit.
+
 ## Expected Labels
 
 `expected_labels.csv` is the answer key. Each JSON case must have exactly one CSV row with matching:

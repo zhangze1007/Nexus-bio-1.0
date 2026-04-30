@@ -45,6 +45,7 @@ function isDBTLMetricSource(value: unknown): value is DBTLMetricSource {
     && typeof value.derivedAt === 'string'
     && value.derivedAt.length > 0
     && isOptionalString(value.experimentRecordId)
+    && (typeof value.sourceExperimentRecordIds === 'undefined' || isStringArray(value.sourceExperimentRecordIds))
     && isOptionalString(value.provenanceEntryId)
     && isOptionalString(value.notes)
   );

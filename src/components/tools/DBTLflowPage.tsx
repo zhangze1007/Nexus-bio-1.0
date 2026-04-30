@@ -22,6 +22,9 @@ import type {
   ProvenanceRecord,
 } from '../../types';
 import { useWorkbenchStore } from '../../store/workbenchStore';
+import { buildLearnedDeltaPack } from '../../services/learnedDeltaBuilder';
+import type { DBTLLearnedFeedback } from '../../types/dbtlFeedback';
+import type { LearnedDeltaPack } from '../../types/learnedDelta';
 import WorkbenchInlineContext from '../workbench/WorkbenchInlineContext';
 import { buildDBTLDraft } from './shared/workbenchDataflow';
 import { PATHD_THEME } from '../workbench/workbenchTheme';
@@ -54,6 +57,30 @@ const GLASS: React.CSSProperties = {
 };
 
 const PHASES: DBTLPhase[] = ['Design', 'Build', 'Test', 'Learn'];
+const DBTL_DELTA_TARGET_TOOLS = ['fbasim', 'catdes', 'dyncon', 'cellfree'];
+
+function uniqueStrings(items: string[]): string[] {
+  return Array.from(new Set(items.filter((item) => item.trim().length > 0)));
+}
+
+function sourceExperimentRecordIdsFromFeedback(
+  result: FeedbackLoopResult | null,
+  feedback: DBTLLearnedFeedback,
+): string[] {
+  return uniqueStrings([
+    ...(result?.sourceExperimentRecordIds ?? []),
+    ...feedback.sources.flatMap((source) => [
+      ...(source.sourceExperimentRecordIds ?? []),
+      ...(source.experimentRecordId ? [source.experimentRecordId] : []),
+    ]),
+  ]);
+}
+
+function sourceProvenanceIdsFromFeedback(feedback: DBTLLearnedFeedback): string[] {
+  return uniqueStrings(feedback.sources.flatMap((source) =>
+    source.provenanceEntryId ? [source.provenanceEntryId] : []
+  ));
+}
 
 /* ── Timeline (preserved) ── */
 function Timeline({ iterations }: { iterations: DBTLIteration[] }) {
@@ -294,8 +321,29 @@ export default function DBTLflowPage() {
   const latestIteration = displayIterations[displayIterations.length - 1];
   const currentPhase: DBTLPhase = latestIteration?.phase ?? 'Design';
   const feedbackGateLabel = hasCommittedFeedback
-    ? `Committed feedback unlocked · iteration #${latestCommittedIteration?.id ?? '—'} now eligible to reseed upstream tools`
-    : 'Draft-only feedback · upstream reseeding remains locked until a new iteration is committed';
+    ? `Committed feedback recorded · iteration #${latestCommittedIteration?.id ?? '—'} requires approved typed deltas before reseeding`
+    : 'Draft-only feedback · upstream reseeding remains locked until committed, typed, and approved deltas exist';
+  const learnedDeltaPacks = useMemo<LearnedDeltaPack[]>(() => {
+    if (!hasCommittedFeedback || !latestCommittedIteration) return [];
+    const sourceExperimentRecordIds = sourceExperimentRecordIdsFromFeedback(feedbackResult, liveDraft.feedback);
+    if (sourceExperimentRecordIds.length === 0) return [];
+
+    const sourceDbtlRunId = `dbtlflow:iteration:${latestCommittedIteration.id}`;
+    return [
+      buildLearnedDeltaPack({
+        deltaPackId: `learned-delta-pack-v1:${sourceDbtlRunId}`,
+        iteration: latestCommittedIteration.id,
+        sourceDbtlRunId,
+        sourceExperimentRecordIds,
+        sourceProvenanceIds: sourceProvenanceIdsFromFeedback(liveDraft.feedback),
+        targetToolIds: DBTL_DELTA_TARGET_TOOLS,
+        learnedMetrics: liveDraft.feedback.learnedMetrics,
+        createdAt: new Date().toISOString(),
+        createdBy: 'dbtlflow',
+        notes: 'Pending DBTL loop-back delta pack. Seed builders ignore this pack until humanGateStatus is approved.',
+      }),
+    ];
+  }, [feedbackResult, hasCommittedFeedback, latestCommittedIteration, liveDraft.feedback]);
   const figureMeta = useMemo(() => ({
     eyebrow: 'Campaign figure',
     title: `DBTL is framed as a governed experimental ledger with ${currentPhase.toLowerCase()} in focus`,
@@ -321,6 +369,7 @@ export default function DBTLflowPage() {
         passRate: parseFloat(committedPassRate),
         latestPhase: latestCommittedIteration?.phase ?? currentPhase,
         feedback: liveDraft.feedback,
+        learnedDeltaPacks,
         learnedParameters: liveDraft.learnedParameters,
       },
       updatedAt: Date.now(),
@@ -333,6 +382,7 @@ export default function DBTLflowPage() {
     committedPassRate,
     currentPhase,
     hasCommittedFeedback,
+    learnedDeltaPacks,
     liveDraft.feedback,
     liveDraft.hypothesis,
     liveDraft.learnedParameters,
@@ -528,7 +578,7 @@ export default function DBTLflowPage() {
           <WorkbenchInlineContext
             toolId="dbtlflow"
             title="DBTL Workflow"
-            summary="DBTL is the governed feedback engine of the workbench: only committed Learn output is allowed to reseed upstream tools, so experiment feedback stays traceable, reviewable, and safe to trust."
+            summary="DBTL is the governed feedback engine of the workbench: only approved typed LearnedDeltaPacks can reseed upstream tools, so experiment feedback stays traceable and reviewable."
             compact
             isSimulated={!analyzeArtifact}
           />
@@ -538,7 +588,7 @@ export default function DBTLflowPage() {
           <ScientificHero
             eyebrow="Stage 4 · Test, Learn, Reseed"
             title="Closed-loop iteration is now an explicit governed object"
-            summary="DBTLflow is no longer just a list of experiments. It is the workbench’s decision gate: draft learning stays visible, committed learning becomes canonical, and only canonical learning is allowed to reseed upstream design, simulation, and control steps."
+            summary="DBTLflow is no longer just a list of experiments. It is the workbench’s decision gate: draft learning stays visible, committed learning becomes canonical, and approved typed deltas are required before upstream reseeding."
             aside={
               <>
                 <div style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
@@ -574,7 +624,7 @@ export default function DBTLflowPage() {
               {
                 label: 'Improvement Velocity',
                 value: `${improvementRate}/${unit}`,
-                detail: hasCommittedFeedback ? 'Upstream reseeding is unlocked for the latest committed learning package.' : 'Learning is still visible, but not yet cleared for upstream reseeding.',
+                detail: hasCommittedFeedback ? 'Approved typed deltas are still required before seed builders can apply changes.' : 'Learning is still visible, but not yet cleared for upstream reseeding.',
                 tone: hasCommittedFeedback ? 'warm' : 'alert',
               },
             ]}
@@ -1032,7 +1082,7 @@ export default function DBTLflowPage() {
                     The central panel now behaves like an experimental ledger figure. Phase state, campaign trajectory, and governance status stay in one reading path so loop health can be judged at a glance.
                   </div>
                   <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL }}>
-                    latest iteration #{latestIteration?.id ?? '—'} · {latestIteration?.result ?? '—'} {latestIteration?.unit ?? ''} · feedback {hasCommittedFeedback ? 'eligible for reseeding' : 'still locked'}
+                    latest iteration #{latestIteration?.id ?? '—'} · {latestIteration?.result ?? '—'} {latestIteration?.unit ?? ''} · feedback {hasCommittedFeedback ? 'requires approved delta' : 'still locked'}
                   </div>
                 </div>
               }
@@ -1109,7 +1159,7 @@ export default function DBTLflowPage() {
                   {feedbackLoading ? '⏳ Processing…' : '↑ Upload Test CSV'}
                 </span>
                 <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL }}>
-                  .csv with sample_id, yield columns
+                  .csv with assay metadata, units, instrument, operator
                 </span>
                 <input
                   type="file"

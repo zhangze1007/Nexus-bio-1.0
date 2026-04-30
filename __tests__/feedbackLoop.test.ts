@@ -1,4 +1,4 @@
-import { parseCSVData, runMOO } from '../src/utils/feedback-loop';
+import { AutomatedFeedbackLoop, parseCSVData, runMOO } from '../src/utils/feedback-loop';
 import type { DBTLIteration, TestDataRow } from '../src/types';
 
 function makeIteration(overrides: Partial<DBTLIteration> = {}): DBTLIteration {
@@ -137,5 +137,21 @@ describe('runMOO — deterministic and edge-case safe', () => {
       expect(Number.isFinite(s.suggested_value)).toBe(true);
       expect(Number.isFinite(s.predicted_improvement_percent)).toBe(true);
     }
+  });
+});
+
+describe('AutomatedFeedbackLoop typed assay boundary', () => {
+  it('does not let metadata-light legacy CSV influence DBTL feedback', async () => {
+    const result = await AutomatedFeedbackLoop([
+      'sample_id,yield_mg_L,biomass_OD600',
+      'S1,80,0.8',
+    ].join('\n'), makeIteration());
+
+    expect(result.optimization_objective).toBe('data_quality');
+    expect(result.test_summary.mean_yield).toBe(0);
+    expect(result.next_iteration_suggestions[0].parameter).toBe('Data Quality');
+    expect(result.next_iteration_suggestions[0].rationale).toContain('Rejected');
+    expect(result.rejectedExperimentRows?.length).toBeGreaterThan(0);
+    expect(result.sourceExperimentRecordIds).toEqual([]);
   });
 });

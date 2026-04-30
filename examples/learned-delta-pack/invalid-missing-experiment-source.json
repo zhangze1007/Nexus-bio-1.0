@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "learned-delta-pack-v1",
+  "deltaPackId": "example-ldp-invalid-missing-experiment-source",
+  "iteration": 7,
+  "sourceDbtlRunId": "dbtlflow:iteration:7",
+  "sourceExperimentRecordIds": [],
+  "sourceProvenanceIds": ["example-provenance-dbtl-004"],
+  "targetToolIds": ["fbasim"],
+  "changedBounds": {},
+  "changedPriors": {
+    "fbasim.glucoseUptake": {
+      "before": 9,
+      "after": 11,
+      "unit": "mmol/gDW/h",
+      "rationale": "Invalid example because no experiment record source is attached."
+    }
+  },
+  "changedWeights": {},
+  "learnedMetrics": {},
+  "classification": "conservative",
+  "humanGateStatus": "approved",
+  "createdAt": "2026-04-30T00:00:00.000Z",
+  "createdBy": "dbtlflow",
+  "notes": "This example should fail validation because sourceExperimentRecordIds is empty."
+}

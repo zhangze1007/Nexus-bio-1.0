@@ -9,6 +9,8 @@ describe('DBTL learned feedback migration', () => {
         {
           derivedFromToolId: 'dbtlflow',
           derivedAt: '2026-04-29T00:00:00.000Z',
+          experimentRecordId: 'er-single',
+          sourceExperimentRecordIds: ['er-single', 'er-batch-2'],
           provenanceEntryId: 'dbtlflow:1',
         },
       ],

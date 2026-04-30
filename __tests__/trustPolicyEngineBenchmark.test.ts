@@ -13,6 +13,7 @@ interface BenchmarkInput {
   isDraft: boolean;
   humanGateRequired: boolean;
   humanGateSatisfied: boolean;
+  humanGateStatus?: HumanGateStatus;
   notes: string;
 }
 
@@ -87,6 +88,7 @@ function loadExpectedLabels(): Map<string, ExpectedLabel> {
 }
 
 function humanGateStatus(testCase: TrustBenchmarkCase): HumanGateStatus {
+  if (testCase.input.humanGateStatus) return testCase.input.humanGateStatus;
   if (!testCase.input.humanGateRequired) return 'not-required';
   return testCase.input.humanGateSatisfied ? 'approved' : 'pending';
 }
@@ -144,6 +146,6 @@ describe('evaluateClaimSurfacePolicy benchmark corpus alignment', () => {
     }
 
     expect(mismatches).toEqual([]);
-    expect(cases).toHaveLength(64);
+    expect(cases).toHaveLength(74);
   });
 });

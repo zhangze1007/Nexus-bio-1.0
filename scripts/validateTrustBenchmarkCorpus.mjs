@@ -100,6 +100,7 @@ const INPUT_KEYS = [
   'humanGateSatisfied',
   'notes',
 ];
+const OPTIONAL_INPUT_KEYS = ['humanGateStatus'];
 
 const EXPECTED_KEYS = ['status', 'blockCode', 'rationale'];
 const CSV_HEADER = 'caseId,expectedStatus,expectedBlockCode,category,toolId,surface,knownBad';
@@ -109,6 +110,15 @@ function hasOnlyKeys(value, allowedKeys, context, errors) {
   const expected = [...allowedKeys].sort();
   const unexpected = keys.filter((key) => !expected.includes(key));
   const missing = expected.filter((key) => !keys.includes(key));
+  for (const key of unexpected) errors.push(`${context}: unexpected field '${key}'`);
+  for (const key of missing) errors.push(`${context}: missing required field '${key}'`);
+}
+
+function hasRequiredAndAllowedKeys(value, requiredKeys, optionalKeys, context, errors) {
+  const keys = Object.keys(value).sort();
+  const allowed = [...requiredKeys, ...optionalKeys].sort();
+  const unexpected = keys.filter((key) => !allowed.includes(key));
+  const missing = requiredKeys.filter((key) => !keys.includes(key));
   for (const key of unexpected) errors.push(`${context}: unexpected field '${key}'`);
   for (const key of missing) errors.push(`${context}: missing required field '${key}'`);
 }
@@ -196,7 +206,7 @@ function validateCase(testCase, errors) {
   if (!testCase.input || typeof testCase.input !== 'object' || Array.isArray(testCase.input)) {
     errors.push(`${context}: input must be an object`);
   } else {
-    hasOnlyKeys(testCase.input, INPUT_KEYS, `${context}.input`, errors);
+    hasRequiredAndAllowedKeys(testCase.input, INPUT_KEYS, OPTIONAL_INPUT_KEYS, `${context}.input`, errors);
     if (!['real', 'partial', 'demo'].includes(testCase.input.validityTier)) {
       errors.push(`${context}: input.validityTier is not allowed`);
     }
@@ -213,6 +223,12 @@ function validateCase(testCase, errors) {
     }
     if (typeof testCase.input.notes !== 'string' || testCase.input.notes.length < 8) {
       errors.push(`${context}: input.notes must be descriptive`);
+    }
+    if (
+      testCase.input.humanGateStatus !== undefined
+      && !['not-required', 'pending', 'approved', 'rejected'].includes(testCase.input.humanGateStatus)
+    ) {
+      errors.push(`${context}: input.humanGateStatus is not allowed`);
     }
   }
 

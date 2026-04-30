@@ -10,6 +10,7 @@ export interface DBTLLearnedMetrics {
 
 export interface DBTLMetricSource {
   experimentRecordId?: string;
+  sourceExperimentRecordIds?: string[];
   provenanceEntryId?: string;
   derivedFromToolId: string;
   derivedAt: string;

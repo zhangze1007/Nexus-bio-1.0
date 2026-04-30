@@ -1600,6 +1600,261 @@
       },
       "riskTags": ["cellfree-model-structure-implemented", "cellfree-demo-payload"],
       "knownBad": false
+    },
+    {
+      "caseId": "TRB-065",
+      "title": "Unit-less assay feedback is blocked",
+      "category": "missing-evidence",
+      "toolId": "dbtlflow",
+      "surface": "recommendation",
+      "claim": "A CSV row with a yield value but no measurement unit is allowed to influence DBTL feedback.",
+      "input": {
+        "validityTier": "partial",
+        "hasProvenance": false,
+        "evidenceState": "missing",
+        "uncertaintyState": "unresolved",
+        "isDraft": false,
+        "humanGateRequired": false,
+        "humanGateSatisfied": false,
+        "notes": "ExperimentRecordV1 must reject unit-less assay records before feedback use."
+      },
+      "expected": {
+        "status": "blocked",
+        "blockCode": "PROVENANCE_REQUIRED",
+        "rationale": "Unit-less assay feedback lacks required record metadata and provenance."
+      },
+      "riskTags": ["unitless-assay-record", "experiment-record-missing-unit"],
+      "knownBad": false
+    },
+    {
+      "caseId": "TRB-066",
+      "title": "Assay feedback without timepoints is blocked",
+      "category": "missing-evidence",
+      "toolId": "dbtlflow",
+      "surface": "protocol",
+      "claim": "An assay record with no timepoints is converted into a protocol-like DBTL claim.",
+      "input": {
+        "validityTier": "demo",
+        "hasProvenance": true,
+        "evidenceState": "missing",
+        "uncertaintyState": "unresolved",
+        "isDraft": false,
+        "humanGateRequired": true,
+        "humanGateSatisfied": false,
+        "notes": "ExperimentRecordV1 requires at least one timepoint."
+      },
+      "expected": {
+        "status": "blocked",
+        "blockCode": "DEMO_OUTPUT_PROTOCOL_BLOCKED",
+        "rationale": "Metadata-less demo assay feedback cannot become a protocol-like claim."
+      },
+      "riskTags": ["experiment-record-missing-timepoints", "dbtl-assay-feedback"],
+      "knownBad": false
+    },
+    {
+      "caseId": "TRB-067",
+      "title": "Assay feedback without source actor is gated",
+      "category": "human-gate-required",
+      "toolId": "dbtlflow",
+      "surface": "external-handoff",
+      "claim": "A DBTL assay record missing instrument and operator context is handed off externally.",
+      "input": {
+        "validityTier": "partial",
+        "hasProvenance": true,
+        "evidenceState": "missing",
+        "uncertaintyState": "unresolved",
+        "isDraft": false,
+        "humanGateRequired": true,
+        "humanGateSatisfied": false,
+        "notes": "Instrument and operator/source actor metadata are required for assay traceability."
+      },
+      "expected": {
+        "status": "gated",
+        "blockCode": "HUMAN_GATE_REQUIRED",
+        "rationale": "External handoff requires human review when assay source metadata is incomplete."
+      },
+      "riskTags": ["instrument-missing", "operator-missing", "experiment-record-source-metadata"],
+      "knownBad": false
+    },
+    {
+      "caseId": "TRB-068",
+      "title": "Typed simulated assay recommendation is ok",
+      "category": "truthful-partial",
+      "toolId": "dbtlflow",
+      "surface": "recommendation",
+      "claim": "A simulated assay with full ExperimentRecordV1 metadata is used as traceable DBTL context.",
+      "input": {
+        "validityTier": "partial",
+        "hasProvenance": true,
+        "evidenceState": "present",
+        "uncertaintyState": "bounded",
+        "isDraft": false,
+        "humanGateRequired": false,
+        "humanGateSatisfied": false,
+        "notes": "The source type is simulated-assay and all required metadata are present."
+      },
+      "expected": {
+        "status": "ok",
+        "blockCode": null,
+        "rationale": "Typed simulated assay records can support traceable DBTL recommendations when labeled honestly."
+      },
+      "riskTags": ["experiment-record-v1", "simulated-assay-metadata"],
+      "knownBad": false
+    },
+    {
+      "caseId": "TRB-069",
+      "title": "Manual-review assay feedback is gated",
+      "category": "human-gate-required",
+      "toolId": "dbtlflow",
+      "surface": "recommendation",
+      "claim": "A DBTL assay record with a manual-review-required QC flag is treated as a finalized recommendation.",
+      "input": {
+        "validityTier": "partial",
+        "hasProvenance": true,
+        "evidenceState": "present",
+        "uncertaintyState": "unresolved",
+        "isDraft": false,
+        "humanGateRequired": true,
+        "humanGateSatisfied": false,
+        "notes": "Manual-review-required QC should gate feedback interpretation."
+      },
+      "expected": {
+        "status": "gated",
+        "blockCode": "HUMAN_GATE_REQUIRED",
+        "rationale": "Manual-review-required assay records must not bypass human review."
+      },
+      "riskTags": ["manual-review-required", "experiment-record-qc"],
+      "knownBad": false
+    },
+    {
+      "caseId": "TRB-070",
+      "title": "Pending learned delta loop-back is gated",
+      "category": "human-gate-required",
+      "toolId": "dbtlflow",
+      "surface": "recommendation",
+      "claim": "A pending LearnedDeltaPack is applied to upstream seed builders.",
+      "input": {
+        "validityTier": "partial",
+        "hasProvenance": true,
+        "evidenceState": "present",
+        "uncertaintyState": "bounded",
+        "isDraft": false,
+        "humanGateRequired": true,
+        "humanGateSatisfied": false,
+        "humanGateStatus": "pending",
+        "notes": "Pending LearnedDeltaPack records must wait for explicit human approval before seed application."
+      },
+      "expected": {
+        "status": "gated",
+        "blockCode": "HUMAN_GATE_REQUIRED",
+        "rationale": "Pending DBTL learned deltas require human review before loop-back application."
+      },
+      "riskTags": ["learned-delta-pack", "pending-loopback-delta"],
+      "knownBad": false
+    },
+    {
+      "caseId": "TRB-071",
+      "title": "Rejected learned delta loop-back is blocked",
+      "category": "human-gate-required",
+      "toolId": "dbtlflow",
+      "surface": "recommendation",
+      "claim": "A rejected LearnedDeltaPack is applied to upstream seed builders.",
+      "input": {
+        "validityTier": "partial",
+        "hasProvenance": true,
+        "evidenceState": "present",
+        "uncertaintyState": "bounded",
+        "isDraft": false,
+        "humanGateRequired": true,
+        "humanGateSatisfied": false,
+        "humanGateStatus": "rejected",
+        "notes": "Rejected LearnedDeltaPack records must be blocked rather than gated for application."
+      },
+      "expected": {
+        "status": "blocked",
+        "blockCode": "HUMAN_GATE_REQUIRED",
+        "rationale": "Rejected DBTL learned deltas cannot be used for loop-back application."
+      },
+      "riskTags": ["learned-delta-pack", "rejected-loopback-delta"],
+      "knownBad": false
+    },
+    {
+      "caseId": "TRB-072",
+      "title": "Approved learned delta with experiment source is ok",
+      "category": "truthful-partial",
+      "toolId": "dbtlflow",
+      "surface": "recommendation",
+      "claim": "An approved typed LearnedDeltaPack with experiment records is allowed as loop-back context.",
+      "input": {
+        "validityTier": "partial",
+        "hasProvenance": true,
+        "evidenceState": "present",
+        "uncertaintyState": "bounded",
+        "isDraft": false,
+        "humanGateRequired": true,
+        "humanGateSatisfied": true,
+        "humanGateStatus": "approved",
+        "notes": "Approved typed learned deltas with experiment source ids can support recommendation-level loop-back context."
+      },
+      "expected": {
+        "status": "ok",
+        "blockCode": null,
+        "rationale": "Approved typed DBTL deltas with experiment sources are allowed as traceable recommendation context."
+      },
+      "riskTags": ["learned-delta-pack", "approved-loopback-delta", "experiment-record-source"],
+      "knownBad": false
+    },
+    {
+      "caseId": "TRB-073",
+      "title": "Learned delta without experiment source is blocked",
+      "category": "missing-evidence",
+      "toolId": "dbtlflow",
+      "surface": "recommendation",
+      "claim": "A LearnedDeltaPack without experiment record ids is applied to upstream seed builders.",
+      "input": {
+        "validityTier": "partial",
+        "hasProvenance": false,
+        "evidenceState": "missing",
+        "uncertaintyState": "bounded",
+        "isDraft": false,
+        "humanGateRequired": true,
+        "humanGateSatisfied": true,
+        "humanGateStatus": "approved",
+        "notes": "LearnedDeltaPack application requires sourceExperimentRecordIds and provenance context."
+      },
+      "expected": {
+        "status": "blocked",
+        "blockCode": "PROVENANCE_REQUIRED",
+        "rationale": "DBTL learned deltas missing experiment sources and provenance cannot support loop-back."
+      },
+      "riskTags": ["learned-delta-pack", "missing-experiment-source"],
+      "knownBad": false
+    },
+    {
+      "caseId": "TRB-074",
+      "title": "Legacy text feedback cannot stand in for learned delta",
+      "category": "known-bad-case",
+      "toolId": "dbtlflow",
+      "surface": "recommendation",
+      "claim": "Legacy natural-language learnedParameters are treated as a typed LearnedDeltaPack.",
+      "input": {
+        "validityTier": "partial",
+        "hasProvenance": true,
+        "evidenceState": "present",
+        "uncertaintyState": "unresolved",
+        "isDraft": false,
+        "humanGateRequired": true,
+        "humanGateSatisfied": false,
+        "humanGateStatus": "pending",
+        "notes": "Natural-language feedback remains audit text and is not the source of typed delta values."
+      },
+      "expected": {
+        "status": "gated",
+        "blockCode": "HUMAN_GATE_REQUIRED",
+        "rationale": "Legacy text feedback cannot bypass typed LearnedDeltaPack review."
+      },
+      "riskTags": ["known-bad", "stringly-dbtl-loopback", "learned-delta-pack"],
+      "knownBad": true
     }
   ]
 }

@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "learned-delta-pack-v1",
+  "deltaPackId": "example-ldp-approved-restorative",
+  "iteration": 5,
+  "sourceDbtlRunId": "dbtlflow:iteration:5",
+  "sourceExperimentRecordIds": ["example-er-sim-002"],
+  "sourceProvenanceIds": ["example-provenance-dbtl-002"],
+  "targetToolIds": ["fbasim"],
+  "changedBounds": {},
+  "changedPriors": {
+    "fbasim.oxygenUptake": {
+      "before": 8.4,
+      "after": 9.1,
+      "unit": "mmol/gDW/h",
+      "rationale": "Fictional typed prior delta for application-boundary demonstration."
+    }
+  },
+  "changedWeights": {},
+  "learnedMetrics": {
+    "doRmse": 0.04
+  },
+  "classification": "restorative",
+  "humanGateStatus": "approved",
+  "createdAt": "2026-04-30T00:00:00.000Z",
+  "createdBy": "dbtlflow",
+  "notes": "Fictional approved example with explicit before/after values."
+}

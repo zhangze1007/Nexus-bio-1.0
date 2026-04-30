@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "learned-delta-pack-v1",
+  "deltaPackId": "example-ldp-rejected-aggressive",
+  "iteration": 6,
+  "sourceDbtlRunId": "dbtlflow:iteration:6",
+  "sourceExperimentRecordIds": ["example-er-sim-003"],
+  "sourceProvenanceIds": ["example-provenance-dbtl-003"],
+  "targetToolIds": ["cellfree"],
+  "changedBounds": {},
+  "changedPriors": {
+    "cellfree.params.ribosomeTotal": {
+      "before": 520,
+      "after": 760,
+      "unit": "nM",
+      "rationale": "Fictional aggressive prior delta retained as a rejected audit record."
+    }
+  },
+  "changedWeights": {},
+  "learnedMetrics": {
+    "confidenceScore": 0.42
+  },
+  "classification": "aggressive",
+  "humanGateStatus": "rejected",
+  "createdAt": "2026-04-30T00:00:00.000Z",
+  "createdBy": "dbtlflow",
+  "notes": "Rejected records remain inspectable but must not apply to seeds."
+}

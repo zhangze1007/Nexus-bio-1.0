@@ -84,4 +84,4 @@ See `examples/experiment-records/valid-simulated-assay.json`. The source type is
 - real operator or instrument provenance unless provided by the user/source;
 - automatic DBTL parameter updates.
 
-Step 14 will decide how typed experiment records become learned deltas. Step 13 only creates typed records, validation, import mapping, examples, and source references.
+Step 14 uses typed experiment record ids as required sources for `LearnedDeltaPack`. Experiment records still do not apply seed changes on their own.

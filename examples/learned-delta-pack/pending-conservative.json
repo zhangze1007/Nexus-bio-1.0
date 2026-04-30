@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "learned-delta-pack-v1",
+  "deltaPackId": "example-ldp-pending-conservative",
+  "iteration": 4,
+  "sourceDbtlRunId": "dbtlflow:iteration:4",
+  "sourceExperimentRecordIds": ["example-er-sim-001"],
+  "sourceProvenanceIds": ["example-provenance-dbtl-001"],
+  "targetToolIds": ["fbasim", "dyncon"],
+  "changedBounds": {},
+  "changedPriors": {},
+  "changedWeights": {},
+  "learnedMetrics": {
+    "yieldChangePercent": 3.2
+  },
+  "classification": "conservative",
+  "humanGateStatus": "pending",
+  "createdAt": "2026-04-30T00:00:00.000Z",
+  "createdBy": "dbtlflow",
+  "notes": "Fictional pending example. Empty change maps mean no seed changes are represented yet."
+}

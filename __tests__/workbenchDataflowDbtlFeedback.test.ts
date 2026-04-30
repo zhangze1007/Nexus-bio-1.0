@@ -1,5 +1,6 @@
-import { buildFBASeed } from '../src/components/tools/shared/workbenchDataflow';
+import { buildFBASeed, buildDynConSeed } from '../src/components/tools/shared/workbenchDataflow';
 import type { WorkbenchToolPayloadMap } from '../src/store/workbenchPayloads';
+import type { LearnedDeltaPack } from '../src/types/learnedDelta';
 
 function makeDbtlPayload(
   resultOverrides: Partial<WorkbenchToolPayloadMap['dbtlflow']['result']> = {},
@@ -26,8 +27,30 @@ function makeDbtlPayload(
   };
 }
 
+function makeDeltaPack(overrides: Partial<LearnedDeltaPack> = {}): LearnedDeltaPack {
+  return {
+    schemaVersion: 'learned-delta-pack-v1',
+    deltaPackId: 'ldp-workbench-001',
+    iteration: 1,
+    sourceDbtlRunId: 'dbtlflow:iteration:1',
+    sourceExperimentRecordIds: ['er-workbench-001'],
+    sourceProvenanceIds: ['provenance:dbtlflow:workbench'],
+    targetToolIds: ['fbasim'],
+    changedBounds: {},
+    changedPriors: {
+      'fbasim.glucoseUptake': { before: 9, after: 14, unit: 'mmol/gDW/h' },
+    },
+    changedWeights: {},
+    learnedMetrics: { drainPercent: 45 },
+    classification: 'conservative',
+    humanGateStatus: 'approved',
+    createdAt: '2026-04-30T00:00:00.000Z',
+    ...overrides,
+  };
+}
+
 describe('workbench dataflow DBTL feedback', () => {
-  it('uses typed DBTL drain metrics when reseeding FBA', () => {
+  it('keeps typed DBTL feedback as audit data without applying it as a delta', () => {
     const dbtl = makeDbtlPayload({
       feedback: {
         learnedMetrics: { drainPercent: 45 },
@@ -42,7 +65,7 @@ describe('workbench dataflow DBTL feedback', () => {
       learnedParameters: ['drain 5%'],
     });
 
-    expect(buildFBASeed(null, null, dbtl).objective).toBe('atp');
+    expect(buildFBASeed(null, null, dbtl).objective).toBe('biomass');
   });
 
   it('does not regex-parse legacy learnedParameters while reseeding FBA', () => {
@@ -59,5 +82,42 @@ describe('workbench dataflow DBTL feedback', () => {
     });
 
     expect(() => buildFBASeed(null, null, legacyDbtl)).not.toThrow();
+  });
+
+  it('ignores pending and rejected delta packs while reseeding FBA', () => {
+    const pending = makeDbtlPayload({
+      learnedDeltaPacks: [makeDeltaPack({ humanGateStatus: 'pending' })],
+    });
+    const rejected = makeDbtlPayload({
+      learnedDeltaPacks: [makeDeltaPack({ humanGateStatus: 'rejected' })],
+    });
+
+    expect(buildFBASeed(null, null, pending).glucoseUptake).not.toBe(14);
+    expect(buildFBASeed(null, null, rejected).glucoseUptake).not.toBe(14);
+  });
+
+  it('applies approved deltas only to matching target tools', () => {
+    const dbtl = makeDbtlPayload({
+      learnedDeltaPacks: [makeDeltaPack()],
+    });
+
+    expect(buildFBASeed(null, null, dbtl).glucoseUptake).toBe(14);
+  });
+
+  it('skips unknown delta fields and nonmatching target tools safely', () => {
+    const dbtl = makeDbtlPayload({
+      learnedDeltaPacks: [
+        makeDeltaPack({
+          targetToolIds: ['dyncon'],
+          changedPriors: {
+            'fbasim.glucoseUptake': { before: 9, after: 14 },
+            'dyncon.unknown': { before: 1, after: 2 },
+          },
+        }),
+      ],
+    });
+
+    expect(buildFBASeed(null, null, dbtl).glucoseUptake).not.toBe(14);
+    expect(() => buildDynConSeed(null, null, null, dbtl)).not.toThrow();
   });
 });
