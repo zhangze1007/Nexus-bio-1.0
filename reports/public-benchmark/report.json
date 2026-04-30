@@ -1,0 +1,58 @@
+{
+  "schemaVersion": "public-benchmark-v1",
+  "generatedAt": "2026-04-30T08:26:00.605Z",
+  "runLabel": "local-dev",
+  "totalCases": 74,
+  "modes": [
+    {
+      "mode": "no-gating",
+      "totalCases": 74,
+      "unsafePropagationRate": 1,
+      "falseTrustRate": 1,
+      "falseBlockRate": 0,
+      "demoLeakageRate": 1,
+      "missingProvenanceLeakageRate": 1,
+      "unsafeExportPreventionRate": 0,
+      "knownBadPreventionRate": 0,
+      "reviewerCalibrationScore": null,
+      "meanTimeToSafeDecisionMs": null
+    },
+    {
+      "mode": "badge-only",
+      "totalCases": 74,
+      "unsafePropagationRate": 1,
+      "falseTrustRate": 1,
+      "falseBlockRate": 0,
+      "demoLeakageRate": 1,
+      "missingProvenanceLeakageRate": 1,
+      "unsafeExportPreventionRate": 0,
+      "knownBadPreventionRate": 0,
+      "reviewerCalibrationScore": null,
+      "meanTimeToSafeDecisionMs": null
+    },
+    {
+      "mode": "runtime-gating",
+      "totalCases": 74,
+      "unsafePropagationRate": 0,
+      "falseTrustRate": 0,
+      "falseBlockRate": 0,
+      "demoLeakageRate": 0,
+      "missingProvenanceLeakageRate": 0,
+      "unsafeExportPreventionRate": 1,
+      "knownBadPreventionRate": 1,
+      "reviewerCalibrationScore": null,
+      "meanTimeToSafeDecisionMs": null
+    }
+  ],
+  "rawResultsPath": "reports/public-benchmark/raw-results.json",
+  "summaryPath": "reports/public-benchmark/summary.json",
+  "methodsNotePath": "docs/public-benchmark-methods.md",
+  "limitations": [
+    "Local development benchmark output only.",
+    "Does not validate wet-lab outcomes.",
+    "Does not measure biological model accuracy or scientific truth.",
+    "No external validation, third-party certification, or public release claim is made.",
+    "No human reviewer calibration study has been run; reviewerCalibrationScore is not measured.",
+    "Does not measure real user time-to-decision or statistical significance."
+  ]
+}

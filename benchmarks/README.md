@@ -99,6 +99,16 @@ The report is written to `reports/trust-metrics/latest.json`. It includes block 
 
 The report is a local development benchmark artifact. It is not wet-lab evidence, a scientific correctness guarantee, a third-party benchmark claim, or a safety certification.
 
+## Public Baseline Comparison
+
+Step 17 derives a local public comparison benchmark from the same corpus:
+
+```bash
+npm run benchmark:public
+```
+
+The comparison writes `reports/public-benchmark/` artifacts for `no-gating`, `badge-only`, and `runtime-gating` modes. It compares unsafe propagation and prevention behavior; it does not change expected labels or claim scientific validation.
+
 ## Current Limitation
 
 The corpus itself is static. The evaluator and report scripts exercise claim-surface policy behavior over those static cases, but they do not enforce UI behavior, block live exports, block live protocols, or generate provenance middleware. No wet-lab validation is claimed.

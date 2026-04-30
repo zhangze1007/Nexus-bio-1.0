@@ -57,4 +57,4 @@ It writes:
 
 ## Next Steps
 
-Step 16 can use this dashboard as a narrow showcase surface without changing the metrics semantics. Step 17 can compare against public baselines only if a real comparison protocol is introduced later.
+Step 16 can use this dashboard as a narrow showcase surface without changing the metrics semantics. Step 17 adds a local baseline comparison protocol in `docs/public-benchmark-methods.md` and writes reproducible comparison artifacts to `reports/public-benchmark/`.
