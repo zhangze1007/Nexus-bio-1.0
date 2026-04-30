@@ -64,6 +64,33 @@ const PATHD_SUPPORT_RAIL_WIDTH = 272;
 const PATHD_SCENE_GUTTER = 20;
 const PATHD_PANEL_BOTTOM = 18;
 type ControlVarsStyle = CSSProperties & Record<`--${string}`, string>;
+type PathdSceneInsets = { top: number; right: number; bottom: number; left: number };
+
+const PATHD_SAFE_FRAME_GUTTER = 16;
+
+function getFallbackSceneInsets(embedded: boolean): PathdSceneInsets {
+  return embedded
+    ? {
+        top: 18,
+        right: 18 + PATHD_RIGHT_PANEL_WIDTH + PATHD_SAFE_FRAME_GUTTER,
+        bottom: PATHD_PANEL_BOTTOM + 150,
+        left: 20 + PATHD_LEFT_PANEL_WIDTH + PATHD_SAFE_FRAME_GUTTER,
+      }
+    : {
+        top: 18,
+        right: 18 + PATHD_SUPPORT_RAIL_WIDTH + PATHD_SAFE_FRAME_GUTTER,
+        bottom: PATHD_PANEL_BOTTOM + 150,
+        left: 20 + PATHD_LEFT_PANEL_WIDTH + PATHD_SAFE_FRAME_GUTTER,
+      };
+}
+
+function getBaseMeasuredInsets(): PathdSceneInsets {
+  return { top: 18, right: 18, bottom: PATHD_PANEL_BOTTOM + 18, left: 18 };
+}
+
+function sceneInsetsEqual(a: PathdSceneInsets | null, b: PathdSceneInsets) {
+  return Boolean(a) && a.top === b.top && a.right === b.right && a.bottom === b.bottom && a.left === b.left;
+}
 
 function ArtifactRouteState({
   title,
@@ -133,7 +160,12 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
   const [heroDismissed, setHeroDismissed] = useState(embedded);
   const [methodStripDismissed, setMethodStripDismissed] = useState(embedded);
   const stageRef = useRef<HTMLDivElement | null>(null);
+  const supportFrameRef = useRef<HTMLDivElement | null>(null);
+  const leftPanelFrameRef = useRef<HTMLDivElement | null>(null);
+  const rightPanelFrameRef = useRef<HTMLDivElement | null>(null);
   const [embeddedStageHeight, setEmbeddedStageHeight] = useState<number | null>(null);
+  const fallbackSceneInsets = useMemo(() => getFallbackSceneInsets(embedded), [embedded]);
+  const [measuredSceneInsets, setMeasuredSceneInsets] = useState<PathdSceneInsets | null>(null);
 
   // ── Zustand: node selection + AI-generated pathway ───────────────
   const selectedNode    = useUIStore(s => s.selectedNode);
@@ -403,6 +435,90 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
     };
   }, [embedded]);
 
+  const measureSceneInsets = useCallback(() => {
+    const stage = stageRef.current;
+    if (!stage) return;
+
+    const stageRect = stage.getBoundingClientRect();
+    const next = getBaseMeasuredInsets();
+    const stageCenterX = stageRect.left + stageRect.width / 2;
+    const stageCenterY = stageRect.top + stageRect.height / 2;
+
+    const includeOverlay = (element: HTMLElement | null) => {
+      if (!element) return;
+      const elementRect = element.getBoundingClientRect();
+      const measurable = elementRect.width > 0 && elementRect.height > 0
+        ? element
+        : element.firstElementChild instanceof HTMLElement
+          ? element.firstElementChild
+          : element;
+      const rect = measurable.getBoundingClientRect();
+      const overlaps =
+        rect.right > stageRect.left &&
+        rect.left < stageRect.right &&
+        rect.bottom > stageRect.top &&
+        rect.top < stageRect.bottom;
+      if (!overlaps) return;
+
+      const overlayCenterX = rect.left + rect.width / 2;
+      const overlayCenterY = rect.top + rect.height / 2;
+
+      if (overlayCenterX <= stageCenterX) {
+        next.left = Math.max(next.left, Math.round(rect.right - stageRect.left + PATHD_SAFE_FRAME_GUTTER));
+      } else {
+        next.right = Math.max(next.right, Math.round(stageRect.right - rect.left + PATHD_SAFE_FRAME_GUTTER));
+      }
+
+      if (overlayCenterY <= stageCenterY) {
+        next.top = Math.max(next.top, Math.round(rect.bottom - stageRect.top + PATHD_SAFE_FRAME_GUTTER));
+      } else {
+        next.bottom = Math.max(next.bottom, Math.round(stageRect.bottom - rect.top + PATHD_SAFE_FRAME_GUTTER));
+      }
+    };
+
+    includeOverlay(supportFrameRef.current);
+    includeOverlay(leftPanelFrameRef.current);
+    includeOverlay(rightPanelFrameRef.current);
+
+    setMeasuredSceneInsets((current) => (sceneInsetsEqual(current, next) ? current : next));
+  }, []);
+
+  useLayoutEffect(() => {
+    let rafId = window.requestAnimationFrame(measureSceneInsets);
+    const resizeObserver = typeof ResizeObserver !== 'undefined'
+      ? new ResizeObserver(() => {
+          window.cancelAnimationFrame(rafId);
+          rafId = window.requestAnimationFrame(measureSceneInsets);
+        })
+      : null;
+
+    const observed = [
+      stageRef.current,
+      supportFrameRef.current,
+      leftPanelFrameRef.current,
+      leftPanelFrameRef.current?.firstElementChild,
+      rightPanelFrameRef.current,
+      rightPanelFrameRef.current?.firstElementChild,
+    ].filter((element): element is HTMLElement => element instanceof HTMLElement);
+
+    observed.forEach((element) => resizeObserver?.observe(element));
+    window.addEventListener('resize', measureSceneInsets);
+
+    return () => {
+      window.cancelAnimationFrame(rafId);
+      resizeObserver?.disconnect();
+      window.removeEventListener('resize', measureSceneInsets);
+    };
+  }, [
+    embedded,
+    embeddedStageHeight,
+    heroDismissed,
+    measureSceneInsets,
+    methodStripDismissed,
+    state,
+    supportCards.length,
+  ]);
+
   // ── ThreeScene: computed props from simulation params ─────────────
   // glowMultiplier: default enzyme=5 → 1.0 (mid); enzyme=20 → 2.0 (max); pH/temp deviate → dims
   const glowMultiplier = useMemo(() => {
@@ -417,22 +533,7 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
     [params.substrate, params.km]
   );
 
-  const sceneOpticalInsets = useMemo(
-    () => (embedded
-      ? {
-          top: 18,
-          right: Math.round(PATHD_RIGHT_PANEL_WIDTH * 0.16),
-          bottom: PATHD_PANEL_BOTTOM + 34,
-          left: Math.round(PATHD_LEFT_PANEL_WIDTH * 0.14),
-        }
-      : {
-          top: 18,
-          right: Math.round(PATHD_SUPPORT_RAIL_WIDTH * 0.28),
-          bottom: PATHD_PANEL_BOTTOM + 36,
-          left: Math.round(PATHD_LEFT_PANEL_WIDTH * 0.18),
-        }),
-    [embedded],
-  );
+  const sceneOpticalInsets = measuredSceneInsets ?? fallbackSceneInsets;
 
   // ── Fluid force ref — zero allocation on RAF ──────────────────────
   const forceRef = useRef<FluidForce | null>(null);
@@ -586,7 +687,7 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
       />
 
       {embedded ? (
-        <div className="nb-pathd-support-dock">
+        <div ref={supportFrameRef} className="nb-pathd-support-dock">
           <div className="nb-pathd-support-dock__grid">
             {supportCards.map((card) => (
               <div
@@ -667,6 +768,7 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
         </div>
       ) : (
         <div
+          ref={supportFrameRef}
           className="nb-pathd-hero-stack nb-pathd-hero-stack--rail"
           style={{
             position: 'absolute',
@@ -822,6 +924,7 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
             stressIndex={readouts.stressIndex}
             fullscreen
             opticalInsets={sceneOpticalInsets}
+            debugFrameName="PATHD"
             tracePlacement="top-left"
             traceLayout={embedded ? { top: 16, left: PATHD_SCENE_GUTTER, width: PATHD_LEFT_PANEL_WIDTH } : undefined}
           />
@@ -830,7 +933,7 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
 
       {/* ── Left tool panel ── */}
       <div style={{ position:'absolute', inset:0, zIndex:10, pointerEvents:'none' }}>
-        <div style={{ pointerEvents:'auto' }}>
+        <div ref={leftPanelFrameRef} style={{ pointerEvents:'auto' }}>
           <ToolOverlay
             params={params}
             state={state}
@@ -849,7 +952,7 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
 
       {/* ── Right status panel ── */}
       <div style={{ position:'absolute', inset:0, zIndex:10, pointerEvents:'none' }}>
-        <div style={{ pointerEvents:'auto' }}>
+        <div ref={rightPanelFrameRef} style={{ pointerEvents:'auto' }}>
           <StatusOverlay
             readouts={readouts}
             rateHistory={rateHistory}

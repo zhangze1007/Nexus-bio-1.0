@@ -23,11 +23,8 @@ type ConfigurableRenderer = {
 const INIT_TIMEOUT_MS = 2000;
 const CAMERA_FRAME_PADDING = 1.38;
 const CAMERA_ELEVATION_RATIO = 0.04;
-const OPTICAL_CENTER_WEIGHT_X = 0.36;
-const OPTICAL_CENTER_WEIGHT_Y = 0.28;
-const MAX_OPTICAL_SHIFT_RATIO_X = 0.08;
-const MAX_OPTICAL_SHIFT_RATIO_Y = 0.07;
 const MIN_CAMERA_DISTANCE = 5;
+const GRID_ORIGIN = new THREE.Vector3(0, -3.8, 0);
 
 function normalizeOpticalInsets(
   fullscreen: boolean,
@@ -44,22 +41,63 @@ function normalizeOpticalInsets(
   };
 }
 
-function getBoundsCenterAndSize(nodes: PathwayNode[]) {
+type RouteGeometry = {
+  box: THREE.Box3;
+  min: THREE.Vector3;
+  max: THREE.Vector3;
+  boundsCenter: THREE.Vector3;
+  arithmeticCentroid: THREE.Vector3;
+  size: THREE.Vector3;
+  routeGroupOffset: THREE.Vector3;
+  isEmpty: boolean;
+};
+
+function computeRouteGeometry(nodes: PathwayNode[]): RouteGeometry {
   const box = new THREE.Box3();
+  const arithmeticCentroid = new THREE.Vector3();
+  let positionCount = 0;
+
   nodes.forEach((node) => {
     if (node && Array.isArray(node.position) && node.position.length === 3) {
-      box.expandByPoint(new THREE.Vector3(...(node.position as [number, number, number])));
+      const position = new THREE.Vector3(...(node.position as [number, number, number]));
+      box.expandByPoint(position);
+      arithmeticCentroid.add(position);
+      positionCount += 1;
     }
   });
 
-  const center = new THREE.Vector3();
-  const size = new THREE.Vector3();
-  if (!box.isEmpty()) {
-    box.getCenter(center);
-    box.getSize(size);
+  if (positionCount > 0) {
+    arithmeticCentroid.multiplyScalar(1 / positionCount);
   }
 
-  return { center, size, box };
+  const boundsCenter = new THREE.Vector3();
+  const size = new THREE.Vector3();
+  const min = new THREE.Vector3();
+  const max = new THREE.Vector3();
+  if (!box.isEmpty()) {
+    box.getCenter(boundsCenter);
+    box.getSize(size);
+    min.copy(box.min);
+    max.copy(box.max);
+  }
+
+  return {
+    box,
+    min,
+    max,
+    boundsCenter,
+    arithmeticCentroid,
+    size,
+    routeGroupOffset: boundsCenter.clone().multiplyScalar(-1),
+    isEmpty: box.isEmpty(),
+  };
+}
+
+function getSafeFrameDimensions(width: number, height: number, insets: OpticalInsetBox) {
+  return {
+    width: Math.max(width - insets.left - insets.right, 1),
+    height: Math.max(height - insets.top - insets.bottom, 1),
+  };
 }
 
 function getOpticalTargetOffset(args: {
@@ -77,14 +115,15 @@ function getOpticalTargetOffset(args: {
   const hHalfRad = Math.atan(Math.tan(vHalfRad) * aspect);
   const frustumHalfWidth = Math.tan(hHalfRad) * distance;
   const frustumHalfHeight = Math.tan(vHalfRad) * distance;
-  const desiredScreenShiftX = (insets.left - insets.right) / width;
-  const desiredScreenShiftY = (insets.bottom - insets.top) / height;
-  const rawX = -desiredScreenShiftX * frustumHalfWidth * OPTICAL_CENTER_WEIGHT_X;
-  const rawY = -desiredScreenShiftY * frustumHalfHeight * OPTICAL_CENTER_WEIGHT_Y;
+  const safeFrame = getSafeFrameDimensions(width, height, insets);
+  const safeCenterX = insets.left + safeFrame.width / 2;
+  const safeCenterY = insets.top + safeFrame.height / 2;
+  const desiredNdcX = (safeCenterX - width / 2) / (width / 2);
+  const desiredNdcY = (height / 2 - safeCenterY) / (height / 2);
 
   return new THREE.Vector3(
-    THREE.MathUtils.clamp(rawX, -frustumHalfWidth * MAX_OPTICAL_SHIFT_RATIO_X, frustumHalfWidth * MAX_OPTICAL_SHIFT_RATIO_X),
-    THREE.MathUtils.clamp(rawY, -frustumHalfHeight * MAX_OPTICAL_SHIFT_RATIO_Y, frustumHalfHeight * MAX_OPTICAL_SHIFT_RATIO_Y),
+    -desiredNdcX * frustumHalfWidth,
+    -desiredNdcY * frustumHalfHeight,
     0,
   );
 }
@@ -97,23 +136,24 @@ function getLabelAwareSize(size: THREE.Vector3) {
 }
 
 function computeCameraFrame(args: {
-  nodes: PathwayNode[];
+  routeGeometry: RouteGeometry;
   width: number;
   height: number;
   cameraFov: number;
   insets: OpticalInsetBox;
 }) {
-  const { nodes, width, height, cameraFov, insets } = args;
-  const { center, size, box } = getBoundsCenterAndSize(nodes);
+  const { routeGeometry, width, height, cameraFov, insets } = args;
+  const { size, isEmpty } = routeGeometry;
   const safeWidth = Math.max(width, 1);
   const safeHeight = Math.max(height, 1);
-  const aspect = safeWidth / safeHeight;
+  const safeFrame = getSafeFrameDimensions(safeWidth, safeHeight, insets);
+  const aspect = safeFrame.width / safeFrame.height;
   const labelAwareSize = getLabelAwareSize(size);
   const vHalfRad = (cameraFov / 2) * Math.PI / 180;
   const hHalfRad = Math.atan(Math.tan(vHalfRad) * aspect);
   const distForX = (labelAwareSize.x / 2) / Math.tan(hHalfRad);
   const distForY = (labelAwareSize.y / 2) / Math.tan(vHalfRad);
-  const distance = (box.isEmpty()
+  const distance = (isEmpty
     ? 11
     : Math.max(distForX, distForY, MIN_CAMERA_DISTANCE) * CAMERA_FRAME_PADDING + (labelAwareSize.z / 2));
   const opticalTargetOffset = getOpticalTargetOffset({
@@ -123,18 +163,17 @@ function computeCameraFrame(args: {
     cameraFov,
     insets,
   });
-  const opticalTarget = center.clone().add(opticalTargetOffset);
+  const opticalTarget = opticalTargetOffset.clone();
 
   return {
-    center,
     size,
     distance,
     opticalTargetOffset,
     opticalTarget,
     cameraPosition: new THREE.Vector3(
-      center.x + opticalTargetOffset.x * 0.04,
-      center.y + size.y * CAMERA_ELEVATION_RATIO + opticalTargetOffset.y * 0.03,
-      center.z + distance,
+      0,
+      size.y * CAMERA_ELEVATION_RATIO,
+      distance,
     ),
   };
 }
@@ -385,22 +424,20 @@ function AmbientParticles() {
   );
 }
 
-// ─── Spatial Grid — darker theme requested ─────────────────────────────
-function SpatialReference({ stressIndex = 0, centroid }: { stressIndex?: number; centroid?: THREE.Vector3 }) {
-  const cx = centroid?.x ?? 0;
-  const cz = centroid?.z ?? 0;
+// ─── Spatial Grid — decorative floor reference, not the pathway layout authority ──
+function SpatialReference({ stressIndex = 0 }: { stressIndex?: number }) {
   const grpRef = useRef<THREE.Group>(null!);
   useFrame(({ clock }) => {
     if (!grpRef.current) return;
     if (stressIndex > 0.8) {
       const mag = (stressIndex - 0.8) * 0.03;
-      grpRef.current.position.x = cx + Math.sin(clock.elapsedTime * 40) * mag;
+      grpRef.current.position.x = GRID_ORIGIN.x + Math.sin(clock.elapsedTime * 40) * mag;
     } else {
-      grpRef.current.position.x = cx;
+      grpRef.current.position.x = GRID_ORIGIN.x;
     }
   });
   return (
-    <group ref={grpRef} position={[cx, -3.8, cz]}>
+    <group ref={grpRef} position={GRID_ORIGIN.toArray() as Vec3}>
       <gridHelper args={[36, 36, '#606060', '#404040']} />
       <Line points={[new THREE.Vector3(-10,0,0), new THREE.Vector3(10,0,0)]} color="#aaaaaa" lineWidth={0.5} transparent opacity={0.35} />
       <Line points={[new THREE.Vector3(0,0,-10), new THREE.Vector3(0,0,10)]} color="#aaaaaa" lineWidth={0.5} transparent opacity={0.35} />
@@ -416,6 +453,7 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov
 }) {
   const _flowSpeed = flowSpeed ?? 1;
   const nodeRadius = 0.32 + cc * 0.05;
+  const labelOffsetY = -(nodeRadius * 1.25 + 0.18);
   // Shrink nodes when pH/temperature deviate from optimal (encoded in glowMultiplier)
   const activityScale = 0.7 + 0.3 * Math.min(1, glowMultiplier / 2.0);
   const grp     = useRef<THREE.Group>(null);
@@ -514,7 +552,7 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov
         ))}
       </group>
 
-      <Html position={[0, 0, 0]} center style={{ pointerEvents: 'none', whiteSpace: 'nowrap' }}>
+      <Html position={[0, labelOffsetY, 0]} center style={{ pointerEvents: 'none', whiteSpace: 'nowrap' }}>
         <div style={{
           color: hov || sel ? '#fff' : 'rgba(160,180,200,0.55)',
           fontSize: '8.25px', fontWeight: sel ? 600 : 500,
@@ -522,7 +560,6 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov
           textShadow: '0 1px 12px rgba(0,0,0,0.9), 0 0 24px rgba(0,0,0,0.7)',
           padding: '2px 4px', background: sel ? 'rgba(200,216,232,0.08)' : 'transparent',
           borderRadius: '4px', border: sel ? '1px solid rgba(200,216,232,0.14)' : '1px solid transparent',
-          transform: 'translate3d(0, 18px, 0)',
           transition: 'color 0.2s',
         }}>{lbl}</div>
       </Html>
@@ -614,27 +651,28 @@ const PathEdge = React.memo(function PathEdge({ edge, s, e, active, color, flowS
 
 // ─── Scroll-Sync Camera 【关键修复】：镜头居中算法，绝不跑偏 ──────────────
 type OrbitControlsHandle = { target: THREE.Vector3; update(): void };
-function ScrollSyncCamera({ nodes, selectedId, interact, controlsRef, centroid, opticalOffset }: {
+function ScrollSyncCamera({ nodes, selectedId, interact, controlsRef, baseTarget, routeCenter, opticalOffset }: {
   nodes: PathwayNode[];
   selectedId: string | null;
   interact: boolean;
   controlsRef: React.RefObject<OrbitControlsHandle | null>;
-  centroid: THREE.Vector3;
+  baseTarget: THREE.Vector3;
+  routeCenter: THREE.Vector3;
   opticalOffset: THREE.Vector3;
 }) {
   const { camera } = useThree();
-  const targetLookAt = useRef(new THREE.Vector3().copy(centroid));
+  const targetLookAt = useRef(new THREE.Vector3().copy(baseTarget));
 
   useEffect(() => {
     if (selectedId) {
       const node = nodes.find(n => n.id === selectedId);
       if (node && Array.isArray(node.position)) {
-        targetLookAt.current.set(...node.position).add(opticalOffset);
+        targetLookAt.current.set(...node.position).sub(routeCenter).add(opticalOffset);
       }
     } else {
-      targetLookAt.current.copy(centroid);
+      targetLookAt.current.copy(baseTarget);
     }
-  }, [centroid, nodes, opticalOffset, selectedId]);
+  }, [baseTarget, nodes, opticalOffset, routeCenter, selectedId]);
 
   useFrame((_, dt) => {
     if (interact || !(camera instanceof THREE.PerspectiveCamera)) return;
@@ -719,8 +757,12 @@ function FluxParticles({ edges, nodes, flowSpeed, glowMultiplier }: {
   return <primitive object={pts} />;
 }
 
+function vectorAudit(value: THREE.Vector3) {
+  return [value.x, value.y, value.z].map((entry) => Number(entry.toFixed(3)));
+}
+
 // ─── Scene — unified lighting, integrated depth ────────────────────────
-function Scene({ nodes, edges, onNodeClick, selectedNodeId, roughnessTexture, glowMultiplier, flowSpeed, stressIndex, viewMode, resetSignal, opticalInsets }: { nodes:PathwayNode[]; edges:PathwayEdge[]; onNodeClick:(n:PathwayNode)=>void; selectedNodeId:string|null; roughnessTexture:THREE.Texture | null; glowMultiplier:number; flowSpeed:number; stressIndex:number; viewMode: SceneViewMode; resetSignal?: number; opticalInsets: OpticalInsetBox; }) {
+function Scene({ nodes, edges, onNodeClick, selectedNodeId, roughnessTexture, glowMultiplier, flowSpeed, stressIndex, viewMode, resetSignal, opticalInsets, debugFrameName }: { nodes:PathwayNode[]; edges:PathwayEdge[]; onNodeClick:(n:PathwayNode)=>void; selectedNodeId:string|null; roughnessTexture:THREE.Texture | null; glowMultiplier:number; flowSpeed:number; stressIndex:number; viewMode: SceneViewMode; resetSignal?: number; opticalInsets: OpticalInsetBox; debugFrameName?: string; }) {
   const [hovId, setHovId]       = useState<string|null>(null);
   const [interact, setInteract] = useState(false);
   const controlsRef = useRef<OrbitControlsHandle | null>(null);
@@ -733,16 +775,17 @@ function Scene({ nodes, edges, onNodeClick, selectedNodeId, roughnessTexture, gl
   // BoundingBox auto-focus — FOV-based distance so the entire pathway fits the viewport
   const { camera, size: viewportSize } = useThree();
   const cameraFov = (camera as THREE.PerspectiveCamera).fov ?? 44;
+  const routeGeometry = useMemo(() => computeRouteGeometry(nodes), [nodes]);
 
-  const { center: centroid, opticalTarget, opticalTargetOffset, cameraPosition } = useMemo(() =>
+  const { opticalTarget, opticalTargetOffset, cameraPosition } = useMemo(() =>
     computeCameraFrame({
-      nodes,
+      routeGeometry,
       width: viewportSize.width,
       height: viewportSize.height,
       cameraFov,
       insets: opticalInsets,
     }),
-  [nodes, cameraFov, opticalInsets, viewportSize.height, viewportSize.width]);
+  [routeGeometry, cameraFov, opticalInsets, viewportSize.height, viewportSize.width]);
 
   useEffect(() => {
     camera.position.copy(cameraPosition);
@@ -754,6 +797,37 @@ function Scene({ nodes, edges, onNodeClick, selectedNodeId, roughnessTexture, gl
     if (resetSignal) setInteract(false);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [camera, cameraPosition, opticalTarget, resetSignal]);
+
+  useEffect(() => {
+    if (!debugFrameName || process.env.NODE_ENV === 'production') return;
+    console.info(`[${debugFrameName} geometry audit]`, {
+      nodeCount: nodes.length,
+      bboxMin: vectorAudit(routeGeometry.min),
+      bboxMax: vectorAudit(routeGeometry.max),
+      bboxCenter: vectorAudit(routeGeometry.boundsCenter),
+      arithmeticCentroid: vectorAudit(routeGeometry.arithmeticCentroid),
+      routeGroupOffset: vectorAudit(routeGeometry.routeGroupOffset),
+      cameraPosition: vectorAudit(cameraPosition),
+      cameraTarget: vectorAudit(opticalTarget),
+      opticalOffset: vectorAudit(opticalTargetOffset),
+      gridOrigin: vectorAudit(GRID_ORIGIN),
+      viewport: {
+        width: Math.round(viewportSize.width),
+        height: Math.round(viewportSize.height),
+      },
+      safeInsets: opticalInsets,
+    });
+  }, [
+    cameraPosition,
+    debugFrameName,
+    nodes.length,
+    opticalInsets,
+    opticalTarget,
+    opticalTargetOffset,
+    routeGeometry,
+    viewportSize.height,
+    viewportSize.width,
+  ]);
 
   const cc = useMemo(() => {
     const c: Record<string,number> = {};
@@ -776,19 +850,21 @@ function Scene({ nodes, edges, onNodeClick, selectedNodeId, roughnessTexture, gl
       <ambientLight intensity={0.75 * glowMultiplier} color="#FFFFFF" />
       <directionalLight position={[4, 10, 6]}  intensity={0.30 * glowMultiplier} color="#FFFFFF" />
       <directionalLight position={[-8, -2, -6]} intensity={0.08} color="#111111" />
-      <pointLight position={[centroid.x, centroid.y + 6, centroid.z]} intensity={0.18 * glowMultiplier} color="#FFFFFF" distance={28} decay={2} />
+      <pointLight position={[0, routeGeometry.size.y * 0.5 + 6, 0]} intensity={0.18 * glowMultiplier} color="#FFFFFF" distance={28} decay={2} />
       <fog attach="fog" args={['#000000', 30, 70]} />
 
       {/* maxDistance 50 accommodates large AI-generated pathway networks without clipping */}
       <OrbitControls ref={controlsRef as React.Ref<never>} makeDefault enableZoom autoRotate={!interact && !hovId && !selectedNodeId} autoRotateSpeed={0.12} zoomSpeed={0.45} minDistance={6} maxDistance={50} enablePan={false} onStart={onStart} onEnd={onEnd} target={opticalTarget} />
-      <SpatialReference stressIndex={stressIndex} centroid={centroid} />
+      <SpatialReference stressIndex={stressIndex} />
 
       <AmbientParticles />
-      <FluxParticles edges={edges} nodes={nodes} flowSpeed={viewMode === 'flow' ? flowSpeed * 1.25 : flowSpeed} glowMultiplier={glowMultiplier} />
-      {ed.map(e => <PathEdge key={e.key} edge={e.edge} s={e.s.position} e={e.e.position} active={e.active} color={e.color} flowSpeed={flowSpeed} viewMode={viewMode} />)}
-      {nodes.map(n => <MolNode key={n.id} node={n} hov={hovId===n.id} sel={selectedNodeId===n.id} cc={cc[n.id]??0} onClick={onNodeClick} onHov={setHovId} roughnessTexture={roughnessTexture} flowSpeed={flowSpeed} glowMultiplier={glowMultiplier} stressIndex={stressIndex} viewMode={viewMode} />)}
+      <group position={routeGeometry.routeGroupOffset.toArray() as Vec3}>
+        <FluxParticles edges={edges} nodes={nodes} flowSpeed={viewMode === 'flow' ? flowSpeed * 1.25 : flowSpeed} glowMultiplier={glowMultiplier} />
+        {ed.map(e => <PathEdge key={e.key} edge={e.edge} s={e.s.position} e={e.e.position} active={e.active} color={e.color} flowSpeed={flowSpeed} viewMode={viewMode} />)}
+        {nodes.map(n => <MolNode key={n.id} node={n} hov={hovId===n.id} sel={selectedNodeId===n.id} cc={cc[n.id]??0} onClick={onNodeClick} onHov={setHovId} roughnessTexture={roughnessTexture} flowSpeed={flowSpeed} glowMultiplier={glowMultiplier} stressIndex={stressIndex} viewMode={viewMode} />)}
+      </group>
 
-      <ScrollSyncCamera nodes={nodes} selectedId={selectedNodeId} interact={interact} controlsRef={controlsRef} centroid={opticalTarget} opticalOffset={opticalTargetOffset} />
+      <ScrollSyncCamera nodes={nodes} selectedId={selectedNodeId} interact={interact} controlsRef={controlsRef} baseTarget={opticalTarget} routeCenter={routeGeometry.boundsCenter} opticalOffset={opticalTargetOffset} />
     </>
   );
 }
@@ -814,9 +890,9 @@ function ResizeHandler() {
 }
 
 // ─── Main Component — loading fallback and scene unified ─────────────
-interface Props { nodes:PathwayNode[]; onNodeClick:(node:PathwayNode)=>void; edges?:PathwayEdge[]; selectedNodeId?:string|null; glowMultiplier?:number; flowSpeed?:number; fullscreen?:boolean; stressIndex?:number; opticalInsets?: Partial<OpticalInsetBox>; tracePlacement?: TracePlacement; traceLayout?: TraceLayout; }
+interface Props { nodes:PathwayNode[]; onNodeClick:(node:PathwayNode)=>void; edges?:PathwayEdge[]; selectedNodeId?:string|null; glowMultiplier?:number; flowSpeed?:number; fullscreen?:boolean; stressIndex?:number; opticalInsets?: Partial<OpticalInsetBox>; tracePlacement?: TracePlacement; traceLayout?: TraceLayout; debugFrameName?: string; }
 
-export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, glowMultiplier = 1, flowSpeed = 1, fullscreen = false, stressIndex = 0, opticalInsets, tracePlacement = 'top-right', traceLayout }: Props) {
+export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, glowMultiplier = 1, flowSpeed = 1, fullscreen = false, stressIndex = 0, opticalInsets, tracePlacement = 'top-right', traceLayout, debugFrameName }: Props) {
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [rendererMode, setRendererMode] = useState<RendererMode>('loading');
   const [viewMode, setViewMode] = useState<SceneViewMode>('network');
@@ -1108,7 +1184,7 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, 
           dpr={[1, 1.5]} performance={{ min: 0.5 }} style={{ background: 'transparent', pointerEvents: 'auto' }}
         >
           <ResizeHandler />
-          <Scene nodes={safeNodes} edges={safeEdges} onNodeClick={onNodeClick} selectedNodeId={selectedNodeId ?? null} roughnessTexture={roughnessTexture} glowMultiplier={glowMultiplier} flowSpeed={flowSpeed} stressIndex={stressIndex} viewMode={viewMode} resetSignal={resetSignal} opticalInsets={resolvedOpticalInsets} />
+          <Scene nodes={safeNodes} edges={safeEdges} onNodeClick={onNodeClick} selectedNodeId={selectedNodeId ?? null} roughnessTexture={roughnessTexture} glowMultiplier={glowMultiplier} flowSpeed={flowSpeed} stressIndex={stressIndex} viewMode={viewMode} resetSignal={resetSignal} opticalInsets={resolvedOpticalInsets} debugFrameName={debugFrameName} />
         </Canvas>
       </SceneErrorBoundary>
       {status !== 'ready' && (
