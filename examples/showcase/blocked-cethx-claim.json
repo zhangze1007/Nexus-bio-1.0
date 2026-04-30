@@ -1,0 +1,32 @@
+{
+  "showcaseId": "nexus-blocked-claim-v1",
+  "title": "CETHX demo thermodynamics blocked from protocol use",
+  "pathway": "artemisinin educational trace",
+  "claim": "Demo output cannot become a formal protocol claim",
+  "blockedStep": {
+    "stepId": "blocked-cethx-protocol",
+    "toolId": "cethx",
+    "surface": "protocol",
+    "validityTier": "demo",
+    "assumptionIds": [
+      "cethx.thermodynamics_demo_only",
+      "cethx.missing_condition_aware_backend",
+      "cethx.uncertainty_not_calculated"
+    ],
+    "evidenceIds": [],
+    "provenanceIds": [
+      "demo-provenance-cethx-artemisinin-v1"
+    ],
+    "expectedGateStatus": "blocked",
+    "expectedBlockCode": "DEMO_OUTPUT_PROTOCOL_BLOCKED",
+    "note": "The runtime blocks protocol-like use because demo thermodynamics cannot support an operational claim."
+  },
+  "reason": "The block protects the claim surface. It does not say the biological hypothesis is false; it says the output lacks the validity tier needed for protocol use.",
+  "nonClaims": [
+    "This trace does not include a real thermodynamic value.",
+    "This trace does not claim CETHX has condition-aware thermodynamics.",
+    "This trace does not claim the biological hypothesis is false.",
+    "This trace does not claim wet-lab validation, scientific validation, or external validation.",
+    "The demo provenance ID is a local trace identifier, not a real assay or publication."
+  ]
+}

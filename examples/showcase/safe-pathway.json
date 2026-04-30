@@ -1,0 +1,53 @@
+{
+  "showcaseId": "nexus-safe-pathway-v1",
+  "title": "Artemisinin educational trace: safe partial output with provenance",
+  "pathway": "artemisinin educational trace",
+  "claim": "Safe partial output can move forward with provenance",
+  "steps": [
+    {
+      "stepId": "safe-pathd-payload",
+      "toolId": "pathd",
+      "surface": "payload",
+      "validityTier": "partial",
+      "assumptionIds": [
+        "pathd.template_route_synthesis",
+        "pathd.delta_g_lookup_real"
+      ],
+      "evidenceIds": [
+        "demo-evidence-artemisinin-context"
+      ],
+      "provenanceIds": [
+        "demo-provenance-pathd-artemisinin-v1"
+      ],
+      "expectedGateStatus": "ok",
+      "note": "The design context can remain visible as a workbench payload because it is partial and traceable."
+    },
+    {
+      "stepId": "safe-fbasim-recommendation",
+      "toolId": "fbasim",
+      "surface": "recommendation",
+      "validityTier": "partial",
+      "assumptionIds": [
+        "fbasim.steady_state",
+        "fbasim.no_regulation",
+        "fbasim.simplex_real"
+      ],
+      "evidenceIds": [
+        "demo-evidence-fba-subset-model"
+      ],
+      "provenanceIds": [
+        "demo-provenance-pathd-artemisinin-v1",
+        "demo-provenance-fbasim-artemisinin-v1"
+      ],
+      "expectedGateStatus": "ok",
+      "note": "The partial single-tool recommendation has provenance and stays inside the declared claim surface."
+    }
+  ],
+  "nonClaims": [
+    "This is a local educational trust-gating trace, not wet-lab evidence.",
+    "The demo evidence IDs are fictional local IDs, not literature citations or assay records.",
+    "The trace does not claim pathway optimization.",
+    "The trace does not claim artemisinin production was improved.",
+    "The trace does not claim scientific validation or external benchmark validation."
+  ]
+}
