@@ -10,6 +10,7 @@ This package lets reviewers verify Nexus-Bio trust-runtime behavior without rely
 - Step 16 showcase examples in `examples/`
 - Step 20 external review workflow references in `manifest.json`
 - Step 23 future research study-design references in `../docs/nobel-path-scientific-question.md` and `../analysis/nobel-path-design.md`; these are not-yet-run and are not proof of a completed result
+- Step 24 protocol-governance roadmap references in `../docs/turing-path-whitepaper.md`, `../docs/sitr-governance-charter.md`, `../docs/conformance-leaderboard-plan.md`, `../docs/adoption-roadmap.md`, and `../docs/versioning-policy.md`; these do not prove adoption
 - SBOL/PROV-linked provenance examples in `provenance/`
 - Limitations and tool status documentation in `limitations.md` and `demo-status-table.md`
 - Replay instructions in `replay.md` and `replication-guide.md`

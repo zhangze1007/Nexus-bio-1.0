@@ -1,0 +1,28 @@
+{
+  "schemaVersion": "conformance-leaderboard-template-v1",
+  "status": "not-yet-run",
+  "generatedAt": null,
+  "leaderboardName": "SITR Conformance Leaderboard",
+  "nonClaims": [
+    "no external adoption claimed",
+    "no third-party validation claimed",
+    "no scientific validation claimed",
+    "no wet-lab validation claimed",
+    "no biological accuracy ranking claimed",
+    "no product quality ranking claimed",
+    "no full SBOL compliance claimed"
+  ],
+  "metrics": [
+    "conformancePassRate",
+    "benchmarkAgreement",
+    "unsafePropagationRate",
+    "proofReplaySuccess",
+    "implementationLanguage"
+  ],
+  "submissions": [],
+  "rejectedSubmissions": [],
+  "notes": [
+    "Template only; no implementations have been submitted.",
+    "Do not populate without reproducible conformance evidence and permission to list."
+  ]
+}
