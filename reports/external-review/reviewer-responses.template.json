@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "external-review-template-v1",
+  "status": "template-not-yet-run",
+  "instructions": [
+    "Copy this file for a real reviewer submission.",
+    "Use anonymous reviewer labels such as reviewer-001.",
+    "Do not store real names, institutions, email addresses, or private personal data.",
+    "Do not use this template as completed review data."
+  ],
+  "submission": {
+    "schemaVersion": "external-review-v1",
+    "reviewId": "",
+    "reviewerLabel": "",
+    "reviewerRole": "",
+    "reviewedAt": "",
+    "proofPackageCommit": "",
+    "responses": [],
+    "adversarialAttempts": [],
+    "summary": {
+      "strongestAgreement": [],
+      "strongestDisagreement": [],
+      "unclearDocs": [],
+      "suggestedBenchmarkAdditions": []
+    }
+  }
+}

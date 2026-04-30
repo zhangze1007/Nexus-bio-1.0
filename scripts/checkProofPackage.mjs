@@ -16,6 +16,7 @@ const requiredNonClaims = [
   'No full SBOL compliance is claimed unless validated separately.',
   'No statistical significance is claimed.',
   'No completed human reviewer study is claimed.',
+  'No completed external reviewer pilot is claimed.',
   'No regulatory approval is claimed.',
   'No production-grade safety certification is claimed.',
   'No user traction is claimed.',

@@ -35,6 +35,7 @@ const requiredNonClaims = [
   'No full SBOL compliance is claimed unless validated separately.',
   'No statistical significance is claimed.',
   'No completed human reviewer study is claimed.',
+  'No completed external reviewer pilot is claimed.',
   'No regulatory approval is claimed.',
   'No production-grade safety certification is claimed.',
   'No user traction is claimed.',
@@ -127,6 +128,7 @@ describe('proof package', () => {
     expect(readProof('README.md')).toContain('npm run proof:replay');
     expect(readProof('replay.md')).toContain('npm run proof:replay');
     expect(readProof('limitations.md')).toContain('Community FBA mode is demo-only illustrative');
+    expect(readProof('limitations.md')).toContain('external review workflow is prepared');
     expect(readProof('demo-status-table.md')).toContain('| CETHX | demo |');
   });
 
@@ -148,6 +150,7 @@ describe('proof package', () => {
     expect(combinedText).not.toMatch(/\bvalidated biological design\b/i);
     expect(combinedText).not.toMatch(/\bstatistically significant\b/i);
     expect(combinedText).not.toMatch(/\bhuman reviewer study completed\b/i);
+    expect(combinedText).not.toMatch(/\bpilot completed\b/i);
     expect(combinedText).not.toMatch(/\bhas full SBOL compliance\b/i);
   });
 });

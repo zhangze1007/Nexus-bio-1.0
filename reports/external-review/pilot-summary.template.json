@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "external-review-pilot-summary-v1",
+  "status": "not-yet-run",
+  "reviewerCount": 0,
+  "agreementRate": null,
+  "bypassSuccessRate": null,
+  "topDisagreements": [],
+  "newBenchmarkCandidates": [],
+  "limitations": [
+    "No external reviewer pilot has been completed yet."
+  ]
+}

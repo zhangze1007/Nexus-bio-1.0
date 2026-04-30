@@ -211,6 +211,44 @@
         "label": "Proof package test",
         "sourcePath": "__tests__/proofPackage.test.ts"
       }
+    ],
+    "externalReview": [
+      {
+        "label": "Reviewer pack",
+        "sourcePath": "docs/reviewer-pack.md"
+      },
+      {
+        "label": "Reviewer worksheet",
+        "sourcePath": "docs/reviewer-worksheet.md"
+      },
+      {
+        "label": "External review protocol",
+        "sourcePath": "docs/external-review-protocol.md"
+      },
+      {
+        "label": "External review log",
+        "sourcePath": "docs/external-review-log.md"
+      },
+      {
+        "label": "External review templates index",
+        "sourcePath": "reports/external-review/README.md"
+      },
+      {
+        "label": "Reviewer response template",
+        "sourcePath": "reports/external-review/reviewer-responses.template.json"
+      },
+      {
+        "label": "Adversarial cases template",
+        "sourcePath": "reports/external-review/adversarial-cases.json"
+      },
+      {
+        "label": "Disagreement cases template",
+        "sourcePath": "reports/external-review/disagreement-cases.json"
+      },
+      {
+        "label": "External review pilot summary template",
+        "sourcePath": "reports/external-review/pilot-summary.template.json"
+      }
     ]
   },
   "replayCommands": [
@@ -230,6 +268,7 @@
     "No full SBOL compliance is claimed unless validated separately.",
     "No statistical significance is claimed.",
     "No completed human reviewer study is claimed.",
+    "No completed external reviewer pilot is claimed.",
     "No regulatory approval is claimed.",
     "No production-grade safety certification is claimed.",
     "No user traction is claimed."
