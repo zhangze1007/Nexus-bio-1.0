@@ -7,9 +7,30 @@ export const metadata: Metadata = {
   description: '3D metabolic pathway visualization with flux particles, enzyme design, and AI-extracted biosynthesis routes.',
 };
 
+function PathDFallback() {
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      style={{
+        minHeight: '100dvh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: '#05070a',
+        color: 'rgba(255,255,255,0.72)',
+        fontFamily: "'Public Sans',sans-serif",
+        fontSize: '12px',
+      }}
+    >
+      Loading PATHD workbench...
+    </div>
+  );
+}
+
 export default function Page() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<PathDFallback />}>
       <PathDClient />
     </Suspense>
   );

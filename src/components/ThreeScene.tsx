@@ -23,8 +23,11 @@ type ConfigurableRenderer = {
 const INIT_TIMEOUT_MS = 2000;
 const CAMERA_FRAME_PADDING = 1.38;
 const CAMERA_ELEVATION_RATIO = 0.04;
-const OPTICAL_CENTER_WEIGHT_X = 0.82;
-const OPTICAL_CENTER_WEIGHT_Y = 0.58;
+const OPTICAL_CENTER_WEIGHT_X = 0.36;
+const OPTICAL_CENTER_WEIGHT_Y = 0.28;
+const MAX_OPTICAL_SHIFT_RATIO_X = 0.08;
+const MAX_OPTICAL_SHIFT_RATIO_Y = 0.07;
+const MIN_CAMERA_DISTANCE = 5;
 
 function normalizeOpticalInsets(
   fullscreen: boolean,
@@ -76,12 +79,64 @@ function getOpticalTargetOffset(args: {
   const frustumHalfHeight = Math.tan(vHalfRad) * distance;
   const desiredScreenShiftX = (insets.left - insets.right) / width;
   const desiredScreenShiftY = (insets.bottom - insets.top) / height;
+  const rawX = -desiredScreenShiftX * frustumHalfWidth * OPTICAL_CENTER_WEIGHT_X;
+  const rawY = -desiredScreenShiftY * frustumHalfHeight * OPTICAL_CENTER_WEIGHT_Y;
 
   return new THREE.Vector3(
-    -desiredScreenShiftX * frustumHalfWidth * OPTICAL_CENTER_WEIGHT_X,
-    -desiredScreenShiftY * frustumHalfHeight * OPTICAL_CENTER_WEIGHT_Y,
+    THREE.MathUtils.clamp(rawX, -frustumHalfWidth * MAX_OPTICAL_SHIFT_RATIO_X, frustumHalfWidth * MAX_OPTICAL_SHIFT_RATIO_X),
+    THREE.MathUtils.clamp(rawY, -frustumHalfHeight * MAX_OPTICAL_SHIFT_RATIO_Y, frustumHalfHeight * MAX_OPTICAL_SHIFT_RATIO_Y),
     0,
   );
+}
+
+function getLabelAwareSize(size: THREE.Vector3) {
+  const labelAwareSize = size.clone();
+  labelAwareSize.x += Math.min(2.2, Math.max(1.2, size.x * 0.16));
+  labelAwareSize.y += Math.min(1.2, Math.max(0.8, size.y * 0.18));
+  return labelAwareSize;
+}
+
+function computeCameraFrame(args: {
+  nodes: PathwayNode[];
+  width: number;
+  height: number;
+  cameraFov: number;
+  insets: OpticalInsetBox;
+}) {
+  const { nodes, width, height, cameraFov, insets } = args;
+  const { center, size, box } = getBoundsCenterAndSize(nodes);
+  const safeWidth = Math.max(width, 1);
+  const safeHeight = Math.max(height, 1);
+  const aspect = safeWidth / safeHeight;
+  const labelAwareSize = getLabelAwareSize(size);
+  const vHalfRad = (cameraFov / 2) * Math.PI / 180;
+  const hHalfRad = Math.atan(Math.tan(vHalfRad) * aspect);
+  const distForX = (labelAwareSize.x / 2) / Math.tan(hHalfRad);
+  const distForY = (labelAwareSize.y / 2) / Math.tan(vHalfRad);
+  const distance = (box.isEmpty()
+    ? 11
+    : Math.max(distForX, distForY, MIN_CAMERA_DISTANCE) * CAMERA_FRAME_PADDING + (labelAwareSize.z / 2));
+  const opticalTargetOffset = getOpticalTargetOffset({
+    width: safeWidth,
+    height: safeHeight,
+    distance,
+    cameraFov,
+    insets,
+  });
+  const opticalTarget = center.clone().add(opticalTargetOffset);
+
+  return {
+    center,
+    size,
+    distance,
+    opticalTargetOffset,
+    opticalTarget,
+    cameraPosition: new THREE.Vector3(
+      center.x + opticalTargetOffset.x * 0.04,
+      center.y + size.y * CAMERA_ELEVATION_RATIO + opticalTargetOffset.y * 0.03,
+      center.z + distance,
+    ),
+  };
 }
 
 function withTimeout<T>(promise: Promise<T>, label: string): Promise<T> {
@@ -364,6 +419,7 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov
   // Shrink nodes when pH/temperature deviate from optimal (encoded in glowMultiplier)
   const activityScale = 0.7 + 0.3 * Math.min(1, glowMultiplier / 2.0);
   const grp     = useRef<THREE.Group>(null);
+  const glyphGrp = useRef<THREE.Group>(null);
   const ring    = useRef<THREE.Mesh>(null);
   const bodyRef = useRef<THREE.Mesh>(null);
   const ready   = true;
@@ -387,11 +443,12 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov
     const t = state.clock.elapsedTime;
     const fdt = dt * _flowSpeed;
     if (grp.current) {
-      const cs = grp.current.scale.x;
-      grp.current.scale.setScalar(cs + ((ready ? tgt : 0.001) - cs) * dt * 5);
       grp.current.position.y = node.position[1] + Math.sin(t * 0.4 * _flowSpeed + hash(node.id) * 0.01) * 0.06;
-      grp.current.rotation.y = Math.sin(t * 0.06 * _flowSpeed + hash(node.id) * 0.001) * 0.05;
-      // NOTE: intentionally no rotation.z — label is inside this group and must stay anchored below node
+    }
+    if (glyphGrp.current) {
+      const cs = glyphGrp.current.scale.x;
+      glyphGrp.current.scale.setScalar(cs + ((ready ? tgt : 0.001) - cs) * dt * 5);
+      glyphGrp.current.rotation.y = Math.sin(t * 0.06 * _flowSpeed + hash(node.id) * 0.001) * 0.05;
     }
     if (ring.current) {
       ring.current.rotation.z += fdt * 0.10;
@@ -414,48 +471,50 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov
       onPointerOver={e => { e.stopPropagation(); onHov(node.id); document.body.style.cursor = 'pointer'; }}
       onPointerOut={e => { e.stopPropagation(); onHov(null); document.body.style.cursor = 'auto'; }}
     >
-      <mesh ref={bodyRef}>
-        <GeoComp g={cfg.geom} s={nodeRadius * activityScale * modeScale} />
-        <meshPhysicalMaterial
-          color={finalColor}
-          emissive={finalColor}
-          emissiveIntensity={0.12}
-          roughnessMap={roughnessTexture} 
-          roughness={0.55} 
-          metalness={0.08}
-          transmission={0.05}
-          depthWrite={true} 
-        />
-      </mesh>
-
-      {/* Invisible hitbox for reliable click detection */}
-      <mesh visible={false}>
-        <sphereGeometry args={[0.8 * modeScale, 16, 16]} />
-        <meshBasicMaterial color="white" transparent opacity={0} depthWrite={false} />
-      </mesh>
-
-      {/* Bottleneck anomaly glow — sharp red wireframe ring when substrate accumulates under stress */}
-      {stressIndex > 0.5 && (node.risk_score ?? 0) > 0.5 && (
-        <mesh>
-          <sphereGeometry args={[nodeRadius * 1.55 * modeScale, 16, 16]} />
-          <meshBasicMaterial
-            color="#FF2222"
-            transparent
-            opacity={Math.min(0.45, (stressIndex - 0.5) * (node.risk_score ?? 0) * 0.7)}
-            wireframe
-            depthWrite={false}
+      <group ref={glyphGrp}>
+        <mesh ref={bodyRef}>
+          <GeoComp g={cfg.geom} s={nodeRadius * activityScale * modeScale} />
+          <meshPhysicalMaterial
+            color={finalColor}
+            emissive={finalColor}
+            emissiveIntensity={0.12}
+            roughnessMap={roughnessTexture}
+            roughness={0.55}
+            metalness={0.08}
+            transmission={0.05}
+            depthWrite={true}
           />
         </mesh>
-      )}
 
-      {cfg.rr.map((r, i) => (
-        <mesh key={`r${i}`} ref={i === 0 ? ring : undefined} rotation={[cfg.rt[i] || 0, 0, i * 1.1]}>
-          <torusGeometry args={[r * modeScale, 0.007, 4, 40]} />
-          <meshPhysicalMaterial color={finalColor} emissive={finalColor} emissiveIntensity={0.08} transparent opacity={0.07} roughness={0.6} metalness={0} depthWrite={false} />
+        {/* Invisible hitbox for reliable click detection */}
+        <mesh visible={false}>
+          <sphereGeometry args={[0.8 * modeScale, 16, 16]} />
+          <meshBasicMaterial color="white" transparent opacity={0} depthWrite={false} />
         </mesh>
-      ))}
 
-      <Html position={[0, -(nodeRadius * 0.4), 0]} center style={{ pointerEvents: 'none', whiteSpace: 'nowrap' }}>
+        {/* Bottleneck anomaly glow — sharp red wireframe ring when substrate accumulates under stress */}
+        {stressIndex > 0.5 && (node.risk_score ?? 0) > 0.5 && (
+          <mesh>
+            <sphereGeometry args={[nodeRadius * 1.55 * modeScale, 16, 16]} />
+            <meshBasicMaterial
+              color="#FF2222"
+              transparent
+              opacity={Math.min(0.45, (stressIndex - 0.5) * (node.risk_score ?? 0) * 0.7)}
+              wireframe
+              depthWrite={false}
+            />
+          </mesh>
+        )}
+
+        {cfg.rr.map((r, i) => (
+          <mesh key={`r${i}`} ref={i === 0 ? ring : undefined} rotation={[cfg.rt[i] || 0, 0, i * 1.1]}>
+            <torusGeometry args={[r * modeScale, 0.007, 4, 40]} />
+            <meshPhysicalMaterial color={finalColor} emissive={finalColor} emissiveIntensity={0.08} transparent opacity={0.07} roughness={0.6} metalness={0} depthWrite={false} />
+          </mesh>
+        ))}
+      </group>
+
+      <Html position={[0, 0, 0]} center style={{ pointerEvents: 'none', whiteSpace: 'nowrap' }}>
         <div style={{
           color: hov || sel ? '#fff' : 'rgba(160,180,200,0.55)',
           fontSize: '8.25px', fontWeight: sel ? 600 : 500,
@@ -463,6 +522,7 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov
           textShadow: '0 1px 12px rgba(0,0,0,0.9), 0 0 24px rgba(0,0,0,0.7)',
           padding: '2px 4px', background: sel ? 'rgba(200,216,232,0.08)' : 'transparent',
           borderRadius: '4px', border: sel ? '1px solid rgba(200,216,232,0.14)' : '1px solid transparent',
+          transform: 'translate3d(0, 18px, 0)',
           transition: 'color 0.2s',
         }}>{lbl}</div>
       </Html>
@@ -672,40 +732,20 @@ function Scene({ nodes, edges, onNodeClick, selectedNodeId, roughnessTexture, gl
 
   // BoundingBox auto-focus — FOV-based distance so the entire pathway fits the viewport
   const { camera, size: viewportSize } = useThree();
-  const aspect = viewportSize.width / (viewportSize.height || 1);
   const cameraFov = (camera as THREE.PerspectiveCamera).fov ?? 44;
 
-  const { centroid, camOffset, opticalTarget, opticalTargetOffset } = useMemo(() => {
-    const { center, size } = getBoundsCenterAndSize(nodes);
-    const labelAwareSize = size.clone();
-    labelAwareSize.x += Math.min(2.2, Math.max(1.2, size.x * 0.16));
-    labelAwareSize.y += Math.min(1.2, Math.max(0.8, size.y * 0.18));
-    const vHalfRad = (cameraFov / 2) * Math.PI / 180;
-    const hHalfRad = Math.atan(Math.tan(vHalfRad) * aspect); // horizontal half-FOV from aspect
-    const MIN_DISTANCE = 5;
-    const distForX = (labelAwareSize.x / 2) / Math.tan(hHalfRad);
-    const distForY = (labelAwareSize.y / 2) / Math.tan(vHalfRad);
-    const dist = Math.max(distForX, distForY, MIN_DISTANCE) * CAMERA_FRAME_PADDING + (labelAwareSize.z / 2);
-    const opticalTargetOffset = getOpticalTargetOffset({
+  const { center: centroid, opticalTarget, opticalTargetOffset, cameraPosition } = useMemo(() =>
+    computeCameraFrame({
+      nodes,
       width: viewportSize.width,
       height: viewportSize.height,
-      distance: dist,
       cameraFov,
       insets: opticalInsets,
-    });
-    return {
-      centroid: center,
-      camOffset: { y: size.y * CAMERA_ELEVATION_RATIO, z: dist },
-      opticalTarget: center.clone().add(opticalTargetOffset),
-      opticalTargetOffset,
-    };
-  }, [nodes, aspect, cameraFov, opticalInsets, viewportSize.height, viewportSize.width]);
+    }),
+  [nodes, cameraFov, opticalInsets, viewportSize.height, viewportSize.width]);
+
   useEffect(() => {
-    camera.position.set(
-      centroid.x + opticalTargetOffset.x * 0.08,
-      centroid.y + camOffset.y + opticalTargetOffset.y * 0.04,
-      centroid.z + camOffset.z,
-    );
+    camera.position.copy(cameraPosition);
     camera.lookAt(opticalTarget);
     if (controlsRef.current) {
       controlsRef.current.target.copy(opticalTarget);
@@ -713,7 +753,7 @@ function Scene({ nodes, edges, onNodeClick, selectedNodeId, roughnessTexture, gl
     }
     if (resetSignal) setInteract(false);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [camera, camOffset, centroid, opticalTarget, opticalTargetOffset, resetSignal]);
+  }, [camera, cameraPosition, opticalTarget, resetSignal]);
 
   const cc = useMemo(() => {
     const c: Record<string,number> = {};
@@ -777,7 +817,7 @@ function ResizeHandler() {
 interface Props { nodes:PathwayNode[]; onNodeClick:(node:PathwayNode)=>void; edges?:PathwayEdge[]; selectedNodeId?:string|null; glowMultiplier?:number; flowSpeed?:number; fullscreen?:boolean; stressIndex?:number; opticalInsets?: Partial<OpticalInsetBox>; tracePlacement?: TracePlacement; traceLayout?: TraceLayout; }
 
 export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, glowMultiplier = 1, flowSpeed = 1, fullscreen = false, stressIndex = 0, opticalInsets, tracePlacement = 'top-right', traceLayout }: Props) {
-  const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('ready');
+  const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [rendererMode, setRendererMode] = useState<RendererMode>('loading');
   const [viewMode, setViewMode] = useState<SceneViewMode>('network');
   const [resetSignal, setResetSignal] = useState(0);
@@ -848,37 +888,7 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, 
     };
   }, [connectedEdges, riskNodes, safeNodes.length, selectedNode, spontaneousEdges, viewMode]);
 
-  // Compute initial camera position from node bounding box so Canvas starts centered on the cluster
-  const initialCamPos = useMemo(() => {
-    const { center, size, box } = getBoundsCenterAndSize(safeNodes);
-    if (box.isEmpty()) return { position: [0, 0.2, 11] as [number, number, number], fov: 44 };
-    const labelAwareSize = size.clone();
-    labelAwareSize.x += Math.min(2.2, Math.max(1.2, size.x * 0.16));
-    labelAwareSize.y += Math.min(1.2, Math.max(0.8, size.y * 0.18));
-    const vHalfRad = (44 / 2) * Math.PI / 180;
-    const aspect = typeof window !== 'undefined'
-      ? Math.max(window.innerWidth, 1) / Math.max(window.innerHeight, 1)
-      : 1.6;
-    const hHalfRad = Math.atan(Math.tan(vHalfRad) * aspect);
-    const dist = Math.max(labelAwareSize.x / 2 / Math.tan(hHalfRad), labelAwareSize.y / 2 / Math.tan(vHalfRad), 5) * CAMERA_FRAME_PADDING + labelAwareSize.z / 2;
-    const initialOpticalOffset = typeof window !== 'undefined'
-      ? getOpticalTargetOffset({
-          width: Math.max(window.innerWidth, 1),
-          height: Math.max(window.innerHeight, 1),
-          distance: dist,
-          cameraFov: 44,
-          insets: resolvedOpticalInsets,
-        })
-      : new THREE.Vector3();
-    return {
-      position: [
-        center.x + initialOpticalOffset.x * 0.08,
-        center.y + size.y * CAMERA_ELEVATION_RATIO + initialOpticalOffset.y * 0.04,
-        center.z + dist,
-      ] as [number, number, number],
-      fov: 44,
-    };
-  }, [resolvedOpticalInsets, safeNodes]);
+  const initialCamPos = useMemo(() => ({ position: [0, 0.2, 11] as [number, number, number], fov: 44 }), []);
 
   return (
     <div style={{
@@ -1063,7 +1073,7 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, 
         ))}
       </div>
 
-      <SceneErrorBoundary onError={(e) => setStatus('error')}>
+      <SceneErrorBoundary onError={() => { setRendererMode('error'); setStatus('error'); }}>
         <Canvas
           camera={initialCamPos}
           gl={async (props) => {
@@ -1091,6 +1101,8 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, 
               setRendererMode('webgl'); setStatus('ready');
               return applyRendererDefaults(new THREE.WebGLRenderer({ canvas, context: webgl, antialias: true, powerPreference: 'high-performance', alpha: true }));
             }
+            setRendererMode('error');
+            setStatus('error');
             throw new Error('WebGL unavailable');
           }}
           dpr={[1, 1.5]} performance={{ min: 0.5 }} style={{ background: 'transparent', pointerEvents: 'auto' }}
@@ -1099,6 +1111,46 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, 
           <Scene nodes={safeNodes} edges={safeEdges} onNodeClick={onNodeClick} selectedNodeId={selectedNodeId ?? null} roughnessTexture={roughnessTexture} glowMultiplier={glowMultiplier} flowSpeed={flowSpeed} stressIndex={stressIndex} viewMode={viewMode} resetSignal={resetSignal} opticalInsets={resolvedOpticalInsets} />
         </Canvas>
       </SceneErrorBoundary>
+      {status !== 'ready' && (
+        <div
+          aria-live="polite"
+          style={{
+            pointerEvents: 'none',
+            position: 'absolute',
+            inset: 0,
+            zIndex: 20,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: status === 'error'
+              ? 'rgba(5,7,10,0.72)'
+              : 'linear-gradient(180deg, rgba(5,7,10,0.36), rgba(5,7,10,0.08))',
+          }}
+        >
+          <div style={{
+            maxWidth: 'min(320px, calc(100% - 40px))',
+            borderRadius: '14px',
+            border: '1px solid rgba(255,255,255,0.10)',
+            background: 'rgba(8,10,14,0.74)',
+            padding: '12px 14px',
+            color: 'rgba(255,255,255,0.70)',
+            fontFamily: "'Public Sans',sans-serif",
+            fontSize: '11px',
+            lineHeight: 1.45,
+            textAlign: 'center',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+            boxShadow: '0 16px 40px rgba(0,0,0,0.28)',
+          }}>
+            <strong style={{ display: 'block', color: 'rgba(255,255,255,0.88)', fontSize: '11px', marginBottom: '3px' }}>
+              {status === 'error' ? '3D pathway renderer unavailable' : 'Preparing 3D pathway view'}
+            </strong>
+            {status === 'error'
+              ? 'Try reloading the page or enabling WebGL in the browser.'
+              : 'Loading the PATHD molecular graph and renderer.'}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

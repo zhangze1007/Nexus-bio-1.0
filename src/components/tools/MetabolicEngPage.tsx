@@ -420,16 +420,16 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
   const sceneOpticalInsets = useMemo(
     () => (embedded
       ? {
-          top: 24,
-          right: Math.round(PATHD_RIGHT_PANEL_WIDTH * 0.4),
-          bottom: PATHD_PANEL_BOTTOM + 54,
-          left: Math.round(PATHD_LEFT_PANEL_WIDTH * 0.26),
+          top: 18,
+          right: Math.round(PATHD_RIGHT_PANEL_WIDTH * 0.16),
+          bottom: PATHD_PANEL_BOTTOM + 34,
+          left: Math.round(PATHD_LEFT_PANEL_WIDTH * 0.14),
         }
       : {
-          top: 22,
-          right: Math.round(PATHD_SUPPORT_RAIL_WIDTH * 0.72),
-          bottom: PATHD_PANEL_BOTTOM + 54,
-          left: Math.round(PATHD_LEFT_PANEL_WIDTH * 0.42),
+          top: 18,
+          right: Math.round(PATHD_SUPPORT_RAIL_WIDTH * 0.28),
+          bottom: PATHD_PANEL_BOTTOM + 36,
+          left: Math.round(PATHD_LEFT_PANEL_WIDTH * 0.18),
         }),
     [embedded],
   );
