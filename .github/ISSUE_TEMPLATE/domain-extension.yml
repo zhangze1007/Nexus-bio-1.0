@@ -1,0 +1,83 @@
+name: Domain extension
+description: Propose a SITR-compatible domain extension without changing core semantics.
+title: "[Domain extension]: "
+labels:
+  - domain-extension
+  - sitr
+body:
+  - type: input
+    id: case_id
+    attributes:
+      label: caseId
+      description: Extension proposal ID, use case ID, or benchmark case ID.
+    validations:
+      required: true
+  - type: input
+    id: policy_rule
+    attributes:
+      label: Policy rule
+      description: Existing or proposed rule IDs affected by the extension.
+    validations:
+      required: true
+  - type: dropdown
+    id: claim_surface
+    attributes:
+      label: Claim surface
+      options:
+        - payload
+        - export
+        - recommendation
+        - protocol
+        - external-handoff
+    validations:
+      required: true
+  - type: dropdown
+    id: expected_status
+    attributes:
+      label: Expected status
+      options:
+        - ok
+        - blocked
+        - gated
+        - demoOnly
+    validations:
+      required: true
+  - type: dropdown
+    id: observed_status
+    attributes:
+      label: Observed status
+      options:
+        - ok
+        - blocked
+        - gated
+        - demoOnly
+    validations:
+      required: true
+  - type: textarea
+    id: evidence_provenance
+    attributes:
+      label: Evidence/provenance
+      description: Existing evidence requirements, provenance expectations, and any missing artifacts. Do not invent validation.
+    validations:
+      required: true
+  - type: input
+    id: implementation_language
+    attributes:
+      label: Implementation language
+      description: Example: TypeScript, Python, Rust, or other.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction_steps
+    attributes:
+      label: Reproduction steps
+      description: Minimal example, schema sketch, policy case, or benchmark fixture path.
+    validations:
+      required: true
+  - type: textarea
+    id: proposed_fix
+    attributes:
+      label: Proposed fix
+      description: Proposed extension object, policy behavior, compatibility boundary, and tests.
+    validations:
+      required: true

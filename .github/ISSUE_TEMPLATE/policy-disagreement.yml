@@ -1,0 +1,83 @@
+name: Policy disagreement
+description: Report a disputed SITR gate decision or policy rule outcome.
+title: "[Policy disagreement]: "
+labels:
+  - policy
+  - sitr
+body:
+  - type: input
+    id: case_id
+    attributes:
+      label: caseId
+      description: Benchmark case, runtime case, or local reproduction identifier.
+    validations:
+      required: true
+  - type: input
+    id: policy_rule
+    attributes:
+      label: Policy rule
+      description: Rule ID or policy path involved in the disagreement.
+    validations:
+      required: true
+  - type: dropdown
+    id: claim_surface
+    attributes:
+      label: Claim surface
+      options:
+        - payload
+        - export
+        - recommendation
+        - protocol
+        - external-handoff
+    validations:
+      required: true
+  - type: dropdown
+    id: expected_status
+    attributes:
+      label: Expected status
+      options:
+        - ok
+        - blocked
+        - gated
+        - demoOnly
+    validations:
+      required: true
+  - type: dropdown
+    id: observed_status
+    attributes:
+      label: Observed status
+      options:
+        - ok
+        - blocked
+        - gated
+        - demoOnly
+    validations:
+      required: true
+  - type: textarea
+    id: evidence_provenance
+    attributes:
+      label: Evidence/provenance
+      description: List evidence IDs, provenance IDs, missing provenance, or relevant source files. Do not invent evidence.
+    validations:
+      required: true
+  - type: input
+    id: implementation_language
+    attributes:
+      label: Implementation language
+      description: Example: TypeScript, Python, Rust, or other.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction_steps
+    attributes:
+      label: Reproduction steps
+      description: Commands, fixture paths, inputs, and observed output.
+    validations:
+      required: true
+  - type: textarea
+    id: proposed_fix
+    attributes:
+      label: Proposed fix
+      description: Policy, fixture, documentation, or implementation change you recommend.
+    validations:
+      required: true

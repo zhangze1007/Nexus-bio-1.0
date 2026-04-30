@@ -1,0 +1,83 @@
+name: Conformance failure
+description: Report a SITR conformance failure in an implementation or proof artifact.
+title: "[Conformance failure]: "
+labels:
+  - conformance
+  - sitr
+body:
+  - type: input
+    id: case_id
+    attributes:
+      label: caseId
+      description: Conformance case, benchmark case, or local reproduction identifier.
+    validations:
+      required: true
+  - type: input
+    id: policy_rule
+    attributes:
+      label: Policy rule
+      description: Rule ID, conformance level, or checklist item involved.
+    validations:
+      required: true
+  - type: dropdown
+    id: claim_surface
+    attributes:
+      label: Claim surface
+      options:
+        - payload
+        - export
+        - recommendation
+        - protocol
+        - external-handoff
+    validations:
+      required: true
+  - type: dropdown
+    id: expected_status
+    attributes:
+      label: Expected status
+      options:
+        - ok
+        - blocked
+        - gated
+        - demoOnly
+    validations:
+      required: true
+  - type: dropdown
+    id: observed_status
+    attributes:
+      label: Observed status
+      options:
+        - ok
+        - blocked
+        - gated
+        - demoOnly
+    validations:
+      required: true
+  - type: textarea
+    id: evidence_provenance
+    attributes:
+      label: Evidence/provenance
+      description: Include relevant evidence IDs, provenance IDs, proof-package paths, reports, or missing artifacts.
+    validations:
+      required: true
+  - type: input
+    id: implementation_language
+    attributes:
+      label: Implementation language
+      description: Example: TypeScript, Python, Rust, or other.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction_steps
+    attributes:
+      label: Reproduction steps
+      description: Commands, environment notes, fixture paths, and observed output.
+    validations:
+      required: true
+  - type: textarea
+    id: proposed_fix
+    attributes:
+      label: Proposed fix
+      description: Conformance, docs, policy, proof, or implementation change you recommend.
+    validations:
+      required: true

@@ -257,6 +257,7 @@ Trust-runtime thesis:
 - Nexus-Bio is an assumption-gated scientific inference runtime for synthetic biology workflows.
 - The workbench treats assumptions, evidence, provenance, and claim surfaces as runtime objects rather than marketing claims.
 - See [docs/TRUST_RUNTIME_THESIS.md](docs/TRUST_RUNTIME_THESIS.md) and [spec/nexus-trust-runtime-v0.md](spec/nexus-trust-runtime-v0.md) for the protocol foundation.
+- See [spec/SITR-draft-v1.md](spec/SITR-draft-v1.md) for the draft Scientific Inference Trust Runtime open protocol proposal.
 
 Key limitations:
 - Some tools are explicitly demo-tier and assumption-gated.
