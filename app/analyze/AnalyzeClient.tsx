@@ -31,7 +31,7 @@ const ThreeScene = dynamic(
 );
 
 const MONO = "'JetBrains Mono', 'Fira Code', monospace";
-const SANS = "'Inter', -apple-system, sans-serif";
+const SANS = "'Public Sans', -apple-system, sans-serif";
 
 function summarizeWorkflowArtifactDebug(artifact: WorkflowArtifact | null | undefined) {
   if (!artifact) return null;

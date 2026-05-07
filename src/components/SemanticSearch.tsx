@@ -729,7 +729,7 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
       id="search"
       style={{
         background: RESEARCH_PALETTE.page,
-        fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        fontFamily: "'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
       }}
     >
       <div className="max-w-5xl mx-auto">

@@ -4,7 +4,7 @@ import { motion, type Variants } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import type { CSSProperties, ReactNode } from 'react';
 
-const HEADER = "'Inter',-apple-system,sans-serif";
+const HEADER = "'Public Sans',-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','Fira Code',monospace";
 
 const cardVariants: Variants = {

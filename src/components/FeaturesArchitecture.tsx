@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import HomeInteractiveCard from './HomeInteractiveCard';
 
-const HEADER = "'Inter',-apple-system,sans-serif";
+const HEADER = "'Public Sans',-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','Fira Code',monospace";
 
 interface EngineBlock {

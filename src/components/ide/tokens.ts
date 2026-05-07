@@ -43,16 +43,16 @@ export const T = {
   NEON_SUCCESS: '#BFDCCD',
   NEON_DANGER:  '#E8A3A1',
 
-  // IDE shell backgrounds
-  BG_SHELL:   '#F2F5F8',
-  BG_SIDEBAR: '#FFFFFF',
-  BG_TOPBAR:  '#FFFFFF',
-  BG_PANEL:   '#FFFFFF',
-  BG_CANVAS:  '#F4EFE7',
+  // IDE shell backgrounds (dark theme)
+  BG_SHELL:   '#0d0f14',
+  BG_SIDEBAR: '#10131a',
+  BG_TOPBAR:  '#0d0f14',
+  BG_PANEL:   '#10131a',
+  BG_CANVAS:  '#050505',
 
   // Borders
-  BORDER:        'rgba(0,0,0,0.07)',
-  BORDER_ACTIVE: 'rgba(0,0,0,0.15)',
+  BORDER:        'rgba(255,255,255,0.07)',
+  BORDER_ACTIVE: 'rgba(255,255,255,0.15)',
 
   // Squircle radii
   R_SM: '8px',

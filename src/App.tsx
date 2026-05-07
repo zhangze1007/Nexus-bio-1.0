@@ -20,8 +20,8 @@ import HomeInteractiveCard from './components/HomeInteractiveCard';
 import { Mail, Linkedin, Dna, ShieldCheck, Zap, BarChart3 } from 'lucide-react';
 
 // ── Design tokens ──────────────────────────────────────────────────────
-const H = "'Inter',-apple-system,sans-serif";
-const MONO = "'JetBrains Mono','Fira Code',monospace";
+const H = "'Public Sans',-apple-system,sans-serif";
+const MONO = "'IBM Plex Mono','JetBrains Mono','Fira Code',monospace";
 
 // ── Scroll reveal ──────────────────────────────────────────────────────
 function Reveal({ children, delay = 0, style }: {

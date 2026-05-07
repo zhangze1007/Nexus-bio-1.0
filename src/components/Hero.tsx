@@ -25,8 +25,8 @@ import { useRouter } from 'next/navigation';
 import HeroFluidCanvas, { type HeroFluidHandle } from './HeroFluidCanvas';
 
 const BRAND = "'Space Grotesk',-apple-system,sans-serif";
-const SANS  = "'Inter',-apple-system,sans-serif";
-const MONO  = "'JetBrains Mono','Fira Code',monospace";
+const SANS  = "'Public Sans',-apple-system,sans-serif";
+const MONO  = "'IBM Plex Mono','JetBrains Mono','Fira Code',monospace";
 
 // Quick preview from OpenAlex (CORS-open, no key)
 interface PreviewResult {

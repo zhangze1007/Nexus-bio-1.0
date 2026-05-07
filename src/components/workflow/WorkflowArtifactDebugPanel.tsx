@@ -3,7 +3,7 @@
 import type { WorkflowArtifact } from '../../domain/workflowArtifact';
 
 const MONO = "'IBM Plex Mono', 'JetBrains Mono', monospace";
-const SANS = "'Public Sans', 'Inter', sans-serif";
+const SANS = "'Public Sans', -apple-system, sans-serif";
 
 type GraphSource = 'persisted' | 'in-memory' | 'compatibility-projection' | 'ui-graph' | 'demo' | 'none';
 

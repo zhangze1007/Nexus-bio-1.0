@@ -745,7 +745,7 @@ export default function PaperAnalyzer({
                 fontSize: '13.5px',
                 lineHeight: 1.7,
                 margin: 0,
-                fontFamily: "var(--font-sans, 'Inter', sans-serif)",
+                fontFamily: "var(--font-sans, 'Public Sans', sans-serif)",
               }}>
                 {axonInteraction.question}
               </p>
@@ -764,7 +764,7 @@ export default function PaperAnalyzer({
                         background: 'rgba(201,228,222,0.06)',
                         color: 'rgba(201,228,222,0.85)',
                         fontSize: '12px',
-                        fontFamily: "var(--font-sans, 'Inter', sans-serif)",
+                        fontFamily: "var(--font-sans, 'Public Sans', sans-serif)",
                         cursor: 'pointer',
                         transition: 'all 0.15s',
                       }}

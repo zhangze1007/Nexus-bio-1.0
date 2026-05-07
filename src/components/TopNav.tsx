@@ -10,7 +10,7 @@ import { usePathname } from 'next/navigation';
 import { Dna } from 'lucide-react';
 
 const MONO = "'JetBrains Mono','Fira Code',monospace";
-const SANS = "'Inter',-apple-system,sans-serif";
+const SANS = "'Public Sans',-apple-system,sans-serif";
 const BRAND = "'Space Grotesk',-apple-system,sans-serif";
 
 const NAV_LINKS: [string, string][] = [

@@ -148,10 +148,10 @@ export default function ProteinViewer({ pdbId, alphafoldId, label }: { pdbId: st
               <div style={{ position: 'absolute', inset: '14px', borderRadius: '50%', background: 'rgba(0,83,214,0.12)', animation: 'pulse 1.5s ease-in-out infinite' }} />
             </div>
             <div style={{ textAlign: 'center' }}>
-              <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '11px', fontFamily: "'Inter', -apple-system, sans-serif", fontWeight: 600, margin: '0 0 3px' }}>
+              <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '11px', fontFamily: "'Public Sans', -apple-system, sans-serif", fontWeight: 600, margin: '0 0 3px' }}>
                 {useAF ? 'Predicting structure' : 'Loading structure'}
               </p>
-              <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', fontFamily: "'Inter', -apple-system, sans-serif", margin: 0, fontFeatureSettings: "'tnum' 1" }}>
+              <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', fontFamily: "'Public Sans', -apple-system, sans-serif", margin: 0, fontFeatureSettings: "'tnum' 1" }}>
                 {useAF ? `AlphaFold · ${alphafoldId}` : `RCSB PDB · ${pdbId}`}
               </p>
             </div>
@@ -189,14 +189,14 @@ export default function ProteinViewer({ pdbId, alphafoldId, label }: { pdbId: st
               ))}
             </div>
             <div style={{ position: 'absolute', top: '8px', left: '10px', pointerEvents: 'none' }}>
-              <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '9px', fontFamily: "'Inter', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1", background: 'rgba(0,0,0,0.45)', padding: '2px 6px', borderRadius: '8px' }}>
+              <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '9px', fontFamily: "'Public Sans', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1", background: 'rgba(0,0,0,0.45)', padding: '2px 6px', borderRadius: '8px' }}>
                 {useAF ? `AF-${alphafoldId}` : pdbId}
               </span>
             </div>
             <div style={{ position: 'absolute', bottom: '8px', right: '10px' }}>
               <a href={useAF ? `https://alphafold.ebi.ac.uk/entry/${alphafoldId}` : `https://www.rcsb.org/structure/${pdbId}`}
                 target="_blank" rel="noopener noreferrer"
-                style={{ color: 'rgba(255,255,255,0.35)', fontSize: '9px', fontFamily: "'Inter', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1", display: 'flex', alignItems: 'center', gap: '3px', textDecoration: 'none', background: 'rgba(0,0,0,0.45)', padding: '2px 6px', borderRadius: '8px' }}
+                style={{ color: 'rgba(255,255,255,0.35)', fontSize: '9px', fontFamily: "'Public Sans', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1", display: 'flex', alignItems: 'center', gap: '3px', textDecoration: 'none', background: 'rgba(0,0,0,0.45)', padding: '2px 6px', borderRadius: '8px' }}
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(200,232,240,0.9)'; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.35)'; }}>
                 {useAF ? 'AlphaFold DB' : 'RCSB PDB'} <ExternalLink size={8} />
@@ -210,7 +210,7 @@ export default function ProteinViewer({ pdbId, alphafoldId, label }: { pdbId: st
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', borderRadius: '16px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
           <div>
             <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '11px', fontWeight: 500, margin: '0 0 2px' }}>AlphaFold pLDDT</p>
-            <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', fontFamily: "'Inter', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1", margin: 0 }}>AI confidence coloring</p>
+            <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', fontFamily: "'Public Sans', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1", margin: 0 }}>AI confidence coloring</p>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <button
@@ -233,33 +233,33 @@ export default function ProteinViewer({ pdbId, alphafoldId, label }: { pdbId: st
           {[{ c: '#0053D6', l: '>90' }, { c: '#65CBF3', l: '70–90' }, { c: '#FFDB13', l: '50–70' }, { c: '#FF7D45', l: '<50' }].map(x => (
             <div key={x.l} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
               <div style={{ width: '10px', height: '4px', borderRadius: '2px', background: x.c }} />
-              <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '9px', fontFamily: "'Inter', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1" }}>{x.l}</span>
+              <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '9px', fontFamily: "'Public Sans', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1" }}>{x.l}</span>
             </div>
           ))}
         </div>
       )}
 
       <div style={{ padding: '10px 12px', borderRadius: '16px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
-        <p style={{ color: 'rgba(255,255,255,0.28)', fontSize: '10px', fontFamily: "'Inter', -apple-system, sans-serif", textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 6px' }}>
+        <p style={{ color: 'rgba(255,255,255,0.28)', fontSize: '10px', fontFamily: "'Public Sans', -apple-system, sans-serif", textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 6px' }}>
           Structure trace
         </p>
-        <p style={{ color: 'rgba(255,255,255,0.68)', fontSize: '11px', lineHeight: 1.6, margin: '0 0 8px', fontFamily: "'Inter', -apple-system, sans-serif" }}>
+        <p style={{ color: 'rgba(255,255,255,0.68)', fontSize: '11px', lineHeight: 1.6, margin: '0 0 8px', fontFamily: "'Public Sans', -apple-system, sans-serif" }}>
           {traceText}
         </p>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          <span style={{ padding: '3px 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.55)', fontSize: '9px', fontFamily: "'Inter', -apple-system, sans-serif" }}>
+          <span style={{ padding: '3px 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.55)', fontSize: '9px', fontFamily: "'Public Sans', -apple-system, sans-serif" }}>
             source · {sourceLabel}
           </span>
-          <span style={{ padding: '3px 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.55)', fontSize: '9px', fontFamily: "'Inter', -apple-system, sans-serif" }}>
+          <span style={{ padding: '3px 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.55)', fontSize: '9px', fontFamily: "'Public Sans', -apple-system, sans-serif" }}>
             mode · {renderMode}
           </span>
-          <span style={{ padding: '3px 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.55)', fontSize: '9px', fontFamily: "'Inter', -apple-system, sans-serif" }}>
+          <span style={{ padding: '3px 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.55)', fontSize: '9px', fontFamily: "'Public Sans', -apple-system, sans-serif" }}>
             label · {label}
           </span>
         </div>
       </div>
 
-      <p style={{ color: 'rgba(255,255,255,0.1)', fontSize: '9px', fontFamily: "'Inter', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1", margin: 0, textAlign: 'center' }}>
+      <p style={{ color: 'rgba(255,255,255,0.1)', fontSize: '9px', fontFamily: "'Public Sans', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1", margin: 0, textAlign: 'center' }}>
         Drag to rotate · {spinEnabled ? 'auto-spin on' : 'manual view'} · {renderMode === 'surface' ? 'surface envelope' : renderMode === 'confidence' ? 'confidence coloring' : 'cartoon fold'}
       </p>
     </div>

@@ -91,7 +91,7 @@ export default function DevModePanel() {
                 height: '60vh', display: 'flex', flexDirection: 'column',
                 background: '#0f0f0f',
                 borderTop: '1px solid rgba(255,255,255,0.08)',
-                fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+                fontFamily: "'Public Sans', -apple-system, BlinkMacSystemFont, sans-serif",
               }}
             >
               {/* Header */}
