@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import ExportButton from '../ide/shared/ExportButton';
 import { useWorkbenchStore } from '../../store/workbenchStore';
-import { PATHD_THEME } from '../workbench/workbenchTheme';
 import { T } from '../ide/tokens';
 import { buildProEvolCampaignInput } from '../../data/proevolMockCampaign';
 import { buildProEvolCampaign } from '../../services/ProEvolCampaignEngine';
@@ -26,7 +25,7 @@ import EnrichmentBurdenScatter from './proevol/research/EnrichmentBurdenScatter'
 import DiversityConvergenceCurve from './proevol/research/DiversityConvergenceCurve';
 import VariantEvidenceTable from './proevol/research/VariantEvidenceTable';
 
-const PANEL_BG = PATHD_THEME.sepiaPanelMuted;
+const PANEL_BG = PROEVOL_THEME.pageBg;
 
 export default function ProEvolPage() {
   const project = useWorkbenchStore((state) => state.project);
@@ -132,7 +131,7 @@ export default function ProEvolPage() {
 
   return (
     <div className="nb-tool-page" style={{ background: PANEL_BG, minHeight: '100%' }}>
-      <div style={{ display: 'grid', gap: '14px', padding: '14px 16px 18px' }}>
+      <div style={{ display: 'grid', gap: '10px', padding: '10px 12px 14px' }}>
 
         {/* ═══════════════  TRUTH HEADER  ═══════════════ */}
         <TruthHeader
@@ -144,10 +143,10 @@ export default function ProEvolPage() {
 
         {/* ═══════════════  TOP STATUS BAR — always visible  ═══════════════ */}
         <div style={{
-          display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '8px',
-          padding: '12px 14px', borderRadius: '14px',
-          border: `1px solid ${PROEVOL_THEME.border}`,
-          background: 'linear-gradient(135deg, rgba(191,220,205,0.08) 0%, rgba(175,195,214,0.06) 100%)',
+          display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '6px',
+          padding: '10px 12px', borderRadius: '12px',
+          border: `1px solid ${PROEVOL_THEME.borderStrong}`,
+          background: PROEVOL_THEME.surface,
         }}>
           <CompactMetric label="Lead score" value={lead.score.composite.toFixed(1)} delta={formatSigned(lead.score.deltaFromWildType, 1)} accent={PROEVOL_THEME.mint} />
           <CompactMetric label="Activity" value={lead.predictedActivity.toFixed(1)} delta={formatSigned(lead.predictedActivity - wt.predictedActivity, 1)} accent={PROEVOL_THEME.mint} />
@@ -158,14 +157,14 @@ export default function ProEvolPage() {
         </div>
 
         {/* ═══════════════  SCORE BREAKDOWN + CAMPAIGN INFO  ═══════════════ */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
           {/* Score breakdown */}
           <div style={{
-            padding: '14px', borderRadius: '14px',
-            border: `1px solid ${PROEVOL_THEME.border}`, background: 'rgba(255,255,255,0.02)',
+            padding: '10px 12px', borderRadius: '12px',
+            border: `1px solid ${PROEVOL_THEME.border}`, background: PROEVOL_THEME.surface,
           }}>
-            <div style={kicker}>Score breakdown · {lead.name}</div>
-            <div style={{ marginTop: '10px', display: 'grid', gap: '5px' }}>
+            <div style={kicker}>Score breakdown</div>
+            <div style={{ marginTop: '8px', display: 'grid', gap: '4px' }}>
               <BreakdownRow label="Activity" value={lead.score.activityTerm} max={30} color={PROEVOL_THEME.mint} />
               <BreakdownRow label="Stability" value={lead.score.stabilityTerm} max={30} color={PROEVOL_THEME.sky} />
               <BreakdownRow label="Expression" value={lead.score.expressionTerm} max={30} color={PROEVOL_THEME.apricot} />
@@ -184,12 +183,12 @@ export default function ProEvolPage() {
 
           {/* Campaign info — compact */}
           <div style={{
-            padding: '14px', borderRadius: '14px',
-            border: `1px solid ${PROEVOL_THEME.border}`, background: 'rgba(255,255,255,0.02)',
-            display: 'grid', gap: '10px', alignContent: 'start',
+            padding: '10px 12px', borderRadius: '12px',
+            border: `1px solid ${PROEVOL_THEME.border}`, background: PROEVOL_THEME.surface,
+            display: 'grid', gap: '8px', alignContent: 'start',
           }}>
             <div style={kicker}>Campaign parameters</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '5px' }}>
               <InfoField label="Target" value={campaign.targetProtein} />
               <InfoField label="Wild type" value={campaign.wildTypeLabel} />
               <InfoField label="Host" value={campaign.hostSystem} />
@@ -198,9 +197,9 @@ export default function ProEvolPage() {
               <InfoField label="Rounds" value={`${campaign.currentRound}/${campaign.totalRounds}`} />
             </div>
             <div style={{
-              padding: '8px 10px', borderRadius: '10px',
-              border: `1px solid ${PROEVOL_THEME.border}`, background: 'rgba(255,255,255,0.03)',
-              display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center',
+              padding: '6px 8px', borderRadius: '8px',
+              border: `1px solid ${PROEVOL_THEME.border}`, background: PROEVOL_THEME.inset,
+              display: 'flex', flexWrap: 'wrap', gap: '5px', alignItems: 'center',
             }}>
               <StatusPill tone="cool">{campaign.convergenceSignal.state}</StatusPill>
               <StatusPill tone={lead.riskFlags.length ? 'warm' : 'neutral'}>
@@ -229,9 +228,9 @@ export default function ProEvolPage() {
 
         {/* ═══════════════  DECISION STRIP — always visible  ═══════════════ */}
         <div style={{
-          display: 'grid', gridTemplateColumns: 'auto 1fr auto', gap: '12px', alignItems: 'center',
-          padding: '10px 14px', borderRadius: '12px',
-          border: `1px solid ${PROEVOL_THEME.border}`, background: 'rgba(255,255,255,0.02)',
+          display: 'grid', gridTemplateColumns: 'auto 1fr auto', gap: '10px', alignItems: 'center',
+          padding: '8px 12px', borderRadius: '10px',
+          border: `1px solid ${PROEVOL_THEME.border}`, background: PROEVOL_THEME.surface,
         }}>
           <StatusPill tone="cool">{campaign.nextRoundRecommendation.action}</StatusPill>
           <div style={{ minWidth: 0 }}>
@@ -249,7 +248,7 @@ export default function ProEvolPage() {
 
         {/* ═══════════════  EVIDENCE: trajectory + stat rail  ═══════════════ */}
         <SectionKicker index={1} label="Variant trajectories & statistical signal" />
-        <div style={{ display: 'grid', gap: '12px', gridTemplateColumns: 'minmax(0, 2.4fr) minmax(200px, 0.8fr)' }}>
+        <div style={{ display: 'grid', gap: '8px', gridTemplateColumns: 'minmax(0, 2.4fr) minmax(200px, 0.8fr)' }}>
           <ChartShell title="Variant trajectory · top 6" footnote={`Frequencies use Laplace pseudocount (+1). Hover for ${bandSemantic === 'modeled' ? 'model spread' : '95% CI'} range.`}>
             <VariantTrajectoryChart
               trajectories={research.topVariants}
@@ -262,7 +261,7 @@ export default function ProEvolPage() {
         </div>
 
         {/* ═══════════════  EVIDENCE: Muller + Diversity  ═══════════════ */}
-        <div style={{ display: 'grid', gap: '12px', gridTemplateColumns: 'minmax(0, 1.1fr) minmax(0, 0.9fr)' }}>
+        <div style={{ display: 'grid', gap: '8px', gridTemplateColumns: 'minmax(0, 1.1fr) minmax(0, 0.9fr)' }}>
           <ChartShell title="Family share · Muller stack" footnote="Normalized share per family across rounds.">
             <MullerPlot data={research.familyShares} />
           </ChartShell>
@@ -278,18 +277,18 @@ export default function ProEvolPage() {
 
         {/* ═══════════════  EVIDENCE TABLE  ═══════════════ */}
         <div style={{
-          padding: '14px 16px', borderRadius: '14px',
-          border: `1px solid ${PROEVOL_THEME.border}`, background: 'rgba(255,255,255,0.015)',
+          padding: '10px 12px', borderRadius: '12px',
+          border: `1px solid ${PROEVOL_THEME.border}`, background: PROEVOL_THEME.surface,
         }}>
           <div style={kicker}>Variant evidence · top 12 by log₂ enrichment vs WT</div>
-          <div style={{ marginTop: '8px' }}>
+          <div style={{ marginTop: '6px' }}>
             <VariantEvidenceTable entries={research.enrichment} highlightVariantId={selectedVariantId} onSelectVariant={setSelectedVariantId} />
           </div>
         </div>
 
         {/* ═══════════════  AUXILIARY: Lineage + Library Table + 3D  ═══════════════ */}
         <SectionKicker index={2} label="Lineage trace, variant library & fitness landscape" />
-        <div style={{ display: 'grid', gap: '12px', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)' }}>
+        <div style={{ display: 'grid', gap: '8px', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)' }}>
           <LineageTracePanel campaign={campaign} selectedVariantId={focusedVariant?.id ?? null} onSelectVariant={setSelectedVariantId} />
           <VariantLibraryTable roundResult={campaign.currentRoundResult} selectedVariantId={focusedVariant?.id ?? null} onSelectVariant={setSelectedVariantId} />
         </div>
@@ -298,16 +297,16 @@ export default function ProEvolPage() {
 
         {/* ═══════════════  DECISION DETAIL  ═══════════════ */}
         <SectionKicker index={3} label="Decision detail & focused variant" />
-        <div style={{ display: 'grid', gap: '12px', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)' }}>
+        <div style={{ display: 'grid', gap: '8px', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)' }}>
           <NextRoundRecommendationCard campaign={campaign} />
           <SelectionDecisionCard campaign={campaign} focusedVariant={focusedVariant} />
         </div>
 
         {/* ═══════════════  EXPORTS  ═══════════════ */}
         <div style={{
-          display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center',
-          padding: '10px 14px', borderRadius: '12px',
-          border: `1px solid ${PROEVOL_THEME.border}`, background: 'rgba(10,12,16,0.4)',
+          display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center',
+          padding: '8px 12px', borderRadius: '10px',
+          border: `1px solid ${PROEVOL_THEME.border}`, background: PROEVOL_THEME.surface,
         }}>
           <span style={{ ...kicker, marginRight: '4px' }}>Exports · {bandSemantic}</span>
           <ExportButton label="Trajectory CSV" data={trajectoryExport} filename={`proevol-trajectories${exportSuffix}`} format="csv" />
@@ -381,8 +380,8 @@ function InfoField({ label, value }: { label: string; value: string }) {
 function ChartShell({ title, children, footnote }: { title: string; children: React.ReactNode; footnote?: string }) {
   return (
     <div style={{
-      display: 'grid', gap: '10px', padding: '14px 16px', borderRadius: '14px',
-      border: `1px solid ${PROEVOL_THEME.border}`, background: 'rgba(8,11,16,0.5)', minWidth: 0,
+      display: 'grid', gap: '8px', padding: '10px 12px', borderRadius: '12px',
+      border: `1px solid ${PROEVOL_THEME.border}`, background: PROEVOL_THEME.surface, minWidth: 0,
     }}>
       <div style={kicker}>{title}</div>
       <div>{children}</div>

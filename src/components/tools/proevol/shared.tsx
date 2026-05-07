@@ -5,14 +5,15 @@ import { PATHD_THEME } from '../../workbench/workbenchTheme';
 import { T } from '../../ide/tokens';
 
 export const PROEVOL_THEME = {
-  border: PATHD_THEME.paperBorder,
-  borderStrong: PATHD_THEME.paperBorderStrong,
-  label: PATHD_THEME.label,
-  value: PATHD_THEME.value,
-  muted: PATHD_THEME.paperMuted,
-  surface: PATHD_THEME.panelSurface,
-  inset: PATHD_THEME.panelInset,
-  glass: PATHD_THEME.panelGlass,
+  border: 'rgba(255, 235, 210, 0.10)',
+  borderStrong: 'rgba(255, 235, 210, 0.18)',
+  label: 'rgba(225, 215, 200, 0.60)',
+  value: 'rgba(255, 248, 240, 0.96)',
+  muted: 'rgba(225, 215, 200, 0.55)',
+  surface: 'rgba(28, 24, 20, 0.92)',
+  inset: 'rgba(34, 28, 22, 0.94)',
+  glass: 'rgba(30, 26, 22, 0.88)',
+  pageBg: '#080706',
   mint: PATHD_THEME.mint,
   coral: PATHD_THEME.coral,
   apricot: PATHD_THEME.apricot,
@@ -49,12 +50,12 @@ export function surfaceCardStyle(options?: {
 }): CSSProperties {
   return {
     display: 'grid',
-    gap: '12px',
-    padding: options?.padding ?? '14px',
-    borderRadius: '18px',
+    gap: '10px',
+    padding: options?.padding ?? '12px',
+    borderRadius: '14px',
     border: `1px solid ${options?.inset ? PROEVOL_THEME.borderStrong : PROEVOL_THEME.border}`,
     background: options?.inset ? PROEVOL_THEME.inset : PROEVOL_THEME.surface,
-    boxShadow: '0 18px 36px rgba(0,0,0,0.24)',
+    boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
     minHeight: options?.minHeight,
   };
 }
