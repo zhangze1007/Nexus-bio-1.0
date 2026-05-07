@@ -111,11 +111,11 @@ const AA_MUTATIONS = [
 
 const tn: React.CSSProperties = { fontFeatureSettings: "'tnum' 1" };
 const hdrCell: React.CSSProperties = {
-  fontFamily: T.MONO, fontSize: '8px', color: LABEL, textAlign: 'left',
+  fontFamily: T.MONO, fontSize: '10px', color: LABEL, textAlign: 'left',
   padding: '4px 6px', borderBottom: `1px solid ${BORDER}`, letterSpacing: '0.04em',
 };
 const dataCell: React.CSSProperties = {
-  fontFamily: T.MONO, fontSize: '9px', color: VALUE, padding: '3px 6px',
+  fontFamily: T.MONO, fontSize: '11px', color: VALUE, padding: '4px 6px',
   textAlign: 'right', ...tn,
 };
 
@@ -129,7 +129,7 @@ function MiniBar({ value, color, max = 1 }: { value: number; color: string; max?
       }}>
         <div style={{ width: `${pct}%`, height: '100%', borderRadius: 2, background: color, opacity: 0.8 }} />
       </div>
-      <span style={{ fontFamily: T.MONO, fontSize: '8px', color: VALUE, minWidth: 28, textAlign: 'right', ...tn }}>
+      <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE, minWidth: 28, textAlign: 'right', ...tn }}>
         {value.toFixed(2)}
       </span>
     </div>
@@ -140,7 +140,7 @@ function StatusDot({ color, label }: { color: string; label: string }) {
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
       <span style={{ width: 5, height: 5, borderRadius: '50%', background: color, flexShrink: 0 }} />
-      <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>{label}</span>
+      <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>{label}</span>
     </span>
   );
 }
@@ -160,26 +160,26 @@ function BindingView({ result, enzyme }: { result: BindingAffinityResult; enzyme
       {/* Header metrics */}
       <div style={{ display: 'flex', gap: 16, alignItems: 'baseline' }}>
         <div>
-          <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Catalytic Fit</span>
-          <p style={{ fontFamily: T.MONO, fontSize: '18px', color: VALUE, margin: '1px 0 0', ...tn }}>{result.overallScore.toFixed(3)}</p>
+          <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Catalytic Fit</span>
+          <p style={{ fontFamily: T.MONO, fontSize: '20px', color: VALUE, margin: '1px 0 0', ...tn }}>{result.overallScore.toFixed(3)}</p>
         </div>
         <div>
-          <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Kd</span>
-          <p style={{ fontFamily: T.MONO, fontSize: '13px', color: VALUE, margin: '1px 0 0', ...tn }}>{result.predictedKd.toFixed(2)} <span style={{ fontSize: '8px', color: LABEL }}>μM</span></p>
+          <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>Kd</span>
+          <p style={{ fontFamily: T.MONO, fontSize: '14px', color: VALUE, margin: '1px 0 0', ...tn }}>{result.predictedKd.toFixed(2)} <span style={{ fontSize: '10px', color: LABEL }}>μM</span></p>
         </div>
         <div>
-          <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>ΔG</span>
-          <p style={{ fontFamily: T.MONO, fontSize: '13px', color: VALUE, margin: '1px 0 0', ...tn }}>{result.bindingEnergy.toFixed(2)} <span style={{ fontSize: '8px', color: LABEL }}>kcal/mol</span></p>
+          <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>ΔG</span>
+          <p style={{ fontFamily: T.MONO, fontSize: '14px', color: VALUE, margin: '1px 0 0', ...tn }}>{result.bindingEnergy.toFixed(2)} <span style={{ fontSize: '10px', color: LABEL }}>kcal/mol</span></p>
         </div>
       </div>
 
       {/* Energy decomposition */}
       <div>
-        <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Energy Decomposition</span>
+        <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Energy Decomposition</span>
         <div style={{ marginTop: 4, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3px 12px' }}>
           {axes.map(ax => (
             <div key={ax.label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL, minWidth: 42 }}>{ax.label}</span>
+              <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL, minWidth: 42 }}>{ax.label}</span>
               <MiniBar value={ax.value} color={ax.color} />
             </div>
           ))}
@@ -188,7 +188,7 @@ function BindingView({ result, enzyme }: { result: BindingAffinityResult; enzyme
 
       {/* Catalytic residues table */}
       <div>
-        <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+        <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
           Catalytic Residues — {enzyme.name}
         </span>
         <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 4 }}>
@@ -206,7 +206,7 @@ function BindingView({ result, enzyme }: { result: BindingAffinityResult; enzyme
                 <tr key={r.position} style={{ background: 'rgba(255,255,255,0.015)' }}>
                   <td style={{ ...dataCell, textAlign: 'left', color: PHASE_COLORS.binding }}>{r.position}</td>
                   <td style={{ ...dataCell, textAlign: 'center' }}>{r.residue}</td>
-                  <td style={{ ...dataCell, textAlign: 'left', fontSize: '8px', color: LABEL }}>{r.role.replace('_', ' ')}</td>
+                  <td style={{ ...dataCell, textAlign: 'left', fontSize: '10px', color: LABEL }}>{r.role.replace('_', ' ')}</td>
                   <td style={dataCell}>{r.distanceToSubstrate.toFixed(1)}</td>
                   <td style={dataCell}>{r.optimalDistance.toFixed(1)}</td>
                   <td style={{ ...dataCell, color: Math.abs(distDelta) > 0.5 ? '#FA8072' : VALUE }}>
@@ -234,7 +234,7 @@ function SequenceView({ result }: { result: SequenceDesignResult }) {
 
   return (
     <div style={{ padding: '10px 12px' }}>
-      <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+      <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
         Sequence Designs — {result.targetEnzyme}
       </span>
       <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 6 }}>
@@ -255,7 +255,7 @@ function SequenceView({ result }: { result: SequenceDesignResult }) {
               <td style={dataCell}>{(d.gcContent * 100).toFixed(1)}%</td>
               <td style={{ ...dataCell, color: d.rareCodons > 3 ? '#FA8072' : VALUE }}>{d.rareCodons}</td>
               <td style={{
-                fontFamily: T.MONO, fontSize: '8px', color: 'rgba(255,255,255,0.35)',
+                fontFamily: T.MONO, fontSize: '10px', color: 'rgba(255,255,255,0.35)',
                 padding: '3px 6px', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
               }}>
                 {d.dnaSequence.slice(0, 40)}…
@@ -267,10 +267,10 @@ function SequenceView({ result }: { result: SequenceDesignResult }) {
 
       {result.consensusMotifs.length > 0 && (
         <div style={{ marginTop: 8, display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-          <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL, marginRight: 4 }}>Motifs:</span>
+          <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL, marginRight: 4 }}>Motifs:</span>
           {result.consensusMotifs.map((m, i) => (
             <span key={i} style={{
-              fontFamily: T.MONO, fontSize: '8px', color: PHASE_COLORS.sequence,
+              fontFamily: T.MONO, fontSize: '10px', color: PHASE_COLORS.sequence,
               padding: '1px 6px', borderRadius: 4,
               background: 'rgba(175,195,214,0.1)', border: '1px solid rgba(175,195,214,0.15)',
             }}>{m}</span>
@@ -293,14 +293,14 @@ function FluxCostView({ result }: { result: MetabolicDrainResult }) {
       {/* Header */}
       <div style={{ display: 'flex', gap: 16, alignItems: 'baseline' }}>
         <div>
-          <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Total Drain</span>
-          <p style={{ fontFamily: T.MONO, fontSize: '18px', color: VALUE, margin: '1px 0 0', ...tn }}>
+          <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Total Drain</span>
+          <p style={{ fontFamily: T.MONO, fontSize: '20px', color: VALUE, margin: '1px 0 0', ...tn }}>
             {(result.totalMetabolicDrain * 100).toFixed(1)}%
           </p>
         </div>
         <div>
-          <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Growth Penalty</span>
-          <p style={{ fontFamily: T.MONO, fontSize: '13px', color: viabilityColor, margin: '1px 0 0', ...tn }}>
+          <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>Growth Penalty</span>
+          <p style={{ fontFamily: T.MONO, fontSize: '14px', color: viabilityColor, margin: '1px 0 0', ...tn }}>
             {result.growthPenalty.toFixed(1)}%
           </p>
         </div>
@@ -311,7 +311,7 @@ function FluxCostView({ result }: { result: MetabolicDrainResult }) {
 
       {/* Resource breakdown */}
       <div>
-        <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Resource Breakdown</span>
+        <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Resource Breakdown</span>
         <div style={{ marginTop: 4, display: 'flex', flexDirection: 'column', gap: 4 }}>
           {[
             { label: 'ATP', value: result.atpCost, color: PHASE_COLORS.flux },
@@ -319,7 +319,7 @@ function FluxCostView({ result }: { result: MetabolicDrainResult }) {
             { label: 'Ribosome', value: result.ribosomeBurden, color: PHASE_COLORS.pareto },
           ].map(item => (
             <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL, minWidth: 52 }}>{item.label}</span>
+              <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL, minWidth: 52 }}>{item.label}</span>
               <MiniBar value={item.value} color={item.color} max={Math.max(result.atpCost, result.nadphCost, result.ribosomeBurden) || 1} />
             </div>
           ))}
@@ -328,7 +328,7 @@ function FluxCostView({ result }: { result: MetabolicDrainResult }) {
 
       {/* Recommendation */}
       <div style={{
-        fontFamily: T.SANS, fontSize: '9px', color: LABEL,
+        fontFamily: T.SANS, fontSize: '11px', color: LABEL,
         padding: '6px 8px', borderRadius: 8,
         background: 'rgba(255,255,255,0.02)', border: `1px solid ${BORDER}`,
       }}>
@@ -347,7 +347,7 @@ function BalancerView({ result }: { result: PathwayBalanceResult }) {
   return (
     <div style={{ padding: '10px 12px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-        <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+        <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
           Pathway Balance — {steps.length} Steps
         </span>
         <StatusDot color={result.isBalanced ? '#93CB52' : '#FA8072'} label={result.isBalanced ? 'Balanced' : 'Imbalanced'} />
@@ -392,11 +392,11 @@ function BalancerView({ result }: { result: PathwayBalanceResult }) {
         ).join(' ');
         return (
           <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Convergence</span>
+            <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>Convergence</span>
             <svg width={sparkW} height={sparkH} style={{ overflow: 'visible' }}>
               <polyline points={pts} fill="none" stroke={PHASE_COLORS.balancing} strokeWidth={1.2} />
             </svg>
-            <span style={{ fontFamily: T.MONO, fontSize: '8px', color: VALUE, ...tn }}>
+            <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE, ...tn }}>
               {ch.length} iter → {ch[ch.length - 1].maxConc.toFixed(3)}
             </span>
           </div>
@@ -414,7 +414,7 @@ function ParetoView({ result }: { result: ParetoFrontResult }) {
 
   return (
     <div style={{ padding: '10px 12px' }}>
-      <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+      <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
         Pareto Front — {result.paretoFront.length} non-dominated
       </span>
       <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 6 }}>
@@ -442,7 +442,7 @@ function ParetoView({ result }: { result: ParetoFrontResult }) {
                 <td style={dataCell}>{c.scores.metabolicCost.toFixed(3)}</td>
                 <td style={{ ...dataCell, textAlign: 'center' }}>
                   <span style={{
-                    fontFamily: T.MONO, fontSize: '7px',
+                    fontFamily: T.MONO, fontSize: '11px',
                     color: isFront ? PHASE_COLORS.pareto : LABEL,
                     padding: '1px 4px', borderRadius: 3,
                     background: isFront ? 'rgba(207,196,227,0.1)' : 'transparent',
@@ -474,7 +474,7 @@ function MutagenesisView({ result, enzyme }: { result: MutagenesisResult; enzyme
     <div style={{ padding: '10px 12px' }}>
       {/* Header with sequence bar */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-        <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+        <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
           Mutagenesis Targets
         </span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -487,14 +487,14 @@ function MutagenesisView({ result, enzyme }: { result: MutagenesisResult; enzyme
               <rect key={`m-${s.position}`} x={(s.position / seqLen) * barW - 1.5} y={0} width={3} height={10} rx={1} fill="rgba(147,203,82,0.5)" />
             ))}
           </svg>
-          <span style={{ fontFamily: T.MONO, fontSize: '7px', color: LABEL }}>{seqLen} aa</span>
+          <span style={{ fontFamily: T.MONO, fontSize: '11px', color: LABEL }}>{seqLen} aa</span>
         </div>
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Top combo:</span>
-          <span style={{ fontFamily: T.MONO, fontSize: '9px', color: PHASE_COLORS.mutagenesis }}>
+          <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>Top combo:</span>
+          <span style={{ fontFamily: T.MONO, fontSize: '11px', color: PHASE_COLORS.mutagenesis }}>
             {result.topCombination.positions.join(', ')}
           </span>
-          <span style={{ fontFamily: T.MONO, fontSize: '9px', color: '#93CB52', ...tn }}>
+          <span style={{ fontFamily: T.MONO, fontSize: '11px', color: '#93CB52', ...tn }}>
             +{(result.topCombination.predictedImprovement * 100).toFixed(0)}%
           </span>
         </div>
@@ -514,7 +514,7 @@ function MutagenesisView({ result, enzyme }: { result: MutagenesisResult; enzyme
             <tr key={s.position} style={{ background: 'rgba(255,255,255,0.015)' }}>
               <td style={{ ...dataCell, textAlign: 'left', color: PHASE_COLORS.mutagenesis }}>{s.position}</td>
               <td style={{ ...dataCell, textAlign: 'center' }}>{s.wildTypeResidue}</td>
-              <td style={{ ...dataCell, textAlign: 'left', fontSize: '8px' }}>{s.suggestedMutants.join(',')}</td>
+              <td style={{ ...dataCell, textAlign: 'left', fontSize: '10px' }}>{s.suggestedMutants.join(',')}</td>
               <td style={dataCell}>{s.conservationScore.toFixed(2)}</td>
               <td style={{ ...dataCell, color: effectColor(s.predictedEffect), textAlign: 'center' }}>
                 {effectSymbol(s.predictedEffect)}
@@ -643,14 +643,14 @@ export default function CatalystDesignerPage() {
         flexWrap: 'wrap',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+          <span style={{ fontFamily: T.SANS, fontSize: '11px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
             Enzyme
           </span>
           <select
             value={selectedEnzyme}
             onChange={e => { setSelectedEnzyme(Number(e.target.value)); setSelectedResidue(null); setSelectedMutation(null); }}
             style={{
-              fontFamily: T.SANS, fontSize: '13px', fontWeight: 600, color: VALUE,
+              fontFamily: T.SANS, fontSize: '14px', fontWeight: 600, color: VALUE,
               background: INPUT_BG, border: `1px solid ${INPUT_BORDER}`, borderRadius: 10,
               padding: '6px 12px', cursor: 'pointer', outline: 'none',
             }}
@@ -661,7 +661,7 @@ export default function CatalystDesignerPage() {
           </select>
           {enzyme.id === RATE_LIMITING_ENZYME.id && (
             <span style={{
-              fontFamily: T.MONO, fontSize: '8px', color: '#FFFB1F',
+              fontFamily: T.MONO, fontSize: '10px', color: '#FFFB1F',
               background: 'rgba(255,251,31,0.12)', padding: '2px 8px', borderRadius: 8,
             }}>Rate-limiting</span>
           )}
@@ -699,14 +699,14 @@ export default function CatalystDesignerPage() {
             display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px',
             borderBottom: `1px solid ${BORDER}`,
           }}>
-            <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            <span style={{ fontFamily: T.SANS, fontSize: '11px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
               3D Viewport
             </span>
             <div style={{ display: 'flex', gap: 4, marginLeft: 12 }}>
               {(['cartoon', 'surface', 'confidence'] as const).map(mode => (
                 <button key={mode} onClick={() => setRenderMode(mode)}
                   style={{
-                    fontFamily: T.SANS, fontSize: '9px', padding: '3px 8px',
+                    fontFamily: T.SANS, fontSize: '11px', padding: '3px 8px',
                     border: `1px solid ${renderMode === mode ? PATHD_THEME.sky : INPUT_BORDER}`,
                     borderRadius: 6, cursor: 'pointer',
                     background: renderMode === mode ? 'rgba(175,195,214,0.15)' : 'transparent',
@@ -720,7 +720,7 @@ export default function CatalystDesignerPage() {
             <div style={{ display: 'flex', gap: 4, marginLeft: 8 }}>
               <button onClick={() => setSpinEnabled(!spinEnabled)}
                 style={{
-                  fontFamily: T.SANS, fontSize: '9px', padding: '3px 8px',
+                  fontFamily: T.SANS, fontSize: '11px', padding: '3px 8px',
                   border: `1px solid ${spinEnabled ? PATHD_THEME.mint : INPUT_BORDER}`,
                   borderRadius: 6, cursor: 'pointer',
                   background: spinEnabled ? 'rgba(191,220,205,0.15)' : 'transparent',
@@ -754,7 +754,7 @@ export default function CatalystDesignerPage() {
         }}>
           {/* Selected Residue */}
           <div>
-            <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase',
+            <p style={{ fontFamily: T.SANS, fontSize: '11px', textTransform: 'uppercase',
               letterSpacing: '0.1em', color: LABEL, margin: '0 0 8px' }}>
               Selected Residue
             </p>
@@ -768,7 +768,7 @@ export default function CatalystDesignerPage() {
                   </span>
                   {selectedCatResidue && (
                     <span style={{
-                      fontFamily: T.MONO, fontSize: '8px', color: PHASE_COLORS.binding,
+                      fontFamily: T.MONO, fontSize: '10px', color: PHASE_COLORS.binding,
                       background: 'rgba(191,220,205,0.12)', padding: '2px 6px', borderRadius: 6,
                     }}>
                       {selectedCatResidue.role.replace('_', ' ')}
@@ -778,25 +778,25 @@ export default function CatalystDesignerPage() {
                 {selectedCatResidue && (
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 12px' }}>
                     <div>
-                      <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Distance</span>
+                      <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>Distance</span>
                       <p style={{ fontFamily: T.MONO, fontSize: '12px', color: VALUE, margin: 0 }}>
                         {selectedCatResidue.distanceToSubstrate.toFixed(1)} Å
                       </p>
                     </div>
                     <div>
-                      <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Optimal</span>
+                      <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>Optimal</span>
                       <p style={{ fontFamily: T.MONO, fontSize: '12px', color: VALUE, margin: 0 }}>
                         {selectedCatResidue.optimalDistance.toFixed(1)} Å
                       </p>
                     </div>
                     <div>
-                      <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Angle</span>
+                      <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>Angle</span>
                       <p style={{ fontFamily: T.MONO, fontSize: '12px', color: VALUE, margin: 0 }}>
                         {selectedCatResidue.orientationAngle.toFixed(0)}°
                       </p>
                     </div>
                     <div>
-                      <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>pKa shift</span>
+                      <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>pKa shift</span>
                       <p style={{
                         fontFamily: T.MONO, fontSize: '12px', margin: 0,
                         color: Math.abs(selectedCatResidue.pKaShift) > 0.5 ? '#FA8072' : VALUE,
@@ -809,7 +809,7 @@ export default function CatalystDesignerPage() {
 
                 {/* Mutation dropdown */}
                 <div style={{ marginTop: 10 }}>
-                  <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Mutate to</span>
+                  <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>Mutate to</span>
                   <select
                     value={selectedMutation || ''}
                     onChange={e => setSelectedMutation(e.target.value || null)}
@@ -836,12 +836,12 @@ export default function CatalystDesignerPage() {
                     marginTop: 8, padding: '8px 10px', borderRadius: 10,
                     background: 'rgba(255,255,255,0.03)', border: `1px solid ${BORDER}`,
                   }}>
-                    <p style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL, margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                    <p style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL, margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                       Predicted Impact
                     </p>
                     <div style={{ display: 'flex', gap: 12 }}>
                       <div>
-                        <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>ΔKd</span>
+                        <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>ΔKd</span>
                         <p style={{
                           fontFamily: T.MONO, fontSize: '11px', margin: 0,
                           color: mutationImpact.deltaKd < 0 ? '#93CB52' : '#FA8072',
@@ -850,7 +850,7 @@ export default function CatalystDesignerPage() {
                         </p>
                       </div>
                       <div>
-                        <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>ΔKcat</span>
+                        <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>ΔKcat</span>
                         <p style={{
                           fontFamily: T.MONO, fontSize: '11px', margin: 0,
                           color: mutationImpact.deltaKcat > 0 ? '#93CB52' : '#FA8072',
@@ -875,7 +875,7 @@ export default function CatalystDesignerPage() {
 
           {/* Quick Stats */}
           <div>
-            <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase',
+            <p style={{ fontFamily: T.SANS, fontSize: '11px', textTransform: 'uppercase',
               letterSpacing: '0.1em', color: LABEL, margin: '0 0 8px' }}>
               Quick Stats
             </p>
@@ -888,46 +888,46 @@ export default function CatalystDesignerPage() {
                   <>
                     <div style={{ ...GLASS, padding: '10px 12px', borderRadius: 14 }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Kd</span>
+                        <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>Kd</span>
                         <span style={{ fontFamily: T.MONO, fontSize: '10px', color: kdQ.color }}>{kdQ.icon}</span>
                       </div>
                       <p style={{ fontFamily: T.MONO, fontSize: '14px', color: VALUE, margin: '2px 0 0' }}>
                         {(mutationImpact?.newKd ?? binding.predictedKd).toFixed(1)}
-                        <span style={{ fontSize: '9px', color: LABEL }}> μM</span>
+                        <span style={{ fontSize: '11px', color: LABEL }}> μM</span>
                       </p>
-                      <span style={{ fontFamily: T.SANS, fontSize: '7px', color: kdQ.color }}>{kdQ.label}</span>
+                      <span style={{ fontFamily: T.SANS, fontSize: '11px', color: kdQ.color }}>{kdQ.label}</span>
                     </div>
                     <div style={{ ...GLASS, padding: '10px 12px', borderRadius: 14 }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Kcat</span>
+                        <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>Kcat</span>
                         <span style={{ fontFamily: T.MONO, fontSize: '10px', color: kcatQ.color }}>{kcatQ.icon}</span>
                       </div>
                       <p style={{ fontFamily: T.MONO, fontSize: '14px', color: VALUE, margin: '2px 0 0' }}>
                         {(mutationImpact?.newKcat ?? enzyme.kcat).toFixed(2)}
-                        <span style={{ fontSize: '9px', color: LABEL }}> s⁻¹</span>
+                        <span style={{ fontSize: '11px', color: LABEL }}> s⁻¹</span>
                       </p>
-                      <span style={{ fontFamily: T.SANS, fontSize: '7px', color: kcatQ.color }}>{kcatQ.label}</span>
+                      <span style={{ fontFamily: T.SANS, fontSize: '11px', color: kcatQ.color }}>{kcatQ.label}</span>
                     </div>
                     <div style={{ ...GLASS, padding: '10px 12px', borderRadius: 14 }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Km</span>
+                        <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>Km</span>
                         <span style={{ fontFamily: T.MONO, fontSize: '10px', color: '#86C2C6' }}>✓</span>
                       </div>
                       <p style={{ fontFamily: T.MONO, fontSize: '14px', color: VALUE, margin: '2px 0 0' }}>
                         {enzyme.km.toFixed(2)}
-                        <span style={{ fontSize: '9px', color: LABEL }}> mM</span>
+                        <span style={{ fontSize: '11px', color: LABEL }}> mM</span>
                       </p>
-                      <span style={{ fontFamily: T.SANS, fontSize: '7px', color: '#86C2C6' }}>Good</span>
+                      <span style={{ fontFamily: T.SANS, fontSize: '11px', color: '#86C2C6' }}>Good</span>
                     </div>
                     <div style={{ ...GLASS, padding: '10px 12px', borderRadius: 14 }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Fit</span>
+                        <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>Fit</span>
                         <span style={{ fontFamily: T.MONO, fontSize: '10px', color: fitQ.color }}>{fitQ.icon}</span>
                       </div>
                       <p style={{ fontFamily: T.MONO, fontSize: '14px', color: VALUE, margin: '2px 0 0' }}>
                         {binding.overallScore.toFixed(2)}
                       </p>
-                      <span style={{ fontFamily: T.SANS, fontSize: '7px', color: fitQ.color }}>{fitQ.label}</span>
+                      <span style={{ fontFamily: T.SANS, fontSize: '11px', color: fitQ.color }}>{fitQ.label}</span>
                     </div>
                   </>
                 );
@@ -937,7 +937,7 @@ export default function CatalystDesignerPage() {
 
           {/* Enzyme Properties */}
           <div>
-            <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase',
+            <p style={{ fontFamily: T.SANS, fontSize: '11px', textTransform: 'uppercase',
               letterSpacing: '0.1em', color: LABEL, margin: '0 0 8px' }}>
               Enzyme Properties
             </p>
