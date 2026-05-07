@@ -65,6 +65,18 @@ export default function SelectionDecisionCard({
           accent={campaign.leadVariant.predictedStability < 55 ? PROEVOL_THEME.coral : PROEVOL_THEME.mint}
         />
         <MetricBadge
+          label="Lead expression"
+          value={campaign.leadVariant.predictedExpression.toFixed(1)}
+          detail={`Δ vs WT ${formatSigned(campaign.leadVariant.predictedExpression - campaign.wildType.predictedExpression, 1)}`}
+          accent={PROEVOL_THEME.apricot}
+        />
+        <MetricBadge
+          label="Lead specificity"
+          value={campaign.leadVariant.predictedSpecificity.toFixed(1)}
+          detail={`Δ vs WT ${formatSigned(campaign.leadVariant.predictedSpecificity - campaign.wildType.predictedSpecificity, 1)}`}
+          accent={PROEVOL_THEME.lilac}
+        />
+        <MetricBadge
           label="Mutation burden risk"
           value={burdenRisk}
           detail={`${campaign.leadVariant.mutationBurden} substitutions`}
@@ -138,7 +150,7 @@ export default function SelectionDecisionCard({
         <div style={{ display: 'grid', gap: '4px', fontFamily: T.SANS, fontSize: '11px', color: PROEVOL_THEME.muted, lineHeight: 1.55 }}>
           <div>Parent: {focusedVariant.parentId ?? 'WT'}</div>
           <div>
-            Metrics: score {focusedVariant.score.composite.toFixed(1)} · activity {focusedVariant.predictedActivity.toFixed(1)} · stability {focusedVariant.predictedStability.toFixed(1)} · confidence {focusedVariant.confidence.toFixed(1)}%
+            Metrics: score {focusedVariant.score.composite.toFixed(1)} · activity {focusedVariant.predictedActivity.toFixed(1)} · stability {focusedVariant.predictedStability.toFixed(1)} · expression {focusedVariant.predictedExpression.toFixed(1)} · specificity {focusedVariant.predictedSpecificity.toFixed(1)} · confidence {focusedVariant.confidence.toFixed(1)}%
           </div>
           <div>
             Selection reason: {focusedVariant.status === 'selected' ? focusedVariant.selectionReason : focusedVariant.rejectionReason}

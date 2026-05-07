@@ -63,7 +63,7 @@ export default function LeadVariantCard({ campaign }: { campaign: ProteinEvoluti
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '10px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '10px' }}>
           <MetricBadge
             label="Predicted activity"
             value={lead.predictedActivity.toFixed(1)}
@@ -75,6 +75,18 @@ export default function LeadVariantCard({ campaign }: { campaign: ProteinEvoluti
             value={lead.predictedStability.toFixed(1)}
             detail={`Round floor defended by ${formatSigned(lead.predictedStability - 55, 1)}`}
             accent={PROEVOL_THEME.sky}
+          />
+          <MetricBadge
+            label="Predicted expression"
+            value={lead.predictedExpression.toFixed(1)}
+            detail={`Δ vs WT ${formatSigned(lead.predictedExpression - campaign.wildType.predictedExpression, 1)}`}
+            accent={PROEVOL_THEME.apricot}
+          />
+          <MetricBadge
+            label="Predicted specificity"
+            value={lead.predictedSpecificity.toFixed(1)}
+            detail={`Δ vs WT ${formatSigned(lead.predictedSpecificity - campaign.wildType.predictedSpecificity, 1)}`}
+            accent={PROEVOL_THEME.lilac}
           />
           <MetricBadge
             label="Developability / burden"
@@ -89,7 +101,105 @@ export default function LeadVariantCard({ campaign }: { campaign: ProteinEvoluti
             accent={PROEVOL_THEME.lilac}
           />
         </div>
+
+        {/* Score breakdown */}
+        <ScoreBreakdown score={lead.score} />
       </div>
     </ProEvolCard>
+  );
+}
+
+function ScoreBreakdown({ score }: { score: import('../../../services/ProEvolCampaignEngine').VariantScore }) {
+  const terms = [
+    { label: 'Activity', value: score.activityTerm, color: PROEVOL_THEME.mint },
+    { label: 'Stability', value: score.stabilityTerm, color: PROEVOL_THEME.sky },
+    { label: 'Expression', value: score.expressionTerm, color: PROEVOL_THEME.apricot },
+    { label: 'Specificity', value: score.specificityTerm, color: PROEVOL_THEME.lilac },
+  ];
+  const penalties = [
+    { label: 'Burden', value: score.burdenPenalty, color: PROEVOL_THEME.coral },
+    { label: 'Risk', value: score.riskPenalty, color: PROEVOL_THEME.coral },
+  ];
+  const maxVal = Math.max(...terms.map((t) => t.value), ...penalties.map((p) => p.value), 1);
+  const barMax = 100;
+
+  return (
+    <div
+      style={{
+        padding: '12px',
+        borderRadius: '14px',
+        border: `1px solid ${PROEVOL_THEME.border}`,
+        background: 'rgba(255,255,255,0.02)',
+        display: 'grid',
+        gap: '6px',
+      }}
+    >
+      <div
+        style={{
+          fontFamily: T.MONO,
+          fontSize: '9px',
+          color: PROEVOL_THEME.label,
+          textTransform: 'uppercase',
+          letterSpacing: '0.08em',
+        }}
+      >
+        Score breakdown
+      </div>
+      {terms.map((term) => (
+        <div key={term.label} style={{ display: 'grid', gridTemplateColumns: '72px 1fr 44px', gap: '8px', alignItems: 'center' }}>
+          <span style={{ fontFamily: T.MONO, fontSize: '10px', color: PROEVOL_THEME.muted }}>{term.label}</span>
+          <div style={{ height: '6px', borderRadius: '3px', background: 'rgba(255,255,255,0.04)', overflow: 'hidden' }}>
+            <div
+              style={{
+                width: `${(term.value / maxVal) * barMax}%`,
+                height: '100%',
+                borderRadius: '3px',
+                background: term.color,
+                transition: 'width 0.3s ease',
+              }}
+            />
+          </div>
+          <span style={{ fontFamily: T.MONO, fontSize: '10px', color: PROEVOL_THEME.value, textAlign: 'right', fontFeatureSettings: "'tnum' 1" }}>
+            {term.value.toFixed(1)}
+          </span>
+        </div>
+      ))}
+      {penalties.map((pen) => (
+        <div key={pen.label} style={{ display: 'grid', gridTemplateColumns: '72px 1fr 44px', gap: '8px', alignItems: 'center' }}>
+          <span style={{ fontFamily: T.MONO, fontSize: '10px', color: PROEVOL_THEME.muted }}>{pen.label}</span>
+          <div style={{ height: '6px', borderRadius: '3px', background: 'rgba(255,255,255,0.04)', overflow: 'hidden' }}>
+            <div
+              style={{
+                width: `${(pen.value / maxVal) * barMax}%`,
+                height: '100%',
+                borderRadius: '3px',
+                background: pen.color,
+                opacity: 0.7,
+                transition: 'width 0.3s ease',
+              }}
+            />
+          </div>
+          <span style={{ fontFamily: T.MONO, fontSize: '10px', color: PROEVOL_THEME.coral, textAlign: 'right', fontFeatureSettings: "'tnum' 1" }}>
+            −{pen.value.toFixed(1)}
+          </span>
+        </div>
+      ))}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '72px 1fr 44px',
+          gap: '8px',
+          alignItems: 'center',
+          paddingTop: '4px',
+          borderTop: `1px solid ${PROEVOL_THEME.border}`,
+        }}
+      >
+        <span style={{ fontFamily: T.MONO, fontSize: '10px', color: PROEVOL_THEME.value, fontWeight: 600 }}>Composite</span>
+        <div />
+        <span style={{ fontFamily: T.MONO, fontSize: '11px', color: PROEVOL_THEME.value, textAlign: 'right', fontWeight: 600, fontFeatureSettings: "'tnum' 1" }}>
+          {score.composite.toFixed(1)}
+        </span>
+      </div>
+    </div>
   );
 }

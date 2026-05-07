@@ -12,7 +12,7 @@ import {
   tableHeaderStyle,
 } from './shared';
 
-type SortKey = 'score' | 'activity' | 'stability' | 'burden' | 'confidence' | 'status';
+type SortKey = 'score' | 'activity' | 'stability' | 'expression' | 'specificity' | 'developability' | 'burden' | 'confidence' | 'status';
 type SortDirection = 'asc' | 'desc';
 
 const STATUS_ORDER: Record<VariantCandidate['status'], number> = {
@@ -28,6 +28,9 @@ function sortVariants(variants: VariantCandidate[], sortKey: SortKey, direction:
     if (sortKey === 'score') difference = left.score.composite - right.score.composite;
     if (sortKey === 'activity') difference = left.predictedActivity - right.predictedActivity;
     if (sortKey === 'stability') difference = left.predictedStability - right.predictedStability;
+    if (sortKey === 'expression') difference = left.predictedExpression - right.predictedExpression;
+    if (sortKey === 'specificity') difference = left.predictedSpecificity - right.predictedSpecificity;
+    if (sortKey === 'developability') difference = left.developability - right.developability;
     if (sortKey === 'burden') difference = left.mutationBurden - right.mutationBurden;
     if (sortKey === 'confidence') difference = left.confidence - right.confidence;
     if (sortKey === 'status') difference = STATUS_ORDER[left.status] - STATUS_ORDER[right.status];
@@ -75,7 +78,7 @@ export default function VariantLibraryTable({
       subtitle="Variants are ranked as campaign candidates, not abstract search steps. The table keeps survivors, rejected branches, burden, score deltas, and decision reasons in one auditable view."
     >
       <div style={{ overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '900px' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '1200px' }}>
           <thead>
             <tr>
               {[
@@ -86,6 +89,9 @@ export default function VariantLibraryTable({
                 { label: 'ΔWT' },
                 { label: 'Activity', sortKey: 'activity' as SortKey },
                 { label: 'Stability', sortKey: 'stability' as SortKey },
+                { label: 'Expression', sortKey: 'expression' as SortKey },
+                { label: 'Specificity', sortKey: 'specificity' as SortKey },
+                { label: 'Develop.', sortKey: 'developability' as SortKey },
                 { label: 'Burden', sortKey: 'burden' as SortKey },
                 { label: 'Confidence', sortKey: 'confidence' as SortKey },
                 { label: 'Decision reason' },
@@ -156,6 +162,9 @@ export default function VariantLibraryTable({
                   </td>
                   <td style={{ ...tableCellStyle(), fontFamily: T.MONO }}>{variant.predictedActivity.toFixed(1)}</td>
                   <td style={{ ...tableCellStyle(), fontFamily: T.MONO }}>{variant.predictedStability.toFixed(1)}</td>
+                  <td style={{ ...tableCellStyle(), fontFamily: T.MONO }}>{variant.predictedExpression.toFixed(1)}</td>
+                  <td style={{ ...tableCellStyle(), fontFamily: T.MONO }}>{variant.predictedSpecificity.toFixed(1)}</td>
+                  <td style={{ ...tableCellStyle(), fontFamily: T.MONO }}>{variant.developability.toFixed(1)}</td>
                   <td style={{ ...tableCellStyle(), fontFamily: T.MONO }}>
                     {variant.mutationBurden}
                     {variant.riskFlags.length ? (
