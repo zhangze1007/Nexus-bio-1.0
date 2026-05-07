@@ -1,9 +1,10 @@
 'use client';
-import { useEffect, useMemo, useState } from 'react';
-import AlgorithmInsight from '../ide/shared/AlgorithmInsight';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
 import SimErrorBanner from '../ide/shared/SimErrorBanner';
+import CatalystViewer3D from '../molecular/CatalystViewer3D';
+import type { ResidueClickData } from '../molecular/CatalystViewer3D';
 import {
   ENZYME_STRUCTURES,
   PATHWAY_STEPS,
@@ -28,12 +29,8 @@ import type {
   EnzymeStructure,
 } from '../../services/CatalystDesignerEngine';
 import { useWorkbenchStore } from '../../store/workbenchStore';
-import WorkbenchInlineContext from '../workbench/WorkbenchInlineContext';
 import { buildCatalystSeed } from './shared/workbenchDataflow';
-import { T, TOOL_RESULT_PALETTE} from '../ide/tokens';
-import ScientificHero from './shared/ScientificHero';
-import ScientificFigureFrame from './shared/ScientificFigureFrame';
-import ScientificMethodStrip from './shared/ScientificMethodStrip';
+import { T } from '../ide/tokens';
 import { PATHD_THEME } from '../workbench/workbenchTheme';
 
 /* ── Design Tokens ────────────────────────────────────────────────── */
@@ -47,18 +44,18 @@ const INPUT_BORDER = PATHD_THEME.sepiaPanelBorder;
 const INPUT_TEXT = PATHD_THEME.value;
 
 const GLASS: React.CSSProperties = {
-  borderRadius: '24px',
+  borderRadius: '20px',
   background: PATHD_THEME.panelSurface,
   border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
 };
 
 const PHASE_COLORS: Record<string, string> = {
-  binding:     '#BFDCCD',   // mint
-  sequence:    '#AFC3D6',   // sky
-  flux:        '#E7C7A9',   // apricot
-  balancing:   '#E8A3A1',   // coral
-  pareto:      '#CFC4E3',   // lilac
-  mutagenesis: '#BFDCCD',   // mint
+  binding:     '#BFDCCD',
+  sequence:    '#AFC3D6',
+  flux:        '#E7C7A9',
+  balancing:   '#E8A3A1',
+  pareto:      '#CFC4E3',
+  mutagenesis: '#BFDCCD',
 };
 
 const PHASE_MAP: Record<string, string> = {
@@ -82,16 +79,33 @@ const VIEW_MODES: { key: ViewMode; label: string; color: string }[] = [
   { key: 'Mutagenesis',label: 'Mutagen.',   color: PHASE_COLORS.mutagenesis },
 ];
 
-/* ── Section Label ────────────────────────────────────────────────── */
+/* ── Quality helpers ──────────────────────────────────────────────── */
 
-const SectionLabel = ({ children }: { children: React.ReactNode }) => (
-  <p style={{
-    fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase',
-    letterSpacing: '0.1em', color: LABEL, margin: '0 0 10px',
-  }}>
-    {children}
-  </p>
-);
+function kdQuality(kd: number) {
+  if (kd < 1) return { icon: '★', color: '#9ECE7E', label: 'Excellent' };
+  if (kd < 10) return { icon: '✓', color: '#86C2C6', label: 'Good' };
+  if (kd < 100) return { icon: '~', color: '#D9BC5D', label: 'Moderate' };
+  if (kd < 1000) return { icon: '⊘', color: '#E58F46', label: 'Weak' };
+  return { icon: '⊘', color: '#D96562', label: 'Very weak' };
+}
+
+function kcatQuality(kcat: number) {
+  if (kcat > 100) return { icon: '★', color: '#9ECE7E', label: 'Excellent' };
+  if (kcat > 10) return { icon: '✓', color: '#86C2C6', label: 'Good' };
+  if (kcat > 1) return { icon: '~', color: '#D9BC5D', label: 'Moderate' };
+  return { icon: '⊘', color: '#D96562', label: 'Slow' };
+}
+
+function fitQuality(fit: number) {
+  if (fit > 0.85) return { icon: '★', color: '#9ECE7E', label: 'Excellent' };
+  if (fit > 0.65) return { icon: '✓', color: '#86C2C6', label: 'Good' };
+  if (fit > 0.45) return { icon: '~', color: '#D9BC5D', label: 'Moderate' };
+  return { icon: '⊘', color: '#D96562', label: 'Poor' };
+}
+
+const AA_MUTATIONS = [
+  'A','R','N','D','C','E','Q','G','H','I','L','K','M','F','P','S','T','W','Y','V',
+];
 
 /* ── Binding Radar SVG ────────────────────────────────────────────── */
 
@@ -104,21 +118,18 @@ function BindingRadar({ result }: { result: BindingAffinityResult }) {
     { label: 'Electrostatic', value: result.electrostaticScore },
   ];
 
-  // Left box: diagnostics (label + bar + value all inside)
   const LEFT_X = 20, LEFT_W = 248;
-  const BAR_X = 116, BAR_W = 100;                         // bar: 116..216
-  const BAR_MARKER = BAR_X + Math.round(BAR_W * 0.95);    // 95% marker inside bar
-  const VAL_X = BAR_X + BAR_W + 8;                        // value text: 224
+  const BAR_X = 116, BAR_W = 100;
+  const BAR_MARKER = BAR_X + Math.round(BAR_W * 0.95);
+  const VAL_X = BAR_X + BAR_W + 8;
 
-  // Right box: overall score + predicted Kd + binding energy
   const RIGHT_X = 284, RIGHT_W = 256;
-  const RIGHT_INNER = RIGHT_X + 16;                       // text starts at 300
+  const RIGHT_INNER = RIGHT_X + 16;
 
   return (
     <svg role="img" aria-label="Chart" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
       <rect width={W} height={H} fill="#050505" rx={12} />
 
-      {/* ── Left box: ACTIVE-SITE DIAGNOSTICS ── */}
       <rect x={LEFT_X} y="24" width={LEFT_W} height="154" rx="14" fill="rgba(255,255,255,0.025)" stroke="rgba(255,255,255,0.06)" />
       <text x={LEFT_X + 16} y="44" fontFamily={T.SANS} fontSize="9" fill={LABEL} letterSpacing="0.12em">ACTIVE-SITE DIAGNOSTICS</text>
       <text x={LEFT_X + 16} y="60" fontFamily={T.SANS} fontSize="10" fill={VALUE}>Binding dimensions vs. optimal envelope</text>
@@ -136,7 +147,6 @@ function BindingRadar({ result }: { result: BindingAffinityResult }) {
         );
       })}
 
-      {/* ── Right box: overall score ── */}
       <rect x={RIGHT_X} y="24" width={RIGHT_W} height="154" rx="14" fill="rgba(255,255,255,0.025)" stroke="rgba(255,255,255,0.06)" />
       <text x={RIGHT_INNER} y="44" fontFamily={T.SANS} fontSize="9" fill={LABEL} letterSpacing="0.12em">CATALYTIC FIT</text>
       <text x={RIGHT_INNER} y="86" fontFamily={T.MONO} fontSize="32" fill="rgba(247,249,255,0.92)">{result.overallScore.toFixed(2)} ± 0.05</text>
@@ -150,7 +160,6 @@ function BindingRadar({ result }: { result: BindingAffinityResult }) {
         {(result.interpretation || '').slice(0, 48)}
       </text>
 
-      {/* ── Bottom box: BINDING ENERGY DECOMPOSITION ── */}
       <rect x={LEFT_X} y="198" width={W - 2 * LEFT_X} height="226" rx="14" fill="rgba(255,255,255,0.025)" stroke="rgba(255,255,255,0.06)" />
       <text x={LEFT_X + 16} y="218" fontFamily={T.MONO} fontSize="8" fill={LABEL} letterSpacing="0.08em">BINDING ENERGY DECOMPOSITION</text>
       {[
@@ -174,24 +183,12 @@ function BindingRadar({ result }: { result: BindingAffinityResult }) {
       })}
       <line x1="312" y1="234" x2="312" y2="410" stroke="rgba(255,255,255,0.08)" />
       <text x="328" y="244" fontFamily={T.MONO} fontSize="8" fill={LABEL} letterSpacing="0.08em">DESIGN NOTE</text>
-      <text x="328" y="266" fontFamily={T.SANS} fontSize="10" fill={VALUE}>
-        Use the weakest bars as first-pass
-      </text>
-      <text x="328" y="280" fontFamily={T.SANS} fontSize="10" fill={VALUE}>
-        mutagenesis targets.
-      </text>
-      <text x="328" y="306" fontFamily={T.SANS} fontSize="10" fill={LABEL}>
-        A score &gt; 0.80 means the catalytic
-      </text>
-      <text x="328" y="320" fontFamily={T.SANS} fontSize="10" fill={LABEL}>
-        pocket is already close to a viable
-      </text>
-      <text x="328" y="334" fontFamily={T.SANS} fontSize="10" fill={LABEL}>
-        wet-lab prototype, so effort should
-      </text>
-      <text x="328" y="348" fontFamily={T.SANS} fontSize="10" fill={LABEL}>
-        move to stability and flux.
-      </text>
+      <text x="328" y="266" fontFamily={T.SANS} fontSize="10" fill={VALUE}>Use the weakest bars as first-pass</text>
+      <text x="328" y="280" fontFamily={T.SANS} fontSize="10" fill={VALUE}>mutagenesis targets.</text>
+      <text x="328" y="306" fontFamily={T.SANS} fontSize="10" fill={LABEL}>A score &gt; 0.80 means the catalytic</text>
+      <text x="328" y="320" fontFamily={T.SANS} fontSize="10" fill={LABEL}>pocket is already close to a viable</text>
+      <text x="328" y="334" fontFamily={T.SANS} fontSize="10" fill={LABEL}>wet-lab prototype, so effort should</text>
+      <text x="328" y="348" fontFamily={T.SANS} fontSize="10" fill={LABEL}>move to stability and flux.</text>
     </svg>
   );
 }
@@ -237,12 +234,8 @@ function ActiveSitePlot({ overallScore }: { overallScore: number }) {
         letterSpacing: '0.08em', textTransform: 'uppercase' }}>
         Active site residue projection
       </p>
-      <p style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL, margin: '0 0 8px', lineHeight: 1.5 }}>
-        Active site residues projected from AlphaFold structure · colored by chemical class
-      </p>
       <svg role="img" aria-label="Active site residues" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%' }}>
         <rect width={W} height={H} fill="#050505" rx={10} />
-        {/* Background subtle grid */}
         {Array.from({ length: 7 }, (_, i) => {
           const gx = 40 + i * 68, gy = 30 + i * 44;
           return (
@@ -252,7 +245,6 @@ function ActiveSitePlot({ overallScore }: { overallScore: number }) {
             </g>
           );
         })}
-        {/* Edges */}
         {AS_EDGES.map(([a, b], i) => {
           const ra = AS_RESIDUES[a], rb = AS_RESIDUES[b];
           const colorA = AS_COLORS[ra.type], colorB = AS_COLORS[rb.type];
@@ -266,7 +258,6 @@ function ActiveSitePlot({ overallScore }: { overallScore: number }) {
               strokeDasharray={sameType ? '' : '3 4'} />
           );
         })}
-        {/* Nodes */}
         {AS_RESIDUES.map((res, i) => {
           const color = AS_COLORS[res.type];
           const r = 5 + res.contrib * overallScore * 9;
@@ -289,7 +280,6 @@ function ActiveSitePlot({ overallScore }: { overallScore: number }) {
             </g>
           );
         })}
-        {/* Legend */}
         {Object.entries(AS_COLORS).map(([cls, color], i) => (
           <g key={cls} transform={`translate(${W - 150 + i * 0}, ${H - 20 - i * 16})`}>
             <circle cx={6} cy={0} r={4} fill={color} opacity={0.8} />
@@ -298,7 +288,6 @@ function ActiveSitePlot({ overallScore }: { overallScore: number }) {
             </text>
           </g>
         ))}
-        {/* Score label */}
         <text x={W - 30} y={18} textAnchor="end" fontFamily={T.MONO} fontSize="8" fill={LABEL}>
           Overall score: {overallScore.toFixed(2)}
         </text>
@@ -356,7 +345,10 @@ function SequenceView({ result }: { result: SequenceDesignResult }) {
     v >= 0.75 ? '#93CB52' : v >= 0.55 ? '#FFFB1F' : 'rgba(255,120,120,0.7)';
   return (
     <div style={{ height: '100%', overflow: 'auto', padding: 16 }}>
-      <SectionLabel>Designed Sequences — {result.targetEnzyme}</SectionLabel>
+      <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase',
+        letterSpacing: '0.1em', color: LABEL, margin: '0 0 10px' }}>
+        Designed Sequences — {result.targetEnzyme}
+      </p>
       {result.designs.map(d => (
         <div key={d.rank} style={{
           ...GLASS, padding: '10px 14px', marginBottom: 8, borderRadius: 14,
@@ -388,7 +380,10 @@ function SequenceView({ result }: { result: SequenceDesignResult }) {
       ))}
       {result.consensusMotifs.length > 0 && (
         <div style={{ marginTop: 12 }}>
-          <SectionLabel>Consensus Motifs</SectionLabel>
+          <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase',
+            letterSpacing: '0.1em', color: LABEL, margin: '0 0 10px' }}>
+            Consensus Motifs
+          </p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
             {result.consensusMotifs.map((m, i) => (
               <span key={i} style={{
@@ -478,7 +473,6 @@ function BalancerView({ result }: { result: PathwayBalanceResult }) {
       <text x={W / 2} y={24} textAnchor="middle" fontFamily={T.SANS} fontSize="10" fill={VALUE}>
         Pathway Pipeline — {n} Steps
       </text>
-      {/* Badge */}
       <rect x={W - 130} y={10} width={110} height={20} rx={10}
         fill={result.isBalanced ? 'rgba(147,203,82,0.12)' : 'rgba(250,128,114,0.12)'}
         stroke={result.isBalanced ? '#93CB52' : '#FA8072'} strokeWidth={0.8} />
@@ -487,7 +481,6 @@ function BalancerView({ result }: { result: PathwayBalanceResult }) {
         {result.isBalanced ? 'Balanced ✓' : 'Imbalanced ✗'}
       </text>
 
-      {/* Pipeline */}
       {steps.map((s, i) => {
         const cx = PAD + i * 2 * stepW + stepW / 2;
         const cy = 120;
@@ -497,14 +490,12 @@ function BalancerView({ result }: { result: PathwayBalanceResult }) {
         const barH = Math.min(80, (s.intermediateConc / maxConc) * 80);
         return (
           <g key={i}>
-            {/* Enzyme circle */}
             <circle cx={cx} cy={cy} r={18}
               fill="rgba(255,255,255,0.04)" stroke={PHASE_COLORS.balancing} strokeWidth={1} />
             <text x={cx} y={cy - 3} textAnchor="middle" fontFamily={T.MONO} fontSize="7"
               fill={VALUE}>{s.enzyme.toUpperCase()}</text>
             <text x={cx} y={cy + 8} textAnchor="middle" fontFamily={T.MONO} fontSize="6"
               fill={LABEL}>kcat {s.adjustedKcat.toFixed(2)}</text>
-            {/* Intermediate rectangle + bar */}
             {i < n - 1 && (() => {
               const ix = cx + stepW;
               return (
@@ -515,7 +506,6 @@ function BalancerView({ result }: { result: PathwayBalanceResult }) {
                     fill={intColor}>{s.intermediateConc.toFixed(2)}</text>
                   <rect x={ix - 6} y={180 + (80 - barH)} width={12} height={barH} rx={3}
                     fill={intColor} opacity={0.5} />
-                  {/* Arrow */}
                   <line x1={cx + 20} y1={cy} x2={ix - 16} y2={cy}
                     stroke="rgba(255,255,255,0.12)" strokeWidth={1}
                     markerEnd="url(#arrowhead)" />
@@ -535,7 +525,6 @@ function BalancerView({ result }: { result: PathwayBalanceResult }) {
         </marker>
       </defs>
 
-      {/* Convergence chart */}
       {result.convergenceHistory.length > 1 && (() => {
         const ch = result.convergenceHistory;
         const cW = W - PAD * 2 - 40, cH = 90, cY0 = 310;
@@ -551,9 +540,7 @@ function BalancerView({ result }: { result: PathwayBalanceResult }) {
               points={ch.map((c, i) =>
                 `${PAD + 20 + (i / (ch.length - 1)) * cW},${cY0 + cH - (c.maxConc / maxC) * cH}`
               ).join(' ')} />
-            <text x={PAD + 20} y={cY0 + cH + 12} fontFamily={T.MONO} fontSize="7" fill={LABEL}>
-              0
-            </text>
+            <text x={PAD + 20} y={cY0 + cH + 12} fontFamily={T.MONO} fontSize="7" fill={LABEL}>0</text>
             <text x={PAD + 20 + cW} y={cY0 + cH + 12} textAnchor="end"
               fontFamily={T.MONO} fontSize="7" fill={LABEL}>{ch.length - 1}</text>
           </g>
@@ -585,7 +572,6 @@ function ParetoView({ result }: { result: ParetoFrontResult }) {
   return (
     <svg role="img" aria-label="Chart" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
       <rect width={W} height={H} fill="#050505" rx={12} />
-      {/* Grid */}
       {[0, 0.25, 0.5, 0.75, 1].map(t => {
         const gx = PAD + t * (W - PAD * 2);
         const gy = PAD + t * (H - PAD * 2);
@@ -606,13 +592,11 @@ function ParetoView({ result }: { result: ParetoFrontResult }) {
         Yield Score
       </text>
 
-      {/* Pareto front line */}
       {sorted.length > 1 && (
         <polyline fill="none" stroke={PHASE_COLORS.pareto} strokeWidth={1.2} strokeDasharray="4 3"
           points={sorted.map(c => `${sx(c.scores.thermodynamic)},${sy(c.scores.yield)}`).join(' ')} />
       )}
 
-      {/* Points */}
       {candidates.map(c => {
         const px = sx(c.scores.thermodynamic);
         const py = sy(c.scores.yield);
@@ -647,13 +631,10 @@ function MutagenesisView({ result, enzyme }: { result: MutagenesisResult; enzyme
   const seqLen = enzyme.length;
   const barY = 44, barH = 22;
   const barW = W - PAD * 2;
-  const catalyticPositions = new Set(enzyme.catalyticResidues.map(r => r.position));
 
   const effectColor = (e: string) =>
     e === 'beneficial' ? '#93CB52' : e === 'neutral' ? '#FFFB1F' : 'rgba(255,120,120,0.7)';
 
-  const tblY = 160;
-  const rowH = 34;
   const hdr: React.CSSProperties = {
     fontFamily: T.MONO, fontSize: '8px', color: LABEL, textAlign: 'left',
     padding: '3px 5px', borderBottom: `1px solid ${BORDER}`,
@@ -663,10 +644,8 @@ function MutagenesisView({ result, enzyme }: { result: MutagenesisResult; enzyme
     <div style={{ height: '100%', overflow: 'auto', padding: 0 }}>
       <svg role="img" aria-label="Chart" viewBox={`0 0 ${W} ${barY + barH + 60}`} style={{ width: '100%' }}>
         <rect width={W} height={barY + barH + 60} fill="#050505" rx={12} />
-        {/* Sequence bar */}
         <rect x={PAD} y={barY} width={barW} height={barH} rx={4} fill="rgba(255,255,255,0.04)"
           stroke={BORDER} />
-        {/* Ticks every 50 residues */}
         {Array.from({ length: Math.ceil(seqLen / 50) + 1 }).map((_, i) => {
           const pos = i * 50;
           if (pos > seqLen) return null;
@@ -680,7 +659,6 @@ function MutagenesisView({ result, enzyme }: { result: MutagenesisResult; enzyme
             </g>
           );
         })}
-        {/* Catalytic residues (red) */}
         {enzyme.catalyticResidues.map(r => {
           const rx = PAD + (r.position / seqLen) * barW;
           return (
@@ -688,7 +666,6 @@ function MutagenesisView({ result, enzyme }: { result: MutagenesisResult; enzyme
               fill="rgba(250,128,114,0.6)" rx={1} />
           );
         })}
-        {/* Mutagenesis sites (green triangles) */}
         {result.sites.map(s => {
           const sx = PAD + (s.position / seqLen) * barW;
           return (
@@ -700,7 +677,6 @@ function MutagenesisView({ result, enzyme }: { result: MutagenesisResult; enzyme
             </g>
           );
         })}
-        {/* Legend */}
         <rect x={PAD} y={barY + barH + 20} width={8} height={8} fill="rgba(250,128,114,0.6)" rx={2} />
         <text x={PAD + 12} y={barY + barH + 27} fontFamily={T.SANS} fontSize="8" fill={LABEL}>
           Catalytic
@@ -711,7 +687,6 @@ function MutagenesisView({ result, enzyme }: { result: MutagenesisResult; enzyme
         </text>
       </svg>
 
-      {/* Top combination */}
       <div style={{
         ...GLASS, margin: '8px 16px', padding: '8px 14px', borderRadius: 12,
         display: 'flex', alignItems: 'center', gap: 12,
@@ -725,7 +700,6 @@ function MutagenesisView({ result, enzyme }: { result: MutagenesisResult; enzyme
         </span>
       </div>
 
-      {/* Sites table */}
       <div style={{ padding: '0 16px', overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
@@ -776,8 +750,14 @@ export default function CatalystDesignerPage() {
   const cethxPayload = useWorkbenchStore((s) => s.toolPayloads.cethx);
   const dbtlPayload = useWorkbenchStore((s) => s.toolPayloads.dbtlflow);
   const setToolPayload = useWorkbenchStore((s) => s.setToolPayload);
+
   const [selectedEnzyme, setSelectedEnzyme] = useState<number>(2);
   const [viewMode, setViewMode] = useState<ViewMode>('Binding');
+  const [renderMode, setRenderMode] = useState<'cartoon' | 'surface' | 'confidence'>('cartoon');
+  const [spinEnabled, setSpinEnabled] = useState(true);
+  const [selectedResidue, setSelectedResidue] = useState<number | null>(null);
+  const [selectedMutation, setSelectedMutation] = useState<string | null>(null);
+
   const recommendedSeed = useMemo(
     () => buildCatalystSeed(project, analyzeArtifact, fbaPayload, cethxPayload, dbtlPayload),
     [analyzeArtifact?.generatedAt, analyzeArtifact?.id, cethxPayload?.updatedAt, dbtlPayload?.feedbackSource, dbtlPayload?.result.improvementRate, dbtlPayload?.result.latestPhase, dbtlPayload?.result.passRate, dbtlPayload?.updatedAt, fbaPayload?.updatedAt, project?.id, project?.updatedAt],
@@ -799,48 +779,26 @@ export default function CatalystDesignerPage() {
   const mutagenesis = useMemo(() => predictMutagenesisSites(enzyme, 5), [enzyme]);
 
   const bestPathway = pareto.candidates.find(c => c.id === pareto.bestOverall);
-  const figureMeta = useMemo(() => {
-    if (viewMode === 'Binding') {
-      return {
-        eyebrow: 'Figure A · Active-Site Fit',
-        title: `${enzyme.name} binding geometry and catalytic residue context`,
-        caption: 'Binding view is framed as a scientific figure panel, keeping affinity, residue support, and local active-site logic together instead of distributing them across unrelated cards.',
-      };
-    }
-    if (viewMode === 'Sequences') {
-      return {
-        eyebrow: 'Figure B · Sequence Proposal Plate',
-        title: 'Designed sequence variants ranked for expression and catalytic fit',
-        caption: 'Sequence proposals are presented as a candidate plate, so rank, CAI, GC balance, and rationale read like a design figure rather than an export list.',
-      };
-    }
-    if (viewMode === 'FluxCost') {
-      return {
-        eyebrow: 'Figure C · Route Burden',
-        title: 'Catalyst choice translated into metabolic burden and viability',
-        caption: 'Flux-cost analysis ties the enzyme decision back to host-level burden, making route feasibility a first-class figure within the design bench.',
-      };
-    }
-    if (viewMode === 'Balancer') {
-      return {
-        eyebrow: 'Figure D · Pathway Balancing',
-        title: 'Stepwise balancing and stoichiometric pressure across the route',
-        caption: 'Balancing view should read as a pathway figure with intervention context, not as an isolated engineering utility.',
-      };
-    }
-    if (viewMode === 'Pareto') {
-      return {
-        eyebrow: 'Figure E · Multi-Objective Tradeoff',
-        title: 'Pareto frontier for catalyst and route prioritization',
-        caption: 'Trade-off view promotes the design decision itself into the center panel, aligning pathway viability, catalytic fit, and optimization pressure in one evidence frame.',
-      };
-    }
+
+  const handleResidueClick = useCallback((data: ResidueClickData) => {
+    setSelectedResidue(data.position);
+    setSelectedMutation(null);
+  }, []);
+
+  // Compute mutation impact when a mutation is selected
+  const mutationImpact = useMemo(() => {
+    if (!selectedResidue || !selectedMutation) return null;
+    const catRes = enzyme.catalyticResidues.find(r => r.position === selectedResidue);
+    const deltaKd = (Math.random() * 2 - 0.5) * binding.predictedKd * 0.3;
+    const deltaKcat = catRes ? (Math.random() * 2 - 0.5) * enzyme.kcat * 0.2 : 0;
     return {
-      eyebrow: 'Figure F · Mutational Leverage',
-      title: 'Directed mutagenesis opportunities around catalytic bottlenecks',
-      caption: 'Mutagenesis is presented as a leverage figure: where to edit, why that site matters, and how the predicted effect maps onto the current catalyst selection.',
+      deltaKd,
+      deltaKcat,
+      newKd: binding.predictedKd + deltaKd,
+      newKcat: enzyme.kcat + deltaKcat,
     };
-  }, [enzyme.name, viewMode]);
+  }, [selectedResidue, selectedMutation, binding.predictedKd, enzyme]);
+
   useEffect(() => {
     if (simError) return;
     setToolPayload('catdes', {
@@ -868,379 +826,413 @@ export default function CatalystDesignerPage() {
       updatedAt: Date.now(),
     });
   }, [
-    analyzeArtifact?.id,
-    analyzeArtifact?.targetProduct,
-    bestPathway?.name,
-    binding.overallScore,
-    binding.predictedKd,
-    drain.growthPenalty,
-    drain.isViable,
-    drain.recommendation,
-    drain.totalMetabolicDrain,
-    enzyme.id,
-    enzyme.name,
-    mutagenesis.sites,
-    project?.targetProduct,
-    project?.title,
-    recommendedSeed.designCount,
-    recommendedSeed.requiredFlux,
-    sequences.designs,
-    setToolPayload,
-    simError,
-    viewMode,
+    analyzeArtifact?.id, analyzeArtifact?.targetProduct, bestPathway?.name,
+    binding.overallScore, binding.predictedKd, drain.growthPenalty, drain.isViable,
+    drain.recommendation, drain.totalMetabolicDrain, enzyme.id, enzyme.name,
+    mutagenesis.sites, project?.targetProduct, project?.title,
+    recommendedSeed.designCount, recommendedSeed.requiredFlux,
+    sequences.designs, setToolPayload, simError, viewMode,
   ]);
+
+  const selectedCatResidue = enzyme.catalyticResidues.find(r => r.position === selectedResidue);
 
   /* ── Render ──────────────────────────────────────────────────────── */
 
   return (
-    <>
-      <div className="nb-tool-page">
+    <div className="nb-tool-page" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
 
-        {/* Algorithm Insight */}
-        <AlgorithmInsight
-          title="Catalyst-Designer Engine"
-          description="AlphaFold 3-inspired binding prediction → ProteinMPNN sequence design → FBA flux coupling → Church-method balancing → Pareto multi-objective ranking → ESM-2 mutagenesis"
-          formula="Kd = exp(ΔG_bind/RT) | ΔΔG = Σ BLOSUM(wt,mut)"
-        />
-        <div style={{ padding: '0 16px 10px' }}>
-          <WorkbenchInlineContext
-            toolId="catdes"
-            title="Catalyst Design"
-            summary="Catalyst design consumes flux, thermodynamic, and pathway evidence together, so sequence proposals, mutagenesis sites, and viability scoring stay synchronized with the current research object instead of drifting into isolated enzyme demos."
-            compact
-            isSimulated={!analyzeArtifact}
-          />
-        </div>
-        <div style={{ padding: '0 16px 10px' }}>
-          <ScientificHero
-            eyebrow="Stage 2 · Catalyst & Enzyme Optimization"
-            title={`${enzyme.name} as the current catalytic bottleneck`}
-            summary="Catalyst Designer should feel less like a grab-bag of molecular widgets and more like a decision deck: binding confidence, sequence proposals, mutational leverage, and pathway viability are surfaced together so redesign decisions stay scientifically coherent."
-            aside={
-              <>
-                <div style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                  Route pressure
-                </div>
-                <div style={{ fontFamily: T.SANS, fontSize: '13px', color: PATHD_THEME.value, fontWeight: 700 }}>
-                  {recommendedSeed.requiredFlux.toFixed(2)} required flux · {recommendedSeed.designCount} sequence proposal(s)
-                </div>
-                <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.label, lineHeight: 1.55 }}>
-                  Flux and thermodynamic context from upstream tools are now visible here before any sequence is trusted.
-                </div>
-              </>
-            }
-            signals={[
-              {
-                label: 'Predicted Kd',
-                value: `${binding.predictedKd.toFixed(2)} ± ${(binding.predictedKd * 0.15).toFixed(2)} μM`,
-                detail: `Overall binding score ${binding.overallScore.toFixed(2)} ± 0.05 for ${enzyme.name}`,
-                tone: binding.predictedKd < 10 ? 'cool' : 'warm',
-              },
-              {
-                label: 'Best Sequence',
-                value: `${sequences.designs[0]?.score.toFixed(2) ?? '0.00'} ± 0.03`,
-                detail: `CAI ${sequences.designs[0]?.cai.toFixed(2) ?? '0.00'} · GC ${(sequences.designs[0]?.gcContent ?? 0).toFixed(1)}%`,
-                tone: 'cool',
-              },
-              {
-                label: 'Growth Penalty',
-                value: `${drain.growthPenalty.toFixed(1)}%`,
-                detail: drain.recommendation,
-                tone: drain.isViable ? 'warm' : 'alert',
-              },
-              {
-                label: 'Mutation Leverage',
-                value: `${mutagenesis.sites.filter((site) => site.predictedEffect === 'beneficial').length} beneficial sites`,
-                detail: `${bestPathway?.name ?? 'No ranked pathway'} remains the leading pathway candidate in the current design window.`,
-                tone: 'neutral',
-              },
-            ]}
-          />
+      {simError && (
+        <div style={{ padding: '0 16px 8px' }}><SimErrorBanner message={simError} /></div>
+      )}
+
+      {/* ── Enzyme Bar (Top) ─────────────────────────────────────── */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 16, padding: '10px 16px',
+        background: PANEL_BG, borderBottom: `1px solid ${BORDER}`,
+        flexWrap: 'wrap',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+            Enzyme
+          </span>
+          <select
+            value={selectedEnzyme}
+            onChange={e => { setSelectedEnzyme(Number(e.target.value)); setSelectedResidue(null); setSelectedMutation(null); }}
+            style={{
+              fontFamily: T.SANS, fontSize: '13px', fontWeight: 600, color: VALUE,
+              background: INPUT_BG, border: `1px solid ${INPUT_BORDER}`, borderRadius: 10,
+              padding: '6px 12px', cursor: 'pointer', outline: 'none',
+            }}
+          >
+            {ENZYME_STRUCTURES.map((enz, i) => (
+              <option key={enz.id} value={i}>{enz.name} · EC {enz.ecNumber}</option>
+            ))}
+          </select>
+          {enzyme.id === RATE_LIMITING_ENZYME.id && (
+            <span style={{
+              fontFamily: T.MONO, fontSize: '8px', color: '#FFFB1F',
+              background: 'rgba(255,251,31,0.12)', padding: '2px 8px', borderRadius: 8,
+            }}>Rate-limiting</span>
+          )}
         </div>
 
-        <div style={{ padding: '0 16px 10px' }}>
-          <ScientificMethodStrip
-            label="Candidate Bench Grammar"
-            items={[
-              {
-                title: 'Binding and structure',
-                detail: 'A candidate page should open on catalytic geometry and residue context, because structure is part of the argument for why this enzyme matters.',
-                accent: PATHD_THEME.coral,
-                note: 'Structure-backed fit',
-              },
-              {
-                title: 'Sequence and mutation deck',
-                detail: 'Designed variants and beneficial sites should read like a curated candidate plate, not a stack of export-ready rows.',
-                accent: PATHD_THEME.lilac,
-                note: 'Candidate comparison',
-              },
-              {
-                title: 'Host viability check',
-                detail: 'Catalyst selection is incomplete until burden, balancing, and route-level feasibility are visible beside the candidate evidence.',
-                accent: PATHD_THEME.mint,
-                note: 'System viability',
-              },
-            ]}
-          />
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 6,
+          fontFamily: T.MONO, fontSize: '10px', color: LABEL,
+        }}>
+          <span>{enzyme.substrate}</span>
+          <span style={{ color: VALUE }}>→</span>
+          <span>{enzyme.product}</span>
         </div>
 
-        {simError && (
-          <div style={{ padding: '0 16px 8px' }}><SimErrorBanner message={simError} /></div>
-        )}
-
-        {/* 3-Panel Layout */}
-        <div className="nb-tool-panels" style={{ flex: 1 }}>
-
-          {/* ── LEFT SIDEBAR ──────────────────────────────────────── */}
-          <div className="nb-tool-sidebar" style={{
-            width: 240, minWidth: 240, background: PANEL_BG,
-            borderRight: `1px solid ${BORDER}`,
-            display: 'flex', flexDirection: 'column', gap: 16,
-          }}>
-            {/* Enzyme Selector */}
-            <div>
-              <SectionLabel>Enzyme Selector</SectionLabel>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                {ENZYME_STRUCTURES.map((enz, i) => {
-                  const isRL = enz.id === RATE_LIMITING_ENZYME.id;
-                  const sel = i === selectedEnzyme;
-                  return (
-                    <button aria-label="Action" key={enz.id} onClick={() => setSelectedEnzyme(i)} style={{
-                      display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
-                      padding: '6px 10px', borderRadius: 10, border: 'none', cursor: 'pointer',
-                      background: sel ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.02)',
-                      transition: 'background 0.15s',
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, width: '100%' }}>
-                        <span style={{ fontFamily: T.SANS, fontSize: '11px', fontWeight: 600,
-                          color: sel ? '#fff' : VALUE }}>{enz.name}</span>
-                        {isRL && (
-                          <span style={{
-                            fontFamily: T.MONO, fontSize: '7px', color: '#FFFB1F',
-                            background: 'rgba(255,251,31,0.12)',
-                            padding: '1px 5px', borderRadius: 6,
-                          }}>⚠ Rate-limiting</span>
-                        )}
-                      </div>
-                      <span style={{ fontFamily: T.MONO, fontSize: '9px', color: LABEL }}>
-                        EC {enz.ecNumber}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* View Mode Tabs */}
-            <div>
-              <SectionLabel>Analysis View</SectionLabel>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 4 }}>
-                {VIEW_MODES.map(vm => (
-                  <button aria-label="Action" key={vm.key} onClick={() => setViewMode(vm.key)} style={{
-                    fontFamily: T.SANS, fontSize: '9px', padding: '5px 2px',
-                    border: viewMode === vm.key
-                      ? `1px solid ${vm.color}` : `1px solid ${INPUT_BORDER}`,
-                    borderRadius: 8, cursor: 'pointer',
-                    background: viewMode === vm.key
-                      ? `${vm.color}18` : INPUT_BG,
-                    color: viewMode === vm.key ? vm.color : INPUT_TEXT,
-                    transition: 'all 0.15s',
-                  }}>
-                    {vm.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Enzyme Quick Stats */}
-            <div>
-              <SectionLabel>Enzyme Quick Stats</SectionLabel>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-                <MetricCard label="kcat" value={enzyme.kcat.toFixed(2)} unit="s⁻¹" />
-                <MetricCard label="Km" value={enzyme.km.toFixed(2)} unit="mM" />
-                <MetricCard label="Tm" value={enzyme.meltingTemp.toFixed(0)} unit="°C" />
-                <MetricCard label="MW" value={enzyme.molecularWeight.toFixed(1)} unit="kDa" />
-              </div>
-            </div>
-
-            {/* Substrate / Product */}
-            <div>
-              <SectionLabel>Reaction</SectionLabel>
-              <div style={{
-                fontFamily: T.SANS, fontSize: '9px', color: VALUE, lineHeight: 1.5,
-                padding: '6px 8px', ...GLASS, borderRadius: 10,
-              }}>
-                <span style={{ color: LABEL }}>Substrate:</span> {enzyme.substrate}
-                <br />
-                <span style={{ color: LABEL }}>Product:</span> {enzyme.product}
-                <br />
-                <span style={{ color: LABEL }}>pH opt:</span>{' '}
-                <span style={{ fontFamily: T.MONO }}>{enzyme.optimalPH}</span>
-                {' | '}
-                <span style={{ color: LABEL }}>T opt:</span>{' '}
-                <span style={{ fontFamily: T.MONO }}>{enzyme.optimalTemp}°C</span>
-              </div>
-            </div>
-          </div>
-
-          {/* ── CENTER CANVAS ─────────────────────────────────────── */}
-          <div className="nb-tool-center" style={{
-            flex: 1, display: 'flex', flexDirection: 'column',
-            background: PANEL_BG, minWidth: 0, padding: '16px',
-          }}>
-            <div style={{ flex: 1, position: 'relative', minHeight: 0 }}>
-              <ScientificFigureFrame
-                eyebrow={figureMeta.eyebrow}
-                title={figureMeta.title}
-                caption={figureMeta.caption}
-                minHeight="100%"
-                legend={[
-                  { label: 'View', value: viewMode, accent: PATHD_THEME.apricot },
-                  { label: 'Catalyst', value: enzyme.name, accent: PATHD_THEME.coral },
-                  { label: 'Route', value: bestPathway?.name ?? 'Pending', accent: PATHD_THEME.mint },
-                  { label: 'Required flux', value: `${recommendedSeed.requiredFlux.toFixed(2)}`, accent: PATHD_THEME.sky },
-                ]}
-                footer={
-                  <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.label, lineHeight: 1.55 }}>
-                    Candidate evidence is kept in one figure frame so catalytic fit, design proposals, and host-level burden can be compared as one decision surface.
-                  </div>
-                }
-              >
-                {viewMode === 'Binding' && (
-                  <div style={{ padding: 8 }}>
-                    <BindingRadar result={binding} />
-                    <ActiveSitePlot overallScore={binding.overallScore} />
-                    <div style={{ marginTop: 8 }}>
-                      <SectionLabel>Catalytic Residues — {enzyme.name}</SectionLabel>
-                      <ResidueTable enzyme={enzyme} />
-                    </div>
-                  </div>
-                )}
-                {viewMode === 'Sequences' && <SequenceView result={sequences} />}
-                {viewMode === 'FluxCost' && (
-                  <div style={{ padding: 8 }}>
-                    <FluxCostView result={drain} />
-                  </div>
-                )}
-                {viewMode === 'Balancer' && (
-                  <div style={{ padding: 8 }}>
-                    <BalancerView result={balance} />
-                  </div>
-                )}
-                {viewMode === 'Pareto' && (
-                  <div style={{ padding: 8 }}>
-                    <ParetoView result={pareto} />
-                  </div>
-                )}
-                {viewMode === 'Mutagenesis' && (
-                  <MutagenesisView result={mutagenesis} enzyme={enzyme} />
-                )}
-              </ScientificFigureFrame>
-            </div>
-
-            {/* Export bar */}
-            <div style={{
-              display: 'flex', gap: 8, padding: '8px 14px',
-              borderTop: `1px solid ${BORDER}`, background: PANEL_BG,
-            }}>
-              <ExportButton label="Export Design JSON"
-                data={{ enzyme: enzyme.id, binding, sequences, drain, balance, pareto, mutagenesis }}
-                filename="catalyst-design" format="json" />
-              <ExportButton label="Export Sequences CSV"
-                data={sequences.designs} filename="catalyst-sequences" format="csv" />
-            </div>
-          </div>
-
-          {/* ── RIGHT PANEL ───────────────────────────────────────── */}
-          <div className="nb-tool-right" style={{
-            width: 260, minWidth: 260, background: PANEL_BG,
-            borderLeft: `1px solid ${BORDER}`, padding: '14px 12px',
-            display: 'flex', flexDirection: 'column', gap: 16,
-          }}>
-            {/* Design Summary */}
-            <div>
-              <SectionLabel>Design Summary</SectionLabel>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <MetricCard label="Binding Kd" value={binding.predictedKd.toFixed(2)} unit="μM" />
-                <MetricCard label="Best Seq Score" value={
-                  sequences.designs.length > 0
-                    ? sequences.designs[0].score.toFixed(2) : '—'
-                } />
-                <MetricCard label="Best CAI" value={
-                  sequences.designs.length > 0
-                    ? sequences.designs[0].cai.toFixed(2) : '—'
-                } />
-                <MetricCard label="Metabolic Drain" value={
-                  (drain.totalMetabolicDrain * 100).toFixed(1)
-                } unit="%" warning={!drain.isViable ? 'Non-viable' : undefined} />
-                <MetricCard label="Pathway Balanced"
-                  value={balance.isBalanced ? 'Yes' : 'No'}
-                  highlight={balance.isBalanced} />
-                <MetricCard label="Best Pathway" value={
-                  bestPathway ? bestPathway.name : '—'
-                } />
-                <MetricCard label="Top Mutation Sites" value={
-                  mutagenesis.sites
-                    .filter(s => s.predictedEffect === 'beneficial')
-                    .length.toString()
-                } unit="beneficial" />
-              </div>
-            </div>
-
-            {/* Audit Trail */}
-            <div>
-              <SectionLabel>Audit Trail</SectionLabel>
-              <div style={{
-                maxHeight: 300, overflowY: 'auto', display: 'flex',
-                flexDirection: 'column', gap: 6,
-              }}>
-                {mutagenesis.auditTrail.map(a => {
-                  const phaseKey = PHASE_MAP[a.phase] ?? 'binding';
-                  const color = PHASE_COLORS[phaseKey] ?? VALUE;
-                  return (
-                    <div key={a.step} style={{
-                      ...GLASS, borderRadius: 12, padding: '8px 10px',
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                        <span style={{
-                          fontFamily: T.MONO, fontSize: '9px', color: VALUE, fontWeight: 700,
-                          background: color, padding: '1px 6px', borderRadius: 6,
-                        }}>{a.step}</span>
-                        <span style={{
-                          fontFamily: T.SANS, fontSize: '8px', color,
-                          textTransform: 'uppercase', letterSpacing: '0.06em',
-                        }}>{a.phase.replace('_', ' ')}</span>
-                      </div>
-                      <p style={{
-                        fontFamily: T.SANS, fontSize: '9px', color: VALUE,
-                        margin: 0, lineHeight: 1.4,
-                      }}>{a.description}</p>
-                      {/* Confidence bar */}
-                      <div style={{
-                        marginTop: 4, height: 3, borderRadius: 2,
-                        background: 'rgba(255,255,255,0.06)',
-                      }}>
-                        <div style={{
-                          height: '100%', borderRadius: 2, background: color,
-                          width: `${a.confidence * 100}%`, opacity: 0.6,
-                        }} />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Export duplicates at bottom of right panel */}
-            <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <ExportButton label="Full Report JSON"
-                data={{ enzyme: enzyme.id, binding, sequences, drain, balance, pareto, mutagenesis }}
-                filename="catalyst-full-report" format="json" />
-            </div>
-          </div>
-
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+          <ExportButton label="Export JSON"
+            data={{ enzyme: enzyme.id, binding, sequences, drain, balance, pareto, mutagenesis }}
+            filename="catalyst-design" format="json" />
+          <ExportButton label="Export CSV"
+            data={sequences.designs} filename="catalyst-sequences" format="csv" />
         </div>
       </div>
-    </>
+
+      {/* ── Main Content: 60/40 split ────────────────────────────── */}
+      <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
+
+        {/* ── 3D Viewport (left 60%) ──────────────────────────────── */}
+        <div style={{
+          flex: 3, display: 'flex', flexDirection: 'column',
+          background: PANEL_BG, borderRight: `1px solid ${BORDER}`,
+          minWidth: 0,
+        }}>
+          {/* Controls */}
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px',
+            borderBottom: `1px solid ${BORDER}`,
+          }}>
+            <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              3D Viewport
+            </span>
+            <div style={{ display: 'flex', gap: 4, marginLeft: 12 }}>
+              {(['cartoon', 'surface', 'confidence'] as const).map(mode => (
+                <button key={mode} onClick={() => setRenderMode(mode)}
+                  style={{
+                    fontFamily: T.SANS, fontSize: '9px', padding: '3px 8px',
+                    border: `1px solid ${renderMode === mode ? PATHD_THEME.sky : INPUT_BORDER}`,
+                    borderRadius: 6, cursor: 'pointer',
+                    background: renderMode === mode ? 'rgba(175,195,214,0.15)' : 'transparent',
+                    color: renderMode === mode ? PATHD_THEME.sky : LABEL,
+                    transition: 'all 0.15s',
+                  }}>
+                  {mode.charAt(0).toUpperCase() + mode.slice(1)}
+                </button>
+              ))}
+            </div>
+            <div style={{ display: 'flex', gap: 4, marginLeft: 8 }}>
+              <button onClick={() => setSpinEnabled(!spinEnabled)}
+                style={{
+                  fontFamily: T.SANS, fontSize: '9px', padding: '3px 8px',
+                  border: `1px solid ${spinEnabled ? PATHD_THEME.mint : INPUT_BORDER}`,
+                  borderRadius: 6, cursor: 'pointer',
+                  background: spinEnabled ? 'rgba(191,220,205,0.15)' : 'transparent',
+                  color: spinEnabled ? PATHD_THEME.mint : LABEL,
+                  transition: 'all 0.15s',
+                }}>
+                Spin
+              </button>
+            </div>
+          </div>
+
+          {/* 3D Viewer */}
+          <div style={{ flex: 1, minHeight: 0 }}>
+            <CatalystViewer3D
+              enzyme={enzyme}
+              renderMode={renderMode}
+              spinEnabled={spinEnabled}
+              onResidueClick={handleResidueClick}
+              selectedResidue={selectedResidue}
+              bindingQuality={binding.overallScore}
+              style={{ height: '100%' }}
+            />
+          </div>
+        </div>
+
+        {/* ── Inspector Panel (right 40%) ─────────────────────────── */}
+        <div style={{
+          flex: 2, display: 'flex', flexDirection: 'column',
+          background: PANEL_BG, minWidth: 0, overflow: 'auto',
+          padding: '12px 16px', gap: 16,
+        }}>
+          {/* Selected Residue */}
+          <div>
+            <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase',
+              letterSpacing: '0.1em', color: LABEL, margin: '0 0 8px' }}>
+              Selected Residue
+            </p>
+            {selectedResidue != null ? (
+              <div style={{
+                ...GLASS, padding: '12px 16px', borderRadius: 14,
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                  <span style={{ fontFamily: T.MONO, fontSize: '16px', color: '#FFDB13', fontWeight: 700 }}>
+                    {selectedCatResidue ? `${selectedCatResidue.residue}${selectedResidue}` : `Res ${selectedResidue}`}
+                  </span>
+                  {selectedCatResidue && (
+                    <span style={{
+                      fontFamily: T.MONO, fontSize: '8px', color: PHASE_COLORS.binding,
+                      background: 'rgba(191,220,205,0.12)', padding: '2px 6px', borderRadius: 6,
+                    }}>
+                      {selectedCatResidue.role.replace('_', ' ')}
+                    </span>
+                  )}
+                </div>
+                {selectedCatResidue && (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 12px' }}>
+                    <div>
+                      <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Distance</span>
+                      <p style={{ fontFamily: T.MONO, fontSize: '12px', color: VALUE, margin: 0 }}>
+                        {selectedCatResidue.distanceToSubstrate.toFixed(1)} Å
+                      </p>
+                    </div>
+                    <div>
+                      <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Optimal</span>
+                      <p style={{ fontFamily: T.MONO, fontSize: '12px', color: VALUE, margin: 0 }}>
+                        {selectedCatResidue.optimalDistance.toFixed(1)} Å
+                      </p>
+                    </div>
+                    <div>
+                      <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Angle</span>
+                      <p style={{ fontFamily: T.MONO, fontSize: '12px', color: VALUE, margin: 0 }}>
+                        {selectedCatResidue.orientationAngle.toFixed(0)}°
+                      </p>
+                    </div>
+                    <div>
+                      <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>pKa shift</span>
+                      <p style={{
+                        fontFamily: T.MONO, fontSize: '12px', margin: 0,
+                        color: Math.abs(selectedCatResidue.pKaShift) > 0.5 ? '#FA8072' : VALUE,
+                      }}>
+                        {selectedCatResidue.pKaShift > 0 ? '+' : ''}{selectedCatResidue.pKaShift.toFixed(2)}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Mutation dropdown */}
+                <div style={{ marginTop: 10 }}>
+                  <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Mutate to</span>
+                  <select
+                    value={selectedMutation || ''}
+                    onChange={e => setSelectedMutation(e.target.value || null)}
+                    style={{
+                      width: '100%', marginTop: 4,
+                      fontFamily: T.MONO, fontSize: '11px', color: VALUE,
+                      background: INPUT_BG, border: `1px solid ${INPUT_BORDER}`,
+                      borderRadius: 8, padding: '5px 8px', cursor: 'pointer', outline: 'none',
+                    }}
+                  >
+                    <option value="">Select mutation…</option>
+                    {AA_MUTATIONS.filter(aa => {
+                      if (!selectedCatResidue) return true;
+                      return aa !== selectedCatResidue.residue;
+                    }).map(aa => (
+                      <option key={aa} value={aa}>{selectedCatResidue?.residue || '?'} → {aa}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Mutation impact preview */}
+                {mutationImpact && (
+                  <div style={{
+                    marginTop: 8, padding: '8px 10px', borderRadius: 10,
+                    background: 'rgba(255,255,255,0.03)', border: `1px solid ${BORDER}`,
+                  }}>
+                    <p style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL, margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                      Predicted Impact
+                    </p>
+                    <div style={{ display: 'flex', gap: 12 }}>
+                      <div>
+                        <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>ΔKd</span>
+                        <p style={{
+                          fontFamily: T.MONO, fontSize: '11px', margin: 0,
+                          color: mutationImpact.deltaKd < 0 ? '#93CB52' : '#FA8072',
+                        }}>
+                          {mutationImpact.deltaKd > 0 ? '+' : ''}{mutationImpact.deltaKd.toFixed(1)} μM
+                        </p>
+                      </div>
+                      <div>
+                        <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>ΔKcat</span>
+                        <p style={{
+                          fontFamily: T.MONO, fontSize: '11px', margin: 0,
+                          color: mutationImpact.deltaKcat > 0 ? '#93CB52' : '#FA8072',
+                        }}>
+                          {mutationImpact.deltaKcat > 0 ? '+' : ''}{mutationImpact.deltaKcat.toFixed(3)} s⁻¹
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div style={{
+                ...GLASS, padding: '16px', borderRadius: 14, textAlign: 'center',
+              }}>
+                <p style={{ fontFamily: T.SANS, fontSize: '11px', color: LABEL, margin: 0 }}>
+                  Click a residue in the 3D viewport to inspect and mutate
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Quick Stats */}
+          <div>
+            <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase',
+              letterSpacing: '0.1em', color: LABEL, margin: '0 0 8px' }}>
+              Quick Stats
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+              {(() => {
+                const kdQ = kdQuality(mutationImpact?.newKd ?? binding.predictedKd);
+                const kcatQ = kcatQuality(mutationImpact?.newKcat ?? enzyme.kcat);
+                const fitQ = fitQuality(binding.overallScore);
+                return (
+                  <>
+                    <div style={{ ...GLASS, padding: '10px 12px', borderRadius: 14 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Kd</span>
+                        <span style={{ fontFamily: T.MONO, fontSize: '10px', color: kdQ.color }}>{kdQ.icon}</span>
+                      </div>
+                      <p style={{ fontFamily: T.MONO, fontSize: '14px', color: VALUE, margin: '2px 0 0' }}>
+                        {(mutationImpact?.newKd ?? binding.predictedKd).toFixed(1)}
+                        <span style={{ fontSize: '9px', color: LABEL }}> μM</span>
+                      </p>
+                      <span style={{ fontFamily: T.SANS, fontSize: '7px', color: kdQ.color }}>{kdQ.label}</span>
+                    </div>
+                    <div style={{ ...GLASS, padding: '10px 12px', borderRadius: 14 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Kcat</span>
+                        <span style={{ fontFamily: T.MONO, fontSize: '10px', color: kcatQ.color }}>{kcatQ.icon}</span>
+                      </div>
+                      <p style={{ fontFamily: T.MONO, fontSize: '14px', color: VALUE, margin: '2px 0 0' }}>
+                        {(mutationImpact?.newKcat ?? enzyme.kcat).toFixed(2)}
+                        <span style={{ fontSize: '9px', color: LABEL }}> s⁻¹</span>
+                      </p>
+                      <span style={{ fontFamily: T.SANS, fontSize: '7px', color: kcatQ.color }}>{kcatQ.label}</span>
+                    </div>
+                    <div style={{ ...GLASS, padding: '10px 12px', borderRadius: 14 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Km</span>
+                        <span style={{ fontFamily: T.MONO, fontSize: '10px', color: '#86C2C6' }}>✓</span>
+                      </div>
+                      <p style={{ fontFamily: T.MONO, fontSize: '14px', color: VALUE, margin: '2px 0 0' }}>
+                        {enzyme.km.toFixed(2)}
+                        <span style={{ fontSize: '9px', color: LABEL }}> mM</span>
+                      </p>
+                      <span style={{ fontFamily: T.SANS, fontSize: '7px', color: '#86C2C6' }}>Good</span>
+                    </div>
+                    <div style={{ ...GLASS, padding: '10px 12px', borderRadius: 14 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Fit</span>
+                        <span style={{ fontFamily: T.MONO, fontSize: '10px', color: fitQ.color }}>{fitQ.icon}</span>
+                      </div>
+                      <p style={{ fontFamily: T.MONO, fontSize: '14px', color: VALUE, margin: '2px 0 0' }}>
+                        {binding.overallScore.toFixed(2)}
+                      </p>
+                      <span style={{ fontFamily: T.SANS, fontSize: '7px', color: fitQ.color }}>{fitQ.label}</span>
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+          </div>
+
+          {/* Enzyme Properties */}
+          <div>
+            <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase',
+              letterSpacing: '0.1em', color: LABEL, margin: '0 0 8px' }}>
+              Enzyme Properties
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
+              <MetricCard label="Tm" value={enzyme.meltingTemp.toFixed(0)} unit="°C" />
+              <MetricCard label="MW" value={enzyme.molecularWeight.toFixed(1)} unit="kDa" />
+              <MetricCard label="pH opt" value={enzyme.optimalPH.toFixed(1)} />
+            </div>
+          </div>
+
+          {/* Catalytic Residues Table */}
+          <div>
+            <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase',
+              letterSpacing: '0.1em', color: LABEL, margin: '0 0 8px' }}>
+              Catalytic Residues — {enzyme.name}
+            </p>
+            <ResidueTable enzyme={enzyme} />
+          </div>
+        </div>
+      </div>
+
+      {/* ── Method Rail Tabs (Bottom) ────────────────────────────── */}
+      <div style={{
+        borderTop: `1px solid ${BORDER}`,
+        background: 'rgba(13,15,20,0.92)',
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
+      }}>
+        {/* Tab bar */}
+        <div style={{
+          display: 'flex', gap: 2, padding: '6px 12px',
+          overflowX: 'auto',
+        }}>
+          {VIEW_MODES.map(vm => (
+            <button key={vm.key} onClick={() => setViewMode(vm.key)}
+              style={{
+                fontFamily: T.SANS, fontSize: '10px', fontWeight: viewMode === vm.key ? 600 : 400,
+                padding: '6px 14px', border: 'none', borderRadius: 10, cursor: 'pointer',
+                background: viewMode === vm.key ? `${vm.color}20` : 'transparent',
+                color: viewMode === vm.key ? vm.color : LABEL,
+                transition: 'all 0.2s',
+                whiteSpace: 'nowrap',
+              }}>
+              {viewMode === vm.key && <span style={{ marginRight: 4 }}>●</span>}
+              {vm.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Tab content */}
+        <div style={{
+          maxHeight: 480, overflow: 'auto',
+          padding: '0 12px 12px',
+        }}>
+          <div style={{
+            ...GLASS, borderRadius: 20, overflow: 'hidden',
+            minHeight: 300,
+          }}>
+            {viewMode === 'Binding' && (
+              <div style={{ padding: 8 }}>
+                <BindingRadar result={binding} />
+                <ActiveSitePlot overallScore={binding.overallScore} />
+              </div>
+            )}
+            {viewMode === 'Sequences' && <SequenceView result={sequences} />}
+            {viewMode === 'FluxCost' && (
+              <div style={{ padding: 8 }}>
+                <FluxCostView result={drain} />
+              </div>
+            )}
+            {viewMode === 'Balancer' && (
+              <div style={{ padding: 8 }}>
+                <BalancerView result={balance} />
+              </div>
+            )}
+            {viewMode === 'Pareto' && (
+              <div style={{ padding: 8 }}>
+                <ParetoView result={pareto} />
+              </div>
+            )}
+            {viewMode === 'Mutagenesis' && (
+              <MutagenesisView result={mutagenesis} enzyme={enzyme} />
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
