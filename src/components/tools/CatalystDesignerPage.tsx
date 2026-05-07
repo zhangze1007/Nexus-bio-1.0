@@ -107,634 +107,425 @@ const AA_MUTATIONS = [
   'A','R','N','D','C','E','Q','G','H','I','L','K','M','F','P','S','T','W','Y','V',
 ];
 
-/* ── Binding Radar SVG ────────────────────────────────────────────── */
+/* ── Compact Shared Styles ─────────────────────────────────────────── */
 
-function BindingRadar({ result }: { result: BindingAffinityResult }) {
-  const W = 560, H = 460;
-  const axes = [
-    { label: 'Distance', value: result.distanceScore },
-    { label: 'Orientation', value: result.orientationScore },
-    { label: 'vdW', value: result.vdwScore },
-    { label: 'Electrostatic', value: result.electrostaticScore },
-  ];
-
-  const LEFT_X = 20, LEFT_W = 248;
-  const BAR_X = 116, BAR_W = 100;
-  const BAR_MARKER = BAR_X + Math.round(BAR_W * 0.95);
-  const VAL_X = BAR_X + BAR_W + 8;
-
-  const RIGHT_X = 284, RIGHT_W = 256;
-  const RIGHT_INNER = RIGHT_X + 16;
-
-  return (
-    <svg role="img" aria-label="Chart" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
-      <rect width={W} height={H} fill="#050505" rx={12} />
-
-      <rect x={LEFT_X} y="24" width={LEFT_W} height="154" rx="14" fill="rgba(255,255,255,0.025)" stroke="rgba(255,255,255,0.06)" />
-      <text x={LEFT_X + 16} y="44" fontFamily={T.SANS} fontSize="9" fill={LABEL} letterSpacing="0.12em">ACTIVE-SITE DIAGNOSTICS</text>
-      <text x={LEFT_X + 16} y="60" fontFamily={T.SANS} fontSize="10" fill={VALUE}>Binding dimensions vs. optimal envelope</text>
-      {axes.map((ax, index) => {
-        const y = 86 + index * 22;
-        const width = ax.value * BAR_W;
-        return (
-          <g key={ax.label}>
-            <text x={LEFT_X + 16} y={y + 3} fontFamily={T.SANS} fontSize="9" fill={LABEL}>{ax.label}</text>
-            <rect x={BAR_X} y={y - 5} width={BAR_W} height="8" rx="4" fill="rgba(255,255,255,0.05)" />
-            <rect x={BAR_X} y={y - 5} width={width} height="8" rx="4" fill={PHASE_COLORS.binding} opacity="0.82" />
-            <line x1={BAR_MARKER} y1={y - 9} x2={BAR_MARKER} y2={y + 7} stroke="rgba(255,255,255,0.3)" strokeDasharray="3 2" />
-            <text x={VAL_X} y={y + 3} fontFamily={T.MONO} fontSize="9" fill={VALUE}>{ax.value.toFixed(2)}</text>
-          </g>
-        );
-      })}
-
-      <rect x={RIGHT_X} y="24" width={RIGHT_W} height="154" rx="14" fill="rgba(255,255,255,0.025)" stroke="rgba(255,255,255,0.06)" />
-      <text x={RIGHT_INNER} y="44" fontFamily={T.SANS} fontSize="9" fill={LABEL} letterSpacing="0.12em">CATALYTIC FIT</text>
-      <text x={RIGHT_INNER} y="86" fontFamily={T.MONO} fontSize="32" fill="rgba(247,249,255,0.92)">{result.overallScore.toFixed(2)} ± 0.05</text>
-      <text x={RIGHT_INNER} y="102" fontFamily={T.SANS} fontSize="9" fill={LABEL}>overall catalytic fit</text>
-
-      <text x={RIGHT_INNER} y="130" fontFamily={T.SANS} fontSize="9" fill={LABEL}>Predicted Kd</text>
-      <text x={RIGHT_INNER} y="146" fontFamily={T.MONO} fontSize="13" fill={VALUE}>{result.predictedKd.toFixed(2)} ± {(result.predictedKd * 0.15).toFixed(2)} μM</text>
-      <text x={RIGHT_INNER + 112} y="130" fontFamily={T.SANS} fontSize="9" fill={LABEL}>Binding energy</text>
-      <text x={RIGHT_INNER + 112} y="146" fontFamily={T.MONO} fontSize="13" fill={VALUE}>{result.bindingEnergy.toFixed(2)} ± {(Math.abs(result.bindingEnergy) * 0.10).toFixed(2)} kcal/mol</text>
-      <text x={RIGHT_INNER} y="168" fontFamily={T.SANS} fontSize="9" fill="rgba(255,255,255,0.5)">
-        {(result.interpretation || '').slice(0, 48)}
-      </text>
-
-      <rect x={LEFT_X} y="198" width={W - 2 * LEFT_X} height="226" rx="14" fill="rgba(255,255,255,0.025)" stroke="rgba(255,255,255,0.06)" />
-      <text x={LEFT_X + 16} y="218" fontFamily={T.MONO} fontSize="8" fill={LABEL} letterSpacing="0.08em">BINDING ENERGY DECOMPOSITION</text>
-      {[
-        { label: 'Distance fit',         value: result.distanceScore,      color: PATHD_THEME.mint },
-        { label: 'Orientation fit',      value: result.orientationScore,   color: PATHD_THEME.sky },
-        { label: 'vdW packing',          value: result.vdwScore,           color: PATHD_THEME.apricot },
-        { label: 'Electrostatic compl.', value: result.electrostaticScore, color: PATHD_THEME.lilac },
-      ].map((item, index) => {
-        const x = 42 + index * 64;
-        const height = item.value * 112;
-        return (
-          <g key={item.label}>
-            <rect x={x} y={338 - height} width="48" height={height} rx="8" fill={item.color} opacity="0.82" />
-            <rect x={x} y="226" width="48" height="112" rx="8" fill="none" stroke="rgba(255,255,255,0.08)" />
-            <text x={x + 24} y="352" textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill={VALUE}>{item.value.toFixed(2)}</text>
-            <text x={x + 24} y="372" textAnchor="middle" fontFamily={T.SANS} fontSize="7" fill={LABEL}>
-              {item.label.length > 15 ? `${item.label.slice(0, 14)}…` : item.label}
-            </text>
-          </g>
-        );
-      })}
-      <line x1="312" y1="234" x2="312" y2="410" stroke="rgba(255,255,255,0.08)" />
-      <text x="328" y="244" fontFamily={T.MONO} fontSize="8" fill={LABEL} letterSpacing="0.08em">DESIGN NOTE</text>
-      <text x="328" y="266" fontFamily={T.SANS} fontSize="10" fill={VALUE}>Use the weakest bars as first-pass</text>
-      <text x="328" y="280" fontFamily={T.SANS} fontSize="10" fill={VALUE}>mutagenesis targets.</text>
-      <text x="328" y="306" fontFamily={T.SANS} fontSize="10" fill={LABEL}>A score &gt; 0.80 means the catalytic</text>
-      <text x="328" y="320" fontFamily={T.SANS} fontSize="10" fill={LABEL}>pocket is already close to a viable</text>
-      <text x="328" y="334" fontFamily={T.SANS} fontSize="10" fill={LABEL}>wet-lab prototype, so effort should</text>
-      <text x="328" y="348" fontFamily={T.SANS} fontSize="10" fill={LABEL}>move to stability and flux.</text>
-    </svg>
-  );
-}
-
-/* ── Active Site Residue Projection ──────────────────────────────── */
-
-const AS_RESIDUES = [
-  { name: 'Ser195', type: 'catalytic',   x: 198, y: 125, contrib: 0.95 },
-  { name: 'His57',  type: 'catalytic',   x: 132, y: 158, contrib: 0.92 },
-  { name: 'Asp102', type: 'catalytic',   x: 98,  y: 218, contrib: 0.88 },
-  { name: 'Gly193', type: 'polar',       x: 228, y: 92,  contrib: 0.45 },
-  { name: 'Ser214', type: 'polar',       x: 163, y: 78,  contrib: 0.52 },
-  { name: 'Trp215', type: 'hydrophobic', x: 278, y: 108, contrib: 0.72 },
-  { name: 'Val216', type: 'hydrophobic', x: 318, y: 138, contrib: 0.35 },
-  { name: 'Gly217', type: 'polar',       x: 342, y: 174, contrib: 0.28 },
-  { name: 'Asp189', type: 'charged',     x: 308, y: 218, contrib: 0.66 },
-  { name: 'Lys224', type: 'charged',     x: 276, y: 256, contrib: 0.58 },
-  { name: 'Tyr228', type: 'polar',       x: 228, y: 286, contrib: 0.40 },
-  { name: 'His40',  type: 'charged',     x: 168, y: 278, contrib: 0.48 },
-  { name: 'Cys42',  type: 'polar',       x: 118, y: 252, contrib: 0.38 },
-  { name: 'Met192', type: 'hydrophobic', x: 164, y: 192, contrib: 0.55 },
-  { name: 'Phe41',  type: 'hydrophobic', x: 74,  y: 188, contrib: 0.42 },
-  { name: 'Asn155', type: 'polar',       x: 84,  y: 138, contrib: 0.32 },
-] as const;
-
-const AS_EDGES: [number, number][] = [
-  [0,1],[1,2],[0,3],[3,4],[0,5],[5,6],[6,7],[7,8],[8,9],[9,10],
-  [10,11],[11,12],[12,13],[2,12],[1,13],[13,14],[14,15],[15,2],[0,13],[1,5],
-];
-
-const AS_COLORS: Record<string, string> = {
-  catalytic:   '#4DAF4A',
-  polar:       '#377EB8',
-  hydrophobic: '#FF7F00',
-  charged:     '#E41A1C',
+const tn: React.CSSProperties = { fontFeatureSettings: "'tnum' 1" };
+const hdrCell: React.CSSProperties = {
+  fontFamily: T.MONO, fontSize: '8px', color: LABEL, textAlign: 'left',
+  padding: '4px 6px', borderBottom: `1px solid ${BORDER}`, letterSpacing: '0.04em',
+};
+const dataCell: React.CSSProperties = {
+  fontFamily: T.MONO, fontSize: '9px', color: VALUE, padding: '3px 6px',
+  textAlign: 'right', ...tn,
 };
 
-function ActiveSitePlot({ overallScore }: { overallScore: number }) {
-  const W = 520, H = 340;
+function MiniBar({ value, color, max = 1 }: { value: number; color: string; max?: number }) {
+  const pct = Math.min(100, (value / max) * 100);
   return (
-    <div style={{ marginTop: 12 }}>
-      <p style={{ fontFamily: T.MONO, fontSize: '8px', color: LABEL, margin: '0 0 4px',
-        letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-        Active site residue projection
-      </p>
-      <svg role="img" aria-label="Active site residues" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%' }}>
-        <rect width={W} height={H} fill="#050505" rx={10} />
-        {Array.from({ length: 7 }, (_, i) => {
-          const gx = 40 + i * 68, gy = 30 + i * 44;
-          return (
-            <g key={i}>
-              <line x1={gx} y1={30} x2={gx} y2={H - 24} stroke="rgba(255,255,255,0.03)" strokeWidth={0.5} />
-              <line x1={40} y1={gy} x2={W - 30} y2={gy} stroke="rgba(255,255,255,0.03)" strokeWidth={0.5} />
-            </g>
-          );
-        })}
-        {AS_EDGES.map(([a, b], i) => {
-          const ra = AS_RESIDUES[a], rb = AS_RESIDUES[b];
-          const colorA = AS_COLORS[ra.type], colorB = AS_COLORS[rb.type];
-          const sameType = ra.type === rb.type;
-          return (
-            <line key={i}
-              x1={ra.x + 30} y1={ra.y + 20} x2={rb.x + 30} y2={rb.y + 20}
-              stroke={sameType ? colorA : 'rgba(255,255,255,0.1)'}
-              strokeWidth={sameType ? 1 : 0.7}
-              opacity={sameType ? 0.35 : 0.22}
-              strokeDasharray={sameType ? '' : '3 4'} />
-          );
-        })}
-        {AS_RESIDUES.map((res, i) => {
-          const color = AS_COLORS[res.type];
-          const r = 5 + res.contrib * overallScore * 9;
-          const nx = res.x + 30, ny = res.y + 20;
-          const isCatalytic = res.type === 'catalytic';
-          return (
-            <g key={res.name}>
-              {isCatalytic && (
-                <circle cx={nx} cy={ny} r={r + 5} fill={color} opacity={0.1} />
-              )}
-              <circle cx={nx} cy={ny} r={r}
-                fill={color} opacity={isCatalytic ? 0.9 : 0.72}
-                stroke={isCatalytic ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.15)'}
-                strokeWidth={isCatalytic ? 1.2 : 0.6} />
-              <text x={nx} y={ny - r - 3}
-                textAnchor="middle"
-                fontFamily={T.MONO} fontSize="6.5" fill={color} opacity={0.9}>
-                {res.name}
-              </text>
-            </g>
-          );
-        })}
-        {Object.entries(AS_COLORS).map(([cls, color], i) => (
-          <g key={cls} transform={`translate(${W - 150 + i * 0}, ${H - 20 - i * 16})`}>
-            <circle cx={6} cy={0} r={4} fill={color} opacity={0.8} />
-            <text x={14} y={4} fontFamily={T.SANS} fontSize="8" fill={LABEL}>
-              {cls.charAt(0).toUpperCase() + cls.slice(1)}
-            </text>
-          </g>
-        ))}
-        <text x={W - 30} y={18} textAnchor="end" fontFamily={T.MONO} fontSize="8" fill={LABEL}>
-          Overall score: {overallScore.toFixed(2)}
-        </text>
-      </svg>
+    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, minWidth: 60 }}>
+      <div style={{
+        flex: 1, height: 3, borderRadius: 2, background: 'rgba(255,255,255,0.06)',
+        overflow: 'hidden',
+      }}>
+        <div style={{ width: `${pct}%`, height: '100%', borderRadius: 2, background: color, opacity: 0.8 }} />
+      </div>
+      <span style={{ fontFamily: T.MONO, fontSize: '8px', color: VALUE, minWidth: 28, textAlign: 'right', ...tn }}>
+        {value.toFixed(2)}
+      </span>
     </div>
   );
 }
 
-/* ── Catalytic Residue Table ──────────────────────────────────────── */
-
-function ResidueTable({ enzyme }: { enzyme: EnzymeStructure }) {
-  const hdr: React.CSSProperties = {
-    fontFamily: T.MONO, fontSize: '9px', color: LABEL, textAlign: 'left',
-    padding: '4px 6px', borderBottom: `1px solid ${BORDER}`,
-  };
-  const cell: React.CSSProperties = {
-    fontFamily: T.MONO, fontSize: '10px', color: VALUE, padding: '3px 6px',
-    textAlign: 'right',
-  };
+function StatusDot({ color, label }: { color: string; label: string }) {
   return (
-    <div style={{ overflowX: 'auto', marginTop: 8 }}>
-      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+      <span style={{ width: 5, height: 5, borderRadius: '50%', background: color, flexShrink: 0 }} />
+      <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>{label}</span>
+    </span>
+  );
+}
+
+/* ── Binding View (compact) ───────────────────────────────────────── */
+
+function BindingView({ result, enzyme }: { result: BindingAffinityResult; enzyme: EnzymeStructure }) {
+  const axes = [
+    { label: 'Distance', value: result.distanceScore, color: PATHD_THEME.mint },
+    { label: 'Orient', value: result.orientationScore, color: PATHD_THEME.sky },
+    { label: 'vdW', value: result.vdwScore, color: PATHD_THEME.apricot },
+    { label: 'Electro', value: result.electrostaticScore, color: PATHD_THEME.lilac },
+  ];
+
+  return (
+    <div style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+      {/* Header metrics */}
+      <div style={{ display: 'flex', gap: 16, alignItems: 'baseline' }}>
+        <div>
+          <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Catalytic Fit</span>
+          <p style={{ fontFamily: T.MONO, fontSize: '18px', color: VALUE, margin: '1px 0 0', ...tn }}>{result.overallScore.toFixed(3)}</p>
+        </div>
+        <div>
+          <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Kd</span>
+          <p style={{ fontFamily: T.MONO, fontSize: '13px', color: VALUE, margin: '1px 0 0', ...tn }}>{result.predictedKd.toFixed(2)} <span style={{ fontSize: '8px', color: LABEL }}>μM</span></p>
+        </div>
+        <div>
+          <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>ΔG</span>
+          <p style={{ fontFamily: T.MONO, fontSize: '13px', color: VALUE, margin: '1px 0 0', ...tn }}>{result.bindingEnergy.toFixed(2)} <span style={{ fontSize: '8px', color: LABEL }}>kcal/mol</span></p>
+        </div>
+      </div>
+
+      {/* Energy decomposition */}
+      <div>
+        <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Energy Decomposition</span>
+        <div style={{ marginTop: 4, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3px 12px' }}>
+          {axes.map(ax => (
+            <div key={ax.label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL, minWidth: 42 }}>{ax.label}</span>
+              <MiniBar value={ax.value} color={ax.color} />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Catalytic residues table */}
+      <div>
+        <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+          Catalytic Residues — {enzyme.name}
+        </span>
+        <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 4 }}>
+          <thead>
+            <tr>
+              {['Pos', 'Res', 'Role', 'Dist', 'Opt', 'Δ', 'Angle', 'pKa'].map(h => (
+                <th key={h} style={hdrCell}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {enzyme.catalyticResidues.map(r => {
+              const distDelta = r.distanceToSubstrate - r.optimalDistance;
+              return (
+                <tr key={r.position} style={{ background: 'rgba(255,255,255,0.015)' }}>
+                  <td style={{ ...dataCell, textAlign: 'left', color: PHASE_COLORS.binding }}>{r.position}</td>
+                  <td style={{ ...dataCell, textAlign: 'center' }}>{r.residue}</td>
+                  <td style={{ ...dataCell, textAlign: 'left', fontSize: '8px', color: LABEL }}>{r.role.replace('_', ' ')}</td>
+                  <td style={dataCell}>{r.distanceToSubstrate.toFixed(1)}</td>
+                  <td style={dataCell}>{r.optimalDistance.toFixed(1)}</td>
+                  <td style={{ ...dataCell, color: Math.abs(distDelta) > 0.5 ? '#FA8072' : VALUE }}>
+                    {distDelta > 0 ? '+' : ''}{distDelta.toFixed(1)}
+                  </td>
+                  <td style={dataCell}>{r.orientationAngle.toFixed(0)}°</td>
+                  <td style={{ ...dataCell, color: Math.abs(r.pKaShift) > 0.5 ? '#FA8072' : VALUE }}>
+                    {r.pKaShift > 0 ? '+' : ''}{r.pKaShift.toFixed(2)}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+/* ── Sequence View (compact table) ────────────────────────────────── */
+
+function SequenceView({ result }: { result: SequenceDesignResult }) {
+  const caiColor = (v: number) =>
+    v >= 0.75 ? '#93CB52' : v >= 0.55 ? '#FFFB1F' : 'rgba(255,120,120,0.7)';
+
+  return (
+    <div style={{ padding: '10px 12px' }}>
+      <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+        Sequence Designs — {result.targetEnzyme}
+      </span>
+      <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 6 }}>
         <thead>
           <tr>
-            {['Pos', 'Res', 'Role', 'Dist Å', 'Opt Å', 'Angle°', 'Opt°', 'pKa Δ'].map(h => (
-              <th key={h} style={hdr}>{h}</th>
+            {['#', 'Score', 'Recovery', 'CAI', 'GC%', 'Rare', 'Sequence'].map(h => (
+              <th key={h} style={hdrCell}>{h}</th>
             ))}
           </tr>
         </thead>
         <tbody>
-          {enzyme.catalyticResidues.map(r => (
-            <tr key={r.position} style={{ background: 'rgba(255,255,255,0.02)' }}>
-              <td style={{ ...cell, textAlign: 'left', color: '#F0FDFA' }}>{r.position}</td>
-              <td style={{ ...cell, textAlign: 'center' }}>{r.residue}</td>
-              <td style={{ ...cell, textAlign: 'left', fontSize: '8px' }}>{r.role.replace('_', ' ')}</td>
-              <td style={cell}>{r.distanceToSubstrate.toFixed(1)}</td>
-              <td style={cell}>{r.optimalDistance.toFixed(1)}</td>
-              <td style={cell}>{r.orientationAngle.toFixed(0)}</td>
-              <td style={cell}>{r.optimalAngle.toFixed(0)}</td>
-              <td style={{ ...cell, color: Math.abs(r.pKaShift) > 0.5 ? '#FA8072' : VALUE }}>
-                {r.pKaShift > 0 ? '+' : ''}{r.pKaShift.toFixed(2)}
+          {result.designs.map(d => (
+            <tr key={d.rank} style={{ background: 'rgba(255,255,255,0.015)' }}>
+              <td style={{ ...dataCell, textAlign: 'left', color: PHASE_COLORS.sequence, fontWeight: 600 }}>#{d.rank}</td>
+              <td style={dataCell}>{d.score.toFixed(3)}</td>
+              <td style={dataCell}>{(d.recoveryRate * 100).toFixed(1)}%</td>
+              <td style={{ ...dataCell, color: caiColor(d.cai) }}>{d.cai.toFixed(3)}</td>
+              <td style={dataCell}>{(d.gcContent * 100).toFixed(1)}%</td>
+              <td style={{ ...dataCell, color: d.rareCodons > 3 ? '#FA8072' : VALUE }}>{d.rareCodons}</td>
+              <td style={{
+                fontFamily: T.MONO, fontSize: '8px', color: 'rgba(255,255,255,0.35)',
+                padding: '3px 6px', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+              }}>
+                {d.dnaSequence.slice(0, 40)}…
               </td>
             </tr>
           ))}
+        </tbody>
+      </table>
+
+      {result.consensusMotifs.length > 0 && (
+        <div style={{ marginTop: 8, display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+          <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL, marginRight: 4 }}>Motifs:</span>
+          {result.consensusMotifs.map((m, i) => (
+            <span key={i} style={{
+              fontFamily: T.MONO, fontSize: '8px', color: PHASE_COLORS.sequence,
+              padding: '1px 6px', borderRadius: 4,
+              background: 'rgba(175,195,214,0.1)', border: '1px solid rgba(175,195,214,0.15)',
+            }}>{m}</span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Flux Cost View (compact) ─────────────────────────────────────── */
+
+function FluxCostView({ result }: { result: MetabolicDrainResult }) {
+  const viabilityColor = result.isViable
+    ? result.growthPenalty < 10 ? '#93CB52' : '#FFFB1F'
+    : '#FA8072';
+
+  return (
+    <div style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+      {/* Header */}
+      <div style={{ display: 'flex', gap: 16, alignItems: 'baseline' }}>
+        <div>
+          <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Total Drain</span>
+          <p style={{ fontFamily: T.MONO, fontSize: '18px', color: VALUE, margin: '1px 0 0', ...tn }}>
+            {(result.totalMetabolicDrain * 100).toFixed(1)}%
+          </p>
+        </div>
+        <div>
+          <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Growth Penalty</span>
+          <p style={{ fontFamily: T.MONO, fontSize: '13px', color: viabilityColor, margin: '1px 0 0', ...tn }}>
+            {result.growthPenalty.toFixed(1)}%
+          </p>
+        </div>
+        <div style={{ marginLeft: 'auto' }}>
+          <StatusDot color={viabilityColor} label={result.isViable ? 'Viable' : 'Non-viable'} />
+        </div>
+      </div>
+
+      {/* Resource breakdown */}
+      <div>
+        <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Resource Breakdown</span>
+        <div style={{ marginTop: 4, display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {[
+            { label: 'ATP', value: result.atpCost, color: PHASE_COLORS.flux },
+            { label: 'NADPH', value: result.nadphCost, color: PHASE_COLORS.balancing },
+            { label: 'Ribosome', value: result.ribosomeBurden, color: PHASE_COLORS.pareto },
+          ].map(item => (
+            <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL, minWidth: 52 }}>{item.label}</span>
+              <MiniBar value={item.value} color={item.color} max={Math.max(result.atpCost, result.nadphCost, result.ribosomeBurden) || 1} />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Recommendation */}
+      <div style={{
+        fontFamily: T.SANS, fontSize: '9px', color: LABEL,
+        padding: '6px 8px', borderRadius: 8,
+        background: 'rgba(255,255,255,0.02)', border: `1px solid ${BORDER}`,
+      }}>
+        {result.recommendation}
+      </div>
+    </div>
+  );
+}
+
+/* ── Balancer View (compact table) ────────────────────────────────── */
+
+function BalancerView({ result }: { result: PathwayBalanceResult }) {
+  const steps = result.steps;
+  const maxConc = Math.max(...steps.map(s => s.intermediateConc), 0.01);
+
+  return (
+    <div style={{ padding: '10px 12px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+        <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+          Pathway Balance — {steps.length} Steps
+        </span>
+        <StatusDot color={result.isBalanced ? '#93CB52' : '#FA8072'} label={result.isBalanced ? 'Balanced' : 'Imbalanced'} />
+      </div>
+
+      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <thead>
+          <tr>
+            {['#', 'Enzyme', 'kcat', 'Flux', 'Conc', 'Toxic', 'Status'].map(h => (
+              <th key={h} style={hdrCell}>{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {steps.map((s, i) => {
+            const toxRatio = s.intermediateConc / s.toxicityThreshold;
+            const statusColor = toxRatio > 0.8 ? '#FA8072' : toxRatio > 0.5 ? '#FFFB1F' : '#93CB52';
+            return (
+              <tr key={i} style={{ background: 'rgba(255,255,255,0.015)' }}>
+                <td style={{ ...dataCell, textAlign: 'left', color: PHASE_COLORS.balancing }}>{i + 1}</td>
+                <td style={{ ...dataCell, textAlign: 'left' }}>{s.enzyme.toUpperCase()}</td>
+                <td style={dataCell}>{s.adjustedKcat.toFixed(3)}</td>
+                <td style={dataCell}>{s.currentFlux.toFixed(3)}</td>
+                <td style={dataCell}>{s.intermediateConc.toFixed(3)}</td>
+                <td style={dataCell}>{toxRatio.toFixed(2)}</td>
+                <td style={{ ...dataCell, textAlign: 'center' }}>
+                  <span style={{ width: 5, height: 5, borderRadius: '50%', background: statusColor, display: 'inline-block' }} />
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+
+      {/* Convergence mini sparkline */}
+      {result.convergenceHistory.length > 1 && (() => {
+        const ch = result.convergenceHistory;
+        const maxC = Math.max(...ch.map(c => c.maxConc), 0.01);
+        const sparkW = 120, sparkH = 24;
+        const pts = ch.map((c, i) =>
+          `${(i / (ch.length - 1)) * sparkW},${sparkH - (c.maxConc / maxC) * sparkH}`
+        ).join(' ');
+        return (
+          <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Convergence</span>
+            <svg width={sparkW} height={sparkH} style={{ overflow: 'visible' }}>
+              <polyline points={pts} fill="none" stroke={PHASE_COLORS.balancing} strokeWidth={1.2} />
+            </svg>
+            <span style={{ fontFamily: T.MONO, fontSize: '8px', color: VALUE, ...tn }}>
+              {ch.length} iter → {ch[ch.length - 1].maxConc.toFixed(3)}
+            </span>
+          </div>
+        );
+      })()}
+    </div>
+  );
+}
+
+/* ── Pareto View (compact ranked table) ───────────────────────────── */
+
+function ParetoView({ result }: { result: ParetoFrontResult }) {
+  const candidates = result.candidates;
+  const frontIds = new Set(result.paretoFront.map(c => c.id));
+
+  return (
+    <div style={{ padding: '10px 12px' }}>
+      <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+        Pareto Front — {result.paretoFront.length} non-dominated
+      </span>
+      <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 6 }}>
+        <thead>
+          <tr>
+            {['Rank', 'Pathway', 'Thermo', 'Yield', 'Cost', 'Status'].map(h => (
+              <th key={h} style={hdrCell}>{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {candidates.map(c => {
+            const isFront = frontIds.has(c.id);
+            const isBest = c.id === result.bestOverall;
+            return (
+              <tr key={c.id} style={{
+                background: isBest ? 'rgba(207,196,227,0.06)' : 'rgba(255,255,255,0.015)',
+              }}>
+                <td style={{ ...dataCell, textAlign: 'left', color: isBest ? '#FFFB1F' : VALUE }}>
+                  {isBest ? '★' : ''} {c.paretoRank}
+                </td>
+                <td style={{ ...dataCell, textAlign: 'left' }}>{c.name}</td>
+                <td style={dataCell}>{c.scores.thermodynamic.toFixed(3)}</td>
+                <td style={dataCell}>{c.scores.yield.toFixed(3)}</td>
+                <td style={dataCell}>{c.scores.metabolicCost.toFixed(3)}</td>
+                <td style={{ ...dataCell, textAlign: 'center' }}>
+                  <span style={{
+                    fontFamily: T.MONO, fontSize: '7px',
+                    color: isFront ? PHASE_COLORS.pareto : LABEL,
+                    padding: '1px 4px', borderRadius: 3,
+                    background: isFront ? 'rgba(207,196,227,0.1)' : 'transparent',
+                  }}>
+                    {isFront ? 'Front' : 'Dom.'}
+                  </span>
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
   );
 }
 
-/* ── Sequence Design View ─────────────────────────────────────────── */
-
-function SequenceView({ result }: { result: SequenceDesignResult }) {
-  const caiColor = (v: number) =>
-    v >= 0.75 ? '#93CB52' : v >= 0.55 ? '#FFFB1F' : 'rgba(255,120,120,0.7)';
-  return (
-    <div style={{ height: '100%', overflow: 'auto', padding: 16 }}>
-      <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase',
-        letterSpacing: '0.1em', color: LABEL, margin: '0 0 10px' }}>
-        Designed Sequences — {result.targetEnzyme}
-      </p>
-      {result.designs.map(d => (
-        <div key={d.rank} style={{
-          ...GLASS, padding: '10px 14px', marginBottom: 8, borderRadius: 14,
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-            <span style={{ fontFamily: T.MONO, fontSize: '11px', color: PHASE_COLORS.sequence,
-              fontWeight: 600 }}>#{d.rank}</span>
-            <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE }}>
-              Score {d.score.toFixed(2)}</span>
-            <span style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL }}>
-              Recovery {(d.recoveryRate * 100).toFixed(1)}%</span>
-            <span style={{ fontFamily: T.MONO, fontSize: '10px', color: caiColor(d.cai) }}>
-              CAI {d.cai.toFixed(2)}</span>
-            <span style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL }}>
-              GC {(d.gcContent * 100).toFixed(1)}%</span>
-            <span style={{ fontFamily: T.MONO, fontSize: '10px',
-              color: d.rareCodons > 3 ? 'rgba(255,120,120,0.7)' : VALUE }}>
-              {d.rareCodons} rare</span>
-          </div>
-          <div style={{
-            fontFamily: T.MONO, fontSize: '9px', color: 'rgba(255,255,255,0.45)',
-            letterSpacing: '0.04em', overflowX: 'auto', whiteSpace: 'nowrap',
-            padding: '4px 6px', background: 'rgba(0,0,0,0.3)', borderRadius: 6,
-          }}>
-            {d.dnaSequence.slice(0, 60)}
-            {d.dnaSequence.length > 60 && <span style={{ color: LABEL }}> …</span>}
-          </div>
-        </div>
-      ))}
-      {result.consensusMotifs.length > 0 && (
-        <div style={{ marginTop: 12 }}>
-          <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase',
-            letterSpacing: '0.1em', color: LABEL, margin: '0 0 10px' }}>
-            Consensus Motifs
-          </p>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-            {result.consensusMotifs.map((m, i) => (
-              <span key={i} style={{
-                fontFamily: T.MONO, fontSize: '10px', color: PHASE_COLORS.sequence,
-                padding: '2px 8px', borderRadius: 8,
-                background: 'rgba(81,81,205,0.1)', border: '1px solid rgba(81,81,205,0.15)',
-              }}>{m}</span>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-/* ── Flux Cost Gauge ──────────────────────────────────────────────── */
-
-function FluxCostView({ result }: { result: MetabolicDrainResult }) {
-  const W = 520, H = 420;
-  const barY = 74, barH = 30, barW = 380;
-  const total = result.atpCost + result.nadphCost + result.ribosomeBurden * 100;
-  const atpW = total > 0 ? (result.atpCost / total) * barW : 0;
-  const nadW = total > 0 ? (result.nadphCost / total) * barW : 0;
-  const ribW = barW - atpW - nadW;
-  const viabilityColor = result.isViable
-    ? result.growthPenalty < 10 ? '#93CB52' : '#FFFB1F'
-    : 'rgba(255,120,120,0.8)';
-  return (
-    <svg role="img" aria-label="Chart" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
-      <rect width={W} height={H} fill="#050505" rx={12} />
-      <rect x="20" y="22" width="480" height="140" rx="14" fill="rgba(255,255,255,0.025)" stroke="rgba(255,255,255,0.06)" />
-      <text x={70} y={barY - 18} fontFamily={T.SANS} fontSize="9" fill={LABEL}>
-        RESOURCE BURDEN LEDGER (ATP / NADPH / RIBOSOME)
-      </text>
-      <rect x={70} y={barY} width={atpW} height={barH} fill={PHASE_COLORS.flux} rx={4} />
-      <rect x={70 + atpW} y={barY} width={nadW} height={barH} fill={PHASE_COLORS.balancing} rx={0} />
-      <rect x={70 + atpW + nadW} y={barY} width={Math.max(0, ribW)} height={barH}
-        fill={PHASE_COLORS.pareto} rx={4} />
-      <rect x={70} y={barY} width={barW} height={barH} fill="none"
-        stroke="rgba(255,255,255,0.1)" rx={4} />
-      <text x={70 + atpW / 2} y={barY + barH / 2 + 4} textAnchor="middle"
-        fontFamily={T.MONO} fontSize="9" fill="#000000">ATP {result.atpCost.toFixed(1)}</text>
-      {nadW > 40 && (
-        <text x={70 + atpW + nadW / 2} y={barY + barH / 2 + 4} textAnchor="middle"
-          fontFamily={T.MONO} fontSize="9" fill="#000000">NADPH {result.nadphCost.toFixed(1)}</text>
-      )}
-      <rect x="20" y="186" width="480" height="198" rx="14" fill="rgba(255,255,255,0.025)" stroke="rgba(255,255,255,0.06)" />
-      <text x="36" y="206" fontFamily={T.MONO} fontSize="8" fill={LABEL}>DRAIN AND VIABILITY WINDOWS</text>
-      <text x="36" y="238" fontFamily={T.MONO} fontSize="28" fill={VALUE}>
-        {(result.totalMetabolicDrain * 100).toFixed(1)}%
-      </text>
-      <text x="36" y="252" fontFamily={T.SANS} fontSize="9" fill={LABEL}>total metabolic drain</text>
-      <rect x="36" y="274" width="280" height="18" rx="9" fill="rgba(255,255,255,0.05)" />
-      <rect x="36" y="274" width={Math.min(280, result.totalMetabolicDrain * 280)} height="18" rx="9" fill="rgba(255,139,31,0.82)" />
-      <line x1="232" y1="268" x2="232" y2="298" stroke="rgba(255,255,255,0.24)" strokeDasharray="4 3" />
-      <text x="232" y="262" textAnchor="middle" fontFamily={T.MONO} fontSize="7" fill={LABEL}>target limit</text>
-
-      <text x="36" y="330" fontFamily={T.SANS} fontSize="9" fill={LABEL}>Growth penalty</text>
-      <rect x="36" y="338" width="280" height="14" rx="7" fill="rgba(255,255,255,0.05)" />
-      <rect x="36" y="338" width={Math.min(280, (result.growthPenalty / 30) * 280)} height="14" rx="7" fill={viabilityColor} />
-      <text x="324" y="349" fontFamily={T.MONO} fontSize="9" fill={VALUE}>{result.growthPenalty.toFixed(1)}%</text>
-
-      <rect x="346" y="226" width="134" height="106" rx="12" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.07)" />
-      <text x="360" y="246" fontFamily={T.MONO} fontSize="7" fill={LABEL}>VIABILITY STATUS</text>
-      <text x="360" y="270" fontFamily={T.SANS} fontSize="18" fill={viabilityColor}>
-        {result.isViable ? 'Prototype viable' : 'Redesign required'}
-      </text>
-      <text x="360" y="294" fontFamily={T.SANS} fontSize="10" fill={VALUE}>
-        {result.recommendation}
-      </text>
-    </svg>
-  );
-}
-
-/* ── Pathway Balancer View ────────────────────────────────────────── */
-
-function BalancerView({ result }: { result: PathwayBalanceResult }) {
-  const W = 540, H = 440, PAD = 40;
-  const steps = result.steps;
-  const n = steps.length;
-  const stepW = (W - PAD * 2) / (n * 2 - 1);
-  const maxConc = Math.max(...steps.map(s => s.intermediateConc), 0.01);
-
-  return (
-    <svg role="img" aria-label="Chart" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
-      <rect width={W} height={H} fill="#050505" rx={12} />
-      <text x={W / 2} y={24} textAnchor="middle" fontFamily={T.SANS} fontSize="10" fill={VALUE}>
-        Pathway Pipeline — {n} Steps
-      </text>
-      <rect x={W - 130} y={10} width={110} height={20} rx={10}
-        fill={result.isBalanced ? 'rgba(147,203,82,0.12)' : 'rgba(250,128,114,0.12)'}
-        stroke={result.isBalanced ? '#93CB52' : '#FA8072'} strokeWidth={0.8} />
-      <text x={W - 75} y={24} textAnchor="middle" fontFamily={T.MONO} fontSize="9"
-        fill={result.isBalanced ? '#93CB52' : '#FA8072'}>
-        {result.isBalanced ? 'Balanced ✓' : 'Imbalanced ✗'}
-      </text>
-
-      {steps.map((s, i) => {
-        const cx = PAD + i * 2 * stepW + stepW / 2;
-        const cy = 120;
-        const toxRatio = s.intermediateConc / s.toxicityThreshold;
-        const intColor = toxRatio > 0.8 ? 'rgba(255,120,120,0.6)' :
-          toxRatio > 0.5 ? '#FFFB1F' : '#93CB52';
-        const barH = Math.min(80, (s.intermediateConc / maxConc) * 80);
-        return (
-          <g key={i}>
-            <circle cx={cx} cy={cy} r={18}
-              fill="rgba(255,255,255,0.04)" stroke={PHASE_COLORS.balancing} strokeWidth={1} />
-            <text x={cx} y={cy - 3} textAnchor="middle" fontFamily={T.MONO} fontSize="7"
-              fill={VALUE}>{s.enzyme.toUpperCase()}</text>
-            <text x={cx} y={cy + 8} textAnchor="middle" fontFamily={T.MONO} fontSize="6"
-              fill={LABEL}>kcat {s.adjustedKcat.toFixed(2)}</text>
-            {i < n - 1 && (() => {
-              const ix = cx + stepW;
-              return (
-                <g>
-                  <rect x={ix - 14} y={cy - 12} width={28} height={24} rx={4}
-                    fill="rgba(255,255,255,0.03)" stroke={intColor} strokeWidth={0.8} />
-                  <text x={ix} y={cy + 2} textAnchor="middle" fontFamily={T.MONO} fontSize="6"
-                    fill={intColor}>{s.intermediateConc.toFixed(2)}</text>
-                  <rect x={ix - 6} y={180 + (80 - barH)} width={12} height={barH} rx={3}
-                    fill={intColor} opacity={0.5} />
-                  <line x1={cx + 20} y1={cy} x2={ix - 16} y2={cy}
-                    stroke="rgba(255,255,255,0.12)" strokeWidth={1}
-                    markerEnd="url(#arrowhead)" />
-                  <text x={(cx + 20 + ix - 16) / 2} y={cy - 8} textAnchor="middle"
-                    fontFamily={T.MONO} fontSize="6" fill={LABEL}>
-                    {s.currentFlux.toFixed(2)}
-                  </text>
-                </g>
-              );
-            })()}
-          </g>
-        );
-      })}
-      <defs>
-        <marker id="arrowhead" markerWidth="6" markerHeight="4" refX="6" refY="2" orient="auto">
-          <polygon points="0 0, 6 2, 0 4" fill="rgba(255,255,255,0.2)" />
-        </marker>
-      </defs>
-
-      {result.convergenceHistory.length > 1 && (() => {
-        const ch = result.convergenceHistory;
-        const cW = W - PAD * 2 - 40, cH = 90, cY0 = 310;
-        const maxC = Math.max(...ch.map(c => c.maxConc), 0.01);
-        return (
-          <g>
-            <text x={PAD + 20} y={cY0 - 8} fontFamily={T.SANS} fontSize="8" fill={LABEL}>
-              Convergence (iterations vs max concentration)
-            </text>
-            <rect x={PAD + 20} y={cY0} width={cW} height={cH} rx={6}
-              fill="rgba(255,255,255,0.02)" stroke={BORDER} />
-            <polyline fill="none" stroke={PHASE_COLORS.balancing} strokeWidth={1.2}
-              points={ch.map((c, i) =>
-                `${PAD + 20 + (i / (ch.length - 1)) * cW},${cY0 + cH - (c.maxConc / maxC) * cH}`
-              ).join(' ')} />
-            <text x={PAD + 20} y={cY0 + cH + 12} fontFamily={T.MONO} fontSize="7" fill={LABEL}>0</text>
-            <text x={PAD + 20 + cW} y={cY0 + cH + 12} textAnchor="end"
-              fontFamily={T.MONO} fontSize="7" fill={LABEL}>{ch.length - 1}</text>
-          </g>
-        );
-      })()}
-    </svg>
-  );
-}
-
-/* ── Pareto Front View ────────────────────────────────────────────── */
-
-function ParetoView({ result }: { result: ParetoFrontResult }) {
-  const W = 540, H = 440, PAD = 56;
-  const candidates = result.candidates;
-  const front = result.paretoFront;
-  const frontIds = new Set(front.map(c => c.id));
-
-  const xMin = Math.min(...candidates.map(c => c.scores.thermodynamic)) - 0.05;
-  const xMax = Math.max(...candidates.map(c => c.scores.thermodynamic)) + 0.05;
-  const yMin = Math.min(...candidates.map(c => c.scores.yield)) - 0.05;
-  const yMax = Math.max(...candidates.map(c => c.scores.yield)) + 0.05;
-  const xR = xMax - xMin || 1, yR = yMax - yMin || 1;
-
-  const sx = (v: number) => PAD + ((v - xMin) / xR) * (W - PAD * 2);
-  const sy = (v: number) => H - PAD - ((v - yMin) / yR) * (H - PAD * 2);
-
-  const sorted = [...front].sort((a, b) => a.scores.thermodynamic - b.scores.thermodynamic);
-
-  return (
-    <svg role="img" aria-label="Chart" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
-      <rect width={W} height={H} fill="#050505" rx={12} />
-      {[0, 0.25, 0.5, 0.75, 1].map(t => {
-        const gx = PAD + t * (W - PAD * 2);
-        const gy = PAD + t * (H - PAD * 2);
-        return (
-          <g key={t}>
-            <line x1={gx} y1={PAD} x2={gx} y2={H - PAD} stroke="rgba(255,255,255,0.04)" />
-            <line x1={PAD} y1={gy} x2={W - PAD} y2={gy} stroke="rgba(255,255,255,0.04)" />
-          </g>
-        );
-      })}
-      <line x1={PAD} y1={H - PAD} x2={W - PAD} y2={H - PAD} stroke="rgba(255,255,255,0.1)" />
-      <line x1={PAD} y1={PAD} x2={PAD} y2={H - PAD} stroke="rgba(255,255,255,0.1)" />
-      <text x={W / 2} y={H - 10} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill={LABEL}>
-        Thermodynamic Score
-      </text>
-      <text x={14} y={H / 2} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill={LABEL}
-        transform={`rotate(-90,14,${H / 2})`}>
-        Yield Score
-      </text>
-
-      {sorted.length > 1 && (
-        <polyline fill="none" stroke={PHASE_COLORS.pareto} strokeWidth={1.2} strokeDasharray="4 3"
-          points={sorted.map(c => `${sx(c.scores.thermodynamic)},${sy(c.scores.yield)}`).join(' ')} />
-      )}
-
-      {candidates.map(c => {
-        const px = sx(c.scores.thermodynamic);
-        const py = sy(c.scores.yield);
-        const r = Math.max(5, Math.min(14, (1 / (c.scores.metabolicCost + 0.1)) * 4));
-        const isFront = frontIds.has(c.id);
-        const isBest = c.id === result.bestOverall;
-        return (
-          <g key={c.id}>
-            <circle cx={px} cy={py} r={r}
-              fill={isFront ? PHASE_COLORS.pareto : 'rgba(255,255,255,0.1)'}
-              opacity={isFront ? 0.8 : 0.35}
-              stroke={isBest ? '#fff' : 'none'} strokeWidth={isBest ? 1.5 : 0} />
-            {isBest && (
-              <text x={px} y={py - r - 6} textAnchor="middle" fontFamily={T.SANS} fontSize="12"
-                fill="#FFFB1F">★</text>
-            )}
-            <text x={px} y={py + r + 12} textAnchor="middle" fontFamily={T.SANS} fontSize="8"
-              fill={isFront ? VALUE : LABEL}>{c.name}</text>
-            <text x={px} y={py + r + 22} textAnchor="middle" fontFamily={T.MONO} fontSize="7"
-              fill={LABEL}>Rank {c.paretoRank}</text>
-          </g>
-        );
-      })}
-    </svg>
-  );
-}
-
-/* ── Mutagenesis View ─────────────────────────────────────────────── */
+/* ── Mutagenesis View (compact) ───────────────────────────────────── */
 
 function MutagenesisView({ result, enzyme }: { result: MutagenesisResult; enzyme: EnzymeStructure }) {
-  const W = 540, H = 450, PAD = 30;
   const seqLen = enzyme.length;
-  const barY = 44, barH = 22;
-  const barW = W - PAD * 2;
+  const barW = 200;
 
   const effectColor = (e: string) =>
-    e === 'beneficial' ? '#93CB52' : e === 'neutral' ? '#FFFB1F' : 'rgba(255,120,120,0.7)';
-
-  const hdr: React.CSSProperties = {
-    fontFamily: T.MONO, fontSize: '8px', color: LABEL, textAlign: 'left',
-    padding: '3px 5px', borderBottom: `1px solid ${BORDER}`,
-  };
+    e === 'beneficial' ? '#93CB52' : e === 'neutral' ? '#FFFB1F' : '#FA8072';
+  const effectSymbol = (e: string) =>
+    e === 'beneficial' ? '+++' : e === 'neutral' ? '·' : '−';
 
   return (
-    <div style={{ height: '100%', overflow: 'auto', padding: 0 }}>
-      <svg role="img" aria-label="Chart" viewBox={`0 0 ${W} ${barY + barH + 60}`} style={{ width: '100%' }}>
-        <rect width={W} height={barY + barH + 60} fill="#050505" rx={12} />
-        <rect x={PAD} y={barY} width={barW} height={barH} rx={4} fill="rgba(255,255,255,0.04)"
-          stroke={BORDER} />
-        {Array.from({ length: Math.ceil(seqLen / 50) + 1 }).map((_, i) => {
-          const pos = i * 50;
-          if (pos > seqLen) return null;
-          const tx = PAD + (pos / seqLen) * barW;
-          return (
-            <g key={pos}>
-              <line x1={tx} y1={barY + barH} x2={tx} y2={barY + barH + 4}
-                stroke="rgba(255,255,255,0.15)" strokeWidth={0.5} />
-              <text x={tx} y={barY + barH + 12} textAnchor="middle"
-                fontFamily={T.MONO} fontSize="6" fill={LABEL}>{pos}</text>
-            </g>
-          );
-        })}
-        {enzyme.catalyticResidues.map(r => {
-          const rx = PAD + (r.position / seqLen) * barW;
-          return (
-            <rect key={`cat-${r.position}`} x={rx - 1.5} y={barY + 2} width={3} height={barH - 4}
-              fill="rgba(250,128,114,0.6)" rx={1} />
-          );
-        })}
-        {result.sites.map(s => {
-          const sx = PAD + (s.position / seqLen) * barW;
-          return (
-            <g key={`mut-${s.position}`}>
-              <rect x={sx - 2} y={barY + 2} width={4} height={barH - 4}
-                fill="rgba(147,203,82,0.5)" rx={1} />
-              <polygon points={`${sx},${barY - 6} ${sx - 4},${barY - 1} ${sx + 4},${barY - 1}`}
-                fill={PHASE_COLORS.mutagenesis} />
-            </g>
-          );
-        })}
-        <rect x={PAD} y={barY + barH + 20} width={8} height={8} fill="rgba(250,128,114,0.6)" rx={2} />
-        <text x={PAD + 12} y={barY + barH + 27} fontFamily={T.SANS} fontSize="8" fill={LABEL}>
-          Catalytic
-        </text>
-        <rect x={PAD + 70} y={barY + barH + 20} width={8} height={8} fill={PHASE_COLORS.mutagenesis} rx={2} />
-        <text x={PAD + 82} y={barY + barH + 27} fontFamily={T.SANS} fontSize="8" fill={LABEL}>
-          Mutagenesis site
-        </text>
-      </svg>
-
-      <div style={{
-        ...GLASS, margin: '8px 16px', padding: '8px 14px', borderRadius: 12,
-        display: 'flex', alignItems: 'center', gap: 12,
-      }}>
-        <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL }}>Top Combination</span>
-        <span style={{ fontFamily: T.MONO, fontSize: '11px', color: PHASE_COLORS.mutagenesis }}>
-          {result.topCombination.positions.join(', ')}
+    <div style={{ padding: '10px 12px' }}>
+      {/* Header with sequence bar */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+        <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+          Mutagenesis Targets
         </span>
-        <span style={{ fontFamily: T.MONO, fontSize: '11px', color: VALUE }}>
-          +{(result.topCombination.predictedImprovement * 100).toFixed(0)}% predicted
-        </span>
-      </div>
-
-      <div style={{ padding: '0 16px', overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr>
-              {['Pos', 'WT', 'Mutants', 'Cons.', 'Effect', 'ΔKcat', 'ΔKm', 'Conf.', 'Rationale'].map(h => (
-                <th key={h} style={hdr}>{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {result.sites.map(s => (
-              <tr key={s.position} style={{ borderBottom: `1px solid ${BORDER}` }}>
-                <td style={{ fontFamily: T.MONO, fontSize: '10px', color: PHASE_COLORS.mutagenesis,
-                  padding: '4px 5px' }}>{s.position}</td>
-                <td style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE, padding: '4px 5px',
-                  textAlign: 'center' }}>{s.wildTypeResidue}</td>
-                <td style={{ fontFamily: T.MONO, fontSize: '9px', color: VALUE, padding: '4px 5px' }}>
-                  {s.suggestedMutants.join(', ')}</td>
-                <td style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE, padding: '4px 5px',
-                  textAlign: 'right' }}>{s.conservationScore.toFixed(2)}</td>
-                <td style={{ fontFamily: T.SANS, fontSize: '9px', padding: '4px 5px',
-                  color: effectColor(s.predictedEffect) }}>{s.predictedEffect}</td>
-                <td style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE, padding: '4px 5px',
-                  textAlign: 'right' }}>{s.predictedDeltaKcat.toFixed(2)}×</td>
-                <td style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE, padding: '4px 5px',
-                  textAlign: 'right' }}>{s.predictedDeltaKm.toFixed(2)}×</td>
-                <td style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE, padding: '4px 5px',
-                  textAlign: 'right' }}>{(s.confidence * 100).toFixed(0)}%</td>
-                <td style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL, padding: '4px 5px',
-                  maxWidth: 120 }}>{s.rationale}</td>
-              </tr>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <svg width={barW} height={12} style={{ overflow: 'visible' }}>
+            <rect x={0} y={0} width={barW} height={10} rx={2} fill="rgba(255,255,255,0.04)" stroke={BORDER} />
+            {enzyme.catalyticResidues.map(r => (
+              <rect key={`c-${r.position}`} x={(r.position / seqLen) * barW - 1} y={1} width={2} height={8} rx={1} fill="rgba(250,128,114,0.6)" />
             ))}
-          </tbody>
-        </table>
+            {result.sites.map(s => (
+              <rect key={`m-${s.position}`} x={(s.position / seqLen) * barW - 1.5} y={0} width={3} height={10} rx={1} fill="rgba(147,203,82,0.5)" />
+            ))}
+          </svg>
+          <span style={{ fontFamily: T.MONO, fontSize: '7px', color: LABEL }}>{seqLen} aa</span>
+        </div>
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Top combo:</span>
+          <span style={{ fontFamily: T.MONO, fontSize: '9px', color: PHASE_COLORS.mutagenesis }}>
+            {result.topCombination.positions.join(', ')}
+          </span>
+          <span style={{ fontFamily: T.MONO, fontSize: '9px', color: '#93CB52', ...tn }}>
+            +{(result.topCombination.predictedImprovement * 100).toFixed(0)}%
+          </span>
+        </div>
       </div>
+
+      {/* Sites table */}
+      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <thead>
+          <tr>
+            {['Pos', 'WT', 'Mutants', 'Cons', 'Effect', 'ΔKcat', 'ΔKm', 'Conf'].map(h => (
+              <th key={h} style={hdrCell}>{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {result.sites.map(s => (
+            <tr key={s.position} style={{ background: 'rgba(255,255,255,0.015)' }}>
+              <td style={{ ...dataCell, textAlign: 'left', color: PHASE_COLORS.mutagenesis }}>{s.position}</td>
+              <td style={{ ...dataCell, textAlign: 'center' }}>{s.wildTypeResidue}</td>
+              <td style={{ ...dataCell, textAlign: 'left', fontSize: '8px' }}>{s.suggestedMutants.join(',')}</td>
+              <td style={dataCell}>{s.conservationScore.toFixed(2)}</td>
+              <td style={{ ...dataCell, color: effectColor(s.predictedEffect), textAlign: 'center' }}>
+                {effectSymbol(s.predictedEffect)}
+              </td>
+              <td style={dataCell}>{s.predictedDeltaKcat.toFixed(2)}×</td>
+              <td style={dataCell}>{s.predictedDeltaKm.toFixed(2)}×</td>
+              <td style={dataCell}>{(s.confidence * 100).toFixed(0)}%</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -1157,14 +948,6 @@ export default function CatalystDesignerPage() {
             </div>
           </div>
 
-          {/* Catalytic Residues Table */}
-          <div>
-            <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase',
-              letterSpacing: '0.1em', color: LABEL, margin: '0 0 8px' }}>
-              Catalytic Residues — {enzyme.name}
-            </p>
-            <ResidueTable enzyme={enzyme} />
-          </div>
         </div>
       </div>
 
@@ -1198,18 +981,14 @@ export default function CatalystDesignerPage() {
 
         {/* Tab content */}
         <div style={{
-          maxHeight: 480, overflow: 'auto',
+          maxHeight: 360, overflow: 'auto',
           padding: '0 12px 12px',
         }}>
           <div style={{
             ...GLASS, borderRadius: 20, overflow: 'hidden',
-            minHeight: 300,
           }}>
             {viewMode === 'Binding' && (
-              <div style={{ padding: 8 }}>
-                <BindingRadar result={binding} />
-                <ActiveSitePlot overallScore={binding.overallScore} />
-              </div>
+              <BindingView result={binding} enzyme={enzyme} />
             )}
             {viewMode === 'Sequences' && <SequenceView result={sequences} />}
             {viewMode === 'FluxCost' && (
