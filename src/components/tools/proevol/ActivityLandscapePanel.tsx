@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { Canvas } from '@react-three/fiber';
+import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import type { ProteinEvolutionCampaign, VariantCandidate } from '../../../services/ProEvolCampaignEngine';
 import { T } from '../../ide/tokens';
@@ -158,6 +159,19 @@ function DMSHeatmap({ cells, positions, metric, selectedVariantId, campaign, onS
     return { min: Math.min(...vals), max: Math.max(...vals) };
   }, [cells]);
 
+  // Build position index map for O(1) lookup
+  const posIndex = useMemo(() => {
+    const map = new Map<number, number>();
+    positions.forEach((p, i) => map.set(p, i));
+    return map;
+  }, [positions]);
+
+  const aaIndex = useMemo(() => {
+    const map = new Map<string, number>();
+    AMINO_ACIDS.forEach((aa, i) => map.set(aa, i));
+    return map;
+  }, []);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -184,9 +198,9 @@ function DMSHeatmap({ cells, positions, metric, selectedVariantId, campaign, onS
 
     // Draw cells
     for (const cell of cells) {
-      const xi = positions.indexOf(cell.position);
-      const yi = AMINO_ACIDS.indexOf(cell.aa);
-      if (xi < 0 || yi < 0) continue;
+      const xi = posIndex.get(cell.position);
+      const yi = aaIndex.get(cell.aa);
+      if (xi === undefined || yi === undefined) continue;
 
       const x = labelW + xi * cellW;
       const y = labelH + yi * cellH;
@@ -235,7 +249,7 @@ function DMSHeatmap({ cells, positions, metric, selectedVariantId, campaign, onS
     for (let i = 0; i < AMINO_ACIDS.length; i++) {
       ctx.fillText(AMINO_ACIDS[i], labelW - 5, labelH + i * cellH + cellH / 2 + 3);
     }
-  }, [cells, positions, fitnessRange]);
+  }, [cells, positions, fitnessRange, posIndex, aaIndex]);
 
   // Handle hover
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -294,6 +308,13 @@ function FitnessSurface({ cells, positions, metric }: {
 }) {
   const meshRef = useRef<THREE.Mesh>(null);
 
+  // Build lookup for O(1) access
+  const cellLookup = useMemo(() => {
+    const map = new Map<string, FitnessCell>();
+    for (const c of cells) map.set(`${c.position}-${c.aa}`, c);
+    return map;
+  }, [cells]);
+
   const { geometry, colors } = useMemo(() => {
     const nX = positions.length;
     const nY = AMINO_ACIDS.length;
@@ -313,27 +334,42 @@ function FitnessSurface({ cells, positions, metric }: {
     for (let yi = 0; yi < nY; yi++) {
       for (let xi = 0; xi < nX; xi++) {
         const idx = yi * nX + xi;
-        const cell = cells.find(c => c.position === positions[xi] && c.aa === AMINO_ACIDS[yi]);
-        const fitness = cell?.fitness ?? fitnessRange.min;
-        const t = (fitness - fitnessRange.min) / range;
-        const height = t * 0.5;
-        posAttr.setZ(idx, height);
-        const [r, g, b] = viridisColor(t);
-        colorArr[idx * 3] = r;
-        colorArr[idx * 3 + 1] = g;
-        colorArr[idx * 3 + 2] = b;
+        const cell = cellLookup.get(`${positions[xi]}-${AMINO_ACIDS[yi]}`);
+        const observed = cell && (cell.count > 0 || cell.isWildType);
+
+        if (observed) {
+          const t = (cell.fitness - fitnessRange.min) / range;
+          const height = t * 0.5;
+          posAttr.setZ(idx, height);
+          const [r, g, b] = viridisColor(t);
+          colorArr[idx * 3] = r;
+          colorArr[idx * 3 + 1] = g;
+          colorArr[idx * 3 + 2] = b;
+        } else {
+          // Unobserved — flat at baseline, dark gray
+          posAttr.setZ(idx, 0);
+          colorArr[idx * 3] = 0.18;
+          colorArr[idx * 3 + 1] = 0.17;
+          colorArr[idx * 3 + 2] = 0.16;
+        }
       }
     }
 
     geo.setAttribute('color', new THREE.BufferAttribute(colorArr, 3));
     geo.computeVertexNormals();
     return { geometry: geo, colors: colorArr };
-  }, [cells, positions]);
+  }, [cells, positions, cellLookup]);
 
   return (
-    <mesh ref={meshRef} geometry={geometry} rotation={[-0.4, 0.2, 0]}>
-      <meshBasicMaterial vertexColors side={THREE.DoubleSide} wireframe={false} />
-    </mesh>
+    <group rotation={[-0.5, 0.3, 0]}>
+      <mesh ref={meshRef} geometry={geometry}>
+        <meshLambertMaterial vertexColors side={THREE.DoubleSide} />
+      </mesh>
+      {/* Wireframe overlay for depth perception */}
+      <mesh geometry={geometry}>
+        <meshBasicMaterial color="rgba(255,255,255,0.06)" side={THREE.DoubleSide} wireframe transparent opacity={0.08} />
+      </mesh>
+    </group>
   );
 }
 
@@ -345,12 +381,21 @@ function FitnessSurfaceCanvas({ cells, positions, metric }: {
   return (
     <Canvas
       orthographic
-      camera={{ position: [0, 0, 2.5], zoom: 120 }}
+      camera={{ position: [2, 2, 2.5], zoom: 100 }}
       dpr={[1, 1.5]}
       gl={{ alpha: true, antialias: true }}
-      style={{ width: '100%', height: '280px', borderRadius: '8px' }}
+      style={{ width: '100%', height: '320px', borderRadius: '8px', cursor: 'grab' }}
     >
       <FitnessSurface cells={cells} positions={positions} metric={metric} />
+      <OrbitControls
+        enablePan={false}
+        enableZoom={true}
+        minZoom={50}
+        maxZoom={250}
+        rotateSpeed={0.5}
+      />
+      <ambientLight intensity={0.4} />
+      <directionalLight position={[3, 2, 4]} intensity={0.6} />
     </Canvas>
   );
 }
