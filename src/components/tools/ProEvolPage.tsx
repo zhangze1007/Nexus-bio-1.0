@@ -40,6 +40,7 @@ export default function ProEvolPage() {
   const [survivorCount, setSurvivorCount] = useState(5);
   const [selectionStringency, setSelectionStringency] = useState(0.65);
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
+  const [showParams, setShowParams] = useState(false);
 
   const campaignInput = useMemo(
     () => buildProEvolCampaignInput({
@@ -133,7 +134,7 @@ export default function ProEvolPage() {
     <div className="nb-tool-page" style={{ background: PANEL_BG, minHeight: '100%' }}>
       <div style={{ display: 'grid', gap: '10px', padding: '10px 12px 14px' }}>
 
-        {/* ═══════════════  TRUTH HEADER  ═══════════════ */}
+        {/* ═══ 1. TRUTH HEADER ═══ */}
         <TruthHeader
           campaignName={campaign.name}
           targetProduct={targetProduct}
@@ -141,9 +142,9 @@ export default function ProEvolPage() {
           actions={<ExportButton label="Artifact JSON" data={artifact} filename={`proevol-artifact${exportSuffix}`} format="json" />}
         />
 
-        {/* ═══════════════  TOP STATUS BAR — always visible  ═══════════════ */}
+        {/* ═══ 2. METRIC BAR — responsive auto-fit ═══ */}
         <div style={{
-          display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '6px',
+          display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '6px',
           padding: '10px 12px', borderRadius: '12px',
           border: `1px solid ${PROEVOL_THEME.borderStrong}`,
           background: PROEVOL_THEME.surface,
@@ -156,77 +157,7 @@ export default function ProEvolPage() {
           <CompactMetric label="Confidence" value={`${lead.confidence.toFixed(0)}%`} delta={`R${lead.round}`} accent={PROEVOL_THEME.lilac} />
         </div>
 
-        {/* ═══════════════  SCORE BREAKDOWN + CAMPAIGN INFO  ═══════════════ */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-          {/* Score breakdown */}
-          <div style={{
-            padding: '10px 12px', borderRadius: '12px',
-            border: `1px solid ${PROEVOL_THEME.border}`, background: PROEVOL_THEME.surface,
-          }}>
-            <div style={kicker}>Score breakdown</div>
-            <div style={{ marginTop: '8px', display: 'grid', gap: '4px' }}>
-              <BreakdownRow label="Activity" value={lead.score.activityTerm} max={30} color={PROEVOL_THEME.mint} />
-              <BreakdownRow label="Stability" value={lead.score.stabilityTerm} max={30} color={PROEVOL_THEME.sky} />
-              <BreakdownRow label="Expression" value={lead.score.expressionTerm} max={30} color={PROEVOL_THEME.apricot} />
-              <BreakdownRow label="Specificity" value={lead.score.specificityTerm} max={30} color={PROEVOL_THEME.lilac} />
-              <BreakdownRow label="Burden" value={-lead.score.burdenPenalty} max={30} color={PROEVOL_THEME.coral} isNegative />
-              <BreakdownRow label="Risk" value={-lead.score.riskPenalty} max={30} color={PROEVOL_THEME.coral} isNegative />
-              <div style={{ display: 'grid', gridTemplateColumns: '64px 1fr 40px', gap: '6px', alignItems: 'center', paddingTop: '6px', borderTop: `1px solid ${PROEVOL_THEME.border}`, marginTop: '2px' }}>
-                <span style={{ fontFamily: T.MONO, fontSize: '10px', color: PROEVOL_THEME.value, fontWeight: 600 }}>Total</span>
-                <div />
-                <span style={{ fontFamily: T.MONO, fontSize: '11px', color: PROEVOL_THEME.value, textAlign: 'right', fontWeight: 700, fontFeatureSettings: "'tnum' 1" }}>
-                  {lead.score.composite.toFixed(1)}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Campaign info — compact */}
-          <div style={{
-            padding: '10px 12px', borderRadius: '12px',
-            border: `1px solid ${PROEVOL_THEME.border}`, background: PROEVOL_THEME.surface,
-            display: 'grid', gap: '8px', alignContent: 'start',
-          }}>
-            <div style={kicker}>Campaign parameters</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '5px' }}>
-              <InfoField label="Target" value={campaign.targetProtein} />
-              <InfoField label="Wild type" value={campaign.wildTypeLabel} />
-              <InfoField label="Host" value={campaign.hostSystem} />
-              <InfoField label="Screening" value={campaign.screeningSystem} />
-              <InfoField label="Pressure" value={campaign.selectionPressure} />
-              <InfoField label="Rounds" value={`${campaign.currentRound}/${campaign.totalRounds}`} />
-            </div>
-            <div style={{
-              padding: '6px 8px', borderRadius: '8px',
-              border: `1px solid ${PROEVOL_THEME.border}`, background: PROEVOL_THEME.inset,
-              display: 'flex', flexWrap: 'wrap', gap: '5px', alignItems: 'center',
-            }}>
-              <StatusPill tone="cool">{campaign.convergenceSignal.state}</StatusPill>
-              <StatusPill tone={lead.riskFlags.length ? 'warm' : 'neutral'}>
-                burden {lead.mutationBurden}
-              </StatusPill>
-              <StatusPill tone={lead.predictedStability < 55 ? 'warm' : 'cool'}>
-                stability {lead.predictedStability.toFixed(0)}
-              </StatusPill>
-              <span style={{ fontFamily: T.MONO, fontSize: '10px', color: PROEVOL_THEME.muted, marginLeft: 'auto' }}>
-                dev {lead.developability.toFixed(0)} · {campaign.diversitySummary.classification}
-              </span>
-            </div>
-            <EvolutionCampaignContextCard
-              campaign={campaign}
-              totalRounds={totalRounds}
-              librarySize={librarySize}
-              survivorCount={survivorCount}
-              selectionStringency={selectionStringency}
-              onTotalRoundsChange={setTotalRounds}
-              onLibrarySizeChange={setLibrarySize}
-              onSurvivorCountChange={setSurvivorCount}
-              onSelectionStringencyChange={setSelectionStringency}
-            />
-          </div>
-        </div>
-
-        {/* ═══════════════  DECISION STRIP — always visible  ═══════════════ */}
+        {/* ═══ 3. DECISION — immediately visible ═══ */}
         <div style={{
           display: 'grid', gridTemplateColumns: 'auto 1fr auto', gap: '10px', alignItems: 'center',
           padding: '8px 12px', borderRadius: '10px',
@@ -246,7 +177,69 @@ export default function ProEvolPage() {
           </StatusPill>
         </div>
 
-        {/* ═══════════════  EVIDENCE: trajectory + stat rail  ═══════════════ */}
+        {/* ═══ 4. DECISION DETAIL — 2-col cards ═══ */}
+        <div style={{ display: 'grid', gap: '8px', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)' }}>
+          <NextRoundRecommendationCard campaign={campaign} />
+          <SelectionDecisionCard campaign={campaign} focusedVariant={focusedVariant} />
+        </div>
+
+        {/* ═══ 5. CAMPAIGN INFO + PARAMS (collapsible) ═══ */}
+        <div style={{
+          padding: '10px 12px', borderRadius: '12px',
+          border: `1px solid ${PROEVOL_THEME.border}`, background: PROEVOL_THEME.surface,
+          display: 'grid', gap: '8px', alignContent: 'start',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={kicker}>Campaign parameters</span>
+            <StatusPill tone="cool">{campaign.convergenceSignal.state}</StatusPill>
+            <StatusPill tone={lead.riskFlags.length ? 'warm' : 'neutral'}>
+              burden {lead.mutationBurden}
+            </StatusPill>
+            <StatusPill tone={lead.predictedStability < 55 ? 'warm' : 'cool'}>
+              stab {lead.predictedStability.toFixed(0)}
+            </StatusPill>
+            <span style={{ fontFamily: T.MONO, fontSize: '10px', color: PROEVOL_THEME.muted, marginLeft: 'auto' }}>
+              dev {lead.developability.toFixed(0)} · {campaign.diversitySummary.classification}
+            </span>
+            <button
+              type="button"
+              onClick={() => setShowParams(!showParams)}
+              style={{
+                minHeight: '22px', padding: '0 8px', borderRadius: '999px',
+                border: `1px solid ${PROEVOL_THEME.border}`,
+                background: showParams ? 'rgba(191,220,205,0.12)' : 'transparent',
+                color: showParams ? PROEVOL_THEME.value : PROEVOL_THEME.label,
+                fontFamily: T.MONO, fontSize: '8px', textTransform: 'uppercase',
+                letterSpacing: '0.06em', cursor: 'pointer',
+              }}
+            >
+              {showParams ? 'Hide' : 'Edit'}
+            </button>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '5px' }}>
+            <InfoField label="Target" value={campaign.targetProtein} />
+            <InfoField label="Wild type" value={campaign.wildTypeLabel} />
+            <InfoField label="Host" value={campaign.hostSystem} />
+            <InfoField label="Screening" value={campaign.screeningSystem} />
+            <InfoField label="Pressure" value={campaign.selectionPressure} />
+            <InfoField label="Rounds" value={`${campaign.currentRound}/${campaign.totalRounds}`} />
+          </div>
+          {showParams ? (
+            <EvolutionCampaignContextCard
+              campaign={campaign}
+              totalRounds={totalRounds}
+              librarySize={librarySize}
+              survivorCount={survivorCount}
+              selectionStringency={selectionStringency}
+              onTotalRoundsChange={setTotalRounds}
+              onLibrarySizeChange={setLibrarySize}
+              onSurvivorCountChange={setSurvivorCount}
+              onSelectionStringencyChange={setSelectionStringency}
+            />
+          ) : null}
+        </div>
+
+        {/* ═══ 6. EVIDENCE: trajectory + stat rail ═══ */}
         <SectionKicker index={1} label="Variant trajectories & statistical signal" />
         <div style={{ display: 'grid', gap: '8px', gridTemplateColumns: 'minmax(0, 2.4fr) minmax(200px, 0.8fr)' }}>
           <ChartShell title="Variant trajectory · top 6" footnote={`Frequencies use Laplace pseudocount (+1). Hover for ${bandSemantic === 'modeled' ? 'model spread' : '95% CI'} range.`}>
@@ -260,7 +253,7 @@ export default function ProEvolPage() {
           <EvidenceStatRail research={research} bandSemantic={bandSemantic} />
         </div>
 
-        {/* ═══════════════  EVIDENCE: Muller + Diversity  ═══════════════ */}
+        {/* ═══ 7. EVIDENCE: Muller + Diversity ═══ */}
         <div style={{ display: 'grid', gap: '8px', gridTemplateColumns: 'minmax(0, 1.1fr) minmax(0, 0.9fr)' }}>
           <ChartShell title="Family share · Muller stack" footnote="Normalized share per family across rounds.">
             <MullerPlot data={research.familyShares} />
@@ -270,12 +263,12 @@ export default function ProEvolPage() {
           </ChartShell>
         </div>
 
-        {/* ═══════════════  EVIDENCE: Enrichment scatter  ═══════════════ */}
+        {/* ═══ 8. EVIDENCE: Enrichment scatter ═══ */}
         <ChartShell title="Enrichment vs mutation burden" footnote="Above dashed line = enriched vs WT. Bubble area = final frequency.">
           <EnrichmentBurdenScatter entries={research.enrichment} highlightVariantId={selectedVariantId} onSelectVariant={setSelectedVariantId} />
         </ChartShell>
 
-        {/* ═══════════════  EVIDENCE TABLE  ═══════════════ */}
+        {/* ═══ 9. EVIDENCE TABLE ═══ */}
         <div style={{
           padding: '10px 12px', borderRadius: '12px',
           border: `1px solid ${PROEVOL_THEME.border}`, background: PROEVOL_THEME.surface,
@@ -286,7 +279,7 @@ export default function ProEvolPage() {
           </div>
         </div>
 
-        {/* ═══════════════  AUXILIARY: Lineage + Library Table + 3D  ═══════════════ */}
+        {/* ═══ 10. AUXILIARY: Lineage + Library + Landscape ═══ */}
         <SectionKicker index={2} label="Lineage trace, variant library & fitness landscape" />
         <div style={{ display: 'grid', gap: '8px', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)' }}>
           <LineageTracePanel campaign={campaign} selectedVariantId={focusedVariant?.id ?? null} onSelectVariant={setSelectedVariantId} />
@@ -295,14 +288,7 @@ export default function ProEvolPage() {
 
         <ActivityLandscapePanel campaign={campaign} selectedVariantId={selectedVariantId} onSelectVariant={setSelectedVariantId} />
 
-        {/* ═══════════════  DECISION DETAIL  ═══════════════ */}
-        <SectionKicker index={3} label="Decision detail & focused variant" />
-        <div style={{ display: 'grid', gap: '8px', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)' }}>
-          <NextRoundRecommendationCard campaign={campaign} />
-          <SelectionDecisionCard campaign={campaign} focusedVariant={focusedVariant} />
-        </div>
-
-        {/* ═══════════════  EXPORTS  ═══════════════ */}
+        {/* ═══ 11. EXPORTS ═══ */}
         <div style={{
           display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center',
           padding: '8px 12px', borderRadius: '10px',
@@ -341,29 +327,10 @@ function SectionKicker({ index, label }: { index: number; label: string }) {
 
 function CompactMetric({ label, value, delta, accent }: { label: string; value: string; delta: string; accent: string }) {
   return (
-    <div style={{ display: 'grid', gap: '3px', textAlign: 'center' }}>
-      <span style={{ fontFamily: T.MONO, fontSize: '8px', color: PROEVOL_THEME.label, letterSpacing: '0.08em', textTransform: 'uppercase' }}>{label}</span>
+    <div style={{ display: 'grid', gap: '3px', textAlign: 'center', minWidth: 0 }}>
+      <span style={{ fontFamily: T.MONO, fontSize: '8px', color: PROEVOL_THEME.label, letterSpacing: '0.08em', textTransform: 'uppercase', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</span>
       <span style={{ fontFamily: T.SANS, fontSize: '18px', fontWeight: 700, color: PROEVOL_THEME.value, letterSpacing: '-0.03em' }}>{value}</span>
       <span style={{ fontFamily: T.MONO, fontSize: '10px', color: accent, fontFeatureSettings: "'tnum' 1" }}>{delta}</span>
-    </div>
-  );
-}
-
-function BreakdownRow({ label, value, max, color, isNegative }: { label: string; value: number; max: number; color: string; isNegative?: boolean }) {
-  const absVal = Math.abs(value);
-  const pct = Math.min((absVal / max) * 100, 100);
-  return (
-    <div style={{ display: 'grid', gridTemplateColumns: '64px 1fr 40px', gap: '6px', alignItems: 'center' }}>
-      <span style={{ fontFamily: T.MONO, fontSize: '10px', color: PROEVOL_THEME.muted }}>{label}</span>
-      <div style={{ height: '5px', borderRadius: '3px', background: 'rgba(255,255,255,0.04)', overflow: 'hidden' }}>
-        <div style={{ width: `${pct}%`, height: '100%', borderRadius: '3px', background: color, opacity: isNegative ? 0.65 : 1 }} />
-      </div>
-      <span style={{
-        fontFamily: T.MONO, fontSize: '10px', textAlign: 'right', fontFeatureSettings: "'tnum' 1",
-        color: isNegative ? PROEVOL_THEME.coral : PROEVOL_THEME.value,
-      }}>
-        {isNegative ? '−' : ''}{absVal.toFixed(1)}
-      </span>
     </div>
   );
 }

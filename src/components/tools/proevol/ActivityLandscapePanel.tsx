@@ -103,6 +103,29 @@ function buildFitnessGrid(campaign: ProteinEvolutionCampaign, metric: FitnessMet
   return { cells, positions };
 }
 
+function mutationEffect(cell: FitnessCell, fitnessRange: { min: number; max: number }): 'wt' | 'tolerated' | 'deleterious' | 'gain-of-function' {
+  if (cell.isWildType) return 'wt';
+  if (cell.count === 0) return 'tolerated';
+  const wtFitness = 55; // baseline WT fitness
+  const threshold = (fitnessRange.max - fitnessRange.min) * 0.15;
+  if (cell.fitness > wtFitness + threshold) return 'gain-of-function';
+  if (cell.fitness < wtFitness - threshold) return 'deleterious';
+  return 'tolerated';
+}
+
+function effectLabel(effect: ReturnType<typeof mutationEffect>): string {
+  if (effect === 'wt') return 'WT';
+  if (effect === 'gain-of-function') return 'GoF';
+  if (effect === 'deleterious') return 'DEL';
+  return 'TOL';
+}
+
+function effectColor(effect: ReturnType<typeof mutationEffect>): string {
+  if (effect === 'gain-of-function') return PROEVOL_THEME.mint;
+  if (effect === 'deleterious') return PROEVOL_THEME.coral;
+  return PROEVOL_THEME.muted;
+}
+
 function viridisColor(t: number): [number, number, number] {
   const clamped = Math.max(0, Math.min(1, t));
   const idx = clamped * (VIRIDIS.length - 1);
@@ -174,8 +197,13 @@ function DMSHeatmap({ cells, positions, metric, selectedVariantId, campaign, onS
         ctx.fillStyle = `rgb(${Math.round(r * 255)},${Math.round(g * 255)},${Math.round(b * 255)})`;
         ctx.fillRect(x + 1, y + 1, cellW - 2, cellH - 2);
       } else {
-        ctx.fillStyle = 'rgba(255,255,255,0.02)';
+        // Unobserved — distinct gray, not lowest viridis
+        ctx.fillStyle = 'rgba(50,48,44,0.6)';
         ctx.fillRect(x + 1, y + 1, cellW - 2, cellH - 2);
+        ctx.fillStyle = 'rgba(255,255,255,0.06)';
+        ctx.font = '7px "IBM Plex Mono", monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('—', x + cellW / 2, y + cellH / 2 + 2);
       }
 
       // WT marker
@@ -248,8 +276,8 @@ function DMSHeatmap({ cells, positions, metric, selectedVariantId, campaign, onS
           display: 'grid', gap: '2px',
         }}>
           <span>{hovered.wtResidue}{hovered.position}{hovered.aa === hovered.wtResidue ? '(WT)' : hovered.aa}</span>
-          <span style={{ color: PROEVOL_THEME.muted }}>
-            {metric}: {hovered.count > 0 ? hovered.fitness.toFixed(1) : '—'} · n={hovered.count}
+          <span style={{ color: effectColor(mutationEffect(hovered, fitnessRange)) }}>
+            {effectLabel(mutationEffect(hovered, fitnessRange))} · predicted {metric}: {hovered.count > 0 ? hovered.fitness.toFixed(1) : '—'} · n={hovered.count}
           </span>
         </div>
       )}
@@ -482,9 +510,19 @@ export default function ActivityLandscapePanel({
         marginTop: '6px', padding: '6px 8px', borderRadius: '8px',
         background: 'rgba(255,255,255,0.02)', border: `1px solid ${PROEVOL_THEME.border}`,
         fontFamily: T.SANS, fontSize: '10px', color: PROEVOL_THEME.muted, lineHeight: 1.5,
+        display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center',
       }}>
-        Position × amino acid substitution fitness map. White outline = wild-type residue. Number in cell = variant count.
-        {positions.length > 0 ? ` ${positions.length} positions × ${AMINO_ACIDS.length} substitutions = ${positions.length * AMINO_ACIDS.length} cells.` : ''}
+        <span>Predicted fitness landscape. White outline = WT. Gray = unobserved. Hover for effect class.</span>
+        <span style={{ display: 'inline-flex', gap: '6px', alignItems: 'center' }}>
+          <span style={{ color: PROEVOL_THEME.mint, fontFamily: T.MONO, fontSize: '9px' }}>GoF</span>
+          <span style={{ color: PROEVOL_THEME.muted, fontFamily: T.MONO, fontSize: '9px' }}>TOL</span>
+          <span style={{ color: PROEVOL_THEME.coral, fontFamily: T.MONO, fontSize: '9px' }}>DEL</span>
+        </span>
+        {positions.length > 0 ? (
+          <span style={{ marginLeft: 'auto', fontFamily: T.MONO, fontSize: '9px' }}>
+            {positions.length} pos × {AMINO_ACIDS.length} AA = {positions.length * AMINO_ACIDS.length} cells
+          </span>
+        ) : null}
       </div>
     </div>
   );

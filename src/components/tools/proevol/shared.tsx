@@ -7,9 +7,9 @@ import { T } from '../../ide/tokens';
 export const PROEVOL_THEME = {
   border: 'rgba(255, 235, 210, 0.10)',
   borderStrong: 'rgba(255, 235, 210, 0.18)',
-  label: 'rgba(225, 215, 200, 0.60)',
+  label: 'rgba(225, 215, 200, 0.75)',
   value: 'rgba(255, 248, 240, 0.96)',
-  muted: 'rgba(225, 215, 200, 0.55)',
+  muted: 'rgba(225, 215, 200, 0.68)',
   surface: 'rgba(28, 24, 20, 0.92)',
   inset: 'rgba(34, 28, 22, 0.94)',
   glass: 'rgba(30, 26, 22, 0.88)',
