@@ -32,7 +32,7 @@ export default function SelectionDecisionCard({
       eyebrow="Selection Decision"
       title="Campaign decision support"
     >
-      <div style={{ display: 'grid', gap: '10px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
         <MetricBadge
           label="Lead variant score"
           value={campaign.leadVariant.score.composite.toFixed(1)}
@@ -93,8 +93,8 @@ export default function SelectionDecisionCard({
         style={{
           display: 'grid',
           gap: '8px',
-          padding: '12px',
-          borderRadius: '14px',
+          padding: '8px 10px',
+          borderRadius: '10px',
           border: `1px solid ${PROEVOL_THEME.border}`,
           background: 'linear-gradient(135deg, rgba(232,163,161,0.10) 0%, rgba(191,220,205,0.08) 100%)',
         }}
@@ -117,8 +117,8 @@ export default function SelectionDecisionCard({
         style={{
           display: 'grid',
           gap: '8px',
-          padding: '12px',
-          borderRadius: '14px',
+          padding: '8px 10px',
+          borderRadius: '10px',
           border: `1px solid ${PROEVOL_THEME.border}`,
           background: 'rgba(255,255,255,0.03)',
         }}
@@ -146,15 +146,12 @@ export default function SelectionDecisionCard({
         <div style={{ fontFamily: T.MONO, fontSize: '11px', color: PROEVOL_THEME.value, lineHeight: 1.5 }}>
           {focusedVariant.mutationString}
         </div>
-        <div style={{ display: 'grid', gap: '4px', fontFamily: T.SANS, fontSize: '11px', color: PROEVOL_THEME.muted, lineHeight: 1.55 }}>
-          <div>Parent: {focusedVariant.parentId ?? 'WT'}</div>
-          <div>
-            Metrics: score {focusedVariant.score.composite.toFixed(1)} · activity {focusedVariant.predictedActivity.toFixed(1)} · stability {focusedVariant.predictedStability.toFixed(1)} · expression {focusedVariant.predictedExpression.toFixed(1)} · specificity {focusedVariant.predictedSpecificity.toFixed(1)} · confidence {focusedVariant.confidence.toFixed(1)}%
+        <div style={{ display: 'grid', gap: '3px', fontFamily: T.SANS, fontSize: '10px', color: PROEVOL_THEME.muted, lineHeight: 1.5 }}>
+          <div>Parent: {focusedVariant.parentId ?? 'WT'} · {focusedVariant.status === 'selected' ? focusedVariant.selectionReason : focusedVariant.rejectionReason}</div>
+          <div style={{ fontFamily: T.MONO, fontSize: '9px' }}>
+            score {focusedVariant.score.composite.toFixed(1)} · act {focusedVariant.predictedActivity.toFixed(1)} · stab {focusedVariant.predictedStability.toFixed(1)} · expr {focusedVariant.predictedExpression.toFixed(1)} · spec {focusedVariant.predictedSpecificity.toFixed(1)} · conf {focusedVariant.confidence.toFixed(0)}%
           </div>
-          <div>
-            Selection reason: {focusedVariant.status === 'selected' ? focusedVariant.selectionReason : focusedVariant.rejectionReason}
-          </div>
-          <div>Rationale: {focusedVariant.rationale}</div>
+          <div style={{ fontSize: '10px', color: PROEVOL_THEME.muted }}>{focusedVariant.rationale}</div>
         </div>
       </div>
     </ProEvolCard>

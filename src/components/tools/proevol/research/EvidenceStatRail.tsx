@@ -43,10 +43,10 @@ export default function EvidenceStatRail({ research, bandSemantic }: EvidenceSta
         display: 'grid',
         gap: '10px',
         gridAutoRows: 'min-content',
-        padding: '14px 14px 12px',
-        borderRadius: '14px',
+        padding: '10px 12px',
+        borderRadius: '12px',
         border: `1px solid ${PROEVOL_THEME.border}`,
-        background: 'rgba(255,255,255,0.02)',
+        background: PROEVOL_THEME.surface,
         minWidth: 0,
         alignSelf: 'stretch',
       }}
@@ -123,8 +123,8 @@ function Row({
     <div
       style={{
         display: 'grid',
-        gap: '3px',
-        padding: '8px 0 10px',
+        gap: '2px',
+        padding: '5px 0 7px',
         borderTop: `1px solid ${PROEVOL_THEME.border}`,
       }}
     >
@@ -152,7 +152,7 @@ function Row({
       <div
         style={{
           fontFamily: T.SANS,
-          fontSize: '15px',
+          fontSize: '14px',
           fontWeight: 700,
           color: PROEVOL_THEME.value,
           letterSpacing: '-0.02em',
@@ -163,9 +163,9 @@ function Row({
       <div
         style={{
           fontFamily: T.SANS,
-          fontSize: '10.5px',
+          fontSize: '10px',
           color: PROEVOL_THEME.muted,
-          lineHeight: 1.5,
+          lineHeight: 1.4,
         }}
       >
         {detail}

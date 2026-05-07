@@ -120,8 +120,7 @@ export default function VariantEvidenceTable({
           lineHeight: 1.55,
         }}
       >
-        Top 12 variants by log₂ enrichment vs wild type. Frequency CIs computed from per-replicate variance (two-sided 95%).
-        Selection coefficient s̄ is the mean across consecutive rounds of ln(f<sub>t</sub> / f<sub>t-1</sub>).
+        Top 12 by log₂ enrichment vs WT. Frequency CIs from per-replicate variance (95%). Selection s̄ = mean ln(ft / ft-1) across rounds.
       </div>
     </div>
   );

@@ -34,12 +34,11 @@ export default function TruthHeader({
       style={{
         display: 'grid',
         gap: '10px',
-        padding: '14px 18px',
-        borderRadius: '18px',
+        padding: '10px 12px',
+        borderRadius: '14px',
         border: `1px solid ${accent}33`,
-        background:
-          'linear-gradient(180deg, rgba(12,15,20,0.92) 0%, rgba(8,11,15,0.92) 100%)',
-        boxShadow: '0 18px 36px rgba(0,0,0,0.28)',
+        background: PROEVOL_THEME.surface,
+        boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
       }}
     >
       <div
@@ -117,10 +116,10 @@ export default function TruthHeader({
         <div
           style={{
             display: 'flex',
-            gap: '8px',
-            alignItems: 'flex-start',
-            padding: '8px 12px',
-            borderRadius: '10px',
+            gap: '6px',
+            alignItems: 'center',
+            padding: '5px 8px',
+            borderRadius: '8px',
             border: `1px solid ${accent}33`,
             background: `${accent}10`,
           }}
@@ -128,12 +127,11 @@ export default function TruthHeader({
           <span
             style={{
               fontFamily: T.MONO,
-              fontSize: '9px',
+              fontSize: '8px',
               fontWeight: 700,
-              letterSpacing: '0.12em',
+              letterSpacing: '0.1em',
               color: accent,
               flexShrink: 0,
-              paddingTop: '1px',
             }}
           >
             MODELED
@@ -141,16 +139,12 @@ export default function TruthHeader({
           <span
             style={{
               fontFamily: T.SANS,
-              fontSize: '11px',
-              color: PROEVOL_THEME.value,
-              lineHeight: 1.55,
+              fontSize: '10px',
+              color: PROEVOL_THEME.muted,
+              lineHeight: 1.4,
             }}
           >
-            Read counts on this artifact are deterministic model draws synthesized from
-            engine composite scores. Bands around frequency, Shannon, and top-share lines
-            represent <strong style={{ color: accent }}>spread across model draws</strong>,
-            not biological-replicate confidence intervals. Treat all charts and the
-            decision strip as decision-support, not measurement.
+            Deterministic model draws — bands show model spread, not biological CIs.
           </span>
         </div>
       ) : null}
