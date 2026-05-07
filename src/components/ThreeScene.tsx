@@ -121,9 +121,11 @@ function getOpticalTargetOffset(args: {
   const desiredNdcX = (safeCenterX - width / 2) / (width / 2);
   const desiredNdcY = (height / 2 - safeCenterY) / (height / 2);
 
+  // Dampen offset (0.4x) so pathway stays closer to viewport center
+  // rather than being pushed to the exact safe-frame center
   return new THREE.Vector3(
-    -desiredNdcX * frustumHalfWidth,
-    -desiredNdcY * frustumHalfHeight,
+    -desiredNdcX * frustumHalfWidth * 0.4,
+    -desiredNdcY * frustumHalfHeight * 0.4,
     0,
   );
 }
@@ -453,7 +455,7 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov
 }) {
   const _flowSpeed = flowSpeed ?? 1;
   const nodeRadius = 0.32 + cc * 0.05;
-  const labelOffsetY = nodeRadius * 1.25 + 0.12;
+  const labelOffsetY = nodeRadius + 0.06;
   // Shrink nodes when pH/temperature deviate from optimal (encoded in glowMultiplier)
   const activityScale = 0.7 + 0.3 * Math.min(1, glowMultiplier / 2.0);
   const grp     = useRef<THREE.Group>(null);
