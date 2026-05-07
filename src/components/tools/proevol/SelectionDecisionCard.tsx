@@ -29,9 +29,8 @@ export default function SelectionDecisionCard({
 
   return (
     <ProEvolCard
-      eyebrow="Selection Decision Layer"
+      eyebrow="Selection Decision"
       title="Campaign decision support"
-      subtitle="The right rail should help the scientist decide what to do next: continue, narrow, broaden, rescue stability, transfer the lead, or stop the campaign."
     >
       <div style={{ display: 'grid', gap: '10px' }}>
         <MetricBadge

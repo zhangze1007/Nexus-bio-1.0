@@ -57,7 +57,6 @@ export default function LineageTracePanel({
     <ProEvolCard
       eyebrow="Lineage / Evolution Trace"
       title="Survivor families across selection rounds"
-      subtitle="The lineage trace follows parent-child families, shows where branches persisted or died out, and keeps mutation accumulation visible as a campaign history rather than a generic trajectory."
     >
       <div style={{ display: 'grid', gap: '12px' }}>
         <svg role="img" aria-label="PROEVOL lineage trace" viewBox={`0 0 ${width} ${height}`} style={{ width: '100%', height: '100%' }}>

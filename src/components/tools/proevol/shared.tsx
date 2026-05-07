@@ -206,46 +206,17 @@ export function ProEvolCard({
 }) {
   return (
     <section style={surfaceCardStyle({ minHeight, inset })}>
-      {(eyebrow || title || subtitle || actions) ? (
-        <div
-          style={{
-            display: 'grid',
-            gap: '6px',
-            paddingBottom: '10px',
-            borderBottom: `1px solid ${PROEVOL_THEME.border}`,
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'start', justifyContent: 'space-between', gap: '12px' }}>
-            <div style={{ display: 'grid', gap: '6px', minWidth: 0 }}>
-              {eyebrow ? <div style={sectionKickerStyle()}>{eyebrow}</div> : null}
-              {title ? (
-                <div
-                  style={{
-                    fontFamily: T.SANS,
-                    fontSize: '16px',
-                    fontWeight: 700,
-                    color: PROEVOL_THEME.value,
-                    letterSpacing: '-0.03em',
-                  }}
-                >
-                  {title}
-                </div>
-              ) : null}
-              {subtitle ? (
-                <div
-                  style={{
-                    fontFamily: T.SANS,
-                    fontSize: '11px',
-                    color: PROEVOL_THEME.muted,
-                    lineHeight: 1.6,
-                  }}
-                >
-                  {subtitle}
-                </div>
-              ) : null}
-            </div>
-            {actions ? <div style={{ flexShrink: 0 }}>{actions}</div> : null}
+      {(eyebrow || title || actions) ? (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', paddingBottom: '6px', borderBottom: `1px solid ${PROEVOL_THEME.border}` }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', minWidth: 0 }}>
+            {eyebrow ? <div style={sectionKickerStyle()}>{eyebrow}</div> : null}
+            {title ? (
+              <div style={{ fontFamily: T.SANS, fontSize: '13px', fontWeight: 600, color: PROEVOL_THEME.value, letterSpacing: '-0.02em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {title}
+              </div>
+            ) : null}
           </div>
+          {actions ? <div style={{ flexShrink: 0 }}>{actions}</div> : null}
         </div>
       ) : null}
       <div style={{ minHeight: 0 }}>{children}</div>

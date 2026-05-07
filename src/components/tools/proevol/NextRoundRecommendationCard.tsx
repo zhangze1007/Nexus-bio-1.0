@@ -10,8 +10,7 @@ export default function NextRoundRecommendationCard({ campaign }: { campaign: Pr
   return (
     <ProEvolCard
       eyebrow="Next-Round Recommendation"
-      title={recommendation.title}
-      subtitle="PROEVOL ends by turning round evidence into the next campaign action, so the page behaves like an evolution advisor rather than a static history report."
+      title="Next round action"
     >
       <div style={{ display: 'grid', gap: '12px' }}>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
