@@ -453,7 +453,7 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov
 }) {
   const _flowSpeed = flowSpeed ?? 1;
   const nodeRadius = 0.32 + cc * 0.05;
-  const labelOffsetY = -(nodeRadius * 1.25 + 0.18);
+  const labelOffsetY = nodeRadius * 1.25 + 0.12;
   // Shrink nodes when pH/temperature deviate from optimal (encoded in glowMultiplier)
   const activityScale = 0.7 + 0.3 * Math.min(1, glowMultiplier / 2.0);
   const grp     = useRef<THREE.Group>(null);
@@ -1016,12 +1016,12 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, 
                     ['--nb-control-bg' as const]: viewMode === mode.key ? mode.active : 'transparent',
                     ['--nb-control-border' as const]: viewMode === mode.key ? mode.active : 'transparent',
                     ['--nb-control-color' as const]: viewMode === mode.key ? '#000000' : 'rgba(255,255,255,0.45)',
-                    ['--nb-control-hover-bg' as const]: '#ffffff',
-                    ['--nb-control-hover-border' as const]: '#ffffff',
-                    ['--nb-control-hover-color' as const]: '#111318',
-                    ['--nb-control-active-bg' as const]: '#ffffff',
-                    ['--nb-control-active-border' as const]: '#ffffff',
-                    ['--nb-control-active-color' as const]: '#111318',
+                    ['--nb-control-hover-bg' as const]: 'rgba(255,255,255,0.10)',
+                    ['--nb-control-hover-border' as const]: 'rgba(255,255,255,0.18)',
+                    ['--nb-control-hover-color' as const]: '#e2e8f0',
+                    ['--nb-control-active-bg' as const]: 'rgba(255,255,255,0.14)',
+                    ['--nb-control-active-border' as const]: 'rgba(255,255,255,0.22)',
+                    ['--nb-control-active-color' as const]: '#e2e8f0',
                   } as ControlVarsStyle}
                 >
                   {mode.label}
@@ -1050,12 +1050,12 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, 
               ['--nb-control-bg' as const]: 'rgba(255,255,255,0.04)',
               ['--nb-control-border' as const]: 'rgba(255,255,255,0.10)',
               ['--nb-control-color' as const]: 'rgba(255,255,255,0.45)',
-              ['--nb-control-hover-bg' as const]: '#ffffff',
-              ['--nb-control-hover-border' as const]: '#ffffff',
-              ['--nb-control-hover-color' as const]: '#111318',
-              ['--nb-control-active-bg' as const]: '#ffffff',
-              ['--nb-control-active-border' as const]: '#ffffff',
-              ['--nb-control-active-color' as const]: '#111318',
+              ['--nb-control-hover-bg' as const]: 'rgba(255,255,255,0.10)',
+              ['--nb-control-hover-border' as const]: 'rgba(255,255,255,0.18)',
+              ['--nb-control-hover-color' as const]: '#e2e8f0',
+              ['--nb-control-active-bg' as const]: 'rgba(255,255,255,0.14)',
+              ['--nb-control-active-border' as const]: 'rgba(255,255,255,0.22)',
+              ['--nb-control-active-color' as const]: '#e2e8f0',
             } as ControlVarsStyle}
           >
             ↺ Reset
