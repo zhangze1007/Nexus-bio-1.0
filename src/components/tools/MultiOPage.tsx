@@ -778,7 +778,6 @@ export default function MultiOPage() {
       tabs={MULTIO_TABS}
       activeTab={activeTab}
       onTabChange={setActiveTab}
-      workbenchSummary="Deterministically combine transcript, protein, and metabolite layers against the active pathway object so Stage 4 evidence can provide exploratory bottleneck context."
       hero={
         <ScientificHero
             eyebrow="Stage 4 · Deterministic Multi-Omics Demo"

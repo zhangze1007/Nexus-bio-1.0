@@ -1,0 +1,110 @@
+<h2>Workbench Layout: Current vs Proposed</h2>
+<p class="subtitle">Click on the layout you prefer. The proposed design reduces cognitive load by consolidating redundant sections.</p>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">Current Layout (What You See Now)</div>
+    <div class="mockup-body">
+      <div style="font-size:11px;color:#999;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.1em">Header Area (Always Visible)</div>
+      <div class="mock-nav" style="font-size:10px;padding:4px 8px">[Stage1] [Stage2] [Stage3] [Stage4] &nbsp;&nbsp;&nbsp; [Research] [Analyze] [Axon] [Evidence & Next Steps]</div>
+      <div style="height:8px"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px">
+        <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:6px;padding:6px 8px">
+          <div style="font-size:8px;color:#666;text-transform:uppercase">Current Object</div>
+          <div style="font-size:10px;color:#ccc;font-weight:600">Artemisinin Pathway</div>
+          <div style="font-size:8px;color:#777">7 nodes · 6 edges</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:6px;padding:6px 8px">
+          <div style="font-size:8px;color:#666;text-transform:uppercase">Evidence</div>
+          <div style="font-size:10px;color:#ccc;font-weight:600">3 selected</div>
+          <div style="font-size:8px;color:#777">Ro et al. 2006...</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:6px;padding:6px 8px">
+          <div style="font-size:8px;color:#666;text-transform:uppercase">Stage Focus</div>
+          <div style="font-size:10px;color:#ccc;font-weight:600">Design & Discovery</div>
+          <div style="font-size:8px;color:#777">1 analyzed route ready</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:6px;padding:6px 8px">
+          <div style="font-size:8px;color:#666;text-transform:uppercase">Integrity</div>
+          <div style="font-size:10px;color:#ccc;font-weight:600">Fresh</div>
+          <div style="font-size:8px;color:#777">DB synced · 5 runs</div>
+        </div>
+      </div>
+      <div style="height:8px"></div>
+      <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:6px;padding:6px 8px">
+        <div style="font-size:8px;color:#666;text-transform:uppercase">Golden Path Dashboard</div>
+        <div style="display:flex;gap:3px;margin:4px 0;flex-wrap:wrap">
+          <span style="font-size:7px;background:rgba(191,220,205,0.2);padding:2px 5px;border-radius:99px;border:1px solid rgba(191,220,205,0.3)">target ✓</span>
+          <span style="font-size:7px;background:rgba(175,195,214,0.2);padding:2px 5px;border-radius:99px;border:1px solid rgba(175,195,214,0.3)">pathd →</span>
+          <span style="font-size:7px;background:rgba(255,255,255,0.05);padding:2px 5px;border-radius:99px;border:1px solid rgba(255,255,255,0.08)">fbasim</span>
+          <span style="font-size:7px;background:rgba(255,255,255,0.05);padding:2px 5px;border-radius:99px;border:1px solid rgba(255,255,255,0.08)">catdes</span>
+          <span style="font-size:7px;background:rgba(255,255,255,0.05);padding:2px 5px;border-radius:99px;border:1px solid rgba(255,255,255,0.08)">dyncon</span>
+          <span style="font-size:7px;background:rgba(255,255,255,0.05);padding:2px 5px;border-radius:99px;border:1px solid rgba(255,255,255,0.08)">dbtl</span>
+        </div>
+        <div style="font-size:7px;color:#555">progress 1/6 · next PATHD · conf 0.85 · unc 0.12</div>
+      </div>
+      <div style="height:8px"></div>
+      <div style="font-size:9px;color:#AFC3D6">Next Step → PATHD</div>
+      <div style="height:12px"></div>
+      <div style="font-size:11px;color:#E8A3A1;font-weight:600">Problems:</div>
+      <div style="font-size:9px;color:#999;line-height:1.6">
+        • 4 rows, no visual focus<br>
+        • Stage Rail + Dashboard = redundant<br>
+        • 4 tiny cards with low info density<br>
+        • Next Step duplicated in header + drawer
+      </div>
+    </div>
+  </div>
+
+  <div class="mockup">
+    <div class="mockup-header">Proposed Layout (Apple-Inspired)</div>
+    <div class="mockup-body">
+      <div style="font-size:11px;color:#999;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.1em">Header (Always Visible)</div>
+      <div class="mock-nav" style="font-size:10px;padding:4px 8px;display:flex;justify-content:space-between;align-items:center">
+        <span>[S1] [S2] [S3] [S4]</span>
+        <span style="font-size:9px;color:#AFC3D6">Artemisinin · 7 nodes · stage 1</span>
+        <span>[Research] [Analyze] [Axon] [⋯]</span>
+      </div>
+      <div style="height:8px"></div>
+      <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:6px;padding:8px 10px">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px">
+          <div>
+            <div style="font-size:11px;color:#ccc;font-weight:700">Artemisinin Pathway</div>
+            <div style="font-size:8px;color:#777">Ro et al. 2006 · 3 evidence · stage Design & Discovery</div>
+          </div>
+          <div style="display:flex;gap:4px;align-items:center">
+            <span style="font-size:7px;background:rgba(191,220,205,0.2);padding:2px 6px;border-radius:99px;border:1px solid rgba(191,220,205,0.3)">✓ fresh</span>
+            <span style="font-size:7px;background:rgba(175,195,214,0.2);padding:2px 6px;border-radius:99px;border:1px solid rgba(175,195,214,0.3)">next: PATHD</span>
+            <span style="font-size:7px;color:#555">1/6</span>
+          </div>
+        </div>
+      </div>
+      <div style="height:12px"></div>
+      <div style="font-size:11px;color:#BFDCCD;font-weight:600">Drawer: Tabbed (3 tabs)</div>
+      <div style="height:4px"></div>
+      <div style="display:flex;gap:2px;margin-bottom:6px">
+        <span style="font-size:8px;background:rgba(175,195,214,0.2);padding:3px 8px;border-radius:4px 4px 0 0;border:1px solid rgba(175,195,214,0.3);border-bottom:none">Status</span>
+        <span style="font-size:8px;background:rgba(255,255,255,0.03);padding:3px 8px;border-radius:4px 4px 0 0;border:1px solid rgba(255,255,255,0.06);border-bottom:none">Evidence</span>
+        <span style="font-size:8px;background:rgba(255,255,255,0.03);padding:3px 8px;border-radius:4px 4px 0 0;border:1px solid rgba(255,255,255,0.06);border-bottom:none">History</span>
+      </div>
+      <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:0 6px 6px 6px;padding:8px 10px">
+        <div style="font-size:8px;color:#666;text-transform:uppercase;margin-bottom:6px">Tab: Status</div>
+        <div style="display:grid;gap:4px">
+          <div style="font-size:9px;color:#aaa;border-left:2px solid rgba(191,220,205,0.4);padding-left:6px">Feedback: DBTL committed · pass 85%</div>
+          <div style="font-size:9px;color:#aaa;border-left:2px solid rgba(175,195,214,0.4);padding-left:6px">Integrity: Fresh · DB synced</div>
+          <div style="font-size:9px;color:#aaa;border-left:2px solid rgba(207,196,227,0.4);padding-left:6px">Canonical: 5 runs · rev 12</div>
+          <div style="font-size:9px;color:#aaa;border-left:2px solid rgba(232,163,161,0.4);padding-left:6px">Gate: PATHD output needed</div>
+        </div>
+      </div>
+      <div style="height:12px"></div>
+      <div style="font-size:11px;color:#BFDCCD;font-weight:600">Benefits:</div>
+      <div style="font-size:9px;color:#999;line-height:1.6">
+        • 1 focused summary row (not 4)<br>
+        • No redundant info<br>
+        • Drawer grouped into 3 tabs<br>
+        • Golden Path folded into summary<br>
+        • Clear visual hierarchy
+      </div>
+    </div>
+  </div>
+</div>

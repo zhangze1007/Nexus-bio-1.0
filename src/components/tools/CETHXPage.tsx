@@ -380,8 +380,6 @@ export default function CETHXPage() {
       tabs={CETHX_TABS}
       activeTab={activeTab}
       onTabChange={setActiveTab}
-      workbenchSummary="Demo thermodynamics explainer that keeps reference Delta-G, ATP/NADH yield, and limiting-step context visible without making condition-aware feasibility claims."
-      workbenchSimulated={!analyzeArtifact}
       hero={
         <ScientificHero
           eyebrow="Stage 2 · Demo Thermodynamics"

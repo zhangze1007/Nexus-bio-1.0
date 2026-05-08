@@ -215,7 +215,6 @@ export default function ScSpatialPage() {
       tabs={SCSPATIAL_TABS}
       activeTab={activeTab}
       onTabChange={setActiveTab}
-      workbenchSummary="Spatial transcriptomics analysis with hex-grid visualization, cluster annotations, and gene expression hotspots."
       footer={
         <>
           <ExportButton

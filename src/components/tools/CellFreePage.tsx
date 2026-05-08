@@ -845,8 +845,6 @@ export default function CellFreePage() {
       tabs={CELLFREE_TABS}
       activeTab={activeTab}
       onTabChange={setActiveTab}
-      workbenchSummary="Cell-free prototyping provides an exploratory pre-build signal, keeping construct count, resource limits, and heuristic translation confidence attached to the same project lineage before DBTL review."
-      workbenchSimulated={!analyzeArtifact}
       footer={
         <>
           <ExportButton label="Export Simulation JSON" data={result} filename="cellfree-simulation" format="json" />

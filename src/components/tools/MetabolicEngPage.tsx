@@ -24,7 +24,6 @@ import ToolOverlay from './ToolOverlay';
 import StatusOverlay from './StatusOverlay';
 import ThreeScene from '../ThreeScene';
 import NodePanel from '../NodePanel';
-import WorkbenchInlineContext from '../workbench/WorkbenchInlineContext';
 import ScientificHero from './shared/ScientificHero';
 import ScientificMethodStrip from './shared/ScientificMethodStrip';
 import { PATHD_THEME } from '../workbench/workbenchTheme';
@@ -826,15 +825,6 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
             paddingRight: '2px',
           }}
         >
-          <div style={{ pointerEvents: 'auto' }}>
-            <WorkbenchInlineContext
-              toolId="pathd"
-              title="Pathway & Enzyme Design"
-              summary="PATHD keeps the active route, evidence state, and bottleneck focus visible while the pathway itself remains the main scientific figure."
-              compact
-              isSimulated={graphSource === 'demo'}
-            />
-          </div>
           {!heroDismissed && <div style={{ pointerEvents: 'auto' }}>
             <ScientificHero
               eyebrow="Stage 1 · Pathway & Enzyme Design"

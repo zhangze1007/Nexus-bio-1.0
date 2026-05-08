@@ -1,0 +1,7 @@
+- generic [ref=e3]:
+  - heading "Access Denied" [level=1] [ref=e4]
+  - paragraph [ref=e5]: Automated access to this service is restricted.
+  - paragraph [ref=e6]:
+    - text: If you believe this is an error, please contact support at
+    - link "alphafolddb@ebi.ac.uk" [ref=e7] [cursor=pointer]:
+      - /url: mailto:afdbhelp@ebi.ac.uk

@@ -22,7 +22,6 @@ import ExportButton from '../ide/shared/ExportButton';
 import type { NEXAIResult, CitationNode, GeneratedPathway } from '../../types';
 import { useUIStore } from '../../store/uiStore';
 import { useWorkbenchStore } from '../../store/workbenchStore';
-import WorkbenchInlineContext from '../workbench/WorkbenchInlineContext';
 import { workflowStatusLabel } from '../workbench/workflowExperience';
 import ScientificHero from './shared/ScientificHero';
 import { PATHD_THEME } from '../workbench/workbenchTheme';
@@ -464,14 +463,6 @@ export default function NEXAIPage() {
       {/* ── Left rail: quick queries + citation index ──────── */}
       <ModuleCard area="presets" title="Quick Queries">
         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, overflowY: 'auto' }}>
-          <WorkbenchInlineContext
-            toolId="nexai"
-            title="Axon"
-            summary="Cross-stage copilot for literature synthesis, bottleneck interpretation, and tool routing across the active Nexus-Bio project."
-            compact
-            isSimulated={!analyzeArtifact}
-          />
-
           {contextPrompt && (
             <button
               onClick={() => setQuery(contextPrompt)}

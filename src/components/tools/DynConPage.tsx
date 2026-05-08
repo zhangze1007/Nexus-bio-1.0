@@ -429,8 +429,6 @@ export default function DynConPage() {
       title="Dynamic Control Simulator"
       description="Fed-batch bioreactor with PID-controlled DO₂ and Hill-function negative feedback"
       formula="f(FPP) = Vmax·Kd^n / (Kd^n + FPP^n)"
-      workbenchSummary="Dynamic control inherits bottlenecks, thermodynamic stress, catalyst burden, and DBTL feedback."
-      workbenchSimulated={!analyzeArtifact}
       tabs={DYNCON_TABS}
       activeTab={activeTab}
       onTabChange={setActiveTab}

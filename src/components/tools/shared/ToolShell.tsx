@@ -33,7 +33,6 @@ import { getToolDefinition } from './toolRegistry';
 import { getToolValidity, type ValidityLevel } from './toolValidity';
 import { useNavigation } from '../../../contexts/NavigationContext';
 import { T } from '../../ide/tokens';
-import WorkbenchInlineContext from '../../workbench/WorkbenchInlineContext';
 import { PATHD_THEME } from '../../workbench/workbenchTheme';
 import ToolTabBar, { type ToolTab } from './ToolTabBar';
 type ControlVarsStyle = CSSProperties & Record<`--${string}`, string>;
@@ -54,9 +53,6 @@ export interface ToolShellProps {
   children: ReactNode;
   /** Extra footer content (export buttons) */
   footer?: ReactNode;
-  workbenchSummary?: string;
-  workbenchCompact?: boolean;
-  workbenchSimulated?: boolean;
   hero?: ReactNode;
   /** Optional tab navigation — renders ToolTabBar between header and body */
   tabs?: ToolTab[];
@@ -68,9 +64,6 @@ export default function ToolShell({
   moduleId, title, description, formula,
   grid, columns, rows, gap = 6,
   children, footer,
-  workbenchSummary,
-  workbenchCompact = true,
-  workbenchSimulated = false,
   hero,
   tabs,
   activeTab,
@@ -233,15 +226,6 @@ export default function ToolShell({
         flexDirection: 'column',
         gap: '8px',
       }}>
-        {workbenchSummary && (
-          <WorkbenchInlineContext
-            toolId={moduleId}
-            title={tool?.name ?? title}
-            summary={workbenchSummary}
-            compact={workbenchCompact}
-            isSimulated={workbenchSimulated}
-          />
-        )}
         {hero}
         <div
           className="nb-tool-shell__grid"

@@ -1,0 +1,762 @@
+- generic [ref=e2]:
+  - navigation [ref=e3]:
+    - generic [ref=e4]:
+      - link "RCSB PDB" [ref=e5] [cursor=pointer]:
+        - /url: /
+      - button "Toggle navigation" [ref=e6] [cursor=pointer]
+      - generic [ref=e8]:
+        - link "Help" [ref=e9] [cursor=pointer]:
+          - /url: /help
+        - generic [ref=e10] [cursor=pointer]: Contact us
+        - button "MyPDB" [ref=e13] [cursor=pointer]: MyPDB
+  - generic [ref=e15]:
+    - generic [ref=e17]:
+      - table [ref=e19]:
+        - rowgroup [ref=e20]:
+          - row "RCSB PDB   253,482 Structures from the PDB archive  1,068,577 Computed Structure Models (CSM)" [ref=e21]:
+            - cell "RCSB PDB" [ref=e22]:
+              - link "RCSB PDB":
+                - /url: /
+                - img "RCSB PDB" [ref=e23] [cursor=pointer]
+            - cell "  253,482 Structures from the PDB archive  1,068,577 Computed Structure Models (CSM)" [ref=e24]:
+              - table [ref=e25]:
+                - rowgroup [ref=e26]:
+                  - row "  253,482 Structures from the PDB archive  1,068,577 Computed Structure Models (CSM)" [ref=e27]:
+                    - cell " " [ref=e28]:
+                      - link "" [ref=e29] [cursor=pointer]:
+                        - /url: /search?request=%7B%22query%22%3A%7B%22type%22%3A%22group%22%2C%22nodes%22%3A%5B%7B%22type%22%3A%22group%22%2C%22nodes%22%3A%5B%7B%22type%22%3A%22group%22%2C%22nodes%22%3A%5B%7B%22type%22%3A%22terminal%22%2C%22service%22%3A%22text%22%2C%22parameters%22%3A%7B%22attribute%22%3A%22rcsb_entry_info.structure_determination_methodology%22%2C%22operator%22%3A%22exact_match%22%2C%22value%22%3A%22experimental%22%7D%7D%5D%2C%22logical_operator%22%3A%22and%22%7D%5D%2C%22logical_operator%22%3A%22and%22%2C%22label%22%3A%22text%22%7D%5D%2C%22logical_operator%22%3A%22and%22%7D%2C%22return_type%22%3A%22entry%22%2C%22request_options%22%3A%7B%22scoring_strategy%22%3A%22combined%22%2C%22results_content_type%22%3A%5B%22experimental%22%5D%2C%22sort%22%3A%5B%7B%22sort_by%22%3A%22rcsb_accession_info.initial_release_date%22%2C%22direction%22%3A%22desc%22%7D%5D%7D%7D
+                        - generic [ref=e31]: 
+                      - link "" [ref=e32] [cursor=pointer]:
+                        - /url: /search?request=%7B%22query%22%3A%7B%22type%22%3A%22group%22%2C%22nodes%22%3A%5B%7B%22type%22%3A%22group%22%2C%22nodes%22%3A%5B%7B%22type%22%3A%22group%22%2C%22nodes%22%3A%5B%7B%22type%22%3A%22terminal%22%2C%22service%22%3A%22text%22%2C%22parameters%22%3A%7B%22attribute%22%3A%22rcsb_entry_info.structure_determination_methodology%22%2C%22operator%22%3A%22exact_match%22%2C%22value%22%3A%22integrative%22%7D%7D%5D%2C%22logical_operator%22%3A%22and%22%7D%5D%2C%22logical_operator%22%3A%22and%22%2C%22label%22%3A%22text%22%7D%5D%2C%22logical_operator%22%3A%22and%22%7D%2C%22return_type%22%3A%22entry%22%2C%22request_options%22%3A%7B%22scoring_strategy%22%3A%22combined%22%2C%22results_content_type%22%3A%5B%22experimental%22%5D%2C%22sort%22%3A%5B%7B%22sort_by%22%3A%22rcsb_accession_info.initial_release_date%22%2C%22direction%22%3A%22desc%22%7D%5D%7D%7D
+                        - generic [ref=e34]: 
+                    - cell "253,482 Structures from the PDB archive" [ref=e35]:
+                      - link "253,482" [ref=e36] [cursor=pointer]:
+                        - /url: /search?request=%7B%22query%22%3A%7B%22type%22%3A%22group%22%2C%22nodes%22%3A%5B%7B%22type%22%3A%22group%22%2C%22nodes%22%3A%5B%7B%22type%22%3A%22group%22%2C%22nodes%22%3A%5B%7B%22type%22%3A%22terminal%22%2C%22service%22%3A%22text%22%2C%22parameters%22%3A%7B%22attribute%22%3A%22rcsb_entry_info.structure_determination_methodology%22%2C%22operator%22%3A%22exact_match%22%2C%22value%22%3A%22experimental%22%7D%7D%2C%7B%22type%22%3A%22terminal%22%2C%22service%22%3A%22text%22%2C%22parameters%22%3A%7B%22attribute%22%3A%22rcsb_entry_info.structure_determination_methodology%22%2C%22operator%22%3A%22exact_match%22%2C%22value%22%3A%22integrative%22%7D%7D%5D%2C%22logical_operator%22%3A%22or%22%7D%5D%2C%22logical_operator%22%3A%22and%22%2C%22label%22%3A%22text%22%7D%5D%2C%22logical_operator%22%3A%22and%22%7D%2C%22return_type%22%3A%22entry%22%2C%22request_options%22%3A%7B%22scoring_strategy%22%3A%22combined%22%2C%22results_content_type%22%3A%5B%22experimental%22%5D%2C%22sort%22%3A%5B%7B%22sort_by%22%3A%22rcsb_accession_info.initial_release_date%22%2C%22direction%22%3A%22desc%22%7D%5D%7D%7D
+                      - text: Structures from the PDB archive
+                    - cell "" [ref=e37]:
+                      - link "" [ref=e38] [cursor=pointer]:
+                        - /url: /search?request=%7B%22query%22%3A%7B%22type%22%3A%22group%22%2C%22nodes%22%3A%5B%7B%22type%22%3A%22group%22%2C%22nodes%22%3A%5B%7B%22type%22%3A%22group%22%2C%22nodes%22%3A%5B%7B%22type%22%3A%22terminal%22%2C%22service%22%3A%22text%22%2C%22parameters%22%3A%7B%22attribute%22%3A%22rcsb_entry_info.structure_determination_methodology%22%2C%22operator%22%3A%22exact_match%22%2C%22value%22%3A%22computational%22%7D%7D%5D%2C%22logical_operator%22%3A%22and%22%7D%5D%2C%22logical_operator%22%3A%22and%22%2C%22label%22%3A%22text%22%7D%5D%2C%22logical_operator%22%3A%22and%22%7D%2C%22return_type%22%3A%22entry%22%2C%22request_options%22%3A%7B%22scoring_strategy%22%3A%22combined%22%2C%22results_content_type%22%3A%5B%22computational%22%5D%7D%7D
+                        - generic [ref=e40]: 
+                    - cell "1,068,577 Computed Structure Models (CSM)" [ref=e41]:
+                      - link "1,068,577" [ref=e42] [cursor=pointer]:
+                        - /url: /search?request=%7B%22query%22%3A%7B%22type%22%3A%22group%22%2C%22nodes%22%3A%5B%7B%22type%22%3A%22group%22%2C%22nodes%22%3A%5B%7B%22type%22%3A%22group%22%2C%22nodes%22%3A%5B%7B%22type%22%3A%22terminal%22%2C%22service%22%3A%22text%22%2C%22parameters%22%3A%7B%22attribute%22%3A%22rcsb_entry_info.structure_determination_methodology%22%2C%22operator%22%3A%22exact_match%22%2C%22value%22%3A%22computational%22%7D%7D%5D%2C%22logical_operator%22%3A%22and%22%7D%5D%2C%22logical_operator%22%3A%22and%22%2C%22label%22%3A%22text%22%7D%5D%2C%22logical_operator%22%3A%22and%22%7D%2C%22return_type%22%3A%22entry%22%2C%22request_options%22%3A%7B%22scoring_strategy%22%3A%22combined%22%2C%22results_content_type%22%3A%5B%22computational%22%5D%7D%7D
+                      - text: Computed Structure Models (CSM)
+      - table [ref=e46]:
+        - rowgroup [ref=e47]:
+          - row "Include CSM" [ref=e48]:
+            - cell [ref=e49]:
+              - textbox "Enter search term(s), Ligand ID or sequence" [active] [ref=e51]
+            - cell "Include CSM" [ref=e52]:
+              - button "Include CSM" [ref=e53] [cursor=pointer]:
+                - img [ref=e56]
+                - generic [ref=e59]:
+                  - text: Include
+                  - generic [ref=e61]: CSM
+            - cell [ref=e62]:
+              - img [ref=e65] [cursor=pointer]
+          - row "Advanced Search | Chemical Search | Browse Annotations Help" [ref=e67]:
+            - cell "Advanced Search | Chemical Search | Browse Annotations" [ref=e68]:
+              - link "Advanced Search" [ref=e69] [cursor=pointer]:
+                - /url: /search/advanced
+              - generic [ref=e70]: "|"
+              - link "Chemical Search" [ref=e71] [cursor=pointer]:
+                - /url: /search/chemical
+              - generic [ref=e72]: "|"
+              - link "Browse Annotations" [ref=e73] [cursor=pointer]:
+                - /url: /search/browse/atc
+            - cell "Help" [ref=e74]:
+              - link "Help" [ref=e76] [cursor=pointer]:
+                - /url: /docs/search-and-browse/basic-search
+    - generic [ref=e78]:
+      - list [ref=e79]:
+        - listitem [ref=e80]:
+          - link "PDB-101" [ref=e82] [cursor=pointer]:
+            - /url: https://pdb101.rcsb.org/
+            - img "PDB-101" [ref=e83]
+        - listitem [ref=e84]:
+          - link "wwPDB" [ref=e86] [cursor=pointer]:
+            - /url: https://www.wwpdb.org/
+            - img "wwPDB" [ref=e87]
+        - listitem [ref=e88]:
+          - link "EMDataResource" [ref=e90] [cursor=pointer]:
+            - /url: https://www.emdataresource.org
+            - img "EMDataResource" [ref=e91]
+        - listitem [ref=e92]:
+          - 'link "NAKB: Nucleic Acid Knowledgebase" [ref=e94] [cursor=pointer]':
+            - /url: https://nakb.org/
+            - 'img "NAKB: Nucleic Acid Knowledgebase" [ref=e95]'
+        - listitem [ref=e96]:
+          - link "wwPDB Foundation" [ref=e98] [cursor=pointer]:
+            - /url: https://foundation.wwpdb.org/
+            - img "wwPDB Foundation" [ref=e99]
+        - listitem [ref=e100]:
+          - link "PDB-IHM Logo" [ref=e102] [cursor=pointer]:
+            - /url: https://pdb-ihm.org/
+            - img "PDB-IHM Logo" [ref=e103]
+      - list [ref=e105]:
+        - listitem [ref=e106]:
+          - link "" [ref=e107] [cursor=pointer]:
+            - /url: https://www.facebook.com/RCSBPDB
+            - generic [ref=e108]: 
+        - listitem [ref=e109]:
+          - link "" [ref=e110] [cursor=pointer]:
+            - /url: https://twitter.com/buildmodels
+            - generic [ref=e111]: 
+        - listitem [ref=e112]:
+          - link "" [ref=e113] [cursor=pointer]:
+            - /url: https://bsky.app/profile/rcsbpdb.bsky.social
+            - generic [ref=e114]: 
+        - listitem [ref=e115]:
+          - link "" [ref=e116] [cursor=pointer]:
+            - /url: https://www.youtube.com/user/RCSBProteinDataBank
+            - generic [ref=e117]: 
+        - listitem [ref=e118]:
+          - link "" [ref=e119] [cursor=pointer]:
+            - /url: https://github.com/rcsb
+            - generic [ref=e120]: 
+        - listitem [ref=e121]:
+          - link "" [ref=e122] [cursor=pointer]:
+            - /url: https://www.linkedin.com/company/rcsb-protein-data-bank
+            - generic [ref=e123]: 
+  - generic [ref=e125]:
+    - tablist [ref=e127]:
+      - link "Structure Summary" [ref=e128] [cursor=pointer]:
+        - /url: /structure/1TUP
+      - link "Structure" [ref=e129] [cursor=pointer]:
+        - /url: /3d-view/1TUP
+      - link "Annotations" [ref=e130] [cursor=pointer]:
+        - /url: /annotations/1TUP
+      - link "Experiment" [ref=e131] [cursor=pointer]:
+        - /url: /experimental/1TUP
+      - link "Sequence" [ref=e132] [cursor=pointer]:
+        - /url: /sequence/1TUP
+      - link "Genome" [ref=e133] [cursor=pointer]:
+        - /url: /genome/1TUP
+      - link "Versions" [ref=e134] [cursor=pointer]:
+        - /url: /versions/1TUP
+    - generic [ref=e135]:
+      - tabpanel [ref=e136]:
+        - generic [ref=e137]:
+          - generic [ref=e138]:
+            - toolbar [ref=e139]:
+              - group [ref=e140]:
+                - group [ref=e141]:
+                  - button "Display Files" [ref=e142] [cursor=pointer]:
+                    - generic [ref=e143]: 
+                    - text: Display Files
+                - group [ref=e144]:
+                  - button "Download Files" [ref=e145] [cursor=pointer]:
+                    - generic [ref=e146]: 
+                    - text: Download Files
+                  - text: 
+              - group [ref=e147]:
+                - link " Data API" [ref=e148] [cursor=pointer]:
+                  - /url: https://data.rcsb.org/graphiql/index.html?query=query%20structure(%24id%3A%20String!)%20%7B%0A%20%20entry(entry_id%3A%20%24id)%20%7B%0A%20%20%20%20rcsb_id%0A%20%20%20%20entry%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%7D%0A%20%20%20%20database_2%20%7B%0A%20%20%20%20%20%20database_id%0A%20%20%20%20%20%20pdbx_database_accession%0A%20%20%20%20%7D%0A%20%20%20%20rcsb_entry_container_identifiers%20%7B%0A%20%20%20%20%20%20entity_ids%0A%20%20%20%20%20%20pubmed_id%0A%20%20%20%20%20%20emdb_ids%0A%20%20%20%20%20%20assembly_ids%0A%20%20%20%20%7D%0A%20%20%20%20rcsb_associated_holdings%20%7B%0A%20%20%20%20%20%20rcsb_repository_holdings_current_entry_container_identifiers%20%7B%0A%20%20%20%20%20%20%20%20assembly_ids%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20rcsb_repository_holdings_current%20%7B%0A%20%20%20%20%20%20%20%20repository_content_types%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20%20%20rcsb_comp_model_provenance%20%7B%0A%20%20%20%20%20%20source_url%0A%20%20%20%20%20%20source_pae_url%0A%20%20%20%20%20%20entry_id%0A%20%20%20%20%20%20source_db%0A%20%20%20%20%7D%0A%20%20%20%20pdbx_database_status%20%7B%0A%20%20%20%20%20%20pdb_format_compatible%0A%20%20%20%20%7D%0A%20%20%20%20struct%20%7B%0A%20%20%20%20%20%20title%0A%20%20%20%20%7D%0A%20%20%20%20rcsb_ma_qa_metric_global%20%7B%0A%20%20%20%20%20%20model_id%0A%20%20%20%20%20%20ma_qa_metric_global%20%7B%0A%20%20%20%20%20%20%20%20name%0A%20%20%20%20%20%20%20%20value%0A%20%20%20%20%20%20%20%20type%0A%20%20%20%20%20%20%20%20description%0A%20%20%20%20%20%20%20%20type_other_details%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20%20%20rcsb_primary_citation%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%20%20pdbx_database_id_DOI%0A%20%20%20%20%7D%0A%20%20%20%20pubmed%20%7B%0A%20%20%20%20%20%20rcsb_pubmed_container_identifiers%20%7B%0A%20%20%20%20%20%20%20%20pubmed_id%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20rcsb_pubmed_central_id%0A%20%20%20%20%20%20rcsb_pubmed_doi%0A%20%20%20%20%20%20rcsb_pubmed_abstract_text%0A%20%20%20%20%20%20rcsb_pubmed_affiliation_info%0A%20%20%20%20%7D%0A%20%20%20%20pdbx_deposit_group%20%7B%0A%20%20%20%20%20%20group_id%0A%20%20%20%20%20%20group_type%0A%20%20%20%20%7D%0A%20%20%20%20rcsb_external_references%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%20%20type%0A%20%20%20%20%20%20link%0A%20%20%20%20%7D%0A%20%20%20%20pdbx_database_PDB_obs_spr%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%20%20replace_pdb_id%0A%20%20%20%20%7D%0A%20%20%20%20struct_keywords%20%7B%0A%20%20%20%20%20%20pdbx_keywords%0A%20%20%20%20%20%20text%0A%20%20%20%20%7D%0A%20%20%20%20exptl%20%7B%0A%20%20%20%20%20%20method%0A%20%20%20%20%7D%0A%20%20%20%20cell%20%7B%0A%20%20%20%20%20%20length_a%0A%20%20%20%20%20%20length_b%0A%20%20%20%20%20%20length_c%0A%20%20%20%20%20%20angle_alpha%0A%20%20%20%20%20%20angle_beta%0A%20%20%20%20%20%20angle_gamma%0A%20%20%20%20%7D%0A%20%20%20%20symmetry%20%7B%0A%20%20%20%20%20%20space_group_name_H_M%0A%20%20%20%20%7D%0A%20%20%20%20software%20%7B%0A%20%20%20%20%20%20classification%0A%20%20%20%20%20%20name%0A%20%20%20%20%7D%0A%20%20%20%20rcsb_accession_info%20%7B%0A%20%20%20%20%20%20deposit_date%0A%20%20%20%20%20%20initial_release_date%0A%20%20%20%20%20%20major_revision%0A%20%20%20%20%20%20minor_revision%0A%20%20%20%20%7D%0A%20%20%20%20pdbx_audit_revision_history%20%7B%0A%20%20%20%20%20%20ordinal%0A%20%20%20%20%20%20data_content_type%0A%20%20%20%20%20%20major_revision%0A%20%20%20%20%20%20minor_revision%0A%20%20%20%20%20%20revision_date%0A%20%20%20%20%7D%0A%20%20%20%20pdbx_audit_revision_details%20%7B%0A%20%20%20%20%20%20ordinal%0A%20%20%20%20%20%20revision_ordinal%0A%20%20%20%20%20%20data_content_type%0A%20%20%20%20%20%20type%0A%20%20%20%20%20%20description%0A%20%20%20%20%7D%0A%20%20%20%20pdbx_audit_revision_group%20%7B%0A%20%20%20%20%20%20ordinal%0A%20%20%20%20%20%20revision_ordinal%0A%20%20%20%20%20%20data_content_type%0A%20%20%20%20%20%20group%0A%20%20%20%20%7D%0A%20%20%20%20pdbx_database_related%20%7B%0A%20%20%20%20%20%20content_type%0A%20%20%20%20%20%20db_id%0A%20%20%20%20%20%20details%0A%20%20%20%20%7D%0A%20%20%20%20audit_author%20%7B%0A%20%20%20%20%20%20name%0A%20%20%20%20%7D%0A%20%20%20%20pdbx_audit_support%20%7B%0A%20%20%20%20%20%20funding_organization%0A%20%20%20%20%20%20country%0A%20%20%20%20%20%20grant_number%0A%20%20%20%20%20%20ordinal%0A%20%20%20%20%7D%0A%20%20%20%20pdbx_initial_refinement_model%20%7B%0A%20%20%20%20%20%20type%0A%20%20%20%20%7D%0A%20%20%20%20refine%20%7B%0A%20%20%20%20%20%20pdbx_refine_id%0A%20%20%20%20%20%20ls_d_res_high%0A%20%20%20%20%20%20ls_R_factor_R_work%0A%20%20%20%20%20%20ls_R_factor_R_free%0A%20%20%20%20%20%20ls_R_factor_obs%0A%20%20%20%20%7D%0A%20%20%20%20pdbx_vrpt_summary_diffraction%20%7B%0A%20%20%20%20%20%20DCC_R%0A%20%20%20%20%20%20DCC_Rfree%0A%20%20%20%20%7D%0A%20%20%20%20pdbx_nmr_ensemble%20%7B%0A%20%20%20%20%20%20conformers_calculated_total_number%0A%20%20%20%20%20%20conformers_submitted_total_number%0A%20%20%20%20%20%20conformer_selection_criteria%0A%20%20%20%20%7D%0A%20%20%20%20em_experiment%20%7B%0A%20%20%20%20%20%20aggregation_state%0A%20%20%20%20%20%20reconstruction_method%0A%20%20%20%20%7D%0A%20%20%20%20em_3d_reconstruction%20%7B%0A%20%20%20%20%20%20resolution%0A%20%20%20%20%7D%0A%20%20%20%20em_software%20%7B%0A%20%20%20%20%20%20category%0A%20%20%20%20%20%20name%0A%20%20%20%20%20%20version%0A%20%20%20%20%7D%0A%20%20%20%20citation%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%20%20title%0A%20%20%20%20%20%20rcsb_journal_abbrev%0A%20%20%20%20%20%20rcsb_authors%0A%20%20%20%20%20%20year%0A%20%20%20%20%20%20journal_volume%0A%20%20%20%20%20%20page_first%0A%20%20%20%20%20%20page_last%0A%20%20%20%20%20%20pdbx_database_id_PubMed%0A%20%20%20%20%20%20pdbx_database_id_DOI%0A%20%20%20%20%7D%0A%20%20%20%20pdbx_database_related%20%7B%0A%20%20%20%20%20%20db_id%0A%20%20%20%20%20%20db_name%0A%20%20%20%20%7D%0A%20%20%20%20ihm_entry_collection_mapping%20%7B%0A%20%20%20%20%20%20collection_id%0A%20%20%20%20%7D%0A%20%20%20%20rcsb_entry_info%20%7B%0A%20%20%20%20%20%20structure_determination_methodology%0A%20%20%20%20%20%20ihm_multi_scale_flag%0A%20%20%20%20%20%20ihm_multi_state_flag%0A%20%20%20%20%20%20ihm_ordered_state_flag%0A%20%20%20%20%20%20deposited_model_count%0A%20%20%20%20%20%20representative_model%0A%20%20%20%20%20%20molecular_weight%0A%20%20%20%20%20%20deposited_atom_count%0A%20%20%20%20%20%20deposited_polymer_monomer_count%0A%20%20%20%20%20%20deposited_modeled_polymer_monomer_count%0A%20%20%20%20%20%20deposited_unmodeled_polymer_monomer_count%0A%20%20%20%20%20%20polymer_entity_count_protein%0A%20%20%20%20%20%20polymer_entity_count_nucleic_acid%0A%20%20%20%20%20%20polymer_entity_count_nucleic_acid_hybrid%0A%20%20%20%20%7D%0A%20%20%20%20rcsb_entry_group_membership%20%7B%0A%20%20%20%20%20%20group_id%0A%20%20%20%20%20%20aggregation_method%0A%20%20%20%20%7D%0A%20%20%20%20rcsb_binding_affinity%20%7B%0A%20%20%20%20%20%20comp_id%0A%20%20%20%20%20%20type%0A%20%20%20%20%20%20value%0A%20%20%20%20%20%20unit%0A%20%20%20%20%20%20reference_sequence_identity%0A%20%20%20%20%20%20provenance_code%0A%20%20%20%20%20%20link%0A%20%20%20%20%7D%0A%20%20%20%20branched_entities%20%7B%0A%20%20%20%20%20%20rcsb_id%0A%20%20%20%20%20%20rcsb_branched_entity_container_identifiers%20%7B%0A%20%20%20%20%20%20%20%20entry_id%0A%20%20%20%20%20%20%20%20entity_id%0A%20%20%20%20%20%20%20%20asym_ids%0A%20%20%20%20%20%20%20%20auth_asym_ids%0A%20%20%20%20%20%20%20%20reference_identifiers%20%7B%0A%20%20%20%20%20%20%20%20%20%20provenance_source%0A%20%20%20%20%20%20%20%20%20%20resource_name%0A%20%20%20%20%20%20%20%20%20%20resource_accession%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20prd%20%7B%0A%20%20%20%20%20%20%20%20rcsb_id%0A%20%20%20%20%20%20%20%20pdbx_reference_molecule%20%7B%0A%20%20%20%20%20%20%20%20%20%20prd_id%0A%20%20%20%20%20%20%20%20%20%20chem_comp_id%0A%20%20%20%20%20%20%20%20%20%20name%0A%20%20%20%20%20%20%20%20%20%20type%0A%20%20%20%20%20%20%20%20%20%20class%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20rcsb_branched_entity%20%7B%0A%20%20%20%20%20%20%20%20pdbx_description%0A%20%20%20%20%20%20%20%20formula_weight%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20pdbx_entity_branch%20%7B%0A%20%20%20%20%20%20%20%20rcsb_branched_component_count%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20branched_entity_instances%20%7B%0A%20%20%20%20%20%20%20%20rcsb_branched_entity_instance_container_identifiers%20%7B%0A%20%20%20%20%20%20%20%20%20%20entry_id%0A%20%20%20%20%20%20%20%20%20%20entity_id%0A%20%20%20%20%20%20%20%20%20%20asym_id%0A%20%20%20%20%20%20%20%20%20%20auth_asym_id%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20rcsb_branched_struct_conn%20%7B%0A%20%20%20%20%20%20%20%20%20%20connect_type%0A%20%20%20%20%20%20%20%20%20%20role%0A%20%20%20%20%20%20%20%20%20%20ordinal_id%0A%20%20%20%20%20%20%20%20%20%20connect_partner%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20label_asym_id%0A%20%20%20%20%20%20%20%20%20%20%20%20label_seq_id%0A%20%20%20%20%20%20%20%20%20%20%20%20label_comp_id%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20connect_target%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20auth_seq_id%0A%20%20%20%20%20%20%20%20%20%20%20%20label_asym_id%0A%20%20%20%20%20%20%20%20%20%20%20%20label_comp_id%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20rcsb_branched_instance_feature%20%7B%0A%20%20%20%20%20%20%20%20%20%20name%0A%20%20%20%20%20%20%20%20%20%20type%0A%20%20%20%20%20%20%20%20%20%20feature_value%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20comp_id%0A%20%20%20%20%20%20%20%20%20%20%20%20details%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20%20%20polymer_entities%20%7B%0A%20%20%20%20%20%20polymer_entity_instances%20%7B%0A%20%20%20%20%20%20%20%20rcsb_polymer_entity_instance_container_identifiers%20%7B%0A%20%20%20%20%20%20%20%20%20%20auth_asym_id%0A%20%20%20%20%20%20%20%20%20%20asym_id%0A%20%20%20%20%20%20%20%20%20%20entry_id%0A%20%20%20%20%20%20%20%20%20%20entity_id%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20rcsb_polymer_entity_container_identifiers%20%7B%0A%20%20%20%20%20%20%20%20entry_id%0A%20%20%20%20%20%20%20%20entity_id%0A%20%20%20%20%20%20%20%20asym_ids%0A%20%20%20%20%20%20%20%20auth_asym_ids%0A%20%20%20%20%20%20%20%20uniprot_ids%0A%20%20%20%20%20%20%20%20reference_sequence_identifiers%20%7B%0A%20%20%20%20%20%20%20%20%20%20database_accession%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20uniprots%20%7B%0A%20%20%20%20%20%20%20%20rcsb_id%0A%20%20%20%20%20%20%20%20rcsb_uniprot_protein%20%7B%0A%20%20%20%20%20%20%20%20%20%20source_organism%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20scientific_name%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20rcsb_uniprot_external_reference%20%7B%0A%20%20%20%20%20%20%20%20%20%20reference_name%0A%20%20%20%20%20%20%20%20%20%20reference_id%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20rcsb_polymer_entity%20%7B%0A%20%20%20%20%20%20%20%20pdbx_description%0A%20%20%20%20%20%20%20%20rcsb_ec_lineage%20%7B%0A%20%20%20%20%20%20%20%20%20%20id%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20pdbx_ec%0A%20%20%20%20%20%20%20%20rcsb_enzyme_class_combined%20%7B%0A%20%20%20%20%20%20%20%20%20%20ec%0A%20%20%20%20%20%20%20%20%20%20provenance_source%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20rcsb_polymer_entity_annotation%20%7B%0A%20%20%20%20%20%20%20%20type%0A%20%20%20%20%20%20%20%20annotation_lineage%20%7B%0A%20%20%20%20%20%20%20%20%20%20name%0A%20%20%20%20%20%20%20%20%20%20depth%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20rcsb_polymer_entity_group_membership%20%7B%0A%20%20%20%20%20%20%20%20group_id%0A%20%20%20%20%20%20%20%20similarity_cutoff%0A%20%20%20%20%20%20%20%20aggregation_method%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20entity_poly%20%7B%0A%20%20%20%20%20%20%20%20type%0A%20%20%20%20%20%20%20%20rcsb_entity_polymer_type%0A%20%20%20%20%20%20%20%20pdbx_seq_one_letter_code_can%0A%20%20%20%20%20%20%20%20rcsb_sample_sequence_length%0A%20%20%20%20%20%20%20%20rcsb_mutation_count%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20rcsb_entity_source_organism%20%7B%0A%20%20%20%20%20%20%20%20scientific_name%0A%20%20%20%20%20%20%20%20ncbi_scientific_name%0A%20%20%20%20%20%20%20%20rcsb_gene_name%20%7B%0A%20%20%20%20%20%20%20%20%20%20value%0A%20%20%20%20%20%20%20%20%20%20provenance_source%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20rcsb_entity_host_organism%20%7B%0A%20%20%20%20%20%20%20%20ncbi_scientific_name%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20prd%20%7B%0A%20%20%20%20%20%20%20%20rcsb_id%0A%20%20%20%20%20%20%20%20pdbx_reference_molecule%20%7B%0A%20%20%20%20%20%20%20%20%20%20prd_id%0A%20%20%20%20%20%20%20%20%20%20chem_comp_id%0A%20%20%20%20%20%20%20%20%20%20name%0A%20%20%20%20%20%20%20%20%20%20type%0A%20%20%20%20%20%20%20%20%20%20class%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20chem_comp_nstd_monomers%20%7B%0A%20%20%20%20%20%20%20%20chem_comp%20%7B%0A%20%20%20%20%20%20%20%20%20%20id%0A%20%20%20%20%20%20%20%20%20%20name%0A%20%20%20%20%20%20%20%20%20%20formula%0A%20%20%20%20%20%20%20%20%20%20type%0A%20%20%20%20%20%20%20%20%20%20mon_nstd_parent_comp_id%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20polymer_entity_instances%20%7B%0A%20%20%20%20%20%20%20%20rcsb_polymer_instance_annotation%20%7B%0A%20%20%20%20%20%20%20%20%20%20type%0A%20%20%20%20%20%20%20%20%20%20annotation_id%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20rcsb_polymer_struct_conn%20%7B%0A%20%20%20%20%20%20%20%20%20%20role%0A%20%20%20%20%20%20%20%20%20%20connect_type%0A%20%20%20%20%20%20%20%20%20%20connect_partner%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20label_asym_id%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20connect_target%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20label_asym_id%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20%20%20nonpolymer_entities%20%7B%0A%20%20%20%20%20%20rcsb_nonpolymer_entity_container_identifiers%20%7B%0A%20%20%20%20%20%20%20%20entry_id%0A%20%20%20%20%20%20%20%20entity_id%0A%20%20%20%20%20%20%20%20auth_asym_ids%0A%20%20%20%20%20%20%20%20asym_ids%0A%20%20%20%20%20%20%20%20nonpolymer_comp_id%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20rcsb_nonpolymer_entity_annotation%20%7B%0A%20%20%20%20%20%20%20%20type%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20nonpolymer_entity_instances%20%7B%0A%20%20%20%20%20%20%20%20rcsb_nonpolymer_entity_instance_container_identifiers%20%7B%0A%20%20%20%20%20%20%20%20%20%20auth_seq_id%0A%20%20%20%20%20%20%20%20%20%20auth_asym_id%0A%20%20%20%20%20%20%20%20%20%20asym_id%0A%20%20%20%20%20%20%20%20%20%20entry_id%0A%20%20%20%20%20%20%20%20%20%20entity_id%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20rcsb_nonpolymer_instance_validation_score%20%7B%0A%20%20%20%20%20%20%20%20%20%20ranking_model_fit%0A%20%20%20%20%20%20%20%20%20%20ranking_model_geometry%0A%20%20%20%20%20%20%20%20%20%20average_occupancy%0A%20%20%20%20%20%20%20%20%20%20is_subject_of_investigation%0A%20%20%20%20%20%20%20%20%20%20is_subject_of_investigation_provenance%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20rcsb_nonpolymer_entity%20%7B%0A%20%20%20%20%20%20%20%20pdbx_description%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20nonpolymer_comp%20%7B%0A%20%20%20%20%20%20%20%20chem_comp%20%7B%0A%20%20%20%20%20%20%20%20%20%20id%0A%20%20%20%20%20%20%20%20%20%20formula_weight%0A%20%20%20%20%20%20%20%20%20%20name%0A%20%20%20%20%20%20%20%20%20%20formula%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20pdbx_reference_molecule%20%7B%0A%20%20%20%20%20%20%20%20%20%20prd_id%0A%20%20%20%20%20%20%20%20%20%20chem_comp_id%0A%20%20%20%20%20%20%20%20%20%20type%0A%20%20%20%20%20%20%20%20%20%20name%0A%20%20%20%20%20%20%20%20%20%20class%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20rcsb_chem_comp_descriptor%20%7B%0A%20%20%20%20%20%20%20%20%20%20InChIKey%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20%20%20assemblies%20%7B%0A%20%20%20%20%20%20rcsb_assembly_container_identifiers%20%7B%0A%20%20%20%20%20%20%20%20assembly_id%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20pdbx_struct_assembly%20%7B%0A%20%20%20%20%20%20%20%20rcsb_details%0A%20%20%20%20%20%20%20%20method_details%0A%20%20%20%20%20%20%20%20rcsb_candidate_assembly%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20pdbx_struct_assembly_auth_evidence%20%7B%0A%20%20%20%20%20%20%20%20experimental_support%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20rcsb_struct_symmetry%20%7B%0A%20%20%20%20%20%20%20%20kind%0A%20%20%20%20%20%20%20%20type%0A%20%20%20%20%20%20%20%20symbol%0A%20%20%20%20%20%20%20%20oligomeric_state%0A%20%20%20%20%20%20%20%20stoichiometry%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20rcsb_assembly_info%20%7B%0A%20%20%20%20%20%20%20%20modeled_polymer_monomer_count%0A%20%20%20%20%20%20%20%20polymer_entity_count_protein%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D&variables=%7B%22id%22%3A%20%221TUP%22%7D
+                  - generic [ref=e150]: 
+                  - text: Data API
+            - generic [ref=e151]:
+              - heading [level=1]
+              - heading "Experimental PDB Structure 1TUP | pdb_00001tupExtended PDB ID. Click to learn more." [level=1] [ref=e152]:
+                - generic "Experimental PDB Structure" [ref=e154]: 
+                - text: 1TUP | pdb_00001tup
+                - superscript [ref=e155]:
+                  - link "Extended PDB ID. Click to learn more." [ref=e156] [cursor=pointer]:
+                    - /url: https://www.wwpdb.org/documentation/new-format-for-pdb-ids
+                    - generic [ref=e157]: 
+              - heading "TUMOR SUPPRESSOR P53 COMPLEXED WITH DNA" [level=4] [ref=e158]
+              - list [ref=e159]:
+                - listitem [ref=e160]:
+                  - generic [ref=e161]:
+                    - strong [ref=e162]: "PDB DOI:"
+                    - link "https://doi.org/10.2210/pdb1TUP/pdb" [ref=e163] [cursor=pointer]:
+                      - /url: https://doi.org/10.2210/pdb1TUP/pdb
+                - listitem [ref=e164]:
+                  - strong [ref=e165]: "NAKB:"
+                  - link "1TUP" [ref=e166] [cursor=pointer]:
+                    - /url: https://nakb.org/atlas=1TUP
+              - list [ref=e167]:
+                - listitem [ref=e168]:
+                  - strong [ref=e169]: "Classification:"
+                  - link "ANTITUMOR PROTEIN/DNA" [ref=e170] [cursor=pointer]:
+                    - /url: /search?q=struct_keywords.pdbx_keywords:ANTITUMOR PROTEIN/DNA
+                - listitem [ref=e171]:
+                  - strong [ref=e172]: "Organism(s):"
+                  - link "Homo sapiens" [ref=e173] [cursor=pointer]:
+                    - /url: /search?q=rcsb_entity_source_organism.taxonomy_lineage.name:Homo sapiens
+                - listitem [ref=e174]:
+                  - strong [ref=e175]: "Expression System:"
+                  - link "Escherichia coli" [ref=e176] [cursor=pointer]:
+                    - /url: /search?q=rcsb_entity_host_organism.ncbi_scientific_name:Escherichia coli
+                - listitem [ref=e177]:
+                  - strong [ref=e178]: "Mutation(s):"
+                  - text: No 
+                - listitem [ref=e179]:
+                  - strong [ref=e180]: "Deposited:"
+                  - text: 1995-07-11
+                  - strong [ref=e181]: "Released:"
+                  - text: 1995-07-11
+                - listitem [ref=e182]:
+                  - strong [ref=e183]: "Deposition Author(s):"
+                  - link "Cho, Y." [ref=e184] [cursor=pointer]:
+                    - /url: /search?q=audit_author.name:Cho, Y.
+                  - text: ","
+                  - link "Gorina, S." [ref=e185] [cursor=pointer]:
+                    - /url: /search?q=audit_author.name:Gorina, S.
+                  - text: ","
+                  - link "Jeffrey, P.D." [ref=e186] [cursor=pointer]:
+                    - /url: /search?q=audit_author.name:Jeffrey, P.D.
+                  - text: ","
+                  - link "Pavletich, N.P." [ref=e187] [cursor=pointer]:
+                    - /url: /search?q=audit_author.name:Pavletich, N.P.
+            - separator [ref=e188]
+            - generic [ref=e189]:
+              - generic [ref=e190]:
+                - paragraph [ref=e191]:
+                  - strong [ref=e192]: Experimental Data Snapshot
+                - list [ref=e193]:
+                  - listitem [ref=e194]:
+                    - strong [ref=e195]: "Method:"
+                    - text: X-RAY DIFFRACTION
+                  - listitem [ref=e196]:
+                    - strong [ref=e197]: "Resolution:"
+                    - text: 2.20 Å
+                  - listitem [ref=e198]:
+                    - strong [ref=e199]: "R-Value Work:"
+                    - generic [ref=e200]: 0.202 (Depositor) 
+                  - listitem [ref=e201]:
+                    - strong [ref=e202]: "R-Value Observed:"
+                    - generic [ref=e203]: 0.202 (Depositor) 
+              - generic [ref=e204]:
+                - paragraph [ref=e205]:
+                  - strong [ref=e206]: wwPDB Validation
+                  - text: 
+                  - generic [ref=e207]:
+                    - link " 3D Report" [ref=e208] [cursor=pointer]:
+                      - /url: /3d-view/1TUP?preset=validationReport
+                    - link "Full Report" [ref=e209] [cursor=pointer]:
+                      - /url: //files.rcsb.org/validation/view/1tup_full_validation.pdf
+                - link "Validation slider image for 1TUP" [ref=e212] [cursor=pointer]:
+                  - /url: //files.rcsb.org/validation/view/1tup_full_validation.pdf
+                  - img "Validation slider image for 1TUP" [ref=e213]
+            - generic [ref=e217]:
+              - text: This is version 1.3 of the entry. See complete
+              - link "history" [ref=e218] [cursor=pointer]:
+                - /url: /versions/1TUP
+              - text: .
+            - generic [ref=e221]:
+              - generic [ref=e222]:
+                - heading "Literature" [level=3] [ref=e223]
+                - button "Download Primary Citation" [ref=e225] [cursor=pointer]
+              - generic [ref=e227]:
+                - 'heading "Crystal structure of a p53 tumor suppressor-DNA complex: understanding tumorigenic mutations." [level=4] [ref=e228]'
+                - link "Cho, Y." [ref=e229] [cursor=pointer]:
+                  - /url: /search?q=citation.rcsb_authors:Cho, Y.
+                - text: ","
+                - link "Gorina, S." [ref=e230] [cursor=pointer]:
+                  - /url: /search?q=citation.rcsb_authors:Gorina, S.
+                - text: ","
+                - link "Jeffrey, P.D." [ref=e231] [cursor=pointer]:
+                  - /url: /search?q=citation.rcsb_authors:Jeffrey, P.D.
+                - text: ","
+                - link "Pavletich, N.P." [ref=e232] [cursor=pointer]:
+                  - /url: /search?q=citation.rcsb_authors:Pavletich, N.P.
+                - paragraph [ref=e233]:
+                  - text: (1994) Science
+                  - strong [ref=e234]: "265"
+                  - text: ": 346-355"
+                - list [ref=e235]:
+                  - listitem [ref=e236]:
+                    - strong [ref=e237]: "PubMed:"
+                    - link "8023157" [ref=e238] [cursor=pointer]:
+                      - /url: /search?q=rcsb_pubmed_container_identifiers.pubmed_id:8023157
+                    - link "Search on PubMed" [ref=e239] [cursor=pointer]:
+                      - /url: http://www.ncbi.nlm.nih.gov/pubmed/?term=8023157
+                  - listitem [ref=e240]:
+                    - strong [ref=e241]: "DOI:"
+                    - link "https://doi.org/10.1126/science.8023157" [ref=e242] [cursor=pointer]:
+                      - /url: https://doi.org/10.1126/science.8023157
+                  - listitem [ref=e243]:
+                    - text: "Primary Citation Related Structures:"
+                    - link "1TSR" [ref=e244] [cursor=pointer]:
+                      - /url: /structure/1TSR
+                    - text: ","
+                    - link "1TUP" [ref=e245] [cursor=pointer]:
+                      - /url: /structure/1TUP
+                  - listitem [ref=e246]:
+                    - strong [ref=e247]: "PubMed Abstract:"
+                    - paragraph [ref=e249]: Mutations in the p53 tumor suppressor are the most frequently observed genetic alterations in human cancer. The majority of the mutations occur in the core domain which contains the sequence-specific DNA binding activity of the p53 protein (residues 102-292), and they result in loss of DNA binding. The crystal structure of a complex containing the core domain of human p53 and a DNA binding site has been determined at 2.2 angstroms resolution and refined to a crystallographic R factor of 20.5 percent. The core domain structure consists of a beta sandwich that serves as a scaffold for two large loops and a loop-sheet-helix motif. The two loops, which are held together in part by a tetrahedrally coordinated zinc atom, and the loop-sheet-helix motif form the DNA binding surface of p53. Residues from the loop-sheet-helix motif interact in the major groove of the DNA, while an arginine from one of the two large loops interacts in the minor groove. The loops and the loop-sheet-helix motif consist of the conserved regions of the core domain and contain the majority of the p53 mutations identified in tumors. The structure supports the hypothesis that DNA binding is critical for the biological activity of p53, and provides a framework for understanding how mutations inactivate it.
+                    - button " View More" [ref=e250] [cursor=pointer]:
+                      - generic [ref=e251]: 
+                      - text: View More
+                  - separator [ref=e252]
+                  - strong [ref=e253]: Organizational Affiliation
+                  - text: ":"
+                  - list [ref=e254]:
+                    - listitem [ref=e255]: Cellular Biochemistry and Biophysics Program, Memorial Sloan-Kettering Cancer Center, New York, NY 10021.
+          - generic [ref=e256]:
+            - generic [ref=e259]:
+              - button "Previous" [ref=e260] [cursor=pointer]:
+                - generic [ref=e262]: Previous
+              - button "Next" [ref=e263] [cursor=pointer]:
+                - generic [ref=e265]: Next
+              - listbox [ref=e266]:
+                - text:  
+                - generic [ref=e267]:
+                  - generic [ref=e268]:
+                    - heading "Biological Assembly 1" [level=3] [ref=e269]
+                    - link "" [ref=e270] [cursor=pointer]:
+                      - /url: /docs/general-help/computed-structure-models-and-rcsborg#models-and-assembly
+                      - generic [ref=e271]: 
+                  - img [ref=e272]
+                  - link "" [ref=e273] [cursor=pointer]:
+                    - /url: https://cdn.rcsb.org/images/structures/1tup_assembly-1.jpeg
+                    - generic [ref=e274]: 
+                  - generic [ref=e275]:
+                    - paragraph [ref=e276]:
+                      - text: 
+                      - strong [ref=e277]: Explore in 3D
+                      - text: ":"
+                      - link "Structure" [ref=e278] [cursor=pointer]:
+                        - /url: /3d-view/1TUP/1
+                      - text: "|"
+                      - link "Sequence Annotations" [ref=e279] [cursor=pointer]:
+                        - /url: /3d-sequence/1TUP?assemblyId=1
+                      - text: "|"
+                      - link "Validation Report" [ref=e281] [cursor=pointer]:
+                        - /url: /3d-view/1TUP?preset=validationReport
+                      - text: "|"
+                      - generic [ref=e282]:
+                        - link "Ligand Interaction" [ref=e283] [cursor=pointer]:
+                          - /url: /3d-view/1TUP?preset=ligandInteraction&label_asym_id=F
+                        - text: (ZN)
+                    - separator [ref=e284]
+                    - strong [ref=e285]: Global Symmetry
+                    - text: ": Asymmetric - C1 "
+                    - strong [ref=e286]: Global Stoichiometry
+                    - text: ": Homo 3-mer - A3 "
+                    - text: 
+                    - separator [ref=e287]
+                    - link "Find Similar Assemblies" [ref=e288] [cursor=pointer]:
+                      - /url: /search?query=%7B%22type%22%3A%22terminal%22%2C%22service%22%3A%22structure%22%2C%22parameters%22%3A%7B%22value%22%3A%7B%22entry_id%22%3A%221TUP%22%2C%22assembly_id%22%3A%221%22%7D%2C%22target_search_space%22%3A%22assembly%22%2C%22similarity_type%22%3A%22global%22%2C%22ptmscore_cutoff%22%3A0.8%7D%7D&return_type=assembly
+                    - separator [ref=e289]
+                    - paragraph [ref=e290]: Biological assembly 1 assigned by authors.
+            - generic [ref=e292]:
+              - paragraph [ref=e293]:
+                - strong [ref=e294]: Macromolecule Content 
+              - list [ref=e295]:
+                - listitem [ref=e296]: "Total Structure Weight: 86.84 kDa "
+                - listitem [ref=e297]: "Atom Count: 5,828 "
+                - listitem [ref=e298]: "Modeled Residue Count: 627 "
+                - listitem [ref=e299]: "Deposited Residue Count: 699 "
+                - listitem [ref=e300]: "Unique protein chains: 1"
+                - listitem [ref=e301]: "Unique nucleic acid chains: 2"
+      - generic [ref=e302]:
+        - heading "Macromolecules" [level=3] [ref=e304]
+        - generic [ref=e305]:
+          - generic [ref=e306]:
+            - button "Proteins 1" [ref=e307] [cursor=pointer]:
+              - text: Proteins
+              - generic [ref=e308]: "1"
+            - button "Nucleic Acids / Hybrid 2" [ref=e309] [cursor=pointer]:
+              - text: Nucleic Acids / Hybrid
+              - generic [ref=e310]: "2"
+          - generic [ref=e311]:
+            - generic [ref=e312]:
+              - strong [ref=e313]: "Find similar proteins by:"
+              - group [ref=e314]:
+                - group [ref=e315] [cursor=pointer]: Sequence
+              - text:  |
+              - link "3D Structure" [ref=e316] [cursor=pointer]:
+                - /url: /search?query=%7B%22type%22%3A%22terminal%22%2C%22service%22%3A%22structure%22%2C%22parameters%22%3A%7B%22value%22%3A%7B%22entry_id%22%3A%221TUP%22%2C%22asym_id%22%3A%22C%22%7D%2C%22target_search_space%22%3A%22polymer_entity_instance%22%2C%22similarity_type%22%3A%22global%22%2C%22ptmscore_cutoff%22%3A0.8%7D%7D&return_type=polymer_entity
+            - generic [ref=e317]:
+              - table
+              - table [ref=e318]:
+                - rowgroup [ref=e319]:
+                  - 'row "Entity ID: 3" [ref=e320]':
+                    - 'columnheader "Entity ID: 3" [ref=e321]':
+                      - 'heading "Entity ID: 3" [level=5] [ref=e322]'
+                  - row "Molecule Chains Sequence Length Organism Details Image" [ref=e323]:
+                    - columnheader "Molecule" [ref=e324]
+                    - columnheader "Chains" [ref=e325]: Chains 
+                    - columnheader "Sequence Length" [ref=e326]
+                    - columnheader "Organism" [ref=e327]
+                    - columnheader "Details" [ref=e328]
+                    - columnheader "Image" [ref=e329]
+                - rowgroup [ref=e330]:
+                  - 'row "PROTEIN (P53 TUMOR SUPPRESSOR ) C [auth A], D [auth B], E [auth C] 219 Homo sapiens Mutation(s): 0" [ref=e331]':
+                    - cell "PROTEIN (P53 TUMOR SUPPRESSOR )" [ref=e332]
+                    - cell "C [auth A], D [auth B], E [auth C]" [ref=e333]:
+                      - link "C [auth A]" [ref=e334] [cursor=pointer]:
+                        - /url: /sequence/1TUP#C
+                      - text: ","
+                      - link "D [auth B]" [ref=e335] [cursor=pointer]:
+                        - /url: /sequence/1TUP#D
+                      - text: ","
+                      - link "E [auth C]" [ref=e336] [cursor=pointer]:
+                        - /url: /sequence/1TUP#E
+                    - cell "219" [ref=e337]
+                    - cell "Homo sapiens" [ref=e338]:
+                      - link "Homo sapiens" [ref=e339] [cursor=pointer]:
+                        - /url: /search?q=rcsb_entity_source_organism.taxonomy_lineage.name:Homo sapiens
+                    - 'cell "Mutation(s): 0" [ref=e340]':
+                      - strong [ref=e341]: Mutation(s)
+                      - text: ": 0 "
+                    - cell [ref=e342]:
+                      - link [ref=e343] [cursor=pointer]:
+                        - /url: "#imageModal"
+                        - img [ref=e344]
+                  - row "UniProt & NIH Common Fund Data Resources" [ref=e345]:
+                    - cell "UniProt & NIH Common Fund Data Resources" [ref=e346]:
+                      - heading "UniProt & NIH Common Fund Data Resources" [level=5] [ref=e347]
+                  - 'row "Find proteins for P04637 (Homo sapiens) Explore P04637 Go to UniProtKB: P04637" [ref=e348]':
+                    - 'cell "Find proteins for P04637 (Homo sapiens) Explore P04637 Go to UniProtKB: P04637" [ref=e349]':
+                      - generic [ref=e350]:
+                        - generic [ref=e351]:
+                          - text: Find proteins for
+                          - link "P04637" [ref=e352] [cursor=pointer]:
+                            - /url: /search?q=rcsb_polymer_entity_container_identifiers.reference_sequence_identifiers.database_accession:P04637 AND rcsb_polymer_entity_container_identifiers.reference_sequence_identifiers.database_name:UniProt
+                          - text: (Homo sapiens)
+                        - generic [ref=e353]:
+                          - text: Explore
+                          - link "P04637" [ref=e354] [cursor=pointer]:
+                            - /url: /groups/sequence/polymer_entity/P04637
+                          - text: 
+                        - generic [ref=e355]:
+                          - text: "Go to UniProtKB:"
+                          - link "P04637" [ref=e356] [cursor=pointer]:
+                            - /url: https://www.uniprot.org/uniprot/P04637
+                  - 'row "PHAROS: P04637 GTEx: ENSG00000141510" [ref=e357]':
+                    - 'cell "PHAROS: P04637 GTEx: ENSG00000141510" [ref=e358]':
+                      - generic [ref=e359]:
+                        - generic "Diseases, drugs and related data" [ref=e360]:
+                          - generic [ref=e361]:
+                            - text: "PHAROS:"
+                            - link "P04637" [ref=e362] [cursor=pointer]:
+                              - /url: https://pharos.nih.gov/targets/P04637
+                        - generic [ref=e364]:
+                          - text: "GTEx:"
+                          - link "ENSG00000141510" [ref=e365] [cursor=pointer]:
+                            - /url: https://gtexportal.org/home/gene/ENSG00000141510
+                  - row "Entity Groups" [ref=e366]:
+                    - cell "Entity Groups" [ref=e367]:
+                      - heading "Entity Groups" [level=5] [ref=e368]: Entity Groups 
+                  - row "Sequence Clusters 30% Identity 50% Identity 70% Identity 90% Identity 95% Identity 100% Identity" [ref=e369]:
+                    - cell "Sequence Clusters" [ref=e370]
+                    - cell "30% Identity 50% Identity 70% Identity 90% Identity 95% Identity 100% Identity" [ref=e371]:
+                      - link "30% Identity" [ref=e372] [cursor=pointer]:
+                        - /url: /groups/summary/polymer_entity/674_30
+                        - text: 30% Identity
+                        - generic [ref=e373]: 
+                      - link "50% Identity" [ref=e374] [cursor=pointer]:
+                        - /url: /groups/summary/polymer_entity/482_50
+                        - text: 50% Identity
+                        - generic [ref=e375]: 
+                      - link "70% Identity" [ref=e376] [cursor=pointer]:
+                        - /url: /groups/summary/polymer_entity/339_70
+                        - text: 70% Identity
+                        - generic [ref=e377]: 
+                      - link "90% Identity" [ref=e378] [cursor=pointer]:
+                        - /url: /groups/summary/polymer_entity/333_90
+                        - text: 90% Identity
+                        - generic [ref=e379]: 
+                      - link "95% Identity" [ref=e380] [cursor=pointer]:
+                        - /url: /groups/summary/polymer_entity/507_95
+                        - text: 95% Identity
+                        - generic [ref=e381]: 
+                      - link "100% Identity" [ref=e382] [cursor=pointer]:
+                        - /url: /groups/summary/polymer_entity/455_100
+                        - text: 100% Identity
+                        - generic [ref=e383]: 
+                  - row "UniProt Group P04637" [ref=e384]:
+                    - cell "UniProt Group" [ref=e385]
+                    - cell "P04637" [ref=e386]:
+                      - link "P04637" [ref=e387] [cursor=pointer]:
+                        - /url: /groups/summary/polymer_entity/P04637
+                        - text: P04637
+                        - generic [ref=e388]: 
+                  - row "Sequence Annotations Expand" [ref=e389]:
+                    - cell "Sequence Annotations Expand" [ref=e390]:
+                      - generic [ref=e391]:
+                        - heading "Sequence Annotations" [level=5] [ref=e392]
+                        - heading "Expand" [level=5] [ref=e393]:
+                          - link "Expand" [ref=e394] [cursor=pointer]:
+                            - /url: /sequence/1TUP#C
+                  - row "Reference Sequence" [ref=e395]:
+                    - cell "Reference Sequence" [ref=e396]:
+                      - strong [ref=e399]: Reference Sequence
+          - text:    
+      - generic [ref=e404]:
+        - heading "Small Molecules" [level=3] [ref=e406]
+        - table [ref=e409]:
+          - rowgroup [ref=e410]:
+            - row "Ligands 1 Unique" [ref=e411]:
+              - columnheader "Ligands 1 Unique" [ref=e412]:
+                - text: Ligands
+                - generic [ref=e413]: 1 Unique
+            - row "ID Chains Name / Formula / InChI Key 2D Diagram 3D Interactions" [ref=e414]:
+              - columnheader "ID" [ref=e415]
+              - columnheader "Chains" [ref=e416]: Chains 
+              - columnheader "Name / Formula / InChI Key" [ref=e417]
+              - columnheader "2D Diagram" [ref=e418]
+              - columnheader "3D Interactions" [ref=e419]
+          - rowgroup [ref=e420]:
+            - 'row "ZN Query on ZN  Download: Ideal Coordinates CCD File F [auth A], G [auth B], H [auth C] ZINC ION Zn PTFCDOFLOPIGGS-UHFFFAOYSA-N" [ref=e421]':
+              - 'cell "ZN Query on ZN  Download: Ideal Coordinates CCD File" [ref=e422]':
+                - link "ZN" [ref=e424] [cursor=pointer]:
+                  - /url: /ligand/ZN
+                - paragraph [ref=e425]:
+                  - link "Query on ZN" [ref=e426] [cursor=pointer]:
+                    - /url: /search/chemical?q=rcsb_chem_comp_container_identifiers.comp_id:ZN
+                - separator [ref=e427]
+                - generic [ref=e428]: " Download:"
+                - link "Ideal Coordinates CCD File" [ref=e429] [cursor=pointer]:
+                  - /url: https://files.rcsb.org/ligands/download/ZN.cif
+                - group [ref=e431]:
+                  - group [ref=e432] [cursor=pointer]: Instance Coordinates
+              - cell "F [auth A], G [auth B], H [auth C]" [ref=e433]:
+                - text: F [auth A],
+                - text: G [auth B],
+                - text: H [auth C]
+              - cell "ZINC ION Zn PTFCDOFLOPIGGS-UHFFFAOYSA-N" [ref=e434]:
+                - strong [ref=e435]: ZINC ION
+                - text: Zn
+                - text: PTFCDOFLOPIGGS-UHFFFAOYSA-N
+              - cell [ref=e436]:
+                - link [ref=e437] [cursor=pointer]:
+                  - /url: "#imageModal"
+                  - img [ref=e438]
+              - cell [ref=e439]:
+                - group [ref=e440]:
+                  - group "Focus on a ligand and show non-covalent interactions with its surroundings." [ref=e441] [cursor=pointer]:  Interactions
+      - generic [ref=e442]:
+        - heading "Experimental Data & Validation" [level=3] [ref=e444]
+        - generic [ref=e445]:
+          - generic [ref=e446]:
+            - generic [ref=e447]:
+              - heading "Experimental Data" [level=4] [ref=e448]
+              - generic [ref=e449]:
+                - list [ref=e450]:
+                  - listitem [ref=e451]:
+                    - strong [ref=e452]: "Method:"
+                    - text: X-RAY DIFFRACTION
+                  - listitem [ref=e453]:
+                    - strong [ref=e454]: "Resolution:"
+                    - text: 2.20 Å
+                  - listitem [ref=e455]:
+                    - strong [ref=e456]: "R-Value Work:"
+                    - text: 0.202 (Depositor) 
+                  - listitem [ref=e457]:
+                    - strong [ref=e458]: "R-Value Observed:"
+                    - text: 0.202 (Depositor) 
+                - strong [ref=e462]:
+                  - text: "Space Group:"
+                  - link "C 1 2 1" [ref=e463] [cursor=pointer]:
+                    - /url: /search?q=symmetry.space_group_name_H_M:C 1 2 1
+                - generic [ref=e464]:
+                  - strong [ref=e465]: Unit Cell
+                  - text: ":"
+                  - table [ref=e466]:
+                    - rowgroup [ref=e467]:
+                      - row "Length ( Å ) Angle ( ˚ )" [ref=e468]:
+                        - columnheader "Length ( Å )" [ref=e469]
+                        - columnheader "Angle ( ˚ )" [ref=e470]
+                    - rowgroup [ref=e471]:
+                      - row "a = 117.5 α = 90" [ref=e472]:
+                        - cell "a = 117.5" [ref=e473]
+                        - cell "α = 90" [ref=e474]
+                      - row "b = 67.9 β = 105.5" [ref=e475]:
+                        - cell "b = 67.9" [ref=e476]
+                        - cell "β = 105.5" [ref=e477]
+                      - row "c = 108.8 γ = 90" [ref=e478]:
+                        - cell "c = 108.8" [ref=e479]
+                        - cell "γ = 90" [ref=e480]
+              - strong [ref=e481]: "Software Package:"
+              - table [ref=e482]:
+                - rowgroup [ref=e483]:
+                  - row "Software Name Purpose" [ref=e484]:
+                    - columnheader "Software Name" [ref=e485]
+                    - columnheader "Purpose" [ref=e486]
+                - rowgroup [ref=e487]:
+                  - row "X-PLOR refinement" [ref=e488]:
+                    - cell "X-PLOR" [ref=e489]
+                    - cell "refinement" [ref=e490]
+                  - row "TNT refinement" [ref=e491]:
+                    - cell "TNT" [ref=e492]
+                    - cell "refinement" [ref=e493]
+            - generic [ref=e494]:
+              - heading "Structure Validation" [level=4] [ref=e495]
+              - paragraph [ref=e496]:
+                - text: View
+                - link "Full Validation Report" [ref=e497] [cursor=pointer]:
+                  - /url: //files.rcsb.org/validation/view/1tup_full_validation.pdf
+              - link [ref=e498] [cursor=pointer]:
+                - /url: //files.rcsb.org/validation/view/1tup_full_validation.pdf
+                - img [ref=e499]
+          - link "View more in-depth experimental data" [ref=e502] [cursor=pointer]:
+            - /url: /experimental/1TUP
+      - generic [ref=e503]:
+        - heading "Entry History" [level=3] [ref=e505]
+        - generic [ref=e507]:
+          - generic [ref=e508]:
+            - heading "Deposition Data" [level=4] [ref=e509]
+            - list [ref=e510]:
+              - listitem [ref=e511]:
+                - strong [ref=e512]: "Released Date:"
+                - text: 1995-07-11
+              - strong [ref=e513]: "Deposition Author(s):"
+              - link "Cho, Y." [ref=e514] [cursor=pointer]:
+                - /url: /search?q=audit_author.name:Cho, Y.
+              - text: ","
+              - link "Gorina, S." [ref=e515] [cursor=pointer]:
+                - /url: /search?q=audit_author.name:Gorina, S.
+              - text: ","
+              - link "Jeffrey, P.D." [ref=e516] [cursor=pointer]:
+                - /url: /search?q=audit_author.name:Jeffrey, P.D.
+              - text: ","
+              - link "Pavletich, N.P." [ref=e517] [cursor=pointer]:
+                - /url: /search?q=audit_author.name:Pavletich, N.P.
+          - generic [ref=e518]:
+            - heading "Revision History (Full details and data files)" [level=4] [ref=e519]:
+              - text: Revision History
+              - link "(Full details and data files)" [ref=e521] [cursor=pointer]:
+                - /url: /versions/1TUP
+            - list [ref=e522]:
+              - listitem [ref=e523]:
+                - strong [ref=e524]: "Version 1.0: 1995-07-11"
+                - text: "Type: Initial release"
+              - listitem [ref=e525]:
+                - strong [ref=e526]: "Version 1.1: 2008-05-22"
+                - text: "Changes: Version format compliance"
+              - listitem [ref=e527]:
+                - strong [ref=e528]: "Version 1.2: 2011-07-13"
+                - text: "Changes: Version format compliance"
+              - listitem [ref=e529]:
+                - strong [ref=e530]: "Version 1.3: 2024-02-14"
+                - text: "Changes: Data collection, Database references, Derived calculations"
+  - generic [ref=e531]:
+    - generic [ref=e534]:
+      - generic [ref=e536]:
+        - list [ref=e538]:
+          - listitem [ref=e539]: About
+          - listitem [ref=e540]:
+            - link "About Us" [ref=e541] [cursor=pointer]:
+              - /url: /pages/about-us/index
+          - listitem [ref=e542]:
+            - link "Citing Us" [ref=e543] [cursor=pointer]:
+              - /url: /pages/policies#References
+          - listitem [ref=e544]:
+            - link "Publications" [ref=e545] [cursor=pointer]:
+              - /url: /pages/publications
+          - listitem [ref=e546]:
+            - link "Team" [ref=e547] [cursor=pointer]:
+              - /url: /pages/team
+          - listitem [ref=e548]:
+            - link "Careers" [ref=e549] [cursor=pointer]:
+              - /url: /pages/jobs
+          - listitem [ref=e550]:
+            - link "Usage & Privacy" [ref=e551] [cursor=pointer]:
+              - /url: /pages/policies
+        - list [ref=e553]:
+          - listitem [ref=e554]: Support
+          - listitem [ref=e555]:
+            - link "Contact Us" [ref=e556] [cursor=pointer]:
+              - /url: /pages/contactus
+          - listitem [ref=e557]:
+            - link "Help" [ref=e558] [cursor=pointer]:
+              - /url: /help
+          - listitem [ref=e559]:
+            - link "Website FAQ" [ref=e560] [cursor=pointer]:
+              - /url: /docs/general-help/website-faq
+          - listitem [ref=e561]:
+            - link "Glossary" [ref=e562] [cursor=pointer]:
+              - /url: /docs/general-help/glossary
+          - listitem [ref=e563]:
+            - link "Service Status" [ref=e564] [cursor=pointer]:
+              - /url: https://status.rcsb.org/
+      - generic [ref=e566]:
+        - list [ref=e568]:
+          - listitem [ref=e569]: RCSB PDB is hosted by
+          - listitem [ref=e570]:
+            - generic [ref=e571]:
+              - separator [ref=e572]
+              - link "The Rutgers Artificial Intelligence and Data Science Collaboratory logo" [ref=e573] [cursor=pointer]:
+                - /url: https://radcollaboratory.rutgers.edu/
+                - img "The Rutgers Artificial Intelligence and Data Science Collaboratory logo" [ref=e574]
+              - separator [ref=e575]
+              - link "Uiversity of California San Diego logo" [ref=e576] [cursor=pointer]:
+                - /url: https://ucsd.edu/
+                - img "Uiversity of California San Diego logo" [ref=e577]
+              - link "San Diego Supercomputer Center logo" [ref=e578] [cursor=pointer]:
+                - /url: https://www.sdsc.edu/
+                - img "San Diego Supercomputer Center logo" [ref=e579]
+              - separator [ref=e580]
+              - link "University of California San Francisco Logo" [ref=e581] [cursor=pointer]:
+                - /url: https://www.ucsf.edu/
+                - img "University of California San Francisco Logo" [ref=e582]
+        - list [ref=e584]:
+          - listitem [ref=e585]: RCSB PDB is a member of
+          - listitem [ref=e586]:
+            - generic [ref=e588]:
+              - separator [ref=e589]
+              - link "wwPDB" [ref=e590] [cursor=pointer]:
+                - /url: https://www.wwpdb.org
+                - img "wwPDB" [ref=e591]
+              - separator [ref=e592]
+              - link "EMDataResource" [ref=e593] [cursor=pointer]:
+                - /url: https://www.emdataresource.org
+                - img "EMDataResource" [ref=e594]
+              - separator [ref=e595]
+          - listitem [ref=e596]: RCSB Partners
+          - listitem [ref=e597]:
+            - link "Nucleic Acid Knowledgebase" [ref=e598] [cursor=pointer]:
+              - /url: https://nakb.org/
+        - generic [ref=e599]:
+          - list [ref=e600]:
+            - listitem [ref=e601]:
+              - link "wwPDB Partners" [ref=e603] [cursor=pointer]:
+                - /url: https://www.wwpdb.org/
+            - listitem [ref=e604]:
+              - link "RCSB PDB" [ref=e605] [cursor=pointer]:
+                - /url: /
+            - listitem [ref=e606]:
+              - link "PDBe" [ref=e607] [cursor=pointer]:
+                - /url: https://www.ebi.ac.uk/pdbe/
+            - listitem [ref=e608]:
+              - link "PDBj" [ref=e609] [cursor=pointer]:
+                - /url: https://www.pdbj.org/
+            - listitem [ref=e610]:
+              - link "BMRB" [ref=e611] [cursor=pointer]:
+                - /url: https://bmrb.io/
+            - listitem [ref=e612]:
+              - link "EMDB" [ref=e613] [cursor=pointer]:
+                - /url: https://emdb-empiar.org/
+          - generic [ref=e614]:
+            - link "CoreTrustSeal" [ref=e616] [cursor=pointer]:
+              - /url: https://www.coretrustseal.org/
+              - img "CoreTrustSeal" [ref=e617]
+            - link "Global Biodata Coalition Logo" [ref=e619] [cursor=pointer]:
+              - /url: https://globalbiodata.org/
+              - img "Global Biodata Coalition Logo" [ref=e620]
+    - paragraph [ref=e624]:
+      - text: RCSB PDB Core Operations are funded by the
+      - link "U.S. National Science Foundation" [ref=e625] [cursor=pointer]:
+        - /url: http://www.nsf.gov/
+      - text: (DBI-2321666), the
+      - link "US Department of Energy" [ref=e626] [cursor=pointer]:
+        - /url: http://science.energy.gov/
+      - text: (DE-SC0019749), and the
+      - link "National Cancer Institute" [ref=e627] [cursor=pointer]:
+        - /url: http://www.cancer.gov/
+      - text: ","
+      - link "National Institute of Allergy and Infectious Diseases" [ref=e628] [cursor=pointer]:
+        - /url: http://www.niaid.nih.gov/
+      - text: ", and"
+      - link "National Institute of General Medical Sciences" [ref=e629] [cursor=pointer]:
+        - /url: http://www.nigms.nih.gov/
+      - text: of the
+      - link "National Institutes of Health" [ref=e630] [cursor=pointer]:
+        - /url: http://www.nih.gov/
+      - text: under grant R01GM157729. RCSB PDB uses resources of the National Energy Research Scientific Computing Center (
+      - link "NERSC" [ref=e631] [cursor=pointer]:
+        - /url: https://www.nersc.gov/
+      - text: ), a Department of Energy User Facility.

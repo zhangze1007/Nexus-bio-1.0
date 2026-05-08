@@ -279,8 +279,6 @@ export default function GenMIMPage() {
       tabs={GENMIM_TABS}
       activeTab={activeTab}
       onTabChange={setActiveTab}
-      workbenchSummary="Translate analyzed bottlenecks into chassis-level genome minimization hypotheses so Stage 3 interventions remain linked to the same project object."
-      workbenchSimulated={!analyzeArtifact}
       hero={
         <ScientificHero
           eyebrow="Stage 3 · Chassis Minimization"

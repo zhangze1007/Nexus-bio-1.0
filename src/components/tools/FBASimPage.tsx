@@ -882,8 +882,6 @@ export default function FBASimPage() {
           <ExportButton label="Export SVG" data={null} filename={`fbasim-${simMode}-chart`} format="svg" svgRef={chartRef} />
         </>
       }
-      workbenchSummary="Flux simulation turns the current pathway object into quantitative growth, ATP, and carbon-efficiency constraints."
-      workbenchSimulated={!analyzeArtifact}
     >
       {/* ── Flux Map Tab ── */}
       <ToolTabPanel tabId="flux" activeId={activeTab}>

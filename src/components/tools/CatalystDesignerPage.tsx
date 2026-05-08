@@ -642,8 +642,6 @@ export default function CatalystDesignerPage() {
       tabs={CATDES_TABS}
       activeTab={activeTab}
       onTabChange={setActiveTab}
-      workbenchSummary="Catalyst design binds enzyme structure, binding affinity, and metabolic cost into one engineering surface for sequence and mutation decisions."
-      workbenchSimulated={!analyzeArtifact}
       footer={
         <>
           <ExportButton label="Export JSON"
