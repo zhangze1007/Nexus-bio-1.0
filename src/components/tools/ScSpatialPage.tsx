@@ -5,7 +5,6 @@ import { HelpCircle, RefreshCcw } from 'lucide-react';
 import ExportButton from '../ide/shared/ExportButton';
 import ScSpatialControlRail from './scspatial/ScSpatialControlRail';
 import ScSpatialHelpDialog from './scspatial/ScSpatialHelpDialog';
-import ScSpatialInsightRail from './scspatial/ScSpatialInsightRail';
 import ScSpatialViewport from './scspatial/ScSpatialViewport';
 import styles from './scspatial/ScSpatialWorkbench.module.css';
 import { SCSPATIAL_VIEW_LABELS } from './scspatial/scSpatialPalette';
@@ -20,8 +19,10 @@ import { PATHD_THEME } from '../workbench/workbenchTheme';
 import { T } from '../ide/tokens';
 
 const SCSPATIAL_TABS: ToolTab[] = [
-  { id: 'viz', label: 'Spatial View', accent: PATHD_THEME.sky },
-  { id: 'insights', label: 'Insights', accent: PATHD_THEME.mint },
+  { id: 'spatial-2d', label: 'Hex Grid', accent: PATHD_THEME.sky },
+  { id: 'umap', label: 'UMAP', accent: PATHD_THEME.lilac },
+  { id: 'trajectory', label: 'Clusters', accent: PATHD_THEME.apricot },
+  { id: 'table', label: 'Gene Expression', accent: PATHD_THEME.mint },
 ];
 
 function readyClass(validity: 'real' | 'partial' | 'demo' | null, loadState: string) {
@@ -43,7 +44,7 @@ function readyLabel(validity: 'real' | 'partial' | 'demo' | null, loadState: str
 }
 
 export default function ScSpatialPage() {
-  const [activeTab, setActiveTab] = useState('viz');
+  const [activeTab, setActiveTab] = useState('spatial-2d');
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -107,6 +108,20 @@ export default function ScSpatialPage() {
     await uploadFile(file);
     event.target.value = '';
   }, [uploadFile]);
+
+  // Sync tab → viewMode in store
+  useEffect(() => {
+    const tabToView: Record<string, typeof viewMode> = {
+      'spatial-2d': 'spatial-2d',
+      'umap': 'umap',
+      'trajectory': 'trajectory',
+      'table': 'table',
+    };
+    const mapped = tabToView[activeTab];
+    if (mapped && mapped !== viewMode) {
+      setViewModeStore(mapped);
+    }
+  }, [activeTab, viewMode, setViewModeStore]);
 
   useEffect(() => {
     if (!artifactId) return;
@@ -242,7 +257,7 @@ export default function ScSpatialPage() {
 
       {error ? <div className={styles.errorBanner} role="alert">{error}</div> : null}
 
-      <ToolTabPanel tabId="viz" activeId={activeTab}>
+      <ToolTabPanel tabId={activeTab} activeId={activeTab}>
         <div className={styles.layout}>
           <ScSpatialControlRail
             availableClusters={availableClusters}
@@ -262,12 +277,10 @@ export default function ScSpatialPage() {
             loadState={loadState}
             selectedCluster={selectedCluster}
             selectedGene={selectedGene}
-            viewMode={viewMode}
             onLoadDemo={loadDemo}
             onPickFile={() => fileInputRef.current?.click()}
             onSelectCluster={setSelectedClusterStore}
             onSelectGene={setSelectedGeneStore}
-            onSetViewMode={setViewModeStore}
             onToggleDeveloperMode={toggleDeveloperMode}
           />
 
@@ -315,12 +328,6 @@ export default function ScSpatialPage() {
               <RefreshCcw size={13} />
             </button>
           </div>
-        </div>
-      </ToolTabPanel>
-
-      <ToolTabPanel tabId="insights" activeId={activeTab}>
-        <div style={{ flex: 1, overflow: 'auto' }}>
-          <ScSpatialInsightRail query={query} />
         </div>
       </ToolTabPanel>
 

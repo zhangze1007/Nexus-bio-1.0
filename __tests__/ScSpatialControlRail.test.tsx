@@ -29,19 +29,14 @@ describe('ScSpatialControlRail', () => {
         loadState="ready"
         selectedCluster={null}
         selectedGene="GAPDH"
-        viewMode="umap"
         onLoadDemo={jest.fn()}
         onPickFile={jest.fn()}
         onSelectCluster={jest.fn()}
         onSelectGene={jest.fn()}
-        onSetViewMode={jest.fn()}
         onToggleDeveloperMode={jest.fn()}
       />,
     );
 
-    expect((screen.getByRole('button', { name: '2D' }) as HTMLButtonElement).disabled).toBe(true);
-    expect((screen.getByRole('button', { name: '3D' }) as HTMLButtonElement).disabled).toBe(true);
-    expect((screen.getByRole('button', { name: 'UMAP' }) as HTMLButtonElement).disabled).toBe(false);
     expect(screen.getByText('test/1.0.0')).toBeTruthy();
   });
 });

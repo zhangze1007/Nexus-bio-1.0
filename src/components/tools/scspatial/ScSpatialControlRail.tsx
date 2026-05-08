@@ -24,22 +24,12 @@ interface ScSpatialControlRailProps {
   loadState: 'idle' | 'uploading' | 'querying' | 'ready' | 'error';
   selectedCluster: string | null;
   selectedGene: string;
-  viewMode: 'spatial-2d' | 'spatial-3d' | 'umap' | 'trajectory' | 'table';
   onLoadDemo: () => void;
   onPickFile: () => void;
   onSelectCluster: (cluster: string | null) => void;
   onSelectGene: (gene: string) => void;
-  onSetViewMode: (viewMode: 'spatial-2d' | 'spatial-3d' | 'umap' | 'trajectory' | 'table') => void;
   onToggleDeveloperMode: () => void;
 }
-
-const VIEW_BUTTONS: Array<{ value: 'spatial-2d' | 'spatial-3d' | 'umap' | 'trajectory' | 'table'; label: string; availKey: keyof ScSpatialAvailableViews }> = [
-  { value: 'spatial-2d', label: '2D', availKey: 'spatial2d' },
-  { value: 'spatial-3d', label: '3D', availKey: 'spatial3d' },
-  { value: 'umap', label: 'UMAP', availKey: 'umap' },
-  { value: 'trajectory', label: 'Traj.', availKey: 'trajectory' },
-  { value: 'table', label: 'Table', availKey: 'table' },
-];
 
 function StepTitle({ n, children }: { n: number; children: React.ReactNode }) {
   return (
@@ -58,22 +48,13 @@ export default function ScSpatialControlRail({
   loadState,
   selectedCluster,
   selectedGene,
-  viewMode,
   onLoadDemo,
   onPickFile,
   onSelectCluster,
   onSelectGene,
-  onSetViewMode,
   onToggleDeveloperMode,
 }: ScSpatialControlRailProps) {
   const busy = loadState === 'uploading' || loadState === 'querying';
-  const viewAvailability = datasetMeta?.availableViews ?? {
-    spatial2d: false,
-    spatial3d: false,
-    umap: false,
-    trajectory: false,
-    table: false,
-  };
 
   const [geneQuery, setGeneQuery] = useState('');
 
@@ -108,28 +89,7 @@ export default function ScSpatialControlRail({
         </section>
 
         <section className={styles.section}>
-          <StepTitle n={2}>View</StepTitle>
-          <div>
-            <label className={styles.fieldLabel}>Mode</label>
-            <div className={styles.chipRow}>
-              {VIEW_BUTTONS.map((option) => {
-                const available = viewAvailability[option.availKey];
-                return (
-                  <button
-                    key={option.value}
-                    type="button"
-                    className={`${styles.button} ${viewMode === option.value ? styles.buttonActive : ''} ${!available ? styles.buttonDisabled : ''}`}
-                    onClick={() => onSetViewMode(option.value)}
-                    disabled={!available || busy}
-                    aria-disabled={!available || busy}
-                    title={available ? option.label : `${option.label} unavailable for the current artifact`}
-                  >
-                    {option.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+          <StepTitle n={2}>Gene</StepTitle>
           <div>
             <label className={styles.fieldLabel}>Target Gene</label>
             <select
