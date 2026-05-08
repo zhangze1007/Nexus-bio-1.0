@@ -25,7 +25,6 @@ import { useWorkbenchStore } from '../../store/workbenchStore';
 import { buildLearnedDeltaPack } from '../../services/learnedDeltaBuilder';
 import type { DBTLLearnedFeedback } from '../../types/dbtlFeedback';
 import type { LearnedDeltaPack } from '../../types/learnedDelta';
-import WorkbenchInlineContext from '../workbench/WorkbenchInlineContext';
 import { buildDBTLDraft } from './shared/workbenchDataflow';
 import { PATHD_THEME } from '../workbench/workbenchTheme';
 import ScientificHero from './shared/ScientificHero';
@@ -573,16 +572,6 @@ export default function DBTLflowPage() {
           description="Iterative experimental optimization. Each cycle records a hypothesis, measured result, and learning for the next design."
           formula="Cycle: D→B→T→L→D'"
         />
-
-        <div style={{ padding: '0 16px 6px' }}>
-          <WorkbenchInlineContext
-            toolId="dbtlflow"
-            title="DBTL Workflow"
-            summary="DBTL is the governed feedback engine of the workbench: only approved typed LearnedDeltaPacks can reseed upstream tools, so experiment feedback stays traceable and reviewable."
-            compact
-            isSimulated={!analyzeArtifact}
-          />
-        </div>
 
         <div style={{ padding: '0 16px 4px' }}>
           <ScientificHero

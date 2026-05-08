@@ -8,7 +8,6 @@ import { CIRCUIT_NODES, LOGIC_GATES, hillInhibition, hillActivation } from '../.
 import type { GateType } from '../../data/mockGECAIR';
 import { useWorkbenchStore } from '../../store/workbenchStore';
 import { T, TOOL_RESULT_PALETTE} from '../ide/tokens';
-import WorkbenchInlineContext from '../workbench/WorkbenchInlineContext';
 import ScientificHero from './shared/ScientificHero';
 import { PATHD_THEME } from '../workbench/workbenchTheme';
 import ScientificFigureFrame from './shared/ScientificFigureFrame';
@@ -497,14 +496,6 @@ export default function GECAIRPage() {
         <div className="nb-tool-panels" style={{ flex: 1 }}>
           {/* Input panel */}
           <div className="nb-tool-sidebar" style={{ width: '240px', borderRight: `1px solid ${BORDER}`, background: PANEL_BG }}>
-            <WorkbenchInlineContext
-              toolId="gecair"
-              title="Gene Circuit AI Reasoner"
-              summary="Turn bottleneck and control objectives into interpretable circuit logic so Stage 3 design decisions stay connected to upstream evidence and downstream control work."
-              compact
-              isSimulated={!analyzeArtifact}
-            />
-
             <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: LABEL, margin: '0 0 12px' }}>
               Input Signals
             </p>
