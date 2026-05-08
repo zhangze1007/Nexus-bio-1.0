@@ -1,14 +1,11 @@
 'use client';
 import { useState, useMemo, useRef, useEffect } from 'react';
-import AlgorithmInsight from '../ide/shared/AlgorithmInsight';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
-import DemoBanner from '../ide/shared/DemoBanner';
 import SimErrorBanner from '../ide/shared/SimErrorBanner';
 import { usePersistedState } from '../ide/shared/usePersistedState';
 import { useUIStore } from '../../store/uiStore';
 import { useWorkbenchStore } from '../../store/workbenchStore';
-import WorkbenchInlineContext from '../workbench/WorkbenchInlineContext';
 import ScientificHero from './shared/ScientificHero';
 import {
   METABOLIC_NODES, FLUX_EDGES, REACTION_DEFS,
@@ -22,8 +19,12 @@ import { T, TOOL_RESULT_PALETTE} from '../ide/tokens';
 import { PATHD_THEME } from '../workbench/workbenchTheme';
 import { SCI_PALETTE, SCI_PASTEL } from '../charts/chartTheme';
 import ScientificFigureFrame from './shared/ScientificFigureFrame';
-import ScientificMethodStrip from './shared/ScientificMethodStrip';
 import WorkbenchRangeSlider from './shared/WorkbenchRangeSlider';
+import ToolShell from './shared/ToolShell';
+import ToolTabPanel from './shared/ToolTabPanel';
+import FloatingControlRail from './shared/FloatingControlRail';
+import InlineMetricOverlay from './shared/InlineMetricOverlay';
+import type { ToolTab } from './shared/ToolTabBar';
 
 // ── 5-color scientific palette (coral / sky / mint / lilac / apricot) ──
 // E. coli → coral (warm, distinctive)
@@ -524,6 +525,12 @@ export default function FBASimPage() {
   );
   const lastAppliedSeedRef = useRef<string | null>(null);
   const [seedOverwriteNotice, setSeedOverwriteNotice] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState('viz');
+
+  const FBA_TABS: ToolTab[] = [
+    { id: 'viz', label: 'Visualization', accent: PATHD_THEME.sky },
+    { id: 'analysis', label: 'Analysis', accent: PATHD_THEME.mint },
+  ];
 
   useEffect(() => {
     if (lastAppliedSeedRef.current === seedSignature) return;
@@ -775,28 +782,13 @@ export default function FBASimPage() {
   ]);
 
   return (
-    <>
-      <div className="nb-tool-page" style={{ background: PATHD_THEME.sepiaPanelMuted }}>
-        <AlgorithmInsight
-          title={simMode === 'single' ? 'Flux Balance Analysis' : 'Two-Species Demo Comparison'}
-          description={simMode === 'single'
-            ? 'Server-side GLPK solves a stoichiometric LP for the current host context, then revalidates glucose and oxygen shadow prices with finite-difference reruns so downstream tools inherit an authority-backed flux state.'
-            : 'Two-species heuristic demo, not a joint community LP. Two server-side host LPs are solved independently and exchange values are compared with post-hoc scaling.'}
-          formula={simMode === 'single'
-            ? 'max cᵀv s.t. Sv=0, lb≤v≤ub'
-            : 'μ_demo = (1-α)μ₁ + αμ₂; exchange = post-hoc scaled comparison'}
-        />
-        <div style={{ padding: '0 16px 8px' }}>
-          <WorkbenchInlineContext
-            toolId="fbasim"
-            title="Flux Simulation"
-            summary="Flux simulation turns the current pathway object into quantitative growth, ATP, and carbon-efficiency constraints so downstream thermodynamics, catalyst design, and control layers do not keep operating on stale assumptions."
-            compact
-            isSimulated={!analyzeArtifact}
-          />
-        </div>
-        <div style={{ padding: '0 16px 10px' }}>
-          <ScientificHero
+    <ToolShell
+      moduleId="fbasim"
+      title="Flux Balance Analysis"
+      description={simMode === 'single' ? 'Server-side GLPK solves a stoichiometric LP for the current host context' : 'Two-species heuristic demo comparison'}
+      formula={simMode === 'single' ? 'max cᵀv s.t. Sv=0, lb≤v≤ub' : 'μ_demo = (1-α)μ₁ + αμ₂'}
+      hero={
+        <ScientificHero
             eyebrow={`Stage 2 · ${simMode === 'single' ? 'Host Flux Solve' : 'Two-Species Heuristic Demo'}`}
             title={simMode === 'single' ? 'Authority-backed metabolic flux state' : 'Side-by-side host flux comparison'}
             summary={simMode === 'single'
@@ -869,394 +861,12 @@ export default function FBASimPage() {
                   },
                 ]}
           />
-        </div>
-
-        <div style={{ padding: '0 16px 10px' }}>
-          <ScientificMethodStrip
-            label="Model Analysis Grammar"
-            items={[
-              {
-                title: 'Constraint setup',
-                detail: 'Objective, uptake limits, and knockout state should read like the methods legend for the current flux solve.',
-                accent: PATHD_THEME.apricot,
-                note: 'Model inputs',
-              },
-              {
-                title: 'Flux figure',
-                detail: 'The network map is the primary scientific canvas and should carry the main burden of interpretation, not act as a middle-column ornament.',
-                accent: PATHD_THEME.sky,
-                note: 'Primary canvas',
-              },
-              {
-                title: 'Readout ledger',
-                detail: 'Growth, ATP, carbon efficiency, and top reactions belong as an attached evidence ledger around the same model figure.',
-                accent: PATHD_THEME.mint,
-                note: 'Integrated readout',
-              },
-            ]}
-          />
-        </div>
-        <div style={{ padding: '0 16px 4px' }}>
-          <DemoBanner context="E. coli central metabolism (glycolysis + TCA)" />
-        </div>
-
-        {/* Mode toggle */}
-        <div style={{ padding: '0 16px 8px', display: 'flex', gap: '4px', flexShrink: 0 }}>
-          {(['single', 'community'] as const).map(mode => (
-            <button aria-label="Action" key={mode} onClick={() => setSimMode(mode)} style={{
-              padding: '6px 14px', borderRadius: '20px',
-              background: simMode === mode ? 'rgba(255,255,255,0.08)' : 'transparent',
-              border: `1px solid ${simMode === mode ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.06)'}`,
-              color: simMode === mode ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.35)',
-              fontFamily: T.SANS, fontSize: '11px', cursor: 'pointer', transition: 'all 0.2s',
-            }}>
-              {mode === 'single' ? 'Single Species' : 'Two-Species Demo'}
-            </button>
-          ))}
-        </div>
-
-        {/* Error banners */}
-        {singleError && simMode === 'single' && (
-          <div style={{ padding: '0 16px 8px' }}><SimErrorBanner message={singleError} /></div>
-        )}
-        {simMode === 'community' && (
-          <div style={{ padding: '0 16px 8px' }}>
-            <div style={{
-              padding: '8px 12px',
-              borderRadius: '12px',
-              border: '1px solid rgba(250,128,114,0.28)',
-              background: 'rgba(250,128,114,0.08)',
-              color: 'rgba(255,228,220,0.85)',
-              fontFamily: T.SANS,
-              fontSize: '11px',
-              lineHeight: 1.5,
-            }}>
-              <strong style={{ color: 'rgba(255,200,190,0.95)' }}>Method note:</strong> Two-species heuristic demo, not a joint community LP. This mode runs two independent single-species FBA solves (E. coli and yeast) and compares their exchange fluxes. It is <em>not</em> a joint community LP (e.g. SteadyCom / cFBA) — shared-pool stoichiometric coupling is not enforced. Treat outputs as a side-by-side flux comparison, not a microbiome model.
-            </div>
-          </div>
-        )}
-        {seedOverwriteNotice && (
-          <div style={{ padding: '0 16px 8px' }}>
-            <div style={{
-              padding: '8px 12px',
-              borderRadius: '12px',
-              border: '1px solid rgba(232, 180, 90, 0.45)',
-              background: 'rgba(232, 180, 90, 0.10)',
-              color: 'rgba(255, 230, 190, 0.9)',
-              fontFamily: T.SANS,
-              fontSize: '11px',
-              display: 'flex',
-              gap: '8px',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-            }}>
-              <span>{seedOverwriteNotice}</span>
-              <button
-                aria-label="Dismiss"
-                onClick={() => setSeedOverwriteNotice(null)}
-                style={{
-                  fontFamily: T.MONO,
-                  fontSize: '10px',
-                  padding: '3px 8px',
-                  borderRadius: '8px',
-                  border: '1px solid rgba(255,255,255,0.18)',
-                  background: 'transparent',
-                  color: 'rgba(255,255,255,0.8)',
-                  cursor: 'pointer',
-                }}
-              >
-                Dismiss
-              </button>
-            </div>
-          </div>
-        )}
-        {communityError && simMode === 'community' && (
-          <div style={{ padding: '0 16px 8px' }}><SimErrorBanner message={communityError} /></div>
-        )}
-        {singleLoading && simMode === 'single' && (
-          <div style={{ padding: '0 16px 8px' }}>
-            <div style={{
-              padding: '8px 12px',
-              borderRadius: '12px',
-              border: '1px solid rgba(81,81,205,0.22)',
-              background: 'rgba(81,81,205,0.08)',
-              color: 'rgba(240,245,255,0.78)',
-              fontFamily: T.SANS,
-              fontSize: '11px',
-            }}>
-              Authority engine recomputing server-side LP for the current pathway context.
-            </div>
-          </div>
-        )}
-        {communityLoading && simMode === 'community' && (
-          <div style={{ padding: '0 16px 8px' }}>
-            <div style={{
-              padding: '8px 12px',
-              borderRadius: '12px',
-              border: '1px solid rgba(81,81,205,0.22)',
-              background: 'rgba(81,81,205,0.08)',
-              color: 'rgba(240,245,255,0.78)',
-              fontFamily: T.SANS,
-              fontSize: '11px',
-            }}>
-              Solving two independent single-species LPs and comparing their exchange fluxes (not a joint stoichiometric optimization).
-            </div>
-          </div>
-        )}
-
-        {/* ── SINGLE MODE ── */}
-        {simMode === 'single' && (
-          <div className="nb-tool-panels" style={{ flex: 1 }}>
-            {/* Input panel */}
-            <div className="nb-tool-sidebar" style={{ width: '240px', borderRight: `1px solid ${PATHD_THEME.sepiaPanelBorder}`, background: PATHD_THEME.sepiaPanelMuted }}>
-              <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '0 0 12px' }}>
-                Simulation Parameters
-              </p>
-
-              <ParamSlider label="Glucose uptake" value={glucoseUptake} min={0} max={20} onChange={setGlucoseUptake} unit="mmol/gDW/h" />
-              <ParamSlider label="O₂ uptake" value={oxygenUptake} min={0} max={20} onChange={setOxygenUptake} unit="mmol/gDW/h" />
-
-              <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '16px 0 8px' }}>
-                Objective Function
-              </p>
-              {(['biomass', 'atp', 'product'] as const).map(opt => (
-                <button aria-label="Action" key={opt} onClick={() => setObjective(opt)} style={{
-                  display: 'block', width: '100%', textAlign: 'left',
-                  padding: '6px 10px', marginBottom: '4px',
-                  background: objective === opt ? PATHD_THEME.panelSurface : 'rgba(255,255,255,0.34)',
-                  border: `1px solid ${objective === opt ? PATHD_THEME.panelBorderStrong : PATHD_THEME.sepiaPanelBorder}`,
-                  borderRadius: '8px',
-                  color: objective === opt ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.4)',
-                  fontFamily: T.SANS, fontSize: '11px', cursor: 'pointer',
-                }}>
-                  {opt === 'biomass' ? 'Max Biomass' : opt === 'atp' ? 'Max ATP' : 'Max Product'}
-                </button>
-              ))}
-
-              <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '16px 0 8px' }}>
-                Gene Knockouts
-              </p>
-              {REACTION_DEFS.map(r => {
-                const isKO = knockouts.includes(r.id);
-                return (
-                  <button aria-label={`${isKO ? 'Remove' : 'Apply'} ${r.id} knockout`} aria-pressed={isKO} key={r.id} onClick={() => toggleKO(r.id)} style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    width: '100%', padding: '5px 8px', marginBottom: '3px',
-                    background: isKO ? 'rgba(255,80,80,0.14)' : 'transparent',
-                    border: `1px solid ${isKO ? 'rgba(255,80,80,0.38)' : 'rgba(255,255,255,0.06)'}`,
-                    borderRadius: '6px', cursor: 'pointer',
-                  }}>
-                    <span style={{ fontFamily: T.MONO, fontSize: '10px', color: isKO ? 'rgba(255,120,120,0.9)' : 'rgba(255,255,255,0.5)' }}>{r.id}</span>
-                    <span style={{
-                      width: '8px', height: '8px', borderRadius: '50%',
-                      background: isKO ? 'rgba(255,80,80,0.7)' : 'rgba(255,255,255,0.12)',
-                      flexShrink: 0,
-                    }} />
-                  </button>
-                );
-              })}
-              {knockouts.length > 0 && (
-                <>
-                  <div
-                    style={{
-                      marginTop: '6px',
-                      marginBottom: '6px',
-                      padding: '8px 10px',
-                      borderRadius: '8px',
-                      border: '1px solid rgba(255,80,80,0.24)',
-                      background: 'rgba(255,80,80,0.10)',
-                      display: 'grid',
-                      gap: '3px',
-                    }}
-                  >
-                    <span style={{ fontFamily: T.MONO, fontSize: '9px', color: 'rgba(255,190,190,0.92)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-                      Active perturbations
-                    </span>
-                    <span style={{ fontFamily: T.SANS, fontSize: '10px', color: 'rgba(255,255,255,0.72)', lineHeight: 1.5 }}>
-                      {knockouts.join(', ')} applied. The LP has been recomputed with those reactions clamped to zero flux.
-                    </span>
-                  </div>
-                  <button aria-label="Clear all knockouts" onClick={() => setKnockouts([])} style={{
-                    display: 'block', width: '100%', marginTop: '6px',
-                    padding: '5px 8px', background: 'transparent',
-                    border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px',
-                    color: 'rgba(255,255,255,0.3)', fontFamily: T.SANS, fontSize: '10px', cursor: 'pointer',
-                  }}>
-                    Clear all knockouts
-                  </button>
-                </>
-              )}
-            </div>
-
-            {/* Engine view — SVG flux map */}
-            <div className="nb-tool-center" style={{ flex: 1, position: 'relative', background: PATHD_THEME.sepiaPanelMuted, display: 'flex', alignItems: 'stretch', justifyContent: 'center', minWidth: 0, padding: '16px' }}>
-              <ScientificFigureFrame
-                eyebrow={figureMeta.eyebrow}
-                title={figureMeta.title}
-                caption={figureMeta.caption}
-                minHeight="100%"
-                legend={[
-                  { label: 'Objective', value: objective, accent: PATHD_THEME.apricot },
-                  { label: 'Glucose', value: `${glucoseUptake.toFixed(1)} mmol/gDW/h`, accent: PATHD_THEME.coral },
-                  { label: 'Oxygen', value: `${oxygenUptake.toFixed(1)} mmol/gDW/h`, accent: PATHD_THEME.sky },
-                  { label: 'Knockouts', value: knockouts.length ? knockouts.join(', ') : 'none', accent: PATHD_THEME.mint },
-                ]}
-                footer={
-                  <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.paperMuted, lineHeight: 1.55 }}>
-                    {singleResult.feasible
-                      ? 'Shadow prices and top-flux readouts should be interpreted as annotations on this same model figure, not as detached KPI tiles.'
-                      : 'The current solve is infeasible, so the figure is functioning as a rejection surface rather than a success dashboard.'}
-                  </div>
-                }
-              >
-                <div style={{ minHeight: '540px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <FluxMap result={singleResult} nodes={METABOLIC_NODES} edges={FLUX_EDGES} knockouts={knockouts} svgRef={chartRef} />
-                </div>
-              </ScientificFigureFrame>
-            </div>
-
-            {/* Results panel */}
-            <div className="nb-tool-right" style={{ width: '240px', borderLeft: `1px solid ${PATHD_THEME.sepiaPanelBorder}`, background: PATHD_THEME.sepiaPanelMuted }}>
-              <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '0 0 12px' }}>
-                Results
-              </p>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
-                <MetricCard label="Growth Rate (μ)" value={singleResult.growthRate} unit="h⁻¹" highlight />
-                <MetricCard label="ATP Yield" value={singleResult.atpYield} unit="mol/mol glc" />
-                <MetricCard label="NADH Production" value={singleResult.nadhProduction} unit="mmol/gDW/h" />
-                <MetricCard label="Carbon Efficiency" value={singleResult.carbonEfficiency} unit="%" />
-                <MetricCard label="Feasible" value={singleResult.feasible ? 'YES' : 'NO'} />
-              </div>
-
-              <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '0 0 8px' }}>
-                Shadow Prices (∂μ/∂uptake)
-              </p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
-                <MetricCard label="∂μ/∂Glucose" value={singleResult.shadowPrices.glc.toFixed(4)} unit="h⁻¹·gDW/mmol" />
-                <MetricCard label="∂μ/∂Oxygen"  value={singleResult.shadowPrices.o2.toFixed(4)}  unit="h⁻¹·gDW/mmol" />
-                <MetricCard label="∂μ/∂ATP"     value={singleResult.shadowPrices.atp.toFixed(4)} unit="h⁻¹·gDW/mmol" />
-              </div>
-
-              <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '0 0 8px' }}>
-                Top 5 Active Reactions
-              </p>
-              {top5.map(r => (
-                <div key={r.id} style={{
-                  padding: '6px 8px', marginBottom: '4px',
-                  background: 'rgba(255,255,255,0.04)',
-                  border: `1px solid ${knockouts.includes(r.id) ? 'rgba(255,80,80,0.2)' : 'rgba(255,255,255,0.06)'}`,
-                  borderRadius: '8px',
-                }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontFamily: T.MONO, fontSize: '10px', color: knockouts.includes(r.id) ? 'rgba(255,120,120,0.7)' : 'rgba(255,255,255,0.6)' }}>{r.id}</span>
-                    <span style={{ fontFamily: T.MONO, fontSize: '10px', fontWeight: 600, color: r.flux > 0 ? 'rgba(20,140,80,0.9)' : 'rgba(255,80,80,0.6)', textAlign: 'right' }}>
-                      {r.flux.toFixed(2)}
-                    </span>
-                  </div>
-                  <div style={{ fontFamily: T.SANS, fontSize: '10px', color: 'rgba(255,255,255,0.35)', marginTop: '2px' }}>{r.name}</div>
-                  <div style={{ marginTop: '4px', height: '2px', background: 'rgba(255,255,255,0.06)', borderRadius: '1px' }}>
-                    <div style={{
-                      height: '100%', borderRadius: '1px',
-                      width: `${Math.abs(r.flux / maxTopFlux) * 100}%`,
-                      background: knockouts.includes(r.id) ? 'rgba(255,80,80,0.3)' : 'rgba(20,140,80,0.4)',
-                      transition: 'width 0.3s',
-                    }} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* ── COMMUNITY MODE ── */}
-        {simMode === 'community' && (
-          <div className="nb-tool-panels" style={{ flex: 1 }}>
-            {/* Strain A (E. coli) sidebar */}
-            <div className="nb-tool-sidebar" style={{ width: '220px', flexShrink: 0, padding: '12px' }}>
-              <StrainPanel
-                label="E. coli (Strain A)"
-                color={COLORS.strainABg} borderColor={COLORS.strainABorder} accentColor={COLORS.strainA}
-                glucoseUptake={ecoliGlucose} oxygenUptake={ecoliOxygen} knockouts={ecoliKO}
-                reactions={REACTION_DEFS} result={communityResult.ecoli}
-                onGlucoseChange={setEcoliGlucose} onOxygenChange={setEcoliOxygen}
-                onToggleKO={toggleEcoliKO} onClearKO={() => setEcoliKO([])}
-              />
-            </div>
-
-            {/* Center: dual flux maps + shared bus */}
-            <div className="nb-tool-center" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '12px', padding: '16px', minWidth: 0, background: PATHD_THEME.sepiaPanelMuted }}>
-              <ScientificFigureFrame
-                eyebrow={figureMeta.eyebrow}
-                title={figureMeta.title}
-                caption={figureMeta.caption}
-                minHeight="100%"
-                legend={[
-                  { label: 'Objective', value: objective, accent: PATHD_THEME.apricot },
-                  { label: 'Demo blended growth', value: `${communityResult.communityGrowthRate.toFixed(4)} h⁻¹`, accent: PATHD_THEME.mint },
-                  { label: 'E. coli KOs', value: ecoliKO.length ? ecoliKO.join(', ') : 'none', accent: COLORS.strainA },
-                  { label: 'Yeast KOs', value: yeastKO.length ? yeastKO.join(', ') : 'none', accent: COLORS.strainB },
-                ]}
-                footer={
-                  <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.paperMuted, lineHeight: 1.55 }}>
-                    Two-species demo view compares independent host states and post-hoc exchange-like values; it does not assert a coupled community optimum.
-                  </div>
-                }
-              >
-                <div style={{ display: 'grid', gap: '12px', minHeight: '540px' }}>
-                  <GlassContainer color={COLORS.sharedBg} borderColor={COLORS.sharedBorder}
-                    style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span style={{ fontFamily: T.SANS, fontSize: '11px', color: 'rgba(255,255,255,0.55)' }}>
-                      Demo Biomass Blend
-                    </span>
-                    <span style={{ fontFamily: T.MONO, fontSize: '14px', fontWeight: 600, color: COLORS.sharedPool, textAlign: 'right' }}>
-                      μ_demo = {communityResult.communityGrowthRate.toFixed(4)} h⁻¹
-                    </span>
-                  </GlassContainer>
-
-                  <div style={{ display: 'flex', gap: '12px', flex: 1, minHeight: 0 }}>
-                    <GlassContainer color={COLORS.strainABg} borderColor={COLORS.strainABorder}
-                      style={{ flex: 1, padding: '8px', display: 'flex', flexDirection: 'column' }}>
-                      <p style={{ fontFamily: T.MONO, fontSize: '9px', color: COLORS.strainA, margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                        E. coli Network
-                      </p>
-                      <div style={{ flex: 1, minHeight: 0 }}>
-                        <FluxMap result={communityResult.ecoli} nodes={METABOLIC_NODES} edges={FLUX_EDGES} knockouts={ecoliKO} compact />
-                      </div>
-                    </GlassContainer>
-
-                    <GlassContainer color={COLORS.strainBBg} borderColor={COLORS.strainBBorder}
-                      style={{ flex: 1, padding: '8px', display: 'flex', flexDirection: 'column' }}>
-                      <p style={{ fontFamily: T.MONO, fontSize: '9px', color: COLORS.strainB, margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                        S. cerevisiae Network
-                      </p>
-                      <div style={{ flex: 1, minHeight: 0 }}>
-                        <FluxMap result={communityResult.yeast} nodes={YEAST_NODES} edges={YEAST_FLUX_EDGES} knockouts={yeastKO} compact />
-                      </div>
-                    </GlassContainer>
-                  </div>
-
-                  <SharedMetaboliteBus exchangeFluxes={communityResult.exchangeFluxes} />
-                </div>
-              </ScientificFigureFrame>
-            </div>
-
-            {/* Strain B (S. cerevisiae) sidebar */}
-            <div className="nb-tool-right" style={{ width: '220px', flexShrink: 0, padding: '12px' }}>
-              <StrainPanel
-                label="S. cerevisiae (Strain B)"
-                color={COLORS.strainBBg} borderColor={COLORS.strainBBorder} accentColor={COLORS.strainB}
-                glucoseUptake={yeastGlucose} oxygenUptake={yeastOxygen} knockouts={yeastKO}
-                reactions={YEAST_REACTION_DEFS} result={communityResult.yeast}
-                onGlucoseChange={setYeastGlucose} onOxygenChange={setYeastOxygen}
-                onToggleKO={toggleYeastKO} onClearKO={() => setYeastKO([])}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Export bar */}
-        <div style={{ borderTop: `1px solid ${PATHD_THEME.sepiaPanelBorder}`, padding: '8px 16px', display: 'flex', gap: '8px', flexShrink: 0, background: PATHD_THEME.sepiaPanelMuted }}>
+      }
+      tabs={FBA_TABS}
+      activeTab={activeTab}
+      onTabChange={setActiveTab}
+      footer={
+        <>
           <ExportButton label="Export JSON" data={exportData} filename={`fbasim-${simMode}-result`} format="json" />
           <ExportButton label="Export CSV" data={
             simMode === 'single'
@@ -1268,8 +878,220 @@ export default function FBASimPage() {
                 ]
           } filename={`fbasim-${simMode}-fluxes`} format="csv" />
           <ExportButton label="Export SVG" data={null} filename={`fbasim-${simMode}-chart`} format="svg" svgRef={chartRef} />
+        </>
+      }
+      workbenchSummary="Flux simulation turns the current pathway object into quantitative growth, ATP, and carbon-efficiency constraints."
+      workbenchSimulated={!analyzeArtifact}
+    >
+      {/* ── Visualization Tab ── */}
+      <ToolTabPanel tabId="viz" activeId={activeTab}>
+        <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
+          <FloatingControlRail label="Parameters" defaultCollapsed={false} width={260}>
+            {/* Mode toggle */}
+            <div style={{ display: 'flex', gap: '4px', marginBottom: '8px' }}>
+              {(['single', 'community'] as const).map(mode => (
+                <button key={mode} onClick={() => setSimMode(mode)} style={{
+                  flex: 1, padding: '6px 8px', borderRadius: '12px',
+                  background: simMode === mode ? 'rgba(255,255,255,0.08)' : 'transparent',
+                  border: `1px solid ${simMode === mode ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.06)'}`,
+                  color: simMode === mode ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.35)',
+                  fontFamily: T.SANS, fontSize: '10px', cursor: 'pointer', transition: 'all 0.2s',
+                }}>
+                  {mode === 'single' ? 'Single' : 'Community'}
+                </button>
+              ))}
+            </div>
+
+            {simMode === 'single' ? (
+              <>
+                <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '0 0 8px' }}>
+                  Uptake Limits
+                </p>
+                <ParamSlider label="Glucose uptake" value={glucoseUptake} min={0} max={20} onChange={setGlucoseUptake} unit="mmol/gDW/h" />
+                <ParamSlider label="O₂ uptake" value={oxygenUptake} min={0} max={20} onChange={setOxygenUptake} unit="mmol/gDW/h" />
+                <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '12px 0 8px' }}>
+                  Objective
+                </p>
+                {(['biomass', 'atp', 'product'] as const).map(opt => (
+                  <button key={opt} onClick={() => setObjective(opt)} style={{
+                    display: 'block', width: '100%', textAlign: 'left',
+                    padding: '5px 8px', marginBottom: '3px',
+                    background: objective === opt ? PATHD_THEME.panelSurface : 'rgba(255,255,255,0.34)',
+                    border: `1px solid ${objective === opt ? PATHD_THEME.panelBorderStrong : PATHD_THEME.sepiaPanelBorder}`,
+                    borderRadius: '6px',
+                    color: objective === opt ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.4)',
+                    fontFamily: T.SANS, fontSize: '10px', cursor: 'pointer',
+                  }}>
+                    {opt === 'biomass' ? 'Max Biomass' : opt === 'atp' ? 'Max ATP' : 'Max Product'}
+                  </button>
+                ))}
+                <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '12px 0 8px' }}>
+                  Gene Knockouts
+                </p>
+                {REACTION_DEFS.map(r => {
+                  const isKO = knockouts.includes(r.id);
+                  return (
+                    <button key={r.id} onClick={() => toggleKO(r.id)} style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      width: '100%', padding: '4px 6px', marginBottom: '2px',
+                      background: isKO ? 'rgba(255,80,80,0.14)' : 'transparent',
+                      border: `1px solid ${isKO ? 'rgba(255,80,80,0.38)' : 'rgba(255,255,255,0.06)'}`,
+                      borderRadius: '5px', cursor: 'pointer',
+                    }}>
+                      <span style={{ fontFamily: T.MONO, fontSize: '9px', color: isKO ? 'rgba(255,120,120,0.9)' : 'rgba(255,255,255,0.5)' }}>{r.id}</span>
+                      <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: isKO ? 'rgba(255,80,80,0.7)' : 'rgba(255,255,255,0.12)', flexShrink: 0 }} />
+                    </button>
+                  );
+                })}
+                {knockouts.length > 0 && (
+                  <button onClick={() => setKnockouts([])} style={{
+                    display: 'block', width: '100%', marginTop: '6px',
+                    padding: '4px 6px', background: 'transparent',
+                    border: '1px solid rgba(255,255,255,0.08)', borderRadius: '5px',
+                    color: 'rgba(255,255,255,0.3)', fontFamily: T.SANS, fontSize: '9px', cursor: 'pointer',
+                  }}>
+                    Clear knockouts ({knockouts.length})
+                  </button>
+                )}
+              </>
+            ) : (
+              <>
+                <StrainPanel label="E. coli" color={COLORS.strainABg} borderColor={COLORS.strainABorder} accentColor={COLORS.strainA}
+                  glucoseUptake={ecoliGlucose} oxygenUptake={ecoliOxygen} knockouts={ecoliKO}
+                  reactions={REACTION_DEFS} result={communityResult.ecoli}
+                  onGlucoseChange={setEcoliGlucose} onOxygenChange={setEcoliOxygen}
+                  onToggleKO={toggleEcoliKO} onClearKO={() => setEcoliKO([])} />
+                <div style={{ height: '1px', background: 'rgba(255,255,255,0.06)', margin: '8px 0' }} />
+                <StrainPanel label="S. cerevisiae" color={COLORS.strainBBg} borderColor={COLORS.strainBBorder} accentColor={COLORS.strainB}
+                  glucoseUptake={yeastGlucose} oxygenUptake={yeastOxygen} knockouts={yeastKO}
+                  reactions={YEAST_REACTION_DEFS} result={communityResult.yeast}
+                  onGlucoseChange={setYeastGlucose} onOxygenChange={setYeastOxygen}
+                  onToggleKO={toggleYeastKO} onClearKO={() => setYeastKO([])} />
+              </>
+            )}
+          </FloatingControlRail>
+
+          {/* Main visualization area */}
+          <div style={{ flex: 1, position: 'relative', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+            {/* Error banners */}
+            {singleError && simMode === 'single' && <div style={{ padding: '0 16px 8px' }}><SimErrorBanner message={singleError} /></div>}
+            {communityError && simMode === 'community' && <div style={{ padding: '0 16px 8px' }}><SimErrorBanner message={communityError} /></div>}
+            {(singleLoading && simMode === 'single') && (
+              <div style={{ padding: '0 16px 8px' }}>
+                <div style={{ padding: '6px 10px', borderRadius: '10px', border: '1px solid rgba(81,81,205,0.22)', background: 'rgba(81,81,205,0.08)', color: 'rgba(240,245,255,0.78)', fontFamily: T.SANS, fontSize: '10px' }}>
+                  Authority engine recomputing server-side LP.
+                </div>
+              </div>
+            )}
+            {(communityLoading && simMode === 'community') && (
+              <div style={{ padding: '0 16px 8px' }}>
+                <div style={{ padding: '6px 10px', borderRadius: '10px', border: '1px solid rgba(81,81,205,0.22)', background: 'rgba(81,81,205,0.08)', color: 'rgba(240,245,255,0.78)', fontFamily: T.SANS, fontSize: '10px' }}>
+                  Solving two independent single-species LPs.
+                </div>
+              </div>
+            )}
+
+            <ScientificFigureFrame
+              eyebrow={figureMeta.eyebrow}
+              title={figureMeta.title}
+              caption={figureMeta.caption}
+              minHeight="100%"
+              legend={[
+                { label: 'Objective', value: objective, accent: PATHD_THEME.apricot },
+                { label: 'Glucose', value: `${glucoseUptake.toFixed(1)} mmol/gDW/h`, accent: PATHD_THEME.coral },
+                { label: 'Oxygen', value: `${oxygenUptake.toFixed(1)} mmol/gDW/h`, accent: PATHD_THEME.sky },
+                { label: 'Knockouts', value: knockouts.length ? knockouts.join(', ') : 'none', accent: PATHD_THEME.mint },
+              ]}
+            >
+              {simMode === 'single' ? (
+                <div style={{ minHeight: '500px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <FluxMap result={singleResult} nodes={METABOLIC_NODES} edges={FLUX_EDGES} knockouts={knockouts} svgRef={chartRef} />
+                </div>
+              ) : (
+                <div style={{ display: 'grid', gap: '12px', minHeight: '500px' }}>
+                  <GlassContainer color={COLORS.sharedBg} borderColor={COLORS.sharedBorder}
+                    style={{ padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ fontFamily: T.SANS, fontSize: '11px', color: 'rgba(255,255,255,0.55)' }}>Demo Biomass Blend</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: '13px', fontWeight: 600, color: COLORS.sharedPool }}>μ_demo = {communityResult.communityGrowthRate.toFixed(4)} h⁻¹</span>
+                  </GlassContainer>
+                  <div style={{ display: 'flex', gap: '12px', flex: 1, minHeight: 0 }}>
+                    <GlassContainer color={COLORS.strainABg} borderColor={COLORS.strainABorder} style={{ flex: 1, padding: '6px', display: 'flex', flexDirection: 'column' }}>
+                      <p style={{ fontFamily: T.MONO, fontSize: '8px', color: COLORS.strainA, margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>E. coli</p>
+                      <div style={{ flex: 1, minHeight: 0 }}><FluxMap result={communityResult.ecoli} nodes={METABOLIC_NODES} edges={FLUX_EDGES} knockouts={ecoliKO} compact /></div>
+                    </GlassContainer>
+                    <GlassContainer color={COLORS.strainBBg} borderColor={COLORS.strainBBorder} style={{ flex: 1, padding: '6px', display: 'flex', flexDirection: 'column' }}>
+                      <p style={{ fontFamily: T.MONO, fontSize: '8px', color: COLORS.strainB, margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>S. cerevisiae</p>
+                      <div style={{ flex: 1, minHeight: 0 }}><FluxMap result={communityResult.yeast} nodes={YEAST_NODES} edges={YEAST_FLUX_EDGES} knockouts={yeastKO} compact /></div>
+                    </GlassContainer>
+                  </div>
+                  <SharedMetaboliteBus exchangeFluxes={communityResult.exchangeFluxes} />
+                </div>
+              )}
+            </ScientificFigureFrame>
+
+            {/* Inline metric overlay */}
+            <InlineMetricOverlay
+              position="top-right"
+              metrics={simMode === 'single'
+                ? [
+                    { label: 'Growth', value: `${singleResult.growthRate.toFixed(4)} h⁻¹`, accent: singleResult.feasible ? PATHD_THEME.mint : PATHD_THEME.coral },
+                    { label: 'ATP Yield', value: `${singleResult.atpYield.toFixed(2)} mol/mol`, accent: PATHD_THEME.sky },
+                    { label: 'C Efficiency', value: `${singleResult.carbonEfficiency.toFixed(1)}%`, accent: singleResult.carbonEfficiency >= 50 ? PATHD_THEME.mint : PATHD_THEME.apricot },
+                  ]
+                : [
+                    { label: 'Blend μ', value: `${communityResult.communityGrowthRate.toFixed(4)} h⁻¹`, accent: communityResult.feasible ? PATHD_THEME.mint : PATHD_THEME.coral },
+                    { label: 'E. coli μ', value: `${communityResult.ecoli.growthRate.toFixed(3)}`, accent: COLORS.strainA },
+                    { label: 'Yeast μ', value: `${communityResult.yeast.growthRate.toFixed(3)}`, accent: COLORS.strainB },
+                  ]
+              }
+            />
+          </div>
         </div>
-      </div>
-    </>
+      </ToolTabPanel>
+
+      {/* ── Analysis Tab ── */}
+      <ToolTabPanel tabId="analysis" activeId={activeTab}>
+        <div style={{ display: 'flex', gap: '16px', flex: 1, minHeight: 0, overflow: 'auto', padding: '12px' }}>
+          {/* Results */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '0 0 10px' }}>Results</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '16px' }}>
+              <MetricCard label="Growth Rate (μ)" value={singleResult.growthRate} unit="h⁻¹" highlight />
+              <MetricCard label="ATP Yield" value={singleResult.atpYield} unit="mol/mol glc" />
+              <MetricCard label="NADH Production" value={singleResult.nadhProduction} unit="mmol/gDW/h" />
+              <MetricCard label="Carbon Efficiency" value={singleResult.carbonEfficiency} unit="%" />
+              <MetricCard label="Feasible" value={singleResult.feasible ? 'YES' : 'NO'} />
+            </div>
+            <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '0 0 8px' }}>Shadow Prices (∂μ/∂uptake)</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <MetricCard label="∂μ/∂Glucose" value={singleResult.shadowPrices.glc.toFixed(4)} unit="h⁻¹·gDW/mmol" />
+              <MetricCard label="∂μ/∂Oxygen"  value={singleResult.shadowPrices.o2.toFixed(4)}  unit="h⁻¹·gDW/mmol" />
+              <MetricCard label="∂μ/∂ATP"     value={singleResult.shadowPrices.atp.toFixed(4)} unit="h⁻¹·gDW/mmol" />
+            </div>
+          </div>
+          {/* Top reactions */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '0 0 10px' }}>Top 5 Active Reactions</p>
+            {top5.map(r => (
+              <div key={r.id} style={{
+                padding: '6px 8px', marginBottom: '4px',
+                background: 'rgba(255,255,255,0.04)',
+                border: `1px solid ${knockouts.includes(r.id) ? 'rgba(255,80,80,0.2)' : 'rgba(255,255,255,0.06)'}`,
+                borderRadius: '8px',
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontFamily: T.MONO, fontSize: '10px', color: knockouts.includes(r.id) ? 'rgba(255,120,120,0.7)' : 'rgba(255,255,255,0.6)' }}>{r.id}</span>
+                  <span style={{ fontFamily: T.MONO, fontSize: '10px', fontWeight: 600, color: r.flux > 0 ? 'rgba(20,140,80,0.9)' : 'rgba(255,80,80,0.6)', textAlign: 'right' }}>{r.flux.toFixed(2)}</span>
+                </div>
+                <div style={{ fontFamily: T.SANS, fontSize: '10px', color: 'rgba(255,255,255,0.35)', marginTop: '2px' }}>{r.name}</div>
+                <div style={{ marginTop: '4px', height: '2px', background: 'rgba(255,255,255,0.06)', borderRadius: '1px' }}>
+                  <div style={{ height: '100%', borderRadius: '1px', width: `${Math.abs(r.flux / maxTopFlux) * 100}%`, background: knockouts.includes(r.id) ? 'rgba(255,80,80,0.3)' : 'rgba(20,140,80,0.4)', transition: 'width 0.3s' }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </ToolTabPanel>
+    </ToolShell>
   );
 }
