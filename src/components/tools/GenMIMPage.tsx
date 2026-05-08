@@ -219,10 +219,12 @@ export default function GenMIMPage() {
   const avgEfficiency = schedule.length > 0
     ? schedule.reduce((a, t) => a + t.knockdown_efficiency, 0) / schedule.length : 0;
   const offTargetRisk = schedule.filter(t => t.knockdown_efficiency < 0.9).length / Math.max(schedule.length, 1);
-  const [activeTab, setActiveTab] = useState('viz');
+  const [activeTab, setActiveTab] = useState('genome');
   const GENMIM_TABS: ToolTab[] = [
-    { id: 'viz', label: 'Visualization', accent: PATHD_THEME.sky },
-    { id: 'analysis', label: 'Analysis', accent: PATHD_THEME.mint },
+    { id: 'genome', label: 'Genome Map', accent: PATHD_THEME.sky },
+    { id: 'targets', label: 'Targets', accent: PATHD_THEME.lilac },
+    { id: 'schedule', label: 'Schedule', accent: PATHD_THEME.coral },
+    { id: 'efficiency', label: 'Efficiency', accent: PATHD_THEME.mint },
   ];
 
   const figureMeta = useMemo(() => ({
@@ -313,8 +315,8 @@ export default function GenMIMPage() {
         <div style={{ padding: '0 0 8px' }}><SimErrorBanner message={simError} /></div>
       )}
 
-      {/* ── Visualization Tab ─────────────────────────────────── */}
-      <ToolTabPanel tabId="viz" activeId={activeTab}>
+      {/* ── Genome Map Tab ── */}
+      <ToolTabPanel tabId="genome" activeId={activeTab}>
         <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
           <FloatingControlRail label="CRISPRi Parameters" defaultCollapsed={false}>
             {[
@@ -345,24 +347,6 @@ export default function GenMIMPage() {
               <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: protectEssential ? PATHD_THEME.apricot : 'transparent', border: `1px solid ${PATHD_THEME.apricot}`, flexShrink: 0 }} />
               Protect essential genes
             </button>
-
-            <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: PATHD_THEME.label, margin: '0 0 8px' }}>
-              Schedule ({schedule.length} targets)
-            </p>
-            {schedule.map(t => (
-              <div key={t.gene} style={{
-                padding: '6px 8px', marginBottom: '4px',
-                background: 'rgba(232,163,161,0.12)', border: '1px solid rgba(232,163,161,0.28)', borderRadius: '8px',
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.value }}>{t.gene}</span>
-                  <span style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label }}>{(t.knockdown_efficiency * 100).toFixed(0)}% KD</span>
-                </div>
-                <div style={{ fontFamily: T.SANS, fontSize: '10px', color: PATHD_THEME.label, marginTop: '2px' }}>
-                  {t.phenotype} · GI: {((t.growth_impact ?? 0) * 100).toFixed(0)}%
-                </div>
-              </div>
-            ))}
           </FloatingControlRail>
 
           <div style={{ flex: 1, position: 'relative', display: 'flex', flexDirection: 'column', minHeight: 0, padding: '12px' }}>
@@ -383,79 +367,24 @@ export default function GenMIMPage() {
               }
               minHeight="100%"
             >
-              <div style={{ paddingBottom: '12px', borderBottom: `1px solid ${PATHD_THEME.sepiaPanelBorder}`, flexShrink: 0 }}>
-                <GenomeMap targets={CRISPRI_TARGETS} selected={schedule} efficiencyThreshold={efficiency} />
-              </div>
-              <div style={{ paddingTop: '12px', overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <thead>
-                    <tr style={{ borderBottom: `1px solid ${PATHD_THEME.panelBorderStrong}` }}>
-                      {['Gene', 'Position', 'Essential', 'KD Eff.', 'Phenotype', 'Growth ΔΔ'].map(h => (
-                        <th key={h} style={{ fontFamily: T.MONO, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.06em', color: PATHD_THEME.label, padding: '5px 8px', textAlign: 'left' }}>
-                          {h}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {CRISPRI_TARGETS.map((t, i) => {
-                      const isSelected = schedule.some(s => s.gene === t.gene);
-                      return (
-                        <tr key={t.gene} style={{ background: isSelected ? 'rgba(232,163,161,0.10)' : i % 2 === 0 ? 'transparent' : PATHD_THEME.panelInset }}>
-                          <td style={{ fontFamily: T.MONO, fontSize: '10px', padding: '4px 8px', color: PATHD_THEME.value }}>{t.gene}</td>
-                          <td style={{ fontFamily: T.MONO, fontSize: '10px', padding: '4px 8px', color: PATHD_THEME.label }}>{t.position.toLocaleString()}</td>
-                          <td style={{ fontFamily: T.MONO, fontSize: '10px', padding: '4px 8px', color: t.essential ? PATHD_THEME.apricot : PATHD_THEME.label }}>{t.essential ? 'YES' : 'no'}</td>
-                          <td style={{ fontFamily: T.MONO, fontSize: '10px', padding: '4px 8px', color: PATHD_THEME.value }}>{t.essential ? '—' : `${(t.knockdown_efficiency * 100).toFixed(0)}%`}</td>
-                          <td style={{ fontFamily: T.SANS, fontSize: '10px', padding: '4px 8px', color: PATHD_THEME.label }}>{t.phenotype}</td>
-                          <td style={{ fontFamily: T.MONO, fontSize: '10px', padding: '4px 8px', color: PATHD_THEME.label }}>{t.essential ? '—' : `${((t.growth_impact ?? 0) * 100).toFixed(0)}%`}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+              <GenomeMap targets={CRISPRI_TARGETS} selected={schedule} efficiencyThreshold={efficiency} />
             </ScientificFigureFrame>
 
             <InlineMetricOverlay
               position="top-right"
               metrics={[
                 { label: 'Targets', value: `${schedule.length}`, accent: PATHD_THEME.coral },
-                { label: 'Growth', value: `${(growthImpact * 100).toFixed(1)}%`, accent: Math.abs(growthImpact) > 0.4 ? PATHD_THEME.coral : PATHD_THEME.mint },
                 { label: 'Avg KD', value: `${(avgEfficiency * 100).toFixed(1)}%`, accent: PATHD_THEME.sky },
-                { label: 'Off-target', value: `${(offTargetRisk * 100).toFixed(0)}%`, accent: PATHD_THEME.apricot },
+                { label: 'Growth', value: `${(growthImpact * 100).toFixed(1)}%`, accent: Math.abs(growthImpact) > 0.4 ? PATHD_THEME.coral : PATHD_THEME.mint },
               ]}
             />
           </div>
         </div>
       </ToolTabPanel>
 
-      {/* ── Analysis Tab ──────────────────────────────────────── */}
-      <ToolTabPanel tabId="analysis" activeId={activeTab}>
+      {/* ── Targets Tab ── */}
+      <ToolTabPanel tabId="targets" activeId={activeTab}>
         <div style={{ flex: 1, overflowY: 'auto', padding: '12px 0' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', marginBottom: '20px' }}>
-            <MetricCard label="Targets Selected" value={schedule.length} highlight />
-            <MetricCard label="Total Growth Impact" value={(growthImpact * 100).toFixed(1)} unit="%"
-              warning={Math.abs(growthImpact) > 0.4 ? 'Growth penalty >40%' : undefined} />
-            <MetricCard label="Avg KD Efficiency" value={(avgEfficiency * 100).toFixed(1)} unit="%" />
-            <MetricCard label="Off-target Risk" value={(offTargetRisk * 100).toFixed(0)} unit="%" />
-          </div>
-
-          <div style={{
-            padding: '12px', borderRadius: '12px',
-            border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
-            background: PATHD_THEME.panelSurface, display: 'grid', gap: '6px', marginBottom: '20px',
-          }}>
-            <div style={{ fontFamily: T.MONO, fontSize: '9px', color: PATHD_THEME.label, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-              Readout
-            </div>
-            <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.value, lineHeight: 1.55 }}>
-              {protectEssential
-                ? 'The current schedule is conservative enough to behave like a viable chassis-editing proposal rather than an aggressive pruning experiment.'
-                : 'Aggressive pruning is enabled, so this schedule should be interpreted as a stress-test of the chassis boundary rather than a default plan.'}
-            </div>
-          </div>
-
-          {/* Full target table */}
           <div style={{ fontFamily: T.MONO, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: PATHD_THEME.label, marginBottom: '10px' }}>
             All CRISPRi Targets
           </div>
@@ -486,6 +415,62 @@ export default function GenMIMPage() {
                 })}
               </tbody>
             </table>
+          </div>
+        </div>
+      </ToolTabPanel>
+
+      {/* ── Schedule Tab ── */}
+      <ToolTabPanel tabId="schedule" activeId={activeTab}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '12px 0' }}>
+          <div style={{ fontFamily: T.MONO, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: PATHD_THEME.label, marginBottom: '10px' }}>
+            Selected Schedule ({schedule.length} targets)
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            {schedule.map((t, i) => (
+              <div key={t.gene} style={{
+                padding: '8px 12px',
+                background: 'rgba(232,163,161,0.12)', border: '1px solid rgba(232,163,161,0.28)', borderRadius: '8px',
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontFamily: T.MONO, fontSize: '11px', fontWeight: 600, color: PATHD_THEME.value }}>{t.gene}</span>
+                  <span style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label }}>{(t.knockdown_efficiency * 100).toFixed(0)}% KD</span>
+                </div>
+                <div style={{ fontFamily: T.SANS, fontSize: '10px', color: PATHD_THEME.label, marginTop: '2px' }}>
+                  {t.phenotype} · GI: {((t.growth_impact ?? 0) * 100).toFixed(0)}%
+                </div>
+                <div style={{ marginTop: '6px', height: '3px', background: 'rgba(255,255,255,0.06)', borderRadius: '2px' }}>
+                  <div style={{ height: '100%', borderRadius: '2px', width: `${t.knockdown_efficiency * 100}%`, background: PATHD_THEME.coral, opacity: 0.6, transition: 'width 0.3s' }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </ToolTabPanel>
+
+      {/* ── Efficiency Tab ── */}
+      <ToolTabPanel tabId="efficiency" activeId={activeTab}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '12px 0' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', marginBottom: '20px' }}>
+            <MetricCard label="Targets Selected" value={schedule.length} highlight />
+            <MetricCard label="Total Growth Impact" value={(growthImpact * 100).toFixed(1)} unit="%"
+              warning={Math.abs(growthImpact) > 0.4 ? 'Growth penalty >40%' : undefined} />
+            <MetricCard label="Avg KD Efficiency" value={(avgEfficiency * 100).toFixed(1)} unit="%" />
+            <MetricCard label="Off-target Risk" value={(offTargetRisk * 100).toFixed(0)} unit="%" />
+          </div>
+
+          <div style={{
+            padding: '12px', borderRadius: '12px',
+            border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
+            background: PATHD_THEME.panelSurface, display: 'grid', gap: '6px',
+          }}>
+            <div style={{ fontFamily: T.MONO, fontSize: '9px', color: PATHD_THEME.label, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              Readout
+            </div>
+            <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.value, lineHeight: 1.55 }}>
+              {protectEssential
+                ? 'The current schedule is conservative enough to behave like a viable chassis-editing proposal rather than an aggressive pruning experiment.'
+                : 'Aggressive pruning is enabled, so this schedule should be interpreted as a stress-test of the chassis boundary rather than a default plan.'}
+            </div>
           </div>
         </div>
       </ToolTabPanel>
