@@ -1,6 +1,5 @@
 'use client';
 import { useState, useMemo, useEffect } from 'react';
-import AlgorithmInsight from '../ide/shared/AlgorithmInsight';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
 import SimErrorBanner from '../ide/shared/SimErrorBanner';
@@ -8,11 +7,14 @@ import { CRISPRI_TARGETS, greedyKnockdownSchedule } from '../../data/mockGenMIM'
 import type { CRISPRiTarget } from '../../types';
 import { useWorkbenchStore } from '../../store/workbenchStore';
 import { T, TOOL_RESULT_PALETTE} from '../ide/tokens';
-import WorkbenchInlineContext from '../workbench/WorkbenchInlineContext';
 import ScientificHero from './shared/ScientificHero';
 import { PATHD_THEME } from '../workbench/workbenchTheme';
 import ScientificFigureFrame from './shared/ScientificFigureFrame';
-import ScientificMethodStrip from './shared/ScientificMethodStrip';
+import ToolShell from './shared/ToolShell';
+import ToolTabPanel from './shared/ToolTabPanel';
+import FloatingControlRail from './shared/FloatingControlRail';
+import InlineMetricOverlay from './shared/InlineMetricOverlay';
+import type { ToolTab } from './shared/ToolTabBar';
 
 function GenomeMap({
   targets,
@@ -217,6 +219,12 @@ export default function GenMIMPage() {
   const avgEfficiency = schedule.length > 0
     ? schedule.reduce((a, t) => a + t.knockdown_efficiency, 0) / schedule.length : 0;
   const offTargetRisk = schedule.filter(t => t.knockdown_efficiency < 0.9).length / Math.max(schedule.length, 1);
+  const [activeTab, setActiveTab] = useState('viz');
+  const GENMIM_TABS: ToolTab[] = [
+    { id: 'viz', label: 'Visualization', accent: PATHD_THEME.sky },
+    { id: 'analysis', label: 'Analysis', accent: PATHD_THEME.mint },
+  ];
+
   const figureMeta = useMemo(() => ({
     eyebrow: 'Genome minimization map',
     title: 'CRISPRi target landscape, selected schedule, and viability ledger are read as one chassis figure',
@@ -261,128 +269,54 @@ export default function GenMIMPage() {
   if (!dynconPayload) upstreamMissing.push('DynCon');
 
   return (
-    <>
-      <div className="nb-tool-page" style={{ background: PATHD_THEME.sepiaPanelMuted }}>
-        {upstreamMissing.length > 0 && (
-          <div style={{ padding: '10px 16px 0' }}>
-            <div style={{
-              padding: '10px 14px',
-              borderRadius: '12px',
-              border: '1px solid rgba(180, 150, 100, 0.50)',
-              background: 'rgba(232, 220, 200, 0.32)',
-              color: '#6a4f1c',
-              fontFamily: T.SANS,
-              fontSize: '11px',
-              lineHeight: 1.55,
-            }}>
-              <strong>Upstream payload missing:</strong>{' '}
-              Run <em>{upstreamMissing.join(' and ')}</em> first so the
-              CRISPRi schedule is conditioned on real flux feasibility and
-              controller stability. The current view falls back to neutral
-              defaults (efficiency 0.72, no DO-stability bonus) and will
-              upgrade automatically once those tools have run in this
-              workbench session.
-            </div>
-          </div>
-        )}
-        <AlgorithmInsight
-          title="Gene Minimization via CRISPRi"
-          description="Greedy knockdown scheduling: ranks non-essential genes by knockdown efficiency, bounded by max targets and growth tolerance."
-          formula="score = KD_eff + (1 + GI) × 0.3"
+    <ToolShell
+      moduleId="genmim"
+      title="Gene Minimization via CRISPRi"
+      description="Greedy knockdown scheduling: ranks non-essential genes by knockdown efficiency, bounded by max targets and growth tolerance."
+      formula="score = KD_eff + (1 + GI) × 0.3"
+      tabs={GENMIM_TABS}
+      activeTab={activeTab}
+      onTabChange={setActiveTab}
+      workbenchSummary="Translate analyzed bottlenecks into chassis-level genome minimization hypotheses so Stage 3 interventions remain linked to the same project object."
+      workbenchSimulated={!analyzeArtifact}
+      hero={
+        <ScientificHero
+          eyebrow="Stage 3 · Chassis Minimization"
+          title="Minimal chassis decisions with explicit growth tradeoffs"
+          summary="GENMIM now foregrounds the chassis question instead of burying it in a schedule table. You can read immediately how many targets are being proposed, how much growth is being sacrificed, and whether the current protection policy is conservative enough for the active project."
+          signals={[
+            { label: 'Selected Targets', value: `${schedule.length}`, detail: `Max budget ${maxTargets}`, tone: schedule.length > 6 ? 'warm' : 'cool' },
+            { label: 'Growth Impact', value: `${(growthImpact * 100).toFixed(1)}%`, detail: Math.abs(growthImpact) > 0.4 ? 'Expensive in host fitness.' : 'Manageable band.', tone: Math.abs(growthImpact) > 0.4 ? 'alert' : 'cool' },
+            { label: 'Average KD', value: `${(avgEfficiency * 100).toFixed(1)}%`, detail: `Off-target ${(offTargetRisk * 100).toFixed(0)}%`, tone: avgEfficiency > 0.85 ? 'cool' : 'warm' },
+            { label: 'Lead Gene', value: schedule[0]?.gene ?? 'Pending', detail: schedule[0] ? `${schedule[0].phenotype}` : 'No schedule yet.', tone: 'neutral' },
+          ]}
         />
-
-        <div style={{ padding: '0 16px 10px' }}>
-          <ScientificHero
-            eyebrow="Stage 3 · Chassis Minimization"
-            title="Minimal chassis decisions with explicit growth tradeoffs"
-            summary="GENMIM now foregrounds the chassis question instead of burying it in a schedule table. You can read immediately how many targets are being proposed, how much growth is being sacrificed, and whether the current protection policy is conservative enough for the active project."
-            aside={
-              <>
-                <div style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                  Current minimization policy
-                </div>
-                <div style={{ fontFamily: T.SANS, fontSize: '13px', color: PATHD_THEME.value, fontWeight: 700 }}>
-                  {protectEssential ? 'Essential genes protected' : 'Aggressive pruning mode'}
-                </div>
-                <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.label, lineHeight: 1.55 }}>
-                  This policy is already influenced by flux feasibility and control stability so genome reduction does not detach from the rest of the workbench.
-                </div>
-              </>
-            }
-            signals={[
-              {
-                label: 'Selected Targets',
-                value: `${schedule.length}`,
-                detail: `Max target budget ${maxTargets} under the current efficiency threshold`,
-                tone: schedule.length > 6 ? 'warm' : 'cool',
-              },
-              {
-                label: 'Growth Impact',
-                value: `${(growthImpact * 100).toFixed(1)}%`,
-                detail: Math.abs(growthImpact) > 0.4 ? 'This schedule is expensive in host fitness and should be treated cautiously.' : 'Predicted host penalty remains in a manageable chassis-engineering band.',
-                tone: Math.abs(growthImpact) > 0.4 ? 'alert' : 'cool',
-              },
-              {
-                label: 'Average KD',
-                value: `${(avgEfficiency * 100).toFixed(1)}%`,
-                detail: `Off-target risk ${(offTargetRisk * 100).toFixed(0)}% across the current guide schedule`,
-                tone: avgEfficiency > 0.85 ? 'cool' : 'warm',
-              },
-              {
-                label: 'Lead Gene',
-                value: schedule[0]?.gene ?? 'Pending',
-                detail: schedule[0] ? `${schedule[0].phenotype} · GI ${((schedule[0].growth_impact ?? 0) * 100).toFixed(0)}%` : 'No knockdown schedule has been generated yet.',
-                tone: 'neutral',
-              },
-            ]}
-          />
+      }
+      footer={
+        <>
+          <ExportButton label="Export Schedule JSON" data={schedule} filename="genmim-schedule" format="json" />
+          <ExportButton label="Export All Targets CSV" data={CRISPRI_TARGETS} filename="genmim-targets" format="csv" />
+        </>
+      }
+    >
+      {upstreamMissing.length > 0 && (
+        <div style={{
+          padding: '8px 12px', marginBottom: '8px',
+          borderRadius: '10px', border: '1px solid rgba(180, 150, 100, 0.50)',
+          background: 'rgba(232, 220, 200, 0.32)', color: '#6a4f1c',
+          fontFamily: T.SANS, fontSize: '11px', lineHeight: 1.55,
+        }}>
+          <strong>Upstream payload missing:</strong>{' '}Run <em>{upstreamMissing.join(' and ')}</em> first.
         </div>
+      )}
+      {simError && (
+        <div style={{ padding: '0 0 8px' }}><SimErrorBanner message={simError} /></div>
+      )}
 
-        <div style={{ padding: '0 16px 10px' }}>
-          <ScientificMethodStrip
-            label="Chassis bench"
-            items={[
-              {
-                title: 'Suppression policy',
-                detail: 'Efficiency threshold, target budget, and essential-gene protection now read as one minimization policy rather than disconnected control toggles.',
-                accent: PATHD_THEME.apricot,
-                note: `${maxTargets} target budget · ${(efficiency * 100).toFixed(0)}% minimum KD`,
-              },
-              {
-                title: 'Genome figure',
-                detail: 'The circular genome map becomes the main scientific figure, with selected targets, essential regions, and knockdown strength on one chassis canvas.',
-                accent: PATHD_THEME.sky,
-                note: `${schedule.length} selected targets`,
-              },
-              {
-                title: 'Viability ledger',
-                detail: 'Growth impact, average efficiency, and off-target burden remain visible so genome reduction stays grounded in host survival.',
-                accent: PATHD_THEME.mint,
-                note: `${(avgEfficiency * 100).toFixed(1)}% average KD`,
-              },
-            ]}
-          />
-        </div>
-
-        {simError && (
-          <div style={{ padding: '0 16px 8px' }}><SimErrorBanner message={simError} /></div>
-        )}
-
-        <div className="nb-tool-panels" style={{ flex: 1 }}>
-          {/* Input panel */}
-          <div className="nb-tool-sidebar" style={{ width: '240px', borderRight: `1px solid ${PATHD_THEME.sepiaPanelBorder}`, background: PATHD_THEME.sepiaPanelMuted }}>
-            <WorkbenchInlineContext
-              toolId="genmim"
-              title="Gene Minimization"
-              summary="Translate analyzed bottlenecks into chassis-level genome minimization hypotheses so Stage 3 interventions remain linked to the same project object."
-              compact
-              isSimulated={!analyzeArtifact}
-            />
-
-            <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: PATHD_THEME.label, margin: '0 0 12px' }}>
-              CRISPRi Parameters
-            </p>
-
+      {/* ── Visualization Tab ─────────────────────────────────── */}
+      <ToolTabPanel tabId="viz" activeId={activeTab}>
+        <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
+          <FloatingControlRail label="CRISPRi Parameters" defaultCollapsed={false}>
             {[
               { label: 'Min. knockdown efficiency', value: efficiency, min: 0.5, max: 1.0, step: 0.01, set: setEfficiency, display: (v: number) => `${(v * 100).toFixed(0)}%` },
               { label: 'Max targets', value: maxTargets, min: 1, max: 15, step: 1, set: setMaxTargets, display: (v: number) => `${v}` },
@@ -399,7 +333,7 @@ export default function GenMIMPage() {
               </div>
             ))}
 
-            <button aria-label="Action" onClick={() => setProtectEssential(!protectEssential)} style={{
+            <button onClick={() => setProtectEssential(!protectEssential)} style={{
               display: 'flex', alignItems: 'center', gap: '8px',
               width: '100%', padding: '7px 10px', marginBottom: '16px',
               background: protectEssential ? 'rgba(231,199,169,0.18)' : PATHD_THEME.panelSurface,
@@ -413,14 +347,12 @@ export default function GenMIMPage() {
             </button>
 
             <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: PATHD_THEME.label, margin: '0 0 8px' }}>
-              Knockdown Schedule ({schedule.length} targets)
+              Schedule ({schedule.length} targets)
             </p>
             {schedule.map(t => (
               <div key={t.gene} style={{
                 padding: '6px 8px', marginBottom: '4px',
-                background: 'rgba(232,163,161,0.12)',
-                border: '1px solid rgba(232,163,161,0.28)',
-                borderRadius: '8px',
+                background: 'rgba(232,163,161,0.12)', border: '1px solid rgba(232,163,161,0.28)', borderRadius: '8px',
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.value }}>{t.gene}</span>
@@ -431,10 +363,9 @@ export default function GenMIMPage() {
                 </div>
               </div>
             ))}
-          </div>
+          </FloatingControlRail>
 
-          {/* Engine view — genome map + table */}
-          <div className="nb-tool-center" style={{ flex: 1, display: 'flex', flexDirection: 'column', background: PATHD_THEME.sepiaPanelMuted, minWidth: 0, padding: '12px' }}>
+          <div style={{ flex: 1, position: 'relative', display: 'flex', flexDirection: 'column', minHeight: 0, padding: '12px' }}>
             <ScientificFigureFrame
               eyebrow={figureMeta.eyebrow}
               title={figureMeta.title}
@@ -446,13 +377,8 @@ export default function GenMIMPage() {
                 { label: 'Growth', value: `${(growthImpact * 100).toFixed(1)}%`, accent: PATHD_THEME.sky },
               ]}
               footer={
-                <div style={{ display: 'grid', gap: '6px' }}>
-                  <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.value, lineHeight: 1.55 }}>
-                    The page now keeps the selected schedule, full target ledger, and circular genome context in one figure so chassis-minimization decisions can be defended visually and biologically.
-                  </div>
-                  <div style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label }}>
-                    recommended baseline {recommendedTargets} targets · {(recommendedEfficiency * 100).toFixed(0)}% KD · off-target {(offTargetRisk * 100).toFixed(0)}%
-                  </div>
+                <div style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label }}>
+                  baseline {recommendedTargets} targets · {(recommendedEfficiency * 100).toFixed(0)}% KD · off-target {(offTargetRisk * 100).toFixed(0)}%
                 </div>
               }
               minHeight="100%"
@@ -476,7 +402,7 @@ export default function GenMIMPage() {
                       const isSelected = schedule.some(s => s.gene === t.gene);
                       return (
                         <tr key={t.gene} style={{ background: isSelected ? 'rgba(232,163,161,0.10)' : i % 2 === 0 ? 'transparent' : PATHD_THEME.panelInset }}>
-                          <td style={{ fontFamily: T.MONO, fontSize: '10px', padding: '4px 8px', color: isSelected ? PATHD_THEME.value : PATHD_THEME.value }}>{t.gene}</td>
+                          <td style={{ fontFamily: T.MONO, fontSize: '10px', padding: '4px 8px', color: PATHD_THEME.value }}>{t.gene}</td>
                           <td style={{ fontFamily: T.MONO, fontSize: '10px', padding: '4px 8px', color: PATHD_THEME.label }}>{t.position.toLocaleString()}</td>
                           <td style={{ fontFamily: T.MONO, fontSize: '10px', padding: '4px 8px', color: t.essential ? PATHD_THEME.apricot : PATHD_THEME.label }}>{t.essential ? 'YES' : 'no'}</td>
                           <td style={{ fontFamily: T.MONO, fontSize: '10px', padding: '4px 8px', color: PATHD_THEME.value }}>{t.essential ? '—' : `${(t.knockdown_efficiency * 100).toFixed(0)}%`}</td>
@@ -489,47 +415,80 @@ export default function GenMIMPage() {
                 </table>
               </div>
             </ScientificFigureFrame>
-          </div>
 
-          {/* Results panel */}
-          <div className="nb-tool-right" style={{ width: '200px', borderLeft: `1px solid ${PATHD_THEME.sepiaPanelBorder}`, background: PATHD_THEME.sepiaPanelMuted }}>
-            <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: PATHD_THEME.label, margin: '0 0 12px' }}>
-              Predicted Impact
-            </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <MetricCard label="Targets Selected" value={schedule.length} highlight />
-              <MetricCard label="Total Growth Impact" value={(growthImpact * 100).toFixed(1)} unit="%"
-                warning={Math.abs(growthImpact) > 0.4 ? 'Growth penalty >40% — review schedule' : undefined} />
-              <MetricCard label="Avg KD Efficiency" value={(avgEfficiency * 100).toFixed(1)} unit="%" />
-              <MetricCard label="Off-target Risk" value={(offTargetRisk * 100).toFixed(0)} unit="%" />
-            </div>
-
-            <div style={{
-              marginTop: '12px',
-              padding: '12px',
-              borderRadius: '12px',
-              border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
-              background: PATHD_THEME.panelSurface,
-              display: 'grid',
-              gap: '6px',
-            }}>
-              <div style={{ fontFamily: T.MONO, fontSize: '9px', color: PATHD_THEME.label, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                Readout
-              </div>
-              <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.value, lineHeight: 1.55 }}>
-                {protectEssential
-                  ? 'The current schedule is conservative enough to behave like a viable chassis-editing proposal rather than an aggressive pruning experiment.'
-                  : 'Aggressive pruning is enabled, so this schedule should be interpreted as a stress-test of the chassis boundary rather than a default plan.'}
-              </div>
-            </div>
+            <InlineMetricOverlay
+              position="top-right"
+              metrics={[
+                { label: 'Targets', value: `${schedule.length}`, accent: PATHD_THEME.coral },
+                { label: 'Growth', value: `${(growthImpact * 100).toFixed(1)}%`, accent: Math.abs(growthImpact) > 0.4 ? PATHD_THEME.coral : PATHD_THEME.mint },
+                { label: 'Avg KD', value: `${(avgEfficiency * 100).toFixed(1)}%`, accent: PATHD_THEME.sky },
+                { label: 'Off-target', value: `${(offTargetRisk * 100).toFixed(0)}%`, accent: PATHD_THEME.apricot },
+              ]}
+            />
           </div>
         </div>
+      </ToolTabPanel>
 
-        <div style={{ borderTop: `1px solid ${PATHD_THEME.sepiaPanelBorder}`, padding: '8px 16px', display: 'flex', gap: '8px', flexShrink: 0, background: PATHD_THEME.sepiaPanelMuted }}>
-          <ExportButton label="Export Schedule JSON" data={schedule} filename="genmim-schedule" format="json" />
-          <ExportButton label="Export All Targets CSV" data={CRISPRI_TARGETS} filename="genmim-targets" format="csv" />
+      {/* ── Analysis Tab ──────────────────────────────────────── */}
+      <ToolTabPanel tabId="analysis" activeId={activeTab}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '12px 0' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', marginBottom: '20px' }}>
+            <MetricCard label="Targets Selected" value={schedule.length} highlight />
+            <MetricCard label="Total Growth Impact" value={(growthImpact * 100).toFixed(1)} unit="%"
+              warning={Math.abs(growthImpact) > 0.4 ? 'Growth penalty >40%' : undefined} />
+            <MetricCard label="Avg KD Efficiency" value={(avgEfficiency * 100).toFixed(1)} unit="%" />
+            <MetricCard label="Off-target Risk" value={(offTargetRisk * 100).toFixed(0)} unit="%" />
+          </div>
+
+          <div style={{
+            padding: '12px', borderRadius: '12px',
+            border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
+            background: PATHD_THEME.panelSurface, display: 'grid', gap: '6px', marginBottom: '20px',
+          }}>
+            <div style={{ fontFamily: T.MONO, fontSize: '9px', color: PATHD_THEME.label, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              Readout
+            </div>
+            <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.value, lineHeight: 1.55 }}>
+              {protectEssential
+                ? 'The current schedule is conservative enough to behave like a viable chassis-editing proposal rather than an aggressive pruning experiment.'
+                : 'Aggressive pruning is enabled, so this schedule should be interpreted as a stress-test of the chassis boundary rather than a default plan.'}
+            </div>
+          </div>
+
+          {/* Full target table */}
+          <div style={{ fontFamily: T.MONO, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: PATHD_THEME.label, marginBottom: '10px' }}>
+            All CRISPRi Targets
+          </div>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ borderBottom: `1px solid ${PATHD_THEME.panelBorderStrong}` }}>
+                  {['Gene', 'Position', 'Essential', 'KD Eff.', 'Phenotype', 'Growth ΔΔ'].map(h => (
+                    <th key={h} style={{ fontFamily: T.MONO, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.06em', color: PATHD_THEME.label, padding: '5px 8px', textAlign: 'left' }}>
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {CRISPRI_TARGETS.map((t, i) => {
+                  const isSelected = schedule.some(s => s.gene === t.gene);
+                  return (
+                    <tr key={t.gene} style={{ background: isSelected ? 'rgba(232,163,161,0.10)' : i % 2 === 0 ? 'transparent' : PATHD_THEME.panelInset }}>
+                      <td style={{ fontFamily: T.MONO, fontSize: '10px', padding: '4px 8px', color: PATHD_THEME.value }}>{t.gene}</td>
+                      <td style={{ fontFamily: T.MONO, fontSize: '10px', padding: '4px 8px', color: PATHD_THEME.label }}>{t.position.toLocaleString()}</td>
+                      <td style={{ fontFamily: T.MONO, fontSize: '10px', padding: '4px 8px', color: t.essential ? PATHD_THEME.apricot : PATHD_THEME.label }}>{t.essential ? 'YES' : 'no'}</td>
+                      <td style={{ fontFamily: T.MONO, fontSize: '10px', padding: '4px 8px', color: PATHD_THEME.value }}>{t.essential ? '—' : `${(t.knockdown_efficiency * 100).toFixed(0)}%`}</td>
+                      <td style={{ fontFamily: T.SANS, fontSize: '10px', padding: '4px 8px', color: PATHD_THEME.label }}>{t.phenotype}</td>
+                      <td style={{ fontFamily: T.MONO, fontSize: '10px', padding: '4px 8px', color: PATHD_THEME.label }}>{t.essential ? '—' : `${((t.growth_impact ?? 0) * 100).toFixed(0)}%`}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
-    </>
+      </ToolTabPanel>
+    </ToolShell>
   );
 }
