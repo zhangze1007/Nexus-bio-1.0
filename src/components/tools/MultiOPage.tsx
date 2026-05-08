@@ -60,25 +60,17 @@ const INPUT_BORDER = PATHD_THEME.sepiaPanelBorder;
 const INPUT_TEXT = PATHD_THEME.value;
 
 const MULTIO_TABS: ToolTab[] = [
-  { id: 'viz', label: 'Visualization', accent: PATHD_THEME.sky },
-  { id: 'analysis', label: 'Analysis', accent: PATHD_THEME.mint },
+  { id: 'embedding', label: 'Embedding', accent: PATHD_THEME.sky },
+  { id: 'volcano', label: 'Volcano', accent: PATHD_THEME.lilac },
+  { id: 'factors', label: 'Factors', accent: PATHD_THEME.apricot },
+  { id: 'projection', label: 'Projection', accent: PATHD_THEME.mint },
+  { id: 'efficiency', label: 'Efficiency', accent: PATHD_THEME.coral },
 ];
 
 const GLASS: React.CSSProperties = {
   borderRadius: '24px',
   background: PATHD_THEME.panelSurface,
   border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
-};
-
-type ViewMode = 'Embedding' | 'Volcano' | 'Table' | 'Factors' | 'Latent' | 'Efficiency';
-
-const VIEW_MODE_LABELS: Record<ViewMode, string> = {
-  Embedding: 'Embedding',
-  Volcano: 'Volcano',
-  Table: 'Table',
-  Factors: 'Decomposition',
-  Latent: 'Projection',
-  Efficiency: 'Efficiency',
 };
 
 function canonicalGeneToken(value: string) {
@@ -598,14 +590,11 @@ export default function MultiOPage() {
   const dbtlPayload = useWorkbenchStore((s) => s.toolPayloads.dbtlflow);
   const setToolPayload = useWorkbenchStore((s) => s.setToolPayload);
   const devMode = useUIStore((s) => s.devMode);
-  const [activeTab, setActiveTab] = useState('viz');
+  const [activeTab, setActiveTab] = useState('embedding');
   /* Layer toggles */
   const [showTranscript, setShowTranscript] = useState(true);
   const [showProtein, setShowProtein] = useState(true);
   const [showMetabolite, setShowMetabolite] = useState(true);
-
-  /* View mode */
-  const [viewMode, setViewMode] = useState<ViewMode>('Embedding');
 
   /* Thresholds */
   const [fcThreshold, setFcThreshold] = useState(1.5);
@@ -652,48 +641,6 @@ export default function MultiOPage() {
   const downregulated = significant.filter(r => (r.fold_change ?? 0) < 0).length;
 
   const thoughts = useMemo(() => model.getThoughts(), [model, perturbResult]);
-  const figureMeta = useMemo(() => {
-    if (viewMode === 'Embedding') {
-      return {
-        eyebrow: 'Figure A · Cross-Layer Projection',
-        title: 'Transcript, protein, and metabolite structure aligned in one figure field',
-        caption: 'The center canvas is framed as an integrative figure plate: deterministic projection first, bottleneck signal second, and pathway relevance always visible.',
-      };
-    }
-    if (viewMode === 'Volcano') {
-      return {
-        eyebrow: 'Figure B · Differential Signal Map',
-        title: `${selectedGene} highlighted against fold-change and significance thresholds`,
-        caption: 'Volcano view is treated as a comparative panel, emphasizing threshold logic and current bottleneck focus rather than acting as a detached QC plot.',
-      };
-    }
-    if (viewMode === 'Factors') {
-      return {
-        eyebrow: 'Figure C · Factor Decomposition',
-        title: 'Cross-layer factors explaining multi-omics variance',
-        caption: 'Factor decomposition is translated into a publication-style comparative panel where per-layer contribution, top genes, and interpretation stay in the same frame.',
-      };
-    }
-    if (viewMode === 'Latent') {
-      return {
-        eyebrow: 'Figure D · Projected Embedding',
-        title: 'Projected embedding and optimization trace viewed as one demo figure',
-        caption: 'The projected view should read like an exploratory results plate: embedding geometry above, optimization trace below, with no posterior uncertainty implied.',
-      };
-    }
-    if (viewMode === 'Efficiency') {
-      return {
-        eyebrow: 'Figure E · Metabolic Efficiency Ledger',
-        title: 'Ranked entities ordered by production-relevant efficiency',
-        caption: 'Efficiency ranking connects deterministic integration back to exploratory prioritization, turning the center panel into a contextual table rather than a formal recommendation.',
-      };
-    }
-    return {
-      eyebrow: 'Figure F · Omics Appendix Table',
-      title: 'Auditable row-level evidence beneath the same thresholds',
-      caption: 'The table behaves like a supplementary figure appendix that remains tied to the same significance thresholds and highlighted bottleneck gene.',
-    };
-  }, [selectedGene, viewMode]);
 
   const activeLayers: Record<OmicsLayer, boolean> = {
     transcriptomics: showTranscript,
@@ -777,7 +724,7 @@ export default function MultiOPage() {
       targetProduct: analyzeArtifact?.targetProduct || project?.targetProduct || project?.title || 'Target Product',
       sourceArtifactId: analyzeArtifact?.id,
       selectedGene,
-      activeView: viewMode,
+      activeView: activeTab,
       thresholds: {
         fc: fcThreshold,
         pv: pvThreshold,
@@ -811,7 +758,6 @@ export default function MultiOPage() {
     setToolPayload,
     significant.length,
     vaeResult.elbo,
-    viewMode,
   ]);
 
   /* Section label helper */
@@ -844,7 +790,7 @@ export default function MultiOPage() {
                   Current analytical lens
                 </div>
                 <div style={{ fontFamily: T.SANS, fontSize: '13px', color: PATHD_THEME.value, fontWeight: 700 }}>
-                  {VIEW_MODE_LABELS[viewMode]} · {Object.values(activeLayers).filter(Boolean).length}/3 omics layers active
+                  {MULTIO_TABS.find(t => t.id === activeTab)?.label ?? 'Embedding'} · {Object.values(activeLayers).filter(Boolean).length}/3 omics layers active
                 </div>
                 <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.label, lineHeight: 1.55 }}>
                   The current lens is anchored to {analyzeArtifact?.targetProduct ?? project?.targetProduct ?? project?.title ?? 'the active project object'}, so bottleneck claims stay attached to the same scientific context.
@@ -888,11 +834,12 @@ export default function MultiOPage() {
         </div>
       }
     >
-      {/* ── Visualization Tab ─────────────────────────────────── */}
       {simError && (
         <div style={{ padding: '0 16px 8px' }}><SimErrorBanner message={simError} /></div>
       )}
-      <ToolTabPanel tabId="viz" activeId={activeTab}>
+
+      {/* ── Embedding Tab ── */}
+      <ToolTabPanel tabId="embedding" activeId={activeTab}>
         <div style={{ display: 'flex', gap: '0', flex: 1, minHeight: 0, overflow: 'hidden' }}>
           <FloatingControlRail label="Omics Controls">
             {/* Data Layers */}
@@ -919,21 +866,6 @@ export default function MultiOPage() {
                 {label}
               </button>
             ))}
-
-            {/* View Mode Tabs */}
-            <SectionLabel>View Mode</SectionLabel>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '16px' }}>
-              {(['Embedding', 'Volcano', 'Table', 'Factors', 'Latent', 'Efficiency'] as ViewMode[]).map(mode => (
-                <button aria-label="Action" key={mode} onClick={() => setViewMode(mode)} style={{
-                  flex: '1 0 30%', padding: '5px 0', borderRadius: '6px', cursor: 'pointer',
-                  fontFamily: T.SANS, fontSize: '9px', border: `1px solid ${viewMode === mode ? 'rgba(175,195,214,0.34)' : INPUT_BORDER}`,
-                  background: viewMode === mode ? 'rgba(175,195,214,0.22)' : INPUT_BG,
-                  color: viewMode === mode ? VALUE : LABEL,
-                }}>
-                  {VIEW_MODE_LABELS[mode]}
-                </button>
-              ))}
-            </div>
 
             {/* Thresholds */}
             <SectionLabel>Thresholds</SectionLabel>
@@ -1056,35 +988,16 @@ export default function MultiOPage() {
 
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, padding: '16px', overflow: 'auto' }}>
             <ScientificFigureFrame
-              eyebrow={figureMeta.eyebrow}
-              title={figureMeta.title}
-              caption={figureMeta.caption}
+              eyebrow="Cross-Layer Projection"
+              title="Transcript, protein, and metabolite structure aligned in one figure field"
+              caption="Deterministic projection first, bottleneck signal second, and pathway relevance always visible."
               minHeight="100%"
               legend={[
-                { label: 'View', value: VIEW_MODE_LABELS[viewMode], accent: PATHD_THEME.apricot },
                 { label: 'Bottleneck', value: bottleneck.dominant_layer, accent: LAYER_COLORS[bottleneck.dominant_layer] },
                 { label: 'Gene', value: selectedGene, accent: PATHD_THEME.lilac },
                 { label: 'Significant', value: `${significant.length}`, accent: PATHD_THEME.mint },
               ]}
-              footer={
-                <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.paperMuted, lineHeight: 1.55 }}>
-                  The integration frame keeps deterministic cross-layer structure, thresholding logic, and exploratory output in one continuous reading path.
-                </div>
-              }
             >
-              {viewMode === 'Table' && (
-                <div style={{ minHeight: '520px', overflow: 'auto' }}>
-                  <DataTable<OmicsRow> columns={COLUMNS} rows={filtered} maxRows={50} />
-                </div>
-              )}
-              {viewMode === 'Volcano' && (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '520px' }}>
-                  <div style={{ width: '100%', maxWidth: '560px', aspectRatio: '360/300' }}>
-                    <VolcanoPlot data={filtered} fcThreshold={fcThreshold} pvThreshold={pvThreshold} highlightedGene={selectedGene} />
-                  </div>
-                </div>
-              )}
-              {viewMode === 'Embedding' && (
                 <div style={{ minHeight: '520px', overflow: 'auto' }}>
                   <TriPanelEmbedding
                     embeddings={embeddings}
@@ -1095,374 +1008,245 @@ export default function MultiOPage() {
                     highlightedGene={selectedGene}
                   />
                 </div>
-              )}
-
-              {/* ── ALS Factor Decomposition (not MOFA+) ────────────── */}
-              {viewMode === 'Factors' && (
-              <div style={{ minHeight: '520px', padding: '20px' }}>
-                {/* Summary metrics */}
-                <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
-                  <div style={{ ...GLASS, borderRadius: '14px', padding: '12px 16px', flex: '1 0 120px' }}>
-                    <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL, display: 'block' }}>Total Var. Explained</span>
-                    <span style={{ fontFamily: T.MONO, fontSize: '18px', fontWeight: 700, color: LAYER_COLORS.transcriptomics }}>
-                      {(mofaResult.totalVarianceExplained * 100).toFixed(1)}%
-                    </span>
-                  </div>
-                  <div style={{ ...GLASS, borderRadius: '14px', padding: '12px 16px', flex: '1 0 120px' }}>
-                    <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL, display: 'block' }}>Optimization Steps</span>
-                    <span style={{ fontFamily: T.MONO, fontSize: '18px', fontWeight: 700, color: VALUE }}>
-                      {mofaResult.convergenceIterations} iter
-                    </span>
-                  </div>
-                  <div style={{ ...GLASS, borderRadius: '14px', padding: '12px 16px', flex: '1 0 120px' }}>
-                    <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL, display: 'block' }}>Recon. Error</span>
-                    <span style={{ fontFamily: T.MONO, fontSize: '18px', fontWeight: 700, color: VALUE }}>
-                      {mofaResult.reconstructionError.toFixed(4)}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Factor cards */}
-                {mofaResult.factors.map(f => (
-                  <div key={f.id} style={{ ...GLASS, borderRadius: '14px', padding: '14px', marginBottom: '12px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                      <span style={{ fontFamily: T.SANS, fontSize: '12px', fontWeight: 600, color: VALUE }}>{f.name}</span>
-                      <span style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL }}>
-                        {(f.varianceExplained.total * 100).toFixed(1)}% var
-                      </span>
-                    </div>
-                    {/* Variance per layer bars */}
-                    {(['transcriptomics', 'proteomics', 'metabolomics'] as OmicsLayer[]).map(layer => {
-                      const pct = f.varianceExplained[layer] * 100;
-                      return (
-                        <div key={layer} style={{ marginBottom: '5px' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
-                            <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL }}>{layer.slice(0, 5)}</span>
-                            <span style={{ fontFamily: T.MONO, fontSize: '9px', color: VALUE }}>{pct.toFixed(1)}%</span>
-                          </div>
-                          <div style={{ width: '100%', height: '5px', borderRadius: '3px', background: PATHD_THEME.panelInset }}>
-                            <div style={{ width: `${Math.min(100, pct)}%`, height: '100%', borderRadius: '3px', background: LAYER_COLORS[layer] }} />
-                          </div>
-                        </div>
-                      );
-                    })}
-                    {/* Top genes */}
-                    <div style={{ display: 'flex', gap: '4px', marginTop: '8px', flexWrap: 'wrap' }}>
-                      {f.topGenes.slice(0, 4).map(g => (
-                        <span key={g.gene} style={{
-                          fontFamily: T.MONO, fontSize: '8px', padding: '2px 6px', borderRadius: '6px',
-                          background: PATHD_THEME.panelInset, color: VALUE,
-                        }}>
-                          {g.gene} ({g.loading.toFixed(2)})
-                        </span>
-                      ))}
-                    </div>
-                    <p style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL, margin: '6px 0 0', lineHeight: '1.3' }}>
-                      {f.interpretation}
-                    </p>
-                  </div>
-                ))}
-              </div>
-              )}
-
-              {/* ── Seeded Linear Embedding (not production VAE) ────── */}
-              {viewMode === 'Latent' && (
-              <div style={{ minHeight: '520px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                {/* Local embedding scatter */}
-                <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
-                  <div style={{ width: '100%', maxWidth: '560px' }}>
-                    {(() => {
-                      const W = 520, H = 380, PAD = 44;
-                      const pts = vaeResult.latentPoints;
-                      const xs = pts.map(p => p.z_mean[0] ?? 0);
-                      const ys = pts.map(p => p.z_mean[1] ?? 0);
-                      const xMin = Math.min(...xs), xMax = Math.max(...xs);
-                      const yMin = Math.min(...ys), yMax = Math.max(...ys);
-                      const xR = xMax - xMin || 1, yR = yMax - yMin || 1;
-                      return (
-                        <svg role="img" aria-label="Chart" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%' }}>
-                          <rect width={W} height={H} fill="#050505" rx={12} />
-                          <line x1={PAD} y1={H - PAD} x2={W - PAD} y2={H - PAD} stroke="rgba(255,255,255,0.1)" />
-                          <line x1={PAD} y1={PAD} x2={PAD} y2={H - PAD} stroke="rgba(255,255,255,0.1)" />
-                          <text x={W / 2} y={H - 6} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill={LABEL}>Projection 1</text>
-                          <text x={12} y={H / 2} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill={LABEL} transform={`rotate(-90,12,${H / 2})`}>Projection 2</text>
-                          {pts.map((p, i) => {
-                            const cx = PAD + ((xs[i] - xMin) / xR) * (W - PAD * 2);
-                            const cy = H - PAD - ((ys[i] - yMin) / yR) * (H - PAD * 2);
-                            const eff = p.metabolicEfficiency;
-                            const r = Math.round(60 + (1 - eff) * 195);
-                            const g = Math.round(120 + eff * 100);
-                            const b = Math.round(100 + eff * 80);
-                            return (
-                              <circle key={p.id} cx={cx} cy={cy} r={5} fill={`rgb(${r},${g},${b})`} opacity={0.85}>
-                                <title>{p.gene}: eff={eff.toFixed(3)}</title>
-                              </circle>
-                            );
-                          })}
-                        </svg>
-                      );
-                    })()}
-                  </div>
-                </div>
-                {/* Convergence mini-chart */}
-                <div style={{ height: '100px', padding: '0 20px 12px', flexShrink: 0 }}>
-                  {(() => {
-                    const hist = vaeResult.convergenceHistory;
-                    if (hist.length === 0) return null;
-                    const W = 480, H = 80, PAD = 30;
-                    const maxL = Math.max(...hist.map(h => h.loss), 0.01);
-                    return (
-                      <svg role="img" aria-label="Chart" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
-                        <rect width={W} height={H} fill="transparent" />
-                        <text x={PAD - 4} y={12} fontFamily={T.MONO} fontSize="7" fill={LABEL} textAnchor="end">Loss</text>
-                        <polyline
-                          points={hist.map((h, i) => {
-                            const x = PAD + (i / (hist.length - 1)) * (W - PAD * 2);
-                            const y = H - 8 - (h.loss / maxL) * (H - 20);
-                            return `${x},${y}`;
-                          }).join(' ')}
-                          fill="none" stroke={LAYER_COLORS.proteomics} strokeWidth={1.5}
-                        />
-                        <text x={W / 2} y={H - 1} textAnchor="middle" fontFamily={T.MONO} fontSize="7" fill={LABEL}>Epoch</text>
-                      </svg>
-                    );
-                  })()}
-                </div>
-              </div>
-              )}
-
-              {/* ── Metabolic Efficiency ────────────────────────────── */}
-              {viewMode === 'Efficiency' && (
-              <div style={{ minHeight: '520px', padding: '20px' }}>
-                <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
-                  <div style={{ ...GLASS, borderRadius: '14px', padding: '12px 16px', flex: '1 0 140px' }}>
-                    <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL, display: 'block' }}>Avg Efficiency</span>
-                    <span style={{ fontFamily: T.MONO, fontSize: '18px', fontWeight: 700, color: 'rgba(147,203,82,0.9)' }}>
-                      {(efficiencyScores.reduce((s, e) => s + e.score, 0) / Math.max(1, efficiencyScores.length) * 100).toFixed(1)}%
-                    </span>
-                  </div>
-                  <div style={{ ...GLASS, borderRadius: '14px', padding: '12px 16px', flex: '1 0 140px' }}>
-                    <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL, display: 'block' }}>Top Gene</span>
-                    <span style={{ fontFamily: T.MONO, fontSize: '14px', fontWeight: 700, color: VALUE }}>
-                      {[...efficiencyScores].sort((a, b) => b.score - a.score)[0]?.gene ?? '—'}
-                    </span>
-                  </div>
-                </div>
-                {/* Efficiency ranked list */}
-                {[...efficiencyScores].sort((a, b) => b.score - a.score).map((e, i) => {
-                  const pct = e.score * 100;
-                  const color = pct > 60 ? 'rgba(147,203,82,0.85)' : pct > 35 ? 'rgba(255,139,31,0.85)' : 'rgba(250,128,114,0.85)';
-                  return (
-                    <div key={e.geneId} style={{
-                      display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 0',
-                      borderBottom: `1px solid ${BORDER}`,
-                    }}>
-                      <span style={{ fontFamily: T.MONO, fontSize: '9px', color: LABEL, width: '20px', textAlign: 'right' }}>
-                        {i + 1}
-                      </span>
-                      <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE, width: '70px' }}>{e.gene}</span>
-                      <div style={{ flex: 1, height: '6px', borderRadius: '3px', background: 'rgba(255,255,255,0.06)' }}>
-                        <div style={{ width: `${pct}%`, height: '100%', borderRadius: '3px', background: color, transition: 'width 0.3s' }} />
-                      </div>
-                      <span style={{ fontFamily: T.MONO, fontSize: '10px', color, width: '45px', textAlign: 'right' }}>
-                        {pct.toFixed(1)}%
-                      </span>
-                      <div style={{ display: 'flex', gap: '4px' }}>
-                        <span style={{ fontFamily: T.MONO, fontSize: '7px', padding: '1px 4px', borderRadius: '4px', background: `${LAYER_COLORS.transcriptomics}20`, color: LAYER_COLORS.transcriptomics }}>
-                          F:{e.fluxUtilization.toFixed(2)}
-                        </span>
-                        <span style={{ fontFamily: T.MONO, fontSize: '7px', padding: '1px 4px', borderRadius: '4px', background: `${LAYER_COLORS.proteomics}20`, color: LAYER_COLORS.proteomics }}>
-                          E:{e.expressionBalance.toFixed(2)}
-                        </span>
-                        <span style={{ fontFamily: T.MONO, fontSize: '7px', padding: '1px 4px', borderRadius: '4px', background: `${LAYER_COLORS.metabolomics}20`, color: LAYER_COLORS.metabolomics }}>
-                          Y:{e.metaboliteYield.toFixed(2)}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-              )}
             </ScientificFigureFrame>
-
             <InlineMetricOverlay
               position="top-right"
               metrics={[
-                { label: 'Significant', value: `${significant.length}`, accent: PATHD_THEME.lilac },
                 { label: 'Bottleneck', value: bottleneck.dominant_layer, accent: PATHD_THEME.sky },
-                { label: 'Lead Gene', value: significant[0]?.gene ?? selectedGene, accent: PATHD_THEME.mint },
-                { label: 'Best Efficiency', value: `${Math.max(...efficiencyScores.map((entry) => entry.score)).toFixed(2)}`, accent: PATHD_THEME.apricot },
+                { label: 'Gene', value: selectedGene, accent: PATHD_THEME.lilac },
+                { label: 'Significant', value: `${significant.length}`, accent: PATHD_THEME.mint },
               ]}
             />
           </div>
         </div>
       </ToolTabPanel>
 
-      <ToolTabPanel tabId="analysis" activeId={activeTab}>
-        <div style={{ padding: '20px', overflow: 'auto', flex: 1 }}>
-          {/* Enrichment Summary */}
-            <SectionLabel>Enrichment Summary</SectionLabel>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '16px' }}>
-              <MetricCard label="Significant" value={significant.length} highlight />
-              <MetricCard label="Upregulated" value={upregulated} />
-              <MetricCard label="Downregulated" value={downregulated} />
-              <MetricCard label="Total" value={OMICS_DATA.length} />
+      {/* ── Volcano Tab ── */}
+      <ToolTabPanel tabId="volcano" activeId={activeTab}>
+        <div style={{ display: 'flex', gap: '0', flex: 1, minHeight: 0, overflow: 'hidden' }}>
+          <FloatingControlRail label="Controls">
+            <SectionLabel>Thresholds</SectionLabel>
+            <div style={{ marginBottom: '12px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                <span style={{ fontFamily: T.SANS, fontSize: '11px', color: LABEL }}>|FC| &gt;</span>
+                <span style={{ fontFamily: T.MONO, fontSize: '11px', color: VALUE }}>{fcThreshold.toFixed(1)}</span>
+              </div>
+              <input aria-label="Parameter slider" type="range" min={0.5} max={5} step={0.1} value={fcThreshold} onChange={e => setFcThreshold(parseFloat(e.target.value))} className="nb-pathd-slider" style={{ '--val': `${((fcThreshold - 0.5) / 4.5) * 100}%` } as React.CSSProperties} />
             </div>
-
-            {/* Layer-signal analysis */}
-            <SectionLabel>Layer Signal Analysis</SectionLabel>
-            <div style={{ ...GLASS, borderRadius: '14px', padding: '12px', marginBottom: '16px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                <div>
-                  <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL, display: 'block', marginBottom: '2px' }}>
-                    Dominant Layer
-                  </span>
-                  <span style={{
-                    fontFamily: T.MONO, fontSize: '12px', fontWeight: 600,
-                    color: LAYER_COLORS[bottleneck.dominant_layer],
-                  }}>
-                    {bottleneck.dominant_layer}
-                  </span>
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL, display: 'block', marginBottom: '2px' }}>
-                    Score
-                  </span>
-                  <span style={{ fontFamily: T.MONO, fontSize: '12px', color: VALUE }}>
-                    {(bottleneck.confidence * 100).toFixed(0)}%
-                  </span>
+            <div style={{ marginBottom: '16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                <span style={{ fontFamily: T.SANS, fontSize: '11px', color: LABEL }}>p &lt;</span>
+                <span style={{ fontFamily: T.MONO, fontSize: '11px', color: VALUE }}>{pvThreshold.toFixed(3)}</span>
+              </div>
+              <input aria-label="Parameter slider" type="range" min={0.001} max={0.1} step={0.001} value={pvThreshold} onChange={e => setPvThreshold(parseFloat(e.target.value))} className="nb-pathd-slider" style={{ '--val': `${((pvThreshold - 0.001) / 0.099) * 100}%` } as React.CSSProperties} />
+            </div>
+            <SectionLabel>Gene</SectionLabel>
+            <select value={selectedGene} onChange={e => setSelectedGene(e.target.value)}
+              style={{ width: '100%', padding: '6px 8px', background: INPUT_BG, border: `1px solid ${INPUT_BORDER}`, borderRadius: '8px', color: INPUT_TEXT, fontFamily: T.MONO, fontSize: '10px', outline: 'none', appearance: 'auto' as React.CSSProperties['appearance'] }}>
+              {geneNames.map(g => (<option key={g} value={g} style={{ background: '#1a1d24' }}>{g}</option>))}
+            </select>
+          </FloatingControlRail>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, padding: '16px', overflow: 'auto' }}>
+            <ScientificFigureFrame
+              eyebrow="Differential Signal Map"
+              title={`${selectedGene} highlighted against fold-change and significance thresholds`}
+              caption="Volcano view emphasizes threshold logic and current bottleneck focus."
+              minHeight="100%"
+              legend={[
+                { label: 'Gene', value: selectedGene, accent: PATHD_THEME.lilac },
+                { label: 'Significant', value: `${significant.length}`, accent: PATHD_THEME.mint },
+              ]}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '520px' }}>
+                <div style={{ width: '100%', maxWidth: '560px', aspectRatio: '360/300' }}>
+                  <VolcanoPlot data={filtered} fcThreshold={fcThreshold} pvThreshold={pvThreshold} highlightedGene={selectedGene} />
                 </div>
               </div>
-              {/* Attention bars */}
-              {(['transcriptomics', 'proteomics', 'metabolomics'] as OmicsLayer[]).map(layer => {
-                const w = (layerAttention[layer] / maxAtt) * 100;
-                return (
-                  <div key={layer} style={{ marginBottom: '6px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-                      <span style={{ fontFamily: T.SANS, fontSize: '9px', color: 'rgba(255,255,255,0.45)' }}>
-                        {layer.charAt(0).toUpperCase() + layer.slice(1)}
-                      </span>
-                      <span style={{ fontFamily: T.MONO, fontSize: '9px', color: VALUE, textAlign: 'right' }}>
-                        {layerAttention[layer].toFixed(3)}
-                      </span>
-                    </div>
-                    <div style={{
-                      width: '100%', height: '6px', borderRadius: '3px',
-                      background: 'rgba(255,255,255,0.06)',
-                    }}>
-                      <div style={{
-                        width: `${w}%`, height: '100%', borderRadius: '3px',
-                        background: LAYER_COLORS[layer],
-                        transition: 'width 0.3s ease',
-                      }} />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+            </ScientificFigureFrame>
+            <InlineMetricOverlay
+              position="top-right"
+              metrics={[
+                { label: 'Up', value: `${upregulated}`, accent: PATHD_THEME.mint },
+                { label: 'Down', value: `${downregulated}`, accent: PATHD_THEME.coral },
+                { label: 'Total Sig', value: `${significant.length}`, accent: PATHD_THEME.lilac },
+              ]}
+            />
+          </div>
+        </div>
+      </ToolTabPanel>
 
-            {/* Cross-Layer Correlations */}
-            <SectionLabel>Cross-Layer Correlations</SectionLabel>
-            <div style={{ ...GLASS, borderRadius: '14px', padding: '10px', marginBottom: '16px' }}>
-              {correlations.map((c, i) => (
-                <div key={i} style={{
-                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                  padding: '4px 0',
-                  borderTop: i > 0 ? `1px solid ${BORDER}` : 'none',
-                }}>
-                  <span style={{ fontFamily: T.SANS, fontSize: '10px', color: 'rgba(255,255,255,0.5)' }}>
-                    {corrLabel(c.layers[0], c.layers[1])}
-                  </span>
-                  <span style={{
-                    fontFamily: T.MONO, fontSize: '11px', textAlign: 'right',
-                    color: Math.abs(c.r) > 0.5 ? 'rgba(147,203,82,0.9)' : VALUE,
-                  }}>
-                    r={c.r.toFixed(3)}
-                  </span>
-                  <span style={{
-                    fontFamily: T.MONO, fontSize: '9px', textAlign: 'right',
-                    color: c.p_approx < 0.05 ? 'rgba(255,139,31,0.85)' : 'rgba(255,255,255,0.3)',
-                  }}>
-                    p={c.p_approx.toFixed(3)}
-                  </span>
+      {/* ── Factors Tab ── */}
+      <ToolTabPanel tabId="factors" activeId={activeTab}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '20px' }}>
+          <ScientificFigureFrame
+            eyebrow="Factor Decomposition"
+            title="Cross-layer factors explaining multi-omics variance"
+            caption="Per-layer contribution, top genes, and interpretation in one frame."
+            minHeight="100%"
+            legend={[
+              { label: 'Var Explained', value: `${(mofaResult.totalVarianceExplained * 100).toFixed(1)}%`, accent: PATHD_THEME.sky },
+              { label: 'Factors', value: `${mofaResult.factors.length}`, accent: PATHD_THEME.lilac },
+            ]}
+          >
+            <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
+              <div style={{ ...GLASS, borderRadius: '14px', padding: '12px 16px', flex: '1 0 120px' }}>
+                <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL, display: 'block' }}>Total Var. Explained</span>
+                <span style={{ fontFamily: T.MONO, fontSize: '18px', fontWeight: 700, color: LAYER_COLORS.transcriptomics }}>{(mofaResult.totalVarianceExplained * 100).toFixed(1)}%</span>
+              </div>
+              <div style={{ ...GLASS, borderRadius: '14px', padding: '12px 16px', flex: '1 0 120px' }}>
+                <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL, display: 'block' }}>Optimization Steps</span>
+                <span style={{ fontFamily: T.MONO, fontSize: '18px', fontWeight: 700, color: VALUE }}>{mofaResult.convergenceIterations} iter</span>
+              </div>
+              <div style={{ ...GLASS, borderRadius: '14px', padding: '12px 16px', flex: '1 0 120px' }}>
+                <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL, display: 'block' }}>Recon. Error</span>
+                <span style={{ fontFamily: T.MONO, fontSize: '18px', fontWeight: 700, color: VALUE }}>{mofaResult.reconstructionError.toFixed(4)}</span>
+              </div>
+            </div>
+            {mofaResult.factors.map(f => (
+              <div key={f.id} style={{ ...GLASS, borderRadius: '14px', padding: '14px', marginBottom: '12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                  <span style={{ fontFamily: T.SANS, fontSize: '12px', fontWeight: 600, color: VALUE }}>{f.name}</span>
+                  <span style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL }}>{(f.varianceExplained.total * 100).toFixed(1)}% var</span>
                 </div>
-              ))}
-            </div>
-
-            {devMode && (
-              <>
-                <SectionLabel>Developer Notes</SectionLabel>
-
-                {(viewMode === 'Factors' || viewMode === 'Latent' || viewMode === 'Efficiency') && (
-                  <div style={{ ...GLASS, borderRadius: '14px', padding: '10px', marginBottom: '16px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0' }}>
-                      <span style={{ fontFamily: T.SANS, fontSize: '9px', color: 'rgba(255,255,255,0.45)' }}>Factor Count</span>
-                      <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE, textAlign: 'right' }}>{mofaResult.factors.length}</span>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', borderTop: `1px solid ${BORDER}` }}>
-                      <span style={{ fontFamily: T.SANS, fontSize: '9px', color: 'rgba(255,255,255,0.45)' }}>Objective</span>
-                      <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE, textAlign: 'right' }}>{vaeResult.elbo.toFixed(3)}</span>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', borderTop: `1px solid ${BORDER}` }}>
-                      <span style={{ fontFamily: T.SANS, fontSize: '9px', color: 'rgba(255,255,255,0.45)' }}>Reconstruction</span>
-                      <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE, textAlign: 'right' }}>{vaeResult.reconLoss.toFixed(4)}</span>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', borderTop: `1px solid ${BORDER}` }}>
-                      <span style={{ fontFamily: T.SANS, fontSize: '9px', color: 'rgba(255,255,255,0.45)' }}>Regularizer</span>
-                      <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE, textAlign: 'right' }}>{vaeResult.klDivergence.toFixed(4)}</span>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', borderTop: `1px solid ${BORDER}` }}>
-                      <span style={{ fontFamily: T.SANS, fontSize: '9px', color: 'rgba(255,255,255,0.45)' }}>Projection Dims</span>
-                      <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE, textAlign: 'right' }}>{vaeResult.latentDim}</span>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', borderTop: `1px solid ${BORDER}` }}>
-                      <span style={{ fontFamily: T.SANS, fontSize: '9px', color: 'rgba(255,255,255,0.45)' }}>Batch Correction</span>
-                      <span style={{ fontFamily: T.MONO, fontSize: '10px', color: vaeResult.batchCorrectionApplied ? 'rgba(255,139,31,0.9)' : LABEL, textAlign: 'right' }}>
-                        {vaeResult.batchCorrectionApplied ? 'Applied' : 'Not applied'}
-                      </span>
-                    </div>
-                  </div>
-                )}
-                <div style={{
-                  maxHeight: '220px', overflowY: 'auto',
-                  display: 'flex', flexDirection: 'column', gap: '6px',
-                }}>
-                  {(thoughts.length > 0 ? thoughts.slice(-5) : []).map((t, i) => (
-                    <div key={i} style={{
-                      ...GLASS, borderRadius: '10px', padding: '8px 10px',
-                    }}>
-                      <p style={{
-                        fontFamily: T.MONO, fontSize: '9px', color: 'rgba(255,255,255,0.55)',
-                        margin: 0, lineHeight: '1.4', whiteSpace: 'pre-wrap',
-                      }}>
-                        {t.thought}
-                      </p>
-                      <div style={{ display: 'flex', gap: '4px', marginTop: '4px', flexWrap: 'wrap' }}>
-                        {t.layer_context.map(l => (
-                          <span key={l} style={{
-                            fontFamily: T.MONO, fontSize: '7px', padding: '1px 5px',
-                            borderRadius: '4px', background: `${LAYER_COLORS[l]}20`,
-                            color: LAYER_COLORS[l],
-                          }}>
-                            {l.slice(0, 5)}
-                          </span>
-                        ))}
+                {(['transcriptomics', 'proteomics', 'metabolomics'] as OmicsLayer[]).map(layer => {
+                  const pct = f.varianceExplained[layer] * 100;
+                  return (
+                    <div key={layer} style={{ marginBottom: '5px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
+                        <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL }}>{layer.slice(0, 5)}</span>
+                        <span style={{ fontFamily: T.MONO, fontSize: '9px', color: VALUE }}>{pct.toFixed(1)}%</span>
                       </div>
-                      <span style={{
-                        fontFamily: T.MONO, fontSize: '7px', color: LABEL, display: 'block', marginTop: '3px',
-                      }}>
-                        → {t.action_taken}
-                      </span>
+                      <div style={{ width: '100%', height: '5px', borderRadius: '3px', background: PATHD_THEME.panelInset }}>
+                        <div style={{ width: `${Math.min(100, pct)}%`, height: '100%', borderRadius: '3px', background: LAYER_COLORS[layer] }} />
+                      </div>
                     </div>
+                  );
+                })}
+                <div style={{ display: 'flex', gap: '4px', marginTop: '8px', flexWrap: 'wrap' }}>
+                  {f.topGenes.slice(0, 4).map(g => (
+                    <span key={g.gene} style={{ fontFamily: T.MONO, fontSize: '8px', padding: '2px 6px', borderRadius: '6px', background: PATHD_THEME.panelInset, color: VALUE }}>{g.gene} ({g.loading.toFixed(2)})</span>
                   ))}
-                  {thoughts.length === 0 && (
-                    <p style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL, fontStyle: 'italic', margin: 0 }}>
-                      Run a simulation to see Axon's reasoning…
-                    </p>
-                  )}
                 </div>
-              </>
-            )}
+                <p style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL, margin: '6px 0 0', lineHeight: '1.3' }}>{f.interpretation}</p>
+              </div>
+            ))}
+          </ScientificFigureFrame>
+        </div>
+      </ToolTabPanel>
+
+      {/* ── Projection Tab ── */}
+      <ToolTabPanel tabId="projection" activeId={activeTab}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, padding: '16px', overflow: 'auto' }}>
+          <ScientificFigureFrame
+            eyebrow="Projected Embedding"
+            title="Projected embedding and optimization trace"
+            caption="Embedding geometry above, optimization trace below."
+            minHeight="100%"
+            legend={[
+              { label: 'Dim', value: `${vaeResult.latentDim}D`, accent: PATHD_THEME.sky },
+              { label: 'ELBO', value: vaeResult.elbo.toFixed(3), accent: PATHD_THEME.mint },
+            ]}
+          >
+            <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+              <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+                <div style={{ width: '100%', maxWidth: '560px' }}>
+                  {(() => {
+                    const W = 520, H = 380, PAD = 44;
+                    const pts = vaeResult.latentPoints;
+                    const xs = pts.map(p => p.z_mean[0] ?? 0);
+                    const ys = pts.map(p => p.z_mean[1] ?? 0);
+                    const xMin = Math.min(...xs), xMax = Math.max(...xs);
+                    const yMin = Math.min(...ys), yMax = Math.max(...ys);
+                    const xR = xMax - xMin || 1, yR = yMax - yMin || 1;
+                    return (
+                      <svg role="img" aria-label="Chart" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%' }}>
+                        <rect width={W} height={H} fill="#050505" rx={12} />
+                        <line x1={PAD} y1={H - PAD} x2={W - PAD} y2={H - PAD} stroke="rgba(255,255,255,0.1)" />
+                        <line x1={PAD} y1={PAD} x2={PAD} y2={H - PAD} stroke="rgba(255,255,255,0.1)" />
+                        <text x={W / 2} y={H - 6} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill={LABEL}>Projection 1</text>
+                        <text x={12} y={H / 2} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill={LABEL} transform={`rotate(-90,12,${H / 2})`}>Projection 2</text>
+                        {pts.map((p, i) => {
+                          const cx = PAD + ((xs[i] - xMin) / xR) * (W - PAD * 2);
+                          const cy = H - PAD - ((ys[i] - yMin) / yR) * (H - PAD * 2);
+                          const eff = p.metabolicEfficiency;
+                          const r = Math.round(60 + (1 - eff) * 195);
+                          const g = Math.round(120 + eff * 100);
+                          const b = Math.round(100 + eff * 80);
+                          return (
+                            <circle key={p.id} cx={cx} cy={cy} r={5} fill={`rgb(${r},${g},${b})`} opacity={0.85}>
+                              <title>{p.gene}: eff={eff.toFixed(3)}</title>
+                            </circle>
+                          );
+                        })}
+                      </svg>
+                    );
+                  })()}
+                </div>
+              </div>
+              <div style={{ height: '100px', padding: '0 20px 12px', flexShrink: 0 }}>
+                {(() => {
+                  const hist = vaeResult.convergenceHistory;
+                  if (hist.length === 0) return null;
+                  const W = 480, H = 80, PAD = 30;
+                  const maxL = Math.max(...hist.map(h => h.loss), 0.01);
+                  return (
+                    <svg role="img" aria-label="Chart" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
+                      <rect width={W} height={H} fill="transparent" />
+                      <text x={PAD - 4} y={12} fontFamily={T.MONO} fontSize="7" fill={LABEL} textAnchor="end">Loss</text>
+                      <polyline points={hist.map((h, i) => { const x = PAD + (i / (hist.length - 1)) * (W - PAD * 2); const y = H - 8 - (h.loss / maxL) * (H - 20); return `${x},${y}`; }).join(' ')} fill="none" stroke={LAYER_COLORS.proteomics} strokeWidth={1.5} />
+                      <text x={W / 2} y={H - 1} textAnchor="middle" fontFamily={T.MONO} fontSize="7" fill={LABEL}>Epoch</text>
+                    </svg>
+                  );
+                })()}
+              </div>
+            </div>
+          </ScientificFigureFrame>
+        </div>
+      </ToolTabPanel>
+
+      {/* ── Efficiency Tab ── */}
+      <ToolTabPanel tabId="efficiency" activeId={activeTab}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '20px' }}>
+          <ScientificFigureFrame
+            eyebrow="Metabolic Efficiency Ledger"
+            title="Ranked entities ordered by production-relevant efficiency"
+            caption="Efficiency ranking connects deterministic integration back to exploratory prioritization."
+            minHeight="100%"
+            legend={[
+              { label: 'Avg Eff', value: `${(efficiencyScores.reduce((s, e) => s + e.score, 0) / Math.max(1, efficiencyScores.length) * 100).toFixed(1)}%`, accent: PATHD_THEME.mint },
+              { label: 'Top Gene', value: [...efficiencyScores].sort((a, b) => b.score - a.score)[0]?.gene ?? '—', accent: PATHD_THEME.sky },
+            ]}
+          >
+            <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
+              <div style={{ ...GLASS, borderRadius: '14px', padding: '12px 16px', flex: '1 0 140px' }}>
+                <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL, display: 'block' }}>Avg Efficiency</span>
+                <span style={{ fontFamily: T.MONO, fontSize: '18px', fontWeight: 700, color: 'rgba(147,203,82,0.9)' }}>{(efficiencyScores.reduce((s, e) => s + e.score, 0) / Math.max(1, efficiencyScores.length) * 100).toFixed(1)}%</span>
+              </div>
+              <div style={{ ...GLASS, borderRadius: '14px', padding: '12px 16px', flex: '1 0 140px' }}>
+                <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL, display: 'block' }}>Top Gene</span>
+                <span style={{ fontFamily: T.MONO, fontSize: '14px', fontWeight: 700, color: VALUE }}>{[...efficiencyScores].sort((a, b) => b.score - a.score)[0]?.gene ?? '—'}</span>
+              </div>
+            </div>
+            {[...efficiencyScores].sort((a, b) => b.score - a.score).map((e, i) => {
+              const pct = e.score * 100;
+              const color = pct > 60 ? 'rgba(147,203,82,0.85)' : pct > 35 ? 'rgba(255,139,31,0.85)' : 'rgba(250,128,114,0.85)';
+              return (
+                <div key={e.geneId} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 0', borderBottom: `1px solid ${BORDER}` }}>
+                  <span style={{ fontFamily: T.MONO, fontSize: '9px', color: LABEL, width: '20px', textAlign: 'right' }}>{i + 1}</span>
+                  <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE, width: '70px' }}>{e.gene}</span>
+                  <div style={{ flex: 1, height: '6px', borderRadius: '3px', background: 'rgba(255,255,255,0.06)' }}>
+                    <div style={{ width: `${pct}%`, height: '100%', borderRadius: '3px', background: color, transition: 'width 0.3s' }} />
+                  </div>
+                  <span style={{ fontFamily: T.MONO, fontSize: '10px', color, width: '45px', textAlign: 'right' }}>{pct.toFixed(1)}%</span>
+                  <div style={{ display: 'flex', gap: '4px' }}>
+                    <span style={{ fontFamily: T.MONO, fontSize: '7px', padding: '1px 4px', borderRadius: '4px', background: `${LAYER_COLORS.transcriptomics}20`, color: LAYER_COLORS.transcriptomics }}>F:{e.fluxUtilization.toFixed(2)}</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: '7px', padding: '1px 4px', borderRadius: '4px', background: `${LAYER_COLORS.proteomics}20`, color: LAYER_COLORS.proteomics }}>E:{e.expressionBalance.toFixed(2)}</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: '7px', padding: '1px 4px', borderRadius: '4px', background: `${LAYER_COLORS.metabolomics}20`, color: LAYER_COLORS.metabolomics }}>Y:{e.metaboliteYield.toFixed(2)}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </ScientificFigureFrame>
         </div>
       </ToolTabPanel>
     </ToolShell>
