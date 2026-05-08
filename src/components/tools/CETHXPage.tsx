@@ -364,10 +364,11 @@ export default function CETHXPage() {
 
   const fba = fbaPayload;
 
-  const [activeTab, setActiveTab] = useState('viz');
+  const [activeTab, setActiveTab] = useState('waterfall');
   const CETHX_TABS: ToolTab[] = [
-    { id: 'viz', label: 'Visualization', accent: PATHD_THEME.sky },
-    { id: 'analysis', label: 'Analysis', accent: PATHD_THEME.mint },
+    { id: 'waterfall', label: 'Waterfall', accent: PATHD_THEME.sky },
+    { id: 'atp', label: 'ATP Ledger', accent: PATHD_THEME.lilac },
+    { id: 'feasibility', label: 'Feasibility', accent: PATHD_THEME.apricot },
   ];
 
   return (
@@ -414,11 +415,10 @@ export default function CETHXPage() {
         </>
       }
     >
-      {/* ── Visualization Tab ─────────────────────────────────── */}
-      <ToolTabPanel tabId="viz" activeId={activeTab}>
+      {/* ── Waterfall Tab ── */}
+      <ToolTabPanel tabId="waterfall" activeId={activeTab}>
         <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
           <FloatingControlRail label="Parameters" defaultCollapsed={false}>
-            {/* Pathway selector */}
             <div style={{ marginBottom: '16px' }}>
               {PATHWAYS.map(p => (
                 <motion.button
@@ -436,38 +436,24 @@ export default function CETHXPage() {
                     borderRadius: '10px', cursor: 'pointer',
                   }}
                 >
-                  <span style={{
-                    fontFamily: T.SANS, fontSize: '11px', fontWeight: 500,
-                    color: pathway === p.id ? T.VALUE : T.LABEL,
-                    display: 'block',
-                  }}>
+                  <span style={{ fontFamily: T.SANS, fontSize: '11px', fontWeight: 500, color: pathway === p.id ? T.VALUE : T.LABEL, display: 'block' }}>
                     {p.label}
                   </span>
-                  <span style={{
-                    fontFamily: T.MONO, fontSize: '8px',
-                    color: T.DIM,
-                  }}>
+                  <span style={{ fontFamily: T.MONO, fontSize: '8px', color: T.DIM }}>
                     {p.desc}
                   </span>
                 </motion.button>
               ))}
             </div>
-
-            <TactileSlider
-              label="Temperature" value={tempC} min={20} max={60} step={1}
-              unit="°C" onChange={setTempC}
-            />
-            <TactileSlider
-              label="pH" value={pH} min={5.5} max={9.0} step={0.1}
-              onChange={setPH} color="rgba(120,180,255,0.9)"
-            />
+            <TactileSlider label="Temperature" value={tempC} min={20} max={60} step={1} unit="°C" onChange={setTempC} />
+            <TactileSlider label="pH" value={pH} min={5.5} max={9.0} step={0.1} onChange={setPH} color="rgba(120,180,255,0.9)" />
           </FloatingControlRail>
 
           <div style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px', background: PATHD_THEME.panelInset }}>
             <ScientificFigureFrame
               eyebrow="Thermodynamic waterfall"
-              title="Free-energy burden, ATP coupling, and cumulative route load are read in one figure"
-              caption="The central figure behaves like a publication panel instead of a dashboard chart, so limiting chemistry and operating-window assumptions stay legible in the same place."
+              title="Free-energy burden, ATP coupling, and cumulative route load"
+              caption="Publication-quality waterfall showing step-by-step ΔG cascade with limiting chemistry highlighted."
               legend={[
                 { label: 'Pathway', value: PATHWAYS.find((entry) => entry.id === pathway)?.label ?? pathway, accent: PATHD_THEME.apricot },
                 { label: 'Window', value: `${tempC.toFixed(0)}°C / pH ${pH.toFixed(1)}`, accent: PATHD_THEME.sky },
@@ -482,14 +468,7 @@ export default function CETHXPage() {
               minHeight="100%"
             >
               <AnimatePresence mode="wait">
-                <motion.div
-                  key={pathway}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                  style={{ width: '100%', maxWidth: '600px' }}
-                >
+                <motion.div key={pathway} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} style={{ width: '100%', maxWidth: '600px' }}>
                   <BreathingWaterfall steps={thermo.steps} />
                 </motion.div>
               </AnimatePresence>
@@ -508,10 +487,9 @@ export default function CETHXPage() {
         </div>
       </ToolTabPanel>
 
-      {/* ── Analysis Tab ──────────────────────────────────────── */}
-      <ToolTabPanel tabId="analysis" activeId={activeTab}>
+      {/* ── ATP Ledger Tab ── */}
+      <ToolTabPanel tabId="atp" activeId={activeTab}>
         <div style={{ flex: 1, overflowY: 'auto', padding: '12px 0' }}>
-          {/* Metrics */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', marginBottom: '20px' }}>
             <MetricCard label="Net ATP Yield" value={thermo.atp_yield} unit="mol/mol" highlight />
             <MetricCard label="NADH Yield" value={thermo.nadh_yield} unit="mol/mol" />
@@ -519,7 +497,6 @@ export default function CETHXPage() {
             <MetricCard label="Entropy" value={thermo.entropy_production.toFixed(3)} unit="kJ/mol/K" />
           </div>
 
-          {/* Efficiency gauge */}
           <div style={{ padding: '12px', borderRadius: '12px', background: PATHD_THEME.panelInset, marginBottom: '20px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
               <span style={{ fontFamily: T.SANS, fontSize: '9px', color: T.LABEL }}>Efficiency</span>
@@ -527,10 +504,7 @@ export default function CETHXPage() {
                 key={thermo.efficiency}
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
-                style={{
-                  fontFamily: T.MONO, fontSize: '16px', fontWeight: 700,
-                  color: thermo.efficiency > 50 ? T.VALUE : PATHD_THEME.coral,
-                }}
+                style={{ fontFamily: T.MONO, fontSize: '16px', fontWeight: 700, color: thermo.efficiency > 50 ? T.VALUE : PATHD_THEME.coral }}
               >
                 {thermo.efficiency.toFixed(1)}%
               </motion.span>
@@ -541,18 +515,13 @@ export default function CETHXPage() {
                 transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                 style={{
                   height: '100%', borderRadius: `${PATHD_THEME.progressRadius}px`,
-                  background: thermo.efficiency > 50
-                    ? PATHD_THEME.progressGradient
-                    : 'linear-gradient(90deg, rgba(232,163,161,0.45), rgba(232,163,161,0.95))',
-                  boxShadow: thermo.efficiency > 50
-                    ? PATHD_THEME.progressGlow
-                    : '0 0 8px rgba(232,163,161,0.32)',
+                  background: thermo.efficiency > 50 ? PATHD_THEME.progressGradient : 'linear-gradient(90deg, rgba(232,163,161,0.45), rgba(232,163,161,0.95))',
+                  boxShadow: thermo.efficiency > 50 ? PATHD_THEME.progressGlow : '0 0 8px rgba(232,163,161,0.32)',
                 }}
               />
             </div>
           </div>
 
-          {/* Step Breakdown */}
           <div style={{ marginBottom: '20px' }}>
             <div style={{ fontFamily: T.MONO, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: T.LABEL, marginBottom: '10px' }}>
               Step Breakdown
@@ -566,35 +535,29 @@ export default function CETHXPage() {
                   transition={{ delay: i * 0.04, duration: 0.2 }}
                   style={{
                     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    padding: '4px 0',
-                    borderBottom: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
+                    padding: '4px 0', borderBottom: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
                   }}
                 >
-                  <span style={{
-                    fontFamily: T.SANS, fontSize: '9px',
-                    color: T.LABEL,
-                    maxWidth: '200px', overflow: 'hidden',
-                    textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                  }}>
+                  <span style={{ fontFamily: T.SANS, fontSize: '9px', color: T.LABEL, maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {s.step}
                   </span>
-                  <span style={{
-                    fontFamily: T.MONO, fontSize: '10px', fontWeight: 600,
-                    textAlign: 'right',
-                    color: s.deltaG < 0 ? PATHD_THEME.mint : PATHD_THEME.coral,
-                  }}>
+                  <span style={{ fontFamily: T.MONO, fontSize: '10px', fontWeight: 600, textAlign: 'right', color: s.deltaG < 0 ? PATHD_THEME.mint : PATHD_THEME.coral }}>
                     {s.deltaG > 0 ? '+' : ''}{s.deltaG.toFixed(1)}
                   </span>
                 </motion.div>
               ))}
             </div>
           </div>
+        </div>
+      </ToolTabPanel>
 
-          {/* Interpretation */}
+      {/* ── Feasibility Tab ── */}
+      <ToolTabPanel tabId="feasibility" activeId={activeTab}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '12px 0' }}>
           <div style={{
             padding: '12px', borderRadius: '12px',
             border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
-            background: PATHD_THEME.panelInset, display: 'grid', gap: '6px',
+            background: PATHD_THEME.panelInset, display: 'grid', gap: '6px', marginBottom: '20px',
           }}>
             <div style={{ fontFamily: T.MONO, fontSize: '9px', color: T.LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
               Interpretation
@@ -603,6 +566,25 @@ export default function CETHXPage() {
               {thermo.gibbs_free_energy < 0
                 ? 'The reference table total is negative, but this is not a condition-aware feasibility claim or backend-backed Delta-G prime result.'
                 : 'The reference table total is positive, so this remains a demo-level redesign prompt rather than a formal thermodynamic block.'}
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '20px' }}>
+            <MetricCard label="Limiting Step" value={limitingStep ?? 'Pending'} />
+            <MetricCard label="Reference ΔG" value={thermo.gibbs_free_energy} unit="kJ/mol" />
+            <MetricCard label="Efficiency" value={thermo.efficiency} unit="%" />
+          </div>
+
+          <div style={{
+            padding: '12px', borderRadius: '12px',
+            border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
+            background: PATHD_THEME.panelInset, display: 'grid', gap: '6px',
+          }}>
+            <div style={{ fontFamily: T.MONO, fontSize: '9px', color: T.LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              Conditions
+            </div>
+            <div style={{ fontFamily: T.SANS, fontSize: '11px', color: T.VALUE, lineHeight: 1.55 }}>
+              {`Pathway: ${PATHWAYS.find((entry) => entry.id === pathway)?.label ?? pathway} · ${tempC.toFixed(0)}°C · pH ${pH.toFixed(1)} · No Alberty transform applied. This is a reference ΔG°′ table — not a condition-aware feasibility determination.`}
             </div>
           </div>
         </div>
