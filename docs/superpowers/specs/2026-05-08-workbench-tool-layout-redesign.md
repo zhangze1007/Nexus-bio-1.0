@@ -74,46 +74,67 @@ All 10 modifiable tool pages follow this structure:
 ```
 ┌──────────────────────────────────────────────────────────────┐
 │  WorkbenchStatusBar (1-row + tabbed drawer)                  │
+│  [Analyze] [Axon] [Detail]  ← handles all workbench context │
 ├──────────────────────────────────────────────────────────────┤
 │                                                              │
-│  ┌─ Collapsed Hero (28px) ────────────────────────────────┐  │
-│  │  ToolName · Description · key metric  [▸ expand]       │  │
+│  ┌─ ToolShell Header ─────────────────────────────────────┐  │
+│  │  ToolName · formula · accent                           │  │
 │  └────────────────────────────────────────────────────────┘  │
 │                                                              │
-│  ┌─ View Tabs ────────────────────────────────────────────┐  │
-│  │  [Tab1]  [Tab2]  [Tab3]  [Tab4]                        │  │
+│  ┌─ Tool-Specific Tabs ──────────────────────────────────┐  │
+│  │  [Tab1]  [Tab2]  [Tab3]  [Tab4]  [Tab5]               │  │
+│  └────────────────────────────────────────────────────────┘  │
+│                                                              │
+│  ┌─ Collapsed Hero (signals only) ───────────────────────┐  │
+│  │  signal1  signal2  signal3  signal4                    │  │
 │  └────────────────────────────────────────────────────────┘  │
 │                                                              │
 │  ┌─ Floating Rail ─┐  ┌─ Main Visualization ─────────────┐  │
-│  │  Controls        │  │                                    │  │
-│  │  ────────        │  │   Primary chart/3D view             │  │
-│  │  Parameter       │  │   fills remaining space             │  │
-│  │  sliders         │  │                                    │  │
-│  │                  │  │   ┌──────────┐                     │  │
-│  │  [Action btn]    │  │   │ metric   │  ← inline overlay  │  │
+│  │  Parameters      │  │                                    │  │
+│  │  only            │  │   Primary chart/3D view             │  │
+│  │  (sliders,       │  │   fills remaining space             │  │
+│  │   dropdowns,     │  │                                    │  │
+│  │   action btns)   │  │   ┌──────────┐                     │  │
+│  │                  │  │   │ metric   │  ← inline overlay  │  │
 │  │                  │  │   └──────────┘                     │  │
 │  └──────────────────┘  └────────────────────────────────────┘  │
 │                                                              │
+│  ┌─ Footer: Export buttons ───────────────────────────────┐  │
+│  └────────────────────────────────────────────────────────┘  │
 └──────────────────────────────────────────────────────────────┘
 ```
 
-**Collapsed hero** contains:
-- Tool name + description + key signal
-- Expand arrow → reveals ScientificHero full content + AlgorithmInsight + ScientificMethodStrip + DemoBanner
-- Export button in action bar
+**What the top bar already handles (no duplication in tool pages):**
+- Workbench context (project, evidence, handoff, freshness) → Detail drawer
+- AI analysis → Analyze link
+- AI chat → Axon sidebar (⌘K)
+- Status/integrity/history → Detail drawer tabs
 
-**View tabs** replace vertical scrolling — each tab shows one visualization/analysis view.
+**ToolShell header** contains:
+- Tool name + formula (from AlgorithmInsight — header absorbs this)
+- Accent color per tool
 
-**Floating control rail** (200px):
-- Parameter sliders
-- Action buttons (Run, Design, etc.)
-- Mode toggles
+**Tool-specific tabs** (4-5 per tool):
+- Each tab corresponds to a distinct visualization/analysis view
+- Tab structure defined per tool in Section 4
+- Replaces the old viewMode dropdown in FloatingControlRail
+
+**Collapsed ScientificHero** contains:
+- Signal cards only (tool-specific key metrics)
+- No WorkbenchInlineContext, no ScientificMethodStrip, no AlgorithmInsight, no DemoBanner
+
+**Floating control rail** (200px, parameters only):
+- Parameter sliders (temperature, thresholds, concentrations)
+- Dropdowns (gene selector, pathway selector, enzyme selector)
+- Action buttons (Run, Design, Simulate)
 - Collapsible via chevron
+- NO view mode selector (that's now tabs)
+- NO context panels (that's now top bar)
 
-**Inline metric overlays** float on the main visualization:
-- Growth rate, titer, confidence, etc.
+**Inline metric overlays** float on each tab's visualization:
+- Key metrics relevant to that specific tab's view
 - Semi-transparent glass background
-- Positioned top-right or bottom-right of the viz area
+- Positioned top-right of the viz area
 
 ---
 
@@ -279,29 +300,37 @@ All 10 modifiable tool pages follow this structure:
 
 ## 5. Shared Component Changes
 
-### Components to modify:
+### Components to REMOVE from all tool pages:
+
+| Component | Reason |
+|-----------|--------|
+| `WorkbenchInlineContext` | Top bar Detail drawer handles all workbench context |
+| `ScientificMethodStrip` | Static boilerplate — no real scientific value |
+| `AlgorithmInsight` | Title/formula absorbed into ToolShell header |
+| `DemoBanner` | Already shown in top bar status indicator |
+
+### Components to KEEP (modified):
 
 | Component | Change |
 |-----------|--------|
-| `ScientificHero` | Default collapsed (28px lineage bar). Click to expand full content. |
-| `ScientificFigureFrame` | Remove wrapper — content goes directly in tab panel |
-| `ScientificMethodStrip` | Move into collapsed hero expand section |
-| `AlgorithmInsight` | Move into collapsed hero expand section |
-| `DemoBanner` | Convert to inline status chip in hero bar |
-| `SimErrorBanner` | Convert to inline alert chip in hero bar |
-| `WorkbenchInlineContext` | Merge into collapsed hero summary line |
-| `MetricCard` | Convert to floating overlay on visualization |
-| `ExportButton` | Move to hero action bar (top-right) |
-| `ToolShell` | Add tab infrastructure (tab bar, tab content panels) |
+| `ScientificHero` | Keep collapsed, signals only. Remove expand/dismissible behavior. |
+| `ScientificFigureFrame` | Keep — wraps each tab's visualization content |
+| `MetricCard` | Keep — used in analysis-type tabs |
+| `ExportButton` | Move to ToolShell footer |
+| `ToolShell` | Add tab infrastructure, absorb AlgorithmInsight title/formula |
 
-### New shared components to create:
+### New shared components (already created):
 
 | Component | Purpose |
 |-----------|---------|
-| `ToolTabBar` | Tab navigation with active indicator animation |
+| `ToolTabBar` | Tool-specific tab navigation with animated indicator |
 | `ToolTabPanel` | Tab content panel with AnimatePresence transitions |
-| `FloatingControlRail` | Narrow left sidebar for parameter controls |
-| `InlineMetricOverlay` | Floating metric display on visualization |
+| `FloatingControlRail` | Narrow left sidebar for parameters only (no view mode, no context) |
+| `InlineMetricOverlay` | Floating metric display on each tab's visualization |
+
+### Per-tool tab migration:
+
+Each tool's viewMode dropdown in FloatingControlRail gets replaced by ToolTabBar tabs. The `activeTab` state drives which ToolTabPanel is visible. Each tab renders its own ScientificFigureFrame + InlineMetricOverlay.
 
 ---
 
