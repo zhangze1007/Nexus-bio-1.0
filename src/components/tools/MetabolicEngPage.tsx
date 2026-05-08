@@ -40,8 +40,10 @@ import type { PathwayNode, PathwayEdge } from '../../types';
 import { T } from '../ide/tokens';
 
 const PATHD_TABS: ToolTab[] = [
-  { id: 'lab', label: 'Lab', accent: PATHD_THEME.sky },
-  { id: 'analysis', label: 'Analysis', accent: PATHD_THEME.mint },
+  { id: 'lab', label: '3D Lab', accent: PATHD_THEME.sky },
+  { id: 'node', label: 'Node Panel', accent: PATHD_THEME.lilac },
+  { id: 'dbtl', label: 'DBTL', accent: PATHD_THEME.apricot },
+  { id: 'evidence', label: 'Evidence', accent: PATHD_THEME.mint },
 ];
 
 // ── Demo pathway edges (Artemisinin biosynthesis — Ro et al. 2006) ─────
@@ -804,7 +806,7 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
             ))}
           </div>
         </div>
-      ) : activeTab === 'analysis' ? (
+      ) : activeTab === 'evidence' ? (
         <div
           ref={supportFrameRef}
           className="nb-pathd-hero-stack nb-pathd-hero-stack--rail"
@@ -947,6 +949,65 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
             </div>
           )}
         </div>
+      ) : activeTab === 'node' ? (
+        <div style={{
+          position: 'absolute', top: '16px', right: '18px', left: 'auto',
+          width: `${PATHD_SUPPORT_RAIL_WIDTH}px`, zIndex: 14,
+          pointerEvents: 'auto',
+        }}>
+          {selectedNode ? (
+            <NodePanel
+              node={selectedNode}
+              onClose={() => setSelectedNode(null)}
+              allNodes={activeNodes}
+              allEdges={activeEdges}
+            />
+          ) : (
+            <div style={{
+              padding: '16px', borderRadius: '14px',
+              background: 'rgba(10,12,16,0.72)', backdropFilter: 'blur(16px)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              color: PATHD_THEME.label, fontFamily: T.SANS, fontSize: '12px',
+              textAlign: 'center', lineHeight: 1.6,
+            }}>
+              Click a node in the 3D pathway to inspect its overview, structure, and analysis.
+            </div>
+          )}
+        </div>
+      ) : activeTab === 'dbtl' ? (
+        <div style={{
+          position: 'absolute', top: '16px', right: '18px', left: 'auto',
+          width: `${PATHD_SUPPORT_RAIL_WIDTH}px`, zIndex: 14,
+          pointerEvents: 'auto', display: 'grid', gap: '8px',
+        }}>
+          <div style={{
+            padding: '14px', borderRadius: '14px',
+            background: 'rgba(10,12,16,0.72)', backdropFilter: 'blur(16px)',
+            border: '1px solid rgba(255,255,255,0.1)',
+            display: 'grid', gap: '10px',
+          }}>
+            <div style={{ fontFamily: T.MONO, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: PATHD_THEME.label }}>
+              DBTL Integration
+            </div>
+            <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.value, lineHeight: 1.55 }}>
+              Pathway design feeds directly into the DBTL cycle. Bottlenecks identified here become the hypotheses for the next iteration.
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label }}>
+                <span>Active Route</span><span style={{ color: PATHD_THEME.value }}>{activeRouteLabel}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label }}>
+                <span>Nodes</span><span style={{ color: PATHD_THEME.value }}>{activeNodes.length}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label }}>
+                <span>Bottlenecks</span><span style={{ color: PATHD_THEME.value }}>{activeAnalyzeArtifact?.bottleneckAssumptions.length ?? 0}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label }}>
+                <span>Next Tool</span><span style={{ color: PATHD_THEME.apricot }}>{recommendedNextTool}</span>
+              </div>
+            </div>
+          </div>
+        </div>
       ) : null}
 
       {/* ── Center: 3D Pathway Visualization — full-screen, panels float over ── */}
@@ -1035,9 +1096,9 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
         )}
       </AnimatePresence>
 
-      {/* ── Node detail panel (Overview / Structure / Analysis) ── */}
+      {/* ── Node detail panel (Overview / Structure / Analysis) — hidden on Node tab ── */}
       <AnimatePresence>
-        {selectedNode && (
+        {selectedNode && activeTab !== 'node' && (
           <NodePanel
             node={selectedNode}
             onClose={() => setSelectedNode(null)}
