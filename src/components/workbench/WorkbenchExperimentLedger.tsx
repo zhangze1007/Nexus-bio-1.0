@@ -1,49 +1,31 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState, useCallback } from 'react';
+import { motion } from 'framer-motion';
 import { ClipboardList, FlaskConical, Microscope } from 'lucide-react';
-import { useWorkbenchStore } from '../../store/workbenchStore';
-import { T } from '../ide/tokens';
+import { useWorkbenchStore, type WorkbenchRunArtifact } from '../../store/workbenchStore';
 import { buildExperimentLedger, getAuthorityTier } from './workbenchTrust';
 import { TOOL_BY_ID } from '../tools/shared/toolRegistry';
 import { PATHD_THEME } from './workbenchTheme';
+import {
+  glassPanel,
+  glassPanelInset,
+  typography,
+  iconContainer,
+  statusChip,
+  cardVariants,
+  staggerContainer,
+  chipVariants,
+  sectionHeaderRow,
+  chipRow,
+  accentLeftBorder,
+  statusAccent,
+  getChipStyle,
+} from './workbenchDesignSystem';
 
 interface WorkbenchExperimentLedgerProps {
   title?: string;
   limit?: number;
-}
-
-const BORDER = PATHD_THEME.panelBorder;
-const LABEL = PATHD_THEME.label;
-const VALUE = PATHD_THEME.value;
-
-function getStatusStyle(status: 'recorded' | 'committed' | 'attention' | 'draft') {
-  if (status === 'committed') {
-    return {
-      border: PATHD_THEME.chipBorder,
-      background: PATHD_THEME.chipCool,
-      color: PATHD_THEME.chipText,
-    };
-  }
-  if (status === 'attention') {
-    return {
-      border: PATHD_THEME.chipBorderWarm,
-      background: PATHD_THEME.chipWarm,
-      color: 'rgba(255,228,194,0.94)',
-    };
-  }
-  if (status === 'draft') {
-    return {
-      border: PATHD_THEME.chipBorderWarm,
-      background: PATHD_THEME.panelGradientSoft,
-      color: PATHD_THEME.value,
-    };
-  }
-  return {
-    border: 'rgba(255,255,255,0.12)',
-    background: PATHD_THEME.chipNeutral,
-    color: VALUE,
-  };
 }
 
 function formatTime(timestamp: number) {
@@ -67,106 +49,142 @@ export default function WorkbenchExperimentLedger({
   );
 
   return (
-    <section style={{ display: 'grid', gap: '10px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <ClipboardList size={14} color={PATHD_THEME.orange} />
-        <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-          {title}
+    <motion.section
+      variants={staggerContainer}
+      initial="hidden"
+      animate="visible"
+      style={{ display: 'grid', gap: '12px' }}
+    >
+      {/* Section Header */}
+      <motion.div variants={cardVariants} style={sectionHeaderRow}>
+        <span style={iconContainer(PATHD_THEME.apricot, 20)}>
+          <ClipboardList size={11} color={PATHD_THEME.apricot} />
+        </span>
+        <span style={typography.sectionTitle}>{title}</span>
+      </motion.div>
+
+      {/* Entries */}
+      {entries.length ? (
+        <motion.div variants={staggerContainer} initial="hidden" animate="visible" style={{ display: 'grid', gap: '12px' }}>
+          {entries.map((entry) => {
+            const tool = TOOL_BY_ID[entry.toolId];
+            const accent = statusAccent(entry.status);
+            const chipStyle = getChipStyle(entry.status);
+            const Icon = entry.toolId === 'cellfree' || entry.toolId === 'dbtlflow' ? FlaskConical : Microscope;
+            const artifact = artifactById.get(entry.id);
+            return (
+              <ExperimentCard
+                key={entry.id}
+                entry={entry}
+                tool={tool}
+                accent={accent}
+                chipStyle={chipStyle}
+                Icon={Icon}
+                artifact={artifact}
+                formatTime={formatTime}
+              />
+            );
+          })}
+        </motion.div>
+      ) : (
+        <motion.div
+          variants={cardVariants}
+          style={{
+            ...glassPanel,
+            ...glassPanelInset,
+            padding: '24px',
+            textAlign: 'center',
+          }}
+        >
+          <div style={{ ...typography.body, maxWidth: '280px', margin: '0 auto' }}>
+            No experimental ledger entries yet.
+          </div>
+          <div style={{ ...typography.caption, maxWidth: '280px', margin: '0 auto', opacity: 0.6 }}>
+            Execute Cell-free, DBTL, or downstream omics tools to populate the recorded test trail.
+          </div>
+        </motion.div>
+      )}
+    </motion.section>
+  );
+}
+
+function ExperimentCard({
+  entry,
+  tool,
+  accent,
+  chipStyle,
+  Icon,
+  artifact,
+  formatTime,
+}: {
+  entry: { id: string; toolId: string; title: string; summary: string; status: string; createdAt: number; metrics: string[] };
+  tool: { shortLabel?: string } | undefined;
+  accent: string;
+  chipStyle: React.CSSProperties;
+  Icon: typeof FlaskConical;
+  artifact: WorkbenchRunArtifact | undefined;
+  formatTime: (ts: number) => string;
+}) {
+  const [hovered, setHovered] = useState(false);
+  const handleMouseEnter = useCallback(() => setHovered(true), []);
+  const handleMouseLeave = useCallback(() => setHovered(false), []);
+
+  return (
+    <motion.div
+      variants={cardVariants}
+      whileHover="hover"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      style={{
+        ...glassPanel,
+        ...accentLeftBorder(accent),
+        borderColor: hovered ? 'rgba(255, 255, 255, 0.12)' : glassPanel.borderColor,
+        transform: hovered ? 'translateY(-2px)' : 'translateY(0)',
+        boxShadow: hovered
+          ? '0 8px 32px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.2)'
+          : 'none',
+      }}
+    >
+      {/* Top row: icon + title + status chip */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+          <span style={iconContainer(accent)}>
+            <Icon size={12} color={accent} />
+          </span>
+          <div style={{ minWidth: 0 }}>
+            <div style={typography.cardTitle}>{entry.title}</div>
+            <div style={typography.caption}>
+              {tool?.shortLabel ?? entry.toolId.toUpperCase()} · {formatTime(entry.createdAt)}
+            </div>
+          </div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <motion.span variants={chipVariants} style={chipStyle}>
+            {entry.status}
+          </motion.span>
+          <span style={typography.caption}>
+            {artifact ? getAuthorityTier(artifact) : 'unknown'}
+          </span>
         </div>
       </div>
 
-      {entries.length ? entries.map((entry) => {
-        const tool = TOOL_BY_ID[entry.toolId];
-        const style = getStatusStyle(entry.status);
-        const Icon = entry.toolId === 'cellfree' || entry.toolId === 'dbtlflow' ? FlaskConical : Microscope;
-        const artifact = artifactById.get(entry.id);
-        return (
-          <div
-            key={entry.id}
-            style={{
-              borderRadius: '16px',
-              border: `1px solid ${BORDER}`,
-              background: PATHD_THEME.panelGradientSoft,
-              padding: '12px 14px',
-              display: 'grid',
-              gap: '8px',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
-                <span
-                  style={{
-                    width: '24px',
-                    height: '24px',
-                    borderRadius: '999px',
-                    border: `1px solid ${style.border}`,
-                    background: style.background,
-                    color: style.color,
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                  }}
-                >
-                  <Icon size={12} />
-                </span>
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontFamily: T.SANS, fontSize: '13px', color: VALUE, fontWeight: 700 }}>
-                    {entry.title}
-                  </div>
-                  <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL }}>
-                    {tool?.shortLabel ?? entry.toolId.toUpperCase()} · {formatTime(entry.createdAt)}
-                  </div>
-                </div>
-              </div>
-              <span
-                style={{
-                  padding: '3px 8px',
-                  borderRadius: '999px',
-                  border: `1px solid ${style.border}`,
-                  background: style.background,
-                  color: style.color,
-                  fontFamily: T.MONO,
-                  fontSize: '10px',
-                  textTransform: 'uppercase',
-                }}
-              >
-                {entry.status}
-              </span>
-              <span style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL }}>
-                {artifact ? getAuthorityTier(artifact) : 'unknown'}
-              </span>
-            </div>
+      {/* Summary */}
+      <div style={typography.body}>{entry.summary}</div>
 
-            <div style={{ fontFamily: T.SANS, fontSize: '12px', color: LABEL, lineHeight: 1.6 }}>
-              {entry.summary}
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-              {entry.metrics.map((metric) => (
-                <span
-                  key={metric}
-                  style={{
-                    padding: '4px 8px',
-                    borderRadius: '999px',
-                    border: `1px solid ${BORDER}`,
-                    background: PATHD_THEME.chipNeutral,
-                    color: 'rgba(255,255,255,0.76)',
-                    fontFamily: T.MONO,
-                    fontSize: '10px',
-                  }}
-                >
-                  {metric}
-                </span>
-              ))}
-            </div>
-          </div>
-        );
-      }) : (
-        <div style={{ fontFamily: T.SANS, fontSize: '12px', color: LABEL, lineHeight: 1.6 }}>
-          No experimental ledger entries yet. Execute Cell-free, DBTL, or downstream omics tools to populate the recorded test trail.
-        </div>
+      {/* Metrics */}
+      {entry.metrics.length > 0 && (
+        <motion.div variants={staggerContainer} initial="hidden" animate="visible" style={chipRow}>
+          {entry.metrics.map((metric) => (
+            <motion.span
+              key={metric}
+              variants={chipVariants}
+              style={statusChip.neutral}
+            >
+              {metric}
+            </motion.span>
+          ))}
+        </motion.div>
       )}
-    </section>
+    </motion.div>
   );
 }
