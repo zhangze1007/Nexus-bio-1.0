@@ -1,16 +1,12 @@
 'use client';
 import { useState, useMemo, useRef, useEffect } from 'react';
-import AlgorithmInsight from '../ide/shared/AlgorithmInsight';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
-import DemoBanner from '../ide/shared/DemoBanner';
 import { useUIStore } from '../../store/uiStore';
 import { useWorkbenchStore } from '../../store/workbenchStore';
-import WorkbenchInlineContext from '../workbench/WorkbenchInlineContext';
 import { PATHD_THEME } from '../workbench/workbenchTheme';
 import ScientificHero from './shared/ScientificHero';
 import ScientificFigureFrame from './shared/ScientificFigureFrame';
-import ScientificMethodStrip from './shared/ScientificMethodStrip';
 import SimErrorBanner from '../ide/shared/SimErrorBanner';
 import { usePersistedState } from '../ide/shared/usePersistedState';
 import WorkbenchRangeSlider from './shared/WorkbenchRangeSlider';
@@ -317,10 +313,12 @@ export default function DynConPage() {
   const [vmax, setVmax] = usePersistedState('nexus-bio:dyncon:vmax', DEFAULT_HILL.Vmax);
   const [hillKd, setHillKd] = usePersistedState('nexus-bio:dyncon:hillKd', DEFAULT_HILL.Kd);
   const [hillN, setHillN] = usePersistedState('nexus-bio:dyncon:hillN', DEFAULT_HILL.n);
-  const [activeTab, setActiveTab] = useState('viz');
+  const [activeTab, setActiveTab] = useState('trajectory');
   const DYNCON_TABS: ToolTab[] = [
-    { id: 'viz', label: 'Visualization', accent: PATHD_THEME.sky },
-    { id: 'analysis', label: 'Analysis', accent: PATHD_THEME.mint },
+    { id: 'trajectory', label: 'Trajectory', accent: PATHD_THEME.sky },
+    { id: 'hill', label: 'Hill Curve', accent: PATHD_THEME.lilac },
+    { id: 'convergence', label: 'Convergence', accent: PATHD_THEME.apricot },
+    { id: 'rbs', label: 'RBS Bridge', accent: PATHD_THEME.mint },
   ];
   const recommendedSeed = useMemo(
     () => buildDynConSeed(fbaPayload, cethxPayload, catalystPayload, dbtlPayload),
@@ -380,11 +378,6 @@ export default function DynConPage() {
 
   const currentFPP = last?.fpp ?? 0;
   const currentADS = last?.adsExpression ?? 0;
-  const figureMeta = useMemo(() => ({
-    eyebrow: 'Controller figure',
-    title: 'Closed-loop bioreactor dynamics, Hill repression, and genetic-part mapping are read as one control figure',
-    caption: 'The page now treats trajectory, repression curve, burden response, and implementation bridge as one scientific control object instead of a collection of simulator widgets.',
-  }), []);
 
   /* ── Console logging ─────────────────────────────────────────────────── */
   const appendConsole = useUIStore((s) => s.appendConsole);
@@ -501,8 +494,8 @@ export default function DynConPage() {
         </div>
       ) : (
         <>
-          {/* ── Visualization Tab ── */}
-          <ToolTabPanel tabId="viz" activeId={activeTab}>
+          {/* ── Trajectory Tab ── */}
+          <ToolTabPanel tabId="trajectory" activeId={activeTab}>
             <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
               <FloatingControlRail label="Parameters" defaultCollapsed={false} width={260}>
                 <SectionLabel>PID Controller</SectionLabel>
@@ -514,22 +507,13 @@ export default function DynConPage() {
                 <ParamSlider label="Vmax" value={vmax} min={0.1} max={2.0} step={0.05} onChange={setVmax} />
                 <ParamSlider label="Kd" value={hillKd} min={5} max={200} step={5} onChange={setHillKd} unit="μM" />
                 <ParamSlider label="n" value={hillN} min={1} max={4} step={0.5} onChange={setHillN} />
-                <SectionLabel>RBS Bridge</SectionLabel>
-                <div style={{ ...GLASS, padding: '10px' }}>
-                  <StatRow label="Gain" value={rbsMapping.controlGain} />
-                  <StatRow label="RBS" value={rbsMapping.rbsName} />
-                  <StatRow label="Strength" value={rbsMapping.rbsStrength} />
-                  <p style={{ fontFamily: T.MONO, fontSize: '9px', color: PATHD_THEME.sky, wordBreak: 'break-all', lineHeight: 1.5, margin: '6px 0 0', opacity: 0.85 }}>
-                    {rbsMapping.sequence}
-                  </p>
-                </div>
               </FloatingControlRail>
 
               <div style={{ flex: 1, position: 'relative', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
                 <ScientificFigureFrame
-                  eyebrow={figureMeta.eyebrow}
-                  title={figureMeta.title}
-                  caption={figureMeta.caption}
+                  eyebrow="Controller figure"
+                  title="Closed-loop bioreactor dynamics"
+                  caption="6-lane time-series showing biomass, substrate, product, DO₂, FPP, and ADS expression trajectories under PID control."
                   legend={[
                     { label: 'Setpoint', value: `${setpoint.toFixed(2)} sat.`, accent: PATHD_THEME.sky },
                     { label: 'Stability', value: convergence.isStable ? 'Stable' : 'Unstable', accent: convergence.isStable ? PATHD_THEME.mint : PATHD_THEME.coral },
@@ -538,13 +522,7 @@ export default function DynConPage() {
                   ]}
                   minHeight="100%"
                 >
-                  <div style={{ display: 'grid', gap: '10px' }}>
-                    <TimeSeriesSVG trajectory={trajectory} setpoint={setpoint} svgRef={chartRef} />
-                    <div>
-                      <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.08em', color: LABEL, margin: '4px 0 2px 4px' }}>Hill Feedback — f(FPP)</p>
-                      <HillCurveSVG hill={hill} currentFPP={currentFPP} />
-                    </div>
-                  </div>
+                  <TimeSeriesSVG trajectory={trajectory} setpoint={setpoint} svgRef={chartRef} />
                 </ScientificFigureFrame>
 
                 <InlineMetricOverlay
@@ -560,22 +538,50 @@ export default function DynConPage() {
             </div>
           </ToolTabPanel>
 
-          {/* ── Analysis Tab ── */}
-          <ToolTabPanel tabId="analysis" activeId={activeTab}>
+          {/* ── Hill Curve Tab ── */}
+          <ToolTabPanel tabId="hill" activeId={activeTab}>
+            <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
+              <FloatingControlRail label="Hill Parameters" defaultCollapsed={false} width={260}>
+                <SectionLabel>Hill Feedback</SectionLabel>
+                <ParamSlider label="Vmax" value={vmax} min={0.1} max={2.0} step={0.05} onChange={setVmax} />
+                <ParamSlider label="Kd" value={hillKd} min={5} max={200} step={5} onChange={setHillKd} unit="μM" />
+                <ParamSlider label="n" value={hillN} min={1} max={4} step={0.5} onChange={setHillN} />
+              </FloatingControlRail>
+
+              <div style={{ flex: 1, position: 'relative', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                <ScientificFigureFrame
+                  eyebrow="Hill repression"
+                  title="Hill feedback curve with operating point"
+                  caption="f(FPP) = Vmax·Kd^n / (Kd^n + FPP^n). The operating point shows current repression level."
+                  legend={[
+                    { label: 'Vmax', value: vmax.toFixed(2), accent: PATHD_THEME.sky },
+                    { label: 'Kd', value: `${hillKd.toFixed(0)} μM`, accent: PATHD_THEME.lilac },
+                    { label: 'n', value: hillN.toFixed(1), accent: PATHD_THEME.apricot },
+                    { label: 'Operating Pt', value: `${currentFPP.toFixed(1)} μM`, accent: PATHD_THEME.mint },
+                  ]}
+                  minHeight="100%"
+                >
+                  <HillCurveSVG hill={hill} currentFPP={currentFPP} />
+                </ScientificFigureFrame>
+
+                <InlineMetricOverlay
+                  position="top-right"
+                  metrics={[
+                    { label: 'Vmax', value: vmax.toFixed(2), accent: PATHD_THEME.sky },
+                    { label: 'Kd', value: `${hillKd.toFixed(0)} μM`, accent: PATHD_THEME.lilac },
+                    { label: 'Hill coeff', value: hillN.toFixed(1), accent: PATHD_THEME.apricot },
+                    { label: 'Current FPP', value: `${currentFPP.toFixed(1)} μM`, accent: currentFPP > DEFAULT_PARAMS.fppToxicThreshold ? PATHD_THEME.coral : PATHD_THEME.mint },
+                  ]}
+                />
+              </div>
+            </div>
+          </ToolTabPanel>
+
+          {/* ── Convergence Tab ── */}
+          <ToolTabPanel tabId="convergence" activeId={activeTab}>
             <div style={{ display: 'flex', gap: '16px', flex: 1, minHeight: 0, overflow: 'auto', padding: '12px' }}>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <SectionLabel>Process Readouts</SectionLabel>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '16px' }}>
-                  <MetricCard label="Final Product Titer" value={productTiter} unit="g/L" highlight />
-                  <MetricCard label="Productivity" value={productivity} unit="g/L/h" />
-                  <MetricCard label="Final Biomass" value={last?.biomass ?? 0} unit="g/L" />
-                  <MetricCard label="DO₂ RMSE" value={doRmse} unit="sat." warning={doRmse > 0.1 ? 'Poor control' : undefined} />
-                  <MetricCard label="FPP Level" value={currentFPP} unit="μM" warning={currentFPP > DEFAULT_PARAMS.fppToxicThreshold ? 'Above toxic' : undefined} />
-                  <MetricCard label="ADS Expression" value={currentADS} unit="a.u." />
-                </div>
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <SectionLabel>Convergence</SectionLabel>
+                <SectionLabel>Convergence Analysis</SectionLabel>
                 <div style={{ ...GLASS, padding: '12px', marginBottom: '12px' }}>
                   <StatRow label="Settling Time" value={convergence.settlingTime} unit="h" />
                   <StatRow label="Overshoot" value={convergence.overshoot} unit="%" />
@@ -598,6 +604,67 @@ export default function DynConPage() {
                   </div>
                   <p style={{ fontFamily: T.SANS, fontSize: '10px', fontStyle: 'italic', color: LABEL, lineHeight: 1.45, marginTop: '6px' }}>{burden.recommendation}</p>
                 </div>
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <SectionLabel>Process Readouts</SectionLabel>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <MetricCard label="Final Product Titer" value={productTiter} unit="g/L" highlight />
+                  <MetricCard label="Productivity" value={productivity} unit="g/L/h" />
+                  <MetricCard label="Final Biomass" value={last?.biomass ?? 0} unit="g/L" />
+                  <MetricCard label="DO₂ RMSE" value={doRmse} unit="sat." warning={doRmse > 0.1 ? 'Poor control' : undefined} />
+                  <MetricCard label="FPP Level" value={currentFPP} unit="μM" warning={currentFPP > DEFAULT_PARAMS.fppToxicThreshold ? 'Above toxic' : undefined} />
+                  <MetricCard label="ADS Expression" value={currentADS} unit="a.u." />
+                </div>
+              </div>
+            </div>
+          </ToolTabPanel>
+
+          {/* ── RBS Bridge Tab ── */}
+          <ToolTabPanel tabId="rbs" activeId={activeTab}>
+            <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
+              <FloatingControlRail label="Controller Gains" defaultCollapsed={false} width={260}>
+                <SectionLabel>PID Controller</SectionLabel>
+                <ParamSlider label="Kp" value={kp} min={0} max={10} step={0.1} onChange={setKp} />
+                <ParamSlider label="Ki" value={ki} min={0} max={5} step={0.05} onChange={setKi} />
+                <ParamSlider label="Kd" value={kd} min={0} max={2} step={0.02} onChange={setKd} />
+              </FloatingControlRail>
+
+              <div style={{ flex: 1, position: 'relative', display: 'flex', flexDirection: 'column', minHeight: 0, gap: '12px', padding: '12px', overflow: 'auto' }}>
+                <SectionLabel>RBS Part Mapping</SectionLabel>
+                <div style={{ ...GLASS, padding: '16px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                    <div>
+                      <div style={{ fontFamily: T.MONO, fontSize: '9px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>Control Gain</div>
+                      <div style={{ fontFamily: T.SANS, fontSize: '20px', color: VALUE, fontWeight: 700 }}>{rbsMapping.controlGain.toFixed(2)}</div>
+                    </div>
+                    <div>
+                      <div style={{ fontFamily: T.MONO, fontSize: '9px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>RBS Part</div>
+                      <div style={{ fontFamily: T.SANS, fontSize: '20px', color: PATHD_THEME.sky, fontWeight: 700 }}>{rbsMapping.rbsName}</div>
+                    </div>
+                  </div>
+                  <div style={{ marginBottom: '12px' }}>
+                    <div style={{ fontFamily: T.MONO, fontSize: '9px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>RBS Strength</div>
+                    <div style={{ background: PATHD_THEME.panelInset, borderRadius: '6px', height: '10px', overflow: 'hidden' }}>
+                      <div style={{ width: `${Math.min(100, rbsMapping.rbsStrength * 100)}%`, height: '100%', background: `linear-gradient(90deg, ${PATHD_THEME.sky}, ${PATHD_THEME.mint})`, borderRadius: '6px', transition: 'width 300ms ease-out' }} />
+                    </div>
+                    <div style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE, marginTop: '4px' }}>{(rbsMapping.rbsStrength * 100).toFixed(0)}%</div>
+                  </div>
+                  <div>
+                    <div style={{ fontFamily: T.MONO, fontSize: '9px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>DNA Sequence</div>
+                    <p style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.sky, wordBreak: 'break-all', lineHeight: 1.6, background: PATHD_THEME.panelInset, padding: '8px', borderRadius: '8px', border: `1px solid ${PATHD_THEME.sepiaPanelBorder}` }}>
+                      {rbsMapping.sequence}
+                    </p>
+                  </div>
+                </div>
+
+                <InlineMetricOverlay
+                  position="top-right"
+                  metrics={[
+                    { label: 'Gain', value: rbsMapping.controlGain.toFixed(2), accent: PATHD_THEME.sky },
+                    { label: 'RBS', value: rbsMapping.rbsName, accent: PATHD_THEME.lilac },
+                    { label: 'Strength', value: `${(rbsMapping.rbsStrength * 100).toFixed(0)}%`, accent: PATHD_THEME.mint },
+                  ]}
+                />
               </div>
             </div>
           </ToolTabPanel>
