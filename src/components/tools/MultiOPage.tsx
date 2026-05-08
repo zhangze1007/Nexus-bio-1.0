@@ -1,7 +1,6 @@
 'use client';
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { computeConvexHull, expandHull } from '../../utils/vizUtils';
-import AlgorithmInsight from '../ide/shared/AlgorithmInsight';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
 import SimErrorBanner from '../ide/shared/SimErrorBanner';
@@ -35,12 +34,14 @@ import { useWorkbenchStore } from '../../store/workbenchStore';
 import { useUIStore } from '../../store/uiStore';
 import { createProvenanceEntry } from '../../utils/provenance';
 import { T, TOOL_RESULT_PALETTE} from '../ide/tokens';
-import WorkbenchInlineContext from '../workbench/WorkbenchInlineContext';
 import ScientificHero from './shared/ScientificHero';
 import ScientificFigureFrame from './shared/ScientificFigureFrame';
-import ScientificMethodStrip from './shared/ScientificMethodStrip';
 import { PATHD_THEME } from '../workbench/workbenchTheme';
-import HybridWorkbenchPanels from './shared/HybridWorkbenchPanels';
+import ToolShell from './shared/ToolShell';
+import ToolTabBar, { type ToolTab } from './shared/ToolTabBar';
+import ToolTabPanel from './shared/ToolTabPanel';
+import FloatingControlRail from './shared/FloatingControlRail';
+import InlineMetricOverlay from './shared/InlineMetricOverlay';
 
 /* ── Design Tokens ────────────────────────────────────────────────── */
 
@@ -57,6 +58,11 @@ const VALUE = PATHD_THEME.value;
 const INPUT_BG = PATHD_THEME.panelInset;
 const INPUT_BORDER = PATHD_THEME.sepiaPanelBorder;
 const INPUT_TEXT = PATHD_THEME.value;
+
+const MULTIO_TABS: ToolTab[] = [
+  { id: 'viz', label: 'Visualization', accent: PATHD_THEME.sky },
+  { id: 'analysis', label: 'Analysis', accent: PATHD_THEME.mint },
+];
 
 const GLASS: React.CSSProperties = {
   borderRadius: '24px',
@@ -592,6 +598,7 @@ export default function MultiOPage() {
   const dbtlPayload = useWorkbenchStore((s) => s.toolPayloads.dbtlflow);
   const setToolPayload = useWorkbenchStore((s) => s.setToolPayload);
   const devMode = useUIStore((s) => s.devMode);
+  const [activeTab, setActiveTab] = useState('viz');
   /* Layer toggles */
   const [showTranscript, setShowTranscript] = useState(true);
   const [showProtein, setShowProtein] = useState(true);
@@ -818,20 +825,16 @@ export default function MultiOPage() {
   );
 
   return (
-    <>
-      <div className="nb-tool-page" style={{ background: PANEL_BG }}>
-        <AlgorithmInsight
-          title="Deterministic Multi-Omics Integration"
-          description="Z-score/log2 fold-change, ALS-style factors, deterministic projection, and sensitivity sketches. No Bayesian, MOFA, VAE, GP, or posterior model is running."
-          formula="z-score + ALS factors + linear projection | sensitivity Δ"
-        />
-
-        {simError && (
-          <div style={{ padding: '0 16px 8px' }}><SimErrorBanner message={simError} /></div>
-        )}
-
-        <div style={{ padding: '0 16px 10px' }}>
-          <ScientificHero
+    <ToolShell
+      moduleId="multio"
+      title="Deterministic Multi-Omics Integration"
+      formula="z-score + ALS factors + linear projection | sensitivity Δ"
+      tabs={MULTIO_TABS}
+      activeTab={activeTab}
+      onTabChange={setActiveTab}
+      workbenchSummary="Deterministically combine transcript, protein, and metabolite layers against the active pathway object so Stage 4 evidence can provide exploratory bottleneck context."
+      hero={
+        <ScientificHero
             eyebrow="Stage 4 · Deterministic Multi-Omics Demo"
             title="Result-centered omics synthesis instead of isolated plots"
             summary="MULTIO behaves as an exploratory integration surface: significant genes, deterministic layer signals, sensitivity sketches, and efficiency context sit above the visualization layer without claiming posterior uncertainty or a reference-model backend."
@@ -877,50 +880,21 @@ export default function MultiOPage() {
               },
             ]}
           />
+      }
+      footer={
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <ExportButton label="Export All CSV" data={OMICS_DATA} filename="multio-all" format="csv" />
+          <ExportButton label="Export Significant JSON" data={significant} filename="multio-significant" format="json" />
         </div>
-
-        <div style={{ padding: '0 16px 10px' }}>
-          <ScientificMethodStrip
-            label="Deterministic Integration Grammar"
-            items={[
-              {
-                title: 'Input layers',
-                detail: 'Transcriptomics, proteomics, and metabolomics should be presented as distinct evidence sources with clear color and label separation.',
-                accent: PATHD_THEME.coral,
-                note: 'Input matrix',
-              },
-              {
-                title: 'Cross-layer integration',
-                detail: 'ALS-style factors and projected views sit visibly between raw layers and exploratory readouts; no reference model or posterior inference is implied.',
-                accent: PATHD_THEME.sky,
-                note: 'Demo bridge',
-              },
-              {
-                title: 'Exploratory output',
-                detail: 'The page ends in candidate bottleneck, sensitivity, and efficiency readouts, not formal recommendations or protocol claims.',
-                accent: PATHD_THEME.mint,
-                note: 'Demo output',
-              },
-            ]}
-          />
-        </div>
-
-        <HybridWorkbenchPanels
-          leftLabel="Omics Controls"
-          rightLabel="Readout Ledger"
-          leftPanel={(
-            <div className="nb-tool-sidebar" style={{
-            width: '240px', flexShrink: 0, padding: '16px',
-            borderRight: `1px solid ${BORDER}`, background: PANEL_BG,
-          }}>
-            <WorkbenchInlineContext
-              toolId="multio"
-              title="Multi-Omics Integrator"
-              summary="Deterministically combine transcript, protein, and metabolite layers against the active pathway object so Stage 4 evidence can provide exploratory bottleneck context."
-              compact
-              isSimulated={!analyzeArtifact}
-            />
-
+      }
+    >
+      {/* ── Visualization Tab ─────────────────────────────────── */}
+      {simError && (
+        <div style={{ padding: '0 16px 8px' }}><SimErrorBanner message={simError} /></div>
+      )}
+      <ToolTabPanel tabId="viz" activeId={activeTab}>
+        <div style={{ display: 'flex', gap: '0', flex: 1, minHeight: 0, overflow: 'hidden' }}>
+          <FloatingControlRail label="Omics Controls">
             {/* Data Layers */}
             <SectionLabel>Data Layers</SectionLabel>
             {([
@@ -1078,10 +1052,9 @@ export default function MultiOPage() {
                 </div>
               </div>
             )}
-            </div>
-          )}
-          centerPanel={(
-            <div className="nb-tool-center" style={{ flex: 1, display: 'flex', flexDirection: 'column', background: PANEL_BG, minWidth: 0, padding: '16px', overflow: 'auto' }}>
+          </FloatingControlRail>
+
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, padding: '16px', overflow: 'auto' }}>
             <ScientificFigureFrame
               eyebrow={figureMeta.eyebrow}
               title={figureMeta.title}
@@ -1311,14 +1284,23 @@ export default function MultiOPage() {
               </div>
               )}
             </ScientificFigureFrame>
-            </div>
-          )}
-          rightPanel={(
-            <div className="nb-tool-right" style={{
-            width: '260px', flexShrink: 0, padding: '16px',
-            borderLeft: `1px solid ${BORDER}`, background: PANEL_BG,
-          }}>
-            {/* Enrichment Summary */}
+
+            <InlineMetricOverlay
+              position="top-right"
+              metrics={[
+                { label: 'Significant', value: `${significant.length}`, accent: PATHD_THEME.lilac },
+                { label: 'Bottleneck', value: bottleneck.dominant_layer, accent: PATHD_THEME.sky },
+                { label: 'Lead Gene', value: significant[0]?.gene ?? selectedGene, accent: PATHD_THEME.mint },
+                { label: 'Best Efficiency', value: `${Math.max(...efficiencyScores.map((entry) => entry.score)).toFixed(2)}`, accent: PATHD_THEME.apricot },
+              ]}
+            />
+          </div>
+        </div>
+      </ToolTabPanel>
+
+      <ToolTabPanel tabId="analysis" activeId={activeTab}>
+        <div style={{ padding: '20px', overflow: 'auto', flex: 1 }}>
+          {/* Enrichment Summary */}
             <SectionLabel>Enrichment Summary</SectionLabel>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '16px' }}>
               <MetricCard label="Significant" value={significant.length} highlight />
@@ -1481,19 +1463,8 @@ export default function MultiOPage() {
                 </div>
               </>
             )}
-            </div>
-          )}
-        />
-
-        {/* ── Bottom Export Bar ──────────────────────────────────── */}
-        <div style={{
-          borderTop: `1px solid ${BORDER}`, padding: '8px 16px',
-          display: 'flex', gap: '8px', flexShrink: 0, background: PANEL_BG,
-        }}>
-          <ExportButton label="Export All CSV" data={OMICS_DATA} filename="multio-all" format="csv" />
-          <ExportButton label="Export Significant JSON" data={significant} filename="multio-significant" format="json" />
         </div>
-      </div>
-    </>
+      </ToolTabPanel>
+    </ToolShell>
   );
 }
