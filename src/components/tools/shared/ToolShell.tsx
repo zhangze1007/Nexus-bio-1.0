@@ -35,6 +35,7 @@ import { useNavigation } from '../../../contexts/NavigationContext';
 import { T } from '../../ide/tokens';
 import WorkbenchInlineContext from '../../workbench/WorkbenchInlineContext';
 import { PATHD_THEME } from '../../workbench/workbenchTheme';
+import ToolTabBar, { type ToolTab } from './ToolTabBar';
 type ControlVarsStyle = CSSProperties & Record<`--${string}`, string>;
 
 export interface ToolShellProps {
@@ -57,6 +58,10 @@ export interface ToolShellProps {
   workbenchCompact?: boolean;
   workbenchSimulated?: boolean;
   hero?: ReactNode;
+  /** Optional tab navigation — renders ToolTabBar between header and body */
+  tabs?: ToolTab[];
+  activeTab?: string;
+  onTabChange?: (id: string) => void;
 }
 
 export default function ToolShell({
@@ -67,6 +72,9 @@ export default function ToolShell({
   workbenchCompact = true,
   workbenchSimulated = false,
   hero,
+  tabs,
+  activeTab,
+  onTabChange,
 }: ToolShellProps) {
   const tool = getToolDefinition(moduleId);
   const validity = getToolValidity(moduleId);
@@ -211,6 +219,11 @@ export default function ToolShell({
           </div>
         )}
       </motion.header>
+
+      {/* ── Tab Bar (optional) ─────────────────────────────── */}
+      {tabs && activeTab && onTabChange && (
+        <ToolTabBar tabs={tabs} activeId={activeTab} onChange={onTabChange} />
+      )}
 
       {/* ── BentoGrid ──────────────────────────────────────── */}
       {/* P3.4: fixed token padding (SP_SM=8, SP_MD=16) instead of dynamic Math.max */}
