@@ -1,5 +1,5 @@
 'use client';
-import { useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import AlgorithmInsight from '../ide/shared/AlgorithmInsight';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
@@ -27,6 +27,11 @@ import {
 import type { ODEState, HillParams } from '../../types';
 import { buildDynConSeed } from './shared/workbenchDataflow';
 import { T, TOOL_RESULT_PALETTE} from '../ide/tokens';
+import ToolShell from './shared/ToolShell';
+import ToolTabPanel from './shared/ToolTabPanel';
+import FloatingControlRail from './shared/FloatingControlRail';
+import InlineMetricOverlay from './shared/InlineMetricOverlay';
+import type { ToolTab } from './shared/ToolTabBar';
 
 /* ── Design Tokens ─────────────────────────────────────────────────────────── */
 const PANEL_BG = PATHD_THEME.sepiaPanelMuted;
@@ -312,6 +317,11 @@ export default function DynConPage() {
   const [vmax, setVmax] = usePersistedState('nexus-bio:dyncon:vmax', DEFAULT_HILL.Vmax);
   const [hillKd, setHillKd] = usePersistedState('nexus-bio:dyncon:hillKd', DEFAULT_HILL.Kd);
   const [hillN, setHillN] = usePersistedState('nexus-bio:dyncon:hillN', DEFAULT_HILL.n);
+  const [activeTab, setActiveTab] = useState('viz');
+  const DYNCON_TABS: ToolTab[] = [
+    { id: 'viz', label: 'Visualization', accent: PATHD_THEME.sky },
+    { id: 'analysis', label: 'Analysis', accent: PATHD_THEME.mint },
+  ];
   const recommendedSeed = useMemo(
     () => buildDynConSeed(fbaPayload, cethxPayload, catalystPayload, dbtlPayload),
     [catalystPayload?.updatedAt, cethxPayload?.updatedAt, dbtlPayload?.feedbackSource, dbtlPayload?.result.improvementRate, dbtlPayload?.result.latestPhase, dbtlPayload?.result.passRate, dbtlPayload?.updatedAt, fbaPayload?.updatedAt],
@@ -421,35 +431,25 @@ export default function DynConPage() {
 
   /* ── Render ─────────────────────────────────────────────────────────────── */
   return (
-    <>
-      <div className="nb-tool-page" style={{ background: PANEL_BG }}>
-        <AlgorithmInsight
-          title="Dynamic Control Simulator"
-          description="Fed-batch bioreactor with PID-controlled DO₂ and Hill-function negative feedback on ADS expression. RK4 integration."
-          formula="f(FPP) = Vmax·Kd^n / (Kd^n + FPP^n)"
-        />
-        <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          <WorkbenchInlineContext
-            toolId="dyncon"
-            title="Dynamic Control"
-            summary="Dynamic control inherits bottlenecks, thermodynamic stress, catalyst burden, and DBTL feedback so controller tuning reflects the latest pathway reality instead of freezing around an old operating point."
-            compact
-            isSimulated={!analyzeArtifact}
-          />
-          {fba && (
-            <div role="status" style={{ padding: '6px 14px', background: 'rgba(175,195,214,0.14)', border: '1px solid rgba(175,195,214,0.28)', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
-              <span style={{ fontFamily: T.MONO, fontSize: '9px', fontWeight: 700, padding: '2px 8px', borderRadius: '999px', background: 'rgba(175,195,214,0.22)', border: '1px solid rgba(175,195,214,0.34)', color: VALUE, textTransform: 'uppercase', letterSpacing: '0.06em', flexShrink: 0 }}>
-                FBASim
-              </span>
-              <span style={{ fontFamily: T.SANS, fontSize: '11px', color: LABEL }}>
-                {'✓ Flux data loaded — '}
-                <span style={{ fontFamily: T.MONO, color: VALUE }}>
-                  {`μ=${fba.result.growthRate.toFixed(4)} h⁻¹ · ∂μ/∂Glc=${fba.result.shadowPrices.glc.toFixed(4)} · ∂μ/∂O₂=${fba.result.shadowPrices.o2.toFixed(4)}`}
-                </span>
-              </span>
-            </div>
-          )}
-          <ScientificHero
+    <ToolShell
+      moduleId="dyncon"
+      title="Dynamic Control Simulator"
+      description="Fed-batch bioreactor with PID-controlled DO₂ and Hill-function negative feedback"
+      formula="f(FPP) = Vmax·Kd^n / (Kd^n + FPP^n)"
+      workbenchSummary="Dynamic control inherits bottlenecks, thermodynamic stress, catalyst burden, and DBTL feedback."
+      workbenchSimulated={!analyzeArtifact}
+      tabs={DYNCON_TABS}
+      activeTab={activeTab}
+      onTabChange={setActiveTab}
+      footer={
+        <>
+          <ExportButton label="Export JSON" data={trajectory} filename="dyncon-trajectory" format="json" />
+          <ExportButton label="Export CSV" data={trajectory} filename="dyncon-trajectory" format="csv" />
+          <ExportButton label="Export SVG" data={null} filename="dyncon-chart" format="svg" svgRef={chartRef} />
+        </>
+      }
+      hero={
+        <ScientificHero
             eyebrow="Stage 3 · Chassis Control"
             title="Controller behavior is tied to the current metabolic burden"
             summary="DYNCON turns pathway risk into operating policy. PID tuning, Hill repression, and genetic-part mapping are treated as one control package so the page behaves like a scientific control surface for a living system, not a disconnected slider set."
@@ -493,250 +493,116 @@ export default function DynConPage() {
               },
             ]}
           />
-          <ScientificMethodStrip
-            label="Control bench"
-            items={[
-              {
-                title: 'Policy tuning',
-                detail: 'PID gains, setpoint, and Hill repression parameters are treated as one operating policy rather than separate slider families.',
-                accent: PATHD_THEME.apricot,
-                note: `Kp ${kp.toFixed(2)} · Ki ${ki.toFixed(2)} · Kd ${kd.toFixed(2)}`,
-              },
-              {
-                title: 'Dynamic figure',
-                detail: 'The main panel combines the closed-loop trajectory and repression curve so system behavior reads as a scientific control figure.',
-                accent: PATHD_THEME.sky,
-                note: convergence.isStable ? 'stable regime' : 'unstable regime',
-              },
-              {
-                title: 'Implementation bridge',
-                detail: 'Controller gain is translated into an RBS part and burden readout so simulation choices stay grounded in executable biology.',
-                accent: PATHD_THEME.mint,
-                note: rbsMapping.rbsName,
-              },
-            ]}
-          />
-          <DemoBanner context="Artemisinin biosynthesis PID control (Ro et al. 2006)" />
+      }
+    >
+      {simError ? (
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px' }}>
+          <SimErrorBanner message={simError} />
         </div>
-
-        {simError ? (
-          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px' }}>
-            <SimErrorBanner message={simError} />
-          </div>
-        ) : (
+      ) : (
         <>
-        <div className="nb-tool-panels" style={{ flex: 1 }}>
-          {/* ═══════ LEFT PANEL (260px) ═══════ */}
-          <div className="nb-tool-sidebar" style={{ width: '260px', borderRight: `1px solid ${BORDER}`, background: PANEL_BG }}>
-            {/* — PID Controller — */}
-            <SectionLabel>PID Controller</SectionLabel>
-            <ParamSlider label="Kp (Proportional)" value={kp} min={0} max={10} step={0.1} onChange={setKp} />
-            <ParamSlider label="Ki (Integral)" value={ki} min={0} max={5} step={0.05} onChange={setKi} />
-            <ParamSlider label="Kd (Derivative)" value={kd} min={0} max={2} step={0.02} onChange={setKd} />
-            <ParamSlider label="DO₂ Setpoint" value={setpoint} min={0.1} max={1.0} step={0.05} onChange={setSetpoint} unit="sat." />
-
-            {/* — Hill Feedback — */}
-            <SectionLabel>Hill Feedback</SectionLabel>
-            <ParamSlider label="Vmax" value={vmax} min={0.1} max={2.0} step={0.05} onChange={setVmax} />
-            <ParamSlider label="Kd (dissociation)" value={hillKd} min={5} max={200} step={5} onChange={setHillKd} unit="μM" />
-            <ParamSlider label="n (cooperativity)" value={hillN} min={1} max={4} step={0.5} onChange={setHillN} />
-
-            {/* — RBS Mapping — */}
-            <SectionLabel>Codon Optimization Bridge</SectionLabel>
-            <div style={{ ...GLASS, padding: '12px', marginBottom: '12px' }}>
-              <StatRow label="Combined Gain" value={rbsMapping.controlGain} />
-              <StatRow label="RBS Part" value={rbsMapping.rbsName} />
-              <StatRow label="Registry ID" value={rbsMapping.registryId} />
-              {/* RBS Strength bar */}
-              <div style={{ margin: '8px 0 4px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-                  <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>RBS Strength</span>
-                  <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE }}>{rbsMapping.rbsStrength.toFixed(2)}</span>
-                </div>
-                <div style={{ height: `${PATHD_THEME.progressHeight}px`, borderRadius: `${PATHD_THEME.progressRadius}px`, background: PATHD_THEME.progressTrack, overflow: 'hidden' }}>
-                  <div style={{ height: '100%', width: `${rbsMapping.rbsStrength * 100}%`, borderRadius: `${PATHD_THEME.progressRadius}px`, background: PATHD_THEME.progressGradient, boxShadow: PATHD_THEME.progressGlow, transition: 'width 0.3s ease' }} />
-                </div>
-              </div>
-              {/* DNA Sequence */}
-              <p style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.sky, wordBreak: 'break-all', lineHeight: 1.5, margin: '8px 0 0', opacity: 0.85 }}>
-                {rbsMapping.sequence}
-              </p>
-            </div>
-
-            {/* — Bioreactor Parameters — */}
-            <SectionLabel>Bioreactor Parameters</SectionLabel>
-            {([
-              ['μmax', `${DEFAULT_PARAMS.muMax} h⁻¹`],
-              ['Ks', `${DEFAULT_PARAMS.Ks} g/L`],
-              ['Yxs', `${DEFAULT_PARAMS.Yxs} g/g`],
-              ['kLa', `${DEFAULT_PARAMS.kLa} h⁻¹`],
-              ['Feed conc', `${DEFAULT_PARAMS.feedConc} g/L`],
-              ['FPP toxic', `${DEFAULT_PARAMS.fppToxicThreshold} μM`],
-            ] as const).map(([k, v]) => (
-              <div key={k} style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', borderBottom: `1px solid ${BORDER}` }}>
-                <span style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL }}>{k}</span>
-                <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE }}>{v}</span>
-              </div>
-            ))}
-          </div>
-
-          {/* ═══════ CENTER (flex) ═══════ */}
-          <div className="nb-tool-center" style={{ flex: 1, background: PANEL_BG, display: 'flex', flexDirection: 'column', minWidth: 0, padding: '12px' }}>
-            <ScientificFigureFrame
-              eyebrow={figureMeta.eyebrow}
-              title={figureMeta.title}
-              caption={figureMeta.caption}
-              legend={[
-                { label: 'Setpoint', value: `${setpoint.toFixed(2)} sat.`, accent: PATHD_THEME.sky },
-                { label: 'Stability', value: convergence.isStable ? 'Stable' : 'Unstable', accent: convergence.isStable ? PATHD_THEME.mint : PATHD_THEME.coral },
-                { label: 'Titer', value: `${productTiter.toFixed(2)} g/L`, accent: PATHD_THEME.mint },
-                { label: 'RBS', value: rbsMapping.rbsName, accent: PATHD_THEME.lilac },
-              ]}
-              footer={
-                <div style={{ display: 'grid', gap: '6px' }}>
-                  <div style={{ fontFamily: T.SANS, fontSize: '11px', color: VALUE, lineHeight: 1.55 }}>
-                    The central figure now lets controller behavior, repression logic, and implementation mapping be read as one scientific control story instead of a simulator trace plus a detached helper chart.
-                  </div>
-                  <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL }}>
-                    burden {burden.burdenIndex.toFixed(3)} · DO₂ RMSE {doRmse.toFixed(3)} · FPP {currentFPP.toFixed(2)} μM
-                  </div>
-                </div>
-              }
-              minHeight="100%"
-            >
-              <div style={{ display: 'grid', gap: '10px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <TimeSeriesSVG trajectory={trajectory} setpoint={setpoint} svgRef={chartRef} />
-                </div>
-                <div>
-                  <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.08em', color: LABEL, margin: '4px 0 2px 4px' }}>
-                    Hill Feedback Curve — f(FPP)
+          {/* ── Visualization Tab ── */}
+          <ToolTabPanel tabId="viz" activeId={activeTab}>
+            <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
+              <FloatingControlRail label="Parameters" defaultCollapsed={false} width={260}>
+                <SectionLabel>PID Controller</SectionLabel>
+                <ParamSlider label="Kp" value={kp} min={0} max={10} step={0.1} onChange={setKp} />
+                <ParamSlider label="Ki" value={ki} min={0} max={5} step={0.05} onChange={setKi} />
+                <ParamSlider label="Kd" value={kd} min={0} max={2} step={0.02} onChange={setKd} />
+                <ParamSlider label="DO₂ Setpoint" value={setpoint} min={0.1} max={1.0} step={0.05} onChange={setSetpoint} unit="sat." />
+                <SectionLabel>Hill Feedback</SectionLabel>
+                <ParamSlider label="Vmax" value={vmax} min={0.1} max={2.0} step={0.05} onChange={setVmax} />
+                <ParamSlider label="Kd" value={hillKd} min={5} max={200} step={5} onChange={setHillKd} unit="μM" />
+                <ParamSlider label="n" value={hillN} min={1} max={4} step={0.5} onChange={setHillN} />
+                <SectionLabel>RBS Bridge</SectionLabel>
+                <div style={{ ...GLASS, padding: '10px' }}>
+                  <StatRow label="Gain" value={rbsMapping.controlGain} />
+                  <StatRow label="RBS" value={rbsMapping.rbsName} />
+                  <StatRow label="Strength" value={rbsMapping.rbsStrength} />
+                  <p style={{ fontFamily: T.MONO, fontSize: '9px', color: PATHD_THEME.sky, wordBreak: 'break-all', lineHeight: 1.5, margin: '6px 0 0', opacity: 0.85 }}>
+                    {rbsMapping.sequence}
                   </p>
-                  <HillCurveSVG hill={hill} currentFPP={currentFPP} />
+                </div>
+              </FloatingControlRail>
+
+              <div style={{ flex: 1, position: 'relative', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                <ScientificFigureFrame
+                  eyebrow={figureMeta.eyebrow}
+                  title={figureMeta.title}
+                  caption={figureMeta.caption}
+                  legend={[
+                    { label: 'Setpoint', value: `${setpoint.toFixed(2)} sat.`, accent: PATHD_THEME.sky },
+                    { label: 'Stability', value: convergence.isStable ? 'Stable' : 'Unstable', accent: convergence.isStable ? PATHD_THEME.mint : PATHD_THEME.coral },
+                    { label: 'Titer', value: `${productTiter.toFixed(2)} g/L`, accent: PATHD_THEME.mint },
+                    { label: 'RBS', value: rbsMapping.rbsName, accent: PATHD_THEME.lilac },
+                  ]}
+                  minHeight="100%"
+                >
+                  <div style={{ display: 'grid', gap: '10px' }}>
+                    <TimeSeriesSVG trajectory={trajectory} setpoint={setpoint} svgRef={chartRef} />
+                    <div>
+                      <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.08em', color: LABEL, margin: '4px 0 2px 4px' }}>Hill Feedback — f(FPP)</p>
+                      <HillCurveSVG hill={hill} currentFPP={currentFPP} />
+                    </div>
+                  </div>
+                </ScientificFigureFrame>
+
+                <InlineMetricOverlay
+                  position="top-right"
+                  metrics={[
+                    { label: 'Titer', value: `${productTiter.toFixed(2)} g/L`, accent: PATHD_THEME.mint },
+                    { label: 'DO₂ RMSE', value: doRmse.toFixed(3), accent: doRmse > 0.1 ? PATHD_THEME.coral : PATHD_THEME.sky },
+                    { label: 'FPP', value: `${currentFPP.toFixed(1)} μM`, accent: currentFPP > DEFAULT_PARAMS.fppToxicThreshold ? PATHD_THEME.coral : PATHD_THEME.sky },
+                    { label: 'Burden', value: burden.burdenIndex.toFixed(3), accent: burden.isViable ? PATHD_THEME.mint : PATHD_THEME.coral },
+                  ]}
+                />
+              </div>
+            </div>
+          </ToolTabPanel>
+
+          {/* ── Analysis Tab ── */}
+          <ToolTabPanel tabId="analysis" activeId={activeTab}>
+            <div style={{ display: 'flex', gap: '16px', flex: 1, minHeight: 0, overflow: 'auto', padding: '12px' }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <SectionLabel>Process Readouts</SectionLabel>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '16px' }}>
+                  <MetricCard label="Final Product Titer" value={productTiter} unit="g/L" highlight />
+                  <MetricCard label="Productivity" value={productivity} unit="g/L/h" />
+                  <MetricCard label="Final Biomass" value={last?.biomass ?? 0} unit="g/L" />
+                  <MetricCard label="DO₂ RMSE" value={doRmse} unit="sat." warning={doRmse > 0.1 ? 'Poor control' : undefined} />
+                  <MetricCard label="FPP Level" value={currentFPP} unit="μM" warning={currentFPP > DEFAULT_PARAMS.fppToxicThreshold ? 'Above toxic' : undefined} />
+                  <MetricCard label="ADS Expression" value={currentADS} unit="a.u." />
                 </div>
               </div>
-            </ScientificFigureFrame>
-          </div>
-
-          {/* ═══════ RIGHT PANEL (280px) ═══════ */}
-          <div className="nb-tool-right" style={{ width: '280px', borderLeft: `1px solid ${BORDER}`, background: PANEL_BG }}>
-            {/* — Process Readouts — */}
-            <SectionLabel>Process Readouts</SectionLabel>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
-              <MetricCard label="Final Product Titer" value={productTiter} unit="g/L" highlight />
-              <MetricCard label="Productivity" value={productivity} unit="g/L/h" />
-              <MetricCard label="Final Biomass" value={last?.biomass ?? 0} unit="g/L" />
-              <MetricCard label="DO₂ RMSE" value={doRmse} unit="sat."
-                warning={doRmse > 0.1 ? 'Poor control — adjust Kp/Ki' : undefined} />
-              <MetricCard label="Residual Substrate" value={last?.substrate ?? 0} unit="g/L" />
-              <MetricCard label="FPP Level" value={currentFPP} unit="μM"
-                warning={currentFPP > DEFAULT_PARAMS.fppToxicThreshold ? 'Above toxic threshold' : undefined} />
-              <MetricCard label="ADS Expression" value={currentADS} unit="a.u." />
-            </div>
-
-            {/* — Convergence Analysis — */}
-            <SectionLabel>Convergence Analysis</SectionLabel>
-            <div style={{ ...GLASS, padding: '14px', marginBottom: '16px' }}>
-              <StatRow label="Settling Time" value={convergence.settlingTime} unit="h" />
-              <StatRow label="Overshoot" value={convergence.overshoot} unit="%" />
-              <StatRow label="Convergence Rate" value={convergence.convergenceRate} unit="h⁻¹" />
-              <StatRow label="Steady-State Error" value={convergence.steadyStateError} />
-              <StatRow label="Oscillation Count" value={convergence.oscillationCount} />
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '8px' }}>
-                <span style={{
-                  width: '8px', height: '8px', borderRadius: '50%',
-                  background: convergence.isStable ? PATHD_THEME.mint : PATHD_THEME.coral,
-                  boxShadow: convergence.isStable ? '0 0 6px rgba(191,220,205,0.4)' : '0 0 6px rgba(232,163,161,0.4)',
-                }} />
-                <span style={{ fontFamily: T.SANS, fontSize: '11px', color: convergence.isStable ? VALUE : PATHD_THEME.coral }}>
-                  {convergence.isStable ? 'Stable' : 'Unstable'}
-                </span>
-              </div>
-            </div>
-
-            {/* — Metabolic Burden — */}
-            <SectionLabel>Metabolic Burden</SectionLabel>
-            <div style={{ ...GLASS, padding: '14px', marginBottom: '16px' }}>
-              {/* Burden index bar */}
-              <div style={{ marginBottom: '10px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-                  <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>Burden Index</span>
-                  <span style={{ fontFamily: T.MONO, fontSize: '12px', fontWeight: 600, color: VALUE }}>{burden.burdenIndex.toFixed(3)}</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <SectionLabel>Convergence</SectionLabel>
+                <div style={{ ...GLASS, padding: '12px', marginBottom: '12px' }}>
+                  <StatRow label="Settling Time" value={convergence.settlingTime} unit="h" />
+                  <StatRow label="Overshoot" value={convergence.overshoot} unit="%" />
+                  <StatRow label="Conv. Rate" value={convergence.convergenceRate} unit="h⁻¹" />
+                  <StatRow label="SS Error" value={convergence.steadyStateError} />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '6px' }}>
+                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: convergence.isStable ? PATHD_THEME.mint : PATHD_THEME.coral }} />
+                    <span style={{ fontFamily: T.SANS, fontSize: '11px', color: convergence.isStable ? VALUE : PATHD_THEME.coral }}>{convergence.isStable ? 'Stable' : 'Unstable'}</span>
+                  </div>
                 </div>
-                <div style={{ height: `${PATHD_THEME.progressHeight + 2}px`, borderRadius: `${PATHD_THEME.progressRadius}px`, background: PATHD_THEME.progressTrack, overflow: 'hidden' }}>
-                  <div style={{
-                    height: '100%', borderRadius: `${PATHD_THEME.progressRadius}px`, transition: 'width 0.3s ease',
-                    width: `${Math.min(1, burden.burdenIndex) * 100}%`,
-                    background: burden.burdenIndex < 0.3
-                      ? PATHD_THEME.mint
-                      : burden.burdenIndex < 0.6
-                        ? PATHD_THEME.progressGradient
-                        : PATHD_THEME.coral,
-                    boxShadow: burden.burdenIndex < 0.3
-                      ? '0 0 6px rgba(191,220,205,0.3)'
-                      : burden.burdenIndex < 0.6
-                        ? PATHD_THEME.progressGlow
-                        : '0 0 6px rgba(232,163,161,0.3)',
-                  }} />
+                <SectionLabel>Metabolic Burden</SectionLabel>
+                <div style={{ ...GLASS, padding: '12px' }}>
+                  <StatRow label="Burden Index" value={burden.burdenIndex} />
+                  <StatRow label="Protein Cost" value={burden.proteinCost} />
+                  <StatRow label="ATP Drain" value={burden.atpDrain} unit="mmol/gDW/h" />
+                  <StatRow label="Growth Penalty" value={burden.growthPenalty} />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '6px' }}>
+                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: burden.isViable ? PATHD_THEME.mint : PATHD_THEME.coral }} />
+                    <span style={{ fontFamily: T.SANS, fontSize: '11px', color: burden.isViable ? VALUE : PATHD_THEME.coral }}>{burden.isViable ? 'Viable' : 'Non-viable'}</span>
+                  </div>
+                  <p style={{ fontFamily: T.SANS, fontSize: '10px', fontStyle: 'italic', color: LABEL, lineHeight: 1.45, marginTop: '6px' }}>{burden.recommendation}</p>
                 </div>
               </div>
-              <StatRow label="Protein Cost" value={burden.proteinCost} />
-              <StatRow label="ATP Drain" value={burden.atpDrain} unit="mmol/gDW/h" />
-              <StatRow label="Growth Penalty" value={burden.growthPenalty} />
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '8px' }}>
-                <span style={{
-                  width: '8px', height: '8px', borderRadius: '50%',
-                  background: burden.isViable ? PATHD_THEME.mint : PATHD_THEME.coral,
-                  boxShadow: burden.isViable ? '0 0 6px rgba(191,220,205,0.4)' : '0 0 6px rgba(232,163,161,0.4)',
-                }} />
-                <span style={{ fontFamily: T.SANS, fontSize: '11px', color: burden.isViable ? VALUE : PATHD_THEME.coral }}>
-                  {burden.isViable ? 'Viable' : 'Non-viable'}
-                </span>
-              </div>
-              <p style={{ fontFamily: T.SANS, fontSize: '10px', fontStyle: 'italic', color: LABEL, lineHeight: 1.45, margin: '8px 0 0' }}>
-                {burden.recommendation}
-              </p>
             </div>
-
-            {/* — Internal Feedback State — */}
-            <SectionLabel>Internal Feedback</SectionLabel>
-            <div style={{ ...GLASS, padding: '14px' }}>
-              <StatRow label="Hill f(FPP)" value={hillFeedback(currentFPP, hill)} unit="a.u." />
-              <StatRow label="Current FPP" value={currentFPP} unit="μM" />
-              <StatRow label="Current ADS" value={currentADS} unit="a.u." />
-              <StatRow label="Toxicity" value={last?.toxicity ?? 0} />
-            </div>
-
-            <div style={{
-              marginTop: '12px',
-              padding: '12px',
-              borderRadius: '12px',
-              border: `1px solid ${BORDER}`,
-              background: PATHD_THEME.panelSurface,
-              display: 'grid',
-              gap: '6px',
-            }}>
-              <div style={{ fontFamily: T.MONO, fontSize: '9px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                Readout
-              </div>
-              <div style={{ fontFamily: T.SANS, fontSize: '11px', color: VALUE, lineHeight: 1.55 }}>
-                {convergence.isStable
-                  ? 'The controller is behaving like a viable operating policy rather than a fragile simulator-only tuning.'
-                  : 'The current gain package still behaves like an unstable experimental policy, so the figure encourages retuning before downstream commitment.'}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* ═══════ FOOTER ═══════ */}
-        <div style={{ borderTop: `1px solid ${BORDER}`, padding: '8px 16px', display: 'flex', gap: '8px', flexShrink: 0, background: PANEL_BG }}>
-          <ExportButton label="Export JSON" data={trajectory} filename="dyncon-trajectory" format="json" />
-          <ExportButton label="Export CSV" data={trajectory} filename="dyncon-trajectory" format="csv" />
-          <ExportButton label="Export SVG" data={null} filename="dyncon-chart" format="svg" svgRef={chartRef} />
-        </div>
+          </ToolTabPanel>
         </>
-        )}
-      </div>
-    </>
+      )}
+    </ToolShell>
   );
 }
