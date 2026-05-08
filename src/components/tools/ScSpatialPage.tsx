@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, type ChangeEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import { HelpCircle, RefreshCcw } from 'lucide-react';
 import ExportButton from '../ide/shared/ExportButton';
 import ScSpatialControlRail from './scspatial/ScSpatialControlRail';
@@ -12,6 +12,17 @@ import { SCSPATIAL_VIEW_LABELS } from './scspatial/scSpatialPalette';
 import { ingestScSpatialDemo, ingestScSpatialFile, queryScSpatial } from '../../services/ScSpatialAuthorityClient';
 import { useScSpatialStore } from '../../store/scSpatialStore';
 import { useWorkbenchStore } from '../../store/workbenchStore';
+import ToolShell from './shared/ToolShell';
+import ToolTabBar, { type ToolTab } from './shared/ToolTabBar';
+import ToolTabPanel from './shared/ToolTabPanel';
+import InlineMetricOverlay from './shared/InlineMetricOverlay';
+import { PATHD_THEME } from '../workbench/workbenchTheme';
+import { T } from '../ide/tokens';
+
+const SCSPATIAL_TABS: ToolTab[] = [
+  { id: 'viz', label: 'Spatial View', accent: PATHD_THEME.sky },
+  { id: 'insights', label: 'Insights', accent: PATHD_THEME.mint },
+];
 
 function readyClass(validity: 'real' | 'partial' | 'demo' | null, loadState: string) {
   if (loadState === 'uploading' || loadState === 'querying') return styles.readyIdle;
@@ -32,6 +43,7 @@ function readyLabel(validity: 'real' | 'partial' | 'demo' | null, loadState: str
 }
 
 export default function ScSpatialPage() {
+  const [activeTab, setActiveTab] = useState('viz');
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -181,7 +193,42 @@ export default function ScSpatialPage() {
   }, [datasetMeta, artifactId]);
 
   return (
-    <div className={styles.root}>
+    <ToolShell
+      moduleId="scspatial"
+      title="Single-Cell Spatial Transcriptomics"
+      formula="hex-grid · UMAP · Moran's I · cluster enrichment"
+      tabs={SCSPATIAL_TABS}
+      activeTab={activeTab}
+      onTabChange={setActiveTab}
+      workbenchSummary="Spatial transcriptomics analysis with hex-grid visualization, cluster annotations, and gene expression hotspots."
+      footer={
+        <>
+          <ExportButton
+            label="Export Cluster CSV"
+            data={query?.exportData.clusterAnnotations ?? []}
+            filename="scspatial-cluster-annotations"
+            format="csv"
+            disabled={!query}
+          />
+          <ExportButton
+            label="Export Hotspots CSV"
+            data={query?.exportData.hotspotTable ?? []}
+            filename="scspatial-hotspots"
+            format="csv"
+            disabled={!query}
+          />
+          <ExportButton
+            label="Export View PNG"
+            data={null}
+            filename="scspatial-view"
+            format="png"
+            svgRef={svgRef}
+            canvasRef={canvasRef}
+            disabled={!query}
+          />
+        </>
+      }
+    >
       <p className={styles.srOnly} aria-live="polite">
         {selectionSummary}
       </p>
@@ -193,98 +240,91 @@ export default function ScSpatialPage() {
         onChange={onFileChange}
       />
 
-      <header className={styles.header}>
-        <div className={styles.headerTitle}>
-          <h1 className={styles.title}>SCSPATIAL</h1>
-          <div className={styles.headerArtifact}>
-            <span className={styles.headerArtifactLabel}>Artifact:</span>
-            <span className={styles.headerChip}>{artifactChipLabel}</span>
-          </div>
-        </div>
-        <div className={styles.headerActions}>
-          <span className={`${styles.readyIndicator} ${readyClass(validity, loadState)}`}>
-            <span className={styles.readyDot} />
-            {readyLabel(validity, loadState)}
-          </span>
-          <button type="button" className={styles.headerIconButton} onClick={toggleHelp}>
-            <HelpCircle size={13} />
-            Help
-          </button>
-          <button type="button" className={styles.headerIconButton} onClick={reset}>
-            <RefreshCcw size={13} />
-            Reset
-          </button>
-        </div>
-      </header>
-
       {error ? <div className={styles.errorBanner} role="alert">{error}</div> : null}
 
-      <div className={styles.layout}>
-        <ScSpatialControlRail
-          availableClusters={availableClusters}
-          availableGenes={availableGenes}
-          datasetMeta={datasetMeta ? {
-            availableViews: datasetMeta.availableViews,
-            cellCount: datasetMeta.cellCount,
-            geneCount: datasetMeta.geneCount,
-            sampleCount: datasetMeta.sampleCount,
-            fileName: datasetMeta.fileName,
-            missingFields: datasetMeta.missingFields,
-            parserVersion: datasetMeta.parserVersion,
-            sampleMetadataKeys: datasetMeta.sampleMetadataKeys,
-            warnings: datasetMeta.warnings,
-          } : null}
-          developerMode={developerMode}
-          loadState={loadState}
-          selectedCluster={selectedCluster}
-          selectedGene={selectedGene}
-          viewMode={viewMode}
-          onLoadDemo={loadDemo}
-          onPickFile={() => fileInputRef.current?.click()}
-          onSelectCluster={setSelectedClusterStore}
-          onSelectGene={setSelectedGeneStore}
-          onSetViewMode={setViewModeStore}
-          onToggleDeveloperMode={toggleDeveloperMode}
-        />
+      <ToolTabPanel tabId="viz" activeId={activeTab}>
+        <div className={styles.layout}>
+          <ScSpatialControlRail
+            availableClusters={availableClusters}
+            availableGenes={availableGenes}
+            datasetMeta={datasetMeta ? {
+              availableViews: datasetMeta.availableViews,
+              cellCount: datasetMeta.cellCount,
+              geneCount: datasetMeta.geneCount,
+              sampleCount: datasetMeta.sampleCount,
+              fileName: datasetMeta.fileName,
+              missingFields: datasetMeta.missingFields,
+              parserVersion: datasetMeta.parserVersion,
+              sampleMetadataKeys: datasetMeta.sampleMetadataKeys,
+              warnings: datasetMeta.warnings,
+            } : null}
+            developerMode={developerMode}
+            loadState={loadState}
+            selectedCluster={selectedCluster}
+            selectedGene={selectedGene}
+            viewMode={viewMode}
+            onLoadDemo={loadDemo}
+            onPickFile={() => fileInputRef.current?.click()}
+            onSelectCluster={setSelectedClusterStore}
+            onSelectGene={setSelectedGeneStore}
+            onSetViewMode={setViewModeStore}
+            onToggleDeveloperMode={toggleDeveloperMode}
+          />
 
-        <ScSpatialViewport
-          canvasRef={canvasRef}
-          loadState={loadState}
-          query={query}
-          svgRef={svgRef}
-          onSelectCell={setSelectedCellStore}
-        />
+          <div style={{ flex: 1, position: 'relative', minHeight: 0 }}>
+            <ScSpatialViewport
+              canvasRef={canvasRef}
+              loadState={loadState}
+              query={query}
+              svgRef={svgRef}
+              onSelectCell={setSelectedCellStore}
+            />
 
-        <ScSpatialInsightRail query={query} />
-      </div>
+            {query && (
+              <InlineMetricOverlay
+                position="top-right"
+                metrics={[
+                  { label: 'Cells', value: `${datasetMeta?.cellCount ?? 0}`, accent: PATHD_THEME.sky },
+                  { label: 'Clusters', value: `${availableClusters.length}`, accent: PATHD_THEME.lilac },
+                  { label: 'Gene', value: selectedGene || '—', accent: PATHD_THEME.mint },
+                  { label: 'Hotspots', value: `${query.rightPanel.hotspots.length}`, accent: PATHD_THEME.apricot },
+                ]}
+              />
+            )}
+          </div>
 
-      <footer className={styles.footer}>
-        <ExportButton
-          label="Export Cluster CSV"
-          data={query?.exportData.clusterAnnotations ?? []}
-          filename="scspatial-cluster-annotations"
-          format="csv"
-          disabled={!query}
-        />
-        <ExportButton
-          label="Export Hotspots CSV"
-          data={query?.exportData.hotspotTable ?? []}
-          filename="scspatial-hotspots"
-          format="csv"
-          disabled={!query}
-        />
-        <ExportButton
-          label="Export View PNG"
-          data={null}
-          filename="scspatial-view"
-          format="png"
-          svgRef={svgRef}
-          canvasRef={canvasRef}
-          disabled={!query}
-        />
-      </footer>
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '8px',
+            padding: '0 12px', flexShrink: 0,
+          }}>
+            <span className={`${styles.readyIndicator} ${readyClass(validity, loadState)}`}>
+              <span className={styles.readyDot} />
+              {readyLabel(validity, loadState)}
+            </span>
+            <span style={{
+              fontFamily: T.MONO, fontSize: '9px', color: PATHD_THEME.label,
+              padding: '2px 8px', borderRadius: '6px',
+              background: PATHD_THEME.panelInset, border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
+            }}>
+              {artifactChipLabel}
+            </span>
+            <button type="button" className={styles.headerIconButton} onClick={toggleHelp}>
+              <HelpCircle size={13} />
+            </button>
+            <button type="button" className={styles.headerIconButton} onClick={reset}>
+              <RefreshCcw size={13} />
+            </button>
+          </div>
+        </div>
+      </ToolTabPanel>
+
+      <ToolTabPanel tabId="insights" activeId={activeTab}>
+        <div style={{ flex: 1, overflow: 'auto' }}>
+          <ScSpatialInsightRail query={query} />
+        </div>
+      </ToolTabPanel>
 
       {helpOpen ? <ScSpatialHelpDialog onClose={toggleHelp} /> : null}
-    </div>
+    </ToolShell>
   );
 }
