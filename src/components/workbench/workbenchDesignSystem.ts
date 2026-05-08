@@ -361,3 +361,34 @@ export function getChipStyle(status: 'recorded' | 'committed' | 'attention' | 'd
       return statusChip.neutral;
   }
 }
+
+// ─── Layout Primitives (tool page tab/rail system) ────────────────────
+
+export const tabContainer: CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  flex: 1,
+  minHeight: 0,
+};
+
+export const tabContent: CSSProperties = {
+  flex: 1,
+  display: 'flex',
+  minHeight: 0,
+  overflow: 'hidden',
+};
+
+export const railMainLayout: CSSProperties = {
+  display: 'flex',
+  flex: 1,
+  minHeight: 0,
+};
+
+export const mainVizArea: CSSProperties = {
+  flex: 1,
+  position: 'relative',
+  display: 'flex',
+  flexDirection: 'column',
+  minHeight: 0,
+  padding: '12px',
+};
