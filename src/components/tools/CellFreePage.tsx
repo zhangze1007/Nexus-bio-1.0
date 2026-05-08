@@ -1,6 +1,5 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
-import AlgorithmInsight from '../ide/shared/AlgorithmInsight';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
 import SimErrorBanner from '../ide/shared/SimErrorBanner';
@@ -17,15 +16,17 @@ import type {
 import { useWorkbenchStore } from '../../store/workbenchStore';
 import type { ProvenanceEntry } from '../../types/assumptions';
 import { createProvenanceEntry } from '../../utils/provenance';
-import WorkbenchInlineContext from '../workbench/WorkbenchInlineContext';
 import { buildCellFreeSeed } from './shared/workbenchDataflow';
 import { T, TOOL_RESULT_PALETTE} from '../ide/tokens';
 import { SEMANTIC_RGB } from '../charts/chartTheme';
 import ScientificHero from './shared/ScientificHero';
 import { PATHD_THEME } from '../workbench/workbenchTheme';
 import ScientificFigureFrame from './shared/ScientificFigureFrame';
-import ScientificMethodStrip from './shared/ScientificMethodStrip';
-import HybridWorkbenchPanels from './shared/HybridWorkbenchPanels';
+import ToolShell from './shared/ToolShell';
+import ToolTabPanel from './shared/ToolTabPanel';
+import FloatingControlRail from './shared/FloatingControlRail';
+import InlineMetricOverlay from './shared/InlineMetricOverlay';
+import type { ToolTab } from './shared/ToolTabBar';
 
 /* ── Design Tokens ────────────────────────────────────────────────── */
 
@@ -734,6 +735,12 @@ export default function CellFreePage() {
   }, [constructs, params]);
 
   const [viewMode, setViewMode] = useState<ViewMode>('TimeCourse');
+  const [activeTab, setActiveTab] = useState('viz');
+
+  const CELLFREE_TABS: ToolTab[] = [
+    { id: 'viz', label: 'Visualization', accent: PATHD_THEME.sky },
+    { id: 'analysis', label: 'Analysis', accent: PATHD_THEME.mint },
+  ];
 
   const sim = result.simulation;
   const fit = result.fitting;
@@ -853,108 +860,43 @@ export default function CellFreePage() {
   }, [viewMode]);
 
   return (
-    <>
-      <div className="nb-tool-page" style={{ background: PANEL_BG }}>
-        <AlgorithmInsight
-          title="Cell-Free Sandbox (CFPS)"
-          description="Resource-aware TX-TL ODE simulation → plate-reader Michaelis-Menten fitting → heuristic in-vitro-to-in-vivo estimate"
-          formula="dP/dt = k_tl · [mRNA] · R_free / (K_tl + R_free)"
+    <ToolShell
+      moduleId="cellfree"
+      title="Cell-Free Prototyping"
+      formula="dP/dt = k_tl · [mRNA] · R_free / (K_tl + R_free)"
+      hero={
+        <ScientificHero
+          eyebrow="Stage 4 · Pre-Build Simulation"
+          title="Cell-free prototyping as a fast exploratory gate before DBTL"
+          summary="Cell-free should read like a simulation bench, not a calibrated prediction. Yield, depletion timing, heuristic in-vitro-to-in-vivo confidence, and construct count are elevated here with parameter-sourcing limits visible."
+          signals={[
+            { label: 'Total Yield', value: `${sim.totalProteinYield.toFixed(1)} nM`, detail: `${invitroMaxProtein.toFixed(1)} nM max single-construct expression.`, tone: sim.totalProteinYield > 100 ? 'cool' : 'warm' },
+            { label: 'Depletion Gate', value: `${sim.energyDepletionTime.toFixed(0)} min`, detail: sim.isResourceLimited ? 'Resource-limited run.' : 'Resources adequate.', tone: sim.isResourceLimited ? 'alert' : 'cool' },
+            { label: 'IVIV Confidence', value: iviv ? `${(iviv.confidence * 100).toFixed(0)}%` : 'Pending', detail: iviv ? `${iviv.invivo_expression.toFixed(1)} nM in vivo est.` : 'Fitting required.', tone: iviv && iviv.confidence > 0.65 ? 'cool' : 'neutral' },
+            { label: 'Constructs', value: `${constructs.length}`, detail: `${params.temperature}°C · ${params.simulationTime} min`, tone: 'neutral' },
+          ]}
         />
-        <div style={{ padding: '0 16px 10px' }}>
-          <WorkbenchInlineContext
-            toolId="cellfree"
-            title="Cell-Free Prototyping"
-            summary="Cell-free prototyping provides an exploratory pre-build signal, keeping construct count, resource limits, and heuristic translation confidence attached to the same project lineage before DBTL review."
-            compact
-            isSimulated={!analyzeArtifact}
-          />
-        </div>
+      }
+      tabs={CELLFREE_TABS}
+      activeTab={activeTab}
+      onTabChange={setActiveTab}
+      workbenchSummary="Cell-free prototyping provides an exploratory pre-build signal, keeping construct count, resource limits, and heuristic translation confidence attached to the same project lineage before DBTL review."
+      workbenchSimulated={!analyzeArtifact}
+      footer={
+        <>
+          <ExportButton label="Export Simulation JSON" data={result} filename="cellfree-simulation" format="json" />
+          <ExportButton label="Export Time Series CSV" data={exportData} filename="cellfree-timeseries" format="csv" />
+        </>
+      }
+    >
+      {simError && (
+        <div style={{ padding: '0 0 8px' }}><SimErrorBanner message={simError} /></div>
+      )}
 
-        <div style={{ padding: '0 16px 10px' }}>
-          <ScientificHero
-            eyebrow="Stage 4 · Pre-Build Simulation"
-            title="Cell-free prototyping as a fast exploratory gate before DBTL"
-            summary="Cell-free should read like a simulation bench, not a calibrated prediction. Yield, depletion timing, heuristic in-vitro-to-in-vivo confidence, and construct count are elevated here with parameter-sourcing limits visible."
-            aside={
-              <>
-                <div style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                  Current bench setup
-                </div>
-                <div style={{ fontFamily: T.SANS, fontSize: '13px', color: PATHD_THEME.value, fontWeight: 700 }}>
-                  {constructs.length} constructs · {params.temperature}°C · {params.simulationTime} min
-                </div>
-                <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.label, lineHeight: 1.55 }}>
-                  The reaction window and construct stack shown here are now directly inherited from catalyst, thermodynamic, and DBTL context.
-                </div>
-              </>
-            }
-            signals={[
-              {
-                label: 'Total Yield',
-                value: `${sim.totalProteinYield.toFixed(1)} nM`,
-                detail: `${invitroMaxProtein.toFixed(1)} nM max single-construct expression in the current run.`,
-                tone: sim.totalProteinYield > 100 ? 'cool' : 'warm',
-              },
-              {
-                label: 'Depletion Gate',
-                value: `${sim.energyDepletionTime.toFixed(0)} min`,
-                detail: sim.isResourceLimited ? 'Resource limitation is the dominant reason this run should be treated cautiously.' : 'Resources hold long enough for this run to act as an exploratory pre-build signal.',
-                tone: sim.isResourceLimited ? 'alert' : 'cool',
-              },
-              {
-                label: 'IVIV Confidence',
-                value: iviv ? `${(iviv.confidence * 100).toFixed(0)}%` : 'Pending',
-                detail: iviv ? `${iviv.invivo_expression.toFixed(1)} estimated in vivo expression` : 'Switch to the IvIv lens to estimate translation into cellular expression.',
-                tone: iviv && iviv.confidence > 0.65 ? 'cool' : 'neutral',
-              },
-              {
-                label: 'Current Lens',
-                value: viewMode,
-                detail: 'The active view changes how the same canonical run is interpreted, but not which run is considered current.',
-                tone: 'neutral',
-              },
-            ]}
-          />
-        </div>
-
-        <div style={{ padding: '0 16px 10px' }}>
-          <ScientificMethodStrip
-            label="Cell-free bench"
-            items={[
-              {
-                title: 'Construct register',
-                detail: 'The left rail keeps construct identity, promoter, and DNA load visible so each run is read as a bench setup rather than a generic parameter set.',
-                accent: PATHD_THEME.apricot,
-                note: `${constructs.length} constructs`,
-              },
-              {
-                title: 'Figure lens',
-                detail: 'Timecourse, resource, fitting, translation, and reactor-twin views now share one framed figure language instead of behaving like unrelated tabs.',
-                accent: PATHD_THEME.sky,
-                note: viewMode,
-              },
-              {
-                title: 'Boundary evidence',
-                detail: 'Yield, depletion gate, and heuristic translation confidence remain exposed alongside parameter-sourcing limits.',
-                accent: PATHD_THEME.mint,
-                note: `${sim.totalProteinYield.toFixed(1)} nM total yield`,
-              },
-            ]}
-          />
-        </div>
-
-        {simError && (
-          <div style={{ padding: '0 16px 8px' }}><SimErrorBanner message={simError} /></div>
-        )}
-
-        <HybridWorkbenchPanels
-          leftLabel="Construct Register"
-          rightLabel="Simulation Ledger"
-          leftPanel={(
-            <div className="nb-tool-sidebar" style={{
-            width: '240px', flexShrink: 0, padding: '16px',
-            borderRight: `1px solid ${BORDER}`, background: PANEL_BG,
-          }}>
+      {/* ── Visualization Tab ─────────────────────────────────── */}
+      <ToolTabPanel tabId="viz" activeId={activeTab}>
+        <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
+          <FloatingControlRail label="Bench Setup" defaultCollapsed={false}>
             {/* Gene Constructs */}
             <SectionLabel>Gene Constructs</SectionLabel>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
@@ -982,10 +924,10 @@ export default function CellFreePage() {
             </div>
 
             {/* View Mode */}
-            <SectionLabel>View Mode</SectionLabel>
+            <SectionLabel>View Lens</SectionLabel>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '16px' }}>
               {(['TimeCourse', 'Resources', 'Fitting', 'IvIv', 'Reactor3D'] as ViewMode[]).map(mode => (
-                <button aria-label="Action" key={mode} onClick={() => setViewMode(mode)} style={{
+                <button key={mode} onClick={() => setViewMode(mode)} style={{
                   flex: '1 1 0', padding: '5px 0', borderRadius: '6px', cursor: 'pointer',
                   fontFamily: T.SANS, fontSize: '10px', border: `1px solid ${viewMode === mode ? 'rgba(175,195,214,0.34)' : INPUT_BORDER}`,
                   background: viewMode === mode ? 'rgba(175,195,214,0.22)' : INPUT_BG,
@@ -1027,10 +969,9 @@ export default function CellFreePage() {
                 </div>
               ))}
             </div>
-            </div>
-          )}
-          centerPanel={(
-            <div className="nb-tool-center" style={{ flex: 1, display: 'flex', flexDirection: 'column', background: PANEL_BG, minWidth: 0, padding: '12px' }}>
+          </FloatingControlRail>
+
+          <div style={{ flex: 1, position: 'relative', display: 'flex', flexDirection: 'column', minHeight: 0, padding: '12px' }}>
             <ScientificFigureFrame
               eyebrow={figureMeta.eyebrow}
               title={figureMeta.title}
@@ -1042,13 +983,8 @@ export default function CellFreePage() {
                 { label: 'Depletion', value: `${sim.energyDepletionTime.toFixed(0)} min`, accent: PATHD_THEME.coral },
               ]}
               footer={
-                <div style={{ display: 'grid', gap: '6px' }}>
-                  <div style={{ fontFamily: T.SANS, fontSize: '11px', color: VALUE, lineHeight: 1.55 }}>
-                    The figure surface is now stable across lenses, so scientists can switch from expression to depletion to IVIV translation without feeling like they left the same experiment.
-                  </div>
-                  <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL }}>
-                    setup {params.temperature}°C · {params.simulationTime} min · {sim.isResourceLimited ? 'resource-limited run' : 'resources adequate for exploratory review'}
-                  </div>
+                <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL }}>
+                  setup {params.temperature}°C · {params.simulationTime} min · {sim.isResourceLimited ? 'resource-limited run' : 'resources adequate for exploratory review'}
                 </div>
               }
               minHeight="100%"
@@ -1107,79 +1043,90 @@ export default function CellFreePage() {
                 </div>
               )}
             </ScientificFigureFrame>
-            </div>
-          )}
-          rightPanel={(
-            <div className="nb-tool-right" style={{
-            width: '260px', flexShrink: 0, padding: '16px',
-            borderLeft: `1px solid ${BORDER}`, background: PANEL_BG,
-          }}>
-            {/* Simulation Summary */}
-            <SectionLabel>Simulation Summary</SectionLabel>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '16px' }}>
-              <MetricCard label="Total Yield" value={sim.totalProteinYield.toFixed(1)} unit="nM" highlight />
-              <MetricCard label="Depletion" value={sim.energyDepletionTime.toFixed(0)} unit="min" />
-              <MetricCard
-                label="Resource Ltd"
-                value={sim.isResourceLimited ? 'Yes' : 'No'}
-                warning={sim.isResourceLimited ? 'Ribosomes saturated' : undefined}
-              />
-            </div>
 
-            {/* Per-Gene Stats */}
-            <SectionLabel>Per-Gene Stats</SectionLabel>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '16px' }}>
-              {sim.steadyState.map((ss, i) => {
-                const gene = constructs.find(c => c.id === ss.geneId);
-                const color = GENE_COLORS[i % GENE_COLORS.length];
-                return (
-                  <div key={ss.geneId} style={{ ...GLASS, borderRadius: '10px', padding: '8px 10px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
-                      <span style={{
-                        width: '8px', height: '8px', borderRadius: '50%',
-                        background: color, flexShrink: 0,
-                      }} />
-                      <span style={{ fontFamily: T.SANS, fontSize: '10px', fontWeight: 600, color: VALUE }}>
-                        {gene ? (gene.name.length > 18 ? gene.name.slice(0, 18) + '…' : gene.name) : ss.geneId}
-                      </span>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-                      <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Peak Protein</span>
-                      <span style={{ fontFamily: T.MONO, fontSize: '9px', color: VALUE }}>{ss.maxProtein.toFixed(1)} nM</span>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-                      <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Time to Half</span>
-                      <span style={{ fontFamily: T.MONO, fontSize: '9px', color: VALUE }}>{ss.timeToHalf.toFixed(0)} min</span>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Yield/DNA</span>
-                      <span style={{ fontFamily: T.MONO, fontSize: '9px', color: VALUE }}>{ss.yieldPerDNA.toFixed(2)}</span>
-                    </div>
+            <InlineMetricOverlay
+              position="top-right"
+              metrics={[
+                { label: 'Yield', value: `${sim.totalProteinYield.toFixed(1)} nM`, accent: PATHD_THEME.mint },
+                { label: 'Depletion', value: `${sim.energyDepletionTime.toFixed(0)} min`, accent: sim.isResourceLimited ? PATHD_THEME.coral : PATHD_THEME.sky },
+                { label: 'IVIV', value: iviv ? `${(iviv.confidence * 100).toFixed(0)}%` : '—', accent: PATHD_THEME.lilac },
+                { label: 'Constructs', value: `${constructs.length}`, accent: PATHD_THEME.apricot },
+              ]}
+            />
+          </div>
+        </div>
+      </ToolTabPanel>
+
+      {/* ── Analysis Tab ──────────────────────────────────────── */}
+      <ToolTabPanel tabId="analysis" activeId={activeTab}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '12px 0' }}>
+          {/* Simulation Summary */}
+          <SectionLabel>Simulation Summary</SectionLabel>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '20px' }}>
+            <MetricCard label="Total Yield" value={sim.totalProteinYield.toFixed(1)} unit="nM" highlight />
+            <MetricCard label="Depletion" value={sim.energyDepletionTime.toFixed(0)} unit="min" />
+            <MetricCard
+              label="Resource Ltd"
+              value={sim.isResourceLimited ? 'Yes' : 'No'}
+              warning={sim.isResourceLimited ? 'Ribosomes saturated' : undefined}
+            />
+          </div>
+
+          {/* Per-Gene Stats */}
+          <SectionLabel>Per-Gene Stats</SectionLabel>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '8px', marginBottom: '20px' }}>
+            {sim.steadyState.map((ss, i) => {
+              const gene = constructs.find(c => c.id === ss.geneId);
+              const color = GENE_COLORS[i % GENE_COLORS.length];
+              return (
+                <div key={ss.geneId} style={{ ...GLASS, borderRadius: '10px', padding: '8px 10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+                    <span style={{
+                      width: '8px', height: '8px', borderRadius: '50%',
+                      background: color, flexShrink: 0,
+                    }} />
+                    <span style={{ fontFamily: T.SANS, fontSize: '10px', fontWeight: 600, color: VALUE }}>
+                      {gene ? (gene.name.length > 18 ? gene.name.slice(0, 18) + '…' : gene.name) : ss.geneId}
+                    </span>
                   </div>
-                );
-              })}
-            </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
+                    <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Peak Protein</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: '9px', color: VALUE }}>{ss.maxProtein.toFixed(1)} nM</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
+                    <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Time to Half</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: '9px', color: VALUE }}>{ss.timeToHalf.toFixed(0)} min</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Yield/DNA</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: '9px', color: VALUE }}>{ss.yieldPerDNA.toFixed(2)}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
 
-            {/* Fitting Results */}
-            {fit && (
-              <>
-                <SectionLabel>Fitting Results</SectionLabel>
-                <div style={{ ...GLASS, borderRadius: '14px', padding: '10px', marginBottom: '16px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+          {/* Fitting Results */}
+          {fit && (
+            <>
+              <SectionLabel>Fitting Results</SectionLabel>
+              <div style={{ ...GLASS, borderRadius: '14px', padding: '12px', marginBottom: '20px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Vmax</span>
                     <span style={{ fontFamily: T.MONO, fontSize: '9px', color: VALUE }}>{fit.vmax.toFixed(3)}</span>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Kd</span>
                     <span style={{ fontFamily: T.MONO, fontSize: '9px', color: VALUE }}>{fit.kd.toFixed(3)}</span>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>R²</span>
                     <span style={{ fontFamily: T.MONO, fontSize: '9px', color: `rgba(${SEMANTIC_RGB.pass}, 0.92)` }}>
                       {fit.r_squared.toFixed(4)}
                     </span>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Vmax CI</span>
                     <span style={{ fontFamily: T.MONO, fontSize: '8px', color: LABEL }}>
                       [{fit.vmax_ci[0].toFixed(2)}, {fit.vmax_ci[1].toFixed(2)}]
@@ -1192,27 +1139,29 @@ export default function CellFreePage() {
                     </span>
                   </div>
                 </div>
-              </>
-            )}
+              </div>
+            </>
+          )}
 
-            {/* IvIv Estimate */}
-            {iviv && (
-              <>
-                <SectionLabel>IvIv Estimate</SectionLabel>
-                <div style={{ ...GLASS, borderRadius: '14px', padding: '10px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+          {/* IvIv Estimate */}
+          {iviv && (
+            <>
+              <SectionLabel>IvIv Estimate</SectionLabel>
+              <div style={{ ...GLASS, borderRadius: '14px', padding: '12px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>In-vivo Expr</span>
                     <span style={{ fontFamily: T.MONO, fontSize: '9px', color: VALUE }}>
                       {iviv.invivo_expression.toFixed(1)} nM
                     </span>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Scaling Factor</span>
                     <span style={{ fontFamily: T.MONO, fontSize: '9px', color: VALUE }}>
                       {iviv.scalingFactor.toFixed(3)}
                     </span>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Fold Change</span>
                     <span style={{ fontFamily: T.MONO, fontSize: '9px', color: VALUE }}>
                       {iviv.invivo_foldChange.toFixed(2)}×
@@ -1228,21 +1177,11 @@ export default function CellFreePage() {
                     </span>
                   </div>
                 </div>
-              </>
-            )}
-            </div>
+              </div>
+            </>
           )}
-        />
-
-        {/* ── Bottom Export Bar ──────────────────────────────────── */}
-        <div style={{
-          borderTop: `1px solid ${BORDER}`, padding: '8px 16px',
-          display: 'flex', gap: '8px', flexShrink: 0, background: PANEL_BG,
-        }}>
-          <ExportButton label="Export Simulation JSON" data={result} filename="cellfree-simulation" format="json" />
-          <ExportButton label="Export Time Series CSV" data={exportData} filename="cellfree-timeseries" format="csv" />
         </div>
-      </div>
-    </>
+      </ToolTabPanel>
+    </ToolShell>
   );
 }
