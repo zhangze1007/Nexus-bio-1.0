@@ -45,7 +45,6 @@ const GLASS: React.CSSProperties = {
 
 const GENE_COLORS = [PATHD_THEME.mint, PATHD_THEME.sky, PATHD_THEME.coral, PATHD_THEME.apricot, PATHD_THEME.lilac];
 
-type ViewMode = 'TimeCourse' | 'Resources' | 'Fitting' | 'IvIv' | 'Reactor3D';
 
 /* ── Section Label ────────────────────────────────────────────────── */
 
@@ -734,12 +733,14 @@ export default function CellFreePage() {
     catch (e) { return { data: runFullCFSPipeline([], generateDefaultParameters()), error: e instanceof Error ? e.message : 'CFS pipeline failed' }; }
   }, [constructs, params]);
 
-  const [viewMode, setViewMode] = useState<ViewMode>('TimeCourse');
-  const [activeTab, setActiveTab] = useState('viz');
+  const [activeTab, setActiveTab] = useState('timecourse');
 
   const CELLFREE_TABS: ToolTab[] = [
-    { id: 'viz', label: 'Visualization', accent: PATHD_THEME.sky },
-    { id: 'analysis', label: 'Analysis', accent: PATHD_THEME.mint },
+    { id: 'timecourse', label: 'Time Course', accent: PATHD_THEME.sky },
+    { id: 'resources', label: 'Resources', accent: PATHD_THEME.lilac },
+    { id: 'fitting', label: 'Fitting', accent: PATHD_THEME.apricot },
+    { id: 'iviv', label: 'IVIV', accent: PATHD_THEME.mint },
+    { id: 'reactor', label: 'Reactor 3D', accent: PATHD_THEME.coral },
   ];
 
   const sim = result.simulation;
@@ -823,42 +824,6 @@ export default function CellFreePage() {
     });
     return rows;
   }, [sim]);
-  const figureMeta = useMemo(() => {
-    if (viewMode === 'TimeCourse') {
-      return {
-        eyebrow: 'Expression timecourse',
-        title: 'Protein production, resource depletion, and construct quality are read as one figure',
-        caption: 'The timecourse lens is treated as a figure plate rather than a simulator canvas, so expression, depletion, and comparative construct quality live inside one evidence surface.',
-      };
-    }
-    if (viewMode === 'Resources') {
-      return {
-        eyebrow: 'Resource ledger',
-        title: 'ATP, ribosome, and amino-acid drawdown define the real viability of the run',
-        caption: 'This lens foregrounds resource exhaustion as the governing constraint for whether a construct bundle should remain exploratory before slower experimental loops.',
-      };
-    }
-    if (viewMode === 'Fitting') {
-      return {
-        eyebrow: 'Plate fitting',
-        title: 'Parameter-fit quality sits inside the same workbench story as simulation output',
-        caption: 'Fitting is presented as evidence for how trustworthy the cell-free readout is, not as a detached analytics tab.',
-      };
-    }
-    if (viewMode === 'IvIv') {
-      return {
-        eyebrow: 'Translation bridge',
-        title: 'In-vitro to in-vivo translation remains a heuristic estimate panel',
-        caption: 'The bridge lens keeps estimated in-vivo expression, heuristic confidence, and rationale in one place so parameter limits stay legible.',
-      };
-    }
-    return {
-      eyebrow: 'Reactor twin',
-      title: 'The digital twin reframes the run as a spatial bench instrument',
-      caption: 'Construct output, energy pools, and reactor geometry are consolidated into a single interpretive stage rather than a decorative 3D tab.',
-    };
-  }, [viewMode]);
-
   return (
     <ToolShell
       moduleId="cellfree"
@@ -893,23 +858,17 @@ export default function CellFreePage() {
         <div style={{ padding: '0 0 8px' }}><SimErrorBanner message={simError} /></div>
       )}
 
-      {/* ── Visualization Tab ─────────────────────────────────── */}
-      <ToolTabPanel tabId="viz" activeId={activeTab}>
+      {/* ── Time Course Tab ── */}
+      <ToolTabPanel tabId="timecourse" activeId={activeTab}>
         <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
           <FloatingControlRail label="Bench Setup" defaultCollapsed={false}>
-            {/* Gene Constructs */}
             <SectionLabel>Gene Constructs</SectionLabel>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
               {constructs.map((g, i) => (
                 <div key={g.id} style={{ ...GLASS, borderRadius: '14px', padding: '10px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
-                    <span style={{
-                      width: '8px', height: '8px', borderRadius: '50%',
-                      background: GENE_COLORS[i % GENE_COLORS.length], flexShrink: 0,
-                    }} />
-                    <span style={{ fontFamily: T.SANS, fontSize: '10px', fontWeight: 600, color: VALUE }}>
-                      {g.name.length > 20 ? g.name.slice(0, 20) + '…' : g.name}
-                    </span>
+                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: GENE_COLORS[i % GENE_COLORS.length], flexShrink: 0 }} />
+                    <span style={{ fontFamily: T.SANS, fontSize: '10px', fontWeight: 600, color: VALUE }}>{g.name.length > 20 ? g.name.slice(0, 20) + '…' : g.name}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
                     <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Promoter</span>
@@ -922,23 +881,6 @@ export default function CellFreePage() {
                 </div>
               ))}
             </div>
-
-            {/* View Mode */}
-            <SectionLabel>View Lens</SectionLabel>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '16px' }}>
-              {(['TimeCourse', 'Resources', 'Fitting', 'IvIv', 'Reactor3D'] as ViewMode[]).map(mode => (
-                <button key={mode} onClick={() => setViewMode(mode)} style={{
-                  flex: '1 1 0', padding: '5px 0', borderRadius: '6px', cursor: 'pointer',
-                  fontFamily: T.SANS, fontSize: '10px', border: `1px solid ${viewMode === mode ? 'rgba(175,195,214,0.34)' : INPUT_BORDER}`,
-                  background: viewMode === mode ? 'rgba(175,195,214,0.22)' : INPUT_BG,
-                  color: viewMode === mode ? VALUE : LABEL,
-                }}>
-                  {mode}
-                </button>
-              ))}
-            </div>
-
-            {/* Reaction Parameters */}
             <SectionLabel>Reaction Parameters</SectionLabel>
             <div style={{ ...GLASS, borderRadius: '14px', padding: '10px', marginBottom: '16px' }}>
               {[
@@ -954,8 +896,6 @@ export default function CellFreePage() {
                 </div>
               ))}
             </div>
-
-            {/* Energy Status */}
             <SectionLabel>Energy Status</SectionLabel>
             <div style={{ ...GLASS, borderRadius: '14px', padding: '10px' }}>
               {[
@@ -973,83 +913,26 @@ export default function CellFreePage() {
 
           <div style={{ flex: 1, position: 'relative', display: 'flex', flexDirection: 'column', minHeight: 0, padding: '12px' }}>
             <ScientificFigureFrame
-              eyebrow={figureMeta.eyebrow}
-              title={figureMeta.title}
-              caption={figureMeta.caption}
+              eyebrow="Expression timecourse"
+              title="Protein production, resource depletion, and construct quality"
+              caption="The timecourse lens is treated as a figure plate — expression, depletion, and comparative construct quality live inside one evidence surface."
               legend={[
-                { label: 'Lens', value: viewMode, accent: PATHD_THEME.sky },
                 { label: 'Constructs', value: `${constructs.length}`, accent: PATHD_THEME.apricot },
                 { label: 'Yield', value: `${sim.totalProteinYield.toFixed(1)} nM`, accent: PATHD_THEME.mint },
                 { label: 'Depletion', value: `${sim.energyDepletionTime.toFixed(0)} min`, accent: PATHD_THEME.coral },
               ]}
-              footer={
-                <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL }}>
-                  setup {params.temperature}°C · {params.simulationTime} min · {sim.isResourceLimited ? 'resource-limited run' : 'resources adequate for exploratory review'}
-                </div>
-              }
+              footer={<div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL }}>setup {params.temperature}°C · {params.simulationTime} min · {sim.isResourceLimited ? 'resource-limited run' : 'resources adequate'}</div>}
               minHeight="100%"
             >
-              {viewMode === 'TimeCourse' && (
-                <div style={{ padding: '4px 0', overflowY: 'auto' }}>
-                  <TimeCourseChart result={result} constructs={constructs} />
-                </div>
-              )}
-              {viewMode === 'Resources' && (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '8px 0' }}>
-                  <div style={{ width: '100%', maxWidth: '600px' }}>
-                    <ResourceChart result={result} />
-                  </div>
-                </div>
-              )}
-              {viewMode === 'Fitting' && (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '8px 0' }}>
-                  <div style={{ width: '100%', maxWidth: '600px' }}>
-                    <FittingChart result={result} />
-                  </div>
-                </div>
-              )}
-              {viewMode === 'IvIv' && (
-                <div style={{ display: 'flex', flexDirection: 'column', padding: '8px 0', gap: '16px' }}>
-                  <div style={{ width: '100%', maxWidth: '600px', margin: '0 auto' }}>
-                    <IvIvChart result={result} />
-                  </div>
-                  {iviv && (
-                    <div style={{ ...GLASS, borderRadius: '16px', padding: '14px 18px', maxWidth: '600px', margin: '0 auto', width: '100%' }}>
-                      <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: LABEL, margin: '0 0 6px' }}>
-                        Reasoning
-                      </p>
-                      <p style={{ fontFamily: T.SANS, fontSize: '11px', color: VALUE, margin: 0, lineHeight: 1.6 }}>
-                        {iviv.reasoning}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )}
-              {viewMode === 'Reactor3D' && (
-                <div style={{ display: 'flex', flexDirection: 'column', padding: '8px 0', gap: '10px' }}>
-                  <div style={{ maxWidth: '760px', margin: '0 auto', width: '100%' }}>
-                    <div style={{ padding: '8px 12px', borderRadius: '14px', border: `1px solid ${BORDER}`, background: PATHD_THEME.panelInset }}>
-                      <p style={{ margin: '0 0 3px', color: VALUE, fontSize: '11px', fontFamily: T.SANS }}>
-                        Reactor 3D turns the CFPS run into a digital twin: construct yield, energy pool and depletion timing are mapped into one spatial scene.
-                      </p>
-                      <p style={{ margin: 0, color: LABEL, fontSize: '9px', fontFamily: T.MONO }}>
-                        center tank = resource state · rear towers = expression output · right bars = ATP / GTP / PEP allocation
-                      </p>
-                    </div>
-                  </div>
-                  <div style={{ minHeight: '420px', maxWidth: '760px', margin: '0 auto', width: '100%' }}>
-                    <ReactorTwin3D result={result} constructs={constructs} params={params} />
-                  </div>
-                </div>
-              )}
+              <div style={{ padding: '4px 0', overflowY: 'auto' }}>
+                <TimeCourseChart result={result} constructs={constructs} />
+              </div>
             </ScientificFigureFrame>
-
             <InlineMetricOverlay
               position="top-right"
               metrics={[
                 { label: 'Yield', value: `${sim.totalProteinYield.toFixed(1)} nM`, accent: PATHD_THEME.mint },
                 { label: 'Depletion', value: `${sim.energyDepletionTime.toFixed(0)} min`, accent: sim.isResourceLimited ? PATHD_THEME.coral : PATHD_THEME.sky },
-                { label: 'IVIV', value: iviv ? `${(iviv.confidence * 100).toFixed(0)}%` : '—', accent: PATHD_THEME.lilac },
                 { label: 'Constructs', value: `${constructs.length}`, accent: PATHD_THEME.apricot },
               ]}
             />
@@ -1057,37 +940,213 @@ export default function CellFreePage() {
         </div>
       </ToolTabPanel>
 
-      {/* ── Analysis Tab ──────────────────────────────────────── */}
-      <ToolTabPanel tabId="analysis" activeId={activeTab}>
-        <div style={{ flex: 1, overflowY: 'auto', padding: '12px 0' }}>
-          {/* Simulation Summary */}
-          <SectionLabel>Simulation Summary</SectionLabel>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '20px' }}>
-            <MetricCard label="Total Yield" value={sim.totalProteinYield.toFixed(1)} unit="nM" highlight />
-            <MetricCard label="Depletion" value={sim.energyDepletionTime.toFixed(0)} unit="min" />
-            <MetricCard
-              label="Resource Ltd"
-              value={sim.isResourceLimited ? 'Yes' : 'No'}
-              warning={sim.isResourceLimited ? 'Ribosomes saturated' : undefined}
+      {/* ── Resources Tab ── */}
+      <ToolTabPanel tabId="resources" activeId={activeTab}>
+        <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
+          <FloatingControlRail label="Bench Setup" defaultCollapsed={true}>
+            <SectionLabel>Energy Status</SectionLabel>
+            <div style={{ ...GLASS, borderRadius: '14px', padding: '10px' }}>
+              {[
+                { label: 'ATP', value: `${params.initialEnergy.atp} mM` },
+                { label: 'GTP', value: `${params.initialEnergy.gtp} mM` },
+                { label: 'PEP', value: `${params.initialEnergy.pep} mM` },
+              ].map(item => (
+                <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                  <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>{item.label}</span>
+                  <span style={{ fontFamily: T.MONO, fontSize: '9px', color: VALUE }}>{item.value}</span>
+                </div>
+              ))}
+            </div>
+          </FloatingControlRail>
+          <div style={{ flex: 1, position: 'relative', display: 'flex', flexDirection: 'column', minHeight: 0, padding: '12px' }}>
+            <ScientificFigureFrame
+              eyebrow="Resource ledger"
+              title="ATP, ribosome, and amino-acid drawdown"
+              caption="Resource exhaustion governs whether a construct bundle should remain exploratory before slower experimental loops."
+              legend={[
+                { label: 'Yield', value: `${sim.totalProteinYield.toFixed(1)} nM`, accent: PATHD_THEME.mint },
+                { label: 'Depletion', value: `${sim.energyDepletionTime.toFixed(0)} min`, accent: PATHD_THEME.coral },
+              ]}
+              minHeight="100%"
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '8px 0' }}>
+                <div style={{ width: '100%', maxWidth: '600px' }}>
+                  <ResourceChart result={result} />
+                </div>
+              </div>
+            </ScientificFigureFrame>
+            <InlineMetricOverlay
+              position="top-right"
+              metrics={[
+                { label: 'Depletion', value: `${sim.energyDepletionTime.toFixed(0)} min`, accent: sim.isResourceLimited ? PATHD_THEME.coral : PATHD_THEME.sky },
+                { label: 'Resource Ltd', value: sim.isResourceLimited ? 'Yes' : 'No', accent: sim.isResourceLimited ? PATHD_THEME.coral : PATHD_THEME.mint },
+              ]}
             />
           </div>
+        </div>
+      </ToolTabPanel>
 
+      {/* ── Fitting Tab ── */}
+      <ToolTabPanel tabId="fitting" activeId={activeTab}>
+        <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
+          <FloatingControlRail label="Parameters" defaultCollapsed={true}>
+            <SectionLabel>Reaction Parameters</SectionLabel>
+            <div style={{ ...GLASS, borderRadius: '14px', padding: '10px' }}>
+              {[
+                { label: 'Temperature', value: `${params.temperature} °C` },
+                { label: 'Sim Time', value: `${params.simulationTime} min` },
+              ].map(item => (
+                <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                  <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>{item.label}</span>
+                  <span style={{ fontFamily: T.MONO, fontSize: '9px', color: VALUE }}>{item.value}</span>
+                </div>
+              ))}
+            </div>
+          </FloatingControlRail>
+          <div style={{ flex: 1, position: 'relative', display: 'flex', flexDirection: 'column', minHeight: 0, padding: '12px', overflowY: 'auto', gap: '16px' }}>
+            <ScientificFigureFrame
+              eyebrow="Plate fitting"
+              title="Parameter-fit quality for cell-free readout"
+              caption="Fitting is presented as evidence for how trustworthy the cell-free readout is."
+              legend={[
+                { label: 'R²', value: fit ? fit.r_squared.toFixed(4) : '—', accent: PATHD_THEME.mint },
+              ]}
+              minHeight="300px"
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '8px 0' }}>
+                <div style={{ width: '100%', maxWidth: '600px' }}>
+                  <FittingChart result={result} />
+                </div>
+              </div>
+            </ScientificFigureFrame>
+            {fit && (
+              <div style={{ ...GLASS, borderRadius: '14px', padding: '12px' }}>
+                <SectionLabel>Fitting Results</SectionLabel>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Vmax</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: '9px', color: VALUE }}>{fit.vmax.toFixed(3)}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Kd</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: '9px', color: VALUE }}>{fit.kd.toFixed(3)}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>R²</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: '9px', color: `rgba(${SEMANTIC_RGB.pass}, 0.92)` }}>{fit.r_squared.toFixed(4)}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Vmax CI</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: '8px', color: LABEL }}>[{fit.vmax_ci[0].toFixed(2)}, {fit.vmax_ci[1].toFixed(2)}]</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Kd CI</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: '8px', color: LABEL }}>[{fit.kd_ci[0].toFixed(2)}, {fit.kd_ci[1].toFixed(2)}]</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </ToolTabPanel>
+
+      {/* ── IVIV Tab ── */}
+      <ToolTabPanel tabId="iviv" activeId={activeTab}>
+        <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
+          <FloatingControlRail label="Parameters" defaultCollapsed={true}>
+            <SectionLabel>Gene Constructs</SectionLabel>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {constructs.map((g, i) => (
+                <div key={g.id} style={{ ...GLASS, borderRadius: '14px', padding: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: GENE_COLORS[i % GENE_COLORS.length], flexShrink: 0 }} />
+                    <span style={{ fontFamily: T.SANS, fontSize: '10px', fontWeight: 600, color: VALUE }}>{g.name.length > 20 ? g.name.slice(0, 20) + '…' : g.name}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </FloatingControlRail>
+          <div style={{ flex: 1, position: 'relative', display: 'flex', flexDirection: 'column', minHeight: 0, padding: '12px', overflowY: 'auto', gap: '16px' }}>
+            <ScientificFigureFrame
+              eyebrow="Translation bridge"
+              title="In-vitro to in-vivo translation estimate"
+              caption="Estimated in-vivo expression, heuristic confidence, and rationale — parameter limits stay legible."
+              legend={[
+                { label: 'Confidence', value: iviv ? `${(iviv.confidence * 100).toFixed(0)}%` : '—', accent: PATHD_THEME.lilac },
+                { label: 'Fold Change', value: iviv ? `${iviv.invivo_foldChange.toFixed(2)}×` : '—', accent: PATHD_THEME.mint },
+              ]}
+              minHeight="300px"
+            >
+              <div style={{ display: 'flex', flexDirection: 'column', padding: '8px 0', gap: '16px' }}>
+                <div style={{ width: '100%', maxWidth: '600px', margin: '0 auto' }}>
+                  <IvIvChart result={result} />
+                </div>
+                {iviv && (
+                  <div style={{ ...GLASS, borderRadius: '16px', padding: '14px 18px', maxWidth: '600px', margin: '0 auto', width: '100%' }}>
+                    <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: LABEL, margin: '0 0 6px' }}>Reasoning</p>
+                    <p style={{ fontFamily: T.SANS, fontSize: '11px', color: VALUE, margin: 0, lineHeight: 1.6 }}>{iviv.reasoning}</p>
+                  </div>
+                )}
+              </div>
+            </ScientificFigureFrame>
+            {iviv && (
+              <div style={{ ...GLASS, borderRadius: '14px', padding: '12px' }}>
+                <SectionLabel>IvIv Estimate</SectionLabel>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>In-vivo Expr</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: '9px', color: VALUE }}>{iviv.invivo_expression.toFixed(1)} nM</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Scaling Factor</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: '9px', color: VALUE }}>{iviv.scalingFactor.toFixed(3)}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Fold Change</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: '9px', color: VALUE }}>{iviv.invivo_foldChange.toFixed(2)}×</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Confidence</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: '9px', color: iviv.confidence > 0.7 ? `rgba(${SEMANTIC_RGB.pass}, 0.92)` : iviv.confidence > 0.4 ? `rgba(${SEMANTIC_RGB.warn}, 0.9)` : `rgba(${SEMANTIC_RGB.fail}, 0.9)` }}>{(iviv.confidence * 100).toFixed(0)}%</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </ToolTabPanel>
+
+      {/* ── Reactor 3D Tab ── */}
+      <ToolTabPanel tabId="reactor" activeId={activeTab}>
+        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, padding: '12px', gap: '10px' }}>
+          <div style={{ maxWidth: '760px', margin: '0 auto', width: '100%' }}>
+            <div style={{ padding: '8px 12px', borderRadius: '14px', border: `1px solid ${BORDER}`, background: PATHD_THEME.panelInset }}>
+              <p style={{ margin: '0 0 3px', color: VALUE, fontSize: '11px', fontFamily: T.SANS }}>Reactor 3D turns the CFPS run into a digital twin: construct yield, energy pool and depletion timing are mapped into one spatial scene.</p>
+              <p style={{ margin: 0, color: LABEL, fontSize: '9px', fontFamily: T.MONO }}>center tank = resource state · rear towers = expression output · right bars = ATP / GTP / PEP allocation</p>
+            </div>
+          </div>
+          <div style={{ minHeight: '420px', maxWidth: '760px', margin: '0 auto', width: '100%', position: 'relative' }}>
+            <ReactorTwin3D result={result} constructs={constructs} params={params} />
+            <InlineMetricOverlay
+              position="top-right"
+              metrics={[
+                { label: 'Yield', value: `${sim.totalProteinYield.toFixed(1)} nM`, accent: PATHD_THEME.mint },
+                { label: 'Depletion', value: `${sim.energyDepletionTime.toFixed(0)} min`, accent: sim.isResourceLimited ? PATHD_THEME.coral : PATHD_THEME.sky },
+                { label: 'Constructs', value: `${constructs.length}`, accent: PATHD_THEME.apricot },
+              ]}
+            />
+          </div>
           {/* Per-Gene Stats */}
           <SectionLabel>Per-Gene Stats</SectionLabel>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '8px', marginBottom: '20px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '8px' }}>
             {sim.steadyState.map((ss, i) => {
               const gene = constructs.find(c => c.id === ss.geneId);
               const color = GENE_COLORS[i % GENE_COLORS.length];
               return (
                 <div key={ss.geneId} style={{ ...GLASS, borderRadius: '10px', padding: '8px 10px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
-                    <span style={{
-                      width: '8px', height: '8px', borderRadius: '50%',
-                      background: color, flexShrink: 0,
-                    }} />
-                    <span style={{ fontFamily: T.SANS, fontSize: '10px', fontWeight: 600, color: VALUE }}>
-                      {gene ? (gene.name.length > 18 ? gene.name.slice(0, 18) + '…' : gene.name) : ss.geneId}
-                    </span>
+                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: color, flexShrink: 0 }} />
+                    <span style={{ fontFamily: T.SANS, fontSize: '10px', fontWeight: 600, color: VALUE }}>{gene ? (gene.name.length > 18 ? gene.name.slice(0, 18) + '…' : gene.name) : ss.geneId}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
                     <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Peak Protein</span>
@@ -1105,81 +1164,6 @@ export default function CellFreePage() {
               );
             })}
           </div>
-
-          {/* Fitting Results */}
-          {fit && (
-            <>
-              <SectionLabel>Fitting Results</SectionLabel>
-              <div style={{ ...GLASS, borderRadius: '14px', padding: '12px', marginBottom: '20px' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Vmax</span>
-                    <span style={{ fontFamily: T.MONO, fontSize: '9px', color: VALUE }}>{fit.vmax.toFixed(3)}</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Kd</span>
-                    <span style={{ fontFamily: T.MONO, fontSize: '9px', color: VALUE }}>{fit.kd.toFixed(3)}</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>R²</span>
-                    <span style={{ fontFamily: T.MONO, fontSize: '9px', color: `rgba(${SEMANTIC_RGB.pass}, 0.92)` }}>
-                      {fit.r_squared.toFixed(4)}
-                    </span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Vmax CI</span>
-                    <span style={{ fontFamily: T.MONO, fontSize: '8px', color: LABEL }}>
-                      [{fit.vmax_ci[0].toFixed(2)}, {fit.vmax_ci[1].toFixed(2)}]
-                    </span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Kd CI</span>
-                    <span style={{ fontFamily: T.MONO, fontSize: '8px', color: LABEL }}>
-                      [{fit.kd_ci[0].toFixed(2)}, {fit.kd_ci[1].toFixed(2)}]
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
-
-          {/* IvIv Estimate */}
-          {iviv && (
-            <>
-              <SectionLabel>IvIv Estimate</SectionLabel>
-              <div style={{ ...GLASS, borderRadius: '14px', padding: '12px' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>In-vivo Expr</span>
-                    <span style={{ fontFamily: T.MONO, fontSize: '9px', color: VALUE }}>
-                      {iviv.invivo_expression.toFixed(1)} nM
-                    </span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Scaling Factor</span>
-                    <span style={{ fontFamily: T.MONO, fontSize: '9px', color: VALUE }}>
-                      {iviv.scalingFactor.toFixed(3)}
-                    </span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Fold Change</span>
-                    <span style={{ fontFamily: T.MONO, fontSize: '9px', color: VALUE }}>
-                      {iviv.invivo_foldChange.toFixed(2)}×
-                    </span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Confidence</span>
-                    <span style={{
-                      fontFamily: T.MONO, fontSize: '9px',
-                      color: iviv.confidence > 0.7 ? `rgba(${SEMANTIC_RGB.pass}, 0.92)` : iviv.confidence > 0.4 ? `rgba(${SEMANTIC_RGB.warn}, 0.9)` : `rgba(${SEMANTIC_RGB.fail}, 0.9)`,
-                    }}>
-                      {(iviv.confidence * 100).toFixed(0)}%
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
         </div>
       </ToolTabPanel>
     </ToolShell>
