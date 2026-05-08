@@ -98,7 +98,7 @@ export interface CatalystWorkbenchPayload extends WorkbenchPayloadBase {
   sourceArtifactId?: string;
   selectedEnzymeId: string;
   selectedEnzymeName: string;
-  selectedView: string;
+  selectedView?: string;
   requiredFlux: number;
   designCount: number;
   result: {

@@ -73,16 +73,6 @@ const PHASE_MAP: Record<string, string> = {
   mutagenesis:        'mutagenesis',
 };
 
-type ViewMode = 'Binding' | 'Sequences' | 'FluxCost' | 'Balancer' | 'Pareto' | 'Mutagenesis';
-
-const VIEW_MODES: { key: ViewMode; label: string; color: string }[] = [
-  { key: 'Binding',    label: 'Binding',    color: PHASE_COLORS.binding },
-  { key: 'Sequences',  label: 'Sequences',  color: PHASE_COLORS.sequence },
-  { key: 'FluxCost',   label: 'Flux Cost',  color: PHASE_COLORS.flux },
-  { key: 'Balancer',   label: 'Balancer',   color: PHASE_COLORS.balancing },
-  { key: 'Pareto',     label: 'Pareto',     color: PHASE_COLORS.pareto },
-  { key: 'Mutagenesis',label: 'Mutagen.',   color: PHASE_COLORS.mutagenesis },
-];
 
 /* ── Quality helpers ──────────────────────────────────────────────── */
 
@@ -548,7 +538,6 @@ export default function CatalystDesignerPage() {
   const setToolPayload = useWorkbenchStore((s) => s.setToolPayload);
 
   const [selectedEnzyme, setSelectedEnzyme] = useState<number>(2);
-  const [viewMode, setViewMode] = useState<ViewMode>('Binding');
   const [renderMode, setRenderMode] = useState<'cartoon' | 'surface' | 'confidence'>('cartoon');
   const [spinEnabled, setSpinEnabled] = useState(true);
   const [selectedResidue, setSelectedResidue] = useState<number | null>(null);
@@ -604,7 +593,6 @@ export default function CatalystDesignerPage() {
       sourceArtifactId: analyzeArtifact?.id,
       selectedEnzymeId: enzyme.id,
       selectedEnzymeName: enzyme.name,
-      selectedView: viewMode,
       requiredFlux: recommendedSeed.requiredFlux,
       designCount: recommendedSeed.designCount,
       result: {
@@ -627,15 +615,18 @@ export default function CatalystDesignerPage() {
     drain.recommendation, drain.totalMetabolicDrain, enzyme.id, enzyme.name,
     mutagenesis.sites, project?.targetProduct, project?.title,
     recommendedSeed.designCount, recommendedSeed.requiredFlux,
-    sequences.designs, setToolPayload, simError, viewMode,
+    sequences.designs, setToolPayload, simError,
   ]);
 
   const selectedCatResidue = enzyme.catalyticResidues.find(r => r.position === selectedResidue);
 
-  const [activeTab, setActiveTab] = useState('viz');
+  const [activeTab, setActiveTab] = useState('viewer');
   const CATDES_TABS: ToolTab[] = [
-    { id: 'viz', label: '3D Viewport', accent: PATHD_THEME.sky },
-    { id: 'analysis', label: 'Analysis', accent: PATHD_THEME.mint },
+    { id: 'viewer', label: '3D Viewer', accent: PATHD_THEME.sky },
+    { id: 'binding', label: 'Binding', accent: PATHD_THEME.lilac },
+    { id: 'sequences', label: 'Sequences', accent: PATHD_THEME.apricot },
+    { id: 'pareto', label: 'Pareto', accent: PATHD_THEME.mint },
+    { id: 'mutagenesis', label: 'Mutagenesis', accent: PATHD_THEME.coral },
   ];
 
   const kdQ = kdQuality(mutationImpact?.newKd ?? binding.predictedKd);
@@ -667,92 +658,52 @@ export default function CatalystDesignerPage() {
         <div style={{ padding: '0 0 8px' }}><SimErrorBanner message={simError} /></div>
       )}
 
-      {/* ── 3D Viewport Tab ───────────────────────────────────── */}
-      <ToolTabPanel tabId="viz" activeId={activeTab}>
+      {/* ── 3D Viewer Tab ── */}
+      <ToolTabPanel tabId="viewer" activeId={activeTab}>
         <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
           <FloatingControlRail label="Enzyme" defaultCollapsed={false}>
-            {/* Enzyme selector */}
             <div style={{ marginBottom: '12px' }}>
-              <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                Enzyme
-              </span>
+              <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Enzyme</span>
               <select
                 value={selectedEnzyme}
                 onChange={e => { setSelectedEnzyme(Number(e.target.value)); setSelectedResidue(null); setSelectedMutation(null); }}
-                style={{
-                  width: '100%', marginTop: 4,
-                  fontFamily: T.SANS, fontSize: '11px', fontWeight: 600, color: VALUE,
-                  background: INPUT_BG, border: `1px solid ${INPUT_BORDER}`, borderRadius: 8,
-                  padding: '5px 8px', cursor: 'pointer', outline: 'none',
-                }}
+                style={{ width: '100%', marginTop: 4, fontFamily: T.SANS, fontSize: '11px', fontWeight: 600, color: VALUE, background: INPUT_BG, border: `1px solid ${INPUT_BORDER}`, borderRadius: 8, padding: '5px 8px', cursor: 'pointer', outline: 'none' }}
               >
                 {ENZYME_STRUCTURES.map((enz, i) => (
                   <option key={enz.id} value={i}>{enz.name} · EC {enz.ecNumber}</option>
                 ))}
               </select>
               {enzyme.id === RATE_LIMITING_ENZYME.id && (
-                <span style={{
-                  display: 'inline-block', marginTop: 4,
-                  fontFamily: T.MONO, fontSize: '9px', color: '#FFFB1F',
-                  background: 'rgba(255,251,31,0.12)', padding: '2px 8px', borderRadius: 8,
-                }}>Rate-limiting</span>
+                <span style={{ display: 'inline-block', marginTop: 4, fontFamily: T.MONO, fontSize: '9px', color: '#FFFB1F', background: 'rgba(255,251,31,0.12)', padding: '2px 8px', borderRadius: 8 }}>Rate-limiting</span>
               )}
             </div>
-
-            {/* Substrate → Product */}
             <div style={{ marginBottom: '12px', fontFamily: T.MONO, fontSize: '10px', color: LABEL }}>
               <span>{enzyme.substrate}</span>
               <span style={{ color: VALUE, margin: '0 4px' }}>→</span>
               <span>{enzyme.product}</span>
             </div>
-
-            {/* Render Mode */}
             <div style={{ marginBottom: '12px' }}>
-              <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                Render Mode
-              </span>
+              <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Render Mode</span>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 4 }}>
                 {(['cartoon', 'surface', 'confidence'] as const).map(mode => (
                   <button key={mode} onClick={() => setRenderMode(mode)}
-                    style={{
-                      flex: '1 1 0', fontFamily: T.SANS, fontSize: '10px', padding: '4px 0',
-                      border: `1px solid ${renderMode === mode ? PATHD_THEME.sky : INPUT_BORDER}`,
-                      borderRadius: 6, cursor: 'pointer',
-                      background: renderMode === mode ? 'rgba(175,195,214,0.15)' : 'transparent',
-                      color: renderMode === mode ? PATHD_THEME.sky : LABEL,
-                    }}>
+                    style={{ flex: '1 1 0', fontFamily: T.SANS, fontSize: '10px', padding: '4px 0', border: `1px solid ${renderMode === mode ? PATHD_THEME.sky : INPUT_BORDER}`, borderRadius: 6, cursor: 'pointer', background: renderMode === mode ? 'rgba(175,195,214,0.15)' : 'transparent', color: renderMode === mode ? PATHD_THEME.sky : LABEL }}>
                     {mode.charAt(0).toUpperCase() + mode.slice(1)}
                   </button>
                 ))}
               </div>
             </div>
-
-            {/* Spin toggle */}
             <button onClick={() => setSpinEnabled(!spinEnabled)}
-              style={{
-                width: '100%', fontFamily: T.SANS, fontSize: '10px', padding: '5px 0',
-                border: `1px solid ${spinEnabled ? PATHD_THEME.mint : INPUT_BORDER}`,
-                borderRadius: 6, cursor: 'pointer',
-                background: spinEnabled ? 'rgba(191,220,205,0.15)' : 'transparent',
-                color: spinEnabled ? PATHD_THEME.mint : LABEL,
-              }}>
+              style={{ width: '100%', fontFamily: T.SANS, fontSize: '10px', padding: '5px 0', border: `1px solid ${spinEnabled ? PATHD_THEME.mint : INPUT_BORDER}`, borderRadius: 6, cursor: 'pointer', background: spinEnabled ? 'rgba(191,220,205,0.15)' : 'transparent', color: spinEnabled ? PATHD_THEME.mint : LABEL }}>
               {spinEnabled ? '● Spin On' : 'Spin Off'}
             </button>
-
-            {/* Selected residue info */}
             {selectedResidue != null && selectedCatResidue && (
               <div style={{ marginTop: '16px' }}>
-                <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                  Selected Residue
-                </span>
+                <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Selected Residue</span>
                 <div style={{ ...GLASS, borderRadius: '12px', padding: '8px 10px', marginTop: 4 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-                    <span style={{ fontFamily: T.MONO, fontSize: '14px', color: '#FFDB13', fontWeight: 700 }}>
-                      {selectedCatResidue.residue}{selectedResidue}
-                    </span>
-                    <span style={{ fontFamily: T.MONO, fontSize: '8px', color: PHASE_COLORS.binding, background: 'rgba(191,220,205,0.12)', padding: '2px 5px', borderRadius: 4 }}>
-                      {selectedCatResidue.role.replace('_', ' ')}
-                    </span>
+                    <span style={{ fontFamily: T.MONO, fontSize: '14px', color: '#FFDB13', fontWeight: 700 }}>{selectedCatResidue.residue}{selectedResidue}</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: '8px', color: PHASE_COLORS.binding, background: 'rgba(191,220,205,0.12)', padding: '2px 5px', borderRadius: 4 }}>{selectedCatResidue.role.replace('_', ' ')}</span>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3px 8px' }}>
                     <div>
@@ -764,42 +715,26 @@ export default function CatalystDesignerPage() {
                       <p style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE, margin: 0 }}>{selectedCatResidue.orientationAngle.toFixed(0)}°</p>
                     </div>
                   </div>
-
-                  {/* Mutation dropdown */}
                   <div style={{ marginTop: 6 }}>
                     <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Mutate to</span>
-                    <select
-                      value={selectedMutation || ''}
-                      onChange={e => setSelectedMutation(e.target.value || null)}
-                      style={{
-                        width: '100%', marginTop: 2,
-                        fontFamily: T.MONO, fontSize: '10px', color: VALUE,
-                        background: INPUT_BG, border: `1px solid ${INPUT_BORDER}`,
-                        borderRadius: 6, padding: '4px 6px', cursor: 'pointer', outline: 'none',
-                      }}
-                    >
+                    <select value={selectedMutation || ''} onChange={e => setSelectedMutation(e.target.value || null)}
+                      style={{ width: '100%', marginTop: 2, fontFamily: T.MONO, fontSize: '10px', color: VALUE, background: INPUT_BG, border: `1px solid ${INPUT_BORDER}`, borderRadius: 6, padding: '4px 6px', cursor: 'pointer', outline: 'none' }}>
                       <option value="">Select…</option>
                       {AA_MUTATIONS.filter(aa => aa !== selectedCatResidue.residue).map(aa => (
                         <option key={aa} value={aa}>{selectedCatResidue.residue} → {aa}</option>
                       ))}
                     </select>
                   </div>
-
-                  {/* Mutation impact */}
                   {mutationImpact && (
                     <div style={{ marginTop: 6, padding: '6px 8px', borderRadius: 8, background: 'rgba(255,255,255,0.03)', border: `1px solid ${BORDER}` }}>
                       <div style={{ display: 'flex', gap: 8 }}>
                         <div>
                           <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>ΔKd</span>
-                          <p style={{ fontFamily: T.MONO, fontSize: '10px', margin: 0, color: mutationImpact.deltaKd < 0 ? '#93CB52' : '#FA8072' }}>
-                            {mutationImpact.deltaKd > 0 ? '+' : ''}{mutationImpact.deltaKd.toFixed(1)} μM
-                          </p>
+                          <p style={{ fontFamily: T.MONO, fontSize: '10px', margin: 0, color: mutationImpact.deltaKd < 0 ? '#93CB52' : '#FA8072' }}>{mutationImpact.deltaKd > 0 ? '+' : ''}{mutationImpact.deltaKd.toFixed(1)} μM</p>
                         </div>
                         <div>
                           <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>ΔKcat</span>
-                          <p style={{ fontFamily: T.MONO, fontSize: '10px', margin: 0, color: mutationImpact.deltaKcat > 0 ? '#93CB52' : '#FA8072' }}>
-                            {mutationImpact.deltaKcat > 0 ? '+' : ''}{mutationImpact.deltaKcat.toFixed(3)} s⁻¹
-                          </p>
+                          <p style={{ fontFamily: T.MONO, fontSize: '10px', margin: 0, color: mutationImpact.deltaKcat > 0 ? '#93CB52' : '#FA8072' }}>{mutationImpact.deltaKcat > 0 ? '+' : ''}{mutationImpact.deltaKcat.toFixed(3)} s⁻¹</p>
                         </div>
                       </div>
                     </div>
@@ -808,17 +743,8 @@ export default function CatalystDesignerPage() {
               </div>
             )}
           </FloatingControlRail>
-
           <div style={{ flex: 1, position: 'relative', minHeight: 0 }}>
-            <CatalystViewer3D
-              enzyme={enzyme}
-              renderMode={renderMode}
-              spinEnabled={spinEnabled}
-              onResidueClick={handleResidueClick}
-              selectedResidue={selectedResidue}
-              bindingQuality={binding.overallScore}
-              style={{ height: '100%' }}
-            />
+            <CatalystViewer3D enzyme={enzyme} renderMode={renderMode} spinEnabled={spinEnabled} onResidueClick={handleResidueClick} selectedResidue={selectedResidue} bindingQuality={binding.overallScore} style={{ height: '100%' }} />
             <InlineMetricOverlay
               position="top-right"
               metrics={[
@@ -832,78 +758,70 @@ export default function CatalystDesignerPage() {
         </div>
       </ToolTabPanel>
 
-      {/* ── Analysis Tab ──────────────────────────────────────── */}
-      <ToolTabPanel tabId="analysis" activeId={activeTab}>
+      {/* ── Binding Tab ── */}
+      <ToolTabPanel tabId="binding" activeId={activeTab}>
         <div style={{ flex: 1, overflowY: 'auto', padding: '12px 0' }}>
-          {/* Sub-tabs for analysis views */}
-          <div style={{ display: 'flex', gap: 2, marginBottom: '12px', flexWrap: 'wrap' }}>
-            {VIEW_MODES.map(vm => (
-              <button key={vm.key} onClick={() => setViewMode(vm.key)}
-                style={{
-                  fontFamily: T.SANS, fontSize: '10px', fontWeight: viewMode === vm.key ? 600 : 400,
-                  padding: '6px 14px', border: 'none', borderRadius: 10, cursor: 'pointer',
-                  background: viewMode === vm.key ? `${vm.color}20` : 'transparent',
-                  color: viewMode === vm.key ? vm.color : LABEL,
-                  transition: 'all 0.2s',
-                }}>
-                {viewMode === vm.key && <span style={{ marginRight: 4 }}>●</span>}
-                {vm.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Quick Stats */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6, marginBottom: '16px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6, marginBottom: '16px', padding: '0 12px' }}>
             <div style={{ ...GLASS, padding: '10px 12px', borderRadius: 14 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>Kd</span>
                 <span style={{ fontFamily: T.MONO, fontSize: '10px', color: kdQ.color }}>{kdQ.icon}</span>
               </div>
-              <p style={{ fontFamily: T.MONO, fontSize: '14px', color: VALUE, margin: '2px 0 0' }}>
-                {(mutationImpact?.newKd ?? binding.predictedKd).toFixed(1)}<span style={{ fontSize: '11px', color: LABEL }}> μM</span>
-              </p>
+              <p style={{ fontFamily: T.MONO, fontSize: '14px', color: VALUE, margin: '2px 0 0' }}>{(mutationImpact?.newKd ?? binding.predictedKd).toFixed(1)}<span style={{ fontSize: '11px', color: LABEL }}> μM</span></p>
             </div>
             <div style={{ ...GLASS, padding: '10px 12px', borderRadius: 14 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>Kcat</span>
                 <span style={{ fontFamily: T.MONO, fontSize: '10px', color: kcatQ.color }}>{kcatQ.icon}</span>
               </div>
-              <p style={{ fontFamily: T.MONO, fontSize: '14px', color: VALUE, margin: '2px 0 0' }}>
-                {(mutationImpact?.newKcat ?? enzyme.kcat).toFixed(2)}<span style={{ fontSize: '11px', color: LABEL }}> s⁻¹</span>
-              </p>
+              <p style={{ fontFamily: T.MONO, fontSize: '14px', color: VALUE, margin: '2px 0 0' }}>{(mutationImpact?.newKcat ?? enzyme.kcat).toFixed(2)}<span style={{ fontSize: '11px', color: LABEL }}> s⁻¹</span></p>
             </div>
             <div style={{ ...GLASS, padding: '10px 12px', borderRadius: 14 }}>
               <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>Km</span>
-              <p style={{ fontFamily: T.MONO, fontSize: '14px', color: VALUE, margin: '2px 0 0' }}>
-                {enzyme.km.toFixed(2)}<span style={{ fontSize: '11px', color: LABEL }}> mM</span>
-              </p>
+              <p style={{ fontFamily: T.MONO, fontSize: '14px', color: VALUE, margin: '2px 0 0' }}>{enzyme.km.toFixed(2)}<span style={{ fontSize: '11px', color: LABEL }}> mM</span></p>
             </div>
             <div style={{ ...GLASS, padding: '10px 12px', borderRadius: 14 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>Fit</span>
                 <span style={{ fontFamily: T.MONO, fontSize: '10px', color: fitQ.color }}>{fitQ.icon}</span>
               </div>
-              <p style={{ fontFamily: T.MONO, fontSize: '14px', color: VALUE, margin: '2px 0 0' }}>
-                {binding.overallScore.toFixed(2)}
-              </p>
+              <p style={{ fontFamily: T.MONO, fontSize: '14px', color: VALUE, margin: '2px 0 0' }}>{binding.overallScore.toFixed(2)}</p>
             </div>
           </div>
-
-          {/* Enzyme Properties */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6, marginBottom: '16px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6, marginBottom: '16px', padding: '0 12px' }}>
             <MetricCard label="Tm" value={enzyme.meltingTemp.toFixed(0)} unit="°C" />
             <MetricCard label="MW" value={enzyme.molecularWeight.toFixed(1)} unit="kDa" />
             <MetricCard label="pH opt" value={enzyme.optimalPH.toFixed(1)} />
           </div>
+          <div style={{ ...GLASS, borderRadius: 16, overflow: 'hidden', margin: '0 12px' }}>
+            <BindingView result={binding} enzyme={enzyme} />
+          </div>
+        </div>
+      </ToolTabPanel>
 
-          {/* View content */}
+      {/* ── Sequences Tab ── */}
+      <ToolTabPanel tabId="sequences" activeId={activeTab}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '12px 0' }}>
+          <div style={{ ...GLASS, borderRadius: 16, overflow: 'hidden', margin: '0 12px' }}>
+            <SequenceView result={sequences} />
+          </div>
+        </div>
+      </ToolTabPanel>
+
+      {/* ── Pareto Tab ── */}
+      <ToolTabPanel tabId="pareto" activeId={activeTab}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '12px' }}>
           <div style={{ ...GLASS, borderRadius: 16, overflow: 'hidden' }}>
-            {viewMode === 'Binding' && <BindingView result={binding} enzyme={enzyme} />}
-            {viewMode === 'Sequences' && <SequenceView result={sequences} />}
-            {viewMode === 'FluxCost' && <div style={{ padding: 8 }}><FluxCostView result={drain} /></div>}
-            {viewMode === 'Balancer' && <div style={{ padding: 8 }}><BalancerView result={balance} /></div>}
-            {viewMode === 'Pareto' && <div style={{ padding: 8 }}><ParetoView result={pareto} /></div>}
-            {viewMode === 'Mutagenesis' && <MutagenesisView result={mutagenesis} enzyme={enzyme} />}
+            <div style={{ padding: 8 }}><ParetoView result={pareto} /></div>
+          </div>
+        </div>
+      </ToolTabPanel>
+
+      {/* ── Mutagenesis Tab ── */}
+      <ToolTabPanel tabId="mutagenesis" activeId={activeTab}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '12px' }}>
+          <div style={{ ...GLASS, borderRadius: 16, overflow: 'hidden' }}>
+            <MutagenesisView result={mutagenesis} enzyme={enzyme} />
           </div>
         </div>
       </ToolTabPanel>
