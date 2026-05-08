@@ -29,6 +29,16 @@ import {
   workflowStatusLabel,
   type WorkflowExperienceStatus,
 } from './workflowExperience';
+import {
+  glassPanel,
+  glassPanelInset,
+  typography,
+  iconContainer,
+  statusChip,
+  cardVariants,
+  staggerContainer,
+  accentLeftBorder,
+} from './workbenchDesignSystem';
 
 interface WorkbenchStatusBarProps {
   moduleId: string | null;
@@ -360,38 +370,34 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
               ))}
             </div>
           ) : (
-            <div
+            <motion.div
+              variants={staggerContainer}
+              initial="hidden"
+              animate="visible"
               style={{
                 display: 'grid',
                 gap: '8px',
                 gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))',
               }}
             >
-              <div
+              <motion.div
+                variants={cardVariants}
                 style={{
-                  borderRadius: '14px',
-                  border: `1px solid ${BORDER}`,
-                  background: CARD_BG,
+                  ...glassPanel,
+                  ...accentLeftBorder(PATHD_THEME.sky, 2),
                   padding: '10px 12px',
-                  display: 'grid',
-                  gap: '6px',
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                  <span style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                    Current Object
-                  </span>
+                  <span style={typography.sectionTitle}>Current Object</span>
                   <span
                     style={{
-                        padding: '2px 7px',
-                        borderRadius: '999px',
-                        border: `1px solid ${project?.isDemo ? PATHD_THEME.chipBorderWarm : BORDER}`,
+                        ...statusChip.base,
+                        border: `1px solid ${project?.isDemo ? PATHD_THEME.chipBorderWarm : 'rgba(255,255,255,0.08)'}`,
                         background: project?.isDemo ? 'rgba(231,199,169,0.24)' : 'rgba(175,195,214,0.22)',
                         color: VALUE,
-                      fontFamily: T.MONO,
-                      fontSize: '9px',
-                      letterSpacing: '0.05em',
-                      textTransform: 'uppercase',
+                        fontSize: '9px',
+                        padding: '2px 7px',
                     }}
                   >
                     {project?.isDemo ? 'Demo' : 'Project'}
@@ -399,108 +405,91 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                   {stage && (
                     <span
                       style={{
-                        padding: '2px 7px',
-                        borderRadius: '999px',
-                        border: `1px solid ${BORDER}`,
-                        background: 'rgba(191,220,205,0.22)',
+                        ...statusChip.base,
+                        border: '1px solid rgba(191,220,205,0.22)',
+                        background: 'rgba(191,220,205,0.12)',
                         color: VALUE,
-                        fontFamily: T.MONO,
                         fontSize: '9px',
-                        letterSpacing: '0.05em',
-                        textTransform: 'uppercase',
+                        padding: '2px 7px',
                       }}
                     >
                       {stage.shortLabel}
                     </span>
                   )}
                 </div>
-                <div style={{ fontFamily: T.SANS, fontSize: '14px', fontWeight: 700, color: VALUE, letterSpacing: '-0.01em' }}>
+                <div style={{ ...typography.cardTitle, fontSize: '14px', letterSpacing: '-0.01em' }}>
                   {project?.title ?? 'Scientific workbench context not yet initialized'}
                 </div>
-                <div style={{ fontFamily: T.SANS, fontSize: '11px', color: LABEL, lineHeight: 1.55 }}>
+                <div style={typography.body}>
                   {analyzeArtifact
                     ? `${analyzeArtifact.targetProduct} · ${analyzeArtifact.nodes.length} nodes · ${analyzeArtifact.edges.length} edges`
                     : project?.summary ?? 'Start in Research or Analyze to create a traceable project object.'}
                 </div>
-              </div>
+              </motion.div>
 
-              <div
+              <motion.div
+                variants={cardVariants}
                 style={{
-                  borderRadius: '14px',
-                  border: `1px solid ${BORDER}`,
-                  background: CARD_BG,
+                  ...glassPanel,
                   padding: '10px 12px',
-                  display: 'grid',
-                  gap: '6px',
                 }}
               >
-                <span style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                  Evidence
-                </span>
-                <div style={{ fontFamily: T.SANS, fontSize: '16px', color: VALUE, fontWeight: 700 }}>
+                <span style={typography.sectionTitle}>Evidence</span>
+                <div style={{ ...typography.cardTitle, fontSize: '16px' }}>
                   {selectedEvidence.length}
                 </div>
-                <div style={{ fontFamily: T.SANS, fontSize: '11px', color: LABEL, lineHeight: 1.55 }}>
+                <div style={typography.body}>
                   {selectedEvidence.length
                     ? selectedEvidence[0]?.title
                     : project?.isDemo
                       ? 'Demo fallback is active.'
                       : 'Research bundle ready to attach.'}
                 </div>
-              </div>
+              </motion.div>
 
-              <div
+              <motion.div
+                variants={cardVariants}
                 style={{
-                  borderRadius: '14px',
-                  border: `1px solid ${BORDER}`,
-                  background: CARD_BG,
+                  ...glassPanel,
+                  ...accentLeftBorder(PATHD_THEME.lilac, 2),
                   padding: '10px 12px',
-                  display: 'grid',
-                  gap: '6px',
                 }}
               >
-                <span style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                  Stage Focus
-                </span>
-                <div style={{ fontFamily: T.SANS, fontSize: '12px', color: VALUE, fontWeight: 600 }}>
+                <span style={typography.sectionTitle}>Stage Focus</span>
+                <div style={typography.label}>
                   {stage?.label ?? 'Flowchart skeleton ready'}
                 </div>
-                <div style={{ fontFamily: T.SANS, fontSize: '11px', color: LABEL, lineHeight: 1.55 }}>
+                <div style={typography.body}>
                   {stageSummary}
                 </div>
-              </div>
+              </motion.div>
 
-              <div
+              <motion.div
+                variants={cardVariants}
                 style={{
-                  borderRadius: '14px',
-                  border: `1px solid ${BORDER}`,
-                  background: CARD_BG,
+                  ...glassPanel,
+                  ...accentLeftBorder(PATHD_THEME.mint, 2),
                   padding: '10px 12px',
-                  display: 'grid',
-                  gap: '6px',
                 }}
               >
-                <span style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                  Integrity
-                </span>
-                <div style={{ fontFamily: T.SANS, fontSize: '12px', color: VALUE, fontWeight: 600 }}>
+                <span style={typography.sectionTitle}>Integrity</span>
+                <div style={typography.label}>
                   {executionSummary}
                 </div>
-                <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, lineHeight: 1.5 }}>
+                <div style={typography.caption}>
                   {syncLabel} · {backendMeta?.runArtifactCount ?? runArtifacts.length} runs · {backendMeta?.experimentCount ?? experimentRecords.length} experiments
                 </div>
-              </div>
-            </div>
+              </motion.div>
+            </motion.div>
           )}
 
-          <div
+          <motion.div
+            variants={cardVariants}
+            initial="hidden"
+            animate="visible"
             style={{
-              borderRadius: compactHeader ? '14px' : '16px',
-              border: `1px solid ${BORDER}`,
-              background: CARD_BG,
+              ...glassPanel,
               padding: compactHeader ? '8px 10px' : '12px 14px',
-              display: 'grid',
-              gap: compactHeader ? '8px' : '10px',
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' }}>
@@ -595,7 +584,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                 </span>
               )}
             </div>
-          </div>
+          </motion.div>
 
           {visibleNextTools.length > 0 && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
@@ -680,17 +669,17 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
               <div
                 style={{
                   padding: '14px 16px',
-                  borderBottom: `1px solid ${BORDER}`,
+                  borderBottom: `1px solid rgba(255,255,255,0.06)`,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
                 }}
               >
                 <div>
-                  <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                  <div style={typography.sectionTitle}>
                     Evidence Drawer
                   </div>
-                  <div style={{ fontFamily: T.SANS, fontSize: '14px', color: VALUE, fontWeight: 700 }}>
+                  <div style={{ ...typography.cardTitle, fontSize: '14px' }}>
                     Evidence Chain & Next Steps
                   </div>
                 </div>
@@ -701,10 +690,14 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                     width: 30,
                     height: 30,
                     borderRadius: '999px',
-                    border: `1px solid ${BORDER}`,
-                    background: CARD_BG,
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    background: 'rgba(16, 19, 26, 0.6)',
                     color: LABEL,
                     cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'border-color 0.2s ease',
                   }}
                 >
                   <X size={14} />
@@ -712,47 +705,42 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
               </div>
 
               <div style={{ flex: 1, overflowY: 'auto', padding: '14px 16px', display: 'grid', gap: '14px' }}>
-                <section style={{ display: 'grid', gap: '8px' }}>
-                  <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                <motion.section variants={staggerContainer} initial="hidden" animate="visible" style={{ display: 'grid', gap: '8px' }}>
+                  <motion.div variants={cardVariants} style={typography.sectionTitle}>
                     Closed-loop Feedback
-                  </div>
-                  <div
+                  </motion.div>
+                  <motion.div
+                    variants={cardVariants}
                     style={{
-                      borderRadius: '14px',
-                      border: `1px solid ${BORDER}`,
-                      background: CARD_BG,
-                      padding: '10px 12px',
-                      display: 'grid',
-                      gap: '4px',
+                      ...glassPanel,
+                      padding: '12px 14px',
                     }}
                   >
-                    <div style={{ fontFamily: T.SANS, fontSize: '12px', color: VALUE, fontWeight: 600 }}>
+                    <div style={typography.label}>
                       {feedbackLabel}
                     </div>
-	                    <div style={{ fontFamily: T.SANS, fontSize: '11px', color: LABEL, lineHeight: 1.55 }}>
-	                      {dbtlPayload?.feedbackSource === 'committed'
-	                        ? 'Upstream stage seeds require approved typed LearnedDeltaPacks before incorporating DBTL learning.'
-	                        : 'Draft DBTL output remains visible, but upstream reseeding waits for committed and approved typed learning.'}
-	                    </div>
-                  </div>
-                </section>
+                    <div style={typography.body}>
+                      {dbtlPayload?.feedbackSource === 'committed'
+                        ? 'Upstream stage seeds require approved typed LearnedDeltaPacks before incorporating DBTL learning.'
+                        : 'Draft DBTL output remains visible, but upstream reseeding waits for committed and approved typed learning.'}
+                    </div>
+                  </motion.div>
+                </motion.section>
 
                 {moduleId && (
-                  <section style={{ display: 'grid', gap: '8px' }}>
-                    <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                  <motion.section variants={staggerContainer} initial="hidden" animate="visible" style={{ display: 'grid', gap: '8px' }}>
+                    <motion.div variants={cardVariants} style={typography.sectionTitle}>
                       Execution Integrity
-                    </div>
-                    <div
+                    </motion.div>
+                    <motion.div
+                      variants={cardVariants}
                       style={{
-                        borderRadius: '14px',
-                        border: `1px solid ${BORDER}`,
-                        background: freshness.status === 'stale' ? 'rgba(232,163,161,0.18)' : CARD_BG,
-                        padding: '10px 12px',
-                        display: 'grid',
-                        gap: '4px',
+                        ...glassPanel,
+                        ...accentLeftBorder(freshness.status === 'stale' ? PATHD_THEME.coral : PATHD_THEME.mint, 2),
+                        padding: '12px 14px',
                       }}
                     >
-                      <div style={{ fontFamily: T.SANS, fontSize: '12px', color: VALUE, fontWeight: 600 }}>
+                      <div style={typography.label}>
                         {freshness.status === 'fresh'
                           ? 'Current run is aligned with upstream context'
                           : freshness.status === 'stale'
@@ -761,107 +749,99 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                               ? 'Upstream data is ready, but this tool has not been rerun'
                               : 'No auditable run recorded yet'}
                       </div>
-                      <div style={{ fontFamily: T.SANS, fontSize: '11px', color: LABEL, lineHeight: 1.55 }}>
+                      <div style={typography.body}>
                         {freshness.summary}
                       </div>
-                    </div>
-                  </section>
+                    </motion.div>
+                  </motion.section>
                 )}
 
-                <section style={{ display: 'grid', gap: '8px' }}>
-                  <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                <motion.section variants={staggerContainer} initial="hidden" animate="visible" style={{ display: 'grid', gap: '8px' }}>
+                  <motion.div variants={cardVariants} style={typography.sectionTitle}>
                     Canonical State
-                  </div>
-                  <div
+                  </motion.div>
+                  <motion.div
+                    variants={cardVariants}
                     style={{
-                      borderRadius: '14px',
-                      border: `1px solid ${BORDER}`,
-                      background: CARD_BG,
-                      padding: '10px 12px',
-                      display: 'grid',
-                      gap: '4px',
+                      ...glassPanel,
+                      padding: '12px 14px',
                     }}
                   >
-                    <div style={{ fontFamily: T.SANS, fontSize: '12px', color: VALUE, fontWeight: 600 }}>
+                    <div style={typography.label}>
                       {syncLabel}
                     </div>
-                    <div style={{ fontFamily: T.SANS, fontSize: '11px', color: LABEL, lineHeight: 1.55 }}>
+                    <div style={typography.body}>
                       {runArtifacts.length
                         ? `${backendMeta?.runArtifactCount ?? runArtifacts.length} immutable run artifact(s) retained for provenance and downstream audit.`
                         : 'No immutable run artifacts yet. Execute a tool to create auditable state.'}
                     </div>
                     {backendMeta && (
-                      <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL }}>
+                      <div style={typography.caption}>
                         {backendMeta.driver} · project {backendMeta.projectId} · actor {backendMeta.actorId} · rev {backendMeta.revision} · {backendMeta.auditCount} sync audit event(s)
                       </div>
                     )}
-                  </div>
-                </section>
+                  </motion.div>
+                </motion.section>
 
-                <section style={{ display: 'grid', gap: '8px' }}>
-                  <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                <motion.section variants={staggerContainer} initial="hidden" animate="visible" style={{ display: 'grid', gap: '8px' }}>
+                  <motion.div variants={cardVariants} style={typography.sectionTitle}>
                     Active Evidence
-                  </div>
+                  </motion.div>
                   {selectedEvidence.length ? selectedEvidence.map((item) => (
-                    <div
+                    <motion.div
                       key={item.id}
+                      variants={cardVariants}
                       style={{
-                        borderRadius: '14px',
-                        border: `1px solid ${BORDER}`,
-                        background: CARD_BG,
-                        padding: '10px 12px',
-                        display: 'grid',
-                        gap: '4px',
+                        ...glassPanel,
+                        padding: '12px 14px',
                       }}
                     >
-                      <div style={{ fontFamily: T.SANS, fontSize: '12px', color: VALUE, fontWeight: 600 }}>
+                      <div style={typography.label}>
                         {item.title}
                       </div>
-                      <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL }}>
+                      <div style={typography.caption}>
                         {[item.source ?? item.journal, item.year].filter(Boolean).join(' · ')}
                       </div>
-                      <div style={{ fontFamily: T.SANS, fontSize: '11px', color: LABEL, lineHeight: 1.55 }}>
+                      <div style={typography.body}>
                         {item.abstract.slice(0, 180)}{item.abstract.length > 180 ? '…' : ''}
                       </div>
-                    </div>
+                    </motion.div>
                   )) : (
-                    <div style={{ fontFamily: T.SANS, fontSize: '12px', color: LABEL, lineHeight: 1.6 }}>
+                    <motion.div variants={cardVariants} style={typography.body}>
                       No evidence has been selected yet. Save papers in Research to build a bundle.
-                    </div>
+                    </motion.div>
                   )}
-                </section>
+                </motion.section>
 
-                <section style={{ display: 'grid', gap: '8px' }}>
-                  <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                <motion.section variants={staggerContainer} initial="hidden" animate="visible" style={{ display: 'grid', gap: '8px' }}>
+                  <motion.div variants={cardVariants} style={typography.sectionTitle}>
                     Analyze Artifact
-                  </div>
+                  </motion.div>
                   {analyzeArtifact ? (
-                    <div
+                    <motion.div
+                      variants={cardVariants}
                       style={{
-                        borderRadius: '14px',
-                        border: `1px solid ${BORDER}`,
-                        background: CARD_BG,
-                        padding: '10px 12px',
-                        display: 'grid',
-                        gap: '6px',
+                        ...glassPanel,
+                        ...accentLeftBorder(PATHD_THEME.lilac, 2),
+                        padding: '12px 14px',
                       }}
                     >
-                      <div style={{ fontFamily: T.SANS, fontSize: '12px', color: VALUE, fontWeight: 600 }}>
+                      <div style={typography.label}>
                         {analyzeArtifact.title}
                       </div>
-                      <div style={{ fontFamily: T.SANS, fontSize: '11px', color: LABEL, lineHeight: 1.55 }}>
+                      <div style={typography.body}>
                         {analyzeArtifact.summary}
                       </div>
-                      <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL }}>
+                      <div style={typography.caption}>
                         {`${analyzeArtifact.nodes.length} nodes · ${analyzeArtifact.edges.length} edges · ${analyzeArtifact.bottleneckAssumptions.length} bottleneck assumptions`}
                       </div>
-                    </div>
+                    </motion.div>
                   ) : (
-                    <div style={{ fontFamily: T.SANS, fontSize: '12px', color: LABEL, lineHeight: 1.6 }}>
+                    <motion.div variants={cardVariants} style={typography.body}>
                       Analyze has not generated a structured artifact yet.
-                    </div>
+                    </motion.div>
                   )}
-                </section>
+                </motion.section>
 
                 <WorkbenchEvidenceTracePanel toolId={moduleId} />
 
@@ -894,81 +874,73 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                   limit={7}
                 />
 
-                <section style={{ display: 'grid', gap: '8px' }}>
-                  <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                <motion.section variants={staggerContainer} initial="hidden" animate="visible" style={{ display: 'grid', gap: '8px' }}>
+                  <motion.div variants={cardVariants} style={typography.sectionTitle}>
                     Next Step Panel
-                  </div>
+                  </motion.div>
                   {nextRecommendations.length ? nextRecommendations.map((recommendation) => {
                     const tool = TOOL_BY_ID[recommendation.toolId];
                     if (!tool) return null;
                     return (
-                      <Link
-                        key={recommendation.id}
-                        href={tool.href}
-                        style={{
-                          borderRadius: '14px',
-                          border: `1px solid ${BORDER}`,
-                          background: CARD_BG,
-                          padding: '10px 12px',
-                          display: 'grid',
-                          gap: '4px',
-                          textDecoration: 'none',
-                        }}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
-                          <span style={{ fontFamily: T.SANS, fontSize: '12px', color: VALUE, fontWeight: 600 }}>
-                            {tool.name}
-                          </span>
-                          <span style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL }}>
-                            {tool.shortLabel}
-                          </span>
-                        </div>
-                        <div style={{ fontFamily: T.SANS, fontSize: '11px', color: LABEL, lineHeight: 1.55 }}>
-                          {recommendation.reason}
-                        </div>
-                      </Link>
+                      <motion.div key={recommendation.id} variants={cardVariants} whileHover="hover">
+                        <Link
+                          href={tool.href}
+                          style={{
+                            ...glassPanel,
+                            padding: '12px 14px',
+                            textDecoration: 'none',
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+                            <span style={typography.label}>
+                              {tool.name}
+                            </span>
+                            <span style={typography.caption}>
+                              {tool.shortLabel}
+                            </span>
+                          </div>
+                          <div style={typography.body}>
+                            {recommendation.reason}
+                          </div>
+                        </Link>
+                      </motion.div>
                     );
                   }) : (
-                    <div style={{ fontFamily: T.SANS, fontSize: '12px', color: LABEL, lineHeight: 1.6 }}>
+                    <motion.div variants={cardVariants} style={typography.body}>
                       No recommended next step yet. Run Analyze or open a stage tool to get handoff guidance.
-                    </div>
+                    </motion.div>
                   )}
-                </section>
+                </motion.section>
 
                 {CROSS_STAGE_TOOL_IDS.length > 0 && (
-                  <section style={{ display: 'grid', gap: '8px' }}>
-                    <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                  <motion.section variants={staggerContainer} initial="hidden" animate="visible" style={{ display: 'grid', gap: '8px' }}>
+                    <motion.div variants={cardVariants} style={typography.sectionTitle}>
                       Cross-Stage Intelligence
-                    </div>
+                    </motion.div>
                     {CROSS_STAGE_TOOL_IDS.map((toolId) => {
                       const tool = TOOL_BY_ID[toolId];
                       if (!tool) return null;
                       return (
-                        <Link
-                          key={toolId}
-                          href={tool.href}
-                          style={{
-                            borderRadius: '14px',
-                            border: `1px solid ${BORDER}`,
-                            background: CARD_BG,
-                            padding: '10px 12px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            gap: '10px',
-                            textDecoration: 'none',
-                            color: VALUE,
-                            fontFamily: T.SANS,
-                            fontSize: '12px',
-                            fontWeight: 600,
-                          }}
-                        >
-                          <span>{tool.name}</span>
-                          <Workflow size={13} />
-                        </Link>
+                        <motion.div key={toolId} variants={cardVariants} whileHover="hover">
+                          <Link
+                            href={tool.href}
+                            style={{
+                              ...glassPanel,
+                              padding: '12px 14px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              gap: '10px',
+                              textDecoration: 'none',
+                            }}
+                          >
+                            <span style={typography.label}>{tool.name}</span>
+                            <Workflow size={13} color={PATHD_THEME.sky} />
+                          </Link>
+                        </motion.div>
                       );
                     })}
-                  </section>
+                  </motion.section>
                 )}
               </div>
             </motion.aside>
