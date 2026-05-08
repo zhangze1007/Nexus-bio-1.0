@@ -15,11 +15,12 @@ interface FloatingControlRailProps {
 
 export default function FloatingControlRail({
   children,
-  width = 200,
+  width = 240,
   label = 'Controls',
   defaultCollapsed = false,
 }: FloatingControlRailProps) {
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
+  const contentId = 'floating-rail-content';
 
   return (
     <motion.div
@@ -34,7 +35,11 @@ export default function FloatingControlRail({
         flexDirection: 'column',
       }}
     >
-      <div
+      <button
+        type="button"
+        aria-expanded={!collapsed}
+        aria-controls={contentId}
+        aria-label={`${collapsed ? 'Expand' : 'Collapse'} ${label}`}
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -42,6 +47,11 @@ export default function FloatingControlRail({
           padding: '10px 12px',
           borderBottom: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
           cursor: 'pointer',
+          background: 'transparent',
+          border: 'none',
+          width: '100%',
+          color: 'inherit',
+          font: 'inherit',
         }}
         onClick={() => setCollapsed(!collapsed)}
       >
@@ -63,11 +73,12 @@ export default function FloatingControlRail({
         ) : (
           <ChevronLeft size={14} color={PATHD_THEME.label} />
         )}
-      </div>
+      </button>
 
       <AnimatePresence>
         {!collapsed && (
           <motion.div
+            id={contentId}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
