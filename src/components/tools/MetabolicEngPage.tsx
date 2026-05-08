@@ -28,6 +28,7 @@ import WorkbenchInlineContext from '../workbench/WorkbenchInlineContext';
 import ScientificHero from './shared/ScientificHero';
 import ScientificMethodStrip from './shared/ScientificMethodStrip';
 import { PATHD_THEME } from '../workbench/workbenchTheme';
+import type { ToolTab } from './shared/ToolTabBar';
 import { metabolicMachine } from '../../machines/metabolicMachine';
 import type { FBAWorkerIn, FBAWorkerOut } from '../../workers/fbaWorker';
 import { deriveAnalyzeCompatibilityProjection } from '../../domain/workflowArtifactAdapters';
@@ -37,6 +38,11 @@ import { useWorkbenchStore } from '../../store/workbenchStore';
 import pathwayNodes from '../../data/pathwayData.json';
 import type { PathwayNode, PathwayEdge } from '../../types';
 import { T } from '../ide/tokens';
+
+const PATHD_TABS: ToolTab[] = [
+  { id: 'lab', label: 'Lab', accent: PATHD_THEME.sky },
+  { id: 'analysis', label: 'Analysis', accent: PATHD_THEME.mint },
+];
 
 // ── Demo pathway edges (Artemisinin biosynthesis — Ro et al. 2006) ─────
 const DEMO_EDGES: PathwayEdge[] = [
@@ -157,6 +163,7 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
   const setToolPayload = useWorkbenchStore((s) => s.setToolPayload);
 
   // ── Dismissible center dashboards — let user clear the view of the 3D canvas
+  const [activeTab, setActiveTab] = useState('lab');
   const [heroDismissed, setHeroDismissed] = useState(embedded);
   const [methodStripDismissed, setMethodStripDismissed] = useState(embedded);
   const stageRef = useRef<HTMLDivElement | null>(null);
@@ -686,6 +693,37 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
         state={state}
       />
 
+      {/* ── Floating tab bar ── */}
+      {!embedded && (
+        <div style={{
+          position: 'absolute', top: 12, left: '50%', transform: 'translateX(-50%)',
+          zIndex: 30, display: 'flex', gap: '2px',
+          background: 'rgba(10,12,16,0.72)', backdropFilter: 'blur(16px) saturate(135%)',
+          WebkitBackdropFilter: 'blur(16px) saturate(135%)',
+          borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)',
+          padding: '3px',
+        }}>
+          {PATHD_TABS.map(tab => {
+            const isActive = tab.id === activeTab;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                style={{
+                  padding: '6px 14px', borderRadius: '8px', border: 'none', cursor: 'pointer',
+                  fontFamily: T.SANS, fontSize: '11px', fontWeight: isActive ? 600 : 400,
+                  color: isActive ? tab.accent : PATHD_THEME.label,
+                  background: isActive ? 'rgba(255,255,255,0.1)' : 'transparent',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {embedded ? (
         <div ref={supportFrameRef} className="nb-pathd-support-dock">
           <div className="nb-pathd-support-dock__grid">
@@ -766,7 +804,7 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
             ))}
           </div>
         </div>
-      ) : (
+      ) : activeTab === 'analysis' ? (
         <div
           ref={supportFrameRef}
           className="nb-pathd-hero-stack nb-pathd-hero-stack--rail"
@@ -909,7 +947,7 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
             </div>
           )}
         </div>
-      )}
+      ) : null}
 
       {/* ── Center: 3D Pathway Visualization — full-screen, panels float over ── */}
       <div style={{ position:'absolute', inset:0, zIndex:5, pointerEvents:'auto' }}>
@@ -932,6 +970,7 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
       </div>
 
       {/* ── Left tool panel ── */}
+      {(embedded || activeTab === 'lab') && (
       <div style={{ position:'absolute', inset:0, zIndex:10, pointerEvents:'none' }}>
         <div ref={leftPanelFrameRef} style={{ pointerEvents:'auto' }}>
           <ToolOverlay
@@ -949,8 +988,10 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
           />
         </div>
       </div>
+      )}
 
       {/* ── Right status panel ── */}
+      {(embedded || activeTab === 'lab') && (
       <div style={{ position:'absolute', inset:0, zIndex:10, pointerEvents:'none' }}>
         <div ref={rightPanelFrameRef} style={{ pointerEvents:'auto' }}>
           <StatusOverlay
@@ -963,6 +1004,7 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
           />
         </div>
       </div>
+      )}
 
       {/* ── Idle prompt — clickable start button ── */}
       <AnimatePresence>
