@@ -1,5 +1,14 @@
 # Nexus-Bio 1.0
 
+![Next.js](https://img.shields.io/badge/Next.js-14-black?logo=next.js&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?logo=typescript&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3.10+-yellow?logo=python&logoColor=blue)
+![Vercel](https://img.shields.io/badge/Vercel-Deployed-black?logo=vercel&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-green)
+![Status](https://img.shields.io/badge/Status-Research%20in%20Progress-orange)
+![Trust Runtime](https://img.shields.io/badge/Trust%20Runtime-v0-purple)
+![Bio Adapters](https://img.shields.io/badge/Bio%20Adapters-14-teal)
+
 **Assumption-Gated Scientific Inference Runtime**
 
 Nexus-Bio is an assumption-gated scientific inference runtime for synthetic biology workflows.
