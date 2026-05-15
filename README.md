@@ -1,13 +1,12 @@
 # Nexus-Bio 1.0
 
-![Next.js](https://img.shields.io/badge/Next.js-14-black?logo=next.js&logoColor=white)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?logo=typescript&logoColor=white)
-![Python](https://img.shields.io/badge/Python-3.10+-yellow?logo=python&logoColor=blue)
-![Vercel](https://img.shields.io/badge/Vercel-Deployed-black?logo=vercel&logoColor=white)
-![License](https://img.shields.io/badge/License-MIT-green)
-![Status](https://img.shields.io/badge/Status-Research%20in%20Progress-orange)
-![Trust Runtime](https://img.shields.io/badge/Trust%20Runtime-v0-purple)
-![Bio Adapters](https://img.shields.io/badge/Bio%20Adapters-14-teal)
+![Next.js](https://img.shields.io/badge/Next.js-14-000000?style=flat-square&logo=next.js&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6?style=flat-square&logo=typescript&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3.10+-FFD43B?style=flat-square&logo=python&logoColor=blue)
+![Vercel](https://img.shields.io/badge/Vercel-Deployed-000000?style=flat-square&logo=vercel&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-4CAF50?style=flat-square)
+![Trust Runtime](https://img.shields.io/badge/Trust_Runtime-v0-9C27B0?style=flat-square)
+![Bio Adapters](https://img.shields.io/badge/Bio_Adapters-14-009688?style=flat-square)
 
 **Assumption-Gated Scientific Inference Runtime**
 
