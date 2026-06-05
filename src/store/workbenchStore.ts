@@ -196,31 +196,31 @@ function summarizePayload<K extends keyof WorkbenchToolPayloadMap>(toolId: K, pa
   if (!payload) return `${String(toolId).toUpperCase()} updated`;
   switch (toolId) {
     case 'pathd': {
-      const data = payload as WorkbenchToolPayloadMap['pathd'];
+      const data = (payload as WorkbenchToolPayloadMap['pathd'])!;
       return `PATHD ${data.activeRouteLabel} · ${data.nodeCount} nodes · ${data.result.bottleneckCount} bottlenecks`;
     }
     case 'fbasim': {
-      const data = payload as WorkbenchToolPayloadMap['fbasim'];
+      const data = (payload as WorkbenchToolPayloadMap['fbasim'])!;
       return `FBA ${data.mode} run · growth ${data.result.growthRate.toFixed(3)} · feasible ${data.result.feasible ? 'yes' : 'no'}`;
     }
     case 'cethx': {
-      const data = payload as WorkbenchToolPayloadMap['cethx'];
+      const data = (payload as WorkbenchToolPayloadMap['cethx'])!;
       return `Thermo ${data.pathway} · ΔG ${data.result.gibbsFreeEnergy.toFixed(1)} · η ${data.result.efficiency.toFixed(1)}%`;
     }
     case 'catdes': {
-      const data = payload as WorkbenchToolPayloadMap['catdes'];
+      const data = (payload as WorkbenchToolPayloadMap['catdes'])!;
       return `Catalyst ${data.selectedEnzymeName} · ${data.designCount} designs · viable ${data.result.isViable ? 'yes' : 'no'}`;
     }
     case 'dyncon': {
-      const data = payload as WorkbenchToolPayloadMap['dyncon'];
+      const data = (payload as WorkbenchToolPayloadMap['dyncon'])!;
       return `Dynamic control · titer ${data.result.productTiter.toFixed(2)} · stable ${data.result.stable ? 'yes' : 'no'}`;
     }
     case 'cellfree': {
-      const data = payload as WorkbenchToolPayloadMap['cellfree'];
+      const data = (payload as WorkbenchToolPayloadMap['cellfree'])!;
       return `Cell-free ${data.targetConstruct} · ${data.result.totalProteinYield.toFixed(2)} mg/mL`;
     }
     case 'dbtlflow': {
-      const data = payload as WorkbenchToolPayloadMap['dbtlflow'];
+      const data = (payload as WorkbenchToolPayloadMap['dbtlflow'])!;
       const typedMetricCount = Object.values(data.result.feedback?.learnedMetrics ?? {})
         .filter((value) => typeof value === 'number')
         .length;
@@ -228,27 +228,27 @@ function summarizePayload<K extends keyof WorkbenchToolPayloadMap>(toolId: K, pa
       return `DBTL ${data.proposedPhase} · pass ${data.passed ? 'yes' : 'no'} · ${typedMetricCount || legacyLearnedCount} learned`;
     }
     case 'proevol': {
-      const data = payload as WorkbenchToolPayloadMap['proevol'];
+      const data = (payload as WorkbenchToolPayloadMap['proevol'])!;
       return `PROEVOL ${data.targetProtein} · round ${data.currentRound}/${data.totalRounds} · lead ${data.result.leadVariantName}`;
     }
     case 'gecair': {
-      const data = payload as WorkbenchToolPayloadMap['gecair'];
+      const data = (payload as WorkbenchToolPayloadMap['gecair'])!;
       return `Gene circuit ${data.gateType} · output ${data.result.outputLevel.toFixed(2)}`;
     }
     case 'genmim': {
-      const data = payload as WorkbenchToolPayloadMap['genmim'];
+      const data = (payload as WorkbenchToolPayloadMap['genmim'])!;
       return `Genome minimizer · ${data.result.selectedTargets} targets · risk ${data.result.offTargetRisk.toFixed(2)}`;
     }
     case 'multio': {
-      const data = payload as WorkbenchToolPayloadMap['multio'];
+      const data = (payload as WorkbenchToolPayloadMap['multio'])!;
       return `Multi-omics ${data.selectedGene} · ${data.result.significantCount} significant signals`;
     }
     case 'scspatial': {
-      const data = payload as WorkbenchToolPayloadMap['scspatial'];
+      const data = (payload as WorkbenchToolPayloadMap['scspatial'])!;
       return `Spatial ${data.highlightGene} · cluster ${data.result.highestYieldCluster}`;
     }
     case 'nexai': {
-      const data = payload as WorkbenchToolPayloadMap['nexai'];
+      const data = (payload as WorkbenchToolPayloadMap['nexai'])!;
       return `Axon ${data.result.mode} · ${data.result.citations} citations · ${(data.result.confidence * 100).toFixed(0)}% confidence`;
     }
     default:

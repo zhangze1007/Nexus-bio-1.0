@@ -1,17 +1,17 @@
 /** @jest-environment node */
-import type { WorkbenchToolPayloadMap } from '../src/store/workbenchPayloads';
+import type { CatalystWorkbenchPayload, WorkbenchToolPayloadMap } from '../src/store/workbenchPayloads';
 import type { ProvenanceEntry as WorkbenchProvenanceEntry } from '../src/types/assumptions';
 
 type StoreModule = typeof import('../src/store/workbenchStore');
 
 function withFreshStore<T>(fn: (mod: StoreModule) => T): T {
-  let result: T;
+  let result!: T;
   jest.isolateModules(() => {
     const mod = require('../src/store/workbenchStore') as StoreModule;
     mod.__resetWorkflowActorForTests();
     result = fn(mod);
   });
-  return result as T;
+  return result;
 }
 
 function setTarget(useStore: StoreModule['useWorkbenchStore'], target: string): void {
@@ -105,7 +105,7 @@ function fbasim(updatedAt = 2): WorkbenchToolPayloadMap['fbasim'] {
       nadhProduction: 7,
       carbonEfficiency: 0.71,
       feasible: true,
-      shadowPrices: { glc: -0.1, o2: -0.2, atp: 0.12 },
+      sensitivityCoefficients: { glc: -0.1, o2: -0.2, atp: 0.12 },
       topFluxes: [{ reactionId: 'R1', flux: 2.4 }],
     },
     runProvenance: workbenchProvenance('fbasim', updatedAt),
@@ -113,7 +113,7 @@ function fbasim(updatedAt = 2): WorkbenchToolPayloadMap['fbasim'] {
   };
 }
 
-function catdes(updatedAt = 3): WorkbenchToolPayloadMap['catdes'] {
+function catdes(updatedAt = 3): CatalystWorkbenchPayload {
   return {
     validity: 'partial',
     toolId: 'catdes',

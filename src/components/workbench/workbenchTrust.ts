@@ -150,19 +150,19 @@ export function getFreshnessMap(
 }
 
 function isCellFreePayload(payload: WorkbenchRunArtifact['payloadSnapshot']) {
-  return payload.toolId === 'cellfree';
+  return payload?.toolId === 'cellfree';
 }
 
 function isDBTLPayload(payload: WorkbenchRunArtifact['payloadSnapshot']) {
-  return payload.toolId === 'dbtlflow';
+  return payload?.toolId === 'dbtlflow';
 }
 
 function isMultiOPayload(payload: WorkbenchRunArtifact['payloadSnapshot']) {
-  return payload.toolId === 'multio';
+  return payload?.toolId === 'multio';
 }
 
 function isSpatialPayload(payload: WorkbenchRunArtifact['payloadSnapshot']) {
-  return payload.toolId === 'scspatial';
+  return payload?.toolId === 'scspatial';
 }
 
 export function buildExperimentLedger(runArtifacts: WorkbenchRunArtifact[], limit = 8): WorkbenchExperimentLedgerEntry[] {

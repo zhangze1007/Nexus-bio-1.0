@@ -74,7 +74,7 @@ function fbasim(feasible: boolean, uncertainty: number, updatedAt: number): Work
       nadhProduction: 7,
       carbonEfficiency: 0.71,
       feasible,
-      shadowPrices: {
+      sensitivityCoefficients: {
         glc: -0.1,
         o2: -0.2,
         atp: uncertainty,

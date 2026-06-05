@@ -96,7 +96,7 @@ function getBaseMeasuredInsets(): PathdSceneInsets {
 }
 
 function sceneInsetsEqual(a: PathdSceneInsets | null, b: PathdSceneInsets) {
-  return Boolean(a) && a.top === b.top && a.right === b.right && a.bottom === b.bottom && a.left === b.left;
+  return a !== null && a.top === b.top && a.right === b.right && a.bottom === b.bottom && a.left === b.left;
 }
 
 function ArtifactRouteState({

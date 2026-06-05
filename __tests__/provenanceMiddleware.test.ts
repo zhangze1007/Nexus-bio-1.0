@@ -1,6 +1,6 @@
 /** @jest-environment node */
 import type { ProvenanceEntry } from '../src/protocol/nexusTrustRuntime';
-import type { WorkbenchToolPayloadMap } from '../src/store/workbenchPayloads';
+import type { PathDWorkbenchPayload, WorkbenchToolPayloadMap } from '../src/store/workbenchPayloads';
 import type { ProvenanceEntry as WorkbenchProvenanceEntry } from '../src/types/assumptions';
 import {
   appendRunProvenance,
@@ -56,7 +56,7 @@ function protocolProvenance(overrides: Partial<ProvenanceEntry> = {}): Provenanc
   };
 }
 
-function pathd(updatedAt = 1): WorkbenchToolPayloadMap['pathd'] {
+function pathd(updatedAt = 1): PathDWorkbenchPayload {
   return {
     validity: 'partial',
     toolId: 'pathd',
@@ -95,7 +95,7 @@ function fbasim(updatedAt = 2): WorkbenchToolPayloadMap['fbasim'] {
       nadhProduction: 7,
       carbonEfficiency: 0.71,
       feasible: true,
-      shadowPrices: { glc: -0.1, o2: -0.2, atp: 0.12 },
+      sensitivityCoefficients: { glc: -0.1, o2: -0.2, atp: 0.12 },
       topFluxes: [{ reactionId: 'R1', flux: 2.4 }],
     },
     updatedAt,
@@ -265,7 +265,7 @@ describe('provenance middleware', () => {
         upstreamProvenance: ['pathd:1'],
       },
     });
-    expect(payload.runProvenance.evidence).toEqual([]);
+    expect(payload.runProvenance!.evidence).toEqual([]);
   });
 
   it('does not crash on primitive payloads', () => {
@@ -347,7 +347,7 @@ describe('provenance middleware', () => {
         outputAssumptions: ['dyncon.rk4_real', 'dyncon.parameters_reference', 'dyncon.no_noise'],
       });
       const catdesRun = state.runArtifacts.find((artifact) => artifact.toolId === 'catdes');
-      expect(state.toolPayloads.catdes?.runProvenance ?? catdesRun?.payloadSnapshot.runProvenance).toMatchObject({
+      expect(state.toolPayloads.catdes?.runProvenance ?? catdesRun?.payloadSnapshot?.runProvenance).toMatchObject({
         toolId: 'catdes',
         outputAssumptions: [
           'catdes.warshel_dielectric',
@@ -363,7 +363,7 @@ describe('provenance middleware', () => {
           outputAssumptions: ['dbtlflow.heuristic_learning', 'dbtlflow.sbol_real'],
         },
       });
-      expect(state.toolPayloads.dbtlflow?.runProvenance ?? dbtlRun?.payloadSnapshot.runProvenance).toMatchObject({
+      expect(state.toolPayloads.dbtlflow?.runProvenance ?? dbtlRun?.payloadSnapshot?.runProvenance).toMatchObject({
         toolId: 'dbtlflow',
         outputAssumptions: ['dbtlflow.heuristic_learning', 'dbtlflow.sbol_real'],
       });

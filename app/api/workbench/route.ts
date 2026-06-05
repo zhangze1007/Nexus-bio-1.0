@@ -138,8 +138,8 @@ export async function PUT(request: Request) {
       { status: 500 },
     );
   }
-  const scopeId = needsArtifactScope
-    ? resolvedArtifactId
+  const scopeId: string = needsArtifactScope
+    ? resolvedArtifactId!
     : incoming.project?.id ?? scopedProjectId ?? 'default-workbench';
   const explicitScope = needsArtifactScope ? { forceExplicit: true as const } : undefined;
   if (needsArtifactScope && process.env.NODE_ENV !== 'production') {

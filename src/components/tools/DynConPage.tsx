@@ -79,8 +79,8 @@ function TimeSeriesSVG({ trajectory, setpoint, svgRef }: { trajectory: ODEState[
     { key: 'biomass',       label: 'Biomass',   color: 'rgba(207,196,227,0.92)', max: Math.max(0.001, ...trajectory.map((point) => point.biomass)),        unit: 'g/L'  },
     { key: 'substrate',     label: 'Substrate', color: 'rgba(231,199,169,0.92)', max: Math.max(0.001, ...trajectory.map((point) => point.substrate)),      unit: 'g/L'  },
     { key: 'dissolvedO2',   label: 'DO₂',       color: 'rgba(175,195,214,0.9)',  max: 1,                                                                    unit: 'sat.' },
-    { key: 'fpp',           label: 'FPP',       color: 'rgba(232,163,161,0.94)', max: Math.max(0.001, ...trajectory.map((point) => point.fpp)),             unit: 'μM'   },
-    { key: 'adsExpression', label: 'ADS',       color: 'rgba(207,196,227,0.92)', max: Math.max(0.001, ...trajectory.map((point) => point.adsExpression)),   unit: 'a.u.' },
+    { key: 'fpp',           label: 'FPP',       color: 'rgba(232,163,161,0.94)', max: Math.max(0.001, ...trajectory.map((point) => point.fpp ?? 0)),             unit: 'μM'   },
+    { key: 'adsExpression', label: 'ADS',       color: 'rgba(207,196,227,0.92)', max: Math.max(0.001, ...trajectory.map((point) => point.adsExpression ?? 0)),   unit: 'a.u.' },
   ] as const;
 
   const tMax = trajectory[trajectory.length - 1].time;
@@ -100,7 +100,7 @@ function TimeSeriesSVG({ trajectory, setpoint, svgRef }: { trajectory: ODEState[
   const productMax = lanes[0].max, fppMax = lanes[4].max;
   const ppPts: [number, number][] = trajectory.map(pt => [
     PP_X + (normalize(pt.product, productMax)) * PP_W,
-    PP_Y + PP_H - (normalize(pt.fpp, fppMax)) * PP_H,
+    PP_Y + PP_H - (normalize(pt.fpp ?? 0, fppMax)) * PP_H,
   ]);
   const ppPath = crPath(ppPts);
 

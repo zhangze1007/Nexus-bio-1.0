@@ -278,7 +278,7 @@ export default function CatalystViewer3D({
     }
 
     // Draw interaction lines
-    drawInteractionLines(viewer, enzyme, bindingQuality, selectedResidue);
+    drawInteractionLines(viewer, enzyme, bindingQuality, selectedResidue ?? null);
 
     viewer.render();
   }, [selectedResidue, bindingQuality, enzyme, status]);

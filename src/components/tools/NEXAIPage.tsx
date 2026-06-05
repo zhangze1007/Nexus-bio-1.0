@@ -349,7 +349,7 @@ export default function NEXAIPage() {
     setLoading(false);
   }
 
-  const isUngrounded = Boolean(result) && result.citations.length === 0;
+  const isUngrounded = result !== null && result.citations.length === 0;
   const malformedParse =
     parseError && (parseError.code === 'INVALID_SYNTAX' || parseError.code === 'EMPTY');
   const workflowRisk = workflowControl.status === 'blocked'

@@ -1,10 +1,10 @@
 import { buildFBASeed, buildDynConSeed } from '../src/components/tools/shared/workbenchDataflow';
-import type { WorkbenchToolPayloadMap } from '../src/store/workbenchPayloads';
+import type { DBTLWorkbenchPayload, WorkbenchToolPayloadMap } from '../src/store/workbenchPayloads';
 import type { LearnedDeltaPack } from '../src/types/learnedDelta';
 
 function makeDbtlPayload(
-  resultOverrides: Partial<WorkbenchToolPayloadMap['dbtlflow']['result']> = {},
-): WorkbenchToolPayloadMap['dbtlflow'] {
+  resultOverrides: Partial<DBTLWorkbenchPayload['result']> = {},
+): DBTLWorkbenchPayload {
   return {
     validity: 'partial',
     toolId: 'dbtlflow',

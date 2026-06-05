@@ -275,7 +275,7 @@ export default function FluidBackground() {
       depth: false,
       stencil: false,
       preserveDrawingBuffer: false,
-    }) as WebGL2RenderingContext | null;
+    }) as WebGL2RenderingContext;
 
     if (!gl) {
       // Graceful degradation — CSS gradient fallback handled in parent
@@ -406,7 +406,7 @@ export default function FluidBackground() {
     let colorIdx = 0;
 
     function splat(x: number, y: number, dx: number, dy: number, color: [number, number, number]) {
-      const aspect = canvas.width / canvas.height;
+      const aspect = canvas!.width / canvas!.height;
 
       // Velocity splat
       gl.useProgram(splatProg);

@@ -204,11 +204,13 @@ const HeroFluidCanvas = forwardRef<HeroFluidHandle>((_, ref) => {
   }));
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    const canvasOrNull = canvasRef.current;
+    if (!canvasOrNull) return;
+    const canvas: HTMLCanvasElement = canvasOrNull;
 
-    const gl = canvas.getContext('webgl2');
-    if (!gl) return;
+    const glOrNull = canvas.getContext('webgl2');
+    if (!glOrNull) return;
+    const gl: WebGL2RenderingContext = glOrNull;
 
     // Check for float texture support
     const extColorHalf = gl.getExtension('EXT_color_buffer_half_float');
