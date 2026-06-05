@@ -4,7 +4,7 @@ const nextConfig = {
 
   /* Enable Turbopack (Next.js 16 default bundler) alongside legacy webpack config */
   turbopack: {
-    root: __dirname,
+    root: process.cwd(),
   },
 
   /* Image optimization */
@@ -70,4 +70,4 @@ const nextConfig = {
   },
 };
 
-module.exports = nextConfig;
+export default nextConfig;
