@@ -1,3 +1,20 @@
+/**
+ * Workbench SQLite persistence layer.
+ *
+ * ⚠️ EPHEMERAL ON VERCEL: Vercel's serverless filesystem is ephemeral —
+ * the SQLite database is lost on every cold start. All workbench data is
+ * effectively in-memory on Vercel Hobby plan.
+ *
+ * MIGRATION PATH (M11): Replace better-sqlite3 with Turso (libSQL):
+ *   1. npm install @libsql/client
+ *   2. Create Turso database: turso db create nexus-bio-workbench
+ *   3. Set TURSO_DATABASE_URL and TURSO_AUTH_TOKEN in Vercel env
+ *   4. Replace BetterSqlite3 with @libsql/client
+ *   5. All SQL is standard SQLite — schema migration is minimal
+ *
+ * Alternative: Vercel Postgres (drop-in, good for Vercel deployment)
+ * Alternative: Upstash Redis (simple key-value, good for session data)
+ */
 import { access, mkdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import BetterSqlite3 from 'better-sqlite3';
