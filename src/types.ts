@@ -166,7 +166,7 @@ export interface FBAReaction {
 export interface FBAResult {
   objectiveValue: number;
   reactions: FBAReaction[];
-  shadowPrices: Record<string, number>;
+  sensitivityCoefficients: Record<string, number>;
   feasible: boolean;
 }
 

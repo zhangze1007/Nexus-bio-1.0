@@ -86,7 +86,7 @@ export interface FBAOutput {
   carbonEfficiency: number; // %
   feasible: boolean;
   // Shadow prices (LP dual variables): marginal growth per unit uptake flux
-  shadowPrices: {
+  sensitivityCoefficients: {
     glc: number;   // ∂μ/∂glucose_uptake — h⁻¹ / (mmol/gDW/h)
     o2:  number;   // ∂μ/∂oxygen_uptake
     atp: number;   // ∂μ/∂ATP_maintenance (reduced cost)
@@ -152,7 +152,7 @@ export function runFBA(
   const { raw: rawGlcDn }   = _computeRawFluxes(Math.max(0, glucoseUptake - eps), oxygenUptake, knockouts);
   const { raw: rawO2Up }    = _computeRawFluxes(glucoseUptake, oxygenUptake + eps, knockouts);
   const { raw: rawO2Dn }    = _computeRawFluxes(glucoseUptake, Math.max(0, oxygenUptake - eps), knockouts);
-  const shadowPrices = {
+  const sensitivityCoefficients = {
     glc: ((rawGlcUp['BIOMASS'] ?? 0) - (rawGlcDn['BIOMASS'] ?? 0)) / (2 * eps),
     o2:  ((rawO2Up['BIOMASS']  ?? 0) - (rawO2Dn['BIOMASS']  ?? 0)) / (2 * eps),
     atp: atpYield > 0 ? 0.082 * aerobic * (glucoseUptake / 10) : 0,
@@ -165,10 +165,10 @@ export function runFBA(
     nadhProduction:   Math.round(nadhProd * 100) / 100,
     carbonEfficiency: Math.max(0, Math.min(100, Math.round(cEfficiency * 10) / 10)),
     feasible:         biomassFlux > 1e-6,
-    shadowPrices: {
-      glc: Math.round(shadowPrices.glc * 10000) / 10000,
-      o2:  Math.round(shadowPrices.o2 * 10000) / 10000,
-      atp: Math.round(shadowPrices.atp * 10000) / 10000,
+    sensitivityCoefficients: {
+      glc: Math.round(sensitivityCoefficients.glc * 10000) / 10000,
+      o2:  Math.round(sensitivityCoefficients.o2 * 10000) / 10000,
+      atp: Math.round(sensitivityCoefficients.atp * 10000) / 10000,
     },
   };
 }
@@ -186,7 +186,7 @@ export function computeFBAResult(glucoseUptake: number, oxygenUptake: number): F
   return {
     objectiveValue: 0.74 * scale * Math.sqrt(oScale),
     reactions,
-    shadowPrices: { glc: -1.0 * scale, o2: -0.8 * oScale, atp: 0.12 },
+    sensitivityCoefficients: { glc: -1.0 * scale, o2: -0.8 * oScale, atp: 0.12 },
     feasible: true,
   };
 }
@@ -321,7 +321,7 @@ export function runYeastFBA(
     nadhProduction:   Math.round(tpi * 0.8 * 100) / 100,
     carbonEfficiency: Math.max(0, Math.min(100, Math.round(((biomassFlux * 42) / (glcFlux * 6) * 100) * 10) / 10)),
     feasible:         biomassFlux > 1e-6,
-    shadowPrices: {
+    sensitivityCoefficients: {
       glc: Math.round(((rawGlcUp['BIOMASS_y'] ?? 0) - (rawGlcDn['BIOMASS_y'] ?? 0)) / (2 * eps) * 10000) / 10000,
       o2:  Math.round(((rawO2Up['BIOMASS_y']  ?? 0) - (rawO2Dn['BIOMASS_y']  ?? 0)) / (2 * eps) * 10000) / 10000,
       atp: Math.round(0.06 * aerobic * (glucoseUptake / 8) * 10000) / 10000,

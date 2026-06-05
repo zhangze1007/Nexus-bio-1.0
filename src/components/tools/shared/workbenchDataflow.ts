@@ -319,7 +319,7 @@ export function buildCETHXSeed(
     60,
   );
   const pH = clampNumber(
-    (benchmark?.optimalPH ?? 7.3) - concernCount * 0.08 + ((fba?.result.shadowPrices.o2 ?? 0) > 0.03 ? 0.12 : -0.06),
+    (benchmark?.optimalPH ?? 7.3) - concernCount * 0.08 + ((fba?.result.sensitivityCoefficients.o2 ?? 0) > 0.03 ? 0.12 : -0.06),
     5.5,
     9,
   );
@@ -413,7 +413,7 @@ export function buildDynConSeed(
     8,
   );
   let ki = clampNumber(
-    0.2 + (fba?.result.shadowPrices.o2 ?? 0) * 6 + (fba?.result.feasible ? 0.1 : 0),
+    0.2 + (fba?.result.sensitivityCoefficients.o2 ?? 0) * 6 + (fba?.result.feasible ? 0.1 : 0),
     0.05,
     2.5,
   );

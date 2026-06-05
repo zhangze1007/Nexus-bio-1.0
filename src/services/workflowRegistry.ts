@@ -85,7 +85,7 @@ const FBASIM_CONTRACT: ToolContract = {
   evidenceRequired: NO_EVIDENCE,
   validityBaseline: { floor: 'partial', reason: 'Single-species FBA uses real two-phase simplex LP. Community mode is post-hoc scaled.' },
   confidencePolicy: { sourceField: 'result.feasible', minToAdvance: 1 },
-  uncertaintyPolicy: { sourceField: 'result.shadowPrices.atp', unboundedIsGate: false },
+  uncertaintyPolicy: { sourceField: 'result.sensitivityCoefficients.atp', unboundedIsGate: false },
   humanGatePolicy: NO_GATE,
   nextRecommendedNodes: ['catdes', 'cethx', 'genmim'],
   failureModes: [

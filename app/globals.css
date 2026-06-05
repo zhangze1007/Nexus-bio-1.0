@@ -47,10 +47,9 @@
   --neon-danger:     #e8a3a1;
 }
 
-/* ── CSS class for .serif override ── */
+/* ── Typography utility classes ── */
 .serif { font-family: var(--font-serif); font-weight: 400; }
-
-.serif { font-family: var(--font-sans); font-weight: 700; }
+.sans-bold { font-family: var(--font-sans); font-weight: 700; }
 .mono  { font-family: var(--font-mono); }
 
 /*

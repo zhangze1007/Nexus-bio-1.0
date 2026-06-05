@@ -357,7 +357,7 @@ function GeoComp({ g, s }: { g: GeomKind; s: number }) {
 
 // ─── InstancedMesh Ambient Particles (GPU instancing, frustum-culled) ──
 // Replaces any per-component approach. frustumCulled=true (default) on InstancedMesh.
-const PARTICLE_COUNT = 160;
+const PARTICLE_COUNT = 80;
 
 function AmbientParticles() {
   const meshRef = useRef<THREE.InstancedMesh>(null);
@@ -414,11 +414,9 @@ function AmbientParticles() {
     <instancedMesh ref={meshRef} args={[undefined, undefined, PARTICLE_COUNT]} frustumCulled={true}>
       {/* icosahedronGeometry — no gl_PointSize anywhere */}
       <icosahedronGeometry args={[1, 0]} />
-      <meshPhysicalMaterial
+      <meshLambertMaterial
         transparent
         opacity={0.55}
-        roughness={0.7}
-        metalness={0.05}
         depthWrite={false}
         vertexColors
       />
@@ -514,14 +512,10 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov
       <group ref={glyphGrp}>
         <mesh ref={bodyRef}>
           <GeoComp g={cfg.geom} s={nodeRadius * activityScale * modeScale} />
-          <meshPhysicalMaterial
+          <meshLambertMaterial
             color={finalColor}
             emissive={finalColor}
             emissiveIntensity={0.12}
-            roughnessMap={roughnessTexture}
-            roughness={0.55}
-            metalness={0.08}
-            transmission={0.05}
             depthWrite={true}
           />
         </mesh>
@@ -549,7 +543,7 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov
         {cfg.rr.map((r, i) => (
           <mesh key={`r${i}`} ref={i === 0 ? ring : undefined} rotation={[cfg.rt[i] || 0, 0, i * 1.1]}>
             <torusGeometry args={[r * modeScale, 0.007, 4, 40]} />
-            <meshPhysicalMaterial color={finalColor} emissive={finalColor} emissiveIntensity={0.08} transparent opacity={0.07} roughness={0.6} metalness={0} depthWrite={false} />
+            <meshLambertMaterial color={finalColor} emissive={finalColor} emissiveIntensity={0.08} transparent opacity={0.07} depthWrite={false} />
           </mesh>
         ))}
       </group>
@@ -638,7 +632,7 @@ const PathEdge = React.memo(function PathEdge({ edge, s, e, active, color, flowS
       <Line points={[sv, ev]} color={active ? color : '#444444'} lineWidth={lineWidth} transparent opacity={lineOpacity} />
       <mesh ref={dot} visible={false}>
         <sphereGeometry args={[viewMode === 'flow' ? 0.055 : active ? 0.05 : 0.035, 6, 6]} />
-        <meshPhysicalMaterial color={color} emissive={color} emissiveIntensity={isSpontaneous ? 0.8 : 0.6} transparent opacity={active ? 0.9 : 0.5} />
+        <meshLambertMaterial color={color} emissive={color} emissiveIntensity={isSpontaneous ? 0.8 : 0.6} transparent opacity={active ? 0.9 : 0.5} />
       </mesh>
       {active && edge.predicted_delta_G_kJ_mol && (
         <Html position={mid.toArray() as Vec3}>
@@ -691,19 +685,25 @@ function ScrollSyncCamera({ nodes, selectedId, interact, controlsRef, baseTarget
 }
 
 // ─── Flux Particle System — white dots flow along pathway edges ───────
-const FLUX_PER_EDGE = 60;
+const FLUX_PER_EDGE = 20;
 
 function FluxParticles({ edges, nodes, flowSpeed, glowMultiplier }: {
   edges: PathwayEdge[]; nodes: PathwayNode[]; flowSpeed: number; glowMultiplier: number;
 }) {
+  const nodeMap = useMemo(() => {
+    const map = new Map<string, PathwayNode>();
+    nodes.forEach(n => map.set(n.id, n));
+    return map;
+  }, [nodes]);
+
   const edgeVecs = useMemo(() =>
     edges.map(e => {
-      const s = nodes.find(n => n.id === e.start);
-      const t = nodes.find(n => n.id === e.end);
+      const s = nodeMap.get(e.start);
+      const t = nodeMap.get(e.end);
       if (!s?.position || !t?.position || !Array.isArray(s.position) || !Array.isArray(t.position)) return null;
       return { sv: new THREE.Vector3(...(s.position as [number,number,number])), ev: new THREE.Vector3(...(t.position as [number,number,number])) };
     }).filter((x): x is { sv: THREE.Vector3; ev: THREE.Vector3 } => x !== null),
-  [edges, nodes]);
+  [edges, nodeMap]);
 
   const N = edgeVecs.length * FLUX_PER_EDGE;
 
@@ -838,14 +838,20 @@ function Scene({ nodes, edges, onNodeClick, selectedNodeId, roughnessTexture, gl
     return c;
   }, [nodes, edges]);
 
+  const nodeMap = useMemo(() => {
+    const map = new Map<string, PathwayNode>();
+    nodes.forEach(n => map.set(n.id, n));
+    return map;
+  }, [nodes]);
+
   const ed = useMemo(() =>
     edges.map(edge => {
-      const s = nodes.find(n => n.id === edge.start);
-      const e = nodes.find(n => n.id === edge.end);
+      const s = nodeMap.get(edge.start);
+      const e = nodeMap.get(edge.end);
       if (!s || !e || !Array.isArray(s.position) || !Array.isArray(e.position)) return null;
       return { key:`${edge.start}-${edge.end}`, edge, s, e, active: hovId===edge.start||hovId===edge.end||selectedNodeId===edge.start||selectedNodeId===edge.end, color: getColor(s) };
     }).filter(Boolean) as any[],
-  [edges, nodes, hovId, selectedNodeId]);
+  [edges, nodeMap, hovId, selectedNodeId]);
 
   return (
     <>

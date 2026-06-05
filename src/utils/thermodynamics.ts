@@ -16,7 +16,11 @@ export function calcKeq(dG0: number, T: number): number {
   return Math.exp(-dG0 / (R * T));
 }
 
-/** Simplified mass balance simulation driven by ΔG. */
+/**
+ * Qualitative illustration of substrate→product conversion driven by ΔG.
+ * NOT calibrated to experimental data — rate constants are ad-hoc.
+ * For quantitative predictions, use Eyring equation with measured ΔG‡.
+ */
 export function calcMassBalance(
   S0: number, dG: number, Keq: number, steps: number
 ): { time: number[]; S: number[]; P: number[] } {

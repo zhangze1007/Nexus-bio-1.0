@@ -403,7 +403,7 @@ export default function CETHXPage() {
               <span style={{ fontFamily: T.SANS, fontSize: '11px', color: T.LABEL }}>
                 {'✓ Flux data loaded — '}
                 <span style={{ fontFamily: T.MONO, color: T.VALUE }}>
-                  {`μ=${fba.result.growthRate.toFixed(4)} h⁻¹ · ∂μ/∂Glc=${fba.result.shadowPrices.glc.toFixed(4)} · ∂μ/∂O₂=${fba.result.shadowPrices.o2.toFixed(4)}`}
+                  {`μ=${fba.result.growthRate.toFixed(4)} h⁻¹ · ∂μ/∂Glc=${fba.result.sensitivityCoefficients.glc.toFixed(4)} · ∂μ/∂O₂=${fba.result.sensitivityCoefficients.o2.toFixed(4)}`}
                 </span>
               </span>
             </div>

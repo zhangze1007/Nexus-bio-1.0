@@ -56,7 +56,7 @@ function createEmptyFBAOutput(): FBAOutput {
     nadhProduction: 0,
     carbonEfficiency: 0,
     feasible: false,
-    shadowPrices: {
+    sensitivityCoefficients: {
       glc: 0,
       o2: 0,
       atp: 0,
@@ -74,7 +74,7 @@ function createEmptyCommunityOutput(): CommunityFBAOutput {
       nadhProduction: 0,
       carbonEfficiency: 0,
       feasible: false,
-      shadowPrices: {
+      sensitivityCoefficients: {
         glc: 0,
         o2: 0,
         atp: 0,
@@ -530,7 +530,7 @@ export default function FBASimPage() {
   const FBA_TABS: ToolTab[] = [
     { id: 'flux', label: 'Flux Map', accent: PATHD_THEME.sky },
     { id: 'knockout', label: 'Knockout', accent: PATHD_THEME.coral },
-    { id: 'shadows', label: 'Shadow Prices', accent: PATHD_THEME.lilac },
+    { id: 'shadows', label: 'Sensitivity', accent: PATHD_THEME.lilac },
     { id: 'community', label: 'Community', accent: PATHD_THEME.mint },
   ];
 
@@ -668,7 +668,7 @@ export default function FBASimPage() {
       return {
         eyebrow: 'Figure A · Host Flux State',
         title: 'Constraint-resolved flux map for the active host context',
-        caption: 'The central flux map is framed as a model figure: objective, uptake limits, and shadow-price interpretation are treated as part of the same scientific panel.',
+        caption: 'The central flux map is framed as a model figure: objective, uptake limits, and sensitivity-coefficient interpretation are treated as part of the same scientific panel.',
       };
     }
     return {
@@ -726,10 +726,10 @@ export default function FBASimPage() {
           nadhProduction: (communityResult.ecoli.nadhProduction + communityResult.yeast.nadhProduction) / 2,
           carbonEfficiency: (communityResult.ecoli.carbonEfficiency + communityResult.yeast.carbonEfficiency) / 2,
           feasible: communityResult.feasible,
-          shadowPrices: {
-            glc: (communityResult.ecoli.shadowPrices.glc + communityResult.yeast.shadowPrices.glc) / 2,
-            o2: (communityResult.ecoli.shadowPrices.o2 + communityResult.yeast.shadowPrices.o2) / 2,
-            atp: (communityResult.ecoli.shadowPrices.atp + communityResult.yeast.shadowPrices.atp) / 2,
+          sensitivityCoefficients: {
+            glc: (communityResult.ecoli.sensitivityCoefficients.glc + communityResult.yeast.sensitivityCoefficients.glc) / 2,
+            o2: (communityResult.ecoli.sensitivityCoefficients.o2 + communityResult.yeast.sensitivityCoefficients.o2) / 2,
+            atp: (communityResult.ecoli.sensitivityCoefficients.atp + communityResult.yeast.sensitivityCoefficients.atp) / 2,
           },
         };
 
@@ -755,7 +755,7 @@ export default function FBASimPage() {
         nadhProduction: activeResult.nadhProduction,
         carbonEfficiency: activeResult.carbonEfficiency,
         feasible: activeResult.feasible,
-        shadowPrices: activeResult.shadowPrices,
+        sensitivityCoefficients: activeResult.sensitivityCoefficients,
         topFluxes: Object.entries(activeResult.fluxes)
           .sort((left, right) => Math.abs(right[1]) - Math.abs(left[1]))
           .slice(0, 5)
@@ -825,8 +825,8 @@ export default function FBASimPage() {
                   },
                   {
                     label: 'Primary Constraint',
-                    value: `∂μ/∂Glc ${singleResult.shadowPrices.glc.toFixed(4)}`,
-                    detail: `O₂ shadow ${singleResult.shadowPrices.o2.toFixed(4)} · ATP shadow ${singleResult.shadowPrices.atp.toFixed(4)}`,
+                    value: `∂μ/∂Glc ${singleResult.sensitivityCoefficients.glc.toFixed(4)}`,
+                    detail: `O₂ sens. ${singleResult.sensitivityCoefficients.o2.toFixed(4)} · ATP sens. ${singleResult.sensitivityCoefficients.atp.toFixed(4)}`,
                     tone: 'neutral',
                   },
                   {
@@ -1026,9 +1026,9 @@ export default function FBASimPage() {
             </div>
             <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '0 0 8px' }}>Shadow Prices (∂μ/∂uptake)</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <MetricCard label="∂μ/∂Glucose" value={singleResult.shadowPrices.glc.toFixed(4)} unit="h⁻¹·gDW/mmol" />
-              <MetricCard label="∂μ/∂Oxygen"  value={singleResult.shadowPrices.o2.toFixed(4)}  unit="h⁻¹·gDW/mmol" />
-              <MetricCard label="∂μ/∂ATP"     value={singleResult.shadowPrices.atp.toFixed(4)} unit="h⁻¹·gDW/mmol" />
+              <MetricCard label="∂μ/∂Glucose" value={singleResult.sensitivityCoefficients.glc.toFixed(4)} unit="h⁻¹·gDW/mmol" />
+              <MetricCard label="∂μ/∂Oxygen"  value={singleResult.sensitivityCoefficients.o2.toFixed(4)}  unit="h⁻¹·gDW/mmol" />
+              <MetricCard label="∂μ/∂ATP"     value={singleResult.sensitivityCoefficients.atp.toFixed(4)} unit="h⁻¹·gDW/mmol" />
             </div>
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
@@ -1056,6 +1056,10 @@ export default function FBASimPage() {
 
       {/* ── Community Tab ── */}
       <ToolTabPanel tabId="community" activeId={activeTab}>
+        <div style={{ padding: '8px 12px', background: 'rgba(232,220,200,0.1)', borderRadius: '6px', fontSize: '12px', opacity: 0.8, margin: '8px 12px' }}>
+          ℹ️ Community FBA uses sequential single-species optimization with shared resource constraints.
+          This is an approximation — for true joint optimization, consider SteCom or BioME frameworks.
+        </div>
         <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
           <FloatingControlRail label="Strain Parameters" defaultCollapsed={false} width={260}>
             <StrainPanel label="E. coli" color={COLORS.strainABg} borderColor={COLORS.strainABorder} accentColor={COLORS.strainA}

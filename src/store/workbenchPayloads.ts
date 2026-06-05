@@ -61,7 +61,7 @@ export interface FBAWorkbenchPayload extends WorkbenchPayloadBase {
     nadhProduction: number;
     carbonEfficiency: number;
     feasible: boolean;
-    shadowPrices: {
+    sensitivityCoefficients: {
       glc: number;
       o2: number;
       atp: number;

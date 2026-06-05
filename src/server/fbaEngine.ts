@@ -43,7 +43,7 @@ type NetworkSpec = {
     request: SingleSpeciesFBARequest,
     status: number,
     objectiveValue: number,
-  ) => Omit<FBAOutput, 'shadowPrices'>;
+  ) => Omit<FBAOutput, 'sensitivityCoefficients'>;
 };
 
 function round(value: number, digits = 4) {
@@ -266,7 +266,7 @@ async function solveNetwork(request: SingleSpeciesFBARequest): Promise<FBAOutput
 
   return {
     ...base,
-    shadowPrices: {
+    sensitivityCoefficients: {
       glc: round(glucoseShadow, 4),
       o2: round(oxygenShadow, 4),
       atp: round(Math.max(0, base.atpYield / 12), 4),

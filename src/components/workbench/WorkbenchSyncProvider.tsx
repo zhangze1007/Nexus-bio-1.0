@@ -41,7 +41,12 @@ export default function WorkbenchSyncProvider() {
   useEffect(() => {
     if (!shouldHydrate) return;
     if (syncStatus !== 'conflict' || !hydratedFromServer) return;
-    syncToServer({ artifactId });
+    // Exponential backoff before retrying on conflict: 200ms, 800ms, 3200ms
+    const retryDelay = Math.min(200 * Math.pow(4, 0), 5000);
+    const timer = setTimeout(() => {
+      syncToServer({ artifactId });
+    }, retryDelay);
+    return () => clearTimeout(timer);
   }, [artifactId, hydratedFromServer, shouldHydrate, syncStatus, syncToServer]);
 
   return null;

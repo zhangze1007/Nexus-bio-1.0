@@ -89,14 +89,15 @@ export const PATHWAY_STEPS: Record<PathwayKey, ThermoStep[]> = {
 // (T/298.15) and added a hand-tuned "* 0.1" pH term, both of which are incorrect.
 // Until eQuilibrator integration lands, we surface the reference value unchanged
 // and the UI must label outputs as "Lehninger reference ΔG°' — demo only".
-export function correctedDeltaG(deltaG: number, _tempC: number, _pH: number): number {
+/** Returns the Lehninger reference ΔG°' unchanged. Temperature/pH correction requires eQuilibrator integration. */
+export function referenceDeltaG(deltaG: number, _tempC: number, _pH: number): number {
   return deltaG;
 }
 
 export function computeThermo(steps: ThermoStep[], tempC: number, pH: number) {
   const corrected = steps.map(s => ({
     ...s,
-    deltaG: correctedDeltaG(s.deltaG, tempC, pH),
+    deltaG: referenceDeltaG(s.deltaG, tempC, pH),
     cumulative: 0,
   }));
   let cum = 0;

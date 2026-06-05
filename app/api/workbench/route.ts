@@ -142,7 +142,7 @@ export async function PUT(request: Request) {
     ? resolvedArtifactId
     : incoming.project?.id ?? scopedProjectId ?? 'default-workbench';
   const explicitScope = needsArtifactScope ? { forceExplicit: true as const } : undefined;
-  if (needsArtifactScope) {
+  if (needsArtifactScope && process.env.NODE_ENV !== 'production') {
     console.info('[api/workbench] canonical artifact save request payload', {
       scopedArtifactId: scopedArtifactId ?? null,
       resolvedArtifactId: resolvedArtifactId ?? null,
@@ -222,7 +222,7 @@ export async function PUT(request: Request) {
     `client synced revision ${nextState.revision}`,
     explicitScope,
   );
-  if (needsArtifactScope) {
+  if (needsArtifactScope && process.env.NODE_ENV !== 'production') {
     console.info('[api/workbench] canonical artifact save response payload', {
       ok: true,
       state: {

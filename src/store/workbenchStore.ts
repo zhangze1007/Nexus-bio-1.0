@@ -594,8 +594,12 @@ function getWorkflowActor(): WorkflowActor {
   return workflowActor;
 }
 
-/** Test helper. Production code never calls this. */
+/** Test helper. Gated behind NODE_ENV=test to keep out of production bundles. */
 export function __resetWorkflowActorForTests(): void {
+  if (process.env.NODE_ENV !== 'test') {
+    console.warn('__resetWorkflowActorForTests called outside test environment');
+    return;
+  }
   if (workflowActor) {
     try {
       workflowActor.stop();
