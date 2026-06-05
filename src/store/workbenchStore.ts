@@ -22,6 +22,34 @@ import {
 import { getUpstreamToolIds } from '../components/tools/shared/workbenchGraph';
 import { TOOL_ASSUMPTIONS } from '../components/tools/shared/toolAssumptions';
 import { buildExecutionSnapshot } from '../components/workbench/workbenchExecution';
+
+// ── Debounced localStorage adapter to prevent UI stutter on large projects ──
+let _persistTimer: ReturnType<typeof setTimeout> | null = null;
+const PERSIST_DEBOUNCE_MS = 500;
+
+function createDebouncedStorage() {
+  if (typeof window === 'undefined') {
+    // SSR fallback: no-op storage
+    return createJSONStorage(() => ({
+      getItem: () => null,
+      setItem: () => {},
+      removeItem: () => {},
+    }));
+  }
+  return createJSONStorage(() => ({
+    getItem: (name: string) => localStorage.getItem(name),
+    setItem: (name: string, value: string) => {
+      if (_persistTimer) clearTimeout(_persistTimer);
+      _persistTimer = setTimeout(() => {
+        try { localStorage.setItem(name, value); } catch { /* quota exceeded */ }
+      }, PERSIST_DEBOUNCE_MS);
+    },
+    removeItem: (name: string) => {
+      if (_persistTimer) clearTimeout(_persistTimer);
+      localStorage.removeItem(name);
+    },
+  }));
+}
 import { tryGetToolContract } from '../services/workflowRegistry';
 import { isAxonToolSupported } from '../services/axonAdapterRegistry';
 import type { AxonTool } from '../services/AxonOrchestrator';
@@ -1898,7 +1926,7 @@ export const useWorkbenchStore = create<WorkbenchState>()(
     {
       name: 'nexus-bio-workbench',
       version: 3,
-      storage: createJSONStorage(() => localStorage),
+      storage: createDebouncedStorage(),
       partialize: (state) => buildCanonicalSlice(state),
       merge: (persistedState, currentState) => {
         const sanitized = sanitizeWorkbenchState(persistedState);
