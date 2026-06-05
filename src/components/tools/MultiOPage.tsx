@@ -848,7 +848,7 @@ export default function MultiOPage() {
               { label: 'Proteomics',      layer: 'proteomics' as OmicsLayer,      val: showProtein,    set: setShowProtein },
               { label: 'Metabolomics',    layer: 'metabolomics' as OmicsLayer,    val: showMetabolite, set: setShowMetabolite },
             ]).map(({ label, layer, val, set }) => (
-              <button aria-label="Action" key={label} onClick={() => set(!val)} style={{
+              <button aria-label={`Toggle ${label} layer`} key={label} onClick={() => set(!val)} style={{
                 display: 'flex', alignItems: 'center', gap: '8px',
                 width: '100%', padding: '7px 10px', marginBottom: '6px',
                 background: val ? 'rgba(175,195,214,0.22)' : INPUT_BG,
@@ -898,7 +898,7 @@ export default function MultiOPage() {
                 width: '100%', padding: '6px 8px', marginBottom: '8px',
                 background: INPUT_BG, border: `1px solid ${INPUT_BORDER}`, borderRadius: '8px',
                 color: INPUT_TEXT, fontFamily: T.MONO, fontSize: '10px',
-                outline: 'none', appearance: 'auto' as React.CSSProperties['appearance'],
+                outline: '2px solid rgba(175,195,214,0.5)', outlineOffset: '2px', appearance: 'auto' as React.CSSProperties['appearance'],
               }}
             >
               {geneNames.map(g => (
@@ -919,14 +919,14 @@ export default function MultiOPage() {
                 <span style={{ fontFamily: T.MONO, fontSize: '8px', color: LABEL }}>+8</span>
               </div>
             </div>
-            <button aria-label="Action" onClick={handleSimulate} style={{
+            <button aria-label="Run sensitivity analysis" onClick={handleSimulate} style={{
               width: '100%', padding: '7px 0', borderRadius: '8px', cursor: 'pointer',
               fontFamily: T.SANS, fontSize: '11px', fontWeight: 600,
-              border: 'none', background: 'rgba(255,255,255,0.88)', color: '#111318',
+              border: '1px solid rgba(191,220,205,0.45)', background: 'rgba(191,220,205,0.15)', color: 'rgba(250,246,240,0.96)',
               transition: 'all 0.15s',
             }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#ffffff'; (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 12px rgba(0,0,0,0.22)'; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.88)'; (e.currentTarget as HTMLElement).style.boxShadow = 'none'; }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(191,220,205,0.25)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 12px rgba(191,220,205,0.15)'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(191,220,205,0.15)'; (e.currentTarget as HTMLElement).style.boxShadow = 'none'; }}
             >
               Run Sensitivity
             </button>
@@ -1041,7 +1041,7 @@ export default function MultiOPage() {
             </div>
             <SectionLabel>Gene</SectionLabel>
             <select value={selectedGene} onChange={e => setSelectedGene(e.target.value)}
-              style={{ width: '100%', padding: '6px 8px', background: INPUT_BG, border: `1px solid ${INPUT_BORDER}`, borderRadius: '8px', color: INPUT_TEXT, fontFamily: T.MONO, fontSize: '10px', outline: 'none', appearance: 'auto' as React.CSSProperties['appearance'] }}>
+              style={{ width: '100%', padding: '6px 8px', background: INPUT_BG, border: `1px solid ${INPUT_BORDER}`, borderRadius: '8px', color: INPUT_TEXT, fontFamily: T.MONO, fontSize: '10px', outline: '2px solid rgba(175,195,214,0.5)', outlineOffset: '2px', appearance: 'auto' as React.CSSProperties['appearance'] }}>
               {geneNames.map(g => (<option key={g} value={g} style={{ background: '#1a1d24' }}>{g}</option>))}
             </select>
           </FloatingControlRail>

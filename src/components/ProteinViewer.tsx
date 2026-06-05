@@ -53,7 +53,7 @@ export default function ProteinViewer({ pdbId, alphafoldId, label }: { pdbId: st
           viewer.setStyle({}, { cartoon: { color: useAF ? '#EAEAEA' : 'spectrum', thickness: 0.35 } });
           viewer.addSurface(window.$3Dmol.SurfaceType.VDW, {
             opacity: 0.72,
-            color: useAF ? '#F0FDFA' : '#FFFFFF',
+            color: useAF ? '#F0FDFA' : '#D4DCE8',
           });
         } else if (renderMode === 'confidence' && useAF && alphafoldId) {
           viewer.setStyle({}, {

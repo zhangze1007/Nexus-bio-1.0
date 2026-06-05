@@ -90,7 +90,8 @@ export default function ToolTabBar({ tabs, activeId, onChange, instanceId: insta
               color: isActive ? accent : PATHD_THEME.label,
               borderRadius: '6px 6px 0 0',
               transition: 'color 0.2s ease, background 0.15s ease',
-              outline: 'none',
+              outline: '2px solid rgba(175,195,214,0.5)',
+              outlineOffset: '2px',
             }}
             onMouseEnter={(e) => {
               if (!isActive) {

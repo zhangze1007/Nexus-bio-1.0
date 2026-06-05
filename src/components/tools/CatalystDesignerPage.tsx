@@ -665,7 +665,7 @@ export default function CatalystDesignerPage() {
               <select
                 value={selectedEnzyme}
                 onChange={e => { setSelectedEnzyme(Number(e.target.value)); setSelectedResidue(null); setSelectedMutation(null); }}
-                style={{ width: '100%', marginTop: 4, fontFamily: T.SANS, fontSize: '11px', fontWeight: 600, color: VALUE, background: INPUT_BG, border: `1px solid ${INPUT_BORDER}`, borderRadius: 8, padding: '5px 8px', cursor: 'pointer', outline: 'none' }}
+                style={{ width: '100%', marginTop: 4, fontFamily: T.SANS, fontSize: '11px', fontWeight: 600, color: VALUE, background: INPUT_BG, border: `1px solid ${INPUT_BORDER}`, borderRadius: 8, padding: '5px 8px', cursor: 'pointer', outline: '2px solid rgba(175,195,214,0.5)', outlineOffset: '2px' }}
               >
                 {ENZYME_STRUCTURES.map((enz, i) => (
                   <option key={enz.id} value={i}>{enz.name} · EC {enz.ecNumber}</option>
@@ -716,7 +716,7 @@ export default function CatalystDesignerPage() {
                   <div style={{ marginTop: 6 }}>
                     <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Mutate to</span>
                     <select value={selectedMutation || ''} onChange={e => setSelectedMutation(e.target.value || null)}
-                      style={{ width: '100%', marginTop: 2, fontFamily: T.MONO, fontSize: '10px', color: VALUE, background: INPUT_BG, border: `1px solid ${INPUT_BORDER}`, borderRadius: 6, padding: '4px 6px', cursor: 'pointer', outline: 'none' }}>
+                      style={{ width: '100%', marginTop: 2, fontFamily: T.MONO, fontSize: '10px', color: VALUE, background: INPUT_BG, border: `1px solid ${INPUT_BORDER}`, borderRadius: 6, padding: '4px 6px', cursor: 'pointer', outline: '2px solid rgba(175,195,214,0.5)', outlineOffset: '2px' }}>
                       <option value="">Select…</option>
                       {AA_MUTATIONS.filter(aa => aa !== selectedCatResidue.residue).map(aa => (
                         <option key={aa} value={aa}>{selectedCatResidue.residue} → {aa}</option>

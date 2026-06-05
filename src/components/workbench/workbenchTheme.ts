@@ -22,7 +22,7 @@ export const PATHD_THEME = {
   // consumer auto-inherit the unified dark look without file edits. Keys are kept.
   paper: '#0d0f14',
   paperWarm: '#10131a',
-  paperElevated: '#FFFFFF',                       // still used as slider thumb fill — keep white
+  paperElevated: 'rgba(250,246,240,0.96)',         // slider thumb fill — off-white to match dark theme
   paperBorder: 'rgba(255, 255, 255, 0.08)',
   paperBorderStrong: 'rgba(255, 255, 255, 0.14)',
   paperSurface: 'rgba(26, 31, 37, 0.88)',

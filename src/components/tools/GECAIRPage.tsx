@@ -507,7 +507,7 @@ export default function GECAIRPage() {
               Output Gate Type
             </p>
             {(['NOT', 'AND', 'OR', 'NAND'] as GateType[]).map(gate => (
-              <button aria-label="Action" key={gate} onClick={() => setGateType(gate)} className="nb-ui-control" style={{
+              <button aria-label={`Select ${gate} gate type`} key={gate} onClick={() => setGateType(gate)} className="nb-ui-control" style={{
                 display: 'block', width: '100%', textAlign: 'left',
                 padding: '6px 10px', marginBottom: '4px',
                 background: 'var(--nb-control-bg)',

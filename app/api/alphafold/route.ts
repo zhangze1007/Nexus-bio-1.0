@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCorsHeaders, handleOptions } from '@/utils/cors';
+import { getCorsHeaders, handleOptions } from '../../../src/utils/cors';
 
 export const runtime = 'edge';
 

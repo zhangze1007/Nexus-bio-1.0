@@ -75,11 +75,52 @@ export async function GET(request: Request) {
 }
 
 export async function PUT(request: Request) {
+  // ── Origin checking (CSRF protection) ──
+  const origin = request.headers.get('origin') ?? '';
+  const ALLOWED_ORIGINS = [
+    'https://nexus-bio-1-0.vercel.app',
+    'http://localhost:3000',
+    'http://localhost:3001',
+  ];
+  if (origin && !ALLOWED_ORIGINS.includes(origin)) {
+    return NextResponse.json(
+      { ok: false, error: 'Forbidden: invalid origin' },
+      { status: 403, headers: getCorsHeaders(request) },
+    );
+  }
+
+  // ── CSRF: require JSON content type ──
+  const putContentType = request.headers.get('content-type') ?? '';
+  if (!putContentType.includes('application/json')) {
+    return NextResponse.json(
+      { ok: false, error: 'Invalid content type' },
+      { status: 415, headers: getCorsHeaders(request) },
+    );
+  }
+
+  // ── Body size limit (1MB) ──
+  const contentLength = parseInt(request.headers.get('content-length') ?? '0', 10);
+  if (contentLength > 1_000_000) {
+    return NextResponse.json(
+      { ok: false, error: 'Request body too large' },
+      { status: 413, headers: getCorsHeaders(request) },
+    );
+  }
+
   const { artifactId: scopedArtifactId, projectId: scopedProjectId, actorId } = getProjectScope(request);
   const body = await request.json().catch(() => null);
   const incoming = sanitizeWorkbenchState(body?.state);
   if (!incoming) {
     return NextResponse.json({ ok: false, error: 'Invalid workbench payload' }, { status: 400, headers: getCorsHeaders(request) });
+  }
+
+  // ── State payload size guard (500KB) ──
+  const stateJson = JSON.stringify(incoming);
+  if (stateJson.length > 500_000) {
+    return NextResponse.json(
+      { ok: false, error: 'State payload too large' },
+      { status: 413, headers: getCorsHeaders(request) },
+    );
   }
 
   const db = await getWorkbenchDb();

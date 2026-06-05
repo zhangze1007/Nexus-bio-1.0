@@ -443,7 +443,7 @@ export default function PDBExplorer() {
                   onChange={e => setCustomPDB(e.target.value.toUpperCase().slice(0, 4))}
                   placeholder="e.g. 1TQN"
                   maxLength={4}
-                  style={{ flex: 1, padding: '8px 10px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', color: '#fff', fontSize: '13px', fontFamily: 'monospace', outline: 'none', letterSpacing: '0.08em' }}
+                  style={{ flex: 1, padding: '8px 10px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', color: '#fff', fontSize: '13px', fontFamily: 'monospace', outline: '2px solid rgba(175,195,214,0.5)', outlineOffset: '2px', letterSpacing: '0.08em' }}
                 />
                 <button
                   onClick={() => { if (customPDB.length === 4) setCustomActive(true); }}

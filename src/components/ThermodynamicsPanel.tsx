@@ -145,7 +145,7 @@ Do not return JSON, code fences, or developer-style logs.` }] }],
       </div>
       <input type={type} value={value}
         onChange={e => onChange(e.target.value)}
-        style={{ width: '100%', padding: '6px 10px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '14px', color: '#ffffff', fontSize: '12px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", outline: 'none', boxSizing: 'border-box' }} />
+        style={{ width: '100%', padding: '6px 10px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '14px', color: '#ffffff', fontSize: '12px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", outline: '2px solid rgba(175,195,214,0.5)', outlineOffset: '2px', boxSizing: 'border-box' }} />
       {hint && <p style={{ color: 'rgba(255,255,255,0.15)', fontSize: '9px', margin: '3px 0 0', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1" }}>{hint}</p>}
     </div>
   );

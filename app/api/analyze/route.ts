@@ -50,6 +50,21 @@ const TIMEOUT_MS = 12000;
 export const MAX_PROMPT_CHARS = 24_000;
 export const MAX_SEARCH_QUERY_CHARS = 500;
 
+// ── In-memory rate limiter (token bucket per IP) ──
+const rateLimit = new Map<string, { count: number; resetAt: number }>();
+
+function checkRateLimit(ip: string, maxPerMinute = 10): boolean {
+  const now = Date.now();
+  const entry = rateLimit.get(ip);
+  if (!entry || now > entry.resetAt) {
+    rateLimit.set(ip, { count: 1, resetAt: now + 60_000 });
+    return true;
+  }
+  if (entry.count >= maxPerMinute) return false;
+  entry.count++;
+  return true;
+}
+
 const AXON_SYSTEM_PROMPT = `You are Axon, the predictive design core of Nexus-Bio — a de novo metabolic design agent inspired by the rigor of computational protein design.
 Your mission: do not merely extract pathway data. Predict where the pathway will fail, and propose structure-level interventions to fix it.
 
@@ -79,7 +94,7 @@ Global output obligations:
 5. If no bottleneck is found, set bottleneck arrays to [] and ask a conservative question about pathway optimization.
 6. Include enzyme efficiency estimates on enzyme nodes as "efficiency_percent" field.`;
 
-import { getCorsHeaders, handleOptions } from '@/utils/cors';
+import { getCorsHeaders, handleOptions } from '../../../src/utils/cors';
 
 function jsonResponse(body: unknown, status = 200, req?: Request) {
   return new NextResponse(JSON.stringify(body), {
@@ -423,9 +438,12 @@ async function tryGemini(
       };
 
       const res = await withTimeout(
-        fetch(`${GEMINI_BASE}/${model}:generateContent?key=${apiKey}`, {
+        fetch(`${GEMINI_BASE}/${model}:generateContent`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'x-goog-api-key': apiKey,
+          },
           body: JSON.stringify(geminiBody),
         }),
         TIMEOUT_MS
@@ -561,6 +579,28 @@ Target compound: ${searchQuery}`;
 }
 
 export async function POST(req: NextRequest) {
+  // ── Rate limiting ──
+  const ip = req.headers.get('x-forwarded-for') ?? req.headers.get('x-real-ip') ?? 'unknown';
+  if (!checkRateLimit(ip)) {
+    return new NextResponse(
+      JSON.stringify({ error: 'Rate limit exceeded. Try again in 60 seconds.' }),
+      {
+        status: 429,
+        headers: {
+          'Content-Type': 'application/json',
+          'Retry-After': '60',
+          ...getCorsHeaders(req),
+        },
+      },
+    );
+  }
+
+  // ── CSRF: require JSON content type ──
+  const contentType = req.headers.get('content-type') ?? '';
+  if (!contentType.includes('application/json')) {
+    return jsonResponse({ error: 'Invalid content type' }, 415);
+  }
+
   const groqKey = process.env.GROQ_API_KEY;
   const geminiKey = process.env.GEMINI_API_KEY;
 
@@ -645,7 +685,7 @@ export async function POST(req: NextRequest) {
         error: `searchQuery exceeds ${MAX_SEARCH_QUERY_CHARS} characters`,
       }, 413);
     }
-    const safeQuery = escapeHtml(sanitizePromptInput(rawSearchQuery, MAX_SEARCH_QUERY_CHARS).value);
+    const safeQuery = sanitizePromptInput(rawSearchQuery, MAX_SEARCH_QUERY_CHARS).value;
     if (useBiosynthesisPrompt) {
       prompt = buildDynamicPrompt(safeQuery);
       body = {

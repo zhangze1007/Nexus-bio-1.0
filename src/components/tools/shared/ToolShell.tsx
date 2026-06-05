@@ -126,11 +126,11 @@ export default function ToolShell({
             ['--nb-control-bg' as const]: PATHD_THEME.panelGlassStrong,
             ['--nb-control-border' as const]: PATHD_THEME.sepiaPanelBorder,
             ['--nb-control-color' as const]: PATHD_THEME.label,
-            ['--nb-control-hover-bg' as const]: 'rgba(255,255,255,0.94)',
-            ['--nb-control-hover-border' as const]: 'rgba(255,255,255,0.94)',
+            ['--nb-control-hover-bg' as const]: 'rgba(255,255,255,0.08)',
+            ['--nb-control-hover-border' as const]: 'rgba(255,255,255,0.12)',
             ['--nb-control-hover-color' as const]: PATHD_THEME.ink,
-            ['--nb-control-active-bg' as const]: '#ffffff',
-            ['--nb-control-active-border' as const]: '#ffffff',
+            ['--nb-control-active-bg' as const]: 'rgba(255,255,255,0.12)',
+            ['--nb-control-active-border' as const]: 'rgba(255,255,255,0.16)',
             ['--nb-control-active-color' as const]: PATHD_THEME.ink,
           } as ControlVarsStyle}
           title="Back to Tools"

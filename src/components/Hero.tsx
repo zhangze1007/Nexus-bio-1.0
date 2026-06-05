@@ -210,7 +210,7 @@ export default function Hero() {
               onKeyDown={onKeyDown}
               placeholder="Search pathways, enzymes, literature…"
               style={{
-                flex: 1, background: 'none', border: 'none', outline: 'none',
+                flex: 1, background: 'none', border: 'none', outline: '2px solid rgba(175,195,214,0.5)', outlineOffset: '2px',
                 fontFamily: SANS, fontSize: '15px', fontWeight: 400,
                 color: '#E2E8F0',
                 '::placeholder': { color: 'rgba(148,163,184,0.45)' },

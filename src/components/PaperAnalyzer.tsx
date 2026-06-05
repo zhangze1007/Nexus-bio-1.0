@@ -554,7 +554,7 @@ export default function PaperAnalyzer({
               <Globe size={14} style={{ color: 'rgba(255,255,255,0.2)', flexShrink: 0 }} />
               <input type="url" value={webUrl} onChange={e => { setWebUrl(e.target.value); setErrorMsg(null); }}
                 placeholder="https://pubmed.ncbi.nlm.nih.gov/... or https://doi.org/..."
-                style={{ flex: 1, background: 'transparent', border: 'none', color: '#ffffff', fontSize: '13px', outline: 'none', fontFamily: 'inherit' }} />
+                style={{ flex: 1, background: 'transparent', border: 'none', color: '#ffffff', fontSize: '13px', outline: '2px solid rgba(175,195,214,0.5)', outlineOffset: '2px', fontFamily: 'inherit' }} />
               {webUrl && <button onClick={() => setWebUrl('')} style={{ color: 'rgba(255,255,255,0.2)', background: 'none', border: 'none', cursor: 'pointer' }}><X size={13} /></button>}
             </div>
           )}
@@ -567,7 +567,7 @@ export default function PaperAnalyzer({
               onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleAnalyze(); } }}
               placeholder="Paste an abstract, methods section, or any research text here..."
               rows={4}
-              style={{ width: '100%', background: 'transparent', padding: '16px', color: '#ffffff', fontSize: '13px', lineHeight: 1.7, border: 'none', outline: 'none', resize: 'none', fontFamily: 'inherit', boxSizing: 'border-box' }}
+              style={{ width: '100%', background: 'transparent', padding: '16px', color: '#ffffff', fontSize: '13px', lineHeight: 1.7, border: 'none', outline: '2px solid rgba(175,195,214,0.5)', outlineOffset: '2px', resize: 'none', fontFamily: 'inherit', boxSizing: 'border-box' }}
             />
           )}
 
