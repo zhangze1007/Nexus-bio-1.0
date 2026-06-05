@@ -362,6 +362,7 @@ async function fetchEuropePMC(query: string): Promise<Article[]> {
 
 async function fetchSemanticScholar(query: string): Promise<Article[]> {
   const data = await fetchJsonOrThrow(`https://api.semanticscholar.org/graph/v1/paper/search?query=${encodeURIComponent(query)}&fields=title,abstract,authors,year,journal,externalIds,citationCount,isOpenAccess,venue&limit=${SOURCE_RESULT_LIMIT}`);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external API response
   return (data.data || []).map((item: any) => ({
     id: `ss-${item.paperId}`,
     title: item.title || '',

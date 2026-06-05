@@ -303,7 +303,7 @@ export default function GenMIMPage() {
         <div style={{
           padding: '8px 12px', marginBottom: '8px',
           borderRadius: '10px', border: '1px solid rgba(180, 150, 100, 0.50)',
-          background: 'rgba(232, 220, 200, 0.32)', color: '#6a4f1c',
+          background: 'rgba(232, 220, 200, 0.12)', color: 'rgba(250, 246, 240, 0.96)',
           fontFamily: T.SANS, fontSize: '11px', lineHeight: 1.55,
         }}>
           <strong>Upstream payload missing:</strong>{' '}Run <em>{upstreamMissing.join(' and ')}</em> first.

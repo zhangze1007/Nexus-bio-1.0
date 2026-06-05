@@ -446,12 +446,13 @@ function StrainPanel({ label, color, borderColor, accentColor, glucoseUptake, ox
         {reactions.map(r => {
           const isKO = knockouts.includes(r.id);
           return (
-            <button aria-label={`Toggle knockout for ${r.id}`} key={r.id} onClick={() => onToggleKO(r.id)} style={{
+            <button type="button" aria-label={`Toggle knockout for ${r.id}`} key={r.id} onClick={() => onToggleKO(r.id)} style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               width: '100%', padding: '4px 8px', marginBottom: '2px',
               background: isKO ? 'rgba(255,80,80,0.08)' : 'transparent',
               border: `1px solid ${isKO ? 'rgba(255,80,80,0.3)' : 'rgba(255,255,255,0.06)'}`,
               borderRadius: '6px', cursor: 'pointer',
+              transition: 'background 0.15s ease, border-color 0.15s ease',
             }}>
               <span style={{ fontFamily: T.MONO, fontSize: '10px', color: isKO ? 'rgba(255,120,120,0.9)' : 'rgba(255,255,255,0.5)' }}>{r.id}</span>
               <span style={{

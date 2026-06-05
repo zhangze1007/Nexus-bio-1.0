@@ -103,6 +103,9 @@ function derivatives(
   p: BioreactorParams, hill: HillParams,
 ): State {
   const V = 2.0; // working volume L
+  const SPONTANEOUS_LOSS_RATE = 0.02; // h⁻¹ FPP spontaneous degradation
+  const PROTEIN_TURNOVER_RATE = 0.3; // h⁻¹ protein turnover
+  const O2_CONSUMPTION_COEFF = 0.18; // mol O₂ per mol biomass
   const { mu } = monodRate(s.S, s.O, s.FPP, s.P, s.ADS, p);
 
   // Biomass
@@ -110,14 +113,14 @@ function derivatives(
   // Substrate
   const dS = -dX / p.Yxs + p.feedRate * (p.feedConc - s.S) / V;
   // FPP intermediate: produced proportional to biomass, consumed by ADS
-  const dFPP = p.kFPP * s.X - s.ADS * s.FPP * p.fppDegradation - s.FPP * 0.02; // spontaneous loss
+  const dFPP = p.kFPP * s.X - s.ADS * s.FPP * p.fppDegradation - s.FPP * SPONTANEOUS_LOSS_RATE;
   // ADS expression: Hill-function feedback from FPP
   const adsTarget = hillFeedback(s.FPP, hill);
-  const dADS = (adsTarget - s.ADS) * 0.3; // 0.3 h⁻¹ protein turnover rate
+  const dADS = (adsTarget - s.ADS) * PROTEIN_TURNOVER_RATE;
   // Product: formed by ADS enzyme acting on FPP
   const dP = p.kADS * s.ADS * s.FPP * s.X;
   // Dissolved O₂
-  const dO = p.kLa * airflowScale * (p.OstarSat - s.O) - mu * s.X * 0.18;
+  const dO = p.kLa * airflowScale * (p.OstarSat - s.O) - mu * s.X * O2_CONSUMPTION_COEFF;
 
   return { X: dX, S: dS, P: dP, O: dO, FPP: dFPP, ADS: dADS };
 }

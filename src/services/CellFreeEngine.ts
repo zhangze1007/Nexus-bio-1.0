@@ -21,6 +21,8 @@
  * - Karzbrun et al. (2011) Mol Syst Biol — Resource competition model
  */
 
+import { clamp } from '../utils/math';
+
 // ═══════════════════════════════════════════════════════════════
 //  Types
 // ═══════════════════════════════════════════════════════════════
@@ -181,11 +183,6 @@ interface ODEState {
   n: number; // number of genes
 }
 
-/** Clamp a value to [lo, hi]. */
-function clamp(v: number, lo: number, hi: number): number {
-  return v < lo ? lo : v > hi ? hi : v;
-}
-
 /**
  * Compute derivatives for the full TX-TL + energy ODE system.
  *
@@ -227,13 +224,15 @@ function computeDerivatives(
 
   // Solve R_free iteratively: R_free = R_total - Σ mRNA_i · R_free / (K_tl_i + R_free)
   let rFree = params.ribosomeTotal;
-  for (let iter = 0; iter < 15; iter++) {
+  const MAX_RIBOSOME_ITER = 15;
+  const RIBOSOME_CONVERGENCE_TOL = 0.01;
+  for (let iter = 0; iter < MAX_RIBOSOME_ITER; iter++) {
     let rBoundSum = 0;
     for (let i = 0; i < n; i++) {
       rBoundSum += mRNAs[i] * rFree / (constructs[i].K_tl + rFree);
     }
     const rFreeNew = Math.max(0, params.ribosomeTotal - rBoundSum);
-    if (Math.abs(rFreeNew - rFree) < 0.01) { rFree = rFreeNew; break; }
+    if (Math.abs(rFreeNew - rFree) < RIBOSOME_CONVERGENCE_TOL) { rFree = rFreeNew; break; }
     rFree = rFreeNew;
   }
 

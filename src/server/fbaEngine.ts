@@ -51,9 +51,7 @@ function round(value: number, digits = 4) {
   return Math.round(value * factor) / factor;
 }
 
-function clamp(value: number, min: number, max: number) {
-  return Math.min(max, Math.max(min, value));
-}
+import { clamp } from '../utils/math';
 
 const ECOLI_NETWORK: NetworkSpec = {
   species: 'ecoli',

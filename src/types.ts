@@ -130,15 +130,17 @@ export interface GeneratedPathway {
 }
 
 // RESTORED HELPERS for PaperAnalyzer.tsx
-export function isValidNode(node: any): node is Partial<PathwayNode> {
+export function isValidNode(node: unknown): node is Partial<PathwayNode> {
   if (!node || typeof node !== 'object') return false;
-  return typeof node.id === 'string' && node.id.length > 0;
+  const n = node as Record<string, unknown>;
+  return typeof n.id === 'string' && (n.id as string).length > 0;
 }
 
-export function isValidEdge(edge: any): edge is PathwayEdge {
+export function isValidEdge(edge: unknown): edge is PathwayEdge {
   if (!edge || typeof edge !== 'object') return false;
-  return typeof edge.start === 'string' && edge.start.length > 0 &&
-         typeof edge.end === 'string' && edge.end.length > 0;
+  const e = edge as Record<string, unknown>;
+  return typeof e.start === 'string' && (e.start as string).length > 0 &&
+         typeof e.end === 'string' && (e.end as string).length > 0;
 }
 
 export function sanitizeNodeId(id: string): string {

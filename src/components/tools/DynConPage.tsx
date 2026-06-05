@@ -196,9 +196,9 @@ function TimeSeriesSVG({ trajectory, setpoint, svgRef }: { trajectory: ODEState[
       </text>
       <line x1={PP_X} y1={PP_Y} x2={PP_X} y2={PP_Y + PP_H} stroke="rgba(255,255,255,0.1)" />
       <line x1={PP_X} y1={PP_Y + PP_H} x2={PP_X + PP_W} y2={PP_Y + PP_H} stroke="rgba(255,255,255,0.1)" />
-      <text x={PP_X - 2} y={PP_Y + PP_H + 8} textAnchor="middle" fontFamily={T.MONO} fontSize="5" fill="rgba(255,255,255,0.25)">P</text>
-      <text x={PP_X + PP_W} y={PP_Y + PP_H + 8} textAnchor="end" fontFamily={T.MONO} fontSize="5" fill="rgba(255,255,255,0.25)">→</text>
-      <text x={PP_X - 2} y={PP_Y} fontFamily={T.MONO} fontSize="5" fill="rgba(255,255,255,0.25)">R↑</text>
+      <text x={PP_X - 2} y={PP_Y + PP_H + 8} textAnchor="middle" fontFamily={T.MONO} fontSize="7" fill="rgba(255,255,255,0.25)">P</text>
+      <text x={PP_X + PP_W} y={PP_Y + PP_H + 8} textAnchor="end" fontFamily={T.MONO} fontSize="7" fill="rgba(255,255,255,0.25)">→</text>
+      <text x={PP_X - 2} y={PP_Y} fontFamily={T.MONO} fontSize="7" fill="rgba(255,255,255,0.25)">R↑</text>
       {ppPath && <path d={ppPath} fill="none" stroke="rgba(232,163,161,0.7)" strokeWidth="1.2" />}
       {ppPts.length > 0 && (
         <circle cx={ppPts[ppPts.length - 1][0]} cy={ppPts[ppPts.length - 1][1]} r="2.5" fill={PATHD_THEME.coral} />

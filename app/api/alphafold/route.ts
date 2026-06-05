@@ -63,7 +63,8 @@ export async function GET(req: NextRequest) {
     return new NextResponse(`AlphaFold structure not found for ${uniprotId}`, {
       status: 404, headers,
     });
-  } catch (err: any) {
-    return new NextResponse(`Fetch error: ${err.message}`, { status: 500, headers });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    return new NextResponse(`Fetch error: ${message}`, { status: 500, headers });
   }
 }

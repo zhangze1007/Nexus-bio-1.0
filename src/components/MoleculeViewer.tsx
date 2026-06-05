@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Loader2, ExternalLink, AlertCircle } from 'lucide-react';
 
-declare global { interface Window { $3Dmol: any; } }
+// $3Dmol Window declaration is in src/types/3dmol.d.ts
 
 type ViewerStatus = 'idle' | 'loading' | 'ready' | 'empty' | 'error';
 

@@ -8,7 +8,8 @@ export const R = 8.314e-3; // kJ/mol·K
 /** Calculate actual ΔG from standard ΔG°, temperature, and concentrations. */
 export function calcDeltaG(dG0: number, T: number, products: number[], reactants: number[]): number {
   const Q = products.reduce((a, b) => a * b, 1) / reactants.reduce((a, b) => a * b, 1);
-  return dG0 + R * T * Math.log(Q || 1e-10);
+  const Q_SAFE = Math.max(1e-15, Math.min(1e15, Q));
+  return dG0 + R * T * Math.log(Q_SAFE);
 }
 
 /** Calculate equilibrium constant from ΔG°. */

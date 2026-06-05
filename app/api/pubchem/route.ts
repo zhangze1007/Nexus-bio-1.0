@@ -89,8 +89,9 @@ export async function GET(req: NextRequest) {
 
       return json({ error: `CID ${foundCid} found but no SDF available` }, 404);
 
-    } catch (err: any) {
-      return json({ error: err.message || 'PubChem lookup failed' }, 500);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'PubChem lookup failed';
+      return json({ error: message }, 500);
     }
   }
 

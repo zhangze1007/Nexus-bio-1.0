@@ -2,7 +2,7 @@
 
 import { useRef, useState, useEffect } from 'react';
 
-declare global { interface Window { $3Dmol: any; } }
+// $3Dmol Window declaration is in src/types/3dmol.d.ts
 
 const THREEDMOL_CDNS = [
   'https://cdnjs.cloudflare.com/ajax/libs/3Dmol/2.5.3/3Dmol-min.js',

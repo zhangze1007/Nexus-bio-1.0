@@ -36,6 +36,7 @@ export interface LPSolution {
   feasible: boolean;
   z: number;
   x: number[];
+  maxIterationsReached?: boolean;
 }
 
 const EPS = 1e-9;
@@ -120,7 +121,9 @@ export function solveLPSimplex({ c, A, b, ub, lb: lbRaw }: LPProblem): LPSolutio
     }
   }
 
+  let iterCount = 0;
   for (let iter = 0; iter < MAX_ITER; iter++) {
+    iterCount = iter + 1;
     // Entering variable: most negative reduced cost (exclude artificials)
     let enterCol = -1;
     let minRC = -EPS;
@@ -173,5 +176,5 @@ export function solveLPSimplex({ c, A, b, ub, lb: lbRaw }: LPProblem): LPSolutio
 
   const x = Array.from(y, (yi, i) => yi + lb[i]);
   const z = c.reduce((s, ci, i) => s + ci * x[i], 0);
-  return { feasible: infeasAmt < 1e-4, z, x };
+  return { feasible: infeasAmt < 1e-4, z, x, maxIterationsReached: iterCount >= MAX_ITER };
 }

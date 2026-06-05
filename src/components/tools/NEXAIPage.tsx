@@ -46,7 +46,9 @@ const PRESET_QUERIES = [
   'Explain the thermodynamic risk in the current pathway using attached evidence.',
 ];
 
-function extractYear(citation?: string): number | null {
+/** Extract publication year from citation string. Prefers structured year field if available. */
+function extractYear(citation?: string, structuredYear?: number | null): number | null {
+  if (structuredYear) return structuredYear;
   if (!citation) return null;
   const m = citation.match(/\b(19|20)\d{2}\b/);
   return m ? parseInt(m[0]) : null;

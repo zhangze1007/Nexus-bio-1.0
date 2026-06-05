@@ -27,12 +27,13 @@ export default function MetricCard({ label, value, unit, delta, warning, highlig
       border: `1px solid ${highlight ? 'rgba(191,220,205,0.28)' : PATHD_THEME.sepiaPanelBorder}`,
       borderRadius: '14px',
       boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
+      overflow: 'hidden',
     }}>
       <p style={{ fontFamily: SANS, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.09em', color: PATHD_THEME.label, margin: '0 0 8px' }}>
         {label}
       </p>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: '5px' }}>
-        <span style={{ fontFamily: MONO, fontSize: '20px', fontWeight: 700, color: PATHD_THEME.value, letterSpacing: '-0.02em', lineHeight: 1 }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: '5px', minWidth: 0 }}>
+        <span style={{ fontFamily: MONO, fontSize: '20px', fontWeight: 700, color: PATHD_THEME.value, letterSpacing: '-0.02em', lineHeight: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {typeof value === 'number' ? value.toFixed(value < 10 ? 3 : value < 100 ? 2 : 1) : value}
         </span>
         {unit && (
