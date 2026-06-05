@@ -2,6 +2,15 @@
 
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
+import { createAxonSlice, AXON_RUN_LIMIT, AXON_LOG_LIMIT } from './slices/axonSlice';
+import {
+  STAGE_IDS, WORKBENCH_SCHEMA_VERSION, RUN_ARTIFACT_LIMIT, TOOL_RUN_LIMIT,
+  WORKBENCH_ACTOR_KEY, DEFAULT_PROJECT_SYNC_SCOPE, PROVENANCE_MIDDLEWARE_TOOL_IDS,
+  createId, getWorkbenchActorId, stableSerialize, normalizeNonEmptyId,
+  isPayloadRecord, payloadTimestamp, createEmptyCheckpoints, buildCheckpoints,
+  composeEvidenceText, buildRecommendationsFromToolIds, deriveTargetProduct,
+  shouldAutoSeedDemo, inferToolSimulation, payloadValidity,
+} from './workbenchStoreHelpers';
 import type { BottleneckEnzyme, DeNovoDesignStrategy, PathwayEdge, PathwayNode } from '../types';
 import type { WorkflowArtifact } from '../domain/workflowArtifact';
 import { deriveAnalyzeCompatibilityProjection } from '../domain/workflowArtifactAdapters';
@@ -181,117 +190,7 @@ interface WorkbenchState extends WorkbenchCanonicalState {
   resetWorkbench: () => void;
 }
 
-const STAGE_IDS: WorkbenchStageId[] = ['stage-1', 'stage-2', 'stage-3', 'stage-4'];
-const WORKBENCH_SCHEMA_VERSION = 1;
-const RUN_ARTIFACT_LIMIT = 160;
-const TOOL_RUN_LIMIT = 120;
-const AXON_RUN_LIMIT = 80;
-const AXON_LOG_LIMIT = 400;
-const WORKBENCH_ACTOR_KEY = 'nexus-bio:workbench-actor-id';
-const DEFAULT_PROJECT_SYNC_SCOPE = 'default-workbench';
-const PROVENANCE_MIDDLEWARE_TOOL_IDS = new Set(['pathd', 'dyncon', 'dbtlflow', 'catdes']);
-
-function createId(prefix: string) {
-  return `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
-}
-
-function getWorkbenchActorId() {
-  if (typeof window === 'undefined') return 'system';
-  try {
-    const existing = window.localStorage.getItem(WORKBENCH_ACTOR_KEY);
-    if (existing && existing.trim().length > 0) return existing;
-    const generated = typeof window.crypto?.randomUUID === 'function'
-      ? `actor-${window.crypto.randomUUID()}`
-      : createId('actor');
-    window.localStorage.setItem(WORKBENCH_ACTOR_KEY, generated);
-    return generated;
-  } catch {
-    return 'system';
-  }
-}
-
-function stableSerialize(value: unknown) {
-  try {
-    return JSON.stringify(value);
-  } catch {
-    return '';
-  }
-}
-
-function createEmptyCheckpoints(now = Date.now()): StageCheckpoint[] {
-  return STAGE_IDS.map((id) => ({
-    id,
-    status: 'pending',
-    summary: 'Waiting for project context',
-    updatedAt: now,
-  }));
-}
-
-function deriveTargetProduct(nodes: PathwayNode[]) {
-  const preferred = [...nodes].reverse().find((node) => node.nodeType !== 'enzyme' && node.nodeType !== 'gene');
-  return preferred?.label ?? nodes[nodes.length - 1]?.label ?? 'Target Product';
-}
-
-function composeEvidenceText(items: WorkbenchEvidenceItem[]) {
-  return items
-    .map((item) => {
-      const meta = [
-        item.source ?? item.journal,
-        item.year,
-        item.doi ? `DOI: ${item.doi}` : null,
-      ].filter(Boolean).join(' · ');
-      return [
-        `Title: ${item.title}`,
-        item.authors.length ? `Authors: ${item.authors.join(', ')}` : null,
-        meta ? `Source: ${meta}` : null,
-        item.abstract ? `Abstract: ${item.abstract}` : null,
-      ].filter(Boolean).join('\n');
-    })
-    .join('\n\n---\n\n');
-}
-
-function buildRecommendationsFromToolIds(toolIds: string[], source: NextStepRecommendation['source'], reason: string): NextStepRecommendation[] {
-  return toolIds.map((toolId) => ({
-    id: `${source}-${toolId}`,
-    toolId,
-    source,
-    reason,
-  }));
-}
-
-function buildCheckpoints(
-  currentStageId: WorkbenchStageId | null,
-  analyzeArtifact: WorkbenchAnalyzeArtifact | null,
-  toolRuns: WorkbenchToolRun[],
-): StageCheckpoint[] {
-  const now = Date.now();
-  const hasStageVisits = (stageId: WorkbenchStageId) => toolRuns.some((run) => run.stageId === stageId);
-
-  return STAGE_IDS.map((stageId) => {
-    if (stageId === 'stage-1' && analyzeArtifact) {
-      return {
-        id: stageId,
-        status: currentStageId === stageId ? 'active' : 'complete',
-        summary: `${analyzeArtifact.pathwayCandidates.length || 1} analyzed pathway candidate ready`,
-        updatedAt: now,
-      };
-    }
-    if (hasStageVisits(stageId)) {
-      return {
-        id: stageId,
-        status: currentStageId === stageId ? 'active' : 'complete',
-        summary: `Visited ${toolRuns.filter((run) => run.stageId === stageId).length} workbench step(s)`,
-        updatedAt: now,
-      };
-    }
-    return {
-      id: stageId,
-      status: currentStageId === stageId ? 'active' : 'pending',
-      summary: currentStageId === stageId ? 'Current execution focus' : 'Not started',
-      updatedAt: now,
-    };
-  });
-}
+// Constants and pure helpers imported from ./workbenchStoreHelpers
 
 function summarizePayload<K extends keyof WorkbenchToolPayloadMap>(toolId: K, payload: WorkbenchToolPayloadMap[K]) {
   if (!payload) return `${String(toolId).toUpperCase()} updated`;
@@ -357,33 +256,7 @@ function summarizePayload<K extends keyof WorkbenchToolPayloadMap>(toolId: K, pa
   }
 }
 
-/**
- * Phase-1 — Workflow Control Plane. Returns true when the URL carries
- * `?demo=1` (or the env flag NEXT_PUBLIC_AUTO_DEMO=1). All other entry
- * paths must invoke `seedDemoProject` explicitly. Returning false on
- * the server (window undefined) preserves SSR safety.
- */
-function shouldAutoSeedDemo(): boolean {
-  if (typeof window === 'undefined') return false;
-  try {
-    if (window.location.search.includes('demo=1')) return true;
-  } catch {
-    // Ignore — sandboxed iframes can throw on .search access.
-  }
-  if (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_AUTO_DEMO === '1') return true;
-  return false;
-}
-
-function inferToolSimulation(payload: WorkbenchToolPayloadMap[keyof WorkbenchToolPayloadMap]) {
-  if (!payload) return true;
-  if ('validity' in payload && payload.validity === 'demo') return true;
-  if ('result' in payload && payload.result && typeof payload.result === 'object') {
-    if ('mode' in payload.result) {
-      return payload.result.mode === 'mock' || payload.result.mode === 'idle';
-    }
-  }
-  return false;
-}
+// shouldAutoSeedDemo, inferToolSimulation imported from ./workbenchStoreHelpers
 
 type ContractStatusDecision = {
   status: WorkbenchRunStatus;
@@ -395,11 +268,7 @@ type ContractStatusDecision = {
   humanGateRequired: boolean;
 };
 
-function payloadValidity(payload: WorkbenchToolPayloadMap[keyof WorkbenchToolPayloadMap]): WorkbenchRunArtifact['validity'] {
-  if (!payload || typeof payload !== 'object' || !('validity' in payload)) return null;
-  const validity = payload.validity;
-  return validity === 'real' || validity === 'partial' || validity === 'demo' ? validity : null;
-}
+// payloadValidity imported from ./workbenchStoreHelpers
 
 const EVIDENCE_SOURCE_KINDS: EvidenceSourceKind[] = ['literature', 'analysis', 'tool', 'system'];
 
@@ -883,22 +752,7 @@ function touchState(state: WorkbenchState, patch: Partial<WorkbenchCanonicalStat
   };
 }
 
-function normalizeNonEmptyId(value: string | null | undefined) {
-  if (typeof value !== 'string') return null;
-  const normalized = value.trim();
-  return normalized.length > 0 ? normalized : null;
-}
-
-function isPayloadRecord(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
-}
-
-function payloadTimestamp(value: unknown): string | undefined {
-  if (!isPayloadRecord(value) || typeof value.updatedAt !== 'number' || !Number.isFinite(value.updatedAt)) {
-    return undefined;
-  }
-  return new Date(value.updatedAt).toISOString();
-}
+// normalizeNonEmptyId, isPayloadRecord, payloadTimestamp imported from ./workbenchStoreHelpers
 
 function outputAssumptionIdsForTool(toolId: string): string[] {
   return (TOOL_ASSUMPTIONS[toolId] ?? []).map((assumption) => assumption.id);
@@ -1162,9 +1016,6 @@ const initialState: Pick<
   | 'backendMeta'
   | 'collaborators'
   | 'experimentRecords'
-  | 'axonRuns'
-  | 'axonLogs'
-  | 'axonPlan'
   | 'syncAuditLog'
   | 'historyLog'
   | 'syncStatus'
@@ -1198,9 +1049,7 @@ const initialState: Pick<
   backendMeta: null,
   collaborators: [],
   experimentRecords: [],
-  axonRuns: [],
-  axonLogs: [],
-  axonPlan: null,
+  // Axon state provided by createAxonSlice
   syncAuditLog: [],
   historyLog: [],
   syncStatus: 'idle',
@@ -1217,6 +1066,7 @@ export const useWorkbenchStore = create<WorkbenchState>()(
   persist(
     (set, get) => ({
       ...initialState,
+      ...createAxonSlice(set, get, undefined as any),
 
       ensureProject: (seed) => {
         const now = Date.now();
@@ -1547,44 +1397,7 @@ export const useWorkbenchStore = create<WorkbenchState>()(
         });
       },
 
-      appendAxonRun: (record) => {
-        set((state) => ({
-          axonRuns: [record, ...state.axonRuns].slice(0, AXON_RUN_LIMIT),
-        }));
-      },
-
-      clearAxonRuns: () => {
-        set({ axonRuns: [] });
-      },
-
-      appendAxonLog: (entry) => {
-        set((state) => ({
-          axonLogs: [entry, ...state.axonLogs].slice(0, AXON_LOG_LIMIT),
-        }));
-      },
-
-      clearAxonLogs: () => {
-        set({ axonLogs: [] });
-      },
-
-      setAxonPlan: (plan) => {
-        set({ axonPlan: plan });
-      },
-
-      updateAxonPlanStep: (planId, stepId, patch) => {
-        set((state) => {
-          const plan = state.axonPlan;
-          if (!plan || plan.id !== planId) return state;
-          return {
-            axonPlan: {
-              ...plan,
-              steps: plan.steps.map((s) =>
-                s.id === stepId ? { ...s, ...patch } : s,
-              ),
-            },
-          };
-        });
-      },
+      // Axon actions are provided by createAxonSlice (spread above)
 
       setToolPayload: (toolId, payload) => {
         set((state) => {
