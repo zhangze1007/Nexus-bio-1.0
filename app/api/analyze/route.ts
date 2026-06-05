@@ -79,15 +79,13 @@ Global output obligations:
 5. If no bottleneck is found, set bottleneck arrays to [] and ask a conservative question about pathway optimization.
 6. Include enzyme efficiency estimates on enzyme nodes as "efficiency_percent" field.`;
 
-const CORS_HEADERS = {
-  'Content-Type': 'application/json',
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
-};
+import { getCorsHeaders, handleOptions } from '@/utils/cors';
 
-function jsonResponse(body: unknown, status = 200) {
-  return new NextResponse(JSON.stringify(body), { status, headers: CORS_HEADERS });
+function jsonResponse(body: unknown, status = 200, req?: Request) {
+  return new NextResponse(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json', ...getCorsHeaders(req) },
+  });
 }
 
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
@@ -450,8 +448,8 @@ async function tryGemini(
   return null;
 }
 
-export async function OPTIONS() {
-  return new NextResponse(null, { status: 200, headers: CORS_HEADERS });
+export async function OPTIONS(req: Request) {
+  return handleOptions(req);
 }
 
 // ── Senior Metabolic Engineer prompt builder for dynamic search queries ──

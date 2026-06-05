@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getCorsHeaders, handleOptions } from '@/utils/cors';
 
 export const runtime = 'edge';
 
@@ -16,10 +17,13 @@ export const runtime = 'edge';
 
 const KEGG_BASE = 'https://rest.kegg.jp';
 
-const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*',
-  'Cache-Control': 'public, max-age=3600',
-};
+function corsHeaders(req?: Request) {
+  return { ...getCorsHeaders(req), 'Cache-Control': 'public, max-age=3600' };
+}
+
+export async function OPTIONS(req: NextRequest) {
+  return handleOptions(req);
+}
 
 export async function GET(req: NextRequest) {
   const compound = req.nextUrl.searchParams.get('compound');
@@ -32,7 +36,7 @@ export async function GET(req: NextRequest) {
       const sanitized = compound.replace(/[^a-zA-Z0-9\s\-()]/g, '').slice(0, 100);
       const res = await fetch(`${KEGG_BASE}/find/compound/${encodeURIComponent(sanitized)}`);
       if (!res.ok) {
-        return NextResponse.json({ error: 'KEGG compound search failed', status: res.status }, { status: 502, headers: CORS_HEADERS });
+        return NextResponse.json({ error: 'KEGG compound search failed', status: res.status }, { status: 502, headers: corsHeaders(req) });
       }
       const text = await res.text();
       const results = text
@@ -43,17 +47,17 @@ export async function GET(req: NextRequest) {
           const [id, ...nameParts] = line.split('\t');
           return { id: id?.replace('cpd:', '') ?? '', names: nameParts.join('\t') };
         });
-      return NextResponse.json({ query: sanitized, results }, { headers: CORS_HEADERS });
+      return NextResponse.json({ query: sanitized, results }, { headers: corsHeaders(req) });
     }
 
     // Mode 2: Get pathways linked to a compound ID
     if (pathway) {
       if (!/^C\d{5}$/.test(pathway)) {
-        return NextResponse.json({ error: 'Invalid KEGG compound ID (expected C#####)' }, { status: 400, headers: CORS_HEADERS });
+        return NextResponse.json({ error: 'Invalid KEGG compound ID (expected C#####)' }, { status: 400, headers: corsHeaders(req) });
       }
       const res = await fetch(`${KEGG_BASE}/link/pathway/${pathway}`);
       if (!res.ok) {
-        return NextResponse.json({ error: 'KEGG pathway link failed', status: res.status }, { status: 502, headers: CORS_HEADERS });
+        return NextResponse.json({ error: 'KEGG pathway link failed', status: res.status }, { status: 502, headers: corsHeaders(req) });
       }
       const text = await res.text();
       const pathways = text
@@ -64,30 +68,30 @@ export async function GET(req: NextRequest) {
           const parts = line.split('\t');
           return { compound: parts[0]?.replace('cpd:', '') ?? '', pathway: parts[1]?.replace('path:', '') ?? '' };
         });
-      return NextResponse.json({ compound: pathway, pathways }, { headers: CORS_HEADERS });
+      return NextResponse.json({ compound: pathway, pathways }, { headers: corsHeaders(req) });
     }
 
     // Mode 3: Get reaction details
     if (reaction) {
       if (!/^R\d{5}$/.test(reaction)) {
-        return NextResponse.json({ error: 'Invalid KEGG reaction ID (expected R#####)' }, { status: 400, headers: CORS_HEADERS });
+        return NextResponse.json({ error: 'Invalid KEGG reaction ID (expected R#####)' }, { status: 400, headers: corsHeaders(req) });
       }
       const res = await fetch(`${KEGG_BASE}/get/${reaction}`);
       if (!res.ok) {
-        return NextResponse.json({ error: 'KEGG reaction fetch failed', status: res.status }, { status: 502, headers: CORS_HEADERS });
+        return NextResponse.json({ error: 'KEGG reaction fetch failed', status: res.status }, { status: 502, headers: corsHeaders(req) });
       }
       const text = await res.text();
-      return NextResponse.json({ reaction, data: text }, { headers: CORS_HEADERS });
+      return NextResponse.json({ reaction, data: text }, { headers: corsHeaders(req) });
     }
 
     return NextResponse.json(
       { error: 'Missing parameter. Use ?compound=<name>, ?pathway=<C#####>, or ?reaction=<R#####>' },
-      { status: 400, headers: CORS_HEADERS },
+      { status: 400, headers: corsHeaders(req) },
     );
   } catch (err) {
     return NextResponse.json(
       { error: 'KEGG proxy error', detail: err instanceof Error ? err.message : 'Unknown error' },
-      { status: 502, headers: CORS_HEADERS },
+      { status: 502, headers: corsHeaders(req) },
     );
   }
 }

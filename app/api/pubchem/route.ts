@@ -1,23 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getCorsHeaders, handleOptions } from '@/utils/cors';
 
 export const runtime = 'edge';
 
-const CORS = {
-  'Content-Type': 'text/plain',
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
-};
+function getCors(req?: Request) {
+  return { 'Content-Type': 'text/plain', ...getCorsHeaders(req) };
+}
 
-function json(b: unknown, s = 200) {
+function json(b: unknown, s = 200, req?: Request) {
   return new NextResponse(JSON.stringify(b), {
     status: s,
-    headers: { ...CORS, 'Content-Type': 'application/json' },
+    headers: { ...getCors(req), 'Content-Type': 'application/json' },
   });
 }
 
-export async function OPTIONS() {
-  return new NextResponse(null, { status: 200, headers: CORS });
+export async function OPTIONS(req: NextRequest) {
+  return handleOptions(req);
 }
 
 export async function GET(req: NextRequest) {
@@ -41,7 +39,7 @@ export async function GET(req: NextRequest) {
         if (!res.ok) continue;
         const sdf = await res.text();
         if (!sdf || sdf.length < 30) continue;
-        return new NextResponse(sdf, { status: 200, headers: CORS });
+        return new NextResponse(sdf, { status: 200, headers: getCors(req) });
       } catch { continue; }
     }
 
@@ -84,7 +82,7 @@ export async function GET(req: NextRequest) {
           // Return SDF with CID in header so frontend knows what was found
           return new NextResponse(sdf, {
             status: 200,
-            headers: { ...CORS, 'X-PubChem-CID': String(foundCid) },
+            headers: { ...getCors(req), 'X-PubChem-CID': String(foundCid) },
           });
         } catch { continue; }
       }

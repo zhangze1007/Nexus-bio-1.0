@@ -45,10 +45,10 @@ export function runRK4(
     const k4s = formationRate - v(S + dt * k3s);
     S = Math.max(0, S + (dt / 6) * (k1s + 2 * k2s + 2 * k3s + k4s));
 
-    const k1p = v(substrate[i]) - degradationRate * P;
-    const k2p = v(substrate[i]) - degradationRate * (P + dt * k1p / 2);
-    const k3p = v(substrate[i]) - degradationRate * (P + dt * k2p / 2);
-    const k4p = v(substrate[i]) - degradationRate * (P + dt * k3p);
+    const k1p = v(S) - degradationRate * P;
+    const k2p = v(S + dt * k1s / 2) - degradationRate * (P + dt * k1p / 2);
+    const k3p = v(S + dt * k2s / 2) - degradationRate * (P + dt * k2p / 2);
+    const k4p = v(S + dt * k3s) - degradationRate * (P + dt * k3p);
     P = Math.max(0, P + (dt / 6) * (k1p + 2 * k2p + 2 * k3p + k4p));
 
     time.push(parseFloat(((i + 1) * dt).toFixed(3)));

@@ -1,13 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getCorsHeaders, handleOptions } from '@/utils/cors';
 
 export const runtime = 'edge';
 
 const MIN_VALID_PDB_LENGTH = 100;
 
+export async function OPTIONS(req: NextRequest) {
+  return handleOptions(req);
+}
+
 export async function GET(req: NextRequest) {
-  const headers = {
+  const headers: Record<string, string> = {
     'Content-Type': 'text/plain',
-    'Access-Control-Allow-Origin': '*',
+    ...getCorsHeaders(req),
   };
 
   const uniprotId = req.nextUrl.searchParams.get('id');

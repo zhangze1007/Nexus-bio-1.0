@@ -1,9 +1,14 @@
 import { NextResponse } from 'next/server';
 import { solveAuthorityCommunityFBA, solveAuthorityFBA, type CommunityFBARequest, type FBAObjective, type FBASpecies } from '../../../src/server/fbaEngine';
 import { createProvenanceEntry } from '../../../src/utils/provenance';
+import { getCorsHeaders, handleOptions } from '../../../src/utils/cors';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+
+export async function OPTIONS(req: Request) {
+  return handleOptions(req);
+}
 
 function asNumber(value: unknown, fallback: number) {
   return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
@@ -25,7 +30,7 @@ function asKnockouts(value: unknown) {
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
   if (!body || typeof body !== 'object') {
-    return NextResponse.json({ ok: false, error: 'Invalid FBA request payload' }, { status: 400 });
+    return NextResponse.json({ ok: false, error: 'Invalid FBA request payload' }, { status: 400, headers: getCorsHeaders(request) });
   }
   const input = body as Record<string, any>;
 
@@ -64,7 +69,7 @@ export async function POST(request: Request) {
           confidence: 'demo',
         }],
       });
-      return NextResponse.json({ ok: true, mode: 'community', result, provenance: provenanceEntry });
+      return NextResponse.json({ ok: true, mode: 'community', result, provenance: provenanceEntry }, { headers: getCorsHeaders(request) });
     }
 
     const result = await solveAuthorityFBA({
@@ -90,7 +95,7 @@ export async function POST(request: Request) {
       }],
     });
 
-    return NextResponse.json({ ok: true, mode: 'single', result, provenance: provenanceEntry });
+    return NextResponse.json({ ok: true, mode: 'single', result, provenance: provenanceEntry }, { headers: getCorsHeaders(request) });
   } catch (error) {
     if (process.env.NODE_ENV !== 'production') {
       console.error('FBA route failed', error);
@@ -100,7 +105,7 @@ export async function POST(request: Request) {
         ok: false,
         error: error instanceof Error ? error.message : 'Authoritative FBA solve failed',
       },
-      { status: 500 },
+      { status: 500, headers: getCorsHeaders(request) },
     );
   }
 }

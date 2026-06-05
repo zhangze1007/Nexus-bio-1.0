@@ -154,7 +154,7 @@ function ProteinCanvas({ pdbId, alphafoldId, name, useAlphaFold }: ProteinCanvas
         containerRef.current.innerHTML = '';
 
         const viewer = window.$3Dmol.createViewer(containerRef.current, {
-          backgroundColor: 'white', // WHITE background
+          backgroundColor: '#050505',
           antialias: true,
         });
         viewerRef.current = viewer;
@@ -237,18 +237,18 @@ function ProteinCanvas({ pdbId, alphafoldId, name, useAlphaFold }: ProteinCanvas
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '360px' }}>
-      {/* 3Dmol container — WHITE background */}
+      {/* 3Dmol container */}
       <div
         ref={containerRef}
-        style={{ width: '100%', height: '100%', borderRadius: '14px', overflow: 'hidden', background: '#ffffff', border: '1px solid rgba(0,0,0,0.1)', boxShadow: '0 4px 24px rgba(0,0,0,0.15)' }}
+        style={{ width: '100%', height: '100%', borderRadius: '14px', overflow: 'hidden', background: '#050505', border: '1px solid rgba(250,246,240,0.08)', boxShadow: '0 4px 24px rgba(0,0,0,0.4)' }}
       />
 
       {/* Loading */}
       {status === 'loading' && (
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '10px', background: '#ffffff', borderRadius: '14px', pointerEvents: 'none' }}>
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '10px', background: '#050505', borderRadius: '14px', pointerEvents: 'none' }}>
           <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
           <Loader2 size={22} style={{ color: '#6495ED', animation: 'spin 1s linear infinite' }} />
-          <span style={{ color: '#666', fontSize: '12px', fontFamily: 'monospace' }}>
+          <span style={{ color: 'rgba(250,246,240,0.5)', fontSize: '12px', fontFamily: 'monospace' }}>
             Loading {useAlphaFold ? 'AlphaFold' : 'RCSB PDB'} · {useAlphaFold ? alphafoldId : pdbId}
           </span>
         </div>
@@ -256,8 +256,8 @@ function ProteinCanvas({ pdbId, alphafoldId, name, useAlphaFold }: ProteinCanvas
 
       {/* Error */}
       {status === 'error' && (
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', background: '#ffffff', borderRadius: '14px' }}>
-          <span style={{ color: '#cc4444', fontSize: '12px', fontFamily: 'monospace' }}>Structure unavailable</span>
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', background: '#050505', borderRadius: '14px' }}>
+          <span style={{ color: '#FA8072', fontSize: '12px', fontFamily: 'monospace' }}>Structure unavailable</span>
           <a href={`https://www.rcsb.org/structure/${pdbId}`} target="_blank" rel="noopener noreferrer" style={{ color: '#6495ED', fontSize: '11px' }}>
             Open in RCSB →
           </a>
@@ -448,7 +448,7 @@ export default function PDBExplorer() {
                 <button
                   onClick={() => { if (customPDB.length === 4) setCustomActive(true); }}
                   disabled={customPDB.length !== 4}
-                  style={{ padding: '8px 12px', background: customPDB.length === 4 ? '#ffffff' : 'rgba(255,255,255,0.05)', color: customPDB.length === 4 ? '#0a0a0a' : 'rgba(255,255,255,0.2)', borderRadius: '8px', border: 'none', fontSize: '12px', fontWeight: 600, cursor: customPDB.length === 4 ? 'pointer' : 'not-allowed', transition: 'all 0.15s' }}>
+                  style={{ padding: '8px 12px', background: customPDB.length === 4 ? 'rgba(147,203,82,0.15)' : 'rgba(255,255,255,0.05)', color: customPDB.length === 4 ? 'rgba(147,203,82,0.9)' : 'rgba(255,255,255,0.2)', borderRadius: '8px', border: customPDB.length === 4 ? '1px solid rgba(147,203,82,0.4)' : '1px solid rgba(255,255,255,0.08)', fontSize: '12px', fontWeight: 600, cursor: customPDB.length === 4 ? 'pointer' : 'not-allowed', transition: 'all 0.15s' }}>
                   Load
                 </button>
               </div>

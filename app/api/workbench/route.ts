@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { deriveAnalyzeCompatibilityProjection } from '../../../src/domain/workflowArtifactAdapters';
 import type { WorkflowArtifact } from '../../../src/domain/workflowArtifact';
 import { sanitizeWorkbenchState } from '../../../src/store/workbenchValidation';
+import { getCorsHeaders, handleOptions } from '../../../src/utils/cors';
 import {
   getBackendMeta,
   getWorkbenchDb,
@@ -17,6 +18,10 @@ import {
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+
+export async function OPTIONS(req: Request) {
+  return handleOptions(req);
+}
 
 function normalizeNonEmptyId(value: string | null | undefined) {
   if (typeof value !== 'string') return undefined;
@@ -56,7 +61,7 @@ export async function GET(request: Request) {
   const explicitScope = useArtifactScope ? { forceExplicit: true as const } : undefined;
 
   if (artifactId && !projectStateExists(db, artifactId, explicitScope)) {
-    return NextResponse.json({ ok: false, error: 'Workflow artifact not found' }, { status: 404 });
+    return NextResponse.json({ ok: false, error: 'Workflow artifact not found' }, { status: 404, headers: getCorsHeaders(request) });
   }
 
   const state = readProjectState(db, artifactId ?? projectId, explicitScope);
@@ -66,7 +71,7 @@ export async function GET(request: Request) {
   const history = listCanonicalHistory(db, resolvedProjectId, 16, explicitScope);
   const members = listProjectMembers(db, resolvedProjectId, 24, explicitScope);
   const experiments = listExperimentRecords(db, resolvedProjectId, 24, explicitScope);
-  return NextResponse.json({ ok: true, state, backend, members, experiments, audit, history });
+  return NextResponse.json({ ok: true, state, backend, members, experiments, audit, history }, { headers: getCorsHeaders(request) });
 }
 
 export async function PUT(request: Request) {
@@ -74,7 +79,7 @@ export async function PUT(request: Request) {
   const body = await request.json().catch(() => null);
   const incoming = sanitizeWorkbenchState(body?.state);
   if (!incoming) {
-    return NextResponse.json({ ok: false, error: 'Invalid workbench payload' }, { status: 400 });
+    return NextResponse.json({ ok: false, error: 'Invalid workbench payload' }, { status: 400, headers: getCorsHeaders(request) });
   }
 
   const db = await getWorkbenchDb();
