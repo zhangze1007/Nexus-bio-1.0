@@ -3,6 +3,7 @@ import { useState, useMemo, useRef, useEffect } from 'react';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
 import SimErrorBanner from '../ide/shared/SimErrorBanner';
+import { SimSkeleton } from '../shared/Skeleton';
 import { usePersistedState } from '../ide/shared/usePersistedState';
 import { useUIStore } from '../../store/uiStore';
 import { useWorkbenchStore } from '../../store/workbenchStore';
@@ -470,9 +471,10 @@ export default function FBASimPage() {
             {singleError && <div style={{ padding: '0 16px 8px' }}><SimErrorBanner message={singleError} /></div>}
             {singleLoading && (
               <div style={{ padding: '0 16px 8px' }}>
-                <div style={{ padding: '6px 10px', borderRadius: '10px', border: '1px solid rgba(81,81,205,0.22)', background: 'rgba(81,81,205,0.08)', color: 'rgba(240,245,255,0.78)', fontFamily: T.SANS, fontSize: '10px' }}>
+                <div style={{ padding: '6px 10px', borderRadius: '10px', border: '1px solid rgba(81,81,205,0.22)', background: 'rgba(81,81,205,0.08)', color: 'rgba(240,245,255,0.78)', fontFamily: T.SANS, fontSize: '10px', marginBottom: '8px' }}>
                   Authority engine recomputing server-side LP.
                 </div>
+                <SimSkeleton />
               </div>
             )}
 
