@@ -59,6 +59,11 @@ export const T = {
   R_MD: '12px',
   R_LG: '16px',
   R_XL: '20px',
+
+  // Elevation shadows (3 levels)
+  SHADOW_LOW:    '0 2px 8px rgba(0,0,0,0.18)',
+  SHADOW_MEDIUM: '0 8px 24px rgba(0,0,0,0.28)',
+  SHADOW_HIGH:   '0 16px 48px rgba(0,0,0,0.38)',
   // Tool result accent colors — only used inside tool pages for data differentiation
   RESULT_MINT:   '#BFDCCD',
   RESULT_CORAL:  '#E8A3A1',
