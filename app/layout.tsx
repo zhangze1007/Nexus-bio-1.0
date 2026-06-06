@@ -3,6 +3,7 @@ import { Suspense } from 'react';
 import './globals.css';
 import WorkbenchSyncProvider from '../src/components/workbench/WorkbenchSyncProvider';
 import { RouteTransition } from '../src/components/shared/RouteTransition';
+import { OnboardingOverlay } from '../src/components/shared/OnboardingOverlay';
 
 export const metadata: Metadata = {
   title: 'Nexus-Bio | Synthetic Biology Research Workbench',
@@ -48,6 +49,7 @@ export default function RootLayout({
         <div id="root">
           <RouteTransition>{children}</RouteTransition>
         </div>
+        <OnboardingOverlay />
       </body>
     </html>
   );
