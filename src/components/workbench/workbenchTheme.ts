@@ -58,9 +58,9 @@ export const PATHD_THEME = {
   chipLilac: 'rgba(207, 196, 227, 0.16)',
   chipBorder: 'rgba(175, 195, 214, 0.22)',
   chipBorderWarm: 'rgba(231, 199, 169, 0.28)',
-  chipText: '#20252B',
+  chipText: 'rgba(250, 246, 240, 0.96)',
   label: 'rgba(217, 225, 235, 0.68)',
   value: 'rgba(250, 246, 240, 0.96)',
-  ink: '#20252B',
-  inkSoft: '#4E555F',
+  ink: 'rgba(250, 246, 240, 0.96)',
+  inkSoft: 'rgba(217, 225, 235, 0.45)',
 } as const;
