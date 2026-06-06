@@ -103,8 +103,8 @@ export const useUIStore = create<UIState>()(
     consoleEntries: [],
     consoleOpen: false,
 
-    // IDE Sidebar — starts collapsed (icon strip only)
-    sidebarCollapsed: true,
+    // IDE Sidebar — starts expanded (labels visible); user can collapse
+    sidebarCollapsed: false,
 
     // Copilot slide-over — closed by default
     copilotOpen: false,
