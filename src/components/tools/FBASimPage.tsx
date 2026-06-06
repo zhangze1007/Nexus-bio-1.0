@@ -424,6 +424,7 @@ export default function FBASimPage() {
       tabs={FBA_TABS}
       activeTab={activeTab}
       onTabChange={setActiveTab}
+      advancedTabIds={['knockout', 'shadows', 'community']}
       footer={
         <>
           <ExportButton label="Export JSON" data={exportData} filename={`fbasim-${simMode}-result`} format="json" />

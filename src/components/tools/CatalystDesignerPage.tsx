@@ -633,6 +633,7 @@ export default function CatalystDesignerPage() {
       tabs={CATDES_TABS}
       activeTab={activeTab}
       onTabChange={setActiveTab}
+      advancedTabIds={['sequences', 'pareto', 'mutagenesis']}
       footer={
         <>
           <ExportButton label="Export JSON"

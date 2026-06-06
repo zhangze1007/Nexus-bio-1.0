@@ -425,6 +425,7 @@ export default function DynConPage() {
       tabs={DYNCON_TABS}
       activeTab={activeTab}
       onTabChange={setActiveTab}
+      advancedTabIds={['convergence', 'rbs']}
       footer={
         <>
           <ExportButton label="Export JSON" data={trajectory} filename="dyncon-trajectory" format="json" />

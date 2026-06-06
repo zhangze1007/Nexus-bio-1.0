@@ -27,8 +27,10 @@
  */
 'use client';
 import type { CSSProperties, ReactNode } from 'react';
+import { useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { LayoutGrid, ChevronLeft } from 'lucide-react';
+import { LayoutGrid, ChevronLeft, SlidersHorizontal, Minimize2 } from 'lucide-react';
+import { usePersistedState } from '../../ide/shared/usePersistedState';
 import { getToolDefinition } from './toolRegistry';
 import { getToolValidity, type ValidityLevel } from '../../../config/toolValidity';
 import { useNavigation } from '../../../contexts/NavigationContext';
@@ -58,6 +60,8 @@ export interface ToolShellProps {
   tabs?: ToolTab[];
   activeTab?: string;
   onTabChange?: (id: string) => void;
+  /** Tab IDs hidden in "simple" mode. Toggle appears automatically when provided. */
+  advancedTabIds?: string[];
 }
 
 export default function ToolShell({
@@ -68,6 +72,7 @@ export default function ToolShell({
   tabs,
   activeTab,
   onTabChange,
+  advancedTabIds,
 }: ToolShellProps) {
   const tool = getToolDefinition(moduleId);
   const validity = getToolValidity(moduleId);
@@ -78,6 +83,28 @@ export default function ToolShell({
     partial: { bg: 'rgba(232, 220, 200, 0.32)', border: 'rgba(180, 150, 100, 0.50)', color: '#8a6a30', label: 'PARTIAL' },
     demo:    { bg: 'rgba(250, 128, 114, 0.16)', border: 'rgba(250, 128, 114, 0.50)', color: '#a8453a', label: 'DEMO' },
   };
+
+  // ── Progressive Disclosure: simple/advanced mode ──
+  const [mode, setMode] = usePersistedState<'simple' | 'advanced'>(
+    `nexus-bio:tool-mode:${moduleId}`,
+    'simple',
+  );
+
+  const hasAdvancedTabs = Boolean(advancedTabIds && advancedTabIds.length > 0 && tabs && tabs.length > advancedTabIds.length);
+
+  const visibleTabs = useMemo(() => {
+    if (!tabs || !hasAdvancedTabs || mode === 'advanced') return tabs;
+    return tabs.filter(t => !advancedTabIds!.includes(t.id));
+  }, [tabs, hasAdvancedTabs, mode, advancedTabIds]);
+
+  const toggleMode = useCallback(() => {
+    const next = mode === 'simple' ? 'advanced' : 'simple';
+    setMode(next);
+    if (next === 'simple' && activeTab && onTabChange && advancedTabIds?.includes(activeTab)) {
+      const firstSimple = tabs?.find(t => !advancedTabIds.includes(t.id));
+      if (firstSimple) onTabChange(firstSimple.id);
+    }
+  }, [mode, setMode, activeTab, onTabChange, advancedTabIds, tabs]);
 
   return (
     <div className="nb-tool-shell" style={{
@@ -228,11 +255,53 @@ export default function ToolShell({
             {formula}
           </div>
         )}
+
+        {/* ── Simple/Advanced Toggle ── */}
+        {hasAdvancedTabs && (
+          <button
+            type="button"
+            onClick={toggleMode}
+            className="nb-ui-control"
+            title={mode === 'simple' ? 'Show advanced tabs' : 'Show simple view'}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px',
+              minHeight: '28px',
+              padding: '0 7px',
+              borderRadius: '12px',
+              border: '1px solid var(--nb-control-border)',
+              background: mode === 'advanced' ? 'rgba(175, 195, 214, 0.15)' : 'var(--nb-control-bg)',
+              color: mode === 'advanced' ? T.SKY : 'var(--nb-control-color)',
+              cursor: 'pointer',
+              fontFamily: T.SANS,
+              fontSize: '10px',
+              fontWeight: mode === 'advanced' ? 600 : 400,
+              flexShrink: 0,
+              transition: 'all 0.2s ease',
+              ['--nb-control-bg' as const]: 'rgba(16,19,26,0.8)',
+              ['--nb-control-border' as const]: 'rgba(255,255,255,0.08)',
+              ['--nb-control-color' as const]: T.LABEL,
+              ['--nb-control-hover-bg' as const]: 'rgba(255,255,255,0.08)',
+              ['--nb-control-hover-border' as const]: 'rgba(255,255,255,0.12)',
+              ['--nb-control-hover-color' as const]: T.VALUE,
+              ['--nb-control-active-bg' as const]: 'rgba(255,255,255,0.12)',
+              ['--nb-control-active-border' as const]: 'rgba(255,255,255,0.16)',
+              ['--nb-control-active-color' as const]: T.VALUE,
+            } as ControlVarsStyle}
+          >
+            {mode === 'simple' ? (
+              <><SlidersHorizontal size={12} /> Advanced</>
+            ) : (
+              <><Minimize2 size={12} /> Simple</>
+            )}
+          </button>
+        )}
       </motion.header>
 
       {/* ── Tab Bar (optional) ─────────────────────────────── */}
-      {tabs && activeTab && onTabChange && (
-        <ToolTabBar tabs={tabs} activeId={activeTab} onChange={onTabChange} />
+      {visibleTabs && visibleTabs.length > 0 && activeTab && onTabChange && (
+        <ToolTabBar tabs={visibleTabs} activeId={activeTab} onChange={onTabChange} />
       )}
 
       {/* ── BentoGrid ──────────────────────────────────────── */}

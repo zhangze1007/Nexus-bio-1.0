@@ -215,6 +215,7 @@ export default function ScSpatialPage() {
       tabs={SCSPATIAL_TABS}
       activeTab={activeTab}
       onTabChange={setActiveTab}
+      advancedTabIds={['trajectory', 'table']}
       footer={
         <>
           <ExportButton

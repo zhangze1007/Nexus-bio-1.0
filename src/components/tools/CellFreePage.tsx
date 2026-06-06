@@ -837,6 +837,7 @@ export default function CellFreePage() {
       tabs={CELLFREE_TABS}
       activeTab={activeTab}
       onTabChange={setActiveTab}
+      advancedTabIds={['fitting', 'iviv', 'reactor']}
       footer={
         <>
           <ExportButton label="Export Simulation JSON" data={result} filename="cellfree-simulation" format="json" />

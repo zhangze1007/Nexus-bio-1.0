@@ -279,6 +279,7 @@ export default function GenMIMPage() {
       tabs={GENMIM_TABS}
       activeTab={activeTab}
       onTabChange={setActiveTab}
+      advancedTabIds={['schedule', 'efficiency']}
       hero={
         <ScientificHero
           eyebrow="Stage 3 · Chassis Minimization"

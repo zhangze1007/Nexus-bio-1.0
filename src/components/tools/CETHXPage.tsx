@@ -380,6 +380,7 @@ export default function CETHXPage() {
       tabs={CETHX_TABS}
       activeTab={activeTab}
       onTabChange={setActiveTab}
+      advancedTabIds={['feasibility']}
       hero={
         <ScientificHero
           eyebrow="Stage 2 · Demo Thermodynamics"

@@ -778,6 +778,7 @@ export default function MultiOPage() {
       tabs={MULTIO_TABS}
       activeTab={activeTab}
       onTabChange={setActiveTab}
+      advancedTabIds={['factors', 'projection', 'efficiency']}
       hero={
         <ScientificHero
             eyebrow="Stage 4 · Deterministic Multi-Omics Demo"
