@@ -179,7 +179,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                   color: VALUE,
                   textDecoration: 'none',
                   fontFamily: T.MONO,
-                  fontSize: '9px',
+                  fontSize: '10px',
                   fontWeight: 600,
                   letterSpacing: '0.04em',
                   whiteSpace: 'nowrap',
@@ -240,7 +240,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
             border: `1px solid ${BORDER}`,
             background: CARD_BG_SOFT,
             fontFamily: T.MONO,
-            fontSize: '8px',
+            fontSize: '10px',
             color: freshness.status === 'stale' ? PATHD_THEME.coral : freshness.status === 'fresh' ? PATHD_THEME.mint : LABEL,
             display: 'inline-flex',
             alignItems: 'center',
@@ -269,7 +269,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
             border: `1px solid ${BORDER}`,
             background: CARD_BG_SOFT,
             fontFamily: T.MONO,
-            fontSize: '8px',
+            fontSize: '10px',
             color: getWorkflowStatusColor(workflowControl.status === 'gated' ? 'humanGate' : workflowControl.status),
             display: 'inline-flex',
             alignItems: 'center',
@@ -287,7 +287,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
         <div
           style={{
             fontFamily: T.MONO,
-            fontSize: '8px',
+            fontSize: '10px',
             color: LABEL,
             letterSpacing: '0.06em',
             whiteSpace: 'nowrap',
@@ -316,7 +316,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
               background: CARD_BG,
               color: LABEL,
               fontFamily: T.SANS,
-              fontSize: '9px',
+              fontSize: '10px',
             }}
           >
             <BookOpenText size={11} />
@@ -336,7 +336,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
               background: CARD_BG,
               color: LABEL,
               fontFamily: T.SANS,
-              fontSize: '9px',
+              fontSize: '10px',
             }}
           >
             <Microscope size={11} />
@@ -358,7 +358,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
               background: 'rgba(207,196,227,0.34)',
               color: VALUE,
               fontFamily: T.SANS,
-              fontSize: '9px',
+              fontSize: '10px',
             }}
           >
             <BrainCircuit size={11} />
@@ -384,7 +384,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
               color: VALUE,
               cursor: 'pointer',
               fontFamily: T.SANS,
-              fontSize: '9px',
+              fontSize: '10px',
             }}
           >
             <Layers3 size={11} />
@@ -535,7 +535,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                           <span style={{ fontFamily: T.SANS, fontSize: '12px', color: VALUE, fontWeight: 700 }}>
                             {workflowStatusLabel(workflowControl.status)}
                           </span>
-                          <span style={{ fontFamily: T.MONO, fontSize: '8px', color: LABEL }}>
+                          <span style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL }}>
                             {workflowProgress}
                           </span>
                         </div>
@@ -556,7 +556,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                                   alignItems: 'center',
                                   gap: '4px',
                                   fontFamily: T.SANS,
-                                  fontSize: '9px',
+                                  fontSize: '10px',
                                   fontWeight: 600,
                                 }}
                               >
@@ -567,7 +567,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                             return item.href ? <Link key={item.id} href={item.href} style={{ textDecoration: 'none' }}>{itemEl}</Link> : <div key={item.id}>{itemEl}</div>;
                           })}
                         </div>
-                        <div style={{ fontFamily: T.MONO, fontSize: '8px', color: LABEL, marginTop: '6px' }}>
+                        <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, marginTop: '6px' }}>
                           {workflowControl.currentToolId && <span>current: {workflowControl.currentToolId.toUpperCase()} · </span>}
                           {workflowControl.confidence !== null && <span>conf {workflowControl.confidence.toFixed(2)} · </span>}
                           <span>uncert {workflowControl.uncertainty === null ? '?' : workflowControl.uncertainty.toFixed(2)}</span>
@@ -635,7 +635,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                               >
                                 {tool.shortLabel}
                                 {nextFreshness[tool.id]?.status === 'stale' && (
-                                  <span style={{ color: 'rgba(255,214,166,0.92)', fontFamily: T.MONO, fontSize: '8px' }}>stale</span>
+                                  <span style={{ color: 'rgba(255,214,166,0.92)', fontFamily: T.MONO, fontSize: '10px' }}>stale</span>
                                 )}
                                 <ArrowUpRight size={11} />
                               </Link>

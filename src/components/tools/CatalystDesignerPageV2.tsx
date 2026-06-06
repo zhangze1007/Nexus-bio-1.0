@@ -71,7 +71,7 @@ const VIEW_MODES: { key: ViewMode; label: string; color: string }[] = [
 
 const SectionLabel = ({ children }: { children: React.ReactNode }) => (
   <p style={{
-    fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase',
+    fontFamily: T.SANS, fontSize: '10px', textTransform: 'uppercase',
     letterSpacing: '0.1em', color: LABEL, margin: '0 0 10px',
   }}>
     {children}
@@ -107,7 +107,7 @@ function SequenceView({ result }: { result: SequenceDesignResult }) {
   return (
     <div style={{ height: '100%', overflow: 'auto', padding: 16 }}>
       <SectionLabel>Designed Sequences — {result.targetEnzyme}</SectionLabel>
-      <p style={{ fontFamily: T.SANS, fontSize: '9px', color: 'rgba(255,255,255,0.35)', margin: '0 0 8px', fontStyle: 'italic' }}>
+      <p style={{ fontFamily: T.SANS, fontSize: '10px', color: 'rgba(255,255,255,0.35)', margin: '0 0 8px', fontStyle: 'italic' }}>
         Stability estimates are heuristic screening scores (BLOSUM62-based), not rigorous ΔΔG values.
       </p>
       {result.designs.map(d => (
@@ -121,7 +121,7 @@ function SequenceView({ result }: { result: SequenceDesignResult }) {
             <span style={{ fontFamily: T.MONO, fontSize: '10px', color: d.rareCodons > 3 ? 'rgba(255,120,120,0.7)' : VALUE }}>{d.rareCodons} rare</span>
           </div>
           <div style={{
-            fontFamily: T.MONO, fontSize: '9px', color: 'rgba(255,255,255,0.45)',
+            fontFamily: T.MONO, fontSize: '10px', color: 'rgba(255,255,255,0.45)',
             letterSpacing: '0.04em', overflowX: 'auto', whiteSpace: 'nowrap',
             padding: '4px 6px', background: 'rgba(0,0,0,0.3)', borderRadius: 6,
           }}>
@@ -265,11 +265,11 @@ export default function CatalystDesignerPageV2() {
         </select>
         {enzyme.id === RATE_LIMITING_ENZYME.id && (
           <span style={{
-            fontFamily: T.MONO, fontSize: '7px', color: '#FFFB1F',
+            fontFamily: T.MONO, fontSize: '10px', color: '#FFFB1F',
             background: 'rgba(255,251,31,0.12)', padding: '1px 5px', borderRadius: 4,
           }}>Rate-limiting</span>
         )}
-        <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL }}>
+        <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>
           {enzyme.substrate} → {enzyme.product}
         </span>
         {/* Inline key metrics */}
@@ -284,7 +284,7 @@ export default function CatalystDesignerPageV2() {
             Fit {binding.overallScore.toFixed(2)}
           </span>
           {enzyme.pdbId && (
-            <span style={{ fontFamily: T.MONO, fontSize: '8px', color: 'rgba(255,255,255,0.25)' }}>
+            <span style={{ fontFamily: T.MONO, fontSize: '10px', color: 'rgba(255,255,255,0.25)' }}>
               PDB {enzyme.pdbId}
             </span>
           )}
@@ -354,7 +354,7 @@ export default function CatalystDesignerPageV2() {
             ]).map(tab => (
               <button key={tab.key} type="button" onClick={() => setInspectorTab(tab.key)} style={{
                 flex: 1, padding: '7px 0', border: 'none', cursor: 'pointer',
-                fontFamily: T.SANS, fontSize: '9px', letterSpacing: '0.06em',
+                fontFamily: T.SANS, fontSize: '10px', letterSpacing: '0.06em',
                 textTransform: 'uppercase',
                 color: inspectorTab === tab.key ? VALUE : LABEL,
                 background: inspectorTab === tab.key ? 'rgba(255,255,255,0.05)' : 'transparent',
@@ -378,31 +378,31 @@ export default function CatalystDesignerPageV2() {
                       <span style={{ fontFamily: T.MONO, fontSize: '14px', color: VALUE, fontWeight: 700 }}>
                         {selectedResidue.name}
                       </span>
-                      <span style={{ fontFamily: T.MONO, fontSize: '9px', color: LABEL }}>
+                      <span style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL }}>
                         pos {selectedResidue.position}
                       </span>
                       {selectedResidue.isCatalytic && (
                         <span style={{
-                          fontFamily: T.MONO, fontSize: '7px', color: '#93CB52',
+                          fontFamily: T.MONO, fontSize: '10px', color: '#93CB52',
                           background: 'rgba(147,203,82,0.12)', padding: '1px 5px', borderRadius: 4,
                         }}>catalytic</span>
                       )}
                     </div>
                     {selectedCatalyticResidue ? (
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3 }}>
-                        <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL }}>Role</span>
+                        <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>Role</span>
                         <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE }}>{selectedCatalyticResidue.role.replace('_', ' ')}</span>
-                        <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL }}>Dist</span>
+                        <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>Dist</span>
                         <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE }}>{selectedCatalyticResidue.distanceToSubstrate.toFixed(1)} Å</span>
-                        <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL }}>Angle</span>
+                        <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>Angle</span>
                         <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE }}>{selectedCatalyticResidue.orientationAngle.toFixed(0)}°</span>
-                        <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL }}>pKa shift</span>
+                        <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>pKa shift</span>
                         <span style={{ fontFamily: T.MONO, fontSize: '10px', color: Math.abs(selectedCatalyticResidue.pKaShift) > 0.5 ? '#FA8072' : VALUE }}>
                           {selectedCatalyticResidue.pKaShift > 0 ? '+' : ''}{selectedCatalyticResidue.pKaShift.toFixed(2)}
                         </span>
                         {selectedResidue.distanceToSubstrate != null && (
                           <>
-                            <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL }}>→ Substrate</span>
+                            <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>→ Substrate</span>
                             <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE }}>{selectedResidue.distanceToSubstrate.toFixed(1)} Å</span>
                           </>
                         )}
@@ -451,32 +451,32 @@ export default function CatalystDesignerPageV2() {
                         </div>
                         {selectedMutagenesisSite && selectedMutagenesisSite.suggestedMutants.includes(pendingMutation) ? (
                           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3 }}>
-                            <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL }}>Δkcat</span>
+                            <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>Δkcat</span>
                             <span style={{ fontFamily: T.MONO, fontSize: '10px', color: selectedMutagenesisSite.predictedDeltaKcat > 1 ? '#93CB52' : '#FA8072' }}>
                               {selectedMutagenesisSite.predictedDeltaKcat.toFixed(2)}×
                             </span>
-                            <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL }}>ΔKm</span>
+                            <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>ΔKm</span>
                             <span style={{ fontFamily: T.MONO, fontSize: '10px', color: selectedMutagenesisSite.predictedDeltaKm < 1 ? '#93CB52' : '#FA8072' }}>
                               {selectedMutagenesisSite.predictedDeltaKm.toFixed(2)}×
                             </span>
-                            <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL }}>Effect</span>
+                            <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>Effect</span>
                             <span style={{ fontFamily: T.MONO, fontSize: '10px', color:
                               selectedMutagenesisSite.predictedEffect === 'beneficial' ? '#93CB52' :
                               selectedMutagenesisSite.predictedEffect === 'neutral' ? '#FFFB1F' : '#FA8072'
                             }}>
                               {selectedMutagenesisSite.predictedEffect}
                             </span>
-                            <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL }}>Confidence</span>
+                            <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>Confidence</span>
                             <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE }}>
                               {(selectedMutagenesisSite.confidence * 100).toFixed(0)}%
                             </span>
                           </div>
                         ) : (
-                          <p style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL, margin: 0 }}>
+                          <p style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL, margin: 0 }}>
                             No screening data for this substitution.
                           </p>
                         )}
-                        <p style={{ fontFamily: T.SANS, fontSize: '7px', color: 'rgba(255,255,255,0.25)', margin: '5px 0 0', fontStyle: 'italic' }}>
+                        <p style={{ fontFamily: T.SANS, fontSize: '10px', color: 'rgba(255,255,255,0.25)', margin: '5px 0 0', fontStyle: 'italic' }}>
                           BLOSUM62 heuristic screening score — not rigorous ΔΔG
                         </p>
                       </div>
@@ -498,7 +498,7 @@ export default function CatalystDesignerPageV2() {
                   <div style={{ display: 'flex', alignItems: 'center' }}>
                     <div style={{ flex: 1 }}><MetricCard label="Kd" value={binding.predictedKd.toFixed(2)} unit="μM" /></div>
                     <span style={{
-                      fontFamily: T.MONO, fontSize: '9px', color: bindingColorCSS(kdToQuality(binding.predictedKd)),
+                      fontFamily: T.MONO, fontSize: '10px', color: bindingColorCSS(kdToQuality(binding.predictedKd)),
                       padding: '2px 6px', borderRadius: 6,
                       background: `${bindingColorCSS(kdToQuality(binding.predictedKd))}18`,
                       whiteSpace: 'nowrap', flexShrink: 0, marginLeft: 6,
@@ -507,7 +507,7 @@ export default function CatalystDesignerPageV2() {
                   <div style={{ display: 'flex', alignItems: 'center' }}>
                     <div style={{ flex: 1 }}><MetricCard label="kcat" value={enzyme.kcat.toFixed(2)} unit="s⁻¹" /></div>
                     <span style={{
-                      fontFamily: T.MONO, fontSize: '9px', color: kcatQ.color,
+                      fontFamily: T.MONO, fontSize: '10px', color: kcatQ.color,
                       padding: '2px 6px', borderRadius: 6, background: `${kcatQ.color}18`,
                       whiteSpace: 'nowrap', flexShrink: 0, marginLeft: 6,
                     }}>{kcatQ.icon} {kcatQ.label}</span>
@@ -518,7 +518,7 @@ export default function CatalystDesignerPageV2() {
                   <div style={{ display: 'flex', alignItems: 'center' }}>
                     <div style={{ flex: 1 }}><MetricCard label="Fit" value={binding.overallScore.toFixed(2)} /></div>
                     <span style={{
-                      fontFamily: T.MONO, fontSize: '9px', color: fitQ.color,
+                      fontFamily: T.MONO, fontSize: '10px', color: fitQ.color,
                       padding: '2px 6px', borderRadius: 6, background: `${fitQ.color}18`,
                       whiteSpace: 'nowrap', flexShrink: 0, marginLeft: 6,
                     }}>{fitQ.icon} {fitQ.label}</span>
@@ -542,7 +542,7 @@ export default function CatalystDesignerPageV2() {
                 <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
                   {VIEW_MODES.map(vm => (
                     <button key={vm.key} type="button" onClick={() => setViewMode(vm.key)} style={{
-                      fontFamily: T.SANS, fontSize: '8px', fontWeight: viewMode === vm.key ? 600 : 400,
+                      fontFamily: T.SANS, fontSize: '10px', fontWeight: viewMode === vm.key ? 600 : 400,
                       padding: '3px 8px', borderRadius: 10, cursor: 'pointer',
                       border: viewMode === vm.key ? `1px solid ${vm.color}` : `1px solid ${INPUT_BORDER}`,
                       background: viewMode === vm.key ? `${vm.color}18` : 'transparent',

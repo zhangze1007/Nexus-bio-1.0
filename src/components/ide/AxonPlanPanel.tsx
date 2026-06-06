@@ -73,10 +73,10 @@ export default function AxonPlanPanel({ plan, compact }: AxonPlanPanelProps) {
         >
           Axon plan
         </span>
-        <span style={{ fontFamily: T.MONO, fontSize: '9px', color: PATHD_THEME.value }}>
+        <span style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.value }}>
           {summarisePlan(plan)}
         </span>
-        <span style={{ fontFamily: T.MONO, fontSize: '9px', color: PATHD_THEME.label }}>
+        <span style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label }}>
           origin={plan.origin}
         </span>
       </div>
@@ -165,7 +165,7 @@ export default function AxonPlanPanel({ plan, compact }: AxonPlanPanelProps) {
                   <span
                     style={{
                       fontFamily: T.MONO,
-                      fontSize: '9px',
+                      fontSize: '10px',
                       padding: '1px 5px',
                       borderRadius: '4px',
                       background: 'rgba(10,14,22,0.45)',
@@ -189,7 +189,7 @@ export default function AxonPlanPanel({ plan, compact }: AxonPlanPanelProps) {
                     <span
                       style={{
                         fontFamily: T.MONO,
-                        fontSize: '9px',
+                        fontSize: '10px',
                         color: PATHD_THEME.label,
                       }}
                     >
@@ -214,7 +214,7 @@ export default function AxonPlanPanel({ plan, compact }: AxonPlanPanelProps) {
               <span
                 style={{
                   fontFamily: T.MONO,
-                  fontSize: '9px',
+                  fontSize: '10px',
                   padding: '3px 8px',
                   borderRadius: '6px',
                   background: 'rgba(10,14,22,0.35)',

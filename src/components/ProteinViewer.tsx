@@ -178,7 +178,7 @@ export default function ProteinViewer({ pdbId, alphafoldId, label }: { pdbId: st
                     border: '1px solid rgba(255,255,255,0.12)',
                     background: renderMode === mode.key ? 'rgba(200,232,240,0.18)' : 'rgba(255,255,255,0.06)',
                     color: renderMode === mode.key ? '#C8E8F0' : 'rgba(255,255,255,0.45)',
-                    fontSize: '9px',
+                    fontSize: '10px',
                     borderRadius: '999px',
                     padding: '3px 7px',
                     cursor: 'pointer',
@@ -189,14 +189,14 @@ export default function ProteinViewer({ pdbId, alphafoldId, label }: { pdbId: st
               ))}
             </div>
             <div style={{ position: 'absolute', top: '8px', left: '10px', pointerEvents: 'none' }}>
-              <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '9px', fontFamily: "'Public Sans', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1", background: 'rgba(0,0,0,0.45)', padding: '2px 6px', borderRadius: '8px' }}>
+              <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '10px', fontFamily: "'Public Sans', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1", background: 'rgba(0,0,0,0.45)', padding: '2px 6px', borderRadius: '8px' }}>
                 {useAF ? `AF-${alphafoldId}` : pdbId}
               </span>
             </div>
             <div style={{ position: 'absolute', bottom: '8px', right: '10px' }}>
               <a href={useAF ? `https://alphafold.ebi.ac.uk/entry/${alphafoldId}` : `https://www.rcsb.org/structure/${pdbId}`}
                 target="_blank" rel="noopener noreferrer"
-                style={{ color: 'rgba(255,255,255,0.35)', fontSize: '9px', fontFamily: "'Public Sans', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1", display: 'flex', alignItems: 'center', gap: '3px', textDecoration: 'none', background: 'rgba(0,0,0,0.45)', padding: '2px 6px', borderRadius: '8px' }}
+                style={{ color: 'rgba(255,255,255,0.35)', fontSize: '10px', fontFamily: "'Public Sans', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1", display: 'flex', alignItems: 'center', gap: '3px', textDecoration: 'none', background: 'rgba(0,0,0,0.45)', padding: '2px 6px', borderRadius: '8px' }}
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(200,232,240,0.9)'; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.35)'; }}>
                 {useAF ? 'AlphaFold DB' : 'RCSB PDB'} <ExternalLink size={8} />
@@ -216,7 +216,7 @@ export default function ProteinViewer({ pdbId, alphafoldId, label }: { pdbId: st
             <button
               type="button"
               onClick={() => setSpinEnabled(!spinEnabled)}
-              style={{ padding: '4px 8px', borderRadius: '999px', border: '1px solid rgba(255,255,255,0.08)', background: spinEnabled ? 'rgba(255,255,255,0.1)' : 'transparent', color: 'rgba(255,255,255,0.7)', fontSize: '9px', cursor: 'pointer' }}
+              style={{ padding: '4px 8px', borderRadius: '999px', border: '1px solid rgba(255,255,255,0.08)', background: spinEnabled ? 'rgba(255,255,255,0.1)' : 'transparent', color: 'rgba(255,255,255,0.7)', fontSize: '10px', cursor: 'pointer' }}
             >
               {spinEnabled ? 'Auto spin' : 'Static'}
             </button>
@@ -233,7 +233,7 @@ export default function ProteinViewer({ pdbId, alphafoldId, label }: { pdbId: st
           {[{ c: '#0053D6', l: '>90' }, { c: '#65CBF3', l: '70–90' }, { c: '#FFDB13', l: '50–70' }, { c: '#FF7D45', l: '<50' }].map(x => (
             <div key={x.l} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
               <div style={{ width: '10px', height: '4px', borderRadius: '2px', background: x.c }} />
-              <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '9px', fontFamily: "'Public Sans', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1" }}>{x.l}</span>
+              <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '10px', fontFamily: "'Public Sans', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1" }}>{x.l}</span>
             </div>
           ))}
         </div>
@@ -247,19 +247,19 @@ export default function ProteinViewer({ pdbId, alphafoldId, label }: { pdbId: st
           {traceText}
         </p>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          <span style={{ padding: '3px 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.55)', fontSize: '9px', fontFamily: "'Public Sans', -apple-system, sans-serif" }}>
+          <span style={{ padding: '3px 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.55)', fontSize: '10px', fontFamily: "'Public Sans', -apple-system, sans-serif" }}>
             source · {sourceLabel}
           </span>
-          <span style={{ padding: '3px 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.55)', fontSize: '9px', fontFamily: "'Public Sans', -apple-system, sans-serif" }}>
+          <span style={{ padding: '3px 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.55)', fontSize: '10px', fontFamily: "'Public Sans', -apple-system, sans-serif" }}>
             mode · {renderMode}
           </span>
-          <span style={{ padding: '3px 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.55)', fontSize: '9px', fontFamily: "'Public Sans', -apple-system, sans-serif" }}>
+          <span style={{ padding: '3px 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.55)', fontSize: '10px', fontFamily: "'Public Sans', -apple-system, sans-serif" }}>
             label · {label}
           </span>
         </div>
       </div>
 
-      <p style={{ color: 'rgba(255,255,255,0.1)', fontSize: '9px', fontFamily: "'Public Sans', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1", margin: 0, textAlign: 'center' }}>
+      <p style={{ color: 'rgba(255,255,255,0.1)', fontSize: '10px', fontFamily: "'Public Sans', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1", margin: 0, textAlign: 'center' }}>
         Drag to rotate · {spinEnabled ? 'auto-spin on' : 'manual view'} · {renderMode === 'surface' ? 'surface envelope' : renderMode === 'confidence' ? 'confidence coloring' : 'cartoon fold'}
       </p>
     </div>

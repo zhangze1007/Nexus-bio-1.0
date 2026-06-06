@@ -41,7 +41,7 @@ export default function EmbeddedSupportDock({
               <div
                 style={{
                   fontFamily: T.MONO,
-                  fontSize: '9px',
+                  fontSize: '10px',
                   letterSpacing: '0.10em',
                   textTransform: 'uppercase',
                   color: PATHD_THEME.label,
@@ -85,7 +85,7 @@ export default function EmbeddedSupportDock({
                     display: 'inline-flex',
                     alignItems: 'center',
                     fontFamily: T.MONO,
-                    fontSize: '8px',
+                    fontSize: '10px',
                     letterSpacing: '0.05em',
                     textTransform: 'uppercase',
                   }}

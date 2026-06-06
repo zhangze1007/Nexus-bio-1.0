@@ -143,7 +143,7 @@ function VolcanoPlot({ data, fcThreshold, pvThreshold, highlightedGene }: {
               <title>{row.gene}: FC={fc.toFixed(2)}, p={pv.toFixed(4)}</title>
             </circle>
             {isHighlighted && (
-              <text x={xPos(fc)} y={yPos(pv) - 10} textAnchor="middle" fontFamily={T.MONO} fontSize="7" fill="rgba(255,139,31,0.92)">
+              <text x={xPos(fc)} y={yPos(pv) - 10} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill="rgba(255,139,31,0.92)">
                 {row.gene}
               </text>
             )}
@@ -152,16 +152,16 @@ function VolcanoPlot({ data, fcThreshold, pvThreshold, highlightedGene }: {
       })}
       <line x1={PAD} y1={H - PAD} x2={W - PAD} y2={H - PAD} stroke="rgba(255,255,255,0.1)" />
       <line x1={PAD} y1={PAD} x2={PAD} y2={H - PAD} stroke="rgba(255,255,255,0.1)" />
-      <text x={W / 2} y={H - 4} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.25)">
+      <text x={W / 2} y={H - 4} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.25)">
         log₂ Fold Change
       </text>
-      <text x={10} y={H / 2} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.25)"
+      <text x={10} y={H / 2} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.25)"
         transform={`rotate(-90,10,${H / 2})`}>
         -log₁₀(p)
       </text>
-      <text x={W - PAD} y={H - PAD + 12} textAnchor="end" fontFamily={T.MONO} fontSize="7" fill="rgba(255,255,255,0.2)">+{fcMax}</text>
-      <text x={PAD} y={H - PAD + 12} textAnchor="start" fontFamily={T.MONO} fontSize="7" fill="rgba(255,255,255,0.2)">-{fcMax}</text>
-      <text x={W - PAD - 4} y={PAD + 12} textAnchor="end" fontFamily={T.MONO} fontSize="7" fill="rgba(147,203,82,0.74)">
+      <text x={W - PAD} y={H - PAD + 12} textAnchor="end" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.2)">+{fcMax}</text>
+      <text x={PAD} y={H - PAD + 12} textAnchor="start" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.2)">-{fcMax}</text>
+      <text x={W - PAD - 4} y={PAD + 12} textAnchor="end" fontFamily={T.MONO} fontSize="10" fill="rgba(147,203,82,0.74)">
         productive-significant
       </text>
     </svg>
@@ -288,9 +288,9 @@ function TriPanelEmbedding({ embeddings, data, fcThreshold, pvThreshold, activeL
       <div style={{ flex: '0 0 auto' }}>
         <svg viewBox={`0 0 ${pcaW} ${pcaH}`} style={{ width: `${pcaW}px`, height: `${pcaH}px` }}>
           <rect width={pcaW} height={pcaH} fill="#050505" rx="10" />
-          <text x={pcaW / 2} y={14} textAnchor="middle" fontFamily={T.MONO} fontSize="7" fill="rgba(255,255,255,0.25)">PCA BIPLOT</text>
-          <text x={pcaW / 2} y={pcaH - 4} textAnchor="middle" fontFamily={T.MONO} fontSize="7" fill="rgba(255,255,255,0.22)">PC1 (38.2% var)</text>
-          <text x={8} y={pcaH / 2} textAnchor="middle" fontFamily={T.MONO} fontSize="7" fill="rgba(255,255,255,0.22)"
+          <text x={pcaW / 2} y={14} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.25)">PCA BIPLOT</text>
+          <text x={pcaW / 2} y={pcaH - 4} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.22)">PC1 (38.2% var)</text>
+          <text x={8} y={pcaH / 2} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.22)"
             transform={`rotate(-90,8,${pcaH / 2})`}>PC2 (21.6% var)</text>
           <line x1={pcaPAD} y1={pcaH - pcaPAD} x2={pcaW - pcaPAD} y2={pcaH - pcaPAD} stroke="rgba(255,255,255,0.08)" />
           <line x1={pcaPAD} y1={pcaPAD} x2={pcaPAD} y2={pcaH - pcaPAD} stroke="rgba(255,255,255,0.08)" />
@@ -304,7 +304,7 @@ function TriPanelEmbedding({ embeddings, data, fcThreshold, pvThreshold, activeL
                 <line x1={cx} y1={cy} x2={ax} y2={ay}
                   stroke="rgba(255,255,255,0.35)" strokeWidth="1" markerEnd="url(#pca-arrow)" />
                 <text x={ax + Math.cos(angle) * 8} y={ay + Math.sin(angle) * 8 + 2}
-                  textAnchor="middle" fontFamily={T.MONO} fontSize="6" fill="rgba(255,255,255,0.5)">
+                  textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.5)">
                   {gene.gene.slice(0, 6)}
                 </text>
               </g>
@@ -328,7 +328,7 @@ function TriPanelEmbedding({ embeddings, data, fcThreshold, pvThreshold, activeL
             activeLayers[layer] && (
               <g key={layer} transform={`translate(${pcaPAD},${pcaH - pcaPAD + 10 + i * 12})`}>
                 <circle cx={4} cy={4} r={4} fill={layerColorMap[layer]} />
-                <text x={12} y={8} fontFamily={T.MONO} fontSize="7" fill="rgba(255,255,255,0.4)">{layer.slice(0,6)}</text>
+                <text x={12} y={8} fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.4)">{layer.slice(0,6)}</text>
               </g>
             )
           ))}
@@ -339,7 +339,7 @@ function TriPanelEmbedding({ embeddings, data, fcThreshold, pvThreshold, activeL
       <div style={{ flex: '0 0 auto' }}>
         <svg viewBox={`0 0 ${hmW} ${hmH}`} style={{ width: `${hmW}px`, height: `${hmH}px` }}>
           <rect width={hmW} height={hmH} fill="#050505" rx="10" />
-          <text x={hmW / 2} y={12} textAnchor="middle" fontFamily={T.MONO} fontSize="7" fill="rgba(255,255,255,0.25)">
+          <text x={hmW / 2} y={12} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.25)">
             CORRELATION MATRIX (20×20)
           </text>
           {corrMatrix.map((row, yi) =>
@@ -359,7 +359,7 @@ function TriPanelEmbedding({ embeddings, data, fcThreshold, pvThreshold, activeL
               x={hmPAD.left + i * cellW + cellW / 2}
               y={hmPAD.top - 4}
               textAnchor="start"
-              fontFamily={T.MONO} fontSize="5.5" fill="rgba(255,255,255,0.35)"
+              fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.35)"
               transform={`rotate(-60,${hmPAD.left + i * cellW + cellW / 2},${hmPAD.top - 4})`}
             >{g.gene.slice(0, 5)}</text>
           ))}
@@ -369,7 +369,7 @@ function TriPanelEmbedding({ embeddings, data, fcThreshold, pvThreshold, activeL
               x={hmPAD.left - 2}
               y={hmPAD.top + i * cellW + cellW * 0.65}
               textAnchor="end"
-              fontFamily={T.MONO} fontSize="5.5" fill="rgba(255,255,255,0.35)"
+              fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.35)"
             >{g.gene.slice(0, 5)}</text>
           ))}
           {/* ── Publication colorbar — RdBu diverging scale ── */}
@@ -388,12 +388,12 @@ function TriPanelEmbedding({ embeddings, data, fcThreshold, pvThreshold, activeL
             return (
               <g key={label}>
                 <line x1={hmW - 8} y1={y} x2={hmW - 5} y2={y} stroke="rgba(255,255,255,0.25)" strokeWidth={0.7} />
-                <text x={hmW - 3} y={y + 3} fontFamily={T.MONO} fontSize="6" fill="rgba(255,255,255,0.35)">{label}</text>
+                <text x={hmW - 3} y={y + 3} fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.35)">{label}</text>
               </g>
             );
           })}
           {/* Unit label */}
-          <text x={hmW - 12} y={hmPAD.top - 6} textAnchor="middle" fontFamily={T.MONO} fontSize="6" fill="rgba(255,255,255,0.22)">
+          <text x={hmW - 12} y={hmPAD.top - 6} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.22)">
             z
           </text>
         </svg>
@@ -482,10 +482,10 @@ function EmbeddingScatter({ embeddings, fcThreshold, activeLayers, highlightedGe
       {/* Axes */}
       <line x1={PAD} y1={H - PAD} x2={W - PAD} y2={H - PAD} stroke="rgba(255,255,255,0.1)" />
       <line x1={PAD} y1={PAD} x2={PAD} y2={H - PAD} stroke="rgba(255,255,255,0.1)" />
-      <text x={W / 2} y={H - 6} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill={LABEL}>
+      <text x={W / 2} y={H - 6} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill={LABEL}>
         Embed-1 (linear projection)
       </text>
-      <text x={12} y={H / 2} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill={LABEL}
+      <text x={12} y={H / 2} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill={LABEL}
         transform={`rotate(-90,12,${H / 2})`}>
         Embed-2 (linear projection)
       </text>
@@ -550,7 +550,7 @@ function EmbeddingScatter({ embeddings, fcThreshold, activeLayers, highlightedGe
         return (
           <g key={`centroid-${layer}`}>
             <circle cx={centroid.sx / centroid.n} cy={centroid.sy / centroid.n} r={11} fill="none" stroke={`${LAYER_COLORS[layer]}`} strokeWidth={1.1} strokeDasharray="4 3" />
-            <text x={centroid.sx / centroid.n} y={centroid.sy / centroid.n - 14} textAnchor="middle" fontFamily={T.MONO} fontSize="7" fill={LAYER_COLORS[layer]}>
+            <text x={centroid.sx / centroid.n} y={centroid.sy / centroid.n - 14} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill={LAYER_COLORS[layer]}>
               {layer.slice(0, 5)}
             </text>
           </g>
@@ -560,12 +560,12 @@ function EmbeddingScatter({ embeddings, fcThreshold, activeLayers, highlightedGe
       {(['transcriptomics', 'proteomics', 'metabolomics'] as OmicsLayer[]).map((layer, i) => (
         <g key={layer} transform={`translate(${W - PAD - 110}, ${PAD + 6 + i * 16})`}>
           <circle cx={0} cy={0} r={4} fill={LAYER_COLORS[layer]} opacity={activeLayers[layer] ? 1 : 0.25} />
-          <text x={10} y={3.5} fontFamily={T.SANS} fontSize="9" fill={activeLayers[layer] ? VALUE : LABEL}>
+          <text x={10} y={3.5} fontFamily={T.SANS} fontSize="10" fill={activeLayers[layer] ? VALUE : LABEL}>
             {layer.charAt(0).toUpperCase() + layer.slice(1)}
           </text>
         </g>
       ))}
-      <text x={PAD} y={PAD - 12} fontFamily={T.MONO} fontSize="7" fill={LABEL}>
+      <text x={PAD} y={PAD - 12} fontFamily={T.MONO} fontSize="10" fill={LABEL}>
         Highlight ring = current bottleneck or selected sensitivity gene
       </text>
     </svg>
@@ -763,7 +763,7 @@ export default function MultiOPage() {
   /* Section label helper */
   const SectionLabel = ({ children }: { children: React.ReactNode }) => (
     <p style={{
-      fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase',
+      fontFamily: T.SANS, fontSize: '10px', textTransform: 'uppercase',
       letterSpacing: '0.1em', color: LABEL, margin: '0 0 10px',
     }}>
       {children}
@@ -915,8 +915,8 @@ export default function MultiOPage() {
                 className="nb-pathd-slider"
                 style={{ '--val': `${((perturbedExpr + 4) / 12) * 100}%` } as React.CSSProperties} />
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ fontFamily: T.MONO, fontSize: '8px', color: LABEL }}>-4</span>
-                <span style={{ fontFamily: T.MONO, fontSize: '8px', color: LABEL }}>+8</span>
+                <span style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL }}>-4</span>
+                <span style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL }}>+8</span>
               </div>
             </div>
             <button aria-label="Run sensitivity analysis" onClick={handleSimulate} style={{
@@ -940,7 +940,7 @@ export default function MultiOPage() {
                 }}>
                   {/* Yield change */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                    <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL }}>Demo Yield Δ</span>
+                    <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>Demo Yield Δ</span>
                     <span style={{
                       fontFamily: T.MONO, fontSize: '13px', fontWeight: 700,
                       color: perturbResult.predicted_yield_change_percent >= 0
@@ -954,7 +954,7 @@ export default function MultiOPage() {
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '8px' }}>
                     {perturbResult.metabolite_shifts.map(ms => (
                       <span key={ms.metabolite} style={{
-                        fontFamily: T.MONO, fontSize: '8px', padding: '2px 6px', borderRadius: '6px',
+                        fontFamily: T.MONO, fontSize: '10px', padding: '2px 6px', borderRadius: '6px',
                         background: ms.direction === 'up' ? 'rgba(147,203,82,0.15)' : 'rgba(250,128,114,0.15)',
                         color: ms.direction === 'up' ? 'rgba(147,203,82,0.9)' : 'rgba(250,128,114,0.9)',
                         border: `1px solid ${ms.direction === 'up' ? 'rgba(147,203,82,0.2)' : 'rgba(250,128,114,0.2)'}`,
@@ -969,11 +969,11 @@ export default function MultiOPage() {
                       padding: '4px 0',
                       borderTop: i > 0 ? `1px solid ${BORDER}` : 'none',
                     }}>
-                      <span style={{ fontFamily: T.MONO, fontSize: '8px', color: LAYER_COLORS.proteomics }}>
+                      <span style={{ fontFamily: T.MONO, fontSize: '10px', color: LAYER_COLORS.proteomics }}>
                         {i + 1}. {step.step}
                       </span>
                       <p style={{
-                        fontFamily: T.SANS, fontSize: '9px', color: LABEL,
+                        fontFamily: T.SANS, fontSize: '10px', color: LABEL,
                         margin: '2px 0 0', lineHeight: '1.35',
                       }}>
                         {step.description}
@@ -1089,15 +1089,15 @@ export default function MultiOPage() {
           >
             <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
               <div style={{ ...GLASS, borderRadius: '14px', padding: '12px 16px', flex: '1 0 120px' }}>
-                <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL, display: 'block' }}>Total Var. Explained</span>
+                <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL, display: 'block' }}>Total Var. Explained</span>
                 <span style={{ fontFamily: T.MONO, fontSize: '18px', fontWeight: 700, color: LAYER_COLORS.transcriptomics }}>{(mofaResult.totalVarianceExplained * 100).toFixed(1)}%</span>
               </div>
               <div style={{ ...GLASS, borderRadius: '14px', padding: '12px 16px', flex: '1 0 120px' }}>
-                <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL, display: 'block' }}>Optimization Steps</span>
+                <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL, display: 'block' }}>Optimization Steps</span>
                 <span style={{ fontFamily: T.MONO, fontSize: '18px', fontWeight: 700, color: VALUE }}>{mofaResult.convergenceIterations} iter</span>
               </div>
               <div style={{ ...GLASS, borderRadius: '14px', padding: '12px 16px', flex: '1 0 120px' }}>
-                <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL, display: 'block' }}>Recon. Error</span>
+                <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL, display: 'block' }}>Recon. Error</span>
                 <span style={{ fontFamily: T.MONO, fontSize: '18px', fontWeight: 700, color: VALUE }}>{mofaResult.reconstructionError.toFixed(4)}</span>
               </div>
             </div>
@@ -1112,8 +1112,8 @@ export default function MultiOPage() {
                   return (
                     <div key={layer} style={{ marginBottom: '5px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
-                        <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL }}>{layer.slice(0, 5)}</span>
-                        <span style={{ fontFamily: T.MONO, fontSize: '9px', color: VALUE }}>{pct.toFixed(1)}%</span>
+                        <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>{layer.slice(0, 5)}</span>
+                        <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE }}>{pct.toFixed(1)}%</span>
                       </div>
                       <div style={{ width: '100%', height: '5px', borderRadius: '3px', background: PATHD_THEME.panelInset }}>
                         <div style={{ width: `${Math.min(100, pct)}%`, height: '100%', borderRadius: '3px', background: LAYER_COLORS[layer] }} />
@@ -1123,10 +1123,10 @@ export default function MultiOPage() {
                 })}
                 <div style={{ display: 'flex', gap: '4px', marginTop: '8px', flexWrap: 'wrap' }}>
                   {f.topGenes.slice(0, 4).map(g => (
-                    <span key={g.gene} style={{ fontFamily: T.MONO, fontSize: '8px', padding: '2px 6px', borderRadius: '6px', background: PATHD_THEME.panelInset, color: VALUE }}>{g.gene} ({g.loading.toFixed(2)})</span>
+                    <span key={g.gene} style={{ fontFamily: T.MONO, fontSize: '10px', padding: '2px 6px', borderRadius: '6px', background: PATHD_THEME.panelInset, color: VALUE }}>{g.gene} ({g.loading.toFixed(2)})</span>
                   ))}
                 </div>
-                <p style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL, margin: '6px 0 0', lineHeight: '1.3' }}>{f.interpretation}</p>
+                <p style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL, margin: '6px 0 0', lineHeight: '1.3' }}>{f.interpretation}</p>
               </div>
             ))}
           </ScientificFigureFrame>
@@ -1173,8 +1173,8 @@ export default function MultiOPage() {
                         <rect width={W} height={H} fill="#050505" rx={12} />
                         <line x1={PAD} y1={H - PAD} x2={W - PAD} y2={H - PAD} stroke="rgba(255,255,255,0.1)" />
                         <line x1={PAD} y1={PAD} x2={PAD} y2={H - PAD} stroke="rgba(255,255,255,0.1)" />
-                        <text x={W / 2} y={H - 6} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill={LABEL}>Projection 1</text>
-                        <text x={12} y={H / 2} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill={LABEL} transform={`rotate(-90,12,${H / 2})`}>Projection 2</text>
+                        <text x={W / 2} y={H - 6} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill={LABEL}>Projection 1</text>
+                        <text x={12} y={H / 2} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill={LABEL} transform={`rotate(-90,12,${H / 2})`}>Projection 2</text>
                         {pts.map((p, i) => {
                           const cx = PAD + ((xs[i] - xMin) / xR) * (W - PAD * 2);
                           const cy = H - PAD - ((ys[i] - yMin) / yR) * (H - PAD * 2);
@@ -1202,9 +1202,9 @@ export default function MultiOPage() {
                   return (
                     <svg role="img" aria-label="Chart" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
                       <rect width={W} height={H} fill="transparent" />
-                      <text x={PAD - 4} y={12} fontFamily={T.MONO} fontSize="7" fill={LABEL} textAnchor="end">Loss</text>
+                      <text x={PAD - 4} y={12} fontFamily={T.MONO} fontSize="10" fill={LABEL} textAnchor="end">Loss</text>
                       <polyline points={hist.map((h, i) => { const x = PAD + (i / (hist.length - 1)) * (W - PAD * 2); const y = H - 8 - (h.loss / maxL) * (H - 20); return `${x},${y}`; }).join(' ')} fill="none" stroke={LAYER_COLORS.proteomics} strokeWidth={1.5} />
-                      <text x={W / 2} y={H - 1} textAnchor="middle" fontFamily={T.MONO} fontSize="7" fill={LABEL}>Epoch</text>
+                      <text x={W / 2} y={H - 1} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill={LABEL}>Epoch</text>
                     </svg>
                   );
                 })()}
@@ -1230,11 +1230,11 @@ export default function MultiOPage() {
           >
             <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
               <div style={{ ...GLASS, borderRadius: '14px', padding: '12px 16px', flex: '1 0 140px' }}>
-                <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL, display: 'block' }}>Avg Efficiency</span>
+                <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL, display: 'block' }}>Avg Efficiency</span>
                 <span style={{ fontFamily: T.MONO, fontSize: '18px', fontWeight: 700, color: 'rgba(147,203,82,0.9)' }}>{(efficiencyScores.reduce((s, e) => s + e.score, 0) / Math.max(1, efficiencyScores.length) * 100).toFixed(1)}%</span>
               </div>
               <div style={{ ...GLASS, borderRadius: '14px', padding: '12px 16px', flex: '1 0 140px' }}>
-                <span style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL, display: 'block' }}>Top Gene</span>
+                <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL, display: 'block' }}>Top Gene</span>
                 <span style={{ fontFamily: T.MONO, fontSize: '14px', fontWeight: 700, color: VALUE }}>{[...efficiencyScores].sort((a, b) => b.score - a.score)[0]?.gene ?? '—'}</span>
               </div>
             </div>
@@ -1243,16 +1243,16 @@ export default function MultiOPage() {
               const color = pct > 60 ? 'rgba(147,203,82,0.85)' : pct > 35 ? 'rgba(255,139,31,0.85)' : 'rgba(250,128,114,0.85)';
               return (
                 <div key={e.geneId} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 0', borderBottom: `1px solid ${BORDER}` }}>
-                  <span style={{ fontFamily: T.MONO, fontSize: '9px', color: LABEL, width: '20px', textAlign: 'right' }}>{i + 1}</span>
+                  <span style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, width: '20px', textAlign: 'right' }}>{i + 1}</span>
                   <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE, width: '70px' }}>{e.gene}</span>
                   <div style={{ flex: 1, height: '6px', borderRadius: '3px', background: 'rgba(255,255,255,0.06)' }}>
                     <div style={{ width: `${pct}%`, height: '100%', borderRadius: '3px', background: color, transition: 'width 0.3s' }} />
                   </div>
                   <span style={{ fontFamily: T.MONO, fontSize: '10px', color, width: '45px', textAlign: 'right' }}>{pct.toFixed(1)}%</span>
                   <div style={{ display: 'flex', gap: '4px' }}>
-                    <span style={{ fontFamily: T.MONO, fontSize: '7px', padding: '1px 4px', borderRadius: '4px', background: `${LAYER_COLORS.transcriptomics}20`, color: LAYER_COLORS.transcriptomics }}>F:{e.fluxUtilization.toFixed(2)}</span>
-                    <span style={{ fontFamily: T.MONO, fontSize: '7px', padding: '1px 4px', borderRadius: '4px', background: `${LAYER_COLORS.proteomics}20`, color: LAYER_COLORS.proteomics }}>E:{e.expressionBalance.toFixed(2)}</span>
-                    <span style={{ fontFamily: T.MONO, fontSize: '7px', padding: '1px 4px', borderRadius: '4px', background: `${LAYER_COLORS.metabolomics}20`, color: LAYER_COLORS.metabolomics }}>Y:{e.metaboliteYield.toFixed(2)}</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: '10px', padding: '1px 4px', borderRadius: '4px', background: `${LAYER_COLORS.transcriptomics}20`, color: LAYER_COLORS.transcriptomics }}>F:{e.fluxUtilization.toFixed(2)}</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: '10px', padding: '1px 4px', borderRadius: '4px', background: `${LAYER_COLORS.proteomics}20`, color: LAYER_COLORS.proteomics }}>E:{e.expressionBalance.toFixed(2)}</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: '10px', padding: '1px 4px', borderRadius: '4px', background: `${LAYER_COLORS.metabolomics}20`, color: LAYER_COLORS.metabolomics }}>Y:{e.metaboliteYield.toFixed(2)}</span>
                   </div>
                 </div>
               );

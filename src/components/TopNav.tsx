@@ -86,7 +86,7 @@ export default function TopNav() {
 
       {/* Mono tag */}
       <div style={{
-        fontFamily: MONO, fontSize: '9px', fontWeight: 500,
+        fontFamily: MONO, fontSize: '10px', fontWeight: 500,
         color: 'rgba(255,255,255,0.12)',
         letterSpacing: '0.1em', textTransform: 'uppercase',
         padding: '6px 10px', borderRadius: '999px',

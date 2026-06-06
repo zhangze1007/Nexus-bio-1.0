@@ -133,9 +133,9 @@ export function FluxMap({ result, nodes, edges, knockouts, compact, svgRef }: {
       </defs>
       <rect width={W} height={viewH} fill="#05070b" rx={16} />
 
-      <text x="28" y="22" fontFamily={T.MONO} fontSize="8" fill={SUBSYSTEM_COLORS.Glycolysis} opacity={0.75}>● GLYCOLYSIS</text>
-      <text x="200" y="22" fontFamily={T.MONO} fontSize="8" fill={SUBSYSTEM_COLORS.TCA} opacity={0.75}>● TCA CYCLE</text>
-      <text x="28" y={viewH - 12} fontFamily={T.MONO} fontSize="7" fill="rgba(255,255,255,0.2)">
+      <text x="28" y="22" fontFamily={T.MONO} fontSize="10" fill={SUBSYSTEM_COLORS.Glycolysis} opacity={0.75}>● GLYCOLYSIS</text>
+      <text x="200" y="22" fontFamily={T.MONO} fontSize="10" fill={SUBSYSTEM_COLORS.TCA} opacity={0.75}>● TCA CYCLE</text>
+      <text x="28" y={viewH - 12} fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.2)">
         Flux: mmol·gDW⁻¹·h⁻¹ · Node size ∝ flux magnitude · Edge color encodes direction
       </text>
 
@@ -162,7 +162,7 @@ export function FluxMap({ result, nodes, edges, knockouts, compact, svgRef }: {
             <rect x={mx - 14} y={my - 7} width="28" height="14" rx="7"
               fill="rgba(5,7,11,0.88)" stroke="rgba(255,255,255,0.07)" />
             <text x={mx} y={my + 4} fill={isKO ? 'rgba(255,80,80,0.7)' : 'rgba(255,255,255,0.55)'}
-              fontFamily={T.MONO} fontSize="7.5" textAnchor="middle">
+              fontFamily={T.MONO} fontSize="10" textAnchor="middle">
               {isKO ? '×' : flux.toFixed(1)}
             </text>
           </g>
@@ -181,10 +181,10 @@ export function FluxMap({ result, nodes, edges, knockouts, compact, svgRef }: {
             {isHov && <circle cx={pos.x} cy={pos.y} r={r + 6} fill={color} opacity={0.12} />}
             <circle cx={pos.x} cy={pos.y} r={r} fill="rgba(5,7,11,0.92)" stroke={color}
               strokeWidth={isHov ? 2.2 : 1.4} filter={isHov ? 'url(#fba-glow)' : undefined} />
-            <text x={pos.x} y={pos.y + 3.5} textAnchor="middle" fontFamily={T.MONO} fontSize="7.5" fill="rgba(255,255,255,0.88)">
+            <text x={pos.x} y={pos.y + 3.5} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.88)">
               {node.label.slice(0, 5)}
             </text>
-            <text x={pos.x} y={pos.y + r + 10} textAnchor="middle" fontFamily={T.MONO} fontSize="6.5" fill={color} opacity={0.7}>
+            <text x={pos.x} y={pos.y + r + 10} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill={color} opacity={0.7}>
               {f.toFixed(1)}
             </text>
           </g>
@@ -192,7 +192,7 @@ export function FluxMap({ result, nodes, edges, knockouts, compact, svgRef }: {
       })}
 
       <rect x={W - 110} y={26} width="96" height="38" rx="10" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.07)" />
-      <text x={W - 96} y={40} fontFamily={T.MONO} fontSize="7" fill="rgba(255,255,255,0.28)">μ BIOMASS</text>
+      <text x={W - 96} y={40} fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.28)">μ BIOMASS</text>
       <text x={W - 96} y={56} fontFamily={T.MONO} fontSize="13" fontWeight="700" fill="rgba(247,249,255,0.92)">
         {result.growthRate.toFixed(4)}
       </text>

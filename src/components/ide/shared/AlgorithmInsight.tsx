@@ -26,7 +26,7 @@ export default function AlgorithmInsight({ title, description, formula }: Algori
     >
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '1px', flexWrap: 'wrap' }}>
-          <span style={{ fontFamily: SANS, fontSize: '8px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.4)' }}>
+          <span style={{ fontFamily: SANS, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.4)' }}>
             Algorithm Insight
           </span>
           <span style={{ fontFamily: SANS, fontSize: '11px', fontWeight: 600, color: 'rgba(255,255,255,0.85)', letterSpacing: '-0.01em' }}>

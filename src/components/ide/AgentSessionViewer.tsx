@@ -102,7 +102,7 @@ function PreviewFrame({ title, children }: { title: string; children: React.Reac
       <div
         style={{
           fontFamily: T.MONO,
-          fontSize: '9px',
+          fontSize: '10px',
           letterSpacing: '0.08em',
           textTransform: 'uppercase',
           color: PATHD_THEME.label,
@@ -118,7 +118,7 @@ function PreviewFrame({ title, children }: { title: string; children: React.Reac
 function KeyValRow({ label, value }: { label: string; value: string }) {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '110px 1fr', gap: '8px', alignItems: 'baseline' }}>
-      <span style={{ fontFamily: T.MONO, fontSize: '9px', color: PATHD_THEME.label, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+      <span style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
         {label}
       </span>
       <span style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.value, lineHeight: 1.45, overflowWrap: 'anywhere' }}>
@@ -138,7 +138,7 @@ function renderPreview(preview: AxonSessionPreview) {
           <KeyValRow label="Request" value={preview.request} />
           {preview.warnings.length > 0 && (
             <div style={{ display: 'grid', gap: '3px' }}>
-              <div style={{ fontFamily: T.MONO, fontSize: '9px', color: '#E7C7A9', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              <div style={{ fontFamily: T.MONO, fontSize: '10px', color: '#E7C7A9', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                 Warnings
               </div>
               {preview.warnings.map((w, i) => (
@@ -297,7 +297,7 @@ function StepCard({
                 background: 'rgba(10,14,22,0.55)',
                 color: PATHD_THEME.value,
                 fontFamily: T.MONO,
-                fontSize: '9px',
+                fontSize: '10px',
                 letterSpacing: '0.06em',
                 textTransform: 'uppercase',
               }}
@@ -315,7 +315,7 @@ function StepCard({
                 background: 'rgba(147,203,82,0.22)',
                 color: '#B8DE8A',
                 fontFamily: T.MONO,
-                fontSize: '9px',
+                fontSize: '10px',
                 letterSpacing: '0.06em',
                 textTransform: 'uppercase',
               }}
@@ -330,7 +330,7 @@ function StepCard({
               border: `1px solid ${tone.border}`,
               color: tone.fg,
               fontFamily: T.MONO,
-              fontSize: '9px',
+              fontSize: '10px',
               letterSpacing: '0.06em',
               textTransform: 'uppercase',
             }}
@@ -348,17 +348,17 @@ function StepCard({
 
       <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap' }}>
         {step.startedAt && (
-          <span style={{ fontFamily: T.MONO, fontSize: '9px', color: PATHD_THEME.label, letterSpacing: '0.05em' }}>
+          <span style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label, letterSpacing: '0.05em' }}>
             start {formatTime(step.startedAt)}
           </span>
         )}
         {step.finishedAt && (
-          <span style={{ fontFamily: T.MONO, fontSize: '9px', color: PATHD_THEME.label, letterSpacing: '0.05em' }}>
+          <span style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label, letterSpacing: '0.05em' }}>
             end {formatTime(step.finishedAt)}
           </span>
         )}
         {step.startedAt && step.finishedAt && (
-          <span style={{ fontFamily: T.MONO, fontSize: '9px', color: PATHD_THEME.label, letterSpacing: '0.05em' }}>
+          <span style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label, letterSpacing: '0.05em' }}>
             dur {formatDuration(step.startedAt, step.finishedAt)}
           </span>
         )}
@@ -460,7 +460,7 @@ function SessionHeader({ session }: { session: AxonSession }) {
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
         <div style={{ display: 'grid', gap: '2px', minWidth: 0 }}>
-          <div style={{ fontFamily: T.MONO, fontSize: '9px', letterSpacing: '0.08em', textTransform: 'uppercase', color: PATHD_THEME.label }}>
+          <div style={{ fontFamily: T.MONO, fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', color: PATHD_THEME.label }}>
             Agent session
           </div>
           <div style={{ fontFamily: T.SANS, fontSize: '13px', fontWeight: 700, color: PATHD_THEME.value, overflowWrap: 'anywhere' }}>
@@ -501,7 +501,7 @@ function SessionHeader({ session }: { session: AxonSession }) {
               border: '1px solid rgba(207,196,227,0.28)',
             }}
           >
-            <span style={{ fontFamily: T.MONO, fontSize: '9px', letterSpacing: '0.08em', textTransform: 'uppercase', color: '#CFC4E3' }}>
+            <span style={{ fontFamily: T.MONO, fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', color: '#CFC4E3' }}>
               Domain
             </span>
             <span style={{ fontFamily: T.SANS, fontSize: '10px', color: PATHD_THEME.value }}>
@@ -510,12 +510,12 @@ function SessionHeader({ session }: { session: AxonSession }) {
           </div>
         )}
         {session.startedAt && (
-          <span style={{ fontFamily: T.MONO, fontSize: '9px', color: PATHD_THEME.label, letterSpacing: '0.04em' }}>
+          <span style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label, letterSpacing: '0.04em' }}>
             started {formatTime(session.startedAt)}
           </span>
         )}
         {session.lastActivityAt && (
-          <span style={{ fontFamily: T.MONO, fontSize: '9px', color: PATHD_THEME.label, letterSpacing: '0.04em' }}>
+          <span style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label, letterSpacing: '0.04em' }}>
             last activity {formatTime(session.lastActivityAt)}
           </span>
         )}

@@ -54,7 +54,7 @@ export default function InlineMetricOverlay({
           <span
             style={{
               fontFamily: T.MONO,
-              fontSize: '9px',
+              fontSize: '10px',
               textTransform: 'uppercase',
               letterSpacing: '0.08em',
               color: PATHD_THEME.label,

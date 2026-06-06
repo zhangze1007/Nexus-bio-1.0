@@ -53,7 +53,7 @@ export default function TruthHeader({
           <div
             style={{
               fontFamily: T.MONO,
-              fontSize: '9px',
+              fontSize: '10px',
               color: PROEVOL_THEME.label,
               letterSpacing: '0.14em',
               textTransform: 'uppercase',
@@ -127,7 +127,7 @@ export default function TruthHeader({
           <span
             style={{
               fontFamily: T.MONO,
-              fontSize: '8px',
+              fontSize: '10px',
               fontWeight: 700,
               letterSpacing: '0.1em',
               color: accent,

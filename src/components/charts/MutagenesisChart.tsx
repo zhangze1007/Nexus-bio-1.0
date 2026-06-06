@@ -75,7 +75,7 @@ export default function MutagenesisChart({ result, enzyme }: MutagenesisChartPro
           return (
             <g key={pos}>
               <line x1={tx} y1={38} x2={tx} y2={42} stroke="rgba(255,255,255,0.15)" strokeWidth={0.5} />
-              <text x={tx} y={52} textAnchor="middle" fontFamily={FONT.MONO} fontSize="6" fill="rgba(217,225,235,0.48)">{pos}</text>
+              <text x={tx} y={52} textAnchor="middle" fontFamily={FONT.MONO} fontSize="10" fill="rgba(217,225,235,0.48)">{pos}</text>
             </g>
           );
         })}
@@ -96,9 +96,9 @@ export default function MutagenesisChart({ result, enzyme }: MutagenesisChartPro
         })}
         {/* Legend */}
         <rect x="0" y="0" width="6" height="6" fill="rgba(250,128,114,0.6)" rx={1} />
-        <text x="10" y="6" fontFamily={FONT.SANS} fontSize="7" fill="rgba(217,225,235,0.68)">Catalytic</text>
+        <text x="10" y="6" fontFamily={FONT.SANS} fontSize="10" fill="rgba(217,225,235,0.68)">Catalytic</text>
         <rect x="60" y="0" width="6" height="6" fill={ACCENT.mint} rx={1} />
-        <text x="70" y="6" fontFamily={FONT.SANS} fontSize="7" fill="rgba(217,225,235,0.68)">Mutagenesis</text>
+        <text x="70" y="6" fontFamily={FONT.SANS} fontSize="10" fill="rgba(217,225,235,0.68)">Mutagenesis</text>
       </svg>
 
       {/* ── Top Combination ── */}

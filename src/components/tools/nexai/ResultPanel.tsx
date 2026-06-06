@@ -122,7 +122,7 @@ export default function ResultPanel({
           <span style={{ fontFamily: T.SANS, fontSize: '13px', color: PATHD_THEME.value }}>
             Ask Axon a research question in plain language
           </span>
-          <span style={{ fontFamily: T.MONO, fontSize: '9px', color: PATHD_THEME.label }}>
+          <span style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label }}>
             Press <kbd>/</kbd> to focus the prompt · Axon will summarise, cite, and recommend the next move
           </span>
         </div>
@@ -152,7 +152,7 @@ export default function ResultPanel({
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-        <span style={{ fontFamily: T.MONO, fontSize: '9px', color: PATHD_THEME.label }}>AXON</span>
+        <span style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label }}>AXON</span>
         <Chip
           tone="neutral"
           label={`${(result.confidence * 100).toFixed(0)}%`}
@@ -258,7 +258,7 @@ function Chip({
       title={title}
       style={{
         fontFamily: T.MONO,
-        fontSize: '8px',
+        fontSize: '10px',
         padding: '2px 6px',
         background: palette.bg,
         border: `1px solid ${palette.border}`,
@@ -289,7 +289,7 @@ function MalformedBanner({ parseError }: { parseError: ParseErrorInfo }) {
       <span
         style={{
           fontFamily: T.MONO,
-          fontSize: '9px',
+          fontSize: '10px',
           fontWeight: 700,
           color: '#FA8072',
           letterSpacing: '0.08em',

@@ -120,7 +120,7 @@ export default function AxonLogPanel({ logs, maxRows = 80, compact }: AxonLogPan
                     fontWeight: 700,
                     letterSpacing: '0.04em',
                     textTransform: 'uppercase',
-                    fontSize: '9px',
+                    fontSize: '10px',
                   }}
                 >
                   {phaseLabel(entry.phase)}
@@ -132,7 +132,7 @@ export default function AxonLogPanel({ logs, maxRows = 80, compact }: AxonLogPan
                       borderRadius: '4px',
                       background: 'rgba(10,14,22,0.45)',
                       color: PATHD_THEME.value,
-                      fontSize: '8px',
+                      fontSize: '10px',
                       letterSpacing: '0.06em',
                       textTransform: 'uppercase',
                     }}
@@ -141,7 +141,7 @@ export default function AxonLogPanel({ logs, maxRows = 80, compact }: AxonLogPan
                   </span>
                 )}
                 {entry.taskId && (
-                  <span style={{ color: PATHD_THEME.label, fontSize: '8px' }}>
+                  <span style={{ color: PATHD_THEME.label, fontSize: '10px' }}>
                     {entry.taskId}
                   </span>
                 )}
@@ -166,7 +166,7 @@ export default function AxonLogPanel({ logs, maxRows = 80, compact }: AxonLogPan
                     borderRadius: '6px',
                     background: 'rgba(5,7,11,0.6)',
                     color: PATHD_THEME.label,
-                    fontSize: '9px',
+                    fontSize: '10px',
                     lineHeight: 1.4,
                     whiteSpace: 'pre-wrap',
                     wordBreak: 'break-word',
@@ -190,7 +190,7 @@ export default function AxonLogPanel({ logs, maxRows = 80, compact }: AxonLogPan
                   border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
                   background: 'transparent',
                   color: PATHD_THEME.label,
-                  fontSize: '9px',
+                  fontSize: '10px',
                   cursor: 'pointer',
                 }}
               >

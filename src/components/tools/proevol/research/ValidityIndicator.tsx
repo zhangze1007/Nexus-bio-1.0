@@ -84,7 +84,7 @@ export default function ValidityIndicator({
         <span
           style={{
             fontFamily: T.MONO,
-            fontSize: '9px',
+            fontSize: '10px',
             letterSpacing: '0.14em',
             color: copy.tone,
             fontWeight: 700,
@@ -96,7 +96,7 @@ export default function ValidityIndicator({
           <span
             style={{
               fontFamily: T.MONO,
-              fontSize: '9px',
+              fontSize: '10px',
               letterSpacing: '0.08em',
               color: PROEVOL_THEME.muted,
             }}

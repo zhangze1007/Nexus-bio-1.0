@@ -54,7 +54,7 @@ export default function DemoBanner({ context }: DemoBannerProps) {
       <span
         style={{
           fontFamily: T.MONO,
-          fontSize: '9px',
+          fontSize: '10px',
           fontWeight: 700,
           padding: '2px 8px',
           borderRadius: '999px',

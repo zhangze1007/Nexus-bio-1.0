@@ -663,7 +663,7 @@ export default function CatalystDesignerPage() {
                 ))}
               </select>
               {enzyme.id === RATE_LIMITING_ENZYME.id && (
-                <span style={{ display: 'inline-block', marginTop: 4, fontFamily: T.MONO, fontSize: '9px', color: '#FFFB1F', background: 'rgba(255,251,31,0.12)', padding: '2px 8px', borderRadius: 8 }}>Rate-limiting</span>
+                <span style={{ display: 'inline-block', marginTop: 4, fontFamily: T.MONO, fontSize: '10px', color: '#FFFB1F', background: 'rgba(255,251,31,0.12)', padding: '2px 8px', borderRadius: 8 }}>Rate-limiting</span>
               )}
             </div>
             <div style={{ marginBottom: '12px', fontFamily: T.MONO, fontSize: '10px', color: LABEL }}>
@@ -692,20 +692,20 @@ export default function CatalystDesignerPage() {
                 <div style={{ ...GLASS, borderRadius: '12px', padding: '8px 10px', marginTop: 4 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
                     <span style={{ fontFamily: T.MONO, fontSize: '14px', color: '#FFDB13', fontWeight: 700 }}>{selectedCatResidue.residue}{selectedResidue}</span>
-                    <span style={{ fontFamily: T.MONO, fontSize: '8px', color: PHASE_COLORS.binding, background: 'rgba(191,220,205,0.12)', padding: '2px 5px', borderRadius: 4 }}>{selectedCatResidue.role.replace('_', ' ')}</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: '10px', color: PHASE_COLORS.binding, background: 'rgba(191,220,205,0.12)', padding: '2px 5px', borderRadius: 4 }}>{selectedCatResidue.role.replace('_', ' ')}</span>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3px 8px' }}>
                     <div>
-                      <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Dist</span>
+                      <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>Dist</span>
                       <p style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE, margin: 0 }}>{selectedCatResidue.distanceToSubstrate.toFixed(1)} Å</p>
                     </div>
                     <div>
-                      <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Angle</span>
+                      <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>Angle</span>
                       <p style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE, margin: 0 }}>{selectedCatResidue.orientationAngle.toFixed(0)}°</p>
                     </div>
                   </div>
                   <div style={{ marginTop: 6 }}>
-                    <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Mutate to</span>
+                    <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>Mutate to</span>
                     <select value={selectedMutation || ''} onChange={e => setSelectedMutation(e.target.value || null)}
                       style={{ width: '100%', marginTop: 2, fontFamily: T.MONO, fontSize: '10px', color: VALUE, background: INPUT_BG, border: `1px solid ${INPUT_BORDER}`, borderRadius: 6, padding: '4px 6px', cursor: 'pointer', outline: '2px solid rgba(175,195,214,0.5)', outlineOffset: '2px' }}>
                       <option value="">Select…</option>
@@ -718,11 +718,11 @@ export default function CatalystDesignerPage() {
                     <div style={{ marginTop: 6, padding: '6px 8px', borderRadius: 8, background: 'rgba(255,255,255,0.03)', border: `1px solid ${BORDER}` }}>
                       <div style={{ display: 'flex', gap: 8 }}>
                         <div>
-                          <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>ΔKd</span>
+                          <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>ΔKd</span>
                           <p style={{ fontFamily: T.MONO, fontSize: '10px', margin: 0, color: mutationImpact.deltaKd < 0 ? '#93CB52' : '#FA8072' }}>{mutationImpact.deltaKd > 0 ? '+' : ''}{mutationImpact.deltaKd.toFixed(1)} μM</p>
                         </div>
                         <div>
-                          <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>ΔKcat</span>
+                          <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>ΔKcat</span>
                           <p style={{ fontFamily: T.MONO, fontSize: '10px', margin: 0, color: mutationImpact.deltaKcat > 0 ? '#93CB52' : '#FA8072' }}>{mutationImpact.deltaKcat > 0 ? '+' : ''}{mutationImpact.deltaKcat.toFixed(3)} s⁻¹</p>
                         </div>
                       </div>

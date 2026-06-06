@@ -88,14 +88,14 @@ function InputField({ label, value, unit, onChange, min, max, step, hint }: {
         <label style={{ color: 'rgba(255,255,255,0.4)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.05em' }}>
           {label}
         </label>
-        <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '9px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1" }}>{unit}</span>
+        <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1" }}>{unit}</span>
       </div>
       <input
         type="number" value={value} min={min} max={max} step={step}
         onChange={e => onChange(parseFloat(e.target.value) || 0)}
         style={{ width: '100%', padding: '6px 10px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '14px', color: '#ffffff', fontSize: '12px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", outline: '2px solid rgba(175,195,214,0.5)', outlineOffset: '2px' }}
       />
-      {hint && <p style={{ color: 'rgba(255,255,255,0.15)', fontSize: '9px', margin: '3px 0 0', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1" }}>{hint}</p>}
+      {hint && <p style={{ color: 'rgba(255,255,255,0.15)', fontSize: '10px', margin: '3px 0 0', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1" }}>{hint}</p>}
     </div>
   );
 }
@@ -276,7 +276,7 @@ Be specific and scientific. No generic statements.`;
       {/* MM curve — always visible */}
       <div style={{ padding: '14px', borderRadius: '20px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
         <LineChart data={mmCurve} color="#C8D8E8" label="Michaelis-Menten curve (v vs [S])" unit="mM" />
-        <p style={{ color: 'rgba(255,255,255,0.15)', fontSize: '9px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", margin: '6px 0 0' }}>
+        <p style={{ color: 'rgba(255,255,255,0.15)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", margin: '6px 0 0' }}>
           v = (Vmax × [S]) / (Km{Ki > 0 && I > 0 ? ` × (1 + [I]/Ki)` : ''} + [S])
         </p>
       </div>
@@ -312,7 +312,7 @@ Be specific and scientific. No generic statements.`;
               { l: 'Saturation', v: `${((S0 / (S0 + Km)) * 100).toFixed(1)}%` },
             ].map(m => (
               <div key={m.l} style={{ padding: '8px 10px', borderRadius: '14px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '9px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", margin: '0 0 3px', textTransform: 'uppercase' }}>{m.l}</p>
+                <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", margin: '0 0 3px', textTransform: 'uppercase' }}>{m.l}</p>
                 <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '11px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", margin: 0, fontWeight: 600 }}>{m.v}</p>
               </div>
             ))}
@@ -339,7 +339,7 @@ Be specific and scientific. No generic statements.`;
         </div>
       )}
 
-      <p style={{ color: 'rgba(255,255,255,0.1)', fontSize: '9px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", textAlign: 'center', margin: 0 }}>
+      <p style={{ color: 'rgba(255,255,255,0.1)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", textAlign: 'center', margin: 0 }}>
         Numerical integration via 4th-order Runge-Kutta · Based on user-provided experimental parameters
       </p>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>

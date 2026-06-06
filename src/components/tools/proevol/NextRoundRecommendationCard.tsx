@@ -53,7 +53,7 @@ export default function NextRoundRecommendationCard({ campaign }: { campaign: Pr
           <div
             style={{
               fontFamily: T.MONO,
-              fontSize: '9px',
+              fontSize: '10px',
               color: PROEVOL_THEME.label,
               textTransform: 'uppercase',
               letterSpacing: '0.08em',

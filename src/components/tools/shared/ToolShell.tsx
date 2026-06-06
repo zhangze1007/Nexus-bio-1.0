@@ -121,7 +121,7 @@ export default function ToolShell({
             color: 'var(--nb-control-color)',
             cursor: 'pointer',
             fontFamily: T.SANS,
-            fontSize: '9px',
+            fontSize: '10px',
             flexShrink: 0,
             ['--nb-control-bg' as const]: PATHD_THEME.panelGlassStrong,
             ['--nb-control-border' as const]: PATHD_THEME.sepiaPanelBorder,
@@ -150,7 +150,7 @@ export default function ToolShell({
             background: 'rgba(231, 199, 169, 0.24)',
             color: PATHD_THEME.value,
             fontFamily: T.MONO,
-            fontSize: '9px',
+            fontSize: '10px',
             fontWeight: 700,
           letterSpacing: '0.08em',
           textTransform: 'uppercase',
@@ -183,7 +183,7 @@ export default function ToolShell({
             title={validity.caption}
             style={{
               fontFamily: T.MONO,
-              fontSize: '9px',
+              fontSize: '10px',
               fontWeight: 700,
               letterSpacing: '0.10em',
               padding: '5px 9px',
@@ -201,7 +201,7 @@ export default function ToolShell({
 
         {formula && (
           <div style={{
-            fontFamily: T.MONO, fontSize: '9px',
+            fontFamily: T.MONO, fontSize: '10px',
             color: PATHD_THEME.value,
           padding: '5px 8px',
             background: PATHD_THEME.panelGlassStrong,

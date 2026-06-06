@@ -147,7 +147,7 @@ export default function EvidenceTabRail({
               WebkitBackdropFilter: 'blur(16px)',
               color: 'var(--nb-control-color)',
               fontFamily: T.MONO,
-              fontSize: '9px',
+              fontSize: '10px',
               fontWeight: 600,
               textTransform: 'uppercase',
               letterSpacing: '0.1em',

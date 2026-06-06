@@ -83,7 +83,7 @@ export default function WorkflowArtifactDebugPanel({
             <span
               style={{
                 fontFamily: MONO,
-                fontSize: '9px',
+                fontSize: '10px',
                 color: 'rgba(255,255,255,0.28)',
                 textTransform: 'uppercase',
                 letterSpacing: '0.08em',

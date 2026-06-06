@@ -510,7 +510,7 @@ export default function NEXAIPage() {
           {result && result.citations.length > 0 && (
             <>
               <div style={{
-                fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase',
+                fontFamily: T.SANS, fontSize: '10px', textTransform: 'uppercase',
                 letterSpacing: '0.1em', color: PATHD_THEME.label,
                 margin: '14px 0 6px', padding: '0 2px',
               }}>
@@ -523,14 +523,14 @@ export default function NEXAIPage() {
                   background: PATHD_THEME.panelInset,
                   border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
                 }}>
-                  <p style={{ fontFamily: T.SANS, fontSize: '9px', color: PATHD_THEME.value, margin: '0 0 2px', lineHeight: 1.4 }}>
+                  <p style={{ fontFamily: T.SANS, fontSize: '10px', color: PATHD_THEME.value, margin: '0 0 2px', lineHeight: 1.4 }}>
                     {c.title.slice(0, 60)}…
                   </p>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ fontFamily: T.SANS, fontSize: '8px', color: PATHD_THEME.label }}>
+                    <span style={{ fontFamily: T.SANS, fontSize: '10px', color: PATHD_THEME.label }}>
                       {c.authors.split(',')[0]} et al. {c.year}
                     </span>
-                    <span style={{ fontFamily: T.MONO, fontSize: '8px', color: PATHD_THEME.value }}>
+                    <span style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.value }}>
                       {(c.relevance * 100).toFixed(0)}%
                     </span>
                   </div>
@@ -584,7 +584,7 @@ export default function NEXAIPage() {
               }}
             >
               <div style={{ display: 'grid', gap: '2px' }}>
-                <span style={{ fontFamily: T.MONO, fontSize: '9px', letterSpacing: '0.08em', textTransform: 'uppercase', color: PATHD_THEME.label }}>
+                <span style={{ fontFamily: T.MONO, fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', color: PATHD_THEME.label }}>
                   Axon mode
                 </span>
                 <span style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.value, lineHeight: 1.5 }}>
@@ -595,7 +595,7 @@ export default function NEXAIPage() {
                 {agenticMode && routeHint && routeHint.kind === 'none' && (
                   <span
                     data-testid="nexai-route-hint-none"
-                    style={{ fontFamily: T.MONO, fontSize: '9px', color: PATHD_THEME.label }}
+                    style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label }}
                   >
                     Not routed — {routeHint.reason}
                   </span>
@@ -603,7 +603,7 @@ export default function NEXAIPage() {
                 {agenticMode && routeHint && routeHint.kind !== 'none' && (
                   <span
                     data-testid={`nexai-route-hint-${routeHint.kind}`}
-                    style={{ fontFamily: T.MONO, fontSize: '9px', color: PATHD_THEME.value }}
+                    style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.value }}
                   >
                     Routed to {routeHint.kind.toUpperCase()} — {routeHint.reason}
                   </span>
@@ -646,7 +646,7 @@ export default function NEXAIPage() {
 
             {(result || agenticMode) && (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' }}>
-                <div style={{ fontFamily: T.MONO, fontSize: '9px', color: PATHD_THEME.label, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                <div style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
                   Primary reading surface
                 </div>
                 <div
@@ -816,7 +816,7 @@ export default function NEXAIPage() {
             gap: '8px',
           }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap' }}>
-              <div style={{ fontFamily: T.MONO, fontSize: '9px', color: PATHD_THEME.label, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              <div style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                 Workflow supervisor
               </div>
               <span style={{
@@ -828,7 +828,7 @@ export default function NEXAIPage() {
                   ? PATHD_THEME.apricot
                   : PATHD_THEME.value,
                 fontFamily: T.MONO,
-                fontSize: '8px',
+                fontSize: '10px',
                 textTransform: 'uppercase',
                 letterSpacing: '0.06em',
               }}>
@@ -838,7 +838,7 @@ export default function NEXAIPage() {
             <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.value, lineHeight: 1.55 }}>
               {workflowControl.explanation}
             </div>
-            <div style={{ display: 'grid', gap: '5px', fontFamily: T.MONO, fontSize: '9px', color: PATHD_THEME.label, lineHeight: 1.45 }}>
+            <div style={{ display: 'grid', gap: '5px', fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label, lineHeight: 1.45 }}>
               <span>state · {workflowControl.machineState}</span>
               <span>current · {workflowControl.currentToolId?.toUpperCase() ?? 'NONE'}</span>
               <span>next · {workflowControl.nextRecommendedNode?.toUpperCase() ?? 'NONE'}</span>
@@ -854,7 +854,7 @@ export default function NEXAIPage() {
           {history.length > 0 && (
             <div style={{ marginTop: '12px' }}>
               <div style={{
-                fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase',
+                fontFamily: T.SANS, fontSize: '10px', textTransform: 'uppercase',
                 letterSpacing: '0.1em', color: PATHD_THEME.label, marginBottom: '6px',
               }}>
                 History ({history.length})
@@ -868,7 +868,7 @@ export default function NEXAIPage() {
                     display: 'block', width: '100%', textAlign: 'left',
                     padding: '4px 6px', marginBottom: '2px',
                     background: 'transparent', border: 'none', cursor: 'pointer',
-                    fontFamily: T.MONO, fontSize: '8px', color: PATHD_THEME.label,
+                    fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label,
                     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                   }}
                 >
@@ -886,7 +886,7 @@ export default function NEXAIPage() {
             display: 'grid',
             gap: '6px',
           }}>
-            <div style={{ fontFamily: T.MONO, fontSize: '9px', color: PATHD_THEME.label, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            <div style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
               Axon posture
             </div>
             <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.value, lineHeight: 1.55 }}>

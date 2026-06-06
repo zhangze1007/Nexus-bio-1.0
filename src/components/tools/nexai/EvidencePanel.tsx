@@ -61,7 +61,7 @@ export default function EvidencePanel({ citations, onNodeClick }: EvidencePanelP
       }}
     >
       <div style={{ display: 'grid', gap: '4px' }}>
-        <div style={{ fontFamily: T.MONO, fontSize: '9px', color: PATHD_THEME.label, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+        <div style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
           Citation support map
         </div>
         <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.label, lineHeight: 1.55 }}>
@@ -139,7 +139,7 @@ function CitationGraph({
               y={y + 3}
               textAnchor="end"
               fontFamily={T.MONO}
-              fontSize="7"
+              fontSize="10"
               fill="rgba(255,255,255,0.28)"
             >
               {(1 - tick).toFixed(2)}
@@ -159,7 +159,7 @@ function CitationGraph({
               y="350"
               textAnchor="middle"
               fontFamily={T.MONO}
-              fontSize="7"
+              fontSize="10"
               fill="rgba(255,255,255,0.28)"
             >
               {year}
@@ -232,7 +232,7 @@ function CitationGraph({
               y={n.y + 4}
               textAnchor="middle"
               fontFamily={T.MONO}
-              fontSize="9"
+              fontSize="10"
               fill={isHov ? 'rgba(255,244,230,0.96)' : 'rgba(255,255,255,0.72)'}
             >
               {n.year}
@@ -242,7 +242,7 @@ function CitationGraph({
               y={n.y + n.r + 16}
               textAnchor="middle"
               fontFamily={T.SANS}
-              fontSize="8"
+              fontSize="10"
               fill="rgba(205,214,236,0.62)"
             >
               {n.title.slice(0, 14)}
@@ -251,7 +251,7 @@ function CitationGraph({
           </g>
         );
       })}
-      <text x={14} y={H - 12} fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.18)">
+      <text x={14} y={H - 12} fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.18)">
         Y-axis = citation relevance · X-axis = publication year
       </text>
     </svg>

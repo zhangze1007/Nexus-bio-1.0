@@ -123,7 +123,7 @@ export default function ScientificFigureFrame({
                   <span
                     style={{
                       fontFamily: T.MONO,
-                      fontSize: '9px',
+                      fontSize: '10px',
                       letterSpacing: '0.06em',
                       textTransform: 'uppercase',
                       color: PATHD_THEME.label,

@@ -23,7 +23,7 @@ function MiniChart({ x, y, color, label }: { x: number[]; y: number[]; color: st
 
   return (
     <div>
-      <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '9px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 4px' }}>{label}</p>
+      <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 4px' }}>{label}</p>
       <svg width={W} height={H}>
         {[0.33, 0.66, 1].map(f => (
           <line key={f} x1={PAD.l} x2={W-PAD.r} y1={PAD.t+iH*(1-f)} y2={PAD.t+iH*(1-f)} stroke="rgba(255,255,255,0.05)" strokeWidth={0.5} />
@@ -141,12 +141,12 @@ Do not return JSON, code fences, or developer-style logs.` }] }],
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
         <label style={{ color: 'rgba(255,255,255,0.4)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</label>
-        <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '9px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1" }}>{unit}</span>
+        <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1" }}>{unit}</span>
       </div>
       <input type={type} value={value}
         onChange={e => onChange(e.target.value)}
         style={{ width: '100%', padding: '6px 10px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '14px', color: '#ffffff', fontSize: '12px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", outline: '2px solid rgba(175,195,214,0.5)', outlineOffset: '2px', boxSizing: 'border-box' }} />
-      {hint && <p style={{ color: 'rgba(255,255,255,0.15)', fontSize: '9px', margin: '3px 0 0', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1" }}>{hint}</p>}
+      {hint && <p style={{ color: 'rgba(255,255,255,0.15)', fontSize: '10px', margin: '3px 0 0', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1" }}>{hint}</p>}
     </div>
   );
 
@@ -206,7 +206,7 @@ Do not return JSON, code fences, or developer-style logs.` }] }],
               { l: 'T (Kelvin)', v: `${T.toFixed(2)} K`, col: 'rgba(255,255,255,0.5)' },
             ].map(m => (
               <div key={m.l} style={{ padding: '8px 10px', borderRadius: '14px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '9px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", margin: '0 0 3px', textTransform: 'uppercase' }}>{m.l}</p>
+                <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", margin: '0 0 3px', textTransform: 'uppercase' }}>{m.l}</p>
                 <p style={{ color: m.col, fontSize: '11px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", margin: 0, fontWeight: 600 }}>{m.v}</p>
               </div>
             ))}
@@ -244,7 +244,7 @@ Do not return JSON, code fences, or developer-style logs.` }] }],
         </div>
       )}
 
-      <p style={{ color: 'rgba(255,255,255,0.1)', fontSize: '9px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", textAlign: 'center', margin: 0 }}>
+      <p style={{ color: 'rgba(255,255,255,0.1)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", textAlign: 'center', margin: 0 }}>
         ΔG = ΔG° + RT ln(Q) · Based on user-provided concentrations
       </p>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>

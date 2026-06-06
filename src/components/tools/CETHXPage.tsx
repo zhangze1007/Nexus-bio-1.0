@@ -84,7 +84,7 @@ function BreathingWaterfall({ steps }: { steps: ReturnType<typeof computeThermo>
       <line x1={PAD.left} y1={yPos(0)} x2={W - PAD.right} y2={yPos(0)}
         stroke="rgba(255,255,255,0.08)" strokeWidth={1} />
 
-      <text x={PAD.left} y={18} fontFamily={T.SANS} fontSize="9" fill={PATHD_THEME.label} letterSpacing="0.12em">
+      <text x={PAD.left} y={18} fontFamily={T.SANS} fontSize="10" fill={PATHD_THEME.label} letterSpacing="0.12em">
         THERMODYNAMIC WATERFALL
       </text>
       <text x={PAD.left} y={30} fontFamily={T.SANS} fontSize="11" fill={PATHD_THEME.value}>
@@ -142,7 +142,7 @@ function BreathingWaterfall({ steps }: { steps: ReturnType<typeof computeThermo>
                 y={topY - 5}
                 textAnchor="middle"
                 fontFamily={T.MONO}
-                fontSize="6"
+                fontSize="10"
                 fill={SEMANTIC.fail}
               >
                 INFEASIBLE
@@ -154,7 +154,7 @@ function BreathingWaterfall({ steps }: { steps: ReturnType<typeof computeThermo>
                 y={topY - 8}
                 textAnchor="middle"
                 fontFamily={T.MONO}
-                fontSize="7"
+                fontSize="10"
                 fill={PATHD_THEME.orange}
               >
                 ATP +{step.atpYield.toFixed(0)}
@@ -175,7 +175,7 @@ function BreathingWaterfall({ steps }: { steps: ReturnType<typeof computeThermo>
                   y={PAD.top - 14}
                   textAnchor="middle"
                   fontFamily={T.MONO}
-                  fontSize="7"
+                  fontSize="10"
                   fill="rgba(255,255,255,0.72)"
                 >
                   LIMITING
@@ -206,7 +206,7 @@ function BreathingWaterfall({ steps }: { steps: ReturnType<typeof computeThermo>
               y={H - 18}
               textAnchor="middle"
               fontFamily={T.MONO}
-              fontSize="7"
+              fontSize="10"
               fill="rgba(255,255,255,0.34)"
               transform={`rotate(-38,${x},${H - 18})`}
             >
@@ -217,7 +217,7 @@ function BreathingWaterfall({ steps }: { steps: ReturnType<typeof computeThermo>
               y={H - 34}
               textAnchor="middle"
               fontFamily={T.MONO}
-              fontSize="7"
+              fontSize="10"
               fill={step.deltaG < 0 ? `rgba(${SEMANTIC_RGB.pass}, 0.85)` : `rgba(${SEMANTIC_RGB.fail}, 0.85)`}
             >
               {step.deltaG > 0 ? '+' : ''}{step.deltaG.toFixed(1)}
@@ -229,22 +229,22 @@ function BreathingWaterfall({ steps }: { steps: ReturnType<typeof computeThermo>
       {[-40, -20, 0, 20].map(v => v >= minG && v <= maxG ? (
         <g key={v}>
           <line x1={PAD.left - 4} y1={yPos(v)} x2={PAD.left} y2={yPos(v)} stroke="rgba(255,255,255,0.08)" />
-          <text x={PAD.left - 8} y={yPos(v) + 3} textAnchor="end" fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.28)">
+          <text x={PAD.left - 8} y={yPos(v) + 3} textAnchor="end" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.28)">
             {v}
           </text>
         </g>
       ) : null)}
 
-      <text x={10} y={H / 2} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.18)"
+      <text x={10} y={H / 2} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.18)"
         transform={`rotate(-90,10,${H / 2})`}>ΔG (kJ/mol)</text>
 
       <g transform={`translate(${W - 174}, 14)`}>
         <rect width="154" height="54" rx="10" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.08)" />
-        <text x="12" y="17" fontFamily={T.MONO} fontSize="7" fill={PATHD_THEME.label}>CURRENT LIMITING STEP</text>
+        <text x="12" y="17" fontFamily={T.MONO} fontSize="10" fill={PATHD_THEME.label}>CURRENT LIMITING STEP</text>
         <text x="12" y="31" fontFamily={T.SANS} fontSize="11" fill={PATHD_THEME.value}>
           {limitingStep?.step ?? '—'}
         </text>
-        <text x="12" y="45" fontFamily={T.MONO} fontSize="8" fill={`rgba(${SEMANTIC_RGB.fail}, 0.85)`}>
+        <text x="12" y="45" fontFamily={T.MONO} fontSize="10" fill={`rgba(${SEMANTIC_RGB.fail}, 0.85)`}>
           ΔG {limitingStep ? `${limitingStep.deltaG > 0 ? '+' : ''}${limitingStep.deltaG.toFixed(1)} kJ/mol` : '—'}
         </text>
       </g>
@@ -397,7 +397,7 @@ export default function CETHXPage() {
         <>
           {fba && (
             <div role="status" style={{ padding: '6px 14px', background: 'rgba(175,195,214,0.14)', border: '1px solid rgba(175,195,214,0.28)', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
-              <span style={{ fontFamily: T.MONO, fontSize: '9px', fontWeight: 700, padding: '2px 8px', borderRadius: '999px', background: 'rgba(175,195,214,0.22)', border: '1px solid rgba(175,195,214,0.34)', color: T.VALUE, textTransform: 'uppercase', letterSpacing: '0.06em', flexShrink: 0 }}>
+              <span style={{ fontFamily: T.MONO, fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '999px', background: 'rgba(175,195,214,0.22)', border: '1px solid rgba(175,195,214,0.34)', color: T.VALUE, textTransform: 'uppercase', letterSpacing: '0.06em', flexShrink: 0 }}>
                 FBASim
               </span>
               <span style={{ fontFamily: T.SANS, fontSize: '11px', color: T.LABEL }}>
@@ -437,7 +437,7 @@ export default function CETHXPage() {
                   <span style={{ fontFamily: T.SANS, fontSize: '11px', fontWeight: 500, color: pathway === p.id ? T.VALUE : T.LABEL, display: 'block' }}>
                     {p.label}
                   </span>
-                  <span style={{ fontFamily: T.MONO, fontSize: '8px', color: T.DIM }}>
+                  <span style={{ fontFamily: T.MONO, fontSize: '10px', color: T.DIM }}>
                     {p.desc}
                   </span>
                 </motion.button>
@@ -497,7 +497,7 @@ export default function CETHXPage() {
 
           <div style={{ padding: '12px', borderRadius: '12px', background: PATHD_THEME.panelInset, marginBottom: '20px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-              <span style={{ fontFamily: T.SANS, fontSize: '9px', color: T.LABEL }}>Efficiency</span>
+              <span style={{ fontFamily: T.SANS, fontSize: '10px', color: T.LABEL }}>Efficiency</span>
               <motion.span
                 key={thermo.efficiency}
                 initial={{ opacity: 0, scale: 0.8 }}
@@ -521,7 +521,7 @@ export default function CETHXPage() {
           </div>
 
           <div style={{ marginBottom: '20px' }}>
-            <div style={{ fontFamily: T.MONO, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: T.LABEL, marginBottom: '10px' }}>
+            <div style={{ fontFamily: T.MONO, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: T.LABEL, marginBottom: '10px' }}>
               Step Breakdown
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
@@ -536,7 +536,7 @@ export default function CETHXPage() {
                     padding: '4px 0', borderBottom: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
                   }}
                 >
-                  <span style={{ fontFamily: T.SANS, fontSize: '9px', color: T.LABEL, maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <span style={{ fontFamily: T.SANS, fontSize: '10px', color: T.LABEL, maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {s.step}
                   </span>
                   <span style={{ fontFamily: T.MONO, fontSize: '10px', fontWeight: 600, textAlign: 'right', color: s.deltaG < 0 ? PATHD_THEME.mint : PATHD_THEME.coral }}>
@@ -557,7 +557,7 @@ export default function CETHXPage() {
             border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
             background: PATHD_THEME.panelInset, display: 'grid', gap: '6px', marginBottom: '20px',
           }}>
-            <div style={{ fontFamily: T.MONO, fontSize: '9px', color: T.LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            <div style={{ fontFamily: T.MONO, fontSize: '10px', color: T.LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
               Interpretation
             </div>
             <div style={{ fontFamily: T.SANS, fontSize: '11px', color: T.VALUE, lineHeight: 1.55 }}>
@@ -578,7 +578,7 @@ export default function CETHXPage() {
             border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
             background: PATHD_THEME.panelInset, display: 'grid', gap: '6px',
           }}>
-            <div style={{ fontFamily: T.MONO, fontSize: '9px', color: T.LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            <div style={{ fontFamily: T.MONO, fontSize: '10px', color: T.LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
               Conditions
             </div>
             <div style={{ fontFamily: T.SANS, fontSize: '11px', color: T.VALUE, lineHeight: 1.55 }}>

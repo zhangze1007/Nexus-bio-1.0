@@ -414,7 +414,7 @@ function TrajectoryViewport({
               x={10 + node.x * 80}
               y={12 + node.y * 80}
               textAnchor="middle"
-              fontSize="3"
+              fontSize="10"
               fill="#111827"
               fontWeight={600}
             >

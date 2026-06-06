@@ -143,7 +143,7 @@ export default function ScientificMethodStrip({ label, items, dismissible = fals
               <div
                 style={{
                   fontFamily: T.MONO,
-                  fontSize: '9px',
+                  fontSize: '10px',
                   letterSpacing: '0.05em',
                   textTransform: 'uppercase',
                   color: PATHD_THEME.label,

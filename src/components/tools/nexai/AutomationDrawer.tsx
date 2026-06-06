@@ -38,7 +38,7 @@ export interface AutomationDrawerProps {
 function controlBtn(disabled: boolean): CSSProperties {
   return {
     fontFamily: T.MONO,
-    fontSize: '9px',
+    fontSize: '10px',
     padding: '2px 6px',
     borderRadius: '5px',
     border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
@@ -146,7 +146,7 @@ export default function AutomationDrawer({
           <span style={{ fontFamily: T.MONO, fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', color: PATHD_THEME.label }}>
             Automation queue
           </span>
-          <span style={{ fontFamily: T.MONO, fontSize: '9px', color: PATHD_THEME.label }}>
+          <span style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label }}>
             {pending} pending · {running} running · {done} done · {errored} error
           </span>
         </div>
@@ -156,7 +156,7 @@ export default function AutomationDrawer({
             onClick={onClear}
             data-testid="nexai-automation-clear"
             style={{
-              fontFamily: T.MONO, fontSize: '9px',
+              fontFamily: T.MONO, fontSize: '10px',
               padding: '3px 8px', borderRadius: '6px',
               border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
               background: 'transparent', cursor: 'pointer',
@@ -208,7 +208,7 @@ export default function AutomationDrawer({
                 <div style={{ display: 'grid', gap: '3px', minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                     <span style={{
-                      fontFamily: T.MONO, fontSize: '9px',
+                      fontFamily: T.MONO, fontSize: '10px',
                       padding: '1px 5px', borderRadius: '4px',
                       background: 'rgba(10,14,22,0.45)',
                       color: PATHD_THEME.value, letterSpacing: '0.06em',
@@ -224,7 +224,7 @@ export default function AutomationDrawer({
                     </span>
                   </div>
                   <div style={{
-                    fontFamily: T.MONO, fontSize: '9px', color: PATHD_THEME.label,
+                    fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label,
                     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                   }}>
                     queued {formatMillis(task.createdAt)}
@@ -247,7 +247,7 @@ export default function AutomationDrawer({
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
                   <span
                     style={{
-                      fontFamily: T.MONO, fontSize: '9px',
+                      fontFamily: T.MONO, fontSize: '10px',
                       padding: '3px 8px', borderRadius: '6px',
                       background: 'rgba(10,14,22,0.35)', color: tone.fg,
                       letterSpacing: '0.08em', textTransform: 'uppercase',

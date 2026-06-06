@@ -126,7 +126,7 @@ export default function SelectionDecisionCard({
         <div
           style={{
             fontFamily: T.MONO,
-            fontSize: '9px',
+            fontSize: '10px',
             color: PROEVOL_THEME.label,
             textTransform: 'uppercase',
             letterSpacing: '0.08em',
@@ -148,7 +148,7 @@ export default function SelectionDecisionCard({
         </div>
         <div style={{ display: 'grid', gap: '3px', fontFamily: T.SANS, fontSize: '10px', color: PROEVOL_THEME.muted, lineHeight: 1.5 }}>
           <div>Parent: {focusedVariant.parentId ?? 'WT'} · {focusedVariant.status === 'selected' ? focusedVariant.selectionReason : focusedVariant.rejectionReason}</div>
-          <div style={{ fontFamily: T.MONO, fontSize: '9px' }}>
+          <div style={{ fontFamily: T.MONO, fontSize: '10px' }}>
             score {focusedVariant.score.composite.toFixed(1)} · act {focusedVariant.predictedActivity.toFixed(1)} · stab {focusedVariant.predictedStability.toFixed(1)} · expr {focusedVariant.predictedExpression.toFixed(1)} · spec {focusedVariant.predictedSpecificity.toFixed(1)} · conf {focusedVariant.confidence.toFixed(0)}%
           </div>
           <div style={{ fontSize: '10px', color: PROEVOL_THEME.muted }}>{focusedVariant.rationale}</div>

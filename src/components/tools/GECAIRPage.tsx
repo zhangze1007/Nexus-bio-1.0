@@ -116,7 +116,7 @@ function CircuitSVG({ inputA, inputB, gateType }: { inputA: number; inputB: numb
   return (
     <svg role="img" aria-label="Chart" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
       <rect width={W} height={H} fill="#050505" rx="18" />
-      <text x="24" y="22" fontFamily={T.MONO} fontSize="9" fill="rgba(255,255,255,0.26)">GENE CIRCUIT · SBOL NOTATION</text>
+      <text x="24" y="22" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.26)">GENE CIRCUIT · SBOL NOTATION</text>
       <text x="24" y="36" fontFamily={T.SANS} fontSize="11" fill="rgba(255,255,255,0.72)">
         {gateType} gate — biological parts and 2D phase space response
       </text>
@@ -124,7 +124,7 @@ function CircuitSVG({ inputA, inputB, gateType }: { inputA: number; inputB: numb
       {/* ── SBOL circuit diagram ── */}
       <rect x={bbX1 - 8} y={bbY - 44} width={bbX2 - bbX1 + 16} height={96} rx="12"
         fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.07)" />
-      <text x={bbX1 - 4} y={bbY - 36} fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.25)">
+      <text x={bbX1 - 4} y={bbY - 36} fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.25)">
         GENETIC ARCHITECTURE
       </text>
       {/* Backbone line */}
@@ -135,12 +135,12 @@ function CircuitSVG({ inputA, inputB, gateType }: { inputA: number; inputB: numb
         points={`65,${bbY} 80,${bbY} 80,${bbY - 22} 90,${bbY - 12} 80,${bbY - 2} 80,${bbY - 22}`}
         fill="rgba(207,196,227,0.85)" stroke={PART_COLORS.promoter} strokeWidth="1"
       />
-      <text x={77} y={bbY + 14} textAnchor="middle" fontFamily={T.MONO} fontSize="7" fill={PART_COLORS.promoter}>P</text>
+      <text x={77} y={bbY + 14} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill={PART_COLORS.promoter}>P</text>
 
       {/* RBS — blue half-circle arc above backbone at x=116 */}
       <path d={`M 106,${bbY} A 10 10 0 0 1 126,${bbY}`}
         fill="rgba(175,195,214,0.82)" stroke={PART_COLORS.rbs} strokeWidth="1" />
-      <text x={116} y={bbY + 14} textAnchor="middle" fontFamily={T.MONO} fontSize="7" fill={PART_COLORS.rbs}>RBS</text>
+      <text x={116} y={bbY + 14} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill={PART_COLORS.rbs}>RBS</text>
 
       {/* CDS — orange arrow rectangle at x=148 */}
       <polygon
@@ -148,12 +148,12 @@ function CircuitSVG({ inputA, inputB, gateType }: { inputA: number; inputB: numb
         fill={`rgba(231,199,169,${0.3 + exprLevel * 0.55})`}
         stroke={PART_COLORS.cds} strokeWidth="1.2"
       />
-      <text x={172} y={bbY + 4} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill={PART_COLORS.cds}>{gateType}</text>
+      <text x={172} y={bbY + 4} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill={PART_COLORS.cds}>{gateType}</text>
 
       {/* Terminator — red T-shape at x=252 */}
       <line x1={252} y1={bbY - 20} x2={252} y2={bbY + 2} stroke={PART_COLORS.terminator} strokeWidth="2.5" />
       <line x1={240} y1={bbY - 20} x2={264} y2={bbY - 20} stroke={PART_COLORS.terminator} strokeWidth="2.5" />
-      <text x={252} y={bbY + 14} textAnchor="middle" fontFamily={T.MONO} fontSize="7" fill={PART_COLORS.terminator}>T</text>
+      <text x={252} y={bbY + 14} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill={PART_COLORS.terminator}>T</text>
 
       {/* Output arrow at right end */}
       <line x1={bbX2} y1={bbY} x2={bbX2 + 18} y2={bbY} stroke="rgba(255,255,255,0.25)" strokeWidth="1.5" markerEnd="url(#gecair-arrow)" />
@@ -162,10 +162,10 @@ function CircuitSVG({ inputA, inputB, gateType }: { inputA: number; inputB: numb
           <polygon points="0 0.5, 5.5 3, 0 5.5" fill="rgba(255,255,255,0.3)" />
         </marker>
       </defs>
-      <text x={bbX2 + 22} y={bbY + 4} fontFamily={T.MONO} fontSize="7" fill="rgba(255,255,255,0.28)">{(outC * 100).toFixed(0)}%</text>
+      <text x={bbX2 + 22} y={bbY + 4} fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.28)">{(outC * 100).toFixed(0)}%</text>
 
       {/* ── 2D Phase Space heatmap (viridis, 30×30) ── */}
-      <text x={PS_LEFT} y={PS_TOP - 10} fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.26)">
+      <text x={PS_LEFT} y={PS_TOP - 10} fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.26)">
         PHASE SPACE · Output = {viridisColor(0).includes('68') ? 'low' : ''} → high (viridis)
       </text>
       <rect x={PS_LEFT - 2} y={PS_TOP - 2} width={PS_SIZE + 4} height={PS_SIZE + 4} rx="10"
@@ -201,17 +201,17 @@ function CircuitSVG({ inputA, inputB, gateType }: { inputA: number; inputB: numb
       />
       {/* Axes */}
       <text x={PS_LEFT + PS_SIZE / 2} y={PS_TOP + PS_SIZE + 16} textAnchor="middle"
-        fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.28)">Input A (0→1)</text>
+        fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.28)">Input A (0→1)</text>
       <text x={PS_LEFT - 14} y={PS_TOP + PS_SIZE / 2} textAnchor="middle"
-        fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.28)"
+        fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.28)"
         transform={`rotate(-90,${PS_LEFT - 14},${PS_TOP + PS_SIZE / 2})`}>Input B (0→1)</text>
       {/* Tick marks */}
       {[0, 0.5, 1].map((tick) => (
         <g key={tick}>
           <text x={PS_LEFT + tick * PS_SIZE} y={PS_TOP + PS_SIZE + 8}
-            textAnchor="middle" fontFamily={T.MONO} fontSize="7" fill="rgba(255,255,255,0.2)">{tick.toFixed(1)}</text>
+            textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.2)">{tick.toFixed(1)}</text>
           <text x={PS_LEFT - 4} y={PS_TOP + (1 - tick) * PS_SIZE + 3}
-            textAnchor="end" fontFamily={T.MONO} fontSize="7" fill="rgba(255,255,255,0.2)">{tick.toFixed(1)}</text>
+            textAnchor="end" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.2)">{tick.toFixed(1)}</text>
         </g>
       ))}
       {/* Viridis color bar */}
@@ -226,25 +226,25 @@ function CircuitSVG({ inputA, inputB, gateType }: { inputA: number; inputB: numb
       </defs>
       <rect x={PS_LEFT + PS_SIZE + 8} y={PS_TOP} width="10" height={PS_SIZE}
         fill="url(#gecair-viridis)" rx="3" />
-      <text x={PS_LEFT + PS_SIZE + 22} y={PS_TOP + 6} fontFamily={T.MONO} fontSize="7" fill="rgba(255,255,255,0.3)">1.0</text>
-      <text x={PS_LEFT + PS_SIZE + 22} y={PS_TOP + PS_SIZE + 2} fontFamily={T.MONO} fontSize="7" fill="rgba(255,255,255,0.3)">0.0</text>
+      <text x={PS_LEFT + PS_SIZE + 22} y={PS_TOP + 6} fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.3)">1.0</text>
+      <text x={PS_LEFT + PS_SIZE + 22} y={PS_TOP + PS_SIZE + 2} fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.3)">0.0</text>
 
       {/* ── Right: Transfer curves ── */}
       <rect x="324" y="54" width="382" height="92" rx="16" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" />
-      <text x="338" y="74" fontFamily={T.MONO} fontSize="9" fill="rgba(255,255,255,0.24)">TRANSFER CURVES</text>
+      <text x="338" y="74" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.24)">TRANSFER CURVES</text>
       <polyline points={curveA.points} fill="none" stroke={PATHD_THEME.coral} strokeWidth="2" />
       <polyline points={curveB.points} fill="none" stroke={PATHD_THEME.apricot} strokeWidth="2" />
       <circle cx={curveA.markerX} cy={curveA.markerY} r="4" fill={PATHD_THEME.coral} />
       <circle cx={curveB.markerX} cy={curveB.markerY} r="4" fill={PATHD_THEME.apricot} />
-      <text x="348" y="133" fontFamily={T.MONO} fontSize="8" fill="rgba(232,163,161,0.9)">
+      <text x="348" y="133" fontFamily={T.MONO} fontSize="10" fill="rgba(232,163,161,0.9)">
         A: {(curveA.markerOutput * 100).toFixed(0)}%
       </text>
-      <text x="420" y="133" fontFamily={T.MONO} fontSize="8" fill="rgba(231,199,169,0.95)">
+      <text x="420" y="133" fontFamily={T.MONO} fontSize="10" fill="rgba(231,199,169,0.95)">
         B: {(curveB.markerOutput * 100).toFixed(0)}%
       </text>
 
       <rect x="324" y="164" width="382" height="160" rx="16" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" />
-      <text x="338" y="182" fontFamily={T.MONO} fontSize="9" fill="rgba(255,255,255,0.24)">
+      <text x="338" y="182" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.24)">
         NODE STATE LEDGER
       </text>
       {nodeRows.map((row, index) => {
@@ -256,10 +256,10 @@ function CircuitSVG({ inputA, inputB, gateType }: { inputA: number; inputB: numb
             </text>
             <rect x="338" y={y + 8} width="220" height="10" rx="999" fill="rgba(255,255,255,0.06)" />
             <rect x="338" y={y + 8} width={Math.max(8, row.value * 220)} height="10" rx="999" fill={row.tone} opacity={0.85} />
-            <text x="564" y={y + 17} textAnchor="end" fontFamily={T.MONO} fontSize="9" fontWeight="600" fill="rgba(255,255,255,0.65)">
+            <text x="564" y={y + 17} textAnchor="end" fontFamily={T.MONO} fontSize="10" fontWeight="600" fill="rgba(255,255,255,0.65)">
               {(row.value * 100).toFixed(1)}%
             </text>
-            <text x="338" y={y + 31} fontFamily={T.SANS} fontSize="9" fill="rgba(255,255,255,0.28)">
+            <text x="338" y={y + 31} fontFamily={T.SANS} fontSize="10" fill="rgba(255,255,255,0.28)">
               {row.detail}
             </text>
           </g>
@@ -268,7 +268,7 @@ function CircuitSVG({ inputA, inputB, gateType }: { inputA: number; inputB: numb
 
       {/* SBOL Legend */}
       <rect x="324" y="340" width="382" height="140" rx="16" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.07)" />
-      <text x="338" y="358" fontFamily={T.MONO} fontSize="9" fill="rgba(255,255,255,0.24)">SBOL2 NOTATION LEGEND</text>
+      <text x="338" y="358" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.24)">SBOL2 NOTATION LEGEND</text>
       {[
         { label: 'Promoter',   color: PART_COLORS.promoter, shape: 'pentagon' },
         { label: 'RBS',        color: PART_COLORS.rbs, shape: 'arc' },
@@ -278,10 +278,10 @@ function CircuitSVG({ inputA, inputB, gateType }: { inputA: number; inputB: numb
         <g key={item.label} transform={`translate(338,${372 + i * 26})`}>
           <rect width="10" height="10" rx="2" fill={item.color} opacity={0.8} />
           <text x="16" y="9" fontFamily={T.SANS} fontSize="10" fill="rgba(255,255,255,0.55)">{item.label}</text>
-          <text x="100" y="9" fontFamily={T.MONO} fontSize="9" fill="rgba(255,255,255,0.28)">{item.shape}</text>
+          <text x="100" y="9" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.28)">{item.shape}</text>
         </g>
       ))}
-      <text x="338" y="476" fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.2)">
+      <text x="338" y="476" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.2)">
         Expression level → CDS height · Phase space → viridis output
       </text>
     </svg>
@@ -496,14 +496,14 @@ export default function GECAIRPage() {
         <div className="nb-tool-panels" style={{ flex: 1 }}>
           {/* Input panel */}
           <div className="nb-tool-sidebar" style={{ width: '240px', borderRight: `1px solid ${BORDER}`, background: PANEL_BG }}>
-            <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: LABEL, margin: '0 0 12px' }}>
+            <p style={{ fontFamily: T.SANS, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: LABEL, margin: '0 0 12px' }}>
               Input Signals
             </p>
 
             <ParamSlider label="Input A strength" value={inputA} min={0} max={1} onChange={setInputA} />
             <ParamSlider label="Input B strength" value={inputB} min={0} max={1} onChange={setInputB} />
 
-            <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: LABEL, margin: '16px 0 8px' }}>
+            <p style={{ fontFamily: T.SANS, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: LABEL, margin: '16px 0 8px' }}>
               Output Gate Type
             </p>
             {(['NOT', 'AND', 'OR', 'NAND'] as GateType[]).map(gate => (
@@ -529,14 +529,14 @@ export default function GECAIRPage() {
               </button>
             ))}
 
-            <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: LABEL, margin: '16px 0 8px' }}>
+            <p style={{ fontFamily: T.SANS, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: LABEL, margin: '16px 0 8px' }}>
               Truth Table
             </p>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr>
                   {['A', 'B', 'OUT'].map(h => (
-                    <th key={h} style={{ fontFamily: T.SANS, fontSize: '9px', color: LABEL, padding: '3px 6px', textAlign: 'center', borderBottom: `1px solid ${BORDER}` }}>{h}</th>
+                    <th key={h} style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL, padding: '3px 6px', textAlign: 'center', borderBottom: `1px solid ${BORDER}` }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -594,7 +594,7 @@ export default function GECAIRPage() {
 
           {/* Results panel */}
           <div className="nb-tool-right" style={{ width: '240px', borderLeft: `1px solid ${BORDER}`, background: PANEL_BG }}>
-            <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: LABEL, margin: '0 0 12px' }}>
+            <p style={{ fontFamily: T.SANS, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: LABEL, margin: '0 0 12px' }}>
               Circuit Readouts
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -614,7 +614,7 @@ export default function GECAIRPage() {
               display: 'grid',
               gap: '6px',
             }}>
-              <div style={{ fontFamily: T.MONO, fontSize: '9px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                 Recommendation
               </div>
               <div style={{ fontFamily: T.SANS, fontSize: '11px', color: VALUE, lineHeight: 1.55 }}>

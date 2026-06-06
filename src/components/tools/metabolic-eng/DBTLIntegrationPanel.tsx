@@ -26,7 +26,7 @@ export default function DBTLIntegrationPanel({
         border: '1px solid rgba(255,255,255,0.1)',
         display: 'grid', gap: '10px',
       }}>
-        <div style={{ fontFamily: T.MONO, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: PATHD_THEME.label }}>
+        <div style={{ fontFamily: T.MONO, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: PATHD_THEME.label }}>
           DBTL Integration
         </div>
         <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.value, lineHeight: 1.55 }}>

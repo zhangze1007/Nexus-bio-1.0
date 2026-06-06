@@ -309,8 +309,8 @@ function ProteinCanvas({ pdbId, alphafoldId, name, useAlphaFold }: ProteinCanvas
           {tooltip.b > 0 && (
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-                <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '9px', fontFamily: 'monospace' }}>pLDDT</span>
-                <span style={{ color: getPLDDTColor(tooltip.b), fontSize: '9px', fontFamily: 'monospace', fontWeight: 700 }}>
+                <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '10px', fontFamily: 'monospace' }}>pLDDT</span>
+                <span style={{ color: getPLDDTColor(tooltip.b), fontSize: '10px', fontFamily: 'monospace', fontWeight: 700 }}>
                   {tooltip.b.toFixed(1)}
                 </span>
               </div>
@@ -488,7 +488,7 @@ export default function PDBExplorer() {
                       </div>
                     </div>
                   ))}
-                  <p style={{ color: 'rgba(255,255,255,0.12)', fontSize: '9px', fontFamily: 'monospace', margin: '4px 0 0', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '6px' }}>
+                  <p style={{ color: 'rgba(255,255,255,0.12)', fontSize: '10px', fontFamily: 'monospace', margin: '4px 0 0', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '6px' }}>
                     Jumper et al., Nature 2021 · AlphaFold2 standard
                   </p>
                 </div>

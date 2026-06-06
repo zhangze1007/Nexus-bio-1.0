@@ -154,7 +154,7 @@ export default function WorkbenchInlineContext({
     >
       <div style={{ display: 'flex', alignItems: compact ? 'flex-start' : 'center', justifyContent: 'space-between', gap: compact ? '10px' : '8px', flexWrap: 'wrap' }}>
         <div style={{ display: 'grid', gap: '4px' }}>
-          <span style={{ fontFamily: T.MONO, fontSize: '9px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+          <span style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
             {stage?.shortLabel ?? 'Workbench'} context
           </span>
           <span style={{ fontFamily: T.SANS, fontSize: compact ? '12px' : '14px', color: VALUE, fontWeight: 700 }}>
@@ -321,7 +321,7 @@ export default function WorkbenchInlineContext({
             >
               <span
                 className="nb-workbench-inline-context__metric-label"
-                style={{ fontFamily: T.MONO, fontSize: '8px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}
+                style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}
               >
                 {item.label}
               </span>
@@ -344,7 +344,7 @@ export default function WorkbenchInlineContext({
       ) : (
         <div style={{ display: 'grid', gap: '8px', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))' }}>
           <div>
-            <div style={{ fontFamily: T.MONO, fontSize: '9px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>
+            <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>
               Evidence
             </div>
             <div style={{ fontFamily: T.SANS, fontSize: '12px', color: VALUE }}>
@@ -352,7 +352,7 @@ export default function WorkbenchInlineContext({
             </div>
           </div>
           <div>
-            <div style={{ fontFamily: T.MONO, fontSize: '9px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>
+            <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>
               Bottleneck
             </div>
             <div style={{ fontFamily: T.SANS, fontSize: '12px', color: VALUE }}>
@@ -360,7 +360,7 @@ export default function WorkbenchInlineContext({
             </div>
           </div>
           <div>
-            <div style={{ fontFamily: T.MONO, fontSize: '9px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>
+            <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>
               Loop Feedback
             </div>
             <div style={{ fontFamily: T.SANS, fontSize: '12px', color: VALUE, lineHeight: 1.55 }}>
@@ -370,7 +370,7 @@ export default function WorkbenchInlineContext({
             </div>
           </div>
           <div>
-            <div style={{ fontFamily: T.MONO, fontSize: '9px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>
+            <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>
               Freshness
             </div>
             <div style={{ fontFamily: T.SANS, fontSize: '12px', color: VALUE, lineHeight: 1.55 }}>
@@ -384,7 +384,7 @@ export default function WorkbenchInlineContext({
             </div>
           </div>
           <div>
-            <div style={{ fontFamily: T.MONO, fontSize: '9px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>
+            <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>
               Evidence trace
             </div>
             <div style={{ fontFamily: T.SANS, fontSize: '12px', color: VALUE, lineHeight: 1.55 }}>
@@ -405,7 +405,7 @@ export default function WorkbenchInlineContext({
             gap: '4px',
           }}
         >
-          <div style={{ fontFamily: T.MONO, fontSize: '9px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+          <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
             Latest audited run
           </div>
           <div style={{ fontFamily: T.SANS, fontSize: '12px', color: VALUE, lineHeight: 1.55 }}>

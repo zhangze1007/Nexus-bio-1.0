@@ -90,13 +90,13 @@ export default function ScientificHero({
           transition: 'background 0.15s',
         }}
       >
-        <span style={{ fontFamily: T.MONO, fontSize: '9px', color: PATHD_THEME.label, textTransform: 'uppercase', letterSpacing: '0.10em', flexShrink: 0 }}>
+        <span style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label, textTransform: 'uppercase', letterSpacing: '0.10em', flexShrink: 0 }}>
           {eyebrow}
         </span>
         <span style={{ fontFamily: T.SANS, fontSize: '11px', fontWeight: 600, color: PATHD_THEME.value, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>
           {title}
         </span>
-        <span style={{ fontFamily: T.MONO, fontSize: '9px', color: PATHD_THEME.label, marginLeft: 'auto', flexShrink: 0 }}>
+        <span style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label, marginLeft: 'auto', flexShrink: 0 }}>
           ▸ expand
         </span>
       </section>

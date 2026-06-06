@@ -122,7 +122,7 @@ export default function RawJsonDrawer({
             <span
               style={{
                 fontFamily: T.MONO,
-                fontSize: '9px',
+                fontSize: '10px',
                 padding: '2px 6px',
                 borderRadius: '6px',
                 background: 'rgba(175,195,214,0.12)',
@@ -139,7 +139,7 @@ export default function RawJsonDrawer({
             <span
               style={{
                 fontFamily: T.MONO,
-                fontSize: '9px',
+                fontSize: '10px',
                 padding: '2px 6px',
                 borderRadius: '6px',
                 background: 'rgba(250,128,114,0.16)',
@@ -170,7 +170,7 @@ export default function RawJsonDrawer({
             <span
               style={{
                 fontFamily: T.MONO,
-                fontSize: '9px',
+                fontSize: '10px',
                 color: PATHD_THEME.label,
                 letterSpacing: '0.06em',
               }}

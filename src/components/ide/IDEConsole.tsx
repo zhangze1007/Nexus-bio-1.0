@@ -52,7 +52,7 @@ export default function IDEConsole() {
         borderBottom: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
         flexShrink: 0,
       }}>
-        <span style={{ fontFamily: MONO, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: PATHD_THEME.label }}>
+        <span style={{ fontFamily: MONO, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: PATHD_THEME.label }}>
           Output Console · {consoleEntries.length} entries
         </span>
         <div style={{ display: 'flex', gap: '4px' }}>
@@ -85,11 +85,11 @@ export default function IDEConsole() {
                 borderLeft: `2px solid ${LEVEL_COLORS[entry.level]}`,
                 marginBottom: '1px',
               }}>
-                <span style={{ fontFamily: MONO, fontSize: '9px', color: 'rgba(226,232,240,0.42)', flexShrink: 0, marginTop: '1px' }}>{ts}</span>
-                <span style={{ fontFamily: MONO, fontSize: '9px', color: LEVEL_COLORS[entry.level], flexShrink: 0, textTransform: 'uppercase', marginTop: '1px' }}>
+                <span style={{ fontFamily: MONO, fontSize: '10px', color: 'rgba(226,232,240,0.42)', flexShrink: 0, marginTop: '1px' }}>{ts}</span>
+                <span style={{ fontFamily: MONO, fontSize: '10px', color: LEVEL_COLORS[entry.level], flexShrink: 0, textTransform: 'uppercase', marginTop: '1px' }}>
                   [{entry.level}]
                 </span>
-                <span style={{ fontFamily: MONO, fontSize: '9px', color: 'rgba(226,232,240,0.42)', flexShrink: 0, marginTop: '1px' }}>{entry.module}</span>
+                <span style={{ fontFamily: MONO, fontSize: '10px', color: 'rgba(226,232,240,0.42)', flexShrink: 0, marginTop: '1px' }}>{entry.module}</span>
                 <span style={{ fontFamily: SANS, fontSize: '11px', color: PATHD_THEME.value, flex: 1, lineHeight: 1.4 }}>{entry.message}</span>
               </div>
             );

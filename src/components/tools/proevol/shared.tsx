@@ -63,7 +63,7 @@ export function surfaceCardStyle(options?: {
 export function sectionKickerStyle(): CSSProperties {
   return {
     fontFamily: T.MONO,
-    fontSize: '9px',
+    fontSize: '10px',
     color: PROEVOL_THEME.label,
     textTransform: 'uppercase',
     letterSpacing: '0.12em',
@@ -73,7 +73,7 @@ export function sectionKickerStyle(): CSSProperties {
 export function tableHeaderStyle(): CSSProperties {
   return {
     fontFamily: T.MONO,
-    fontSize: '9px',
+    fontSize: '10px',
     textTransform: 'uppercase',
     letterSpacing: '0.08em',
     color: PROEVOL_THEME.label,
@@ -115,7 +115,7 @@ export function StatusPill({
         background: `${color}18`,
         color,
         fontFamily: T.MONO,
-        fontSize: '9px',
+        fontSize: '10px',
         letterSpacing: '0.06em',
         textTransform: 'uppercase',
       }}

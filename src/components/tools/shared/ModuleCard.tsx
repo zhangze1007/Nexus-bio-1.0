@@ -122,7 +122,7 @@ export default function ModuleCard({
           </span>
           <span style={{
             fontFamily: T.MONO,
-            fontSize: '8px',
+            fontSize: '10px',
             fontWeight: 600,
             letterSpacing: '0.1em',
             textTransform: 'uppercase',
@@ -135,7 +135,7 @@ export default function ModuleCard({
 
       {title && (
         <div style={{
-          fontFamily: T.SANS, fontSize: '9px', fontWeight: 500,
+          fontFamily: T.SANS, fontSize: '10px', fontWeight: 500,
           textTransform: 'uppercase', letterSpacing: '0.12em',
           color: active ? PATHD_THEME.value : PATHD_THEME.label,
           marginBottom: flush ? 0 : '10px',

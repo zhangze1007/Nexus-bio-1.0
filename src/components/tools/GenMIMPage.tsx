@@ -67,7 +67,7 @@ function GenomeMap({
       <rect width={W} height={H} fill="#050505" rx="18" />
 
       {/* Title */}
-      <text x="22" y="26" fontFamily={T.MONO} fontSize="9" fill="rgba(255,255,255,0.22)" letterSpacing="0.08em">
+      <text x="22" y="26" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.22)" letterSpacing="0.08em">
         E. COLI K-12 · 4.64 Mb
       </text>
       <text x="22" y="42" fontFamily={T.SANS} fontSize="12" fill="rgba(255,255,255,0.6)">
@@ -93,7 +93,7 @@ function GenomeMap({
             <line x1={x1.toFixed(1)} y1={y1.toFixed(1)} x2={x2.toFixed(1)} y2={y2.toFixed(1)}
               stroke="rgba(255,255,255,0.18)" strokeWidth={1} />
             <text x={tx.toFixed(1)} y={ty.toFixed(1)} textAnchor="middle" dominantBaseline="middle"
-              fontFamily={T.MONO} fontSize="7" fill="rgba(255,255,255,0.28)">
+              fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.28)">
               {mb}Mb
             </text>
           </g>
@@ -120,7 +120,7 @@ function GenomeMap({
             {prominent && (
               <text x={lx.toFixed(1)} y={ly.toFixed(1)}
                 textAnchor="middle" dominantBaseline="middle"
-                fontFamily={T.MONO} fontSize="6.5" fill={color}
+                fontFamily={T.MONO} fontSize="10" fill={color}
                 transform={`rotate(${(flip ? labelDeg + 180 : labelDeg).toFixed(1)}, ${lx.toFixed(1)}, ${ly.toFixed(1)})`}>
                 {t.gene}
               </text>
@@ -152,11 +152,11 @@ function GenomeMap({
         {viability}%
       </text>
       <text x={cx} y={cy + 12} textAnchor="middle" fontFamily={T.MONO}
-        fontSize="9" fill="rgba(255,255,255,0.32)" letterSpacing="0.12em">
+        fontSize="10" fill="rgba(255,255,255,0.32)" letterSpacing="0.12em">
         VIABILITY
       </text>
       <text x={cx} y={cy + 28} textAnchor="middle" fontFamily={T.MONO}
-        fontSize="8" fill="rgba(255,255,255,0.2)">
+        fontSize="10" fill="rgba(255,255,255,0.2)">
         {selected.length} target{selected.length !== 1 ? 's' : ''} suppressed
       </text>
 
@@ -164,7 +164,7 @@ function GenomeMap({
       {LEGEND.map((item, i) => (
         <g key={item.label} transform={`translate(${22 + i * 128}, ${H - 22})`}>
           <rect width={9} height={9} fill={item.color} rx="2" />
-          <text x={13} y={8.5} fontFamily={T.SANS} fontSize="8.5" fill="rgba(255,255,255,0.5)">
+          <text x={13} y={8.5} fontFamily={T.SANS} fontSize="10" fill="rgba(255,255,255,0.5)">
             {item.label}
           </text>
         </g>
@@ -172,7 +172,7 @@ function GenomeMap({
 
       {/* Inner ring label */}
       <text x={cx + R_EFF - 30} y={cy - 2} textAnchor="middle" fontFamily={T.MONO}
-        fontSize="6.5" fill="rgba(55,126,184,0.55)">
+        fontSize="10" fill="rgba(55,126,184,0.55)">
         KD eff
       </text>
     </svg>
@@ -383,7 +383,7 @@ export default function GenMIMPage() {
       {/* ── Targets Tab ── */}
       <ToolTabPanel tabId="targets" activeId={activeTab}>
         <div style={{ flex: 1, overflowY: 'auto', padding: '12px 0' }}>
-          <div style={{ fontFamily: T.MONO, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: PATHD_THEME.label, marginBottom: '10px' }}>
+          <div style={{ fontFamily: T.MONO, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: PATHD_THEME.label, marginBottom: '10px' }}>
             All CRISPRi Targets
           </div>
           <div style={{ overflowX: 'auto' }}>
@@ -391,7 +391,7 @@ export default function GenMIMPage() {
               <thead>
                 <tr style={{ borderBottom: `1px solid ${PATHD_THEME.panelBorderStrong}` }}>
                   {['Gene', 'Position', 'Essential', 'KD Eff.', 'Phenotype', 'Growth ΔΔ'].map(h => (
-                    <th key={h} style={{ fontFamily: T.MONO, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.06em', color: PATHD_THEME.label, padding: '5px 8px', textAlign: 'left' }}>
+                    <th key={h} style={{ fontFamily: T.MONO, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.06em', color: PATHD_THEME.label, padding: '5px 8px', textAlign: 'left' }}>
                       {h}
                     </th>
                   ))}
@@ -420,7 +420,7 @@ export default function GenMIMPage() {
       {/* ── Schedule Tab ── */}
       <ToolTabPanel tabId="schedule" activeId={activeTab}>
         <div style={{ flex: 1, overflowY: 'auto', padding: '12px 0' }}>
-          <div style={{ fontFamily: T.MONO, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: PATHD_THEME.label, marginBottom: '10px' }}>
+          <div style={{ fontFamily: T.MONO, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: PATHD_THEME.label, marginBottom: '10px' }}>
             Selected Schedule ({schedule.length} targets)
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -461,7 +461,7 @@ export default function GenMIMPage() {
             border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
             background: PATHD_THEME.panelSurface, display: 'grid', gap: '6px',
           }}>
-            <div style={{ fontFamily: T.MONO, fontSize: '9px', color: PATHD_THEME.label, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            <div style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
               Readout
             </div>
             <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.value, lineHeight: 1.55 }}>

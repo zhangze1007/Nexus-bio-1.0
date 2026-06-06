@@ -201,7 +201,7 @@ function PLDDTHistogram({ nodes, currentNodeId }: { nodes?: PathwayNode[]; curre
       <div style={{ position: 'relative', height: `${CHART_H + 20}px` }}>
         <div style={{ position: 'absolute', left: 0, top: 0, bottom: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', width: '18px' }}>
           {[max, Math.round(max/2), 0].map((v, i) => (
-            <span key={i} style={{ fontFamily: "'Public Sans', -apple-system, sans-serif", fontSize: '8px', color: 'rgba(255,255,255,0.15)', fontFeatureSettings: "'tnum' 1", lineHeight: 1 }}>
+            <span key={i} style={{ fontFamily: "'Public Sans', -apple-system, sans-serif", fontSize: '10px', color: 'rgba(255,255,255,0.15)', fontFeatureSettings: "'tnum' 1", lineHeight: 1 }}>
               {v}
             </span>
           ))}
@@ -218,7 +218,7 @@ function PLDDTHistogram({ nodes, currentNodeId }: { nodes?: PathwayNode[]; curre
           }}>
             <span style={{
               position: 'absolute', top: '-1px', left: '3px',
-              fontFamily: "'Public Sans', -apple-system, sans-serif", fontSize: '8px',
+              fontFamily: "'Public Sans', -apple-system, sans-serif", fontSize: '10px',
               color: `${PATHD_THEME.successMedium}cc`, fontFeatureSettings: "'tnum' 1",
               whiteSpace: 'nowrap',
             }}>μ</span>
@@ -247,14 +247,14 @@ function PLDDTHistogram({ nodes, currentNodeId }: { nodes?: PathwayNode[]; curre
 
         <div style={{ marginLeft: '22px', display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}>
           {[0, 20, 40, 60, 80, 100].map(v => (
-            <span key={v} style={{ fontFamily: "'Public Sans', -apple-system, sans-serif", fontSize: '8px', color: 'rgba(255,255,255,0.15)', fontFeatureSettings: "'tnum' 1" }}>
+            <span key={v} style={{ fontFamily: "'Public Sans', -apple-system, sans-serif", fontSize: '10px', color: 'rgba(255,255,255,0.15)', fontFeatureSettings: "'tnum' 1" }}>
               {v}
             </span>
           ))}
         </div>
       </div>
 
-      <p style={{ fontFamily: "'Public Sans', -apple-system, sans-serif", fontSize: '9px', color: 'rgba(255,255,255,0.12)', margin: '4px 0 0', textAlign: 'center' }}>
+      <p style={{ fontFamily: "'Public Sans', -apple-system, sans-serif", fontSize: '10px', color: 'rgba(255,255,255,0.12)', margin: '4px 0 0', textAlign: 'center' }}>
         Confidence Score (%)
       </p>
     </div>
@@ -295,7 +295,7 @@ function AuditTrailBadge({ text, riskScore }: { text: string | null; riskScore?:
       >
         <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: riskAccent, flexShrink: 0 }} />
         Audit Trail
-        <span style={{ opacity: 0.6, fontSize: '9px' }}>{open ? '▲' : '▼'}</span>
+        <span style={{ opacity: 0.6, fontSize: '10px' }}>{open ? '▲' : '▼'}</span>
       </button>
 
       {/* Expandable audit panel */}
@@ -317,7 +317,7 @@ function AuditTrailBadge({ text, riskScore }: { text: string | null; riskScore?:
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
                 <span style={{ width: '4px', height: '4px', borderRadius: '50%', background: riskAccent, display: 'inline-block' }} />
-                <span style={{ fontFamily: UI_MONO, fontSize: '9px', fontWeight: 600, color: badgeText, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                <span style={{ fontFamily: UI_MONO, fontSize: '10px', fontWeight: 600, color: badgeText, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
                   Verifiable Source Trace
                 </span>
               </div>
@@ -615,7 +615,7 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: '#9CA3AF', marginBottom: '6px', fontFamily: UI_MONO }}>
                         <span>Risk Score</span>
                         {hasInsufficientRiskData ? (
-                          <span style={{ fontWeight: 600, fontSize: '9px', color: '#9CA3AF', background: 'rgba(255,255,255,0.06)', padding: '2px 8px', borderRadius: '6px', letterSpacing: '0.03em', fontFamily: UI_MONO }}>
+                          <span style={{ fontWeight: 600, fontSize: '10px', color: '#9CA3AF', background: 'rgba(255,255,255,0.06)', padding: '2px 8px', borderRadius: '6px', letterSpacing: '0.03em', fontFamily: UI_MONO }}>
                             Inference Pending
                           </span>
                         ) : (
@@ -646,13 +646,13 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: '#9CA3AF', marginBottom: '6px', fontFamily: UI_MONO }}>
                         <span>Separation Cost Index</span>
                         {hasInsufficientSepData ? (
-                          <span style={{ fontWeight: 600, fontSize: '9px', color: '#9CA3AF', background: 'rgba(255,255,255,0.06)', padding: '2px 8px', borderRadius: '6px', letterSpacing: '0.03em', fontFamily: UI_MONO }}>
+                          <span style={{ fontWeight: 600, fontSize: '10px', color: '#9CA3AF', background: 'rgba(255,255,255,0.06)', padding: '2px 8px', borderRadius: '6px', letterSpacing: '0.03em', fontFamily: UI_MONO }}>
                             Inference Pending
                           </span>
                         ) : (
                           <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontFamily: UI_MONO }}>
                             {(node.separation_cost_index ?? 0) > HIGH_RISK_THRESHOLD && (
-                              <span style={{ color: PATHD_THEME.riskHigh, fontWeight: 700, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>High Separation Cost</span>
+                              <span style={{ color: PATHD_THEME.riskHigh, fontWeight: 700, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>High Separation Cost</span>
                             )}
                             <span style={{ fontWeight: 600, color: separationAccent }}>
                               {((node.separation_cost_index ?? 0) * 100).toFixed(0)}%
@@ -683,7 +683,7 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                         background: `${PATHD_THEME.riskHigh}12`,
                         border: `0.5px solid ${PATHD_THEME.riskHigh}33`,
                       }}>
-                        <span style={{ display: 'block', fontSize: '9px', color: `${PATHD_THEME.riskHigh}cc`, marginBottom: '4px', fontWeight: 700, textTransform: 'uppercase', fontFamily: "'Public Sans', -apple-system, sans-serif" }}>Potential Toxicity Analysis</span>
+                        <span style={{ display: 'block', fontSize: '10px', color: `${PATHD_THEME.riskHigh}cc`, marginBottom: '4px', fontWeight: 700, textTransform: 'uppercase', fontFamily: "'Public Sans', -apple-system, sans-serif" }}>Potential Toxicity Analysis</span>
                         <p style={{ color: 'rgba(255,214,210,0.78)', fontSize: '11px', fontWeight: 500, margin: 0, lineHeight: 1.5, fontFamily: "'Public Sans', -apple-system, sans-serif" }}>
                           {node.toxicity_impact}
                         </p>
@@ -704,7 +704,7 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                         background: 'rgba(255,255,255,0.02)',
                         border: '0.5px solid rgba(255,255,255,0.07)',
                       }}>
-                        <span style={{ display: 'block', fontSize: '9px', color: 'rgba(255,255,255,0.35)', marginBottom: '4px', fontWeight: 700, textTransform: 'uppercase', fontFamily: "'Public Sans', -apple-system, sans-serif" }}>Cofactor Balance (ATP/NAD(P)H)</span>
+                        <span style={{ display: 'block', fontSize: '10px', color: 'rgba(255,255,255,0.35)', marginBottom: '4px', fontWeight: 700, textTransform: 'uppercase', fontFamily: "'Public Sans', -apple-system, sans-serif" }}>Cofactor Balance (ATP/NAD(P)H)</span>
                         <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '11px', fontWeight: 500, margin: 0, lineHeight: 1.5, fontFamily: UI_MONO }}>
                           {node.cofactor_balance}
                         </p>
@@ -714,7 +714,7 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                         background: 'rgba(255,255,255,0.02)',
                         border: '1px solid rgba(255,255,255,0.06)',
                       }}>
-                        <span style={{ display: 'block', fontSize: '9px', color: 'rgba(255,255,255,0.35)', marginBottom: '4px', fontWeight: 700, textTransform: 'uppercase', fontFamily: "'Public Sans', -apple-system, sans-serif" }}>Cofactor Balance (ATP/NAD(P)H)</span>
+                        <span style={{ display: 'block', fontSize: '10px', color: 'rgba(255,255,255,0.35)', marginBottom: '4px', fontWeight: 700, textTransform: 'uppercase', fontFamily: "'Public Sans', -apple-system, sans-serif" }}>Cofactor Balance (ATP/NAD(P)H)</span>
                         <span style={{ fontSize: '10px', color: '#9CA3AF', background: 'rgba(255,255,255,0.05)', padding: '3px 10px', borderRadius: '6px', fontFamily: UI_MONO, fontWeight: 600 }}>
                           Inference Pending / Data Insufficient
                         </span>
@@ -726,7 +726,7 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                       <div style={{ marginBottom: '12px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: '#9CA3AF', marginBottom: '6px', fontFamily: UI_MONO }}>
                           <span>Carbon Efficiency (Atom Economy)</span>
-                          <span style={{ fontWeight: 600, fontSize: '9px', color: '#9CA3AF', background: 'rgba(255,255,255,0.06)', padding: '2px 8px', borderRadius: '6px', letterSpacing: '0.03em', fontFamily: UI_MONO }}>
+                          <span style={{ fontWeight: 600, fontSize: '10px', color: '#9CA3AF', background: 'rgba(255,255,255,0.06)', padding: '2px 8px', borderRadius: '6px', letterSpacing: '0.03em', fontFamily: UI_MONO }}>
                             Inference Pending
                           </span>
                         </div>
@@ -760,7 +760,7 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                         background: 'rgba(255,255,255,0.02)',
                         border: '0.5px solid rgba(255,255,255,0.07)',
                       }}>
-                        <span style={{ display: 'block', fontSize: '9px', color: 'rgba(255,255,255,0.35)', marginBottom: '4px', fontWeight: 700, textTransform: 'uppercase', fontFamily: "'Public Sans', -apple-system, sans-serif" }}>Gene Engineering Target (KO/OE)</span>
+                        <span style={{ display: 'block', fontSize: '10px', color: 'rgba(255,255,255,0.35)', marginBottom: '4px', fontWeight: 700, textTransform: 'uppercase', fontFamily: "'Public Sans', -apple-system, sans-serif" }}>Gene Engineering Target (KO/OE)</span>
                         <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '11px', fontWeight: 500, margin: 0, lineHeight: 1.5, fontFamily: "'Public Sans', -apple-system, sans-serif" }}>
                           {node.gene_recommendation}
                         </p>
@@ -799,7 +799,7 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                           <SectionLabel label="Evidence Trace" />
-                          <span style={{ color: 'rgba(255,255,255,0.12)', fontSize: '9px', fontFamily: "'Public Sans', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1", marginBottom: '8px' }}>
+                          <span style={{ color: 'rgba(255,255,255,0.12)', fontSize: '10px', fontFamily: "'Public Sans', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1", marginBottom: '8px' }}>
                             AI · grounded in source
                           </span>
                         </div>
@@ -956,13 +956,13 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                         }}>
                           {node.cofactor_balance && (
                             <div style={{ marginBottom: '8px' }}>
-                              <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: "'Public Sans', -apple-system, sans-serif", fontWeight: 700 }}>Cofactor Balance</span>
+                              <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: "'Public Sans', -apple-system, sans-serif", fontWeight: 700 }}>Cofactor Balance</span>
                               <div style={{ color: BIO_THEME_COLORS.PURPLE, marginTop: '2px' }}>{node.cofactor_balance}</div>
                             </div>
                           )}
                           {node.atom_economy !== undefined && node.atom_economy !== 0 ? (
                             <div style={{ marginBottom: '8px' }}>
-                              <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: "'Public Sans', -apple-system, sans-serif", fontWeight: 700 }}>Atom Economy (Carbon Efficiency)</span>
+                              <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: "'Public Sans', -apple-system, sans-serif", fontWeight: 700 }}>Atom Economy (Carbon Efficiency)</span>
                               <div style={{
                                 color: node.atom_economy >= 80 ? PATHD_THEME.successHigh
                                   : node.atom_economy >= 50 ? PATHD_THEME.successMedium
@@ -974,19 +974,19 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                             </div>
                           ) : !isFinalTarget && (
                             <div style={{ marginBottom: '8px' }}>
-                              <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: "'Public Sans', -apple-system, sans-serif", fontWeight: 700 }}>Atom Economy (Carbon Efficiency)</span>
+                              <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: "'Public Sans', -apple-system, sans-serif", fontWeight: 700 }}>Atom Economy (Carbon Efficiency)</span>
                               <div style={{ color: 'rgba(255,255,255,0.30)', marginTop: '2px' }}>Inference Pending / Data Insufficient</div>
                             </div>
                           )}
                           {node.dsp_bottleneck && (
                             <div style={{ marginBottom: '8px' }}>
-                              <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: "'Public Sans', -apple-system, sans-serif", fontWeight: 700 }}>DSP Bottleneck</span>
+                              <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: "'Public Sans', -apple-system, sans-serif", fontWeight: 700 }}>DSP Bottleneck</span>
                               <div style={{ color: PATHD_THEME.riskMedium, marginTop: '2px' }}>{node.dsp_bottleneck}</div>
                             </div>
                           )}
                           {node.ic50_toxicity && (
                             <div>
-                              <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: "'Public Sans', -apple-system, sans-serif", fontWeight: 700 }}>IC50 Toxicity</span>
+                              <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: "'Public Sans', -apple-system, sans-serif", fontWeight: 700 }}>IC50 Toxicity</span>
                               <div style={{ color: PATHD_THEME.riskHigh, marginTop: '2px' }}>{node.ic50_toxicity}</div>
                             </div>
                           )}
@@ -1004,7 +1004,7 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
 
                     {recommendedTools.length > 0 && (
                       <div style={{ marginTop: '12px', padding: '12px 14px', borderRadius: '16px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
-                        <p style={{ margin: '0 0 8px', color: 'rgba(255,255,255,0.25)', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700 }}>
+                        <p style={{ margin: '0 0 8px', color: 'rgba(255,255,255,0.25)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700 }}>
                           Next Actions
                         </p>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
@@ -1028,7 +1028,7 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                               }}
                             >
                               {tool!.shortLabel}
-                              <span style={{ color: 'rgba(255,255,255,0.28)', fontFamily: UI_MONO, fontSize: '9px' }}>
+                              <span style={{ color: 'rgba(255,255,255,0.28)', fontFamily: UI_MONO, fontSize: '10px' }}>
                                 {tool!.direction}
                               </span>
                             </a>
@@ -1089,7 +1089,7 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                               label={node.canonicalLabel || node.label}
                               height={260}
                             />
-                            <p style={{ color: 'rgba(255,255,255,0.12)', fontSize: '9px', fontFamily: "'Public Sans', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1", marginTop: '6px' }}>
+                            <p style={{ color: 'rgba(255,255,255,0.12)', fontSize: '10px', fontFamily: "'Public Sans', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1", marginTop: '6px' }}>
                               3D conformer · CPK coloring · Source: PubChem
                             </p>
                           </div>
@@ -1109,7 +1109,7 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                           </div>
                           <CellImageViewer searchTerm={node.canonicalLabel || node.label} height={260} />
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                            <p style={{ color: 'rgba(255,255,255,0.15)', fontSize: '9px', fontFamily: "'Public Sans', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.06em', margin: 0 }}>
+                            <p style={{ color: 'rgba(255,255,255,0.15)', fontSize: '10px', fontFamily: "'Public Sans', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.06em', margin: 0 }}>
                               Search more databases:
                             </p>
                             <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>

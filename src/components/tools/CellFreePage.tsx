@@ -42,7 +42,7 @@ const GENE_COLORS = [PATHD_THEME.mint, PATHD_THEME.sky, PATHD_THEME.coral, PATHD
 
 const SectionLabel = ({ children }: { children: React.ReactNode }) => (
   <p style={{
-    fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase',
+    fontFamily: T.SANS, fontSize: '10px', textTransform: 'uppercase',
     letterSpacing: '0.1em', color: LABEL, margin: '0 0 10px',
   }}>
     {children}
@@ -170,18 +170,18 @@ function TimeCourseChart({ result, constructs }: { result: CFSFullResult; constr
         })}
         <line x1={TP} y1={BASE_Y} x2={TOP_W - TP} y2={BASE_Y} stroke="rgba(255,255,255,0.1)" />
         <line x1={TP} y1={TP} x2={TP} y2={BASE_Y} stroke="rgba(255,255,255,0.1)" />
-        <text x={TOP_W / 2} y={TOP_H - 6} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill={LABEL}>Time (min)</text>
-        <text x={12} y={TOP_H / 2} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill={LABEL}
+        <text x={TOP_W / 2} y={TOP_H - 6} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill={LABEL}>Time (min)</text>
+        <text x={12} y={TOP_H / 2} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill={LABEL}
           transform={`rotate(-90,12,${TOP_H / 2})`}>Expression (a.u.)</text>
         {/* X-axis ticks */}
         {[0, 0.25, 0.5, 0.75, 1].map((f, i) => (
           <text key={i} x={tsx(tMax * f)} y={BASE_Y + 12} textAnchor="middle"
-            fontFamily={T.MONO} fontSize="7" fill={LABEL}>{Math.round(tMax * f)}</text>
+            fontFamily={T.MONO} fontSize="10" fill={LABEL}>{Math.round(tMax * f)}</text>
         ))}
         {/* Y-axis ticks */}
         {[0, 0.5, 1].map((f, i) => (
           <text key={i} x={TP - 4} y={tsy(pMax * f) + 3} textAnchor="end"
-            fontFamily={T.MONO} fontSize="7" fill={LABEL}>{(pMax * f).toFixed(1)}</text>
+            fontFamily={T.MONO} fontSize="10" fill={LABEL}>{(pMax * f).toFixed(1)}</text>
         ))}
         {sim.genes.map((g, gi) => {
           const color = constructs.find(c => c.id === g.geneId)?.color ?? GENE_COLORS[gi % GENE_COLORS.length];
@@ -202,7 +202,7 @@ function TimeCourseChart({ result, constructs }: { result: CFSFullResult; constr
           return (
             <g key={`l${gi}`} transform={`translate(${TOP_W - TP - 110}, ${TP + 6 + gi * 15})`}>
               <line x1={0} y1={0} x2={13} y2={0} stroke={color} strokeWidth={2} />
-              <text x={17} y={3.5} fontFamily={T.SANS} fontSize="8.5" fill={VALUE}>{g.geneName}</text>
+              <text x={17} y={3.5} fontFamily={T.SANS} fontSize="10" fill={VALUE}>{g.geneName}</text>
             </g>
           );
         })}
@@ -215,8 +215,8 @@ function TimeCourseChart({ result, constructs }: { result: CFSFullResult; constr
           <rect width={BL_W} height={BL_H} fill="#050505" rx={10} />
           <line x1={BP} y1={BL_H - BP} x2={BL_W - 16} y2={BL_H - BP} stroke="rgba(255,255,255,0.1)" />
           <line x1={BP} y1={BP} x2={BP} y2={BL_H - BP} stroke="rgba(255,255,255,0.1)" />
-          <text x={(BL_W + BP) / 2} y={BL_H - 4} textAnchor="middle" fontFamily={T.MONO} fontSize="7" fill={LABEL}>Time (min)</text>
-          <text x={10} y={BL_H / 2} textAnchor="middle" fontFamily={T.MONO} fontSize="7" fill={LABEL}
+          <text x={(BL_W + BP) / 2} y={BL_H - 4} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill={LABEL}>Time (min)</text>
+          <text x={10} y={BL_H / 2} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill={LABEL}
             transform={`rotate(-90,10,${BL_H / 2})`}>Fraction remaining</text>
           {/* Stacked areas */}
           {([
@@ -237,12 +237,12 @@ function TimeCourseChart({ result, constructs }: { result: CFSFullResult; constr
           {[['ATP', RES_COLORS.atp], ['Ribosomes', RES_COLORS.rib], ['Amino acids', RES_COLORS.aa]].map(([label, col], i) => (
             <g key={label} transform={`translate(${BP + 4}, ${BP + 4 + i * 13})`}>
               <rect width={8} height={4} fill={col} rx={1} opacity={0.8} />
-              <text x={11} y={4.5} fontFamily={T.SANS} fontSize="7.5" fill={LABEL}>{label}</text>
+              <text x={11} y={4.5} fontFamily={T.SANS} fontSize="10" fill={LABEL}>{label}</text>
             </g>
           ))}
           {/* Y ticks */}
           {[0, 0.5, 1].map((f, i) => (
-            <text key={i} x={BP - 3} y={bsy(f) + 3} textAnchor="end" fontFamily={T.MONO} fontSize="7" fill={LABEL}>
+            <text key={i} x={BP - 3} y={bsy(f) + 3} textAnchor="end" fontFamily={T.MONO} fontSize="10" fill={LABEL}>
               {f.toFixed(1)}
             </text>
           ))}
@@ -251,7 +251,7 @@ function TimeCourseChart({ result, constructs }: { result: CFSFullResult; constr
         {/* BOTTOM RIGHT — radar spider chart */}
         <svg role="img" aria-label="Construct radar chart" viewBox={`0 0 ${BR_W} ${BR_H}`} style={{ flex: 1 }}>
           <rect width={BR_W} height={BR_H} fill="#050505" rx={10} />
-          <text x={RADAR_CX} y={12} textAnchor="middle" fontFamily={T.MONO} fontSize="7.5" fill={LABEL}>
+          <text x={RADAR_CX} y={12} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill={LABEL}>
             Construct performance
           </text>
           {/* Radar grid rings */}
@@ -269,7 +269,7 @@ function TimeCourseChart({ result, constructs }: { result: CFSFullResult; constr
                 <line x1={RADAR_CX} y1={RADAR_CY} x2={x.toFixed(1)} y2={y.toFixed(1)}
                   stroke="rgba(255,255,255,0.12)" strokeWidth={0.8} />
                 <text x={lx.toFixed(1)} y={ly.toFixed(1)} textAnchor="middle" dominantBaseline="middle"
-                  fontFamily={T.MONO} fontSize="7" fill={LABEL}>{label}</text>
+                  fontFamily={T.MONO} fontSize="10" fill={LABEL}>{label}</text>
               </g>
             );
           })}
@@ -293,7 +293,7 @@ function TimeCourseChart({ result, constructs }: { result: CFSFullResult; constr
             return (
               <g key={`rl${gi}`} transform={`translate(${BR_W - 80}, ${20 + gi * 13})`}>
                 <rect width={8} height={4} fill={color} rx={1} />
-                <text x={12} y={4} fontFamily={T.SANS} fontSize="7.5" fill={LABEL}>{rs.geneName}</text>
+                <text x={12} y={4} fontFamily={T.SANS} fontSize="10" fill={LABEL}>{rs.geneName}</text>
               </g>
             );
           })}
@@ -338,20 +338,20 @@ function ResourceChart({ result }: { result: CFSFullResult }) {
       {/* Y ticks */}
       {[0, 0.25, 0.5, 0.75, 1].map(v => (
         <text key={`yr${v}`} x={PAD - 6} y={sy(v) + 3} textAnchor="end"
-          fontFamily={T.MONO} fontSize="7" fill={LABEL}>{v.toFixed(2)}</text>
+          fontFamily={T.MONO} fontSize="10" fill={LABEL}>{v.toFixed(2)}</text>
       ))}
       {/* X ticks */}
       {Array.from({ length: 6 }).map((_, i) => {
         const v = (tMax / 5) * i;
         return (
           <text key={`xr${i}`} x={sx(v)} y={H - PAD + 14} textAnchor="middle"
-            fontFamily={T.MONO} fontSize="7" fill={LABEL}>{Math.round(v)}</text>
+            fontFamily={T.MONO} fontSize="10" fill={LABEL}>{Math.round(v)}</text>
         );
       })}
-      <text x={W / 2} y={H - 6} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill={LABEL}>
+      <text x={W / 2} y={H - 6} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill={LABEL}>
         Time (min)
       </text>
-      <text x={12} y={H / 2} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill={LABEL}
+      <text x={12} y={H / 2} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill={LABEL}
         transform={`rotate(-90,12,${H / 2})`}>
         Fraction of Initial
       </text>
@@ -360,7 +360,7 @@ function ResourceChart({ result }: { result: CFSFullResult }) {
         <>
           <line x1={sx(depTime)} y1={PAD} x2={sx(depTime)} y2={H - PAD}
             stroke={`rgba(${SEMANTIC_RGB.fail}, 0.5)`} strokeWidth={1} strokeDasharray="4,3" />
-          <text x={sx(depTime) + 4} y={PAD + 12} fontFamily={T.MONO} fontSize="7" fill={`rgba(${SEMANTIC_RGB.fail}, 0.78)`}>
+          <text x={sx(depTime) + 4} y={PAD + 12} fontFamily={T.MONO} fontSize="10" fill={`rgba(${SEMANTIC_RGB.fail}, 0.78)`}>
             Depletion
           </text>
         </>
@@ -376,7 +376,7 @@ function ResourceChart({ result }: { result: CFSFullResult }) {
       {series.map((s, i) => (
         <g key={`lr${i}`} transform={`translate(${W - PAD - 120}, ${PAD + 8 + i * 14})`}>
           <line x1={0} y1={0} x2={12} y2={0} stroke={s.color} strokeWidth={2} />
-          <text x={16} y={3.5} fontFamily={T.SANS} fontSize="8" fill={VALUE}>{s.label}</text>
+          <text x={16} y={3.5} fontFamily={T.SANS} fontSize="10" fill={VALUE}>{s.label}</text>
         </g>
       ))}
     </svg>
@@ -447,22 +447,22 @@ function FittingChart({ result }: { result: CFSFullResult }) {
       <line x1={PAD} y1={sy(fit.vmax)} x2={W - PAD} y2={sy(fit.vmax)}
         stroke="rgba(231,199,169,0.4)" strokeWidth={1} strokeDasharray="4,3" />
       <text x={W - PAD - 4} y={sy(fit.vmax) - 4} textAnchor="end"
-        fontFamily={T.MONO} fontSize="7" fill="rgba(231,199,169,0.9)">Vmax={fit.vmax.toFixed(2)}</text>
+        fontFamily={T.MONO} fontSize="10" fill="rgba(231,199,169,0.9)">Vmax={fit.vmax.toFixed(2)}</text>
       {/* Stats text */}
-      <text x={PAD + 8} y={PAD + 14} fontFamily={T.MONO} fontSize="8" fill={VALUE}>
+      <text x={PAD + 8} y={PAD + 14} fontFamily={T.MONO} fontSize="10" fill={VALUE}>
         Vmax={fit.vmax.toFixed(2)} [{fit.vmax_ci[0].toFixed(2)}, {fit.vmax_ci[1].toFixed(2)}]
       </text>
-      <text x={PAD + 8} y={PAD + 26} fontFamily={T.MONO} fontSize="8" fill={VALUE}>
+      <text x={PAD + 8} y={PAD + 26} fontFamily={T.MONO} fontSize="10" fill={VALUE}>
         Kd={fit.kd.toFixed(2)} [{fit.kd_ci[0].toFixed(2)}, {fit.kd_ci[1].toFixed(2)}]
       </text>
-      <text x={PAD + 8} y={PAD + 38} fontFamily={T.MONO} fontSize="8" fill={VALUE}>
+      <text x={PAD + 8} y={PAD + 38} fontFamily={T.MONO} fontSize="10" fill={VALUE}>
         R²={fit.r_squared.toFixed(4)}
       </text>
       {/* Axis labels */}
-      <text x={W / 2} y={mainH - 4} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill={LABEL}>
+      <text x={W / 2} y={mainH - 4} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill={LABEL}>
         [DNA] (nM)
       </text>
-      <text x={12} y={mainH / 2} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill={LABEL}
+      <text x={12} y={mainH / 2} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill={LABEL}
         transform={`rotate(-90,12,${mainH / 2})`}>
         Rate (nM/min)
       </text>
@@ -479,7 +479,7 @@ function FittingChart({ result }: { result: CFSFullResult }) {
             fill={r > 0 ? `rgba(${SEMANTIC_RGB.pass}, 0.72)` : `rgba(${SEMANTIC_RGB.fail}, 0.72)`} />
         );
       })}
-      <text x={PAD + 4} y={resTop + 10} fontFamily={T.MONO} fontSize="7" fill={LABEL}>Residuals</text>
+      <text x={PAD + 4} y={resTop + 10} fontFamily={T.MONO} fontSize="10" fill={LABEL}>Residuals</text>
     </svg>
   );
 }
@@ -527,23 +527,23 @@ function IvIvChart({ result }: { result: CFSFullResult }) {
       <rect x={PAD + 40} y={barBaseY - barH(invitro)} width={barW} height={barH(invitro)}
         fill="#AFC3D6" rx={4} opacity={0.8} />
       <text x={PAD + 40 + barW / 2} y={barBaseY + 14} textAnchor="middle"
-        fontFamily={T.SANS} fontSize="9" fill={VALUE}>In vitro</text>
+        fontFamily={T.SANS} fontSize="10" fill={VALUE}>In vitro</text>
       <text x={PAD + 40 + barW / 2} y={barBaseY - barH(invitro) - 6} textAnchor="middle"
-        fontFamily={T.MONO} fontSize="8" fill={VALUE}>{invitro.toFixed(1)} nM</text>
+        fontFamily={T.MONO} fontSize="10" fill={VALUE}>{invitro.toFixed(1)} nM</text>
 
       <rect x={PAD + 40 + barW + barGap} y={barBaseY - barH(invivo)} width={barW} height={barH(invivo)}
         fill="#BFDCCD" rx={4} opacity={0.8} />
       <text x={PAD + 40 + barW + barGap + barW / 2} y={barBaseY + 14} textAnchor="middle"
-        fontFamily={T.SANS} fontSize="9" fill={VALUE}>In vivo (pred)</text>
+        fontFamily={T.SANS} fontSize="10" fill={VALUE}>In vivo (pred)</text>
       <text x={PAD + 40 + barW + barGap + barW / 2} y={barBaseY - barH(invivo) - 6} textAnchor="middle"
-        fontFamily={T.MONO} fontSize="8" fill={VALUE}>{invivo.toFixed(1)} nM</text>
+        fontFamily={T.MONO} fontSize="10" fill={VALUE}>{invivo.toFixed(1)} nM</text>
 
       {/* Baseline */}
       <line x1={PAD + 20} y1={barBaseY} x2={PAD + 40 + barW * 2 + barGap + 20} y2={barBaseY}
         stroke="rgba(255,255,255,0.1)" strokeWidth={0.5} />
 
       {/* Correction factor bars */}
-      <text x={corrLeft} y={corrTop} fontFamily={T.SANS} fontSize="9" fill={VALUE} fontWeight={600}>
+      <text x={corrLeft} y={corrTop} fontFamily={T.SANS} fontSize="10" fill={VALUE} fontWeight={600}>
         Correction Factors
       </text>
       {iviv.corrections.map((c, i) => {
@@ -553,10 +553,10 @@ function IvIvChart({ result }: { result: CFSFullResult }) {
         const positive = c.adjustment >= 0;
         return (
           <g key={`cf${i}`}>
-            <text x={corrLeft} y={y + 4} fontFamily={T.SANS} fontSize="7" fill={LABEL}>{c.factor}</text>
+            <text x={corrLeft} y={y + 4} fontFamily={T.SANS} fontSize="10" fill={LABEL}>{c.factor}</text>
             <rect x={corrLeft} y={y + 8} width={bw} height={8}
               fill={positive ? 'rgba(191,220,205,0.5)' : 'rgba(232,163,161,0.5)'} rx={2} />
-            <text x={corrLeft + bw + 4} y={y + 16} fontFamily={T.MONO} fontSize="7"
+            <text x={corrLeft + bw + 4} y={y + 16} fontFamily={T.MONO} fontSize="10"
               fill={positive ? 'rgba(191,220,205,0.9)' : 'rgba(232,163,161,0.9)'}>
               {c.adjustment > 0 ? '+' : ''}{c.adjustment.toFixed(2)}
             </text>
@@ -585,7 +585,7 @@ function IvIvChart({ result }: { result: CFSFullResult }) {
             <text x={cx} y={cy - 4} textAnchor="middle" fontFamily={T.MONO} fontSize="14" fontWeight={700} fill={VALUE}>
               {(iviv.confidence * 100).toFixed(0)}%
             </text>
-            <text x={cx} y={cy + 10} textAnchor="middle" fontFamily={T.SANS} fontSize="7" fill={LABEL}>
+            <text x={cx} y={cy + 10} textAnchor="middle" fontFamily={T.SANS} fontSize="10" fill={LABEL}>
               Confidence
             </text>
           </g>
@@ -618,7 +618,7 @@ function ReactorTwin3D({ result, constructs, params }: { result: CFSFullResult; 
         <rect x="54" y={vesselTop} width="156" height={reactorHeight} rx="22" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.08)" />
         <rect x="66" y={vesselTop + reactorHeight - fillHeight - 12} width="132" height={fillHeight} rx="18" fill={`rgba(${SEMANTIC_RGB.pass}, 0.32)`} stroke={`rgba(${SEMANTIC_RGB.pass}, 0.48)`} />
         <line x1="66" y1={vesselTop + reactorHeight - fillHeight - 12} x2="198" y2={vesselTop + reactorHeight - fillHeight - 12} stroke={`rgba(${SEMANTIC_RGB.pass}, 0.85)`} strokeDasharray="4 3" />
-        <text x="76" y={vesselTop + reactorHeight + 24} fontFamily={T.MONO} fontSize="8" fill={LABEL}>reaction volume</text>
+        <text x="76" y={vesselTop + reactorHeight + 24} fontFamily={T.MONO} fontSize="10" fill={LABEL}>reaction volume</text>
         <text x="76" y={vesselTop + reactorHeight + 38} fontFamily={T.MONO} fontSize="10" fill={VALUE}>{(depletionRatio * 100).toFixed(0)}% energy-support window</text>
 
         {constructs.map((construct, index) => {
@@ -631,12 +631,12 @@ function ReactorTwin3D({ result, constructs, params }: { result: CFSFullResult; 
             <g key={construct.id}>
               <rect x={x} y={y} width="34" height={height} rx="10" fill={GENE_COLORS[index % GENE_COLORS.length]} opacity="0.86" />
               <rect x={x} y={y} width="34" height={height} rx="10" fill="none" stroke="rgba(255,255,255,0.12)" />
-              <text x={x + 17} y="312" textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill={VALUE}>{construct.name.slice(0, 6)}</text>
-              <text x={x + 17} y={y - 8} textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill={VALUE}>{steady ? steady.maxProtein.toFixed(1) : '0.0'}</text>
+              <text x={x + 17} y="312" textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill={VALUE}>{construct.name.slice(0, 6)}</text>
+              <text x={x + 17} y={y - 8} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill={VALUE}>{steady ? steady.maxProtein.toFixed(1) : '0.0'}</text>
             </g>
           );
         })}
-        <text x="272" y="332" fontFamily={T.SANS} fontSize="9" fill={LABEL}>Construct yield skyline</text>
+        <text x="272" y="332" fontFamily={T.SANS} fontSize="10" fill={LABEL}>Construct yield skyline</text>
 
         {[
           { label: 'ATP', value: params.initialEnergy.atp / energyPool, x: 546, color: '#E8A3A1' },   // coral
@@ -647,14 +647,14 @@ function ReactorTwin3D({ result, constructs, params }: { result: CFSFullResult; 
           return (
             <g key={resource.label}>
               <rect x={resource.x} y={290 - height} width="26" height={height} rx="8" fill={resource.color} opacity="0.82" />
-              <text x={resource.x + 13} y="312" textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill={VALUE}>{resource.label}</text>
+              <text x={resource.x + 13} y="312" textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill={VALUE}>{resource.label}</text>
             </g>
           );
         })}
-        <text x="546" y="332" fontFamily={T.SANS} fontSize="9" fill={LABEL}>Resource reservoirs</text>
+        <text x="546" y="332" fontFamily={T.SANS} fontSize="10" fill={LABEL}>Resource reservoirs</text>
 
         <rect x="246" y="62" width="448" height="70" rx="14" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.06)" />
-        <text x="264" y="82" fontFamily={T.MONO} fontSize="8" fill={LABEL}>TRANSLATION SUMMARY</text>
+        <text x="264" y="82" fontFamily={T.MONO} fontSize="10" fill={LABEL}>TRANSLATION SUMMARY</text>
         <text x="264" y="104" fontFamily={T.SANS} fontSize="12" fill={VALUE}>
           {result.simulation.totalProteinYield.toFixed(1)} nM in vitro total yield · {result.simulation.energyDepletionTime.toFixed(0)} min depletion horizon
         </text>
@@ -666,29 +666,29 @@ function ReactorTwin3D({ result, constructs, params }: { result: CFSFullResult; 
       </svg>
 
       <div style={{ position: 'absolute', top: '10px', left: '12px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-        <span style={{ padding: '3px 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.06)', color: VALUE, fontSize: '9px', fontFamily: T.MONO }}>
+        <span style={{ padding: '3px 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.06)', color: VALUE, fontSize: '10px', fontFamily: T.MONO }}>
           Reactor body = active TX-TL volume
         </span>
-        <span style={{ padding: '3px 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.06)', color: VALUE, fontSize: '9px', fontFamily: T.MONO }}>
+        <span style={{ padding: '3px 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.06)', color: VALUE, fontSize: '10px', fontFamily: T.MONO }}>
           Yield skyline = construct-level protein output
         </span>
       </div>
       <div style={{ position: 'absolute', top: '10px', right: '12px', width: 'min(260px, calc(100% - 24px))' }}>
         <div style={{ padding: '10px 12px', borderRadius: '14px', border: `1px solid ${BORDER}`, background: 'rgba(0,0,0,0.56)', backdropFilter: 'blur(10px)' }}>
-          <p style={{ margin: '0 0 6px', color: LABEL, fontSize: '9px', fontFamily: T.MONO, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+          <p style={{ margin: '0 0 6px', color: LABEL, fontSize: '10px', fontFamily: T.MONO, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
             Evidence trace
           </p>
           <p style={{ margin: '0 0 8px', color: VALUE, fontSize: '10px', lineHeight: 1.55, fontFamily: T.SANS }}>
             Reactor 3D binds the simulated TX-TL state to one scene: depletion timing drives tank fill, gene yield drives tower height, and ATP/GTP/PEP are kept visible as explicit resource assumptions.
           </p>
           <div style={{ display: 'grid', gap: '6px' }}>
-            <span style={{ padding: '3px 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.05)', color: VALUE, fontSize: '9px', fontFamily: T.MONO }}>
+            <span style={{ padding: '3px 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.05)', color: VALUE, fontSize: '10px', fontFamily: T.MONO }}>
               depletion · {result.simulation.energyDepletionTime.toFixed(0)} min
             </span>
-            <span style={{ padding: '3px 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.05)', color: VALUE, fontSize: '9px', fontFamily: T.MONO }}>
+            <span style={{ padding: '3px 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.05)', color: VALUE, fontSize: '10px', fontFamily: T.MONO }}>
               total yield · {result.simulation.totalProteinYield.toFixed(1)} nM
             </span>
-            <span style={{ padding: '3px 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.05)', color: VALUE, fontSize: '9px', fontFamily: T.MONO }}>
+            <span style={{ padding: '3px 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.05)', color: VALUE, fontSize: '10px', fontFamily: T.MONO }}>
               energy pool · {(params.initialEnergy.atp + params.initialEnergy.gtp + params.initialEnergy.pep).toFixed(1)} mM
             </span>
           </div>
@@ -861,12 +861,12 @@ export default function CellFreePage() {
                     <span style={{ fontFamily: T.SANS, fontSize: '10px', fontWeight: 600, color: VALUE }}>{g.name.length > 20 ? g.name.slice(0, 20) + '…' : g.name}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-                    <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Promoter</span>
-                    <span style={{ fontFamily: T.MONO, fontSize: '9px', color: VALUE }}>{g.promoter}</span>
+                    <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>Promoter</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE }}>{g.promoter}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>DNA conc.</span>
-                    <span style={{ fontFamily: T.MONO, fontSize: '9px', color: VALUE }}>{g.dnaConcentration} nM</span>
+                    <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>DNA conc.</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE }}>{g.dnaConcentration} nM</span>
                   </div>
                 </div>
               ))}
@@ -881,8 +881,8 @@ export default function CellFreePage() {
                 { label: 'Sim Time', value: `${params.simulationTime} min` },
               ].map(item => (
                 <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                  <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>{item.label}</span>
-                  <span style={{ fontFamily: T.MONO, fontSize: '9px', color: VALUE }}>{item.value}</span>
+                  <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>{item.label}</span>
+                  <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE }}>{item.value}</span>
                 </div>
               ))}
             </div>
@@ -894,8 +894,8 @@ export default function CellFreePage() {
                 { label: 'PEP', value: `${params.initialEnergy.pep} mM` },
               ].map(item => (
                 <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                  <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>{item.label}</span>
-                  <span style={{ fontFamily: T.MONO, fontSize: '9px', color: VALUE }}>{item.value}</span>
+                  <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>{item.label}</span>
+                  <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE }}>{item.value}</span>
                 </div>
               ))}
             </div>
@@ -942,8 +942,8 @@ export default function CellFreePage() {
                 { label: 'PEP', value: `${params.initialEnergy.pep} mM` },
               ].map(item => (
                 <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                  <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>{item.label}</span>
-                  <span style={{ fontFamily: T.MONO, fontSize: '9px', color: VALUE }}>{item.value}</span>
+                  <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>{item.label}</span>
+                  <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE }}>{item.value}</span>
                 </div>
               ))}
             </div>
@@ -987,8 +987,8 @@ export default function CellFreePage() {
                 { label: 'Sim Time', value: `${params.simulationTime} min` },
               ].map(item => (
                 <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                  <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>{item.label}</span>
-                  <span style={{ fontFamily: T.MONO, fontSize: '9px', color: VALUE }}>{item.value}</span>
+                  <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>{item.label}</span>
+                  <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE }}>{item.value}</span>
                 </div>
               ))}
             </div>
@@ -1014,24 +1014,24 @@ export default function CellFreePage() {
                 <SectionLabel>Fitting Results</SectionLabel>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Vmax</span>
-                    <span style={{ fontFamily: T.MONO, fontSize: '9px', color: VALUE }}>{fit.vmax.toFixed(3)}</span>
+                    <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>Vmax</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE }}>{fit.vmax.toFixed(3)}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Kd</span>
-                    <span style={{ fontFamily: T.MONO, fontSize: '9px', color: VALUE }}>{fit.kd.toFixed(3)}</span>
+                    <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>Kd</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE }}>{fit.kd.toFixed(3)}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>R²</span>
-                    <span style={{ fontFamily: T.MONO, fontSize: '9px', color: `rgba(${SEMANTIC_RGB.pass}, 0.92)` }}>{fit.r_squared.toFixed(4)}</span>
+                    <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>R²</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: '10px', color: `rgba(${SEMANTIC_RGB.pass}, 0.92)` }}>{fit.r_squared.toFixed(4)}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Vmax CI</span>
-                    <span style={{ fontFamily: T.MONO, fontSize: '8px', color: LABEL }}>[{fit.vmax_ci[0].toFixed(2)}, {fit.vmax_ci[1].toFixed(2)}]</span>
+                    <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>Vmax CI</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL }}>[{fit.vmax_ci[0].toFixed(2)}, {fit.vmax_ci[1].toFixed(2)}]</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Kd CI</span>
-                    <span style={{ fontFamily: T.MONO, fontSize: '8px', color: LABEL }}>[{fit.kd_ci[0].toFixed(2)}, {fit.kd_ci[1].toFixed(2)}]</span>
+                    <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>Kd CI</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL }}>[{fit.kd_ci[0].toFixed(2)}, {fit.kd_ci[1].toFixed(2)}]</span>
                   </div>
                 </div>
               </div>
@@ -1073,7 +1073,7 @@ export default function CellFreePage() {
                 </div>
                 {iviv && (
                   <div style={{ ...GLASS, borderRadius: '16px', padding: '14px 18px', maxWidth: '600px', margin: '0 auto', width: '100%' }}>
-                    <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: LABEL, margin: '0 0 6px' }}>Reasoning</p>
+                    <p style={{ fontFamily: T.SANS, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: LABEL, margin: '0 0 6px' }}>Reasoning</p>
                     <p style={{ fontFamily: T.SANS, fontSize: '11px', color: VALUE, margin: 0, lineHeight: 1.6 }}>{iviv.reasoning}</p>
                   </div>
                 )}
@@ -1084,20 +1084,20 @@ export default function CellFreePage() {
                 <SectionLabel>IvIv Estimate</SectionLabel>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>In-vivo Expr</span>
-                    <span style={{ fontFamily: T.MONO, fontSize: '9px', color: VALUE }}>{iviv.invivo_expression.toFixed(1)} nM</span>
+                    <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>In-vivo Expr</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE }}>{iviv.invivo_expression.toFixed(1)} nM</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Scaling Factor</span>
-                    <span style={{ fontFamily: T.MONO, fontSize: '9px', color: VALUE }}>{iviv.scalingFactor.toFixed(3)}</span>
+                    <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>Scaling Factor</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE }}>{iviv.scalingFactor.toFixed(3)}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Fold Change</span>
-                    <span style={{ fontFamily: T.MONO, fontSize: '9px', color: VALUE }}>{iviv.invivo_foldChange.toFixed(2)}×</span>
+                    <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>Fold Change</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE }}>{iviv.invivo_foldChange.toFixed(2)}×</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Confidence</span>
-                    <span style={{ fontFamily: T.MONO, fontSize: '9px', color: iviv.confidence > 0.7 ? `rgba(${SEMANTIC_RGB.pass}, 0.92)` : iviv.confidence > 0.4 ? `rgba(${SEMANTIC_RGB.warn}, 0.9)` : `rgba(${SEMANTIC_RGB.fail}, 0.9)` }}>{(iviv.confidence * 100).toFixed(0)}%</span>
+                    <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>Confidence</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: '10px', color: iviv.confidence > 0.7 ? `rgba(${SEMANTIC_RGB.pass}, 0.92)` : iviv.confidence > 0.4 ? `rgba(${SEMANTIC_RGB.warn}, 0.9)` : `rgba(${SEMANTIC_RGB.fail}, 0.9)` }}>{(iviv.confidence * 100).toFixed(0)}%</span>
                   </div>
                 </div>
               </div>
@@ -1112,7 +1112,7 @@ export default function CellFreePage() {
           <div style={{ maxWidth: '760px', margin: '0 auto', width: '100%' }}>
             <div style={{ padding: '8px 12px', borderRadius: '14px', border: `1px solid ${BORDER}`, background: PATHD_THEME.panelInset }}>
               <p style={{ margin: '0 0 3px', color: VALUE, fontSize: '11px', fontFamily: T.SANS }}>Reactor 3D turns the CFPS run into a digital twin: construct yield, energy pool and depletion timing are mapped into one spatial scene.</p>
-              <p style={{ margin: 0, color: LABEL, fontSize: '9px', fontFamily: T.MONO }}>center tank = resource state · rear towers = expression output · right bars = ATP / GTP / PEP allocation</p>
+              <p style={{ margin: 0, color: LABEL, fontSize: '10px', fontFamily: T.MONO }}>center tank = resource state · rear towers = expression output · right bars = ATP / GTP / PEP allocation</p>
             </div>
           </div>
           <div style={{ minHeight: '420px', maxWidth: '760px', margin: '0 auto', width: '100%', position: 'relative' }}>
@@ -1139,16 +1139,16 @@ export default function CellFreePage() {
                     <span style={{ fontFamily: T.SANS, fontSize: '10px', fontWeight: 600, color: VALUE }}>{gene ? (gene.name.length > 18 ? gene.name.slice(0, 18) + '…' : gene.name) : ss.geneId}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-                    <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Peak Protein</span>
-                    <span style={{ fontFamily: T.MONO, fontSize: '9px', color: VALUE }}>{ss.maxProtein.toFixed(1)} nM</span>
+                    <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>Peak Protein</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE }}>{ss.maxProtein.toFixed(1)} nM</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-                    <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Time to Half</span>
-                    <span style={{ fontFamily: T.MONO, fontSize: '9px', color: VALUE }}>{ss.timeToHalf.toFixed(0)} min</span>
+                    <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>Time to Half</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE }}>{ss.timeToHalf.toFixed(0)} min</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ fontFamily: T.SANS, fontSize: '8px', color: LABEL }}>Yield/DNA</span>
-                    <span style={{ fontFamily: T.MONO, fontSize: '9px', color: VALUE }}>{ss.yieldPerDNA.toFixed(2)}</span>
+                    <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>Yield/DNA</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE }}>{ss.yieldPerDNA.toFixed(2)}</span>
                   </div>
                 </div>
               );

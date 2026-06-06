@@ -369,14 +369,14 @@ export default function ToolsDirectoryPage() {
                         }}
                       >
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                          <span style={{ fontFamily: T.MONO, fontSize: '9px', fontWeight: 700, color: VALUE, opacity: 0.82 }}>
+                          <span style={{ fontFamily: T.MONO, fontSize: '10px', fontWeight: 700, color: VALUE, opacity: 0.82 }}>
                             STAGE {s.stage}
                           </span>
                         </div>
                         <p style={{ margin: '0 0 4px', fontFamily: T.SANS, fontSize: '14px', fontWeight: 700, color: s.color }}>
                           {s.label}
                         </p>
-                        <p style={{ margin: '0 0 8px', fontFamily: T.MONO, fontSize: '9px', color: LABEL }}>
+                        <p style={{ margin: '0 0 8px', fontFamily: T.MONO, fontSize: '10px', color: LABEL }}>
                           {s.tagline}
                         </p>
                         <p style={{ margin: 0, fontFamily: T.SANS, fontSize: '11px', lineHeight: 1.5, color: LABEL }}>

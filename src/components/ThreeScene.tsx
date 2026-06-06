@@ -551,7 +551,7 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov
       <Html position={[0, labelOffsetY, 0]} center style={{ pointerEvents: 'none', whiteSpace: 'nowrap' }}>
         <div style={{
           color: hov || sel ? '#fff' : 'rgba(160,180,200,0.55)',
-          fontSize: '8.25px', fontWeight: sel ? 600 : 500,
+          fontSize: '10px', fontWeight: sel ? 600 : 500,
           fontFamily: "'JetBrains Mono', 'Fira Code', monospace", letterSpacing: '0.01em',
           textShadow: '0 1px 12px rgba(0,0,0,0.9), 0 0 24px rgba(0,0,0,0.7)',
           padding: '2px 4px', background: sel ? 'rgba(200,216,232,0.08)' : 'transparent',
@@ -572,14 +572,14 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov
               <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', fontFeatureSettings: "'tnum' 1" }}>{Math.round(conf*100)}%</span>
             </div>
             {node.nodeType && node.nodeType !== 'unknown' && (
-              <span style={{ color: 'rgba(200,216,232,0.5)', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.07em', display: 'block', marginBottom: '5px', fontWeight: 700 }}>{node.nodeType}</span>
+              <span style={{ color: 'rgba(200,216,232,0.5)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.07em', display: 'block', marginBottom: '5px', fontWeight: 700 }}>{node.nodeType}</span>
             )}
             <p style={{ color: 'rgba(180,200,215,0.42)', fontSize: '11px', lineHeight: 1.6, margin: '0 0 7px' }}>{node.summary?.slice(0, 80)}...</p>
             <div style={{ width: '100%', height: '2px', background: 'rgba(255,255,255,0.06)', borderRadius: '1px', marginBottom: '6px' }}>
               <div style={{ width: `${Math.round(conf*100)}%`, height: '100%', background: colVec.getStyle(), borderRadius: '1px', opacity: 0.8 }} />
             </div>
             {node.audit_trail && (
-              <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '6px', fontSize: '9px', color: 'rgba(255,255,255,0.35)', fontStyle: 'italic' }}>
+              <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '6px', fontSize: '10px', color: 'rgba(255,255,255,0.35)', fontStyle: 'italic' }}>
                 <span style={{ fontWeight: 600, color: 'rgba(255,255,255,0.2)' }}>Source: </span> {node.audit_trail}
               </div>
             )}
@@ -636,7 +636,7 @@ const PathEdge = React.memo(function PathEdge({ edge, s, e, active, color, flowS
       </mesh>
       {active && edge.predicted_delta_G_kJ_mol && (
         <Html position={mid.toArray() as Vec3}>
-          <div style={{ background: 'rgba(6,9,16,0.9)', color: '#fff', padding: '2px 6px', borderRadius: '4px', fontSize: '9px', fontWeight: 600, border: '1px solid rgba(255,255,255,0.1)' }}>
+          <div style={{ background: 'rgba(6,9,16,0.9)', color: '#fff', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 600, border: '1px solid rgba(255,255,255,0.1)' }}>
             ΔG: {edge.predicted_delta_G_kJ_mol} kJ/mol
           </div>
         </Html>
@@ -1016,7 +1016,7 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, 
                     border: '1px solid var(--nb-control-border)',
                     background: 'var(--nb-control-bg)',
                     color: 'var(--nb-control-color)',
-                    fontSize: '9px',
+                    fontSize: '10px',
                     fontWeight: 700,
                     letterSpacing: '0.04em',
                     textTransform: 'uppercase',
@@ -1050,7 +1050,7 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, 
               border: '1px solid var(--nb-control-border)',
               background: 'var(--nb-control-bg)',
               color: 'var(--nb-control-color)',
-              fontSize: '9px',
+              fontSize: '10px',
               fontWeight: 700,
               letterSpacing: '0.04em',
               textTransform: 'uppercase',
@@ -1119,21 +1119,21 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, 
           boxShadow: '0 14px 34px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.10)',
         }}
       >
-        <p style={{ margin: '0 0 6px', color: 'rgba(255,255,255,0.22)', fontSize: '8px', fontFamily: "'Public Sans',sans-serif", fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+        <p style={{ margin: '0 0 6px', color: 'rgba(255,255,255,0.22)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
           {modeTrace.label}
         </p>
-        <p style={{ margin: '0 0 8px', color: 'rgba(255,255,255,0.68)', fontSize: '9.5px', lineHeight: 1.5, fontFamily: "'Public Sans',sans-serif" }}>
+        <p style={{ margin: '0 0 8px', color: 'rgba(255,255,255,0.68)', fontSize: '10px', lineHeight: 1.5, fontFamily: "'Public Sans',sans-serif" }}>
           {modeTrace.summary}
         </p>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          <span style={{ minHeight: '22px', padding: '0 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.55)', display: 'inline-flex', alignItems: 'center', fontSize: '9px', fontFamily: "'Public Sans',sans-serif" }}>
+          <span style={{ minHeight: '22px', padding: '0 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.55)', display: 'inline-flex', alignItems: 'center', fontSize: '10px', fontFamily: "'Public Sans',sans-serif" }}>
             {selectedNode ? `${selectedNode.label}` : 'No node selected'}
           </span>
-          <span style={{ minHeight: '22px', padding: '0 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.55)', display: 'inline-flex', alignItems: 'center', fontSize: '9px', fontFamily: "'Public Sans',sans-serif" }}>
+          <span style={{ minHeight: '22px', padding: '0 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.55)', display: 'inline-flex', alignItems: 'center', fontSize: '10px', fontFamily: "'Public Sans',sans-serif" }}>
             {modeTrace.metric}
           </span>
           {selectedNode?.citation && (
-            <span style={{ minHeight: '22px', padding: '0 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.55)', display: 'inline-flex', alignItems: 'center', fontSize: '9px', fontFamily: "'Public Sans',sans-serif" }}>
+            <span style={{ minHeight: '22px', padding: '0 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.55)', display: 'inline-flex', alignItems: 'center', fontSize: '10px', fontFamily: "'Public Sans',sans-serif" }}>
               {selectedNode.citation}
             </span>
           )}

@@ -154,14 +154,14 @@ function TimeSeriesSVG({ trajectory, setpoint, svgRef }: { trajectory: ODEState[
             {/* Smooth Catmull-Rom curve */}
             <path d={smoothPath} fill="none" stroke={lane.color} strokeWidth="2" />
             <circle cx={markerX} cy={markerY} r="4" fill={lane.color} />
-            <text x="20" y={y + 14} fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.24)">{lane.label}</text>
+            <text x="20" y={y + 14} fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.24)">{lane.label}</text>
             <text x="20" y={y + 28} fontFamily={T.SANS} fontSize="10" fill="rgba(255,255,255,0.62)">
               {(lastValue ?? 0).toFixed(lane.key === 'fpp' ? 1 : 2)} {lane.unit}
             </text>
-            <text x={PAD_X + plotWidth + 8} y={y + 14} fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.2)">
+            <text x={PAD_X + plotWidth + 8} y={y + 14} fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.2)">
               {lane.max.toFixed(lane.key === 'fpp' ? 0 : 1)}
             </text>
-            <text x={PAD_X + plotWidth + 8} y={y + laneH} fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.16)">0</text>
+            <text x={PAD_X + plotWidth + 8} y={y + laneH} fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.16)">0</text>
           </g>
         );
       })}
@@ -174,7 +174,7 @@ function TimeSeriesSVG({ trajectory, setpoint, svgRef }: { trajectory: ODEState[
               x2={x} y2={plotTop + lanes.length * (laneH + laneGap) - laneGap + 6}
               stroke="rgba(255,255,255,0.08)" />
             <text x={x} y={plotTop + lanes.length * (laneH + laneGap) - laneGap + 18}
-              textAnchor="middle" fontFamily={T.MONO} fontSize="8" fill="rgba(255,255,255,0.22)">
+              textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.22)">
               {tick}h
             </text>
           </g>
@@ -184,14 +184,14 @@ function TimeSeriesSVG({ trajectory, setpoint, svgRef }: { trajectory: ODEState[
       {/* Phase portrait inset (P vs FPP) */}
       <rect x={PP_X - 4} y={PP_Y - 12} width={PP_W + 8} height={PP_H + 22} rx="8"
         fill="rgba(0,0,0,0.7)" stroke="rgba(255,255,255,0.08)" />
-      <text x={PP_X + PP_W / 2} y={PP_Y - 4} textAnchor="middle" fontFamily={T.MONO} fontSize="6" fill="rgba(255,255,255,0.3)">
+      <text x={PP_X + PP_W / 2} y={PP_Y - 4} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.3)">
         PHASE PORTRAIT
       </text>
       <line x1={PP_X} y1={PP_Y} x2={PP_X} y2={PP_Y + PP_H} stroke="rgba(255,255,255,0.1)" />
       <line x1={PP_X} y1={PP_Y + PP_H} x2={PP_X + PP_W} y2={PP_Y + PP_H} stroke="rgba(255,255,255,0.1)" />
-      <text x={PP_X - 2} y={PP_Y + PP_H + 8} textAnchor="middle" fontFamily={T.MONO} fontSize="7" fill="rgba(255,255,255,0.25)">P</text>
-      <text x={PP_X + PP_W} y={PP_Y + PP_H + 8} textAnchor="end" fontFamily={T.MONO} fontSize="7" fill="rgba(255,255,255,0.25)">→</text>
-      <text x={PP_X - 2} y={PP_Y} fontFamily={T.MONO} fontSize="7" fill="rgba(255,255,255,0.25)">R↑</text>
+      <text x={PP_X - 2} y={PP_Y + PP_H + 8} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.25)">P</text>
+      <text x={PP_X + PP_W} y={PP_Y + PP_H + 8} textAnchor="end" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.25)">→</text>
+      <text x={PP_X - 2} y={PP_Y} fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.25)">R↑</text>
       {ppPath && <path d={ppPath} fill="none" stroke="rgba(232,163,161,0.7)" strokeWidth="1.2" />}
       {ppPts.length > 0 && (
         <circle cx={ppPts[ppPts.length - 1][0]} cy={ppPts[ppPts.length - 1][1]} r="2.5" fill={PATHD_THEME.coral} />
@@ -229,17 +229,17 @@ function HillCurveSVG({ hill, currentFPP }: { hill: HillParams; currentFPP: numb
       <circle cx={markerX} cy={H - PAD + 4 - (hillFeedback(Math.min(currentFPP, fppMax), hill) / hill.Vmax) * (H - PAD * 2 + 4)}
         r={3} fill={PATHD_THEME.coral} />
       {/* labels */}
-      <text x="20" y="18" fontFamily={T.MONO} fontSize="9" fill="rgba(255,255,255,0.24)">
+      <text x="20" y="18" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.24)">
         Repression response
       </text>
       <text x="20" y="32" fontFamily={T.SANS} fontSize="11" fill="rgba(255,255,255,0.5)">
         Operating point of the current precursor pool on the Hill feedback curve
       </text>
-      <text x={W / 2} y={H + 6} fontFamily={T.MONO} fontSize="8" textAnchor="middle" fill={LABEL}>FPP (μM)</text>
-      <text x={10} y={(PAD + H - PAD) / 2} fontFamily={T.MONO} fontSize="8" textAnchor="middle" fill={LABEL}
+      <text x={W / 2} y={H + 6} fontFamily={T.MONO} fontSize="10" textAnchor="middle" fill={LABEL}>FPP (μM)</text>
+      <text x={10} y={(PAD + H - PAD) / 2} fontFamily={T.MONO} fontSize="10" textAnchor="middle" fill={LABEL}
         transform={`rotate(-90, 10, ${(PAD + H - PAD) / 2})`}>ADS</text>
-      <text x={W - PAD} y={H + 6} fontFamily={T.MONO} fontSize="7" textAnchor="end" fill="rgba(255,255,255,0.15)">200</text>
-      <text x={PAD} y={H + 6} fontFamily={T.MONO} fontSize="7" textAnchor="start" fill="rgba(255,255,255,0.15)">0</text>
+      <text x={W - PAD} y={H + 6} fontFamily={T.MONO} fontSize="10" textAnchor="end" fill="rgba(255,255,255,0.15)">200</text>
+      <text x={PAD} y={H + 6} fontFamily={T.MONO} fontSize="10" textAnchor="start" fill="rgba(255,255,255,0.15)">0</text>
     </svg>
   );
 }
@@ -266,7 +266,7 @@ function ParamSlider({ label, value, min, max, step = 0.1, onChange, unit }: {
 /* ── Section Header ────────────────────────────────────────────────────────── */
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p style={{ fontFamily: T.SANS, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: LABEL, margin: '16px 0 8px' }}>
+    <p style={{ fontFamily: T.SANS, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: LABEL, margin: '16px 0 8px' }}>
       {children}
     </p>
   );
@@ -625,23 +625,23 @@ export default function DynConPage() {
                 <div style={{ ...GLASS, padding: '16px' }}>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
                     <div>
-                      <div style={{ fontFamily: T.MONO, fontSize: '9px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>Control Gain</div>
+                      <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>Control Gain</div>
                       <div style={{ fontFamily: T.SANS, fontSize: '20px', color: VALUE, fontWeight: 700 }}>{rbsMapping.controlGain.toFixed(2)}</div>
                     </div>
                     <div>
-                      <div style={{ fontFamily: T.MONO, fontSize: '9px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>RBS Part</div>
+                      <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>RBS Part</div>
                       <div style={{ fontFamily: T.SANS, fontSize: '20px', color: PATHD_THEME.sky, fontWeight: 700 }}>{rbsMapping.rbsName}</div>
                     </div>
                   </div>
                   <div style={{ marginBottom: '12px' }}>
-                    <div style={{ fontFamily: T.MONO, fontSize: '9px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>RBS Strength</div>
+                    <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>RBS Strength</div>
                     <div style={{ background: PATHD_THEME.panelInset, borderRadius: '6px', height: '10px', overflow: 'hidden' }}>
                       <div style={{ width: `${Math.min(100, rbsMapping.rbsStrength * 100)}%`, height: '100%', background: `linear-gradient(90deg, ${PATHD_THEME.sky}, ${PATHD_THEME.mint})`, borderRadius: '6px', transition: 'width 300ms ease-out' }} />
                     </div>
                     <div style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE, marginTop: '4px' }}>{(rbsMapping.rbsStrength * 100).toFixed(0)}%</div>
                   </div>
                   <div>
-                    <div style={{ fontFamily: T.MONO, fontSize: '9px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>DNA Sequence</div>
+                    <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>DNA Sequence</div>
                     <p style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.sky, wordBreak: 'break-all', lineHeight: 1.6, background: PATHD_THEME.panelInset, padding: '8px', borderRadius: '8px', border: `1px solid ${PATHD_THEME.sepiaPanelBorder}` }}>
                       {rbsMapping.sequence}
                     </p>

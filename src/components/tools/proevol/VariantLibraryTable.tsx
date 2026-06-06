@@ -107,7 +107,7 @@ export default function VariantLibraryTable({
                         padding: 0,
                         color: PROEVOL_THEME.label,
                         fontFamily: T.MONO,
-                        fontSize: '9px',
+                        fontSize: '10px',
                         letterSpacing: '0.08em',
                         textTransform: 'uppercase',
                         cursor: 'pointer',
@@ -144,7 +144,7 @@ export default function VariantLibraryTable({
                   <td style={tableCellStyle()}>
                     <div style={{ display: 'grid', gap: '4px' }}>
                       <span style={{ fontFamily: T.SANS, fontWeight: 600 }}>{variant.name}</span>
-                      <span style={{ fontFamily: T.MONO, fontSize: '9px', color: PROEVOL_THEME.label }}>
+                      <span style={{ fontFamily: T.MONO, fontSize: '10px', color: PROEVOL_THEME.label }}>
                         parent {variant.parentId ?? 'WT'} · rank {variant.libraryRank + 1}
                       </span>
                     </div>
@@ -168,7 +168,7 @@ export default function VariantLibraryTable({
                   <td style={{ ...tableCellStyle(), fontFamily: T.MONO }}>
                     {variant.mutationBurden}
                     {variant.riskFlags.length ? (
-                      <div style={{ fontSize: '9px', color: PROEVOL_THEME.label }}>{variant.riskFlags.join(', ')}</div>
+                      <div style={{ fontSize: '10px', color: PROEVOL_THEME.label }}>{variant.riskFlags.join(', ')}</div>
                     ) : null}
                   </td>
                   <td style={{ ...tableCellStyle(), fontFamily: T.MONO }}>{variant.confidence.toFixed(1)}%</td>

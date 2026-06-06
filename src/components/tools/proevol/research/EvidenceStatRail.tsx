@@ -102,7 +102,7 @@ export default function EvidenceStatRail({ research, bandSemantic }: EvidenceSta
 
 const kickerStyle = {
   fontFamily: T.MONO,
-  fontSize: '9px',
+  fontSize: '10px',
   letterSpacing: '0.14em',
   color: PROEVOL_THEME.label,
   textTransform: 'uppercase' as const,
@@ -140,7 +140,7 @@ function Row({
         <span
           style={{
             fontFamily: T.MONO,
-            fontSize: '9px',
+            fontSize: '10px',
             color: PROEVOL_THEME.label,
             letterSpacing: '0.10em',
             textTransform: 'uppercase',

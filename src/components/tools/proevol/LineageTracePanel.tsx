@@ -76,7 +76,7 @@ export default function LineageTracePanel({
           {Array.from({ length: campaign.totalRounds + 1 }, (_, round) => (
             <g key={round}>
               <line x1={xForRound(round)} y1={padY - 18} x2={xForRound(round)} y2={height - padY + 14} stroke="rgba(255,255,255,0.06)" />
-              <text x={xForRound(round)} y="22" textAnchor="middle" fontFamily={T.MONO} fontSize="9" fill={PROEVOL_THEME.label}>
+              <text x={xForRound(round)} y="22" textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill={PROEVOL_THEME.label}>
                 {round === 0 ? 'WT' : `R${round}`}
               </text>
             </g>
@@ -126,7 +126,7 @@ export default function LineageTracePanel({
                     y={yForVariant(variant) - 10}
                     textAnchor="middle"
                     fontFamily={T.MONO}
-                    fontSize="8"
+                    fontSize="10"
                     fill="rgba(255,255,255,0.86)"
                   >
                     {variant.name}
@@ -156,7 +156,7 @@ export default function LineageTracePanel({
           <div
             style={{
               fontFamily: T.MONO,
-              fontSize: '9px',
+              fontSize: '10px',
               color: PROEVOL_THEME.label,
               textTransform: 'uppercase',
               letterSpacing: '0.08em',

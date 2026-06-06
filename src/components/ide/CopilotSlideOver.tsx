@@ -219,7 +219,7 @@ export default function CopilotSlideOver() {
                     title="Agentic queue status"
                     style={{
                       fontFamily: T.MONO,
-                      fontSize: '9px',
+                      fontSize: '10px',
                       padding: '4px 8px',
                       borderRadius: '8px',
                       border: '1px solid rgba(175,195,214,0.34)',
@@ -370,7 +370,7 @@ export default function CopilotSlideOver() {
                     ? 'rgba(175,195,214,0.08)'
                     : 'transparent',
                   fontFamily: T.MONO,
-                  fontSize: '9px',
+                  fontSize: '10px',
                   color: workbenchContext.hasContext
                     ? PATHD_THEME.value
                     : PATHD_THEME.label,
@@ -453,7 +453,7 @@ export default function CopilotSlideOver() {
                     <span style={{ fontFamily: T.SANS, fontSize: '13px', color: PATHD_THEME.value }}>
                       Ask Axon about the active research
                     </span>
-                    <span style={{ fontFamily: T.MONO, fontSize: '9px', color: PATHD_THEME.label }}>
+                    <span style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label }}>
                       Axon synthesises evidence, explains bottlenecks, and recommends the next scientific move.
                     </span>
                   </div>
@@ -471,10 +471,10 @@ export default function CopilotSlideOver() {
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-                    <span style={{ fontFamily: T.MONO, fontSize: '9px', color: PATHD_THEME.label }}>AXON</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label }}>AXON</span>
                     {provider && (
                       <span style={{
-                        fontFamily: T.MONO, fontSize: '8px',
+                        fontFamily: T.MONO, fontSize: '10px',
                         padding: '2px 6px', borderRadius: '6px',
                         background: 'rgba(175,195,214,0.14)',
                         border: '1px solid rgba(175,195,214,0.26)',
@@ -500,7 +500,7 @@ export default function CopilotSlideOver() {
                 flexShrink: 0,
               }}
             >
-              <span style={{ fontFamily: T.MONO, fontSize: '9px', color: PATHD_THEME.label }}>
+              <span style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label }}>
                 Ctrl+K to toggle · Esc to close
               </span>
               <Link
