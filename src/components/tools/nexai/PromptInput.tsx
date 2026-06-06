@@ -105,8 +105,8 @@ export default function PromptInput({
         gap: '10px',
         padding: '12px',
         borderRadius: '20px',
-        border: `1px solid ${loading ? 'rgba(175,195,214,0.34)' : 'rgba(255,255,255,0.08)'}`,
-        background: '#05070b',
+        border: `1px solid ${loading ? 'rgba(175,195,214,0.34)' : 'rgba(255,255,255,0.12)'}`,
+        background: 'rgba(16,19,26,0.9)',
         boxShadow: '0 18px 48px rgba(4,10,16,0.26)',
       }}
     >

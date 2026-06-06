@@ -61,8 +61,8 @@ export function ContextChips() {
         <span key={i} style={{
           display: 'inline-flex', alignItems: 'center', gap: '3px',
           padding: '2px 7px', borderRadius: '6px',
-          background: `${chip.accent}12`,
-          border: `1px solid ${chip.accent}25`,
+          background: `${chip.accent}22`,
+          border: `1px solid ${chip.accent}40`,
           fontFamily: T.MONO, fontSize: '9px',
           color: chip.accent, letterSpacing: '0.04em',
         }}>

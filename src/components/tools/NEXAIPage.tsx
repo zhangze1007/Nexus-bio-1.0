@@ -607,15 +607,16 @@ export default function NEXAIPage() {
         </div>
       </ModuleCard>}
 
-      {/* ── Center: clean chat interface (no cardboard layers) ── */}
+      {/* ── Center: clean chat interface with subtle surface ── */}
       <div
         style={{
           display: 'flex',
           flexDirection: 'column',
           height: '100%',
           minHeight: '560px',
-          background: 'transparent',
-          borderRadius: '0',
+          background: 'rgba(10, 12, 16, 0.6)',
+          borderRadius: '16px',
+          border: '1px solid rgba(255, 255, 255, 0.04)',
           overflow: 'hidden',
         }}
       >
@@ -691,6 +692,9 @@ export default function NEXAIPage() {
 
             {/* ── Context chips: what Axon knows about the workbench ── */}
             <ContextChips />
+
+            {/* ── Divider between controls and messages ── */}
+            <div style={{ height: '1px', background: 'rgba(255,255,255,0.04)', margin: '2px 0' }} />
 
             {/* ── Conversation messages ── */}
             {messages.length > 0 && (

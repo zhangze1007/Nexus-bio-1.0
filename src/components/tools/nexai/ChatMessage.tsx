@@ -29,14 +29,14 @@ export function ChatMessage({
       padding: '14px 16px',
       borderRadius: '16px',
       background: isUser
-        ? 'rgba(175, 195, 214, 0.06)'
+        ? 'rgba(175, 195, 214, 0.12)'
         : isSystem
-          ? 'rgba(147, 203, 82, 0.04)'
+          ? 'rgba(147, 203, 82, 0.06)'
           : PATHD_THEME.panelGlassStrong,
       border: `1px solid ${isUser
-        ? 'rgba(175, 195, 214, 0.10)'
+        ? 'rgba(175, 195, 214, 0.15)'
         : isSystem
-          ? 'rgba(147, 203, 82, 0.10)'
+          ? 'rgba(147, 203, 82, 0.12)'
           : PATHD_THEME.sepiaPanelBorder}`,
       backdropFilter: isUser ? 'none' : 'blur(12px)',
       WebkitBackdropFilter: isUser ? 'none' : 'blur(12px)',
