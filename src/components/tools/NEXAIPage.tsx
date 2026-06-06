@@ -607,33 +607,26 @@ export default function NEXAIPage() {
         </div>
       </ModuleCard>}
 
-      {/* ── Center: reading surface (prompt → result → evidence → raw) ── */}
-      <ModuleCard area="graph" flush>
-        <ScientificFigureFrame
-          eyebrow={result && surfaceView === 'evidence' ? 'Evidence map' : 'Research brief'}
-          title={result
-            ? 'Read the written synthesis first, then inspect the evidence map'
-            : 'Ask Axon for a workbench-grounded research brief'}
-          caption={result
-            ? 'The primary surface opens on prose and structured takeaways. The citation network and raw model response remain available as secondary views.'
-            : 'Axon opens as a text-first research desk. Once a result exists, the written brief becomes the default reading surface; evidence and raw JSON stay available on demand.'}
-          legend={[
-            { label: 'Mode', value: result ? resultMode : 'idle', accent: PATHD_THEME.lilac },
-            { label: 'Agentic', value: agenticMode ? `on · ${tasks.length} task${tasks.length === 1 ? '' : 's'}` : 'off', accent: PATHD_THEME.mint },
-            { label: 'Surface', value: result ? surfaceView : 'answer', accent: PATHD_THEME.apricot },
-            { label: 'Confidence', value: result ? `${(result.confidence * 100).toFixed(0)}%` : '—', accent: PATHD_THEME.mint },
-            { label: 'Citations', value: `${result?.citations.length ?? 0}`, accent: PATHD_THEME.sky },
-            { label: 'Parse', value: parseError?.code === 'NO_OBJECT' ? 'prose' : parseError?.code ?? 'ok', accent: PATHD_THEME.lilac },
-          ]}
-          minHeight="100%"
-        >
+      {/* ── Center: clean chat interface (no cardboard layers) ── */}
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          height: '100%',
+          minHeight: '560px',
+          background: 'transparent',
+          borderRadius: '0',
+          overflow: 'hidden',
+        }}
+      >
           <div
             style={{
-              padding: '12px',
-              display: 'grid',
-              gridTemplateRows: 'auto auto auto minmax(0, 1fr) auto auto',
-              gap: '12px',
-              minHeight: '560px',
+              padding: '12px 16px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '10px',
+              flex: 1,
+              minHeight: 0,
             }}
           >
             <div
@@ -643,10 +636,7 @@ export default function NEXAIPage() {
                 justifyContent: 'space-between',
                 gap: '10px',
                 flexWrap: 'wrap',
-                padding: '6px 10px',
-                borderRadius: '12px',
-                border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
-                background: PATHD_THEME.panelSurface,
+                padding: '4px 0',
               }}
             >
               <div style={{ display: 'grid', gap: '2px' }}>
@@ -883,8 +873,7 @@ export default function NEXAIPage() {
               </div>
             )}
           </div>
-        </ScientificFigureFrame>
-      </ModuleCard>
+      </div>
 
       {/* ── Right rail: stats + posture (hidden on mobile) ── */}
       {!isMobile && <ModuleCard area="stats" title="Query Stats">
