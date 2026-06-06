@@ -151,13 +151,21 @@ export function FluxMap({ result, nodes, edges, knockouts, compact, svgRef }: {
           : flux < 0.01 ? 'rgba(255,255,255,0.15)'
           : isReverse ? FLUX_REV_COLOR : FLUX_FWD_COLOR;
         const strokeW = Math.min(8, 1 + normalized * 5);
-        const mx = (from.x + to.x) / 2;
-        const my = (from.y + to.y) / 2;
+        // Bezier curve with perpendicular offset for Escher-style routing
+        const dx = to.x - from.x, dy = to.y - from.y;
+        const len = Math.max(Math.sqrt(dx * dx + dy * dy), 1);
+        const curvature = 0.12 + normalized * 0.08; // stronger curve for higher flux
+        const cx = (from.x + to.x) / 2 + (-dy / len) * len * curvature;
+        const cy = (from.y + to.y) / 2 + (dx / len) * len * curvature;
+        const pathD = `M ${from.x},${from.y} Q ${cx},${cy} ${to.x},${to.y}`;
+        // Label position at Bezier midpoint (t=0.5)
+        const mx = 0.25 * from.x + 0.5 * cx + 0.25 * to.x;
+        const my = 0.25 * from.y + 0.5 * cy + 0.25 * to.y;
         const marker = isKO ? 'url(#fba-ko)' : flux < 0.01 ? 'url(#fba-zero)' : isReverse ? 'url(#fba-rev)' : 'url(#fba-fwd)';
         return (
           <g key={edge.reactionId}>
-            <line x1={from.x} y1={from.y} x2={to.x} y2={to.y}
-              stroke={color} strokeWidth={strokeW} strokeLinecap="round"
+            <path d={pathD}
+              stroke={color} strokeWidth={strokeW} strokeLinecap="round" fill="none"
               strokeDasharray={isKO ? '5 3' : undefined} markerEnd={marker} opacity={0.85} />
             <rect x={mx - 14} y={my - 7} width="28" height="14" rx="7"
               fill="rgba(5,7,11,0.88)" stroke="rgba(255,255,255,0.07)" />
