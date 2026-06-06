@@ -96,12 +96,33 @@ export default function CopilotSlideOver() {
   const [provider, setProvider] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const panelRef = useRef<HTMLElement>(null);
 
-  // Focus prompt when opened.
+  // Focus prompt when opened + focus trap.
   useEffect(() => {
-    if (open) {
-      requestAnimationFrame(() => textareaRef.current?.focus());
-    }
+    if (!open) return;
+    requestAnimationFrame(() => textareaRef.current?.focus());
+
+    const panel = panelRef.current;
+    if (!panel) return;
+
+    const handleTab = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return;
+      const focusable = panel.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      );
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey) {
+        if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+      } else {
+        if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+      }
+    };
+
+    panel.addEventListener('keydown', handleTab);
+    return () => panel.removeEventListener('keydown', handleTab);
   }, [open]);
 
   // Escape closes.
@@ -170,7 +191,9 @@ export default function CopilotSlideOver() {
           {/* Panel */}
           <motion.aside
             key="copilot-panel"
+            ref={panelRef}
             role="dialog"
+            aria-modal="true"
             aria-label="Axon Copilot"
             data-testid="copilot-slide-over"
             initial={{ x: SLIDE_WIDTH + 20, opacity: 0 }}

@@ -720,6 +720,7 @@ export default function NEXAIPage() {
               query={query}
               setQuery={setQuery}
               onSubmit={runQuery}
+              onStop={() => { abortRef.current?.abort(); setLoading(false); }}
               loading={loading}
               history={history}
               placeholder={contextPrompt || undefined}

@@ -203,6 +203,7 @@ function CitationGraph({
             onClick={() => onNodeClick?.(n)}
             style={{ cursor: 'pointer' }}
           >
+            <title>{n.title} ({n.year}) — Relevance: {(n.relevance * 100).toFixed(0)}%</title>
             <line x1={n.x} y1="330" x2={n.x} y2={n.y + n.r + 4} stroke="rgba(255,255,255,0.08)" strokeDasharray="3 4" />
             {n.relevance > 0.7 && (
               <circle
@@ -245,8 +246,7 @@ function CitationGraph({
               fontSize="10"
               fill="rgba(205,214,236,0.62)"
             >
-              {n.title.slice(0, 14)}
-              {n.title.length > 14 ? '…' : ''}
+              {n.title.length > 24 ? n.title.slice(0, 24) + '…' : n.title}
             </text>
           </g>
         );

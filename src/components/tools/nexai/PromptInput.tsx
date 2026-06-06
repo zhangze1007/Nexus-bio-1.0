@@ -27,6 +27,7 @@ export interface PromptInputProps {
   query: string;
   setQuery: (value: string) => void;
   onSubmit: () => void;
+  onStop?: () => void;
   loading: boolean;
   history: string[];
   placeholder?: string;
@@ -50,6 +51,7 @@ export default function PromptInput({
   query,
   setQuery,
   onSubmit,
+  onStop,
   loading,
   history,
   placeholder,
@@ -184,10 +186,37 @@ export default function PromptInput({
           }}
         />
 
+        {loading && onStop ? (
+          <motion.button
+            aria-label="Stop generation"
+            onClick={onStop}
+            whileTap={{ scale: 0.96 }}
+            onMouseEnter={() => setBtnHover(true)}
+            onMouseLeave={() => setBtnHover(false)}
+            style={{
+              flexShrink: 0,
+              minHeight: '44px',
+              minWidth: '112px',
+              padding: '0 18px',
+              borderRadius: '12px',
+              cursor: 'pointer',
+              fontFamily: T.SANS,
+              fontSize: '13px',
+              fontWeight: 700,
+              background: btnHover ? 'rgba(250, 128, 114, 0.22)' : 'rgba(250, 128, 114, 0.12)',
+              color: PATHD_THEME.coral,
+              border: `1px solid rgba(250, 128, 114, ${btnHover ? 0.4 : 0.25})`,
+              boxShadow: btnHover ? '0 2px 12px rgba(0,0,0,0.22)' : 'none',
+              transition: 'background 0.15s, box-shadow 0.15s',
+            }}
+          >
+            Stop
+          </motion.button>
+        ) : (
         <motion.button
           aria-label="Ask Axon"
           onClick={onSubmit}
-          disabled={loading || !query.trim()}
+          disabled={!query.trim()}
           whileTap={{ scale: 0.96 }}
           onMouseEnter={() => setBtnHover(true)}
           onMouseLeave={() => setBtnHover(false)}
@@ -197,24 +226,23 @@ export default function PromptInput({
             minWidth: '112px',
             padding: '0 18px',
             borderRadius: '12px',
-            cursor: loading || !query.trim() ? 'not-allowed' : 'pointer',
+            cursor: !query.trim() ? 'not-allowed' : 'pointer',
             fontFamily: T.SANS,
             fontSize: '13px',
             fontWeight: 700,
-            background: loading
-              ? 'rgba(255,255,255,0.08)'
-              : btnHover
-                ? 'rgba(175, 195, 214, 0.28)'
-                : 'rgba(175, 195, 214, 0.18)',
-            color: loading ? PATHD_THEME.label : T.VALUE,
-            opacity: !loading && !query.trim() ? 0.45 : 1,
+            background: btnHover
+              ? 'rgba(175, 195, 214, 0.28)'
+              : 'rgba(175, 195, 214, 0.18)',
+            color: T.VALUE,
+            opacity: !query.trim() ? 0.45 : 1,
             border: `1px solid rgba(175, 195, 214, ${btnHover ? 0.35 : 0.2})`,
-            boxShadow: !loading && btnHover ? '0 2px 12px rgba(0,0,0,0.22)' : 'none',
+            boxShadow: btnHover ? '0 2px 12px rgba(0,0,0,0.22)' : 'none',
             transition: 'background 0.15s, box-shadow 0.15s',
           }}
         >
-          {loading ? 'Asking…' : 'Ask Axon'}
+          Ask Axon
         </motion.button>
+        )}
       </div>
 
       {showExamples && shownExamples.length > 0 && (
