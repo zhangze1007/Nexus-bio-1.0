@@ -222,6 +222,7 @@ export default function Hero() {
 
             {/* Search button */}
             <button
+              aria-label="Search"
               onClick={() => navigate(query)}
               style={{
                 display: 'flex', alignItems: 'center', gap: '6px',

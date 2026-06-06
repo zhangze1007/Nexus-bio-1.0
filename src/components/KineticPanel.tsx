@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { Loader2, Play, RotateCcw, Info } from 'lucide-react';
 import { mmVelocity, runRK4, type SimResult } from '../utils/kinetics';
 import ResearchAnswerRenderer from './tools/shared/ResearchAnswerRenderer';
@@ -115,6 +115,11 @@ export default function KineticPanel({ nodeLabel, nodeId }: KineticPanelProps) {
   const [result, setResult] = useState<SimResult | null>(null);
   const [ai, setAi] = useState<AIInterpretation>({ text: '', loading: false });
   const abortRef = useRef<AbortController | null>(null);
+
+  // Cancel in-flight request on unmount
+  useEffect(() => {
+    return () => { abortRef.current?.abort(); };
+  }, []);
 
   const runSimulation = useCallback(() => {
     const res = runRK4(

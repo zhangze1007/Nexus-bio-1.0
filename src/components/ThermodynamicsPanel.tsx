@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Loader2, Play, Info, RotateCcw } from 'lucide-react';
 import { calcDeltaG, calcKeq, calcMassBalance, R } from '../utils/thermodynamics';
 import ResearchAnswerRenderer from './tools/shared/ResearchAnswerRenderer';
@@ -57,6 +57,11 @@ export default function ThermodynamicsPanel({ nodeLabel, nodeId }: ThermoPanelPr
   const [result, setResult] = useState<{ dG: number; Keq: number; spontaneous: boolean; sim: ReturnType<typeof calcMassBalance> } | null>(null);
   const [ai, setAi] = useState<{ text: string; loading: boolean }>({ text: '', loading: false });
   const abortRef = useRef<AbortController | null>(null);
+
+  // Cancel in-flight request on unmount
+  useEffect(() => {
+    return () => { abortRef.current?.abort(); };
+  }, []);
 
   const run = async () => {
     const pArr = products.split(',').map(Number).filter(n => n > 0);

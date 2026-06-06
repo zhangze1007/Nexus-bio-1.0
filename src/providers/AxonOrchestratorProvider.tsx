@@ -351,10 +351,8 @@ export function AxonOrchestratorProvider({
     if (drainingRef.current) return;
     drainingRef.current = true;
     try {
-      // eslint-disable-next-line no-constant-condition
-      while (true) {
-        const peek = orchestrator.peekNextRunnable();
-        if (!peek) return;
+      let peek = orchestrator.peekNextRunnable();
+      while (peek) {
         pushLog('started', `Started ${peek.tool.toUpperCase()} — "${peek.label}"`, {
           taskId: peek.id,
           tool: peek.tool,
@@ -391,6 +389,7 @@ export function AxonOrchestratorProvider({
             metadata: { error: finished.error },
           });
         }
+        peek = orchestrator.peekNextRunnable();
       }
     } finally {
       drainingRef.current = false;

@@ -326,7 +326,9 @@ async function fetchPubMed(query: string): Promise<Article[]> {
     let abstract = '';
     try {
       abstract = await fetchPubMedAbstractText(uid);
-    } catch {}
+    } catch {
+      // Abstract fetch is best-effort — paper metadata is still returned without it
+    }
 
     return {
       id: `pm-${uid}`,
