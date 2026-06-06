@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import './globals.css';
 import WorkbenchSyncProvider from '../src/components/workbench/WorkbenchSyncProvider';
+import { RouteTransition } from '../src/components/shared/RouteTransition';
 
 export const metadata: Metadata = {
   title: 'Nexus-Bio | Synthetic Biology Research Workbench',
@@ -44,7 +45,9 @@ export default function RootLayout({
         <Suspense fallback={null}>
           <WorkbenchSyncProvider />
         </Suspense>
-        <div id="root">{children}</div>
+        <div id="root">
+          <RouteTransition>{children}</RouteTransition>
+        </div>
       </body>
     </html>
   );
