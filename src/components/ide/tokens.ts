@@ -64,6 +64,21 @@ export const T = {
   SHADOW_LOW:    '0 2px 8px rgba(0,0,0,0.18)',
   SHADOW_MEDIUM: '0 8px 24px rgba(0,0,0,0.28)',
   SHADOW_HIGH:   '0 16px 48px rgba(0,0,0,0.38)',
+
+  // Workbench surface colors (from PATHD_THEME — canonical dark palette)
+  PANEL_BG:     '#050505',
+  PANEL_SURFACE:'rgba(26, 31, 37, 0.88)',
+  PANEL_INSET:  'rgba(31, 37, 44, 0.92)',
+  PANEL_BORDER: 'rgba(255, 255, 255, 0.08)',
+  LABEL:        'rgba(217, 225, 235, 0.68)',
+  VALUE:        'rgba(250, 246, 240, 0.96)',
+
+  // Scientific accent colors (canonical 5-color family)
+  APRICOT: '#E7C7A9',
+  SKY:     '#AFC3D6',
+  MINT:    '#BFDCCD',
+  LILAC:   '#CFC4E3',
+  CORAL:   '#E8A3A1',
   // Tool result accent colors — only used inside tool pages for data differentiation
   RESULT_MINT:   '#BFDCCD',
   RESULT_CORAL:  '#E8A3A1',

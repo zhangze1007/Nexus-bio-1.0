@@ -1,4 +1,4 @@
-import { PATHD_THEME } from '../components/workbench/workbenchTheme';
+import { T } from '../components/ide/tokens';
 
 /**
  * Shared design tokens for all tool pages.
@@ -11,17 +11,17 @@ import { PATHD_THEME } from '../components/workbench/workbenchTheme';
  * ToolsDirectoryPage keeps its own SURFACE_TINT / SHADOW / BTN_TEXT tokens.
  */
 export const toolTokens = {
-  panelBg:     PATHD_THEME.sepiaPanelMuted,
-  border:      PATHD_THEME.sepiaPanelBorder,
-  label:       PATHD_THEME.label,
-  value:       PATHD_THEME.value,
-  inputBg:     PATHD_THEME.panelInset,
-  inputBorder: PATHD_THEME.sepiaPanelBorder,
-  inputText:   PATHD_THEME.value,
+  panelBg:     T.PANEL_BG,
+  border:      T.PANEL_BORDER,
+  label:       T.LABEL,
+  value:       T.VALUE,
+  inputBg:     T.PANEL_INSET,
+  inputBorder: T.PANEL_BORDER,
+  inputText:   T.VALUE,
   glass: {
-    borderRadius: '24px',
-    background: PATHD_THEME.panelSurface,
-    border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
+    borderRadius: T.R_XL,
+    background: T.PANEL_SURFACE,
+    border: `1px solid ${T.PANEL_BORDER}`,
   } as React.CSSProperties,
 } as const;
 
