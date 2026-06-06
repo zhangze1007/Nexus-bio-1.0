@@ -176,6 +176,23 @@ export default function ToolShell({
               {description}
             </div>
           )}
+          {tool?.focus && (
+            <details style={{ marginTop: '4px' }}>
+              <summary style={{
+                fontFamily: T.MONO, fontSize: '9px', color: PATHD_THEME.label,
+                cursor: 'pointer', letterSpacing: '0.05em', textTransform: 'uppercase',
+                opacity: 0.7,
+              }}>
+                What does this tool do?
+              </summary>
+              <p style={{
+                fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.label,
+                marginTop: '4px', lineHeight: 1.55, maxWidth: '480px',
+              }}>
+                {tool.focus}
+              </p>
+            </details>
+          )}
         </div>
 
         {validity && (
