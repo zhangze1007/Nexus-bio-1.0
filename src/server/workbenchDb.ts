@@ -515,7 +515,13 @@ function migrateLegacyCanonicalIfNeeded(db: SqliteDb) {
   if (hasProjectState.count > 0) return;
   const row = db.prepare('SELECT state_json FROM canonical_state WHERE id = 1').get() as { state_json?: string } | undefined;
   if (!row?.state_json) return;
-  const parsed = sanitizeWorkbenchState(JSON.parse(row.state_json));
+  let parsed;
+  try {
+    parsed = sanitizeWorkbenchState(JSON.parse(row.state_json));
+  } catch {
+    console.warn('[workbenchDb] Failed to parse legacy canonical state — skipping migration');
+    return;
+  }
   if (!parsed) return;
   writeProjectState(db, resolveProjectId(undefined, parsed), SYSTEM_ACTOR_ID, parsed, 'legacy-canonical-migration', 'migrated legacy canonical snapshot into project-scoped state');
 }

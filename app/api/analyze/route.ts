@@ -10,6 +10,7 @@ type GeminiPart = {
 };
 
 type GeminiContent = {
+  role?: 'user' | 'model';
   parts?: GeminiPart[];
 };
 
@@ -49,6 +50,20 @@ const TIMEOUT_MS = 12000;
 // room for the system prompt.
 export const MAX_PROMPT_CHARS = 24_000;
 export const MAX_SEARCH_QUERY_CHARS = 500;
+
+// ── Conversation history limits ──
+// MAX_HISTORY_TURNS: how many prior (user, assistant) turn-pairs to keep.
+// MAX_HISTORY_MSG_CHARS: per-message character cap so one huge reply cannot
+//   blow the token budget.
+// MAX_HISTORY_TOTAL_CHARS: hard cap on the serialised history block.
+export const MAX_HISTORY_TURNS = 5;
+export const MAX_HISTORY_MSG_CHARS = 1_000;
+export const MAX_HISTORY_TOTAL_CHARS = 6_000;
+
+export interface ConversationTurn {
+  role: 'user' | 'assistant';
+  content: string;
+}
 
 // ── In-memory rate limiter (token bucket per IP) ──
 const rateLimit = new Map<string, { count: number; resetAt: number }>();
@@ -376,14 +391,71 @@ function buildGeminiBodyWithSystemPrompt(
   };
 }
 
+/**
+ * Validate and sanitize conversation history from the client.
+ *
+ * - Drops entries with invalid role or empty content.
+ * - Truncates each message to MAX_HISTORY_MSG_CHARS.
+ * - Keeps only the last MAX_HISTORY_TURNS turn-pairs (user+assistant).
+ * - Caps total serialised length at MAX_HISTORY_TOTAL_CHARS.
+ *
+ * Returns a clean array ready for injection into provider messages.
+ */
+export function sanitizeHistory(
+  raw: unknown,
+): ConversationTurn[] {
+  if (!Array.isArray(raw)) return [];
+
+  const validated: ConversationTurn[] = [];
+  for (const entry of raw) {
+    if (
+      !entry ||
+      typeof entry !== 'object' ||
+      (entry.role !== 'user' && entry.role !== 'assistant') ||
+      typeof entry.content !== 'string' ||
+      entry.content.trim().length === 0
+    ) {
+      continue;
+    }
+    const truncated = entry.content.length > MAX_HISTORY_MSG_CHARS
+      ? entry.content.slice(0, MAX_HISTORY_MSG_CHARS)
+      : entry.content;
+    validated.push({ role: entry.role, content: truncated });
+  }
+
+  // Keep last N turn-pairs (each pair = user + assistant = 2 messages).
+  const maxMessages = MAX_HISTORY_TURNS * 2;
+  const windowed = validated.slice(-maxMessages);
+
+  // Final total-length guard: walk backwards and drop oldest until under cap.
+  let totalLen = 0;
+  const lengthCapped: ConversationTurn[] = [];
+  for (let i = windowed.length - 1; i >= 0; i--) {
+    const msgLen = windowed[i].content.length + windowed[i].role.length + 10; // +10 for JSON overhead
+    if (totalLen + msgLen > MAX_HISTORY_TOTAL_CHARS) break;
+    totalLen += msgLen;
+    lengthCapped.unshift(windowed[i]);
+  }
+
+  return lengthCapped;
+}
+
 // ── Try Groq first (OpenAI-compatible format) ──
 async function tryGroq(
   prompt: string,
   apiKey: string,
   systemPrompt: string = AXON_SYSTEM_PROMPT,
+  conversationHistory: ConversationTurn[] = [],
 ): Promise<string | null> {
   for (const model of GROQ_MODELS) {
     try {
+      // Build messages array: [system, ...history, current user]
+      const messages: Array<{ role: string; content: string }> = [
+        { role: 'system', content: systemPrompt },
+        ...conversationHistory.map((h) => ({ role: h.role, content: h.content })),
+        { role: 'user', content: prompt },
+      ];
+
       const res = await withTimeout(
         fetch(GROQ_BASE, {
           method: 'POST',
@@ -393,10 +465,7 @@ async function tryGroq(
           },
           body: JSON.stringify({
             model,
-            messages: [
-              { role: 'system', content: systemPrompt },
-              { role: 'user', content: prompt },
-            ],
+            messages,
             temperature: 0.1,
             max_tokens: 4096,
           }),
@@ -425,11 +494,28 @@ async function tryGemini(
   body: GeminiRequestBody,
   apiKey: string,
   systemPrompt: string = AXON_SYSTEM_PROMPT,
+  conversationHistory: ConversationTurn[] = [],
 ): Promise<string | null> {
   for (const model of GEMINI_MODELS) {
     try {
+      // Build history contents for Gemini multi-turn format.
+      // Gemini uses 'user' and 'model' roles (not 'assistant').
+      const historyContents: GeminiContent[] = conversationHistory.map((h) => ({
+        role: h.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: h.content }],
+      }));
+
+      // Prepend history to the existing contents array.
+      const bodyWithHistory: GeminiRequestBody = {
+        ...body,
+        contents: [
+          ...historyContents,
+          ...(body.contents ?? []),
+        ],
+      };
+
       const geminiBody = {
-        ...buildGeminiBodyWithSystemPrompt(body, systemPrompt),
+        ...buildGeminiBodyWithSystemPrompt(bodyWithHistory, systemPrompt),
         generationConfig: {
           maxOutputTokens: 4096,
           temperature: 0.1,
@@ -613,6 +699,9 @@ export async function POST(req: NextRequest) {
   // When searchQuery is provided, build the full Senior ME prompt server-side
   const rawSearchQuery = typeof rawBody.searchQuery === 'string' ? rawBody.searchQuery.trim() : '';
 
+  // ── Conversation history (multi-turn context) ──
+  const conversationHistory = sanitizeHistory(rawBody.history);
+
   let body: GeminiRequestBody;
   let prompt: string;
   let truncated = false;
@@ -727,6 +816,9 @@ export async function POST(req: NextRequest) {
     if (rawSearchQuery) meta.searchQuery = rawSearchQuery;
     if (truncated) meta.truncated = true;
     if (enriched.parseError) meta.parseError = enriched.parseError;
+    if (conversationHistory.length > 0) {
+      meta.historyTurns = conversationHistory.length;
+    }
     if (classification) {
       meta.domain = {
         category: classification.category,
@@ -739,7 +831,7 @@ export async function POST(req: NextRequest) {
 
   // ── Try Groq first ──
   if (groqKey && textOnlyRequest) {
-    const groqResult = await tryGroq(prompt, groqKey, activeSystemPrompt);
+    const groqResult = await tryGroq(prompt, groqKey, activeSystemPrompt, conversationHistory);
     if (groqResult) {
       // PR-5: only enrich (biosynthesis schema fixup) when we actually
       // asked for biosynthesis output. Prose responses are passed
@@ -761,7 +853,7 @@ export async function POST(req: NextRequest) {
 
   // ── Fallback to Gemini ──
   if (geminiKey) {
-    const geminiResult = await tryGemini(body, geminiKey, activeSystemPrompt);
+    const geminiResult = await tryGemini(body, geminiKey, activeSystemPrompt, conversationHistory);
     if (geminiResult) {
       const enriched: EnrichResult = useBiosynthesisPrompt
         ? enrichAxonOutput(geminiResult)

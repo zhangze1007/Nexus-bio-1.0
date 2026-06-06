@@ -8,6 +8,7 @@ import {
   buildWorkbenchCopilotContext,
   composeCopilotQuery,
   type WorkbenchContextSnapshot,
+  type ConversationTurn,
 } from '../src/services/axonContext';
 
 function emptySnapshot(): WorkbenchContextSnapshot {
@@ -127,5 +128,67 @@ describe('composeCopilotQuery', () => {
     snap.project = { title: 'P', targetProduct: 'X' };
     const ctx = buildWorkbenchCopilotContext(snap);
     expect(composeCopilotQuery('   ', ctx)).toBe('');
+  });
+
+  it('works without the optional conversationHistory parameter (backward compat)', () => {
+    const snap = emptySnapshot();
+    snap.project = { title: 'P', targetProduct: 'X' };
+    const ctx = buildWorkbenchCopilotContext(snap);
+    const result = composeCopilotQuery('hello', ctx);
+    expect(result).toContain('hello');
+    expect(result).not.toContain('Conversation so far');
+  });
+
+  it('prepends conversation preamble when history is provided', () => {
+    const ctx = buildWorkbenchCopilotContext(emptySnapshot());
+    const history: ConversationTurn[] = [
+      { role: 'user', content: 'What is the bottleneck?' },
+      { role: 'assistant', content: 'The bottleneck is at FPP-to-amorphadiene.' },
+    ];
+    const result = composeCopilotQuery('How do we fix it?', ctx, history);
+    expect(result).toContain('Conversation so far:');
+    expect(result).toContain('[Researcher]: What is the bottleneck?');
+    expect(result).toContain('[Axon]: The bottleneck is at FPP-to-amorphadiene.');
+    expect(result).toContain('Current question: How do we fix it?');
+  });
+
+  it('does not prepend history when history array is empty', () => {
+    const ctx = buildWorkbenchCopilotContext(emptySnapshot());
+    const result = composeCopilotQuery('hello', ctx, []);
+    expect(result).toBe('hello');
+    expect(result).not.toContain('Conversation so far');
+  });
+
+  it('does not prepend history when history is undefined', () => {
+    const ctx = buildWorkbenchCopilotContext(emptySnapshot());
+    const result = composeCopilotQuery('hello', ctx, undefined);
+    expect(result).toBe('hello');
+  });
+
+  it('truncates long history messages to 200 chars in the preamble', () => {
+    const ctx = buildWorkbenchCopilotContext(emptySnapshot());
+    const longContent = 'x'.repeat(500);
+    const history: ConversationTurn[] = [
+      { role: 'user', content: longContent },
+    ];
+    const result = composeCopilotQuery('question', ctx, history);
+    // The history line should be capped at ~200 chars + label overhead
+    const historySection = result.split('Current question:')[0];
+    expect(historySection.length).toBeLessThan(300);
+    expect(historySection).toContain('…');
+  });
+
+  it('combines history preamble with workbench context augmentation', () => {
+    const snap = emptySnapshot();
+    snap.project = { title: 'P', targetProduct: 'artemisinin' };
+    const ctx = buildWorkbenchCopilotContext(snap);
+    const history: ConversationTurn[] = [
+      { role: 'user', content: 'first question' },
+      { role: 'assistant', content: 'first answer' },
+    ];
+    const result = composeCopilotQuery('follow up', ctx, history);
+    expect(result).toContain('Conversation so far:');
+    expect(result).toContain('Current question: follow up');
+    expect(result).toContain('Target product: artemisinin');
   });
 });

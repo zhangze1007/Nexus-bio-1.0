@@ -198,15 +198,47 @@ export function buildWorkbenchCopilotContext(
 }
 
 /**
+ * Conversation turn for multi-turn context.
+ */
+export interface ConversationTurn {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+/**
  * Compose a full copilot query by appending the bounded context block
  * when it is non-empty. No-op when there is no active workbench state.
+ *
+ * When `conversationHistory` is provided and non-empty, a compact
+ * conversation-preamble block is prepended so the current query carries
+ * multi-turn context even when the API receives it as a flat searchQuery
+ * string (the server-side history injection handles the proper multi-turn
+ * message array; this preamble is a safety net for prompt-only paths).
  */
 export function composeCopilotQuery(
   rawQuery: string,
   context: WorkbenchCopilotContext,
+  conversationHistory?: ConversationTurn[],
 ): string {
   const trimmed = rawQuery.trim();
   if (!trimmed) return trimmed;
-  if (!context.hasContext || !context.promptAugmentation) return trimmed;
-  return `${trimmed}\n\n${context.promptAugmentation}`;
+
+  let result = trimmed;
+
+  // Prepend a compact conversation preamble when history is present.
+  // This is deliberately terse to stay within token budgets.
+  if (conversationHistory && conversationHistory.length > 0) {
+    const historyLines = conversationHistory.map((turn) => {
+      const label = turn.role === 'user' ? 'Researcher' : 'Axon';
+      // Cap each history line to 200 chars for the preamble.
+      const snippet = turn.content.length > 200
+        ? `${turn.content.slice(0, 197).trimEnd()}…`
+        : turn.content;
+      return `[${label}]: ${snippet}`;
+    });
+    result = `Conversation so far:\n${historyLines.join('\n')}\n\nCurrent question: ${trimmed}`;
+  }
+
+  if (!context.hasContext || !context.promptAugmentation) return result;
+  return `${result}\n\n${context.promptAugmentation}`;
 }

@@ -443,11 +443,11 @@ export default function PaperAnalyzer({
         setExpanded(false);
       }
 
-    } catch (err: any) {
-      if (err.name === 'AbortError') return;
+    } catch (err: unknown) {
+      if (err instanceof DOMException && err.name === 'AbortError') return;
       setAnalysisState('error');
       // Show full message for debugging
-      const msg = err.message || '';
+      const msg = err instanceof Error ? err.message : String(err);
       if (msg.startsWith('PARSE_FAIL:') || msg.startsWith('NORMALIZE_FAIL:')) {
         setErrorMsg(msg); // Show raw for debugging
       } else {

@@ -25,6 +25,7 @@ import { useAxonOrchestratorOptional } from '../../providers/AxonOrchestratorPro
 import {
   buildWorkbenchCopilotContext,
   composeCopilotQuery,
+  type ConversationTurn,
 } from '../../services/axonContext';
 import ResearchAnswerRenderer from '../tools/shared/ResearchAnswerRenderer';
 
@@ -102,6 +103,12 @@ export default function CopilotSlideOver() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const panelRef = useRef<HTMLElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
+
+  // Cancel in-flight request on unmount
+  useEffect(() => {
+    return () => { abortRef.current?.abort(); };
+  }, []);
 
   // Focus prompt when opened + focus trap.
   useEffect(() => {
@@ -155,15 +162,40 @@ export default function CopilotSlideOver() {
     setLoading(true);
     setError(null);
 
+    // Cancel previous in-flight request
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     try {
-      const composedQuery = composeCopilotQuery(q, workbenchContext);
+      // Build conversation history from the current messages state.
+      // We snapshot before the new user message was added, but React
+      // batches the setState above so `messages` still holds the prior
+      // state at this point. We include the new user turn explicitly.
+      const historyForApi: ConversationTurn[] = [
+        ...messages.map((m) => ({
+          role: m.role as 'user' | 'assistant',
+          content: m.content,
+        })),
+        { role: 'user' as const, content: q },
+      ];
+
+      const composedQuery = composeCopilotQuery(q, workbenchContext, historyForApi);
       const res = await fetch('/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ searchQuery: composedQuery }),
+        body: JSON.stringify({
+          searchQuery: composedQuery,
+          history: historyForApi,
+        }),
+        signal: controller.signal,
       });
+
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        throw new Error(errBody?.error ?? `HTTP ${res.status}`);
+      }
       const data = await res.json();
-      if (!res.ok) throw new Error(data?.error ?? `HTTP ${res.status}`);
       const text: string | undefined = data?.candidates?.[0]?.content?.parts?.[0]?.text;
       if (!text) throw new Error('No response from Axon');
 
@@ -175,6 +207,10 @@ export default function CopilotSlideOver() {
         timestamp: Date.now(),
       }]);
     } catch (err) {
+      // Silently ignore aborted requests
+      if (err instanceof DOMException && err.name === 'AbortError') return;
+      if (controller.signal.aborted) return;
+
       const errMsg = err instanceof Error ? err.message : String(err);
       setError(errMsg);
       setMessages(prev => [...prev, {
