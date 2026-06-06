@@ -259,7 +259,7 @@ function DBTLLedgerCard({
   runs,
   decision,
 }: {
-  runs: { id: string; toolId: string; summary: string; status?: string | null; isSimulated: boolean; confidence?: number | null; uncertainty?: number | null; validity?: string | null; humanGateRequired?: boolean; iteration?: number | null; payloadSnapshot: unknown }[];
+  runs: { id: string; toolId: string; summary: string; status?: string | null; isSimulated: boolean; confidence?: number | null; uncertainty?: number | null; validity?: string | null; humanGateRequired?: boolean; iteration?: number | null; payloadSnapshot: unknown; evidenceSnapshot?: { count?: number; status?: string; missingEvidence?: { minRequired?: number } } | null }[];
   decision: { missingEvidence: { have: number }; confidence: number | null; uncertainty: number | null; validity: string | null; humanGateRequired: boolean; nextRecommendedNode: string | null; latestRunToolId: string | null };
 }) {
   return (
@@ -287,7 +287,7 @@ function LedgerEntry({
   run,
   decision,
 }: {
-  run: { id: string; toolId: string; summary: string; status?: string | null; isSimulated: boolean; confidence?: number | null; uncertainty?: number | null; validity?: string | null; humanGateRequired?: boolean; iteration?: number | null; payloadSnapshot: unknown };
+  run: { id: string; toolId: string; summary: string; status?: string | null; isSimulated: boolean; confidence?: number | null; uncertainty?: number | null; validity?: string | null; humanGateRequired?: boolean; iteration?: number | null; payloadSnapshot: unknown; evidenceSnapshot?: { count?: number; status?: string; missingEvidence?: { minRequired?: number } } | null };
   decision: { missingEvidence: { have: number }; confidence: number | null; uncertainty: number | null; validity: string | null; humanGateRequired: boolean; nextRecommendedNode: string | null; latestRunToolId: string | null };
 }) {
   const provenanceDiagnostics = getProvenanceChainDiagnostics(run.payloadSnapshot);
@@ -310,7 +310,16 @@ function LedgerEntry({
       <div style={typography.body}>{run.summary}</div>
       <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
         <span style={typography.caption}>
-          evidence · {run.payloadSnapshot ? `${(run.payloadSnapshot as { evidenceSnapshot?: { count?: number } }).evidenceSnapshot?.count ?? decision.missingEvidence.have}` : decision.missingEvidence.have}
+          evidence · {(() => {
+            const ev = run.evidenceSnapshot;
+            if (ev) {
+              const count = ev.count ?? 0;
+              const min = ev.missingEvidence?.minRequired ?? 0;
+              const status = ev.status ?? '';
+              return min > 0 ? `${count}/${min}${status ? ` · ${status}` : ''}` : `${count}`;
+            }
+            return decision.missingEvidence.have;
+          })()}
         </span>
         <span style={typography.caption}>
           confidence · {run.confidence !== undefined && run.confidence !== null ? run.confidence.toFixed(2) : decision.latestRunToolId === run.toolId && decision.confidence !== null ? decision.confidence.toFixed(2) : 'n/a'}

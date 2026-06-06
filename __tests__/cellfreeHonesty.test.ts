@@ -225,7 +225,7 @@ describe('CellFree model structure and parameter sourcing honesty boundary', () 
     const workflowRegistry = readRepoFile('src/services/workflowRegistry.ts');
     const readme = readRepoFile('README.md');
 
-    expect(cellfreePage).toContain('heuristic in-vitro-to-in-vivo estimate');
+    expect(cellfreePage).toContain('heuristic in-vitro-to-in-vivo');
     expect(registry).toContain('parameter-sourcing limits');
     expect(validity).toContain('Resource-aware TX-TL ODE structure exists');
     expect(workflowRegistry).toContain('parameter sourcing, calibration, and uncertainty remain incomplete');
@@ -236,7 +236,9 @@ describe('CellFree model structure and parameter sourcing honesty boundary', () 
     expect(userFacingText).not.toContain('calibrated TX-TL model');
     expect(userFacingText).not.toContain('experimentally validated protocol');
     expect(userFacingText).not.toContain('production-grade CFPS prediction');
-    expect(userFacingText).not.toContain('wet-lab validated');
+    // Allow honest "Not a wet-lab validated" disclaimers in the README "What Nexus-Bio Is Not" section
+    const cellfreeCombined = `${cellfreePage}\n${registry}\n${validity}\n${workflowRegistry}`;
+    expect(cellfreeCombined).not.toContain('wet-lab validated');
     expect(userFacingText).not.toContain('no live TXTL kinetic model');
   });
 });

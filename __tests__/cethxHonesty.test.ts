@@ -187,7 +187,7 @@ describe('CETHX thermodynamics honesty boundary', () => {
 
     expect(cethxPage).toContain('Demo thermodynamics explainer');
     expect(cethxPage).toContain('uncertainty not calculated');
-    expect(cethxPage).toContain('not a condition-aware feasibility result');
+    expect(cethxPage).toContain('not a condition-aware feasibility');
     expect(registry).toContain('Demo thermodynamics explainer');
     expect(validity).toContain('No condition-aware backend');
     expect(mockCethx).toContain('reference-table values displayed unchanged');

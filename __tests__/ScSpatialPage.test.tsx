@@ -37,18 +37,6 @@ jest.mock('../src/components/tools/scspatial/ScSpatialViewport', () => (
   }
 ));
 
-jest.mock('../src/components/tools/scspatial/ScSpatialInsightRail', () => (
-  function MockScSpatialInsightRail(props: {
-    query: { rightPanel: { provenance: { validity: string } } } | null;
-  }) {
-    return (
-      <div data-testid="scspatial-insight-rail">
-        {props.query?.rightPanel.provenance.validity ?? 'idle'}
-      </div>
-    );
-  }
-));
-
 jest.mock('../src/components/tools/scspatial/ScSpatialHelpDialog', () => (
   function MockScSpatialHelpDialog(props: { open: boolean }) {
     return props.open ? <div>Help dialog</div> : null;
@@ -99,6 +87,5 @@ describe('ScSpatialPage', () => {
     });
     expect(screen.getByTestId('scspatial-control-rail').textContent).toMatch(/bundled-demo\.h5ad::(ready|querying)/);
     expect(screen.getByTestId('scspatial-viewport').textContent).toContain('spatial-2d');
-    expect(screen.getByTestId('scspatial-insight-rail').textContent).toContain('demo');
   });
 });

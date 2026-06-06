@@ -147,11 +147,11 @@ The tools below are adapters and testbeds inside the trust runtime. Their validi
 | --- | --- | --- |
 | PATHD | `/tools/pathd` | Pathway and enzyme design navigator with trust-gated pathway context. |
 | Metabolic Engineering Lab | `/tools/metabolic-eng` | Backward-compatible PATHD-style lab route; not an independent stronger claim. |
-| FBASim | `/tools/fbasim` | Partial single-species simplex LP; community mode remains demo-only. |
+| FBASim | `/tools/fbasim` | Partial single-species simplex LP plus illustrative two-species demo mode; single-species FBA plus demo-only two-species comparison. |
 | CETHX | `/tools/cethx` | Demo thermodynamics explainer with explicit feasibility boundary. |
-| CellFree | `/tools/cellfree` | TX-TL structure with partial or heuristic parameter evidence. |
+| CellFree | `/tools/cellfree` | TX-TL structure with partial or heuristic parameter evidence; heuristic expression estimates only. |
 | DBTLflow | `/tools/dbtlflow` | DBTL iteration ledger and typed feedback boundary. |
-| MultiO | `/tools/multio` | Demo multi-omics integration unless a reference model backend is added. |
+| MultiO | `/tools/multio` | Demo multi-omics integration (deterministic sensitivity sketches, layer signals, efficiency context) unless a reference model backend is added. |
 | SCSPATIAL | `/tools/scspatial` | Partial `.h5ad` sidecar-backed spatial workflow when required fields are present. |
 | CATDES | `/tools/catdes` | Catalyst design workbench with partial scoring boundaries. |
 | PROEVOL | `/tools/proevol` | Directed evolution campaign planning; not wet-lab campaign evidence. |
