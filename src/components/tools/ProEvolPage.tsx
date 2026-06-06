@@ -160,7 +160,7 @@ export default function ProEvolPage() {
         {/* ═══ 3. DECISION — immediately visible ═══ */}
         <div style={{
           display: 'grid', gridTemplateColumns: 'auto 1fr auto', gap: '10px', alignItems: 'center',
-          padding: '8px 12px', borderRadius: '10px',
+          padding: '8px 12px', borderRadius: '12px',
           border: `1px solid ${PROEVOL_THEME.border}`, background: PROEVOL_THEME.surface,
         }}>
           <StatusPill tone="cool">{campaign.nextRoundRecommendation.action}</StatusPill>
@@ -291,7 +291,7 @@ export default function ProEvolPage() {
         {/* ═══ 11. EXPORTS ═══ */}
         <div style={{
           display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center',
-          padding: '8px 12px', borderRadius: '10px',
+          padding: '8px 12px', borderRadius: '12px',
           border: `1px solid ${PROEVOL_THEME.border}`, background: PROEVOL_THEME.surface,
         }}>
           <span style={{ ...kicker, marginRight: '4px' }}>Exports · {bandSemantic}</span>

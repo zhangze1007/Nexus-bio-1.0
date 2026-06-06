@@ -94,7 +94,7 @@ export default function SelectionDecisionCard({
           display: 'grid',
           gap: '8px',
           padding: '8px 10px',
-          borderRadius: '10px',
+          borderRadius: '12px',
           border: `1px solid ${PROEVOL_THEME.border}`,
           background: 'linear-gradient(135deg, rgba(232,163,161,0.10) 0%, rgba(191,220,205,0.08) 100%)',
         }}
@@ -118,7 +118,7 @@ export default function SelectionDecisionCard({
           display: 'grid',
           gap: '8px',
           padding: '8px 10px',
-          borderRadius: '10px',
+          borderRadius: '12px',
           border: `1px solid ${PROEVOL_THEME.border}`,
           background: 'rgba(255,255,255,0.03)',
         }}

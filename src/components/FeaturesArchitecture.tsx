@@ -292,7 +292,7 @@ function ModelStack({ models }: { models: EngineBlock['models'] }) {
         flexDirection: 'column',
         gap: '10px',
         padding: '14px',
-        borderRadius: '14px',
+        borderRadius: '12px',
         background: 'linear-gradient(180deg, rgba(255,255,255,0.045) 0%, rgba(255,255,255,0.018) 100%)',
         border: '0.5px solid rgba(255,255,255,0.09)',
       }}

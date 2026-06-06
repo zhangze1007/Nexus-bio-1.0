@@ -144,7 +144,7 @@ export default function IDETopBar({ moduleId, actions }: IDETopBarProps) {
             gap: '6px',
             minHeight: '36px',
             padding: '0 12px',
-            borderRadius: '10px',
+            borderRadius: '12px',
             border: `1px solid ${consoleOpen ? PATHD_THEME.panelBorderStrong : BORDER}`,
             background: PATHD_THEME.panelGlassStrong,
             color: errorCount > 0 ? PATHD_THEME.coral : VALUE,

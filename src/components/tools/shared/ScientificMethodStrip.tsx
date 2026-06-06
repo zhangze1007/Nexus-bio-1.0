@@ -26,7 +26,7 @@ export default function ScientificMethodStrip({ label, items, dismissible = fals
         display: 'grid',
         gap: '10px',
         padding: '12px 16px',
-        borderRadius: '18px',
+        borderRadius: '16px',
         border: '1px solid rgba(255,255,255,0.12)',
         background: 'rgba(10,12,16,0.52)',
         backdropFilter: 'blur(24px) saturate(140%)',
@@ -91,7 +91,7 @@ export default function ScientificMethodStrip({ label, items, dismissible = fals
           <div
             key={`${item.title}-${index}`}
             style={{
-              borderRadius: '14px',
+              borderRadius: '12px',
               border: '1px solid rgba(255,255,255,0.10)',
               background: 'rgba(255,255,255,0.04)',
               padding: '12px',

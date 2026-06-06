@@ -397,7 +397,7 @@ export default function ToolsDirectoryPage() {
                     <div
                       key={cluster.direction}
                       style={{
-                        borderRadius: '18px',
+                        borderRadius: '16px',
                         border: `1px solid ${direction === cluster.direction ? BORDER_STRONG : BORDER}`,
                         background: direction === cluster.direction ? `${getDirectionAccent(cluster.direction)}2a` : SURFACE_SOFT,
                         padding: '14px',
@@ -500,7 +500,7 @@ export default function ToolsDirectoryPage() {
                           style={{
                             width: '100%',
                             minHeight: '44px',
-                            borderRadius: '14px',
+                            borderRadius: '12px',
                             border: `1px solid ${BORDER}`,
                             background: SURFACE_SOFT,
                             color: VALUE,
@@ -592,7 +592,7 @@ export default function ToolsDirectoryPage() {
                             style={{
                               width: '100%',
                               minHeight: '42px',
-                              borderRadius: '14px',
+                              borderRadius: '12px',
                               border: `1px solid ${BORDER}`,
                               background: SURFACE_SOFT,
                               color: VALUE,
@@ -665,7 +665,7 @@ export default function ToolsDirectoryPage() {
                             style={{
                               textAlign: 'left',
                               padding: '10px 12px',
-                              borderRadius: '14px',
+                              borderRadius: '12px',
                               border: `1px solid ${active ? BORDER_STRONG : BORDER}`,
                               background: active ? `${getDirectionAccent(item)}28` : SURFACE_TINT,
                               color: active ? VALUE : LABEL,
@@ -716,7 +716,7 @@ export default function ToolsDirectoryPage() {
                           style={{
                             minHeight: '36px',
                             padding: '0 12px',
-                            borderRadius: '10px',
+                            borderRadius: '12px',
                             border: `1px solid ${BORDER}`,
                             background: SURFACE_TINT,
                             color: BTN_TEXT,
@@ -823,7 +823,7 @@ export default function ToolsDirectoryPage() {
                           style={{
                             minHeight: '36px',
                             padding: '0 12px',
-                            borderRadius: '10px',
+                            borderRadius: '12px',
                             border: `1px solid ${BORDER}`,
                             background: SURFACE_TINT,
                             color: BTN_TEXT,
@@ -860,7 +860,7 @@ export default function ToolsDirectoryPage() {
                                 flexDirection: 'column',
                                 gap: '14px',
                                 minHeight: '100%',
-                                borderRadius: '18px',
+                                borderRadius: '16px',
                                 border: `1px solid ${isSelected ? BORDER_STRONG : BORDER}`,
                                 background: isSelected ? `${getDirectionAccent(tool.direction)}22` : SURFACE_SOFT,
                                 padding: '16px',
@@ -873,7 +873,7 @@ export default function ToolsDirectoryPage() {
                                     style={{
                                       width: '42px',
                                       height: '42px',
-                                      borderRadius: '14px',
+                                      borderRadius: '12px',
                                       border: `1px solid ${BORDER}`,
                                       background: SURFACE_TINT,
                                       display: 'grid',
@@ -1217,7 +1217,7 @@ export default function ToolsDirectoryPage() {
                             href={selectedTool.href}
                             style={{
                               minHeight: '42px',
-                              borderRadius: '14px',
+                              borderRadius: '12px',
                               border: `1px solid ${BORDER_STRONG}`,
                               background: `${getDirectionAccent(selectedTool.direction)}36`,
                               color: VALUE,

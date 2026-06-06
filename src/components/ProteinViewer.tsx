@@ -221,7 +221,7 @@ export default function ProteinViewer({ pdbId, alphafoldId, label }: { pdbId: st
               {spinEnabled ? 'Auto spin' : 'Static'}
             </button>
             <button onClick={() => setUseAF(!useAF)}
-              style={{ width: '34px', height: '18px', borderRadius: '9px', background: useAF ? '#A8C5DA' : 'rgba(255,255,255,0.1)', border: 'none', cursor: 'pointer', position: 'relative', transition: 'background 0.2s' }}>
+              style={{ width: '34px', height: '18px', borderRadius: '8px', background: useAF ? '#A8C5DA' : 'rgba(255,255,255,0.1)', border: 'none', cursor: 'pointer', position: 'relative', transition: 'background 0.2s' }}>
               <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#fff', position: 'absolute', top: '3px', left: useAF ? '19px' : '3px', transition: 'left 0.2s' }} />
             </button>
           </div>

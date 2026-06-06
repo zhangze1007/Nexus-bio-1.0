@@ -1140,7 +1140,7 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, 
         </div>
       </div>
 
-      <div style={{ pointerEvents: 'none', position:'absolute', bottom:`${resolvedOpticalInsets.bottom}px`, right:`${resolvedOpticalInsets.right}px`, zIndex:10, background:'rgba(0,0,0,0.42)', padding:'8px 12px', borderRadius:'10px', border:'1px solid rgba(255,255,255,0.06)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}>
+      <div style={{ pointerEvents: 'none', position:'absolute', bottom:`${resolvedOpticalInsets.bottom}px`, right:`${resolvedOpticalInsets.right}px`, zIndex:10, background:'rgba(0,0,0,0.42)', padding:'8px 12px', borderRadius:'12px', border:'1px solid rgba(255,255,255,0.06)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}>
         <p style={{ color:'rgba(255,255,255,0.25)', fontSize:'8px', fontFamily:"'Public Sans',sans-serif", fontWeight:700, margin:'0 0 6px', letterSpacing:'0.07em', textTransform:'uppercase' }}>Node Types</p>
         {[
           { c: BIO_THEME_COLORS.CYAN,   l:'Metabolite', s:'●' },
@@ -1213,7 +1213,7 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, 
         >
           <div style={{
             maxWidth: 'min(320px, calc(100% - 40px))',
-            borderRadius: '14px',
+            borderRadius: '12px',
             border: '1px solid rgba(255,255,255,0.10)',
             background: 'rgba(8,10,14,0.74)',
             padding: '12px 14px',

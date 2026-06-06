@@ -92,7 +92,7 @@ function PreviewFrame({ title, children }: { title: string; children: React.Reac
     <div
       style={{
         padding: '8px 10px',
-        borderRadius: '10px',
+        borderRadius: '12px',
         background: 'rgba(5,7,11,0.35)',
         border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
         display: 'grid',
@@ -453,7 +453,7 @@ function SessionHeader({ session }: { session: AxonSession }) {
         display: 'grid',
         gap: '8px',
         padding: '12px 14px',
-        borderRadius: '14px',
+        borderRadius: '12px',
         border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
         background: PATHD_THEME.panelSurface,
       }}
@@ -475,7 +475,7 @@ function SessionHeader({ session }: { session: AxonSession }) {
             alignItems: 'center',
             gap: '6px',
             padding: '4px 10px',
-            borderRadius: '10px',
+            borderRadius: '12px',
             border: `1px solid ${tone.dot}`,
             background: 'rgba(5,7,11,0.35)',
           }}
@@ -568,7 +568,7 @@ export default function AgentSessionViewer({
           display: 'grid',
           gap: '10px',
           padding: '16px',
-          borderRadius: '14px',
+          borderRadius: '12px',
           border: `1px dashed ${PATHD_THEME.sepiaPanelBorder}`,
           background: PATHD_THEME.panelInset,
           color: PATHD_THEME.label,
@@ -602,7 +602,7 @@ export default function AgentSessionViewer({
           display: 'grid',
           gap: '8px',
           padding: '10px 12px',
-          borderRadius: '14px',
+          borderRadius: '12px',
           border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
           background: PATHD_THEME.panelInset,
         }}

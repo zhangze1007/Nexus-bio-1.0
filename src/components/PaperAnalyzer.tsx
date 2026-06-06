@@ -517,7 +517,7 @@ export default function PaperAnalyzer({
         </div>
 
         {/* Input card */}
-        <div style={{ borderRadius: '14px', overflow: 'hidden', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)' }}>
+        <div style={{ borderRadius: '12px', overflow: 'hidden', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)' }}>
 
           {/* File/image preview */}
           {(mode === 'pdf' || mode === 'image' || mode === 'camera') && (
@@ -799,7 +799,7 @@ export default function PaperAnalyzer({
             {/* Bottleneck enzymes — kinetic warning cards */}
             {axonInteraction.disclosure_phase === 'revealed' && bottleneckEnzymes.length > 0 && (
               <div style={{
-                borderRadius: '14px',
+                borderRadius: '12px',
                 padding: '16px 18px',
                 background: 'linear-gradient(135deg, rgba(250,237,203,0.08) 0%, rgba(250,237,203,0.03) 100%)',
                 backdropFilter: 'blur(20px)',
@@ -843,7 +843,7 @@ export default function PaperAnalyzer({
             {/* De Novo Design Strategies — collapsible */}
             {axonInteraction.disclosure_phase === 'revealed' && designStrategies.length > 0 && (
               <div style={{
-                borderRadius: '14px',
+                borderRadius: '12px',
                 overflow: 'hidden',
                 background: 'linear-gradient(135deg, rgba(201,228,222,0.06) 0%, rgba(201,228,222,0.02) 100%)',
                 backdropFilter: 'blur(20px)',
@@ -923,7 +923,7 @@ export default function PaperAnalyzer({
                 <button
                   onClick={dismissAxonDialogue}
                   style={{
-                    padding: '5px 12px', borderRadius: '14px', fontSize: '11px',
+                    padding: '5px 12px', borderRadius: '12px', fontSize: '11px',
                     background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
                     color: 'rgba(255,255,255,0.35)', cursor: 'pointer',
                   }}

@@ -115,7 +115,7 @@ export default function ToolShell({
             gap: '4px',
             minHeight: '28px',
             padding: '0 7px',
-            borderRadius: '10px',
+            borderRadius: '12px',
             border: '1px solid var(--nb-control-border)',
             background: 'var(--nb-control-bg)',
             color: 'var(--nb-control-color)',
@@ -145,7 +145,7 @@ export default function ToolShell({
           gap: '6px',
             minHeight: '28px',
             padding: '0 8px',
-            borderRadius: '10px',
+            borderRadius: '12px',
             border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
             background: 'rgba(231, 199, 169, 0.24)',
             color: PATHD_THEME.value,
@@ -204,7 +204,7 @@ export default function ToolShell({
               fontWeight: 700,
               letterSpacing: '0.10em',
               padding: '5px 9px',
-              borderRadius: '10px',
+              borderRadius: '12px',
               background: validityStyles[validity.level].bg,
               border: `1px solid ${validityStyles[validity.level].border}`,
               color: validityStyles[validity.level].color,
@@ -223,7 +223,7 @@ export default function ToolShell({
           padding: '5px 8px',
             background: PATHD_THEME.panelGlassStrong,
             border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
-            borderRadius: '10px',
+            borderRadius: '12px',
           }}>
             {formula}
           </div>

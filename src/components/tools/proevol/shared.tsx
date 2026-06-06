@@ -52,7 +52,7 @@ export function surfaceCardStyle(options?: {
     display: 'grid',
     gap: '10px',
     padding: options?.padding ?? '12px',
-    borderRadius: '14px',
+    borderRadius: '12px',
     border: `1px solid ${options?.inset ? PROEVOL_THEME.borderStrong : PROEVOL_THEME.border}`,
     background: options?.inset ? PROEVOL_THEME.inset : PROEVOL_THEME.surface,
     boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
@@ -141,7 +141,7 @@ export function MetricBadge({
       style={{
         minWidth: 0,
         padding: '10px 12px',
-        borderRadius: '14px',
+        borderRadius: '12px',
         border: `1px solid ${PROEVOL_THEME.border}`,
         background: 'rgba(255,255,255,0.03)',
         display: 'grid',

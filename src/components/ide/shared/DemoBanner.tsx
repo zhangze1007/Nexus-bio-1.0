@@ -42,7 +42,7 @@ export default function DemoBanner({ context }: DemoBannerProps) {
         padding: '8px 16px',
         background: PASS_BG,
         border: `1px solid ${PASS_BORDER}`,
-        borderRadius: '10px',
+        borderRadius: '12px',
         display: 'flex',
         alignItems: 'center',
         gap: '10px',

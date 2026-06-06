@@ -66,7 +66,7 @@ export default function AxonLogPanel({ logs, maxRows = 80, compact }: AxonLogPan
         data-testid="axon-log-empty"
         style={{
           padding: compact ? '10px 12px' : '14px',
-          borderRadius: '10px',
+          borderRadius: '12px',
           border: `1px dashed ${PATHD_THEME.sepiaPanelBorder}`,
           color: PATHD_THEME.label,
           fontFamily: T.SANS,

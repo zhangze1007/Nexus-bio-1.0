@@ -121,7 +121,7 @@ function CofactorMatrix({ readouts }: { readouts: SimReadouts }) {
   return (
       <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'6px', marginTop:'8px' }}>
       {items.map(({ l, v, u, opacity }) => (
-        <div key={l} style={{ padding:'8px 6px', borderRadius:'10px', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.10)', textAlign:'center' }}>
+        <div key={l} style={{ padding:'8px 6px', borderRadius:'12px', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.10)', textAlign:'center' }}>
           <div style={{ fontFamily: T.MONO, fontSize:'11px', fontWeight:700, color:opacity > 0.7 ? PATHD_THEME.value : PATHD_THEME.label, fontVariantNumeric:'tabular-nums' }}>
             {v.toFixed(1)}
           </div>
@@ -272,7 +272,7 @@ export default function StatusOverlay({
           <motion.div
             initial={{ opacity:0, y:6 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0 }}
             style={{
-              marginTop:'12px', padding:'8px 10px', borderRadius:'10px',
+              marginTop:'12px', padding:'8px 10px', borderRadius:'12px',
               background:'rgba(191,220,205,0.14)', border:'1px solid rgba(191,220,205,0.28)',
               textAlign:'center',
             }}
@@ -289,7 +289,7 @@ export default function StatusOverlay({
           <motion.div
             initial={{ opacity:0, y:6 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0 }}
             style={{
-              marginTop:'12px', padding:'8px 10px', borderRadius:'10px',
+              marginTop:'12px', padding:'8px 10px', borderRadius:'12px',
               background:'rgba(232,163,161,0.14)', border:'1px solid rgba(232,163,161,0.28)',
               textAlign:'center',
             }}

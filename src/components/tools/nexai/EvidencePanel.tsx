@@ -33,7 +33,7 @@ export default function EvidencePanel({ citations, onNodeClick }: EvidencePanelP
           placeItems: 'center',
           minHeight: '240px',
           padding: '24px',
-          borderRadius: '18px',
+          borderRadius: '16px',
           border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
           background: PATHD_THEME.panelSurface,
           textAlign: 'center',

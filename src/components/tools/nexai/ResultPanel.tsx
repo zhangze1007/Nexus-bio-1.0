@@ -67,7 +67,7 @@ export default function ResultPanel({
         data-testid="nexai-result-api-error"
         role="alert"
         style={{
-          borderRadius: '14px',
+          borderRadius: '12px',
           border: '1px solid rgba(250,128,114,0.42)',
           background: 'rgba(250,128,114,0.12)',
           padding: '14px 16px',
@@ -110,7 +110,7 @@ export default function ResultPanel({
           display: 'grid',
           placeItems: 'center',
           minHeight: '220px',
-          borderRadius: '18px',
+          borderRadius: '16px',
           border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
           background: PATHD_THEME.panelSurface,
           padding: '28px',
@@ -141,7 +141,7 @@ export default function ResultPanel({
     <div
       data-testid="nexai-result-panel"
       style={{
-        borderRadius: '18px',
+        borderRadius: '16px',
         background: PATHD_THEME.panelGlassStrong,
         backdropFilter: 'blur(12px)',
         border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,

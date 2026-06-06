@@ -624,7 +624,7 @@ export default function DBTLflowPage() {
         <div style={{ padding: '0 16px 6px' }}>
           <div
             style={{
-              borderRadius: '14px',
+              borderRadius: '12px',
               border: `1px solid ${hasCommittedFeedback ? 'rgba(158,215,199,0.22)' : 'rgba(255,192,128,0.24)'}`,
               background: hasCommittedFeedback ? 'rgba(158,215,199,0.10)' : 'rgba(255,192,128,0.08)',
               padding: '8px 10px',
@@ -690,7 +690,7 @@ export default function DBTLflowPage() {
         <div style={{ padding: '0 16px 6px' }}>
           <div
             style={{
-              borderRadius: '14px',
+              borderRadius: '12px',
               border: `1px solid ${activityTone === 'error'
                 ? 'rgba(232,163,161,0.34)'
                 : draftIteration
@@ -829,7 +829,7 @@ export default function DBTLflowPage() {
             {/* Best Result */}
             <div style={{
               marginTop: '16px', padding: '10px',
-              background: 'rgba(191,220,205,0.18)', borderRadius: '10px',
+              background: 'rgba(191,220,205,0.18)', borderRadius: '12px',
               border: '1px solid rgba(191,220,205,0.34)',
             }}>
               <p style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL, margin: '0 0 6px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>

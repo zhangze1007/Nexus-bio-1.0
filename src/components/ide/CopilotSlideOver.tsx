@@ -242,7 +242,7 @@ export default function CopilotSlideOver() {
                     justifyContent: 'center',
                     width: '30px',
                     height: '30px',
-                    borderRadius: '10px',
+                    borderRadius: '12px',
                     border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
                     background: 'transparent',
                     color: PATHD_THEME.label,
@@ -262,7 +262,7 @@ export default function CopilotSlideOver() {
                     justifyContent: 'center',
                     width: '30px',
                     height: '30px',
-                    borderRadius: '10px',
+                    borderRadius: '12px',
                     border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
                     background: 'transparent',
                     color: PATHD_THEME.label,
@@ -288,7 +288,7 @@ export default function CopilotSlideOver() {
                   alignItems: 'flex-start',
                   gap: '8px',
                   padding: '10px 12px',
-                  borderRadius: '14px',
+                  borderRadius: '12px',
                   border: `1px solid ${loading ? 'rgba(175,195,214,0.34)' : 'rgba(255,255,255,0.08)'}`,
                   background: '#05070b',
                 }}
@@ -326,7 +326,7 @@ export default function CopilotSlideOver() {
                     flexShrink: 0,
                     minHeight: '36px',
                     padding: '0 14px',
-                    borderRadius: '10px',
+                    borderRadius: '12px',
                     border: 'none',
                     cursor: loading || !query.trim() ? 'not-allowed' : 'pointer',
                     fontFamily: T.SANS,
@@ -360,7 +360,7 @@ export default function CopilotSlideOver() {
                   gap: '8px',
                   marginTop: '10px',
                   padding: '6px 10px',
-                  borderRadius: '10px',
+                  borderRadius: '12px',
                   border: `1px solid ${
                     workbenchContext.hasContext
                       ? 'rgba(175,195,214,0.32)'
@@ -464,7 +464,7 @@ export default function CopilotSlideOver() {
                 <div
                   data-testid="copilot-answer"
                   style={{
-                    borderRadius: '14px',
+                    borderRadius: '12px',
                     background: PATHD_THEME.panelGlassStrong,
                     border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
                     padding: '14px 16px',

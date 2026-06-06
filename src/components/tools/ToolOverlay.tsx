@@ -187,7 +187,7 @@ function ActionBtn({ label, icon: Icon, tone = 'neutral', onClick, disabled = fa
         flex:1,
         minHeight:'34px',
         padding:'0 10px',
-        borderRadius:'10px',
+        borderRadius:'12px',
         cursor: disabled ? 'not-allowed' : 'pointer',
         fontFamily: T.MONO, fontSize:'10px', fontWeight:600,
         textTransform:'uppercase', letterSpacing:'0.08em',

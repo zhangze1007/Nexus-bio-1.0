@@ -608,7 +608,7 @@ function ReactorTwin3D({ result, constructs, params }: { result: CFSFullResult; 
   const fillHeight = Math.max(36, depletionRatio * 142);
 
   return (
-    <div style={{ width: '100%', height: '100%', minHeight: '420px', borderRadius: '18px', overflow: 'hidden', border: `1px solid ${BORDER}`, background: '#050505', position: 'relative' }}>
+    <div style={{ width: '100%', height: '100%', minHeight: '420px', borderRadius: '16px', overflow: 'hidden', border: `1px solid ${BORDER}`, background: '#050505', position: 'relative' }}>
       <svg role="img" aria-label="Chart" viewBox="0 0 720 420" style={{ width: '100%', height: '100%' }}>
         <rect width="720" height="420" fill="#05070b" />
         <rect x="26" y="24" width="668" height="372" rx="18" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.06)" />
@@ -674,7 +674,7 @@ function ReactorTwin3D({ result, constructs, params }: { result: CFSFullResult; 
         </span>
       </div>
       <div style={{ position: 'absolute', top: '10px', right: '12px', width: 'min(260px, calc(100% - 24px))' }}>
-        <div style={{ padding: '10px 12px', borderRadius: '14px', border: `1px solid ${BORDER}`, background: 'rgba(0,0,0,0.56)', backdropFilter: 'blur(10px)' }}>
+        <div style={{ padding: '10px 12px', borderRadius: '12px', border: `1px solid ${BORDER}`, background: 'rgba(0,0,0,0.56)', backdropFilter: 'blur(10px)' }}>
           <p style={{ margin: '0 0 6px', color: LABEL, fontSize: '10px', fontFamily: T.MONO, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
             Evidence trace
           </p>
@@ -855,7 +855,7 @@ export default function CellFreePage() {
             <SectionLabel>Gene Constructs</SectionLabel>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
               {constructs.map((g, i) => (
-                <div key={g.id} style={{ ...GLASS, borderRadius: '14px', padding: '10px' }}>
+                <div key={g.id} style={{ ...GLASS, borderRadius: '12px', padding: '10px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
                     <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: GENE_COLORS[i % GENE_COLORS.length], flexShrink: 0 }} />
                     <span style={{ fontFamily: T.SANS, fontSize: '10px', fontWeight: 600, color: VALUE }}>{g.name.length > 20 ? g.name.slice(0, 20) + '…' : g.name}</span>
@@ -872,7 +872,7 @@ export default function CellFreePage() {
               ))}
             </div>
             <SectionLabel>Reaction Parameters</SectionLabel>
-            <div style={{ ...GLASS, borderRadius: '14px', padding: '10px', marginBottom: '16px' }}>
+            <div style={{ ...GLASS, borderRadius: '12px', padding: '10px', marginBottom: '16px' }}>
               {[
                 { label: 'Ribosome Total', value: `${params.ribosomeTotal} nM` },
                 { label: 'RNAP Total', value: `${params.rnap_total} nM` },
@@ -887,7 +887,7 @@ export default function CellFreePage() {
               ))}
             </div>
             <SectionLabel>Energy Status</SectionLabel>
-            <div style={{ ...GLASS, borderRadius: '14px', padding: '10px' }}>
+            <div style={{ ...GLASS, borderRadius: '12px', padding: '10px' }}>
               {[
                 { label: 'ATP', value: `${params.initialEnergy.atp} mM` },
                 { label: 'GTP', value: `${params.initialEnergy.gtp} mM` },
@@ -935,7 +935,7 @@ export default function CellFreePage() {
         <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
           <FloatingControlRail label="Bench Setup" defaultCollapsed={true}>
             <SectionLabel>Energy Status</SectionLabel>
-            <div style={{ ...GLASS, borderRadius: '14px', padding: '10px' }}>
+            <div style={{ ...GLASS, borderRadius: '12px', padding: '10px' }}>
               {[
                 { label: 'ATP', value: `${params.initialEnergy.atp} mM` },
                 { label: 'GTP', value: `${params.initialEnergy.gtp} mM` },
@@ -981,7 +981,7 @@ export default function CellFreePage() {
         <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
           <FloatingControlRail label="Parameters" defaultCollapsed={true}>
             <SectionLabel>Reaction Parameters</SectionLabel>
-            <div style={{ ...GLASS, borderRadius: '14px', padding: '10px' }}>
+            <div style={{ ...GLASS, borderRadius: '12px', padding: '10px' }}>
               {[
                 { label: 'Temperature', value: `${params.temperature} °C` },
                 { label: 'Sim Time', value: `${params.simulationTime} min` },
@@ -1010,7 +1010,7 @@ export default function CellFreePage() {
               </div>
             </ScientificFigureFrame>
             {fit && (
-              <div style={{ ...GLASS, borderRadius: '14px', padding: '12px' }}>
+              <div style={{ ...GLASS, borderRadius: '12px', padding: '12px' }}>
                 <SectionLabel>Fitting Results</SectionLabel>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -1047,7 +1047,7 @@ export default function CellFreePage() {
             <SectionLabel>Gene Constructs</SectionLabel>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {constructs.map((g, i) => (
-                <div key={g.id} style={{ ...GLASS, borderRadius: '14px', padding: '10px' }}>
+                <div key={g.id} style={{ ...GLASS, borderRadius: '12px', padding: '10px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: GENE_COLORS[i % GENE_COLORS.length], flexShrink: 0 }} />
                     <span style={{ fontFamily: T.SANS, fontSize: '10px', fontWeight: 600, color: VALUE }}>{g.name.length > 20 ? g.name.slice(0, 20) + '…' : g.name}</span>
@@ -1080,7 +1080,7 @@ export default function CellFreePage() {
               </div>
             </ScientificFigureFrame>
             {iviv && (
-              <div style={{ ...GLASS, borderRadius: '14px', padding: '12px' }}>
+              <div style={{ ...GLASS, borderRadius: '12px', padding: '12px' }}>
                 <SectionLabel>IvIv Estimate</SectionLabel>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -1110,7 +1110,7 @@ export default function CellFreePage() {
       <ToolTabPanel tabId="reactor" activeId={activeTab}>
         <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, padding: '12px', gap: '10px' }}>
           <div style={{ maxWidth: '760px', margin: '0 auto', width: '100%' }}>
-            <div style={{ padding: '8px 12px', borderRadius: '14px', border: `1px solid ${BORDER}`, background: PATHD_THEME.panelInset }}>
+            <div style={{ padding: '8px 12px', borderRadius: '12px', border: `1px solid ${BORDER}`, background: PATHD_THEME.panelInset }}>
               <p style={{ margin: '0 0 3px', color: VALUE, fontSize: '11px', fontFamily: T.SANS }}>Reactor 3D turns the CFPS run into a digital twin: construct yield, energy pool and depletion timing are mapped into one spatial scene.</p>
               <p style={{ margin: 0, color: LABEL, fontSize: '10px', fontFamily: T.MONO }}>center tank = resource state · rear towers = expression output · right bars = ATP / GTP / PEP allocation</p>
             </div>
@@ -1133,7 +1133,7 @@ export default function CellFreePage() {
               const gene = constructs.find(c => c.id === ss.geneId);
               const color = GENE_COLORS[i % GENE_COLORS.length];
               return (
-                <div key={ss.geneId} style={{ ...GLASS, borderRadius: '10px', padding: '8px 10px' }}>
+                <div key={ss.geneId} style={{ ...GLASS, borderRadius: '12px', padding: '8px 10px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
                     <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: color, flexShrink: 0 }} />
                     <span style={{ fontFamily: T.SANS, fontSize: '10px', fontWeight: 600, color: VALUE }}>{gene ? (gene.name.length > 18 ? gene.name.slice(0, 18) + '…' : gene.name) : ss.geneId}</span>

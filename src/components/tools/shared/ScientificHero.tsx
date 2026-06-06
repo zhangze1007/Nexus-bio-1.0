@@ -77,7 +77,7 @@ export default function ScientificHero({
         className="nb-scientific-hero nb-scientific-hero--collapsed"
         onClick={() => setCollapsed(false)}
         style={{
-          borderRadius: '14px',
+          borderRadius: '12px',
           border: '1px solid rgba(255,255,255,0.10)',
           background: 'rgba(10,12,16,0.40)',
           padding: '6px 14px',
@@ -257,7 +257,7 @@ export default function ScientificHero({
           <div
             className="nb-scientific-hero__aside"
             style={{
-              borderRadius: '18px',
+              borderRadius: '16px',
               border: '1px solid rgba(175,195,214,0.22)',
               background: 'rgba(175,195,214,0.08)',
               padding: '14px 16px',
@@ -288,7 +288,7 @@ export default function ScientificHero({
               key={`${signal.label}-${signal.value}`}
               className="nb-scientific-hero__signal"
               style={{
-                borderRadius: '18px',
+                borderRadius: '16px',
                 border: `1px solid ${style.border}`,
                 background: style.background,
                 padding: '12px 14px',

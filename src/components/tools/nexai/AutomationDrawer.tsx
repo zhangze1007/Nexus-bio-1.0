@@ -125,7 +125,7 @@ export default function AutomationDrawer({
     <div
       data-testid="nexai-automation-drawer"
       style={{
-        borderRadius: '14px',
+        borderRadius: '12px',
         border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
         background: PATHD_THEME.panelInset,
         padding: '12px 14px',
@@ -173,7 +173,7 @@ export default function AutomationDrawer({
         <div
           data-testid="nexai-automation-empty"
           style={{
-            padding: '14px', borderRadius: '10px',
+            padding: '14px', borderRadius: '12px',
             border: `1px dashed ${PATHD_THEME.sepiaPanelBorder}`,
             color: PATHD_THEME.label, fontFamily: T.SANS, fontSize: '11px',
             lineHeight: 1.55,
@@ -200,7 +200,7 @@ export default function AutomationDrawer({
                   alignItems: 'center',
                   gap: '10px',
                   padding: '8px 10px',
-                  borderRadius: '10px',
+                  borderRadius: '12px',
                   border: `1px solid ${tone.border}`,
                   background: tone.bg,
                 }}

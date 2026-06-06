@@ -132,7 +132,7 @@ export default function WorkbenchRunCompare({
       {compareLabel && (
         <div
           style={{
-            borderRadius: '14px',
+            borderRadius: '12px',
             border: `1px solid ${BORDER}`,
             background: PATHD_THEME.panelGradientSoft,
             padding: '10px 12px',

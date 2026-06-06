@@ -302,7 +302,7 @@ export default function GenMIMPage() {
       {upstreamMissing.length > 0 && (
         <div style={{
           padding: '8px 12px', marginBottom: '8px',
-          borderRadius: '10px', border: '1px solid rgba(180, 150, 100, 0.50)',
+          borderRadius: '12px', border: '1px solid rgba(180, 150, 100, 0.50)',
           background: 'rgba(232, 220, 200, 0.12)', color: 'rgba(250, 246, 240, 0.96)',
           fontFamily: T.SANS, fontSize: '11px', lineHeight: 1.55,
         }}>

@@ -81,7 +81,7 @@ export default function Pagination({
               onChange={(event) => onPageSizeChange(Number(event.target.value))}
               style={{
                 minHeight: '36px',
-                borderRadius: '10px',
+                borderRadius: '12px',
                 border: '1px solid rgba(255,255,255,0.12)',
                 background: 'rgba(11,15,22,0.92)',
                 color: 'rgba(255,255,255,0.82)',
@@ -114,7 +114,7 @@ export default function Pagination({
             style={{
               minHeight: '36px',
               padding: '0 12px',
-              borderRadius: '10px',
+              borderRadius: '12px',
               border: '1px solid rgba(255,255,255,0.1)',
               background: control.disabled ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.05)',
               color: control.disabled ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.8)',
@@ -160,7 +160,7 @@ export default function Pagination({
                 minWidth: '36px',
                 minHeight: '36px',
                 padding: '0 10px',
-                borderRadius: '10px',
+                borderRadius: '12px',
                 border: isActive ? '1px solid rgba(255,255,255,0.22)' : '1px solid rgba(255,255,255,0.08)',
                 background: isActive ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.03)',
                 color: isActive ? '#ffffff' : 'rgba(255,255,255,0.72)',
@@ -188,7 +188,7 @@ export default function Pagination({
             style={{
               minHeight: '36px',
               padding: '0 12px',
-              borderRadius: '10px',
+              borderRadius: '12px',
               border: '1px solid rgba(255,255,255,0.1)',
               background: control.disabled ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.05)',
               color: control.disabled ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.8)',

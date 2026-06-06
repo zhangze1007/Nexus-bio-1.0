@@ -471,7 +471,7 @@ export default function FBASimPage() {
             {singleError && <div style={{ padding: '0 16px 8px' }}><SimErrorBanner message={singleError} /></div>}
             {singleLoading && (
               <div style={{ padding: '0 16px 8px' }}>
-                <div style={{ padding: '6px 10px', borderRadius: '10px', border: '1px solid rgba(81,81,205,0.22)', background: 'rgba(81,81,205,0.08)', color: 'rgba(240,245,255,0.78)', fontFamily: T.SANS, fontSize: '10px', marginBottom: '8px' }}>
+                <div style={{ padding: '6px 10px', borderRadius: '12px', border: '1px solid rgba(81,81,205,0.22)', background: 'rgba(81,81,205,0.08)', color: 'rgba(240,245,255,0.78)', fontFamily: T.SANS, fontSize: '10px', marginBottom: '8px' }}>
                   Authority engine recomputing server-side LP.
                 </div>
                 <SimSkeleton />
@@ -637,7 +637,7 @@ export default function FBASimPage() {
             {communityError && <div style={{ padding: '0 16px 8px' }}><SimErrorBanner message={communityError} /></div>}
             {communityLoading && (
               <div style={{ padding: '0 16px 8px' }}>
-                <div style={{ padding: '6px 10px', borderRadius: '10px', border: '1px solid rgba(81,81,205,0.22)', background: 'rgba(81,81,205,0.08)', color: 'rgba(240,245,255,0.78)', fontFamily: T.SANS, fontSize: '10px' }}>
+                <div style={{ padding: '6px 10px', borderRadius: '12px', border: '1px solid rgba(81,81,205,0.22)', background: 'rgba(81,81,205,0.08)', color: 'rgba(240,245,255,0.78)', fontFamily: T.SANS, fontSize: '10px' }}>
                   Solving two independent single-species LPs.
                 </div>
               </div>

@@ -140,7 +140,7 @@ export default function DevModePanel() {
                   </div>
 
                   {/* Stack info */}
-                  <div style={{ marginTop: '20px', padding: '14px', borderRadius: '10px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                  <div style={{ marginTop: '20px', padding: '14px', borderRadius: '12px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
                     <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>
                       Stack
                     </p>
@@ -169,7 +169,7 @@ export default function DevModePanel() {
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     {faqs.map((faq, i) => (
-                      <div key={i} style={{ padding: '12px 14px', borderRadius: '10px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                      <div key={i} style={{ padding: '12px 14px', borderRadius: '12px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
                         <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px', fontFamily: 'monospace', fontWeight: 600, margin: '0 0 5px' }}>
                           {faq.q}
                         </p>

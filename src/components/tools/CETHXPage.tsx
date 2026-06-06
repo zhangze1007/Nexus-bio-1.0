@@ -396,7 +396,7 @@ export default function CETHXPage() {
       footer={
         <>
           {fba && (
-            <div role="status" style={{ padding: '6px 14px', background: 'rgba(175,195,214,0.14)', border: '1px solid rgba(175,195,214,0.28)', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
+            <div role="status" style={{ padding: '6px 14px', background: 'rgba(175,195,214,0.14)', border: '1px solid rgba(175,195,214,0.28)', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
               <span style={{ fontFamily: T.MONO, fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '999px', background: 'rgba(175,195,214,0.22)', border: '1px solid rgba(175,195,214,0.34)', color: T.VALUE, textTransform: 'uppercase', letterSpacing: '0.06em', flexShrink: 0 }}>
                 FBASim
               </span>
@@ -431,7 +431,7 @@ export default function CETHXPage() {
                     border: pathway === p.id
                       ? `1px solid rgba(231,199,169,0.34)`
                       : `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
-                    borderRadius: '10px', cursor: 'pointer',
+                    borderRadius: '12px', cursor: 'pointer',
                   }}
                 >
                   <span style={{ fontFamily: T.SANS, fontSize: '11px', fontWeight: 500, color: pathway === p.id ? T.VALUE : T.LABEL, display: 'block' }}>

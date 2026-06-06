@@ -617,7 +617,7 @@ export default function NEXAIPage() {
                 style={{
                   minHeight: '30px',
                   padding: '0 12px',
-                  borderRadius: '10px',
+                  borderRadius: '12px',
                   border: `1px solid ${agenticMode ? 'rgba(147,203,82,0.42)' : PATHD_THEME.sepiaPanelBorder}`,
                   background: agenticMode ? 'rgba(147,203,82,0.18)' : 'transparent',
                   color: agenticMode ? PATHD_THEME.value : PATHD_THEME.label,
@@ -674,7 +674,7 @@ export default function NEXAIPage() {
                       style={{
                         minHeight: '32px',
                         padding: '0 12px',
-                        borderRadius: '10px',
+                        borderRadius: '12px',
                         border: 'none',
                         cursor: 'pointer',
                         fontFamily: T.SANS,
@@ -730,7 +730,7 @@ export default function NEXAIPage() {
               <div
                 data-testid="nexai-secondary-panels"
                 style={{
-                  borderRadius: '14px',
+                  borderRadius: '12px',
                   border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
                   background: PATHD_THEME.panelInset,
                   padding: '8px 10px',

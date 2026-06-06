@@ -72,7 +72,7 @@ export default function RawJsonDrawer({
     <div
       data-testid="nexai-raw-json-drawer"
       style={{
-        borderRadius: '14px',
+        borderRadius: '12px',
         border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
         background: PATHD_THEME.panelInset,
         overflow: 'hidden',
@@ -213,7 +213,7 @@ export default function RawJsonDrawer({
             style={{
               margin: 0,
               padding: '10px 12px',
-              borderRadius: '10px',
+              borderRadius: '12px',
               background: 'rgba(10,14,22,0.7)',
               border: '1px solid rgba(255,255,255,0.06)',
               fontFamily: T.MONO,

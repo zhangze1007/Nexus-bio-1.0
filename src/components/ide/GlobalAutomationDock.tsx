@@ -85,7 +85,7 @@ export default function GlobalAutomationDock() {
           gap: '8px',
           padding: '6px 10px',
           marginBottom: expanded ? '8px' : 0,
-          borderRadius: '10px',
+          borderRadius: '12px',
           border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
           background: PATHD_THEME.panelInset,
           color: PATHD_THEME.value,
@@ -133,7 +133,7 @@ export default function GlobalAutomationDock() {
           <div
             data-testid="global-automation-dock-log"
             style={{
-              borderRadius: '14px',
+              borderRadius: '12px',
               border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
               background: PATHD_THEME.panelInset,
               padding: '10px 12px',

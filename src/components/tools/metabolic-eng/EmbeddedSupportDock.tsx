@@ -26,7 +26,7 @@ export default function EmbeddedSupportDock({
             key={card.eyebrow}
             className="nb-pathd-support-dock__card"
             style={{
-              borderRadius: '18px',
+              borderRadius: '16px',
               border: '1px solid rgba(255,255,255,0.12)',
               background: 'linear-gradient(180deg, rgba(255,255,255,0.12) 0%, rgba(247,250,253,0.08) 16%, rgba(10,12,16,0.58) 100%)',
               boxShadow: '0 18px 34px rgba(0,0,0,0.24), inset 0 1px 0 rgba(255,255,255,0.10)',

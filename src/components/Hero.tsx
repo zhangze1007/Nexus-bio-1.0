@@ -182,7 +182,7 @@ export default function Hero() {
           {/* Input wrapper */}
           <div style={{
             display: 'flex', alignItems: 'center', gap: '12px',
-            padding: '0 20px', height: '58px', borderRadius: '30px',
+            padding: '0 20px', height: '58px', borderRadius: '20px',
             background: focused
               ? 'rgba(15,18,25,0.88)'
               : 'rgba(15,18,25,0.72)',
@@ -254,7 +254,7 @@ export default function Hero() {
               style={{
                 position: 'absolute', top: 'calc(100% + 8px)',
                 left: 0, right: 0, zIndex: 50,
-                borderRadius: '18px',
+                borderRadius: '16px',
                 background: 'rgba(10,13,20,0.94)',
                 border: '1px solid rgba(255,255,255,0.08)',
                 backdropFilter: 'blur(40px) saturate(1.6)',

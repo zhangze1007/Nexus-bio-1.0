@@ -25,7 +25,7 @@ export default function MetricCard({ label, value, unit, delta, warning, highlig
       padding: '14px 14px 12px',
       background: highlight ? 'rgba(191,220,205,0.10)' : PATHD_THEME.panelSurface,
       border: `1px solid ${highlight ? 'rgba(191,220,205,0.28)' : PATHD_THEME.sepiaPanelBorder}`,
-      borderRadius: '14px',
+      borderRadius: '12px',
       boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
       overflow: 'hidden',
     }}>

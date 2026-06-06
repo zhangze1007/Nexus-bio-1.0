@@ -309,7 +309,7 @@ function AuditTrailBadge({ text, riskScore }: { text: string | null; riskScore?:
             style={{ overflow: 'hidden' }}
           >
             <div style={{
-              marginTop: '8px', padding: '12px 14px', borderRadius: '10px',
+              marginTop: '8px', padding: '12px 14px', borderRadius: '12px',
               background: 'rgba(0,0,0,0.92)',
               border: `0.5px solid ${badgeBorder}`,
               fontFamily: UI_MONO, fontSize: '11px', color: 'rgba(255,255,255,0.55)',
@@ -493,7 +493,7 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
               </div>
 
               {/* Tab bar */}
-              <div style={{ display: 'flex', gap: '4px', background: PATHD_THEME.panelGradientSoft, borderRadius: '10px', padding: '4px', border: `1px solid ${PATHD_THEME.panelBorder}` }}>
+              <div style={{ display: 'flex', gap: '4px', background: PATHD_THEME.panelGradientSoft, borderRadius: '12px', padding: '4px', border: `1px solid ${PATHD_THEME.panelBorder}` }}>
                 {tabs.map(tab => (
                   <button key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
@@ -547,7 +547,7 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
 
                   <div style={{
                     padding: '12px 14px',
-                    borderRadius: '18px',
+                    borderRadius: '16px',
                     background: PATHD_THEME.panelGradientSoft,
                     border: `1px solid ${PATHD_THEME.panelBorder}`,
                   }}>

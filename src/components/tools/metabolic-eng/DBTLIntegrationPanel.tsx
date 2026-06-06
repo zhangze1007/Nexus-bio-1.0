@@ -21,7 +21,7 @@ export default function DBTLIntegrationPanel({
       pointerEvents: 'auto', display: 'grid', gap: '8px',
     }}>
       <div style={{
-        padding: '14px', borderRadius: '14px',
+        padding: '14px', borderRadius: '12px',
         background: 'rgba(10,12,16,0.72)', backdropFilter: 'blur(16px)',
         border: '1px solid rgba(255,255,255,0.1)',
         display: 'grid', gap: '10px',

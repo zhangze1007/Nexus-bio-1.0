@@ -936,7 +936,7 @@ export default function MultiOPage() {
               <div style={{ marginTop: '14px' }}>
                 <SectionLabel>Sensitivity Result</SectionLabel>
                 <div style={{
-                  ...GLASS, borderRadius: '14px', padding: '10px', marginBottom: '10px',
+                  ...GLASS, borderRadius: '12px', padding: '10px', marginBottom: '10px',
                 }}>
                   {/* Yield change */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
@@ -1088,21 +1088,21 @@ export default function MultiOPage() {
             ]}
           >
             <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
-              <div style={{ ...GLASS, borderRadius: '14px', padding: '12px 16px', flex: '1 0 120px' }}>
+              <div style={{ ...GLASS, borderRadius: '12px', padding: '12px 16px', flex: '1 0 120px' }}>
                 <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL, display: 'block' }}>Total Var. Explained</span>
                 <span style={{ fontFamily: T.MONO, fontSize: '18px', fontWeight: 700, color: LAYER_COLORS.transcriptomics }}>{(mofaResult.totalVarianceExplained * 100).toFixed(1)}%</span>
               </div>
-              <div style={{ ...GLASS, borderRadius: '14px', padding: '12px 16px', flex: '1 0 120px' }}>
+              <div style={{ ...GLASS, borderRadius: '12px', padding: '12px 16px', flex: '1 0 120px' }}>
                 <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL, display: 'block' }}>Optimization Steps</span>
                 <span style={{ fontFamily: T.MONO, fontSize: '18px', fontWeight: 700, color: VALUE }}>{mofaResult.convergenceIterations} iter</span>
               </div>
-              <div style={{ ...GLASS, borderRadius: '14px', padding: '12px 16px', flex: '1 0 120px' }}>
+              <div style={{ ...GLASS, borderRadius: '12px', padding: '12px 16px', flex: '1 0 120px' }}>
                 <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL, display: 'block' }}>Recon. Error</span>
                 <span style={{ fontFamily: T.MONO, fontSize: '18px', fontWeight: 700, color: VALUE }}>{mofaResult.reconstructionError.toFixed(4)}</span>
               </div>
             </div>
             {mofaResult.factors.map(f => (
-              <div key={f.id} style={{ ...GLASS, borderRadius: '14px', padding: '14px', marginBottom: '12px' }}>
+              <div key={f.id} style={{ ...GLASS, borderRadius: '12px', padding: '14px', marginBottom: '12px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                   <span style={{ fontFamily: T.SANS, fontSize: '12px', fontWeight: 600, color: VALUE }}>{f.name}</span>
                   <span style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL }}>{(f.varianceExplained.total * 100).toFixed(1)}% var</span>
@@ -1229,11 +1229,11 @@ export default function MultiOPage() {
             ]}
           >
             <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
-              <div style={{ ...GLASS, borderRadius: '14px', padding: '12px 16px', flex: '1 0 140px' }}>
+              <div style={{ ...GLASS, borderRadius: '12px', padding: '12px 16px', flex: '1 0 140px' }}>
                 <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL, display: 'block' }}>Avg Efficiency</span>
                 <span style={{ fontFamily: T.MONO, fontSize: '18px', fontWeight: 700, color: 'rgba(147,203,82,0.9)' }}>{(efficiencyScores.reduce((s, e) => s + e.score, 0) / Math.max(1, efficiencyScores.length) * 100).toFixed(1)}%</span>
               </div>
-              <div style={{ ...GLASS, borderRadius: '14px', padding: '12px 16px', flex: '1 0 140px' }}>
+              <div style={{ ...GLASS, borderRadius: '12px', padding: '12px 16px', flex: '1 0 140px' }}>
                 <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL, display: 'block' }}>Top Gene</span>
                 <span style={{ fontFamily: T.MONO, fontSize: '14px', fontWeight: 700, color: VALUE }}>{[...efficiencyScores].sort((a, b) => b.score - a.score)[0]?.gene ?? '—'}</span>
               </div>

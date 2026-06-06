@@ -35,7 +35,7 @@ export default function TruthHeader({
         display: 'grid',
         gap: '10px',
         padding: '10px 12px',
-        borderRadius: '14px',
+        borderRadius: '12px',
         border: `1px solid ${accent}33`,
         background: PROEVOL_THEME.surface,
         boxShadow: '0 8px 24px rgba(0,0,0,0.3)',

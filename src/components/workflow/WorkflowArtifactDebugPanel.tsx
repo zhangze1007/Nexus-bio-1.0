@@ -36,7 +36,7 @@ export default function WorkflowArtifactDebugPanel({
   return (
     <div
       style={{
-        borderRadius: '18px',
+        borderRadius: '16px',
         border: '1px solid rgba(255,255,255,0.08)',
         background: 'rgba(255,255,255,0.03)',
         padding: '14px 15px',

@@ -458,7 +458,7 @@ export default function WorkbenchDirectoryPage() {
                   <div
                     key={group.key}
                     style={{
-                      borderRadius: '18px',
+                      borderRadius: '16px',
                       border: `1px solid ${BORDER}`,
                       background: SURFACE_SOFT,
                       padding: '14px',

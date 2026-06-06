@@ -327,7 +327,7 @@ export default function CellImageViewer({ searchTerm, height = 280 }: CellImageV
         <div style={{ display: 'flex', gap: '5px', overflowX: 'auto', paddingBottom: '2px' }}>
           {images.map((img, i) => (
             <button key={img.id} onClick={() => setCurrentIdx(i)}
-              style={{ flexShrink: 0, width: '44px', height: '44px', borderRadius: '14px', overflow: 'hidden', border: `2px solid ${i === currentIdx ? (SOURCE_COLORS[img.source] || 'rgba(255,255,255,0.4)') : 'rgba(255,255,255,0.06)'}`, background: '#0a0a0a', cursor: 'pointer', padding: 0, position: 'relative' }}>
+              style={{ flexShrink: 0, width: '44px', height: '44px', borderRadius: '12px', overflow: 'hidden', border: `2px solid ${i === currentIdx ? (SOURCE_COLORS[img.source] || 'rgba(255,255,255,0.4)') : 'rgba(255,255,255,0.06)'}`, background: '#0a0a0a', cursor: 'pointer', padding: 0, position: 'relative' }}>
               {imgError[img.id]
                 ? <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Microscope size={12} style={{ color: 'rgba(255,255,255,0.2)' }} /></div>
                 : <img src={img.thumbnailUrl} alt={img.title} onError={() => setImgError(prev => ({ ...prev, [img.id]: true }))} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />

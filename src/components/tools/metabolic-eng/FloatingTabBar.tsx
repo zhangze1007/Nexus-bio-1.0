@@ -23,7 +23,7 @@ export default function FloatingTabBar({
       zIndex: 30, display: 'flex', gap: '2px',
       background: 'rgba(10,12,16,0.72)', backdropFilter: 'blur(16px) saturate(135%)',
       WebkitBackdropFilter: 'blur(16px) saturate(135%)',
-      borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)',
+      borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)',
       padding: '3px',
     }}>
       {tabs.map(tab => {

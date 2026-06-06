@@ -148,7 +148,7 @@ export default function LineageTracePanel({
             display: 'grid',
             gap: '8px',
             padding: '12px',
-            borderRadius: '14px',
+            borderRadius: '12px',
             border: `1px solid ${PROEVOL_THEME.border}`,
             background: 'rgba(255,255,255,0.03)',
           }}

@@ -240,12 +240,12 @@ function ProteinCanvas({ pdbId, alphafoldId, name, useAlphaFold }: ProteinCanvas
       {/* 3Dmol container */}
       <div
         ref={containerRef}
-        style={{ width: '100%', height: '100%', borderRadius: '14px', overflow: 'hidden', background: '#050505', border: '1px solid rgba(250,246,240,0.08)', boxShadow: '0 4px 24px rgba(0,0,0,0.4)' }}
+        style={{ width: '100%', height: '100%', borderRadius: '12px', overflow: 'hidden', background: '#050505', border: '1px solid rgba(250,246,240,0.08)', boxShadow: '0 4px 24px rgba(0,0,0,0.4)' }}
       />
 
       {/* Loading */}
       {status === 'loading' && (
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '10px', background: '#050505', borderRadius: '14px', pointerEvents: 'none' }}>
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '10px', background: '#050505', borderRadius: '12px', pointerEvents: 'none' }}>
           <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
           <Loader2 size={22} style={{ color: '#6495ED', animation: 'spin 1s linear infinite' }} />
           <span style={{ color: 'rgba(250,246,240,0.5)', fontSize: '12px', fontFamily: 'monospace' }}>
@@ -256,7 +256,7 @@ function ProteinCanvas({ pdbId, alphafoldId, name, useAlphaFold }: ProteinCanvas
 
       {/* Error */}
       {status === 'error' && (
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', background: '#050505', borderRadius: '14px' }}>
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', background: '#050505', borderRadius: '12px' }}>
           <span style={{ color: '#FA8072', fontSize: '12px', fontFamily: 'monospace' }}>Structure unavailable</span>
           <a href={`https://www.rcsb.org/structure/${pdbId}`} target="_blank" rel="noopener noreferrer" style={{ color: '#6495ED', fontSize: '11px' }}>
             Open in RCSB →
@@ -274,7 +274,7 @@ function ProteinCanvas({ pdbId, alphafoldId, name, useAlphaFold }: ProteinCanvas
           pointerEvents: 'none',
           background: 'rgba(10,10,10,0.95)',
           border: '1px solid rgba(255,255,255,0.12)',
-          borderRadius: '10px',
+          borderRadius: '12px',
           padding: '10px 12px',
           width: '220px',
           backdropFilter: 'blur(12px)',
@@ -455,14 +455,14 @@ export default function PDBExplorer() {
             </div>
 
             {/* AlphaFold toggle */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', borderRadius: '10px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', borderRadius: '12px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
               <div>
                 <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '12px', fontWeight: 500, margin: '0 0 2px' }}>AlphaFold pLDDT</p>
                 <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '10px', fontFamily: 'monospace', margin: 0 }}>Confidence color coding</p>
               </div>
               <button
                 onClick={() => setUseAlphaFold(!useAlphaFold)}
-                style={{ width: '36px', height: '20px', borderRadius: '10px', background: useAlphaFold ? '#6495ED' : 'rgba(255,255,255,0.1)', border: 'none', cursor: 'pointer', position: 'relative', transition: 'background 0.2s' }}>
+                style={{ width: '36px', height: '20px', borderRadius: '12px', background: useAlphaFold ? '#6495ED' : 'rgba(255,255,255,0.1)', border: 'none', cursor: 'pointer', position: 'relative', transition: 'background 0.2s' }}>
                 <div style={{ width: '14px', height: '14px', borderRadius: '50%', background: '#fff', position: 'absolute', top: '3px', left: useAlphaFold ? '19px' : '3px', transition: 'left 0.2s' }} />
               </button>
             </div>

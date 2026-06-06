@@ -849,7 +849,7 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
               background: isSearching ? 'rgba(255,255,255,0.08)' : '#ffffff',
               color: isSearching ? RESEARCH_PALETTE.textFaint : '#0a0a0a',
               border: 'none',
-              borderRadius: '14px',
+              borderRadius: '12px',
               fontSize: '12px',
               fontWeight: 700,
               cursor: isSearching ? 'not-allowed' : 'pointer',
@@ -967,7 +967,7 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
                   <div
                     key={source}
                     style={{
-                      borderRadius: '18px',
+                      borderRadius: '16px',
                       border: '1px solid rgba(255,255,255,0.07)',
                       background: 'rgba(255,255,255,0.03)',
                       padding: '12px 14px',
@@ -1025,7 +1025,7 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
                     <article
                     key={paper.id}
                     style={{
-                      borderRadius: '18px',
+                      borderRadius: '16px',
                       border: `1px solid ${RESEARCH_PALETTE.border}`,
                       background: RESEARCH_PALETTE.surface,
                       padding: '18px 20px',
@@ -1277,7 +1277,7 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
                       onChange={(event) => setSourceFilter(event.target.value)}
                       style={{
                         minHeight: '36px',
-                        borderRadius: '10px',
+                        borderRadius: '12px',
                         border: `1px solid ${RESEARCH_PALETTE.borderStrong}`,
                         background: 'rgba(255,255,255,0.04)',
                         color: RESEARCH_PALETTE.text,
@@ -1304,7 +1304,7 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
                       onChange={(event) => setSortMode(event.target.value as SortMode)}
                       style={{
                         minHeight: '36px',
-                        borderRadius: '10px',
+                        borderRadius: '12px',
                         border: `1px solid ${RESEARCH_PALETTE.borderStrong}`,
                         background: 'rgba(255,255,255,0.04)',
                         color: RESEARCH_PALETTE.text,
@@ -1326,7 +1326,7 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
                     style={{
                       minHeight: '36px',
                       padding: '0 12px',
-                      borderRadius: '10px',
+                      borderRadius: '12px',
                       border: `1px solid ${RESEARCH_PALETTE.borderStrong}`,
                       background: 'rgba(255,255,255,0.035)',
                       color: RESEARCH_PALETTE.textSoft,
@@ -1402,7 +1402,7 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
                     display: 'flex',
                     alignItems: 'flex-start',
                     gap: '10px',
-                    borderRadius: '14px',
+                    borderRadius: '12px',
                     border: `1px solid ${RESEARCH_PALETTE.warningBorder}`,
                     background: RESEARCH_PALETTE.warningSurface,
                     padding: '12px 14px',
@@ -1439,7 +1439,7 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
                       <article
                         key={article.id}
                         style={{
-                          borderRadius: '18px',
+                          borderRadius: '16px',
                           border: `1px solid ${isExpanded ? RESEARCH_PALETTE.borderStrong : RESEARCH_PALETTE.border}`,
                           background: isExpanded ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.03)',
                           padding: '18px 20px',
