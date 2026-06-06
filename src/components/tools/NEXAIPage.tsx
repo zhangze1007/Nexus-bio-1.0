@@ -39,6 +39,8 @@ import { routeIntent, type IntentRoute } from '../../services/axonIntentRouter';
 import { buildWorkbenchCopilotContext, composeCopilotQuery } from '../../services/axonContext';
 import { useAxonOrchestrator } from '../../providers/AxonOrchestratorProvider';
 import { domainCategoryLabel } from '../../services/axonDomainClassifier';
+import { ChatMessage, type ChatMessageProps } from './nexai/ChatMessage';
+import { ContextChips } from './nexai/ContextChips';
 
 const PRESET_QUERIES = [
   'Summarise current pathway bottlenecks and recommend the next tool to run.',
@@ -117,6 +119,17 @@ export default function NEXAIPage() {
   const [history, setHistory] = useState<string[]>([]);
   const [apiError, setApiError] = useState<string | null>(null);
 
+  // ── Conversation state for chat-style interface ──
+  const [messages, setMessages] = useState<Array<{
+    role: 'user' | 'assistant' | 'system';
+    content: string;
+    timestamp: number;
+    confidence?: number;
+    citations?: number;
+    actions?: ChatMessageProps['actions'];
+  }>>([]);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
   // PR-1 meta plumbing — the backend tells us when structured parsing
   // failed. We surface it to ResultPanel and RawJsonDrawer so the failure
   // is visible rather than silently coerced.
@@ -163,6 +176,11 @@ export default function NEXAIPage() {
   useEffect(() => {
     return () => { abortRef.current?.abort(); };
   }, []);
+
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
   const contextPrompt = useMemo(() => {
     if (workflowControl.status === 'blocked' || workflowControl.status === 'gated' || workflowControl.status === 'demoOnly') {
@@ -234,6 +252,13 @@ export default function NEXAIPage() {
   async function runQuery() {
     const activeQuery = query.trim();
     if (!activeQuery) return;
+
+    // Add user message to conversation
+    setMessages(prev => [...prev, {
+      role: 'user',
+      content: activeQuery,
+      timestamp: Date.now(),
+    }]);
 
     // Cancel any in-flight request to prevent race conditions
     abortRef.current?.abort();
@@ -351,6 +376,20 @@ export default function NEXAIPage() {
           }
         }
       } catch { /* Semantic Scholar optional */ }
+
+      // Add assistant message to conversation
+      const finalResult = pathway
+        ? pathwayToResult(pathway, activeQuery, resolvedProvider)
+        : { answer: answerText.slice(0, 1200), confidence: 0.75, citations: [] as CitationNode[] };
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: finalResult.answer,
+        timestamp: Date.now(),
+        confidence: finalResult.confidence,
+        citations: finalResult.citations?.length ?? 0,
+        actions: [], // Will be populated by next_steps in future
+      }]);
+
     } catch (e) {
       // Silently ignore aborted requests
       if (e instanceof DOMException && e.name === 'AbortError') return;
@@ -362,6 +401,13 @@ export default function NEXAIPage() {
       setResult(null);
       setResultMode('idle');
       setSurfaceView('answer');
+
+      // Add error message to conversation
+      setMessages(prev => [...prev, {
+        role: 'system',
+        content: `Error: ${errMsg.slice(0, 200)}`,
+        timestamp: Date.now(),
+      }]);
     }
     setLoading(false);
   }
@@ -649,6 +695,26 @@ export default function NEXAIPage() {
                 {agenticMode ? 'Agentic on' : 'Agentic off'}
               </button>
             </div>
+
+            {/* ── Context chips: what Axon knows about the workbench ── */}
+            <ContextChips />
+
+            {/* ── Conversation messages ── */}
+            {messages.length > 0 && (
+              <div style={{
+                display: 'flex', flexDirection: 'column', gap: '10px',
+                maxHeight: '280px', overflowY: 'auto',
+                padding: '4px 0',
+              }}>
+                {messages.map((msg, i) => (
+                  <ChatMessage key={i} {...msg} />
+                ))}
+                {loading && (
+                  <ChatMessage role="assistant" content="" isLoading timestamp={Date.now()} />
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+            )}
 
             <PromptInput
               query={query}
