@@ -305,16 +305,16 @@ PYTHONPATH                Additional Python module paths (optional, for custom s
 
 ### FORBIDDEN Files — Rationale
 
-The following files are marked `FORBIDDEN: never modify` in the project tree. They are stable, contract-bound components that other parts of the system depend on. Modifications risk cascading breakages across tools and the IDE shell.
+The following files are marked `FORBIDDEN: never modify` in the project tree. Modifications require explicit approval and careful testing.
 
 | File | Reason |
 |------|--------|
-| `src/components/ide/IDEShell.tsx` | Root IDE layout shell — all tool pages render inside it. Changing its structure breaks every tool's layout. |
+| `src/components/ide/IDEShell.tsx` | Root IDE layout shell — all 14 tool pages render inside it via `<ToolShell>`. Changing its structure breaks every tool's layout. |
 | `src/components/ide/IDETopBar.tsx` | IDE top bar with navigation, breadcrumbs, and project context. Routing and state depend on its exact contract. |
 | `src/components/ide/IDESidebar.tsx` | IDE sidebar with tool registry navigation. Tool discovery and deep-linking depend on its data shape. |
-| `src/components/tools/DBTLflowPage.tsx` | DBTL cycle tracker — used as the standard feedback loop component embedded in other tools. Contract-bound by ProEvol, CATDES, and metabolic lab. |
-| `src/components/tools/GECAIRPage.tsx` | Gene circuit reasoner — integrated into DYNCON and GenMIM as a sub-panel. Shared state shape must remain stable. |
-| `src/components/tools/ProEvolPage.tsx` | Protein evolution engine — fitness landscape data consumed by CATDES and PathD. Its output schema is a cross-tool contract. |
+| `src/components/tools/DBTLflowPage.tsx` | Externally reviewed and locked. Stable page with 1300+ lines. Not imported by other tools, but changes require review protocol to maintain scientific accuracy of the DBTL cycle representation. |
+| `src/components/tools/GECAIRPage.tsx` | Externally reviewed and locked. Gene circuit reasoner with Hill function modeling. Not imported by other tools, but changes require review protocol to maintain correctness of circuit logic. |
+| `src/components/tools/ProEvolPage.tsx` | Externally reviewed and locked. Protein evolution fitness landscape. Has sub-components in `src/components/tools/proevol/research/` that share types with `src/services/proevolAnalysis.ts`. Changes require review protocol. |
 
 ---
 
