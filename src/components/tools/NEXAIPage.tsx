@@ -41,6 +41,7 @@ import { useAxonOrchestrator } from '../../providers/AxonOrchestratorProvider';
 import { domainCategoryLabel } from '../../services/axonDomainClassifier';
 import { ChatMessage, type ChatMessageProps } from './nexai/ChatMessage';
 import { ContextChips } from './nexai/ContextChips';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
 
 const PRESET_QUERIES = [
   'Summarise current pathway bottlenecks and recommend the next tool to run.',
@@ -425,14 +426,16 @@ export default function NEXAIPage() {
           ? 'Uncertainty unresolved'
           : 'No active workflow gate';
 
+  const isMobile = useMediaQuery('(max-width: 768px)');
+
   return (
     <ToolShell
       moduleId="nexai"
       title="Axon Copilot"
       description="Nexus-Bio hub surface — ask in plain language across every tool and workbench object"
-      grid="'presets graph stats' 'presets graph stats'"
-      columns="200px 1fr 200px"
-      rows="1fr 1fr"
+      grid={isMobile ? "'graph'" : "'presets graph stats' 'presets graph stats'"}
+      columns={isMobile ? '1fr' : '200px 1fr 200px'}
+      rows={isMobile ? '1fr' : '1fr 1fr'}
       gap={6}
       hero={
         <>
@@ -525,8 +528,8 @@ export default function NEXAIPage() {
         <ExportButton label="Export Result" data={result} filename="nexai-result" format="json" disabled={!result} />
       }
     >
-      {/* ── Left rail: quick queries + citation index ──────── */}
-      <ModuleCard area="presets" title="Quick Queries">
+      {/* ── Left rail: quick queries + citation index (hidden on mobile) ── */}
+      {!isMobile && <ModuleCard area="presets" title="Quick Queries">
         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, overflowY: 'auto' }}>
           {contextPrompt && (
             <button
@@ -602,7 +605,7 @@ export default function NEXAIPage() {
             </>
           )}
         </div>
-      </ModuleCard>
+      </ModuleCard>}
 
       {/* ── Center: reading surface (prompt → result → evidence → raw) ── */}
       <ModuleCard area="graph" flush>
@@ -883,8 +886,8 @@ export default function NEXAIPage() {
         </ScientificFigureFrame>
       </ModuleCard>
 
-      {/* ── Right rail: stats + posture ──────────────────── */}
-      <ModuleCard area="stats" title="Query Stats">
+      {/* ── Right rail: stats + posture (hidden on mobile) ── */}
+      {!isMobile && <ModuleCard area="stats" title="Query Stats">
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
           <MetricCard label="Confidence" value={result ? (result.confidence * 100).toFixed(0) + '%' : '—'} highlight={!!result} />
           <MetricCard label="Citations" value={result?.citations.length ?? 0} />
@@ -984,7 +987,7 @@ export default function NEXAIPage() {
             </div>
           </div>
         </div>
-      </ModuleCard>
+      </ModuleCard>}
     </ToolShell>
   );
 }
