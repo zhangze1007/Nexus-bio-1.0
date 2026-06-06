@@ -298,6 +298,8 @@ export default function CopilotSlideOver() {
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   onKeyDown={handleKey}
+                  onFocus={(e) => { e.currentTarget.style.outline = '2px solid rgba(175,195,214,0.5)'; e.currentTarget.style.outlineOffset = '2px'; }}
+                  onBlur={(e) => { e.currentTarget.style.outline = 'none'; }}
                   placeholder='e.g. "Which bottleneck should we tackle first?"'
                   rows={2}
                   disabled={loading}
@@ -309,8 +311,7 @@ export default function CopilotSlideOver() {
                     maxHeight: '100px',
                     background: 'transparent',
                     border: 'none',
-                    outline: '2px solid rgba(175,195,214,0.5)',
-                    outlineOffset: '2px',
+                    outline: 'none',
                     fontFamily: T.SANS,
                     fontSize: '13px',
                     lineHeight: 1.5,
@@ -327,14 +328,15 @@ export default function CopilotSlideOver() {
                     minHeight: '36px',
                     padding: '0 14px',
                     borderRadius: '12px',
-                    border: 'none',
+                    border: '1px solid rgba(175, 195, 214, 0.2)',
                     cursor: loading || !query.trim() ? 'not-allowed' : 'pointer',
                     fontFamily: T.SANS,
                     fontSize: '12px',
                     fontWeight: 700,
-                    background: '#f4f7fb',
-                    color: '#111318',
+                    background: 'rgba(175, 195, 214, 0.18)',
+                    color: T.VALUE,
                     opacity: !loading && !query.trim() ? 0.4 : 1,
+                    transition: 'background 0.15s, border-color 0.15s',
                   }}
                 >
                   {loading ? 'Asking…' : 'Ask'}

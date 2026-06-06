@@ -161,6 +161,8 @@ export default function PromptInput({
             setHistIdx(-1);
           }}
           onKeyDown={handleKey}
+          onFocus={(e) => { e.currentTarget.style.outline = '2px solid rgba(175,195,214,0.5)'; e.currentTarget.style.outlineOffset = '2px'; }}
+          onBlur={(e) => { e.currentTarget.style.outline = 'none'; }}
           placeholder={placeholder ?? DEFAULT_PLACEHOLDER}
           rows={2}
           disabled={loading}
@@ -172,8 +174,7 @@ export default function PromptInput({
             maxHeight: '140px',
             background: 'transparent',
             border: 'none',
-            outline: '2px solid rgba(175,195,214,0.5)',
-            outlineOffset: '2px',
+            outline: 'none',
             fontFamily: T.SANS,
             fontSize: '14px',
             lineHeight: 1.55,
@@ -196,7 +197,6 @@ export default function PromptInput({
             minWidth: '112px',
             padding: '0 18px',
             borderRadius: '12px',
-            border: 'none',
             cursor: loading || !query.trim() ? 'not-allowed' : 'pointer',
             fontFamily: T.SANS,
             fontSize: '13px',
@@ -204,10 +204,11 @@ export default function PromptInput({
             background: loading
               ? 'rgba(255,255,255,0.08)'
               : btnHover
-                ? '#ffffff'
-                : '#f4f7fb',
-            color: loading ? PATHD_THEME.label : '#111318',
+                ? 'rgba(175, 195, 214, 0.28)'
+                : 'rgba(175, 195, 214, 0.18)',
+            color: loading ? PATHD_THEME.label : T.VALUE,
             opacity: !loading && !query.trim() ? 0.45 : 1,
+            border: `1px solid rgba(175, 195, 214, ${btnHover ? 0.35 : 0.2})`,
             boxShadow: !loading && btnHover ? '0 2px 12px rgba(0,0,0,0.22)' : 'none',
             transition: 'background 0.15s, box-shadow 0.15s',
           }}

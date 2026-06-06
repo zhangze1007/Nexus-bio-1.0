@@ -13,7 +13,7 @@
  * external literature API expansion, evidence tree viz) are NOT started
  * here — see PR-2b / PR-3 notes.
  */
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { motion } from 'framer-motion';
 import ToolShell, { TOOL_TOKENS as T } from './shared/ToolShell';
 import ModuleCard from './shared/ModuleCard';
@@ -110,6 +110,7 @@ export default function NEXAIPage() {
 
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
+  const abortRef = useRef<AbortController | null>(null);
   const [result, setResult] = useState<NEXAIResult | null>(null);
   const [resultMode, setResultMode] = useState<ResultMode>('idle');
   const [surfaceView, setSurfaceView] = useState<SurfaceView>('answer');
@@ -157,6 +158,11 @@ export default function NEXAIPage() {
       setSurfaceView('answer');
     }
   }, [agenticMode]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Cancel in-flight request on unmount
+  useEffect(() => {
+    return () => { abortRef.current?.abort(); };
+  }, []);
 
   const contextPrompt = useMemo(() => {
     if (workflowControl.status === 'blocked' || workflowControl.status === 'gated' || workflowControl.status === 'demoOnly') {
@@ -228,6 +234,12 @@ export default function NEXAIPage() {
   async function runQuery() {
     const activeQuery = query.trim();
     if (!activeQuery) return;
+
+    // Cancel any in-flight request to prevent race conditions
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     setHistory(prev => [activeQuery, ...prev.slice(0, 19)]);
 
     // PR-4: routing + planning gate. When agentic mode is on we (a) run
@@ -260,6 +272,7 @@ export default function NEXAIPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ searchQuery: contextualQuery }),
+        signal: controller.signal,
       });
 
       const data = await res.json();
@@ -339,6 +352,10 @@ export default function NEXAIPage() {
         }
       } catch { /* Semantic Scholar optional */ }
     } catch (e) {
+      // Silently ignore aborted requests
+      if (e instanceof DOMException && e.name === 'AbortError') return;
+      if (controller.signal.aborted) return;
+
       const errMsg = e instanceof Error ? e.message : String(e);
       appendConsole({ level: 'error', module: 'nexai', message: `Groq API unavailable — ${errMsg.slice(0, 120)}` });
       setApiError(`Groq API unavailable — ${errMsg}. Please verify GROQ_API_KEY is configured and try again.`);
