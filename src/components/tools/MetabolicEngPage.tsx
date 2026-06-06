@@ -14,9 +14,9 @@
  *   Desktop: 60 FPS  |  Mobile MatePad 11.5: 45 FPS (dpr capped at 1.2)
  */
 
-import { useEffect, useRef, useCallback, useMemo, useState, useLayoutEffect, type CSSProperties } from 'react';
+import { useEffect, useRef, useCallback, useMemo, useState, useLayoutEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import { useMachine } from '@xstate/react';
 import FluidSimCanvas from './FluidSimCanvas';
 import type { FluidForce } from './FluidSimCanvas';
@@ -24,8 +24,6 @@ import ToolOverlay from './ToolOverlay';
 import StatusOverlay from './StatusOverlay';
 import ThreeScene from '../ThreeScene';
 import NodePanel from '../NodePanel';
-import ScientificHero from './shared/ScientificHero';
-import ScientificMethodStrip from './shared/ScientificMethodStrip';
 import { PATHD_THEME } from '../workbench/workbenchTheme';
 import type { ToolTab } from './shared/ToolTabBar';
 import { metabolicMachine } from '../../machines/metabolicMachine';
@@ -37,6 +35,12 @@ import { useWorkbenchStore } from '../../store/workbenchStore';
 import pathwayNodes from '../../data/pathwayData.json';
 import type { PathwayNode, PathwayEdge } from '../../types';
 import { T } from '../ide/tokens';
+import ArtifactRouteState from './metabolic-eng/ArtifactRouteState';
+import EmbeddedSupportDock from './metabolic-eng/EmbeddedSupportDock';
+import EvidenceTabRail from './metabolic-eng/EvidenceTabRail';
+import DBTLIntegrationPanel from './metabolic-eng/DBTLIntegrationPanel';
+import FloatingTabBar from './metabolic-eng/FloatingTabBar';
+import IdleStartButton from './metabolic-eng/IdleStartButton';
 
 const PATHD_TABS: ToolTab[] = [
   { id: 'lab', label: '3D Lab', accent: PATHD_THEME.sky },
@@ -70,7 +74,6 @@ const PATHD_RIGHT_PANEL_WIDTH = 218;
 const PATHD_SUPPORT_RAIL_WIDTH = 272;
 const PATHD_SCENE_GUTTER = 20;
 const PATHD_PANEL_BOTTOM = 18;
-type ControlVarsStyle = CSSProperties & Record<`--${string}`, string>;
 type PathdSceneInsets = { top: number; right: number; bottom: number; left: number };
 
 const PATHD_SAFE_FRAME_GUTTER = 16;
@@ -99,55 +102,6 @@ function sceneInsetsEqual(a: PathdSceneInsets | null, b: PathdSceneInsets) {
   return a !== null && a.top === b.top && a.right === b.right && a.bottom === b.bottom && a.left === b.left;
 }
 
-function ArtifactRouteState({
-  title,
-  message,
-  artifact,
-  embedded,
-}: {
-  title: string;
-  message: string;
-  artifact: WorkflowArtifact | null;
-  embedded: boolean;
-}) {
-  return (
-    <div
-      style={{
-        minHeight: embedded ? '560px' : '100vh',
-        background: 'radial-gradient(circle at top, rgba(207,196,227,0.18), transparent 28%), radial-gradient(circle at bottom right, rgba(191,220,205,0.14), transparent 26%), linear-gradient(180deg, #0d0a09 0%, #050505 100%)',
-        display: 'grid',
-        placeItems: 'center',
-        padding: embedded ? '28px' : '40px 24px',
-      }}
-    >
-      <div
-        style={{
-          width: 'min(760px, 100%)',
-          borderRadius: '28px',
-          border: '1px solid rgba(255,255,255,0.1)',
-          background: 'linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03))',
-          boxShadow: '0 28px 64px rgba(0,0,0,0.34)',
-          padding: '22px',
-          display: 'grid',
-          gap: '16px',
-        }}
-      >
-        <div style={{ display: 'grid', gap: '8px' }}>
-          <div style={{ fontFamily: T.MONO, fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: PATHD_THEME.label }}>
-            Canonical PATHD route
-          </div>
-          <h2 style={{ margin: 0, fontFamily: T.SANS, fontSize: '28px', lineHeight: 1.1, color: PATHD_THEME.value }}>
-            {title}
-          </h2>
-          <p style={{ margin: 0, fontFamily: T.SANS, fontSize: '14px', lineHeight: 1.65, color: PATHD_THEME.label }}>
-            {message}
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ── Main orchestrator ──────────────────────────────────────────────────
 
 export default function MetabolicEngPage({ embedded = false }: { embedded?: boolean } = {}) {
@@ -165,8 +119,6 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
 
   // ── Dismissible center dashboards — let user clear the view of the 3D canvas
   const [activeTab, setActiveTab] = useState('lab');
-  const [heroDismissed, setHeroDismissed] = useState(embedded);
-  const [methodStripDismissed, setMethodStripDismissed] = useState(embedded);
   const stageRef = useRef<HTMLDivElement | null>(null);
   const supportFrameRef = useRef<HTMLDivElement | null>(null);
   const leftPanelFrameRef = useRef<HTMLDivElement | null>(null);
@@ -520,9 +472,7 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
   }, [
     embedded,
     embeddedStageHeight,
-    heroDismissed,
     measureSceneInsets,
-    methodStripDismissed,
     state,
     supportCards.length,
   ]);
@@ -695,250 +645,27 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
       />
 
       {/* ── Floating tab bar ── */}
-      {!embedded && (
-        <div style={{
-          position: 'absolute', top: 12, left: '50%', transform: 'translateX(-50%)',
-          zIndex: 30, display: 'flex', gap: '2px',
-          background: 'rgba(10,12,16,0.72)', backdropFilter: 'blur(16px) saturate(135%)',
-          WebkitBackdropFilter: 'blur(16px) saturate(135%)',
-          borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)',
-          padding: '3px',
-        }}>
-          {PATHD_TABS.map(tab => {
-            const isActive = tab.id === activeTab;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                style={{
-                  padding: '6px 14px', borderRadius: '8px', border: 'none', cursor: 'pointer',
-                  fontFamily: T.SANS, fontSize: '11px', fontWeight: isActive ? 600 : 400,
-                  color: isActive ? tab.accent : PATHD_THEME.label,
-                  background: isActive ? 'rgba(255,255,255,0.1)' : 'transparent',
-                  transition: 'all 0.2s ease',
-                }}
-              >
-                {tab.label}
-              </button>
-            );
-          })}
-        </div>
-      )}
+      <FloatingTabBar
+        tabs={PATHD_TABS}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        visible={!embedded}
+      />
 
       {embedded ? (
-        <div ref={supportFrameRef} className="nb-pathd-support-dock">
-          <div className="nb-pathd-support-dock__grid">
-            {supportCards.map((card) => (
-              <div
-                key={card.eyebrow}
-                className="nb-pathd-support-dock__card"
-                style={{
-                  borderRadius: '18px',
-                  border: '1px solid rgba(255,255,255,0.12)',
-                  background: 'linear-gradient(180deg, rgba(255,255,255,0.12) 0%, rgba(247,250,253,0.08) 16%, rgba(10,12,16,0.58) 100%)',
-                  boxShadow: '0 18px 34px rgba(0,0,0,0.24), inset 0 1px 0 rgba(255,255,255,0.10)',
-                  backdropFilter: 'blur(18px) saturate(135%)',
-                  WebkitBackdropFilter: 'blur(18px) saturate(135%)',
-                  padding: '12px 13px',
-                  display: 'grid',
-                  gap: '8px',
-                }}
-              >
-                <div style={{ display: 'grid', gap: '4px' }}>
-                  <div
-                    style={{
-                      fontFamily: T.MONO,
-                      fontSize: '9px',
-                      letterSpacing: '0.10em',
-                      textTransform: 'uppercase',
-                      color: PATHD_THEME.label,
-                    }}
-                  >
-                    {card.eyebrow}
-                  </div>
-                  <div
-                    style={{
-                      fontFamily: T.SANS,
-                      fontSize: '13px',
-                      fontWeight: 700,
-                      color: PATHD_THEME.value,
-                      lineHeight: 1.2,
-                    }}
-                  >
-                    {card.value}
-                  </div>
-                </div>
-                <div
-                  style={{
-                    fontFamily: T.SANS,
-                    fontSize: '10.5px',
-                    lineHeight: 1.5,
-                    color: PATHD_THEME.label,
-                  }}
-                >
-                  {card.body}
-                </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                  {card.chips.map((chip) => (
-                    <span
-                      key={chip}
-                      style={{
-                        minHeight: '24px',
-                        padding: '0 8px',
-                        borderRadius: '999px',
-                        border: '1px solid rgba(255,255,255,0.12)',
-                        background: 'rgba(255,255,255,0.10)',
-                        color: PATHD_THEME.value,
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        fontFamily: T.MONO,
-                        fontSize: '8px',
-                        letterSpacing: '0.05em',
-                        textTransform: 'uppercase',
-                      }}
-                    >
-                      {chip}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <EmbeddedSupportDock supportCards={supportCards} innerRef={supportFrameRef} />
       ) : activeTab === 'evidence' ? (
-        <div
-          ref={supportFrameRef}
-          className="nb-pathd-hero-stack nb-pathd-hero-stack--rail"
-          style={{
-            position: 'absolute',
-            top: '16px',
-            right: '18px',
-            left: 'auto',
-            transform: 'none',
-            width: `${PATHD_SUPPORT_RAIL_WIDTH}px`,
-            zIndex: 14,
-            pointerEvents: 'none',
-            display: 'grid',
-            gap: '8px',
-            maxHeight: embedded ? 'min(34vh, 300px)' : 'min(33vh, 300px)',
-            overflowY: 'auto',
-            paddingRight: '2px',
-          }}
-        >
-          {!heroDismissed && <div style={{ pointerEvents: 'auto' }}>
-            <ScientificHero
-              eyebrow="Stage 1 · Pathway & Enzyme Design"
-              title={`${activeRouteLabel} is the current design object`}
-              summary="PATHD should read like the front door to the whole scientific program. This page now surfaces the active route, bottleneck pressure, enzyme opportunity, and next tool handoff before the scientist dives into the 3D pathway graph."
-              dismissible
-              onDismiss={() => setHeroDismissed(true)}
-              aside={
-                <>
-                  <div style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                    Current focus
-                  </div>
-                  <div style={{ fontFamily: T.SANS, fontSize: '13px', color: PATHD_THEME.value, fontWeight: 700 }}>
-                    {selectedNode?.label ?? derivedTarget}
-                  </div>
-                  <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.label, lineHeight: 1.55 }}>
-                    {selectedNode
-                      ? 'A specific pathway node is in focus, so downstream interpretation should respect this current design emphasis.'
-                      : 'No node is pinned yet; the route remains the active object at pathway scale.'}
-                  </div>
-                </>
-              }
-              signals={[
-                {
-                  label: 'Target Product',
-                  value: derivedTarget,
-                  detail: `${activeNodes.length} nodes · ${activeEdges.length} edges in the current executable route graph`,
-                  tone: 'cool',
-                },
-                {
-                  label: 'Bottlenecks',
-                  value: `${activeAnalyzeArtifact?.bottleneckAssumptions.length ?? 0}`,
-                  detail: activeAnalyzeArtifact?.bottleneckAssumptions[0]?.label ?? 'No structured bottleneck has been injected from Analyze yet.',
-                  tone: (activeAnalyzeArtifact?.bottleneckAssumptions.length ?? 0) > 0 ? 'warm' : 'neutral',
-                },
-                {
-                  label: 'Enzyme Candidates',
-                  value: `${activeAnalyzeArtifact?.enzymeCandidates.length ?? 0}`,
-                  detail: activeAnalyzeArtifact?.enzymeCandidates[0]?.label ?? 'No enzyme candidate has been prioritized yet.',
-                  tone: 'neutral',
-                },
-                {
-                  label: 'Next Tool',
-                  value: recommendedNextTool,
-                  detail: 'PATHD now makes the next scientific handoff explicit instead of leaving the route as a dead-end visualization.',
-                  tone: 'warm',
-                },
-              ]}
-            />
-          </div>}
-          {!methodStripDismissed && <div style={{ pointerEvents: 'auto' }}>
-            <ScientificMethodStrip
-              label="Pathway workbench"
-              dismissible
-              onDismiss={() => setMethodStripDismissed(true)}
-              items={[
-                {
-                  title: 'Route object',
-                  detail: 'The active route is treated as the canonical scientific object, so every downstream handoff inherits the same graph rather than rebuilding assumptions from scratch.',
-                  accent: PATHD_THEME.apricot,
-                  note: `${activeNodes.length} nodes · ${activeEdges.length} edges`,
-                },
-                {
-                  title: '3D scientific canvas',
-                  detail: 'The immersive pathway graph remains the main stage, but it is now framed by clear evidence and handoff language instead of reading like a standalone visual demo.',
-                  accent: PATHD_THEME.sky,
-                  note: selectedNode?.label ?? derivedTarget,
-                },
-                {
-                  title: 'Execution handoff',
-                  detail: 'Bottlenecks, enzyme candidates, and next-tool routing stay visible so the page behaves like the front door to the rest of the workbench.',
-                  accent: PATHD_THEME.mint,
-                  note: recommendedNextTool,
-                },
-              ]}
-            />
-          </div>}
-          {(heroDismissed || methodStripDismissed) && (
-            <div style={{ pointerEvents: 'auto', display: 'flex', justifyContent: 'flex-end' }}>
-              <button
-                type="button"
-                className="nb-ui-control"
-                onClick={() => { setHeroDismissed(false); setMethodStripDismissed(false); }}
-                style={{
-                  padding: '5px 12px',
-                  borderRadius: '100px',
-                  background: 'var(--nb-control-bg)',
-                  border: '1px solid var(--nb-control-border)',
-                  backdropFilter: 'blur(16px)',
-                  WebkitBackdropFilter: 'blur(16px)',
-                  color: 'var(--nb-control-color)',
-                  fontFamily: T.MONO,
-                  fontSize: '9px',
-                  fontWeight: 600,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.1em',
-                  cursor: 'pointer',
-                  transition: 'background 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease',
-                  ['--nb-control-bg' as const]: 'rgba(10,12,16,0.52)',
-                  ['--nb-control-border' as const]: 'rgba(255,255,255,0.14)',
-                  ['--nb-control-color' as const]: PATHD_THEME.label,
-                  ['--nb-control-hover-bg' as const]: '#ffffff',
-                  ['--nb-control-hover-border' as const]: '#ffffff',
-                  ['--nb-control-hover-color' as const]: PATHD_THEME.ink,
-                  ['--nb-control-active-bg' as const]: '#ffffff',
-                  ['--nb-control-active-border' as const]: '#ffffff',
-                  ['--nb-control-active-color' as const]: PATHD_THEME.ink,
-                } as ControlVarsStyle}
-              >
-                Restore dashboard
-              </button>
-            </div>
-          )}
-        </div>
+        <EvidenceTabRail
+          activeRouteLabel={activeRouteLabel}
+          selectedNodeLabel={selectedNode?.label}
+          derivedTarget={derivedTarget}
+          activeNodes={activeNodes}
+          activeEdges={activeEdges}
+          activeAnalyzeArtifact={activeAnalyzeArtifact}
+          recommendedNextTool={recommendedNextTool}
+          embedded={embedded}
+          width={PATHD_SUPPORT_RAIL_WIDTH}
+        />
       ) : activeTab === 'node' ? (
         <div style={{
           position: 'absolute', top: '16px', right: '18px', left: 'auto',
@@ -965,39 +692,12 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
           )}
         </div>
       ) : activeTab === 'dbtl' ? (
-        <div style={{
-          position: 'absolute', top: '16px', right: '18px', left: 'auto',
-          width: `${PATHD_SUPPORT_RAIL_WIDTH}px`, zIndex: 14,
-          pointerEvents: 'auto', display: 'grid', gap: '8px',
-        }}>
-          <div style={{
-            padding: '14px', borderRadius: '14px',
-            background: 'rgba(10,12,16,0.72)', backdropFilter: 'blur(16px)',
-            border: '1px solid rgba(255,255,255,0.1)',
-            display: 'grid', gap: '10px',
-          }}>
-            <div style={{ fontFamily: T.MONO, fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: PATHD_THEME.label }}>
-              DBTL Integration
-            </div>
-            <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.value, lineHeight: 1.55 }}>
-              Pathway design feeds directly into the DBTL cycle. Bottlenecks identified here become the hypotheses for the next iteration.
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label }}>
-                <span>Active Route</span><span style={{ color: PATHD_THEME.value }}>{activeRouteLabel}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label }}>
-                <span>Nodes</span><span style={{ color: PATHD_THEME.value }}>{activeNodes.length}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label }}>
-                <span>Bottlenecks</span><span style={{ color: PATHD_THEME.value }}>{activeAnalyzeArtifact?.bottleneckAssumptions.length ?? 0}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label }}>
-                <span>Next Tool</span><span style={{ color: PATHD_THEME.apricot }}>{recommendedNextTool}</span>
-              </div>
-            </div>
-          </div>
-        </div>
+        <DBTLIntegrationPanel
+          activeRouteLabel={activeRouteLabel}
+          nodeCount={activeNodes.length}
+          bottleneckCount={activeAnalyzeArtifact?.bottleneckAssumptions.length ?? 0}
+          recommendedNextTool={recommendedNextTool}
+        />
       ) : null}
 
       {/* ── Center: 3D Pathway Visualization — full-screen, panels float over ── */}
@@ -1058,33 +758,7 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
       )}
 
       {/* ── Idle prompt — clickable start button ── */}
-      <AnimatePresence>
-        {state === 'idle' && (
-          <motion.button
-            initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0, y:-10 }}
-            onClick={handleStart}
-            style={{
-              position:'absolute', bottom:'28px', left:'50%', transform:'translateX(-50%)',
-              fontFamily: T.MONO, fontSize:'10px', color:'#111318',
-              textTransform:'uppercase', letterSpacing:'0.15em', zIndex:25,
-              background:'rgba(255,255,255,0.88)', border:'none',
-              borderRadius:'100px', padding:'8px 20px', cursor:'pointer',
-              transition:'background 0.2s, box-shadow 0.2s',
-              boxShadow:'0 12px 28px rgba(0,0,0,0.32)',
-            }}
-            onMouseEnter={e => {
-              (e.currentTarget as HTMLElement).style.background = '#ffffff';
-              (e.currentTarget as HTMLElement).style.boxShadow = '0 16px 34px rgba(0,0,0,0.4)';
-            }}
-            onMouseLeave={e => {
-              (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.88)';
-              (e.currentTarget as HTMLElement).style.boxShadow = '0 12px 28px rgba(0,0,0,0.32)';
-            }}
-          >
-            ▶ Start Simulation
-          </motion.button>
-        )}
-      </AnimatePresence>
+      <IdleStartButton onStart={handleStart} visible={state === 'idle'} />
 
       {/* ── Node detail panel (Overview / Structure / Analysis) — hidden on Node tab ── */}
       <AnimatePresence>
