@@ -856,7 +856,7 @@ function Scene({ nodes, edges, onNodeClick, selectedNodeId, roughnessTexture, gl
   return (
     <>
       <ambientLight intensity={0.75 * glowMultiplier} color="#FFFFFF" />
-      <directionalLight position={[4, 10, 6]}  intensity={0.30 * glowMultiplier} color="#FFFFFF" />
+      <directionalLight position={[4, 10, 6]} intensity={0.30 * glowMultiplier} color="#FFFFFF" castShadow shadow-mapSize={[512, 512]} />
       <directionalLight position={[-8, -2, -6]} intensity={0.08} color="#111111" />
       <pointLight position={[0, routeGeometry.size.y * 0.5 + 6, 0]} intensity={0.18 * glowMultiplier} color="#FFFFFF" distance={28} decay={2} />
       <fog attach="fog" args={['#000000', 30, 70]} />
@@ -1168,8 +1168,8 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, 
 
             const applyRendererDefaults = <Renderer extends ConfigurableRenderer>(renderer: Renderer) => {
               renderer.setSize(width, height, false);
-              renderer.toneMapping = THREE.LinearToneMapping;
-              renderer.toneMappingExposure = 1.0;
+              renderer.toneMapping = THREE.ACESFilmicToneMapping;
+              renderer.toneMappingExposure = 1.15;
               renderer.setClearColor(0x000000, 0); // transparent — FluidSim shows through
               return renderer;
             };
