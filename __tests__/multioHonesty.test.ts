@@ -193,7 +193,7 @@ describe('MultiO model honesty boundary', () => {
   it('does not present current MultiO as Bayesian, MOFA-like, VAE-like, GP-backed, or reference-model-backed', () => {
     const multioPage = readRepoFile('src/components/tools/MultiOPage.tsx');
     const registry = readRepoFile('src/components/tools/shared/toolRegistry.ts');
-    const validity = readRepoFile('src/components/tools/shared/toolValidity.ts');
+    const validity = readRepoFile('src/config/toolValidity.ts');
     const readme = readRepoFile('README.md');
 
     expect(multioPage).toContain('Deterministic Multi-Omics Integration');

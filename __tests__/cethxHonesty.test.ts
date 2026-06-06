@@ -182,7 +182,7 @@ describe('CETHX thermodynamics honesty boundary', () => {
   it('does not present current CETHX as real, condition-aware, or eQuilibrator-backed', () => {
     const cethxPage = readRepoFile('src/components/tools/CETHXPage.tsx');
     const registry = readRepoFile('src/components/tools/shared/toolRegistry.ts');
-    const validity = readRepoFile('src/components/tools/shared/toolValidity.ts');
+    const validity = readRepoFile('src/config/toolValidity.ts');
     const mockCethx = readRepoFile('src/data/mockCETHX.ts');
 
     expect(cethxPage).toContain('Demo thermodynamics explainer');

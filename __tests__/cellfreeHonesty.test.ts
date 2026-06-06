@@ -221,7 +221,7 @@ describe('CellFree model structure and parameter sourcing honesty boundary', () 
   it('does not present current CellFree as fully sourced, calibrated, or wet-lab validated', () => {
     const cellfreePage = readRepoFile('src/components/tools/CellFreePage.tsx');
     const registry = readRepoFile('src/components/tools/shared/toolRegistry.ts');
-    const validity = readRepoFile('src/components/tools/shared/toolValidity.ts');
+    const validity = readRepoFile('src/config/toolValidity.ts');
     const workflowRegistry = readRepoFile('src/services/workflowRegistry.ts');
     const readme = readRepoFile('README.md');
 
