@@ -39,7 +39,7 @@ export interface PromptInputProps {
 }
 
 const DEFAULT_PLACEHOLDER =
-  'Describe the research question in plain language — e.g. "Which bottleneck in the amorphadiene route should we redesign first, and why?"';
+  'Describe your research question — e.g. "Which bottleneck should we redesign first?"';
 
 const DEFAULT_EXAMPLES = [
   'Summarise the current pathway bottlenecks and recommend the next tool to run.',

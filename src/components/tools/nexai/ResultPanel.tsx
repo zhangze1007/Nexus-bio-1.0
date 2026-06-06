@@ -120,10 +120,10 @@ export default function ResultPanel({
         <div style={{ display: 'grid', gap: '8px' }}>
           <span style={{ fontFamily: T.MONO, fontSize: '26px', color: 'rgba(36,29,24,0.08)' }}>⬡</span>
           <span style={{ fontFamily: T.SANS, fontSize: '13px', color: PATHD_THEME.value }}>
-            Ask Axon a research question in plain language
+            Ask Axon about your research
           </span>
           <span style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label }}>
-            Press <kbd>/</kbd> to focus the prompt · Axon will summarise, cite, and recommend the next move
+            Press <kbd>/</kbd> to focus
           </span>
         </div>
       </div>

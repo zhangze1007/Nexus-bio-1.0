@@ -879,13 +879,23 @@ export default function NEXAIPage() {
           </div>
       </div>
 
-      {/* ── Right rail: stats + posture (hidden on mobile) ── */}
+      {/* ── Right rail: stats + posture (hidden on mobile, collapsed when no result) ── */}
       {!isMobile && <ModuleCard area="stats" title="Query Stats">
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
-          <MetricCard label="Confidence" value={result ? (result.confidence * 100).toFixed(0) + '%' : '—'} highlight={!!result} />
-          <MetricCard label="Citations" value={result?.citations.length ?? 0} />
-          <MetricCard label="Databases" value={6} unit="sources" />
-          <MetricCard label="Model" value={provider ?? 'llama-3.3'} />
+          {result ? (
+            <>
+              <MetricCard label="Confidence" value={`${(result.confidence * 100).toFixed(0)}%`} highlight />
+              <MetricCard label="Citations" value={result.citations.length} />
+              <MetricCard label="Model" value={provider ?? 'groq'} />
+            </>
+          ) : (
+            <div style={{
+              padding: '16px', textAlign: 'center',
+              color: PATHD_THEME.label, fontFamily: T.MONO, fontSize: '10px',
+            }}>
+              Ask a question to see stats
+            </div>
+          )}
 
           <div style={{
             padding: '12px',

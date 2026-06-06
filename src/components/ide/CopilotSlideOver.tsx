@@ -92,9 +92,14 @@ export default function CopilotSlideOver() {
 
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
-  const [answer, setAnswer] = useState<string | null>(null);
-  const [provider, setProvider] = useState<string | null>(null);
+  const [messages, setMessages] = useState<Array<{
+    role: 'user' | 'assistant';
+    content: string;
+    provider?: string;
+    timestamp: number;
+  }>>([]);
   const [error, setError] = useState<string | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const panelRef = useRef<HTMLElement>(null);
 
@@ -135,11 +140,21 @@ export default function CopilotSlideOver() {
     return () => window.removeEventListener('keydown', handler);
   }, [open]);
 
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
   async function submit() {
     const q = query.trim();
     if (!q || loading) return;
+
+    // Add user message to conversation
+    setMessages(prev => [...prev, { role: 'user', content: q, timestamp: Date.now() }]);
+    setQuery('');
     setLoading(true);
     setError(null);
+
     try {
       const composedQuery = composeCopilotQuery(q, workbenchContext);
       const res = await fetch('/api/analyze', {
@@ -151,11 +166,22 @@ export default function CopilotSlideOver() {
       if (!res.ok) throw new Error(data?.error ?? `HTTP ${res.status}`);
       const text: string | undefined = data?.candidates?.[0]?.content?.parts?.[0]?.text;
       if (!text) throw new Error('No response from Axon');
-      setAnswer(text);
-      setProvider(data?.meta?.provider ?? 'groq');
+
+      // Add assistant message to conversation
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: text,
+        provider: data?.meta?.provider ?? 'groq',
+        timestamp: Date.now(),
+      }]);
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-      setAnswer(null);
+      const errMsg = err instanceof Error ? err.message : String(err);
+      setError(errMsg);
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: `Error: ${errMsg}`,
+        timestamp: Date.now(),
+      }]);
     }
     setLoading(false);
   }
@@ -462,7 +488,8 @@ export default function CopilotSlideOver() {
                 </div>
               )}
 
-              {!answer && !loading && !error && (
+              {/* Conversation messages */}
+              {messages.length === 0 && !loading && (
                 <div
                   data-testid="copilot-idle"
                   style={{
@@ -485,33 +512,73 @@ export default function CopilotSlideOver() {
                 </div>
               )}
 
-              {answer && (
+              {messages.map((msg, i) => (
                 <div
-                  data-testid="copilot-answer"
+                  key={i}
+                  data-testid={msg.role === 'user' ? 'copilot-user-message' : 'copilot-answer'}
                   style={{
                     borderRadius: '12px',
-                    background: PATHD_THEME.panelGlassStrong,
-                    border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
-                    padding: '14px 16px',
+                    background: msg.role === 'user'
+                      ? 'rgba(175, 195, 214, 0.12)'
+                      : PATHD_THEME.panelGlassStrong,
+                    border: `1px solid ${msg.role === 'user'
+                      ? 'rgba(175, 195, 214, 0.15)'
+                      : PATHD_THEME.sepiaPanelBorder}`,
+                    padding: '12px 14px',
+                    alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
+                    maxWidth: msg.role === 'user' ? '85%' : '100%',
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-                    <span style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label }}>AXON</span>
-                    {provider && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+                    <span style={{
+                      fontFamily: T.MONO, fontSize: '9px',
+                      padding: '1px 5px', borderRadius: '4px',
+                      background: msg.role === 'user' ? 'rgba(175,195,214,0.12)' : 'rgba(163,195,214,0.12)',
+                      color: msg.role === 'user' ? PATHD_THEME.label : PATHD_THEME.sky,
+                      textTransform: 'uppercase', letterSpacing: '0.06em',
+                    }}>
+                      {msg.role === 'user' ? 'You' : 'Axon'}
+                    </span>
+                    {msg.provider && (
                       <span style={{
-                        fontFamily: T.MONO, fontSize: '10px',
-                        padding: '2px 6px', borderRadius: '6px',
-                        background: 'rgba(175,195,214,0.14)',
-                        border: '1px solid rgba(175,195,214,0.26)',
-                        color: PATHD_THEME.value,
+                        fontFamily: T.MONO, fontSize: '9px',
+                        padding: '1px 5px', borderRadius: '4px',
+                        background: 'rgba(175,195,214,0.10)',
+                        color: PATHD_THEME.label,
                       }}>
-                        {provider}
+                        {msg.provider}
                       </span>
                     )}
+                    <span style={{ fontFamily: T.MONO, fontSize: '9px', color: PATHD_THEME.label, opacity: 0.5 }}>
+                      {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
                   </div>
-                  <ResearchAnswerRenderer answer={answer} compact />
+                  {msg.role === 'user' ? (
+                    <p style={{ fontFamily: T.SANS, fontSize: '12px', lineHeight: 1.6, color: PATHD_THEME.value, margin: 0, whiteSpace: 'pre-wrap' }}>
+                      {msg.content}
+                    </p>
+                  ) : (
+                    <ResearchAnswerRenderer answer={msg.content} compact />
+                  )}
+                </div>
+              ))}
+
+              {loading && (
+                <div style={{
+                  display: 'flex', gap: '4px', padding: '12px',
+                  justifyContent: 'center',
+                }}>
+                  {[0, 1, 2].map(i => (
+                    <div key={i} style={{
+                      width: '5px', height: '5px', borderRadius: '50%',
+                      background: PATHD_THEME.sky,
+                      animation: `axon-pulse 1.2s ease-in-out ${i * 0.2}s infinite`,
+                    }} />
+                  ))}
                 </div>
               )}
+
+              <div ref={messagesEndRef} />
             </div>
 
             {/* Footer */}
