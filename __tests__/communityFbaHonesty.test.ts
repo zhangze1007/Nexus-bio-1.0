@@ -1,8 +1,8 @@
 /** @jest-environment node */
 import fs from 'fs';
 import path from 'path';
-import { TOOL_ASSUMPTIONS } from '../src/components/tools/shared/toolAssumptions';
-import { TOOL_VALIDITY } from '../src/components/tools/shared/toolValidity';
+import { TOOL_ASSUMPTIONS } from '../src/config/toolAssumptions';
+import { TOOL_VALIDITY } from '../src/config/toolValidity';
 import {
   COMMUNITY_FBA_ROUTE_DECISION,
   FBASIM_COMMUNITY_BOUNDARY,

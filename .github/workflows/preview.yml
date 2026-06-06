@@ -1,0 +1,56 @@
+name: Vercel Preview
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  pull-requests: write
+  deployments: write
+
+concurrency:
+  group: preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  comment-preview-url:
+    name: Comment Vercel Preview URL
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Construct preview URL from branch name
+        id: url
+        run: |
+          BRANCH="${GITHUB_HEAD_REF}"
+          SLUG=$(echo "$BRANCH" | tr '/' '-' | tr '_' '-' | tr '[:upper:]' '[:lower:]')
+          PREVIEW_URL="https://nexus-bio-1-0-git-${SLUG}-zhangze1007s-projects.vercel.app"
+          echo "preview_url=$PREVIEW_URL" >> "$GITHUB_OUTPUT"
+
+      - name: Find existing bot comment
+        id: find-comment
+        uses: peter-evans/find-comment@v3
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: "github-actions[bot]"
+          body-includes: "<!-- vercel-preview -->"
+
+      - name: Create or update PR comment with preview URL
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-id: ${{ steps.find-comment.outputs.comment-id }}
+          edit-mode: replace
+          body: |
+            <!-- vercel-preview -->
+            ## Vercel Preview Deployment
+
+            :rocket: **Preview URL:** ${{ steps.url.outputs.preview_url }}
+
+            > This preview is automatically deployed by Vercel on every push to this PR.
+            > The URL above updates as new commits are pushed.
+
+            | Detail | Value |
+            |--------|-------|
+            | Branch | `${{ github.head_ref }}` |
+            | Commit | `${{ github.event.pull_request.head.sha }}` |

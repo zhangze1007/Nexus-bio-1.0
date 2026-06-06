@@ -2,8 +2,8 @@ import type {
   WorkbenchAnalyzeArtifact,
   WorkbenchProjectBrief,
   WorkbenchRunArtifact,
-} from '../../store/workbenchTypes';
-import { getUpstreamToolIds } from '../tools/shared/workbenchGraph';
+} from '../store/workbenchTypes';
+import { getUpstreamToolIds } from './workbenchGraph';
 
 export interface WorkbenchExecutionSnapshot {
   projectRef: string | null;

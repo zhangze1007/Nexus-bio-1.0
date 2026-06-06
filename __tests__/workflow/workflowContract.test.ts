@@ -8,7 +8,7 @@
  * audit silently rots — these tests fail CI before the rot ships.
  */
 import { TOOL_DEFINITIONS } from '../../src/components/tools/shared/toolRegistry';
-import { TOOL_VALIDITY } from '../../src/components/tools/shared/toolValidity';
+import { TOOL_VALIDITY } from '../../src/config/toolValidity';
 import {
   GOLDEN_PATH_TOOL_IDS,
   TOOL_IDS,

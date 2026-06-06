@@ -129,7 +129,7 @@ export default function BindingRadarChart({ result }: BindingRadarChartProps) {
               <LabelList
                 dataKey="value"
                 position="right"
-                formatter={(v: number) => fmt2(v)}
+                formatter={(v) => fmt2(Number(v))}
                 style={{ fontFamily: FONT.MONO, fontSize: 10, fill: 'rgba(250,246,240,0.96)' }}
               />
             </Bar>
@@ -211,7 +211,7 @@ export default function BindingRadarChart({ result }: BindingRadarChartProps) {
               <LabelList
                 dataKey="value"
                 position="top"
-                formatter={(v: number) => fmt2(v)}
+                formatter={(v) => fmt2(Number(v))}
                 style={{ fontFamily: FONT.MONO, fontSize: 10, fill: 'rgba(250,246,240,0.96)' }}
               />
             </Bar>

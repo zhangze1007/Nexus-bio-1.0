@@ -1,5 +1,5 @@
 import type { ProvenanceEntry, Evidence } from '../types/assumptions';
-import { TOOL_VALIDITY } from '../components/tools/shared/toolValidity';
+import { TOOL_VALIDITY } from '../config/toolValidity';
 
 export function createProvenanceEntry(args: {
   toolId: string;

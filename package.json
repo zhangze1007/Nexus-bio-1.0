@@ -8,6 +8,9 @@
     "start": "next start",
     "lint": "tsc --noEmit",
     "test": "jest",
+    "test:e2e": "npx playwright test",
+    "test:e2e:ui": "npx playwright test --ui",
+    "analyze": "ANALYZE=true npm run build",
     "benchmark:trust:validate": "node scripts/validateTrustBenchmarkCorpus.mjs",
     "benchmark:trust:evaluate": "jest __tests__/trustPolicyEngineBenchmark.test.ts --runInBand",
     "benchmark:trust:report": "tsx scripts/generateTrustMetricsReport.ts",
@@ -25,6 +28,7 @@
     "@nivo/heatmap": "^0.99.0",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.5.0",
+    "@sentry/nextjs": "^10.56.0",
     "@xstate/react": "^6.1.0",
     "better-sqlite3": "^12.8.0",
     "framer-motion": "^12.38.0",
@@ -39,6 +43,8 @@
     "zustand": "^5.0.12"
   },
   "devDependencies": {
+    "@next/bundle-analyzer": "^16.2.7",
+    "@playwright/test": "^1.60.0",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@types/better-sqlite3": "^7.6.13",

@@ -28,9 +28,9 @@ import {
   getStageForTool,
   type WorkbenchStageId,
 } from '../components/tools/shared/workbenchConfig';
-import { getUpstreamToolIds } from '../components/tools/shared/workbenchGraph';
-import { TOOL_ASSUMPTIONS } from '../components/tools/shared/toolAssumptions';
-import { buildExecutionSnapshot } from '../components/workbench/workbenchExecution';
+import { getUpstreamToolIds } from '../config/workbenchGraph';
+import { TOOL_ASSUMPTIONS } from '../config/toolAssumptions';
+import { buildExecutionSnapshot } from '../config/workbenchExecution';
 
 // ── Debounced localStorage adapter to prevent UI stutter on large projects ──
 let _persistTimer: ReturnType<typeof setTimeout> | null = null;
@@ -78,7 +78,7 @@ import {
   type ToolId,
 } from '../domain/workflowContract';
 import type { WorkbenchRunStatus } from './workbenchTypes';
-import { getToolValidity } from '../components/tools/shared/toolValidity';
+import { getToolValidity } from '../config/toolValidity';
 import {
   evaluateWorkbenchPayloadAdmission,
   inferAdmissionInputFromPayload,
@@ -1590,6 +1590,34 @@ export const useWorkbenchStore = create<WorkbenchState>()(
               && currentArtifact.id === incomingArtifact.id
               && incomingArtifact.version > currentArtifact.version
             );
+
+            // Cold-start recovery: if server returned empty/default state but
+            // localStorage has meaningful data, preserve local data and only
+            // update metadata (backend, collaborators, audit).
+            const serverIsEmpty = canonicalState.revision === 0
+              && !canonicalState.project?.id
+              && (!canonicalState.toolRuns || canonicalState.toolRuns.length === 0);
+            const localHasData = state.revision > 0
+              || (state.toolRuns && state.toolRuns.length > 0)
+              || (state.evidenceItems && state.evidenceItems.length > 0);
+
+            if (serverIsEmpty && localHasData) {
+              return {
+                backendMeta,
+                collaborators,
+                experimentRecords,
+                syncAuditLog: auditLog,
+                historyLog,
+                syncStatus: 'synced',
+                syncError: null,
+                hydratedFromServer: true,
+                lastServerSyncAt: Date.now(),
+                lastServerSyncedRevision: state.revision, // keep local revision
+                artifactLoadState: artifactId ? 'ready' : state.artifactLoadState,
+                artifactLoadError: null,
+                artifactRequestedId: artifactId,
+              };
+            }
 
             if (canonicalState.revision < state.revision && !persistedArtifactIsNewer) {
               return {

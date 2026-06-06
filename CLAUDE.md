@@ -65,6 +65,38 @@ Deploy     Vercel (Hobby plan, free tier, Edge Runtime)
 
 ---
 
+## Getting Started
+
+```bash
+# Clone and install
+git clone https://github.com/zhangze1007/Nexus-bio-1.0.git
+cd Nexus-bio-1.0
+npm ci
+
+# Environment variables (copy to .env.local)
+# GROQ_API_KEY=your_groq_key
+# GEMINI_API_KEY=your_gemini_key
+
+# Development
+npm run dev          # http://localhost:3000
+
+# Quality checks (mirrors CI pipeline)
+npx tsc --noEmit     # Type check
+npm test             # Jest unit tests (76 files)
+npm run build        # Production build
+
+# Test scripts
+npm run benchmark:trust:validate   # Validate trust benchmark corpus
+npm run policy:dsl:validate        # Validate policy DSL definitions
+npm run proof:check                # Check proof package integrity
+```
+
+### Without API Keys
+The app runs without API keys but AI features (analyze, paper search) will return 503.
+All tool page simulations (FBA, kinetics, thermodynamics, etc.) work offline.
+
+---
+
 ## Project Structure
 
 ```
@@ -83,13 +115,17 @@ Deploy     Vercel (Hobby plan, free tier, Edge Runtime)
 │   │   └── ResearchClient.tsx
 │   ├── terms/page.tsx
 │   ├── privacy/page.tsx
-│   ├── api/                          Edge Runtime API routes
-│   │   ├── analyze/route.ts          ← PRIMARY AI endpoint (Groq → Gemini fallback chain)
-│   │   ├── gemini/route.ts           ← Re-exports analyze/route (legacy alias)
-│   │   ├── alphafold/route.ts        AlphaFold EBI CORS proxy
-│   │   ├── pubchem/route.ts          PubChem 3D SDF lookup
+│   ├── api/                          API routes
+│   │   ├── analyze/route.ts          ← PRIMARY AI endpoint (Groq → Gemini fallback chain, Edge Runtime)
+│   │   ├── gemini/route.ts           ← Re-exports analyze/route (legacy alias, Edge Runtime)
+│   │   ├── alphafold/route.ts        AlphaFold EBI CORS proxy (Edge Runtime)
+│   │   ├── pubchem/route.ts          PubChem 3D SDF lookup (Edge Runtime)
+│   │   ├── kegg/route.ts             KEGG pathway database proxy (Edge Runtime)
 │   │   ├── fba/route.ts              Flux Balance Analysis engine (Node.js runtime)
-│   │   └── workbench/route.ts        Workbench state sync & project ledger
+│   │   ├── scspatial/
+│   │   │   ├── ingest/route.ts       ScSpatial data upload & processing (Node.js runtime)
+│   │   │   └── query/route.ts        ScSpatial query & analysis API (Node.js runtime)
+│   │   └── workbench/route.ts        Workbench state sync & project ledger (Node.js runtime)
 │   └── tools/
 │       ├── page.tsx                  Tools directory index
 │       ├── layout.tsx                Tools shell layout
@@ -172,16 +208,19 @@ Deploy     Vercel (Hobby plan, free tier, Edge Runtime)
 │
 ├── .claude/commands/
 │   └── nexus-bio-viz.md              Visualization upgrade skill (/nexus-bio-viz)
-├── __tests__/                        Jest unit tests
+├── __tests__/                        76 Jest unit test files
+│   ├── workflow/                     Workflow-specific tests
+│   └── *.test.ts                     Per-module tests (engines, API, utils, domain)
+├── jest.config.cjs                   Jest configuration (ts-jest, jsdom)
 ├── vercel.json                       ← Do not modify
-├── next.config.js
+├── next.config.mjs
 ├── tailwind.config.js
 └── package.json
 ```
 
 ---
 
-## All 13 Tool Pages
+## All 14 Tool Pages
 
 | # | Route | Component | What It Does |
 |---|-------|-----------|--------------|
@@ -224,18 +263,24 @@ The primary AI endpoint. Uses the "Axon" system prompt (predictive design core).
 |-------|---------|---------|
 | `app/api/alphafold/route.ts` | Edge | CORS proxy for EBI AlphaFold — input: `?id=<UniProtID>`, output: PDB text |
 | `app/api/pubchem/route.ts` | Edge | PubChem 3D SDF — mode 1: `?cid=<CID>`, mode 2: `?name=<compound>` |
+| `app/api/kegg/route.ts` | Edge | KEGG pathway database proxy — pathway/molecule lookups |
 | `app/api/fba/route.ts` | Node.js | FBA solver (simplex LP) — single-species + community FBA |
+| `app/api/scspatial/ingest/route.ts` | Node.js | ScSpatial data upload — file ingestion, preprocessing, artifact storage |
+| `app/api/scspatial/query/route.ts` | Node.js | ScSpatial query API — view modes, cluster analysis, gene expression lookups |
 | `app/api/workbench/route.ts` | Node.js | Workbench project sync — GET/PUT with revision conflict detection |
 
 ---
 
 ## Environment Variables
 
-Set in Vercel dashboard. Never hardcode in source.
+Set in Vercel dashboard. Never hardcode in source. See `.env.example` for the full template.
 
 ```
-GROQ_API_KEY      Groq API authorization (used in app/api/analyze/route.ts)
-GEMINI_API_KEY    Google Gemini authorization (used in app/api/analyze/route.ts)
+GROQ_API_KEY              Groq API authorization (used in app/api/analyze/route.ts)
+GEMINI_API_KEY            Google Gemini authorization (used in app/api/analyze/route.ts)
+SCSPATIAL_ARTIFACT_DIR    ScSpatial artifact storage directory (optional, defaults to system temp)
+SCSPATIAL_PYTHON_BIN      Python binary path for ScSpatial sidecar (optional, defaults to "python3")
+PYTHONPATH                Additional Python module paths (optional, for custom scanpy/anndata)
 ```
 
 `NODE_ENV` and `VERCEL` are set automatically by the platform.
@@ -257,6 +302,19 @@ GEMINI_API_KEY    Google Gemini authorization (used in app/api/analyze/route.ts)
 6. **3Dmol.js is CDN-only** — loaded from `https://3Dmol.org/build/3Dmol-min.js`. It is not an npm package.
 
 7. **AlphaFold and PubChem are proxied** — always call `/api/alphafold` and `/api/pubchem`, never fetch EBI or PubChem directly from the browser (CORS).
+
+### FORBIDDEN Files — Rationale
+
+The following files are marked `FORBIDDEN: never modify` in the project tree. They are stable, contract-bound components that other parts of the system depend on. Modifications risk cascading breakages across tools and the IDE shell.
+
+| File | Reason |
+|------|--------|
+| `src/components/ide/IDEShell.tsx` | Root IDE layout shell — all tool pages render inside it. Changing its structure breaks every tool's layout. |
+| `src/components/ide/IDETopBar.tsx` | IDE top bar with navigation, breadcrumbs, and project context. Routing and state depend on its exact contract. |
+| `src/components/ide/IDESidebar.tsx` | IDE sidebar with tool registry navigation. Tool discovery and deep-linking depend on its data shape. |
+| `src/components/tools/DBTLflowPage.tsx` | DBTL cycle tracker — used as the standard feedback loop component embedded in other tools. Contract-bound by ProEvol, CATDES, and metabolic lab. |
+| `src/components/tools/GECAIRPage.tsx` | Gene circuit reasoner — integrated into DYNCON and GenMIM as a sub-panel. Shared state shape must remain stable. |
+| `src/components/tools/ProEvolPage.tsx` | Protein evolution engine — fitness landscape data consumed by CATDES and PathD. Its output schema is a cross-tool contract. |
 
 ---
 
@@ -339,6 +397,41 @@ const SHOWCASE_PUBCHEM_CIDS = {
 Better-SQLite3 ledger (`src/server/workbenchDb.ts`) stores project state server-side. Synced via `app/api/workbench/route.ts` (GET/PUT with revision conflict detection). `WorkbenchSyncProvider` wraps the entire app tree and manages state via Zustand (`src/store/workbenchStore.ts`).
 
 Features: project versioning, experiment ledger, actor/member tracking, immutable audit trail.
+
+
+
+---
+
+## Testing
+
+### Unit Tests (Jest)
+
+- **Location:** `__tests__/` directory (76 test files)
+- **Config:** `jest.config.cjs` — uses `ts-jest` preset with `jsdom` environment
+- **Run:** `npm test` (or `npx jest` for direct control)
+- **CI:** Tests run on every PR and push to main via `.github/workflows/ci.yml`
+
+The test suite covers:
+- Simulation engines: kinetics, thermodynamics, simplex LP solver, cell-free, FBA, catalyst designer, proevol
+- Honesty checks: `cellfreeHonesty`, `cethxHonesty`, `multioHonesty`, `communityFbaHonesty` (verify no hardcoded mock responses)
+- Axon AI orchestrator: intent routing, planning, execution logging, session view, writeback, cancellation/retry
+- Trust & policy engine: policy DSL evaluator/validator, trust policy engine, provenance coverage, claim surface policy
+- UI components: pagination, automation drawer, result panel, falsification dashboard, SCSpatial control rail
+- Workbench: dataflow/DBTL feedback, payload admission, experiment record validation, CSV import
+
+### Adding New Tests
+
+1. Create a file in `__tests__/` named `<module>.test.ts` or `<component>.test.tsx`
+2. Import from the module under test — path aliases (`@/`) work via `ts-jest` tsconfig override
+3. For component tests, use `@testing-library/react` — already in devDependencies
+4. DOM-dependent tests get `jsdom` environment automatically (configured in `jest.config.cjs`)
+
+### Future: E2E Tests (Playwright)
+
+A placeholder E2E job exists in CI. To activate:
+1. `npm install -D @playwright/test`
+2. Create `e2e/` directory with test files
+3. Uncomment the E2E step in `.github/workflows/ci.yml`
 
 ---
 

@@ -28,20 +28,12 @@ import FloatingControlRail from './shared/FloatingControlRail';
 import InlineMetricOverlay from './shared/InlineMetricOverlay';
 import type { ToolTab } from './shared/ToolTabBar';
 
-/* ── Design Tokens ────────────────────────────────────────────────── */
+/* ── Design Tokens (shared via useToolTheme) ──────────────────────── */
 
-const PANEL_BG = PATHD_THEME.sepiaPanelMuted;
-const BORDER = PATHD_THEME.sepiaPanelBorder;
-const LABEL = PATHD_THEME.label;
-const VALUE = PATHD_THEME.value;
-const INPUT_BG = PATHD_THEME.panelInset;
-const INPUT_BORDER = PATHD_THEME.sepiaPanelBorder;
-const INPUT_TEXT = PATHD_THEME.value;
-const GLASS: React.CSSProperties = {
-  borderRadius: '24px',
-  background: PATHD_THEME.panelSurface,
-  border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
-};
+import { toolTokens } from '../../hooks/useToolTheme';
+const { panelBg: PANEL_BG, border: BORDER, label: LABEL, value: VALUE,
+        inputBg: INPUT_BG, inputBorder: INPUT_BORDER, inputText: INPUT_TEXT,
+        glass: GLASS } = toolTokens;
 
 const GENE_COLORS = [PATHD_THEME.mint, PATHD_THEME.sky, PATHD_THEME.coral, PATHD_THEME.apricot, PATHD_THEME.lilac];
 

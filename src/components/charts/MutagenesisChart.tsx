@@ -134,7 +134,7 @@ export default function MutagenesisChart({ result, enzyme }: MutagenesisChartPro
               <LabelList
                 dataKey="deltaKcat"
                 position="top"
-                formatter={(v: number) => `${fmt2(v)}×`}
+                formatter={(v) => `${fmt2(Number(v))}×`}
                 style={{ fontFamily: FONT.MONO, fontSize: 9, fill: 'rgba(250,246,240,0.96)' }}
               />
             </Bar>

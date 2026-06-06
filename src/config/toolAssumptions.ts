@@ -40,7 +40,7 @@
  *      until Phase 2 migrates call sites.
  */
 
-import type { ToolAssumption } from '../../../types/assumptions';
+import type { ToolAssumption } from '../types/assumptions';
 
 export const TOOL_ASSUMPTIONS: Record<string, ToolAssumption[]> = {
   // ─────────────────────────────────────────────────────────────

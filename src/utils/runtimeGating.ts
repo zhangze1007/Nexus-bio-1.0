@@ -1,7 +1,7 @@
 import type { ProvenanceEntry } from '../types/assumptions';
 import type { WorkbenchPayloadBase } from '../store/workbenchPayloads';
-import { TOOL_ASSUMPTIONS } from '../components/tools/shared/toolAssumptions';
-import { TOOL_VALIDITY, type ValidityLevel } from '../components/tools/shared/toolValidity';
+import { TOOL_ASSUMPTIONS } from '../config/toolAssumptions';
+import { TOOL_VALIDITY, type ValidityLevel } from '../config/toolValidity';
 
 export type RuntimeGatingSeverity = 'allow' | 'warn' | 'block';
 

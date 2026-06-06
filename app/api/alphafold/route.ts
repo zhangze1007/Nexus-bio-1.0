@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCorsHeaders, handleOptions } from '../../../src/utils/cors';
+import { errorResponse } from '../../../src/utils/apiErrors';
 
 export const runtime = 'edge';
 
@@ -18,12 +19,12 @@ export async function GET(req: NextRequest) {
   const uniprotId = req.nextUrl.searchParams.get('id');
 
   if (!uniprotId) {
-    return new NextResponse('Missing id parameter', { status: 400, headers });
+    return errorResponse('Missing id parameter', 400, undefined, getCorsHeaders(req));
   }
 
   // Sanitize — only allow valid UniProt ID format
   if (!/^[A-Z0-9]{6,10}$/i.test(uniprotId)) {
-    return new NextResponse('Invalid UniProt ID', { status: 400, headers });
+    return errorResponse('Invalid UniProt ID', 400, undefined, getCorsHeaders(req));
   }
 
   try {
@@ -60,11 +61,9 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    return new NextResponse(`AlphaFold structure not found for ${uniprotId}`, {
-      status: 404, headers,
-    });
+    return errorResponse(`AlphaFold structure not found for ${uniprotId}`, 404, undefined, getCorsHeaders(req));
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Unknown error';
-    return new NextResponse(`Fetch error: ${message}`, { status: 500, headers });
+    return errorResponse(`Fetch error: ${message}`, 500, undefined, getCorsHeaders(req));
   }
 }

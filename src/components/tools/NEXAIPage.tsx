@@ -19,7 +19,7 @@ import ToolShell, { TOOL_TOKENS as T } from './shared/ToolShell';
 import ModuleCard from './shared/ModuleCard';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
-import type { NEXAIResult, CitationNode, GeneratedPathway } from '../../types';
+import type { NEXAIResult, CitationNode, GeneratedPathway, BottleneckEnzyme } from '../../types';
 import { useUIStore } from '../../store/uiStore';
 import { useWorkbenchStore } from '../../store/workbenchStore';
 import { workflowStatusLabel } from '../workbench/workflowExperience';
@@ -56,8 +56,8 @@ function extractYear(citation?: string, structuredYear?: number | null): number 
 
 function pathwayToResult(pathway: GeneratedPathway, query: string, provider: string): NEXAIResult {
   const nodes = (pathway.nodes || []).slice(0, 14);
-  const bottlenecks = (pathway as any).bottleneck_enzymes || [];
-  const axon = (pathway as any).axon_interaction;
+  const bottlenecks = pathway.bottleneck_enzymes ?? [];
+  const axon = pathway.axon_interaction;
 
   const W = 600, H = 420;
   const citations: CitationNode[] = nodes.map((n, i) => {
@@ -79,7 +79,7 @@ function pathwayToResult(pathway: GeneratedPathway, query: string, provider: str
     answer = axon.question;
     if (bottlenecks.length > 0) {
       const bList = bottlenecks
-        .map((b: any) => `${b.enzyme} (${b.efficiency_percent}% efficiency, ${b.yield_loss_percent}% yield loss)`)
+        .map((b: BottleneckEnzyme) => `${b.enzyme} (${b.efficiency_percent}% efficiency, ${b.yield_loss_percent}% yield loss)`)
         .join('; ');
       answer += `\n\nBottleneck enzymes identified: ${bList}.`;
       if (axon.options?.length) answer += ` Recommended: ${axon.options.join(' or ')}.`;
@@ -88,7 +88,7 @@ function pathwayToResult(pathway: GeneratedPathway, query: string, provider: str
     const b = bottlenecks[0];
     answer = `Axon identified ${nodes.length} pathway nodes for "${query}". Primary bottleneck: ${b.enzyme} at ${b.efficiency_percent}% efficiency (${b.yield_loss_percent}% yield loss). ${b.evidence || ''}`;
   } else {
-    answer = `Axon mapped ${nodes.length} nodes across the ${query} pathway. Confidence: ${((nodes.reduce((s: number, n: any) => s + (n.confidenceScore ?? 0.7), 0) / Math.max(nodes.length, 1)) * 100).toFixed(0)}%. Source: ${provider}.`;
+    answer = `Axon mapped ${nodes.length} nodes across the ${query} pathway. Confidence: ${((nodes.reduce((s, n) => s + (n.confidenceScore ?? 0.7), 0) / Math.max(nodes.length, 1)) * 100).toFixed(0)}%. Source: ${provider}.`;
   }
 
   const avgConfidence = nodes.reduce((s, n) => s + (n.confidenceScore ?? 0.7), 0) / Math.max(nodes.length, 1);
@@ -291,7 +291,7 @@ export default function NEXAIPage() {
         setResult(pathwayToResult(pathway, activeQuery, resolvedProvider));
         setResultMode('pathway');
         setSurfaceView('answer');
-        const bottlenecks = (pathway as any).bottleneck_enzymes?.length ?? 0;
+        const bottlenecks = pathway.bottleneck_enzymes?.length ?? 0;
         appendConsole({ level: 'success', module: 'nexai', message: `Axon: ${pathway.nodes.length} nodes · ${bottlenecks} bottleneck(s) · ${resolvedProvider}` });
       } else {
         // Plain text or malformed — both render via ResultPanel, which

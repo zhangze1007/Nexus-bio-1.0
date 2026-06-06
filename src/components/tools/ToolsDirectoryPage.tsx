@@ -31,10 +31,9 @@ const STORAGE_KEY = 'nexus-bio-favorite-tools';
 type ShellFilter = 'All' | 'ide' | 'bento';
 type SortMode = 'name' | 'category' | 'workflow';
 
-const BORDER = PATHD_THEME.sepiaPanelBorder;
+import { toolTokens } from '../../hooks/useToolTheme';
+const { border: BORDER, value: VALUE, label: LABEL } = toolTokens;
 const BORDER_STRONG = PATHD_THEME.panelBorderStrong;
-const VALUE = PATHD_THEME.value;
-const LABEL = PATHD_THEME.label;
 const SURFACE = PATHD_THEME.panelSurface;
 const SURFACE_SOFT = PATHD_THEME.panelInset;
 const SURFACE_TINT = 'rgba(255,255,255,0.90)';

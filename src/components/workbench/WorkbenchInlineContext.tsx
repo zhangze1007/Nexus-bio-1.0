@@ -5,7 +5,7 @@ import { useMemo } from 'react';
 import { ArrowUpRight, BrainCircuit, Microscope } from 'lucide-react';
 import { TOOL_BY_ID } from '../tools/shared/toolRegistry';
 import { getStageForTool } from '../tools/shared/workbenchConfig';
-import { getUpstreamToolIds } from '../tools/shared/workbenchGraph';
+import { getUpstreamToolIds } from '../../config/workbenchGraph';
 import RuntimeGatingNotice from '../tools/shared/RuntimeGatingNotice';
 import { useWorkbenchStore } from '../../store/workbenchStore';
 import type { WorkbenchToolPayloadMap } from '../../store/workbenchPayloads';

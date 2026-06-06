@@ -121,6 +121,10 @@ export interface GeneratedPathway {
   edges: PathwayEdge[];
   risk_report?: RiskReportEntry[];
   yield_optimization_strategies?: YieldOptimizationStrategy[];
+  // Axon predictive design fields (populated by /api/analyze enrichAxonOutput)
+  bottleneck_enzymes?: BottleneckEnzyme[];
+  de_novo_design_strategies?: DeNovoDesignStrategy[];
+  axon_interaction?: AxonInteraction;
   metadata?: {
     sourceText?: string;
     generatedAt?: string;

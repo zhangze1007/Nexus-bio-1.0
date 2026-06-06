@@ -3,7 +3,7 @@ import type {
   WorkbenchProjectBrief,
   WorkbenchRunArtifact,
 } from '../../store/workbenchTypes';
-import { buildExecutionSnapshot, diffExecutionSnapshot } from './workbenchExecution';
+import { buildExecutionSnapshot, diffExecutionSnapshot } from '../../config/workbenchExecution';
 
 export type WorkbenchFreshnessStatus = 'fresh' | 'stale' | 'awaiting-upstream' | 'not-run';
 export type ExperimentLedgerStatus = 'recorded' | 'committed' | 'attention' | 'draft';

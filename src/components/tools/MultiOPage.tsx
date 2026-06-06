@@ -10,7 +10,6 @@ import { OMICS_DATA } from '../../data/mockMultiO';
 import { OmicsFoundationModel } from '../../services/OmicsIntegrator';
 import {
   extractMOFAFactors,
-  trainMultimodalVAE,
   predictPerturbation as vaePredictPerturbation,
   computeMetabolicEfficiency,
   exportEmbeddingsWithEfficiency,
@@ -32,6 +31,7 @@ import type {
 import type { ProvenanceEntry } from '../../types/assumptions';
 import { useWorkbenchStore } from '../../store/workbenchStore';
 import { useUIStore } from '../../store/uiStore';
+import { useVAEWorker } from '../../hooks/useVAEWorker';
 import { createProvenanceEntry } from '../../utils/provenance';
 import { T, TOOL_RESULT_PALETTE} from '../ide/tokens';
 import ScientificHero from './shared/ScientificHero';
@@ -51,13 +51,10 @@ const LAYER_COLORS: Record<OmicsLayer, string> = {
   metabolomics:    '#E8A3A1',   // coral
 };
 
-const PANEL_BG = PATHD_THEME.sepiaPanelMuted;
-const BORDER = PATHD_THEME.sepiaPanelBorder;
-const LABEL = PATHD_THEME.label;
-const VALUE = PATHD_THEME.value;
-const INPUT_BG = PATHD_THEME.panelInset;
-const INPUT_BORDER = PATHD_THEME.sepiaPanelBorder;
-const INPUT_TEXT = PATHD_THEME.value;
+import { toolTokens } from '../../hooks/useToolTheme';
+const { panelBg: PANEL_BG, border: BORDER, label: LABEL, value: VALUE,
+        inputBg: INPUT_BG, inputBorder: INPUT_BORDER, inputText: INPUT_TEXT,
+        glass: GLASS } = toolTokens;
 
 const MULTIO_TABS: ToolTab[] = [
   { id: 'embedding', label: 'Embedding', accent: PATHD_THEME.sky },
@@ -66,12 +63,6 @@ const MULTIO_TABS: ToolTab[] = [
   { id: 'projection', label: 'Projection', accent: PATHD_THEME.mint },
   { id: 'efficiency', label: 'Efficiency', accent: PATHD_THEME.coral },
 ];
-
-const GLASS: React.CSSProperties = {
-  borderRadius: '24px',
-  background: PATHD_THEME.panelSurface,
-  border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
-};
 
 function canonicalGeneToken(value: string) {
   return value.toUpperCase().replace(/[^A-Z0-9]/g, '');
@@ -616,10 +607,19 @@ export default function MultiOPage() {
 
   /* MOI Engine — ALS factors / linear embedding / Efficiency (see MOIEngine.ts header for honest method names) */
   const mofaResult = useMemo(() => extractMOFAFactors(OMICS_DATA, 5), []);
-  const vaeResult = useMemo(() => trainMultimodalVAE(OMICS_DATA, 8, 0.5, 100, 0.005), []);
+  const { result: vaeResult, loading: vaeLoading, error: vaeError, train: trainVAE } = useVAEWorker({
+    data: OMICS_DATA,
+    latentDim: 8,
+    beta: 0.5,
+    epochs: 100,
+    lr: 0.005,
+  });
+
+  /* Auto-train VAE on mount */
+  useEffect(() => { trainVAE(); }, [trainVAE]);
   const efficiencyScores = useMemo(() => computeMetabolicEfficiency(OMICS_DATA), []);
   const vaeEmbeddings = useMemo(
-    () => exportEmbeddingsWithEfficiency(vaeResult, efficiencyScores),
+    () => vaeResult ? exportEmbeddingsWithEfficiency(vaeResult, efficiencyScores) : [],
     [vaeResult, efficiencyScores],
   );
 
@@ -737,7 +737,7 @@ export default function MultiOPage() {
         mofaVarianceExplained: mofaResult.totalVarianceExplained,
         topEfficiencyGene: topEfficiency?.gene ?? '—',
         topEfficiencyScore: topEfficiency?.score ?? 0,
-        vaeElbo: vaeResult.elbo,
+        vaeElbo: vaeResult?.elbo ?? 0,
       },
       updatedAt: now,
     });
@@ -757,7 +757,7 @@ export default function MultiOPage() {
     selectedGene,
     setToolPayload,
     significant.length,
-    vaeResult.elbo,
+    vaeResult?.elbo,
   ]);
 
   /* Section label helper */
@@ -1142,16 +1142,27 @@ export default function MultiOPage() {
             caption="Embedding geometry above, optimization trace below."
             minHeight="100%"
             legend={[
-              { label: 'Dim', value: `${vaeResult.latentDim}D`, accent: PATHD_THEME.sky },
-              { label: 'ELBO', value: vaeResult.elbo.toFixed(3), accent: PATHD_THEME.mint },
+              { label: 'Dim', value: `${vaeResult?.latentDim ?? 8}D`, accent: PATHD_THEME.sky },
+              { label: 'ELBO', value: vaeResult?.elbo?.toFixed(3) ?? '—', accent: PATHD_THEME.mint },
             ]}
           >
+            {vaeLoading && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px', color: PATHD_THEME.label, fontSize: '12px', fontFamily: 'monospace' }}>
+                Training VAE embedding model…
+              </div>
+            )}
+            {vaeError && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px', color: '#FA8072', fontSize: '12px', fontFamily: 'monospace' }}>
+                VAE error: {vaeError}
+              </div>
+            )}
+            {!vaeLoading && !vaeError && (
             <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
               <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
                 <div style={{ width: '100%', maxWidth: '560px' }}>
                   {(() => {
                     const W = 520, H = 380, PAD = 44;
-                    const pts = vaeResult.latentPoints;
+                    const pts = vaeResult?.latentPoints ?? [];
                     const xs = pts.map(p => p.z_mean[0] ?? 0);
                     const ys = pts.map(p => p.z_mean[1] ?? 0);
                     const xMin = Math.min(...xs), xMax = Math.max(...xs);
@@ -1184,7 +1195,7 @@ export default function MultiOPage() {
               </div>
               <div style={{ height: '100px', padding: '0 20px 12px', flexShrink: 0 }}>
                 {(() => {
-                  const hist = vaeResult.convergenceHistory;
+                  const hist = vaeResult?.convergenceHistory ?? [];
                   if (hist.length === 0) return null;
                   const W = 480, H = 80, PAD = 30;
                   const maxL = Math.max(...hist.map(h => h.loss), 0.01);
@@ -1199,6 +1210,7 @@ export default function MultiOPage() {
                 })()}
               </div>
             </div>
+            )}
           </ScientificFigureFrame>
         </div>
       </ToolTabPanel>

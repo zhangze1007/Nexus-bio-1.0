@@ -29,17 +29,10 @@ import FloatingControlRail from './shared/FloatingControlRail';
 import InlineMetricOverlay from './shared/InlineMetricOverlay';
 import type { ToolTab } from './shared/ToolTabBar';
 
-/* ── Design Tokens ─────────────────────────────────────────────────────────── */
-const PANEL_BG = PATHD_THEME.sepiaPanelMuted;
-const BORDER = PATHD_THEME.sepiaPanelBorder;
-const LABEL = PATHD_THEME.label;
-const VALUE = PATHD_THEME.value;
-
-const GLASS: React.CSSProperties = {
-  borderRadius: '24px',
-  background: PATHD_THEME.panelSurface,
-  border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
-};
+/* ── Design Tokens (shared via useToolTheme) ───────────────────────────────── */
+import { toolTokens } from '../../hooks/useToolTheme';
+const { panelBg: PANEL_BG, border: BORDER, label: LABEL, value: VALUE,
+        glass: GLASS } = toolTokens;
 
 /* ── Series definitions (6 state variables) ────────────────────────────────── */
 const SERIES = [

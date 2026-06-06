@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { ArrowRight, BookMarked, FlaskConical, ShieldAlert, Workflow } from 'lucide-react';
 import { useWorkbenchStore } from '../../store/workbenchStore';
 import { TOOL_BY_ID } from '../tools/shared/toolRegistry';
-import { getDependencyTrace } from '../tools/shared/workbenchGraph';
+import { getDependencyTrace } from '../../config/workbenchGraph';
 import { getAuthorityTier } from './workbenchTrust';
 import { PATHD_THEME } from './workbenchTheme';
 import { tryGetToolContract } from '../../services/workflowRegistry';

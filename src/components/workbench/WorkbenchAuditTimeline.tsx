@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { BookOpenText, Database, FlaskConical, Workflow } from 'lucide-react';
 import { useWorkbenchStore } from '../../store/workbenchStore';
 import { TOOL_BY_ID } from '../tools/shared/toolRegistry';
-import { getDownstreamToolIds, getUpstreamToolIds } from '../tools/shared/workbenchGraph';
+import { getDownstreamToolIds, getUpstreamToolIds } from '../../config/workbenchGraph';
 import type { WorkbenchStageId } from '../tools/shared/workbenchConfig';
 import { PATHD_THEME } from './workbenchTheme';
 import {

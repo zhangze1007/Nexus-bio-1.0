@@ -1,17 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCorsHeaders, handleOptions } from '../../../src/utils/cors';
+import { errorResponse } from '../../../src/utils/apiErrors';
 
 export const runtime = 'edge';
 
 function getCors(req?: Request) {
   return { 'Content-Type': 'text/plain', ...getCorsHeaders(req) };
-}
-
-function json(b: unknown, s = 200, req?: Request) {
-  return new NextResponse(JSON.stringify(b), {
-    status: s,
-    headers: { ...getCors(req), 'Content-Type': 'application/json' },
-  });
 }
 
 export async function OPTIONS(req: NextRequest) {
@@ -24,7 +18,7 @@ export async function GET(req: NextRequest) {
 
   // ── Mode 1: fetch SDF by CID ──────────────────────────────────────
   if (cid) {
-    if (!/^\d+$/.test(cid)) return json({ error: 'Invalid CID' }, 400);
+    if (!/^\d+$/.test(cid)) return errorResponse('Invalid CID', 400, undefined, getCors(req));
 
     const attempts = [
       `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${cid}/SDF?record_type=3d`,
@@ -43,13 +37,13 @@ export async function GET(req: NextRequest) {
       } catch { continue; }
     }
 
-    return json({ error: `No SDF found for CID ${cid}` }, 404);
+    return errorResponse(`No SDF found for CID ${cid}`, 404, undefined, getCors(req));
   }
 
   // ── Mode 2: search CID by name, then fetch SDF ────────────────────
   if (name) {
     const cleanName = name.trim().slice(0, 200);
-    if (!cleanName) return json({ error: 'Empty name' }, 400);
+    if (!cleanName) return errorResponse('Empty name', 400, undefined, getCors(req));
 
     try {
       // Step 1: resolve name → CID
@@ -58,11 +52,11 @@ export async function GET(req: NextRequest) {
         headers: { 'User-Agent': 'NexusBio/1.0 (fuchanze@gmail.com)' },
       });
 
-      if (!searchRes.ok) return json({ error: 'Name not found in PubChem' }, 404);
+      if (!searchRes.ok) return errorResponse('Name not found in PubChem', 404, undefined, getCors(req));
 
       const searchData = await searchRes.json() as { IdentifierList?: { CID?: number[] } };
       const foundCid = searchData?.IdentifierList?.CID?.[0];
-      if (!foundCid) return json({ error: 'No CID found for this name' }, 404);
+      if (!foundCid) return errorResponse('No CID found for this name', 404, undefined, getCors(req));
 
       // Step 2: fetch 3D SDF with found CID
       const sdfAttempts = [
@@ -87,13 +81,13 @@ export async function GET(req: NextRequest) {
         } catch { continue; }
       }
 
-      return json({ error: `CID ${foundCid} found but no SDF available` }, 404);
+      return errorResponse(`CID ${foundCid} found but no SDF available`, 404, undefined, getCors(req));
 
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'PubChem lookup failed';
-      return json({ error: message }, 500);
+      return errorResponse(message, 500, undefined, getCors(req));
     }
   }
 
-  return json({ error: 'Provide either cid or name parameter' }, 400);
+  return errorResponse('Provide either cid or name parameter', 400, undefined, getCors(req));
 }

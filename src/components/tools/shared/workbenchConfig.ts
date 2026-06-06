@@ -1,5 +1,5 @@
 import { getToolDefinition } from './toolRegistry';
-import { getDependencyEdges } from './workbenchGraph';
+import { getDependencyEdges } from '../../../config/workbenchGraph';
 
 export type WorkbenchStageId =
   | 'stage-1'

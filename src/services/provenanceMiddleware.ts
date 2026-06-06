@@ -2,7 +2,7 @@ import type {
   ClaimSurface,
   ProvenanceEntry,
 } from '../protocol/nexusTrustRuntime';
-import { TOOL_VALIDITY } from '../components/tools/shared/toolValidity';
+import { TOOL_VALIDITY } from '../config/toolValidity';
 import type {
   ProvenanceEntry as WorkbenchProvenanceEntry,
 } from '../types/assumptions';

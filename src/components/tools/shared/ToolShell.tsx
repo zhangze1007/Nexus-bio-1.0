@@ -30,7 +30,7 @@ import type { CSSProperties, ReactNode } from 'react';
 import { motion } from 'framer-motion';
 import { LayoutGrid, ChevronLeft } from 'lucide-react';
 import { getToolDefinition } from './toolRegistry';
-import { getToolValidity, type ValidityLevel } from './toolValidity';
+import { getToolValidity, type ValidityLevel } from '../../../config/toolValidity';
 import { useNavigation } from '../../../contexts/NavigationContext';
 import { T } from '../../ide/tokens';
 import { PATHD_THEME } from '../../workbench/workbenchTheme';
