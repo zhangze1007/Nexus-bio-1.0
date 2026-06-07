@@ -344,7 +344,7 @@ export default function GenMIMPage() {
                 borderRadius: 'var(--nb-radius-sm)', cursor: 'pointer',
                 color: protectEssential ? PATHD_THEME.value : PATHD_THEME.label,
                 fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', textAlign: 'left',
-                transition: 'background 0.12s, border-color 0.12s, color 0.12s',
+                transition: 'background 80ms, border-color 80ms, color 80ms',
               }}
               onMouseEnter={e => {
                 (e.currentTarget as HTMLElement).style.background = protectEssential ? 'rgba(231,199,169,0.25)' : 'var(--nb-hover-bg)';

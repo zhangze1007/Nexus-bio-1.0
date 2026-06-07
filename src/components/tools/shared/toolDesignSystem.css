@@ -79,7 +79,7 @@
   font-size: var(--nb-fs-sm);
   font-weight: 500;
   cursor: pointer;
-  transition: background 0.12s, border-color 0.12s, color 0.12s;
+  transition: background 80ms, border-color 80ms, color 80ms;
   white-space: nowrap;
   flex-shrink: 0;
 }

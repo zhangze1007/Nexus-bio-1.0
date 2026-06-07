@@ -91,7 +91,7 @@ export default function ScientificHero({
           cursor: 'pointer',
           height: '28px',
           overflow: 'hidden',
-          transition: 'background 0.15s',
+          transition: 'background 80ms',
         }}
       >
         <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: 'var(--nb-text-label)', textTransform: 'uppercase', letterSpacing: '0.10em', flexShrink: 0 }}>

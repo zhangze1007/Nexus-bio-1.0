@@ -191,7 +191,7 @@ function ActionBtn({ label, icon: Icon, tone = 'neutral', onClick, disabled = fa
         cursor: disabled ? 'not-allowed' : 'pointer',
         fontFamily: T.MONO, fontSize:'10px', fontWeight:600,
         textTransform:'uppercase', letterSpacing:'0.08em',
-        transition:'background 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease',
+        transition:'background 80ms ease, border-color 80ms ease, color 80ms ease, box-shadow 80ms ease, transform 80ms ease',
         display:'inline-flex',
         alignItems:'center',
         justifyContent:'center',
