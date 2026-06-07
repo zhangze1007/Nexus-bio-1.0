@@ -533,6 +533,7 @@ export default function NEXAIPage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, overflowY: 'auto' }}>
           {contextPrompt && (
             <button
+              className="nb-tool-toggle"
               onClick={() => setQuery(contextPrompt)}
               style={{
                 display: 'block',
@@ -668,6 +669,7 @@ export default function NEXAIPage() {
               </div>
               <button
                 type="button"
+                className="nb-tool-toggle"
                 data-testid="nexai-agentic-toggle"
                 aria-pressed={agenticMode}
                 onClick={toggleAgenticMode}
@@ -749,6 +751,7 @@ export default function NEXAIPage() {
                     <button
                       key={view}
                       type="button"
+                      className={`nb-tool-toggle ${surfaceView === view ? 'nb-tool-toggle--active' : ''}`}
                       onClick={() => setSurfaceView(view)}
                       aria-pressed={surfaceView === view}
                       data-testid={`nexai-surface-${view}`}
@@ -821,6 +824,7 @@ export default function NEXAIPage() {
               >
                 <button
                   type="button"
+                  className="nb-tool-toggle"
                   data-testid="nexai-secondary-toggle"
                   aria-expanded={secondaryOpen}
                   onClick={() => setSecondaryOpen((v) => !v)}

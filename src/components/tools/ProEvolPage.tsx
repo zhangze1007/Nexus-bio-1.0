@@ -203,12 +203,12 @@ export default function ProEvolPage() {
             </span>
             <button
               type="button"
+              className={`nb-tool-toggle ${showParams ? 'nb-tool-toggle--active' : ''}`}
               onClick={() => setShowParams(!showParams)}
               style={{
                 minHeight: '22px', padding: '0 8px', borderRadius: '999px',
-                border: `1px solid ${PROEVOL_THEME.border}`,
-                background: showParams ? 'rgba(191,220,205,0.12)' : 'transparent',
-                color: showParams ? PROEVOL_THEME.value : PROEVOL_THEME.label,
+                background: showParams ? 'rgba(191,220,205,0.12)' : undefined,
+                color: showParams ? PROEVOL_THEME.value : undefined,
                 fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase',
                 letterSpacing: '0.06em', cursor: 'pointer',
               }}

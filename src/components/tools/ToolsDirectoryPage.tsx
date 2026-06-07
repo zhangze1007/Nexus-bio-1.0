@@ -356,15 +356,15 @@ export default function ToolsDirectoryPage() {
                     <React.Fragment key={s.stage}>
                       <button
                         type="button"
+                        className="nb-tool-toggle"
                         onClick={() => setDirection(s.directions[0])}
                         style={{
                           flex: '1 1 0',
                           minWidth: '160px',
                           padding: '14px 16px',
                           borderRadius: 'var(--nb-radius-lg)',
-                          border: `1px solid ${s.borderColor}`,
+                          borderColor: s.borderColor,
                           background: s.bgColor,
-                          cursor: 'pointer',
                           textAlign: 'left',
                         }}
                       >
@@ -412,16 +412,12 @@ export default function ToolsDirectoryPage() {
                         </div>
                         <button
                           type="button"
+                          className="nb-tool-toggle"
                           onClick={() => setDirection(cluster.direction)}
                           style={{
                             minHeight: '30px',
                             padding: '0 10px',
                             borderRadius: '999px',
-                            border: `1px solid ${BORDER}`,
-                            background: SURFACE_TINT,
-                            color: BTN_TEXT,
-                            cursor: 'pointer',
-                            fontFamily: T.MONO,
                             fontSize: 'var(--nb-fs-xs)',
                           }}
                         >
