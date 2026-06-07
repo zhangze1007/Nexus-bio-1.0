@@ -801,13 +801,14 @@ export default function DBTLflowPage() {
             {/* Pass / Fail */}
             <div style={{ display: 'flex', gap: '8px', marginBottom: '14px' }}>
               {([true, false] as const).map(p => (
-                <button aria-label={p ? 'Mark iteration as pass' : 'Mark iteration as fail'} key={String(p)} onClick={() => setPassed(p)} style={{
+                <button aria-label={p ? 'Mark iteration as pass' : 'Mark iteration as fail'} key={String(p)} onClick={() => setPassed(p)}
+                  className={`nb-tool-toggle ${passed === p ? 'nb-tool-toggle--active' : ''}`}
+                  style={{
                   flex: 1, padding: '6px',
-                  background: passed === p ? (p ? 'rgba(191,220,205,0.2)' : 'rgba(232,163,161,0.18)') : PATHD_THEME.paperSurfaceStrong,
-                  border: `1px solid ${passed === p ? (p ? 'rgba(191,220,205,0.34)' : 'rgba(232,163,161,0.34)') : INPUT_BORDER}`,
+                  background: passed === p ? (p ? 'rgba(191,220,205,0.2)' : 'rgba(232,163,161,0.18)') : undefined,
+                  borderColor: passed === p ? (p ? 'rgba(191,220,205,0.34)' : 'rgba(232,163,161,0.34)') : undefined,
                   borderRadius: 'var(--nb-radius-sm)',
-                  color: passed === p ? VALUE : LABEL,
-                  fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', cursor: 'pointer',
+                  color: passed === p ? VALUE : undefined,
                 }}>
                   {p ? '✓ Pass' : '✗ Fail'}
                 </button>

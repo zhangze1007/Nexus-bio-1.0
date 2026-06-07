@@ -850,14 +850,16 @@ export default function MultiOPage() {
               { label: 'Proteomics',      layer: 'proteomics' as OmicsLayer,      val: showProtein,    set: setShowProtein },
               { label: 'Metabolomics',    layer: 'metabolomics' as OmicsLayer,    val: showMetabolite, set: setShowMetabolite },
             ]).map(({ label, layer, val, set }) => (
-              <button aria-label={`Toggle ${label} layer`} key={label} onClick={() => set(!val)} style={{
+              <button aria-label={`Toggle ${label} layer`} key={label} onClick={() => set(!val)}
+                className={`nb-tool-toggle ${val ? 'nb-tool-toggle--active' : ''}`}
+                style={{
                 display: 'flex', alignItems: 'center', gap: '8px',
                 width: '100%', padding: '7px 10px', marginBottom: '6px',
-                background: val ? 'rgba(175,195,214,0.22)' : INPUT_BG,
-                border: `1px solid ${val ? 'rgba(175,195,214,0.34)' : BORDER}`,
-                borderRadius: 'var(--nb-radius-sm)', cursor: 'pointer',
-                color: val ? INPUT_TEXT : LABEL,
-                fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', textAlign: 'left',
+                background: val ? 'rgba(175,195,214,0.22)' : undefined,
+                borderColor: val ? 'rgba(175,195,214,0.34)' : undefined,
+                borderRadius: 'var(--nb-radius-sm)',
+                color: val ? INPUT_TEXT : undefined,
+                textAlign: 'left',
               }}>
                 <span style={{
                   width: '8px', height: '8px', borderRadius: '50%',
