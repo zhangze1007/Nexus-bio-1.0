@@ -23,7 +23,7 @@ export default function FloatingTabBar({
       zIndex: 30, display: 'flex', gap: '2px',
       background: 'rgba(10,12,16,0.72)', backdropFilter: 'blur(16px) saturate(135%)',
       WebkitBackdropFilter: 'blur(16px) saturate(135%)',
-      borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)',
+      borderRadius: 'var(--nb-radius-md)', border: '1px solid rgba(255,255,255,0.1)',
       padding: '3px',
     }}>
       {tabs.map(tab => {
@@ -33,8 +33,8 @@ export default function FloatingTabBar({
             key={tab.id}
             onClick={() => onTabChange(tab.id)}
             style={{
-              padding: '6px 14px', borderRadius: '8px', border: 'none', cursor: 'pointer',
-              fontFamily: T.SANS, fontSize: '11px', fontWeight: isActive ? 600 : 400,
+              padding: '6px 14px', borderRadius: 'var(--nb-radius-sm)', border: 'none', cursor: 'pointer',
+              fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', fontWeight: isActive ? 600 : 400,
               color: isActive ? tab.accent : PATHD_THEME.label,
               background: isActive ? 'rgba(255,255,255,0.1)' : 'transparent',
               transition: 'all 0.2s ease',

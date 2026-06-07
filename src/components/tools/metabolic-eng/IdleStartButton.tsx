@@ -18,7 +18,7 @@ export default function IdleStartButton({
           onClick={onStart}
           style={{
             position: 'absolute', bottom: '28px', left: '50%', transform: 'translateX(-50%)',
-            fontFamily: T.MONO, fontSize: '10px', color: '#111318',
+            fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: '#111318',
             textTransform: 'uppercase', letterSpacing: '0.15em', zIndex: 25,
             background: 'rgba(255,255,255,0.88)', border: 'none',
             borderRadius: '100px', padding: '8px 20px', cursor: 'pointer',

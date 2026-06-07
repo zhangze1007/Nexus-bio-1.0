@@ -59,7 +59,7 @@ export default function FloatingControlRail({
           <span
             style={{
               fontFamily: T.SANS,
-              fontSize: '10px',
+              fontSize: 'var(--nb-fs-xs)',
               textTransform: 'uppercase',
               letterSpacing: '0.1em',
               color: PATHD_THEME.label,

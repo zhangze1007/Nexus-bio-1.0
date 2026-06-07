@@ -35,7 +35,7 @@ export default function ScientificFigureFrame({
         display: 'grid',
         gap: '12px',
         padding: '14px',
-        borderRadius: '20px',
+        borderRadius: 'var(--nb-radius-xl)',
         border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
         background: PATHD_THEME.panelSurface,
         boxShadow: '0 16px 34px rgba(96,74,56,0.08), inset 0 1px 0 rgba(255,255,255,0.82)',
@@ -53,7 +53,7 @@ export default function ScientificFigureFrame({
         <div
           style={{
             fontFamily: T.MONO,
-            fontSize: '10px',
+            fontSize: 'var(--nb-fs-xs)',
             letterSpacing: '0.12em',
             textTransform: 'uppercase',
             color: PATHD_THEME.label,
@@ -64,7 +64,7 @@ export default function ScientificFigureFrame({
         <div
           style={{
             fontFamily: T.SANS,
-            fontSize: '15px',
+            fontSize: 'var(--nb-fs-md)',
             fontWeight: 700,
             color: PATHD_THEME.value,
             letterSpacing: '-0.02em',
@@ -75,7 +75,7 @@ export default function ScientificFigureFrame({
         <div
           style={{
             fontFamily: T.SANS,
-            fontSize: '11px',
+            fontSize: 'var(--nb-fs-sm)',
             lineHeight: 1.6,
             color: PATHD_THEME.paperMuted,
           }}
@@ -123,7 +123,7 @@ export default function ScientificFigureFrame({
                   <span
                     style={{
                       fontFamily: T.MONO,
-                      fontSize: '10px',
+                      fontSize: 'var(--nb-fs-xs)',
                       letterSpacing: '0.06em',
                       textTransform: 'uppercase',
                       color: PATHD_THEME.label,
@@ -134,7 +134,7 @@ export default function ScientificFigureFrame({
                   <span
                     style={{
                       fontFamily: T.SANS,
-                      fontSize: '10px',
+                      fontSize: 'var(--nb-fs-xs)',
                       color: PATHD_THEME.value,
                       fontWeight: 600,
                     }}

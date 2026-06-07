@@ -26,7 +26,7 @@ export default function EmbeddedSupportDock({
             key={card.eyebrow}
             className="nb-pathd-support-dock__card"
             style={{
-              borderRadius: '16px',
+              borderRadius: 'var(--nb-radius-lg)',
               border: '1px solid rgba(255,255,255,0.12)',
               background: 'linear-gradient(180deg, rgba(255,255,255,0.12) 0%, rgba(247,250,253,0.08) 16%, rgba(10,12,16,0.58) 100%)',
               boxShadow: '0 18px 34px rgba(0,0,0,0.24), inset 0 1px 0 rgba(255,255,255,0.10)',
@@ -41,7 +41,7 @@ export default function EmbeddedSupportDock({
               <div
                 style={{
                   fontFamily: T.MONO,
-                  fontSize: '10px',
+                  fontSize: 'var(--nb-fs-xs)',
                   letterSpacing: '0.10em',
                   textTransform: 'uppercase',
                   color: PATHD_THEME.label,
@@ -52,7 +52,7 @@ export default function EmbeddedSupportDock({
               <div
                 style={{
                   fontFamily: T.SANS,
-                  fontSize: '13px',
+                  fontSize: 'var(--nb-fs-sm)',
                   fontWeight: 700,
                   color: PATHD_THEME.value,
                   lineHeight: 1.2,
@@ -85,7 +85,7 @@ export default function EmbeddedSupportDock({
                     display: 'inline-flex',
                     alignItems: 'center',
                     fontFamily: T.MONO,
-                    fontSize: '10px',
+                    fontSize: 'var(--nb-fs-xs)',
                     letterSpacing: '0.05em',
                     textTransform: 'uppercase',
                   }}

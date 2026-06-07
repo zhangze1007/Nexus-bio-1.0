@@ -266,7 +266,7 @@ function ParamSlider({ label, value, min, max, step = 0.1, onChange, unit }: {
 /* ── Section Header ────────────────────────────────────────────────────────── */
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p style={{ fontFamily: T.SANS, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: LABEL, margin: '16px 0 8px' }}>
+    <p style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', letterSpacing: '0.1em', color: LABEL, margin: '16px 0 8px' }}>
       {children}
     </p>
   );
@@ -276,8 +276,8 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 function StatRow({ label, value, unit }: { label: string; value: string | number; unit?: string }) {
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', padding: '4px 0', borderBottom: `1px solid ${BORDER}` }}>
-      <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>{label}</span>
-      <span style={{ fontFamily: T.MONO, fontSize: '12px', fontWeight: 600, color: VALUE, textAlign: 'right' }}>
+      <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>{label}</span>
+      <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-sm)', fontWeight: 600, color: VALUE, textAlign: 'right' }}>
         {typeof value === 'number' ? value.toFixed(3) : value}{unit ? ` ${unit}` : ''}
       </span>
     </div>
@@ -440,13 +440,13 @@ export default function DynConPage() {
             summary="DYNCON turns pathway risk into operating policy. PID tuning, Hill repression, and genetic-part mapping are treated as one control package so the page behaves like a scientific control surface for a living system, not a disconnected slider set."
             aside={
               <>
-                <div style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                <div style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.label, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                   Control bridge
                 </div>
-                <div style={{ fontFamily: T.SANS, fontSize: '13px', color: PATHD_THEME.value, fontWeight: 700 }}>
+                <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: PATHD_THEME.value, fontWeight: 700 }}>
                   {rbsMapping.rbsName} · gain {rbsMapping.controlGain.toFixed(2)}
                 </div>
-                <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.label, lineHeight: 1.55 }}>
+                <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: PATHD_THEME.label, lineHeight: 1.55 }}>
                   Controller gains are translated into a concrete RBS choice, so the workbench keeps one foot in executable biology.
                 </div>
               </>
@@ -581,7 +581,7 @@ export default function DynConPage() {
                   <StatRow label="SS Error" value={convergence.steadyStateError} />
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '6px' }}>
                     <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: convergence.isStable ? PATHD_THEME.mint : PATHD_THEME.coral }} />
-                    <span style={{ fontFamily: T.SANS, fontSize: '11px', color: convergence.isStable ? VALUE : PATHD_THEME.coral }}>{convergence.isStable ? 'Stable' : 'Unstable'}</span>
+                    <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: convergence.isStable ? VALUE : PATHD_THEME.coral }}>{convergence.isStable ? 'Stable' : 'Unstable'}</span>
                   </div>
                 </div>
                 <SectionLabel>Metabolic Burden</SectionLabel>
@@ -592,9 +592,9 @@ export default function DynConPage() {
                   <StatRow label="Growth Penalty" value={burden.growthPenalty} />
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '6px' }}>
                     <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: burden.isViable ? PATHD_THEME.mint : PATHD_THEME.coral }} />
-                    <span style={{ fontFamily: T.SANS, fontSize: '11px', color: burden.isViable ? VALUE : PATHD_THEME.coral }}>{burden.isViable ? 'Viable' : 'Non-viable'}</span>
+                    <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: burden.isViable ? VALUE : PATHD_THEME.coral }}>{burden.isViable ? 'Viable' : 'Non-viable'}</span>
                   </div>
-                  <p style={{ fontFamily: T.SANS, fontSize: '10px', fontStyle: 'italic', color: LABEL, lineHeight: 1.45, marginTop: '6px' }}>{burden.recommendation}</p>
+                  <p style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', fontStyle: 'italic', color: LABEL, lineHeight: 1.45, marginTop: '6px' }}>{burden.recommendation}</p>
                 </div>
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
@@ -626,24 +626,24 @@ export default function DynConPage() {
                 <div style={{ ...GLASS, padding: '16px' }}>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
                     <div>
-                      <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>Control Gain</div>
-                      <div style={{ fontFamily: T.SANS, fontSize: '20px', color: VALUE, fontWeight: 700 }}>{rbsMapping.controlGain.toFixed(2)}</div>
+                      <div style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>Control Gain</div>
+                      <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-lg)', color: VALUE, fontWeight: 700 }}>{rbsMapping.controlGain.toFixed(2)}</div>
                     </div>
                     <div>
-                      <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>RBS Part</div>
-                      <div style={{ fontFamily: T.SANS, fontSize: '20px', color: PATHD_THEME.sky, fontWeight: 700 }}>{rbsMapping.rbsName}</div>
+                      <div style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>RBS Part</div>
+                      <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-lg)', color: PATHD_THEME.sky, fontWeight: 700 }}>{rbsMapping.rbsName}</div>
                     </div>
                   </div>
                   <div style={{ marginBottom: '12px' }}>
-                    <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>RBS Strength</div>
+                    <div style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>RBS Strength</div>
                     <div style={{ background: PATHD_THEME.panelInset, borderRadius: '6px', height: '10px', overflow: 'hidden' }}>
                       <div style={{ width: `${Math.min(100, rbsMapping.rbsStrength * 100)}%`, height: '100%', background: `linear-gradient(90deg, ${PATHD_THEME.sky}, ${PATHD_THEME.mint})`, borderRadius: '6px', transition: 'width 300ms ease-out' }} />
                     </div>
-                    <div style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE, marginTop: '4px' }}>{(rbsMapping.rbsStrength * 100).toFixed(0)}%</div>
+                    <div style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE, marginTop: '4px' }}>{(rbsMapping.rbsStrength * 100).toFixed(0)}%</div>
                   </div>
                   <div>
-                    <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>DNA Sequence</div>
-                    <p style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.sky, wordBreak: 'break-all', lineHeight: 1.6, background: PATHD_THEME.panelInset, padding: '8px', borderRadius: '8px', border: `1px solid ${PATHD_THEME.sepiaPanelBorder}` }}>
+                    <div style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>DNA Sequence</div>
+                    <p style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.sky, wordBreak: 'break-all', lineHeight: 1.6, background: PATHD_THEME.panelInset, padding: '8px', borderRadius: 'var(--nb-radius-sm)', border: `1px solid ${PATHD_THEME.sepiaPanelBorder}` }}>
                       {rbsMapping.sequence}
                     </p>
                   </div>

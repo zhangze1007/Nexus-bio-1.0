@@ -41,7 +41,7 @@ export default function InlineMetricOverlay({
         flexDirection: 'column',
         gap: '4px',
         padding: '8px 12px',
-        borderRadius: '12px',
+        borderRadius: 'var(--nb-radius-md)',
         background: 'rgba(16, 19, 26, 0.85)',
         backdropFilter: 'blur(12px)',
         border: '1px solid rgba(255, 255, 255, 0.08)',
@@ -54,7 +54,7 @@ export default function InlineMetricOverlay({
           <span
             style={{
               fontFamily: T.MONO,
-              fontSize: '10px',
+              fontSize: 'var(--nb-fs-xs)',
               textTransform: 'uppercase',
               letterSpacing: '0.08em',
               color: PATHD_THEME.label,
@@ -66,7 +66,7 @@ export default function InlineMetricOverlay({
           <span
             style={{
               fontFamily: T.MONO,
-              fontSize: '12px',
+              fontSize: 'var(--nb-fs-sm)',
               fontWeight: 600,
               color: metric.accent ?? PATHD_THEME.value,
             }}

@@ -355,13 +355,13 @@ export default function FBASimPage() {
               : 'Community mode remains a two-species heuristic demo. It compares independent host solves and post-hoc exchange values; it does not create a shared stoichiometric pool or a real ecological operating state.'}
             aside={
               <>
-                <div style={{ fontFamily: T.MONO, fontSize: '10px', color: 'rgba(205,214,236,0.6)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                <div style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: 'rgba(205,214,236,0.6)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                   Current route focus
                 </div>
-                <div style={{ fontFamily: T.SANS, fontSize: '13px', color: 'rgba(247,249,255,0.92)', fontWeight: 700 }}>
+                <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: 'rgba(247,249,255,0.92)', fontWeight: 700 }}>
                   {recommendedSeed.pathwayFocus || recommendedSeed.targetProduct}
                 </div>
-                <div style={{ fontFamily: T.SANS, fontSize: '11px', color: 'rgba(205,214,236,0.6)', lineHeight: 1.55 }}>
+                <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: 'rgba(205,214,236,0.6)', lineHeight: 1.55 }}>
                   Objective {objective === 'biomass' ? 'maximizes biomass resilience' : objective === 'atp' ? 'prioritizes energetic yield' : 'pushes product-oriented flux through the current route'}.
                 </div>
               </>
@@ -445,12 +445,12 @@ export default function FBASimPage() {
       <ToolTabPanel tabId="flux" activeId={activeTab}>
         <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
           <FloatingControlRail label="Flux Parameters" defaultCollapsed={false} width={220}>
-            <p style={{ fontFamily: T.SANS, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '0 0 8px' }}>
+            <p style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '0 0 8px' }}>
               Uptake Limits
             </p>
             <ParamSlider label="Glucose uptake" value={glucoseUptake} min={0} max={20} onChange={setGlucoseUptake} unit="mmol/gDW/h" />
             <ParamSlider label="O₂ uptake" value={oxygenUptake} min={0} max={20} onChange={setOxygenUptake} unit="mmol/gDW/h" />
-            <p style={{ fontFamily: T.SANS, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '12px 0 8px' }}>
+            <p style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '12px 0 8px' }}>
               Objective
             </p>
             {(['biomass', 'atp', 'product'] as const).map(opt => (
@@ -461,7 +461,7 @@ export default function FBASimPage() {
                 border: `1px solid ${objective === opt ? PATHD_THEME.panelBorderStrong : PATHD_THEME.sepiaPanelBorder}`,
                 borderRadius: '6px',
                 color: objective === opt ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.4)',
-                fontFamily: T.SANS, fontSize: '10px', cursor: 'pointer',
+                fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', cursor: 'pointer',
               }}>
                 {opt === 'biomass' ? 'Max Biomass' : opt === 'atp' ? 'Max ATP' : 'Max Product'}
               </button>
@@ -472,7 +472,7 @@ export default function FBASimPage() {
             {singleError && <div style={{ padding: '0 16px 8px' }}><SimErrorBanner message={singleError} /></div>}
             {singleLoading && (
               <div style={{ padding: '0 16px 8px' }}>
-                <div style={{ padding: '6px 10px', borderRadius: '12px', border: '1px solid rgba(81,81,205,0.22)', background: 'rgba(81,81,205,0.08)', color: 'rgba(240,245,255,0.78)', fontFamily: T.SANS, fontSize: '10px', marginBottom: '8px' }}>
+                <div style={{ padding: '6px 10px', borderRadius: 'var(--nb-radius-md)', border: '1px solid rgba(81,81,205,0.22)', background: 'rgba(81,81,205,0.08)', color: 'rgba(240,245,255,0.78)', fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', marginBottom: '8px' }}>
                   Authority engine recomputing server-side LP.
                 </div>
                 <SimSkeleton />
@@ -511,7 +511,7 @@ export default function FBASimPage() {
       <ToolTabPanel tabId="knockout" activeId={activeTab}>
         <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
           <FloatingControlRail label="Gene Knockouts" defaultCollapsed={false} width={240}>
-            <p style={{ fontFamily: T.SANS, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '0 0 8px' }}>
+            <p style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '0 0 8px' }}>
               Toggle Reactions
             </p>
             {REACTION_DEFS.map(r => {
@@ -524,7 +524,7 @@ export default function FBASimPage() {
                   border: `1px solid ${isKO ? 'rgba(255,80,80,0.38)' : 'rgba(255,255,255,0.06)'}`,
                   borderRadius: '5px', cursor: 'pointer',
                 }}>
-                  <span style={{ fontFamily: T.MONO, fontSize: '10px', color: isKO ? 'rgba(255,120,120,0.9)' : 'rgba(255,255,255,0.5)' }}>{r.id}</span>
+                  <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: isKO ? 'rgba(255,120,120,0.9)' : 'rgba(255,255,255,0.5)' }}>{r.id}</span>
                   <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: isKO ? 'rgba(255,80,80,0.7)' : 'rgba(255,255,255,0.12)', flexShrink: 0 }} />
                 </button>
               );
@@ -534,7 +534,7 @@ export default function FBASimPage() {
                 display: 'block', width: '100%', marginTop: '6px',
                 padding: '4px 6px', background: 'transparent',
                 border: '1px solid rgba(255,255,255,0.08)', borderRadius: '5px',
-                color: 'rgba(255,255,255,0.3)', fontFamily: T.SANS, fontSize: '10px', cursor: 'pointer',
+                color: 'rgba(255,255,255,0.3)', fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', cursor: 'pointer',
               }}>
                 Clear knockouts ({knockouts.length})
               </button>
@@ -575,7 +575,7 @@ export default function FBASimPage() {
       <ToolTabPanel tabId="shadows" activeId={activeTab}>
         <div style={{ display: 'flex', gap: '16px', flex: 1, minHeight: 0, overflow: 'auto', padding: '12px' }}>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ fontFamily: T.SANS, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '0 0 10px' }}>FBA Results</p>
+            <p style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '0 0 10px' }}>FBA Results</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '16px' }}>
               <MetricCard label="Growth Rate (μ)" value={singleResult.growthRate} unit="h⁻¹" highlight />
               <MetricCard label="ATP Yield" value={singleResult.atpYield} unit="mol/mol glc" />
@@ -583,7 +583,7 @@ export default function FBASimPage() {
               <MetricCard label="Carbon Efficiency" value={singleResult.carbonEfficiency} unit="%" />
               <MetricCard label="Feasible" value={singleResult.feasible ? 'YES' : 'NO'} />
             </div>
-            <p style={{ fontFamily: T.SANS, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '0 0 8px' }}>Shadow Prices (∂μ/∂uptake)</p>
+            <p style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '0 0 8px' }}>Shadow Prices (∂μ/∂uptake)</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               <MetricCard label="∂μ/∂Glucose" value={singleResult.sensitivityCoefficients.glc.toFixed(4)} unit="h⁻¹·gDW/mmol" />
               <MetricCard label="∂μ/∂Oxygen"  value={singleResult.sensitivityCoefficients.o2.toFixed(4)}  unit="h⁻¹·gDW/mmol" />
@@ -591,19 +591,19 @@ export default function FBASimPage() {
             </div>
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ fontFamily: T.SANS, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '0 0 10px' }}>Top 5 Active Reactions</p>
+            <p style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '0 0 10px' }}>Top 5 Active Reactions</p>
             {top5.map(r => (
               <div key={r.id} style={{
                 padding: '6px 8px', marginBottom: '4px',
                 background: 'rgba(255,255,255,0.04)',
                 border: `1px solid ${knockouts.includes(r.id) ? 'rgba(255,80,80,0.2)' : 'rgba(255,255,255,0.06)'}`,
-                borderRadius: '8px',
+                borderRadius: 'var(--nb-radius-sm)',
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontFamily: T.MONO, fontSize: '10px', color: knockouts.includes(r.id) ? 'rgba(255,120,120,0.7)' : 'rgba(255,255,255,0.6)' }}>{r.id}</span>
-                  <span style={{ fontFamily: T.MONO, fontSize: '10px', fontWeight: 600, color: r.flux > 0 ? 'rgba(20,140,80,0.9)' : 'rgba(255,80,80,0.6)', textAlign: 'right' }}>{r.flux.toFixed(2)}</span>
+                  <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: knockouts.includes(r.id) ? 'rgba(255,120,120,0.7)' : 'rgba(255,255,255,0.6)' }}>{r.id}</span>
+                  <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', fontWeight: 600, color: r.flux > 0 ? 'rgba(20,140,80,0.9)' : 'rgba(255,80,80,0.6)', textAlign: 'right' }}>{r.flux.toFixed(2)}</span>
                 </div>
-                <div style={{ fontFamily: T.SANS, fontSize: '10px', color: 'rgba(255,255,255,0.35)', marginTop: '2px' }}>{r.name}</div>
+                <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: 'rgba(255,255,255,0.35)', marginTop: '2px' }}>{r.name}</div>
                 <div style={{ marginTop: '4px', height: '2px', background: 'rgba(255,255,255,0.06)', borderRadius: '1px' }}>
                   <div style={{ height: '100%', borderRadius: '1px', width: `${Math.abs(r.flux / maxTopFlux) * 100}%`, background: knockouts.includes(r.id) ? 'rgba(255,80,80,0.3)' : 'rgba(20,140,80,0.4)', transition: 'width 0.3s' }} />
                 </div>
@@ -615,7 +615,7 @@ export default function FBASimPage() {
 
       {/* ── Community Tab ── */}
       <ToolTabPanel tabId="community" activeId={activeTab}>
-        <div style={{ padding: '8px 12px', background: 'rgba(232,220,200,0.1)', borderRadius: '6px', fontSize: '12px', opacity: 0.8, margin: '8px 12px' }}>
+        <div style={{ padding: '8px 12px', background: 'rgba(232,220,200,0.1)', borderRadius: '6px', fontSize: 'var(--nb-fs-sm)', opacity: 0.8, margin: '8px 12px' }}>
           ℹ️ Community FBA uses sequential single-species optimization with shared resource constraints.
           This is an approximation — for true joint optimization, consider SteCom or BioME frameworks.
         </div>
@@ -638,7 +638,7 @@ export default function FBASimPage() {
             {communityError && <div style={{ padding: '0 16px 8px' }}><SimErrorBanner message={communityError} /></div>}
             {communityLoading && (
               <div style={{ padding: '0 16px 8px' }}>
-                <div style={{ padding: '6px 10px', borderRadius: '12px', border: '1px solid rgba(81,81,205,0.22)', background: 'rgba(81,81,205,0.08)', color: 'rgba(240,245,255,0.78)', fontFamily: T.SANS, fontSize: '10px' }}>
+                <div style={{ padding: '6px 10px', borderRadius: 'var(--nb-radius-md)', border: '1px solid rgba(81,81,205,0.22)', background: 'rgba(81,81,205,0.08)', color: 'rgba(240,245,255,0.78)', fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)' }}>
                   Solving two independent single-species LPs.
                 </div>
               </div>
@@ -653,16 +653,16 @@ export default function FBASimPage() {
               <div style={{ display: 'grid', gap: '12px', minHeight: '500px' }}>
                 <GlassContainer color={COLORS.sharedBg} borderColor={COLORS.sharedBorder}
                   style={{ padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ fontFamily: T.SANS, fontSize: '11px', color: 'rgba(255,255,255,0.55)' }}>Demo Biomass Blend</span>
-                  <span style={{ fontFamily: T.MONO, fontSize: '13px', fontWeight: 600, color: COLORS.sharedPool }}>μ_demo = {communityResult.communityGrowthRate.toFixed(4)} h⁻¹</span>
+                  <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: 'rgba(255,255,255,0.55)' }}>Demo Biomass Blend</span>
+                  <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-sm)', fontWeight: 600, color: COLORS.sharedPool }}>μ_demo = {communityResult.communityGrowthRate.toFixed(4)} h⁻¹</span>
                 </GlassContainer>
                 <div style={{ display: 'flex', gap: '12px', flex: 1, minHeight: 0 }}>
                   <GlassContainer color={COLORS.strainABg} borderColor={COLORS.strainABorder} style={{ flex: 1, padding: '6px', display: 'flex', flexDirection: 'column' }}>
-                    <p style={{ fontFamily: T.MONO, fontSize: '10px', color: COLORS.strainA, margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>E. coli</p>
+                    <p style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: COLORS.strainA, margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>E. coli</p>
                     <div style={{ flex: 1, minHeight: 0 }}><FluxMap result={communityResult.ecoli} nodes={METABOLIC_NODES} edges={FLUX_EDGES} knockouts={ecoliKO} compact /></div>
                   </GlassContainer>
                   <GlassContainer color={COLORS.strainBBg} borderColor={COLORS.strainBBorder} style={{ flex: 1, padding: '6px', display: 'flex', flexDirection: 'column' }}>
-                    <p style={{ fontFamily: T.MONO, fontSize: '10px', color: COLORS.strainB, margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>S. cerevisiae</p>
+                    <p style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: COLORS.strainB, margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>S. cerevisiae</p>
                     <div style={{ flex: 1, minHeight: 0 }}><FluxMap result={communityResult.yeast} nodes={YEAST_NODES} edges={YEAST_FLUX_EDGES} knockouts={yeastKO} compact /></div>
                   </GlassContainer>
                 </div>

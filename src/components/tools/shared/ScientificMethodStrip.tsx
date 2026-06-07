@@ -26,7 +26,7 @@ export default function ScientificMethodStrip({ label, items, dismissible = fals
         display: 'grid',
         gap: '10px',
         padding: '12px 16px',
-        borderRadius: '16px',
+        borderRadius: 'var(--nb-radius-lg)',
         border: '1px solid rgba(255,255,255,0.12)',
         background: 'rgba(10,12,16,0.52)',
         backdropFilter: 'blur(24px) saturate(140%)',
@@ -52,7 +52,7 @@ export default function ScientificMethodStrip({ label, items, dismissible = fals
             color: PATHD_THEME.label,
             cursor: 'pointer',
             fontFamily: T.MONO,
-            fontSize: '11px',
+            fontSize: 'var(--nb-fs-sm)',
             lineHeight: 1,
             display: 'flex',
             alignItems: 'center',
@@ -77,7 +77,7 @@ export default function ScientificMethodStrip({ label, items, dismissible = fals
       <div
         style={{
           fontFamily: T.MONO,
-          fontSize: '10px',
+          fontSize: 'var(--nb-fs-xs)',
           letterSpacing: '0.12em',
           textTransform: 'uppercase',
           color: PATHD_THEME.label,
@@ -91,7 +91,7 @@ export default function ScientificMethodStrip({ label, items, dismissible = fals
           <div
             key={`${item.title}-${index}`}
             style={{
-              borderRadius: '12px',
+              borderRadius: 'var(--nb-radius-md)',
               border: '1px solid rgba(255,255,255,0.10)',
               background: 'rgba(255,255,255,0.04)',
               padding: '12px',
@@ -111,7 +111,7 @@ export default function ScientificMethodStrip({ label, items, dismissible = fals
                   alignItems: 'center',
                   justifyContent: 'center',
                   fontFamily: T.MONO,
-                  fontSize: '10px',
+                  fontSize: 'var(--nb-fs-xs)',
                   fontWeight: 700,
                   flexShrink: 0,
                 }}
@@ -121,7 +121,7 @@ export default function ScientificMethodStrip({ label, items, dismissible = fals
               <span
                 style={{
                   fontFamily: T.SANS,
-                  fontSize: '12px',
+                  fontSize: 'var(--nb-fs-sm)',
                   fontWeight: 700,
                   color: PATHD_THEME.value,
                 }}
@@ -132,7 +132,7 @@ export default function ScientificMethodStrip({ label, items, dismissible = fals
             <div
               style={{
                 fontFamily: T.SANS,
-                fontSize: '11px',
+                fontSize: 'var(--nb-fs-sm)',
                 lineHeight: 1.55,
                 color: 'rgba(234,240,248,0.76)',
               }}
@@ -143,7 +143,7 @@ export default function ScientificMethodStrip({ label, items, dismissible = fals
               <div
                 style={{
                   fontFamily: T.MONO,
-                  fontSize: '10px',
+                  fontSize: 'var(--nb-fs-xs)',
                   letterSpacing: '0.05em',
                   textTransform: 'uppercase',
                   color: PATHD_THEME.label,

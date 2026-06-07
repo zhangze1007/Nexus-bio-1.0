@@ -94,7 +94,7 @@ export default function SelectionDecisionCard({
           display: 'grid',
           gap: '8px',
           padding: '8px 10px',
-          borderRadius: '12px',
+          borderRadius: 'var(--nb-radius-md)',
           border: `1px solid ${PROEVOL_THEME.border}`,
           background: 'linear-gradient(135deg, rgba(232,163,161,0.10) 0%, rgba(191,220,205,0.08) 100%)',
         }}
@@ -105,10 +105,10 @@ export default function SelectionDecisionCard({
             confidence {(campaign.selectionDecision.confidence * 100).toFixed(0)}%
           </StatusPill>
         </div>
-        <div style={{ fontFamily: T.SANS, fontSize: '12px', color: PROEVOL_THEME.value, fontWeight: 600, lineHeight: 1.45 }}>
+        <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: PROEVOL_THEME.value, fontWeight: 600, lineHeight: 1.45 }}>
           {campaign.selectionDecision.summary}
         </div>
-        <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PROEVOL_THEME.muted, lineHeight: 1.65 }}>
+        <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: PROEVOL_THEME.muted, lineHeight: 1.65 }}>
           {campaign.selectionDecision.researchBrief}
         </div>
       </div>
@@ -118,7 +118,7 @@ export default function SelectionDecisionCard({
           display: 'grid',
           gap: '8px',
           padding: '8px 10px',
-          borderRadius: '12px',
+          borderRadius: 'var(--nb-radius-md)',
           border: `1px solid ${PROEVOL_THEME.border}`,
           background: 'rgba(255,255,255,0.03)',
         }}
@@ -126,7 +126,7 @@ export default function SelectionDecisionCard({
         <div
           style={{
             fontFamily: T.MONO,
-            fontSize: '10px',
+            fontSize: 'var(--nb-fs-xs)',
             color: PROEVOL_THEME.label,
             textTransform: 'uppercase',
             letterSpacing: '0.08em',
@@ -140,18 +140,18 @@ export default function SelectionDecisionCard({
           </StatusPill>
           <StatusPill tone="neutral">round {focusedVariant.round}</StatusPill>
         </div>
-        <div style={{ fontFamily: T.SANS, fontSize: '13px', color: PROEVOL_THEME.value, fontWeight: 600 }}>
+        <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: PROEVOL_THEME.value, fontWeight: 600 }}>
           {focusedVariant.name}
         </div>
-        <div style={{ fontFamily: T.MONO, fontSize: '11px', color: PROEVOL_THEME.value, lineHeight: 1.5 }}>
+        <div style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-sm)', color: PROEVOL_THEME.value, lineHeight: 1.5 }}>
           {focusedVariant.mutationString}
         </div>
-        <div style={{ display: 'grid', gap: '3px', fontFamily: T.SANS, fontSize: '10px', color: PROEVOL_THEME.muted, lineHeight: 1.5 }}>
+        <div style={{ display: 'grid', gap: '3px', fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: PROEVOL_THEME.muted, lineHeight: 1.5 }}>
           <div>Parent: {focusedVariant.parentId ?? 'WT'} · {focusedVariant.status === 'selected' ? focusedVariant.selectionReason : focusedVariant.rejectionReason}</div>
-          <div style={{ fontFamily: T.MONO, fontSize: '10px' }}>
+          <div style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)' }}>
             score {focusedVariant.score.composite.toFixed(1)} · act {focusedVariant.predictedActivity.toFixed(1)} · stab {focusedVariant.predictedStability.toFixed(1)} · expr {focusedVariant.predictedExpression.toFixed(1)} · spec {focusedVariant.predictedSpecificity.toFixed(1)} · conf {focusedVariant.confidence.toFixed(0)}%
           </div>
-          <div style={{ fontSize: '10px', color: PROEVOL_THEME.muted }}>{focusedVariant.rationale}</div>
+          <div style={{ fontSize: 'var(--nb-fs-xs)', color: PROEVOL_THEME.muted }}>{focusedVariant.rationale}</div>
         </div>
       </div>
     </ProEvolCard>

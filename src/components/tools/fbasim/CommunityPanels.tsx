@@ -42,7 +42,7 @@ export function GlassContainer({ children, color, borderColor, style }: {
 }) {
   return (
     <div style={{
-      borderRadius: '24px', background: color, backdropFilter: 'blur(10px)',
+      borderRadius: 'var(--nb-radius-xl)', background: color, backdropFilter: 'blur(10px)',
       WebkitBackdropFilter: 'blur(10px)', border: `1px solid ${borderColor}`,
       boxShadow: '0 4px 24px rgba(0,0,0,0.15)', overflow: 'hidden', ...style,
     }}>
@@ -59,7 +59,7 @@ export function SharedMetaboliteBus({ exchangeFluxes }: {
   return (
     <GlassContainer color={COLORS.sharedBg} borderColor={COLORS.sharedBorder}
       style={{ padding: '14px 16px' }}>
-      <p style={{ fontFamily: T.SANS, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: COLORS.sharedPool, margin: '0 0 10px' }}>
+      <p style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', letterSpacing: '0.1em', color: COLORS.sharedPool, margin: '0 0 10px' }}>
         Shared Environmental Pool
       </p>
       {exchangeFluxes.map((ex) => {
@@ -69,8 +69,8 @@ export function SharedMetaboliteBus({ exchangeFluxes }: {
         return (
           <div key={ex.id} style={{ marginBottom: '8px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-              <span style={{ fontFamily: T.SANS, fontSize: '10px', color: 'rgba(255,255,255,0.5)' }}>{ex.metabolite}</span>
-              <span style={{ fontFamily: T.MONO, fontSize: '11px', fontWeight: 600, color: COLORS.sharedPool, textAlign: 'right' }}>
+              <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: 'rgba(255,255,255,0.5)' }}>{ex.metabolite}</span>
+              <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-sm)', fontWeight: 600, color: COLORS.sharedPool, textAlign: 'right' }}>
                 {ex.flux.toFixed(2)} mmol/h
               </span>
             </div>
@@ -89,10 +89,10 @@ export function SharedMetaboliteBus({ exchangeFluxes }: {
               </text>
             </svg>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '2px' }}>
-              <span style={{ fontSize: '10px', color: isRightFlow ? COLORS.strainA : COLORS.strainB, fontFamily: T.MONO }}>
+              <span style={{ fontSize: 'var(--nb-fs-xs)', color: isRightFlow ? COLORS.strainA : COLORS.strainB, fontFamily: T.MONO }}>
                 {ex.fromStrain === 'ecoli' ? 'E. coli' : 'S. cerevisiae'}
               </span>
-              <span style={{ fontSize: '10px', color: isRightFlow ? COLORS.strainB : COLORS.strainA, fontFamily: T.MONO }}>
+              <span style={{ fontSize: 'var(--nb-fs-xs)', color: isRightFlow ? COLORS.strainB : COLORS.strainA, fontFamily: T.MONO }}>
                 {ex.toStrain === 'ecoli' ? 'E. coli' : 'S. cerevisiae'}
               </span>
             </div>
@@ -117,7 +117,7 @@ export function StrainPanel({ label, color, borderColor, accentColor, glucoseUpt
   return (
     <GlassContainer color={color} borderColor={borderColor}
       style={{ padding: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-      <p style={{ fontFamily: T.SANS, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: accentColor, margin: '0' }}>
+      <p style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', letterSpacing: '0.1em', color: accentColor, margin: '0' }}>
         {label}
       </p>
       <ParamSlider label="Glucose" value={glucoseUptake} min={0} max={20} onChange={onGlucoseChange} unit="mmol/gDW/h" accentColor={accentColor} />
@@ -127,7 +127,7 @@ export function StrainPanel({ label, color, borderColor, accentColor, glucoseUpt
         <MetricCard label="ATP Yield" value={result.atpYield} unit="mol/mol" />
         <MetricCard label="Carbon Eff." value={result.carbonEfficiency} unit="%" />
       </div>
-      <p style={{ fontFamily: T.SANS, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '6px 0 0' }}>
+      <p style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '6px 0 0' }}>
         Gene Knockouts
       </p>
       <div style={{ maxHeight: '140px', overflowY: 'auto' }}>
@@ -141,7 +141,7 @@ export function StrainPanel({ label, color, borderColor, accentColor, glucoseUpt
               border: `1px solid ${isKO ? 'rgba(255,80,80,0.3)' : 'rgba(255,255,255,0.06)'}`,
               borderRadius: '6px', cursor: 'pointer', transition: 'background 0.15s ease, border-color 0.15s ease',
             }}>
-              <span style={{ fontFamily: T.MONO, fontSize: '10px', color: isKO ? 'rgba(255,120,120,0.9)' : 'rgba(255,255,255,0.5)' }}>{r.id}</span>
+              <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: isKO ? 'rgba(255,120,120,0.9)' : 'rgba(255,255,255,0.5)' }}>{r.id}</span>
               <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: isKO ? 'rgba(255,80,80,0.7)' : 'rgba(255,255,255,0.12)', flexShrink: 0 }} />
             </button>
           );
@@ -151,7 +151,7 @@ export function StrainPanel({ label, color, borderColor, accentColor, glucoseUpt
         <button aria-label="Clear all knockouts" onClick={onClearKO} style={{
           display: 'block', width: '100%', padding: '4px 8px',
           background: 'transparent', border: '1px solid rgba(255,255,255,0.08)',
-          borderRadius: '6px', color: 'rgba(255,255,255,0.3)', fontFamily: T.SANS, fontSize: '10px', cursor: 'pointer',
+          borderRadius: '6px', color: 'rgba(255,255,255,0.3)', fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', cursor: 'pointer',
         }}>
           Clear all
         </button>

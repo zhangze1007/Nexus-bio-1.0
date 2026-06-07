@@ -38,7 +38,7 @@ export interface AutomationDrawerProps {
 function controlBtn(disabled: boolean): CSSProperties {
   return {
     fontFamily: T.MONO,
-    fontSize: '10px',
+    fontSize: 'var(--nb-fs-xs)',
     padding: '2px 6px',
     borderRadius: '5px',
     border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
@@ -125,7 +125,7 @@ export default function AutomationDrawer({
     <div
       data-testid="nexai-automation-drawer"
       style={{
-        borderRadius: '12px',
+        borderRadius: 'var(--nb-radius-md)',
         border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
         background: PATHD_THEME.panelInset,
         padding: '12px 14px',
@@ -143,10 +143,10 @@ export default function AutomationDrawer({
               boxShadow: running > 0 ? '0 0 0 3px rgba(147,203,82,0.22)' : 'none',
             }}
           />
-          <span style={{ fontFamily: T.MONO, fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', color: PATHD_THEME.label }}>
+          <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', letterSpacing: '0.08em', textTransform: 'uppercase', color: PATHD_THEME.label }}>
             Automation queue
           </span>
-          <span style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label }}>
+          <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.label }}>
             {pending} pending · {running} running · {done} done · {errored} error
           </span>
         </div>
@@ -156,7 +156,7 @@ export default function AutomationDrawer({
             onClick={onClear}
             data-testid="nexai-automation-clear"
             style={{
-              fontFamily: T.MONO, fontSize: '10px',
+              fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)',
               padding: '3px 8px', borderRadius: '6px',
               border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
               background: 'transparent', cursor: 'pointer',
@@ -173,9 +173,9 @@ export default function AutomationDrawer({
         <div
           data-testid="nexai-automation-empty"
           style={{
-            padding: '14px', borderRadius: '12px',
+            padding: '14px', borderRadius: 'var(--nb-radius-md)',
             border: `1px dashed ${PATHD_THEME.sepiaPanelBorder}`,
-            color: PATHD_THEME.label, fontFamily: T.SANS, fontSize: '11px',
+            color: PATHD_THEME.label, fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)',
             lineHeight: 1.55,
           }}
         >
@@ -200,7 +200,7 @@ export default function AutomationDrawer({
                   alignItems: 'center',
                   gap: '10px',
                   padding: '8px 10px',
-                  borderRadius: '12px',
+                  borderRadius: 'var(--nb-radius-md)',
                   border: `1px solid ${tone.border}`,
                   background: tone.bg,
                 }}
@@ -208,7 +208,7 @@ export default function AutomationDrawer({
                 <div style={{ display: 'grid', gap: '3px', minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                     <span style={{
-                      fontFamily: T.MONO, fontSize: '10px',
+                      fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)',
                       padding: '1px 5px', borderRadius: '4px',
                       background: 'rgba(10,14,22,0.45)',
                       color: PATHD_THEME.value, letterSpacing: '0.06em',
@@ -217,14 +217,14 @@ export default function AutomationDrawer({
                       {task.tool}
                     </span>
                     <span style={{
-                      fontFamily: T.SANS, fontSize: '12px', color: PATHD_THEME.value,
+                      fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: PATHD_THEME.value,
                       overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                     }}>
                       {task.label}
                     </span>
                   </div>
                   <div style={{
-                    fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label,
+                    fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.label,
                     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                   }}>
                     queued {formatMillis(task.createdAt)}
@@ -236,7 +236,7 @@ export default function AutomationDrawer({
                     <div
                       data-testid={`nexai-automation-task-summary-${task.id}`}
                       style={{
-                        fontFamily: T.SANS, fontSize: '11px', color: tone.fg,
+                        fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: tone.fg,
                         lineHeight: 1.5,
                       }}
                     >
@@ -247,7 +247,7 @@ export default function AutomationDrawer({
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
                   <span
                     style={{
-                      fontFamily: T.MONO, fontSize: '10px',
+                      fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)',
                       padding: '3px 8px', borderRadius: '6px',
                       background: 'rgba(10,14,22,0.35)', color: tone.fg,
                       letterSpacing: '0.08em', textTransform: 'uppercase',

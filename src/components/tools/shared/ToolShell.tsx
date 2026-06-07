@@ -149,7 +149,7 @@ export default function ToolShell({
             color: 'var(--nb-control-color)',
             cursor: 'pointer',
             fontFamily: T.SANS,
-            fontSize: '10px',
+            fontSize: 'var(--nb-fs-xs)',
             flexShrink: 0,
             ['--nb-control-bg' as const]: PATHD_THEME.panelGlassStrong,
             ['--nb-control-border' as const]: PATHD_THEME.sepiaPanelBorder,
@@ -173,12 +173,12 @@ export default function ToolShell({
           gap: '6px',
             minHeight: '28px',
             padding: '0 8px',
-            borderRadius: '12px',
+            borderRadius: 'var(--nb-radius-md)',
             border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
             background: 'rgba(231, 199, 169, 0.24)',
             color: PATHD_THEME.value,
             fontFamily: T.MONO,
-            fontSize: '10px',
+            fontSize: 'var(--nb-fs-xs)',
             fontWeight: 700,
           letterSpacing: '0.08em',
           textTransform: 'uppercase',
@@ -189,7 +189,7 @@ export default function ToolShell({
 
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{
-            fontFamily: T.SANS, fontSize: '12px', fontWeight: 700,
+            fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', fontWeight: 700,
             color: PATHD_THEME.value,
             letterSpacing: '-0.01em',
           }}>
@@ -197,7 +197,7 @@ export default function ToolShell({
           </div>
           {description && (
             <div style={{
-              fontFamily: T.SANS, fontSize: '10px',
+              fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)',
               color: PATHD_THEME.label,
               marginTop: '2px',
             }}>
@@ -207,14 +207,14 @@ export default function ToolShell({
           {tool?.focus && (
             <details style={{ marginTop: '4px' }}>
               <summary style={{
-                fontFamily: T.MONO, fontSize: '9px', color: PATHD_THEME.label,
+                fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.label,
                 cursor: 'pointer', letterSpacing: '0.05em', textTransform: 'uppercase',
                 opacity: 0.7,
               }}>
                 What does this tool do?
               </summary>
               <p style={{
-                fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.label,
+                fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: PATHD_THEME.label,
                 marginTop: '4px', lineHeight: 1.55, maxWidth: '480px',
               }}>
                 {tool.focus}
@@ -228,11 +228,11 @@ export default function ToolShell({
             title={validity.caption}
             style={{
               fontFamily: T.MONO,
-              fontSize: '10px',
+              fontSize: 'var(--nb-fs-xs)',
               fontWeight: 700,
               letterSpacing: '0.10em',
               padding: '5px 9px',
-              borderRadius: '12px',
+              borderRadius: 'var(--nb-radius-md)',
               background: validityStyles[validity.level].bg,
               border: `1px solid ${validityStyles[validity.level].border}`,
               color: validityStyles[validity.level].color,
@@ -246,12 +246,12 @@ export default function ToolShell({
 
         {formula && (
           <div style={{
-            fontFamily: T.MONO, fontSize: '10px',
+            fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)',
             color: PATHD_THEME.value,
           padding: '5px 8px',
             background: PATHD_THEME.panelGlassStrong,
             border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
-            borderRadius: '12px',
+            borderRadius: 'var(--nb-radius-md)',
           }}>
             {formula}
           </div>
@@ -270,13 +270,13 @@ export default function ToolShell({
               gap: '4px',
               minHeight: '28px',
               padding: '0 7px',
-              borderRadius: '12px',
+              borderRadius: 'var(--nb-radius-md)',
               border: '1px solid var(--nb-control-border)',
               background: mode === 'advanced' ? 'rgba(175, 195, 214, 0.15)' : 'var(--nb-control-bg)',
               color: mode === 'advanced' ? T.SKY : 'var(--nb-control-color)',
               cursor: 'pointer',
               fontFamily: T.SANS,
-              fontSize: '10px',
+              fontSize: 'var(--nb-fs-xs)',
               fontWeight: mode === 'advanced' ? 600 : 400,
               flexShrink: 0,
               transition: 'all 0.2s ease',

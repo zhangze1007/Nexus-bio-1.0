@@ -64,13 +64,13 @@ export default function EvidenceTabRail({
           onDismiss={() => setHeroDismissed(true)}
           aside={
             <>
-              <div style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              <div style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.label, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                 Current focus
               </div>
-              <div style={{ fontFamily: T.SANS, fontSize: '13px', color: PATHD_THEME.value, fontWeight: 700 }}>
+              <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: PATHD_THEME.value, fontWeight: 700 }}>
                 {selectedNodeLabel ?? derivedTarget}
               </div>
-              <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.label, lineHeight: 1.55 }}>
+              <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: PATHD_THEME.label, lineHeight: 1.55 }}>
                 {selectedNodeLabel
                   ? 'A specific pathway node is in focus, so downstream interpretation should respect this current design emphasis.'
                   : 'No node is pinned yet; the route remains the active object at pathway scale.'}
@@ -147,7 +147,7 @@ export default function EvidenceTabRail({
               WebkitBackdropFilter: 'blur(16px)',
               color: 'var(--nb-control-color)',
               fontFamily: T.MONO,
-              fontSize: '10px',
+              fontSize: 'var(--nb-fs-xs)',
               fontWeight: 600,
               textTransform: 'uppercase',
               letterSpacing: '0.1em',

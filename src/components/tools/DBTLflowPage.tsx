@@ -51,7 +51,7 @@ const INPUT_BORDER = PATHD_THEME.paperBorder;
 const INPUT_TEXT = PATHD_THEME.paperValue;
 
 const GLASS: React.CSSProperties = {
-  borderRadius: '24px',
+  borderRadius: 'var(--nb-radius-xl)',
   background: PATHD_THEME.paperSurfaceStrong,
   border: `1px solid ${PATHD_THEME.paperBorder}`,
 };
@@ -208,18 +208,18 @@ function CycleProgressRing({
         pointerEvents: 'none',
       }}>
         <span style={{
-          fontFamily: T.SANS, fontSize: '11px', fontWeight: 600,
+          fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', fontWeight: 600,
           color: PATHD_THEME.orange, letterSpacing: '0.04em',
         }}>
           {currentPhase.toUpperCase()}
         </span>
         <span style={{
-          fontFamily: T.MONO, fontSize: '20px', fontWeight: 700,
+          fontFamily: T.MONO, fontSize: 'var(--nb-fs-lg)', fontWeight: 700,
           color: VALUE, marginTop: '2px',
         }}>
           {iterationCount}
         </span>
-        <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>
+        <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>
           iterations
         </span>
       </div>
@@ -548,17 +548,17 @@ export default function DBTLflowPage() {
     boxSizing: 'border-box',
     background: INPUT_BG,
     border: `1px solid ${INPUT_BORDER}`,
-    borderRadius: '8px',
+    borderRadius: 'var(--nb-radius-sm)',
     color: INPUT_TEXT,
     fontFamily: T.MONO,
-    fontSize: '12px',
+    fontSize: 'var(--nb-fs-sm)',
     outline: '2px solid rgba(175,195,214,0.5)',
     outlineOffset: '2px',
   };
 
   const sectionLabel: React.CSSProperties = {
     fontFamily: T.SANS,
-    fontSize: '10px',
+    fontSize: 'var(--nb-fs-xs)',
     textTransform: 'uppercase',
     letterSpacing: '0.1em',
     color: LABEL,
@@ -582,13 +582,13 @@ export default function DBTLflowPage() {
             summary="DBTLflow is no longer just a list of experiments. It is the workbench’s decision gate: draft learning stays visible, committed learning becomes canonical, and approved typed deltas are required before upstream reseeding."
             aside={
               <>
-                <div style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                <div style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.label, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                   Current loop status
                 </div>
-                <div style={{ fontFamily: T.SANS, fontSize: '13px', color: PATHD_THEME.value, fontWeight: 700 }}>
+                <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: PATHD_THEME.value, fontWeight: 700 }}>
                   {hasCommittedFeedback ? 'Committed learn loop is active' : 'Draft learn loop awaiting commit'}
                 </div>
-                <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.label, lineHeight: 1.55 }}>
+                <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: PATHD_THEME.label, lineHeight: 1.55 }}>
                   {feedbackGateLabel}
                 </div>
               </>
@@ -625,7 +625,7 @@ export default function DBTLflowPage() {
         <div style={{ padding: '0 16px 6px' }}>
           <div
             style={{
-              borderRadius: '12px',
+              borderRadius: 'var(--nb-radius-md)',
               border: `1px solid ${hasCommittedFeedback ? 'rgba(158,215,199,0.22)' : 'rgba(255,192,128,0.24)'}`,
               background: hasCommittedFeedback ? 'rgba(158,215,199,0.10)' : 'rgba(255,192,128,0.08)',
               padding: '8px 10px',
@@ -634,7 +634,7 @@ export default function DBTLflowPage() {
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-              <span style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                 Closed-loop gate
               </span>
               <span
@@ -645,7 +645,7 @@ export default function DBTLflowPage() {
                   background: hasCommittedFeedback ? 'rgba(158,215,199,0.16)' : 'rgba(255,192,128,0.14)',
                   color: hasCommittedFeedback ? 'rgba(224,244,238,0.92)' : 'rgba(255,219,180,0.92)',
                   fontFamily: T.MONO,
-                  fontSize: '10px',
+                  fontSize: 'var(--nb-fs-xs)',
                   letterSpacing: '0.05em',
                   textTransform: 'uppercase',
                 }}
@@ -653,10 +653,10 @@ export default function DBTLflowPage() {
                 {hasCommittedFeedback ? 'Feedback Applied' : 'Awaiting Commit'}
               </span>
             </div>
-            <div style={{ fontFamily: T.SANS, fontSize: '11px', color: VALUE, lineHeight: 1.45 }}>
+            <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: VALUE, lineHeight: 1.45 }}>
               {feedbackGateLabel}
             </div>
-            <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, lineHeight: 1.4 }}>
+            <div style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL, lineHeight: 1.4 }}>
               committed pass rate {committedPassRate}% · committed improvement {committedImprovementRate} · latest committed phase {latestCommittedIteration?.phase ?? 'Design'}
             </div>
           </div>
@@ -691,7 +691,7 @@ export default function DBTLflowPage() {
         <div style={{ padding: '0 16px 6px' }}>
           <div
             style={{
-              borderRadius: '12px',
+              borderRadius: 'var(--nb-radius-md)',
               border: `1px solid ${activityTone === 'error'
                 ? 'rgba(232,163,161,0.34)'
                 : draftIteration
@@ -708,7 +708,7 @@ export default function DBTLflowPage() {
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-              <span style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                 Draft + action status
               </span>
               {draftIteration && (
@@ -720,7 +720,7 @@ export default function DBTLflowPage() {
                     background: 'rgba(175,195,214,0.16)',
                     color: VALUE,
                     fontFamily: T.MONO,
-                    fontSize: '10px',
+                    fontSize: 'var(--nb-fs-xs)',
                     letterSpacing: '0.05em',
                     textTransform: 'uppercase',
                   }}
@@ -729,13 +729,13 @@ export default function DBTLflowPage() {
                 </span>
               )}
             </div>
-            <div style={{ fontFamily: T.SANS, fontSize: '11px', color: VALUE, lineHeight: 1.45 }}>
+            <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: VALUE, lineHeight: 1.45 }}>
               {activityMessage
                 ?? (draftIteration
                   ? `The figure and campaign cards are previewing your current draft at ${draftIteration.result.toFixed(1)} ${draftIteration.unit} before commit.`
                   : 'Commit a new iteration or generate a protocol to create a visible experimental artifact.')}
             </div>
-            <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL }}>
+            <div style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>
               {draftIteration
                 ? `${draftIteration.phase} preview · ${draftIteration.passed ? 'pass' : 'fail'} gate · commit required for canonical history`
                 : 'canonical history updates only after + Add Iteration'}
@@ -754,7 +754,7 @@ export default function DBTLflowPage() {
 
             {/* Hypothesis */}
             <div style={{ marginBottom: '10px' }}>
-              <label style={{ fontFamily: T.SANS, fontSize: '11px', color: LABEL, display: 'block', marginBottom: '4px' }}>
+              <label style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: LABEL, display: 'block', marginBottom: '4px' }}>
                 Hypothesis
               </label>
               <textarea
@@ -766,7 +766,7 @@ export default function DBTLflowPage() {
                   ...inputBase,
                   padding: '6px 8px',
                   fontFamily: T.SANS,
-                  fontSize: '11px',
+                  fontSize: 'var(--nb-fs-sm)',
                   resize: 'vertical',
                 }}
               />
@@ -775,7 +775,7 @@ export default function DBTLflowPage() {
             {/* Result + Unit */}
             <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
               <div style={{ flex: 1 }}>
-                <label style={{ fontFamily: T.SANS, fontSize: '11px', color: LABEL, display: 'block', marginBottom: '4px' }}>
+                <label style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: LABEL, display: 'block', marginBottom: '4px' }}>
                   Result
                 </label>
                 <input
@@ -787,13 +787,13 @@ export default function DBTLflowPage() {
                 />
               </div>
               <div style={{ width: '70px' }}>
-                <label style={{ fontFamily: T.SANS, fontSize: '11px', color: LABEL, display: 'block', marginBottom: '4px' }}>
+                <label style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: LABEL, display: 'block', marginBottom: '4px' }}>
                   Unit
                 </label>
                 <input
                   value={unit}
                   onChange={e => setUnit(e.target.value)}
-                  style={{ ...inputBase, padding: '5px 6px', fontSize: '11px' }}
+                  style={{ ...inputBase, padding: '5px 6px', fontSize: 'var(--nb-fs-sm)' }}
                 />
               </div>
             </div>
@@ -805,9 +805,9 @@ export default function DBTLflowPage() {
                   flex: 1, padding: '6px',
                   background: passed === p ? (p ? 'rgba(191,220,205,0.2)' : 'rgba(232,163,161,0.18)') : PATHD_THEME.paperSurfaceStrong,
                   border: `1px solid ${passed === p ? (p ? 'rgba(191,220,205,0.34)' : 'rgba(232,163,161,0.34)') : INPUT_BORDER}`,
-                  borderRadius: '8px',
+                  borderRadius: 'var(--nb-radius-sm)',
                   color: passed === p ? VALUE : LABEL,
-                  fontFamily: T.SANS, fontSize: '11px', cursor: 'pointer',
+                  fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', cursor: 'pointer',
                 }}>
                   {p ? '✓ Pass' : '✗ Fail'}
                 </button>
@@ -829,16 +829,16 @@ export default function DBTLflowPage() {
             {/* Best Result */}
             <div style={{
               marginTop: '16px', padding: '10px',
-              background: 'rgba(191,220,205,0.18)', borderRadius: '12px',
+              background: 'rgba(191,220,205,0.18)', borderRadius: 'var(--nb-radius-md)',
               border: '1px solid rgba(191,220,205,0.34)',
             }}>
-              <p style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL, margin: '0 0 6px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              <p style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, margin: '0 0 6px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                 Best Result
               </p>
-              <p style={{ fontFamily: T.MONO, fontSize: '14px', color: VALUE, margin: '0 0 4px' }}>
+              <p style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-md)', color: VALUE, margin: '0 0 4px' }}>
                 {bestIteration?.result} {bestIteration?.unit}
               </p>
-              <p style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL, margin: 0, lineHeight: 1.4 }}>
+              <p style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, margin: 0, lineHeight: 1.4 }}>
                 {bestIteration?.hypothesis.slice(0, 60)}…
               </p>
             </div>
@@ -863,20 +863,20 @@ export default function DBTLflowPage() {
                     onClick={() => setProtocolExpanded(prev => !prev)}
                     style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
                   >
-                    <span style={{ fontFamily: T.SANS, fontSize: '10px', color: VALUE, fontWeight: 500 }}>
+                    <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: VALUE, fontWeight: 500 }}>
                       {generatedProtocol.metadata.protocolName}
                     </span>
-                    <span style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL }}>
+                    <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>
                       {protocolExpanded ? '▾' : '▸'}
                     </span>
                   </div>
 
                   {protocolExpanded && (
                     <div style={{ marginTop: '8px' }}>
-                      <p style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL, margin: '0 0 4px' }}>
+                      <p style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, margin: '0 0 4px' }}>
                         {generatedProtocol.metadata.description}
                       </p>
-                      <p style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, margin: '0 0 8px' }}>
+                      <p style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL, margin: '0 0 8px' }}>
                         API {generatedProtocol.api_version} · {generatedProtocol.labware.length} labware · {generatedProtocol.pipetting_logic.length} steps
                       </p>
                       <ActionButton
@@ -908,15 +908,15 @@ export default function DBTLflowPage() {
               </ActionButton>
               {sbolDoc && (
                 <div style={{ ...GLASS, marginTop: '10px', padding: '12px' }}>
-                  <p style={{ fontFamily: T.SANS, fontSize: '10px', color: VALUE, fontWeight: 500, margin: '0 0 6px' }}>
+                  <p style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: VALUE, fontWeight: 500, margin: '0 0 6px' }}>
                     {sbolDoc.name}
                   </p>
-                  <p style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, margin: '0 0 8px' }}>
+                  <p style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL, margin: '0 0 8px' }}>
                     {sbolDoc.components.length} components · {sbolDoc.interactions.length} interactions
                   </p>
                   {sbolValidation.map((v, i) => (
                     <p key={i} style={{
-                      fontFamily: T.MONO, fontSize: '10px', margin: '0 0 3px', lineHeight: 1.3,
+                      fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', margin: '0 0 3px', lineHeight: 1.3,
                       color: v.startsWith('VALID') ? PATHD_THEME.mint :
                              v.startsWith('ERROR') ? PATHD_THEME.coral :
                              PATHD_THEME.apricot,
@@ -955,7 +955,7 @@ export default function DBTLflowPage() {
                 value={seqInput} onChange={e => setSeqInput(e.target.value)}
                 placeholder="Paste target DNA (ATCG)… or leave empty for demo"
                 rows={2}
-                style={{ ...inputBase, fontFamily: T.MONO, fontSize: '10px', resize: 'vertical', marginBottom: '8px' }}
+                style={{ ...inputBase, fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', resize: 'vertical', marginBottom: '8px' }}
               />
               {assemblyError && (
                 <div style={{ marginBottom: '8px' }}>
@@ -975,10 +975,10 @@ export default function DBTLflowPage() {
                 <div style={{ ...GLASS, marginTop: '10px', padding: '12px' }}>
                   <div onClick={() => setAssemblyExpanded(p => !p)}
                     style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontFamily: T.SANS, fontSize: '10px', color: VALUE, fontWeight: 500 }}>
+                    <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: VALUE, fontWeight: 500 }}>
                       {assemblyPlan.targetName}
                     </span>
-                    <span style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL }}>
+                    <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>
                       {assemblyExpanded ? '▾' : '▸'}
                     </span>
                   </div>
@@ -994,8 +994,8 @@ export default function DBTLflowPage() {
                           ['Tm Spread', assemblyPlan.tmSpread.toFixed(1) + ' °C'],
                         ] as const).map(([lbl, val]) => (
                           <div key={lbl} style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>{lbl}</span>
-                            <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE, textAlign: 'right' }}>{val}</span>
+                            <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>{lbl}</span>
+                            <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE, textAlign: 'right' }}>{val}</span>
                           </div>
                         ))}
                       </div>
@@ -1013,13 +1013,13 @@ export default function DBTLflowPage() {
                       {assemblyPlan.warnings.length > 0 && (
                         <div style={{ marginBottom: '8px' }}>
                           {assemblyPlan.warnings.map((w, i) => (
-                            <p key={i} style={{ fontFamily: T.SANS, fontSize: '10px', color: PATHD_THEME.apricot, margin: '0 0 3px', lineHeight: 1.3 }}>
+                            <p key={i} style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.apricot, margin: '0 0 3px', lineHeight: 1.3 }}>
                               ⚠ {w}
                             </p>
                           ))}
                         </div>
                       )}
-                      <p style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 6px' }}>
+                      <p style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 6px' }}>
                         Fragment Map
                       </p>
                       <div style={{ display: 'flex', gap: '2px', marginBottom: '10px' }}>
@@ -1033,7 +1033,7 @@ export default function DBTLflowPage() {
                               background: colors[i % 4], border: '1px solid ' + borders[i % 4],
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
                             }}>
-                              <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE }}>{f.length}</span>
+                              <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE }}>{f.length}</span>
                             </div>
                           );
                         })}
@@ -1058,7 +1058,7 @@ export default function DBTLflowPage() {
                           ⚗ OT-2 Protocol
                         </ActionButton>
                       </div>
-                      <p style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, margin: 0 }}>
+                      <p style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL, margin: 0 }}>
                         Provenance: {assemblyPlan.provenanceId.slice(0, 8)}…
                       </p>
                     </div>
@@ -1082,10 +1082,10 @@ export default function DBTLflowPage() {
               ]}
               footer={
                 <div style={{ display: 'grid', gap: '6px' }}>
-                  <div style={{ fontFamily: T.SANS, fontSize: '11px', color: VALUE, lineHeight: 1.55 }}>
+                  <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: VALUE, lineHeight: 1.55 }}>
                     The central panel now behaves like an experimental ledger figure. Phase state, campaign trajectory, and governance status stay in one reading path so loop health can be judged at a glance.
                   </div>
-                  <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL }}>
+                  <div style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>
                     latest iteration #{latestIteration?.id ?? '—'} · {latestIteration?.result ?? '—'} {latestIteration?.unit ?? ''} · feedback {hasCommittedFeedback ? 'requires approved delta' : 'still locked'}
                   </div>
                 </div>
@@ -1101,7 +1101,7 @@ export default function DBTLflowPage() {
                     return (
                       <div key={p} style={{
                         padding: '4px 10px',
-                        borderRadius: '8px',
+                        borderRadius: 'var(--nb-radius-sm)',
                         background: isActive ? `${PHASE_PASTEL[p]}33` : PATHD_THEME.paperSurfaceMuted,
                         border: `1px solid ${isActive ? `${PHASE_PASTEL[p]}66` : PATHD_THEME.paperBorder}`,
                         display: 'flex', alignItems: 'center', gap: '6px',
@@ -1112,7 +1112,7 @@ export default function DBTLflowPage() {
                           opacity: isActive ? 1 : 0.5,
                         }} />
                         <span style={{
-                          fontFamily: T.SANS, fontSize: '10px',
+                          fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)',
                           color: isActive ? VALUE : LABEL,
                           fontWeight: isActive ? 600 : 400,
                         }}>
@@ -1152,17 +1152,17 @@ export default function DBTLflowPage() {
               <label style={{
                 display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                 padding: '14px 8px',
-                borderRadius: '12px',
+                borderRadius: 'var(--nb-radius-md)',
                 border: `2px dashed ${PATHD_THEME.paperBorderStrong}`,
                 background: PATHD_THEME.paperSurfaceMuted,
                 cursor: 'pointer',
                 marginBottom: '12px',
                 transition: 'border-color 0.2s',
               }}>
-                <span style={{ fontFamily: T.SANS, fontSize: '11px', color: VALUE, marginBottom: '4px' }}>
+                <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: VALUE, marginBottom: '4px' }}>
                   {feedbackLoading ? '⏳ Processing…' : '↑ Upload Test CSV'}
                 </span>
-                <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>
+                <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>
                   .csv with assay metadata, units, instrument, operator
                 </span>
                 <input
@@ -1185,11 +1185,11 @@ export default function DBTLflowPage() {
 
                   {/* Test Summary */}
                   <div style={{
-                    padding: '10px', borderRadius: '12px',
+                    padding: '10px', borderRadius: 'var(--nb-radius-md)',
                     background: PATHD_THEME.paperSurfaceMuted,
                     border: `1px solid ${PATHD_THEME.paperBorder}`,
                   }}>
-                    <p style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 8px' }}>
+                    <p style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 8px' }}>
                       Test Summary
                     </p>
                     {([
@@ -1199,8 +1199,8 @@ export default function DBTLflowPage() {
                       ['Worst Sample', feedbackResult.test_summary.worst_sample],
                     ] as const).map(([lbl, val]) => (
                       <div key={lbl} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-                        <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>{lbl}</span>
-                        <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE, textAlign: 'right' }}>{val}</span>
+                        <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>{lbl}</span>
+                        <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE, textAlign: 'right' }}>{val}</span>
                       </div>
                     ))}
                   </div>
@@ -1208,12 +1208,12 @@ export default function DBTLflowPage() {
                   {/* QC Flags */}
                   {feedbackResult.qc_flags.length > 0 && (
                     <div>
-                      <p style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 6px' }}>
+                      <p style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 6px' }}>
                         QC Flags ({feedbackResult.qc_flags.length})
                       </p>
                       {feedbackResult.qc_flags.map((flag: QCFlag, idx: number) => (
                         <div key={idx} style={{
-                          padding: '8px', borderRadius: '8px', marginBottom: '6px',
+                          padding: '8px', borderRadius: 'var(--nb-radius-sm)', marginBottom: '6px',
                           background: flag.flag_type === 'sensor_anomaly'
                             ? 'rgba(231,199,169,0.18)'
                             : 'rgba(232,163,161,0.18)',
@@ -1222,14 +1222,14 @@ export default function DBTLflowPage() {
                             : 'rgba(232,163,161,0.34)'}`,
                         }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
-                            <span style={{ fontFamily: T.MONO, fontSize: '10px', color: PHASE_PASTEL.Build }}>
+                            <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PHASE_PASTEL.Build }}>
                               {flag.flag_type === 'sensor_anomaly' ? '⚠' : '◆'} {flag.sample_id}
                             </span>
-                            <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE, textAlign: 'right' }}>
+                            <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE, textAlign: 'right' }}>
                               {flag.measured_value.toFixed(1)} / {flag.theoretical_max.toFixed(1)}
                             </span>
                           </div>
-                          <p style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL, margin: 0, lineHeight: 1.3 }}>
+                          <p style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, margin: 0, lineHeight: 1.3 }}>
                             {flag.message}
                           </p>
                         </div>
@@ -1240,33 +1240,33 @@ export default function DBTLflowPage() {
                   {/* Next Iteration Suggestions */}
                   {feedbackResult.next_iteration_suggestions.length > 0 && (
                     <div>
-                      <p style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 6px' }}>
+                      <p style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 6px' }}>
                         Suggested Next Iteration
                       </p>
                       {feedbackResult.next_iteration_suggestions.map((s: NextIterationSuggestion, idx: number) => (
                         <div key={idx} style={{
-                          padding: '8px', borderRadius: '8px', marginBottom: '6px',
+                          padding: '8px', borderRadius: 'var(--nb-radius-sm)', marginBottom: '6px',
                           background: 'rgba(191,220,205,0.18)',
                           border: '1px solid rgba(191,220,205,0.34)',
                         }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                            <span style={{ fontFamily: T.SANS, fontSize: '10px', color: PHASE_PASTEL.Learn, fontWeight: 500 }}>
+                            <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: PHASE_PASTEL.Learn, fontWeight: 500 }}>
                               {s.parameter}
                             </span>
-                            <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE, textAlign: 'right' }}>
+                            <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE, textAlign: 'right' }}>
                               +{s.predicted_improvement_percent.toFixed(1)}%
                             </span>
                           </div>
                           <div style={{ display: 'flex', gap: '4px', alignItems: 'center', marginBottom: '4px' }}>
-                            <span style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL }}>
+                            <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>
                               {s.current_value}
                             </span>
-                            <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>→</span>
-                            <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE, textAlign: 'right' }}>
+                            <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>→</span>
+                            <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE, textAlign: 'right' }}>
                               {s.suggested_value}
                             </span>
                           </div>
-                          <p style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL, margin: 0, lineHeight: 1.3 }}>
+                          <p style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, margin: 0, lineHeight: 1.3 }}>
                             {s.rationale}
                           </p>
                         </div>
@@ -1275,7 +1275,7 @@ export default function DBTLflowPage() {
                   )}
 
                   {/* Optimization Objective */}
-                  <p style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, margin: 0, textAlign: 'center' }}>
+                  <p style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL, margin: 0, textAlign: 'center' }}>
                     objective: {feedbackResult.optimization_objective}
                   </p>
                 </div>
@@ -1299,15 +1299,15 @@ export default function DBTLflowPage() {
                     };
                     const clr = tc[p.sampleType] ?? VALUE;
                     return (
-                      <div key={p.uuid} style={{ padding: '8px', borderRadius: '8px', background: PATHD_THEME.paperSurfaceMuted, border: `1px solid ${PATHD_THEME.paperBorder}` }}>
+                      <div key={p.uuid} style={{ padding: '8px', borderRadius: 'var(--nb-radius-sm)', background: PATHD_THEME.paperSurfaceMuted, border: `1px solid ${PATHD_THEME.paperBorder}` }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
-                          <span style={{ fontFamily: T.MONO, fontSize: '10px', color: clr }}>{p.sampleType.toUpperCase()}</span>
-                          <span style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, textAlign: 'right' }}>
+                          <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: clr }}>{p.sampleType.toUpperCase()}</span>
+                          <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL, textAlign: 'right' }}>
                             {p.well ? 'Well ' + p.well : ''}{p.slot ? ' · Slot ' + p.slot : ''}
                           </span>
                         </div>
-                        <p style={{ fontFamily: T.SANS, fontSize: '10px', color: VALUE, margin: '0 0 2px', lineHeight: 1.3 }}>{p.label}</p>
-                        <p style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, margin: 0 }}>{p.uuid}</p>
+                        <p style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: VALUE, margin: '0 0 2px', lineHeight: 1.3 }}>{p.label}</p>
+                        <p style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL, margin: 0 }}>{p.uuid}</p>
                       </div>
                     );
                   })}

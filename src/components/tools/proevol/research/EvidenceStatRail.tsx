@@ -44,7 +44,7 @@ export default function EvidenceStatRail({ research, bandSemantic }: EvidenceSta
         gap: '10px',
         gridAutoRows: 'min-content',
         padding: '10px 12px',
-        borderRadius: '12px',
+        borderRadius: 'var(--nb-radius-md)',
         border: `1px solid ${PROEVOL_THEME.border}`,
         background: PROEVOL_THEME.surface,
         minWidth: 0,
@@ -102,7 +102,7 @@ export default function EvidenceStatRail({ research, bandSemantic }: EvidenceSta
 
 const kickerStyle = {
   fontFamily: T.MONO,
-  fontSize: '10px',
+  fontSize: 'var(--nb-fs-xs)',
   letterSpacing: '0.14em',
   color: PROEVOL_THEME.label,
   textTransform: 'uppercase' as const,
@@ -140,7 +140,7 @@ function Row({
         <span
           style={{
             fontFamily: T.MONO,
-            fontSize: '10px',
+            fontSize: 'var(--nb-fs-xs)',
             color: PROEVOL_THEME.label,
             letterSpacing: '0.10em',
             textTransform: 'uppercase',
@@ -152,7 +152,7 @@ function Row({
       <div
         style={{
           fontFamily: T.SANS,
-          fontSize: '14px',
+          fontSize: 'var(--nb-fs-md)',
           fontWeight: 700,
           color: PROEVOL_THEME.value,
           letterSpacing: '-0.02em',
@@ -163,7 +163,7 @@ function Row({
       <div
         style={{
           fontFamily: T.SANS,
-          fontSize: '10px',
+          fontSize: 'var(--nb-fs-xs)',
           color: PROEVOL_THEME.muted,
           lineHeight: 1.4,
         }}

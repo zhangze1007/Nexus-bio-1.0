@@ -63,7 +63,7 @@ export function ContextChips() {
           padding: '2px 7px', borderRadius: '6px',
           background: `${chip.accent}22`,
           border: `1px solid ${chip.accent}40`,
-          fontFamily: T.MONO, fontSize: '9px',
+          fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)',
           color: chip.accent, letterSpacing: '0.04em',
         }}>
           <span style={{ opacity: 0.55 }}>#{chip.label}</span>

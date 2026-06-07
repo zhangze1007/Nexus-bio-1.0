@@ -303,9 +303,9 @@ export default function GenMIMPage() {
       {upstreamMissing.length > 0 && (
         <div style={{
           padding: '8px 12px', marginBottom: '8px',
-          borderRadius: '12px', border: '1px solid rgba(180, 150, 100, 0.50)',
+          borderRadius: 'var(--nb-radius-md)', border: '1px solid rgba(180, 150, 100, 0.50)',
           background: 'rgba(232, 220, 200, 0.12)', color: 'rgba(250, 246, 240, 0.96)',
-          fontFamily: T.SANS, fontSize: '11px', lineHeight: 1.55,
+          fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', lineHeight: 1.55,
         }}>
           <strong>Upstream payload missing:</strong>{' '}Run <em>{upstreamMissing.join(' and ')}</em> first.
         </div>
@@ -324,8 +324,8 @@ export default function GenMIMPage() {
             ].map(s => (
               <div key={s.label} style={{ marginBottom: '12px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                  <span style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.label }}>{s.label}</span>
-                  <span style={{ fontFamily: T.MONO, fontSize: '11px', color: PATHD_THEME.value }}>{s.display(s.value)}</span>
+                  <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: PATHD_THEME.label }}>{s.label}</span>
+                  <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-sm)', color: PATHD_THEME.value }}>{s.display(s.value)}</span>
                 </div>
                 <input aria-label="Parameter slider" type="range" min={s.min} max={s.max} step={s.step} value={s.value}
                   onChange={e => s.set(parseFloat(e.target.value) as never)}
@@ -372,7 +372,7 @@ export default function GenMIMPage() {
                 { label: 'Growth', value: `${(growthImpact * 100).toFixed(1)}%`, accent: PATHD_THEME.sky },
               ]}
               footer={
-                <div style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label }}>
+                <div style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.label }}>
                   baseline {recommendedTargets} targets · {(recommendedEfficiency * 100).toFixed(0)}% KD · off-target {(offTargetRisk * 100).toFixed(0)}%
                 </div>
               }
@@ -396,7 +396,7 @@ export default function GenMIMPage() {
       {/* ── Targets Tab ── */}
       <ToolTabPanel tabId="targets" activeId={activeTab}>
         <div style={{ flex: 1, overflowY: 'auto', padding: '12px 0' }}>
-          <div style={{ fontFamily: T.MONO, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: PATHD_THEME.label, marginBottom: '10px' }}>
+          <div style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', letterSpacing: '0.1em', color: PATHD_THEME.label, marginBottom: '10px' }}>
             All CRISPRi Targets
           </div>
           <div style={{ overflowX: 'auto' }}>
@@ -404,7 +404,7 @@ export default function GenMIMPage() {
               <thead>
                 <tr style={{ borderBottom: `1px solid ${PATHD_THEME.panelBorderStrong}` }}>
                   {['Gene', 'Position', 'Essential', 'KD Eff.', 'Phenotype', 'Growth ΔΔ'].map(h => (
-                    <th key={h} style={{ fontFamily: T.MONO, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.06em', color: PATHD_THEME.label, padding: '5px 8px', textAlign: 'left' }}>
+                    <th key={h} style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', letterSpacing: '0.06em', color: PATHD_THEME.label, padding: '5px 8px', textAlign: 'left' }}>
                       {h}
                     </th>
                   ))}
@@ -415,12 +415,12 @@ export default function GenMIMPage() {
                   const isSelected = schedule.some(s => s.gene === t.gene);
                   return (
                     <tr key={t.gene} style={{ background: isSelected ? 'rgba(232,163,161,0.10)' : i % 2 === 0 ? 'transparent' : PATHD_THEME.panelInset }}>
-                      <td style={{ fontFamily: T.MONO, fontSize: '10px', padding: '4px 8px', color: PATHD_THEME.value }}>{t.gene}</td>
-                      <td style={{ fontFamily: T.MONO, fontSize: '10px', padding: '4px 8px', color: PATHD_THEME.label }}>{t.position.toLocaleString()}</td>
-                      <td style={{ fontFamily: T.MONO, fontSize: '10px', padding: '4px 8px', color: t.essential ? PATHD_THEME.apricot : PATHD_THEME.label }}>{t.essential ? 'YES' : 'no'}</td>
-                      <td style={{ fontFamily: T.MONO, fontSize: '10px', padding: '4px 8px', color: PATHD_THEME.value }}>{t.essential ? '—' : `${(t.knockdown_efficiency * 100).toFixed(0)}%`}</td>
-                      <td style={{ fontFamily: T.SANS, fontSize: '10px', padding: '4px 8px', color: PATHD_THEME.label }}>{t.phenotype}</td>
-                      <td style={{ fontFamily: T.MONO, fontSize: '10px', padding: '4px 8px', color: PATHD_THEME.label }}>{t.essential ? '—' : `${((t.growth_impact ?? 0) * 100).toFixed(0)}%`}</td>
+                      <td style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', padding: '4px 8px', color: PATHD_THEME.value }}>{t.gene}</td>
+                      <td style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', padding: '4px 8px', color: PATHD_THEME.label }}>{t.position.toLocaleString()}</td>
+                      <td style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', padding: '4px 8px', color: t.essential ? PATHD_THEME.apricot : PATHD_THEME.label }}>{t.essential ? 'YES' : 'no'}</td>
+                      <td style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', padding: '4px 8px', color: PATHD_THEME.value }}>{t.essential ? '—' : `${(t.knockdown_efficiency * 100).toFixed(0)}%`}</td>
+                      <td style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', padding: '4px 8px', color: PATHD_THEME.label }}>{t.phenotype}</td>
+                      <td style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', padding: '4px 8px', color: PATHD_THEME.label }}>{t.essential ? '—' : `${((t.growth_impact ?? 0) * 100).toFixed(0)}%`}</td>
                     </tr>
                   );
                 })}
@@ -433,20 +433,20 @@ export default function GenMIMPage() {
       {/* ── Schedule Tab ── */}
       <ToolTabPanel tabId="schedule" activeId={activeTab}>
         <div style={{ flex: 1, overflowY: 'auto', padding: '12px 0' }}>
-          <div style={{ fontFamily: T.MONO, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: PATHD_THEME.label, marginBottom: '10px' }}>
+          <div style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', letterSpacing: '0.1em', color: PATHD_THEME.label, marginBottom: '10px' }}>
             Selected Schedule ({schedule.length} targets)
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
             {schedule.map((t, i) => (
               <div key={t.gene} style={{
                 padding: '8px 12px',
-                background: 'rgba(232,163,161,0.12)', border: '1px solid rgba(232,163,161,0.28)', borderRadius: '8px',
+                background: 'rgba(232,163,161,0.12)', border: '1px solid rgba(232,163,161,0.28)', borderRadius: 'var(--nb-radius-sm)',
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontFamily: T.MONO, fontSize: '11px', fontWeight: 600, color: PATHD_THEME.value }}>{t.gene}</span>
-                  <span style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label }}>{(t.knockdown_efficiency * 100).toFixed(0)}% KD</span>
+                  <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-sm)', fontWeight: 600, color: PATHD_THEME.value }}>{t.gene}</span>
+                  <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.label }}>{(t.knockdown_efficiency * 100).toFixed(0)}% KD</span>
                 </div>
-                <div style={{ fontFamily: T.SANS, fontSize: '10px', color: PATHD_THEME.label, marginTop: '2px' }}>
+                <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.label, marginTop: '2px' }}>
                   {t.phenotype} · GI: {((t.growth_impact ?? 0) * 100).toFixed(0)}%
                 </div>
                 <div style={{ marginTop: '6px', height: '3px', background: 'rgba(255,255,255,0.06)', borderRadius: '2px' }}>
@@ -470,14 +470,14 @@ export default function GenMIMPage() {
           </div>
 
           <div style={{
-            padding: '12px', borderRadius: '12px',
+            padding: '12px', borderRadius: 'var(--nb-radius-md)',
             border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
             background: PATHD_THEME.panelSurface, display: 'grid', gap: '6px',
           }}>
-            <div style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            <div style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.label, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
               Readout
             </div>
-            <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.value, lineHeight: 1.55 }}>
+            <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: PATHD_THEME.value, lineHeight: 1.55 }}>
               {protectEssential
                 ? 'The current schedule is conservative enough to behave like a viable chassis-editing proposal rather than an aggressive pruning experiment.'
                 : 'Aggressive pruning is enabled, so this schedule should be interpreted as a stress-test of the chassis boundary rather than a default plan.'}

@@ -35,7 +35,7 @@ export default function TruthHeader({
         display: 'grid',
         gap: '10px',
         padding: '10px 12px',
-        borderRadius: '12px',
+        borderRadius: 'var(--nb-radius-md)',
         border: `1px solid ${accent}33`,
         background: PROEVOL_THEME.surface,
         boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
@@ -53,7 +53,7 @@ export default function TruthHeader({
           <div
             style={{
               fontFamily: T.MONO,
-              fontSize: '10px',
+              fontSize: 'var(--nb-fs-xs)',
               color: PROEVOL_THEME.label,
               letterSpacing: '0.14em',
               textTransform: 'uppercase',
@@ -64,7 +64,7 @@ export default function TruthHeader({
           <div
             style={{
               fontFamily: T.SANS,
-              fontSize: '15px',
+              fontSize: 'var(--nb-fs-md)',
               fontWeight: 700,
               color: PROEVOL_THEME.value,
               letterSpacing: '-0.02em',
@@ -78,7 +78,7 @@ export default function TruthHeader({
           <div
             style={{
               fontFamily: T.SANS,
-              fontSize: '11px',
+              fontSize: 'var(--nb-fs-sm)',
               color: PROEVOL_THEME.muted,
               lineHeight: 1.5,
             }}
@@ -119,7 +119,7 @@ export default function TruthHeader({
             gap: '6px',
             alignItems: 'center',
             padding: '5px 8px',
-            borderRadius: '8px',
+            borderRadius: 'var(--nb-radius-sm)',
             border: `1px solid ${accent}33`,
             background: `${accent}10`,
           }}
@@ -127,7 +127,7 @@ export default function TruthHeader({
           <span
             style={{
               fontFamily: T.MONO,
-              fontSize: '10px',
+              fontSize: 'var(--nb-fs-xs)',
               fontWeight: 700,
               letterSpacing: '0.1em',
               color: accent,
@@ -139,7 +139,7 @@ export default function TruthHeader({
           <span
             style={{
               fontFamily: T.SANS,
-              fontSize: '10px',
+              fontSize: 'var(--nb-fs-xs)',
               color: PROEVOL_THEME.muted,
               lineHeight: 1.4,
             }}

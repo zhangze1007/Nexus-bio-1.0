@@ -397,11 +397,11 @@ export default function CETHXPage() {
       footer={
         <>
           {fba && (
-            <div role="status" style={{ padding: '6px 14px', background: 'rgba(175,195,214,0.14)', border: '1px solid rgba(175,195,214,0.28)', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
-              <span style={{ fontFamily: T.MONO, fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '999px', background: 'rgba(175,195,214,0.22)', border: '1px solid rgba(175,195,214,0.34)', color: T.VALUE, textTransform: 'uppercase', letterSpacing: '0.06em', flexShrink: 0 }}>
+            <div role="status" style={{ padding: '6px 14px', background: 'rgba(175,195,214,0.14)', border: '1px solid rgba(175,195,214,0.28)', borderRadius: 'var(--nb-radius-md)', display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
+              <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', fontWeight: 700, padding: '2px 8px', borderRadius: '999px', background: 'rgba(175,195,214,0.22)', border: '1px solid rgba(175,195,214,0.34)', color: T.VALUE, textTransform: 'uppercase', letterSpacing: '0.06em', flexShrink: 0 }}>
                 FBASim
               </span>
-              <span style={{ fontFamily: T.SANS, fontSize: '11px', color: T.LABEL }}>
+              <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: T.LABEL }}>
                 {'✓ Flux data loaded — '}
                 <span style={{ fontFamily: T.MONO, color: T.VALUE }}>
                   {`μ=${fba.result.growthRate.toFixed(4)} h⁻¹ · ∂μ/∂Glc=${fba.result.sensitivityCoefficients.glc.toFixed(4)} · ∂μ/∂O₂=${fba.result.sensitivityCoefficients.o2.toFixed(4)}`}
@@ -432,13 +432,13 @@ export default function CETHXPage() {
                     border: pathway === p.id
                       ? `1px solid rgba(231,199,169,0.34)`
                       : `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
-                    borderRadius: '12px', cursor: 'pointer',
+                    borderRadius: 'var(--nb-radius-md)', cursor: 'pointer',
                   }}
                 >
-                  <span style={{ fontFamily: T.SANS, fontSize: '11px', fontWeight: 500, color: pathway === p.id ? T.VALUE : T.LABEL, display: 'block' }}>
+                  <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', fontWeight: 500, color: pathway === p.id ? T.VALUE : T.LABEL, display: 'block' }}>
                     {p.label}
                   </span>
-                  <span style={{ fontFamily: T.MONO, fontSize: '10px', color: T.DIM }}>
+                  <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: T.DIM }}>
                     {p.desc}
                   </span>
                 </motion.button>
@@ -460,7 +460,7 @@ export default function CETHXPage() {
                 { label: 'ATP', value: `${thermo.atp_yield.toFixed(1)}`, accent: PATHD_THEME.mint },
               ]}
               footer={
-                <div style={{ fontFamily: T.MONO, fontSize: '10px', color: T.LABEL }}>
+                <div style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: T.LABEL }}>
                   limiting step {limitingStep ?? 'pending'} · entropy {thermo.entropy_production.toFixed(3)} · NADH {thermo.nadh_yield.toFixed(1)}
                 </div>
               }
@@ -496,14 +496,14 @@ export default function CETHXPage() {
             <MetricCard label="Entropy" value={thermo.entropy_production.toFixed(3)} unit="kJ/mol/K" />
           </div>
 
-          <div style={{ padding: '12px', borderRadius: '12px', background: PATHD_THEME.panelInset, marginBottom: '20px' }}>
+          <div style={{ padding: '12px', borderRadius: 'var(--nb-radius-md)', background: PATHD_THEME.panelInset, marginBottom: '20px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-              <span style={{ fontFamily: T.SANS, fontSize: '10px', color: T.LABEL }}>Efficiency</span>
+              <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: T.LABEL }}>Efficiency</span>
               <motion.span
                 key={thermo.efficiency}
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
-                style={{ fontFamily: T.MONO, fontSize: '16px', fontWeight: 700, color: thermo.efficiency > 50 ? T.VALUE : PATHD_THEME.coral }}
+                style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-md)', fontWeight: 700, color: thermo.efficiency > 50 ? T.VALUE : PATHD_THEME.coral }}
               >
                 {thermo.efficiency.toFixed(1)}%
               </motion.span>
@@ -522,7 +522,7 @@ export default function CETHXPage() {
           </div>
 
           <div style={{ marginBottom: '20px' }}>
-            <div style={{ fontFamily: T.MONO, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: T.LABEL, marginBottom: '10px' }}>
+            <div style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', letterSpacing: '0.1em', color: T.LABEL, marginBottom: '10px' }}>
               Step Breakdown
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
@@ -537,10 +537,10 @@ export default function CETHXPage() {
                     padding: '4px 0', borderBottom: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
                   }}
                 >
-                  <span style={{ fontFamily: T.SANS, fontSize: '10px', color: T.LABEL, maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: T.LABEL, maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {s.step}
                   </span>
-                  <span style={{ fontFamily: T.MONO, fontSize: '10px', fontWeight: 600, textAlign: 'right', color: s.deltaG < 0 ? PATHD_THEME.mint : PATHD_THEME.coral }}>
+                  <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', fontWeight: 600, textAlign: 'right', color: s.deltaG < 0 ? PATHD_THEME.mint : PATHD_THEME.coral }}>
                     {s.deltaG > 0 ? '+' : ''}{s.deltaG.toFixed(1)}
                   </span>
                 </motion.div>
@@ -554,14 +554,14 @@ export default function CETHXPage() {
       <ToolTabPanel tabId="feasibility" activeId={activeTab}>
         <div style={{ flex: 1, overflowY: 'auto', padding: '12px 0' }}>
           <div style={{
-            padding: '12px', borderRadius: '12px',
+            padding: '12px', borderRadius: 'var(--nb-radius-md)',
             border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
             background: PATHD_THEME.panelInset, display: 'grid', gap: '6px', marginBottom: '20px',
           }}>
-            <div style={{ fontFamily: T.MONO, fontSize: '10px', color: T.LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            <div style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: T.LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
               Interpretation
             </div>
-            <div style={{ fontFamily: T.SANS, fontSize: '11px', color: T.VALUE, lineHeight: 1.55 }}>
+            <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: T.VALUE, lineHeight: 1.55 }}>
               {thermo.gibbs_free_energy < 0
                 ? 'The reference table total is negative, but this is not a condition-aware feasibility claim or backend-backed Delta-G prime result.'
                 : 'The reference table total is positive, so this remains a demo-level redesign prompt rather than a formal thermodynamic block.'}
@@ -575,14 +575,14 @@ export default function CETHXPage() {
           </div>
 
           <div style={{
-            padding: '12px', borderRadius: '12px',
+            padding: '12px', borderRadius: 'var(--nb-radius-md)',
             border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
             background: PATHD_THEME.panelInset, display: 'grid', gap: '6px',
           }}>
-            <div style={{ fontFamily: T.MONO, fontSize: '10px', color: T.LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            <div style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: T.LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
               Conditions
             </div>
-            <div style={{ fontFamily: T.SANS, fontSize: '11px', color: T.VALUE, lineHeight: 1.55 }}>
+            <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: T.VALUE, lineHeight: 1.55 }}>
               {`Pathway: ${PATHWAYS.find((entry) => entry.id === pathway)?.label ?? pathway} · ${tempC.toFixed(0)}°C · pH ${pH.toFixed(1)} · No Alberty transform applied. This is a reference ΔG°′ table — not a condition-aware feasibility determination.`}
             </div>
           </div>

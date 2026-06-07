@@ -68,13 +68,13 @@ export default function TactileSlider({
   return (
     <div style={{ marginBottom: '14px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-        <span style={{ fontFamily: T.SANS, fontSize: '10px', color: PATHD_THEME.label }}>
+        <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.label }}>
           {label}
         </span>
         <span
           style={{
             fontFamily: T.MONO,
-            fontSize: '10px',
+            fontSize: 'var(--nb-fs-xs)',
             color: PATHD_THEME.value,
           }}
         >

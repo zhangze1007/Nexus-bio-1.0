@@ -42,7 +42,7 @@ const GENE_COLORS = [PATHD_THEME.mint, PATHD_THEME.sky, PATHD_THEME.coral, PATHD
 
 const SectionLabel = ({ children }: { children: React.ReactNode }) => (
   <p style={{
-    fontFamily: T.SANS, fontSize: '10px', textTransform: 'uppercase',
+    fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase',
     letterSpacing: '0.1em', color: LABEL, margin: '0 0 10px',
   }}>
     {children}
@@ -608,7 +608,7 @@ function ReactorTwin3D({ result, constructs, params }: { result: CFSFullResult; 
   const fillHeight = Math.max(36, depletionRatio * 142);
 
   return (
-    <div style={{ width: '100%', height: '100%', minHeight: '420px', borderRadius: '16px', overflow: 'hidden', border: `1px solid ${BORDER}`, background: '#050505', position: 'relative' }}>
+    <div style={{ width: '100%', height: '100%', minHeight: '420px', borderRadius: 'var(--nb-radius-lg)', overflow: 'hidden', border: `1px solid ${BORDER}`, background: '#050505', position: 'relative' }}>
       <svg role="img" aria-label="Chart" viewBox="0 0 720 420" style={{ width: '100%', height: '100%' }}>
         <rect width="720" height="420" fill="#05070b" />
         <rect x="26" y="24" width="668" height="372" rx="18" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.06)" />
@@ -666,29 +666,29 @@ function ReactorTwin3D({ result, constructs, params }: { result: CFSFullResult; 
       </svg>
 
       <div style={{ position: 'absolute', top: '10px', left: '12px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-        <span style={{ padding: '3px 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.06)', color: VALUE, fontSize: '10px', fontFamily: T.MONO }}>
+        <span style={{ padding: '3px 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.06)', color: VALUE, fontSize: 'var(--nb-fs-xs)', fontFamily: T.MONO }}>
           Reactor body = active TX-TL volume
         </span>
-        <span style={{ padding: '3px 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.06)', color: VALUE, fontSize: '10px', fontFamily: T.MONO }}>
+        <span style={{ padding: '3px 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.06)', color: VALUE, fontSize: 'var(--nb-fs-xs)', fontFamily: T.MONO }}>
           Yield skyline = construct-level protein output
         </span>
       </div>
       <div style={{ position: 'absolute', top: '10px', right: '12px', width: 'min(260px, calc(100% - 24px))' }}>
-        <div style={{ padding: '10px 12px', borderRadius: '12px', border: `1px solid ${BORDER}`, background: 'rgba(0,0,0,0.56)', backdropFilter: 'blur(10px)' }}>
-          <p style={{ margin: '0 0 6px', color: LABEL, fontSize: '10px', fontFamily: T.MONO, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+        <div style={{ padding: '10px 12px', borderRadius: 'var(--nb-radius-md)', border: `1px solid ${BORDER}`, background: 'rgba(0,0,0,0.56)', backdropFilter: 'blur(10px)' }}>
+          <p style={{ margin: '0 0 6px', color: LABEL, fontSize: 'var(--nb-fs-xs)', fontFamily: T.MONO, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
             Evidence trace
           </p>
-          <p style={{ margin: '0 0 8px', color: VALUE, fontSize: '10px', lineHeight: 1.55, fontFamily: T.SANS }}>
+          <p style={{ margin: '0 0 8px', color: VALUE, fontSize: 'var(--nb-fs-xs)', lineHeight: 1.55, fontFamily: T.SANS }}>
             Reactor 3D binds the simulated TX-TL state to one scene: depletion timing drives tank fill, gene yield drives tower height, and ATP/GTP/PEP are kept visible as explicit resource assumptions.
           </p>
           <div style={{ display: 'grid', gap: '6px' }}>
-            <span style={{ padding: '3px 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.05)', color: VALUE, fontSize: '10px', fontFamily: T.MONO }}>
+            <span style={{ padding: '3px 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.05)', color: VALUE, fontSize: 'var(--nb-fs-xs)', fontFamily: T.MONO }}>
               depletion · {result.simulation.energyDepletionTime.toFixed(0)} min
             </span>
-            <span style={{ padding: '3px 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.05)', color: VALUE, fontSize: '10px', fontFamily: T.MONO }}>
+            <span style={{ padding: '3px 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.05)', color: VALUE, fontSize: 'var(--nb-fs-xs)', fontFamily: T.MONO }}>
               total yield · {result.simulation.totalProteinYield.toFixed(1)} nM
             </span>
-            <span style={{ padding: '3px 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.05)', color: VALUE, fontSize: '10px', fontFamily: T.MONO }}>
+            <span style={{ padding: '3px 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.05)', color: VALUE, fontSize: 'var(--nb-fs-xs)', fontFamily: T.MONO }}>
               energy pool · {(params.initialEnergy.atp + params.initialEnergy.gtp + params.initialEnergy.pep).toFixed(1)} mM
             </span>
           </div>
@@ -856,24 +856,24 @@ export default function CellFreePage() {
             <SectionLabel>Gene Constructs</SectionLabel>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
               {constructs.map((g, i) => (
-                <div key={g.id} style={{ ...GLASS, borderRadius: '12px', padding: '10px' }}>
+                <div key={g.id} style={{ ...GLASS, borderRadius: 'var(--nb-radius-md)', padding: '10px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
                     <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: GENE_COLORS[i % GENE_COLORS.length], flexShrink: 0 }} />
-                    <span style={{ fontFamily: T.SANS, fontSize: '10px', fontWeight: 600, color: VALUE }}>{g.name.length > 20 ? g.name.slice(0, 20) + '…' : g.name}</span>
+                    <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', fontWeight: 600, color: VALUE }}>{g.name.length > 20 ? g.name.slice(0, 20) + '…' : g.name}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-                    <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>Promoter</span>
-                    <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE }}>{g.promoter}</span>
+                    <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Promoter</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE }}>{g.promoter}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>DNA conc.</span>
-                    <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE }}>{g.dnaConcentration} nM</span>
+                    <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>DNA conc.</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE }}>{g.dnaConcentration} nM</span>
                   </div>
                 </div>
               ))}
             </div>
             <SectionLabel>Reaction Parameters</SectionLabel>
-            <div style={{ ...GLASS, borderRadius: '12px', padding: '10px', marginBottom: '16px' }}>
+            <div style={{ ...GLASS, borderRadius: 'var(--nb-radius-md)', padding: '10px', marginBottom: '16px' }}>
               {[
                 { label: 'Ribosome Total', value: `${params.ribosomeTotal} nM` },
                 { label: 'RNAP Total', value: `${params.rnap_total} nM` },
@@ -882,21 +882,21 @@ export default function CellFreePage() {
                 { label: 'Sim Time', value: `${params.simulationTime} min` },
               ].map(item => (
                 <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                  <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>{item.label}</span>
-                  <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE }}>{item.value}</span>
+                  <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>{item.label}</span>
+                  <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE }}>{item.value}</span>
                 </div>
               ))}
             </div>
             <SectionLabel>Energy Status</SectionLabel>
-            <div style={{ ...GLASS, borderRadius: '12px', padding: '10px' }}>
+            <div style={{ ...GLASS, borderRadius: 'var(--nb-radius-md)', padding: '10px' }}>
               {[
                 { label: 'ATP', value: `${params.initialEnergy.atp} mM` },
                 { label: 'GTP', value: `${params.initialEnergy.gtp} mM` },
                 { label: 'PEP', value: `${params.initialEnergy.pep} mM` },
               ].map(item => (
                 <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                  <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>{item.label}</span>
-                  <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE }}>{item.value}</span>
+                  <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>{item.label}</span>
+                  <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE }}>{item.value}</span>
                 </div>
               ))}
             </div>
@@ -912,7 +912,7 @@ export default function CellFreePage() {
                 { label: 'Yield', value: `${sim.totalProteinYield.toFixed(1)} nM`, accent: PATHD_THEME.mint },
                 { label: 'Depletion', value: `${sim.energyDepletionTime.toFixed(0)} min`, accent: PATHD_THEME.coral },
               ]}
-              footer={<div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL }}>setup {params.temperature}°C · {params.simulationTime} min · {sim.isResourceLimited ? 'resource-limited run' : 'resources adequate'}</div>}
+              footer={<div style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>setup {params.temperature}°C · {params.simulationTime} min · {sim.isResourceLimited ? 'resource-limited run' : 'resources adequate'}</div>}
               minHeight="100%"
             >
               <div style={{ padding: '4px 0', overflowY: 'auto' }}>
@@ -936,15 +936,15 @@ export default function CellFreePage() {
         <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
           <FloatingControlRail label="Bench Setup" defaultCollapsed={true}>
             <SectionLabel>Energy Status</SectionLabel>
-            <div style={{ ...GLASS, borderRadius: '12px', padding: '10px' }}>
+            <div style={{ ...GLASS, borderRadius: 'var(--nb-radius-md)', padding: '10px' }}>
               {[
                 { label: 'ATP', value: `${params.initialEnergy.atp} mM` },
                 { label: 'GTP', value: `${params.initialEnergy.gtp} mM` },
                 { label: 'PEP', value: `${params.initialEnergy.pep} mM` },
               ].map(item => (
                 <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                  <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>{item.label}</span>
-                  <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE }}>{item.value}</span>
+                  <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>{item.label}</span>
+                  <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE }}>{item.value}</span>
                 </div>
               ))}
             </div>
@@ -982,14 +982,14 @@ export default function CellFreePage() {
         <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
           <FloatingControlRail label="Parameters" defaultCollapsed={true}>
             <SectionLabel>Reaction Parameters</SectionLabel>
-            <div style={{ ...GLASS, borderRadius: '12px', padding: '10px' }}>
+            <div style={{ ...GLASS, borderRadius: 'var(--nb-radius-md)', padding: '10px' }}>
               {[
                 { label: 'Temperature', value: `${params.temperature} °C` },
                 { label: 'Sim Time', value: `${params.simulationTime} min` },
               ].map(item => (
                 <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                  <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>{item.label}</span>
-                  <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE }}>{item.value}</span>
+                  <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>{item.label}</span>
+                  <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE }}>{item.value}</span>
                 </div>
               ))}
             </div>
@@ -1011,28 +1011,28 @@ export default function CellFreePage() {
               </div>
             </ScientificFigureFrame>
             {fit && (
-              <div style={{ ...GLASS, borderRadius: '12px', padding: '12px' }}>
+              <div style={{ ...GLASS, borderRadius: 'var(--nb-radius-md)', padding: '12px' }}>
                 <SectionLabel>Fitting Results</SectionLabel>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>Vmax</span>
-                    <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE }}>{fit.vmax.toFixed(3)}</span>
+                    <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Vmax</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE }}>{fit.vmax.toFixed(3)}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>Kd</span>
-                    <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE }}>{fit.kd.toFixed(3)}</span>
+                    <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Kd</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE }}>{fit.kd.toFixed(3)}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>R²</span>
-                    <span style={{ fontFamily: T.MONO, fontSize: '10px', color: `rgba(${SEMANTIC_RGB.pass}, 0.92)` }}>{fit.r_squared.toFixed(4)}</span>
+                    <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>R²</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: `rgba(${SEMANTIC_RGB.pass}, 0.92)` }}>{fit.r_squared.toFixed(4)}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>Vmax CI</span>
-                    <span style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL }}>[{fit.vmax_ci[0].toFixed(2)}, {fit.vmax_ci[1].toFixed(2)}]</span>
+                    <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Vmax CI</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>[{fit.vmax_ci[0].toFixed(2)}, {fit.vmax_ci[1].toFixed(2)}]</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>Kd CI</span>
-                    <span style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL }}>[{fit.kd_ci[0].toFixed(2)}, {fit.kd_ci[1].toFixed(2)}]</span>
+                    <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Kd CI</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>[{fit.kd_ci[0].toFixed(2)}, {fit.kd_ci[1].toFixed(2)}]</span>
                   </div>
                 </div>
               </div>
@@ -1048,10 +1048,10 @@ export default function CellFreePage() {
             <SectionLabel>Gene Constructs</SectionLabel>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {constructs.map((g, i) => (
-                <div key={g.id} style={{ ...GLASS, borderRadius: '12px', padding: '10px' }}>
+                <div key={g.id} style={{ ...GLASS, borderRadius: 'var(--nb-radius-md)', padding: '10px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: GENE_COLORS[i % GENE_COLORS.length], flexShrink: 0 }} />
-                    <span style={{ fontFamily: T.SANS, fontSize: '10px', fontWeight: 600, color: VALUE }}>{g.name.length > 20 ? g.name.slice(0, 20) + '…' : g.name}</span>
+                    <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', fontWeight: 600, color: VALUE }}>{g.name.length > 20 ? g.name.slice(0, 20) + '…' : g.name}</span>
                   </div>
                 </div>
               ))}
@@ -1073,32 +1073,32 @@ export default function CellFreePage() {
                   <IvIvChart result={result} />
                 </div>
                 {iviv && (
-                  <div style={{ ...GLASS, borderRadius: '16px', padding: '14px 18px', maxWidth: '600px', margin: '0 auto', width: '100%' }}>
-                    <p style={{ fontFamily: T.SANS, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: LABEL, margin: '0 0 6px' }}>Reasoning</p>
-                    <p style={{ fontFamily: T.SANS, fontSize: '11px', color: VALUE, margin: 0, lineHeight: 1.6 }}>{iviv.reasoning}</p>
+                  <div style={{ ...GLASS, borderRadius: 'var(--nb-radius-lg)', padding: '14px 18px', maxWidth: '600px', margin: '0 auto', width: '100%' }}>
+                    <p style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', letterSpacing: '0.1em', color: LABEL, margin: '0 0 6px' }}>Reasoning</p>
+                    <p style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: VALUE, margin: 0, lineHeight: 1.6 }}>{iviv.reasoning}</p>
                   </div>
                 )}
               </div>
             </ScientificFigureFrame>
             {iviv && (
-              <div style={{ ...GLASS, borderRadius: '12px', padding: '12px' }}>
+              <div style={{ ...GLASS, borderRadius: 'var(--nb-radius-md)', padding: '12px' }}>
                 <SectionLabel>IvIv Estimate</SectionLabel>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>In-vivo Expr</span>
-                    <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE }}>{iviv.invivo_expression.toFixed(1)} nM</span>
+                    <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>In-vivo Expr</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE }}>{iviv.invivo_expression.toFixed(1)} nM</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>Scaling Factor</span>
-                    <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE }}>{iviv.scalingFactor.toFixed(3)}</span>
+                    <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Scaling Factor</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE }}>{iviv.scalingFactor.toFixed(3)}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>Fold Change</span>
-                    <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE }}>{iviv.invivo_foldChange.toFixed(2)}×</span>
+                    <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Fold Change</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE }}>{iviv.invivo_foldChange.toFixed(2)}×</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>Confidence</span>
-                    <span style={{ fontFamily: T.MONO, fontSize: '10px', color: iviv.confidence > 0.7 ? `rgba(${SEMANTIC_RGB.pass}, 0.92)` : iviv.confidence > 0.4 ? `rgba(${SEMANTIC_RGB.warn}, 0.9)` : `rgba(${SEMANTIC_RGB.fail}, 0.9)` }}>{(iviv.confidence * 100).toFixed(0)}%</span>
+                    <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Confidence</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: iviv.confidence > 0.7 ? `rgba(${SEMANTIC_RGB.pass}, 0.92)` : iviv.confidence > 0.4 ? `rgba(${SEMANTIC_RGB.warn}, 0.9)` : `rgba(${SEMANTIC_RGB.fail}, 0.9)` }}>{(iviv.confidence * 100).toFixed(0)}%</span>
                   </div>
                 </div>
               </div>
@@ -1111,9 +1111,9 @@ export default function CellFreePage() {
       <ToolTabPanel tabId="reactor" activeId={activeTab}>
         <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, padding: '12px', gap: '10px' }}>
           <div style={{ maxWidth: '760px', margin: '0 auto', width: '100%' }}>
-            <div style={{ padding: '8px 12px', borderRadius: '12px', border: `1px solid ${BORDER}`, background: PATHD_THEME.panelInset }}>
-              <p style={{ margin: '0 0 3px', color: VALUE, fontSize: '11px', fontFamily: T.SANS }}>Reactor 3D turns the CFPS run into a digital twin: construct yield, energy pool and depletion timing are mapped into one spatial scene.</p>
-              <p style={{ margin: 0, color: LABEL, fontSize: '10px', fontFamily: T.MONO }}>center tank = resource state · rear towers = expression output · right bars = ATP / GTP / PEP allocation</p>
+            <div style={{ padding: '8px 12px', borderRadius: 'var(--nb-radius-md)', border: `1px solid ${BORDER}`, background: PATHD_THEME.panelInset }}>
+              <p style={{ margin: '0 0 3px', color: VALUE, fontSize: 'var(--nb-fs-sm)', fontFamily: T.SANS }}>Reactor 3D turns the CFPS run into a digital twin: construct yield, energy pool and depletion timing are mapped into one spatial scene.</p>
+              <p style={{ margin: 0, color: LABEL, fontSize: 'var(--nb-fs-xs)', fontFamily: T.MONO }}>center tank = resource state · rear towers = expression output · right bars = ATP / GTP / PEP allocation</p>
             </div>
           </div>
           <div style={{ minHeight: '420px', maxWidth: '760px', margin: '0 auto', width: '100%', position: 'relative' }}>
@@ -1134,22 +1134,22 @@ export default function CellFreePage() {
               const gene = constructs.find(c => c.id === ss.geneId);
               const color = GENE_COLORS[i % GENE_COLORS.length];
               return (
-                <div key={ss.geneId} style={{ ...GLASS, borderRadius: '12px', padding: '8px 10px' }}>
+                <div key={ss.geneId} style={{ ...GLASS, borderRadius: 'var(--nb-radius-md)', padding: '8px 10px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
                     <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: color, flexShrink: 0 }} />
-                    <span style={{ fontFamily: T.SANS, fontSize: '10px', fontWeight: 600, color: VALUE }}>{gene ? (gene.name.length > 18 ? gene.name.slice(0, 18) + '…' : gene.name) : ss.geneId}</span>
+                    <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', fontWeight: 600, color: VALUE }}>{gene ? (gene.name.length > 18 ? gene.name.slice(0, 18) + '…' : gene.name) : ss.geneId}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-                    <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>Peak Protein</span>
-                    <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE }}>{ss.maxProtein.toFixed(1)} nM</span>
+                    <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Peak Protein</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE }}>{ss.maxProtein.toFixed(1)} nM</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-                    <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>Time to Half</span>
-                    <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE }}>{ss.timeToHalf.toFixed(0)} min</span>
+                    <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Time to Half</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE }}>{ss.timeToHalf.toFixed(0)} min</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>Yield/DNA</span>
-                    <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE }}>{ss.yieldPerDNA.toFixed(2)}</span>
+                    <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Yield/DNA</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE }}>{ss.yieldPerDNA.toFixed(2)}</span>
                   </div>
                 </div>
               );

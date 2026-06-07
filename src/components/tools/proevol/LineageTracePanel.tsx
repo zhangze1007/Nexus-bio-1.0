@@ -148,7 +148,7 @@ export default function LineageTracePanel({
             display: 'grid',
             gap: '8px',
             padding: '12px',
-            borderRadius: '12px',
+            borderRadius: 'var(--nb-radius-md)',
             border: `1px solid ${PROEVOL_THEME.border}`,
             background: 'rgba(255,255,255,0.03)',
           }}
@@ -156,7 +156,7 @@ export default function LineageTracePanel({
           <div
             style={{
               fontFamily: T.MONO,
-              fontSize: '10px',
+              fontSize: 'var(--nb-fs-xs)',
               color: PROEVOL_THEME.label,
               textTransform: 'uppercase',
               letterSpacing: '0.08em',

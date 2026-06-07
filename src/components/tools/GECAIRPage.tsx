@@ -299,8 +299,8 @@ function ParamSlider({ label, value, min, max, step = 0.05, onChange }: {
   return (
     <div style={{ marginBottom: '14px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
-        <span style={{ fontFamily: T.SANS, fontSize: '11px', color: LABEL }}>{label}</span>
-        <span style={{ fontFamily: T.MONO, fontSize: '11px', fontWeight: 600, color: VALUE }}>
+        <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: LABEL }}>{label}</span>
+        <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-sm)', fontWeight: 600, color: VALUE }}>
           {(localVal * 100).toFixed(0)}%
         </span>
       </div>
@@ -427,13 +427,13 @@ export default function GECAIRPage() {
             summary="GECAIR now reads as a control-design page rather than a circuit toy. The important question is whether the selected logic stabilizes the current pathway and burden context, not just whether the gate truth table looks correct."
             aside={
               <>
-                <div style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                <div style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.label, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                   Recommended logic
                 </div>
-                <div style={{ fontFamily: T.SANS, fontSize: '13px', color: PATHD_THEME.value, fontWeight: 700 }}>
+                <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: PATHD_THEME.value, fontWeight: 700 }}>
                   {recommendedGate} gate from current burden and control context
                 </div>
-                <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.label, lineHeight: 1.55 }}>
+                <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: PATHD_THEME.label, lineHeight: 1.55 }}>
                   Catalyst burden and controller stability are already being used here to bias the circuit topology instead of leaving logic selection arbitrary.
                 </div>
               </>
@@ -496,14 +496,14 @@ export default function GECAIRPage() {
         <div className="nb-tool-panels" style={{ flex: 1 }}>
           {/* Input panel */}
           <div className="nb-tool-sidebar" style={{ width: '240px', borderRight: `1px solid ${BORDER}`, background: PANEL_BG }}>
-            <p style={{ fontFamily: T.SANS, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: LABEL, margin: '0 0 12px' }}>
+            <p style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', letterSpacing: '0.1em', color: LABEL, margin: '0 0 12px' }}>
               Input Signals
             </p>
 
             <ParamSlider label="Input A strength" value={inputA} min={0} max={1} onChange={setInputA} />
             <ParamSlider label="Input B strength" value={inputB} min={0} max={1} onChange={setInputB} />
 
-            <p style={{ fontFamily: T.SANS, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: LABEL, margin: '16px 0 8px' }}>
+            <p style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', letterSpacing: '0.1em', color: LABEL, margin: '16px 0 8px' }}>
               Output Gate Type
             </p>
             {(['NOT', 'AND', 'OR', 'NAND'] as GateType[]).map(gate => (
@@ -512,9 +512,9 @@ export default function GECAIRPage() {
                 padding: '6px 10px', marginBottom: '4px',
                 background: 'var(--nb-control-bg)',
                 border: '1px solid var(--nb-control-border)',
-                borderRadius: '8px',
+                borderRadius: 'var(--nb-radius-sm)',
                 color: 'var(--nb-control-color)',
-                fontFamily: T.SANS, fontSize: '11px', cursor: 'pointer',
+                fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', cursor: 'pointer',
                 ['--nb-control-bg' as const]: gateType === gate ? 'rgba(207,196,227,0.22)' : PATHD_THEME.paperSurfaceStrong,
                 ['--nb-control-border' as const]: gateType === gate ? 'rgba(207,196,227,0.34)' : INPUT_BORDER,
                 ['--nb-control-color' as const]: gateType === gate ? VALUE : LABEL,
@@ -529,14 +529,14 @@ export default function GECAIRPage() {
               </button>
             ))}
 
-            <p style={{ fontFamily: T.SANS, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: LABEL, margin: '16px 0 8px' }}>
+            <p style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', letterSpacing: '0.1em', color: LABEL, margin: '16px 0 8px' }}>
               Truth Table
             </p>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr>
                   {['A', 'B', 'OUT'].map(h => (
-                    <th key={h} style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL, padding: '3px 6px', textAlign: 'center', borderBottom: `1px solid ${BORDER}` }}>{h}</th>
+                    <th key={h} style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, padding: '3px 6px', textAlign: 'center', borderBottom: `1px solid ${BORDER}` }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -551,7 +551,7 @@ export default function GECAIRPage() {
                   return (
                     <tr key={i} style={{ background: i % 2 === 0 ? 'transparent' : PATHD_THEME.paperSurfaceMuted }}>
                       {[row.A, row.B, out].map((v, j) => (
-                        <td key={j} style={{ fontFamily: T.MONO, fontSize: '10px', textAlign: 'center', padding: '4px', color: v ? PATHD_THEME.mint : LABEL }}>
+                        <td key={j} style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', textAlign: 'center', padding: '4px', color: v ? PATHD_THEME.mint : LABEL }}>
                           {v ? '1' : '0'}
                         </td>
                       ))}
@@ -576,10 +576,10 @@ export default function GECAIRPage() {
               ]}
               footer={
                 <div style={{ display: 'grid', gap: '6px' }}>
-                  <div style={{ fontFamily: T.SANS, fontSize: '11px', color: VALUE, lineHeight: 1.55 }}>
+                  <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: VALUE, lineHeight: 1.55 }}>
                     The page now treats the circuit as a scientific control object: architecture, phase space, transfer response, and node state are presented as one figure so logic choice can be defended from first principles.
                   </div>
-                  <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL }}>
+                  <div style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>
                     recommended gate {recommendedGate} · node outputs {(outA * 100).toFixed(0)} / {(outB * 100).toFixed(0)} · noise {noiseScore.toFixed(4)}
                   </div>
                 </div>
@@ -594,7 +594,7 @@ export default function GECAIRPage() {
 
           {/* Results panel */}
           <div className="nb-tool-right" style={{ width: '240px', borderLeft: `1px solid ${BORDER}`, background: PANEL_BG }}>
-            <p style={{ fontFamily: T.SANS, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: LABEL, margin: '0 0 12px' }}>
+            <p style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', letterSpacing: '0.1em', color: LABEL, margin: '0 0 12px' }}>
               Circuit Readouts
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -608,16 +608,16 @@ export default function GECAIRPage() {
             <div style={{
               marginTop: '12px',
               padding: '12px',
-              borderRadius: '12px',
+              borderRadius: 'var(--nb-radius-md)',
               border: `1px solid ${BORDER}`,
               background: PATHD_THEME.paperSurfaceStrong,
               display: 'grid',
               gap: '6px',
             }}>
-              <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              <div style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                 Recommendation
               </div>
-              <div style={{ fontFamily: T.SANS, fontSize: '11px', color: VALUE, lineHeight: 1.55 }}>
+              <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: VALUE, lineHeight: 1.55 }}>
                 {recommendedGate === gateType
                   ? 'The active gate agrees with the system-derived recommendation, so the control story is internally coherent.'
                   : 'The active gate differs from the system-derived recommendation, which is useful when stress-testing alternative logic before build.'}

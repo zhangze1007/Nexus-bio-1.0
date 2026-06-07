@@ -72,7 +72,7 @@ export default function RawJsonDrawer({
     <div
       data-testid="nexai-raw-json-drawer"
       style={{
-        borderRadius: '12px',
+        borderRadius: 'var(--nb-radius-md)',
         border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
         background: PATHD_THEME.panelInset,
         overflow: 'hidden',
@@ -95,7 +95,7 @@ export default function RawJsonDrawer({
           border: 'none',
           cursor: 'pointer',
           fontFamily: T.MONO,
-          fontSize: '10px',
+          fontSize: 'var(--nb-fs-xs)',
           letterSpacing: '0.08em',
           textTransform: 'uppercase',
           color: PATHD_THEME.label,
@@ -109,7 +109,7 @@ export default function RawJsonDrawer({
               transform: open ? 'rotate(90deg)' : 'rotate(0deg)',
               transition: 'transform 0.15s ease',
               fontFamily: T.MONO,
-              fontSize: '10px',
+              fontSize: 'var(--nb-fs-xs)',
               color: PATHD_THEME.label,
             }}
           >
@@ -122,7 +122,7 @@ export default function RawJsonDrawer({
             <span
               style={{
                 fontFamily: T.MONO,
-                fontSize: '10px',
+                fontSize: 'var(--nb-fs-xs)',
                 padding: '2px 6px',
                 borderRadius: '6px',
                 background: 'rgba(175,195,214,0.12)',
@@ -139,7 +139,7 @@ export default function RawJsonDrawer({
             <span
               style={{
                 fontFamily: T.MONO,
-                fontSize: '10px',
+                fontSize: 'var(--nb-fs-xs)',
                 padding: '2px 6px',
                 borderRadius: '6px',
                 background: 'rgba(250,128,114,0.16)',
@@ -170,7 +170,7 @@ export default function RawJsonDrawer({
             <span
               style={{
                 fontFamily: T.MONO,
-                fontSize: '10px',
+                fontSize: 'var(--nb-fs-xs)',
                 color: PATHD_THEME.label,
                 letterSpacing: '0.06em',
               }}
@@ -183,9 +183,9 @@ export default function RawJsonDrawer({
                 onClick={handleCopy}
                 style={{
                   fontFamily: T.MONO,
-                  fontSize: '10px',
+                  fontSize: 'var(--nb-fs-xs)',
                   padding: '4px 10px',
-                  borderRadius: '8px',
+                  borderRadius: 'var(--nb-radius-sm)',
                   border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
                   background: 'transparent',
                   cursor: 'pointer',
@@ -201,7 +201,7 @@ export default function RawJsonDrawer({
               style={{
                 margin: 0,
                 fontFamily: T.SANS,
-                fontSize: '11px',
+                fontSize: 'var(--nb-fs-sm)',
                 color: PATHD_THEME.label,
                 lineHeight: 1.55,
               }}
@@ -213,11 +213,11 @@ export default function RawJsonDrawer({
             style={{
               margin: 0,
               padding: '10px 12px',
-              borderRadius: '12px',
+              borderRadius: 'var(--nb-radius-md)',
               background: 'rgba(10,14,22,0.7)',
               border: '1px solid rgba(255,255,255,0.06)',
               fontFamily: T.MONO,
-              fontSize: '11px',
+              fontSize: 'var(--nb-fs-sm)',
               lineHeight: 1.5,
               color: PATHD_THEME.value,
               maxHeight: '340px',

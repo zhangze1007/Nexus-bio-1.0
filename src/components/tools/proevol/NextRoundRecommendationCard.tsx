@@ -27,15 +27,15 @@ export default function NextRoundRecommendationCard({ campaign }: { campaign: Pr
             display: 'grid',
             gap: '8px',
             padding: '14px',
-            borderRadius: '16px',
+            borderRadius: 'var(--nb-radius-lg)',
             border: `1px solid ${PROEVOL_THEME.borderStrong}`,
             background: 'linear-gradient(135deg, rgba(191,220,205,0.10) 0%, rgba(207,196,227,0.08) 48%, rgba(231,199,169,0.08) 100%)',
           }}
         >
-          <div style={{ fontFamily: T.SANS, fontSize: '13px', fontWeight: 600, color: PROEVOL_THEME.value, lineHeight: 1.45 }}>
+          <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', fontWeight: 600, color: PROEVOL_THEME.value, lineHeight: 1.45 }}>
             {recommendation.summary}
           </div>
-          <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PROEVOL_THEME.muted, lineHeight: 1.65 }}>
+          <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: PROEVOL_THEME.muted, lineHeight: 1.65 }}>
             {recommendation.rationale}
           </div>
         </div>
@@ -45,7 +45,7 @@ export default function NextRoundRecommendationCard({ campaign }: { campaign: Pr
             display: 'grid',
             gap: '8px',
             padding: '12px',
-            borderRadius: '12px',
+            borderRadius: 'var(--nb-radius-md)',
             border: `1px solid ${PROEVOL_THEME.border}`,
             background: 'rgba(255,255,255,0.03)',
           }}
@@ -53,7 +53,7 @@ export default function NextRoundRecommendationCard({ campaign }: { campaign: Pr
           <div
             style={{
               fontFamily: T.MONO,
-              fontSize: '10px',
+              fontSize: 'var(--nb-fs-xs)',
               color: PROEVOL_THEME.label,
               textTransform: 'uppercase',
               letterSpacing: '0.08em',
@@ -84,12 +84,12 @@ export default function NextRoundRecommendationCard({ campaign }: { campaign: Pr
                     alignItems: 'center',
                     justifyContent: 'center',
                     fontFamily: T.MONO,
-                    fontSize: '10px',
+                    fontSize: 'var(--nb-fs-xs)',
                   }}
                 >
                   →
                 </div>
-                <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PROEVOL_THEME.value, lineHeight: 1.55 }}>
+                <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: PROEVOL_THEME.value, lineHeight: 1.55 }}>
                   {directive}
                 </div>
               </div>

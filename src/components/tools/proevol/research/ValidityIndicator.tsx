@@ -65,7 +65,7 @@ export default function ValidityIndicator({
         display: 'inline-grid',
         gap: compact ? '2px' : '6px',
         padding: compact ? '6px 10px' : '10px 14px',
-        borderRadius: '12px',
+        borderRadius: 'var(--nb-radius-md)',
         border: `1px solid ${copy.tone}55`,
         background: `${copy.tone}14`,
         minWidth: 0,
@@ -84,7 +84,7 @@ export default function ValidityIndicator({
         <span
           style={{
             fontFamily: T.MONO,
-            fontSize: '10px',
+            fontSize: 'var(--nb-fs-xs)',
             letterSpacing: '0.14em',
             color: copy.tone,
             fontWeight: 700,
@@ -96,7 +96,7 @@ export default function ValidityIndicator({
           <span
             style={{
               fontFamily: T.MONO,
-              fontSize: '10px',
+              fontSize: 'var(--nb-fs-xs)',
               letterSpacing: '0.08em',
               color: PROEVOL_THEME.muted,
             }}
@@ -109,7 +109,7 @@ export default function ValidityIndicator({
         <div
           style={{
             fontFamily: T.SANS,
-            fontSize: '11px',
+            fontSize: 'var(--nb-fs-sm)',
             color: PROEVOL_THEME.value,
             lineHeight: 1.55,
           }}
@@ -121,7 +121,7 @@ export default function ValidityIndicator({
         <div
           style={{
             fontFamily: T.SANS,
-            fontSize: '10px',
+            fontSize: 'var(--nb-fs-xs)',
             color: PROEVOL_THEME.muted,
             lineHeight: 1.5,
           }}

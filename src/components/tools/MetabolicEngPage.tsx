@@ -681,10 +681,10 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
             />
           ) : (
             <div style={{
-              padding: '16px', borderRadius: '12px',
+              padding: '16px', borderRadius: 'var(--nb-radius-md)',
               background: 'rgba(10,12,16,0.72)', backdropFilter: 'blur(16px)',
               border: '1px solid rgba(255,255,255,0.1)',
-              color: PATHD_THEME.label, fontFamily: T.SANS, fontSize: '12px',
+              color: PATHD_THEME.label, fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)',
               textAlign: 'center', lineHeight: 1.6,
             }}>
               Click a node in the 3D pathway to inspect its overview, structure, and analysis.

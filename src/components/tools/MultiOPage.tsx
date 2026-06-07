@@ -177,13 +177,13 @@ const COLUMNS: TableColumn<OmicsRow>[] = [
   { key: 'protein',     header: 'Prot.',       width: 55, render: v => typeof v === 'number' ? v.toFixed(1) : '—' },
   { key: 'metabolite',  header: 'Met.',        width: 55, render: v => typeof v === 'number' ? v.toFixed(1) : '—' },
   { key: 'fold_change', header: 'FC',          width: 55, render: v => typeof v === 'number'
-    ? <span style={{ color: (v as number) > 0 ? 'rgba(147,203,82,0.85)' : 'rgba(250,128,114,0.8)', fontFamily: "'JetBrains Mono',monospace", fontSize: '10px' }}>
+    ? <span style={{ color: (v as number) > 0 ? 'rgba(147,203,82,0.85)' : 'rgba(250,128,114,0.8)', fontFamily: "'JetBrains Mono',monospace", fontSize: 'var(--nb-fs-xs)' }}>
         {(v as number) > 0 ? '+' : ''}{(v as number).toFixed(2)}
       </span>
     : '—'
   },
   { key: 'pValue',      header: 'p-val',       width: 60, render: v => typeof v === 'number'
-    ? <span style={{ color: (v as number) < 0.05 ? 'rgba(255,139,31,0.85)' : 'rgba(255,255,255,0.35)', fontFamily: "'JetBrains Mono',monospace", fontSize: '10px' }}>
+    ? <span style={{ color: (v as number) < 0.05 ? 'rgba(255,139,31,0.85)' : 'rgba(255,255,255,0.35)', fontFamily: "'JetBrains Mono',monospace", fontSize: 'var(--nb-fs-xs)' }}>
         {(v as number).toFixed(3)}
       </span>
     : '—'
@@ -764,7 +764,7 @@ export default function MultiOPage() {
   /* Section label helper */
   const SectionLabel = ({ children }: { children: React.ReactNode }) => (
     <p style={{
-      fontFamily: T.SANS, fontSize: '10px', textTransform: 'uppercase',
+      fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase',
       letterSpacing: '0.1em', color: LABEL, margin: '0 0 10px',
     }}>
       {children}
@@ -787,13 +787,13 @@ export default function MultiOPage() {
             summary="MULTIO behaves as an exploratory integration surface: significant genes, deterministic layer signals, sensitivity sketches, and efficiency context sit above the visualization layer without claiming posterior uncertainty or a reference-model backend."
             aside={
               <>
-                <div style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                <div style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.label, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                   Current analytical lens
                 </div>
-                <div style={{ fontFamily: T.SANS, fontSize: '13px', color: PATHD_THEME.value, fontWeight: 700 }}>
+                <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: PATHD_THEME.value, fontWeight: 700 }}>
                   {MULTIO_TABS.find(t => t.id === activeTab)?.label ?? 'Embedding'} · {Object.values(activeLayers).filter(Boolean).length}/3 omics layers active
                 </div>
-                <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.label, lineHeight: 1.55 }}>
+                <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: PATHD_THEME.label, lineHeight: 1.55 }}>
                   The current lens is anchored to {analyzeArtifact?.targetProduct ?? project?.targetProduct ?? project?.title ?? 'the active project object'}, so bottleneck claims stay attached to the same scientific context.
                 </div>
               </>
@@ -855,9 +855,9 @@ export default function MultiOPage() {
                 width: '100%', padding: '7px 10px', marginBottom: '6px',
                 background: val ? 'rgba(175,195,214,0.22)' : INPUT_BG,
                 border: `1px solid ${val ? 'rgba(175,195,214,0.34)' : BORDER}`,
-                borderRadius: '8px', cursor: 'pointer',
+                borderRadius: 'var(--nb-radius-sm)', cursor: 'pointer',
                 color: val ? INPUT_TEXT : LABEL,
-                fontFamily: T.SANS, fontSize: '11px', textAlign: 'left',
+                fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', textAlign: 'left',
               }}>
                 <span style={{
                   width: '8px', height: '8px', borderRadius: '50%',
@@ -872,8 +872,8 @@ export default function MultiOPage() {
             <SectionLabel>Thresholds</SectionLabel>
             <div style={{ marginBottom: '12px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                <span style={{ fontFamily: T.SANS, fontSize: '11px', color: LABEL }}>|FC| &gt;</span>
-                <span style={{ fontFamily: T.MONO, fontSize: '11px', color: VALUE }}>{fcThreshold.toFixed(1)}</span>
+                <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: LABEL }}>|FC| &gt;</span>
+                <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-sm)', color: VALUE }}>{fcThreshold.toFixed(1)}</span>
               </div>
               <input aria-label="Parameter slider" type="range" min={0.5} max={5} step={0.1} value={fcThreshold}
                 onChange={e => setFcThreshold(parseFloat(e.target.value))}
@@ -882,8 +882,8 @@ export default function MultiOPage() {
             </div>
             <div style={{ marginBottom: '16px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                <span style={{ fontFamily: T.SANS, fontSize: '11px', color: LABEL }}>p &lt;</span>
-                <span style={{ fontFamily: T.MONO, fontSize: '11px', color: VALUE }}>{pvThreshold.toFixed(3)}</span>
+                <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: LABEL }}>p &lt;</span>
+                <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-sm)', color: VALUE }}>{pvThreshold.toFixed(3)}</span>
               </div>
               <input aria-label="Parameter slider" type="range" min={0.001} max={0.1} step={0.001} value={pvThreshold}
                 onChange={e => setPvThreshold(parseFloat(e.target.value))}
@@ -898,8 +898,8 @@ export default function MultiOPage() {
               onChange={e => setSelectedGene(e.target.value)}
               style={{
                 width: '100%', padding: '6px 8px', marginBottom: '8px',
-                background: INPUT_BG, border: `1px solid ${INPUT_BORDER}`, borderRadius: '8px',
-                color: INPUT_TEXT, fontFamily: T.MONO, fontSize: '10px',
+                background: INPUT_BG, border: `1px solid ${INPUT_BORDER}`, borderRadius: 'var(--nb-radius-sm)',
+                color: INPUT_TEXT, fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)',
                 outline: '2px solid rgba(175,195,214,0.5)', outlineOffset: '2px', appearance: 'auto' as React.CSSProperties['appearance'],
               }}
             >
@@ -909,16 +909,16 @@ export default function MultiOPage() {
             </select>
             <div style={{ marginBottom: '6px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                <span style={{ fontFamily: T.SANS, fontSize: '10px', color: 'rgba(255,255,255,0.45)' }}>Expression</span>
-                <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE }}>{perturbedExpr.toFixed(1)}</span>
+                <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: 'rgba(255,255,255,0.45)' }}>Expression</span>
+                <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE }}>{perturbedExpr.toFixed(1)}</span>
               </div>
               <input aria-label="Parameter slider" type="range" min={-4} max={8} step={0.1} value={perturbedExpr}
                 onChange={e => setPerturbedExpr(parseFloat(e.target.value))}
                 className="nb-pathd-slider"
                 style={{ '--val': `${((perturbedExpr + 4) / 12) * 100}%` } as React.CSSProperties} />
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL }}>-4</span>
-                <span style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL }}>+8</span>
+                <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>-4</span>
+                <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>+8</span>
               </div>
             </div>
             <ActionButton
@@ -936,13 +936,13 @@ export default function MultiOPage() {
               <div style={{ marginTop: '14px' }}>
                 <SectionLabel>Sensitivity Result</SectionLabel>
                 <div style={{
-                  ...GLASS, borderRadius: '12px', padding: '10px', marginBottom: '10px',
+                  ...GLASS, borderRadius: 'var(--nb-radius-md)', padding: '10px', marginBottom: '10px',
                 }}>
                   {/* Yield change */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                    <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>Demo Yield Δ</span>
+                    <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Demo Yield Δ</span>
                     <span style={{
-                      fontFamily: T.MONO, fontSize: '13px', fontWeight: 700,
+                      fontFamily: T.MONO, fontSize: 'var(--nb-fs-sm)', fontWeight: 700,
                       color: perturbResult.predicted_yield_change_percent >= 0
                         ? 'rgba(147,203,82,0.95)' : 'rgba(250,128,114,0.95)',
                     }}>
@@ -954,7 +954,7 @@ export default function MultiOPage() {
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '8px' }}>
                     {perturbResult.metabolite_shifts.map(ms => (
                       <span key={ms.metabolite} style={{
-                        fontFamily: T.MONO, fontSize: '10px', padding: '2px 6px', borderRadius: '6px',
+                        fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', padding: '2px 6px', borderRadius: '6px',
                         background: ms.direction === 'up' ? 'rgba(147,203,82,0.15)' : 'rgba(250,128,114,0.15)',
                         color: ms.direction === 'up' ? 'rgba(147,203,82,0.9)' : 'rgba(250,128,114,0.9)',
                         border: `1px solid ${ms.direction === 'up' ? 'rgba(147,203,82,0.2)' : 'rgba(250,128,114,0.2)'}`,
@@ -969,11 +969,11 @@ export default function MultiOPage() {
                       padding: '4px 0',
                       borderTop: i > 0 ? `1px solid ${BORDER}` : 'none',
                     }}>
-                      <span style={{ fontFamily: T.MONO, fontSize: '10px', color: LAYER_COLORS.proteomics }}>
+                      <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: LAYER_COLORS.proteomics }}>
                         {i + 1}. {step.step}
                       </span>
                       <p style={{
-                        fontFamily: T.SANS, fontSize: '10px', color: LABEL,
+                        fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL,
                         margin: '2px 0 0', lineHeight: '1.35',
                       }}>
                         {step.description}
@@ -1027,21 +1027,21 @@ export default function MultiOPage() {
             <SectionLabel>Thresholds</SectionLabel>
             <div style={{ marginBottom: '12px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                <span style={{ fontFamily: T.SANS, fontSize: '11px', color: LABEL }}>|FC| &gt;</span>
-                <span style={{ fontFamily: T.MONO, fontSize: '11px', color: VALUE }}>{fcThreshold.toFixed(1)}</span>
+                <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: LABEL }}>|FC| &gt;</span>
+                <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-sm)', color: VALUE }}>{fcThreshold.toFixed(1)}</span>
               </div>
               <input aria-label="Parameter slider" type="range" min={0.5} max={5} step={0.1} value={fcThreshold} onChange={e => setFcThreshold(parseFloat(e.target.value))} className="nb-pathd-slider" style={{ '--val': `${((fcThreshold - 0.5) / 4.5) * 100}%` } as React.CSSProperties} />
             </div>
             <div style={{ marginBottom: '16px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                <span style={{ fontFamily: T.SANS, fontSize: '11px', color: LABEL }}>p &lt;</span>
-                <span style={{ fontFamily: T.MONO, fontSize: '11px', color: VALUE }}>{pvThreshold.toFixed(3)}</span>
+                <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: LABEL }}>p &lt;</span>
+                <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-sm)', color: VALUE }}>{pvThreshold.toFixed(3)}</span>
               </div>
               <input aria-label="Parameter slider" type="range" min={0.001} max={0.1} step={0.001} value={pvThreshold} onChange={e => setPvThreshold(parseFloat(e.target.value))} className="nb-pathd-slider" style={{ '--val': `${((pvThreshold - 0.001) / 0.099) * 100}%` } as React.CSSProperties} />
             </div>
             <SectionLabel>Gene</SectionLabel>
             <select value={selectedGene} onChange={e => setSelectedGene(e.target.value)}
-              style={{ width: '100%', padding: '6px 8px', background: INPUT_BG, border: `1px solid ${INPUT_BORDER}`, borderRadius: '8px', color: INPUT_TEXT, fontFamily: T.MONO, fontSize: '10px', outline: '2px solid rgba(175,195,214,0.5)', outlineOffset: '2px', appearance: 'auto' as React.CSSProperties['appearance'] }}>
+              style={{ width: '100%', padding: '6px 8px', background: INPUT_BG, border: `1px solid ${INPUT_BORDER}`, borderRadius: 'var(--nb-radius-sm)', color: INPUT_TEXT, fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', outline: '2px solid rgba(175,195,214,0.5)', outlineOffset: '2px', appearance: 'auto' as React.CSSProperties['appearance'] }}>
               {geneNames.map(g => (<option key={g} value={g} style={{ background: '#1a1d24' }}>{g}</option>))}
             </select>
           </FloatingControlRail>
@@ -1088,32 +1088,32 @@ export default function MultiOPage() {
             ]}
           >
             <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
-              <div style={{ ...GLASS, borderRadius: '12px', padding: '12px 16px', flex: '1 0 120px' }}>
-                <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL, display: 'block' }}>Total Var. Explained</span>
-                <span style={{ fontFamily: T.MONO, fontSize: '18px', fontWeight: 700, color: LAYER_COLORS.transcriptomics }}>{(mofaResult.totalVarianceExplained * 100).toFixed(1)}%</span>
+              <div style={{ ...GLASS, borderRadius: 'var(--nb-radius-md)', padding: '12px 16px', flex: '1 0 120px' }}>
+                <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, display: 'block' }}>Total Var. Explained</span>
+                <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-lg)', fontWeight: 700, color: LAYER_COLORS.transcriptomics }}>{(mofaResult.totalVarianceExplained * 100).toFixed(1)}%</span>
               </div>
-              <div style={{ ...GLASS, borderRadius: '12px', padding: '12px 16px', flex: '1 0 120px' }}>
-                <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL, display: 'block' }}>Optimization Steps</span>
-                <span style={{ fontFamily: T.MONO, fontSize: '18px', fontWeight: 700, color: VALUE }}>{mofaResult.convergenceIterations} iter</span>
+              <div style={{ ...GLASS, borderRadius: 'var(--nb-radius-md)', padding: '12px 16px', flex: '1 0 120px' }}>
+                <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, display: 'block' }}>Optimization Steps</span>
+                <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-lg)', fontWeight: 700, color: VALUE }}>{mofaResult.convergenceIterations} iter</span>
               </div>
-              <div style={{ ...GLASS, borderRadius: '12px', padding: '12px 16px', flex: '1 0 120px' }}>
-                <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL, display: 'block' }}>Recon. Error</span>
-                <span style={{ fontFamily: T.MONO, fontSize: '18px', fontWeight: 700, color: VALUE }}>{mofaResult.reconstructionError.toFixed(4)}</span>
+              <div style={{ ...GLASS, borderRadius: 'var(--nb-radius-md)', padding: '12px 16px', flex: '1 0 120px' }}>
+                <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, display: 'block' }}>Recon. Error</span>
+                <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-lg)', fontWeight: 700, color: VALUE }}>{mofaResult.reconstructionError.toFixed(4)}</span>
               </div>
             </div>
             {mofaResult.factors.map(f => (
-              <div key={f.id} style={{ ...GLASS, borderRadius: '12px', padding: '14px', marginBottom: '12px' }}>
+              <div key={f.id} style={{ ...GLASS, borderRadius: 'var(--nb-radius-md)', padding: '14px', marginBottom: '12px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                  <span style={{ fontFamily: T.SANS, fontSize: '12px', fontWeight: 600, color: VALUE }}>{f.name}</span>
-                  <span style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL }}>{(f.varianceExplained.total * 100).toFixed(1)}% var</span>
+                  <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', fontWeight: 600, color: VALUE }}>{f.name}</span>
+                  <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>{(f.varianceExplained.total * 100).toFixed(1)}% var</span>
                 </div>
                 {(['transcriptomics', 'proteomics', 'metabolomics'] as OmicsLayer[]).map(layer => {
                   const pct = f.varianceExplained[layer] * 100;
                   return (
                     <div key={layer} style={{ marginBottom: '5px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
-                        <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL }}>{layer.slice(0, 5)}</span>
-                        <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE }}>{pct.toFixed(1)}%</span>
+                        <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>{layer.slice(0, 5)}</span>
+                        <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE }}>{pct.toFixed(1)}%</span>
                       </div>
                       <div style={{ width: '100%', height: '5px', borderRadius: '3px', background: PATHD_THEME.panelInset }}>
                         <div style={{ width: `${Math.min(100, pct)}%`, height: '100%', borderRadius: '3px', background: LAYER_COLORS[layer] }} />
@@ -1123,10 +1123,10 @@ export default function MultiOPage() {
                 })}
                 <div style={{ display: 'flex', gap: '4px', marginTop: '8px', flexWrap: 'wrap' }}>
                   {f.topGenes.slice(0, 4).map(g => (
-                    <span key={g.gene} style={{ fontFamily: T.MONO, fontSize: '10px', padding: '2px 6px', borderRadius: '6px', background: PATHD_THEME.panelInset, color: VALUE }}>{g.gene} ({g.loading.toFixed(2)})</span>
+                    <span key={g.gene} style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', padding: '2px 6px', borderRadius: '6px', background: PATHD_THEME.panelInset, color: VALUE }}>{g.gene} ({g.loading.toFixed(2)})</span>
                   ))}
                 </div>
-                <p style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL, margin: '6px 0 0', lineHeight: '1.3' }}>{f.interpretation}</p>
+                <p style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, margin: '6px 0 0', lineHeight: '1.3' }}>{f.interpretation}</p>
               </div>
             ))}
           </ScientificFigureFrame>
@@ -1147,12 +1147,12 @@ export default function MultiOPage() {
             ]}
           >
             {vaeLoading && (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px', color: PATHD_THEME.label, fontSize: '12px', fontFamily: 'monospace' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px', color: PATHD_THEME.label, fontSize: 'var(--nb-fs-sm)', fontFamily: 'monospace' }}>
                 Training VAE embedding model…
               </div>
             )}
             {vaeError && (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px', color: '#FA8072', fontSize: '12px', fontFamily: 'monospace' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px', color: '#FA8072', fontSize: 'var(--nb-fs-sm)', fontFamily: 'monospace' }}>
                 VAE error: {vaeError}
               </div>
             )}
@@ -1229,13 +1229,13 @@ export default function MultiOPage() {
             ]}
           >
             <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
-              <div style={{ ...GLASS, borderRadius: '12px', padding: '12px 16px', flex: '1 0 140px' }}>
-                <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL, display: 'block' }}>Avg Efficiency</span>
-                <span style={{ fontFamily: T.MONO, fontSize: '18px', fontWeight: 700, color: 'rgba(147,203,82,0.9)' }}>{(efficiencyScores.reduce((s, e) => s + e.score, 0) / Math.max(1, efficiencyScores.length) * 100).toFixed(1)}%</span>
+              <div style={{ ...GLASS, borderRadius: 'var(--nb-radius-md)', padding: '12px 16px', flex: '1 0 140px' }}>
+                <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, display: 'block' }}>Avg Efficiency</span>
+                <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-lg)', fontWeight: 700, color: 'rgba(147,203,82,0.9)' }}>{(efficiencyScores.reduce((s, e) => s + e.score, 0) / Math.max(1, efficiencyScores.length) * 100).toFixed(1)}%</span>
               </div>
-              <div style={{ ...GLASS, borderRadius: '12px', padding: '12px 16px', flex: '1 0 140px' }}>
-                <span style={{ fontFamily: T.SANS, fontSize: '10px', color: LABEL, display: 'block' }}>Top Gene</span>
-                <span style={{ fontFamily: T.MONO, fontSize: '14px', fontWeight: 700, color: VALUE }}>{[...efficiencyScores].sort((a, b) => b.score - a.score)[0]?.gene ?? '—'}</span>
+              <div style={{ ...GLASS, borderRadius: 'var(--nb-radius-md)', padding: '12px 16px', flex: '1 0 140px' }}>
+                <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, display: 'block' }}>Top Gene</span>
+                <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-md)', fontWeight: 700, color: VALUE }}>{[...efficiencyScores].sort((a, b) => b.score - a.score)[0]?.gene ?? '—'}</span>
               </div>
             </div>
             {[...efficiencyScores].sort((a, b) => b.score - a.score).map((e, i) => {
@@ -1243,16 +1243,16 @@ export default function MultiOPage() {
               const color = pct > 60 ? 'rgba(147,203,82,0.85)' : pct > 35 ? 'rgba(255,139,31,0.85)' : 'rgba(250,128,114,0.85)';
               return (
                 <div key={e.geneId} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 0', borderBottom: `1px solid ${BORDER}` }}>
-                  <span style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, width: '20px', textAlign: 'right' }}>{i + 1}</span>
-                  <span style={{ fontFamily: T.MONO, fontSize: '10px', color: VALUE, width: '70px' }}>{e.gene}</span>
+                  <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL, width: '20px', textAlign: 'right' }}>{i + 1}</span>
+                  <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE, width: '70px' }}>{e.gene}</span>
                   <div style={{ flex: 1, height: '6px', borderRadius: '3px', background: 'rgba(255,255,255,0.06)' }}>
                     <div style={{ width: `${pct}%`, height: '100%', borderRadius: '3px', background: color, transition: 'width 0.3s' }} />
                   </div>
-                  <span style={{ fontFamily: T.MONO, fontSize: '10px', color, width: '45px', textAlign: 'right' }}>{pct.toFixed(1)}%</span>
+                  <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color, width: '45px', textAlign: 'right' }}>{pct.toFixed(1)}%</span>
                   <div style={{ display: 'flex', gap: '4px' }}>
-                    <span style={{ fontFamily: T.MONO, fontSize: '10px', padding: '1px 4px', borderRadius: '4px', background: `${LAYER_COLORS.transcriptomics}20`, color: LAYER_COLORS.transcriptomics }}>F:{e.fluxUtilization.toFixed(2)}</span>
-                    <span style={{ fontFamily: T.MONO, fontSize: '10px', padding: '1px 4px', borderRadius: '4px', background: `${LAYER_COLORS.proteomics}20`, color: LAYER_COLORS.proteomics }}>E:{e.expressionBalance.toFixed(2)}</span>
-                    <span style={{ fontFamily: T.MONO, fontSize: '10px', padding: '1px 4px', borderRadius: '4px', background: `${LAYER_COLORS.metabolomics}20`, color: LAYER_COLORS.metabolomics }}>Y:{e.metaboliteYield.toFixed(2)}</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', padding: '1px 4px', borderRadius: '4px', background: `${LAYER_COLORS.transcriptomics}20`, color: LAYER_COLORS.transcriptomics }}>F:{e.fluxUtilization.toFixed(2)}</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', padding: '1px 4px', borderRadius: '4px', background: `${LAYER_COLORS.proteomics}20`, color: LAYER_COLORS.proteomics }}>E:{e.expressionBalance.toFixed(2)}</span>
+                    <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', padding: '1px 4px', borderRadius: '4px', background: `${LAYER_COLORS.metabolomics}20`, color: LAYER_COLORS.metabolomics }}>Y:{e.metaboliteYield.toFixed(2)}</span>
                   </div>
                 </div>
               );

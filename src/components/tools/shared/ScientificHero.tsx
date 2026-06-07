@@ -150,7 +150,7 @@ export default function ScientificHero({
           color: PATHD_THEME.label,
           cursor: 'pointer',
           fontFamily: T.MONO,
-          fontSize: '10px',
+          fontSize: 'var(--nb-fs-xs)',
           lineHeight: 1,
           display: 'flex',
           alignItems: 'center',
@@ -178,7 +178,7 @@ export default function ScientificHero({
             color: PATHD_THEME.label,
             cursor: 'pointer',
             fontFamily: T.MONO,
-            fontSize: '12px',
+            fontSize: 'var(--nb-fs-sm)',
             lineHeight: 1,
             display: 'flex',
             alignItems: 'center',
@@ -216,7 +216,7 @@ export default function ScientificHero({
             <div
               style={{
                 fontFamily: T.MONO,
-                fontSize: '10px',
+                fontSize: 'var(--nb-fs-xs)',
                 color: PATHD_THEME.label,
                 textTransform: 'uppercase',
                 letterSpacing: '0.12em',
@@ -227,7 +227,7 @@ export default function ScientificHero({
             <div
               style={{
                 fontFamily: T.SANS,
-                fontSize: '24px',
+                fontSize: 'var(--nb-fs-xl)',
                 fontWeight: 700,
                 color: PATHD_THEME.value,
                 letterSpacing: '-0.04em',
@@ -240,7 +240,7 @@ export default function ScientificHero({
             <div
               style={{
                 fontFamily: T.SANS,
-                fontSize: '12px',
+                fontSize: 'var(--nb-fs-sm)',
                 color: 'rgba(234,240,248,0.78)',
                 lineHeight: 1.62,
                 maxWidth: '76ch',
@@ -261,7 +261,7 @@ export default function ScientificHero({
           <div
             className="nb-scientific-hero__aside"
             style={{
-              borderRadius: '16px',
+              borderRadius: 'var(--nb-radius-lg)',
               border: '1px solid rgba(175,195,214,0.22)',
               background: 'rgba(175,195,214,0.08)',
               padding: '14px 16px',
@@ -292,7 +292,7 @@ export default function ScientificHero({
               key={`${signal.label}-${signal.value}`}
               className="nb-scientific-hero__signal"
               style={{
-                borderRadius: '16px',
+                borderRadius: 'var(--nb-radius-lg)',
                 border: `1px solid ${style.border}`,
                 background: style.background,
                 padding: '12px 14px',
@@ -304,7 +304,7 @@ export default function ScientificHero({
               <div
                 style={{
                   fontFamily: T.MONO,
-                  fontSize: '10px',
+                  fontSize: 'var(--nb-fs-xs)',
                   color: PATHD_THEME.label,
                   textTransform: 'uppercase',
                   letterSpacing: '0.08em',
@@ -315,7 +315,7 @@ export default function ScientificHero({
               <div
                 style={{
                   fontFamily: T.SANS,
-                  fontSize: '15px',
+                  fontSize: 'var(--nb-fs-md)',
                   fontWeight: 700,
                   color: style.color,
                   letterSpacing: '-0.02em',
@@ -327,7 +327,7 @@ export default function ScientificHero({
                 <div
                   style={{
                     fontFamily: T.SANS,
-                    fontSize: '10px',
+                    fontSize: 'var(--nb-fs-xs)',
                     color: style.detailColor,
                     lineHeight: 1.5,
                   }}

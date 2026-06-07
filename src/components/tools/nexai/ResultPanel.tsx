@@ -67,7 +67,7 @@ export default function ResultPanel({
         data-testid="nexai-result-api-error"
         role="alert"
         style={{
-          borderRadius: '12px',
+          borderRadius: 'var(--nb-radius-md)',
           border: '1px solid rgba(250,128,114,0.42)',
           background: 'rgba(250,128,114,0.12)',
           padding: '14px 16px',
@@ -78,7 +78,7 @@ export default function ResultPanel({
         <span
           style={{
             fontFamily: T.MONO,
-            fontSize: '10px',
+            fontSize: 'var(--nb-fs-xs)',
             fontWeight: 700,
             color: '#FA8072',
             letterSpacing: '0.08em',
@@ -90,7 +90,7 @@ export default function ResultPanel({
         <p
           style={{
             fontFamily: T.SANS,
-            fontSize: '12px',
+            fontSize: 'var(--nb-fs-sm)',
             color: PATHD_THEME.value,
             lineHeight: 1.6,
             margin: 0,
@@ -110,7 +110,7 @@ export default function ResultPanel({
           display: 'grid',
           placeItems: 'center',
           minHeight: '220px',
-          borderRadius: '16px',
+          borderRadius: 'var(--nb-radius-lg)',
           border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
           background: PATHD_THEME.panelSurface,
           padding: '28px',
@@ -119,10 +119,10 @@ export default function ResultPanel({
       >
         <div style={{ display: 'grid', gap: '8px' }}>
           <span style={{ fontFamily: T.MONO, fontSize: '26px', color: 'rgba(36,29,24,0.08)' }}>⬡</span>
-          <span style={{ fontFamily: T.SANS, fontSize: '13px', color: PATHD_THEME.value }}>
+          <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: PATHD_THEME.value }}>
             Ask Axon about your research
           </span>
-          <span style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label }}>
+          <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.label }}>
             Press <kbd>/</kbd> to focus
           </span>
         </div>
@@ -141,7 +141,7 @@ export default function ResultPanel({
     <div
       data-testid="nexai-result-panel"
       style={{
-        borderRadius: '16px',
+        borderRadius: 'var(--nb-radius-lg)',
         background: PATHD_THEME.panelGlassStrong,
         backdropFilter: 'blur(12px)',
         border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
@@ -152,7 +152,7 @@ export default function ResultPanel({
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-        <span style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label }}>AXON</span>
+        <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.label }}>AXON</span>
         <Chip
           tone="neutral"
           label={`${(result.confidence * 100).toFixed(0)}%`}
@@ -187,7 +187,7 @@ export default function ResultPanel({
           data-testid="nexai-result-ungrounded-note"
           style={{
             fontFamily: T.SANS,
-            fontSize: '11px',
+            fontSize: 'var(--nb-fs-sm)',
             color: PATHD_THEME.label,
             lineHeight: 1.6,
             margin: 0,
@@ -203,11 +203,11 @@ export default function ResultPanel({
           style={{
             margin: 0,
             padding: '12px 14px',
-            borderRadius: '12px',
+            borderRadius: 'var(--nb-radius-md)',
             background: 'rgba(10,14,22,0.65)',
             border: '1px solid rgba(255,255,255,0.06)',
             fontFamily: T.MONO,
-            fontSize: '11px',
+            fontSize: 'var(--nb-fs-sm)',
             lineHeight: 1.55,
             color: PATHD_THEME.value,
             whiteSpace: 'pre-wrap',
@@ -258,7 +258,7 @@ function Chip({
       title={title}
       style={{
         fontFamily: T.MONO,
-        fontSize: '10px',
+        fontSize: 'var(--nb-fs-xs)',
         padding: '2px 6px',
         background: palette.bg,
         border: `1px solid ${palette.border}`,
@@ -278,7 +278,7 @@ function MalformedBanner({ parseError }: { parseError: ParseErrorInfo }) {
       data-testid="nexai-parse-error-banner"
       role="status"
       style={{
-        borderRadius: '12px',
+        borderRadius: 'var(--nb-radius-md)',
         border: '1px solid rgba(250,128,114,0.42)',
         background: 'rgba(250,128,114,0.10)',
         padding: '10px 12px',
@@ -289,7 +289,7 @@ function MalformedBanner({ parseError }: { parseError: ParseErrorInfo }) {
       <span
         style={{
           fontFamily: T.MONO,
-          fontSize: '10px',
+          fontSize: 'var(--nb-fs-xs)',
           fontWeight: 700,
           color: '#FA8072',
           letterSpacing: '0.08em',
@@ -301,14 +301,14 @@ function MalformedBanner({ parseError }: { parseError: ParseErrorInfo }) {
       <p
         style={{
           fontFamily: T.SANS,
-          fontSize: '11px',
+          fontSize: 'var(--nb-fs-sm)',
           color: PATHD_THEME.value,
           lineHeight: 1.55,
           margin: 0,
         }}
       >
         Model returned malformed structured output; showing raw answer. Re-run the query or open the raw output drawer to inspect the full response.
-        <span style={{ display: 'block', color: PATHD_THEME.label, marginTop: '4px', fontFamily: T.MONO, fontSize: '10px' }}>
+        <span style={{ display: 'block', color: PATHD_THEME.label, marginTop: '4px', fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)' }}>
           {parseError.code}: {parseError.message}
         </span>
       </p>

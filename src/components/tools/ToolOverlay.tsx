@@ -109,7 +109,7 @@ function ParamSlider({ def, value, onChange, forceRef }: SliderProps) {
         <span style={{ fontFamily: T.SANS, fontSize:'10px', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.08em', color:PATHD_THEME.label }}>
           {def.label}
         </span>
-        <span style={{ fontFamily: T.MONO, fontSize:'13px', fontWeight:600, color:PATHD_THEME.value, textAlign:'right', minWidth:'72px' }}>
+        <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-sm)', fontWeight:600, color:PATHD_THEME.value, textAlign:'right', minWidth:'72px' }}>
           {value.toFixed(def.step < 1 ? 1 : 0)}<span style={{ fontSize:'9px', color:PATHD_THEME.label, marginLeft:'2px' }}>{def.unit}</span>
         </span>
       </div>

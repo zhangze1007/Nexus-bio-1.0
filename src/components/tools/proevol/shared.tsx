@@ -52,7 +52,7 @@ export function surfaceCardStyle(options?: {
     display: 'grid',
     gap: '10px',
     padding: options?.padding ?? '12px',
-    borderRadius: '12px',
+    borderRadius: 'var(--nb-radius-md)',
     border: `1px solid ${options?.inset ? PROEVOL_THEME.borderStrong : PROEVOL_THEME.border}`,
     background: options?.inset ? PROEVOL_THEME.inset : PROEVOL_THEME.surface,
     boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
@@ -63,7 +63,7 @@ export function surfaceCardStyle(options?: {
 export function sectionKickerStyle(): CSSProperties {
   return {
     fontFamily: T.MONO,
-    fontSize: '10px',
+    fontSize: 'var(--nb-fs-xs)',
     color: PROEVOL_THEME.label,
     textTransform: 'uppercase',
     letterSpacing: '0.12em',
@@ -73,7 +73,7 @@ export function sectionKickerStyle(): CSSProperties {
 export function tableHeaderStyle(): CSSProperties {
   return {
     fontFamily: T.MONO,
-    fontSize: '10px',
+    fontSize: 'var(--nb-fs-xs)',
     textTransform: 'uppercase',
     letterSpacing: '0.08em',
     color: PROEVOL_THEME.label,
@@ -87,7 +87,7 @@ export function tableHeaderStyle(): CSSProperties {
 export function tableCellStyle(): CSSProperties {
   return {
     fontFamily: T.SANS,
-    fontSize: '11px',
+    fontSize: 'var(--nb-fs-sm)',
     color: PROEVOL_THEME.value,
     padding: '8px 10px',
     verticalAlign: 'top',
@@ -115,7 +115,7 @@ export function StatusPill({
         background: `${color}18`,
         color,
         fontFamily: T.MONO,
-        fontSize: '10px',
+        fontSize: 'var(--nb-fs-xs)',
         letterSpacing: '0.06em',
         textTransform: 'uppercase',
       }}
@@ -141,7 +141,7 @@ export function MetricBadge({
       style={{
         minWidth: 0,
         padding: '10px 12px',
-        borderRadius: '12px',
+        borderRadius: 'var(--nb-radius-md)',
         border: `1px solid ${PROEVOL_THEME.border}`,
         background: 'rgba(255,255,255,0.03)',
         display: 'grid',
@@ -163,7 +163,7 @@ export function MetricBadge({
       <div
         style={{
           fontFamily: T.SANS,
-          fontSize: '17px',
+          fontSize: 'var(--nb-fs-md)',
           fontWeight: 700,
           color: PROEVOL_THEME.value,
           letterSpacing: '-0.03em',
@@ -175,7 +175,7 @@ export function MetricBadge({
         <div
           style={{
             fontFamily: T.SANS,
-            fontSize: '10px',
+            fontSize: 'var(--nb-fs-xs)',
             lineHeight: 1.5,
             color: PROEVOL_THEME.muted,
           }}
@@ -211,7 +211,7 @@ export function ProEvolCard({
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', minWidth: 0 }}>
             {eyebrow ? <div style={sectionKickerStyle()}>{eyebrow}</div> : null}
             {title ? (
-              <div style={{ fontFamily: T.SANS, fontSize: '13px', fontWeight: 600, color: PROEVOL_THEME.value, letterSpacing: '-0.02em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', fontWeight: 600, color: PROEVOL_THEME.value, letterSpacing: '-0.02em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {title}
               </div>
             ) : null}

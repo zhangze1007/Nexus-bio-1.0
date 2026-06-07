@@ -46,7 +46,7 @@ export default function ModuleCard({
         gridArea: area,
         gridColumn: colSpan ? `span ${colSpan}` : undefined,
         gridRow: rowSpan ? `span ${rowSpan}` : undefined,
-        borderRadius: '20px',
+        borderRadius: 'var(--nb-radius-xl)',
         background: PATHD_THEME.panelSurface,
         border: active
           ? `1px solid ${PATHD_THEME.panelBorderStrong}`
@@ -122,7 +122,7 @@ export default function ModuleCard({
           </span>
           <span style={{
             fontFamily: T.MONO,
-            fontSize: '10px',
+            fontSize: 'var(--nb-fs-xs)',
             fontWeight: 600,
             letterSpacing: '0.1em',
             textTransform: 'uppercase',
@@ -135,7 +135,7 @@ export default function ModuleCard({
 
       {title && (
         <div style={{
-          fontFamily: T.SANS, fontSize: '10px', fontWeight: 500,
+          fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', fontWeight: 500,
           textTransform: 'uppercase', letterSpacing: '0.12em',
           color: active ? PATHD_THEME.value : PATHD_THEME.label,
           marginBottom: flush ? 0 : '10px',

@@ -39,7 +39,7 @@ export default function HybridWorkbenchPanels({
             className="nb-tool-panels__tablet-aux-label"
             style={{
               fontFamily: T.MONO,
-              fontSize: '10px',
+              fontSize: 'var(--nb-fs-xs)',
               color: PATHD_THEME.label,
               letterSpacing: '0.1em',
               textTransform: 'uppercase',

@@ -85,7 +85,7 @@ export default function ToolTabBar({ tabs, activeId, onChange, instanceId: insta
               border: 'none',
               cursor: 'pointer',
               fontFamily: T.SANS,
-              fontSize: '12px',
+              fontSize: 'var(--nb-fs-sm)',
               fontWeight: isActive ? 600 : 400,
               color: isActive ? accent : PATHD_THEME.label,
               borderRadius: '6px 6px 0 0',

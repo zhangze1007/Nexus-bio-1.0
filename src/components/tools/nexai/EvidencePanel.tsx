@@ -33,17 +33,17 @@ export default function EvidencePanel({ citations, onNodeClick }: EvidencePanelP
           placeItems: 'center',
           minHeight: '240px',
           padding: '24px',
-          borderRadius: '16px',
+          borderRadius: 'var(--nb-radius-lg)',
           border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
           background: PATHD_THEME.panelSurface,
           textAlign: 'center',
         }}
       >
         <div style={{ display: 'grid', gap: '6px' }}>
-          <div style={{ fontFamily: T.MONO, fontSize: '11px', color: PATHD_THEME.label }}>
+          <div style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-sm)', color: PATHD_THEME.label }}>
             No evidence map yet
           </div>
-          <div style={{ fontFamily: T.SANS, fontSize: '12px', color: PATHD_THEME.value, lineHeight: 1.6 }}>
+          <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: PATHD_THEME.value, lineHeight: 1.6 }}>
             Attach Research evidence or rerun with a literature-backed query to populate the citation surface.
           </div>
         </div>
@@ -61,10 +61,10 @@ export default function EvidencePanel({ citations, onNodeClick }: EvidencePanelP
       }}
     >
       <div style={{ display: 'grid', gap: '4px' }}>
-        <div style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+        <div style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.label, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
           Citation support map
         </div>
-        <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.label, lineHeight: 1.55 }}>
+        <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: PATHD_THEME.label, lineHeight: 1.55 }}>
           {citations.length} source{citations.length === 1 ? '' : 's'} · positioned by year and relevance.
         </div>
       </div>

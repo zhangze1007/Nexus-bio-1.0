@@ -315,7 +315,7 @@ export default function ScSpatialPage() {
               {readyLabel(validity, loadState)}
             </span>
             <span style={{
-              fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label,
+              fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.label,
               padding: '2px 8px', borderRadius: '6px',
               background: PATHD_THEME.panelInset, border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
             }}>

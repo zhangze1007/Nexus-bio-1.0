@@ -27,7 +27,7 @@ export function ChatMessage({
       flexDirection: 'column',
       gap: '8px',
       padding: '14px 16px',
-      borderRadius: '16px',
+      borderRadius: 'var(--nb-radius-lg)',
       background: isUser
         ? 'rgba(175, 195, 214, 0.12)'
         : isSystem
@@ -44,7 +44,7 @@ export function ChatMessage({
       {/* Header: role badge + timestamp + metadata */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap',
-        fontSize: '10px', fontFamily: T.MONO,
+        fontSize: 'var(--nb-fs-xs)', fontFamily: T.MONO,
       }}>
         <span style={{
           padding: '2px 7px', borderRadius: '6px',
@@ -59,7 +59,7 @@ export function ChatMessage({
           {isUser ? 'You' : isSystem ? 'System' : 'Axon'}
         </span>
         {timestamp !== undefined && (
-          <span style={{ color: PATHD_THEME.inkSoft, fontSize: '9px' }}>
+          <span style={{ color: PATHD_THEME.inkSoft, fontSize: 'var(--nb-fs-xs)' }}>
             {new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
           </span>
         )}
@@ -72,7 +72,7 @@ export function ChatMessage({
                 ? 'rgba(231,199,169,0.12)'
                 : 'rgba(250,128,114,0.12)',
             color: confidence > 0.7 ? '#93CB52' : confidence > 0.4 ? PATHD_THEME.apricot : PATHD_THEME.coral,
-            fontSize: '9px',
+            fontSize: 'var(--nb-fs-xs)',
           }}>
             {(confidence * 100).toFixed(0)}% conf
           </span>
@@ -81,7 +81,7 @@ export function ChatMessage({
           <span style={{
             padding: '1px 5px', borderRadius: '4px',
             background: 'rgba(175,195,214,0.10)',
-            color: PATHD_THEME.label, fontSize: '9px',
+            color: PATHD_THEME.label, fontSize: 'var(--nb-fs-xs)',
           }}>
             {citations} citation{citations !== 1 ? 's' : ''}
           </span>
@@ -101,7 +101,7 @@ export function ChatMessage({
         </div>
       ) : (
         <div style={{
-          fontFamily: T.SANS, fontSize: '13px', lineHeight: 1.65,
+          fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', lineHeight: 1.65,
           color: PATHD_THEME.value, whiteSpace: 'pre-wrap',
         }}>
           {content}
@@ -116,11 +116,11 @@ export function ChatMessage({
               key={i}
               onClick={action.onClick}
               style={{
-                padding: '4px 10px', borderRadius: '8px',
+                padding: '4px 10px', borderRadius: 'var(--nb-radius-sm)',
                 background: 'rgba(255,255,255,0.04)',
                 border: `1px solid ${action.accent ?? 'rgba(255,255,255,0.10)'}`,
                 color: action.accent ?? PATHD_THEME.label,
-                fontFamily: T.MONO, fontSize: '10px', cursor: 'pointer',
+                fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', cursor: 'pointer',
                 transition: 'all 0.15s ease',
               }}
             >

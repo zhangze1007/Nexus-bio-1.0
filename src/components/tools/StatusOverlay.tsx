@@ -94,7 +94,7 @@ function DataRow({ label, value, unit, decimals = 2 }: {
           animate={{ opacity:1, y:0 }}
           transition={{ duration:0.15 }}
           style={{
-            fontFamily: T.MONO, fontSize:'13px', fontWeight:600,
+            fontFamily: T.MONO, fontSize: 'var(--nb-fs-sm)', fontWeight:600,
             color:PATHD_THEME.value,
             textAlign:'right',
             fontVariantNumeric:'tabular-nums',
