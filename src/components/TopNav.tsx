@@ -10,6 +10,7 @@ import { usePathname } from 'next/navigation';
 import { Dna } from 'lucide-react';
 import { T } from './ide/tokens';
 import styles from './TopNav.module.css';
+import LoginButton from './auth/LoginButton';
 
 const NAV_LINKS: [string, string][] = [
   ['Home',     '/'],
@@ -50,6 +51,9 @@ export default function TopNav() {
           );
         })}
       </div>
+
+      {/* Auth */}
+      <LoginButton />
 
       {/* Version tag */}
       <div className={styles.versionTag} style={{ fontFamily: T.MONO }}>
