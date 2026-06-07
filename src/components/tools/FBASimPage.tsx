@@ -454,14 +454,15 @@ export default function FBASimPage() {
               Objective
             </p>
             {(['biomass', 'atp', 'product'] as const).map(opt => (
-              <button key={opt} onClick={() => setObjective(opt)} style={{
+              <button key={opt} onClick={() => setObjective(opt)}
+                className={`nb-tool-toggle ${objective === opt ? 'nb-tool-toggle--active' : ''}`}
+                style={{
                 display: 'block', width: '100%', textAlign: 'left',
                 padding: '5px 8px', marginBottom: '3px',
-                background: objective === opt ? PATHD_THEME.panelSurface : 'rgba(255,255,255,0.34)',
-                border: `1px solid ${objective === opt ? PATHD_THEME.panelBorderStrong : PATHD_THEME.sepiaPanelBorder}`,
+                background: objective === opt ? PATHD_THEME.panelSurface : undefined,
+                borderColor: objective === opt ? PATHD_THEME.panelBorderStrong : undefined,
                 borderRadius: '6px',
-                color: objective === opt ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.4)',
-                fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', cursor: 'pointer',
+                color: objective === opt ? 'rgba(255,255,255,0.85)' : undefined,
               }}>
                 {opt === 'biomass' ? 'Max Biomass' : opt === 'atp' ? 'Max ATP' : 'Max Product'}
               </button>
@@ -517,12 +518,14 @@ export default function FBASimPage() {
             {REACTION_DEFS.map(r => {
               const isKO = knockouts.includes(r.id);
               return (
-                <button key={r.id} onClick={() => toggleKO(r.id)} style={{
+                <button key={r.id} onClick={() => toggleKO(r.id)}
+                  className={`nb-tool-toggle ${isKO ? 'nb-tool-toggle--active' : ''}`}
+                  style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                   width: '100%', padding: '4px 6px', marginBottom: '2px',
-                  background: isKO ? 'rgba(255,80,80,0.14)' : 'transparent',
-                  border: `1px solid ${isKO ? 'rgba(255,80,80,0.38)' : 'rgba(255,255,255,0.06)'}`,
-                  borderRadius: '5px', cursor: 'pointer',
+                  background: isKO ? 'rgba(255,80,80,0.14)' : undefined,
+                  borderColor: isKO ? 'rgba(255,80,80,0.38)' : undefined,
+                  borderRadius: '5px',
                 }}>
                   <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: isKO ? 'rgba(255,120,120,0.9)' : 'rgba(255,255,255,0.5)' }}>{r.id}</span>
                   <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: isKO ? 'rgba(255,80,80,0.7)' : 'rgba(255,255,255,0.12)', flexShrink: 0 }} />
@@ -530,11 +533,12 @@ export default function FBASimPage() {
               );
             })}
             {knockouts.length > 0 && (
-              <button onClick={() => setKnockouts([])} style={{
+              <button onClick={() => setKnockouts([])}
+                className="nb-tool-toggle"
+                style={{
                 display: 'block', width: '100%', marginTop: '6px',
-                padding: '4px 6px', background: 'transparent',
-                border: '1px solid rgba(255,255,255,0.08)', borderRadius: '5px',
-                color: 'rgba(255,255,255,0.3)', fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', cursor: 'pointer',
+                padding: '4px 6px', borderRadius: '5px',
+                color: 'rgba(255,255,255,0.3)',
               }}>
                 Clear knockouts ({knockouts.length})
               </button>
