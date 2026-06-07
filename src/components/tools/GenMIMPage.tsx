@@ -14,6 +14,7 @@ import ToolShell from './shared/ToolShell';
 import ToolTabPanel from './shared/ToolTabPanel';
 import FloatingControlRail from './shared/FloatingControlRail';
 import InlineMetricOverlay from './shared/InlineMetricOverlay';
+import WorkbenchRangeSlider from './shared/WorkbenchRangeSlider';
 import type { ToolTab } from './shared/ToolTabBar';
 
 function GenomeMap({
@@ -319,21 +320,24 @@ export default function GenMIMPage() {
       <ToolTabPanel tabId="genome" activeId={activeTab}>
         <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
           <FloatingControlRail label="CRISPRi Parameters" defaultCollapsed={false}>
-            {[
-              { label: 'Min. knockdown efficiency', value: efficiency, min: 0.5, max: 1.0, step: 0.01, set: setEfficiency, display: (v: number) => `${(v * 100).toFixed(0)}%` },
-              { label: 'Max targets', value: maxTargets, min: 1, max: 15, step: 1, set: setMaxTargets, display: (v: number) => `${v}` },
-            ].map(s => (
-              <div key={s.label} style={{ marginBottom: '12px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                  <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: PATHD_THEME.label }}>{s.label}</span>
-                  <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-sm)', color: PATHD_THEME.value }}>{s.display(s.value)}</span>
-                </div>
-                <input aria-label="Parameter slider" type="range" min={s.min} max={s.max} step={s.step} value={s.value}
-                  onChange={e => s.set(parseFloat(e.target.value) as never)}
-                  className="nb-pathd-slider"
-                  style={{ '--val': `${((s.value - s.min) / (s.max - s.min)) * 100}%` } as React.CSSProperties} />
-              </div>
-            ))}
+            <WorkbenchRangeSlider
+              label="Min. knockdown efficiency"
+              value={efficiency}
+              min={0.5}
+              max={1.0}
+              step={0.01}
+              formatValue={v => `${(v * 100).toFixed(0)}%`}
+              onChange={setEfficiency}
+            />
+            <WorkbenchRangeSlider
+              label="Max targets"
+              value={maxTargets}
+              min={1}
+              max={15}
+              step={1}
+              formatValue={v => `${v}`}
+              onChange={v => setMaxTargets(v as number)}
+            />
 
             <button
               onClick={() => setProtectEssential(!protectEssential)}
@@ -387,7 +391,7 @@ export default function GenMIMPage() {
 
       {/* ── Targets Tab ── */}
       <ToolTabPanel tabId="targets" activeId={activeTab}>
-        <div style={{ flex: 1, overflowY: 'auto', padding: '12px 0' }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '12px' }}>
           <div style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', letterSpacing: '0.1em', color: PATHD_THEME.label, marginBottom: '10px' }}>
             All CRISPRi Targets
           </div>
@@ -424,7 +428,7 @@ export default function GenMIMPage() {
 
       {/* ── Schedule Tab ── */}
       <ToolTabPanel tabId="schedule" activeId={activeTab}>
-        <div style={{ flex: 1, overflowY: 'auto', padding: '12px 0' }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '12px' }}>
           <div style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', letterSpacing: '0.1em', color: PATHD_THEME.label, marginBottom: '10px' }}>
             Selected Schedule ({schedule.length} targets)
           </div>
@@ -452,7 +456,7 @@ export default function GenMIMPage() {
 
       {/* ── Efficiency Tab ── */}
       <ToolTabPanel tabId="efficiency" activeId={activeTab}>
-        <div style={{ flex: 1, overflowY: 'auto', padding: '12px 0' }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '12px' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', marginBottom: '20px' }}>
             <MetricCard label="Targets Selected" value={schedule.length} highlight />
             <MetricCard label="Total Growth Impact" value={(growthImpact * 100).toFixed(1)} unit="%"

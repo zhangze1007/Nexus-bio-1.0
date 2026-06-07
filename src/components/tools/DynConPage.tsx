@@ -264,13 +264,7 @@ function ParamSlider({ label, value, min, max, step = 0.1, onChange, unit }: {
 }
 
 /* ── Section Header ────────────────────────────────────────────────────────── */
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <p style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', letterSpacing: '0.1em', color: LABEL, margin: '16px 0 8px' }}>
-      {children}
-    </p>
-  );
-}
+import SectionLabel from './shared/SectionLabel';
 
 /* ── Stat Row (for convergence / burden readouts) ──────────────────────────── */
 function StatRow({ label, value, unit }: { label: string; value: string | number; unit?: string }) {

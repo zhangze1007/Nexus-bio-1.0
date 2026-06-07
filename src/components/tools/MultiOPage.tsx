@@ -765,7 +765,7 @@ export default function MultiOPage() {
   const SectionLabel = ({ children }: { children: React.ReactNode }) => (
     <p style={{
       fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase',
-      letterSpacing: '0.1em', color: LABEL, margin: '0 0 10px',
+      letterSpacing: '0.1em', color: PATHD_THEME.label, margin: '0 0 10px',
     }}>
       {children}
     </p>
@@ -1078,7 +1078,7 @@ export default function MultiOPage() {
 
       {/* ── Factors Tab ── */}
       <ToolTabPanel tabId="factors" activeId={activeTab}>
-        <div style={{ flex: 1, overflowY: 'auto', padding: '20px' }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '12px' }}>
           <ScientificFigureFrame
             eyebrow="Factor Decomposition"
             title="Cross-layer factors explaining multi-omics variance"
@@ -1219,7 +1219,7 @@ export default function MultiOPage() {
 
       {/* ── Efficiency Tab ── */}
       <ToolTabPanel tabId="efficiency" activeId={activeTab}>
-        <div style={{ flex: 1, overflowY: 'auto', padding: '20px' }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '12px' }}>
           <ScientificFigureFrame
             eyebrow="Metabolic Efficiency Ledger"
             title="Ranked entities ordered by production-relevant efficiency"

@@ -69,14 +69,7 @@ const VIEW_MODES: { key: ViewMode; label: string; color: string }[] = [
 
 /* ── Small helpers ─────────────────────────────────────────────── */
 
-const SectionLabel = ({ children }: { children: React.ReactNode }) => (
-  <p style={{
-    fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase',
-    letterSpacing: '0.1em', color: LABEL, margin: '0 0 10px',
-  }}>
-    {children}
-  </p>
-);
+import SectionLabel from './shared/SectionLabel';
 
 const kdQuality = (kd: number) => {
   if (kd < 1) return { icon: '▲', label: 'Excellent', color: '#93CB52' };

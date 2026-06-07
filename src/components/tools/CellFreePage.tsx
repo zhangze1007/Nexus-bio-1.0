@@ -40,14 +40,7 @@ const GENE_COLORS = [PATHD_THEME.mint, PATHD_THEME.sky, PATHD_THEME.coral, PATHD
 
 /* ── Section Label ────────────────────────────────────────────────── */
 
-const SectionLabel = ({ children }: { children: React.ReactNode }) => (
-  <p style={{
-    fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase',
-    letterSpacing: '0.1em', color: LABEL, margin: '0 0 10px',
-  }}>
-    {children}
-  </p>
-);
+import SectionLabel from './shared/SectionLabel';
 
 /* ── SVG Helpers ──────────────────────────────────────────────────── */
 

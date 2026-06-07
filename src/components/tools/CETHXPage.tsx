@@ -3,7 +3,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AlertTriangle } from 'lucide-react';
 import ToolShell, { TOOL_TOKENS as T } from './shared/ToolShell';
-import TactileSlider from './shared/TactileSlider';
+import WorkbenchRangeSlider from './shared/WorkbenchRangeSlider';
 import ScientificHero from './shared/ScientificHero';
 import ScientificFigureFrame from './shared/ScientificFigureFrame';
 import MetricCard from '../ide/shared/MetricCard';
@@ -442,8 +442,8 @@ export default function CETHXPage() {
                 </button>
               ))}
             </div>
-            <TactileSlider label="Temperature" value={tempC} min={20} max={60} step={1} unit="°C" onChange={setTempC} />
-            <TactileSlider label="pH" value={pH} min={5.5} max={9.0} step={0.1} onChange={setPH} color="rgba(120,180,255,0.9)" />
+            <WorkbenchRangeSlider label="Temperature" value={tempC} min={20} max={60} step={1} unit="°C" onChange={setTempC} />
+            <WorkbenchRangeSlider label="pH" value={pH} min={5.5} max={9.0} step={0.1} onChange={setPH} />
           </FloatingControlRail>
 
           <div style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px', background: PATHD_THEME.panelInset }}>
@@ -486,7 +486,7 @@ export default function CETHXPage() {
 
       {/* ── ATP Ledger Tab ── */}
       <ToolTabPanel tabId="atp" activeId={activeTab}>
-        <div style={{ flex: 1, overflowY: 'auto', padding: '12px 0' }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '12px' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', marginBottom: '20px' }}>
             <MetricCard label="Net ATP Yield" value={thermo.atp_yield} unit="mol/mol" highlight />
             <MetricCard label="NADH Yield" value={thermo.nadh_yield} unit="mol/mol" />
@@ -550,7 +550,7 @@ export default function CETHXPage() {
 
       {/* ── Feasibility Tab ── */}
       <ToolTabPanel tabId="feasibility" activeId={activeTab}>
-        <div style={{ flex: 1, overflowY: 'auto', padding: '12px 0' }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '12px' }}>
           <div style={{
             padding: '12px', borderRadius: 'var(--nb-radius-md)',
             border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
