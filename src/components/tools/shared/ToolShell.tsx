@@ -40,6 +40,15 @@ import ToolTabBar, { type ToolTab } from './ToolTabBar';
 import { ErrorBoundary } from '../../shared/ErrorBoundary';
 type ControlVarsStyle = CSSProperties & Record<`--${string}`, string>;
 
+export interface ToolReference {
+  /** Short citation key, e.g. "Orth et al., 2010" */
+  citation: string;
+  /** DOI link, e.g. "10.1038/nbt.1614" */
+  doi?: string;
+  /** Optional URL for non-DOI references */
+  url?: string;
+}
+
 export interface ToolShellProps {
   moduleId: string;
   title: string;
@@ -63,6 +72,8 @@ export interface ToolShellProps {
   onTabChange?: (id: string) => void;
   /** Tab IDs hidden in "simple" mode. Toggle appears automatically when provided. */
   advancedTabIds?: string[];
+  /** Scientific references with DOI links for credibility */
+  references?: ToolReference[];
 }
 
 export default function ToolShell({
@@ -74,6 +85,7 @@ export default function ToolShell({
   activeTab,
   onTabChange,
   advancedTabIds,
+  references,
 }: ToolShellProps) {
   const tool = getToolDefinition(moduleId);
   const validity = getToolValidity(moduleId);
@@ -331,6 +343,65 @@ export default function ToolShell({
           </ErrorBoundary>
         </div>
       </div>
+
+      {/* ── References ──────────────────────────────────────── */}
+      {references && references.length > 0 && (
+        <div style={{
+          padding: '6px 16px',
+          borderTop: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
+          background: PATHD_THEME.sepiaPanelMuted,
+          flexShrink: 0,
+        }}>
+          <details>
+            <summary style={{
+              fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.label,
+              cursor: 'pointer', letterSpacing: '0.06em', textTransform: 'uppercase',
+              listStyle: 'none', display: 'flex', alignItems: 'center', gap: '6px',
+            }}>
+              <span style={{ fontSize: '9px', transition: 'transform 0.15s' }}>▸</span>
+              References ({references.length})
+            </summary>
+            <div style={{ paddingTop: '6px', display: 'flex', flexDirection: 'column', gap: '3px' }}>
+              {references.map((ref, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                  <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.label, flexShrink: 0 }}>
+                    [{i + 1}]
+                  </span>
+                  <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.value }}>
+                    {ref.citation}
+                  </span>
+                  {ref.doi && (
+                    <a
+                      href={`https://doi.org/${ref.doi}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)',
+                        color: T.SKY, textDecoration: 'none',
+                      }}
+                    >
+                      DOI: {ref.doi}
+                    </a>
+                  )}
+                  {ref.url && !ref.doi && (
+                    <a
+                      href={ref.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)',
+                        color: T.SKY, textDecoration: 'none',
+                      }}
+                    >
+                      Link
+                    </a>
+                  )}
+                </div>
+              ))}
+            </div>
+          </details>
+        </div>
+      )}
 
       {/* ── Footer ─────────────────────────────────────────── */}
         {footer && (

@@ -26,7 +26,7 @@ function Sparkline({ data, height = 36 }: {
 }) {
   if (data.length < 2) return (
     <div style={{ height, display:'flex', alignItems:'center', justifyContent:'center' }}>
-      <span style={{ fontFamily: T.MONO, fontSize:'9px', color:PATHD_THEME.label }}>AWAITING DATA</span>
+      <span style={{ fontFamily: T.MONO, fontSize:'var(--nb-fs-xs)', color:PATHD_THEME.label }}>AWAITING DATA</span>
     </div>
   );
 
@@ -84,7 +84,7 @@ function DataRow({ label, value, unit, decimals = 2 }: {
       display:'flex', alignItems:'center', justifyContent:'space-between',
       padding:'5px 0', borderBottom:'1px solid rgba(255,255,255,0.06)',
     }}>
-      <span style={{ fontFamily: T.SANS, fontSize:'10px', color:PATHD_THEME.label, fontWeight:500 }}>
+      <span style={{ fontFamily: T.SANS, fontSize:'var(--nb-fs-xs)', color:PATHD_THEME.label, fontWeight:500 }}>
         {label}
       </span>
       <div style={{ display:'flex', alignItems:'baseline', gap:'3px' }}>
@@ -103,7 +103,7 @@ function DataRow({ label, value, unit, decimals = 2 }: {
           {value.toFixed(decimals)}
         </motion.span>
         {unit && (
-          <span style={{ fontFamily: T.MONO, fontSize:'9px', color:PATHD_THEME.label }}>{unit}</span>
+          <span style={{ fontFamily: T.MONO, fontSize:'var(--nb-fs-xs)', color:PATHD_THEME.label }}>{unit}</span>
         )}
       </div>
     </div>
@@ -121,12 +121,12 @@ function CofactorMatrix({ readouts }: { readouts: SimReadouts }) {
   return (
       <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'6px', marginTop:'8px' }}>
       {items.map(({ l, v, u, opacity }) => (
-        <div key={l} style={{ padding:'8px 6px', borderRadius:'12px', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.10)', textAlign:'center' }}>
-          <div style={{ fontFamily: T.MONO, fontSize:'11px', fontWeight:700, color:opacity > 0.7 ? PATHD_THEME.value : PATHD_THEME.label, fontVariantNumeric:'tabular-nums' }}>
+        <div key={l} style={{ padding:'8px 6px', borderRadius:'var(--nb-radius-md)', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.10)', textAlign:'center' }}>
+          <div style={{ fontFamily: T.MONO, fontSize:'var(--nb-fs-xs)', fontWeight:700, color:opacity > 0.7 ? PATHD_THEME.value : PATHD_THEME.label, fontVariantNumeric:'tabular-nums' }}>
             {v.toFixed(1)}
           </div>
-          <div style={{ fontFamily: T.SANS, fontSize:'8px', color:PATHD_THEME.label, marginTop:'2px' }}>{l}</div>
-          <div style={{ fontFamily: T.MONO, fontSize:'7px', color:PATHD_THEME.label }}>{u}</div>
+          <div style={{ fontFamily: T.SANS, fontSize:'var(--nb-fs-xs)', color:PATHD_THEME.label, marginTop:'2px' }}>{l}</div>
+          <div style={{ fontFamily: T.MONO, fontSize:'var(--nb-fs-xs)', color:PATHD_THEME.label }}>{u}</div>
         </div>
       ))}
     </div>
@@ -140,8 +140,8 @@ function FluxGauge({ value, label }: { value: number; label: string }) {
   return (
     <div style={{ marginTop:'6px' }}>
       <div style={{ display:'flex', justifyContent:'space-between', marginBottom:'4px' }}>
-        <span style={{ fontFamily: T.SANS, fontSize:'9px', color:PATHD_THEME.label }}>{label}</span>
-        <span style={{ fontFamily: T.MONO, fontSize:'10px', color:PATHD_THEME.value, fontWeight:700 }}>{pct.toFixed(0)}%</span>
+        <span style={{ fontFamily: T.SANS, fontSize:'var(--nb-fs-xs)', color:PATHD_THEME.label }}>{label}</span>
+        <span style={{ fontFamily: T.MONO, fontSize:'var(--nb-fs-xs)', color:PATHD_THEME.value, fontWeight:700 }}>{pct.toFixed(0)}%</span>
       </div>
       <div style={{ height:`${PATHD_THEME.progressHeight}px`, borderRadius:`${PATHD_THEME.progressRadius}px`, background:PATHD_THEME.progressTrack, overflow:'hidden' }}>
         <motion.div
@@ -221,10 +221,10 @@ export default function StatusOverlay({
       />
       {/* Header */}
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'12px', position:'relative', zIndex:1 }}>
-        <span style={{ fontFamily: T.MONO, fontSize:'9px', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.12em', color:PATHD_THEME.label }}>
+        <span style={{ fontFamily: T.MONO, fontSize:'var(--nb-fs-xs)', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.12em', color:PATHD_THEME.label }}>
           Readout Ledger
         </span>
-        <span style={{ fontFamily: T.MONO, fontSize:'8px', color:PATHD_THEME.label, fontVariantNumeric:'tabular-nums' }}>
+        <span style={{ fontFamily: T.MONO, fontSize:'var(--nb-fs-xs)', color:PATHD_THEME.label, fontVariantNumeric:'tabular-nums' }}>
           T:{readouts.tick.toString().padStart(5,'0')}
         </span>
       </div>
@@ -232,7 +232,7 @@ export default function StatusOverlay({
       {/* Reaction rate sparkline */}
       <div style={{ marginBottom:'10px', position:'relative', zIndex:1 }}>
         <div style={{ display:'flex', alignItems:'baseline', justifyContent:'space-between', marginBottom:'4px' }}>
-          <span style={{ fontFamily: T.SANS, fontSize:'9px', color:PATHD_THEME.label }}>Reaction Rate v</span>
+          <span style={{ fontFamily: T.SANS, fontSize:'var(--nb-fs-xs)', color:PATHD_THEME.label }}>Reaction Rate v</span>
           <div style={{ display:'flex', alignItems:'baseline', gap:'2px' }}>
             <motion.span
               key={Math.round(readouts.reactionRate * 10)}
@@ -241,7 +241,7 @@ export default function StatusOverlay({
             >
               {readouts.reactionRate.toFixed(2)}
             </motion.span>
-            <span style={{ fontFamily: T.MONO, fontSize:'9px', color:PATHD_THEME.label }}>μmol/min</span>
+            <span style={{ fontFamily: T.MONO, fontSize:'var(--nb-fs-xs)', color:PATHD_THEME.label }}>μmol/min</span>
           </div>
         </div>
         <Sparkline data={rateHistory} height={40} />
@@ -272,15 +272,15 @@ export default function StatusOverlay({
           <motion.div
             initial={{ opacity:0, y:6 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0 }}
             style={{
-              marginTop:'12px', padding:'8px 10px', borderRadius:'12px',
+              marginTop:'12px', padding:'8px 10px', borderRadius:'var(--nb-radius-md)',
               background:'rgba(191,220,205,0.14)', border:'1px solid rgba(191,220,205,0.28)',
               textAlign:'center',
             }}
           >
-            <span style={{ fontFamily: T.MONO, fontSize:'9px', color:PATHD_THEME.value, textTransform:'uppercase', letterSpacing:'0.1em' }}>
+            <span style={{ fontFamily: T.MONO, fontSize:'var(--nb-fs-xs)', color:PATHD_THEME.value, textTransform:'uppercase', letterSpacing:'0.1em' }}>
               Steady State Reached
             </span>
-            <div style={{ fontFamily: T.MONO, fontSize:'8px', color:PATHD_THEME.label, marginTop:'2px' }}>
+            <div style={{ fontFamily: T.MONO, fontSize:'var(--nb-fs-xs)', color:PATHD_THEME.label, marginTop:'2px' }}>
               σ² = {variance.toFixed(4)} (stable)
             </div>
           </motion.div>
@@ -289,14 +289,14 @@ export default function StatusOverlay({
           <motion.div
             initial={{ opacity:0, y:6 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0 }}
             style={{
-              marginTop:'12px', padding:'8px 10px', borderRadius:'12px',
+              marginTop:'12px', padding:'8px 10px', borderRadius:'var(--nb-radius-md)',
               background:'rgba(232,163,161,0.14)', border:'1px solid rgba(232,163,161,0.28)',
               textAlign:'center',
             }}
           >
             <motion.span
               animate={{ opacity:[1,0.4,1] }} transition={{ duration:0.7, repeat:Infinity }}
-              style={{ fontFamily: T.MONO, fontSize:'9px', color:PATHD_THEME.value, textTransform:'uppercase', letterSpacing:'0.1em' }}
+              style={{ fontFamily: T.MONO, fontSize:'var(--nb-fs-xs)', color:PATHD_THEME.value, textTransform:'uppercase', letterSpacing:'0.1em' }}
             >
               Stress Test Active
             </motion.span>

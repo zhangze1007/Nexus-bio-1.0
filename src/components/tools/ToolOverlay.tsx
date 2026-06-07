@@ -106,11 +106,11 @@ function ParamSlider({ def, value, onChange, forceRef }: SliderProps) {
   return (
     <div style={{ marginBottom: '14px' }}>
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'5px' }}>
-        <span style={{ fontFamily: T.SANS, fontSize:'10px', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.08em', color:PATHD_THEME.label }}>
+        <span style={{ fontFamily: T.SANS, fontSize:'var(--nb-fs-xs)', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.08em', color:PATHD_THEME.label }}>
           {def.label}
         </span>
         <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-sm)', fontWeight:600, color:PATHD_THEME.value, textAlign:'right', minWidth:'72px' }}>
-          {value.toFixed(def.step < 1 ? 1 : 0)}<span style={{ fontSize:'9px', color:PATHD_THEME.label, marginLeft:'2px' }}>{def.unit}</span>
+          {value.toFixed(def.step < 1 ? 1 : 0)}<span style={{ fontSize:'var(--nb-fs-xs)', color:PATHD_THEME.label, marginLeft:'2px' }}>{def.unit}</span>
         </span>
       </div>
 
@@ -187,9 +187,9 @@ function ActionBtn({ label, icon: Icon, tone = 'neutral', onClick, disabled = fa
         flex:1,
         minHeight:'34px',
         padding:'0 10px',
-        borderRadius:'12px',
+        borderRadius:'var(--nb-radius-md)',
         cursor: disabled ? 'not-allowed' : 'pointer',
-        fontFamily: T.MONO, fontSize:'10px', fontWeight:600,
+        fontFamily: T.MONO, fontSize:'var(--nb-fs-xs)', fontWeight:600,
         textTransform:'uppercase', letterSpacing:'0.08em',
         transition:'background 80ms ease, border-color 80ms ease, color 80ms ease, box-shadow 80ms ease, transform 80ms ease',
         display:'inline-flex',
@@ -267,7 +267,7 @@ export default function ToolOverlay({
       {/* Header */}
       <div style={{ marginBottom:'16px', position:'relative', zIndex:1 }}>
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-          <span style={{ fontFamily: T.MONO, fontSize:'9px', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.12em', color:PATHD_THEME.label }}>
+          <span style={{ fontFamily: T.MONO, fontSize:'var(--nb-fs-xs)', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.12em', color:PATHD_THEME.label }}>
             Method Rail
           </span>
           {/* FSM state indicator */}
@@ -287,7 +287,7 @@ export default function ToolOverlay({
               transition={{ duration:1.5, repeat:Infinity }}
               style={{ width:'5px', height:'5px', borderRadius:'50%', background:PATHD_THEME.liveRed, boxShadow:'0 0 6px rgba(232,163,161,0.48)' }}
             />
-            <span style={{ fontFamily: T.MONO, fontSize:'8px', fontWeight:600, color:PATHD_THEME.value, letterSpacing:'0.1em' }}>
+            <span style={{ fontFamily: T.MONO, fontSize:'var(--nb-fs-xs)', fontWeight:600, color:PATHD_THEME.value, letterSpacing:'0.1em' }}>
               {stateLabel}
             </span>
           </motion.div>
@@ -338,15 +338,15 @@ export default function ToolOverlay({
       </div>
 
       {/* Michaelis-Menten preview formula */}
-      <div style={{ marginTop:'14px', padding:'10px', borderRadius:'12px', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.10)', position:'relative', zIndex:1 }}>
-        <span style={{ fontFamily: T.MONO, fontSize:'9px', color:PATHD_THEME.label, display:'block', marginBottom:'4px', textTransform:'uppercase', letterSpacing:'0.08em' }}>
+      <div style={{ marginTop:'14px', padding:'10px', borderRadius:'var(--nb-radius-md)', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.10)', position:'relative', zIndex:1 }}>
+        <span style={{ fontFamily: T.MONO, fontSize:'var(--nb-fs-xs)', color:PATHD_THEME.label, display:'block', marginBottom:'4px', textTransform:'uppercase', letterSpacing:'0.08em' }}>
           Kinetics Preview
         </span>
-        <span style={{ fontFamily: T.MONO, fontSize:'10px', color:PATHD_THEME.value }}>
+        <span style={{ fontFamily: T.MONO, fontSize:'var(--nb-fs-xs)', color:PATHD_THEME.value }}>
           v = Vmax·[S] / (Km+[S])
         </span>
         <br />
-        <span style={{ fontFamily: T.MONO, fontSize:'10px', color:PATHD_THEME.label }}>
+        <span style={{ fontFamily: T.MONO, fontSize:'var(--nb-fs-xs)', color:PATHD_THEME.label }}>
           = {params.vmax.toFixed(1)} · {params.substrate} / ({params.km.toFixed(1)} + {params.substrate})
         </span>
       </div>

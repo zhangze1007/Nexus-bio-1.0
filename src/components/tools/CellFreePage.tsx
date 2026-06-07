@@ -698,6 +698,14 @@ function ReactorTwin3D({ result, constructs, params }: { result: CFSFullResult; 
   );
 }
 
+const CELLFREE_TABS: ToolTab[] = [
+  { id: 'timecourse', label: 'Time Course', accent: PATHD_THEME.sky },
+  { id: 'resources', label: 'Resources', accent: PATHD_THEME.lilac },
+  { id: 'fitting', label: 'Fitting', accent: PATHD_THEME.apricot },
+  { id: 'iviv', label: 'IVIV', accent: PATHD_THEME.mint },
+  { id: 'reactor', label: 'Reactor 3D', accent: PATHD_THEME.coral },
+];
+
 /* ── Main Component ───────────────────────────────────────────────── */
 
 export default function CellFreePage() {
@@ -726,14 +734,6 @@ export default function CellFreePage() {
   }, [constructs, params]);
 
   const [activeTab, setActiveTab] = useState('timecourse');
-
-  const CELLFREE_TABS: ToolTab[] = [
-    { id: 'timecourse', label: 'Time Course', accent: PATHD_THEME.sky },
-    { id: 'resources', label: 'Resources', accent: PATHD_THEME.lilac },
-    { id: 'fitting', label: 'Fitting', accent: PATHD_THEME.apricot },
-    { id: 'iviv', label: 'IVIV', accent: PATHD_THEME.mint },
-    { id: 'reactor', label: 'Reactor 3D', accent: PATHD_THEME.coral },
-  ];
 
   const sim = result.simulation;
   const fit = result.fitting;

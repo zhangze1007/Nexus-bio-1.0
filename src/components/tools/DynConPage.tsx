@@ -284,6 +284,13 @@ function StatRow({ label, value, unit }: { label: string; value: string | number
   );
 }
 
+const DYNCON_TABS: ToolTab[] = [
+  { id: 'trajectory', label: 'Trajectory', accent: PATHD_THEME.sky },
+  { id: 'hill', label: 'Hill Curve', accent: PATHD_THEME.lilac },
+  { id: 'convergence', label: 'Convergence', accent: PATHD_THEME.apricot },
+  { id: 'rbs', label: 'RBS Bridge', accent: PATHD_THEME.mint },
+];
+
 /* ══════════════════════════════════════════════════════════════════════════════
    MAIN PAGE
    ══════════════════════════════════════════════════════════════════════════════ */
@@ -307,12 +314,6 @@ export default function DynConPage() {
   const [hillKd, setHillKd] = usePersistedState('nexus-bio:dyncon:hillKd', DEFAULT_HILL.Kd);
   const [hillN, setHillN] = usePersistedState('nexus-bio:dyncon:hillN', DEFAULT_HILL.n);
   const [activeTab, setActiveTab] = useState('trajectory');
-  const DYNCON_TABS: ToolTab[] = [
-    { id: 'trajectory', label: 'Trajectory', accent: PATHD_THEME.sky },
-    { id: 'hill', label: 'Hill Curve', accent: PATHD_THEME.lilac },
-    { id: 'convergence', label: 'Convergence', accent: PATHD_THEME.apricot },
-    { id: 'rbs', label: 'RBS Bridge', accent: PATHD_THEME.mint },
-  ];
   const recommendedSeed = useMemo(
     () => buildDynConSeed(fbaPayload, cethxPayload, catalystPayload, dbtlPayload),
     [catalystPayload?.updatedAt, cethxPayload?.updatedAt, dbtlPayload?.feedbackSource, dbtlPayload?.result.improvementRate, dbtlPayload?.result.latestPhase, dbtlPayload?.result.passRate, dbtlPayload?.updatedAt, fbaPayload?.updatedAt],

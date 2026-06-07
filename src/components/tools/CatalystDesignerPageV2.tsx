@@ -318,7 +318,7 @@ export default function CatalystDesignerPageV2() {
                   borderColor: renderMode === mode ? 'rgba(200,232,240,0.3)' : undefined,
                   background: renderMode === mode ? 'rgba(200,232,240,0.12)' : undefined,
                   color: renderMode === mode ? '#C8E8F0' : undefined,
-                  fontSize: 9, borderRadius: 999, padding: '3px 8px',
+                  fontSize: 'var(--nb-fs-xs)', borderRadius: '999px', padding: '3px 8px',
                 }}>
                 {mode === 'confidence' ? 'pLDDT' : mode.charAt(0).toUpperCase() + mode.slice(1)}
               </button>
@@ -327,7 +327,7 @@ export default function CatalystDesignerPageV2() {
               className={`nb-tool-toggle ${spinEnabled ? 'nb-tool-toggle--active' : ''}`}
               style={{
                 background: spinEnabled ? 'rgba(255,255,255,0.08)' : undefined,
-                fontSize: 9, borderRadius: 999, padding: '3px 8px',
+                fontSize: 'var(--nb-fs-xs)', borderRadius: '999px', padding: '3px 8px',
               }}>
               {spinEnabled ? 'Auto-spin' : 'Static'}
             </button>

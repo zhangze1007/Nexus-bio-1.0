@@ -556,22 +556,20 @@ export default function NEXAIPage() {
           )}
 
           {PRESET_QUERIES.map((q, i) => (
-            <motion.button
+            <button
               key={i}
               onClick={() => { setQuery(q); }}
-              whileHover={{ x: 3 }}
+              className={`nb-tool-toggle${query === q ? ' nb-tool-toggle--active' : ''}`}
+              aria-label={`Use preset query: ${q}`}
               style={{
                 display: 'block', width: '100%', textAlign: 'left',
                 padding: '7px 10px',
-                background: query === q ? 'rgba(175,195,214,0.2)' : PATHD_THEME.panelSurface,
-                border: query === q ? '1px solid rgba(175,195,214,0.34)' : `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
-                borderRadius: 'var(--nb-radius-sm)', cursor: 'pointer',
+                borderRadius: 'var(--nb-radius-sm)',
                 fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', lineHeight: 1.5,
-                color: query === q ? PATHD_THEME.value : PATHD_THEME.label,
               }}
             >
               {q}
-            </motion.button>
+            </button>
           ))}
 
           {result && result.citations.length > 0 && (
@@ -954,20 +952,20 @@ export default function NEXAIPage() {
                 History ({history.length})
               </div>
               {history.slice(0, 5).map((h, i) => (
-                <motion.button
+                <button
                   key={h + i}
                   onClick={() => setQuery(h)}
-                  whileHover={{ x: 2 }}
+                  className="nb-tool-toggle"
+                  aria-label={`Reuse query: ${h.slice(0, 40)}`}
                   style={{
                     display: 'block', width: '100%', textAlign: 'left',
                     padding: '4px 6px', marginBottom: '2px',
-                    background: 'transparent', border: 'none', cursor: 'pointer',
-                    fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.label,
+                    fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)',
                     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                   }}
                 >
                   {h.slice(0, 40)}{h.length > 40 ? '…' : ''}
-                </motion.button>
+                </button>
               ))}
             </div>
           )}

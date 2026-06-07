@@ -179,6 +179,13 @@ function GenomeMap({
   );
 }
 
+const GENMIM_TABS: ToolTab[] = [
+  { id: 'genome', label: 'Genome Map', accent: PATHD_THEME.sky },
+  { id: 'targets', label: 'Targets', accent: PATHD_THEME.lilac },
+  { id: 'schedule', label: 'Schedule', accent: PATHD_THEME.coral },
+  { id: 'efficiency', label: 'Efficiency', accent: PATHD_THEME.mint },
+];
+
 export default function GenMIMPage() {
   const project = useWorkbenchStore((s) => s.project);
   const analyzeArtifact = useWorkbenchStore((s) => s.analyzeArtifact);
@@ -220,12 +227,6 @@ export default function GenMIMPage() {
     ? schedule.reduce((a, t) => a + t.knockdown_efficiency, 0) / schedule.length : 0;
   const offTargetRisk = schedule.filter(t => t.knockdown_efficiency < 0.9).length / Math.max(schedule.length, 1);
   const [activeTab, setActiveTab] = useState('genome');
-  const GENMIM_TABS: ToolTab[] = [
-    { id: 'genome', label: 'Genome Map', accent: PATHD_THEME.sky },
-    { id: 'targets', label: 'Targets', accent: PATHD_THEME.lilac },
-    { id: 'schedule', label: 'Schedule', accent: PATHD_THEME.coral },
-    { id: 'efficiency', label: 'Efficiency', accent: PATHD_THEME.mint },
-  ];
 
   const figureMeta = useMemo(() => ({
     eyebrow: 'Genome minimization map',
@@ -336,23 +337,14 @@ export default function GenMIMPage() {
 
             <button
               onClick={() => setProtectEssential(!protectEssential)}
+              className={`nb-tool-toggle${protectEssential ? ' nb-tool-toggle--active' : ''}`}
+              aria-pressed={protectEssential}
+              aria-label="Toggle protect essential genes"
               style={{
                 display: 'flex', alignItems: 'center', gap: '8px',
                 width: '100%', padding: '7px 10px', marginBottom: '16px',
-                background: protectEssential ? 'rgba(231,199,169,0.18)' : PATHD_THEME.panelSurface,
-                border: `1px solid ${protectEssential ? 'rgba(231,199,169,0.34)' : PATHD_THEME.sepiaPanelBorder}`,
-                borderRadius: 'var(--nb-radius-sm)', cursor: 'pointer',
-                color: protectEssential ? PATHD_THEME.value : PATHD_THEME.label,
+                borderRadius: 'var(--nb-radius-sm)',
                 fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', textAlign: 'left',
-                transition: 'background 80ms, border-color 80ms, color 80ms',
-              }}
-              onMouseEnter={e => {
-                (e.currentTarget as HTMLElement).style.background = protectEssential ? 'rgba(231,199,169,0.25)' : 'var(--nb-hover-bg)';
-                (e.currentTarget as HTMLElement).style.borderColor = protectEssential ? 'rgba(231,199,169,0.45)' : 'var(--nb-border-hover)';
-              }}
-              onMouseLeave={e => {
-                (e.currentTarget as HTMLElement).style.background = protectEssential ? 'rgba(231,199,169,0.18)' : PATHD_THEME.panelSurface;
-                (e.currentTarget as HTMLElement).style.borderColor = protectEssential ? 'rgba(231,199,169,0.34)' : PATHD_THEME.sepiaPanelBorder;
               }}
             >
               <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: protectEssential ? PATHD_THEME.apricot : 'transparent', border: `1px solid ${PATHD_THEME.apricot}`, flexShrink: 0 }} />

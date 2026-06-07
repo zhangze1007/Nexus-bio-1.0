@@ -36,6 +36,13 @@ import { round, createEmptyFBAOutput, createEmptyCommunityOutput, type SimMode }
 // ── MAIN COMPONENT ──
 // ═══════════════════════════════════════════════════════════════════════════════
 
+const FBA_TABS: ToolTab[] = [
+  { id: 'flux', label: 'Flux Map', accent: PATHD_THEME.sky },
+  { id: 'knockout', label: 'Knockout', accent: PATHD_THEME.coral },
+  { id: 'shadows', label: 'Sensitivity', accent: PATHD_THEME.lilac },
+  { id: 'community', label: 'Community', accent: PATHD_THEME.mint },
+];
+
 export default function FBASimPage() {
   const [simMode, setSimMode] = useState<SimMode>('single');
   const chartRef = useRef<SVGSVGElement>(null);
@@ -83,13 +90,6 @@ export default function FBASimPage() {
   const lastAppliedSeedRef = useRef<string | null>(null);
   const [seedOverwriteNotice, setSeedOverwriteNotice] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('flux');
-
-  const FBA_TABS: ToolTab[] = [
-    { id: 'flux', label: 'Flux Map', accent: PATHD_THEME.sky },
-    { id: 'knockout', label: 'Knockout', accent: PATHD_THEME.coral },
-    { id: 'shadows', label: 'Sensitivity', accent: PATHD_THEME.lilac },
-    { id: 'community', label: 'Community', accent: PATHD_THEME.mint },
-  ];
 
   useEffect(() => {
     if (lastAppliedSeedRef.current === seedSignature) return;
@@ -461,7 +461,7 @@ export default function FBASimPage() {
                 padding: '5px 8px', marginBottom: '3px',
                 background: objective === opt ? PATHD_THEME.panelSurface : undefined,
                 borderColor: objective === opt ? PATHD_THEME.panelBorderStrong : undefined,
-                borderRadius: '6px',
+                borderRadius: 'var(--nb-radius-sm)',
                 color: objective === opt ? 'rgba(255,255,255,0.85)' : undefined,
               }}>
                 {opt === 'biomass' ? 'Max Biomass' : opt === 'atp' ? 'Max ATP' : 'Max Product'}
@@ -525,7 +525,7 @@ export default function FBASimPage() {
                   width: '100%', padding: '4px 6px', marginBottom: '2px',
                   background: isKO ? 'rgba(255,80,80,0.14)' : undefined,
                   borderColor: isKO ? 'rgba(255,80,80,0.38)' : undefined,
-                  borderRadius: '5px',
+                  borderRadius: 'var(--nb-radius-sm)',
                 }}>
                   <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: isKO ? 'rgba(255,120,120,0.9)' : 'rgba(255,255,255,0.5)' }}>{r.id}</span>
                   <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: isKO ? 'rgba(255,80,80,0.7)' : 'rgba(255,255,255,0.12)', flexShrink: 0 }} />
@@ -537,7 +537,7 @@ export default function FBASimPage() {
                 className="nb-tool-toggle"
                 style={{
                 display: 'block', width: '100%', marginTop: '6px',
-                padding: '4px 6px', borderRadius: '5px',
+                padding: '4px 6px', borderRadius: 'var(--nb-radius-sm)',
                 color: 'rgba(255,255,255,0.3)',
               }}>
                 Clear knockouts ({knockouts.length})
@@ -619,7 +619,7 @@ export default function FBASimPage() {
 
       {/* ── Community Tab ── */}
       <ToolTabPanel tabId="community" activeId={activeTab}>
-        <div style={{ padding: '8px 12px', background: 'rgba(232,220,200,0.1)', borderRadius: '6px', fontSize: 'var(--nb-fs-sm)', opacity: 0.8, margin: '8px 12px' }}>
+        <div style={{ padding: '8px 12px', background: 'rgba(232,220,200,0.1)', borderRadius: 'var(--nb-radius-sm)', fontSize: 'var(--nb-fs-sm)', opacity: 0.8, margin: '8px 12px' }}>
           ℹ️ Community FBA uses sequential single-species optimization with shared resource constraints.
           This is an approximation — for true joint optimization, consider SteCom or BioME frameworks.
         </div>

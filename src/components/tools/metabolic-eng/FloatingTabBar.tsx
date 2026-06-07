@@ -32,12 +32,13 @@ export default function FloatingTabBar({
           <button
             key={tab.id}
             onClick={() => onTabChange(tab.id)}
+            role="tab"
+            aria-selected={isActive}
+            className={`nb-tool-toggle${isActive ? ' nb-tool-toggle--active' : ''}`}
             style={{
-              padding: '6px 14px', borderRadius: 'var(--nb-radius-sm)', border: 'none', cursor: 'pointer',
+              padding: '6px 14px', borderRadius: 'var(--nb-radius-sm)',
               fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', fontWeight: isActive ? 600 : 400,
               color: isActive ? tab.accent : PATHD_THEME.label,
-              background: isActive ? 'rgba(255,255,255,0.1)' : 'transparent',
-              transition: 'all 0.2s ease',
             }}
           >
             {tab.label}

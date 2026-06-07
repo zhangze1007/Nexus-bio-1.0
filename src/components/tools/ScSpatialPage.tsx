@@ -321,10 +321,10 @@ export default function ScSpatialPage() {
             }}>
               {artifactChipLabel}
             </span>
-            <button type="button" className={styles.headerIconButton} onClick={toggleHelp}>
+            <button type="button" className={styles.headerIconButton} onClick={toggleHelp} aria-label="Toggle help">
               <HelpCircle size={13} />
             </button>
-            <button type="button" className={styles.headerIconButton} onClick={reset}>
+            <button type="button" className={styles.headerIconButton} onClick={reset} aria-label="Reset view">
               <RefreshCcw size={13} />
             </button>
           </div>

@@ -191,7 +191,7 @@ function BreathingWaterfall({ steps }: { steps: ReturnType<typeof computeThermo>
         <path
           d={catmullRomPath(splinePts)}
           fill="none"
-          stroke="#FF7F00"
+          stroke={PATHD_THEME.orange}
           strokeWidth={2}
           strokeOpacity={0.85}
         />
@@ -253,7 +253,7 @@ function BreathingWaterfall({ steps }: { steps: ReturnType<typeof computeThermo>
         { color: `rgba(${SEMANTIC_RGB.pass}, 0.82)`, label: 'Exergonic' },
         { color: SEMANTIC.fail, label: 'Infeasible (ΔG>0)' },
         { color: PATHD_THEME.orange, label: 'ATP-coupled' },
-        { color: '#FF7F00', label: 'Energy landscape', line: true },
+        { color: PATHD_THEME.orange, label: 'Energy landscape', line: true },
       ].map((l, i) => (
         <g key={l.label} transform={`translate(${PAD.left + i * 100},${PAD.top - 16})`}>
           {l.line
@@ -272,6 +272,12 @@ const PATHWAYS: { id: PathwayKey; label: string; desc: string }[] = [
   { id: 'glycolysis', label: 'Glycolysis', desc: 'Glucose → 2 Pyruvate' },
   { id: 'tca',        label: 'TCA Cycle',  desc: 'Acetyl-CoA → CO₂ + energy' },
   { id: 'ppp',        label: 'Pentose ℙ',  desc: 'G6P → Ribose-5P + NADPH' },
+];
+
+const CETHX_TABS: ToolTab[] = [
+  { id: 'waterfall', label: 'Waterfall', accent: PATHD_THEME.sky },
+  { id: 'atp', label: 'ATP Ledger', accent: PATHD_THEME.lilac },
+  { id: 'feasibility', label: 'Feasibility', accent: PATHD_THEME.apricot },
 ];
 
 // ── Main Page ──────────────────────────────────────────────────────────
@@ -365,11 +371,6 @@ export default function CETHXPage() {
   const fba = fbaPayload;
 
   const [activeTab, setActiveTab] = useState('waterfall');
-  const CETHX_TABS: ToolTab[] = [
-    { id: 'waterfall', label: 'Waterfall', accent: PATHD_THEME.sky },
-    { id: 'atp', label: 'ATP Ledger', accent: PATHD_THEME.lilac },
-    { id: 'feasibility', label: 'Feasibility', accent: PATHD_THEME.apricot },
-  ];
 
   return (
     <ToolShell
@@ -420,19 +421,16 @@ export default function CETHXPage() {
           <FloatingControlRail label="Parameters" defaultCollapsed={false}>
             <div style={{ marginBottom: '16px' }}>
               {PATHWAYS.map(p => (
-                <motion.button
+                <button
                   key={p.id}
                   onClick={() => setPathway(p.id)}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                  className={`nb-tool-toggle${pathway === p.id ? ' nb-tool-toggle--active' : ''}`}
+                  aria-pressed={pathway === p.id}
+                  aria-label={`Select ${p.label} pathway`}
                   style={{
                     display: 'block', width: '100%', textAlign: 'left',
                     padding: '8px 10px', marginBottom: '4px',
-                    background: pathway === p.id ? 'rgba(231,199,169,0.22)' : PATHD_THEME.panelSurface,
-                    border: pathway === p.id
-                      ? `1px solid rgba(231,199,169,0.34)`
-                      : `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
-                    borderRadius: 'var(--nb-radius-md)', cursor: 'pointer',
+                    borderRadius: 'var(--nb-radius-md)',
                   }}
                 >
                   <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', fontWeight: 500, color: pathway === p.id ? T.VALUE : T.LABEL, display: 'block' }}>
@@ -441,7 +439,7 @@ export default function CETHXPage() {
                   <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: T.DIM }}>
                     {p.desc}
                   </span>
-                </motion.button>
+                </button>
               ))}
             </div>
             <TactileSlider label="Temperature" value={tempC} min={20} max={60} step={1} unit="°C" onChange={setTempC} />

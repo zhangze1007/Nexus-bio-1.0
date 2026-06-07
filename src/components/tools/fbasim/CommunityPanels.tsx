@@ -134,12 +134,10 @@ export function StrainPanel({ label, color, borderColor, accentColor, glucoseUpt
         {reactions.map(r => {
           const isKO = knockouts.includes(r.id);
           return (
-            <button type="button" aria-label={`Toggle knockout for ${r.id}`} key={r.id} onClick={() => onToggleKO(r.id)} style={{
+            <button type="button" aria-label={`Toggle knockout for ${r.id}`} aria-pressed={isKO} key={r.id} onClick={() => onToggleKO(r.id)} className={`nb-tool-toggle${isKO ? ' nb-tool-toggle--active' : ''}`} style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               width: '100%', padding: '4px 8px', marginBottom: '2px',
-              background: isKO ? 'rgba(255,80,80,0.08)' : 'transparent',
-              border: `1px solid ${isKO ? 'rgba(255,80,80,0.3)' : 'rgba(255,255,255,0.06)'}`,
-              borderRadius: '6px', cursor: 'pointer', transition: 'background 0.15s ease, border-color 0.15s ease',
+              borderRadius: 'var(--nb-radius-sm)',
             }}>
               <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: isKO ? 'rgba(255,120,120,0.9)' : 'rgba(255,255,255,0.5)' }}>{r.id}</span>
               <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: isKO ? 'rgba(255,80,80,0.7)' : 'rgba(255,255,255,0.12)', flexShrink: 0 }} />
@@ -148,10 +146,9 @@ export function StrainPanel({ label, color, borderColor, accentColor, glucoseUpt
         })}
       </div>
       {knockouts.length > 0 && (
-        <button aria-label="Clear all knockouts" onClick={onClearKO} style={{
+        <button aria-label="Clear all knockouts" onClick={onClearKO} className="nb-tool-toggle" style={{
           display: 'block', width: '100%', padding: '4px 8px',
-          background: 'transparent', border: '1px solid rgba(255,255,255,0.08)',
-          borderRadius: '6px', color: 'rgba(255,255,255,0.3)', fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', cursor: 'pointer',
+          borderRadius: 'var(--nb-radius-sm)', fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)',
         }}>
           Clear all
         </button>

@@ -41,7 +41,7 @@ export default function ArtifactRouteState({
           <div style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', letterSpacing: '0.1em', textTransform: 'uppercase', color: PATHD_THEME.label }}>
             Canonical PATHD route
           </div>
-          <h2 style={{ margin: 0, fontFamily: T.SANS, fontSize: '28px', lineHeight: 1.1, color: PATHD_THEME.value }}>
+          <h2 style={{ margin: 0, fontFamily: T.SANS, fontSize: 'var(--nb-fs-xl)', lineHeight: 1.1, color: PATHD_THEME.value }}>
             {title}
           </h2>
           <p style={{ margin: 0, fontFamily: T.SANS, fontSize: 'var(--nb-fs-md)', lineHeight: 1.65, color: PATHD_THEME.label }}>
