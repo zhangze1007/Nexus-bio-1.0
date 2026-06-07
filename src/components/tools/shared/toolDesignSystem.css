@@ -132,6 +132,42 @@
 .nb-btn--md { height: 36px; padding: 0 14px; gap: 6px; border-radius: var(--nb-radius-md); }
 .nb-btn--lg { height: 44px; padding: 0 20px; gap: 8px; border-radius: var(--nb-radius-md); }
 
+/* ── Tool Toggle Button ── */
+.nb-tool-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--nb-border);
+  background: var(--nb-surface-glass);
+  color: var(--nb-text-label);
+  font-family: var(--nb-font-sans);
+  font-size: var(--nb-fs-sm);
+  cursor: pointer;
+  transition: background 80ms, border-color 80ms, color 80ms;
+}
+
+.nb-tool-toggle:hover {
+  background: var(--nb-hover-bg);
+  border-color: var(--nb-border-hover);
+  color: var(--nb-text-value);
+}
+
+.nb-tool-toggle:focus-visible {
+  outline: 2px solid var(--nb-focus-ring);
+  outline-offset: 2px;
+}
+
+.nb-tool-toggle:active {
+  background: var(--nb-active-bg);
+  border-color: var(--nb-border-active);
+}
+
+.nb-tool-toggle--active {
+  background: var(--nb-active-bg);
+  border-color: var(--nb-border-active);
+  color: var(--nb-text-value);
+}
+
 /* ── Focus Summary Styles ── */
 .nb-focus-summary {
   display: flex;

@@ -677,14 +677,16 @@ export default function CatalystDesignerPage() {
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 4 }}>
                 {(['cartoon', 'surface', 'confidence'] as const).map(mode => (
                   <button key={mode} onClick={() => setRenderMode(mode)}
-                    style={{ flex: '1 1 0', fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', padding: '4px 0', border: `1px solid ${renderMode === mode ? PATHD_THEME.sky : INPUT_BORDER}`, borderRadius: 6, cursor: 'pointer', background: renderMode === mode ? 'rgba(175,195,214,0.15)' : 'transparent', color: renderMode === mode ? PATHD_THEME.sky : LABEL }}>
+                    className={`nb-tool-toggle ${renderMode === mode ? 'nb-tool-toggle--active' : ''}`}
+                    style={{ flex: '1 1 0', padding: '4px 0', borderRadius: 6, borderColor: renderMode === mode ? PATHD_THEME.sky : undefined, background: renderMode === mode ? 'rgba(175,195,214,0.15)' : undefined, color: renderMode === mode ? PATHD_THEME.sky : undefined }}>
                     {mode.charAt(0).toUpperCase() + mode.slice(1)}
                   </button>
                 ))}
               </div>
             </div>
             <button onClick={() => setSpinEnabled(!spinEnabled)}
-              style={{ width: '100%', fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', padding: '5px 0', border: `1px solid ${spinEnabled ? PATHD_THEME.mint : INPUT_BORDER}`, borderRadius: 6, cursor: 'pointer', background: spinEnabled ? 'rgba(191,220,205,0.15)' : 'transparent', color: spinEnabled ? PATHD_THEME.mint : LABEL }}>
+              className={`nb-tool-toggle ${spinEnabled ? 'nb-tool-toggle--active' : ''}`}
+              style={{ width: '100%', padding: '5px 0', borderRadius: 6, borderColor: spinEnabled ? PATHD_THEME.mint : undefined, background: spinEnabled ? 'rgba(191,220,205,0.15)' : undefined, color: spinEnabled ? PATHD_THEME.mint : undefined }}>
               {spinEnabled ? '● Spin On' : 'Spin Off'}
             </button>
             {selectedResidue != null && selectedCatResidue && (
