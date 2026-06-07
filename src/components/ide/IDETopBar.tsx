@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Home, LayoutGrid, Menu, Terminal } from 'lucide-react';
+import LoginButton from '../auth/LoginButton';
 import { useUIStore } from '../../store/uiStore';
 import { getToolDefinition } from '../tools/shared/toolRegistry';
 import { T } from './tokens';
@@ -133,6 +134,7 @@ export default function IDETopBar({ moduleId, actions }: IDETopBarProps) {
          * Demo/Research has no real effect.
          */}
         {actions}
+        <LoginButton />
         <button
           type="button"
           onClick={toggleConsole}

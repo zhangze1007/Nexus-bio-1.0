@@ -4,6 +4,7 @@ import './globals.css';
 import WorkbenchSyncProvider from '../src/components/workbench/WorkbenchSyncProvider';
 import { RouteTransition } from '../src/components/shared/RouteTransition';
 import { OnboardingOverlay } from '../src/components/shared/OnboardingOverlay';
+import AuthProvider from '../src/components/auth/AuthProvider';
 
 export const metadata: Metadata = {
   title: 'Nexus-Bio | Synthetic Biology Research Workbench',
@@ -43,13 +44,15 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <Suspense fallback={null}>
-          <WorkbenchSyncProvider />
-        </Suspense>
-        <div id="root">
-          <RouteTransition>{children}</RouteTransition>
-        </div>
-        <OnboardingOverlay />
+        <AuthProvider>
+          <Suspense fallback={null}>
+            <WorkbenchSyncProvider />
+          </Suspense>
+          <div id="root">
+            <RouteTransition>{children}</RouteTransition>
+          </div>
+          <OnboardingOverlay />
+        </AuthProvider>
       </body>
     </html>
   );
