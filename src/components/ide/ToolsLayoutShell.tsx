@@ -34,6 +34,7 @@ import { useUIStore } from '../../store/uiStore';
 import WorkbenchStatusBar from '../workbench/WorkbenchStatusBar';
 import { useWorkbenchStore } from '../../store/workbenchStore';
 import { AxonOrchestratorProvider } from '../../providers/AxonOrchestratorProvider';
+import { ErrorBoundary } from '../shared/ErrorBoundary';
 
 function openCopilot() {
   useUIStore.getState().setCopilotOpen(true);
@@ -153,7 +154,9 @@ export default function ToolsLayoutShell({ children }: ToolsLayoutShellProps) {
               }}
             >
               <WorkbenchStatusBar moduleId={moduleId} />
-              {children}
+              <ErrorBoundary>
+                {children}
+              </ErrorBoundary>
             </motion.div>
           </AnimatePresence>
         </main>

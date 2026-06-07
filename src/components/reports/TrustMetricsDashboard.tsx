@@ -13,10 +13,10 @@ interface RateTile {
 
 const pageStyle: CSSProperties = {
   minHeight: '100vh',
-  background: '#f8fafc',
-  color: '#172033',
+  background: '#0d0f14',
+  color: 'rgba(255,255,255,0.88)',
   fontFamily:
-    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+    "'Public Sans', Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
 };
 
 const shellStyle: CSSProperties = {
@@ -32,24 +32,25 @@ const headerStyle: CSSProperties = {
 };
 
 const eyebrowStyle: CSSProperties = {
-  color: '#0f766e',
+  color: '#BFDCCD',
   fontSize: 13,
   fontWeight: 700,
-  letterSpacing: 0,
+  letterSpacing: '0.06em',
   textTransform: 'uppercase',
+  fontFamily: "'IBM Plex Mono', monospace",
 };
 
 const titleStyle: CSSProperties = {
   margin: 0,
   fontSize: 34,
   lineHeight: 1.12,
-  letterSpacing: 0,
+  letterSpacing: '-0.02em',
 };
 
 const subtitleStyle: CSSProperties = {
   margin: 0,
   maxWidth: 840,
-  color: '#475569',
+  color: 'rgba(255,255,255,0.5)',
   fontSize: 16,
   lineHeight: 1.55,
 };
@@ -69,11 +70,10 @@ const sectionGridStyle: CSSProperties = {
 };
 
 const panelStyle: CSSProperties = {
-  background: '#ffffff',
-  border: '1px solid #dbe4ef',
+  background: 'rgba(255,255,255,0.03)',
+  border: '1px solid rgba(255,255,255,0.08)',
   borderRadius: 8,
   padding: 18,
-  boxShadow: '0 1px 2px rgba(15, 23, 42, 0.05)',
 };
 
 const metricValueStyle: CSSProperties = {
@@ -81,11 +81,12 @@ const metricValueStyle: CSSProperties = {
   fontSize: 30,
   fontWeight: 800,
   letterSpacing: 0,
+  fontFamily: "'IBM Plex Mono', monospace",
 };
 
 const labelStyle: CSSProperties = {
   margin: 0,
-  color: '#475569',
+  color: 'rgba(255,255,255,0.5)',
   fontSize: 13,
   lineHeight: 1.45,
 };
@@ -99,14 +100,18 @@ const tableStyle: CSSProperties = {
 const thStyle: CSSProperties = {
   padding: '10px 8px',
   textAlign: 'left',
-  color: '#334155',
-  borderBottom: '1px solid #dbe4ef',
+  color: 'rgba(255,255,255,0.6)',
+  borderBottom: '1px solid rgba(255,255,255,0.08)',
   fontWeight: 700,
+  fontFamily: "'IBM Plex Mono', monospace",
+  fontSize: 11,
+  letterSpacing: '0.06em',
+  textTransform: 'uppercase',
 };
 
 const tdStyle: CSSProperties = {
   padding: '10px 8px',
-  borderBottom: '1px solid #edf2f7',
+  borderBottom: '1px solid rgba(255,255,255,0.05)',
   verticalAlign: 'top',
 };
 
@@ -116,10 +121,11 @@ const badgeStyle: CSSProperties = {
   minHeight: 24,
   padding: '2px 8px',
   borderRadius: 6,
-  background: '#e0f2fe',
-  color: '#075985',
+  background: 'rgba(191,220,205,0.12)',
+  color: '#BFDCCD',
   fontSize: 12,
   fontWeight: 700,
+  fontFamily: "'IBM Plex Mono', monospace",
 };
 
 function formatPercent(value: number): string {
@@ -194,7 +200,7 @@ export function TrustMetricsDashboard({ report }: TrustMetricsDashboardProps) {
         <section style={gridStyle} aria-label="Trust metric rates">
           {rateTiles.map((tile) => (
             <article key={tile.label} style={panelStyle}>
-              <p style={{ ...labelStyle, fontWeight: 700, color: '#334155' }}>{tile.label}</p>
+              <p style={{ ...labelStyle, fontWeight: 700, color: 'rgba(255,255,255,0.7)' }}>{tile.label}</p>
               <p style={metricValueStyle}>{formatPercent(tile.value)}</p>
               <p style={labelStyle}>{tile.detail}</p>
             </article>
@@ -316,7 +322,7 @@ export function TrustMetricsDashboard({ report }: TrustMetricsDashboardProps) {
 
         <section style={{ ...panelStyle, marginTop: 20 }}>
           <h2 style={{ marginTop: 0, fontSize: 20, letterSpacing: 0 }}>Scope</h2>
-          <ul style={{ margin: 0, paddingLeft: 20, color: '#475569', lineHeight: 1.7 }}>
+          <ul style={{ margin: 0, paddingLeft: 20, color: 'rgba(255,255,255,0.5)', lineHeight: 1.7 }}>
             {report.limitations.map((limitation) => (
               <li key={limitation}>{limitation}</li>
             ))}

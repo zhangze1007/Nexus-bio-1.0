@@ -23,10 +23,12 @@ import { motion, useScroll, useTransform } from 'framer-motion';
 import { Search, ArrowRight, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import HeroFluidCanvas, { type HeroFluidHandle } from './HeroFluidCanvas';
+import { T } from './ide/tokens';
+import styles from './Hero.module.css';
 
-const BRAND = "'Space Grotesk',-apple-system,sans-serif";
-const SANS  = "'Public Sans',-apple-system,sans-serif";
-const MONO  = "'IBM Plex Mono','JetBrains Mono','Fira Code',monospace";
+const BRAND = T.BRAND;
+const SANS  = T.SANS;
+const MONO  = T.MONO;
 
 // Quick preview from OpenAlex (CORS-open, no key)
 interface PreviewResult {
@@ -36,76 +38,51 @@ interface PreviewResult {
   primary_location?: { source?: { display_name?: string } };
 }
 
-async function fetchPreview(q: string): Promise<PreviewResult[]> {
-  const url = `https://api.openalex.org/works?search=${encodeURIComponent(q)}&per-page=4&select=id,title,publication_year,primary_location`;
-  const res = await fetch(url, { signal: AbortSignal.timeout(4000) });
-  if (!res.ok) return [];
-  const data = await res.json();
-  return (data.results ?? []) as PreviewResult[];
-}
-
-// ── Reveal helper ─────────────────────────────────────────────────────
-export function Reveal({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 24, filter: 'blur(6px)' }}
-      whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-      viewport={{ once: true, margin: '-60px' }}
-      transition={{ duration: 0.8, delay, ease: [0.22, 1, 0.36, 1] }}>
-      {children}
-    </motion.div>
-  );
-}
-
-// ── Main ──────────────────────────────────────────────────────────────
 export default function Hero() {
-  const router = useRouter();
-  const headerRef = useRef<HTMLElement>(null);
-  const fluidRef = useRef<HeroFluidHandle>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  const [query, setQuery] = useState('');
-  const [focused, setFocused] = useState(false);
-  const [preview, setPreview] = useState<PreviewResult[]>([]);
+  const router       = useRouter();
+  const headerRef    = useRef<HTMLElement>(null);
+  const inputRef     = useRef<HTMLInputElement>(null);
+  const fluidRef     = useRef<HeroFluidHandle>(null);
+  const [query, setQuery]       = useState('');
+  const [focused, setFocused]   = useState(false);
+  const [preview, setPreview]   = useState<PreviewResult[]>([]);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [, startTransition] = useTransition();
 
-  // Scroll-based parallax on title
-  const { scrollYProgress } = useScroll({
-    target: headerRef,
-    offset: ['start start', 'end start'],
-  });
-  const titleY       = useTransform(scrollYProgress, [0, 1], [0, -80]);
-  const titleOpacity = useTransform(scrollYProgress, [0, 0.55], [1, 0]);
+  // Parallax
+  const { scrollY } = useScroll({ target: headerRef, offset: ['start start', 'end start'] });
+  const titleY       = useTransform(scrollY, [0, 300], [0, -60]);
+  const titleOpacity = useTransform(scrollY, [0, 280], [1, 0]);
 
-  // Debounced preview fetch
+  // Debounced OpenAlex preview
   useEffect(() => {
-    if (!query.trim() || query.length < 3) {
-      setPreview([]);
-      return;
-    }
-    setPreviewLoading(true);
+    if (!focused || query.length < 3) { setPreview([]); return; }
+    const ctrl = new AbortController();
     const timer = setTimeout(async () => {
+      setPreviewLoading(true);
       try {
-        const results = await fetchPreview(query);
-        startTransition(() => setPreview(results));
-      } catch {
-        setPreview([]);
-      } finally {
-        setPreviewLoading(false);
-      }
-    }, 380);
-    return () => clearTimeout(timer);
-  }, [query]);
-
-  const navigate = useCallback((q: string) => {
-    if (q.trim()) router.push(`/research?q=${encodeURIComponent(q.trim())}`);
-  }, [router]);
+        const res = await fetch(
+          `https://api.openalex.org/works?search=${encodeURIComponent(query)}&per_page=4&select=id,title,publication_year,primary_location`,
+          { signal: ctrl.signal },
+        );
+        if (!res.ok) return;
+        const data = await res.json();
+        startTransition(() => setPreview(data.results ?? []));
+      } catch { /* aborted */ }
+      finally { setPreviewLoading(false); }
+    }, 300);
+    return () => { clearTimeout(timer); ctrl.abort(); };
+  }, [query, focused]);
 
   const onFocus = useCallback(() => {
     setFocused(true);
     fluidRef.current?.triggerConverge();
   }, []);
+
+  const navigate = useCallback((q: string) => {
+    const term = q.trim();
+    if (term) router.push(`/research?q=${encodeURIComponent(term)}`);
+  }, [router]);
 
   const onKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') navigate(query);
@@ -115,43 +92,22 @@ export default function Hero() {
   const showPopup = focused && query.length >= 3 && (preview.length > 0 || previewLoading);
 
   return (
-    <header ref={headerRef} style={{
-      position: 'relative',
-      width: '100%',
-      height: '100svh',
-      minHeight: '600px',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      overflow: 'hidden',
-    }}>
+    <header ref={headerRef} className={styles.header}>
       {/* ── Layer 0: B&W Fluid ── */}
       <HeroFluidCanvas ref={fluidRef} />
 
       {/* ── Layer 1: Content ── */}
       <motion.div
-        style={{
-          y: titleY, opacity: titleOpacity,
-          position: 'relative', zIndex: 10,
-          display: 'flex', flexDirection: 'column',
-          alignItems: 'center', textAlign: 'center',
-          padding: '0 clamp(20px, 5vw, 60px)',
-          width: '100%', maxWidth: '900px',
-          pointerEvents: 'auto',
-        }}>
+        style={{ y: titleY, opacity: titleOpacity }}
+        className={styles.content}>
 
         {/* Overline */}
         <motion.p
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, ease: [0.22,1,0.36,1] }}
-          style={{
-            fontFamily: MONO, fontSize: '10px', fontWeight: 500,
-            textTransform: 'uppercase', letterSpacing: '0.18em',
-            color: 'rgba(255,255,255,0.35)',
-            margin: '0 0 28px',
-          }}>
+          className={styles.overline}
+          style={{ fontFamily: MONO }}>
           Synthetic Biology Research Platform
         </motion.p>
 
@@ -160,15 +116,8 @@ export default function Hero() {
           initial={{ opacity: 0, y: 36 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.95, delay: 0.04, ease: [0.22,1,0.36,1] }}
-          style={{
-            fontWeight: 700, fontStyle: 'normal',
-            fontSize: 'clamp(4rem, 11vw, 9.5rem)',
-            lineHeight: 0.95, letterSpacing: '-0.03em',
-            fontFamily: BRAND,
-            color: '#FFFFFF',
-            margin: '0 0 clamp(32px, 5vw, 56px)',
-            textShadow: '0 0 120px rgba(255,255,255,0.06)',
-          }}>
+          className={styles.title}
+          style={{ fontFamily: BRAND }}>
           Nexus-Bio
         </motion.h1>
 
@@ -183,12 +132,8 @@ export default function Hero() {
           <div style={{
             display: 'flex', alignItems: 'center', gap: '12px',
             padding: '0 20px', height: '58px', borderRadius: '20px',
-            background: focused
-              ? 'rgba(15,18,25,0.88)'
-              : 'rgba(15,18,25,0.72)',
-            border: focused
-              ? '1px solid rgba(255,255,255,0.3)'
-              : '1px solid rgba(255,255,255,0.10)',
+            background: focused ? 'rgba(15,18,25,0.88)' : 'rgba(15,18,25,0.72)',
+            border: focused ? '1px solid rgba(255,255,255,0.3)' : '1px solid rgba(255,255,255,0.10)',
             backdropFilter: 'blur(32px) saturate(1.5)',
             WebkitBackdropFilter: 'blur(32px) saturate(1.5)',
             boxShadow: focused
@@ -209,12 +154,8 @@ export default function Hero() {
               onBlur={() => setTimeout(() => setFocused(false), 200)}
               onKeyDown={onKeyDown}
               placeholder="Search pathways, enzymes, literature…"
-              style={{
-                flex: 1, background: 'none', border: 'none', outline: '2px solid rgba(175,195,214,0.5)', outlineOffset: '2px',
-                fontFamily: SANS, fontSize: '15px', fontWeight: 400,
-                color: '#E2E8F0',
-                '::placeholder': { color: 'rgba(148,163,184,0.45)' },
-              } as React.CSSProperties}
+              className={styles.searchInput}
+              style={{ fontFamily: SANS }}
               aria-label="Search research database"
               autoComplete="off"
               spellCheck={false}
@@ -224,20 +165,8 @@ export default function Hero() {
             <button
               aria-label="Search"
               onClick={() => navigate(query)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '6px',
-                padding: '8px 18px', borderRadius: '20px', flexShrink: 0,
-                background: query.trim()
-                  ? 'rgba(255,255,255,0.08)'
-                  : 'rgba(255,255,255,0.04)',
-                border: query.trim()
-                  ? '1px solid rgba(255,255,255,0.25)'
-                  : '1px solid rgba(255,255,255,0.07)',
-                color: query.trim() ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.2)',
-                fontFamily: MONO, fontSize: '11px', fontWeight: 500,
-                cursor: query.trim() ? 'pointer' : 'default',
-                transition: 'all 0.2s',
-              }}>
+              className={`${styles.searchButton} ${query.trim() ? styles.searchButtonActive : styles.searchButtonInactive}`}
+              style={{ fontFamily: MONO }}>
               {previewLoading
                 ? <Loader2 size={11} style={{ animation: 'spin 1s linear infinite' }} />
                 : <ArrowRight size={11} />}
@@ -245,59 +174,30 @@ export default function Hero() {
             </button>
           </div>
 
-          {/* ── Preview Dropdown (Glassmorphism 2.0) ── */}
+          {/* ── Preview Dropdown ── */}
           {showPopup && (
             <motion.div
               initial={{ opacity: 0, y: -6, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -4 }}
               transition={{ duration: 0.18 }}
-              style={{
-                position: 'absolute', top: 'calc(100% + 8px)',
-                left: 0, right: 0, zIndex: 50,
-                borderRadius: '16px',
-                background: 'rgba(10,13,20,0.94)',
-                border: '1px solid rgba(255,255,255,0.08)',
-                backdropFilter: 'blur(40px) saturate(1.6)',
-                WebkitBackdropFilter: 'blur(40px) saturate(1.6)',
-                boxShadow: '0 0 0 1px rgba(255,255,255,0.04), 0 32px 80px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.05)',
-                overflow: 'hidden',
-              }}>
+              className={styles.preview}>
               {previewLoading && preview.length === 0 ? (
-                <div style={{ padding: '16px 20px', display:'flex', alignItems:'center', gap:'10px' }}>
-                  <Loader2 size={12} style={{ color:'rgba(255,255,255,0.75)', animation:'spin 1s linear infinite' }} />
-                  <span style={{ fontFamily:MONO, fontSize:'11px', color:'rgba(148,163,184,0.6)' }}>
+                <div style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <Loader2 size={12} style={{ color: 'rgba(255,255,255,0.75)', animation: 'spin 1s linear infinite' }} />
+                  <span style={{ fontFamily: MONO, fontSize: '11px', color: 'rgba(148,163,184,0.6)' }}>
                     Searching OpenAlex…
                   </span>
                 </div>
-              ) : preview.map((r, i) => (
+              ) : preview.map((r) => (
                 <button
                   key={r.id}
                   onMouseDown={() => navigate(r.title)}
-                  style={{
-                    display: 'block', width: '100%', textAlign: 'left',
-                    padding: '12px 20px', background: 'none', border: 'none',
-                    cursor: 'pointer',
-                    borderBottom: i < preview.length - 1
-                      ? '1px solid rgba(255,255,255,0.04)'
-                      : 'none',
-                    transition: 'background 0.15s',
-                  }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'none'; }}>
-                  <p style={{
-                    fontFamily: SANS, fontSize: '13px', fontWeight: 400,
-                    color: 'rgba(226,232,240,0.82)',
-                    margin: '0 0 4px',
-                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                  }}>
+                  className={styles.previewItem}>
+                  <p className={styles.previewTitle} style={{ fontFamily: SANS }}>
                     {r.title}
                   </p>
-                  <p style={{
-                    fontFamily: MONO, fontSize: '10px',
-                    color: 'rgba(148,163,184,0.5)',
-                    margin: 0,
-                  }}>
+                  <p className={styles.previewMeta} style={{ fontFamily: MONO }}>
                     {r.publication_year ?? '—'}
                     {r.primary_location?.source?.display_name
                       ? ` · ${r.primary_location.source.display_name}`
@@ -307,22 +207,15 @@ export default function Hero() {
               ))}
 
               {/* Footer: view all */}
-              <button
-                onMouseDown={() => navigate(query)}
-                style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  gap: '8px', width: '100%', padding: '12px 20px',
-                  background: 'rgba(255,255,255,0.04)', border: 'none',
-                  borderTop: '1px solid rgba(255,255,255,0.05)',
-                  cursor: 'pointer', transition: 'background 0.15s',
-                }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.06)'; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'; }}>
-                <span style={{ fontFamily: MONO, fontSize: '10px', fontWeight: 500, color: 'rgba(255,255,255,0.75)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-                  View all results for "{query}"
-                </span>
-                <ArrowRight size={10} style={{ color: 'rgba(255,255,255,0.75)' }} />
-              </button>
+              <div className={styles.previewFooter}>
+                <button
+                  onMouseDown={() => navigate(query)}
+                  className={styles.previewFooterButton}
+                  style={{ fontFamily: MONO }}>
+                  View all results for &ldquo;{query}&rdquo;
+                  <ArrowRight size={10} />
+                </button>
+              </div>
             </motion.div>
           )}
         </motion.div>
@@ -332,27 +225,14 @@ export default function Hero() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.7, delay: 0.42 }}
-          style={{
-            fontFamily: SANS, fontSize: '13px',
-            color: 'rgba(148,163,184,0.4)',
-            margin: 'clamp(16px, 2vw, 24px) 0 0',
-            letterSpacing: '0.01em',
-          }}>
-          Metabolic pathways · Enzyme kinetics · Literature synthesis · 3D visualization
+          className={styles.tagline}
+          style={{ fontFamily: SANS }}>
+          Metabolic pathways<span className={styles.taglineDivider} />Enzyme kinetics<span className={styles.taglineDivider} />Literature synthesis<span className={styles.taglineDivider} />3D visualization
         </motion.p>
       </motion.div>
 
       {/* ── Bottom fade to bg-base ── */}
-      <div style={{
-        position: 'absolute', bottom: 0, left: 0, right: 0,
-        height: '160px', pointerEvents: 'none', zIndex: 5,
-        background: 'linear-gradient(to bottom, transparent, #0A0D14)',
-      }} />
-
-      {/* ── Spin keyframe (for Loader2) ── */}
-      <style>{`
-        @keyframes spin { to { transform: rotate(360deg); } }
-      `}</style>
+      <div className={styles.bottomGradient} />
     </header>
   );
 }

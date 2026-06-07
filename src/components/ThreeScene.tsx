@@ -850,7 +850,7 @@ function Scene({ nodes, edges, onNodeClick, selectedNodeId, roughnessTexture, gl
       const e = nodeMap.get(edge.end);
       if (!s || !e || !Array.isArray(s.position) || !Array.isArray(e.position)) return null;
       return { key:`${edge.start}-${edge.end}`, edge, s, e, active: hovId===edge.start||hovId===edge.end||selectedNodeId===edge.start||selectedNodeId===edge.end, color: getColor(s) };
-    }).filter(Boolean) as any[],
+    }).filter((e): e is NonNullable<typeof e> => e !== null),
   [edges, nodeMap, hovId, selectedNodeId]);
 
   return (

@@ -37,7 +37,7 @@ async function searchWikipediaCommons(query: string): Promise<CellImage[]> {
       const imgRes = await fetch(imgUrl);
       if (!imgRes.ok) continue;
       const imgData = await imgRes.json();
-      const pageData = Object.values(imgData?.query?.pages || {})[0] as any;
+      const pageData = Object.values(imgData?.query?.pages || {})[0] as { thumbnail?: { source?: string } } | undefined;
 
       if (pageData?.thumbnail?.source) {
         images.push({

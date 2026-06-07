@@ -146,7 +146,7 @@ export default function ErrorBarChart({
               <LabelList
                 dataKey="value"
                 position="top"
-                formatter={(formatValue ?? fmt2) as any}
+                formatter={(formatValue ?? fmt2) as (value: unknown) => string}
                 style={{ fontFamily: FONT.MONO, fontSize: 10, fill: 'rgba(240,244,252,0.86)' }}
               />
             ) : null}

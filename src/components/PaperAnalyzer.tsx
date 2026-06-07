@@ -9,6 +9,7 @@ import {
 import {
   PathwayNode, PathwayEdge, isValidNode, isValidEdge, sanitizeNodeId,
   AxonInteraction, BottleneckEnzyme, DeNovoDesignStrategy,
+  NodeType, NodeColorMapping,
 } from '../types';
 import { BIO_THEME_COLORS } from './ThreeScene';
 import type { StructuredAnalysisPayload } from '../store/workbenchStore';
@@ -166,7 +167,7 @@ function normalizePathway(parsed: unknown): { nodes: PathwayNode[]; edges: Pathw
       label: String(n.label).slice(0, 32),
       canonicalLabel: n.canonicalLabel ? String(n.canonicalLabel) : undefined,
       nodeType: (VALID_NODE_TYPES.includes(n.nodeType as string)
-        ? n.nodeType : 'unknown') as any,
+        ? n.nodeType : 'unknown') as NodeType,
       summary: n.summary ? String(n.summary) : 'No summary available.',
       evidenceSnippet: n.evidenceSnippet ? String(n.evidenceSnippet) : undefined,
       citation: n.citation ? String(n.citation) : 'Extracted from provided text',
@@ -178,7 +179,7 @@ function normalizePathway(parsed: unknown): { nodes: PathwayNode[]; edges: Pathw
       thermodynamic_stability: typeof n.thermodynamic_stability === 'string'
         ? n.thermodynamic_stability : undefined,
       color_mapping: (VALID_COLOR_MAPPINGS.includes(n.color_mapping as string)
-        ? n.color_mapping : undefined) as any,
+        ? n.color_mapping : undefined) as NodeColorMapping | undefined,
       audit_trail: typeof n.audit_trail === 'string' ? n.audit_trail : undefined,
       toxicity_impact: typeof n.toxicity_impact === 'string' ? n.toxicity_impact : undefined,
       separation_cost_index: typeof n.separation_cost_index === 'number'
@@ -216,7 +217,7 @@ function normalizePathway(parsed: unknown): { nodes: PathwayNode[]; edges: Pathw
       start: sanitizeNodeId(String(e.start)),
       end: sanitizeNodeId(String(e.end)),
       relationshipType: validEdgeTypes.includes(e.relationshipType) ? e.relationshipType : 'unknown',
-      direction: (['forward','reverse','bidirectional'].includes(e.direction) ? e.direction : 'forward') as any,
+      direction: (['forward','reverse','bidirectional'].includes(e.direction) ? e.direction : 'forward') as 'forward' | 'reverse' | 'bidirectional',
       evidence: e.evidence ? String(e.evidence) : undefined,
       confidenceScore: typeof e.confidenceScore === 'number'
         ? Math.min(1, Math.max(0, e.confidenceScore)) : undefined,
@@ -226,7 +227,7 @@ function normalizePathway(parsed: unknown): { nodes: PathwayNode[]; edges: Pathw
       spontaneity: typeof e.spontaneity === 'string' ? e.spontaneity : undefined,
       yield_prediction: typeof e.yield_prediction === 'string' ? e.yield_prediction : undefined,
       thickness_mapping: (['Thick','Medium','Thin'].includes(e.thickness_mapping)
-        ? e.thickness_mapping : undefined) as any,
+        ? e.thickness_mapping : undefined) as 'Thick' | 'Medium' | 'Thin' | undefined,
       audit_trail: typeof e.audit_trail === 'string' ? e.audit_trail : undefined,
     }))
     // Only filter edges where BOTH sanitized IDs exist — more permissive
@@ -619,7 +620,7 @@ export default function PaperAnalyzer({
               style={{
                 width: '32px', height: '32px', borderRadius: '50%', border: 'none',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-                background: analysisState === 'analyzing' ? 'rgba(255,255,255,0.06)' : canAnalyze ? '#ffffff' : 'rgba(255,255,255,0.07)',
+                background: analysisState === 'analyzing' ? 'rgba(255,255,255,0.06)' : canAnalyze ? '#BFDCCD' : 'rgba(255,255,255,0.07)',
                 color: analysisState === 'analyzing' || !canAnalyze ? 'rgba(255,255,255,0.2)' : '#0a0a0a',
                 transition: 'all 0.15s',
               }}>

@@ -37,6 +37,7 @@ import { useNavigation } from '../../../contexts/NavigationContext';
 import { T } from '../../ide/tokens';
 import { PATHD_THEME } from '../../workbench/workbenchTheme';
 import ToolTabBar, { type ToolTab } from './ToolTabBar';
+import { ErrorBoundary } from '../../shared/ErrorBoundary';
 type ControlVarsStyle = CSSProperties & Record<`--${string}`, string>;
 
 export interface ToolShellProps {
@@ -325,7 +326,9 @@ export default function ToolShell({
             gap: '8px',
           }}
         >
-          {children}
+          <ErrorBoundary>
+            {children}
+          </ErrorBoundary>
         </div>
       </div>
 

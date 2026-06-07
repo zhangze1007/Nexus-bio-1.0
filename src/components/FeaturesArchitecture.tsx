@@ -13,9 +13,10 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import HomeInteractiveCard from './HomeInteractiveCard';
+import { T } from './ide/tokens';
 
-const HEADER = "'Public Sans',-apple-system,sans-serif";
-const MONO = "'JetBrains Mono','Fira Code',monospace";
+const HEADER = T.SANS;
+const MONO = T.MONO;
 
 interface EngineBlock {
   label: string;
@@ -27,6 +28,7 @@ interface EngineBlock {
   }>;
   notes: string[];
   icon: LucideIcon;
+  featured?: boolean;
 }
 
 const ENGINE_BLOCKS: EngineBlock[] = [
@@ -75,6 +77,7 @@ const ENGINE_BLOCKS: EngineBlock[] = [
   {
     label: 'Yield',
     title: 'Genetic ROI & Carbon Efficiency',
+    featured: true,
     description:
       'Carbon retention is treated as an engineering return signal so atom economy, diversion loss, and chassis burden stay visible during route choice.',
     models: [
@@ -96,6 +99,7 @@ const ENGINE_BLOCKS: EngineBlock[] = [
   {
     label: 'Constraint',
     title: 'Stoichiometric Flux Solver',
+    featured: true,
     description:
       'Pathway performance is solved as a constrained stoichiometric system so growth, production, and limiting resources remain on one quantitative state.',
     models: [
@@ -159,6 +163,7 @@ const ENGINE_BLOCKS: EngineBlock[] = [
   {
     label: 'Dynamics',
     title: 'Regulatory Control Dynamics',
+    featured: true,
     description:
       'Time-dependent pathway behavior is modeled with enzyme kinetics, Hill regulation, Monod growth, and RK4 integration so stability is treated as a control problem.',
     models: [
@@ -180,6 +185,7 @@ const ENGINE_BLOCKS: EngineBlock[] = [
   {
     label: 'Catalysis',
     title: 'Catalyst Design & Ranking',
+    featured: true,
     description:
       'Catalyst choice couples binding plausibility, sequence design, and multi-objective ranking so enzyme selection remains tied to system viability.',
     models: [
@@ -264,6 +270,7 @@ const ENGINE_BLOCKS: EngineBlock[] = [
   {
     label: 'Inference',
     title: 'Omics & Spatial Inference',
+    featured: true,
     description:
       'Omics interpretation uses low-rank factorization, linear embeddings, and spatial autocorrelation to turn assay and spatial layers into structured bottleneck evidence.',
     models: [
@@ -427,31 +434,18 @@ export default function FeaturesArchitecture() {
               fontFamily: HEADER,
               fontSize: '14px',
               color: 'rgba(255,255,255,0.35)',
-              margin: '0 0 12px',
+              margin: 0,
               lineHeight: 1.65,
               maxWidth: '760px',
             }}
           >
-            Nexus-Bio is powered by a matrix of quantitative engines behind the platform:
-            flux solvers, carbon and cofactor ledgers, DSP and toxicity screens, dynamic control,
-            catalytic search, and validation inference that all carry real computational identity.
-          </p>
-          <p
-            style={{
-              fontFamily: MONO,
-              fontSize: '11px',
-              color: 'rgba(255,255,255,0.26)',
-              margin: 0,
-              letterSpacing: '0.05em',
-              textTransform: 'uppercase',
-            }}
-          >
-            Model families below are derived from the live codebase; detailed real / partial / demo labeling remains in-tool.
+            Nexus-Bio is powered by quantitative engines that carry real computational identity —
+            flux solvers, catalyst design, kinetic regulation, and omics inference working together as one system.
           </p>
         </motion.div>
 
         <div className="nb-home-engine-grid">
-          {ENGINE_BLOCKS.map((block, index) => (
+          {ENGINE_BLOCKS.filter(b => b.featured).map((block, index) => (
             <EngineCard key={block.title} block={block} index={index} />
           ))}
         </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useId } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { T } from '../../ide/tokens';
@@ -20,7 +20,7 @@ export default function FloatingControlRail({
   defaultCollapsed = false,
 }: FloatingControlRailProps) {
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
-  const contentId = 'floating-rail-content';
+  const contentId = useId();
 
   return (
     <motion.div

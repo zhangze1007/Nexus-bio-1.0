@@ -75,7 +75,11 @@ export default function ScientificHero({
     return (
       <section
         className="nb-scientific-hero nb-scientific-hero--collapsed"
+        role="button"
+        tabIndex={0}
+        aria-label={`${title} — click to expand`}
         onClick={() => setCollapsed(false)}
+        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setCollapsed(false); } }}
         style={{
           borderRadius: '12px',
           border: '1px solid rgba(255,255,255,0.10)',

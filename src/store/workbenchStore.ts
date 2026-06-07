@@ -1066,7 +1066,7 @@ export const useWorkbenchStore = create<WorkbenchState>()(
   persist(
     (set, get) => ({
       ...initialState,
-      ...createAxonSlice(set, get, undefined as any),
+      ...createAxonSlice(set, get, undefined as unknown as Parameters<typeof createAxonSlice>[2]),
 
       ensureProject: (seed) => {
         const now = Date.now();

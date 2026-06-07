@@ -264,9 +264,9 @@ Be specific and scientific. No generic statements.`;
       {/* Run button */}
       <div style={{ display: 'flex', gap: '8px' }}>
         <button onClick={runSimulation}
-          style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px', padding: '10px', borderRadius: '16px', background: '#ffffff', color: '#0a0a0a', border: 'none', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', transition: 'background 0.15s' }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#e5e5e5'; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#ffffff'; }}>
+          style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px', padding: '10px', borderRadius: '16px', background: '#BFDCCD', color: '#0a0a0a', border: 'none', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', transition: 'background 0.15s' }}
+          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#A8CDB9'; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#BFDCCD'; }}>
           <Play size={13} />
           Run Simulation
         </button>

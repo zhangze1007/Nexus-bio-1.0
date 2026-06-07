@@ -848,7 +848,7 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
               bottom: '6px',
               minWidth: '108px',
               padding: '0 16px',
-              background: isSearching ? 'rgba(255,255,255,0.08)' : '#ffffff',
+              background: isSearching ? 'rgba(255,255,255,0.08)' : '#BFDCCD',
               color: isSearching ? RESEARCH_PALETTE.textFaint : '#0a0a0a',
               border: 'none',
               borderRadius: '12px',
@@ -862,7 +862,7 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
               letterSpacing: '-0.01em',
               fontFamily: SANS,
               transition: 'transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease',
-              boxShadow: isSearching ? 'none' : '0 10px 28px rgba(255,255,255,0.14)',
+              boxShadow: isSearching ? 'none' : '0 10px 28px rgba(191,220,205,0.14)',
             }}
             className="nb-research-primary-control"
           >
@@ -890,10 +890,10 @@ export default function SemanticSearch({ onAnalyzePaper, initialQuery }: Semanti
 
           .nb-research-primary-control:hover:not(:disabled),
           .nb-research-primary-control:focus-visible:not(:disabled) {
-            background: #ffffff !important;
+            background: #A8CDB9 !important;
             color: #0a0a0a !important;
             transform: translateY(-1px) !important;
-            box-shadow: 0 14px 32px rgba(255,255,255,0.18) !important;
+            box-shadow: 0 14px 32px rgba(191,220,205,0.18) !important;
             outline: none;
           }
 

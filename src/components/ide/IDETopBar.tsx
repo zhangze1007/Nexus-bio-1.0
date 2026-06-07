@@ -75,7 +75,7 @@ export default function IDETopBar({ moduleId, actions }: IDETopBarProps) {
           Home
         </Link>
 
-        <span style={{ color: PATHD_THEME.label }}>/</span>
+        <span aria-hidden="true" style={{ color: PATHD_THEME.label }}>/</span>
 
         <Link
           href="/tools"
@@ -95,7 +95,7 @@ export default function IDETopBar({ moduleId, actions }: IDETopBarProps) {
 
         {!isDirectory && (
           <>
-            <span style={{ color: PATHD_THEME.label }}>/</span>
+            <span aria-hidden="true" style={{ color: PATHD_THEME.label }}>/</span>
 
             <span style={{ fontFamily: MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase' }}>
               {tool?.shortLabel ?? moduleId}

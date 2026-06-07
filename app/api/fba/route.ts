@@ -28,9 +28,17 @@ function asKnockouts(value: unknown) {
 }
 
 export async function POST(request: Request) {
-  const body = await request.json().catch(() => null);
+  const requestId = request.headers.get('x-request-id') || `fba_${Date.now().toString(36)}`;
+
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch (err) {
+    console.warn(JSON.stringify({ level: 'warn', message: 'FBA: invalid JSON body', requestId, error: err instanceof Error ? err.message : String(err), timestamp: new Date().toISOString() }));
+    return NextResponse.json({ ok: false, error: 'Invalid FBA request payload', requestId }, { status: 400, headers: getCorsHeaders(request) });
+  }
   if (!body || typeof body !== 'object') {
-    return NextResponse.json({ ok: false, error: 'Invalid FBA request payload' }, { status: 400, headers: getCorsHeaders(request) });
+    return NextResponse.json({ ok: false, error: 'Invalid FBA request payload', requestId }, { status: 400, headers: getCorsHeaders(request) });
   }
   const input = body as Record<string, any>;
 
@@ -97,13 +105,18 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ ok: true, mode: 'single', result, provenance: provenanceEntry }, { headers: getCorsHeaders(request) });
   } catch (error) {
-    if (process.env.NODE_ENV !== 'production') {
-      console.error('FBA route failed', error);
-    }
+    console.error(JSON.stringify({
+      level: 'error',
+      message: 'FBA route failed',
+      requestId,
+      error: error instanceof Error ? error.message : String(error),
+      timestamp: new Date().toISOString(),
+    }));
     return NextResponse.json(
       {
         ok: false,
         error: error instanceof Error ? error.message : 'Authoritative FBA solve failed',
+        requestId,
       },
       { status: 500, headers: getCorsHeaders(request) },
     );

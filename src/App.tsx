@@ -3,11 +3,7 @@
 /**
  * Nexus-Bio — Home Page Shell
  *
- * Layout: TopNav (fixed) → Hero (fluid+search) → Engine Architecture → Contact → Footer
- *
- * 3D Pathway Visualization lives at /tools/metabolic-eng
- * Paper Analyzer                lives at /analyze
- * Research Search               lives at /research
+ * Layout: TopNav (fixed) → Hero (fluid+search) → Metrics → CTA → Engine Architecture → Contact → Footer
  */
 
 import { useRef } from 'react';
@@ -17,20 +13,21 @@ import TopNav from './components/TopNav';
 import DevModePanel from './components/DevModePanel';
 import FeaturesArchitecture from './components/FeaturesArchitecture';
 import HomeInteractiveCard from './components/HomeInteractiveCard';
-import { Mail, Linkedin, Dna, ShieldCheck, Zap, BarChart3 } from 'lucide-react';
+import { Linkedin, Dna, ShieldCheck, Zap, BarChart3 } from 'lucide-react';
+import { T } from './components/ide/tokens';
+import styles from './App.module.css';
 
-// ── Design tokens ──────────────────────────────────────────────────────
-const H = "'Public Sans',-apple-system,sans-serif";
-const MONO = "'IBM Plex Mono','JetBrains Mono','Fira Code',monospace";
+const H = T.SANS;
+const MONO = T.MONO;
 
 // ── Scroll reveal ──────────────────────────────────────────────────────
-function Reveal({ children, delay = 0, style }: {
-  children: React.ReactNode; delay?: number; style?: React.CSSProperties;
+function Reveal({ children, delay = 0, className }: {
+  children: React.ReactNode; delay?: number; className?: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: '-80px' });
   return (
-    <motion.div ref={ref} style={style}
+    <motion.div ref={ref} className={className}
       initial={{ opacity: 0, y: 28 }}
       animate={inView ? { opacity: 1, y: 0 } : {}}
       transition={{ duration: 0.6, delay, ease: [0.22, 1, 0.36, 1] }}>
@@ -42,45 +39,75 @@ function Reveal({ children, delay = 0, style }: {
 // ── Main ───────────────────────────────────────────────────────────────
 export default function App() {
   return (
-    <div style={{ background: '#000', color: '#FFF', minHeight: '100vh' }}>
+    <div className={styles.shell}>
       <TopNav />
 
       <main>
         {/* ── HERO ── */}
         <Hero />
 
+        {/* ── METRICS STRIP ── */}
+        <section className={styles.metrics}>
+          <div className={styles.metricsGrid}>
+            {[
+              { value: '14', label: 'Research Tools' },
+              { value: '6', label: 'Database Integrations' },
+              { value: '3D', label: 'Real-time Visualization' },
+              { value: '100%', label: 'Client-side Computation' },
+            ].map((m) => (
+              <div key={m.label} className={styles.metricItem}>
+                <div className={styles.metricValue} style={{ fontFamily: MONO }}>{m.value}</div>
+                <div className={styles.metricLabel} style={{ fontFamily: H }}>{m.label}</div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ── CTA BAND ── */}
+        <section className={styles.ctaBand}>
+          <div className={styles.ctaGroup}>
+            <a href="/tools" className={styles.ctaPrimary} style={{ fontFamily: H }}>
+              Explore Platform →
+            </a>
+            <a href="/tools/metabolic-eng" className={styles.ctaSecondary} style={{ fontFamily: H }}>
+              See it in Action
+            </a>
+          </div>
+        </section>
+
         {/* ── ENGINE ARCHITECTURE ── */}
         <Reveal>
           <FeaturesArchitecture />
         </Reveal>
 
-        {/* ── CONTACT (embedded) ── */}
-        <section id="contact" style={{ padding: 'clamp(64px,10vw,112px) clamp(16px,4vw,40px)', background: '#000' }}>
-          <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
-            <Reveal style={{ marginBottom: '48px' }}>
-              <h2 style={{ fontFamily: H, fontSize: 'clamp(1.8rem,3.5vw,2.8rem)', fontWeight: 700, color: '#FFFFFF', letterSpacing: '-0.025em', lineHeight: 1.1, margin: '0 0 14px' }}>
+        {/* ── CONTACT ── */}
+        <section id="contact" className={styles.contact}>
+          <div className={styles.contactInner}>
+            <Reveal className={styles.contactHeader} delay={0}>
+              <h2 className={styles.sectionHeading} style={{ fontFamily: H }}>
                 Get in Touch
               </h2>
-              <p style={{ fontFamily: H, fontSize: '14px', color: 'rgba(255,255,255,0.35)', margin: 0, lineHeight: 1.65, maxWidth: '420px' }}>
-                Open to research collaborations, consulting inquiries, and investment discussions.
+              <p className={styles.sectionSub} style={{ fontFamily: H }}>
+                Open to research collaborations, partnerships, and pilot programs with research institutions and iGEM teams.
               </p>
             </Reveal>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(260px,1fr))', gap: '0', maxWidth: '640px', border: '0.5px solid rgba(255,255,255,0.08)' }}>
+            <div className={styles.contactGrid}>
               <HomeInteractiveCard
-                href="mailto:fuchanze@gmail.com"
-                icon={<Mail size={16} style={{ color: 'rgba(255,255,255,0.55)' }} />}
-                label="Email"
-                title="fuchanze@gmail.com"
-                description="Research collaborations · Consulting · General inquiries"
-                footer="Send email"
+                href="https://github.com/zhangze1007/Nexus-bio-1.0"
+                icon={<Dna size={16} style={{ color: 'rgba(255,255,255,0.55)' }} />}
+                label="Open Source"
+                title="View on GitHub"
+                description="Explore the codebase · Report issues · Contribute"
+                footer="Star on GitHub"
+                external
               />
               <HomeInteractiveCard
                 href="https://www.linkedin.com/in/zhangze-foo-3575ba359"
                 icon={<Linkedin size={16} style={{ color: 'rgba(255,255,255,0.55)' }} />}
-                label="LinkedIn"
+                label="Connect"
                 title="Zhang Ze Foo"
-                description="Founder · Synthetic Biology & Metabolic Engineering · Nexus-Bio"
+                description="Founder · Synthetic Biology & Metabolic Engineering"
                 footer="View profile"
                 external
               />
@@ -88,38 +115,36 @@ export default function App() {
           </div>
         </section>
 
-        <DevModePanel />
+        {process.env.NODE_ENV === 'development' && <DevModePanel />}
 
         {/* ── FOOTER ── */}
-        <footer style={{ padding: '24px clamp(16px,4vw,40px)', borderTop: '0.5px solid rgba(255,255,255,0.07)' }}>
-          <div style={{ maxWidth: '1280px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div style={{ width: '22px', height: '22px', borderRadius: '6px', background: 'rgba(255,255,255,0.05)', border: '0.5px solid rgba(255,255,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Dna size={11} style={{ color: 'rgba(255,255,255,0.5)' }} />
+        <footer className={styles.footer}>
+          <div className={styles.footerInner}>
+            <div className={styles.footerBrand}>
+              <div className={styles.footerLogo}>
+                <Dna size={11} />
               </div>
-              <span style={{ fontFamily: H, fontSize: '13px', fontWeight: 600, color: 'rgba(255,255,255,0.5)', letterSpacing: '-0.01em' }}>Nexus-Bio</span>
+              <span className={styles.footerBrandName} style={{ fontFamily: H }}>Nexus-Bio</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <div className={styles.footerBadges}>
               {[
                 { icon: <ShieldCheck size={10} />, label: 'WCAG 2.2 AA' },
                 { icon: <Zap size={10} />, label: 'INP ≤ 50ms' },
                 { icon: <BarChart3 size={10} />, label: 'WebGL2 + FSM' },
               ].map(({ icon, label }) => (
-                <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '3px 8px', background: 'rgba(255,255,255,0.03)', border: '0.5px solid rgba(255,255,255,0.07)' }}>
-                  <span style={{ color: 'rgba(255,255,255,0.25)' }}>{icon}</span>
-                  <span style={{ fontFamily: MONO, fontSize: '9px', color: 'rgba(255,255,255,0.25)', letterSpacing: '0.06em' }}>{label}</span>
+                <div key={label} className={styles.footerBadge}>
+                  <span className={styles.footerBadgeIcon}>{icon}</span>
+                  <span className={styles.footerBadgeLabel} style={{ fontFamily: MONO }}>{label}</span>
                 </div>
               ))}
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
-              <p style={{ fontFamily: MONO, fontSize: '10px', color: 'rgba(255,255,255,0.22)', margin: 0 }}>
+            <div className={styles.footerMeta}>
+              <p className={styles.footerCopyright} style={{ fontFamily: MONO }}>
                 © {new Date().getFullYear()} Nexus-Bio
               </p>
               {['Terms of Service', 'Privacy Policy'].map((t, i) => (
                 <a key={i} href={t === 'Terms of Service' ? '/terms' : '/privacy'}
-                  style={{ fontFamily: H, fontSize: '11px', color: 'rgba(255,255,255,0.22)', textDecoration: 'none', transition: 'color 0.2s' }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#FFF'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.22)'; }}>
+                  className={styles.footerLink} style={{ fontFamily: H }}>
                   {t}
                 </a>
               ))}

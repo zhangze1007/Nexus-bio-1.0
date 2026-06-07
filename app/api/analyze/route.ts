@@ -482,7 +482,8 @@ async function tryGroq(
       const text = data?.choices?.[0]?.message?.content;
       if (text) return text;
 
-    } catch {
+    } catch (err) {
+      console.warn(JSON.stringify({ level: 'warn', message: 'Groq provider failed', error: err instanceof Error ? err.message : String(err), timestamp: new Date().toISOString() }));
       continue;
     }
   }
@@ -546,7 +547,8 @@ async function tryGemini(
       const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
       if (text) return text;
 
-    } catch {
+    } catch (err) {
+      console.warn(JSON.stringify({ level: 'warn', message: 'Groq provider failed', error: err instanceof Error ? err.message : String(err), timestamp: new Date().toISOString() }));
       continue;
     }
   }
@@ -666,6 +668,8 @@ Target compound: ${searchQuery}`;
 }
 
 export async function POST(req: NextRequest) {
+  const requestId = req.headers.get('x-request-id') || `anon_${Date.now().toString(36)}`;
+
   // ── Rate limiting ──
   const ip = req.headers.get('x-forwarded-for') ?? req.headers.get('x-real-ip') ?? 'unknown';
   if (!checkRateLimit(ip)) {
@@ -692,7 +696,8 @@ export async function POST(req: NextRequest) {
   try {
     rawBody = await req.json();
   } catch {
-    return jsonResponse({ error: 'Invalid JSON body' }, 400);
+    console.warn(JSON.stringify({ level: 'warn', message: 'Invalid JSON body', requestId, ip, timestamp: new Date().toISOString() }));
+    return jsonResponse({ error: 'Invalid JSON body', requestId }, 400, req);
   }
 
   // ── Dynamic search query mode ──
