@@ -1,5 +1,6 @@
 /* Import existing design system and styles */
 @import '../src/index.css';
+@import '../src/components/tools/shared/toolDesignSystem.css';
 
 /* ── Global typographic reset ── */
 :root {

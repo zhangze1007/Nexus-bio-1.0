@@ -1,0 +1,155 @@
+/**
+ * Nexus-Bio Tool Design System — Shared CSS Custom Properties
+ *
+ * This file defines the single source of truth for all tool page styling.
+ * Every tool page should reference these variables instead of hardcoded values.
+ *
+ * Usage:
+ *   .my-tool { padding: var(--nb-space-md); border-radius: var(--nb-radius-md); }
+ */
+
+:root {
+  /* ── Typography Scale (Tufte-inspired 5-stop) ── */
+  --nb-font-sans: 'Public Sans', -apple-system, sans-serif;
+  --nb-font-mono: 'IBM Plex Mono', 'JetBrains Mono', 'Fira Code', monospace;
+  --nb-font-brand: 'Space Grotesk', -apple-system, sans-serif;
+
+  --nb-fs-xs: 10px;   /* metadata, captions, footnotes */
+  --nb-fs-sm: 12px;   /* body, descriptions, secondary labels */
+  --nb-fs-md: 14px;   /* primary labels, controls */
+  --nb-fs-lg: 18px;   /* section headings */
+  --nb-fs-xl: 24px;   /* hero titles */
+
+  /* ── Spacing Scale (5-stop) ── */
+  --nb-space-xs: 4px;
+  --nb-space-sm: 8px;
+  --nb-space-md: 16px;
+  --nb-space-lg: 24px;
+  --nb-space-xl: 32px;
+
+  /* ── Border Radius Scale ── */
+  --nb-radius-sm: 8px;
+  --nb-radius-md: 12px;
+  --nb-radius-lg: 16px;
+  --nb-radius-xl: 20px;
+
+  /* ── Shadow Scale ── */
+  --nb-shadow-low: 0 2px 8px rgba(0, 0, 0, 0.18);
+  --nb-shadow-medium: 0 8px 24px rgba(0, 0, 0, 0.28);
+  --nb-shadow-high: 0 16px 48px rgba(0, 0, 0, 0.38);
+
+  /* ── Surface Colors ── */
+  --nb-surface-bg: #050505;
+  --nb-surface-panel: rgba(26, 31, 37, 0.88);
+  --nb-surface-inset: rgba(31, 37, 44, 0.92);
+  --nb-surface-glass: rgba(255, 255, 255, 0.03);
+
+  /* ── Border Colors ── */
+  --nb-border: rgba(255, 255, 255, 0.07);
+  --nb-border-active: rgba(255, 255, 255, 0.15);
+  --nb-border-hover: rgba(255, 255, 255, 0.12);
+
+  /* ── Text Colors ── */
+  --nb-text-value: rgba(250, 246, 240, 0.96);
+  --nb-text-label: rgba(217, 225, 235, 0.68);
+  --nb-text-muted: rgba(217, 225, 235, 0.4);
+
+  /* ── Accent Palette (5-color scientific) ── */
+  --nb-mint: #BFDCCD;
+  --nb-sky: #AFC3D6;
+  --nb-lilac: #CFC4E3;
+  --nb-apricot: #E7C7A9;
+  --nb-coral: #E8A3A1;
+
+  /* ── Interaction Colors ── */
+  --nb-hover-bg: rgba(255, 255, 255, 0.04);
+  --nb-active-bg: rgba(255, 255, 255, 0.08);
+  --nb-focus-ring: rgba(175, 195, 214, 0.5);
+}
+
+/* ── Shared Button Styles ── */
+.nb-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--nb-border);
+  background: var(--nb-surface-glass);
+  color: var(--nb-text-label);
+  font-family: var(--nb-font-sans);
+  font-size: var(--nb-fs-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.nb-btn:hover:not(:disabled) {
+  background: var(--nb-hover-bg);
+  border-color: var(--nb-border-hover);
+  color: var(--nb-text-value);
+}
+
+.nb-btn:active:not(:disabled) {
+  background: var(--nb-active-bg);
+  border-color: var(--nb-border-active);
+}
+
+.nb-btn:focus-visible {
+  outline: 2px solid var(--nb-focus-ring);
+  outline-offset: 2px;
+}
+
+.nb-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.nb-btn--primary {
+  background: var(--nb-mint);
+  border-color: transparent;
+  color: #0a0a0a;
+}
+
+.nb-btn--primary:hover:not(:disabled) {
+  background: #A8CDB9;
+  border-color: transparent;
+  color: #0a0a0a;
+}
+
+.nb-btn--destructive {
+  background: rgba(232, 163, 161, 0.08);
+  border-color: rgba(232, 163, 161, 0.15);
+  color: var(--nb-coral);
+}
+
+.nb-btn--destructive:hover:not(:disabled) {
+  background: rgba(232, 163, 161, 0.14);
+  border-color: rgba(232, 163, 161, 0.25);
+}
+
+.nb-btn--sm { height: 28px; padding: 0 10px; gap: 5px; border-radius: var(--nb-radius-sm); }
+.nb-btn--md { height: 36px; padding: 0 14px; gap: 6px; border-radius: var(--nb-radius-md); }
+.nb-btn--lg { height: 44px; padding: 0 20px; gap: 8px; border-radius: var(--nb-radius-md); }
+
+/* ── Focus Summary Styles ── */
+.nb-focus-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: var(--nb-radius-sm);
+  background: var(--nb-surface-glass);
+  border: 1px solid var(--nb-border);
+  font-family: var(--nb-font-mono);
+  font-size: var(--nb-fs-xs);
+  color: var(--nb-text-label);
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+
+.nb-focus-summary:hover {
+  background: var(--nb-hover-bg);
+  border-color: var(--nb-border-hover);
+}

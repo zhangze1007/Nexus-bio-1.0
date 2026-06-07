@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Loader2, Play, Info, RotateCcw } from 'lucide-react';
+import ActionButton from './tools/shared/ActionButton';
 import { calcDeltaG, calcKeq, calcMassBalance, R } from '../utils/thermodynamics';
 import ResearchAnswerRenderer from './tools/shared/ResearchAnswerRenderer';
 import { buildThermodynamicFallbackInterpretation } from '../utils/pathdAnalysisFallback';
@@ -186,17 +187,22 @@ Do not return JSON, code fences, or developer-style logs.` }] }],
       </div>
 
       <div style={{ display: 'flex', gap: '8px' }}>
-        <button onClick={run}
-          style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px', padding: '10px', borderRadius: '16px', background: '#BFDCCD', color: '#0a0a0a', border: 'none', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#A8CDB9'; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#BFDCCD'; }}>
-          <Play size={13} /> Calculate ΔG
-        </button>
+        <ActionButton
+          variant="primary"
+          size="md"
+          icon={<Play size={13} />}
+          onClick={run}
+          style={{ flex: 1 }}
+        >
+          Calculate ΔG
+        </ActionButton>
         {result && (
-          <button onClick={() => { setResult(null); setAi({ text: '', loading: false }); }}
-            style={{ padding: '10px 14px', borderRadius: '16px', background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.4)', border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer' }}>
-            <RotateCcw size={13} />
-          </button>
+          <ActionButton
+            variant="secondary"
+            size="md"
+            icon={<RotateCcw size={13} />}
+            onClick={() => { setResult(null); setAi({ text: '', loading: false }); }}
+          />
         )}
       </div>
 

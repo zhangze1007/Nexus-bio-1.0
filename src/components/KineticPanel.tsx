@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { Loader2, Play, RotateCcw, Info } from 'lucide-react';
+import ActionButton from './tools/shared/ActionButton';
 import { mmVelocity, runRK4, type SimResult } from '../utils/kinetics';
 import ResearchAnswerRenderer from './tools/shared/ResearchAnswerRenderer';
 import { buildKineticFallbackInterpretation } from '../utils/pathdAnalysisFallback';
@@ -263,18 +264,22 @@ Be specific and scientific. No generic statements.`;
 
       {/* Run button */}
       <div style={{ display: 'flex', gap: '8px' }}>
-        <button onClick={runSimulation}
-          style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px', padding: '10px', borderRadius: '16px', background: '#BFDCCD', color: '#0a0a0a', border: 'none', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', transition: 'background 0.15s' }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#A8CDB9'; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#BFDCCD'; }}>
-          <Play size={13} />
+        <ActionButton
+          variant="primary"
+          size="md"
+          icon={<Play size={13} />}
+          onClick={runSimulation}
+          style={{ flex: 1 }}
+        >
           Run Simulation
-        </button>
+        </ActionButton>
         {result && (
-          <button onClick={reset}
-            style={{ padding: '10px 14px', borderRadius: '16px', background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.4)', border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer' }}>
-            <RotateCcw size={13} />
-          </button>
+          <ActionButton
+            variant="secondary"
+            size="md"
+            icon={<RotateCcw size={13} />}
+            onClick={reset}
+          />
         )}
       </div>
 
