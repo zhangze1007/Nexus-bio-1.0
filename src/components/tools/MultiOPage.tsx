@@ -4,6 +4,7 @@ import { computeConvexHull, expandHull } from '../../utils/vizUtils';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
 import ActionButton from './shared/ActionButton';
+import WorkbenchRangeSlider from './shared/WorkbenchRangeSlider';
 import SimErrorBanner from '../ide/shared/SimErrorBanner';
 import DataTable from '../ide/shared/DataTable';
 import type { TableColumn } from '../ide/shared/DataTable';
@@ -872,26 +873,8 @@ export default function MultiOPage() {
 
             {/* Thresholds */}
             <SectionLabel>Thresholds</SectionLabel>
-            <div style={{ marginBottom: '12px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: LABEL }}>|FC| &gt;</span>
-                <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-sm)', color: VALUE }}>{fcThreshold.toFixed(1)}</span>
-              </div>
-              <input aria-label="Parameter slider" type="range" min={0.5} max={5} step={0.1} value={fcThreshold}
-                onChange={e => setFcThreshold(parseFloat(e.target.value))}
-                className="nb-pathd-slider"
-                style={{ '--val': `${((fcThreshold - 0.5) / 4.5) * 100}%` } as React.CSSProperties} />
-            </div>
-            <div style={{ marginBottom: '16px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: LABEL }}>p &lt;</span>
-                <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-sm)', color: VALUE }}>{pvThreshold.toFixed(3)}</span>
-              </div>
-              <input aria-label="Parameter slider" type="range" min={0.001} max={0.1} step={0.001} value={pvThreshold}
-                onChange={e => setPvThreshold(parseFloat(e.target.value))}
-                className="nb-pathd-slider"
-                style={{ '--val': `${((pvThreshold - 0.001) / 0.099) * 100}%` } as React.CSSProperties} />
-            </div>
+            <WorkbenchRangeSlider label="|FC| >" value={fcThreshold} min={0.5} max={5} step={0.1} formatValue={v => v.toFixed(1)} onChange={setFcThreshold} />
+            <WorkbenchRangeSlider label="p <" value={pvThreshold} min={0.001} max={0.1} step={0.001} formatValue={v => v.toFixed(3)} onChange={setPvThreshold} />
 
             {/* Sensitivity sketch */}
             <SectionLabel>Sensitivity Sketch</SectionLabel>
@@ -909,20 +892,7 @@ export default function MultiOPage() {
                 <option key={g} value={g} style={{ background: '#1a1d24' }}>{g}</option>
               ))}
             </select>
-            <div style={{ marginBottom: '6px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: 'rgba(255,255,255,0.45)' }}>Expression</span>
-                <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE }}>{perturbedExpr.toFixed(1)}</span>
-              </div>
-              <input aria-label="Parameter slider" type="range" min={-4} max={8} step={0.1} value={perturbedExpr}
-                onChange={e => setPerturbedExpr(parseFloat(e.target.value))}
-                className="nb-pathd-slider"
-                style={{ '--val': `${((perturbedExpr + 4) / 12) * 100}%` } as React.CSSProperties} />
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>-4</span>
-                <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>+8</span>
-              </div>
-            </div>
+            <WorkbenchRangeSlider label="Expression" value={perturbedExpr} min={-4} max={8} step={0.1} formatValue={v => v.toFixed(1)} onChange={setPerturbedExpr} />
             <ActionButton
               variant="primary"
               size="sm"
@@ -1027,20 +997,8 @@ export default function MultiOPage() {
         <div style={{ display: 'flex', gap: '0', flex: 1, minHeight: 0, overflow: 'hidden' }}>
           <FloatingControlRail label="Controls">
             <SectionLabel>Thresholds</SectionLabel>
-            <div style={{ marginBottom: '12px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: LABEL }}>|FC| &gt;</span>
-                <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-sm)', color: VALUE }}>{fcThreshold.toFixed(1)}</span>
-              </div>
-              <input aria-label="Parameter slider" type="range" min={0.5} max={5} step={0.1} value={fcThreshold} onChange={e => setFcThreshold(parseFloat(e.target.value))} className="nb-pathd-slider" style={{ '--val': `${((fcThreshold - 0.5) / 4.5) * 100}%` } as React.CSSProperties} />
-            </div>
-            <div style={{ marginBottom: '16px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: LABEL }}>p &lt;</span>
-                <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-sm)', color: VALUE }}>{pvThreshold.toFixed(3)}</span>
-              </div>
-              <input aria-label="Parameter slider" type="range" min={0.001} max={0.1} step={0.001} value={pvThreshold} onChange={e => setPvThreshold(parseFloat(e.target.value))} className="nb-pathd-slider" style={{ '--val': `${((pvThreshold - 0.001) / 0.099) * 100}%` } as React.CSSProperties} />
-            </div>
+            <WorkbenchRangeSlider label="|FC| >" value={fcThreshold} min={0.5} max={5} step={0.1} formatValue={v => v.toFixed(1)} onChange={setFcThreshold} />
+            <WorkbenchRangeSlider label="p <" value={pvThreshold} min={0.001} max={0.1} step={0.001} formatValue={v => v.toFixed(3)} onChange={setPvThreshold} />
             <SectionLabel>Gene</SectionLabel>
             <select value={selectedGene} onChange={e => setSelectedGene(e.target.value)}
               style={{ width: '100%', padding: '6px 8px', background: INPUT_BG, border: `1px solid ${INPUT_BORDER}`, borderRadius: 'var(--nb-radius-sm)', color: INPUT_TEXT, fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', outline: '2px solid rgba(175,195,214,0.5)', outlineOffset: '2px', appearance: 'auto' as React.CSSProperties['appearance'] }}>
