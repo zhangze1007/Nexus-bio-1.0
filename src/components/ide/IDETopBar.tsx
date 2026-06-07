@@ -91,14 +91,24 @@ export default function IDETopBar({ moduleId, actions }: IDETopBarProps) {
           }}
         >
           <LayoutGrid size={12} />
-          Tools
+          Workbench
         </Link>
+
+        {!isDirectory && tool?.direction && (
+          <>
+            <span aria-hidden="true" style={{ color: PATHD_THEME.label }}>/</span>
+
+            <span style={{ fontFamily: MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase' }}>
+              {tool.direction}
+            </span>
+          </>
+        )}
 
         {!isDirectory && (
           <>
             <span aria-hidden="true" style={{ color: PATHD_THEME.label }}>/</span>
 
-            <span style={{ fontFamily: MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase' }}>
+            <span style={{ fontFamily: MONO, fontSize: '10px', color: VALUE, textTransform: 'uppercase', fontWeight: 600 }}>
               {tool?.shortLabel ?? moduleId}
             </span>
           </>
