@@ -307,16 +307,16 @@ export default function IDESidebar() {
                           />
                         </div>
 
-                        {/* Label text — hidden when collapsed via width:0 */}
+                        {/* Label text — hidden when collapsed via maxWidth:0 */}
                         <motion.div
-                          animate={{ opacity: collapsed ? 0 : 1 }}
+                          animate={{ opacity: collapsed ? 0 : 1, maxWidth: collapsed ? 0 : 200 }}
                           transition={{
                             duration: collapsed ? 0.1 : 0.2,
                             delay: collapsed ? 0 : 0.06 + toolIndex * 0.025,
+                            ease: 'easeOut',
                           }}
                           aria-hidden={collapsed}
                           style={{
-                            width: collapsed ? 0 : 'auto',
                             overflow: 'hidden',
                             minWidth: 0,
                             pointerEvents: collapsed ? 'none' : 'auto',
@@ -326,7 +326,7 @@ export default function IDESidebar() {
                           <div
                             style={{
                               fontFamily: SANS,
-                              fontSize: 11,
+                              fontSize: 'var(--nb-fs-sm)',
                               fontWeight: 600,
                               color: isActive ? VALUE : LABEL,
                               lineHeight: 1.25,
@@ -442,11 +442,10 @@ export default function IDESidebar() {
                     </div>
 
                     <motion.div
-                      animate={{ opacity: collapsed ? 0 : 1 }}
-                      transition={{ duration: collapsed ? 0.1 : 0.2, delay: collapsed ? 0 : 0.06 + crossIndex * 0.025 }}
+                      animate={{ opacity: collapsed ? 0 : 1, maxWidth: collapsed ? 0 : 200 }}
+                      transition={{ duration: collapsed ? 0.1 : 0.2, delay: collapsed ? 0 : 0.06 + crossIndex * 0.025, ease: 'easeOut' }}
                       aria-hidden={collapsed}
                       style={{
-                        width: collapsed ? 0 : 'auto',
                         overflow: 'hidden',
                         minWidth: 0,
                         pointerEvents: collapsed ? 'none' : 'auto',
@@ -456,7 +455,7 @@ export default function IDESidebar() {
                       <div
                         style={{
                           fontFamily: SANS,
-                          fontSize: 11,
+                          fontSize: 'var(--nb-fs-sm)',
                           fontWeight: 600,
                           color: isActive ? VALUE : LABEL,
                           lineHeight: 1.25,
