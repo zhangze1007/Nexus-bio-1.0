@@ -33,7 +33,7 @@ const SIZE_MAP: Record<MetricSize, {
   valueSize: string; labelSize: string; detailSize: string;
 }> = {
   sm: { padding: '8px 10px', gap: '2px', valueSize: T.FS_MD, labelSize: T.FS_XS, detailSize: T.FS_XS },
-  md: { padding: '12px 14px', gap: '4px', valueSize: '18px', labelSize: T.FS_XS, detailSize: T.FS_SM },
+  md: { padding: '12px 14px', gap: '4px', valueSize: T.FS_LG, labelSize: T.FS_XS, detailSize: T.FS_SM },
   lg: { padding: '16px 18px', gap: '6px', valueSize: T.FS_XL, labelSize: T.FS_SM, detailSize: T.FS_SM },
 };
 

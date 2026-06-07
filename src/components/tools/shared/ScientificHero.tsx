@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, type ReactNode } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { PATHD_THEME } from '../../workbench/workbenchTheme';
 import { T } from '../../ide/tokens';
 
@@ -71,58 +72,65 @@ export default function ScientificHero({
   // P2.1: default collapsed to a compact 28px lineage bar; expand on click
   const [collapsed, setCollapsed] = useState(true);
 
-  if (collapsed) {
-    return (
-      <section
-        className="nb-scientific-hero nb-scientific-hero--collapsed"
-        role="button"
-        tabIndex={0}
-        aria-label={`${title} — click to expand`}
-        onClick={() => setCollapsed(false)}
-        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setCollapsed(false); } }}
-        style={{
-          borderRadius: 'var(--nb-radius-md)',
-          border: '1px solid var(--nb-border)',
-          background: 'var(--nb-surface-glass)',
-          padding: '6px var(--nb-space-md)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px',
-          cursor: 'pointer',
-          height: '28px',
-          overflow: 'hidden',
-          transition: 'background 80ms',
-        }}
-      >
-        <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: 'var(--nb-text-label)', textTransform: 'uppercase', letterSpacing: '0.10em', flexShrink: 0 }}>
-          {eyebrow}
-        </span>
-        <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', fontWeight: 600, color: 'var(--nb-text-value)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>
-          {title}
-        </span>
-        <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: 'var(--nb-text-label)', marginLeft: 'auto', flexShrink: 0 }}>
-          ▸ expand
-        </span>
-      </section>
-    );
-  }
-
   return (
-    <section
-      className="nb-scientific-hero"
-      style={{
-        borderRadius: 'var(--nb-radius-xl)',
-        border: '1px solid var(--nb-border-active)',
-        background: 'rgba(10,12,16,0.52)',
-        boxShadow: 'var(--nb-shadow-high)',
-        backdropFilter: 'blur(24px) saturate(140%)',
-        WebkitBackdropFilter: 'blur(24px) saturate(140%)',
-        padding: '18px 20px',
-        display: 'grid',
-        gap: 'var(--nb-space-md)',
-        position: 'relative',
-      }}
-    >
+    <AnimatePresence mode="wait" initial={false}>
+      {collapsed ? (
+        <motion.section
+          key="collapsed"
+          className="nb-scientific-hero nb-scientific-hero--collapsed"
+          role="button"
+          tabIndex={0}
+          aria-label={`${title} — click to expand`}
+          onClick={() => setCollapsed(false)}
+          onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setCollapsed(false); } }}
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: 28 }}
+          exit={{ opacity: 0, height: 0 }}
+          transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+          style={{
+            borderRadius: 'var(--nb-radius-md)',
+            border: '1px solid var(--nb-border)',
+            background: 'var(--nb-surface-glass)',
+            padding: '6px var(--nb-space-md)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            cursor: 'pointer',
+            overflow: 'hidden',
+          }}
+        >
+          <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: 'var(--nb-text-label)', textTransform: 'uppercase', letterSpacing: '0.10em', flexShrink: 0 }}>
+            {eyebrow}
+          </span>
+          <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', fontWeight: 600, color: 'var(--nb-text-value)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>
+            {title}
+          </span>
+          <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: 'var(--nb-text-label)', marginLeft: 'auto', flexShrink: 0 }}>
+            ▸ expand
+          </span>
+        </motion.section>
+      ) : (
+        <motion.section
+          key="expanded"
+          className="nb-scientific-hero"
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: 'auto' }}
+          exit={{ opacity: 0, height: 0 }}
+          transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+          style={{
+            borderRadius: 'var(--nb-radius-xl)',
+            border: '1px solid var(--nb-border-active)',
+            background: 'rgba(10,12,16,0.52)',
+            boxShadow: 'var(--nb-shadow-high)',
+            backdropFilter: 'blur(24px) saturate(140%)',
+            WebkitBackdropFilter: 'blur(24px) saturate(140%)',
+            padding: '18px 20px',
+            display: 'grid',
+            gap: 'var(--nb-space-md)',
+            position: 'relative',
+            overflow: 'hidden',
+          }}
+        >
       <div
         aria-hidden
         style={{
@@ -339,6 +347,8 @@ export default function ScientificHero({
           );
         })}
       </div>
-    </section>
+        </motion.section>
+      )}
+    </AnimatePresence>
   );
 }

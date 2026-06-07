@@ -33,6 +33,7 @@ export default function FloatingControlRail({
         overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
+        willChange: 'width',
       }}
     >
       <button
