@@ -130,7 +130,7 @@ export default function ToolShell({
           background: PATHD_THEME.sepiaPanelMuted,
           backdropFilter: 'blur(18px)',
           WebkitBackdropFilter: 'blur(18px)',
-          boxShadow: '0 10px 30px rgba(96,74,56,0.08), inset 0 1px 0 rgba(255,255,255,0.28)',
+          boxShadow: 'var(--nb-shadow-low), inset 0 1px 0 rgba(255,255,255,0.28)',
         }}
       >
         <button
@@ -143,7 +143,7 @@ export default function ToolShell({
             gap: '4px',
             minHeight: '28px',
             padding: '0 7px',
-            borderRadius: '12px',
+            borderRadius: 'var(--nb-radius-md)',
             border: '1px solid var(--nb-control-border)',
             background: 'var(--nb-control-bg)',
             color: 'var(--nb-control-color)',
