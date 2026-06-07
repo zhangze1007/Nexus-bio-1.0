@@ -81,10 +81,10 @@ export default function ScientificHero({
         onClick={() => setCollapsed(false)}
         onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setCollapsed(false); } }}
         style={{
-          borderRadius: '12px',
-          border: '1px solid rgba(255,255,255,0.10)',
-          background: 'rgba(10,12,16,0.40)',
-          padding: '6px 14px',
+          borderRadius: 'var(--nb-radius-md)',
+          border: '1px solid var(--nb-border)',
+          background: 'var(--nb-surface-glass)',
+          padding: '6px var(--nb-space-md)',
           display: 'flex',
           alignItems: 'center',
           gap: '10px',
@@ -94,13 +94,13 @@ export default function ScientificHero({
           transition: 'background 0.15s',
         }}
       >
-        <span style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label, textTransform: 'uppercase', letterSpacing: '0.10em', flexShrink: 0 }}>
+        <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: 'var(--nb-text-label)', textTransform: 'uppercase', letterSpacing: '0.10em', flexShrink: 0 }}>
           {eyebrow}
         </span>
-        <span style={{ fontFamily: T.SANS, fontSize: '11px', fontWeight: 600, color: PATHD_THEME.value, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>
+        <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', fontWeight: 600, color: 'var(--nb-text-value)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>
           {title}
         </span>
-        <span style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label, marginLeft: 'auto', flexShrink: 0 }}>
+        <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: 'var(--nb-text-label)', marginLeft: 'auto', flexShrink: 0 }}>
           ▸ expand
         </span>
       </section>
@@ -111,15 +111,15 @@ export default function ScientificHero({
     <section
       className="nb-scientific-hero"
       style={{
-        borderRadius: '24px',
-        border: `1px solid rgba(255,255,255,0.12)`,
+        borderRadius: 'var(--nb-radius-xl)',
+        border: '1px solid var(--nb-border-active)',
         background: 'rgba(10,12,16,0.52)',
-        boxShadow: '0 18px 48px rgba(0,0,0,0.38)',
+        boxShadow: 'var(--nb-shadow-high)',
         backdropFilter: 'blur(24px) saturate(140%)',
         WebkitBackdropFilter: 'blur(24px) saturate(140%)',
         padding: '18px 20px',
         display: 'grid',
-        gap: '16px',
+        gap: 'var(--nb-space-md)',
         position: 'relative',
       }}
     >
@@ -128,7 +128,7 @@ export default function ScientificHero({
         style={{
           position: 'absolute',
           inset: 0,
-          borderRadius: '24px',
+          borderRadius: 'var(--nb-radius-xl)',
           background: 'linear-gradient(135deg, rgba(191,220,205,0.06) 0%, rgba(175,195,214,0.04) 48%, rgba(207,196,227,0.06) 100%)',
           pointerEvents: 'none',
         }}
