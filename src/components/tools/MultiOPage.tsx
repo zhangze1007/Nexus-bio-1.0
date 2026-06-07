@@ -3,6 +3,7 @@ import { useState, useMemo, useCallback, useEffect } from 'react';
 import { computeConvexHull, expandHull } from '../../utils/vizUtils';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
+import ActionButton from './shared/ActionButton';
 import SimErrorBanner from '../ide/shared/SimErrorBanner';
 import DataTable from '../ide/shared/DataTable';
 import type { TableColumn } from '../ide/shared/DataTable';
@@ -920,17 +921,15 @@ export default function MultiOPage() {
                 <span style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL }}>+8</span>
               </div>
             </div>
-            <button aria-label="Run sensitivity analysis" onClick={handleSimulate} style={{
-              width: '100%', padding: '7px 0', borderRadius: '8px', cursor: 'pointer',
-              fontFamily: T.SANS, fontSize: '11px', fontWeight: 600,
-              border: '1px solid rgba(191,220,205,0.45)', background: 'rgba(191,220,205,0.15)', color: 'rgba(250,246,240,0.96)',
-              transition: 'all 0.15s',
-            }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(191,220,205,0.25)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 12px rgba(191,220,205,0.15)'; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(191,220,205,0.15)'; (e.currentTarget as HTMLElement).style.boxShadow = 'none'; }}
+            <ActionButton
+              variant="primary"
+              size="sm"
+              aria-label="Run sensitivity analysis"
+              onClick={handleSimulate}
+              style={{ width: '100%' }}
             >
               Run Sensitivity
-            </button>
+            </ActionButton>
 
             {/* Sensitivity Results */}
             {perturbResult && (
