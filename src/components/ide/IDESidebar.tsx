@@ -246,7 +246,7 @@ export default function IDESidebar() {
                   gap: 6,
                   justifyItems: collapsed ? 'center' : undefined,
                 }}>
-                  {tools.map((tool) => {
+                  {tools.map((tool, toolIndex) => {
                     const Icon     = tool.icon;
                     const isActive = pathname?.startsWith(tool.href);
 
@@ -312,7 +312,7 @@ export default function IDESidebar() {
                           animate={{ opacity: collapsed ? 0 : 1 }}
                           transition={{
                             duration: collapsed ? 0.1 : 0.2,
-                            delay: collapsed ? 0 : 0.06,
+                            delay: collapsed ? 0 : 0.06 + toolIndex * 0.025,
                           }}
                           aria-hidden={collapsed}
                           style={{
@@ -385,7 +385,7 @@ export default function IDESidebar() {
             </motion.p>
 
             <div style={{ display: 'grid', gap: 6, justifyItems: collapsed ? 'center' : undefined }}>
-              {TOOL_DEFINITIONS.filter((tool) => CROSS_STAGE_TOOL_IDS.includes(tool.id as (typeof CROSS_STAGE_TOOL_IDS)[number])).map((tool) => {
+              {TOOL_DEFINITIONS.filter((tool) => CROSS_STAGE_TOOL_IDS.includes(tool.id as (typeof CROSS_STAGE_TOOL_IDS)[number])).map((tool, crossIndex) => {
                 const Icon = tool.icon;
                 const isActive = pathname?.startsWith(tool.href);
 
@@ -443,7 +443,7 @@ export default function IDESidebar() {
 
                     <motion.div
                       animate={{ opacity: collapsed ? 0 : 1 }}
-                      transition={{ duration: collapsed ? 0.1 : 0.2, delay: collapsed ? 0 : 0.06 }}
+                      transition={{ duration: collapsed ? 0.1 : 0.2, delay: collapsed ? 0 : 0.06 + crossIndex * 0.025 }}
                       aria-hidden={collapsed}
                       style={{
                         width: collapsed ? 0 : 'auto',

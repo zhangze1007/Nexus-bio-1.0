@@ -14,7 +14,7 @@ import styles from './TopNav.module.css';
 const NAV_LINKS: [string, string][] = [
   ['Home',     '/'],
   ['Research', '/research'],
-  ['Tools',    '/tools'],
+  ['Workbench', '/tools'],
   ['Analyze',  '/analyze'],
 ];
 

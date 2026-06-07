@@ -362,7 +362,7 @@ export default function CatalystDesignerPageV2() {
                 color: inspectorTab === tab.key ? VALUE : LABEL,
                 background: inspectorTab === tab.key ? 'rgba(255,255,255,0.05)' : 'transparent',
                 borderBottom: inspectorTab === tab.key ? '2px solid rgba(200,216,232,0.5)' : '2px solid transparent',
-                transition: 'all 0.15s ease',
+                transition: 'color 80ms, background 80ms, border-bottom-color 80ms',
               }}>
                 {tab.label}
               </button>
