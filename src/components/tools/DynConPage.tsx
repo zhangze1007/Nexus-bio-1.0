@@ -142,8 +142,8 @@ function TimeSeriesSVG({ trajectory, setpoint, svgRef }: { trajectory: ODEState[
             ))}
             {setpointY !== null && (
               <>
-                <rect x={PAD_X} y={setpointY - 6} width={plotWidth} height={12} fill="rgba(95,168,255,0.06)" />
-                <line x1={PAD_X} y1={setpointY} x2={PAD_X + plotWidth} y2={setpointY} stroke="rgba(95,168,255,0.4)" strokeDasharray="4 4" />
+                <rect x={PAD_X} y={setpointY - 6} width={plotWidth} height={12} fill={`${T.SKY}0F`} />
+                <line x1={PAD_X} y1={setpointY} x2={PAD_X + plotWidth} y2={setpointY} stroke={`${T.SKY}66`} strokeDasharray="4 4" />
               </>
             )}
             {toxicityY !== null && (

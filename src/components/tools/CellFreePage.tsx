@@ -116,7 +116,7 @@ function TimeCourseChart({ result, constructs }: { result: CFSFullResult; constr
   const bsx = (t: number) => BP + (t / btMax) * (BL_W - BP - 16);
   const bsy = (f: number) => BL_H - BP - f * (BL_H - BP * 2);
 
-  const RES_COLORS = { atp: '#E8A3A1', rib: '#AFC3D6', aa: '#BFDCCD' };  // coral / sky / mint
+  const RES_COLORS = { atp: T.CORAL, rib: T.SKY, aa: T.MINT };
 
   // Stacked area paths (atp + rib + aa stacked to 1)
   const stackedPath = useMemo(() => {
@@ -324,11 +324,11 @@ function ResourceChart({ result }: { result: CFSFullResult }) {
   function sy(f: number) { return H - PAD - f * (H - PAD * 2); }
 
   const series: { key: keyof typeof initials; label: string; color: string }[] = [
-    { key: 'ribosomeFree', label: 'Ribosome (free)', color: '#BFDCCD' },   // mint
-    { key: 'atp',          label: 'ATP',             color: '#E8A3A1' },   // coral
-    { key: 'gtp',          label: 'GTP',             color: '#AFC3D6' },   // sky
-    { key: 'pep',          label: 'PEP',             color: '#E7C7A9' },   // apricot
-    { key: 'aminoAcids',   label: 'Amino Acids',     color: '#CFC4E3' },   // lilac
+    { key: 'ribosomeFree', label: 'Ribosome (free)', color: T.MINT },
+    { key: 'atp',          label: 'ATP',             color: T.CORAL },
+    { key: 'gtp',          label: 'GTP',             color: T.SKY },
+    { key: 'pep',          label: 'PEP',             color: T.APRICOT },
+    { key: 'aminoAcids',   label: 'Amino Acids',     color: T.LILAC },
   ];
 
   return (
@@ -441,7 +441,7 @@ function FittingChart({ result }: { result: CFSFullResult }) {
       {/* Fitted curve */}
       <polyline
         points={curve.map(p => `${sx(p.concentration)},${sy(p.rate)}`).join(' ')}
-        fill="none" stroke="#BFDCCD" strokeWidth={1.8} opacity={0.85}
+        fill="none" stroke={T.MINT} strokeWidth={1.8} opacity={0.85}
       />
       {/* Vmax line */}
       <line x1={PAD} y1={sy(fit.vmax)} x2={W - PAD} y2={sy(fit.vmax)}
@@ -525,14 +525,14 @@ function IvIvChart({ result }: { result: CFSFullResult }) {
       <rect width={W} height={H} fill="#050505" rx={12} />
       {/* Bar chart */}
       <rect x={PAD + 40} y={barBaseY - barH(invitro)} width={barW} height={barH(invitro)}
-        fill="#AFC3D6" rx={4} opacity={0.8} />
+        fill={T.SKY} rx={4} opacity={0.8} />
       <text x={PAD + 40 + barW / 2} y={barBaseY + 14} textAnchor="middle"
         fontFamily={T.SANS} fontSize="10" fill={VALUE}>In vitro</text>
       <text x={PAD + 40 + barW / 2} y={barBaseY - barH(invitro) - 6} textAnchor="middle"
         fontFamily={T.MONO} fontSize="10" fill={VALUE}>{invitro.toFixed(1)} nM</text>
 
       <rect x={PAD + 40 + barW + barGap} y={barBaseY - barH(invivo)} width={barW} height={barH(invivo)}
-        fill="#BFDCCD" rx={4} opacity={0.8} />
+        fill={T.MINT} rx={4} opacity={0.8} />
       <text x={PAD + 40 + barW + barGap + barW / 2} y={barBaseY + 14} textAnchor="middle"
         fontFamily={T.SANS} fontSize="10" fill={VALUE}>In vivo (pred)</text>
       <text x={PAD + 40 + barW + barGap + barW / 2} y={barBaseY - barH(invivo) - 6} textAnchor="middle"
@@ -581,7 +581,7 @@ function IvIvChart({ result }: { result: CFSFullResult }) {
             <path d={`M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy}`}
               fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={6} />
             <path d={`M ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2}`}
-              fill="none" stroke="#BFDCCD" strokeWidth={6} strokeLinecap="round" />
+              fill="none" stroke={T.MINT} strokeWidth={6} strokeLinecap="round" />
             <text x={cx} y={cy - 4} textAnchor="middle" fontFamily={T.MONO} fontSize="14" fontWeight={700} fill={VALUE}>
               {(iviv.confidence * 100).toFixed(0)}%
             </text>
@@ -639,9 +639,9 @@ function ReactorTwin3D({ result, constructs, params }: { result: CFSFullResult; 
         <text x="272" y="332" fontFamily={T.SANS} fontSize="10" fill={LABEL}>Construct yield skyline</text>
 
         {[
-          { label: 'ATP', value: params.initialEnergy.atp / energyPool, x: 546, color: '#E8A3A1' },   // coral
-          { label: 'GTP', value: params.initialEnergy.gtp / energyPool, x: 596, color: '#AFC3D6' },   // sky
-          { label: 'PEP', value: params.initialEnergy.pep / energyPool, x: 646, color: '#E7C7A9' },   // apricot
+          { label: 'ATP', value: params.initialEnergy.atp / energyPool, x: 546, color: T.CORAL },
+          { label: 'GTP', value: params.initialEnergy.gtp / energyPool, x: 596, color: T.SKY },
+          { label: 'PEP', value: params.initialEnergy.pep / energyPool, x: 646, color: T.APRICOT },
         ].map((resource) => {
           const height = 46 + resource.value * 118;
           return (

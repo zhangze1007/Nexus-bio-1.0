@@ -334,15 +334,27 @@ export default function GenMIMPage() {
               </div>
             ))}
 
-            <button onClick={() => setProtectEssential(!protectEssential)} style={{
-              display: 'flex', alignItems: 'center', gap: '8px',
-              width: '100%', padding: '7px 10px', marginBottom: '16px',
-              background: protectEssential ? 'rgba(231,199,169,0.18)' : PATHD_THEME.panelSurface,
-              border: `1px solid ${protectEssential ? 'rgba(231,199,169,0.34)' : PATHD_THEME.sepiaPanelBorder}`,
-              borderRadius: '8px', cursor: 'pointer',
-              color: protectEssential ? PATHD_THEME.value : PATHD_THEME.label,
-              fontFamily: T.SANS, fontSize: '11px', textAlign: 'left',
-            }}>
+            <button
+              onClick={() => setProtectEssential(!protectEssential)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '8px',
+                width: '100%', padding: '7px 10px', marginBottom: '16px',
+                background: protectEssential ? 'rgba(231,199,169,0.18)' : PATHD_THEME.panelSurface,
+                border: `1px solid ${protectEssential ? 'rgba(231,199,169,0.34)' : PATHD_THEME.sepiaPanelBorder}`,
+                borderRadius: 'var(--nb-radius-sm)', cursor: 'pointer',
+                color: protectEssential ? PATHD_THEME.value : PATHD_THEME.label,
+                fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', textAlign: 'left',
+                transition: 'background 0.12s, border-color 0.12s, color 0.12s',
+              }}
+              onMouseEnter={e => {
+                (e.currentTarget as HTMLElement).style.background = protectEssential ? 'rgba(231,199,169,0.25)' : 'var(--nb-hover-bg)';
+                (e.currentTarget as HTMLElement).style.borderColor = protectEssential ? 'rgba(231,199,169,0.45)' : 'var(--nb-border-hover)';
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLElement).style.background = protectEssential ? 'rgba(231,199,169,0.18)' : PATHD_THEME.panelSurface;
+                (e.currentTarget as HTMLElement).style.borderColor = protectEssential ? 'rgba(231,199,169,0.34)' : PATHD_THEME.sepiaPanelBorder;
+              }}
+            >
               <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: protectEssential ? PATHD_THEME.apricot : 'transparent', border: `1px solid ${PATHD_THEME.apricot}`, flexShrink: 0 }} />
               Protect essential genes
             </button>
