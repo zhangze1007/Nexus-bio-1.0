@@ -32,6 +32,7 @@ import { T, TOOL_RESULT_PALETTE} from '../ide/tokens';
 import { SEMANTIC_RGB } from '../charts/chartTheme';
 import ScientificFigureFrame from './shared/ScientificFigureFrame';
 import ScientificMethodStrip from './shared/ScientificMethodStrip';
+import ActionButton from './shared/ActionButton';
 
 /* ── Design Tokens ── */
 const PHASE_PASTEL: Record<string, string> = {
@@ -814,17 +815,16 @@ export default function DBTLflowPage() {
             </div>
 
             {/* Add iteration button */}
-            <button aria-label="Add DBTL iteration" onClick={addIteration} disabled={!hypothesis.trim() || !result.trim()} style={{
-              width: '100%', padding: '8px',
-              background: PATHD_THEME.paperSurfaceStrong,
-              border: `1px solid ${INPUT_BORDER}`,
-              borderRadius: '8px',
-              color: VALUE,
-              fontFamily: T.SANS, fontSize: '11px', cursor: 'pointer',
-              boxShadow: '0 10px 18px rgba(96,74,56,0.08)',
-            }}>
+            <ActionButton
+              variant="primary"
+              size="md"
+              aria-label="Add DBTL iteration"
+              onClick={addIteration}
+              disabled={!hypothesis.trim() || !result.trim()}
+              style={{ width: '100%' }}
+            >
               + Add Iteration
-            </button>
+            </ActionButton>
 
             {/* Best Result */}
             <div style={{
@@ -846,17 +846,16 @@ export default function DBTLflowPage() {
             {/* ── Protocol Generation ── */}
             <div style={{ marginTop: '16px' }}>
               <p style={sectionLabel}>Protocol Generation</p>
-              <button aria-label="Generate protocol" onClick={handleGenerateProtocol} disabled={!latestIteration} style={{
-                width: '100%', padding: '8px',
-                background: 'rgba(207,196,227,0.2)',
-                border: '1px solid rgba(207,196,227,0.34)',
-                borderRadius: '8px',
-                color: VALUE,
-                fontFamily: T.SANS, fontSize: '11px', cursor: 'pointer',
-                opacity: latestIteration ? 1 : 0.4,
-              }}>
+              <ActionButton
+                variant="secondary"
+                size="md"
+                aria-label="Generate protocol"
+                onClick={handleGenerateProtocol}
+                disabled={!latestIteration}
+                style={{ width: '100%', background: 'rgba(207,196,227,0.2)', borderColor: 'rgba(207,196,227,0.34)' }}
+              >
                 ⚗ Generate Protocol
-              </button>
+              </ActionButton>
 
               {generatedProtocol && (
                 <div style={{ ...GLASS, marginTop: '10px', padding: '12px' }}>
@@ -880,16 +879,15 @@ export default function DBTLflowPage() {
                       <p style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, margin: '0 0 8px' }}>
                         API {generatedProtocol.api_version} · {generatedProtocol.labware.length} labware · {generatedProtocol.pipetting_logic.length} steps
                       </p>
-                      <button aria-label="Download Python protocol" onClick={handleDownloadProtocol} style={{
-                        width: '100%', padding: '6px',
-                        background: 'rgba(207,196,227,0.22)',
-                        border: '1px solid rgba(207,196,227,0.34)',
-                        borderRadius: '6px',
-                        color: VALUE,
-                        fontFamily: T.MONO, fontSize: '10px', cursor: 'pointer',
-                      }}>
+                      <ActionButton
+                        variant="secondary"
+                        size="sm"
+                        aria-label="Download Python protocol"
+                        onClick={handleDownloadProtocol}
+                        style={{ width: '100%', background: 'rgba(207,196,227,0.22)', borderColor: 'rgba(207,196,227,0.34)' }}
+                      >
                         ↓ Download .py
-                      </button>
+                      </ActionButton>
                     </div>
                   )}
                 </div>
@@ -899,15 +897,15 @@ export default function DBTLflowPage() {
             {/* ── SBOL 3.0 Export ── */}
             <div style={{ marginTop: '16px' }}>
               <p style={sectionLabel}>SBOL 3.0 Export</p>
-              <button aria-label="Serialize to SBOL 3.0" onClick={handleSBOLExport} style={{
-                width: '100%', padding: '8px',
-                background: 'rgba(175,195,214,0.2)',
-                border: '1px solid rgba(175,195,214,0.34)',
-                borderRadius: '8px', color: VALUE,
-                fontFamily: T.SANS, fontSize: '11px', cursor: 'pointer',
-              }}>
+              <ActionButton
+                variant="secondary"
+                size="md"
+                aria-label="Serialize to SBOL 3.0"
+                onClick={handleSBOLExport}
+                style={{ width: '100%', background: 'rgba(175,195,214,0.2)', borderColor: 'rgba(175,195,214,0.34)' }}
+              >
                 ◎ Serialize to SBOL 3.0
-              </button>
+              </ActionButton>
               {sbolDoc && (
                 <div style={{ ...GLASS, marginTop: '10px', padding: '12px' }}>
                   <p style={{ fontFamily: T.SANS, fontSize: '10px', color: VALUE, fontWeight: 500, margin: '0 0 6px' }}>
@@ -927,16 +925,24 @@ export default function DBTLflowPage() {
                     </p>
                   ))}
                   <div style={{ display: 'flex', gap: '6px', marginTop: '8px' }}>
-                    <button aria-label="Download SBOL as RDF/XML" onClick={() => handleDownloadSBOL('xml')} style={{
-                      flex: 1, padding: '5px', background: 'rgba(175,195,214,0.22)',
-                      border: '1px solid rgba(175,195,214,0.34)', borderRadius: '6px',
-                      color: VALUE, fontFamily: T.MONO, fontSize: '10px', cursor: 'pointer',
-                    }}>↓ RDF/XML</button>
-                    <button aria-label="Download SBOL as Turtle" onClick={() => handleDownloadSBOL('turtle')} style={{
-                      flex: 1, padding: '5px', background: 'rgba(207,196,227,0.22)',
-                      border: '1px solid rgba(207,196,227,0.34)', borderRadius: '6px',
-                      color: VALUE, fontFamily: T.MONO, fontSize: '10px', cursor: 'pointer',
-                    }}>↓ Turtle</button>
+                    <ActionButton
+                      variant="secondary"
+                      size="sm"
+                      aria-label="Download SBOL as RDF/XML"
+                      onClick={() => handleDownloadSBOL('xml')}
+                      style={{ flex: 1, background: 'rgba(175,195,214,0.22)', borderColor: 'rgba(175,195,214,0.34)' }}
+                    >
+                      ↓ RDF/XML
+                    </ActionButton>
+                    <ActionButton
+                      variant="secondary"
+                      size="sm"
+                      aria-label="Download SBOL as Turtle"
+                      onClick={() => handleDownloadSBOL('turtle')}
+                      style={{ flex: 1, background: 'rgba(207,196,227,0.22)', borderColor: 'rgba(207,196,227,0.34)' }}
+                    >
+                      ↓ Turtle
+                    </ActionButton>
                   </div>
                 </div>
               )}
@@ -956,15 +962,15 @@ export default function DBTLflowPage() {
                   <SimErrorBanner message={assemblyError} />
                 </div>
               )}
-              <button aria-label="Plan Gibson assembly" onClick={handlePlanAssembly} style={{
-                width: '100%', padding: '8px',
-                background: 'rgba(191,220,205,0.2)',
-                border: '1px solid rgba(191,220,205,0.34)',
-                borderRadius: '8px', color: VALUE,
-                fontFamily: T.SANS, fontSize: '11px', cursor: 'pointer',
-              }}>
+              <ActionButton
+                variant="secondary"
+                size="md"
+                aria-label="Plan Gibson assembly"
+                onClick={handlePlanAssembly}
+                style={{ width: '100%', background: 'rgba(191,220,205,0.2)', borderColor: 'rgba(191,220,205,0.34)' }}
+              >
                 🧬 Plan Assembly
-              </button>
+              </ActionButton>
               {assemblyPlan && (
                 <div style={{ ...GLASS, marginTop: '10px', padding: '12px' }}>
                   <div onClick={() => setAssemblyExpanded(p => !p)}
@@ -1033,16 +1039,24 @@ export default function DBTLflowPage() {
                         })}
                       </div>
                       <div style={{ display: 'flex', gap: '6px', marginBottom: '8px' }}>
-                        <button aria-label="Download primers as CSV" onClick={handleDownloadPrimers} style={{
-                          flex: 1, padding: '5px', background: 'rgba(191,220,205,0.22)',
-                          border: '1px solid rgba(191,220,205,0.34)', borderRadius: '6px',
-                          color: VALUE, fontFamily: T.MONO, fontSize: '10px', cursor: 'pointer',
-                        }}>↓ Primers CSV</button>
-                        <button aria-label="Generate OT-2 protocol" onClick={handleGenerateGibsonProtocol} style={{
-                          flex: 1, padding: '5px', background: 'rgba(175,195,214,0.22)',
-                          border: '1px solid rgba(175,195,214,0.34)', borderRadius: '6px',
-                          color: VALUE, fontFamily: T.MONO, fontSize: '10px', cursor: 'pointer',
-                        }}>⚗ OT-2 Protocol</button>
+                        <ActionButton
+                          variant="secondary"
+                          size="sm"
+                          aria-label="Download primers as CSV"
+                          onClick={handleDownloadPrimers}
+                          style={{ flex: 1, background: 'rgba(191,220,205,0.22)', borderColor: 'rgba(191,220,205,0.34)' }}
+                        >
+                          ↓ Primers CSV
+                        </ActionButton>
+                        <ActionButton
+                          variant="secondary"
+                          size="sm"
+                          aria-label="Generate OT-2 protocol"
+                          onClick={handleGenerateGibsonProtocol}
+                          style={{ flex: 1, background: 'rgba(175,195,214,0.22)', borderColor: 'rgba(175,195,214,0.34)' }}
+                        >
+                          ⚗ OT-2 Protocol
+                        </ActionButton>
                       </div>
                       <p style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, margin: 0 }}>
                         Provenance: {assemblyPlan.provenanceId.slice(0, 8)}…
