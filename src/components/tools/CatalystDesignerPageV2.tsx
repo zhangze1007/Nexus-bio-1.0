@@ -312,22 +312,23 @@ export default function CatalystDesignerPageV2() {
           {/* Render mode controls */}
           <div style={{ display: 'flex', gap: 6, marginTop: 6, flexShrink: 0 }}>
             {(['cartoon', 'surface', 'confidence'] as const).map(mode => (
-              <button key={mode} type="button" onClick={() => setRenderMode(mode)} style={{
-                border: `1px solid ${renderMode === mode ? 'rgba(200,232,240,0.3)' : 'rgba(255,255,255,0.08)'}`,
-                background: renderMode === mode ? 'rgba(200,232,240,0.12)' : 'rgba(255,255,255,0.03)',
-                color: renderMode === mode ? '#C8E8F0' : 'rgba(255,255,255,0.45)',
-                fontSize: 9, borderRadius: 999, padding: '3px 8px', cursor: 'pointer',
-                transition: 'all 0.2s',
-              }}>
+              <button key={mode} type="button" onClick={() => setRenderMode(mode)}
+                className={`nb-tool-toggle ${renderMode === mode ? 'nb-tool-toggle--active' : ''}`}
+                style={{
+                  borderColor: renderMode === mode ? 'rgba(200,232,240,0.3)' : undefined,
+                  background: renderMode === mode ? 'rgba(200,232,240,0.12)' : undefined,
+                  color: renderMode === mode ? '#C8E8F0' : undefined,
+                  fontSize: 9, borderRadius: 999, padding: '3px 8px',
+                }}>
                 {mode === 'confidence' ? 'pLDDT' : mode.charAt(0).toUpperCase() + mode.slice(1)}
               </button>
             ))}
-            <button type="button" onClick={() => setSpinEnabled(!spinEnabled)} style={{
-              border: '1px solid rgba(255,255,255,0.08)',
-              background: spinEnabled ? 'rgba(255,255,255,0.08)' : 'transparent',
-              color: 'rgba(255,255,255,0.5)', fontSize: 9,
-              borderRadius: 999, padding: '3px 8px', cursor: 'pointer',
-            }}>
+            <button type="button" onClick={() => setSpinEnabled(!spinEnabled)}
+              className={`nb-tool-toggle ${spinEnabled ? 'nb-tool-toggle--active' : ''}`}
+              style={{
+                background: spinEnabled ? 'rgba(255,255,255,0.08)' : undefined,
+                fontSize: 9, borderRadius: 999, padding: '3px 8px',
+              }}>
               {spinEnabled ? 'Auto-spin' : 'Static'}
             </button>
           </div>
@@ -352,8 +353,10 @@ export default function CatalystDesignerPageV2() {
               { key: 'stats' as const, label: 'Stats' },
               { key: 'analysis' as const, label: 'Analysis' },
             ]).map(tab => (
-              <button key={tab.key} type="button" onClick={() => setInspectorTab(tab.key)} style={{
-                flex: 1, padding: '7px 0', border: 'none', cursor: 'pointer',
+              <button key={tab.key} type="button" onClick={() => setInspectorTab(tab.key)}
+                className={`nb-tool-toggle ${inspectorTab === tab.key ? 'nb-tool-toggle--active' : ''}`}
+                style={{
+                flex: 1, padding: '7px 0', border: 'none',
                 fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', letterSpacing: '0.06em',
                 textTransform: 'uppercase',
                 color: inspectorTab === tab.key ? VALUE : LABEL,
@@ -541,13 +544,14 @@ export default function CatalystDesignerPageV2() {
                 {/* Sub-tab selector */}
                 <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
                   {VIEW_MODES.map(vm => (
-                    <button key={vm.key} type="button" onClick={() => setViewMode(vm.key)} style={{
+                    <button key={vm.key} type="button" onClick={() => setViewMode(vm.key)}
+                      className={`nb-tool-toggle ${viewMode === vm.key ? 'nb-tool-toggle--active' : ''}`}
+                      style={{
                       fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', fontWeight: viewMode === vm.key ? 600 : 400,
-                      padding: '3px 8px', borderRadius: 10, cursor: 'pointer',
-                      border: viewMode === vm.key ? `1px solid ${vm.color}` : `1px solid ${INPUT_BORDER}`,
-                      background: viewMode === vm.key ? `${vm.color}18` : 'transparent',
-                      color: viewMode === vm.key ? vm.color : INPUT_TEXT,
-                      transition: 'all 0.15s ease',
+                      padding: '3px 8px', borderRadius: 10,
+                      borderColor: viewMode === vm.key ? vm.color : undefined,
+                      background: viewMode === vm.key ? `${vm.color}18` : undefined,
+                      color: viewMode === vm.key ? vm.color : undefined,
                     }}>
                       {vm.label}
                     </button>
