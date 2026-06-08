@@ -161,4 +161,70 @@ describe('ProtocolGenerator — plate scale', () => {
       'plate_1:E1', 'plate_1:F1', 'plate_1:G1', 'plate_1:H1',
     ]);
   });
+
+  it('handles wellCount of 1', () => {
+    const protocol = gen.generatePlateScale(makeIteration(), 1);
+    expect(protocol.pipetting_logic.length).toBeGreaterThan(0);
+    expect(protocol.pipetting_logic[0].destination).toBe('plate_1:A1');
+  });
+
+  it('handles wellCount of 96', () => {
+    const protocol = gen.generatePlateScale(makeIteration(), 96);
+    expect(protocol.pipetting_logic.length).toBeGreaterThan(0);
+  });
+});
+
+describe('ProtocolGenerator — all phases', () => {
+  const gen = new ProtocolGenerator();
+
+  it('generates Build phase protocol', () => {
+    const protocol = gen.generate(makeIteration({ phase: 'Build' }));
+    expect(protocol.metadata.protocolName).toMatch(/Build/);
+    expect(protocol.python_code).toBeDefined();
+  });
+
+  it('generates Test phase protocol', () => {
+    const protocol = gen.generate(makeIteration({ phase: 'Test' }));
+    expect(protocol.metadata.protocolName).toMatch(/Test/);
+    expect(protocol.python_code).toBeDefined();
+  });
+
+  it('generates Learn phase protocol', () => {
+    const protocol = gen.generate(makeIteration({ phase: 'Learn' }));
+    expect(protocol.metadata.protocolName).toMatch(/Learn/);
+    expect(protocol.python_code).toBeDefined();
+  });
+
+  it('handles failed iteration', () => {
+    const protocol = gen.generate(makeIteration({ passed: false, result: 50 }));
+    expect(protocol.python_code).toBeDefined();
+  });
+
+  it('handles different units', () => {
+    const protocol = gen.generate(makeIteration({ unit: 'g/L' }));
+    expect(protocol.python_code).toBeDefined();
+  });
+
+  it('Gibson assembly with 2 fragments', () => {
+    const protocol = gen.generateGibsonAssembly(makeGibsonPlan(2), provenance);
+    expect(protocol.python_code).toBeDefined();
+    expect(protocol.pipetting_logic.length).toBeGreaterThan(0);
+  });
+
+  it('Gibson assembly with 15 fragments (max)', () => {
+    const protocol = gen.generateGibsonAssembly(makeGibsonPlan(15), provenance);
+    expect(protocol.python_code).toBeDefined();
+  });
+
+  it('Gibson assembly with empty provenance', () => {
+    const protocol = gen.generateGibsonAssembly(makeGibsonPlan(3), []);
+    expect(protocol.python_code).toBeDefined();
+  });
+
+  it('Gibson assembly with warnings in plan', () => {
+    const plan = makeGibsonPlan(3);
+    plan.warnings = ['Low GC content in fragment 2', 'High Tm spread'];
+    const protocol = gen.generateGibsonAssembly(plan, provenance);
+    expect(protocol.python_code).toBeDefined();
+  });
 });

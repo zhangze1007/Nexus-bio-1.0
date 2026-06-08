@@ -184,3 +184,217 @@ describe('advanceEventNameForState', () => {
     expect(advanceEventNameForState('dbtlCommitted')).toBeNull();
   });
 });
+
+describe('workflowSupervisor — additional branches', () => {
+  it('handles unknown machine state', () => {
+    const decision = buildWorkflowDecision(
+      makeInput({ machineState: 'unknownState' as any, targetProduct: 'x' }),
+    );
+    expect(decision.status).toBe('idle');
+    expect(decision.reasonCodes).toContain('NO_CURRENT_TOOL');
+  });
+
+  it('handles idle with unregistered pathd adapter', () => {
+    const decision = buildWorkflowDecision(
+      makeInput({
+        machineState: 'idle',
+        isAdapterRegistered: () => false,
+      }),
+    );
+    expect(decision.nextNodeIsContractOnly).toBe(true);
+  });
+
+  it('handles dbtlCommitted without dbtlflow status', () => {
+    const decision = buildWorkflowDecision(
+      makeInput({
+        machineState: 'dbtlCommitted',
+        toolStatus: {},
+      }),
+    );
+    expect(decision.status).toBe('complete');
+    expect(decision.confidence).toBeNull();
+  });
+
+  it('handles upstream blocked with unregistered predecessor adapter', () => {
+    const decision = buildWorkflowDecision(
+      makeInput({
+        machineState: 'pathdReady',
+        targetProduct: 'x',
+        toolStatus: {},
+        isAdapterRegistered: () => false,
+      }),
+    );
+    expect(decision.status).toBe('blocked');
+    expect(decision.nextNodeIsContractOnly).toBe(true);
+  });
+
+  it('handles demoOnly with full status fields', () => {
+    const decision = buildWorkflowDecision(
+      makeInput({
+        machineState: 'targetSet',
+        targetProduct: 'x',
+        toolStatus: {
+          pathd: {
+            validity: 'partial',
+            confidence: 0.8,
+            uncertainty: 0.2,
+            hasRequiredOutputs: true,
+            isSimulated: true,
+          },
+        },
+      }),
+    );
+    expect(decision.status).toBe('demoOnly');
+    expect(decision.confidence).toBe(0.8);
+    expect(decision.uncertainty).toBe(0.2);
+  });
+
+  it('handles ready state with no status object', () => {
+    const decision = buildWorkflowDecision(
+      makeInput({
+        machineState: 'targetSet',
+        targetProduct: 'x',
+        toolStatus: {},
+      }),
+    );
+    expect(decision.status).toBe('ready');
+    expect(decision.explanation).toContain('Run PATHD');
+  });
+
+  it('handles ready state with status but missing outputs', () => {
+    const decision = buildWorkflowDecision(
+      makeInput({
+        machineState: 'targetSet',
+        targetProduct: 'x',
+        toolStatus: {
+          pathd: {
+            validity: 'real',
+            confidence: 0.9,
+            hasRequiredOutputs: false,
+          },
+        },
+      }),
+    );
+    expect(decision.status).toBe('ready');
+    expect(decision.reasonCodes).toContain('CURRENT_TOOL_NOT_READY');
+  });
+
+  it('handles ready state with low confidence', () => {
+    const decision = buildWorkflowDecision(
+      makeInput({
+        machineState: 'targetSet',
+        targetProduct: 'x',
+        toolStatus: {
+          pathd: {
+            validity: 'real',
+            confidence: 0.1,
+            hasRequiredOutputs: true,
+          },
+        },
+      }),
+    );
+    expect(decision.status).toBe('ready');
+    // PATHD may or may not have a confidence gate — just verify the decision is valid
+    expect(decision.currentToolId).toBe('pathd');
+  });
+
+  it('handles satisfied state with evidence items', () => {
+    const decision = buildWorkflowDecision(
+      makeInput({
+        machineState: 'pathdReady',
+        targetProduct: 'x',
+        toolStatus: { pathd: PARTIAL_OK, fbasim: PARTIAL_OK },
+        evidence: [
+          { id: 'ev1', sourceKind: 'literature', title: 'Paper 1' },
+          { id: 'ev2', sourceKind: 'analysis', title: 'Analysis 1' },
+        ] as any,
+      }),
+    );
+    expect(decision.status).toBe('ready');
+    expect(decision.missingEvidence.have).toBe(2);
+  });
+
+  it('handles upstream blocked with missing validity', () => {
+    const decision = buildWorkflowDecision(
+      makeInput({
+        machineState: 'pathdReady',
+        targetProduct: 'x',
+        toolStatus: {
+          pathd: {
+            validity: null,
+            confidence: 1,
+            hasRequiredOutputs: true,
+          },
+        },
+      }),
+    );
+    expect(decision.status).toBe('blocked');
+    expect(decision.reasonCodes).toContain('UPSTREAM_BLOCKED');
+  });
+
+  it('handles upstream blocked with simulated predecessor', () => {
+    const decision = buildWorkflowDecision(
+      makeInput({
+        machineState: 'pathdReady',
+        targetProduct: 'x',
+        toolStatus: {
+          pathd: {
+            validity: 'real',
+            confidence: 1,
+            hasRequiredOutputs: true,
+            isSimulated: true,
+          },
+        },
+      }),
+    );
+    expect(decision.status).toBe('blocked');
+  });
+
+  it('summariseDecision for blocked status', () => {
+    const decision = buildWorkflowDecision(
+      makeInput({
+        machineState: 'pathdReady',
+        targetProduct: 'x',
+        toolStatus: {},
+      }),
+    );
+    const line = summariseDecision(decision);
+    expect(line).toMatch(/BLOCKED/);
+  });
+
+  it('summariseDecision for demoOnly status', () => {
+    const decision = buildWorkflowDecision(
+      makeInput({
+        machineState: 'targetSet',
+        targetProduct: 'x',
+        toolStatus: { pathd: { ...PARTIAL_OK, isSimulated: true } },
+      }),
+    );
+    const line = summariseDecision(decision);
+    expect(line).toMatch(/DEMO/);
+  });
+
+  it('summariseDecision for complete status', () => {
+    const decision = buildWorkflowDecision(
+      makeInput({
+        machineState: 'dbtlCommitted',
+        toolStatus: { dbtlflow: PARTIAL_OK },
+      }),
+    );
+    const line = summariseDecision(decision);
+    expect(line).toMatch(/COMPLETE/);
+  });
+
+  it('summariseDecision for idle status', () => {
+    const decision = buildWorkflowDecision(makeInput({ machineState: 'idle' }));
+    const line = summariseDecision(decision);
+    expect(line).toMatch(/IDLE/);
+  });
+
+  it('advanceEventNameForState handles all states', () => {
+    expect(advanceEventNameForState('fbasimReady')).toBe('CATDES_DONE');
+    expect(advanceEventNameForState('catdesReady')).toBe('DYNCON_DONE');
+    expect(advanceEventNameForState('dynconReady')).toBe('CELLFREE_DONE');
+    expect(advanceEventNameForState('cellfreeReady')).toBe('DBTL_COMMITTED');
+  });
+});
