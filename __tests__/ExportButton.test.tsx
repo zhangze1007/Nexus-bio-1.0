@@ -18,7 +18,7 @@ import ExportButton from '../src/components/ide/shared/ExportButton';
 
 // ── Mocks ──
 
-const mockCreateObjectURL = jest.fn(() => 'blob:mock-url');
+const mockCreateObjectURL = jest.fn((_blob?: Blob): string => 'blob:mock-url');
 const mockRevokeObjectURL = jest.fn();
 const mockClick = jest.fn();
 const mockToDataURL = jest.fn(() => 'data:image/png;base64,abc');
@@ -116,7 +116,7 @@ describe('ExportButton', () => {
     fireEvent.click(screen.getByRole('button'));
 
     expect(mockCreateObjectURL).toHaveBeenCalled();
-    const blob = mockCreateObjectURL.mock.calls[0][0] as Blob;
+    const blob = mockCreateObjectURL.mock.calls[0][0] as unknown as Blob;
     expect(blob.type).toBe('application/json');
     expect(mockClick).toHaveBeenCalled();
     expect(mockRevokeObjectURL).toHaveBeenCalledWith('blob:mock-url');
@@ -130,7 +130,7 @@ describe('ExportButton', () => {
     render(<ExportButton label="CSV" data={data} filename="table" format="csv" />);
     fireEvent.click(screen.getByRole('button'));
 
-    const blob = mockCreateObjectURL.mock.calls[0][0] as Blob;
+    const blob = mockCreateObjectURL.mock.calls[0][0] as unknown as Blob;
     expect(blob.type).toBe('text/csv');
   });
 
@@ -138,7 +138,7 @@ describe('ExportButton', () => {
     render(<ExportButton label="CSV" data={{ not: 'array' }} filename="bad" format="csv" />);
     fireEvent.click(screen.getByRole('button'));
 
-    const blob = mockCreateObjectURL.mock.calls[0][0] as Blob;
+    const blob = mockCreateObjectURL.mock.calls[0][0] as unknown as Blob;
     expect(blob.type).toBe('text/csv');
   });
 
@@ -146,7 +146,7 @@ describe('ExportButton', () => {
     render(<ExportButton label="CSV" data={[]} filename="empty" format="csv" />);
     fireEvent.click(screen.getByRole('button'));
 
-    const blob = mockCreateObjectURL.mock.calls[0][0] as Blob;
+    const blob = mockCreateObjectURL.mock.calls[0][0] as unknown as Blob;
     expect(blob.type).toBe('text/csv');
   });
 
@@ -159,7 +159,7 @@ describe('ExportButton', () => {
 
     expect(mockSerializeToString).toHaveBeenCalledWith(svgEl);
     expect(mockCreateObjectURL).toHaveBeenCalled();
-    const blob = mockCreateObjectURL.mock.calls[0][0] as Blob;
+    const blob = mockCreateObjectURL.mock.calls[0][0] as unknown as Blob;
     expect(blob.type).toBe('image/svg+xml');
     expect(mockClick).toHaveBeenCalled();
   });

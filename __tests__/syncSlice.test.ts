@@ -11,6 +11,7 @@
 import { createSyncSlice, syncInitialState } from '../src/store/slices/syncSlice';
 import type { SyncSlice } from '../src/store/slices/syncSlice';
 import type { WorkbenchCanonicalState } from '../src/store/workbenchTypes';
+import type { WorkflowArtifact, WorkflowArtifactNode } from '../src/domain/workflowArtifact';
 
 // ── Mocks ──
 
@@ -30,30 +31,30 @@ const mockSanitizeWorkbenchHistory = jest.fn(() => []);
 const mockNormalizeNonEmptyId = jest.fn((id: string | null) => id || null);
 
 jest.mock('../src/store/slices/sharedHelpers', () => ({
-  buildCanonicalSlice: (...args: unknown[]) => mockBuildCanonicalSlice(...args),
-  requestCanonicalState: (...args: unknown[]) => mockRequestCanonicalState(...args),
-  buildCanonicalPatchFromWorkflowArtifact: (...args: unknown[]) => mockBuildCanonicalPatchFromWorkflowArtifact(...args),
-  buildWorkflowControlSnapshot: (...args: unknown[]) => mockBuildWorkflowControlSnapshot(...args),
-  isValidPersistedWorkflowArtifact: (...args: unknown[]) => mockIsValidPersistedWorkflowArtifact(...args),
-  summarizeWorkflowArtifactDebug: (...args: unknown[]) => mockSummarizeWorkflowArtifactDebug(...args),
+  buildCanonicalSlice: (...args: unknown[]) => (mockBuildCanonicalSlice as Function)(...args),
+  requestCanonicalState: (...args: unknown[]) => (mockRequestCanonicalState as Function)(...args),
+  buildCanonicalPatchFromWorkflowArtifact: (...args: unknown[]) => (mockBuildCanonicalPatchFromWorkflowArtifact as Function)(...args),
+  buildWorkflowControlSnapshot: (...args: unknown[]) => (mockBuildWorkflowControlSnapshot as Function)(...args),
+  isValidPersistedWorkflowArtifact: (...args: unknown[]) => (mockIsValidPersistedWorkflowArtifact as Function)(...args),
+  summarizeWorkflowArtifactDebug: (...args: unknown[]) => (mockSummarizeWorkflowArtifactDebug as Function)(...args),
 }));
 
 jest.mock('../src/domain/workflowArtifactAdapters', () => ({
-  deriveAnalyzeCompatibilityProjection: (...args: unknown[]) => mockDeriveAnalyzeCompatibilityProjection(...args),
+  deriveAnalyzeCompatibilityProjection: (...args: unknown[]) => (mockDeriveAnalyzeCompatibilityProjection as Function)(...args),
 }));
 
 jest.mock('../src/store/workbenchStoreHelpers', () => ({
-  normalizeNonEmptyId: (...args: unknown[]) => mockNormalizeNonEmptyId(...args),
+  normalizeNonEmptyId: (...args: unknown[]) => (mockNormalizeNonEmptyId as Function)(...args),
   DEFAULT_PROJECT_SYNC_SCOPE: 'default-workbench',
 }));
 
 jest.mock('../src/store/workbenchValidation', () => ({
-  sanitizeWorkbenchState: (...args: unknown[]) => mockSanitizeWorkbenchState(...args),
-  sanitizeWorkbenchBackendMeta: (...args: unknown[]) => mockSanitizeWorkbenchBackendMeta(...args),
-  sanitizeWorkbenchCollaborators: (...args: unknown[]) => mockSanitizeWorkbenchCollaborators(...args),
-  sanitizeWorkbenchExperimentRecords: (...args: unknown[]) => mockSanitizeWorkbenchExperimentRecords(...args),
-  sanitizeWorkbenchAuditLog: (...args: unknown[]) => mockSanitizeWorkbenchAuditLog(...args),
-  sanitizeWorkbenchHistory: (...args: unknown[]) => mockSanitizeWorkbenchHistory(...args),
+  sanitizeWorkbenchState: (...args: unknown[]) => (mockSanitizeWorkbenchState as Function)(...args),
+  sanitizeWorkbenchBackendMeta: (...args: unknown[]) => (mockSanitizeWorkbenchBackendMeta as Function)(...args),
+  sanitizeWorkbenchCollaborators: (...args: unknown[]) => (mockSanitizeWorkbenchCollaborators as Function)(...args),
+  sanitizeWorkbenchExperimentRecords: (...args: unknown[]) => (mockSanitizeWorkbenchExperimentRecords as Function)(...args),
+  sanitizeWorkbenchAuditLog: (...args: unknown[]) => (mockSanitizeWorkbenchAuditLog as Function)(...args),
+  sanitizeWorkbenchHistory: (...args: unknown[]) => (mockSanitizeWorkbenchHistory as Function)(...args),
 }));
 
 // ── Helpers ──
@@ -141,7 +142,7 @@ function createTestSlice(overrides?: Record<string, unknown>) {
     }
   };
   const get: GetFn = () => state;
-  const slice = createSyncSlice(set as Parameters<typeof createSyncSlice>[0], get as Parameters<typeof createSyncSlice>[1], {} as Parameters<typeof createSyncSlice>[2]);
+  const slice = createSyncSlice(set as unknown as Parameters<typeof createSyncSlice>[0], get as unknown as Parameters<typeof createSyncSlice>[1], {} as Parameters<typeof createSyncSlice>[2]);
   return { slice, getState: () => state, set, get };
 }
 
@@ -443,8 +444,8 @@ describe('syncSlice', () => {
           id: 'artifact-1',
           version: 3,
           status: 'compiled',
-          atomicPathwayGraph: { nodes: [{ id: 'n1' }], edges: [] },
-        },
+          atomicPathwayGraph: { nodes: [{ id: 'n1' } as unknown as WorkflowArtifactNode], edges: [] },
+        } as unknown as WorkflowArtifact,
       });
       mockRequestCanonicalState.mockResolvedValue({
         canonicalState: canonical,

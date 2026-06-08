@@ -254,7 +254,7 @@ describe('ErrorBoundary edge cases', () => {
   });
 
   it('catches errors from deeply nested children', () => {
-    function DeepChild() {
+    function DeepChild(): never {
       throw new Error('Deep error');
     }
     function MiddleLayer() {

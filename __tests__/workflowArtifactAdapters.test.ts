@@ -21,9 +21,9 @@ function makeArtifact(overrides?: Partial<WorkflowArtifact>): WorkflowArtifact {
     evidencePackets: [],
     atomicPathwayGraph: {
       nodes: [
-        { id: 'n1', label: 'Acetyl-CoA', role: 'metabolite', nodeType: 'metabolite', summary: '', citation: '', color: '' },
-        { id: 'n2', label: 'Artemisinin', role: 'metabolite', nodeType: 'metabolite', summary: '', citation: '', color: '' },
-        { id: 'n3', label: 'ADS', role: 'enzyme', nodeType: 'enzyme', summary: 'Rate-limiting step', citation: '', color: '' },
+        { id: 'n1', label: 'Acetyl-CoA', role: 'metabolite', nodeType: 'metabolite', summary: '', citation: '', color: '', position: [0, 0, 0] as [number, number, number] },
+        { id: 'n2', label: 'Artemisinin', role: 'metabolite', nodeType: 'metabolite', summary: '', citation: '', color: '', position: [0, 0, 0] as [number, number, number] },
+        { id: 'n3', label: 'ADS', role: 'enzyme', nodeType: 'enzyme', summary: 'Rate-limiting step', citation: '', color: '', position: [0, 0, 0] as [number, number, number] },
       ],
       edges: [
         { start: 'n1', end: 'n3', key: 'k1', role: 'catalysis' },
@@ -63,8 +63,8 @@ describe('deriveAnalyzeCompatibilityProjection', () => {
     const artifact = makeArtifact({
       atomicPathwayGraph: {
         nodes: [
-          { id: 'e1', label: 'EnzymeA', role: 'enzyme', nodeType: 'enzyme', summary: '', citation: '', color: '' },
-          { id: 'e2', label: 'EnzymeB', role: 'enzyme', nodeType: 'enzyme', summary: '', citation: '', color: '' },
+          { id: 'e1', label: 'EnzymeA', role: 'enzyme', nodeType: 'enzyme', summary: '', citation: '', color: '', position: [0, 0, 0] as [number, number, number] },
+          { id: 'e2', label: 'EnzymeB', role: 'enzyme', nodeType: 'enzyme', summary: '', citation: '', color: '', position: [0, 0, 0] as [number, number, number] },
         ],
         edges: [],
       },
@@ -125,11 +125,11 @@ describe('deriveAnalyzeCompatibilityProjection', () => {
 
   it('filters bottleneck nodes correctly', () => {
     const nodes: WorkflowArtifactNode[] = [
-      { id: 'n1', label: 'Met', role: 'metabolite', nodeType: 'metabolite', summary: '', citation: '', color: '' },
-      { id: 'n2', label: 'Enz1', role: 'enzyme', nodeType: 'enzyme', summary: '', citation: '', color: '' },
-      { id: 'n3', label: 'Enz2', role: 'enzyme', nodeType: 'enzyme', summary: 'bottleneck step', citation: '', color: '' },
-      { id: 'n4', label: 'HighRisk', role: 'metabolite', nodeType: 'metabolite', summary: '', risk_score: 0.7, citation: '', color: '' },
-      { id: 'n5', label: 'LowRisk', role: 'metabolite', nodeType: 'metabolite', summary: '', risk_score: 0.3, citation: '', color: '' },
+      { id: 'n1', label: 'Met', role: 'metabolite', nodeType: 'metabolite', summary: '', citation: '', color: '', position: [0, 0, 0] as [number, number, number] },
+      { id: 'n2', label: 'Enz1', role: 'enzyme', nodeType: 'enzyme', summary: '', citation: '', color: '', position: [0, 0, 0] as [number, number, number] },
+      { id: 'n3', label: 'Enz2', role: 'enzyme', nodeType: 'enzyme', summary: 'bottleneck step', citation: '', color: '', position: [0, 0, 0] as [number, number, number] },
+      { id: 'n4', label: 'HighRisk', role: 'metabolite', nodeType: 'metabolite', summary: '', risk_score: 0.7, citation: '', color: '', position: [0, 0, 0] as [number, number, number] },
+      { id: 'n5', label: 'LowRisk', role: 'metabolite', nodeType: 'metabolite', summary: '', risk_score: 0.3, citation: '', color: '', position: [0, 0, 0] as [number, number, number] },
     ];
     const artifact = makeArtifact({
       atomicPathwayGraph: { nodes, edges: [] },
@@ -147,10 +147,11 @@ describe('deriveAnalyzeCompatibilityProjection', () => {
       id: `e${i}`,
       label: `Enz${i}`,
       role: 'enzyme' as const,
-      nodeType: 'enzyme',
+      nodeType: 'enzyme' as const,
       summary: '',
       citation: '',
       color: '',
+      position: [0, 0, 0] as [number, number, number],
     }));
     const artifact = makeArtifact({
       atomicPathwayGraph: { nodes, edges: [] },
@@ -161,7 +162,7 @@ describe('deriveAnalyzeCompatibilityProjection', () => {
 
   it('sets yieldLossPercent from risk_score', () => {
     const nodes: WorkflowArtifactNode[] = [
-      { id: 'n1', label: 'Enz', role: 'enzyme', nodeType: 'enzyme', summary: '', risk_score: 0.75, citation: '', color: '' },
+      { id: 'n1', label: 'Enz', role: 'enzyme', nodeType: 'enzyme', summary: '', risk_score: 0.75, citation: '', color: '', position: [0, 0, 0] as [number, number, number] },
     ];
     const artifact = makeArtifact({
       atomicPathwayGraph: { nodes, edges: [] },
@@ -172,7 +173,7 @@ describe('deriveAnalyzeCompatibilityProjection', () => {
 
   it('sets yieldLossPercent to undefined when no risk_score', () => {
     const nodes: WorkflowArtifactNode[] = [
-      { id: 'n1', label: 'Enz', role: 'enzyme', nodeType: 'enzyme', summary: '', citation: '', color: '' },
+      { id: 'n1', label: 'Enz', role: 'enzyme', nodeType: 'enzyme', summary: '', citation: '', color: '', position: [0, 0, 0] as [number, number, number] },
     ];
     const artifact = makeArtifact({
       atomicPathwayGraph: { nodes, edges: [] },
@@ -193,10 +194,11 @@ describe('deriveAnalyzeCompatibilityProjection', () => {
       id: `e${i}`,
       label: `Enz${i}`,
       role: 'enzyme' as const,
-      nodeType: 'enzyme',
+      nodeType: 'enzyme' as const,
       summary: '',
       citation: '',
       color: '',
+      position: [0, 0, 0] as [number, number, number],
     }));
     const artifact = makeArtifact({
       atomicPathwayGraph: { nodes, edges: [] },
@@ -207,7 +209,7 @@ describe('deriveAnalyzeCompatibilityProjection', () => {
 
   it('uses gene_recommendation for enzyme rationale when available', () => {
     const nodes: WorkflowArtifactNode[] = [
-      { id: 'n1', label: 'Enz', role: 'enzyme', nodeType: 'enzyme', summary: 'Some summary', gene_recommendation: 'Use variant X', citation: '', color: '' },
+      { id: 'n1', label: 'Enz', role: 'enzyme', nodeType: 'enzyme', summary: 'Some summary', gene_recommendation: 'Use variant X', citation: '', color: '', position: [0, 0, 0] as [number, number, number] },
     ];
     const artifact = makeArtifact({
       atomicPathwayGraph: { nodes, edges: [] },
@@ -218,7 +220,7 @@ describe('deriveAnalyzeCompatibilityProjection', () => {
 
   it('falls back to summary for enzyme rationale', () => {
     const nodes: WorkflowArtifactNode[] = [
-      { id: 'n1', label: 'Enz', role: 'enzyme', nodeType: 'enzyme', summary: 'Important enzyme', citation: '', color: '' },
+      { id: 'n1', label: 'Enz', role: 'enzyme', nodeType: 'enzyme', summary: 'Important enzyme', citation: '', color: '', position: [0, 0, 0] as [number, number, number] },
     ];
     const artifact = makeArtifact({
       atomicPathwayGraph: { nodes, edges: [] },
@@ -229,7 +231,7 @@ describe('deriveAnalyzeCompatibilityProjection', () => {
 
   it('uses default rationale when both gene_recommendation and summary are empty', () => {
     const nodes: WorkflowArtifactNode[] = [
-      { id: 'n1', label: 'Enz', role: 'enzyme', nodeType: 'enzyme', summary: '', citation: '', color: '' },
+      { id: 'n1', label: 'Enz', role: 'enzyme', nodeType: 'enzyme', summary: '', citation: '', color: '', position: [0, 0, 0] as [number, number, number] },
     ];
     const artifact = makeArtifact({
       atomicPathwayGraph: { nodes, edges: [] },
@@ -284,7 +286,7 @@ describe('deriveAnalyzeCompatibilityProjection', () => {
     const artifact = makeArtifact({
       atomicPathwayGraph: {
         nodes: [
-          { id: 'n1', label: 'Met', role: 'metabolite', nodeType: 'metabolite', summary: '', citation: '', color: '' },
+          { id: 'n1', label: 'Met', role: 'metabolite', nodeType: 'metabolite', summary: '', citation: '', color: '', position: [0, 0, 0] as [number, number, number] },
         ],
         edges: [],
       },
@@ -350,7 +352,7 @@ describe('deriveAnalyzeCompatibilityProjection', () => {
 
   it('detects bottleneck via summary pattern matching (rate-limiting)', () => {
     const nodes: WorkflowArtifactNode[] = [
-      { id: 'n1', label: 'X', role: 'metabolite', nodeType: 'metabolite', summary: 'rate limiting step', citation: '', color: '' },
+      { id: 'n1', label: 'X', role: 'metabolite', nodeType: 'metabolite', summary: 'rate limiting step', citation: '', color: '', position: [0, 0, 0] as [number, number, number] },
     ];
     const artifact = makeArtifact({
       atomicPathwayGraph: { nodes, edges: [] },
@@ -361,7 +363,7 @@ describe('deriveAnalyzeCompatibilityProjection', () => {
 
   it('detects bottleneck via summary pattern matching (rate-limiting with hyphen)', () => {
     const nodes: WorkflowArtifactNode[] = [
-      { id: 'n1', label: 'X', role: 'metabolite', nodeType: 'metabolite', summary: 'rate-limiting enzyme', citation: '', color: '' },
+      { id: 'n1', label: 'X', role: 'metabolite', nodeType: 'metabolite', summary: 'rate-limiting enzyme', citation: '', color: '', position: [0, 0, 0] as [number, number, number] },
     ];
     const artifact = makeArtifact({
       atomicPathwayGraph: { nodes, edges: [] },
@@ -372,8 +374,8 @@ describe('deriveAnalyzeCompatibilityProjection', () => {
 
   it('sets detail from summary or default', () => {
     const nodes: WorkflowArtifactNode[] = [
-      { id: 'n1', label: 'Enz', role: 'enzyme', nodeType: 'enzyme', summary: 'Custom detail', citation: '', color: '' },
-      { id: 'n2', label: 'Enz2', role: 'enzyme', nodeType: 'enzyme', summary: '', citation: '', color: '' },
+      { id: 'n1', label: 'Enz', role: 'enzyme', nodeType: 'enzyme', summary: 'Custom detail', citation: '', color: '', position: [0, 0, 0] as [number, number, number] },
+      { id: 'n2', label: 'Enz2', role: 'enzyme', nodeType: 'enzyme', summary: '', citation: '', color: '', position: [0, 0, 0] as [number, number, number] },
     ];
     const artifact = makeArtifact({
       atomicPathwayGraph: { nodes, edges: [] },
