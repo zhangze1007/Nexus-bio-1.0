@@ -30,8 +30,8 @@ test.describe('Homepage search bar', () => {
     // Use type instead of fill to properly trigger React's onChange handler
     await input.click();
     await input.type('metabolic engineering', { delay: 10 });
-    // Small wait to ensure React has processed the state update
-    await page.waitForTimeout(200);
+    // Wait for React to process the state update by checking the input value
+    await expect(input).toHaveValue('metabolic engineering');
     await input.press('Enter');
 
     // Should navigate to /research?q=metabolic%20engineering

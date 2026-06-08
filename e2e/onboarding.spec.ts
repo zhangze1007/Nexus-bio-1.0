@@ -124,8 +124,9 @@ test.describe('Onboarding overlay', () => {
     await page.reload();
     await page.waitForLoadState('domcontentloaded');
 
-    // Give the page a moment to hydrate, then verify the overlay is absent
-    await page.waitForTimeout(2000);
+    // Wait for the page to fully hydrate (h1 renders after hydration)
+    await expect(page.locator('h1')).toBeVisible({ timeout: 10000 });
+    // Verify the overlay is absent — it should not render when localStorage is set
     await expect(page.getByText('Welcome', { exact: false })).not.toBeVisible();
   });
 });
