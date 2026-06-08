@@ -63,7 +63,7 @@ const TOOLS_BASIC: Array<{
   { route: '/tools/catdes', moduleId: 'CATDES' },
   { route: '/tools/dbtlflow', moduleId: 'DBTL', usesToolShell: false },
   { route: '/tools/gecair', moduleId: 'GECAIR', usesToolShell: false },
-  { route: '/tools/metabolic-eng', moduleId: 'METABOLIC-ENG', usesToolShell: false },
+  { route: '/tools/metabolic-eng', moduleId: 'METABOLIC-ENG' },
   { route: '/tools/nexai', moduleId: 'NEXAI' },
   { route: '/tools/proevol', moduleId: 'PROEVOL', usesToolShell: false },
 ];
@@ -93,6 +93,14 @@ test.describe('Tool page loading', () => {
   for (const tool of [...TOOLS_WITH_TABS, ...TOOLS_BASIC]) {
     test(`${tool.route} loads and shows the module badge`, async ({ page }) => {
       await page.goto(tool.route);
+
+      // metabolic-eng redirects to pathd — verify redirect
+      if (tool.route === '/tools/metabolic-eng') {
+        await expect(page).toHaveURL(/\/tools\/pathd/);
+        await waitForToolHeader(page, 'PATHD');
+        return;
+      }
+
       const usesToolShell = 'usesToolShell' in tool ? tool.usesToolShell !== false : true;
       await waitForToolHeader(page, tool.moduleId, usesToolShell);
     });
@@ -123,6 +131,12 @@ test.describe('Tool page tab switching', () => {
         const toggleButton = page.locator('button[aria-label="Toggle sidebar"]');
         await toggleButton.click();
         await expect(sidebar).toHaveAttribute('aria-expanded', 'false');
+      }
+
+      // Some tabs are hidden in "simple" mode — switch to "advanced" mode if available
+      const advancedButton = page.locator('button', { hasText: 'Advanced' });
+      if (await advancedButton.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await advancedButton.click();
       }
 
       // The first tab should be active by default — verify it has the aria-selected attribute
