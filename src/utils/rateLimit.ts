@@ -10,7 +10,9 @@
  *   UPSTASH_REDIS_REST_TOKEN — Upstash Redis REST token
  */
 
-import { Redis } from '@upstash/redis';
+// Dynamic import to avoid Edge Runtime issues with @upstash/redis
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let Redis: any = null;
 
 // ── Types ───────────────────────────────────────────────────────────────
 
@@ -46,10 +48,11 @@ export function getRateLimitConfig(path: string): RateLimitConfig {
 
 // ── Redis client (lazy singleton) ───────────────────────────────────────
 
-let redisClient: Redis | null = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let redisClient: any = null;
 let redisInitialized = false;
 
-function getRedis(): Redis | null {
+async function getRedis(): Promise<any> {
   if (redisInitialized) return redisClient;
 
   redisInitialized = true;
@@ -57,7 +60,10 @@ function getRedis(): Redis | null {
   const token = process.env.UPSTASH_REDIS_REST_TOKEN;
 
   if (url && token) {
-    redisClient = new Redis({ url, token });
+    // Dynamic import to avoid Edge Runtime issues
+    const { Redis: RedisClass } = await import('@upstash/redis');
+    Redis = RedisClass;
+    redisClient = new RedisClass({ url, token });
   }
 
   return redisClient;
@@ -111,7 +117,8 @@ function checkRateLimitMemory(
 // ── Redis sliding window ────────────────────────────────────────────────
 
 async function checkRateLimitRedis(
-  redis: Redis,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  redis: any,
   key: string,
   limit: number,
   windowMs: number,
@@ -170,7 +177,7 @@ export async function checkRateLimit(
   const normalizedPath = path.split('/').slice(0, 3).join('/');
   const key = `rl:${ip}:${normalizedPath}`;
 
-  const redis = getRedis();
+  const redis = await getRedis();
   if (redis) {
     try {
       return await checkRateLimitRedis(redis, key, limit, windowMs);
