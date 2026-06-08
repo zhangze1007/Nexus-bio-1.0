@@ -5,6 +5,7 @@ import {
   ResponsiveContainer, ReferenceLine, LabelList,
 } from 'recharts';
 import type { BindingAffinityResult } from '../../services/CatalystDesignerEngine';
+import type { ChartTooltipProps, ChartEntryProps } from '../../types/charts';
 import {
   ACCENT, COOL, FONT, TOOLTIP_STYLE, CHART_CONTAINER,
   SECTION_LABEL, rechartsGrid, rechartsTick, fmt2,
@@ -12,16 +13,16 @@ import {
 
 /* ── Glassmorphism Tooltip ────────────────────────────────────── */
 
-function GlassTooltip({ active, payload, label }: any) {
+function GlassTooltip({ active, payload, label }: ChartTooltipProps) {
   if (!active || !payload?.length) return null;
   return (
     <div style={TOOLTIP_STYLE}>
       <p style={{ margin: 0, fontSize: 10, color: 'rgba(255,255,255,0.5)', fontFamily: FONT.SANS }}>
         {label}
       </p>
-      {payload.map((entry: any, i: number) => (
+      {payload.map((entry: ChartEntryProps, i: number) => (
         <p key={i} style={{ margin: '2px 0 0', fontFamily: FONT.MONO, color: entry.color }}>
-          {fmt2(entry.value)}
+          {fmt2(entry.value as number)}
         </p>
       ))}
     </div>

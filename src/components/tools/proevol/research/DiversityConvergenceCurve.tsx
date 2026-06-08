@@ -10,6 +10,7 @@ import {
 } from '../../../charts/chartTheme';
 import { PROEVOL_THEME } from '../shared';
 import type { DiversityRoundPoint } from '../../../../services/proevolAnalysis';
+import type { ChartTooltipProps } from '../../../../types/charts';
 import type { ProEvolBandSemantic } from '../../../../domain/proevolArtifact';
 
 const SHANNON_COLOR = SCI_PALETTE.blue;
@@ -33,9 +34,9 @@ interface Row {
 
 function buildTooltip(bandSemantic: ProEvolBandSemantic) {
   const bandLabel = bandSemantic === 'measurement' ? '95% CI' : 'model spread';
-  return function CustomTooltip({ active, payload, label }: any) {
+  return function CustomTooltip({ active, payload, label }: ChartTooltipProps) {
     if (!active || !payload?.length) return null;
-    const row = payload[0]?.payload as Row | undefined;
+    const row = payload[0]?.payload as unknown as Row | undefined;
     if (!row) return null;
     return (
       <div style={TOOLTIP_STYLE}>
@@ -138,7 +139,7 @@ export default function DiversityConvergenceCurve({ data, bandSemantic }: Divers
               style: { ...rechartsAxisTitle, fill: TOP_SHARE_COLOR },
             }}
           />
-          <Tooltip content={buildTooltip(bandSemantic)} />
+          <Tooltip content={buildTooltip(bandSemantic) as unknown as React.ReactElement} />
           <Legend
             wrapperStyle={{ fontFamily: FONT.SANS, fontSize: 11, color: 'rgba(232,238,248,0.82)' }}
             iconSize={10}

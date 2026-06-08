@@ -35,7 +35,7 @@ export interface Use3DmolConfig {
 }
 
 export interface Use3DmolResult {
-  viewer: any | null;
+  viewer: $3DmolViewer | null;
   status: 'loading' | 'ready' | 'error';
 }
 
@@ -48,7 +48,7 @@ export function use3Dmol(
   config: Use3DmolConfig = {},
 ): Use3DmolResult {
   const { backgroundColor = '0x0d0f14' } = config;
-  const viewerRef = useRef<any>(null);
+  const viewerRef = useRef<$3DmolViewer | null>(null);
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
 
   useEffect(() => {

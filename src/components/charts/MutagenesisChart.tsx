@@ -5,6 +5,7 @@ import {
   ResponsiveContainer, LabelList, ReferenceLine,
 } from 'recharts';
 import type { MutagenesisResult, EnzymeStructure } from '../../services/CatalystDesignerEngine';
+import type { ChartTooltipProps, ChartEntryProps } from '../../types/charts';
 import {
   ACCENT, WARM, COOL, FONT, TOOLTIP_STYLE, CHART_CONTAINER,
   SECTION_LABEL, rechartsGrid, rechartsTick, fmt2,
@@ -12,9 +13,15 @@ import {
 
 /* ── Glassmorphism Tooltip ────────────────────────────────────── */
 
-function GlassTooltip({ active, payload, label }: any) {
+interface MutagenesisTooltipSite {
+  wildTypeResidue?: string;
+  position?: number;
+  rationale?: string;
+}
+
+function GlassTooltip({ active, payload, label }: ChartTooltipProps) {
   if (!active || !payload?.length) return null;
-  const site = payload[0]?.payload;
+  const site = payload[0]?.payload as unknown as MutagenesisTooltipSite | undefined;
   return (
     <div style={TOOLTIP_STYLE}>
       <p style={{ margin: 0, fontSize: 11, fontFamily: FONT.MONO, color: 'rgba(250,246,240,0.96)', fontWeight: 600 }}>
@@ -23,7 +30,7 @@ function GlassTooltip({ active, payload, label }: any) {
       <p style={{ margin: '2px 0 0', fontFamily: FONT.SANS, fontSize: 9, color: 'rgba(255,255,255,0.5)' }}>
         {site?.rationale}
       </p>
-      {payload.map((entry: any, i: number) => (
+      {payload.map((entry: ChartEntryProps, i: number) => (
         <p key={i} style={{ margin: '2px 0 0', fontFamily: FONT.MONO, color: entry.color || ACCENT.mint }}>
           {entry.name}: {fmt2(entry.value as number)}
         </p>

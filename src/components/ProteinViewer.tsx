@@ -11,7 +11,7 @@ function sanitizeMolData(data: string): string {
 
 export default function ProteinViewer({ pdbId, alphafoldId, label }: { pdbId: string; alphafoldId?: string; label: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const viewerRef = useRef<any>(null);
+  const viewerRef = useRef<$3DmolViewer | null>(null);
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [useAF, setUseAF] = useState(false);
   const [renderMode, setRenderMode] = useState<'cartoon' | 'surface' | 'confidence'>('cartoon');
@@ -63,8 +63,8 @@ export default function ProteinViewer({ pdbId, alphafoldId, label }: { pdbId: st
         } else if (renderMode === 'confidence' && useAF && alphafoldId) {
           viewer.setStyle({}, {
             cartoon: {
-              colorfunc: (atom: any) => {
-                const b = atom.b;
+              colorfunc: (atom: Record<string, unknown>) => {
+                const b = atom.b as number;
                 if (b >= 90) return 0x0053D6;
                 if (b >= 70) return 0x65CBF3;
                 if (b >= 50) return 0xFFDB13;
@@ -144,7 +144,7 @@ export default function ProteinViewer({ pdbId, alphafoldId, label }: { pdbId: st
                   '--tx': `${tx}px`,
                   animationDelay: `${(i / 18) * 2.2}s`,
                   animationDuration: `${1.8 + (i % 3) * 0.4}s`,
-                } as any} />
+                } as React.CSSProperties} />
               );
             })}
             <div style={{ position: 'relative', width: '48px', height: '48px' }}>

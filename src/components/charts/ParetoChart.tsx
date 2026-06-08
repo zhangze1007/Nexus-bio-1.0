@@ -5,6 +5,7 @@ import {
   ResponsiveContainer, ZAxis,
 } from 'recharts';
 import type { ParetoFrontResult, PathwayCandidate } from '../../services/CatalystDesignerEngine';
+import type { ChartTooltipProps } from '../../types/charts';
 import {
   ACCENT, FONT, TOOLTIP_STYLE, CHART_CONTAINER,
   SECTION_LABEL, rechartsGrid, rechartsTick, rechartsAxisTitle,
@@ -13,9 +14,9 @@ import {
 
 /* ── Glassmorphism Tooltip ────────────────────────────────────── */
 
-function ParetoTooltip({ active, payload }: any) {
+function ParetoTooltip({ active, payload }: ChartTooltipProps) {
   if (!active || !payload?.length) return null;
-  const data = payload[0]?.payload as PathwayCandidate | undefined;
+  const data = payload[0]?.payload as unknown as PathwayCandidate | undefined;
   if (!data) return null;
   return (
     <div style={TOOLTIP_STYLE}>

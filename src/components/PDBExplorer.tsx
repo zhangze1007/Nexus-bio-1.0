@@ -102,8 +102,6 @@ interface AtomTooltip {
   chain: string;
   elem: string;
   b: number;
-  x: number;
-  y: number;
 }
 
 interface ProteinCanvasProps {
@@ -115,7 +113,7 @@ interface ProteinCanvasProps {
 
 function ProteinCanvas({ pdbId, alphafoldId, name, useAlphaFold }: ProteinCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const viewerRef = useRef<any>(null);
+  const viewerRef = useRef<$3DmolViewer | null>(null);
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [tooltip, setTooltip] = useState<AtomTooltip | null>(null);
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
@@ -170,7 +168,7 @@ function ProteinCanvas({ pdbId, alphafoldId, name, useAlphaFold }: ProteinCanvas
             // pLDDT via B-factor
             viewer.setStyle({}, {
               cartoon: {
-                colorfunc: (atom: any) => getPLDDTHex(atom.b),
+                colorfunc: (atom: Record<string, unknown>) => getPLDDTHex(atom.b as number),
                 thickness: 0.5,
               }
             });
@@ -198,22 +196,23 @@ function ProteinCanvas({ pdbId, alphafoldId, name, useAlphaFold }: ProteinCanvas
         viewer.setHoverable(
           { hetflag: false }, // exclude all HET atoms (HEM, ligands etc)
           true,
-          (atom: any, _viewer: any, event: any) => {
+          (atom: Record<string, unknown>, _viewer: unknown, event: Record<string, unknown>) => {
             if (!atom) return;
+            const resn = String(atom.resn ?? '');
             const stdAA = ['ALA','ARG','ASN','ASP','CYS','GLN','GLU','GLY','HIS',
               'ILE','LEU','LYS','MET','PHE','PRO','SER','THR','TRP','TYR','VAL'];
-            if (!stdAA.includes(atom.resn?.toUpperCase())) return;
+            if (!stdAA.includes(resn.toUpperCase())) return;
             const rect = containerRef.current?.getBoundingClientRect();
             if (!rect) return;
-            setTooltipPos({ x: event.clientX - rect.left, y: event.clientY - rect.top });
+            setTooltipPos({ x: (event.clientX as number) - rect.left, y: (event.clientY as number) - rect.top });
             setTooltip({
-              resn: atom.resn || '?',
-              resi: atom.resi || 0,
-              atom: atom.atom || '?',
-              chain: atom.chain || 'A',
-              elem: atom.elem || '?',
-              b: atom.b || 0,
-            } as AtomTooltip);
+              resn: resn || '?',
+              resi: (atom.resi as number) || 0,
+              atom: String(atom.atom ?? '?'),
+              chain: String(atom.chain ?? 'A'),
+              elem: String(atom.elem ?? '?'),
+              b: (atom.b as number) || 0,
+            });
           },
           () => setTooltip(null)
         );

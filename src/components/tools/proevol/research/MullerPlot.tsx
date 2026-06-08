@@ -6,6 +6,7 @@ import {
 } from 'recharts';
 import { rechartsGrid, rechartsTick, TOOLTIP_STYLE, FONT, SERIES_PALETTE } from '../../../charts/chartTheme';
 import { PROEVOL_THEME } from '../shared';
+import type { ChartTooltipProps, ChartEntryProps } from '../../../../types/charts';
 import type { familyShareCurve } from '../../../../services/proevolAnalysis';
 
 type FamilyShareCurve = ReturnType<typeof familyShareCurve>;
@@ -19,16 +20,16 @@ interface MullerRow {
   [familyId: string]: number;
 }
 
-function CustomTooltip({ active, payload, label }: any) {
+function CustomTooltip({ active, payload, label }: ChartTooltipProps) {
   if (!active || !payload?.length) return null;
   return (
     <div style={TOOLTIP_STYLE}>
       <div style={{ marginBottom: 4, fontFamily: FONT.MONO, color: 'rgba(255,255,255,0.5)', fontSize: 10 }}>
         Round {label}
       </div>
-      {payload.map((entry: any) => (
+      {payload.map((entry: ChartEntryProps) => (
         <div key={entry.dataKey} style={{ fontFamily: FONT.MONO, color: entry.color, fontSize: 11 }}>
-          {entry.name}: {(entry.value * 100).toFixed(1)}%
+          {entry.name}: {((entry.value as number) * 100).toFixed(1)}%
         </div>
       ))}
     </div>

@@ -5,6 +5,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import type { PathwayBalanceResult } from '../../services/CatalystDesignerEngine';
+import type { ChartTooltipProps, ChartEntryProps } from '../../types/charts';
 import {
   ACCENT, FONT, TOOLTIP_STYLE, CHART_CONTAINER,
   SECTION_LABEL, rechartsGrid, rechartsTick, rechartsAxisTitle,
@@ -13,14 +14,14 @@ import {
 
 /* ── Glassmorphism Tooltip ────────────────────────────────────── */
 
-function GlassTooltip({ active, payload, label }: any) {
+function GlassTooltip({ active, payload, label }: ChartTooltipProps) {
   if (!active || !payload?.length) return null;
   return (
     <div style={TOOLTIP_STYLE}>
       <p style={{ margin: 0, fontSize: 10, color: 'rgba(232,238,248,0.65)', fontFamily: FONT.SANS }}>
         Iteration {label}
       </p>
-      {payload.map((entry: any, i: number) => (
+      {payload.map((entry: ChartEntryProps, i: number) => (
         <p key={i} style={{ margin: '2px 0 0', fontFamily: FONT.MONO, fontSize: 11, color: entry.color }}>
           {entry.name}: {fmt2(entry.value as number)} mM
         </p>

@@ -60,6 +60,15 @@ async function searchWikipediaCommons(query: string): Promise<CellImage[]> {
 }
 
 // ── Source 2: Cell Image Library ───────────────────────────────────────
+interface CILImageEntry {
+  CIL_CCDB?: {
+    CIL?: {
+      Image?: { Image_ID?: string; Description?: string; Image_Type?: string[] };
+      Biological_Context?: { Organism?: string[] };
+    };
+  };
+}
+
 async function searchCIL(query: string): Promise<CellImage[]> {
   try {
     const res = await fetch(
@@ -70,7 +79,7 @@ async function searchCIL(query: string): Promise<CellImage[]> {
     const data = await res.json();
     if (!data?.images?.length) return [];
 
-    return data.images.slice(0, 4).map((img: any) => {
+    return (data.images as CILImageEntry[]).slice(0, 4).map((img) => {
       const id = img.CIL_CCDB?.CIL?.Image?.Image_ID || String(Math.random());
       return {
         id: `cil-${id}`,
@@ -90,6 +99,12 @@ async function searchCIL(query: string): Promise<CellImage[]> {
 }
 
 // ── Source 3: EMBL-EBI Image Data Resource ─────────────────────────────
+interface IDRImageEntry {
+  '@id': number;
+  Name?: string;
+  AcquisitionDate?: string;
+}
+
 async function searchIDR(query: string): Promise<CellImage[]> {
   try {
     const res = await fetch(
@@ -100,7 +115,7 @@ async function searchIDR(query: string): Promise<CellImage[]> {
     const data = await res.json();
     if (!data?.data?.length) return [];
 
-    return data.data.slice(0, 3).map((img: any) => ({
+    return (data.data as IDRImageEntry[]).slice(0, 3).map((img) => ({
       id: `idr-${img['@id']}`,
       title: img.Name || query,
       description: `IDR image dataset — ${img.Name || query}`,

@@ -54,7 +54,7 @@ async function fetchByName(name: string): Promise<{ sdf: string; cid: number | n
 
 export default function MoleculeViewer({ nodeId, pubchemCID, searchName, molBlock, label, height = 240 }: MoleculeViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const viewerRef = useRef<any>(null);
+  const viewerRef = useRef<$3DmolViewer | null>(null);
   const [status, setStatus] = useState<ViewerStatus>('idle');
   const [resolvedCID, setResolvedCID] = useState<number | null>(pubchemCID ?? null);
   const [renderMode, setRenderMode] = useState<'ball-stick' | 'spacefill' | 'wire'>('ball-stick');

@@ -15,6 +15,7 @@ import { useMemo } from 'react';
 import {
   ComposedChart, Line, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
+import type { ChartTooltipProps, ChartEntryProps } from '../../../types/charts';
 import {
   FONT, TOOLTIP_STYLE, SCI_SERIES, rechartsGrid, rechartsTick,
   rechartsAxisTitle, rechartsAxisLine, LINE, MARKER, BAND,
@@ -84,10 +85,10 @@ function mergeRows(series: ConfidenceSeries[]): MergedRow[] {
 
 function buildTooltip(series: ConfidenceSeries[], bandLabel: string, formatValue?: (v: number) => string) {
   const fmt = formatValue ?? ((v: number) => v.toFixed(3));
-  return function Tip({ active, payload, label }: any) {
+  return function Tip({ active, payload, label }: ChartTooltipProps) {
     if (!active || !payload?.length) return null;
     const meanRows = payload.filter(
-      (entry: any) =>
+      (entry: ChartEntryProps) =>
         !entry.dataKey?.toString().endsWith('__band')
         && !entry.dataKey?.toString().endsWith('__lower')
         && !entry.dataKey?.toString().endsWith('__upper'),
@@ -97,7 +98,7 @@ function buildTooltip(series: ConfidenceSeries[], bandLabel: string, formatValue
         <div style={{ marginBottom: 4, fontFamily: FONT.MONO, fontSize: 10, color: 'rgba(255,255,255,0.55)' }}>
           x = {label}
         </div>
-        {meanRows.map((entry: any) => {
+        {meanRows.map((entry: ChartEntryProps) => {
           const s = series.find((item) => item.id === entry.dataKey);
           const lower = entry.payload?.[`${entry.dataKey}__lower`];
           const upper = entry.payload?.[`${entry.dataKey}__upper`];
@@ -166,7 +167,7 @@ export default function ConfidenceLineChart({
               style: rechartsAxisTitle,
             }}
           />
-          <Tooltip content={buildTooltip(series, bandLabel, formatValue)} />
+          <Tooltip content={buildTooltip(series, bandLabel, formatValue) as unknown as React.ReactElement} />
 
           {/* Bands first, so mean lines render on top */}
           {series.map((s, i) => {

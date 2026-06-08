@@ -84,10 +84,10 @@ export default function CatalystViewer3D({
   style,
 }: CatalystViewer3DProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const viewerRef = useRef<any>(null);
+  const viewerRef = useRef<$3DmolViewer | null>(null);
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [useAlphaFold, setUseAlphaFold] = useState(false);
-  const substrateAtomsRef = useRef<any[]>([]);
+  const substrateAtomsRef = useRef<Record<string, unknown>[]>([]);
 
   const sourceLabel = useAlphaFold
     ? `AlphaFold · ${enzyme.uniprotId}`
@@ -141,8 +141,8 @@ export default function CatalystViewer3D({
         } else if (renderMode === 'confidence' && shouldUseAF) {
           viewer.setStyle({}, {
             cartoon: {
-              colorfunc: (atom: any) => {
-                const b = atom.b;
+              colorfunc: (atom: Record<string, unknown>) => {
+                const b = atom.b as number;
                 if (b >= 90) return 0x0053D6;
                 if (b >= 70) return 0x65CBF3;
                 if (b >= 50) return 0xFFDB13;
@@ -197,10 +197,10 @@ export default function CatalystViewer3D({
         drawInteractionLines(viewer, enzyme, bindingQuality, null);
 
         // ── Click handler ──
-        viewer.setClickable({}, true, (atom: any) => {
+        viewer.setClickable({}, true, (atom: Record<string, unknown>) => {
           if (!atom || typeof atom.resi !== 'number') return;
           const pos = atom.resi;
-          const resn = atom.resn || '';
+          const resn = String(atom.resn ?? '');
           const letter = AA3TO1[resn.toUpperCase()] || '?';
           const name = `${resn}${pos}`;
           const catRes = enzyme.catalyticResidues.find(r => r.position === pos);
@@ -265,9 +265,9 @@ export default function CatalystViewer3D({
       const selAtoms = viewer.selectedAtoms({ resi: selectedResidue, atom: 'CA' });
       if (selAtoms && selAtoms.length > 0) {
         const ca = selAtoms[0];
-        const resn = ca.resn || '';
+        const resn = String(ca.resn ?? '');
         viewer.addLabel(`${resn}${selectedResidue}`, {
-          position: { x: ca.x, y: ca.y, z: ca.z + 2 },
+          position: { x: ca.x as number, y: ca.y as number, z: (ca.z as number) + 2 },
           backgroundColor: 'rgba(0,0,0,0.7)',
           fontColor: '#FFDB13',
           fontSize: 11,
@@ -398,7 +398,7 @@ export default function CatalystViewer3D({
 /* ── Draw H-bond / distance interaction lines ──────────────────── */
 
 function drawInteractionLines(
-  viewer: any,
+  viewer: $3DmolViewer,
   enzyme: EnzymeStructure,
   quality: number,
   selectedResidue: number | null,
@@ -415,13 +415,13 @@ function drawInteractionLines(
 
     // Find closest hetflag atom (ligand/substrate) or another catalytic residue's CA
     // Use substrate atoms if available
-    let targetAtom: any = null;
+    let targetAtom: Record<string, unknown> | null = null;
     const hetAtoms = viewer.selectedAtoms({ hetflag: true });
     if (hetAtoms && hetAtoms.length > 0) {
       // Find closest het atom
       let minDist = Infinity;
       for (const ha of hetAtoms) {
-        const d = Math.sqrt((ca.x - ha.x) ** 2 + (ca.y - ha.y) ** 2 + (ca.z - ha.z) ** 2);
+        const d = Math.sqrt(((ca.x as number) - (ha.x as number)) ** 2 + ((ca.y as number) - (ha.y as number)) ** 2 + ((ca.z as number) - (ha.z as number)) ** 2);
         if (d < minDist) { minDist = d; targetAtom = ha; }
       }
     }
@@ -429,9 +429,9 @@ function drawInteractionLines(
     if (!targetAtom) continue;
 
     const dist = Math.sqrt(
-      (ca.x - targetAtom.x) ** 2 +
-      (ca.y - targetAtom.y) ** 2 +
-      (ca.z - targetAtom.z) ** 2,
+      ((ca.x as number) - (targetAtom.x as number)) ** 2 +
+      ((ca.y as number) - (targetAtom.y as number)) ** 2 +
+      ((ca.z as number) - (targetAtom.z as number)) ** 2,
     );
 
     // Only draw if < 15 Å (reasonable interaction range)
@@ -442,8 +442,8 @@ function drawInteractionLines(
     const lineWidth = isSelected ? 2.5 : 1.5;
 
     viewer.addCylinder({
-      start: { x: ca.x, y: ca.y, z: ca.z },
-      end: { x: targetAtom.x, y: targetAtom.y, z: targetAtom.z },
+      start: { x: ca.x as number, y: ca.y as number, z: ca.z as number },
+      end: { x: targetAtom.x as number, y: targetAtom.y as number, z: targetAtom.z as number },
       radius: 0.04 * (isSelected ? 1.6 : 1),
       color: lineColor,
       dashed: true,
@@ -455,9 +455,9 @@ function drawInteractionLines(
     });
 
     // Distance label
-    const mx = (ca.x + targetAtom.x) / 2;
-    const my = (ca.y + targetAtom.y) / 2;
-    const mz = (ca.z + targetAtom.z) / 2;
+    const mx = ((ca.x as number) + (targetAtom.x as number)) / 2;
+    const my = ((ca.y as number) + (targetAtom.y as number)) / 2;
+    const mz = ((ca.z as number) + (targetAtom.z as number)) / 2;
     viewer.addLabel(`${dist.toFixed(1)} Å`, {
       position: { x: mx, y: my, z: mz },
       backgroundColor: 'rgba(0,0,0,0.6)',

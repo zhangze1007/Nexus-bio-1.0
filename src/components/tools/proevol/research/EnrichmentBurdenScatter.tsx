@@ -4,8 +4,10 @@ import { useMemo } from 'react';
 import {
   ScatterChart, Scatter, XAxis, YAxis, ZAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine,
 } from 'recharts';
+import type { ScatterShapeProps } from 'recharts';
 import { rechartsGrid, rechartsTick, TOOLTIP_STYLE, FONT, SERIES_PALETTE } from '../../../charts/chartTheme';
 import { PROEVOL_THEME } from '../shared';
+import type { ChartTooltipProps } from '../../../../types/charts';
 import type { VariantEnrichmentEntry } from '../../../../services/proevolAnalysis';
 
 interface EnrichmentBurdenScatterProps {
@@ -14,9 +16,9 @@ interface EnrichmentBurdenScatterProps {
   onSelectVariant?: (variantId: string) => void;
 }
 
-function CustomTooltip({ active, payload }: any) {
+function CustomTooltip({ active, payload }: ChartTooltipProps) {
   if (!active || !payload?.length) return null;
-  const point = payload[0].payload as {
+  const point = payload[0].payload as unknown as {
     label: string;
     mutationString: string;
     familyLabel: string;
@@ -52,7 +54,7 @@ export default function EnrichmentBurdenScatter({
   onSelectVariant,
 }: EnrichmentBurdenScatterProps) {
   const grouped = useMemo(() => {
-    const families = new Map<string, { id: string; label: string; points: any[] }>();
+    const families = new Map<string, { id: string; label: string; points: Array<VariantEnrichmentEntry & { zSize: number }> }>();
     entries.forEach((entry) => {
       const list = families.get(entry.familyId) ?? { id: entry.familyId, label: entry.familyLabel, points: [] };
       list.points.push({
@@ -133,8 +135,9 @@ export default function EnrichmentBurdenScatter({
                 stroke={color}
                 strokeWidth={1.2}
                 fillOpacity={0.6}
-                shape={(props: any) => {
-                  const { cx, cy, payload } = props;
+                shape={(props: ScatterShapeProps) => {
+                  const { cx, cy } = props;
+                  const payload = props.payload as VariantEnrichmentEntry & { zSize: number; variantId: string };
                   const isHighlighted =
                     !highlightVariantId || highlightVariantId === payload.variantId;
                   const radius = Math.sqrt(payload.zSize / Math.PI);

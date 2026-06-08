@@ -14,6 +14,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell,
   ErrorBar, ResponsiveContainer, LabelList,
 } from 'recharts';
+import type { ChartTooltipProps } from '../../../types/charts';
 import {
   FONT, TOOLTIP_STYLE, rechartsGrid, rechartsTick,
   rechartsAxisTitle, rechartsAxisLine, SCI_SERIES, LINE, fmt2,
@@ -50,9 +51,9 @@ export interface ErrorBarChartProps {
   intervalLabel?: string;
 }
 
-function ErrorBarTooltip({ active, payload, intervalLabel, formatValue }: any) {
+function ErrorBarTooltip({ active, payload, intervalLabel, formatValue }: ChartTooltipProps & { intervalLabel?: string; formatValue?: (value: number) => string }) {
   if (!active || !payload?.length) return null;
-  const datum = payload[0].payload as ErrorBarDatum;
+  const datum = payload[0].payload as unknown as ErrorBarDatum;
   const fmt = formatValue ?? fmt2;
   const hasInterval = typeof datum.lower === 'number' && typeof datum.upper === 'number';
   return (
