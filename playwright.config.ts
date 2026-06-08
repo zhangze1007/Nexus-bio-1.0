@@ -15,6 +15,7 @@ export default defineConfig({
     timeout: 120000,
     env: {
       AUTH_SECRET: process.env.AUTH_SECRET ?? 'local-dev-secret',
+      NEXUS_API_KEY: process.env.NEXUS_API_KEY ?? 'e2e-test-key',
     },
   },
 });

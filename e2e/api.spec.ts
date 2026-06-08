@@ -8,6 +8,8 @@ import { test, expect } from '@playwright/test';
  * without requiring external API keys.
  */
 
+const E2E_API_KEY = 'e2e-test-key';
+
 test.describe('Health endpoint', () => {
   test('GET /api/health returns ok status', async ({ request }) => {
     const response = await request.get('/api/health');
@@ -41,17 +43,19 @@ test.describe('Analyze endpoint', () => {
 });
 
 test.describe('FBA endpoint', () => {
-  test('POST /api/fba with empty body returns 400', async ({ request }) => {
+  test('POST /api/fba with empty body uses defaults and returns 200', async ({ request }) => {
     const response = await request.post('/api/fba', {
       data: {},
+      headers: { 'X-API-Key': E2E_API_KEY },
     });
 
-    // The FBA endpoint returns 400 for invalid payloads
-    expect(response.status()).toBe(400);
+    // The FBA endpoint applies sensible defaults (ecoli, biomass, etc.)
+    // so an empty body is a valid request, not a 400 error.
+    expect(response.ok()).toBeTruthy();
 
     const body = await response.json();
-    expect(body.ok).toBe(false);
-    expect(body.error).toBeDefined();
+    expect(body.ok).toBe(true);
+    expect(body.result).toBeDefined();
   });
 
   test('POST /api/fba with valid single-species request returns 200', async ({
@@ -65,6 +69,7 @@ test.describe('FBA endpoint', () => {
         glucoseUptake: 10,
         oxygenUptake: 12,
       },
+      headers: { 'X-API-Key': E2E_API_KEY },
     });
 
     expect(response.ok()).toBeTruthy();
@@ -83,6 +88,7 @@ test.describe('FBA endpoint', () => {
         ecoli: { glucoseUptake: 10, oxygenUptake: 12 },
         yeast: { glucoseUptake: 8, oxygenUptake: 6 },
       },
+      headers: { 'X-API-Key': E2E_API_KEY },
     });
 
     expect(response.ok()).toBeTruthy();

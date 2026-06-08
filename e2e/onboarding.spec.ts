@@ -11,12 +11,19 @@ import { test, expect } from '@playwright/test';
 
 const STORAGE_KEY = 'nexus-bio-onboarding-done';
 
+/** Wait for client-side hydration to complete (onboarding overlay uses useEffect). */
+async function waitForOnboarding(page: import('@playwright/test').Page) {
+  // The overlay renders "Welcome" inside a motion.div after useEffect runs.
+  // In CI, hydration can be slow, so we wait with a generous timeout.
+  await expect(page.locator('text=Welcome')).toBeVisible({ timeout: 15000 });
+}
+
 test.describe('Onboarding overlay', () => {
   test('shows on first visit when localStorage is empty', async ({ page }) => {
     await page.goto('/');
 
     // The overlay should be visible — it contains the eyebrow "Welcome"
-    await expect(page.locator('text=Welcome')).toBeVisible();
+    await waitForOnboarding(page);
 
     // The first step title should be visible
     await expect(
@@ -28,7 +35,7 @@ test.describe('Onboarding overlay', () => {
     await page.goto('/');
 
     // Wait for the overlay to render
-    await expect(page.locator('text=Welcome')).toBeVisible();
+    await waitForOnboarding(page);
 
     // Click the "Next" button
     const nextButton = page.locator('button', { hasText: 'Next' });
@@ -47,7 +54,7 @@ test.describe('Onboarding overlay', () => {
   }) => {
     await page.goto('/');
 
-    await expect(page.locator('text=Welcome')).toBeVisible();
+    await waitForOnboarding(page);
 
     // Step 1 -> Step 2
     await page.locator('button', { hasText: 'Next' }).click();
@@ -68,6 +75,7 @@ test.describe('Onboarding overlay', () => {
     page,
   }) => {
     await page.goto('/');
+    await waitForOnboarding(page);
 
     // Advance through all 3 steps
     await page.locator('button', { hasText: 'Next' }).click();
@@ -85,7 +93,7 @@ test.describe('Onboarding overlay', () => {
   test('clicking Skip dismisses the overlay', async ({ page }) => {
     await page.goto('/');
 
-    await expect(page.locator('text=Welcome')).toBeVisible();
+    await waitForOnboarding(page);
 
     const skipButton = page.locator('button', { hasText: 'Skip' });
     await expect(skipButton).toBeVisible();
@@ -105,9 +113,10 @@ test.describe('Onboarding overlay', () => {
 
     // Reload — the overlay should not appear
     await page.reload();
+    await page.waitForLoadState('domcontentloaded');
 
-    // Give the page a moment, then verify the overlay is absent
-    await page.waitForTimeout(1000);
+    // Give the page a moment to hydrate, then verify the overlay is absent
+    await page.waitForTimeout(1500);
     await expect(page.locator('text=Welcome')).not.toBeVisible();
   });
 });

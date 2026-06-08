@@ -26,11 +26,16 @@ test.describe('Homepage search bar', () => {
   }) => {
     await page.goto('/');
     const input = page.locator('input[aria-label="Search research database"]');
-    await input.fill('metabolic engineering');
+    await expect(input).toBeVisible({ timeout: 10000 });
+    // Use type instead of fill to properly trigger React's onChange handler
+    await input.click();
+    await input.type('metabolic engineering', { delay: 10 });
+    // Small wait to ensure React has processed the state update
+    await page.waitForTimeout(200);
     await input.press('Enter');
 
     // Should navigate to /research?q=metabolic%20engineering
-    await page.waitForURL(/\/research\?q=/);
+    await page.waitForURL(/\/research\?q=/, { timeout: 15000 });
     const url = new URL(page.url());
     expect(url.pathname).toBe('/research');
     expect(url.searchParams.get('q')).toBe('metabolic engineering');

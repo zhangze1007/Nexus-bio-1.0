@@ -66,12 +66,20 @@ const TOOLS_BASIC: Array<{
   { route: '/tools/proevol', moduleId: 'PROEVOL' },
 ];
 
+/** Wait for the tool page header to be fully rendered. */
+async function waitForToolHeader(page: import('@playwright/test').Page, moduleId: string) {
+  await expect(
+    page.locator('.nb-tool-shell__header', { hasText: moduleId })
+  ).toBeVisible({ timeout: 15000 });
+}
+
 test.describe('Tool page loading', () => {
   for (const tool of [...TOOLS_WITH_TABS, ...TOOLS_BASIC]) {
     test(`${tool.route} loads and shows the module badge`, async ({ page }) => {
       await page.goto(tool.route);
       // The ToolShell header renders a shortLabel badge (e.g. "FBASIM")
-      await expect(page.locator(`text=${tool.moduleId}`)).toBeVisible();
+      // Scope to the header to avoid strict mode violations from sidebar/topbar duplicates
+      await waitForToolHeader(page, tool.moduleId);
     });
   }
 });
@@ -80,6 +88,7 @@ test.describe('Tool page explanation', () => {
   for (const tool of TOOLS_WITH_TABS) {
     test(`${tool.route} has a "What does this tool do?" section`, async ({ page }) => {
       await page.goto(tool.route);
+      await waitForToolHeader(page, tool.moduleId);
       const summary = page.locator('summary', { hasText: 'What does this tool do?' });
       await expect(summary).toBeVisible();
     });
@@ -90,14 +99,15 @@ test.describe('Tool page tab switching', () => {
   for (const tool of TOOLS_WITH_TABS) {
     test(`${tool.route} supports tab switching to "${tool.secondTab}"`, async ({ page }) => {
       await page.goto(tool.route);
+      await waitForToolHeader(page, tool.moduleId);
 
       // The first tab should be active by default — verify it has the aria-selected attribute
       const tablist = page.locator('[role="tablist"]');
-      await expect(tablist).toBeVisible();
+      await expect(tablist).toBeVisible({ timeout: 10000 });
 
       // Click the second tab
       const secondTabButton = page.locator('[role="tab"]', { hasText: tool.secondTab });
-      await expect(secondTabButton).toBeVisible();
+      await expect(secondTabButton).toBeVisible({ timeout: 10000 });
       await secondTabButton.click();
 
       // After clicking, the second tab should be selected

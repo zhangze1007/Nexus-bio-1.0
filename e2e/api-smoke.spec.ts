@@ -8,6 +8,8 @@ import { test, expect } from '@playwright/test';
  * No external API keys are needed for these negative-path tests.
  */
 
+const E2E_API_KEY = 'e2e-test-key';
+
 test.describe('AlphaFold proxy', () => {
   test('GET /api/alphafold without id returns 400', async ({ request }) => {
     const response = await request.get('/api/alphafold');
@@ -44,7 +46,9 @@ test.describe('KEGG proxy', () => {
 
 test.describe('Workbench API', () => {
   test('GET /api/workbench returns ok with state', async ({ request }) => {
-    const response = await request.get('/api/workbench');
+    const response = await request.get('/api/workbench', {
+      headers: { 'X-API-Key': E2E_API_KEY },
+    });
     expect(response.ok()).toBeTruthy();
 
     const body = await response.json();

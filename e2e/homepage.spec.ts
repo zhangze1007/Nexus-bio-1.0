@@ -7,5 +7,5 @@ test('homepage loads', async ({ page }) => {
 
 test('navigate to tools directory', async ({ page }) => {
   await page.goto('/tools');
-  await expect(page.locator('text=Pathway Designer')).toBeVisible();
+  await expect(page.locator('text=Pathway & Enzyme Design')).toBeVisible();
 });
