@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { computeConvexHull, expandHull } from '../../utils/vizUtils';
+import { SVGChartContainer, ChartGrid, ChartAxisLabels, ChartLegend } from '../charts/primitives';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
 import ActionButton from './shared/ActionButton';
@@ -99,8 +100,7 @@ function VolcanoPlot({ data, fcThreshold, pvThreshold, highlightedGene }: {
   const fcLineR = xPos(fcThreshold);
 
   return (
-    <svg role="img" aria-label="Chart" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
-      <rect width={W} height={H} fill="#050505" />
+    <SVGChartContainer W={W} H={H} ariaLabel="Volcano plot" rx={0}>
       <line x1={PAD} y1={pvLine} x2={W - PAD} y2={pvLine}
         stroke="rgba(255,255,255,0.12)" strokeWidth={1} strokeDasharray="4 3" />
       <line x1={fcLineL} y1={PAD} x2={fcLineL} y2={H - PAD}
@@ -165,7 +165,7 @@ function VolcanoPlot({ data, fcThreshold, pvThreshold, highlightedGene }: {
       <text x={W - PAD - 4} y={PAD + 12} textAnchor="end" fontFamily={THEME.MONO} fontSize="10" fill="rgba(147,203,82,0.74)">
         productive-significant
       </text>
-    </svg>
+    </SVGChartContainer>
   );
 }
 
@@ -287,8 +287,7 @@ function TriPanelEmbedding({ embeddings, data, fcThreshold, pvThreshold, activeL
 
       {/* LEFT: PCA Biplot */}
       <div style={{ flex: '0 0 auto' }}>
-        <svg viewBox={`0 0 ${pcaW} ${pcaH}`} style={{ width: `${pcaW}px`, height: `${pcaH}px` }}>
-          <rect width={pcaW} height={pcaH} fill="#050505" rx="10" />
+        <SVGChartContainer W={pcaW} H={pcaH} ariaLabel="PCA Biplot" rx={10} style={{ width: `${pcaW}px`, height: `${pcaH}px` }}>
           <text x={pcaW / 2} y={14} textAnchor="middle" fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.45)">PCA BIPLOT</text>
           <text x={pcaW / 2} y={pcaH - 4} textAnchor="middle" fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.45)">PC1 (38.2% var)</text>
           <text x={8} y={pcaH / 2} textAnchor="middle" fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.45)"
@@ -333,13 +332,12 @@ function TriPanelEmbedding({ embeddings, data, fcThreshold, pvThreshold, activeL
               </g>
             )
           ))}
-        </svg>
+        </SVGChartContainer>
       </div>
 
       {/* CENTER: 20×20 Correlation Heatmap */}
       <div style={{ flex: '0 0 auto' }}>
-        <svg viewBox={`0 0 ${hmW} ${hmH}`} style={{ width: `${hmW}px`, height: `${hmH}px` }}>
-          <rect width={hmW} height={hmH} fill="#050505" rx="10" />
+        <SVGChartContainer W={hmW} H={hmH} ariaLabel="Correlation matrix" rx={10} style={{ width: `${hmW}px`, height: `${hmH}px` }}>
           <text x={hmW / 2} y={12} textAnchor="middle" fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.45)">
             CORRELATION MATRIX (20×20)
           </text>
@@ -397,7 +395,7 @@ function TriPanelEmbedding({ embeddings, data, fcThreshold, pvThreshold, activeL
           <text x={hmW - 12} y={hmPAD.top - 6} textAnchor="middle" fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.45)">
             z
           </text>
-        </svg>
+        </SVGChartContainer>
       </div>
 
       {/* RIGHT: Volcano plot — updated colors */}
@@ -466,8 +464,7 @@ function EmbeddingScatter({ embeddings, fcThreshold, activeLayers, highlightedGe
   }, [projected]);
 
   return (
-    <svg role="img" aria-label="Chart" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
-      <rect width={W} height={H} fill="#050505" rx={12} />
+    <SVGChartContainer W={W} H={H} ariaLabel="Embedding scatter plot">
       <rect x={PAD} y={PAD} width={W - PAD * 2} height={H - PAD * 2} fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.06)" rx={12} />
       {/* Grid */}
       {Array.from({ length: GRID_COUNT + 1 }).map((_, i) => {
@@ -569,7 +566,7 @@ function EmbeddingScatter({ embeddings, fcThreshold, activeLayers, highlightedGe
       <text x={PAD} y={PAD - 12} fontFamily={THEME.MONO} fontSize="10" fill={LABEL}>
         Highlight ring = current bottleneck or selected sensitivity gene
       </text>
-    </svg>
+    </SVGChartContainer>
   );
 }
 
@@ -1128,12 +1125,9 @@ export default React.memo(function MultiOPage() {
                     const yMin = Math.min(...ys), yMax = Math.max(...ys);
                     const xR = xMax - xMin || 1, yR = yMax - yMin || 1;
                     return (
-                      <svg role="img" aria-label="Chart" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%' }}>
-                        <rect width={W} height={H} fill="#050505" rx={12} />
-                        <line x1={PAD} y1={H - PAD} x2={W - PAD} y2={H - PAD} stroke="rgba(255,255,255,0.1)" />
-                        <line x1={PAD} y1={PAD} x2={PAD} y2={H - PAD} stroke="rgba(255,255,255,0.1)" />
-                        <text x={W / 2} y={H - 6} textAnchor="middle" fontFamily={THEME.MONO} fontSize="10" fill={LABEL}>Projection 1</text>
-                        <text x={12} y={H / 2} textAnchor="middle" fontFamily={THEME.MONO} fontSize="10" fill={LABEL} transform={`rotate(-90,12,${H / 2})`}>Projection 2</text>
+                      <SVGChartContainer W={W} H={H} ariaLabel="VAE latent space projection">
+                        <ChartGrid W={W} H={H} PAD={PAD} gridCount={0} showGrid={false} />
+                        <ChartAxisLabels W={W} H={H} PAD={PAD} xLabel="Projection 1" yLabel="Projection 2" />
                         {pts.map((p, i) => {
                           const cx = PAD + ((xs[i] - xMin) / xR) * (W - PAD * 2);
                           const cy = H - PAD - ((ys[i] - yMin) / yR) * (H - PAD * 2);
@@ -1147,7 +1141,7 @@ export default React.memo(function MultiOPage() {
                             </circle>
                           );
                         })}
-                      </svg>
+                      </SVGChartContainer>
                     );
                   })()}
                 </div>
@@ -1159,12 +1153,11 @@ export default React.memo(function MultiOPage() {
                   const W = 480, H = 80, PAD = 30;
                   const maxL = Math.max(...hist.map(h => h.loss), 0.01);
                   return (
-                    <svg role="img" aria-label="Chart" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
-                      <rect width={W} height={H} fill="transparent" />
+                    <SVGChartContainer W={W} H={H} ariaLabel="VAE convergence history" fill="transparent">
                       <text x={PAD - 4} y={12} fontFamily={THEME.MONO} fontSize="10" fill={LABEL} textAnchor="end">Loss</text>
                       <polyline points={hist.map((h, i) => { const x = PAD + (i / (hist.length - 1)) * (W - PAD * 2); const y = H - 8 - (h.loss / maxL) * (H - 20); return `${x},${y}`; }).join(' ')} fill="none" stroke={LAYER_COLORS.proteomics} strokeWidth={1.5} />
                       <text x={W / 2} y={H - 1} textAnchor="middle" fontFamily={THEME.MONO} fontSize="10" fill={LABEL}>Epoch</text>
-                    </svg>
+                    </SVGChartContainer>
                   );
                 })()}
               </div>

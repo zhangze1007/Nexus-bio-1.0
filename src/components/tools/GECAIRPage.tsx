@@ -12,6 +12,7 @@ import ScientificHero from './shared/ScientificHero';
 import { PATHD_THEME } from '../workbench/workbenchTheme';
 import ScientificFigureFrame from './shared/ScientificFigureFrame';
 import ScientificMethodStrip from './shared/ScientificMethodStrip';
+import { SVGChartContainer } from '../charts/primitives';
 
 
 const PART_COLORS: Record<string, string> = {
@@ -107,8 +108,7 @@ function CircuitSVG({ inputA, inputB, gateType }: { inputA: number; inputB: numb
   ];
 
   return (
-    <svg role="img" aria-label="Chart" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
-      <rect width={W} height={H} fill="#050505" rx="18" />
+    <SVGChartContainer W={W} H={H} ariaLabel="Gene circuit diagram" rx={18}>
       <text x="24" y="22" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.26)">GENE CIRCUIT · SBOL NOTATION</text>
       <text x="24" y="36" fontFamily={T.SANS} fontSize="11" fill="rgba(255,255,255,0.72)">
         {gateType} gate — biological parts and 2D phase space response
@@ -277,7 +277,7 @@ function CircuitSVG({ inputA, inputB, gateType }: { inputA: number; inputB: numb
       <text x="338" y="476" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.2)">
         Expression level → CDS height · Phase space → viridis output
       </text>
-    </svg>
+    </SVGChartContainer>
   );
 }
 

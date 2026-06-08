@@ -19,6 +19,7 @@ import type { ProvenanceEntry } from '../../types/assumptions';
 import { createProvenanceEntry } from '../../utils/provenance';
 import { buildCellFreeSeed } from './shared/workbenchDataflow';
 import { SEMANTIC_RGB } from '../charts/chartTheme';
+import { SVGChartContainer, ChartGrid, ChartAxisLabels, ChartLegend } from '../charts/primitives';
 import ScientificHero from './shared/ScientificHero';
 import ScientificFigureFrame from './shared/ScientificFigureFrame';
 import ToolShell from './shared/ToolShell';
@@ -42,25 +43,7 @@ import SectionLabel from './shared/SectionLabel';
 import { THEME, TOOL_RESULT_PALETTE } from '../../theme';
 
 /* ── SVG Helpers ──────────────────────────────────────────────────── */
-
-function GridLines({ W, H, PAD, count }: { W: number; H: number; PAD: number; count: number }) {
-  return (
-    <>
-      {Array.from({ length: count + 1 }).map((_, i) => {
-        const gx = PAD + (i / count) * (W - PAD * 2);
-        const gy = PAD + (i / count) * (H - PAD * 2);
-        return (
-          <g key={i}>
-            <line x1={gx} y1={PAD} x2={gx} y2={H - PAD} stroke="rgba(255,255,255,0.04)" strokeWidth={0.5} />
-            <line x1={PAD} y1={gy} x2={W - PAD} y2={gy} stroke="rgba(255,255,255,0.04)" strokeWidth={0.5} />
-          </g>
-        );
-      })}
-      <line x1={PAD} y1={H - PAD} x2={W - PAD} y2={H - PAD} stroke="rgba(255,255,255,0.1)" />
-      <line x1={PAD} y1={PAD} x2={PAD} y2={H - PAD} stroke="rgba(255,255,255,0.1)" />
-    </>
-  );
-}
+/* GridLines is now ChartGrid from ../charts/primitives */
 
 /* ── Time Course Tri-Panel Layout ─────────────────────────────────── */
 
@@ -308,9 +291,8 @@ function ResourceChart({ result }: { result: CFSFullResult }) {
   ];
 
   return (
-    <svg role="img" aria-label="Chart" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
-      <rect width={W} height={H} fill="#050505" rx={12} />
-      <GridLines W={W} H={H} PAD={PAD} count={8} />
+    <SVGChartContainer W={W} H={H} ariaLabel="Resource depletion over time">
+      <ChartGrid W={W} H={H} PAD={PAD} gridCount={8} />
       {/* Y ticks */}
       {[0, 0.25, 0.5, 0.75, 1].map(v => (
         <text key={`yr${v}`} x={PAD - 6} y={sy(v) + 3} textAnchor="end"
@@ -349,13 +331,13 @@ function ResourceChart({ result }: { result: CFSFullResult }) {
         return <polyline key={s.key} points={pts} fill="none" stroke={s.color} strokeWidth={1.5} opacity={0.8} />;
       })}
       {/* Legend */}
-      {series.map((s, i) => (
-        <g key={`lr${i}`} transform={`translate(${W - PAD - 120}, ${PAD + 8 + i * 14})`}>
-          <line x1={0} y1={0} x2={12} y2={0} stroke={s.color} strokeWidth={2} />
-          <text x={16} y={3.5} fontFamily={THEME.SANS} fontSize="10" fill={VALUE}>{s.label}</text>
-        </g>
-      ))}
-    </svg>
+      <ChartLegend
+        x={W - PAD - 120}
+        y={PAD + 8}
+        variant="line"
+        items={series.map(s => ({ label: s.label, color: s.color }))}
+      />
+    </SVGChartContainer>
   );
 }
 
@@ -367,12 +349,11 @@ function FittingChart({ result }: { result: CFSFullResult }) {
 
   if (!fit) {
     return (
-      <svg role="img" aria-label="Chart" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
-        <rect width={W} height={H} fill="#050505" rx={12} />
+      <SVGChartContainer W={W} H={H} ariaLabel="Fitting chart">
         <text x={W / 2} y={H / 2} textAnchor="middle" fontFamily={THEME.SANS} fontSize="12" fill={LABEL}>
           No fitting data available
         </text>
-      </svg>
+      </SVGChartContainer>
     );
   }
 
@@ -390,8 +371,7 @@ function FittingChart({ result }: { result: CFSFullResult }) {
   const rMaxRes = Math.max(...fit.residuals.map(r => Math.abs(r)), 0.01);
 
   return (
-    <svg role="img" aria-label="Chart" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
-      <rect width={W} height={H} fill="#050505" rx={12} />
+    <SVGChartContainer W={W} H={H} ariaLabel="Fitting curve with residuals">
       {/* Main plot grid */}
       {Array.from({ length: 9 }).map((_, i) => {
         const gx = PAD + (i / 8) * (W - PAD * 2);
@@ -456,7 +436,7 @@ function FittingChart({ result }: { result: CFSFullResult }) {
         );
       })}
       <text x={PAD + 4} y={resTop + 10} fontFamily={THEME.MONO} fontSize="10" fill={LABEL}>Residuals</text>
-    </svg>
+    </SVGChartContainer>
   );
 }
 
@@ -469,12 +449,11 @@ function IvIvChart({ result }: { result: CFSFullResult }) {
 
   if (!iviv) {
     return (
-      <svg role="img" aria-label="Chart" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
-        <rect width={W} height={H} fill="#050505" rx={12} />
+      <SVGChartContainer W={W} H={H} ariaLabel="IVIV chart">
         <text x={W / 2} y={H / 2} textAnchor="middle" fontFamily={THEME.SANS} fontSize="12" fill={LABEL}>
           IvIv estimate unavailable — fitting required
         </text>
-      </svg>
+      </SVGChartContainer>
     );
   }
 
@@ -497,8 +476,7 @@ function IvIvChart({ result }: { result: CFSFullResult }) {
   const confAngle = iviv.confidence * 180;
 
   return (
-    <svg role="img" aria-label="Chart" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
-      <rect width={W} height={H} fill="#050505" rx={12} />
+    <SVGChartContainer W={W} H={H} ariaLabel="In-vitro to in-vivo translation">
       {/* Bar chart */}
       <rect x={PAD + 40} y={barBaseY - barH(invitro)} width={barW} height={barH(invitro)}
         fill={THEME.SKY} rx={4} opacity={0.8} />
@@ -567,7 +545,7 @@ function IvIvChart({ result }: { result: CFSFullResult }) {
           </g>
         );
       })()}
-    </svg>
+    </SVGChartContainer>
   );
 }
 

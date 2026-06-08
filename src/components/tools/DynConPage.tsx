@@ -8,6 +8,7 @@ import ScientificHero from './shared/ScientificHero';
 import ScientificFigureFrame from './shared/ScientificFigureFrame';
 import SimErrorBanner from '../ide/shared/SimErrorBanner';
 import { catmullRomPath } from '../../utils/svgPath';
+import { SVGChartContainer, ChartGrid } from '../charts/primitives';
 import { usePersistedState } from '../ide/shared/usePersistedState';
 import WorkbenchRangeSlider from './shared/WorkbenchRangeSlider';
 import {
@@ -84,8 +85,7 @@ function TimeSeriesSVG({ trajectory, setpoint, svgRef }: { trajectory: ODEState[
   const ppPath = catmullRomPath(ppPts);
 
   return (
-    <svg ref={svgRef} role="img" aria-label="Chart" viewBox={`0 0 ${W} ${H + 36}`} style={{ width: '100%', height: '100%' }}>
-      <rect width={W} height={H + 36} fill="#050505" rx="18" />
+    <SVGChartContainer W={W} H={H + 36} ariaLabel="Closed-loop trajectory" rx={18} svgRef={svgRef}>
       <text x="22" y="22" fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.24)">
         Closed-loop trajectory
       </text>
@@ -182,7 +182,7 @@ function TimeSeriesSVG({ trajectory, setpoint, svgRef }: { trajectory: ODEState[
       {ppPts.length > 0 && (
         <circle cx={ppPts[ppPts.length - 1][0]} cy={ppPts[ppPts.length - 1][1]} r="2.5" fill={THEME.CORAL} />
       )}
-    </svg>
+    </SVGChartContainer>
   );
 }
 
@@ -201,8 +201,7 @@ function HillCurveSVG({ hill, currentFPP }: { hill: HillParams; currentFPP: numb
   const markerX = PAD + (Math.min(currentFPP, fppMax) / fppMax) * (W - PAD * 2);
 
   return (
-    <svg role="img" aria-label="Chart" viewBox={`0 0 ${W} ${H + 10}`} style={{ width: '100%', height: '132px' }}>
-      <rect width={W} height={H + 10} fill="#050505" rx="18" />
+    <SVGChartContainer W={W} H={H + 10} ariaLabel="Hill feedback curve" rx={18} style={{ height: '132px' }}>
       {/* axes */}
       <line x1={PAD} y1={H - PAD + 4} x2={W - PAD} y2={H - PAD + 4} stroke="rgba(255,255,255,0.08)" />
       <line x1={PAD} y1={PAD - 8} x2={PAD} y2={H - PAD + 4} stroke="rgba(255,255,255,0.08)" />
@@ -226,7 +225,7 @@ function HillCurveSVG({ hill, currentFPP }: { hill: HillParams; currentFPP: numb
         transform={`rotate(-90, 10, ${(PAD + H - PAD) / 2})`}>ADS</text>
       <text x={W - PAD} y={H + 6} fontFamily={THEME.MONO} fontSize="10" textAnchor="end" fill="rgba(255,255,255,0.15)">200</text>
       <text x={PAD} y={H + 6} fontFamily={THEME.MONO} fontSize="10" textAnchor="start" fill="rgba(255,255,255,0.15)">0</text>
-    </svg>
+    </SVGChartContainer>
   );
 }
 

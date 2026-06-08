@@ -24,6 +24,7 @@ import type { ToolTab } from './shared/ToolTabBar';
 // ── Breathing Waterfall Chart ──────────────────────────────────────────
 
 import { catmullRomPath } from '../../utils/svgPath';
+import { SVGChartContainer } from '../charts/primitives';
 import { THEME } from '../../theme';
 
 function BreathingWaterfall({ steps }: { steps: ReturnType<typeof computeThermo>['steps'] }) {
@@ -45,8 +46,7 @@ function BreathingWaterfall({ steps }: { steps: ReturnType<typeof computeThermo>
   ]);
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
-      <rect x="0" y="0" width={W} height={H} rx="14" fill="#05070b" />
+    <SVGChartContainer W={W} H={H} ariaLabel="Thermodynamic waterfall" rx={14} fill="#05070b">
       <rect
         x={PAD.left - 22}
         y={PAD.top - 18}
@@ -251,7 +251,7 @@ function BreathingWaterfall({ steps }: { steps: ReturnType<typeof computeThermo>
           <text x={14} y={8} fontFamily={THEME.SANS} fontSize={8} fill="rgba(255,255,255,0.28)">{l.label}</text>
         </g>
       ))}
-    </svg>
+    </SVGChartContainer>
   );
 }
 

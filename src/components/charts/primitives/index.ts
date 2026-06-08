@@ -16,3 +16,18 @@ export type {
   ConfidenceSeries,
   ConfidenceSeriesPoint,
 } from './ConfidenceLineChart';
+
+export { default as SVGChartContainer } from './SVGChartContainer';
+export type { SVGChartContainerProps } from './SVGChartContainer';
+
+export { default as ChartGrid } from './ChartGrid';
+export type { ChartGridProps } from './ChartGrid';
+
+export { default as ChartAxisLabels } from './ChartAxisLabels';
+export type { ChartAxisLabelsProps } from './ChartAxisLabels';
+
+export { default as ChartLegend } from './ChartLegend';
+export type { ChartLegendProps, ChartLegendItem } from './ChartLegend';
+
+export { default as HeatmapGrid } from './HeatmapGrid';
+export type { HeatmapGridProps } from './HeatmapGrid';

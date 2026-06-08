@@ -15,6 +15,7 @@ import InlineMetricOverlay from './shared/InlineMetricOverlay';
 import WorkbenchRangeSlider from './shared/WorkbenchRangeSlider';
 import type { ToolTab } from './shared/ToolTabBar';
 import { THEME, TOOL_RESULT_PALETTE } from '../../theme';
+import { SVGChartContainer } from '../charts/primitives';
 
 function GenomeMap({
   targets,
@@ -63,8 +64,7 @@ function GenomeMap({
   ];
 
   return (
-    <svg role="img" aria-label="Circular E. coli genome map" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
-      <rect width={W} height={H} fill="#050505" rx="18" />
+    <SVGChartContainer W={W} H={H} ariaLabel="Circular E. coli genome map" rx={18}>
 
       {/* Title */}
       <text x="22" y="26" fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.45)" letterSpacing="0.08em">
@@ -175,7 +175,7 @@ function GenomeMap({
         fontSize="10" fill="rgba(55,126,184,0.55)">
         KD eff
       </text>
-    </svg>
+    </SVGChartContainer>
   );
 }
 
