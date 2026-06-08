@@ -1,5 +1,5 @@
-import { THEME } from '../../../theme';
 'use client';
+import { THEME } from '../../../theme';
 
 /**
  * StatusBadge — Consistent status indicator across all tools.

@@ -1,5 +1,5 @@
-import { THEME } from '../../../theme';
 'use client';
+import { THEME } from '../../../theme';
 
 interface ScientificMethodStripItem {
   title: string;

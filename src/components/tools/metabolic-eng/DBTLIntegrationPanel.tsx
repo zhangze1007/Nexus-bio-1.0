@@ -1,5 +1,5 @@
-import { THEME } from '../../../theme';
 'use client';
+import { THEME } from '../../../theme';
 
 export default function DBTLIntegrationPanel({
   activeRouteLabel,

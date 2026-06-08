@@ -1,5 +1,5 @@
-import { THEME } from '../../../theme';
 'use client';
+import { THEME } from '../../../theme';
 
 /**
  * Consistent section label for tool control rails and panels.
