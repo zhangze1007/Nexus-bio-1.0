@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import { checkRateLimit, getRateLimitConfig } from '@/src/utils/rateLimit';
 
 /**
  * Next.js Edge Middleware — API authentication + rate limiting + request IDs.
@@ -15,10 +16,11 @@ import { NextResponse, type NextRequest } from 'next/server';
  *     3. Same-origin requests (Sec-Fetch-Site: same-origin) are allowed
  *
  * Rate limiting:
- *   - In-memory sliding window per IP
+ *   - Upstash Redis sliding window when configured, in-memory fallback otherwise
  *   - Read (GET): 60 req/min
  *   - Write (POST/PUT/DELETE): 20 req/min
  *   - Analyze endpoint: 10 req/min (AI calls are expensive)
+ *   - Proxy endpoints: 30 req/min
  */
 
 // ── Config ────────────────────────────────────────────────────────────
@@ -40,60 +42,6 @@ const PUBLIC_ROUTES = [
   '/api/kegg',
   '/api/gemini', // legacy alias for analyze
 ];
-
-// ── Rate Limiter ──────────────────────────────────────────────────────
-interface RateLimitEntry {
-  timestamps: number[];
-}
-
-const rateLimitStore = new Map<string, RateLimitEntry>();
-
-function getRateLimit(ip: string, path: string): { limit: number; windowMs: number } {
-  if (path.startsWith('/api/analyze') || path.startsWith('/api/gemini')) {
-    return { limit: 10, windowMs: 60_000 }; // 10 req/min for AI
-  }
-  if (path.startsWith('/api/fba')) {
-    return { limit: 20, windowMs: 60_000 }; // 20 req/min for compute
-  }
-  // Proxy routes — tighter limits to prevent abuse of external APIs
-  if (path.startsWith('/api/alphafold') || path.startsWith('/api/pubchem') || path.startsWith('/api/kegg')) {
-    return { limit: 30, windowMs: 60_000 }; // 30 req/min for external API proxies
-  }
-  return { limit: 60, windowMs: 60_000 }; // 60 req/min default
-}
-
-function checkRateLimit(ip: string, path: string): { allowed: boolean; remaining: number; resetMs: number } {
-  const { limit, windowMs } = getRateLimit(ip, path);
-  const key = `${ip}:${path.split('/').slice(0, 3).join('/')}`;
-  const now = Date.now();
-
-  let entry = rateLimitStore.get(key);
-  if (!entry) {
-    entry = { timestamps: [] };
-    rateLimitStore.set(key, entry);
-  }
-
-  // Remove timestamps outside the window
-  entry.timestamps = entry.timestamps.filter(t => now - t < windowMs);
-
-  if (entry.timestamps.length >= limit) {
-    const oldestInWindow = entry.timestamps[0];
-    const resetMs = windowMs - (now - oldestInWindow);
-    return { allowed: false, remaining: 0, resetMs };
-  }
-
-  entry.timestamps.push(now);
-  return { allowed: true, remaining: limit - entry.timestamps.length, resetMs: windowMs };
-}
-
-// Periodic cleanup of stale entries (every 5 minutes)
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, entry] of rateLimitStore) {
-    entry.timestamps = entry.timestamps.filter(t => now - t < 120_000);
-    if (entry.timestamps.length === 0) rateLimitStore.delete(key);
-  }
-}, 300_000);
 
 // ── Auth Check ────────────────────────────────────────────────────────
 function isProtectedRoute(pathname: string): boolean {
@@ -129,9 +77,8 @@ function generateRequestId(): string {
 }
 
 // ── Middleware ─────────────────────────────────────────────────────────
-export function middleware(req: NextRequest) {
+export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
-  const method = req.method;
 
   // Only run on API routes
   if (!pathname.startsWith('/api/')) {
@@ -143,10 +90,11 @@ export function middleware(req: NextRequest) {
     || '127.0.0.1';
   const requestId = generateRequestId();
 
-  // ── Rate Limiting ──
-  const rateLimit = checkRateLimit(ip, pathname);
+  // ── Rate Limiting (Upstash Redis with in-memory fallback) ──
+  const rateLimit = await checkRateLimit(ip, pathname);
 
   if (!rateLimit.allowed) {
+    const config = getRateLimitConfig(pathname);
     return NextResponse.json(
       {
         error: 'Rate limit exceeded',
@@ -157,7 +105,7 @@ export function middleware(req: NextRequest) {
         status: 429,
         headers: {
           'X-Request-Id': requestId,
-          'X-RateLimit-Limit': String(getRateLimit(ip, pathname).limit),
+          'X-RateLimit-Limit': String(config.limit),
           'X-RateLimit-Remaining': '0',
           'Retry-After': String(Math.ceil(rateLimit.resetMs / 1000)),
         },
@@ -184,9 +132,10 @@ export function middleware(req: NextRequest) {
   }
 
   // ── Pass through with request metadata ──
+  const config = getRateLimitConfig(pathname);
   const response = NextResponse.next();
   response.headers.set('X-Request-Id', requestId);
-  response.headers.set('X-RateLimit-Limit', String(getRateLimit(ip, pathname).limit));
+  response.headers.set('X-RateLimit-Limit', String(config.limit));
   response.headers.set('X-RateLimit-Remaining', String(rateLimit.remaining));
 
   return response;
