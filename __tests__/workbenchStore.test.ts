@@ -24,7 +24,7 @@ describe('summarizePayload', () => {
       activeRouteLabel: 'Artemisinin',
       nodeCount: 7,
       result: { bottleneckCount: 2 },
-    } as WorkbenchToolPayloadMap['pathd'];
+    } as unknown as WorkbenchToolPayloadMap['pathd'];
     const summary = summarizePayload('pathd', payload);
     expect(summary).toContain('PATHD');
     expect(summary).toContain('Artemisinin');
@@ -36,7 +36,7 @@ describe('summarizePayload', () => {
     const payload = {
       mode: 'single',
       result: { growthRate: 0.85, feasible: true },
-    } as WorkbenchToolPayloadMap['fbasim'];
+    } as unknown as WorkbenchToolPayloadMap['fbasim'];
     const summary = summarizePayload('fbasim', payload);
     expect(summary).toContain('FBA');
     expect(summary).toContain('single');
@@ -48,7 +48,7 @@ describe('summarizePayload', () => {
     const payload = {
       pathway: 'Glycolysis',
       result: { gibbsFreeEnergy: -23.5, efficiency: 85.2 },
-    } as WorkbenchToolPayloadMap['cethx'];
+    } as unknown as WorkbenchToolPayloadMap['cethx'];
     const summary = summarizePayload('cethx', payload);
     expect(summary).toContain('Thermo');
     expect(summary).toContain('Glycolysis');
@@ -61,7 +61,7 @@ describe('summarizePayload', () => {
       selectedEnzymeName: 'ADS',
       designCount: 5,
       result: { isViable: true },
-    } as WorkbenchToolPayloadMap['catdes'];
+    } as unknown as WorkbenchToolPayloadMap['catdes'];
     const summary = summarizePayload('catdes', payload);
     expect(summary).toContain('Catalyst');
     expect(summary).toContain('ADS');
@@ -71,7 +71,7 @@ describe('summarizePayload', () => {
   it('summarizes dyncon payload', () => {
     const payload = {
       result: { productTiter: 12.34, stable: true },
-    } as WorkbenchToolPayloadMap['dyncon'];
+    } as unknown as WorkbenchToolPayloadMap['dyncon'];
     const summary = summarizePayload('dyncon', payload);
     expect(summary).toContain('Dynamic control');
     expect(summary).toContain('12.34');
@@ -82,7 +82,7 @@ describe('summarizePayload', () => {
     const payload = {
       targetConstruct: 'pET21a-GFP',
       result: { totalProteinYield: 2.5 },
-    } as WorkbenchToolPayloadMap['cellfree'];
+    } as unknown as WorkbenchToolPayloadMap['cellfree'];
     const summary = summarizePayload('cellfree', payload);
     expect(summary).toContain('Cell-free');
     expect(summary).toContain('pET21a-GFP');
@@ -97,7 +97,7 @@ describe('summarizePayload', () => {
         feedback: { learnedMetrics: { yield: 0.85, titer: 12.0 } },
         learnedParameters: [],
       },
-    } as WorkbenchToolPayloadMap['dbtlflow'];
+    } as unknown as WorkbenchToolPayloadMap['dbtlflow'];
     const summary = summarizePayload('dbtlflow', payload);
     expect(summary).toContain('DBTL');
     expect(summary).toContain('Design');
@@ -111,7 +111,7 @@ describe('summarizePayload', () => {
       currentRound: 3,
       totalRounds: 5,
       result: { leadVariantName: 'V3-A7' },
-    } as WorkbenchToolPayloadMap['proevol'];
+    } as unknown as WorkbenchToolPayloadMap['proevol'];
     const summary = summarizePayload('proevol', payload);
     expect(summary).toContain('PROEVOL');
     expect(summary).toContain('CYP71AV1');
@@ -123,7 +123,7 @@ describe('summarizePayload', () => {
     const payload = {
       gateType: 'AND',
       result: { outputLevel: 0.75 },
-    } as WorkbenchToolPayloadMap['gecair'];
+    } as unknown as WorkbenchToolPayloadMap['gecair'];
     const summary = summarizePayload('gecair', payload);
     expect(summary).toContain('Gene circuit');
     expect(summary).toContain('AND');
@@ -133,7 +133,7 @@ describe('summarizePayload', () => {
   it('summarizes genmim payload', () => {
     const payload = {
       result: { selectedTargets: 12, offTargetRisk: 0.15 },
-    } as WorkbenchToolPayloadMap['genmim'];
+    } as unknown as WorkbenchToolPayloadMap['genmim'];
     const summary = summarizePayload('genmim', payload);
     expect(summary).toContain('Genome minimizer');
     expect(summary).toContain('12 targets');
@@ -144,7 +144,7 @@ describe('summarizePayload', () => {
     const payload = {
       selectedGene: 'CYP71AV1',
       result: { significantCount: 8 },
-    } as WorkbenchToolPayloadMap['multio'];
+    } as unknown as WorkbenchToolPayloadMap['multio'];
     const summary = summarizePayload('multio', payload);
     expect(summary).toContain('Multi-omics');
     expect(summary).toContain('CYP71AV1');
@@ -155,7 +155,7 @@ describe('summarizePayload', () => {
     const payload = {
       highlightGene: 'ALDH1',
       result: { highestYieldCluster: 'Cluster-3' },
-    } as WorkbenchToolPayloadMap['scspatial'];
+    } as unknown as WorkbenchToolPayloadMap['scspatial'];
     const summary = summarizePayload('scspatial', payload);
     expect(summary).toContain('Spatial');
     expect(summary).toContain('ALDH1');
@@ -165,7 +165,7 @@ describe('summarizePayload', () => {
   it('summarizes nexai payload', () => {
     const payload = {
       result: { mode: 'literature', citations: 15, confidence: 0.82 },
-    } as WorkbenchToolPayloadMap['nexai'];
+    } as unknown as WorkbenchToolPayloadMap['nexai'];
     const summary = summarizePayload('nexai', payload);
     expect(summary).toContain('Axon');
     expect(summary).toContain('literature');
@@ -185,10 +185,11 @@ describe('buildRunEvidenceSnapshot', () => {
   it('returns snapshot with zero evidence', () => {
     const state = { evidenceItems: [], selectedEvidenceIds: [] };
     const snapshot = buildRunEvidenceSnapshot(state, 'pathd');
-    expect(snapshot.count).toBe(0);
-    expect(snapshot.selectedCount).toBe(0);
-    expect(snapshot.evidenceItemIds).toEqual([]);
-    expect(snapshot.selectedEvidenceIds).toEqual([]);
+    expect(snapshot).toBeDefined();
+    expect(snapshot!.count).toBe(0);
+    expect(snapshot!.selectedCount).toBe(0);
+    expect(snapshot!.evidenceItemIds).toEqual([]);
+    expect(snapshot!.selectedEvidenceIds).toEqual([]);
   });
 
   it('counts evidence items correctly', () => {
@@ -201,10 +202,11 @@ describe('buildRunEvidenceSnapshot', () => {
       selectedEvidenceIds: ['ev-1', 'ev-3'],
     };
     const snapshot = buildRunEvidenceSnapshot(state as never, 'pathd');
-    expect(snapshot.count).toBe(3);
-    expect(snapshot.selectedCount).toBe(2);
-    expect(snapshot.evidenceItemIds).toEqual(['ev-1', 'ev-2', 'ev-3']);
-    expect(snapshot.selectedEvidenceIds).toEqual(['ev-1', 'ev-3']);
+    expect(snapshot).toBeDefined();
+    expect(snapshot!.count).toBe(3);
+    expect(snapshot!.selectedCount).toBe(2);
+    expect(snapshot!.evidenceItemIds).toEqual(['ev-1', 'ev-2', 'ev-3']);
+    expect(snapshot!.selectedEvidenceIds).toEqual(['ev-1', 'ev-3']);
   });
 
   it('filters out invalid selected IDs', () => {
@@ -215,8 +217,9 @@ describe('buildRunEvidenceSnapshot', () => {
       selectedEvidenceIds: ['ev-1', 'ev-nonexistent'],
     };
     const snapshot = buildRunEvidenceSnapshot(state as never, 'pathd');
-    expect(snapshot.selectedCount).toBe(1);
-    expect(snapshot.selectedEvidenceIds).toEqual(['ev-1']);
+    expect(snapshot).toBeDefined();
+    expect(snapshot!.selectedCount).toBe(1);
+    expect(snapshot!.selectedEvidenceIds).toEqual(['ev-1']);
   });
 });
 
@@ -294,8 +297,9 @@ describe('workbenchStore actions', () => {
     const id = upsertEvidence({
       title: 'Test Evidence',
       sourceKind: 'literature',
-      sourceUrl: 'https://example.com',
-      snippet: 'Test snippet',
+      source: 'https://example.com',
+      abstract: 'Test snippet',
+      authors: ['Test Author'],
     });
     expect(id).toBeDefined();
     const { evidenceItems } = useWorkbenchStore.getState();
@@ -309,8 +313,9 @@ describe('workbenchStore actions', () => {
     const id = upsertEvidence({
       title: 'Test Evidence',
       sourceKind: 'literature',
-      sourceUrl: 'https://example.com',
-      snippet: 'Test snippet',
+      source: 'https://example.com',
+      abstract: 'Test snippet',
+      authors: ['Test Author'],
     });
     toggleEvidenceSelection(id);
     expect(useWorkbenchStore.getState().selectedEvidenceIds).toContain(id);
@@ -348,8 +353,9 @@ describe('workbenchStore actions', () => {
     upsertEvidence({
       title: 'Test',
       sourceKind: 'literature',
-      sourceUrl: 'https://example.com',
-      snippet: 'Test',
+      source: 'https://example.com',
+      abstract: 'Test',
+      authors: ['Test Author'],
     });
     resetWorkbench();
     const state = useWorkbenchStore.getState();
