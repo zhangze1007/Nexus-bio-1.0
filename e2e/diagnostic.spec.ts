@@ -5,26 +5,20 @@ import { test, expect } from '@playwright/test';
  * Run this to understand why .nb-tool-shell__header is not found.
  */
 
-test('diagnostic: /tools/fbasim page state after 30s', async ({ page }) => {
-  const consoleMessages: string[] = [];
+test('diagnostic: /tools/fbasim page state', async ({ page }) => {
   const consoleErrors: string[] = [];
+  const failedRequests: string[] = [];
 
-  // Capture all console output
   page.on('console', (msg) => {
-    const text = `[${msg.type()}] ${msg.text()}`;
-    consoleMessages.push(text);
     if (msg.type() === 'error') {
       consoleErrors.push(msg.text());
     }
   });
 
-  // Capture page errors (uncaught exceptions)
   page.on('pageerror', (error) => {
-    consoleErrors.push(`PAGE ERROR: ${error.message}`);
+    consoleErrors.push(`PAGE_ERROR: ${error.message}`);
   });
 
-  // Capture failed requests
-  const failedRequests: string[] = [];
   page.on('requestfailed', (request) => {
     failedRequests.push(`${request.url()} - ${request.failure()?.errorText}`);
   });
@@ -32,76 +26,73 @@ test('diagnostic: /tools/fbasim page state after 30s', async ({ page }) => {
   console.log('=== Navigating to /tools/fbasim ===');
   await page.goto('/tools/fbasim');
 
-  // Wait a bit for initial load
+  // Check at 5s
   await page.waitForTimeout(5000);
 
-  // Check what's in the DOM
-  const bodyHTML = await page.evaluate(() => {
-    const body = document.body;
+  const state5s = await page.evaluate(() => {
+    const mainEl = document.querySelector('.nb-ide-main');
+    const wbContent = mainEl?.querySelector('.nb-workbench-content');
+
     return {
-      childCount: body.children.length,
-      // Check for key elements
       hasIdeShell: !!document.querySelector('.nb-ide-shell'),
-      hasIdeMain: !!document.querySelector('.nb-ide-main'),
+      hasIdeMain: !!mainEl,
       hasToolShell: !!document.querySelector('.nb-tool-shell'),
       hasToolShellHeader: !!document.querySelector('.nb-tool-shell__header'),
-      hasOnboardingOverlay: !!document.querySelector('[style*="z-index: 9999"]'),
-      // Get all class names on direct children of main
-      mainChildren: Array.from(document.querySelector('.nb-ide-main')?.children || []).map(el => ({
+      // Check ErrorBoundary fallback specifically
+      hasAlertRole: !!document.querySelector('[role="alert"]'),
+      hasSomethingWrong: document.body.innerText.includes('Something went wrong'),
+      // Check for any dynamic import loading states
+      hasSpinners: document.querySelectorAll('[style*="animation: spin"]').length,
+      // Count nb-workbench-content children
+      wbContentChildCount: wbContent?.children.length ?? 0,
+      // List all direct children of nb-workbench-content
+      wbContentChildren: Array.from(wbContent?.children || []).map(el => ({
         tag: el.tagName,
-        class: el.className?.substring?.(0, 80) || '',
-        childCount: el.children.length,
+        role: el.getAttribute('role'),
+        class: (el.className || '').substring(0, 60),
+        text: el.textContent?.substring(0, 100) || '',
       })),
-      // Check for loading spinners
-      spinners: document.querySelectorAll('[style*="animation: spin"]').length,
-      // Check for error boundaries
-      errorBoundaries: document.querySelectorAll('[class*="error"]').length,
+      // Full innerHTML of nb-workbench-content (truncated)
+      wbContentHTML: wbContent?.innerHTML?.substring(0, 3000) || 'NOT FOUND',
     };
   });
 
-  console.log('=== DOM State after 5s ===');
-  console.log(JSON.stringify(bodyHTML, null, 2));
+  console.log('=== STATE at 5s ===');
+  console.log(JSON.stringify(state5s, null, 2));
 
-  // Wait more
+  // Check at 15s
   await page.waitForTimeout(10000);
 
-  const bodyHTML2 = await page.evaluate(() => {
+  const state15s = await page.evaluate(() => {
+    const mainEl = document.querySelector('.nb-ide-main');
+    const wbContent = mainEl?.querySelector('.nb-workbench-content');
+
     return {
       hasToolShell: !!document.querySelector('.nb-tool-shell'),
       hasToolShellHeader: !!document.querySelector('.nb-tool-shell__header'),
-      hasOnboardingOverlay: !!document.querySelector('[style*="z-index: 9999"]'),
-      // Get the full HTML of nb-ide-main
-      ideMainHTML: document.querySelector('.nb-ide-main')?.innerHTML?.substring(0, 2000) || 'NOT FOUND',
+      hasAlertRole: !!document.querySelector('[role="alert"]'),
+      hasSomethingWrong: document.body.innerText.includes('Something went wrong'),
+      hasSpinners: document.querySelectorAll('[style*="animation: spin"]').length,
+      wbContentChildCount: wbContent?.children.length ?? 0,
+      wbContentChildren: Array.from(wbContent?.children || []).map(el => ({
+        tag: el.tagName,
+        role: el.getAttribute('role'),
+        class: (el.className || '').substring(0, 60),
+        text: el.textContent?.substring(0, 100) || '',
+      })),
     };
   });
 
-  console.log('=== DOM State after 15s ===');
-  console.log(JSON.stringify(bodyHTML2, null, 2));
-
-  // Final check after 30s total
-  await page.waitForTimeout(15000);
-
-  const bodyHTML3 = await page.evaluate(() => {
-    return {
-      hasToolShell: !!document.querySelector('.nb-tool-shell'),
-      hasToolShellHeader: !!document.querySelector('.nb-tool-shell__header'),
-      hasOnboardingOverlay: !!document.querySelector('[style*="z-index: 9999"]'),
-      ideMainHTML: document.querySelector('.nb-ide-main')?.innerHTML?.substring(0, 2000) || 'NOT FOUND',
-    };
-  });
-
-  console.log('=== DOM State after 30s ===');
-  console.log(JSON.stringify(bodyHTML3, null, 2));
+  console.log('=== STATE at 15s ===');
+  console.log(JSON.stringify(state15s, null, 2));
 
   console.log('=== Console Errors ===');
   consoleErrors.forEach(e => console.log(`  ERROR: ${e}`));
+  if (consoleErrors.length === 0) console.log('  (none)');
 
   console.log('=== Failed Requests ===');
   failedRequests.forEach(r => console.log(`  FAILED: ${r}`));
+  if (failedRequests.length === 0) console.log('  (none)');
 
-  console.log('=== All Console Messages ===');
-  consoleMessages.forEach(m => console.log(`  ${m}`));
-
-  // The test always passes — we just want the diagnostic output
   expect(true).toBe(true);
 });
