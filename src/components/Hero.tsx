@@ -47,6 +47,7 @@ export default function Hero() {
   const [focused, setFocused]   = useState(false);
   const [preview, setPreview]   = useState<PreviewResult[]>([]);
   const [previewLoading, setPreviewLoading] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(-1);
   const [, startTransition] = useTransition();
 
   // Parallax
@@ -84,12 +85,40 @@ export default function Hero() {
     if (term) router.push(`/research?q=${encodeURIComponent(term)}`);
   }, [router]);
 
-  const onKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') navigate(query);
-    if (e.key === 'Escape') { setFocused(false); inputRef.current?.blur(); }
-  }, [navigate, query]);
-
   const showPopup = focused && query.length >= 3 && (preview.length > 0 || previewLoading);
+
+  // Total dropdown items = preview results + "View all" footer
+  const totalItems = preview.length + 1;
+
+  const onKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Escape') {
+      setActiveIndex(-1);
+      setFocused(false);
+      inputRef.current?.blur();
+      return;
+    }
+    if (!showPopup) {
+      if (e.key === 'Enter') navigate(query);
+      return;
+    }
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setActiveIndex(prev => (prev + 1) % totalItems);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setActiveIndex(prev => (prev - 1 + totalItems) % totalItems);
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (activeIndex >= 0 && activeIndex < preview.length) {
+        navigate(preview[activeIndex].title);
+      } else {
+        navigate(query);
+      }
+    }
+  }, [navigate, query, showPopup, activeIndex, totalItems, preview]);
+
+  // Reset active index when preview results change
+  useEffect(() => { setActiveIndex(-1); }, [preview]);
 
   return (
     <header ref={headerRef} className={styles.header}>
@@ -142,7 +171,7 @@ export default function Hero() {
             transition: 'all 0.25s cubic-bezier(0.22,1,0.36,1)',
           }}>
             <Search size={16} style={{
-              color: focused ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.25)',
+              color: focused ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.45)',
               flexShrink: 0, transition: 'color 0.2s',
             }} />
 
@@ -157,6 +186,9 @@ export default function Hero() {
               className={styles.searchInput}
               style={{ fontFamily: SANS }}
               aria-label="Search research database"
+              aria-autocomplete="list"
+              aria-controls="hero-search-listbox"
+              aria-activedescendant={activeIndex >= 0 ? `hero-search-option-${activeIndex}` : undefined}
               autoComplete="off"
               spellCheck={false}
             />
@@ -181,7 +213,10 @@ export default function Hero() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -4 }}
               transition={{ duration: 0.18 }}
-              className={styles.preview}>
+              className={styles.preview}
+              role="listbox"
+              id="hero-search-listbox"
+              aria-label="Search suggestions">
               {previewLoading && preview.length === 0 ? (
                 <div style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <Loader2 size={12} style={{ color: 'rgba(255,255,255,0.75)', animation: 'spin 1s linear infinite' }} />
@@ -189,11 +224,15 @@ export default function Hero() {
                     Searching OpenAlex…
                   </span>
                 </div>
-              ) : preview.map((r) => (
+              ) : preview.map((r, i) => (
                 <button
                   key={r.id}
+                  id={`hero-search-option-${i}`}
+                  role="option"
+                  aria-selected={i === activeIndex}
                   onMouseDown={() => navigate(r.title)}
-                  className={styles.previewItem}>
+                  className={styles.previewItem}
+                  style={i === activeIndex ? { background: 'rgba(255,255,255,0.08)' } : undefined}>
                   <p className={styles.previewTitle} style={{ fontFamily: SANS }}>
                     {r.title}
                   </p>
@@ -209,9 +248,15 @@ export default function Hero() {
               {/* Footer: view all */}
               <div className={styles.previewFooter}>
                 <button
+                  id={`hero-search-option-${preview.length}`}
+                  role="option"
+                  aria-selected={activeIndex === preview.length}
                   onMouseDown={() => navigate(query)}
                   className={styles.previewFooterButton}
-                  style={{ fontFamily: MONO }}>
+                  style={{
+                    fontFamily: MONO,
+                    ...(activeIndex === preview.length ? { background: 'rgba(255,255,255,0.08)' } : undefined),
+                  }}>
                   View all results for &ldquo;{query}&rdquo;
                   <ArrowRight size={10} />
                 </button>

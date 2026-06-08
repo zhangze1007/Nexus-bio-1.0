@@ -154,10 +154,10 @@ function VolcanoPlot({ data, fcThreshold, pvThreshold, highlightedGene }: {
       })}
       <line x1={PAD} y1={H - PAD} x2={W - PAD} y2={H - PAD} stroke="rgba(255,255,255,0.1)" />
       <line x1={PAD} y1={PAD} x2={PAD} y2={H - PAD} stroke="rgba(255,255,255,0.1)" />
-      <text x={W / 2} y={H - 4} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.25)">
+      <text x={W / 2} y={H - 4} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.45)">
         log₂ Fold Change
       </text>
-      <text x={10} y={H / 2} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.25)"
+      <text x={10} y={H / 2} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.45)"
         transform={`rotate(-90,10,${H / 2})`}>
         -log₁₀(p)
       </text>
@@ -184,7 +184,7 @@ const COLUMNS: TableColumn<OmicsRow>[] = [
     : '—'
   },
   { key: 'pValue',      header: 'p-val',       width: 60, render: v => typeof v === 'number'
-    ? <span style={{ color: (v as number) < 0.05 ? 'rgba(255,139,31,0.85)' : 'rgba(255,255,255,0.35)', fontFamily: "'JetBrains Mono',monospace", fontSize: 'var(--nb-fs-xs)' }}>
+    ? <span style={{ color: (v as number) < 0.05 ? 'rgba(255,139,31,0.85)' : 'rgba(255,255,255,0.55)', fontFamily: "'JetBrains Mono',monospace", fontSize: 'var(--nb-fs-xs)' }}>
         {(v as number).toFixed(3)}
       </span>
     : '—'
@@ -290,9 +290,9 @@ function TriPanelEmbedding({ embeddings, data, fcThreshold, pvThreshold, activeL
       <div style={{ flex: '0 0 auto' }}>
         <svg viewBox={`0 0 ${pcaW} ${pcaH}`} style={{ width: `${pcaW}px`, height: `${pcaH}px` }}>
           <rect width={pcaW} height={pcaH} fill="#050505" rx="10" />
-          <text x={pcaW / 2} y={14} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.25)">PCA BIPLOT</text>
-          <text x={pcaW / 2} y={pcaH - 4} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.22)">PC1 (38.2% var)</text>
-          <text x={8} y={pcaH / 2} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.22)"
+          <text x={pcaW / 2} y={14} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.45)">PCA BIPLOT</text>
+          <text x={pcaW / 2} y={pcaH - 4} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.45)">PC1 (38.2% var)</text>
+          <text x={8} y={pcaH / 2} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.45)"
             transform={`rotate(-90,8,${pcaH / 2})`}>PC2 (21.6% var)</text>
           <line x1={pcaPAD} y1={pcaH - pcaPAD} x2={pcaW - pcaPAD} y2={pcaH - pcaPAD} stroke="rgba(255,255,255,0.08)" />
           <line x1={pcaPAD} y1={pcaPAD} x2={pcaPAD} y2={pcaH - pcaPAD} stroke="rgba(255,255,255,0.08)" />
@@ -304,7 +304,7 @@ function TriPanelEmbedding({ embeddings, data, fcThreshold, pvThreshold, activeL
             return (
               <g key={gene.gene}>
                 <line x1={cx} y1={cy} x2={ax} y2={ay}
-                  stroke="rgba(255,255,255,0.35)" strokeWidth="1" markerEnd="url(#pca-arrow)" />
+                  stroke="rgba(255,255,255,0.55)" strokeWidth="1" markerEnd="url(#pca-arrow)" />
                 <text x={ax + Math.cos(angle) * 8} y={ay + Math.sin(angle) * 8 + 2}
                   textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.5)">
                   {gene.gene.slice(0, 6)}
@@ -314,7 +314,7 @@ function TriPanelEmbedding({ embeddings, data, fcThreshold, pvThreshold, activeL
           })}
           <defs>
             <marker id="pca-arrow" markerWidth="5" markerHeight="5" refX="4" refY="2.5" orient="auto">
-              <polygon points="0 0.5, 4.5 2.5, 0 4.5" fill="rgba(255,255,255,0.35)" />
+              <polygon points="0 0.5, 4.5 2.5, 0 4.5" fill="rgba(255,255,255,0.55)" />
             </marker>
           </defs>
           {/* Sample points */}
@@ -341,7 +341,7 @@ function TriPanelEmbedding({ embeddings, data, fcThreshold, pvThreshold, activeL
       <div style={{ flex: '0 0 auto' }}>
         <svg viewBox={`0 0 ${hmW} ${hmH}`} style={{ width: `${hmW}px`, height: `${hmH}px` }}>
           <rect width={hmW} height={hmH} fill="#050505" rx="10" />
-          <text x={hmW / 2} y={12} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.25)">
+          <text x={hmW / 2} y={12} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.45)">
             CORRELATION MATRIX (20×20)
           </text>
           {corrMatrix.map((row, yi) =>
@@ -361,7 +361,7 @@ function TriPanelEmbedding({ embeddings, data, fcThreshold, pvThreshold, activeL
               x={hmPAD.left + i * cellW + cellW / 2}
               y={hmPAD.top - 4}
               textAnchor="start"
-              fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.35)"
+              fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.55)"
               transform={`rotate(-60,${hmPAD.left + i * cellW + cellW / 2},${hmPAD.top - 4})`}
             >{g.gene.slice(0, 5)}</text>
           ))}
@@ -371,7 +371,7 @@ function TriPanelEmbedding({ embeddings, data, fcThreshold, pvThreshold, activeL
               x={hmPAD.left - 2}
               y={hmPAD.top + i * cellW + cellW * 0.65}
               textAnchor="end"
-              fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.35)"
+              fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.55)"
             >{g.gene.slice(0, 5)}</text>
           ))}
           {/* ── Publication colorbar — RdBu diverging scale ── */}
@@ -389,13 +389,13 @@ function TriPanelEmbedding({ embeddings, data, fcThreshold, pvThreshold, activeL
             const y = hmPAD.top + t * hmInner;
             return (
               <g key={label}>
-                <line x1={hmW - 8} y1={y} x2={hmW - 5} y2={y} stroke="rgba(255,255,255,0.25)" strokeWidth={0.7} />
-                <text x={hmW - 3} y={y + 3} fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.35)">{label}</text>
+                <line x1={hmW - 8} y1={y} x2={hmW - 5} y2={y} stroke="rgba(255,255,255,0.45)" strokeWidth={0.7} />
+                <text x={hmW - 3} y={y + 3} fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.55)">{label}</text>
               </g>
             );
           })}
           {/* Unit label */}
-          <text x={hmW - 12} y={hmPAD.top - 6} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.22)">
+          <text x={hmW - 12} y={hmPAD.top - 6} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.45)">
             z
           </text>
         </svg>

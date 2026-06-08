@@ -117,7 +117,7 @@ export default function LineageTracePanel({
                   cy={yForVariant(variant)}
                   r={lead ? 6 : selected ? 5 : variant.status === 'selected' ? 4 : 3.2}
                   fill={fill}
-                  stroke={selected ? '#ffffff' : 'rgba(255,255,255,0.22)'}
+                  stroke={selected ? '#ffffff' : 'rgba(255,255,255,0.45)'}
                   strokeWidth={selected ? 1.8 : 1}
                 />
                 {(lead || selected) ? (

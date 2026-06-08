@@ -24,8 +24,6 @@
   },
   "dependencies": {
     "@google/genai": "^1.29.0",
-    "@nivo/core": "^0.99.0",
-    "@nivo/heatmap": "^0.99.0",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.5.0",
     "@sentry/nextjs": "^10.56.0",

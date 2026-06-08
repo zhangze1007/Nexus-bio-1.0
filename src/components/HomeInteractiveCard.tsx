@@ -41,7 +41,7 @@ const iconVariants: Variants = {
   },
   press: {
     backgroundColor: 'rgba(255,255,255,0.11)',
-    borderColor: 'rgba(255,255,255,0.22)',
+    borderColor: 'rgba(255,255,255,0.45)',
     scale: 0.99,
   },
 };

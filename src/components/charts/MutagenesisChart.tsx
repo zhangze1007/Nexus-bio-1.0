@@ -59,7 +59,7 @@ export default function MutagenesisChart({ result, enzyme }: MutagenesisChartPro
 
   return (
     <div style={{ ...CHART_CONTAINER, background: '#050505', padding: 16 }}>
-      <p style={{ fontFamily: FONT.SANS, fontSize: 9, color: 'rgba(255,255,255,0.35)', margin: '0 0 8px', fontStyle: 'italic' }}>
+      <p style={{ fontFamily: FONT.SANS, fontSize: 9, color: 'rgba(255,255,255,0.55)', margin: '0 0 8px', fontStyle: 'italic' }}>
         Predicted effects are heuristic screening scores (BLOSUM62 + conservation), not rigorous ΔΔG.
       </p>
 
@@ -171,7 +171,7 @@ export default function MutagenesisChart({ result, enzyme }: MutagenesisChartPro
             ))}
           </tbody>
         </table>
-        <p style={{ fontFamily: FONT.SANS, fontSize: 8, color: 'rgba(255,255,255,0.25)', margin: '6px 0 0', fontStyle: 'italic' }}>
+        <p style={{ fontFamily: FONT.SANS, fontSize: 8, color: 'rgba(255,255,255,0.45)', margin: '6px 0 0', fontStyle: 'italic' }}>
           * Heuristic fold-change estimates — validate with directed evolution or computational ΔΔG tools (FoldX, Rosetta).
         </p>
       </div>

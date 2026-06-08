@@ -2,6 +2,29 @@
 @import '../src/index.css';
 @import '../src/components/tools/shared/toolDesignSystem.css';
 
+/* ── Skip-to-content: keyboard a11y ── */
+.skip-to-content {
+  position: absolute;
+  top: -100px;
+  left: 16px;
+  z-index: 9999;
+  padding: 8px 16px;
+  background: #1a1f25;
+  color: #e2e8f0;
+  font-family: 'Public Sans', -apple-system, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: top 0.2s ease;
+}
+
+.skip-to-content:focus {
+  top: 16px;
+  outline: 2px solid rgba(175,195,214,0.52);
+  outline-offset: 2px;
+}
+
 /* ── Global typographic reset ── */
 :root {
   --font-serif: 'Source Serif 4', Georgia, serif;
@@ -389,6 +412,17 @@
 .nb-directory-layout input:focus-visible,
 .nb-directory-layout select:focus-visible,
 .nb-tool-shell a:focus-visible {
+  outline: 2px solid rgba(175,195,214,0.52);
+  outline-offset: 2px;
+}
+
+/* ── Global focus-visible: all interactive elements ── */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
   outline: 2px solid rgba(175,195,214,0.52);
   outline-offset: 2px;
 }

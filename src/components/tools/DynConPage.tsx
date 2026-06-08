@@ -8,6 +8,7 @@ import { PATHD_THEME } from '../workbench/workbenchTheme';
 import ScientificHero from './shared/ScientificHero';
 import ScientificFigureFrame from './shared/ScientificFigureFrame';
 import SimErrorBanner from '../ide/shared/SimErrorBanner';
+import { catmullRomPath } from '../../utils/svgPath';
 import { usePersistedState } from '../ide/shared/usePersistedState';
 import WorkbenchRangeSlider from './shared/WorkbenchRangeSlider';
 import {
@@ -45,19 +46,6 @@ const SERIES = [
 ] as const;
 
 /* ── Catmull-Rom → SVG path helper ─────────────────────────────────────────── */
-function crPath(pts: [number, number][]): string {
-  if (pts.length < 2) return '';
-  const p = [pts[0], ...pts, pts[pts.length - 1]];
-  let d = `M ${p[1][0].toFixed(1)} ${p[1][1].toFixed(1)}`;
-  for (let i = 1; i < p.length - 2; i++) {
-    const [x0, y0] = p[i - 1], [x1, y1] = p[i], [x2, y2] = p[i + 1], [x3, y3] = p[i + 2];
-    const cp1x = x1 + (x2 - x0) / 6, cp1y = y1 + (y2 - y0) / 6;
-    const cp2x = x2 - (x3 - x1) / 6, cp2y = y2 - (y3 - y1) / 6;
-    d += ` C ${cp1x.toFixed(1)} ${cp1y.toFixed(1)}, ${cp2x.toFixed(1)} ${cp2y.toFixed(1)}, ${x2.toFixed(1)} ${y2.toFixed(1)}`;
-  }
-  return d;
-}
-
 /* ── Time-Series SVG (6 series) ────────────────────────────────────────────── */
 function TimeSeriesSVG({ trajectory, setpoint, svgRef }: { trajectory: ODEState[]; setpoint: number; svgRef?: React.RefObject<SVGSVGElement | null> }) {
   if (trajectory.length < 2) return null;
@@ -95,7 +83,7 @@ function TimeSeriesSVG({ trajectory, setpoint, svgRef }: { trajectory: ODEState[
     PP_X + (normalize(pt.product, productMax)) * PP_W,
     PP_Y + PP_H - (normalize(pt.fpp ?? 0, fppMax)) * PP_H,
   ]);
-  const ppPath = crPath(ppPts);
+  const ppPath = catmullRomPath(ppPts);
 
   return (
     <svg ref={svgRef} role="img" aria-label="Chart" viewBox={`0 0 ${W} ${H + 36}`} style={{ width: '100%', height: '100%' }}>
@@ -121,12 +109,12 @@ function TimeSeriesSVG({ trajectory, setpoint, svgRef }: { trajectory: ODEState[
         // Confidence band: ±5% of laneH
         const sigma = laneH * 0.05;
         const bandPath = coords.length > 1
-          ? crPath(coords.map(([x, cy]) => [x, cy - sigma] as [number, number]))
+          ? catmullRomPath(coords.map(([x, cy]) => [x, cy - sigma] as [number, number]))
             + ' '
-            + crPath([...coords].reverse().map(([x, cy]) => [x, cy + sigma] as [number, number])).replace('M', 'L')
+            + catmullRomPath([...coords].reverse().map(([x, cy]) => [x, cy + sigma] as [number, number])).replace('M', 'L')
             + ' Z'
           : '';
-        const smoothPath = crPath(coords);
+        const smoothPath = catmullRomPath(coords);
         // Extract base color for band fill
         const bandColor = lane.color.startsWith('rgba')
           ? lane.color.replace(/[\d.]+\)$/, '0.10)')
@@ -174,7 +162,7 @@ function TimeSeriesSVG({ trajectory, setpoint, svgRef }: { trajectory: ODEState[
               x2={x} y2={plotTop + lanes.length * (laneH + laneGap) - laneGap + 6}
               stroke="rgba(255,255,255,0.08)" />
             <text x={x} y={plotTop + lanes.length * (laneH + laneGap) - laneGap + 18}
-              textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.22)">
+              textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.45)">
               {tick}h
             </text>
           </g>
@@ -189,9 +177,9 @@ function TimeSeriesSVG({ trajectory, setpoint, svgRef }: { trajectory: ODEState[
       </text>
       <line x1={PP_X} y1={PP_Y} x2={PP_X} y2={PP_Y + PP_H} stroke="rgba(255,255,255,0.1)" />
       <line x1={PP_X} y1={PP_Y + PP_H} x2={PP_X + PP_W} y2={PP_Y + PP_H} stroke="rgba(255,255,255,0.1)" />
-      <text x={PP_X - 2} y={PP_Y + PP_H + 8} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.25)">P</text>
-      <text x={PP_X + PP_W} y={PP_Y + PP_H + 8} textAnchor="end" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.25)">→</text>
-      <text x={PP_X - 2} y={PP_Y} fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.25)">R↑</text>
+      <text x={PP_X - 2} y={PP_Y + PP_H + 8} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.45)">P</text>
+      <text x={PP_X + PP_W} y={PP_Y + PP_H + 8} textAnchor="end" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.45)">→</text>
+      <text x={PP_X - 2} y={PP_Y} fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.45)">R↑</text>
       {ppPath && <path d={ppPath} fill="none" stroke="rgba(232,163,161,0.7)" strokeWidth="1.2" />}
       {ppPts.length > 0 && (
         <circle cx={ppPts[ppPts.length - 1][0]} cy={ppPts[ppPts.length - 1][1]} r="2.5" fill={PATHD_THEME.coral} />

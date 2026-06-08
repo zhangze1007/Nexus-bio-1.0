@@ -56,7 +56,7 @@ export default function DevModePanel() {
         }}
         onMouseEnter={e => {
           (e.currentTarget as HTMLElement).style.color = '#ffffff';
-          (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.25)';
+          (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.45)';
           (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.1)';
         }}
         onMouseLeave={e => {
@@ -173,7 +173,7 @@ export default function DevModePanel() {
                         <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px', fontFamily: 'monospace', fontWeight: 600, margin: '0 0 5px' }}>
                           {faq.q}
                         </p>
-                        <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '12px', margin: 0, lineHeight: 1.5 }}>
+                        <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '12px', margin: 0, lineHeight: 1.5 }}>
                           {faq.a}
                           {faq.code && (
                             <code style={{ marginLeft: '6px', color: 'rgba(255,255,255,0.55)', background: 'rgba(255,255,255,0.06)', padding: '1px 5px', borderRadius: '4px', fontFamily: 'monospace' }}>

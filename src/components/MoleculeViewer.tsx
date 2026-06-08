@@ -5,6 +5,11 @@ import { Loader2, ExternalLink, AlertCircle } from 'lucide-react';
 
 // $3Dmol Window declaration is in src/types/3dmol.d.ts
 
+/** Strip HTML tags from molecular data to prevent XSS via 3Dmol */
+function sanitizeMolData(data: string): string {
+  return data.replace(/<[^>]*>/g, '');
+}
+
 type ViewerStatus = 'idle' | 'loading' | 'ready' | 'empty' | 'error';
 
 interface MoleculeViewerProps {
@@ -31,7 +36,7 @@ function load3Dmol(): Promise<void> {
 async function fetchByCID(cid: number): Promise<string> {
   const res = await fetch(`/api/pubchem?cid=${cid}`);
   if (!res.ok) throw new Error(`PubChem CID ${res.status}`);
-  const text = await res.text();
+  const text = sanitizeMolData(await res.text());
   if (!text || text.length < 50) throw new Error('Empty SDF');
   return text;
 }
@@ -40,7 +45,7 @@ async function fetchByCID(cid: number): Promise<string> {
 async function fetchByName(name: string): Promise<{ sdf: string; cid: number | null }> {
   const res = await fetch(`/api/pubchem?name=${encodeURIComponent(name)}`);
   if (!res.ok) throw new Error(`Name not found: ${name}`);
-  const sdf = await res.text();
+  const sdf = sanitizeMolData(await res.text());
   if (!sdf || sdf.length < 50) throw new Error('Empty SDF from name search');
   // Backend returns resolved CID in header
   const cid = res.headers.get('X-PubChem-CID');
@@ -203,9 +208,9 @@ export default function MoleculeViewer({ nodeId, pubchemCID, searchName, molBloc
           {pubchemLink && (
             <div style={{ position: 'absolute', top: '8px', right: '10px' }}>
               <a href={pubchemLink} target="_blank" rel="noopener noreferrer"
-                style={{ color: 'rgba(255,255,255,0.35)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", display: 'flex', alignItems: 'center', gap: '3px', textDecoration: 'none', background: 'rgba(0,0,0,0.45)', padding: '2px 6px', borderRadius: '8px' }}
+                style={{ color: 'rgba(255,255,255,0.55)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", display: 'flex', alignItems: 'center', gap: '3px', textDecoration: 'none', background: 'rgba(0,0,0,0.45)', padding: '2px 6px', borderRadius: '8px' }}
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(200,232,240,0.9)'; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.35)'; }}>
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.55)'; }}>
                 PubChem <ExternalLink size={8} />
               </a>
             </div>

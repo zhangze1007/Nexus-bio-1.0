@@ -152,7 +152,7 @@ export default function LoginButton() {
             {user.institution && (
               <p style={{
                 fontFamily: T.SANS, fontSize: '11px',
-                color: 'rgba(255,255,255,0.35)', margin: '4px 0 0',
+                color: 'rgba(255,255,255,0.55)', margin: '4px 0 0',
               }}>
                 {user.institution}
               </p>

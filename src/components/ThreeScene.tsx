@@ -3,7 +3,28 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, Html, Line } from '@react-three/drei';
-import * as THREE from 'three';
+import {
+  ACESFilmicToneMapping,
+  Box3,
+  BufferAttribute,
+  BufferGeometry,
+  CanvasTexture,
+  Color,
+  Group,
+  InstancedMesh,
+  Mesh,
+  MeshPhysicalMaterial,
+  Object3D,
+  PerspectiveCamera,
+  Points,
+  PointsMaterial,
+  RepeatWrapping,
+  Texture,
+  Vector3,
+  WebGLRenderer,
+  type ColorRepresentation,
+  type ToneMapping,
+} from 'three';
 import { PathwayNode, PathwayEdge } from '../types';
 
 type Vec3 = [number, number, number];
@@ -15,16 +36,16 @@ type TraceLayout = { top?: number; right?: number; left?: number; width?: number
 type ControlVarsStyle = React.CSSProperties & Record<`--${string}`, string>;
 type ConfigurableRenderer = {
   setSize: (w: number, h: number, updateStyle?: boolean) => void;
-  toneMapping: THREE.ToneMapping;
+  toneMapping: ToneMapping;
   toneMappingExposure: number;
-  setClearColor: (color: THREE.ColorRepresentation, alpha?: number) => void;
+  setClearColor: (color: ColorRepresentation, alpha?: number) => void;
 };
 
 const INIT_TIMEOUT_MS = 2000;
 const CAMERA_FRAME_PADDING = 1.38;
 const CAMERA_ELEVATION_RATIO = 0.04;
 const MIN_CAMERA_DISTANCE = 5;
-const GRID_ORIGIN = new THREE.Vector3(0, -3.8, 0);
+const GRID_ORIGIN = new Vector3(0, -3.8, 0);
 
 function normalizeOpticalInsets(
   fullscreen: boolean,
@@ -42,24 +63,24 @@ function normalizeOpticalInsets(
 }
 
 type RouteGeometry = {
-  box: THREE.Box3;
-  min: THREE.Vector3;
-  max: THREE.Vector3;
-  boundsCenter: THREE.Vector3;
-  arithmeticCentroid: THREE.Vector3;
-  size: THREE.Vector3;
-  routeGroupOffset: THREE.Vector3;
+  box: Box3;
+  min: Vector3;
+  max: Vector3;
+  boundsCenter: Vector3;
+  arithmeticCentroid: Vector3;
+  size: Vector3;
+  routeGroupOffset: Vector3;
   isEmpty: boolean;
 };
 
 function computeRouteGeometry(nodes: PathwayNode[]): RouteGeometry {
-  const box = new THREE.Box3();
-  const arithmeticCentroid = new THREE.Vector3();
+  const box = new Box3();
+  const arithmeticCentroid = new Vector3();
   let positionCount = 0;
 
   nodes.forEach((node) => {
     if (node && Array.isArray(node.position) && node.position.length === 3) {
-      const position = new THREE.Vector3(...(node.position as [number, number, number]));
+      const position = new Vector3(...(node.position as [number, number, number]));
       box.expandByPoint(position);
       arithmeticCentroid.add(position);
       positionCount += 1;
@@ -70,10 +91,10 @@ function computeRouteGeometry(nodes: PathwayNode[]): RouteGeometry {
     arithmeticCentroid.multiplyScalar(1 / positionCount);
   }
 
-  const boundsCenter = new THREE.Vector3();
-  const size = new THREE.Vector3();
-  const min = new THREE.Vector3();
-  const max = new THREE.Vector3();
+  const boundsCenter = new Vector3();
+  const size = new Vector3();
+  const min = new Vector3();
+  const max = new Vector3();
   if (!box.isEmpty()) {
     box.getCenter(boundsCenter);
     box.getSize(size);
@@ -108,7 +129,7 @@ function getOpticalTargetOffset(args: {
   insets: OpticalInsetBox;
 }) {
   const { width, height, distance, cameraFov, insets } = args;
-  if (width <= 0 || height <= 0 || distance <= 0) return new THREE.Vector3();
+  if (width <= 0 || height <= 0 || distance <= 0) return new Vector3();
 
   const aspect = width / height;
   const vHalfRad = (cameraFov / 2) * Math.PI / 180;
@@ -123,14 +144,14 @@ function getOpticalTargetOffset(args: {
 
   // Dampen offset (0.4x) so pathway stays closer to viewport center
   // rather than being pushed to the exact safe-frame center
-  return new THREE.Vector3(
+  return new Vector3(
     -desiredNdcX * frustumHalfWidth * 0.4,
     -desiredNdcY * frustumHalfHeight * 0.4,
     0,
   );
 }
 
-function getLabelAwareSize(size: THREE.Vector3) {
+function getLabelAwareSize(size: Vector3) {
   const labelAwareSize = size.clone();
   labelAwareSize.x += Math.min(2.2, Math.max(1.2, size.x * 0.16));
   labelAwareSize.y += Math.min(1.2, Math.max(0.8, size.y * 0.18));
@@ -172,7 +193,7 @@ function computeCameraFrame(args: {
     distance,
     opticalTargetOffset,
     opticalTarget,
-    cameraPosition: new THREE.Vector3(
+    cameraPosition: new Vector3(
       0,
       size.y * CAMERA_ELEVATION_RATIO,
       distance,
@@ -275,8 +296,8 @@ const createProceduralTexture = () => {
     imageData.data[i + 3] = 255;
   }
   ctx.putImageData(imageData, 0, 0);
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+  const texture = new CanvasTexture(canvas);
+  texture.wrapS = texture.wrapT = RepeatWrapping;
   texture.repeat.set(10, 10); // Fine, subtle tiling
   texture.flipY = true;
   return texture;
@@ -360,8 +381,8 @@ function GeoComp({ g, s }: { g: GeomKind; s: number }) {
 const PARTICLE_COUNT = 80;
 
 function AmbientParticles() {
-  const meshRef = useRef<THREE.InstancedMesh>(null);
-  const dummy   = useMemo(() => new THREE.Object3D(), []);
+  const meshRef = useRef<InstancedMesh>(null);
+  const dummy   = useMemo(() => new Object3D(), []);
   const phases  = useMemo(() => Float32Array.from({ length: PARTICLE_COUNT }, () => Math.random() * Math.PI * 2), []);
 
   // Seed positions deterministically
@@ -381,11 +402,11 @@ function AmbientParticles() {
 
   // Monochrome white tiers for ambient particles
   const COLOR_CYCLE = useMemo(() => [
-    new THREE.Color('#FFFFFF').multiplyScalar(0.55),
-    new THREE.Color('#FFFFFF').multiplyScalar(0.40),
-    new THREE.Color('#FFFFFF').multiplyScalar(0.45),
-    new THREE.Color('#FFFFFF').multiplyScalar(0.35),
-    new THREE.Color('#FFFFFF').multiplyScalar(0.50),
+    new Color('#FFFFFF').multiplyScalar(0.55),
+    new Color('#FFFFFF').multiplyScalar(0.40),
+    new Color('#FFFFFF').multiplyScalar(0.45),
+    new Color('#FFFFFF').multiplyScalar(0.35),
+    new Color('#FFFFFF').multiplyScalar(0.50),
   ], []);
 
   useFrame((state) => {
@@ -426,7 +447,7 @@ function AmbientParticles() {
 
 // ─── Spatial Grid — decorative floor reference, not the pathway layout authority ──
 function SpatialReference({ stressIndex = 0 }: { stressIndex?: number }) {
-  const grpRef = useRef<THREE.Group>(null!);
+  const grpRef = useRef<Group>(null!);
   useFrame(({ clock }) => {
     if (!grpRef.current) return;
     if (stressIndex > 0.8) {
@@ -439,8 +460,8 @@ function SpatialReference({ stressIndex = 0 }: { stressIndex?: number }) {
   return (
     <group ref={grpRef} position={GRID_ORIGIN.toArray() as Vec3}>
       <gridHelper args={[36, 36, '#606060', '#404040']} />
-      <Line points={[new THREE.Vector3(-10,0,0), new THREE.Vector3(10,0,0)]} color="#aaaaaa" lineWidth={0.5} transparent opacity={0.35} />
-      <Line points={[new THREE.Vector3(0,0,-10), new THREE.Vector3(0,0,10)]} color="#aaaaaa" lineWidth={0.5} transparent opacity={0.35} />
+      <Line points={[new Vector3(-10,0,0), new Vector3(10,0,0)]} color="#aaaaaa" lineWidth={0.5} transparent opacity={0.35} />
+      <Line points={[new Vector3(0,0,-10), new Vector3(0,0,10)]} color="#aaaaaa" lineWidth={0.5} transparent opacity={0.35} />
     </group>
   );
 }
@@ -449,17 +470,17 @@ function SpatialReference({ stressIndex = 0 }: { stressIndex?: number }) {
 const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov, roughnessTexture, flowSpeed, glowMultiplier = 1, stressIndex = 0, viewMode = 'network' }: {
   node: PathwayNode; hov: boolean; sel: boolean; cc: number;
   onClick: (n: PathwayNode) => void; onHov: (id: string | null) => void;
-  roughnessTexture: THREE.Texture | null; flowSpeed?: number; glowMultiplier?: number; stressIndex?: number; viewMode?: SceneViewMode;
+  roughnessTexture: Texture | null; flowSpeed?: number; glowMultiplier?: number; stressIndex?: number; viewMode?: SceneViewMode;
 }) {
   const _flowSpeed = flowSpeed ?? 1;
   const nodeRadius = 0.32 + cc * 0.05;
   const labelOffsetY = nodeRadius + 0.06;
   // Shrink nodes when pH/temperature deviate from optimal (encoded in glowMultiplier)
   const activityScale = 0.7 + 0.3 * Math.min(1, glowMultiplier / 2.0);
-  const grp     = useRef<THREE.Group>(null);
-  const glyphGrp = useRef<THREE.Group>(null);
-  const ring    = useRef<THREE.Mesh>(null);
-  const bodyRef = useRef<THREE.Mesh>(null);
+  const grp     = useRef<Group>(null);
+  const glyphGrp = useRef<Group>(null);
+  const ring    = useRef<Mesh>(null);
+  const bodyRef = useRef<Mesh>(null);
   const ready   = true;
 
   const conf   = getConfidenceValue(node);
@@ -473,7 +494,7 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov
     : viewMode === 'flow'
       ? 1 + Math.min(cc, 4) * 0.06
       : 1;
-  const colVec = useMemo(() => new THREE.Color(finalColor), [finalColor]);
+  const colVec = useMemo(() => new Color(finalColor), [finalColor]);
 
   useEffect(() => () => { document.body.style.cursor = 'auto'; }, []);
 
@@ -490,12 +511,12 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov
     }
     if (ring.current) {
       ring.current.rotation.z += fdt * 0.10;
-      const mat = ring.current.material as THREE.MeshPhysicalMaterial;
+      const mat = ring.current.material as MeshPhysicalMaterial;
       const to = hov || sel ? 0.35 : 0.07;
       mat.opacity += (to - mat.opacity) * dt * 3;
     }
     if (bodyRef.current) {
-      const mat = bodyRef.current.material as THREE.MeshPhysicalMaterial;
+      const mat = bodyRef.current.material as MeshPhysicalMaterial;
       const targetEmissive = sel ? 0.40 : hov ? 0.2 : 0.03;
       mat.emissiveIntensity += (targetEmissive - mat.emissiveIntensity) * dt * 6;
     }
@@ -579,7 +600,7 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov
               <div style={{ width: `${Math.round(conf*100)}%`, height: '100%', background: colVec.getStyle(), borderRadius: '1px', opacity: 0.8 }} />
             </div>
             {node.audit_trail && (
-              <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '6px', fontSize: '10px', color: 'rgba(255,255,255,0.35)', fontStyle: 'italic' }}>
+              <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '6px', fontSize: '10px', color: 'rgba(255,255,255,0.55)', fontStyle: 'italic' }}>
                 <span style={{ fontWeight: 600, color: 'rgba(255,255,255,0.2)' }}>Source: </span> {node.audit_trail}
               </div>
             )}
@@ -593,10 +614,10 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov
 // ─── Soft path edges ────────────────────────────────────────────────────
 const PathEdge = React.memo(function PathEdge({ edge, s, e, active, color, flowSpeed, viewMode = 'network' }: { edge:PathwayEdge; s:Vec3; e:Vec3; active:boolean; color:string; flowSpeed?:number; viewMode?: SceneViewMode }) {
   const _flowSpeed = flowSpeed ?? 1;
-  const dot  = useRef<THREE.Mesh>(null);
+  const dot  = useRef<Mesh>(null);
   const prog = useRef(Math.random());
-  const sv   = useMemo(() => new THREE.Vector3(...s), [s]);
-  const ev   = useMemo(() => new THREE.Vector3(...e), [e]);
+  const sv   = useMemo(() => new Vector3(...s), [s]);
+  const ev   = useMemo(() => new Vector3(...e), [e]);
   const mid  = useMemo(() => sv.clone().lerp(ev, 0.5), [sv, ev]);
 
   const thickness = useMemo(() => {
@@ -646,18 +667,18 @@ const PathEdge = React.memo(function PathEdge({ edge, s, e, active, color, flowS
 });
 
 // ─── Scroll-Sync Camera 【关键修复】：镜头居中算法，绝不跑偏 ──────────────
-type OrbitControlsHandle = { target: THREE.Vector3; update(): void };
+type OrbitControlsHandle = { target: Vector3; update(): void };
 function ScrollSyncCamera({ nodes, selectedId, interact, controlsRef, baseTarget, routeCenter, opticalOffset }: {
   nodes: PathwayNode[];
   selectedId: string | null;
   interact: boolean;
   controlsRef: React.RefObject<OrbitControlsHandle | null>;
-  baseTarget: THREE.Vector3;
-  routeCenter: THREE.Vector3;
-  opticalOffset: THREE.Vector3;
+  baseTarget: Vector3;
+  routeCenter: Vector3;
+  opticalOffset: Vector3;
 }) {
   const { camera } = useThree();
-  const targetLookAt = useRef(new THREE.Vector3().copy(baseTarget));
+  const targetLookAt = useRef(new Vector3().copy(baseTarget));
 
   useEffect(() => {
     if (selectedId) {
@@ -671,7 +692,7 @@ function ScrollSyncCamera({ nodes, selectedId, interact, controlsRef, baseTarget
   }, [baseTarget, nodes, opticalOffset, routeCenter, selectedId]);
 
   useFrame((_, dt) => {
-    if (interact || !(camera instanceof THREE.PerspectiveCamera)) return;
+    if (interact || !(camera instanceof PerspectiveCamera)) return;
     const alpha = 1 - Math.exp(-dt * 2.0);
     if (controlsRef.current) {
       controlsRef.current.target.lerp(targetLookAt.current, alpha);
@@ -701,8 +722,8 @@ function FluxParticles({ edges, nodes, flowSpeed, glowMultiplier }: {
       const s = nodeMap.get(e.start);
       const t = nodeMap.get(e.end);
       if (!s?.position || !t?.position || !Array.isArray(s.position) || !Array.isArray(t.position)) return null;
-      return { sv: new THREE.Vector3(...(s.position as [number,number,number])), ev: new THREE.Vector3(...(t.position as [number,number,number])) };
-    }).filter((x): x is { sv: THREE.Vector3; ev: THREE.Vector3 } => x !== null),
+      return { sv: new Vector3(...(s.position as [number,number,number])), ev: new Vector3(...(t.position as [number,number,number])) };
+    }).filter((x): x is { sv: Vector3; ev: Vector3 } => x !== null),
   [edges, nodeMap]);
 
   const N = edgeVecs.length * FLUX_PER_EDGE;
@@ -719,15 +740,15 @@ function FluxParticles({ edges, nodes, flowSpeed, glowMultiplier }: {
       pos[i * 3 + 1] = sv.y + (ev.y - sv.y) * t;
       pos[i * 3 + 2] = sv.z + (ev.z - sv.z) * t;
     }
-    const g = new THREE.BufferGeometry();
-    g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-    const m = new THREE.PointsMaterial({ size: 0.05, color: 0xffffff, transparent: true, opacity: 0.55, sizeAttenuation: true, depthWrite: false });
-    return { pts: new THREE.Points(g, m), geo: g };
+    const g = new BufferGeometry();
+    g.setAttribute('position', new BufferAttribute(pos, 3));
+    const m = new PointsMaterial({ size: 0.05, color: 0xffffff, transparent: true, opacity: 0.55, sizeAttenuation: true, depthWrite: false });
+    return { pts: new Points(g, m), geo: g };
   }, [N, edgeVecs]);
 
   // Update opacity reactively with glowMultiplier
   useEffect(() => {
-    (pts.material as THREE.PointsMaterial).opacity = Math.min(0.85, 0.3 + glowMultiplier * 0.2);
+    (pts.material as PointsMaterial).opacity = Math.min(0.85, 0.3 + glowMultiplier * 0.2);
   }, [pts, glowMultiplier]);
 
   const progress = useRef(Float32Array.from({ length: N }, (_, i) => (i % FLUX_PER_EDGE) / FLUX_PER_EDGE));
@@ -741,7 +762,7 @@ function FluxParticles({ edges, nodes, flowSpeed, glowMultiplier }: {
     if (N === 0 || edgeVecs.length === 0) return;
     const speed = dt * flowSpeed * 0.28;
     const prog = progress.current;
-    const positions = (geo.attributes.position as THREE.BufferAttribute).array as Float32Array;
+    const positions = (geo.attributes.position as BufferAttribute).array as Float32Array;
     for (let i = 0; i < N; i++) {
       prog[i] = (prog[i] + speed) % 1;
       const ei = Math.floor(i / FLUX_PER_EDGE);
@@ -759,12 +780,12 @@ function FluxParticles({ edges, nodes, flowSpeed, glowMultiplier }: {
   return <primitive object={pts} />;
 }
 
-function vectorAudit(value: THREE.Vector3) {
+function vectorAudit(value: Vector3) {
   return [value.x, value.y, value.z].map((entry) => Number(entry.toFixed(3)));
 }
 
 // ─── Scene — unified lighting, integrated depth ────────────────────────
-function Scene({ nodes, edges, onNodeClick, selectedNodeId, roughnessTexture, glowMultiplier, flowSpeed, stressIndex, viewMode, resetSignal, opticalInsets, debugFrameName }: { nodes:PathwayNode[]; edges:PathwayEdge[]; onNodeClick:(n:PathwayNode)=>void; selectedNodeId:string|null; roughnessTexture:THREE.Texture | null; glowMultiplier:number; flowSpeed:number; stressIndex:number; viewMode: SceneViewMode; resetSignal?: number; opticalInsets: OpticalInsetBox; debugFrameName?: string; }) {
+function Scene({ nodes, edges, onNodeClick, selectedNodeId, roughnessTexture, glowMultiplier, flowSpeed, stressIndex, viewMode, resetSignal, opticalInsets, debugFrameName }: { nodes:PathwayNode[]; edges:PathwayEdge[]; onNodeClick:(n:PathwayNode)=>void; selectedNodeId:string|null; roughnessTexture:Texture | null; glowMultiplier:number; flowSpeed:number; stressIndex:number; viewMode: SceneViewMode; resetSignal?: number; opticalInsets: OpticalInsetBox; debugFrameName?: string; }) {
   const [hovId, setHovId]       = useState<string|null>(null);
   const [interact, setInteract] = useState(false);
   const controlsRef = useRef<OrbitControlsHandle | null>(null);
@@ -776,7 +797,7 @@ function Scene({ nodes, edges, onNodeClick, selectedNodeId, roughnessTexture, gl
 
   // BoundingBox auto-focus — FOV-based distance so the entire pathway fits the viewport
   const { camera, size: viewportSize } = useThree();
-  const cameraFov = (camera as THREE.PerspectiveCamera).fov ?? 44;
+  const cameraFov = (camera as PerspectiveCamera).fov ?? 44;
   const routeGeometry = useMemo(() => computeRouteGeometry(nodes), [nodes]);
 
   const { opticalTarget, opticalTargetOffset, cameraPosition } = useMemo(() =>
@@ -885,7 +906,7 @@ function ResizeHandler() {
       const parent = gl.domElement.parentElement;
       if (!parent) return;
       gl.setSize(parent.clientWidth, parent.clientHeight, false);
-      if (camera instanceof THREE.PerspectiveCamera) {
+      if (camera instanceof PerspectiveCamera) {
         camera.aspect = parent.clientWidth / parent.clientHeight;
         camera.updateProjectionMatrix();
       }
@@ -912,6 +933,11 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, 
     mountedRef.current = true;
     return () => { mountedRef.current = false; };
   }, []);
+
+  // GPU resource cleanup: dispose texture on unmount
+  useEffect(() => {
+    return () => { roughnessTexture?.dispose(); };
+  }, [roughnessTexture]);
 
   const safeNodes = useMemo(() => Array.isArray(nodes) ? nodes.filter(isRenderableNode) : [], [nodes]);
   const safeEdges = useMemo(() => Array.isArray(edges) ? edges : [], [edges]);
@@ -991,7 +1017,7 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, 
               <div key={c} style={{ width:'4px', height:'4px', borderRadius:'50%', background:c, opacity:0.35 }} />
             ))}
           </div>
-          <span style={{ color:'rgba(255,255,255,0.20)', fontSize:'10px', fontFamily:"'Public Sans',sans-serif", fontWeight:700, textTransform:'uppercase', letterSpacing:'0.08em' }}>
+          <span style={{ color:'rgba(255,255,255,0.45)', fontSize:'10px', fontFamily:"'Public Sans',sans-serif", fontWeight:700, textTransform:'uppercase', letterSpacing:'0.08em' }}>
             METABOLIC · {safeNodes.length} ENTITIES
           </span>
         </div>
@@ -1028,7 +1054,7 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, 
                     ['--nb-control-hover-border' as const]: 'rgba(255,255,255,0.18)',
                     ['--nb-control-hover-color' as const]: '#e2e8f0',
                     ['--nb-control-active-bg' as const]: 'rgba(255,255,255,0.14)',
-                    ['--nb-control-active-border' as const]: 'rgba(255,255,255,0.22)',
+                    ['--nb-control-active-border' as const]: 'rgba(255,255,255,0.45)',
                     ['--nb-control-active-color' as const]: '#e2e8f0',
                   } as ControlVarsStyle}
                 >
@@ -1062,7 +1088,7 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, 
               ['--nb-control-hover-border' as const]: 'rgba(255,255,255,0.18)',
               ['--nb-control-hover-color' as const]: '#e2e8f0',
               ['--nb-control-active-bg' as const]: 'rgba(255,255,255,0.14)',
-              ['--nb-control-active-border' as const]: 'rgba(255,255,255,0.22)',
+              ['--nb-control-active-border' as const]: 'rgba(255,255,255,0.45)',
               ['--nb-control-active-color' as const]: '#e2e8f0',
             } as ControlVarsStyle}
           >
@@ -1119,7 +1145,7 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, 
           boxShadow: '0 14px 34px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.10)',
         }}
       >
-        <p style={{ margin: '0 0 6px', color: 'rgba(255,255,255,0.22)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+        <p style={{ margin: '0 0 6px', color: 'rgba(255,255,255,0.45)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
           {modeTrace.label}
         </p>
         <p style={{ margin: '0 0 8px', color: 'rgba(255,255,255,0.68)', fontSize: '10px', lineHeight: 1.5, fontFamily: "'Public Sans',sans-serif" }}>
@@ -1141,7 +1167,7 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, 
       </div>
 
       <div style={{ pointerEvents: 'none', position:'absolute', bottom:`${resolvedOpticalInsets.bottom}px`, right:`${resolvedOpticalInsets.right}px`, zIndex:10, background:'rgba(0,0,0,0.42)', padding:'8px 12px', borderRadius:'12px', border:'1px solid rgba(255,255,255,0.06)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}>
-        <p style={{ color:'rgba(255,255,255,0.25)', fontSize:'8px', fontFamily:"'Public Sans',sans-serif", fontWeight:700, margin:'0 0 6px', letterSpacing:'0.07em', textTransform:'uppercase' }}>Node Types</p>
+        <p style={{ color:'rgba(255,255,255,0.45)', fontSize:'8px', fontFamily:"'Public Sans',sans-serif", fontWeight:700, margin:'0 0 6px', letterSpacing:'0.07em', textTransform:'uppercase' }}>Node Types</p>
         {[
           { c: BIO_THEME_COLORS.CYAN,   l:'Metabolite', s:'●' },
           { c: BIO_THEME_COLORS.AMBER,  l:'Enzyme', s:'◆' },
@@ -1168,7 +1194,7 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, 
 
             const applyRendererDefaults = <Renderer extends ConfigurableRenderer>(renderer: Renderer) => {
               renderer.setSize(width, height, false);
-              renderer.toneMapping = THREE.ACESFilmicToneMapping;
+              renderer.toneMapping = ACESFilmicToneMapping;
               renderer.toneMappingExposure = 1.15;
               renderer.setClearColor(0x000000, 0); // transparent — FluidSim shows through
               return renderer;
@@ -1177,13 +1203,13 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, 
             const webgl2 = canvas.getContext('webgl2', { antialias: true, powerPreference: 'high-performance', alpha: true });
             if (webgl2) {
               setRendererMode('webgl2'); setStatus('ready');
-              return applyRendererDefaults(new THREE.WebGLRenderer({ canvas, context: webgl2, antialias: true, powerPreference: 'high-performance', alpha: true }));
+              return applyRendererDefaults(new WebGLRenderer({ canvas, context: webgl2, antialias: true, powerPreference: 'high-performance', alpha: true }));
             }
 
             const webgl = canvas.getContext('webgl', { antialias: true, powerPreference: 'high-performance', alpha: true });
             if (webgl) {
               setRendererMode('webgl'); setStatus('ready');
-              return applyRendererDefaults(new THREE.WebGLRenderer({ canvas, context: webgl, antialias: true, powerPreference: 'high-performance', alpha: true }));
+              return applyRendererDefaults(new WebGLRenderer({ canvas, context: webgl, antialias: true, powerPreference: 'high-performance', alpha: true }));
             }
             setRendererMode('error');
             setStatus('error');

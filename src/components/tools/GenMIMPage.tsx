@@ -68,7 +68,7 @@ function GenomeMap({
       <rect width={W} height={H} fill="#050505" rx="18" />
 
       {/* Title */}
-      <text x="22" y="26" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.22)" letterSpacing="0.08em">
+      <text x="22" y="26" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.45)" letterSpacing="0.08em">
         E. COLI K-12 · 4.64 Mb
       </text>
       <text x="22" y="42" fontFamily={T.SANS} fontSize="12" fill="rgba(255,255,255,0.6)">
@@ -153,7 +153,7 @@ function GenomeMap({
         {viability}%
       </text>
       <text x={cx} y={cy + 12} textAnchor="middle" fontFamily={T.MONO}
-        fontSize="10" fill="rgba(255,255,255,0.32)" letterSpacing="0.12em">
+        fontSize="10" fill="rgba(255,255,255,0.50)" letterSpacing="0.12em">
         VIABILITY
       </text>
       <text x={cx} y={cy + 28} textAnchor="middle" fontFamily={T.MONO}

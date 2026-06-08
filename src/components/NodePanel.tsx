@@ -2,17 +2,20 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import dynamic from 'next/dynamic';
 // 注入了 ShieldAlert 用于合规面板
 import { X, Download, FileText, Hash, Link2, ChevronDown, ChevronUp, Atom, Activity, Thermometer, ExternalLink, ShieldAlert, AlertTriangle, CheckCircle, Circle, Scissors, ArrowUp } from 'lucide-react';
 import { PathwayNode, PathwayEdge, NodeType, EdgeRelationshipType, SHOWCASE_PUBCHEM_CIDS } from '../types';
 import { BIO_THEME_COLORS } from './ThreeScene';
-import MoleculeViewer from './MoleculeViewer';
-import KineticPanel from './KineticPanel';
-import ThermodynamicsPanel from './ThermodynamicsPanel';
-import CellImageViewer from './CellImageViewer';
-import ProteinViewer from './ProteinViewer';
 import { getToolDefinition } from './tools/shared/toolRegistry';
 import { PATHD_THEME } from './workbench/workbenchTheme';
+
+// Dynamic imports for heavy viewers (code-splitting)
+const MoleculeViewer = dynamic(() => import('./MoleculeViewer'), { ssr: false, loading: () => <div style={{ height: 200, background: 'rgba(255,255,255,0.03)', borderRadius: 12 }} /> });
+const KineticPanel = dynamic(() => import('./KineticPanel'), { ssr: false, loading: () => <div style={{ height: 200, background: 'rgba(255,255,255,0.03)', borderRadius: 12 }} /> });
+const ThermodynamicsPanel = dynamic(() => import('./ThermodynamicsPanel'), { ssr: false, loading: () => <div style={{ height: 200, background: 'rgba(255,255,255,0.03)', borderRadius: 12 }} /> });
+const CellImageViewer = dynamic(() => import('./CellImageViewer'), { ssr: false, loading: () => <div style={{ height: 200, background: 'rgba(255,255,255,0.03)', borderRadius: 12 }} /> });
+const ProteinViewer = dynamic(() => import('./ProteinViewer'), { ssr: false, loading: () => <div style={{ height: 200, background: 'rgba(255,255,255,0.03)', borderRadius: 12 }} /> });
 
 // ── Compliance thresholds ─────────────────────────────────────────────
 const HIGH_RISK_THRESHOLD = 0.7;
@@ -184,7 +187,7 @@ function PLDDTHistogram({ nodes, currentNodeId }: { nodes?: PathwayNode[]; curre
     <div style={{ padding: '14px 16px', borderRadius: '20px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
       {/* Header row */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-        <p style={{ fontFamily: "'Public Sans', -apple-system, sans-serif", fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'rgba(255,255,255,0.22)', margin: 0 }}>
+        <p style={{ fontFamily: "'Public Sans', -apple-system, sans-serif", fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'rgba(255,255,255,0.45)', margin: 0 }}>
           Confidence Distribution
         </p>
         <div style={{ display: 'flex', gap: '10px' }}>
@@ -262,7 +265,7 @@ function PLDDTHistogram({ nodes, currentNodeId }: { nodes?: PathwayNode[]; curre
 }
 
 function SectionLabel({ label }: { label: string }) {
-  return <p style={{ fontFamily: UI_MONO, fontSize: '10px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.22)', margin: '0 0 8px' }}>{label}</p>;
+  return <p style={{ fontFamily: UI_MONO, fontSize: '10px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.45)', margin: '0 0 8px' }}>{label}</p>;
 }
 function Divider() { return <div style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }} />; }
 
@@ -493,9 +496,27 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
               </div>
 
               {/* Tab bar */}
-              <div style={{ display: 'flex', gap: '4px', background: PATHD_THEME.panelGradientSoft, borderRadius: '12px', padding: '4px', border: `1px solid ${PATHD_THEME.panelBorder}` }}>
+              <div
+                role="tablist"
+                aria-label="Node details"
+                style={{ display: 'flex', gap: '4px', background: PATHD_THEME.panelGradientSoft, borderRadius: '12px', padding: '4px', border: `1px solid ${PATHD_THEME.panelBorder}` }}
+                onKeyDown={e => {
+                  const idx = tabs.findIndex(t => t.id === activeTab);
+                  if (e.key === 'ArrowRight') {
+                    e.preventDefault();
+                    setActiveTab(tabs[(idx + 1) % tabs.length].id);
+                  } else if (e.key === 'ArrowLeft') {
+                    e.preventDefault();
+                    setActiveTab(tabs[(idx - 1 + tabs.length) % tabs.length].id);
+                  }
+                }}>
                 {tabs.map(tab => (
                   <button key={tab.id}
+                    id={`tab-${tab.id}`}
+                    role="tab"
+                    aria-selected={activeTab === tab.id}
+                    aria-controls={`tabpanel-${tab.id}`}
+                    tabIndex={activeTab === tab.id ? 0 : -1}
                     onClick={() => setActiveTab(tab.id)}
                     onMouseEnter={e => {
                       if (activeTab !== tab.id) {
@@ -529,7 +550,7 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
 
               {/* ── TAB 1: OVERVIEW ── */}
               {activeTab === 'overview' && (
-                <>
+                <div role="tabpanel" id="tabpanel-overview" aria-labelledby="tab-overview">
                   {/* ID + Node Type */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '3px 8px', borderRadius: '20px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
@@ -704,7 +725,7 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                         background: 'rgba(255,255,255,0.02)',
                         border: '0.5px solid rgba(255,255,255,0.07)',
                       }}>
-                        <span style={{ display: 'block', fontSize: '10px', color: 'rgba(255,255,255,0.35)', marginBottom: '4px', fontWeight: 700, textTransform: 'uppercase', fontFamily: "'Public Sans', -apple-system, sans-serif" }}>Cofactor Balance (ATP/NAD(P)H)</span>
+                        <span style={{ display: 'block', fontSize: '10px', color: 'rgba(255,255,255,0.55)', marginBottom: '4px', fontWeight: 700, textTransform: 'uppercase', fontFamily: "'Public Sans', -apple-system, sans-serif" }}>Cofactor Balance (ATP/NAD(P)H)</span>
                         <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '11px', fontWeight: 500, margin: 0, lineHeight: 1.5, fontFamily: UI_MONO }}>
                           {node.cofactor_balance}
                         </p>
@@ -714,7 +735,7 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                         background: 'rgba(255,255,255,0.02)',
                         border: '1px solid rgba(255,255,255,0.06)',
                       }}>
-                        <span style={{ display: 'block', fontSize: '10px', color: 'rgba(255,255,255,0.35)', marginBottom: '4px', fontWeight: 700, textTransform: 'uppercase', fontFamily: "'Public Sans', -apple-system, sans-serif" }}>Cofactor Balance (ATP/NAD(P)H)</span>
+                        <span style={{ display: 'block', fontSize: '10px', color: 'rgba(255,255,255,0.55)', marginBottom: '4px', fontWeight: 700, textTransform: 'uppercase', fontFamily: "'Public Sans', -apple-system, sans-serif" }}>Cofactor Balance (ATP/NAD(P)H)</span>
                         <span style={{ fontSize: '10px', color: '#9CA3AF', background: 'rgba(255,255,255,0.05)', padding: '3px 10px', borderRadius: '6px', fontFamily: UI_MONO, fontWeight: 600 }}>
                           Inference Pending / Data Insufficient
                         </span>
@@ -760,7 +781,7 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                         background: 'rgba(255,255,255,0.02)',
                         border: '0.5px solid rgba(255,255,255,0.07)',
                       }}>
-                        <span style={{ display: 'block', fontSize: '10px', color: 'rgba(255,255,255,0.35)', marginBottom: '4px', fontWeight: 700, textTransform: 'uppercase', fontFamily: "'Public Sans', -apple-system, sans-serif" }}>Gene Engineering Target (KO/OE)</span>
+                        <span style={{ display: 'block', fontSize: '10px', color: 'rgba(255,255,255,0.55)', marginBottom: '4px', fontWeight: 700, textTransform: 'uppercase', fontFamily: "'Public Sans', -apple-system, sans-serif" }}>Gene Engineering Target (KO/OE)</span>
                         <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '11px', fontWeight: 500, margin: 0, lineHeight: 1.5, fontFamily: "'Public Sans', -apple-system, sans-serif" }}>
                           {node.gene_recommendation}
                         </p>
@@ -843,7 +864,7 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                               return (
                                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', borderRadius: '16px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
                                   <Link2 size={11} style={{ color: 'rgba(255,255,255,0.2)', flexShrink: 0 }} />
-                                  <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '10px', fontFamily: "'Public Sans', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1" }}>{isSource ? '→' : '←'}</span>
+                                  <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: '10px', fontFamily: "'Public Sans', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1" }}>{isSource ? '→' : '←'}</span>
                                   <div style={{ flex: 1, minWidth: 0 }}>
                                     <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px', margin: '0 0 1px', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                       {otherNode?.label || otherId}
@@ -956,13 +977,13 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                         }}>
                           {node.cofactor_balance && (
                             <div style={{ marginBottom: '8px' }}>
-                              <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: "'Public Sans', -apple-system, sans-serif", fontWeight: 700 }}>Cofactor Balance</span>
+                              <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: "'Public Sans', -apple-system, sans-serif", fontWeight: 700 }}>Cofactor Balance</span>
                               <div style={{ color: BIO_THEME_COLORS.PURPLE, marginTop: '2px' }}>{node.cofactor_balance}</div>
                             </div>
                           )}
                           {node.atom_economy !== undefined && node.atom_economy !== 0 ? (
                             <div style={{ marginBottom: '8px' }}>
-                              <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: "'Public Sans', -apple-system, sans-serif", fontWeight: 700 }}>Atom Economy (Carbon Efficiency)</span>
+                              <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: "'Public Sans', -apple-system, sans-serif", fontWeight: 700 }}>Atom Economy (Carbon Efficiency)</span>
                               <div style={{
                                 color: node.atom_economy >= 80 ? PATHD_THEME.successHigh
                                   : node.atom_economy >= 50 ? PATHD_THEME.successMedium
@@ -974,19 +995,19 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                             </div>
                           ) : !isFinalTarget && (
                             <div style={{ marginBottom: '8px' }}>
-                              <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: "'Public Sans', -apple-system, sans-serif", fontWeight: 700 }}>Atom Economy (Carbon Efficiency)</span>
+                              <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: "'Public Sans', -apple-system, sans-serif", fontWeight: 700 }}>Atom Economy (Carbon Efficiency)</span>
                               <div style={{ color: 'rgba(255,255,255,0.30)', marginTop: '2px' }}>Inference Pending / Data Insufficient</div>
                             </div>
                           )}
                           {node.dsp_bottleneck && (
                             <div style={{ marginBottom: '8px' }}>
-                              <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: "'Public Sans', -apple-system, sans-serif", fontWeight: 700 }}>DSP Bottleneck</span>
+                              <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: "'Public Sans', -apple-system, sans-serif", fontWeight: 700 }}>DSP Bottleneck</span>
                               <div style={{ color: PATHD_THEME.riskMedium, marginTop: '2px' }}>{node.dsp_bottleneck}</div>
                             </div>
                           )}
                           {node.ic50_toxicity && (
                             <div>
-                              <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: "'Public Sans', -apple-system, sans-serif", fontWeight: 700 }}>IC50 Toxicity</span>
+                              <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: "'Public Sans', -apple-system, sans-serif", fontWeight: 700 }}>IC50 Toxicity</span>
                               <div style={{ color: PATHD_THEME.riskHigh, marginTop: '2px' }}>{node.ic50_toxicity}</div>
                             </div>
                           )}
@@ -1004,7 +1025,7 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
 
                     {recommendedTools.length > 0 && (
                       <div style={{ marginTop: '12px', padding: '12px 14px', borderRadius: '16px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
-                        <p style={{ margin: '0 0 8px', color: 'rgba(255,255,255,0.25)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700 }}>
+                        <p style={{ margin: '0 0 8px', color: 'rgba(255,255,255,0.45)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700 }}>
                           Next Actions
                         </p>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
@@ -1036,14 +1057,14 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                         </div>
                       </div>
                     )}
-                  </>
+                  </div>
                 )}
 
               {/* ── TAB 2: STRUCTURE ── */}
               {activeTab === 'structure' && (() => {
                 const rcsbMatch = lookupRCSB(node.label);
                 return (
-                  <>
+                  <div role="tabpanel" id="tabpanel-structure" aria-labelledby="tab-structure">
                     {ENZYME_ALPHAFOLD[node.id] ? (
                       <div>
                         <SectionLabel label="Protein Structure" />
@@ -1058,7 +1079,7 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                         <SectionLabel label="Reference Structure" />
                         <div style={{ padding: '8px 12px', borderRadius: '16px', background: 'rgba(200,216,232,0.06)', border: '1px solid rgba(200,216,232,0.12)', marginBottom: '10px' }}>
                           <p style={{ color: 'rgba(200,216,232,0.7)', fontSize: '11px', margin: '0 0 2px', fontWeight: 500 }}>{rcsbMatch.name}</p>
-                          <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '10px', margin: 0 }}>{rcsbMatch.description}</p>
+                          <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '10px', margin: 0 }}>{rcsbMatch.description}</p>
                         </div>
                         <ProteinViewer
                           pdbId={rcsbMatch.pdbId}
@@ -1102,7 +1123,7 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                             <p style={{ color: 'rgba(200,224,208,0.6)', fontSize: '11px', margin: '0 0 2px', fontWeight: 500 }}>
                               Biological Entity — Microscopy View
                             </p>
-                            <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '10px', margin: 0, lineHeight: 1.5 }}>
+                            <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '10px', margin: 0, lineHeight: 1.5 }}>
                               This node exists at a scale beyond molecular visualization.
                               Showing reference microscopy images instead.
                             </p>
@@ -1119,9 +1140,9 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                                 { label: 'RCSB PDB', url: `https://www.rcsb.org/search?request=${encodeURIComponent(JSON.stringify({ query: { type: 'terminal', service: 'full_text', parameters: { value: node.label } } }))}` },
                               ].map(db => (
                                 <a key={db.label} href={db.url} target="_blank" rel="noopener noreferrer"
-                                  style={{ padding: '4px 10px', borderRadius: '20px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.35)', fontSize: '10px', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}
+                                  style={{ padding: '4px 10px', borderRadius: '20px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.55)', fontSize: '10px', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}
                                   onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.2)'; (e.currentTarget as HTMLElement).style.color = '#fff'; }}
-                                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.07)'; (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.35)'; }}>
+                                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.07)'; (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.55)'; }}>
                                   {db.label} <ExternalLink size={8} />
                                 </a>
                               ))}
@@ -1130,12 +1151,16 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                         </div>
                       );
                     })()}
-                  </>
+                  </div>
                 );
               })()}
 
               {/* ── TAB 3: ANALYSIS ── */}
-              <div style={{ display: activeTab === 'analysis' ? 'block' : 'none' }}>
+              <div
+                role="tabpanel"
+                id="tabpanel-analysis"
+                aria-labelledby="tab-analysis"
+                style={{ display: activeTab === 'analysis' ? 'block' : 'none' }}>
                 {isEnzyme ? (
                   <KineticPanel key={node.id} nodeLabel={node.label} nodeId={node.id} />
                 ) : (

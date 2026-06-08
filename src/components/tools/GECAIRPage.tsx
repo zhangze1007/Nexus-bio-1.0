@@ -117,7 +117,7 @@ function CircuitSVG({ inputA, inputB, gateType }: { inputA: number; inputB: numb
       {/* ── SBOL circuit diagram ── */}
       <rect x={bbX1 - 8} y={bbY - 44} width={bbX2 - bbX1 + 16} height={96} rx="12"
         fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.07)" />
-      <text x={bbX1 - 4} y={bbY - 36} fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.25)">
+      <text x={bbX1 - 4} y={bbY - 36} fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.45)">
         GENETIC ARCHITECTURE
       </text>
       {/* Backbone line */}
@@ -149,7 +149,7 @@ function CircuitSVG({ inputA, inputB, gateType }: { inputA: number; inputB: numb
       <text x={252} y={bbY + 14} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill={PART_COLORS.terminator}>T</text>
 
       {/* Output arrow at right end */}
-      <line x1={bbX2} y1={bbY} x2={bbX2 + 18} y2={bbY} stroke="rgba(255,255,255,0.25)" strokeWidth="1.5" markerEnd="url(#gecair-arrow)" />
+      <line x1={bbX2} y1={bbY} x2={bbX2 + 18} y2={bbY} stroke="rgba(255,255,255,0.45)" strokeWidth="1.5" markerEnd="url(#gecair-arrow)" />
       <defs>
         <marker id="gecair-arrow" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
           <polygon points="0 0.5, 5.5 3, 0 5.5" fill="rgba(255,255,255,0.3)" />

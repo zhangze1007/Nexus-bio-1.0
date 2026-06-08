@@ -110,7 +110,7 @@ function SequenceView({ result }: { result: SequenceDesignResult }) {
   return (
     <div style={{ height: '100%', overflow: 'auto' }}>
       <SectionLabel>Designed Sequences — {result.targetEnzyme}</SectionLabel>
-      <p style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: 'rgba(255,255,255,0.35)', margin: '0 0 8px', fontStyle: 'italic' }}>
+      <p style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: 'rgba(255,255,255,0.55)', margin: '0 0 8px', fontStyle: 'italic' }}>
         Stability estimates are heuristic screening scores (BLOSUM62-based), not rigorous ΔΔG values.
       </p>
       {result.designs.map(d => (

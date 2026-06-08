@@ -512,7 +512,7 @@ export default function PaperAnalyzer({
           <h2 style={{ color: '#ffffff', fontSize: 'clamp(24px, 4vw, 32px)', fontWeight: 600, letterSpacing: '-0.03em', marginBottom: '8px' }}>
             Decode any pathway.
           </h2>
-          <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '14px', lineHeight: 1.6, maxWidth: '480px', margin: '0 auto' }}>
+          <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '14px', lineHeight: 1.6, maxWidth: '480px', margin: '0 auto' }}>
             Paste a paper, upload a PDF, or point your camera — AI extracts the metabolic architecture with evidence citations.
           </p>
         </div>
@@ -541,7 +541,7 @@ export default function PaperAnalyzer({
                     </button>
                 }
                 {fileName && (
-                  <button onClick={resetState} style={{ color: 'rgba(255,255,255,0.25)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '11px', padding: 0, display: 'flex', alignItems: 'center', gap: '3px' }}>
+                  <button onClick={resetState} style={{ color: 'rgba(255,255,255,0.45)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '11px', padding: 0, display: 'flex', alignItems: 'center', gap: '3px' }}>
                     <X size={9} /> remove
                   </button>
                 )}
@@ -604,7 +604,7 @@ export default function PaperAnalyzer({
                     if (m.id === 'image') setTimeout(() => imageInputRef.current?.click(), 80);
                     if (m.id === 'camera') setTimeout(() => cameraInputRef.current?.click(), 80);
                   }}
-                  style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '5px 10px', borderRadius: '16px', background: mode === m.id ? 'rgba(255,255,255,0.1)' : 'none', border: 'none', color: mode === m.id ? '#ffffff' : 'rgba(255,255,255,0.35)', fontSize: '12px', cursor: 'pointer' }}>
+                  style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '5px 10px', borderRadius: '16px', background: mode === m.id ? 'rgba(255,255,255,0.1)' : 'none', border: 'none', color: mode === m.id ? '#ffffff' : 'rgba(255,255,255,0.55)', fontSize: '12px', cursor: 'pointer' }}>
                   {m.icon}{m.label}
                 </button>
               ))}
@@ -828,7 +828,7 @@ export default function PaperAnalyzer({
                     }}>
                       {b.efficiency_percent}% eff
                     </span>
-                    <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '11px', gridColumn: '1 / -1' }}>{b.evidence}</span>
+                    <span style={{ color: 'rgba(255,255,255,0.55)', fontSize: '11px', gridColumn: '1 / -1' }}>{b.evidence}</span>
                     <span style={{
                       color: 'rgba(250,237,203,0.6)', fontSize: '11px', textAlign: 'right', gridColumn: '2',
                       fontFamily: "var(--font-mono, 'JetBrains Mono', monospace)",
@@ -926,10 +926,10 @@ export default function PaperAnalyzer({
                   style={{
                     padding: '5px 12px', borderRadius: '12px', fontSize: '11px',
                     background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
-                    color: 'rgba(255,255,255,0.35)', cursor: 'pointer',
+                    color: 'rgba(255,255,255,0.55)', cursor: 'pointer',
                   }}
                   onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.7)'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.35)'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.55)'; }}
                 >
                   Dismiss
                 </button>

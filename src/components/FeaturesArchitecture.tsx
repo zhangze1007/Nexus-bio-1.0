@@ -360,7 +360,7 @@ function EngineCard({ block, index }: { block: EngineBlock; index: number }) {
         label={block.label}
         title={block.title}
         description={block.description}
-        labelStyle={{ color: 'rgba(255,255,255,0.32)', marginBottom: '7px' }}
+        labelStyle={{ color: 'rgba(255,255,255,0.50)', marginBottom: '7px' }}
         titleStyle={{ fontSize: '17px', fontWeight: 650, marginBottom: '10px', letterSpacing: '-0.016em' }}
         descriptionStyle={{ color: 'rgba(255,255,255,0.4)' }}
         focusable
@@ -433,7 +433,7 @@ export default function FeaturesArchitecture() {
             style={{
               fontFamily: HEADER,
               fontSize: '14px',
-              color: 'rgba(255,255,255,0.35)',
+              color: 'rgba(255,255,255,0.55)',
               margin: 0,
               lineHeight: 1.65,
               maxWidth: '760px',

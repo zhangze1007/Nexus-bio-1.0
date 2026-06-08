@@ -223,7 +223,7 @@ export default function CellImageViewer({ searchTerm, height = 280 }: CellImageV
             <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
             <Loader2 size={16} style={{ color: 'rgba(200,224,208,0.5)', animation: 'spin 1s linear infinite' }} />
             <div style={{ textAlign: 'center' }}>
-              <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", margin: '0 0 4px' }}>
+              <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", margin: '0 0 4px' }}>
                 Searching 3 databases in parallel...
               </p>
               <p style={{ color: 'rgba(255,255,255,0.12)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", margin: 0 }}>
@@ -283,7 +283,7 @@ export default function CellImageViewer({ searchTerm, height = 280 }: CellImageV
                   </span>
                 )}
                 {current.organism && (
-                  <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", fontStyle: 'italic' }}>
+                  <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", fontStyle: 'italic' }}>
                     {current.organism}
                   </span>
                 )}

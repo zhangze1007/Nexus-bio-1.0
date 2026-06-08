@@ -44,12 +44,18 @@ export default function RootLayout({
         />
       </head>
       <body>
+        {/* Skip-to-content: keyboard a11y — first focusable element */}
+        <a href="#main-content" className="skip-to-content">
+          Skip to content
+        </a>
         <AuthProvider>
           <Suspense fallback={null}>
             <WorkbenchSyncProvider />
           </Suspense>
           <div id="root">
-            <RouteTransition>{children}</RouteTransition>
+            <RouteTransition>
+              <main id="main-content">{children}</main>
+            </RouteTransition>
           </div>
           <OnboardingOverlay />
         </AuthProvider>

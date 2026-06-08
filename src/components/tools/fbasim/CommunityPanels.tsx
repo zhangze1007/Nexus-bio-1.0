@@ -127,7 +127,7 @@ export function StrainPanel({ label, color, borderColor, accentColor, glucoseUpt
         <MetricCard label="ATP Yield" value={result.atpYield} unit="mol/mol" />
         <MetricCard label="Carbon Eff." value={result.carbonEfficiency} unit="%" />
       </div>
-      <p style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', margin: '6px 0 0' }}>
+      <p style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.55)', margin: '6px 0 0' }}>
         Gene Knockouts
       </p>
       <div style={{ maxHeight: '140px', overflowY: 'auto' }}>

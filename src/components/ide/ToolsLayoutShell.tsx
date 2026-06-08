@@ -220,7 +220,7 @@ function CopilotFloatingButton() {
         letterSpacing: '0.02em',
         cursor: 'pointer',
         boxShadow: '0 10px 28px rgba(4,10,16,0.45), 0 2px 6px rgba(0,0,0,0.35)',
-        border: '1px solid rgba(255,255,255,0.22)',
+        border: '1px solid rgba(255,255,255,0.45)',
       }}
     >
       <span aria-hidden style={{ fontFamily: 'monospace', fontSize: '14px' }}>⬡</span>

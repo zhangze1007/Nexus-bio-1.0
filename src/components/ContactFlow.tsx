@@ -16,7 +16,7 @@ export default function ContactFlow() {
             style={{ letterSpacing: '-0.02em' }}>
             Get in Touch
           </h2>
-          <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '14px' }}>
+          <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '14px' }}>
             Open to research collaborations, consulting inquiries, and investment discussions.
           </p>
         </div>
@@ -54,7 +54,7 @@ export default function ContactFlow() {
             <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '12px', margin: '0 0 16px', lineHeight: 1.5 }}>
               Research collaborations · Consulting · General inquiries
             </p>
-            <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', gap: '6px', color: 'rgba(255,255,255,0.35)', fontSize: '12px' }}>
+            <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', gap: '6px', color: 'rgba(255,255,255,0.55)', fontSize: '12px' }}>
               Send email <ArrowRight size={12} />
             </div>
           </a>
@@ -92,7 +92,7 @@ export default function ContactFlow() {
             <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '12px', margin: '0 0 16px', lineHeight: 1.5 }}>
               Founder · Synthetic Biology & Metabolic Engineering · Nexus-Bio
             </p>
-            <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', gap: '6px', color: 'rgba(255,255,255,0.35)', fontSize: '12px' }}>
+            <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', gap: '6px', color: 'rgba(255,255,255,0.55)', fontSize: '12px' }}>
               View profile <ArrowRight size={12} />
             </div>
           </a>

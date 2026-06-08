@@ -120,7 +120,7 @@ export default function EnrichmentBurdenScatter({
             }}
           />
           <ZAxis type="number" dataKey="zSize" range={[40, 220]} />
-          <ReferenceLine y={0} stroke="rgba(255,255,255,0.22)" strokeDasharray="4 4" />
+          <ReferenceLine y={0} stroke="rgba(255,255,255,0.45)" strokeDasharray="4 4" />
           <Tooltip cursor={{ strokeDasharray: '3 3' }} content={<CustomTooltip />} />
           {grouped.map((family, index) => {
             const color = SERIES_PALETTE[index % SERIES_PALETTE.length];

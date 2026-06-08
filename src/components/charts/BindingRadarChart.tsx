@@ -121,7 +121,7 @@ export default function BindingRadarChart({ result }: BindingRadarChartProps) {
               width={90}
             />
             <Tooltip content={<GlassTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
-            <ReferenceLine x={0.95} stroke="rgba(255,255,255,0.25)" strokeDasharray="4 3" label={{ value: 'optimal', fill: 'rgba(255,255,255,0.3)', fontSize: 8, fontFamily: FONT.MONO, position: 'top' }} />
+            <ReferenceLine x={0.95} stroke="rgba(255,255,255,0.45)" strokeDasharray="4 3" label={{ value: 'optimal', fill: 'rgba(255,255,255,0.3)', fontSize: 8, fontFamily: FONT.MONO, position: 'top' }} />
             <Bar dataKey="value" radius={[0, 6, 6, 0]}>
               {diagnosticData.map((entry, i) => (
                 <Cell key={i} fill={entry.fill} fillOpacity={0.82} />

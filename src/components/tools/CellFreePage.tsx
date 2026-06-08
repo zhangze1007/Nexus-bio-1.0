@@ -8,6 +8,7 @@ import {
   generateDefaultConstructs,
   generateDefaultParameters,
 } from '../../services/CellFreeEngine';
+import { catmullRomPath } from '../../utils/svgPath';
 import type {
   CFSFullResult,
   GeneConstruct,
@@ -61,22 +62,6 @@ function GridLines({ W, H, PAD, count }: { W: number; H: number; PAD: number; co
       <line x1={PAD} y1={PAD} x2={PAD} y2={H - PAD} stroke="rgba(255,255,255,0.1)" />
     </>
   );
-}
-
-/* ── Catmull-Rom → cubic Bezier smooth path ──────────────────────── */
-
-function crPath(pts: [number, number][]): string {
-  if (pts.length < 2) return '';
-  const d: string[] = [`M ${pts[0][0].toFixed(1)} ${pts[0][1].toFixed(1)}`];
-  for (let i = 0; i < pts.length - 1; i++) {
-    const p0 = pts[Math.max(0, i - 1)], p1 = pts[i], p2 = pts[i + 1], p3 = pts[Math.min(pts.length - 1, i + 2)];
-    const cp1x = p1[0] + (p2[0] - p0[0]) / 6;
-    const cp1y = p1[1] + (p2[1] - p0[1]) / 6;
-    const cp2x = p2[0] - (p3[0] - p1[0]) / 6;
-    const cp2y = p2[1] - (p3[1] - p1[1]) / 6;
-    d.push(`C ${cp1x.toFixed(1)} ${cp1y.toFixed(1)}, ${cp2x.toFixed(1)} ${cp2y.toFixed(1)}, ${p2[0].toFixed(1)} ${p2[1].toFixed(1)}`);
-  }
-  return d.join(' ');
 }
 
 /* ── Time Course Tri-Panel Layout ─────────────────────────────────── */
@@ -181,11 +166,11 @@ function TimeCourseChart({ result, constructs }: { result: CFSFullResult; constr
           const pts: [number, number][] = g.time.map((t, j) => [tsx(t), tsy(g.protein[j])]);
           if (pts.length < 2) return null;
           // Shaded area: path from curve down to baseline
-          const areaD = crPath(pts) + ` L ${pts[pts.length-1][0].toFixed(1)} ${BASE_Y} L ${pts[0][0].toFixed(1)} ${BASE_Y} Z`;
+          const areaD = catmullRomPath(pts) + ` L ${pts[pts.length-1][0].toFixed(1)} ${BASE_Y} L ${pts[0][0].toFixed(1)} ${BASE_Y} Z`;
           return (
             <g key={g.geneId}>
               <path d={areaD} fill={color} opacity={0.12} />
-              <path d={crPath(pts)} fill="none" stroke={color} strokeWidth={1.9} opacity={0.88} />
+              <path d={catmullRomPath(pts)} fill="none" stroke={color} strokeWidth={1.9} opacity={0.88} />
             </g>
           );
         })}
@@ -218,11 +203,11 @@ function TimeCourseChart({ result, constructs }: { result: CFSFullResult; constr
             { key: 'aminoAcids' as const, initV: initAA, color: RES_COLORS.aa },
           ] as const).map(({ key, initV, color }, si) => {
             const pts: [number, number][] = res.time.map((t, i) => [bsx(t), bsy(Math.min(1, res[key][i] / initV))]);
-            const areaD = crPath(pts) + ` L ${pts[pts.length-1][0].toFixed(1)} ${bsy(0)} L ${pts[0][0].toFixed(1)} ${bsy(0)} Z`;
+            const areaD = catmullRomPath(pts) + ` L ${pts[pts.length-1][0].toFixed(1)} ${bsy(0)} L ${pts[0][0].toFixed(1)} ${bsy(0)} Z`;
             return (
               <g key={key}>
                 <path d={areaD} fill={color} opacity={0.25 + si * 0.05} />
-                <path d={crPath(pts)} fill="none" stroke={color} strokeWidth={1.4} opacity={0.8} />
+                <path d={catmullRomPath(pts)} fill="none" stroke={color} strokeWidth={1.4} opacity={0.8} />
               </g>
             );
           })}

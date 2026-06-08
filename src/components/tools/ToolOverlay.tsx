@@ -159,7 +159,7 @@ function ActionBtn({ label, icon: Icon, tone = 'neutral', onClick, disabled = fa
     ? {
         background: 'rgba(255,255,255,0.10)',
         border: 'rgba(255,255,255,0.08)',
-        color: 'rgba(255,255,255,0.35)',
+        color: 'rgba(255,255,255,0.55)',
       }
     : tone === 'primary'
       ? {

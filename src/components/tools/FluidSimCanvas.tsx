@@ -13,7 +13,7 @@
 
 import { useRef, useMemo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import * as THREE from 'three';
+import { Color, InstancedMesh, Object3D } from 'three';
 import type { MachineState } from '../../machines/metabolicMachine';
 
 // ─── FluidForce — exported, used by MetabolicEngPage + ToolOverlay ─────────────
@@ -37,16 +37,16 @@ interface MoleculesProps {
 }
 
 // State-based tint palettes
-const STATE_TINT: Record<MachineState, THREE.Color> = {
-  idle:        new THREE.Color('#1a3040'),
-  simulating:  new THREE.Color('#0a4055'),
-  stress_test: new THREE.Color('#4a1010'),
-  equilibrium: new THREE.Color('#0a4030'),
+const STATE_TINT: Record<MachineState, Color> = {
+  idle:        new Color('#1a3040'),
+  simulating:  new Color('#0a4055'),
+  stress_test: new Color('#4a1010'),
+  equilibrium: new Color('#0a4030'),
 };
 
 function MetaboliteMolecules({ reactionRate, stressIndex, state }: MoleculesProps) {
-  const meshRef  = useRef<THREE.InstancedMesh>(null);
-  const dummy    = useMemo(() => new THREE.Object3D(), []);
+  const meshRef  = useRef<InstancedMesh>(null);
+  const dummy    = useMemo(() => new Object3D(), []);
 
   // Deterministic seed positions — golden angle sphere distribution
   const seeds = useMemo(() => {

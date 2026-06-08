@@ -241,7 +241,7 @@ function SequenceView({ result }: { result: SequenceDesignResult }) {
               <td style={dataCell}>{(d.gcContent * 100).toFixed(1)}%</td>
               <td style={{ ...dataCell, color: d.rareCodons > 3 ? '#FA8072' : VALUE }}>{d.rareCodons}</td>
               <td style={{
-                fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: 'rgba(255,255,255,0.35)',
+                fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: 'rgba(255,255,255,0.55)',
                 padding: '3px 6px', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
               }}>
                 {d.dnaSequence.slice(0, 40)}…

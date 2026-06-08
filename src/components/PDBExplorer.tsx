@@ -309,7 +309,7 @@ function ProteinCanvas({ pdbId, alphafoldId, name, useAlphaFold }: ProteinCanvas
           {tooltip.b > 0 && (
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-                <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '10px', fontFamily: 'monospace' }}>pLDDT</span>
+                <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: '10px', fontFamily: 'monospace' }}>pLDDT</span>
                 <span style={{ color: getPLDDTColor(tooltip.b), fontSize: '10px', fontFamily: 'monospace', fontWeight: 700 }}>
                   {tooltip.b.toFixed(1)}
                 </span>
@@ -394,7 +394,7 @@ export default function PDBExplorer() {
           <h2 className="text-2xl md:text-3xl font-semibold text-white mb-2" style={{ letterSpacing: '-0.02em' }}>
             Enzyme Structure Explorer
           </h2>
-          <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '14px' }}>
+          <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '14px' }}>
             Real 3D structures from{' '}
             <span style={{ color: '#6495ED', fontFamily: 'monospace' }}>RCSB PDB</span>
             {' '}·{' '}
@@ -429,7 +429,7 @@ export default function PDBExplorer() {
                   <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', fontFamily: 'monospace' }}>{enzyme.pdbId}</span>
                 </div>
                 <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '12px', fontWeight: 500, margin: '0 0 2px' }}>{enzyme.fullName}</p>
-                <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '10px', margin: 0, fontStyle: 'italic' }}>{enzyme.organism}</p>
+                <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '10px', margin: 0, fontStyle: 'italic' }}>{enzyme.organism}</p>
               </button>
             ))}
 
@@ -458,7 +458,7 @@ export default function PDBExplorer() {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', borderRadius: '12px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
               <div>
                 <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '12px', fontWeight: 500, margin: '0 0 2px' }}>AlphaFold pLDDT</p>
-                <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '10px', fontFamily: 'monospace', margin: 0 }}>Confidence color coding</p>
+                <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '10px', fontFamily: 'monospace', margin: 0 }}>Confidence color coding</p>
               </div>
               <button
                 onClick={() => setUseAlphaFold(!useAlphaFold)}

@@ -3,7 +3,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
-import * as THREE from 'three';
+import {
+  BufferAttribute,
+  BufferGeometry,
+  DoubleSide,
+  Mesh,
+  PlaneGeometry,
+} from 'three';
 import type { ProteinEvolutionCampaign, VariantCandidate } from '../../../services/ProEvolCampaignEngine';
 import { T } from '../../ide/tokens';
 import { PROEVOL_THEME, StatusPill } from './shared';
@@ -306,7 +312,7 @@ function FitnessSurface({ cells, positions, metric }: {
   positions: number[];
   metric: FitnessMetricKey;
 }) {
-  const meshRef = useRef<THREE.Mesh>(null);
+  const meshRef = useRef<Mesh>(null);
 
   // Build lookup for O(1) access
   const cellLookup = useMemo(() => {
@@ -318,7 +324,7 @@ function FitnessSurface({ cells, positions, metric }: {
   const { geometry, colors } = useMemo(() => {
     const nX = positions.length;
     const nY = AMINO_ACIDS.length;
-    if (nX === 0 || nY === 0) return { geometry: new THREE.BufferGeometry(), colors: new Float32Array(0) };
+    if (nX === 0 || nY === 0) return { geometry: new BufferGeometry(), colors: new Float32Array(0) };
 
     const fitnessRange = (() => {
       const vals = cells.filter(c => c.count > 0).map(c => c.fitness);
@@ -327,7 +333,7 @@ function FitnessSurface({ cells, positions, metric }: {
     })();
     const range = fitnessRange.max - fitnessRange.min || 1;
 
-    const geo = new THREE.PlaneGeometry(2, 1.6, nX - 1, nY - 1);
+    const geo = new PlaneGeometry(2, 1.6, nX - 1, nY - 1);
     const posAttr = geo.attributes.position;
     const colorArr = new Float32Array(posAttr.count * 3);
 
@@ -355,7 +361,7 @@ function FitnessSurface({ cells, positions, metric }: {
       }
     }
 
-    geo.setAttribute('color', new THREE.BufferAttribute(colorArr, 3));
+    geo.setAttribute('color', new BufferAttribute(colorArr, 3));
     geo.computeVertexNormals();
     return { geometry: geo, colors: colorArr };
   }, [cells, positions, cellLookup]);
@@ -363,11 +369,11 @@ function FitnessSurface({ cells, positions, metric }: {
   return (
     <group rotation={[-0.5, 0.3, 0]}>
       <mesh ref={meshRef} geometry={geometry}>
-        <meshLambertMaterial vertexColors side={THREE.DoubleSide} />
+        <meshLambertMaterial vertexColors side={DoubleSide} />
       </mesh>
       {/* Wireframe overlay for depth perception */}
       <mesh geometry={geometry}>
-        <meshBasicMaterial color="rgba(255,255,255,0.06)" side={THREE.DoubleSide} wireframe transparent opacity={0.08} />
+        <meshBasicMaterial color="rgba(255,255,255,0.06)" side={DoubleSide} wireframe transparent opacity={0.08} />
       </mesh>
     </group>
   );

@@ -4,6 +4,11 @@ import { useRef, useState, useEffect } from 'react';
 import { ExternalLink } from 'lucide-react';
 import { load3Dmol } from '../hooks/use3Dmol';
 
+/** Strip HTML tags from molecular data to prevent XSS via 3Dmol */
+function sanitizeMolData(data: string): string {
+  return data.replace(/<[^>]*>/g, '');
+}
+
 export default function ProteinViewer({ pdbId, alphafoldId, label }: { pdbId: string; alphafoldId?: string; label: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<any>(null);
@@ -38,7 +43,7 @@ export default function ProteinViewer({ pdbId, alphafoldId, label }: { pdbId: st
         if (useAF && alphafoldId) {
           const res = await fetch(`/api/alphafold?id=${alphafoldId}`);
           if (!res.ok) throw new Error(`AlphaFold ${res.status}`);
-          const pdb = await res.text();
+          const pdb = sanitizeMolData(await res.text());
           if (!pdb || pdb.length < 100) throw new Error('Empty AlphaFold response');
           viewer.addModel(pdb, 'pdb');
         } else {
@@ -196,9 +201,9 @@ export default function ProteinViewer({ pdbId, alphafoldId, label }: { pdbId: st
             <div style={{ position: 'absolute', bottom: '8px', right: '10px' }}>
               <a href={useAF ? `https://alphafold.ebi.ac.uk/entry/${alphafoldId}` : `https://www.rcsb.org/structure/${pdbId}`}
                 target="_blank" rel="noopener noreferrer"
-                style={{ color: 'rgba(255,255,255,0.35)', fontSize: '10px', fontFamily: "'Public Sans', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1", display: 'flex', alignItems: 'center', gap: '3px', textDecoration: 'none', background: 'rgba(0,0,0,0.45)', padding: '2px 6px', borderRadius: '8px' }}
+                style={{ color: 'rgba(255,255,255,0.55)', fontSize: '10px', fontFamily: "'Public Sans', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1", display: 'flex', alignItems: 'center', gap: '3px', textDecoration: 'none', background: 'rgba(0,0,0,0.45)', padding: '2px 6px', borderRadius: '8px' }}
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(200,232,240,0.9)'; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.35)'; }}>
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.55)'; }}>
                 {useAF ? 'AlphaFold DB' : 'RCSB PDB'} <ExternalLink size={8} />
               </a>
             </div>
@@ -233,7 +238,7 @@ export default function ProteinViewer({ pdbId, alphafoldId, label }: { pdbId: st
           {[{ c: '#0053D6', l: '>90' }, { c: '#65CBF3', l: '70–90' }, { c: '#FFDB13', l: '50–70' }, { c: '#FF7D45', l: '<50' }].map(x => (
             <div key={x.l} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
               <div style={{ width: '10px', height: '4px', borderRadius: '2px', background: x.c }} />
-              <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '10px', fontFamily: "'Public Sans', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1" }}>{x.l}</span>
+              <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: '10px', fontFamily: "'Public Sans', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1" }}>{x.l}</span>
             </div>
           ))}
         </div>
