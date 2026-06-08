@@ -1,4 +1,6 @@
 import { chromium, type FullConfig } from '@playwright/test';
+import { mkdirSync } from 'fs';
+import { dirname } from 'path';
 
 /**
  * Global setup — seeds localStorage so the onboarding overlay is skipped.
@@ -15,6 +17,9 @@ const STORAGE_PATH = './e2e/.auth/storage-state.json';
 
 async function globalSetup(config: FullConfig) {
   const baseURL = config.projects[0]?.use?.baseURL ?? 'http://localhost:3000';
+
+  // Ensure the .auth directory exists (it's gitignored)
+  mkdirSync(dirname(STORAGE_PATH), { recursive: true });
 
   const browser = await chromium.launch();
   const context = await browser.newContext();
