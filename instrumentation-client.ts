@@ -1,4 +1,4 @@
-import * as Sentry from "@sentry/nextjs";
+import * as Sentry from '@sentry/nextjs';
 
 Sentry.init({
   dsn: process.env.SENTRY_DSN,
@@ -6,7 +6,6 @@ Sentry.init({
   replaysSessionSampleRate: 0,
   replaysOnErrorSampleRate: 1.0,
   integrations: [
-    // Capture Core Web Vitals (LCP, FID, CLS, TTFB, INP) in Sentry
     Sentry.browserTracingIntegration(),
     Sentry.replayIntegration({
       maskAllText: true,
@@ -14,3 +13,5 @@ Sentry.init({
     }),
   ],
 });
+
+export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
