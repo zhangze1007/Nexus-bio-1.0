@@ -55,6 +55,10 @@ function getRateLimit(ip: string, path: string): { limit: number; windowMs: numb
   if (path.startsWith('/api/fba')) {
     return { limit: 20, windowMs: 60_000 }; // 20 req/min for compute
   }
+  // Proxy routes — tighter limits to prevent abuse of external APIs
+  if (path.startsWith('/api/alphafold') || path.startsWith('/api/pubchem') || path.startsWith('/api/kegg')) {
+    return { limit: 30, windowMs: 60_000 }; // 30 req/min for external API proxies
+  }
   return { limit: 60, windowMs: 60_000 }; // 60 req/min default
 }
 
@@ -101,8 +105,9 @@ function isAuthenticated(req: NextRequest): boolean {
   const secFetchSite = req.headers.get('sec-fetch-site');
   if (secFetchSite === 'same-origin') return true;
 
-  // If no API key is configured, allow all requests (development mode)
-  if (!API_KEY) return true;
+  // If no API key is configured, only same-origin requests are allowed.
+  // External callers must provide a key — never silently bypass auth.
+  if (!API_KEY) return false;
 
   // Check X-API-Key header
   const apiKey = req.headers.get('x-api-key');

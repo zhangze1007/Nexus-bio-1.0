@@ -108,14 +108,11 @@ function MetaboliteMolecules({ reactionRate, stressIndex, state }: MoleculesProp
     >
       {/* icosahedronGeometry — no gl_PointSize */}
       <icosahedronGeometry args={[1, 0]} />
-      <meshPhysicalMaterial
+      <meshLambertMaterial
         vertexColors
         transparent
         opacity={0.72}
-        roughness={0.55}
-        metalness={0.12}
         depthWrite={false}
-        envMapIntensity={0.4}
       />
     </instancedMesh>
   );

@@ -548,7 +548,7 @@ async function tryGemini(
       if (text) return text;
 
     } catch (err) {
-      console.warn(JSON.stringify({ level: 'warn', message: 'Groq provider failed', error: err instanceof Error ? err.message : String(err), timestamp: new Date().toISOString() }));
+      console.warn(JSON.stringify({ level: 'warn', message: 'Gemini provider failed', error: err instanceof Error ? err.message : String(err), timestamp: new Date().toISOString() }));
       continue;
     }
   }

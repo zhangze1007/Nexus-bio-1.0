@@ -306,7 +306,18 @@ function initializeSchema(db: SqliteDb) {
   ensureLegacyColumns(db);
 }
 
+/** Whitelist of valid table names — prevents latent SQL injection via PRAGMA. */
+const VALID_TABLE_NAMES = new Set([
+  'actors', 'projects', 'project_members', 'project_state',
+  'project_run_artifact_index', 'experiment_records', 'sync_audit',
+  'project_history', 'canonical_state',
+]);
+
 function hasColumn(db: SqliteDb, tableName: string, columnName: string) {
+  if (!VALID_TABLE_NAMES.has(tableName)) {
+    throw new Error(`hasColumn: invalid table name "${tableName}"`);
+  }
+  // PRAGMA doesn't support parameterized queries; whitelist above is the guard.
   const rows = db.prepare(`PRAGMA table_info(${tableName})`).all() as Array<{ name: string }>;
   return rows.some((row) => row.name === columnName);
 }

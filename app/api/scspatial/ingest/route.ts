@@ -68,7 +68,9 @@ export async function POST(request: Request) {
     const artifactId = `scspatial-${randomUUID()}`;
     const uploadedAt = Date.now();
     const tempDir = await mkdtemp(path.join(tmpdir(), 'scspatial-'));
-    const tempFilePath = path.join(tempDir, file.name);
+    // Sanitize filename: strip directory components to prevent path traversal
+    const safeFileName = path.basename(file.name).replace(/[^a-zA-Z0-9._-]/g, '_');
+    const tempFilePath = path.join(tempDir, safeFileName);
 
     try {
       const buffer = Buffer.from(await file.arrayBuffer());
@@ -76,7 +78,7 @@ export async function POST(request: Request) {
       const artifact = await runScSpatialSidecar({
         artifactId,
         filePath: tempFilePath,
-        fileName: file.name,
+        fileName: safeFileName,
         uploadedAt,
         config,
       });

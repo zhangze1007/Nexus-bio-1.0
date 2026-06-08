@@ -1,6 +1,6 @@
 {
   "schemaVersion": "second-implementation-consistency-v1",
-  "generatedAt": "2026-06-07T11:47:43Z",
+  "generatedAt": "2026-06-08T03:41:06Z",
   "runLabel": "local-dev",
   "referenceImplementation": "python-stdlib",
   "policySnapshot": "reference_impl_py/policies/claim_surface_policies.json",
