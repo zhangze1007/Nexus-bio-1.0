@@ -43,7 +43,7 @@ jobs:
           NEXT_TELEMETRY_DISABLED: 1
 
   e2e:
-    name: E2E Tests (placeholder)
+    name: E2E Tests
     runs-on: ubuntu-latest
     timeout-minutes: 15
     needs: typecheck-test-build
@@ -64,11 +64,7 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
-      # Uncomment when E2E tests are written:
-      # - name: Run E2E tests
-      #   run: npx playwright test
-      #   env:
-      #     BASE_URL: http://localhost:3000
-
-      - name: E2E placeholder (no tests yet)
-        run: echo "E2E placeholder — add Playwright tests and uncomment above"
+      - name: Run E2E tests
+        run: npx playwright test
+        env:
+          BASE_URL: http://localhost:3000

@@ -59,6 +59,11 @@ const TOOLS_BASIC: Array<{
   { route: '/tools/multio', moduleId: 'MULTIO' },
   { route: '/tools/scspatial', moduleId: 'SCSPATIAL' },
   { route: '/tools/catdes', moduleId: 'CATDES' },
+  { route: '/tools/dbtlflow', moduleId: 'DBTL' },
+  { route: '/tools/gecair', moduleId: 'GECAIR' },
+  { route: '/tools/metabolic-eng', moduleId: 'METABOLIC-ENG' },
+  { route: '/tools/nexai', moduleId: 'NEXAI' },
+  { route: '/tools/proevol', moduleId: 'PROEVOL' },
 ];
 
 test.describe('Tool page loading', () => {
