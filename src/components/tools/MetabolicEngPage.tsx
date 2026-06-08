@@ -637,7 +637,6 @@ export default React.memo(function MetabolicEngPage({ embedded = false }: { embe
     >
       {/* ── Core viewport: fluid background ── */}
       <FluidSimCanvas
-        forceRef={forceRef}
         reactionRate={readouts.reactionRate}
         stressIndex={readouts.stressIndex}
         state={state}

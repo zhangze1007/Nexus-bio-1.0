@@ -156,7 +156,6 @@ function BlueprintGrid({ state }: { state: MachineState }) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface FluidSimCanvasProps {
-  forceRef: React.MutableRefObject<FluidForce | null>;
   reactionRate: number;
   stressIndex: number;
   state: MachineState;
