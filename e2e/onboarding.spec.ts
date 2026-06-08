@@ -23,6 +23,10 @@ async function waitForOnboarding(page: import('@playwright/test').Page) {
 }
 
 test.describe('Onboarding overlay', () => {
+  // Override global storageState — these tests need fresh localStorage
+  // (no nexus-bio-onboarding-done key) to verify the overlay lifecycle.
+  test.use({ storageState: { cookies: [], origins: [] } });
+
   test('shows on first visit when localStorage is empty', async ({ page }) => {
     await page.goto('/');
     await page.waitForLoadState('domcontentloaded');
