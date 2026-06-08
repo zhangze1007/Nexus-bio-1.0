@@ -5,6 +5,7 @@ import WorkbenchSyncProvider from '../src/components/workbench/WorkbenchSyncProv
 import { RouteTransition } from '../src/components/shared/RouteTransition';
 import { OnboardingOverlay } from '../src/components/shared/OnboardingOverlay';
 import AuthProvider from '../src/components/auth/AuthProvider';
+import WebVitals from '../src/components/WebVitals';
 
 export const metadata: Metadata = {
   title: 'Nexus-Bio | Synthetic Biology Research Workbench',
@@ -44,6 +45,7 @@ export default function RootLayout({
         />
       </head>
       <body>
+        <WebVitals />
         {/* Skip-to-content: keyboard a11y — first focusable element */}
         <a href="#main-content" className="skip-to-content">
           Skip to content
