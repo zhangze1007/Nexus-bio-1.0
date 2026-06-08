@@ -127,10 +127,10 @@ test.describe('TopBar breadcrumb', () => {
     await page.goto('/tools/fbasim');
     await waitForPageReady(page);
 
-    // The topbar contains Home and Tools links
+    // The topbar contains Home and Workbench (link to /tools) links
     const topbar = page.locator('header.nb-ide-topbar');
     await expect(topbar.locator('text=Home')).toBeAttached();
-    await expect(topbar.locator('text=Tools')).toBeAttached();
+    await expect(topbar.locator('text=Workbench')).toBeAttached();
   });
 
   test('topbar shows the tool short label for a specific tool', async ({ page }) => {
