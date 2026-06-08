@@ -29,6 +29,7 @@ export async function OPTIONS(req: NextRequest) {
 export async function GET(req: NextRequest) {
   const headers: Record<string, string> = {
     'Content-Type': 'text/plain',
+    'Cache-Control': 'public, max-age=86400, s-maxage=604800', // 1 day browser, 7 days CDN
     ...getCorsHeaders(req),
   };
 

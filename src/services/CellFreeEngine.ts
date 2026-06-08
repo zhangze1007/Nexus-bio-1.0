@@ -1029,6 +1029,7 @@ export function runFullCFSPipeline(
     fitting = fitPlateReaderKinetics(plateData);
   } catch {
     fitting = null;
+    console.debug('[CellFreeEngine] Plate reader kinetics fitting failed, continuing without fit');
   }
 
   // 3. In-vitro → in-vivo translation for first construct

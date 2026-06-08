@@ -1,5 +1,5 @@
 'use client';
-import { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AlertTriangle } from 'lucide-react';
 import ToolShell, { TOOL_TOKENS as T } from './shared/ToolShell';
@@ -271,7 +271,7 @@ const CETHX_TABS: ToolTab[] = [
 
 // ── Main Page ──────────────────────────────────────────────────────────
 
-export default function CETHXPage() {
+export default React.memo(function CETHXPage() {
   const project = useWorkbenchStore((s) => s.project);
   const analyzeArtifact = useWorkbenchStore((s) => s.analyzeArtifact);
   const pathdPayload = useWorkbenchStore((s) => s.toolPayloads.pathd);
@@ -577,4 +577,4 @@ export default function CETHXPage() {
       </ToolTabPanel>
     </ToolShell>
   );
-}
+});

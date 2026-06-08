@@ -1,5 +1,5 @@
 'use client';
-import { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
 import { useUIStore } from '../../store/uiStore';
@@ -276,7 +276,7 @@ const DYNCON_TABS: ToolTab[] = [
 /* ══════════════════════════════════════════════════════════════════════════════
    MAIN PAGE
    ══════════════════════════════════════════════════════════════════════════════ */
-export default function DynConPage() {
+export default React.memo(function DynConPage() {
   const chartRef = useRef<SVGSVGElement>(null);
   const project = useWorkbenchStore((s) => s.project);
   const analyzeArtifact = useWorkbenchStore((s) => s.analyzeArtifact);
@@ -647,4 +647,4 @@ export default function DynConPage() {
       )}
     </ToolShell>
   );
-}
+});

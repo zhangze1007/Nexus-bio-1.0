@@ -78,6 +78,7 @@ export const pathdAdapter: AxonAdapter<PathdAdapterInput, PathdAdapterResult> =
       }
     } catch {
       // prose or malformed — nodeCount stays 0; parseError is still surfaced
+      console.debug('[axonAdapters] Failed to parse structured analysis JSON, falling back to prose');
     }
 
     return {

@@ -13,7 +13,7 @@
  * external literature API expansion, evidence tree viz) are NOT started
  * here — see PR-2b / PR-3 notes.
  */
-import { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion } from 'framer-motion';
 import ToolShell, { TOOL_TOKENS as T } from './shared/ToolShell';
 import ModuleCard from './shared/ModuleCard';
@@ -101,7 +101,7 @@ function pathwayToResult(pathway: GeneratedPathway, query: string, provider: str
 type ResultMode = 'pathway' | 'text' | 'idle';
 type SurfaceView = 'answer' | 'evidence' | 'session';
 
-export default function NEXAIPage() {
+export default React.memo(function NEXAIPage() {
   const appendConsole = useUIStore(s => s.appendConsole);
   const project = useWorkbenchStore((s) => s.project);
   const analyzeArtifact = useWorkbenchStore((s) => s.analyzeArtifact);
@@ -995,4 +995,4 @@ export default function NEXAIPage() {
       </ModuleCard>}
     </ToolShell>
   );
-}
+});

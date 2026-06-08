@@ -1,5 +1,5 @@
 'use client';
-import { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
 import SimErrorBanner from '../ide/shared/SimErrorBanner';
@@ -43,7 +43,7 @@ const FBA_TABS: ToolTab[] = [
   { id: 'community', label: 'Community', accent: PATHD_THEME.mint },
 ];
 
-export default function FBASimPage() {
+export default React.memo(function FBASimPage() {
   const [simMode, setSimMode] = useState<SimMode>('single');
   const chartRef = useRef<SVGSVGElement>(null);
   const project = useWorkbenchStore((s) => s.project);
@@ -687,4 +687,4 @@ export default function FBASimPage() {
       </ToolTabPanel>
     </ToolShell>
   );
-}
+});

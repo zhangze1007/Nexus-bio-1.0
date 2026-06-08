@@ -54,6 +54,7 @@ async function searchWikipediaCommons(query: string): Promise<CellImage[]> {
 
     return images;
   } catch {
+    console.debug('[CellImageViewer] OpenAlex microscopy search failed, returning empty');
     return [];
   }
 }
@@ -83,6 +84,7 @@ async function searchCIL(query: string): Promise<CellImage[]> {
       };
     });
   } catch {
+    console.debug('[CellImageViewer] Cell Image Library search failed, returning empty');
     return [];
   }
 }
@@ -108,6 +110,7 @@ async function searchIDR(query: string): Promise<CellImage[]> {
       imagingMethod: img.AcquisitionDate ? 'Fluorescence' : 'Microscopy',
     }));
   } catch {
+    console.debug('[CellImageViewer] EMBL-EBI IDR search failed, returning empty');
     return [];
   }
 }

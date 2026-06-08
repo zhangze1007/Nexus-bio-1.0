@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
 import SimErrorBanner from '../ide/shared/SimErrorBanner';
@@ -686,7 +686,7 @@ const CELLFREE_TABS: ToolTab[] = [
 
 /* ── Main Component ───────────────────────────────────────────────── */
 
-export default function CellFreePage() {
+export default React.memo(function CellFreePage() {
   const project = useWorkbenchStore((s) => s.project);
   const analyzeArtifact = useWorkbenchStore((s) => s.analyzeArtifact);
   const catalystPayload = useWorkbenchStore((s) => s.toolPayloads.catdes);
@@ -1137,4 +1137,4 @@ export default function CellFreePage() {
       </ToolTabPanel>
     </ToolShell>
   );
-}
+});

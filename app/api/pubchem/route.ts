@@ -5,7 +5,11 @@ import { errorResponse } from '../../../src/utils/apiErrors';
 export const runtime = 'edge';
 
 function getCors(req?: Request) {
-  return { 'Content-Type': 'text/plain', ...getCorsHeaders(req) };
+  return {
+    'Content-Type': 'text/plain',
+    'Cache-Control': 'public, max-age=86400, s-maxage=604800', // 1 day browser, 7 days CDN
+    ...getCorsHeaders(req),
+  };
 }
 
 export async function OPTIONS(req: NextRequest) {

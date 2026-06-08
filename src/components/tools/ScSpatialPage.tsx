@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import { HelpCircle, RefreshCcw } from 'lucide-react';
 import ExportButton from '../ide/shared/ExportButton';
 import ScSpatialControlRail from './scspatial/ScSpatialControlRail';
@@ -43,7 +43,7 @@ function readyLabel(validity: 'real' | 'partial' | 'demo' | null, loadState: str
   return 'Idle';
 }
 
-export default function ScSpatialPage() {
+export default React.memo(function ScSpatialPage() {
   const [activeTab, setActiveTab] = useState('spatial-2d');
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -334,4 +334,4 @@ export default function ScSpatialPage() {
       {helpOpen ? <ScSpatialHelpDialog onClose={toggleHelp} /> : null}
     </ToolShell>
   );
-}
+});

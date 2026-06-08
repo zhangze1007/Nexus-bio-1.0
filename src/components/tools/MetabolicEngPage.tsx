@@ -14,7 +14,7 @@
  *   Desktop: 60 FPS  |  Mobile MatePad 11.5: 45 FPS (dpr capped at 1.2)
  */
 
-import { useEffect, useRef, useCallback, useMemo, useState, useLayoutEffect } from 'react';
+import React, { useEffect, useRef, useCallback, useMemo, useState, useLayoutEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { AnimatePresence } from 'framer-motion';
 import { useMachine } from '@xstate/react';
@@ -104,7 +104,7 @@ function sceneInsetsEqual(a: PathdSceneInsets | null, b: PathdSceneInsets) {
 
 // ── Main orchestrator ──────────────────────────────────────────────────
 
-export default function MetabolicEngPage({ embedded = false }: { embedded?: boolean } = {}) {
+export default React.memo(function MetabolicEngPage({ embedded = false }: { embedded?: boolean } = {}) {
   const searchParams = useSearchParams();
   const routeArtifactId = searchParams.get('artifact');
   const [snapshot, send] = useMachine(metabolicMachine);
@@ -773,4 +773,4 @@ export default function MetabolicEngPage({ embedded = false }: { embedded?: bool
       </AnimatePresence>
     </div>
   );
-}
+});

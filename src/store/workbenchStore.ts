@@ -491,12 +491,8 @@ function getWorkflowActor(): WorkflowActor {
   return workflowActor;
 }
 
-/** Test helper. Gated behind NODE_ENV=test to keep out of production bundles. */
-export function __resetWorkflowActorForTests(): void {
-  if (process.env.NODE_ENV !== 'test') {
-    console.warn('__resetWorkflowActorForTests called outside test environment');
-    return;
-  }
+/** Reset the workflow actor — used when targetProduct changes. */
+function resetWorkflowActor(): void {
   if (workflowActor) {
     try {
       workflowActor.stop();
@@ -507,6 +503,15 @@ export function __resetWorkflowActorForTests(): void {
   workflowActor = null;
 }
 
+/** Test helper. Delegates to resetWorkflowActor(). */
+export function __resetWorkflowActorForTests(): void {
+  if (process.env.NODE_ENV !== 'test') {
+    console.warn('__resetWorkflowActorForTests called outside test environment');
+    return;
+  }
+  resetWorkflowActor();
+}
+
 function syncWorkflowActor(
   targetProduct: string | null,
   toolStatus: Partial<Record<ToolId, WorkflowToolStatus>>,
@@ -515,7 +520,7 @@ function syncWorkflowActor(
   let ctx = actor.getSnapshot().context;
 
   if (ctx.targetProduct !== null && ctx.targetProduct !== targetProduct) {
-    __resetWorkflowActorForTests();
+    resetWorkflowActor();
     actor = getWorkflowActor();
     ctx = actor.getSnapshot().context;
   }

@@ -1,5 +1,5 @@
 'use client';
-import { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
 import SimErrorBanner from '../ide/shared/SimErrorBanner';
@@ -187,7 +187,7 @@ const GENMIM_TABS: ToolTab[] = [
   { id: 'efficiency', label: 'Efficiency', accent: PATHD_THEME.mint },
 ];
 
-export default function GenMIMPage() {
+export default React.memo(function GenMIMPage() {
   const project = useWorkbenchStore((s) => s.project);
   const analyzeArtifact = useWorkbenchStore((s) => s.analyzeArtifact);
   const fbaPayload = useWorkbenchStore((s) => s.toolPayloads.fbasim);
@@ -483,4 +483,4 @@ export default function GenMIMPage() {
       </ToolTabPanel>
     </ToolShell>
   );
-}
+});

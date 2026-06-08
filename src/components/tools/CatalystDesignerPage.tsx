@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
 import SimErrorBanner from '../ide/shared/SimErrorBanner';
@@ -520,7 +520,7 @@ function MutagenesisView({ result, enzyme }: { result: MutagenesisResult; enzyme
    Main Component
    ══════════════════════════════════════════════════════════════════════ */
 
-export default function CatalystDesignerPage() {
+export default React.memo(function CatalystDesignerPage() {
   const project = useWorkbenchStore((s) => s.project);
   const analyzeArtifact = useWorkbenchStore((s) => s.analyzeArtifact);
   const fbaPayload = useWorkbenchStore((s) => s.toolPayloads.fbasim);
@@ -819,4 +819,4 @@ export default function CatalystDesignerPage() {
       </ToolTabPanel>
     </ToolShell>
   );
-}
+});

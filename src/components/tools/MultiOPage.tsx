@@ -1,5 +1,5 @@
 'use client';
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { computeConvexHull, expandHull } from '../../utils/vizUtils';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
@@ -576,7 +576,7 @@ function EmbeddingScatter({ embeddings, fcThreshold, activeLayers, highlightedGe
 
 /* ── Main Component ───────────────────────────────────────────────── */
 
-export default function MultiOPage() {
+export default React.memo(function MultiOPage() {
   const project = useWorkbenchStore((s) => s.project);
   const analyzeArtifact = useWorkbenchStore((s) => s.analyzeArtifact);
   const cellfreePayload = useWorkbenchStore((s) => s.toolPayloads.cellfree);
@@ -1222,4 +1222,4 @@ export default function MultiOPage() {
       </ToolTabPanel>
     </ToolShell>
   );
-}
+});
