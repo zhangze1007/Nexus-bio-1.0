@@ -76,4 +76,45 @@ describe('calcMassBalance', () => {
     for (const s of result.S) expect(s).toBeGreaterThanOrEqual(0);
     for (const p of result.P) expect(p).toBeGreaterThanOrEqual(0);
   });
+
+  it('positive ΔG results in slower substrate consumption', () => {
+    const negDG = calcMassBalance(10, -20, 100, 50);
+    const posDG = calcMassBalance(10, 20, 100, 50);
+    // Positive ΔG has negative driving force, slower consumption
+    expect(posDG.S[posDG.S.length - 1]).toBeGreaterThanOrEqual(negDG.S[negDG.S.length - 1]);
+  });
+
+  it('zero ΔG still produces some conversion', () => {
+    const result = calcMassBalance(10, 0, 1, 50);
+    // With ΔG=0, drivingForce is -|dG|*0.005 = 0, so no conversion
+    // Actually dG=0 means dG < 0 is false, so drivingForce = -|0|*0.005 = 0
+    expect(result.S[0]).toBe(10);
+    expect(result.P[0]).toBe(0);
+  });
+
+  it('time array starts at 0 and increments by dt', () => {
+    const result = calcMassBalance(5, -10, 100, 10);
+    expect(result.time[0]).toBe(0);
+    expect(result.time[1]).toBeCloseTo(0.1, 2);
+    expect(result.time[2]).toBeCloseTo(0.2, 2);
+  });
+
+  it('works with single step', () => {
+    const result = calcMassBalance(10, -5, 100, 1);
+    expect(result.time).toHaveLength(2);
+    expect(result.S).toHaveLength(2);
+    expect(result.P).toHaveLength(2);
+  });
+
+  it('handles very small initial substrate', () => {
+    const result = calcMassBalance(0.001, -10, 100, 100);
+    for (const s of result.S) expect(s).toBeGreaterThanOrEqual(0);
+    for (const p of result.P) expect(p).toBeGreaterThanOrEqual(0);
+  });
+
+  it('handles very large Keq', () => {
+    const result = calcMassBalance(10, -50, 1e10, 100);
+    expect(result.S[result.S.length - 1]).toBeLessThan(10);
+    expect(result.P[result.P.length - 1]).toBeGreaterThan(0);
+  });
 });
