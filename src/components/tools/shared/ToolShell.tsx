@@ -34,10 +34,9 @@ import { usePersistedState } from '../../ide/shared/usePersistedState';
 import { getToolDefinition } from './toolRegistry';
 import { getToolValidity, type ValidityLevel } from '../../../config/toolValidity';
 import { useNavigation } from '../../../contexts/NavigationContext';
-import { T } from '../../ide/tokens';
-import { PATHD_THEME } from '../../workbench/workbenchTheme';
 import ToolTabBar, { type ToolTab } from './ToolTabBar';
 import { ErrorBoundary } from '../../shared/ErrorBoundary';
+import { THEME } from '../../../theme';
 type ControlVarsStyle = CSSProperties & Record<`--${string}`, string>;
 
 export interface ToolReference {
@@ -123,8 +122,8 @@ export default function ToolShell({
     <div className="nb-tool-shell" style={{
       position: 'relative',
       display: 'flex', flexDirection: 'column',
-      background: `linear-gradient(180deg, ${PATHD_THEME.sepiaPanelMuted} 0%, ${PATHD_THEME.sepiaPanel} 100%)`,
-      fontFamily: T.SANS,
+      background: `linear-gradient(180deg, ${THEME.PANEL_MUTED} 0%, ${THEME.PANEL_BG} 100%)`,
+      fontFamily: THEME.SANS,
       flex: 1,
       minHeight: '100%',
     }}>
@@ -138,8 +137,8 @@ export default function ToolShell({
           padding: '8px 16px',
           display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap',
           flexShrink: 0,
-          borderBottom: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
-          background: PATHD_THEME.sepiaPanelMuted,
+          borderBottom: `1px solid ${THEME.BORDER}`,
+          background: THEME.PANEL_MUTED,
           backdropFilter: 'blur(18px)',
           WebkitBackdropFilter: 'blur(18px)',
           boxShadow: 'var(--nb-shadow-low), inset 0 1px 0 rgba(255,255,255,0.28)',
@@ -160,18 +159,18 @@ export default function ToolShell({
             background: 'var(--nb-control-bg)',
             color: 'var(--nb-control-color)',
             cursor: 'pointer',
-            fontFamily: T.SANS,
+            fontFamily: THEME.SANS,
             fontSize: 'var(--nb-fs-xs)',
             flexShrink: 0,
-            ['--nb-control-bg' as const]: PATHD_THEME.panelGlassStrong,
-            ['--nb-control-border' as const]: PATHD_THEME.sepiaPanelBorder,
-            ['--nb-control-color' as const]: PATHD_THEME.label,
+            ['--nb-control-bg' as const]: THEME.PANEL_GLASS_STRONG,
+            ['--nb-control-border' as const]: THEME.BORDER,
+            ['--nb-control-color' as const]: THEME.LABEL,
             ['--nb-control-hover-bg' as const]: 'rgba(255,255,255,0.08)',
             ['--nb-control-hover-border' as const]: 'rgba(255,255,255,0.12)',
-            ['--nb-control-hover-color' as const]: PATHD_THEME.ink,
+            ['--nb-control-hover-color' as const]: THEME.INK,
             ['--nb-control-active-bg' as const]: 'rgba(255,255,255,0.12)',
             ['--nb-control-active-border' as const]: 'rgba(255,255,255,0.16)',
-            ['--nb-control-active-color' as const]: PATHD_THEME.ink,
+            ['--nb-control-active-color' as const]: THEME.INK,
           } as ControlVarsStyle}
           title="Back to Tools"
         >
@@ -186,10 +185,10 @@ export default function ToolShell({
             minHeight: '28px',
             padding: '0 8px',
             borderRadius: 'var(--nb-radius-md)',
-            border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
+            border: `1px solid ${THEME.BORDER}`,
             background: 'rgba(231, 199, 169, 0.24)',
-            color: PATHD_THEME.value,
-            fontFamily: T.MONO,
+            color: THEME.VALUE,
+            fontFamily: THEME.MONO,
             fontSize: 'var(--nb-fs-xs)',
             fontWeight: 700,
           letterSpacing: '0.08em',
@@ -201,16 +200,16 @@ export default function ToolShell({
 
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{
-            fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', fontWeight: 700,
-            color: PATHD_THEME.value,
+            fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', fontWeight: 700,
+            color: THEME.VALUE,
             letterSpacing: '-0.01em',
           }}>
             {tool?.name ?? title}
           </div>
           {description && (
             <div style={{
-              fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)',
-              color: PATHD_THEME.label,
+              fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)',
+              color: THEME.LABEL,
               marginTop: '2px',
             }}>
               {description}
@@ -219,14 +218,14 @@ export default function ToolShell({
           {tool?.focus && (
             <details style={{ marginTop: '4px' }}>
               <summary style={{
-                fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.label,
+                fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL,
                 cursor: 'pointer', letterSpacing: '0.05em', textTransform: 'uppercase',
                 opacity: 0.7,
               }}>
                 What does this tool do?
               </summary>
               <p style={{
-                fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: PATHD_THEME.label,
+                fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: THEME.LABEL,
                 marginTop: '4px', lineHeight: 1.55, maxWidth: '480px',
               }}>
                 {tool.focus}
@@ -239,7 +238,7 @@ export default function ToolShell({
           <div
             title={validity.caption}
             style={{
-              fontFamily: T.MONO,
+              fontFamily: THEME.MONO,
               fontSize: 'var(--nb-fs-xs)',
               fontWeight: 700,
               letterSpacing: '0.10em',
@@ -258,11 +257,11 @@ export default function ToolShell({
 
         {formula && (
           <div style={{
-            fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)',
-            color: PATHD_THEME.value,
+            fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)',
+            color: THEME.VALUE,
           padding: '5px 8px',
-            background: PATHD_THEME.panelGlassStrong,
-            border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
+            background: THEME.PANEL_GLASS_STRONG,
+            border: `1px solid ${THEME.BORDER}`,
             borderRadius: 'var(--nb-radius-md)',
           }}>
             {formula}
@@ -285,22 +284,22 @@ export default function ToolShell({
               borderRadius: 'var(--nb-radius-md)',
               border: '1px solid var(--nb-control-border)',
               background: mode === 'advanced' ? 'rgba(175, 195, 214, 0.15)' : 'var(--nb-control-bg)',
-              color: mode === 'advanced' ? T.SKY : 'var(--nb-control-color)',
+              color: mode === 'advanced' ? THEME.SKY : 'var(--nb-control-color)',
               cursor: 'pointer',
-              fontFamily: T.SANS,
+              fontFamily: THEME.SANS,
               fontSize: 'var(--nb-fs-xs)',
               fontWeight: mode === 'advanced' ? 600 : 400,
               flexShrink: 0,
               transition: 'all 0.2s ease',
               ['--nb-control-bg' as const]: 'rgba(16,19,26,0.8)',
               ['--nb-control-border' as const]: 'rgba(255,255,255,0.08)',
-              ['--nb-control-color' as const]: T.LABEL,
+              ['--nb-control-color' as const]: THEME.LABEL,
               ['--nb-control-hover-bg' as const]: 'rgba(255,255,255,0.08)',
               ['--nb-control-hover-border' as const]: 'rgba(255,255,255,0.12)',
-              ['--nb-control-hover-color' as const]: T.VALUE,
+              ['--nb-control-hover-color' as const]: THEME.VALUE,
               ['--nb-control-active-bg' as const]: 'rgba(255,255,255,0.12)',
               ['--nb-control-active-border' as const]: 'rgba(255,255,255,0.16)',
-              ['--nb-control-active-color' as const]: T.VALUE,
+              ['--nb-control-active-color' as const]: THEME.VALUE,
             } as ControlVarsStyle}
           >
             {mode === 'simple' ? (
@@ -348,13 +347,13 @@ export default function ToolShell({
       {references && references.length > 0 && (
         <div style={{
           padding: '6px 16px',
-          borderTop: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
-          background: PATHD_THEME.sepiaPanelMuted,
+          borderTop: `1px solid ${THEME.BORDER}`,
+          background: THEME.PANEL_MUTED,
           flexShrink: 0,
         }}>
           <details>
             <summary style={{
-              fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.label,
+              fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL,
               cursor: 'pointer', letterSpacing: '0.06em', textTransform: 'uppercase',
               listStyle: 'none', display: 'flex', alignItems: 'center', gap: '6px',
             }}>
@@ -364,10 +363,10 @@ export default function ToolShell({
             <div style={{ paddingTop: '6px', display: 'flex', flexDirection: 'column', gap: '3px' }}>
               {references.map((ref, i) => (
                 <div key={i} style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-                  <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.label, flexShrink: 0 }}>
+                  <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL, flexShrink: 0 }}>
                     [{i + 1}]
                   </span>
-                  <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.value }}>
+                  <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: THEME.VALUE }}>
                     {ref.citation}
                   </span>
                   {ref.doi && (
@@ -376,8 +375,8 @@ export default function ToolShell({
                       target="_blank"
                       rel="noopener noreferrer"
                       style={{
-                        fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)',
-                        color: T.SKY, textDecoration: 'none',
+                        fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)',
+                        color: THEME.SKY, textDecoration: 'none',
                       }}
                     >
                       DOI: {ref.doi}
@@ -389,8 +388,8 @@ export default function ToolShell({
                       target="_blank"
                       rel="noopener noreferrer"
                       style={{
-                        fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)',
-                        color: T.SKY, textDecoration: 'none',
+                        fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)',
+                        color: THEME.SKY, textDecoration: 'none',
                       }}
                     >
                       Link
@@ -408,8 +407,8 @@ export default function ToolShell({
         <div className="nb-tool-shell__footer" style={{
           padding: '8px 16px',
           display: 'flex', gap: '8px', flexShrink: 0,
-          borderTop: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
-          background: PATHD_THEME.sepiaPanelMuted,
+          borderTop: `1px solid ${THEME.BORDER}`,
+          background: THEME.PANEL_MUTED,
           backdropFilter: 'blur(16px)',
           WebkitBackdropFilter: 'blur(16px)',
         }}>
@@ -425,21 +424,21 @@ export default function ToolShell({
 export const TOOL_TOKENS = {
   MONO: "'IBM Plex Mono','JetBrains Mono','Fira Code',monospace" as const,
   SANS: "'Public Sans',-apple-system,sans-serif" as const,
-  NEON: PATHD_THEME.apricot,
-  NEON_BLUE: PATHD_THEME.sky,
-  NEON_ORANGE: PATHD_THEME.apricot,
-  NEON_SUCCESS: PATHD_THEME.mint,
-  NEON_DANGER: PATHD_THEME.coral,
-  CORAL: PATHD_THEME.coral,
-  APRICOT: PATHD_THEME.apricot,
-  MINT: PATHD_THEME.mint,
-  SKY: PATHD_THEME.sky,
-  LILAC: PATHD_THEME.lilac,
-  BG: PATHD_THEME.sepiaPanel,
-  CARD_BG: PATHD_THEME.panelSurface,
-  BORDER: PATHD_THEME.sepiaPanelBorder,
-  LABEL: PATHD_THEME.label,
-  VALUE: PATHD_THEME.value,
-  DIM: PATHD_THEME.label,
-  INPUT_BG: PATHD_THEME.panelInset,
+  NEON: THEME.APRICOT,
+  NEON_BLUE: THEME.SKY,
+  NEON_ORANGE: THEME.APRICOT,
+  NEON_SUCCESS: THEME.MINT,
+  NEON_DANGER: THEME.CORAL,
+  CORAL: THEME.CORAL,
+  APRICOT: THEME.APRICOT,
+  MINT: THEME.MINT,
+  SKY: THEME.SKY,
+  LILAC: THEME.LILAC,
+  BG: THEME.PANEL_BG,
+  CARD_BG: THEME.PANEL_SURFACE,
+  BORDER: THEME.BORDER,
+  LABEL: THEME.LABEL,
+  VALUE: THEME.VALUE,
+  DIM: THEME.LABEL,
+  INPUT_BG: THEME.PANEL_INSET,
 } as const;

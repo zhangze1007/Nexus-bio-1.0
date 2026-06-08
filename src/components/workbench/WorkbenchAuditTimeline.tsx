@@ -7,7 +7,6 @@ import { useWorkbenchStore } from '../../store/workbenchStore';
 import { TOOL_BY_ID } from '../tools/shared/toolRegistry';
 import { getDownstreamToolIds, getUpstreamToolIds } from '../../config/workbenchGraph';
 import type { WorkbenchStageId } from '../tools/shared/workbenchConfig';
-import { PATHD_THEME } from './workbenchTheme';
 import {
   glassPanel,
   typography,
@@ -16,6 +15,7 @@ import {
   staggerContainer,
   accentLeftBorder,
 } from './workbenchDesignSystem';
+import { THEME } from '../../theme';
 
 interface WorkbenchAuditTimelineProps {
   toolId?: string | null;
@@ -47,13 +47,13 @@ function formatTime(timestamp: number) {
 function getKindAccent(kind: TimelineEvent['kind']) {
   switch (kind) {
     case 'evidence':
-      return PATHD_THEME.sky;
+      return THEME.SKY;
     case 'analysis':
-      return PATHD_THEME.lilac;
+      return THEME.LILAC;
     case 'run':
-      return PATHD_THEME.apricot;
+      return THEME.APRICOT;
     default:
-      return PATHD_THEME.coral;
+      return THEME.CORAL;
   }
 }
 
@@ -164,8 +164,8 @@ export default function WorkbenchAuditTimeline({
     >
       {/* Section Header */}
       <motion.div variants={cardVariants} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <span style={iconContainer(PATHD_THEME.sky, 20)}>
-          <BookOpenText size={11} color={PATHD_THEME.sky} />
+        <span style={iconContainer(THEME.SKY, 20)}>
+          <BookOpenText size={11} color={THEME.SKY} />
         </span>
         <span style={typography.sectionTitle}>{title}</span>
       </motion.div>
@@ -180,7 +180,7 @@ export default function WorkbenchAuditTimeline({
               top: '16px',
               bottom: '16px',
               width: '1px',
-              background: `linear-gradient(180deg, ${PATHD_THEME.sky}22, ${PATHD_THEME.lilac}22, ${PATHD_THEME.apricot}22, transparent)`,
+              background: `linear-gradient(180deg, ${THEME.SKY}22, ${THEME.LILAC}22, ${THEME.APRICOT}22, transparent)`,
               pointerEvents: 'none',
             }}
           />

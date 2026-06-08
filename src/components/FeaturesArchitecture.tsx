@@ -13,10 +13,9 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import HomeInteractiveCard from './HomeInteractiveCard';
-import { T } from './ide/tokens';
-
-const HEADER = T.SANS;
-const MONO = T.MONO;
+import { THEME } from '../theme';
+const HEADER = THEME.SANS;
+const MONO = THEME.MONO;
 
 interface EngineBlock {
   label: string;

@@ -1,9 +1,7 @@
 'use client';
 
 import type { WorkflowArtifact } from '../../../domain/workflowArtifact';
-import { PATHD_THEME } from '../../workbench/workbenchTheme';
-import { T } from '../../ide/tokens';
-
+import { THEME } from '../../../theme';
 export default function ArtifactRouteState({
   title,
   message,
@@ -38,13 +36,13 @@ export default function ArtifactRouteState({
         }}
       >
         <div style={{ display: 'grid', gap: '8px' }}>
-          <div style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', letterSpacing: '0.1em', textTransform: 'uppercase', color: PATHD_THEME.label }}>
+          <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', letterSpacing: '0.1em', textTransform: 'uppercase', color: THEME.LABEL }}>
             Canonical PATHD route
           </div>
-          <h2 style={{ margin: 0, fontFamily: T.SANS, fontSize: 'var(--nb-fs-xl)', lineHeight: 1.1, color: PATHD_THEME.value }}>
+          <h2 style={{ margin: 0, fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xl)', lineHeight: 1.1, color: THEME.VALUE }}>
             {title}
           </h2>
-          <p style={{ margin: 0, fontFamily: T.SANS, fontSize: 'var(--nb-fs-md)', lineHeight: 1.65, color: PATHD_THEME.label }}>
+          <p style={{ margin: 0, fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-md)', lineHeight: 1.65, color: THEME.LABEL }}>
             {message}
           </p>
         </div>

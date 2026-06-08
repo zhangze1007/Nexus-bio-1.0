@@ -2,9 +2,7 @@
 
 import { useId, useState } from 'react';
 import type { ReactNode } from 'react';
-import { T } from '../../ide/tokens';
-import { PATHD_THEME } from '../../workbench/workbenchTheme';
-
+import { THEME } from '../../../theme';
 interface HybridWorkbenchPanelsProps {
   leftLabel: string;
   rightLabel: string;
@@ -38,9 +36,9 @@ export default function HybridWorkbenchPanels({
           <span
             className="nb-tool-panels__tablet-aux-label"
             style={{
-              fontFamily: T.MONO,
+              fontFamily: THEME.MONO,
               fontSize: 'var(--nb-fs-xs)',
-              color: PATHD_THEME.label,
+              color: THEME.LABEL,
               letterSpacing: '0.1em',
               textTransform: 'uppercase',
             }}

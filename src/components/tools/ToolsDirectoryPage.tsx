@@ -23,33 +23,31 @@ import {
   type ToolDirection,
   type ToolDefinition,
 } from './shared/toolRegistry';
-import { T } from '../ide/tokens';
-import { PATHD_THEME } from '../workbench/workbenchTheme';
-
 const STORAGE_KEY = 'nexus-bio-favorite-tools';
 
 type ShellFilter = 'All' | 'ide' | 'bento';
 type SortMode = 'name' | 'category' | 'workflow';
 
 import { toolTokens } from '../../hooks/useToolTheme';
+import { THEME } from '../../theme';
 const { border: BORDER, value: VALUE, label: LABEL } = toolTokens;
-const BORDER_STRONG = PATHD_THEME.panelBorderStrong;
-const SURFACE = PATHD_THEME.panelSurface;
-const SURFACE_SOFT = PATHD_THEME.panelInset;
+const BORDER_STRONG = THEME.BORDER_STRONG;
+const SURFACE = THEME.PANEL_SURFACE;
+const SURFACE_SOFT = THEME.PANEL_INSET;
 const SURFACE_TINT = 'rgba(255,255,255,0.90)';
 const SHADOW = '0 2px 16px rgba(0,0,0,0.28)';
 // Dark text for white-pill buttons
 const BTN_TEXT = '#111318';
 
 const DIRECTION_ACCENTS: Record<ToolDirection | 'All', string> = {
-  All: PATHD_THEME.sky,
-  'Research Intake': PATHD_THEME.sky,
-  'Pathway & Design': PATHD_THEME.apricot,
-  'Structure & Enzyme': PATHD_THEME.coral,
-  'Dynamic & System': PATHD_THEME.lilac,
-  'Omics & Spatial': PATHD_THEME.sky,
-  'Validation & DBTL': PATHD_THEME.mint,
-  'AI Assistant': PATHD_THEME.lilac,
+  All: THEME.SKY,
+  'Research Intake': THEME.SKY,
+  'Pathway & Design': THEME.APRICOT,
+  'Structure & Enzyme': THEME.CORAL,
+  'Dynamic & System': THEME.LILAC,
+  'Omics & Spatial': THEME.SKY,
+  'Validation & DBTL': THEME.MINT,
+  'AI Assistant': THEME.LILAC,
 };
 
 function getDirectionAccent(direction: ToolDirection | 'All') {
@@ -268,7 +266,7 @@ export default function ToolsDirectoryPage() {
   return (
     // position:absolute + inset:0 fills the nb-ide-main container provided
     // by the persistent ToolsLayoutShell (app/tools/layout.tsx)
-    <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(180deg, ${PATHD_THEME.sepiaPanelMuted} 0%, ${PATHD_THEME.sepiaPanel} 100%)`, color: VALUE, overflow: 'auto' }}>
+    <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(180deg, ${THEME.PANEL_MUTED} 0%, ${THEME.PANEL_BG} 100%)`, color: VALUE, overflow: 'auto' }}>
       <main>
         <section style={{ padding: '32px 18px 20px' }}>
           <div style={{ maxWidth: '1480px', margin: '0 auto' }}>
@@ -291,7 +289,7 @@ export default function ToolsDirectoryPage() {
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginBottom: '14px', flexWrap: 'wrap' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <p style={{ margin: 0, fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase' }}>
+                    <p style={{ margin: 0, fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase' }}>
                       Tools Directory
                     </p>
                     {[
@@ -299,7 +297,7 @@ export default function ToolsDirectoryPage() {
                       { label: 'Directions', value: TOOL_DIRECTIONS.length },
                       { label: '3D', value: TOOL_DEFINITIONS.filter((tool) => tool.threeDPotential !== 'none').length },
                     ].map((item) => (
-                      <span key={item.label} style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE, padding: '3px 8px', borderRadius: 'var(--nb-radius-sm)', border: `1px solid ${BORDER}`, background: SURFACE }}>
+                      <span key={item.label} style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE, padding: '3px 8px', borderRadius: 'var(--nb-radius-sm)', border: `1px solid ${BORDER}`, background: SURFACE }}>
                         {item.value} {item.label}
                       </span>
                     ))}
@@ -313,7 +311,7 @@ export default function ToolsDirectoryPage() {
                       label: 'Discover',
                       tagline: 'Papers → Evidence → Route',
                       desc: 'Import literature, extract pathway context, and decide which tools to use.',
-                      color: PATHD_THEME.sky,
+                      color: THEME.SKY,
                       bgColor: 'rgba(175,195,214,0.20)',
                       borderColor: 'rgba(175,195,214,0.44)',
                       directions: ['Research Intake'] as ToolDirection[],
@@ -324,7 +322,7 @@ export default function ToolsDirectoryPage() {
                       label: 'Design',
                       tagline: 'Pathway → Structure → Candidate',
                       desc: 'Map routes, inspect enzyme nodes, and rank structural candidates.',
-                      color: PATHD_THEME.apricot,
+                      color: THEME.APRICOT,
                       bgColor: 'rgba(231,199,169,0.20)',
                       borderColor: 'rgba(231,199,169,0.44)',
                       directions: ['Pathway & Design', 'Structure & Enzyme'] as ToolDirection[],
@@ -335,7 +333,7 @@ export default function ToolsDirectoryPage() {
                       label: 'Simulate',
                       tagline: 'Flux → Dynamics → Omics',
                       desc: 'Run FBA, PID bioreactor control, thermodynamics, and multi-omics analysis.',
-                      color: PATHD_THEME.lilac,
+                      color: THEME.LILAC,
                       bgColor: 'rgba(207,196,227,0.20)',
                       borderColor: 'rgba(207,196,227,0.44)',
                       directions: ['Dynamic & System', 'Omics & Spatial'] as ToolDirection[],
@@ -346,7 +344,7 @@ export default function ToolsDirectoryPage() {
                       label: 'Validate',
                       tagline: 'Cell-free → DBTL → Learn',
                       desc: 'Translate candidates into cell-free experiments, DBTL loops, and construct generation.',
-                      color: PATHD_THEME.mint,
+                      color: THEME.MINT,
                       bgColor: 'rgba(191,220,205,0.22)',
                       borderColor: 'rgba(191,220,205,0.44)',
                       directions: ['Validation & DBTL', 'AI Assistant'] as ToolDirection[],
@@ -369,17 +367,17 @@ export default function ToolsDirectoryPage() {
                         }}
                       >
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                          <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', fontWeight: 700, color: VALUE, opacity: 0.82 }}>
+                          <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', fontWeight: 700, color: VALUE, opacity: 0.82 }}>
                             STAGE {s.stage}
                           </span>
                         </div>
-                        <p style={{ margin: '0 0 4px', fontFamily: T.SANS, fontSize: 'var(--nb-fs-md)', fontWeight: 700, color: s.color }}>
+                        <p style={{ margin: '0 0 4px', fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-md)', fontWeight: 700, color: s.color }}>
                           {s.label}
                         </p>
-                        <p style={{ margin: '0 0 8px', fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>
+                        <p style={{ margin: '0 0 8px', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>
                           {s.tagline}
                         </p>
-                        <p style={{ margin: 0, fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', lineHeight: 1.5, color: LABEL }}>
+                        <p style={{ margin: 0, fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', lineHeight: 1.5, color: LABEL }}>
                           {s.desc}
                         </p>
                       </button>
@@ -405,8 +403,8 @@ export default function ToolsDirectoryPage() {
                     >
                       <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', marginBottom: '8px' }}>
                         <div>
-                          <p style={{ margin: '0 0 4px', fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', fontWeight: 700, color: VALUE }}>{cluster.direction}</p>
-                          <p style={{ margin: 0, fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>
+                          <p style={{ margin: '0 0 4px', fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', fontWeight: 700, color: VALUE }}>{cluster.direction}</p>
+                          <p style={{ margin: 0, fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>
                             {cluster.total} tools · {cluster.strong3d} strong 3D
                           </p>
                         </div>
@@ -424,7 +422,7 @@ export default function ToolsDirectoryPage() {
                           Open
                         </button>
                       </div>
-                      <p style={{ margin: '0 0 10px', fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', lineHeight: 1.6, color: LABEL }}>
+                      <p style={{ margin: '0 0 10px', fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', lineHeight: 1.6, color: LABEL }}>
                         {displayMode === 'demo'
                           ? DIRECTION_CLUSTER_RECIPES[cluster.direction].demoLabel
                           : DIRECTION_CLUSTER_RECIPES[cluster.direction].researchLabel}
@@ -439,12 +437,12 @@ export default function ToolsDirectoryPage() {
                               padding: '0 10px',
                               borderRadius: '999px',
                               border: `1px solid ${BORDER}`,
-                              background: tool.threeDPotential === 'strong' ? `${PATHD_THEME.mint}2f` : SURFACE_TINT,
+                              background: tool.threeDPotential === 'strong' ? `${THEME.MINT}2f` : SURFACE_TINT,
                               color: tool.threeDPotential === 'strong' ? VALUE : LABEL,
                               textDecoration: 'none',
                               display: 'inline-flex',
                               alignItems: 'center',
-                              fontFamily: T.MONO,
+                              fontFamily: THEME.MONO,
                               fontSize: 'var(--nb-fs-xs)',
                             }}
                           >
@@ -478,7 +476,7 @@ export default function ToolsDirectoryPage() {
                       boxShadow: SHADOW,
                     }}
                   >
-                    <p style={{ margin: '0 0 12px', fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', letterSpacing: '0.08em', textTransform: 'uppercase', color: LABEL }}>
+                    <p style={{ margin: '0 0 12px', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', letterSpacing: '0.08em', textTransform: 'uppercase', color: LABEL }}>
                       Find a tool
                     </p>
                     <label style={{ display: 'block', marginBottom: '12px' }}>
@@ -501,7 +499,7 @@ export default function ToolsDirectoryPage() {
                             background: SURFACE_SOFT,
                             color: VALUE,
                             padding: '0 14px 0 40px',
-                            fontFamily: T.SANS,
+                            fontFamily: THEME.SANS,
                             fontSize: 'var(--nb-fs-sm)',
                           }}
                         />
@@ -510,7 +508,7 @@ export default function ToolsDirectoryPage() {
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                       <div>
-                        <p style={{ margin: '0 0 8px', fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase' }}>
+                        <p style={{ margin: '0 0 8px', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase' }}>
                           Direction
                         </p>
                         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
@@ -530,7 +528,7 @@ export default function ToolsDirectoryPage() {
                                   background: active ? `${getDirectionAccent(item)}2a` : SURFACE_TINT,
                                   color: active ? VALUE : LABEL,
                                   cursor: 'pointer',
-                                  fontFamily: T.SANS,
+                                  fontFamily: THEME.SANS,
                                   fontSize: 'var(--nb-fs-sm)',
                                   textAlign: 'left',
                                 }}
@@ -543,7 +541,7 @@ export default function ToolsDirectoryPage() {
                       </div>
 
                       <div>
-                        <p style={{ margin: '0 0 8px', fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase' }}>
+                        <p style={{ margin: '0 0 8px', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase' }}>
                           Shell type
                         </p>
                         <div style={{ display: 'grid', gap: '8px', gridTemplateColumns: '1fr 1fr 1fr' }}>
@@ -559,10 +557,10 @@ export default function ToolsDirectoryPage() {
                                   minHeight: '36px',
                                   borderRadius: 'var(--nb-radius-md)',
                                   border: `1px solid ${active ? BORDER_STRONG : BORDER}`,
-                                  background: active ? `${PATHD_THEME.sky}24` : SURFACE_TINT,
+                                  background: active ? `${THEME.SKY}24` : SURFACE_TINT,
                                   color: active ? VALUE : LABEL,
                                   cursor: 'pointer',
-                                  fontFamily: T.MONO,
+                                  fontFamily: THEME.MONO,
                                   fontSize: 'var(--nb-fs-sm)',
                                   textTransform: 'uppercase',
                                   letterSpacing: '0.06em',
@@ -576,7 +574,7 @@ export default function ToolsDirectoryPage() {
                       </div>
 
                       <label>
-                        <p style={{ margin: '0 0 8px', fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase' }}>
+                        <p style={{ margin: '0 0 8px', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase' }}>
                           Sort
                         </p>
                         <div style={{ position: 'relative' }}>
@@ -593,7 +591,7 @@ export default function ToolsDirectoryPage() {
                               background: SURFACE_SOFT,
                               color: VALUE,
                               padding: '0 14px 0 38px',
-                              fontFamily: T.SANS,
+                              fontFamily: THEME.SANS,
                               fontSize: 'var(--nb-fs-sm)',
                             }}
                           >
@@ -615,25 +613,25 @@ export default function ToolsDirectoryPage() {
                       boxShadow: SHADOW,
                     }}
                   >
-                    <p style={{ margin: '0 0 12px', fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', letterSpacing: '0.08em', textTransform: 'uppercase', color: LABEL }}>
+                    <p style={{ margin: '0 0 12px', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', letterSpacing: '0.08em', textTransform: 'uppercase', color: LABEL }}>
                       Active state
                     </p>
                     <div style={{ display: 'grid', gap: '10px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
-                        <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: LABEL }}>Display mode</span>
-                        <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-sm)', color: VALUE }}>{displayMode}</span>
+                        <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: LABEL }}>Display mode</span>
+                        <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-sm)', color: VALUE }}>{displayMode}</span>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
-                        <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: LABEL }}>Favorites</span>
-                        <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-sm)', color: VALUE }}>{favoriteIds.length}</span>
+                        <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: LABEL }}>Favorites</span>
+                        <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-sm)', color: VALUE }}>{favoriteIds.length}</span>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
-                        <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: LABEL }}>Compare tray</span>
-                        <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-sm)', color: VALUE }}>{compareIds.length}/2</span>
+                        <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: LABEL }}>Compare tray</span>
+                        <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-sm)', color: VALUE }}>{compareIds.length}/2</span>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
-                        <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: LABEL }}>Current page</span>
-                        <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-sm)', color: VALUE }}>{safePage}/{totalPages}</span>
+                        <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: LABEL }}>Current page</span>
+                        <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-sm)', color: VALUE }}>{safePage}/{totalPages}</span>
                       </div>
                     </div>
                   </section>
@@ -647,7 +645,7 @@ export default function ToolsDirectoryPage() {
                       boxShadow: SHADOW,
                     }}
                   >
-                    <p style={{ margin: '0 0 10px', fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', letterSpacing: '0.08em', textTransform: 'uppercase', color: LABEL }}>
+                    <p style={{ margin: '0 0 10px', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', letterSpacing: '0.08em', textTransform: 'uppercase', color: LABEL }}>
                       Research directions
                     </p>
                     <div style={{ display: 'grid', gap: '8px' }}>
@@ -668,8 +666,8 @@ export default function ToolsDirectoryPage() {
                               cursor: 'pointer',
                             }}
                           >
-                            <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', fontWeight: 700, marginBottom: '4px' }}>{item}</div>
-                            <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', lineHeight: 1.5, color: LABEL }}>
+                            <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', fontWeight: 700, marginBottom: '4px' }}>{item}</div>
+                            <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', lineHeight: 1.5, color: LABEL }}>
                               {DIRECTION_NOTES[item]}
                             </div>
                           </button>
@@ -699,10 +697,10 @@ export default function ToolsDirectoryPage() {
                     >
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
                         <div>
-                          <p style={{ margin: '0 0 4px', fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', color: LABEL }}>
+                          <p style={{ margin: '0 0 4px', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', color: LABEL }}>
                             Compare tray
                           </p>
-                          <p style={{ margin: 0, fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: LABEL }}>
+                          <p style={{ margin: 0, fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: LABEL }}>
                             Pin up to two tools to compare category, outputs, and shell model side by side.
                           </p>
                         </div>
@@ -717,7 +715,7 @@ export default function ToolsDirectoryPage() {
                             background: SURFACE_TINT,
                             color: BTN_TEXT,
                             cursor: 'pointer',
-                            fontFamily: T.SANS,
+                            fontFamily: THEME.SANS,
                             fontSize: 'var(--nb-fs-sm)',
                           }}
                         >
@@ -736,7 +734,7 @@ export default function ToolsDirectoryPage() {
                             }}
                           >
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', marginBottom: '10px' }}>
-                              <p style={{ margin: 0, fontFamily: T.SANS, fontSize: 'var(--nb-fs-md)', fontWeight: 600 }}>{tool.name}</p>
+                              <p style={{ margin: 0, fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-md)', fontWeight: 600 }}>{tool.name}</p>
                               <button
                                 type="button"
                                 onClick={() => toggleCompare(tool.id)}
@@ -764,10 +762,10 @@ export default function ToolsDirectoryPage() {
                                 ['Best for', tool.focus],
                               ].map(([label, value]) => (
                                 <div key={label}>
-                                  <dt style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase', marginBottom: '4px' }}>
+                                  <dt style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase', marginBottom: '4px' }}>
                                     {label}
                                   </dt>
-                                  <dd style={{ margin: 0, fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: VALUE, lineHeight: 1.55 }}>
+                                  <dd style={{ margin: 0, fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: VALUE, lineHeight: 1.55 }}>
                                     {value}
                                   </dd>
                                 </div>
@@ -800,10 +798,10 @@ export default function ToolsDirectoryPage() {
                       }}
                     >
                       <div>
-                        <p style={{ margin: '0 0 4px', fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', color: LABEL }}>
+                        <p style={{ margin: '0 0 4px', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', color: LABEL }}>
                           Matching tools
                         </p>
-                        <p style={{ margin: 0, fontFamily: T.SANS, fontSize: 'var(--nb-fs-md)', color: LABEL }}>
+                        <p style={{ margin: 0, fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-md)', color: LABEL }}>
                           {filteredTools.length} tool{filteredTools.length === 1 ? '' : 's'} match the current query and filter state.
                         </p>
                       </div>
@@ -824,7 +822,7 @@ export default function ToolsDirectoryPage() {
                             background: SURFACE_TINT,
                             color: BTN_TEXT,
                             cursor: 'pointer',
-                            fontFamily: T.SANS,
+                            fontFamily: THEME.SANS,
                             fontSize: 'var(--nb-fs-sm)',
                           }}
                         >
@@ -880,13 +878,13 @@ export default function ToolsDirectoryPage() {
                                     <Icon size={18} style={{ color: isSelected ? VALUE : LABEL }} />
                                   </div>
                                   <div style={{ minWidth: 0 }}>
-                                    <p style={{ margin: '0 0 4px', fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', color: LABEL }}>
+                                    <p style={{ margin: '0 0 4px', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', color: LABEL }}>
                                       {tool.shortLabel} · {tool.direction}
                                     </p>
-                                    <h2 style={{ margin: '0 0 6px', fontFamily: T.SANS, fontSize: 'var(--nb-fs-md)', lineHeight: 1.25, letterSpacing: '-0.02em', color: VALUE }}>
+                                    <h2 style={{ margin: '0 0 6px', fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-md)', lineHeight: 1.25, letterSpacing: '-0.02em', color: VALUE }}>
                                       {tool.name}
                                     </h2>
-                                    <p style={{ margin: 0, fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', lineHeight: 1.65, color: LABEL }}>
+                                    <p style={{ margin: 0, fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', lineHeight: 1.65, color: LABEL }}>
                                       {tool.summary}
                                     </p>
                                   </div>
@@ -903,7 +901,7 @@ export default function ToolsDirectoryPage() {
                                       height: '34px',
                                       borderRadius: '999px',
                                       border: `1px solid ${BORDER}`,
-                                      background: isFavorite ? `${PATHD_THEME.coral}24` : SURFACE_TINT,
+                                      background: isFavorite ? `${THEME.CORAL}24` : SURFACE_TINT,
                                       color: VALUE,
                                       cursor: 'pointer',
                                       display: 'grid',
@@ -922,7 +920,7 @@ export default function ToolsDirectoryPage() {
                                       height: '34px',
                                       borderRadius: '999px',
                                       border: `1px solid ${BORDER}`,
-                                      background: isCompared ? `${PATHD_THEME.mint}26` : SURFACE_TINT,
+                                      background: isCompared ? `${THEME.MINT}26` : SURFACE_TINT,
                                       color: VALUE,
                                       cursor: 'pointer',
                                       display: 'grid',
@@ -945,7 +943,7 @@ export default function ToolsDirectoryPage() {
                                       border: `1px solid ${BORDER}`,
                                       background: SURFACE_TINT,
                                       color: LABEL,
-                                      fontFamily: T.MONO,
+                                      fontFamily: THEME.MONO,
                                       fontSize: 'var(--nb-fs-xs)',
                                       display: 'inline-flex',
                                       alignItems: 'center',
@@ -960,9 +958,9 @@ export default function ToolsDirectoryPage() {
                                     padding: '0 10px',
                                     borderRadius: '999px',
                                     border: `1px solid ${BORDER}`,
-                                    background: tool.threeDPotential === 'strong' ? `${PATHD_THEME.mint}28` : tool.threeDPotential === 'supporting' ? `${PATHD_THEME.lilac}28` : SURFACE_TINT,
+                                    background: tool.threeDPotential === 'strong' ? `${THEME.MINT}28` : tool.threeDPotential === 'supporting' ? `${THEME.LILAC}28` : SURFACE_TINT,
                                     color: VALUE,
-                                    fontFamily: T.MONO,
+                                    fontFamily: THEME.MONO,
                                     fontSize: 'var(--nb-fs-xs)',
                                     display: 'inline-flex',
                                     alignItems: 'center',
@@ -985,7 +983,7 @@ export default function ToolsDirectoryPage() {
                                     background: isSelected ? `${getDirectionAccent(tool.direction)}28` : SURFACE_TINT,
                                     color: VALUE,
                                     cursor: 'pointer',
-                                    fontFamily: T.SANS,
+                                    fontFamily: THEME.SANS,
                                     fontSize: 'var(--nb-fs-sm)',
                                     fontWeight: 600,
                                   }}
@@ -1006,7 +1004,7 @@ export default function ToolsDirectoryPage() {
                                     display: 'inline-flex',
                                     alignItems: 'center',
                                     gap: '8px',
-                                    fontFamily: T.SANS,
+                                    fontFamily: THEME.SANS,
                                     fontSize: 'var(--nb-fs-sm)',
                                     fontWeight: 700,
                                   }}
@@ -1052,27 +1050,27 @@ export default function ToolsDirectoryPage() {
                       boxShadow: SHADOW,
                     }}
                   >
-                    <p style={{ margin: '0 0 12px', fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', color: LABEL }}>
+                    <p style={{ margin: '0 0 12px', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', color: LABEL }}>
                       Selected tool
                     </p>
                     {selectedTool ? (
                       <>
-                          <p style={{ margin: '0 0 6px', fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>
+                          <p style={{ margin: '0 0 6px', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>
                           {selectedTool.shortLabel} · {selectedTool.direction}
                           </p>
-                        <h2 style={{ margin: '0 0 10px', fontFamily: T.SANS, fontSize: 'var(--nb-fs-lg)', lineHeight: 1.15, letterSpacing: '-0.03em', color: VALUE }}>
+                        <h2 style={{ margin: '0 0 10px', fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-lg)', lineHeight: 1.15, letterSpacing: '-0.03em', color: VALUE }}>
                           {selectedTool.name}
                         </h2>
-                        <p style={{ margin: '0 0 16px', fontFamily: T.SANS, fontSize: 'var(--nb-fs-md)', lineHeight: 1.7, color: LABEL }}>
+                        <p style={{ margin: '0 0 16px', fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-md)', lineHeight: 1.7, color: LABEL }}>
                           {selectedTool.summary}
                         </p>
 
                         <div style={{ display: 'grid', gap: '12px' }}>
                           <div style={{ borderRadius: 'var(--nb-radius-lg)', border: `1px solid ${BORDER}`, background: SURFACE_SOFT, padding: '14px' }}>
-                            <p style={{ margin: '0 0 6px', fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase' }}>
+                            <p style={{ margin: '0 0 6px', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase' }}>
                               {displayMode === 'demo' ? 'Story fit' : 'Best for'}
                             </p>
-                            <p style={{ margin: 0, fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', lineHeight: 1.65, color: VALUE }}>
+                            <p style={{ margin: 0, fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', lineHeight: 1.65, color: VALUE }}>
                               {displayMode === 'demo'
                                 ? DIRECTION_CLUSTER_RECIPES[selectedTool.direction].demoLabel
                                 : selectedTool.focus}
@@ -1080,19 +1078,19 @@ export default function ToolsDirectoryPage() {
                           </div>
 
                           <div style={{ borderRadius: 'var(--nb-radius-lg)', border: `1px solid ${BORDER}`, background: SURFACE_SOFT, padding: '14px' }}>
-                            <p style={{ margin: '0 0 6px', fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase' }}>
+                            <p style={{ margin: '0 0 6px', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase' }}>
                               {displayMode === 'demo' ? 'Direction cluster' : 'Direction fit'}
                             </p>
-                            <p style={{ margin: '0 0 8px', fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', lineHeight: 1.65, color: VALUE }}>
+                            <p style={{ margin: '0 0 8px', fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', lineHeight: 1.65, color: VALUE }}>
                               {selectedTool.direction} · {selectedTool.mode} mode · {selectedTool.shell.toUpperCase()} shell
                             </p>
-                            <p style={{ margin: 0, fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: selectedTool.threeDPotential === 'strong' ? VALUE : LABEL }}>
+                            <p style={{ margin: 0, fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: selectedTool.threeDPotential === 'strong' ? VALUE : LABEL }}>
                               3D potential: {selectedTool.threeDPotential}
                             </p>
                           </div>
 
                           <div style={{ borderRadius: 'var(--nb-radius-lg)', border: `1px solid ${BORDER}`, background: SURFACE_SOFT, padding: '14px' }}>
-                            <p style={{ margin: '0 0 6px', fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase' }}>
+                            <p style={{ margin: '0 0 6px', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase' }}>
                               {displayMode === 'demo' ? 'Guided route' : 'Workflow map'}
                             </p>
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
@@ -1112,7 +1110,7 @@ export default function ToolsDirectoryPage() {
                                     color: step.active ? VALUE : LABEL,
                                     display: 'inline-flex',
                                     alignItems: 'center',
-                                    fontFamily: T.MONO,
+                                    fontFamily: THEME.MONO,
                                     fontSize: 'var(--nb-fs-xs)',
                                   }}>
                                     {step.label}
@@ -1124,12 +1122,12 @@ export default function ToolsDirectoryPage() {
                           </div>
 
                           <div style={{ borderRadius: 'var(--nb-radius-lg)', border: `1px solid ${BORDER}`, background: SURFACE_SOFT, padding: '14px' }}>
-                            <p style={{ margin: '0 0 8px', fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase' }}>
+                            <p style={{ margin: '0 0 8px', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase' }}>
                               {displayMode === 'demo' ? 'What this shows best' : 'Outputs you can expect'}
                             </p>
                             <ul style={{ margin: 0, paddingLeft: '18px', display: 'grid', gap: '8px' }}>
                               {(displayMode === 'demo' ? selectedTool.outputs.slice(0, 2) : selectedTool.outputs).map((output) => (
-                                <li key={output} style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', lineHeight: 1.55, color: VALUE }}>
+                                <li key={output} style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', lineHeight: 1.55, color: VALUE }}>
                                   {output}
                                 </li>
                               ))}
@@ -1138,7 +1136,7 @@ export default function ToolsDirectoryPage() {
 
                           {displayMode === 'research' && selectedTool.relatedRoutes && selectedTool.relatedRoutes.length > 0 && (
                             <div style={{ borderRadius: 'var(--nb-radius-lg)', border: `1px solid ${BORDER}`, background: SURFACE_SOFT, padding: '14px' }}>
-                              <p style={{ margin: '0 0 8px', fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase' }}>
+                              <p style={{ margin: '0 0 8px', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase' }}>
                                 Related routes
                               </p>
                               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
@@ -1156,7 +1154,7 @@ export default function ToolsDirectoryPage() {
                                       textDecoration: 'none',
                                       display: 'inline-flex',
                                       alignItems: 'center',
-                                      fontFamily: T.MONO,
+                                      fontFamily: THEME.MONO,
                                       fontSize: 'var(--nb-fs-xs)',
                                     }}
                                   >
@@ -1169,7 +1167,7 @@ export default function ToolsDirectoryPage() {
 
                           {relatedTools.length > 0 && (
                             <div style={{ borderRadius: 'var(--nb-radius-lg)', border: `1px solid ${BORDER}`, background: SURFACE_SOFT, padding: '14px' }}>
-                              <p style={{ margin: '0 0 8px', fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase' }}>
+                              <p style={{ margin: '0 0 8px', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase' }}>
                                 {displayMode === 'demo' ? 'Continue with' : 'Adjacent tools'}
                               </p>
                               <div style={{ display: 'grid', gap: '8px' }}>
@@ -1186,10 +1184,10 @@ export default function ToolsDirectoryPage() {
                                       color: VALUE,
                                     }}
                                   >
-                                    <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', fontWeight: 700, marginBottom: '3px' }}>
+                                    <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', fontWeight: 700, marginBottom: '3px' }}>
                                       {tool.shortLabel} · {tool.name}
                                     </div>
-                                    <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', lineHeight: 1.5, color: LABEL }}>
+                                    <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', lineHeight: 1.5, color: LABEL }}>
                                       {tool.focus}
                                     </div>
                                   </Link>
@@ -1222,7 +1220,7 @@ export default function ToolsDirectoryPage() {
                               alignItems: 'center',
                               justifyContent: 'center',
                               gap: '8px',
-                              fontFamily: T.SANS,
+                              fontFamily: THEME.SANS,
                               fontSize: 'var(--nb-fs-sm)',
                               fontWeight: 700,
                             }}
@@ -1245,7 +1243,7 @@ export default function ToolsDirectoryPage() {
                       boxShadow: SHADOW,
                     }}
                   >
-                    <p style={{ margin: '0 0 10px', fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', color: LABEL }}>
+                    <p style={{ margin: '0 0 10px', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', color: LABEL }}>
                       Why this structure
                     </p>
                     <div style={{ display: 'grid', gap: '10px' }}>
@@ -1256,7 +1254,7 @@ export default function ToolsDirectoryPage() {
                       ].map((line) => (
                         <div key={line} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
                           <CheckCircle2 size={15} style={{ color: VALUE, marginTop: '2px', flexShrink: 0 }} />
-                          <p style={{ margin: 0, fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', lineHeight: 1.6, color: LABEL }}>
+                          <p style={{ margin: 0, fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', lineHeight: 1.6, color: LABEL }}>
                             {line}
                           </p>
                         </div>

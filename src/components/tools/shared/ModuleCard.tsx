@@ -8,9 +8,7 @@
 'use client';
 import { motion } from 'framer-motion';
 import type { CSSProperties, ReactNode } from 'react';
-import { PATHD_THEME } from '../../workbench/workbenchTheme';
-import { T } from '../../ide/tokens';
-
+import { THEME } from '../../../theme';
 interface ModuleCardProps {
   children: ReactNode;
   /** Grid area name (maps to ToolShell gridTemplateAreas) */
@@ -47,10 +45,10 @@ export default function ModuleCard({
         gridColumn: colSpan ? `span ${colSpan}` : undefined,
         gridRow: rowSpan ? `span ${rowSpan}` : undefined,
         borderRadius: 'var(--nb-radius-xl)',
-        background: PATHD_THEME.panelSurface,
+        background: THEME.PANEL_SURFACE,
         border: active
-          ? `1px solid ${PATHD_THEME.panelBorderStrong}`
-          : `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
+          ? `1px solid ${THEME.BORDER_STRONG}`
+          : `1px solid ${THEME.BORDER}`,
         boxShadow: active
           ? '0 2px 24px rgba(0,0,0,0.38), inset 0 1px 0 rgba(255,255,255,0.08)'
           : '0 2px 16px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.06)',
@@ -99,7 +97,7 @@ export default function ModuleCard({
               inset: 0,
               borderRadius: '50%',
               border: '1px solid',
-              borderColor: PATHD_THEME.liveRed,
+              borderColor: THEME.CORAL,
               animation: 'signal-ripple 2s ease-out infinite',
             }} />
             {/* Second ripple ring (delayed) */}
@@ -108,7 +106,7 @@ export default function ModuleCard({
               inset: 0,
               borderRadius: '50%',
               border: '1px solid',
-              borderColor: PATHD_THEME.liveRed,
+              borderColor: THEME.CORAL,
               animation: 'signal-ripple 2s ease-out infinite 1s',
             }} />
             {/* Core dot */}
@@ -116,17 +114,17 @@ export default function ModuleCard({
               position: 'absolute',
               inset: 0,
               borderRadius: '50%',
-              background: PATHD_THEME.liveRed,
+              background: THEME.CORAL,
               animation: 'signal-breathe 2.5s ease-in-out infinite',
             }} />
           </span>
           <span style={{
-            fontFamily: T.MONO,
+            fontFamily: THEME.MONO,
             fontSize: 'var(--nb-fs-xs)',
             fontWeight: 600,
             letterSpacing: '0.1em',
             textTransform: 'uppercase',
-            color: PATHD_THEME.label,
+            color: THEME.LABEL,
           }}>
             LIVE
           </span>
@@ -135,9 +133,9 @@ export default function ModuleCard({
 
       {title && (
         <div style={{
-          fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', fontWeight: 500,
+          fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', fontWeight: 500,
           textTransform: 'uppercase', letterSpacing: '0.12em',
-          color: active ? PATHD_THEME.value : PATHD_THEME.label,
+          color: active ? THEME.VALUE : THEME.LABEL,
           marginBottom: flush ? 0 : '10px',
           padding: flush ? '12px 14px 0' : 0,
           flexShrink: 0,

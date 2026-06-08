@@ -1,10 +1,8 @@
 'use client';
 
 import type { CSSProperties } from 'react';
-import { T } from '../tokens';
 import { usePersistedState } from './usePersistedState';
-import { PATHD_THEME } from '../../workbench/workbenchTheme';
-
+import { THEME } from '../../../theme';
 export type DisplayMode = 'demo' | 'research';
 
 export function useDisplayMode() {
@@ -24,8 +22,8 @@ export default function DisplayModeToggle() {
         gap: '4px',
         padding: '2px',
         borderRadius: '999px',
-        border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
-        background: PATHD_THEME.panelGlassStrong,
+        border: `1px solid ${THEME.BORDER}`,
+        background: THEME.PANEL_GLASS_STRONG,
       }}
     >
       {([
@@ -45,18 +43,18 @@ export default function DisplayModeToggle() {
             background: 'var(--nb-control-bg)',
             color: 'var(--nb-control-color)',
             cursor: 'pointer',
-            fontFamily: T.SANS,
+            fontFamily: THEME.SANS,
             fontSize: '11px',
             fontWeight: 700,
-            ['--nb-control-bg' as const]: displayMode === mode.key ? PATHD_THEME.sky : 'transparent',
-            ['--nb-control-border' as const]: displayMode === mode.key ? PATHD_THEME.sky : 'transparent',
-            ['--nb-control-color' as const]: displayMode === mode.key ? PATHD_THEME.ink : PATHD_THEME.label,
+            ['--nb-control-bg' as const]: displayMode === mode.key ? THEME.SKY : 'transparent',
+            ['--nb-control-border' as const]: displayMode === mode.key ? THEME.SKY : 'transparent',
+            ['--nb-control-color' as const]: displayMode === mode.key ? THEME.INK : THEME.LABEL,
             ['--nb-control-hover-bg' as const]: 'rgba(255,255,255,0.96)',
             ['--nb-control-hover-border' as const]: 'rgba(255,255,255,0.96)',
-            ['--nb-control-hover-color' as const]: PATHD_THEME.ink,
+            ['--nb-control-hover-color' as const]: THEME.INK,
             ['--nb-control-active-bg' as const]: '#ffffff',
             ['--nb-control-active-border' as const]: '#ffffff',
-            ['--nb-control-active-color' as const]: PATHD_THEME.ink,
+            ['--nb-control-active-color' as const]: THEME.INK,
           } as ControlVarsStyle}
         >
           {mode.label}

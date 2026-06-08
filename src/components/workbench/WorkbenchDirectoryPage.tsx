@@ -3,18 +3,16 @@
 import type { CSSProperties } from 'react';
 import Link from 'next/link';
 import { Beaker, Layers3, Microscope } from 'lucide-react';
-import { T } from '../ide/tokens';
 import { TOOL_BY_ID } from '../tools/shared/toolRegistry';
 import { CROSS_STAGE_TOOL_IDS, WORKBENCH_STAGES } from '../tools/shared/workbenchConfig';
 import { useWorkbenchStore } from '../../store/workbenchStore';
 import { getFreshnessMap } from './workbenchTrust';
-import { PATHD_THEME } from './workbenchTheme';
-
-const BORDER = PATHD_THEME.sepiaPanelBorder;
-const LABEL = PATHD_THEME.label;
-const VALUE = PATHD_THEME.value;
-const SURFACE = PATHD_THEME.panelGlassStrong;
-const SURFACE_SOFT = PATHD_THEME.panelSurface;
+import { THEME } from '../../theme';
+const BORDER = THEME.BORDER;
+const LABEL = THEME.LABEL;
+const VALUE = THEME.VALUE;
+const SURFACE = THEME.PANEL_GLASS_STRONG;
+const SURFACE_SOFT = THEME.PANEL_SURFACE;
 
 type ControlVarsStyle = CSSProperties & Record<`--${string}`, string>;
 type LauncherSignal = 'dormant' | 'live' | 'revisit';
@@ -82,7 +80,7 @@ function LauncherToolCard({
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
-        <span style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+        <span style={{ fontFamily: THEME.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
           {tool.shortLabel}
         </span>
         <span
@@ -104,19 +102,19 @@ function LauncherToolCard({
         </span>
       </div>
 
-      <div style={{ fontFamily: T.SANS, fontSize: compact ? '14px' : '15px', fontWeight: 700, color: VALUE, letterSpacing: '-0.01em' }}>
+      <div style={{ fontFamily: THEME.SANS, fontSize: compact ? '14px' : '15px', fontWeight: 700, color: VALUE, letterSpacing: '-0.01em' }}>
         {tool.name}
       </div>
 
-      <div style={{ fontFamily: T.SANS, fontSize: compact ? '11px' : '12px', color: VALUE, lineHeight: 1.55 }}>
+      <div style={{ fontFamily: THEME.SANS, fontSize: compact ? '11px' : '12px', color: VALUE, lineHeight: 1.55 }}>
         {tool.focus}
       </div>
 
-      <div style={{ fontFamily: T.SANS, fontSize: '11px', color: LABEL, lineHeight: 1.6 }}>
+      <div style={{ fontFamily: THEME.SANS, fontSize: '11px', color: LABEL, lineHeight: 1.6 }}>
         {tool.summary}
       </div>
 
-      <div style={{ marginTop: 'auto', fontFamily: T.MONO, fontSize: '10px', color: LABEL, minWidth: 0, lineHeight: 1.5 }}>
+      <div style={{ marginTop: 'auto', fontFamily: THEME.MONO, fontSize: '10px', color: LABEL, minWidth: 0, lineHeight: 1.5 }}>
         {cardOutputs.join(' · ')}
       </div>
     </Link>
@@ -220,7 +218,7 @@ export default function WorkbenchDirectoryPage() {
       style={{
         position: 'relative',
         minHeight: '100%',
-        background: `linear-gradient(180deg, ${PATHD_THEME.sepiaPanelMuted} 0%, ${PATHD_THEME.sepiaPanel} 100%)`,
+        background: `linear-gradient(180deg, ${THEME.PANEL_MUTED} 0%, ${THEME.PANEL_BG} 100%)`,
         color: VALUE,
         flex: 1,
       }}
@@ -231,7 +229,7 @@ export default function WorkbenchDirectoryPage() {
             style={{
               borderRadius: '26px',
               border: `1px solid ${BORDER}`,
-              background: `linear-gradient(180deg, ${PATHD_THEME.sepiaPanelMuted} 0%, ${PATHD_THEME.sepiaPanel} 100%)`,
+              background: `linear-gradient(180deg, ${THEME.PANEL_MUTED} 0%, ${THEME.PANEL_BG} 100%)`,
               padding: '22px',
               display: 'grid',
               gap: '14px',
@@ -240,13 +238,13 @@ export default function WorkbenchDirectoryPage() {
           >
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
               <div style={{ display: 'grid', gap: '6px' }}>
-                <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.12em' }}>
+                <div style={{ fontFamily: THEME.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.12em' }}>
                   Workbench Launcher
                 </div>
-                <div style={{ fontFamily: T.SANS, fontSize: '32px', fontWeight: 700, letterSpacing: '-0.04em', color: VALUE, lineHeight: 1.02 }}>
+                <div style={{ fontFamily: THEME.SANS, fontSize: '32px', fontWeight: 700, letterSpacing: '-0.04em', color: VALUE, lineHeight: 1.02 }}>
                   Move through the 4-stage workbench without losing project context
                 </div>
-                <div style={{ fontFamily: T.SANS, fontSize: '14px', color: LABEL, maxWidth: '66ch', lineHeight: 1.65 }}>
+                <div style={{ fontFamily: THEME.SANS, fontSize: '14px', color: LABEL, maxWidth: '66ch', lineHeight: 1.65 }}>
                   This launcher mirrors the Nexus-Bio architecture: start from research and analysis,
                   continue into simulation and optimization, translate findings into chassis or control
                   interventions, then close the loop with validation, DBTL, omics, and spatial readouts.
@@ -268,7 +266,7 @@ export default function WorkbenchDirectoryPage() {
                     border: '1px solid var(--nb-control-border)',
                     background: 'var(--nb-control-bg)',
                     color: 'var(--nb-control-color)',
-                    fontFamily: T.SANS,
+                    fontFamily: THEME.SANS,
                     fontSize: '13px',
                     fontWeight: 600,
                     ['--nb-control-bg' as const]: SURFACE_SOFT,
@@ -276,10 +274,10 @@ export default function WorkbenchDirectoryPage() {
                     ['--nb-control-color' as const]: VALUE,
                     ['--nb-control-hover-bg' as const]: '#ffffff',
                     ['--nb-control-hover-border' as const]: '#ffffff',
-                    ['--nb-control-hover-color' as const]: PATHD_THEME.ink,
+                    ['--nb-control-hover-color' as const]: THEME.INK,
                     ['--nb-control-active-bg' as const]: '#ffffff',
                     ['--nb-control-active-border' as const]: '#ffffff',
-                    ['--nb-control-active-color' as const]: PATHD_THEME.ink,
+                    ['--nb-control-active-color' as const]: THEME.INK,
                   } as ControlVarsStyle}
                 >
                   <Microscope size={14} />
@@ -299,7 +297,7 @@ export default function WorkbenchDirectoryPage() {
                     border: '1px solid var(--nb-control-border)',
                     background: 'var(--nb-control-bg)',
                     color: 'var(--nb-control-color)',
-                    fontFamily: T.SANS,
+                    fontFamily: THEME.SANS,
                     fontSize: '13px',
                     fontWeight: 600,
                     ['--nb-control-bg' as const]: SURFACE_SOFT,
@@ -307,10 +305,10 @@ export default function WorkbenchDirectoryPage() {
                     ['--nb-control-color' as const]: VALUE,
                     ['--nb-control-hover-bg' as const]: '#ffffff',
                     ['--nb-control-hover-border' as const]: '#ffffff',
-                    ['--nb-control-hover-color' as const]: PATHD_THEME.ink,
+                    ['--nb-control-hover-color' as const]: THEME.INK,
                     ['--nb-control-active-bg' as const]: '#ffffff',
                     ['--nb-control-active-border' as const]: '#ffffff',
-                    ['--nb-control-active-color' as const]: PATHD_THEME.ink,
+                    ['--nb-control-active-color' as const]: THEME.INK,
                   } as ControlVarsStyle}
                 >
                   <Beaker size={14} />
@@ -338,13 +336,13 @@ export default function WorkbenchDirectoryPage() {
                     gap: '4px',
                   }}
                 >
-                  <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                  <div style={{ fontFamily: THEME.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                     {item.label}
                   </div>
-                  <div style={{ fontFamily: T.SANS, fontSize: '15px', fontWeight: 700, color: VALUE }}>
+                  <div style={{ fontFamily: THEME.SANS, fontSize: '15px', fontWeight: 700, color: VALUE }}>
                     {item.value}
                   </div>
-                  <div style={{ fontFamily: T.SANS, fontSize: '12px', color: LABEL, lineHeight: 1.55 }}>
+                  <div style={{ fontFamily: THEME.SANS, fontSize: '12px', color: LABEL, lineHeight: 1.55 }}>
                     {item.detail}
                   </div>
                 </div>
@@ -370,13 +368,13 @@ export default function WorkbenchDirectoryPage() {
                     gap: '4px',
                   }}
                 >
-                  <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                  <div style={{ fontFamily: THEME.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                     {item.label}
                   </div>
-                  <div style={{ fontFamily: T.SANS, fontSize: '15px', fontWeight: 700, color: VALUE }}>
+                  <div style={{ fontFamily: THEME.SANS, fontSize: '15px', fontWeight: 700, color: VALUE }}>
                     {item.value}
                   </div>
-                  <div style={{ fontFamily: T.SANS, fontSize: '12px', color: LABEL, lineHeight: 1.55 }}>
+                  <div style={{ fontFamily: THEME.SANS, fontSize: '12px', color: LABEL, lineHeight: 1.55 }}>
                     {item.detail}
                   </div>
                 </div>
@@ -386,7 +384,7 @@ export default function WorkbenchDirectoryPage() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
               <span
                 style={{
-                  fontFamily: T.MONO,
+                  fontFamily: THEME.MONO,
                   fontSize: '10px',
                   color: LABEL,
                   textTransform: 'uppercase',
@@ -412,7 +410,7 @@ export default function WorkbenchDirectoryPage() {
                     alignItems: 'center',
                     gap: '8px',
                     color: LABEL,
-                    fontFamily: T.SANS,
+                    fontFamily: THEME.SANS,
                     fontSize: '12px',
                   }}
                 >
@@ -436,13 +434,13 @@ export default function WorkbenchDirectoryPage() {
               }}
             >
               <div style={{ display: 'grid', gap: '4px' }}>
-                <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                <div style={{ fontFamily: THEME.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                   Quick Entry
                 </div>
-                <div style={{ fontFamily: T.SANS, fontSize: '18px', fontWeight: 700, color: VALUE, letterSpacing: '-0.02em' }}>
+                <div style={{ fontFamily: THEME.SANS, fontSize: '18px', fontWeight: 700, color: VALUE, letterSpacing: '-0.02em' }}>
                   Recommended and recent tools
                 </div>
-                <div style={{ fontFamily: T.SANS, fontSize: '13px', color: LABEL, lineHeight: 1.6 }}>
+                <div style={{ fontFamily: THEME.SANS, fontSize: '13px', color: LABEL, lineHeight: 1.6 }}>
                   Start from the most relevant next step, or jump straight back into the workbench you just used.
                 </div>
               </div>
@@ -467,10 +465,10 @@ export default function WorkbenchDirectoryPage() {
                     }}
                   >
                     <div style={{ display: 'grid', gap: '4px' }}>
-                      <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                      <div style={{ fontFamily: THEME.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                         {group.title}
                       </div>
-                      <div style={{ fontFamily: T.SANS, fontSize: '13px', color: LABEL, lineHeight: 1.55 }}>
+                      <div style={{ fontFamily: THEME.SANS, fontSize: '13px', color: LABEL, lineHeight: 1.55 }}>
                         {group.detail}
                       </div>
                     </div>
@@ -505,7 +503,7 @@ export default function WorkbenchDirectoryPage() {
                 style={{
                   borderRadius: '22px',
                   border: `1px solid ${BORDER}`,
-                  background: `linear-gradient(135deg, ${PATHD_THEME.sepiaPanelMuted} 0%, ${stage.accent}18 48%, ${PATHD_THEME.sepiaPanel} 100%)`,
+                  background: `linear-gradient(135deg, ${THEME.PANEL_MUTED} 0%, ${stage.accent}18 48%, ${THEME.PANEL_BG} 100%)`,
                   padding: '16px',
                   display: 'grid',
                   gap: '14px',
@@ -521,7 +519,7 @@ export default function WorkbenchDirectoryPage() {
                         border: `1px solid ${stage.accent}66`,
                         background: `${stage.accent}28`,
                         color: VALUE,
-                        fontFamily: T.MONO,
+                        fontFamily: THEME.MONO,
                         fontSize: '10px',
                         textTransform: 'uppercase',
                         letterSpacing: '0.08em',
@@ -529,11 +527,11 @@ export default function WorkbenchDirectoryPage() {
                     >
                       {stage.shortLabel}
                     </span>
-                    <span style={{ fontFamily: T.SANS, fontSize: '18px', fontWeight: 700, color: VALUE, letterSpacing: '-0.02em' }}>
+                    <span style={{ fontFamily: THEME.SANS, fontSize: '18px', fontWeight: 700, color: VALUE, letterSpacing: '-0.02em' }}>
                       {stage.label}
                     </span>
                   </div>
-                  <div style={{ fontFamily: T.SANS, fontSize: '12px', color: LABEL, maxWidth: '72ch', lineHeight: 1.6 }}>
+                  <div style={{ fontFamily: THEME.SANS, fontSize: '12px', color: LABEL, maxWidth: '72ch', lineHeight: 1.6 }}>
                     {stage.description}
                   </div>
                 </div>
@@ -570,11 +568,11 @@ export default function WorkbenchDirectoryPage() {
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Layers3 size={16} color={LABEL} />
-                <div style={{ fontFamily: T.SANS, fontSize: '17px', fontWeight: 700, color: VALUE }}>
+                <div style={{ fontFamily: THEME.SANS, fontSize: '17px', fontWeight: 700, color: VALUE }}>
                   Cross-stage intelligence
                 </div>
               </div>
-              <div style={{ fontFamily: T.SANS, fontSize: '12px', color: LABEL, lineHeight: 1.6, maxWidth: '68ch' }}>
+              <div style={{ fontFamily: THEME.SANS, fontSize: '12px', color: LABEL, lineHeight: 1.6, maxWidth: '68ch' }}>
                 Keep Axon close as a supporting synthesis layer, but let the stage tools remain the main path through the launcher.
               </div>
               <div style={{ display: 'grid', gap: '12px', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' }}>

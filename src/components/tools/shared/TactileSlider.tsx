@@ -8,10 +8,8 @@
  */
 'use client';
 import { useRef, useCallback, useState } from 'react';
-import { T } from '../../ide/tokens';
-import { PATHD_THEME } from '../../workbench/workbenchTheme';
-
-const TRACK = PATHD_THEME.progressTrack;
+import { THEME } from '../../../theme';
+const TRACK = THEME.PROGRESS_TRACK;
 
 interface TactileSliderProps {
   label: string;
@@ -68,14 +66,14 @@ export default function TactileSlider({
   return (
     <div style={{ marginBottom: '14px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-        <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.label }}>
+        <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL }}>
           {label}
         </span>
         <span
           style={{
-            fontFamily: T.MONO,
+            fontFamily: THEME.MONO,
             fontSize: 'var(--nb-fs-xs)',
-            color: PATHD_THEME.value,
+            color: THEME.VALUE,
           }}
         >
           {value.toFixed(step < 1 ? 1 : 0)}{unit}
@@ -99,18 +97,18 @@ export default function TactileSlider({
       >
         {/* Background track */}
         <div style={{
-          position: 'absolute', left: 0, right: 0, height: `${PATHD_THEME.progressHeight}px`,
-          borderRadius: `${PATHD_THEME.progressRadius}px`, background: TRACK,
+          position: 'absolute', left: 0, right: 0, height: `${THEME.PROGRESS_HEIGHT}px`,
+          borderRadius: `${THEME.PROGRESS_RADIUS}px`, background: TRACK,
         }} />
 
         {/* Filled track — instant, no transition */}
         <div
           style={{
-            position: 'absolute', left: 0, height: `${PATHD_THEME.progressHeight}px`,
-            borderRadius: `${PATHD_THEME.progressRadius}px`,
-            background: PATHD_THEME.progressGradient,
+            position: 'absolute', left: 0, height: `${THEME.PROGRESS_HEIGHT}px`,
+            borderRadius: `${THEME.PROGRESS_RADIUS}px`,
+            background: THEME.PROGRESS_GRADIENT,
             width: `${pct}%`,
-            boxShadow: dragging || hovering ? PATHD_THEME.progressGlow : 'none',
+            boxShadow: dragging || hovering ? THEME.PROGRESS_GLOW : 'none',
           }}
         />
 
@@ -121,7 +119,7 @@ export default function TactileSlider({
             left: `calc(${pct}% - 7px)`,
             width: '14px', height: '14px', borderRadius: '50%',
             background: '#FFFFFF',
-            border: `2px solid ${PATHD_THEME.sky}`,
+            border: `2px solid ${THEME.SKY}`,
             boxShadow: dragging
               ? `0 2px 8px rgba(32,37,43,0.32), 0 0 0 6px rgba(175,195,214,0.22)`
               : hovering

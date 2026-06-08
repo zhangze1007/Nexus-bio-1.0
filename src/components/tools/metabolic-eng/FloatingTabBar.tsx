@@ -1,9 +1,7 @@
 'use client';
 
 import type { ToolTab } from '../shared/ToolTabBar';
-import { PATHD_THEME } from '../../workbench/workbenchTheme';
-import { T } from '../../ide/tokens';
-
+import { THEME } from '../../../theme';
 export default function FloatingTabBar({
   tabs,
   activeTab,
@@ -37,8 +35,8 @@ export default function FloatingTabBar({
             className={`nb-tool-toggle${isActive ? ' nb-tool-toggle--active' : ''}`}
             style={{
               padding: '6px 14px', borderRadius: 'var(--nb-radius-sm)',
-              fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', fontWeight: isActive ? 600 : 400,
-              color: isActive ? tab.accent : PATHD_THEME.label,
+              fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', fontWeight: isActive ? 600 : 400,
+              color: isActive ? tab.accent : THEME.LABEL,
             }}
           >
             {tab.label}

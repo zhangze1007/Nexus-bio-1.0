@@ -4,8 +4,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, useCallback } from 'react';
 import { User, Save, CheckCircle, AlertCircle, Building2, FlaskConical, Hash, FileText } from 'lucide-react';
-import { T } from '../../src/components/ide/tokens';
-
+import { THEME } from '../../src/theme';
 interface ProfileData {
   name: string;
   email: string;
@@ -109,7 +108,7 @@ export default function ProfilePage() {
     return (
       <div style={{
         minHeight: '100vh',
-        background: T.BG_SHELL,
+        background: THEME.BG_SHELL,
         display: 'grid',
         placeItems: 'center',
       }}>
@@ -117,20 +116,20 @@ export default function ProfilePage() {
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          gap: T.SP_SM,
+          gap: THEME.SP_SM,
         }}>
           <div style={{
             width: '32px',
             height: '32px',
             border: '2px solid rgba(255,255,255,0.1)',
-            borderTopColor: T.MINT,
+            borderTopColor: THEME.MINT,
             borderRadius: '50%',
             animation: 'spin 0.8s linear infinite',
           }} />
           <span style={{
-            fontFamily: T.SANS,
-            fontSize: T.FS_SM,
-            color: T.LABEL,
+            fontFamily: THEME.SANS,
+            fontSize: THEME.FS_SM,
+            color: THEME.LABEL,
           }}>
             Loading profile...
           </span>
@@ -145,12 +144,12 @@ export default function ProfilePage() {
   const fieldStyle: React.CSSProperties = {
     width: '100%',
     padding: '10px 12px',
-    borderRadius: T.R_SM,
-    background: T.PANEL_INSET,
-    border: `1px solid ${T.PANEL_BORDER}`,
-    color: T.VALUE,
-    fontFamily: T.SANS,
-    fontSize: T.FS_MD,
+    borderRadius: THEME.R_SM,
+    background: THEME.PANEL_INSET,
+    border: `1px solid ${THEME.PANEL_BORDER}`,
+    color: THEME.VALUE,
+    fontFamily: THEME.SANS,
+    fontSize: THEME.FS_MD,
     outline: 'none',
     transition: 'border-color 0.15s',
     boxSizing: 'border-box',
@@ -160,10 +159,10 @@ export default function ProfilePage() {
     display: 'flex',
     alignItems: 'center',
     gap: '6px',
-    fontFamily: T.SANS,
-    fontSize: T.FS_SM,
+    fontFamily: THEME.SANS,
+    fontSize: THEME.FS_SM,
     fontWeight: 600,
-    color: T.LABEL,
+    color: THEME.LABEL,
     marginBottom: '6px',
     textTransform: 'uppercase' as const,
     letterSpacing: '0.04em',
@@ -172,26 +171,26 @@ export default function ProfilePage() {
   const fieldGroup: React.CSSProperties = {
     display: 'flex',
     flexDirection: 'column',
-    gap: T.SP_SM,
+    gap: THEME.SP_SM,
   };
 
   return (
     <div style={{
       minHeight: '100vh',
-      background: T.BG_SHELL,
-      color: T.VALUE,
+      background: THEME.BG_SHELL,
+      color: THEME.VALUE,
     }}>
       <div style={{
         maxWidth: '640px',
         margin: '0 auto',
-        padding: `${T.SP_XL}px ${T.SP_MD}px`,
+        padding: `${THEME.SP_XL}px ${THEME.SP_MD}px`,
       }}>
         {/* Header */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
-          gap: T.SP_MD,
-          marginBottom: T.SP_XL,
+          gap: THEME.SP_MD,
+          marginBottom: THEME.SP_XL,
         }}>
           {profile.image ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -201,27 +200,27 @@ export default function ProfilePage() {
               width={64}
               height={64}
               style={{
-                borderRadius: T.R_MD,
-                border: `2px solid ${T.PANEL_BORDER}`,
+                borderRadius: THEME.R_MD,
+                border: `2px solid ${THEME.PANEL_BORDER}`,
               }}
             />
           ) : (
             <div style={{
               width: '64px',
               height: '64px',
-              borderRadius: T.R_MD,
+              borderRadius: THEME.R_MD,
               background: 'rgba(191,220,205,0.12)',
-              border: `2px solid ${T.PANEL_BORDER}`,
+              border: `2px solid ${THEME.PANEL_BORDER}`,
               display: 'grid',
               placeItems: 'center',
             }}>
-              <User size={28} style={{ color: T.MINT }} />
+              <User size={28} style={{ color: THEME.MINT }} />
             </div>
           )}
           <div>
             <h1 style={{
-              fontFamily: T.SANS,
-              fontSize: T.FS_XL,
+              fontFamily: THEME.SANS,
+              fontSize: THEME.FS_XL,
               fontWeight: 700,
               color: 'rgba(255,255,255,0.92)',
               margin: 0,
@@ -229,9 +228,9 @@ export default function ProfilePage() {
               {profile.name || 'User'}
             </h1>
             <p style={{
-              fontFamily: T.MONO,
-              fontSize: T.FS_SM,
-              color: T.LABEL,
+              fontFamily: THEME.MONO,
+              fontSize: THEME.FS_SM,
+              color: THEME.LABEL,
               margin: '4px 0 0',
             }}>
               {profile.email}
@@ -241,22 +240,22 @@ export default function ProfilePage() {
 
         {/* Card */}
         <div style={{
-          background: T.PANEL_SURFACE,
-          border: `1px solid ${T.PANEL_BORDER}`,
-          borderRadius: T.R_LG,
-          padding: T.SP_LG,
+          background: THEME.PANEL_SURFACE,
+          border: `1px solid ${THEME.PANEL_BORDER}`,
+          borderRadius: THEME.R_LG,
+          padding: THEME.SP_LG,
           display: 'flex',
           flexDirection: 'column',
-          gap: T.SP_LG,
+          gap: THEME.SP_LG,
         }}>
           <h2 style={{
-            fontFamily: T.SANS,
-            fontSize: T.FS_LG,
+            fontFamily: THEME.SANS,
+            fontSize: THEME.FS_LG,
             fontWeight: 600,
             color: 'rgba(255,255,255,0.88)',
             margin: 0,
-            paddingBottom: T.SP_SM,
-            borderBottom: `1px solid ${T.PANEL_BORDER}`,
+            paddingBottom: THEME.SP_SM,
+            borderBottom: `1px solid ${THEME.PANEL_BORDER}`,
           }}>
             Research Profile
           </h2>
@@ -264,7 +263,7 @@ export default function ProfilePage() {
           {/* Institution */}
           <div style={fieldGroup}>
             <label style={labelStyle}>
-              <Building2 size={13} style={{ color: T.SKY }} />
+              <Building2 size={13} style={{ color: THEME.SKY }} />
               Institution
             </label>
             <input
@@ -273,15 +272,15 @@ export default function ProfilePage() {
               onChange={e => setProfile(p => ({ ...p, institution: e.target.value }))}
               placeholder="e.g. MIT, Stanford, Max Planck Institute"
               style={fieldStyle}
-              onFocus={e => { (e.target as HTMLInputElement).style.borderColor = T.SKY; }}
-              onBlur={e => { (e.target as HTMLInputElement).style.borderColor = T.PANEL_BORDER; }}
+              onFocus={e => { (e.target as HTMLInputElement).style.borderColor = THEME.SKY; }}
+              onBlur={e => { (e.target as HTMLInputElement).style.borderColor = THEME.PANEL_BORDER; }}
             />
           </div>
 
           {/* Research Area */}
           <div style={fieldGroup}>
             <label style={labelStyle}>
-              <FlaskConical size={13} style={{ color: T.LILAC }} />
+              <FlaskConical size={13} style={{ color: THEME.LILAC }} />
               Research Area
             </label>
             <input
@@ -290,15 +289,15 @@ export default function ProfilePage() {
               onChange={e => setProfile(p => ({ ...p, research_area: e.target.value }))}
               placeholder="e.g. Synthetic biology, Metabolic engineering"
               style={fieldStyle}
-              onFocus={e => { (e.target as HTMLInputElement).style.borderColor = T.LILAC; }}
-              onBlur={e => { (e.target as HTMLInputElement).style.borderColor = T.PANEL_BORDER; }}
+              onFocus={e => { (e.target as HTMLInputElement).style.borderColor = THEME.LILAC; }}
+              onBlur={e => { (e.target as HTMLInputElement).style.borderColor = THEME.PANEL_BORDER; }}
             />
           </div>
 
           {/* ORCID */}
           <div style={fieldGroup}>
             <label style={labelStyle}>
-              <Hash size={13} style={{ color: T.APRICOT }} />
+              <Hash size={13} style={{ color: THEME.APRICOT }} />
               ORCID
             </label>
             <input
@@ -306,16 +305,16 @@ export default function ProfilePage() {
               value={profile.orcid}
               onChange={e => setProfile(p => ({ ...p, orcid: e.target.value }))}
               placeholder="0000-0000-0000-0000"
-              style={{ ...fieldStyle, fontFamily: T.MONO }}
-              onFocus={e => { (e.target as HTMLInputElement).style.borderColor = T.APRICOT; }}
-              onBlur={e => { (e.target as HTMLInputElement).style.borderColor = T.PANEL_BORDER; }}
+              style={{ ...fieldStyle, fontFamily: THEME.MONO }}
+              onFocus={e => { (e.target as HTMLInputElement).style.borderColor = THEME.APRICOT; }}
+              onBlur={e => { (e.target as HTMLInputElement).style.borderColor = THEME.PANEL_BORDER; }}
             />
           </div>
 
           {/* Bio */}
           <div style={fieldGroup}>
             <label style={labelStyle}>
-              <FileText size={13} style={{ color: T.MINT }} />
+              <FileText size={13} style={{ color: THEME.MINT }} />
               Bio
             </label>
             <textarea
@@ -329,12 +328,12 @@ export default function ProfilePage() {
                 resize: 'vertical' as const,
                 minHeight: '80px',
               }}
-              onFocus={e => { (e.target as HTMLTextAreaElement).style.borderColor = T.MINT; }}
-              onBlur={e => { (e.target as HTMLTextAreaElement).style.borderColor = T.PANEL_BORDER; }}
+              onFocus={e => { (e.target as HTMLTextAreaElement).style.borderColor = THEME.MINT; }}
+              onBlur={e => { (e.target as HTMLTextAreaElement).style.borderColor = THEME.PANEL_BORDER; }}
             />
             <span style={{
-              fontFamily: T.MONO,
-              fontSize: T.FS_XS,
+              fontFamily: THEME.MONO,
+              fontSize: THEME.FS_XS,
               color: 'rgba(255,255,255,0.3)',
               textAlign: 'right',
             }}>
@@ -346,9 +345,9 @@ export default function ProfilePage() {
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            gap: T.SP_SM,
-            paddingTop: T.SP_SM,
-            borderTop: `1px solid ${T.PANEL_BORDER}`,
+            gap: THEME.SP_SM,
+            paddingTop: THEME.SP_SM,
+            borderTop: `1px solid ${THEME.PANEL_BORDER}`,
           }}>
             <button
               onClick={handleSave}
@@ -358,12 +357,12 @@ export default function ProfilePage() {
                 alignItems: 'center',
                 gap: '6px',
                 padding: '10px 20px',
-                borderRadius: T.R_SM,
+                borderRadius: THEME.R_SM,
                 background: saving ? 'rgba(191,220,205,0.15)' : 'rgba(191,220,205,0.2)',
-                border: `1px solid ${T.MINT}40`,
-                color: T.MINT,
-                fontFamily: T.SANS,
-                fontSize: T.FS_MD,
+                border: `1px solid ${THEME.MINT}40`,
+                color: THEME.MINT,
+                fontFamily: THEME.SANS,
+                fontSize: THEME.FS_MD,
                 fontWeight: 600,
                 cursor: saving ? 'default' : 'pointer',
                 opacity: saving ? 0.7 : 1,
@@ -387,9 +386,9 @@ export default function ProfilePage() {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '4px',
-                fontFamily: T.SANS,
-                fontSize: T.FS_SM,
-                color: T.NEON_SUCCESS,
+                fontFamily: THEME.SANS,
+                fontSize: THEME.FS_SM,
+                color: THEME.NEON_SUCCESS,
               }}>
                 <CheckCircle size={14} />
                 Saved
@@ -401,9 +400,9 @@ export default function ProfilePage() {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '4px',
-                fontFamily: T.SANS,
-                fontSize: T.FS_SM,
-                color: T.NEON_DANGER,
+                fontFamily: THEME.SANS,
+                fontSize: THEME.FS_SM,
+                color: THEME.NEON_DANGER,
               }}>
                 <AlertCircle size={14} />
                 {errorMsg}
@@ -414,11 +413,11 @@ export default function ProfilePage() {
 
         {/* Footer hint */}
         <p style={{
-          fontFamily: T.MONO,
-          fontSize: T.FS_XS,
+          fontFamily: THEME.MONO,
+          fontSize: THEME.FS_XS,
           color: 'rgba(255,255,255,0.2)',
           textAlign: 'center',
-          marginTop: T.SP_LG,
+          marginTop: THEME.SP_LG,
         }}>
           Profile data is stored securely and used to personalize your Nexus-Bio experience.
         </p>

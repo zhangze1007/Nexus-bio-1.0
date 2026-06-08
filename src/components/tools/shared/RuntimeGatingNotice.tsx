@@ -1,8 +1,6 @@
 import { AlertTriangle, CheckCircle2, ShieldAlert } from 'lucide-react';
 import type { RuntimeGatingDecision } from '../../../utils/runtimeGating';
-import { T } from '../../ide/tokens';
-import { PATHD_THEME } from '../../workbench/workbenchTheme';
-
+import { THEME } from '../../../theme';
 interface RuntimeGatingNoticeProps {
   decision: RuntimeGatingDecision;
   sourceLabel?: string;
@@ -21,20 +19,20 @@ export default function RuntimeGatingNotice({
     ? {
         border: 'rgba(250,128,114,0.32)',
         background: 'rgba(250,128,114,0.10)',
-        icon: PATHD_THEME.coral,
+        icon: THEME.CORAL,
         label: 'Blocked',
       }
     : tone === 'warn'
       ? {
-          border: PATHD_THEME.chipBorderWarm,
+          border: THEME.CHIP_BORDER_WARM,
           background: 'rgba(231,199,169,0.14)',
-          icon: PATHD_THEME.apricot,
+          icon: THEME.APRICOT,
           label: 'Caution',
         }
       : {
           border: 'rgba(191,220,205,0.30)',
           background: 'rgba(191,220,205,0.10)',
-          icon: PATHD_THEME.mint,
+          icon: THEME.MINT,
           label: 'Allowed',
         };
   const Icon = tone === 'block' ? ShieldAlert : tone === 'warn' ? AlertTriangle : CheckCircle2;
@@ -56,7 +54,7 @@ export default function RuntimeGatingNotice({
           <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
             <span
               style={{
-                fontFamily: T.MONO,
+                fontFamily: THEME.MONO,
                 fontSize: compact ? '8px' : '9px',
                 color: colors.icon,
                 textTransform: 'uppercase',
@@ -67,16 +65,16 @@ export default function RuntimeGatingNotice({
             </span>
             <span
               style={{
-                fontFamily: T.MONO,
+                fontFamily: THEME.MONO,
                 fontSize: compact ? '8px' : '9px',
-                color: PATHD_THEME.label,
+                color: THEME.LABEL,
                 overflowWrap: 'anywhere',
               }}
             >
               {(sourceLabel ?? decision.sourceToolId ?? 'source').toUpperCase()} {'->'} {(targetLabel ?? decision.targetToolId).toUpperCase()}
             </span>
           </div>
-          <div style={{ fontFamily: T.SANS, fontSize: compact ? '9px' : '11px', color: PATHD_THEME.label, lineHeight: 1.45 }}>
+          <div style={{ fontFamily: THEME.SANS, fontSize: compact ? '9px' : '11px', color: THEME.LABEL, lineHeight: 1.45 }}>
             {decision.reason}
           </div>
         </div>
@@ -86,7 +84,7 @@ export default function RuntimeGatingNotice({
           {decision.sourceValidity} {'->'} {decision.targetValidity}
         </span>
         {decision.blockingAssumptionIds.map((id) => (
-          <span key={id} style={{ ...pillStyle(compact), color: PATHD_THEME.coral, borderColor: 'rgba(250,128,114,0.30)' }}>
+          <span key={id} style={{ ...pillStyle(compact), color: THEME.CORAL, borderColor: 'rgba(250,128,114,0.30)' }}>
             {id}
           </span>
         ))}
@@ -98,11 +96,11 @@ export default function RuntimeGatingNotice({
 function pillStyle(compact: boolean): React.CSSProperties {
   return {
     borderRadius: '999px',
-    border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
-    background: PATHD_THEME.chipNeutral,
-    color: PATHD_THEME.value,
+    border: `1px solid ${THEME.BORDER}`,
+    background: THEME.CHIP_NEUTRAL,
+    color: THEME.VALUE,
     padding: compact ? '2px 6px' : '3px 7px',
-    fontFamily: T.MONO,
+    fontFamily: THEME.MONO,
     fontSize: compact ? '8px' : '9px',
     lineHeight: 1.2,
     overflowWrap: 'anywhere',

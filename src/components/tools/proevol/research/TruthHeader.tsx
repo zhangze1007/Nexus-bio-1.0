@@ -1,10 +1,10 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { T } from '../../../ide/tokens';
 import { PROEVOL_THEME } from '../shared';
 import type { ProEvolProvenance } from '../../../../domain/proevolArtifact';
 import ValidityIndicator from './ValidityIndicator';
+import { THEME } from '../../../../theme';
 
 interface TruthHeaderProps {
   campaignName: string;
@@ -52,7 +52,7 @@ export default function TruthHeader({
         <div style={{ display: 'grid', gap: '4px', minWidth: 0 }}>
           <div
             style={{
-              fontFamily: T.MONO,
+              fontFamily: THEME.MONO,
               fontSize: 'var(--nb-fs-xs)',
               color: PROEVOL_THEME.label,
               letterSpacing: '0.14em',
@@ -63,7 +63,7 @@ export default function TruthHeader({
           </div>
           <div
             style={{
-              fontFamily: T.SANS,
+              fontFamily: THEME.SANS,
               fontSize: 'var(--nb-fs-md)',
               fontWeight: 700,
               color: PROEVOL_THEME.value,
@@ -77,7 +77,7 @@ export default function TruthHeader({
           </div>
           <div
             style={{
-              fontFamily: T.SANS,
+              fontFamily: THEME.SANS,
               fontSize: 'var(--nb-fs-sm)',
               color: PROEVOL_THEME.muted,
               lineHeight: 1.5,
@@ -97,7 +97,7 @@ export default function TruthHeader({
           />
           <div
             style={{
-              fontFamily: T.SANS,
+              fontFamily: THEME.SANS,
               fontSize: '10.5px',
               color: PROEVOL_THEME.muted,
               lineHeight: 1.5,
@@ -126,7 +126,7 @@ export default function TruthHeader({
         >
           <span
             style={{
-              fontFamily: T.MONO,
+              fontFamily: THEME.MONO,
               fontSize: 'var(--nb-fs-xs)',
               fontWeight: 700,
               letterSpacing: '0.1em',
@@ -138,7 +138,7 @@ export default function TruthHeader({
           </span>
           <span
             style={{
-              fontFamily: T.SANS,
+              fontFamily: THEME.SANS,
               fontSize: 'var(--nb-fs-xs)',
               color: PROEVOL_THEME.muted,
               lineHeight: 1.4,

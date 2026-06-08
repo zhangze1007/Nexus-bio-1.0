@@ -8,9 +8,9 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Dna } from 'lucide-react';
-import { T } from './ide/tokens';
 import styles from './TopNav.module.css';
 import LoginButton from './auth/LoginButton';
+import { THEME } from '../theme';
 
 const NAV_LINKS: [string, string][] = [
   ['Home',     '/'],
@@ -23,13 +23,13 @@ export default function TopNav() {
   const pathname = usePathname();
 
   return (
-    <nav className={styles.nav} style={{ fontFamily: T.SANS }}>
+    <nav className={styles.nav} style={{ fontFamily: THEME.SANS }}>
       {/* Logo */}
       <Link href="/" className={styles.logo}>
         <div className={styles.logoIcon}>
           <Dna size={13} />
         </div>
-        <span className={styles.logoText} style={{ fontFamily: T.BRAND }}>
+        <span className={styles.logoText} style={{ fontFamily: THEME.BRAND }}>
           Nexus-Bio
         </span>
       </Link>
@@ -43,7 +43,7 @@ export default function TopNav() {
               key={href}
               href={href}
               className={`${styles.link} ${isActive ? styles.linkActive : ''}`}
-              style={{ fontFamily: T.SANS }}
+              style={{ fontFamily: THEME.SANS }}
             >
               {label}
               {isActive && <span className={styles.activeIndicator} />}
@@ -56,7 +56,7 @@ export default function TopNav() {
       <LoginButton />
 
       {/* Version tag */}
-      <div className={styles.versionTag} style={{ fontFamily: T.MONO }}>
+      <div className={styles.versionTag} style={{ fontFamily: THEME.MONO }}>
         v1.0
       </div>
     </nav>

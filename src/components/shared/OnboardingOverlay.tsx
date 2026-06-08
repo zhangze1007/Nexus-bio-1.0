@@ -2,9 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { PATHD_THEME } from '../workbench/workbenchTheme';
-import { T } from '../ide/tokens';
-
+import { THEME } from '../../theme';
 const STORAGE_KEY = 'nexus-bio-onboarding-done';
 
 const STEPS = [
@@ -12,19 +10,19 @@ const STEPS = [
     eyebrow: 'Welcome',
     title: 'Nexus-Bio is a 4-stage research workbench',
     body: 'Design pathways, simulate metabolism, engineer chassis, and test iteratively — all in one platform with built-in scientific rigor.',
-    accent: PATHD_THEME.sky,
+    accent: THEME.SKY,
   },
   {
     eyebrow: 'Start here',
     title: 'Browse the tool directory',
     body: 'The Tools page groups 14 instruments into 4 stages. Start with Pathway Designer (Stage 1) to explore your first metabolic route.',
-    accent: PATHD_THEME.mint,
+    accent: THEME.MINT,
   },
   {
     eyebrow: 'Anytime',
     title: 'Ask Axon for help',
     body: 'The floating AI copilot is available on every page. Ask it to analyze papers, explain bottlenecks, or suggest next steps.',
-    accent: PATHD_THEME.apricot,
+    accent: THEME.APRICOT,
   },
 ];
 
@@ -106,22 +104,22 @@ export function OnboardingOverlay() {
           {/* Content */}
           <div style={{ textAlign: 'center' }}>
             <div style={{
-              fontFamily: T.MONO, fontSize: '10px',
+              fontFamily: THEME.MONO, fontSize: '10px',
               letterSpacing: '0.1em', textTransform: 'uppercase',
               color: current.accent, marginBottom: '8px',
             }}>
               {current.eyebrow}
             </div>
             <h2 style={{
-              margin: 0, fontFamily: T.SANS, fontSize: '22px',
-              fontWeight: 700, color: PATHD_THEME.value,
+              margin: 0, fontFamily: THEME.SANS, fontSize: '22px',
+              fontWeight: 700, color: THEME.VALUE,
               lineHeight: 1.2,
             }}>
               {current.title}
             </h2>
             <p style={{
-              marginTop: '10px', fontFamily: T.SANS, fontSize: '13px',
-              color: PATHD_THEME.label, lineHeight: 1.6,
+              marginTop: '10px', fontFamily: THEME.SANS, fontSize: '13px',
+              color: THEME.LABEL, lineHeight: 1.6,
             }}>
               {current.body}
             </p>
@@ -133,7 +131,7 @@ export function OnboardingOverlay() {
               onClick={handleSkip}
               style={{
                 background: 'none', border: 'none', cursor: 'pointer',
-                fontFamily: T.SANS, fontSize: '12px', color: PATHD_THEME.label,
+                fontFamily: THEME.SANS, fontSize: '12px', color: THEME.LABEL,
                 opacity: 0.6, padding: '4px 0',
               }}
             >
@@ -143,7 +141,7 @@ export function OnboardingOverlay() {
               onClick={handleNext}
               style={{
                 background: current.accent, border: 'none', cursor: 'pointer',
-                fontFamily: T.SANS, fontSize: '12px', fontWeight: 600,
+                fontFamily: THEME.SANS, fontSize: '12px', fontWeight: 600,
                 color: '#050505', borderRadius: '100px',
                 padding: '8px 24px',
                 boxShadow: `0 8px 24px ${current.accent}33`,

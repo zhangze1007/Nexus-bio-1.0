@@ -8,7 +8,6 @@ import { getProvenanceChainDiagnostics } from '../../services/provenanceMiddlewa
 import { useWorkbenchStore } from '../../store/workbenchStore';
 import { TOOL_BY_ID } from '../tools/shared/toolRegistry';
 import { getFreshnessMap, getAuthoritySummary, getAuthorityTier, getToolFreshness } from './workbenchTrust';
-import { PATHD_THEME } from './workbenchTheme';
 import { workflowStatusLabel } from './workflowExperience';
 import {
   glassPanel,
@@ -23,6 +22,7 @@ import {
   accentLeftBorder,
   statusAccent,
 } from './workbenchDesignSystem';
+import { THEME } from '../../theme';
 
 interface WorkbenchDecisionTracePanelProps {
   toolId?: string | null;
@@ -32,13 +32,13 @@ interface WorkbenchDecisionTracePanelProps {
 
 function statusColor(status: string): string {
   switch (status) {
-    case 'complete': return PATHD_THEME.mint;
-    case 'ready': return PATHD_THEME.sky;
-    case 'blocked': return PATHD_THEME.coral;
-    case 'gated': return PATHD_THEME.apricot;
-    case 'demoOnly': return PATHD_THEME.apricot;
+    case 'complete': return THEME.MINT;
+    case 'ready': return THEME.SKY;
+    case 'blocked': return THEME.CORAL;
+    case 'gated': return THEME.APRICOT;
+    case 'demoOnly': return THEME.APRICOT;
     case 'idle':
-    default: return PATHD_THEME.label;
+    default: return THEME.LABEL;
   }
 }
 
@@ -97,8 +97,8 @@ export default function WorkbenchDecisionTracePanel({
     >
       {/* Section Header */}
       <motion.div variants={cardVariants} style={sectionHeaderRow}>
-        <span style={iconContainer(PATHD_THEME.sky, 20)}>
-          <Compass size={11} color={PATHD_THEME.sky} />
+        <span style={iconContainer(THEME.SKY, 20)}>
+          <Compass size={11} color={THEME.SKY} />
         </span>
         <span style={typography.sectionTitle}>{title}</span>
       </motion.div>
@@ -179,7 +179,7 @@ function WorkflowStateCard({
           {decision.status}
         </motion.span>
         {decision.humanGateRequired && (
-          <span style={{ ...typography.caption, color: PATHD_THEME.apricot }}>human gate required</span>
+          <span style={{ ...typography.caption, color: THEME.APRICOT }}>human gate required</span>
         )}
         {decision.nextNodeIsContractOnly && (
           <span style={typography.caption}>next: contract-only</span>
@@ -231,13 +231,13 @@ function DecisionBasisCard({
       onMouseLeave={() => setHovered(false)}
       style={{
         ...glassPanel,
-        ...accentLeftBorder(PATHD_THEME.apricot, 2),
+        ...accentLeftBorder(THEME.APRICOT, 2),
         borderColor: hovered ? 'rgba(255, 255, 255, 0.12)' : glassPanel.borderColor,
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-        <span style={iconContainer(PATHD_THEME.apricot, 20)}>
-          <ShieldCheck size={11} color={PATHD_THEME.apricot} />
+        <span style={iconContainer(THEME.APRICOT, 20)}>
+          <ShieldCheck size={11} color={THEME.APRICOT} />
         </span>
         <span style={typography.label}>Current decision basis</span>
         {toolId && (
@@ -265,8 +265,8 @@ function DBTLLedgerCard({
   return (
     <motion.div variants={cardVariants} style={glassPanel}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <span style={iconContainer(PATHD_THEME.mint, 20)}>
-          <ShieldCheck size={11} color={PATHD_THEME.mint} />
+        <span style={iconContainer(THEME.MINT, 20)}>
+          <ShieldCheck size={11} color={THEME.MINT} />
         </span>
         <span style={typography.label}>DBTL decision ledger</span>
       </div>
@@ -377,8 +377,8 @@ function RecommendationCard({
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={iconContainer(PATHD_THEME.lilac, 20)}>
-              <WandSparkles size={11} color={PATHD_THEME.lilac} />
+            <span style={iconContainer(THEME.LILAC, 20)}>
+              <WandSparkles size={11} color={THEME.LILAC} />
             </span>
             <span style={typography.label}>{tool.name}</span>
           </div>

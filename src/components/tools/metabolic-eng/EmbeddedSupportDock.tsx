@@ -1,9 +1,7 @@
 'use client';
 
 import type { RefObject } from 'react';
-import { PATHD_THEME } from '../../workbench/workbenchTheme';
-import { T } from '../../ide/tokens';
-
+import { THEME } from '../../../theme';
 export interface SupportCard {
   eyebrow: string;
   value: string;
@@ -40,21 +38,21 @@ export default function EmbeddedSupportDock({
             <div style={{ display: 'grid', gap: '4px' }}>
               <div
                 style={{
-                  fontFamily: T.MONO,
+                  fontFamily: THEME.MONO,
                   fontSize: 'var(--nb-fs-xs)',
                   letterSpacing: '0.10em',
                   textTransform: 'uppercase',
-                  color: PATHD_THEME.label,
+                  color: THEME.LABEL,
                 }}
               >
                 {card.eyebrow}
               </div>
               <div
                 style={{
-                  fontFamily: T.SANS,
+                  fontFamily: THEME.SANS,
                   fontSize: 'var(--nb-fs-sm)',
                   fontWeight: 700,
-                  color: PATHD_THEME.value,
+                  color: THEME.VALUE,
                   lineHeight: 1.2,
                 }}
               >
@@ -63,10 +61,10 @@ export default function EmbeddedSupportDock({
             </div>
             <div
               style={{
-                fontFamily: T.SANS,
+                fontFamily: THEME.SANS,
                 fontSize: '10.5px',
                 lineHeight: 1.5,
-                color: PATHD_THEME.label,
+                color: THEME.LABEL,
               }}
             >
               {card.body}
@@ -81,10 +79,10 @@ export default function EmbeddedSupportDock({
                     borderRadius: '999px',
                     border: '1px solid rgba(255,255,255,0.12)',
                     background: 'rgba(255,255,255,0.10)',
-                    color: PATHD_THEME.value,
+                    color: THEME.VALUE,
                     display: 'inline-flex',
                     alignItems: 'center',
-                    fontFamily: T.MONO,
+                    fontFamily: THEME.MONO,
                     fontSize: 'var(--nb-fs-xs)',
                     letterSpacing: '0.05em',
                     textTransform: 'uppercase',

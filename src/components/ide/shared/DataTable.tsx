@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import EmptyState from './EmptyState';
 import Pagination from './Pagination';
-import { T } from '../tokens';
+import { THEME } from '../../../theme';
 
 export interface TableColumn<T> {
   key: keyof T;
@@ -94,7 +94,7 @@ export default function DataTable<T extends object>({
                   style={{
                     padding: '8px 12px',
                     textAlign: 'left',
-                    fontFamily: T.MONO,
+                    fontFamily: THEME.MONO,
                     fontSize: '10px',
                     textTransform: 'uppercase',
                     letterSpacing: '0.08em',
@@ -133,7 +133,7 @@ export default function DataTable<T extends object>({
                       key={String(col.key)}
                       style={{
                         padding: '7px 12px',
-                        fontFamily: T.SANS,
+                        fontFamily: THEME.SANS,
                         fontSize: '11px',
                         color: 'rgba(255,255,255,0.65)',
                         whiteSpace: 'nowrap',

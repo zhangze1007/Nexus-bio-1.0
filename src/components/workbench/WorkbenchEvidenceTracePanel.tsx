@@ -7,7 +7,6 @@ import { useWorkbenchStore } from '../../store/workbenchStore';
 import { TOOL_BY_ID } from '../tools/shared/toolRegistry';
 import { getDependencyTrace } from '../../config/workbenchGraph';
 import { getAuthorityTier } from './workbenchTrust';
-import { PATHD_THEME } from './workbenchTheme';
 import { tryGetToolContract } from '../../services/workflowRegistry';
 import {
   GOLDEN_PATH_TOOL_IDS,
@@ -29,6 +28,7 @@ import {
   twoColumnGrid,
   accentLeftBorder,
 } from './workbenchDesignSystem';
+import { THEME } from '../../theme';
 
 interface WorkbenchEvidenceTracePanelProps {
   toolId?: string | null;
@@ -136,8 +136,8 @@ export default function WorkbenchEvidenceTracePanel({
     >
       {/* Section Header */}
       <motion.div variants={cardVariants} style={sectionHeaderRow}>
-        <span style={iconContainer(PATHD_THEME.lilac, 20)}>
-          <BookMarked size={11} color={PATHD_THEME.lilac} />
+        <span style={iconContainer(THEME.LILAC, 20)}>
+          <BookMarked size={11} color={THEME.LILAC} />
         </span>
         <span style={typography.sectionTitle}>{title}</span>
       </motion.div>
@@ -187,16 +187,16 @@ function GateRowCard({
       onMouseLeave={() => setHovered(false)}
       style={{
         ...glassPanel,
-        ...accentLeftBorder(PATHD_THEME.apricot, 3),
+        ...accentLeftBorder(THEME.APRICOT, 3),
         borderColor: hovered ? 'rgba(255, 255, 255, 0.12)' : glassPanel.borderColor,
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-        <span style={iconContainer(PATHD_THEME.apricot, 20)}>
-          <ShieldAlert size={11} color={PATHD_THEME.apricot} />
+        <span style={iconContainer(THEME.APRICOT, 20)}>
+          <ShieldAlert size={11} color={THEME.APRICOT} />
         </span>
         <span style={typography.label}>Next step needs:</span>
-        <span style={{ ...typography.caption, color: PATHD_THEME.sky }}>
+        <span style={{ ...typography.caption, color: THEME.SKY }}>
           {gateRow.toolId.toUpperCase()}
         </span>
       </div>
@@ -239,8 +239,8 @@ function DecisionLedgerFieldsCard({
   return (
     <motion.div variants={cardVariants} style={glassPanel}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-        <span style={iconContainer(PATHD_THEME.mint, 20)}>
-          <Workflow size={11} color={PATHD_THEME.mint} />
+        <span style={iconContainer(THEME.MINT, 20)}>
+          <Workflow size={11} color={THEME.MINT} />
         </span>
         <span style={typography.label}>Decision ledger fields</span>
         <span style={typography.caption}>{workflowStatusLabel(workflowControl.status)}</span>
@@ -285,7 +285,7 @@ function LedgerFieldRow({ label, value }: { label: string; value: string }) {
       <span style={{ ...typography.caption, minWidth: '100px', flexShrink: 0, opacity: 0.7 }}>
         {label}
       </span>
-      <span style={{ ...typography.caption, color: PATHD_THEME.value }}>
+      <span style={{ ...typography.caption, color: THEME.VALUE }}>
         {value}
       </span>
     </div>
@@ -310,8 +310,8 @@ function EvidenceBundleCard({
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <span style={iconContainer(PATHD_THEME.sky, 20)}>
-          <BookMarked size={11} color={PATHD_THEME.sky} />
+        <span style={iconContainer(THEME.SKY, 20)}>
+          <BookMarked size={11} color={THEME.SKY} />
         </span>
         <span style={typography.label}>Evidence Bundle</span>
       </div>
@@ -346,8 +346,8 @@ function AnalyzeArtifactCard({
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <span style={iconContainer(PATHD_THEME.lilac, 20)}>
-          <FlaskConical size={11} color={PATHD_THEME.lilac} />
+        <span style={iconContainer(THEME.LILAC, 20)}>
+          <FlaskConical size={11} color={THEME.LILAC} />
         </span>
         <span style={typography.label}>Analyze Artifact</span>
       </div>
@@ -385,8 +385,8 @@ function ExecutionTraceCard({
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <span style={iconContainer(PATHD_THEME.apricot, 20)}>
-          <Workflow size={11} color={PATHD_THEME.apricot} />
+        <span style={iconContainer(THEME.APRICOT, 20)}>
+          <Workflow size={11} color={THEME.APRICOT} />
         </span>
         <span style={typography.label}>Execution Trace</span>
       </div>
@@ -402,9 +402,9 @@ function ExecutionTraceCard({
               variants={chipVariants}
               style={{
                 ...statusChip.base,
-                border: `1px solid ${entry.run ? PATHD_THEME.chipBorder : 'rgba(255, 255, 255, 0.08)'}`,
-                background: entry.run ? PATHD_THEME.chipCool : PATHD_THEME.chipNeutral,
-                color: PATHD_THEME.value,
+                border: `1px solid ${entry.run ? THEME.CHIP_BORDER : 'rgba(255, 255, 255, 0.08)'}`,
+                background: entry.run ? THEME.CHIP_COOL : THEME.CHIP_NEUTRAL,
+                color: THEME.VALUE,
               }}
             >
               {entry.tool?.shortLabel ?? entry.toolId.toUpperCase()}
@@ -417,7 +417,7 @@ function ExecutionTraceCard({
                 {getAuthorityTier(entry.run as Parameters<typeof getAuthorityTier>[0])}
               </motion.span>
             )}
-            {index < trace.length - 1 && <ArrowRight size={12} color={PATHD_THEME.apricot} />}
+            {index < trace.length - 1 && <ArrowRight size={12} color={THEME.APRICOT} />}
           </span>
         )) : (
           <div style={typography.body}>No execution trace has been formed yet.</div>

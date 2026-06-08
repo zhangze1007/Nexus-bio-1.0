@@ -2,8 +2,8 @@
 
 import { useMemo } from 'react';
 import type { ProteinEvolutionCampaign, VariantCandidate } from '../../../services/ProEvolCampaignEngine';
-import { T } from '../../ide/tokens';
 import { ProEvolCard, PROEVOL_THEME, StatusPill } from './shared';
+import { THEME } from '../../../theme';
 
 function buildLeadPath(campaign: ProteinEvolutionCampaign) {
   const path: VariantCandidate[] = [];
@@ -67,7 +67,7 @@ export default function LineageTracePanel({
             return (
               <g key={family}>
                 <line x1={padX} y1={y} x2={width - padX} y2={y} stroke="rgba(255,255,255,0.05)" />
-                <text x="18" y={y + 4} fontFamily={T.SANS} fontSize="10" fill={PROEVOL_THEME.label}>
+                <text x="18" y={y + 4} fontFamily={THEME.SANS} fontSize="10" fill={PROEVOL_THEME.label}>
                   {family}
                 </text>
               </g>
@@ -76,7 +76,7 @@ export default function LineageTracePanel({
           {Array.from({ length: campaign.totalRounds + 1 }, (_, round) => (
             <g key={round}>
               <line x1={xForRound(round)} y1={padY - 18} x2={xForRound(round)} y2={height - padY + 14} stroke="rgba(255,255,255,0.06)" />
-              <text x={xForRound(round)} y="22" textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill={PROEVOL_THEME.label}>
+              <text x={xForRound(round)} y="22" textAnchor="middle" fontFamily={THEME.MONO} fontSize="10" fill={PROEVOL_THEME.label}>
                 {round === 0 ? 'WT' : `R${round}`}
               </text>
             </g>
@@ -125,7 +125,7 @@ export default function LineageTracePanel({
                     x={xForRound(variant.round)}
                     y={yForVariant(variant) - 10}
                     textAnchor="middle"
-                    fontFamily={T.MONO}
+                    fontFamily={THEME.MONO}
                     fontSize="10"
                     fill="rgba(255,255,255,0.86)"
                   >
@@ -155,7 +155,7 @@ export default function LineageTracePanel({
         >
           <div
             style={{
-              fontFamily: T.MONO,
+              fontFamily: THEME.MONO,
               fontSize: 'var(--nb-fs-xs)',
               color: PROEVOL_THEME.label,
               textTransform: 'uppercase',

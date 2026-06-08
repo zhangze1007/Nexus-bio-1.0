@@ -24,8 +24,7 @@ import AutomationDrawer from '../tools/nexai/AutomationDrawer';
 import AxonLogPanel from './AxonLogPanel';
 import { useAxonOrchestratorOptional } from '../../providers/AxonOrchestratorProvider';
 import { sessionStatusLabel } from '../../services/axonSessionView';
-import { PATHD_THEME } from '../workbench/workbenchTheme';
-
+import { THEME } from '../../theme';
 const DOCK_WIDTH = 360;
 
 export default function GlobalAutomationDock() {
@@ -58,7 +57,7 @@ export default function GlobalAutomationDock() {
     'off-domain': '#CFC4E3',
     unsupported: '#E7C7A9',
   };
-  const sessionDot = SESSION_DOT[session.status] ?? PATHD_THEME.label;
+  const sessionDot = SESSION_DOT[session.status] ?? THEME.LABEL;
 
   return (
     <div
@@ -86,9 +85,9 @@ export default function GlobalAutomationDock() {
           padding: '6px 10px',
           marginBottom: expanded ? '8px' : 0,
           borderRadius: '12px',
-          border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
-          background: PATHD_THEME.panelInset,
-          color: PATHD_THEME.value,
+          border: `1px solid ${THEME.BORDER}`,
+          background: THEME.PANEL_INSET,
+          color: THEME.VALUE,
           fontFamily: 'var(--font-mono, monospace)',
           fontSize: '10px',
           letterSpacing: '0.08em',
@@ -113,10 +112,10 @@ export default function GlobalAutomationDock() {
         >
           Axon · {sessionStatusLabel(session.status)}
         </span>
-        <span style={{ color: PATHD_THEME.label, letterSpacing: 0, textTransform: 'none' }}>
+        <span style={{ color: THEME.LABEL, letterSpacing: 0, textTransform: 'none' }}>
           {pending}P · {running}R · {tasks.length}T
         </span>
-        <span aria-hidden style={{ color: PATHD_THEME.label, letterSpacing: 0 }}>
+        <span aria-hidden style={{ color: THEME.LABEL, letterSpacing: 0 }}>
           {expanded ? '▾' : '▸'}
         </span>
       </button>
@@ -134,8 +133,8 @@ export default function GlobalAutomationDock() {
             data-testid="global-automation-dock-log"
             style={{
               borderRadius: '12px',
-              border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
-              background: PATHD_THEME.panelInset,
+              border: `1px solid ${THEME.BORDER}`,
+              background: THEME.PANEL_INSET,
               padding: '10px 12px',
               display: 'grid',
               gap: '8px',
@@ -149,7 +148,7 @@ export default function GlobalAutomationDock() {
                 fontSize: '10px',
                 letterSpacing: '0.08em',
                 textTransform: 'uppercase',
-                color: PATHD_THEME.label,
+                color: THEME.LABEL,
               }}
             >
               Execution trace

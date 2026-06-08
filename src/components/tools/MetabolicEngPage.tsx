@@ -24,7 +24,6 @@ import ToolOverlay from './ToolOverlay';
 import StatusOverlay from './StatusOverlay';
 import ThreeScene from '../ThreeScene';
 import NodePanel from '../NodePanel';
-import { PATHD_THEME } from '../workbench/workbenchTheme';
 import type { ToolTab } from './shared/ToolTabBar';
 import { metabolicMachine } from '../../machines/metabolicMachine';
 import type { FBAWorkerIn, FBAWorkerOut } from '../../workers/fbaWorker';
@@ -34,19 +33,19 @@ import { useUIStore } from '../../store/uiStore';
 import { useWorkbenchStore } from '../../store/workbenchStore';
 import pathwayNodes from '../../data/pathwayData.json';
 import type { PathwayNode, PathwayEdge } from '../../types';
-import { T } from '../ide/tokens';
 import ArtifactRouteState from './metabolic-eng/ArtifactRouteState';
 import EmbeddedSupportDock from './metabolic-eng/EmbeddedSupportDock';
 import EvidenceTabRail from './metabolic-eng/EvidenceTabRail';
 import DBTLIntegrationPanel from './metabolic-eng/DBTLIntegrationPanel';
 import FloatingTabBar from './metabolic-eng/FloatingTabBar';
 import IdleStartButton from './metabolic-eng/IdleStartButton';
+import { THEME } from '../../theme';
 
 const PATHD_TABS: ToolTab[] = [
-  { id: 'lab', label: '3D Lab', accent: PATHD_THEME.sky },
-  { id: 'node', label: 'Node Panel', accent: PATHD_THEME.lilac },
-  { id: 'dbtl', label: 'DBTL', accent: PATHD_THEME.apricot },
-  { id: 'evidence', label: 'Evidence', accent: PATHD_THEME.mint },
+  { id: 'lab', label: '3D Lab', accent: THEME.SKY },
+  { id: 'node', label: 'Node Panel', accent: THEME.LILAC },
+  { id: 'dbtl', label: 'DBTL', accent: THEME.APRICOT },
+  { id: 'evidence', label: 'Evidence', accent: THEME.MINT },
 ];
 
 // ── Demo pathway edges (Artemisinin biosynthesis — Ro et al. 2006) ─────
@@ -684,7 +683,7 @@ export default React.memo(function MetabolicEngPage({ embedded = false }: { embe
               padding: '16px', borderRadius: 'var(--nb-radius-md)',
               background: 'rgba(10,12,16,0.72)', backdropFilter: 'blur(16px)',
               border: '1px solid rgba(255,255,255,0.1)',
-              color: PATHD_THEME.label, fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)',
+              color: THEME.LABEL, fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)',
               textAlign: 'center', lineHeight: 1.6,
             }}>
               Click a node in the 3D pathway to inspect its overview, structure, and analysis.

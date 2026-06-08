@@ -30,8 +30,6 @@ import type {
 import { useWorkbenchStore } from '../../store/workbenchStore';
 import WorkbenchInlineContext from '../workbench/WorkbenchInlineContext';
 import { buildCatalystSeed } from './shared/workbenchDataflow';
-import { T } from '../ide/tokens';
-import { PATHD_THEME } from '../workbench/workbenchTheme';
 import CatalystViewer3D, { kdToQuality, bindingColorCSS } from '../molecular/CatalystViewer3D';
 import type { ResidueClickData } from '../molecular/CatalystViewer3D';
 import BindingRadarChart from '../charts/BindingRadarChart';
@@ -49,6 +47,7 @@ import InlineMetricOverlay from './shared/InlineMetricOverlay';
 import ScientificFigureFrame from './shared/ScientificFigureFrame';
 import SectionLabel from './shared/SectionLabel';
 import type { ToolTab } from './shared/ToolTabBar';
+import { THEME } from '../../theme';
 
 /* ── Constants ───────────────────────────────────────────────────── */
 
@@ -73,10 +72,10 @@ const VIEW_MODES: { key: ViewMode; label: string; color: string }[] = [
 ];
 
 const CATDES_TABS: ToolTab[] = [
-  { id: 'overview',  label: 'Overview',  accent: PATHD_THEME.sky },
-  { id: 'residue',   label: 'Residue',   accent: PATHD_THEME.lilac },
-  { id: 'stats',     label: 'Stats',     accent: PATHD_THEME.apricot },
-  { id: 'analysis',  label: 'Analysis',  accent: PATHD_THEME.mint },
+  { id: 'overview',  label: 'Overview',  accent: THEME.SKY },
+  { id: 'residue',   label: 'Residue',   accent: THEME.LILAC },
+  { id: 'stats',     label: 'Stats',     accent: THEME.APRICOT },
+  { id: 'analysis',  label: 'Analysis',  accent: THEME.MINT },
 ];
 
 /* ── Quality helpers ─────────────────────────────────────────────── */
@@ -110,30 +109,30 @@ function SequenceView({ result }: { result: SequenceDesignResult }) {
   return (
     <div style={{ height: '100%', overflow: 'auto' }}>
       <SectionLabel>Designed Sequences — {result.targetEnzyme}</SectionLabel>
-      <p style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: 'rgba(255,255,255,0.55)', margin: '0 0 8px', fontStyle: 'italic' }}>
+      <p style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: 'rgba(255,255,255,0.55)', margin: '0 0 8px', fontStyle: 'italic' }}>
         Stability estimates are heuristic screening scores (BLOSUM62-based), not rigorous ΔΔG values.
       </p>
       {result.designs.map(d => (
         <div key={d.rank} style={{
           padding: '10px 14px', marginBottom: 8,
           borderRadius: 'var(--nb-radius-md)',
-          background: PATHD_THEME.panelGlass, border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
+          background: THEME.PANEL_GLASS, border: `1px solid ${THEME.BORDER}`,
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-            <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-sm)', color: PHASE_COLORS.sequence, fontWeight: 600 }}>#{d.rank}</span>
-            <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.value }}>Score {d.score.toFixed(2)}</span>
-            <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.label }}>Recovery {(d.recoveryRate * 100).toFixed(1)}%</span>
-            <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: caiColor(d.cai) }}>CAI {d.cai.toFixed(2)}</span>
-            <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.label }}>GC {(d.gcContent * 100).toFixed(1)}%</span>
-            <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: d.rareCodons > 3 ? 'rgba(255,120,120,0.7)' : PATHD_THEME.value }}>{d.rareCodons} rare</span>
+            <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-sm)', color: PHASE_COLORS.sequence, fontWeight: 600 }}>#{d.rank}</span>
+            <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.VALUE }}>Score {d.score.toFixed(2)}</span>
+            <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL }}>Recovery {(d.recoveryRate * 100).toFixed(1)}%</span>
+            <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: caiColor(d.cai) }}>CAI {d.cai.toFixed(2)}</span>
+            <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL }}>GC {(d.gcContent * 100).toFixed(1)}%</span>
+            <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: d.rareCodons > 3 ? 'rgba(255,120,120,0.7)' : THEME.VALUE }}>{d.rareCodons} rare</span>
           </div>
           <div style={{
-            fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: 'rgba(255,255,255,0.45)',
+            fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: 'rgba(255,255,255,0.45)',
             letterSpacing: '0.04em', overflowX: 'auto', whiteSpace: 'nowrap',
             padding: '4px 6px', background: 'rgba(0,0,0,0.3)', borderRadius: 'var(--nb-radius-sm)',
           }}>
             {d.dnaSequence.slice(0, 60)}
-            {d.dnaSequence.length > 60 && <span style={{ color: PATHD_THEME.label }}> …</span>}
+            {d.dnaSequence.length > 60 && <span style={{ color: THEME.LABEL }}> …</span>}
           </div>
         </div>
       ))}
@@ -143,7 +142,7 @@ function SequenceView({ result }: { result: SequenceDesignResult }) {
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
             {result.consensusMotifs.map((m, i) => (
               <span key={i} style={{
-                fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PHASE_COLORS.sequence,
+                fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: PHASE_COLORS.sequence,
                 padding: '2px 8px', borderRadius: 'var(--nb-radius-sm)',
                 background: 'rgba(81,81,205,0.1)', border: '1px solid rgba(81,81,205,0.15)',
               }}>{m}</span>
@@ -306,9 +305,9 @@ export default function CatalystDesignerPageV2() {
               value={selectedEnzymeIdx}
               onChange={e => { setSelectedEnzymeIdx(Number(e.target.value)); setSelectedResidue(null); setPendingMutation(null); }}
               style={{
-                width: '100%', fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', fontWeight: 600,
-                color: PATHD_THEME.value, background: PATHD_THEME.panelInset,
-                border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
+                width: '100%', fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', fontWeight: 600,
+                color: THEME.VALUE, background: THEME.PANEL_INSET,
+                border: `1px solid ${THEME.BORDER}`,
                 borderRadius: 'var(--nb-radius-sm)', padding: '4px 8px', cursor: 'pointer', marginBottom: 10,
               }}
             >
@@ -318,12 +317,12 @@ export default function CatalystDesignerPageV2() {
             </select>
             {enzyme.id === RATE_LIMITING_ENZYME.id && (
               <span style={{
-                display: 'inline-block', fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: '#FFFB1F',
+                display: 'inline-block', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: '#FFFB1F',
                 background: 'rgba(255,251,31,0.12)', padding: '1px 5px', borderRadius: 'var(--nb-radius-sm)', marginBottom: 10,
               }}>Rate-limiting</span>
             )}
             <SectionLabel>Substrate → Product</SectionLabel>
-            <p style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.label, margin: '0 0 10px' }}>
+            <p style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL, margin: '0 0 10px' }}>
               {enzyme.substrate} → {enzyme.product}
             </p>
             <SectionLabel>Render Mode</SectionLabel>
@@ -373,43 +372,43 @@ export default function CatalystDesignerPageV2() {
             <FloatingControlRail label="Residue Info" defaultCollapsed={false} width={260}>
               <div style={{
                 padding: '8px 10px', borderRadius: 'var(--nb-radius-md)',
-                background: PATHD_THEME.panelGlass, border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`, marginBottom: 10,
+                background: THEME.PANEL_GLASS, border: `1px solid ${THEME.BORDER}`, marginBottom: 10,
               }}>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 4 }}>
-                  <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-md)', color: PATHD_THEME.value, fontWeight: 700 }}>
+                  <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-md)', color: THEME.VALUE, fontWeight: 700 }}>
                     {selectedResidue.name}
                   </span>
-                  <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.label }}>
+                  <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL }}>
                     pos {selectedResidue.position}
                   </span>
                   {selectedResidue.isCatalytic && (
                     <span style={{
-                      fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: '#93CB52',
+                      fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: '#93CB52',
                       background: 'rgba(147,203,82,0.12)', padding: '1px 5px', borderRadius: 'var(--nb-radius-sm)',
                     }}>catalytic</span>
                   )}
                 </div>
                 {selectedCatalyticResidue ? (
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3 }}>
-                    <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.label }}>Role</span>
-                    <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.value }}>{selectedCatalyticResidue.role.replace('_', ' ')}</span>
-                    <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.label }}>Dist</span>
-                    <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.value }}>{selectedCatalyticResidue.distanceToSubstrate.toFixed(1)} Å</span>
-                    <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.label }}>Angle</span>
-                    <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.value }}>{selectedCatalyticResidue.orientationAngle.toFixed(0)}°</span>
-                    <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.label }}>pKa shift</span>
-                    <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: Math.abs(selectedCatalyticResidue.pKaShift) > 0.5 ? '#FA8072' : PATHD_THEME.value }}>
+                    <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL }}>Role</span>
+                    <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.VALUE }}>{selectedCatalyticResidue.role.replace('_', ' ')}</span>
+                    <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL }}>Dist</span>
+                    <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.VALUE }}>{selectedCatalyticResidue.distanceToSubstrate.toFixed(1)} Å</span>
+                    <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL }}>Angle</span>
+                    <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.VALUE }}>{selectedCatalyticResidue.orientationAngle.toFixed(0)}°</span>
+                    <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL }}>pKa shift</span>
+                    <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: Math.abs(selectedCatalyticResidue.pKaShift) > 0.5 ? '#FA8072' : THEME.VALUE }}>
                       {selectedCatalyticResidue.pKaShift > 0 ? '+' : ''}{selectedCatalyticResidue.pKaShift.toFixed(2)}
                     </span>
                     {selectedResidue.distanceToSubstrate != null && (
                       <>
-                        <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.label }}>→ Substrate</span>
-                        <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.value }}>{selectedResidue.distanceToSubstrate.toFixed(1)} Å</span>
+                        <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL }}>→ Substrate</span>
+                        <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.VALUE }}>{selectedResidue.distanceToSubstrate.toFixed(1)} Å</span>
                       </>
                     )}
                   </div>
                 ) : (
-                  <p style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.label, margin: 0 }}>
+                  <p style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL, margin: 0 }}>
                     Non-catalytic — {selectedResidue.residueLetter} at position {selectedResidue.position}
                   </p>
                 )}
@@ -420,9 +419,9 @@ export default function CatalystDesignerPageV2() {
                 value={pendingMutation ?? ''}
                 onChange={e => setPendingMutation(e.target.value || null)}
                 style={{
-                  width: '100%', fontFamily: T.MONO, fontSize: 'var(--nb-fs-sm)',
-                  color: PATHD_THEME.value, background: PATHD_THEME.panelInset,
-                  border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
+                  width: '100%', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-sm)',
+                  color: THEME.VALUE, background: THEME.PANEL_INSET,
+                  border: `1px solid ${THEME.BORDER}`,
                   borderRadius: 'var(--nb-radius-sm)', padding: '4px 8px', cursor: 'pointer',
                 }}
               >
@@ -452,7 +451,7 @@ export default function CatalystDesignerPageV2() {
                   title={`${selectedResidue.residueLetter}${selectedResidue.position}${pendingMutation}`}
                   caption="BLOSUM62 heuristic screening score — not rigorous ΔΔG"
                   legend={[
-                    { label: 'Effect', value: selectedMutagenesisSite?.suggestedMutants.includes(pendingMutation) ? selectedMutagenesisSite.predictedEffect : 'Unknown', accent: selectedMutagenesisSite?.suggestedMutants.includes(pendingMutation) ? (selectedMutagenesisSite.predictedEffect === 'beneficial' ? '#93CB52' : selectedMutagenesisSite.predictedEffect === 'neutral' ? '#FFFB1F' : '#FA8072') : PATHD_THEME.label },
+                    { label: 'Effect', value: selectedMutagenesisSite?.suggestedMutants.includes(pendingMutation) ? selectedMutagenesisSite.predictedEffect : 'Unknown', accent: selectedMutagenesisSite?.suggestedMutants.includes(pendingMutation) ? (selectedMutagenesisSite.predictedEffect === 'beneficial' ? '#93CB52' : selectedMutagenesisSite.predictedEffect === 'neutral' ? '#FFFB1F' : '#FA8072') : THEME.LABEL },
                   ]}
                 >
                   {selectedMutagenesisSite && selectedMutagenesisSite.suggestedMutants.includes(pendingMutation) ? (
@@ -463,20 +462,20 @@ export default function CatalystDesignerPageV2() {
                       <MetricCard label="Confidence" value={`${(selectedMutagenesisSite.confidence * 100).toFixed(0)}%`} />
                     </div>
                   ) : (
-                    <p style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: PATHD_THEME.label, margin: 0 }}>
+                    <p style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: THEME.LABEL, margin: 0 }}>
                       No screening data for this substitution.
                     </p>
                   )}
                 </ScientificFigureFrame>
               ) : (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: PATHD_THEME.label, fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: THEME.LABEL, fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)' }}>
                   Select a mutation target from the dropdown, or click a residue on the 3D model.
                 </div>
               )}
             </div>
           </div>
         ) : (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: PATHD_THEME.label, fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: THEME.LABEL, fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)' }}>
             Click a residue on the 3D model to inspect it.
           </div>
         )}
@@ -490,7 +489,7 @@ export default function CatalystDesignerPageV2() {
             <div style={{ display: 'flex', alignItems: 'center' }}>
               <div style={{ flex: 1 }}><MetricCard label="Kd" value={binding.predictedKd.toFixed(2)} unit="μM" /></div>
               <span style={{
-                fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: bindingColorCSS(kdToQuality(binding.predictedKd)),
+                fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: bindingColorCSS(kdToQuality(binding.predictedKd)),
                 padding: '2px 6px', borderRadius: 'var(--nb-radius-sm)',
                 background: `${bindingColorCSS(kdToQuality(binding.predictedKd))}18`,
                 whiteSpace: 'nowrap', flexShrink: 0, marginLeft: 6,
@@ -499,7 +498,7 @@ export default function CatalystDesignerPageV2() {
             <div style={{ display: 'flex', alignItems: 'center' }}>
               <div style={{ flex: 1 }}><MetricCard label="kcat" value={enzyme.kcat.toFixed(2)} unit="s⁻¹" /></div>
               <span style={{
-                fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: kcatQ.color,
+                fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: kcatQ.color,
                 padding: '2px 6px', borderRadius: 'var(--nb-radius-sm)', background: `${kcatQ.color}18`,
                 whiteSpace: 'nowrap', flexShrink: 0, marginLeft: 6,
               }}>{kcatQ.icon} {kcatQ.label}</span>
@@ -510,7 +509,7 @@ export default function CatalystDesignerPageV2() {
             <div style={{ display: 'flex', alignItems: 'center' }}>
               <div style={{ flex: 1 }}><MetricCard label="Fit" value={binding.overallScore.toFixed(2)} /></div>
               <span style={{
-                fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: fitQ.color,
+                fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: fitQ.color,
                 padding: '2px 6px', borderRadius: 'var(--nb-radius-sm)', background: `${fitQ.color}18`,
                 whiteSpace: 'nowrap', flexShrink: 0, marginLeft: 6,
               }}>{fitQ.icon} {fitQ.label}</span>
@@ -538,7 +537,7 @@ export default function CatalystDesignerPageV2() {
                   className={`nb-tool-toggle ${viewMode === vm.key ? 'nb-tool-toggle--active' : ''}`}
                   style={{
                     width: '100%', textAlign: 'left',
-                    fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', fontWeight: viewMode === vm.key ? 600 : 400,
+                    fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', fontWeight: viewMode === vm.key ? 600 : 400,
                     padding: '5px 8px', borderRadius: 'var(--nb-radius-sm)',
                     borderColor: viewMode === vm.key ? vm.color : undefined,
                     background: viewMode === vm.key ? `${vm.color}18` : undefined,
@@ -565,8 +564,8 @@ export default function CatalystDesignerPageV2() {
                        viewMode === 'Pareto' ? 'Trade-off ranking of candidate pathways.' :
                        'Predicted mutagenesis sites with effect classification.'}
               legend={[
-                { label: 'Enzyme', value: enzyme.name, accent: PATHD_THEME.sky },
-                { label: 'View', value: viewMode, accent: VIEW_MODES.find(vm => vm.key === viewMode)?.color ?? PATHD_THEME.apricot },
+                { label: 'Enzyme', value: enzyme.name, accent: THEME.SKY },
+                { label: 'View', value: viewMode, accent: VIEW_MODES.find(vm => vm.key === viewMode)?.color ?? THEME.APRICOT },
               ]}
             >
               {viewMode === 'Binding' && <BindingRadarChart result={binding} />}

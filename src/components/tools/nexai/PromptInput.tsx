@@ -19,9 +19,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { TOOL_TOKENS as T } from '../shared/ToolShell';
-import { PATHD_THEME } from '../../workbench/workbenchTheme';
-
-const AXON_ACCENT = PATHD_THEME.blue;
+import { THEME } from '../../../theme';
+const AXON_ACCENT = THEME.SKY;
 
 export interface PromptInputProps {
   query: string;
@@ -144,10 +143,10 @@ export default function PromptInput({
           ) : (
             <span
               style={{
-                fontFamily: T.MONO,
+                fontFamily: THEME.MONO,
                 fontSize: 'var(--nb-fs-sm)',
                 fontWeight: 700,
-                color: PATHD_THEME.label,
+                color: THEME.LABEL,
               }}
             >
               /
@@ -177,10 +176,10 @@ export default function PromptInput({
             background: 'transparent',
             border: 'none',
             outline: 'none',
-            fontFamily: T.SANS,
+            fontFamily: THEME.SANS,
             fontSize: 'var(--nb-fs-md)',
             lineHeight: 1.55,
-            color: PATHD_THEME.value,
+            color: THEME.VALUE,
             caretColor: AXON_ACCENT,
             letterSpacing: '-0.01em',
           }}
@@ -200,11 +199,11 @@ export default function PromptInput({
               padding: '0 18px',
               borderRadius: 'var(--nb-radius-md)',
               cursor: 'pointer',
-              fontFamily: T.SANS,
+              fontFamily: THEME.SANS,
               fontSize: 'var(--nb-fs-sm)',
               fontWeight: 700,
               background: btnHover ? 'rgba(250, 128, 114, 0.22)' : 'rgba(250, 128, 114, 0.12)',
-              color: PATHD_THEME.coral,
+              color: THEME.CORAL,
               border: `1px solid rgba(250, 128, 114, ${btnHover ? 0.4 : 0.25})`,
               boxShadow: btnHover ? '0 2px 12px rgba(0,0,0,0.22)' : 'none',
               transition: 'background 0.15s, box-shadow 0.15s',
@@ -227,13 +226,13 @@ export default function PromptInput({
             padding: '0 18px',
             borderRadius: 'var(--nb-radius-md)',
             cursor: !query.trim() ? 'not-allowed' : 'pointer',
-            fontFamily: T.SANS,
+            fontFamily: THEME.SANS,
             fontSize: 'var(--nb-fs-sm)',
             fontWeight: 700,
             background: btnHover
               ? 'rgba(175, 195, 214, 0.28)'
               : 'rgba(175, 195, 214, 0.18)',
-            color: T.VALUE,
+            color: THEME.VALUE,
             opacity: !query.trim() ? 0.45 : 1,
             border: `1px solid rgba(175, 195, 214, ${btnHover ? 0.35 : 0.2})`,
             boxShadow: btnHover ? '0 2px 12px rgba(0,0,0,0.22)' : 'none',
@@ -257,11 +256,11 @@ export default function PromptInput({
         >
           <span
             style={{
-              fontFamily: T.MONO,
+              fontFamily: THEME.MONO,
               fontSize: 'var(--nb-fs-xs)',
               letterSpacing: '0.08em',
               textTransform: 'uppercase',
-              color: PATHD_THEME.label,
+              color: THEME.LABEL,
               alignSelf: 'center',
               marginRight: '4px',
             }}
@@ -282,10 +281,10 @@ export default function PromptInput({
                 border: '1px solid rgba(175,195,214,0.2)',
                 background: 'rgba(175,195,214,0.06)',
                 cursor: 'pointer',
-                fontFamily: T.SANS,
+                fontFamily: THEME.SANS,
                 fontSize: 'var(--nb-fs-sm)',
                 lineHeight: 1.45,
-                color: PATHD_THEME.value,
+                color: THEME.VALUE,
               }}
             >
               {example}

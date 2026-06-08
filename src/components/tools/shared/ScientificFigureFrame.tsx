@@ -1,9 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { PATHD_THEME } from '../../workbench/workbenchTheme';
-import { T } from '../../ide/tokens';
-
+import { THEME } from '../../../theme';
 export interface ScientificFigureLegendItem {
   label: string;
   value: string;
@@ -36,8 +34,8 @@ export default function ScientificFigureFrame({
         gap: '12px',
         padding: '14px',
         borderRadius: 'var(--nb-radius-xl)',
-        border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
-        background: PATHD_THEME.panelSurface,
+        border: `1px solid ${THEME.BORDER}`,
+        background: THEME.PANEL_SURFACE,
         boxShadow: '0 16px 34px rgba(96,74,56,0.08), inset 0 1px 0 rgba(255,255,255,0.82)',
         minHeight,
       }}
@@ -47,26 +45,26 @@ export default function ScientificFigureFrame({
           display: 'grid',
           gap: '4px',
           paddingBottom: '10px',
-          borderBottom: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
+          borderBottom: `1px solid ${THEME.BORDER}`,
         }}
       >
         <div
           style={{
-            fontFamily: T.MONO,
+            fontFamily: THEME.MONO,
             fontSize: 'var(--nb-fs-xs)',
             letterSpacing: '0.12em',
             textTransform: 'uppercase',
-            color: PATHD_THEME.label,
+            color: THEME.LABEL,
           }}
         >
           {eyebrow}
         </div>
         <div
           style={{
-            fontFamily: T.SANS,
+            fontFamily: THEME.SANS,
             fontSize: 'var(--nb-fs-md)',
             fontWeight: 700,
-            color: PATHD_THEME.value,
+            color: THEME.VALUE,
             letterSpacing: '-0.02em',
           }}
         >
@@ -74,10 +72,10 @@ export default function ScientificFigureFrame({
         </div>
         <div
           style={{
-            fontFamily: T.SANS,
+            fontFamily: THEME.SANS,
             fontSize: 'var(--nb-fs-sm)',
             lineHeight: 1.6,
-            color: PATHD_THEME.paperMuted,
+            color: THEME.PAPER_MUTED,
           }}
         >
           {caption}
@@ -92,7 +90,7 @@ export default function ScientificFigureFrame({
             display: 'grid',
             gap: '10px',
             paddingTop: '10px',
-            borderTop: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
+            borderTop: `1px solid ${THEME.BORDER}`,
           }}
         >
           {legend.length > 0 && (
@@ -104,8 +102,8 @@ export default function ScientificFigureFrame({
                     minHeight: '28px',
                     padding: '0 10px',
                     borderRadius: '999px',
-                    border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
-                    background: PATHD_THEME.panelInset,
+                    border: `1px solid ${THEME.BORDER}`,
+                    background: THEME.PANEL_INSET,
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: '6px',
@@ -116,26 +114,26 @@ export default function ScientificFigureFrame({
                       width: '8px',
                       height: '8px',
                       borderRadius: '999px',
-                      background: item.accent ?? PATHD_THEME.apricot,
+                      background: item.accent ?? THEME.APRICOT,
                       flexShrink: 0,
                     }}
                   />
                   <span
                     style={{
-                      fontFamily: T.MONO,
+                      fontFamily: THEME.MONO,
                       fontSize: 'var(--nb-fs-xs)',
                       letterSpacing: '0.06em',
                       textTransform: 'uppercase',
-                      color: PATHD_THEME.label,
+                      color: THEME.LABEL,
                     }}
                   >
                     {item.label}
                   </span>
                   <span
                     style={{
-                      fontFamily: T.SANS,
+                      fontFamily: THEME.SANS,
                       fontSize: 'var(--nb-fs-xs)',
-                      color: PATHD_THEME.value,
+                      color: THEME.VALUE,
                       fontWeight: 600,
                     }}
                   >

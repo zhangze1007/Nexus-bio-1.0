@@ -1,5 +1,5 @@
 'use client';
-import { T } from '../tokens';
+import { THEME } from '../../../theme';
 
 interface SimErrorBannerProps {
   message: string;
@@ -18,7 +18,7 @@ export default function SimErrorBanner({ message, onRetry }: SimErrorBannerProps
         display: 'flex',
         alignItems: 'center',
         gap: '12px',
-        fontFamily: T.SANS,
+        fontFamily: THEME.SANS,
       }}
     >
       <span style={{ fontSize: '18px', flexShrink: 0 }}>⚠</span>
@@ -39,7 +39,7 @@ export default function SimErrorBanner({ message, onRetry }: SimErrorBannerProps
             border: '1px solid rgba(255,49,49,0.25)',
             borderRadius: '8px',
             color: '#FF3131',
-            fontFamily: T.MONO,
+            fontFamily: THEME.MONO,
             fontSize: '10px',
             cursor: 'pointer',
             flexShrink: 0,

@@ -8,8 +8,7 @@ import { X, Download, FileText, Hash, Link2, ChevronDown, ChevronUp, Atom, Activ
 import { PathwayNode, PathwayEdge, NodeType, EdgeRelationshipType, SHOWCASE_PUBCHEM_CIDS } from '../types';
 import { BIO_THEME_COLORS } from './ThreeScene';
 import { getToolDefinition } from './tools/shared/toolRegistry';
-import { PATHD_THEME } from './workbench/workbenchTheme';
-
+import { THEME } from '../theme';
 // Dynamic imports for heavy viewers (code-splitting)
 const MoleculeViewer = dynamic(() => import('./MoleculeViewer'), { ssr: false, loading: () => <div style={{ height: 200, background: 'rgba(255,255,255,0.03)', borderRadius: 12 }} /> });
 const KineticPanel = dynamic(() => import('./KineticPanel'), { ssr: false, loading: () => <div style={{ height: 200, background: 'rgba(255,255,255,0.03)', borderRadius: 12 }} /> });
@@ -22,20 +21,19 @@ const HIGH_RISK_THRESHOLD = 0.7;
 const MODERATE_RISK_THRESHOLD = 0.3;
 const STRONG_SUCCESS_THRESHOLD = 0.75;
 const MODERATE_SUCCESS_THRESHOLD = 0.45;
-import { T } from './ide/tokens';
-const UI_SANS = T.SANS;
-const UI_MONO = T.MONO;
+const UI_SANS = THEME.SANS;
+const UI_MONO = THEME.MONO;
 
 function riskMetricColor(value: number) {
-  if (value >= HIGH_RISK_THRESHOLD) return PATHD_THEME.riskHigh;
-  if (value >= MODERATE_RISK_THRESHOLD) return PATHD_THEME.riskMedium;
-  return PATHD_THEME.riskLow;
+  if (value >= HIGH_RISK_THRESHOLD) return THEME.RISK_HIGH;
+  if (value >= MODERATE_RISK_THRESHOLD) return THEME.RISK_MEDIUM;
+  return THEME.RISK_LOW;
 }
 
 function successMetricColor(value: number) {
-  if (value >= STRONG_SUCCESS_THRESHOLD) return PATHD_THEME.successHigh;
-  if (value >= MODERATE_SUCCESS_THRESHOLD) return PATHD_THEME.successMedium;
-  return PATHD_THEME.successLow;
+  if (value >= STRONG_SUCCESS_THRESHOLD) return THEME.SUCCESS_HIGH;
+  if (value >= MODERATE_SUCCESS_THRESHOLD) return THEME.SUCCESS_MEDIUM;
+  return THEME.SUCCESS_LOW;
 }
 
 // ── AlphaFold IDs for showcase enzymes ────────────────────────────────
@@ -89,7 +87,6 @@ function lookupRCSB(label: string) {
   return RCSB_STRUCTURES[key] ?? null;
 }
 
-
 interface NodePanelProps {
   node: PathwayNode | null;
   onClose: () => void;
@@ -115,7 +112,7 @@ function ConfidenceBar({ score }: { score: number }) {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
-        <span style={{ fontFamily: "'Public Sans', -apple-system, sans-serif", fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: PATHD_THEME.label }}>
+        <span style={{ fontFamily: "'Public Sans', -apple-system, sans-serif", fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: THEME.LABEL }}>
           AI Confidence
         </span>
         <span style={{ fontFamily: "'Public Sans', -apple-system, sans-serif", fontSize: '13px', color, fontWeight: 700, fontFeatureSettings: "'tnum' 1" }}>{pct}%</span>
@@ -125,7 +122,7 @@ function ConfidenceBar({ score }: { score: number }) {
           style={{
             width: `${pct}%`,
             height: '100%',
-            background: `linear-gradient(90deg, ${PATHD_THEME.successLow} 0%, ${PATHD_THEME.successMedium} 58%, ${PATHD_THEME.successHigh} 100%)`,
+            background: `linear-gradient(90deg, ${THEME.SUCCESS_LOW} 0%, ${THEME.SUCCESS_MEDIUM} 58%, ${THEME.SUCCESS_HIGH} 100%)`,
             borderRadius: '2px',
             boxShadow: `0 0 10px ${color}33`,
             transition: 'width 0.5s cubic-bezier(0.22,1,0.36,1)',
@@ -168,10 +165,10 @@ function PLDDTHistogram({ nodes, currentNodeId }: { nodes?: PathwayNode[]; curre
 
     const binColor = (idx: number): string => {
       const midpoint = idx * 10 + 5;
-      if (midpoint < 50) return `${PATHD_THEME.successLow}66`;
-      if (midpoint < 70) return `${PATHD_THEME.successMedium}80`;
-      if (midpoint < 90) return `${PATHD_THEME.successHigh}99`;
-      return `${PATHD_THEME.successHigh}cc`;
+      if (midpoint < 50) return `${THEME.SUCCESS_LOW}66`;
+      if (midpoint < 70) return `${THEME.SUCCESS_MEDIUM}80`;
+      if (midpoint < 90) return `${THEME.SUCCESS_HIGH}99`;
+      return `${THEME.SUCCESS_HIGH}cc`;
     };
 
     return { binCounts, mean, max, n, binColor };
@@ -215,14 +212,14 @@ function PLDDTHistogram({ nodes, currentNodeId }: { nodes?: PathwayNode[]; curre
             position: 'absolute',
             left: `${(meanBinX / BINS) * 100}%`,
             top: 0, bottom: 0, width: '1px',
-            background: `${PATHD_THEME.successMedium}80`,
+            background: `${THEME.SUCCESS_MEDIUM}80`,
             zIndex: 10,
             pointerEvents: 'none',
           }}>
             <span style={{
               position: 'absolute', top: '-1px', left: '3px',
               fontFamily: "'Public Sans', -apple-system, sans-serif", fontSize: '10px',
-              color: `${PATHD_THEME.successMedium}cc`, fontFeatureSettings: "'tnum' 1",
+              color: `${THEME.SUCCESS_MEDIUM}cc`, fontFeatureSettings: "'tnum' 1",
               whiteSpace: 'nowrap',
             }}>μ</span>
           </div>
@@ -241,7 +238,7 @@ function PLDDTHistogram({ nodes, currentNodeId }: { nodes?: PathwayNode[]; curre
                   borderRadius: '3px 3px 0 0',
                   opacity: count > 0 ? (isCurrentNode ? 1.0 : 0.65) : 0.08,
                   transition: 'height 0.45s cubic-bezier(0.22,1,0.36,1), opacity 0.3s',
-                  outline: isCurrentNode ? `1px solid ${PATHD_THEME.successHigh}66` : 'none',
+                  outline: isCurrentNode ? `1px solid ${THEME.SUCCESS_HIGH}66` : 'none',
                 }} />
               </div>
             );
@@ -386,12 +383,12 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
   const separationAccent = riskMetricColor(separationValue);
   const carbonAccent = successMetricColor(carbonEfficiencyNormalized);
   const statusAccent = node?.nodeType === 'impurity'
-    ? PATHD_THEME.riskHigh
+    ? THEME.RISK_HIGH
     : node?.nodeType === 'intermediate'
-      ? PATHD_THEME.riskMedium
+      ? THEME.RISK_MEDIUM
       : !hasInsufficientRiskData && riskValue > MODERATE_RISK_THRESHOLD
         ? riskAccent
-        : PATHD_THEME.successHigh;
+        : THEME.SUCCESS_HIGH;
 
   useEffect(() => {
     if (!node) return undefined;
@@ -462,25 +459,25 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
             aria-label={node.label}
           >
             {/* Header */}
-            <div style={{ padding: '16px 20px', borderBottom: `1px solid ${PATHD_THEME.panelBorder}` }}>
+            <div style={{ padding: '16px 20px', borderBottom: `1px solid ${THEME.BORDER}` }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
-                  <div style={{ width: '10px', height: '10px', borderRadius: '50%', flexShrink: 0, background: PATHD_THEME.orange, border: `1px solid ${PATHD_THEME.panelBorderStrong}`, boxShadow: '0 0 10px rgba(255,139,31,0.35)' }} />
+                  <div style={{ width: '10px', height: '10px', borderRadius: '50%', flexShrink: 0, background: THEME.APRICOT, border: `1px solid ${THEME.BORDER_STRONG}`, boxShadow: '0 0 10px rgba(255,139,31,0.35)' }} />
                   <div style={{ minWidth: 0 }}>
-                    <div style={{ color: PATHD_THEME.label, fontSize: '10px', marginBottom: '4px', fontFamily: UI_MONO, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                    <div style={{ color: THEME.LABEL, fontSize: '10px', marginBottom: '4px', fontFamily: UI_MONO, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                       Active graph object
                     </div>
-                    <h2 style={{ color: PATHD_THEME.value, fontSize: '14px', fontWeight: 700, margin: 0, letterSpacing: '-0.01em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    <h2 style={{ color: THEME.VALUE, fontSize: '14px', fontWeight: 700, margin: 0, letterSpacing: '-0.01em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {node.label}
                     </h2>
                     {node.canonicalLabel && node.canonicalLabel !== node.label && (
-                      <p style={{ color: PATHD_THEME.label, fontSize: '11px', margin: '2px 0 0', fontStyle: 'italic' }}>{node.canonicalLabel}</p>
+                      <p style={{ color: THEME.LABEL, fontSize: '11px', margin: '2px 0 0', fontStyle: 'italic' }}>{node.canonicalLabel}</p>
                     )}
                   </div>
                 </div>
                 <button onClick={onClose}
                   aria-label="Close sidebar"
-                  style={{ color: PATHD_THEME.value, background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)', cursor: 'pointer', padding: '8px', flexShrink: 0, display: 'flex', borderRadius: '12px', transition: 'border-color 300ms ease-out, filter 300ms ease-out, background 300ms ease-out' }}
+                  style={{ color: THEME.VALUE, background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)', cursor: 'pointer', padding: '8px', flexShrink: 0, display: 'flex', borderRadius: '12px', transition: 'border-color 300ms ease-out, filter 300ms ease-out, background 300ms ease-out' }}
                   onMouseEnter={e => {
                     (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.28)';
                     (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.16)';
@@ -499,7 +496,7 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
               <div
                 role="tablist"
                 aria-label="Node details"
-                style={{ display: 'flex', gap: '4px', background: PATHD_THEME.panelGradientSoft, borderRadius: '12px', padding: '4px', border: `1px solid ${PATHD_THEME.panelBorder}` }}
+                style={{ display: 'flex', gap: '4px', background: THEME.PANEL_GRADIENT_SOFT, borderRadius: '12px', padding: '4px', border: `1px solid ${THEME.BORDER}` }}
                 onKeyDown={e => {
                   const idx = tabs.findIndex(t => t.id === activeTab);
                   if (e.key === 'ArrowRight') {
@@ -520,21 +517,21 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                     onClick={() => setActiveTab(tab.id)}
                     onMouseEnter={e => {
                       if (activeTab !== tab.id) {
-                        (e.currentTarget as HTMLElement).style.borderColor = PATHD_THEME.panelBorderStrong;
+                        (e.currentTarget as HTMLElement).style.borderColor = THEME.BORDER_STRONG;
                         (e.currentTarget as HTMLElement).style.filter = 'brightness(1.05)';
                       }
                     }}
                     onMouseLeave={e => {
                       if (activeTab !== tab.id) {
-                        (e.currentTarget as HTMLElement).style.borderColor = PATHD_THEME.panelBorder;
+                        (e.currentTarget as HTMLElement).style.borderColor = THEME.BORDER;
                         (e.currentTarget as HTMLElement).style.filter = 'brightness(1)';
                       }
                     }}
                     style={{
                       flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px',
-                      padding: '6px 8px', borderRadius: '8px', border: `1px solid ${activeTab === tab.id ? PATHD_THEME.panelBorderStrong : PATHD_THEME.panelBorder}`, cursor: 'pointer',
-                      background: activeTab === tab.id ? PATHD_THEME.panelGradientStrong : 'transparent',
-                      color: activeTab === tab.id ? PATHD_THEME.value : PATHD_THEME.label,
+                      padding: '6px 8px', borderRadius: '8px', border: `1px solid ${activeTab === tab.id ? THEME.BORDER_STRONG : THEME.BORDER}`, cursor: 'pointer',
+                      background: activeTab === tab.id ? THEME.PANEL_GRADIENT_STRONG : 'transparent',
+                      color: activeTab === tab.id ? THEME.VALUE : THEME.LABEL,
                       fontSize: '11px', fontWeight: activeTab === tab.id ? 600 : 400,
                       transition: 'border-color 300ms ease-out, filter 300ms ease-out, color 300ms ease-out',
                     }}>
@@ -569,20 +566,20 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                   <div style={{
                     padding: '12px 14px',
                     borderRadius: '16px',
-                    background: PATHD_THEME.panelGradientSoft,
-                    border: `1px solid ${PATHD_THEME.panelBorder}`,
+                    background: THEME.PANEL_GRADIENT_SOFT,
+                    border: `1px solid ${THEME.BORDER}`,
                   }}>
-                    <div style={{ color: PATHD_THEME.label, fontSize: '10px', fontFamily: UI_MONO, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>
+                    <div style={{ color: THEME.LABEL, fontSize: '10px', fontFamily: UI_MONO, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>
                       Scientific role in the current route
                     </div>
-                    <div style={{ color: PATHD_THEME.value, fontSize: '13px', fontWeight: 700, lineHeight: 1.45, marginBottom: '6px' }}>
+                    <div style={{ color: THEME.VALUE, fontSize: '13px', fontWeight: 700, lineHeight: 1.45, marginBottom: '6px' }}>
                       {isEnzyme
                         ? 'This node is acting as a catalytic control point in the active pathway.'
                         : isMetabolite
                           ? 'This node is acting as a metabolic state checkpoint in the active route.'
                           : 'This node is acting as a genetic or contextual regulator around the active route.'}
                     </div>
-                    <div style={{ color: PATHD_THEME.label, fontSize: '11px', lineHeight: 1.6 }}>
+                    <div style={{ color: THEME.LABEL, fontSize: '11px', lineHeight: 1.6 }}>
                       {recommendedTools[0]
                         ? `The next strongest workbench handoff from this node is ${recommendedTools[0].shortLabel} — ${recommendedTools[0].direction}.`
                         : 'No downstream handoff has been inferred for this node yet.'}
@@ -627,7 +624,7 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                   {/* ─── Commercial Risk & Compliance Panel ──────────────────────── */}
                   <div style={{ padding: '14px 16px', borderRadius: '20px', background: 'rgba(255,255,255,0.03)', border: '0.5px solid rgba(255,255,255,0.07)', marginBottom: '16px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                      <ShieldAlert size={14} color={PATHD_THEME.riskMedium} />
+                      <ShieldAlert size={14} color={THEME.RISK_MEDIUM} />
                       <span style={{ fontSize: '11px', fontWeight: 800, color: '#FFFFFF', letterSpacing: '0.03em', fontFamily: UI_SANS }}>COMMERCIAL RISK & COMPLIANCE</span>
                     </div>
 
@@ -654,7 +651,7 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                               width: `${(node.risk_score ?? 0) * 100}%`,
                               height: '100%',
                               borderRadius: '2px',
-                              background: `linear-gradient(90deg, ${PATHD_THEME.riskLow} 0%, ${PATHD_THEME.riskMedium} 58%, ${PATHD_THEME.riskHigh} 100%)`,
+                              background: `linear-gradient(90deg, ${THEME.RISK_LOW} 0%, ${THEME.RISK_MEDIUM} 58%, ${THEME.RISK_HIGH} 100%)`,
                               boxShadow: `0 0 10px ${riskAccent}30`,
                             }}
                           />
@@ -673,7 +670,7 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                         ) : (
                           <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontFamily: UI_MONO }}>
                             {(node.separation_cost_index ?? 0) > HIGH_RISK_THRESHOLD && (
-                              <span style={{ color: PATHD_THEME.riskHigh, fontWeight: 700, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>High Separation Cost</span>
+                              <span style={{ color: THEME.RISK_HIGH, fontWeight: 700, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>High Separation Cost</span>
                             )}
                             <span style={{ fontWeight: 600, color: separationAccent }}>
                               {((node.separation_cost_index ?? 0) * 100).toFixed(0)}%
@@ -690,7 +687,7 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                               width: `${(node.separation_cost_index ?? 0) * 100}%`,
                               height: '100%',
                               borderRadius: '2px',
-                              background: `linear-gradient(90deg, ${PATHD_THEME.riskLow} 0%, ${PATHD_THEME.riskMedium} 58%, ${PATHD_THEME.riskHigh} 100%)`,
+                              background: `linear-gradient(90deg, ${THEME.RISK_LOW} 0%, ${THEME.RISK_MEDIUM} 58%, ${THEME.RISK_HIGH} 100%)`,
                               boxShadow: `0 0 10px ${separationAccent}30`,
                             }}
                           />
@@ -701,10 +698,10 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                     {/* Toxicity Impact */}
                     {node.toxicity_impact && (
                       <div style={{ padding: '10px 12px', borderRadius: '12px', marginBottom: '12px',
-                        background: `${PATHD_THEME.riskHigh}12`,
-                        border: `0.5px solid ${PATHD_THEME.riskHigh}33`,
+                        background: `${THEME.RISK_HIGH}12`,
+                        border: `0.5px solid ${THEME.RISK_HIGH}33`,
                       }}>
-                        <span style={{ display: 'block', fontSize: '10px', color: `${PATHD_THEME.riskHigh}cc`, marginBottom: '4px', fontWeight: 700, textTransform: 'uppercase', fontFamily: "'Public Sans', -apple-system, sans-serif" }}>Potential Toxicity Analysis</span>
+                        <span style={{ display: 'block', fontSize: '10px', color: `${THEME.RISK_HIGH}cc`, marginBottom: '4px', fontWeight: 700, textTransform: 'uppercase', fontFamily: "'Public Sans', -apple-system, sans-serif" }}>Potential Toxicity Analysis</span>
                         <p style={{ color: 'rgba(255,214,210,0.78)', fontSize: '11px', fontWeight: 500, margin: 0, lineHeight: 1.5, fontFamily: "'Public Sans', -apple-system, sans-serif" }}>
                           {node.toxicity_impact}
                         </p>
@@ -767,7 +764,7 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                               width: `${node.carbon_efficiency}%`,
                               height: '100%',
                               borderRadius: '2px',
-                              background: `linear-gradient(90deg, ${PATHD_THEME.successLow} 0%, ${PATHD_THEME.successMedium} 58%, ${PATHD_THEME.successHigh} 100%)`,
+                              background: `linear-gradient(90deg, ${THEME.SUCCESS_LOW} 0%, ${THEME.SUCCESS_MEDIUM} 58%, ${THEME.SUCCESS_HIGH} 100%)`,
                               boxShadow: `0 0 10px ${carbonAccent}30`,
                             }}
                           />
@@ -985,9 +982,9 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                             <div style={{ marginBottom: '8px' }}>
                               <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: "'Public Sans', -apple-system, sans-serif", fontWeight: 700 }}>Atom Economy (Carbon Efficiency)</span>
                               <div style={{
-                                color: node.atom_economy >= 80 ? PATHD_THEME.successHigh
-                                  : node.atom_economy >= 50 ? PATHD_THEME.successMedium
-                                  : PATHD_THEME.successLow,
+                                color: node.atom_economy >= 80 ? THEME.SUCCESS_HIGH
+                                  : node.atom_economy >= 50 ? THEME.SUCCESS_MEDIUM
+                                  : THEME.SUCCESS_LOW,
                                 marginTop: '2px',
                               }}>
                                 {node.atom_economy.toFixed(1)}%
@@ -1002,13 +999,13 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                           {node.dsp_bottleneck && (
                             <div style={{ marginBottom: '8px' }}>
                               <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: "'Public Sans', -apple-system, sans-serif", fontWeight: 700 }}>DSP Bottleneck</span>
-                              <div style={{ color: PATHD_THEME.riskMedium, marginTop: '2px' }}>{node.dsp_bottleneck}</div>
+                              <div style={{ color: THEME.RISK_MEDIUM, marginTop: '2px' }}>{node.dsp_bottleneck}</div>
                             </div>
                           )}
                           {node.ic50_toxicity && (
                             <div>
                               <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: "'Public Sans', -apple-system, sans-serif", fontWeight: 700 }}>IC50 Toxicity</span>
-                              <div style={{ color: PATHD_THEME.riskHigh, marginTop: '2px' }}>{node.ic50_toxicity}</div>
+                              <div style={{ color: THEME.RISK_HIGH, marginTop: '2px' }}>{node.ic50_toxicity}</div>
                             </div>
                           )}
                         </div>

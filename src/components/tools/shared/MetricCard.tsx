@@ -1,9 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { T } from '../../ide/tokens';
-import { PATHD_THEME } from '../../workbench/workbenchTheme';
-
+import { THEME } from '../../../theme';
 /**
  * MetricCard — Standardized metric display for all tool pages.
  *
@@ -32,9 +30,9 @@ const SIZE_MAP: Record<MetricSize, {
   padding: string; gap: string;
   valueSize: string; labelSize: string; detailSize: string;
 }> = {
-  sm: { padding: '8px 10px', gap: '2px', valueSize: T.FS_MD, labelSize: T.FS_XS, detailSize: T.FS_XS },
-  md: { padding: '12px 14px', gap: '4px', valueSize: T.FS_LG, labelSize: T.FS_XS, detailSize: T.FS_SM },
-  lg: { padding: '16px 18px', gap: '6px', valueSize: T.FS_XL, labelSize: T.FS_SM, detailSize: T.FS_SM },
+  sm: { padding: '8px 10px', gap: '2px', valueSize: THEME.FS_MD, labelSize: THEME.FS_XS, detailSize: THEME.FS_XS },
+  md: { padding: '12px 14px', gap: '4px', valueSize: THEME.FS_LG, labelSize: THEME.FS_XS, detailSize: THEME.FS_SM },
+  lg: { padding: '16px 18px', gap: '6px', valueSize: THEME.FS_XL, labelSize: THEME.FS_SM, detailSize: THEME.FS_SM },
 };
 
 export default function MetricCard({
@@ -47,16 +45,16 @@ export default function MetricCard({
   icon,
 }: MetricCardProps) {
   const s = SIZE_MAP[size];
-  const accentColor = accent || T.MINT;
+  const accentColor = accent || THEME.MINT;
 
   return (
     <div style={{
       display: 'grid',
       gap: s.gap,
       padding: s.padding,
-      borderRadius: T.R_MD,
-      border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
-      background: PATHD_THEME.panelInset,
+      borderRadius: THEME.R_MD,
+      border: `1px solid ${THEME.BORDER}`,
+      background: THEME.PANEL_INSET,
     }}>
       {/* Label row */}
       <div style={{
@@ -70,12 +68,12 @@ export default function MetricCard({
           </span>
         )}
         <span style={{
-          fontFamily: T.MONO,
+          fontFamily: THEME.MONO,
           fontSize: s.labelSize,
           fontWeight: 700,
           letterSpacing: '0.08em',
           textTransform: 'uppercase',
-          color: PATHD_THEME.label,
+          color: THEME.LABEL,
         }}>
           {label}
         </span>
@@ -88,10 +86,10 @@ export default function MetricCard({
         gap: '4px',
       }}>
         <span style={{
-          fontFamily: T.MONO,
+          fontFamily: THEME.MONO,
           fontSize: s.valueSize,
           fontWeight: 700,
-          color: PATHD_THEME.value,
+          color: THEME.VALUE,
           letterSpacing: '-0.02em',
           fontFeatureSettings: "'tnum' 1",
         }}>
@@ -99,9 +97,9 @@ export default function MetricCard({
         </span>
         {unit && (
           <span style={{
-            fontFamily: T.MONO,
+            fontFamily: THEME.MONO,
             fontSize: s.labelSize,
-            color: PATHD_THEME.label,
+            color: THEME.LABEL,
           }}>
             {unit}
           </span>
@@ -111,9 +109,9 @@ export default function MetricCard({
       {/* Detail */}
       {detail && (
         <span style={{
-          fontFamily: T.SANS,
+          fontFamily: THEME.SANS,
           fontSize: s.detailSize,
-          color: PATHD_THEME.paperMuted,
+          color: THEME.PAPER_MUTED,
           lineHeight: 1.5,
         }}>
           {detail}

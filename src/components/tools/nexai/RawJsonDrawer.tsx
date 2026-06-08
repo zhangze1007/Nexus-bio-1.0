@@ -20,8 +20,8 @@
  */
 import { useState } from 'react';
 import { TOOL_TOKENS as T } from '../shared/ToolShell';
-import { PATHD_THEME } from '../../workbench/workbenchTheme';
 import type { ParseErrorInfo } from './ResultPanel';
+import { THEME } from '../../../theme';
 
 export interface RawJsonDrawerProps {
   open: boolean;
@@ -73,8 +73,8 @@ export default function RawJsonDrawer({
       data-testid="nexai-raw-json-drawer"
       style={{
         borderRadius: 'var(--nb-radius-md)',
-        border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
-        background: PATHD_THEME.panelInset,
+        border: `1px solid ${THEME.BORDER}`,
+        background: THEME.PANEL_INSET,
         overflow: 'hidden',
       }}
     >
@@ -94,11 +94,11 @@ export default function RawJsonDrawer({
           background: 'transparent',
           border: 'none',
           cursor: 'pointer',
-          fontFamily: T.MONO,
+          fontFamily: THEME.MONO,
           fontSize: 'var(--nb-fs-xs)',
           letterSpacing: '0.08em',
           textTransform: 'uppercase',
-          color: PATHD_THEME.label,
+          color: THEME.LABEL,
         }}
       >
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: '10px' }}>
@@ -108,9 +108,9 @@ export default function RawJsonDrawer({
               display: 'inline-block',
               transform: open ? 'rotate(90deg)' : 'rotate(0deg)',
               transition: 'transform 0.15s ease',
-              fontFamily: T.MONO,
+              fontFamily: THEME.MONO,
               fontSize: 'var(--nb-fs-xs)',
-              color: PATHD_THEME.label,
+              color: THEME.LABEL,
             }}
           >
             ▸
@@ -121,13 +121,13 @@ export default function RawJsonDrawer({
           {provider && (
             <span
               style={{
-                fontFamily: T.MONO,
+                fontFamily: THEME.MONO,
                 fontSize: 'var(--nb-fs-xs)',
                 padding: '2px 6px',
                 borderRadius: '6px',
                 background: 'rgba(175,195,214,0.12)',
                 border: '1px solid rgba(175,195,214,0.24)',
-                color: PATHD_THEME.value,
+                color: THEME.VALUE,
                 letterSpacing: '0.04em',
                 textTransform: 'none',
               }}
@@ -138,7 +138,7 @@ export default function RawJsonDrawer({
           {parseError && parseError.code !== 'NO_OBJECT' && (
             <span
               style={{
-                fontFamily: T.MONO,
+                fontFamily: THEME.MONO,
                 fontSize: 'var(--nb-fs-xs)',
                 padding: '2px 6px',
                 borderRadius: '6px',
@@ -160,7 +160,7 @@ export default function RawJsonDrawer({
           id="nexai-raw-json-body"
           data-testid="nexai-raw-json-body"
           style={{
-            borderTop: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
+            borderTop: `1px solid ${THEME.BORDER}`,
             padding: '10px 14px 14px',
             display: 'grid',
             gap: '8px',
@@ -169,9 +169,9 @@ export default function RawJsonDrawer({
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
             <span
               style={{
-                fontFamily: T.MONO,
+                fontFamily: THEME.MONO,
                 fontSize: 'var(--nb-fs-xs)',
-                color: PATHD_THEME.label,
+                color: THEME.LABEL,
                 letterSpacing: '0.06em',
               }}
             >
@@ -182,14 +182,14 @@ export default function RawJsonDrawer({
                 type="button"
                 onClick={handleCopy}
                 style={{
-                  fontFamily: T.MONO,
+                  fontFamily: THEME.MONO,
                   fontSize: 'var(--nb-fs-xs)',
                   padding: '4px 10px',
                   borderRadius: 'var(--nb-radius-sm)',
-                  border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
+                  border: `1px solid ${THEME.BORDER}`,
                   background: 'transparent',
                   cursor: 'pointer',
-                  color: PATHD_THEME.value,
+                  color: THEME.VALUE,
                 }}
               >
                 {copied ? 'Copied' : 'Copy'}
@@ -200,13 +200,13 @@ export default function RawJsonDrawer({
             <p
               style={{
                 margin: 0,
-                fontFamily: T.SANS,
+                fontFamily: THEME.SANS,
                 fontSize: 'var(--nb-fs-sm)',
-                color: PATHD_THEME.label,
+                color: THEME.LABEL,
                 lineHeight: 1.55,
               }}
             >
-              Backend reported <code style={{ fontFamily: T.MONO }}>{parseError.code}</code>: {parseError.message}
+              Backend reported <code style={{ fontFamily: THEME.MONO }}>{parseError.code}</code>: {parseError.message}
             </p>
           )}
           <pre
@@ -216,10 +216,10 @@ export default function RawJsonDrawer({
               borderRadius: 'var(--nb-radius-md)',
               background: 'rgba(10,14,22,0.7)',
               border: '1px solid rgba(255,255,255,0.06)',
-              fontFamily: T.MONO,
+              fontFamily: THEME.MONO,
               fontSize: 'var(--nb-fs-sm)',
               lineHeight: 1.5,
-              color: PATHD_THEME.value,
+              color: THEME.VALUE,
               maxHeight: '340px',
               overflow: 'auto',
               whiteSpace: 'pre-wrap',

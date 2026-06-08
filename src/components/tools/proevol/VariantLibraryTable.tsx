@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from 'react';
 import type { RoundResult, VariantCandidate } from '../../../services/ProEvolCampaignEngine';
-import { T } from '../../ide/tokens';
 import {
   ProEvolCard,
   PROEVOL_THEME,
@@ -11,6 +10,7 @@ import {
   tableCellStyle,
   tableHeaderStyle,
 } from './shared';
+import { THEME } from '../../../theme';
 
 type SortKey = 'score' | 'activity' | 'stability' | 'expression' | 'specificity' | 'developability' | 'burden' | 'confidence' | 'status';
 type SortDirection = 'asc' | 'desc';
@@ -106,7 +106,7 @@ export default function VariantLibraryTable({
                         border: 'none',
                         padding: 0,
                         color: PROEVOL_THEME.label,
-                        fontFamily: T.MONO,
+                        fontFamily: THEME.MONO,
                         fontSize: 'var(--nb-fs-xs)',
                         letterSpacing: '0.08em',
                         textTransform: 'uppercase',
@@ -143,8 +143,8 @@ export default function VariantLibraryTable({
                 >
                   <td style={tableCellStyle()}>
                     <div style={{ display: 'grid', gap: '4px' }}>
-                      <span style={{ fontFamily: T.SANS, fontWeight: 600 }}>{variant.name}</span>
-                      <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PROEVOL_THEME.label }}>
+                      <span style={{ fontFamily: THEME.SANS, fontWeight: 600 }}>{variant.name}</span>
+                      <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: PROEVOL_THEME.label }}>
                         parent {variant.parentId ?? 'WT'} · rank {variant.libraryRank + 1}
                       </span>
                     </div>
@@ -155,23 +155,23 @@ export default function VariantLibraryTable({
                       <StatusPill tone={toneForStatus(variant.status)}>{variant.status}</StatusPill>
                     </div>
                   </td>
-                  <td style={{ ...tableCellStyle(), fontFamily: T.MONO }}>{variant.mutationString}</td>
-                  <td style={{ ...tableCellStyle(), fontFamily: T.MONO }}>{variant.score.composite.toFixed(1)}</td>
-                  <td style={{ ...tableCellStyle(), fontFamily: T.MONO, color: variant.score.deltaFromWildType >= 0 ? PROEVOL_THEME.mint : PROEVOL_THEME.coral }}>
+                  <td style={{ ...tableCellStyle(), fontFamily: THEME.MONO }}>{variant.mutationString}</td>
+                  <td style={{ ...tableCellStyle(), fontFamily: THEME.MONO }}>{variant.score.composite.toFixed(1)}</td>
+                  <td style={{ ...tableCellStyle(), fontFamily: THEME.MONO, color: variant.score.deltaFromWildType >= 0 ? PROEVOL_THEME.mint : PROEVOL_THEME.coral }}>
                     {formatSigned(variant.score.deltaFromWildType, 1)}
                   </td>
-                  <td style={{ ...tableCellStyle(), fontFamily: T.MONO }}>{variant.predictedActivity.toFixed(1)}</td>
-                  <td style={{ ...tableCellStyle(), fontFamily: T.MONO }}>{variant.predictedStability.toFixed(1)}</td>
-                  <td style={{ ...tableCellStyle(), fontFamily: T.MONO }}>{variant.predictedExpression.toFixed(1)}</td>
-                  <td style={{ ...tableCellStyle(), fontFamily: T.MONO }}>{variant.predictedSpecificity.toFixed(1)}</td>
-                  <td style={{ ...tableCellStyle(), fontFamily: T.MONO }}>{variant.developability.toFixed(1)}</td>
-                  <td style={{ ...tableCellStyle(), fontFamily: T.MONO }}>
+                  <td style={{ ...tableCellStyle(), fontFamily: THEME.MONO }}>{variant.predictedActivity.toFixed(1)}</td>
+                  <td style={{ ...tableCellStyle(), fontFamily: THEME.MONO }}>{variant.predictedStability.toFixed(1)}</td>
+                  <td style={{ ...tableCellStyle(), fontFamily: THEME.MONO }}>{variant.predictedExpression.toFixed(1)}</td>
+                  <td style={{ ...tableCellStyle(), fontFamily: THEME.MONO }}>{variant.predictedSpecificity.toFixed(1)}</td>
+                  <td style={{ ...tableCellStyle(), fontFamily: THEME.MONO }}>{variant.developability.toFixed(1)}</td>
+                  <td style={{ ...tableCellStyle(), fontFamily: THEME.MONO }}>
                     {variant.mutationBurden}
                     {variant.riskFlags.length ? (
                       <div style={{ fontSize: 'var(--nb-fs-xs)', color: PROEVOL_THEME.label }}>{variant.riskFlags.join(', ')}</div>
                     ) : null}
                   </td>
-                  <td style={{ ...tableCellStyle(), fontFamily: T.MONO }}>{variant.confidence.toFixed(1)}%</td>
+                  <td style={{ ...tableCellStyle(), fontFamily: THEME.MONO }}>{variant.confidence.toFixed(1)}%</td>
                   <td style={{ ...tableCellStyle(), color: PROEVOL_THEME.muted, lineHeight: 1.55 }}>
                     {variant.status === 'selected' ? variant.selectionReason : variant.rejectionReason}
                   </td>

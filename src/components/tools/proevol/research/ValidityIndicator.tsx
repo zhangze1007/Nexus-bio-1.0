@@ -1,11 +1,11 @@
 'use client';
 
-import { T } from '../../../ide/tokens';
 import { PROEVOL_THEME } from '../shared';
 import type {
   ProEvolBandSemantic,
   ProEvolValidity,
 } from '../../../../domain/proevolArtifact';
+import { THEME } from '../../../../theme';
 
 interface ValidityIndicatorProps {
   validity: ProEvolValidity;
@@ -83,7 +83,7 @@ export default function ValidityIndicator({
         />
         <span
           style={{
-            fontFamily: T.MONO,
+            fontFamily: THEME.MONO,
             fontSize: 'var(--nb-fs-xs)',
             letterSpacing: '0.14em',
             color: copy.tone,
@@ -95,7 +95,7 @@ export default function ValidityIndicator({
         {!compact ? (
           <span
             style={{
-              fontFamily: T.MONO,
+              fontFamily: THEME.MONO,
               fontSize: 'var(--nb-fs-xs)',
               letterSpacing: '0.08em',
               color: PROEVOL_THEME.muted,
@@ -108,7 +108,7 @@ export default function ValidityIndicator({
       {!compact ? (
         <div
           style={{
-            fontFamily: T.SANS,
+            fontFamily: THEME.SANS,
             fontSize: 'var(--nb-fs-sm)',
             color: PROEVOL_THEME.value,
             lineHeight: 1.55,
@@ -120,7 +120,7 @@ export default function ValidityIndicator({
       {!compact ? (
         <div
           style={{
-            fontFamily: T.SANS,
+            fontFamily: THEME.SANS,
             fontSize: 'var(--nb-fs-xs)',
             color: PROEVOL_THEME.muted,
             lineHeight: 1.5,

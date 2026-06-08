@@ -1,9 +1,9 @@
 'use client';
 
 import { useMemo } from 'react';
-import { T } from '../../../ide/tokens';
 import { PROEVOL_THEME, tableHeaderStyle, tableCellStyle, formatSigned } from '../shared';
 import type { VariantEnrichmentEntry } from '../../../../services/proevolAnalysis';
+import { THEME } from '../../../../theme';
 
 interface VariantEvidenceTableProps {
   entries: VariantEnrichmentEntry[];
@@ -27,7 +27,7 @@ export default function VariantEvidenceTable({
         style={{
           padding: '20px',
           textAlign: 'center',
-          fontFamily: T.SANS,
+          fontFamily: THEME.SANS,
           fontSize: 12,
           color: PROEVOL_THEME.muted,
         }}
@@ -64,13 +64,13 @@ export default function VariantEvidenceTable({
                   borderBottom: `1px solid ${PROEVOL_THEME.border}`,
                 }}
               >
-                <td style={{ ...tableCellStyle(), fontFamily: T.MONO, fontWeight: 600 }}>{entry.label}</td>
+                <td style={{ ...tableCellStyle(), fontFamily: THEME.MONO, fontWeight: 600 }}>{entry.label}</td>
                 <td style={tableCellStyle()}>{entry.familyLabel}</td>
-                <td style={{ ...tableCellStyle(), fontFamily: T.MONO, fontSize: 10, color: PROEVOL_THEME.muted }}>
+                <td style={{ ...tableCellStyle(), fontFamily: THEME.MONO, fontSize: 10, color: PROEVOL_THEME.muted }}>
                   {entry.mutationString}
                 </td>
-                <td style={{ ...tableCellStyle(), textAlign: 'right', fontFamily: T.MONO }}>{entry.mutationBurden}</td>
-                <td style={{ ...tableCellStyle(), textAlign: 'right', fontFamily: T.MONO }}>
+                <td style={{ ...tableCellStyle(), textAlign: 'right', fontFamily: THEME.MONO }}>{entry.mutationBurden}</td>
+                <td style={{ ...tableCellStyle(), textAlign: 'right', fontFamily: THEME.MONO }}>
                   {(entry.finalFrequency * 100).toFixed(2)}%
                   <div style={{ fontSize: 9, color: PROEVOL_THEME.muted }}>
                     [{(entry.finalFrequencyCi.lower * 100).toFixed(2)}–{(entry.finalFrequencyCi.upper * 100).toFixed(2)}%]
@@ -80,7 +80,7 @@ export default function VariantEvidenceTable({
                   style={{
                     ...tableCellStyle(),
                     textAlign: 'right',
-                    fontFamily: T.MONO,
+                    fontFamily: THEME.MONO,
                     color:
                       entry.log2EnrichmentVsWildType > 0
                         ? PROEVOL_THEME.successHigh
@@ -95,7 +95,7 @@ export default function VariantEvidenceTable({
                   style={{
                     ...tableCellStyle(),
                     textAlign: 'right',
-                    fontFamily: T.MONO,
+                    fontFamily: THEME.MONO,
                     color:
                       entry.meanSelectionCoefficient > 0
                         ? PROEVOL_THEME.successHigh
@@ -113,7 +113,7 @@ export default function VariantEvidenceTable({
       </table>
       <div
         style={{
-          fontFamily: T.SANS,
+          fontFamily: THEME.SANS,
           fontSize: 10,
           color: PROEVOL_THEME.muted,
           padding: '8px 4px 0',

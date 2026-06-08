@@ -1,9 +1,9 @@
 'use client';
 import type { CSSProperties } from 'react';
 import { Download } from 'lucide-react';
-import { T } from '../tokens';
+import { THEME } from '../../../theme';
 
-const SANS = T.SANS;
+const SANS = THEME.SANS;
 type ControlVarsStyle = CSSProperties & Record<`--${string}`, string>;
 
 interface ExportButtonProps {

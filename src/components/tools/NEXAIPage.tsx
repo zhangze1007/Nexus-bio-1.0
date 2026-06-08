@@ -24,7 +24,6 @@ import { useUIStore } from '../../store/uiStore';
 import { useWorkbenchStore } from '../../store/workbenchStore';
 import { workflowStatusLabel } from '../workbench/workflowExperience';
 import ScientificHero from './shared/ScientificHero';
-import { PATHD_THEME } from '../workbench/workbenchTheme';
 import ScientificFigureFrame from './shared/ScientificFigureFrame';
 import ScientificMethodStrip from './shared/ScientificMethodStrip';
 import PromptInput from './nexai/PromptInput';
@@ -42,6 +41,7 @@ import { domainCategoryLabel } from '../../services/axonDomainClassifier';
 import { ChatMessage, type ChatMessageProps } from './nexai/ChatMessage';
 import { ContextChips } from './nexai/ContextChips';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
+import { THEME } from '../../theme';
 
 const PRESET_QUERIES = [
   'Summarise current pathway bottlenecks and recommend the next tool to run.',
@@ -445,13 +445,13 @@ export default React.memo(function NEXAIPage() {
             summary="Axon is the hub surface, not a tool page. Ask in plain language — this full view is the deep reading room; the slide-over (⌘K from any tool) is the quick-access variant. Both hit the same synthesis pipeline."
             aside={
               <>
-                <div style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.label, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                   Current scope
                 </div>
-                <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: PATHD_THEME.value, fontWeight: 700 }}>
+                <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: THEME.VALUE, fontWeight: 700 }}>
                   {analyzeArtifact?.targetProduct ?? project?.targetProduct ?? project?.title ?? 'Scientific workbench'}
                 </div>
-                <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: PATHD_THEME.label, lineHeight: 1.55 }}>
+                <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: THEME.LABEL, lineHeight: 1.55 }}>
                   {contextPrompt || 'Ask Axon to synthesise evidence, explain a bottleneck, or route the next scientific action.'}
                 </div>
               </>
@@ -505,19 +505,19 @@ export default React.memo(function NEXAIPage() {
               {
                 title: 'Prompt context',
                 detail: 'The active target product, evidence graph, and queued next-step recommendations seed the research prompt so Axon starts from the workbench state.',
-                accent: PATHD_THEME.apricot,
+                accent: THEME.APRICOT,
                 note: `${selectedEvidenceIds.length} selected evidence item(s)`,
               },
               {
                 title: 'Reading surface',
                 detail: 'The written synthesis is the default reading plane. Evidence graph and raw structured output remain one click away for power users.',
-                accent: PATHD_THEME.sky,
+                accent: THEME.SKY,
                 note: `${result?.citations.length ?? 0} citation nodes`,
               },
               {
                 title: 'Structured contract',
                 detail: 'When the model fails to produce the structured envelope we asked for, the failure is surfaced explicitly rather than coerced into a plausible brief.',
-                accent: PATHD_THEME.mint,
+                accent: THEME.MINT,
                 note: malformedParse ? (parseError!.code) : (parseError?.code === 'NO_OBJECT' ? 'prose' : 'ok'),
               },
             ]}
@@ -544,10 +544,10 @@ export default React.memo(function NEXAIPage() {
                 border: '1px solid rgba(175,195,214,0.34)',
                 borderRadius: 'var(--nb-radius-sm)',
                 cursor: 'pointer',
-                fontFamily: T.SANS,
+                fontFamily: THEME.SANS,
                 fontSize: 'var(--nb-fs-xs)',
                 lineHeight: 1.5,
-                color: PATHD_THEME.value,
+                color: THEME.VALUE,
                 marginBottom: '4px',
               }}
             >
@@ -565,7 +565,7 @@ export default React.memo(function NEXAIPage() {
                 display: 'block', width: '100%', textAlign: 'left',
                 padding: '7px 10px',
                 borderRadius: 'var(--nb-radius-sm)',
-                fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', lineHeight: 1.5,
+                fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', lineHeight: 1.5,
               }}
             >
               {q}
@@ -575,8 +575,8 @@ export default React.memo(function NEXAIPage() {
           {result && result.citations.length > 0 && (
             <>
               <div style={{
-                fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase',
-                letterSpacing: '0.1em', color: PATHD_THEME.label,
+                fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase',
+                letterSpacing: '0.1em', color: THEME.LABEL,
                 margin: '14px 0 6px', padding: '0 2px',
               }}>
                 Citations ({result.citations.length})
@@ -585,17 +585,17 @@ export default React.memo(function NEXAIPage() {
                 <div key={c.id} style={{
                   padding: '6px 8px',
                   borderRadius: 'var(--nb-radius-sm)',
-                  background: PATHD_THEME.panelInset,
-                  border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
+                  background: THEME.PANEL_INSET,
+                  border: `1px solid ${THEME.BORDER}`,
                 }}>
-                  <p style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.value, margin: '0 0 2px', lineHeight: 1.4 }}>
+                  <p style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: THEME.VALUE, margin: '0 0 2px', lineHeight: 1.4 }}>
                     {c.title.slice(0, 60)}…
                   </p>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.label }}>
+                    <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL }}>
                       {c.authors.split(',')[0]} et al. {c.year}
                     </span>
-                    <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.value }}>
+                    <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.VALUE }}>
                       {(c.relevance * 100).toFixed(0)}%
                     </span>
                   </div>
@@ -640,10 +640,10 @@ export default React.memo(function NEXAIPage() {
               }}
             >
               <div style={{ display: 'grid', gap: '2px' }}>
-                <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', letterSpacing: '0.08em', textTransform: 'uppercase', color: PATHD_THEME.label }}>
+                <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', letterSpacing: '0.08em', textTransform: 'uppercase', color: THEME.LABEL }}>
                   Axon mode
                 </span>
-                <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: PATHD_THEME.value, lineHeight: 1.5 }}>
+                <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: THEME.VALUE, lineHeight: 1.5 }}>
                   {agenticMode
                     ? 'Agentic — qualifying PATHD / FBASIM prompts are queued as real tool runs.'
                     : 'Copilot — plain-language synthesis only. Raw JSON and automation stay out of the way.'}
@@ -651,7 +651,7 @@ export default React.memo(function NEXAIPage() {
                 {agenticMode && routeHint && routeHint.kind === 'none' && (
                   <span
                     data-testid="nexai-route-hint-none"
-                    style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.label }}
+                    style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL }}
                   >
                     Not routed — {routeHint.reason}
                   </span>
@@ -659,7 +659,7 @@ export default React.memo(function NEXAIPage() {
                 {agenticMode && routeHint && routeHint.kind !== 'none' && (
                   <span
                     data-testid={`nexai-route-hint-${routeHint.kind}`}
-                    style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.value }}
+                    style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.VALUE }}
                   >
                     Routed to {routeHint.kind.toUpperCase()} — {routeHint.reason}
                   </span>
@@ -675,10 +675,10 @@ export default React.memo(function NEXAIPage() {
                   minHeight: '30px',
                   padding: '0 12px',
                   borderRadius: 'var(--nb-radius-md)',
-                  border: `1px solid ${agenticMode ? 'rgba(147,203,82,0.42)' : PATHD_THEME.sepiaPanelBorder}`,
+                  border: `1px solid ${agenticMode ? 'rgba(147,203,82,0.42)' : THEME.BORDER}`,
                   background: agenticMode ? 'rgba(147,203,82,0.18)' : 'transparent',
-                  color: agenticMode ? PATHD_THEME.value : PATHD_THEME.label,
-                  fontFamily: T.MONO,
+                  color: agenticMode ? THEME.VALUE : THEME.LABEL,
+                  fontFamily: THEME.MONO,
                   fontSize: 'var(--nb-fs-xs)',
                   fontWeight: 700,
                   letterSpacing: '0.08em',
@@ -727,7 +727,7 @@ export default React.memo(function NEXAIPage() {
 
             {(result || agenticMode) && (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' }}>
-                <div style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.label, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
                   Primary reading surface
                 </div>
                 <div
@@ -737,8 +737,8 @@ export default React.memo(function NEXAIPage() {
                     gap: '6px',
                     padding: '4px',
                     borderRadius: 'var(--nb-radius-md)',
-                    border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
-                    background: PATHD_THEME.panelSurface,
+                    border: `1px solid ${THEME.BORDER}`,
+                    background: THEME.PANEL_SURFACE,
                   }}
                 >
                   {([
@@ -759,11 +759,11 @@ export default React.memo(function NEXAIPage() {
                         borderRadius: 'var(--nb-radius-md)',
                         border: 'none',
                         cursor: 'pointer',
-                        fontFamily: T.SANS,
+                        fontFamily: THEME.SANS,
                         fontSize: 'var(--nb-fs-sm)',
                         fontWeight: 600,
                         background: surfaceView === view ? 'rgba(175,195,214,0.18)' : 'transparent',
-                        color: surfaceView === view ? PATHD_THEME.value : PATHD_THEME.label,
+                        color: surfaceView === view ? THEME.VALUE : THEME.LABEL,
                       }}
                     >
                       {label}
@@ -813,8 +813,8 @@ export default React.memo(function NEXAIPage() {
                 data-testid="nexai-secondary-panels"
                 style={{
                   borderRadius: 'var(--nb-radius-md)',
-                  border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
-                  background: PATHD_THEME.panelInset,
+                  border: `1px solid ${THEME.BORDER}`,
+                  background: THEME.PANEL_INSET,
                   padding: '8px 10px',
                   display: 'grid',
                   gap: '8px',
@@ -834,8 +834,8 @@ export default React.memo(function NEXAIPage() {
                     background: 'transparent',
                     border: 'none',
                     cursor: 'pointer',
-                    color: PATHD_THEME.label,
-                    fontFamily: T.MONO,
+                    color: THEME.LABEL,
+                    fontFamily: THEME.MONO,
                     fontSize: 'var(--nb-fs-xs)',
                     letterSpacing: '0.08em',
                     textTransform: 'uppercase',
@@ -854,7 +854,7 @@ export default React.memo(function NEXAIPage() {
                       data-testid="nexai-axon-log"
                       style={{
                         borderRadius: 'var(--nb-radius-md)',
-                        border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
+                        border: `1px solid ${THEME.BORDER}`,
                         background: 'rgba(5,7,11,0.35)',
                         padding: '10px 12px',
                         display: 'grid',
@@ -863,11 +863,11 @@ export default React.memo(function NEXAIPage() {
                     >
                       <div
                         style={{
-                          fontFamily: T.MONO,
+                          fontFamily: THEME.MONO,
                           fontSize: 'var(--nb-fs-xs)',
                           letterSpacing: '0.08em',
                           textTransform: 'uppercase',
-                          color: PATHD_THEME.label,
+                          color: THEME.LABEL,
                         }}
                       >
                         Execution trace
@@ -893,7 +893,7 @@ export default React.memo(function NEXAIPage() {
           ) : (
             <div style={{
               padding: '16px', textAlign: 'center',
-              color: PATHD_THEME.label, fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)',
+              color: THEME.LABEL, fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)',
             }}>
               Ask a question to see stats
             </div>
@@ -902,24 +902,24 @@ export default React.memo(function NEXAIPage() {
           <div style={{
             padding: '12px',
             borderRadius: 'var(--nb-radius-md)',
-            border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
-            background: PATHD_THEME.panelInset,
+            border: `1px solid ${THEME.BORDER}`,
+            background: THEME.PANEL_INSET,
             display: 'grid',
             gap: '8px',
           }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap' }}>
-              <div style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.label, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                 Workflow supervisor
               </div>
               <span style={{
                 padding: '2px 7px',
                 borderRadius: '999px',
-                border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
-                background: PATHD_THEME.chipNeutral,
+                border: `1px solid ${THEME.BORDER}`,
+                background: THEME.CHIP_NEUTRAL,
                 color: workflowControl.status === 'blocked' || workflowControl.status === 'gated' || workflowControl.status === 'demoOnly'
-                  ? PATHD_THEME.apricot
-                  : PATHD_THEME.value,
-                fontFamily: T.MONO,
+                  ? THEME.APRICOT
+                  : THEME.VALUE,
+                fontFamily: THEME.MONO,
                 fontSize: 'var(--nb-fs-xs)',
                 textTransform: 'uppercase',
                 letterSpacing: '0.06em',
@@ -927,10 +927,10 @@ export default React.memo(function NEXAIPage() {
                 {workflowStatusLabel(workflowControl.status)}
               </span>
             </div>
-            <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: PATHD_THEME.value, lineHeight: 1.55 }}>
+            <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: THEME.VALUE, lineHeight: 1.55 }}>
               {workflowControl.explanation}
             </div>
-            <div style={{ display: 'grid', gap: '5px', fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.label, lineHeight: 1.45 }}>
+            <div style={{ display: 'grid', gap: '5px', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL, lineHeight: 1.45 }}>
               <span>state · {workflowControl.machineState}</span>
               <span>current · {workflowControl.currentToolId?.toUpperCase() ?? 'NONE'}</span>
               <span>next · {workflowControl.nextRecommendedNode?.toUpperCase() ?? 'NONE'}</span>
@@ -946,8 +946,8 @@ export default React.memo(function NEXAIPage() {
           {history.length > 0 && (
             <div style={{ marginTop: '12px' }}>
               <div style={{
-                fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase',
-                letterSpacing: '0.1em', color: PATHD_THEME.label, marginBottom: '6px',
+                fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase',
+                letterSpacing: '0.1em', color: THEME.LABEL, marginBottom: '6px',
               }}>
                 History ({history.length})
               </div>
@@ -960,7 +960,7 @@ export default React.memo(function NEXAIPage() {
                   style={{
                     display: 'block', width: '100%', textAlign: 'left',
                     padding: '4px 6px', marginBottom: '2px',
-                    fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)',
+                    fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)',
                     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                   }}
                 >
@@ -973,15 +973,15 @@ export default React.memo(function NEXAIPage() {
           <div style={{
             padding: '12px',
             borderRadius: 'var(--nb-radius-md)',
-            border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
-            background: PATHD_THEME.panelInset,
+            border: `1px solid ${THEME.BORDER}`,
+            background: THEME.PANEL_INSET,
             display: 'grid',
             gap: '6px',
           }}>
-            <div style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.label, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
               Axon posture
             </div>
-            <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: PATHD_THEME.value, lineHeight: 1.55 }}>
+            <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: THEME.VALUE, lineHeight: 1.55 }}>
               {result
                 ? malformedParse
                   ? 'Model returned malformed structured output — the raw response is preserved in the drawer for manual inspection.'

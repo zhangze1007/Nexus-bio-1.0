@@ -2,9 +2,7 @@
 
 import { useId, useRef, useCallback, type KeyboardEvent } from 'react';
 import { motion } from 'framer-motion';
-import { T } from '../../ide/tokens';
-import { PATHD_THEME } from '../../workbench/workbenchTheme';
-
+import { THEME } from '../../../theme';
 export interface ToolTab {
   id: string;
   label: string;
@@ -61,13 +59,13 @@ export default function ToolTabBar({ tabs, activeId, onChange, instanceId: insta
         display: 'flex',
         gap: '2px',
         padding: '0 16px',
-        borderBottom: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
-        background: PATHD_THEME.sepiaPanelMuted,
+        borderBottom: `1px solid ${THEME.BORDER}`,
+        background: THEME.PANEL_MUTED,
       }}
     >
       {tabs.map((tab, i) => {
         const isActive = tab.id === activeId;
-        const accent = tab.accent ?? PATHD_THEME.sky;
+        const accent = tab.accent ?? THEME.SKY;
         return (
           <button
             key={tab.id}
@@ -84,10 +82,10 @@ export default function ToolTabBar({ tabs, activeId, onChange, instanceId: insta
               background: 'transparent',
               border: 'none',
               cursor: 'pointer',
-              fontFamily: T.SANS,
+              fontFamily: THEME.SANS,
               fontSize: 'var(--nb-fs-sm)',
               fontWeight: isActive ? 600 : 400,
-              color: isActive ? accent : PATHD_THEME.label,
+              color: isActive ? accent : THEME.LABEL,
               borderRadius: '6px 6px 0 0',
               transition: 'color 0.2s ease, background 0.15s ease',
               outline: '2px solid rgba(175,195,214,0.5)',
@@ -96,13 +94,13 @@ export default function ToolTabBar({ tabs, activeId, onChange, instanceId: insta
             onMouseEnter={(e) => {
               if (!isActive) {
                 e.currentTarget.style.background = 'rgba(255,255,255,0.04)';
-                e.currentTarget.style.color = PATHD_THEME.value;
+                e.currentTarget.style.color = THEME.VALUE;
               }
             }}
             onMouseLeave={(e) => {
               if (!isActive) {
                 e.currentTarget.style.background = 'transparent';
-                e.currentTarget.style.color = PATHD_THEME.label;
+                e.currentTarget.style.color = THEME.LABEL;
               }
             }}
             onFocus={(e) => {

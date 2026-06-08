@@ -3,21 +3,19 @@
 import { useMemo } from 'react';
 import { Gauge, GitCompareArrows } from 'lucide-react';
 import { useWorkbenchStore } from '../../store/workbenchStore';
-import { T } from '../ide/tokens';
 import { TOOL_BY_ID } from '../tools/shared/toolRegistry';
 import type { WorkbenchStageId } from '../tools/shared/workbenchConfig';
 import { getAuthorityTier } from './workbenchTrust';
-import { PATHD_THEME } from './workbenchTheme';
-
+import { THEME } from '../../theme';
 interface WorkbenchRunCompareProps {
   toolId?: string | null;
   stageId?: WorkbenchStageId | null;
   title?: string;
 }
 
-const BORDER = PATHD_THEME.panelBorder;
-const LABEL = PATHD_THEME.label;
-const VALUE = PATHD_THEME.value;
+const BORDER = THEME.BORDER;
+const LABEL = THEME.LABEL;
+const VALUE = THEME.VALUE;
 
 function formatTime(timestamp: number) {
   return new Date(timestamp).toLocaleString([], {
@@ -61,10 +59,10 @@ export default function WorkbenchRunCompare({
   if (!latest) {
     return (
       <section style={{ display: 'grid', gap: '8px' }}>
-        <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+        <div style={{ fontFamily: THEME.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
           {title}
         </div>
-        <div style={{ fontFamily: T.SANS, fontSize: '12px', color: LABEL, lineHeight: 1.6 }}>
+        <div style={{ fontFamily: THEME.SANS, fontSize: '12px', color: LABEL, lineHeight: 1.6 }}>
           No runs have been recorded for {subject} yet.
         </div>
       </section>
@@ -74,8 +72,8 @@ export default function WorkbenchRunCompare({
   return (
     <section style={{ display: 'grid', gap: '10px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <GitCompareArrows size={14} color={PATHD_THEME.orange} />
-        <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+        <GitCompareArrows size={14} color={THEME.APRICOT} />
+        <div style={{ fontFamily: THEME.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
           {title}
         </div>
       </div>
@@ -87,21 +85,21 @@ export default function WorkbenchRunCompare({
             style={{
               borderRadius: '16px',
               border: `1px solid ${BORDER}`,
-              background: index === 0 ? PATHD_THEME.panelGradient : PATHD_THEME.panelGradientSoft,
+              background: index === 0 ? THEME.PANEL_GRADIENT : THEME.PANEL_GRADIENT_SOFT,
               padding: '12px 14px',
               display: 'grid',
               gap: '6px',
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
-              <div style={{ fontFamily: T.SANS, fontSize: '13px', color: VALUE, fontWeight: 700 }}>
+              <div style={{ fontFamily: THEME.SANS, fontSize: '13px', color: VALUE, fontWeight: 700 }}>
                 {index === 0 ? 'Latest run' : 'Previous run'}
               </div>
-              <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL }}>
+              <div style={{ fontFamily: THEME.MONO, fontSize: '10px', color: LABEL }}>
                 {formatTime(run.createdAt)}
               </div>
             </div>
-            <div style={{ fontFamily: T.SANS, fontSize: '12px', color: VALUE, lineHeight: 1.55 }}>
+            <div style={{ fontFamily: THEME.SANS, fontSize: '12px', color: VALUE, lineHeight: 1.55 }}>
               {run.summary}
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
@@ -109,19 +107,19 @@ export default function WorkbenchRunCompare({
                 style={{
                   padding: '3px 8px',
                   borderRadius: '999px',
-                  border: `1px solid ${run.isSimulated ? PATHD_THEME.chipBorderWarm : PATHD_THEME.chipBorder}`,
-                  background: run.isSimulated ? PATHD_THEME.chipWarm : PATHD_THEME.chipCool,
-                  color: PATHD_THEME.chipText,
-                  fontFamily: T.MONO,
+                  border: `1px solid ${run.isSimulated ? THEME.CHIP_BORDER_WARM : THEME.CHIP_BORDER}`,
+                  background: run.isSimulated ? THEME.CHIP_WARM : THEME.CHIP_COOL,
+                  color: THEME.CHIP_TEXT,
+                  fontFamily: THEME.MONO,
                   fontSize: '10px',
                 }}
               >
                 {run.isSimulated ? 'Simulated' : 'Project-linked'}
               </span>
-              <span style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL }}>
+              <span style={{ fontFamily: THEME.MONO, fontSize: '10px', color: LABEL }}>
                 {getAuthorityTier(run)}
               </span>
-              <span style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL }}>
+              <span style={{ fontFamily: THEME.MONO, fontSize: '10px', color: LABEL }}>
                 upstream {run.upstreamArtifactIds.length}
               </span>
             </div>
@@ -134,7 +132,7 @@ export default function WorkbenchRunCompare({
           style={{
             borderRadius: '12px',
             border: `1px solid ${BORDER}`,
-            background: PATHD_THEME.panelGradientSoft,
+            background: THEME.PANEL_GRADIENT_SOFT,
             padding: '10px 12px',
             display: 'flex',
             alignItems: 'center',
@@ -142,11 +140,11 @@ export default function WorkbenchRunCompare({
             flexWrap: 'wrap',
           }}
         >
-          <Gauge size={13} color={PATHD_THEME.blue} />
-          <span style={{ fontFamily: T.SANS, fontSize: '12px', color: VALUE, fontWeight: 600 }}>
+          <Gauge size={13} color={THEME.SKY} />
+          <span style={{ fontFamily: THEME.SANS, fontSize: '12px', color: VALUE, fontWeight: 600 }}>
             {subject}
           </span>
-          <span style={{ fontFamily: T.SANS, fontSize: '12px', color: LABEL, lineHeight: 1.55 }}>
+          <span style={{ fontFamily: THEME.SANS, fontSize: '12px', color: LABEL, lineHeight: 1.55 }}>
             {compareLabel}
           </span>
         </div>

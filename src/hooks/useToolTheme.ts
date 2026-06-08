@@ -1,5 +1,4 @@
-import { T } from '../components/ide/tokens';
-
+import { THEME } from '../theme';
 /**
  * Shared design tokens for all tool pages.
  *
@@ -11,17 +10,17 @@ import { T } from '../components/ide/tokens';
  * ToolsDirectoryPage keeps its own SURFACE_TINT / SHADOW / BTN_TEXT tokens.
  */
 export const toolTokens = {
-  panelBg:     T.PANEL_BG,
-  border:      T.PANEL_BORDER,
-  label:       T.LABEL,
-  value:       T.VALUE,
-  inputBg:     T.PANEL_INSET,
-  inputBorder: T.PANEL_BORDER,
-  inputText:   T.VALUE,
+  panelBg:     THEME.PANEL_BG,
+  border:      THEME.PANEL_BORDER,
+  label:       THEME.LABEL,
+  value:       THEME.VALUE,
+  inputBg:     THEME.PANEL_INSET,
+  inputBorder: THEME.PANEL_BORDER,
+  inputText:   THEME.VALUE,
   glass: {
-    borderRadius: T.R_XL,
-    background: T.PANEL_SURFACE,
-    border: `1px solid ${T.PANEL_BORDER}`,
+    borderRadius: THEME.R_XL,
+    background: THEME.PANEL_SURFACE,
+    border: `1px solid ${THEME.PANEL_BORDER}`,
   } as React.CSSProperties,
 } as const;
 

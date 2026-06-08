@@ -1,13 +1,13 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { T } from '../../../ide/tokens';
 import { PROEVOL_THEME } from '../shared';
 import type {
   ConfidenceInterval,
   ProEvolResearchSummary,
 } from '../../../../services/proevolAnalysis';
 import type { ProEvolBandSemantic } from '../../../../domain/proevolArtifact';
+import { THEME } from '../../../../theme';
 
 interface EvidenceStatRailProps {
   research: ProEvolResearchSummary;
@@ -101,7 +101,7 @@ export default function EvidenceStatRail({ research, bandSemantic }: EvidenceSta
 }
 
 const kickerStyle = {
-  fontFamily: T.MONO,
+  fontFamily: THEME.MONO,
   fontSize: 'var(--nb-fs-xs)',
   letterSpacing: '0.14em',
   color: PROEVOL_THEME.label,
@@ -139,7 +139,7 @@ function Row({
         />
         <span
           style={{
-            fontFamily: T.MONO,
+            fontFamily: THEME.MONO,
             fontSize: 'var(--nb-fs-xs)',
             color: PROEVOL_THEME.label,
             letterSpacing: '0.10em',
@@ -151,7 +151,7 @@ function Row({
       </div>
       <div
         style={{
-          fontFamily: T.SANS,
+          fontFamily: THEME.SANS,
           fontSize: 'var(--nb-fs-md)',
           fontWeight: 700,
           color: PROEVOL_THEME.value,
@@ -162,7 +162,7 @@ function Row({
       </div>
       <div
         style={{
-          fontFamily: T.SANS,
+          fontFamily: THEME.SANS,
           fontSize: 'var(--nb-fs-xs)',
           color: PROEVOL_THEME.muted,
           lineHeight: 1.4,

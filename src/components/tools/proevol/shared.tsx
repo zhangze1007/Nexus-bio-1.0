@@ -1,30 +1,28 @@
 'use client';
 
 import type { CSSProperties, ReactNode } from 'react';
-import { PATHD_THEME } from '../../workbench/workbenchTheme';
-import { T } from '../../ide/tokens';
-
+import { THEME } from '../../../theme';
 export const PROEVOL_THEME = {
-  border: PATHD_THEME.panelBorder,
-  borderStrong: PATHD_THEME.panelBorderStrong,
-  label: PATHD_THEME.label,
-  value: PATHD_THEME.value,
-  muted: PATHD_THEME.paperMuted,
-  surface: PATHD_THEME.panelSurface,
-  inset: PATHD_THEME.panelInset,
-  glass: PATHD_THEME.panelGlass,
-  pageBg: PATHD_THEME.paper,
-  mint: PATHD_THEME.mint,
-  coral: PATHD_THEME.coral,
-  apricot: PATHD_THEME.apricot,
-  sky: PATHD_THEME.sky,
-  lilac: PATHD_THEME.lilac,
-  riskLow: PATHD_THEME.riskLow,
-  riskMedium: PATHD_THEME.riskMedium,
-  riskHigh: PATHD_THEME.riskHigh,
-  successLow: PATHD_THEME.successLow,
-  successMedium: PATHD_THEME.successMedium,
-  successHigh: PATHD_THEME.successHigh,
+  border: THEME.BORDER,
+  borderStrong: THEME.BORDER_STRONG,
+  label: THEME.LABEL,
+  value: THEME.VALUE,
+  muted: THEME.PAPER_MUTED,
+  surface: THEME.PANEL_SURFACE,
+  inset: THEME.PANEL_INSET,
+  glass: THEME.PANEL_GLASS,
+  pageBg: THEME.PAPER,
+  mint: THEME.MINT,
+  coral: THEME.CORAL,
+  apricot: THEME.APRICOT,
+  sky: THEME.SKY,
+  lilac: THEME.LILAC,
+  riskLow: THEME.RISK_LOW,
+  riskMedium: THEME.RISK_MEDIUM,
+  riskHigh: THEME.RISK_HIGH,
+  successLow: THEME.SUCCESS_LOW,
+  successMedium: THEME.SUCCESS_MEDIUM,
+  successHigh: THEME.SUCCESS_HIGH,
 };
 
 export function formatSigned(value: number, digits = 1) {
@@ -62,7 +60,7 @@ export function surfaceCardStyle(options?: {
 
 export function sectionKickerStyle(): CSSProperties {
   return {
-    fontFamily: T.MONO,
+    fontFamily: THEME.MONO,
     fontSize: 'var(--nb-fs-xs)',
     color: PROEVOL_THEME.label,
     textTransform: 'uppercase',
@@ -72,7 +70,7 @@ export function sectionKickerStyle(): CSSProperties {
 
 export function tableHeaderStyle(): CSSProperties {
   return {
-    fontFamily: T.MONO,
+    fontFamily: THEME.MONO,
     fontSize: 'var(--nb-fs-xs)',
     textTransform: 'uppercase',
     letterSpacing: '0.08em',
@@ -86,7 +84,7 @@ export function tableHeaderStyle(): CSSProperties {
 
 export function tableCellStyle(): CSSProperties {
   return {
-    fontFamily: T.SANS,
+    fontFamily: THEME.SANS,
     fontSize: 'var(--nb-fs-sm)',
     color: PROEVOL_THEME.value,
     padding: '8px 10px',
@@ -114,7 +112,7 @@ export function StatusPill({
         border: `1px solid ${color}44`,
         background: `${color}18`,
         color,
-        fontFamily: T.MONO,
+        fontFamily: THEME.MONO,
         fontSize: 'var(--nb-fs-xs)',
         letterSpacing: '0.06em',
         textTransform: 'uppercase',
@@ -162,7 +160,7 @@ export function MetricBadge({
       </div>
       <div
         style={{
-          fontFamily: T.SANS,
+          fontFamily: THEME.SANS,
           fontSize: 'var(--nb-fs-md)',
           fontWeight: 700,
           color: PROEVOL_THEME.value,
@@ -174,7 +172,7 @@ export function MetricBadge({
       {detail ? (
         <div
           style={{
-            fontFamily: T.SANS,
+            fontFamily: THEME.SANS,
             fontSize: 'var(--nb-fs-xs)',
             lineHeight: 1.5,
             color: PROEVOL_THEME.muted,
@@ -211,7 +209,7 @@ export function ProEvolCard({
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', minWidth: 0 }}>
             {eyebrow ? <div style={sectionKickerStyle()}>{eyebrow}</div> : null}
             {title ? (
-              <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', fontWeight: 600, color: PROEVOL_THEME.value, letterSpacing: '-0.02em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', fontWeight: 600, color: PROEVOL_THEME.value, letterSpacing: '-0.02em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {title}
               </div>
             ) : null}

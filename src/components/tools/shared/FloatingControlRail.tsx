@@ -3,9 +3,7 @@
 import { useState, useId } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { T } from '../../ide/tokens';
-import { PATHD_THEME } from '../../workbench/workbenchTheme';
-
+import { THEME } from '../../../theme';
 interface FloatingControlRailProps {
   children: React.ReactNode;
   width?: number;
@@ -28,8 +26,8 @@ export default function FloatingControlRail({
       transition={{ duration: 0.25, ease: 'easeInOut' }}
       style={{
         flexShrink: 0,
-        borderRight: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
-        background: PATHD_THEME.sepiaPanelMuted,
+        borderRight: `1px solid ${THEME.BORDER}`,
+        background: THEME.PANEL_MUTED,
         overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
@@ -46,7 +44,7 @@ export default function FloatingControlRail({
           alignItems: 'center',
           justifyContent: collapsed ? 'center' : 'space-between',
           padding: '10px 12px',
-          borderBottom: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
+          borderBottom: `1px solid ${THEME.BORDER}`,
           cursor: 'pointer',
           background: 'transparent',
           border: 'none',
@@ -59,20 +57,20 @@ export default function FloatingControlRail({
         {!collapsed && (
           <span
             style={{
-              fontFamily: T.SANS,
+              fontFamily: THEME.SANS,
               fontSize: 'var(--nb-fs-xs)',
               textTransform: 'uppercase',
               letterSpacing: '0.1em',
-              color: PATHD_THEME.label,
+              color: THEME.LABEL,
             }}
           >
             {label}
           </span>
         )}
         {collapsed ? (
-          <ChevronRight size={14} color={PATHD_THEME.label} />
+          <ChevronRight size={14} color={THEME.LABEL} />
         ) : (
-          <ChevronLeft size={14} color={PATHD_THEME.label} />
+          <ChevronLeft size={14} color={THEME.LABEL} />
         )}
       </button>
 

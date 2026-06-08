@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import { T } from '../tokens';
+import { THEME } from '../../../theme';
 import { SEMANTIC_RGB } from '../../charts/chartTheme';
 
 /**
@@ -46,14 +46,14 @@ export default function DemoBanner({ context }: DemoBannerProps) {
         display: 'flex',
         alignItems: 'center',
         gap: '10px',
-        fontFamily: T.SANS,
+        fontFamily: THEME.SANS,
         flexShrink: 0,
         flexWrap: 'wrap',
       }}
     >
       <span
         style={{
-          fontFamily: T.MONO,
+          fontFamily: THEME.MONO,
           fontSize: '10px',
           fontWeight: 700,
           padding: '2px 8px',
@@ -82,7 +82,7 @@ export default function DemoBanner({ context }: DemoBannerProps) {
       <Link
         href="/analyze"
         style={{
-          fontFamily: T.MONO,
+          fontFamily: THEME.MONO,
           fontSize: '10px',
           fontWeight: 700,
           padding: '4px 10px',

@@ -4,7 +4,6 @@ import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
 import { useUIStore } from '../../store/uiStore';
 import { useWorkbenchStore } from '../../store/workbenchStore';
-import { PATHD_THEME } from '../workbench/workbenchTheme';
 import ScientificHero from './shared/ScientificHero';
 import ScientificFigureFrame from './shared/ScientificFigureFrame';
 import SimErrorBanner from '../ide/shared/SimErrorBanner';
@@ -23,7 +22,6 @@ import {
 } from '../../data/mockDynCon';
 import type { ODEState, HillParams } from '../../types';
 import { buildDynConSeed } from './shared/workbenchDataflow';
-import { T, TOOL_RESULT_PALETTE} from '../ide/tokens';
 import ToolShell from './shared/ToolShell';
 import ToolTabPanel from './shared/ToolTabPanel';
 import FloatingControlRail from './shared/FloatingControlRail';
@@ -88,10 +86,10 @@ function TimeSeriesSVG({ trajectory, setpoint, svgRef }: { trajectory: ODEState[
   return (
     <svg ref={svgRef} role="img" aria-label="Chart" viewBox={`0 0 ${W} ${H + 36}`} style={{ width: '100%', height: '100%' }}>
       <rect width={W} height={H + 36} fill="#050505" rx="18" />
-      <text x="22" y="22" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.24)">
+      <text x="22" y="22" fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.24)">
         Closed-loop trajectory
       </text>
-      <text x="22" y="36" fontFamily={T.SANS} fontSize="12" fill="rgba(255,255,255,0.72)">
+      <text x="22" y="36" fontFamily={THEME.SANS} fontSize="12" fill="rgba(255,255,255,0.72)">
         Shared timeline for product, host state, oxygen control, precursor load, and expression
       </text>
 
@@ -130,8 +128,8 @@ function TimeSeriesSVG({ trajectory, setpoint, svgRef }: { trajectory: ODEState[
             ))}
             {setpointY !== null && (
               <>
-                <rect x={PAD_X} y={setpointY - 6} width={plotWidth} height={12} fill={`${T.SKY}0F`} />
-                <line x1={PAD_X} y1={setpointY} x2={PAD_X + plotWidth} y2={setpointY} stroke={`${T.SKY}66`} strokeDasharray="4 4" />
+                <rect x={PAD_X} y={setpointY - 6} width={plotWidth} height={12} fill={`${THEME.SKY}0F`} />
+                <line x1={PAD_X} y1={setpointY} x2={PAD_X + plotWidth} y2={setpointY} stroke={`${THEME.SKY}66`} strokeDasharray="4 4" />
               </>
             )}
             {toxicityY !== null && (
@@ -142,14 +140,14 @@ function TimeSeriesSVG({ trajectory, setpoint, svgRef }: { trajectory: ODEState[
             {/* Smooth Catmull-Rom curve */}
             <path d={smoothPath} fill="none" stroke={lane.color} strokeWidth="2" />
             <circle cx={markerX} cy={markerY} r="4" fill={lane.color} />
-            <text x="20" y={y + 14} fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.24)">{lane.label}</text>
-            <text x="20" y={y + 28} fontFamily={T.SANS} fontSize="10" fill="rgba(255,255,255,0.62)">
+            <text x="20" y={y + 14} fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.24)">{lane.label}</text>
+            <text x="20" y={y + 28} fontFamily={THEME.SANS} fontSize="10" fill="rgba(255,255,255,0.62)">
               {(lastValue ?? 0).toFixed(lane.key === 'fpp' ? 1 : 2)} {lane.unit}
             </text>
-            <text x={PAD_X + plotWidth + 8} y={y + 14} fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.2)">
+            <text x={PAD_X + plotWidth + 8} y={y + 14} fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.2)">
               {lane.max.toFixed(lane.key === 'fpp' ? 0 : 1)}
             </text>
-            <text x={PAD_X + plotWidth + 8} y={y + laneH} fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.16)">0</text>
+            <text x={PAD_X + plotWidth + 8} y={y + laneH} fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.16)">0</text>
           </g>
         );
       })}
@@ -162,7 +160,7 @@ function TimeSeriesSVG({ trajectory, setpoint, svgRef }: { trajectory: ODEState[
               x2={x} y2={plotTop + lanes.length * (laneH + laneGap) - laneGap + 6}
               stroke="rgba(255,255,255,0.08)" />
             <text x={x} y={plotTop + lanes.length * (laneH + laneGap) - laneGap + 18}
-              textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.45)">
+              textAnchor="middle" fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.45)">
               {tick}h
             </text>
           </g>
@@ -172,17 +170,17 @@ function TimeSeriesSVG({ trajectory, setpoint, svgRef }: { trajectory: ODEState[
       {/* Phase portrait inset (P vs FPP) */}
       <rect x={PP_X - 4} y={PP_Y - 12} width={PP_W + 8} height={PP_H + 22} rx="8"
         fill="rgba(0,0,0,0.7)" stroke="rgba(255,255,255,0.08)" />
-      <text x={PP_X + PP_W / 2} y={PP_Y - 4} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.3)">
+      <text x={PP_X + PP_W / 2} y={PP_Y - 4} textAnchor="middle" fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.3)">
         PHASE PORTRAIT
       </text>
       <line x1={PP_X} y1={PP_Y} x2={PP_X} y2={PP_Y + PP_H} stroke="rgba(255,255,255,0.1)" />
       <line x1={PP_X} y1={PP_Y + PP_H} x2={PP_X + PP_W} y2={PP_Y + PP_H} stroke="rgba(255,255,255,0.1)" />
-      <text x={PP_X - 2} y={PP_Y + PP_H + 8} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.45)">P</text>
-      <text x={PP_X + PP_W} y={PP_Y + PP_H + 8} textAnchor="end" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.45)">→</text>
-      <text x={PP_X - 2} y={PP_Y} fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.45)">R↑</text>
+      <text x={PP_X - 2} y={PP_Y + PP_H + 8} textAnchor="middle" fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.45)">P</text>
+      <text x={PP_X + PP_W} y={PP_Y + PP_H + 8} textAnchor="end" fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.45)">→</text>
+      <text x={PP_X - 2} y={PP_Y} fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.45)">R↑</text>
       {ppPath && <path d={ppPath} fill="none" stroke="rgba(232,163,161,0.7)" strokeWidth="1.2" />}
       {ppPts.length > 0 && (
-        <circle cx={ppPts[ppPts.length - 1][0]} cy={ppPts[ppPts.length - 1][1]} r="2.5" fill={PATHD_THEME.coral} />
+        <circle cx={ppPts[ppPts.length - 1][0]} cy={ppPts[ppPts.length - 1][1]} r="2.5" fill={THEME.CORAL} />
       )}
     </svg>
   );
@@ -210,24 +208,24 @@ function HillCurveSVG({ hill, currentFPP }: { hill: HillParams; currentFPP: numb
       <line x1={PAD} y1={PAD - 8} x2={PAD} y2={H - PAD + 4} stroke="rgba(255,255,255,0.08)" />
       {/* curve */}
       <rect x={PAD} y={PAD - 8} width={W - PAD * 2} height={H - PAD * 2 + 12} fill="rgba(255,255,255,0.02)" rx="14" />
-      <polyline points={pts.join(' ')} fill="none" stroke={PATHD_THEME.mint} strokeWidth={2.2} />
+      <polyline points={pts.join(' ')} fill="none" stroke={THEME.MINT} strokeWidth={2.2} />
       {/* current FPP marker */}
       <line x1={markerX} y1={PAD - 8} x2={markerX} y2={H - PAD + 4}
         stroke="rgba(232,163,161,0.5)" strokeWidth={1} strokeDasharray="3 3" />
       <circle cx={markerX} cy={H - PAD + 4 - (hillFeedback(Math.min(currentFPP, fppMax), hill) / hill.Vmax) * (H - PAD * 2 + 4)}
-        r={3} fill={PATHD_THEME.coral} />
+        r={3} fill={THEME.CORAL} />
       {/* labels */}
-      <text x="20" y="18" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.24)">
+      <text x="20" y="18" fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.24)">
         Repression response
       </text>
-      <text x="20" y="32" fontFamily={T.SANS} fontSize="11" fill="rgba(255,255,255,0.5)">
+      <text x="20" y="32" fontFamily={THEME.SANS} fontSize="11" fill="rgba(255,255,255,0.5)">
         Operating point of the current precursor pool on the Hill feedback curve
       </text>
-      <text x={W / 2} y={H + 6} fontFamily={T.MONO} fontSize="10" textAnchor="middle" fill={LABEL}>FPP (μM)</text>
-      <text x={10} y={(PAD + H - PAD) / 2} fontFamily={T.MONO} fontSize="10" textAnchor="middle" fill={LABEL}
+      <text x={W / 2} y={H + 6} fontFamily={THEME.MONO} fontSize="10" textAnchor="middle" fill={LABEL}>FPP (μM)</text>
+      <text x={10} y={(PAD + H - PAD) / 2} fontFamily={THEME.MONO} fontSize="10" textAnchor="middle" fill={LABEL}
         transform={`rotate(-90, 10, ${(PAD + H - PAD) / 2})`}>ADS</text>
-      <text x={W - PAD} y={H + 6} fontFamily={T.MONO} fontSize="10" textAnchor="end" fill="rgba(255,255,255,0.15)">200</text>
-      <text x={PAD} y={H + 6} fontFamily={T.MONO} fontSize="10" textAnchor="start" fill="rgba(255,255,255,0.15)">0</text>
+      <text x={W - PAD} y={H + 6} fontFamily={THEME.MONO} fontSize="10" textAnchor="end" fill="rgba(255,255,255,0.15)">200</text>
+      <text x={PAD} y={H + 6} fontFamily={THEME.MONO} fontSize="10" textAnchor="start" fill="rgba(255,255,255,0.15)">0</text>
     </svg>
   );
 }
@@ -253,13 +251,14 @@ function ParamSlider({ label, value, min, max, step = 0.1, onChange, unit }: {
 
 /* ── Section Header ────────────────────────────────────────────────────────── */
 import SectionLabel from './shared/SectionLabel';
+import { THEME, TOOL_RESULT_PALETTE } from '../../theme';
 
 /* ── Stat Row (for convergence / burden readouts) ──────────────────────────── */
 function StatRow({ label, value, unit }: { label: string; value: string | number; unit?: string }) {
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', padding: '4px 0', borderBottom: `1px solid ${BORDER}` }}>
-      <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>{label}</span>
-      <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-sm)', fontWeight: 600, color: VALUE, textAlign: 'right' }}>
+      <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>{label}</span>
+      <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-sm)', fontWeight: 600, color: VALUE, textAlign: 'right' }}>
         {typeof value === 'number' ? value.toFixed(3) : value}{unit ? ` ${unit}` : ''}
       </span>
     </div>
@@ -267,10 +266,10 @@ function StatRow({ label, value, unit }: { label: string; value: string | number
 }
 
 const DYNCON_TABS: ToolTab[] = [
-  { id: 'trajectory', label: 'Trajectory', accent: PATHD_THEME.sky },
-  { id: 'hill', label: 'Hill Curve', accent: PATHD_THEME.lilac },
-  { id: 'convergence', label: 'Convergence', accent: PATHD_THEME.apricot },
-  { id: 'rbs', label: 'RBS Bridge', accent: PATHD_THEME.mint },
+  { id: 'trajectory', label: 'Trajectory', accent: THEME.SKY },
+  { id: 'hill', label: 'Hill Curve', accent: THEME.LILAC },
+  { id: 'convergence', label: 'Convergence', accent: THEME.APRICOT },
+  { id: 'rbs', label: 'RBS Bridge', accent: THEME.MINT },
 ];
 
 /* ══════════════════════════════════════════════════════════════════════════════
@@ -423,13 +422,13 @@ export default React.memo(function DynConPage() {
             summary="DYNCON turns pathway risk into operating policy. PID tuning, Hill repression, and genetic-part mapping are treated as one control package so the page behaves like a scientific control surface for a living system, not a disconnected slider set."
             aside={
               <>
-                <div style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.label, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                   Control bridge
                 </div>
-                <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: PATHD_THEME.value, fontWeight: 700 }}>
+                <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: THEME.VALUE, fontWeight: 700 }}>
                   {rbsMapping.rbsName} · gain {rbsMapping.controlGain.toFixed(2)}
                 </div>
-                <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: PATHD_THEME.label, lineHeight: 1.55 }}>
+                <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: THEME.LABEL, lineHeight: 1.55 }}>
                   Controller gains are translated into a concrete RBS choice, so the workbench keeps one foot in executable biology.
                 </div>
               </>
@@ -490,10 +489,10 @@ export default React.memo(function DynConPage() {
                   title="Closed-loop bioreactor dynamics"
                   caption="6-lane time-series showing biomass, substrate, product, DO₂, FPP, and ADS expression trajectories under PID control."
                   legend={[
-                    { label: 'Setpoint', value: `${setpoint.toFixed(2)} sat.`, accent: PATHD_THEME.sky },
-                    { label: 'Stability', value: convergence.isStable ? 'Stable' : 'Unstable', accent: convergence.isStable ? PATHD_THEME.mint : PATHD_THEME.coral },
-                    { label: 'Titer', value: `${productTiter.toFixed(2)} g/L`, accent: PATHD_THEME.mint },
-                    { label: 'RBS', value: rbsMapping.rbsName, accent: PATHD_THEME.lilac },
+                    { label: 'Setpoint', value: `${setpoint.toFixed(2)} sat.`, accent: THEME.SKY },
+                    { label: 'Stability', value: convergence.isStable ? 'Stable' : 'Unstable', accent: convergence.isStable ? THEME.MINT : THEME.CORAL },
+                    { label: 'Titer', value: `${productTiter.toFixed(2)} g/L`, accent: THEME.MINT },
+                    { label: 'RBS', value: rbsMapping.rbsName, accent: THEME.LILAC },
                   ]}
                   minHeight="100%"
                 >
@@ -503,10 +502,10 @@ export default React.memo(function DynConPage() {
                 <InlineMetricOverlay
                   position="top-right"
                   metrics={[
-                    { label: 'Titer', value: `${productTiter.toFixed(2)} g/L`, accent: PATHD_THEME.mint },
-                    { label: 'DO₂ RMSE', value: doRmse.toFixed(3), accent: doRmse > 0.1 ? PATHD_THEME.coral : PATHD_THEME.sky },
-                    { label: 'FPP', value: `${currentFPP.toFixed(1)} μM`, accent: currentFPP > DEFAULT_PARAMS.fppToxicThreshold ? PATHD_THEME.coral : PATHD_THEME.sky },
-                    { label: 'Burden', value: burden.burdenIndex.toFixed(3), accent: burden.isViable ? PATHD_THEME.mint : PATHD_THEME.coral },
+                    { label: 'Titer', value: `${productTiter.toFixed(2)} g/L`, accent: THEME.MINT },
+                    { label: 'DO₂ RMSE', value: doRmse.toFixed(3), accent: doRmse > 0.1 ? THEME.CORAL : THEME.SKY },
+                    { label: 'FPP', value: `${currentFPP.toFixed(1)} μM`, accent: currentFPP > DEFAULT_PARAMS.fppToxicThreshold ? THEME.CORAL : THEME.SKY },
+                    { label: 'Burden', value: burden.burdenIndex.toFixed(3), accent: burden.isViable ? THEME.MINT : THEME.CORAL },
                   ]}
                 />
               </div>
@@ -529,10 +528,10 @@ export default React.memo(function DynConPage() {
                   title="Hill feedback curve with operating point"
                   caption="f(FPP) = Vmax·Kd^n / (Kd^n + FPP^n). The operating point shows current repression level."
                   legend={[
-                    { label: 'Vmax', value: vmax.toFixed(2), accent: PATHD_THEME.sky },
-                    { label: 'Kd', value: `${hillKd.toFixed(0)} μM`, accent: PATHD_THEME.lilac },
-                    { label: 'n', value: hillN.toFixed(1), accent: PATHD_THEME.apricot },
-                    { label: 'Operating Pt', value: `${currentFPP.toFixed(1)} μM`, accent: PATHD_THEME.mint },
+                    { label: 'Vmax', value: vmax.toFixed(2), accent: THEME.SKY },
+                    { label: 'Kd', value: `${hillKd.toFixed(0)} μM`, accent: THEME.LILAC },
+                    { label: 'n', value: hillN.toFixed(1), accent: THEME.APRICOT },
+                    { label: 'Operating Pt', value: `${currentFPP.toFixed(1)} μM`, accent: THEME.MINT },
                   ]}
                   minHeight="100%"
                 >
@@ -542,10 +541,10 @@ export default React.memo(function DynConPage() {
                 <InlineMetricOverlay
                   position="top-right"
                   metrics={[
-                    { label: 'Vmax', value: vmax.toFixed(2), accent: PATHD_THEME.sky },
-                    { label: 'Kd', value: `${hillKd.toFixed(0)} μM`, accent: PATHD_THEME.lilac },
-                    { label: 'Hill coeff', value: hillN.toFixed(1), accent: PATHD_THEME.apricot },
-                    { label: 'Current FPP', value: `${currentFPP.toFixed(1)} μM`, accent: currentFPP > DEFAULT_PARAMS.fppToxicThreshold ? PATHD_THEME.coral : PATHD_THEME.mint },
+                    { label: 'Vmax', value: vmax.toFixed(2), accent: THEME.SKY },
+                    { label: 'Kd', value: `${hillKd.toFixed(0)} μM`, accent: THEME.LILAC },
+                    { label: 'Hill coeff', value: hillN.toFixed(1), accent: THEME.APRICOT },
+                    { label: 'Current FPP', value: `${currentFPP.toFixed(1)} μM`, accent: currentFPP > DEFAULT_PARAMS.fppToxicThreshold ? THEME.CORAL : THEME.MINT },
                   ]}
                 />
               </div>
@@ -563,8 +562,8 @@ export default React.memo(function DynConPage() {
                   <StatRow label="Conv. Rate" value={convergence.convergenceRate} unit="h⁻¹" />
                   <StatRow label="SS Error" value={convergence.steadyStateError} />
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '6px' }}>
-                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: convergence.isStable ? PATHD_THEME.mint : PATHD_THEME.coral }} />
-                    <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: convergence.isStable ? VALUE : PATHD_THEME.coral }}>{convergence.isStable ? 'Stable' : 'Unstable'}</span>
+                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: convergence.isStable ? THEME.MINT : THEME.CORAL }} />
+                    <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: convergence.isStable ? VALUE : THEME.CORAL }}>{convergence.isStable ? 'Stable' : 'Unstable'}</span>
                   </div>
                 </div>
                 <SectionLabel>Metabolic Burden</SectionLabel>
@@ -574,10 +573,10 @@ export default React.memo(function DynConPage() {
                   <StatRow label="ATP Drain" value={burden.atpDrain} unit="mmol/gDW/h" />
                   <StatRow label="Growth Penalty" value={burden.growthPenalty} />
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '6px' }}>
-                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: burden.isViable ? PATHD_THEME.mint : PATHD_THEME.coral }} />
-                    <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: burden.isViable ? VALUE : PATHD_THEME.coral }}>{burden.isViable ? 'Viable' : 'Non-viable'}</span>
+                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: burden.isViable ? THEME.MINT : THEME.CORAL }} />
+                    <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: burden.isViable ? VALUE : THEME.CORAL }}>{burden.isViable ? 'Viable' : 'Non-viable'}</span>
                   </div>
-                  <p style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', fontStyle: 'italic', color: LABEL, lineHeight: 1.45, marginTop: '6px' }}>{burden.recommendation}</p>
+                  <p style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', fontStyle: 'italic', color: LABEL, lineHeight: 1.45, marginTop: '6px' }}>{burden.recommendation}</p>
                 </div>
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
@@ -609,24 +608,24 @@ export default React.memo(function DynConPage() {
                 <div style={{ ...GLASS, padding: '16px' }}>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
                     <div>
-                      <div style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>Control Gain</div>
-                      <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-lg)', color: VALUE, fontWeight: 700 }}>{rbsMapping.controlGain.toFixed(2)}</div>
+                      <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>Control Gain</div>
+                      <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-lg)', color: VALUE, fontWeight: 700 }}>{rbsMapping.controlGain.toFixed(2)}</div>
                     </div>
                     <div>
-                      <div style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>RBS Part</div>
-                      <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-lg)', color: PATHD_THEME.sky, fontWeight: 700 }}>{rbsMapping.rbsName}</div>
+                      <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>RBS Part</div>
+                      <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-lg)', color: THEME.SKY, fontWeight: 700 }}>{rbsMapping.rbsName}</div>
                     </div>
                   </div>
                   <div style={{ marginBottom: '12px' }}>
-                    <div style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>RBS Strength</div>
-                    <div style={{ background: PATHD_THEME.panelInset, borderRadius: '6px', height: '10px', overflow: 'hidden' }}>
-                      <div style={{ width: `${Math.min(100, rbsMapping.rbsStrength * 100)}%`, height: '100%', background: `linear-gradient(90deg, ${PATHD_THEME.sky}, ${PATHD_THEME.mint})`, borderRadius: '6px', transition: 'width 300ms ease-out' }} />
+                    <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>RBS Strength</div>
+                    <div style={{ background: THEME.PANEL_INSET, borderRadius: '6px', height: '10px', overflow: 'hidden' }}>
+                      <div style={{ width: `${Math.min(100, rbsMapping.rbsStrength * 100)}%`, height: '100%', background: `linear-gradient(90deg, ${THEME.SKY}, ${THEME.MINT})`, borderRadius: '6px', transition: 'width 300ms ease-out' }} />
                     </div>
-                    <div style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE, marginTop: '4px' }}>{(rbsMapping.rbsStrength * 100).toFixed(0)}%</div>
+                    <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE, marginTop: '4px' }}>{(rbsMapping.rbsStrength * 100).toFixed(0)}%</div>
                   </div>
                   <div>
-                    <div style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>DNA Sequence</div>
-                    <p style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.sky, wordBreak: 'break-all', lineHeight: 1.6, background: PATHD_THEME.panelInset, padding: '8px', borderRadius: 'var(--nb-radius-sm)', border: `1px solid ${PATHD_THEME.sepiaPanelBorder}` }}>
+                    <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>DNA Sequence</div>
+                    <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.SKY, wordBreak: 'break-all', lineHeight: 1.6, background: THEME.PANEL_INSET, padding: '8px', borderRadius: 'var(--nb-radius-sm)', border: `1px solid ${THEME.BORDER}` }}>
                       {rbsMapping.sequence}
                     </p>
                   </div>
@@ -635,9 +634,9 @@ export default React.memo(function DynConPage() {
                 <InlineMetricOverlay
                   position="top-right"
                   metrics={[
-                    { label: 'Gain', value: rbsMapping.controlGain.toFixed(2), accent: PATHD_THEME.sky },
-                    { label: 'RBS', value: rbsMapping.rbsName, accent: PATHD_THEME.lilac },
-                    { label: 'Strength', value: `${(rbsMapping.rbsStrength * 100).toFixed(0)}%`, accent: PATHD_THEME.mint },
+                    { label: 'Gain', value: rbsMapping.controlGain.toFixed(2), accent: THEME.SKY },
+                    { label: 'RBS', value: rbsMapping.rbsName, accent: THEME.LILAC },
+                    { label: 'Strength', value: `${(rbsMapping.rbsStrength * 100).toFixed(0)}%`, accent: THEME.MINT },
                   ]}
                 />
               </div>

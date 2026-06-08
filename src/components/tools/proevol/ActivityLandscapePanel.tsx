@@ -11,8 +11,8 @@ import {
   PlaneGeometry,
 } from 'three';
 import type { ProteinEvolutionCampaign, VariantCandidate } from '../../../services/ProEvolCampaignEngine';
-import { T } from '../../ide/tokens';
 import { PROEVOL_THEME, StatusPill } from './shared';
+import { THEME } from '../../../theme';
 
 /* ── Constants ────────────────────────────────────────────────────────── */
 
@@ -292,7 +292,7 @@ function DMSHeatmap({ cells, positions, metric, selectedVariantId, campaign, onS
           marginBottom: '6px', padding: '6px 10px', borderRadius: 'var(--nb-radius-sm)',
           background: 'rgba(0,0,0,0.85)', border: `1px solid ${PROEVOL_THEME.border}`,
           backdropFilter: 'blur(8px)', whiteSpace: 'nowrap', zIndex: 10,
-          fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PROEVOL_THEME.value,
+          fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: PROEVOL_THEME.value,
           display: 'grid', gap: '2px',
         }}>
           <span>{hovered.wtResidue}{hovered.position}{hovered.aa === hovered.wtResidue ? '(WT)' : hovered.aa}</span>
@@ -414,13 +414,13 @@ function AxisLabels({ positions, metric }: { positions: number[]; metric: Fitnes
       display: 'grid', gridTemplateColumns: '1fr auto 1fr',
       alignItems: 'center', gap: '8px', marginTop: '4px',
     }}>
-      <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PROEVOL_THEME.label, letterSpacing: '0.06em' }}>
+      <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: PROEVOL_THEME.label, letterSpacing: '0.06em' }}>
         ← Position {positions[0] ?? '—'}
       </span>
-      <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PROEVOL_THEME.label, textAlign: 'center' }}>
+      <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: PROEVOL_THEME.label, textAlign: 'center' }}>
         Amino acid substitution → Y | Position → X | {metric} ↑ Z
       </span>
-      <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PROEVOL_THEME.label, textAlign: 'right' }}>
+      <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: PROEVOL_THEME.label, textAlign: 'right' }}>
         {positions[positions.length - 1] ?? '—'} Position →
       </span>
     </div>
@@ -439,7 +439,7 @@ function FitnessLegend({ metric, cells }: { metric: FitnessMetricKey; cells: Fit
   const steps = 8;
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-      <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PROEVOL_THEME.muted }}>{range.min.toFixed(0)}</span>
+      <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: PROEVOL_THEME.muted }}>{range.min.toFixed(0)}</span>
       <div style={{ display: 'flex', flex: 1, height: '8px', borderRadius: '4px', overflow: 'hidden' }}>
         {Array.from({ length: steps }, (_, i) => {
           const t = i / (steps - 1);
@@ -452,8 +452,8 @@ function FitnessLegend({ metric, cells }: { metric: FitnessMetricKey; cells: Fit
           );
         })}
       </div>
-      <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PROEVOL_THEME.muted }}>{range.max.toFixed(0)}</span>
-      <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PROEVOL_THEME.label, marginLeft: '4px' }}>
+      <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: PROEVOL_THEME.muted }}>{range.max.toFixed(0)}</span>
+      <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: PROEVOL_THEME.label, marginLeft: '4px' }}>
         {FITNESS_METRICS.find(m => m.key === metric)?.label ?? metric}
       </span>
     </div>
@@ -494,7 +494,7 @@ export default function ActivityLandscapePanel({
                 border: `1px solid ${metric === m.key ? `${m.color}55` : PROEVOL_THEME.border}`,
                 background: metric === m.key ? `${m.color}18` : 'transparent',
                 color: metric === m.key ? PROEVOL_THEME.value : PROEVOL_THEME.label,
-                fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase',
+                fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase',
                 letterSpacing: '0.06em', cursor: 'pointer',
               }}
             >
@@ -511,7 +511,7 @@ export default function ActivityLandscapePanel({
               border: `1px solid ${viewMode === 'heatmap' ? `${PROEVOL_THEME.mint}55` : PROEVOL_THEME.border}`,
               background: viewMode === 'heatmap' ? 'rgba(191,220,205,0.12)' : 'transparent',
               color: viewMode === 'heatmap' ? PROEVOL_THEME.value : PROEVOL_THEME.label,
-              fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', cursor: 'pointer',
+              fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', cursor: 'pointer',
             }}
           >
             Heatmap
@@ -524,7 +524,7 @@ export default function ActivityLandscapePanel({
               border: `1px solid ${viewMode === '3d' ? `${PROEVOL_THEME.mint}55` : PROEVOL_THEME.border}`,
               background: viewMode === '3d' ? 'rgba(191,220,205,0.12)' : 'transparent',
               color: viewMode === '3d' ? PROEVOL_THEME.value : PROEVOL_THEME.label,
-              fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', cursor: 'pointer',
+              fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', cursor: 'pointer',
             }}
           >
             3D Surface
@@ -560,17 +560,17 @@ export default function ActivityLandscapePanel({
       <div style={{
         marginTop: '6px', padding: '6px 8px', borderRadius: 'var(--nb-radius-sm)',
         background: 'rgba(255,255,255,0.02)', border: `1px solid ${PROEVOL_THEME.border}`,
-        fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: PROEVOL_THEME.muted, lineHeight: 1.5,
+        fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: PROEVOL_THEME.muted, lineHeight: 1.5,
         display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center',
       }}>
         <span>Predicted fitness landscape. White outline = WT. Gray = unobserved. Hover for effect class.</span>
         <span style={{ display: 'inline-flex', gap: '6px', alignItems: 'center' }}>
-          <span style={{ color: PROEVOL_THEME.mint, fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)' }}>GoF</span>
-          <span style={{ color: PROEVOL_THEME.muted, fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)' }}>TOL</span>
-          <span style={{ color: PROEVOL_THEME.coral, fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)' }}>DEL</span>
+          <span style={{ color: PROEVOL_THEME.mint, fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)' }}>GoF</span>
+          <span style={{ color: PROEVOL_THEME.muted, fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)' }}>TOL</span>
+          <span style={{ color: PROEVOL_THEME.coral, fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)' }}>DEL</span>
         </span>
         {positions.length > 0 ? (
-          <span style={{ marginLeft: 'auto', fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)' }}>
+          <span style={{ marginLeft: 'auto', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)' }}>
             {positions.length} pos × {AMINO_ACIDS.length} AA = {positions.length * AMINO_ACIDS.length} cells
           </span>
         ) : null}

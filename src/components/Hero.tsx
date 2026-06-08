@@ -23,12 +23,12 @@ import { motion, useScroll, useTransform } from 'framer-motion';
 import { Search, ArrowRight, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import HeroFluidCanvas, { type HeroFluidHandle } from './HeroFluidCanvas';
-import { T } from './ide/tokens';
 import styles from './Hero.module.css';
+import { THEME } from '../theme';
 
-const BRAND = T.BRAND;
-const SANS  = T.SANS;
-const MONO  = T.MONO;
+const BRAND = THEME.BRAND;
+const SANS  = THEME.SANS;
+const MONO  = THEME.MONO;
 
 // Quick preview from OpenAlex (CORS-open, no key)
 interface PreviewResult {

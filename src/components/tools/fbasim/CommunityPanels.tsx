@@ -6,9 +6,9 @@
 'use client';
 import MetricCard from '../../ide/shared/MetricCard';
 import WorkbenchRangeSlider from '../shared/WorkbenchRangeSlider';
-import { T } from '../../ide/tokens';
 import type { FBAOutput, CommunityFBAOutput } from '../../../data/mockFBA';
 import type { REACTION_DEFS } from '../../../data/mockFBA';
+import { THEME } from '../../../theme';
 
 // ── Color palette for community mode ──
 export const COLORS = {
@@ -59,7 +59,7 @@ export function SharedMetaboliteBus({ exchangeFluxes }: {
   return (
     <GlassContainer color={COLORS.sharedBg} borderColor={COLORS.sharedBorder}
       style={{ padding: '14px 16px' }}>
-      <p style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', letterSpacing: '0.1em', color: COLORS.sharedPool, margin: '0 0 10px' }}>
+      <p style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', letterSpacing: '0.1em', color: COLORS.sharedPool, margin: '0 0 10px' }}>
         Shared Environmental Pool
       </p>
       {exchangeFluxes.map((ex) => {
@@ -69,8 +69,8 @@ export function SharedMetaboliteBus({ exchangeFluxes }: {
         return (
           <div key={ex.id} style={{ marginBottom: '8px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-              <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: 'rgba(255,255,255,0.5)' }}>{ex.metabolite}</span>
-              <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-sm)', fontWeight: 600, color: COLORS.sharedPool, textAlign: 'right' }}>
+              <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: 'rgba(255,255,255,0.5)' }}>{ex.metabolite}</span>
+              <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-sm)', fontWeight: 600, color: COLORS.sharedPool, textAlign: 'right' }}>
                 {ex.flux.toFixed(2)} mmol/h
               </span>
             </div>
@@ -84,15 +84,15 @@ export function SharedMetaboliteBus({ exchangeFluxes }: {
               <line x1="8" y1="6" x2="100%" y2="6" stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
               <line x1="8" y1="6" x2="100%" y2="6" stroke={`url(#grad-${ex.id})`} strokeWidth={strokeW}
                 strokeLinecap="round" style={{ opacity: ex.flux > 0.01 ? 0.85 : 0.2 }} />
-              <text x={isRightFlow ? '92%' : '4%'} y="10" fontFamily={T.SANS} fontSize="10" fill={COLORS.sharedPool} textAnchor="middle">
+              <text x={isRightFlow ? '92%' : '4%'} y="10" fontFamily={THEME.SANS} fontSize="10" fill={COLORS.sharedPool} textAnchor="middle">
                 {isRightFlow ? '→' : '←'}
               </text>
             </svg>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '2px' }}>
-              <span style={{ fontSize: 'var(--nb-fs-xs)', color: isRightFlow ? COLORS.strainA : COLORS.strainB, fontFamily: T.MONO }}>
+              <span style={{ fontSize: 'var(--nb-fs-xs)', color: isRightFlow ? COLORS.strainA : COLORS.strainB, fontFamily: THEME.MONO }}>
                 {ex.fromStrain === 'ecoli' ? 'E. coli' : 'S. cerevisiae'}
               </span>
-              <span style={{ fontSize: 'var(--nb-fs-xs)', color: isRightFlow ? COLORS.strainB : COLORS.strainA, fontFamily: T.MONO }}>
+              <span style={{ fontSize: 'var(--nb-fs-xs)', color: isRightFlow ? COLORS.strainB : COLORS.strainA, fontFamily: THEME.MONO }}>
                 {ex.toStrain === 'ecoli' ? 'E. coli' : 'S. cerevisiae'}
               </span>
             </div>
@@ -117,7 +117,7 @@ export function StrainPanel({ label, color, borderColor, accentColor, glucoseUpt
   return (
     <GlassContainer color={color} borderColor={borderColor}
       style={{ padding: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-      <p style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', letterSpacing: '0.1em', color: accentColor, margin: '0' }}>
+      <p style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', letterSpacing: '0.1em', color: accentColor, margin: '0' }}>
         {label}
       </p>
       <ParamSlider label="Glucose" value={glucoseUptake} min={0} max={20} onChange={onGlucoseChange} unit="mmol/gDW/h" accentColor={accentColor} />
@@ -127,7 +127,7 @@ export function StrainPanel({ label, color, borderColor, accentColor, glucoseUpt
         <MetricCard label="ATP Yield" value={result.atpYield} unit="mol/mol" />
         <MetricCard label="Carbon Eff." value={result.carbonEfficiency} unit="%" />
       </div>
-      <p style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.55)', margin: '6px 0 0' }}>
+      <p style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.55)', margin: '6px 0 0' }}>
         Gene Knockouts
       </p>
       <div style={{ maxHeight: '140px', overflowY: 'auto' }}>
@@ -139,7 +139,7 @@ export function StrainPanel({ label, color, borderColor, accentColor, glucoseUpt
               width: '100%', padding: '4px 8px', marginBottom: '2px',
               borderRadius: 'var(--nb-radius-sm)',
             }}>
-              <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: isKO ? 'rgba(255,120,120,0.9)' : 'rgba(255,255,255,0.5)' }}>{r.id}</span>
+              <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: isKO ? 'rgba(255,120,120,0.9)' : 'rgba(255,255,255,0.5)' }}>{r.id}</span>
               <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: isKO ? 'rgba(255,80,80,0.7)' : 'rgba(255,255,255,0.12)', flexShrink: 0 }} />
             </button>
           );
@@ -148,7 +148,7 @@ export function StrainPanel({ label, color, borderColor, accentColor, glucoseUpt
       {knockouts.length > 0 && (
         <button aria-label="Clear all knockouts" onClick={onClearKO} className="nb-tool-toggle" style={{
           display: 'block', width: '100%', padding: '4px 8px',
-          borderRadius: 'var(--nb-radius-sm)', fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)',
+          borderRadius: 'var(--nb-radius-sm)', fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)',
         }}>
           Clear all
         </button>

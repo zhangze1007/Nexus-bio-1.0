@@ -3,18 +3,16 @@
 import { useMemo } from 'react';
 import { Database, GitBranchPlus, ShieldCheck } from 'lucide-react';
 import { useWorkbenchStore } from '../../store/workbenchStore';
-import { T } from '../ide/tokens';
 import { getAuthoritySummary, getAuthorityTier } from './workbenchTrust';
-import { PATHD_THEME } from './workbenchTheme';
-
+import { THEME } from '../../theme';
 interface WorkbenchProjectTimelineProps {
   title?: string;
   limit?: number;
 }
 
-const BORDER = PATHD_THEME.panelBorder;
-const LABEL = PATHD_THEME.label;
-const VALUE = PATHD_THEME.value;
+const BORDER = THEME.BORDER;
+const LABEL = THEME.LABEL;
+const VALUE = THEME.VALUE;
 
 function formatTime(timestamp: number) {
   return new Date(timestamp).toLocaleString([], {
@@ -26,10 +24,10 @@ function formatTime(timestamp: number) {
 }
 
 function authorityColor(tier: ReturnType<typeof getAuthorityTier>) {
-  if (tier === 'experiment-backed') return PATHD_THEME.orange;
-  if (tier === 'evidence-linked') return PATHD_THEME.blue;
-  if (tier === 'contextual') return PATHD_THEME.indigo;
-  return PATHD_THEME.liveRed;
+  if (tier === 'experiment-backed') return THEME.APRICOT;
+  if (tier === 'evidence-linked') return THEME.SKY;
+  if (tier === 'contextual') return THEME.LILAC;
+  return THEME.CORAL;
 }
 
 export default function WorkbenchProjectTimeline({
@@ -54,8 +52,8 @@ export default function WorkbenchProjectTimeline({
   return (
     <section style={{ display: 'grid', gap: '10px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-        <GitBranchPlus size={14} color={PATHD_THEME.blue} />
-        <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+        <GitBranchPlus size={14} color={THEME.SKY} />
+        <div style={{ fontFamily: THEME.MONO, fontSize: '10px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
           {title}
         </div>
         {backendMeta && (
@@ -64,9 +62,9 @@ export default function WorkbenchProjectTimeline({
               padding: '3px 8px',
               borderRadius: '999px',
               border: `1px solid ${BORDER}`,
-              background: PATHD_THEME.chipNeutral,
+              background: THEME.CHIP_NEUTRAL,
               color: LABEL,
-              fontFamily: T.MONO,
+              fontFamily: THEME.MONO,
               fontSize: '10px',
             }}
           >
@@ -80,7 +78,7 @@ export default function WorkbenchProjectTimeline({
           style={{
             borderRadius: '16px',
             border: `1px solid ${BORDER}`,
-            background: PATHD_THEME.panelGradientSoft,
+            background: THEME.PANEL_GRADIENT_SOFT,
             padding: '12px 14px',
             display: 'flex',
             alignItems: 'center',
@@ -89,10 +87,10 @@ export default function WorkbenchProjectTimeline({
           }}
         >
           <ShieldCheck size={14} color={authorityColor(latestAuthority.tier)} />
-          <span style={{ fontFamily: T.SANS, fontSize: '12px', color: VALUE, fontWeight: 700 }}>
+          <span style={{ fontFamily: THEME.SANS, fontSize: '12px', color: VALUE, fontWeight: 700 }}>
             Latest run authority
           </span>
-          <span style={{ fontFamily: T.SANS, fontSize: '12px', color: LABEL, lineHeight: 1.55 }}>
+          <span style={{ fontFamily: THEME.SANS, fontSize: '12px', color: LABEL, lineHeight: 1.55 }}>
             {latestAuthority.summary}
           </span>
         </div>
@@ -104,7 +102,7 @@ export default function WorkbenchProjectTimeline({
           style={{
             borderRadius: '16px',
             border: `1px solid ${BORDER}`,
-            background: PATHD_THEME.panelGradientSoft,
+            background: THEME.PANEL_GRADIENT_SOFT,
             padding: '12px 14px',
             display: 'grid',
             gap: '6px',
@@ -113,16 +111,16 @@ export default function WorkbenchProjectTimeline({
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Database size={13} color="rgba(255,255,255,0.72)" />
-              <span style={{ fontFamily: T.SANS, fontSize: '13px', color: VALUE, fontWeight: 700 }}>
+              <span style={{ fontFamily: THEME.SANS, fontSize: '13px', color: VALUE, fontWeight: 700 }}>
                 rev {entry.revision} · {entry.projectTitle}
               </span>
             </div>
-            <span style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL }}>
+            <span style={{ fontFamily: THEME.MONO, fontSize: '10px', color: LABEL }}>
               {formatTime(entry.updatedAt)}
             </span>
           </div>
 
-          <div style={{ fontFamily: T.SANS, fontSize: '12px', color: LABEL, lineHeight: 1.6 }}>
+          <div style={{ fontFamily: THEME.SANS, fontSize: '12px', color: LABEL, lineHeight: 1.6 }}>
             {entry.targetProduct}
             {entry.analyzeTitle ? ` · ${entry.analyzeTitle}` : ' · Analyze pending'}
           </div>
@@ -133,9 +131,9 @@ export default function WorkbenchProjectTimeline({
                 padding: '4px 8px',
                 borderRadius: '999px',
                 border: `1px solid ${BORDER}`,
-                background: PATHD_THEME.chipNeutral,
+                background: THEME.CHIP_NEUTRAL,
                 color: 'rgba(255,255,255,0.76)',
-                fontFamily: T.MONO,
+                fontFamily: THEME.MONO,
                 fontSize: '10px',
               }}
             >
@@ -146,9 +144,9 @@ export default function WorkbenchProjectTimeline({
                 padding: '4px 8px',
                 borderRadius: '999px',
                 border: `1px solid ${BORDER}`,
-                background: PATHD_THEME.chipNeutral,
+                background: THEME.CHIP_NEUTRAL,
                 color: 'rgba(255,255,255,0.76)',
-                fontFamily: T.MONO,
+                fontFamily: THEME.MONO,
                 fontSize: '10px',
               }}
             >
@@ -157,7 +155,7 @@ export default function WorkbenchProjectTimeline({
           </div>
         </div>
       )) : (
-        <div style={{ fontFamily: T.SANS, fontSize: '12px', color: LABEL, lineHeight: 1.6 }}>
+        <div style={{ fontFamily: THEME.SANS, fontSize: '12px', color: LABEL, lineHeight: 1.6 }}>
           No canonical revision history yet. Once the workbench syncs, project revisions will appear here.
         </div>
       )}

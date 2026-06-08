@@ -15,14 +15,12 @@ import ToolShell from './shared/ToolShell';
 import ToolTabBar, { type ToolTab } from './shared/ToolTabBar';
 import ToolTabPanel from './shared/ToolTabPanel';
 import InlineMetricOverlay from './shared/InlineMetricOverlay';
-import { PATHD_THEME } from '../workbench/workbenchTheme';
-import { T } from '../ide/tokens';
-
+import { THEME } from '../../theme';
 const SCSPATIAL_TABS: ToolTab[] = [
-  { id: 'spatial-2d', label: 'Hex Grid', accent: PATHD_THEME.sky },
-  { id: 'umap', label: 'UMAP', accent: PATHD_THEME.lilac },
-  { id: 'trajectory', label: 'Clusters', accent: PATHD_THEME.apricot },
-  { id: 'table', label: 'Gene Expression', accent: PATHD_THEME.mint },
+  { id: 'spatial-2d', label: 'Hex Grid', accent: THEME.SKY },
+  { id: 'umap', label: 'UMAP', accent: THEME.LILAC },
+  { id: 'trajectory', label: 'Clusters', accent: THEME.APRICOT },
+  { id: 'table', label: 'Gene Expression', accent: THEME.MINT },
 ];
 
 function readyClass(validity: 'real' | 'partial' | 'demo' | null, loadState: string) {
@@ -297,10 +295,10 @@ export default React.memo(function ScSpatialPage() {
               <InlineMetricOverlay
                 position="top-right"
                 metrics={[
-                  { label: 'Cells', value: `${datasetMeta?.cellCount ?? 0}`, accent: PATHD_THEME.sky },
-                  { label: 'Clusters', value: `${availableClusters.length}`, accent: PATHD_THEME.lilac },
-                  { label: 'Gene', value: selectedGene || '—', accent: PATHD_THEME.mint },
-                  { label: 'Hotspots', value: `${query.rightPanel.hotspots.length}`, accent: PATHD_THEME.apricot },
+                  { label: 'Cells', value: `${datasetMeta?.cellCount ?? 0}`, accent: THEME.SKY },
+                  { label: 'Clusters', value: `${availableClusters.length}`, accent: THEME.LILAC },
+                  { label: 'Gene', value: selectedGene || '—', accent: THEME.MINT },
+                  { label: 'Hotspots', value: `${query.rightPanel.hotspots.length}`, accent: THEME.APRICOT },
                 ]}
               />
             )}
@@ -315,9 +313,9 @@ export default React.memo(function ScSpatialPage() {
               {readyLabel(validity, loadState)}
             </span>
             <span style={{
-              fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.label,
+              fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL,
               padding: '2px 8px', borderRadius: '6px',
-              background: PATHD_THEME.panelInset, border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
+              background: THEME.PANEL_INSET, border: `1px solid ${THEME.BORDER}`,
             }}>
               {artifactChipLabel}
             </span>

@@ -3,8 +3,7 @@
 import { useSession, signIn, signOut } from 'next-auth/react';
 import { useState, useRef, useEffect } from 'react';
 import { LogIn, LogOut, User, ChevronDown } from 'lucide-react';
-import { T } from '../ide/tokens';
-
+import { THEME } from '../../theme';
 /**
  * LoginButton — Authentication control for the IDE top bar.
  *
@@ -45,7 +44,7 @@ export default function LoginButton() {
           background: 'rgba(255,255,255,0.04)',
           border: '1px solid rgba(255,255,255,0.08)',
           color: 'rgba(255,255,255,0.6)',
-          fontFamily: T.SANS, fontSize: '12px', fontWeight: 500,
+          fontFamily: THEME.SANS, fontSize: '12px', fontWeight: 500,
           cursor: 'pointer',
           transition: 'background 0.15s, border-color 0.15s, color 0.15s',
         }}
@@ -81,7 +80,7 @@ export default function LoginButton() {
           background: open ? 'rgba(255,255,255,0.06)' : 'transparent',
           border: '1px solid transparent',
           color: 'rgba(255,255,255,0.7)',
-          fontFamily: T.SANS, fontSize: '12px', fontWeight: 500,
+          fontFamily: THEME.SANS, fontSize: '12px', fontWeight: 500,
           cursor: 'pointer',
           transition: 'background 0.15s',
         }}
@@ -138,20 +137,20 @@ export default function LoginButton() {
             borderBottom: '1px solid rgba(255,255,255,0.06)',
           }}>
             <p style={{
-              fontFamily: T.SANS, fontSize: '13px', fontWeight: 600,
+              fontFamily: THEME.SANS, fontSize: '13px', fontWeight: 600,
               color: 'rgba(255,255,255,0.88)', margin: 0,
             }}>
               {user.name}
             </p>
             <p style={{
-              fontFamily: T.MONO, fontSize: '11px',
+              fontFamily: THEME.MONO, fontSize: '11px',
               color: 'rgba(255,255,255,0.4)', margin: '2px 0 0',
             }}>
               {user.email}
             </p>
             {user.institution && (
               <p style={{
-                fontFamily: T.SANS, fontSize: '11px',
+                fontFamily: THEME.SANS, fontSize: '11px',
                 color: 'rgba(255,255,255,0.55)', margin: '4px 0 0',
               }}>
                 {user.institution}
@@ -169,7 +168,7 @@ export default function LoginButton() {
                 width: '100%', padding: '8px 10px', borderRadius: '6px',
                 background: 'none', border: 'none',
                 color: 'rgba(255,255,255,0.6)',
-                fontFamily: T.SANS, fontSize: '12px',
+                fontFamily: THEME.SANS, fontSize: '12px',
                 cursor: 'pointer', textAlign: 'left',
                 transition: 'background 0.12s, color 0.12s',
               }}
@@ -193,7 +192,7 @@ export default function LoginButton() {
                 width: '100%', padding: '8px 10px', borderRadius: '6px',
                 background: 'none', border: 'none',
                 color: 'rgba(255,255,255,0.6)',
-                fontFamily: T.SANS, fontSize: '12px',
+                fontFamily: THEME.SANS, fontSize: '12px',
                 cursor: 'pointer', textAlign: 'left',
                 transition: 'background 0.12s, color 0.12s',
               }}

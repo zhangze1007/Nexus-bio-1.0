@@ -1,10 +1,10 @@
 'use client';
 
-import { T } from '../tokens';
+import { THEME } from '../../../theme';
 import { buildPageRange } from '../../../utils/pagination';
 
-const SANS = T.SANS;
-const MONO = T.MONO;
+const SANS = THEME.SANS;
+const MONO = THEME.MONO;
 
 interface PaginationProps {
   totalItems: number;

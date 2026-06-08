@@ -1,9 +1,7 @@
 'use client';
 
 import { Component, type ErrorInfo, type ReactNode } from 'react';
-import { T } from '../ide/tokens';
-import { PATHD_THEME } from '../workbench/workbenchTheme';
-
+import { THEME } from '../../theme';
 interface ErrorBoundaryProps {
   children: ReactNode;
   /** Custom fallback UI. If omitted, renders a built-in recovery panel. */
@@ -64,23 +62,23 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
               width: '40px',
               height: '40px',
               borderRadius: '999px',
-              border: `1px solid ${PATHD_THEME.coral}44`,
-              background: `${PATHD_THEME.coral}15`,
+              border: `1px solid ${THEME.CORAL}44`,
+              background: `${THEME.CORAL}15`,
               display: 'grid',
               placeItems: 'center',
             }}
           >
-            <span style={{ fontFamily: T.MONO, fontSize: '14px', color: PATHD_THEME.coral }}>!</span>
+            <span style={{ fontFamily: THEME.MONO, fontSize: '14px', color: THEME.CORAL }}>!</span>
           </div>
 
           <p style={{
-            fontFamily: T.SANS, fontSize: '14px', fontWeight: 600,
+            fontFamily: THEME.SANS, fontSize: '14px', fontWeight: 600,
             color: 'rgba(255,255,255,0.88)', margin: 0, textAlign: 'center',
           }}>
             Something went wrong
           </p>
           <p style={{
-            fontFamily: T.SANS, fontSize: '12px',
+            fontFamily: THEME.SANS, fontSize: '12px',
             color: 'rgba(255,255,255,0.45)', margin: 0, textAlign: 'center',
             lineHeight: 1.6, maxWidth: '44ch',
           }}>
@@ -98,7 +96,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
               border: `1px solid rgba(255,255,255,0.1)`,
               background: 'rgba(255,255,255,0.04)',
               color: 'rgba(255,255,255,0.7)',
-              fontFamily: T.SANS,
+              fontFamily: THEME.SANS,
               fontSize: '12px',
               fontWeight: 500,
               cursor: 'pointer',

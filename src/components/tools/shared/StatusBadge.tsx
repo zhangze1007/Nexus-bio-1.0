@@ -1,7 +1,5 @@
+import { THEME } from '../../../theme';
 'use client';
-
-import { T } from '../../ide/tokens';
-import { PATHD_THEME } from '../../workbench/workbenchTheme';
 
 /**
  * StatusBadge — Consistent status indicator across all tools.
@@ -28,32 +26,32 @@ const VARIANT_STYLES: Record<BadgeVariant, {
   success: {
     bg: 'rgba(191,220,205,0.12)',
     border: 'rgba(191,220,205,0.25)',
-    color: T.MINT,
-    dotColor: T.MINT,
+    color: THEME.MINT,
+    dotColor: THEME.MINT,
   },
   warning: {
     bg: 'rgba(231,199,169,0.12)',
     border: 'rgba(231,199,169,0.25)',
-    color: T.APRICOT,
-    dotColor: T.APRICOT,
+    color: THEME.APRICOT,
+    dotColor: THEME.APRICOT,
   },
   error: {
     bg: 'rgba(232,163,161,0.12)',
     border: 'rgba(232,163,161,0.25)',
-    color: T.CORAL,
-    dotColor: T.CORAL,
+    color: THEME.CORAL,
+    dotColor: THEME.CORAL,
   },
   info: {
     bg: 'rgba(175,195,214,0.12)',
     border: 'rgba(175,195,214,0.25)',
-    color: T.SKY,
-    dotColor: T.SKY,
+    color: THEME.SKY,
+    dotColor: THEME.SKY,
   },
   muted: {
     bg: 'rgba(255,255,255,0.03)',
-    border: PATHD_THEME.sepiaPanelBorder,
-    color: PATHD_THEME.label,
-    dotColor: PATHD_THEME.label,
+    border: THEME.BORDER,
+    color: THEME.LABEL,
+    dotColor: THEME.LABEL,
   },
 };
 
@@ -70,8 +68,8 @@ export default function StatusBadge({ label, variant = 'muted', dot = false }: S
       borderRadius: '999px',
       border: `1px solid ${v.border}`,
       background: v.bg,
-      fontFamily: T.MONO,
-      fontSize: T.FS_XS,
+      fontFamily: THEME.MONO,
+      fontSize: THEME.FS_XS,
       fontWeight: 600,
       letterSpacing: '0.04em',
       color: v.color,

@@ -3,10 +3,9 @@
 import { useState, type CSSProperties } from 'react';
 import ScientificHero from '../shared/ScientificHero';
 import ScientificMethodStrip from '../shared/ScientificMethodStrip';
-import { PATHD_THEME } from '../../workbench/workbenchTheme';
-import { T } from '../../ide/tokens';
 import type { PathwayNode, PathwayEdge } from '../../../types';
 import type { WorkbenchAnalyzeArtifact } from '../../../store/workbenchTypes';
+import { THEME } from '../../../theme';
 
 type ControlVarsStyle = CSSProperties & Record<`--${string}`, string>;
 
@@ -64,13 +63,13 @@ export default function EvidenceTabRail({
           onDismiss={() => setHeroDismissed(true)}
           aside={
             <>
-              <div style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.label, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                 Current focus
               </div>
-              <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: PATHD_THEME.value, fontWeight: 700 }}>
+              <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: THEME.VALUE, fontWeight: 700 }}>
                 {selectedNodeLabel ?? derivedTarget}
               </div>
-              <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: PATHD_THEME.label, lineHeight: 1.55 }}>
+              <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: THEME.LABEL, lineHeight: 1.55 }}>
                 {selectedNodeLabel
                   ? 'A specific pathway node is in focus, so downstream interpretation should respect this current design emphasis.'
                   : 'No node is pinned yet; the route remains the active object at pathway scale.'}
@@ -114,19 +113,19 @@ export default function EvidenceTabRail({
             {
               title: 'Route object',
               detail: 'The active route is treated as the canonical scientific object, so every downstream handoff inherits the same graph rather than rebuilding assumptions from scratch.',
-              accent: PATHD_THEME.apricot,
+              accent: THEME.APRICOT,
               note: `${activeNodes.length} nodes · ${activeEdges.length} edges`,
             },
             {
               title: '3D scientific canvas',
               detail: 'The immersive pathway graph remains the main stage, but it is now framed by clear evidence and handoff language instead of reading like a standalone visual demo.',
-              accent: PATHD_THEME.sky,
+              accent: THEME.SKY,
               note: selectedNodeLabel ?? derivedTarget,
             },
             {
               title: 'Execution handoff',
               detail: 'Bottlenecks, enzyme candidates, and next-tool routing stay visible so the page behaves like the front door to the rest of the workbench.',
-              accent: PATHD_THEME.mint,
+              accent: THEME.MINT,
               note: recommendedNextTool,
             },
           ]}
@@ -146,7 +145,7 @@ export default function EvidenceTabRail({
               backdropFilter: 'blur(16px)',
               WebkitBackdropFilter: 'blur(16px)',
               color: 'var(--nb-control-color)',
-              fontFamily: T.MONO,
+              fontFamily: THEME.MONO,
               fontSize: 'var(--nb-fs-xs)',
               fontWeight: 600,
               textTransform: 'uppercase',
@@ -155,13 +154,13 @@ export default function EvidenceTabRail({
               transition: 'background 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease',
               ['--nb-control-bg' as const]: 'rgba(10,12,16,0.52)',
               ['--nb-control-border' as const]: 'rgba(255,255,255,0.14)',
-              ['--nb-control-color' as const]: PATHD_THEME.label,
+              ['--nb-control-color' as const]: THEME.LABEL,
               ['--nb-control-hover-bg' as const]: '#ffffff',
               ['--nb-control-hover-border' as const]: '#ffffff',
-              ['--nb-control-hover-color' as const]: PATHD_THEME.ink,
+              ['--nb-control-hover-color' as const]: THEME.INK,
               ['--nb-control-active-bg' as const]: '#ffffff',
               ['--nb-control-active-border' as const]: '#ffffff',
-              ['--nb-control-active-color' as const]: PATHD_THEME.ink,
+              ['--nb-control-active-color' as const]: THEME.INK,
             } as ControlVarsStyle}
           >
             Restore dashboard

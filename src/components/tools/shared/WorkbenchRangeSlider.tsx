@@ -1,9 +1,7 @@
 'use client';
 
 import type { CSSProperties } from 'react';
-import { T } from '../../ide/tokens';
-import { PATHD_THEME } from '../../workbench/workbenchTheme';
-
+import { THEME } from '../../../theme';
 interface WorkbenchRangeSliderProps {
   label: string;
   value: number;
@@ -42,10 +40,10 @@ export default function WorkbenchRangeSlider({
   return (
     <div style={{ marginBottom: '14px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
-        <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: PATHD_THEME.label }}>
+        <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: THEME.LABEL }}>
           {label}
         </span>
-        <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-sm)', fontWeight: 600, color: PATHD_THEME.value }}>
+        <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-sm)', fontWeight: 600, color: THEME.VALUE }}>
           {displayValue}
           {unit ? ` ${unit}` : ''}
         </span>

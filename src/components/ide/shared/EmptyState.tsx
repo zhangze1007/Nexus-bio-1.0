@@ -1,9 +1,7 @@
 'use client';
-import { T } from '../tokens';
-import { PATHD_THEME } from '../../workbench/workbenchTheme';
-
-const SANS = T.SANS;
-const MONO = T.MONO;
+import { THEME } from '../../../theme';
+const SANS = THEME.SANS;
+const MONO = THEME.MONO;
 
 interface EmptyStateProps {
   type?: 'empty' | 'loading' | 'error';
@@ -24,10 +22,10 @@ export default function EmptyState({
       : 'Adjust filters or parameters to continue.';
 
   const accent = type === 'error'
-    ? PATHD_THEME.coral
+    ? THEME.CORAL
     : type === 'loading'
-      ? PATHD_THEME.sky
-      : PATHD_THEME.mint;
+      ? THEME.SKY
+      : THEME.MINT;
 
   return (
     <div
@@ -40,7 +38,7 @@ export default function EmptyState({
         gap: '10px',
         padding: '32px',
         background: 'linear-gradient(180deg, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0.56) 100%)',
-        color: PATHD_THEME.paperValue,
+        color: THEME.PAPER_VALUE,
       }}
     >
       <div
@@ -74,14 +72,14 @@ export default function EmptyState({
         )}
       </div>
 
-      <p style={{ fontFamily: SANS, fontSize: '15px', fontWeight: 600, color: PATHD_THEME.paperValue, margin: 0 }}>
+      <p style={{ fontFamily: SANS, fontSize: '15px', fontWeight: 600, color: THEME.PAPER_VALUE, margin: 0 }}>
         {title ?? defaultTitle}
       </p>
       <p
         style={{
           fontFamily: SANS,
           fontSize: '13px',
-          color: PATHD_THEME.paperLabel,
+          color: THEME.PAPER_LABEL,
           margin: 0,
           textAlign: 'center',
           lineHeight: 1.6,

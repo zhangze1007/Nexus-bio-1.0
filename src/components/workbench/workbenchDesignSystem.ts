@@ -9,9 +9,7 @@
 
 import type { CSSProperties } from 'react';
 import type { Variants } from 'framer-motion';
-import { PATHD_THEME } from './workbenchTheme';
-import { T } from '../ide/tokens';
-
+import { THEME } from '../../theme';
 // ─── Glass Panel Styles ─────────────────────────────────────────────
 
 export const glassPanel: CSSProperties = {
@@ -49,55 +47,55 @@ export const glassPanelInset: CSSProperties = {
 
 export const typography = {
   sectionTitle: {
-    fontFamily: T.MONO,
+    fontFamily: THEME.MONO,
     fontSize: '10px',
-    color: PATHD_THEME.label,
+    color: THEME.LABEL,
     textTransform: 'uppercase' as const,
     letterSpacing: '0.08em',
     lineHeight: 1,
   } satisfies CSSProperties,
 
   cardTitle: {
-    fontFamily: T.SANS,
+    fontFamily: THEME.SANS,
     fontSize: '13px',
-    color: PATHD_THEME.value,
+    color: THEME.VALUE,
     fontWeight: 600,
     lineHeight: 1.3,
   } satisfies CSSProperties,
 
   body: {
-    fontFamily: T.SANS,
+    fontFamily: THEME.SANS,
     fontSize: '12px',
-    color: PATHD_THEME.label,
+    color: THEME.LABEL,
     lineHeight: 1.6,
   } satisfies CSSProperties,
 
   caption: {
-    fontFamily: T.MONO,
+    fontFamily: THEME.MONO,
     fontSize: '10px',
-    color: PATHD_THEME.label,
+    color: THEME.LABEL,
     lineHeight: 1.4,
   } satisfies CSSProperties,
 
   metric: {
-    fontFamily: T.MONO,
+    fontFamily: THEME.MONO,
     fontSize: '10px',
-    color: PATHD_THEME.value,
+    color: THEME.VALUE,
     lineHeight: 1,
   } satisfies CSSProperties,
 
   label: {
-    fontFamily: T.SANS,
+    fontFamily: THEME.SANS,
     fontSize: '12px',
-    color: PATHD_THEME.value,
+    color: THEME.VALUE,
     fontWeight: 600,
     lineHeight: 1.3,
   } satisfies CSSProperties,
 
   overline: {
-    fontFamily: T.MONO,
+    fontFamily: THEME.MONO,
     fontSize: '9px',
-    color: PATHD_THEME.label,
+    color: THEME.LABEL,
     textTransform: 'uppercase' as const,
     letterSpacing: '0.1em',
     lineHeight: 1,
@@ -105,18 +103,18 @@ export const typography = {
 
   /** Key-value pair label (left side) */
   kvLabel: {
-    fontFamily: T.MONO,
+    fontFamily: THEME.MONO,
     fontSize: '10px',
-    color: PATHD_THEME.label,
+    color: THEME.LABEL,
     minWidth: '80px',
     flexShrink: 0,
   } satisfies CSSProperties,
 
   /** Key-value pair value (right side) */
   kvValue: {
-    fontFamily: T.MONO,
+    fontFamily: THEME.MONO,
     fontSize: '10px',
-    color: PATHD_THEME.value,
+    color: THEME.VALUE,
   } satisfies CSSProperties,
 };
 
@@ -127,7 +125,7 @@ const chipBase: CSSProperties = {
   alignItems: 'center',
   padding: '3px 10px',
   borderRadius: '999px',
-  fontFamily: T.MONO,
+  fontFamily: THEME.MONO,
   fontSize: '10px',
   textTransform: 'uppercase',
   letterSpacing: '0.04em',
@@ -141,15 +139,15 @@ export const statusChip = {
 
   committed: {
     ...chipBase,
-    border: `1px solid ${PATHD_THEME.chipBorder}`,
-    background: PATHD_THEME.chipCool,
-    color: PATHD_THEME.chipText,
+    border: `1px solid ${THEME.CHIP_BORDER}`,
+    background: THEME.CHIP_COOL,
+    color: THEME.CHIP_TEXT,
   } satisfies CSSProperties,
 
   attention: {
     ...chipBase,
-    border: `1px solid ${PATHD_THEME.chipBorderWarm}`,
-    background: PATHD_THEME.chipWarm,
+    border: `1px solid ${THEME.CHIP_BORDER_WARM}`,
+    background: THEME.CHIP_WARM,
     color: 'rgba(255, 228, 194, 0.94)',
   } satisfies CSSProperties,
 
@@ -157,27 +155,27 @@ export const statusChip = {
     ...chipBase,
     border: '1px solid rgba(255, 255, 255, 0.08)',
     background: 'rgba(255, 255, 255, 0.04)',
-    color: PATHD_THEME.value,
+    color: THEME.VALUE,
   } satisfies CSSProperties,
 
   success: {
     ...chipBase,
     border: '1px solid rgba(191, 220, 205, 0.22)',
     background: 'rgba(191, 220, 205, 0.12)',
-    color: PATHD_THEME.mint,
+    color: THEME.MINT,
   } satisfies CSSProperties,
 
   blocked: {
     ...chipBase,
     border: '1px solid rgba(232, 163, 161, 0.22)',
     background: 'rgba(232, 163, 161, 0.12)',
-    color: PATHD_THEME.coral,
+    color: THEME.CORAL,
   } satisfies CSSProperties,
 
   neutral: {
     ...chipBase,
     border: '1px solid rgba(255, 255, 255, 0.08)',
-    background: PATHD_THEME.chipNeutral,
+    background: THEME.CHIP_NEUTRAL,
     color: 'rgba(255, 255, 255, 0.76)',
   } satisfies CSSProperties,
 };
@@ -262,25 +260,25 @@ export const metricRow: CSSProperties = {
 };
 
 export const metricLabel: CSSProperties = {
-  fontFamily: T.MONO,
+  fontFamily: THEME.MONO,
   fontSize: '10px',
-  color: PATHD_THEME.label,
+  color: THEME.LABEL,
   minWidth: '72px',
   flexShrink: 0,
 };
 
 export const metricValue: CSSProperties = {
-  fontFamily: T.MONO,
+  fontFamily: THEME.MONO,
   fontSize: '10px',
-  color: PATHD_THEME.value,
+  color: THEME.VALUE,
 };
 
 export const kvGrid: CSSProperties = {
   display: 'grid',
   gap: '4px',
-  fontFamily: T.MONO,
+  fontFamily: THEME.MONO,
   fontSize: '10px',
-  color: PATHD_THEME.label,
+  color: THEME.LABEL,
   lineHeight: 1.5,
 };
 
@@ -329,21 +327,21 @@ export function statusAccent(status: string): string {
   switch (status) {
     case 'committed':
     case 'complete':
-      return PATHD_THEME.mint;
+      return THEME.MINT;
     case 'ready':
-      return PATHD_THEME.sky;
+      return THEME.SKY;
     case 'blocked':
-      return PATHD_THEME.coral;
+      return THEME.CORAL;
     case 'gated':
     case 'attention':
-      return PATHD_THEME.apricot;
+      return THEME.APRICOT;
     case 'demoOnly':
-      return PATHD_THEME.apricot;
+      return THEME.APRICOT;
     case 'draft':
-      return PATHD_THEME.lilac;
+      return THEME.LILAC;
     case 'recorded':
     default:
-      return PATHD_THEME.label;
+      return THEME.LABEL;
   }
 }
 

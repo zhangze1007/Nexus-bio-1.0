@@ -17,8 +17,6 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Maximize2 } from 'lucide-react';
-import { T } from './tokens';
-import { PATHD_THEME } from '../workbench/workbenchTheme';
 import { useUIStore } from '../../store/uiStore';
 import { useWorkbenchStore } from '../../store/workbenchStore';
 import { useAxonOrchestratorOptional } from '../../providers/AxonOrchestratorProvider';
@@ -28,6 +26,7 @@ import {
   type ConversationTurn,
 } from '../../services/axonContext';
 import ResearchAnswerRenderer from '../tools/shared/ResearchAnswerRenderer';
+import { THEME } from '../../theme';
 
 const SLIDE_WIDTH = 420;
 
@@ -272,8 +271,8 @@ export default function CopilotSlideOver() {
               zIndex: 97,
               display: 'flex',
               flexDirection: 'column',
-              background: `linear-gradient(180deg, ${PATHD_THEME.sepiaPanelMuted} 0%, ${PATHD_THEME.sepiaPanel} 100%)`,
-              borderLeft: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
+              background: `linear-gradient(180deg, ${THEME.PANEL_MUTED} 0%, ${THEME.PANEL_BG} 100%)`,
+              borderLeft: `1px solid ${THEME.BORDER}`,
               boxShadow: '-16px 0 48px rgba(4,10,16,0.35)',
             }}
           >
@@ -285,15 +284,15 @@ export default function CopilotSlideOver() {
                 justifyContent: 'space-between',
                 gap: '10px',
                 padding: '14px 16px 12px',
-                borderBottom: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
+                borderBottom: `1px solid ${THEME.BORDER}`,
                 flexShrink: 0,
               }}
             >
               <div style={{ display: 'grid', gap: '2px' }}>
-                <span style={{ fontFamily: T.MONO, fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', color: PATHD_THEME.label }}>
+                <span style={{ fontFamily: THEME.MONO, fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', color: THEME.LABEL }}>
                   Axon Copilot
                 </span>
-                <span style={{ fontFamily: T.SANS, fontSize: '12px', fontWeight: 700, color: PATHD_THEME.value }}>
+                <span style={{ fontFamily: THEME.SANS, fontSize: '12px', fontWeight: 700, color: THEME.VALUE }}>
                   Ask anything about the active research
                 </span>
               </div>
@@ -303,13 +302,13 @@ export default function CopilotSlideOver() {
                     data-testid="copilot-queue-badge"
                     title="Agentic queue status"
                     style={{
-                      fontFamily: T.MONO,
+                      fontFamily: THEME.MONO,
                       fontSize: '10px',
                       padding: '4px 8px',
                       borderRadius: '8px',
                       border: '1px solid rgba(175,195,214,0.34)',
                       background: 'rgba(175,195,214,0.14)',
-                      color: PATHD_THEME.value,
+                      color: THEME.VALUE,
                       whiteSpace: 'nowrap',
                     }}
                   >
@@ -328,9 +327,9 @@ export default function CopilotSlideOver() {
                     width: '30px',
                     height: '30px',
                     borderRadius: '12px',
-                    border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
+                    border: `1px solid ${THEME.BORDER}`,
                     background: 'transparent',
-                    color: PATHD_THEME.label,
+                    color: THEME.LABEL,
                     textDecoration: 'none',
                   }}
                 >
@@ -348,9 +347,9 @@ export default function CopilotSlideOver() {
                     width: '30px',
                     height: '30px',
                     borderRadius: '12px',
-                    border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
+                    border: `1px solid ${THEME.BORDER}`,
                     background: 'transparent',
-                    color: PATHD_THEME.label,
+                    color: THEME.LABEL,
                     cursor: 'pointer',
                   }}
                 >
@@ -363,7 +362,7 @@ export default function CopilotSlideOver() {
             <div
               style={{
                 padding: '12px 16px',
-                borderBottom: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
+                borderBottom: `1px solid ${THEME.BORDER}`,
                 flexShrink: 0,
               }}
             >
@@ -397,11 +396,11 @@ export default function CopilotSlideOver() {
                     background: 'transparent',
                     border: 'none',
                     outline: 'none',
-                    fontFamily: T.SANS,
+                    fontFamily: THEME.SANS,
                     fontSize: '13px',
                     lineHeight: 1.5,
-                    color: PATHD_THEME.value,
-                    caretColor: PATHD_THEME.blue,
+                    color: THEME.VALUE,
+                    caretColor: THEME.SKY,
                   }}
                 />
                 <button
@@ -415,11 +414,11 @@ export default function CopilotSlideOver() {
                     borderRadius: '12px',
                     border: '1px solid rgba(175, 195, 214, 0.2)',
                     cursor: loading || !query.trim() ? 'not-allowed' : 'pointer',
-                    fontFamily: T.SANS,
+                    fontFamily: THEME.SANS,
                     fontSize: '12px',
                     fontWeight: 700,
                     background: 'rgba(175, 195, 214, 0.18)',
-                    color: T.VALUE,
+                    color: THEME.VALUE,
                     opacity: !loading && !query.trim() ? 0.4 : 1,
                     transition: 'background 0.15s, border-color 0.15s',
                   }}
@@ -456,11 +455,11 @@ export default function CopilotSlideOver() {
                   background: workbenchContext.hasContext
                     ? 'rgba(175,195,214,0.08)'
                     : 'transparent',
-                  fontFamily: T.MONO,
+                  fontFamily: THEME.MONO,
                   fontSize: '10px',
                   color: workbenchContext.hasContext
-                    ? PATHD_THEME.value
-                    : PATHD_THEME.label,
+                    ? THEME.VALUE
+                    : THEME.LABEL,
                   lineHeight: 1.4,
                 }}
               >
@@ -471,7 +470,7 @@ export default function CopilotSlideOver() {
                     height: '6px',
                     borderRadius: '50%',
                     background: workbenchContext.hasContext
-                      ? PATHD_THEME.blue
+                      ? THEME.SKY
                       : 'rgba(175,195,214,0.28)',
                     flexShrink: 0,
                   }}
@@ -481,7 +480,7 @@ export default function CopilotSlideOver() {
                 </span>
                 <span
                   style={{
-                    color: PATHD_THEME.label,
+                    color: THEME.LABEL,
                     textTransform: 'none',
                     letterSpacing: 0,
                     overflow: 'hidden',
@@ -513,9 +512,9 @@ export default function CopilotSlideOver() {
                     borderRadius: '12px',
                     border: '1px solid rgba(250,128,114,0.42)',
                     background: 'rgba(250,128,114,0.12)',
-                    fontFamily: T.SANS,
+                    fontFamily: THEME.SANS,
                     fontSize: '12px',
-                    color: PATHD_THEME.value,
+                    color: THEME.VALUE,
                     lineHeight: 1.6,
                     marginBottom: '10px',
                   }}
@@ -537,11 +536,11 @@ export default function CopilotSlideOver() {
                   }}
                 >
                   <div style={{ display: 'grid', gap: '8px' }}>
-                    <span style={{ fontFamily: T.MONO, fontSize: '28px', color: 'rgba(36,29,24,0.08)' }}>⬡</span>
-                    <span style={{ fontFamily: T.SANS, fontSize: '13px', color: PATHD_THEME.value }}>
+                    <span style={{ fontFamily: THEME.MONO, fontSize: '28px', color: 'rgba(36,29,24,0.08)' }}>⬡</span>
+                    <span style={{ fontFamily: THEME.SANS, fontSize: '13px', color: THEME.VALUE }}>
                       Ask Axon about the active research
                     </span>
-                    <span style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label }}>
+                    <span style={{ fontFamily: THEME.MONO, fontSize: '10px', color: THEME.LABEL }}>
                       Axon synthesises evidence, explains bottlenecks, and recommends the next scientific move.
                     </span>
                   </div>
@@ -556,10 +555,10 @@ export default function CopilotSlideOver() {
                     borderRadius: '12px',
                     background: msg.role === 'user'
                       ? 'rgba(175, 195, 214, 0.12)'
-                      : PATHD_THEME.panelGlassStrong,
+                      : THEME.PANEL_GLASS_STRONG,
                     border: `1px solid ${msg.role === 'user'
                       ? 'rgba(175, 195, 214, 0.15)'
-                      : PATHD_THEME.sepiaPanelBorder}`,
+                      : THEME.BORDER}`,
                     padding: '12px 14px',
                     alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
                     maxWidth: msg.role === 'user' ? '85%' : '100%',
@@ -567,30 +566,30 @@ export default function CopilotSlideOver() {
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
                     <span style={{
-                      fontFamily: T.MONO, fontSize: '9px',
+                      fontFamily: THEME.MONO, fontSize: '9px',
                       padding: '1px 5px', borderRadius: '4px',
                       background: msg.role === 'user' ? 'rgba(175,195,214,0.12)' : 'rgba(163,195,214,0.12)',
-                      color: msg.role === 'user' ? PATHD_THEME.label : PATHD_THEME.sky,
+                      color: msg.role === 'user' ? THEME.LABEL : THEME.SKY,
                       textTransform: 'uppercase', letterSpacing: '0.06em',
                     }}>
                       {msg.role === 'user' ? 'You' : 'Axon'}
                     </span>
                     {msg.provider && (
                       <span style={{
-                        fontFamily: T.MONO, fontSize: '9px',
+                        fontFamily: THEME.MONO, fontSize: '9px',
                         padding: '1px 5px', borderRadius: '4px',
                         background: 'rgba(175,195,214,0.10)',
-                        color: PATHD_THEME.label,
+                        color: THEME.LABEL,
                       }}>
                         {msg.provider}
                       </span>
                     )}
-                    <span style={{ fontFamily: T.MONO, fontSize: '9px', color: PATHD_THEME.label, opacity: 0.5 }}>
+                    <span style={{ fontFamily: THEME.MONO, fontSize: '9px', color: THEME.LABEL, opacity: 0.5 }}>
                       {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
                   {msg.role === 'user' ? (
-                    <p style={{ fontFamily: T.SANS, fontSize: '12px', lineHeight: 1.6, color: PATHD_THEME.value, margin: 0, whiteSpace: 'pre-wrap' }}>
+                    <p style={{ fontFamily: THEME.SANS, fontSize: '12px', lineHeight: 1.6, color: THEME.VALUE, margin: 0, whiteSpace: 'pre-wrap' }}>
                       {msg.content}
                     </p>
                   ) : (
@@ -607,7 +606,7 @@ export default function CopilotSlideOver() {
                   {[0, 1, 2].map(i => (
                     <div key={i} style={{
                       width: '5px', height: '5px', borderRadius: '50%',
-                      background: PATHD_THEME.sky,
+                      background: THEME.SKY,
                       animation: `axon-pulse 1.2s ease-in-out ${i * 0.2}s infinite`,
                     }} />
                   ))}
@@ -621,24 +620,24 @@ export default function CopilotSlideOver() {
             <div
               style={{
                 padding: '10px 16px',
-                borderTop: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
+                borderTop: `1px solid ${THEME.BORDER}`,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 flexShrink: 0,
               }}
             >
-              <span style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label }}>
+              <span style={{ fontFamily: THEME.MONO, fontSize: '10px', color: THEME.LABEL }}>
                 Ctrl+K to toggle · Esc to close
               </span>
               <Link
                 href="/tools/nexai"
                 onClick={close}
                 style={{
-                  fontFamily: T.SANS,
+                  fontFamily: THEME.SANS,
                   fontSize: '11px',
                   fontWeight: 600,
-                  color: PATHD_THEME.value,
+                  color: THEME.VALUE,
                   textDecoration: 'none',
                 }}
               >

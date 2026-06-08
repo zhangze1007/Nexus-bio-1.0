@@ -1,8 +1,8 @@
 'use client';
-import { T } from '../tokens';
+import { THEME } from '../../../theme';
 
-const MONO = T.MONO;
-const SANS = T.SANS;
+const MONO = THEME.MONO;
+const SANS = THEME.SANS;
 
 interface AlgorithmInsightProps {
   title: string;

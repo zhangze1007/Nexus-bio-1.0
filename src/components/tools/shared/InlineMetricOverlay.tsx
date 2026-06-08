@@ -1,9 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { T } from '../../ide/tokens';
-import { PATHD_THEME } from '../../workbench/workbenchTheme';
-
+import { THEME } from '../../../theme';
 interface MetricItem {
   label: string;
   value: string;
@@ -53,11 +51,11 @@ export default function InlineMetricOverlay({
         <div key={metric.label} style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
           <span
             style={{
-              fontFamily: T.MONO,
+              fontFamily: THEME.MONO,
               fontSize: 'var(--nb-fs-xs)',
               textTransform: 'uppercase',
               letterSpacing: '0.08em',
-              color: PATHD_THEME.label,
+              color: THEME.LABEL,
               minWidth: '60px',
             }}
           >
@@ -65,10 +63,10 @@ export default function InlineMetricOverlay({
           </span>
           <span
             style={{
-              fontFamily: T.MONO,
+              fontFamily: THEME.MONO,
               fontSize: 'var(--nb-fs-sm)',
               fontWeight: 600,
-              color: metric.accent ?? PATHD_THEME.value,
+              color: metric.accent ?? THEME.VALUE,
             }}
           >
             {metric.value}

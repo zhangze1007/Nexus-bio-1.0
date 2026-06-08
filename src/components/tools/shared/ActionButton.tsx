@@ -1,9 +1,7 @@
 'use client';
 
 import type { ReactNode, ButtonHTMLAttributes } from 'react';
-import { T } from '../../ide/tokens';
-import { PATHD_THEME } from '../../workbench/workbenchTheme';
-
+import { THEME } from '../../../theme';
 /**
  * ActionButton — Unified button primitive for all 14 tool pages.
  *
@@ -29,9 +27,9 @@ interface ActionButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const SIZE_MAP: Record<ButtonSize, { height: string; padding: string; fontSize: string; gap: string; iconSize: number }> = {
-  sm: { height: '28px', padding: '0 10px', fontSize: T.FS_XS, gap: '5px', iconSize: 12 },
-  md: { height: '36px', padding: '0 14px', fontSize: T.FS_SM, gap: '6px', iconSize: 14 },
-  lg: { height: '44px', padding: '0 20px', fontSize: T.FS_MD, gap: '8px', iconSize: 16 },
+  sm: { height: '28px', padding: '0 10px', fontSize: THEME.FS_XS, gap: '5px', iconSize: 12 },
+  md: { height: '36px', padding: '0 14px', fontSize: THEME.FS_SM, gap: '6px', iconSize: 14 },
+  lg: { height: '44px', padding: '0 20px', fontSize: THEME.FS_MD, gap: '8px', iconSize: 16 },
 };
 
 const VARIANT_STYLES: Record<ButtonVariant, {
@@ -40,7 +38,7 @@ const VARIANT_STYLES: Record<ButtonVariant, {
   color: string; colorHover: string;
 }> = {
   primary: {
-    bg: T.MINT,
+    bg: THEME.MINT,
     bgHover: '#A8CDB9',
     bgActive: '#96BDAA',
     border: 'transparent',
@@ -53,11 +51,11 @@ const VARIANT_STYLES: Record<ButtonVariant, {
     bg: 'rgba(255,255,255,0.04)',
     bgHover: 'rgba(255,255,255,0.08)',
     bgActive: 'rgba(255,255,255,0.12)',
-    border: PATHD_THEME.sepiaPanelBorder,
+    border: THEME.BORDER,
     borderHover: 'rgba(255,255,255,0.12)',
     borderActive: 'rgba(255,255,255,0.16)',
-    color: PATHD_THEME.label,
-    colorHover: PATHD_THEME.value,
+    color: THEME.LABEL,
+    colorHover: THEME.VALUE,
   },
   destructive: {
     bg: 'rgba(232,163,161,0.08)',
@@ -66,7 +64,7 @@ const VARIANT_STYLES: Record<ButtonVariant, {
     border: 'rgba(232,163,161,0.15)',
     borderHover: 'rgba(232,163,161,0.25)',
     borderActive: 'rgba(232,163,161,0.35)',
-    color: T.CORAL,
+    color: THEME.CORAL,
     colorHover: '#F0B0AE',
   },
 };
@@ -94,11 +92,11 @@ export default function ActionButton({
         gap: s.gap,
         height: s.height,
         padding: s.padding,
-        borderRadius: T.R_MD,
+        borderRadius: THEME.R_MD,
         border: `1px solid ${v.border}`,
         background: v.bg,
         color: v.color,
-        fontFamily: T.SANS,
+        fontFamily: THEME.SANS,
         fontSize: s.fontSize,
         fontWeight: 500,
         cursor: disabled ? 'not-allowed' : 'pointer',

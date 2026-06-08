@@ -1,8 +1,8 @@
 'use client';
 
 import type { ProteinEvolutionCampaign } from '../../../services/ProEvolCampaignEngine';
-import { T } from '../../ide/tokens';
 import { ProEvolCard, PROEVOL_THEME, StatusPill } from './shared';
+import { THEME } from '../../../theme';
 
 export default function NextRoundRecommendationCard({ campaign }: { campaign: ProteinEvolutionCampaign }) {
   const recommendation = campaign.nextRoundRecommendation;
@@ -32,10 +32,10 @@ export default function NextRoundRecommendationCard({ campaign }: { campaign: Pr
             background: 'linear-gradient(135deg, rgba(191,220,205,0.10) 0%, rgba(207,196,227,0.08) 48%, rgba(231,199,169,0.08) 100%)',
           }}
         >
-          <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', fontWeight: 600, color: PROEVOL_THEME.value, lineHeight: 1.45 }}>
+          <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', fontWeight: 600, color: PROEVOL_THEME.value, lineHeight: 1.45 }}>
             {recommendation.summary}
           </div>
-          <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: PROEVOL_THEME.muted, lineHeight: 1.65 }}>
+          <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: PROEVOL_THEME.muted, lineHeight: 1.65 }}>
             {recommendation.rationale}
           </div>
         </div>
@@ -52,7 +52,7 @@ export default function NextRoundRecommendationCard({ campaign }: { campaign: Pr
         >
           <div
             style={{
-              fontFamily: T.MONO,
+              fontFamily: THEME.MONO,
               fontSize: 'var(--nb-fs-xs)',
               color: PROEVOL_THEME.label,
               textTransform: 'uppercase',
@@ -83,13 +83,13 @@ export default function NextRoundRecommendationCard({ campaign }: { campaign: Pr
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontFamily: T.MONO,
+                    fontFamily: THEME.MONO,
                     fontSize: 'var(--nb-fs-xs)',
                   }}
                 >
                   →
                 </div>
-                <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: PROEVOL_THEME.value, lineHeight: 1.55 }}>
+                <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: PROEVOL_THEME.value, lineHeight: 1.55 }}>
                   {directive}
                 </div>
               </div>

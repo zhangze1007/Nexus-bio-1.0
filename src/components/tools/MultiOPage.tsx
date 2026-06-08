@@ -35,10 +35,8 @@ import { useWorkbenchStore } from '../../store/workbenchStore';
 import { useUIStore } from '../../store/uiStore';
 import { useVAEWorker } from '../../hooks/useVAEWorker';
 import { createProvenanceEntry } from '../../utils/provenance';
-import { T, TOOL_RESULT_PALETTE} from '../ide/tokens';
 import ScientificHero from './shared/ScientificHero';
 import ScientificFigureFrame from './shared/ScientificFigureFrame';
-import { PATHD_THEME } from '../workbench/workbenchTheme';
 import ToolShell from './shared/ToolShell';
 import ToolTabBar, { type ToolTab } from './shared/ToolTabBar';
 import ToolTabPanel from './shared/ToolTabPanel';
@@ -54,16 +52,17 @@ const LAYER_COLORS: Record<OmicsLayer, string> = {
 };
 
 import { toolTokens } from '../../hooks/useToolTheme';
+import { THEME, TOOL_RESULT_PALETTE } from '../../theme';
 const { panelBg: PANEL_BG, border: BORDER, label: LABEL, value: VALUE,
         inputBg: INPUT_BG, inputBorder: INPUT_BORDER, inputText: INPUT_TEXT,
         glass: GLASS } = toolTokens;
 
 const MULTIO_TABS: ToolTab[] = [
-  { id: 'embedding', label: 'Embedding', accent: PATHD_THEME.sky },
-  { id: 'volcano', label: 'Volcano', accent: PATHD_THEME.lilac },
-  { id: 'factors', label: 'Factors', accent: PATHD_THEME.apricot },
-  { id: 'projection', label: 'Projection', accent: PATHD_THEME.mint },
-  { id: 'efficiency', label: 'Efficiency', accent: PATHD_THEME.coral },
+  { id: 'embedding', label: 'Embedding', accent: THEME.SKY },
+  { id: 'volcano', label: 'Volcano', accent: THEME.LILAC },
+  { id: 'factors', label: 'Factors', accent: THEME.APRICOT },
+  { id: 'projection', label: 'Projection', accent: THEME.MINT },
+  { id: 'efficiency', label: 'Efficiency', accent: THEME.CORAL },
 ];
 
 function canonicalGeneToken(value: string) {
@@ -145,7 +144,7 @@ function VolcanoPlot({ data, fcThreshold, pvThreshold, highlightedGene }: {
               <title>{row.gene}: FC={fc.toFixed(2)}, p={pv.toFixed(4)}</title>
             </circle>
             {isHighlighted && (
-              <text x={xPos(fc)} y={yPos(pv) - 10} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill="rgba(255,139,31,0.92)">
+              <text x={xPos(fc)} y={yPos(pv) - 10} textAnchor="middle" fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,139,31,0.92)">
                 {row.gene}
               </text>
             )}
@@ -154,16 +153,16 @@ function VolcanoPlot({ data, fcThreshold, pvThreshold, highlightedGene }: {
       })}
       <line x1={PAD} y1={H - PAD} x2={W - PAD} y2={H - PAD} stroke="rgba(255,255,255,0.1)" />
       <line x1={PAD} y1={PAD} x2={PAD} y2={H - PAD} stroke="rgba(255,255,255,0.1)" />
-      <text x={W / 2} y={H - 4} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.45)">
+      <text x={W / 2} y={H - 4} textAnchor="middle" fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.45)">
         log₂ Fold Change
       </text>
-      <text x={10} y={H / 2} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.45)"
+      <text x={10} y={H / 2} textAnchor="middle" fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.45)"
         transform={`rotate(-90,10,${H / 2})`}>
         -log₁₀(p)
       </text>
-      <text x={W - PAD} y={H - PAD + 12} textAnchor="end" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.2)">+{fcMax}</text>
-      <text x={PAD} y={H - PAD + 12} textAnchor="start" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.2)">-{fcMax}</text>
-      <text x={W - PAD - 4} y={PAD + 12} textAnchor="end" fontFamily={T.MONO} fontSize="10" fill="rgba(147,203,82,0.74)">
+      <text x={W - PAD} y={H - PAD + 12} textAnchor="end" fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.2)">+{fcMax}</text>
+      <text x={PAD} y={H - PAD + 12} textAnchor="start" fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.2)">-{fcMax}</text>
+      <text x={W - PAD - 4} y={PAD + 12} textAnchor="end" fontFamily={THEME.MONO} fontSize="10" fill="rgba(147,203,82,0.74)">
         productive-significant
       </text>
     </svg>
@@ -290,9 +289,9 @@ function TriPanelEmbedding({ embeddings, data, fcThreshold, pvThreshold, activeL
       <div style={{ flex: '0 0 auto' }}>
         <svg viewBox={`0 0 ${pcaW} ${pcaH}`} style={{ width: `${pcaW}px`, height: `${pcaH}px` }}>
           <rect width={pcaW} height={pcaH} fill="#050505" rx="10" />
-          <text x={pcaW / 2} y={14} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.45)">PCA BIPLOT</text>
-          <text x={pcaW / 2} y={pcaH - 4} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.45)">PC1 (38.2% var)</text>
-          <text x={8} y={pcaH / 2} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.45)"
+          <text x={pcaW / 2} y={14} textAnchor="middle" fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.45)">PCA BIPLOT</text>
+          <text x={pcaW / 2} y={pcaH - 4} textAnchor="middle" fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.45)">PC1 (38.2% var)</text>
+          <text x={8} y={pcaH / 2} textAnchor="middle" fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.45)"
             transform={`rotate(-90,8,${pcaH / 2})`}>PC2 (21.6% var)</text>
           <line x1={pcaPAD} y1={pcaH - pcaPAD} x2={pcaW - pcaPAD} y2={pcaH - pcaPAD} stroke="rgba(255,255,255,0.08)" />
           <line x1={pcaPAD} y1={pcaPAD} x2={pcaPAD} y2={pcaH - pcaPAD} stroke="rgba(255,255,255,0.08)" />
@@ -306,7 +305,7 @@ function TriPanelEmbedding({ embeddings, data, fcThreshold, pvThreshold, activeL
                 <line x1={cx} y1={cy} x2={ax} y2={ay}
                   stroke="rgba(255,255,255,0.55)" strokeWidth="1" markerEnd="url(#pca-arrow)" />
                 <text x={ax + Math.cos(angle) * 8} y={ay + Math.sin(angle) * 8 + 2}
-                  textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.5)">
+                  textAnchor="middle" fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.5)">
                   {gene.gene.slice(0, 6)}
                 </text>
               </g>
@@ -330,7 +329,7 @@ function TriPanelEmbedding({ embeddings, data, fcThreshold, pvThreshold, activeL
             activeLayers[layer] && (
               <g key={layer} transform={`translate(${pcaPAD},${pcaH - pcaPAD + 10 + i * 12})`}>
                 <circle cx={4} cy={4} r={4} fill={layerColorMap[layer]} />
-                <text x={12} y={8} fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.4)">{layer.slice(0,6)}</text>
+                <text x={12} y={8} fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.4)">{layer.slice(0,6)}</text>
               </g>
             )
           ))}
@@ -341,7 +340,7 @@ function TriPanelEmbedding({ embeddings, data, fcThreshold, pvThreshold, activeL
       <div style={{ flex: '0 0 auto' }}>
         <svg viewBox={`0 0 ${hmW} ${hmH}`} style={{ width: `${hmW}px`, height: `${hmH}px` }}>
           <rect width={hmW} height={hmH} fill="#050505" rx="10" />
-          <text x={hmW / 2} y={12} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.45)">
+          <text x={hmW / 2} y={12} textAnchor="middle" fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.45)">
             CORRELATION MATRIX (20×20)
           </text>
           {corrMatrix.map((row, yi) =>
@@ -361,7 +360,7 @@ function TriPanelEmbedding({ embeddings, data, fcThreshold, pvThreshold, activeL
               x={hmPAD.left + i * cellW + cellW / 2}
               y={hmPAD.top - 4}
               textAnchor="start"
-              fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.55)"
+              fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.55)"
               transform={`rotate(-60,${hmPAD.left + i * cellW + cellW / 2},${hmPAD.top - 4})`}
             >{g.gene.slice(0, 5)}</text>
           ))}
@@ -371,7 +370,7 @@ function TriPanelEmbedding({ embeddings, data, fcThreshold, pvThreshold, activeL
               x={hmPAD.left - 2}
               y={hmPAD.top + i * cellW + cellW * 0.65}
               textAnchor="end"
-              fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.55)"
+              fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.55)"
             >{g.gene.slice(0, 5)}</text>
           ))}
           {/* ── Publication colorbar — RdBu diverging scale ── */}
@@ -390,12 +389,12 @@ function TriPanelEmbedding({ embeddings, data, fcThreshold, pvThreshold, activeL
             return (
               <g key={label}>
                 <line x1={hmW - 8} y1={y} x2={hmW - 5} y2={y} stroke="rgba(255,255,255,0.45)" strokeWidth={0.7} />
-                <text x={hmW - 3} y={y + 3} fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.55)">{label}</text>
+                <text x={hmW - 3} y={y + 3} fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.55)">{label}</text>
               </g>
             );
           })}
           {/* Unit label */}
-          <text x={hmW - 12} y={hmPAD.top - 6} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.45)">
+          <text x={hmW - 12} y={hmPAD.top - 6} textAnchor="middle" fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.45)">
             z
           </text>
         </svg>
@@ -484,10 +483,10 @@ function EmbeddingScatter({ embeddings, fcThreshold, activeLayers, highlightedGe
       {/* Axes */}
       <line x1={PAD} y1={H - PAD} x2={W - PAD} y2={H - PAD} stroke="rgba(255,255,255,0.1)" />
       <line x1={PAD} y1={PAD} x2={PAD} y2={H - PAD} stroke="rgba(255,255,255,0.1)" />
-      <text x={W / 2} y={H - 6} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill={LABEL}>
+      <text x={W / 2} y={H - 6} textAnchor="middle" fontFamily={THEME.MONO} fontSize="10" fill={LABEL}>
         Embed-1 (linear projection)
       </text>
-      <text x={12} y={H / 2} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill={LABEL}
+      <text x={12} y={H / 2} textAnchor="middle" fontFamily={THEME.MONO} fontSize="10" fill={LABEL}
         transform={`rotate(-90,12,${H / 2})`}>
         Embed-2 (linear projection)
       </text>
@@ -552,7 +551,7 @@ function EmbeddingScatter({ embeddings, fcThreshold, activeLayers, highlightedGe
         return (
           <g key={`centroid-${layer}`}>
             <circle cx={centroid.sx / centroid.n} cy={centroid.sy / centroid.n} r={11} fill="none" stroke={`${LAYER_COLORS[layer]}`} strokeWidth={1.1} strokeDasharray="4 3" />
-            <text x={centroid.sx / centroid.n} y={centroid.sy / centroid.n - 14} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill={LAYER_COLORS[layer]}>
+            <text x={centroid.sx / centroid.n} y={centroid.sy / centroid.n - 14} textAnchor="middle" fontFamily={THEME.MONO} fontSize="10" fill={LAYER_COLORS[layer]}>
               {layer.slice(0, 5)}
             </text>
           </g>
@@ -562,12 +561,12 @@ function EmbeddingScatter({ embeddings, fcThreshold, activeLayers, highlightedGe
       {(['transcriptomics', 'proteomics', 'metabolomics'] as OmicsLayer[]).map((layer, i) => (
         <g key={layer} transform={`translate(${W - PAD - 110}, ${PAD + 6 + i * 16})`}>
           <circle cx={0} cy={0} r={4} fill={LAYER_COLORS[layer]} opacity={activeLayers[layer] ? 1 : 0.25} />
-          <text x={10} y={3.5} fontFamily={T.SANS} fontSize="10" fill={activeLayers[layer] ? VALUE : LABEL}>
+          <text x={10} y={3.5} fontFamily={THEME.SANS} fontSize="10" fill={activeLayers[layer] ? VALUE : LABEL}>
             {layer.charAt(0).toUpperCase() + layer.slice(1)}
           </text>
         </g>
       ))}
-      <text x={PAD} y={PAD - 12} fontFamily={T.MONO} fontSize="10" fill={LABEL}>
+      <text x={PAD} y={PAD - 12} fontFamily={THEME.MONO} fontSize="10" fill={LABEL}>
         Highlight ring = current bottleneck or selected sensitivity gene
       </text>
     </svg>
@@ -765,8 +764,8 @@ export default React.memo(function MultiOPage() {
   /* Section label helper */
   const SectionLabel = ({ children }: { children: React.ReactNode }) => (
     <p style={{
-      fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase',
-      letterSpacing: '0.1em', color: PATHD_THEME.label, margin: '0 0 10px',
+      fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase',
+      letterSpacing: '0.1em', color: THEME.LABEL, margin: '0 0 10px',
     }}>
       {children}
     </p>
@@ -788,13 +787,13 @@ export default React.memo(function MultiOPage() {
             summary="MULTIO behaves as an exploratory integration surface: significant genes, deterministic layer signals, sensitivity sketches, and efficiency context sit above the visualization layer without claiming posterior uncertainty or a reference-model backend."
             aside={
               <>
-                <div style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.label, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                   Current analytical lens
                 </div>
-                <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: PATHD_THEME.value, fontWeight: 700 }}>
+                <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: THEME.VALUE, fontWeight: 700 }}>
                   {MULTIO_TABS.find(t => t.id === activeTab)?.label ?? 'Embedding'} · {Object.values(activeLayers).filter(Boolean).length}/3 omics layers active
                 </div>
-                <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: PATHD_THEME.label, lineHeight: 1.55 }}>
+                <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: THEME.LABEL, lineHeight: 1.55 }}>
                   The current lens is anchored to {analyzeArtifact?.targetProduct ?? project?.targetProduct ?? project?.title ?? 'the active project object'}, so bottleneck claims stay attached to the same scientific context.
                 </div>
               </>
@@ -884,7 +883,7 @@ export default React.memo(function MultiOPage() {
               style={{
                 width: '100%', padding: '6px 8px', marginBottom: '8px',
                 background: INPUT_BG, border: `1px solid ${INPUT_BORDER}`, borderRadius: 'var(--nb-radius-sm)',
-                color: INPUT_TEXT, fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)',
+                color: INPUT_TEXT, fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)',
                 outline: '2px solid rgba(175,195,214,0.5)', outlineOffset: '2px', appearance: 'auto' as React.CSSProperties['appearance'],
               }}
             >
@@ -912,9 +911,9 @@ export default React.memo(function MultiOPage() {
                 }}>
                   {/* Yield change */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                    <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Demo Yield Δ</span>
+                    <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Demo Yield Δ</span>
                     <span style={{
-                      fontFamily: T.MONO, fontSize: 'var(--nb-fs-sm)', fontWeight: 700,
+                      fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-sm)', fontWeight: 700,
                       color: perturbResult.predicted_yield_change_percent >= 0
                         ? 'rgba(147,203,82,0.95)' : 'rgba(250,128,114,0.95)',
                     }}>
@@ -926,7 +925,7 @@ export default React.memo(function MultiOPage() {
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '8px' }}>
                     {perturbResult.metabolite_shifts.map(ms => (
                       <span key={ms.metabolite} style={{
-                        fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', padding: '2px 6px', borderRadius: '6px',
+                        fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', padding: '2px 6px', borderRadius: '6px',
                         background: ms.direction === 'up' ? 'rgba(147,203,82,0.15)' : 'rgba(250,128,114,0.15)',
                         color: ms.direction === 'up' ? 'rgba(147,203,82,0.9)' : 'rgba(250,128,114,0.9)',
                         border: `1px solid ${ms.direction === 'up' ? 'rgba(147,203,82,0.2)' : 'rgba(250,128,114,0.2)'}`,
@@ -941,11 +940,11 @@ export default React.memo(function MultiOPage() {
                       padding: '4px 0',
                       borderTop: i > 0 ? `1px solid ${BORDER}` : 'none',
                     }}>
-                      <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: LAYER_COLORS.proteomics }}>
+                      <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: LAYER_COLORS.proteomics }}>
                         {i + 1}. {step.step}
                       </span>
                       <p style={{
-                        fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL,
+                        fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL,
                         margin: '2px 0 0', lineHeight: '1.35',
                       }}>
                         {step.description}
@@ -965,8 +964,8 @@ export default React.memo(function MultiOPage() {
               minHeight="100%"
               legend={[
                 { label: 'Bottleneck', value: bottleneck.dominant_layer, accent: LAYER_COLORS[bottleneck.dominant_layer] },
-                { label: 'Gene', value: selectedGene, accent: PATHD_THEME.lilac },
-                { label: 'Significant', value: `${significant.length}`, accent: PATHD_THEME.mint },
+                { label: 'Gene', value: selectedGene, accent: THEME.LILAC },
+                { label: 'Significant', value: `${significant.length}`, accent: THEME.MINT },
               ]}
             >
                 <div style={{ minHeight: '520px', overflow: 'auto' }}>
@@ -983,9 +982,9 @@ export default React.memo(function MultiOPage() {
             <InlineMetricOverlay
               position="top-right"
               metrics={[
-                { label: 'Bottleneck', value: bottleneck.dominant_layer, accent: PATHD_THEME.sky },
-                { label: 'Gene', value: selectedGene, accent: PATHD_THEME.lilac },
-                { label: 'Significant', value: `${significant.length}`, accent: PATHD_THEME.mint },
+                { label: 'Bottleneck', value: bottleneck.dominant_layer, accent: THEME.SKY },
+                { label: 'Gene', value: selectedGene, accent: THEME.LILAC },
+                { label: 'Significant', value: `${significant.length}`, accent: THEME.MINT },
               ]}
             />
           </div>
@@ -1001,7 +1000,7 @@ export default React.memo(function MultiOPage() {
             <WorkbenchRangeSlider label="p <" value={pvThreshold} min={0.001} max={0.1} step={0.001} formatValue={v => v.toFixed(3)} onChange={setPvThreshold} />
             <SectionLabel>Gene</SectionLabel>
             <select value={selectedGene} onChange={e => setSelectedGene(e.target.value)}
-              style={{ width: '100%', padding: '6px 8px', background: INPUT_BG, border: `1px solid ${INPUT_BORDER}`, borderRadius: 'var(--nb-radius-sm)', color: INPUT_TEXT, fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', outline: '2px solid rgba(175,195,214,0.5)', outlineOffset: '2px', appearance: 'auto' as React.CSSProperties['appearance'] }}>
+              style={{ width: '100%', padding: '6px 8px', background: INPUT_BG, border: `1px solid ${INPUT_BORDER}`, borderRadius: 'var(--nb-radius-sm)', color: INPUT_TEXT, fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', outline: '2px solid rgba(175,195,214,0.5)', outlineOffset: '2px', appearance: 'auto' as React.CSSProperties['appearance'] }}>
               {geneNames.map(g => (<option key={g} value={g} style={{ background: '#1a1d24' }}>{g}</option>))}
             </select>
           </FloatingControlRail>
@@ -1012,8 +1011,8 @@ export default React.memo(function MultiOPage() {
               caption="Volcano view emphasizes threshold logic and current bottleneck focus."
               minHeight="100%"
               legend={[
-                { label: 'Gene', value: selectedGene, accent: PATHD_THEME.lilac },
-                { label: 'Significant', value: `${significant.length}`, accent: PATHD_THEME.mint },
+                { label: 'Gene', value: selectedGene, accent: THEME.LILAC },
+                { label: 'Significant', value: `${significant.length}`, accent: THEME.MINT },
               ]}
             >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '520px' }}>
@@ -1025,9 +1024,9 @@ export default React.memo(function MultiOPage() {
             <InlineMetricOverlay
               position="top-right"
               metrics={[
-                { label: 'Up', value: `${upregulated}`, accent: PATHD_THEME.mint },
-                { label: 'Down', value: `${downregulated}`, accent: PATHD_THEME.coral },
-                { label: 'Total Sig', value: `${significant.length}`, accent: PATHD_THEME.lilac },
+                { label: 'Up', value: `${upregulated}`, accent: THEME.MINT },
+                { label: 'Down', value: `${downregulated}`, accent: THEME.CORAL },
+                { label: 'Total Sig', value: `${significant.length}`, accent: THEME.LILAC },
               ]}
             />
           </div>
@@ -1043,39 +1042,39 @@ export default React.memo(function MultiOPage() {
             caption="Per-layer contribution, top genes, and interpretation in one frame."
             minHeight="100%"
             legend={[
-              { label: 'Var Explained', value: `${(mofaResult.totalVarianceExplained * 100).toFixed(1)}%`, accent: PATHD_THEME.sky },
-              { label: 'Factors', value: `${mofaResult.factors.length}`, accent: PATHD_THEME.lilac },
+              { label: 'Var Explained', value: `${(mofaResult.totalVarianceExplained * 100).toFixed(1)}%`, accent: THEME.SKY },
+              { label: 'Factors', value: `${mofaResult.factors.length}`, accent: THEME.LILAC },
             ]}
           >
             <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
               <div style={{ ...GLASS, borderRadius: 'var(--nb-radius-md)', padding: '12px 16px', flex: '1 0 120px' }}>
-                <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, display: 'block' }}>Total Var. Explained</span>
-                <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-lg)', fontWeight: 700, color: LAYER_COLORS.transcriptomics }}>{(mofaResult.totalVarianceExplained * 100).toFixed(1)}%</span>
+                <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, display: 'block' }}>Total Var. Explained</span>
+                <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-lg)', fontWeight: 700, color: LAYER_COLORS.transcriptomics }}>{(mofaResult.totalVarianceExplained * 100).toFixed(1)}%</span>
               </div>
               <div style={{ ...GLASS, borderRadius: 'var(--nb-radius-md)', padding: '12px 16px', flex: '1 0 120px' }}>
-                <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, display: 'block' }}>Optimization Steps</span>
-                <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-lg)', fontWeight: 700, color: VALUE }}>{mofaResult.convergenceIterations} iter</span>
+                <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, display: 'block' }}>Optimization Steps</span>
+                <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-lg)', fontWeight: 700, color: VALUE }}>{mofaResult.convergenceIterations} iter</span>
               </div>
               <div style={{ ...GLASS, borderRadius: 'var(--nb-radius-md)', padding: '12px 16px', flex: '1 0 120px' }}>
-                <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, display: 'block' }}>Recon. Error</span>
-                <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-lg)', fontWeight: 700, color: VALUE }}>{mofaResult.reconstructionError.toFixed(4)}</span>
+                <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, display: 'block' }}>Recon. Error</span>
+                <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-lg)', fontWeight: 700, color: VALUE }}>{mofaResult.reconstructionError.toFixed(4)}</span>
               </div>
             </div>
             {mofaResult.factors.map(f => (
               <div key={f.id} style={{ ...GLASS, borderRadius: 'var(--nb-radius-md)', padding: '14px', marginBottom: '12px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                  <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', fontWeight: 600, color: VALUE }}>{f.name}</span>
-                  <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>{(f.varianceExplained.total * 100).toFixed(1)}% var</span>
+                  <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', fontWeight: 600, color: VALUE }}>{f.name}</span>
+                  <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>{(f.varianceExplained.total * 100).toFixed(1)}% var</span>
                 </div>
                 {(['transcriptomics', 'proteomics', 'metabolomics'] as OmicsLayer[]).map(layer => {
                   const pct = f.varianceExplained[layer] * 100;
                   return (
                     <div key={layer} style={{ marginBottom: '5px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
-                        <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>{layer.slice(0, 5)}</span>
-                        <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE }}>{pct.toFixed(1)}%</span>
+                        <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>{layer.slice(0, 5)}</span>
+                        <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE }}>{pct.toFixed(1)}%</span>
                       </div>
-                      <div style={{ width: '100%', height: '5px', borderRadius: '3px', background: PATHD_THEME.panelInset }}>
+                      <div style={{ width: '100%', height: '5px', borderRadius: '3px', background: THEME.PANEL_INSET }}>
                         <div style={{ width: `${Math.min(100, pct)}%`, height: '100%', borderRadius: '3px', background: LAYER_COLORS[layer] }} />
                       </div>
                     </div>
@@ -1083,10 +1082,10 @@ export default React.memo(function MultiOPage() {
                 })}
                 <div style={{ display: 'flex', gap: '4px', marginTop: '8px', flexWrap: 'wrap' }}>
                   {f.topGenes.slice(0, 4).map(g => (
-                    <span key={g.gene} style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', padding: '2px 6px', borderRadius: '6px', background: PATHD_THEME.panelInset, color: VALUE }}>{g.gene} ({g.loading.toFixed(2)})</span>
+                    <span key={g.gene} style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', padding: '2px 6px', borderRadius: '6px', background: THEME.PANEL_INSET, color: VALUE }}>{g.gene} ({g.loading.toFixed(2)})</span>
                   ))}
                 </div>
-                <p style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, margin: '6px 0 0', lineHeight: '1.3' }}>{f.interpretation}</p>
+                <p style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, margin: '6px 0 0', lineHeight: '1.3' }}>{f.interpretation}</p>
               </div>
             ))}
           </ScientificFigureFrame>
@@ -1102,12 +1101,12 @@ export default React.memo(function MultiOPage() {
             caption="Embedding geometry above, optimization trace below."
             minHeight="100%"
             legend={[
-              { label: 'Dim', value: `${vaeResult?.latentDim ?? 8}D`, accent: PATHD_THEME.sky },
-              { label: 'ELBO', value: vaeResult?.elbo?.toFixed(3) ?? '—', accent: PATHD_THEME.mint },
+              { label: 'Dim', value: `${vaeResult?.latentDim ?? 8}D`, accent: THEME.SKY },
+              { label: 'ELBO', value: vaeResult?.elbo?.toFixed(3) ?? '—', accent: THEME.MINT },
             ]}
           >
             {vaeLoading && (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px', color: PATHD_THEME.label, fontSize: 'var(--nb-fs-sm)', fontFamily: 'monospace' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px', color: THEME.LABEL, fontSize: 'var(--nb-fs-sm)', fontFamily: 'monospace' }}>
                 Training VAE embedding model…
               </div>
             )}
@@ -1133,8 +1132,8 @@ export default React.memo(function MultiOPage() {
                         <rect width={W} height={H} fill="#050505" rx={12} />
                         <line x1={PAD} y1={H - PAD} x2={W - PAD} y2={H - PAD} stroke="rgba(255,255,255,0.1)" />
                         <line x1={PAD} y1={PAD} x2={PAD} y2={H - PAD} stroke="rgba(255,255,255,0.1)" />
-                        <text x={W / 2} y={H - 6} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill={LABEL}>Projection 1</text>
-                        <text x={12} y={H / 2} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill={LABEL} transform={`rotate(-90,12,${H / 2})`}>Projection 2</text>
+                        <text x={W / 2} y={H - 6} textAnchor="middle" fontFamily={THEME.MONO} fontSize="10" fill={LABEL}>Projection 1</text>
+                        <text x={12} y={H / 2} textAnchor="middle" fontFamily={THEME.MONO} fontSize="10" fill={LABEL} transform={`rotate(-90,12,${H / 2})`}>Projection 2</text>
                         {pts.map((p, i) => {
                           const cx = PAD + ((xs[i] - xMin) / xR) * (W - PAD * 2);
                           const cy = H - PAD - ((ys[i] - yMin) / yR) * (H - PAD * 2);
@@ -1162,9 +1161,9 @@ export default React.memo(function MultiOPage() {
                   return (
                     <svg role="img" aria-label="Chart" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%' }}>
                       <rect width={W} height={H} fill="transparent" />
-                      <text x={PAD - 4} y={12} fontFamily={T.MONO} fontSize="10" fill={LABEL} textAnchor="end">Loss</text>
+                      <text x={PAD - 4} y={12} fontFamily={THEME.MONO} fontSize="10" fill={LABEL} textAnchor="end">Loss</text>
                       <polyline points={hist.map((h, i) => { const x = PAD + (i / (hist.length - 1)) * (W - PAD * 2); const y = H - 8 - (h.loss / maxL) * (H - 20); return `${x},${y}`; }).join(' ')} fill="none" stroke={LAYER_COLORS.proteomics} strokeWidth={1.5} />
-                      <text x={W / 2} y={H - 1} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill={LABEL}>Epoch</text>
+                      <text x={W / 2} y={H - 1} textAnchor="middle" fontFamily={THEME.MONO} fontSize="10" fill={LABEL}>Epoch</text>
                     </svg>
                   );
                 })()}
@@ -1184,18 +1183,18 @@ export default React.memo(function MultiOPage() {
             caption="Efficiency ranking connects deterministic integration back to exploratory prioritization."
             minHeight="100%"
             legend={[
-              { label: 'Avg Eff', value: `${(efficiencyScores.reduce((s, e) => s + e.score, 0) / Math.max(1, efficiencyScores.length) * 100).toFixed(1)}%`, accent: PATHD_THEME.mint },
-              { label: 'Top Gene', value: [...efficiencyScores].sort((a, b) => b.score - a.score)[0]?.gene ?? '—', accent: PATHD_THEME.sky },
+              { label: 'Avg Eff', value: `${(efficiencyScores.reduce((s, e) => s + e.score, 0) / Math.max(1, efficiencyScores.length) * 100).toFixed(1)}%`, accent: THEME.MINT },
+              { label: 'Top Gene', value: [...efficiencyScores].sort((a, b) => b.score - a.score)[0]?.gene ?? '—', accent: THEME.SKY },
             ]}
           >
             <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
               <div style={{ ...GLASS, borderRadius: 'var(--nb-radius-md)', padding: '12px 16px', flex: '1 0 140px' }}>
-                <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, display: 'block' }}>Avg Efficiency</span>
-                <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-lg)', fontWeight: 700, color: 'rgba(147,203,82,0.9)' }}>{(efficiencyScores.reduce((s, e) => s + e.score, 0) / Math.max(1, efficiencyScores.length) * 100).toFixed(1)}%</span>
+                <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, display: 'block' }}>Avg Efficiency</span>
+                <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-lg)', fontWeight: 700, color: 'rgba(147,203,82,0.9)' }}>{(efficiencyScores.reduce((s, e) => s + e.score, 0) / Math.max(1, efficiencyScores.length) * 100).toFixed(1)}%</span>
               </div>
               <div style={{ ...GLASS, borderRadius: 'var(--nb-radius-md)', padding: '12px 16px', flex: '1 0 140px' }}>
-                <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, display: 'block' }}>Top Gene</span>
-                <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-md)', fontWeight: 700, color: VALUE }}>{[...efficiencyScores].sort((a, b) => b.score - a.score)[0]?.gene ?? '—'}</span>
+                <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, display: 'block' }}>Top Gene</span>
+                <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-md)', fontWeight: 700, color: VALUE }}>{[...efficiencyScores].sort((a, b) => b.score - a.score)[0]?.gene ?? '—'}</span>
               </div>
             </div>
             {[...efficiencyScores].sort((a, b) => b.score - a.score).map((e, i) => {
@@ -1203,16 +1202,16 @@ export default React.memo(function MultiOPage() {
               const color = pct > 60 ? 'rgba(147,203,82,0.85)' : pct > 35 ? 'rgba(255,139,31,0.85)' : 'rgba(250,128,114,0.85)';
               return (
                 <div key={e.geneId} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 0', borderBottom: `1px solid ${BORDER}` }}>
-                  <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL, width: '20px', textAlign: 'right' }}>{i + 1}</span>
-                  <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE, width: '70px' }}>{e.gene}</span>
+                  <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL, width: '20px', textAlign: 'right' }}>{i + 1}</span>
+                  <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE, width: '70px' }}>{e.gene}</span>
                   <div style={{ flex: 1, height: '6px', borderRadius: '3px', background: 'rgba(255,255,255,0.06)' }}>
                     <div style={{ width: `${pct}%`, height: '100%', borderRadius: '3px', background: color, transition: 'width 0.3s' }} />
                   </div>
-                  <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color, width: '45px', textAlign: 'right' }}>{pct.toFixed(1)}%</span>
+                  <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color, width: '45px', textAlign: 'right' }}>{pct.toFixed(1)}%</span>
                   <div style={{ display: 'flex', gap: '4px' }}>
-                    <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', padding: '1px 4px', borderRadius: '4px', background: `${LAYER_COLORS.transcriptomics}20`, color: LAYER_COLORS.transcriptomics }}>F:{e.fluxUtilization.toFixed(2)}</span>
-                    <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', padding: '1px 4px', borderRadius: '4px', background: `${LAYER_COLORS.proteomics}20`, color: LAYER_COLORS.proteomics }}>E:{e.expressionBalance.toFixed(2)}</span>
-                    <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', padding: '1px 4px', borderRadius: '4px', background: `${LAYER_COLORS.metabolomics}20`, color: LAYER_COLORS.metabolomics }}>Y:{e.metaboliteYield.toFixed(2)}</span>
+                    <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', padding: '1px 4px', borderRadius: '4px', background: `${LAYER_COLORS.transcriptomics}20`, color: LAYER_COLORS.transcriptomics }}>F:{e.fluxUtilization.toFixed(2)}</span>
+                    <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', padding: '1px 4px', borderRadius: '4px', background: `${LAYER_COLORS.proteomics}20`, color: LAYER_COLORS.proteomics }}>E:{e.expressionBalance.toFixed(2)}</span>
+                    <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', padding: '1px 4px', borderRadius: '4px', background: `${LAYER_COLORS.metabolomics}20`, color: LAYER_COLORS.metabolomics }}>Y:{e.metaboliteYield.toFixed(2)}</span>
                   </div>
                 </div>
               );

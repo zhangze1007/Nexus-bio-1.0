@@ -14,11 +14,11 @@ import DevModePanel from './components/DevModePanel';
 import FeaturesArchitecture from './components/FeaturesArchitecture';
 import HomeInteractiveCard from './components/HomeInteractiveCard';
 import { Linkedin, Dna, ShieldCheck, Zap, BarChart3 } from 'lucide-react';
-import { T } from './components/ide/tokens';
 import styles from './App.module.css';
+import { THEME } from './theme';
 
-const H = T.SANS;
-const MONO = T.MONO;
+const H = THEME.SANS;
+const MONO = THEME.MONO;
 
 // ── Scroll reveal ──────────────────────────────────────────────────────
 function Reveal({ children, delay = 0, className }: {

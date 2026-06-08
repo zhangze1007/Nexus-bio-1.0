@@ -14,11 +14,11 @@ import {
 import EmptyState from './ide/shared/EmptyState';
 import Pagination from './ide/shared/Pagination';
 
-import { T } from './ide/tokens';
 import { useWorkbenchStore } from '../store/workbenchStore';
+import { THEME } from '../theme';
 
-const SANS = T.SANS;
-const MONO = T.MONO;
+const SANS = THEME.SANS;
+const MONO = THEME.MONO;
 
 interface Article {
   id: string;
@@ -124,7 +124,7 @@ const SHOWCASE_PAPERS: Article[] = [
     title: 'Construction of a genetic toggle switch in Escherichia coli',
     whyItMatters:
       'This paper introduced one of the defining constructs of early synthetic biology: a bistable genetic toggle switch in Escherichia coli. By coupling mutually repressing transcriptional regulators, it established engineered biological memory as a programmable design principle rather than a theoretical possibility.',
-    authors: ['Gardner T.S.', 'Cantor C.R.', 'Collins J.J.'],
+    authors: ['Gardner THEME.S.', 'Cantor C.R.', 'Collins J.J.'],
     journal: 'Nature',
     year: '2000',
     abstract:

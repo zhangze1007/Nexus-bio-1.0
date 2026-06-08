@@ -6,7 +6,6 @@ import { ClipboardList, FlaskConical, Microscope } from 'lucide-react';
 import { useWorkbenchStore, type WorkbenchRunArtifact } from '../../store/workbenchStore';
 import { buildExperimentLedger, getAuthorityTier } from './workbenchTrust';
 import { TOOL_BY_ID } from '../tools/shared/toolRegistry';
-import { PATHD_THEME } from './workbenchTheme';
 import {
   glassPanel,
   glassPanelInset,
@@ -22,6 +21,7 @@ import {
   statusAccent,
   getChipStyle,
 } from './workbenchDesignSystem';
+import { THEME } from '../../theme';
 
 interface WorkbenchExperimentLedgerProps {
   title?: string;
@@ -57,8 +57,8 @@ export default function WorkbenchExperimentLedger({
     >
       {/* Section Header */}
       <motion.div variants={cardVariants} style={sectionHeaderRow}>
-        <span style={iconContainer(PATHD_THEME.apricot, 20)}>
-          <ClipboardList size={11} color={PATHD_THEME.apricot} />
+        <span style={iconContainer(THEME.APRICOT, 20)}>
+          <ClipboardList size={11} color={THEME.APRICOT} />
         </span>
         <span style={typography.sectionTitle}>{title}</span>
       </motion.div>

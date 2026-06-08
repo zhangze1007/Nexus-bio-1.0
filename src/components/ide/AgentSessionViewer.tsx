@@ -35,34 +35,33 @@ import {
   sessionStepStatusLabel,
 } from '../../services/axonSessionView';
 import { domainCategoryLabel } from '../../services/axonDomainClassifier';
-import { PATHD_THEME } from '../workbench/workbenchTheme';
-import { T } from './tokens';
+import { THEME } from '../../theme';
 
 const STATUS_TONE: Record<AxonSessionStatus, { fg: string; dot: string; label: string }> = {
-  idle:        { fg: PATHD_THEME.label,  dot: 'rgba(255,255,255,0.18)', label: 'Idle' },
-  planning:    { fg: PATHD_THEME.value,  dot: '#AFC3D6',                 label: 'Planning' },
+  idle:        { fg: THEME.LABEL,  dot: 'rgba(255,255,255,0.18)', label: 'Idle' },
+  planning:    { fg: THEME.VALUE,  dot: '#AFC3D6',                 label: 'Planning' },
   running:     { fg: '#93CB52',          dot: '#93CB52',                 label: 'Running' },
   waiting:     { fg: '#E7C7A9',          dot: '#E7C7A9',                 label: 'Waiting' },
   completed:   { fg: '#93CB52',          dot: '#93CB52',                 label: 'Completed' },
   partial:     { fg: '#E7C7A9',          dot: '#E7C7A9',                 label: 'Partial' },
   failed:      { fg: '#FA8072',          dot: '#FA8072',                 label: 'Failed' },
-  cancelled:   { fg: PATHD_THEME.label,  dot: 'rgba(255,255,255,0.40)', label: 'Cancelled' },
+  cancelled:   { fg: THEME.LABEL,  dot: 'rgba(255,255,255,0.40)', label: 'Cancelled' },
   interrupted: { fg: '#E7C7A9',          dot: '#E7C7A9',                 label: 'Interrupted' },
   'off-domain':{ fg: '#CFC4E3',          dot: '#CFC4E3',                 label: 'Off-domain' },
   unsupported: { fg: '#E7C7A9',          dot: '#E7C7A9',                 label: 'Unsupported' },
 };
 
 const STEP_STATUS_TONE: Record<AxonSessionStepStatus, { fg: string; border: string; bg: string }> = {
-  planned:      { fg: PATHD_THEME.label, border: 'rgba(175,195,214,0.26)', bg: 'rgba(175,195,214,0.08)' },
+  planned:      { fg: THEME.LABEL, border: 'rgba(175,195,214,0.26)', bg: 'rgba(175,195,214,0.08)' },
   running:      { fg: '#93CB52',          border: 'rgba(147,203,82,0.42)',  bg: 'rgba(147,203,82,0.14)' },
   waiting:      { fg: '#E7C7A9',          border: 'rgba(231,199,169,0.38)', bg: 'rgba(231,199,169,0.10)' },
   done:         { fg: '#93CB52',          border: 'rgba(147,203,82,0.36)',  bg: 'rgba(147,203,82,0.10)' },
   failed:       { fg: '#FA8072',          border: 'rgba(250,128,114,0.42)', bg: 'rgba(250,128,114,0.12)' },
-  cancelled:    { fg: PATHD_THEME.label,  border: 'rgba(255,255,255,0.18)', bg: 'rgba(255,255,255,0.04)' },
+  cancelled:    { fg: THEME.LABEL,  border: 'rgba(255,255,255,0.18)', bg: 'rgba(255,255,255,0.04)' },
   unsupported:  { fg: '#E7C7A9',          border: 'rgba(231,199,169,0.38)', bg: 'rgba(231,199,169,0.10)' },
   blocked:      { fg: '#E7C7A9',          border: 'rgba(231,199,169,0.38)', bg: 'rgba(231,199,169,0.10)' },
   interrupted:  { fg: '#E7C7A9',          border: 'rgba(231,199,169,0.38)', bg: 'rgba(231,199,169,0.10)' },
-  info:         { fg: PATHD_THEME.label,  border: 'rgba(255,255,255,0.12)', bg: 'rgba(255,255,255,0.04)' },
+  info:         { fg: THEME.LABEL,  border: 'rgba(255,255,255,0.12)', bg: 'rgba(255,255,255,0.04)' },
 };
 
 function formatTime(ms: number | undefined | null): string {
@@ -94,18 +93,18 @@ function PreviewFrame({ title, children }: { title: string; children: React.Reac
         padding: '8px 10px',
         borderRadius: '12px',
         background: 'rgba(5,7,11,0.35)',
-        border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
+        border: `1px solid ${THEME.BORDER}`,
         display: 'grid',
         gap: '6px',
       }}
     >
       <div
         style={{
-          fontFamily: T.MONO,
+          fontFamily: THEME.MONO,
           fontSize: '10px',
           letterSpacing: '0.08em',
           textTransform: 'uppercase',
-          color: PATHD_THEME.label,
+          color: THEME.LABEL,
         }}
       >
         {title}
@@ -118,10 +117,10 @@ function PreviewFrame({ title, children }: { title: string; children: React.Reac
 function KeyValRow({ label, value }: { label: string; value: string }) {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '110px 1fr', gap: '8px', alignItems: 'baseline' }}>
-      <span style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+      <span style={{ fontFamily: THEME.MONO, fontSize: '10px', color: THEME.LABEL, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
         {label}
       </span>
-      <span style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.value, lineHeight: 1.45, overflowWrap: 'anywhere' }}>
+      <span style={{ fontFamily: THEME.SANS, fontSize: '11px', color: THEME.VALUE, lineHeight: 1.45, overflowWrap: 'anywhere' }}>
         {value}
       </span>
     </div>
@@ -138,11 +137,11 @@ function renderPreview(preview: AxonSessionPreview) {
           <KeyValRow label="Request" value={preview.request} />
           {preview.warnings.length > 0 && (
             <div style={{ display: 'grid', gap: '3px' }}>
-              <div style={{ fontFamily: T.MONO, fontSize: '10px', color: '#E7C7A9', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              <div style={{ fontFamily: THEME.MONO, fontSize: '10px', color: '#E7C7A9', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                 Warnings
               </div>
               {preview.warnings.map((w, i) => (
-                <div key={i} style={{ fontFamily: T.SANS, fontSize: '10px', color: '#E7C7A9', lineHeight: 1.4 }}>
+                <div key={i} style={{ fontFamily: THEME.SANS, fontSize: '10px', color: '#E7C7A9', lineHeight: 1.4 }}>
                   • {w}
                 </div>
               ))}
@@ -162,7 +161,7 @@ function renderPreview(preview: AxonSessionPreview) {
             value={preview.sourcesUnimplemented.length ? preview.sourcesUnimplemented.join(', ') : 'None'}
           />
           <KeyValRow label="Saved items" value={`${preview.savedEvidenceCount}`} />
-          <div style={{ fontFamily: T.SANS, fontSize: '10px', color: PATHD_THEME.label, lineHeight: 1.4 }}>
+          <div style={{ fontFamily: THEME.SANS, fontSize: '10px', color: THEME.LABEL, lineHeight: 1.4 }}>
             {preview.note}
           </div>
         </PreviewFrame>
@@ -176,7 +175,7 @@ function renderPreview(preview: AxonSessionPreview) {
             value={`${preview.evidenceSelected}/${preview.evidenceTotal} selected`}
           />
           <KeyValRow label="Active tool" value={preview.currentTool ?? '—'} />
-          <div style={{ fontFamily: T.SANS, fontSize: '10px', color: PATHD_THEME.label, lineHeight: 1.4 }}>
+          <div style={{ fontFamily: THEME.SANS, fontSize: '10px', color: THEME.LABEL, lineHeight: 1.4 }}>
             {preview.summary}
           </div>
         </PreviewFrame>
@@ -185,7 +184,7 @@ function renderPreview(preview: AxonSessionPreview) {
       return (
         <PreviewFrame title="Metadata">
           {preview.entries.length === 0 ? (
-            <div style={{ fontFamily: T.SANS, fontSize: '10px', color: PATHD_THEME.label }}>
+            <div style={{ fontFamily: THEME.SANS, fontSize: '10px', color: THEME.LABEL }}>
               No metadata captured.
             </div>
           ) : (
@@ -198,7 +197,7 @@ function renderPreview(preview: AxonSessionPreview) {
     case 'result':
       return (
         <PreviewFrame title={`${preview.tool.toUpperCase()} result`}>
-          <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.value, lineHeight: 1.45 }}>
+          <div style={{ fontFamily: THEME.SANS, fontSize: '11px', color: THEME.VALUE, lineHeight: 1.45 }}>
             {preview.summary}
           </div>
           {preview.entries.map((e, i) => (
@@ -222,7 +221,7 @@ function renderPreview(preview: AxonSessionPreview) {
             label="Signals"
             value={preview.signals.length > 0 ? preview.signals.join(', ') : '—'}
           />
-          <div style={{ fontFamily: T.SANS, fontSize: '10px', color: '#CFC4E3', lineHeight: 1.45 }}>
+          <div style={{ fontFamily: THEME.SANS, fontSize: '10px', color: '#CFC4E3', lineHeight: 1.45 }}>
             The biosynthesis planner was not invoked. Rephrase with pathway, enzyme,
             or flux-analysis intent to route this through a Nexus-Bio tool.
           </div>
@@ -231,7 +230,7 @@ function renderPreview(preview: AxonSessionPreview) {
     case 'unavailable':
       return (
         <PreviewFrame title="Preview unavailable">
-          <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.label, lineHeight: 1.45 }}>
+          <div style={{ fontFamily: THEME.SANS, fontSize: '11px', color: THEME.LABEL, lineHeight: 1.45 }}>
             {preview.reason}
           </div>
         </PreviewFrame>
@@ -279,10 +278,10 @@ function StepCard({
           />
           <span
             style={{
-              fontFamily: T.SANS,
+              fontFamily: THEME.SANS,
               fontSize: '12px',
               fontWeight: 600,
-              color: PATHD_THEME.value,
+              color: THEME.VALUE,
               lineHeight: 1.35,
               overflowWrap: 'anywhere',
             }}
@@ -295,8 +294,8 @@ function StepCard({
                 padding: '1px 6px',
                 borderRadius: '5px',
                 background: 'rgba(10,14,22,0.55)',
-                color: PATHD_THEME.value,
-                fontFamily: T.MONO,
+                color: THEME.VALUE,
+                fontFamily: THEME.MONO,
                 fontSize: '10px',
                 letterSpacing: '0.06em',
                 textTransform: 'uppercase',
@@ -314,7 +313,7 @@ function StepCard({
                 borderRadius: '5px',
                 background: 'rgba(147,203,82,0.22)',
                 color: '#B8DE8A',
-                fontFamily: T.MONO,
+                fontFamily: THEME.MONO,
                 fontSize: '10px',
                 letterSpacing: '0.06em',
                 textTransform: 'uppercase',
@@ -329,7 +328,7 @@ function StepCard({
               borderRadius: '6px',
               border: `1px solid ${tone.border}`,
               color: tone.fg,
-              fontFamily: T.MONO,
+              fontFamily: THEME.MONO,
               fontSize: '10px',
               letterSpacing: '0.06em',
               textTransform: 'uppercase',
@@ -341,24 +340,24 @@ function StepCard({
       </div>
 
       {step.detail && (
-        <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.label, lineHeight: 1.5 }}>
+        <div style={{ fontFamily: THEME.SANS, fontSize: '11px', color: THEME.LABEL, lineHeight: 1.5 }}>
           {step.detail}
         </div>
       )}
 
       <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap' }}>
         {step.startedAt && (
-          <span style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label, letterSpacing: '0.05em' }}>
+          <span style={{ fontFamily: THEME.MONO, fontSize: '10px', color: THEME.LABEL, letterSpacing: '0.05em' }}>
             start {formatTime(step.startedAt)}
           </span>
         )}
         {step.finishedAt && (
-          <span style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label, letterSpacing: '0.05em' }}>
+          <span style={{ fontFamily: THEME.MONO, fontSize: '10px', color: THEME.LABEL, letterSpacing: '0.05em' }}>
             end {formatTime(step.finishedAt)}
           </span>
         )}
         {step.startedAt && step.finishedAt && (
-          <span style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label, letterSpacing: '0.05em' }}>
+          <span style={{ fontFamily: THEME.MONO, fontSize: '10px', color: THEME.LABEL, letterSpacing: '0.05em' }}>
             dur {formatDuration(step.startedAt, step.finishedAt)}
           </span>
         )}
@@ -411,14 +410,14 @@ function OutcomeCard({ session }: { session: AxonSession }) {
             background: tone.dot,
           }}
         />
-        <span style={{ fontFamily: T.MONO, fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', color: tone.fg }}>
+        <span style={{ fontFamily: THEME.MONO, fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', color: tone.fg }}>
           {tone.label}
         </span>
-        <span style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label, letterSpacing: '0.04em' }}>
+        <span style={{ fontFamily: THEME.MONO, fontSize: '10px', color: THEME.LABEL, letterSpacing: '0.04em' }}>
           · {session.outcome.headline}
         </span>
       </div>
-      <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.value, lineHeight: 1.5 }}>
+      <div style={{ fontFamily: THEME.SANS, fontSize: '11px', color: THEME.VALUE, lineHeight: 1.5 }}>
         {messages[session.status]}
       </div>
       {session.outcome.userActionNeeded && (
@@ -429,7 +428,7 @@ function OutcomeCard({ session }: { session: AxonSession }) {
             borderRadius: '8px',
             background: 'rgba(229,143,70,0.12)',
             border: '1px solid rgba(229,143,70,0.3)',
-            fontFamily: T.SANS,
+            fontFamily: THEME.SANS,
             fontSize: '10px',
             color: '#E7C7A9',
             lineHeight: 1.4,
@@ -454,16 +453,16 @@ function SessionHeader({ session }: { session: AxonSession }) {
         gap: '8px',
         padding: '12px 14px',
         borderRadius: '12px',
-        border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
-        background: PATHD_THEME.panelSurface,
+        border: `1px solid ${THEME.BORDER}`,
+        background: THEME.PANEL_SURFACE,
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
         <div style={{ display: 'grid', gap: '2px', minWidth: 0 }}>
-          <div style={{ fontFamily: T.MONO, fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', color: PATHD_THEME.label }}>
+          <div style={{ fontFamily: THEME.MONO, fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', color: THEME.LABEL }}>
             Agent session
           </div>
-          <div style={{ fontFamily: T.SANS, fontSize: '13px', fontWeight: 700, color: PATHD_THEME.value, overflowWrap: 'anywhere' }}>
+          <div style={{ fontFamily: THEME.SANS, fontSize: '13px', fontWeight: 700, color: THEME.VALUE, overflowWrap: 'anywhere' }}>
             {session.title}
           </div>
         </div>
@@ -481,7 +480,7 @@ function SessionHeader({ session }: { session: AxonSession }) {
           }}
         >
           <span aria-hidden style={{ width: '8px', height: '8px', borderRadius: '50%', background: tone.dot }} />
-          <span style={{ fontFamily: T.MONO, fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', color: tone.fg, fontWeight: 700 }}>
+          <span style={{ fontFamily: THEME.MONO, fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', color: tone.fg, fontWeight: 700 }}>
             {sessionStatusLabel(session.status)}
           </span>
         </div>
@@ -501,21 +500,21 @@ function SessionHeader({ session }: { session: AxonSession }) {
               border: '1px solid rgba(207,196,227,0.28)',
             }}
           >
-            <span style={{ fontFamily: T.MONO, fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', color: '#CFC4E3' }}>
+            <span style={{ fontFamily: THEME.MONO, fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', color: '#CFC4E3' }}>
               Domain
             </span>
-            <span style={{ fontFamily: T.SANS, fontSize: '10px', color: PATHD_THEME.value }}>
+            <span style={{ fontFamily: THEME.SANS, fontSize: '10px', color: THEME.VALUE }}>
               {domainCategoryLabel(session.domain.category)}
             </span>
           </div>
         )}
         {session.startedAt && (
-          <span style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label, letterSpacing: '0.04em' }}>
+          <span style={{ fontFamily: THEME.MONO, fontSize: '10px', color: THEME.LABEL, letterSpacing: '0.04em' }}>
             started {formatTime(session.startedAt)}
           </span>
         )}
         {session.lastActivityAt && (
-          <span style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.label, letterSpacing: '0.04em' }}>
+          <span style={{ fontFamily: THEME.MONO, fontSize: '10px', color: THEME.LABEL, letterSpacing: '0.04em' }}>
             last activity {formatTime(session.lastActivityAt)}
           </span>
         )}
@@ -523,18 +522,18 @@ function SessionHeader({ session }: { session: AxonSession }) {
       {session.request && (
         <div
           style={{
-            fontFamily: T.SANS,
+            fontFamily: THEME.SANS,
             fontSize: '11px',
-            color: PATHD_THEME.label,
+            color: THEME.LABEL,
             lineHeight: 1.5,
             padding: '6px 10px',
             borderRadius: '8px',
             background: 'rgba(5,7,11,0.35)',
-            border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
+            border: `1px solid ${THEME.BORDER}`,
             overflowWrap: 'anywhere',
           }}
         >
-          <span style={{ color: PATHD_THEME.value, fontWeight: 600 }}>Request · </span>
+          <span style={{ color: THEME.VALUE, fontWeight: 600 }}>Request · </span>
           {session.request}
         </div>
       )}
@@ -569,15 +568,15 @@ export default function AgentSessionViewer({
           gap: '10px',
           padding: '16px',
           borderRadius: '12px',
-          border: `1px dashed ${PATHD_THEME.sepiaPanelBorder}`,
-          background: PATHD_THEME.panelInset,
-          color: PATHD_THEME.label,
-          fontFamily: T.SANS,
+          border: `1px dashed ${THEME.BORDER}`,
+          background: THEME.PANEL_INSET,
+          color: THEME.LABEL,
+          fontFamily: THEME.SANS,
           fontSize: '12px',
           lineHeight: 1.55,
         }}
       >
-        <div style={{ fontFamily: T.MONO, fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+        <div style={{ fontFamily: THEME.MONO, fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
           Agent session · idle
         </div>
         Ask Axon a question to start a real session. The viewer will show the classifier
@@ -603,23 +602,23 @@ export default function AgentSessionViewer({
           gap: '8px',
           padding: '10px 12px',
           borderRadius: '12px',
-          border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
-          background: PATHD_THEME.panelInset,
+          border: `1px solid ${THEME.BORDER}`,
+          background: THEME.PANEL_INSET,
         }}
       >
         <div
           style={{
-            fontFamily: T.MONO,
+            fontFamily: THEME.MONO,
             fontSize: '10px',
             letterSpacing: '0.08em',
             textTransform: 'uppercase',
-            color: PATHD_THEME.label,
+            color: THEME.LABEL,
           }}
         >
           Session timeline · {steps.length} step{steps.length === 1 ? '' : 's'}
         </div>
         {steps.length === 0 ? (
-          <div style={{ fontFamily: T.SANS, fontSize: '11px', color: PATHD_THEME.label, lineHeight: 1.5 }}>
+          <div style={{ fontFamily: THEME.SANS, fontSize: '11px', color: THEME.LABEL, lineHeight: 1.5 }}>
             No steps in this session. See the outcome card above for the reason.
           </div>
         ) : (

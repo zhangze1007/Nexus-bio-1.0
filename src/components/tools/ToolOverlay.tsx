@@ -18,10 +18,9 @@ import type { SimParams } from '../../machines/metabolicMachine';
 import type { FluidForce } from './FluidSimCanvas';
 import type { MachineState } from '../../machines/metabolicMachine';
 import { STATE_LABELS } from '../../machines/metabolicMachine';
-import { T } from '../ide/tokens';
-import { PATHD_THEME } from '../workbench/workbenchTheme';
 import { PATHD_FLOATING_PANEL_SHEEN, PATHD_FLOATING_PANEL_SURFACE } from './shared/pathdFloatingPanelStyles';
 import { usePathdFloatingPanelScroll } from './shared/usePathdFloatingPanelScroll';
+import { THEME } from '../../theme';
 type ControlVarsStyle = CSSProperties & Record<`--${string}`, string>;
 
 // ── Parameter definitions ──────────────────────────────────────────────
@@ -106,18 +105,18 @@ function ParamSlider({ def, value, onChange, forceRef }: SliderProps) {
   return (
     <div style={{ marginBottom: '14px' }}>
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'5px' }}>
-        <span style={{ fontFamily: T.SANS, fontSize:'var(--nb-fs-xs)', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.08em', color:PATHD_THEME.label }}>
+        <span style={{ fontFamily: THEME.SANS, fontSize:'var(--nb-fs-xs)', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.08em', color:THEME.LABEL }}>
           {def.label}
         </span>
-        <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-sm)', fontWeight:600, color:PATHD_THEME.value, textAlign:'right', minWidth:'72px' }}>
-          {value.toFixed(def.step < 1 ? 1 : 0)}<span style={{ fontSize:'var(--nb-fs-xs)', color:PATHD_THEME.label, marginLeft:'2px' }}>{def.unit}</span>
+        <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-sm)', fontWeight:600, color:THEME.VALUE, textAlign:'right', minWidth:'72px' }}>
+          {value.toFixed(def.step < 1 ? 1 : 0)}<span style={{ fontSize:'var(--nb-fs-xs)', color:THEME.LABEL, marginLeft:'2px' }}>{def.unit}</span>
         </span>
       </div>
 
       {/* Track */}
       <div style={{ position:'relative', height:'20px', display:'flex', alignItems:'center' }}>
-        <div style={{ position:'absolute', left:0, right:0, height:`${PATHD_THEME.progressHeight}px`, borderRadius:`${PATHD_THEME.progressRadius}px`, background:PATHD_THEME.progressTrack }}>
-          <div style={{ width:`${pct}%`, height:'100%', borderRadius:`${PATHD_THEME.progressRadius}px`, background:PATHD_THEME.progressGradient, boxShadow:PATHD_THEME.progressGlow, transition:'width 0.08s' }} />
+        <div style={{ position:'absolute', left:0, right:0, height:`${THEME.PROGRESS_HEIGHT}px`, borderRadius:`${THEME.PROGRESS_RADIUS}px`, background:THEME.PROGRESS_TRACK }}>
+          <div style={{ width:`${pct}%`, height:'100%', borderRadius:`${THEME.PROGRESS_RADIUS}px`, background:THEME.PROGRESS_GRADIENT, boxShadow:THEME.PROGRESS_GLOW, transition:'width 0.08s' }} />
         </div>
         <input
           className="nb-tool-overlay-slider"
@@ -136,13 +135,13 @@ function ParamSlider({ def, value, onChange, forceRef }: SliderProps) {
       <style>{`
         .nb-tool-overlay-slider::-webkit-slider-thumb{
           -webkit-appearance:none; width:12px; height:12px;
-          border-radius:50%; background:${PATHD_THEME.paperElevated};
+          border-radius:50%; background:${THEME.PAPER_ELEVATED};
           box-shadow:0 0 0 1px rgba(34,40,48,0.12), 0 0 8px rgba(175,195,214,0.24);
           border:none; cursor:pointer;
         }
         .nb-tool-overlay-slider::-moz-range-thumb{
           width:12px; height:12px; border-radius:50%;
-          background:${PATHD_THEME.paperElevated}; border:none; cursor:pointer;
+          background:${THEME.PAPER_ELEVATED}; border:none; cursor:pointer;
           box-shadow:0 0 0 1px rgba(34,40,48,0.12), 0 0 8px rgba(175,195,214,0.24);
         }
       `}</style>
@@ -189,7 +188,7 @@ function ActionBtn({ label, icon: Icon, tone = 'neutral', onClick, disabled = fa
         padding:'0 10px',
         borderRadius:'var(--nb-radius-md)',
         cursor: disabled ? 'not-allowed' : 'pointer',
-        fontFamily: T.MONO, fontSize:'var(--nb-fs-xs)', fontWeight:600,
+        fontFamily: THEME.MONO, fontSize:'var(--nb-fs-xs)', fontWeight:600,
         textTransform:'uppercase', letterSpacing:'0.08em',
         transition:'background 80ms ease, border-color 80ms ease, color 80ms ease, box-shadow 80ms ease, transform 80ms ease',
         display:'inline-flex',
@@ -267,7 +266,7 @@ export default function ToolOverlay({
       {/* Header */}
       <div style={{ marginBottom:'16px', position:'relative', zIndex:1 }}>
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-          <span style={{ fontFamily: T.MONO, fontSize:'var(--nb-fs-xs)', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.12em', color:PATHD_THEME.label }}>
+          <span style={{ fontFamily: THEME.MONO, fontSize:'var(--nb-fs-xs)', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.12em', color:THEME.LABEL }}>
             Method Rail
           </span>
           {/* FSM state indicator */}
@@ -285,15 +284,15 @@ export default function ToolOverlay({
             <motion.div
               animate={{ opacity:[0.4, 1, 0.4] }}
               transition={{ duration:1.5, repeat:Infinity }}
-              style={{ width:'5px', height:'5px', borderRadius:'50%', background:PATHD_THEME.liveRed, boxShadow:'0 0 6px rgba(232,163,161,0.48)' }}
+              style={{ width:'5px', height:'5px', borderRadius:'50%', background:THEME.CORAL, boxShadow:'0 0 6px rgba(232,163,161,0.48)' }}
             />
-            <span style={{ fontFamily: T.MONO, fontSize:'var(--nb-fs-xs)', fontWeight:600, color:PATHD_THEME.value, letterSpacing:'0.1em' }}>
+            <span style={{ fontFamily: THEME.MONO, fontSize:'var(--nb-fs-xs)', fontWeight:600, color:THEME.VALUE, letterSpacing:'0.1em' }}>
               {stateLabel}
             </span>
           </motion.div>
         </div>
         <div style={{ marginTop:'8px', borderBottom:'1px solid rgba(255,255,255,0.08)', paddingBottom:'12px' }}>
-          <span style={{ fontFamily: T.SANS, fontSize:'12px', fontWeight:600, color:PATHD_THEME.value }}>
+          <span style={{ fontFamily: THEME.SANS, fontSize:'12px', fontWeight:600, color:THEME.VALUE }}>
             Metabolic Parameters
           </span>
         </div>
@@ -339,14 +338,14 @@ export default function ToolOverlay({
 
       {/* Michaelis-Menten preview formula */}
       <div style={{ marginTop:'14px', padding:'10px', borderRadius:'var(--nb-radius-md)', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.10)', position:'relative', zIndex:1 }}>
-        <span style={{ fontFamily: T.MONO, fontSize:'var(--nb-fs-xs)', color:PATHD_THEME.label, display:'block', marginBottom:'4px', textTransform:'uppercase', letterSpacing:'0.08em' }}>
+        <span style={{ fontFamily: THEME.MONO, fontSize:'var(--nb-fs-xs)', color:THEME.LABEL, display:'block', marginBottom:'4px', textTransform:'uppercase', letterSpacing:'0.08em' }}>
           Kinetics Preview
         </span>
-        <span style={{ fontFamily: T.MONO, fontSize:'var(--nb-fs-xs)', color:PATHD_THEME.value }}>
+        <span style={{ fontFamily: THEME.MONO, fontSize:'var(--nb-fs-xs)', color:THEME.VALUE }}>
           v = Vmax·[S] / (Km+[S])
         </span>
         <br />
-        <span style={{ fontFamily: T.MONO, fontSize:'var(--nb-fs-xs)', color:PATHD_THEME.label }}>
+        <span style={{ fontFamily: THEME.MONO, fontSize:'var(--nb-fs-xs)', color:THEME.LABEL }}>
           = {params.vmax.toFixed(1)} · {params.substrate} / ({params.km.toFixed(1)} + {params.substrate})
         </span>
       </div>

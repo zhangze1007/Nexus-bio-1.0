@@ -2,12 +2,12 @@
 
 import WorkbenchRangeSlider from '../shared/WorkbenchRangeSlider';
 import type { ProteinEvolutionCampaign } from '../../../services/ProEvolCampaignEngine';
-import { T } from '../../ide/tokens';
 import {
   PROEVOL_THEME,
   StatusPill,
   formatPercent,
 } from './shared';
+import { THEME } from '../../../theme';
 
 interface EvolutionCampaignContextCardProps {
   campaign: ProteinEvolutionCampaign;
@@ -36,7 +36,7 @@ export default function EvolutionCampaignContextCard({
     <div style={{ display: 'grid', gap: '8px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
         <span style={{
-          fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PROEVOL_THEME.label,
+          fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: PROEVOL_THEME.label,
           letterSpacing: '0.08em', textTransform: 'uppercase',
         }}>Parameters</span>
         <StatusPill tone={campaign.provenance === 'simulated' ? 'warm' : 'cool'}>
@@ -88,13 +88,13 @@ export default function EvolutionCampaignContextCard({
         border: `1px solid ${PROEVOL_THEME.border}`, background: PROEVOL_THEME.inset,
       }}>
         <div style={{
-          fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PROEVOL_THEME.label,
+          fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: PROEVOL_THEME.label,
           textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px',
         }}>
           Starting sequence
         </div>
         <div style={{
-          fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PROEVOL_THEME.muted,
+          fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: PROEVOL_THEME.muted,
           lineHeight: 1.5, wordBreak: 'break-all', maxHeight: '60px', overflow: 'auto',
         }}>
           {campaign.startingSequence}

@@ -15,7 +15,6 @@ import {
 } from '../tools/shared/workbenchConfig';
 import { useWorkbenchStore } from '../../store/workbenchStore';
 import { useUIStore } from '../../store/uiStore';
-import { T } from '../ide/tokens';
 import WorkbenchAuditTimeline from './WorkbenchAuditTimeline';
 import WorkbenchDecisionTracePanel from './WorkbenchDecisionTracePanel';
 import WorkbenchEvidenceTracePanel from './WorkbenchEvidenceTracePanel';
@@ -23,7 +22,6 @@ import WorkbenchExperimentLedger from './WorkbenchExperimentLedger';
 import WorkbenchProjectTimeline from './WorkbenchProjectTimeline';
 import WorkbenchRunCompare from './WorkbenchRunCompare';
 import { getFreshnessMap, getToolFreshness } from './workbenchTrust';
-import { PATHD_THEME } from './workbenchTheme';
 import {
   buildWorkflowDashboardItems,
   workflowStatusLabel,
@@ -39,38 +37,39 @@ import {
   staggerContainer,
   accentLeftBorder,
 } from './workbenchDesignSystem';
+import { THEME } from '../../theme';
 
 interface WorkbenchStatusBarProps {
   moduleId: string | null;
 }
 
-const BORDER = PATHD_THEME.sepiaPanelBorder;
-const LABEL = PATHD_THEME.label;
-const VALUE = PATHD_THEME.value;
-const CARD_BG = PATHD_THEME.panelGlassStrong;
-const CARD_BG_SOFT = PATHD_THEME.panelSurface;
+const BORDER = THEME.BORDER;
+const LABEL = THEME.LABEL;
+const VALUE = THEME.VALUE;
+const CARD_BG = THEME.PANEL_GLASS_STRONG;
+const CARD_BG_SOFT = THEME.PANEL_SURFACE;
 const HEADER_HEIGHT = 34; // compact 1-row header height in px
 
 function getStageStatusColor(status: 'pending' | 'active' | 'complete') {
-  if (status === 'complete') return PATHD_THEME.mint;
-  if (status === 'active') return PATHD_THEME.apricot;
+  if (status === 'complete') return THEME.MINT;
+  if (status === 'active') return THEME.APRICOT;
   return 'rgba(226,232,240,0.18)';
 }
 
 function getWorkflowStatusColor(status: WorkflowExperienceStatus | string) {
-  if (status === 'complete') return PATHD_THEME.mint;
-  if (status === 'current' || status === 'next' || status === 'ready') return PATHD_THEME.sky;
-  if (status === 'blocked') return PATHD_THEME.coral;
-  if (status === 'demoOnly' || status === 'humanGate') return PATHD_THEME.apricot;
+  if (status === 'complete') return THEME.MINT;
+  if (status === 'current' || status === 'next' || status === 'ready') return THEME.SKY;
+  if (status === 'blocked') return THEME.CORAL;
+  if (status === 'demoOnly' || status === 'humanGate') return THEME.APRICOT;
   return 'rgba(226,232,240,0.22)';
 }
 
 type DrawerTab = 'status' | 'evidence' | 'history';
 
 const DRAWER_TABS: { id: DrawerTab; label: string; accent: string }[] = [
-  { id: 'status', label: 'Status', accent: PATHD_THEME.sky },
-  { id: 'evidence', label: 'Evidence', accent: PATHD_THEME.lilac },
-  { id: 'history', label: 'History', accent: PATHD_THEME.mint },
+  { id: 'status', label: 'Status', accent: THEME.SKY },
+  { id: 'evidence', label: 'Evidence', accent: THEME.LILAC },
+  { id: 'history', label: 'History', accent: THEME.MINT },
 ];
 
 export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps) {
@@ -149,7 +148,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
           alignItems: 'center',
           gap: '8px',
           flexWrap: 'nowrap',
-          background: `linear-gradient(180deg, ${PATHD_THEME.sepiaPanelMuted} 0%, ${PATHD_THEME.sepiaPanel} 100%)`,
+          background: `linear-gradient(180deg, ${THEME.PANEL_MUTED} 0%, ${THEME.PANEL_BG} 100%)`,
           borderBottom: `1px solid ${BORDER}`,
           backdropFilter: 'blur(18px)',
           WebkitBackdropFilter: 'blur(18px)',
@@ -174,11 +173,11 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                   height: '24px',
                   padding: '0 7px',
                   borderRadius: '999px',
-                  border: `1px solid ${isActive ? PATHD_THEME.panelBorderStrong : BORDER}`,
+                  border: `1px solid ${isActive ? THEME.BORDER_STRONG : BORDER}`,
                   background: isActive ? `${entry.accent}33` : CARD_BG,
                   color: VALUE,
                   textDecoration: 'none',
-                  fontFamily: T.MONO,
+                  fontFamily: THEME.MONO,
                   fontSize: '10px',
                   fontWeight: 600,
                   letterSpacing: '0.04em',
@@ -215,7 +214,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
             borderRadius: '999px',
             border: `1px solid ${BORDER}`,
             background: 'rgba(175,195,214,0.14)',
-            fontFamily: T.SANS,
+            fontFamily: THEME.SANS,
             fontSize: '10px',
             fontWeight: 600,
             color: VALUE,
@@ -239,9 +238,9 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
             borderRadius: '999px',
             border: `1px solid ${BORDER}`,
             background: CARD_BG_SOFT,
-            fontFamily: T.MONO,
+            fontFamily: THEME.MONO,
             fontSize: '10px',
-            color: freshness.status === 'stale' ? PATHD_THEME.coral : freshness.status === 'fresh' ? PATHD_THEME.mint : LABEL,
+            color: freshness.status === 'stale' ? THEME.CORAL : freshness.status === 'fresh' ? THEME.MINT : LABEL,
             display: 'inline-flex',
             alignItems: 'center',
             gap: '4px',
@@ -255,7 +254,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
             width: '5px',
             height: '5px',
             borderRadius: '999px',
-            background: freshness.status === 'stale' ? PATHD_THEME.coral : freshness.status === 'fresh' ? PATHD_THEME.mint : 'rgba(226,232,240,0.3)',
+            background: freshness.status === 'stale' ? THEME.CORAL : freshness.status === 'fresh' ? THEME.MINT : 'rgba(226,232,240,0.3)',
           }} />
           {freshnessLabel}
         </div>
@@ -268,7 +267,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
             borderRadius: '999px',
             border: `1px solid ${BORDER}`,
             background: CARD_BG_SOFT,
-            fontFamily: T.MONO,
+            fontFamily: THEME.MONO,
             fontSize: '10px',
             color: getWorkflowStatusColor(workflowControl.status === 'gated' ? 'humanGate' : workflowControl.status),
             display: 'inline-flex',
@@ -286,7 +285,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
         {/* Progress */}
         <div
           style={{
-            fontFamily: T.MONO,
+            fontFamily: THEME.MONO,
             fontSize: '10px',
             color: LABEL,
             letterSpacing: '0.06em',
@@ -315,7 +314,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
               border: `1px solid ${BORDER}`,
               background: CARD_BG,
               color: LABEL,
-              fontFamily: T.SANS,
+              fontFamily: THEME.SANS,
               fontSize: '10px',
             }}
           >
@@ -335,7 +334,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
               border: `1px solid ${BORDER}`,
               background: CARD_BG,
               color: LABEL,
-              fontFamily: T.SANS,
+              fontFamily: THEME.SANS,
               fontSize: '10px',
             }}
           >
@@ -354,10 +353,10 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
               alignItems: 'center',
               gap: '4px',
               cursor: 'pointer',
-              border: `1px solid ${PATHD_THEME.panelBorderStrong}`,
+              border: `1px solid ${THEME.BORDER_STRONG}`,
               background: 'rgba(207,196,227,0.34)',
               color: VALUE,
-              fontFamily: T.SANS,
+              fontFamily: THEME.SANS,
               fontSize: '10px',
             }}
           >
@@ -379,11 +378,11 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
               display: 'inline-flex',
               alignItems: 'center',
               gap: '4px',
-              border: `1px solid ${drawerOpen ? PATHD_THEME.panelBorderStrong : BORDER}`,
+              border: `1px solid ${drawerOpen ? THEME.BORDER_STRONG : BORDER}`,
               background: drawerOpen ? 'rgba(175,195,214,0.18)' : CARD_BG,
               color: VALUE,
               cursor: 'pointer',
-              fontFamily: T.SANS,
+              fontFamily: THEME.SANS,
               fontSize: '10px',
             }}
           >
@@ -426,7 +425,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                 width: 'min(380px, calc(100vw - 24px))',
                 borderRadius: '22px',
                 border: `1px solid ${BORDER}`,
-                background: `linear-gradient(180deg, ${PATHD_THEME.sepiaPanelMuted} 0%, ${PATHD_THEME.sepiaPanel} 100%)`,
+                background: `linear-gradient(180deg, ${THEME.PANEL_MUTED} 0%, ${THEME.PANEL_BG} 100%)`,
                 backdropFilter: 'blur(24px)',
                 WebkitBackdropFilter: 'blur(24px)',
                 boxShadow: '0 24px 80px rgba(52, 48, 43, 0.16)',
@@ -477,7 +476,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                   gap: '2px',
                   padding: '0 16px',
                   borderBottom: `1px solid ${BORDER}`,
-                  background: PATHD_THEME.sepiaPanelMuted,
+                  background: THEME.PANEL_MUTED,
                   flexShrink: 0,
                 }}
               >
@@ -495,7 +494,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                         background: 'transparent',
                         border: 'none',
                         cursor: 'pointer',
-                        fontFamily: T.SANS,
+                        fontFamily: THEME.SANS,
                         fontSize: '11px',
                         fontWeight: isActive ? 600 : 400,
                         color: isActive ? tab.accent : LABEL,
@@ -532,10 +531,10 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                       <DrawerSection title="Golden Path">
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '8px' }}>
                           <Workflow size={13} color={getWorkflowStatusColor(workflowControl.status === 'gated' ? 'humanGate' : workflowControl.status)} />
-                          <span style={{ fontFamily: T.SANS, fontSize: '12px', color: VALUE, fontWeight: 700 }}>
+                          <span style={{ fontFamily: THEME.SANS, fontSize: '12px', color: VALUE, fontWeight: 700 }}>
                             {workflowStatusLabel(workflowControl.status)}
                           </span>
-                          <span style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL }}>
+                          <span style={{ fontFamily: THEME.MONO, fontSize: '10px', color: LABEL }}>
                             {workflowProgress}
                           </span>
                         </div>
@@ -549,13 +548,13 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                                   height: '24px',
                                   padding: '0 7px',
                                   borderRadius: '999px',
-                                  border: `1px solid ${item.status === 'current' || item.status === 'next' ? PATHD_THEME.panelBorderStrong : BORDER}`,
+                                  border: `1px solid ${item.status === 'current' || item.status === 'next' ? THEME.BORDER_STRONG : BORDER}`,
                                   background: item.status === 'current' || item.status === 'next' ? 'rgba(175,195,214,0.18)' : CARD_BG_SOFT,
                                   color: VALUE,
                                   display: 'inline-flex',
                                   alignItems: 'center',
                                   gap: '4px',
-                                  fontFamily: T.SANS,
+                                  fontFamily: THEME.SANS,
                                   fontSize: '10px',
                                   fontWeight: 600,
                                 }}
@@ -567,11 +566,11 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                             return item.href ? <Link key={item.id} href={item.href} style={{ textDecoration: 'none' }}>{itemEl}</Link> : <div key={item.id}>{itemEl}</div>;
                           })}
                         </div>
-                        <div style={{ fontFamily: T.MONO, fontSize: '10px', color: LABEL, marginTop: '6px' }}>
+                        <div style={{ fontFamily: THEME.MONO, fontSize: '10px', color: LABEL, marginTop: '6px' }}>
                           {workflowControl.currentToolId && <span>current: {workflowControl.currentToolId.toUpperCase()} · </span>}
                           {workflowControl.confidence !== null && <span>conf {workflowControl.confidence.toFixed(2)} · </span>}
                           <span>uncert {workflowControl.uncertainty === null ? '?' : workflowControl.uncertainty.toFixed(2)}</span>
-                          {workflowControl.humanGateRequired && <span style={{ color: PATHD_THEME.apricot }}> · human gate</span>}
+                          {workflowControl.humanGateRequired && <span style={{ color: THEME.APRICOT }}> · human gate</span>}
                         </div>
                       </DrawerSection>
 
@@ -587,7 +586,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
 
                       {/* Execution Integrity */}
                       {moduleId && (
-                        <DrawerSection title="Execution Integrity" accent={freshness.status === 'stale' ? PATHD_THEME.coral : PATHD_THEME.mint}>
+                        <DrawerSection title="Execution Integrity" accent={freshness.status === 'stale' ? THEME.CORAL : THEME.MINT}>
                           <div style={typography.label}>
                             {freshness.status === 'fresh' ? 'Aligned with upstream' : freshness.status === 'stale' ? 'Stale against upstream' : freshness.status === 'awaiting-upstream' ? 'Awaiting rerun' : 'No auditable run'}
                           </div>
@@ -626,16 +625,16 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                                   alignItems: 'center',
                                   gap: '5px',
                                   textDecoration: 'none',
-                                  border: `1px solid ${PATHD_THEME.chipBorder}`,
+                                  border: `1px solid ${THEME.CHIP_BORDER}`,
                                   background: CARD_BG_SOFT,
                                   color: VALUE,
-                                  fontFamily: T.SANS,
+                                  fontFamily: THEME.SANS,
                                   fontSize: '10px',
                                 }}
                               >
                                 {tool.shortLabel}
                                 {nextFreshness[tool.id]?.status === 'stale' && (
-                                  <span style={{ color: 'rgba(255,214,166,0.92)', fontFamily: T.MONO, fontSize: '10px' }}>stale</span>
+                                  <span style={{ color: 'rgba(255,214,166,0.92)', fontFamily: THEME.MONO, fontSize: '10px' }}>stale</span>
                                 )}
                                 <ArrowUpRight size={11} />
                               </Link>
@@ -664,7 +663,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                       </DrawerSection>
 
                       {/* Analyze Artifact */}
-                      <DrawerSection title="Analyze Artifact" accent={PATHD_THEME.lilac}>
+                      <DrawerSection title="Analyze Artifact" accent={THEME.LILAC}>
                         {analyzeArtifact ? (
                           <div style={{ ...glassPanel, padding: '10px 12px' }}>
                             <div style={typography.label}>{analyzeArtifact.title}</div>
@@ -710,7 +709,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
                                   }}
                                 >
                                   <span style={typography.label}>{tool.name}</span>
-                                  <Workflow size={12} color={PATHD_THEME.sky} />
+                                  <Workflow size={12} color={THEME.SKY} />
                                 </Link>
                               );
                             })}

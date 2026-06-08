@@ -2,16 +2,15 @@
 import { useRef, useEffect } from 'react';
 import { X, Trash2 } from 'lucide-react';
 import { useUIStore } from '../../store/uiStore';
-import { PATHD_THEME } from '../workbench/workbenchTheme';
-
+import { THEME } from '../../theme';
 const MONO = "'IBM Plex Mono','JetBrains Mono','Fira Code',monospace";
 const SANS = "'Public Sans',-apple-system,sans-serif";
 
 const LEVEL_COLORS = {
-  info:    PATHD_THEME.sky,
-  warn:    PATHD_THEME.apricot,
-  error:   PATHD_THEME.coral,
-  success: PATHD_THEME.mint,
+  info:    THEME.SKY,
+  warn:    THEME.APRICOT,
+  error:   THEME.CORAL,
+  success: THEME.MINT,
 };
 
 const LEVEL_BG = {
@@ -41,26 +40,26 @@ export default function IDEConsole() {
       height: '180px',
       display: 'flex',
       flexDirection: 'column',
-      background: PATHD_THEME.sepiaPanelMuted,
-      borderTop: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
+      background: THEME.PANEL_MUTED,
+      borderTop: `1px solid ${THEME.BORDER}`,
       boxShadow: '0 -10px 30px rgba(0,0,0,0.28)',
     }}>
       {/* Header */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '5px 12px',
-        borderBottom: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
+        borderBottom: `1px solid ${THEME.BORDER}`,
         flexShrink: 0,
       }}>
-        <span style={{ fontFamily: MONO, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: PATHD_THEME.label }}>
+        <span style={{ fontFamily: MONO, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: THEME.LABEL }}>
           Output Console · {consoleEntries.length} entries
         </span>
         <div style={{ display: 'flex', gap: '4px' }}>
-          <button onClick={clearConsole} style={{ background: 'none', border: 'none', cursor: 'pointer', color: PATHD_THEME.label, padding: '2px', display: 'flex' }}
+          <button onClick={clearConsole} style={{ background: 'none', border: 'none', cursor: 'pointer', color: THEME.LABEL, padding: '2px', display: 'flex' }}
             title="Clear console">
             <Trash2 size={11} />
           </button>
-          <button onClick={toggleConsole} style={{ background: 'none', border: 'none', cursor: 'pointer', color: PATHD_THEME.label, padding: '2px', display: 'flex' }}
+          <button onClick={toggleConsole} style={{ background: 'none', border: 'none', cursor: 'pointer', color: THEME.LABEL, padding: '2px', display: 'flex' }}
             title="Close console">
             <X size={11} />
           </button>
@@ -81,7 +80,7 @@ export default function IDEConsole() {
               <div key={entry.id} style={{
                 display: 'flex', alignItems: 'flex-start', gap: '8px',
                 padding: '3px 12px',
-                background: PATHD_THEME.panelGlassStrong,
+                background: THEME.PANEL_GLASS_STRONG,
                 borderLeft: `2px solid ${LEVEL_COLORS[entry.level]}`,
                 marginBottom: '1px',
               }}>
@@ -90,7 +89,7 @@ export default function IDEConsole() {
                   [{entry.level}]
                 </span>
                 <span style={{ fontFamily: MONO, fontSize: '10px', color: 'rgba(226,232,240,0.42)', flexShrink: 0, marginTop: '1px' }}>{entry.module}</span>
-                <span style={{ fontFamily: SANS, fontSize: '11px', color: PATHD_THEME.value, flex: 1, lineHeight: 1.4 }}>{entry.message}</span>
+                <span style={{ fontFamily: SANS, fontSize: '11px', color: THEME.VALUE, flex: 1, lineHeight: 1.4 }}>{entry.message}</span>
               </div>
             );
           })

@@ -1,7 +1,6 @@
 'use client';
 
 import type { ProteinEvolutionCampaign, VariantCandidate } from '../../../services/ProEvolCampaignEngine';
-import { T } from '../../ide/tokens';
 import {
   MetricBadge,
   ProEvolCard,
@@ -9,6 +8,7 @@ import {
   StatusPill,
   formatSigned,
 } from './shared';
+import { THEME } from '../../../theme';
 
 function burdenRiskLabel(variant: VariantCandidate) {
   if (variant.mutationBurden >= 4 || variant.riskFlags.includes('mutation burden')) return 'elevated';
@@ -105,10 +105,10 @@ export default function SelectionDecisionCard({
             confidence {(campaign.selectionDecision.confidence * 100).toFixed(0)}%
           </StatusPill>
         </div>
-        <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: PROEVOL_THEME.value, fontWeight: 600, lineHeight: 1.45 }}>
+        <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: PROEVOL_THEME.value, fontWeight: 600, lineHeight: 1.45 }}>
           {campaign.selectionDecision.summary}
         </div>
-        <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: PROEVOL_THEME.muted, lineHeight: 1.65 }}>
+        <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: PROEVOL_THEME.muted, lineHeight: 1.65 }}>
           {campaign.selectionDecision.researchBrief}
         </div>
       </div>
@@ -125,7 +125,7 @@ export default function SelectionDecisionCard({
       >
         <div
           style={{
-            fontFamily: T.MONO,
+            fontFamily: THEME.MONO,
             fontSize: 'var(--nb-fs-xs)',
             color: PROEVOL_THEME.label,
             textTransform: 'uppercase',
@@ -140,15 +140,15 @@ export default function SelectionDecisionCard({
           </StatusPill>
           <StatusPill tone="neutral">round {focusedVariant.round}</StatusPill>
         </div>
-        <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: PROEVOL_THEME.value, fontWeight: 600 }}>
+        <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: PROEVOL_THEME.value, fontWeight: 600 }}>
           {focusedVariant.name}
         </div>
-        <div style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-sm)', color: PROEVOL_THEME.value, lineHeight: 1.5 }}>
+        <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-sm)', color: PROEVOL_THEME.value, lineHeight: 1.5 }}>
           {focusedVariant.mutationString}
         </div>
-        <div style={{ display: 'grid', gap: '3px', fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: PROEVOL_THEME.muted, lineHeight: 1.5 }}>
+        <div style={{ display: 'grid', gap: '3px', fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: PROEVOL_THEME.muted, lineHeight: 1.5 }}>
           <div>Parent: {focusedVariant.parentId ?? 'WT'} · {focusedVariant.status === 'selected' ? focusedVariant.selectionReason : focusedVariant.rejectionReason}</div>
-          <div style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)' }}>
+          <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)' }}>
             score {focusedVariant.score.composite.toFixed(1)} · act {focusedVariant.predictedActivity.toFixed(1)} · stab {focusedVariant.predictedStability.toFixed(1)} · expr {focusedVariant.predictedExpression.toFixed(1)} · spec {focusedVariant.predictedSpecificity.toFixed(1)} · conf {focusedVariant.confidence.toFixed(0)}%
           </div>
           <div style={{ fontSize: 'var(--nb-fs-xs)', color: PROEVOL_THEME.muted }}>{focusedVariant.rationale}</div>

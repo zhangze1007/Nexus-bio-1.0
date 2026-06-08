@@ -1,6 +1,5 @@
 import type { CSSProperties } from 'react';
-import { PATHD_THEME } from '../../workbench/workbenchTheme';
-
+import { THEME } from '../../../theme';
 export const PATHD_FLOATING_PANEL_SURFACE: CSSProperties = {
   background: 'linear-gradient(180deg, rgba(255,255,255,0.14) 0%, rgba(246,250,255,0.08) 12%, rgba(27,33,39,0.86) 100%)',
   backdropFilter: 'blur(28px) saturate(138%)',
@@ -14,6 +13,6 @@ export const PATHD_FLOATING_PANEL_SHEEN: CSSProperties = {
   position: 'absolute',
   inset: 0,
   borderRadius: 'inherit',
-  background: `${PATHD_THEME.panelSheen}, radial-gradient(circle at top left, rgba(255,255,255,0.14), transparent 40%), radial-gradient(circle at top right, rgba(255,255,255,0.08), transparent 32%)`,
+  background: `${THEME.PANEL_SHEEN}, radial-gradient(circle at top left, rgba(255,255,255,0.14), transparent 40%), radial-gradient(circle at top right, rgba(255,255,255,0.08), transparent 32%)`,
   pointerEvents: 'none',
 };

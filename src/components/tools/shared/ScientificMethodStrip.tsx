@@ -1,7 +1,5 @@
+import { THEME } from '../../../theme';
 'use client';
-
-import { PATHD_THEME } from '../../workbench/workbenchTheme';
-import { T } from '../../ide/tokens';
 
 interface ScientificMethodStripItem {
   title: string;
@@ -49,9 +47,9 @@ export default function ScientificMethodStrip({ label, items, dismissible = fals
             borderRadius: '50%',
             background: 'rgba(255,255,255,0.08)',
             border: '1px solid rgba(255,255,255,0.14)',
-            color: PATHD_THEME.label,
+            color: THEME.LABEL,
             cursor: 'pointer',
-            fontFamily: T.MONO,
+            fontFamily: THEME.MONO,
             fontSize: 'var(--nb-fs-sm)',
             lineHeight: 1,
             display: 'flex',
@@ -62,12 +60,12 @@ export default function ScientificMethodStrip({ label, items, dismissible = fals
           }}
           onMouseEnter={e => {
             (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.16)';
-            (e.currentTarget as HTMLElement).style.color = PATHD_THEME.value;
+            (e.currentTarget as HTMLElement).style.color = THEME.VALUE;
             (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.28)';
           }}
           onMouseLeave={e => {
             (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)';
-            (e.currentTarget as HTMLElement).style.color = PATHD_THEME.label;
+            (e.currentTarget as HTMLElement).style.color = THEME.LABEL;
             (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.14)';
           }}
         >
@@ -76,11 +74,11 @@ export default function ScientificMethodStrip({ label, items, dismissible = fals
       ) : null}
       <div
         style={{
-          fontFamily: T.MONO,
+          fontFamily: THEME.MONO,
           fontSize: 'var(--nb-fs-xs)',
           letterSpacing: '0.12em',
           textTransform: 'uppercase',
-          color: PATHD_THEME.label,
+          color: THEME.LABEL,
           paddingRight: dismissible ? '28px' : 0,
         }}
       >
@@ -105,12 +103,12 @@ export default function ScientificMethodStrip({ label, items, dismissible = fals
                   width: '22px',
                   height: '22px',
                   borderRadius: '999px',
-                  background: item.accent ?? PATHD_THEME.sky,
+                  background: item.accent ?? THEME.SKY,
                   color: '#111318',
                   display: 'inline-flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontFamily: T.MONO,
+                  fontFamily: THEME.MONO,
                   fontSize: 'var(--nb-fs-xs)',
                   fontWeight: 700,
                   flexShrink: 0,
@@ -120,10 +118,10 @@ export default function ScientificMethodStrip({ label, items, dismissible = fals
               </span>
               <span
                 style={{
-                  fontFamily: T.SANS,
+                  fontFamily: THEME.SANS,
                   fontSize: 'var(--nb-fs-sm)',
                   fontWeight: 700,
-                  color: PATHD_THEME.value,
+                  color: THEME.VALUE,
                 }}
               >
                 {item.title}
@@ -131,7 +129,7 @@ export default function ScientificMethodStrip({ label, items, dismissible = fals
             </div>
             <div
               style={{
-                fontFamily: T.SANS,
+                fontFamily: THEME.SANS,
                 fontSize: 'var(--nb-fs-sm)',
                 lineHeight: 1.55,
                 color: 'rgba(234,240,248,0.76)',
@@ -142,11 +140,11 @@ export default function ScientificMethodStrip({ label, items, dismissible = fals
             {item.note ? (
               <div
                 style={{
-                  fontFamily: T.MONO,
+                  fontFamily: THEME.MONO,
                   fontSize: 'var(--nb-fs-xs)',
                   letterSpacing: '0.05em',
                   textTransform: 'uppercase',
-                  color: PATHD_THEME.label,
+                  color: THEME.LABEL,
                 }}
               >
                 {item.note}

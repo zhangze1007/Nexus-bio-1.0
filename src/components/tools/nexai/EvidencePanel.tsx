@@ -16,8 +16,7 @@
 import { useState } from 'react';
 import type { CitationNode } from '../../../types';
 import { TOOL_TOKENS as T } from '../shared/ToolShell';
-import { PATHD_THEME } from '../../workbench/workbenchTheme';
-
+import { THEME } from '../../../theme';
 export interface EvidencePanelProps {
   citations: CitationNode[];
   onNodeClick?: (citation: CitationNode) => void;
@@ -34,16 +33,16 @@ export default function EvidencePanel({ citations, onNodeClick }: EvidencePanelP
           minHeight: '240px',
           padding: '24px',
           borderRadius: 'var(--nb-radius-lg)',
-          border: `1px solid ${PATHD_THEME.sepiaPanelBorder}`,
-          background: PATHD_THEME.panelSurface,
+          border: `1px solid ${THEME.BORDER}`,
+          background: THEME.PANEL_SURFACE,
           textAlign: 'center',
         }}
       >
         <div style={{ display: 'grid', gap: '6px' }}>
-          <div style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-sm)', color: PATHD_THEME.label }}>
+          <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-sm)', color: THEME.LABEL }}>
             No evidence map yet
           </div>
-          <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: PATHD_THEME.value, lineHeight: 1.6 }}>
+          <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: THEME.VALUE, lineHeight: 1.6 }}>
             Attach Research evidence or rerun with a literature-backed query to populate the citation surface.
           </div>
         </div>
@@ -61,10 +60,10 @@ export default function EvidencePanel({ citations, onNodeClick }: EvidencePanelP
       }}
     >
       <div style={{ display: 'grid', gap: '4px' }}>
-        <div style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.label, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+        <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
           Citation support map
         </div>
-        <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: PATHD_THEME.label, lineHeight: 1.55 }}>
+        <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: THEME.LABEL, lineHeight: 1.55 }}>
           {citations.length} source{citations.length === 1 ? '' : 's'} · positioned by year and relevance.
         </div>
       </div>
@@ -122,10 +121,10 @@ function CitationGraph({
         fill="rgba(255,255,255,0.025)"
         stroke="rgba(255,255,255,0.06)"
       />
-      <text x="40" y="22" fontFamily={T.SANS} fontSize="10" fill="rgba(205,214,236,0.6)" letterSpacing="0.12em">
+      <text x="40" y="22" fontFamily={THEME.SANS} fontSize="10" fill="rgba(205,214,236,0.6)" letterSpacing="0.12em">
         LITERATURE SUPPORT MAP
       </text>
-      <text x="40" y="36" fontFamily={T.SANS} fontSize="12" fill="rgba(247,249,255,0.92)">
+      <text x="40" y="36" fontFamily={THEME.SANS} fontSize="12" fill="rgba(247,249,255,0.92)">
         Publications positioned by year and relevance, with bridge citations highlighted
       </text>
 
@@ -138,7 +137,7 @@ function CitationGraph({
               x="46"
               y={y + 3}
               textAnchor="end"
-              fontFamily={T.MONO}
+              fontFamily={THEME.MONO}
               fontSize="10"
               fill="rgba(255,255,255,0.28)"
             >
@@ -158,7 +157,7 @@ function CitationGraph({
               x={x}
               y="350"
               textAnchor="middle"
-              fontFamily={T.MONO}
+              fontFamily={THEME.MONO}
               fontSize="10"
               fill="rgba(255,255,255,0.28)"
             >
@@ -232,7 +231,7 @@ function CitationGraph({
               x={n.x}
               y={n.y + 4}
               textAnchor="middle"
-              fontFamily={T.MONO}
+              fontFamily={THEME.MONO}
               fontSize="10"
               fill={isHov ? 'rgba(255,244,230,0.96)' : 'rgba(255,255,255,0.72)'}
             >
@@ -242,7 +241,7 @@ function CitationGraph({
               x={n.x}
               y={n.y + n.r + 16}
               textAnchor="middle"
-              fontFamily={T.SANS}
+              fontFamily={THEME.SANS}
               fontSize="10"
               fill="rgba(205,214,236,0.62)"
             >
@@ -251,7 +250,7 @@ function CitationGraph({
           </g>
         );
       })}
-      <text x={14} y={H - 12} fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.18)">
+      <text x={14} y={H - 12} fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.18)">
         Y-axis = citation relevance · X-axis = publication year
       </text>
     </svg>
