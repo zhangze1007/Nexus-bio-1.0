@@ -68,3 +68,4 @@ jobs:
         run: npx playwright test
         env:
           BASE_URL: http://localhost:3000
+          AUTH_SECRET: ci-e2e-placeholder-secret-for-testing-only

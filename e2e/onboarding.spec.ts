@@ -11,10 +11,6 @@ import { test, expect } from '@playwright/test';
 
 const STORAGE_KEY = 'nexus-bio-onboarding-done';
 
-// Override storageState so these tests get a fresh context without the
-// pre-seeded localStorage, allowing the onboarding overlay to appear.
-test.use({ storageState: { cookies: [], origins: [] } });
-
 test.describe('Onboarding overlay', () => {
   test('shows on first visit when localStorage is empty', async ({ page }) => {
     await page.goto('/');
