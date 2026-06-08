@@ -156,7 +156,7 @@ function normalizePathway(parsed: unknown): { nodes: PathwayNode[]; edges: Pathw
   const VALID_NODE_TYPES = ['metabolite','enzyme','gene','complex','cofactor','impurity','intermediate','unknown'];
   const VALID_COLOR_MAPPINGS = ['Green','Yellow','Orange','Red','Purple','Blue'];
 
-  const nodes: PathwayNode[] = validNodes.map((node: any, i: number) => {
+  const nodes: PathwayNode[] = validNodes.map((node: Partial<PathwayNode>, i: number) => {
     const n = node as Record<string, unknown>;
     const count = validNodes.length;
     const angle = (i / count) * Math.PI * 2;
@@ -213,11 +213,11 @@ function normalizePathway(parsed: unknown): { nodes: PathwayNode[]; edges: Pathw
 
   const edges: PathwayEdge[] = (!Array.isArray(p.edges) ? [] : p.edges)
     .filter(isValidEdge)
-    .map((e: any) => ({
+    .map((e: PathwayEdge) => ({
       start: sanitizeNodeId(String(e.start)),
       end: sanitizeNodeId(String(e.end)),
-      relationshipType: validEdgeTypes.includes(e.relationshipType) ? e.relationshipType : 'unknown',
-      direction: (['forward','reverse','bidirectional'].includes(e.direction) ? e.direction : 'forward') as 'forward' | 'reverse' | 'bidirectional',
+      relationshipType: e.relationshipType && validEdgeTypes.includes(e.relationshipType) ? e.relationshipType : 'unknown',
+      direction: (e.direction && ['forward','reverse','bidirectional'].includes(e.direction) ? e.direction : 'forward') as 'forward' | 'reverse' | 'bidirectional',
       evidence: e.evidence ? String(e.evidence) : undefined,
       confidenceScore: typeof e.confidenceScore === 'number'
         ? Math.min(1, Math.max(0, e.confidenceScore)) : undefined,
@@ -226,12 +226,12 @@ function normalizePathway(parsed: unknown): { nodes: PathwayNode[]; edges: Pathw
         ? e.predicted_delta_G_kJ_mol : undefined,
       spontaneity: typeof e.spontaneity === 'string' ? e.spontaneity : undefined,
       yield_prediction: typeof e.yield_prediction === 'string' ? e.yield_prediction : undefined,
-      thickness_mapping: (['Thick','Medium','Thin'].includes(e.thickness_mapping)
+      thickness_mapping: (e.thickness_mapping && ['Thick','Medium','Thin'].includes(e.thickness_mapping)
         ? e.thickness_mapping : undefined) as 'Thick' | 'Medium' | 'Thin' | undefined,
       audit_trail: typeof e.audit_trail === 'string' ? e.audit_trail : undefined,
     }))
     // Only filter edges where BOTH sanitized IDs exist — more permissive
-    .filter((e: any) => sanitizedIds.has(e.start) && sanitizedIds.has(e.end));
+    .filter((e: PathwayEdge) => sanitizedIds.has(e.start) && sanitizedIds.has(e.end));
 
   // Return even if no valid edges — nodes alone are still useful
   return { nodes, edges };

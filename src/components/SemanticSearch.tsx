@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { EuropePMCResultItem, SemanticScholarPaper, OpenAlexWork, COREWorkItem } from '../types/literature';
 import {
   AlertCircle,
   ChevronDown,
@@ -78,7 +79,7 @@ const SOURCE_DESCRIPTORS: Record<string, { kind: string; access: string }> = {
   'CORE': { kind: 'Repository aggregator', access: 'Open repository content' },
 };
 
-async function fetchJsonOrThrow(url: string) {
+async function fetchJsonOrThrow<T = unknown>(url: string): Promise<T> {
   const controller = new AbortController();
   const timeoutId = window.setTimeout(() => controller.abort(), SOURCE_TIMEOUT_MS);
   try {
@@ -86,7 +87,7 @@ async function fetchJsonOrThrow(url: string) {
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
     }
-    return await response.json();
+    return await response.json() as T;
   } finally {
     window.clearTimeout(timeoutId);
   }
@@ -315,14 +316,14 @@ async function fetchPubMedAbstractText(pmid: string): Promise<string> {
 }
 
 async function fetchPubMed(query: string): Promise<Article[]> {
-  const searchData = await fetchJsonOrThrow(`https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=${encodeURIComponent(query)}+AND+(synthetic+biology+OR+metabolic+engineering+OR+fermentation)&retmax=${SOURCE_RESULT_LIMIT}&sort=relevance&retmode=json`);
+  const searchData = await fetchJsonOrThrow<{ esearchresult?: { idlist?: string[] } }>(`https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=${encodeURIComponent(query)}+AND+(synthetic+biology+OR+metabolic+engineering+OR+fermentation)&retmax=${SOURCE_RESULT_LIMIT}&sort=relevance&retmode=json`);
   const ids: string[] = searchData.esearchresult?.idlist || [];
   if (!ids.length) return [];
 
-  const summaryData = await fetchJsonOrThrow(`https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id=${ids.join(',')}&retmode=json`);
+  const summaryData = await fetchJsonOrThrow<{ result?: { uids?: string[]; [uid: string]: unknown } }>(`https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id=${ids.join(',')}&retmode=json`);
 
   return Promise.all((summaryData.result?.uids || []).map(async (uid: string) => {
-    const item = summaryData.result[uid];
+    const item = summaryData.result?.[uid] as { title?: string; authors?: Array<{ name: string }>; source?: string; pubdate?: string; articleids?: Array<{ idtype: string; value: string }> } | undefined;
     let abstract = '';
     try {
       abstract = await fetchPubMedAbstractText(uid);
@@ -332,13 +333,13 @@ async function fetchPubMed(query: string): Promise<Article[]> {
 
     return {
       id: `pm-${uid}`,
-      title: item.title || '',
+      title: item?.title || '',
       abstract,
       pmid: uid,
-      authors: item.authors?.slice(0, 3).map((author: { name: string }) => author.name) || [],
-      journal: item.source || '',
-      year: item.pubdate?.split(' ')[0] || '',
-      doi: item.articleids?.find((article: { idtype: string; value: string }) => article.idtype === 'doi')?.value || '',
+      authors: item?.authors?.slice(0, 3).map((author) => author.name) || [],
+      journal: item?.source || '',
+      year: item?.pubdate?.split(' ')[0] || '',
+      doi: item?.articleids?.find((article) => article.idtype === 'doi')?.value || '',
       url: `https://pubmed.ncbi.nlm.nih.gov/${uid}/`,
       source: 'PubMed',
     };
@@ -346,14 +347,14 @@ async function fetchPubMed(query: string): Promise<Article[]> {
 }
 
 async function fetchEuropePMC(query: string): Promise<Article[]> {
-  const data = await fetchJsonOrThrow(`https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=${encodeURIComponent(query)}&format=json&pageSize=${SOURCE_RESULT_LIMIT}`);
-  return (data.resultList?.result || []).map((item: any) => ({
+  const data = await fetchJsonOrThrow<{ resultList?: { result: EuropePMCResultItem[] } }>(`https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=${encodeURIComponent(query)}&format=json&pageSize=${SOURCE_RESULT_LIMIT}`);
+  return (data.resultList?.result || []).map((item: EuropePMCResultItem) => ({
     id: `epmc-${item.id}`,
     title: item.title || '',
     abstract: item.abstractText || '',
     authors: item.authorString ? item.authorString.split(',').slice(0, 3) : [],
     journal: item.journalTitle || '',
-    year: item.pubYear || '',
+    year: item.pubYear?.toString() || '',
     doi: item.doi || '',
     url: item.doi ? `https://doi.org/${item.doi}` : `https://europepmc.org/article/${item.source}/${item.id}`,
     source: 'Europe PMC',
@@ -363,13 +364,12 @@ async function fetchEuropePMC(query: string): Promise<Article[]> {
 }
 
 async function fetchSemanticScholar(query: string): Promise<Article[]> {
-  const data = await fetchJsonOrThrow(`https://api.semanticscholar.org/graph/v1/paper/search?query=${encodeURIComponent(query)}&fields=title,abstract,authors,year,journal,externalIds,citationCount,isOpenAccess,venue&limit=${SOURCE_RESULT_LIMIT}`);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external API response
-  return (data.data || []).map((item: any) => ({
+  const data = await fetchJsonOrThrow<{ data: SemanticScholarPaper[] }>(`https://api.semanticscholar.org/graph/v1/paper/search?query=${encodeURIComponent(query)}&fields=title,abstract,authors,year,journal,externalIds,citationCount,isOpenAccess,venue&limit=${SOURCE_RESULT_LIMIT}`);
+  return (data.data || []).map((item: SemanticScholarPaper) => ({
     id: `ss-${item.paperId}`,
     title: item.title || '',
     abstract: item.abstract || '',
-    authors: item.authors?.slice(0, 3).map((author: any) => author.name) || [],
+    authors: item.authors?.slice(0, 3).map((author) => author.name) || [],
     journal: item.venue || item.journal?.name || '',
     year: item.year?.toString() || '',
     doi: item.externalIds?.DOI || '',
@@ -381,14 +381,14 @@ async function fetchSemanticScholar(query: string): Promise<Article[]> {
 }
 
 async function fetchOpenAlex(query: string): Promise<Article[]> {
-  const data = await fetchJsonOrThrow(`https://api.openalex.org/works?search=${encodeURIComponent(query)}&per-page=${SOURCE_RESULT_LIMIT}&mailto=nexusbio@research.com`);
-  return (data.results || []).map((item: any) => {
+  const data = await fetchJsonOrThrow<{ results: OpenAlexWork[] }>(`https://api.openalex.org/works?search=${encodeURIComponent(query)}&per-page=${SOURCE_RESULT_LIMIT}&mailto=nexusbio@research.com`);
+  return (data.results || []).map((item: OpenAlexWork) => {
     const doi = item.doi?.replace('https://doi.org/', '') || '';
     return {
       id: `oa-${item.id}`,
       title: item.title || '',
       abstract: decodeOpenAlexAbstract(item.abstract_inverted_index),
-      authors: item.authorships?.slice(0, 3).map((author: any) => author.author?.display_name || '') || [],
+      authors: item.authorships?.slice(0, 3).map((author) => author.author?.display_name || '') || [],
       journal: item.primary_location?.source?.display_name || '',
       year: item.publication_year?.toString() || '',
       doi,
@@ -401,14 +401,14 @@ async function fetchOpenAlex(query: string): Promise<Article[]> {
 }
 
 async function fetchBioRxiv(query: string): Promise<Article[]> {
-  const data = await fetchJsonOrThrow(`https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=${encodeURIComponent(query)}+AND+SRC:PPR&format=json&pageSize=${SOURCE_RESULT_LIMIT}&sort=FIRST_PDATE:desc`);
-  return (data.resultList?.result || []).map((item: any) => ({
+  const data = await fetchJsonOrThrow<{ resultList?: { result: EuropePMCResultItem[] } }>(`https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=${encodeURIComponent(query)}+AND+SRC:PPR&format=json&pageSize=${SOURCE_RESULT_LIMIT}&sort=FIRST_PDATE:desc`);
+  return (data.resultList?.result || []).map((item: EuropePMCResultItem) => ({
     id: `biorxiv-${item.id}`,
     title: item.title || '',
     abstract: item.abstractText || '',
     authors: item.authorString ? item.authorString.split(',').slice(0, 3) : [],
     journal: 'bioRxiv',
-    year: item.pubYear || '',
+    year: item.pubYear?.toString() || '',
     doi: item.doi || '',
     url: item.doi ? `https://doi.org/${item.doi}` : '',
     source: 'bioRxiv',
@@ -418,13 +418,13 @@ async function fetchBioRxiv(query: string): Promise<Article[]> {
 }
 
 async function fetchCORE(query: string): Promise<Article[]> {
-  const data = await fetchJsonOrThrow(`https://api.core.ac.uk/v3/search/works?q=${encodeURIComponent(query)}&limit=${SOURCE_RESULT_LIMIT}`);
-  return (data.results || []).map((item: any) => ({
+  const data = await fetchJsonOrThrow<{ results: COREWorkItem[] }>(`https://api.core.ac.uk/v3/search/works?q=${encodeURIComponent(query)}&limit=${SOURCE_RESULT_LIMIT}`);
+  return (data.results || []).map((item: COREWorkItem) => ({
     id: `core-${item.id}`,
     title: item.title || '',
     abstract: item.abstract || '',
-    authors: item.authors?.slice(0, 3).map((author: any) => author.name || '') || [],
-    journal: item.journals?.[0]?.title || '',
+    authors: item.authors?.slice(0, 3).map((author) => author.name || '') || [],
+    journal: item.journals?.[0] || '',
     year: item.yearPublished?.toString() || '',
     doi: item.doi || '',
     url: item.downloadUrl || '',
