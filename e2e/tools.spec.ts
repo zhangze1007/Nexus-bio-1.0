@@ -68,9 +68,12 @@ const TOOLS_BASIC: Array<{
 
 /** Wait for the tool page header to be fully rendered. */
 async function waitForToolHeader(page: import('@playwright/test').Page, moduleId: string) {
+  // Wait for main content area to be present (page layout rendered)
+  await expect(page.locator('.nb-ide-main')).toBeAttached({ timeout: 15000 });
+  // Then wait for the tool header with generous timeout for CI compilation
   await expect(
     page.locator('.nb-tool-shell__header', { hasText: moduleId })
-  ).toBeVisible({ timeout: 15000 });
+  ).toBeVisible({ timeout: 30000 });
 }
 
 test.describe('Tool page loading', () => {
