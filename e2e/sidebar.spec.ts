@@ -23,7 +23,8 @@ async function waitForPageReady(page: import('@playwright/test').Page) {
   // Wait for the main content to render (indicates page is hydrated)
   await page.waitForLoadState('domcontentloaded');
   // Wait for the sidebar to be in the DOM with correct state
-  const sidebar = page.locator('aside[role="navigation"][aria-label="Tool navigation"]');
+  // Use .first() because the app renders duplicate elements (desktop + mobile layouts)
+  const sidebar = page.locator('aside[role="navigation"][aria-label="Tool navigation"]').first();
   await expect(sidebar).toBeAttached({ timeout: 15000 });
   await expect(sidebar).toHaveAttribute('aria-expanded', 'true', { timeout: 15000 });
 }
@@ -33,7 +34,7 @@ test.describe('Sidebar visibility', () => {
     await page.goto('/tools/fbasim');
     await waitForPageReady(page);
 
-    const sidebar = page.locator('aside[role="navigation"][aria-label="Tool navigation"]');
+    const sidebar = page.locator('aside[role="navigation"][aria-label="Tool navigation"]').first();
     await expect(sidebar).toBeAttached();
     await expect(sidebar).toHaveAttribute('aria-expanded', 'true');
   });
@@ -42,14 +43,14 @@ test.describe('Sidebar visibility', () => {
     await page.goto('/tools/fbasim');
     await waitForPageReady(page);
 
-    const sidebar = page.locator('aside[role="navigation"]');
+    const sidebar = page.locator('aside[role="navigation"]').first();
     await expect(sidebar).toHaveAttribute('aria-expanded', 'true');
   });
 
   test('sidebar is not rendered on the tools directory page', async ({ page }) => {
     await page.goto('/tools');
 
-    const sidebar = page.locator('aside[role="navigation"][aria-label="Tool navigation"]');
+    const sidebar = page.locator('aside[role="navigation"][aria-label="Tool navigation"]').first();
     await expect(sidebar).not.toBeAttached();
   });
 });
@@ -61,7 +62,7 @@ test.describe('Sidebar navigation', () => {
     await page.goto('/tools/fbasim');
     await waitForPageReady(page);
 
-    const sidebar = page.locator('aside[role="navigation"]');
+    const sidebar = page.locator('aside[role="navigation"]').first();
 
     // Find and click the CETHX link in the sidebar
     const cethxLink = sidebar.locator('a', { hasText: 'CETHX' });
@@ -76,7 +77,7 @@ test.describe('Sidebar navigation', () => {
     await page.goto('/tools/pathd');
     await waitForPageReady(page);
 
-    const sidebar = page.locator('aside[role="navigation"]');
+    const sidebar = page.locator('aside[role="navigation"]').first();
 
     // Verify a selection of tool links are present
     const expectedTools = ['PATHD', 'FBASIM', 'CETHX', 'GENMIM', 'DYNCON'];
@@ -93,11 +94,11 @@ test.describe('Sidebar collapse/expand toggle', () => {
     await page.goto('/tools/fbasim');
     await waitForPageReady(page);
 
-    const sidebar = page.locator('aside[role="navigation"]');
+    const sidebar = page.locator('aside[role="navigation"]').first();
     await expect(sidebar).toHaveAttribute('aria-expanded', 'true');
 
     // The hamburger toggle button is in IDETopBar
-    const toggleButton = page.locator('button[aria-label="Toggle sidebar"]');
+    const toggleButton = page.locator('button[aria-label="Toggle sidebar"]').first();
     await expect(toggleButton).toBeAttached();
     await toggleButton.click();
 
@@ -109,8 +110,8 @@ test.describe('Sidebar collapse/expand toggle', () => {
     await page.goto('/tools/fbasim');
     await waitForPageReady(page);
 
-    const sidebar = page.locator('aside[role="navigation"]');
-    const toggleButton = page.locator('button[aria-label="Toggle sidebar"]');
+    const sidebar = page.locator('aside[role="navigation"]').first();
+    const toggleButton = page.locator('button[aria-label="Toggle sidebar"]').first();
 
     // Collapse
     await toggleButton.click();
@@ -128,7 +129,7 @@ test.describe('TopBar breadcrumb', () => {
     await waitForPageReady(page);
 
     // The topbar contains Home and Workbench (link to /tools) links
-    const topbar = page.locator('header.nb-ide-topbar');
+    const topbar = page.locator('header.nb-ide-topbar').first();
     await expect(topbar.locator('text=Home')).toBeAttached();
     await expect(topbar.locator('text=Workbench')).toBeAttached();
   });
@@ -138,7 +139,7 @@ test.describe('TopBar breadcrumb', () => {
     await waitForPageReady(page);
 
     // The breadcrumb should include the module short label
-    const topbar = page.locator('header.nb-ide-topbar');
+    const topbar = page.locator('header.nb-ide-topbar').first();
     await expect(topbar.locator('text=CETHX')).toBeAttached();
   });
 });
