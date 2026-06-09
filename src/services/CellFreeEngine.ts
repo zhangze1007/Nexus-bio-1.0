@@ -276,7 +276,7 @@ function computeDerivatives(
                  - params.energyDecayRate * gtp;                      // dGTP
   dv[eidx + 2] = -params.pepRegenerationRate * pep;                  // dPEP
   dv[eidx + 3] = -K_AA_CONSUME * totalAaFlux;                        // dAA
-  dv[eidx + 4] = -K_NTP_CONSUME * totalTxFlux - K_CONSUME_TX * totalTxFlux; // dNTP
+  dv[eidx + 4] = -K_CONSUME_TX * totalTxFlux; // dNTP (NTP consumed per mRNA synthesised)
 
   return dv;
 }
@@ -581,10 +581,10 @@ export function fitPlateReaderKinetics(data: PlateReaderDataPoint[]): KineticFit
       JtR1  += dKd * r;
     }
 
-    // Damped normal equations: (J^T J + λ diag) δ = J^T r
-    const a00 = JtJ00 + lambda * JtJ00;
+    // Damped normal equations: (J^T J + λ I) δ = J^T r  (Levenberg form)
+    const a00 = JtJ00 + lambda;
     const a01 = JtJ01;
-    const a11 = JtJ11 + lambda * JtJ11;
+    const a11 = JtJ11 + lambda;
     const det = a00 * a11 - a01 * a01;
     if (Math.abs(det) < 1e-30) break;
 
@@ -655,10 +655,10 @@ export function fitPlateReaderKinetics(data: PlateReaderDataPoint[]): KineticFit
         J00 += d0 * d0; J01 += d0 * d1; J11 += d1 * d1;
         Jr0 += d0 * r;  Jr1 += d1 * r;
       }
-      const det = (J00 + bLam * J00) * (J11 + bLam * J11) - J01 * J01;
+      const det = (J00 + bLam) * (J11 + bLam) - J01 * J01;
       if (Math.abs(det) < 1e-30) break;
-      const dv = ((J11 + bLam * J11) * Jr0 - J01 * Jr1) / det;
-      const dk = ((J00 + bLam * J00) * Jr1 - J01 * Jr0) / det;
+      const dv = ((J11 + bLam) * Jr0 - J01 * Jr1) / det;
+      const dk = ((J00 + bLam) * Jr1 - J01 * Jr0) / det;
       const nv = Math.max(1e-6, bVmax + dv);
       const nk = Math.max(1e-6, bKd + dk);
       let ssN = 0;

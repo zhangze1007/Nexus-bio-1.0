@@ -1,4 +1,5 @@
-/** Clamps a value between min and max (inclusive). */
+/** Clamps a value between min and max (inclusive). Returns min for NaN. */
 export function clamp(value: number, min: number, max: number): number {
+  if (Number.isNaN(value)) return min;
   return Math.min(max, Math.max(min, value));
 }

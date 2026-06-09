@@ -111,9 +111,9 @@ export function computeThermo(steps: ThermoStep[], tempC: number, pH: number) {
   const nadhYield = steps.reduce((a, s) => a + ((s as ThermoStep & { nadhYield?: number }).nadhYield ?? 0), 0);
   const totalDeltaG = cum;
   // Fraction of glucose combustion enthalpy (-2870 kJ/mol) captured as -ΔG along
-  // the modelled segment. Bounded to [0,1]; this is an order-of-magnitude
-  // illustration, not a true thermodynamic efficiency.
-  const efficiency = Math.max(0, Math.min(1, -totalDeltaG / 2870));
+  // the modelled segment. Bounded to [0,100] as a percentage; this is an
+  // order-of-magnitude illustration, not a true thermodynamic efficiency.
+  const efficiency = Math.max(0, Math.min(100, (-totalDeltaG / 2870) * 100));
 
   // Total Gibbs energy dissipated along the pathway (kJ per mol substrate).
   // The previous field "entropy_production = -ΔG / T" is dimensionally a single

@@ -383,10 +383,13 @@ function codonOptimize(proteinSeq: string): { dna: string; cai: number; gcConten
       dna += 'NNN';
       continue;
     }
+    // CAI uses relative adaptiveness w_i = freq_i / max_freq_for_this_AA
+    const maxFreq = Math.max(...codons.map(c => c.frequency));
     const chosen = codons.reduce((a, b) => a.frequency > b.frequency ? a : b);
     dna += chosen.codon;
-    if (chosen.frequency > 0) {
-      logCai += Math.log(chosen.frequency);
+    const w = maxFreq > 0 ? chosen.frequency / maxFreq : 0;
+    if (w > 0) {
+      logCai += Math.log(w);
     }
     if (chosen.frequency < RARE_CODON_THRESHOLD) rareCodons++;
     for (const nt of chosen.codon) {
@@ -542,9 +545,12 @@ export function predictBindingAffinity(enzyme: EnzymeStructure): BindingAffinity
   const dE_elec = elecNorm;
 
   // ΔG_polar_solv: Born-like desolvation penalty — opposes electrostatic gain
-  // Factor (1/ε_in - 1/ε_out) ≈ 0.2375
-  const bornFactor = (1 / eps_in) - (1 / eps_out);
-  const dG_polar = -dE_elec * bornFactor * eps_in; // partially cancels ΔE_elec
+  // Standard model: ΔG_desolv = ΔE_elec * (1 - ε_in/ε_out)
+  // With ε_in=4 (typical protein interior), ε_out=80 (water): factor = 0.95
+  // This means ~95% of bare electrostatic attraction is lost to desolvation,
+  // which is physically correct for buried active sites.
+  const bornFactor = 1 - eps_in / eps_out;
+  const dG_polar = dE_elec * bornFactor; // partially cancels ΔE_elec
 
   // ΔG_nonpolar: SASA-proportional — higher distance/orientation score → more
   // buried surface → more negative (favorable) nonpolar term
@@ -559,7 +565,7 @@ export function predictBindingAffinity(enzyme: EnzymeStructure): BindingAffinity
   // ΔG_bind → Kd = exp(ΔG / RT)
   const predictedKd = round3(Math.exp(bindingEnergy / RT) * 1000); // μM
 
-  // Overall composite score — weighted geometric mean of component scores
+  // Overall composite score — weighted arithmetic mean of component scores
   const overallScore = round3(clamp(
     0.35 * distanceScore + 0.25 * orientationScore + 0.20 * vdwScore + 0.20 * electrostaticScore,
     0, 1,

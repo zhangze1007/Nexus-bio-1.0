@@ -5,7 +5,12 @@
 
 export const R = 8.314e-3; // kJ/mol·K
 
-/** Calculate actual ΔG from standard ΔG°, temperature, and concentrations. */
+/** Calculate actual ΔG from standard ΔG°, temperature, and concentrations.
+ *  @param products - array of product concentrations (assumes unit stoichiometry)
+ *  @param reactants - array of reactant concentrations (assumes unit stoichiometry)
+ *  NOTE: For reactions with non-unit stoichiometry (e.g., 2 NAD+ → 2 NADH),
+ *  pass each species' concentration raised to its stoichiometric coefficient.
+ */
 export function calcDeltaG(dG0: number, T: number, products: number[], reactants: number[]): number {
   const Q = products.reduce((a, b) => a * b, 1) / reactants.reduce((a, b) => a * b, 1);
   const Q_SAFE = Math.max(1e-15, Math.min(1e15, Q));
@@ -14,6 +19,7 @@ export function calcDeltaG(dG0: number, T: number, products: number[], reactants
 
 /** Calculate equilibrium constant from ΔG°. */
 export function calcKeq(dG0: number, T: number): number {
+  if (T <= 0) return dG0 < 0 ? Infinity : dG0 > 0 ? 0 : 1;
   return Math.exp(-dG0 / (R * T));
 }
 

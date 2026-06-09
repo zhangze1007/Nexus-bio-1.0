@@ -32,6 +32,7 @@ export const DEFAULT_HILL: HillParams = {
 export interface BioreactorParams {
   muMax: number;    // max growth rate h⁻¹
   Ks: number;       // substrate affinity constant g/L
+  Ko: number;       // oxygen half-saturation constant mg/L (default 0.2 for E. coli)
   Yxs: number;      // biomass yield g/g
   Yps: number;      // product yield g/g
   kLa: number;      // oxygen transfer coefficient h⁻¹
@@ -50,7 +51,7 @@ export interface BioreactorParams {
 }
 
 export const DEFAULT_PARAMS: BioreactorParams = {
-  muMax: 0.4, Ks: 0.15, Yxs: 0.45, Yps: 0.38,
+  muMax: 0.4, Ks: 0.15, Ko: 0.2, Yxs: 0.45, Yps: 0.38,
   kLa: 250, OstarSat: 8, feedConc: 400, feedRate: 0.02,
   kFPP: 12.0,      // FPP synthesis: 12 μM/h per g/L biomass
   kADS: 0.08,      // ADS catalysis rate
@@ -75,7 +76,7 @@ function monodRate(
   fpp: number, product: number,
   adsExpr: number, p: BioreactorParams,
 ): { mu: number; toxicity: number; burden: number } {
-  const muO = O > 0 ? O / (0.2 + O) : 0;
+  const muO = O > 0 ? O / (p.Ko + O) : 0;
   const muBase = p.muMax * (S / (p.Ks + S)) * muO;
 
   // Toxicity penalty: FPP and product inhibit growth
@@ -118,7 +119,8 @@ function derivatives(
   const adsTarget = hillFeedback(s.FPP, hill);
   const dADS = (adsTarget - s.ADS) * PROTEIN_TURNOVER_RATE;
   // Product: formed by ADS enzyme acting on FPP
-  const dP = p.kADS * s.ADS * s.FPP * s.X;
+  // Note: ADS is already a concentration (a.u./L), so no additional X factor
+  const dP = p.kADS * s.ADS * s.FPP;
   // Dissolved O₂
   const dO = p.kLa * airflowScale * (p.OstarSat - s.O) - mu * s.X * O2_CONSUMPTION_COEFF;
 

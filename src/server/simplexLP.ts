@@ -3,15 +3,16 @@
  *
  * Solves:  max  c^T x
  *          s.t. A x = b   (stoichiometric balance — b = 0 for FBA)
- *               0 ≤ x ≤ ub
+ *               lb ≤ x ≤ ub
  *
  * Algorithm:
  *   Variables:  y = x - lb  (shifted to lb = 0)
  *               s_j = u_j - y_j  (upper-bound slacks)
  *               a_k              (artificials for A y = bAdj rows)
  *
- *   Phase 1 (b = 0 case): pivot each artificial out greedily — no ratio
- *   test needed because all artificials start at value 0.
+ *   Phase 1: minimise sum of artificials using a full simplex sub-problem.
+ *   When bAdj = 0 (standard FBA), a greedy pivot suffices since all
+ *   artificials start at value 0.
  *
  *   Phase 2: standard simplex minimising -c^T y; artificials are excluded
  *   from entering.
@@ -84,27 +85,85 @@ export function solveLPSimplex({ c, A, b, ub, lb: lbRaw }: LPProblem): LPSolutio
   for (let i = 0; i < m; i++) basis[i] = 2 * n + i;
   for (let j = 0; j < n; j++) basis[m + j] = n + j;
 
-  // ── Phase 1: drive degenerate artificials out (valid because bAdj = 0) ──
-  // Since bAdj[i] = 0 all artificials are at value 0. We just find a non-
-  // artificial column with non-zero coefficient in row i and pivot it in.
-  // Stoichiometric row RHS stays 0 throughout (ratio of 0 / anything = 0),
-  // so no feasibility can be lost.
-  for (let i = 0; i < m; i++) {
-    if (basis[i] < 2 * n) continue; // not an artificial
-    let pivCol = -1;
-    for (let j = 0; j < 2 * n; j++) {
-      if (Math.abs(T[i][j]) > EPS) { pivCol = j; break; }
-    }
-    if (pivCol === -1) continue; // redundant row — leave artificial at 0
+  // ── Phase 1: minimise sum of artificials ──
+  // When bAdj = 0 (standard FBA), a greedy pivot suffices since all
+  // artificials start at value 0. For non-zero bAdj, we run a full
+  // Phase 1 simplex on the artificial objective.
+  const allBAdjZero = bAdj.every(v => Math.abs(v) < EPS);
 
-    basis[i] = pivCol;
-    const piv = T[i][pivCol];
-    for (let k = 0; k <= RHS; k++) T[i][k] /= piv;
-    for (let ii = 0; ii < nR; ii++) {
-      if (ii === i) continue;
-      const f = T[ii][pivCol];
-      if (Math.abs(f) < EPS) continue;
-      for (let k = 0; k <= RHS; k++) T[ii][k] -= f * T[i][k];
+  if (allBAdjZero) {
+    // Fast path: greedy pivot (artificials are degenerate at 0)
+    for (let i = 0; i < m; i++) {
+      if (basis[i] < 2 * n) continue; // not an artificial
+      let pivCol = -1;
+      for (let j = 0; j < 2 * n; j++) {
+        if (Math.abs(T[i][j]) > EPS) { pivCol = j; break; }
+      }
+      if (pivCol === -1) continue; // redundant row — leave artificial at 0
+
+      basis[i] = pivCol;
+      const piv = T[i][pivCol];
+      for (let k = 0; k <= RHS; k++) T[i][k] /= piv;
+      for (let ii = 0; ii < nR; ii++) {
+        if (ii === i) continue;
+        const f = T[ii][pivCol];
+        if (Math.abs(f) < EPS) continue;
+        for (let k = 0; k <= RHS; k++) T[ii][k] -= f * T[i][k];
+      }
+    }
+  } else {
+    // Full Phase 1: minimise sum of artificials
+    // Phase 1 objective: z₁ = Σ a_k = Σ bAdj[i] - Σ (Σ A[i][j]) * y[j]
+    // The reduced cost for y[j] is: -Σ A[i][j] for rows where artificial is basic
+    // The RHS is: Σ bAdj[i] for rows where artificial is basic
+    const phase1Obj = new Float64Array(nV + 1);
+    for (let i = 0; i < m; i++) {
+      if (basis[i] >= 2 * n) {
+        // Artificial is basic in row i — add this row's contribution
+        // Note: we negate because we want to minimize (the tableau framework maximizes)
+        for (let j = 0; j < 2 * n; j++) {
+          phase1Obj[j] -= T[i][j]; // negative of coefficient = reduced cost for minimization
+        }
+        phase1Obj[RHS] += T[i][RHS]; // sum of artificial values
+      }
+    }
+
+    // Phase 1 simplex iterations
+    for (let iter = 0; iter < MAX_ITER; iter++) {
+      // Entering: most negative reduced cost (only non-artificial columns)
+      let enterCol = -1;
+      let minRC = -EPS;
+      for (let j = 0; j < 2 * n; j++) {
+        if (phase1Obj[j] < minRC) { minRC = phase1Obj[j]; enterCol = j; }
+      }
+      if (enterCol === -1) break; // Phase 1 optimal
+
+      // Minimum ratio test
+      let leaveRow = -1;
+      let minRatio = Infinity;
+      for (let i = 0; i < nR; i++) {
+        const aij = T[i][enterCol];
+        if (aij > EPS) {
+          const ratio = T[i][RHS] / aij;
+          if (ratio < minRatio - EPS) { minRatio = ratio; leaveRow = i; }
+        }
+      }
+      if (leaveRow === -1) break; // unbounded in Phase 1
+
+      // Pivot
+      basis[leaveRow] = enterCol;
+      const piv = T[leaveRow][enterCol];
+      for (let k = 0; k <= RHS; k++) T[leaveRow][k] /= piv;
+      for (let i = 0; i < nR; i++) {
+        if (i === leaveRow) continue;
+        const f = T[i][enterCol];
+        if (Math.abs(f) < EPS) continue;
+        for (let k = 0; k <= RHS; k++) T[i][k] -= f * T[leaveRow][k];
+      }
+      const fo = phase1Obj[enterCol];
+      if (Math.abs(fo) > EPS) {
+        for (let k = 0; k <= RHS; k++) phase1Obj[k] -= fo * T[leaveRow][k];
+      }
     }
   }
 
@@ -163,9 +222,19 @@ export function solveLPSimplex({ c, A, b, ub, lb: lbRaw }: LPProblem): LPSolutio
 
   // ── Extract solution ─────────────────────────────────────────────────────
   const y = new Float64Array(n);
+  // Basic original variables: read from RHS
   for (let i = 0; i < nR; i++) {
     const bv = basis[i];
     if (bv < n) y[bv] = Math.max(0, T[i][RHS]);
+  }
+  // Non-basic original variables: check if upper-bound slack is basic
+  // If s_j (column n+j) is basic in row i, then y[j] = u[j] - T[i][RHS]
+  for (let i = 0; i < nR; i++) {
+    const bv = basis[i];
+    if (bv >= n && bv < 2 * n) {
+      const j = bv - n; // variable index
+      y[j] = Math.max(0, u[j] - Math.max(0, T[i][RHS]));
+    }
   }
 
   // Feasibility: any artificial remaining as basic with non-zero value?

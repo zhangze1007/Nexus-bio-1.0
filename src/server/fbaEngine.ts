@@ -106,6 +106,7 @@ const ECOLI_NETWORK: NetworkSpec = {
         ENO: round(vars.GAPD ?? 0),
         PYK: round(vars.PYK ?? 0),
         PDH: round(vars.PDH ?? 0),
+        O2tx: round(vars.O2tx ?? 0),
         BIOMASS: round(vars.BIOMASS ?? 0),
         PRODUCT: round(vars.PRODUCT ?? 0),
       },

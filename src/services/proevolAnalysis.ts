@@ -376,7 +376,11 @@ export function variantEnrichmentTable(artifact: ProEvolArtifact): VariantEnrich
           wildTypeLastFrequency > 0
             ? safeLog2(lastFrequency / wildTypeLastFrequency)
             : safeLog2(lastFrequency),
-        log2EnrichmentAcrossRounds: safeLog2(lastFrequency / Math.max(firstFrequency, 1e-9)),
+        // When firstFrequency is 0 (variant absent in round 0), enrichment is
+        // undefined (∞). We cap at 20 to avoid misleading extreme values.
+        log2EnrichmentAcrossRounds: firstFrequency > 0
+          ? safeLog2(lastFrequency / firstFrequency)
+          : lastFrequency > 0 ? 20 : 0,
         meanSelectionCoefficient: mean(selectionCoefficients),
         finalFrequency: lastFrequency,
         finalFrequencyCi: {
