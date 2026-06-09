@@ -27,5 +27,8 @@
       "Bash(python3*)"
     ],
     "deny": []
+  },
+  "enabledPlugins": {
+    "frontend-design@claude-plugins-official": true
   }
 }
