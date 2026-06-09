@@ -75,7 +75,7 @@ async function waitForToolHeader(
   usesToolShell = true,
 ) {
   // Wait for main content area to be present (page layout rendered)
-  await expect(page.locator('.nb-ide-main')).toBeAttached({ timeout: 15000 });
+  await expect(page.locator('.nb-ide-main').first()).toBeAttached({ timeout: 15000 });
   if (usesToolShell) {
     // Pages using ToolShell have a header with the moduleId badge
     await expect(
@@ -99,7 +99,7 @@ test.describe('Tool page loading', () => {
         await expect(page).toHaveURL(/\/tools\/pathd/, { timeout: 15000 });
         // PathDPage renders MetabolicEngPage which uses its own custom layout
         // (no ToolShell header) — verify the IDE main area is present instead
-        await expect(page.locator('.nb-ide-main')).toBeAttached({ timeout: 15000 });
+        await expect(page.locator('.nb-ide-main').first()).toBeAttached({ timeout: 15000 });
         return;
       }
 

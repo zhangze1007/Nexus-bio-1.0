@@ -10,13 +10,13 @@ import { test, expect } from '@playwright/test';
 test.describe('Homepage search bar', () => {
   test('search input is visible on the homepage', async ({ page }) => {
     await page.goto('/');
-    const input = page.locator('input[aria-label="Search research database"]');
+    const input = page.locator('input[aria-label="Search research database"]').first();
     await expect(input).toBeVisible();
   });
 
   test('search input accepts typed text', async ({ page }) => {
     await page.goto('/');
-    const input = page.locator('input[aria-label="Search research database"]');
+    const input = page.locator('input[aria-label="Search research database"]').first();
     await input.fill('artemisinin biosynthesis');
     await expect(input).toHaveValue('artemisinin biosynthesis');
   });
@@ -25,7 +25,7 @@ test.describe('Homepage search bar', () => {
     page,
   }) => {
     await page.goto('/');
-    const input = page.locator('input[aria-label="Search research database"]');
+    const input = page.locator('input[aria-label="Search research database"]').first();
     await expect(input).toBeVisible({ timeout: 10000 });
     // Use type instead of fill to properly trigger React's onChange handler
     await input.click();
@@ -45,13 +45,13 @@ test.describe('Homepage search bar', () => {
     page,
   }) => {
     await page.goto('/');
-    const input = page.locator('input[aria-label="Search research database"]');
+    const input = page.locator('input[aria-label="Search research database"]').first();
     await expect(input).toHaveAttribute('aria-label', 'Search research database');
   });
 
   test('search input has aria-autocomplete attribute', async ({ page }) => {
     await page.goto('/');
-    const input = page.locator('input[aria-label="Search research database"]');
+    const input = page.locator('input[aria-label="Search research database"]').first();
     await expect(input).toHaveAttribute('aria-autocomplete', 'list');
   });
 });
