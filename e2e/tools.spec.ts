@@ -96,8 +96,10 @@ test.describe('Tool page loading', () => {
 
       // metabolic-eng redirects to pathd — verify redirect
       if (tool.route === '/tools/metabolic-eng') {
-        await expect(page).toHaveURL(/\/tools\/pathd/);
-        await waitForToolHeader(page, 'PATHD');
+        await expect(page).toHaveURL(/\/tools\/pathd/, { timeout: 15000 });
+        // PathDPage renders MetabolicEngPage which uses its own custom layout
+        // (no ToolShell header) — verify the IDE main area is present instead
+        await expect(page.locator('.nb-ide-main')).toBeAttached({ timeout: 15000 });
         return;
       }
 

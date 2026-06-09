@@ -21,6 +21,9 @@ export default defineConfig({
     baseURL: process.env.BASE_URL ?? 'http://localhost:3000',
     trace: 'on-first-retry',
     storageState: './e2e/.auth/storage-state.json',
+    launchOptions: {
+      args: ['--disable-gpu', '--no-sandbox', '--disable-dev-shm-usage'],
+    },
   },
   webServer: {
     command: useProdServer ? 'npx next start -p 3000' : 'npm run dev',
