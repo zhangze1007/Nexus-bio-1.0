@@ -23,8 +23,9 @@ const PART_COLORS: Record<string, string> = {
 };
 
 function viridisColor(t: number): string {
+  // Canonical matplotlib viridis palette (5 stops)
   const stops: [number, number, number][] = [
-    [68, 1, 84], [49, 104, 142], [53, 183, 121], [144, 215, 67], [253, 231, 37],
+    [68, 1, 84], [59, 82, 139], [33, 145, 140], [94, 201, 98], [253, 231, 37],
   ];
   const scaled = Math.max(0, Math.min(1, t)) * 4;
   const lo = Math.floor(scaled), hi = Math.min(4, lo + 1), f = scaled - lo;
@@ -319,9 +320,13 @@ export default function GECAIRPage() {
   const outB = hillInhibition(inputB);
   const finalOutput = resolveGateOutput(outA, outB, gateType);
 
+  // Test both positive and negative perturbations for worst-case sensitivity
+  const delta = 0.05;
   const noiseScore = Math.max(
-    Math.abs(resolveGateOutput(hillInhibition(Math.min(1, inputA + 0.05)), outB, gateType) - finalOutput),
-    Math.abs(resolveGateOutput(outA, hillInhibition(Math.min(1, inputB + 0.05)), gateType) - finalOutput),
+    Math.abs(resolveGateOutput(hillInhibition(Math.max(0, Math.min(1, inputA + delta))), outB, gateType) - finalOutput),
+    Math.abs(resolveGateOutput(hillInhibition(Math.max(0, Math.min(1, inputA - delta))), outB, gateType) - finalOutput),
+    Math.abs(resolveGateOutput(outA, hillInhibition(Math.max(0, Math.min(1, inputB + delta))), gateType) - finalOutput),
+    Math.abs(resolveGateOutput(outA, hillInhibition(Math.max(0, Math.min(1, inputB - delta))), gateType) - finalOutput),
   );
 
   const exportData = useMemo(() => ({

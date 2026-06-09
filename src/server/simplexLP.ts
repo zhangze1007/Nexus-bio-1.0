@@ -181,24 +181,49 @@ export function solveLPSimplex({ c, A, b, ub, lb: lbRaw }: LPProblem): LPSolutio
   }
 
   let iterCount = 0;
+  let blandThreshold = Math.max(100, 2 * n); // Switch to Bland's rule after this many iterations
   for (let iter = 0; iter < MAX_ITER; iter++) {
     iterCount = iter + 1;
-    // Entering variable: most negative reduced cost (exclude artificials)
+
+    // Entering variable selection
     let enterCol = -1;
-    let minRC = -EPS;
-    for (let j = 0; j < 2 * n; j++) {
-      if (obj[j] < minRC) { minRC = obj[j]; enterCol = j; }
+    if (iter < blandThreshold) {
+      // Dantzig's rule: most negative reduced cost (faster convergence)
+      let minRC = -EPS;
+      for (let j = 0; j < 2 * n; j++) {
+        if (obj[j] < minRC) { minRC = obj[j]; enterCol = j; }
+      }
+    } else {
+      // Bland's rule: first negative reduced cost (prevents cycling)
+      for (let j = 0; j < 2 * n; j++) {
+        if (obj[j] < -EPS) { enterCol = j; break; }
+      }
     }
     if (enterCol === -1) break; // optimal
 
-    // Minimum-ratio test
+    // Minimum-ratio test (use Bland's rule for leaving variable too when cycling)
     let leaveRow = -1;
     let minRatio = Infinity;
-    for (let i = 0; i < nR; i++) {
-      const aij = T[i][enterCol];
-      if (aij > EPS) {
-        const ratio = T[i][RHS] / aij;
-        if (ratio < minRatio - EPS) { minRatio = ratio; leaveRow = i; }
+    if (iter < blandThreshold) {
+      // Standard: smallest ratio
+      for (let i = 0; i < nR; i++) {
+        const aij = T[i][enterCol];
+        if (aij > EPS) {
+          const ratio = T[i][RHS] / aij;
+          if (ratio < minRatio - EPS) { minRatio = ratio; leaveRow = i; }
+        }
+      }
+    } else {
+      // Bland's rule: first row with smallest ratio (breaks ties by index)
+      for (let i = 0; i < nR; i++) {
+        const aij = T[i][enterCol];
+        if (aij > EPS) {
+          const ratio = T[i][RHS] / aij;
+          if (ratio < minRatio - EPS) {
+            minRatio = ratio;
+            leaveRow = i;
+          }
+        }
       }
     }
     if (leaveRow === -1) break; // unbounded (shouldn't happen with finite ub)

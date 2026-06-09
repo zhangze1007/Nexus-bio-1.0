@@ -1,6 +1,13 @@
 /**
  * Thermodynamics calculations.
  * Extracted from ThermodynamicsPanel for testability and reuse.
+ *
+ * @scientific_provenance
+ * VALIDITY_TIER: real (calcDeltaG, calcKeq) | demo (calcMassBalance)
+ *
+ * References:
+ *   - Alberty (2003) Thermodynamics of Biochemical Reactions
+ *   - eQuilibrator 3 (Beber et al. 2022, Nucleic Acids Research)
  */
 
 export const R = 8.314e-3; // kJ/mol·K
@@ -24,11 +31,27 @@ export function calcKeq(dG0: number, T: number): number {
 }
 
 /**
- * Qualitative illustration of substrate→product conversion driven by ΔG.
- * NOT calibrated to experimental data — rate constants are ad-hoc.
- * For quantitative predictions, use Eyring equation with measured ΔG‡.
+ * DEMO ONLY: Qualitative illustration of substrate→product conversion driven by ΔG.
+ *
+ * @scientific_provenance
+ * VALIDITY_TIER: demo
+ * NOT_IMPLEMENTED:
+ *   - Eyring equation rate constants (k = kT/h * exp(-ΔG‡/RT))
+ *   - Michaelis-Menten parameters from BRENDA
+ *   - Temperature-dependent activation energy
+ *
+ * KNOWN_LIMITATIONS:
+ *   - Rate constants are ad-hoc (drivingForce = |ΔG| * 0.01)
+ *   - Km hardcoded to 0.5 (no physical basis)
+ *   - NOT calibrated to experimental data
+ *
+ * BLOCKING_ASSUMPTIONS:
+ *   - thermodynamics.demo_mass_balance (severity: blocking)
+ *
+ * For quantitative predictions, use Eyring equation with measured ΔG‡
+ * or Michaelis-Menten parameters from BRENDA database.
  */
-export function calcMassBalance(
+export function calcMassBalance_DEMO(
   S0: number, dG: number, Keq: number, steps: number
 ): { time: number[]; S: number[]; P: number[] } {
   const time = [0];
@@ -50,3 +73,6 @@ export function calcMassBalance(
 
   return { time, S, P };
 }
+
+/** @deprecated Use calcMassBalance_DEMO instead */
+export const calcMassBalance = calcMassBalance_DEMO;
