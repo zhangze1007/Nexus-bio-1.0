@@ -17,6 +17,14 @@ import type { ToolTab } from './shared/ToolTabBar';
 import { THEME, TOOL_RESULT_PALETTE } from '../../theme';
 import { SVGChartContainer } from '../charts/primitives';
 
+/**
+ * IGV-style linear genome map with horizontal arrow gene bodies.
+ *
+ * Genes are rendered as directional arrows on a linear chromosome:
+ * - Forward strand (+): arrows pointing right →
+ * - Reverse strand (-): arrows pointing left ←
+ * - Color-coded by status: essential (coral), below threshold (apricot), candidate (mint)
+ */
 function GenomeMap({
   targets,
   selected,
@@ -26,155 +34,159 @@ function GenomeMap({
   selected: CRISPRiTarget[];
   efficiencyThreshold: number;
 }) {
-  const W = 560, H = 560, cx = 280, cy = 280;
-  const R_OUT = 240, R_IN = 200, R_EFF = 195;
-  const GENOME_KB = 4641, GENE_KB = 80;
-  const GAP = 0.018; // radians gap between gene arcs
+  const W = 700, H = 280;
+  const PAD = { top: 50, right: 30, bottom: 40, left: 50 };
+  const innerW = W - PAD.left - PAD.right;
+  const innerH = H - PAD.top - PAD.bottom;
+
+  const GENOME_KB = 4641;
+  const GENE_KB = 80;
 
   const selectedIds = new Set(selected.map(t => t.gene));
   const growthImpact = selected.reduce((a, t) => a + (t.growth_impact ?? 0), 0);
   const viability = Math.max(0, Math.round((1 + growthImpact) * 100));
 
-  function posToRad(kb: number) {
-    return (kb / GENOME_KB) * 2 * Math.PI - Math.PI / 2;
-  }
-
-  function mkArc(a1: number, a2: number, rOuter: number, rInner: number): string {
-    if (a2 - a1 < 0.002) return '';
-    const la = a2 - a1 > Math.PI ? 1 : 0;
-    const x1o = cx + rOuter * Math.cos(a1), y1o = cy + rOuter * Math.sin(a1);
-    const x2o = cx + rOuter * Math.cos(a2), y2o = cy + rOuter * Math.sin(a2);
-    const x2i = cx + rInner * Math.cos(a2), y2i = cy + rInner * Math.sin(a2);
-    const x1i = cx + rInner * Math.cos(a1), y1i = cy + rInner * Math.sin(a1);
-    return `M ${x1o.toFixed(1)} ${y1o.toFixed(1)} A ${rOuter} ${rOuter} 0 ${la} 1 ${x2o.toFixed(1)} ${y2o.toFixed(1)} L ${x2i.toFixed(1)} ${y2i.toFixed(1)} A ${rInner} ${rInner} 0 ${la} 0 ${x1i.toFixed(1)} ${y1i.toFixed(1)} Z`;
-  }
+  // Scale: kb → x position
+  const xScale = (kb: number) => PAD.left + (kb / GENOME_KB) * innerW;
 
   function geneColor(t: CRISPRiTarget): string {
-    if (selectedIds.has(t.gene)) return 'rgba(175,195,214,0.22)';
+    if (selectedIds.has(t.gene)) return 'rgba(175,195,214,0.6)';
     if (t.essential) return THEME.CORAL;
     if (t.knockdown_efficiency < efficiencyThreshold) return THEME.APRICOT;
     return THEME.MINT;
+  }
+
+  // Gene arrow path (IGV style)
+  // CRISPRiTarget doesn't have strand info, so we alternate based on position
+  function geneArrowPath(t: CRISPRiTarget, y: number, h: number, index: number): string {
+    const x1 = xScale(t.position);
+    const x2 = xScale(t.position + GENE_KB);
+    const w = x2 - x1;
+    const arrowW = Math.min(8, w * 0.15); // Arrow head width
+    const isForward = index % 2 === 0; // Alternate strand direction
+
+    if (isForward) {
+      // Forward strand: →
+      return `M ${x1} ${y} L ${x2 - arrowW} ${y} L ${x2} ${y + h / 2} L ${x2 - arrowW} ${y + h} L ${x1} ${y + h} Z`;
+    } else {
+      // Reverse strand: ←
+      return `M ${x2} ${y} L ${x1 + arrowW} ${y} L ${x1} ${y + h / 2} L ${x1 + arrowW} ${y + h} L ${x2} ${y + h} Z`;
+    }
   }
 
   const LEGEND = [
     { color: THEME.CORAL, label: 'Essential' },
     { color: THEME.APRICOT, label: 'Below threshold' },
     { color: THEME.MINT, label: 'Candidate' },
-    { color: 'rgba(175,195,214,0.3)', label: 'Suppressed' },
+    { color: 'rgba(175,195,214,0.6)', label: 'Suppressed' },
   ];
 
   return (
-    <SVGChartContainer W={W} H={H} ariaLabel="Circular E. coli genome map" rx={18}>
+    <SVGChartContainer W={W} H={H} ariaLabel="IGV-style E. coli genome map" rx={14}>
 
       {/* Title */}
-      <text x="22" y="26" fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.45)" letterSpacing="0.08em">
-        E. COLI K-12 · 4.64 Mb
+      <text x={PAD.left} y={22} fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.45)" letterSpacing="0.08em">
+        E. COLI K-12 · 4.64 Mb · IGV STYLE
       </text>
-      <text x="22" y="42" fontFamily={THEME.SANS} fontSize="12" fill="rgba(255,255,255,0.6)">
-        CRISPRi target landscape
+      <text x={PAD.left} y={38} fontFamily={THEME.SANS} fontSize="11" fill="rgba(255,255,255,0.55)">
+        CRISPRi target landscape — horizontal arrow gene bodies
       </text>
 
-      {/* Track backgrounds */}
-      <circle cx={cx} cy={cy} r={(R_OUT + R_IN) / 2} fill="none"
-        stroke="rgba(255,255,255,0.04)" strokeWidth={R_OUT - R_IN} />
-      <circle cx={cx} cy={cy} r={(R_EFF + R_EFF - 60) / 2} fill="none"
-        stroke="rgba(255,255,255,0.025)" strokeWidth={60} />
-      <circle cx={cx} cy={cy} r={100} fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth={1} />
+      {/* Chromosome ideogram (thin line) */}
+      <line
+        x1={PAD.left} y1={PAD.top + innerH / 2}
+        x2={PAD.left + innerW} y2={PAD.top + innerH / 2}
+        stroke="rgba(255,255,255,0.15)" strokeWidth={2}
+      />
 
-      {/* Compass tick marks */}
-      {[0, 1, 2, 3].map(i => {
-        const ang = i * Math.PI / 2 - Math.PI / 2;
-        const x1 = cx + (R_OUT + 4) * Math.cos(ang), y1 = cy + (R_OUT + 4) * Math.sin(ang);
-        const x2 = cx + (R_OUT + 10) * Math.cos(ang), y2 = cy + (R_OUT + 10) * Math.sin(ang);
-        const tx = cx + (R_OUT + 20) * Math.cos(ang), ty = cy + (R_OUT + 20) * Math.sin(ang);
-        const mb = ((i * GENOME_KB) / 4 / 1000).toFixed(2);
+      {/* Tick marks and labels */}
+      {[0, 1000, 2000, 3000, 4000, 4641].map(kb => {
+        const x = xScale(kb);
         return (
-          <g key={i}>
-            <line x1={x1.toFixed(1)} y1={y1.toFixed(1)} x2={x2.toFixed(1)} y2={y2.toFixed(1)}
-              stroke="rgba(255,255,255,0.18)" strokeWidth={1} />
-            <text x={tx.toFixed(1)} y={ty.toFixed(1)} textAnchor="middle" dominantBaseline="middle"
-              fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.28)">
-              {mb}Mb
+          <g key={kb}>
+            <line
+              x1={x} y1={PAD.top + innerH / 2 - 4}
+              x2={x} y2={PAD.top + innerH / 2 + 4}
+              stroke="rgba(255,255,255,0.2)" strokeWidth={1}
+            />
+            <text
+              x={x} y={PAD.top + innerH + 16}
+              textAnchor="middle" fontFamily={THEME.MONO} fontSize="9"
+              fill="rgba(255,255,255,0.35)"
+            >
+              {(kb / 1000).toFixed(1)} Mb
             </text>
           </g>
         );
       })}
 
-      {/* Gene arcs — outer ring */}
-      {targets.map(t => {
-        const a1 = posToRad(t.position) + GAP;
-        const a2 = posToRad(t.position + GENE_KB) - GAP;
-        const d = mkArc(a1, a2, R_OUT, R_IN);
-        if (!d) return null;
+      {/* Gene arrows — IGV style */}
+      {targets.map((t, i) => {
         const color = geneColor(t);
         const prominent = t.essential || selectedIds.has(t.gene);
-        const aMid = (a1 + a2) / 2;
-        const lx = cx + (R_OUT + 14) * Math.cos(aMid);
-        const ly = cy + (R_OUT + 14) * Math.sin(aMid);
-        // Rotate label tangent to arc; flip if in lower half
-        const labelDeg = (aMid * 180 / Math.PI) + 90;
-        const flip = aMid > Math.PI / 2 && aMid < 3 * Math.PI / 2;
+        const y = PAD.top + (i % 2 === 0 ? 0 : 25); // Stagger rows for readability
+        const h = 18;
+
         return (
           <g key={t.gene}>
-            <path d={d} fill={color} opacity={selectedIds.has(t.gene) ? 0.7 : 0.88} />
-            {prominent && (
-              <text x={lx.toFixed(1)} y={ly.toFixed(1)}
-                textAnchor="middle" dominantBaseline="middle"
-                fontFamily={THEME.MONO} fontSize="10" fill={color}
-                transform={`rotate(${(flip ? labelDeg + 180 : labelDeg).toFixed(1)}, ${lx.toFixed(1)}, ${ly.toFixed(1)})`}>
-                {t.gene}
-              </text>
-            )}
+            <path
+              d={geneArrowPath(t, y, h, i)}
+              fill={color}
+              opacity={selectedIds.has(t.gene) ? 0.9 : 0.75}
+              stroke={prominent ? 'rgba(255,255,255,0.4)' : 'none'}
+              strokeWidth={prominent ? 0.8 : 0}
+            />
+            {/* Gene label */}
+            <text
+              x={xScale(t.position + GENE_KB / 2)}
+              y={y - 4}
+              textAnchor="middle" fontFamily={THEME.MONO} fontSize="8"
+              fill="rgba(255,255,255,0.5)"
+              style={{ paintOrder: 'stroke', stroke: 'rgba(0,0,0,0.6)', strokeWidth: 2 }}
+            >
+              {t.gene.length > 8 ? `${t.gene.slice(0, 7)}…` : t.gene}
+            </text>
           </g>
         );
       })}
 
-      {/* CRISPRi efficiency bars — inner ring */}
-      {targets.filter(t => !t.essential).map(t => {
-        const aMid = posToRad(t.position + GENE_KB / 2);
-        const barHalf = 0.04;
-        const a1 = aMid - barHalf;
-        const a2 = aMid + barHalf;
-        const depth = t.knockdown_efficiency * 55;
-        const d = mkArc(a1, a2, R_EFF, R_EFF - depth);
-        if (!d) return null;
-        const color = selectedIds.has(t.gene) ? THEME.APRICOT : THEME.SKY;
-        return <path key={`eff-${t.gene}`} d={d} fill={color} opacity={0.72} />;
+      {/* Efficiency bars (below chromosome) */}
+      {targets.map((t, i) => {
+        const x = xScale(t.position);
+        const w = xScale(t.position + GENE_KB) - x;
+        const barH = Math.max(2, t.knockdown_efficiency * 30);
+        const y = PAD.top + innerH - 10 - barH;
+        return (
+          <rect
+            key={`eff-${t.gene}`}
+            x={x} y={y} width={w} height={barH}
+            fill={t.knockdown_efficiency >= efficiencyThreshold ? 'rgba(147,203,82,0.4)' : 'rgba(232,200,200,0.3)'}
+            rx={1}
+          />
+        );
       })}
 
-      {/* KD efficiency threshold arc indicator */}
-      <circle cx={cx} cy={cy} r={R_EFF - efficiencyThreshold * 55}
-        fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth={1} strokeDasharray="3 5" />
-
-      {/* Center viability */}
-      <text x={cx} y={cy - 12} textAnchor="middle" fontFamily={THEME.MONO}
-        fontSize="30" fontWeight="700" fill="rgba(255,255,255,0.92)">
-        {viability}%
-      </text>
-      <text x={cx} y={cy + 12} textAnchor="middle" fontFamily={THEME.MONO}
-        fontSize="10" fill="rgba(255,255,255,0.50)" letterSpacing="0.12em">
-        VIABILITY
-      </text>
-      <text x={cx} y={cy + 28} textAnchor="middle" fontFamily={THEME.MONO}
-        fontSize="10" fill="rgba(255,255,255,0.2)">
-        {selected.length} target{selected.length !== 1 ? 's' : ''} suppressed
-      </text>
-
       {/* Legend */}
-      {LEGEND.map((item, i) => (
-        <g key={item.label} transform={`translate(${22 + i * 128}, ${H - 22})`}>
-          <rect width={9} height={9} fill={item.color} rx="2" />
-          <text x={13} y={8.5} fontFamily={THEME.SANS} fontSize="10" fill="rgba(255,255,255,0.5)">
-            {item.label}
-          </text>
-        </g>
-      ))}
+      <g transform={`translate(${PAD.left}, ${PAD.top + innerH + 24})`}>
+        {LEGEND.map((l, i) => (
+          <g key={l.label} transform={`translate(${i * 100}, 0)`}>
+            <rect width={8} height={8} rx={2} fill={l.color} opacity={0.8} />
+            <text x={12} y={7} fontFamily={THEME.SANS} fontSize="9" fill="rgba(255,255,255,0.35)">
+              {l.label}
+            </text>
+          </g>
+        ))}
+      </g>
 
-      {/* Inner ring label */}
-      <text x={cx + R_EFF - 30} y={cy - 2} textAnchor="middle" fontFamily={THEME.MONO}
-        fontSize="10" fill="rgba(55,126,184,0.55)">
-        KD eff
-      </text>
+      {/* Viability indicator */}
+      <g transform={`translate(${W - 100}, ${PAD.top + innerH + 20})`}>
+        <text fontFamily={THEME.MONO} fontSize="9" fill="rgba(255,255,255,0.3)" textAnchor="end">
+          VIABILITY
+        </text>
+        <text y={14} fontFamily={THEME.MONO} fontSize="16" fill={viability > 70 ? THEME.MINT : viability > 40 ? THEME.APRICOT : THEME.CORAL} textAnchor="end" fontWeight={700}>
+          {viability}%
+        </text>
+      </g>
     </SVGChartContainer>
   );
 }

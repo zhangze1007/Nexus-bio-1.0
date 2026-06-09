@@ -8,7 +8,7 @@ import DataTable, { type TableColumn } from '../../ide/shared/DataTable';
 import EmptyState from '../../ide/shared/EmptyState';
 import type { ScSpatialPointDatum, ScSpatialQueryResponse } from '../../../types/scspatial';
 import { colorForCluster, SCSPATIAL_VIEW_LABELS } from './scSpatialPalette';
-import { computeConvexHull, expandHull } from '../../../utils/vizUtils';
+import { computeConvexHull, expandHull, hexPath } from '../../../utils/vizUtils';
 import styles from './ScSpatialWorkbench.module.css';
 
 type AnalysisTabKey = 'context' | 'marker' | 'distribution';
@@ -60,7 +60,7 @@ function getBounds(points: ScSpatialPointDatum[]) {
   };
 }
 
-function handlePointKeyDown(event: KeyboardEvent<SVGCircleElement>, cellId: string, onSelectCell: (cellId: string | null) => void) {
+function handlePointKeyDown(event: KeyboardEvent<SVGPathElement>, cellId: string, onSelectCell: (cellId: string | null) => void) {
   if (event.key === 'Enter' || event.key === ' ') {
     event.preventDefault();
     onSelectCell(cellId);
@@ -190,9 +190,9 @@ function ScatterViewport({
         role="img"
         aria-label={`${xLabel} versus ${yLabel} scatter plot`}
       >
-        <rect width={W} height={H} fill="#ffffff" />
+        <rect width={W} height={H} fill="#050505" />
         {/* plot background */}
-        <rect x={marginL} y={marginT} width={plotW} height={plotH} fill="#fbfcfd" />
+        <rect x={marginL} y={marginT} width={plotW} height={plotH} fill="rgba(255,255,255,0.03)" />
 
         {/* gridlines */}
         {tickFractions.map((t, i) => (
@@ -234,24 +234,25 @@ function ScatterViewport({
           );
         })}
 
-        {/* scatter points */}
-        {points.map((point) => (
-          <circle
-            key={point.id}
-            cx={xScale(point.x)}
-            cy={yScale(point.y)}
-            r={point.selected ? 4.2 : 2.4}
-            fill={colorForCluster(point.clusterId)}
-            stroke={point.selected ? '#111827' : '#ffffff'}
-            strokeWidth={point.selected ? 1.1 : 0.35}
-            opacity={point.selected ? 1 : 0.82}
-            tabIndex={0}
-            role="button"
-            aria-label={`${point.id}, ${point.clusterLabel}, expression ${point.expression.toFixed(2)}`}
-            onClick={() => onSelectCell(point.id)}
-            onKeyDown={(event) => handlePointKeyDown(event, point.id, onSelectCell)}
-          />
-        ))}
+        {/* scatter points — hexagonal spots (10x Visium style) */}
+        {points.map((point) => {
+          const r = point.selected ? 4.5 : 3.0;
+          return (
+            <path
+              key={point.id}
+              d={hexPath(xScale(point.x), yScale(point.y), r)}
+              fill={colorForCluster(point.clusterId)}
+              stroke={point.selected ? '#ffffff' : 'rgba(255,255,255,0.3)'}
+              strokeWidth={point.selected ? 1.2 : 0.4}
+              opacity={point.selected ? 1 : 0.85}
+              tabIndex={0}
+              role="button"
+              aria-label={`${point.id}, ${point.clusterLabel}, expression ${point.expression.toFixed(2)}`}
+              onClick={() => onSelectCell(point.id)}
+              onKeyDown={(event) => handlePointKeyDown(event, point.id, onSelectCell)}
+            />
+          );
+        })}
 
         {/* cluster centroid labels */}
         {clusterGroups.map((g) => {
@@ -266,9 +267,9 @@ function ScatterViewport({
               fontSize={9}
               fontWeight={600}
               textAnchor="middle"
-              fill="#0f172a"
+              fill="rgba(255,255,255,0.7)"
               fontFamily="var(--font-mono)"
-              style={{ paintOrder: 'stroke', stroke: '#ffffff', strokeWidth: 2.5, strokeLinejoin: 'round' }}
+              style={{ paintOrder: 'stroke', stroke: 'rgba(0,0,0,0.5)', strokeWidth: 2.5, strokeLinejoin: 'round' }}
             >
               {g.label.length > 14 ? `${g.label.slice(0, 13)}…` : g.label}
             </text>
@@ -276,15 +277,15 @@ function ScatterViewport({
         })}
 
         {/* axes */}
-        <line x1={marginL} y1={marginT + plotH} x2={marginL + plotW} y2={marginT + plotH} stroke="#0f172a" strokeWidth={0.8} />
-        <line x1={marginL} y1={marginT} x2={marginL} y2={marginT + plotH} stroke="#0f172a" strokeWidth={0.8} />
+        <line x1={marginL} y1={marginT + plotH} x2={marginL + plotW} y2={marginT + plotH} stroke="rgba(255,255,255,0.2)" strokeWidth={0.8} />
+        <line x1={marginL} y1={marginT} x2={marginL} y2={marginT + plotH} stroke="rgba(255,255,255,0.2)" strokeWidth={0.8} />
 
         {/* x ticks + labels */}
         {xTickValues.map((v, i) => {
           const x = marginL + tickFractions[i] * plotW;
           return (
             <g key={`xt-${i}`}>
-              <line x1={x} y1={marginT + plotH} x2={x} y2={marginT + plotH + 3} stroke="#0f172a" strokeWidth={0.6} />
+              <line x1={x} y1={marginT + plotH} x2={x} y2={marginT + plotH + 3} stroke="rgba(255,255,255,0.15)" strokeWidth={0.6} />
               <text
                 x={x}
                 y={marginT + plotH + 12}
@@ -304,7 +305,7 @@ function ScatterViewport({
           const y = marginT + (1 - tickFractions[i]) * plotH;
           return (
             <g key={`yt-${i}`}>
-              <line x1={marginL - 3} y1={y} x2={marginL} y2={y} stroke="#0f172a" strokeWidth={0.6} />
+              <line x1={marginL - 3} y1={y} x2={marginL} y2={y} stroke="rgba(255,255,255,0.15)" strokeWidth={0.6} />
               <text
                 x={marginL - 5}
                 y={y + 3}
@@ -326,7 +327,7 @@ function ScatterViewport({
           fontSize={10}
           fontWeight={700}
           textAnchor="middle"
-          fill="#0f172a"
+          fill="rgba(255,255,255,0.5)"
           fontFamily="var(--font-mono)"
         >
           {xLabel}
@@ -337,7 +338,7 @@ function ScatterViewport({
           fontSize={10}
           fontWeight={700}
           textAnchor="middle"
-          fill="#0f172a"
+          fill="rgba(255,255,255,0.5)"
           fontFamily="var(--font-mono)"
           transform={`rotate(-90 12 ${marginT + plotH / 2})`}
         >
@@ -382,7 +383,7 @@ function TrajectoryViewport({
   return (
     <div className={styles.viewportStage}>
       <svg ref={svgRef} className={styles.viewportSvg} viewBox="0 0 100 100" role="img" aria-label="PAGA trajectory graph">
-        <rect width="100" height="100" fill="#ffffff" />
+        <rect width="100" height="100" fill="#050505" />
         {edges.map((edge) => {
           const from = nodes.find((node) => node.clusterId === edge.from);
           const to = nodes.find((node) => node.clusterId === edge.to);
@@ -456,7 +457,7 @@ function SpatialPointCloud({
           canvasRef.current = gl.domElement;
         }}
       >
-        <color attach="background" args={['#ffffff']} />
+        <color attach="background" args={['#050505']} />
         <ambientLight intensity={0.95} />
         <directionalLight position={[6, 8, 12]} intensity={0.6} />
         <gridHelper args={[16, 12, '#d1d5db', '#e5e7eb']} position={[0, -2.3, 0]} />
@@ -644,7 +645,7 @@ function MarkerHeatmapPanel({ query }: { query: ScSpatialQueryResponse }) {
   return (
     <div className={styles.analysisFigure}>
       <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet">
-        <rect width={W} height={H} fill="#ffffff" />
+        <rect width={W} height={H} fill="#050505" />
         {/* frame */}
         <rect
           x={marginL}
@@ -672,7 +673,7 @@ function MarkerHeatmapPanel({ query }: { query: ScSpatialQueryResponse }) {
                 width={cellW}
                 height={cellH}
                 fill={ramp(t)}
-                stroke="#ffffff"
+                stroke="rgba(255,255,255,0.1)"
                 strokeWidth={0.6}
               />
             );
@@ -838,7 +839,7 @@ function BoxPlotPanel({ query }: { query: ScSpatialQueryResponse }) {
   return (
     <div className={styles.analysisFigure}>
       <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet">
-        <rect width={W} height={H} fill="#ffffff" />
+        <rect width={W} height={H} fill="#050505" />
         {/* gridlines */}
         {yTicks.map((t, idx) => (
           <line

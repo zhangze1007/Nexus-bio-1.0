@@ -3,6 +3,23 @@
  * Used by ScSpatialPage (UMAP), MultiOPage (embedding), etc.
  */
 
+/**
+ * Generate SVG path for a regular hexagon (10x Visium style).
+ *
+ * @param cx - Center x coordinate
+ * @param cy - Center y coordinate
+ * @param r - Radius (distance from center to vertex)
+ * @returns SVG path string for hexagon
+ */
+export function hexPath(cx: number, cy: number, r: number): string {
+  return Array.from({ length: 6 }, (_, i) => {
+    const angle = (Math.PI / 180) * (60 * i - 30);
+    const x = (cx + r * Math.cos(angle)).toFixed(2);
+    const y = (cy + r * Math.sin(angle)).toFixed(2);
+    return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
+  }).join(' ') + ' Z';
+}
+
 /** Convex hull using monotone chain (Andrew's algorithm). O(n log n). */
 export function computeConvexHull(
   pts: Array<{ sx: number; sy: number }>,
