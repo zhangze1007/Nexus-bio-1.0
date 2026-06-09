@@ -817,46 +817,119 @@ export function computeMetabolicEfficiency(data: OmicsRow[]): MetabolicEfficienc
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// 5. PCA-style 3D Export with Metabolic Efficiency Coloring
+// 5. PCA 3D Export with Metabolic Efficiency Coloring
 // ══════════════════════════════════════════════════════════════════════════════
 
 /**
+ * Compute PCA projection using power iteration for eigenvalue decomposition.
+ * Extracts the top 3 principal components from the latent space.
+ *
+ * @param matrix - Data matrix (n × d)
+ * @param nComponents - Number of components to extract (default 3)
+ * @returns Projected data (n × nComponents)
+ */
+function pcaProject(matrix: number[][], nComponents: number = 3): number[][] {
+  const n = matrix.length;
+  if (n === 0) return [];
+
+  const d = matrix[0].length;
+  if (d <= nComponents) return matrix;
+
+  // Center the data
+  const means = new Array(d).fill(0);
+  for (const row of matrix) {
+    for (let j = 0; j < d; j++) means[j] += row[j] / n;
+  }
+  const centered = matrix.map(row => row.map((v, j) => v - means[j]));
+
+  // Compute covariance matrix: C = (1/n) * X^T * X
+  const cov = Array.from({ length: d }, () => new Array(d).fill(0));
+  for (const row of centered) {
+    for (let i = 0; i < d; i++) {
+      for (let j = 0; j < d; j++) {
+        cov[i][j] += row[i] * row[j] / n;
+      }
+    }
+  }
+
+  // Power iteration to extract top eigenvectors
+  const eigenvectors: number[][] = [];
+  const eigenvalues: number[] = [];
+
+  for (let comp = 0; comp < nComponents; comp++) {
+    // Initialize random vector
+    let v = Array.from({ length: d }, () => Math.random() - 0.5);
+    let norm = Math.sqrt(v.reduce((s, x) => s + x * x, 0));
+    v = v.map(x => x / norm);
+
+    // Power iteration
+    for (let iter = 0; iter < 100; iter++) {
+      // Multiply by covariance matrix
+      const vNew = new Array(d).fill(0);
+      for (let i = 0; i < d; i++) {
+        for (let j = 0; j < d; j++) {
+          vNew[i] += cov[i][j] * v[j];
+        }
+      }
+
+      // Deflate: subtract projections onto previous eigenvectors
+      for (const prevV of eigenvectors) {
+        const dot = vNew.reduce((s, x, k) => s + x * prevV[k], 0);
+        for (let k = 0; k < d; k++) vNew[k] -= dot * prevV[k];
+      }
+
+      // Normalize
+      norm = Math.sqrt(vNew.reduce((s, x) => s + x * x, 0));
+      if (norm < 1e-10) break;
+      v = vNew.map(x => x / norm);
+    }
+
+    // Compute eigenvalue
+    const Av = new Array(d).fill(0);
+    for (let i = 0; i < d; i++) {
+      for (let j = 0; j < d; j++) {
+        Av[i] += cov[i][j] * v[j];
+      }
+    }
+    const eigenvalue = v.reduce((s, x, k) => s + x * Av[k], 0);
+
+    eigenvectors.push(v);
+    eigenvalues.push(Math.max(0, eigenvalue));
+  }
+
+  // Project data onto eigenvectors
+  return centered.map(row => {
+    const projected = new Array(nComponents);
+    for (let k = 0; k < nComponents; k++) {
+      projected[k] = row.reduce((s, v, j) => s + v * eigenvectors[k][j], 0);
+    }
+    return projected;
+  });
+}
+
+/**
  * Export 3D embedding coordinates colored by metabolic efficiency.
- * Uses the local embedding projected to 3D via PCA-like dimensionality reduction.
+ * Uses proper PCA to project latent space to 3D.
  */
 export function exportEmbeddingsWithEfficiency(
   vaeResult: VAETrainingResult,
   efficiencyScores: MetabolicEfficiencyScore[],
 ): EmbeddingPoint[] {
   const points = vaeResult.latentPoints;
-  const rng = new SeededRNG(123);
 
-  // Project latent dim → 3D using first 3 principal components (simplified)
-  const matrix = points.map(p => p.z_mean.slice(0, Math.min(8, p.z_mean.length)));
+  // Extract latent dimensions
+  const matrix = points.map(p => p.z_mean);
 
-  // Compute covariance and extract top 3 directions
-  const d = matrix[0]?.length ?? 3;
-  const means = new Array(d).fill(0);
-  for (const row of matrix) for (let j = 0; j < d; j++) means[j] += row[j] / matrix.length;
-  const centered = matrix.map(row => row.map((v, j) => v - means[j]));
-
-  // Power iteration for top 3 eigenvectors (simplified PCA)
-  const projections: [number, number, number][] = [];
-
-  for (const row of centered) {
-    const x = row.length > 0 ? row[0] : rng.gaussian();
-    const y = row.length > 1 ? row[1] : rng.gaussian();
-    const z = row.length > 2 ? row[2] : rng.gaussian();
-    projections.push([x, y, z]);
-  }
+  // PCA projection to 3D
+  const projected = pcaProject(matrix, 3);
 
   // Normalize to [-1, 1]
   const ranges = [0, 1, 2].map(k => {
-    const vals = projections.map(p => p[k]);
+    const vals = projected.map(p => p[k] ?? 0);
     return { min: Math.min(...vals), max: Math.max(...vals) };
   });
 
-  const normalized = projections.map(p =>
+  const normalized = projected.map(p =>
     p.map((v, k) => {
       const r = ranges[k];
       return r.max - r.min > 1e-6 ? ((v - r.min) / (r.max - r.min)) * 2 - 1 : 0;
