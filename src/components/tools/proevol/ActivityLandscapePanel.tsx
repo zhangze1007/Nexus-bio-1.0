@@ -255,6 +255,144 @@ function DMSHeatmap({ cells, positions, metric, selectedVariantId, campaign, onS
     for (let i = 0; i < AMINO_ACIDS.length; i++) {
       ctx.fillText(AMINO_ACIDS[i], labelW - 5, labelH + i * cellH + cellH / 2 + 3);
     }
+
+    // ── Marching-squares contour lines ──────────────────────────────────
+    // Build a 2D grid of fitness values for contour extraction
+    const gridW = positions.length;
+    const gridH = AMINO_ACIDS.length;
+    const grid: number[][] = Array.from({ length: gridH }, () => new Array(gridW).fill(NaN));
+
+    for (const cell of cells) {
+      const xi = posIndex.get(cell.position);
+      const yi = aaIndex.get(cell.aa);
+      if (xi !== undefined && yi !== undefined && (cell.count > 0 || cell.isWildType)) {
+        grid[yi][xi] = (cell.fitness - fitnessRange.min) / range;
+      }
+    }
+
+    // Draw isocontours at 5 levels
+    const contourLevels = [0.2, 0.4, 0.6, 0.8, 0.95];
+    ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+    ctx.lineWidth = 0.8;
+
+    for (const level of contourLevels) {
+      // Simple marching squares: check each cell for contour crossing
+      for (let yi = 0; yi < gridH - 1; yi++) {
+        for (let xi = 0; xi < gridW - 1; xi++) {
+          const v00 = grid[yi][xi];
+          const v10 = grid[yi][xi + 1];
+          const v01 = grid[yi + 1][xi];
+          const v11 = grid[yi + 1][xi + 1];
+
+          // Skip cells with NaN
+          if (isNaN(v00) || isNaN(v10) || isNaN(v01) || isNaN(v11)) continue;
+
+          // Determine which corners are above the contour level
+          const code =
+            (v00 >= level ? 1 : 0) |
+            (v10 >= level ? 2 : 0) |
+            (v11 >= level ? 4 : 0) |
+            (v01 >= level ? 8 : 0);
+
+          // Skip uniform cells (all above or all below)
+          if (code === 0 || code === 15) continue;
+
+          // Interpolate contour segment(s)
+          const x0 = labelW + xi * cellW + cellW / 2;
+          const y0 = labelH + yi * cellH + cellH / 2;
+          const x1 = labelW + (xi + 1) * cellW + cellW / 2;
+          const y1 = labelH + (yi + 1) * cellH + cellH / 2;
+
+          // Linear interpolation helpers
+          const interpX = (va: number, vb: number, ya: number, yb: number) => {
+            const t = (level - va) / (vb - va);
+            return ya + t * (yb - ya);
+          };
+
+          // Draw contour segments based on marching squares case
+          const drawSegment = (ax: number, ay: number, bx: number, by: number) => {
+            ctx.beginPath();
+            ctx.moveTo(ax, ay);
+            ctx.lineTo(bx, by);
+            ctx.stroke();
+          };
+
+          // Edge midpoints (linear interpolation)
+          const top = { x: interpX(v00, v10, x0, x1), y: y0 };
+          const bottom = { x: interpX(v01, v11, x0, x1), y: y1 };
+          const left = { x: x0, y: interpX(v00, v01, y0, y1) };
+          const right = { x: x1, y: interpX(v10, v11, y0, y1) };
+
+          switch (code) {
+            case 1: case 14: drawSegment(top.x, top.y, left.x, left.y); break;
+            case 2: case 13: drawSegment(top.x, top.y, right.x, right.y); break;
+            case 3: case 12: drawSegment(left.x, left.y, right.x, right.y); break;
+            case 4: case 11: drawSegment(right.x, right.y, bottom.x, bottom.y); break;
+            case 5: drawSegment(top.x, top.y, right.x, right.y); drawSegment(left.x, left.y, bottom.x, bottom.y); break;
+            case 6: case 9: drawSegment(top.x, top.y, bottom.x, bottom.y); break;
+            case 7: case 8: drawSegment(left.x, left.y, bottom.x, bottom.y); break;
+            case 10: drawSegment(top.x, top.y, left.x, left.y); drawSegment(right.x, right.y, bottom.x, bottom.y); break;
+          }
+        }
+      }
+    }
+
+    // ── Peak markers ────────────────────────────────────────────────────
+    // Find local maxima (cells higher than all 8 neighbors)
+    const peakCells: FitnessCell[] = [];
+    for (let yi = 1; yi < gridH - 1; yi++) {
+      for (let xi = 1; xi < gridW - 1; xi++) {
+        const v = grid[yi][xi];
+        if (isNaN(v)) continue;
+
+        let isPeak = true;
+        for (let dy = -1; dy <= 1 && isPeak; dy++) {
+          for (let dx = -1; dx <= 1; dx++) {
+            if (dx === 0 && dy === 0) continue;
+            const neighbor = grid[yi + dy][xi + dx];
+            if (!isNaN(neighbor) && neighbor > v) {
+              isPeak = false;
+              break;
+            }
+          }
+        }
+
+        if (isPeak && v > 0.7) { // Only mark high-fitness peaks
+          const cell = cells.find(c => c.position === positions[xi] && c.aa === AMINO_ACIDS[yi]);
+          if (cell) peakCells.push(cell);
+        }
+      }
+    }
+
+    // Draw peak markers
+    for (const peak of peakCells) {
+      const xi = posIndex.get(peak.position)!;
+      const yi = aaIndex.get(peak.aa)!;
+      const cx = labelW + xi * cellW + cellW / 2;
+      const cy = labelH + yi * cellH + cellH / 2;
+
+      // Glow halo
+      ctx.fillStyle = 'rgba(255,255,255,0.15)';
+      ctx.beginPath();
+      ctx.arc(cx, cy, 8, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Diamond marker
+      ctx.fillStyle = 'rgba(255,255,255,0.9)';
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - 4);
+      ctx.lineTo(cx + 4, cy);
+      ctx.lineTo(cx, cy + 4);
+      ctx.lineTo(cx - 4, cy);
+      ctx.closePath();
+      ctx.fill();
+
+      // Peak label
+      ctx.fillStyle = 'rgba(255,255,255,0.7)';
+      ctx.font = '7px "IBM Plex Mono", monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(`★${peak.fitness.toFixed(0)}`, cx, cy - 8);
+    }
   }, [cells, positions, fitnessRange, posIndex, aaIndex]);
 
   // Handle hover

@@ -164,6 +164,8 @@ function CircuitSVG({ inputA, inputB, gateType }: { inputA: number; inputB: numb
       </text>
       <rect x={PS_LEFT - 2} y={PS_TOP - 2} width={PS_SIZE + 4} height={PS_SIZE + 4} rx="10"
         fill="none" stroke="rgba(255,255,255,0.07)" />
+
+      {/* Heatmap cells */}
       {phaseHeat.map((row, yi) =>
         row.map((val, xi) => (
           <rect
@@ -177,6 +179,71 @@ function CircuitSVG({ inputA, inputB, gateType }: { inputA: number; inputB: numb
           />
         ))
       )}
+
+      {/* Isocontour lines (marching squares) */}
+      <g opacity="0.4">
+        {[0.25, 0.5, 0.75].map(level => {
+          const GRID = phaseHeat.length;
+          const paths: string[] = [];
+
+          for (let yi = 0; yi < GRID - 1; yi++) {
+            for (let xi = 0; xi < GRID - 1; xi++) {
+              const v00 = phaseHeat[yi][xi];
+              const v10 = phaseHeat[yi][xi + 1];
+              const v01 = phaseHeat[yi + 1][xi];
+              const v11 = phaseHeat[yi + 1][xi + 1];
+
+              const code =
+                (v00 >= level ? 1 : 0) |
+                (v10 >= level ? 2 : 0) |
+                (v11 >= level ? 4 : 0) |
+                (v01 >= level ? 8 : 0);
+
+              if (code === 0 || code === 15) continue;
+
+              const x0 = PS_LEFT + xi * cellSize + cellSize / 2;
+              const y0 = PS_TOP + yi * cellSize + cellSize / 2;
+              const x1 = PS_LEFT + (xi + 1) * cellSize + cellSize / 2;
+              const y1 = PS_TOP + (yi + 1) * cellSize + cellSize / 2;
+
+              const interpX = (va: number, vb: number, a: number, b: number) => {
+                const t = (level - va) / (vb - va);
+                return a + t * (b - a);
+              };
+
+              const top = { x: interpX(v00, v10, x0, x1), y: y0 };
+              const bottom = { x: interpX(v01, v11, x0, x1), y: y1 };
+              const left = { x: x0, y: interpX(v00, v01, y0, y1) };
+              const right = { x: x1, y: interpX(v10, v11, y0, y1) };
+
+              const seg = (ax: number, ay: number, bx: number, by: number) =>
+                `M${ax.toFixed(1)},${ay.toFixed(1)}L${bx.toFixed(1)},${by.toFixed(1)}`;
+
+              switch (code) {
+                case 1: case 14: paths.push(seg(top.x, top.y, left.x, left.y)); break;
+                case 2: case 13: paths.push(seg(top.x, top.y, right.x, right.y)); break;
+                case 3: case 12: paths.push(seg(left.x, left.y, right.x, right.y)); break;
+                case 4: case 11: paths.push(seg(right.x, right.y, bottom.x, bottom.y)); break;
+                case 5: paths.push(seg(top.x, top.y, right.x, right.y)); paths.push(seg(left.x, left.y, bottom.x, bottom.y)); break;
+                case 6: case 9: paths.push(seg(top.x, top.y, bottom.x, bottom.y)); break;
+                case 7: case 8: paths.push(seg(left.x, left.y, bottom.x, bottom.y)); break;
+                case 10: paths.push(seg(top.x, top.y, left.x, left.y)); paths.push(seg(right.x, right.y, bottom.x, bottom.y)); break;
+              }
+            }
+          }
+
+          return paths.length > 0 ? (
+            <path
+              key={`contour-${level}`}
+              d={paths.join('')}
+              fill="none"
+              stroke="rgba(255,255,255,0.5)"
+              strokeWidth="0.8"
+            />
+          ) : null;
+        })}
+      </g>
+
       {/* Crosshair at current (inputA, inputB) */}
       <line
         x1={PS_LEFT + inputA * PS_SIZE} y1={PS_TOP}
@@ -226,8 +293,22 @@ function CircuitSVG({ inputA, inputB, gateType }: { inputA: number; inputB: numb
       {/* ── Right: Transfer curves ── */}
       <rect x="324" y="54" width="382" height="92" rx="16" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" />
       <text x="338" y="74" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.24)">TRANSFER CURVES</text>
+
+      {/* Area fill under Hill curves */}
+      <polygon
+        points={`${curveA.points} ${curveA.points.split(' ').pop()?.split(',')[0]},146 348,146`}
+        fill={PATHD_THEME.coral} fillOpacity="0.1"
+      />
+      <polygon
+        points={`${curveB.points} ${curveB.points.split(' ').pop()?.split(',')[0]},146 348,146`}
+        fill={PATHD_THEME.apricot} fillOpacity="0.1"
+      />
+
+      {/* Curve lines */}
       <polyline points={curveA.points} fill="none" stroke={PATHD_THEME.coral} strokeWidth="2" />
       <polyline points={curveB.points} fill="none" stroke={PATHD_THEME.apricot} strokeWidth="2" />
+
+      {/* Operating point markers */}
       <circle cx={curveA.markerX} cy={curveA.markerY} r="4" fill={PATHD_THEME.coral} />
       <circle cx={curveB.markerX} cy={curveB.markerY} r="4" fill={PATHD_THEME.apricot} />
       <text x="348" y="133" fontFamily={T.MONO} fontSize="10" fill="rgba(232,163,161,0.9)">

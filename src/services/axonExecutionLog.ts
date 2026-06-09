@@ -34,6 +34,7 @@ export type AxonLogPhase =
   | 'retried'
   | 'reordered'
   | 'blocked-dependency'
+  | 'autonomy'
   | 'info';
 
 export interface AxonLogEntry {
@@ -149,6 +150,7 @@ export function phaseLabel(phase: AxonLogPhase): string {
     case 'retried': return 'Retried';
     case 'reordered': return 'Reordered';
     case 'blocked-dependency': return 'Blocked by dependency';
+    case 'autonomy': return 'Autonomy';
     case 'info': return 'Info';
   }
 }

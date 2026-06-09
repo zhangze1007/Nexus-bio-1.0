@@ -61,7 +61,9 @@ import {
 } from '../services/axonEvidenceAdapter';
 import {
   noopAutonomyLoop,
+  boundedAutonomyLoop,
   type AutonomyLoop,
+  type AutonomyDecisionContext,
 } from '../services/axonAutonomyLoop';
 import type { WorkbenchCopilotContext } from '../services/axonContext';
 import {
@@ -193,7 +195,8 @@ export function AxonOrchestratorProvider({
     [],
   );
 
-  const autonomy: AutonomyLoop = noopAutonomyLoop;
+  // Use bounded autonomy loop when agentic mode is enabled
+  const autonomy: AutonomyLoop = agenticMode ? boundedAutonomyLoop : noopAutonomyLoop;
 
   const pushLog = useCallback(
     (
@@ -601,6 +604,60 @@ export function AxonOrchestratorProvider({
   function clearTerminal() {
     orchestrator.clearTerminal();
   }
+
+  // ── Autonomy Loop ─────────────────────────────────────────────────────
+  // When agentic mode is on, automatically execute plan steps.
+  const autoStepsRef = useRef(0);
+  const autoRetriesRef = useRef(0);
+
+  useEffect(() => {
+    if (!agenticMode || !autonomy.enabled) return;
+
+    const ctx: AutonomyDecisionContext = {
+      plan: activePlan,
+      tasks,
+      autoStepsTaken: autoStepsRef.current,
+      autoRetries: autoRetriesRef.current,
+    };
+
+    const decision = autonomy.decide(ctx);
+
+    switch (decision.action) {
+      case 'run-next-step':
+        autoStepsRef.current++;
+        pushLog('autonomy', `Auto-running: ${decision.reason}`, {
+          taskId: decision.taskId,
+          metadata: { autoStep: autoStepsRef.current },
+        });
+        void drainQueue();
+        break;
+
+      case 'retry-task':
+        autoRetriesRef.current++;
+        pushLog('autonomy', `Auto-retrying: ${decision.reason}`, {
+          taskId: decision.taskId,
+          metadata: { autoRetry: autoRetriesRef.current },
+        });
+        retryTask(decision.taskId);
+        break;
+
+      case 'halt':
+        pushLog('autonomy', `Autonomy halted: ${decision.reason}`, {
+          metadata: { autoSteps: autoStepsRef.current, autoRetries: autoRetriesRef.current },
+        });
+        break;
+
+      case 'idle':
+        // No action needed
+        break;
+    }
+  }, [agenticMode, autonomy, activePlan, tasks, pushLog, drainQueue, retryTask]);
+
+  // Reset autonomy counters when plan changes
+  useEffect(() => {
+    autoStepsRef.current = 0;
+    autoRetriesRef.current = 0;
+  }, [activePlan?.id]);
 
   // PR-5: derived session view. Memoised against the inputs that already
   // drive re-renders (tasks, logs, plan, classification) so downstream

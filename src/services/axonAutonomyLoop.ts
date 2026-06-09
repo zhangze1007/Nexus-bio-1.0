@@ -1,30 +1,16 @@
 /**
- * axonAutonomyLoop — bounded autonomy loop extension seam.
+ * axonAutonomyLoop — bounded autonomy loop for NEXAI AI Agent.
  *
- * PR-4 brief (section E): "Allow optional limited autonomous
- * continuation, but only within strict limits… If safety/clarity is
- * not solid, do not implement this yet; leave a documented extension
- * seam instead."
+ * Implements Hermes/OpenClaw-style autonomous task execution:
+ * - Automatically executes next plan step when current step completes
+ * - Retries failed tasks up to MAX_RETRIES times
+ * - Halts when plan is complete or max steps reached
+ * - All decisions are logged for transparency
  *
- * Decision for PR-4: we are shipping the seam, not the loop. Reasons:
- *
- *   1. Deterministic planner + explicit per-step writeback + live logs
- *      are the preconditions for honest autonomy. They landed in this
- *      PR. Wiring a loop on top without field testing them first risks
- *      the exact "fake autonomy" failure mode the brief forbids.
- *
- *   2. The current planner proposes at most two steps
- *      (PATHD → FBASIM). Autonomy would add zero value over letting
- *      the existing dependency scheduler drain the plan.
- *
- *   3. "Easy to stop" and "each auto-generated next step must show why
- *      it was created" both require UI affordances we have not yet
- *      shipped. Building those without a real autonomy use-case would
- *      be speculative.
- *
- * This file defines the contract a future autonomous continuation must
- * satisfy. It exports a `noopAutonomyLoop` implementation so callers can
- * thread the seam without behavior changes.
+ * Safety limits:
+ * - Max auto-steps: AUTONOMY_MAX_STEPS (8)
+ * - Max retries per task: AUTONOMY_MAX_RETRIES (2)
+ * - Max total retries: AUTONOMY_MAX_TOTAL_RETRIES (5)
  */
 
 import type { AxonPlan } from './axonPlanner';
@@ -32,6 +18,7 @@ import type { AxonTask } from './AxonOrchestrator';
 
 export const AUTONOMY_MAX_STEPS = 8;
 export const AUTONOMY_MAX_RETRIES = 2;
+export const AUTONOMY_MAX_TOTAL_RETRIES = 5;
 
 export interface AutonomyDecisionContext {
   plan: AxonPlan | null;
@@ -44,7 +31,7 @@ export interface AutonomyDecisionContext {
 
 export type AutonomyDecision =
   | { action: 'idle'; reason: string }
-  | { action: 'plan-next-step'; reason: string; tool: 'pathd' | 'fbasim' }
+  | { action: 'run-next-step'; reason: string; taskId: string }
   | { action: 'retry-task'; reason: string; taskId: string }
   | { action: 'halt'; reason: string };
 
@@ -56,18 +43,121 @@ export interface AutonomyLoop {
 }
 
 /**
- * Ships disabled. Always returns `idle`. The field `reason` is the
- * honest user-facing message: "no autonomy implemented".
+ * Noop autonomy loop — always returns idle.
+ * Used when agentic mode is disabled.
  */
 export const noopAutonomyLoop: AutonomyLoop = {
   enabled: false,
-  label: 'Manual only — autonomy seam, not implemented',
+  label: 'Manual only — autonomy disabled',
   decide() {
-    return {
-      action: 'idle',
-      reason:
-        'Bounded autonomy is a PR-5 candidate — the seam exists but no auto-decisions fire.',
-    };
+    return { action: 'idle', reason: 'Autonomy disabled.' };
+  },
+};
+
+/**
+ * Bounded autonomy loop — automatically executes plan steps.
+ *
+ * Decision logic:
+ * 1. If plan is null or no tasks → idle
+ * 2. If max auto-steps reached → halt
+ * 3. If any task is running → idle (wait for completion)
+ * 4. If any task failed and can be retried → retry-task
+ * 5. If next pending task exists and dependencies met → run-next-step
+ * 6. If all tasks done → halt
+ * 7. Otherwise → idle
+ */
+export const boundedAutonomyLoop: AutonomyLoop = {
+  enabled: true,
+  label: 'Bounded autonomy — auto-executes plan steps',
+  decide(ctx: AutonomyDecisionContext): AutonomyDecision {
+    const { plan, tasks, autoStepsTaken, autoRetries } = ctx;
+
+    // No plan or no tasks
+    if (!plan || tasks.length === 0) {
+      return { action: 'idle', reason: 'No plan or tasks to execute.' };
+    }
+
+    // Max auto-steps reached
+    if (autoStepsTaken >= AUTONOMY_MAX_STEPS) {
+      return {
+        action: 'halt',
+        reason: `Maximum auto-steps (${AUTONOMY_MAX_STEPS}) reached. Manual intervention required.`,
+      };
+    }
+
+    // Max total retries reached
+    if (autoRetries >= AUTONOMY_MAX_TOTAL_RETRIES) {
+      return {
+        action: 'halt',
+        reason: `Maximum total retries (${AUTONOMY_MAX_TOTAL_RETRIES}) reached. Stopping to prevent infinite loops.`,
+      };
+    }
+
+    // Check if any task is currently running
+    const runningTask = tasks.find(t => t.status === 'running');
+    if (runningTask) {
+      return {
+        action: 'idle',
+        reason: `Task "${runningTask.label}" is still running. Waiting for completion.`,
+      };
+    }
+
+    // Check for failed tasks that can be retried
+    const failedTask = tasks.find(t =>
+      t.status === 'error' &&
+      t.retryCount < (t.maxRetries ?? AUTONOMY_MAX_RETRIES)
+    );
+    if (failedTask) {
+      return {
+        action: 'retry-task',
+        reason: `Task "${failedTask.label}" failed (attempt ${failedTask.retryCount + 1}/${failedTask.maxRetries ?? AUTONOMY_MAX_RETRIES}). Retrying.`,
+        taskId: failedTask.id,
+      };
+    }
+
+    // Find next pending task whose dependencies are satisfied
+    const byId = new Map(tasks.map(t => [t.id, t]));
+    const nextTask = tasks.find(t => {
+      if (t.status !== 'pending') return false;
+      if (!t.dependsOn || t.dependsOn.length === 0) return true;
+      return t.dependsOn.every(depId => byId.get(depId)?.status === 'done');
+    });
+
+    if (nextTask) {
+      return {
+        action: 'run-next-step',
+        reason: `Running step: ${nextTask.label}`,
+        taskId: nextTask.id,
+      };
+    }
+
+    // Check if all tasks are done
+    const allDone = tasks.every(t => t.status === 'done' || t.status === 'cancelled');
+    if (allDone) {
+      return {
+        action: 'halt',
+        reason: 'All plan steps completed successfully.',
+      };
+    }
+
+    // Check for blocked tasks (dependencies failed)
+    const blockedTask = tasks.find(t => {
+      if (t.status !== 'pending') return false;
+      if (!t.dependsOn || t.dependsOn.length === 0) return false;
+      return t.dependsOn.some(depId => {
+        const dep = byId.get(depId);
+        return dep?.status === 'error' || dep?.status === 'cancelled';
+      });
+    });
+
+    if (blockedTask) {
+      return {
+        action: 'halt',
+        reason: `Task "${blockedTask.label}" is blocked by a failed dependency. Manual intervention required.`,
+      };
+    }
+
+    return { action: 'idle', reason: 'No actionable tasks at this time.' };
   },
 };
 
