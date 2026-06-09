@@ -6,7 +6,7 @@ import dynamic from 'next/dynamic';
 // 注入了 ShieldAlert 用于合规面板
 import { X, Download, FileText, Hash, Link2, ChevronDown, ChevronUp, Atom, Activity, Thermometer, ExternalLink, ShieldAlert, AlertTriangle, CheckCircle, Circle, Scissors, ArrowUp } from 'lucide-react';
 import { PathwayNode, PathwayEdge, NodeType, EdgeRelationshipType, SHOWCASE_PUBCHEM_CIDS } from '../types';
-import { BIO_THEME_COLORS } from './ThreeScene';
+import { BIO_THEME_COLORS } from '../theme';
 import { getToolDefinition } from './tools/shared/toolRegistry';
 import { THEME } from '../theme';
 // Dynamic imports for heavy viewers (code-splitting)

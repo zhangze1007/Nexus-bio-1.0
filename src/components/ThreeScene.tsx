@@ -307,14 +307,9 @@ const createProceduralTexture = () => {
 const HIGH_RISK_THRESHOLD = 0.7;
 
 // ─── BIO_THEME_COLORS — Pastel tones per CLAUDE.md design system ─────────
-export const BIO_THEME_COLORS = {
-  CYAN:   '#C8E8F0',  // Metabolite — pastel sky blue
-  GREEN:  '#C8E0D0',  // Gene / target yield — pastel mint green
-  RED:    '#F0C8C8',  // Impurity / risk — pastel rose red
-  AMBER:  '#E8DCC8',  // Enzyme — pastel warm amber
-  PURPLE: '#DDD0E8',  // Intermediate / complex — pastel lavender
-  PINK:   '#F0D0E4',  // Cofactor — pastel pink
-} as const;
+// Single source of truth in theme/index.ts — re-exported here for backward compatibility
+import { BIO_THEME_COLORS } from '../theme';
+export { BIO_THEME_COLORS };
 
 // Map each nodeType to its semantic BIO_THEME color
 const NODE_TYPE_COLORS: Record<string, string> = {
@@ -926,6 +921,7 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, 
   const [rendererMode, setRendererMode] = useState<RendererMode>('loading');
   const [viewMode, setViewMode] = useState<SceneViewMode>('network');
   const [resetSignal, setResetSignal] = useState(0);
+  const [retryKey, setRetryKey] = useState(0);
   const mountedRef = useRef(true);
   const roughnessTexture = useMemo(() => createProceduralTexture(), []);
 
@@ -1183,7 +1179,7 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, 
         ))}
       </div>
 
-      <SceneErrorBoundary onError={() => { setRendererMode('error'); setStatus('error'); }}>
+      <SceneErrorBoundary key={retryKey} onError={() => { setRendererMode('error'); setStatus('error'); }}>
         <Canvas
           camera={initialCamPos}
           gl={async (props) => {
@@ -1255,9 +1251,22 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, 
             <strong style={{ display: 'block', color: 'rgba(255,255,255,0.88)', fontSize: '11px', marginBottom: '3px' }}>
               {status === 'error' ? '3D pathway renderer unavailable' : 'Preparing 3D pathway view'}
             </strong>
-            {status === 'error'
-              ? 'Try reloading the page or enabling WebGL in the browser.'
-              : 'Loading the PATHD molecular graph and renderer.'}
+            {status === 'error' ? (
+              <>
+                Try reloading the page or enabling WebGL in the browser.
+                <button
+                  onClick={() => { setStatus('loading'); setRetryKey(k => k + 1); }}
+                  style={{
+                    pointerEvents: 'auto', marginTop: '8px', padding: '5px 14px',
+                    background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)',
+                    borderRadius: '6px', color: 'rgba(255,255,255,0.80)', cursor: 'pointer',
+                    fontFamily: "'Public Sans',sans-serif", fontSize: '11px',
+                  }}
+                >
+                  Try again
+                </button>
+              </>
+            ) : 'Loading the PATHD molecular graph and renderer.'}
           </div>
         </div>
       )}

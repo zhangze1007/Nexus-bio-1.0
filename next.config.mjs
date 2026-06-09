@@ -10,6 +10,14 @@ const nextConfig = {
     root: process.cwd(),
   },
 
+  /* Reduce barrel-import overhead for large packages */
+  experimental: {
+    optimizePackageImports: ['lucide-react', 'recharts', 'framer-motion'],
+  },
+
+  /* Prevent native modules from being bundled into client code */
+  serverExternalPackages: ['better-sqlite3'],
+
   /* Image optimization */
   images: {
     formats: ['image/avif', 'image/webp'],

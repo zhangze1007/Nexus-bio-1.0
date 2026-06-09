@@ -11,7 +11,7 @@ import {
   AxonInteraction, BottleneckEnzyme, DeNovoDesignStrategy,
   NodeType, NodeColorMapping,
 } from '../types';
-import { BIO_THEME_COLORS } from './ThreeScene';
+import { BIO_THEME_COLORS } from '../theme';
 import type { StructuredAnalysisPayload } from '../store/workbenchStore';
 
 interface PaperAnalyzerProps {

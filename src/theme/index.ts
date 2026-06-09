@@ -273,6 +273,16 @@ export const THEME = {
   },
 } as const;
 
+// ── Bio node type colors (from ThreeScene — pastel tones per CLAUDE.md) ──
+export const BIO_THEME_COLORS = {
+  CYAN:   '#C8E8F0',  // Metabolite — pastel sky blue
+  GREEN:  '#C8E0D0',  // Gene / target yield — pastel mint green
+  RED:    '#F0C8C8',  // Impurity / risk — pastel rose red
+  AMBER:  '#E8DCC8',  // Enzyme — pastel warm amber
+  PURPLE: '#DDD0E8',  // Intermediate / complex — pastel lavender
+  PINK:   '#F0D0E4',  // Cofactor — pastel pink
+} as const;
+
 /** All tool result accent colors as an ordered palette. */
 export const TOOL_RESULT_PALETTE = [
   THEME.RESULT_MINT,

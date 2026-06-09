@@ -23,7 +23,7 @@ async function waitForPageReady(page: import('@playwright/test').Page) {
   // Wait for the main content to render (indicates page is hydrated)
   await page.waitForLoadState('domcontentloaded');
   // Wait for the sidebar to be in the DOM with correct state
-  // Use .first() because the app renders duplicate elements (desktop + mobile layouts)
+  // Use .first() because AnimatePresence keeps both old and new children in the DOM during transitions
   const sidebar = page.locator('aside[role="navigation"][aria-label="Tool navigation"]').first();
   await expect(sidebar).toBeAttached({ timeout: 15000 });
   await expect(sidebar).toHaveAttribute('aria-expanded', 'true', { timeout: 15000 });

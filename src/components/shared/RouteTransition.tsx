@@ -11,7 +11,7 @@ export function RouteTransition({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   return (
-    <AnimatePresence mode="wait">
+    <AnimatePresence mode="popLayout">
       <motion.div
         key={pathname}
         initial={{ opacity: 0, y: 6 }}

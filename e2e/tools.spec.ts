@@ -152,6 +152,10 @@ test.describe('Tool page tab switching', () => {
 
       // After clicking, the second tab should be selected
       await expect(secondTabButton).toHaveAttribute('aria-selected', 'true');
+
+      // Verify the tab panel content is visible (not just the button state)
+      const tabPanel = page.locator('[role="tabpanel"]').first();
+      await expect(tabPanel).toBeAttached({ timeout: 5000 });
     });
   }
 });

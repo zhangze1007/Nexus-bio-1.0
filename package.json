@@ -23,7 +23,6 @@
     "reference:py:compare": "python3 reference_impl_py/run_reference_benchmark.py compare"
   },
   "dependencies": {
-    "@google/genai": "^1.29.0",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.5.0",
     "@sentry/nextjs": "^10.56.0",
