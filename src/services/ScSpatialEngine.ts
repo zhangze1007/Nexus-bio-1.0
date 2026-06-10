@@ -452,40 +452,69 @@ export function clusterCells(
   // Build symmetric adjacency weights (shared-nearest-neighbor similarity)
   const weights = new Map<string, number>();
   const edgeKey = (a: number, b: number) => a < b ? `${a}_${b}` : `${b}_${a}`;
-  let totalWeight = 0;
   for (let i = 0; i < n; i++) {
     for (const j of adj[i]) {
       const key = edgeKey(i, j);
       if (!weights.has(key)) {
         weights.set(key, 1);
-        totalWeight += 1;
       }
     }
   }
 
-  // Louvain community detection with multiple passes
-  const community = new Int32Array(n);
-  for (let i = 0; i < n; i++) community[i] = i;
+  // ─── Full Louvain community detection (Phase 1 + Phase 2) ───
+  // nodeToComm[i] = community label for original node i
+  const nodeToComm = new Int32Array(n);
+  for (let i = 0; i < n; i++) nodeToComm[i] = i;
+
+  // Compute node degrees from adjacency
   const degree = new Float64Array(n);
   for (let i = 0; i < n; i++) degree[i] = adj[i].length;
-  const m2 = totalWeight * 2 || 1; // 2 * total edge weight
 
-  // Multiple passes of node-move phase for better convergence
-  const MAX_PASSES = 3;
-  for (let pass = 0; pass < MAX_PASSES; pass++) {
-    let moved = false;
+  // Compute modularity Q for current partition
+  function computeModularity(partition: Int32Array, adjList: number[][], deg: Float64Array, edgeWeights: Map<string, number>): number {
+    let m2Local = 0;
+    edgeWeights.forEach(w => { m2Local += w; });
+    m2Local = m2Local * 2 || 1;
+    let q = 0;
+    edgeWeights.forEach((w, key) => {
+      const [iStr, jStr] = key.split('_');
+      const ii = parseInt(iStr), jj = parseInt(jStr);
+      if (partition[ii] === partition[jj]) {
+        q += w - (deg[ii] * deg[jj]) / m2Local;
+      }
+    });
+    return q / (m2Local / 2) || 1;
+  }
+
+  // Phase 1: local node-moving on a given graph
+  // Returns the partition (community assignment) and whether any node moved
+  function louvainPhase1(
+    numNodes: number,
+    adjList: number[][],
+    edgeWeights: Map<string, number>,
+    nodeDeg: Float64Array,
+    currentPartition: Int32Array,
+  ): { partition: Int32Array; moved: boolean } {
+    const partition = new Int32Array(numNodes);
+    for (let i = 0; i < numNodes; i++) partition[i] = currentPartition[i];
+
+    let m2Local = 0;
+    edgeWeights.forEach(w => { m2Local += w; });
+    m2Local = m2Local * 2 || 1;
+
+    let anyMoved = false;
     for (let iter = 0; iter < 10; iter++) {
-      moved = false;
-      for (let i = 0; i < n; i++) {
-        const ci = community[i];
+      let moved = false;
+      for (let i = 0; i < numNodes; i++) {
+        const ci = partition[i];
         const communityDelta = new Map<number, number>();
-        for (const j of adj[i]) {
-          const cj = community[j];
+        for (const j of adjList[i]) {
+          const cj = partition[j];
           if (cj === ci) continue;
           const w = 1;
-          const sumTot = sumCommunityDegree(community, degree, cj);
-          const ki = degree[i];
-          const gain = resolution * (w - (ki * sumTot) / m2);
+          const sumTot = sumCommunityDegree(partition, nodeDeg, cj);
+          const ki = nodeDeg[i];
+          const gain = resolution * (w - (ki * sumTot) / m2Local);
           communityDelta.set(cj, (communityDelta.get(cj) ?? 0) + gain);
         }
         let bestComm = ci, bestGain = 0;
@@ -493,20 +522,136 @@ export function clusterCells(
           if (gain > bestGain) { bestGain = gain; bestComm = comm; }
         });
         if (bestComm !== ci) {
-          community[i] = bestComm;
+          partition[i] = bestComm;
           moved = true;
+          anyMoved = true;
         }
       }
       if (!moved) break;
     }
-    if (!moved) break;
+    return { partition, moved: anyMoved };
+  }
+
+  // Phase 2: aggregate communities into super-nodes, build coarsened graph
+  // Returns coarsened adj list, edge weights, degrees, and mapping from super-node to community
+  function louvainPhase2(
+    numNodes: number,
+    adjList: number[][],
+    edgeWeights: Map<string, number>,
+    nodeDeg: Float64Array,
+    partition: Int32Array,
+  ): {
+    numSuperNodes: number;
+    superAdj: number[][];
+    superWeights: Map<string, number>;
+    superDeg: Float64Array;
+    superToComm: number[];
+  } {
+    // Find unique communities
+    const commSet = new Set<number>();
+    for (let i = 0; i < numNodes; i++) commSet.add(partition[i]);
+    const commList = Array.from(commSet).sort((a, b) => a - b);
+    const numSuperNodes = commList.length;
+    const commToSuper = new Map<number, number>();
+    commList.forEach((c, idx) => commToSuper.set(c, idx));
+
+    // Build coarsened graph: aggregate edges between communities
+    const superAdj: number[][] = Array.from({ length: numSuperNodes }, () => []);
+    const superEdgeWeights = new Map<string, number>();
+    const superDeg = new Float64Array(numSuperNodes);
+
+    // Accumulate degrees
+    for (let i = 0; i < numNodes; i++) {
+      const si = commToSuper.get(partition[i])!;
+      superDeg[si] += nodeDeg[i];
+    }
+
+    // Build coarsened adjacency and weights
+    const superAdjSet = Array.from({ length: numSuperNodes }, () => new Set<number>());
+    for (let i = 0; i < numNodes; i++) {
+      const si = commToSuper.get(partition[i])!;
+      for (const j of adjList[i]) {
+        const sj = commToSuper.get(partition[j])!;
+        if (si === sj) continue; // skip intra-community edges
+        superAdjSet[si].add(sj);
+        superAdjSet[sj].add(si);
+        const key = si < sj ? `${si}_${sj}` : `${sj}_${si}`;
+        superEdgeWeights.set(key, (superEdgeWeights.get(key) ?? 0) + 1);
+      }
+    }
+
+    for (let si = 0; si < numSuperNodes; si++) {
+      superAdj[si] = Array.from(superAdjSet[si]);
+    }
+
+    return { numSuperNodes, superAdj, superWeights: superEdgeWeights, superDeg, superToComm: commList };
+  }
+
+  // Multi-level Louvain: repeat Phase 1 + Phase 2 until modularity stops improving
+  const MAX_LEVELS = 5;
+  let curAdj: number[][] = adj;
+  let curWeights: Map<string, number> = weights;
+  let curDeg: Float64Array = degree;
+  let curN: number = n;
+  let curPartition: Int32Array = new Int32Array(n);
+  for (let i = 0; i < n; i++) curPartition[i] = i;
+
+  // Track which original nodes map to which community across levels
+  // nodeToOriginalComm[original_node] = current_community_id
+  let nodeToOriginalComm: Int32Array = new Int32Array(n);
+  for (let i = 0; i < n; i++) nodeToOriginalComm[i] = i;
+
+  let prevModularity = -Infinity;
+
+  for (let level = 0; level < MAX_LEVELS; level++) {
+    // Phase 1: optimize on current graph
+    const phase1Result = louvainPhase1(curN, curAdj, curWeights, curDeg, curPartition);
+    curPartition = phase1Result.partition;
+
+    // Compute modularity after phase 1
+    const currentModularity = computeModularity(curPartition, curAdj, curDeg, curWeights);
+
+    // If no nodes moved or modularity didn't improve, stop
+    if (!phase1Result.moved || currentModularity <= prevModularity + 1e-10) break;
+    prevModularity = currentModularity;
+
+    // Phase 2: aggregate communities into super-nodes
+    const coarsened = louvainPhase2(curN, curAdj, curWeights, curDeg, curPartition);
+
+    // If no reduction in nodes (each node is its own community), stop
+    if (coarsened.numSuperNodes >= curN) break;
+
+    // Map original nodes to their new super-node communities
+    const newMapping = new Int32Array(n);
+    for (let i = 0; i < n; i++) {
+      // Original node i -> community in curPartition -> super-node index
+      const superIdx = coarsened.superToComm.indexOf(curPartition[i]);
+      // superIdx maps back to the community ID at this level
+      newMapping[i] = superIdx >= 0 ? superIdx : curPartition[i];
+    }
+    nodeToOriginalComm = newMapping;
+
+    // Set up next level
+    curN = coarsened.numSuperNodes;
+    curAdj = coarsened.superAdj;
+    curWeights = coarsened.superWeights;
+    curDeg = coarsened.superDeg;
+    curPartition = new Int32Array(curN);
+    for (let i = 0; i < curN; i++) curPartition[i] = i;
+  }
+
+  // Map final super-node partition back to original nodes
+  const community = new Int32Array(n);
+  for (let i = 0; i < n; i++) {
+    // Walk the mapping chain: original node -> super-node -> final community
+    community[i] = curPartition[nodeToOriginalComm[i]] ?? nodeToOriginalComm[i];
   }
 
   // Re-label communities to 0..K-1
   const uniqueComms = Array.from(new Set(community));
-  const commMap = new Map<number, number>();
-  uniqueComms.forEach((c, idx) => commMap.set(c, idx));
-  for (let i = 0; i < n; i++) community[i] = commMap.get(community[i])!;
+  const commRemap = new Map<number, number>();
+  uniqueComms.forEach((c, idx) => commRemap.set(c, idx));
+  for (let i = 0; i < n; i++) community[i] = commRemap.get(community[i])!;
   const nClusters = uniqueComms.length;
 
   // Cell-type heuristic based on marker genes
@@ -555,16 +700,19 @@ export function clusterCells(
   }
   const silhouetteScore = silhouetteSum / sampleSize;
 
-  // Modularity Q
+  // Modularity Q (computed on original graph)
+  let totalEdgeWeight = 0;
+  weights.forEach(w => { totalEdgeWeight += w; });
+  const m2Orig = totalEdgeWeight * 2 || 1;
   let Q = 0;
   weights.forEach((w, key) => {
     const [iStr, jStr] = key.split('_');
     const i = parseInt(iStr), j = parseInt(jStr);
     if (community[i] === community[j]) {
-      Q += w - (degree[i] * degree[j]) / m2;
+      Q += w - (degree[i] * degree[j]) / m2Orig;
     }
   });
-  Q /= (m2 / 2) || 1;
+  Q /= (m2Orig / 2) || 1;
 
   // Produce updated cells
   const updated = cells.map((c, idx) => ({
@@ -906,6 +1054,10 @@ interface ForwardResult {
   z_mean: number[]; z_logvar: number[]; z_sample: number[];
   h3: number[]; h4: number[];
   recon: number[];
+  // Pre-activations (before ReLU) for gradient computation
+  z1: number[]; z2: number[]; z3: number[]; z4: number[];
+  // Epsilon from reparameterization trick
+  epsilon: number[];
 }
 
 /**
@@ -985,20 +1137,27 @@ export function trainScVAE(
     W5: initWeights(h1Dim, nFeatures, rng), b5: initBias(nFeatures),
   };
 
-  /** Forward pass through the VAE. */
+  /** ReLU derivative for backpropagation. */
+  function reluDeriv(x: number): number { return x > 0 ? 1 : 0; }
+
+  /** Forward pass through the VAE, storing pre-activations and epsilon for backprop. */
   function forward(x: number[]): ForwardResult {
     // Encoder layer 1
+    const z1 = new Array(h1Dim);
     const h1 = new Array(h1Dim);
     for (let j = 0; j < h1Dim; j++) {
       let s = w.b1[j];
       for (let i = 0; i < inputDim; i++) s += x[i] * w.W1[i][j];
+      z1[j] = s;
       h1[j] = relu(s);
     }
     // Encoder layer 2
+    const z2 = new Array(h2Dim);
     const h2 = new Array(h2Dim);
     for (let j = 0; j < h2Dim; j++) {
       let s = w.b2[j];
       for (let i = 0; i < h1Dim; i++) s += h1[i] * w.W2[i][j];
+      z2[j] = s;
       h2[j] = relu(s);
     }
     // Latent mean and log-variance
@@ -1015,21 +1174,27 @@ export function trainScVAE(
     }
     // Reparameterisation trick: z = μ + σ·ε
     const z_sample = new Array(latentDim);
+    const epsilon = new Array(latentDim);
     for (let j = 0; j < latentDim; j++) {
-      z_sample[j] = z_mean[j] + Math.exp(0.5 * z_logvar[j]) * rng.gaussian();
+      epsilon[j] = rng.gaussian();
+      z_sample[j] = z_mean[j] + Math.exp(0.5 * z_logvar[j]) * epsilon[j];
     }
     // Decoder layer 1
+    const z3 = new Array(h2Dim);
     const h3 = new Array(h2Dim);
     for (let j = 0; j < h2Dim; j++) {
       let s = w.b3[j];
       for (let i = 0; i < latentDim; i++) s += z_sample[i] * w.W3[i][j];
+      z3[j] = s;
       h3[j] = relu(s);
     }
     // Decoder layer 2
+    const z4 = new Array(h1Dim);
     const h4 = new Array(h1Dim);
     for (let j = 0; j < h1Dim; j++) {
       let s = w.b4[j];
       for (let i = 0; i < h2Dim; i++) s += h3[i] * w.W4[i][j];
+      z4[j] = s;
       h4[j] = relu(s);
     }
     // Output reconstruction
@@ -1039,65 +1204,144 @@ export function trainScVAE(
       for (let i = 0; i < h1Dim; i++) s += h4[i] * w.W5[i][j];
       recon[j] = s;
     }
-    return { h1, h2, z_mean, z_logvar, z_sample, h3, h4, recon };
+    return { h1, h2, z_mean, z_logvar, z_sample, h3, h4, recon, z1, z2, z3, z4, epsilon };
   }
 
-  // Training loop
+  // Training loop with full backpropagation through all layers
   const lr = 0.001;
   const history: ScVAEResult['convergenceHistory'] = [];
   let finalReconLoss = 0, finalKL = 0;
 
   for (let epoch = 0; epoch < epochs; epoch++) {
     let epochRecon = 0, epochKL = 0;
-    const perturbScale = lr * (1 - epoch / epochs);
 
     for (let i = 0; i < n; i++) {
-      const res = forward(inputs[i]);
+      const x = inputs[i];
+      const f = forward(x);
 
-      // Reconstruction loss (MSE over gene features only)
+      // ─── Loss computation ───
+      // Reconstruction loss (MSE): L_recon = (1/nFeatures) * Σ(x_j - x̂_j)²
       let reconLoss = 0;
       for (let j = 0; j < nFeatures; j++) {
-        reconLoss += (inputs[i][j] - res.recon[j]) ** 2;
+        reconLoss += (x[j] - f.recon[j]) ** 2;
       }
       reconLoss /= nFeatures;
 
-      // KL divergence: −0.5 Σ (1 + log σ² − μ² − σ²)
+      // KL divergence: D_KL = -0.5 * Σ(1 + logσ² - μ² - σ²)
       let kl = 0;
       for (let k = 0; k < latentDim; k++) {
-        kl += -0.5 * (1 + res.z_logvar[k] - res.z_mean[k] ** 2 - Math.exp(res.z_logvar[k]));
+        kl += -0.5 * (1 + f.z_logvar[k] - f.z_mean[k] ** 2 - Math.exp(f.z_logvar[k]));
       }
 
       epochRecon += reconLoss;
       epochKL += kl;
 
-      // Gradient updates — decoder output layer
+      // ─── Backward pass: decoder output layer (W5, b5) ───
+      // dL/dx̂_j = -(2/nFeatures)(x_j - x̂_j)
+      const dxhat = new Array(nFeatures);
       for (let j = 0; j < nFeatures; j++) {
-        const error = inputs[i][j] - res.recon[j];
-        w.b5[j] += perturbScale * error;
+        dxhat[j] = -(2 / nFeatures) * (x[j] - f.recon[j]);
+      }
+
+      // dL/dW5[i][j] = dL/dx̂_j * h4[i],  dL/db5[j] = dL/dx̂_j
+      const dh4 = new Array(h1Dim).fill(0);
+      for (let j = 0; j < nFeatures; j++) {
+        w.b5[j] -= lr * dxhat[j];
         for (let h = 0; h < h1Dim; h++) {
-          w.W5[h][j] += perturbScale * error * res.h4[h] * 0.01;
+          w.W5[h][j] -= lr * dxhat[j] * f.h4[h];
+          dh4[h] += dxhat[j] * w.W5[h][j];
         }
       }
-      // Decoder hidden layer (W4)
+
+      // ─── Decoder hidden layer 2 (W4, b4) ───
+      // dh4/dz4 = ReLU'(z4)
+      const dz4 = new Array(h1Dim);
+      for (let h = 0; h < h1Dim; h++) {
+        dz4[h] = dh4[h] * reluDeriv(f.z4[h]);
+      }
+
+      // dL/dW4[i][j] = dz4[j] * h3[i],  dL/db4[j] = dz4[j]
+      const dh3 = new Array(h2Dim).fill(0);
       for (let j = 0; j < h1Dim; j++) {
-        if (res.h4[j] <= 0) continue; // ReLU gate
-        let dj = 0;
-        for (let o = 0; o < nFeatures; o++) {
-          dj += (inputs[i][o] - res.recon[o]) * (w.W5[j]?.[o] ?? 0);
-        }
-        w.b4[j] += perturbScale * dj * 0.01;
-        for (let h = 0; h < h2Dim; h++) {
-          w.W4[h][j] += perturbScale * dj * res.h3[h] * 0.001;
+        w.b4[j] -= lr * dz4[j];
+        for (let i2 = 0; i2 < h2Dim; i2++) {
+          w.W4[i2][j] -= lr * dz4[j] * f.h3[i2];
+          dh3[i2] += dz4[j] * w.W4[i2][j];
         }
       }
-      // Encoder mean update (KL gradient ∂KL/∂μ = μ)
-      for (let k = 0; k < latentDim; k++) {
-        w.bmu[k] -= perturbScale * beta * res.z_mean[k] * 0.01;
+
+      // ─── Decoder hidden layer 1 (W3, b3) ───
+      const dz3 = new Array(h2Dim);
+      for (let h = 0; h < h2Dim; h++) {
+        dz3[h] = dh3[h] * reluDeriv(f.z3[h]);
       }
-      // Encoder log-variance update (∂KL/∂logvar = 0.5(exp(logvar) − 1))
+
+      // dL/dW3[i][j] = dz3[j] * z_sample[i],  dL/db3[j] = dz3[j]
+      // dL/dz[i] = Σ_j dz3[j] * W3[i][j]
+      const dz = new Array(latentDim).fill(0);
+      for (let j = 0; j < h2Dim; j++) {
+        w.b3[j] -= lr * dz3[j];
+        for (let i2 = 0; i2 < latentDim; i2++) {
+          w.W3[i2][j] -= lr * dz3[j] * f.z_sample[i2];
+          dz[i2] += dz3[j] * w.W3[i2][j];
+        }
+      }
+
+      // ─── Through reparameterization trick ───
+      // z_k = mu_k + exp(0.5 * logvar_k) * epsilon_k
+      // dL/dmu_k = dL/dz_k + beta * mu_k
+      // dL/dlogvar_k = dL/dz_k * 0.5 * exp(0.5*logvar_k) * epsilon_k + beta * 0.5 * (exp(logvar_k) - 1)
+      const dmu = new Array(latentDim);
+      const dlogvar = new Array(latentDim);
       for (let k = 0; k < latentDim; k++) {
-        const klGradLv = 0.5 * (Math.exp(res.z_logvar[k]) - 1);
-        w.blv[k] -= perturbScale * beta * klGradLv * 0.01;
+        const sigma = Math.exp(0.5 * f.z_logvar[k]);
+        dmu[k] = dz[k] + beta * f.z_mean[k];
+        dlogvar[k] = dz[k] * 0.5 * sigma * f.epsilon[k] + beta * 0.5 * (Math.exp(f.z_logvar[k]) - 1);
+      }
+
+      // ─── Encoder: mu and logvar layers (Wmu, bmu, Wlv, blv) ───
+      // dL/dWmu[i][k] = dmu[k] * h2[i],  dL/dbmu[k] = dmu[k]
+      // dL/dWlv[i][k] = dlogvar[k] * h2[i],  dL/dblv[k] = dlogvar[k]
+      // dL/dh2[i] = Σ_k (dmu[k] * Wmu[i][k] + dlogvar[k] * Wlv[i][k])
+      const dh2 = new Array(h2Dim).fill(0);
+      for (let k = 0; k < latentDim; k++) {
+        w.bmu[k] -= lr * dmu[k];
+        w.blv[k] -= lr * dlogvar[k];
+        for (let i2 = 0; i2 < h2Dim; i2++) {
+          w.Wmu[i2][k] -= lr * dmu[k] * f.h2[i2];
+          w.Wlv[i2][k] -= lr * dlogvar[k] * f.h2[i2];
+          dh2[i2] += dmu[k] * w.Wmu[i2][k] + dlogvar[k] * w.Wlv[i2][k];
+        }
+      }
+
+      // ─── Encoder hidden layer 2 (W2, b2) ───
+      const dz2 = new Array(h2Dim);
+      for (let h = 0; h < h2Dim; h++) {
+        dz2[h] = dh2[h] * reluDeriv(f.z2[h]);
+      }
+
+      // dL/dW2[i][j] = dz2[j] * h1[i],  dL/db2[j] = dz2[j]
+      const dh1 = new Array(h1Dim).fill(0);
+      for (let j = 0; j < h2Dim; j++) {
+        w.b2[j] -= lr * dz2[j];
+        for (let i2 = 0; i2 < h1Dim; i2++) {
+          w.W2[i2][j] -= lr * dz2[j] * f.h1[i2];
+          dh1[i2] += dz2[j] * w.W2[i2][j];
+        }
+      }
+
+      // ─── Encoder hidden layer 1 (W1, b1) ───
+      const dz1 = new Array(h1Dim);
+      for (let h = 0; h < h1Dim; h++) {
+        dz1[h] = dh1[h] * reluDeriv(f.z1[h]);
+      }
+
+      // dL/dW1[i][j] = dz1[j] * x[i],  dL/db1[j] = dz1[j]
+      for (let j = 0; j < h1Dim; j++) {
+        w.b1[j] -= lr * dz1[j];
+        for (let i2 = 0; i2 < inputDim; i2++) {
+          w.W1[i2][j] -= lr * dz1[j] * x[i2];
+        }
       }
     }
 
