@@ -27,12 +27,18 @@ export type { Tokens } from './tokens';
 // COMPONENTS - Charts
 // ============================================================================
 
-// TODO: Export chart components as they are created
-// export { LineChart } from './components/charts/LineChart';
-// export { BarChart } from './components/charts/BarChart';
-// export { ScatterPlot } from './components/charts/ScatterPlot';
-// export { Heatmap } from './components/charts/Heatmap';
-// export { RadarChart } from './components/charts/RadarChart';
+export { LineChart, BarChart, ScatterChart } from './components/charts';
+export type {
+  LineChartProps,
+  DataSeries,
+  DataPoint,
+  BarChartProps,
+  BarSeries,
+  BarDatum,
+  ScatterChartProps,
+  ScatterSeries,
+  ScatterPoint,
+} from './components/charts';
 
 // ============================================================================
 // COMPONENTS - 3D
