@@ -34,6 +34,7 @@ export interface VariantScore {
   stabilityTerm: number;
   expressionTerm: number;
   specificityTerm: number;
+  epistasisTerm: number;
   burdenPenalty: number;
   riskPenalty: number;
 }
@@ -335,6 +336,37 @@ const DEFAULT_WEIGHTS: ProEvolCampaignWeights = {
   risk: 4.4,
 };
 
+/**
+ * Compute pairwise epistasis coefficient for two mutation positions.
+ * Uses a deterministic hash to produce a value in roughly [-0.6, +0.3].
+ * Negative values model diminishing returns (the biologically common case);
+ * rare positive values represent synergistic suppressor mutations.
+ */
+function epistasisCoefficient(posI: number, posJ: number): number {
+  // Deterministic hash of the ordered pair
+  const h = hashString(`epi:${Math.min(posI, posJ)}:${Math.max(posI, posJ)}`);
+  // Map to [-0.6, +0.3] — biased negative for diminishing returns
+  return ((h % 1000) / 1000) * 0.9 - 0.6;
+}
+
+/**
+ * Threshold burden model:
+ *   - 0 mutations: no penalty
+ *   - 1 mutation: free (represents the initial beneficial substitution)
+ *   - 2+ mutations: each additional mutation incurs an escalating cost
+ *     following a super-linear (quadratic) curve.
+ *
+ * This captures the empirical observation that the first gain-of-function
+ * substitution is nearly "free" in directed evolution, but stacking multiple
+ * mutations incurs compounding folding/stability/expression costs.
+ */
+function thresholdBurdenPenalty(mutationBurden: number, burdenWeight: number): number {
+  if (mutationBurden <= 1) return 0;
+  // First mutation is free; subsequent mutations cost (n-1)^1.4 * weight * 0.55
+  const effectiveBurden = mutationBurden - 1;
+  return Math.pow(effectiveBurden, 1.4) * burdenWeight * 0.55;
+}
+
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
 }
@@ -412,15 +444,31 @@ function scoreVariantMetrics(
   },
   wildTypeComposite: number,
   weights: ProEvolCampaignWeights,
+  mutatedPositions: number[] = [],
 ): VariantScore {
   const activityTerm = (metrics.activity / 100) * weights.activity * 100;
   const stabilityTerm = (metrics.stability / 100) * weights.stability * 100;
   const expressionTerm = (metrics.expression / 100) * weights.expression * 100;
   const specificityTerm = (metrics.specificity / 100) * weights.specificity * 100;
-  const burdenPenalty = metrics.mutationBurden * weights.burden;
+
+  // Pairwise epistasis: sum over all unique pairs (i < j)
+  let epistasisTerm = 0;
+  for (let i = 0; i < mutatedPositions.length; i += 1) {
+    for (let j = i + 1; j < mutatedPositions.length; j += 1) {
+      epistasisTerm += epistasisCoefficient(mutatedPositions[i], mutatedPositions[j]);
+    }
+  }
+  epistasisTerm = round(epistasisTerm * 4.5, 2); // Scale to meaningful contribution
+
+  // Threshold burden model (first mutation free, escalating cost for stacking)
+  const burdenPenalty = round(thresholdBurdenPenalty(metrics.mutationBurden, weights.burden), 2);
   const riskPenalty = metrics.riskPenalty * weights.risk;
+
   const composite = clamp(
-    round(activityTerm + stabilityTerm + expressionTerm + specificityTerm - burdenPenalty - riskPenalty, 2),
+    round(
+      activityTerm + stabilityTerm + expressionTerm + specificityTerm + epistasisTerm - burdenPenalty - riskPenalty,
+      2,
+    ),
     0,
     100,
   );
@@ -431,6 +479,7 @@ function scoreVariantMetrics(
     stabilityTerm: round(stabilityTerm, 2),
     expressionTerm: round(expressionTerm, 2),
     specificityTerm: round(specificityTerm, 2),
+    epistasisTerm,
     burdenPenalty: round(burdenPenalty, 2),
     riskPenalty: round(riskPenalty, 2),
   };
@@ -447,8 +496,9 @@ export function scoreVariant(
   },
   weights: ProEvolCampaignWeights = DEFAULT_WEIGHTS,
   wildTypeComposite = 55,
+  mutatedPositions: number[] = [],
 ) {
-  return scoreVariantMetrics(metrics, wildTypeComposite, weights);
+  return scoreVariantMetrics(metrics, wildTypeComposite, weights, mutatedPositions);
 }
 
 function determineRiskFlags(stability: number, expression: number, mutationBurden: number) {
@@ -942,6 +992,7 @@ function buildCandidate(
     28,
     94,
   );
+  const mutatedPositions = mutations.map((m) => m.position);
   const score = scoreVariantMetrics(
     {
       activity: predictedActivity,
@@ -953,6 +1004,7 @@ function buildCandidate(
     },
     wildTypeComposite,
     weights,
+    mutatedPositions,
   );
   const mutationString = createMutationString(mutations);
   const embedding = {
@@ -1236,6 +1288,7 @@ export function buildProEvolCampaign(input: ProEvolCampaignInput): ProteinEvolut
       stabilityTerm: round((wildTypeMetrics.stability / 100) * weights.stability * 100, 2),
       expressionTerm: round((wildTypeMetrics.expression / 100) * weights.expression * 100, 2),
       specificityTerm: round((wildTypeMetrics.specificity / 100) * weights.specificity * 100, 2),
+      epistasisTerm: 0,
       burdenPenalty: 0,
       riskPenalty: 0,
     },
