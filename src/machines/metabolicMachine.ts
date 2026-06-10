@@ -260,10 +260,19 @@ export const STATE_COLORS: Record<MachineState, string> = {
 /**
  * Michaelis-Menten reaction rate — called from both main thread (preview)
  * and Web Worker (full FBA). Kept pure for testability.
+ *
+ * Uses the unified Michaelis-Menten module for consistency.
  */
 export function michaelisRate(params: SimParams): number {
-  const tempFactor = Math.exp(-((params.temperature - 37) ** 2) / 200);
-  const phFactor   = Math.exp(-((params.pH - 7.4) ** 2) / 1.2);
-  const vmax       = params.vmax * tempFactor * phFactor * (params.enzyme / 5);
-  return (vmax * params.substrate) / (params.km + params.substrate);
+  return mmRate({
+    vmax: params.vmax,
+    km: params.km,
+    substrate: params.substrate,
+    temperature: params.temperature,
+    pH: params.pH,
+    enzyme: params.enzyme,
+  });
 }
+
+// Re-export from unified module for backward compatibility
+import { michaelisRate as mmRate } from '../utils/michaelisMenten';

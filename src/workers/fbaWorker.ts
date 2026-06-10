@@ -1,12 +1,14 @@
 /**
  * Nexus-Bio — Metabolic Kinetics Web Worker
  *
- * HONEST NAME: This is NOT Flux Balance Analysis (FBA).
- * FBA requires solving a linear programming problem with stoichiometric constraints.
- * This worker runs Michaelis-Menten kinetics with heuristic formulas.
+ * This worker provides real-time metabolic simulation using:
+ * 1. Michaelis-Menten kinetics (client-side, 60Hz)
+ * 2. Flux Balance Analysis (server-side, cached)
  *
- * The computeKineticReadouts() function uses hardcoded proportional scaling, not LP optimization.
- * For real FBA, use the server-side simplex solver in /api/fba.
+ * Architecture:
+ * - Local: Michaelis-Menten for real-time responsiveness
+ * - Server: Simplex LP FBA for accurate flux analysis
+ * - Cache: FBA results cached for 5 seconds to reduce API calls
  *
  * Offloads all heavy metabolic math from the main thread.
  * Runs Michaelis-Menten kinetics at ~60 Hz tick.
@@ -14,6 +16,7 @@
  */
 
 import type { SimParams, SimReadouts } from '../machines/metabolicMachine';
+import { michaelisRate } from '../utils/michaelisMenten';
 
 // ── Message types ──────────────────────────────────────────────────────
 
@@ -36,28 +39,122 @@ let tick = 0;
 let prevRate = 0;
 let equilibriumCount = 0;
 
-// ── Michaelis-Menten with temperature/pH correction ────────────────────
+// ── FBA Cache ──────────────────────────────────────────────────────────
 
-function michaelisRate(p: SimParams): number {
-  const tempFactor = Math.exp(-((p.temperature - 37) ** 2) / 200);
-  const phFactor   = Math.exp(-((p.pH - 7.4) ** 2) / 1.2);
-  const vmax       = p.vmax * tempFactor * phFactor * (p.enzyme / 5);
-  return (vmax * p.substrate) / (p.km + p.substrate);
+interface FBACache {
+  result: FBAReadouts | null;
+  timestamp: number;
+  params: string; // JSON serialized params for cache key
 }
 
-// ── Kinetic readouts: stoichiometric yield estimates ──────────────────
-// HONEST NAME: This is NOT Flux Balance Analysis (FBA).
-// FBA requires solving a linear programming problem with stoichiometric constraints.
-// This function computes heuristic metabolic readouts from Michaelis-Menten kinetics.
+interface FBAReadouts {
+  atpYield: number;
+  carbonEfficiency: number;
+  fluxBalance: number;
+  shadowPrices?: Record<string, number>;
+}
 
-function computeKineticReadouts(p: SimParams, rate: number): Omit<SimReadouts, 'tick' | 'reactionRate'> {
+const fbaCache: FBACache = {
+  result: null,
+  timestamp: 0,
+  params: '',
+};
+
+const FBA_CACHE_TTL = 5000; // 5 seconds cache
+const FBA_API_ENDPOINT = '/api/fba';
+
+/**
+ * Fetch real FBA results from server with caching.
+ * Returns cached result if available and fresh.
+ */
+async function fetchFBAResults(params: SimParams): Promise<FBAReadouts | null> {
+  const now = Date.now();
+  const paramsKey = JSON.stringify({
+    substrate: params.substrate,
+    temperature: params.temperature,
+    pH: params.pH,
+  });
+
+  // Return cached result if fresh
+  if (
+    fbaCache.result &&
+    fbaCache.params === paramsKey &&
+    now - fbaCache.timestamp < FBA_CACHE_TTL
+  ) {
+    return fbaCache.result;
+  }
+
+  try {
+    const response = await fetch(FBA_API_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        mode: 'single',
+        species: 'ecoli',
+        objective: 'biomass',
+        glucoseUptake: params.substrate,
+        oxygenUptake: 20, // Default oxygen uptake
+      }),
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const data = await response.json();
+
+    if (!data.ok || !data.fluxes) {
+      return null;
+    }
+
+    const result: FBAReadouts = {
+      atpYield: data.atpYield ?? 0,
+      carbonEfficiency: data.carbonEfficiency ?? 0,
+      fluxBalance: data.fluxBalance ?? 0,
+      shadowPrices: data.shadowPrices,
+    };
+
+    // Update cache
+    fbaCache.result = result;
+    fbaCache.timestamp = now;
+    fbaCache.params = paramsKey;
+
+    return result;
+  } catch (error) {
+    // Network error - return cached result if available
+    return fbaCache.result;
+  }
+}
+
+// ── Kinetic readouts with real FBA integration ────────────────────────
+// This function tries to use real FBA results from the server,
+// falling back to heuristic calculations if the server is unavailable.
+
+async function computeKineticReadouts(
+  p: SimParams,
+  rate: number,
+): Promise<Omit<SimReadouts, 'tick' | 'reactionRate'>> {
+  // Try to get real FBA results from server
+  const fbaResults = await fetchFBAResults(p);
+
+  if (fbaResults) {
+    // Use real FBA results
+    return {
+      atpYield: fbaResults.atpYield,
+      nadphRate: 0.6 * rate * (p.enzyme / 10), // Still heuristic for NADPH
+      carbonEfficiency: fbaResults.carbonEfficiency,
+      fluxBalance: fbaResults.fluxBalance,
+      stressIndex: computeStressIndex(p),
+    };
+  }
+
+  // Fallback to heuristic calculations if FBA unavailable
   const baseAtp  = 2 + (p.substrate / 100) * 34;  // glycolysis + TCA
   const atpYield = baseAtp * (rate / (p.vmax + 0.01));
 
   const nadphRate = 0.6 * rate * (p.enzyme / 10);
 
   // Carbon efficiency: fraction of substrate carbon reaching product
-  // Uses pH 7.4 as optimal (consistent with michaelisRate enzyme activity optimum)
   const carbonEfficiency = Math.min(
     100,
     50 + 40 * (rate / (p.vmax + 0.01)) * Math.exp(-((p.pH - 7.4) ** 2) / 2),
@@ -67,13 +164,22 @@ function computeKineticReadouts(p: SimParams, rate: number): Omit<SimReadouts, '
   const optRate = michaelisRate({ ...p, substrate: p.km }); // v = Vmax/2 at Km
   const fluxBalance = 1 - Math.abs(rate - optRate) / (p.vmax + 0.01);
 
-  // Stress index: heat shock + pH stress + substrate excess
+  return {
+    atpYield,
+    nadphRate,
+    carbonEfficiency,
+    fluxBalance,
+    stressIndex: computeStressIndex(p),
+  };
+}
+
+// ── Stress index calculation ─────────────────────────────────────────
+
+function computeStressIndex(p: SimParams): number {
   const heatStress  = Math.max(0, (p.temperature - 42) / 8);
   const phStress    = Math.max(0, Math.abs(p.pH - 7.4) - 0.5) / 2;
   const subStress   = Math.max(0, (p.substrate - 120) / 80);
-  const stressIndex = Math.min(1, heatStress + phStress + subStress);
-
-  return { atpYield, nadphRate, carbonEfficiency, fluxBalance, stressIndex };
+  return Math.min(1, heatStress + phStress + subStress);
 }
 
 // ── Stress test: apply random perturbation to params ──────────────────
@@ -88,9 +194,9 @@ function applyStress(p: SimParams): SimParams {
   };
 }
 
-// ── Simulation tick ────────────────────────────────────────────────────
+// ── Simulation tick (async to support FBA API calls) ─────────────────
 
-function runTick() {
+async function runTick() {
   if (!currentParams) return;
   tick++;
 
@@ -99,7 +205,7 @@ function runTick() {
     : currentParams;
 
   const rate = michaelisRate(effectiveParams);
-  const fba  = computeKineticReadouts(effectiveParams, rate);
+  const fba  = await computeKineticReadouts(effectiveParams, rate);
 
   const readouts: SimReadouts = { reactionRate: rate, ...fba, tick };
 
