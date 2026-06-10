@@ -4,9 +4,10 @@ import type { CRISPRiTarget } from '../types';
 // Essential genes are protected from knockdown by the algorithm
 
 export const CRISPRI_TARGETS: CRISPRiTarget[] = [
-  { gene: 'gapA',  position: 1848,  essential: true,  knockdown_efficiency: 0.0,  phenotype: 'Lethal',         growth_impact: -1.00 },
-  { gene: 'gpmA',  position: 3386,  essential: true,  knockdown_efficiency: 0.0,  phenotype: 'Lethal',         growth_impact: -1.00 },
-  { gene: 'eno',   position: 3715,  essential: true,  knockdown_efficiency: 0.0,  phenotype: 'Lethal',         growth_impact: -1.00 },
+  // Essential genes: realistic knockdown efficiencies, but protected by `essential` flag
+  { gene: 'gapA',  position: 1848,  essential: true,  knockdown_efficiency: 0.95, phenotype: 'Lethal',         growth_impact: -1.00 },
+  { gene: 'gpmA',  position: 3386,  essential: true,  knockdown_efficiency: 0.92, phenotype: 'Lethal',         growth_impact: -1.00 },
+  { gene: 'eno',   position: 3715,  essential: true,  knockdown_efficiency: 0.94, phenotype: 'Lethal',         growth_impact: -1.00 },
   { gene: 'pykF',  position: 1754,  essential: false, knockdown_efficiency: 0.92, phenotype: 'Flux redirect',  growth_impact: -0.18 },
   { gene: 'pykA',  position: 1476,  essential: false, knockdown_efficiency: 0.88, phenotype: 'Flux redirect',  growth_impact: -0.08 },
   { gene: 'zwf',   position: 1625,  essential: false, knockdown_efficiency: 0.95, phenotype: 'PPP reduction',  growth_impact: -0.12 },

@@ -497,6 +497,8 @@ export default React.memo(function MetabolicEngPage({ embedded = false }: { embe
 
   // ── FBA Web Worker ─────────────────────────────────────────────────
   const workerRef = useRef<Worker | null>(null);
+  const snapshotValueRef = useRef(snapshot.value);
+  snapshotValueRef.current = snapshot.value;
 
   useEffect(() => {
     if (typeof Worker === 'undefined') return;
@@ -511,7 +513,7 @@ export default React.memo(function MetabolicEngPage({ embedded = false }: { embe
         send({ type: 'TICK', readouts: msg.readouts });
       }
       if (msg.type === 'EQUILIBRIUM_REACHED') {
-        if (snapshot.value === 'simulating') {
+        if (snapshotValueRef.current === 'simulating') {
           send({ type: 'EQUILIBRATE' });
         }
       }

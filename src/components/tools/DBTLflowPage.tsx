@@ -290,7 +290,7 @@ export default function DBTLflowPage() {
   const committedBestIteration = committedIterations.reduce((a, b) => (b.result > a.result ? b : a), committedIterations[0]);
   const committedImprovementRate =
     committedIterations.length > 1
-      ? ((committedIterations[committedIterations.length - 1].result - committedIterations[0].result) / committedIterations.length).toFixed(2)
+      ? ((committedIterations[committedIterations.length - 1].result - committedIterations[0].result) / (committedIterations.length - 1)).toFixed(2)
       : '0';
   const committedPassRate = ((committedIterations.filter(i => i.passed).length / committedIterations.length) * 100).toFixed(0);
   const latestCommittedIteration = committedIterations[committedIterations.length - 1];
@@ -300,7 +300,7 @@ export default function DBTLflowPage() {
   const bestIteration = displayIterations.reduce((a, b) => (b.result > a.result ? b : a), displayIterations[0]);
   const improvementRate =
     displayIterations.length > 1
-      ? ((displayIterations[displayIterations.length - 1].result - displayIterations[0].result) / displayIterations.length).toFixed(2)
+      ? ((displayIterations[displayIterations.length - 1].result - displayIterations[0].result) / (displayIterations.length - 1)).toFixed(2)
       : '0';
   const passRate = ((displayIterations.filter(i => i.passed).length / displayIterations.length) * 100).toFixed(0);
 

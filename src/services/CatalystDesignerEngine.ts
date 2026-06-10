@@ -545,12 +545,13 @@ export function predictBindingAffinity(enzyme: EnzymeStructure): BindingAffinity
   const dE_elec = elecNorm;
 
   // ΔG_polar_solv: Born-like desolvation penalty — opposes electrostatic gain
-  // Standard model: ΔG_desolv = ΔE_elec * (1 - ε_in/ε_out)
+  // Standard model: ΔG_desolv = -ΔE_elec * (1 - ε_in/ε_out)
   // With ε_in=4 (typical protein interior), ε_out=80 (water): factor = 0.95
   // This means ~95% of bare electrostatic attraction is lost to desolvation,
   // which is physically correct for buried active sites.
+  // The NEGATIVE sign ensures desolvation opposes electrostatic attraction.
   const bornFactor = 1 - eps_in / eps_out;
-  const dG_polar = dE_elec * bornFactor; // partially cancels ΔE_elec
+  const dG_polar = -dE_elec * bornFactor; // opposes ΔE_elec (desolvation penalty)
 
   // ΔG_nonpolar: SASA-proportional — higher distance/orientation score → more
   // buried surface → more negative (favorable) nonpolar term
@@ -563,7 +564,8 @@ export function predictBindingAffinity(enzyme: EnzymeStructure): BindingAffinity
   const bindingEnergy = round3(dE_vdw + dE_elec + dG_polar + dG_nonpolar + TdS);
 
   // ΔG_bind → Kd = exp(ΔG / RT)
-  const predictedKd = round3(Math.exp(bindingEnergy / RT) * 1000); // μM
+  // exp(ΔG/RT) gives Kd in M; multiply by 1e6 to convert to μM
+  const predictedKd = round3(Math.exp(bindingEnergy / RT) * 1e6); // μM
 
   // Overall composite score — weighted arithmetic mean of component scores
   const overallScore = round3(clamp(

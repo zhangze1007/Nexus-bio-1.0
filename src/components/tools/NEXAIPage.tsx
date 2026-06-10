@@ -336,11 +336,16 @@ export default React.memo(function NEXAIPage() {
         // Plain text or malformed — both render via ResultPanel, which
         // branches on parseError. We still set a result so confidence,
         // citation, and recent-query UI have something to display.
+        // Estimate confidence based on answer quality signals
+        const hasHedging = /i'm not sure|possibly|might|uncertain|unclear/i.test(answerText);
+        const estimatedConfidence = Math.max(0.3, Math.min(0.95,
+          0.5 + 0.1 * Math.min(0, 3) + 0.1 * Math.min(answerText.length / 200, 1) - (hasHedging ? 0.15 : 0)
+        ));
         setResult({
           query: activeQuery,
           answer: answerText.slice(0, 1200),
           citations: [],
-          confidence: 0.75,
+          confidence: estimatedConfidence,
           generatedAt: Date.now(),
         });
         setResultMode('text');
@@ -358,7 +363,7 @@ export default React.memo(function NEXAIPage() {
 
       try {
         const ssUrl = `https://api.semanticscholar.org/graph/v1/paper/search?query=${encodeURIComponent(activeQuery.slice(0, 100))}&fields=title,authors,year,citationCount&limit=5`;
-        const ssRes = await fetch(ssUrl);
+        const ssRes = await fetch(ssUrl, { signal: controller.signal });
         if (ssRes.ok) {
           const ssData = await ssRes.json();
           const ssCitations: CitationNode[] = (ssData.data ?? []).map((p: Record<string, unknown>, i: number) => ({
@@ -376,7 +381,7 @@ export default React.memo(function NEXAIPage() {
             appendConsole({ level: 'info', module: 'nexai', message: `Semantic Scholar: ${ssCitations.length} real citation(s) loaded` });
           }
         }
-      } catch { /* Semantic Scholar optional */ }
+      } catch { /* Semantic Scholar optional — abort or network error */ }
 
       // Add assistant message to conversation
       const finalResult = pathway
