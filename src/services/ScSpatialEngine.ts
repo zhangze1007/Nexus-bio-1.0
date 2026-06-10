@@ -33,6 +33,8 @@
  *   - Lopez et al. (2018) Deep generative modeling for single-cell transcriptomics
  */
 
+import { KDTreeIndex } from '../utils/knnIndex';
+
 // ══════════════════════════════════════════════════════════════════════
 //  Types
 // ══════════════════════════════════════════════════════════════════════
@@ -206,25 +208,42 @@ function allGenes(cells: CellRecord[]): string[] {
   return Array.from(geneSet).sort();
 }
 
-/** Build a KNN graph from 2-D points. Returns edge list of index pairs. */
+/** Build a KNN graph from 2-D points using a K-d tree index. Returns edge list of index pairs. */
 function buildKNNGraph(points: [number, number][], k: number): [number, number][] {
   const n = points.length;
   const edges: [number, number][] = [];
+
+  // Build a map from point coordinates back to their original indices.
+  // We encode each [x, y] as a string key "x,y" for O(1) lookup.
+  const coordToIndex = new Map<string, number[]>();
   for (let i = 0; i < n; i++) {
-    // Compute distances from point i to every other point
-    const dists: { idx: number; d: number }[] = [];
-    for (let j = 0; j < n; j++) {
-      if (i === j) continue;
-      const dx = points[i][0] - points[j][0];
-      const dy = points[i][1] - points[j][1];
-      dists.push({ idx: j, d: Math.sqrt(dx * dx + dy * dy) });
-    }
-    dists.sort((a, b) => a.d - b.d);
-    const kActual = Math.min(k, dists.length);
-    for (let t = 0; t < kActual; t++) {
-      edges.push([i, dists[t].idx]);
+    const key = `${points[i][0]},${points[i][1]}`;
+    const existing = coordToIndex.get(key);
+    if (existing) {
+      existing.push(i);
+    } else {
+      coordToIndex.set(key, [i]);
     }
   }
+
+  // Build K-d tree index from all points
+  const index = new KDTreeIndex(points.map(p => [p[0], p[1]]));
+
+  // Query k+1 nearest neighbors for each point (includes the point itself)
+  for (let i = 0; i < n; i++) {
+    const neighbors = index.query([points[i][0], points[i][1]], k + 1);
+    for (const nr of neighbors) {
+      const key = `${nr.point[0]},${nr.point[1]}`;
+      const candidates = coordToIndex.get(key);
+      if (!candidates) continue;
+      for (const j of candidates) {
+        if (i !== j) {
+          edges.push([i, j]);
+        }
+      }
+    }
+  }
+
   return edges;
 }
 
