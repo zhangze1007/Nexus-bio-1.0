@@ -1,12 +1,21 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ExportButton from '../ide/shared/ExportButton';
 import { useWorkbenchStore } from '../../store/workbenchStore';
 import { T } from '../ide/tokens';
 import { buildProEvolCampaignInput } from '../../data/proevolMockCampaign';
 import { buildProEvolCampaign } from '../../services/ProEvolCampaignEngine';
-import { campaignToArtifact } from '../../domain/proevolArtifact';
+import {
+  campaignToArtifact,
+  PROEVOL_ARTIFACT_VERSION,
+} from '../../domain/proevolArtifact';
+import type {
+  ProEvolArtifact,
+  ProEvolVariantRoundObservation,
+  ProEvolVariant,
+  ProEvolRound,
+} from '../../domain/proevolArtifact';
 import { buildProEvolResearchSummary } from '../../services/proevolAnalysis';
 
 import EvolutionCampaignContextCard from './proevol/EvolutionCampaignContextCard';
@@ -27,6 +36,206 @@ import VariantEvidenceTable from './proevol/research/VariantEvidenceTable';
 
 const PANEL_BG = PROEVOL_THEME.pageBg;
 
+// ── CSV parsing & artifact construction ─────────────────────────────────────
+
+interface CSVRow {
+  variant_id: string;
+  round: number;
+  replicate: number;
+  read_count: number;
+}
+
+interface ParsedCSV {
+  rows: CSVRow[];
+  variantIds: string[];
+  rounds: number[];
+  replicates: number[];
+}
+
+function parseCSV(text: string): ParsedCSV {
+  const lines = text.trim().split(/\r?\n/);
+  if (lines.length < 2) throw new Error('CSV must have a header row and at least one data row.');
+
+  const header = lines[0].split(',').map((h) => h.trim().toLowerCase());
+  const colIndex = {
+    variant_id: header.indexOf('variant_id'),
+    round: header.indexOf('round'),
+    replicate: header.indexOf('replicate'),
+    read_count: header.indexOf('read_count'),
+  };
+  for (const [key, idx] of Object.entries(colIndex)) {
+    if (idx === -1) throw new Error(`Missing required column: "${key}"`);
+  }
+
+  const rows: CSVRow[] = [];
+  const variantSet = new Set<string>();
+  const roundSet = new Set<number>();
+  const replicateSet = new Set<number>();
+
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+    const cols = line.split(',').map((c) => c.trim());
+    const variant_id = cols[colIndex.variant_id];
+    const round = Number(cols[colIndex.round]);
+    const replicate = Number(cols[colIndex.replicate]);
+    const read_count = Number(cols[colIndex.read_count]);
+
+    if (!variant_id) throw new Error(`Row ${i + 1}: empty variant_id`);
+    if (!Number.isFinite(round) || round < 1) throw new Error(`Row ${i + 1}: invalid round "${cols[colIndex.round]}"`);
+    if (!Number.isFinite(replicate) || replicate < 1) throw new Error(`Row ${i + 1}: invalid replicate "${cols[colIndex.replicate]}"`);
+    if (!Number.isFinite(read_count) || read_count < 0) throw new Error(`Row ${i + 1}: invalid read_count "${cols[colIndex.read_count]}"`);
+
+    rows.push({ variant_id, round, replicate, read_count });
+    variantSet.add(variant_id);
+    roundSet.add(round);
+    replicateSet.add(replicate);
+  }
+
+  if (rows.length === 0) throw new Error('CSV contains no data rows.');
+
+  return {
+    rows,
+    variantIds: [...variantSet],
+    rounds: [...roundSet].sort((a, b) => a - b),
+    replicates: [...replicateSet].sort((a, b) => a - b),
+  };
+}
+
+/** Derive a family grouping from variant_id prefix (e.g. "M1-A12V" → family "M1"). */
+function deriveFamily(variantId: string): { familyId: string; familyLabel: string } {
+  const dashIdx = variantId.indexOf('-');
+  if (dashIdx > 0) {
+    const prefix = variantId.substring(0, dashIdx);
+    return { familyId: prefix, familyLabel: `Family ${prefix}` };
+  }
+  if (variantId === 'WT' || variantId.toLowerCase().startsWith('wt')) {
+    return { familyId: 'wt', familyLabel: 'Wild Type' };
+  }
+  return { familyId: variantId, familyLabel: `Family ${variantId}` };
+}
+
+/** Derive mutation string from variant_id (e.g. "M1-A12V" → "A12V", "WT" → ""). */
+function deriveMutations(variantId: string): { mutationString: string; mutationBurden: number; mutations: Array<{ position: number; from: string; to: string }> } {
+  if (variantId === 'WT' || variantId.toLowerCase().startsWith('wt')) {
+    return { mutationString: '', mutationBurden: 0, mutations: [] };
+  }
+  const dashIdx = variantId.indexOf('-');
+  const mutPart = dashIdx > 0 ? variantId.substring(dashIdx + 1) : variantId;
+  // Support comma-separated multi-mutations like "A12V,S88A"
+  const parts = mutPart.split(',').map((s) => s.trim()).filter(Boolean);
+  const mutations: Array<{ position: number; from: string; to: string }> = [];
+  const mutationStrings: string[] = [];
+  for (const part of parts) {
+    const m = part.match(/^([A-Z])(\d+)([A-Z])$/i);
+    if (m) {
+      mutations.push({ from: m[1].toUpperCase(), position: Number(m[2]), to: m[3].toUpperCase() });
+      mutationStrings.push(part);
+    } else {
+      // If we can't parse it, use the raw string as-is
+      mutationStrings.push(part);
+    }
+  }
+  return { mutationString: mutationStrings.join(' / '), mutationBurden: mutations.length || Math.max(parts.length, 1), mutations };
+}
+
+function csvToArtifact(parsed: ParsedCSV, targetProduct: string): ProEvolArtifact {
+  const { rows, variantIds, rounds, replicates } = parsed;
+  const wildTypeId = variantIds.find((id) => id === 'WT' || id.toLowerCase().startsWith('wt')) ?? variantIds[0];
+
+  // Build round structures
+  const roundObjs: ProEvolRound[] = rounds.map((roundNum) => {
+    const roundLabel = `r${roundNum}`;
+    // Sum reads per replicate across all variants for this round
+    const totalReadsPerReplicate = replicates.map((repNum) => {
+      const replicateId = `rep${repNum}`;
+      const total = rows
+        .filter((r) => r.round === roundNum && r.replicate === repNum)
+        .reduce((sum, r) => sum + r.read_count, 0);
+      return { replicateId, reads: total };
+    });
+    return {
+      id: roundLabel,
+      number: roundNum,
+      label: `Round ${roundNum}`,
+      selectionPressure: 'user-supplied',
+      reportedSurvivorCount: variantIds.length,
+      totalReadsPerReplicate,
+    };
+  });
+
+  // Build variant structures
+  const variants: ProEvolVariant[] = variantIds.map((variantId) => {
+    const { familyId, familyLabel } = deriveFamily(variantId);
+    const { mutationString, mutationBurden, mutations } = deriveMutations(variantId);
+
+    const observations: ProEvolVariantRoundObservation[] = rounds.map((roundNum) => {
+      const replicateIdMap = replicates.map((repNum) => `rep${repNum}`);
+      const replicatesData = replicateIdMap.map((replicateId, idx) => {
+        const repNum = replicates[idx];
+        const matching = rows.find((r) => r.variant_id === variantId && r.round === roundNum && r.replicate === repNum);
+        return { replicateId, reads: matching?.read_count ?? 0 };
+      });
+      const totalReads = replicatesData.reduce((sum, r) => sum + r.reads, 0);
+      return { roundId: `r${roundNum}`, replicates: replicatesData, totalReads };
+    });
+
+    const isWildType = variantId === wildTypeId;
+
+    return {
+      id: variantId,
+      label: variantId,
+      parentId: isWildType ? null : wildTypeId,
+      familyId,
+      familyLabel,
+      mutations,
+      mutationString,
+      mutationBurden,
+      observations,
+      phenotype: {},
+      selectionStatus: isWildType ? 'wild-type' : 'unknown',
+      riskFlags: [],
+    };
+  });
+
+  return {
+    version: PROEVOL_ARTIFACT_VERSION,
+    meta: {
+      id: `csv-upload-${Date.now()}`,
+      name: 'User CSV Upload',
+      targetProtein: targetProduct,
+      targetProduct,
+      wildTypeId,
+      wildTypeLabel: wildTypeId,
+      startingSequence: '',
+      hostSystem: 'User-supplied',
+      screeningSystem: 'User-supplied',
+      assayCondition: 'User-supplied',
+      selectionPressure: 'User-supplied',
+      objective: 'Analyze user-supplied directed evolution data',
+      totalRounds: rounds.length,
+      librarySizePerRound: variantIds.length,
+      selectionStringency: 0.5,
+    },
+    rounds: roundObjs,
+    variants,
+    provenance: {
+      kind: 'user-supplied',
+      validity: 'real',
+      bandSemantic: 'measurement',
+      isModeled: false,
+      source: 'User CSV upload',
+      replicateCount: replicates.length,
+      statisticalNotes: [
+        'Per-replicate read counts supplied by user.',
+        'Uncertainty bands represent 95% CIs across biological replicates.',
+        'Frequencies use Laplace pseudocount (+1) before normalization.',
+      ],
+      generatedAt: Date.now(),
+    },
+  };
+}
+
 export default function ProEvolPage() {
   const project = useWorkbenchStore((state) => state.project);
   const analyzeArtifact = useWorkbenchStore((state) => state.analyzeArtifact);
@@ -42,6 +251,74 @@ export default function ProEvolPage() {
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
   const [showParams, setShowParams] = useState(false);
 
+  // ── CSV upload state ────────────────────────────────────────────────────
+  const [csvArtifact, setCsvArtifact] = useState<ProEvolArtifact | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploadFileName, setUploadFileName] = useState<string | null>(null);
+  const [isParsing, setIsParsing] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // ── CSV upload handler ──────────────────────────────────────────────────
+  const handleCSVUpload = useCallback((file: File) => {
+    setIsParsing(true);
+    setUploadError(null);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const text = e.target?.result;
+        if (typeof text !== 'string') throw new Error('Failed to read file.');
+        const parsed = parseCSV(text);
+        const targetProduct = analyzeArtifact?.targetProduct || project?.targetProduct || project?.title || 'Target Product';
+        const artifact = csvToArtifact(parsed, targetProduct);
+        setCsvArtifact(artifact);
+        setUploadFileName(file.name);
+        setUploadError(null);
+      } catch (err) {
+        setUploadError(err instanceof Error ? err.message : 'Unknown error parsing CSV.');
+        setCsvArtifact(null);
+        setUploadFileName(null);
+      } finally {
+        setIsParsing(false);
+      }
+    };
+    reader.onerror = () => {
+      setUploadError('Failed to read file.');
+      setIsParsing(false);
+    };
+    reader.readAsText(file);
+  }, [analyzeArtifact?.targetProduct, project?.targetProduct, project?.title]);
+
+  const handleFileInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) handleCSVUpload(file);
+    // Reset input so re-uploading the same file triggers onChange
+    e.target.value = '';
+  }, [handleCSVUpload]);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      if (!file.name.endsWith('.csv')) {
+        setUploadError('Please upload a .csv file.');
+        return;
+      }
+      handleCSVUpload(file);
+    }
+  }, [handleCSVUpload]);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
+
+  const clearCSV = useCallback(() => {
+    setCsvArtifact(null);
+    setUploadError(null);
+    setUploadFileName(null);
+  }, []);
+
   const campaignInput = useMemo(
     () => buildProEvolCampaignInput({
       project, analyzeArtifact, catalyst: catalystPayload, fba: fbaPayload, cethx: cethxPayload,
@@ -54,7 +331,17 @@ export default function ProEvolPage() {
   const targetProduct = analyzeArtifact?.targetProduct || project?.targetProduct || project?.title || 'Target Product';
   const artifact = useMemo(() => campaignToArtifact({ campaign, targetProduct }), [campaign, targetProduct]);
   const research = useMemo(() => buildProEvolResearchSummary(artifact), [artifact]);
-  const bandSemantic = artifact.provenance.bandSemantic;
+
+  // Real analysis from CSV data (overrides synthetic when CSV is uploaded)
+  const csvResearch = useMemo(
+    () => (csvArtifact ? buildProEvolResearchSummary(csvArtifact) : null),
+    [csvArtifact],
+  );
+
+  // When CSV is present, use real analysis; otherwise use synthetic
+  const activeResearch = csvResearch ?? research;
+  const activeArtifact = csvArtifact ?? artifact;
+  const bandSemantic = activeArtifact.provenance.bandSemantic;
 
   const focusedVariant =
     (selectedVariantId ? campaign.variantIndex[selectedVariantId] : undefined)
@@ -88,25 +375,25 @@ export default function ProEvolPage() {
         leadMutationString: campaign.leadVariant.mutationString,
         selectedThisRound: campaign.currentRoundResult.selectedSurvivors.length,
         rejectedThisRound: campaign.currentRoundResult.rejectedVariants.length,
-        diversityIndex: research.lastRoundShannon?.mean ?? 0,
+        diversityIndex: activeResearch.lastRoundShannon?.mean ?? 0,
         convergenceState: campaign.convergenceSignal.state,
         recommendation: campaign.nextRoundRecommendation.summary,
       },
       updatedAt: Date.now(),
     });
-  }, [analyzeArtifact?.id, artifact.provenance.validity, campaign, research.lastRoundShannon, setToolPayload, targetProduct]);
+  }, [activeResearch.lastRoundShannon, analyzeArtifact?.id, artifact.provenance.validity, campaign, setToolPayload, targetProduct]);
 
   // ── Exports ────────────────────────────────────────────────────────────
   const trajectoryExport = useMemo(
-    () => research.trajectories.flatMap((t) => t.points.map((p) => ({
+    () => activeResearch.trajectories.flatMap((t) => t.points.map((p) => ({
       variantId: t.variantId, variant: t.label, family: t.familyLabel,
       round: p.roundNumber, frequency: p.frequency, bandLower: p.lower, bandUpper: p.upper,
       bandSemantic, totalReads: p.totalReads,
     }))),
-    [bandSemantic, research.trajectories],
+    [bandSemantic, activeResearch.trajectories],
   );
   const enrichmentExport = useMemo(
-    () => research.enrichment.map((e) => ({
+    () => activeResearch.enrichment.map((e) => ({
       variantId: e.variantId, variant: e.label, family: e.familyLabel, mutations: e.mutationString,
       mutationBurden: e.mutationBurden, finalFrequency: e.finalFrequency,
       bandLower: e.finalFrequencyCi.lower, bandUpper: e.finalFrequencyCi.upper, bandSemantic,
@@ -114,16 +401,16 @@ export default function ProEvolPage() {
       log2EnrichmentAcrossRounds: e.log2EnrichmentAcrossRounds,
       meanSelectionCoefficient: e.meanSelectionCoefficient, totalReadsLastRound: e.totalReadsLastRound,
     })),
-    [bandSemantic, research.enrichment],
+    [bandSemantic, activeResearch.enrichment],
   );
   const diversityExport = useMemo(
-    () => research.diversity.map((d) => ({
+    () => activeResearch.diversity.map((d) => ({
       round: d.roundNumber, shannonBits: d.shannonBits.mean,
       shannonBandLower: d.shannonBits.lower, shannonBandUpper: d.shannonBits.upper,
       topShare: d.topShare.mean, topShareBandLower: d.topShare.lower, topShareBandUpper: d.topShare.upper,
       bandSemantic, effectiveVariantCount: d.effectiveVariantCount, observedVariantCount: d.observedVariantCount,
     })),
-    [bandSemantic, research.diversity],
+    [bandSemantic, activeResearch.diversity],
   );
 
   const exportSuffix = bandSemantic === 'modeled' ? '-modeled' : '-experiment';
@@ -136,11 +423,118 @@ export default function ProEvolPage() {
 
         {/* ═══ 1. TRUTH HEADER ═══ */}
         <TruthHeader
-          campaignName={campaign.name}
+          campaignName={csvArtifact ? 'User CSV Upload' : campaign.name}
           targetProduct={targetProduct}
-          provenance={artifact.provenance}
-          actions={<ExportButton label="Artifact JSON" data={artifact} filename={`proevol-artifact${exportSuffix}`} format="json" />}
+          provenance={activeArtifact.provenance}
+          actions={<ExportButton label="Artifact JSON" data={activeArtifact} filename={`proevol-artifact${exportSuffix}`} format="json" />}
         />
+
+        {/* ═══ 1b. CSV UPLOAD ═══ */}
+        <div
+          style={{
+            padding: '10px 12px', borderRadius: 'var(--nb-radius-md)',
+            border: `1px dashed ${csvArtifact ? PROEVOL_THEME.mint : PROEVOL_THEME.border}`,
+            background: csvArtifact ? 'rgba(191,220,205,0.06)' : PROEVOL_THEME.surface,
+            display: 'grid', gap: '8px',
+          }}
+          onDrop={handleDrop}
+          onDragOver={handleDragOver}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={kicker}>CSV Data Upload</span>
+            {csvArtifact ? (
+              <>
+                <StatusPill tone="cool">Real data</StatusPill>
+                <StatusPill tone="cool">{csvArtifact.variants.length} variants</StatusPill>
+                <StatusPill tone="cool">{csvArtifact.rounds.length} rounds</StatusPill>
+              </>
+            ) : (
+              <StatusPill tone="neutral">Synthetic mode</StatusPill>
+            )}
+          </div>
+          {!csvArtifact ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+              <div
+                style={{
+                  fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: PROEVOL_THEME.muted,
+                  lineHeight: 1.5, flex: '1 1 260px',
+                }}
+              >
+                Upload a CSV with columns: <code style={{ fontFamily: T.MONO, color: PROEVOL_THEME.sky, fontSize: 'var(--nb-fs-xs)' }}>variant_id, round, replicate, read_count</code>.
+                Drop a file here or click to browse.
+              </div>
+              <label
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '6px',
+                  padding: '6px 14px', borderRadius: '999px',
+                  background: 'rgba(191,220,205,0.12)', color: PROEVOL_THEME.mint,
+                  fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', letterSpacing: '0.06em',
+                  textTransform: 'uppercase', cursor: 'pointer',
+                  border: `1px solid ${PROEVOL_THEME.mint}44`,
+                }}
+              >
+                {isParsing ? 'Parsing...' : 'Choose CSV'}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".csv,text/csv"
+                  onChange={handleFileInputChange}
+                  style={{ display: 'none' }}
+                />
+              </label>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PROEVOL_THEME.value }}>
+                {uploadFileName}
+              </span>
+              <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: PROEVOL_THEME.muted }}>
+                {csvArtifact.provenance.replicateCount} replicates · {csvArtifact.provenance.bandSemantic === 'measurement' ? '95% CI bands' : 'model spread'}
+              </span>
+              <button
+                type="button"
+                onClick={clearCSV}
+                style={{
+                  padding: '4px 10px', borderRadius: '999px',
+                  background: 'rgba(232,163,161,0.12)', color: PROEVOL_THEME.coral,
+                  fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', letterSpacing: '0.06em',
+                  textTransform: 'uppercase', cursor: 'pointer',
+                  border: `1px solid ${PROEVOL_THEME.coral}44`,
+                }}
+              >
+                Clear
+              </button>
+              <label
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '6px',
+                  padding: '4px 10px', borderRadius: '999px',
+                  background: 'rgba(191,220,205,0.08)', color: PROEVOL_THEME.mint,
+                  fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', letterSpacing: '0.06em',
+                  textTransform: 'uppercase', cursor: 'pointer',
+                  border: `1px solid ${PROEVOL_THEME.mint}33`,
+                }}
+              >
+                Replace
+                <input
+                  type="file"
+                  accept=".csv,text/csv"
+                  onChange={handleFileInputChange}
+                  style={{ display: 'none' }}
+                />
+              </label>
+            </div>
+          )}
+          {uploadError ? (
+            <div style={{
+              fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: PROEVOL_THEME.coral,
+              padding: '6px 10px', borderRadius: 'var(--nb-radius-sm)',
+              background: 'rgba(232,163,161,0.08)', border: `1px solid ${PROEVOL_THEME.coral}33`,
+              lineHeight: 1.5,
+            }}>
+              {uploadError}
+            </div>
+          ) : null}
+        </div>
 
         {/* ═══ 2. METRIC BAR — responsive auto-fit ═══ */}
         <div style={{
@@ -244,28 +638,28 @@ export default function ProEvolPage() {
         <div style={{ display: 'grid', gap: '8px', gridTemplateColumns: 'minmax(0, 2.4fr) minmax(200px, 0.8fr)' }}>
           <ChartShell title="Variant trajectory · top 6" footnote={`Frequencies use Laplace pseudocount (+1). Hover for ${bandSemantic === 'modeled' ? 'model spread' : '95% CI'} range.`}>
             <VariantTrajectoryChart
-              trajectories={research.topVariants}
+              trajectories={activeResearch.topVariants}
               bandSemantic={bandSemantic}
               highlightVariantId={selectedVariantId}
               onSelectVariant={setSelectedVariantId}
             />
           </ChartShell>
-          <EvidenceStatRail research={research} bandSemantic={bandSemantic} />
+          <EvidenceStatRail research={activeResearch} bandSemantic={bandSemantic} />
         </div>
 
         {/* ═══ 7. EVIDENCE: Muller + Diversity ═══ */}
         <div style={{ display: 'grid', gap: '8px', gridTemplateColumns: 'minmax(0, 1.1fr) minmax(0, 0.9fr)' }}>
           <ChartShell title="Family share · Muller stack" footnote="Normalized share per family across rounds.">
-            <MullerPlot data={research.familyShares} />
+            <MullerPlot data={activeResearch.familyShares} />
           </ChartShell>
           <ChartShell title="Diversity & convergence" footnote="Shannon entropy (left) vs top-1 frequency (right).">
-            <DiversityConvergenceCurve data={research.diversity} bandSemantic={bandSemantic} />
+            <DiversityConvergenceCurve data={activeResearch.diversity} bandSemantic={bandSemantic} />
           </ChartShell>
         </div>
 
         {/* ═══ 8. EVIDENCE: Enrichment scatter ═══ */}
         <ChartShell title="Enrichment vs mutation burden" footnote="Above dashed line = enriched vs WT. Bubble area = final frequency.">
-          <EnrichmentBurdenScatter entries={research.enrichment} highlightVariantId={selectedVariantId} onSelectVariant={setSelectedVariantId} />
+          <EnrichmentBurdenScatter entries={activeResearch.enrichment} highlightVariantId={selectedVariantId} onSelectVariant={setSelectedVariantId} />
         </ChartShell>
 
         {/* ═══ 9. EVIDENCE TABLE ═══ */}
@@ -275,7 +669,7 @@ export default function ProEvolPage() {
         }}>
           <div style={kicker}>Variant evidence · top 12 by log₂ enrichment vs WT</div>
           <div style={{ marginTop: '6px' }}>
-            <VariantEvidenceTable entries={research.enrichment} highlightVariantId={selectedVariantId} onSelectVariant={setSelectedVariantId} />
+            <VariantEvidenceTable entries={activeResearch.enrichment} highlightVariantId={selectedVariantId} onSelectVariant={setSelectedVariantId} />
           </div>
         </div>
 
