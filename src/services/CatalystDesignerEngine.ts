@@ -358,7 +358,7 @@ function sampleSubstitution(aa: string, rng: SeededRNG, temperature: number = 1.
   return probs[probs.length - 1].aa;
 }
 
-/** Pick best yeast codon for an amino acid. */
+/** Pick best yeast codon for an amino acid (deterministic). */
 function bestCodon(aa: string): string {
   const codons = YEAST_CODON_TABLE[aa];
   if (!codons || codons.length === 0) return 'NNN';
@@ -369,8 +369,39 @@ function bestCodon(aa: string): string {
   return best.codon;
 }
 
-/** Codon-optimize a protein sequence for S. cerevisiae. Returns DNA + metrics. */
-function codonOptimize(proteinSeq: string): { dna: string; cai: number; gcContent: number; rareCodons: number } {
+/**
+ * Weighted random codon selection for an amino acid.
+ *
+ * Selects a codon with probability proportional to its frequency,
+ * producing a realistic codon usage distribution rather than always
+ * picking the most frequent codon (which trivially yields CAI = 1.0).
+ */
+function weightedRandomCodon(aa: string, rng: SeededRNG): { codon: string; frequency: number } {
+  const codons = YEAST_CODON_TABLE[aa];
+  if (!codons || codons.length === 0) return { codon: 'NNN', frequency: 0 };
+
+  const totalFreq = codons.reduce((sum, c) => sum + c.frequency, 0);
+  const r = rng.next() * totalFreq;
+  let cumulative = 0;
+  for (const c of codons) {
+    cumulative += c.frequency;
+    if (r <= cumulative) return c;
+  }
+  return codons[codons.length - 1];
+}
+
+/**
+ * Codon-optimize a protein sequence for S. cerevisiae. Returns DNA + metrics.
+ *
+ * Uses weighted random codon selection (probability proportional to natural
+ * codon frequency) so that CAI reflects realistic codon bias rather than
+ * always selecting the optimal codon. Over many positions the expected CAI
+ * approaches the natural codon usage, typically 0.6–0.8 for S. cerevisiae.
+ *
+ * @param proteinSeq  Amino acid sequence
+ * @param rng         Seeded RNG for deterministic codon sampling
+ */
+function codonOptimize(proteinSeq: string, rng: SeededRNG): { dna: string; cai: number; gcContent: number; rareCodons: number } {
   let dna = '';
   let logCai = 0;
   let gcCount = 0;
@@ -383,10 +414,11 @@ function codonOptimize(proteinSeq: string): { dna: string; cai: number; gcConten
       dna += 'NNN';
       continue;
     }
+    // Weighted random selection: codons chosen with probability ∝ frequency
+    const chosen = weightedRandomCodon(aa, rng);
+    dna += chosen.codon;
     // CAI uses relative adaptiveness w_i = freq_i / max_freq_for_this_AA
     const maxFreq = Math.max(...codons.map(c => c.frequency));
-    const chosen = codons.reduce((a, b) => a.frequency > b.frequency ? a : b);
-    dna += chosen.codon;
     const w = maxFreq > 0 ? chosen.frequency / maxFreq : 0;
     if (w > 0) {
       logCai += Math.log(w);
@@ -650,7 +682,7 @@ export function designSequences(
     }
     const score = round3(nll / seq.length);
 
-    const { dna, cai, gcContent, rareCodons } = codonOptimize(seq);
+    const { dna, cai, gcContent, rareCodons } = codonOptimize(seq, rng);
 
     designs.push({
       rank: 0, // assigned after sorting
