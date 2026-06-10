@@ -184,6 +184,46 @@ interface ODEState {
 }
 
 /**
+ * Solve for free ribosome concentration given mRNA concentrations and
+ * construct K_tl values using damped fixed-point iteration.
+ *
+ * R_free = R_total - Σ mRNA_i · R_free / (K_tl_i + R_free)
+ *
+ * @param mRNAs - mRNA concentrations for each gene
+ * @param constructs - gene construct parameters (for K_tl values)
+ * @param ribosomeTotal - total ribosome pool
+ * @returns converged R_free value
+ */
+function solveRibosomeFree(
+  mRNAs: number[],
+  constructs: GeneConstruct[],
+  ribosomeTotal: number,
+): number {
+  let rFree = ribosomeTotal;
+  const MAX_ITER = 30;
+  const CONVERGENCE_TOL = 0.01;
+  const DAMPING = 0.5;
+  let prevResidual = Infinity;
+
+  for (let iter = 0; iter < MAX_ITER; iter++) {
+    let rBoundSum = 0;
+    for (let i = 0; i < mRNAs.length; i++) {
+      rBoundSum += mRNAs[i] * rFree / (constructs[i].K_tl + rFree);
+    }
+    const rFreeTarget = Math.max(0, ribosomeTotal - rBoundSum);
+    const rFreeNew = rFree + DAMPING * (rFreeTarget - rFree);
+    const residual = Math.abs(rFreeNew - rFree);
+
+    if (residual < CONVERGENCE_TOL) { return rFreeNew; }
+    if (residual > prevResidual * 10 && iter > 5) { return rFreeNew; }
+
+    prevResidual = residual;
+    rFree = rFreeNew;
+  }
+  return rFree;
+}
+
+/**
  * Compute derivatives for the full TX-TL + energy ODE system.
  *
  * @param state - current state vector
@@ -217,39 +257,11 @@ function computeDerivatives(
   const ntpFactor = ntps / (K_NTP + ntps);
   const aaFactor  = aa  / (K_AA  + aa);
 
-  // --- Ribosome competition (iterative) ---
-  // Collect mRNA concentrations
+  // --- Ribosome competition (shared solver) ---
   const mRNAs: number[] = [];
   for (let i = 0; i < n; i++) mRNAs.push(Math.max(0, v[2 * i]));
 
-  // Solve R_free iteratively: R_free = R_total - Σ mRNA_i · R_free / (K_tl_i + R_free)
-  // Using damped fixed-point iteration with divergence detection
-  let rFree = params.ribosomeTotal;
-  const MAX_RIBOSOME_ITER = 30;
-  const RIBOSOME_CONVERGENCE_TOL = 0.01;
-  const DAMPING = 0.5; // Damping factor for stability
-  let prevResidual = Infinity;
-  for (let iter = 0; iter < MAX_RIBOSOME_ITER; iter++) {
-    let rBoundSum = 0;
-    for (let i = 0; i < n; i++) {
-      rBoundSum += mRNAs[i] * rFree / (constructs[i].K_tl + rFree);
-    }
-    const rFreeTarget = Math.max(0, params.ribosomeTotal - rBoundSum);
-    const rFreeNew = rFree + DAMPING * (rFreeTarget - rFree); // Damped update
-    const residual = Math.abs(rFreeNew - rFree);
-
-    // Convergence check
-    if (residual < RIBOSOME_CONVERGENCE_TOL) { rFree = rFreeNew; break; }
-
-    // Divergence detection: if residual increased significantly, stop
-    if (residual > prevResidual * 10 && iter > 5) {
-      rFree = rFreeNew; // Use current best estimate
-      break;
-    }
-
-    prevResidual = residual;
-    rFree = rFreeNew;
-  }
+  const rFree = solveRibosomeFree(mRNAs, constructs, params.ribosomeTotal);
 
   // RNAP availability (simplified: assume all RNAP available; could be extended)
   const rnapAvail = 1.0;
@@ -395,20 +407,11 @@ export function simulateCFPS(
     // Record time
     timeArr.push(t);
 
-    // Solve R_free for recording
+    // Solve R_free for recording (shared solver — same algorithm as computeDerivatives)
     const mRNAs: number[] = [];
     for (let i = 0; i < n; i++) mRNAs.push(Math.max(0, v[2 * i]));
 
-    let rFree = params.ribosomeTotal;
-    for (let iter = 0; iter < 15; iter++) {
-      let rBoundSum = 0;
-      for (let i = 0; i < n; i++) {
-        rBoundSum += mRNAs[i] * rFree / (constructs[i].K_tl + rFree);
-      }
-      const rFreeNew = Math.max(0, params.ribosomeTotal - rBoundSum);
-      if (Math.abs(rFreeNew - rFree) < 0.01) { rFree = rFreeNew; break; }
-      rFree = rFreeNew;
-    }
+    const rFree = solveRibosomeFree(mRNAs, constructs, params.ribosomeTotal);
 
     const eidx = 2 * n;
     const atp  = Math.max(0, v[eidx]);
@@ -599,15 +602,22 @@ export function fitPlateReaderKinetics(data: PlateReaderDataPoint[]): KineticFit
       JtR1  += dKd * r;
     }
 
-    // Damped normal equations: (J^T J + λ I) δ = J^T r  (Levenberg form)
-    const a00 = JtJ00 + lambda;
+    // Marquardt diagonal scaling: (J^T J + λ · diag(J^T J)) δ = J^T r
+    // This adapts the damping per-parameter: larger curvature → larger damping.
+    const a00 = JtJ00 * (1 + lambda);
     const a01 = JtJ01;
-    const a11 = JtJ11 + lambda;
+    const a11 = JtJ11 * (1 + lambda);
     const det = a00 * a11 - a01 * a01;
     if (Math.abs(det) < 1e-30) break;
 
-    const dVmax = (a11 * JtR0 - a01 * JtR1) / det;
-    const dKd   = (a00 * JtR1 - a01 * JtR0) / det;
+    let dVmax = (a11 * JtR0 - a01 * JtR1) / det;
+    let dKd   = (a00 * JtR1 - a01 * JtR0) / det;
+
+    // Trust region: clamp step to max 50 % relative change per parameter
+    const maxDVmax = 0.5 * Math.abs(vmax);
+    const maxDKd   = 0.5 * Math.abs(kd);
+    if (Math.abs(dVmax) > maxDVmax) dVmax = Math.sign(dVmax) * maxDVmax;
+    if (Math.abs(dKd)   > maxDKd)   dKd   = Math.sign(dKd)   * maxDKd;
 
     const vmaxNew = Math.max(1e-6, vmax + dVmax);
     const kdNew   = Math.max(1e-6, kd + dKd);
@@ -673,10 +683,15 @@ export function fitPlateReaderKinetics(data: PlateReaderDataPoint[]): KineticFit
         J00 += d0 * d0; J01 += d0 * d1; J11 += d1 * d1;
         Jr0 += d0 * r;  Jr1 += d1 * r;
       }
-      const det = (J00 + bLam) * (J11 + bLam) - J01 * J01;
+      // Marquardt diagonal scaling + trust region (same as main loop)
+      const det = J00 * (1 + bLam) * J11 * (1 + bLam) - J01 * J01;
       if (Math.abs(det) < 1e-30) break;
-      const dv = ((J11 + bLam) * Jr0 - J01 * Jr1) / det;
-      const dk = ((J00 + bLam) * Jr1 - J01 * Jr0) / det;
+      let dv = (J11 * (1 + bLam) * Jr0 - J01 * Jr1) / det;
+      let dk = (J00 * (1 + bLam) * Jr1 - J01 * Jr0) / det;
+      const maxDv = 0.5 * Math.abs(bVmax);
+      const maxDk = 0.5 * Math.abs(bKd);
+      if (Math.abs(dv) > maxDv) dv = Math.sign(dv) * maxDv;
+      if (Math.abs(dk) > maxDk) dk = Math.sign(dk) * maxDk;
       const nv = Math.max(1e-6, bVmax + dv);
       const nk = Math.max(1e-6, bKd + dk);
       let ssN = 0;
