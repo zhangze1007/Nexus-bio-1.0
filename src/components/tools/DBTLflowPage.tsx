@@ -309,7 +309,7 @@ export default function DBTLflowPage() {
   const feedbackGateLabel = hasCommittedFeedback
     ? `Committed feedback recorded · iteration #${latestCommittedIteration?.id ?? '—'} requires approved typed deltas before reseeding`
     : 'Draft-only feedback · upstream reseeding remains locked until committed, typed, and approved deltas exist';
-  const learnedDeltaPacks = useMemo<LearnedDeltaPack[]>(() => {
+  const computedDeltaPacks = useMemo<LearnedDeltaPack[]>(() => {
     if (!hasCommittedFeedback || !latestCommittedIteration) return [];
     const sourceExperimentRecordIds = sourceExperimentRecordIdsFromFeedback(feedbackResult, liveDraft.feedback);
     if (sourceExperimentRecordIds.length === 0) return [];
@@ -330,6 +330,42 @@ export default function DBTLflowPage() {
       }),
     ];
   }, [feedbackResult, hasCommittedFeedback, latestCommittedIteration, liveDraft.feedback]);
+
+  // Mutable delta packs state — allows human approval/rejection
+  const [learnedDeltaPacks, setLearnedDeltaPacks] = useState<LearnedDeltaPack[]>([]);
+  useEffect(() => {
+    setLearnedDeltaPacks((prev) => {
+      // Merge: preserve any human gate decisions already made on matching packs
+      const prevStatusMap = new Map(prev.map((p) => [p.deltaPackId, p.humanGateStatus]));
+      return computedDeltaPacks.map((pack) => {
+        const existingStatus = prevStatusMap.get(pack.deltaPackId);
+        if (existingStatus && existingStatus !== 'pending') {
+          return { ...pack, humanGateStatus: existingStatus };
+        }
+        return pack;
+      });
+    });
+  }, [computedDeltaPacks]);
+
+  function approveDeltaPack(deltaPackId: string) {
+    setLearnedDeltaPacks((prev) =>
+      prev.map((p) =>
+        p.deltaPackId === deltaPackId ? { ...p, humanGateStatus: 'approved' as const } : p,
+      ),
+    );
+    setActivityTone('success');
+    setActivityMessage(`Delta pack approved. Upstream seed builders can now apply these learned parameters.`);
+  }
+
+  function rejectDeltaPack(deltaPackId: string) {
+    setLearnedDeltaPacks((prev) =>
+      prev.map((p) =>
+        p.deltaPackId === deltaPackId ? { ...p, humanGateStatus: 'rejected' as const } : p,
+      ),
+    );
+    setActivityTone('info');
+    setActivityMessage(`Delta pack rejected. Upstream seed builders will not apply these learned parameters.`);
+  }
   const figureMeta = useMemo(() => ({
     eyebrow: 'Campaign figure',
     title: `DBTL is framed as a governed experimental ledger with ${currentPhase.toLowerCase()} in focus`,
@@ -1268,6 +1304,117 @@ export default function DBTLflowPage() {
                 </div>
               )}
             </div>
+
+            {/* ── Delta Pack Approval Gate ── */}
+            {learnedDeltaPacks.length > 0 && (
+              <div style={{ background: PATHD_THEME.paperSurfaceStrong, border: `1px solid ${PATHD_THEME.paperBorder}`, borderRadius: 'var(--nb-radius-xl)', padding: '14px', marginTop: '16px' }}>
+                <p style={{ ...sectionLabel, margin: '0 0 10px' }}>
+                  Delta Pack Approval Gate
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {learnedDeltaPacks.map((pack) => {
+                    const statusColor = pack.humanGateStatus === 'approved'
+                      ? PATHD_THEME.mint
+                      : pack.humanGateStatus === 'rejected'
+                        ? PATHD_THEME.coral
+                        : PATHD_THEME.apricot;
+                    const statusBg = pack.humanGateStatus === 'approved'
+                      ? 'rgba(158,215,199,0.18)'
+                      : pack.humanGateStatus === 'rejected'
+                        ? 'rgba(232,163,161,0.18)'
+                        : 'rgba(231,199,169,0.18)';
+                    const statusBorder = pack.humanGateStatus === 'approved'
+                      ? 'rgba(158,215,199,0.34)'
+                      : pack.humanGateStatus === 'rejected'
+                        ? 'rgba(232,163,161,0.34)'
+                        : 'rgba(231,199,169,0.34)';
+                    const entryCount = Object.keys(pack.changedBounds).length
+                      + Object.keys(pack.changedPriors).length
+                      + Object.keys(pack.changedWeights).length;
+                    return (
+                      <div
+                        key={pack.deltaPackId}
+                        style={{
+                          padding: '10px',
+                          borderRadius: 'var(--nb-radius-md)',
+                          background: statusBg,
+                          border: `1px solid ${statusBorder}`,
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                          <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperValue, fontWeight: 600 }}>
+                            Iteration #{pack.iteration} Delta Pack
+                          </span>
+                          <span
+                            style={{
+                              padding: '2px 7px',
+                              borderRadius: '999px',
+                              border: `1px solid ${statusBorder}`,
+                              background: statusBg,
+                              color: statusColor,
+                              fontFamily: T.MONO,
+                              fontSize: 'var(--nb-fs-xs)',
+                              letterSpacing: '0.05em',
+                              textTransform: 'uppercase',
+                            }}
+                          >
+                            {pack.humanGateStatus}
+                          </span>
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginBottom: '8px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperLabel }}>Classification</span>
+                            <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperValue }}>{pack.classification}</span>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperLabel }}>Target tools</span>
+                            <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperValue }}>{pack.targetToolIds.join(', ')}</span>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperLabel }}>Delta entries</span>
+                            <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperValue }}>{entryCount}</span>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperLabel }}>Sources</span>
+                            <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperValue }}>{pack.sourceExperimentRecordIds.length} record(s)</span>
+                          </div>
+                        </div>
+
+                        {pack.notes && (
+                          <p style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperLabel, margin: '0 0 8px', lineHeight: 1.3 }}>
+                            {pack.notes}
+                          </p>
+                        )}
+
+                        {pack.humanGateStatus === 'pending' && (
+                          <div style={{ display: 'flex', gap: '6px' }}>
+                            <ActionButton
+                              variant="primary"
+                              size="sm"
+                              aria-label={`Approve delta pack for iteration ${pack.iteration}`}
+                              onClick={() => approveDeltaPack(pack.deltaPackId)}
+                              style={{ flex: 1 }}
+                            >
+                              Approve
+                            </ActionButton>
+                            <ActionButton
+                              variant="destructive"
+                              size="sm"
+                              aria-label={`Reject delta pack for iteration ${pack.iteration}`}
+                              onClick={() => rejectDeltaPack(pack.deltaPackId)}
+                              style={{ flex: 1 }}
+                            >
+                              Reject
+                            </ActionButton>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* ── Provenance Tracker ── */}
             {assemblyProvenance.length > 0 && (
