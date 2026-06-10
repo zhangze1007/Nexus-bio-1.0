@@ -338,8 +338,9 @@ export default React.memo(function NEXAIPage() {
         // citation, and recent-query UI have something to display.
         // Estimate confidence based on answer quality signals
         const hasHedging = /i'm not sure|possibly|might|uncertain|unclear/i.test(answerText);
+        // Base confidence 0.5, +0.1 for longer answers (more detail), -0.15 for hedging language
         const estimatedConfidence = Math.max(0.3, Math.min(0.95,
-          0.5 + 0.1 * Math.min(0, 3) + 0.1 * Math.min(answerText.length / 200, 1) - (hasHedging ? 0.15 : 0)
+          0.5 + 0.1 * Math.min(answerText.length / 200, 1) - (hasHedging ? 0.15 : 0)
         ));
         setResult({
           query: activeQuery,

@@ -5,7 +5,7 @@
  * FBA requires solving a linear programming problem with stoichiometric constraints.
  * This worker runs Michaelis-Menten kinetics with heuristic formulas.
  *
- * The computeFBA() function uses hardcoded proportional scaling, not LP optimization.
+ * The computeKineticReadouts() function uses hardcoded proportional scaling, not LP optimization.
  * For real FBA, use the server-side simplex solver in /api/fba.
  *
  * Offloads all heavy metabolic math from the main thread.
@@ -45,18 +45,22 @@ function michaelisRate(p: SimParams): number {
   return (vmax * p.substrate) / (p.km + p.substrate);
 }
 
-// ── Simplified FBA: stoichiometric yield estimates ────────────────────
+// ── Kinetic readouts: stoichiometric yield estimates ──────────────────
+// HONEST NAME: This is NOT Flux Balance Analysis (FBA).
+// FBA requires solving a linear programming problem with stoichiometric constraints.
+// This function computes heuristic metabolic readouts from Michaelis-Menten kinetics.
 
-function computeFBA(p: SimParams, rate: number): Omit<SimReadouts, 'tick' | 'reactionRate'> {
+function computeKineticReadouts(p: SimParams, rate: number): Omit<SimReadouts, 'tick' | 'reactionRate'> {
   const baseAtp  = 2 + (p.substrate / 100) * 34;  // glycolysis + TCA
   const atpYield = baseAtp * (rate / (p.vmax + 0.01));
 
   const nadphRate = 0.6 * rate * (p.enzyme / 10);
 
   // Carbon efficiency: fraction of substrate carbon reaching product
+  // Uses pH 7.4 as optimal (consistent with michaelisRate enzyme activity optimum)
   const carbonEfficiency = Math.min(
     100,
-    50 + 40 * (rate / (p.vmax + 0.01)) * Math.exp(-((p.pH - 7.2) ** 2) / 2),
+    50 + 40 * (rate / (p.vmax + 0.01)) * Math.exp(-((p.pH - 7.4) ** 2) / 2),
   );
 
   // Flux balance score: deviation from optimal steady state
@@ -95,7 +99,7 @@ function runTick() {
     : currentParams;
 
   const rate = michaelisRate(effectiveParams);
-  const fba  = computeFBA(effectiveParams, rate);
+  const fba  = computeKineticReadouts(effectiveParams, rate);
 
   const readouts: SimReadouts = { reactionRate: rate, ...fba, tick };
 
