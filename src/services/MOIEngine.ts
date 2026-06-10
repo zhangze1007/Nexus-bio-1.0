@@ -293,22 +293,25 @@ export function extractMOFAFactors(
   let convergedIter = maxIter;
 
   for (let iter = 0; iter < maxIter; iter++) {
-    // Update W: W = (Z^T Z)^{-1} Z^T X (masked)
+    // Create masked X: zero out missing values
+    const Xmasked = X.map((row, i) => row.map((v, j) => M[i][j] ? v : 0));
+
+    // Update W: W = (Z^T Z)^{-1} Z^T Xmasked
     const ZtZ = matMul(transpose(Z), Z);
     // Regularize diagonal
     for (let k = 0; k < K; k++) ZtZ[k][k] += 1e-6;
-    // Pseudo-inverse via Cholesky-like approach (simplified: use Z^T X / diag)
-    const ZtX = matMul(transpose(Z), X);
+    // Pseudo-inverse via diagonal approximation
+    const ZtX = matMul(transpose(Z), Xmasked);
     for (let j = 0; j < 3; j++) {
       for (let k = 0; k < K; k++) {
         W[j][k] = ZtX[k][j] / (ZtZ[k][k] + 1e-6);
       }
     }
 
-    // Update Z: Z = X W (W^T W)^{-1} (masked)
+    // Update Z: Z = Xmasked W (W^T W)^{-1}
     const WtW = matMul(transpose(W), W);
     for (let k = 0; k < K; k++) WtW[k][k] += 1e-6;
-    const XW = matMul(X, W);
+    const XW = matMul(Xmasked, W);
     for (let i = 0; i < n; i++) {
       for (let k = 0; k < K; k++) {
         Z[i][k] = XW[i][k] / (WtW[k][k] + 1e-6);

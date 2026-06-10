@@ -247,19 +247,34 @@ export function solveLPSimplex({ c, A, b, ub, lb: lbRaw }: LPProblem): LPSolutio
 
   // ── Extract solution ─────────────────────────────────────────────────────
   const y = new Float64Array(n);
+  const isBasic = new Uint8Array(2 * n); // Track which variables are basic
+
   // Basic original variables: read from RHS
   for (let i = 0; i < nR; i++) {
     const bv = basis[i];
-    if (bv < n) y[bv] = Math.max(0, T[i][RHS]);
-  }
-  // Non-basic original variables: check if upper-bound slack is basic
-  // If s_j (column n+j) is basic in row i, then y[j] = u[j] - T[i][RHS]
-  for (let i = 0; i < nR; i++) {
-    const bv = basis[i];
-    if (bv >= n && bv < 2 * n) {
-      const j = bv - n; // variable index
+    if (bv < n) {
+      y[bv] = Math.max(0, T[i][RHS]);
+      isBasic[bv] = 1;
+    } else if (bv >= n && bv < 2 * n) {
+      // Upper-bound slack is basic: y[j] = u[j] - T[i][RHS]
+      const j = bv - n;
       y[j] = Math.max(0, u[j] - Math.max(0, T[i][RHS]));
+      isBasic[bv] = 1;
     }
+  }
+
+  // Non-basic variables: check reduced costs to determine if at upper bound
+  // For maximization, if reduced cost < 0, variable should be at upper bound
+  // (The objective row stores -c for maximization, so negative means beneficial)
+  for (let j = 0; j < n; j++) {
+    if (isBasic[j] || isBasic[n + j]) continue; // Already handled
+    // Use the objective row from Phase 2 (stored in obj array)
+    const reducedCost = obj[j];
+    if (reducedCost < -EPS && u[j] > EPS) {
+      // Negative reduced cost for non-basic variable -> at upper bound for maximization
+      y[j] = u[j];
+    }
+    // Otherwise y[j] stays at 0 (lower bound)
   }
 
   // Feasibility: any artificial remaining as basic with non-zero value?

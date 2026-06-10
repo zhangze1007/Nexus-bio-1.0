@@ -2,30 +2,30 @@ import { calcDeltaG, calcKeq, calcMassBalance, R } from '../src/utils/thermodyna
 
 describe('calcDeltaG', () => {
   it('returns ΔG° when Q = 1', () => {
-    const dG = calcDeltaG(-10, 310, [1], [1]);
+    const { dG } = calcDeltaG(-10, 310, [1], [1]);
     expect(dG).toBeCloseTo(-10, 2);
   });
 
   it('makes ΔG more negative when products are low', () => {
-    const dG = calcDeltaG(-10, 310, [0.001], [1]);
+    const { dG } = calcDeltaG(-10, 310, [0.001], [1]);
     expect(dG).toBeLessThan(-10);
   });
 
   it('makes ΔG less negative when products are high', () => {
-    const dG = calcDeltaG(-10, 310, [100], [1]);
+    const { dG } = calcDeltaG(-10, 310, [100], [1]);
     expect(dG).toBeGreaterThan(-10);
   });
 
   it('handles multiple products and reactants', () => {
-    const dG = calcDeltaG(-5, 310, [2, 3], [1, 1]);
+    const { dG } = calcDeltaG(-5, 310, [2, 3], [1, 1]);
     const expected = -5 + R * 310 * Math.log(6);
     expect(dG).toBeCloseTo(expected, 4);
   });
 
   it('handles zero products gracefully', () => {
-    const dG = calcDeltaG(-10, 310, [0], [1]);
-    expect(dG).toBeLessThan(-10);
-    expect(Number.isFinite(dG)).toBe(true);
+    const { dG, warning } = calcDeltaG(-10, 310, [0], [1]);
+    expect(dG).toBe(Infinity);
+    expect(warning).toBeDefined();
   });
 });
 

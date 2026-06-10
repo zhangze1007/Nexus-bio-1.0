@@ -162,24 +162,28 @@ export function runBioreactor(
   let integral = 0, prevErr = 0;
 
   for (let i = 0; i < steps; i++) {
-    // PID controller on dissolved O₂
+    // PID controller on dissolved O₂ - recomputed at each RK4 sub-step
+    const calcAirflow = (s: State) => {
+      const e = controller.setpoint - s.O / params.OstarSat;
+      return Math.max(0, Math.min(3,
+        1 + controller.kp * e + controller.ki * integral + controller.kd * (e - prevErr) / dt
+      ));
+    };
+
+    // RK4 integration with PID recomputed at each sub-step
+    const k1 = derivatives(state, calcAirflow(state), params, hill);
+    const s2 = clampState(addState(state, k1, dt / 2), params);
+    const k2 = derivatives(s2, calcAirflow(s2), params, hill);
+    const s3 = clampState(addState(state, k2, dt / 2), params);
+    const k3 = derivatives(s3, calcAirflow(s3), params, hill);
+    const s4 = clampState(addState(state, k3, dt), params);
+    const k4 = derivatives(s4, calcAirflow(s4), params, hill);
+
+    // Update PID state after RK4 step
     const err = controller.setpoint - state.O / params.OstarSat;
     integral += err * dt;
     integral = Math.max(-5, Math.min(5, integral)); // Anti-windup
-    const derivative = (err - prevErr) / dt;
-    const airflowScale = Math.max(0, Math.min(3,
-      1 + controller.kp * err + controller.ki * integral + controller.kd * derivative
-    ));
     prevErr = err;
-
-    // RK4 integration
-    const k1 = derivatives(state, airflowScale, params, hill);
-    const s2 = clampState(addState(state, k1, dt / 2), params);
-    const k2 = derivatives(s2, airflowScale, params, hill);
-    const s3 = clampState(addState(state, k2, dt / 2), params);
-    const k3 = derivatives(s3, airflowScale, params, hill);
-    const s4 = clampState(addState(state, k3, dt), params);
-    const k4 = derivatives(s4, airflowScale, params, hill);
 
     state = clampState({
       X:   state.X   + (dt / 6) * (k1.X   + 2 * k2.X   + 2 * k3.X   + k4.X),

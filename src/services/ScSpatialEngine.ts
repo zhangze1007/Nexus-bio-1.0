@@ -436,7 +436,7 @@ export function clusterCells(
 
   // KNN graph in expression space (k=15)
   const k = Math.min(15, n - 1);
-  const adj: number[][] = Array.from({ length: n }, () => []);
+  let adj: number[][] = Array.from({ length: n }, () => []);
   for (let i = 0; i < n; i++) {
     const dists: { idx: number; d: number }[] = [];
     for (let j = 0; j < n; j++) {
@@ -463,38 +463,41 @@ export function clusterCells(
     }
   }
 
-  // Simplified Louvain: initialise each cell in its own community
+  // Louvain community detection with multiple passes
   const community = new Int32Array(n);
   for (let i = 0; i < n; i++) community[i] = i;
   const degree = new Float64Array(n);
   for (let i = 0; i < n; i++) degree[i] = adj[i].length;
   const m2 = totalWeight * 2 || 1; // 2 * total edge weight
 
-  // Iterative node-move phase
-  for (let iter = 0; iter < 10; iter++) {
+  // Multiple passes of node-move phase for better convergence
+  const MAX_PASSES = 3;
+  for (let pass = 0; pass < MAX_PASSES; pass++) {
     let moved = false;
-    for (let i = 0; i < n; i++) {
-      const ci = community[i];
-      // Compute modularity gain for moving i to each neighbor community
-      const communityDelta = new Map<number, number>();
-      for (const j of adj[i]) {
-        const cj = community[j];
-        if (cj === ci) continue;
-        const w = 1; // edge weight
-        const sumTot = sumCommunityDegree(community, degree, cj);
-        const ki = degree[i];
-        const gain = resolution * (w - (ki * sumTot) / m2);
-        communityDelta.set(cj, (communityDelta.get(cj) ?? 0) + gain);
+    for (let iter = 0; iter < 10; iter++) {
+      moved = false;
+      for (let i = 0; i < n; i++) {
+        const ci = community[i];
+        const communityDelta = new Map<number, number>();
+        for (const j of adj[i]) {
+          const cj = community[j];
+          if (cj === ci) continue;
+          const w = 1;
+          const sumTot = sumCommunityDegree(community, degree, cj);
+          const ki = degree[i];
+          const gain = resolution * (w - (ki * sumTot) / m2);
+          communityDelta.set(cj, (communityDelta.get(cj) ?? 0) + gain);
+        }
+        let bestComm = ci, bestGain = 0;
+        communityDelta.forEach((gain, comm) => {
+          if (gain > bestGain) { bestGain = gain; bestComm = comm; }
+        });
+        if (bestComm !== ci) {
+          community[i] = bestComm;
+          moved = true;
+        }
       }
-      // Pick best community
-      let bestComm = ci, bestGain = 0;
-      communityDelta.forEach((gain, comm) => {
-        if (gain > bestGain) { bestGain = gain; bestComm = comm; }
-      });
-      if (bestComm !== ci) {
-        community[i] = bestComm;
-        moved = true;
-      }
+      if (!moved) break;
     }
     if (!moved) break;
   }
@@ -619,20 +622,50 @@ export function computePAGA(cells: CellRecord[], clusters: ClusterResult): PAGAR
     }
   }
 
-  // Connectivity matrix — inverse distance between centroids, normalised
+  // Connectivity matrix — graph-based PAGA connectivity
+  // Count inter-cluster edges in the KNN graph, normalized by cluster sizes
   const connectivities: number[][] = Array.from({ length: nC }, () => new Array(nC).fill(0));
-  let maxDist = 0;
-  for (let i = 0; i < nC; i++) {
-    for (let j = i + 1; j < nC; j++) {
-      const d = euclideanDistance(centroids[i], centroids[j]);
-      if (d > maxDist) maxDist = d;
+  const clusterCounts = new Array(nC).fill(0);
+  for (const c of cells) {
+    clusterCounts[c.cluster]++;
+  }
+
+  // Build KNN graph from spatial coordinates
+  const neighborMap = new Map<string, Set<string>>();
+  for (const c of cells) neighborMap.set(c.id, new Set());
+  const k = Math.min(6, cells.length - 1);
+  for (let i = 0; i < cells.length; i++) {
+    const distances = cells.map((cj, j) => ({
+      j,
+      d: Math.sqrt((cells[i].spatialX - cj.spatialX) ** 2 + (cells[i].spatialY - cj.spatialY) ** 2)
+    })).filter(d => d.j !== i).sort((a, b) => a.d - b.d).slice(0, k);
+    for (const { j } of distances) {
+      neighborMap.get(cells[i].id)?.add(cells[j].id);
+      neighborMap.get(cells[j].id)?.add(cells[i].id);
     }
   }
-  maxDist = maxDist || 1;
+
+  // Count inter-cluster edges
+  for (const c of cells) {
+    const ci = c.cluster;
+    const neighbors = neighborMap.get(c.id);
+    if (!neighbors) continue;
+    for (const nid of neighbors) {
+      const neighbor = cells.find(cn => cn.id === nid);
+      if (!neighbor) continue;
+      const cj = neighbor.cluster;
+      if (ci !== cj) {
+        connectivities[ci][cj]++;
+        connectivities[cj][ci]++;
+      }
+    }
+  }
+
+  // Normalize by geometric mean of cluster sizes (PAGA convention)
   for (let i = 0; i < nC; i++) {
     for (let j = i + 1; j < nC; j++) {
-      const d = euclideanDistance(centroids[i], centroids[j]);
-      const w = 1 - d / maxDist;
+      const norm = Math.sqrt(clusterCounts[i] * clusterCounts[j]);
+      const w = norm > 0 ? connectivities[i][j] / norm : 0;
       connectivities[i][j] = w;
       connectivities[j][i] = w;
     }

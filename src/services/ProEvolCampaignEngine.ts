@@ -367,7 +367,8 @@ class SeededRNG {
 
   next() {
     this.state = (this.state * 1664525 + 1013904223) & 0x7fffffff;
-    return this.state / 0x7fffffff;
+    // Divide by 2^31 to guarantee output in [0, 1) -- avoids returning exactly 1.0
+    return this.state / 0x80000000;
   }
 
   gaussian() {
@@ -377,7 +378,7 @@ class SeededRNG {
   }
 
   pick<T>(items: T[]) {
-    return items[Math.floor(this.next() * items.length) % items.length];
+    return items[Math.floor(this.next() * items.length)];
   }
 }
 
@@ -869,7 +870,6 @@ function buildCandidate(
         + family.activityBias * 0.75
         + mutationBonuses.activity * 1.15
         + roundPressure
-        + roundNumber * 0.8
         - incrementalBurden * 1.1
         + rng.gaussian() * 3.4,
       2,

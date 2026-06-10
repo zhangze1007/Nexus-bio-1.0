@@ -139,7 +139,8 @@ export default function ThermodynamicsPanel({ nodeLabel, nodeId, ecNumber: initi
     if (!pArr.length) pArr.push(0.001);
     if (!rArr.length) rArr.push(1.0);
 
-    const dG = calcDeltaG(dG0, T, pArr, rArr);
+    const dGResult = calcDeltaG(dG0, T, pArr, rArr);
+    const dG = dGResult.dG;
     const Keq = calcKeq(dG0, T);
     const sim = calcMassBalance_DEMO(S0, dG, Keq, 100);
 

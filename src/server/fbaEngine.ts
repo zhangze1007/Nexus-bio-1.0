@@ -408,12 +408,10 @@ export async function solveExpandedFBA(request: ExpandedFBARequest): Promise<Exp
   const lb = rxns.map(r => r.lb);
   const ub = rxns.map((r, j) => {
     if (knockoutSet.has(r.id)) return 0;
-    // Apply user glucose/oxygen uptake to exchange reactions
-    if (r.id === 'EX_glc_e') return -clamp(request.glucoseUptake, 0, 25);
-    if (r.id === 'EX_o2_e') return -clamp(request.oxygenUptake, 0, 25);
     return r.ub;
   });
-  // Fix EX_glc_e lower bound to match uptake (negative = uptake in exchange convention)
+  // Set exchange reaction lower bounds as maximum uptake allowed (not exact value)
+  // This allows the solver to use less substrate if the objective benefits
   const glcIdx = rxnIds.indexOf('EX_glc_e');
   if (glcIdx >= 0) lb[glcIdx] = -clamp(request.glucoseUptake, 0, 25);
   const o2Idx = rxnIds.indexOf('EX_o2_e');

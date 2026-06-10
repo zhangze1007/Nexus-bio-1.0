@@ -13,20 +13,46 @@
 export const R = 8.314e-3; // kJ/mol·K
 
 /** Calculate actual ΔG from standard ΔG°, temperature, and concentrations.
+ *  @param dG0 - standard Gibbs free energy change (kJ/mol)
+ *  @param T - temperature (K)
  *  @param products - array of product concentrations (assumes unit stoichiometry)
  *  @param reactants - array of reactant concentrations (assumes unit stoichiometry)
+ *  @param options - optional configuration
  *  NOTE: For reactions with non-unit stoichiometry (e.g., 2 NAD+ → 2 NADH),
  *  pass each species' concentration raised to its stoichiometric coefficient.
  */
-export function calcDeltaG(dG0: number, T: number, products: number[], reactants: number[]): number {
-  const Q = products.reduce((a, b) => a * b, 1) / reactants.reduce((a, b) => a * b, 1);
-  const Q_SAFE = Math.max(1e-15, Math.min(1e15, Q));
-  return dG0 + R * T * Math.log(Q_SAFE);
+export function calcDeltaG(
+  dG0: number,
+  T: number,
+  products: number[],
+  reactants: number[],
+  options?: { warnOnExtremeQ?: boolean },
+): { dG: number; warning?: string } {
+  const productProd = products.reduce((a, b) => a * b, 1);
+  const reactantProd = reactants.reduce((a, b) => a * b, 1);
+
+  // Check for zero concentrations
+  if (reactantProd === 0) {
+    return { dG: -Infinity, warning: 'Zero reactant concentration → ΔG = -∞ (spontaneous)' };
+  }
+  if (productProd === 0) {
+    return { dG: Infinity, warning: 'Zero product concentration → ΔG = +∞ (non-spontaneous)' };
+  }
+
+  const Q = productProd / reactantProd;
+  const dG = dG0 + R * T * Math.log(Q);
+
+  // Warn on extreme Q values
+  if (options?.warnOnExtremeQ && (Q < 1e-10 || Q > 1e10)) {
+    return { dG, warning: `Extreme reaction quotient Q=${Q.toExponential(2)}` };
+  }
+
+  return { dG };
 }
 
 /** Calculate equilibrium constant from ΔG°. */
 export function calcKeq(dG0: number, T: number): number {
-  if (T <= 0) return dG0 < 0 ? Infinity : dG0 > 0 ? 0 : 1;
+  if (T <= 0) throw new Error('Temperature must be positive (K)');
   return Math.exp(-dG0 / (R * T));
 }
 

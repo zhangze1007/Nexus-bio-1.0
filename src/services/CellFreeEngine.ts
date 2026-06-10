@@ -223,16 +223,31 @@ function computeDerivatives(
   for (let i = 0; i < n; i++) mRNAs.push(Math.max(0, v[2 * i]));
 
   // Solve R_free iteratively: R_free = R_total - Σ mRNA_i · R_free / (K_tl_i + R_free)
+  // Using damped fixed-point iteration with divergence detection
   let rFree = params.ribosomeTotal;
-  const MAX_RIBOSOME_ITER = 15;
+  const MAX_RIBOSOME_ITER = 30;
   const RIBOSOME_CONVERGENCE_TOL = 0.01;
+  const DAMPING = 0.5; // Damping factor for stability
+  let prevResidual = Infinity;
   for (let iter = 0; iter < MAX_RIBOSOME_ITER; iter++) {
     let rBoundSum = 0;
     for (let i = 0; i < n; i++) {
       rBoundSum += mRNAs[i] * rFree / (constructs[i].K_tl + rFree);
     }
-    const rFreeNew = Math.max(0, params.ribosomeTotal - rBoundSum);
-    if (Math.abs(rFreeNew - rFree) < RIBOSOME_CONVERGENCE_TOL) { rFree = rFreeNew; break; }
+    const rFreeTarget = Math.max(0, params.ribosomeTotal - rBoundSum);
+    const rFreeNew = rFree + DAMPING * (rFreeTarget - rFree); // Damped update
+    const residual = Math.abs(rFreeNew - rFree);
+
+    // Convergence check
+    if (residual < RIBOSOME_CONVERGENCE_TOL) { rFree = rFreeNew; break; }
+
+    // Divergence detection: if residual increased significantly, stop
+    if (residual > prevResidual * 10 && iter > 5) {
+      rFree = rFreeNew; // Use current best estimate
+      break;
+    }
+
+    prevResidual = residual;
     rFree = rFreeNew;
   }
 
@@ -269,10 +284,13 @@ function computeDerivatives(
   }
 
   // Energy derivatives
+  // ATP is consumed by translation AND transcription (~25% of NTPs are ATP)
   dv[eidx]     = -K_CONSUME_TL * totalTlFlux
+                 - K_CONSUME_TX * totalTxFlux * 0.25
                  + params.pepRegenerationRate * pep
                  - params.energyDecayRate * atp;                      // dATP
   dv[eidx + 1] = -K_GTP_CONSUME * totalTlFlux
+                 - K_CONSUME_TX * totalTxFlux * 0.25
                  - params.energyDecayRate * gtp;                      // dGTP
   dv[eidx + 2] = -params.pepRegenerationRate * pep;                  // dPEP
   dv[eidx + 3] = -K_AA_CONSUME * totalAaFlux;                        // dAA
