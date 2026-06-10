@@ -228,6 +228,10 @@ class SeededRNG {
  * @param nFactors - Number of latent factors to extract (default 5)
  * @param maxIter - Maximum ALS iterations (default 200)
  * @param tolerance - Convergence threshold for reconstruction error (default 1e-4)
+ *
+ * HONEST NAME: This is ALS matrix factorization, NOT MOFA+.
+ * MOFA+ requires variational inference with view-specific likelihoods.
+ * This function performs simple alternating least squares on a stacked matrix.
  */
 export function extractMOFAFactors(
   data: OmicsRow[],
@@ -527,6 +531,10 @@ function forward(
  * @param epochs - Training epochs (default 100)
  * @param lr - Learning rate (default 0.005)
  * @param batchLabels - Optional batch IDs for batch correction
+ *
+ * HONEST NAME: This is a linear encoder with KL penalty, NOT a VAE.
+ * A true VAE requires autograd, reparameterization trick, and learned posterior.
+ * This function uses hand-derived gradient updates on only the output layer.
  */
 export function trainMultimodalVAE(
   data: OmicsRow[],

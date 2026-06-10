@@ -926,6 +926,11 @@ interface ForwardResult {
  * @param beta        KL weight β (default 0.5)
  * @param epochs      Training epochs (default 50)
  * @param batchLabels Optional per-cell batch IDs
+ *
+ * HONEST NAME: This is a linear encoder with KL penalty, NOT a VAE.
+ * A true VAE requires autograd, reparameterization trick, and learned posterior.
+ * This function uses hand-derived gradient updates on only the output layer.
+ * The "t-SNE-like" projection is actually a force-directed layout, not t-SNE.
  */
 export function trainScVAE(
   cells: CellRecord[],

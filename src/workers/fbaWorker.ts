@@ -1,8 +1,15 @@
 /**
- * Nexus-Bio — FBA (Flux Balance Analysis) Web Worker
+ * Nexus-Bio — Metabolic Kinetics Web Worker
+ *
+ * HONEST NAME: This is NOT Flux Balance Analysis (FBA).
+ * FBA requires solving a linear programming problem with stoichiometric constraints.
+ * This worker runs Michaelis-Menten kinetics with heuristic formulas.
+ *
+ * The computeFBA() function uses hardcoded proportional scaling, not LP optimization.
+ * For real FBA, use the server-side simplex solver in /api/fba.
  *
  * Offloads all heavy metabolic math from the main thread.
- * Runs Michaelis-Menten kinetics + simplified FBA at ~60 Hz tick.
+ * Runs Michaelis-Menten kinetics at ~60 Hz tick.
  * Main thread INP stays ≤ 50ms.
  */
 
