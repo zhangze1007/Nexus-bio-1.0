@@ -657,11 +657,11 @@ export default React.memo(function NEXAIPage() {
               </div>
               {result.citations.map(c => {
                 const statusColor = c.verificationStatus === 'verified'
-                  ? '#9ECE7E'
+                  ? THEME.SUCCESS_HIGH
                   : c.verificationStatus === 'unverified'
-                    ? '#E58F46'
+                    ? THEME.RISK_MEDIUM
                     : c.verificationStatus === 'not_found'
-                      ? '#D96562'
+                      ? THEME.RISK_HIGH
                       : THEME.LABEL;
                 const statusLabel = c.verificationStatus === 'verified'
                   ? 'Verified'
@@ -1013,9 +1013,9 @@ export default React.memo(function NEXAIPage() {
                       PubMed verification
                     </div>
                     <div style={{ display: 'flex', gap: '8px', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)' }}>
-                      <span style={{ color: '#9ECE7E' }}>{summary.verified} verified</span>
-                      <span style={{ color: '#E58F46' }}>{summary.unverified} partial</span>
-                      <span style={{ color: '#D96562' }}>{summary.notFound} missing</span>
+                      <span style={{ color: THEME.SUCCESS_HIGH }}>{summary.verified} verified</span>
+                      <span style={{ color: THEME.RISK_MEDIUM }}>{summary.unverified} partial</span>
+                      <span style={{ color: THEME.RISK_HIGH }}>{summary.notFound} missing</span>
                     </div>
                     <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: THEME.VALUE }}>
                       {(summary.verificationRate * 100).toFixed(0)}% verification rate

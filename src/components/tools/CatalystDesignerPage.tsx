@@ -45,12 +45,12 @@ const { panelBg: PANEL_BG, border: BORDER, label: LABEL, value: VALUE,
 const GLASS: React.CSSProperties = { ...toolTokens.glass, borderRadius: 'var(--nb-radius-xl)' };
 
 const PHASE_COLORS: Record<string, string> = {
-  binding:     '#BFDCCD',
-  sequence:    '#AFC3D6',
-  flux:        '#E7C7A9',
-  balancing:   '#E8A3A1',
-  pareto:      '#CFC4E3',
-  mutagenesis: '#BFDCCD',
+  binding:     THEME.MINT,
+  sequence:    THEME.SKY,
+  flux:        THEME.APRICOT,
+  balancing:   THEME.CORAL,
+  pareto:      THEME.LILAC,
+  mutagenesis: THEME.MINT,
 };
 
 const PHASE_MAP: Record<string, string> = {
@@ -66,25 +66,25 @@ const PHASE_MAP: Record<string, string> = {
 /* ── Quality helpers ──────────────────────────────────────────────── */
 
 function kdQuality(kd: number) {
-  if (kd < 1) return { icon: '★', color: '#9ECE7E', label: 'Excellent' };
-  if (kd < 10) return { icon: '✓', color: '#86C2C6', label: 'Good' };
-  if (kd < 100) return { icon: '~', color: '#D9BC5D', label: 'Moderate' };
-  if (kd < 1000) return { icon: '⊘', color: '#E58F46', label: 'Weak' };
-  return { icon: '⊘', color: '#D96562', label: 'Very weak' };
+  if (kd < 1) return { icon: '★', color: THEME.SUCCESS_HIGH, label: 'Excellent' };
+  if (kd < 10) return { icon: '✓', color: THEME.SUCCESS_MEDIUM, label: 'Good' };
+  if (kd < 100) return { icon: '~', color: THEME.RISK_LOW, label: 'Moderate' };
+  if (kd < 1000) return { icon: '⊘', color: THEME.RISK_MEDIUM, label: 'Weak' };
+  return { icon: '⊘', color: THEME.RISK_HIGH, label: 'Very weak' };
 }
 
 function kcatQuality(kcat: number) {
-  if (kcat > 100) return { icon: '★', color: '#9ECE7E', label: 'Excellent' };
-  if (kcat > 10) return { icon: '✓', color: '#86C2C6', label: 'Good' };
-  if (kcat > 1) return { icon: '~', color: '#D9BC5D', label: 'Moderate' };
-  return { icon: '⊘', color: '#D96562', label: 'Slow' };
+  if (kcat > 100) return { icon: '★', color: THEME.SUCCESS_HIGH, label: 'Excellent' };
+  if (kcat > 10) return { icon: '✓', color: THEME.SUCCESS_MEDIUM, label: 'Good' };
+  if (kcat > 1) return { icon: '~', color: THEME.RISK_LOW, label: 'Moderate' };
+  return { icon: '⊘', color: THEME.RISK_HIGH, label: 'Slow' };
 }
 
 function fitQuality(fit: number) {
-  if (fit > 0.85) return { icon: '★', color: '#9ECE7E', label: 'Excellent' };
-  if (fit > 0.65) return { icon: '✓', color: '#86C2C6', label: 'Good' };
-  if (fit > 0.45) return { icon: '~', color: '#D9BC5D', label: 'Moderate' };
-  return { icon: '⊘', color: '#D96562', label: 'Poor' };
+  if (fit > 0.85) return { icon: '★', color: THEME.SUCCESS_HIGH, label: 'Excellent' };
+  if (fit > 0.65) return { icon: '✓', color: THEME.SUCCESS_MEDIUM, label: 'Good' };
+  if (fit > 0.45) return { icon: '~', color: THEME.RISK_LOW, label: 'Moderate' };
+  return { icon: '⊘', color: THEME.RISK_HIGH, label: 'Poor' };
 }
 
 const AA_MUTATIONS = [
@@ -193,11 +193,11 @@ function BindingView({ result, enzyme }: { result: BindingAffinityResult; enzyme
                   <td style={{ ...dataCell, textAlign: 'left', fontSize: 'var(--nb-fs-xs)', color: LABEL }}>{r.role.replace('_', ' ')}</td>
                   <td style={dataCell}>{r.distanceToSubstrate.toFixed(1)}</td>
                   <td style={dataCell}>{r.optimalDistance.toFixed(1)}</td>
-                  <td style={{ ...dataCell, color: Math.abs(distDelta) > 0.5 ? '#FA8072' : VALUE }}>
+                  <td style={{ ...dataCell, color: Math.abs(distDelta) > 0.5 ? THEME.CORAL : VALUE }}>
                     {distDelta > 0 ? '+' : ''}{distDelta.toFixed(1)}
                   </td>
                   <td style={dataCell}>{r.orientationAngle.toFixed(0)}°</td>
-                  <td style={{ ...dataCell, color: Math.abs(r.pKaShift) > 0.5 ? '#FA8072' : VALUE }}>
+                  <td style={{ ...dataCell, color: Math.abs(r.pKaShift) > 0.5 ? THEME.CORAL : VALUE }}>
                     {r.pKaShift > 0 ? '+' : ''}{r.pKaShift.toFixed(2)}
                   </td>
                 </tr>
@@ -214,7 +214,7 @@ function BindingView({ result, enzyme }: { result: BindingAffinityResult; enzyme
 
 function SequenceView({ result }: { result: SequenceDesignResult }) {
   const caiColor = (v: number) =>
-    v >= 0.75 ? '#93CB52' : v >= 0.55 ? '#FFFB1F' : 'rgba(255,120,120,0.7)';
+    v >= 0.75 ? THEME.MINT : v >= 0.55 ? THEME.RISK_LOW : 'rgba(255,120,120,0.7)';
 
   return (
     <div style={{ padding: '10px 12px' }}>
@@ -237,7 +237,7 @@ function SequenceView({ result }: { result: SequenceDesignResult }) {
               <td style={dataCell}>{(d.recoveryRate * 100).toFixed(1)}%</td>
               <td style={{ ...dataCell, color: caiColor(d.cai) }}>{d.cai.toFixed(3)}</td>
               <td style={dataCell}>{(d.gcContent * 100).toFixed(1)}%</td>
-              <td style={{ ...dataCell, color: d.rareCodons > 3 ? '#FA8072' : VALUE }}>{d.rareCodons}</td>
+              <td style={{ ...dataCell, color: d.rareCodons > 3 ? THEME.CORAL : VALUE }}>{d.rareCodons}</td>
               <td style={{
                 fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: 'rgba(255,255,255,0.55)',
                 padding: '3px 6px', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
@@ -269,8 +269,8 @@ function SequenceView({ result }: { result: SequenceDesignResult }) {
 
 function FluxCostView({ result }: { result: MetabolicDrainResult }) {
   const viabilityColor = result.isViable
-    ? result.growthPenalty < 10 ? '#93CB52' : '#FFFB1F'
-    : '#FA8072';
+    ? result.growthPenalty < 10 ? THEME.MINT : THEME.RISK_LOW
+    : THEME.CORAL;
 
   return (
     <div style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -334,7 +334,7 @@ function BalancerView({ result }: { result: PathwayBalanceResult }) {
         <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
           Pathway Balance — {steps.length} Steps
         </span>
-        <StatusDot color={result.isBalanced ? '#93CB52' : '#FA8072'} label={result.isBalanced ? 'Balanced' : 'Imbalanced'} />
+        <StatusDot color={result.isBalanced ? THEME.MINT : THEME.CORAL} label={result.isBalanced ? 'Balanced' : 'Imbalanced'} />
       </div>
 
       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -348,7 +348,7 @@ function BalancerView({ result }: { result: PathwayBalanceResult }) {
         <tbody>
           {steps.map((s, i) => {
             const toxRatio = s.intermediateConc / s.toxicityThreshold;
-            const statusColor = toxRatio > 0.8 ? '#FA8072' : toxRatio > 0.5 ? '#FFFB1F' : '#93CB52';
+            const statusColor = toxRatio > 0.8 ? THEME.CORAL : toxRatio > 0.5 ? THEME.RISK_LOW : THEME.MINT;
             return (
               <tr key={i} style={{ background: 'rgba(255,255,255,0.015)' }}>
                 <td style={{ ...dataCell, textAlign: 'left', color: PHASE_COLORS.balancing }}>{i + 1}</td>
@@ -417,7 +417,7 @@ function ParetoView({ result }: { result: ParetoFrontResult }) {
               <tr key={c.id} style={{
                 background: isBest ? 'rgba(207,196,227,0.06)' : 'rgba(255,255,255,0.015)',
               }}>
-                <td style={{ ...dataCell, textAlign: 'left', color: isBest ? '#FFFB1F' : VALUE }}>
+                <td style={{ ...dataCell, textAlign: 'left', color: isBest ? THEME.RISK_LOW : VALUE }}>
                   {isBest ? '★' : ''} {c.paretoRank}
                 </td>
                 <td style={{ ...dataCell, textAlign: 'left' }}>{c.name}</td>
@@ -450,7 +450,7 @@ function MutagenesisView({ result, enzyme }: { result: MutagenesisResult; enzyme
   const barW = 200;
 
   const effectColor = (e: string) =>
-    e === 'beneficial' ? '#93CB52' : e === 'neutral' ? '#FFFB1F' : '#FA8072';
+    e === 'beneficial' ? THEME.MINT : e === 'neutral' ? THEME.RISK_LOW : THEME.CORAL;
   const effectSymbol = (e: string) =>
     e === 'beneficial' ? '+++' : e === 'neutral' ? '·' : '−';
 
@@ -478,7 +478,7 @@ function MutagenesisView({ result, enzyme }: { result: MutagenesisResult; enzyme
           <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-sm)', color: PHASE_COLORS.mutagenesis }}>
             {result.topCombination.positions.join(', ')}
           </span>
-          <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-sm)', color: '#93CB52', ...tn }}>
+          <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-sm)', color: THEME.MINT, ...tn }}>
             +{(result.topCombination.predictedImprovement * 100).toFixed(0)}%
           </span>
         </div>
@@ -662,7 +662,7 @@ export default React.memo(function CatalystDesignerPage() {
                 ))}
               </select>
               {enzyme.id === RATE_LIMITING_ENZYME.id && (
-                <span style={{ display: 'inline-block', marginTop: 4, fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: '#FFFB1F', background: 'rgba(255,251,31,0.12)', padding: '2px 8px', borderRadius: 8 }}>Rate-limiting</span>
+                <span style={{ display: 'inline-block', marginTop: 4, fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.RISK_LOW, background: 'rgba(255,251,31,0.12)', padding: '2px 8px', borderRadius: 8 }}>Rate-limiting</span>
               )}
             </div>
             <div style={{ marginBottom: '12px', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>
@@ -720,11 +720,11 @@ export default React.memo(function CatalystDesignerPage() {
                       <div style={{ display: 'flex', gap: 8 }}>
                         <div>
                           <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>ΔKd</span>
-                          <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', margin: 0, color: mutationImpact.deltaKd < 0 ? '#93CB52' : '#FA8072' }}>{mutationImpact.deltaKd > 0 ? '+' : ''}{mutationImpact.deltaKd.toFixed(1)} μM</p>
+                          <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', margin: 0, color: mutationImpact.deltaKd < 0 ? THEME.MINT : THEME.CORAL }}>{mutationImpact.deltaKd > 0 ? '+' : ''}{mutationImpact.deltaKd.toFixed(1)} μM</p>
                         </div>
                         <div>
                           <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>ΔKcat</span>
-                          <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', margin: 0, color: mutationImpact.deltaKcat > 0 ? '#93CB52' : '#FA8072' }}>{mutationImpact.deltaKcat > 0 ? '+' : ''}{mutationImpact.deltaKcat.toFixed(3)} s⁻¹</p>
+                          <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', margin: 0, color: mutationImpact.deltaKcat > 0 ? THEME.MINT : THEME.CORAL }}>{mutationImpact.deltaKcat > 0 ? '+' : ''}{mutationImpact.deltaKcat.toFixed(3)} s⁻¹</p>
                         </div>
                       </div>
                     </div>

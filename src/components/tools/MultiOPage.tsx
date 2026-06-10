@@ -47,9 +47,9 @@ import InlineMetricOverlay from './shared/InlineMetricOverlay';
 /* ── Design Tokens ────────────────────────────────────────────────── */
 
 const LAYER_COLORS: Record<OmicsLayer, string> = {
-  transcriptomics: '#CFC4E3',   // lilac
-  proteomics:      '#AFC3D6',   // sky
-  metabolomics:    '#E8A3A1',   // coral
+  transcriptomics: THEME.LILAC,   // lilac
+  proteomics:      THEME.SKY,     // sky
+  metabolomics:    THEME.CORAL,   // coral
 };
 
 import { toolTokens } from '../../hooks/useToolTheme';
@@ -885,7 +885,7 @@ export default React.memo(function MultiOPage() {
               }}
             >
               {geneNames.map(g => (
-                <option key={g} value={g} style={{ background: '#1a1d24' }}>{g}</option>
+                <option key={g} value={g} style={{ background: THEME.BG_PANEL }}>{g}</option>
               ))}
             </select>
             <WorkbenchRangeSlider label="Expression" value={perturbedExpr} min={-4} max={8} step={0.1} formatValue={v => v.toFixed(1)} onChange={setPerturbedExpr} />
@@ -912,7 +912,7 @@ export default React.memo(function MultiOPage() {
                     <span style={{
                       fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-sm)', fontWeight: 700,
                       color: perturbResult.predicted_yield_change_percent >= 0
-                        ? 'rgba(147,203,82,0.95)' : 'rgba(250,128,114,0.95)',
+                        ? THEME.MINT : THEME.CORAL,
                     }}>
                       {perturbResult.predicted_yield_change_percent >= 0 ? '+' : ''}
                       {perturbResult.predicted_yield_change_percent.toFixed(1)}%
@@ -923,9 +923,9 @@ export default React.memo(function MultiOPage() {
                     {perturbResult.metabolite_shifts.map(ms => (
                       <span key={ms.metabolite} style={{
                         fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', padding: '2px 6px', borderRadius: '6px',
-                        background: ms.direction === 'up' ? 'rgba(147,203,82,0.15)' : 'rgba(250,128,114,0.15)',
-                        color: ms.direction === 'up' ? 'rgba(147,203,82,0.9)' : 'rgba(250,128,114,0.9)',
-                        border: `1px solid ${ms.direction === 'up' ? 'rgba(147,203,82,0.2)' : 'rgba(250,128,114,0.2)'}`,
+                        background: ms.direction === 'up' ? `${THEME.MINT}26` : `${THEME.CORAL}26`,
+                        color: ms.direction === 'up' ? `${THEME.MINT}E6` : `${THEME.CORAL}E6`,
+                        border: `1px solid ${ms.direction === 'up' ? `${THEME.MINT}33` : `${THEME.CORAL}33`}`,
                       }}>
                         {ms.metabolite} {ms.direction === 'up' ? '↑' : '↓'}{Math.abs(ms.delta).toFixed(1)}
                       </span>
@@ -1108,7 +1108,7 @@ export default React.memo(function MultiOPage() {
               </div>
             )}
             {vaeError && (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px', color: '#FA8072', fontSize: 'var(--nb-fs-sm)', fontFamily: 'monospace' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px', color: THEME.CORAL, fontSize: 'var(--nb-fs-sm)', fontFamily: 'monospace' }}>
                 VAE error: {vaeError}
               </div>
             )}
@@ -1183,7 +1183,7 @@ export default React.memo(function MultiOPage() {
             <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
               <div style={{ ...GLASS, borderRadius: 'var(--nb-radius-md)', padding: '12px 16px', flex: '1 0 140px' }}>
                 <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, display: 'block' }}>Avg Efficiency</span>
-                <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-lg)', fontWeight: 700, color: 'rgba(147,203,82,0.9)' }}>{(efficiencyScores.reduce((s, e) => s + e.score, 0) / Math.max(1, efficiencyScores.length) * 100).toFixed(1)}%</span>
+                <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-lg)', fontWeight: 700, color: THEME.MINT }}>{(efficiencyScores.reduce((s, e) => s + e.score, 0) / Math.max(1, efficiencyScores.length) * 100).toFixed(1)}%</span>
               </div>
               <div style={{ ...GLASS, borderRadius: 'var(--nb-radius-md)', padding: '12px 16px', flex: '1 0 140px' }}>
                 <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, display: 'block' }}>Top Gene</span>
@@ -1192,7 +1192,7 @@ export default React.memo(function MultiOPage() {
             </div>
             {[...efficiencyScores].sort((a, b) => b.score - a.score).map((e, i) => {
               const pct = e.score * 100;
-              const color = pct > 60 ? 'rgba(147,203,82,0.85)' : pct > 35 ? 'rgba(255,139,31,0.85)' : 'rgba(250,128,114,0.85)';
+              const color = pct > 60 ? THEME.MINT : pct > 35 ? THEME.RISK_LOW : THEME.CORAL;
               return (
                 <div key={e.geneId} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 0', borderBottom: `1px solid ${BORDER}` }}>
                   <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL, width: '20px', textAlign: 'right' }}>{i + 1}</span>

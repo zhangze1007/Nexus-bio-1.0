@@ -164,7 +164,7 @@ function ActionBtn({ label, icon: Icon, tone = 'neutral', onClick, disabled = fa
       ? {
           background: 'rgba(255,255,255,0.88)',
           border: 'rgba(255,255,255,0.88)',
-          color: '#111318',
+          color: THEME.PANEL_STRONG,
         }
       : tone === 'stress'
         ? {
@@ -203,10 +203,10 @@ function ActionBtn({ label, icon: Icon, tone = 'neutral', onClick, disabled = fa
         ['--nb-control-color' as const]: toneStyles.color,
         ['--nb-control-hover-bg' as const]: disabled ? toneStyles.background : '#ffffff',
         ['--nb-control-hover-border' as const]: disabled ? toneStyles.border : '#ffffff',
-        ['--nb-control-hover-color' as const]: disabled ? toneStyles.color : '#111318',
+        ['--nb-control-hover-color' as const]: disabled ? toneStyles.color : THEME.PANEL_STRONG,
         ['--nb-control-active-bg' as const]: disabled ? toneStyles.background : '#ffffff',
         ['--nb-control-active-border' as const]: disabled ? toneStyles.border : '#ffffff',
-        ['--nb-control-active-color' as const]: disabled ? toneStyles.color : '#111318',
+        ['--nb-control-active-color' as const]: disabled ? toneStyles.color : THEME.PANEL_STRONG,
       } as ControlVarsStyle}
     >
       <Icon size={12} strokeWidth={2} aria-hidden="true" />

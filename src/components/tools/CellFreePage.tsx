@@ -389,9 +389,9 @@ function FittingChart({ result }: { result: CFSFullResult }) {
       {curve.filter((_, i) => i % 3 === 0).map((p, i) => (
         <g key={`dp${i}`}>
           <line x1={sx(p.concentration)} y1={sy(p.rate * 0.9)} x2={sx(p.concentration)} y2={sy(p.rate * 1.1)}
-            stroke="rgba(191,220,205,0.4)" strokeWidth={1} />
+            stroke={`${THEME.MINT}66`} strokeWidth={1} />
           <circle cx={sx(p.concentration)} cy={sy(p.rate)} r={3}
-            fill="rgba(191,220,205,0.8)" stroke="rgba(191,220,205,0.4)" strokeWidth={0.5} />
+            fill={`${THEME.MINT}CC`} stroke={`${THEME.MINT}66`} strokeWidth={0.5} />
         </g>
       ))}
       {/* Fitted curve */}
@@ -401,9 +401,9 @@ function FittingChart({ result }: { result: CFSFullResult }) {
       />
       {/* Vmax line */}
       <line x1={PAD} y1={sy(fit.vmax)} x2={W - PAD} y2={sy(fit.vmax)}
-        stroke="rgba(231,199,169,0.4)" strokeWidth={1} strokeDasharray="4,3" />
+        stroke={`${THEME.APRICOT}66`} strokeWidth={1} strokeDasharray="4,3" />
       <text x={W - PAD - 4} y={sy(fit.vmax) - 4} textAnchor="end"
-        fontFamily={THEME.MONO} fontSize="10" fill="rgba(231,199,169,0.9)">Vmax={fit.vmax.toFixed(2)}</text>
+        fontFamily={THEME.MONO} fontSize="10" fill={`${THEME.APRICOT}E6`}>Vmax={fit.vmax.toFixed(2)}</text>
       {/* Stats text */}
       <text x={PAD + 8} y={PAD + 14} fontFamily={THEME.MONO} fontSize="10" fill={VALUE}>
         Vmax={fit.vmax.toFixed(2)} [{fit.vmax_ci[0].toFixed(2)}, {fit.vmax_ci[1].toFixed(2)}]
@@ -509,9 +509,9 @@ function IvIvChart({ result }: { result: CFSFullResult }) {
           <g key={`cf${i}`}>
             <text x={corrLeft} y={y + 4} fontFamily={THEME.SANS} fontSize="10" fill={LABEL}>{c.factor}</text>
             <rect x={corrLeft} y={y + 8} width={bw} height={8}
-              fill={positive ? 'rgba(191,220,205,0.5)' : 'rgba(232,163,161,0.5)'} rx={2} />
+              fill={positive ? `${THEME.MINT}80` : `${THEME.CORAL}80`} rx={2} />
             <text x={corrLeft + bw + 4} y={y + 16} fontFamily={THEME.MONO} fontSize="10"
-              fill={positive ? 'rgba(191,220,205,0.9)' : 'rgba(232,163,161,0.9)'}>
+              fill={positive ? `${THEME.MINT}E6` : `${THEME.CORAL}E6`}>
               {c.adjustment > 0 ? '+' : ''}{c.adjustment.toFixed(2)}
             </text>
           </g>

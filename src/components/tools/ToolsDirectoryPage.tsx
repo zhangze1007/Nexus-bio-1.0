@@ -37,7 +37,7 @@ const SURFACE_SOFT = THEME.PANEL_INSET;
 const SURFACE_TINT = 'rgba(255,255,255,0.90)';
 const SHADOW = '0 2px 16px rgba(0,0,0,0.28)';
 // Dark text for white-pill buttons
-const BTN_TEXT = '#111318';
+const BTN_TEXT = THEME.PANEL_STRONG;
 
 const DIRECTION_ACCENTS: Record<ToolDirection | 'All', string> = {
   All: THEME.SKY,
@@ -312,8 +312,8 @@ export default function ToolsDirectoryPage() {
                       tagline: 'Papers → Evidence → Route',
                       desc: 'Import literature, extract pathway context, and decide which tools to use.',
                       color: THEME.SKY,
-                      bgColor: 'rgba(175,195,214,0.20)',
-                      borderColor: 'rgba(175,195,214,0.44)',
+                      bgColor: `${THEME.SKY}33`,
+                      borderColor: `${THEME.SKY}70`,
                       directions: ['Research Intake'] as ToolDirection[],
                       toolIds: ['litsearch', 'paper-analyzer', 'genbio-ai'],
                     },
@@ -323,8 +323,8 @@ export default function ToolsDirectoryPage() {
                       tagline: 'Pathway → Structure → Candidate',
                       desc: 'Map routes, inspect enzyme nodes, and rank structural candidates.',
                       color: THEME.APRICOT,
-                      bgColor: 'rgba(231,199,169,0.20)',
-                      borderColor: 'rgba(231,199,169,0.44)',
+                      bgColor: `${THEME.APRICOT}33`,
+                      borderColor: `${THEME.APRICOT}70`,
                       directions: ['Pathway & Design', 'Structure & Enzyme'] as ToolDirection[],
                       toolIds: ['pathd', 'catdes', 'proevol'],
                     },
@@ -334,8 +334,8 @@ export default function ToolsDirectoryPage() {
                       tagline: 'Flux → Dynamics → Omics',
                       desc: 'Run FBA, PID bioreactor control, thermodynamics, and multi-omics analysis.',
                       color: THEME.LILAC,
-                      bgColor: 'rgba(207,196,227,0.20)',
-                      borderColor: 'rgba(207,196,227,0.44)',
+                      bgColor: `${THEME.LILAC}33`,
+                      borderColor: `${THEME.LILAC}70`,
                       directions: ['Dynamic & System', 'Omics & Spatial'] as ToolDirection[],
                       toolIds: ['fbasim', 'dyncon', 'cethx'],
                     },
@@ -345,8 +345,8 @@ export default function ToolsDirectoryPage() {
                       tagline: 'Cell-free → DBTL → Learn',
                       desc: 'Translate candidates into cell-free experiments, DBTL loops, and construct generation.',
                       color: THEME.MINT,
-                      bgColor: 'rgba(191,220,205,0.22)',
-                      borderColor: 'rgba(191,220,205,0.44)',
+                      bgColor: `${THEME.MINT}38`,
+                      borderColor: `${THEME.MINT}70`,
                       directions: ['Validation & DBTL', 'AI Assistant'] as ToolDirection[],
                       toolIds: ['cellfree', 'dbtlflow', 'genmim'],
                     },

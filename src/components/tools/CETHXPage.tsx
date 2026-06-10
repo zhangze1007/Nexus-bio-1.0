@@ -556,8 +556,8 @@ export default React.memo(function CETHXPage() {
       footer={
         <>
           {fba && (
-            <div role="status" style={{ padding: '6px 14px', background: 'rgba(175,195,214,0.14)', border: '1px solid rgba(175,195,214,0.28)', borderRadius: 'var(--nb-radius-md)', display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
-              <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', fontWeight: 700, padding: '2px 8px', borderRadius: '999px', background: 'rgba(175,195,214,0.22)', border: '1px solid rgba(175,195,214,0.34)', color: THEME.VALUE, textTransform: 'uppercase', letterSpacing: '0.06em', flexShrink: 0 }}>
+            <div role="status" style={{ padding: '6px 14px', background: `${THEME.SKY}24`, border: `1px solid ${THEME.SKY}47`, borderRadius: 'var(--nb-radius-md)', display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
+              <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', fontWeight: 700, padding: '2px 8px', borderRadius: '999px', background: `${THEME.SKY}38`, border: `1px solid ${THEME.SKY}57`, color: THEME.VALUE, textTransform: 'uppercase', letterSpacing: '0.06em', flexShrink: 0 }}>
                 FBASim
               </span>
               <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: THEME.LABEL }}>
@@ -670,8 +670,8 @@ export default React.memo(function CETHXPage() {
                 transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                 style={{
                   height: '100%', borderRadius: `${THEME.PROGRESS_RADIUS}px`,
-                  background: thermo.efficiency > 50 ? THEME.PROGRESS_GRADIENT : 'linear-gradient(90deg, rgba(232,163,161,0.45), rgba(232,163,161,0.95))',
-                  boxShadow: thermo.efficiency > 50 ? THEME.PROGRESS_GLOW : '0 0 8px rgba(232,163,161,0.32)',
+                  background: thermo.efficiency > 50 ? THEME.PROGRESS_GRADIENT : `linear-gradient(90deg, ${THEME.CORAL}73, ${THEME.CORAL}F2)`,
+                  boxShadow: thermo.efficiency > 50 ? THEME.PROGRESS_GLOW : `0 0 8px ${THEME.CORAL}52`,
                 }}
               />
             </div>

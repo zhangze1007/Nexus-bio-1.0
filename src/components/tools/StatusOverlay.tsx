@@ -246,7 +246,7 @@ export default function StatusOverlay({
         <Sparkline data={rateHistory} height={40} />
       </div>
 
-      <div style={{ borderTop:'1px solid rgba(255,255,255,0.08)', paddingTop:'10px', marginBottom:'8px', position:'relative', zIndex:1 }}>
+      <div style={{ borderTop:`1px solid ${THEME.BORDER}`, paddingTop:'10px', marginBottom:'8px', position:'relative', zIndex:1 }}>
         <DataRow label="ATP Yield"   value={readouts.atpYield}         unit="mol/mol"  decimals={2} />
         <DataRow label="NADPH Rate"  value={readouts.nadphRate}        unit="μmol/min" decimals={2} />
         <DataRow label="Carbon Eff." value={readouts.carbonEfficiency} unit="%"        decimals={1} />

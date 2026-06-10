@@ -36,12 +36,12 @@ const { panelBg: PANEL_BG, border: BORDER, label: LABEL, value: VALUE,
 
 /* ── Series definitions (6 state variables) ────────────────────────────────── */
 const SERIES = [
-  { key: 'biomass',       label: 'Biomass',   color: 'rgba(207,196,227,0.82)', unit: 'g/L' },
-  { key: 'substrate',     label: 'Substrate', color: 'rgba(231,199,169,0.88)', unit: 'g/L' },
-  { key: 'product',       label: 'Product',   color: 'rgba(191,220,205,0.88)', unit: 'g/L' },
-  { key: 'dissolvedO2',   label: 'DO₂',       color: 'rgba(175,195,214,0.88)', unit: 'sat.' },
-  { key: 'fpp',           label: 'FPP',       color: 'rgba(232,163,161,0.9)',  unit: 'μM' },
-  { key: 'adsExpression', label: 'ADS Expr',  color: 'rgba(207,196,227,0.92)', unit: 'a.u.' },
+  { key: 'biomass',       label: 'Biomass',   color: `${THEME.LILAC}D1`, unit: 'g/L' },
+  { key: 'substrate',     label: 'Substrate', color: `${THEME.APRICOT}E0`, unit: 'g/L' },
+  { key: 'product',       label: 'Product',   color: `${THEME.MINT}E0`, unit: 'g/L' },
+  { key: 'dissolvedO2',   label: 'DO₂',       color: `${THEME.SKY}E0`, unit: 'sat.' },
+  { key: 'fpp',           label: 'FPP',       color: `${THEME.CORAL}E6`, unit: 'μM' },
+  { key: 'adsExpression', label: 'ADS Expr',  color: `${THEME.LILAC}EB`, unit: 'a.u.' },
 ] as const;
 
 /* ── Catmull-Rom → SVG path helper ─────────────────────────────────────────── */
@@ -55,12 +55,12 @@ function TimeSeriesSVG({ trajectory, setpoint, svgRef }: { trajectory: ODEState[
   const laneGap = 16;
   const plotTop = 42;
   const lanes = [
-    { key: 'product',       label: 'Product',   color: 'rgba(191,220,205,0.92)', max: Math.max(0.001, ...trajectory.map((point) => point.product)),       unit: 'g/L'  },
-    { key: 'biomass',       label: 'Biomass',   color: 'rgba(207,196,227,0.92)', max: Math.max(0.001, ...trajectory.map((point) => point.biomass)),        unit: 'g/L'  },
-    { key: 'substrate',     label: 'Substrate', color: 'rgba(231,199,169,0.92)', max: Math.max(0.001, ...trajectory.map((point) => point.substrate)),      unit: 'g/L'  },
-    { key: 'dissolvedO2',   label: 'DO₂',       color: 'rgba(175,195,214,0.9)',  max: 1,                                                                    unit: 'sat.' },
-    { key: 'fpp',           label: 'FPP',       color: 'rgba(232,163,161,0.94)', max: Math.max(0.001, ...trajectory.map((point) => point.fpp ?? 0)),             unit: 'μM'   },
-    { key: 'adsExpression', label: 'ADS',       color: 'rgba(207,196,227,0.92)', max: Math.max(0.001, ...trajectory.map((point) => point.adsExpression ?? 0)),   unit: 'a.u.' },
+    { key: 'product',       label: 'Product',   color: `${THEME.MINT}EB`, max: Math.max(0.001, ...trajectory.map((point) => point.product)),       unit: 'g/L'  },
+    { key: 'biomass',       label: 'Biomass',   color: `${THEME.LILAC}EB`, max: Math.max(0.001, ...trajectory.map((point) => point.biomass)),        unit: 'g/L'  },
+    { key: 'substrate',     label: 'Substrate', color: `${THEME.APRICOT}EB`, max: Math.max(0.001, ...trajectory.map((point) => point.substrate)),      unit: 'g/L'  },
+    { key: 'dissolvedO2',   label: 'DO₂',       color: `${THEME.SKY}E6`,  max: 1,                                                                    unit: 'sat.' },
+    { key: 'fpp',           label: 'FPP',       color: `${THEME.CORAL}F0`, max: Math.max(0.001, ...trajectory.map((point) => point.fpp ?? 0)),             unit: 'μM'   },
+    { key: 'adsExpression', label: 'ADS',       color: `${THEME.LILAC}EB`, max: Math.max(0.001, ...trajectory.map((point) => point.adsExpression ?? 0)),   unit: 'a.u.' },
   ] as const;
 
   const tMax = trajectory[trajectory.length - 1].time;
@@ -178,7 +178,7 @@ function TimeSeriesSVG({ trajectory, setpoint, svgRef }: { trajectory: ODEState[
       <text x={PP_X - 2} y={PP_Y + PP_H + 8} textAnchor="middle" fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.45)">P</text>
       <text x={PP_X + PP_W} y={PP_Y + PP_H + 8} textAnchor="end" fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.45)">→</text>
       <text x={PP_X - 2} y={PP_Y} fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.45)">R↑</text>
-      {ppPath && <path d={ppPath} fill="none" stroke="rgba(232,163,161,0.7)" strokeWidth="1.2" />}
+      {ppPath && <path d={ppPath} fill="none" stroke={`${THEME.CORAL}B2`} strokeWidth="1.2" />}
       {ppPts.length > 0 && (
         <circle cx={ppPts[ppPts.length - 1][0]} cy={ppPts[ppPts.length - 1][1]} r="2.5" fill={THEME.CORAL} />
       )}
@@ -210,7 +210,7 @@ function HillCurveSVG({ hill, currentFPP }: { hill: HillParams; currentFPP: numb
       <polyline points={pts.join(' ')} fill="none" stroke={THEME.MINT} strokeWidth={2.2} />
       {/* current FPP marker */}
       <line x1={markerX} y1={PAD - 8} x2={markerX} y2={H - PAD + 4}
-        stroke="rgba(232,163,161,0.5)" strokeWidth={1} strokeDasharray="3 3" />
+        stroke={`${THEME.CORAL}80`} strokeWidth={1} strokeDasharray="3 3" />
       <circle cx={markerX} cy={H - PAD + 4 - (hillFeedback(Math.min(currentFPP, fppMax), hill) / hill.Vmax) * (H - PAD * 2 + 4)}
         r={3} fill={THEME.CORAL} />
       {/* labels */}
