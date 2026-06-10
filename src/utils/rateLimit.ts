@@ -10,9 +10,26 @@
  *   UPSTASH_REDIS_REST_TOKEN — Upstash Redis REST token
  */
 
+// ── Minimal Redis interface for type safety ───────────────────────────
+
+interface RedisPipeline {
+  zremrangebyscore(key: string, min: number, max: number): void;
+  zcard(key: string): void;
+  zadd(key: string, payload: { score: number; member: string }): void;
+  expire(key: string, seconds: number): void;
+  exec(): Promise<unknown[]>;
+}
+
+interface RedisLike {
+  pipeline(): RedisPipeline;
+  zrem(key: string, member: string): Promise<unknown>;
+  zrange(key: string, start: number, end: number, opts?: { withScores: boolean }): Promise<unknown[]>;
+}
+
+type RedisConstructor = new (config: { url: string; token: string }) => RedisLike;
+
 // Dynamic import to avoid Edge Runtime issues with @upstash/redis
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let Redis: any = null;
+let Redis: RedisConstructor | null = null;
 
 // ── Types ───────────────────────────────────────────────────────────────
 
@@ -48,11 +65,10 @@ export function getRateLimitConfig(path: string): RateLimitConfig {
 
 // ── Redis client (lazy singleton) ───────────────────────────────────────
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let redisClient: any = null;
+let redisClient: RedisLike | null = null;
 let redisInitialized = false;
 
-async function getRedis(): Promise<any> {
+async function getRedis(): Promise<RedisLike | null> {
   if (redisInitialized) return redisClient;
 
   redisInitialized = true;
@@ -62,8 +78,8 @@ async function getRedis(): Promise<any> {
   if (url && token) {
     // Dynamic import to avoid Edge Runtime issues
     const { Redis: RedisClass } = await import('@upstash/redis');
-    Redis = RedisClass;
-    redisClient = new RedisClass({ url, token });
+    Redis = RedisClass as unknown as RedisConstructor;
+    redisClient = new RedisClass({ url, token }) as unknown as RedisLike;
   }
 
   return redisClient;
@@ -117,8 +133,7 @@ function checkRateLimitMemory(
 // ── Redis sliding window ────────────────────────────────────────────────
 
 async function checkRateLimitRedis(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  redis: any,
+  redis: RedisLike,
   key: string,
   limit: number,
   windowMs: number,

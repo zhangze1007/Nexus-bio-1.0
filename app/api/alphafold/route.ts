@@ -80,7 +80,7 @@ export async function GET(req: NextRequest) {
 
     return errorResponse(`AlphaFold structure not found for ${uniprotId}`, 404, undefined, getCorsHeaders(req));
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Unknown error';
-    return errorResponse(`Fetch error: ${message}`, 500, undefined, getCorsHeaders(req));
+    console.error('AlphaFold fetch error:', err);
+    return errorResponse('AlphaFold structure fetch failed', 500, undefined, getCorsHeaders(req));
   }
 }

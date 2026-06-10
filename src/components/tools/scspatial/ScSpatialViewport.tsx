@@ -1,8 +1,9 @@
 'use client';
 
-import { useMemo, useState, type KeyboardEvent, type MutableRefObject } from 'react';
+import { useMemo, useState, useRef, useEffect, useCallback, type KeyboardEvent, type MutableRefObject } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
+import * as THREE from 'three';
 import { Minus, Plus } from 'lucide-react';
 import DataTable, { type TableColumn } from '../../ide/shared/DataTable';
 import EmptyState from '../../ide/shared/EmptyState';
@@ -440,6 +441,17 @@ function SpatialPointCloud({
   const bounds = useMemo(() => getBounds(points), [points]);
   const maxExpression = useMemo(() => Math.max(...points.map((point) => point.expression), 1), [points]);
 
+  // Group points by cluster for instanced rendering
+  const clusterGroups = useMemo(() => {
+    const groups = new Map<string, ScSpatialPointDatum[]>();
+    for (const point of points) {
+      const key = point.selected ? 'selected' : String(point.clusterId);
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key)!.push(point);
+    }
+    return groups;
+  }, [points]);
+
   if (points.length === 0) {
     return (
       <div className={styles.viewportStage}>
@@ -462,21 +474,73 @@ function SpatialPointCloud({
         <directionalLight position={[6, 8, 12]} intensity={0.6} />
         <gridHelper args={[16, 12, '#d1d5db', '#e5e7eb']} position={[0, -2.3, 0]} />
         <group position={[-4.5, -2, -4.5]}>
-          {points.map((point) => {
-            const x = ((point.x - bounds.minX) / bounds.width) * 9;
-            const z = ((point.y - bounds.minY) / bounds.height) * 9;
-            const y = (point.expression / maxExpression) * 4;
-            return (
-              <mesh key={point.id} position={[x, y, z]} onClick={() => onSelectCell(point.id)}>
-                <sphereGeometry args={[point.selected ? 0.22 : 0.12, 12, 12]} />
-                <meshLambertMaterial color={point.selected ? '#111827' : colorForCluster(point.clusterId)} />
-              </mesh>
-            );
-          })}
+          {Array.from(clusterGroups.entries()).map(([clusterId, clusterPoints]) => (
+            <InstancedPointCloud
+              key={clusterId}
+              points={clusterPoints}
+              bounds={bounds}
+              maxExpression={maxExpression}
+              color={clusterId === 'selected' ? '#111827' : colorForCluster(Number(clusterId))}
+              onSelectCell={onSelectCell}
+            />
+          ))}
         </group>
         <OrbitControls enablePan={false} minDistance={8} maxDistance={28} />
       </Canvas>
     </div>
+  );
+}
+
+// Optimized instanced point cloud component
+function InstancedPointCloud({
+  points,
+  bounds,
+  maxExpression,
+  color,
+  onSelectCell,
+}: {
+  points: ScSpatialPointDatum[];
+  bounds: { minX: number; minY: number; width: number; height: number };
+  maxExpression: number;
+  color: string;
+  onSelectCell: (cellId: string | null) => void;
+}) {
+  const meshRef = useRef<THREE.InstancedMesh>(null);
+  const tempObject = useMemo(() => new THREE.Object3D(), []);
+
+  useEffect(() => {
+    if (!meshRef.current) return;
+
+    points.forEach((point, i) => {
+      const x = ((point.x - bounds.minX) / bounds.width) * 9;
+      const z = ((point.y - bounds.minY) / bounds.height) * 9;
+      const y = (point.expression / maxExpression) * 4;
+      const scale = point.selected ? 1.83 : 1; // 0.22 / 0.12 ≈ 1.83
+
+      tempObject.position.set(x, y, z);
+      tempObject.scale.setScalar(scale);
+      tempObject.updateMatrix();
+      meshRef.current!.setMatrixAt(i, tempObject.matrix);
+    });
+
+    meshRef.current.instanceMatrix.needsUpdate = true;
+  }, [points, bounds, maxExpression, tempObject]);
+
+  const handleClick = useCallback((e: { instanceId?: number }) => {
+    if (e.instanceId !== undefined) {
+      onSelectCell(points[e.instanceId]?.id ?? null);
+    }
+  }, [points, onSelectCell]);
+
+  return (
+    <instancedMesh
+      ref={meshRef}
+      args={[undefined, undefined, points.length]}
+      onClick={handleClick}
+    >
+      <sphereGeometry args={[0.12, 12, 12]} />
+      <meshLambertMaterial color={color} />
+    </instancedMesh>
   );
 }
 

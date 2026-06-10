@@ -60,10 +60,10 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ ok: true, ...query });
   } catch (error) {
+    console.error('SCSPATIAL query error:', error);
     return jsonError(
       'SCSPATIAL query failed',
       500,
-      error instanceof Error ? error.message : 'Unknown SCSPATIAL query failure',
     );
   }
 }

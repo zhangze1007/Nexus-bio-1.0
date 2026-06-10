@@ -226,8 +226,10 @@ function PLDDTHistogram({ nodes, currentNodeId }: { nodes?: PathwayNode[]; curre
 
           {binCounts.map((count, i) => {
             const barH = max > 0 ? Math.max((count / max) * (CHART_H - 4), count > 0 ? 3 : 0) : 0;
-            const isCurrentNode = currentNodeId && nodes?.find(n => n.id === currentNodeId)?.confidenceScore !== undefined
-              && Math.floor((nodes.find(n => n.id === currentNodeId)!.confidenceScore! * 100) / 10) === i;
+            const currentNode = currentNodeId ? nodes?.find(n => n.id === currentNodeId) : undefined;
+            const score = currentNode?.confidenceScore;
+            const isCurrentNode = typeof score === 'number'
+              && Math.floor((score * 100) / 10) === i;
 
             return (
               <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', height: '100%' }}>

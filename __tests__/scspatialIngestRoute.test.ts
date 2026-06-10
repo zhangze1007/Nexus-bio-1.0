@@ -246,7 +246,8 @@ describe('scspatial ingest POST — error handling', () => {
     const data = await response.json();
     expect(data.ok).toBe(false);
     expect(data.error).toContain('SCSPATIAL ingest failed');
-    expect(data.detail).toContain('Python module not found');
+    // Error details are no longer exposed to client for security
+    expect(data.detail).toBeUndefined();
   });
 
   it('handles non-Error exceptions', async () => {
@@ -265,7 +266,9 @@ describe('scspatial ingest POST — error handling', () => {
     const response = await POST(request);
     expect(response.status).toBe(500);
     const data = await response.json();
-    expect(data.detail).toBe('Unknown SCSPATIAL ingest failure');
+    expect(data.error).toBe('SCSPATIAL ingest failed');
+    // Error details are no longer exposed to client for security
+    expect(data.detail).toBeUndefined();
   });
 });
 

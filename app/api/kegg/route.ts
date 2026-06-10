@@ -89,8 +89,9 @@ export async function GET(req: NextRequest) {
       { status: 400, headers: corsHeaders(req) },
     );
   } catch (err) {
+    console.error('KEGG proxy error:', err);
     return NextResponse.json(
-      { error: 'KEGG proxy error', detail: err instanceof Error ? err.message : 'Unknown error' },
+      { error: 'KEGG proxy error' },
       { status: 502, headers: corsHeaders(req) },
     );
   }

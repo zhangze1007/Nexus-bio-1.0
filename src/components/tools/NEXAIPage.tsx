@@ -518,7 +518,7 @@ export default React.memo(function NEXAIPage() {
                 title: 'Structured contract',
                 detail: 'When the model fails to produce the structured envelope we asked for, the failure is surfaced explicitly rather than coerced into a plausible brief.',
                 accent: THEME.MINT,
-                note: malformedParse ? (parseError!.code) : (parseError?.code === 'NO_OBJECT' ? 'prose' : 'ok'),
+                note: malformedParse ? (parseError?.code ?? 'unknown') : (parseError?.code === 'NO_OBJECT' ? 'prose' : 'ok'),
               },
             ]}
           />

@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
     for (const attemptUrl of attempts) {
       try {
         const res = await fetch(attemptUrl, {
-          headers: { 'User-Agent': 'NexusBio/1.0 (fuchanze@gmail.com)' },
+          headers: { 'User-Agent': 'NexusBio/1.0 (contact@nexus-bio.vercel.app)' },
         });
         if (!res.ok) continue;
         const sdf = await res.text();
@@ -53,7 +53,7 @@ export async function GET(req: NextRequest) {
       // Step 1: resolve name → CID
       const searchUrl = `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${encodeURIComponent(cleanName)}/cids/JSON`;
       const searchRes = await fetch(searchUrl, {
-        headers: { 'User-Agent': 'NexusBio/1.0 (fuchanze@gmail.com)' },
+        headers: { 'User-Agent': 'NexusBio/1.0 (contact@nexus-bio.vercel.app)' },
       });
 
       if (!searchRes.ok) return errorResponse('Name not found in PubChem', 404, undefined, getCors(req));
@@ -71,7 +71,7 @@ export async function GET(req: NextRequest) {
       for (const sdfUrl of sdfAttempts) {
         try {
           const sdfRes = await fetch(sdfUrl, {
-            headers: { 'User-Agent': 'NexusBio/1.0 (fuchanze@gmail.com)' },
+            headers: { 'User-Agent': 'NexusBio/1.0 (contact@nexus-bio.vercel.app)' },
           });
           if (!sdfRes.ok) continue;
           const sdf = await sdfRes.text();

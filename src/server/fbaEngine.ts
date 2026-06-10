@@ -139,7 +139,7 @@ const YEAST_NETWORK: NetworkSpec = {
     { name: 'glc_balance', vars: [{ name: 'HXT', coef: 1 }, { name: 'HXK', coef: -1 }] },
     { name: 'g6p_balance', vars: [{ name: 'HXK', coef: 1 }, { name: 'PGI_y', coef: -1 }] },
     { name: 'f6p_balance', vars: [{ name: 'PGI_y', coef: 1 }, { name: 'PFK_y', coef: -1 }] },
-    { name: 'fbp_balance', vars: [{ name: 'PFK_y', coef: 2 }, { name: 'TPI', coef: -1 }] },
+    { name: 'fbp_balance', vars: [{ name: 'PFK_y', coef: 1 }, { name: 'TPI', coef: -1 }] },
     { name: 'fermentation_branch', vars: [{ name: 'TPI', coef: 1 }, { name: 'PDC', coef: -1 }] },
     { name: 'ethanol_branch', vars: [{ name: 'PDC', coef: 1 }, { name: 'ADH', coef: -1 }, { name: 'ACS', coef: -1 }] },
     { name: 'oxygen_balance', vars: [{ name: 'O2tx_y', coef: 1 }, { name: 'ACS', coef: -1 }] },

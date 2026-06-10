@@ -103,10 +103,10 @@ export async function POST(request: Request) {
       await rm(tempDir, { recursive: true, force: true });
     }
   } catch (error) {
+    console.error('SCSPATIAL ingest error:', error);
     return jsonError(
       'SCSPATIAL ingest failed',
       500,
-      error instanceof Error ? error.message : 'Unknown SCSPATIAL ingest failure',
     );
   }
 }

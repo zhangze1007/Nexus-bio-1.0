@@ -94,11 +94,8 @@ const nextConfig = {
   },
 
   webpack: (config) => {
-    // Ensure .json imports work correctly
-    config.module.rules.push({
-      test: /\.json$/,
-      type: 'json',
-    });
+    // JSON imports are natively supported in Next.js 15+
+    // Removed redundant rule for cleaner configuration
     return config;
   },
 };
@@ -111,4 +108,7 @@ export default withSentryConfig(withBundleAnalyzer(nextConfig), {
   silent: true,
   org: process.env.SENTRY_ORG,
   project: process.env.SENTRY_PROJECT,
+  widenClientFileUpload: true,
+  hideSourceMaps: true,
+  disableLogger: true,
 });

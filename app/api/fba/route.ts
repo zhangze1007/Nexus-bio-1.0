@@ -30,6 +30,12 @@ function asKnockouts(value: unknown) {
 export async function POST(request: Request) {
   const requestId = request.headers.get('x-request-id') || `fba_${Date.now().toString(36)}`;
 
+  // CSRF protection: validate Content-Type
+  const contentType = request.headers.get('content-type');
+  if (!contentType?.includes('application/json')) {
+    return NextResponse.json({ ok: false, error: 'Invalid Content-Type. Expected application/json', requestId }, { status: 415, headers: getCorsHeaders(request) });
+  }
+
   let body: unknown;
   try {
     body = await request.json();
@@ -40,22 +46,24 @@ export async function POST(request: Request) {
   if (!body || typeof body !== 'object') {
     return NextResponse.json({ ok: false, error: 'Invalid FBA request payload', requestId }, { status: 400, headers: getCorsHeaders(request) });
   }
-  const input = body as Record<string, any>;
+  const input = body as Record<string, unknown>;
 
   try {
     if (input.mode === 'community') {
+      const ecoli = input.ecoli as Record<string, unknown> | undefined;
+      const yeast = input.yeast as Record<string, unknown> | undefined;
       const payload: CommunityFBARequest = {
         objective: asObjective(input.objective),
         alpha: asNumber(input.alpha, 0.5),
         ecoli: {
-          glucoseUptake: asNumber(input.ecoli?.glucoseUptake, 10),
-          oxygenUptake: asNumber(input.ecoli?.oxygenUptake, 12),
-          knockouts: asKnockouts(input.ecoli?.knockouts),
+          glucoseUptake: asNumber(ecoli?.glucoseUptake, 10),
+          oxygenUptake: asNumber(ecoli?.oxygenUptake, 12),
+          knockouts: asKnockouts(ecoli?.knockouts),
         },
         yeast: {
-          glucoseUptake: asNumber(input.yeast?.glucoseUptake, 8),
-          oxygenUptake: asNumber(input.yeast?.oxygenUptake, 6),
-          knockouts: asKnockouts(input.yeast?.knockouts),
+          glucoseUptake: asNumber(yeast?.glucoseUptake, 8),
+          oxygenUptake: asNumber(yeast?.oxygenUptake, 6),
+          knockouts: asKnockouts(yeast?.knockouts),
         },
       };
 
@@ -112,10 +120,11 @@ export async function POST(request: Request) {
       error: error instanceof Error ? error.message : String(error),
       timestamp: new Date().toISOString(),
     }));
+    // Don't expose internal error details to client
     return NextResponse.json(
       {
         ok: false,
-        error: error instanceof Error ? error.message : 'Authoritative FBA solve failed',
+        error: 'Authoritative FBA solve failed',
         requestId,
       },
       { status: 500, headers: getCorsHeaders(request) },
