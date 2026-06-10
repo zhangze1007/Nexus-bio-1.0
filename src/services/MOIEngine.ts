@@ -733,10 +733,13 @@ export function predictPerturbation(
   const saturationFactor = 1 / (1 + Math.exp(-(foldChange - 2))); // Sigmoid saturation
   const metaboliteChange = proteinChange * (0.3 + 0.7 * (1 - saturationFactor));
 
-  // Estimate latent shift
-  const latentShift = original.z_mean.map((_, k) =>
-    foldChange * (0.1 + Math.random() * 0.05) * (k % 2 === 0 ? 1 : -1)
-  );
+  // Estimate latent shift (deterministic, no Math.random)
+  const latentShift = original.z_mean.map((_, k) => {
+    // Deterministic pseudo-random based on fold change and index
+    const seed = (foldChange * 1000 + k * 137) % 100;
+    const pseudoRand = (seed / 100) * 0.05; // 0 to 0.05
+    return foldChange * (0.1 + pseudoRand) * (k % 2 === 0 ? 1 : -1);
+  });
 
   // Predict metabolite shifts for related metabolites
   const metaboliteNames = ['Acetyl-CoA', 'HMG-CoA', 'Mevalonate', 'IPP', 'FPP', 'Amorphadiene', 'Artemisinic acid', 'Artemisinin'];

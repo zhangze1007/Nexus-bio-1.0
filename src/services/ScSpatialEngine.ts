@@ -630,15 +630,17 @@ export function computePAGA(cells: CellRecord[], clusters: ClusterResult): PAGAR
     clusterCounts[c.cluster]++;
   }
 
-  // Build KNN graph from spatial coordinates
+  // Build KNN graph from EXPRESSION space (not spatial coordinates)
+  // This matches the clustering algorithm which uses expression-space KNN
+  const expr: number[][] = cells.map(c => genes.map(g => c.geneExpression[g] ?? 0));
   const neighborMap = new Map<string, Set<string>>();
   for (const c of cells) neighborMap.set(c.id, new Set());
-  const k = Math.min(6, cells.length - 1);
+  const kPaga = Math.min(15, cells.length - 1); // Same k as clustering
   for (let i = 0; i < cells.length; i++) {
     const distances = cells.map((cj, j) => ({
       j,
-      d: Math.sqrt((cells[i].spatialX - cj.spatialX) ** 2 + (cells[i].spatialY - cj.spatialY) ** 2)
-    })).filter(d => d.j !== i).sort((a, b) => a.d - b.d).slice(0, k);
+      d: euclideanDistance(expr[i], expr[j]) // Use expression distance, not spatial
+    })).filter(d => d.j !== i).sort((a, b) => a.d - b.d).slice(0, kPaga);
     for (const { j } of distances) {
       neighborMap.get(cells[i].id)?.add(cells[j].id);
       neighborMap.get(cells[j].id)?.add(cells[i].id);
