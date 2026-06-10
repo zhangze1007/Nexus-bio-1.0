@@ -3,8 +3,8 @@ import { useState, useMemo, useEffect } from 'react';
 import AlgorithmInsight from '../ide/shared/AlgorithmInsight';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
-import { CIRCUIT_NODES, LOGIC_GATES, hillInhibition, hillActivation } from '../../data/mockGECAIR';
-import type { GateType } from '../../data/mockGECAIR';
+import { CIRCUIT_NODES, LOGIC_GATES, hillInhibition, hillActivation, runRepressilator } from '../../data/mockGECAIR';
+import type { GateType, RepressilatorState } from '../../data/mockGECAIR';
 import { useWorkbenchStore } from '../../store/workbenchStore';
 import { T } from '../ide/tokens';
 import WorkbenchRangeSlider from './shared/WorkbenchRangeSlider';
@@ -632,6 +632,34 @@ export default function GECAIRPage() {
               <MetricCard label="Noise Sensitivity" value={noiseScore.toFixed(4)} warning={noiseScore > 0.05 ? 'High noise sensitivity — consider insulator parts' : undefined} />
               <MetricCard label="Circuit Complexity" value={CIRCUIT_NODES.reduce((a, n) => a + n.parts.length, 0)} unit="parts" />
             </div>
+
+            {/* Repressilator ODE Dynamics — Real RK4 simulation */}
+            {(() => {
+              const trajectory = runRepressilator(undefined, 300, 1.0);
+              const maxP = Math.max(...trajectory.flatMap(s => [s.pA, s.pB, s.pC]));
+              const w = 240, h = 60;
+              const toPath = (key: keyof RepressilatorState) => {
+                const pts = trajectory.map((s, i) => `${(i / trajectory.length) * w},${h - (s[key] / maxP) * h}`);
+                return `M${pts.join(' L')}`;
+              };
+              return (
+                <div style={{ marginTop: '12px', padding: '12px', borderRadius: 'var(--nb-radius-md)', border: `1px solid ${PATHD_THEME.paperBorder}`, background: PATHD_THEME.paperSurfaceStrong }}>
+                  <div style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperLabel, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>
+                    Repressilator Dynamics (RK4 ODE)
+                  </div>
+                  <svg width={w} height={h} style={{ display: 'block', width: '100%' }}>
+                    <path d={toPath('pA')} fill="none" stroke="#C8D8E8" strokeWidth={1.5} />
+                    <path d={toPath('pB')} fill="none" stroke="#C8E0D0" strokeWidth={1.5} />
+                    <path d={toPath('pC')} fill="none" stroke="#DDD0E8" strokeWidth={1.5} />
+                  </svg>
+                  <div style={{ display: 'flex', gap: '12px', marginTop: '6px', fontFamily: T.MONO, fontSize: '10px' }}>
+                    <span style={{ color: '#C8D8E8' }}>■ LacI</span>
+                    <span style={{ color: '#C8E0D0' }}>■ TetR</span>
+                    <span style={{ color: '#DDD0E8' }}>■ cI</span>
+                  </div>
+                </div>
+              );
+            })()}
 
             <div style={{
               marginTop: '12px',
