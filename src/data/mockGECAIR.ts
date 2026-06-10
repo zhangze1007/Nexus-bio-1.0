@@ -86,6 +86,100 @@ export const DEFAULT_REPRESSILATOR_PARAMS: RepressilatorParams = {
   K: 100,          // Half-maximal concentration (nM)
 };
 
+// Toggle Switch ODE dynamics (Gardner et al., 2000, Nature)
+// 4-variable system: 2 mRNA + 2 protein (mutual repression)
+// dmA/dt = alpha0 + alpha * hillInhibition(pB, K, n) - mA
+// dmB/dt = alpha0 + alpha * hillInhibition(pA, K, n) - mB
+// dpA/dt = beta * mA - gamma * pA
+// dpB/dt = beta * mB - gamma * pB
+export interface ToggleSwitchParams {
+  alpha: number;     // Max transcription rate (mRNA/min)
+  alpha0: number;    // Leak transcription rate
+  beta: number;      // Translation rate (protein/mRNA/min)
+  gamma: number;     // Protein degradation rate (1/min)
+  n: number;         // Hill coefficient
+  K: number;         // Half-maximal repression concentration
+}
+
+export interface ToggleSwitchState {
+  mA: number;  // mRNA A
+  mB: number;  // mRNA B
+  pA: number;  // Protein A (represses B)
+  pB: number;  // Protein B (represses A)
+}
+
+export const DEFAULT_TOGGLE_SWITCH_PARAMS: ToggleSwitchParams = {
+  alpha: 216,      // mRNA/min
+  alpha0: 0.216,   // Leak rate (alpha0/alpha = 0.001)
+  beta: 0.2,       // protein/mRNA/min
+  gamma: 0.0075,   // 1/min (protein half-life ~92 min)
+  n: 2.5,          // Hill coefficient (higher for sharper bistability)
+  K: 100,          // Half-maximal concentration (nM)
+};
+
+// Run toggle switch ODE simulation using RK4
+export function runToggleSwitch(
+  params: ToggleSwitchParams = DEFAULT_TOGGLE_SWITCH_PARAMS,
+  duration: number = 500,  // minutes
+  dt: number = 0.5,        // time step
+  initialPerturbation: 'A' | 'B' = 'A',  // which state starts high
+): ToggleSwitchState[] {
+  const { alpha, alpha0, beta, gamma, n, K } = params;
+
+  // Initial conditions: asymmetric to trigger bistability
+  // If perturbation A: protein A starts high, B starts low (settles to state A)
+  // If perturbation B: protein B starts high, A starts low (settles to state B)
+  let state: ToggleSwitchState = initialPerturbation === 'A'
+    ? { mA: 20, mB: 2, pA: 200, pB: 20 }
+    : { mA: 2, mB: 20, pA: 20, pB: 200 };
+  const trajectory: ToggleSwitchState[] = [{ ...state }];
+
+  // Derivatives function
+  const derivatives = (s: ToggleSwitchState): ToggleSwitchState => ({
+    mA: alpha0 + alpha * hillInhibition(s.pB, K, n) - s.mA,
+    mB: alpha0 + alpha * hillInhibition(s.pA, K, n) - s.mB,
+    pA: beta * s.mA - gamma * s.pA,
+    pB: beta * s.mB - gamma * s.pB,
+  });
+
+  // Add two states
+  const addStates = (a: ToggleSwitchState, b: ToggleSwitchState, scale: number): ToggleSwitchState => ({
+    mA: a.mA + b.mA * scale,
+    mB: a.mB + b.mB * scale,
+    pA: a.pA + b.pA * scale,
+    pB: a.pB + b.pB * scale,
+  });
+
+  const steps = Math.floor(duration / dt);
+  for (let t = 0; t < steps; t++) {
+    const k1 = derivatives(state);
+    const s2 = addStates(state, k1, dt / 2);
+    const k2 = derivatives(s2);
+    const s3 = addStates(state, k2, dt / 2);
+    const k3 = derivatives(s3);
+    const s4 = addStates(state, k3, dt);
+    const k4 = derivatives(s4);
+
+    // RK4 update
+    state = {
+      mA: state.mA + (dt / 6) * (k1.mA + 2 * k2.mA + 2 * k3.mA + k4.mA),
+      mB: state.mB + (dt / 6) * (k1.mB + 2 * k2.mB + 2 * k3.mB + k4.mB),
+      pA: state.pA + (dt / 6) * (k1.pA + 2 * k2.pA + 2 * k3.pA + k4.pA),
+      pB: state.pB + (dt / 6) * (k1.pB + 2 * k2.pB + 2 * k3.pB + k4.pB),
+    };
+
+    // Clamp to non-negative
+    state.mA = Math.max(0, state.mA);
+    state.mB = Math.max(0, state.mB);
+    state.pA = Math.max(0, state.pA);
+    state.pB = Math.max(0, state.pB);
+
+    trajectory.push({ ...state });
+  }
+
+  return trajectory;
+}
+
 // Run repressilator ODE simulation using RK4
 export function runRepressilator(
   params: RepressilatorParams = DEFAULT_REPRESSILATOR_PARAMS,
