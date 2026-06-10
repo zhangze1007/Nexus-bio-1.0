@@ -455,12 +455,12 @@ function initWeights(inputDim: number, latentDim: number, rng: SeededRNG): VAEWe
 }
 
 function relu(x: number): number { return Math.max(0, x); }
+function reluDeriv(x: number): number { return x > 0 ? 1 : 0; }
 
-function forward(
-  x: number[],        // Input: [transcript, protein, metabolite, ...batch_onehot]
-  w: VAEWeights,
-  rng: SeededRNG,
-): {
+/**
+ * Full forward pass storing all intermediate activations for backpropagation.
+ */
+interface ForwardCache {
   z_mean: number[];
   z_logvar: number[];
   z_sample: number[];
@@ -469,24 +469,44 @@ function forward(
   h2: number[];
   h3: number[];
   h4: number[];
-} {
+  // Pre-activations (before ReLU) for gradient computation
+  z1: number[];
+  z2: number[];
+  z3: number[];
+  z4: number[];
+  // Epsilon from reparameterization trick
+  epsilon: number[];
+}
+
+function forward(
+  x: number[],        // Input: [transcript, protein, metabolite, ...batch_onehot]
+  w: VAEWeights,
+  rng: SeededRNG,
+): ForwardCache {
   // Encoder: x → h1 → h2 → [μ, logσ²]
-  const h1 = w.W1[0].map((_, j) => {
+  const z1: number[] = [];
+  const h1: number[] = [];
+  for (let j = 0; j < w.b1.length; j++) {
     let s = w.b1[j];
     for (let i = 0; i < x.length; i++) s += x[i] * (w.W1[i]?.[j] ?? 0);
-    return relu(s);
-  });
+    z1.push(s);
+    h1.push(relu(s));
+  }
 
-  const h2 = w.W2[0].map((_, j) => {
+  const z2: number[] = [];
+  const h2: number[] = [];
+  for (let j = 0; j < w.b2.length; j++) {
     let s = w.b2[j];
     for (let i = 0; i < h1.length; i++) s += h1[i] * (w.W2[i]?.[j] ?? 0);
-    return relu(s);
-  });
+    z2.push(s);
+    h2.push(relu(s));
+  }
 
   const latentDim = w.Wmu[0].length;
   const z_mean = new Array(latentDim);
   const z_logvar = new Array(latentDim);
   const z_sample = new Array(latentDim);
+  const epsilon = new Array(latentDim);
 
   for (let k = 0; k < latentDim; k++) {
     let mu = w.bmu[k], lv = w.blv[k];
@@ -497,21 +517,28 @@ function forward(
     z_mean[k] = mu;
     z_logvar[k] = Math.max(-10, Math.min(10, lv)); // Clamp for stability
     // Reparameterization trick: z = μ + σ·ε
-    z_sample[k] = mu + Math.exp(0.5 * z_logvar[k]) * rng.gaussian();
+    epsilon[k] = rng.gaussian();
+    z_sample[k] = mu + Math.exp(0.5 * z_logvar[k]) * epsilon[k];
   }
 
   // Decoder: z → h3 → h4 → x̂
-  const h3 = w.W3[0].map((_, j) => {
+  const z3: number[] = [];
+  const h3: number[] = [];
+  for (let j = 0; j < w.b3.length; j++) {
     let s = w.b3[j];
     for (let i = 0; i < latentDim; i++) s += z_sample[i] * (w.W3[i]?.[j] ?? 0);
-    return relu(s);
-  });
+    z3.push(s);
+    h3.push(relu(s));
+  }
 
-  const h4 = w.W4[0].map((_, j) => {
+  const z4: number[] = [];
+  const h4: number[] = [];
+  for (let j = 0; j < w.b4.length; j++) {
     let s = w.b4[j];
     for (let i = 0; i < h3.length; i++) s += h3[i] * (w.W4[i]?.[j] ?? 0);
-    return relu(s);
-  });
+    z4.push(s);
+    h4.push(relu(s));
+  }
 
   const recon = [0, 1, 2].map(j => {
     let s = w.b5[j];
@@ -519,22 +546,31 @@ function forward(
     return s; // Linear output for reconstruction
   });
 
-  return { z_mean, z_logvar, z_sample, recon, h1, h2, h3, h4 };
+  return { z_mean, z_logvar, z_sample, recon, h1, h2, h3, h4, z1, z2, z3, z4, epsilon };
 }
 
 /**
- * Train the seeded linear embedding on omics data.
+ * Train the seeded linear embedding on omics data with full backpropagation.
+ *
+ * All encoder and decoder layers are updated via hand-derived gradients:
+ *   Encoder: W1, b1, W2, b2, Wmu, bmu, Wlv, blv
+ *   Decoder: W3, b3, W4, b4, W5, b5
+ *
+ * Gradients flow through:
+ *   Reconstruction loss (MSE) → decoder output → decoder hidden → latent z
+ *   KL divergence → μ and logσ² → encoder hidden layers
+ *   Reparameterization trick bridges encoder and decoder gradients
  *
  * @param data - OmicsRow[] input
  * @param latentDim - Dimensionality of latent space Z (default 8)
- * @param beta - Compatibility weight for the local KL-style penalty
+ * @param beta - Weight for the KL divergence penalty
  * @param epochs - Training epochs (default 100)
  * @param lr - Learning rate (default 0.005)
  * @param batchLabels - Optional batch IDs for batch correction
  *
- * HONEST NAME: This is a linear encoder with KL penalty, NOT a VAE.
- * A true VAE requires autograd, reparameterization trick, and learned posterior.
- * This function uses hand-derived gradient updates on only the output layer.
+ * HONEST NAME: This is a linear encoder with KL penalty, NOT a production VAE.
+ * No autograd, no validation split, no deployment-grade stochastic inference.
+ * All layers are updated via hand-derived analytical gradients (backpropagation).
  */
 export function trainMultimodalVAE(
   data: OmicsRow[],
@@ -587,24 +623,26 @@ export function trainMultimodalVAE(
 
   const convergenceHistory: { epoch: number; loss: number; kl: number; recon: number }[] = [];
 
-  // Training loop (stochastic gradient descent with finite differences)
+  // Training loop with full backpropagation through all layers
   for (let epoch = 0; epoch < epochs; epoch++) {
     let totalLoss = 0, totalRecon = 0, totalKL = 0;
 
     for (let i = 0; i < n; i++) {
-      const result = forward(inputs[i], w, rng);
+      const x = inputs[i];
+      const f = forward(x, w, rng);
 
-      // Reconstruction loss (MSE)
+      // ─── Loss computation ───
+      // Reconstruction loss (MSE): L_recon = (1/3) * Σ(x_j - x̂_j)²
       let reconLoss = 0;
       for (let j = 0; j < 3; j++) {
-        reconLoss += (inputs[i][j] - result.recon[j]) ** 2;
+        reconLoss += (x[j] - f.recon[j]) ** 2;
       }
       reconLoss /= 3;
 
       // KL divergence: D_KL = -0.5 * Σ(1 + logσ² - μ² - σ²)
       let kl = 0;
       for (let k = 0; k < latentDim; k++) {
-        kl += -0.5 * (1 + result.z_logvar[k] - result.z_mean[k] ** 2 - Math.exp(result.z_logvar[k]));
+        kl += -0.5 * (1 + f.z_logvar[k] - f.z_mean[k] ** 2 - Math.exp(f.z_logvar[k]));
       }
 
       const loss = reconLoss + beta * kl;
@@ -612,20 +650,114 @@ export function trainMultimodalVAE(
       totalRecon += reconLoss;
       totalKL += kl;
 
-      // Simplified parameter update: perturb decoder weights toward reducing recon loss
-      const perturbScale = lr * (1 - epoch / epochs); // Learning rate decay
+      // ─── Backward pass: decoder output layer ───
+      // dL/dx̂_j = -(2/3)(x_j - x̂_j)
+      const dxhat = new Array(3);
       for (let j = 0; j < 3; j++) {
-        const error = inputs[i][j] - result.recon[j];
-        w.b5[j] += perturbScale * error;
-        for (let h = 0; h < result.h4.length; h++) {
-          if (w.W5[h]) w.W5[h][j] += perturbScale * error * result.h4[h] * 0.01;
+        dxhat[j] = -(2 / 3) * (x[j] - f.recon[j]);
+      }
+
+      // dL/dW5[i][j] = dL/dx̂_j * h4[i],  dL/db5[j] = dL/dx̂_j
+      const dh4 = new Array(f.h4.length).fill(0);
+      for (let j = 0; j < 3; j++) {
+        w.b5[j] -= lr * dxhat[j];
+        for (let h = 0; h < f.h4.length; h++) {
+          if (w.W5[h]) w.W5[h][j] -= lr * dxhat[j] * f.h4[h];
+          dh4[h] += dxhat[j] * (w.W5[h]?.[j] ?? 0);
         }
       }
 
-      // Update encoder mean weights toward tighter KL
+      // ─── Decoder hidden layer 4 (h4) ───
+      // dh4/dz4 = ReLU'(z4)
+      const dz4 = new Array(f.z4.length);
+      for (let h = 0; h < f.z4.length; h++) {
+        dz4[h] = dh4[h] * reluDeriv(f.z4[h]);
+      }
+
+      // dL/dW4[i][j] = dz4[j] * h3[i],  dL/db4[j] = dz4[j]
+      const dh3 = new Array(f.h3.length).fill(0);
+      for (let j = 0; j < f.z4.length; j++) {
+        w.b4[j] -= lr * dz4[j];
+        for (let i2 = 0; i2 < f.h3.length; i2++) {
+          if (w.W4[i2]) w.W4[i2][j] -= lr * dz4[j] * f.h3[i2];
+          dh3[i2] += dz4[j] * (w.W4[i2]?.[j] ?? 0);
+        }
+      }
+
+      // ─── Decoder hidden layer 3 (h3) ───
+      const dz3 = new Array(f.z3.length);
+      for (let h = 0; h < f.z3.length; h++) {
+        dz3[h] = dh3[h] * reluDeriv(f.z3[h]);
+      }
+
+      // dL/dW3[i][j] = dz3[j] * z[i],  dL/db3[j] = dz3[j]
+      // dL/dz[i] = Σ_j dz3[j] * W3[i][j]
+      const dz = new Array(latentDim).fill(0);
+      for (let j = 0; j < f.z3.length; j++) {
+        w.b3[j] -= lr * dz3[j];
+        for (let i2 = 0; i2 < latentDim; i2++) {
+          if (w.W3[i2]) w.W3[i2][j] -= lr * dz3[j] * f.z_sample[i2];
+          dz[i2] += dz3[j] * (w.W3[i2]?.[j] ?? 0);
+        }
+      }
+
+      // ─── Through reparameterization trick ───
+      // z_k = mu_k + exp(0.5 * logvar_k) * epsilon_k
+      // dL/dmu_k = dz/dmu_k * dL/dz_k + beta * dKL/dmu_k
+      //          = dL/dz_k + beta * mu_k
+      // dL/dlogvar_k = dz/dlogvar_k * dL/dz_k + beta * dKL/dlogvar_k
+      //              = dL/dz_k * 0.5 * exp(0.5*logvar_k) * epsilon_k + beta * 0.5 * (exp(logvar_k) - 1)
+      const dmu = new Array(latentDim);
+      const dlogvar = new Array(latentDim);
       for (let k = 0; k < latentDim; k++) {
-        const klGrad = result.z_mean[k]; // ∂KL/∂μ = μ
-        w.bmu[k] -= perturbScale * beta * klGrad * 0.01;
+        const sigma = Math.exp(0.5 * f.z_logvar[k]);
+        dmu[k] = dz[k] + beta * f.z_mean[k];
+        dlogvar[k] = dz[k] * 0.5 * sigma * f.epsilon[k] + beta * 0.5 * (Math.exp(f.z_logvar[k]) - 1);
+      }
+
+      // ─── Encoder: mu and logvar layers ───
+      // dL/dWmu[i][k] = dmu[k] * h2[i],  dL/dbmu[k] = dmu[k]
+      // dL/dWlv[i][k] = dlogvar[k] * h2[i],  dL/dblv[k] = dlogvar[k]
+      // dL/dh2[i] = Σ_k (dmu[k] * Wmu[i][k] + dlogvar[k] * Wlv[i][k])
+      const dh2 = new Array(f.h2.length).fill(0);
+      for (let k = 0; k < latentDim; k++) {
+        w.bmu[k] -= lr * dmu[k];
+        w.blv[k] -= lr * dlogvar[k];
+        for (let i2 = 0; i2 < f.h2.length; i2++) {
+          if (w.Wmu[i2]) w.Wmu[i2][k] -= lr * dmu[k] * f.h2[i2];
+          if (w.Wlv[i2]) w.Wlv[i2][k] -= lr * dlogvar[k] * f.h2[i2];
+          dh2[i2] += dmu[k] * (w.Wmu[i2]?.[k] ?? 0) + dlogvar[k] * (w.Wlv[i2]?.[k] ?? 0);
+        }
+      }
+
+      // ─── Encoder hidden layer 2 (h2) ───
+      const dz2 = new Array(f.z2.length);
+      for (let h = 0; h < f.z2.length; h++) {
+        dz2[h] = dh2[h] * reluDeriv(f.z2[h]);
+      }
+
+      // dL/dW2[i][j] = dz2[j] * h1[i],  dL/db2[j] = dz2[j]
+      const dh1 = new Array(f.h1.length).fill(0);
+      for (let j = 0; j < f.z2.length; j++) {
+        w.b2[j] -= lr * dz2[j];
+        for (let i2 = 0; i2 < f.h1.length; i2++) {
+          if (w.W2[i2]) w.W2[i2][j] -= lr * dz2[j] * f.h1[i2];
+          dh1[i2] += dz2[j] * (w.W2[i2]?.[j] ?? 0);
+        }
+      }
+
+      // ─── Encoder hidden layer 1 (h1) ───
+      const dz1 = new Array(f.z1.length);
+      for (let h = 0; h < f.z1.length; h++) {
+        dz1[h] = dh1[h] * reluDeriv(f.z1[h]);
+      }
+
+      // dL/dW1[i][j] = dz1[j] * x[i],  dL/db1[j] = dz1[j]
+      for (let j = 0; j < f.z1.length; j++) {
+        w.b1[j] -= lr * dz1[j];
+        for (let i2 = 0; i2 < x.length; i2++) {
+          if (w.W1[i2]) w.W1[i2][j] -= lr * dz1[j] * x[i2];
+        }
       }
     }
 
