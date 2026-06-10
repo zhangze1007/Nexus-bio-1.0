@@ -36,6 +36,7 @@ import AxonPlanPanel from '../ide/AxonPlanPanel';
 import AgentSessionViewer from '../ide/AgentSessionViewer';
 import { routeIntent, type IntentRoute } from '../../services/axonIntentRouter';
 import { buildWorkbenchCopilotContext, composeCopilotQuery } from '../../services/axonContext';
+import { verifyCitationsBatch, mergeVerificationResults, computeVerificationSummary } from '../../services/citationVerifier';
 import { useAxonOrchestrator } from '../../providers/AxonOrchestratorProvider';
 import { domainCategoryLabel } from '../../services/axonDomainClassifier';
 import { ChatMessage, type ChatMessageProps } from './nexai/ChatMessage';
@@ -138,6 +139,11 @@ export default React.memo(function NEXAIPage() {
   const [rawText, setRawText] = useState<string | null>(null);
   const [provider, setProvider] = useState<string | null>(null);
   const [rawDrawerOpen, setRawDrawerOpen] = useState(false);
+
+  // Citation verification state
+  const [verifying, setVerifying] = useState(false);
+  const [verified, setVerified] = useState(false);
+  const verifyAbortRef = useRef<AbortController | null>(null);
 
   // PR-3 — agentic mode + queue now come from the shared provider.
   //
@@ -419,6 +425,38 @@ export default React.memo(function NEXAIPage() {
     setLoading(false);
   }
 
+  async function verifyCitations() {
+    if (!result || result.citations.length === 0) return;
+
+    // Cancel any in-flight verification
+    verifyAbortRef.current?.abort();
+    const controller = new AbortController();
+    verifyAbortRef.current = controller;
+
+    setVerifying(true);
+    setVerified(false);
+    appendConsole({ level: 'info', module: 'nexai', message: `Verifying ${result.citations.length} citation(s) against PubMed...` });
+
+    try {
+      const results = await verifyCitationsBatch(result.citations, controller.signal);
+      const merged = mergeVerificationResults(result.citations, results);
+      const summary = computeVerificationSummary(merged);
+
+      setResult(prev => prev ? { ...prev, citations: merged } : prev);
+      setVerified(true);
+
+      appendConsole({
+        level: 'success',
+        module: 'nexai',
+        message: `PubMed verification: ${summary.verified} verified, ${summary.unverified} partial, ${summary.notFound} not found`,
+      });
+    } catch (e) {
+      if (e instanceof DOMException && e.name === 'AbortError') return;
+      appendConsole({ level: 'warn', module: 'nexai', message: `Citation verification failed: ${e instanceof Error ? e.message : String(e)}` });
+    }
+    setVerifying(false);
+  }
+
   const isUngrounded = result !== null && result.citations.length === 0;
   const malformedParse =
     parseError && (parseError.code === 'INVALID_SYNTAX' || parseError.code === 'EMPTY');
@@ -492,9 +530,14 @@ export default React.memo(function NEXAIPage() {
                 value: `${result?.citations.length ?? 0}`,
                 detail: result && result.citations.length === 0
                   ? 'No visible citations are attached to this answer yet. Treat it as ungrounded synthesis until Research evidence is attached.'
-                  : evidenceItems.length
-                    ? `Workbench evidence graph currently holds ${evidenceItems.length} saved item(s).`
-                    : 'No saved evidence yet; Research intake will strengthen citation-grounded answers.',
+                  : verified
+                    ? (() => {
+                        const summary = computeVerificationSummary(result!.citations);
+                        return `PubMed: ${summary.verified} verified, ${summary.unverified} partial, ${summary.notFound} not found`;
+                      })()
+                    : evidenceItems.length
+                      ? `Workbench evidence graph currently holds ${evidenceItems.length} saved item(s).`
+                      : 'No saved evidence yet; Research intake will strengthen citation-grounded answers.',
                 tone: result && result.citations.length === 0 ? 'alert' : 'neutral',
               },
               {
@@ -584,29 +627,89 @@ export default React.memo(function NEXAIPage() {
                 fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase',
                 letterSpacing: '0.1em', color: THEME.LABEL,
                 margin: '14px 0 6px', padding: '0 2px',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               }}>
-                Citations ({result.citations.length})
+                <span>Citations ({result.citations.length})</span>
+                {!verified && (
+                  <button
+                    type="button"
+                    className="nb-tool-toggle"
+                    onClick={verifyCitations}
+                    disabled={verifying}
+                    data-testid="nexai-verify-citations"
+                    style={{
+                      padding: '2px 8px',
+                      borderRadius: 'var(--nb-radius-sm)',
+                      border: `1px solid ${THEME.BORDER}`,
+                      background: verifying ? 'rgba(175,195,214,0.18)' : 'transparent',
+                      color: THEME.VALUE,
+                      fontFamily: THEME.MONO,
+                      fontSize: '9px',
+                      fontWeight: 700,
+                      letterSpacing: '0.06em',
+                      textTransform: 'uppercase',
+                      cursor: verifying ? 'wait' : 'pointer',
+                    }}
+                  >
+                    {verifying ? 'Verifying...' : 'Verify'}
+                  </button>
+                )}
               </div>
-              {result.citations.map(c => (
-                <div key={c.id} style={{
-                  padding: '6px 8px',
-                  borderRadius: 'var(--nb-radius-sm)',
-                  background: THEME.PANEL_INSET,
-                  border: `1px solid ${THEME.BORDER}`,
-                }}>
-                  <p style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: THEME.VALUE, margin: '0 0 2px', lineHeight: 1.4 }}>
-                    {c.title.slice(0, 60)}…
-                  </p>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL }}>
-                      {c.authors.split(',')[0]} et al. {c.year}
-                    </span>
-                    <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.VALUE }}>
-                      {(c.relevance * 100).toFixed(0)}%
-                    </span>
+              {result.citations.map(c => {
+                const statusColor = c.verificationStatus === 'verified'
+                  ? '#9ECE7E'
+                  : c.verificationStatus === 'unverified'
+                    ? '#E58F46'
+                    : c.verificationStatus === 'not_found'
+                      ? '#D96562'
+                      : THEME.LABEL;
+                const statusLabel = c.verificationStatus === 'verified'
+                  ? 'Verified'
+                  : c.verificationStatus === 'unverified'
+                    ? 'Partial'
+                    : c.verificationStatus === 'not_found'
+                      ? 'Not found'
+                      : '';
+                return (
+                  <div key={c.id} style={{
+                    padding: '6px 8px',
+                    borderRadius: 'var(--nb-radius-sm)',
+                    background: THEME.PANEL_INSET,
+                    border: `1px solid ${THEME.BORDER}`,
+                  }}>
+                    <p style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: THEME.VALUE, margin: '0 0 2px', lineHeight: 1.4 }}>
+                      {c.title.slice(0, 60)}…
+                    </p>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL }}>
+                        {c.authors.split(',')[0]} et al. {c.year}
+                      </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        {statusLabel && (
+                          <span style={{
+                            fontFamily: THEME.MONO,
+                            fontSize: '8px',
+                            fontWeight: 700,
+                            color: statusColor,
+                            letterSpacing: '0.04em',
+                            textTransform: 'uppercase',
+                          }}>
+                            {statusLabel}
+                          </span>
+                        )}
+                        <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.VALUE }}>
+                          {(c.relevance * 100).toFixed(0)}%
+                        </span>
+                      </div>
+                    </div>
+                    {c.pmid && (
+                      <div style={{ fontFamily: THEME.MONO, fontSize: '8px', color: THEME.LABEL, marginTop: '2px' }}>
+                        PMID: {c.pmid}{c.journal ? ` · ${c.journal}` : ''}
+                      </div>
+                    )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </>
           )}
         </div>
@@ -895,6 +998,31 @@ export default React.memo(function NEXAIPage() {
               <MetricCard label="Confidence" value={`${(result.confidence * 100).toFixed(0)}%`} highlight />
               <MetricCard label="Citations" value={result.citations.length} />
               <MetricCard label="Model" value={provider ?? 'groq'} />
+              {verified && (() => {
+                const summary = computeVerificationSummary(result.citations);
+                return (
+                  <div style={{
+                    padding: '8px',
+                    borderRadius: 'var(--nb-radius-sm)',
+                    background: THEME.PANEL_INSET,
+                    border: `1px solid ${THEME.BORDER}`,
+                    display: 'grid',
+                    gap: '4px',
+                  }}>
+                    <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                      PubMed verification
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)' }}>
+                      <span style={{ color: '#9ECE7E' }}>{summary.verified} verified</span>
+                      <span style={{ color: '#E58F46' }}>{summary.unverified} partial</span>
+                      <span style={{ color: '#D96562' }}>{summary.notFound} missing</span>
+                    </div>
+                    <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: THEME.VALUE }}>
+                      {(summary.verificationRate * 100).toFixed(0)}% verification rate
+                    </div>
+                  </div>
+                );
+              })()}
             </>
           ) : (
             <div style={{

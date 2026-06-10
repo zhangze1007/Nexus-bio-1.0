@@ -441,6 +441,8 @@ export interface CRISPRiTarget {
 
 // ── MODULE: NEXAI ─────────────────────────────────────────────────────────────
 export interface AIQuery { id: string; text: string; timestamp: number; }
+export type CitationVerificationStatus = 'pending' | 'verified' | 'unverified' | 'not_found';
+
 export interface CitationNode {
   id: string;
   title: string;
@@ -450,6 +452,12 @@ export interface CitationNode {
   relevance: number;
   x?: number;
   y?: number;
+  /** PubMed ID if verified */
+  pmid?: string;
+  /** Verification status against PubMed */
+  verificationStatus?: CitationVerificationStatus;
+  /** Journal name from PubMed verification */
+  journal?: string;
 }
 export interface NEXAIResult {
   query: string;
