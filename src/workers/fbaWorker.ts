@@ -23,12 +23,17 @@ import { michaelisRate } from '../utils/michaelisMenten';
 export type FBAWorkerIn =
   | { type: 'START';  params: SimParams; mode: 'simulating' | 'stress_test' | 'equilibrium' }
   | { type: 'UPDATE'; params: SimParams }
-  | { type: 'STOP' };
+  | { type: 'STOP' }
+  | { type: 'STREAM_START'; params: SimParams; fbaParams?: FBAStreamOptions }
+  | { type: 'STREAM_UPDATE'; params: SimParams; fbaParams?: FBAStreamOptions }
+  | { type: 'STREAM_STOP' };
 
 export type FBAWorkerOut =
   | { type: 'TICK'; readouts: SimReadouts }
   | { type: 'EQUILIBRIUM_REACHED' }
-  | { type: 'ERROR'; message: string };
+  | { type: 'ERROR'; message: string }
+  | { type: 'STREAM_STATUS'; status: 'connecting' | 'connected' | 'disconnected' | 'error' }
+  | { type: 'STREAM_RESULT'; result: FBAStreamResult };
 
 // ── Internal state ─────────────────────────────────────────────────────
 
@@ -60,8 +65,309 @@ const fbaCache: FBACache = {
   params: '',
 };
 
+// Latest result from SSE stream (preferred over HTTP cache when available)
+let latestStreamResult: FBAStreamResult | null = null;
+let latestStreamTimestamp = 0;
+const STREAM_RESULT_TTL = 10_000; // Stream results valid for 10s
+
 const FBA_CACHE_TTL = 5000; // 5 seconds cache
 const FBA_API_ENDPOINT = '/api/fba';
+const FBA_STREAM_ENDPOINT = '/api/fba/stream';
+
+// ── WebSocket/SSE Streaming Client ─────────────────────────────────────
+
+interface FBAStreamOptions {
+  species?: 'ecoli' | 'yeast';
+  objective?: 'biomass' | 'atp' | 'product';
+  glucoseUptake?: number;
+  oxygenUptake?: number;
+  knockouts?: string[];
+}
+
+interface FBAStreamResult {
+  ok: boolean;
+  mode?: string;
+  result?: {
+    fluxes: Record<string, number>;
+    growthRate: number;
+    atpYield: number;
+    carbonEfficiency: number;
+    sensitivityCoefficients?: Record<string, number>;
+  };
+  timestamp?: number;
+  solveCount?: number;
+  error?: string;
+}
+
+type StreamEventHandler = (result: FBAStreamResult) => void;
+type StreamStatusHandler = (status: 'connecting' | 'connected' | 'disconnected' | 'error') => void;
+
+/**
+ * SSE-based FBA stream client with automatic reconnection.
+ *
+ * Uses EventSource (SSE) which is natively supported in Web Workers.
+ * Falls back to fetch-based streaming if EventSource is unavailable.
+ *
+ * Architecture:
+ * - Connects to /api/fba/stream via GET (EventSource) or POST (fetch ReadableStream)
+ * - Auto-reconnects on disconnect with exponential backoff (1s, 2s, 4s, max 30s)
+ * - Sends parameter updates by reconnecting with new query params
+ * - Heartbeat detection: if no event in 30s, force reconnect
+ */
+class FBAStreamClient {
+  private eventSource: EventSource | null = null;
+  private abortController: AbortController | null = null;
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  private heartbeatTimer: ReturnType<typeof setTimeout> | null = null;
+  private reconnectAttempt = 0;
+  private isConnecting = false;
+  private isClosed = false;
+  private currentParams: FBAStreamOptions = {};
+  private useFetchFallback = false;
+
+  private onResult: StreamEventHandler | null = null;
+  private onStatus: StreamStatusHandler | null = null;
+
+  private static readonly MAX_RECONNECT_DELAY = 30_000;
+  private static readonly BASE_RECONNECT_DELAY = 1_000;
+  private static readonly HEARTBEAT_TIMEOUT = 30_000;
+
+  constructor(handlers?: {
+    onResult?: StreamEventHandler;
+    onStatus?: StreamStatusHandler;
+  }) {
+    this.onResult = handlers?.onResult ?? null;
+    this.onStatus = handlers?.onStatus ?? null;
+  }
+
+  /**
+   * Start streaming with the given parameters.
+   */
+  connect(params: FBAStreamOptions): void {
+    this.currentParams = params;
+    this.isClosed = false;
+    this.reconnectAttempt = 0;
+    this.doConnect();
+  }
+
+  /**
+   * Update parameters. Reconnects with new params.
+   */
+  updateParams(params: FBAStreamOptions): void {
+    this.currentParams = { ...this.currentParams, ...params };
+    if (this.eventSource || this.abortController) {
+      this.disconnect();
+      this.reconnectAttempt = 0;
+      this.doConnect();
+    }
+  }
+
+  /**
+   * Close the stream and prevent reconnection.
+   */
+  close(): void {
+    this.isClosed = true;
+    this.disconnect();
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
+  }
+
+  private disconnect(): void {
+    if (this.eventSource) {
+      this.eventSource.close();
+      this.eventSource = null;
+    }
+    if (this.abortController) {
+      this.abortController.abort();
+      this.abortController = null;
+    }
+    if (this.heartbeatTimer) {
+      clearTimeout(this.heartbeatTimer);
+      this.heartbeatTimer = null;
+    }
+    this.emitStatus('disconnected');
+  }
+
+  private doConnect(): void {
+    if (this.isClosed || this.isConnecting) return;
+    this.isConnecting = true;
+    this.emitStatus('connecting');
+
+    const qs = this.buildQueryString();
+
+    // Try EventSource first (works in workers, native SSE support)
+    if (!this.useFetchFallback && typeof EventSource !== 'undefined') {
+      try {
+        this.connectEventSource(qs);
+        return;
+      } catch {
+        this.useFetchFallback = true;
+      }
+    }
+
+    // Fallback to fetch-based streaming
+    this.connectFetchStream(qs);
+  }
+
+  private connectEventSource(qs: string): void {
+    const url = `${FBA_STREAM_ENDPOINT}${qs}`;
+    const es = new EventSource(url);
+    this.eventSource = es;
+
+    es.onopen = () => {
+      this.isConnecting = false;
+      this.reconnectAttempt = 0;
+      this.emitStatus('connected');
+      this.resetHeartbeatTimer();
+    };
+
+    es.addEventListener('fba-result', (event: MessageEvent) => {
+      this.resetHeartbeatTimer();
+      try {
+        const data: FBAStreamResult = JSON.parse(event.data);
+        this.onResult?.(data);
+      } catch { /* ignore parse errors */ }
+    });
+
+    es.addEventListener('heartbeat', () => {
+      this.resetHeartbeatTimer();
+    });
+
+    es.addEventListener('stream-end', () => {
+      // Server ended the stream (max duration reached)
+      this.disconnect();
+      this.scheduleReconnect();
+    });
+
+    es.addEventListener('fba-error', (event: MessageEvent) => {
+      try {
+        const data: FBAStreamResult = JSON.parse(event.data);
+        this.onResult?.(data);
+      } catch { /* ignore */ }
+    });
+
+    es.onerror = () => {
+      this.isConnecting = false;
+      es.close();
+      this.eventSource = null;
+      this.emitStatus('error');
+      this.scheduleReconnect();
+    };
+  }
+
+  private async connectFetchStream(qs: string): Promise<void> {
+    const ac = new AbortController();
+    this.abortController = ac;
+
+    try {
+      const response = await fetch(`${FBA_STREAM_ENDPOINT}${qs}`, {
+        method: 'GET',
+        signal: ac.signal,
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      this.isConnecting = false;
+      this.reconnectAttempt = 0;
+      this.emitStatus('connected');
+      this.resetHeartbeatTimer();
+
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error('No response body');
+
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (!this.isClosed) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() ?? '';
+
+        let currentEvent = '';
+        for (const line of lines) {
+          if (line.startsWith('event: ')) {
+            currentEvent = line.slice(7).trim();
+          } else if (line.startsWith('data: ')) {
+            this.resetHeartbeatTimer();
+            const jsonStr = line.slice(6);
+            try {
+              const data: FBAStreamResult = JSON.parse(jsonStr);
+              if (currentEvent === 'fba-result') {
+                this.onResult?.(data);
+              } else if (currentEvent === 'stream-end') {
+                // Server ended stream
+                this.disconnect();
+                this.scheduleReconnect();
+                return;
+              } else if (currentEvent === 'fba-error') {
+                this.onResult?.(data);
+              }
+            } catch { /* ignore parse errors */ }
+            currentEvent = '';
+          }
+        }
+      }
+
+      // Stream ended normally
+      this.disconnect();
+      this.scheduleReconnect();
+    } catch (err) {
+      if ((err as Error).name === 'AbortError') return;
+      this.isConnecting = false;
+      this.disconnect();
+      this.emitStatus('error');
+      this.scheduleReconnect();
+    }
+  }
+
+  private buildQueryString(): string {
+    const params = new URLSearchParams();
+    if (this.currentParams.species) params.set('species', this.currentParams.species);
+    if (this.currentParams.objective) params.set('objective', this.currentParams.objective);
+    if (this.currentParams.glucoseUptake !== undefined) params.set('glucoseUptake', String(this.currentParams.glucoseUptake));
+    if (this.currentParams.oxygenUptake !== undefined) params.set('oxygenUptake', String(this.currentParams.oxygenUptake));
+    if (this.currentParams.knockouts?.length) params.set('knockouts', this.currentParams.knockouts.join(','));
+    const str = params.toString();
+    return str ? `?${str}` : '';
+  }
+
+  private scheduleReconnect(): void {
+    if (this.isClosed) return;
+    const delay = Math.min(
+      FBAStreamClient.BASE_RECONNECT_DELAY * Math.pow(2, this.reconnectAttempt),
+      FBAStreamClient.MAX_RECONNECT_DELAY,
+    );
+    this.reconnectAttempt++;
+    this.reconnectTimer = setTimeout(() => {
+      this.reconnectTimer = null;
+      this.doConnect();
+    }, delay);
+  }
+
+  private resetHeartbeatTimer(): void {
+    if (this.heartbeatTimer) clearTimeout(this.heartbeatTimer);
+    this.heartbeatTimer = setTimeout(() => {
+      // No heartbeat received — force reconnect
+      this.disconnect();
+      this.scheduleReconnect();
+    }, FBAStreamClient.HEARTBEAT_TIMEOUT);
+  }
+
+  private emitStatus(status: 'connecting' | 'connected' | 'disconnected' | 'error'): void {
+    this.onStatus?.(status);
+  }
+}
+
+// Module-level stream client instance
+let streamClient: FBAStreamClient | null = null;
+let streamMode = false; // When true, use streaming instead of polling
 
 /**
  * Fetch real FBA results from server with caching.
@@ -69,6 +375,23 @@ const FBA_API_ENDPOINT = '/api/fba';
  */
 async function fetchFBAResults(params: SimParams): Promise<FBAReadouts | null> {
   const now = Date.now();
+
+  // Prefer stream results if available and fresh
+  if (
+    streamMode &&
+    latestStreamResult?.ok &&
+    latestStreamResult.result &&
+    now - latestStreamTimestamp < STREAM_RESULT_TTL
+  ) {
+    const r = latestStreamResult.result;
+    return {
+      atpYield: r.atpYield ?? 0,
+      carbonEfficiency: r.carbonEfficiency ?? 0,
+      fluxBalance: r.growthRate ?? 0,
+      shadowPrices: r.sensitivityCoefficients,
+    };
+  }
+
   const paramsKey = JSON.stringify({
     substrate: params.substrate,
     temperature: params.temperature,
@@ -246,6 +569,62 @@ self.onmessage = (e: MessageEvent<FBAWorkerIn>) => {
   }
 
   if (msg.type === 'STOP') {
+    if (intervalId) { clearInterval(intervalId); intervalId = null; }
+    return;
+  }
+
+  // ── Streaming mode ──────────────────────────────────────────────────
+
+  if (msg.type === 'STREAM_START') {
+    currentParams = msg.params;
+    currentMode = 'simulating';
+    tick = 0;
+    prevRate = 0;
+    equilibriumCount = 0;
+
+    // Start or update stream client
+    if (!streamClient) {
+      streamClient = new FBAStreamClient({
+        onResult: (result) => {
+          latestStreamResult = result;
+          latestStreamTimestamp = Date.now();
+          self.postMessage({ type: 'STREAM_RESULT', result } satisfies FBAWorkerOut);
+        },
+        onStatus: (status) => {
+          self.postMessage({ type: 'STREAM_STATUS', status } satisfies FBAWorkerOut);
+        },
+      });
+    }
+
+    streamMode = true;
+    const fbaParams = msg.fbaParams ?? {
+      species: 'ecoli',
+      objective: 'biomass',
+      glucoseUptake: msg.params.substrate,
+      oxygenUptake: 20,
+    };
+    streamClient.connect(fbaParams);
+
+    // Also run local kinetics at 60 Hz (stream results are additive)
+    if (intervalId) clearInterval(intervalId);
+    intervalId = setInterval(runTick, 1000 / 60);
+    return;
+  }
+
+  if (msg.type === 'STREAM_UPDATE') {
+    currentParams = msg.params;
+    if (streamClient && msg.fbaParams) {
+      streamClient.updateParams(msg.fbaParams);
+    }
+    return;
+  }
+
+  if (msg.type === 'STREAM_STOP') {
+    streamMode = false;
+    if (streamClient) {
+      streamClient.close();
+      streamClient = null;
+    }
     if (intervalId) { clearInterval(intervalId); intervalId = null; }
     return;
   }
