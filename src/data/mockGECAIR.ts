@@ -180,6 +180,116 @@ export function runToggleSwitch(
   return trajectory;
 }
 
+// Logic Cascade ODE dynamics — 3-node linear repression cascade: A ⊣ B ⊣ C
+// 6-variable system: 3 mRNA + 3 protein
+// Node A is constitutively expressed (driven by input signal strength).
+// Node B is repressed by protein A.
+// Node C is repressed by protein B.
+//
+// This topology produces signal attenuation and switching behavior:
+// when A is high, B is repressed (low), and C is de-repressed (high).
+// Cascade depth controls noise filtering — each stage acts as a Hill switch.
+//
+// Reference: Hooshangi et al. (2005) PNAS — ultrasensitivity and noise
+//            filtering in a synthetic transcriptional cascade.
+export interface LogicCascadeParams {
+  alpha: number;       // Max transcription rate (mRNA/min)
+  alpha0: number;      // Leak transcription rate
+  beta: number;        // Translation rate (protein/mRNA/min)
+  gamma: number;       // Protein degradation rate (1/min)
+  n: number;           // Hill coefficient
+  K: number;           // Half-maximal repression concentration
+  inputStrength: number; // Constitutive drive for node A (mRNA/min)
+}
+
+export interface LogicCascadeState {
+  mA: number;  // mRNA A (constitutive, drives cascade)
+  mB: number;  // mRNA B (repressed by protein A)
+  mC: number;  // mRNA C (repressed by protein B)
+  pA: number;  // Protein A (represses B)
+  pB: number;  // Protein B (represses C)
+  pC: number;  // Protein C (final output)
+}
+
+export const DEFAULT_LOGIC_CASCADE_PARAMS: LogicCascadeParams = {
+  alpha: 216,        // mRNA/min
+  alpha0: 0.216,     // Leak rate (alpha0/alpha = 0.001)
+  beta: 0.2,         // protein/mRNA/min
+  gamma: 0.0075,     // 1/min (protein half-life ~92 min)
+  n: 2,              // Hill coefficient
+  K: 100,            // Half-maximal concentration (nM)
+  inputStrength: 150, // Constitutive drive for node A
+};
+
+// Run logic cascade ODE simulation using RK4
+export function runLogicCascade(
+  params: LogicCascadeParams = DEFAULT_LOGIC_CASCADE_PARAMS,
+  duration: number = 500,  // minutes
+  dt: number = 0.5,        // time step
+  inputLevel: number = 1.0, // 0–1 scaling of input strength
+): LogicCascadeState[] {
+  const { alpha, alpha0, beta, gamma, n, K, inputStrength } = params;
+  const drive = inputStrength * inputLevel;
+
+  // Initial conditions: all start low, input drives A
+  let state: LogicCascadeState = { mA: 10, mB: 3, mC: 1, pA: 80, pB: 30, pC: 10 };
+  const trajectory: LogicCascadeState[] = [{ ...state }];
+
+  // Derivatives function
+  // A is constitutively driven; B is repressed by pA; C is repressed by pB
+  const derivatives = (s: LogicCascadeState): LogicCascadeState => ({
+    mA: drive + alpha0 - s.mA,                                    // Constitutive (input-driven, degrades at rate 1)
+    mB: alpha0 + alpha * hillInhibition(s.pA, K, n) - s.mB,      // Repressed by pA
+    mC: alpha0 + alpha * hillInhibition(s.pB, K, n) - s.mC,      // Repressed by pB
+    pA: beta * s.mA - gamma * s.pA,
+    pB: beta * s.mB - gamma * s.pB,
+    pC: beta * s.mC - gamma * s.pC,
+  });
+
+  // Add two states
+  const addStates = (a: LogicCascadeState, b: LogicCascadeState, scale: number): LogicCascadeState => ({
+    mA: a.mA + b.mA * scale,
+    mB: a.mB + b.mB * scale,
+    mC: a.mC + b.mC * scale,
+    pA: a.pA + b.pA * scale,
+    pB: a.pB + b.pB * scale,
+    pC: a.pC + b.pC * scale,
+  });
+
+  const steps = Math.floor(duration / dt);
+  for (let t = 0; t < steps; t++) {
+    const k1 = derivatives(state);
+    const s2 = addStates(state, k1, dt / 2);
+    const k2 = derivatives(s2);
+    const s3 = addStates(state, k2, dt / 2);
+    const k3 = derivatives(s3);
+    const s4 = addStates(state, k3, dt);
+    const k4 = derivatives(s4);
+
+    // RK4 update
+    state = {
+      mA: state.mA + (dt / 6) * (k1.mA + 2 * k2.mA + 2 * k3.mA + k4.mA),
+      mB: state.mB + (dt / 6) * (k1.mB + 2 * k2.mB + 2 * k3.mB + k4.mB),
+      mC: state.mC + (dt / 6) * (k1.mC + 2 * k2.mC + 2 * k3.mC + k4.mC),
+      pA: state.pA + (dt / 6) * (k1.pA + 2 * k2.pA + 2 * k3.pA + k4.pA),
+      pB: state.pB + (dt / 6) * (k1.pB + 2 * k2.pB + 2 * k3.pB + k4.pB),
+      pC: state.pC + (dt / 6) * (k1.pC + 2 * k2.pC + 2 * k3.pC + k4.pC),
+    };
+
+    // Clamp to non-negative
+    state.mA = Math.max(0, state.mA);
+    state.mB = Math.max(0, state.mB);
+    state.mC = Math.max(0, state.mC);
+    state.pA = Math.max(0, state.pA);
+    state.pB = Math.max(0, state.pB);
+    state.pC = Math.max(0, state.pC);
+
+    trajectory.push({ ...state });
+  }
+
+  return trajectory;
+}
+
 // Run repressilator ODE simulation using RK4
 export function runRepressilator(
   params: RepressilatorParams = DEFAULT_REPRESSILATOR_PARAMS,

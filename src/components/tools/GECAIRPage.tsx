@@ -3,8 +3,8 @@ import { useState, useMemo, useEffect } from 'react';
 import AlgorithmInsight from '../ide/shared/AlgorithmInsight';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
-import { CIRCUIT_NODES, LOGIC_GATES, hillInhibition, hillActivation, runRepressilator, runToggleSwitch } from '../../data/mockGECAIR';
-import type { GateType, RepressilatorState, ToggleSwitchState } from '../../data/mockGECAIR';
+import { CIRCUIT_NODES, LOGIC_GATES, hillInhibition, hillActivation, runRepressilator, runToggleSwitch, runLogicCascade } from '../../data/mockGECAIR';
+import type { GateType, RepressilatorState, ToggleSwitchState, LogicCascadeState } from '../../data/mockGECAIR';
 import { useWorkbenchStore } from '../../store/workbenchStore';
 import { T } from '../ide/tokens';
 import WorkbenchRangeSlider from './shared/WorkbenchRangeSlider';
@@ -376,7 +376,7 @@ export default function GECAIRPage() {
   const [inputA, setInputA] = useState(0.8);
   const [inputB, setInputB] = useState(0.3);
   const [gateType, setGateType] = useState<GateType>('NOT');
-  const [circuitType, setCircuitType] = useState<'repressilator' | 'toggle_switch'>('repressilator');
+  const [circuitType, setCircuitType] = useState<'repressilator' | 'toggle_switch' | 'logic_cascade'>('repressilator');
   const [togglePerturbation, setTogglePerturbation] = useState<'A' | 'B'>('A');
   const recommendedGate = useMemo<GateType>(() => {
     if ((catalystPayload?.result.totalMetabolicDrain ?? 0) > 0.45) return 'NAND';
@@ -640,15 +640,15 @@ export default function GECAIRPage() {
               <div style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperLabel, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>
                 ODE Circuit Model
               </div>
-              <div style={{ display: 'flex', gap: '6px', marginBottom: '8px' }}>
-                {(['repressilator', 'toggle_switch'] as const).map(ct => (
+              <div style={{ display: 'flex', gap: '6px', marginBottom: '8px', flexWrap: 'wrap' }}>
+                {(['repressilator', 'toggle_switch', 'logic_cascade'] as const).map(ct => (
                   <button
                     key={ct}
-                    aria-label={`Select ${ct === 'repressilator' ? 'Repressilator' : 'Toggle Switch'} circuit`}
+                    aria-label={`Select ${ct === 'repressilator' ? 'Repressilator' : ct === 'toggle_switch' ? 'Toggle Switch' : 'Logic Cascade'} circuit`}
                     onClick={() => setCircuitType(ct)}
                     className={`nb-tool-toggle ${circuitType === ct ? 'nb-tool-toggle--active' : ''}`}
                   >
-                    {ct === 'repressilator' ? 'Repressilator' : 'Toggle Switch'}
+                    {ct === 'repressilator' ? 'Repressilator' : ct === 'toggle_switch' ? 'Toggle Switch' : 'Logic Cascade'}
                   </button>
                 ))}
               </div>
@@ -672,10 +672,9 @@ export default function GECAIRPage() {
 
             {/* ODE Dynamics — Real RK4 simulation */}
             {(() => {
-              const isRepressilator = circuitType === 'repressilator';
               const w = 240, h = 60;
 
-              if (isRepressilator) {
+              if (circuitType === 'repressilator') {
                 const trajectory = runRepressilator(undefined, 300, 1.0);
                 const maxP = Math.max(...trajectory.flatMap(s => [s.pA, s.pB, s.pC]));
                 const toPath = (key: keyof RepressilatorState) => {
@@ -704,7 +703,43 @@ export default function GECAIRPage() {
                 );
               }
 
-              // Toggle Switch
+              if (circuitType === 'logic_cascade') {
+                const trajectory = runLogicCascade(undefined, 300, 1.0);
+                const maxP = Math.max(...trajectory.flatMap(s => [s.pA, s.pB, s.pC]));
+                const toPath = (key: keyof LogicCascadeState) => {
+                  const pts = trajectory.map((s, i) => `${(i / trajectory.length) * w},${h - (s[key] / maxP) * h}`);
+                  return `M${pts.join(' L')}`;
+                };
+                const finalPA = trajectory[trajectory.length - 1].pA;
+                const finalPB = trajectory[trajectory.length - 1].pB;
+                const finalPC = trajectory[trajectory.length - 1].pC;
+                const cascadeGain = finalPC / Math.max(0.01, finalPA);
+                return (
+                  <div style={{ marginTop: '12px', padding: '12px', borderRadius: 'var(--nb-radius-md)', border: `1px solid ${PATHD_THEME.paperBorder}`, background: PATHD_THEME.paperSurfaceStrong }}>
+                    <div style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperLabel, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>
+                      Logic Cascade Dynamics (RK4 ODE)
+                    </div>
+                    <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperValue, lineHeight: 1.4, marginBottom: '8px' }}>
+                      3-node linear cascade: A constitutively driven, B repressed by A, C repressed by B. Signal attenuation through the cascade enables noise filtering (Hooshangi et al., 2005).
+                    </div>
+                    <svg width={w} height={h} style={{ display: 'block', width: '100%' }}>
+                      <path d={toPath('pA')} fill="none" stroke="#C8D8E8" strokeWidth={1.5} />
+                      <path d={toPath('pB')} fill="none" stroke="#C8E0D0" strokeWidth={1.5} />
+                      <path d={toPath('pC')} fill="none" stroke="#DDD0E8" strokeWidth={1.5} />
+                    </svg>
+                    <div style={{ display: 'flex', gap: '12px', marginTop: '6px', fontFamily: T.MONO, fontSize: '10px' }}>
+                      <span style={{ color: '#C8D8E8' }}>■ Node A (input)</span>
+                      <span style={{ color: '#C8E0D0' }}>■ Node B (cascade)</span>
+                      <span style={{ color: '#DDD0E8' }}>■ Node C (output)</span>
+                    </div>
+                    <div style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.mint, marginTop: '6px' }}>
+                      Cascade gain: {cascadeGain.toFixed(2)} (pA={finalPA.toFixed(1)}, pB={finalPB.toFixed(1)}, pC={finalPC.toFixed(1)})
+                    </div>
+                  </div>
+                );
+              }
+
+              // Toggle Switch (default fallback)
               const trajectory = runToggleSwitch(undefined, 300, 1.0, togglePerturbation);
               const maxP = Math.max(...trajectory.flatMap(s => [s.pA, s.pB]));
               const toPath = (key: keyof ToggleSwitchState) => {
