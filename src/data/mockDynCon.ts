@@ -79,13 +79,10 @@ function monodRate(
   const muO = O > 0 ? O / (p.Ko + O) : 0;
   const muBase = p.muMax * (S / (p.Ks + S)) * muO;
 
-  // Toxicity penalty: FPP and product inhibit growth
-  const fppInhibition = fpp > p.fppToxicThreshold
-    ? Math.max(0, 1 - (fpp - p.fppToxicThreshold) / (p.fppToxicThreshold * 2))
-    : 1;
-  const productInhibition = product > p.productToxicThreshold
-    ? Math.max(0, 1 - (product - p.productToxicThreshold) / (p.productToxicThreshold * 2))
-    : 1;
+  // Toxicity penalty: IC50 model — smooth sigmoid inhibition
+  // f(x) = 1 / (1 + (x/IC50)^2) — no discontinuity at threshold
+  const fppInhibition = 1 / (1 + (fpp / p.fppToxicThreshold) ** 2);
+  const productInhibition = 1 / (1 + (product / p.productToxicThreshold) ** 2);
   const toxicity = 1 - fppInhibition * productInhibition;
 
   // Metabolic burden: protein expression costs growth
@@ -159,14 +156,19 @@ export function runBioreactor(
 ): ODEState[] {
   const states: ODEState[] = [];
   let state: State = { X: 0.5, S: 20.0, P: 0.0, O: params.OstarSat, FPP: 10.0, ADS: hill.Vmax * 0.8 };
-  let integral = 0, prevErr = 0;
+  let integral = 0;
+  let prevMeasurement = state.O / params.OstarSat; // for derivative-on-measurement
 
   for (let i = 0; i < steps; i++) {
-    // PID controller on dissolved O₂ - recomputed at each RK4 sub-step
+    // PID controller on dissolved O₂ — recomputed at each RK4 sub-step
+    // Derivative-on-measurement: avoids derivative kick on setpoint changes
     const calcAirflow = (s: State) => {
-      const e = controller.setpoint - s.O / params.OstarSat;
+      const measurement = s.O / params.OstarSat;
+      const e = controller.setpoint - measurement;
+      // Derivative acts on -dMeasurement/dt (negative sign for correct direction)
+      const derivative = -(measurement - prevMeasurement) / dt;
       return Math.max(0, Math.min(3,
-        1 + controller.kp * e + controller.ki * integral + controller.kd * (e - prevErr) / dt
+        1 + controller.kp * e + controller.ki * integral + controller.kd * derivative
       ));
     };
 
@@ -180,10 +182,11 @@ export function runBioreactor(
     const k4 = derivatives(s4, calcAirflow(s4), params, hill);
 
     // Update PID state after RK4 step
-    const err = controller.setpoint - state.O / params.OstarSat;
+    const currentMeasurement = state.O / params.OstarSat;
+    const err = controller.setpoint - currentMeasurement;
     integral += err * dt;
     integral = Math.max(-5, Math.min(5, integral)); // Anti-windup
-    prevErr = err;
+    prevMeasurement = currentMeasurement;
 
     state = clampState({
       X:   state.X   + (dt / 6) * (k1.X   + 2 * k2.X   + 2 * k3.X   + k4.X),
