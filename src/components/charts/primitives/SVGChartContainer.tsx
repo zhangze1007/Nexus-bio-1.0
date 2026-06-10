@@ -1,5 +1,6 @@
 'use client';
 import React from 'react';
+import { colors } from '../../../design-system/tokens';
 
 /**
  * SVGChartContainer — canonical dark-background SVG wrapper for all inline charts.
@@ -23,7 +24,7 @@ export interface SVGChartContainerProps {
   ariaLabel?: string;
   /** Corner radius for the background rect (default 12) */
   rx?: number;
-  /** Background fill (default '#050505') */
+  /** Background fill (default from design tokens: colors.bg.primary) */
   fill?: string;
   /** Additional SVG style overrides */
   style?: React.CSSProperties;
@@ -37,7 +38,7 @@ export default function SVGChartContainer({
   H,
   ariaLabel = 'Chart',
   rx = 12,
-  fill = '#050505',
+  fill = colors.bg.primary,
   style,
   svgRef,
   children,

@@ -6,6 +6,7 @@ import {
   SCI_PALETTE, fmt2,
 } from './chartTheme';
 import { ErrorBarChart } from './primitives';
+import { colors, spacing } from '../../design-system/tokens';
 
 /* ── Progress Bar ─────────────────────────────────────────────── */
 
@@ -18,11 +19,11 @@ function ProgressBar({ value, max, color, limitAt }: { value: number; max: numbe
       {limitPct != null && (
         <div style={{
           position: 'absolute', left: `${limitPct}%`, top: -3, bottom: -3, width: 1,
-          borderLeft: '2px dashed rgba(232,238,248,0.55)',
+          borderLeft: `2px dashed ${colors.text.secondary}`,
         }}>
           <span style={{
             position: 'absolute', top: -14, left: -16, fontFamily: FONT.MONO,
-            fontSize: 8, color: 'rgba(232,238,248,0.6)', whiteSpace: 'nowrap',
+            fontSize: 8, color: colors.text.secondary, whiteSpace: 'nowrap',
           }}>viability limit</span>
         </div>
       )}
@@ -59,14 +60,14 @@ export default function FluxCostChart({ result }: FluxCostChartProps) {
   const drainPct = result.totalMetabolicDrain * 100;
 
   return (
-    <div style={{ ...CHART_CONTAINER, background: '#050505', padding: 16 }}>
+    <div style={{ ...CHART_CONTAINER, background: colors.bg.primary, padding: Number(spacing.base) }}>
 
       {/* ── Resource Burden Ledger ── */}
       <p style={SECTION_LABEL}>RESOURCE BURDEN LEDGER</p>
-      <p style={{ fontFamily: FONT.SANS, fontSize: 10, color: 'rgba(232,238,248,0.82)', margin: '-6px 0 4px' }}>
+      <p style={{ fontFamily: FONT.SANS, fontSize: 10, color: colors.text.primary, margin: '-6px 0 4px' }}>
         ATP (mol/mol enzyme) · NADPH (mol/mol enzyme) · Ribosome (% pool × 100)
       </p>
-      <p style={{ fontFamily: FONT.SANS, fontSize: 9, color: 'rgba(232,238,248,0.55)', margin: '0 0 10px' }}>
+      <p style={{ fontFamily: FONT.SANS, fontSize: 9, color: colors.text.tertiary, margin: `0 0 ${spacing.sm}` }}>
         Bars share an axis for visual comparison but carry heterogeneous units — hover each bar for its native quantity. Engine emits single-point estimates, so no whiskers are drawn.
       </p>
 
@@ -81,17 +82,17 @@ export default function FluxCostChart({ result }: FluxCostChartProps) {
 
       {/* ── Drain & Viability ── */}
       <div style={{
-        marginTop: 16, padding: '12px 16px', borderRadius: 14,
-        background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.06)',
+        marginTop: Number(spacing.base), padding: `${spacing.md} ${spacing.base}`, borderRadius: 14,
+        background: 'rgba(255,255,255,0.025)', border: `1px solid ${colors.border.subtle}`,
       }}>
         <p style={SECTION_LABEL}>DRAIN AND VIABILITY</p>
 
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: 20, marginBottom: 14 }}>
           <div>
-            <p style={{ fontFamily: FONT.MONO, fontSize: 28, color: 'rgba(250,246,240,0.96)', margin: 0, lineHeight: 1 }}>
+            <p style={{ fontFamily: FONT.MONO, fontSize: 28, color: colors.text.primary, margin: 0, lineHeight: 1 }}>
               {fmt2(drainPct)}%
             </p>
-            <p style={{ fontFamily: FONT.SANS, fontSize: 9, color: 'rgba(217,225,235,0.68)', margin: '2px 0 0' }}>
+            <p style={{ fontFamily: FONT.SANS, fontSize: 9, color: colors.text.secondary, margin: '2px 0 0' }}>
               total metabolic drain
             </p>
           </div>
@@ -106,30 +107,30 @@ export default function FluxCostChart({ result }: FluxCostChartProps) {
         </div>
 
         {/* Drain progress bar */}
-        <p style={{ fontFamily: FONT.SANS, fontSize: 10, color: 'rgba(232,238,248,0.78)', margin: '0 0 4px' }}>Metabolic drain (%)</p>
+        <p style={{ fontFamily: FONT.SANS, fontSize: 10, color: colors.text.primary, margin: '0 0 4px' }}>Metabolic drain (%)</p>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
           <div style={{ flex: 1 }}>
             <ProgressBar value={drainPct} max={100} color={SCI_PALETTE.orange} limitAt={82} />
           </div>
-          <span style={{ fontFamily: FONT.MONO, fontSize: 10, color: 'rgba(240,244,252,0.92)', flexShrink: 0 }}>
+          <span style={{ fontFamily: FONT.MONO, fontSize: 10, color: colors.text.primary, flexShrink: 0 }}>
             {fmt2(drainPct)}%
           </span>
         </div>
 
         {/* Growth penalty bar */}
-        <p style={{ fontFamily: FONT.SANS, fontSize: 10, color: 'rgba(232,238,248,0.78)', margin: '0 0 4px' }}>Growth penalty (%)</p>
+        <p style={{ fontFamily: FONT.SANS, fontSize: 10, color: colors.text.primary, margin: '0 0 4px' }}>Growth penalty (%)</p>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div style={{ flex: 1 }}>
             <ProgressBar value={result.growthPenalty} max={30} color={viabilityColor} />
           </div>
-          <span style={{ fontFamily: FONT.MONO, fontSize: 10, color: 'rgba(250,246,240,0.96)', flexShrink: 0 }}>
+          <span style={{ fontFamily: FONT.MONO, fontSize: 10, color: colors.text.primary, flexShrink: 0 }}>
             {fmt2(result.growthPenalty)}%
           </span>
         </div>
 
         {/* Recommendation */}
         {result.recommendation && (
-          <p style={{ fontFamily: FONT.SANS, fontSize: 10, color: 'rgba(250,246,240,0.96)', margin: '10px 0 0', lineHeight: 1.4 }}>
+          <p style={{ fontFamily: FONT.SANS, fontSize: 10, color: colors.text.primary, margin: '10px 0 0', lineHeight: 1.4 }}>
             {result.recommendation}
           </p>
         )}

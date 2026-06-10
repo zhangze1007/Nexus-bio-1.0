@@ -1,6 +1,6 @@
 'use client';
 import React from 'react';
-import { THEME } from '../../../theme';
+import { colors, typography } from '../../../design-system/tokens';
 
 /**
  * ChartGrid — reusable grid lines + axis lines for SVG charts.
@@ -23,11 +23,11 @@ export interface ChartGridProps {
   PAD: number;
   /** Number of grid divisions (default 8) */
   gridCount?: number;
-  /** Grid line color (default: rgba(255,255,255,0.04)) */
+  /** Grid line color (default from design tokens: colors.border.subtle) */
   gridColor?: string;
   /** Grid line stroke width (default 0.5) */
   gridStroke?: number;
-  /** Axis line color (default: rgba(255,255,255,0.1)) */
+  /** Axis line color (default from design tokens: colors.border.default) */
   axisColor?: string;
   /** Show grid lines (default true) */
   showGrid?: boolean;
@@ -40,9 +40,9 @@ export default function ChartGrid({
   H,
   PAD,
   gridCount = 8,
-  gridColor = 'rgba(255,255,255,0.04)',
+  gridColor = colors.border.subtle,
   gridStroke = 0.5,
-  axisColor = 'rgba(255,255,255,0.1)',
+  axisColor = colors.border.default,
   showGrid = true,
   showAxes = true,
 }: ChartGridProps) {

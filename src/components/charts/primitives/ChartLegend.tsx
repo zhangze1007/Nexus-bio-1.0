@@ -1,6 +1,6 @@
 'use client';
 import React from 'react';
-import { THEME } from '../../../theme';
+import { colors, typography } from '../../../design-system/tokens';
 
 /**
  * ChartLegend — reusable series legend for SVG charts.
@@ -37,13 +37,13 @@ export interface ChartLegendProps {
   variant?: 'dot' | 'line';
   /** Vertical spacing between items (default 15) */
   spacing?: number;
-  /** Font family (default: THEME.SANS) */
+  /** Font family (default: typography.fontFamily.sans) */
   fontFamily?: string;
-  /** Font size (default: '10') */
+  /** Font size (default: typography.fontSize.xs) */
   fontSize?: string;
-  /** Text fill color for active items (default: rgba(250,246,240,0.96)) */
+  /** Text fill color for active items (default: colors.text.primary) */
   activeFill?: string;
-  /** Text fill color for inactive items (default: rgba(217,225,235,0.68)) */
+  /** Text fill color for inactive items (default: colors.text.secondary) */
   inactiveFill?: string;
 }
 
@@ -53,10 +53,10 @@ export default function ChartLegend({
   items,
   variant = 'dot',
   spacing = 15,
-  fontFamily = THEME.SANS,
-  fontSize = '10',
-  activeFill = 'rgba(250,246,240,0.96)',
-  inactiveFill = 'rgba(217,225,235,0.68)',
+  fontFamily = typography.fontFamily.sans,
+  fontSize = typography.fontSize.xs,
+  activeFill = colors.text.primary,
+  inactiveFill = colors.text.secondary,
 }: ChartLegendProps) {
   return (
     <g>

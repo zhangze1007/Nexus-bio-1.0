@@ -20,6 +20,7 @@ import {
   rechartsAxisTitle, rechartsAxisLine, SCI_SERIES, LINE, fmt2,
   axisLabel as buildAxisLabel,
 } from '../chartTheme';
+import { colors } from '../../../design-system/tokens';
 
 export interface ErrorBarDatum {
   name: string;
@@ -58,14 +59,14 @@ function ErrorBarTooltip({ active, payload, intervalLabel, formatValue }: ChartT
   const hasInterval = typeof datum.lower === 'number' && typeof datum.upper === 'number';
   return (
     <div style={TOOLTIP_STYLE}>
-      <div style={{ fontFamily: FONT.SANS, fontSize: 11, color: 'rgba(250,246,240,0.96)', fontWeight: 600 }}>
+      <div style={{ fontFamily: FONT.SANS, fontSize: 11, color: colors.text.primary, fontWeight: 600 }}>
         {datum.name}
       </div>
       <div style={{ fontFamily: FONT.MONO, fontSize: 11, marginTop: 2 }}>
         {fmt(datum.value)}
       </div>
       {hasInterval ? (
-        <div style={{ fontFamily: FONT.MONO, fontSize: 10, color: 'rgba(255,255,255,0.55)', marginTop: 2 }}>
+        <div style={{ fontFamily: FONT.MONO, fontSize: 10, color: colors.text.tertiary, marginTop: 2 }}>
           {intervalLabel ?? 'interval'} [{fmt(datum.lower!)}–{fmt(datum.upper!)}]
         </div>
       ) : null}
@@ -139,7 +140,7 @@ export default function ErrorBarChart({
                 dataKey="errorDelta"
                 width={8}
                 strokeWidth={LINE.bandStroke}
-                stroke="rgba(240,244,252,0.78)"
+                stroke={colors.text.primary}
                 direction="y"
               />
             ) : null}
@@ -148,7 +149,7 @@ export default function ErrorBarChart({
                 dataKey="value"
                 position="top"
                 formatter={(formatValue ?? fmt2) as (value: unknown) => string}
-                style={{ fontFamily: FONT.MONO, fontSize: 10, fill: 'rgba(240,244,252,0.86)' }}
+                style={{ fontFamily: FONT.MONO, fontSize: 10, fill: colors.text.secondary }}
               />
             ) : null}
           </Bar>
@@ -168,7 +169,7 @@ function ReferenceLineFromValue({ value, label, color }: { value: number; label?
   return (
     <ReferenceLine
       y={value}
-      stroke={color ?? 'rgba(232,238,248,0.45)'}
+      stroke={color ?? colors.text.tertiary}
       strokeDasharray="4 3"
       strokeWidth={1}
       label={
@@ -176,7 +177,7 @@ function ReferenceLineFromValue({ value, label, color }: { value: number; label?
           ? {
               value: label,
               position: 'right',
-              fill: color ?? 'rgba(232,238,248,0.72)',
+              fill: color ?? colors.text.secondary,
               fontSize: 10,
               fontFamily: FONT.SANS,
             }

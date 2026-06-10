@@ -1,6 +1,6 @@
 'use client';
 import React from 'react';
-import { THEME } from '../../../theme';
+import { colors, typography } from '../../../design-system/tokens';
 
 /**
  * HeatmapGrid — rect-based heatmap for SVG charts.
@@ -52,11 +52,11 @@ export interface HeatmapGridProps {
     /** Unit label above the colorbar */
     unitLabel?: string;
   };
-  /** Font family for labels (default: THEME.MONO) */
+  /** Font family for labels (default: typography.fontFamily.mono) */
   fontFamily?: string;
-  /** Font size for labels (default: '10') */
+  /** Font size for labels (default: typography.fontSize.xs) */
   fontSize?: string;
-  /** Label fill color (default: rgba(255,255,255,0.55)) */
+  /** Label fill color (default: colors.text.tertiary) */
   labelFill?: string;
   /** Gradient ID prefix (default: 'hm') — must be unique per chart instance */
   gradientId?: string;
@@ -72,9 +72,9 @@ export default function HeatmapGrid({
   xLabels,
   yLabels,
   colorbar,
-  fontFamily = THEME.MONO,
-  fontSize = '10',
-  labelFill = 'rgba(255,255,255,0.55)',
+  fontFamily = typography.fontFamily.mono,
+  fontSize = typography.fontSize.xs,
+  labelFill = colors.text.tertiary,
   gradientId = 'hm',
 }: HeatmapGridProps) {
   const rows = matrix.length;
@@ -167,7 +167,7 @@ export default function HeatmapGrid({
                   y1={tickY}
                   x2={colorbar.x + (colorbar.width ?? 8) + 3}
                   y2={tickY}
-                  stroke="rgba(255,255,255,0.45)"
+                  stroke={colors.text.tertiary}
                   strokeWidth={0.7}
                 />
                 <text
@@ -189,7 +189,7 @@ export default function HeatmapGrid({
               textAnchor="middle"
               fontFamily={fontFamily}
               fontSize={fontSize}
-              fill="rgba(255,255,255,0.45)"
+              fill={colors.text.tertiary}
             >
               {colorbar.unitLabel}
             </text>

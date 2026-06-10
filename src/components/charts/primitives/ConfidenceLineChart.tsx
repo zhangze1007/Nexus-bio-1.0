@@ -21,6 +21,7 @@ import {
   rechartsAxisTitle, rechartsAxisLine, LINE, MARKER, BAND,
   axisLabel as buildAxisLabel,
 } from '../chartTheme';
+import { colors } from '../../../design-system/tokens';
 
 export interface ConfidenceSeriesPoint {
   x: number;
@@ -95,7 +96,7 @@ function buildTooltip(series: ConfidenceSeries[], bandLabel: string, formatValue
     );
     return (
       <div style={TOOLTIP_STYLE}>
-        <div style={{ marginBottom: 4, fontFamily: FONT.MONO, fontSize: 10, color: 'rgba(255,255,255,0.55)' }}>
+        <div style={{ marginBottom: 4, fontFamily: FONT.MONO, fontSize: 10, color: colors.text.tertiary }}>
           x = {label}
         </div>
         {meanRows.map((entry: ChartEntryProps) => {
@@ -107,7 +108,7 @@ function buildTooltip(series: ConfidenceSeries[], bandLabel: string, formatValue
             <div key={entry.dataKey} style={{ fontFamily: FONT.MONO, fontSize: 11, color: entry.color }}>
               {s?.label ?? entry.dataKey} · {fmt(entry.value as number)}
               {hasInterval ? (
-                <span style={{ color: 'rgba(255,255,255,0.55)', marginLeft: 6 }}>
+                <span style={{ color: colors.text.tertiary, marginLeft: 6 }}>
                   {bandLabel} [{fmt(lower as number)}–{fmt(upper as number)}]
                 </span>
               ) : null}
@@ -207,10 +208,10 @@ export default function ConfidenceLineChart({
                 dot={{
                   r: highlighted ? MARKER.secondary : 1.5,
                   stroke: color,
-                  fill: '#0a0a0a',
+                  fill: colors.bg.primary,
                   strokeWidth: 1.4,
                 }}
-                activeDot={{ r: MARKER.active, stroke: color, fill: '#0a0a0a', strokeWidth: 2 }}
+                activeDot={{ r: MARKER.active, stroke: color, fill: colors.bg.primary, strokeWidth: 2 }}
                 isAnimationActive={false}
               />
             );

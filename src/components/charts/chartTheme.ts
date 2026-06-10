@@ -3,7 +3,14 @@
  *
  * Shared color palette, typography, and styling constants
  * for all Recharts + Nivo charts across CATDES tool panels.
+ *
+ * Now backed by design-system/tokens.ts for single-source-of-truth colors,
+ * spacing, and typography. The chart-specific palettes (SCI_PALETTE, ACCENT,
+ * etc.) remain here because they are domain-specific categorical scales that
+ * the design system intentionally does not prescribe.
  */
+
+import { colors, spacing, typography } from '../../design-system/tokens';
 
 /* ── Color Palette ────────────────────────────────────────────── */
 
@@ -25,12 +32,12 @@ export const WARM = {
 
 /** Phase-specific accent palette (matches PATHD_THEME) */
 export const ACCENT = {
-  mint:      '#BFDCCD',
-  sky:       '#AFC3D6',
-  apricot:   '#E7C7A9',
-  coral:     '#E8A3A1',
-  lilac:     '#CFC4E3',
-  green:     '#93CB52',
+  mint:      colors.chart.green,    // '#C8E0D0' via tokens
+  sky:       colors.chart.blue,     // '#C8D8E8' via tokens
+  apricot:   colors.chart.gold,     // '#E8DCC8' via tokens
+  coral:     colors.chart.salmon,   // '#FA8072' via tokens
+  lilac:     colors.chart.purple,   // '#DDD0E8' via tokens
+  green:     colors.chart.lime,     // '#93CB52' via tokens
   yellow:    '#FFFB1F',
 } as const;
 
@@ -130,31 +137,31 @@ export const HEATMAP_COLORS = {
 /* ── Typography ───────────────────────────────────────────────── */
 
 export const FONT = {
-  SANS:  "'Public Sans',-apple-system,sans-serif",
-  MONO:  "'IBM Plex Mono','JetBrains Mono','Fira Code',monospace",
+  SANS:  typography.fontFamily.sans,
+  MONO:  typography.fontFamily.mono,
 } as const;
 
 /* ── Axis & Grid Styling ──────────────────────────────────────── */
 
 /** Axis label color — higher contrast than 0.6 for readability on dark bg. */
 export const AXIS = {
-  fontSize: 12,
+  fontSize: Number(typography.fontSize.sm),
   fontFamily: FONT.SANS,
-  fill: 'rgba(232,238,248,0.78)',
+  fill: colors.text.primary,  // '#E8E8ED' via tokens
   tickSize: 4,
   tickPadding: 6,
 } as const;
 
 /** Axis title color — same family as AXIS.fill but at label weight. */
 export const AXIS_TITLE = {
-  fontSize: 11,
+  fontSize: Number(typography.fontSize.xs),
   fontFamily: FONT.SANS,
-  fill: 'rgba(232,238,248,0.92)',
-  letterSpacing: '0.02em',
+  fill: colors.text.primary,
+  letterSpacing: typography.letterSpacing.wide,
 } as const;
 
 export const GRID = {
-  stroke: 'rgba(255,255,255,0.06)',
+  stroke: colors.border.subtle,  // 'rgba(255, 255, 255, 0.06)' via tokens
   strokeDasharray: '2 4',
 } as const;
 
@@ -222,16 +229,16 @@ export const SCATTER = {
 /* ── Tooltip (Glassmorphism) ─────────────────────────────────── */
 
 export const TOOLTIP_STYLE: React.CSSProperties = {
-  background: 'rgba(13, 15, 20, 0.85)',
+  background: colors.bg.overlay,
   backdropFilter: 'blur(16px)',
   WebkitBackdropFilter: 'blur(16px)',
-  border: '1px solid rgba(255,255,255,0.12)',
+  border: `1px solid ${colors.border.default}`,
   borderRadius: 12,
-  padding: '8px 12px',
+  padding: `${spacing.sm} ${spacing.md}`,
   boxShadow: '0 4px 24px rgba(0,0,0,0.5)',
   fontFamily: FONT.MONO,
-  fontSize: 11,
-  color: 'rgba(250,246,240,0.96)',
+  fontSize: Number(typography.fontSize.xs),
+  color: colors.text.primary,
 };
 
 /* ── Container Styling ────────────────────────────────────────── */
@@ -245,12 +252,12 @@ export const CHART_CONTAINER: React.CSSProperties = {
 
 export const SECTION_LABEL: React.CSSProperties = {
   fontFamily: FONT.SANS,
-  fontSize: 11,
-  fontWeight: 700,
+  fontSize: Number(typography.fontSize.xs),
+  fontWeight: typography.fontWeight.bold,
   textTransform: 'uppercase',
-  letterSpacing: '0.1em',
-  color: 'rgba(217,225,235,0.68)',
-  margin: '0 0 10px',
+  letterSpacing: typography.letterSpacing.widest,
+  color: colors.text.secondary,
+  margin: `0 0 ${spacing.sm}`,
 };
 
 /* ── Annotation Formatter ─────────────────────────────────────── */
@@ -284,7 +291,7 @@ export const rechartsAxisTitle = {
 
 /** Recharts axis-line default — subtle but present for publication clarity. */
 export const rechartsAxisLine = {
-  stroke: 'rgba(255,255,255,0.18)',
+  stroke: colors.border.strong,  // 'rgba(255, 255, 255, 0.15)' via tokens
 } as const;
 
 /* ── Axis-Label Builder ───────────────────────────────────────── */
@@ -303,8 +310,8 @@ export function axisLabel(quantity: string, unit?: string): string {
 
 export const LEGEND_STYLE: React.CSSProperties = {
   fontFamily: FONT.SANS,
-  fontSize: 11,
-  color: 'rgba(232,238,248,0.82)',
+  fontSize: Number(typography.fontSize.xs),
+  color: colors.text.primary,
 };
 
 /* ── Nivo Theme ───────────────────────────────────────────────── */
@@ -312,21 +319,21 @@ export const LEGEND_STYLE: React.CSSProperties = {
 export const nivoTheme = {
   background: 'transparent',
   text: {
-    fontSize: 12,
+    fontSize: Number(typography.fontSize.sm),
     fill: AXIS.fill,
     fontFamily: FONT.SANS,
   },
   axis: {
     ticks: {
       text: {
-        fontSize: 12,
+        fontSize: Number(typography.fontSize.sm),
         fill: AXIS.fill,
         fontFamily: FONT.SANS,
       },
     },
     legend: {
       text: {
-        fontSize: 11,
+        fontSize: Number(typography.fontSize.xs),
         fill: AXIS_TITLE.fill,
         fontFamily: FONT.SANS,
         fontWeight: 600,
@@ -341,21 +348,21 @@ export const nivoTheme = {
   },
   tooltip: {
     container: {
-      background: 'rgba(13, 15, 20, 0.85)',
+      background: colors.bg.overlay,
       backdropFilter: 'blur(16px)',
-      border: '1px solid rgba(255,255,255,0.12)',
+      border: `1px solid ${colors.border.default}`,
       borderRadius: 12,
-      padding: '8px 12px',
+      padding: `${spacing.sm} ${spacing.md}`,
       boxShadow: '0 4px 24px rgba(0,0,0,0.5)',
       fontFamily: FONT.MONO,
-      fontSize: 11,
-      color: 'rgba(250,246,240,0.96)',
+      fontSize: Number(typography.fontSize.xs),
+      color: colors.text.primary,
     },
   },
   labels: {
     text: {
       fontSize: 10,
-      fill: 'rgba(250,246,240,0.96)',
+      fill: colors.text.primary,
       fontFamily: FONT.MONO,
     },
   },

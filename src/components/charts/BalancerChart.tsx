@@ -11,6 +11,7 @@ import {
   SECTION_LABEL, rechartsGrid, rechartsTick, rechartsAxisTitle,
   rechartsAxisLine, SCI_PALETTE, LINE, MARKER, fmt2, axisLabel,
 } from './chartTheme';
+import { colors, spacing } from '../../design-system/tokens';
 
 /* ── Glassmorphism Tooltip ────────────────────────────────────── */
 
@@ -18,7 +19,7 @@ function GlassTooltip({ active, payload, label }: ChartTooltipProps) {
   if (!active || !payload?.length) return null;
   return (
     <div style={TOOLTIP_STYLE}>
-      <p style={{ margin: 0, fontSize: 10, color: 'rgba(232,238,248,0.65)', fontFamily: FONT.SANS }}>
+      <p style={{ margin: 0, fontSize: 10, color: colors.text.tertiary, fontFamily: FONT.SANS }}>
         Iteration {label}
       </p>
       {payload.map((entry: ChartEntryProps, i: number) => (
@@ -44,10 +45,10 @@ function PipelineNode({ enzyme, adjustedKcat, toxRatio, intermediateConc, isLast
         background: `${SCI_PALETTE.blue}10`,
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
       }}>
-        <span style={{ fontFamily: FONT.MONO, fontSize: 9, color: 'rgba(240,244,252,0.96)', fontWeight: 600 }}>
+        <span style={{ fontFamily: FONT.MONO, fontSize: 9, color: colors.text.primary, fontWeight: 600 }}>
           {enzyme.toUpperCase()}
         </span>
-        <span style={{ fontFamily: FONT.MONO, fontSize: 8, color: 'rgba(232,238,248,0.72)' }}>
+        <span style={{ fontFamily: FONT.MONO, fontSize: 8, color: colors.text.secondary }}>
           k<sub>cat</sub> {fmt2(adjustedKcat)} s⁻¹
         </span>
       </div>
@@ -56,7 +57,7 @@ function PipelineNode({ enzyme, adjustedKcat, toxRatio, intermediateConc, isLast
       {!isLast && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 0, flexShrink: 0 }}>
           {/* Arrow line */}
-          <div style={{ width: 16, height: 1, background: 'rgba(255,255,255,0.12)' }} />
+          <div style={{ width: 16, height: 1, background: colors.border.default }} />
           {/* Intermediate box */}
           <div style={{
             padding: '3px 6px', borderRadius: 4,
@@ -64,18 +65,18 @@ function PipelineNode({ enzyme, adjustedKcat, toxRatio, intermediateConc, isLast
             display: 'flex', flexDirection: 'column', alignItems: 'center',
           }}>
             <span style={{ fontFamily: FONT.MONO, fontSize: 7, color: intColor }}>{fmt2(intermediateConc)}</span>
-            <span style={{ fontFamily: FONT.MONO, fontSize: 6, color: 'rgba(217,225,235,0.48)' }}>mM</span>
+            <span style={{ fontFamily: FONT.MONO, fontSize: 6, color: colors.text.disabled }}>mM</span>
           </div>
           {/* Arrow line + head */}
-          <div style={{ width: 12, height: 1, background: 'rgba(255,255,255,0.12)' }} />
+          <div style={{ width: 12, height: 1, background: colors.border.default }} />
           <div style={{
-            width: 0, height: 0, borderLeft: '4px solid rgba(255,255,255,0.2)',
+            width: 0, height: 0, borderLeft: `4px solid ${colors.border.strong}`,
             borderTop: '3px solid transparent', borderBottom: '3px solid transparent',
           }} />
           {/* Flux label */}
           <span style={{
             position: 'absolute', marginTop: -18, fontFamily: FONT.MONO,
-            fontSize: 6, color: 'rgba(217,225,235,0.48)',
+            fontSize: 6, color: colors.text.disabled,
           }}>
             {fmt2(flux)}
           </span>
@@ -102,15 +103,15 @@ export default function BalancerChart({ result }: BalancerChartProps) {
   }));
 
   return (
-    <div style={{ ...CHART_CONTAINER, background: '#050505', padding: 16 }}>
+    <div style={{ ...CHART_CONTAINER, background: colors.bg.primary, padding: Number(spacing.base) }}>
 
       {/* ── Header ── */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: Number(spacing.md) }}>
         <div>
           <p style={SECTION_LABEL}>PATHWAY PIPELINE — {steps.length} STEPS</p>
         </div>
         <div style={{
-          padding: '3px 10px', borderRadius: 10,
+          padding: `3px 10px`, borderRadius: 10,
           background: result.isBalanced ? `${SCI_PALETTE.green}1f` : `${SCI_PALETTE.vermilion}1f`,
           border: `1px solid ${result.isBalanced ? SCI_PALETTE.green : SCI_PALETTE.vermilion}`,
         }}>
@@ -123,7 +124,7 @@ export default function BalancerChart({ result }: BalancerChartProps) {
       {/* ── Pipeline visualization ── */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: 0, overflowX: 'auto',
-        padding: '8px 0 16px', position: 'relative',
+        padding: `${spacing.sm} 0 ${spacing.base}`, position: 'relative',
       }}>
         {steps.map((s, i) => (
           <PipelineNode
@@ -141,11 +142,11 @@ export default function BalancerChart({ result }: BalancerChartProps) {
       {/* ── Convergence Chart ── */}
       {convergenceData.length > 1 && (
         <>
-          <p style={{ ...SECTION_LABEL, marginTop: 12 }}>CONVERGENCE HISTORY</p>
-          <p style={{ fontFamily: FONT.SANS, fontSize: 10, color: 'rgba(232,238,248,0.82)', margin: '-6px 0 4px' }}>
+          <p style={{ ...SECTION_LABEL, marginTop: Number(spacing.md) }}>CONVERGENCE HISTORY</p>
+          <p style={{ fontFamily: FONT.SANS, fontSize: 10, color: colors.text.primary, margin: '-6px 0 4px' }}>
             LP iterations vs. max intermediate concentration
           </p>
-          <p style={{ fontFamily: FONT.SANS, fontSize: 9, color: 'rgba(232,238,248,0.55)', margin: '0 0 10px' }}>
+          <p style={{ fontFamily: FONT.SANS, fontSize: 9, color: colors.text.tertiary, margin: `0 0 ${spacing.sm}` }}>
             Single deterministic optimization trace — no confidence band is drawn because a confidence band would imply repeated runs that do not exist.
           </p>
 

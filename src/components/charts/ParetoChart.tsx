@@ -11,6 +11,7 @@ import {
   SECTION_LABEL, rechartsGrid, rechartsTick, rechartsAxisTitle,
   rechartsAxisLine, SCI_PALETTE, fmt2, axisLabel,
 } from './chartTheme';
+import { colors, spacing } from '../../design-system/tokens';
 
 /* ── Glassmorphism Tooltip ────────────────────────────────────── */
 
@@ -20,18 +21,18 @@ function ParetoTooltip({ active, payload }: ChartTooltipProps) {
   if (!data) return null;
   return (
     <div style={TOOLTIP_STYLE}>
-      <p style={{ margin: 0, fontSize: 11, fontFamily: FONT.SANS, color: 'rgba(250,246,240,0.96)', fontWeight: 600 }}>
+      <p style={{ margin: 0, fontSize: 11, fontFamily: FONT.SANS, color: colors.text.primary, fontWeight: 600 }}>
         {data.name}
       </p>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2px 12px', marginTop: 4 }}>
-        <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.5)', fontFamily: FONT.SANS }}>Thermo</span>
+        <span style={{ fontSize: 9, color: colors.text.tertiary, fontFamily: FONT.SANS }}>Thermo</span>
         <span style={{ fontFamily: FONT.MONO, color: ACCENT.sky }}>{fmt2(data.scores.thermodynamic)}</span>
-        <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.5)', fontFamily: FONT.SANS }}>Yield</span>
+        <span style={{ fontSize: 9, color: colors.text.tertiary, fontFamily: FONT.SANS }}>Yield</span>
         <span style={{ fontFamily: FONT.MONO, color: ACCENT.mint }}>{fmt2(data.scores.yield)}</span>
-        <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.5)', fontFamily: FONT.SANS }}>Cost</span>
+        <span style={{ fontSize: 9, color: colors.text.tertiary, fontFamily: FONT.SANS }}>Cost</span>
         <span style={{ fontFamily: FONT.MONO, color: ACCENT.apricot }}>{fmt2(data.scores.metabolicCost)}</span>
-        <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.5)', fontFamily: FONT.SANS }}>Rank</span>
-        <span style={{ fontFamily: FONT.MONO, color: data.paretoRank === 0 ? SCI_PALETTE.green : 'rgba(250,246,240,0.96)' }}>
+        <span style={{ fontSize: 9, color: colors.text.tertiary, fontFamily: FONT.SANS }}>Rank</span>
+        <span style={{ fontFamily: FONT.MONO, color: data.paretoRank === 0 ? SCI_PALETTE.green : colors.text.primary }}>
           {data.paretoRank === 0 ? 'Pareto-optimal' : `Rank ${data.paretoRank}`}
         </span>
       </div>
@@ -52,7 +53,7 @@ function LegendSwatch({ color, label, strong, muted }: { color: string; label: s
       <span style={{
         fontFamily: FONT.SANS,
         fontSize: 10,
-        color: muted ? 'rgba(232,238,248,0.62)' : 'rgba(232,238,248,0.88)',
+        color: muted ? colors.text.tertiary : colors.text.primary,
         fontWeight: strong ? 600 : 500,
       }}>
         {label}
@@ -98,12 +99,12 @@ export default function ParetoChart({ result }: ParetoChartProps) {
   const nonFrontColor = SCI_PALETTE.slate;
 
   return (
-    <div style={{ ...CHART_CONTAINER, background: '#050505', padding: 16 }}>
+    <div style={{ ...CHART_CONTAINER, background: colors.bg.primary, padding: Number(spacing.base) }}>
       <p style={SECTION_LABEL}>PARETO FRONT — MULTI-OBJECTIVE RANKING</p>
-      <p style={{ fontFamily: FONT.SANS, fontSize: 10, color: 'rgba(232,238,248,0.82)', margin: '-6px 0 4px' }}>
-        Thermodynamic vs. yield score · circle area ∝ 1/(metabolic cost)
+      <p style={{ fontFamily: FONT.SANS, fontSize: 10, color: colors.text.primary, margin: '-6px 0 4px' }}>
+        Thermodynamic vs. yield score · circle area proportional to 1/(metabolic cost)
       </p>
-      <p style={{ fontFamily: FONT.SANS, fontSize: 9, color: 'rgba(232,238,248,0.55)', margin: '0 0 12px' }}>
+      <p style={{ fontFamily: FONT.SANS, fontSize: 9, color: colors.text.tertiary, margin: `0 0 ${spacing.md}` }}>
         Scores are single-point estimates from the design engine — no uncertainty is visualised here because the underlying engine does not emit replicate intervals.
       </p>
 
@@ -120,7 +121,7 @@ export default function ParetoChart({ result }: ParetoChartProps) {
               tickLine={false}
               name="Thermodynamic score"
               label={{
-                value: axisLabel('Thermodynamic score', '0–1'),
+                value: axisLabel('Thermodynamic score', '0-1'),
                 position: 'insideBottom',
                 offset: -8,
                 style: rechartsAxisTitle,
@@ -136,7 +137,7 @@ export default function ParetoChart({ result }: ParetoChartProps) {
               width={52}
               name="Yield score"
               label={{
-                value: axisLabel('Yield score', '0–1'),
+                value: axisLabel('Yield score', '0-1'),
                 angle: -90,
                 position: 'insideLeft',
                 offset: 4,
@@ -178,15 +179,15 @@ export default function ParetoChart({ result }: ParetoChartProps) {
               background: `${chipColor}14`,
               border: `1px solid ${chipColor}${isFront || isBest ? '55' : '22'}`,
             }}>
-              {isBest && <span style={{ fontSize: 10, color: bestColor }}>★</span>}
+              {isBest && <span style={{ fontSize: 10, color: bestColor }}>*</span>}
               <span style={{
                 fontFamily: FONT.SANS,
                 fontSize: 10,
-                color: isFront ? 'rgba(232,238,248,0.92)' : 'rgba(232,238,248,0.6)',
+                color: isFront ? colors.text.primary : colors.text.secondary,
               }}>
                 {c.name}
               </span>
-              <span style={{ fontFamily: FONT.MONO, fontSize: 9, color: 'rgba(232,238,248,0.48)' }}>
+              <span style={{ fontFamily: FONT.MONO, fontSize: 9, color: colors.text.disabled }}>
                 R{c.paretoRank}
               </span>
             </div>

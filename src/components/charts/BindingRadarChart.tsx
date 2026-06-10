@@ -10,6 +10,7 @@ import {
   ACCENT, COOL, FONT, TOOLTIP_STYLE, CHART_CONTAINER,
   SECTION_LABEL, rechartsGrid, rechartsTick, fmt2,
 } from './chartTheme';
+import { colors, spacing } from '../../design-system/tokens';
 
 /* ── Glassmorphism Tooltip ────────────────────────────────────── */
 
@@ -17,7 +18,7 @@ function GlassTooltip({ active, payload, label }: ChartTooltipProps) {
   if (!active || !payload?.length) return null;
   return (
     <div style={TOOLTIP_STYLE}>
-      <p style={{ margin: 0, fontSize: 10, color: 'rgba(255,255,255,0.5)', fontFamily: FONT.SANS }}>
+      <p style={{ margin: 0, fontSize: 10, color: colors.text.tertiary, fontFamily: FONT.SANS }}>
         {label}
       </p>
       {payload.map((entry: ChartEntryProps, i: number) => (
@@ -48,12 +49,12 @@ function QualityBadge({ value, label }: { value: number; label: string }) {
 function MetricCell({ label, value, unit, color }: { label: string; value: string; unit?: string; color?: string }) {
   return (
     <div style={{ flex: 1, minWidth: 0 }}>
-      <p style={{ fontFamily: FONT.SANS, fontSize: 9, color: 'rgba(217,225,235,0.68)', margin: '0 0 2px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+      <p style={{ fontFamily: FONT.SANS, fontSize: 9, color: colors.text.secondary, margin: '0 0 2px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
         {label}
       </p>
-      <p style={{ fontFamily: FONT.MONO, fontSize: 18, color: color || 'rgba(250,246,240,0.96)', margin: 0, lineHeight: 1.1 }}>
+      <p style={{ fontFamily: FONT.MONO, fontSize: 18, color: color || colors.text.primary, margin: 0, lineHeight: 1.1 }}>
         {value}
-        {unit && <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', marginLeft: 3 }}>{unit}</span>}
+        {unit && <span style={{ fontSize: 10, color: colors.text.disabled, marginLeft: 3 }}>{unit}</span>}
       </p>
     </div>
   );
@@ -88,11 +89,11 @@ export default function BindingRadarChart({ result }: BindingRadarChartProps) {
     : result.overallScore >= 0.6 ? 'Moderate' : 'Weak';
 
   return (
-    <div style={{ ...CHART_CONTAINER, background: '#050505', padding: 16 }}>
+    <div style={{ ...CHART_CONTAINER, background: colors.bg.primary, padding: Number(spacing.base) }}>
 
       {/* ── Active-Site Diagnostics ── */}
       <p style={SECTION_LABEL}>ACTIVE-SITE DIAGNOSTICS</p>
-      <p style={{ fontFamily: FONT.SANS, fontSize: 10, color: 'rgba(250,246,240,0.96)', margin: '-6px 0 12px' }}>
+      <p style={{ fontFamily: FONT.SANS, fontSize: 10, color: colors.text.primary, margin: '-6px 0 12px' }}>
         Binding dimensions vs. optimal envelope
       </p>
 
@@ -110,7 +111,7 @@ export default function BindingRadarChart({ result }: BindingRadarChartProps) {
               domain={[0, 1]}
               ticks={[0, 0.25, 0.5, 0.75, 1]}
               tick={rechartsTick}
-              axisLine={{ stroke: 'rgba(255,255,255,0.1)' }}
+              axisLine={{ stroke: colors.border.default }}
               tickLine={false}
             />
             <YAxis
@@ -122,7 +123,7 @@ export default function BindingRadarChart({ result }: BindingRadarChartProps) {
               width={90}
             />
             <Tooltip content={<GlassTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
-            <ReferenceLine x={0.95} stroke="rgba(255,255,255,0.45)" strokeDasharray="4 3" label={{ value: 'optimal', fill: 'rgba(255,255,255,0.3)', fontSize: 8, fontFamily: FONT.MONO, position: 'top' }} />
+            <ReferenceLine x={0.95} stroke={colors.border.strong} strokeDasharray="4 3" label={{ value: 'optimal', fill: colors.text.disabled, fontSize: 8, fontFamily: FONT.MONO, position: 'top' }} />
             <Bar dataKey="value" radius={[0, 6, 6, 0]}>
               {diagnosticData.map((entry, i) => (
                 <Cell key={i} fill={entry.fill} fillOpacity={0.82} />
@@ -131,7 +132,7 @@ export default function BindingRadarChart({ result }: BindingRadarChartProps) {
                 dataKey="value"
                 position="right"
                 formatter={(v) => fmt2(Number(v))}
-                style={{ fontFamily: FONT.MONO, fontSize: 10, fill: 'rgba(250,246,240,0.96)' }}
+                style={{ fontFamily: FONT.MONO, fontSize: 10, fill: colors.text.primary }}
               />
             </Bar>
           </BarChart>
@@ -140,23 +141,23 @@ export default function BindingRadarChart({ result }: BindingRadarChartProps) {
 
       {/* ── Catalytic Fit Summary ── */}
       <div style={{
-        margin: '16px 0',
-        padding: '12px 16px',
+        margin: `${spacing.base} 0`,
+        padding: `${spacing.md} ${spacing.base}`,
         borderRadius: 14,
         background: 'rgba(255,255,255,0.025)',
-        border: '1px solid rgba(255,255,255,0.06)',
+        border: `1px solid ${colors.border.subtle}`,
         display: 'flex',
-        gap: 16,
+        gap: Number(spacing.base),
         alignItems: 'flex-end',
         flexWrap: 'wrap',
       }}>
         <div style={{ flex: '0 0 auto' }}>
-          <p style={{ fontFamily: FONT.SANS, fontSize: 9, color: 'rgba(217,225,235,0.68)', margin: '0 0 2px', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+          <p style={{ fontFamily: FONT.SANS, fontSize: 9, color: colors.text.secondary, margin: '0 0 2px', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
             CATALYTIC FIT
           </p>
-          <p style={{ fontFamily: FONT.MONO, fontSize: 32, color: 'rgba(247,249,255,0.92)', margin: 0, lineHeight: 1 }}>
+          <p style={{ fontFamily: FONT.MONO, fontSize: 32, color: colors.text.primary, margin: 0, lineHeight: 1 }}>
             {fmt2(result.overallScore)}
-            <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)', marginLeft: 4 }}>± 0.05</span>
+            <span style={{ fontSize: 12, color: colors.text.disabled, marginLeft: 4 }}>± 0.05</span>
           </p>
           <QualityBadge value={result.overallScore} label={fitQuality} />
         </div>
@@ -173,7 +174,7 @@ export default function BindingRadarChart({ result }: BindingRadarChartProps) {
         />
       </div>
       {result.interpretation && (
-        <p style={{ fontFamily: FONT.SANS, fontSize: 10, color: 'rgba(255,255,255,0.4)', margin: '-8px 0 12px', fontStyle: 'italic' }}>
+        <p style={{ fontFamily: FONT.SANS, fontSize: 10, color: colors.text.disabled, margin: '-8px 0 12px', fontStyle: 'italic' }}>
           {result.interpretation.slice(0, 80)}
         </p>
       )}
@@ -192,7 +193,7 @@ export default function BindingRadarChart({ result }: BindingRadarChartProps) {
             <XAxis
               dataKey="name"
               tick={{ ...rechartsTick, fontSize: 9 }}
-              axisLine={{ stroke: 'rgba(255,255,255,0.1)' }}
+              axisLine={{ stroke: colors.border.default }}
               tickLine={false}
               interval={0}
             />
@@ -200,7 +201,7 @@ export default function BindingRadarChart({ result }: BindingRadarChartProps) {
               domain={[0, 1]}
               ticks={[0, 0.25, 0.5, 0.75, 1]}
               tick={rechartsTick}
-              axisLine={{ stroke: 'rgba(255,255,255,0.1)' }}
+              axisLine={{ stroke: colors.border.default }}
               tickLine={false}
               width={32}
             />
@@ -213,7 +214,7 @@ export default function BindingRadarChart({ result }: BindingRadarChartProps) {
                 dataKey="value"
                 position="top"
                 formatter={(v) => fmt2(Number(v))}
-                style={{ fontFamily: FONT.MONO, fontSize: 10, fill: 'rgba(250,246,240,0.96)' }}
+                style={{ fontFamily: FONT.MONO, fontSize: 10, fill: colors.text.primary }}
               />
             </Bar>
           </BarChart>

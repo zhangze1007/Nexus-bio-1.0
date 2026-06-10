@@ -10,6 +10,7 @@ import {
   ACCENT, WARM, COOL, FONT, TOOLTIP_STYLE, CHART_CONTAINER,
   SECTION_LABEL, rechartsGrid, rechartsTick, fmt2,
 } from './chartTheme';
+import { colors, spacing } from '../../design-system/tokens';
 
 /* ── Glassmorphism Tooltip ────────────────────────────────────── */
 
@@ -24,10 +25,10 @@ function GlassTooltip({ active, payload, label }: ChartTooltipProps) {
   const site = payload[0]?.payload as unknown as MutagenesisTooltipSite | undefined;
   return (
     <div style={TOOLTIP_STYLE}>
-      <p style={{ margin: 0, fontSize: 11, fontFamily: FONT.MONO, color: 'rgba(250,246,240,0.96)', fontWeight: 600 }}>
+      <p style={{ margin: 0, fontSize: 11, fontFamily: FONT.MONO, color: colors.text.primary, fontWeight: 600 }}>
         {site?.wildTypeResidue}{site?.position}
       </p>
-      <p style={{ margin: '2px 0 0', fontFamily: FONT.SANS, fontSize: 9, color: 'rgba(255,255,255,0.5)' }}>
+      <p style={{ margin: '2px 0 0', fontFamily: FONT.SANS, fontSize: 9, color: colors.text.tertiary }}>
         {site?.rationale}
       </p>
       {payload.map((entry: ChartEntryProps, i: number) => (
@@ -65,15 +66,15 @@ export default function MutagenesisChart({ result, enzyme }: MutagenesisChartPro
   const seqLen = enzyme.length;
 
   return (
-    <div style={{ ...CHART_CONTAINER, background: '#050505', padding: 16 }}>
-      <p style={{ fontFamily: FONT.SANS, fontSize: 9, color: 'rgba(255,255,255,0.55)', margin: '0 0 8px', fontStyle: 'italic' }}>
+    <div style={{ ...CHART_CONTAINER, background: colors.bg.primary, padding: Number(spacing.base) }}>
+      <p style={{ fontFamily: FONT.SANS, fontSize: 9, color: colors.text.tertiary, margin: '0 0 8px', fontStyle: 'italic' }}>
         Predicted effects are heuristic screening scores (BLOSUM62 + conservation), not rigorous ΔΔG.
       </p>
 
       {/* ── Sequence Position Map (keep as SVG — not a chart type) ── */}
       <p style={SECTION_LABEL}>SEQUENCE POSITION MAP</p>
       <svg role="img" aria-label="Mutagenesis sequence bar" viewBox={`0 0 500 56`} style={{ width: '100%', marginBottom: 8 }}>
-        <rect x="0" y="16" width="500" height="22" rx="4" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.08)" />
+        <rect x="0" y="16" width="500" height="22" rx="4" fill="rgba(255,255,255,0.04)" stroke={colors.border.subtle} />
         {/* Position markers */}
         {Array.from({ length: Math.ceil(seqLen / 50) + 1 }).map((_, i) => {
           const pos = i * 50;
@@ -81,44 +82,44 @@ export default function MutagenesisChart({ result, enzyme }: MutagenesisChartPro
           const tx = (pos / seqLen) * 500;
           return (
             <g key={pos}>
-              <line x1={tx} y1={38} x2={tx} y2={42} stroke="rgba(255,255,255,0.15)" strokeWidth={0.5} />
-              <text x={tx} y={52} textAnchor="middle" fontFamily={FONT.MONO} fontSize="10" fill="rgba(217,225,235,0.48)">{pos}</text>
+              <line x1={tx} y1={38} x2={tx} y2={42} stroke={colors.border.strong} strokeWidth={0.5} />
+              <text x={tx} y={52} textAnchor="middle" fontFamily={FONT.MONO} fontSize="10" fill={colors.text.disabled}>{pos}</text>
             </g>
           );
         })}
         {/* Catalytic residues */}
         {enzyme.catalyticResidues.map(r => {
           const rx = (r.position / seqLen) * 500;
-          return <rect key={`cat-${r.position}`} x={rx - 1.5} y={18} width={3} height={18} fill="rgba(250,128,114,0.6)" rx={1} />;
+          return <rect key={`cat-${r.position}`} x={rx - 1.5} y={18} width={3} height={18} fill={`${colors.state.error}99`} rx={1} />;
         })}
         {/* Mutagenesis sites */}
         {result.sites.map(s => {
           const sx = (s.position / seqLen) * 500;
           return (
             <g key={`mut-${s.position}`}>
-              <rect x={sx - 2} y={18} width={4} height={18} fill="rgba(147,203,82,0.5)" rx={1} />
+              <rect x={sx - 2} y={18} width={4} height={18} fill={`${colors.chart.lime}80`} rx={1} />
               <polygon points={`${sx},8 ${sx - 4},14 ${sx + 4},14`} fill={ACCENT.mint} />
             </g>
           );
         })}
         {/* Legend */}
-        <rect x="0" y="0" width="6" height="6" fill="rgba(250,128,114,0.6)" rx={1} />
-        <text x="10" y="6" fontFamily={FONT.SANS} fontSize="10" fill="rgba(217,225,235,0.68)">Catalytic</text>
+        <rect x="0" y="0" width="6" height="6" fill={`${colors.state.error}99`} rx={1} />
+        <text x="10" y="6" fontFamily={FONT.SANS} fontSize="10" fill={colors.text.secondary}>Catalytic</text>
         <rect x="60" y="0" width="6" height="6" fill={ACCENT.mint} rx={1} />
-        <text x="70" y="6" fontFamily={FONT.SANS} fontSize="10" fill="rgba(217,225,235,0.68)">Mutagenesis</text>
+        <text x="70" y="6" fontFamily={FONT.SANS} fontSize="10" fill={colors.text.secondary}>Mutagenesis</text>
       </svg>
 
       {/* ── Top Combination ── */}
       <div style={{
         padding: '6px 12px', borderRadius: 10, marginBottom: 12,
-        background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.06)',
+        background: 'rgba(255,255,255,0.025)', border: `1px solid ${colors.border.subtle}`,
         display: 'flex', alignItems: 'center', gap: 12,
       }}>
-        <span style={{ fontFamily: FONT.SANS, fontSize: 9, color: 'rgba(217,225,235,0.68)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Top Combination</span>
+        <span style={{ fontFamily: FONT.SANS, fontSize: 9, color: colors.text.secondary, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Top Combination</span>
         <span style={{ fontFamily: FONT.MONO, fontSize: 11, color: ACCENT.mint }}>
           {result.topCombination.positions.join(', ')}
         </span>
-        <span style={{ fontFamily: FONT.MONO, fontSize: 11, color: 'rgba(250,246,240,0.96)' }}>
+        <span style={{ fontFamily: FONT.MONO, fontSize: 11, color: colors.text.primary }}>
           +{(result.topCombination.predictedImprovement * 100).toFixed(0)}% predicted
         </span>
       </div>
@@ -130,10 +131,10 @@ export default function MutagenesisChart({ result, enzyme }: MutagenesisChartPro
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={siteData} margin={{ top: 8, right: 16, left: 10, bottom: 4 }} barSize={28}>
             <CartesianGrid vertical={false} {...rechartsGrid} />
-            <XAxis dataKey="name" tick={rechartsTick} axisLine={{ stroke: 'rgba(255,255,255,0.1)' }} tickLine={false} />
-            <YAxis tick={rechartsTick} axisLine={{ stroke: 'rgba(255,255,255,0.1)' }} tickLine={false} width={36} />
+            <XAxis dataKey="name" tick={rechartsTick} axisLine={{ stroke: colors.border.default }} tickLine={false} />
+            <YAxis tick={rechartsTick} axisLine={{ stroke: colors.border.default }} tickLine={false} width={36} />
             <Tooltip content={<GlassTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
-            <ReferenceLine y={1} stroke="rgba(255,255,255,0.2)" strokeDasharray="4 3" label={{ value: 'WT', fill: 'rgba(255,255,255,0.3)', fontSize: 8, fontFamily: FONT.MONO, position: 'right' }} />
+            <ReferenceLine y={1} stroke={colors.border.default} strokeDasharray="4 3" label={{ value: 'WT', fill: colors.text.disabled, fontSize: 8, fontFamily: FONT.MONO, position: 'right' }} />
             <Bar dataKey="deltaKcat" name="ΔKcat" radius={[6, 6, 0, 0]}>
               {siteData.map((entry, i) => (
                 <Cell key={i} fill={effectColor(entry.predictedEffect)} fillOpacity={0.82} />
@@ -142,7 +143,7 @@ export default function MutagenesisChart({ result, enzyme }: MutagenesisChartPro
                 dataKey="deltaKcat"
                 position="top"
                 formatter={(v) => `${fmt2(Number(v))}×`}
-                style={{ fontFamily: FONT.MONO, fontSize: 9, fill: 'rgba(250,246,240,0.96)' }}
+                style={{ fontFamily: FONT.MONO, fontSize: 9, fill: colors.text.primary }}
               />
             </Bar>
           </BarChart>
@@ -156,29 +157,29 @@ export default function MutagenesisChart({ result, enzyme }: MutagenesisChartPro
             <tr>
               {['Pos', 'WT', 'Mutants', 'Cons.', 'Effect', 'ΔKcat*', 'ΔKm*', 'Conf.', 'Rationale'].map(h => (
                 <th key={h} style={{
-                  fontFamily: FONT.MONO, fontSize: 8, color: 'rgba(217,225,235,0.68)', textAlign: 'left',
-                  padding: '4px 5px', borderBottom: '1px solid rgba(255,255,255,0.08)',
+                  fontFamily: FONT.MONO, fontSize: 8, color: colors.text.secondary, textAlign: 'left',
+                  padding: '4px 5px', borderBottom: `1px solid ${colors.border.subtle}`,
                 }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {result.sites.map(s => (
-              <tr key={s.position} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+              <tr key={s.position} style={{ borderBottom: `1px solid ${colors.border.subtle}` }}>
                 <td style={{ fontFamily: FONT.MONO, fontSize: 10, color: ACCENT.mint, padding: '4px 5px' }}>{s.position}</td>
-                <td style={{ fontFamily: FONT.MONO, fontSize: 10, color: 'rgba(250,246,240,0.96)', padding: '4px 5px', textAlign: 'center' }}>{s.wildTypeResidue}</td>
-                <td style={{ fontFamily: FONT.MONO, fontSize: 9, color: 'rgba(250,246,240,0.96)', padding: '4px 5px' }}>{s.suggestedMutants.join(', ')}</td>
-                <td style={{ fontFamily: FONT.MONO, fontSize: 10, color: 'rgba(250,246,240,0.96)', padding: '4px 5px', textAlign: 'right' }}>{fmt2(s.conservationScore)}</td>
+                <td style={{ fontFamily: FONT.MONO, fontSize: 10, color: colors.text.primary, padding: '4px 5px', textAlign: 'center' }}>{s.wildTypeResidue}</td>
+                <td style={{ fontFamily: FONT.MONO, fontSize: 9, color: colors.text.primary, padding: '4px 5px' }}>{s.suggestedMutants.join(', ')}</td>
+                <td style={{ fontFamily: FONT.MONO, fontSize: 10, color: colors.text.primary, padding: '4px 5px', textAlign: 'right' }}>{fmt2(s.conservationScore)}</td>
                 <td style={{ fontFamily: FONT.SANS, fontSize: 9, padding: '4px 5px', color: effectColor(s.predictedEffect) }}>{s.predictedEffect}</td>
-                <td style={{ fontFamily: FONT.MONO, fontSize: 10, color: 'rgba(250,246,240,0.96)', padding: '4px 5px', textAlign: 'right' }}>{fmt2(s.predictedDeltaKcat)}×</td>
-                <td style={{ fontFamily: FONT.MONO, fontSize: 10, color: 'rgba(250,246,240,0.96)', padding: '4px 5px', textAlign: 'right' }}>{fmt2(s.predictedDeltaKm)}×</td>
-                <td style={{ fontFamily: FONT.MONO, fontSize: 10, color: 'rgba(250,246,240,0.96)', padding: '4px 5px', textAlign: 'right' }}>{(s.confidence * 100).toFixed(0)}%</td>
-                <td style={{ fontFamily: FONT.SANS, fontSize: 8, color: 'rgba(217,225,235,0.68)', padding: '4px 5px', maxWidth: 120 }}>{s.rationale}</td>
+                <td style={{ fontFamily: FONT.MONO, fontSize: 10, color: colors.text.primary, padding: '4px 5px', textAlign: 'right' }}>{fmt2(s.predictedDeltaKcat)}x</td>
+                <td style={{ fontFamily: FONT.MONO, fontSize: 10, color: colors.text.primary, padding: '4px 5px', textAlign: 'right' }}>{fmt2(s.predictedDeltaKm)}x</td>
+                <td style={{ fontFamily: FONT.MONO, fontSize: 10, color: colors.text.primary, padding: '4px 5px', textAlign: 'right' }}>{(s.confidence * 100).toFixed(0)}%</td>
+                <td style={{ fontFamily: FONT.SANS, fontSize: 8, color: colors.text.secondary, padding: '4px 5px', maxWidth: 120 }}>{s.rationale}</td>
               </tr>
             ))}
           </tbody>
         </table>
-        <p style={{ fontFamily: FONT.SANS, fontSize: 8, color: 'rgba(255,255,255,0.45)', margin: '6px 0 0', fontStyle: 'italic' }}>
+        <p style={{ fontFamily: FONT.SANS, fontSize: 8, color: colors.text.disabled, margin: '6px 0 0', fontStyle: 'italic' }}>
           * Heuristic fold-change estimates — validate with directed evolution or computational ΔΔG tools (FoldX, Rosetta).
         </p>
       </div>
