@@ -1,4 +1,4 @@
-import { solveLPSimplex } from './simplexLP';
+import { solveLP, type LPModel } from './highsSolver';
 import { SHARED_METABOLITES, type CommunityFBAOutput, type FBAOutput } from '../data/mockFBA';
 import { IJO1366_REACTIONS, IJO1366_METABOLITES, IJO1366_STATS } from '../data/iJO1366Subset';
 
@@ -38,6 +38,10 @@ type NetworkSpec = {
   reactions: ReactionBound[];
   constraints: Constraint[];
   objectives: ObjectiveMap;
+  /** Constraint name that captures glucose uptake shadow price */
+  glucoseConstraint: string;
+  /** Constraint name that captures oxygen uptake shadow price */
+  oxygenConstraint: string;
   deriveMetrics: (
     vars: Record<string, number>,
     request: SingleSpeciesFBARequest,
@@ -77,6 +81,8 @@ const ECOLI_NETWORK: NetworkSpec = {
     { name: 'accoa_balance', vars: [{ name: 'PDH', coef: 1 }, { name: 'BIOMASS', coef: -1 }, { name: 'PRODUCT', coef: -1 }] },
     { name: 'oxygen_balance', vars: [{ name: 'O2tx', coef: 1 }, { name: 'PDH', coef: -1 }] },
   ],
+  glucoseConstraint: 'g6p_balance',
+  oxygenConstraint: 'oxygen_balance',
   objectives: {
     biomass: [{ name: 'BIOMASS', coef: 1 }, { name: 'PRODUCT', coef: 0.08 }],
     product: [{ name: 'PRODUCT', coef: 1 }, { name: 'BIOMASS', coef: 0.05 }],
@@ -146,6 +152,8 @@ const YEAST_NETWORK: NetworkSpec = {
     { name: 'accoa_balance', vars: [{ name: 'ACS', coef: 1 }, { name: 'IDH', coef: -1 }] },
     { name: 'growth_balance', vars: [{ name: 'IDH', coef: 1 }, { name: 'BIOMASS_y', coef: -1 }, { name: 'PRODUCT_y', coef: -1 }] },
   ],
+  glucoseConstraint: 'glc_balance',
+  oxygenConstraint: 'oxygen_balance',
   objectives: {
     biomass: [{ name: 'BIOMASS_y', coef: 1 }, { name: 'PRODUCT_y', coef: 0.08 }],
     product: [{ name: 'PRODUCT_y', coef: 1 }, { name: 'BIOMASS_y', coef: 0.05 }],
@@ -193,82 +201,65 @@ const NETWORKS: Record<FBASpecies, NetworkSpec> = {
 };
 
 /**
- * Build and solve an LP for the given network and request using the
- * pure-TypeScript simplex solver (no native binaries or WASM).
+ * Build an LPModel for the given network and request, then solve via HiGHS.
+ * Returns primal variable values, status, objective value, and duals.
  */
-function buildAndSolve(
+async function buildAndSolve(
   network: NetworkSpec,
   request: SingleSpeciesFBARequest,
-): { vars: Record<string, number>; status: number; z: number } {
+): Promise<{ vars: Record<string, number>; status: number; z: number; duals: Record<string, number> }> {
   const knockoutSet = new Set(request.knockouts ?? []);
-  const rxnIds = network.reactions.map((r) => r.id);
-  const n = rxnIds.length;
-  const nameToIdx = new Map(rxnIds.map((id, i) => [id, i]));
 
-  // Objective vector
-  const c = new Array<number>(n).fill(0);
-  for (const { name, coef } of network.objectives[request.objective]) {
-    const idx = nameToIdx.get(name);
-    if (idx !== undefined) c[idx] = coef;
-  }
+  // Build LPModel for HiGHS
+  const objective = network.objectives[request.objective];
+  const constraints = network.constraints.map((c) => ({
+    name: c.name,
+    vars: c.vars,
+    lb: 0,
+    ub: 0,
+  }));
+  const bounds = network.reactions.map((r) => ({
+    name: r.id,
+    lb: r.lb,
+    ub: knockoutSet.has(r.id) ? 0 : (typeof r.ub === 'function' ? r.ub(request) : r.ub),
+  }));
 
-  // Stoichiometric constraint matrix and RHS (b = 0 for FBA)
-  const m = network.constraints.length;
-  const A: number[][] = Array.from({ length: m }, () => new Array<number>(n).fill(0));
-  const b = new Array<number>(m).fill(0);
-  for (let i = 0; i < m; i++) {
-    for (const { name, coef } of network.constraints[i].vars) {
-      const idx = nameToIdx.get(name);
-      if (idx !== undefined) A[i][idx] = coef;
-    }
-  }
+  const model: LPModel = {
+    name: `fba_${network.species}`,
+    sense: 'maximize',
+    objective,
+    constraints,
+    bounds,
+  };
 
-  // Variable bounds
-  const lb = new Array<number>(n).fill(0);
-  const ub = rxnIds.map((id, i) => {
-    if (knockoutSet.has(id)) return 0;
-    const rxn = network.reactions[i];
-    return typeof rxn.ub === 'function' ? rxn.ub(request) : rxn.ub;
-  });
-
-  const result = solveLPSimplex({ c, A, b, ub, lb });
+  const result = await solveLP(model);
 
   const vars: Record<string, number> = {};
-  for (let i = 0; i < n; i++) vars[rxnIds[i]] = result.x[i];
+  for (const rxn of network.reactions) {
+    vars[rxn.id] = result.primals[rxn.id] ?? 0;
+  }
 
   // status 2 = optimal (mirrors GLPK GLP_OPT), 4 = infeasible
-  return { vars, status: result.feasible ? 2 : 4, z: result.z };
+  const status = result.status === 'optimal' ? 2 : 4;
+  return { vars, status, z: result.objectiveValue, duals: result.duals };
 }
 
 async function solveNetwork(request: SingleSpeciesFBARequest): Promise<FBAOutput> {
   const network = NETWORKS[request.species];
 
-  const { vars, status, z } = buildAndSolve(network, request);
+  const { vars, status, z, duals } = await buildAndSolve(network, request);
   const base = network.deriveMetrics(vars, request, status, z);
 
-  const epsilon = Math.max(0.05, request.glucoseUptake * 0.01);
-
-  const growthAt = (next: SingleSpeciesFBARequest) => {
-    const { vars: v, status: s, z: zNext } = buildAndSolve(network, next);
-    return network.deriveMetrics(v, next, s, zNext).growthRate;
-  };
-
-  const glucoseShadow =
-    (growthAt({ ...request, glucoseUptake: request.glucoseUptake + epsilon }) -
-      growthAt({ ...request, glucoseUptake: Math.max(0, request.glucoseUptake - epsilon) })) /
-    (2 * epsilon);
-
-  const oxygenShadow =
-    (growthAt({ ...request, oxygenUptake: request.oxygenUptake + epsilon }) -
-      growthAt({ ...request, oxygenUptake: Math.max(0, request.oxygenUptake - epsilon) })) /
-    (2 * epsilon);
+  // Extract shadow prices directly from LP dual variables
+  const glucoseShadow = duals[network.glucoseConstraint] ?? 0;
+  const oxygenShadow = duals[network.oxygenConstraint] ?? 0;
 
   return {
     ...base,
     sensitivityCoefficients: {
       glc: round(glucoseShadow, 4),
       o2: round(oxygenShadow, 4),
-      atp: round(Math.max(0, base.atpYield / 12), 4),
+      atp: round(request.glucoseUptake > 1e-9 ? base.atpYield / request.glucoseUptake : 0, 4),
     },
   };
 }
@@ -384,49 +375,53 @@ export async function solveExpandedFBA(request: ExpandedFBARequest): Promise<Exp
   const rxns = IJO1366_REACTIONS;
   const mets = IJO1366_METABOLITES;
   const n = rxns.length;
-  const m = mets.length;
-  const metIdx = new Map(mets.map((id, i) => [id, i]));
   const rxnIds = rxns.map(r => r.id);
 
-  // Objective: maximize BIOMASS (or PRODUCT)
-  const c = new Array<number>(n).fill(0);
+  // Build LPModel for HiGHS
   const objRxn = request.objective === 'product' ? 'PRODUCT' : 'BIOMASS';
-  const objIdx = rxnIds.indexOf(objRxn);
-  if (objIdx >= 0) c[objIdx] = 1;
+  const objective = [{ name: objRxn, coef: 1 }];
 
-  // Stoichiometric matrix: S · v = 0 (mass balance)
-  const A: number[][] = Array.from({ length: m }, () => new Array<number>(n).fill(0));
-  const b = new Array<number>(m).fill(0);
-  for (let j = 0; j < n; j++) {
-    for (const [met, coef] of Object.entries(rxns[j].stoichiometry)) {
-      const i = metIdx.get(met);
-      if (i !== undefined) A[i][j] = coef;
-    }
-  }
+  // Stoichiometric constraints: S · v = 0 (mass balance)
+  const constraints = mets.map((metId) => ({
+    name: `${metId}_balance`,
+    vars: rxns
+      .filter((r) => r.stoichiometry[metId] !== undefined)
+      .map((r) => ({ name: r.id, coef: r.stoichiometry[metId] })),
+    lb: 0,
+    ub: 0,
+  }));
 
-  // Bounds
-  const lb = rxns.map(r => r.lb);
-  const ub = rxns.map((r, j) => {
-    if (knockoutSet.has(r.id)) return 0;
-    return r.ub;
+  // Variable bounds
+  const bounds = rxns.map((r) => {
+    let lb = r.lb;
+    // Set exchange reaction lower bounds as maximum uptake allowed
+    if (r.id === 'EX_glc_e') lb = -clamp(request.glucoseUptake, 0, 25);
+    if (r.id === 'EX_o2_e') lb = -clamp(request.oxygenUptake, 0, 25);
+    return {
+      name: r.id,
+      lb,
+      ub: knockoutSet.has(r.id) ? 0 : r.ub,
+    };
   });
-  // Set exchange reaction lower bounds as maximum uptake allowed (not exact value)
-  // This allows the solver to use less substrate if the objective benefits
-  const glcIdx = rxnIds.indexOf('EX_glc_e');
-  if (glcIdx >= 0) lb[glcIdx] = -clamp(request.glucoseUptake, 0, 25);
-  const o2Idx = rxnIds.indexOf('EX_o2_e');
-  if (o2Idx >= 0) lb[o2Idx] = -clamp(request.oxygenUptake, 0, 25);
 
-  const result = solveLPSimplex({ c, A, b, ub, lb });
+  const model: LPModel = {
+    name: 'fba_iJO1366',
+    sense: 'maximize',
+    objective,
+    constraints,
+    bounds,
+  };
+
+  const result = await solveLP(model);
 
   const fluxes: Record<string, number> = {};
-  for (let j = 0; j < n; j++) fluxes[rxnIds[j]] = round(result.x[j]);
+  for (let j = 0; j < n; j++) fluxes[rxnIds[j]] = round(result.primals[rxnIds[j]] ?? 0);
 
   // Subsystem flux sums
   const subsystemFluxSums: Record<string, number> = {};
   for (let j = 0; j < n; j++) {
     const sub = rxns[j].subsystem;
-    subsystemFluxSums[sub] = (subsystemFluxSums[sub] ?? 0) + Math.abs(result.x[j]);
+    subsystemFluxSums[sub] = (subsystemFluxSums[sub] ?? 0) + Math.abs(result.primals[rxnIds[j]] ?? 0);
   }
   for (const key of Object.keys(subsystemFluxSums)) {
     subsystemFluxSums[key] = round(subsystemFluxSums[key], 2);
@@ -435,8 +430,8 @@ export async function solveExpandedFBA(request: ExpandedFBARequest): Promise<Exp
   return {
     fluxes,
     growthRate: round(fluxes.BIOMASS * 0.061),
-    objectiveValue: round(result.z),
-    feasible: result.feasible && result.z > 1e-6,
+    objectiveValue: round(result.objectiveValue),
+    feasible: result.status === 'optimal' && result.objectiveValue > 1e-6,
     stats: IJO1366_STATS,
     subsystemFluxSums,
   };
