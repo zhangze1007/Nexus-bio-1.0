@@ -23,7 +23,7 @@ const TOOLS_WITH_TABS: Array<{
     route: '/tools/fbasim',
     moduleId: 'FBASIM',
     title: 'Flux Balance Analysis',
-    secondTab: 'Knockout',
+    secondTab: 'FVA',
   },
   {
     route: '/tools/cethx',
