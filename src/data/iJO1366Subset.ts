@@ -50,136 +50,151 @@ export interface IJO1366Reaction {
   ub: number;
   /** Stoichiometry: metaboliteId → coefficient (negative = consumed, positive = produced) */
   stoichiometry: Record<string, number>;
+  /**
+   * Gene-Protein-Reaction boolean rule from BiGG / iJO1366.
+   * AND = protein complex (all genes required), OR = isozymes (any gene sufficient).
+   * Empty/absent = reaction is always active (no gene dependency).
+   */
+  gpr?: string;
 }
 
 // ── Glycolysis / Gluconeogenesis ─────────────────────────────────────
 const GLYCOLYSIS: IJO1366Reaction[] = [
   { id: 'GLCpts', name: 'Glucose PTS', subsystem: 'Glycolysis', lb: 0, ub: 10,
-    stoichiometry: { glc_e: -1, g6p: 1, pep: -1, pyr: 1 } },
+    stoichiometry: { glc_e: -1, g6p: 1, pep: -1, pyr: 1 },
+    gpr: '(b2417 AND b2416 AND b2415 AND b1101 AND b1817 AND b1818) OR (b2417 AND b2416 AND b2415 AND b1621)' },
   { id: 'PGI', name: 'Phosphoglucose isomerase', subsystem: 'Glycolysis', lb: -100, ub: 100,
-    stoichiometry: { g6p: -1, f6p: 1 } },
+    stoichiometry: { g6p: -1, f6p: 1 }, gpr: '(b4025)' },
   { id: 'PFK', name: 'Phosphofructokinase', subsystem: 'Glycolysis', lb: 0, ub: 100,
-    stoichiometry: { f6p: -1, atp: -1, fbp: 1, adp: 1 } },
+    stoichiometry: { f6p: -1, atp: -1, fbp: 1, adp: 1 }, gpr: '(b3916 OR b0631)' },
   { id: 'FBP', name: 'Fructose-bisphosphatase', subsystem: 'Glycolysis', lb: 0, ub: 100,
-    stoichiometry: { fbp: -1, f6p: 1, pi: 1 } },
+    stoichiometry: { fbp: -1, f6p: 1, pi: 1 }, gpr: '(b4232)' },
   { id: 'FBA', name: 'Fructose-bisphosphate aldolase', subsystem: 'Glycolysis', lb: -100, ub: 100,
-    stoichiometry: { fbp: -1, dhap: 1, g3p: 1 } },
+    stoichiometry: { fbp: -1, dhap: 1, g3p: 1 }, gpr: '(b2925)' },
   { id: 'TPI', name: 'Triose-phosphate isomerase', subsystem: 'Glycolysis', lb: -100, ub: 100,
-    stoichiometry: { dhap: -1, g3p: 1 } },
+    stoichiometry: { dhap: -1, g3p: 1 }, gpr: '(b3919)' },
   { id: 'GAPD', name: 'Glyceraldehyde-3P dehydrogenase', subsystem: 'Glycolysis', lb: -100, ub: 100,
-    stoichiometry: { g3p: -1, nad: -1, pi: -1, bpg13: 1, nadh: 1 } },
+    stoichiometry: { g3p: -1, nad: -1, pi: -1, bpg13: 1, nadh: 1 }, gpr: '(b1779)' },
   { id: 'PGK', name: 'Phosphoglycerate kinase', subsystem: 'Glycolysis', lb: -100, ub: 100,
-    stoichiometry: { bpg13: -1, adp: -1, pg3: 1, atp: 1 } },
+    stoichiometry: { bpg13: -1, adp: -1, pg3: 1, atp: 1 }, gpr: '(b2926)' },
   { id: 'PGM', name: 'Phosphoglycerate mutase', subsystem: 'Glycolysis', lb: -100, ub: 100,
-    stoichiometry: { pg3: -1, pg2: 1 } },
+    stoichiometry: { pg3: -1, pg2: 1 }, gpr: '(b3612 OR b0755)' },
   { id: 'ENO', name: 'Enolase', subsystem: 'Glycolysis', lb: -100, ub: 100,
-    stoichiometry: { pg2: -1, pep: 1, h2o: 1 } },
+    stoichiometry: { pg2: -1, pep: 1, h2o: 1 }, gpr: '(b2779)' },
   { id: 'PYK', name: 'Pyruvate kinase', subsystem: 'Glycolysis', lb: 0, ub: 100,
-    stoichiometry: { pep: -1, adp: -1, pyr: 1, atp: 1 } },
+    stoichiometry: { pep: -1, adp: -1, pyr: 1, atp: 1 }, gpr: '(b1854 OR b1676)' },
   { id: 'PPS', name: 'PEP synthase', subsystem: 'Glycolysis', lb: 0, ub: 100,
-    stoichiometry: { pyr: -1, atp: -1, pep: 1, amp: 1, pi: 1 } },
+    stoichiometry: { pyr: -1, atp: -1, pep: 1, amp: 1, pi: 1 }, gpr: '(b1702)' },
 ];
 
 // ── Pentose Phosphate Pathway ────────────────────────────────────────
 const PPP: IJO1366Reaction[] = [
   { id: 'G6PDH2r', name: 'G6P dehydrogenase', subsystem: 'PPP', lb: -100, ub: 100,
-    stoichiometry: { g6p: -1, nadp: -1, pgl6: 1, nadph: 1 } },
+    stoichiometry: { g6p: -1, nadp: -1, pgl6: 1, nadph: 1 }, gpr: '(b1852)' },
   { id: 'PGL', name: '6-Phosphogluconolactonase', subsystem: 'PPP', lb: 0, ub: 100,
-    stoichiometry: { pgl6: -1, h2o: -1, pg6: 1 } },
+    stoichiometry: { pgl6: -1, h2o: -1, pg6: 1 }, gpr: '(b0767)' },
   { id: 'GND', name: '6-PG dehydrogenase', subsystem: 'PPP', lb: 0, ub: 100,
-    stoichiometry: { pg6: -1, nadp: -1, ru5p: 1, co2: 1, nadph: 1 } },
+    stoichiometry: { pg6: -1, nadp: -1, ru5p: 1, co2: 1, nadph: 1 }, gpr: '(b2029)' },
   { id: 'RPI', name: 'Ribose-5P isomerase', subsystem: 'PPP', lb: -100, ub: 100,
-    stoichiometry: { ru5p: -1, r5p: 1 } },
+    stoichiometry: { ru5p: -1, r5p: 1 }, gpr: '(b2914 OR b4090)' },
   { id: 'RPE', name: 'Ribulose-5P epimerase', subsystem: 'PPP', lb: -100, ub: 100,
-    stoichiometry: { ru5p: -1, xu5p: 1 } },
+    stoichiometry: { ru5p: -1, xu5p: 1 }, gpr: '(b3386 OR b2073)' },
   { id: 'TKT1', name: 'Transketolase 1', subsystem: 'PPP', lb: -100, ub: 100,
-    stoichiometry: { r5p: -1, xu5p: -1, s7p: 1, g3p: 1 } },
+    stoichiometry: { r5p: -1, xu5p: -1, s7p: 1, g3p: 1 }, gpr: '(b2935 OR b2465)' },
   { id: 'TALA', name: 'Transaldolase', subsystem: 'PPP', lb: -100, ub: 100,
-    stoichiometry: { s7p: -1, g3p: -1, e4p: 1, f6p: 1 } },
+    stoichiometry: { s7p: -1, g3p: -1, e4p: 1, f6p: 1 }, gpr: '(b2464 OR b0008)' },
   { id: 'TKT2', name: 'Transketolase 2', subsystem: 'PPP', lb: -100, ub: 100,
-    stoichiometry: { xu5p: -1, e4p: -1, f6p: 1, g3p: 1 } },
+    stoichiometry: { xu5p: -1, e4p: -1, f6p: 1, g3p: 1 }, gpr: '(b2935 OR b2465)' },
 ];
 
 // ── TCA Cycle ────────────────────────────────────────────────────────
 const TCA: IJO1366Reaction[] = [
   { id: 'CS', name: 'Citrate synthase', subsystem: 'TCA', lb: 0, ub: 100,
-    stoichiometry: { accoa: -1, oaa: -1, h2o: -1, cit: 1, coa: 1 } },
+    stoichiometry: { accoa: -1, oaa: -1, h2o: -1, cit: 1, coa: 1 }, gpr: '(b0720)' },
   { id: 'ACONTa', name: 'Aconitase (half 1)', subsystem: 'TCA', lb: -100, ub: 100,
-    stoichiometry: { cit: -1, acon: 1, h2o: 1 } },
+    stoichiometry: { cit: -1, acon: 1, h2o: 1 }, gpr: '(b1276)' },
   { id: 'ACONTb', name: 'Aconitase (half 2)', subsystem: 'TCA', lb: -100, ub: 100,
-    stoichiometry: { acon: -1, h2o: -1, icit: 1 } },
+    stoichiometry: { acon: -1, h2o: -1, icit: 1 }, gpr: '(b1276)' },
   { id: 'ICDHyr', name: 'Isocitrate dehydrogenase', subsystem: 'TCA', lb: -100, ub: 100,
-    stoichiometry: { icit: -1, nadp: -1, akg: 1, co2: 1, nadph: 1 } },
+    stoichiometry: { icit: -1, nadp: -1, akg: 1, co2: 1, nadph: 1 }, gpr: '(b1136)' },
   { id: 'AKGDH', name: 'α-Ketoglutarate dehydrogenase', subsystem: 'TCA', lb: 0, ub: 100,
-    stoichiometry: { akg: -1, nad: -1, coa: -1, succoa: 1, co2: 1, nadh: 1 } },
+    stoichiometry: { akg: -1, nad: -1, coa: -1, succoa: 1, co2: 1, nadh: 1 },
+    gpr: '(b0116 AND b0726 AND b0727)' },
   { id: 'SUCOAS', name: 'Succinyl-CoA synthetase', subsystem: 'TCA', lb: -100, ub: 100,
-    stoichiometry: { succoa: -1, adp: -1, pi: -1, succ: 1, atp: 1, coa: 1 } },
+    stoichiometry: { succoa: -1, adp: -1, pi: -1, succ: 1, atp: 1, coa: 1 },
+    gpr: '(b0728 AND b0729)' },
   { id: 'SUCDi', name: 'Succinate dehydrogenase', subsystem: 'TCA', lb: 0, ub: 100,
-    stoichiometry: { succ: -1, q8: -1, fum: 1, q8h2: 1 } },
+    stoichiometry: { succ: -1, q8: -1, fum: 1, q8h2: 1 },
+    gpr: '(b0721 AND b0722 AND b0723 AND b0724)' },
   { id: 'FUM', name: 'Fumarase', subsystem: 'TCA', lb: -100, ub: 100,
-    stoichiometry: { fum: -1, h2o: -1, mal: 1 } },
+    stoichiometry: { fum: -1, h2o: -1, mal: 1 }, gpr: '(b1612 OR b4122 OR b1611)' },
   { id: 'MDH', name: 'Malate dehydrogenase', subsystem: 'TCA', lb: -100, ub: 100,
-    stoichiometry: { mal: -1, nad: -1, oaa: 1, nadh: 1 } },
+    stoichiometry: { mal: -1, nad: -1, oaa: 1, nadh: 1 }, gpr: '(b3236)' },
   { id: 'ME1', name: 'Malic enzyme (NAD)', subsystem: 'TCA', lb: 0, ub: 100,
-    stoichiometry: { mal: -1, nad: -1, pyr: 1, co2: 1, nadh: 1 } },
+    stoichiometry: { mal: -1, nad: -1, pyr: 1, co2: 1, nadh: 1 }, gpr: '(b1479)' },
 ];
 
 // ── Oxidative Phosphorylation ────────────────────────────────────────
 const OXPHOS: IJO1366Reaction[] = [
   { id: 'NADH16', name: 'NADH dehydrogenase (complex I)', subsystem: 'OxPhos', lb: 0, ub: 100,
-    stoichiometry: { nadh: -1, q8: -1, nad: 1, q8h2: 1 } },
+    stoichiometry: { nadh: -1, q8: -1, nad: 1, q8h2: 1 },
+    gpr: '(b2276 AND b2277 AND b2278 AND b2279 AND b2280 AND b2281 AND b2282 AND b2283 AND b2284 AND b2285 AND b2286 AND b2287 AND b2288)' },
   { id: 'CYTBD', name: 'Cytochrome bd oxidase', subsystem: 'OxPhos', lb: 0, ub: 100,
-    stoichiometry: { q8h2: -1, o2: -0.5, q8: 1, h2o: 1 } },
+    stoichiometry: { q8h2: -1, o2: -0.5, q8: 1, h2o: 1 },
+    gpr: '(b0978 AND b0979 AND b0980)' },
   { id: 'ATPS4r', name: 'ATP synthase', subsystem: 'OxPhos', lb: -100, ub: 100,
-    stoichiometry: { adp: -1, pi: -1, atp: 1, h2o: 1 } },
+    stoichiometry: { adp: -1, pi: -1, atp: 1, h2o: 1 },
+    gpr: '(b3731 AND b3732 AND b3733 AND b3734 AND b3735 AND b3736 AND b3737 AND b3738 AND b3739)' },
   { id: 'NADTRHD', name: 'NAD(P) transhydrogenase', subsystem: 'OxPhos', lb: -100, ub: 100,
-    stoichiometry: { nadh: -1, nadp: -1, nad: 1, nadph: 1 } },
+    stoichiometry: { nadh: -1, nadp: -1, nad: 1, nadph: 1 }, gpr: '(b3962)' },
   { id: 'THD2', name: 'Energy-dependent transhydrogenase', subsystem: 'OxPhos', lb: 0, ub: 100,
-    stoichiometry: { nadh: -1, nadp: -1, nad: 1, nadph: 1 } },
+    stoichiometry: { nadh: -1, nadp: -1, nad: 1, nadph: 1 },
+    gpr: '(b1602 AND b1603)' },
 ];
 
 // ── Anaplerotic Reactions ────────────────────────────────────────────
 const ANAPLEROSIS: IJO1366Reaction[] = [
   { id: 'PPC', name: 'PEP carboxylase', subsystem: 'Anaplerosis', lb: 0, ub: 100,
-    stoichiometry: { pep: -1, co2: -1, oaa: 1, pi: 1 } },
+    stoichiometry: { pep: -1, co2: -1, oaa: 1, pi: 1 }, gpr: '(b3956)' },
   { id: 'PPCK', name: 'PEP carboxykinase', subsystem: 'Anaplerosis', lb: 0, ub: 100,
-    stoichiometry: { oaa: -1, atp: -1, pep: 1, co2: 1, adp: 1 } },
+    stoichiometry: { oaa: -1, atp: -1, pep: 1, co2: 1, adp: 1 }, gpr: '(b3403)' },
   { id: 'ME2', name: 'Malic enzyme (NADP)', subsystem: 'Anaplerosis', lb: 0, ub: 100,
-    stoichiometry: { mal: -1, nadp: -1, pyr: 1, co2: 1, nadph: 1 } },
+    stoichiometry: { mal: -1, nadp: -1, pyr: 1, co2: 1, nadph: 1 }, gpr: '(b2463)' },
   { id: 'PFL', name: 'Pyruvate formate lyase', subsystem: 'Anaplerosis', lb: 0, ub: 100,
-    stoichiometry: { pyr: -1, coa: -1, accoa: 1, for: 1 } },
+    stoichiometry: { pyr: -1, coa: -1, accoa: 1, for: 1 }, gpr: '(b0903 AND b0904)' },
 ];
 
 // ── Pyruvate Metabolism ──────────────────────────────────────────────
 const PYRUVATE: IJO1366Reaction[] = [
   { id: 'PDH', name: 'Pyruvate dehydrogenase', subsystem: 'Pyruvate', lb: 0, ub: 100,
-    stoichiometry: { pyr: -1, nad: -1, coa: -1, accoa: 1, co2: 1, nadh: 1 } },
+    stoichiometry: { pyr: -1, nad: -1, coa: -1, accoa: 1, co2: 1, nadh: 1 },
+    gpr: '(b0114 AND b0115 AND b0116)' },
   { id: 'LDH_D', name: 'D-lactate dehydrogenase', subsystem: 'Pyruvate', lb: -100, ub: 100,
-    stoichiometry: { pyr: -1, nadh: -1, lac: 1, nad: 1 } },
+    stoichiometry: { pyr: -1, nadh: -1, lac: 1, nad: 1 }, gpr: '(b1380 OR b2133 OR b2927)' },
   { id: 'ALCD2x', name: 'Alcohol dehydrogenase', subsystem: 'Pyruvate', lb: -100, ub: 100,
-    stoichiometry: { acald: -1, nadh: -1, etoh: 1, nad: 1 } },
+    stoichiometry: { acald: -1, nadh: -1, etoh: 1, nad: 1 }, gpr: '(b1478 OR b1241)' },
   { id: 'ACALD', name: 'Acetaldehyde dehydrogenase', subsystem: 'Pyruvate', lb: -100, ub: 100,
-    stoichiometry: { accoa: -1, nadh: -1, acald: 1, nad: 1, coa: 1 } },
+    stoichiometry: { accoa: -1, nadh: -1, acald: 1, nad: 1, coa: 1 }, gpr: '(b0351 OR b1241)' },
 ];
 
 // ── Fermentation / Overflow ──────────────────────────────────────────
 const FERMENTATION: IJO1366Reaction[] = [
   { id: 'PTAr', name: 'Phosphotransacetylase', subsystem: 'Fermentation', lb: -100, ub: 100,
-    stoichiometry: { accoa: -1, pi: -1, actp: 1, coa: 1 } },
+    stoichiometry: { accoa: -1, pi: -1, actp: 1, coa: 1 }, gpr: '(b2297)' },
   { id: 'ACKr', name: 'Acetate kinase', subsystem: 'Fermentation', lb: -100, ub: 100,
-    stoichiometry: { actp: -1, adp: -1, ac: 1, atp: 1 } },
+    stoichiometry: { actp: -1, adp: -1, ac: 1, atp: 1 }, gpr: '(b2296 OR b1849 OR b3115)' },
   { id: 'FORt', name: 'Formate transport', subsystem: 'Fermentation', lb: 0, ub: 100,
     stoichiometry: { for: -1, for_e: 1 } },
   { id: 'FHL', name: 'Formate hydrogen lyase', subsystem: 'Fermentation', lb: 0, ub: 100,
-    stoichiometry: { for: -1, co2: 1 } },
+    stoichiometry: { for: -1, co2: 1 }, gpr: '(b2723 AND b2724)' },
 ];
 
 // ── Glyoxylate Shunt ─────────────────────────────────────────────────
 const GLYOXYLATE: IJO1366Reaction[] = [
   { id: 'ICL', name: 'Isocitrate lyase', subsystem: 'Glyoxylate', lb: 0, ub: 100,
-    stoichiometry: { icit: -1, succ: 1, glx: 1 } },
+    stoichiometry: { icit: -1, succ: 1, glx: 1 }, gpr: '(b4015)' },
   { id: 'MALS', name: 'Malate synthase', subsystem: 'Glyoxylate', lb: 0, ub: 100,
-    stoichiometry: { accoa: -1, glx: -1, h2o: -1, mal: 1, coa: 1 } },
+    stoichiometry: { accoa: -1, glx: -1, h2o: -1, mal: 1, coa: 1 }, gpr: '(b4014 OR b2976)' },
 ];
 
 // ── Exchange Reactions ───────────────────────────────────────────────
@@ -286,3 +301,17 @@ export const IJO1366_STATS = {
   metabolites: IJO1366_METABOLITES.length,
   source: 'Orth et al. 2011 (iJO1366 subset)',
 } as const;
+
+/**
+ * Map of reaction ID → GPR rule string for all reactions that have one.
+ * Ready to pass to getKnockoutReactions() from fbaGPR.ts.
+ */
+export const IJO1366_GPR_RULES: Record<string, string> = (() => {
+  const rules: Record<string, string> = {};
+  for (const rxn of IJO1366_REACTIONS) {
+    if (rxn.gpr) {
+      rules[rxn.id] = rxn.gpr;
+    }
+  }
+  return rules;
+})();
