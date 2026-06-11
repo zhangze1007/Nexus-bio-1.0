@@ -56,21 +56,23 @@ function getProjectScope(request: Request) {
 
 export async function GET(request: Request) {
   const { artifactId, projectId, actorId } = getProjectScope(request);
-  const db = await getWorkbenchDb();
+  await getWorkbenchDb();
   const useArtifactScope = Boolean(artifactId);
   const explicitScope = useArtifactScope ? { forceExplicit: true as const } : undefined;
 
-  if (artifactId && !projectStateExists(db, artifactId, explicitScope)) {
+  if (artifactId && !await projectStateExists(artifactId, explicitScope)) {
     return NextResponse.json({ ok: false, error: 'Workflow artifact not found' }, { status: 404, headers: getCorsHeaders(request) });
   }
 
-  const state = readProjectState(db, artifactId ?? projectId, explicitScope);
+  const state = await readProjectState(artifactId ?? projectId, explicitScope);
   const resolvedProjectId = artifactId ?? state.project?.id ?? projectId;
-  const backend = getBackendMeta(db, resolvedProjectId, actorId, explicitScope);
-  const audit = listSyncAudit(db, resolvedProjectId, 12, explicitScope);
-  const history = listCanonicalHistory(db, resolvedProjectId, 16, explicitScope);
-  const members = listProjectMembers(db, resolvedProjectId, 24, explicitScope);
-  const experiments = listExperimentRecords(db, resolvedProjectId, 24, explicitScope);
+  const [backend, audit, history, members, experiments] = await Promise.all([
+    getBackendMeta(resolvedProjectId, actorId, explicitScope),
+    listSyncAudit(resolvedProjectId, 12, explicitScope),
+    listCanonicalHistory(resolvedProjectId, 16, explicitScope),
+    listProjectMembers(resolvedProjectId, 24, explicitScope),
+    listExperimentRecords(resolvedProjectId, 24, explicitScope),
+  ]);
   return NextResponse.json({ ok: true, state, backend, members, experiments, audit, history }, { headers: getCorsHeaders(request) });
 }
 
@@ -123,7 +125,7 @@ export async function PUT(request: Request) {
     );
   }
 
-  const db = await getWorkbenchDb();
+  await getWorkbenchDb();
   const needsArtifactScope = Boolean(scopedArtifactId || incoming.activeArtifactId || incoming.workflowArtifact);
   const resolvedArtifactId = scopedArtifactId
     || normalizeNonEmptyId(incoming.activeArtifactId)
@@ -154,18 +156,25 @@ export async function PUT(request: Request) {
       },
     });
   }
-  const current = readProjectState(db, scopeId, explicitScope);
+  const current = await readProjectState(scopeId, explicitScope);
   if (incoming.revision < current.revision) {
+    const [backend, members, experiments, audit, history] = await Promise.all([
+      getBackendMeta(scopeId, actorId, explicitScope),
+      listProjectMembers(scopeId, 24, explicitScope),
+      listExperimentRecords(scopeId, 24, explicitScope),
+      listSyncAudit(scopeId, 12, explicitScope),
+      listCanonicalHistory(scopeId, 16, explicitScope),
+    ]);
     return NextResponse.json(
       {
         ok: false,
         error: 'Incoming workbench revision is stale',
         state: current,
-        backend: getBackendMeta(db, scopeId, actorId, explicitScope),
-        members: listProjectMembers(db, scopeId, 24, explicitScope),
-        experiments: listExperimentRecords(db, scopeId, 24, explicitScope),
-        audit: listSyncAudit(db, scopeId, 12, explicitScope),
-        history: listCanonicalHistory(db, scopeId, 16, explicitScope),
+        backend,
+        members,
+        experiments,
+        audit,
+        history,
       },
       { status: 409 },
     );
@@ -213,8 +222,7 @@ export async function PUT(request: Request) {
       : nextStateBase.project,
   };
 
-  writeProjectState(
-    db,
+  await writeProjectState(
     scopeId,
     actorId ?? 'system',
     nextState,
@@ -233,13 +241,20 @@ export async function PUT(request: Request) {
       explicitScope: true,
     });
   }
+  const [backend, members, experiments, audit, history] = await Promise.all([
+    getBackendMeta(scopeId, actorId, explicitScope),
+    listProjectMembers(scopeId, 24, explicitScope),
+    listExperimentRecords(scopeId, 24, explicitScope),
+    listSyncAudit(scopeId, 12, explicitScope),
+    listCanonicalHistory(scopeId, 16, explicitScope),
+  ]);
   return NextResponse.json({
     ok: true,
     state: nextState,
-    backend: getBackendMeta(db, scopeId, actorId, explicitScope),
-    members: listProjectMembers(db, scopeId, 24, explicitScope),
-    experiments: listExperimentRecords(db, scopeId, 24, explicitScope),
-    audit: listSyncAudit(db, scopeId, 12, explicitScope),
-    history: listCanonicalHistory(db, scopeId, 16, explicitScope),
+    backend,
+    members,
+    experiments,
+    audit,
+    history,
   });
 }
