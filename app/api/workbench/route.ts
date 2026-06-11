@@ -69,7 +69,7 @@ interface ExportProvenanceSummary {
 
 interface TaggedPayload {
   toolId: string;
-  provenanceStatus: 'verified' | '[UNVERIFIED]';
+  unverified?: boolean;
   [key: string]: unknown;
 }
 
@@ -131,7 +131,7 @@ function tagUnverifiedPayloads(
     if (payload && typeof payload === 'object') {
       tagged[toolId] = {
         ...(payload as Record<string, unknown>),
-        provenanceStatus: '[UNVERIFIED]',
+        unverified: true,
       } as TaggedPayload;
     }
   }
