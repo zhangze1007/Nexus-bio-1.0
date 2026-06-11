@@ -15,7 +15,7 @@ import {
   listExperimentRecords,
   getBackendMeta,
 } from '../src/server/workbenchDb';
-import { closeLibsqlClient } from '../src/server/libsqlDb';
+import { closeLibsqlClient, sqlRun } from '../src/server/libsqlDb';
 
 const TEST_PROJECT_ID = 'test-project-turso';
 const TEST_ACTOR_ID = 'test-actor';
@@ -27,6 +27,16 @@ afterAll(() => {
 describe('workbenchDb with libsql', () => {
   beforeAll(async () => {
     await getWorkbenchDb();
+
+    // Clean up any leftover state from prior runs to ensure test isolation.
+    // Delete from child tables first (foreign key constraints), then parents.
+    await sqlRun('DELETE FROM sync_audit WHERE project_id = ?', [TEST_PROJECT_ID]);
+    await sqlRun('DELETE FROM project_history WHERE project_id = ?', [TEST_PROJECT_ID]);
+    await sqlRun('DELETE FROM experiment_records WHERE project_id = ?', [TEST_PROJECT_ID]);
+    await sqlRun('DELETE FROM project_run_artifact_index WHERE project_id = ?', [TEST_PROJECT_ID]);
+    await sqlRun('DELETE FROM project_members WHERE project_id = ?', [TEST_PROJECT_ID]);
+    await sqlRun('DELETE FROM project_state WHERE project_id = ?', [TEST_PROJECT_ID]);
+    await sqlRun('DELETE FROM projects WHERE project_id = ?', [TEST_PROJECT_ID]);
   });
 
   test('projectStateExists returns false for new project', async () => {
