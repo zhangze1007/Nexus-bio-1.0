@@ -18,6 +18,7 @@ import type {
   ReasoningStep,
   InternalThought,
 } from '../types';
+import { SeededRNG } from '../utils/seededRng';
 
 // ── Gene-to-Protein-to-Metabolite mapping (artemisinin pathway) ────────────
 const GENE_PROTEIN_MAP: Record<string, string> = {
@@ -215,6 +216,7 @@ function variance(values: number[]): number {
 export class OmicsFoundationModel {
   private data: OmicsRow[];
   private thoughts: InternalThought[] = [];
+  private rng = new SeededRNG(42);
 
   constructor(data: OmicsRow[]) {
     this.data = data;
@@ -423,7 +425,7 @@ export class OmicsFoundationModel {
     if (fluxInfo) {
       const effectiveDelta = delta * proteinScaling * fluxInfo.impact_factor;
       for (const met of fluxInfo.metabolites) {
-        const shift = effectiveDelta * (0.5 + Math.random() * 0.5); // some stochasticity
+        const shift = effectiveDelta * (0.5 + this.rng.next() * 0.5); // deterministic stochasticity
         metaboliteShifts.push({
           metabolite: met,
           delta: Math.round(shift * 100) / 100,
