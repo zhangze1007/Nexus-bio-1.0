@@ -4,6 +4,7 @@ import { deriveAnalyzeCompatibilityProjection } from '../../../src/domain/workfl
 import type { WorkflowArtifact } from '../../../src/domain/workflowArtifact';
 import { sanitizeWorkbenchState } from '../../../src/store/workbenchValidation';
 import { getCorsHeaders, handleOptions } from '../../../src/utils/cors';
+import { evaluateClaimSurfacePolicy } from '../../../src/services/trustPolicyEngine';
 import {
   getBackendMeta,
   getWorkbenchDb,
@@ -54,6 +55,90 @@ function getProjectScope(request: Request) {
   };
 }
 
+// ── Export provenance interception ──
+// When workbench state is exported (GET), check each tool payload for provenance.
+// Payloads missing provenance are tagged [UNVERIFIED] so downstream consumers
+// know the data has not been through the trust gate.
+
+interface ExportProvenanceSummary {
+  totalPayloads: number;
+  verifiedPayloads: number;
+  unverifiedPayloads: string[];
+  decision: 'ok' | 'has-unverified';
+}
+
+interface TaggedPayload {
+  toolId: string;
+  provenanceStatus: 'verified' | '[UNVERIFIED]';
+  [key: string]: unknown;
+}
+
+function checkExportProvenance(state: Record<string, unknown>): ExportProvenanceSummary {
+  const toolPayloads = state.toolPayloads as Record<string, unknown> | undefined;
+  if (!toolPayloads || typeof toolPayloads !== 'object') {
+    return { totalPayloads: 0, verifiedPayloads: 0, unverifiedPayloads: [], decision: 'ok' };
+  }
+
+  const unverified: string[] = [];
+  let total = 0;
+  let verified = 0;
+
+  for (const [toolId, payload] of Object.entries(toolPayloads)) {
+    if (!payload || typeof payload !== 'object') continue;
+    total++;
+
+    const record = payload as Record<string, unknown>;
+    const hasProvenance = Boolean(record.runProvenance);
+    const validityTier = typeof record.validity === 'string' ? record.validity : 'demo';
+    const isDraft = Boolean(record.isDraft);
+
+    // Evaluate the export claim-surface policy for this tool
+    const gateDecision = evaluateClaimSurfacePolicy({
+      toolId,
+      surface: 'export',
+      validityTier: validityTier as 'real' | 'partial' | 'demo',
+      isDraft,
+      provenanceIds: hasProvenance ? [`${toolId}:export-check`] : [],
+    });
+
+    if (gateDecision.status === 'ok' || gateDecision.status === 'demoOnly') {
+      verified++;
+    } else {
+      unverified.push(toolId);
+    }
+  }
+
+  return {
+    totalPayloads: total,
+    verifiedPayloads: verified,
+    unverifiedPayloads: unverified,
+    decision: unverified.length > 0 ? 'has-unverified' : 'ok',
+  };
+}
+
+function tagUnverifiedPayloads(
+  state: Record<string, unknown>,
+  unverifiedToolIds: string[],
+): Record<string, unknown> {
+  if (unverifiedToolIds.length === 0) return state;
+
+  const toolPayloads = state.toolPayloads as Record<string, unknown> | undefined;
+  if (!toolPayloads || typeof toolPayloads !== 'object') return state;
+
+  const tagged = { ...toolPayloads };
+  for (const toolId of unverifiedToolIds) {
+    const payload = tagged[toolId];
+    if (payload && typeof payload === 'object') {
+      tagged[toolId] = {
+        ...(payload as Record<string, unknown>),
+        provenanceStatus: '[UNVERIFIED]',
+      } as TaggedPayload;
+    }
+  }
+
+  return { ...state, toolPayloads: tagged };
+}
+
 export async function GET(request: Request) {
   const { artifactId, projectId, actorId } = getProjectScope(request);
   await getWorkbenchDb();
@@ -73,7 +158,26 @@ export async function GET(request: Request) {
     listProjectMembers(resolvedProjectId, 24, explicitScope),
     listExperimentRecords(resolvedProjectId, 24, explicitScope),
   ]);
-  return NextResponse.json({ ok: true, state, backend, members, experiments, audit, history }, { headers: getCorsHeaders(request) });
+
+  // ── Export provenance interception ──
+  // Check all tool payloads for provenance before returning export data.
+  // Tag payloads missing provenance as [UNVERIFIED].
+  const stateRecord = state as unknown as Record<string, unknown>;
+  const exportProvenance = checkExportProvenance(stateRecord);
+  const taggedState = exportProvenance.decision === 'has-unverified'
+    ? tagUnverifiedPayloads(stateRecord, exportProvenance.unverifiedPayloads)
+    : state;
+
+  return NextResponse.json({
+    ok: true,
+    state: taggedState,
+    backend,
+    members,
+    experiments,
+    audit,
+    history,
+    exportProvenance,
+  }, { headers: getCorsHeaders(request) });
 }
 
 export async function PUT(request: Request) {
