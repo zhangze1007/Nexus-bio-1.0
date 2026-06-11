@@ -126,7 +126,7 @@ function buildLPString(model: LPModel): string {
       if (term.startsWith('-')) {
         firstLine += ` ${term}`;
       } else {
-        firstLine += ` ${term}`;
+        firstLine += ` + ${term}`;
       }
     }
     lines.push(firstLine);
