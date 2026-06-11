@@ -1014,9 +1014,11 @@ export function generateMockPlateReaderData(): PlateReaderDataPoint[] {
 
       for (let ti = 0; ti < timepoints; ti++) {
         const t = (ti / (timepoints - 1)) * maxTime;
-        // Fluorescence = baseline + rate * t + saturation curve + noise
-        const saturation = 1 - Math.exp(-0.02 * t); // gradual onset
-        const signal = baseline + rate * t * saturation;
+        // Fluorescence = baseline + rate * t + noise (linear model — no saturation curve)
+        // The fitter extracts initial rates via linear regression, so the mock data
+        // must be purely linear in time (at each concentration) for the LM algorithm
+        // to recover the known Vmax and Kd parameters.
+        const signal = baseline + rate * t;
         const noise = rng.gaussian() * (5 + 0.02 * signal); // heteroscedastic
         data.push({
           time: Math.round(t * 100) / 100,
