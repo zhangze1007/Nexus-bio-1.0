@@ -166,7 +166,7 @@ export const createToolRunSlice: StateCreator<WorkbenchState, [], [], ToolRunSli
           payload: admittedPayload,
           fallbackValidityTier: getToolValidity(String(toolId))?.level,
         }),
-        mode: 'observe',
+        mode: 'enforce',
       });
       const toolRuns = [
         {
@@ -184,7 +184,8 @@ export const createToolRunSlice: StateCreator<WorkbenchState, [], [], ToolRunSli
       const blocksCanonicalPayload =
         contract?.contractScope === 'workflow' && runArtifact.status !== 'ok';
       const runArtifacts = [runArtifact, ...state.runArtifacts].slice(0, RUN_ARTIFACT_LIMIT);
-      const toolPayloads = blocksCanonicalPayload
+      const trustBlocked = !admission.shouldWritePayload;
+      const toolPayloads = blocksCanonicalPayload || trustBlocked
         ? state.toolPayloads
         : {
             ...state.toolPayloads,
