@@ -29,7 +29,7 @@ export function getLibsqlClient(): Client {
   if (singletonClient) return singletonClient;
 
   const url = resolveDbUrl();
-  const isRemote = url.startsWith('http');
+  const isRemote = url.startsWith('http') || url.startsWith('libsql://');
 
   // Issue 2: When using a remote Turso URL, TURSO_AUTH_TOKEN must be present.
   if (isRemote && !process.env.TURSO_AUTH_TOKEN) {
