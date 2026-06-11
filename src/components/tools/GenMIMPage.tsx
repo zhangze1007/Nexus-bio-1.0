@@ -1,5 +1,6 @@
 'use client';
 import React, { useState, useMemo, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
 import SimErrorBanner from '../ide/shared/SimErrorBanner';
@@ -129,12 +130,15 @@ function GenomeMap({
 
         return (
           <g key={t.gene}>
-            <path
+            <motion.path
               d={geneArrowPath(t, y, h, i)}
               fill={color}
               opacity={selectedIds.has(t.gene) ? 0.9 : 0.75}
               stroke={prominent ? 'rgba(255,255,255,0.4)' : 'none'}
               strokeWidth={prominent ? 0.8 : 0}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: selectedIds.has(t.gene) ? 0.9 : 0.75, x: 0 }}
+              transition={{ duration: 0.4, delay: i * 0.03 }}
             />
             {/* Gene label */}
             <text

@@ -1,5 +1,6 @@
 'use client';
 import React, { useEffect, useMemo, useState } from 'react';
+import { motion } from 'framer-motion';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
 import SimErrorBanner from '../ide/shared/SimErrorBanner';
@@ -150,8 +151,8 @@ function TimeCourseChart({ result, constructs }: { result: CFSFullResult; constr
           const areaD = catmullRomPath(pts) + ` L ${pts[pts.length-1][0].toFixed(1)} ${BASE_Y} L ${pts[0][0].toFixed(1)} ${BASE_Y} Z`;
           return (
             <g key={g.geneId}>
-              <path d={areaD} fill={color} opacity={0.12} />
-              <path d={catmullRomPath(pts)} fill="none" stroke={color} strokeWidth={1.9} opacity={0.88} />
+              <motion.path d={areaD} fill={color} opacity={0.12} initial={{ opacity: 0 }} animate={{ opacity: 0.12 }} transition={{ duration: 0.8, delay: gi * 0.15 }} />
+              <motion.path d={catmullRomPath(pts)} fill="none" stroke={color} strokeWidth={1.9} opacity={0.88} initial={{ pathLength: 0, opacity: 0 }} animate={{ pathLength: 1, opacity: 0.88 }} transition={{ duration: 1.2, ease: 'easeOut', delay: gi * 0.15 }} />
             </g>
           );
         })}
@@ -187,8 +188,8 @@ function TimeCourseChart({ result, constructs }: { result: CFSFullResult; constr
             const areaD = catmullRomPath(pts) + ` L ${pts[pts.length-1][0].toFixed(1)} ${bsy(0)} L ${pts[0][0].toFixed(1)} ${bsy(0)} Z`;
             return (
               <g key={key}>
-                <path d={areaD} fill={color} opacity={0.25 + si * 0.05} />
-                <path d={catmullRomPath(pts)} fill="none" stroke={color} strokeWidth={1.4} opacity={0.8} />
+                <motion.path d={areaD} fill={color} opacity={0.25 + si * 0.05} initial={{ opacity: 0 }} animate={{ opacity: 0.25 + si * 0.05 }} transition={{ duration: 0.8, delay: si * 0.15 }} />
+                <motion.path d={catmullRomPath(pts)} fill="none" stroke={color} strokeWidth={1.4} opacity={0.8} initial={{ pathLength: 0, opacity: 0 }} animate={{ pathLength: 1, opacity: 0.8 }} transition={{ duration: 1.2, ease: 'easeOut', delay: si * 0.15 }} />
               </g>
             );
           })}
