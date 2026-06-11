@@ -32,6 +32,7 @@ import type {
 import { useWorkbenchStore } from '../../store/workbenchStore';
 import { buildCatalystSeed } from './shared/workbenchDataflow';
 import ToolShell from './shared/ToolShell';
+import AlgorithmPanel from '../shared/AlgorithmPanel';
 import ToolTabPanel from './shared/ToolTabPanel';
 import FloatingControlRail from './shared/FloatingControlRail';
 import InlineMetricOverlay from './shared/InlineMetricOverlay';
@@ -651,6 +652,34 @@ export default React.memo(function CatalystDesignerPage() {
       {simError && (
         <div style={{ padding: '0 0 8px' }}><SimErrorBanner message={simError} /></div>
       )}
+
+      {/* ── Algorithm Transparency ── */}
+      <div style={{ padding: '8px 16px' }}>
+        <AlgorithmPanel
+          name="Enzyme Design Pipeline"
+          description="Combines binding affinity estimation (ΔG decomposition), sequence optimization (CAI + codon harmonization), and mutagenesis targeting. Uses BLOSUM62 substitution matrices and energy-based screening."
+          assumptions={[
+            'Lock-and-key binding model (rigid body)',
+            'Additive free energy contributions per residue',
+            'CAI reflects translation efficiency',
+            'BLOSUM62 captures evolutionary conservation',
+            'Single-point mutations only (no epistasis)',
+          ]}
+          limitations={[
+            'No molecular dynamics simulation',
+            'Simplified solvation model',
+            'No allosteric effects considered',
+            'Requires experimental validation of predictions',
+          ]}
+          citation={{
+            authors: 'Kortemme T, Baker D',
+            title: 'A simple physical model for binding energy hot spots in protein-protein complexes',
+            journal: 'Proc Natl Acad Sci USA',
+            year: 2002,
+            doi: '10.1073/pnas.202485799',
+          }}
+        />
+      </div>
 
       {/* ── 3D Viewer Tab ── */}
       <ToolTabPanel tabId="viewer" activeId={activeTab}>

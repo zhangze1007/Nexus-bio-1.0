@@ -8,6 +8,9 @@ import { usePersistedState } from '../ide/shared/usePersistedState';
 import { useUIStore } from '../../store/uiStore';
 import { useWorkbenchStore } from '../../store/workbenchStore';
 import ScientificHero from './shared/ScientificHero';
+import AlgorithmPanel from '../shared/AlgorithmPanel';
+import DataUpload from '../shared/DataUpload';
+import DataPreview from '../shared/DataPreview';
 import {
   METABOLIC_NODES, FLUX_EDGES, REACTION_DEFS,
   YEAST_NODES, YEAST_FLUX_EDGES, YEAST_REACTION_DEFS, SHARED_METABOLITES,
@@ -440,6 +443,34 @@ export default React.memo(function FBASimPage() {
         </>
       }
     >
+      {/* ── Algorithm Transparency ── */}
+      <div style={{ padding: '8px 16px' }}>
+        <AlgorithmPanel
+          name="Flux Balance Analysis (FBA)"
+          description="FBA uses linear programming to find the optimal flux distribution through a metabolic network. It maximizes an objective function (usually biomass growth) subject to stoichiometric constraints and capacity bounds."
+          assumptions={[
+            'Steady-state metabolism (no transient dynamics)',
+            'Mass balance constraints (Sv = 0)',
+            'Capacity bounds from BiGG model (lb ≤ v ≤ ub)',
+            'Linear objective function (biomass or product)',
+            'Thermodynamically feasible reactions only',
+          ]}
+          limitations={[
+            'Does not predict metabolite concentrations',
+            'Assumes optimal growth (may not reflect real regulation)',
+            'No kinetic information (rates are upper bounds)',
+            'Gene knockouts are complete (no partial knockdown)',
+          ]}
+          citation={{
+            authors: 'Orth JD, Thiele I, Palsson BØ',
+            title: 'What is flux balance analysis?',
+            journal: 'Nat Biotechnol',
+            year: 2010,
+            doi: '10.1038/nbt.1614',
+          }}
+        />
+      </div>
+
       {/* ── Flux Map Tab ── */}
       <ToolTabPanel tabId="flux" activeId={activeTab}>
         <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>

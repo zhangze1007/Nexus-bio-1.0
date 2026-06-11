@@ -22,6 +22,7 @@ import { buildCellFreeSeed } from './shared/workbenchDataflow';
 import { SEMANTIC_RGB } from '../charts/chartTheme';
 import { SVGChartContainer, ChartGrid, ChartAxisLabels, ChartLegend } from '../charts/primitives';
 import ScientificHero from './shared/ScientificHero';
+import AlgorithmPanel from '../shared/AlgorithmPanel';
 import ScientificFigureFrame from './shared/ScientificFigureFrame';
 import ToolShell from './shared/ToolShell';
 import ToolTabPanel from './shared/ToolTabPanel';
@@ -803,6 +804,34 @@ export default React.memo(function CellFreePage() {
       {simError && (
         <div style={{ padding: '0 0 8px' }}><SimErrorBanner message={simError} /></div>
       )}
+
+      {/* ── Algorithm Transparency ── */}
+      <div style={{ padding: '8px 16px' }}>
+        <AlgorithmPanel
+          name="Cell-Free Expression ODE Model"
+          description="Models gene expression in cell-free systems using coupled ODEs for transcription, translation, and resource competition. Includes ribosome dynamics, energy depletion (ATP/GTP), and amino acid consumption."
+          assumptions={[
+            'Well-mixed reactor (no spatial gradients)',
+            'Michaelis-Menten kinetics for transcription/translation',
+            'Ribosome as limiting resource',
+            'ATP/GTP regeneration via energy mix',
+            'No protein degradation during experiment',
+          ]}
+          limitations={[
+            'Does not model DNA template degradation',
+            'Simplified tRNA dynamics',
+            'No explicit folding kinetics',
+            'Calibration data from specific extract batch',
+          ]}
+          citation={{
+            authors: 'Stögbauer T, Windhager L, Zimmer R, Rädler JO',
+            title: 'Experiment and mathematical modeling of gene expression dynamics in a cell-free system',
+            journal: 'Integr Biol',
+            year: 2012,
+            doi: '10.1039/c2ib00108k',
+          }}
+        />
+      </div>
 
       {/* ── Time Course Tab ── */}
       <ToolTabPanel tabId="timecourse" activeId={activeTab}>

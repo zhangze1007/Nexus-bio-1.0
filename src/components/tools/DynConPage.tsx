@@ -6,6 +6,7 @@ import ExportButton from '../ide/shared/ExportButton';
 import { useUIStore } from '../../store/uiStore';
 import { useWorkbenchStore } from '../../store/workbenchStore';
 import ScientificHero from './shared/ScientificHero';
+import AlgorithmPanel from '../shared/AlgorithmPanel';
 import ScientificFigureFrame from './shared/ScientificFigureFrame';
 import SimErrorBanner from '../ide/shared/SimErrorBanner';
 import { catmullRomPath } from '../../utils/svgPath';
@@ -468,6 +469,34 @@ export default React.memo(function DynConPage() {
         </div>
       ) : (
         <>
+          {/* ── Algorithm Transparency ── */}
+          <div style={{ padding: '8px 16px' }}>
+            <AlgorithmPanel
+              name="RK4 ODE + PID Control"
+              description="Simulates dynamic bioreactor control using 4th-order Runge-Kutta integration. PID controller adjusts feed rate to maintain setpoint. Hill functions model feedback inhibition."
+              assumptions={[
+                'Well-mixed bioreactor (CSTR model)',
+                'Instantaneous mixing (no transport delays)',
+                'Monod kinetics for substrate uptake',
+                'Hill function for product inhibition',
+                'PID controller with anti-windup',
+              ]}
+              limitations={[
+                'No discrete event modeling (e.g., batch transitions)',
+                'Simplified metabolic network (6 species)',
+                'No stochastic effects',
+                'Controller tuning is manual',
+              ]}
+              citation={{
+                authors: 'Bailey JE, Ollis DF',
+                title: 'Biochemical Engineering Fundamentals',
+                journal: 'McGraw-Hill',
+                year: 1986,
+                doi: '',
+              }}
+            />
+          </div>
+
           {/* ── Trajectory Tab ── */}
           <ToolTabPanel tabId="trajectory" activeId={activeTab}>
             <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>

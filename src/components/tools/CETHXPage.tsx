@@ -5,6 +5,7 @@ import { AlertTriangle, Wifi, WifiOff } from 'lucide-react';
 import ToolShell, { TOOL_TOKENS as T } from './shared/ToolShell';
 import WorkbenchRangeSlider from './shared/WorkbenchRangeSlider';
 import ScientificHero from './shared/ScientificHero';
+import AlgorithmPanel from '../shared/AlgorithmPanel';
 import ScientificFigureFrame from './shared/ScientificFigureFrame';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
@@ -573,6 +574,34 @@ export default React.memo(function CETHXPage() {
         </>
       }
     >
+      {/* ── Algorithm Transparency ── */}
+      <div style={{ padding: '8px 16px' }}>
+        <AlgorithmPanel
+          name="Group Contribution Method"
+          description="Estimates standard Gibbs free energy of formation (ΔfG°) for metabolites using molecular group contributions. Applies Alberty's transformed Gibbs energy at physiological pH and ionic strength."
+          assumptions={[
+            'Standard conditions (T = 298.15 K, I = 0.25 M)',
+            'Aqueous phase reactions only',
+            'Group additivity holds for metabolite structures',
+            'pH 7.0 for transformed energies',
+            'No membrane transport costs included',
+          ]}
+          limitations={[
+            'Accuracy decreases for large or unusual metabolites',
+            'Does not account for protein-ligand binding effects',
+            'Estimated uncertainties are approximate',
+            'Some metabolites lack group contribution parameters',
+          ]}
+          citation={{
+            authors: 'Jankowski MD, Henry CS, Broadbelt LJ, Hatzimanikatis V',
+            title: 'Group contribution method for thermodynamic analysis of complex metabolic networks',
+            journal: 'Biophys J',
+            year: 2008,
+            doi: '10.1529/biophysj.107.124784',
+          }}
+        />
+      </div>
+
       {/* ── Waterfall Tab ── */}
       <ToolTabPanel tabId="waterfall" activeId={activeTab}>
         <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
