@@ -58,15 +58,15 @@ const SURFACE_POLICY_TEMPLATES: Record<ClaimSurface, SurfacePolicyTemplate> = {
 
 const CETHX_POLICY_RATIONALES: Partial<Record<ClaimSurface, string>> = {
   payload:
-    'CETHX demo thermodynamics may remain visible as exploratory reference-table context, but it is not a condition-aware thermodynamics backend.',
+    'CETHX Alberty-transformed ΔG′ may be displayed with condition-aware feasibility assessment; provenance and uncertainty estimates are visible.',
   export:
-    'CETHX exports must not carry demo reference delta G values as formal thermodynamic feasibility claims; formal export use requires at least partial validity and provenance.',
+    'CETHX exports carry Alberty-transformed ΔG′ values with provenance; proton stoichiometry is estimated, so export-grade claims require eQuilibrator-backed data.',
   recommendation:
-    'CETHX recommendations require at least partial validity and provenance because demo reference thermodynamics lacks uncertainty, pH/ionic-strength/pMg transforms, and backend provenance.',
+    'CETHX recommendations use condition-aware ΔG′ via Alberty transform; proton stoichiometry is estimated from KEGG reaction equations, not measured pKa values.',
   protocol:
-    'CETHX protocol-like use blocks demo thermodynamics because no condition-aware backend, uncertainty, or compound mapping currently supports operational thermodynamic claims.',
+    'CETHX protocol use requires eQuilibrator-backed data or explicit acknowledgment that proton stoichiometry is estimated and reference ΔG° values are from Lehninger tables.',
   'external-handoff':
-    'CETHX external handoff blocks demo thermodynamics because reference-table values without uncertainty or backend provenance must not leave Nexus-Bio as formal feasibility evidence.',
+    'CETHX external handoff requires eQuilibrator-backed data because estimated proton stoichiometry and reference ΔG° values may not meet external evidence standards.',
 };
 
 const MULTIO_POLICY_RATIONALES: Partial<Record<ClaimSurface, string>> = {

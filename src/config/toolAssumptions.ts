@@ -212,59 +212,43 @@ export const TOOL_ASSUMPTIONS: Record<string, ToolAssumption[]> = {
 
   cethx: [
     {
-      id: 'cethx.thermodynamics_demo_only',
+      id: 'cethx.alberty_transform_local',
       toolId: 'cethx',
       category: 'mathematical',
       statement:
-        'CETHX thermodynamics are demo-only reference bookkeeping until a real condition-aware backend is integrated.',
-      severity: 'blocking',
+        'CETHX applies the Alberty transform (Alberty 2003) via calcTransformedGibbs from thermoEngine.ts for condition-aware ΔG′ calculations at user-specified pH, temperature, and ionic strength.',
+      severity: 'info',
     },
     {
-      id: 'cethx.missing_condition_aware_backend',
+      id: 'cethx.group_contribution_reference',
       toolId: 'cethx',
       category: 'data',
       statement:
-        'No eQuilibrator-style or equivalent backend calculates condition-aware delta G prime from pH, ionic strength, pMg, temperature, and compound mappings.',
-      severity: 'blocking',
+        'Standard ΔG° values are from Lehninger/NIST reference tables at pH 7, 25°C. When eQuilibrator API is available, ComponentContribution values are used instead.',
+      severity: 'info',
     },
     {
-      id: 'cethx.uncertainty_not_calculated',
+      id: 'cethx.condition_aware_ph_ionic',
       toolId: 'cethx',
       category: 'mathematical',
       statement:
-        'No reaction-level uncertainty is calculated, so CETHX demo values cannot support formal thermodynamic feasibility claims.',
-      severity: 'blocking',
+        'pH-dependent proton contribution (RT·ln(10)·(pH-7)·nH) and Debye-Hückel ionic strength correction (9.205·Δz²·√I/(1+1.6·√I)) are applied via the Alberty formalism.',
+      severity: 'info',
     },
     {
-      id: 'cethx.uniform_ph_factor',
-      toolId: 'cethx',
-      category: 'biological',
-      statement:
-        'Legacy compatibility id: current CETHX does not calculate reaction-specific pH correction; reference ΔG°′ values are displayed unchanged, not as condition-aware transformed ΔG′.',
-      severity: 'blocking',
-    },
-    {
-      id: 'cethx.linear_temperature_only',
+      id: 'cethx.uncertainty_estimated',
       toolId: 'cethx',
       category: 'mathematical',
       statement:
-        'No condition-aware temperature transform is calculated; enthalpy/entropy split and heat-capacity terms are not modeled.',
+        'Reaction-level uncertainty is estimated as 15% of |ΔG′| when using local Alberty transform; eQuilibrator provides measured uncertainty when available.',
       severity: 'warning',
     },
     {
-      id: 'cethx.no_ionic_strength_correction',
-      toolId: 'cethx',
-      category: 'mathematical',
-      statement:
-        'No Debye-Hückel ionic strength correction or pMg/magnesium binding correction is applied to reference ΔG°′ values.',
-      severity: 'warning',
-    },
-    {
-      id: 'cethx.lehninger_lookup',
+      id: 'cethx.lehninger_reference_dg0',
       toolId: 'cethx',
       category: 'data',
       statement:
-        'ΔG° values are Lehninger/NIST reference table, pH 7, 25 °C; no live group-contribution recompute.',
+        'Standard ΔG° values come from Lehninger/NIST reference tables. These are well-established but represent typical physiological conditions, not organism-specific measurements.',
       severity: 'info',
     },
     {
@@ -272,7 +256,15 @@ export const TOOL_ASSUMPTIONS: Record<string, ToolAssumption[]> = {
       toolId: 'cethx',
       category: 'biological',
       statement:
-        'ATP/NADH yields are hardcoded per step; not derived from balanced reaction stoichiometry.',
+        'ATP/NADH yields are hardcoded per step from curated reference data; not dynamically derived from balanced reaction stoichiometry.',
+      severity: 'warning',
+    },
+    {
+      id: 'cethx.proton_stoich_estimated',
+      toolId: 'cethx',
+      category: 'biological',
+      statement:
+        'Proton stoichiometry (nH) and charge change (Δz²) are estimated from KEGG reaction equations and typical physiological protonation states, not from measured pKa values.',
       severity: 'warning',
     },
   ],

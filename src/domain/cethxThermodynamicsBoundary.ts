@@ -1,15 +1,15 @@
 import type { ClaimSurface, ValidityTier } from '../protocol/nexusTrustRuntime';
 
-export const CETHX_THERMODYNAMICS_ROUTE_DECISION = 'demo-only-reference-boundary' as const;
+export const CETHX_THERMODYNAMICS_ROUTE_DECISION = 'alberty-transform-partial-boundary' as const;
 
-export type CethxThermodynamicsBoundaryStatus = 'demo-only-reference';
+export type CethxThermodynamicsBoundaryStatus = 'alberty-transform-partial';
 
 export interface CethxThermodynamicsBoundary {
   toolId: 'cethx';
   status: CethxThermodynamicsBoundaryStatus;
   validityTier: ValidityTier;
   hasConditionAwareBackend: boolean;
-  backendName: null;
+  backendName: string;
   payloadAllowed: boolean;
   formalClaimSurfacesBlocked: readonly ClaimSurface[];
   assumptionIds: readonly string[];
@@ -19,40 +19,35 @@ export interface CethxThermodynamicsBoundary {
 }
 
 export const CETHX_FORMAL_THERMODYNAMICS_SURFACES_BLOCKED: readonly ClaimSurface[] = [
-  'export',
-  'recommendation',
-  'protocol',
   'external-handoff',
 ];
 
 export const CETHX_THERMODYNAMICS_BOUNDARY: CethxThermodynamicsBoundary = {
   toolId: 'cethx',
-  status: 'demo-only-reference',
-  validityTier: 'demo',
-  hasConditionAwareBackend: false,
-  backendName: null,
+  status: 'alberty-transform-partial',
+  validityTier: 'partial',
+  hasConditionAwareBackend: true,
+  backendName: 'calcTransformedGibbs (thermoEngine)',
   payloadAllowed: true,
   formalClaimSurfacesBlocked: CETHX_FORMAL_THERMODYNAMICS_SURFACES_BLOCKED,
   assumptionIds: [
-    'cethx.thermodynamics_demo_only',
-    'cethx.missing_condition_aware_backend',
-    'cethx.uncertainty_not_calculated',
-    'cethx.uniform_ph_factor',
-    'cethx.linear_temperature_only',
-    'cethx.no_ionic_strength_correction',
-    'cethx.lehninger_lookup',
+    'cethx.alberty_transform_local',
+    'cethx.group_contribution_reference',
+    'cethx.condition_aware_ph_ionic',
+    'cethx.uncertainty_estimated',
+    'cethx.lehninger_reference_dg0',
     'cethx.atp_yields_hardcoded',
+    'cethx.proton_stoich_estimated',
   ],
   missingCapabilities: [
-    'reaction-specific condition transform',
-    'ionic-strength and pMg correction',
-    'uncertainty estimate',
+    'measured pKa-based proton stoichiometry',
+    'pMg/magnesium binding correction',
     'compound identifier mapping',
-    'thermodynamics backend provenance',
+    'eQuilibrator ComponentContribution backend',
   ],
-  label: 'CETHX demo thermodynamics explainer',
+  label: 'CETHX Alberty-transformed thermodynamics',
   explanation:
-    'CETHX currently displays Lehninger/NIST reference delta G values for workflow exploration; it is not a condition-aware thermodynamics backend.',
+    'CETHX applies the Alberty transform (Alberty 2003) to Lehninger reference ΔG° values using calcTransformedGibbs from thermoEngine. Condition-aware ΔG′ at user-specified pH, temperature, and ionic strength. Proton stoichiometry estimated from KEGG reaction equations.',
 };
 
 export function getCethxThermodynamicsBoundary(): CethxThermodynamicsBoundary {

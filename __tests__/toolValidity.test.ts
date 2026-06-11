@@ -49,8 +49,8 @@ describe('TOOL_VALIDITY', () => {
     expect(TOOL_VALIDITY.nexai.level).toBe('real');
   });
 
-  it('cethx and multio are marked as demo', () => {
-    expect(TOOL_VALIDITY.cethx.level).toBe('demo');
+  it('cethx is marked as partial (Alberty transform) and multio as demo', () => {
+    expect(TOOL_VALIDITY.cethx.level).toBe('partial');
     expect(TOOL_VALIDITY.multio.level).toBe('demo');
   });
 
