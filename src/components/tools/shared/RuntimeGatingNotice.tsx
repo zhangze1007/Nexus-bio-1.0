@@ -55,7 +55,7 @@ export default function RuntimeGatingNotice({
             <span
               style={{
                 fontFamily: THEME.MONO,
-                fontSize: compact ? '8px' : '9px',
+                fontSize: compact ? '10px' : '11px',
                 color: colors.icon,
                 textTransform: 'uppercase',
                 letterSpacing: '0.08em',
@@ -66,7 +66,7 @@ export default function RuntimeGatingNotice({
             <span
               style={{
                 fontFamily: THEME.MONO,
-                fontSize: compact ? '8px' : '9px',
+                fontSize: compact ? '10px' : '11px',
                 color: THEME.LABEL,
                 overflowWrap: 'anywhere',
               }}
@@ -74,7 +74,7 @@ export default function RuntimeGatingNotice({
               {(sourceLabel ?? decision.sourceToolId ?? 'source').toUpperCase()} {'->'} {(targetLabel ?? decision.targetToolId).toUpperCase()}
             </span>
           </div>
-          <div style={{ fontFamily: THEME.SANS, fontSize: compact ? '9px' : '11px', color: THEME.LABEL, lineHeight: 1.45 }}>
+          <div style={{ fontFamily: THEME.SANS, fontSize: compact ? '10px' : '11px', color: THEME.LABEL, lineHeight: 1.45 }}>
             {decision.reason}
           </div>
         </div>
@@ -101,7 +101,7 @@ function pillStyle(compact: boolean): React.CSSProperties {
     color: THEME.VALUE,
     padding: compact ? '2px 6px' : '3px 7px',
     fontFamily: THEME.MONO,
-    fontSize: compact ? '8px' : '9px',
+    fontSize: compact ? '10px' : '11px',
     lineHeight: 1.2,
     overflowWrap: 'anywhere',
   };

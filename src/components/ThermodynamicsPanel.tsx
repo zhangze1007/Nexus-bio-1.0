@@ -395,13 +395,13 @@ Do not return JSON, code fences, or developer-style logs.` }] }],
                   ...(result.eyringRate ? [{ l: 'Eyring k', v: `${result.eyringRate.toExponential(2)} 1/s`, col: 'rgba(255,255,255,0.5)' }] : []),
                 ].map(m => (
                   <div key={m.l} style={{ padding: '6px 8px', borderRadius: '8px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)' }}>
-                    <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '9px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", margin: '0 0 2px', textTransform: 'uppercase' }}>{m.l}</p>
+                    <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '11px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", margin: '0 0 2px', textTransform: 'uppercase' }}>{m.l}</p>
                     <p style={{ color: m.col, fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", margin: 0, fontWeight: 600 }}>{m.v}</p>
                   </div>
                 ))}
               </div>
 
-              <p style={{ color: 'rgba(255,255,255,0.15)', fontSize: '9px', margin: '8px 0 0', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1" }}>
+              <p style={{ color: 'rgba(255,255,255,0.15)', fontSize: '11px', margin: '8px 0 0', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1" }}>
                 Source: {result.kinetics.source} · BRENDA: Chang et al. (2021) Nucleic Acids Res. 49:D498-D508
               </p>
             </div>

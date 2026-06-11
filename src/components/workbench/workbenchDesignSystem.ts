@@ -94,7 +94,7 @@ export const typography = {
 
   overline: {
     fontFamily: THEME.MONO,
-    fontSize: '9px',
+    fontSize: '11px',
     color: THEME.LABEL,
     textTransform: 'uppercase' as const,
     letterSpacing: '0.1em',

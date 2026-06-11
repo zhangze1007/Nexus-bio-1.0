@@ -26,9 +26,8 @@ import { buildLearnedDeltaPack } from '../../services/learnedDeltaBuilder';
 import type { DBTLLearnedFeedback } from '../../types/dbtlFeedback';
 import type { LearnedDeltaPack } from '../../types/learnedDelta';
 import { buildDBTLDraft } from './shared/workbenchDataflow';
-import { PATHD_THEME } from '../workbench/workbenchTheme';
 import ScientificHero from './shared/ScientificHero';
-import { T, TOOL_RESULT_PALETTE} from '../ide/tokens';
+import { THEME, TOOL_RESULT_PALETTE } from '../../theme';
 import { SEMANTIC_RGB } from '../charts/chartTheme';
 import ScientificFigureFrame from './shared/ScientificFigureFrame';
 import ScientificMethodStrip from './shared/ScientificMethodStrip';
@@ -36,10 +35,10 @@ import ActionButton from './shared/ActionButton';
 
 /* ── Design Tokens ── */
 const PHASE_PASTEL: Record<string, string> = {
-  Design: PATHD_THEME.lilac,
-  Build:  PATHD_THEME.apricot,
-  Test:   PATHD_THEME.coral,
-  Learn:  PATHD_THEME.mint,
+  Design: THEME.lilac,
+  Build:  THEME.apricot,
+  Test:   THEME.coral,
+  Learn:  THEME.mint,
 };
 
 const PHASES: DBTLPhase[] = ['Design', 'Build', 'Test', 'Learn'];
@@ -80,8 +79,8 @@ function Timeline({ iterations }: { iterations: DBTLIteration[] }) {
     >
       <rect width="520" height={Math.max(360, iterations.length * 60 + 40)} fill="#05070b" rx="14" />
       <rect x="18" y="18" width="484" height={Math.max(320, iterations.length * 60)} rx="14" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.06)" />
-      <text x="36" y="14" fontFamily={T.SANS} fontSize="10" fill={PATHD_THEME.paperLabel} letterSpacing="0.12em">DBTL AUDIT TIMELINE</text>
-      <text x="36" y="28" fontFamily={T.SANS} fontSize="11" fill={PATHD_THEME.paperValue}>Iteration trace with phase identity, result magnitude, and pass gate</text>
+      <text x="36" y="14" fontFamily={THEME.SANS} fontSize="10" fill={THEME.paperLabel} letterSpacing="0.12em">DBTL AUDIT TIMELINE</text>
+      <text x="36" y="28" fontFamily={THEME.SANS} fontSize="11" fill={THEME.paperValue}>Iteration trace with phase identity, result magnitude, and pass gate</text>
       {iterations.length > 1 && (
         <polyline
           points={iterations
@@ -104,13 +103,13 @@ function Timeline({ iterations }: { iterations: DBTLIteration[] }) {
           <g key={it.id}>
             <rect x={4} y={y + 8} width={60} height={18} rx="3"
               fill={phaseColor} fillOpacity={0.15} stroke={phaseColor} strokeWidth={1} />
-            <text x={34} y={y + 20} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill={phaseColor}>
+            <text x={34} y={y + 20} textAnchor="middle" fontFamily={THEME.MONO} fontSize="10" fill={phaseColor}>
               {it.phase.toUpperCase()}
             </text>
-            <text x={80} y={y + 20} fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.3)">
+            <text x={80} y={y + 20} fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.3)">
               #{it.id}
             </text>
-            <text x={100} y={y + 20} fontFamily={T.SANS} fontSize="10" fill="rgba(255,255,255,0.5)">
+            <text x={100} y={y + 20} fontFamily={THEME.SANS} fontSize="10" fill="rgba(255,255,255,0.5)">
               {it.hypothesis.slice(0, 40)}{it.hypothesis.length > 40 ? '…' : ''}
             </text>
             <rect x={160} y={y + 28} width={barW} height={10} rx="2"
@@ -118,7 +117,7 @@ function Timeline({ iterations }: { iterations: DBTLIteration[] }) {
               stroke={it.passed ? `rgba(${SEMANTIC_RGB.pass}, 0.72)` : `rgba(${SEMANTIC_RGB.fail}, 0.58)`}
               strokeWidth={1}
             />
-            <text x={160 + barW + 6} y={y + 38} fontFamily={T.MONO} fontSize="10"
+            <text x={160 + barW + 6} y={y + 38} fontFamily={THEME.MONO} fontSize="10"
               fill={it.passed ? `rgba(${SEMANTIC_RGB.pass}, 0.85)` : `rgba(${SEMANTIC_RGB.fail}, 0.78)`}>
               {it.result} {it.unit}
             </text>
@@ -128,13 +127,13 @@ function Timeline({ iterations }: { iterations: DBTLIteration[] }) {
           </g>
         );
       })}
-      <text x={160 + (targetThreshold / maxResult) * 280 + 4} y={18} fontFamily={T.MONO} fontSize="10" fill="rgba(255,139,31,0.78)">
+      <text x={160 + (targetThreshold / maxResult) * 280 + 4} y={18} fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,139,31,0.78)">
         target band
       </text>
-      <text x={160} y={30 + iterations.length * 60 + 16} fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.2)">
+      <text x={160} y={30 + iterations.length * 60 + 16} fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.2)">
         0
       </text>
-      <text x={440} y={30 + iterations.length * 60 + 16} fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.2)">
+      <text x={440} y={30 + iterations.length * 60 + 16} fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.2)">
         {maxResult.toFixed(0)} {iterations[0]?.unit}
       </text>
     </svg>
@@ -162,15 +161,15 @@ function CycleProgressRing({
       <svg role="img" aria-label="Chart" width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
         <defs>
           <linearGradient id="pathd-progress-ring" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor={PATHD_THEME.blue} />
-            <stop offset="50%" stopColor={PATHD_THEME.indigo} />
-            <stop offset="100%" stopColor={PATHD_THEME.orange} />
+            <stop offset="0%" stopColor={THEME.blue} />
+            <stop offset="50%" stopColor={THEME.indigo} />
+            <stop offset="100%" stopColor={THEME.orange} />
           </linearGradient>
         </defs>
         {/* Track */}
         <circle
           cx={size / 2} cy={size / 2} r={radius}
-          fill="none" stroke={PATHD_THEME.progressTrack} strokeWidth={stroke}
+          fill="none" stroke={THEME.progressTrack} strokeWidth={stroke}
         />
         {/* Progress arc */}
         <circle
@@ -194,18 +193,18 @@ function CycleProgressRing({
         pointerEvents: 'none',
       }}>
         <span style={{
-          fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', fontWeight: 600,
-          color: PATHD_THEME.orange, letterSpacing: '0.04em',
+          fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', fontWeight: 600,
+          color: THEME.orange, letterSpacing: '0.04em',
         }}>
           {currentPhase.toUpperCase()}
         </span>
         <span style={{
-          fontFamily: T.MONO, fontSize: 'var(--nb-fs-lg)', fontWeight: 700,
-          color: PATHD_THEME.paperValue, marginTop: '2px',
+          fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-lg)', fontWeight: 700,
+          color: THEME.paperValue, marginTop: '2px',
         }}>
           {iterationCount}
         </span>
-        <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperLabel }}>
+        <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: THEME.paperLabel }}>
           iterations
         </span>
       </div>
@@ -568,29 +567,29 @@ export default function DBTLflowPage() {
     width: '100%',
     padding: '5px 8px',
     boxSizing: 'border-box',
-    background: PATHD_THEME.paperSurfaceStrong,
-    border: `1px solid ${PATHD_THEME.paperBorder}`,
+    background: THEME.paperSurfaceStrong,
+    border: `1px solid ${THEME.paperBorder}`,
     borderRadius: 'var(--nb-radius-sm)',
-    color: PATHD_THEME.paperValue,
-    fontFamily: T.MONO,
+    color: THEME.paperValue,
+    fontFamily: THEME.MONO,
     fontSize: 'var(--nb-fs-sm)',
     outline: '2px solid rgba(175,195,214,0.5)',
     outlineOffset: '2px',
   };
 
   const sectionLabel: React.CSSProperties = {
-    fontFamily: T.SANS,
+    fontFamily: THEME.SANS,
     fontSize: 'var(--nb-fs-xs)',
     textTransform: 'uppercase',
     letterSpacing: '0.1em',
-    color: PATHD_THEME.paperLabel,
+    color: THEME.paperLabel,
     margin: '0 0 12px',
   };
 
   /* ── Render ── */
   return (
     <>
-      <div className="nb-tool-page" style={{ background: PATHD_THEME.sepiaPanelMuted }}>
+      <div className="nb-tool-page" style={{ background: THEME.sepiaPanelMuted }}>
         <AlgorithmInsight
           title="Design-Build-Test-Learn Tracker"
           description="Iterative experimental optimization. Each cycle records a hypothesis, measured result, and learning for the next design."
@@ -604,13 +603,13 @@ export default function DBTLflowPage() {
             summary="DBTLflow is no longer just a list of experiments. It is the workbench’s decision gate: draft learning stays visible, committed learning becomes canonical, and approved typed deltas are required before upstream reseeding."
             aside={
               <>
-                <div style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.label, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.label, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                   Current loop status
                 </div>
-                <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: PATHD_THEME.value, fontWeight: 700 }}>
+                <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: THEME.value, fontWeight: 700 }}>
                   {hasCommittedFeedback ? 'Committed learn loop is active' : 'Draft learn loop awaiting commit'}
                 </div>
-                <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: PATHD_THEME.label, lineHeight: 1.55 }}>
+                <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: THEME.label, lineHeight: 1.55 }}>
                   {feedbackGateLabel}
                 </div>
               </>
@@ -656,7 +655,7 @@ export default function DBTLflowPage() {
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-              <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperLabel, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.paperLabel, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                 Closed-loop gate
               </span>
               <span
@@ -666,7 +665,7 @@ export default function DBTLflowPage() {
                   border: `1px solid ${hasCommittedFeedback ? 'rgba(158,215,199,0.3)' : 'rgba(255,192,128,0.3)'}`,
                   background: hasCommittedFeedback ? 'rgba(158,215,199,0.16)' : 'rgba(255,192,128,0.14)',
                   color: hasCommittedFeedback ? 'rgba(224,244,238,0.92)' : 'rgba(255,219,180,0.92)',
-                  fontFamily: T.MONO,
+                  fontFamily: THEME.MONO,
                   fontSize: 'var(--nb-fs-xs)',
                   letterSpacing: '0.05em',
                   textTransform: 'uppercase',
@@ -675,10 +674,10 @@ export default function DBTLflowPage() {
                 {hasCommittedFeedback ? 'Feedback Applied' : 'Awaiting Commit'}
               </span>
             </div>
-            <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: PATHD_THEME.paperValue, lineHeight: 1.45 }}>
+            <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: THEME.paperValue, lineHeight: 1.45 }}>
               {feedbackGateLabel}
             </div>
-            <div style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperLabel, lineHeight: 1.4 }}>
+            <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.paperLabel, lineHeight: 1.4 }}>
               committed pass rate {committedPassRate}% · committed improvement {committedImprovementRate} · latest committed phase {latestCommittedIteration?.phase ?? 'Design'}
             </div>
           </div>
@@ -691,19 +690,19 @@ export default function DBTLflowPage() {
               {
                 title: 'Draft iteration',
                 detail: 'Hypothesis, result, and pass/fail stay editable on the left so the next cycle enters the record with explicit context instead of becoming anonymous row data.',
-                accent: PATHD_THEME.apricot,
+                accent: THEME.apricot,
                 note: `phase ${currentPhase}`,
               },
               {
                 title: 'Governed figure',
                 detail: 'Progress ring, phase legend, and iteration timeline are merged into one figure frame so experimental history reads like a ledger panel, not a utility dashboard.',
-                accent: PATHD_THEME.sky,
+                accent: THEME.sky,
                 note: `${displayIterations.length} visible iterations`,
               },
               {
                 title: 'Reseeding gate',
                 detail: 'Automation, provenance, and feedback remain attached on the right so only governed learn output can return upstream.',
-                accent: PATHD_THEME.mint,
+                accent: THEME.mint,
                 note: hasCommittedFeedback ? 'committed feedback live' : 'draft feedback only',
               },
             ]}
@@ -730,7 +729,7 @@ export default function DBTLflowPage() {
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-              <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperLabel, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.paperLabel, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                 Draft + action status
               </span>
               {draftIteration && (
@@ -740,8 +739,8 @@ export default function DBTLflowPage() {
                     borderRadius: '999px',
                     border: '1px solid rgba(175,195,214,0.34)',
                     background: 'rgba(175,195,214,0.16)',
-                    color: PATHD_THEME.paperValue,
-                    fontFamily: T.MONO,
+                    color: THEME.paperValue,
+                    fontFamily: THEME.MONO,
                     fontSize: 'var(--nb-fs-xs)',
                     letterSpacing: '0.05em',
                     textTransform: 'uppercase',
@@ -751,13 +750,13 @@ export default function DBTLflowPage() {
                 </span>
               )}
             </div>
-            <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: PATHD_THEME.paperValue, lineHeight: 1.45 }}>
+            <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: THEME.paperValue, lineHeight: 1.45 }}>
               {activityMessage
                 ?? (draftIteration
                   ? `The figure and campaign cards are previewing your current draft at ${draftIteration.result.toFixed(1)} ${draftIteration.unit} before commit.`
                   : 'Commit a new iteration or generate a protocol to create a visible experimental artifact.')}
             </div>
-            <div style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperLabel }}>
+            <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.paperLabel }}>
               {draftIteration
                 ? `${draftIteration.phase} preview · ${draftIteration.passed ? 'pass' : 'fail'} gate · commit required for canonical history`
                 : 'canonical history updates only after + Add Iteration'}
@@ -770,13 +769,13 @@ export default function DBTLflowPage() {
           {/* ═══════ LEFT PANEL: Input + Protocol ═══════ */}
           <div className="nb-tool-sidebar" style={{
             width: '260px', flexShrink: 0, padding: '16px',
-            borderRight: `1px solid ${PATHD_THEME.paperBorder}`, background: PATHD_THEME.sepiaPanelMuted,
+            borderRight: `1px solid ${THEME.paperBorder}`, background: THEME.sepiaPanelMuted,
           }}>
             <p style={sectionLabel}>Add Iteration</p>
 
             {/* Hypothesis */}
             <div style={{ marginBottom: '10px' }}>
-              <label style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: PATHD_THEME.paperLabel, display: 'block', marginBottom: '4px' }}>
+              <label style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: THEME.paperLabel, display: 'block', marginBottom: '4px' }}>
                 Hypothesis
               </label>
               <textarea
@@ -787,7 +786,7 @@ export default function DBTLflowPage() {
                 style={{
                   ...inputBase,
                   padding: '6px 8px',
-                  fontFamily: T.SANS,
+                  fontFamily: THEME.SANS,
                   fontSize: 'var(--nb-fs-sm)',
                   resize: 'vertical',
                 }}
@@ -797,7 +796,7 @@ export default function DBTLflowPage() {
             {/* Result + Unit */}
             <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
               <div style={{ flex: 1 }}>
-                <label style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: PATHD_THEME.paperLabel, display: 'block', marginBottom: '4px' }}>
+                <label style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: THEME.paperLabel, display: 'block', marginBottom: '4px' }}>
                   Result
                 </label>
                 <input
@@ -809,7 +808,7 @@ export default function DBTLflowPage() {
                 />
               </div>
               <div style={{ width: '70px' }}>
-                <label style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: PATHD_THEME.paperLabel, display: 'block', marginBottom: '4px' }}>
+                <label style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: THEME.paperLabel, display: 'block', marginBottom: '4px' }}>
                   Unit
                 </label>
                 <input
@@ -830,7 +829,7 @@ export default function DBTLflowPage() {
                   background: passed === p ? (p ? 'rgba(191,220,205,0.2)' : 'rgba(232,163,161,0.18)') : undefined,
                   borderColor: passed === p ? (p ? 'rgba(191,220,205,0.34)' : 'rgba(232,163,161,0.34)') : undefined,
                   borderRadius: 'var(--nb-radius-sm)',
-                  color: passed === p ? PATHD_THEME.paperValue : undefined,
+                  color: passed === p ? THEME.paperValue : undefined,
                 }}>
                   {p ? '✓ Pass' : '✗ Fail'}
                 </button>
@@ -855,13 +854,13 @@ export default function DBTLflowPage() {
               background: 'rgba(191,220,205,0.18)', borderRadius: 'var(--nb-radius-md)',
               border: '1px solid rgba(191,220,205,0.34)',
             }}>
-              <p style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperLabel, margin: '0 0 6px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              <p style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: THEME.paperLabel, margin: '0 0 6px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                 Best Result
               </p>
-              <p style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-md)', color: PATHD_THEME.paperValue, margin: '0 0 4px' }}>
+              <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-md)', color: THEME.paperValue, margin: '0 0 4px' }}>
                 {bestIteration?.result} {bestIteration?.unit}
               </p>
-              <p style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperLabel, margin: 0, lineHeight: 1.4 }}>
+              <p style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: THEME.paperLabel, margin: 0, lineHeight: 1.4 }}>
                 {bestIteration?.hypothesis.slice(0, 60)}…
               </p>
             </div>
@@ -881,25 +880,25 @@ export default function DBTLflowPage() {
               </ActionButton>
 
               {generatedProtocol && (
-                <div style={{ background: PATHD_THEME.paperSurfaceStrong, border: `1px solid ${PATHD_THEME.paperBorder}`, borderRadius: 'var(--nb-radius-xl)', marginTop: '10px', padding: '12px' }}>
+                <div style={{ background: THEME.paperSurfaceStrong, border: `1px solid ${THEME.paperBorder}`, borderRadius: 'var(--nb-radius-xl)', marginTop: '10px', padding: '12px' }}>
                   <div
                     onClick={() => setProtocolExpanded(prev => !prev)}
                     style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
                   >
-                    <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperValue, fontWeight: 500 }}>
+                    <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: THEME.paperValue, fontWeight: 500 }}>
                       {generatedProtocol.metadata.protocolName}
                     </span>
-                    <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperLabel }}>
+                    <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.paperLabel }}>
                       {protocolExpanded ? '▾' : '▸'}
                     </span>
                   </div>
 
                   {protocolExpanded && (
                     <div style={{ marginTop: '8px' }}>
-                      <p style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperLabel, margin: '0 0 4px' }}>
+                      <p style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: THEME.paperLabel, margin: '0 0 4px' }}>
                         {generatedProtocol.metadata.description}
                       </p>
-                      <p style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperLabel, margin: '0 0 8px' }}>
+                      <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.paperLabel, margin: '0 0 8px' }}>
                         API {generatedProtocol.api_version} · {generatedProtocol.labware.length} labware · {generatedProtocol.pipetting_logic.length} steps
                       </p>
                       <ActionButton
@@ -930,19 +929,19 @@ export default function DBTLflowPage() {
                 ◎ Serialize to SBOL 3.0
               </ActionButton>
               {sbolDoc && (
-                <div style={{ background: PATHD_THEME.paperSurfaceStrong, border: `1px solid ${PATHD_THEME.paperBorder}`, borderRadius: 'var(--nb-radius-xl)', marginTop: '10px', padding: '12px' }}>
-                  <p style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperValue, fontWeight: 500, margin: '0 0 6px' }}>
+                <div style={{ background: THEME.paperSurfaceStrong, border: `1px solid ${THEME.paperBorder}`, borderRadius: 'var(--nb-radius-xl)', marginTop: '10px', padding: '12px' }}>
+                  <p style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: THEME.paperValue, fontWeight: 500, margin: '0 0 6px' }}>
                     {sbolDoc.name}
                   </p>
-                  <p style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperLabel, margin: '0 0 8px' }}>
+                  <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.paperLabel, margin: '0 0 8px' }}>
                     {sbolDoc.components.length} components · {sbolDoc.interactions.length} interactions
                   </p>
                   {sbolValidation.map((v, i) => (
                     <p key={i} style={{
-                      fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', margin: '0 0 3px', lineHeight: 1.3,
-                      color: v.startsWith('VALID') ? PATHD_THEME.mint :
-                             v.startsWith('ERROR') ? PATHD_THEME.coral :
-                             PATHD_THEME.apricot,
+                      fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', margin: '0 0 3px', lineHeight: 1.3,
+                      color: v.startsWith('VALID') ? THEME.mint :
+                             v.startsWith('ERROR') ? THEME.coral :
+                             THEME.apricot,
                     }}>
                       {v}
                     </p>
@@ -978,7 +977,7 @@ export default function DBTLflowPage() {
                 value={seqInput} onChange={e => setSeqInput(e.target.value)}
                 placeholder="Paste target DNA (ATCG)… or leave empty for demo"
                 rows={2}
-                style={{ ...inputBase, fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', resize: 'vertical', marginBottom: '8px' }}
+                style={{ ...inputBase, fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', resize: 'vertical', marginBottom: '8px' }}
               />
               {assemblyError && (
                 <div style={{ marginBottom: '8px' }}>
@@ -995,13 +994,13 @@ export default function DBTLflowPage() {
                 🧬 Plan Assembly
               </ActionButton>
               {assemblyPlan && (
-                <div style={{ background: PATHD_THEME.paperSurfaceStrong, border: `1px solid ${PATHD_THEME.paperBorder}`, borderRadius: 'var(--nb-radius-xl)', marginTop: '10px', padding: '12px' }}>
+                <div style={{ background: THEME.paperSurfaceStrong, border: `1px solid ${THEME.paperBorder}`, borderRadius: 'var(--nb-radius-xl)', marginTop: '10px', padding: '12px' }}>
                   <div onClick={() => setAssemblyExpanded(p => !p)}
                     style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperValue, fontWeight: 500 }}>
+                    <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: THEME.paperValue, fontWeight: 500 }}>
                       {assemblyPlan.targetName}
                     </span>
-                    <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperLabel }}>
+                    <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.paperLabel }}>
                       {assemblyExpanded ? '▾' : '▸'}
                     </span>
                   </div>
@@ -1017,8 +1016,8 @@ export default function DBTLflowPage() {
                           ['Tm Spread', assemblyPlan.tmSpread.toFixed(1) + ' °C'],
                         ] as const).map(([lbl, val]) => (
                           <div key={lbl} style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperLabel }}>{lbl}</span>
-                            <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperValue, textAlign: 'right' }}>{val}</span>
+                            <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: THEME.paperLabel }}>{lbl}</span>
+                            <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.paperValue, textAlign: 'right' }}>{val}</span>
                           </div>
                         ))}
                       </div>
@@ -1036,13 +1035,13 @@ export default function DBTLflowPage() {
                       {assemblyPlan.warnings.length > 0 && (
                         <div style={{ marginBottom: '8px' }}>
                           {assemblyPlan.warnings.map((w, i) => (
-                            <p key={i} style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.apricot, margin: '0 0 3px', lineHeight: 1.3 }}>
+                            <p key={i} style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: THEME.apricot, margin: '0 0 3px', lineHeight: 1.3 }}>
                               ⚠ {w}
                             </p>
                           ))}
                         </div>
                       )}
-                      <p style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperLabel, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 6px' }}>
+                      <p style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: THEME.paperLabel, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 6px' }}>
                         Fragment Map
                       </p>
                       <div style={{ display: 'flex', gap: '2px', marginBottom: '10px' }}>
@@ -1056,7 +1055,7 @@ export default function DBTLflowPage() {
                               background: colors[i % 4], border: '1px solid ' + borders[i % 4],
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
                             }}>
-                              <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperValue }}>{f.length}</span>
+                              <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.paperValue }}>{f.length}</span>
                             </div>
                           );
                         })}
@@ -1081,7 +1080,7 @@ export default function DBTLflowPage() {
                           ⚗ OT-2 Protocol
                         </ActionButton>
                       </div>
-                      <p style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperLabel, margin: 0 }}>
+                      <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.paperLabel, margin: 0 }}>
                         Provenance: {assemblyPlan.provenanceId.slice(0, 8)}…
                       </p>
                     </div>
@@ -1092,30 +1091,30 @@ export default function DBTLflowPage() {
           </div>
 
           {/* ═══════ CENTER: Progress Ring + Timeline ═══════ */}
-          <div className="nb-tool-center" style={{ flex: 1, background: PATHD_THEME.sepiaPanelMuted, padding: '12px', display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+          <div className="nb-tool-center" style={{ flex: 1, background: THEME.sepiaPanelMuted, padding: '12px', display: 'flex', flexDirection: 'column', minWidth: 0 }}>
             <ScientificFigureFrame
               eyebrow={figureMeta.eyebrow}
               title={figureMeta.title}
               caption={figureMeta.caption}
               legend={[
                 { label: 'Phase', value: currentPhase, accent: PHASE_PASTEL[currentPhase] },
-                { label: 'Pass rate', value: `${passRate}%`, accent: PATHD_THEME.mint },
-                { label: 'Best result', value: `${bestIteration.result} ${bestIteration.unit}`, accent: PATHD_THEME.apricot },
-                { label: 'Feedback', value: hasCommittedFeedback ? 'Committed' : 'Draft only', accent: hasCommittedFeedback ? PATHD_THEME.sky : PATHD_THEME.coral },
+                { label: 'Pass rate', value: `${passRate}%`, accent: THEME.mint },
+                { label: 'Best result', value: `${bestIteration.result} ${bestIteration.unit}`, accent: THEME.apricot },
+                { label: 'Feedback', value: hasCommittedFeedback ? 'Committed' : 'Draft only', accent: hasCommittedFeedback ? THEME.sky : THEME.coral },
               ]}
               footer={
                 <div style={{ display: 'grid', gap: '6px' }}>
-                  <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: PATHD_THEME.paperValue, lineHeight: 1.55 }}>
+                  <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: THEME.paperValue, lineHeight: 1.55 }}>
                     The central panel now behaves like an experimental ledger figure. Phase state, campaign trajectory, and governance status stay in one reading path so loop health can be judged at a glance.
                   </div>
-                  <div style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperLabel }}>
+                  <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.paperLabel }}>
                     latest iteration #{latestIteration?.id ?? '—'} · {latestIteration?.result ?? '—'} {latestIteration?.unit ?? ''} · feedback {hasCommittedFeedback ? 'requires approved delta' : 'still locked'}
                   </div>
                 </div>
               }
               minHeight="100%"
             >
-              <div style={{ background: PATHD_THEME.paperSurfaceStrong, border: `1px solid ${PATHD_THEME.paperBorder}`, borderRadius: 'var(--nb-radius-xl)', padding: '8px 16px', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <div style={{ background: THEME.paperSurfaceStrong, border: `1px solid ${THEME.paperBorder}`, borderRadius: 'var(--nb-radius-xl)', padding: '8px 16px', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '16px' }}>
                 <CycleProgressRing currentPhase={currentPhase} iterationCount={displayIterations.length} />
 
                 <div style={{ flex: 1, display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
@@ -1125,8 +1124,8 @@ export default function DBTLflowPage() {
                       <div key={p} style={{
                         padding: '4px 10px',
                         borderRadius: 'var(--nb-radius-sm)',
-                        background: isActive ? `${PHASE_PASTEL[p]}33` : PATHD_THEME.paperSurfaceMuted,
-                        border: `1px solid ${isActive ? `${PHASE_PASTEL[p]}66` : PATHD_THEME.paperBorder}`,
+                        background: isActive ? `${PHASE_PASTEL[p]}33` : THEME.paperSurfaceMuted,
+                        border: `1px solid ${isActive ? `${PHASE_PASTEL[p]}66` : THEME.paperBorder}`,
                         display: 'flex', alignItems: 'center', gap: '6px',
                       }}>
                         <div style={{
@@ -1135,8 +1134,8 @@ export default function DBTLflowPage() {
                           opacity: isActive ? 1 : 0.5,
                         }} />
                         <span style={{
-                          fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)',
-                          color: isActive ? PATHD_THEME.paperValue : PATHD_THEME.paperLabel,
+                          fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)',
+                          color: isActive ? THEME.paperValue : THEME.paperLabel,
                           fontWeight: isActive ? 600 : 400,
                         }}>
                           {p}
@@ -1156,7 +1155,7 @@ export default function DBTLflowPage() {
           {/* ═══════ RIGHT PANEL: Campaign Summary + Automation Control Center ═══════ */}
           <div className="nb-tool-right" style={{
             width: '260px', flexShrink: 0, padding: '16px',
-            borderLeft: `1px solid ${PATHD_THEME.paperBorder}`, background: PATHD_THEME.sepiaPanelMuted,
+            borderLeft: `1px solid ${THEME.paperBorder}`, background: THEME.sepiaPanelMuted,
           }}>
             {/* Campaign Summary (preserved) */}
             <p style={sectionLabel}>Campaign Summary</p>
@@ -1168,7 +1167,7 @@ export default function DBTLflowPage() {
             </div>
 
             {/* ── Automation Control Center ── */}
-            <div style={{ background: PATHD_THEME.paperSurfaceStrong, border: `1px solid ${PATHD_THEME.paperBorder}`, borderRadius: 'var(--nb-radius-xl)', padding: '14px' }}>
+            <div style={{ background: THEME.paperSurfaceStrong, border: `1px solid ${THEME.paperBorder}`, borderRadius: 'var(--nb-radius-xl)', padding: '14px' }}>
               <p style={{ ...sectionLabel, margin: '0 0 10px' }}>Automation Control Center</p>
 
               {/* CSV Upload drop zone */}
@@ -1176,16 +1175,16 @@ export default function DBTLflowPage() {
                 display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                 padding: '14px 8px',
                 borderRadius: 'var(--nb-radius-md)',
-                border: `2px dashed ${PATHD_THEME.paperBorderStrong}`,
-                background: PATHD_THEME.paperSurfaceMuted,
+                border: `2px dashed ${THEME.paperBorderStrong}`,
+                background: THEME.paperSurfaceMuted,
                 cursor: 'pointer',
                 marginBottom: '12px',
                 transition: 'border-color 0.2s',
               }}>
-                <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: PATHD_THEME.paperValue, marginBottom: '4px' }}>
+                <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: THEME.paperValue, marginBottom: '4px' }}>
                   {feedbackLoading ? '⏳ Processing…' : '↑ Upload Test CSV'}
                 </span>
-                <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperLabel }}>
+                <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: THEME.paperLabel }}>
                   .csv with assay metadata, units, instrument, operator
                 </span>
                 <input
@@ -1209,10 +1208,10 @@ export default function DBTLflowPage() {
                   {/* Test Summary */}
                   <div style={{
                     padding: '10px', borderRadius: 'var(--nb-radius-md)',
-                    background: PATHD_THEME.paperSurfaceMuted,
-                    border: `1px solid ${PATHD_THEME.paperBorder}`,
+                    background: THEME.paperSurfaceMuted,
+                    border: `1px solid ${THEME.paperBorder}`,
                   }}>
-                    <p style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperLabel, textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 8px' }}>
+                    <p style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: THEME.paperLabel, textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 8px' }}>
                       Test Summary
                     </p>
                     {([
@@ -1222,8 +1221,8 @@ export default function DBTLflowPage() {
                       ['Worst Sample', feedbackResult.test_summary.worst_sample],
                     ] as const).map(([lbl, val]) => (
                       <div key={lbl} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-                        <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperLabel }}>{lbl}</span>
-                        <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperValue, textAlign: 'right' }}>{val}</span>
+                        <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: THEME.paperLabel }}>{lbl}</span>
+                        <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.paperValue, textAlign: 'right' }}>{val}</span>
                       </div>
                     ))}
                   </div>
@@ -1231,7 +1230,7 @@ export default function DBTLflowPage() {
                   {/* QC Flags */}
                   {feedbackResult.qc_flags.length > 0 && (
                     <div>
-                      <p style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperLabel, textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 6px' }}>
+                      <p style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: THEME.paperLabel, textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 6px' }}>
                         QC Flags ({feedbackResult.qc_flags.length})
                       </p>
                       {feedbackResult.qc_flags.map((flag: QCFlag, idx: number) => (
@@ -1245,14 +1244,14 @@ export default function DBTLflowPage() {
                             : 'rgba(232,163,161,0.34)'}`,
                         }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
-                            <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PHASE_PASTEL.Build }}>
+                            <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: PHASE_PASTEL.Build }}>
                               {flag.flag_type === 'sensor_anomaly' ? '⚠' : '◆'} {flag.sample_id}
                             </span>
-                            <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperValue, textAlign: 'right' }}>
+                            <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.paperValue, textAlign: 'right' }}>
                               {flag.measured_value.toFixed(1)} / {flag.theoretical_max.toFixed(1)}
                             </span>
                           </div>
-                          <p style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperLabel, margin: 0, lineHeight: 1.3 }}>
+                          <p style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: THEME.paperLabel, margin: 0, lineHeight: 1.3 }}>
                             {flag.message}
                           </p>
                         </div>
@@ -1263,7 +1262,7 @@ export default function DBTLflowPage() {
                   {/* Next Iteration Suggestions */}
                   {feedbackResult.next_iteration_suggestions.length > 0 && (
                     <div>
-                      <p style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperLabel, textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 6px' }}>
+                      <p style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: THEME.paperLabel, textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 6px' }}>
                         Suggested Next Iteration
                       </p>
                       {feedbackResult.next_iteration_suggestions.map((s: NextIterationSuggestion, idx: number) => (
@@ -1273,23 +1272,23 @@ export default function DBTLflowPage() {
                           border: '1px solid rgba(191,220,205,0.34)',
                         }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                            <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: PHASE_PASTEL.Learn, fontWeight: 500 }}>
+                            <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: PHASE_PASTEL.Learn, fontWeight: 500 }}>
                               {s.parameter}
                             </span>
-                            <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperValue, textAlign: 'right' }}>
+                            <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.paperValue, textAlign: 'right' }}>
                               +{s.predicted_improvement_percent.toFixed(1)}%
                             </span>
                           </div>
                           <div style={{ display: 'flex', gap: '4px', alignItems: 'center', marginBottom: '4px' }}>
-                            <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperLabel }}>
+                            <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.paperLabel }}>
                               {s.current_value}
                             </span>
-                            <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperLabel }}>→</span>
-                            <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperValue, textAlign: 'right' }}>
+                            <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: THEME.paperLabel }}>→</span>
+                            <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.paperValue, textAlign: 'right' }}>
                               {s.suggested_value}
                             </span>
                           </div>
-                          <p style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperLabel, margin: 0, lineHeight: 1.3 }}>
+                          <p style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: THEME.paperLabel, margin: 0, lineHeight: 1.3 }}>
                             {s.rationale}
                           </p>
                         </div>
@@ -1298,7 +1297,7 @@ export default function DBTLflowPage() {
                   )}
 
                   {/* Optimization Objective */}
-                  <p style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperLabel, margin: 0, textAlign: 'center' }}>
+                  <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.paperLabel, margin: 0, textAlign: 'center' }}>
                     objective: {feedbackResult.optimization_objective}
                   </p>
                 </div>
@@ -1307,17 +1306,17 @@ export default function DBTLflowPage() {
 
             {/* ── Delta Pack Approval Gate ── */}
             {learnedDeltaPacks.length > 0 && (
-              <div style={{ background: PATHD_THEME.paperSurfaceStrong, border: `1px solid ${PATHD_THEME.paperBorder}`, borderRadius: 'var(--nb-radius-xl)', padding: '14px', marginTop: '16px' }}>
+              <div style={{ background: THEME.paperSurfaceStrong, border: `1px solid ${THEME.paperBorder}`, borderRadius: 'var(--nb-radius-xl)', padding: '14px', marginTop: '16px' }}>
                 <p style={{ ...sectionLabel, margin: '0 0 10px' }}>
                   Delta Pack Approval Gate
                 </p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {learnedDeltaPacks.map((pack) => {
                     const statusColor = pack.humanGateStatus === 'approved'
-                      ? PATHD_THEME.mint
+                      ? THEME.mint
                       : pack.humanGateStatus === 'rejected'
-                        ? PATHD_THEME.coral
-                        : PATHD_THEME.apricot;
+                        ? THEME.coral
+                        : THEME.apricot;
                     const statusBg = pack.humanGateStatus === 'approved'
                       ? 'rgba(158,215,199,0.18)'
                       : pack.humanGateStatus === 'rejected'
@@ -1342,7 +1341,7 @@ export default function DBTLflowPage() {
                         }}
                       >
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                          <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperValue, fontWeight: 600 }}>
+                          <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: THEME.paperValue, fontWeight: 600 }}>
                             Iteration #{pack.iteration} Delta Pack
                           </span>
                           <span
@@ -1352,7 +1351,7 @@ export default function DBTLflowPage() {
                               border: `1px solid ${statusBorder}`,
                               background: statusBg,
                               color: statusColor,
-                              fontFamily: T.MONO,
+                              fontFamily: THEME.MONO,
                               fontSize: 'var(--nb-fs-xs)',
                               letterSpacing: '0.05em',
                               textTransform: 'uppercase',
@@ -1364,25 +1363,25 @@ export default function DBTLflowPage() {
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginBottom: '8px' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperLabel }}>Classification</span>
-                            <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperValue }}>{pack.classification}</span>
+                            <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: THEME.paperLabel }}>Classification</span>
+                            <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.paperValue }}>{pack.classification}</span>
                           </div>
                           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperLabel }}>Target tools</span>
-                            <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperValue }}>{pack.targetToolIds.join(', ')}</span>
+                            <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: THEME.paperLabel }}>Target tools</span>
+                            <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.paperValue }}>{pack.targetToolIds.join(', ')}</span>
                           </div>
                           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperLabel }}>Delta entries</span>
-                            <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperValue }}>{entryCount}</span>
+                            <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: THEME.paperLabel }}>Delta entries</span>
+                            <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.paperValue }}>{entryCount}</span>
                           </div>
                           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperLabel }}>Sources</span>
-                            <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperValue }}>{pack.sourceExperimentRecordIds.length} record(s)</span>
+                            <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: THEME.paperLabel }}>Sources</span>
+                            <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.paperValue }}>{pack.sourceExperimentRecordIds.length} record(s)</span>
                           </div>
                         </div>
 
                         {pack.notes && (
-                          <p style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperLabel, margin: '0 0 8px', lineHeight: 1.3 }}>
+                          <p style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: THEME.paperLabel, margin: '0 0 8px', lineHeight: 1.3 }}>
                             {pack.notes}
                           </p>
                         )}
@@ -1418,30 +1417,30 @@ export default function DBTLflowPage() {
 
             {/* ── Provenance Tracker ── */}
             {assemblyProvenance.length > 0 && (
-              <div style={{ background: PATHD_THEME.paperSurfaceStrong, border: `1px solid ${PATHD_THEME.paperBorder}`, borderRadius: 'var(--nb-radius-xl)', padding: '14px', marginTop: '16px' }}>
+              <div style={{ background: THEME.paperSurfaceStrong, border: `1px solid ${THEME.paperBorder}`, borderRadius: 'var(--nb-radius-xl)', padding: '14px', marginTop: '16px' }}>
                 <p style={{ ...sectionLabel, margin: '0 0 10px' }}>
                   Data Provenance ({assemblyProvenance.length} records)
                 </p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   {assemblyProvenance.map(p => {
                     const tc: Record<string, string> = {
-                      fragment: PATHD_THEME.mint,
-                      primer: PATHD_THEME.sky,
-                      assembly: PATHD_THEME.lilac,
-                      transformant: PATHD_THEME.coral,
-                      culture: PATHD_THEME.apricot,
+                      fragment: THEME.mint,
+                      primer: THEME.sky,
+                      assembly: THEME.lilac,
+                      transformant: THEME.coral,
+                      culture: THEME.apricot,
                     };
-                    const clr = tc[p.sampleType] ?? PATHD_THEME.paperValue;
+                    const clr = tc[p.sampleType] ?? THEME.paperValue;
                     return (
-                      <div key={p.uuid} style={{ padding: '8px', borderRadius: 'var(--nb-radius-sm)', background: PATHD_THEME.paperSurfaceMuted, border: `1px solid ${PATHD_THEME.paperBorder}` }}>
+                      <div key={p.uuid} style={{ padding: '8px', borderRadius: 'var(--nb-radius-sm)', background: THEME.paperSurfaceMuted, border: `1px solid ${THEME.paperBorder}` }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
-                          <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: clr }}>{p.sampleType.toUpperCase()}</span>
-                          <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperLabel, textAlign: 'right' }}>
+                          <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: clr }}>{p.sampleType.toUpperCase()}</span>
+                          <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.paperLabel, textAlign: 'right' }}>
                             {p.well ? 'Well ' + p.well : ''}{p.slot ? ' · Slot ' + p.slot : ''}
                           </span>
                         </div>
-                        <p style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperValue, margin: '0 0 2px', lineHeight: 1.3 }}>{p.label}</p>
-                        <p style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperLabel, margin: 0 }}>{p.uuid}</p>
+                        <p style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: THEME.paperValue, margin: '0 0 2px', lineHeight: 1.3 }}>{p.label}</p>
+                        <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.paperLabel, margin: 0 }}>{p.uuid}</p>
                       </div>
                     );
                   })}
@@ -1453,8 +1452,8 @@ export default function DBTLflowPage() {
 
         {/* ═══════ Footer: Export ═══════ */}
         <div style={{
-          borderTop: `1px solid ${PATHD_THEME.paperBorder}`, padding: '8px 16px',
-          display: 'flex', gap: '8px', flexShrink: 0, background: PATHD_THEME.sepiaPanelMuted,
+          borderTop: `1px solid ${THEME.paperBorder}`, padding: '8px 16px',
+          display: 'flex', gap: '8px', flexShrink: 0, background: THEME.sepiaPanelMuted,
         }}>
           <ExportButton label="Export JSON" data={displayIterations} filename="dbtlflow-iterations" format="json" />
           <ExportButton label="Export CSV" data={displayIterations} filename="dbtlflow-iterations" format="csv" />

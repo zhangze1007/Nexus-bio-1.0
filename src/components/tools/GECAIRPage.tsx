@@ -6,20 +6,20 @@ import ExportButton from '../ide/shared/ExportButton';
 import { CIRCUIT_NODES, LOGIC_GATES, hillInhibition, hillActivation, runRepressilator, runToggleSwitch, runLogicCascade } from '../../data/mockGECAIR';
 import type { GateType, RepressilatorState, ToggleSwitchState, LogicCascadeState } from '../../data/mockGECAIR';
 import { useWorkbenchStore } from '../../store/workbenchStore';
-import { T } from '../ide/tokens';
+import { THEME } from '../../theme';
 import WorkbenchRangeSlider from './shared/WorkbenchRangeSlider';
 import ScientificHero from './shared/ScientificHero';
-import { PATHD_THEME } from '../workbench/workbenchTheme';
+
 import ScientificFigureFrame from './shared/ScientificFigureFrame';
 import ScientificMethodStrip from './shared/ScientificMethodStrip';
 import { SVGChartContainer } from '../charts/primitives';
 
 
 const PART_COLORS: Record<string, string> = {
-  promoter: PATHD_THEME.lilac,
-  rbs: PATHD_THEME.sky,
-  cds: PATHD_THEME.apricot,
-  terminator: PATHD_THEME.coral,
+  promoter: THEME.lilac,
+  rbs: THEME.sky,
+  cds: THEME.apricot,
+  terminator: THEME.coral,
 };
 
 function viridisColor(t: number): string {
@@ -103,22 +103,22 @@ function CircuitSVG({ inputA, inputB, gateType }: { inputA: number; inputB: numb
   const curveA = responseCurve('A');
   const curveB = responseCurve('B');
   const nodeRows = [
-    { label: 'Sensor A', value: outA, tone: PATHD_THEME.coral, detail: 'Hill repression from input A' },
-    { label: 'Sensor B', value: outB, tone: PATHD_THEME.apricot, detail: 'Hill repression from input B' },
-    { label: `${gateType} Output`, value: outC, tone: PATHD_THEME.mint, detail: 'Combined gate expression state' },
+    { label: 'Sensor A', value: outA, tone: THEME.coral, detail: 'Hill repression from input A' },
+    { label: 'Sensor B', value: outB, tone: THEME.apricot, detail: 'Hill repression from input B' },
+    { label: `${gateType} Output`, value: outC, tone: THEME.mint, detail: 'Combined gate expression state' },
   ];
 
   return (
     <SVGChartContainer W={W} H={H} ariaLabel="Gene circuit diagram" rx={18}>
-      <text x="24" y="22" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.26)">GENE CIRCUIT · SBOL NOTATION</text>
-      <text x="24" y="36" fontFamily={T.SANS} fontSize="11" fill="rgba(255,255,255,0.72)">
+      <text x="24" y="22" fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.26)">GENE CIRCUIT · SBOL NOTATION</text>
+      <text x="24" y="36" fontFamily={THEME.SANS} fontSize="11" fill="rgba(255,255,255,0.72)">
         {gateType} gate — biological parts and 2D phase space response
       </text>
 
       {/* ── SBOL circuit diagram ── */}
       <rect x={bbX1 - 8} y={bbY - 44} width={bbX2 - bbX1 + 16} height={96} rx="12"
         fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.07)" />
-      <text x={bbX1 - 4} y={bbY - 36} fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.45)">
+      <text x={bbX1 - 4} y={bbY - 36} fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.45)">
         GENETIC ARCHITECTURE
       </text>
       {/* Backbone line */}
@@ -129,12 +129,12 @@ function CircuitSVG({ inputA, inputB, gateType }: { inputA: number; inputB: numb
         points={`65,${bbY} 80,${bbY} 80,${bbY - 22} 90,${bbY - 12} 80,${bbY - 2} 80,${bbY - 22}`}
         fill="rgba(207,196,227,0.85)" stroke={PART_COLORS.promoter} strokeWidth="1"
       />
-      <text x={77} y={bbY + 14} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill={PART_COLORS.promoter}>P</text>
+      <text x={77} y={bbY + 14} textAnchor="middle" fontFamily={THEME.MONO} fontSize="10" fill={PART_COLORS.promoter}>P</text>
 
       {/* RBS — blue half-circle arc above backbone at x=116 */}
       <path d={`M 106,${bbY} A 10 10 0 0 1 126,${bbY}`}
         fill="rgba(175,195,214,0.82)" stroke={PART_COLORS.rbs} strokeWidth="1" />
-      <text x={116} y={bbY + 14} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill={PART_COLORS.rbs}>RBS</text>
+      <text x={116} y={bbY + 14} textAnchor="middle" fontFamily={THEME.MONO} fontSize="10" fill={PART_COLORS.rbs}>RBS</text>
 
       {/* CDS — orange arrow rectangle at x=148 */}
       <polygon
@@ -142,12 +142,12 @@ function CircuitSVG({ inputA, inputB, gateType }: { inputA: number; inputB: numb
         fill={`rgba(231,199,169,${0.3 + exprLevel * 0.55})`}
         stroke={PART_COLORS.cds} strokeWidth="1.2"
       />
-      <text x={172} y={bbY + 4} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill={PART_COLORS.cds}>{gateType}</text>
+      <text x={172} y={bbY + 4} textAnchor="middle" fontFamily={THEME.MONO} fontSize="10" fill={PART_COLORS.cds}>{gateType}</text>
 
       {/* Terminator — red T-shape at x=252 */}
       <line x1={252} y1={bbY - 20} x2={252} y2={bbY + 2} stroke={PART_COLORS.terminator} strokeWidth="2.5" />
       <line x1={240} y1={bbY - 20} x2={264} y2={bbY - 20} stroke={PART_COLORS.terminator} strokeWidth="2.5" />
-      <text x={252} y={bbY + 14} textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill={PART_COLORS.terminator}>T</text>
+      <text x={252} y={bbY + 14} textAnchor="middle" fontFamily={THEME.MONO} fontSize="10" fill={PART_COLORS.terminator}>T</text>
 
       {/* Output arrow at right end */}
       <line x1={bbX2} y1={bbY} x2={bbX2 + 18} y2={bbY} stroke="rgba(255,255,255,0.45)" strokeWidth="1.5" markerEnd="url(#gecair-arrow)" />
@@ -156,10 +156,10 @@ function CircuitSVG({ inputA, inputB, gateType }: { inputA: number; inputB: numb
           <polygon points="0 0.5, 5.5 3, 0 5.5" fill="rgba(255,255,255,0.3)" />
         </marker>
       </defs>
-      <text x={bbX2 + 22} y={bbY + 4} fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.28)">{(outC * 100).toFixed(0)}%</text>
+      <text x={bbX2 + 22} y={bbY + 4} fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.28)">{(outC * 100).toFixed(0)}%</text>
 
       {/* ── 2D Phase Space heatmap (viridis, 30×30) ── */}
-      <text x={PS_LEFT} y={PS_TOP - 10} fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.26)">
+      <text x={PS_LEFT} y={PS_TOP - 10} fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.26)">
         PHASE SPACE · Output = {viridisColor(0).includes('68') ? 'low' : ''} → high (viridis)
       </text>
       <rect x={PS_LEFT - 2} y={PS_TOP - 2} width={PS_SIZE + 4} height={PS_SIZE + 4} rx="10"
@@ -262,17 +262,17 @@ function CircuitSVG({ inputA, inputB, gateType }: { inputA: number; inputB: numb
       />
       {/* Axes */}
       <text x={PS_LEFT + PS_SIZE / 2} y={PS_TOP + PS_SIZE + 16} textAnchor="middle"
-        fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.28)">Input A (0→1)</text>
+        fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.28)">Input A (0→1)</text>
       <text x={PS_LEFT - 14} y={PS_TOP + PS_SIZE / 2} textAnchor="middle"
-        fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.28)"
+        fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.28)"
         transform={`rotate(-90,${PS_LEFT - 14},${PS_TOP + PS_SIZE / 2})`}>Input B (0→1)</text>
       {/* Tick marks */}
       {[0, 0.5, 1].map((tick) => (
         <g key={tick}>
           <text x={PS_LEFT + tick * PS_SIZE} y={PS_TOP + PS_SIZE + 8}
-            textAnchor="middle" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.2)">{tick.toFixed(1)}</text>
+            textAnchor="middle" fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.2)">{tick.toFixed(1)}</text>
           <text x={PS_LEFT - 4} y={PS_TOP + (1 - tick) * PS_SIZE + 3}
-            textAnchor="end" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.2)">{tick.toFixed(1)}</text>
+            textAnchor="end" fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.2)">{tick.toFixed(1)}</text>
         </g>
       ))}
       {/* Viridis color bar */}
@@ -287,54 +287,54 @@ function CircuitSVG({ inputA, inputB, gateType }: { inputA: number; inputB: numb
       </defs>
       <rect x={PS_LEFT + PS_SIZE + 8} y={PS_TOP} width="10" height={PS_SIZE}
         fill="url(#gecair-viridis)" rx="3" />
-      <text x={PS_LEFT + PS_SIZE + 22} y={PS_TOP + 6} fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.3)">1.0</text>
-      <text x={PS_LEFT + PS_SIZE + 22} y={PS_TOP + PS_SIZE + 2} fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.3)">0.0</text>
+      <text x={PS_LEFT + PS_SIZE + 22} y={PS_TOP + 6} fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.3)">1.0</text>
+      <text x={PS_LEFT + PS_SIZE + 22} y={PS_TOP + PS_SIZE + 2} fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.3)">0.0</text>
 
       {/* ── Right: Transfer curves ── */}
       <rect x="324" y="54" width="382" height="92" rx="16" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" />
-      <text x="338" y="74" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.24)">TRANSFER CURVES</text>
+      <text x="338" y="74" fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.24)">TRANSFER CURVES</text>
 
       {/* Area fill under Hill curves */}
       <polygon
         points={`${curveA.points} ${curveA.points.split(' ').pop()?.split(',')[0]},146 348,146`}
-        fill={PATHD_THEME.coral} fillOpacity="0.1"
+        fill={THEME.coral} fillOpacity="0.1"
       />
       <polygon
         points={`${curveB.points} ${curveB.points.split(' ').pop()?.split(',')[0]},146 348,146`}
-        fill={PATHD_THEME.apricot} fillOpacity="0.1"
+        fill={THEME.apricot} fillOpacity="0.1"
       />
 
       {/* Curve lines */}
-      <polyline points={curveA.points} fill="none" stroke={PATHD_THEME.coral} strokeWidth="2" />
-      <polyline points={curveB.points} fill="none" stroke={PATHD_THEME.apricot} strokeWidth="2" />
+      <polyline points={curveA.points} fill="none" stroke={THEME.coral} strokeWidth="2" />
+      <polyline points={curveB.points} fill="none" stroke={THEME.apricot} strokeWidth="2" />
 
       {/* Operating point markers */}
-      <circle cx={curveA.markerX} cy={curveA.markerY} r="4" fill={PATHD_THEME.coral} />
-      <circle cx={curveB.markerX} cy={curveB.markerY} r="4" fill={PATHD_THEME.apricot} />
-      <text x="348" y="133" fontFamily={T.MONO} fontSize="10" fill="rgba(232,163,161,0.9)">
+      <circle cx={curveA.markerX} cy={curveA.markerY} r="4" fill={THEME.coral} />
+      <circle cx={curveB.markerX} cy={curveB.markerY} r="4" fill={THEME.apricot} />
+      <text x="348" y="133" fontFamily={THEME.MONO} fontSize="10" fill="rgba(232,163,161,0.9)">
         A: {(curveA.markerOutput * 100).toFixed(0)}%
       </text>
-      <text x="420" y="133" fontFamily={T.MONO} fontSize="10" fill="rgba(231,199,169,0.95)">
+      <text x="420" y="133" fontFamily={THEME.MONO} fontSize="10" fill="rgba(231,199,169,0.95)">
         B: {(curveB.markerOutput * 100).toFixed(0)}%
       </text>
 
       <rect x="324" y="164" width="382" height="160" rx="16" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" />
-      <text x="338" y="182" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.24)">
+      <text x="338" y="182" fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.24)">
         NODE STATE LEDGER
       </text>
       {nodeRows.map((row, index) => {
         const y = 204 + index * 40;
         return (
           <g key={row.label}>
-            <text x="338" y={y} fontFamily={T.SANS} fontSize="11" fill="rgba(255,255,255,0.68)">
+            <text x="338" y={y} fontFamily={THEME.SANS} fontSize="11" fill="rgba(255,255,255,0.68)">
               {row.label}
             </text>
             <rect x="338" y={y + 8} width="220" height="10" rx="999" fill="rgba(255,255,255,0.06)" />
             <rect x="338" y={y + 8} width={Math.max(8, row.value * 220)} height="10" rx="999" fill={row.tone} opacity={0.85} />
-            <text x="564" y={y + 17} textAnchor="end" fontFamily={T.MONO} fontSize="10" fontWeight="600" fill="rgba(255,255,255,0.65)">
+            <text x="564" y={y + 17} textAnchor="end" fontFamily={THEME.MONO} fontSize="10" fontWeight="600" fill="rgba(255,255,255,0.65)">
               {(row.value * 100).toFixed(1)}%
             </text>
-            <text x="338" y={y + 31} fontFamily={T.SANS} fontSize="10" fill="rgba(255,255,255,0.28)">
+            <text x="338" y={y + 31} fontFamily={THEME.SANS} fontSize="10" fill="rgba(255,255,255,0.28)">
               {row.detail}
             </text>
           </g>
@@ -343,7 +343,7 @@ function CircuitSVG({ inputA, inputB, gateType }: { inputA: number; inputB: numb
 
       {/* SBOL Legend */}
       <rect x="324" y="340" width="382" height="140" rx="16" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.07)" />
-      <text x="338" y="358" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.24)">SBOL2 NOTATION LEGEND</text>
+      <text x="338" y="358" fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.24)">SBOL2 NOTATION LEGEND</text>
       {[
         { label: 'Promoter',   color: PART_COLORS.promoter, shape: 'pentagon' },
         { label: 'RBS',        color: PART_COLORS.rbs, shape: 'arc' },
@@ -352,11 +352,11 @@ function CircuitSVG({ inputA, inputB, gateType }: { inputA: number; inputB: numb
       ].map((item, i) => (
         <g key={item.label} transform={`translate(338,${372 + i * 26})`}>
           <rect width="10" height="10" rx="2" fill={item.color} opacity={0.8} />
-          <text x="16" y="9" fontFamily={T.SANS} fontSize="10" fill="rgba(255,255,255,0.55)">{item.label}</text>
-          <text x="100" y="9" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.28)">{item.shape}</text>
+          <text x="16" y="9" fontFamily={THEME.SANS} fontSize="10" fill="rgba(255,255,255,0.55)">{item.label}</text>
+          <text x="100" y="9" fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.28)">{item.shape}</text>
         </g>
       ))}
-      <text x="338" y="476" fontFamily={T.MONO} fontSize="10" fill="rgba(255,255,255,0.2)">
+      <text x="338" y="476" fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.2)">
         Expression level → CDS height · Phase space → viridis output
       </text>
     </SVGChartContainer>
@@ -460,7 +460,7 @@ export default function GECAIRPage() {
 
   return (
     <>
-      <div className="nb-tool-page" style={{ background: PATHD_THEME.sepiaPanelMuted }}>
+      <div className="nb-tool-page" style={{ background: THEME.sepiaPanelMuted }}>
         <AlgorithmInsight
           title="Gene Circuit AI Reasoner"
           description="Hill-function kinetics model promoter activity. Inhibition gates use Hill repression; activation uses Hill induction."
@@ -474,13 +474,13 @@ export default function GECAIRPage() {
             summary="GECAIR now reads as a control-design page rather than a circuit toy. The important question is whether the selected logic stabilizes the current pathway and burden context, not just whether the gate truth table looks correct."
             aside={
               <>
-                <div style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.label, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.label, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                   Recommended logic
                 </div>
-                <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: PATHD_THEME.value, fontWeight: 700 }}>
+                <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: THEME.value, fontWeight: 700 }}>
                   {recommendedGate} gate from current burden and control context
                 </div>
-                <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: PATHD_THEME.label, lineHeight: 1.55 }}>
+                <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: THEME.label, lineHeight: 1.55 }}>
                   Catalyst burden and controller stability are already being used here to bias the circuit topology instead of leaving logic selection arbitrary.
                 </div>
               </>
@@ -521,19 +521,19 @@ export default function GECAIRPage() {
               {
                 title: 'Input envelope',
                 detail: 'The controller and catalyst state seed the gate inputs so circuit design starts from system pressure instead of abstract binary examples.',
-                accent: PATHD_THEME.sky,
+                accent: THEME.sky,
                 note: `A ${(inputA * 100).toFixed(0)}% · B ${(inputB * 100).toFixed(0)}%`,
               },
               {
                 title: 'Logic architecture',
                 detail: 'Promoter, RBS, CDS, terminator, and phase-space response are grouped into one publication-style figure rather than split across dashboard cards.',
-                accent: PATHD_THEME.lilac,
+                accent: THEME.lilac,
                 note: `${gateType} gate`,
               },
               {
                 title: 'Stability readout',
                 detail: 'Noise sensitivity and output level remain visible next to the figure so buildability and control quality stay attached to the same decision.',
-                accent: PATHD_THEME.mint,
+                accent: THEME.mint,
                 note: `noise ${noiseScore.toFixed(4)}`,
               },
             ]}
@@ -542,15 +542,15 @@ export default function GECAIRPage() {
 
         <div className="nb-tool-panels" style={{ flex: 1 }}>
           {/* Input panel */}
-          <div className="nb-tool-sidebar" style={{ width: '240px', borderRight: `1px solid ${PATHD_THEME.paperBorder}`, background: PATHD_THEME.sepiaPanelMuted }}>
-            <p style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', letterSpacing: '0.1em', color: PATHD_THEME.paperLabel, margin: '0 0 12px' }}>
+          <div className="nb-tool-sidebar" style={{ width: '240px', borderRight: `1px solid ${THEME.paperBorder}`, background: THEME.sepiaPanelMuted }}>
+            <p style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', letterSpacing: '0.1em', color: THEME.paperLabel, margin: '0 0 12px' }}>
               Input Signals
             </p>
 
             <WorkbenchRangeSlider label="Input A strength" value={inputA} min={0} max={1} step={0.05} formatValue={v => `${(v * 100).toFixed(0)}%`} onChange={setInputA} />
             <WorkbenchRangeSlider label="Input B strength" value={inputB} min={0} max={1} step={0.05} formatValue={v => `${(v * 100).toFixed(0)}%`} onChange={setInputB} />
 
-            <p style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', letterSpacing: '0.1em', color: PATHD_THEME.paperLabel, margin: '16px 0 8px' }}>
+            <p style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', letterSpacing: '0.1em', color: THEME.paperLabel, margin: '16px 0 8px' }}>
               Output Gate Type
             </p>
             {(['NOT', 'AND', 'OR', 'NAND'] as GateType[]).map(gate => (
@@ -559,14 +559,14 @@ export default function GECAIRPage() {
               </button>
             ))}
 
-            <p style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', letterSpacing: '0.1em', color: PATHD_THEME.paperLabel, margin: '16px 0 8px' }}>
+            <p style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', letterSpacing: '0.1em', color: THEME.paperLabel, margin: '16px 0 8px' }}>
               Truth Table
             </p>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr>
                   {['A', 'B', 'OUT'].map(h => (
-                    <th key={h} style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperLabel, padding: '3px 6px', textAlign: 'center', borderBottom: `1px solid ${PATHD_THEME.paperBorder}` }}>{h}</th>
+                    <th key={h} style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: THEME.paperLabel, padding: '3px 6px', textAlign: 'center', borderBottom: `1px solid ${THEME.paperBorder}` }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -579,9 +579,9 @@ export default function GECAIRPage() {
                     : gateType === 'NAND' ? !(a && b) ? 1 : 0
                     : 1 - a;
                   return (
-                    <tr key={i} style={{ background: i % 2 === 0 ? 'transparent' : PATHD_THEME.paperSurfaceMuted }}>
+                    <tr key={i} style={{ background: i % 2 === 0 ? 'transparent' : THEME.paperSurfaceMuted }}>
                       {[row.A, row.B, out].map((v, j) => (
-                        <td key={j} style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', textAlign: 'center', padding: '4px', color: v ? PATHD_THEME.mint : PATHD_THEME.paperLabel }}>
+                        <td key={j} style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', textAlign: 'center', padding: '4px', color: v ? THEME.mint : THEME.paperLabel }}>
                           {v ? '1' : '0'}
                         </td>
                       ))}
@@ -593,23 +593,23 @@ export default function GECAIRPage() {
           </div>
 
           {/* Engine view */}
-          <div className="nb-tool-center" style={{ flex: 1, background: PATHD_THEME.sepiaPanelMuted, padding: '12px', minWidth: 0 }}>
+          <div className="nb-tool-center" style={{ flex: 1, background: THEME.sepiaPanelMuted, padding: '12px', minWidth: 0 }}>
             <ScientificFigureFrame
               eyebrow={figureMeta.eyebrow}
               title={figureMeta.title}
               caption={figureMeta.caption}
               legend={[
-                { label: 'Gate', value: gateType, accent: PATHD_THEME.lilac },
-                { label: 'Input A', value: `${(inputA * 100).toFixed(0)}%`, accent: PATHD_THEME.coral },
-                { label: 'Input B', value: `${(inputB * 100).toFixed(0)}%`, accent: PATHD_THEME.apricot },
-                { label: 'Output', value: `${(finalOutput * 100).toFixed(1)}%`, accent: PATHD_THEME.mint },
+                { label: 'Gate', value: gateType, accent: THEME.lilac },
+                { label: 'Input A', value: `${(inputA * 100).toFixed(0)}%`, accent: THEME.coral },
+                { label: 'Input B', value: `${(inputB * 100).toFixed(0)}%`, accent: THEME.apricot },
+                { label: 'Output', value: `${(finalOutput * 100).toFixed(1)}%`, accent: THEME.mint },
               ]}
               footer={
                 <div style={{ display: 'grid', gap: '6px' }}>
-                  <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: PATHD_THEME.paperValue, lineHeight: 1.55 }}>
+                  <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: THEME.paperValue, lineHeight: 1.55 }}>
                     The page now treats the circuit as a scientific control object: architecture, phase space, transfer response, and node state are presented as one figure so logic choice can be defended from first principles.
                   </div>
-                  <div style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperLabel }}>
+                  <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.paperLabel }}>
                     recommended gate {recommendedGate} · node outputs {(outA * 100).toFixed(0)} / {(outB * 100).toFixed(0)} · noise {noiseScore.toFixed(4)}
                   </div>
                 </div>
@@ -623,8 +623,8 @@ export default function GECAIRPage() {
           </div>
 
           {/* Results panel */}
-          <div className="nb-tool-right" style={{ width: '240px', borderLeft: `1px solid ${PATHD_THEME.paperBorder}`, background: PATHD_THEME.sepiaPanelMuted }}>
-            <p style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', letterSpacing: '0.1em', color: PATHD_THEME.paperLabel, margin: '0 0 12px' }}>
+          <div className="nb-tool-right" style={{ width: '240px', borderLeft: `1px solid ${THEME.paperBorder}`, background: THEME.sepiaPanelMuted }}>
+            <p style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', letterSpacing: '0.1em', color: THEME.paperLabel, margin: '0 0 12px' }}>
               Circuit Readouts
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -636,8 +636,8 @@ export default function GECAIRPage() {
             </div>
 
             {/* Circuit Type Selector */}
-            <div style={{ marginTop: '12px', padding: '12px', borderRadius: 'var(--nb-radius-md)', border: `1px solid ${PATHD_THEME.paperBorder}`, background: PATHD_THEME.paperSurfaceStrong }}>
-              <div style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperLabel, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>
+            <div style={{ marginTop: '12px', padding: '12px', borderRadius: 'var(--nb-radius-md)', border: `1px solid ${THEME.paperBorder}`, background: THEME.paperSurfaceStrong }}>
+              <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.paperLabel, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>
                 ODE Circuit Model
               </div>
               <div style={{ display: 'flex', gap: '6px', marginBottom: '8px', flexWrap: 'wrap' }}>
@@ -654,14 +654,14 @@ export default function GECAIRPage() {
               </div>
               {circuitType === 'toggle_switch' && (
                 <div style={{ display: 'flex', gap: '6px', marginTop: '4px' }}>
-                  <span style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.paperLabel, alignSelf: 'center' }}>Perturbation:</span>
+                  <span style={{ fontFamily: THEME.MONO, fontSize: '11px', color: THEME.paperLabel, alignSelf: 'center' }}>Perturbation:</span>
                   {(['A', 'B'] as const).map(p => (
                     <button
                       key={p}
                       aria-label={`Toggle switch perturbation ${p}`}
                       onClick={() => setTogglePerturbation(p)}
                       className={`nb-tool-toggle ${togglePerturbation === p ? 'nb-tool-toggle--active' : ''}`}
-                      style={{ fontSize: '10px', padding: '2px 8px' }}
+                      style={{ fontSize: '11px', padding: '2px 8px' }}
                     >
                       State {p}
                     </button>
@@ -682,11 +682,11 @@ export default function GECAIRPage() {
                   return `M${pts.join(' L')}`;
                 };
                 return (
-                  <div style={{ marginTop: '12px', padding: '12px', borderRadius: 'var(--nb-radius-md)', border: `1px solid ${PATHD_THEME.paperBorder}`, background: PATHD_THEME.paperSurfaceStrong }}>
-                    <div style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperLabel, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>
+                  <div style={{ marginTop: '12px', padding: '12px', borderRadius: 'var(--nb-radius-md)', border: `1px solid ${THEME.paperBorder}`, background: THEME.paperSurfaceStrong }}>
+                    <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.paperLabel, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>
                       Repressilator Dynamics (RK4 ODE)
                     </div>
-                    <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperValue, lineHeight: 1.4, marginBottom: '8px' }}>
+                    <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: THEME.paperValue, lineHeight: 1.4, marginBottom: '8px' }}>
                       3-node ring oscillator: LacI represses TetR, TetR represses cI, cI represses LacI. Produces sustained limit-cycle oscillations (Elowitz &amp; Leibler, 2000).
                     </div>
                     <svg width={w} height={h} style={{ display: 'block', width: '100%' }}>
@@ -694,7 +694,7 @@ export default function GECAIRPage() {
                       <path d={toPath('pB')} fill="none" stroke="#C8E0D0" strokeWidth={1.5} />
                       <path d={toPath('pC')} fill="none" stroke="#DDD0E8" strokeWidth={1.5} />
                     </svg>
-                    <div style={{ display: 'flex', gap: '12px', marginTop: '6px', fontFamily: T.MONO, fontSize: '10px' }}>
+                    <div style={{ display: 'flex', gap: '12px', marginTop: '6px', fontFamily: THEME.MONO, fontSize: '11px' }}>
                       <span style={{ color: '#C8D8E8' }}>■ LacI</span>
                       <span style={{ color: '#C8E0D0' }}>■ TetR</span>
                       <span style={{ color: '#DDD0E8' }}>■ cI</span>
@@ -715,11 +715,11 @@ export default function GECAIRPage() {
                 const finalPC = trajectory[trajectory.length - 1].pC;
                 const cascadeGain = finalPC / Math.max(0.01, finalPA);
                 return (
-                  <div style={{ marginTop: '12px', padding: '12px', borderRadius: 'var(--nb-radius-md)', border: `1px solid ${PATHD_THEME.paperBorder}`, background: PATHD_THEME.paperSurfaceStrong }}>
-                    <div style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperLabel, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>
+                  <div style={{ marginTop: '12px', padding: '12px', borderRadius: 'var(--nb-radius-md)', border: `1px solid ${THEME.paperBorder}`, background: THEME.paperSurfaceStrong }}>
+                    <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.paperLabel, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>
                       Logic Cascade Dynamics (RK4 ODE)
                     </div>
-                    <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperValue, lineHeight: 1.4, marginBottom: '8px' }}>
+                    <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: THEME.paperValue, lineHeight: 1.4, marginBottom: '8px' }}>
                       3-node linear cascade: A constitutively driven, B repressed by A, C repressed by B. Signal attenuation through the cascade enables noise filtering (Hooshangi et al., 2005).
                     </div>
                     <svg width={w} height={h} style={{ display: 'block', width: '100%' }}>
@@ -727,12 +727,12 @@ export default function GECAIRPage() {
                       <path d={toPath('pB')} fill="none" stroke="#C8E0D0" strokeWidth={1.5} />
                       <path d={toPath('pC')} fill="none" stroke="#DDD0E8" strokeWidth={1.5} />
                     </svg>
-                    <div style={{ display: 'flex', gap: '12px', marginTop: '6px', fontFamily: T.MONO, fontSize: '10px' }}>
+                    <div style={{ display: 'flex', gap: '12px', marginTop: '6px', fontFamily: THEME.MONO, fontSize: '11px' }}>
                       <span style={{ color: '#C8D8E8' }}>■ Node A (input)</span>
                       <span style={{ color: '#C8E0D0' }}>■ Node B (cascade)</span>
                       <span style={{ color: '#DDD0E8' }}>■ Node C (output)</span>
                     </div>
-                    <div style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.mint, marginTop: '6px' }}>
+                    <div style={{ fontFamily: THEME.MONO, fontSize: '11px', color: THEME.mint, marginTop: '6px' }}>
                       Cascade gain: {cascadeGain.toFixed(2)} (pA={finalPA.toFixed(1)}, pB={finalPB.toFixed(1)}, pC={finalPC.toFixed(1)})
                     </div>
                   </div>
@@ -750,22 +750,22 @@ export default function GECAIRPage() {
               const finalPB = trajectory[trajectory.length - 1].pB;
               const settledState = finalPA > finalPB ? 'A' : 'B';
               return (
-                <div style={{ marginTop: '12px', padding: '12px', borderRadius: 'var(--nb-radius-md)', border: `1px solid ${PATHD_THEME.paperBorder}`, background: PATHD_THEME.paperSurfaceStrong }}>
-                  <div style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperLabel, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>
+                <div style={{ marginTop: '12px', padding: '12px', borderRadius: 'var(--nb-radius-md)', border: `1px solid ${THEME.paperBorder}`, background: THEME.paperSurfaceStrong }}>
+                  <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.paperLabel, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>
                     Toggle Switch Dynamics (RK4 ODE)
                   </div>
-                  <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperValue, lineHeight: 1.4, marginBottom: '8px' }}>
+                  <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: THEME.paperValue, lineHeight: 1.4, marginBottom: '8px' }}>
                     Mutual repression bistable switch: A represses B, B represses A. Settles to one stable state depending on initial perturbation (Gardner et al., 2000).
                   </div>
                   <svg width={w} height={h} style={{ display: 'block', width: '100%' }}>
                     <path d={toPath('pA')} fill="none" stroke="#C8D8E8" strokeWidth={1.5} />
                     <path d={toPath('pB')} fill="none" stroke="#E8DCC8" strokeWidth={1.5} />
                   </svg>
-                  <div style={{ display: 'flex', gap: '12px', marginTop: '6px', fontFamily: T.MONO, fontSize: '10px' }}>
+                  <div style={{ display: 'flex', gap: '12px', marginTop: '6px', fontFamily: THEME.MONO, fontSize: '11px' }}>
                     <span style={{ color: '#C8D8E8' }}>■ Protein A</span>
                     <span style={{ color: '#E8DCC8' }}>■ Protein B</span>
                   </div>
-                  <div style={{ fontFamily: T.MONO, fontSize: '10px', color: PATHD_THEME.mint, marginTop: '6px' }}>
+                  <div style={{ fontFamily: THEME.MONO, fontSize: '11px', color: THEME.mint, marginTop: '6px' }}>
                     Settled to state {settledState} (pA={finalPA.toFixed(1)}, pB={finalPB.toFixed(1)})
                   </div>
                 </div>
@@ -776,15 +776,15 @@ export default function GECAIRPage() {
               marginTop: '12px',
               padding: '12px',
               borderRadius: 'var(--nb-radius-md)',
-              border: `1px solid ${PATHD_THEME.paperBorder}`,
-              background: PATHD_THEME.paperSurfaceStrong,
+              border: `1px solid ${THEME.paperBorder}`,
+              background: THEME.paperSurfaceStrong,
               display: 'grid',
               gap: '6px',
             }}>
-              <div style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PATHD_THEME.paperLabel, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.paperLabel, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                 Recommendation
               </div>
-              <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: PATHD_THEME.paperValue, lineHeight: 1.55 }}>
+              <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: THEME.paperValue, lineHeight: 1.55 }}>
                 {recommendedGate === gateType
                   ? 'The active gate agrees with the system-derived recommendation, so the control story is internally coherent.'
                   : 'The active gate differs from the system-derived recommendation, which is useful when stress-testing alternative logic before build.'}
@@ -793,7 +793,7 @@ export default function GECAIRPage() {
           </div>
         </div>
 
-        <div style={{ borderTop: `1px solid ${PATHD_THEME.paperBorder}`, padding: '8px 16px', display: 'flex', gap: '8px', flexShrink: 0, background: PATHD_THEME.sepiaPanelMuted }}>
+        <div style={{ borderTop: `1px solid ${THEME.paperBorder}`, padding: '8px 16px', display: 'flex', gap: '8px', flexShrink: 0, background: THEME.sepiaPanelMuted }}>
           <ExportButton label="Export JSON" data={exportData} filename="gecair-circuit" format="json" />
         </div>
       </div>

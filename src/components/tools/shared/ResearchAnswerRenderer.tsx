@@ -20,7 +20,7 @@ export default function ResearchAnswerRenderer({
           <div
             style={{
               fontFamily: THEME.MONO,
-              fontSize: compact ? '8px' : '9px',
+              fontSize: compact ? '10px' : '11px',
               color: THEME.LABEL,
               letterSpacing: '0.08em',
               textTransform: 'uppercase',

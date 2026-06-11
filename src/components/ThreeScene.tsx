@@ -1091,16 +1091,16 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, 
             ↺ Reset
           </button>
           {fallbackLabel && (
-            <span style={{ ...getRendererTone(rendererMode), fontSize:'9px', fontFamily:"'Public Sans',sans-serif", padding:'2px 8px', borderRadius:'99px', letterSpacing:'0.04em', fontWeight:700 }}>
+            <span style={{ ...getRendererTone(rendererMode), fontSize:'10px', fontFamily:"'Public Sans',sans-serif", padding:'2px 8px', borderRadius:'99px', letterSpacing:'0.04em', fontWeight:700 }}>
               {fallbackLabel}
             </span>
           )}
-          <span style={{ color:'rgba(255,255,255,0.10)', fontSize:'9px', fontFamily:"'Public Sans',sans-serif" }}>drag · scroll · click</span>
+          <span style={{ color:'rgba(255,255,255,0.10)', fontSize:'10px', fontFamily:"'Public Sans',sans-serif" }}>drag · scroll · click</span>
         </div>
       </div>
 
       <div style={{ pointerEvents: 'none', position:'absolute', bottom:`${resolvedOpticalInsets.bottom}px`, left:`${resolvedOpticalInsets.left}px`, zIndex:10 }}>
-        <p style={{ color:'rgba(255,255,255,0.12)', fontSize:'8px', fontFamily:"'Public Sans',sans-serif", fontWeight:700, margin:'0 0 4px', letterSpacing:'0.07em', textTransform:'uppercase' }}>
+        <p style={{ color:'rgba(255,255,255,0.12)', fontSize:'10px', fontFamily:"'Public Sans',sans-serif", fontWeight:700, margin:'0 0 4px', letterSpacing:'0.07em', textTransform:'uppercase' }}>
           {viewMode === 'risk' ? 'RISK NODES' : viewMode === 'flow' ? 'FLUX EDGES' : 'CONFIDENCE'}
         </p>
         {(viewMode === 'risk'
@@ -1116,7 +1116,7 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, 
             : [{ c:'#C8D8E8',l:'>90' },{ c:'#C8E0D0',l:'70–90' },{ c:'#E8DCC8',l:'50–70' },{ c:'#E8C8D4',l:'<50' }]).map(x => (
           <div key={x.l} style={{ display:'flex', alignItems:'center', gap:'5px', marginBottom:'2px' }}>
             <div style={{ width:'12px', height:'2px', background:x.c, borderRadius:'1px', opacity:0.65 }} />
-            <span style={{ color:'rgba(255,255,255,0.14)', fontSize:'8px', fontFamily:"'Public Sans',sans-serif", fontFeatureSettings:"'tnum' 1" }}>{x.l}</span>
+            <span style={{ color:'rgba(255,255,255,0.14)', fontSize:'10px', fontFamily:"'Public Sans',sans-serif", fontFeatureSettings:"'tnum' 1" }}>{x.l}</span>
           </div>
         ))}
       </div>
@@ -1163,7 +1163,7 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, 
       </div>
 
       <div style={{ pointerEvents: 'none', position:'absolute', bottom:`${resolvedOpticalInsets.bottom}px`, right:`${resolvedOpticalInsets.right}px`, zIndex:10, background:'rgba(0,0,0,0.42)', padding:'8px 12px', borderRadius:'12px', border:'1px solid rgba(255,255,255,0.06)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}>
-        <p style={{ color:'rgba(255,255,255,0.45)', fontSize:'8px', fontFamily:"'Public Sans',sans-serif", fontWeight:700, margin:'0 0 6px', letterSpacing:'0.07em', textTransform:'uppercase' }}>Node Types</p>
+        <p style={{ color:'rgba(255,255,255,0.45)', fontSize:'10px', fontFamily:"'Public Sans',sans-serif", fontWeight:700, margin:'0 0 6px', letterSpacing:'0.07em', textTransform:'uppercase' }}>Node Types</p>
         {[
           { c: BIO_THEME_COLORS.CYAN,   l:'Metabolite', s:'●' },
           { c: BIO_THEME_COLORS.AMBER,  l:'Enzyme', s:'◆' },
@@ -1174,7 +1174,7 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, 
         ].map(x => (
           <div key={x.l} style={{ display:'flex', alignItems:'center', gap:'6px', marginBottom:'3px' }}>
             <span style={{ color:x.c, fontSize:'10px', lineHeight:1, width:'10px', textAlign:'center' }}>{x.s}</span>
-            <span style={{ color:'rgba(255,255,255,0.4)', fontSize:'8px', fontFamily:"'Public Sans',sans-serif" }}>{x.l}</span>
+            <span style={{ color:'rgba(255,255,255,0.4)', fontSize:'10px', fontFamily:"'Public Sans',sans-serif" }}>{x.l}</span>
           </div>
         ))}
       </div>

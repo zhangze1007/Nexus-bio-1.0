@@ -15,11 +15,12 @@ export const THEME = {
   BRAND: "'Space Grotesk',-apple-system,sans-serif",
 
   // ── Typography scale (px) ──────────────────────────────────────────
-  FS_XS:  '10px',
+  FS_XS:  '11px',  // Apple HIG minimum (was 10px)
   FS_SM:  '12px',
   FS_MD:  '14px',
   FS_LG:  '18px',
   FS_XL:  '24px',
+  FS_XXL: '32px',  // Page hero titles
 
   // ── Spacing scale (px) ─────────────────────────────────────────────
   SP_XS:  4,

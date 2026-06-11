@@ -357,7 +357,7 @@ export default function ToolShell({
               cursor: 'pointer', letterSpacing: '0.06em', textTransform: 'uppercase',
               listStyle: 'none', display: 'flex', alignItems: 'center', gap: '6px',
             }}>
-              <span style={{ fontSize: '9px', transition: 'transform 0.15s' }}>▸</span>
+              <span style={{ fontSize: '11px', transition: 'transform 0.15s' }}>▸</span>
               References ({references.length})
             </summary>
             <div style={{ paddingTop: '6px', display: 'flex', flexDirection: 'column', gap: '3px' }}>

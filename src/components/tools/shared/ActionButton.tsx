@@ -101,7 +101,7 @@ export default function ActionButton({
         fontWeight: 500,
         cursor: disabled ? 'not-allowed' : 'pointer',
         opacity: disabled ? 0.45 : 1,
-        transition: 'background 80ms, border-color 80ms, color 80ms',
+        transition: 'background 80ms, border-color 80ms, color 80ms, transform 120ms ease, box-shadow 120ms ease',
         whiteSpace: 'nowrap',
         flexShrink: 0,
         ...styleProp,

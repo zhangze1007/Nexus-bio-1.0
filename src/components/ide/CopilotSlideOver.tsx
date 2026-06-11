@@ -566,7 +566,7 @@ export default function CopilotSlideOver() {
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
                     <span style={{
-                      fontFamily: THEME.MONO, fontSize: '9px',
+                      fontFamily: THEME.MONO, fontSize: '11px',
                       padding: '1px 5px', borderRadius: '4px',
                       background: msg.role === 'user' ? 'rgba(175,195,214,0.12)' : 'rgba(163,195,214,0.12)',
                       color: msg.role === 'user' ? THEME.LABEL : THEME.SKY,
@@ -576,7 +576,7 @@ export default function CopilotSlideOver() {
                     </span>
                     {msg.provider && (
                       <span style={{
-                        fontFamily: THEME.MONO, fontSize: '9px',
+                        fontFamily: THEME.MONO, fontSize: '11px',
                         padding: '1px 5px', borderRadius: '4px',
                         background: 'rgba(175,195,214,0.10)',
                         color: THEME.LABEL,
@@ -584,7 +584,7 @@ export default function CopilotSlideOver() {
                         {msg.provider}
                       </span>
                     )}
-                    <span style={{ fontFamily: THEME.MONO, fontSize: '9px', color: THEME.LABEL, opacity: 0.5 }}>
+                    <span style={{ fontFamily: THEME.MONO, fontSize: '11px', color: THEME.LABEL, opacity: 0.5 }}>
                       {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>

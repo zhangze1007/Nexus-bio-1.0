@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ExportButton from '../ide/shared/ExportButton';
 import { useWorkbenchStore } from '../../store/workbenchStore';
-import { T } from '../ide/tokens';
+import { THEME } from '../../theme';
 import { buildProEvolCampaignInput } from '../../data/proevolMockCampaign';
 import { buildProEvolCampaign } from '../../services/ProEvolCampaignEngine';
 import {
@@ -456,11 +456,11 @@ export default function ProEvolPage() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
               <div
                 style={{
-                  fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: PROEVOL_THEME.muted,
+                  fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: PROEVOL_THEME.muted,
                   lineHeight: 1.5, flex: '1 1 260px',
                 }}
               >
-                Upload a CSV with columns: <code style={{ fontFamily: T.MONO, color: PROEVOL_THEME.sky, fontSize: 'var(--nb-fs-xs)' }}>variant_id, round, replicate, read_count</code>.
+                Upload a CSV with columns: <code style={{ fontFamily: THEME.MONO, color: PROEVOL_THEME.sky, fontSize: 'var(--nb-fs-xs)' }}>variant_id, round, replicate, read_count</code>.
                 Drop a file here or click to browse.
               </div>
               <label
@@ -468,7 +468,7 @@ export default function ProEvolPage() {
                   display: 'inline-flex', alignItems: 'center', gap: '6px',
                   padding: '6px 14px', borderRadius: '999px',
                   background: 'rgba(191,220,205,0.12)', color: PROEVOL_THEME.mint,
-                  fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', letterSpacing: '0.06em',
+                  fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', letterSpacing: '0.06em',
                   textTransform: 'uppercase', cursor: 'pointer',
                   border: `1px solid ${PROEVOL_THEME.mint}44`,
                 }}
@@ -485,10 +485,10 @@ export default function ProEvolPage() {
             </div>
           ) : (
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-              <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PROEVOL_THEME.value }}>
+              <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: PROEVOL_THEME.value }}>
                 {uploadFileName}
               </span>
-              <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: PROEVOL_THEME.muted }}>
+              <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: PROEVOL_THEME.muted }}>
                 {csvArtifact.provenance.replicateCount} replicates · {csvArtifact.provenance.bandSemantic === 'measurement' ? '95% CI bands' : 'model spread'}
               </span>
               <button
@@ -497,7 +497,7 @@ export default function ProEvolPage() {
                 style={{
                   padding: '4px 10px', borderRadius: '999px',
                   background: 'rgba(232,163,161,0.12)', color: PROEVOL_THEME.coral,
-                  fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', letterSpacing: '0.06em',
+                  fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', letterSpacing: '0.06em',
                   textTransform: 'uppercase', cursor: 'pointer',
                   border: `1px solid ${PROEVOL_THEME.coral}44`,
                 }}
@@ -509,7 +509,7 @@ export default function ProEvolPage() {
                   display: 'inline-flex', alignItems: 'center', gap: '6px',
                   padding: '4px 10px', borderRadius: '999px',
                   background: 'rgba(191,220,205,0.08)', color: PROEVOL_THEME.mint,
-                  fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', letterSpacing: '0.06em',
+                  fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', letterSpacing: '0.06em',
                   textTransform: 'uppercase', cursor: 'pointer',
                   border: `1px solid ${PROEVOL_THEME.mint}33`,
                 }}
@@ -526,7 +526,7 @@ export default function ProEvolPage() {
           )}
           {uploadError ? (
             <div style={{
-              fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: PROEVOL_THEME.coral,
+              fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: PROEVOL_THEME.coral,
               padding: '6px 10px', borderRadius: 'var(--nb-radius-sm)',
               background: 'rgba(232,163,161,0.08)', border: `1px solid ${PROEVOL_THEME.coral}33`,
               lineHeight: 1.5,
@@ -559,10 +559,10 @@ export default function ProEvolPage() {
         }}>
           <StatusPill tone="cool">{campaign.nextRoundRecommendation.action}</StatusPill>
           <div style={{ minWidth: 0 }}>
-            <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: PROEVOL_THEME.value, fontWeight: 600, lineHeight: 1.4 }}>
+            <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: PROEVOL_THEME.value, fontWeight: 600, lineHeight: 1.4 }}>
               {campaign.nextRoundRecommendation.title}
             </div>
-            <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: PROEVOL_THEME.muted, lineHeight: 1.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: PROEVOL_THEME.muted, lineHeight: 1.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {campaign.nextRoundRecommendation.summary}
             </div>
           </div>
@@ -592,7 +592,7 @@ export default function ProEvolPage() {
             <StatusPill tone={lead.predictedStability < 55 ? 'warm' : 'cool'}>
               stab {lead.predictedStability.toFixed(0)}
             </StatusPill>
-            <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PROEVOL_THEME.muted, marginLeft: 'auto' }}>
+            <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: PROEVOL_THEME.muted, marginLeft: 'auto' }}>
               dev {lead.developability.toFixed(0)} · {campaign.diversitySummary.classification}
             </span>
             <button
@@ -603,7 +603,7 @@ export default function ProEvolPage() {
                 minHeight: '22px', padding: '0 8px', borderRadius: '999px',
                 background: showParams ? 'rgba(191,220,205,0.12)' : undefined,
                 color: showParams ? PROEVOL_THEME.value : undefined,
-                fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase',
+                fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase',
                 letterSpacing: '0.06em', cursor: 'pointer',
               }}
             >
@@ -702,14 +702,14 @@ export default function ProEvolPage() {
 /* ── Shared sub-components ──────────────────────────────────────────── */
 
 const kicker: React.CSSProperties = {
-  fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PROEVOL_THEME.label,
+  fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: PROEVOL_THEME.label,
   letterSpacing: '0.12em', textTransform: 'uppercase',
 };
 
 function SectionKicker({ index, label }: { index: number; label: string }) {
   return (
     <div style={{
-      fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PROEVOL_THEME.label,
+      fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: PROEVOL_THEME.label,
       letterSpacing: '0.12em', textTransform: 'uppercase',
       paddingTop: '6px', borderTop: `1px solid ${PROEVOL_THEME.border}`,
       marginTop: '2px',
@@ -722,9 +722,9 @@ function SectionKicker({ index, label }: { index: number; label: string }) {
 function CompactMetric({ label, value, delta, accent }: { label: string; value: string; delta: string; accent: string }) {
   return (
     <div style={{ display: 'grid', gap: '3px', textAlign: 'center', minWidth: 0 }}>
-      <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PROEVOL_THEME.label, letterSpacing: '0.08em', textTransform: 'uppercase', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</span>
-      <span style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-lg)', fontWeight: 700, color: PROEVOL_THEME.value, letterSpacing: '-0.03em' }}>{value}</span>
-      <span style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: accent, fontFeatureSettings: "'tnum' 1" }}>{delta}</span>
+      <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: PROEVOL_THEME.label, letterSpacing: '0.08em', textTransform: 'uppercase', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</span>
+      <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-lg)', fontWeight: 700, color: PROEVOL_THEME.value, letterSpacing: '-0.03em' }}>{value}</span>
+      <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: accent, fontFeatureSettings: "'tnum' 1" }}>{delta}</span>
     </div>
   );
 }
@@ -732,8 +732,8 @@ function CompactMetric({ label, value, delta, accent }: { label: string; value: 
 function InfoField({ label, value }: { label: string; value: string }) {
   return (
     <div style={{ padding: '5px 8px', borderRadius: 'var(--nb-radius-sm)', border: `1px solid ${PROEVOL_THEME.border}`, background: 'rgba(255,255,255,0.02)' }}>
-      <div style={{ fontFamily: T.MONO, fontSize: 'var(--nb-fs-xs)', color: PROEVOL_THEME.label, letterSpacing: '0.08em', textTransform: 'uppercase' }}>{label}</div>
-      <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-sm)', color: PROEVOL_THEME.value, lineHeight: 1.4, marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{value}</div>
+      <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: PROEVOL_THEME.label, letterSpacing: '0.08em', textTransform: 'uppercase' }}>{label}</div>
+      <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: PROEVOL_THEME.value, lineHeight: 1.4, marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{value}</div>
     </div>
   );
 }
@@ -747,7 +747,7 @@ function ChartShell({ title, children, footnote }: { title: string; children: Re
       <div style={kicker}>{title}</div>
       <div>{children}</div>
       {footnote ? (
-        <div style={{ fontFamily: T.SANS, fontSize: 'var(--nb-fs-xs)', color: PROEVOL_THEME.muted, lineHeight: 1.5, paddingTop: '4px', borderTop: `1px dashed ${PROEVOL_THEME.border}` }}>
+        <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: PROEVOL_THEME.muted, lineHeight: 1.5, paddingTop: '4px', borderTop: `1px dashed ${PROEVOL_THEME.border}` }}>
           {footnote}
         </div>
       ) : null}

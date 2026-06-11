@@ -168,7 +168,7 @@ export default function WorkbenchInlineContext({
             background: (isSimulated || project?.isDemo) ? 'rgba(231,199,169,0.22)' : 'rgba(175,195,214,0.2)',
             color: VALUE,
             fontFamily: THEME.MONO,
-            fontSize: compact ? '8px' : '9px',
+            fontSize: compact ? '10px' : '11px',
             letterSpacing: '0.05em',
             textTransform: 'uppercase',
           }}
@@ -212,7 +212,7 @@ export default function WorkbenchInlineContext({
           <div
             style={{
               fontFamily: THEME.MONO,
-              fontSize: compact ? '8px' : '9px',
+              fontSize: compact ? '10px' : '11px',
               color: VALUE,
               textTransform: 'uppercase',
               letterSpacing: '0.08em',
@@ -223,7 +223,7 @@ export default function WorkbenchInlineContext({
           <div
             style={{
               fontFamily: THEME.SANS,
-              fontSize: compact ? '9px' : '11px',
+              fontSize: compact ? '10px' : '11px',
               color: LABEL,
               lineHeight: compact ? 1.4 : 1.55,
             }}
@@ -245,7 +245,7 @@ export default function WorkbenchInlineContext({
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap' }}>
-            <span style={{ fontFamily: THEME.MONO, fontSize: compact ? '8px' : '9px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            <span style={{ fontFamily: THEME.MONO, fontSize: compact ? '10px' : '11px', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
               Tool handoff
             </span>
             <span
@@ -256,7 +256,7 @@ export default function WorkbenchInlineContext({
                 background: THEME.CHIP_NEUTRAL,
                 color: handoffColor(handoffSummary.availability),
                 fontFamily: THEME.MONO,
-                fontSize: compact ? '8px' : '9px',
+                fontSize: compact ? '10px' : '11px',
                 textTransform: 'uppercase',
                 letterSpacing: '0.06em',
               }}
@@ -267,20 +267,20 @@ export default function WorkbenchInlineContext({
           {handoffSummary.upstreamRows.length > 0 && (
             <div style={{ display: 'grid', gap: '4px' }}>
               {handoffSummary.upstreamRows.map((row) => (
-                <div key={`${row.toolId}-${row.artifactPath}`} style={{ fontFamily: THEME.SANS, fontSize: compact ? '9px' : '11px', color: LABEL, lineHeight: 1.45 }}>
+                <div key={`${row.toolId}-${row.artifactPath}`} style={{ fontFamily: THEME.SANS, fontSize: compact ? '10px' : '11px', color: LABEL, lineHeight: 1.45 }}>
                   Requires {row.toolId.toUpperCase()} <span style={{ fontFamily: THEME.MONO, color: VALUE }}>{row.artifactPath}</span> · {row.present ? 'present' : workflowStatusLabel(row.status)}
                 </div>
               ))}
             </div>
           )}
           {handoffSummary.nextToolId && (
-            <div style={{ fontFamily: THEME.SANS, fontSize: compact ? '9px' : '11px', color: LABEL, lineHeight: 1.45 }}>
+            <div style={{ fontFamily: THEME.SANS, fontSize: compact ? '10px' : '11px', color: LABEL, lineHeight: 1.45 }}>
               Next {handoffSummary.nextToolId.toUpperCase()} expects{' '}
               <span style={{ fontFamily: THEME.MONO, color: VALUE }}>{handoffSummary.nextArtifactPath ?? 'a published artifact'}</span>
               {' '}· {handoffSummary.nextArtifactPresent ? 'present' : workflowStatusLabel(handoffSummary.availability)}
             </div>
           )}
-          <div style={{ fontFamily: THEME.SANS, fontSize: compact ? '9px' : '11px', color: LABEL, lineHeight: 1.45 }}>
+          <div style={{ fontFamily: THEME.SANS, fontSize: compact ? '10px' : '11px', color: LABEL, lineHeight: 1.45 }}>
             {handoffSummary.reason}
           </div>
         </div>

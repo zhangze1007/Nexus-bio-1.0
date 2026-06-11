@@ -644,7 +644,7 @@ export default React.memo(function NEXAIPage() {
                       background: verifying ? 'rgba(175,195,214,0.18)' : 'transparent',
                       color: THEME.VALUE,
                       fontFamily: THEME.MONO,
-                      fontSize: '9px',
+                      fontSize: '11px',
                       fontWeight: 700,
                       letterSpacing: '0.06em',
                       textTransform: 'uppercase',
@@ -688,7 +688,7 @@ export default React.memo(function NEXAIPage() {
                         {statusLabel && (
                           <span style={{
                             fontFamily: THEME.MONO,
-                            fontSize: '8px',
+                            fontSize: '11px',
                             fontWeight: 700,
                             color: statusColor,
                             letterSpacing: '0.04em',
@@ -703,7 +703,7 @@ export default React.memo(function NEXAIPage() {
                       </div>
                     </div>
                     {c.pmid && (
-                      <div style={{ fontFamily: THEME.MONO, fontSize: '8px', color: THEME.LABEL, marginTop: '2px' }}>
+                      <div style={{ fontFamily: THEME.MONO, fontSize: '11px', color: THEME.LABEL, marginTop: '2px' }}>
                         PMID: {c.pmid}{c.journal ? ` · ${c.journal}` : ''}
                       </div>
                     )}
