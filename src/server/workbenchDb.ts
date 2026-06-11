@@ -522,13 +522,17 @@ async function migrateLegacyJsonIfNeeded(): Promise<void> {
 
 // ─── Public API ──────────────────────────────────────────────────────────────
 
+let schemaReady = false;
+
 export async function getWorkbenchDb(): Promise<void> {
+  if (schemaReady) return;
   if (!process.env.TURSO_DATABASE_URL) {
     await mkdir(resolveStoreDir(), { recursive: true });
   }
   await initializeSchema();
   await migrateLegacyCanonicalIfNeeded();
   await migrateLegacyJsonIfNeeded();
+  schemaReady = true;
 }
 
 export async function projectStateExists(projectId?: string | null, options?: ScopeResolveOptions): Promise<boolean> {

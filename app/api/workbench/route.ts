@@ -60,7 +60,7 @@ export async function GET(request: Request) {
   const useArtifactScope = Boolean(artifactId);
   const explicitScope = useArtifactScope ? { forceExplicit: true as const } : undefined;
 
-  if (artifactId && !await projectStateExists(artifactId, explicitScope)) {
+  if (artifactId && !(await projectStateExists(artifactId, explicitScope))) {
     return NextResponse.json({ ok: false, error: 'Workflow artifact not found' }, { status: 404, headers: getCorsHeaders(request) });
   }
 
