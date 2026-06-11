@@ -1,7 +1,19 @@
 /**
- * Michaelis-Menten kinetics and RK4 ODE solver.
- * Extracted from KineticPanel for testability and reuse.
+ * Michaelis-Menten kinetics and ODE solver.
+ *
+ * Delegates to kineticsEngine.ts for:
+ *   - Multi-inhibition velocity models (competitive, uncompetitive, mixed, substrate)
+ *   - Dormand-Prince adaptive RK4(5) ODE solver
+ *
+ * Backward compatibility: existing callers of mmVelocity and runRK4
+ * continue to work with identical signatures and return types.
  */
+
+import {
+  competitiveInhibition,
+  simulateEnzymeSystem,
+  type EnzymeKinetics,
+} from '../services/kineticsEngine';
 
 export interface SimResult {
   time: number[];
@@ -10,21 +22,35 @@ export interface SimResult {
   velocity: number[];
 }
 
-/** Michaelis-Menten velocity with optional competitive inhibition. */
+/**
+ * Michaelis-Menten velocity with optional competitive inhibition.
+ *
+ * Delegates to kineticsEngine.competitiveInhibition internally.
+ * When Ki and I are both provided and positive, competitive inhibition
+ * is applied: Km_eff = Km * (1 + I / Ki).
+ */
 export function mmVelocity(S: number, Vmax: number, Km: number, Ki?: number, I?: number): number {
+  if (Ki !== undefined && I !== undefined && Ki > 0 && I > 0) {
+    return competitiveInhibition(Vmax, S, Km, Ki, I);
+  }
+  // No inhibition — plain Michaelis-Menten
   const sSafe = Math.max(0, S);
-  const kmEff = Ki !== undefined && I !== undefined && Ki > 0 && I > 0
-    ? Km * (1 + I / Ki)
-    : Km;
-  const denominator = kmEff + sSafe;
-  if (denominator <= 0) return 0; // guard against Km=0, S=0
+  const denominator = Km + sSafe;
+  if (denominator <= 0) return 0;
   return (Vmax * sSafe) / denominator;
 }
 
 /**
- * RK4 ODE solver for single-enzyme pathway.
+ * ODE solver for single-enzyme pathway.
+ *
  * dS/dt = -v(S) + formation_rate
  * dP/dt = +v(S) - degradation_rate * P
+ *
+ * Delegates to kineticsEngine.simulateEnzymeSystem with adaptive
+ * Dormand-Prince RK4(5) step control. Formation and degradation rates
+ * are modeled as additional pseudo-enzymes:
+ *   - Formation: high-concentration pool species -> S (pool >> Km_formation)
+ *   - Degradation: P -> pool (large Km for first-order approximation)
  */
 export function runRK4(
   S0: number, P0: number,
@@ -33,53 +59,99 @@ export function runRK4(
   Ki: number | undefined, I: number | undefined,
   duration: number, steps: number
 ): SimResult {
+  const velocity0 = mmVelocity(S0, Vmax, Km, Ki, I);
+
   // Guard against degenerate inputs
   if (steps <= 0 || duration <= 0) {
     return {
       time: [0],
       substrate: [S0],
       product: [P0],
-      velocity: [mmVelocity(S0, Vmax, Km, Ki, I)],
+      velocity: [velocity0],
     };
   }
 
-  const dt = duration / steps;
-  const time = [0];
-  const substrate = [S0];
-  const product = [P0];
-  const velocity = [mmVelocity(S0, Vmax, Km, Ki, I)];
+  const hasFormation = formationRate > 0;
+  const hasDegradation = degradationRate > 0;
+  const hasInhibition = Ki !== undefined && I !== undefined && Ki > 0 && I > 0;
 
-  let S = S0, P = P0;
+  // Pool concentration for formation/degradation pseudo-enzymes.
+  // High enough that consumption over the simulation is negligible.
+  const POOL_CONC = 1e8;
+  // Large Km for degradation pseudo-enzyme to approximate first-order decay:
+  // v = vmax * P / (km + P) ≈ (vmax / km) * P when P << km
+  const DEGRADATION_KM = 1e8;
 
-  for (let i = 0; i < steps; i++) {
-    const v = (s: number) => mmVelocity(Math.max(0, s), Vmax, Km, Ki, I);
-    const dS = (s: number) => formationRate - v(s);
-    const dP = (s: number, p: number) => v(s) - degradationRate * p;
+  // Species layout: [S, P] + optional pool + optional inhibitor
+  const species: number[] = [S0, P0];
+  let poolIndex = -1;
+  let inhibitorIndex = -1;
 
-    // Save original state for coupled RK4 — all k-values must reference the
-    // same starting state to preserve conservation laws.
-    const S0i = S, P0i = P;
-
-    const k1s = dS(S0i);
-    const k1p = dP(S0i, P0i);
-
-    const k2s = dS(S0i + dt * k1s / 2);
-    const k2p = dP(S0i + dt * k1s / 2, P0i + dt * k1p / 2);
-
-    const k3s = dS(S0i + dt * k2s / 2);
-    const k3p = dP(S0i + dt * k2s / 2, P0i + dt * k2p / 2);
-
-    const k4s = dS(S0i + dt * k3s);
-    const k4p = dP(S0i + dt * k3s, P0i + dt * k3p);
-
-    S = Math.max(0, S0i + (dt / 6) * (k1s + 2 * k2s + 2 * k3s + k4s));
-    P = Math.max(0, P0i + (dt / 6) * (k1p + 2 * k2p + 2 * k3p + k4p));
-
-    time.push(parseFloat(((i + 1) * dt).toFixed(3)));
-    substrate.push(parseFloat(S.toFixed(4)));
-    product.push(parseFloat(P.toFixed(4)));
-    velocity.push(parseFloat(v(S).toFixed(4)));
+  if (hasFormation || hasDegradation) {
+    poolIndex = species.length;
+    species.push(POOL_CONC);
+  }
+  if (hasInhibition) {
+    inhibitorIndex = species.length;
+    species.push(I);
   }
 
-  return { time, substrate, product, velocity };
+  // Build enzyme definitions
+  const enzymes: EnzymeKinetics[] = [];
+
+  // Formation pseudo-enzyme: pool -> S
+  // When pool >> km, v ≈ vmax ≈ formationRate (constant production)
+  if (hasFormation) {
+    enzymes.push({
+      id: 'formation',
+      substrateIndex: poolIndex,
+      productIndex: 0, // S
+      vmax: formationRate,
+      km: 1, // pool (1e8) >> 1, so v ≈ formationRate
+    });
+  }
+
+  // Main enzyme: S -> P (with optional competitive inhibition)
+  const mainEnzyme: EnzymeKinetics = {
+    id: 'main',
+    substrateIndex: 0, // S
+    productIndex: 1, // P
+    vmax: Vmax,
+    km: Km,
+  };
+  if (hasInhibition) {
+    mainEnzyme.ki = Ki;
+    mainEnzyme.inhibitorIndex = inhibitorIndex;
+  }
+  enzymes.push(mainEnzyme);
+  const mainEnzymeIdx = enzymes.length - 1;
+
+  // Degradation pseudo-enzyme: P -> pool
+  // First-order approximation: v = vmax * P / (km + P) ≈ (vmax/km) * P when P << km
+  // Set vmax = degradationRate * km so that vmax/km = degradationRate
+  if (hasDegradation) {
+    enzymes.push({
+      id: 'degradation',
+      substrateIndex: 1, // P
+      productIndex: poolIndex,
+      vmax: degradationRate * DEGRADATION_KM,
+      km: DEGRADATION_KM,
+    });
+  }
+
+  // Run adaptive Dormand-Prince simulation
+  const dt = duration / steps;
+  const result = simulateEnzymeSystem(enzymes, species, duration, dt, {
+    adaptive: true,
+    rtol: 1e-6,
+    atol: 1e-9,
+  });
+
+  // Convert to SimResult (backward-compatible format)
+  return {
+    time: result.time.map(t => parseFloat(t.toFixed(3))),
+    substrate: result.species[0].map(s => parseFloat(s.toFixed(4))),
+    product: result.species[1].map(p => parseFloat(p.toFixed(4))),
+    velocity: result.velocities[mainEnzymeIdx].map(v => parseFloat(v.toFixed(4))),
+  };
 }
