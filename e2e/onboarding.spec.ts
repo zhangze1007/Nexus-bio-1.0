@@ -4,7 +4,7 @@ import { test, expect } from '@playwright/test';
  * Onboarding overlay E2E tests.
  *
  * The OnboardingOverlay (rendered in app/layout.tsx) checks localStorage
- * for the key "nexus-bio-onboarding-done". If absent, it shows a 3-step
+ * for the key "nexus-bio-onboarding-done". If absent, it shows a 4-step
  * walkthrough. These tests use a fresh browser context (no localStorage)
  * to verify the overlay lifecycle.
  *
@@ -76,6 +76,10 @@ test.describe('Onboarding overlay', () => {
     await expect(page.getByText('Anytime')).toBeVisible();
     await expect(page.getByText('Ask Axon for help')).toBeVisible();
 
+    // Step 3 -> Step 4
+    await page.getByRole('button', { name: 'Next' }).click();
+    await expect(page.getByText('Track progress')).toBeVisible();
+
     // The last step button should say "Get started" instead of "Next"
     await expect(
       page.getByRole('button', { name: 'Get started' }),
@@ -89,7 +93,8 @@ test.describe('Onboarding overlay', () => {
     await page.waitForLoadState('domcontentloaded');
     await waitForOnboarding(page);
 
-    // Advance through all 3 steps
+    // Advance through all 4 steps
+    await page.getByRole('button', { name: 'Next' }).click();
     await page.getByRole('button', { name: 'Next' }).click();
     await page.getByRole('button', { name: 'Next' }).click();
     await page.getByRole('button', { name: 'Get started' }).click();
