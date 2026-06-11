@@ -215,7 +215,7 @@ export default function ToolShell({
               {description}
             </div>
           )}
-          {tool?.focus && (
+          {(tool?.focus || tool?.glossary) && (
             <details style={{ marginTop: '4px' }}>
               <summary style={{
                 fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL,
@@ -224,12 +224,42 @@ export default function ToolShell({
               }}>
                 What does this tool do?
               </summary>
-              <p style={{
-                fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: THEME.LABEL,
-                marginTop: '4px', lineHeight: 1.55, maxWidth: '480px',
-              }}>
-                {tool.focus}
-              </p>
+              {tool.glossary && (
+                <p style={{
+                  fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: THEME.LABEL,
+                  marginTop: '4px', lineHeight: 1.6, maxWidth: '520px',
+                }}>
+                  {tool.glossary}
+                </p>
+              )}
+              {!tool.glossary && tool.focus && (
+                <p style={{
+                  fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: THEME.LABEL,
+                  marginTop: '4px', lineHeight: 1.55, maxWidth: '480px',
+                }}>
+                  {tool.focus}
+                </p>
+              )}
+              {tool.keyConcepts && tool.keyConcepts.length > 0 && (
+                <div style={{ display: 'grid', gap: '4px', marginTop: '8px', maxWidth: '520px' }}>
+                  {tool.keyConcepts.map(({ term, definition }) => (
+                    <div key={term} style={{ display: 'flex', gap: '8px' }}>
+                      <span style={{
+                        fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)',
+                        color: THEME.SKY, fontWeight: 600, flexShrink: 0,
+                      }}>
+                        {term}
+                      </span>
+                      <span style={{
+                        fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)',
+                        color: THEME.LABEL, lineHeight: 1.5,
+                      }}>
+                        {definition}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </details>
           )}
         </div>

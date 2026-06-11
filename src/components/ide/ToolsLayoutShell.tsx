@@ -35,6 +35,7 @@ import WorkbenchStatusBar from '../workbench/WorkbenchStatusBar';
 import { useWorkbenchStore } from '../../store/workbenchStore';
 import { AxonOrchestratorProvider } from '../../providers/AxonOrchestratorProvider';
 import { ErrorBoundary } from '../shared/ErrorBoundary';
+import { OnboardingOverlay } from '../shared/OnboardingOverlay';
 
 function openCopilot() {
   useUIStore.getState().setCopilotOpen(true);
@@ -189,6 +190,7 @@ export default function ToolsLayoutShell({ children }: ToolsLayoutShellProps) {
          * when agentic mode is OFF, preserving the non-agentic UX.
          */}
         <GlobalAutomationDock />
+        <OnboardingOverlay />
       </div>
       </AxonOrchestratorProvider>
     </NavigationProvider>
