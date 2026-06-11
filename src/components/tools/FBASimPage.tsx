@@ -28,6 +28,7 @@ import ToolTabPanel from './shared/ToolTabPanel';
 import FloatingControlRail from './shared/FloatingControlRail';
 import InlineMetricOverlay from './shared/InlineMetricOverlay';
 import type { ToolTab } from './shared/ToolTabBar';
+import WorkbenchTrustIndicator from '../workbench/WorkbenchTrustIndicator';
 
 // ── Extracted sub-components (imported from fbasim/) ──
 import { FluxMap, W, H, SUBSYSTEM_COLORS, FLUX_FWD_COLOR, FLUX_REV_COLOR, runForceLayout } from './fbasim/FluxMap';
@@ -450,6 +451,14 @@ export default React.memo(function FBASimPage() {
         </>
       }
     >
+      {/* ── Trust Status Indicator ── */}
+      <div style={{ padding: '4px 16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <WorkbenchTrustIndicator toolId="fbasim" compact />
+        <span style={{ fontFamily: THEME.MONO, fontSize: '10px', color: 'rgba(226,232,240,0.35)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+          Payload admission
+        </span>
+      </div>
+
       {/* ── Algorithm Transparency ── */}
       <div style={{ padding: '8px 16px' }}>
         <AlgorithmPanel
