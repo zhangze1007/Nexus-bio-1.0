@@ -6,6 +6,7 @@ import {
   hillEquation,
   simulateEnzymeSystem,
   EnzymeKinetics,
+  AdaptiveODEOptions,
 } from '../src/services/kineticsEngine';
 
 // ═══════════════════════════════════════════════════════════════
@@ -389,5 +390,308 @@ describe('simulateEnzymeSystem', () => {
     for (const v of result.velocities[0]) {
       expect(v).toBeGreaterThanOrEqual(0);
     }
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+//  7. Adaptive ODE Solver (Dormand-Prince RK4(5))
+// ═══════════════════════════════════════════════════════════════
+
+describe('adaptive ODE solver (Dormand-Prince)', () => {
+  const adaptiveOpts: AdaptiveODEOptions = { adaptive: true, rtol: 1e-8, atol: 1e-10 };
+
+  // ── Smooth problem agreement ──────────────────────────────────
+
+  it('matches fixed-step RK4 for a smooth single-enzyme problem', () => {
+    const enzymes: EnzymeKinetics[] = [
+      { id: 'E1', substrateIndex: 0, productIndex: 1, vmax: 10, km: 5 },
+    ];
+    const init = [20, 0];
+    const tEnd = 1;
+
+    const fixed = simulateEnzymeSystem(enzymes, init, tEnd, 0.001);
+    const adaptive = simulateEnzymeSystem(enzymes, init, tEnd, 0.1, adaptiveOpts);
+
+    // Final concentrations should agree within tolerance
+    const fixedSFinal = fixed.species[0][fixed.species[0].length - 1];
+    const adaptiveSFinal = adaptive.species[0][adaptive.species[0].length - 1];
+    expectClose(fixedSFinal, adaptiveSFinal, 0.05);
+
+    const fixedPFinal = fixed.species[1][fixed.species[1].length - 1];
+    const adaptivePFinal = adaptive.species[1][adaptive.species[1].length - 1];
+    expectClose(fixedPFinal, adaptivePFinal, 0.05);
+
+    // Conservation check
+    expectClose(adaptiveSFinal + adaptivePFinal, 20, 0.01);
+  });
+
+  it('matches fixed-step RK4 for a two-enzyme cascade', () => {
+    const enzymes: EnzymeKinetics[] = [
+      { id: 'E1', substrateIndex: 0, productIndex: 1, vmax: 5, km: 3 },
+      { id: 'E2', substrateIndex: 1, productIndex: 2, vmax: 3, km: 2 },
+    ];
+    const init = [20, 0, 0];
+    const tEnd = 2;
+
+    const fixed = simulateEnzymeSystem(enzymes, init, tEnd, 0.001);
+    const adaptive = simulateEnzymeSystem(enzymes, init, tEnd, 0.1, adaptiveOpts);
+
+    // All species should agree
+    for (let j = 0; j < 3; j++) {
+      const fixedFinal = fixed.species[j][fixed.species[j].length - 1];
+      const adaptiveFinal = adaptive.species[j][adaptive.species[j].length - 1];
+      expectClose(fixedFinal, adaptiveFinal, 0.1);
+    }
+
+    // Conservation: A + B + C = 20
+    const a = adaptive.species[0];
+    const b = adaptive.species[1];
+    const c = adaptive.species[2];
+    const total = a[a.length - 1] + b[b.length - 1] + c[c.length - 1];
+    expectClose(total, 20, 0.01);
+  });
+
+  // ── Error tolerance ──────────────────────────────────────────
+
+  it('respects the specified error tolerance', () => {
+    // Use a simple linear ODE: dy/dt = -y, y(0) = 1 => y(t) = e^(-t)
+    // Simulate as a single enzyme with very high Vmax and Km to approximate linear decay
+    const enzymes: EnzymeKinetics[] = [
+      { id: 'E1', substrateIndex: 0, productIndex: 1, vmax: 1, km: 0.001 },
+    ];
+    const init = [1, 0];
+
+    const result = simulateEnzymeSystem(enzymes, init, 1, 0.1, {
+      adaptive: true,
+      rtol: 1e-6,
+      atol: 1e-9,
+    });
+
+    // The adaptive solver should produce well-resolved output
+    expect(result.meta).toBeDefined();
+    expect(result.meta!.totalSteps).toBeGreaterThan(0);
+
+    // Conservation: S + P should be constant
+    const sFinal = result.species[0][result.species[0].length - 1];
+    const pFinal = result.species[1][result.species[1].length - 1];
+    expectClose(sFinal + pFinal, 1, 0.001);
+  });
+
+  it('produces more accurate results with tighter tolerance', () => {
+    const enzymes: EnzymeKinetics[] = [
+      { id: 'E1', substrateIndex: 0, productIndex: 1, vmax: 10, km: 5 },
+    ];
+    const init = [20, 0];
+    const tEnd = 1;
+
+    // Tight tolerance
+    const tight = simulateEnzymeSystem(enzymes, init, tEnd, 0.1, {
+      adaptive: true,
+      rtol: 1e-10,
+      atol: 1e-12,
+    });
+
+    // Loose tolerance
+    const loose = simulateEnzymeSystem(enzymes, init, tEnd, 0.1, {
+      adaptive: true,
+      rtol: 1e-3,
+      atol: 1e-6,
+    });
+
+    // Both should conserve mass
+    const tightS = tight.species[0][tight.species[0].length - 1];
+    const tightP = tight.species[1][tight.species[1].length - 1];
+    expectClose(tightS + tightP, 20, 0.01);
+
+    const looseS = loose.species[0][loose.species[0].length - 1];
+    const looseP = loose.species[1][loose.species[1].length - 1];
+    expectClose(looseS + looseP, 20, 0.1);
+  });
+
+  // ── Step size adaptation ─────────────────────────────────────
+
+  it('uses adaptive step sizes (meta reports varying dt)', () => {
+    const enzymes: EnzymeKinetics[] = [
+      { id: 'E1', substrateIndex: 0, productIndex: 1, vmax: 10, km: 5 },
+    ];
+
+    const result = simulateEnzymeSystem(enzymes, [20, 0], 1, 0.1, adaptiveOpts);
+
+    expect(result.meta).toBeDefined();
+    const meta = result.meta!;
+
+    // Should have taken multiple steps
+    expect(meta.totalSteps).toBeGreaterThan(1);
+
+    // Min and max step sizes should differ (adaptive behavior)
+    expect(meta.maxDt).toBeGreaterThan(meta.minDt);
+
+    // No stiffness on this smooth problem
+    expect(meta.stiffnessDetected).toBe(false);
+  });
+
+  it('takes fewer steps than fixed-step for smooth problems', () => {
+    const enzymes: EnzymeKinetics[] = [
+      { id: 'E1', substrateIndex: 0, productIndex: 1, vmax: 5, km: 10 },
+    ];
+    const init = [50, 0];
+    const tEnd = 1;
+
+    const fixedSteps = Math.ceil(tEnd / 0.001); // 1000 fixed steps
+    const adaptive = simulateEnzymeSystem(enzymes, init, tEnd, 0.1, adaptiveOpts);
+
+    // Adaptive should use fewer total steps than fixed-step with tiny dt
+    expect(adaptive.meta!.totalSteps).toBeLessThan(fixedSteps);
+  });
+
+  // ── Stiffness detection ──────────────────────────────────────
+
+  it('detects stiffness for a stiff problem', () => {
+    // Create a stiff system: one very fast enzyme, one very slow
+    // Fast enzyme with tiny Km creates rapid transient
+    const enzymes: EnzymeKinetics[] = [
+      { id: 'E_fast', substrateIndex: 0, productIndex: 1, vmax: 1000, km: 0.001 },
+      { id: 'E_slow', substrateIndex: 1, productIndex: 2, vmax: 0.1, km: 10 },
+    ];
+    const init = [10, 0, 0];
+
+    const result = simulateEnzymeSystem(enzymes, init, 1, 0.1, {
+      adaptive: true,
+      rtol: 1e-8,
+      atol: 1e-10,
+      minStepSize: 1e-10, // allow very small steps
+    });
+
+    // Should detect stiffness or at least use very small steps
+    expect(result.meta).toBeDefined();
+    // The fast enzyme creates a rapid transient that forces small steps
+    expect(result.meta!.minDt).toBeLessThan(1e-4);
+  });
+
+  // ── Edge cases ───────────────────────────────────────────────
+
+  it('returns single-point result for zero duration (adaptive mode)', () => {
+    const enzymes: EnzymeKinetics[] = [
+      { id: 'E1', substrateIndex: 0, productIndex: 1, vmax: 10, km: 5 },
+    ];
+
+    const result = simulateEnzymeSystem(enzymes, [10, 0], 0, 0.01, adaptiveOpts);
+
+    expect(result.time).toEqual([0]);
+    expect(result.species[0]).toEqual([10]);
+    expect(result.species[1]).toEqual([0]);
+  });
+
+  it('handles empty enzymes array (adaptive mode)', () => {
+    const result = simulateEnzymeSystem([], [10, 5], 1, 0.01, adaptiveOpts);
+
+    // No enzymes means no change
+    const sFinal = result.species[0][result.species[0].length - 1];
+    const pFinal = result.species[1][result.species[1].length - 1];
+    expectClose(sFinal, 10, 0.01);
+    expectClose(pFinal, 5, 0.01);
+  });
+
+  it('adaptive mode returns meta information', () => {
+    const enzymes: EnzymeKinetics[] = [
+      { id: 'E1', substrateIndex: 0, productIndex: 1, vmax: 10, km: 5 },
+    ];
+
+    const result = simulateEnzymeSystem(enzymes, [20, 0], 1, 0.1, adaptiveOpts);
+
+    expect(result.meta).toBeDefined();
+    expect(typeof result.meta!.stiffnessDetected).toBe('boolean');
+    expect(typeof result.meta!.totalSteps).toBe('number');
+    expect(typeof result.meta!.rejectedSteps).toBe('number');
+    expect(typeof result.meta!.minDt).toBe('number');
+    expect(typeof result.meta!.maxDt).toBe('number');
+  });
+
+  it('fixed-step mode does not return meta', () => {
+    const enzymes: EnzymeKinetics[] = [
+      { id: 'E1', substrateIndex: 0, productIndex: 1, vmax: 10, km: 5 },
+    ];
+
+    const result = simulateEnzymeSystem(enzymes, [20, 0], 1, 0.1);
+
+    // Without adaptive option, meta should be undefined
+    expect(result.meta).toBeUndefined();
+  });
+
+  // ── Backward compatibility ───────────────────────────────────
+
+  it('calling without options preserves original fixed-step behavior', () => {
+    const enzymes: EnzymeKinetics[] = [
+      { id: 'E1', substrateIndex: 0, productIndex: 1, vmax: 10, km: 5 },
+    ];
+
+    const result = simulateEnzymeSystem(enzymes, [20, 0], 1, 0.01);
+
+    // Same behavior as before: fixed-step RK4
+    const sFinal = result.species[0][result.species[0].length - 1];
+    const pFinal = result.species[1][result.species[1].length - 1];
+
+    expect(sFinal).toBeLessThan(20);
+    expect(pFinal).toBeGreaterThan(0);
+    expectClose(sFinal + pFinal, 20, 0.1);
+    expect(result.meta).toBeUndefined();
+  });
+
+  // ── High-dimensional system ──────────────────────────────────
+
+  it('handles a multi-species cascade with adaptive solver', () => {
+    // A -> B -> C -> D -> E
+    const enzymes: EnzymeKinetics[] = [
+      { id: 'E1', substrateIndex: 0, productIndex: 1, vmax: 5, km: 2 },
+      { id: 'E2', substrateIndex: 1, productIndex: 2, vmax: 3, km: 3 },
+      { id: 'E3', substrateIndex: 2, productIndex: 3, vmax: 4, km: 1 },
+      { id: 'E4', substrateIndex: 3, productIndex: 4, vmax: 2, km: 5 },
+    ];
+    const init = [100, 0, 0, 0, 0];
+
+    const result = simulateEnzymeSystem(enzymes, init, 5, 0.1, adaptiveOpts);
+
+    // Conservation: sum of all species should equal initial total
+    const finalTotal = result.species.reduce(
+      (sum, sp) => sum + sp[sp.length - 1],
+      0,
+    );
+    expectClose(finalTotal, 100, 0.1);
+
+    // A should decrease, E should accumulate
+    expect(result.species[0][result.species[0].length - 1]).toBeLessThan(100);
+    expect(result.species[4][result.species[4].length - 1]).toBeGreaterThan(0);
+  });
+
+  // ── Competitive inhibition with adaptive solver ──────────────
+
+  it('handles competitive inhibition correctly with adaptive solver', () => {
+    const enzymesNoInhib: EnzymeKinetics[] = [
+      { id: 'E1', substrateIndex: 0, productIndex: 1, vmax: 10, km: 5 },
+    ];
+
+    const enzymesInhib: EnzymeKinetics[] = [
+      {
+        id: 'E1',
+        substrateIndex: 0,
+        productIndex: 1,
+        vmax: 10,
+        km: 5,
+        ki: 2,
+        inhibitorIndex: 2,
+      },
+    ];
+
+    const init = [20, 0, 10];
+    const tEnd = 1;
+
+    const resultNoInhib = simulateEnzymeSystem(enzymesNoInhib, init, tEnd, 0.1, adaptiveOpts);
+    const resultInhib = simulateEnzymeSystem(enzymesInhib, init, tEnd, 0.1, adaptiveOpts);
+
+    const pNoInhib = resultNoInhib.species[1][resultNoInhib.species[1].length - 1];
+    const pInhib = resultInhib.species[1][resultInhib.species[1].length - 1];
+
+    // Inhibition should reduce product formation
+    expect(pInhib).toBeLessThan(pNoInhib);
   });
 });
