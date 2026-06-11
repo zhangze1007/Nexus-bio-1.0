@@ -106,19 +106,7 @@ function TimeSeriesSVG({ trajectory, setpoint, svgRef }: { trajectory: ODEState[
         const toxicityY = lane.key === 'fpp'
           ? y + laneH - normalize(DEFAULT_PARAMS.fppToxicThreshold, lane.max) * laneH : null;
 
-        // Confidence band: ±5% of laneH
-        const sigma = laneH * 0.05;
-        const bandPath = coords.length > 1
-          ? catmullRomPath(coords.map(([x, cy]) => [x, cy - sigma] as [number, number]))
-            + ' '
-            + catmullRomPath([...coords].reverse().map(([x, cy]) => [x, cy + sigma] as [number, number])).replace('M', 'L')
-            + ' Z'
-          : '';
         const smoothPath = catmullRomPath(coords);
-        // Extract base color for band fill
-        const bandColor = lane.color.startsWith('rgba')
-          ? lane.color.replace(/[\d.]+\)$/, '0.10)')
-          : lane.color + '1a';
 
         return (
           <g key={lane.key}>
@@ -137,9 +125,7 @@ function TimeSeriesSVG({ trajectory, setpoint, svgRef }: { trajectory: ODEState[
             {toxicityY !== null && (
               <line x1={PAD_X} y1={toxicityY} x2={PAD_X + plotWidth} y2={toxicityY} stroke="rgba(255,49,49,0.35)" strokeDasharray="5 4" />
             )}
-            {/* Confidence band */}
-            {bandPath && <motion.path d={bandPath} fill={bandColor} stroke="none" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6, delay: index * 0.1 }} />}
-            {/* Smooth Catmull-Rom curve */}
+            {/* Smooth Catmull-Rom curve — deterministic simulation, no uncertainty quantification */}
             <motion.path d={smoothPath} fill="none" stroke={lane.color} strokeWidth="2" initial={{ pathLength: 0, opacity: 0 }} animate={{ pathLength: 1, opacity: 1 }} transition={{ duration: 1.2, ease: 'easeOut', delay: index * 0.1 }} />
             <motion.circle cx={markerX} cy={markerY} r="4" fill={lane.color} initial={{ opacity: 0, scale: 0 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.3, delay: 1.0 + index * 0.1 }} />
             <text x="20" y={y + 14} fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.24)">{lane.label}</text>
@@ -168,6 +154,12 @@ function TimeSeriesSVG({ trajectory, setpoint, svgRef }: { trajectory: ODEState[
           </g>
         );
       })}
+
+      {/* Deterministic simulation — no uncertainty quantification */}
+      <text x={PAD_X} y={plotTop + lanes.length * (laneH + laneGap) - laneGap + 30}
+        fontFamily={THEME.MONO} fontSize="9" fill="rgba(255,255,255,0.18)" fontStyle="italic">
+        Deterministic simulation — no uncertainty quantification
+      </text>
 
       {/* Phase portrait inset (P vs FPP) */}
       <rect x={PP_X - 4} y={PP_Y - 12} width={PP_W + 8} height={PP_H + 22} rx="8"
