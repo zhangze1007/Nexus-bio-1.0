@@ -17,7 +17,8 @@ import {
   mapControlGainToRBS,
   getAllRBS,
 } from '../src/data/mockDynCon';
-import type { ControllerParams, HillParams, BioreactorParams } from '../src/types';
+import type { ControllerParams, HillParams } from '../src/types';
+import type { BioreactorParams } from '../src/data/mockDynCon';
 
 // ════════════════════════════════════════════════════════════════════════════
 // 1. HILL FUNCTION
@@ -359,7 +360,7 @@ describe('7. Silent Failures & Edge Cases', () => {
     for (const s of traj) {
       expect(isFinite(s.biomass)).toBe(true);
       expect(isFinite(s.dissolvedO2)).toBe(true);
-      expect(isFinite(s.fpp)).toBe(true);
+      expect(isFinite(s.fpp ?? 0)).toBe(true);
       expect(isNaN(s.biomass)).toBe(false);
     }
     // clampState prevents unbounded growth
@@ -497,8 +498,8 @@ describe('10. Full Simulation Smoke Test', () => {
     const traj = runBioreactor(DEFAULT_CONTROLLER, DEFAULT_PARAMS, 200, 1.0);
     // FPP is repressed by Hill feedback (FPP=2088 at 200h, Kd=50 => ADS≈0.0006)
     // But it doesn't fully stabilize because biomass keeps growing (feed sustains growth)
-    const fpp100 = traj[99].fpp;
-    const fpp200 = traj[199].fpp;
+    const fpp100 = traj[99].fpp ?? 0;
+    const fpp200 = traj[199].fpp ?? 0;
     // Verify FPP is in the expected range (thousands of μM due to high kFPP * X)
     expect(fpp100).toBeGreaterThan(1000);
     expect(fpp200).toBeGreaterThan(1000);
