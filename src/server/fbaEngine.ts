@@ -275,6 +275,43 @@ export async function solveAuthorityFBA(request: SingleSpeciesFBARequest): Promi
 }
 
 /**
+ * Build the LPModel for a single-species FBA without solving it.
+ * Useful for FVA and pFBA which need the raw model.
+ */
+export function buildAuthorityFBAModel(request: SingleSpeciesFBARequest): LPModel {
+  const network = NETWORKS[request.species];
+  const clamped: SingleSpeciesFBARequest = {
+    species: request.species,
+    objective: request.objective,
+    glucoseUptake: clamp(request.glucoseUptake, 0, 25),
+    oxygenUptake: clamp(request.oxygenUptake, 0, 25),
+    knockouts: Array.from(new Set(request.knockouts ?? [])),
+  };
+
+  const knockoutSet = new Set(clamped.knockouts);
+  const objective = network.objectives[clamped.objective];
+  const constraints = network.constraints.map((c) => ({
+    name: c.name,
+    vars: c.vars,
+    lb: 0,
+    ub: 0,
+  }));
+  const bounds = network.reactions.map((r) => ({
+    name: r.id,
+    lb: r.lb,
+    ub: knockoutSet.has(r.id) ? 0 : (typeof r.ub === 'function' ? r.ub(clamped) : r.ub),
+  }));
+
+  return {
+    name: `fba_${network.species}`,
+    sense: 'maximize',
+    objective,
+    constraints,
+    bounds,
+  };
+}
+
+/**
  * @scientific_provenance
  *
  * REFERENCE:

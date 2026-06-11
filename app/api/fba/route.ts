@@ -1,5 +1,10 @@
 import { NextResponse } from 'next/server';
-import { solveAuthorityCommunityFBA, solveAuthorityFBA, type CommunityFBARequest, type FBAObjective, type FBASpecies } from '../../../src/server/fbaEngine';
+import { solveAuthorityCommunityFBA, solveAuthorityFBA, buildAuthorityFBAModel, solveExpandedFBA, type CommunityFBARequest, type FBAObjective, type FBASpecies } from '../../../src/server/fbaEngine';
+import { solveLP } from '../../../src/server/highsSolver';
+import { runFVA } from '../../../src/server/fbaFVA';
+import { runPFBA } from '../../../src/server/fbaPFBA';
+import { getKnockoutReactions } from '../../../src/server/fbaGPR';
+import { IJO1366_REACTIONS } from '../../../src/data/iJO1366Subset';
 import { createProvenanceEntry } from '../../../src/utils/provenance';
 import { getCorsHeaders, handleOptions } from '../../../src/utils/cors';
 
@@ -23,6 +28,16 @@ function asSpecies(value: unknown): FBASpecies {
 }
 
 function asKnockouts(value: unknown) {
+  if (!Array.isArray(value)) return [];
+  return value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0);
+}
+
+function asAction(value: unknown): 'fba' | 'fva' | 'pfba' | 'knockout' {
+  if (value === 'fva' || value === 'pfba' || value === 'knockout') return value;
+  return 'fba';
+}
+
+function asStringArray(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
   return value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0);
 }
@@ -88,13 +103,110 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: true, mode: 'community', result, provenance: provenanceEntry }, { headers: getCorsHeaders(request) });
     }
 
-    const result = await solveAuthorityFBA({
-      species: asSpecies(input.species),
-      objective: asObjective(input.objective),
-      glucoseUptake: asNumber(input.glucoseUptake, 10),
-      oxygenUptake: asNumber(input.oxygenUptake, 12),
-      knockouts: asKnockouts(input.knockouts),
-    });
+    const species = asSpecies(input.species);
+    const objective = asObjective(input.objective);
+    const glucoseUptake = asNumber(input.glucoseUptake, 10);
+    const oxygenUptake = asNumber(input.oxygenUptake, 12);
+    const knockouts = asKnockouts(input.knockouts);
+    const action = asAction(input.action);
+
+    const baseRequest = { species, objective, glucoseUptake, oxygenUptake, knockouts };
+
+    // ── FVA ─────────────────────────────────────────────────────────
+    if (action === 'fva') {
+      const model = buildAuthorityFBAModel(baseRequest);
+      const baseResult = await solveLP(model);
+      if (baseResult.status !== 'optimal') {
+        return NextResponse.json(
+          { ok: false, error: 'Base FBA solve failed — model infeasible for FVA', requestId },
+          { status: 422, headers: getCorsHeaders(request) },
+        );
+      }
+      const reactionIds = asStringArray(input.reactionIds);
+      const fvaResult = await runFVA(model, baseResult.objectiveValue, reactionIds.length > 0 ? reactionIds : undefined);
+      const provenanceEntry = createProvenanceEntry({
+        toolId: 'fbasim-fva',
+        outputAssumptions: [
+          'fbasim-fva.steady_state',
+          'fbasim-fva.objective_toleranced',
+          'fbasim-fva.no_regulation',
+          'fbasim-fva.simplex_real',
+        ],
+        evidence: [{
+          id: `fva-${Date.now()}`,
+          source: 'computation',
+          reference: 'Flux Variability Analysis (Mahadevan & Schilling 2003) via HiGHS LP',
+          confidence: 'high',
+        }],
+      });
+      return NextResponse.json({ ok: true, action: 'fva', result: fvaResult, provenance: provenanceEntry }, { headers: getCorsHeaders(request) });
+    }
+
+    // ── pFBA ────────────────────────────────────────────────────────
+    if (action === 'pfba') {
+      const model = buildAuthorityFBAModel(baseRequest);
+      const pfbaResult = await runPFBA(model);
+      const provenanceEntry = createProvenanceEntry({
+        toolId: 'fbasim-pfba',
+        outputAssumptions: [
+          'fbasim-pfba.steady_state',
+          'fbasim-pfba.min_total_flux',
+          'fbasim-pfba.no_regulation',
+          'fbasim-pfba.simplex_real',
+        ],
+        evidence: [{
+          id: `pfba-${Date.now()}`,
+          source: 'computation',
+          reference: 'Parsimonious FBA (Lewis et al. 2010) via HiGHS LP',
+          confidence: 'high',
+        }],
+      });
+      return NextResponse.json({ ok: true, action: 'pfba', result: pfbaResult, provenance: provenanceEntry }, { headers: getCorsHeaders(request) });
+    }
+
+    // ── GPR Knockout ────────────────────────────────────────────────
+    if (action === 'knockout') {
+      const genes = asStringArray(input.genes);
+      if (genes.length === 0) {
+        return NextResponse.json(
+          { ok: false, error: 'knockout action requires a non-empty "genes" array', requestId },
+          { status: 400, headers: getCorsHeaders(request) },
+        );
+      }
+      // Build GPR rules map from iJO1366 reactions
+      const gprRules: Record<string, string> = {};
+      for (const rxn of IJO1366_REACTIONS) {
+        if (rxn.gpr) gprRules[rxn.id] = rxn.gpr;
+      }
+      const geneKnockouts = getKnockoutReactions(genes, gprRules);
+      const allKnockouts = Array.from(new Set([...knockouts, ...geneKnockouts]));
+      const result = await solveExpandedFBA({
+        objective: objective === 'atp' ? 'biomass' : objective,
+        glucoseUptake,
+        oxygenUptake,
+        knockouts: allKnockouts,
+      });
+      const provenanceEntry = createProvenanceEntry({
+        toolId: 'fbasim-knockout',
+        outputAssumptions: [
+          'fbasim-knockout.steady_state',
+          'fbasim-knockout.gpr_boolean',
+          'fbasim-knockout.no_regulation',
+          'fbasim-knockout.simplex_real',
+          'fbasim-knockout.iJO1366_subset',
+        ],
+        evidence: [{
+          id: `knockout-${Date.now()}`,
+          source: 'computation',
+          reference: `Gene knockout via GPR rules on iJO1366 subset: genes=[${genes.join(',')}] → ${geneKnockouts.length} reactions disabled`,
+          confidence: 'high',
+        }],
+      });
+      return NextResponse.json({ ok: true, action: 'knockout', genes, knockedOutReactions: geneKnockouts, result, provenance: provenanceEntry }, { headers: getCorsHeaders(request) });
+    }
+
+    // ── Standard FBA (default) ──────────────────────────────────────
+    const result = await solveAuthorityFBA(baseRequest);
     const provenanceEntry = createProvenanceEntry({
       toolId: 'fbasim-single',
       outputAssumptions: [
