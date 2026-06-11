@@ -24,6 +24,9 @@ import SelectionDecisionCard from './proevol/SelectionDecisionCard';
 import VariantLibraryTable from './proevol/VariantLibraryTable';
 import LineageTracePanel from './proevol/LineageTracePanel';
 import ActivityLandscapePanel from './proevol/ActivityLandscapePanel';
+import ToolShell from './shared/ToolShell';
+import type { ToolTab } from './shared/ToolTabBar';
+import ToolTabPanel from './shared/ToolTabPanel';
 import { PROEVOL_THEME, formatSigned, StatusPill } from './proevol/shared';
 
 import TruthHeader from './proevol/research/TruthHeader';
@@ -257,6 +260,7 @@ export default function ProEvolPage() {
   const [uploadFileName, setUploadFileName] = useState<string | null>(null);
   const [isParsing, setIsParsing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [activeTab, setActiveTab] = useState('landscape');
 
   // ── CSV upload handler ──────────────────────────────────────────────────
   const handleCSVUpload = useCallback((file: File) => {
@@ -417,8 +421,26 @@ export default function ProEvolPage() {
   const lead = campaign.leadVariant;
   const wt = campaign.wildType;
 
+  const tabs: ToolTab[] = [
+    { id: 'landscape', label: 'Landscape' },
+    { id: 'trajectory', label: 'Trajectory' },
+    { id: 'library', label: 'Library' },
+    { id: 'lineage', label: 'Lineage' },
+    { id: 'campaign', label: 'Campaign' },
+  ];
+
   return (
-    <div className="nb-tool-page" style={{ background: PANEL_BG, minHeight: '100%' }}>
+    <ToolShell
+      moduleId="proevol"
+      title="Protein Evolution"
+      description="Directed evolution campaign management with fitness landscape analysis"
+      tabs={tabs}
+      activeTab={activeTab}
+      onTabChange={setActiveTab}
+      advancedTabIds={['lineage', 'campaign']}
+    >
+      {/* ═══════ LANDSCAPE TAB (default) ═══════ */}
+      <ToolTabPanel activeId={activeTab} tabId="landscape">
       <div style={{ display: 'grid', gap: '10px', padding: '10px 12px 14px' }}>
 
         {/* ═══ 1. TRUTH HEADER ═══ */}
@@ -695,7 +717,40 @@ export default function ProEvolPage() {
           <ExportButton label="Artifact JSON" data={artifact} filename={`proevol-artifact${exportSuffix}`} format="json" />
         </div>
       </div>
-    </div>
+      </ToolTabPanel>
+
+      {/* ═══════ TRAJECTORY TAB ═══════ */}
+      <ToolTabPanel activeId={activeTab} tabId="trajectory">
+        <div style={{ padding: '16px', textAlign: 'center', color: THEME.LABEL, fontFamily: THEME.SANS }}>
+          <p style={{ fontSize: 'var(--nb-fs-md)', margin: '0 0 8px' }}>Trajectory charts are in the Landscape tab</p>
+          <p style={{ fontSize: 'var(--nb-fs-sm)', margin: 0 }}>Switch to the Landscape tab to see variant trajectory, Muller plot, enrichment scatter, and diversity convergence curves.</p>
+        </div>
+      </ToolTabPanel>
+
+      {/* ═══════ LIBRARY TAB ═══════ */}
+      <ToolTabPanel activeId={activeTab} tabId="library">
+        <div style={{ padding: '16px', textAlign: 'center', color: THEME.LABEL, fontFamily: THEME.SANS }}>
+          <p style={{ fontSize: 'var(--nb-fs-md)', margin: '0 0 8px' }}>Variant library is in the Landscape tab</p>
+          <p style={{ fontSize: 'var(--nb-fs-sm)', margin: 0 }}>Switch to the Landscape tab to see the full variant library table.</p>
+        </div>
+      </ToolTabPanel>
+
+      {/* ═══════ LINEAGE TAB ═══════ */}
+      <ToolTabPanel activeId={activeTab} tabId="lineage">
+        <div style={{ padding: '16px', textAlign: 'center', color: THEME.LABEL, fontFamily: THEME.SANS }}>
+          <p style={{ fontSize: 'var(--nb-fs-md)', margin: '0 0 8px' }}>Lineage trace is in the Landscape tab</p>
+          <p style={{ fontSize: 'var(--nb-fs-sm)', margin: 0 }}>Switch to the Landscape tab to see the lineage trace panel.</p>
+        </div>
+      </ToolTabPanel>
+
+      {/* ═══════ CAMPAIGN TAB ═══════ */}
+      <ToolTabPanel activeId={activeTab} tabId="campaign">
+        <div style={{ padding: '16px', textAlign: 'center', color: THEME.LABEL, fontFamily: THEME.SANS }}>
+          <p style={{ fontSize: 'var(--nb-fs-md)', margin: '0 0 8px' }}>Campaign details are in the Landscape tab</p>
+          <p style={{ fontSize: 'var(--nb-fs-sm)', margin: 0 }}>Switch to the Landscape tab to see campaign context and recommendations.</p>
+        </div>
+      </ToolTabPanel>
+    </ToolShell>
   );
 }
 
