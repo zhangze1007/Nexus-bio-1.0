@@ -240,7 +240,6 @@ export function extractMOFAFactors(
   tolerance: number = 1e-4,
 ): MOFAResult {
   const n = data.length;
-  const K = Math.min(nFactors, n);
   const rng = new SeededRNG(42);
 
   // Build view matrices + missing-value masks
@@ -261,6 +260,20 @@ export function extractMOFAFactors(
       mask: data.map(d => [d.metabolite !== undefined && d.metabolite !== null]),
     },
   ];
+
+  // Cap K to prevent over-factorization: max rank of feature matrix is nFeatures,
+  // but requesting K == nFeatures is degenerate (each factor maps to one feature).
+  // Cap at nFeatures - 1 so factors must capture shared structure.
+  const nFeatures = views.reduce((sum, v) => sum + v.matrix[0].length, 0); // 3
+  const maxK = Math.max(1, Math.min(n, nFeatures - 1));
+  const K = Math.min(nFactors, maxK);
+  if (K < nFactors) {
+    console.warn(
+      `[MOIEngine] ALS factors reduced from ${nFactors} to ${K}: ` +
+      `only ${nFeatures} features across ${views.length} views — requesting more factors ` +
+      `would cause degenerate (rank-deficient) factorization.`
+    );
+  }
 
   // Count missing data
   let totalCells = 0, missingCells = 0;
@@ -1001,10 +1014,11 @@ function pcaProject(matrix: number[][], nComponents: number = 3): number[][] {
   // Power iteration to extract top eigenvectors
   const eigenvectors: number[][] = [];
   const eigenvalues: number[] = [];
+  const rng = new SeededRNG(42);
 
   for (let comp = 0; comp < nComponents; comp++) {
-    // Initialize random vector
-    let v = Array.from({ length: d }, () => Math.random() - 0.5);
+    // Initialize random vector (deterministic via seeded RNG)
+    let v = Array.from({ length: d }, () => rng.next() - 0.5);
     let norm = Math.sqrt(v.reduce((s, x) => s + x * x, 0));
     v = v.map(x => x / norm);
 
