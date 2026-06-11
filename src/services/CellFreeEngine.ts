@@ -171,7 +171,7 @@ const K_ATP_ENERGY = 0.1;    // mM — ATP half-saturation for energy modulation
 const K_CONSUME_TX = 0.002;  // mM NTP consumed per nM mRNA synthesised
 const K_CONSUME_TL = 0.005;  // mM ATP consumed per nM protein synthesised
 const K_GTP_CONSUME = 0.003; // mM GTP consumed per nM protein synthesised
-const K_AA_CONSUME  = 0.001; // mM AA consumed per nM·aa translated
+const K_AA_CONSUME  = 1e-6;  // mM AA consumed per nM·aa translated (1 nM residue = 1e-6 mM)
 const K_NTP_CONSUME = 0.001; // mM NTP consumed per nM mRNA synthesised
 
 /**
@@ -967,8 +967,8 @@ export function generateDefaultParameters(): CFSParameters {
       atp: 1.5,                 // mM
       gtp: 1.5,                 // mM
       pep: 33,                  // mM — phosphoenolpyruvate energy source
-      aminoAcids: 2.0,          // mM
-      ntps: 2.0,                // mM
+      aminoAcids: 15.0,         // mM — S30 extract: ~1 mM per AA × 20 AAs = ~20 mM total; 15 mM conservative
+      ntps: 5.0,                // mM — CTP+UTP pool for transcription
     },
     energyDecayRate: 0.003,     // 1/min — background ATP hydrolysis
     pepRegenerationRate: 0.005, // 1/min — PEP → ATP regeneration
