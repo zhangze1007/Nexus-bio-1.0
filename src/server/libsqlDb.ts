@@ -7,6 +7,7 @@
  * This replaces better-sqlite3 which is synchronous and ephemeral on Vercel.
  */
 import { createClient, type Client, type InArgs, type InStatement } from '@libsql/client';
+import fs from 'node:fs';
 import path from 'node:path';
 
 const LOCAL_DB_PATH = path.join(process.cwd(), '.nexus', 'workbench.db');
@@ -26,8 +27,26 @@ function resolveAuthToken(): string | undefined {
 
 export function getLibsqlClient(): Client {
   if (singletonClient) return singletonClient;
+
+  const url = resolveDbUrl();
+  const isRemote = url.startsWith('http');
+
+  // Issue 2: When using a remote Turso URL, TURSO_AUTH_TOKEN must be present.
+  if (isRemote && !process.env.TURSO_AUTH_TOKEN) {
+    throw new Error(
+      'TURSO_DATABASE_URL is set but TURSO_AUTH_TOKEN is missing. ' +
+      'Both environment variables are required for a remote Turso connection.',
+    );
+  }
+
+  // Issue 1: Ensure the parent directory exists for local file-based databases.
+  if (!isRemote) {
+    const dbDir = path.dirname(LOCAL_DB_PATH);
+    fs.mkdirSync(dbDir, { recursive: true });
+  }
+
   singletonClient = createClient({
-    url: resolveDbUrl(),
+    url,
     authToken: resolveAuthToken(),
   });
   return singletonClient;
