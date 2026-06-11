@@ -43,6 +43,7 @@ let currentMode: 'simulating' | 'stress_test' | 'equilibrium' = 'simulating';
 let tick = 0;
 let prevRate = 0;
 let equilibriumCount = 0;
+let fbaUnavailableNotified = false;
 
 // ── FBA Cache ──────────────────────────────────────────────────────────
 
@@ -471,27 +472,26 @@ async function computeKineticReadouts(
     };
   }
 
-  // Fallback to heuristic calculations if FBA unavailable
-  const baseAtp  = 2 + (p.substrate / 100) * 34;  // glycolysis + TCA
-  const atpYield = baseAtp * (rate / (p.vmax + 0.01));
-
+  // FBA server unavailable — return NaN for FBA-dependent fields to
+  // signal "no data" rather than fabricated values.  The UI should
+  // display these as "—" or "N/A".  nadphRate and stressIndex are
+  // still computed from real Michaelis-Menten kinetics and
+  // environmental parameters respectively.
   const nadphRate = 0.6 * rate * (p.enzyme / 10);
 
-  // Carbon efficiency: fraction of substrate carbon reaching product
-  const carbonEfficiency = Math.min(
-    100,
-    50 + 40 * (rate / (p.vmax + 0.01)) * Math.exp(-((p.pH - 7.4) ** 2) / 2),
-  );
-
-  // Flux balance score: deviation from optimal steady state
-  const optRate = michaelisRate({ ...p, substrate: p.km }); // v = Vmax/2 at Km
-  const fluxBalance = 1 - Math.abs(rate - optRate) / (p.vmax + 0.01);
+  if (!fbaUnavailableNotified) {
+    fbaUnavailableNotified = true;
+    self.postMessage({
+      type: 'ERROR',
+      message: 'FBA server unavailable — ATP yield, carbon efficiency, and flux balance are not available. Showing kinetic simulation only.',
+    } satisfies FBAWorkerOut);
+  }
 
   return {
-    atpYield,
+    atpYield: NaN,
     nadphRate,
-    carbonEfficiency,
-    fluxBalance,
+    carbonEfficiency: NaN,
+    fluxBalance: NaN,
     stressIndex: computeStressIndex(p),
   };
 }
@@ -557,6 +557,7 @@ self.onmessage = (e: MessageEvent<FBAWorkerIn>) => {
     tick = 0;
     prevRate = 0;
     equilibriumCount = 0;
+    fbaUnavailableNotified = false;
     if (intervalId) clearInterval(intervalId);
     // 60 Hz tick on worker thread
     intervalId = setInterval(runTick, 1000 / 60);
@@ -581,6 +582,7 @@ self.onmessage = (e: MessageEvent<FBAWorkerIn>) => {
     tick = 0;
     prevRate = 0;
     equilibriumCount = 0;
+    fbaUnavailableNotified = false;
 
     // Start or update stream client
     if (!streamClient) {

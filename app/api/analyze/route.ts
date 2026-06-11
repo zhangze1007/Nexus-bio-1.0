@@ -249,6 +249,7 @@ function enrichAxonOutput(raw: string): EnrichResult {
 
     return {
       node_id: b.node_id,
+      source: 'server_enrichment' as const,
       de_novo_design_strategy: {
         active_site_remodeling: `Repack catalytic pocket for ${b.enzyme} by introducing polarity-matched sidechains around the transition-state contact shell to reduce local activation barriers.`,
         thermal_stability_enhancement: `Engineer a thermostability layer for ${b.enzyme} with loop rigidification and salt-bridge reinforcement to preserve active conformation under production stress.`,
