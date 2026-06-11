@@ -1103,8 +1103,15 @@ export default React.memo(function MultiOPage() {
             ]}
           >
             {vaeLoading && (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px', color: THEME.LABEL, fontSize: 'var(--nb-fs-sm)', fontFamily: 'monospace' }}>
-                Training VAE embedding model…
+              <div style={{ display: 'grid', gap: '8px', padding: '16px' }}>
+                <div style={{ height: '14px', width: '50%', borderRadius: '4px', background: `linear-gradient(90deg, ${THEME.PANEL_STRONG} 25%, rgba(255,255,255,0.06) 50%, ${THEME.PANEL_STRONG} 75%)`, backgroundSize: '200% 100%', animation: 'shimmer 1.5s ease-in-out infinite' }} />
+                <div style={{ height: '240px', borderRadius: '12px', background: `linear-gradient(90deg, ${THEME.PANEL_STRONG} 25%, rgba(255,255,255,0.06) 50%, ${THEME.PANEL_STRONG} 75%)`, backgroundSize: '200% 100%', animation: 'shimmer 1.5s ease-in-out infinite' }} />
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  {[1,2,3,4].map(i => <div key={i} style={{ height: '36px', flex: 1, borderRadius: '8px', background: `linear-gradient(90deg, ${THEME.PANEL_STRONG} 25%, rgba(255,255,255,0.06) 50%, ${THEME.PANEL_STRONG} 75%)`, backgroundSize: '200% 100%', animation: 'shimmer 1.5s ease-in-out infinite', animationDelay: `${i * 0.1}s` }} />)}
+                </div>
+                <div style={{ textAlign: 'center', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL, marginTop: '4px' }}>
+                  Training VAE embedding model…
+                </div>
               </div>
             )}
             {vaeError && (

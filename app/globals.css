@@ -847,6 +847,74 @@ textarea:focus-visible,
   }
 }
 
+/* ── Responsive: FloatingControlRail collapse ── */
+@media (max-width: 768px) {
+  .nb-floating-rail {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    top: auto !important;
+    width: 100% !important;
+    max-height: 50vh;
+    border-right: none !important;
+    border-top: 1px solid rgba(255,255,255,0.12) !important;
+    border-radius: 16px 16px 0 0 !important;
+    z-index: 85;
+    overflow-y: auto;
+    transform: translateY(calc(100% - 48px));
+    transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .nb-floating-rail[data-expanded="true"] {
+    transform: translateY(0);
+  }
+
+  /* MetricCard grid: 2 columns on tablet, 1 on mobile */
+  .nb-metric-grid {
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)) !important;
+  }
+
+  /* Tab bar: horizontal scroll on mobile */
+  .nb-tool-tab-bar {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .nb-tool-tab-bar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* ScientificFigureFrame: full width on mobile */
+  .nb-scientific-figure {
+    min-width: 0 !important;
+  }
+
+  /* Chart containers: allow horizontal scroll for fixed-width SVGs */
+  .nb-chart-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Extra small: single column everything */
+  .nb-tool-shell__header {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .nb-tool-tab-bar {
+    gap: 2px;
+  }
+
+  .nb-tool-tab-bar button {
+    padding: 6px 10px !important;
+    font-size: 11px !important;
+  }
+}
+
 /* ── Skeleton shimmer animation ── */
 @keyframes shimmer {
   0% { background-position: 200% 0; }
