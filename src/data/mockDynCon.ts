@@ -52,7 +52,7 @@ export interface BioreactorParams {
 
 export const DEFAULT_PARAMS: BioreactorParams = {
   muMax: 0.4, Ks: 0.15, Ko: 0.2, Yxs: 0.45, Yps: 0.38,
-  kLa: 250, OstarSat: 8, feedConc: 400, feedRate: 0.02,
+  kLa: 0.015, OstarSat: 8, feedConc: 400, feedRate: 0.02,
   kFPP: 12.0,      // FPP synthesis: 12 μM/h per g/L biomass
   kADS: 0.08,      // ADS catalysis rate
   fppDegradation: 0.15,  // FPP consumed at 0.15 h⁻¹
@@ -103,7 +103,7 @@ function derivatives(
   const V = 2.0; // working volume L
   const SPONTANEOUS_LOSS_RATE = 0.02; // h⁻¹ FPP spontaneous degradation
   const PROTEIN_TURNOVER_RATE = 0.3; // h⁻¹ protein turnover
-  const O2_CONSUMPTION_COEFF = 0.18; // mol O₂ per mol biomass
+  const O2_CONSUMPTION_COEFF = 1.5; // O₂ consumption coefficient (mg O₂ per g biomass per h)
   const { mu } = monodRate(s.S, s.O, s.FPP, s.P, s.ADS, p);
 
   // Biomass
