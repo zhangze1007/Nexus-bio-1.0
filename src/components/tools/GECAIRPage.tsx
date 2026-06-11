@@ -9,6 +9,10 @@ import { useWorkbenchStore } from '../../store/workbenchStore';
 import { THEME } from '../../theme';
 import WorkbenchRangeSlider from './shared/WorkbenchRangeSlider';
 import ScientificHero from './shared/ScientificHero';
+import ToolShell from './shared/ToolShell';
+import type { ToolTab } from './shared/ToolTabBar';
+import ToolTabPanel from './shared/ToolTabPanel';
+import FloatingControlRail from './shared/FloatingControlRail';
 
 import ScientificFigureFrame from './shared/ScientificFigureFrame';
 import ScientificMethodStrip from './shared/ScientificMethodStrip';
@@ -378,6 +382,7 @@ export default function GECAIRPage() {
   const [gateType, setGateType] = useState<GateType>('NOT');
   const [circuitType, setCircuitType] = useState<'repressilator' | 'toggle_switch' | 'logic_cascade'>('repressilator');
   const [togglePerturbation, setTogglePerturbation] = useState<'A' | 'B'>('A');
+  const [activeTab, setActiveTab] = useState('circuit');
   const recommendedGate = useMemo<GateType>(() => {
     if ((catalystPayload?.result.totalMetabolicDrain ?? 0) > 0.45) return 'NAND';
     if (dynconPayload?.result.stable && catalystPayload?.result.isViable) return 'AND';
@@ -458,15 +463,27 @@ export default function GECAIRPage() {
     setToolPayload,
   ]);
 
-  return (
-    <>
-      <div className="nb-tool-page" style={{ background: THEME.sepiaPanelMuted }}>
-        <AlgorithmInsight
-          title="Gene Circuit AI Reasoner"
-          description="Hill-function kinetics model promoter activity. Inhibition gates use Hill repression; activation uses Hill induction."
-          formula="f(x) = Kⁿ/(Kⁿ+xⁿ)"
-        />
+  const tabs: ToolTab[] = [
+    { id: 'circuit', label: 'Circuit' },
+    { id: 'phasespace', label: 'Phase Space' },
+    { id: 'transfer', label: 'Transfer' },
+    { id: 'dynamics', label: 'Dynamics' },
+    { id: 'truth', label: 'Truth Table' },
+  ];
 
+  return (
+    <ToolShell
+      moduleId="gecair"
+      title="Gene Circuit AI Reasoner"
+      description="Hill-function kinetics model promoter activity with logic gate design"
+      formula="f(x) = Kⁿ/(Kⁿ+xⁿ)"
+      tabs={tabs}
+      activeTab={activeTab}
+      onTabChange={setActiveTab}
+      advancedTabIds={['phasespace', 'transfer', 'dynamics']}
+    >
+      {/* ═══════ CIRCUIT TAB ═══════ */}
+      <ToolTabPanel activeId={activeTab} tabId="circuit">
         <div style={{ padding: '0 16px 10px' }}>
           <ScientificHero
             eyebrow="Stage 3 · Gene Circuit Programming"
@@ -792,11 +809,94 @@ export default function GECAIRPage() {
             </div>
           </div>
         </div>
+      </ToolTabPanel>
 
-        <div style={{ borderTop: `1px solid ${THEME.paperBorder}`, padding: '8px 16px', display: 'flex', gap: '8px', flexShrink: 0, background: THEME.sepiaPanelMuted }}>
-          <ExportButton label="Export JSON" data={exportData} filename="gecair-circuit" format="json" />
+      {/* ═══════ PHASE SPACE TAB ═══════ */}
+      <ToolTabPanel activeId={activeTab} tabId="phasespace">
+        <div style={{ padding: '16px' }}>
+          <ScientificFigureFrame
+            eyebrow="Phase Space Analysis"
+            title={`${gateType} Gate — 2D Phase Space`}
+            caption="Viridis heatmap showing gate output as a function of both inputs"
+          >
+            <CircuitSVG inputA={inputA} inputB={inputB} gateType={gateType} />
+          </ScientificFigureFrame>
         </div>
+      </ToolTabPanel>
+
+      {/* ═══════ TRANSFER TAB ═══════ */}
+      <ToolTabPanel activeId={activeTab} tabId="transfer">
+        <div style={{ padding: '16px' }}>
+          <ScientificFigureFrame
+            eyebrow="Transfer Function"
+            title={`${gateType} Gate Response Curve`}
+            caption={`Operating point: A=${(inputA*100).toFixed(0)}% B=${(inputB*100).toFixed(0)}% → ${(finalOutput*100).toFixed(1)}%`}
+          >
+            <CircuitSVG inputA={inputA} inputB={inputB} gateType={gateType} />
+          </ScientificFigureFrame>
+        </div>
+      </ToolTabPanel>
+
+      {/* ═══════ DYNAMICS TAB ═══════ */}
+      <ToolTabPanel activeId={activeTab} tabId="dynamics">
+        <div style={{ padding: '16px' }}>
+          <div style={{ display: 'flex', gap: '6px', marginBottom: '16px' }}>
+            {(['repressilator', 'toggle_switch', 'logic_cascade'] as const).map(ct => (
+              <button key={ct} onClick={() => setCircuitType(ct)}
+                className={`nb-tool-toggle ${circuitType === ct ? 'nb-tool-toggle--active' : ''}`}
+                style={{ fontSize: '11px' }}>
+                {ct === 'repressilator' ? 'Repressilator' : ct === 'toggle_switch' ? 'Toggle Switch' : 'Logic Cascade'}
+              </button>
+            ))}
+          </div>
+          <ScientificFigureFrame
+            eyebrow="ODE Dynamics"
+            title={`${circuitType === 'repressilator' ? 'Repressilator' : circuitType === 'toggle_switch' ? 'Toggle Switch' : 'Logic Cascade'} — RK4 Simulation`}
+            caption="Real-time ODE integration showing protein concentration trajectories"
+          >
+            <CircuitSVG inputA={inputA} inputB={inputB} gateType={gateType} />
+          </ScientificFigureFrame>
+        </div>
+      </ToolTabPanel>
+
+      {/* ═══════ TRUTH TABLE TAB ═══════ */}
+      <ToolTabPanel activeId={activeTab} tabId="truth">
+        <div style={{ padding: '16px', maxWidth: '400px' }}>
+          <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL, textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 12px' }}>
+            {gateType} Gate Truth Table
+          </p>
+          <table style={{ width: '100%', borderCollapse: 'collapse', borderRadius: 'var(--nb-radius-md)', overflow: 'hidden', border: `1px solid ${THEME.BORDER}` }}>
+            <thead>
+              <tr>
+                {['A', 'B', 'OUT'].map(h => (
+                  <th key={h} style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-sm)', color: THEME.LABEL, padding: '8px 12px', textAlign: 'center', background: THEME.PANEL_INSET, borderBottom: `1px solid ${THEME.BORDER}` }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {TRUTH_TABLE.map((row, i) => {
+                const a = row.A > 0.5 ? 1 : 0;
+                const b = row.B > 0.5 ? 1 : 0;
+                const out = gateType === 'AND' ? a && b : gateType === 'OR' ? a || b : gateType === 'NAND' ? !(a && b) ? 1 : 0 : 1 - a;
+                return (
+                  <tr key={i} style={{ background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)' }}>
+                    {[row.A, row.B, out].map((v, j) => (
+                      <td key={j} style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-sm)', textAlign: 'center', padding: '8px 12px', color: v ? THEME.MINT : THEME.LABEL, fontWeight: v ? 600 : 400 }}>
+                        {v ? '1' : '0'}
+                      </td>
+                    ))}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </ToolTabPanel>
+
+      {/* ═══════ Footer ═══════ */}
+      <div style={{ borderTop: `1px solid ${THEME.BORDER}`, padding: '8px 16px', display: 'flex', gap: '8px', flexShrink: 0, background: THEME.PANEL_MUTED }}>
+        <ExportButton label="Export JSON" data={exportData} filename="gecair-circuit" format="json" />
       </div>
-    </>
+    </ToolShell>
   );
 }
