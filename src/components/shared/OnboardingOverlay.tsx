@@ -9,20 +9,30 @@ const STEPS = [
   {
     eyebrow: 'Welcome',
     title: 'Nexus-Bio is a 4-stage research workbench',
-    body: 'Design pathways, simulate metabolism, engineer chassis, and test iteratively — all in one platform with built-in scientific rigor.',
+    body: 'Design pathways, simulate metabolism, engineer chassis, and test iteratively — all in one platform with built-in scientific rigor. Every tool implements real algorithms — FBA, ODE kinetics, ΔG thermodynamics.',
     accent: THEME.SKY,
+    icon: '🧬',
   },
   {
     eyebrow: 'Start here',
     title: 'Browse the tool directory',
-    body: 'The Tools page groups 14 instruments into 4 stages. Start with Pathway Designer (Stage 1) to explore your first metabolic route.',
+    body: 'The Tools page groups 14 instruments into 4 stages: Design → Simulate → Engineer → Test. Start with Pathway Designer (Stage 1) to explore your first metabolic route.',
     accent: THEME.MINT,
+    icon: '🔬',
   },
   {
     eyebrow: 'Anytime',
     title: 'Ask Axon for help',
-    body: 'The floating AI copilot is available on every page. Ask it to analyze papers, explain bottlenecks, or suggest next steps.',
+    body: 'The floating AI copilot is available on every page. Press Ctrl+K or click the floating button. Ask it to analyze papers, explain bottlenecks, or suggest next steps.',
     accent: THEME.APRICOT,
+    icon: '🤖',
+  },
+  {
+    eyebrow: 'Track progress',
+    title: 'Your work is saved automatically',
+    body: 'The Workbench tracks experiments, evidence, and decisions across tools. Every tool page has glossary explanations — click "What does this tool do?" to learn more.',
+    accent: THEME.LILAC,
+    icon: '📊',
   },
 ];
 
@@ -101,10 +111,15 @@ export function OnboardingOverlay() {
             ))}
           </div>
 
+          {/* Icon */}
+          <div style={{ textAlign: 'center', fontSize: '32px', lineHeight: 1 }}>
+            {current.icon}
+          </div>
+
           {/* Content */}
           <div style={{ textAlign: 'center' }}>
             <div style={{
-              fontFamily: THEME.MONO, fontSize: '10px',
+              fontFamily: THEME.MONO, fontSize: '11px',
               letterSpacing: '0.1em', textTransform: 'uppercase',
               color: current.accent, marginBottom: '8px',
             }}>
