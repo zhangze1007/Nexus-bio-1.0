@@ -24,7 +24,10 @@ import { checkRateLimit, getRateLimitConfig } from '@/src/utils/rateLimit';
  */
 
 // ── Config ────────────────────────────────────────────────────────────
-const API_KEY = process.env.NEXUS_API_KEY;
+// Read at runtime (not module level) so env vars set after build are available.
+function getApiKey(): string | undefined {
+  return process.env.NEXUS_API_KEY;
+}
 
 /** Routes that require authentication */
 const PROTECTED_ROUTES = [
@@ -53,19 +56,21 @@ function isAuthenticated(req: NextRequest): boolean {
   const secFetchSite = req.headers.get('sec-fetch-site');
   if (secFetchSite === 'same-origin') return true;
 
+  const apiKey = getApiKey();
+
   // If no API key is configured, only same-origin requests are allowed.
   // External callers must provide a key — never silently bypass auth.
-  if (!API_KEY) return false;
+  if (!apiKey) return false;
 
   // Check X-API-Key header
-  const apiKey = req.headers.get('x-api-key');
-  if (apiKey === API_KEY) return true;
+  const providedKey = req.headers.get('x-api-key');
+  if (providedKey === apiKey) return true;
 
   // Check Authorization: Bearer <token>
   const authHeader = req.headers.get('authorization');
   if (authHeader?.startsWith('Bearer ')) {
     const token = authHeader.slice(7);
-    if (token === API_KEY) return true;
+    if (token === apiKey) return true;
   }
 
   return false;
