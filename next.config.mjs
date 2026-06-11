@@ -16,7 +16,7 @@ const nextConfig = {
   },
 
   /* Prevent native modules from being bundled into client code */
-  serverExternalPackages: ['better-sqlite3'],
+  serverExternalPackages: ['better-sqlite3', 'highs'],
 
   /* Image optimization */
   images: {
