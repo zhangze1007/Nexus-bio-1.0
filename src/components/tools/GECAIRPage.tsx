@@ -58,7 +58,7 @@ function resolveGateOutput(a: number, b: number, gateType: GateType) {
   return hillInhibition(a);  // NOT: re-apply Hill repression to raw signal
 }
 
-function CircuitSVG({ inputA, inputB, gateType }: { inputA: number; inputB: number; gateType: GateType }) {
+function CircuitSVG({ inputA, inputB, gateType, view = 'full' }: { inputA: number; inputB: number; gateType: GateType; view?: 'full' | 'phasespace' | 'transfer' | 'dynamics' }) {
   // outA / outB are the repressed signal levels from each input repressor.
   // resolveGateOutput combines these repressed signals directly — it does NOT
   // apply hillInhibition again internally, so there is no double-transformation.
@@ -817,10 +817,15 @@ export default function GECAIRPage() {
           <ScientificFigureFrame
             eyebrow="Phase Space Analysis"
             title={`${gateType} Gate — 2D Phase Space`}
-            caption="Viridis heatmap showing gate output as a function of both inputs"
+            caption="Viridis heatmap showing gate output as a function of both inputs. Axes: Input A (x) vs Input B (y). Color: output level."
           >
-            <CircuitSVG inputA={inputA} inputB={inputB} gateType={gateType} />
+            <CircuitSVG inputA={inputA} inputB={inputB} gateType={gateType} view="phasespace" />
           </ScientificFigureFrame>
+          <div style={{ marginTop: '16px', display: 'grid', gap: '8px' }}>
+            <MetricCard label="Operating Point" value={`A=${(inputA*100).toFixed(0)}% B=${(inputB*100).toFixed(0)}%`} />
+            <MetricCard label="Gate Output" value={(finalOutput * 100).toFixed(1)} unit="%" highlight />
+            <MetricCard label="Noise Sensitivity" value={noiseScore.toFixed(4)} warning={noiseScore > 0.05 ? 'High noise' : undefined} />
+          </div>
         </div>
       </ToolTabPanel>
 
@@ -829,11 +834,17 @@ export default function GECAIRPage() {
         <div style={{ padding: '16px' }}>
           <ScientificFigureFrame
             eyebrow="Transfer Function"
-            title={`${gateType} Gate Response Curve`}
-            caption={`Operating point: A=${(inputA*100).toFixed(0)}% B=${(inputB*100).toFixed(0)}% → ${(finalOutput*100).toFixed(1)}%`}
+            title={`${gateType} Gate — Hill Response Curves`}
+            caption={`Operating point: A=${(inputA*100).toFixed(0)}% B=${(inputB*100).toFixed(0)}% → ${(finalOutput*100).toFixed(1)}% output`}
           >
-            <CircuitSVG inputA={inputA} inputB={inputB} gateType={gateType} />
+            <CircuitSVG inputA={inputA} inputB={inputB} gateType={gateType} view="transfer" />
           </ScientificFigureFrame>
+          <div style={{ marginTop: '16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+            <MetricCard label="Sensor A" value={(outA * 100).toFixed(1)} unit="%" />
+            <MetricCard label="Sensor B" value={(outB * 100).toFixed(1)} unit="%" />
+            <MetricCard label="Combined Output" value={(finalOutput * 100).toFixed(1)} unit="%" highlight />
+            <MetricCard label="Circuit Complexity" value={CIRCUIT_NODES.reduce((a, n) => a + n.parts.length, 0)} unit="parts" />
+          </div>
         </div>
       </ToolTabPanel>
 
@@ -849,13 +860,96 @@ export default function GECAIRPage() {
               </button>
             ))}
           </div>
-          <ScientificFigureFrame
-            eyebrow="ODE Dynamics"
-            title={`${circuitType === 'repressilator' ? 'Repressilator' : circuitType === 'toggle_switch' ? 'Toggle Switch' : 'Logic Cascade'} — RK4 Simulation`}
-            caption="Real-time ODE integration showing protein concentration trajectories"
-          >
-            <CircuitSVG inputA={inputA} inputB={inputB} gateType={gateType} />
-          </ScientificFigureFrame>
+
+          {/* ODE Dynamics — Real RK4 simulation */}
+          {(() => {
+            const w = 400, h = 120;
+            if (circuitType === 'repressilator') {
+              const trajectory = runRepressilator(undefined, 300, 1.0);
+              const maxP = Math.max(...trajectory.flatMap(s => [s.pA, s.pB, s.pC]));
+              const toPath = (key: keyof RepressilatorState) => {
+                const pts = trajectory.map((s, i) => `${(i / trajectory.length) * w},${h - (s[key] / maxP) * h}`);
+                return `M${pts.join(' L')}`;
+              };
+              return (
+                <ScientificFigureFrame eyebrow="ODE Dynamics" title="Repressilator — RK4 Simulation" caption="3-node ring oscillator: LacI→TetR→cI→LacI. Sustained limit-cycle oscillations.">
+                  <svg width={w} height={h} style={{ display: 'block', width: '100%' }} viewBox={`0 0 ${w} ${h}`}>
+                    <path d={toPath('pA')} fill="none" stroke="#C8D8E8" strokeWidth={2} />
+                    <path d={toPath('pB')} fill="none" stroke="#C8E0D0" strokeWidth={2} />
+                    <path d={toPath('pC')} fill="none" stroke="#DDD0E8" strokeWidth={2} />
+                  </svg>
+                  <div style={{ display: 'flex', gap: '16px', marginTop: '8px', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)' }}>
+                    <span style={{ color: '#C8D8E8' }}>■ LacI</span>
+                    <span style={{ color: '#C8E0D0' }}>■ TetR</span>
+                    <span style={{ color: '#DDD0E8' }}>■ cI</span>
+                  </div>
+                </ScientificFigureFrame>
+              );
+            }
+            if (circuitType === 'logic_cascade') {
+              const trajectory = runLogicCascade(undefined, 300, 1.0);
+              const maxP = Math.max(...trajectory.flatMap(s => [s.pA, s.pB, s.pC]));
+              const toPath = (key: keyof LogicCascadeState) => {
+                const pts = trajectory.map((s, i) => `${(i / trajectory.length) * w},${h - (s[key] / maxP) * h}`);
+                return `M${pts.join(' L')}`;
+              };
+              const finalPA = trajectory[trajectory.length - 1].pA;
+              const finalPC = trajectory[trajectory.length - 1].pC;
+              const cascadeGain = finalPC / Math.max(0.01, finalPA);
+              return (
+                <ScientificFigureFrame eyebrow="ODE Dynamics" title="Logic Cascade — RK4 Simulation" caption="3-node linear cascade with signal attenuation for noise filtering.">
+                  <svg width={w} height={h} style={{ display: 'block', width: '100%' }} viewBox={`0 0 ${w} ${h}`}>
+                    <path d={toPath('pA')} fill="none" stroke="#C8D8E8" strokeWidth={2} />
+                    <path d={toPath('pB')} fill="none" stroke="#C8E0D0" strokeWidth={2} />
+                    <path d={toPath('pC')} fill="none" stroke="#DDD0E8" strokeWidth={2} />
+                  </svg>
+                  <div style={{ display: 'flex', gap: '16px', marginTop: '8px', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)' }}>
+                    <span style={{ color: '#C8D8E8' }}>■ Node A (input)</span>
+                    <span style={{ color: '#C8E0D0' }}>■ Node B (cascade)</span>
+                    <span style={{ color: '#DDD0E8' }}>■ Node C (output)</span>
+                  </div>
+                  <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.MINT, marginTop: '6px' }}>
+                    Cascade gain: {cascadeGain.toFixed(2)}
+                  </div>
+                </ScientificFigureFrame>
+              );
+            }
+            // Toggle Switch
+            const trajectory = runToggleSwitch(undefined, 300, 1.0, togglePerturbation);
+            const maxP = Math.max(...trajectory.flatMap(s => [s.pA, s.pB]));
+            const toPath = (key: keyof ToggleSwitchState) => {
+              const pts = trajectory.map((s, i) => `${(i / trajectory.length) * w},${h - (s[key] / maxP) * h}`);
+              return `M${pts.join(' L')}`;
+            };
+            const finalPA = trajectory[trajectory.length - 1].pA;
+            const finalPB = trajectory[trajectory.length - 1].pB;
+            const settledState = finalPA > finalPB ? 'A' : 'B';
+            return (
+              <ScientificFigureFrame eyebrow="ODE Dynamics" title="Toggle Switch — RK4 Simulation" caption={`Bistable switch. Perturbation: State ${togglePerturbation}. Settled to state ${settledState}.`}>
+                <div style={{ display: 'flex', gap: '6px', marginBottom: '8px' }}>
+                  <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL }}>Perturbation:</span>
+                  {(['A', 'B'] as const).map(p => (
+                    <button key={p} onClick={() => setTogglePerturbation(p)}
+                      className={`nb-tool-toggle ${togglePerturbation === p ? 'nb-tool-toggle--active' : ''}`}
+                      style={{ fontSize: '11px', padding: '2px 8px' }}>
+                      State {p}
+                    </button>
+                  ))}
+                </div>
+                <svg width={w} height={h} style={{ display: 'block', width: '100%' }} viewBox={`0 0 ${w} ${h}`}>
+                  <path d={toPath('pA')} fill="none" stroke="#C8D8E8" strokeWidth={2} />
+                  <path d={toPath('pB')} fill="none" stroke="#C8E0D0" strokeWidth={2} />
+                </svg>
+                <div style={{ display: 'flex', gap: '16px', marginTop: '8px', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)' }}>
+                  <span style={{ color: '#C8D8E8' }}>■ State A</span>
+                  <span style={{ color: '#C8E0D0' }}>■ State B</span>
+                </div>
+                <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.MINT, marginTop: '6px' }}>
+                  Settled: State {settledState} (A={finalPA.toFixed(2)}, B={finalPB.toFixed(2)})
+                </div>
+              </ScientificFigureFrame>
+            );
+          })()}
         </div>
       </ToolTabPanel>
 

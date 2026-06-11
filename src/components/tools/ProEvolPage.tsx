@@ -721,33 +721,47 @@ export default function ProEvolPage() {
 
       {/* ═══════ TRAJECTORY TAB ═══════ */}
       <ToolTabPanel activeId={activeTab} tabId="trajectory">
-        <div style={{ padding: '16px', textAlign: 'center', color: THEME.LABEL, fontFamily: THEME.SANS }}>
-          <p style={{ fontSize: 'var(--nb-fs-md)', margin: '0 0 8px' }}>Trajectory charts are in the Landscape tab</p>
-          <p style={{ fontSize: 'var(--nb-fs-sm)', margin: 0 }}>Switch to the Landscape tab to see variant trajectory, Muller plot, enrichment scatter, and diversity convergence curves.</p>
+        <div style={{ padding: '16px' }}>
+          <div style={{ display: 'grid', gap: '12px' }}>
+            <ChartShell title="Variant trajectory · top 6" footnote={`Frequencies use Laplace pseudocount (+1). Hover for ${bandSemantic === 'modeled' ? 'model spread' : '95% CI'} range.`}>
+              <VariantTrajectoryChart trajectories={activeResearch.topVariants} bandSemantic={bandSemantic} highlightVariantId={selectedVariantId} onSelectVariant={setSelectedVariantId} />
+            </ChartShell>
+            <div style={{ display: 'grid', gap: '8px', gridTemplateColumns: '1fr 1fr' }}>
+              <ChartShell title="Family share · Muller stack">
+                <MullerPlot data={activeResearch.familyShares} />
+              </ChartShell>
+              <ChartShell title="Diversity & convergence">
+                <DiversityConvergenceCurve data={activeResearch.diversity} bandSemantic={bandSemantic} />
+              </ChartShell>
+            </div>
+            <ChartShell title="Enrichment vs mutation burden">
+              <EnrichmentBurdenScatter entries={activeResearch.enrichment} highlightVariantId={selectedVariantId} onSelectVariant={setSelectedVariantId} />
+            </ChartShell>
+          </div>
         </div>
       </ToolTabPanel>
 
       {/* ═══════ LIBRARY TAB ═══════ */}
       <ToolTabPanel activeId={activeTab} tabId="library">
-        <div style={{ padding: '16px', textAlign: 'center', color: THEME.LABEL, fontFamily: THEME.SANS }}>
-          <p style={{ fontSize: 'var(--nb-fs-md)', margin: '0 0 8px' }}>Variant library is in the Landscape tab</p>
-          <p style={{ fontSize: 'var(--nb-fs-sm)', margin: 0 }}>Switch to the Landscape tab to see the full variant library table.</p>
+        <div style={{ padding: '16px' }}>
+          <VariantLibraryTable roundResult={campaign.currentRoundResult} selectedVariantId={focusedVariant?.id ?? null} onSelectVariant={setSelectedVariantId} />
         </div>
       </ToolTabPanel>
 
       {/* ═══════ LINEAGE TAB ═══════ */}
       <ToolTabPanel activeId={activeTab} tabId="lineage">
-        <div style={{ padding: '16px', textAlign: 'center', color: THEME.LABEL, fontFamily: THEME.SANS }}>
-          <p style={{ fontSize: 'var(--nb-fs-md)', margin: '0 0 8px' }}>Lineage trace is in the Landscape tab</p>
-          <p style={{ fontSize: 'var(--nb-fs-sm)', margin: 0 }}>Switch to the Landscape tab to see the lineage trace panel.</p>
+        <div style={{ padding: '16px' }}>
+          <LineageTracePanel campaign={campaign} selectedVariantId={selectedVariantId} onSelectVariant={setSelectedVariantId} />
         </div>
       </ToolTabPanel>
 
       {/* ═══════ CAMPAIGN TAB ═══════ */}
       <ToolTabPanel activeId={activeTab} tabId="campaign">
-        <div style={{ padding: '16px', textAlign: 'center', color: THEME.LABEL, fontFamily: THEME.SANS }}>
-          <p style={{ fontSize: 'var(--nb-fs-md)', margin: '0 0 8px' }}>Campaign details are in the Landscape tab</p>
-          <p style={{ fontSize: 'var(--nb-fs-sm)', margin: 0 }}>Switch to the Landscape tab to see campaign context and recommendations.</p>
+        <div style={{ padding: '16px' }}>
+          <div style={{ display: 'grid', gap: '12px' }}>
+            <EvolutionCampaignContextCard campaign={campaign} totalRounds={totalRounds} librarySize={librarySize} survivorCount={survivorCount} selectionStringency={selectionStringency} onTotalRoundsChange={setTotalRounds} onLibrarySizeChange={setLibrarySize} onSurvivorCountChange={setSurvivorCount} onSelectionStringencyChange={setSelectionStringency} />
+            <NextRoundRecommendationCard campaign={campaign} />
+          </div>
         </div>
       </ToolTabPanel>
     </ToolShell>
