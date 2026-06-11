@@ -35,12 +35,18 @@ import { COLORS, ParamSlider, GlassContainer, SharedMetaboliteBus, StrainPanel }
 import { round, createEmptyFBAOutput, createEmptyCommunityOutput, type SimMode } from './fbasim/fbaHelpers';
 import { THEME, TOOL_RESULT_PALETTE } from '../../theme';
 
+// ── FVA / GPR panels (imported from fba/) ──
+import FVAPanel from './fba/FVAPanel';
+import GPRPanel from './fba/GPRPanel';
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // ── MAIN COMPONENT ──
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const FBA_TABS: ToolTab[] = [
   { id: 'flux', label: 'Flux Map', accent: THEME.SKY },
+  { id: 'fva', label: 'FVA', accent: THEME.LILAC },
+  { id: 'gpr', label: 'GPR KO', accent: THEME.CORAL },
   { id: 'knockout', label: 'Knockout', accent: THEME.CORAL },
   { id: 'shadows', label: 'Sensitivity', accent: THEME.LILAC },
   { id: 'community', label: 'Community', accent: THEME.MINT },
@@ -427,7 +433,7 @@ export default React.memo(function FBASimPage() {
       tabs={FBA_TABS}
       activeTab={activeTab}
       onTabChange={setActiveTab}
-      advancedTabIds={['knockout', 'shadows', 'community']}
+      advancedTabIds={['fva', 'gpr', 'knockout', 'shadows', 'community']}
       footer={
         <>
           <ExportButton label="Export JSON" data={exportData} filename={`fbasim-${simMode}-result`} format="json" />
@@ -616,6 +622,48 @@ export default React.memo(function FBASimPage() {
             />
           </div>
         </div>
+      </ToolTabPanel>
+
+      {/* ── FVA Tab ── */}
+      <ToolTabPanel tabId="fva" activeId={activeTab}>
+        <ScientificFigureFrame
+          eyebrow="Figure C · Flux Variability Analysis"
+          title="Reaction flux ranges at optimal objective"
+          caption="FVA (Mahadevan & Schilling 2003) finds the min and max flux each reaction can carry while maintaining the optimal objective value. Reactions with zero range are uniquely determined; variable reactions have alternate optimal pathways."
+          legend={[
+            { label: 'Objective', value: objective, accent: THEME.APRICOT },
+            { label: 'Glucose', value: `${glucoseUptake.toFixed(1)} mmol/gDW/h`, accent: THEME.CORAL },
+            { label: 'Oxygen', value: `${oxygenUptake.toFixed(1)} mmol/gDW/h`, accent: THEME.SKY },
+          ]}
+        >
+          <FVAPanel
+            objective={objective}
+            glucoseUptake={glucoseUptake}
+            oxygenUptake={oxygenUptake}
+            knockouts={knockouts}
+          />
+        </ScientificFigureFrame>
+      </ToolTabPanel>
+
+      {/* ── GPR Knockout Tab ── */}
+      <ToolTabPanel tabId="gpr" activeId={activeTab}>
+        <ScientificFigureFrame
+          eyebrow="Figure D · Gene-Protein-Reaction Knockout"
+          title="Gene knockout simulation via GPR rules"
+          caption="Select genes from the iJO1366 model to knock out. The GPR (Gene-Protein-Reaction) boolean rules determine which reactions become disabled: AND = protein complex (all subunits required), OR = isozymes (any one sufficient). Knocked-out genes propagate through the rule tree to identify disabled reactions."
+          legend={[
+            { label: 'Objective', value: objective, accent: THEME.APRICOT },
+            { label: 'Glucose', value: `${glucoseUptake.toFixed(1)} mmol/gDW/h`, accent: THEME.CORAL },
+            { label: 'Oxygen', value: `${oxygenUptake.toFixed(1)} mmol/gDW/h`, accent: THEME.SKY },
+          ]}
+        >
+          <GPRPanel
+            objective={objective}
+            glucoseUptake={glucoseUptake}
+            oxygenUptake={oxygenUptake}
+            knockouts={knockouts}
+          />
+        </ScientificFigureFrame>
       </ToolTabPanel>
 
       {/* ── Shadow Prices Tab ── */}
