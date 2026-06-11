@@ -623,9 +623,21 @@ export default React.memo(function CETHXPage() {
               minHeight="100%"
             >
               <AnimatePresence mode="wait">
-                <motion.div key={pathway} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} style={{ width: '100%', maxWidth: '600px' }}>
-                  <BreathingWaterfall steps={thermo.steps} />
-                </motion.div>
+                {isLoadingEquilibrator ? (
+                  <motion.div key="skeleton" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ width: '100%', maxWidth: '600px' }}>
+                    <div style={{ display: 'grid', gap: '8px', padding: '16px' }}>
+                      <div style={{ height: '14px', width: '40%', borderRadius: '4px', background: `linear-gradient(90deg, ${THEME.PANEL_STRONG} 25%, rgba(255,255,255,0.06) 50%, ${THEME.PANEL_STRONG} 75%)`, backgroundSize: '200% 100%', animation: 'shimmer 1.5s ease-in-out infinite' }} />
+                      <div style={{ height: '280px', borderRadius: '12px', background: `linear-gradient(90deg, ${THEME.PANEL_STRONG} 25%, rgba(255,255,255,0.06) 50%, ${THEME.PANEL_STRONG} 75%)`, backgroundSize: '200% 100%', animation: 'shimmer 1.5s ease-in-out infinite' }} />
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        {[1,2,3].map(i => <div key={i} style={{ height: '48px', flex: 1, borderRadius: '8px', background: `linear-gradient(90deg, ${THEME.PANEL_STRONG} 25%, rgba(255,255,255,0.06) 50%, ${THEME.PANEL_STRONG} 75%)`, backgroundSize: '200% 100%', animation: 'shimmer 1.5s ease-in-out infinite', animationDelay: `${i * 0.1}s` }} />)}
+                      </div>
+                    </div>
+                  </motion.div>
+                ) : (
+                  <motion.div key={pathway} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} style={{ width: '100%', maxWidth: '600px' }}>
+                    <BreathingWaterfall steps={thermo.steps} />
+                  </motion.div>
+                )}
               </AnimatePresence>
             </ScientificFigureFrame>
 
