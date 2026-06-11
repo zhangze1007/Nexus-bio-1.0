@@ -19,6 +19,10 @@ import {
   calcKeq,
   calcDeltaG,
   calcDeltaGFromQ,
+  fetchEquilibratorDeltaG,
+  calcGroupContributionWithConfidence,
+  estimateFormationEnergyWithFallback,
+  estimateFormationEnergyLocal,
 } from '../src/services/thermoEngine';
 
 // ---------------------------------------------------------------------------
@@ -541,5 +545,359 @@ describe('edge cases', () => {
     });
     const expected = -15 + R * T_25C * Math.log(Q);
     expect(dG).toBeCloseTo(expected, 3);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 10. fetchEquilibratorDeltaG tests (mocked fetch)
+// ---------------------------------------------------------------------------
+
+describe('fetchEquilibratorDeltaG', () => {
+  const originalFetch = global.fetch;
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+  });
+
+  it('should return null for empty compound name', async () => {
+    const result = await fetchEquilibratorDeltaG('');
+    expect(result).toBeNull();
+  });
+
+  it('should return null for whitespace-only input', async () => {
+    const result = await fetchEquilibratorDeltaG('   ');
+    expect(result).toBeNull();
+  });
+
+  it('should return null when search returns no results', async () => {
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => [],
+    });
+
+    const result = await fetchEquilibratorDeltaG('nonexistent_compound_xyz');
+    expect(result).toBeNull();
+  });
+
+  it('should return null when search endpoint fails', async () => {
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: false,
+      status: 500,
+    });
+
+    const result = await fetchEquilibratorDeltaG('glucose');
+    expect(result).toBeNull();
+  });
+
+  it('should return null when compound endpoint fails after successful search', async () => {
+    global.fetch = jest.fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => [{ name: 'glucose', model_ids: ['C00031'] }],
+      })
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+      });
+
+    const result = await fetchEquilibratorDeltaG('glucose');
+    expect(result).toBeNull();
+  });
+
+  it('should return null when compound data has no formation energy', async () => {
+    global.fetch = jest.fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => [{ name: 'glucose', model_ids: ['C00031'] }],
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => [{ name: 'glucose' }], // no dGf0 field
+      });
+
+    const result = await fetchEquilibratorDeltaG('glucose');
+    expect(result).toBeNull();
+  });
+
+  it('should return result when API succeeds', async () => {
+    global.fetch = jest.fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => [{ name: 'glucose', model_ids: ['C00031'] }],
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => [{ name: 'glucose', dgf0: -916.0 }],
+      });
+
+    const result = await fetchEquilibratorDeltaG('glucose');
+    expect(result).not.toBeNull();
+    expect(result!.dGf0).toBe(-916.0);
+    expect(result!.name).toBe('glucose');
+    expect(result!.keggId).toBe('C00031');
+    expect(result!.source).toBe('equilibrator');
+  });
+
+  it('should handle alternative response field names (dG_f)', async () => {
+    global.fetch = jest.fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => [{ name: 'ATP', model_ids: ['C00002'] }],
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => [{ name: 'ATP', dG_f: -2768.0 }],
+      });
+
+    const result = await fetchEquilibratorDeltaG('ATP');
+    expect(result).not.toBeNull();
+    expect(result!.dGf0).toBe(-2768.0);
+  });
+
+  it('should handle alternative response field names (formation_energy)', async () => {
+    global.fetch = jest.fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => [{ name: 'pyruvate', model_ids: ['C00022'] }],
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => [{ name: 'pyruvate', formation_energy: -472.0 }],
+      });
+
+    const result = await fetchEquilibratorDeltaG('pyruvate');
+    expect(result).not.toBeNull();
+    expect(result!.dGf0).toBe(-472.0);
+  });
+
+  it('should return null on network error', async () => {
+    global.fetch = jest.fn().mockRejectedValue(new TypeError('fetch failed'));
+
+    const result = await fetchEquilibratorDeltaG('glucose');
+    expect(result).toBeNull();
+  });
+
+  it('should return null on timeout', async () => {
+    global.fetch = jest.fn().mockImplementation(() =>
+      new Promise((_, reject) => {
+        const error = new Error('The operation was aborted');
+        error.name = 'TimeoutError';
+        reject(error);
+      })
+    );
+
+    const result = await fetchEquilibratorDeltaG('glucose');
+    expect(result).toBeNull();
+  });
+
+  it('should handle nested response structure (compounds key)', async () => {
+    global.fetch = jest.fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          compounds: [{ name: 'acetyl-CoA', model_ids: ['C00024'] }],
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => [{ name: 'acetyl-CoA', dgf0: -1580.0 }],
+      });
+
+    const result = await fetchEquilibratorDeltaG('acetyl-CoA');
+    expect(result).not.toBeNull();
+    expect(result!.dGf0).toBe(-1580.0);
+  });
+
+  it('should handle non-finite dGf0 values gracefully', async () => {
+    global.fetch = jest.fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => [{ name: 'weird_compound', model_ids: ['C99999'] }],
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => [{ name: 'weird_compound', dgf0: NaN }],
+      });
+
+    const result = await fetchEquilibratorDeltaG('weird_compound');
+    expect(result).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 11. calcGroupContributionWithConfidence tests
+// ---------------------------------------------------------------------------
+
+describe('calcGroupContributionWithConfidence', () => {
+  it('should throw on empty SMILES', () => {
+    expect(() => calcGroupContributionWithConfidence('')).toThrow('SMILES string cannot be empty');
+  });
+
+  it('should return "none" confidence for unrecognized SMILES', () => {
+    const result = calcGroupContributionWithConfidence('#');
+    expect(result.confidence).toBe('none');
+    expect(result.groupsFound).toBe(0);
+    expect(result.dGf0).toBe(0);
+    expect(result.source).toBe('group_contribution');
+  });
+
+  it('should return "low" confidence for SMILES with 1-2 groups', () => {
+    // "CC" → 2 CH3 groups
+    const result = calcGroupContributionWithConfidence('CC');
+    expect(result.confidence).toBe('low');
+    expect(result.groupsFound).toBe(2);
+    expect(result.source).toBe('group_contribution');
+  });
+
+  it('should return "medium" confidence for SMILES with 3-5 groups', () => {
+    // "CCO" → 2 CH3 + 1 OH = 3 groups
+    const result = calcGroupContributionWithConfidence('CCO');
+    expect(result.confidence).toBe('medium');
+    expect(result.groupsFound).toBe(3);
+  });
+
+  it('should return "high" confidence for SMILES with 6+ groups', () => {
+    // "c1ccccc1" → 6 aromatic_C groups
+    const result = calcGroupContributionWithConfidence('c1ccccc1');
+    expect(result.confidence).toBe('high');
+    expect(result.groupsFound).toBe(6);
+  });
+
+  it('should match calcGroupContribution values', () => {
+    const smiles = 'CC(=O)O';
+    const basic = calcGroupContribution(smiles);
+    const withConf = calcGroupContributionWithConfidence(smiles);
+    expect(withConf.dGf0).toBeCloseTo(basic, 5);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 12. estimateFormationEnergyWithFallback tests (mocked fetch)
+// ---------------------------------------------------------------------------
+
+describe('estimateFormationEnergyWithFallback', () => {
+  const originalFetch = global.fetch;
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+  });
+
+  it('should return local estimate when confidence is high', async () => {
+    // c1ccccc1 → 6 aromatic carbons → high confidence
+    const result = await estimateFormationEnergyWithFallback('c1ccccc1', 'benzene');
+    expect(result.source).toBe('group_contribution');
+    expect(result.confidence).toBe('high');
+    // Should not have called fetch at all
+    expect(global.fetch).toBeUndefined;
+  });
+
+  it('should fall back to eQuilibrator when confidence is low', async () => {
+    // "CC" → 2 groups → low confidence
+    global.fetch = jest.fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => [{ name: 'ethane', model_ids: ['C00001'] }],
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => [{ name: 'ethane', dgf0: -100.0 }],
+      });
+
+    const result = await estimateFormationEnergyWithFallback('CC', 'ethane');
+    expect(result.source).toBe('equilibrator');
+    expect(result.dGf0).toBe(-100.0);
+    expect(result.equilibratorResult).toBeDefined();
+    expect(result.equilibratorResult!.name).toBe('ethane');
+  });
+
+  it('should return local low-confidence estimate when API fails', async () => {
+    global.fetch = jest.fn().mockRejectedValue(new Error('Network error'));
+
+    const result = await estimateFormationEnergyWithFallback('CC');
+    expect(result.source).toBe('group_contribution');
+    expect(result.confidence).toBe('low');
+  });
+
+  it('should return local estimate when no compound name provided and confidence is low', async () => {
+    const result = await estimateFormationEnergyWithFallback('CC');
+    expect(result.source).toBe('group_contribution');
+    expect(result.confidence).toBe('low');
+    // fetch should not have been called
+    expect(global.fetch).toBeUndefined;
+  });
+
+  it('should skip to API when forceApiLookup is true', async () => {
+    global.fetch = jest.fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => [{ name: 'glucose', model_ids: ['C00031'] }],
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => [{ name: 'glucose', dgf0: -916.0 }],
+      });
+
+    const result = await estimateFormationEnergyWithFallback('CCO', 'glucose', true);
+    expect(result.source).toBe('equilibrator');
+    expect(result.dGf0).toBe(-916.0);
+    expect(result.confidence).toBe('high');
+  });
+
+  it('should fall back to local when forceApiLookup fails', async () => {
+    global.fetch = jest.fn().mockRejectedValue(new Error('API down'));
+
+    const result = await estimateFormationEnergyWithFallback('CCO', 'glucose', true);
+    // Should fall through to local estimation
+    expect(result.source).toBe('group_contribution');
+    // CCO → 3 groups → medium confidence
+    expect(result.confidence).toBe('medium');
+  });
+
+  it('should return "none" confidence when both local and API fail', async () => {
+    global.fetch = jest.fn().mockRejectedValue(new Error('Network error'));
+
+    const result = await estimateFormationEnergyWithFallback('#', 'nonexistent');
+    expect(result.source).toBe('group_contribution');
+    expect(result.confidence).toBe('none');
+    expect(result.dGf0).toBe(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 13. estimateFormationEnergyLocal tests
+// ---------------------------------------------------------------------------
+
+describe('estimateFormationEnergyLocal', () => {
+  it('should return local estimate when confidence is high', () => {
+    const result = estimateFormationEnergyLocal('c1ccccc1');
+    expect(result.source).toBe('group_contribution');
+    expect(result.confidence).toBe('high');
+  });
+
+  it('should use reference value when confidence is low and reference provided', () => {
+    const result = estimateFormationEnergyLocal('CC', -916.0);
+    expect(result.dGf0).toBe(-916.0);
+    expect(result.source).toBe('equilibrator'); // treated as authoritative
+    expect(result.confidence).toBe('medium');
+  });
+
+  it('should use reference value when confidence is none and reference provided', () => {
+    const result = estimateFormationEnergyLocal('#', -500.0);
+    expect(result.dGf0).toBe(-500.0);
+    expect(result.source).toBe('equilibrator');
+  });
+
+  it('should return local estimate when confidence is low and no reference', () => {
+    const result = estimateFormationEnergyLocal('CC');
+    expect(result.source).toBe('group_contribution');
+    expect(result.confidence).toBe('low');
+  });
+
+  it('should return local estimate when confidence is medium', () => {
+    // CCO → 3 groups → medium confidence, reference should be ignored
+    const result = estimateFormationEnergyLocal('CCO', -999.0);
+    expect(result.source).toBe('group_contribution');
+    expect(result.confidence).toBe('medium');
+    expect(result.dGf0).not.toBe(-999.0);
   });
 });

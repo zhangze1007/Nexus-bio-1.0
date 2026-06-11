@@ -488,3 +488,294 @@ export function calcDeltaGFromQ(dG0: number, temp: number, Q: number): number {
   if (Q === 0) return Infinity;
   return dG0 + R * temp * Math.log(Q);
 }
+
+// ---------------------------------------------------------------------------
+// 6. eQuilibrator API Integration
+// ---------------------------------------------------------------------------
+
+/** eQuilibrator API base URL */
+const EQUILIBRATOR_API_BASE = 'https://equilibrator.weizmann.ac.il/api/v2';
+
+/** Timeout for eQuilibrator API calls (ms) */
+const EQUILIBRATOR_TIMEOUT = 8000;
+
+/**
+ * Result from eQuilibrator API lookup.
+ */
+export interface EquilibratorCompoundResult {
+  /** Standard transformed Gibbs energy of formation (kJ/mol at pH 7, I=0.25 M, 25 °C) */
+  dGf0: number;
+  /** Compound name as returned by eQuilibrator */
+  name: string;
+  /** KEGG compound ID if available */
+  keggId?: string;
+  /** Source identifier */
+  source: 'equilibrator';
+}
+
+/**
+ * Fetch the standard transformed Gibbs energy of formation (ΔG'°f) for a
+ * compound from the eQuilibrator API.
+ *
+ * Uses the eQuilibrator 3 web API (Beber et al. 2022, Nucleic Acids Research).
+ * The API returns formation energies at pH 7, I=0.25 M, 25 °C by default.
+ *
+ * @param compoundName - Common name, KEGG ID (e.g., "C00002"), or InChI string
+ * @returns Formation energy result, or null if not found / on error
+ *
+ * @example
+ * const result = await fetchEquilibratorDeltaG('glucose');
+ * if (result) console.log(result.dGf0); // kJ/mol
+ *
+ * @scientific_provenance
+ * eQuilibrator 3 (Beber et al. 2022) Nucleic Acids Research 50(D1):D663-D669
+ */
+export async function fetchEquilibratorDeltaG(
+  compoundName: string,
+): Promise<EquilibratorCompoundResult | null> {
+  if (!compoundName || compoundName.trim().length === 0) return null;
+
+  const query = compoundName.trim();
+
+  try {
+    // Step 1: Search for the compound to get its identifiers
+    const searchUrl = `${EQUILIBRATOR_API_BASE}/search?query=${encodeURIComponent(query)}`;
+    const searchResponse = await fetch(searchUrl, {
+      signal: AbortSignal.timeout(EQUILIBRATOR_TIMEOUT),
+      headers: { Accept: 'application/json' },
+    });
+
+    if (!searchResponse.ok) return null;
+
+    const searchData = await searchResponse.json();
+
+    // Extract the first compound match
+    // eQuilibrator search returns an array of { name, model_ids, ... }
+    const compounds: unknown[] = Array.isArray(searchData)
+      ? searchData
+      : searchData?.compounds ?? searchData?.results ?? [];
+
+    if (compounds.length === 0) return null;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const firstHit = compounds[0] as any;
+    const compoundId: string | undefined =
+      firstHit?.model_ids?.[0] ?? firstHit?.id ?? firstHit?.kegg_id;
+
+    if (!compoundId) return null;
+
+    // Step 2: Fetch formation energy for the compound
+    // Try the compound endpoint with the KEGG ID
+    const compoundUrl = `${EQUILIBRATOR_API_BASE}/compound?ids=${encodeURIComponent(compoundId)}`;
+    const compoundResponse = await fetch(compoundUrl, {
+      signal: AbortSignal.timeout(EQUILIBRATOR_TIMEOUT),
+      headers: { Accept: 'application/json' },
+    });
+
+    if (!compoundResponse.ok) return null;
+
+    const compoundData = await compoundResponse.json();
+
+    // Parse the response — eQuilibrator returns formation energies in kJ/mol
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const entry = Array.isArray(compoundData) ? compoundData[0] : compoundData;
+
+    if (!entry) return null;
+
+    // The formation energy field varies by API version
+    const dGf0: number | undefined =
+      entry.dgf0 ?? entry.dG_f ?? entry.formation_energy ?? entry.dg0_prime;
+
+    if (dGf0 === undefined || dGf0 === null || !Number.isFinite(dGf0)) return null;
+
+    return {
+      dGf0,
+      name: entry.name ?? query,
+      keggId: compoundId.startsWith('C') ? compoundId : undefined,
+      source: 'equilibrator',
+    };
+  } catch {
+    // Network error, timeout, parse error — all return null gracefully
+    return null;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 7. Confidence Scoring & Fallback Logic
+// ---------------------------------------------------------------------------
+
+/**
+ * Confidence levels for group contribution estimates.
+ */
+export type ConfidenceLevel = 'high' | 'medium' | 'low' | 'none';
+
+/**
+ * Result with confidence metadata.
+ */
+export interface ThermoEstimate {
+  /** Estimated ΔG°f (kJ/mol) */
+  dGf0: number;
+  /** Confidence in the estimate */
+  confidence: ConfidenceLevel;
+  /** Number of functional groups identified */
+  groupsFound: number;
+  /** Source of the estimate */
+  source: 'group_contribution' | 'equilibrator';
+  /** eQuilibrator result if fetched */
+  equilibratorResult?: EquilibratorCompoundResult;
+}
+
+/**
+ * Calculate group contribution confidence based on how many groups were
+ * identified from the SMILES string.
+ *
+ * Confidence heuristic:
+ *   - 0 groups → 'none' (SMILES unparseable)
+ *   - 1-2 groups → 'low' (very rough estimate)
+ *   - 3-5 groups → 'medium'
+ *   - 6+ groups → 'high'
+ *
+ * @param smiles - SMILES string
+ * @returns Estimate with confidence metadata
+ */
+export function calcGroupContributionWithConfidence(smiles: string): ThermoEstimate {
+  if (!smiles || smiles.trim().length === 0) {
+    throw new Error('SMILES string cannot be empty');
+  }
+
+  let remaining = smiles;
+  let totalDGf = 0;
+  let groupsFound = 0;
+
+  while (remaining.length > 0) {
+    let matched = false;
+
+    for (const { pattern, group, count } of SMILES_PATTERNS) {
+      if (remaining.startsWith(pattern)) {
+        const contribution = GROUP_CONTRIBUTIONS[group];
+        if (contribution !== undefined) {
+          totalDGf += contribution * count;
+          groupsFound += count;
+        }
+        remaining = remaining.slice(pattern.length);
+        matched = true;
+        break;
+      }
+    }
+
+    if (!matched) {
+      remaining = remaining.slice(1);
+    }
+  }
+
+  let confidence: ConfidenceLevel;
+  if (groupsFound === 0) confidence = 'none';
+  else if (groupsFound <= 2) confidence = 'low';
+  else if (groupsFound <= 5) confidence = 'medium';
+  else confidence = 'high';
+
+  return {
+    dGf0: groupsFound === 0 ? 0 : totalDGf,
+    confidence,
+    groupsFound,
+    source: 'group_contribution',
+  };
+}
+
+/**
+ * Threshold below which we consider the local estimate to have low confidence
+ * and should try the eQuilibrator API as a fallback.
+ */
+const LOW_CONFIDENCE_GROUPS = 2;
+
+/**
+ * Estimate formation energy with eQuilibrator fallback.
+ *
+ * Strategy:
+ *   1. Try local group contribution from SMILES
+ *   2. If confidence is low or none, try eQuilibrator API by compound name
+ *   3. Prefer eQuilibrator result when local confidence is low
+ *   4. If both fail, return the local estimate with its confidence level
+ *
+ * @param smiles - SMILES string for local estimation
+ * @param compoundName - Compound name for eQuilibrator lookup (optional)
+ * @param forceApiLookup - Skip local estimation and go straight to API
+ * @returns Formation energy estimate with confidence metadata
+ */
+export async function estimateFormationEnergyWithFallback(
+  smiles: string,
+  compoundName?: string,
+  forceApiLookup: boolean = false,
+): Promise<ThermoEstimate> {
+  // If forced to use API, skip local estimation
+  if (forceApiLookup && compoundName) {
+    const apiResult = await fetchEquilibratorDeltaG(compoundName);
+    if (apiResult) {
+      return {
+        dGf0: apiResult.dGf0,
+        confidence: 'high',
+        groupsFound: 0,
+        source: 'equilibrator',
+        equilibratorResult: apiResult,
+      };
+    }
+    // API failed — fall through to local estimation
+  }
+
+  // Step 1: Local group contribution
+  const localEstimate = calcGroupContributionWithConfidence(smiles);
+
+  // If confidence is high/medium, return local result
+  if (
+    localEstimate.confidence === 'high' ||
+    localEstimate.confidence === 'medium'
+  ) {
+    return localEstimate;
+  }
+
+  // Step 2: Low/no confidence — try eQuilibrator API
+  if (compoundName) {
+    const apiResult = await fetchEquilibratorDeltaG(compoundName);
+    if (apiResult) {
+      return {
+        dGf0: apiResult.dGf0,
+        confidence: 'high',
+        groupsFound: localEstimate.groupsFound,
+        source: 'equilibrator',
+        equilibratorResult: apiResult,
+      };
+    }
+  }
+
+  // Step 3: Both failed or no compound name — return local estimate
+  return localEstimate;
+}
+
+/**
+ * Synchronous fallback: estimate formation energy using only local data.
+ * Use when eQuilibrator API is unavailable or in non-async contexts.
+ *
+ * @param smiles - SMILES string
+ * @param referenceDGf0 - Known reference ΔG°f to use if local confidence is low
+ * @returns Formation energy estimate
+ */
+export function estimateFormationEnergyLocal(
+  smiles: string,
+  referenceDGf0?: number,
+): ThermoEstimate {
+  const local = calcGroupContributionWithConfidence(smiles);
+
+  if (
+    (local.confidence === 'none' || local.confidence === 'low') &&
+    referenceDGf0 !== undefined
+  ) {
+    return {
+      dGf0: referenceDGf0,
+      confidence: 'medium',
+      groupsFound: local.groupsFound,
+      source: 'equilibrator', // treating reference as authoritative
+    };
+  }
+
+  return local;
+}
