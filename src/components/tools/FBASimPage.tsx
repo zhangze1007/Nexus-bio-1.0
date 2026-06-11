@@ -9,6 +9,7 @@ import { useUIStore } from '../../store/uiStore';
 import { useWorkbenchStore } from '../../store/workbenchStore';
 import ScientificHero from './shared/ScientificHero';
 import AlgorithmPanel from '../shared/AlgorithmPanel';
+import ParameterSnapshot from '../shared/ParameterSnapshot';
 import DataUpload from '../shared/DataUpload';
 import DataPreview from '../shared/DataPreview';
 import {
@@ -497,6 +498,18 @@ export default React.memo(function FBASimPage() {
                 {opt === 'biomass' ? 'Max Biomass' : opt === 'atp' ? 'Max ATP' : 'Max Product'}
               </button>
             ))}
+
+            <div style={{ marginTop: '16px' }}>
+              <ParameterSnapshot
+                toolId="fbasim"
+                parameters={{ glucoseUptake, oxygenUptake, objective }}
+                onLoad={(params) => {
+                  if (params.glucoseUptake !== undefined) setGlucoseUptake(params.glucoseUptake as number);
+                  if (params.oxygenUptake !== undefined) setOxygenUptake(params.oxygenUptake as number);
+                  if (params.objective !== undefined) setObjective(params.objective as 'biomass' | 'atp' | 'product');
+                }}
+              />
+            </div>
           </FloatingControlRail>
 
           <div style={{ flex: 1, position: 'relative', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
