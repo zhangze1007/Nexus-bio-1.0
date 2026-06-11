@@ -1,7 +1,7 @@
 import NextAuth, { type NextAuthConfig } from 'next-auth';
 import GitHub from 'next-auth/providers/github';
 import Google from 'next-auth/providers/google';
-import { getDb } from './db';
+import { getLibsqlClient } from './db';
 
 /**
  * Auth.js v5 configuration for Nexus-Bio researcher accounts.
@@ -68,29 +68,32 @@ const authConfig: NextAuthConfig = {
       if (!user.email) return false;
 
       try {
-        const db = getDb();
+        const client = getLibsqlClient();
         const now = new Date().toISOString();
 
         // Upsert user
-        db.prepare(`
-          INSERT INTO users (id, email, name, image, provider, provider_id, created_at, updated_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-          ON CONFLICT(email) DO UPDATE SET
-            name = excluded.name,
-            image = excluded.image,
-            provider = excluded.provider,
-            provider_id = excluded.provider_id,
-            updated_at = excluded.updated_at
-        `).run(
-          user.id || crypto.randomUUID(),
-          user.email,
-          user.name || null,
-          user.image || null,
-          account?.provider || 'unknown',
-          account?.providerAccountId || null,
-          now,
-          now,
-        );
+        await client.execute({
+          sql: `
+            INSERT INTO users (id, email, name, image, provider, provider_id, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(email) DO UPDATE SET
+              name = excluded.name,
+              image = excluded.image,
+              provider = excluded.provider,
+              provider_id = excluded.provider_id,
+              updated_at = excluded.updated_at
+          `,
+          args: [
+            user.id || crypto.randomUUID(),
+            user.email,
+            user.name || null,
+            user.image || null,
+            account?.provider || 'unknown',
+            account?.providerAccountId || null,
+            now,
+            now,
+          ],
+        });
       } catch (err) {
         console.error('Auth signIn upsert failed:', err);
         // Still allow sign-in even if DB write fails
@@ -110,10 +113,12 @@ const authConfig: NextAuthConfig = {
       // Fetch fresh profile data from DB on each JWT creation
       if (token.email) {
         try {
-          const db = getDb();
-          const row = db.prepare(
-            'SELECT institution, research_area, orcid FROM users WHERE email = ?'
-          ).get(token.email) as Record<string, string> | undefined;
+          const client = getLibsqlClient();
+          const result = await client.execute({
+            sql: 'SELECT institution, research_area, orcid FROM users WHERE email = ?',
+            args: [token.email as string],
+          });
+          const row = result.rows[0] as Record<string, string> | undefined;
 
           if (row) {
             token.institution = row.institution;

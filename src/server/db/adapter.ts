@@ -1,5 +1,5 @@
 /**
- * Database Adapter — Abstraction layer for SQLite (local) and Turso (production)
+ * Database Adapter — Abstraction layer for Turso (libSQL)
  *
  * Usage:
  *   import { getDb } from './db/adapter';
@@ -9,6 +9,9 @@
  * Environment variables for Turso:
  *   TURSO_DATABASE_URL=libsql://your-db.turso.io
  *   TURSO_AUTH_TOKEN=your-auth-token
+ *
+ * Migrated from better-sqlite3 to @libsql/client (Tasks 1-7).
+ * For local development without TURSO_DATABASE_URL, use file: URL.
  */
 
 export interface DatabaseAdapter {
@@ -28,7 +31,7 @@ let cachedDb: DatabaseAdapter | null = null;
 
 /**
  * Get a database instance. Uses Turso if TURSO_DATABASE_URL is set,
- * otherwise falls back to local SQLite via better-sqlite3.
+ * otherwise falls back to a local file-based SQLite via @libsql/client.
  */
 export function getDb(): DatabaseAdapter {
   if (cachedDb) return cachedDb;
@@ -37,50 +40,21 @@ export function getDb(): DatabaseAdapter {
   const tursoToken = process.env.TURSO_AUTH_TOKEN;
 
   if (tursoUrl && tursoToken) {
-    // Turso (production)
     cachedDb = createTursoAdapter(tursoUrl, tursoToken);
   } else {
-    // Local SQLite (development)
-    cachedDb = createSqliteAdapter();
+    // Local development: file-based SQLite via @libsql/client
+    const path = require('path') as typeof import('path');
+    const fs = require('fs') as typeof import('fs');
+    const dbDir = path.join(process.cwd(), '.data');
+    if (!fs.existsSync(dbDir)) fs.mkdirSync(dbDir, { recursive: true });
+    const localUrl = `file:${path.join(dbDir, 'workbench.db')}`;
+    cachedDb = createTursoAdapter(localUrl, undefined);
   }
 
   return cachedDb;
 }
 
-function createSqliteAdapter(): DatabaseAdapter {
-  // Dynamic import to avoid bundling better-sqlite3 in Edge Runtime
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const Database = require('better-sqlite3');
-  const path = require('path');
-  const fs = require('fs');
-
-  const dbDir = path.join(process.cwd(), '.data');
-  if (!fs.existsSync(dbDir)) fs.mkdirSync(dbDir, { recursive: true });
-
-  const dbPath = path.join(dbDir, 'workbench.db');
-  const db = new Database(dbPath);
-
-  // Enable WAL mode for better concurrent read performance
-  db.pragma('journal_mode = WAL');
-  db.pragma('synchronous = NORMAL');
-  db.pragma('foreign_keys = ON');
-
-  return {
-    exec: (sql: string) => db.exec(sql),
-    prepare: (sql: string) => {
-      const stmt = db.prepare(sql);
-      return {
-        run: (...params: unknown[]) => stmt.run(...params),
-        get: (...params: unknown[]) => stmt.get(...params),
-        all: (...params: unknown[]) => stmt.all(...params),
-      };
-    },
-    pragma: (pragma: string) => db.pragma(pragma),
-    close: () => db.close(),
-  };
-}
-
-function createTursoAdapter(url: string, authToken: string): DatabaseAdapter {
+function createTursoAdapter(url: string, authToken: string | undefined): DatabaseAdapter {
   // Dynamic import to avoid bundling @libsql/client in Edge Runtime
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { createClient } = require('@libsql/client');

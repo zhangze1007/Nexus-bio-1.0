@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '../../../../src/lib/auth';
-import { getDb } from '../../../../src/lib/db';
+import { sqlAll, sqlRun } from '../../../../src/lib/db';
 
 /**
  * GET /api/user/profile — Fetch current user's profile
@@ -14,10 +14,11 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const db = getDb();
-    const user = db.prepare(
-      'SELECT id, email, name, image, institution, research_area, orcid, bio, created_at FROM users WHERE email = ?'
-    ).get(session.user.email) as Record<string, unknown> | undefined;
+    const rows = await sqlAll(
+      'SELECT id, email, name, image, institution, research_area, orcid, bio, created_at FROM users WHERE email = ?',
+      [session.user.email],
+    );
+    const user = rows[0];
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
@@ -64,14 +65,16 @@ export async function PUT(req: NextRequest) {
   values.push(session.user.email);
 
   try {
-    const db = getDb();
-    db.prepare(
-      `UPDATE users SET ${updates.join(', ')} WHERE email = ?`
-    ).run(...values);
+    await sqlRun(
+      `UPDATE users SET ${updates.join(', ')} WHERE email = ?`,
+      values,
+    );
 
-    const user = db.prepare(
-      'SELECT id, email, name, image, institution, research_area, orcid, bio FROM users WHERE email = ?'
-    ).get(session.user.email);
+    const rows = await sqlAll(
+      'SELECT id, email, name, image, institution, research_area, orcid, bio FROM users WHERE email = ?',
+      [session.user.email],
+    );
+    const user = rows[0];
 
     return NextResponse.json({ user });
   } catch (err) {
