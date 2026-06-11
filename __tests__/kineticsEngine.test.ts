@@ -7,6 +7,9 @@ import {
   simulateEnzymeSystem,
   EnzymeKinetics,
   AdaptiveODEOptions,
+  estimateParameters,
+  InhibitionModel,
+  KineticDataPoint,
 } from '../src/services/kineticsEngine';
 
 // ═══════════════════════════════════════════════════════════════
@@ -693,5 +696,295 @@ describe('adaptive ODE solver (Dormand-Prince)', () => {
 
     // Inhibition should reduce product formation
     expect(pInhib).toBeLessThan(pNoInhib);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+//  8. Parameter Estimation (Levenberg-Marquardt)
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Generate synthetic velocity data at multiple inhibitor concentrations.
+ *
+ * Multiple inhibitor concentrations are essential for parameter identifiability:
+ *   - Competitive: with single I, only Km*(1+I/Ki) is identifiable
+ *   - Uncompetitive: with single I, Vmax/(1+I/Kiu) and Km are intertwined
+ *   - Mixed: needs at least 2 I>0 values to separate Kic and Kiu
+ *
+ * Each entry in inhibitorConcs produces a full set of (s, v) observations.
+ */
+function generateSyntheticDataMultiI(
+  model: InhibitionModel,
+  trueParams: number[],
+  substrateConcs: number[],
+  inhibitorConcs: number[],
+): KineticDataPoint[] {
+  const data: KineticDataPoint[] = [];
+
+  for (const i of inhibitorConcs) {
+    for (const s of substrateConcs) {
+      const sSafe = Math.max(0, s);
+      let v: number;
+
+      switch (model) {
+        case 'competitive': {
+          const [vmax, km, ki] = trueParams;
+          const denom = ki > 0 && i > 0 ? km * (1 + i / ki) + sSafe : km + sSafe;
+          v = denom <= 0 ? 0 : (vmax * sSafe) / denom;
+          break;
+        }
+        case 'uncompetitive': {
+          const [vmax, km, kiu] = trueParams;
+          const denom = kiu > 0 && i > 0 ? km + sSafe * (1 + i / kiu) : km + sSafe;
+          v = denom <= 0 ? 0 : (vmax * sSafe) / denom;
+          break;
+        }
+        case 'mixed': {
+          const [vmax, km, kic, kiu] = trueParams;
+          const hasComp = kic > 0 && i > 0;
+          const hasUncomp = kiu > 0 && i > 0;
+          if (!hasComp && !hasUncomp) {
+            const denom = km + sSafe;
+            v = denom <= 0 ? 0 : (vmax * sSafe) / denom;
+          } else {
+            const kmFactor = hasComp ? 1 + i / kic : 1;
+            const sFactor = hasUncomp ? 1 + i / kiu : 1;
+            const denom = km * kmFactor + sSafe * sFactor;
+            v = denom <= 0 ? 0 : (vmax * sSafe) / denom;
+          }
+          break;
+        }
+      }
+
+      data.push({ s, v, i });
+    }
+  }
+
+  return data;
+}
+
+/** Seed the PRNG for reproducible noise in tests. */
+function seededRandom(seed: number): () => number {
+  let s = seed;
+  return () => {
+    s = (s * 1664525 + 1013904223) & 0x7fffffff;
+    return s / 0x7fffffff;
+  };
+}
+
+describe('estimateParameters', () => {
+  const sValues = [0.5, 1, 2, 3, 5, 8, 10, 15, 20, 30, 50];
+
+  // ── Competitive inhibition ───────────────────────────────────
+
+  describe('competitive inhibition model', () => {
+    it('recovers exact parameters from clean multi-I data', () => {
+      const trueParams = [100, 5, 2]; // Vmax=100, Km=5, Ki=2
+      // I=0 gives Vmax and Km; I=3 gives Ki
+      const data = generateSyntheticDataMultiI('competitive', trueParams, sValues, [0, 3]);
+
+      const result = estimateParameters('competitive', data, [80, 4, 3]);
+
+      expect(result.converged).toBe(true);
+      expectClose(result.params[0], 100, 0.5);  // Vmax
+      expectClose(result.params[1], 5, 0.5);     // Km
+      expectClose(result.params[2], 2, 0.5);     // Ki
+      expect(result.rss).toBeLessThan(1e-6);
+    });
+
+    it('recovers parameters with noisy multi-I data', () => {
+      const trueParams = [100, 5, 2];
+      const cleanData = generateSyntheticDataMultiI('competitive', trueParams, sValues, [0, 3]);
+
+      // Add 5% noise with seeded PRNG for reproducibility
+      const rng = seededRandom(42);
+      const noisyData: KineticDataPoint[] = cleanData.map(d => ({
+        s: d.s,
+        v: d.v * (1 + 0.05 * (rng() - 0.5) * 2),
+        i: d.i,
+      }));
+
+      const result = estimateParameters('competitive', noisyData, [90, 6, 1.5]);
+
+      expect(result.converged).toBe(true);
+      // With noise, parameters should be within ~15% of true values
+      expect(Math.abs(result.params[0] - 100) / 100).toBeLessThan(0.15);
+      expect(Math.abs(result.params[1] - 5) / 5).toBeLessThan(0.15);
+      expect(Math.abs(result.params[2] - 2) / 2).toBeLessThan(0.2);
+    });
+
+    it('handles no-inhibition data (I = 0 only)', () => {
+      const trueParams = [100, 5, 2];
+      // I=0 only: Ki is unidentifiable but Vmax and Km should be recovered
+      const data = generateSyntheticDataMultiI('competitive', trueParams, sValues, [0]);
+
+      const result = estimateParameters('competitive', data, [80, 4, 3]);
+
+      expect(result.converged).toBe(true);
+      expectClose(result.params[0], 100, 0.5);  // Vmax
+      expectClose(result.params[1], 5, 0.5);     // Km
+      // Ki is unidentifiable when I = 0, but should stay positive
+      expect(result.params[2]).toBeGreaterThan(0);
+    });
+
+    it('converges to zero RSS for clean data', () => {
+      const trueParams = [100, 5, 2];
+      const data = generateSyntheticDataMultiI('competitive', trueParams, sValues, [0, 3]);
+
+      const result = estimateParameters('competitive', data, [80, 4, 3]);
+
+      expect(result.rss).toBeLessThan(1e-10);
+    });
+  });
+
+  // ── Uncompetitive inhibition ─────────────────────────────────
+
+  describe('uncompetitive inhibition model', () => {
+    it('recovers exact parameters from clean multi-I data', () => {
+      const trueParams = [80, 3, 4]; // Vmax=80, Km=3, Kiu=4
+      // I=0 gives Vmax, Km; I=2 gives Kiu info
+      const data = generateSyntheticDataMultiI('uncompetitive', trueParams, sValues, [0, 2]);
+
+      const result = estimateParameters('uncompetitive', data, [70, 4, 5]);
+
+      expect(result.converged).toBe(true);
+      expectClose(result.params[0], 80, 0.5);
+      expectClose(result.params[1], 3, 0.5);
+      expectClose(result.params[2], 4, 0.5);
+      expect(result.rss).toBeLessThan(1e-6);
+    });
+
+    it('recovers parameters with noisy multi-I data', () => {
+      const trueParams = [80, 3, 4];
+      const cleanData = generateSyntheticDataMultiI('uncompetitive', trueParams, sValues, [0, 2]);
+
+      const rng = seededRandom(123);
+      const noisyData: KineticDataPoint[] = cleanData.map(d => ({
+        s: d.s,
+        v: d.v * (1 + 0.05 * (rng() - 0.5) * 2),
+        i: d.i,
+      }));
+
+      const result = estimateParameters('uncompetitive', noisyData, [70, 4, 5]);
+
+      expect(result.converged).toBe(true);
+      expect(Math.abs(result.params[0] - 80) / 80).toBeLessThan(0.15);
+      expect(Math.abs(result.params[1] - 3) / 3).toBeLessThan(0.15);
+      expect(Math.abs(result.params[2] - 4) / 4).toBeLessThan(0.2);
+    });
+  });
+
+  // ── Mixed inhibition ─────────────────────────────────────────
+
+  describe('mixed inhibition model', () => {
+    it('recovers exact parameters from clean multi-I data', () => {
+      const trueParams = [120, 8, 3, 6]; // Vmax=120, Km=8, Kic=3, Kiu=6
+      // I=0 gives Vmax, Km; I=2 and I=6 give Kic and Kiu
+      const data = generateSyntheticDataMultiI('mixed', trueParams, sValues, [0, 2, 6]);
+
+      const result = estimateParameters('mixed', data, [100, 6, 4, 5]);
+
+      expect(result.converged).toBe(true);
+      expectClose(result.params[0], 120, 1);
+      expectClose(result.params[1], 8, 1);
+      expectClose(result.params[2], 3, 1);
+      expectClose(result.params[3], 6, 1);
+      expect(result.rss).toBeLessThan(1e-4);
+    });
+
+    it('recovers parameters with noisy multi-I data', () => {
+      const trueParams = [120, 8, 3, 6];
+      const cleanData = generateSyntheticDataMultiI('mixed', trueParams, sValues, [0, 2, 6]);
+
+      const rng = seededRandom(789);
+      const noisyData: KineticDataPoint[] = cleanData.map(d => ({
+        s: d.s,
+        v: d.v * (1 + 0.05 * (rng() - 0.5) * 2),
+        i: d.i,
+      }));
+
+      const result = estimateParameters('mixed', noisyData, [100, 6, 4, 5]);
+
+      expect(result.converged).toBe(true);
+      expect(Math.abs(result.params[0] - 120) / 120).toBeLessThan(0.15);
+      expect(Math.abs(result.params[1] - 8) / 8).toBeLessThan(0.2);
+      expect(Math.abs(result.params[2] - 3) / 3).toBeLessThan(0.25);
+      expect(Math.abs(result.params[3] - 6) / 6).toBeLessThan(0.25);
+    });
+
+    it('reduces to competitive when Kiu is very large', () => {
+      const trueParams = [100, 5, 2, 1e6]; // Kiu effectively infinite
+      const data = generateSyntheticDataMultiI('mixed', trueParams, sValues, [0, 3]);
+
+      const result = estimateParameters('mixed', data, [80, 4, 3, 10]);
+
+      expect(result.converged).toBe(true);
+      // Vmax and Km should be recovered
+      expectClose(result.params[0], 100, 1);
+      expectClose(result.params[1], 5, 1);
+      // Kic should be close to true Ki
+      expectClose(result.params[2], 2, 1);
+    });
+  });
+
+  // ── Edge cases and robustness ────────────────────────────────
+
+  describe('edge cases', () => {
+    it('returns positive parameters even with negative initial guess', () => {
+      const trueParams = [100, 5, 2];
+      const data = generateSyntheticDataMultiI('competitive', trueParams, sValues, [0, 3]);
+
+      // Negative initial guess should be clamped to positive
+      const result = estimateParameters('competitive', data, [-10, -2, -1]);
+
+      for (const p of result.params) {
+        expect(p).toBeGreaterThan(0);
+      }
+    });
+
+    it('returns non-negative RSS with correct residual count', () => {
+      const trueParams = [100, 5, 2];
+      const data = generateSyntheticDataMultiI('competitive', trueParams, sValues, [0, 3]);
+
+      const result = estimateParameters('competitive', data, [80, 4, 3]);
+
+      expect(result.rss).toBeGreaterThanOrEqual(0);
+      expect(result.residuals.length).toBe(data.length);
+    });
+
+    it('respects maxIter configuration', () => {
+      const trueParams = [100, 5, 2];
+      const data = generateSyntheticDataMultiI('competitive', trueParams, sValues, [0, 3]);
+
+      const result = estimateParameters('competitive', data, [80, 4, 3], { maxIter: 2 });
+
+      // Should stop after 2 iterations (may or may not have converged)
+      expect(result.iterations).toBe(2);
+    });
+
+    it('handles single data point (underdetermined)', () => {
+      const data: KineticDataPoint[] = [{ s: 5, v: 50, i: 0 }];
+
+      const result = estimateParameters('competitive', data, [80, 4, 3]);
+
+      // Should converge (single point is trivially fittable with 3 params)
+      expect(result.converged).toBe(true);
+      expect(result.rss).toBeLessThan(1e-10);
+      // All params should be positive
+      for (const p of result.params) {
+        expect(p).toBeGreaterThan(0);
+      }
+    });
+
+    it('works with sparse substrate data', () => {
+      const trueParams = [100, 5, 2];
+      const sparseS = [1, 5, 15, 50];
+      const data = generateSyntheticDataMultiI('competitive', trueParams, sparseS, [0, 3]);
+
+      const result = estimateParameters('competitive', data, [80, 4, 3]);
+
+      expect(result.converged).toBe(true);
+      expect(result.rss).toBeLessThan(1e-6);
+    });
   });
 });

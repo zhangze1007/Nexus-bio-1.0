@@ -140,6 +140,358 @@ export function substrateInhibition(
   return (vmax * sSafe) / denom;
 }
 
+// ─── Parameter Estimation (Levenberg-Marquardt) ────────────────
+
+/** Inhibition model types for parameter estimation. */
+export type InhibitionModel = 'competitive' | 'uncompetitive' | 'mixed';
+
+/** A single (substrate, velocity) observation. */
+export interface KineticDataPoint {
+  s: number;
+  v: number;
+  /** Inhibitor concentration (required for inhibition models) */
+  i?: number;
+}
+
+/** Configuration for parameter estimation. */
+export interface ParameterEstimationConfig {
+  /** Maximum iterations (default: 500) */
+  maxIter?: number;
+  /** Parameter tolerance for convergence (default: 1e-8) */
+  tolP?: number;
+  /** Gradient tolerance for convergence (default: 1e-8) */
+  tolG?: number;
+  /** Initial damping factor (default: 1e-3) */
+  lambda0?: number;
+  /** Damping growth/shrink factors (default: 10) */
+  lambdaUp?: number;
+  lambdaDown?: number;
+}
+
+/** Result of parameter estimation. */
+export interface ParameterEstimationResult {
+  /** Best-fit parameters (always positive after clamping) */
+  params: number[];
+  /** Residual sum of squares at convergence */
+  rss: number;
+  /** Number of iterations used */
+  iterations: number;
+  /** Whether the solver converged (vs hit max iterations) */
+  converged: boolean;
+  /** Per-point residuals at convergence */
+  residuals: number[];
+}
+
+/**
+ * Compute model velocity for a given inhibition model.
+ *
+ * This is an internal helper used by the LM solver to evaluate the model
+ * at different parameter values during optimization.
+ *
+ * @param model   Inhibition model type
+ * @param params  Parameter array:
+ *                  competitive: [Vmax, Km, Ki]
+ *                  uncompetitive: [Vmax, Km, Kiu]
+ *                  mixed: [Vmax, Km, Kic, Kiu]
+ * @param s       Substrate concentration
+ * @param i       Inhibitor concentration (0 or undefined = no inhibition)
+ */
+function modelVelocity(
+  model: InhibitionModel,
+  params: number[],
+  s: number,
+  i: number,
+): number {
+  const sSafe = Math.max(0, s);
+  const iVal = Math.max(0, i);
+
+  switch (model) {
+    case 'competitive': {
+      const [vmax, km, ki] = params;
+      if (ki <= 0 || iVal <= 0) {
+        const denom = km + sSafe;
+        return denom <= 0 ? 0 : (vmax * sSafe) / denom;
+      }
+      const denom = km * (1 + iVal / ki) + sSafe;
+      return denom <= 0 ? 0 : (vmax * sSafe) / denom;
+    }
+    case 'uncompetitive': {
+      const [vmax, km, kiu] = params;
+      if (kiu <= 0 || iVal <= 0) {
+        const denom = km + sSafe;
+        return denom <= 0 ? 0 : (vmax * sSafe) / denom;
+      }
+      const denom = km + sSafe * (1 + iVal / kiu);
+      return denom <= 0 ? 0 : (vmax * sSafe) / denom;
+    }
+    case 'mixed': {
+      const [vmax, km, kic, kiu] = params;
+      const hasComp = kic > 0 && iVal > 0;
+      const hasUncomp = kiu > 0 && iVal > 0;
+      if (!hasComp && !hasUncomp) {
+        const denom = km + sSafe;
+        return denom <= 0 ? 0 : (vmax * sSafe) / denom;
+      }
+      const kmFactor = hasComp ? 1 + iVal / kic : 1;
+      const sFactor = hasUncomp ? 1 + iVal / kiu : 1;
+      const denom = km * kmFactor + sSafe * sFactor;
+      return denom <= 0 ? 0 : (vmax * sSafe) / denom;
+    }
+  }
+}
+
+/**
+ * Compute residuals: r_j = model(s_j, params) - v_obs_j
+ */
+function computeResiduals(
+  model: InhibitionModel,
+  params: number[],
+  data: KineticDataPoint[],
+): number[] {
+  return data.map(d => {
+    const vPred = modelVelocity(model, params, d.s, d.i ?? 0);
+    return vPred - d.v;
+  });
+}
+
+/**
+ * Compute the Jacobian matrix via central finite differences.
+ *
+ * J[j][k] = d(r_j) / d(params_k) ≈ (f(p + eps) - f(p - eps)) / (2 * eps)
+ *
+ * This avoids the need for analytical derivatives for each model variant,
+ * at the cost of 2*nParams function evaluations per iteration.
+ */
+function computeJacobian(
+  model: InhibitionModel,
+  params: number[],
+  data: KineticDataPoint[],
+): number[][] {
+  const nParams = params.length;
+  const nData = data.length;
+  const J: number[][] = Array.from({ length: nData }, () => new Array(nParams));
+
+  for (let k = 0; k < nParams; k++) {
+    // Scale epsilon relative to parameter magnitude for numerical stability
+    const eps = Math.max(1e-8, 1e-5 * Math.abs(params[k]));
+
+    // Perturb parameter k upward
+    const pPlus = [...params];
+    pPlus[k] = params[k] + eps;
+
+    // Perturb parameter k downward
+    const pMinus = [...params];
+    pMinus[k] = params[k] - eps;
+
+    for (let j = 0; j < nData; j++) {
+      const vPlus = modelVelocity(model, pPlus, data[j].s, data[j].i ?? 0);
+      const vMinus = modelVelocity(model, pMinus, data[j].s, data[j].i ?? 0);
+      J[j][k] = (vPlus - vMinus) / (2 * eps);
+    }
+  }
+
+  return J;
+}
+
+/**
+ * Estimate kinetic parameters by fitting to experimental data using
+ * Levenberg-Marquardt optimization.
+ *
+ * Supports three inhibition models:
+ *   - **competitive**: fits [Vmax, Km, Ki]
+ *   - **uncompetitive**: fits [Vmax, Km, Kiu]
+ *   - **mixed**: fits [Vmax, Km, Kic, Kiu]
+ *
+ * The algorithm iteratively minimizes the sum of squared residuals between
+ * model predictions and observed velocities using the update rule:
+ *
+ *   (J^T J + lambda * diag(J^T J)) * delta = J^T * r
+ *
+ * where lambda grows on failed steps (gradient descent) and shrinks on
+ * successful steps (Gauss-Newton). Parameters are clamped to positive values
+ * since Km, Vmax, and Ki are physical quantities that must be > 0.
+ *
+ * @param model         Inhibition model type
+ * @param experimentalData  Array of {s, v, i?} observations
+ * @param initialGuess  Starting parameter values [Vmax, Km, ...]
+ * @param config        Optional solver configuration
+ * @returns             Fitted parameters, RSS, convergence info
+ */
+export function estimateParameters(
+  model: InhibitionModel,
+  experimentalData: KineticDataPoint[],
+  initialGuess: number[],
+  config?: ParameterEstimationConfig,
+): ParameterEstimationResult {
+  const maxIter = config?.maxIter ?? 500;
+  const tolP = config?.tolP ?? 1e-8;
+  const tolG = config?.tolG ?? 1e-8;
+  let lambda = config?.lambda0 ?? 1e-3;
+  const lambdaUp = config?.lambdaUp ?? 10;
+  const lambdaDown = config?.lambdaDown ?? 10;
+
+  const nParams = initialGuess.length;
+  const nData = experimentalData.length;
+  let params = initialGuess.map(p => Math.max(1e-12, p));
+  let residuals = computeResiduals(model, params, experimentalData);
+  let rss = residuals.reduce((s, r) => s + r * r, 0);
+
+  let converged = false;
+  let iterations = 0;
+
+  for (let iter = 0; iter < maxIter; iter++) {
+    iterations = iter + 1;
+    const J = computeJacobian(model, params, experimentalData);
+
+    // J^T * J
+    const JtJ: number[][] = Array.from({ length: nParams }, () => new Array(nParams).fill(0));
+    for (let k = 0; k < nParams; k++) {
+      for (let l = 0; l < nParams; l++) {
+        let sum = 0;
+        for (let j = 0; j < nData; j++) {
+          sum += J[j][k] * J[j][l];
+        }
+        JtJ[k][l] = sum;
+      }
+    }
+
+    // J^T * r
+    const JtR: number[] = new Array(nParams).fill(0);
+    for (let k = 0; k < nParams; k++) {
+      let sum = 0;
+      for (let j = 0; j < nData; j++) {
+        sum += J[j][k] * residuals[j];
+      }
+      JtR[k] = sum;
+    }
+
+    // Check gradient convergence: ||J^T * r|| / nData < tolG
+    const gradNorm = Math.sqrt(JtR.reduce((s, g) => s + g * g, 0)) / nData;
+    if (gradNorm < tolG) {
+      converged = true;
+      break;
+    }
+
+    // Build damped normal equations with Tikhonov regularization:
+    //   (J^T J + lambda * diag(J^T J) + eps * I) * delta = -J^T * r
+    // The eps*I term ensures positive-definiteness for rank-deficient Jacobians
+    // (e.g., when I=0 makes Ki unidentifiable in competitive inhibition).
+    const eps = 1e-10;
+    const A: number[][] = JtJ.map((row, k) =>
+      row.map((val, l) => (k === l ? val + lambda * JtJ[k][k] + eps : val)),
+    );
+    const b: number[] = JtR.map(g => -g);
+
+    // Solve via Gauss elimination with partial pivoting
+    const delta = solveLinearSystem(A, b);
+
+    if (delta !== null) {
+      // Candidate new parameters (clamp to positive)
+      const pNew = params.map((p, k) => Math.max(1e-12, p + delta[k]));
+
+      // Evaluate new residuals and RSS
+      const rNew = computeResiduals(model, pNew, experimentalData);
+      const rssNew = rNew.reduce((s, r) => s + r * r, 0);
+
+      // Compute predicted reduction from quadratic model
+      let predictedReduction = 0;
+      for (let k = 0; k < nParams; k++) {
+        predictedReduction += delta[k] * (lambda * JtJ[k][k] * delta[k] + JtR[k]);
+      }
+      const actualReduction = rss - rssNew;
+
+      if (actualReduction > 0) {
+        // Step accepted — compute gain ratio
+        const gainRatio = predictedReduction > 0
+          ? actualReduction / predictedReduction
+          : 1.0; // If predicted is negative/zero, model is wrong — treat as okay step
+
+        const paramDelta = params.map((p, k) =>
+          Math.abs(pNew[k] - p) / Math.max(1e-12, Math.abs(p)),
+        );
+        const maxParamDelta = Math.max(...paramDelta);
+
+        params = pNew;
+        residuals = rNew;
+        rss = rssNew;
+
+        // Update lambda using gain ratio
+        if (gainRatio > 0.75) {
+          lambda = Math.max(1e-15, lambda / (lambdaDown * lambdaDown));
+        } else if (gainRatio > 0.25) {
+          lambda = Math.max(1e-15, lambda / lambdaDown);
+        }
+        // gainRatio <= 0.25: keep lambda unchanged
+
+        // Check parameter convergence
+        if (maxParamDelta < tolP) {
+          converged = true;
+          break;
+        }
+      } else {
+        // Step rejected — grow lambda
+        lambda = Math.min(1e12, lambda * lambdaUp);
+      }
+    } else {
+      // Singular system — grow lambda and retry
+      lambda = Math.min(1e12, lambda * lambdaUp);
+    }
+  }
+
+  return { params, rss, iterations, converged, residuals };
+}
+
+/**
+ * Solve a linear system Ax = b via Gauss elimination with partial pivoting.
+ *
+ * Returns null if the system is singular (detected pivot < epsilon).
+ */
+function solveLinearSystem(A: number[][], b: number[]): number[] | null {
+  const n = b.length;
+  // Augmented matrix
+  const M: number[][] = A.map((row, i) => [...row, b[i]]);
+
+  for (let col = 0; col < n; col++) {
+    // Partial pivoting
+    let maxVal = Math.abs(M[col][col]);
+    let maxRow = col;
+    for (let row = col + 1; row < n; row++) {
+      if (Math.abs(M[row][col]) > maxVal) {
+        maxVal = Math.abs(M[row][col]);
+        maxRow = row;
+      }
+    }
+
+    if (maxVal < 1e-14) return null; // Singular
+
+    // Swap rows
+    if (maxRow !== col) {
+      [M[col], M[maxRow]] = [M[maxRow], M[col]];
+    }
+
+    // Eliminate below
+    for (let row = col + 1; row < n; row++) {
+      const factor = M[row][col] / M[col][col];
+      for (let j = col; j <= n; j++) {
+        M[row][j] -= factor * M[col][j];
+      }
+    }
+  }
+
+  // Back-substitution
+  const x = new Array(n).fill(0);
+  for (let row = n - 1; row >= 0; row--) {
+    if (Math.abs(M[row][row]) < 1e-14) return null;
+    let sum = M[row][n];
+    for (let col = row + 1; col < n; col++) {
+      sum -= M[row][col] * x[col];
+    }
+    x[row] = sum / M[row][row];
+  }
+
+  return x;
+}
+
 // ─── Hill Equation ──────────────────────────────────────────────
 
 /**
