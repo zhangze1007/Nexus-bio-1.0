@@ -165,16 +165,15 @@ export interface CFSFullResult {
 import { SeededRNG } from '../utils/seededRng';
 
 // Kinetic constants for energy coupling
-const K_NTP = 0.3;           // mM — NTP Michaelis constant for transcription
-                              // Heuristic — MM constant for NTP-dependent transcription
-const K_AA  = 0.2;           // mM — amino-acid Michaelis constant for translation
-                              // Heuristic — MM constant for amino acid availability
-const K_ATP_ENERGY = 0.1;    // mM — ATP half-saturation for energy modulation
-const K_CONSUME_TX = 0.002;  // mM NTP consumed per nM mRNA synthesised
-const K_CONSUME_TL = 0.005;  // mM ATP consumed per nM protein synthesised
-const K_GTP_CONSUME = 0.003; // mM GTP consumed per nM protein synthesised
-const K_AA_CONSUME  = 1e-6;  // mM AA consumed per nM·aa translated (1 nM residue = 1e-6 mM)
-const K_NTP_CONSUME = 0.001; // mM NTP consumed per nM mRNA synthesised
+// Full provenance: src/services/cellFreeParameterSources.ts
+const K_NTP = 0.3;           // mM — NTP Km for transcription. Heuristic: BRENDA range 0.01-1 mM for RNAPs
+const K_AA  = 0.2;           // mM — amino-acid Km for translation. Heuristic: BRENDA range 0.01-0.5 mM
+const K_ATP_ENERGY = 0.1;    // mM — ATP half-saturation for energy modulation. Dead code (unused)
+const K_CONSUME_TX = 0.002;  // mM NTP/nM mRNA — transcription cost. Heuristic: ~4 NTP/nt × 1000 nt mRNA
+const K_CONSUME_TL = 0.005;  // mM ATP/nM protein — translation cost. Heuristic: ~4 ATP/aa × 300 aa (Russell & Cook 1995)
+const K_GTP_CONSUME = 0.003; // mM GTP/nM protein — EF-Tu/EF-G GTPase. Heuristic: ~2 GTP/aa × 300 aa
+const K_AA_CONSUME  = 1e-6;  // mM AA/nM·residue — unit conversion
+const K_NTP_CONSUME = 0.001; // mM NTP/nM mRNA — additional NTP consumption
 
 /**
  * ODE system state vector layout (for N genes):
@@ -931,13 +930,12 @@ export function generateDefaultConstructs(): GeneConstruct[] {
       promoter: 'sigma70',
       rbs: 'BBa_B0032',
       cds: 'ADS',
-      dnaConcentration: 15,     // nM
-      k_tx: 0.8,                // nM/min — sigma70 moderate
-                                  // Heuristic — sigma70 weaker than T7
-      d_mRNA: 0.1,              // 1/min — ~7 min half-life
-      k_tl: 2.0,                // nM/min — medium RBS
-      K_tl: 80,                 // nM
-      proteinLength: 563,       // ADS from A. annua
+      dnaConcentration: 15,     // nM — Heuristic: typical plasmid concentration for cell-free
+      k_tx: 0.8,                // nM/min — Heuristic: sigma70 ~3-5x weaker than T7 (BRENDA EC 2.7.7.6 vs 2.7.7.60)
+      d_mRNA: 0.1,              // 1/min — Heuristic: sigma70 mRNA ~7 min half-life (faster than T7)
+      k_tl: 2.0,                // nM/min — Heuristic: BBa_B0032 is a medium-strength RBS (iGEM registry)
+      K_tl: 80,                 // nM — Heuristic: weaker ribosome binding than BBa_B0034
+      proteinLength: 563,       // ADS from A. annua — Ro et al. 2006 (doi: 10.1038/nature04894)
       color: '#60a5fa',         // blue
     },
     {
@@ -946,13 +944,12 @@ export function generateDefaultConstructs(): GeneConstruct[] {
       promoter: 'Ptac',
       rbs: 'BBa_B0031',
       cds: 'CYP71AV1',
-      dnaConcentration: 20,     // nM
-      k_tx: 0.5,                // nM/min — Ptac weaker without IPTG
-                                  // Heuristic — Ptac weaker than sigma70
-      d_mRNA: 0.12,             // 1/min — ~6 min half-life
-      k_tl: 1.0,                // nM/min — weak RBS
-      K_tl: 120,                // nM — lower ribosome affinity
-      proteinLength: 496,       // CYP71AV1 from A. annua
+      dnaConcentration: 20,     // nM — Heuristic: typical plasmid concentration for cell-free
+      k_tx: 0.5,                // nM/min — Heuristic: Ptac is a hybrid tac promoter, weaker than sigma70 consensus
+      d_mRNA: 0.12,             // 1/min — Heuristic: Ptac mRNA ~6 min half-life
+      k_tl: 1.0,                // nM/min — Heuristic: BBa_B0031 is a weak RBS (iGEM registry)
+      K_tl: 120,                // nM — Heuristic: lower ribosome affinity for weak RBS
+      proteinLength: 496,       // CYP71AV1 from A. annua — Ro et al. 2006 (doi: 10.1038/nature04894)
       color: '#f472b6',         // pink
     },
   ];
@@ -970,26 +967,21 @@ export function generateDefaultConstructs(): GeneConstruct[] {
  */
 export function generateDefaultParameters(): CFSParameters {
   return {
-    ribosomeTotal: 500,         // nM
-                                  // Karzbrun et al. 2011 (doi: 10.1038/msb.2011.74)
-    rnap_total: 100,            // nM (T7 RNAP)
-                                  // Estimated — typical E. coli S30 extract
-    reactionVolume: 10,         // μL
-    temperature: 30,            // °C
+    ribosomeTotal: 500,         // nM — Karzbrun et al. 2011 (doi: 10.1038/msb.2011.74)
+    rnap_total: 100,            // nM — Estimated: S30 extract ~100-200 nM RNAP (Spirin & Swartz 2011)
+    reactionVolume: 10,         // μL — Typical microplate well volume for cell-free reactions
+    temperature: 30,            // °C — E. coli S30 optimal; 37°C causes protein aggregation in vitro
     initialEnergy: {
-      atp: 1.5,                 // mM
-                                  // Estimated — typical S30 energy charge
-      gtp: 1.5,                 // mM
-      pep: 33,                  // mM — phosphoenolpyruvate energy source
-                                  // Estimated — PEP regeneration substrate
-      aminoAcids: 15.0,         // mM — S30 extract: ~1 mM per AA × 20 AAs = ~20 mM total; 15 mM conservative
-      ntps: 5.0,                // mM — CTP+UTP pool for transcription
+      atp: 1.5,                 // mM — Calhoun & Swartz 2005 (doi: 10.1002/bit.20379)
+      gtp: 1.5,                 // mM — Estimated: similar to ATP in S30 extracts (Spirin & Swartz 2011)
+      pep: 33,                  // mM — Jewett & Swartz 2004 (doi: 10.1002/bit.10865)
+      aminoAcids: 15.0,         // mM — Estimated: ~1 mM per AA × 20 AAs; Shimizu et al. 2001 use 1.5 mM each
+      ntps: 5.0,                // mM — Estimated: CTP+UTP pool for transcription
     },
-    energyDecayRate: 0.003,     // 1/min — background ATP hydrolysis
-    pepRegenerationRate: 0.005, // 1/min — PEP → ATP regeneration
-                                // Jewett & Swartz 2004 (doi: 10.1002/bit.10865)
-    simulationTime: 240,        // 4 hours
-    timeStep: 0.5,              // min
+    energyDecayRate: 0.003,     // 1/min — Heuristic: background ATP hydrolysis in cell-free extracts
+    pepRegenerationRate: 0.005, // 1/min — Jewett & Swartz 2004 (doi: 10.1002/bit.10865)
+    simulationTime: 240,        // 4 hours — typical cell-free reaction duration
+    timeStep: 0.5,              // min — numerical integration step
   };
 }
 

@@ -126,10 +126,11 @@ describe('CellFree model structure and parameter sourcing honesty boundary', () 
       'ribosome-limited translation terms',
     ]));
     expect(boundary.missingEvidence).toEqual(expect.arrayContaining([
-      'per-parameter source table for all defaults',
       'extract-specific calibration dataset',
       'parameter uncertainty model',
     ]));
+    // Parameter source table now exists in cellFreeParameterSources.ts
+    expect(boundary.missingEvidence).not.toContain('per-parameter source table for all defaults');
     expect(isCellFreeFormalParameterSurfaceBlocked('payload')).toBe(false);
     expect(isCellFreeFormalParameterSurfaceBlocked('export')).toBe(true);
     expect(isCellFreeFormalParameterSurfaceBlocked('recommendation')).toBe(true);

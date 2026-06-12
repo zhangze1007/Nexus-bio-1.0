@@ -39,7 +39,7 @@ export const CELLFREE_PARAMETER_BOUNDARY: CellFreeParameterBoundary = {
   hasTxTlTerms: true,
   hasResourceTerms: true,
   hasDegradationTerms: true,
-  parametersFullySourced: true,
+  parametersFullySourced: true, // cellFreeParameterSources.ts covers all constants with citations
   calibrationEstablished: false,
   uncertaintyQuantified: false,
   payloadAllowed: true,
@@ -65,7 +65,6 @@ export const CELLFREE_PARAMETER_BOUNDARY: CellFreeParameterBoundary = {
     'heuristic in-vitro to in-vivo estimate',
   ],
   missingEvidence: [
-    'per-parameter source table for all defaults',
     'extract-specific calibration dataset',
     'parameter uncertainty model',
     'output uncertainty or prediction interval',

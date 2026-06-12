@@ -496,7 +496,7 @@ function MutagenesisView({ result, enzyme }: { result: MutagenesisResult; enzyme
       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
         <thead>
           <tr>
-            {['Pos', 'WT', 'Mutants', 'Cons', 'Effect', 'ΔKcat', 'ΔKm', 'Conf'].map(h => (
+            {['Pos', 'WT', 'Mutants', 'Cons', 'Effect', 'ΔKcat*', 'ΔKm*', 'Conf'].map(h => (
               <th key={h} style={hdrCell}>{h}</th>
             ))}
           </tr>
@@ -518,6 +518,9 @@ function MutagenesisView({ result, enzyme }: { result: MutagenesisResult; enzyme
           ))}
         </tbody>
       </table>
+      <p style={{ margin: '6px 0 0', fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xxs)', color: LABEL, opacity: 0.7 }}>
+        * ΔKcat/ΔKm predictions not available — quantitative mutagenesis effects require FoldX, Rosetta, or molecular dynamics.
+      </p>
     </div>
   );
 }
