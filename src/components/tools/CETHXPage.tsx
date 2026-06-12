@@ -9,7 +9,7 @@ import AlgorithmPanel from '../shared/AlgorithmPanel';
 import ScientificFigureFrame from './shared/ScientificFigureFrame';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
-import { SEMANTIC, SEMANTIC_RGB } from '../charts/chartTheme';
+import { SEMANTIC, SEMANTIC_RGB, PAPER_THEME } from '../charts/chartTheme';
 import { PATHWAY_STEPS, computeThermo } from '../../data/mockCETHX';
 import type { PathwayKey } from '../../data/mockCETHX';
 import type { ThermoStep } from '../../types';
@@ -102,15 +102,15 @@ function BreathingWaterfall({ steps }: { steps: ReturnType<typeof computeThermo>
   ]);
 
   return (
-    <SVGChartContainer W={W} H={H} ariaLabel="Thermodynamic waterfall" rx={14} fill="#05070b">
+    <SVGChartContainer W={W} H={H} ariaLabel="Thermodynamic waterfall" variant="paper">
       <rect
         x={PAD.left - 22}
         y={PAD.top - 18}
         width={innerW + 34}
         height={innerH + 30}
         rx="14"
-        fill="rgba(255,255,255,0.02)"
-        stroke="rgba(255,255,255,0.06)"
+        fill={PAPER_THEME.bgAlt}
+        stroke={PAPER_THEME.border}
       />
       {[0, 0.25, 0.5, 0.75, 1].map((tick) => {
         const y = PAD.top + tick * innerH;
@@ -121,18 +121,18 @@ function BreathingWaterfall({ steps }: { steps: ReturnType<typeof computeThermo>
             y1={y}
             x2={W - PAD.right}
             y2={y}
-            stroke="rgba(255,255,255,0.045)"
-            strokeWidth={0.8}
+            stroke={PAPER_THEME.grid}
+            strokeWidth={0.5}
           />
         );
       })}
       <line x1={PAD.left} y1={yPos(0)} x2={W - PAD.right} y2={yPos(0)}
-        stroke="rgba(255,255,255,0.08)" strokeWidth={1} />
+        stroke={PAPER_THEME.axis} strokeWidth={0.75} />
 
-      <text x={PAD.left} y={18} fontFamily={THEME.SANS} fontSize="10" fill={THEME.LABEL} letterSpacing="0.12em">
+      <text x={PAD.left} y={18} fontFamily={PAPER_THEME.labelFont} fontSize={PAPER_THEME.tickSize} fill={PAPER_THEME.labelColor} letterSpacing="0.12em">
         THERMODYNAMIC WATERFALL
       </text>
-      <text x={PAD.left} y={30} fontFamily={THEME.SANS} fontSize="11" fill={THEME.VALUE}>
+      <text x={PAD.left} y={30} fontFamily={PAPER_THEME.labelFont} fontSize={PAPER_THEME.labelSize} fill={PAPER_THEME.titleColor}>
         Stepwise free-energy burden with cumulative load and ATP-coupled events
       </text>
 
@@ -144,7 +144,7 @@ function BreathingWaterfall({ steps }: { steps: ReturnType<typeof computeThermo>
           const x = PAD.left + (i / steps.length) * innerW + barW / 2;
           return `${x},${yPos(s.cumulative)}`;
         }).join(' ')}
-        fill="none" stroke="rgba(240,248,255,0.52)" strokeWidth={1.7} strokeDasharray="4 2"
+        fill="none" stroke={PAPER_THEME.axis} strokeWidth={1.5} strokeDasharray="4 2"
       />
 
       {steps.map((step, i) => {
@@ -177,17 +177,17 @@ function BreathingWaterfall({ steps }: { steps: ReturnType<typeof computeThermo>
               height={h}
               rx={4}
               fill="none"
-              stroke={isLimiting ? 'rgba(255,255,255,0.7)' : isInfeasible ? `rgba(${SEMANTIC_RGB.fail}, 0.55)` : 'rgba(255,255,255,0.12)'}
+              stroke={isLimiting ? PAPER_THEME.titleColor : isInfeasible ? `rgba(${SEMANTIC_RGB.fail}, 0.55)` : PAPER_THEME.border}
               strokeWidth={isLimiting ? 1.4 : 0.8}
             />
-            <circle cx={cx} cy={yPos(step.cumulative)} r={3.5} fill="rgba(247,249,255,0.95)" />
+            <circle cx={cx} cy={yPos(step.cumulative)} r={3.5} fill={PAPER_THEME.scatterStroke} />
             {isInfeasible && (
               <text
                 x={cx}
                 y={topY - 5}
                 textAnchor="middle"
-                fontFamily={THEME.MONO}
-                fontSize="10"
+                fontFamily={PAPER_THEME.tickFont}
+                fontSize={PAPER_THEME.tickSize}
                 fill={SEMANTIC.fail}
               >
                 INFEASIBLE
@@ -198,8 +198,8 @@ function BreathingWaterfall({ steps }: { steps: ReturnType<typeof computeThermo>
                 x={cx}
                 y={topY - 8}
                 textAnchor="middle"
-                fontFamily={THEME.MONO}
-                fontSize="10"
+                fontFamily={PAPER_THEME.tickFont}
+                fontSize={PAPER_THEME.tickSize}
                 fill={THEME.APRICOT}
               >
                 ATP +{step.atpYield.toFixed(0)}
@@ -212,16 +212,16 @@ function BreathingWaterfall({ steps }: { steps: ReturnType<typeof computeThermo>
                   y1={topY - 10}
                   x2={cx}
                   y2={PAD.top - 6}
-                  stroke="rgba(255,255,255,0.24)"
+                  stroke={PAPER_THEME.grid}
                   strokeDasharray="4 3"
                 />
                 <text
                   x={cx}
                   y={PAD.top - 14}
                   textAnchor="middle"
-                  fontFamily={THEME.MONO}
-                  fontSize="10"
-                  fill="rgba(255,255,255,0.72)"
+                  fontFamily={PAPER_THEME.tickFont}
+                  fontSize={PAPER_THEME.tickSize}
+                  fill={PAPER_THEME.labelColor}
                 >
                   LIMITING
                 </text>
@@ -250,9 +250,9 @@ function BreathingWaterfall({ steps }: { steps: ReturnType<typeof computeThermo>
               x={x}
               y={H - 18}
               textAnchor="middle"
-              fontFamily={THEME.MONO}
-              fontSize="10"
-              fill="rgba(255,255,255,0.34)"
+              fontFamily={PAPER_THEME.tickFont}
+              fontSize={PAPER_THEME.tickSize}
+              fill={PAPER_THEME.tickColor}
               transform={`rotate(-38,${x},${H - 18})`}
             >
               {step.step.slice(0, 12)}
@@ -261,8 +261,8 @@ function BreathingWaterfall({ steps }: { steps: ReturnType<typeof computeThermo>
               x={x}
               y={H - 34}
               textAnchor="middle"
-              fontFamily={THEME.MONO}
-              fontSize="10"
+              fontFamily={PAPER_THEME.tickFont}
+              fontSize={PAPER_THEME.tickSize}
               fill={step.deltaG < 0 ? `rgba(${SEMANTIC_RGB.pass}, 0.85)` : `rgba(${SEMANTIC_RGB.fail}, 0.85)`}
             >
               {step.deltaG > 0 ? '+' : ''}{step.deltaG.toFixed(1)}
@@ -273,23 +273,23 @@ function BreathingWaterfall({ steps }: { steps: ReturnType<typeof computeThermo>
 
       {[-40, -20, 0, 20].map(v => v >= minG && v <= maxG ? (
         <g key={v}>
-          <line x1={PAD.left - 4} y1={yPos(v)} x2={PAD.left} y2={yPos(v)} stroke="rgba(255,255,255,0.08)" />
-          <text x={PAD.left - 8} y={yPos(v) + 3} textAnchor="end" fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.28)">
+          <line x1={PAD.left - 4} y1={yPos(v)} x2={PAD.left} y2={yPos(v)} stroke={PAPER_THEME.grid} />
+          <text x={PAD.left - 8} y={yPos(v) + 3} textAnchor="end" fontFamily={PAPER_THEME.tickFont} fontSize={PAPER_THEME.tickSize} fill={PAPER_THEME.tickColor}>
             {v}
           </text>
         </g>
       ) : null)}
 
-      <text x={10} y={H / 2} textAnchor="middle" fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.18)"
+      <text x={10} y={H / 2} textAnchor="middle" fontFamily={PAPER_THEME.tickFont} fontSize={PAPER_THEME.tickSize} fill={PAPER_THEME.labelColor}
         transform={`rotate(-90,10,${H / 2})`}>ΔG (kJ/mol)</text>
 
       <g transform={`translate(${W - 174}, 14)`}>
-        <rect width="154" height="54" rx="10" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.08)" />
-        <text x="12" y="17" fontFamily={THEME.MONO} fontSize="10" fill={THEME.LABEL}>CURRENT LIMITING STEP</text>
-        <text x="12" y="31" fontFamily={THEME.SANS} fontSize="11" fill={THEME.VALUE}>
+        <rect width="154" height="54" rx={PAPER_THEME.borderRadius} fill={PAPER_THEME.bgAlt} stroke={PAPER_THEME.border} />
+        <text x="12" y="17" fontFamily={PAPER_THEME.tickFont} fontSize={PAPER_THEME.tickSize} fill={PAPER_THEME.labelColor}>CURRENT LIMITING STEP</text>
+        <text x="12" y="31" fontFamily={PAPER_THEME.labelFont} fontSize={PAPER_THEME.labelSize} fill={PAPER_THEME.titleColor}>
           {limitingStep?.step ?? '—'}
         </text>
-        <text x="12" y="45" fontFamily={THEME.MONO} fontSize="10" fill={`rgba(${SEMANTIC_RGB.fail}, 0.85)`}>
+        <text x="12" y="45" fontFamily={PAPER_THEME.tickFont} fontSize={PAPER_THEME.tickSize} fill={`rgba(${SEMANTIC_RGB.fail}, 0.85)`}>
           ΔG {limitingStep ? `${limitingStep.deltaG > 0 ? '+' : ''}${limitingStep.deltaG.toFixed(1)} kJ/mol` : '—'}
         </text>
       </g>
@@ -304,7 +304,7 @@ function BreathingWaterfall({ steps }: { steps: ReturnType<typeof computeThermo>
           {l.line
             ? <line x1={0} y1={4} x2={10} y2={4} stroke={l.color} strokeWidth={2} />
             : <rect width={10} height={8} rx={2} fill={l.color} opacity={0.78} />}
-          <text x={14} y={8} fontFamily={THEME.SANS} fontSize={8} fill="rgba(255,255,255,0.28)">{l.label}</text>
+          <text x={14} y={8} fontFamily={PAPER_THEME.legendFont} fontSize={PAPER_THEME.legendSize} fill={PAPER_THEME.legendColor}>{l.label}</text>
         </g>
       ))}
     </SVGChartContainer>
