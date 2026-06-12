@@ -7,7 +7,7 @@
 import { useState, useMemo } from 'react';
 import type { FBAOutput } from '../../../data/mockFBA';
 import type { METABOLIC_NODES, FLUX_EDGES } from '../../../data/mockFBA';
-import { SCI_PALETTE, SCI_PASTEL } from '../../charts/chartTheme';
+import { SCI_PALETTE, SCI_PASTEL_MUTED, PAPER_THEME } from '../../charts/chartTheme';
 import { THEME } from '../../../theme';
 
 // ── Layout constants ──
@@ -16,10 +16,10 @@ export const H = 640;
 
 // ── Subsystem palette ──
 export const SUBSYSTEM_COLORS: Record<string, string> = {
-  Glycolysis:   SCI_PASTEL.coral,
-  TCA:          SCI_PASTEL.periwinkle,
-  Energy:       SCI_PASTEL.teal,
-  Fermentation: SCI_PASTEL.lavender,
+  Glycolysis:   SCI_PASTEL_MUTED.coral,
+  TCA:          SCI_PASTEL_MUTED.periwinkle,
+  Energy:       SCI_PASTEL_MUTED.teal,
+  Fermentation: SCI_PASTEL_MUTED.lavender,
 };
 
 // ── Flux direction colors (Okabe-Ito, CVD-safe) ──
@@ -121,7 +121,7 @@ export function FluxMap({ result, nodes, edges, knockouts, compact, svgRef }: {
           <polygon points="0 0.5, 6.5 3.5, 0 6.5" fill={FLUX_REV_COLOR} />
         </marker>
         <marker id="fba-zero" markerWidth="7" markerHeight="7" refX="5.5" refY="3.5" orient="auto">
-          <polygon points="0 0.5, 6.5 3.5, 0 6.5" fill="rgba(255,255,255,0.18)" />
+          <polygon points="0 0.5, 6.5 3.5, 0 6.5" fill={PAPER_THEME.border} />
         </marker>
         <marker id="fba-ko"   markerWidth="7" markerHeight="7" refX="5.5" refY="3.5" orient="auto">
           <polygon points="0 0.5, 6.5 3.5, 0 6.5" fill="rgba(255,80,80,0.5)" />
@@ -131,11 +131,11 @@ export function FluxMap({ result, nodes, edges, knockouts, compact, svgRef }: {
           <feComposite in="SourceGraphic" in2="blur" operator="over" />
         </filter>
       </defs>
-      <rect width={W} height={viewH} fill="#05070b" rx={16} />
+      <rect width={W} height={viewH} fill={PAPER_THEME.bg} rx={PAPER_THEME.borderRadius} />
 
       <text x="28" y="22" fontFamily={THEME.MONO} fontSize="10" fill={SUBSYSTEM_COLORS.Glycolysis} opacity={0.75}>● GLYCOLYSIS</text>
       <text x="200" y="22" fontFamily={THEME.MONO} fontSize="10" fill={SUBSYSTEM_COLORS.TCA} opacity={0.75}>● TCA CYCLE</text>
-      <text x="28" y={viewH - 12} fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.2)">
+      <text x="28" y={viewH - 12} fontFamily={THEME.MONO} fontSize="10" fill={PAPER_THEME.tickColor}>
         Flux: mmol·gDW⁻¹·h⁻¹ · Node size ∝ flux magnitude · Edge color encodes direction
       </text>
 
@@ -148,7 +148,7 @@ export function FluxMap({ result, nodes, edges, knockouts, compact, svgRef }: {
         const isKO = koSet.has(edge.reactionId);
         const isReverse = rawFlux < 0;
         const color = isKO ? 'rgba(255,80,80,0.55)'
-          : flux < 0.01 ? 'rgba(255,255,255,0.15)'
+          : flux < 0.01 ? PAPER_THEME.border
           : isReverse ? FLUX_REV_COLOR : FLUX_FWD_COLOR;
         const strokeW = Math.min(8, 1 + normalized * 5);
         // Bezier curve with perpendicular offset for Escher-style routing
@@ -168,8 +168,8 @@ export function FluxMap({ result, nodes, edges, knockouts, compact, svgRef }: {
               stroke={color} strokeWidth={strokeW} strokeLinecap="round" fill="none"
               strokeDasharray={isKO ? '5 3' : undefined} markerEnd={marker} opacity={0.85} />
             <rect x={mx - 14} y={my - 7} width="28" height="14" rx="7"
-              fill="rgba(5,7,11,0.88)" stroke="rgba(255,255,255,0.07)" />
-            <text x={mx} y={my + 4} fill={isKO ? 'rgba(255,80,80,0.7)' : 'rgba(255,255,255,0.55)'}
+              fill={PAPER_THEME.bgAlt} stroke={PAPER_THEME.border} />
+            <text x={mx} y={my + 4} fill={isKO ? '#C0392B' : PAPER_THEME.tickColor}
               fontFamily={THEME.MONO} fontSize="10" textAnchor="middle">
               {isKO ? '×' : flux.toFixed(1)}
             </text>
@@ -182,14 +182,14 @@ export function FluxMap({ result, nodes, edges, knockouts, compact, svgRef }: {
         if (!pos) return null;
         const f = nodeFlux(node.id);
         const r = Math.max(10, Math.min(20, 8 + Math.sqrt(f / maxFlux) * 14));
-        const color = SUBSYSTEM_COLORS[node.subsystem] ?? 'rgba(255,255,255,0.5)';
+        const color = SUBSYSTEM_COLORS[node.subsystem] ?? PAPER_THEME.tickColor;
         const isHov = hovered === node.id;
         return (
           <g key={node.id} onMouseEnter={() => setHovered(node.id)} onMouseLeave={() => setHovered(null)} style={{ cursor: 'pointer' }}>
             {isHov && <circle cx={pos.x} cy={pos.y} r={r + 6} fill={color} opacity={0.12} />}
-            <circle cx={pos.x} cy={pos.y} r={r} fill="rgba(5,7,11,0.92)" stroke={color}
+            <circle cx={pos.x} cy={pos.y} r={r} fill={PAPER_THEME.bg} stroke={color}
               strokeWidth={isHov ? 2.2 : 1.4} filter={isHov ? 'url(#fba-glow)' : undefined} />
-            <text x={pos.x} y={pos.y + 3.5} textAnchor="middle" fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.88)">
+            <text x={pos.x} y={pos.y + 3.5} textAnchor="middle" fontFamily={THEME.MONO} fontSize="10" fill={PAPER_THEME.labelColor}>
               {node.label.slice(0, 5)}
             </text>
             <text x={pos.x} y={pos.y + r + 10} textAnchor="middle" fontFamily={THEME.MONO} fontSize="10" fill={color} opacity={0.7}>
@@ -199,9 +199,9 @@ export function FluxMap({ result, nodes, edges, knockouts, compact, svgRef }: {
         );
       })}
 
-      <rect x={W - 110} y={26} width="96" height="38" rx="10" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.07)" />
-      <text x={W - 96} y={40} fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.28)">μ BIOMASS</text>
-      <text x={W - 96} y={56} fontFamily={THEME.MONO} fontSize="13" fontWeight="700" fill="rgba(247,249,255,0.92)">
+      <rect x={W - 110} y={26} width="96" height="38" rx="10" fill={PAPER_THEME.bgAlt} stroke={PAPER_THEME.border} />
+      <text x={W - 96} y={40} fontFamily={THEME.MONO} fontSize="10" fill={PAPER_THEME.legendColor}>μ BIOMASS</text>
+      <text x={W - 96} y={56} fontFamily={THEME.MONO} fontSize="13" fontWeight="700" fill={PAPER_THEME.titleColor}>
         {result.growthRate.toFixed(4)}
       </text>
     </svg>
