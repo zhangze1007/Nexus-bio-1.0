@@ -31,6 +31,9 @@ import ToolTabPanel from './shared/ToolTabPanel';
 import FloatingControlRail from './shared/FloatingControlRail';
 import InlineMetricOverlay from './shared/InlineMetricOverlay';
 import type { ToolTab } from './shared/ToolTabBar';
+import { getBRENDAKinetics } from '../../services/database/brendaClient';
+import type { BRENDAKinetics } from '../../services/database/brendaClient';
+import DataSourceBadge from '../ide/shared/DataSourceBadge';
 
 /* ── Design Tokens (shared via useToolTheme) ──────────────────────── */
 
@@ -690,6 +693,22 @@ export default React.memo(function CellFreePage() {
 
   const [activeTab, setActiveTab] = useState('timecourse');
   const [userData, setUserData] = useState<PlateReaderDataPoint[] | null>(null);
+  const [brendaEcInput, setBrendaEcInput] = useState('');
+  const [brendaData, setBrendaData] = useState<BRENDAKinetics | null>(null);
+  const [brendaSource, setBrendaSource] = useState<'live' | 'mock'>('mock');
+  const [brendaLoading, setBrendaLoading] = useState(false);
+
+  const handleBrendaLookup = useCallback(async () => {
+    if (!brendaEcInput.trim()) return;
+    setBrendaLoading(true);
+    try {
+      const result = await getBRENDAKinetics(brendaEcInput.trim());
+      setBrendaData(result.data);
+      setBrendaSource(result.source);
+    } finally {
+      setBrendaLoading(false);
+    }
+  }, [brendaEcInput]);
 
   const { data: result, error: simError } = useMemo(() => {
     try { return { data: runFullCFSPipeline(constructs, params, userData ?? undefined), error: null as string | null }; }
@@ -1065,6 +1084,55 @@ export default React.memo(function CellFreePage() {
                   color: LABEL, lineHeight: 1.5,
                 }}>
                   Using built-in demo plate reader data. Upload a CSV (columns: time, fluorescence) to fit your own data.
+                </p>
+              )}
+            </div>
+            {/* BRENDA Kinetics Lookup */}
+            <div style={{ ...GLASS, borderRadius: 'var(--nb-radius-md)', padding: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                <SectionLabel>BRENDA Reference Kinetics</SectionLabel>
+                <DataSourceBadge source={brendaSource} />
+              </div>
+              <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+                <input
+                  value={brendaEcInput}
+                  onChange={e => setBrendaEcInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') handleBrendaLookup(); }}
+                  placeholder="EC number (e.g. 2.7.1.1)"
+                  style={{ flex: 1, fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: INPUT_TEXT, background: INPUT_BG, border: `1px solid ${INPUT_BORDER}`, borderRadius: 6, padding: '5px 8px', outline: 'none' }}
+                />
+                <button
+                  onClick={handleBrendaLookup}
+                  disabled={brendaLoading}
+                  style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: VALUE, background: 'rgba(175,195,214,0.12)', border: `1px solid ${INPUT_BORDER}`, borderRadius: 6, padding: '5px 10px', cursor: brendaLoading ? 'wait' : 'pointer', opacity: brendaLoading ? 0.6 : 1 }}
+                >
+                  {brendaLoading ? '...' : 'Fetch'}
+                </button>
+              </div>
+              {brendaData && brendaData.km.length > 0 && (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+                  {brendaData.km.map((k, i) => (
+                    <div key={`km-${i}`} style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Km ({k.substrate})</span>
+                      <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE }}>{k.value} {k.unit}</span>
+                    </div>
+                  ))}
+                  {brendaData.kcat.map((k, i) => (
+                    <div key={`kcat-${i}`} style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Vmax ({k.substrate})</span>
+                      <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE }}>{k.value} {k.unit}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {brendaData && brendaData.km.length === 0 && (
+                <p style={{ margin: 0, fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, opacity: 0.7 }}>
+                  No kinetics data found for {brendaData.ecNumber}
+                </p>
+              )}
+              {!brendaData && (
+                <p style={{ margin: 0, fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, opacity: 0.6 }}>
+                  Search an EC number to compare BRENDA reference Km/Vmax against your fitted parameters.
                 </p>
               )}
             </div>
