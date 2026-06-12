@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
 import SimErrorBanner from '../ide/shared/SimErrorBanner';
@@ -29,6 +29,10 @@ import FloatingControlRail from './shared/FloatingControlRail';
 import InlineMetricOverlay from './shared/InlineMetricOverlay';
 import type { ToolTab } from './shared/ToolTabBar';
 import WorkbenchTrustIndicator from '../workbench/WorkbenchTrustIndicator';
+import { listBiGGModels } from '../../services/database/biggClient';
+import type { BiGGModel } from '../../services/database/biggClient';
+import type { FallbackResult } from '../../services/database/fetchWithFallback';
+import DataSourceBadge from '../ide/shared/DataSourceBadge';
 
 // ── Extracted sub-components (imported from fbasim/) ──
 import { FluxMap, W, H, SUBSYSTEM_COLORS, FLUX_FWD_COLOR, FLUX_REV_COLOR, runForceLayout } from './fbasim/FluxMap';
@@ -100,6 +104,28 @@ export default React.memo(function FBASimPage() {
   const lastAppliedSeedRef = useRef<string | null>(null);
   const [seedOverwriteNotice, setSeedOverwriteNotice] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('flux');
+
+  // BiGG model selector state
+  const [biggModels, setBiggModels] = useState<BiGGModel[]>([]);
+  const [biggResult, setBiggResult] = useState<FallbackResult<BiGGModel[]> | null>(null);
+  const [selectedModel, setSelectedModel] = useState<string>('e_coli_core');
+  const [biggLoading, setBiggLoading] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    setBiggLoading(true);
+    listBiGGModels().then((result) => {
+      if (cancelled) return;
+      setBiggResult(result);
+      setBiggModels(result.data);
+      if (result.data.length > 0 && !result.data.find(m => m.bigg_id === selectedModel)) {
+        setSelectedModel(result.data[0].bigg_id);
+      }
+    }).finally(() => {
+      if (!cancelled) setBiggLoading(false);
+    });
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     if (lastAppliedSeedRef.current === seedSignature) return;
@@ -491,6 +517,49 @@ export default React.memo(function FBASimPage() {
       <ToolTabPanel tabId="flux" activeId={activeTab}>
         <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
           <FloatingControlRail label="Flux Parameters" defaultCollapsed={false} width={220}>
+            {/* ── BiGG Model Selector ── */}
+            <div style={{ marginBottom: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                <p style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.55)', margin: 0 }}>
+                  BiGG Model
+                </p>
+                {biggResult && <DataSourceBadge source={biggResult.source} label={biggResult.source === 'live' ? 'BiGG Live' : 'BiGG Demo'} />}
+              </div>
+              <select
+                value={selectedModel}
+                onChange={(e) => setSelectedModel(e.target.value)}
+                disabled={biggLoading}
+                style={{
+                  width: '100%',
+                  padding: '4px 6px',
+                  background: 'rgba(255,255,255,0.04)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: 'var(--nb-radius-sm)',
+                  color: 'rgba(255,255,255,0.85)',
+                  fontFamily: THEME.MONO,
+                  fontSize: 'var(--nb-fs-xs)',
+                  outline: 'none',
+                  cursor: 'pointer',
+                }}
+              >
+                {biggModels.map((m) => (
+                  <option key={m.bigg_id} value={m.bigg_id} style={{ background: '#10131a' }}>
+                    {m.bigg_id} ({m.reaction_count} rxns)
+                  </option>
+                ))}
+                {biggModels.length === 0 && <option value="e_coli_core" style={{ background: '#10131a' }}>e_coli_core (loading...)</option>}
+              </select>
+              {biggModels.length > 0 && selectedModel && (() => {
+                const m = biggModels.find(x => x.bigg_id === selectedModel);
+                if (!m) return null;
+                return (
+                  <p style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xxs)', color: 'rgba(255,255,255,0.35)', margin: '3px 0 0', lineHeight: 1.3 }}>
+                    {m.organism} — {m.metabolite_count} metabolites, {m.gene_count} genes
+                  </p>
+                );
+              })()}
+            </div>
+
             <p style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.55)', margin: '0 0 8px' }}>
               Uptake Limits
             </p>
