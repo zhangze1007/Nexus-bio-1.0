@@ -1067,6 +1067,111 @@ function pcaProject(matrix: number[][], nComponents: number = 3): number[][] {
   });
 }
 
+export interface PCABiplotResult {
+  /** Loading vectors: eigenvectors[k][j] = loading of variable j on PC k+1 */
+  loadings: number[][];
+  /** Eigenvalues for each component (for explained-variance labels) */
+  eigenvalues: number[];
+  /** Projected scores: scores[i] = [PC1, PC2, ...] for sample i */
+  scores: number[][];
+}
+
+/**
+ * Compute PCA biplot data from an OmicsRow array.
+ *
+ * Builds a (n_genes x 3) matrix [transcript, protein, metabolite],
+ * runs power-iteration PCA, and returns the eigenvectors (loadings),
+ * eigenvalues (for explained-variance labels), and projected scores.
+ *
+ * @param data  - Array of OmicsRow with transcript, protein, metabolite values
+ * @param nComponents - Number of components to extract (default 3)
+ */
+export function computePCABiplot(
+  data: OmicsRow[],
+  nComponents: number = 3,
+): PCABiplotResult {
+  // Build matrix: n_genes x 3 [transcript, protein, metabolite]
+  const matrix = data.map(g => [
+    g.transcript ?? 0,
+    g.protein ?? 0,
+    g.metabolite ?? 0,
+  ]);
+
+  const n = matrix.length;
+  if (n === 0) return { loadings: [], eigenvalues: [], scores: [] };
+
+  const d = matrix[0].length;
+  if (d <= nComponents) return { loadings: matrix, eigenvalues: [], scores: matrix };
+
+  // Center the data
+  const means = new Array(d).fill(0);
+  for (const row of matrix) {
+    for (let j = 0; j < d; j++) means[j] += row[j] / n;
+  }
+  const centered = matrix.map(row => row.map((v, j) => v - means[j]));
+
+  // Covariance matrix: C = (1/n) X^T X
+  const cov = Array.from({ length: d }, () => new Array(d).fill(0));
+  for (const row of centered) {
+    for (let i = 0; i < d; i++) {
+      for (let j = 0; j < d; j++) {
+        cov[i][j] += row[i] * row[j] / n;
+      }
+    }
+  }
+
+  // Power iteration to extract top eigenvectors (same algorithm as pcaProject)
+  const eigenvectors: number[][] = [];
+  const eigenvalues: number[] = [];
+  const rng = new SeededRNG(42);
+
+  for (let comp = 0; comp < nComponents; comp++) {
+    let v = Array.from({ length: d }, () => rng.next() - 0.5);
+    let norm = Math.sqrt(v.reduce((s, x) => s + x * x, 0));
+    v = v.map(x => x / norm);
+
+    for (let iter = 0; iter < 100; iter++) {
+      const vNew = new Array(d).fill(0);
+      for (let i = 0; i < d; i++) {
+        for (let j = 0; j < d; j++) {
+          vNew[i] += cov[i][j] * v[j];
+        }
+      }
+      // Deflate against previously found eigenvectors
+      for (const prevV of eigenvectors) {
+        const dot = vNew.reduce((s, x, k) => s + x * prevV[k], 0);
+        for (let k = 0; k < d; k++) vNew[k] -= dot * prevV[k];
+      }
+      norm = Math.sqrt(vNew.reduce((s, x) => s + x * x, 0));
+      if (norm < 1e-10) break;
+      v = vNew.map(x => x / norm);
+    }
+
+    // Eigenvalue via Rayleigh quotient: v^T A v
+    const Av = new Array(d).fill(0);
+    for (let i = 0; i < d; i++) {
+      for (let j = 0; j < d; j++) {
+        Av[i] += cov[i][j] * v[j];
+      }
+    }
+    const eigenvalue = v.reduce((s, x, k) => s + x * Av[k], 0);
+
+    eigenvectors.push(v);
+    eigenvalues.push(Math.max(0, eigenvalue));
+  }
+
+  // Project centered data onto eigenvectors (scores)
+  const scores = centered.map(row => {
+    const projected = new Array(nComponents);
+    for (let k = 0; k < nComponents; k++) {
+      projected[k] = row.reduce((s, val, j) => s + val * eigenvectors[k][j], 0);
+    }
+    return projected;
+  });
+
+  return { loadings: eigenvectors, eigenvalues, scores };
+}
+
 /**
  * Export 3D embedding coordinates colored by metabolic efficiency.
  * Uses proper PCA to project latent space to 3D.

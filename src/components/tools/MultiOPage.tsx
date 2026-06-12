@@ -16,6 +16,7 @@ import {
   predictPerturbation as vaePredictPerturbation,
   computeMetabolicEfficiency,
   exportEmbeddingsWithEfficiency,
+  computePCABiplot,
 } from '../../services/MOIEngine';
 import type {
   MOFAResult,
@@ -229,24 +230,22 @@ function TriPanelEmbedding({ embeddings, data, fcThreshold, pvThreshold, activeL
   const pcaW = 280, pcaH = 320, pcaPAD = 36;
   const visible = embeddings.filter(p => activeLayers[p.layer]);
 
+  // Real PCA from eigenvectors (MOIEngine.computePCABiplot)
+  const pcaResult = useMemo(() => computePCABiplot(data), [data]);
+
   const pcaProjected = useMemo(() => {
-    if (visible.length === 0) return [];
-    const pts = visible.map((p, i) => ({
-      ...p,
-      px: p.coords[0] * 0.866 - p.coords[2] * 0.5,
-      py: -p.coords[1] + p.coords[0] * 0.3,
-      clusterIdx: i % 8,
-    }));
-    const xs = pts.map(p => p.px), ys = pts.map(p => p.py);
+    if (visible.length === 0 || pcaResult.scores.length === 0) return [];
+    const scores = pcaResult.scores;
+    const xs = scores.map(s => s[0] ?? 0), ys = scores.map(s => s[1] ?? 0);
     const xMn = Math.min(...xs), xMx = Math.max(...xs);
     const yMn = Math.min(...ys), yMx = Math.max(...ys);
     const xR = xMx - xMn || 1, yR = yMx - yMn || 1;
-    return pts.map(p => ({
+    return visible.map((p, i) => ({
       ...p,
-      sx: pcaPAD + ((p.px - xMn) / xR) * (pcaW - pcaPAD * 2),
-      sy: pcaPAD + ((p.py - yMn) / yR) * (pcaH - pcaPAD * 2),
+      sx: pcaPAD + ((scores[i]?.[0] ?? 0) - xMn) / xR * (pcaW - pcaPAD * 2),
+      sy: pcaPAD + ((scores[i]?.[1] ?? 0) - yMn) / yR * (pcaH - pcaPAD * 2),
     }));
-  }, [visible]);
+  }, [visible, pcaResult]);
 
   // Layer color map (use cluster palette)
   const layerColorMap: Record<OmicsLayer, string> = {
@@ -255,12 +254,29 @@ function TriPanelEmbedding({ embeddings, data, fcThreshold, pvThreshold, activeL
     metabolomics:    CLUSTER_PAL[2],
   };
 
-  // Top-5 loading vectors (genes by |FC|)
-  const topGenes = useMemo(() =>
-    [...data].sort((a, b) => Math.abs(b.fold_change ?? 0) - Math.abs(a.fold_change ?? 0)).slice(0, 5),
-    [data]
-  );
+  // Real PCA loading arrows (eigenvectors) and explained variance (eigenvalues)
   const cx = pcaW / 2, cy = pcaH / 2;
+  const loadingArrows = useMemo(() => {
+    const ev = pcaResult.eigenvalues;
+    const totalVar = ev.reduce((s, v) => s + v, 0);
+    const pct = (v: number) => totalVar > 0 ? ((v / totalVar) * 100).toFixed(1) : '0.0';
+    const labels = ['Transcriptomics', 'Proteomics', 'Metabolomics'];
+    // Scale loadings to fit the plot area (eigenvectors are unit vectors)
+    const maxExtent = Math.min(pcaW, pcaH) / 2 - pcaPAD - 10;
+    return {
+      pc1Pct: pct(ev[0] ?? 0),
+      pc2Pct: pct(ev[1] ?? 0),
+      arrows: (pcaResult.loadings[0] ?? []).map((_, varIdx) => ({
+        label: labels[varIdx] ?? `Var${varIdx}`,
+        // Loading of variable varIdx on PC1 / PC2
+        pc1: pcaResult.loadings[0]?.[varIdx] ?? 0,
+        pc2: pcaResult.loadings[1]?.[varIdx] ?? 0,
+      })).map(a => {
+        const mag = Math.sqrt(a.pc1 * a.pc1 + a.pc2 * a.pc2) || 1;
+        return { ...a, x: (a.pc1 / mag) * maxExtent, y: (a.pc2 / mag) * maxExtent };
+      }),
+    };
+  }, [pcaResult]);
 
   // ── Correlation Heatmap (center) ───────────────────────────────────
   const N_GENES = 20;
@@ -289,32 +305,35 @@ function TriPanelEmbedding({ embeddings, data, fcThreshold, pvThreshold, activeL
       <div style={{ flex: '0 0 auto' }}>
         <SVGChartContainer W={pcaW} H={pcaH} ariaLabel="PCA Biplot" rx={10} style={{ width: `${pcaW}px`, height: `${pcaH}px` }}>
           <text x={pcaW / 2} y={14} textAnchor="middle" fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.45)">PCA BIPLOT</text>
-          <text x={pcaW / 2} y={pcaH - 4} textAnchor="middle" fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.45)">PC1 (38.2% var)</text>
+          <text x={pcaW / 2} y={pcaH - 4} textAnchor="middle" fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.45)">PC1 ({loadingArrows.pc1Pct}% var)</text>
           <text x={8} y={pcaH / 2} textAnchor="middle" fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.45)"
-            transform={`rotate(-90,8,${pcaH / 2})`}>PC2 (21.6% var)</text>
+            transform={`rotate(-90,8,${pcaH / 2})`}>PC2 ({loadingArrows.pc2Pct}% var)</text>
           <line x1={pcaPAD} y1={pcaH - pcaPAD} x2={pcaW - pcaPAD} y2={pcaH - pcaPAD} stroke="rgba(255,255,255,0.08)" />
           <line x1={pcaPAD} y1={pcaPAD} x2={pcaPAD} y2={pcaH - pcaPAD} stroke="rgba(255,255,255,0.08)" />
-          {/* Loading arrows */}
-          {topGenes.map((gene, i) => {
-            const angle = (i / topGenes.length) * Math.PI * 2;
-            const len = 44 + Math.abs(gene.fold_change ?? 0) * 8;
-            const ax = cx + Math.cos(angle) * len, ay = cy + Math.sin(angle) * len;
-            return (
-              <g key={gene.gene}>
-                <line x1={cx} y1={cy} x2={ax} y2={ay}
-                  stroke="rgba(255,255,255,0.55)" strokeWidth="1" markerEnd="url(#pca-arrow)" />
-                <text x={ax + Math.cos(angle) * 8} y={ay + Math.sin(angle) * 8 + 2}
-                  textAnchor="middle" fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.5)">
-                  {gene.gene.slice(0, 6)}
-                </text>
-              </g>
-            );
-          })}
           <defs>
             <marker id="pca-arrow" markerWidth="5" markerHeight="5" refX="4" refY="2.5" orient="auto">
               <polygon points="0 0.5, 4.5 2.5, 0 4.5" fill="rgba(255,255,255,0.55)" />
             </marker>
           </defs>
+          {/* Loading arrows from eigenvectors (one per omics variable) */}
+          {loadingArrows.arrows.map((a, i) => {
+            const ax = cx + a.x, ay = cy - a.y; // flip y for SVG
+            const labelAngle = Math.atan2(-a.y, a.x);
+            const labelDist = 10;
+            const lx = ax + Math.cos(labelAngle) * labelDist;
+            const ly = ay + Math.sin(labelAngle) * labelDist;
+            const color = layerColorMap[(['transcriptomics', 'proteomics', 'metabolomics'] as OmicsLayer[])[i]] ?? 'rgba(255,255,255,0.55)';
+            return (
+              <g key={a.label}>
+                <line x1={cx} y1={cy} x2={ax} y2={ay}
+                  stroke={color} strokeWidth="1.5" markerEnd="url(#pca-arrow)" opacity={0.75} />
+                <text x={lx} y={ly + 3}
+                  textAnchor="middle" fontFamily={THEME.MONO} fontSize="10" fill={color} opacity={0.7}>
+                  {a.label.slice(0, 6)}
+                </text>
+              </g>
+            );
+          })}
           {/* Sample points */}
           {pcaProjected.map((p, i) => (
             <circle key={p.id ?? i}
