@@ -17,6 +17,7 @@ import FloatingControlRail from './shared/FloatingControlRail';
 import ScientificFigureFrame from './shared/ScientificFigureFrame';
 import ScientificMethodStrip from './shared/ScientificMethodStrip';
 import { SVGChartContainer } from '../charts/primitives';
+import { PAPER_THEME } from '../charts/chartTheme';
 
 
 const PART_COLORS: Record<string, string> = {
@@ -113,20 +114,20 @@ function CircuitSVG({ inputA, inputB, gateType, view = 'full' }: { inputA: numbe
   ];
 
   return (
-    <SVGChartContainer W={W} H={H} ariaLabel="Gene circuit diagram" rx={18}>
-      <text x="24" y="22" fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.26)">GENE CIRCUIT · SBOL NOTATION</text>
-      <text x="24" y="36" fontFamily={THEME.SANS} fontSize="11" fill="rgba(255,255,255,0.72)">
+    <SVGChartContainer W={W} H={H} ariaLabel="Gene circuit diagram" variant="paper">
+      <text x="24" y="22" fontFamily={PAPER_THEME.tickFont} fontSize={PAPER_THEME.tickSize} fill={PAPER_THEME.tickColor}>GENE CIRCUIT · SBOL NOTATION</text>
+      <text x="24" y="36" fontFamily={PAPER_THEME.titleFont} fontSize={PAPER_THEME.labelSize} fill={PAPER_THEME.titleColor}>
         {gateType} gate — biological parts and 2D phase space response
       </text>
 
       {/* ── SBOL circuit diagram ── */}
-      <rect x={bbX1 - 8} y={bbY - 44} width={bbX2 - bbX1 + 16} height={96} rx="12"
-        fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.07)" />
-      <text x={bbX1 - 4} y={bbY - 36} fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.45)">
+      <rect x={bbX1 - 8} y={bbY - 44} width={bbX2 - bbX1 + 16} height={96} rx={PAPER_THEME.borderRadius}
+        fill={PAPER_THEME.bgAlt} stroke={PAPER_THEME.border} />
+      <text x={bbX1 - 4} y={bbY - 36} fontFamily={PAPER_THEME.tickFont} fontSize={PAPER_THEME.tickSize} fill={PAPER_THEME.tickColor}>
         GENETIC ARCHITECTURE
       </text>
       {/* Backbone line */}
-      <line x1={bbX1} y1={bbY} x2={bbX2} y2={bbY} stroke="rgba(255,255,255,0.3)" strokeWidth="2" />
+      <line x1={bbX1} y1={bbY} x2={bbX2} y2={bbY} stroke={PAPER_THEME.axis} strokeWidth="2" />
 
       {/* Promoter — purple filled pentagon/arrow at x=65 */}
       <polygon
@@ -154,20 +155,20 @@ function CircuitSVG({ inputA, inputB, gateType, view = 'full' }: { inputA: numbe
       <text x={252} y={bbY + 14} textAnchor="middle" fontFamily={THEME.MONO} fontSize="10" fill={PART_COLORS.terminator}>T</text>
 
       {/* Output arrow at right end */}
-      <line x1={bbX2} y1={bbY} x2={bbX2 + 18} y2={bbY} stroke="rgba(255,255,255,0.45)" strokeWidth="1.5" markerEnd="url(#gecair-arrow)" />
+      <line x1={bbX2} y1={bbY} x2={bbX2 + 18} y2={bbY} stroke={PAPER_THEME.axis} strokeWidth="1.5" markerEnd="url(#gecair-arrow)" />
       <defs>
         <marker id="gecair-arrow" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
-          <polygon points="0 0.5, 5.5 3, 0 5.5" fill="rgba(255,255,255,0.3)" />
+          <polygon points="0 0.5, 5.5 3, 0 5.5" fill={PAPER_THEME.axis} />
         </marker>
       </defs>
-      <text x={bbX2 + 22} y={bbY + 4} fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.28)">{(outC * 100).toFixed(0)}%</text>
+      <text x={bbX2 + 22} y={bbY + 4} fontFamily={PAPER_THEME.tickFont} fontSize={PAPER_THEME.tickSize} fill={PAPER_THEME.tickColor}>{(outC * 100).toFixed(0)}%</text>
 
       {/* ── 2D Phase Space heatmap (viridis, 30×30) ── */}
-      <text x={PS_LEFT} y={PS_TOP - 10} fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.26)">
+      <text x={PS_LEFT} y={PS_TOP - 10} fontFamily={PAPER_THEME.tickFont} fontSize={PAPER_THEME.tickSize} fill={PAPER_THEME.tickColor}>
         PHASE SPACE · Output = {viridisColor(0).includes('68') ? 'low' : ''} → high (viridis)
       </text>
-      <rect x={PS_LEFT - 2} y={PS_TOP - 2} width={PS_SIZE + 4} height={PS_SIZE + 4} rx="10"
-        fill="none" stroke="rgba(255,255,255,0.07)" />
+      <rect x={PS_LEFT - 2} y={PS_TOP - 2} width={PS_SIZE + 4} height={PS_SIZE + 4} rx={PAPER_THEME.borderRadius}
+        fill="none" stroke={PAPER_THEME.border} />
 
       {/* Heatmap cells */}
       {phaseHeat.map((row, yi) =>
@@ -241,7 +242,7 @@ function CircuitSVG({ inputA, inputB, gateType, view = 'full' }: { inputA: numbe
               key={`contour-${level}`}
               d={paths.join('')}
               fill="none"
-              stroke="rgba(255,255,255,0.5)"
+              stroke="rgba(0,0,0,0.25)"
               strokeWidth="0.8"
             />
           ) : null;
@@ -252,31 +253,31 @@ function CircuitSVG({ inputA, inputB, gateType, view = 'full' }: { inputA: numbe
       <line
         x1={PS_LEFT + inputA * PS_SIZE} y1={PS_TOP}
         x2={PS_LEFT + inputA * PS_SIZE} y2={PS_TOP + PS_SIZE}
-        stroke="rgba(255,255,255,0.6)" strokeWidth="1" strokeDasharray="3 2"
+        stroke={PAPER_THEME.axis} strokeWidth="1" strokeDasharray="3 2"
       />
       <line
         x1={PS_LEFT} y1={PS_TOP + (1 - inputB) * PS_SIZE}
         x2={PS_LEFT + PS_SIZE} y2={PS_TOP + (1 - inputB) * PS_SIZE}
-        stroke="rgba(255,255,255,0.6)" strokeWidth="1" strokeDasharray="3 2"
+        stroke={PAPER_THEME.axis} strokeWidth="1" strokeDasharray="3 2"
       />
       <circle
         cx={PS_LEFT + inputA * PS_SIZE}
         cy={PS_TOP + (1 - inputB) * PS_SIZE}
-        r={6} fill="none" stroke="white" strokeWidth="1.8"
+        r={6} fill="none" stroke={PAPER_THEME.scatterStroke} strokeWidth="1.8"
       />
       {/* Axes */}
       <text x={PS_LEFT + PS_SIZE / 2} y={PS_TOP + PS_SIZE + 16} textAnchor="middle"
-        fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.28)">Input A (0→1)</text>
+        fontFamily={PAPER_THEME.tickFont} fontSize={PAPER_THEME.tickSize} fill={PAPER_THEME.tickColor}>Input A (0→1)</text>
       <text x={PS_LEFT - 14} y={PS_TOP + PS_SIZE / 2} textAnchor="middle"
-        fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.28)"
+        fontFamily={PAPER_THEME.tickFont} fontSize={PAPER_THEME.tickSize} fill={PAPER_THEME.tickColor}
         transform={`rotate(-90,${PS_LEFT - 14},${PS_TOP + PS_SIZE / 2})`}>Input B (0→1)</text>
       {/* Tick marks */}
       {[0, 0.5, 1].map((tick) => (
         <g key={tick}>
           <text x={PS_LEFT + tick * PS_SIZE} y={PS_TOP + PS_SIZE + 8}
-            textAnchor="middle" fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.2)">{tick.toFixed(1)}</text>
+            textAnchor="middle" fontFamily={PAPER_THEME.tickFont} fontSize={PAPER_THEME.tickSize} fill={PAPER_THEME.tickColor}>{tick.toFixed(1)}</text>
           <text x={PS_LEFT - 4} y={PS_TOP + (1 - tick) * PS_SIZE + 3}
-            textAnchor="end" fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.2)">{tick.toFixed(1)}</text>
+            textAnchor="end" fontFamily={PAPER_THEME.tickFont} fontSize={PAPER_THEME.tickSize} fill={PAPER_THEME.tickColor}>{tick.toFixed(1)}</text>
         </g>
       ))}
       {/* Viridis color bar */}
@@ -291,21 +292,21 @@ function CircuitSVG({ inputA, inputB, gateType, view = 'full' }: { inputA: numbe
       </defs>
       <rect x={PS_LEFT + PS_SIZE + 8} y={PS_TOP} width="10" height={PS_SIZE}
         fill="url(#gecair-viridis)" rx="3" />
-      <text x={PS_LEFT + PS_SIZE + 22} y={PS_TOP + 6} fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.3)">1.0</text>
-      <text x={PS_LEFT + PS_SIZE + 22} y={PS_TOP + PS_SIZE + 2} fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.3)">0.0</text>
+      <text x={PS_LEFT + PS_SIZE + 22} y={PS_TOP + 6} fontFamily={PAPER_THEME.tickFont} fontSize={PAPER_THEME.tickSize} fill={PAPER_THEME.tickColor}>1.0</text>
+      <text x={PS_LEFT + PS_SIZE + 22} y={PS_TOP + PS_SIZE + 2} fontFamily={PAPER_THEME.tickFont} fontSize={PAPER_THEME.tickSize} fill={PAPER_THEME.tickColor}>0.0</text>
 
       {/* ── Right: Transfer curves ── */}
-      <rect x="324" y="54" width="382" height="92" rx="16" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" />
-      <text x="338" y="74" fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.24)">TRANSFER CURVES</text>
+      <rect x="324" y="54" width="382" height="92" rx={PAPER_THEME.borderRadius} fill={PAPER_THEME.bgAlt} stroke={PAPER_THEME.border} />
+      <text x="338" y="74" fontFamily={PAPER_THEME.tickFont} fontSize={PAPER_THEME.tickSize} fill={PAPER_THEME.tickColor}>TRANSFER CURVES</text>
 
       {/* Area fill under Hill curves */}
       <polygon
         points={`${curveA.points} ${curveA.points.split(' ').pop()?.split(',')[0]},146 348,146`}
-        fill={THEME.coral} fillOpacity="0.1"
+        fill={THEME.coral} fillOpacity="0.18"
       />
       <polygon
         points={`${curveB.points} ${curveB.points.split(' ').pop()?.split(',')[0]},146 348,146`}
-        fill={THEME.apricot} fillOpacity="0.1"
+        fill={THEME.apricot} fillOpacity="0.18"
       />
 
       {/* Curve lines */}
@@ -315,30 +316,30 @@ function CircuitSVG({ inputA, inputB, gateType, view = 'full' }: { inputA: numbe
       {/* Operating point markers */}
       <circle cx={curveA.markerX} cy={curveA.markerY} r="4" fill={THEME.coral} />
       <circle cx={curveB.markerX} cy={curveB.markerY} r="4" fill={THEME.apricot} />
-      <text x="348" y="133" fontFamily={THEME.MONO} fontSize="10" fill="rgba(232,163,161,0.9)">
+      <text x="348" y="133" fontFamily={PAPER_THEME.tickFont} fontSize={PAPER_THEME.tickSize} fill={THEME.coral}>
         A: {(curveA.markerOutput * 100).toFixed(0)}%
       </text>
-      <text x="420" y="133" fontFamily={THEME.MONO} fontSize="10" fill="rgba(231,199,169,0.95)">
+      <text x="420" y="133" fontFamily={PAPER_THEME.tickFont} fontSize={PAPER_THEME.tickSize} fill={THEME.apricot}>
         B: {(curveB.markerOutput * 100).toFixed(0)}%
       </text>
 
-      <rect x="324" y="164" width="382" height="160" rx="16" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" />
-      <text x="338" y="182" fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.24)">
+      <rect x="324" y="164" width="382" height="160" rx={PAPER_THEME.borderRadius} fill={PAPER_THEME.bgAlt} stroke={PAPER_THEME.border} />
+      <text x="338" y="182" fontFamily={PAPER_THEME.tickFont} fontSize={PAPER_THEME.tickSize} fill={PAPER_THEME.tickColor}>
         NODE STATE LEDGER
       </text>
       {nodeRows.map((row, index) => {
         const y = 204 + index * 40;
         return (
           <g key={row.label}>
-            <text x="338" y={y} fontFamily={THEME.SANS} fontSize="11" fill="rgba(255,255,255,0.68)">
+            <text x="338" y={y} fontFamily={PAPER_THEME.labelFont} fontSize={PAPER_THEME.labelSize} fill={PAPER_THEME.labelColor}>
               {row.label}
             </text>
-            <rect x="338" y={y + 8} width="220" height="10" rx="999" fill="rgba(255,255,255,0.06)" />
+            <rect x="338" y={y + 8} width="220" height="10" rx="999" fill={PAPER_THEME.grid} />
             <rect x="338" y={y + 8} width={Math.max(8, row.value * 220)} height="10" rx="999" fill={row.tone} opacity={0.85} />
-            <text x="564" y={y + 17} textAnchor="end" fontFamily={THEME.MONO} fontSize="10" fontWeight="600" fill="rgba(255,255,255,0.65)">
+            <text x="564" y={y + 17} textAnchor="end" fontFamily={PAPER_THEME.tickFont} fontSize={PAPER_THEME.tickSize} fontWeight="600" fill={PAPER_THEME.labelColor}>
               {(row.value * 100).toFixed(1)}%
             </text>
-            <text x="338" y={y + 31} fontFamily={THEME.SANS} fontSize="10" fill="rgba(255,255,255,0.28)">
+            <text x="338" y={y + 31} fontFamily={PAPER_THEME.labelFont} fontSize={PAPER_THEME.tickSize} fill={PAPER_THEME.tickColor}>
               {row.detail}
             </text>
           </g>
@@ -346,8 +347,8 @@ function CircuitSVG({ inputA, inputB, gateType, view = 'full' }: { inputA: numbe
       })}
 
       {/* SBOL Legend */}
-      <rect x="324" y="340" width="382" height="140" rx="16" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.07)" />
-      <text x="338" y="358" fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.24)">SBOL2 NOTATION LEGEND</text>
+      <rect x="324" y="340" width="382" height="140" rx={PAPER_THEME.borderRadius} fill={PAPER_THEME.bgAlt} stroke={PAPER_THEME.border} />
+      <text x="338" y="358" fontFamily={PAPER_THEME.tickFont} fontSize={PAPER_THEME.tickSize} fill={PAPER_THEME.tickColor}>SBOL2 NOTATION LEGEND</text>
       {[
         { label: 'Promoter',   color: PART_COLORS.promoter, shape: 'pentagon' },
         { label: 'RBS',        color: PART_COLORS.rbs, shape: 'arc' },
@@ -356,11 +357,11 @@ function CircuitSVG({ inputA, inputB, gateType, view = 'full' }: { inputA: numbe
       ].map((item, i) => (
         <g key={item.label} transform={`translate(338,${372 + i * 26})`}>
           <rect width="10" height="10" rx="2" fill={item.color} opacity={0.8} />
-          <text x="16" y="9" fontFamily={THEME.SANS} fontSize="10" fill="rgba(255,255,255,0.55)">{item.label}</text>
-          <text x="100" y="9" fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.28)">{item.shape}</text>
+          <text x="16" y="9" fontFamily={PAPER_THEME.labelFont} fontSize={PAPER_THEME.tickSize} fill={PAPER_THEME.labelColor}>{item.label}</text>
+          <text x="100" y="9" fontFamily={PAPER_THEME.tickFont} fontSize={PAPER_THEME.tickSize} fill={PAPER_THEME.tickColor}>{item.shape}</text>
         </g>
       ))}
-      <text x="338" y="476" fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.2)">
+      <text x="338" y="476" fontFamily={PAPER_THEME.tickFont} fontSize={PAPER_THEME.tickSize} fill={PAPER_THEME.tickColor}>
         Expression level → CDS height · Phase space → viridis output
       </text>
     </SVGChartContainer>
@@ -973,7 +974,7 @@ export default function GECAIRPage() {
                 const b = row.B > 0.5 ? 1 : 0;
                 const out = gateType === 'AND' ? a && b : gateType === 'OR' ? a || b : gateType === 'NAND' ? !(a && b) ? 1 : 0 : 1 - a;
                 return (
-                  <tr key={i} style={{ background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)' }}>
+                  <tr key={i} style={{ background: i % 2 === 0 ? 'transparent' : PAPER_THEME.bgAlt }}>
                     {[row.A, row.B, out].map((v, j) => (
                       <td key={j} style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-sm)', textAlign: 'center', padding: '8px 12px', color: v ? THEME.MINT : THEME.LABEL, fontWeight: v ? 600 : 400 }}>
                         {v ? '1' : '0'}
