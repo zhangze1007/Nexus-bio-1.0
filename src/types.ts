@@ -427,7 +427,7 @@ export interface InternalThought {
 }
 
 // ── MODULE: CETHX ─────────────────────────────────────────────────────────────
-export interface ThermoStep { step: string; deltaG: number; cumulative: number; atpYield: number; }
+export interface ThermoStep { step: string; deltaG: number; cumulative: number; atpYield: number; nadhYield?: number; }
 export interface ThermoState { atp_yield: number; nadh_yield: number; entropy_production: number; gibbs_free_energy: number; }
 
 // ── MODULE: GENMIM ────────────────────────────────────────────────────────────

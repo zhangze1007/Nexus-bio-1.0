@@ -427,7 +427,7 @@ export default React.memo(function CETHXPage() {
       const stepsWithCumulative = mergedSteps.map(step => { cum += step.deltaG; return { ...step, cumulative: cum }; });
       const totalDeltaG = cum;
       const atpNet = stepsWithCumulative.reduce((a, s) => a + s.atpYield, 0);
-      const nadhYield = stepsWithCumulative.reduce((a, s) => a + ((s as ThermoStep & { nadhYield?: number }).nadhYield ?? 0), 0);
+      const nadhYield = stepsWithCumulative.reduce((a, s) => a + (s.nadhYield ?? 0), 0);
       const dissipationKJ = -totalDeltaG;
       const entropyChange = dissipationKJ / T;
       const efficiency = Math.max(0, Math.min(100, (-totalDeltaG / 2870) * 100));
@@ -453,7 +453,7 @@ export default React.memo(function CETHXPage() {
     const stepsWithCumulative = transformedSteps.map(step => { cum += step.deltaG; return { ...step, cumulative: cum }; });
     const totalDeltaG = cum;
     const atpNet = stepsWithCumulative.reduce((a, s) => a + s.atpYield, 0);
-    const nadhYield = stepsWithCumulative.reduce((a, s) => a + ((s as ThermoStep & { nadhYield?: number }).nadhYield ?? 0), 0);
+    const nadhYield = stepsWithCumulative.reduce((a, s) => a + (s.nadhYield ?? 0), 0);
     const dissipationKJ = -totalDeltaG;
     const entropyChange = dissipationKJ / T;
     const efficiency = Math.max(0, Math.min(100, (-totalDeltaG / 2870) * 100));

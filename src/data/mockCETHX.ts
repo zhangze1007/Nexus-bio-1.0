@@ -46,7 +46,7 @@ export const GLYCOLYSIS_STEPS: ThermoStep[] = [
   { step: 'F6P → FBP',    deltaG: -14.2, cumulative: -29.2, atpYield: -1 },
   { step: 'FBP → DHAP+GAP', deltaG: +23.8, cumulative: -5.4, atpYield: 0 },
   { step: 'DHAP → GAP',   deltaG: +7.5,  cumulative: +2.1,  atpYield: 0  },
-  { step: 'GAP → 1,3-BPG',deltaG: +6.3,  cumulative: +8.4,  atpYield: 0  },
+  { step: 'GAP → 1,3-BPG',deltaG: +6.3,  cumulative: +8.4,  atpYield: 0,  nadhYield: 1 },
   { step: '1,3-BPG → 3PG',deltaG: -18.8, cumulative: -10.4, atpYield: 2  },
   { step: '3PG → 2PG',    deltaG: +4.4,  cumulative: -6.0,  atpYield: 0  },
   { step: '2PG → PEP',    deltaG: +1.8,  cumulative: -4.2,  atpYield: 0  },
@@ -56,12 +56,12 @@ export const GLYCOLYSIS_STEPS: ThermoStep[] = [
 export const TCA_STEPS: ThermoStep[] = [
   { step: 'AcCoA + OAA → Citrate', deltaG: -32.2, cumulative: -32.2, atpYield: 0 },
   { step: 'Citrate → Isocitrate',  deltaG: +13.3, cumulative: -18.9, atpYield: 0 },
-  { step: 'Isocitrate → α-KG',     deltaG: -20.9, cumulative: -39.8, atpYield: 0 },
-  { step: 'α-KG → Succinyl-CoA',   deltaG: -33.5, cumulative: -73.3, atpYield: 0 },
+  { step: 'Isocitrate → α-KG',     deltaG: -20.9, cumulative: -39.8, atpYield: 0, nadhYield: 1 },
+  { step: 'α-KG → Succinyl-CoA',   deltaG: -33.5, cumulative: -73.3, atpYield: 0, nadhYield: 1 },
   { step: 'Succinyl-CoA → Succinate',deltaG: -2.1, cumulative: -75.4, atpYield: 1 },
-  { step: 'Succinate → Fumarate',  deltaG: +0.0,  cumulative: -75.4, atpYield: 0 },
+  { step: 'Succinate → Fumarate',  deltaG: +0.0,  cumulative: -75.4, atpYield: 0, nadhYield: 1 },
   { step: 'Fumarate → Malate',     deltaG: -3.6,  cumulative: -79.0, atpYield: 0 },
-  { step: 'Malate → OAA',          deltaG: +29.7, cumulative: -49.3, atpYield: 0 },
+  { step: 'Malate → OAA',          deltaG: +29.7, cumulative: -49.3, atpYield: 0, nadhYield: 1 },
 ];
 
 export const PPP_STEPS: ThermoStep[] = [
@@ -108,7 +108,7 @@ export function computeThermo(steps: ThermoStep[], tempC: number, pH: number) {
   // biochemical basis; that heuristic has been removed. NADH yield is now an
   // explicit per-step field (defaults to 0 when omitted by the data source).
   const atpNet = steps.reduce((a, s) => a + s.atpYield, 0);
-  const nadhYield = steps.reduce((a, s) => a + ((s as ThermoStep & { nadhYield?: number }).nadhYield ?? 0), 0);
+  const nadhYield = steps.reduce((a, s) => a + (s.nadhYield ?? 0), 0);
   const totalDeltaG = cum;
   // Fraction of glucose combustion enthalpy (-2870 kJ/mol) captured as -ΔG along
   // the modelled segment. Bounded to [0,100] as a percentage; this is an
