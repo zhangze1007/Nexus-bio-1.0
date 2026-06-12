@@ -12,7 +12,7 @@ import type {
   OmicsRow,
   OmicsLayer,
   EmbeddingPoint,
-  AttentionHead,
+  LayerSignalScore,
   BottleneckSignal,
   PerturbationResult,
   ReasoningStep,
@@ -136,7 +136,11 @@ function computeProjection3D(
 
 // ── Layer-signal scoring ─────────────────────────────────────────────────────
 
-function computeAttentionWeights(data: OmicsRow[]): AttentionHead[] {
+/**
+ * Compute layer-signal scores — variance, discordance, significance, and
+ * bottleneck signals across transcriptomics, proteomics, and metabolomics.
+ */
+function computeLayerSignals(data: OmicsRow[]): LayerSignalScore[] {
   const transcripts = data.map(d => d.transcript ?? 0);
   const proteins = data.map(d => d.protein ?? 0);
   const metabolites = data.map(d => d.metabolite ?? 0);
@@ -182,7 +186,7 @@ function computeAttentionWeights(data: OmicsRow[]): AttentionHead[] {
   }, 0);
   const totalBottleneck = postTranslational + postMetabolic + 1e-10;
 
-  const heads: AttentionHead[] = [
+  const heads: LayerSignalScore[] = [
     // Variance head
     { name: 'Variance', layer: 'transcriptomics', weight: tVar / totalVar, signal_strength: tVar, bottleneck_contribution: 0 },
     { name: 'Variance', layer: 'proteomics', weight: pVar / totalVar, signal_strength: pVar, bottleneck_contribution: 0 },
@@ -320,9 +324,9 @@ export class OmicsFoundationModel {
       'layer_signal_scoring',
     );
 
-    const heads = computeAttentionWeights(this.data);
+    const heads = computeLayerSignals(this.data);
 
-    // Aggregate attention per layer across all heads
+    // Aggregate signal scores per layer across all heads
     const layerScores: Record<OmicsLayer, number> = {
       transcriptomics: 0,
       proteomics: 0,
@@ -365,7 +369,7 @@ export class OmicsFoundationModel {
 
     return {
       dominant_layer: dominant,
-      attention_heads: heads,
+      layer_signals: heads,
       reasoning,
       confidence: Math.round(confidence * 1000) / 1000,
     };

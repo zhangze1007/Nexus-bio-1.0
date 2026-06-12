@@ -646,13 +646,13 @@ export default React.memo(function MultiOPage() {
     metabolomics: showMetabolite,
   };
 
-  /* Attention weights aggregated per layer */
-  const layerAttention = useMemo(() => {
+  /* Layer signal scores aggregated per layer */
+  const layerSignals = useMemo(() => {
     const acc: Record<OmicsLayer, number> = { transcriptomics: 0, proteomics: 0, metabolomics: 0 };
-    bottleneck.attention_heads.forEach(h => { acc[h.layer] += h.weight; });
+    bottleneck.layer_signals.forEach(h => { acc[h.layer] += h.weight; });
     return acc;
   }, [bottleneck]);
-  const maxAtt = Math.max(...Object.values(layerAttention), 0.01);
+  const maxSignal = Math.max(...Object.values(layerSignals), 0.01);
 
   /* Gene list for perturbation dropdown */
   const geneNames = useMemo(() => [...new Set(OMICS_DATA.map(r => r.gene))], []);

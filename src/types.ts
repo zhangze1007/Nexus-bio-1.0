@@ -383,22 +383,22 @@ export interface EmbeddingPoint {
   id: string;
   gene: string;
   layer: OmicsLayer;
-  coords: [number, number, number]; // UMAP 3D
+  coords: [number, number, number]; // 3D projection coordinates (method varies by engine)
   normalizedValue: number;          // z-score normalized
   rawValue: number;
 }
 
-export interface AttentionHead {
+export interface LayerSignalScore {
   name: string;
   layer: OmicsLayer;
-  weight: number; // 0–1 attention weight
+  weight: number; // 0–1 signal ratio (variance/discordance/significance)
   signal_strength: number;
   bottleneck_contribution: number;
 }
 
 export interface BottleneckSignal {
   dominant_layer: OmicsLayer;
-  attention_heads: AttentionHead[];
+  layer_signals: LayerSignalScore[];
   reasoning: string;
   confidence: number;
 }
