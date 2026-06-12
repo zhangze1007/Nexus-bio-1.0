@@ -16,6 +16,7 @@ import ToolTabBar, { type ToolTab } from './shared/ToolTabBar';
 import ToolTabPanel from './shared/ToolTabPanel';
 import InlineMetricOverlay from './shared/InlineMetricOverlay';
 import { THEME } from '../../theme';
+import { PAPER_THEME } from '../charts/chartTheme';
 const SCSPATIAL_TABS: ToolTab[] = [
   { id: 'spatial-2d', label: 'Hex Grid', accent: THEME.SKY },
   { id: 'umap', label: 'UMAP', accent: THEME.LILAC },
