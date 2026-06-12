@@ -500,7 +500,7 @@ export function predictBindingAffinity(enzyme: EnzymeStructure): BindingAffinity
       overallScore: 0,
       interpretation: 'No catalytic residues annotated — cannot predict binding.',
       uncertaintyKd: 0,
-      uncertaintyDeltaG: 2.0,
+      uncertaintyDeltaG: 0,
     };
   }
 
@@ -523,8 +523,8 @@ export function predictBindingAffinity(enzyme: EnzymeStructure): BindingAffinity
   const orientationScore = clamp(oriSum / residues.length, 0, 1);
 
   // ── Van der Waals (Lennard-Jones 6-12) ─────────────────────────────────
-  // LJ well depth: 0.5 kcal/mol — typical for C-C van der Waals contacts
-  // Ref: Cornell et al. 1995 (JACS 117:5179) — AMBER ff99 C-C epsilon
+  // LJ well depth: 0.5 kcal/mol — effective van der Waals contact energy
+  // for multi-atom protein-substrate interactions at binding interface
   const epsilon = 0.5;
   const rMin = 3.5;     // Å — equilibrium separation
   let vdwEnergy = 0;
