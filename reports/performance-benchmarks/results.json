@@ -1,0 +1,132 @@
+{
+  "schemaVersion": "performance-benchmark-v1",
+  "generatedAt": "2026-06-12T05:49:28.245Z",
+  "environment": {
+    "node": "v24.14.0",
+    "platform": "linux",
+    "arch": "x64"
+  },
+  "config": {
+    "iterations": 5,
+    "warmupIterations": 1
+  },
+  "results": [
+    {
+      "name": "FBA — solveAuthorityFBA",
+      "medianMs": 1.8018750000001091,
+      "meanMs": 1.9433775999999852,
+      "stdevMs": 0.3705946592042728,
+      "minMs": 1.699775000000045,
+      "maxMs": 2.5904179999997723,
+      "iterations": 5
+    },
+    {
+      "name": "Thermo — calcGroupContribution × 50",
+      "medianMs": 0.25071799999977884,
+      "meanMs": 0.28241139999981896,
+      "stdevMs": 0.060966616617710606,
+      "minMs": 0.24780199999986507,
+      "maxMs": 0.389697999999953,
+      "iterations": 5
+    },
+    {
+      "name": "Thermo — calcPathwayDeltaG (6-step)",
+      "medianMs": 0.005841000000145868,
+      "meanMs": 0.007385799999974551,
+      "stdevMs": 0.004255984574601493,
+      "minMs": 0.003005999999913911,
+      "maxMs": 0.013684999999895808,
+      "iterations": 5
+    },
+    {
+      "name": "Kinetics — simulateEnzymeSystem",
+      "medianMs": 2.096716000000015,
+      "meanMs": 2.0130977999999233,
+      "stdevMs": 0.4013973322179062,
+      "minMs": 1.3297529999999824,
+      "maxMs": 2.3109459999996034,
+      "iterations": 5
+    },
+    {
+      "name": "Kinetics — runRK4 (1000 steps)",
+      "medianMs": 6.505560999999943,
+      "meanMs": 6.2717197999999375,
+      "stdevMs": 1.7447231294611842,
+      "minMs": 4.350875999999971,
+      "maxMs": 8.70145199999979,
+      "iterations": 5
+    },
+    {
+      "name": "CatDes — predictBindingAffinity",
+      "medianMs": 0.014105999999628693,
+      "meanMs": 0.017342399999961344,
+      "stdevMs": 0.00705920171122898,
+      "minMs": 0.01258300000017698,
+      "maxMs": 0.02952499999992142,
+      "iterations": 5
+    },
+    {
+      "name": "CatDes — runFullDesignPipeline",
+      "medianMs": 21.763578000000052,
+      "meanMs": 23.710360199999922,
+      "stdevMs": 11.669515492616073,
+      "minMs": 13.977366000000075,
+      "maxMs": 43.625790999999936,
+      "iterations": 5
+    },
+    {
+      "name": "CellFree — runFullCFSPipeline",
+      "medianMs": 20.212170000000242,
+      "meanMs": 22.74793440000003,
+      "stdevMs": 3.8540400501616365,
+      "minMs": 19.887023000000227,
+      "maxMs": 28.228733999999804,
+      "iterations": 5
+    },
+    {
+      "name": "CellFree — simulateCFPS",
+      "medianMs": 14.54680899999994,
+      "meanMs": 13.973129599999993,
+      "stdevMs": 1.4955633903673877,
+      "minMs": 12.386504000000059,
+      "maxMs": 15.838811999999962,
+      "iterations": 5
+    },
+    {
+      "name": "MultiO — computeEmbeddings (50 genes)",
+      "medianMs": 24.567614999999932,
+      "meanMs": 24.120261599999957,
+      "stdevMs": 3.885690703772355,
+      "minMs": 17.896785999999793,
+      "maxMs": 27.89204400000017,
+      "iterations": 5
+    },
+    {
+      "name": "MultiO — full pipeline",
+      "medianMs": 17.32668199999989,
+      "meanMs": 17.752795399999922,
+      "stdevMs": 1.9683545994203206,
+      "minMs": 15.490879999999834,
+      "maxMs": 20.89234099999976,
+      "iterations": 5
+    },
+    {
+      "name": "ScSpatial — runFullPipeline (200 cells)",
+      "medianMs": 1819.0879339999992,
+      "meanMs": 1809.8151824000001,
+      "stdevMs": 138.47697122489336,
+      "minMs": 1597.6526159999994,
+      "maxMs": 1983.7847570000013,
+      "iterations": 5
+    },
+    {
+      "name": "ScSpatial — clusterCells (200 cells)",
+      "medianMs": 48.30103300000155,
+      "meanMs": 59.49510480000026,
+      "stdevMs": 29.218920631206064,
+      "minMs": 41.85247899999922,
+      "maxMs": 111.36587300000065,
+      "iterations": 5
+    }
+  ]
+}

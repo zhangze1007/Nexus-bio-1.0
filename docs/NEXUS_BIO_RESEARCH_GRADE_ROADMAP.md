@@ -55,23 +55,34 @@ These data flows must be verified after all fixes:
 
 ## Performance Benchmarks
 
-### Computational Performance
+### Computational Performance (Measured)
 
-| Tool | Operation | Target | Current |
-|------|-----------|--------|---------|
-| FBA | Solve 200-reaction model | < 5s | ~2s (HiGHS) |
-| FVA | 200 reactions | < 30s | ~15s |
-| CETHX | Pathway ΔG (10 steps) | < 1s | ~0.5s |
-| Kinetics | 1000-point ODE simulation | < 2s | ~1s |
-| DynCon | 200h bioreactor simulation | < 5s | ~3s |
-| CellFree | 4h TX-TL simulation | < 3s | ~2s |
-| MultiO | VAE training (50 genes, 50 epochs) | < 10s | ~5s |
-| ScSpatial | 10,000 cells clustering | < 30s | ~15s |
-| NEXAI | Citation verification (10 papers) | < 10s | ~5s |
+Source: `reports/performance-benchmarks/results.json` (2026-06-12). Node v24.14.0, linux x64.
+5 iterations + 1 warmup per benchmark, measured via `performance.now()`.
+
+| Tool | Operation | Target | Measured (median) |
+|------|-----------|--------|-------------------|
+| FBA | solveAuthorityFBA (ecoli, biomass) | < 5s | **1.8ms** |
+| CETHX | calcGroupContribution × 50 | < 10s | **0.25ms** |
+| CETHX | calcPathwayDeltaG (6-step artemisinin) | < 1s | **0.006ms** |
+| Kinetics | simulateEnzymeSystem (2 enzymes, adaptive RK4) | < 5s | **2.1ms** |
+| Kinetics | runRK4 (1000 steps) | < 5s | **6.5ms** |
+| CatDes | predictBindingAffinity | < 10s | **0.014ms** |
+| CatDes | runFullDesignPipeline | < 10s | **21.8ms** |
+| CellFree | runFullCFSPipeline | < 3s | **20.2ms** |
+| CellFree | simulateCFPS (3 constructs) | < 5s | **14.5ms** |
+| MultiO | computeEmbeddings (50 genes) | < 10s | **24.6ms** |
+| MultiO | full pipeline (embed + bottleneck + perturbation) | < 10s | **17.3ms** |
+| ScSpatial | runFullPipeline (200 cells) | < 30s | **1819ms** |
+| ScSpatial | clusterCells (200 cells) | < 30s | **48.3ms** |
+| NEXAI | Citation verification (10 papers) | < 10s | N/A (network-dependent) |
+
+Benchmark script: `scripts/runPerformanceBenchmarks.mjs` (via `npm run benchmark:performance`).
+Jest test: `__tests__/performanceBenchmark.test.ts` (via `npx jest __tests__/performanceBenchmark.test.ts --runInBand`).
 
 ### Trust Policy Engine (Measured)
 
-Source: `reports/trust-metrics/latest.json` (2026-04-30), 74-case corpus.
+Source: `reports/trust-metrics/latest.json` (2026-06-12), 74-case corpus.
 
 | Metric | Value | Target |
 |--------|-------|--------|
@@ -560,4 +571,5 @@ All 10 waves complete. All 14 tools are research-grade.
 
 - [x] Trust policy benchmark: 74-case corpus, 3 modes, runtime-gating achieves 100% unsafe export prevention, 0% false block rate
 - [x] Python reference implementation: 74/74 agreement with TypeScript runtime (consistency report 2026-06-12)
-- [x] Performance benchmarks documented (see table above)
+- [x] Computational performance benchmarks: 13 benchmarks across 7 engines, all measured via `performance.now()` (see table above)
+- [x] Benchmark harness: `__tests__/performanceBenchmark.test.ts` + `reports/performance-benchmarks/results.json`
