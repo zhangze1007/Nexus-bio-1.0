@@ -24,6 +24,9 @@ import FloatingControlRail from './shared/FloatingControlRail';
 import InlineMetricOverlay from './shared/InlineMetricOverlay';
 import type { ToolTab } from './shared/ToolTabBar';
 import { KEGG_REACTIONS } from '../../hooks/useEquilibrator';
+import { searchPubChemCompound } from '../../services/database/pubchemClient';
+import type { PubChemCompound } from '../../services/database/pubchemClient';
+import DataSourceBadge from '../ide/shared/DataSourceBadge';
 
 // ── Per-step proton stoichiometry for Alberty transform ──────────────────
 // Estimated nH (net H+ absorbed) and Δz² (charge change squared) per step.
@@ -340,6 +343,12 @@ export default React.memo(function CETHXPage() {
   const [isRealData, setIsRealData] = useState(false);
   const [isLoadingEquilibrator, setIsLoadingEquilibrator] = useState(false);
 
+  // PubChem compound lookup
+  const [compoundQuery, setCompoundQuery] = useState('');
+  const [pubchemData, setPubchemData] = useState<PubChemCompound | null>(null);
+  const [pubchemSource, setPubchemSource] = useState<'live' | 'mock'>('mock');
+  const [pubchemLoading, setPubchemLoading] = useState(false);
+
   const recommendedSeed = useMemo(
     () => buildCETHXSeed(project, analyzeArtifact, fbaPayload, pathdPayload),
     [analyzeArtifact?.generatedAt, analyzeArtifact?.id, fbaPayload?.updatedAt, pathdPayload?.updatedAt, project?.id, project?.updatedAt],
@@ -405,6 +414,19 @@ export default React.memo(function CETHXPage() {
 
     fetchAll();
   }, [pathway, tempC, pH]);
+
+  // PubChem compound lookup handler
+  const handleCompoundSearch = useCallback(async () => {
+    if (!compoundQuery.trim()) return;
+    setPubchemLoading(true);
+    try {
+      const result = await searchPubChemCompound(compoundQuery.trim());
+      setPubchemData(result.data);
+      setPubchemSource(result.source);
+    } finally {
+      setPubchemLoading(false);
+    }
+  }, [compoundQuery]);
 
   // Compute thermo with eQuilibrator data when available,
   // otherwise apply Alberty transform via calcTransformedGibbs from thermoEngine.
@@ -715,6 +737,73 @@ export default React.memo(function CETHXPage() {
             </div>
             <WorkbenchRangeSlider label="Temperature" value={tempC} min={20} max={60} step={1} unit="°C" onChange={setTempC} />
             <WorkbenchRangeSlider label="pH" value={pH} min={5.5} max={9.0} step={0.1} onChange={setPH} />
+
+            {/* PubChem Compound Lookup */}
+            <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: `1px solid ${THEME.BORDER}` }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                  PubChem Lookup
+                </span>
+                <DataSourceBadge source={pubchemSource} />
+              </div>
+              <div style={{ display: 'flex', gap: 4 }}>
+                <input
+                  value={compoundQuery}
+                  onChange={e => setCompoundQuery(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') handleCompoundSearch(); }}
+                  placeholder="Compound name (e.g. glucose)"
+                  style={{
+                    flex: 1, fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)',
+                    color: THEME.VALUE, background: THEME.PANEL_INSET,
+                    border: `1px solid ${THEME.BORDER}`, borderRadius: 6,
+                    padding: '4px 6px', outline: 'none',
+                  }}
+                />
+                <button
+                  onClick={handleCompoundSearch}
+                  disabled={pubchemLoading}
+                  style={{
+                    fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)',
+                    color: THEME.VALUE, background: 'rgba(175,195,214,0.12)',
+                    border: `1px solid ${THEME.BORDER}`, borderRadius: 6,
+                    padding: '4px 8px', cursor: pubchemLoading ? 'wait' : 'pointer',
+                    opacity: pubchemLoading ? 0.6 : 1,
+                  }}
+                >
+                  {pubchemLoading ? '...' : 'Fetch'}
+                </button>
+              </div>
+              {pubchemData && pubchemData.cid > 0 && (
+                <div style={{
+                  marginTop: 6, padding: '6px 8px', borderRadius: 8,
+                  background: 'rgba(255,255,255,0.02)', border: `1px solid ${THEME.BORDER}`,
+                }}>
+                  <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xxs)', color: THEME.LABEL, marginBottom: 4 }}>
+                    {pubchemData.name} (CID: {pubchemData.cid})
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
+                    <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL }}>Formula</span>
+                    <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.VALUE }}>{pubchemData.formula}</span>
+                  </div>
+                  {pubchemData.molecularWeight > 0 && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
+                      <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL }}>MW</span>
+                      <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.VALUE }}>{pubchemData.molecularWeight.toFixed(2)} g/mol</span>
+                    </div>
+                  )}
+                  {pubchemData.iupacName !== 'Unknown' && (
+                    <div style={{ marginTop: 2, fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xxs)', color: THEME.DIM, lineHeight: 1.3 }}>
+                      {pubchemData.iupacName}
+                    </div>
+                  )}
+                </div>
+              )}
+              {pubchemData && pubchemData.cid === 0 && (
+                <p style={{ margin: '4px 0 0', fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xxs)', color: THEME.LABEL, opacity: 0.7 }}>
+                  No compound found for "{compoundQuery}"
+                </p>
+              )}
+            </div>
           </FloatingControlRail>
 
           <div style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px', background: THEME.PANEL_INSET }}>
@@ -731,6 +820,11 @@ export default React.memo(function CETHXPage() {
               footer={
                 <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL }}>
                   limiting step {limitingStep ?? 'pending'} · entropy {thermo.entropy_production.toFixed(3)} · NADH {thermo.nadh_yield.toFixed(1)}
+                  {!isRealData && (
+                    <span style={{ display: 'block', marginTop: '2px', color: THEME.DIM, fontStyle: 'italic' }}>
+                      Uncertainty estimated at ~15% of |ΔG′| — eQuilibrator data unavailable
+                    </span>
+                  )}
                 </div>
               }
               minHeight="100%"
@@ -946,6 +1040,11 @@ export default React.memo(function CETHXPage() {
             </div>
             <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: THEME.VALUE, lineHeight: 1.55 }}>
               {`Pathway: ${PATHWAYS.find((entry) => entry.id === pathway)?.label ?? pathway} · ${tempC.toFixed(0)}°C · pH ${pH.toFixed(1)} · I = 0.25 M · Alberty transform with Debye-Hückel ionic strength correction. ${isRealData ? 'eQuilibrator 3 (ComponentContribution) backend.' : 'Reference ΔG° from Lehninger, transformed via calcTransformedGibbs.'}`}
+              {!isRealData && (
+                <span style={{ display: 'block', marginTop: '6px', fontStyle: 'italic', color: THEME.DIM }}>
+                  Note: per-step uncertainty is estimated at ~15% of |ΔG′| as a heuristic. For measured uncertainty from statistical thermodynamics, connect to the eQuilibrator backend.
+                </span>
+              )}
             </div>
           </div>
         </div>
