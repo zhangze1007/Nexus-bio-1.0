@@ -2,6 +2,7 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { computeConvexHull, expandHull } from '../../utils/vizUtils';
 import { SVGChartContainer, ChartGrid, ChartAxisLabels, ChartLegend } from '../charts/primitives';
+import { PAPER_THEME, SCI_PASTEL_MUTED } from '../charts/chartTheme';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
 import ActionButton from './shared/ActionButton';
@@ -101,13 +102,13 @@ function VolcanoPlot({ data, fcThreshold, pvThreshold, highlightedGene }: {
   const fcLineR = xPos(fcThreshold);
 
   return (
-    <SVGChartContainer W={W} H={H} ariaLabel="Volcano plot" rx={0}>
+    <SVGChartContainer W={W} H={H} ariaLabel="Volcano plot" variant="paper">
       <line x1={PAD} y1={pvLine} x2={W - PAD} y2={pvLine}
-        stroke="rgba(255,255,255,0.12)" strokeWidth={1} strokeDasharray="4 3" />
+        stroke={PAPER_THEME.grid} strokeWidth={1} strokeDasharray="4 3" />
       <line x1={fcLineL} y1={PAD} x2={fcLineL} y2={H - PAD}
-        stroke="rgba(255,255,255,0.08)" strokeWidth={1} strokeDasharray="4 3" />
+        stroke={PAPER_THEME.grid} strokeWidth={1} strokeDasharray="4 3" />
       <line x1={fcLineR} y1={PAD} x2={fcLineR} y2={H - PAD}
-        stroke="rgba(255,255,255,0.08)" strokeWidth={1} strokeDasharray="4 3" />
+        stroke={PAPER_THEME.grid} strokeWidth={1} strokeDasharray="4 3" />
       <rect
         x={fcLineR}
         y={PAD}
@@ -130,7 +131,7 @@ function VolcanoPlot({ data, fcThreshold, pvThreshold, highlightedGene }: {
         const isHighlighted = row.gene === highlightedGene;
         const color = sig
           ? (up ? 'rgba(147,203,82,0.85)' : 'rgba(250,128,114,0.85)')
-          : 'rgba(255,255,255,0.18)';
+          : PAPER_THEME.scatterStroke;
         return (
           <g key={row.id}>
             {isHighlighted && (
@@ -152,17 +153,17 @@ function VolcanoPlot({ data, fcThreshold, pvThreshold, highlightedGene }: {
           </g>
         );
       })}
-      <line x1={PAD} y1={H - PAD} x2={W - PAD} y2={H - PAD} stroke="rgba(255,255,255,0.1)" />
-      <line x1={PAD} y1={PAD} x2={PAD} y2={H - PAD} stroke="rgba(255,255,255,0.1)" />
-      <text x={W / 2} y={H - 4} textAnchor="middle" fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.45)">
+      <line x1={PAD} y1={H - PAD} x2={W - PAD} y2={H - PAD} stroke={PAPER_THEME.axis} strokeWidth={PAPER_THEME.axisWidth} />
+      <line x1={PAD} y1={PAD} x2={PAD} y2={H - PAD} stroke={PAPER_THEME.axis} strokeWidth={PAPER_THEME.axisWidth} />
+      <text x={W / 2} y={H - 4} textAnchor="middle" fontFamily={PAPER_THEME.tickFont} fontSize={PAPER_THEME.tickSize} fill={PAPER_THEME.tickColor}>
         log₂ Fold Change
       </text>
-      <text x={10} y={H / 2} textAnchor="middle" fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.45)"
+      <text x={10} y={H / 2} textAnchor="middle" fontFamily={PAPER_THEME.tickFont} fontSize={PAPER_THEME.tickSize} fill={PAPER_THEME.tickColor}
         transform={`rotate(-90,10,${H / 2})`}>
         -log₁₀(p)
       </text>
-      <text x={W - PAD} y={H - PAD + 12} textAnchor="end" fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.2)">+{fcMax}</text>
-      <text x={PAD} y={H - PAD + 12} textAnchor="start" fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.2)">-{fcMax}</text>
+      <text x={W - PAD} y={H - PAD + 12} textAnchor="end" fontFamily={PAPER_THEME.tickFont} fontSize={PAPER_THEME.tickSize} fill={PAPER_THEME.tickColor}>+{fcMax}</text>
+      <text x={PAD} y={H - PAD + 12} textAnchor="start" fontFamily={PAPER_THEME.tickFont} fontSize={PAPER_THEME.tickSize} fill={PAPER_THEME.tickColor}>-{fcMax}</text>
       <text x={W - PAD - 4} y={PAD + 12} textAnchor="end" fontFamily={THEME.MONO} fontSize="10" fill="rgba(147,203,82,0.74)">
         productive-significant
       </text>
@@ -184,7 +185,7 @@ const COLUMNS: TableColumn<OmicsRow>[] = [
     : '—'
   },
   { key: 'pValue',      header: 'p-val',       width: 60, render: v => typeof v === 'number'
-    ? <span style={{ color: (v as number) < 0.05 ? 'rgba(255,139,31,0.85)' : 'rgba(255,255,255,0.55)', fontFamily: "'JetBrains Mono',monospace", fontSize: 'var(--nb-fs-xs)' }}>
+    ? <span style={{ color: (v as number) < 0.05 ? 'rgba(255,139,31,0.85)' : PAPER_THEME.tickColor, fontFamily: "'JetBrains Mono',monospace", fontSize: 'var(--nb-fs-xs)' }}>
         {(v as number).toFixed(3)}
       </span>
     : '—'
@@ -303,16 +304,16 @@ function TriPanelEmbedding({ embeddings, data, fcThreshold, pvThreshold, activeL
 
       {/* LEFT: PCA Biplot */}
       <div style={{ flex: '0 0 auto' }}>
-        <SVGChartContainer W={pcaW} H={pcaH} ariaLabel="PCA Biplot" rx={10} style={{ width: `${pcaW}px`, height: `${pcaH}px` }}>
-          <text x={pcaW / 2} y={14} textAnchor="middle" fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.45)">PCA BIPLOT</text>
-          <text x={pcaW / 2} y={pcaH - 4} textAnchor="middle" fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.45)">PC1 ({loadingArrows.pc1Pct}% var)</text>
-          <text x={8} y={pcaH / 2} textAnchor="middle" fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.45)"
+        <SVGChartContainer W={pcaW} H={pcaH} ariaLabel="PCA Biplot" variant="paper" style={{ width: `${pcaW}px`, height: `${pcaH}px` }}>
+          <text x={pcaW / 2} y={14} textAnchor="middle" fontFamily={PAPER_THEME.tickFont} fontSize={PAPER_THEME.tickSize} fill={PAPER_THEME.tickColor}>PCA BIPLOT</text>
+          <text x={pcaW / 2} y={pcaH - 4} textAnchor="middle" fontFamily={PAPER_THEME.tickFont} fontSize={PAPER_THEME.tickSize} fill={PAPER_THEME.tickColor}>PC1 ({loadingArrows.pc1Pct}% var)</text>
+          <text x={8} y={pcaH / 2} textAnchor="middle" fontFamily={PAPER_THEME.tickFont} fontSize={PAPER_THEME.tickSize} fill={PAPER_THEME.tickColor}
             transform={`rotate(-90,8,${pcaH / 2})`}>PC2 ({loadingArrows.pc2Pct}% var)</text>
-          <line x1={pcaPAD} y1={pcaH - pcaPAD} x2={pcaW - pcaPAD} y2={pcaH - pcaPAD} stroke="rgba(255,255,255,0.08)" />
-          <line x1={pcaPAD} y1={pcaPAD} x2={pcaPAD} y2={pcaH - pcaPAD} stroke="rgba(255,255,255,0.08)" />
+          <line x1={pcaPAD} y1={pcaH - pcaPAD} x2={pcaW - pcaPAD} y2={pcaH - pcaPAD} stroke={PAPER_THEME.axis} strokeWidth={PAPER_THEME.axisWidth} />
+          <line x1={pcaPAD} y1={pcaPAD} x2={pcaPAD} y2={pcaH - pcaPAD} stroke={PAPER_THEME.axis} strokeWidth={PAPER_THEME.axisWidth} />
           <defs>
             <marker id="pca-arrow" markerWidth="5" markerHeight="5" refX="4" refY="2.5" orient="auto">
-              <polygon points="0 0.5, 4.5 2.5, 0 4.5" fill="rgba(255,255,255,0.55)" />
+              <polygon points="0 0.5, 4.5 2.5, 0 4.5" fill={PAPER_THEME.axis} />
             </marker>
           </defs>
           {/* Loading arrows from eigenvectors (one per omics variable) */}
@@ -322,7 +323,7 @@ function TriPanelEmbedding({ embeddings, data, fcThreshold, pvThreshold, activeL
             const labelDist = 10;
             const lx = ax + Math.cos(labelAngle) * labelDist;
             const ly = ay + Math.sin(labelAngle) * labelDist;
-            const color = layerColorMap[(['transcriptomics', 'proteomics', 'metabolomics'] as OmicsLayer[])[i]] ?? 'rgba(255,255,255,0.55)';
+            const color = layerColorMap[(['transcriptomics', 'proteomics', 'metabolomics'] as OmicsLayer[])[i]] ?? PAPER_THEME.axis;
             return (
               <g key={a.label}>
                 <line x1={cx} y1={cy} x2={ax} y2={ay}
@@ -347,7 +348,7 @@ function TriPanelEmbedding({ embeddings, data, fcThreshold, pvThreshold, activeL
             activeLayers[layer] && (
               <g key={layer} transform={`translate(${pcaPAD},${pcaH - pcaPAD + 10 + i * 12})`}>
                 <circle cx={4} cy={4} r={4} fill={layerColorMap[layer]} />
-                <text x={12} y={8} fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.4)">{layer.slice(0,6)}</text>
+                <text x={12} y={8} fontFamily={PAPER_THEME.tickFont} fontSize={PAPER_THEME.tickSize} fill={PAPER_THEME.tickColor}>{layer.slice(0,6)}</text>
               </g>
             )
           ))}
@@ -356,8 +357,8 @@ function TriPanelEmbedding({ embeddings, data, fcThreshold, pvThreshold, activeL
 
       {/* CENTER: 20×20 Correlation Heatmap */}
       <div style={{ flex: '0 0 auto' }}>
-        <SVGChartContainer W={hmW} H={hmH} ariaLabel="Correlation matrix" rx={10} style={{ width: `${hmW}px`, height: `${hmH}px` }}>
-          <text x={hmW / 2} y={12} textAnchor="middle" fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.45)">
+        <SVGChartContainer W={hmW} H={hmH} ariaLabel="Correlation matrix" variant="paper" style={{ width: `${hmW}px`, height: `${hmH}px` }}>
+          <text x={hmW / 2} y={12} textAnchor="middle" fontFamily={PAPER_THEME.tickFont} fontSize={PAPER_THEME.tickSize} fill={PAPER_THEME.tickColor}>
             CORRELATION MATRIX (20×20)
           </text>
           {corrMatrix.map((row, yi) =>
@@ -377,7 +378,7 @@ function TriPanelEmbedding({ embeddings, data, fcThreshold, pvThreshold, activeL
               x={hmPAD.left + i * cellW + cellW / 2}
               y={hmPAD.top - 4}
               textAnchor="start"
-              fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.55)"
+              fontFamily={PAPER_THEME.tickFont} fontSize={PAPER_THEME.tickSize} fill={PAPER_THEME.labelColor}
               transform={`rotate(-60,${hmPAD.left + i * cellW + cellW / 2},${hmPAD.top - 4})`}
             >{g.gene.slice(0, 5)}</text>
           ))}
@@ -387,7 +388,7 @@ function TriPanelEmbedding({ embeddings, data, fcThreshold, pvThreshold, activeL
               x={hmPAD.left - 2}
               y={hmPAD.top + i * cellW + cellW * 0.65}
               textAnchor="end"
-              fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.55)"
+              fontFamily={PAPER_THEME.tickFont} fontSize={PAPER_THEME.tickSize} fill={PAPER_THEME.labelColor}
             >{g.gene.slice(0, 5)}</text>
           ))}
           {/* ── Publication colorbar — RdBu diverging scale ── */}
@@ -405,13 +406,13 @@ function TriPanelEmbedding({ embeddings, data, fcThreshold, pvThreshold, activeL
             const y = hmPAD.top + t * hmInner;
             return (
               <g key={label}>
-                <line x1={hmW - 8} y1={y} x2={hmW - 5} y2={y} stroke="rgba(255,255,255,0.45)" strokeWidth={0.7} />
-                <text x={hmW - 3} y={y + 3} fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.55)">{label}</text>
+                <line x1={hmW - 8} y1={y} x2={hmW - 5} y2={y} stroke={PAPER_THEME.axis} strokeWidth={0.7} />
+                <text x={hmW - 3} y={y + 3} fontFamily={PAPER_THEME.tickFont} fontSize={PAPER_THEME.tickSize} fill={PAPER_THEME.tickColor}>{label}</text>
               </g>
             );
           })}
           {/* Unit label */}
-          <text x={hmW - 12} y={hmPAD.top - 6} textAnchor="middle" fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.45)">
+          <text x={hmW - 12} y={hmPAD.top - 6} textAnchor="middle" fontFamily={PAPER_THEME.tickFont} fontSize={PAPER_THEME.tickSize} fill={PAPER_THEME.tickColor}>
             z
           </text>
         </SVGChartContainer>
@@ -483,22 +484,22 @@ function EmbeddingScatter({ embeddings, fcThreshold, activeLayers, highlightedGe
   }, [projected]);
 
   return (
-    <SVGChartContainer W={W} H={H} ariaLabel="Embedding scatter plot">
-      <rect x={PAD} y={PAD} width={W - PAD * 2} height={H - PAD * 2} fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.06)" rx={12} />
+    <SVGChartContainer W={W} H={H} ariaLabel="Embedding scatter plot" variant="paper">
+      <rect x={PAD} y={PAD} width={W - PAD * 2} height={H - PAD * 2} fill={PAPER_THEME.bgAlt} stroke={PAPER_THEME.grid} rx={PAPER_THEME.borderRadius} />
       {/* Grid */}
       {Array.from({ length: GRID_COUNT + 1 }).map((_, i) => {
         const x = PAD + (i / GRID_COUNT) * (W - PAD * 2);
         const y = PAD + (i / GRID_COUNT) * (H - PAD * 2);
         return (
           <g key={i}>
-            <line x1={x} y1={PAD} x2={x} y2={H - PAD} stroke="rgba(255,255,255,0.04)" strokeWidth={0.5} />
-            <line x1={PAD} y1={y} x2={W - PAD} y2={y} stroke="rgba(255,255,255,0.04)" strokeWidth={0.5} />
+            <line x1={x} y1={PAD} x2={x} y2={H - PAD} stroke={PAPER_THEME.grid} strokeWidth={0.5} />
+            <line x1={PAD} y1={y} x2={W - PAD} y2={y} stroke={PAPER_THEME.grid} strokeWidth={0.5} />
           </g>
         );
       })}
       {/* Axes */}
-      <line x1={PAD} y1={H - PAD} x2={W - PAD} y2={H - PAD} stroke="rgba(255,255,255,0.1)" />
-      <line x1={PAD} y1={PAD} x2={PAD} y2={H - PAD} stroke="rgba(255,255,255,0.1)" />
+      <line x1={PAD} y1={H - PAD} x2={W - PAD} y2={H - PAD} stroke={PAPER_THEME.axis} strokeWidth={PAPER_THEME.axisWidth} />
+      <line x1={PAD} y1={PAD} x2={PAD} y2={H - PAD} stroke={PAPER_THEME.axis} strokeWidth={PAPER_THEME.axisWidth} />
       <text x={W / 2} y={H - 6} textAnchor="middle" fontFamily={THEME.MONO} fontSize="10" fill={LABEL}>
         Embed-1 (linear projection)
       </text>
@@ -1276,7 +1277,7 @@ export default React.memo(function MultiOPage() {
                 <div key={e.geneId} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 0', borderBottom: `1px solid ${BORDER}` }}>
                   <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL, width: '20px', textAlign: 'right' }}>{i + 1}</span>
                   <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE, width: '70px' }}>{e.gene}</span>
-                  <div style={{ flex: 1, height: '6px', borderRadius: '3px', background: 'rgba(255,255,255,0.06)' }}>
+                  <div style={{ flex: 1, height: '6px', borderRadius: '3px', background: PAPER_THEME.grid }}>
                     <div style={{ width: `${pct}%`, height: '100%', borderRadius: '3px', background: color, transition: 'width 0.3s' }} />
                   </div>
                   <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color, width: '45px', textAlign: 'right' }}>{pct.toFixed(1)}%</span>
