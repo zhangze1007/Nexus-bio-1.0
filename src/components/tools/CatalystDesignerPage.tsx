@@ -29,6 +29,7 @@ import type {
   MutagenesisResult,
   EnzymeStructure,
 } from '../../services/CatalystDesignerEngine';
+import { PAPER_THEME } from '../charts/chartTheme';
 import { useWorkbenchStore } from '../../store/workbenchStore';
 import { buildCatalystSeed } from './shared/workbenchDataflow';
 import ToolShell from './shared/ToolShell';
