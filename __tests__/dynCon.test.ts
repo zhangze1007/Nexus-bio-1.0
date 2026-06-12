@@ -10,6 +10,7 @@ import {
   runBioreactor,
   analyzeConvergence,
   analyzeMetabolicBurden,
+  mapControlGainToRBS,
   DEFAULT_PARAMS,
   DEFAULT_HILL,
   DEFAULT_CONTROLLER,
@@ -210,6 +211,19 @@ describe('DynCon Engine', () => {
       const burden = analyzeMetabolicBurden(highExpr, DEFAULT_PARAMS);
       expect(burden.proteinCost).toBeGreaterThan(0);
       expect(burden.atpDrain).toBeGreaterThan(0);
+    });
+  });
+
+  // ── RBS Mapping Monotonicity ─────────────────────────────────────────────
+
+  describe('mapControlGainToRBS', () => {
+    test('RBS mapping is monotonic in rbsStrength', () => {
+      let prevStrength = -1;
+      for (let kp = 0; kp <= 10; kp += 0.5) {
+        const rbs = mapControlGainToRBS(kp, 0, 0);
+        expect(rbs.rbsStrength).toBeGreaterThanOrEqual(prevStrength);
+        prevStrength = rbs.rbsStrength;
+      }
     });
   });
 });

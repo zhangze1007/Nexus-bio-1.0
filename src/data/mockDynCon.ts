@@ -346,26 +346,35 @@ const RBS_REGISTRY: RBSMapping[] = [
   { controlGain: 1.0, rbsName: 'J61107', rbsStrength: 0.90, translationRate: 0.90, sequence: 'AAAGAGGAGAAATAACAATG',   registryId: 'BBa_J61107' },
 ];
 
+// Sort by ascending rbsStrength for monotonic mapping
+const RBS_REGISTRY_SORTED = [...RBS_REGISTRY].sort((a, b) => a.rbsStrength - b.rbsStrength);
+
 export function mapControlGainToRBS(
   kp: number, ki: number, kd: number,
 ): RBSMapping {
-  // Normalize combined gain to [0, 1]
-  const combinedGain = Math.min(1, Math.max(0,
-    (kp / 10) * 0.5 + (ki / 5) * 0.3 + (kd / 2) * 0.2
-  ));
+  const combinedGain = (kp / 10) * 0.5 + (ki / 5) * 0.3 + (kd / 2) * 0.2;
+  const t = Math.max(0, Math.min(1, combinedGain));
 
-  // Find closest RBS in registry
-  let best = RBS_REGISTRY[0];
-  let bestDist = Infinity;
-  for (const rbs of RBS_REGISTRY) {
-    const dist = Math.abs(rbs.controlGain - combinedGain);
-    if (dist < bestDist) {
-      bestDist = dist;
-      best = rbs;
-    }
+  const sorted = RBS_REGISTRY_SORTED;
+  if (t <= 0) return sorted[0];
+  if (t >= 1) return sorted[sorted.length - 1];
+
+  // Linear interpolation in rbsStrength space
+  const idx = t * (sorted.length - 1);
+  const lo = Math.floor(idx);
+  const hi = Math.min(lo + 1, sorted.length - 1);
+  const frac = idx - lo;
+
+  const targetStrength = sorted[lo].rbsStrength * (1 - frac) + sorted[hi].rbsStrength * frac;
+
+  // Find closest entry by strength
+  let closest = sorted[0];
+  let minDist = Infinity;
+  for (const entry of sorted) {
+    const dist = Math.abs(entry.rbsStrength - targetStrength);
+    if (dist < minDist) { minDist = dist; closest = entry; }
   }
-
-  return { ...best, controlGain: Math.round(combinedGain * 1000) / 1000 };
+  return closest;
 }
 
 export function getAllRBS(): RBSMapping[] {
