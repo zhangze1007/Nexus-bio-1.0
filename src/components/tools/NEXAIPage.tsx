@@ -388,12 +388,16 @@ export default React.memo(function NEXAIPage() {
         const ssRes = await fetch(ssUrl, { signal: controller.signal });
         if (ssRes.ok) {
           const ssData = await ssRes.json();
+          // Normalize relevance from citationCount rather than positional rank
+          const maxCitations = Math.max(1, ...((ssData.data ?? []) as Record<string, unknown>[]).map(
+            (p) => (p.citationCount as number) ?? 0,
+          ));
           const ssCitations: CitationNode[] = (ssData.data ?? []).map((p: Record<string, unknown>, i: number) => ({
             id: (p.paperId as string) ?? `ss-${i}`,
             title: (p.title as string) ?? 'Unknown title',
             authors: ((p.authors as {name:string}[]) ?? []).map((a) => a.name).join(', ') || 'Unknown authors',
             year: (p.year as number) ?? new Date().getFullYear(),
-            relevance: Math.max(0.1, 1 - i * 0.16),
+            relevance: Math.max(0.1, ((p.citationCount as number) ?? 0) / maxCitations),
           }));
           if (ssCitations.length > 0) {
             setResult(prev => prev ? {
