@@ -1099,7 +1099,6 @@ export function predictMutagenesisSites(
   enzyme: EnzymeStructure,
   nSites: number = 8,
 ): MutagenesisResult {
-  const rng = new SeededRNG(42);
   const catalyticPositions = new Set(enzyme.catalyticResidues.map(r => r.position));
   const seq = enzyme.sequence;
   const len = seq.length;
@@ -1379,8 +1378,9 @@ export function runFullDesignPipeline(
     confidence: 0.70,
   });
   const mutagenesis = predictMutagenesisSites(enzyme);
-  auditTrail[auditTrail.length - 1].output =
-    `${mutagenesis.sites.length} sites, top combination: ${mutagenesis.topCombination.predictedImprovement}× improvement`;
+  auditTrail[auditTrail.length - 1].output = mutagenesis.topCombination.predictedImprovement != null
+    ? `${mutagenesis.sites.length} sites, top combination: ${mutagenesis.topCombination.predictedImprovement}× improvement`
+    : `${mutagenesis.sites.length} sites, no quantitative improvement prediction available`;
 
   return {
     bindingAffinity,
