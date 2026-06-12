@@ -5,7 +5,7 @@ import {
   ScatterChart, Scatter, XAxis, YAxis, ZAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine,
 } from 'recharts';
 import type { ScatterShapeProps } from 'recharts';
-import { rechartsGrid, rechartsTick, TOOLTIP_STYLE, FONT, SERIES_PALETTE } from '../../../charts/chartTheme';
+import { PAPER_THEME, PAPER_TOOLTIP_STYLE, FONT, SCI_SERIES } from '../../../charts/chartTheme';
 import { PROEVOL_THEME } from '../shared';
 import type { ChartTooltipProps } from '../../../../types/charts';
 import type { VariantEnrichmentEntry } from '../../../../services/proevolAnalysis';
@@ -27,21 +27,21 @@ function CustomTooltip({ active, payload }: ChartTooltipProps) {
     finalFrequency: number;
   };
   return (
-    <div style={TOOLTIP_STYLE}>
-      <div style={{ fontFamily: FONT.SANS, fontWeight: 600, fontSize: 11 }}>{point.label}</div>
-      <div style={{ fontFamily: FONT.MONO, color: 'rgba(255,255,255,0.55)', fontSize: 10 }}>
+    <div style={PAPER_TOOLTIP_STYLE}>
+      <div style={{ fontFamily: FONT.SANS, fontWeight: 600, fontSize: 11, color: PAPER_THEME.titleColor }}>{point.label}</div>
+      <div style={{ fontFamily: FONT.MONO, color: PAPER_THEME.tickColor, fontSize: 10 }}>
         {point.mutationString}
       </div>
-      <div style={{ fontFamily: FONT.MONO, fontSize: 10, marginTop: 4 }}>
+      <div style={{ fontFamily: FONT.MONO, fontSize: 10, marginTop: 4, color: PAPER_THEME.tooltipColor }}>
         family · {point.familyLabel}
       </div>
-      <div style={{ fontFamily: FONT.MONO, fontSize: 10 }}>
+      <div style={{ fontFamily: FONT.MONO, fontSize: 10, color: PAPER_THEME.tooltipColor }}>
         log₂ enrichment vs WT · {point.log2EnrichmentVsWildType.toFixed(2)}
       </div>
-      <div style={{ fontFamily: FONT.MONO, fontSize: 10 }}>
+      <div style={{ fontFamily: FONT.MONO, fontSize: 10, color: PAPER_THEME.tooltipColor }}>
         mutation burden · {point.mutationBurden}
       </div>
-      <div style={{ fontFamily: FONT.MONO, fontSize: 10 }}>
+      <div style={{ fontFamily: FONT.MONO, fontSize: 10, color: PAPER_THEME.tooltipColor }}>
         final frequency · {(point.finalFrequency * 100).toFixed(2)}%
       </div>
     </div>
@@ -85,47 +85,47 @@ export default function EnrichmentBurdenScatter({
   }
 
   return (
-    <div style={{ width: '100%', height: 280 }}>
+    <div style={{ width: '100%', height: 280, background: PAPER_THEME.bg, border: `1px solid ${PAPER_THEME.border}`, borderRadius: PAPER_THEME.borderRadius }}>
       <ResponsiveContainer>
         <ScatterChart margin={{ top: 10, right: 24, left: 0, bottom: 4 }}>
-          <CartesianGrid {...rechartsGrid} />
+          <CartesianGrid stroke={PAPER_THEME.grid} strokeDasharray="2 4" />
           <XAxis
             type="number"
             dataKey="mutationBurden"
             name="Mutation burden"
-            tick={rechartsTick}
-            stroke="rgba(255,255,255,0.18)"
+            tick={{ fontSize: PAPER_THEME.tickSize, fontFamily: PAPER_THEME.tickFont, fill: PAPER_THEME.tickColor }}
+            stroke={PAPER_THEME.axis}
             domain={[0, 'dataMax + 1']}
             label={{
               value: 'Mutation burden',
               position: 'insideBottom',
               offset: -2,
-              fill: 'rgba(255,255,255,0.5)',
-              fontSize: 10,
-              fontFamily: FONT.SANS,
+              fill: PAPER_THEME.labelColor,
+              fontSize: PAPER_THEME.labelSize,
+              fontFamily: PAPER_THEME.labelFont,
             }}
           />
           <YAxis
             type="number"
             dataKey="log2EnrichmentVsWildType"
             name="log2 enrichment vs WT"
-            tick={rechartsTick}
-            stroke="rgba(255,255,255,0.18)"
+            tick={{ fontSize: PAPER_THEME.tickSize, fontFamily: PAPER_THEME.tickFont, fill: PAPER_THEME.tickColor }}
+            stroke={PAPER_THEME.axis}
             label={{
               value: 'log₂ enrichment vs WT',
               angle: -90,
               position: 'insideLeft',
-              fill: 'rgba(255,255,255,0.5)',
-              fontSize: 10,
-              fontFamily: FONT.SANS,
+              fill: PAPER_THEME.labelColor,
+              fontSize: PAPER_THEME.labelSize,
+              fontFamily: PAPER_THEME.labelFont,
               offset: 10,
             }}
           />
           <ZAxis type="number" dataKey="zSize" range={[40, 220]} />
-          <ReferenceLine y={0} stroke="rgba(255,255,255,0.45)" strokeDasharray="4 4" />
+          <ReferenceLine y={0} stroke={PAPER_THEME.axis} strokeDasharray="4 4" />
           <Tooltip cursor={{ strokeDasharray: '3 3' }} content={<CustomTooltip />} />
           {grouped.map((family, index) => {
-            const color = SERIES_PALETTE[index % SERIES_PALETTE.length];
+            const color = SCI_SERIES[index % SCI_SERIES.length];
             return (
               <Scatter
                 key={family.id}

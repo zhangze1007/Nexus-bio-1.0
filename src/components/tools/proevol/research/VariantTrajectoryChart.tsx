@@ -1,10 +1,9 @@
 'use client';
 
 import { useMemo } from 'react';
-import { FONT, SCI_SERIES } from '../../../charts/chartTheme';
+import { FONT, SCI_SERIES, PAPER_THEME } from '../../../charts/chartTheme';
 import { ConfidenceLineChart } from '../../../charts/primitives';
 import type { ConfidenceSeries } from '../../../charts/primitives';
-import { PROEVOL_THEME } from '../shared';
 import type { VariantTrajectory } from '../../../../services/proevolAnalysis';
 import type { ProEvolBandSemantic } from '../../../../domain/proevolArtifact';
 
@@ -51,7 +50,7 @@ export default function VariantTrajectoryChart({
   }
 
   return (
-    <div style={{ display: 'grid', gap: '10px' }}>
+    <div style={{ display: 'grid', gap: '10px', background: PAPER_THEME.bg, border: `1px solid ${PAPER_THEME.border}`, borderRadius: PAPER_THEME.borderRadius, padding: '12px' }}>
       <ConfidenceLineChart
         series={series}
         xQuantity="Selection round"
@@ -80,7 +79,7 @@ export default function VariantTrajectoryChart({
                 borderRadius: '999px',
                 border: `1px solid ${color}66`,
                 background: `${color}${isHighlighted ? '24' : '0c'}`,
-                color: PROEVOL_THEME.value,
+                color: PAPER_THEME.titleColor,
                 opacity: isHighlighted ? 1 : 0.55,
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -89,7 +88,7 @@ export default function VariantTrajectoryChart({
             >
               <span style={{ width: 8, height: 8, borderRadius: 999, background: color }} />
               <span>{trajectory.label}</span>
-              <span style={{ color: PROEVOL_THEME.muted }}>
+              <span style={{ color: PAPER_THEME.legendColor }}>
                 · peak {(trajectory.peakFrequency * 100).toFixed(1)}%
               </span>
             </button>
@@ -110,7 +109,7 @@ function EmptyState({ message }: { message: string }) {
         justifyContent: 'center',
         fontFamily: FONT.SANS,
         fontSize: 12,
-        color: PROEVOL_THEME.muted,
+        color: PAPER_THEME.legendColor,
       }}
     >
       {message}

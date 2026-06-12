@@ -4,8 +4,8 @@ import {
   ComposedChart, Line, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
 import {
-  rechartsGrid, rechartsTick, rechartsAxisTitle, rechartsAxisLine,
-  TOOLTIP_STYLE, FONT, SCI_PALETTE, LINE, MARKER, BAND,
+  PAPER_THEME, PAPER_TOOLTIP_STYLE,
+  FONT, SCI_PALETTE, LINE, MARKER, BAND,
   axisLabel,
 } from '../../../charts/chartTheme';
 import { PROEVOL_THEME } from '../shared';
@@ -39,19 +39,19 @@ function buildTooltip(bandSemantic: ProEvolBandSemantic) {
     const row = payload[0]?.payload as unknown as Row | undefined;
     if (!row) return null;
     return (
-      <div style={TOOLTIP_STYLE}>
-        <div style={{ fontFamily: FONT.MONO, color: 'rgba(232,238,248,0.65)', fontSize: 10 }}>
+      <div style={PAPER_TOOLTIP_STYLE}>
+        <div style={{ fontFamily: FONT.MONO, color: PAPER_THEME.tickColor, fontSize: 10 }}>
           Round {label}
         </div>
         <div style={{ fontFamily: FONT.MONO, fontSize: 11, color: SHANNON_COLOR }}>
           Shannon · {row.shannon.toFixed(2)} bits
-          <span style={{ color: 'rgba(232,238,248,0.55)' }}>
+          <span style={{ color: PAPER_THEME.labelColor }}>
             {' '}{bandLabel} [{row.shannonLower.toFixed(2)}–{row.shannonUpper.toFixed(2)}]
           </span>
         </div>
         <div style={{ fontFamily: FONT.MONO, fontSize: 11, color: TOP_SHARE_COLOR }}>
           Top-1 share · {(row.topShare * 100).toFixed(1)}%
-          <span style={{ color: 'rgba(232,238,248,0.55)' }}>
+          <span style={{ color: PAPER_THEME.labelColor }}>
             {' '}{bandLabel} [{(row.topShareLower * 100).toFixed(1)}–{(row.topShareUpper * 100).toFixed(1)}%]
           </span>
         </div>
@@ -94,26 +94,26 @@ export default function DiversityConvergenceCurve({ data, bandSemantic }: Divers
   const bandLabel = isModeled ? 'model spread' : '95% CI';
 
   return (
-    <div style={{ width: '100%', height: 260 }}>
+    <div style={{ width: '100%', height: 260, background: PAPER_THEME.bg, border: `1px solid ${PAPER_THEME.border}`, borderRadius: PAPER_THEME.borderRadius }}>
       <ResponsiveContainer>
         <ComposedChart data={rows} margin={{ top: 14, right: 56, left: 12, bottom: 28 }}>
-          <CartesianGrid {...rechartsGrid} />
+          <CartesianGrid stroke={PAPER_THEME.grid} strokeDasharray="2 4" />
           <XAxis
             dataKey="roundNumber"
-            tick={rechartsTick}
-            axisLine={rechartsAxisLine}
+            tick={{ fontSize: PAPER_THEME.tickSize, fontFamily: PAPER_THEME.tickFont, fill: PAPER_THEME.tickColor }}
+            axisLine={{ stroke: PAPER_THEME.axis }}
             tickLine={false}
             label={{
               value: axisLabel('Selection round'),
               position: 'insideBottom',
               offset: -6,
-              style: rechartsAxisTitle,
+              style: { fontSize: PAPER_THEME.labelSize, fontFamily: PAPER_THEME.labelFont, fill: PAPER_THEME.labelColor, letterSpacing: '0.04em', fontWeight: 600 },
             }}
           />
           <YAxis
             yAxisId="shannon"
             orientation="left"
-            tick={{ ...rechartsTick, fill: SHANNON_COLOR }}
+            tick={{ fontSize: PAPER_THEME.tickSize, fontFamily: PAPER_THEME.tickFont, fill: SHANNON_COLOR }}
             stroke={SHANNON_COLOR}
             domain={[0, 'auto']}
             label={{
@@ -121,13 +121,13 @@ export default function DiversityConvergenceCurve({ data, bandSemantic }: Divers
               angle: -90,
               position: 'insideLeft',
               offset: 6,
-              style: { ...rechartsAxisTitle, fill: SHANNON_COLOR },
+              style: { fontSize: PAPER_THEME.labelSize, fontFamily: PAPER_THEME.labelFont, fill: SHANNON_COLOR, letterSpacing: '0.04em', fontWeight: 600 },
             }}
           />
           <YAxis
             yAxisId="top"
             orientation="right"
-            tick={{ ...rechartsTick, fill: TOP_SHARE_COLOR }}
+            tick={{ fontSize: PAPER_THEME.tickSize, fontFamily: PAPER_THEME.tickFont, fill: TOP_SHARE_COLOR }}
             stroke={TOP_SHARE_COLOR}
             domain={[0, 1]}
             tickFormatter={(value: number) => `${(value * 100).toFixed(0)}%`}
@@ -136,12 +136,12 @@ export default function DiversityConvergenceCurve({ data, bandSemantic }: Divers
               angle: 90,
               position: 'insideRight',
               offset: 6,
-              style: { ...rechartsAxisTitle, fill: TOP_SHARE_COLOR },
+              style: { fontSize: PAPER_THEME.labelSize, fontFamily: PAPER_THEME.labelFont, fill: TOP_SHARE_COLOR, letterSpacing: '0.04em', fontWeight: 600 },
             }}
           />
           <Tooltip content={buildTooltip(bandSemantic) as unknown as React.ReactElement} />
           <Legend
-            wrapperStyle={{ fontFamily: FONT.SANS, fontSize: 11, color: 'rgba(232,238,248,0.82)' }}
+            wrapperStyle={{ fontFamily: PAPER_THEME.legendFont, fontSize: PAPER_THEME.legendSize, color: PAPER_THEME.legendColor }}
             iconSize={10}
           />
           <Area
@@ -165,7 +165,7 @@ export default function DiversityConvergenceCurve({ data, bandSemantic }: Divers
             name="Shannon entropy"
             stroke={SHANNON_COLOR}
             strokeWidth={LINE.primary}
-            dot={{ r: MARKER.secondary, stroke: SHANNON_COLOR, fill: '#0a0a0a', strokeWidth: 1.4 }}
+            dot={{ r: MARKER.secondary, stroke: SHANNON_COLOR, fill: PAPER_THEME.bg, strokeWidth: 1.4 }}
             activeDot={{ r: MARKER.active }}
             isAnimationActive={false}
           />
@@ -177,7 +177,7 @@ export default function DiversityConvergenceCurve({ data, bandSemantic }: Divers
             stroke={TOP_SHARE_COLOR}
             strokeWidth={LINE.primary}
             strokeDasharray="6 3"
-            dot={{ r: MARKER.secondary, stroke: TOP_SHARE_COLOR, fill: '#0a0a0a', strokeWidth: 1.4 }}
+            dot={{ r: MARKER.secondary, stroke: TOP_SHARE_COLOR, fill: PAPER_THEME.bg, strokeWidth: 1.4 }}
             activeDot={{ r: MARKER.active }}
             isAnimationActive={false}
           />
