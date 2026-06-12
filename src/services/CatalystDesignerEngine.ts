@@ -71,6 +71,8 @@ export interface BindingAffinityResult {
   electrostaticScore: number;
   overallScore: number;      // composite 0-1
   interpretation: string;
+  uncertaintyKd: number;      // ± μM (propagated from ±2 kcal/mol ΔG uncertainty)
+  uncertaintyDeltaG: number;  // ± kcal/mol (default 2.0)
 }
 
 /** Single designed sequence variant. */
@@ -497,6 +499,8 @@ export function predictBindingAffinity(enzyme: EnzymeStructure): BindingAffinity
       electrostaticScore: 0,
       overallScore: 0,
       interpretation: 'No catalytic residues annotated — cannot predict binding.',
+      uncertaintyKd: 0,
+      uncertaintyDeltaG: 2.0,
     };
   }
 
@@ -519,7 +523,9 @@ export function predictBindingAffinity(enzyme: EnzymeStructure): BindingAffinity
   const orientationScore = clamp(oriSum / residues.length, 0, 1);
 
   // ── Van der Waals (Lennard-Jones 6-12) ─────────────────────────────────
-  const epsilon = 0.15; // kcal/mol — LJ well depth
+  // LJ well depth: 0.5 kcal/mol — typical for C-C van der Waals contacts
+  // Ref: Cornell et al. 1995 (JACS 117:5179) — AMBER ff99 C-C epsilon
+  const epsilon = 0.5;
   const rMin = 3.5;     // Å — equilibrium separation
   let vdwEnergy = 0;
   for (const res of residues) {
@@ -585,9 +591,16 @@ export function predictBindingAffinity(enzyme: EnzymeStructure): BindingAffinity
   const bornFactor = 1 - eps_in / eps_out;
   const dG_polar = -dE_elec * bornFactor; // opposes ΔE_elec (desolvation penalty)
 
-  // ΔG_nonpolar: SASA-proportional — higher distance/orientation score → more
-  // buried surface → more negative (favorable) nonpolar term
-  const estimatedSASA = 200 * distanceScore * (0.5 + 0.5 * orientationScore); // Å²
+  // ΔG_nonpolar: Analytical SASA approximation
+  // SASA ≈ 4π(r_probe + r_atom)² × (1 - overlap_fraction)
+  // where r_probe = 1.4 Å (water), r_atom = 1.8 Å (typical carbon)
+  // overlap_fraction estimated from distance score (0 = fully exposed, 1 = buried)
+  const r_probe = 1.4; // Å — water probe radius
+  const r_atom = 1.8;  // Å — typical carbon van der Waals radius
+  const maxSASA = 4 * Math.PI * Math.pow(r_probe + r_atom, 2); // ~128.7 Å² per atom
+  const contactAtoms = residues.length; // number of contacting residues
+  const overlapFraction = 1 - distanceScore; // distanceScore=1 → fully buried → overlap=0
+  const estimatedSASA = maxSASA * contactAtoms * (1 - overlapFraction * orientationScore);
   const dG_nonpolar = -gamma * estimatedSASA;
 
   // −TΔS: rigid-body translational/rotational entropy penalty
@@ -612,6 +625,10 @@ export function predictBindingAffinity(enzyme: EnzymeStructure): BindingAffinity
   else if (overallScore > 0.4) interpretation = 'Moderate affinity — consider active-site engineering.';
   else interpretation = 'Poor predicted binding — significant structural optimisation needed.';
 
+  // Propagate ±2 kcal/mol ΔG uncertainty to Kd
+  const uncertaintyDeltaG = 2.0; // kcal/mol
+  const uncertaintyKd = predictedKd * (Math.exp(uncertaintyDeltaG / RT) - 1);
+
   return {
     enzymeId: enzyme.id,
     substrate: enzyme.substrate,
@@ -623,6 +640,8 @@ export function predictBindingAffinity(enzyme: EnzymeStructure): BindingAffinity
     electrostaticScore: round3(electrostaticScore),
     overallScore,
     interpretation,
+    uncertaintyKd: round3(Math.max(0, uncertaintyKd)),
+    uncertaintyDeltaG,
   };
 }
 

@@ -243,6 +243,38 @@ describe('predictBindingAffinity', () => {
     });
   });
 
+  describe('LJ energy and uncertainty bounds', () => {
+    it('binding affinity LJ energy uses physically reasonable epsilon', () => {
+      const enzyme = makeEnzyme({
+        catalyticResidues: [
+          makeCatalyticResidue({
+            position: 10,
+            residue: 'D',
+            role: 'nucleophile',
+            distanceToSubstrate: 3.5,
+            optimalDistance: 3.5,
+            orientationAngle: 0,
+            optimalAngle: 0,
+            pKa: 4.0,
+            pKaShift: 0,
+          }),
+        ],
+      });
+      const result = predictBindingAffinity(enzyme);
+      // With epsilon=0.5 kcal/mol at equilibrium (3.5 Å), LJ energy per residue = -0.5 kcal/mol
+      // vdwNorm = -0.5, vdwScore = 1/(1+exp(-0.5*5)) ≈ 0.924
+      // This is physically reasonable — good vdw contribution at contact distance
+      expect(result.vdwScore).toBeGreaterThan(0.8);
+      expect(result.vdwScore).toBeLessThan(1.0);
+    });
+
+    it('binding result includes uncertainty bounds', () => {
+      const result = predictBindingAffinity(makeEnzyme());
+      expect(result.uncertaintyDeltaG).toBe(2.0);
+      expect(result.uncertaintyKd).toBeGreaterThan(0);
+    });
+  });
+
   describe('empty active site edge case', () => {
     it('returns zero scores and fallback Kd for no catalytic residues', () => {
       const enzyme = makeEnzyme({ catalyticResidues: [] });
