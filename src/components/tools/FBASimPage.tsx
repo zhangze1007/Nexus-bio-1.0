@@ -720,7 +720,7 @@ export default React.memo(function FBASimPage() {
       {/* ── Community Tab ── */}
       <ToolTabPanel tabId="community" activeId={activeTab}>
         <div style={{ padding: '8px 12px', background: 'rgba(232,220,200,0.1)', borderRadius: 'var(--nb-radius-sm)', fontSize: 'var(--nb-fs-sm)', opacity: 0.8, margin: '8px 12px' }}>
-          ℹ️ Community FBA uses sequential single-species optimization with shared resource constraints.
+          [Note] Community FBA uses sequential single-species optimization with shared resource constraints.
           This is an approximation — for true joint optimization, consider SteCom or BioME frameworks.
         </div>
         <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
