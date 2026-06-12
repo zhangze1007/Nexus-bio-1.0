@@ -48,9 +48,9 @@ This table records CellFree defaults discovered in `src/services/CellFreeEngine.
 | Plate-reader DNA concentrations | 0, 1, 5, 10, 25, 50 | nM | yes | repo-default | generated demo data | low | Synthetic demonstration sweep. |
 | Plate-reader replicates | 3 | count | yes | repo-default | generated demo data | low | Synthetic demonstration setup. |
 | Plate-reader timepoints | 20 | count | yes | repo-default | generated demo data | low | Synthetic demonstration setup. |
-| IvIv MLP normalization means | 250, 25, 1000, 0.5, 0.5, 500, 0.6 | mixed | yes | heuristic | none in repo | low | Seeded default model normalization. |
-| IvIv MLP normalization stdevs | 200, 20, 800, 0.3, 0.3, 400, 0.2 | mixed | yes | heuristic | none in repo | low | Seeded default model normalization. |
-| IvIv MLP weights | seeded RNG 12345 | not-applicable | yes | heuristic | none in repo | low | Not retrained on user data. |
+| IvIv heuristic normalization means | 250, 25, 1000, 0.5, 0.5, 500, 0.6 | mixed | yes | heuristic | none in repo | low | Seeded default model normalization. |
+| IvIv heuristic normalization stdevs | 200, 20, 800, 0.3, 0.3, 400, 0.2 | mixed | yes | heuristic | none in repo | low | Seeded default model normalization. |
+| IvIv heuristic weights | seeded RNG 12345 | not-applicable | yes | heuristic | none in repo | low | Not retrained on user data. |
 | IvIv correction factors | formula-based | dimensionless | yes | heuristic | none in repo | low | Folding, codon, promoter, and RBS corrections. |
 
 ## Boundary

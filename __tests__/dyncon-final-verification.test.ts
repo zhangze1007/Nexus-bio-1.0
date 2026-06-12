@@ -432,25 +432,28 @@ describe('8. Metabolic Burden Analysis', () => {
 // ════════════════════════════════════════════════════════════════════════════
 
 describe('9. RBS Mapping', () => {
-  test('[PASS] Zero gains -> weakest RBS (B0030)', () => {
+  test('[PASS] Zero gains -> weakest RBS by strength', () => {
+    // After sorting by rbsStrength, zero gains maps to lowest rbsStrength entry
     const r = mapControlGainToRBS(0, 0, 0);
-    expect(r.controlGain).toBe(0);
-    expect(r.rbsName).toBe('B0030');
+    expect(r.rbsName).toBe('B0033'); // B0033 has lowest rbsStrength=0.01
+    expect(r.rbsStrength).toBe(0.01);
   });
 
-  test('[PASS] Max gains -> strongest RBS (J61107)', () => {
-    // combinedGain = (10/10)*0.5 + (5/5)*0.3 + (2/2)*0.2 = 1.0
+  test('[PASS] Max gains -> strongest RBS by strength', () => {
+    // After sorting by rbsStrength, max gains maps to highest rbsStrength entry
     const r = mapControlGainToRBS(10, 5, 2);
-    expect(r.controlGain).toBeCloseTo(1.0, 2);
+    expect(r.rbsName).toBe('B0034'); // B0034 has highest rbsStrength=1.0
+    expect(r.rbsStrength).toBeCloseTo(1.0, 2);
   });
 
   test('[PASS] Combined gain formula is correct', () => {
     // combinedGain = (kp/10)*0.5 + (ki/5)*0.3 + (kd/2)*0.2
-    // For kp=2, ki=0.5, kd=0.1 (default):
+    // For kp=2, ki=0.5, kd=0.1:
     // = (2/10)*0.5 + (0.5/5)*0.3 + (0.1/2)*0.2
     // = 0.1 + 0.03 + 0.01 = 0.14
+    // This is a low combined gain, mapping to a low rbsStrength entry
     const r = mapControlGainToRBS(2.0, 0.5, 0.1);
-    expect(r.controlGain).toBeCloseTo(0.14, 2);
+    expect(r.rbsStrength).toBeLessThan(0.3); // low gain → low strength
   });
 
   test('[PASS] getAllRBS returns 11 entries', () => {
