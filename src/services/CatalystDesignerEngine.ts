@@ -176,8 +176,8 @@ export interface MutagenesisSite {
   structuralImportance: number; // 0-1
   predictedEffect: 'beneficial' | 'neutral' | 'deleterious';
   rationale: string;
-  predictedDeltaKcat: number;   // fold change
-  predictedDeltaKm: number;     // fold change
+  predictedDeltaKcat: number | null;   // fold change (null = no prediction available)
+  predictedDeltaKm: number | null;     // fold change (null = no prediction available)
   confidence: number;           // 0-1
 }
 
@@ -186,7 +186,7 @@ export interface MutagenesisResult {
   enzymeId: string;
   enzymeName: string;
   sites: MutagenesisSite[];
-  topCombination: { positions: number[]; predictedImprovement: number };
+  topCombination: { positions: number[]; predictedImprovement: number | null };
   auditTrail: AuditStep[];
 }
 
@@ -1211,13 +1211,12 @@ export function predictMutagenesisSites(
     else if (pos.conservation > 0.7) predictedEffect = 'deleterious';
     else predictedEffect = 'neutral';
 
-    // Predicted kinetic changes
-    const kcatFold = predictedEffect === 'beneficial' ? 1.2 + rng.next() * 0.8 :
-                     predictedEffect === 'neutral' ? 0.9 + rng.next() * 0.2 :
-                     0.5 + rng.next() * 0.3;
-    const kmFold = predictedEffect === 'beneficial' ? 0.7 + rng.next() * 0.2 :
-                   predictedEffect === 'neutral' ? 0.9 + rng.next() * 0.2 :
-                   1.3 + rng.next() * 0.5;
+    // Predicted kinetic changes — NOT AVAILABLE
+    // Quantitative mutagenesis effects require molecular dynamics or
+    // trained models (FoldX, Rosetta ddg_monomer, ProteinMPNN).
+    // We report null to indicate no prediction is made.
+    const kcatFold: number | null = null;
+    const kmFold: number | null = null;
 
     let rationale: string;
     if (predictedEffect === 'beneficial') {
@@ -1239,8 +1238,8 @@ export function predictMutagenesisSites(
       structuralImportance: pos.structuralImportance,
       predictedEffect,
       rationale,
-      predictedDeltaKcat: round3(kcatFold),
-      predictedDeltaKm: round3(kmFold),
+      predictedDeltaKcat: null,
+      predictedDeltaKm: null,
       confidence: round3(0.6 + (1 - pos.conservation) * 0.3),
     };
   });
@@ -1249,17 +1248,15 @@ export function predictMutagenesisSites(
   const beneficialSites = sites.filter(s => s.predictedEffect === 'beneficial');
   const combPositions = (beneficialSites.length > 0 ? beneficialSites : sites.slice(0, 3))
     .map(s => s.position);
-  const combinedImprovement = combPositions.reduce((prod, _, idx) => {
-    const site = sites.find(s => s.position === combPositions[idx]);
-    return prod * (site?.predictedDeltaKcat ?? 1.0);
-  }, 1.0);
+  // No quantitative prediction available for combined improvement
+  const combinedImprovement: number | null = null;
 
   auditTrail.push({
     step: 3,
     phase: 'mutagenesis',
-    description: 'Generated mutation suggestions and predicted effects',
+    description: 'Generated mutation suggestions — no quantitative kinetic predictions available (requires FoldX/Rosetta)',
     input: `${sites.length} sites`,
-    output: `${beneficialSites.length} beneficial, top combination: ${round3(combinedImprovement)}× kcat`,
+    output: `${beneficialSites.length} beneficial, top combination: no prediction available`,
     confidence: 0.75,
   });
 
@@ -1269,7 +1266,7 @@ export function predictMutagenesisSites(
     sites,
     topCombination: {
       positions: combPositions,
-      predictedImprovement: round3(combinedImprovement),
+      predictedImprovement: null,
     },
     auditTrail,
   };

@@ -58,7 +58,7 @@ export default function MutagenesisChart({ result, enzyme }: MutagenesisChartPro
   const siteData = result.sites.map(s => ({
     ...s,
     name: `${s.wildTypeResidue}${s.position}`,
-    deltaKcat: s.predictedDeltaKcat,
+    deltaKcat: s.predictedDeltaKcat ?? 0,  // null → 0 (no prediction)
     confidence: s.confidence * 100,
   }));
 
@@ -68,7 +68,7 @@ export default function MutagenesisChart({ result, enzyme }: MutagenesisChartPro
   return (
     <div style={{ ...CHART_CONTAINER, background: colors.bg.primary, padding: Number(spacing.base) }}>
       <p style={{ fontFamily: FONT.SANS, fontSize: 9, color: colors.text.tertiary, margin: '0 0 8px', fontStyle: 'italic' }}>
-        Predicted effects are heuristic screening scores (BLOSUM62 + conservation), not rigorous ΔΔG.
+        Mutagenesis effects require external tools (FoldX, Rosetta ddg_monomer, ProteinMPNN) — no quantitative predictions available.
       </p>
 
       {/* ── Sequence Position Map (keep as SVG — not a chart type) ── */}
@@ -120,7 +120,7 @@ export default function MutagenesisChart({ result, enzyme }: MutagenesisChartPro
           {result.topCombination.positions.join(', ')}
         </span>
         <span style={{ fontFamily: FONT.MONO, fontSize: 11, color: colors.text.primary }}>
-          +{(result.topCombination.predictedImprovement * 100).toFixed(0)}% predicted
+          {result.topCombination.predictedImprovement != null ? `+${(result.topCombination.predictedImprovement * 100).toFixed(0)}% predicted` : 'No prediction available'}
         </span>
       </div>
 
@@ -171,8 +171,8 @@ export default function MutagenesisChart({ result, enzyme }: MutagenesisChartPro
                 <td style={{ fontFamily: FONT.MONO, fontSize: 9, color: colors.text.primary, padding: '4px 5px' }}>{s.suggestedMutants.join(', ')}</td>
                 <td style={{ fontFamily: FONT.MONO, fontSize: 10, color: colors.text.primary, padding: '4px 5px', textAlign: 'right' }}>{fmt2(s.conservationScore)}</td>
                 <td style={{ fontFamily: FONT.SANS, fontSize: 9, padding: '4px 5px', color: effectColor(s.predictedEffect) }}>{s.predictedEffect}</td>
-                <td style={{ fontFamily: FONT.MONO, fontSize: 10, color: colors.text.primary, padding: '4px 5px', textAlign: 'right' }}>{fmt2(s.predictedDeltaKcat)}x</td>
-                <td style={{ fontFamily: FONT.MONO, fontSize: 10, color: colors.text.primary, padding: '4px 5px', textAlign: 'right' }}>{fmt2(s.predictedDeltaKm)}x</td>
+                <td style={{ fontFamily: FONT.MONO, fontSize: 10, color: colors.text.primary, padding: '4px 5px', textAlign: 'right' }}>{s.predictedDeltaKcat != null ? `${fmt2(s.predictedDeltaKcat)}x` : 'N/A'}</td>
+                <td style={{ fontFamily: FONT.MONO, fontSize: 10, color: colors.text.primary, padding: '4px 5px', textAlign: 'right' }}>{s.predictedDeltaKm != null ? `${fmt2(s.predictedDeltaKm)}x` : 'N/A'}</td>
                 <td style={{ fontFamily: FONT.MONO, fontSize: 10, color: colors.text.primary, padding: '4px 5px', textAlign: 'right' }}>{(s.confidence * 100).toFixed(0)}%</td>
                 <td style={{ fontFamily: FONT.SANS, fontSize: 8, color: colors.text.secondary, padding: '4px 5px', maxWidth: 120 }}>{s.rationale}</td>
               </tr>
@@ -180,7 +180,7 @@ export default function MutagenesisChart({ result, enzyme }: MutagenesisChartPro
           </tbody>
         </table>
         <p style={{ fontFamily: FONT.SANS, fontSize: 8, color: colors.text.disabled, margin: '6px 0 0', fontStyle: 'italic' }}>
-          * Heuristic fold-change estimates — validate with directed evolution or computational ΔΔG tools (FoldX, Rosetta).
+          * No quantitative kinetic predictions available — use FoldX, Rosetta, or directed evolution for ΔΔG estimates.
         </p>
       </div>
     </div>

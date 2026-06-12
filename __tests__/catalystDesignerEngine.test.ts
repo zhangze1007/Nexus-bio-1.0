@@ -654,6 +654,14 @@ describe('predictMutagenesisSites', () => {
       }
     });
 
+    it('predictedDeltaKcat and predictedDeltaKm are null (no quantitative prediction)', () => {
+      const result = predictMutagenesisSites(makeEnzyme(), 5);
+      for (const site of result.sites) {
+        expect(site.predictedDeltaKcat).toBeNull();
+        expect(site.predictedDeltaKm).toBeNull();
+      }
+    });
+
     it('conservationScore is between 0 and 1', () => {
       const result = predictMutagenesisSites(makeEnzyme(), 5);
       for (const site of result.sites) {
@@ -687,10 +695,10 @@ describe('predictMutagenesisSites', () => {
   });
 
   describe('top combination', () => {
-    it('returns positions and predicted improvement', () => {
+    it('returns positions and null predicted improvement (no quantitative prediction available)', () => {
       const result = predictMutagenesisSites(makeEnzyme(), 5);
       expect(result.topCombination.positions.length).toBeGreaterThan(0);
-      expect(result.topCombination.predictedImprovement).toBeGreaterThan(0);
+      expect(result.topCombination.predictedImprovement).toBeNull();
     });
 
     it('combination positions are subset of identified sites', () => {

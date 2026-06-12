@@ -486,7 +486,7 @@ function MutagenesisView({ result, enzyme }: { result: MutagenesisResult; enzyme
             {result.topCombination.positions.join(', ')}
           </span>
           <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-sm)', color: THEME.MINT, ...tn }}>
-            +{(result.topCombination.predictedImprovement * 100).toFixed(0)}%
+            {result.topCombination.predictedImprovement != null ? `+${(result.topCombination.predictedImprovement * 100).toFixed(0)}%` : 'N/A'}
           </span>
         </div>
       </div>
@@ -510,8 +510,8 @@ function MutagenesisView({ result, enzyme }: { result: MutagenesisResult; enzyme
               <td style={{ ...dataCell, color: effectColor(s.predictedEffect), textAlign: 'center' }}>
                 {effectSymbol(s.predictedEffect)}
               </td>
-              <td style={dataCell}>{s.predictedDeltaKcat.toFixed(2)}×</td>
-              <td style={dataCell}>{s.predictedDeltaKm.toFixed(2)}×</td>
+              <td style={dataCell}>{s.predictedDeltaKcat != null ? `${s.predictedDeltaKcat.toFixed(2)}×` : 'N/A'}</td>
+              <td style={dataCell}>{s.predictedDeltaKm != null ? `${s.predictedDeltaKm.toFixed(2)}×` : 'N/A'}</td>
               <td style={dataCell}>{(s.confidence * 100).toFixed(0)}%</td>
             </tr>
           ))}
@@ -567,18 +567,17 @@ export default React.memo(function CatalystDesignerPage() {
   }, []);
 
   // Compute mutation impact when a mutation is selected
+  // NOTE: No quantitative prediction available — mutagenesis effects require
+  // external tools (FoldX, Rosetta ddg_monomer, ProteinMPNN).
   const mutationImpact = useMemo(() => {
     if (!selectedResidue || !selectedMutation) return null;
-    const catRes = enzyme.catalyticResidues.find(r => r.position === selectedResidue);
-    const deltaKd = (Math.random() * 2 - 0.5) * binding.predictedKd * 0.3;
-    const deltaKcat = catRes ? (Math.random() * 2 - 0.5) * enzyme.kcat * 0.2 : 0;
     return {
-      deltaKd,
-      deltaKcat,
-      newKd: binding.predictedKd + deltaKd,
-      newKcat: enzyme.kcat + deltaKcat,
+      deltaKd: null,
+      deltaKcat: null,
+      newKd: null,
+      newKcat: null,
     };
-  }, [selectedResidue, selectedMutation, binding.predictedKd, enzyme]);
+  }, [selectedResidue, selectedMutation]);
 
   useEffect(() => {
     if (simError) return;
@@ -752,16 +751,7 @@ export default React.memo(function CatalystDesignerPage() {
                   </div>
                   {mutationImpact && (
                     <div style={{ marginTop: 6, padding: '6px 8px', borderRadius: 8, background: 'rgba(255,255,255,0.03)', border: `1px solid ${BORDER}` }}>
-                      <div style={{ display: 'flex', gap: 8 }}>
-                        <div>
-                          <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>ΔKd</span>
-                          <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', margin: 0, color: mutationImpact.deltaKd < 0 ? THEME.MINT : THEME.CORAL }}>{mutationImpact.deltaKd > 0 ? '+' : ''}{mutationImpact.deltaKd.toFixed(1)} μM</p>
-                        </div>
-                        <div>
-                          <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>ΔKcat</span>
-                          <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', margin: 0, color: mutationImpact.deltaKcat > 0 ? THEME.MINT : THEME.CORAL }}>{mutationImpact.deltaKcat > 0 ? '+' : ''}{mutationImpact.deltaKcat.toFixed(3)} s⁻¹</p>
-                        </div>
-                      </div>
+                      <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', margin: 0, color: LABEL }}>No prediction available — use FoldX or Rosetta</p>
                     </div>
                   )}
                 </div>
