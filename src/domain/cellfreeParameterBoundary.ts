@@ -53,7 +53,7 @@ export const CELLFREE_PARAMETER_BOUNDARY: CellFreeParameterBoundary = {
     'cellfree.tx_tl_kinetics_ref',
     'cellfree.no_chassis_specificity',
     'cellfree.lm_fitting_local',
-    'cellfree.iviv_mlp_unfit',
+    'cellfree.iviv_heuristic_unfit',
   ],
   implementedModelComponents: [
     'resource-aware TX-TL ODE structure',

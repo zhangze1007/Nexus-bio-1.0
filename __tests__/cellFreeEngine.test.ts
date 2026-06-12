@@ -1,7 +1,7 @@
 import {
   simulateCFPS,
   fitPlateReaderKinetics,
-  translateIvIv,
+  estimateIvIvHeuristic,
   generateDefaultConstructs,
   generateDefaultParameters,
   generateMockPlateReaderData,
@@ -333,10 +333,10 @@ describe('fitPlateReaderKinetics', () => {
 });
 
 // ═══════════════════════════════════════════════════════════════
-//  translateIvIv
+//  estimateIvIvHeuristic
 // ═══════════════════════════════════════════════════════════════
 
-describe('translateIvIv', () => {
+describe('estimateIvIvHeuristic', () => {
   const baseInput = {
     invitro_vmax: 450,
     invitro_kd: 8.5,
@@ -348,23 +348,23 @@ describe('translateIvIv', () => {
   };
 
   it('returns a positive in-vivo expression prediction', () => {
-    const result = translateIvIv(baseInput);
+    const result = estimateIvIvHeuristic(baseInput);
     expect(result.invivo_expression).toBeGreaterThan(0);
   });
 
   it('returns fold change relative to 1000 molecules/cell median', () => {
-    const result = translateIvIv(baseInput);
+    const result = estimateIvIvHeuristic(baseInput);
     expect(result.invivo_foldChange).toBeCloseTo(result.invivo_expression / 1000, 2);
   });
 
   it('returns confidence between 0 and 1', () => {
-    const result = translateIvIv(baseInput);
+    const result = estimateIvIvHeuristic(baseInput);
     expect(result.confidence).toBeGreaterThan(0);
     expect(result.confidence).toBeLessThanOrEqual(1);
   });
 
   it('returns 4 biological corrections', () => {
-    const result = translateIvIv(baseInput);
+    const result = estimateIvIvHeuristic(baseInput);
     expect(result.corrections).toHaveLength(4);
     const factorNames = result.corrections.map(c => c.factor);
     expect(factorNames).toContain('Protein folding');
@@ -374,28 +374,28 @@ describe('translateIvIv', () => {
   });
 
   it('penalizes large proteins in folding correction', () => {
-    const small = translateIvIv({ ...baseInput, proteinLength: 200 });
-    const large = translateIvIv({ ...baseInput, proteinLength: 1500 });
+    const small = estimateIvIvHeuristic({ ...baseInput, proteinLength: 200 });
+    const large = estimateIvIvHeuristic({ ...baseInput, proteinLength: 1500 });
     const smallFold = small.corrections.find(c => c.factor === 'Protein folding')!;
     const largeFold = large.corrections.find(c => c.factor === 'Protein folding')!;
     expect(largeFold.adjustment).toBeLessThan(smallFold.adjustment);
   });
 
   it('scales with codon adaptation index', () => {
-    const goodCai = translateIvIv({ ...baseInput, codonAdaptation: 0.9 });
-    const poorCai = translateIvIv({ ...baseInput, codonAdaptation: 0.2 });
+    const goodCai = estimateIvIvHeuristic({ ...baseInput, codonAdaptation: 0.9 });
+    const poorCai = estimateIvIvHeuristic({ ...baseInput, codonAdaptation: 0.2 });
     const goodAdj = goodCai.corrections.find(c => c.factor === 'Codon adaptation')!;
     const poorAdj = poorCai.corrections.find(c => c.factor === 'Codon adaptation')!;
     expect(goodAdj.adjustment).toBeGreaterThan(poorAdj.adjustment);
   });
 
   it('includes a non-empty reasoning string', () => {
-    const result = translateIvIv(baseInput);
+    const result = estimateIvIvHeuristic(baseInput);
     expect(result.reasoning.length).toBeGreaterThan(50);
   });
 
   it('returns positive scalingFactor', () => {
-    const result = translateIvIv(baseInput);
+    const result = estimateIvIvHeuristic(baseInput);
     expect(result.scalingFactor).toBeGreaterThan(0);
   });
 });

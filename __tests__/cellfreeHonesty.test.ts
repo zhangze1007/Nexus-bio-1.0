@@ -93,7 +93,7 @@ describe('CellFree model structure and parameter sourcing honesty boundary', () 
     expect(rows.length).toBeGreaterThan(30);
     expect(pack).toContain('| Total ribosome pool | 500 | nM | yes | repo-default | none in repo | low |');
     expect(pack).toContain('| Energy decay rate | 0.003 | 1/min | yes | heuristic | none in repo | low |');
-    expect(pack).toContain('| IvIv MLP weights | seeded RNG 12345 | not-applicable | yes | heuristic | none in repo | low |');
+    expect(pack).toContain('| IvIv heuristic weights | seeded RNG 12345 | not-applicable | yes | heuristic | none in repo | low |');
 
     const wronglyCitedDefaults = rows.filter((row) =>
       (row.includes('| repo-default |') || row.includes('| heuristic |') || row.includes('| unknown |')) &&

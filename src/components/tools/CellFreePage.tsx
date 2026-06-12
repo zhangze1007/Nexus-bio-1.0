@@ -490,9 +490,9 @@ function IvIvChart({ result }: { result: CFSFullResult }) {
       <rect x={PAD + 40 + barW + barGap} y={barBaseY - barH(invivo)} width={barW} height={barH(invivo)}
         fill={THEME.MINT} rx={4} opacity={0.8} />
       <text x={PAD + 40 + barW + barGap + barW / 2} y={barBaseY + 14} textAnchor="middle"
-        fontFamily={THEME.SANS} fontSize="10" fill={VALUE}>In vivo (pred)</text>
+        fontFamily={THEME.SANS} fontSize="10" fill={VALUE}>In vivo (heuristic)</text>
       <text x={PAD + 40 + barW + barGap + barW / 2} y={barBaseY - barH(invivo) - 6} textAnchor="middle"
-        fontFamily={THEME.MONO} fontSize="10" fill={VALUE}>{invivo.toFixed(1)} nM</text>
+        fontFamily={THEME.MONO} fontSize="10" fill={VALUE}>{invivo < 500 ? 'Low' : invivo < 5000 ? 'Moderate' : invivo < 20000 ? 'High' : 'Very High'}</text>
 
       {/* Baseline */}
       <line x1={PAD + 20} y1={barBaseY} x2={PAD + 40 + barW * 2 + barGap + 20} y2={barBaseY}
@@ -616,7 +616,7 @@ function ReactorTwin3D({ result, constructs, params }: { result: CFSFullResult; 
         </text>
         <text x="264" y="122" fontFamily={THEME.SANS} fontSize="10" fill="rgba(205,214,236,0.62)">
           {result.iviv
-            ? `Heuristic IVIV confidence ${(result.iviv.confidence * 100).toFixed(0)}% with estimated in vivo expression ${result.iviv.invivo_expression.toFixed(1)} nM`
+            ? `Heuristic IVIV confidence ${(result.iviv.confidence * 100).toFixed(0)}% — expression range: ${result.iviv.invivo_expression < 500 ? 'Low' : result.iviv.invivo_expression < 5000 ? 'Moderate' : result.iviv.invivo_expression < 20000 ? 'High' : 'Very High'} (not a trained model)`
             : 'IVIV estimate unavailable until fitting converges.'}
         </text>
       </svg>
@@ -714,7 +714,7 @@ export default React.memo(function CellFreePage() {
           'cellfree.tx_tl_kinetics_ref',
           'cellfree.no_chassis_specificity',
           'cellfree.lm_fitting_local',
-          'cellfree.iviv_mlp_unfit',
+          'cellfree.iviv_heuristic_unfit',
         ],
         evidence: [{
           id: `cellfree-${now}`,
@@ -785,7 +785,7 @@ export default React.memo(function CellFreePage() {
           signals={[
             { label: 'Total Yield', value: `${sim.totalProteinYield.toFixed(1)} nM`, detail: `${invitroMaxProtein.toFixed(1)} nM max single-construct expression.`, tone: sim.totalProteinYield > 100 ? 'cool' : 'warm' },
             { label: 'Depletion Gate', value: `${sim.energyDepletionTime.toFixed(0)} min`, detail: sim.isResourceLimited ? 'Resource-limited run.' : 'Resources adequate.', tone: sim.isResourceLimited ? 'alert' : 'cool' },
-            { label: 'IVIV Confidence', value: iviv ? `${(iviv.confidence * 100).toFixed(0)}%` : 'Pending', detail: iviv ? `${iviv.invivo_expression.toFixed(1)} nM in vivo est.` : 'Fitting required.', tone: iviv && iviv.confidence > 0.65 ? 'cool' : 'neutral' },
+            { label: 'IVIV Confidence', value: iviv ? `${(iviv.confidence * 100).toFixed(0)}%` : 'Pending', detail: iviv ? `${iviv.invivo_expression < 500 ? 'Low' : iviv.invivo_expression < 5000 ? 'Moderate' : iviv.invivo_expression < 20000 ? 'High' : 'Very High'} expression (heuristic)` : 'Fitting required.', tone: iviv && iviv.confidence > 0.65 ? 'cool' : 'neutral' },
             { label: 'Constructs', value: `${constructs.length}`, detail: `${params.temperature}°C · ${params.simulationTime} min`, tone: 'neutral' },
           ]}
         />
@@ -1048,7 +1048,7 @@ export default React.memo(function CellFreePage() {
               caption="Estimated in-vivo expression, heuristic confidence, and rationale — parameter limits stay legible."
               legend={[
                 { label: 'Confidence', value: iviv ? `${(iviv.confidence * 100).toFixed(0)}%` : '—', accent: THEME.LILAC },
-                { label: 'Fold Change', value: iviv ? `${iviv.invivo_foldChange.toFixed(2)}×` : '—', accent: THEME.MINT },
+                { label: 'Estimate', value: iviv ? 'Heuristic' : '—', accent: THEME.MINT },
               ]}
               minHeight="300px"
             >
@@ -1065,27 +1065,34 @@ export default React.memo(function CellFreePage() {
               </div>
             </ScientificFigureFrame>
             {iviv && (
-              <div style={{ ...GLASS, borderRadius: 'var(--nb-radius-md)', padding: '12px' }}>
-                <SectionLabel>IvIv Estimate</SectionLabel>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>In-vivo Expr</span>
-                    <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE }}>{iviv.invivo_expression.toFixed(1)} nM</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Scaling Factor</span>
-                    <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE }}>{iviv.scalingFactor.toFixed(3)}</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Fold Change</span>
-                    <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE }}>{iviv.invivo_foldChange.toFixed(2)}×</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Confidence</span>
-                    <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: iviv.confidence > 0.7 ? `rgba(${SEMANTIC_RGB.pass}, 0.92)` : iviv.confidence > 0.4 ? `rgba(${SEMANTIC_RGB.warn}, 0.9)` : `rgba(${SEMANTIC_RGB.fail}, 0.9)` }}>{(iviv.confidence * 100).toFixed(0)}%</span>
+              <>
+                <div style={{ ...GLASS, borderRadius: 'var(--nb-radius-md)', padding: '12px' }}>
+                  <SectionLabel>IvIv Estimate</SectionLabel>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Expression Range</span>
+                      <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE }}>{iviv.invivo_expression < 500 ? 'Low' : iviv.invivo_expression < 5000 ? 'Moderate' : iviv.invivo_expression < 20000 ? 'High' : 'Very High'}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Fold Change</span>
+                      <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE }}>{iviv.invivo_foldChange < 0.5 ? 'Below median' : iviv.invivo_foldChange < 2 ? 'Near median' : iviv.invivo_foldChange < 10 ? 'Above median' : 'Well above median'}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Confidence</span>
+                      <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: iviv.confidence > 0.7 ? `rgba(${SEMANTIC_RGB.pass}, 0.92)` : iviv.confidence > 0.4 ? `rgba(${SEMANTIC_RGB.warn}, 0.9)` : `rgba(${SEMANTIC_RGB.fail}, 0.9)` }}>{(iviv.confidence * 100).toFixed(0)}%</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Scaling Factor</span>
+                      <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE }}>{iviv.scalingFactor < 1 ? 'Reduced' : iviv.scalingFactor < 5 ? 'Comparable' : 'Amplified'}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
+                <div style={{ ...GLASS, borderRadius: 'var(--nb-radius-md)', padding: '10px 12px', border: `1px solid rgba(${SEMANTIC_RGB.warn}, 0.3)` }}>
+                  <p style={{ margin: 0, fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: `rgba(${SEMANTIC_RGB.warn}, 0.9)`, lineHeight: 1.5 }}>
+                    This is a heuristic estimate, not a trained model. Weights are deterministic (SeededRNG 12345) but not fitted to experimental data. Use qualitative ranges only.
+                  </p>
+                </div>
+              </>
             )}
           </div>
         </div>

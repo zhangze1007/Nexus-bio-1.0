@@ -484,11 +484,11 @@ export const TOOL_ASSUMPTIONS: Record<string, ToolAssumption[]> = {
       severity: 'warning',
     },
     {
-      id: 'cellfree.iviv_mlp_unfit',
+      id: 'cellfree.iviv_heuristic_unfit',
       toolId: 'cellfree',
       category: 'mathematical',
       statement:
-        'In-vitro→in-vivo MLP regression weights ship with reference defaults; not retrained per user.',
+        'In-vitro→in-vivo heuristic estimate uses deterministic seeded weights (SeededRNG 12345); this is not a trained model.',
       severity: 'warning',
     },
   ],
