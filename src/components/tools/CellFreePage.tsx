@@ -15,6 +15,7 @@ import type {
   CFSFullResult,
   GeneConstruct,
   CFSParameters,
+  PlateReaderDataPoint,
 } from '../../services/CellFreeEngine';
 import { useWorkbenchStore } from '../../store/workbenchStore';
 import type { ProvenanceEntry } from '../../types/assumptions';
@@ -687,13 +688,13 @@ export default React.memo(function CellFreePage() {
     setParams(recommendedSeed.params);
   }, [recommendedSeed]);
 
-  const { data: result, error: simError } = useMemo(() => {
-    try { return { data: runFullCFSPipeline(constructs, params), error: null as string | null }; }
-    catch (e) { return { data: runFullCFSPipeline([], generateDefaultParameters()), error: e instanceof Error ? e.message : 'CFS pipeline failed' }; }
-  }, [constructs, params]);
-
   const [activeTab, setActiveTab] = useState('timecourse');
-  const [userData, setUserData] = useState<Array<{time: number, fluorescence: number}> | null>(null);
+  const [userData, setUserData] = useState<PlateReaderDataPoint[] | null>(null);
+
+  const { data: result, error: simError } = useMemo(() => {
+    try { return { data: runFullCFSPipeline(constructs, params, userData ?? undefined), error: null as string | null }; }
+    catch (e) { return { data: runFullCFSPipeline([], generateDefaultParameters()), error: e instanceof Error ? e.message : 'CFS pipeline failed' }; }
+  }, [constructs, params, userData]);
 
   const handleCsvUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -702,10 +703,18 @@ export default React.memo(function CellFreePage() {
     reader.onload = (event) => {
       const text = event.target?.result as string;
       const lines = text.trim().split('\n');
-      const data = lines.slice(1).map(line => {
-        const [time, fluorescence] = line.split(',').map(Number);
-        return { time, fluorescence };
-      }).filter(d => !isNaN(d.time) && !isNaN(d.fluorescence));
+      const data: PlateReaderDataPoint[] = [];
+      lines.slice(1).forEach((line, i) => {
+        const cols = line.split(',').map(s => s.trim());
+        const time = Number(cols[0]);
+        const fluorescence = Number(cols[1]);
+        if (isNaN(time) || isNaN(fluorescence)) return;
+        // 3-column format: time, fluorescence, concentration
+        // 2-column format: time, fluorescence (assign well and concentration from row index)
+        const concentration = cols.length >= 3 ? Number(cols[2]) : 0;
+        const well = cols.length >= 4 ? cols[3] : `R${i + 1}`;
+        data.push({ time, fluorescence, concentration: isNaN(concentration) ? 0 : concentration, well });
+      });
       setUserData(data);
     };
     reader.readAsText(file);
@@ -1047,7 +1056,7 @@ export default React.memo(function CellFreePage() {
                   margin: '8px 0 0', fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)',
                   color: `rgba(${SEMANTIC_RGB.warn}, 0.85)`, lineHeight: 1.5,
                 }}>
-                  Partial — user data not independently validated. Fitting uses your uploaded {userData.length}-point dataset. CSV format: two columns with header row (time, fluorescence).
+                  Partial — user data not independently validated. Fitting uses your uploaded {userData.length}-point dataset. CSV format: header row + columns (time, fluorescence, concentration). 2-column CSV accepted but requires concentration for Michaelis-Menten fitting.
                 </p>
               )}
               {!userData && (

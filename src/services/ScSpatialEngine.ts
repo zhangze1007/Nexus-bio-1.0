@@ -34,7 +34,7 @@
  */
 
 import { KDTreeIndex } from '../utils/knnIndex';
-import { mannWhitneyU } from '../utils/statistics';
+import { mannWhitneyU, benjaminiHochberg } from '../utils/statistics';
 
 // ══════════════════════════════════════════════════════════════════════
 //  Marker gene sets for expression-based cell-type annotation
@@ -126,6 +126,120 @@ function markerGeneAnnotation(
   }
 
   return labels;
+}
+
+/**
+ * Result for a single gene's differential expression test.
+ */
+export interface MarkerGeneResult {
+  gene: string;
+  logFoldChange: number;   // log2(mean_in / mean_out), clipped to avoid ±Inf
+  pValue: number;           // raw p-value from Wilcoxon rank-sum
+  qValue: number;           // BH-adjusted p-value (FDR)
+  meanIn: number;           // mean expression in cluster
+  meanOut: number;          // mean expression outside cluster
+}
+
+/**
+ * Per-cluster marker gene summary.
+ */
+export interface ClusterMarkerSummary {
+  clusterId: number;
+  label: string;                    // from markerGeneAnnotation
+  nCells: number;
+  markers: MarkerGeneResult[];      // sorted by qValue ascending, top-N
+}
+
+/**
+ * De novo marker gene discovery: test every gene in every cluster using
+ * Wilcoxon rank-sum, apply Benjamini-Hochberg FDR correction, and return
+ * ranked marker genes per cluster.
+ *
+ * This complements the predefined-set-based `markerGeneAnnotation()` by
+ * discovering markers without prior knowledge of cell types.
+ *
+ * @param community  Cluster assignment array (one entry per cell).
+ * @param cells      Cell records with geneExpression maps.
+ * @param geneNames  Array of gene symbols to test.
+ * @param nTop       Max markers per cluster (default 10).
+ * @param fdrThreshold  BH FDR cutoff (default 0.05).
+ */
+export function discoverMarkerGenes(
+  community: Int32Array,
+  cells: CellRecord[],
+  geneNames: string[],
+  nTop: number = 10,
+  fdrThreshold: number = 0.05,
+): ClusterMarkerSummary[] {
+  const nClusters = new Set(community).size;
+  const clusterLabels = markerGeneAnnotation(community, cells, geneNames);
+  const results: ClusterMarkerSummary[] = [];
+
+  for (let c = 0; c < nClusters; c++) {
+    const inIdx: number[] = [];
+    const outIdx: number[] = [];
+    for (let i = 0; i < community.length; i++) {
+      (community[i] === c ? inIdx : outIdx).push(i);
+    }
+    if (inIdx.length < 2 || outIdx.length < 2) {
+      results.push({ clusterId: c, label: clusterLabels.get(c) ?? `Cluster ${c}`, nCells: inIdx.length, markers: [] });
+      continue;
+    }
+
+    // Test every gene
+    const rawResults: { gene: string; meanIn: number; meanOut: number; pValue: number }[] = [];
+    for (const gene of geneNames) {
+      const inVals = inIdx.map(i => cells[i].geneExpression[gene] ?? 0);
+      const outVals = outIdx.map(i => cells[i].geneExpression[gene] ?? 0);
+
+      // Skip genes with no variance across all cells
+      const allVals = [...inVals, ...outVals];
+      if (allVals.every(v => v === allVals[0])) continue;
+
+      try {
+        const { pValue } = mannWhitneyU(inVals, outVals);
+        const meanIn = inVals.reduce((s, v) => s + v, 0) / inVals.length;
+        const meanOut = outVals.reduce((s, v) => s + v, 0) / outVals.length;
+        rawResults.push({ gene, meanIn, meanOut, pValue: Math.max(pValue, 1e-300) });
+      } catch {
+        // Skip on error (empty samples, etc.)
+      }
+    }
+
+    // Apply Benjamini-Hochberg FDR correction
+    const pValues = rawResults.map(r => r.pValue);
+    const qValues = benjaminiHochberg(pValues);
+
+    // Build annotated results with log-fold-change
+    const annotated: MarkerGeneResult[] = rawResults.map((r, i) => {
+      // log2 fold change with pseudocount to avoid division by zero
+      const pseudocount = 0.01;
+      const lfc = Math.log2((r.meanIn + pseudocount) / (r.meanOut + pseudocount));
+      return {
+        gene: r.gene,
+        logFoldChange: lfc,
+        pValue: r.pValue,
+        qValue: qValues[i],
+        meanIn: r.meanIn,
+        meanOut: r.meanOut,
+      };
+    });
+
+    // Filter by FDR threshold, sort by qValue, take top-N
+    const significant = annotated
+      .filter(r => r.qValue < fdrThreshold && r.logFoldChange > 0)
+      .sort((a, b) => a.qValue - b.qValue)
+      .slice(0, nTop);
+
+    results.push({
+      clusterId: c,
+      label: clusterLabels.get(c) ?? `Cluster ${c}`,
+      nCells: inIdx.length,
+      markers: significant,
+    });
+  }
+
+  return results;
 }
 
 // ══════════════════════════════════════════════════════════════════════

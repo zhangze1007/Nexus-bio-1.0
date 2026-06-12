@@ -415,7 +415,8 @@ export function mapControlGainToRBS(
     const dist = Math.abs(entry.rbsStrength - targetStrength);
     if (dist < minDist) { minDist = dist; closest = entry; }
   }
-  return closest;
+  // Overwrite controlGain with the actual computed gain (original registry index is meaningless after sort)
+  return { ...closest, controlGain: t };
 }
 
 export function getAllRBS(): RBSMapping[] {

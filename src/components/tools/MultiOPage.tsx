@@ -234,19 +234,69 @@ function TriPanelEmbedding({ embeddings, data, fcThreshold, pvThreshold, activeL
   // Real PCA from eigenvectors (MOIEngine.computePCABiplot)
   const pcaResult = useMemo(() => computePCABiplot(data), [data]);
 
-  const pcaProjected = useMemo(() => {
-    if (visible.length === 0 || pcaResult.scores.length === 0) return [];
-    const scores = pcaResult.scores;
-    const xs = scores.map(s => s[0] ?? 0), ys = scores.map(s => s[1] ?? 0);
-    const xMn = Math.min(...xs), xMx = Math.max(...xs);
-    const yMn = Math.min(...ys), yMx = Math.max(...ys);
-    const xR = xMx - xMn || 1, yR = yMx - yMn || 1;
-    return visible.map((p, i) => ({
-      ...p,
-      sx: pcaPAD + ((scores[i]?.[0] ?? 0) - xMn) / xR * (pcaW - pcaPAD * 2),
-      sy: pcaPAD + ((scores[i]?.[1] ?? 0) - yMn) / yR * (pcaH - pcaPAD * 2),
+  // Gene→index map for correct score lookup (visible has 3 entries/gene, scores has 1)
+  const geneIdxMap = useMemo(() => {
+    const m = new Map<string, number>();
+    data.forEach((g, i) => m.set(g.gene, i));
+    return m;
+  }, [data]);
+
+  // Gabriel biplot scaling: loadings × sqrt(λ), scores / max, shared coordinate system
+  const { pcaProjected, loadingArrows } = useMemo(() => {
+    const ev = pcaResult.eigenvalues;
+    const totalVar = ev.reduce((s, v) => s + v, 0);
+    const pct = (v: number) => totalVar > 0 ? ((v / totalVar) * 100).toFixed(1) : '0.0';
+    const labels = ['Transcriptomics', 'Proteomics', 'Metabolomics'];
+
+    // Scale loadings by sqrt(eigenvalue) — standard biplot scaling
+    const sqrtEv0 = Math.sqrt(Math.max(0, ev[0] ?? 0));
+    const sqrtEv1 = Math.sqrt(Math.max(0, ev[1] ?? 0));
+    const rawLoadings = labels.map((label, varIdx) => ({
+      label,
+      pc1: (pcaResult.loadings[0]?.[varIdx] ?? 0) * sqrtEv0,
+      pc2: (pcaResult.loadings[1]?.[varIdx] ?? 0) * sqrtEv1,
     }));
-  }, [visible, pcaResult]);
+
+    // Compute shared scale: find max extent of both scores and scaled loadings
+    const scores = pcaResult.scores;
+    const scoreXs = scores.map(s => Math.abs(s[0] ?? 0));
+    const scoreYs = scores.map(s => Math.abs(s[1] ?? 0));
+    const loadXs = rawLoadings.map(l => Math.abs(l.pc1));
+    const loadYs = rawLoadings.map(l => Math.abs(l.pc2));
+    const maxScore = Math.max(...scoreXs, ...scoreYs, 1e-10);
+    const maxLoad = Math.max(...loadXs, ...loadYs, 1e-10);
+    const plotExtent = Math.min(pcaW, pcaH) / 2 - pcaPAD - 10;
+    // Uniform scale so both scores and loadings fit within plotExtent
+    const scoreScale = plotExtent / maxScore;
+    const loadScale = plotExtent / maxLoad;
+
+    // Project scores using gene→index map (fixes index misalignment with 3-per-gene visible)
+    const projected = visible.map(p => {
+      const idx = geneIdxMap.get(p.gene) ?? -1;
+      const sc = idx >= 0 ? scores[idx] : undefined;
+      return {
+        ...p,
+        sx: pcaPAD + ((sc?.[0] ?? 0) * scoreScale + plotExtent),
+        sy: pcaPAD + (plotExtent - (sc?.[1] ?? 0) * scoreScale),
+      };
+    });
+
+    // Scale loading arrows preserving relative magnitudes
+    const arrows = rawLoadings.map(a => ({
+      ...a,
+      x: a.pc1 * loadScale,
+      y: a.pc2 * loadScale,
+    }));
+
+    return {
+      pcaProjected: projected,
+      loadingArrows: {
+        pc1Pct: pct(ev[0] ?? 0),
+        pc2Pct: pct(ev[1] ?? 0),
+        arrows,
+      },
+    };
+  }, [visible, pcaResult, geneIdxMap]);
 
   // Layer color map (use cluster palette)
   const layerColorMap: Record<OmicsLayer, string> = {
@@ -255,29 +305,7 @@ function TriPanelEmbedding({ embeddings, data, fcThreshold, pvThreshold, activeL
     metabolomics:    CLUSTER_PAL[2],
   };
 
-  // Real PCA loading arrows (eigenvectors) and explained variance (eigenvalues)
   const cx = pcaW / 2, cy = pcaH / 2;
-  const loadingArrows = useMemo(() => {
-    const ev = pcaResult.eigenvalues;
-    const totalVar = ev.reduce((s, v) => s + v, 0);
-    const pct = (v: number) => totalVar > 0 ? ((v / totalVar) * 100).toFixed(1) : '0.0';
-    const labels = ['Transcriptomics', 'Proteomics', 'Metabolomics'];
-    // Scale loadings to fit the plot area (eigenvectors are unit vectors)
-    const maxExtent = Math.min(pcaW, pcaH) / 2 - pcaPAD - 10;
-    return {
-      pc1Pct: pct(ev[0] ?? 0),
-      pc2Pct: pct(ev[1] ?? 0),
-      arrows: (pcaResult.loadings[0] ?? []).map((_, varIdx) => ({
-        label: labels[varIdx] ?? `Var${varIdx}`,
-        // Loading of variable varIdx on PC1 / PC2
-        pc1: pcaResult.loadings[0]?.[varIdx] ?? 0,
-        pc2: pcaResult.loadings[1]?.[varIdx] ?? 0,
-      })).map(a => {
-        const mag = Math.sqrt(a.pc1 * a.pc1 + a.pc2 * a.pc2) || 1;
-        return { ...a, x: (a.pc1 / mag) * maxExtent, y: (a.pc2 / mag) * maxExtent };
-      }),
-    };
-  }, [pcaResult]);
 
   // ── Correlation Heatmap (center) ───────────────────────────────────
   const N_GENES = 20;

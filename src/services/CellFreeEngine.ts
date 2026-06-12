@@ -1104,6 +1104,7 @@ export function generateMockPlateReaderData(): PlateReaderDataPoint[] {
 export function runFullCFSPipeline(
   constructs?: GeneConstruct[],
   params?: CFSParameters,
+  userPlateData?: PlateReaderDataPoint[],
 ): CFSFullResult {
   const genes = constructs ?? generateDefaultConstructs();
   const simParams = params ?? generateDefaultParameters();
@@ -1111,8 +1112,10 @@ export function runFullCFSPipeline(
   // 1. TX-TL simulation
   const simulation = simulateCFPS(genes, simParams);
 
-  // 2. Plate-reader kinetic fitting
-  const plateData = generateMockPlateReaderData();
+  // 2. Plate-reader kinetic fitting (user data if provided, otherwise mock)
+  const plateData = userPlateData && userPlateData.length > 0
+    ? userPlateData
+    : generateMockPlateReaderData();
   let fitting: KineticFitResult | null = null;
   try {
     fitting = fitPlateReaderKinetics(plateData);

@@ -182,6 +182,42 @@ export function mannWhitneyU(
 }
 
 // ---------------------------------------------------------------------------
+// Multiple testing correction
+// ---------------------------------------------------------------------------
+
+/**
+ * Benjamini-Hochberg FDR correction.
+ *
+ * Given an array of p-values, returns adjusted p-values (q-values) controlling
+ * the false discovery rate at the nominal level.
+ *
+ * @param pValues  Array of raw p-values (must be non-empty).
+ * @returns Array of adjusted p-values in the same order as input.
+ */
+export function benjaminiHochberg(pValues: number[]): number[] {
+  const n = pValues.length;
+  if (n === 0) return [];
+
+  // Create [index, pValue] pairs and sort by pValue descending
+  const indexed = pValues.map((p, i) => ({ p, i }));
+  indexed.sort((a, b) => b.p - a.p);
+
+  const adjusted = new Array(n);
+  let minSoFar = 1;
+
+  for (let rank = 0; rank < n; rank++) {
+    const { p, i } = indexed[rank];
+    // BH formula: p_adj = p * n / (n - rank)  (rank is 0-based, descending)
+    const q = Math.min(1, p * n / (n - rank));
+    // Enforce monotonicity (each q ≤ min of all q-values below it)
+    minSoFar = Math.min(minSoFar, q);
+    adjusted[i] = minSoFar;
+  }
+
+  return adjusted;
+}
+
+// ---------------------------------------------------------------------------
 // Descriptive statistics
 // ---------------------------------------------------------------------------
 

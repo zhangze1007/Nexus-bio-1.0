@@ -229,8 +229,8 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
     tags: ['omics', 'integration', 'deterministic', 'table'],
     mode: 'analysis',
     threeDPotential: 'strong',
-    glossary: 'Multi-Omics Integration combines transcriptomics, proteomics, and metabolomics data using VAE embeddings and MOFA+ factor analysis. It identifies cross-omics patterns and predicts perturbation effects.',
-    keyConcepts: [{ term: 'VAE', definition: 'Variational Autoencoder — learns a compressed latent representation of multi-omics data' }, { term: 'MOFA+', definition: 'Multi-Omics Factor Analysis — identifies shared and unique sources of variation' }, { term: 'Volcano plot', definition: 'Shows statistical significance vs fold change for differential expression' }],
+    glossary: 'Multi-Omics Integration combines transcriptomics, proteomics, and metabolomics data using linear embedding and MOFA+ factor analysis. It identifies cross-omics patterns and predicts perturbation effects.',
+    keyConcepts: [{ term: 'Linear embedding', definition: 'Deterministic linear encoder with KL penalty — learns a compressed latent representation of multi-omics data (not a variational autoencoder)' }, { term: 'MOFA+', definition: 'Multi-Omics Factor Analysis — identifies shared and unique sources of variation' }, { term: 'Volcano plot', definition: 'Shows statistical significance vs fold change for differential expression' }],
   },
   {
     id: 'scspatial',
