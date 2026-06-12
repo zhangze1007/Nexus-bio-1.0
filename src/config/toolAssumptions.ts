@@ -63,6 +63,14 @@ export const TOOL_ASSUMPTIONS: Record<string, ToolAssumption[]> = {
         'Pathway ΔG° aggregation uses reference-table values; inherits all CETHX caveats.',
       severity: 'info',
     },
+    {
+      id: 'pathd.kegg_database_integration',
+      toolId: 'pathd',
+      category: 'data',
+      statement:
+        'PATHD queries KEGG for real metabolic pathways when available. Falls back to demo data.',
+      severity: 'info',
+    },
   ],
 
   'metabolic-eng': [
@@ -126,6 +134,14 @@ export const TOOL_ASSUMPTIONS: Record<string, ToolAssumption[]> = {
       category: 'mathematical',
       statement:
         'Single-species solver is two-phase simplex LP on the iJO1366 subset (real implementation).',
+      severity: 'info',
+    },
+    {
+      id: 'fbasim.bigg_database_integration',
+      toolId: 'fbasim',
+      category: 'data',
+      statement:
+        'FBAsim loads real E. coli models from BiGG when available. Falls back to demo model.',
       severity: 'info',
     },
   ],
@@ -267,6 +283,14 @@ export const TOOL_ASSUMPTIONS: Record<string, ToolAssumption[]> = {
         'Proton stoichiometry (nH) and charge change (Δz²) are estimated from KEGG reaction equations and typical physiological protonation states, not from measured pKa values.',
       severity: 'warning',
     },
+    {
+      id: 'cethx.pubchem_database_integration',
+      toolId: 'cethx',
+      category: 'data',
+      statement:
+        'CETHX queries PubChem for real compound data when available.',
+      severity: 'info',
+    },
   ],
 
   catdes: [
@@ -300,6 +324,14 @@ export const TOOL_ASSUMPTIONS: Record<string, ToolAssumption[]> = {
       category: 'data',
       statement:
         'Codon optimization table is S. cerevisiae default; chassis switch is a curated swap, not learned.',
+      severity: 'info',
+    },
+    {
+      id: 'catdes.brenda_database_integration',
+      toolId: 'catdes',
+      category: 'data',
+      statement:
+        'CatDes queries BRENDA for real enzyme kinetics. Falls back to demo values.',
       severity: 'info',
     },
   ],
@@ -490,6 +522,14 @@ export const TOOL_ASSUMPTIONS: Record<string, ToolAssumption[]> = {
       statement:
         'In-vitro→in-vivo heuristic estimate uses deterministic seeded weights (SeededRNG 12345); this is not a trained model.',
       severity: 'warning',
+    },
+    {
+      id: 'cellfree.brenda_database_integration',
+      toolId: 'cellfree',
+      category: 'data',
+      statement:
+        'CellFree queries BRENDA for real Km/Kcat reference values when available.',
+      severity: 'info',
     },
   ],
 
