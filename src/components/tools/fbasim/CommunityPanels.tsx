@@ -9,18 +9,19 @@ import WorkbenchRangeSlider from '../shared/WorkbenchRangeSlider';
 import type { FBAOutput, CommunityFBAOutput } from '../../../data/mockFBA';
 import type { REACTION_DEFS } from '../../../data/mockFBA';
 import { THEME } from '../../../theme';
+import { SCI_PALETTE } from '../../charts/chartTheme';
 
-// ── Color palette for community mode ──
+// ── Color palette for community mode (Okabe-Ito CVD-safe) ──
 export const COLORS = {
-  strainA: '#E8A3A1',
-  strainB: '#AFC3D6',
-  sharedPool: '#BFDCCD',
-  strainABg: 'rgba(232,163,161,0.10)',
-  strainBBg: 'rgba(175,195,214,0.10)',
-  sharedBg: 'rgba(191,220,205,0.10)',
-  strainABorder: 'rgba(232,163,161,0.20)',
-  strainBBorder: 'rgba(175,195,214,0.20)',
-  sharedBorder: 'rgba(191,220,205,0.20)',
+  strainA: SCI_PALETTE.vermilion,  // '#D55E00' — Okabe-Ito orange-red
+  strainB: SCI_PALETTE.blue,       // '#56B4E9' — Okabe-Ito sky blue
+  sharedPool: SCI_PALETTE.green,   // '#009E73' — Okabe-Ito green
+  strainABg: 'rgba(213, 94, 0, 0.10)',
+  strainBBg: 'rgba(86, 180, 233, 0.10)',
+  sharedBg: 'rgba(0, 158, 115, 0.10)',
+  strainABorder: 'rgba(213, 94, 0, 0.20)',
+  strainBBorder: 'rgba(86, 180, 233, 0.20)',
+  sharedBorder: 'rgba(0, 158, 115, 0.20)',
 };
 
 // ── ParamSlider ──

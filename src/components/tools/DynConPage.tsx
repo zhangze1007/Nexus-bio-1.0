@@ -172,9 +172,10 @@ function TimeSeriesSVG({ trajectory, setpoint, svgRef }: { trajectory: ODEState[
       </text>
       <line x1={PP_X} y1={PP_Y} x2={PP_X} y2={PP_Y + PP_H} stroke={PAPER_THEME.grid} />
       <line x1={PP_X} y1={PP_Y + PP_H} x2={PP_X + PP_W} y2={PP_Y + PP_H} stroke={PAPER_THEME.grid} />
-      <text x={PP_X - 2} y={PP_Y + PP_H + 8} textAnchor="middle" fontFamily={PAPER_THEME.tickFont} fontSize="10" fill={PAPER_THEME.tickColor}>P</text>
+      <text x={PP_X + PP_W / 2} y={PP_Y + PP_H + 14} textAnchor="middle" fontFamily={PAPER_THEME.tickFont} fontSize="9" fill={PAPER_THEME.tickColor}>Product (g/L)</text>
+      <text x={PP_X - 2} y={PP_Y + PP_H + 8} textAnchor="middle" fontFamily={PAPER_THEME.tickFont} fontSize="10" fill={PAPER_THEME.tickColor}>0</text>
       <text x={PP_X + PP_W} y={PP_Y + PP_H + 8} textAnchor="end" fontFamily={PAPER_THEME.tickFont} fontSize="10" fill={PAPER_THEME.tickColor}>→</text>
-      <text x={PP_X - 2} y={PP_Y} fontFamily={PAPER_THEME.tickFont} fontSize="10" fill={PAPER_THEME.tickColor}>R↑</text>
+      <text x={PP_X - 4} y={PP_Y - 2} textAnchor="end" fontFamily={PAPER_THEME.tickFont} fontSize="9" fill={PAPER_THEME.tickColor}>FPP (μM)</text>
       {ppPath && <path d={ppPath} fill="none" stroke={`${THEME.CORAL}B2`} strokeWidth="1.2" />}
       {ppPts.length > 0 && (
         <circle cx={ppPts[ppPts.length - 1][0]} cy={ppPts[ppPts.length - 1][1]} r="2.5" fill={THEME.CORAL} />
