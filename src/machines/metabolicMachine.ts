@@ -251,7 +251,7 @@ export type MachineState = 'idle' | 'simulating' | 'stress_test' | 'equilibrium'
 export const STATE_LABELS: Record<MachineState, string> = {
   idle:         'IDLE',
   simulating:   'SIMULATING',
-  stress_test:  'STRESS TEST',
+  stress_test:  'PARAMETER OSCILLATION',
   equilibrium:  'EQUILIBRIUM',
 };
 
