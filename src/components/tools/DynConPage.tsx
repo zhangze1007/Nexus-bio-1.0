@@ -280,6 +280,7 @@ export default React.memo(function DynConPage() {
   const cethxPayload = useWorkbenchStore((s) => s.toolPayloads.cethx);
   const catalystPayload = useWorkbenchStore((s) => s.toolPayloads.catdes);
   const dbtlPayload = useWorkbenchStore((s) => s.toolPayloads.dbtlflow);
+  const kineticsPayload = useWorkbenchStore((s) => s.toolPayloads.kinetics);
   const setToolPayload = useWorkbenchStore((s) => s.setToolPayload);
   /* ── PID state (persisted) ─────────────────────────────────────────────── */
   const [kp, setKp] = usePersistedState('nexus-bio:dyncon:kp', DEFAULT_CONTROLLER.kp);
@@ -308,10 +309,20 @@ export default React.memo(function DynConPage() {
     setKi(recommendedSeed.controller.ki);
     setKd(recommendedSeed.controller.kd);
     setSetpoint(recommendedSeed.controller.setpoint);
-    setVmax(recommendedSeed.hill.vmax);
-    setHillKd(recommendedSeed.hill.kd);
+    // Hill parameters seeded from kinetic simulation when available
+    if (kineticsPayload?.result) {
+      const kv = kineticsPayload.result;
+      // vmax from kinetics Vmax (normalized to Hill scale)
+      setVmax(Math.min(2, Math.max(0.2, kv.vmax)));
+      // hillKd seeded from Km (Michaelis constant → Hill dissociation constant)
+      setHillKd(Math.min(200, Math.max(5, kv.km * 40)));
+    } else {
+      setVmax(recommendedSeed.hill.vmax);
+      setHillKd(recommendedSeed.hill.kd);
+    }
     setHillN(recommendedSeed.hill.n);
   }, [
+    kineticsPayload?.result,
     recommendedSeed.controller.kd,
     recommendedSeed.controller.ki,
     recommendedSeed.controller.kp,

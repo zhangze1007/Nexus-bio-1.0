@@ -596,6 +596,8 @@ export default React.memo(function MultiOPage() {
   const analyzeArtifact = useWorkbenchStore((s) => s.analyzeArtifact);
   const cellfreePayload = useWorkbenchStore((s) => s.toolPayloads.cellfree);
   const dbtlPayload = useWorkbenchStore((s) => s.toolPayloads.dbtlflow);
+  const fbaPayload = useWorkbenchStore((s) => s.toolPayloads.fbasim);
+  const scspatialPayload = useWorkbenchStore((s) => s.toolPayloads.scspatial);
   const setToolPayload = useWorkbenchStore((s) => s.setToolPayload);
   const devMode = useUIStore((s) => s.devMode);
   const [activeTab, setActiveTab] = useState('embedding');
@@ -696,10 +698,29 @@ export default React.memo(function MultiOPage() {
     return `${short[a]}↔${short[b]}`;
   };
 
+  // FBA flux weighting: high-flux reactions amplify perturbation effects
+  const fbaFluxWeight = useMemo(() => {
+    if (!fbaPayload?.result.topFluxes?.length) return 1;
+    const REACTION_TO_GENES: Record<string, string[]> = {
+      PFK: ['pfkA', 'pfkB'], PYK: ['pykF', 'pykA'], GAPD: ['gapA'],
+      PGI: ['zwf'], ENO: ['eno'], PDH: ['ppc'], CS: ['sdhA'], MDH: ['sucA'], FBA: ['gpmA'],
+    };
+    const geneUpper = selectedGene.toUpperCase();
+    for (const { reactionId, flux } of fbaPayload.result.topFluxes) {
+      const genes = REACTION_TO_GENES[reactionId];
+      if (genes?.some((g) => g.toUpperCase() === geneUpper)) {
+        return 1 + Math.abs(flux) * 0.02;
+      }
+    }
+    return 1;
+  }, [fbaPayload?.result.topFluxes, selectedGene]);
+
   const handleSimulate = useCallback(() => {
-    const result = model.simulatePerturbation(selectedGene, perturbedExpr);
+    // High-flux reactions from FBA produce stronger perturbation effects in the simulation
+    const weightedExpr = perturbedExpr * fbaFluxWeight;
+    const result = model.simulatePerturbation(selectedGene, weightedExpr);
     setPerturbResult(result);
-  }, [model, selectedGene, perturbedExpr]);
+  }, [model, selectedGene, perturbedExpr, fbaFluxWeight]);
 
   useEffect(() => {
     if (preferredGene) {
@@ -711,7 +732,7 @@ export default React.memo(function MultiOPage() {
   useEffect(() => {
     const now = Date.now();
     const topEfficiency = [...efficiencyScores].sort((left, right) => right.score - left.score)[0];
-    const upstreamProvenance = [cellfreePayload?.runProvenance, dbtlPayload?.runProvenance]
+    const upstreamProvenance = [cellfreePayload?.runProvenance, dbtlPayload?.runProvenance, fbaPayload?.runProvenance, scspatialPayload?.runProvenance]
       .filter((entry): entry is ProvenanceEntry => Boolean(entry))
       .map((entry) => `${entry.toolId}:${entry.timestamp}`);
     setToolPayload('multio', {
@@ -765,6 +786,8 @@ export default React.memo(function MultiOPage() {
     bottleneck.dominant_layer,
     cellfreePayload?.runProvenance,
     dbtlPayload?.runProvenance,
+    fbaPayload?.runProvenance,
+    scspatialPayload?.runProvenance,
     efficiencyScores,
     fcThreshold,
     mofaResult.totalVarianceExplained,
@@ -1104,6 +1127,36 @@ export default React.memo(function MultiOPage() {
                 <p style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, margin: '6px 0 0', lineHeight: '1.3' }}>{f.interpretation}</p>
               </div>
             ))}
+            {/* Spatial cluster assignments inform factor decomposition (ScSpatial → MultiO) */}
+            {scspatialPayload?.result?.clusterSummaries && scspatialPayload.result.clusterSummaries.length > 0 && (
+              <div style={{ ...GLASS, borderRadius: 'var(--nb-radius-md)', padding: '14px', marginTop: '12px' }}>
+                <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>
+                  Spatial Cluster Correlation
+                </div>
+                <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, marginBottom: '10px', lineHeight: 1.45 }}>
+                  Spatial cluster assignments inform factor decomposition — clusters with high mean expression may align with dominant MOFA factors.
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  {scspatialPayload.result.clusterSummaries.map((cs) => (
+                    <div key={cs.clusterId} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '4px 0', borderBottom: `1px solid ${BORDER}` }}>
+                      <span style={{
+                        width: '8px', height: '8px', borderRadius: '50%',
+                        background: cs.fate === 'productive' ? THEME.MINT : cs.fate === 'stressed' ? THEME.CORAL : THEME.APRICOT,
+                      }} />
+                      <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE, width: '100px' }}>{cs.clusterLabel}</span>
+                      <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>{cs.cellCount} cells</span>
+                      <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>expr: {cs.meanExpression.toFixed(2)}</span>
+                      <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: cs.fate === 'productive' ? THEME.MINT : THEME.LABEL }}>{cs.fate}</span>
+                      <div style={{ display: 'flex', gap: '3px', flexWrap: 'wrap' }}>
+                        {cs.topGenes.slice(0, 3).map((g) => (
+                          <span key={g} style={{ fontFamily: THEME.MONO, fontSize: '9px', padding: '1px 4px', borderRadius: '4px', background: THEME.PANEL_INSET, color: VALUE }}>{g}</span>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </ScientificFigureFrame>
         </div>
       </ToolTabPanel>

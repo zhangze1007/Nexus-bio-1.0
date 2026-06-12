@@ -292,6 +292,14 @@ export interface ScSpatialWorkbenchPayload extends WorkbenchPayloadBase {
     topMoranI: number;
     highestYieldCluster: string;
     hotspotCount: number;
+    clusterSummaries: Array<{
+      clusterId: number;
+      clusterLabel: string;
+      cellCount: number;
+      meanExpression: number;
+      fate: 'productive' | 'stressed' | 'quiescent';
+      topGenes: string[];
+    }>;
   };
   updatedAt: number;
 }
@@ -310,6 +318,22 @@ export interface NEXAIWorkbenchPayload extends WorkbenchPayloadBase {
   updatedAt: number;
 }
 
+export interface KineticsWorkbenchPayload extends WorkbenchPayloadBase {
+  toolId: 'kinetics';
+  targetProduct: string;
+  sourceArtifactId?: string;
+  enzymeLabel: string;
+  enzymeId: string;
+  result: {
+    vmax: number;
+    km: number;
+    substrate: number;
+    kcat: number;
+    turnoverNumber: number;
+  };
+  updatedAt: number;
+}
+
 export interface WorkbenchToolPayloadMap {
   pathd?: PathDWorkbenchPayload;
   fbasim?: FBAWorkbenchPayload;
@@ -324,4 +348,5 @@ export interface WorkbenchToolPayloadMap {
   multio?: MultiOWorkbenchPayload;
   scspatial?: ScSpatialWorkbenchPayload;
   nexai?: NEXAIWorkbenchPayload;
+  kinetics?: KineticsWorkbenchPayload;
 }

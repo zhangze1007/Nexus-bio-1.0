@@ -6,6 +6,20 @@ import ExportButton from '../ide/shared/ExportButton';
 import SimErrorBanner from '../ide/shared/SimErrorBanner';
 import { CRISPRI_TARGETS, greedyKnockdownSchedule, computeOffTargetScore } from '../../data/mockGenMIM';
 import type { CRISPRiTarget } from '../../types';
+
+// FBA reaction → gene mapping for flux-driven CRISPRi prioritization
+// Targets aligned with FBA-identified flux bottlenecks receive a score boost
+const REACTION_TO_GENES: Record<string, string[]> = {
+  PFK: ['pfkA', 'pfkB'],
+  PYK: ['pykF', 'pykA'],
+  GAPD: ['gapA'],
+  PGI: ['zwf'],
+  ENO: ['eno'],
+  PDH: ['ppc'],
+  CS: ['sdhA'],
+  MDH: ['sucA'],
+  FBA: ['gpmA'],
+};
 import { useWorkbenchStore } from '../../store/workbenchStore';
 import ScientificHero from './shared/ScientificHero';
 import ScientificFigureFrame from './shared/ScientificFigureFrame';
@@ -230,13 +244,37 @@ export default React.memo(function GenMIMPage() {
     setProtectEssential((dynconPayload?.result.doRmse ?? 0.05) <= 0.08);
   }, [dynconPayload?.result.doRmse, recommendedEfficiency, recommendedTargets]);
 
+  // Flux-boosted CRISPRi targets: boost knockdown_efficiency for genes
+  // whose corresponding FBA reactions carry high flux (bottleneck candidates)
+  const fluxBoostedTargets = useMemo(() => {
+    if (!fbaPayload?.result.topFluxes?.length) return CRISPRI_TARGETS;
+    const geneFluxBoost = new Map<string, number>();
+    for (const { reactionId, flux } of fbaPayload.result.topFluxes) {
+      const genes = REACTION_TO_GENES[reactionId];
+      if (genes) {
+        for (const gene of genes) {
+          geneFluxBoost.set(gene, (geneFluxBoost.get(gene) ?? 0) + Math.abs(flux));
+        }
+      }
+    }
+    if (geneFluxBoost.size === 0) return CRISPRI_TARGETS;
+    const maxFlux = Math.max(...geneFluxBoost.values(), 1);
+    return CRISPRI_TARGETS.map((t) => {
+      const boost = geneFluxBoost.get(t.gene);
+      if (boost === undefined) return t;
+      // Boost knockdown_efficiency by up to 0.08 for high-flux genes
+      const normalizedBoost = (boost / maxFlux) * 0.08;
+      return { ...t, knockdown_efficiency: Math.min(1, t.knockdown_efficiency + normalizedBoost) };
+    });
+  }, [fbaPayload?.result.topFluxes]);
+
   const { data: schedule, error: simError } = useMemo(() => {
     try {
-      return { data: greedyKnockdownSchedule(CRISPRI_TARGETS, maxTargets, efficiency, protectEssential), error: null as string | null };
+      return { data: greedyKnockdownSchedule(fluxBoostedTargets, maxTargets, efficiency, protectEssential), error: null as string | null };
     } catch (e) {
       return { data: [] as ReturnType<typeof greedyKnockdownSchedule>, error: e instanceof Error ? e.message : 'Knockdown scheduling failed' };
     }
-  }, [efficiency, maxTargets, protectEssential]);
+  }, [fluxBoostedTargets, efficiency, maxTargets, protectEssential]);
 
   const growthImpact = schedule.reduce((a, t) => a + (t.growth_impact ?? 0), 0);
   const avgEfficiency = schedule.length > 0
@@ -325,7 +363,7 @@ export default React.memo(function GenMIMPage() {
       footer={
         <>
           <ExportButton label="Export Schedule JSON" data={schedule} filename="genmim-schedule" format="json" />
-          <ExportButton label="Export All Targets CSV" data={CRISPRI_TARGETS} filename="genmim-targets" format="csv" />
+          <ExportButton label="Export All Targets CSV" data={fluxBoostedTargets} filename="genmim-targets" format="csv" />
         </>
       }
     >
@@ -401,7 +439,7 @@ export default React.memo(function GenMIMPage() {
               }
               minHeight="100%"
             >
-              <GenomeMap targets={CRISPRI_TARGETS} selected={schedule} efficiencyThreshold={efficiency} />
+              <GenomeMap targets={fluxBoostedTargets} selected={schedule} efficiencyThreshold={efficiency} />
             </ScientificFigureFrame>
 
             <InlineMetricOverlay
@@ -434,7 +472,7 @@ export default React.memo(function GenMIMPage() {
                 </tr>
               </thead>
               <tbody>
-                {CRISPRI_TARGETS.map((t, i) => {
+                {fluxBoostedTargets.map((t, i) => {
                   const isSelected = schedule.some(s => s.gene === t.gene);
                   return (
                     <tr key={t.gene} style={{ background: isSelected ? 'rgba(232,163,161,0.10)' : i % 2 === 0 ? 'transparent' : THEME.PANEL_INSET }}>

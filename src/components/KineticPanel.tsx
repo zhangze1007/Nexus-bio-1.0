@@ -4,6 +4,7 @@ import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { Loader2, Play, RotateCcw, Info, Plus, Trash2 } from 'lucide-react';
 import ActionButton from './tools/shared/ActionButton';
 import { type SimResult } from '../utils/kinetics';
+import { useWorkbenchStore } from '../store/workbenchStore';
 import {
   competitiveInhibition,
   uncompetitiveInhibition,
@@ -348,6 +349,10 @@ interface AIInterpretation { text: string; loading: boolean }
 // ── Main component ───────────────────────────────────────────────
 
 export default function KineticPanel({ nodeLabel, nodeId }: KineticPanelProps) {
+  const setToolPayload = useWorkbenchStore((s) => s.setToolPayload);
+  const analyzeArtifact = useWorkbenchStore((s) => s.analyzeArtifact);
+  const project = useWorkbenchStore((s) => s.project);
+
   // Simulation parameters
   const [Vmax, setVmax] = useState(1.0);
   const [Km, setKm] = useState(0.5);
@@ -436,6 +441,30 @@ export default function KineticPanel({ nodeLabel, nodeId }: KineticPanelProps) {
     setResult(res);
     interpretWithAI(res);
   }, [S0, P0, velocityFn, formation, degradation, duration]);
+
+  // Publish kinetics payload to workbench store for downstream tools (DynCon)
+  useEffect(() => {
+    if (!result) return;
+    // Estimate kcat from Vmax: kcat ≈ Vmax (μmol/min/mg) as a normalized turnover proxy
+    const kcat = Vmax;
+    const turnoverNumber = kcat * 60; // convert per-min to per-hour for bioreactor context
+    setToolPayload('kinetics', {
+      validity: 'partial',
+      toolId: 'kinetics',
+      targetProduct: analyzeArtifact?.targetProduct || project?.targetProduct || project?.title || 'Target Product',
+      sourceArtifactId: analyzeArtifact?.id,
+      enzymeLabel: nodeLabel,
+      enzymeId: nodeId,
+      result: {
+        vmax: Vmax,
+        km: Km,
+        substrate: S0,
+        kcat,
+        turnoverNumber,
+      },
+      updatedAt: Date.now(),
+    });
+  }, [result, Vmax, Km, S0, nodeLabel, nodeId, analyzeArtifact?.id, analyzeArtifact?.targetProduct, project?.targetProduct, project?.title, setToolPayload]);
 
   const interpretWithAI = async (res: SimResult) => {
     abortRef.current?.abort();

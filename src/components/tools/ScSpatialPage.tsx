@@ -176,6 +176,15 @@ export default React.memo(function ScSpatialPage() {
         topMoranI: query.rightPanel.hotspots[0]?.moranI ?? 0,
         highestYieldCluster: query.rightPanel.clusterSummaries[0]?.clusterLabel ?? 'Not available',
         hotspotCount: query.rightPanel.hotspots.length,
+        // Spatial cluster assignments inform factor decomposition in downstream tools (MultiO)
+        clusterSummaries: query.rightPanel.clusterSummaries.map((cs) => ({
+          clusterId: cs.clusterId,
+          clusterLabel: cs.clusterLabel,
+          cellCount: cs.cellCount,
+          meanExpression: cs.meanExpression,
+          fate: cs.fate,
+          topGenes: cs.topGenes,
+        })),
       },
       updatedAt: Date.now(),
     });
