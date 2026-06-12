@@ -73,8 +73,8 @@ export const THEME = {
   PANEL_GRADIENT:       'linear-gradient(180deg, rgba(31, 37, 44, 0.96) 0%, rgba(22, 27, 32, 0.94) 100%)',
   PANEL_GRADIENT_STRONG:'linear-gradient(180deg, rgba(35, 41, 49, 0.98) 0%, rgba(24, 29, 35, 0.96) 100%)',
   PANEL_GRADIENT_SOFT:  'linear-gradient(180deg, rgba(36, 43, 51, 0.9) 0%, rgba(24, 29, 35, 0.88) 100%)',
-  PANEL_GLASS:       'rgba(28, 34, 40, 0.84)',
-  PANEL_GLASS_STRONG:'rgba(22, 27, 32, 0.92)',
+  PANEL_GLASS:       'rgba(28, 34, 40, 0.92)',
+  PANEL_GLASS_STRONG:'rgba(22, 27, 32, 0.96)',
   PANEL_SHEEN: 'linear-gradient(135deg, rgba(232,163,161,0.08) 0%, rgba(231,199,169,0.05) 24%, rgba(191,220,205,0.05) 52%, rgba(175,195,214,0.05) 76%, rgba(207,196,227,0.06) 100%)',
   FIGURE_BACKDROP: 'radial-gradient(circle at top, rgba(207,196,227,0.08), transparent 42%), radial-gradient(circle at bottom right, rgba(191,220,205,0.07), transparent 38%)',
 
@@ -113,9 +113,9 @@ export const THEME = {
   R_XL: '20px',
 
   // ── Elevation shadows ──────────────────────────────────────────────
-  SHADOW_LOW:    '0 2px 8px rgba(0,0,0,0.18)',
-  SHADOW_MEDIUM: '0 8px 24px rgba(0,0,0,0.28)',
-  SHADOW_HIGH:   '0 16px 48px rgba(0,0,0,0.38)',
+  SHADOW_LOW:    '0 1px 4px rgba(0,0,0,0.15)',
+  SHADOW_MEDIUM: '0 4px 12px rgba(0,0,0,0.2)',
+  SHADOW_HIGH:   '0 8px 24px rgba(0,0,0,0.25)',
 
   // ── Progress bar ───────────────────────────────────────────────────
   PROGRESS_GRADIENT: 'linear-gradient(90deg, #BFDCCD 0%, #AFC3D6 42%, #CFC4E3 72%, #E8A3A1 100%)',
@@ -185,9 +185,9 @@ export const THEME = {
   /** @deprecated Use PANEL_GRADIENT_SOFT */
   panelGradientSoft: 'linear-gradient(180deg, rgba(36, 43, 51, 0.9) 0%, rgba(24, 29, 35, 0.88) 100%)',
   /** @deprecated Use PANEL_GLASS */
-  panelGlass:       'rgba(28, 34, 40, 0.84)',
+  panelGlass:       'rgba(28, 34, 40, 0.92)',
   /** @deprecated Use PANEL_GLASS_STRONG */
-  panelGlassStrong: 'rgba(22, 27, 32, 0.92)',
+  panelGlassStrong: 'rgba(22, 27, 32, 0.96)',
   /** @deprecated Use PANEL_SHEEN */
   panelSheen: 'linear-gradient(135deg, rgba(232,163,161,0.08) 0%, rgba(231,199,169,0.05) 24%, rgba(191,220,205,0.05) 52%, rgba(175,195,214,0.05) 76%, rgba(207,196,227,0.06) 100%)',
   /** @deprecated Use FIGURE_BACKDROP */
@@ -267,10 +267,9 @@ export const THEME = {
 
   // ── Glass CSS properties (from useToolTheme) ───────────────────────
   GLASS: {
-    background: 'rgba(31, 37, 44, 0.92)',
-    border: '1px solid rgba(255, 255, 255, 0.08)',
-    borderRadius: '12px',
-    backdropFilter: 'blur(12px)',
+    background: 'rgba(17, 19, 24, 0.95)',
+    border: '1px solid rgba(255,255,255,0.10)',
+    borderRadius: '6px',
   },
 } as const;
 
