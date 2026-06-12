@@ -121,7 +121,7 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
     tags: ['catalyst', 'design', 'ranking', 'optimization'],
     mode: 'design',
     threeDPotential: 'strong',
-    glossary: 'Catalyst Designer uses protein language models and binding affinity calculations to engineer enzymes with improved catalytic properties. It predicts mutation effects on Km, Kcat, and binding energy.',
+    glossary: 'Catalyst Designer uses BLOSUM62 substitution matrices and MM-PBSA-style binding affinity calculations to engineer enzymes with improved catalytic properties. It predicts mutation effects on Km, Kcat, and binding energy.',
     keyConcepts: [{ term: 'Km', definition: 'Michaelis constant — substrate concentration at half-max velocity' }, { term: 'Kcat', definition: 'Turnover number — reactions per enzyme per second' }, { term: 'CAI', definition: 'Codon Adaptation Index — measures how well a gene uses the host organism\'s codons' }],
   },
   {

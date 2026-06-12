@@ -853,3 +853,16 @@ describe('runFullDesignPipeline', () => {
     expect(result.paretoRanking.bestOverall).toBe('');
   });
 });
+
+// ═══════════════════════════════════════════════════════════════
+//  Source Verification
+// ═══════════════════════════════════════════════════════════════
+
+test('no misleading model names in engine source', () => {
+  const fs = require('fs');
+  const engineSrc = fs.readFileSync('src/services/CatalystDesignerEngine.ts', 'utf-8');
+  expect(engineSrc).not.toMatch(/ProteinMPNN/);
+  expect(engineSrc).not.toMatch(/ESM-2/);
+  expect(engineSrc).not.toMatch(/AlphaFold 3/);
+  expect(engineSrc).not.toMatch(/AlphaFold3/);
+});

@@ -4,19 +4,19 @@
  * An enzyme-centered pathway optimizer that balances structural catalytic
  * efficiency with genomic metabolic costs. Implements:
  *
- * 1. AlphaFold 3-inspired binding affinity prediction (Kd scoring via
+ * 1. MM-PBSA-style binding affinity prediction (Kd scoring via
  *    distance/orientation of catalytic residues)
- * 2. ProteinMPNN-style sequence inversion with S. cerevisiae codon optimization
+ * 2. BLOSUM62-based sequence diversification with S. cerevisiae codon optimization
  * 3. Metabolic flux coupling with FBA for expression cost estimation
  * 4. Church-method pathway balancer for zero intermediate accumulation
  * 5. Pareto-front multi-objective pathway ranking
- * 6. ESM-2-inspired mutagenesis site prediction
+ * 6. Conservation-weighted mutagenesis site prediction
  *
  * All implemented in pure TypeScript for browser execution.
  *
  * References:
- * - Abramson et al. (2024) Nature — AlphaFold 3
- * - Dauparas et al. (2022) Science — ProteinMPNN
+ * - Kollman et al. (2000) Acc Chem Res 33:889 — MM-PBSA
+ * - Henikoff & Henikoff (1992) PNAS 89:10915 — BLOSUM62
  * - Ro et al. (2006) Nature — Artemisinin biosynthesis
  * - Church et al. — Multiplex genome engineering
  */
@@ -89,7 +89,7 @@ export interface DesignedSequence {
   rareCodons: number;        // count of rare codons remaining
 }
 
-/** ProteinMPNN-style sequence design result. */
+/** BLOSUM62-based sequence design result. */
 export interface SequenceDesignResult {
   backboneSource: string;    // 'RFdiffusion' or 'template'
   targetEnzyme: string;
@@ -646,11 +646,11 @@ export function predictBindingAffinity(enzyme: EnzymeStructure): BindingAffinity
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// 2. ProteinMPNN-style Sequence Design
+// 2. BLOSUM62-Based Sequence Design
 // ══════════════════════════════════════════════════════════════════════════════
 
 /**
- * Generate variant protein sequences using ProteinMPNN-inspired design.
+ * Generate variant protein sequences using BLOSUM62-based diversification.
  *
  * For each design:
  *  - Non-catalytic positions are perturbed using BLOSUM62 substitution
@@ -1094,11 +1094,11 @@ export function rankPathways(candidates: PathwayCandidate[]): ParetoFrontResult 
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// 6. ESM-2-Inspired Mutagenesis Site Prediction
+// 6. Conservation-Weighted Mutagenesis Site Prediction
 // ══════════════════════════════════════════════════════════════════════════════
 
 /**
- * Predict beneficial mutagenesis sites using ESM-2-inspired per-position
+ * Predict beneficial mutagenesis sites using conservation-weighted per-position
  * scoring:
  *
  *  - Conservation: Shannon entropy from BLOSUM62 column probabilities
@@ -1328,7 +1328,7 @@ export function runFullDesignPipeline(
   auditTrail.push({
     step: ++stepCounter,
     phase: 'sequence_design',
-    description: 'Generating ProteinMPNN-style variant sequences',
+    description: 'Generating BLOSUM62-based variant sequences',
     input: `Wild-type length: ${enzyme.length} aa`,
     output: '',
     confidence: 0.80,
@@ -1384,7 +1384,7 @@ export function runFullDesignPipeline(
   auditTrail.push({
     step: ++stepCounter,
     phase: 'mutagenesis',
-    description: 'ESM-2-inspired mutagenesis site prediction',
+    description: 'Conservation-weighted mutagenesis site prediction',
     input: `Enzyme: ${enzyme.name}`,
     output: '',
     confidence: 0.70,

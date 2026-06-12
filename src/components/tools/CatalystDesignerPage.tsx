@@ -568,7 +568,7 @@ export default React.memo(function CatalystDesignerPage() {
 
   // Compute mutation impact when a mutation is selected
   // NOTE: No quantitative prediction available — mutagenesis effects require
-  // external tools (FoldX, Rosetta ddg_monomer, ProteinMPNN).
+  // external tools (FoldX, Rosetta ddg_monomer, protein design suites).
   const mutationImpact = useMemo(() => {
     if (!selectedResidue || !selectedMutation) return null;
     return {

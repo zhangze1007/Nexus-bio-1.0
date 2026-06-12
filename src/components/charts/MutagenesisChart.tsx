@@ -68,7 +68,7 @@ export default function MutagenesisChart({ result, enzyme }: MutagenesisChartPro
   return (
     <div style={{ ...CHART_CONTAINER, background: colors.bg.primary, padding: Number(spacing.base) }}>
       <p style={{ fontFamily: FONT.SANS, fontSize: 9, color: colors.text.tertiary, margin: '0 0 8px', fontStyle: 'italic' }}>
-        Mutagenesis effects require external tools (FoldX, Rosetta ddg_monomer, ProteinMPNN) — no quantitative predictions available.
+        Mutagenesis effects require external tools (FoldX, Rosetta ddg_monomer, protein design suites) — no quantitative predictions available.
       </p>
 
       {/* ── Sequence Position Map (keep as SVG — not a chart type) ── */}

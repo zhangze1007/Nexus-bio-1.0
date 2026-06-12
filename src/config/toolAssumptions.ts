@@ -291,7 +291,7 @@ export const TOOL_ASSUMPTIONS: Record<string, ToolAssumption[]> = {
       toolId: 'catdes',
       category: 'computational',
       statement:
-        'Binding affinity scoring is AlphaFold3-inspired heuristic; NOT the actual AF3 model.',
+        'Binding affinity scoring is MM-PBSA-style heuristic; NOT a molecular dynamics simulation.',
       severity: 'info',
     },
     {
