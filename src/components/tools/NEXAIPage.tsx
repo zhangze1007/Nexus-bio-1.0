@@ -43,6 +43,7 @@ import { ChatMessage, type ChatMessageProps } from './nexai/ChatMessage';
 import { ContextChips } from './nexai/ContextChips';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
 import { THEME } from '../../theme';
+import { PAPER_THEME } from '../charts/chartTheme';
 
 const PRESET_QUERIES = [
   'Summarise current pathway bottlenecks and recommend the next tool to run.',
@@ -743,7 +744,7 @@ export default React.memo(function NEXAIPage() {
           minHeight: '560px',
           background: 'rgba(10, 12, 16, 0.6)',
           borderRadius: 'var(--nb-radius-lg)',
-          border: '1px solid rgba(255, 255, 255, 0.04)',
+          border: `1px solid ${PAPER_THEME.border}`,
           overflow: 'hidden',
         }}
       >
@@ -822,7 +823,7 @@ export default React.memo(function NEXAIPage() {
             <ContextChips />
 
             {/* ── Divider between controls and messages ── */}
-            <div style={{ height: '1px', background: 'rgba(255,255,255,0.04)', margin: '2px 0' }} />
+            <div style={{ height: '1px', background: PAPER_THEME.border, margin: '2px 0' }} />
 
             {/* ── Conversation messages ── */}
             {messages.length > 0 && (
