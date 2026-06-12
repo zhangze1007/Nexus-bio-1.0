@@ -3,8 +3,60 @@
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, useCallback } from 'react';
-import { User, Save, CheckCircle, AlertCircle, Building2, FlaskConical, Hash, FileText } from 'lucide-react';
-import { THEME } from '../../src/theme';
+import {
+  User, Save, CheckCircle, AlertCircle, Building2, FlaskConical,
+  Hash, FileText, ExternalLink, ArrowLeft, Sparkles, BookOpen,
+  Microscope, TrendingUp, Clock,
+} from 'lucide-react';
+import Link from 'next/link';
+
+/**
+ * Profile Page — Research Identity
+ *
+ * Design direction: Institutional authority meets research precision.
+ * The profile page should feel like a researcher's digital identity card,
+ * not a generic settings form.
+ */
+
+// ─── Design Tokens ────────────────────────────────────────────────────────
+
+const T = {
+  BG: '#08090c',
+  CARD: 'rgba(14, 16, 22, 0.85)',
+  CARD_BORDER: 'rgba(255, 255, 255, 0.06)',
+  INSET: 'rgba(255, 255, 255, 0.02)',
+
+  INK: 'rgba(250, 246, 240, 0.94)',
+  INK_MID: 'rgba(250, 246, 240, 0.6)',
+  INK_SOFT: 'rgba(250, 246, 240, 0.35)',
+  INK_GHOST: 'rgba(250, 246, 240, 0.18)',
+
+  MINT: '#BFDCCD',
+  LILAC: '#CFC4E3',
+  SKY: '#AFC3D6',
+  APRICOT: '#E8D8C4',
+  CORAL: '#E8A3A1',
+  NEON_SUCCESS: '#93CB52',
+  NEON_DANGER: '#E8A3A1',
+
+  SERIF: "'Source Serif 4', 'Georgia', serif",
+  SANS: "'IBM Plex Sans', -apple-system, sans-serif",
+  MONO: "'IBM Plex Mono', 'Menlo', monospace",
+
+  SP_XS: 4,
+  SP_SM: 8,
+  SP_MD: 16,
+  SP_LG: 24,
+  SP_XL: 40,
+  SP_2XL: 64,
+
+  R_SM: 8,
+  R_MD: 12,
+  R_LG: 16,
+};
+
+// ─── Types ────────────────────────────────────────────────────────────────
+
 interface ProfileData {
   name: string;
   email: string;
@@ -15,23 +67,178 @@ interface ProfileData {
   bio: string;
 }
 
+// ─── Expertise Tags ───────────────────────────────────────────────────────
+
+const EXPERTISE_SUGGESTIONS = [
+  'Metabolic Engineering', 'Synthetic Biology', 'CRISPR', 'Protein Engineering',
+  'Flux Balance Analysis', 'Pathway Design', 'Cell-Free Systems', 'Fermentation',
+  'Multi-Omics', 'Machine Learning', 'Directed Evolution', 'Bioinformatics',
+  'Systems Biology', 'Genome Engineering', 'Bioprocess Engineering',
+];
+
+function ExpertiseTag({ label, selected, onToggle }: {
+  label: string;
+  selected: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      onClick={onToggle}
+      style={{
+        padding: '5px 12px',
+        borderRadius: 20,
+        background: selected ? 'rgba(191, 220, 205, 0.12)' : T.INSET,
+        border: `1px solid ${selected ? 'rgba(191, 220, 205, 0.25)' : T.CARD_BORDER}`,
+        color: selected ? T.MINT : T.INK_SOFT,
+        fontFamily: T.SANS,
+        fontSize: '12px',
+        fontWeight: selected ? 600 : 400,
+        cursor: 'pointer',
+        transition: 'all 0.15s',
+        whiteSpace: 'nowrap',
+      }}
+      onMouseEnter={e => {
+        if (!selected) {
+          e.currentTarget.style.borderColor = 'rgba(191, 220, 205, 0.12)';
+          e.currentTarget.style.color = T.INK_MID;
+        }
+      }}
+      onMouseLeave={e => {
+        if (!selected) {
+          e.currentTarget.style.borderColor = T.CARD_BORDER;
+          e.currentTarget.style.color = T.INK_SOFT;
+        }
+      }}
+    >
+      {label}
+    </button>
+  );
+}
+
+// ─── Profile Completeness ─────────────────────────────────────────────────
+
+function CompletenessRing({ percent }: { percent: number }) {
+  const radius = 28;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference - (percent / 100) * circumference;
+
+  return (
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: T.SP_SM,
+    }}>
+      <div style={{ position: 'relative', width: 68, height: 68 }}>
+        <svg width={68} height={68} style={{ transform: 'rotate(-90deg)' }}>
+          {/* Background ring */}
+          <circle
+            cx={34} cy={34} r={radius}
+            fill="none"
+            stroke="rgba(255, 255, 255, 0.06)"
+            strokeWidth={4}
+          />
+          {/* Progress ring */}
+          <circle
+            cx={34} cy={34} r={radius}
+            fill="none"
+            stroke={percent >= 80 ? T.NEON_SUCCESS : percent >= 40 ? T.MINT : T.APRICOT}
+            strokeWidth={4}
+            strokeLinecap="round"
+            strokeDasharray={circumference}
+            strokeDashoffset={strokeDashoffset}
+            style={{ transition: 'stroke-dashoffset 0.6s ease' }}
+          />
+        </svg>
+        {/* Center text */}
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontFamily: T.MONO,
+          fontSize: '14px',
+          fontWeight: 600,
+          color: T.INK,
+        }}>
+          {percent}%
+        </div>
+      </div>
+      <span style={{
+        fontFamily: T.MONO,
+        fontSize: '10px',
+        color: T.INK_GHOST,
+        letterSpacing: '0.06em',
+        textTransform: 'uppercase',
+      }}>
+        Complete
+      </span>
+    </div>
+  );
+}
+
+// ─── Stat Card ────────────────────────────────────────────────────────────
+
+function StatCard({ icon: Icon, value, label, color }: {
+  icon: React.ComponentType<{ size?: number; style?: React.CSSProperties }>;
+  value: string;
+  label: string;
+  color: string;
+}) {
+  return (
+    <div style={{
+      flex: 1,
+      padding: T.SP_MD,
+      borderRadius: T.R_MD,
+      background: T.INSET,
+      border: `1px solid ${T.CARD_BORDER}`,
+      textAlign: 'center',
+    }}>
+      <Icon size={16} style={{ color, marginBottom: T.SP_SM }} />
+      <div style={{
+        fontFamily: T.SERIF,
+        fontSize: '20px',
+        fontWeight: 600,
+        color: T.INK,
+        letterSpacing: '-0.02em',
+      }}>
+        {value}
+      </div>
+      <div style={{
+        fontFamily: T.MONO,
+        fontSize: '10px',
+        color: T.INK_GHOST,
+        letterSpacing: '0.04em',
+        textTransform: 'uppercase',
+        marginTop: 4,
+      }}>
+        {label}
+      </div>
+    </div>
+  );
+}
+
+// ─── Main Page ────────────────────────────────────────────────────────────
+
 export default function ProfilePage() {
   const { data: session, status } = useSession();
   const router = useRouter();
 
   const [profile, setProfile] = useState<ProfileData>({
-    name: '',
-    email: '',
-    image: null,
-    institution: '',
-    research_area: '',
-    orcid: '',
-    bio: '',
+    name: '', email: '', image: null,
+    institution: '', research_area: '', orcid: '', bio: '',
   });
+  const [expertise, setExpertise] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [errorMsg, setErrorMsg] = useState('');
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -56,6 +263,9 @@ export default function ProfilePage() {
           orcid: data.user.orcid || '',
           bio: data.user.bio || '',
         });
+        if (data.user.expertise) {
+          setExpertise(data.user.expertise);
+        }
       }
     } catch {
       // Profile fetch failed — leave fields empty
@@ -69,6 +279,16 @@ export default function ProfilePage() {
       fetchProfile();
     }
   }, [status, fetchProfile]);
+
+  // Calculate completeness
+  const completeness = Math.round(
+    ((profile.name ? 15 : 0) +
+     (profile.institution ? 20 : 0) +
+     (profile.research_area ? 20 : 0) +
+     (profile.orcid ? 15 : 0) +
+     (profile.bio ? 15 : 0) +
+     (expertise.length > 0 ? 15 : 0))
+  );
 
   // Save profile
   const handleSave = async () => {
@@ -85,6 +305,7 @@ export default function ProfilePage() {
           research_area: profile.research_area,
           orcid: profile.orcid,
           bio: profile.bio,
+          expertise,
         }),
       });
 
@@ -108,32 +329,18 @@ export default function ProfilePage() {
     return (
       <div style={{
         minHeight: '100vh',
-        background: THEME.BG_SHELL,
+        background: T.BG,
         display: 'grid',
         placeItems: 'center',
       }}>
         <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: THEME.SP_SM,
-        }}>
-          <div style={{
-            width: '32px',
-            height: '32px',
-            border: '2px solid rgba(255,255,255,0.1)',
-            borderTopColor: THEME.MINT,
-            borderRadius: '50%',
-            animation: 'spin 0.8s linear infinite',
-          }} />
-          <span style={{
-            fontFamily: THEME.SANS,
-            fontSize: THEME.FS_SM,
-            color: THEME.LABEL,
-          }}>
-            Loading profile...
-          </span>
-        </div>
+          width: 32,
+          height: 32,
+          border: `2px solid ${T.INK_GHOST}`,
+          borderTopColor: T.MINT,
+          borderRadius: '50%',
+          animation: 'spin 0.8s linear infinite',
+        }} />
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
@@ -141,287 +348,472 @@ export default function ProfilePage() {
 
   if (!session) return null;
 
+  // Input field styles
   const fieldStyle: React.CSSProperties = {
     width: '100%',
-    padding: '10px 12px',
-    borderRadius: THEME.R_SM,
-    background: THEME.PANEL_INSET,
-    border: `1px solid ${THEME.PANEL_BORDER}`,
-    color: THEME.VALUE,
-    fontFamily: THEME.SANS,
-    fontSize: THEME.FS_MD,
+    padding: '10px 14px',
+    borderRadius: T.R_SM,
+    background: T.INSET,
+    border: `1px solid ${T.CARD_BORDER}`,
+    color: T.INK,
+    fontFamily: T.SANS,
+    fontSize: '14px',
     outline: 'none',
-    transition: 'border-color 0.15s',
+    transition: 'border-color 0.15s, box-shadow 0.15s',
     boxSizing: 'border-box',
   };
 
   const labelStyle: React.CSSProperties = {
     display: 'flex',
     alignItems: 'center',
-    gap: '6px',
-    fontFamily: THEME.SANS,
-    fontSize: THEME.FS_SM,
-    fontWeight: 600,
-    color: THEME.LABEL,
-    marginBottom: '6px',
-    textTransform: 'uppercase' as const,
-    letterSpacing: '0.04em',
-  };
-
-  const fieldGroup: React.CSSProperties = {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: THEME.SP_SM,
+    gap: 6,
+    fontFamily: T.MONO,
+    fontSize: '11px',
+    fontWeight: 500,
+    color: T.INK_SOFT,
+    letterSpacing: '0.06em',
+    textTransform: 'uppercase',
+    marginBottom: T.SP_SM,
   };
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: THEME.BG_SHELL,
-      color: THEME.VALUE,
-    }}>
+    <>
+      <style>{`
+        @keyframes fadeInUp {
+          from { opacity: 0; transform: translateY(12px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
+
       <div style={{
-        maxWidth: '640px',
-        margin: '0 auto',
-        padding: `${THEME.SP_XL}px ${THEME.SP_MD}px`,
+        minHeight: '100vh',
+        background: T.BG,
+        color: T.INK,
       }}>
-        {/* Header */}
         <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: THEME.SP_MD,
-          marginBottom: THEME.SP_XL,
+          maxWidth: 720,
+          margin: '0 auto',
+          padding: `${T.SP_XL}px ${T.SP_MD}px`,
         }}>
-          {profile.image ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={profile.image}
-              alt={profile.name}
-              width={64}
-              height={64}
-              style={{
-                borderRadius: THEME.R_MD,
-                border: `2px solid ${THEME.PANEL_BORDER}`,
-              }}
-            />
-          ) : (
-            <div style={{
-              width: '64px',
-              height: '64px',
-              borderRadius: THEME.R_MD,
-              background: 'rgba(191,220,205,0.12)',
-              border: `2px solid ${THEME.PANEL_BORDER}`,
-              display: 'grid',
-              placeItems: 'center',
-            }}>
-              <User size={28} style={{ color: THEME.MINT }} />
-            </div>
-          )}
-          <div>
-            <h1 style={{
-              fontFamily: THEME.SANS,
-              fontSize: THEME.FS_XL,
-              fontWeight: 700,
-              color: 'rgba(255,255,255,0.92)',
-              margin: 0,
-            }}>
-              {profile.name || 'User'}
-            </h1>
-            <p style={{
-              fontFamily: THEME.MONO,
-              fontSize: THEME.FS_SM,
-              color: THEME.LABEL,
-              margin: '4px 0 0',
-            }}>
-              {profile.email}
-            </p>
-          </div>
-        </div>
+          {/* ─── Back Link ─── */}
+          <Link
+            href="/tools"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              fontFamily: T.MONO,
+              fontSize: '11px',
+              color: T.INK_GHOST,
+              textDecoration: 'none',
+              marginBottom: T.SP_XL,
+              transition: 'color 0.2s',
+              opacity: mounted ? 1 : 0,
+              transitionProperty: 'color, opacity',
+              transitionDuration: '0.2s, 0.4s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.color = T.INK_SOFT; }}
+            onMouseLeave={e => { e.currentTarget.style.color = T.INK_GHOST; }}
+          >
+            <ArrowLeft size={12} />
+            Back to workbench
+          </Link>
 
-        {/* Card */}
-        <div style={{
-          background: THEME.PANEL_SURFACE,
-          border: `1px solid ${THEME.PANEL_BORDER}`,
-          borderRadius: THEME.R_LG,
-          padding: THEME.SP_LG,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: THEME.SP_LG,
-        }}>
-          <h2 style={{
-            fontFamily: THEME.SANS,
-            fontSize: THEME.FS_LG,
-            fontWeight: 600,
-            color: 'rgba(255,255,255,0.88)',
-            margin: 0,
-            paddingBottom: THEME.SP_SM,
-            borderBottom: `1px solid ${THEME.PANEL_BORDER}`,
-          }}>
-            Research Profile
-          </h2>
-
-          {/* Institution */}
-          <div style={fieldGroup}>
-            <label style={labelStyle}>
-              <Building2 size={13} style={{ color: THEME.SKY }} />
-              Institution
-            </label>
-            <input
-              type="text"
-              value={profile.institution}
-              onChange={e => setProfile(p => ({ ...p, institution: e.target.value }))}
-              placeholder="e.g. MIT, Stanford, Max Planck Institute"
-              style={fieldStyle}
-              onFocus={e => { (e.target as HTMLInputElement).style.borderColor = THEME.SKY; }}
-              onBlur={e => { (e.target as HTMLInputElement).style.borderColor = THEME.PANEL_BORDER; }}
-            />
-          </div>
-
-          {/* Research Area */}
-          <div style={fieldGroup}>
-            <label style={labelStyle}>
-              <FlaskConical size={13} style={{ color: THEME.LILAC }} />
-              Research Area
-            </label>
-            <input
-              type="text"
-              value={profile.research_area}
-              onChange={e => setProfile(p => ({ ...p, research_area: e.target.value }))}
-              placeholder="e.g. Synthetic biology, Metabolic engineering"
-              style={fieldStyle}
-              onFocus={e => { (e.target as HTMLInputElement).style.borderColor = THEME.LILAC; }}
-              onBlur={e => { (e.target as HTMLInputElement).style.borderColor = THEME.PANEL_BORDER; }}
-            />
-          </div>
-
-          {/* ORCID */}
-          <div style={fieldGroup}>
-            <label style={labelStyle}>
-              <Hash size={13} style={{ color: THEME.APRICOT }} />
-              ORCID
-            </label>
-            <input
-              type="text"
-              value={profile.orcid}
-              onChange={e => setProfile(p => ({ ...p, orcid: e.target.value }))}
-              placeholder="0000-0000-0000-0000"
-              style={{ ...fieldStyle, fontFamily: THEME.MONO }}
-              onFocus={e => { (e.target as HTMLInputElement).style.borderColor = THEME.APRICOT; }}
-              onBlur={e => { (e.target as HTMLInputElement).style.borderColor = THEME.PANEL_BORDER; }}
-            />
-          </div>
-
-          {/* Bio */}
-          <div style={fieldGroup}>
-            <label style={labelStyle}>
-              <FileText size={13} style={{ color: THEME.MINT }} />
-              Bio
-            </label>
-            <textarea
-              value={profile.bio}
-              onChange={e => setProfile(p => ({ ...p, bio: e.target.value }))}
-              placeholder="Brief description of your research interests..."
-              rows={4}
-              maxLength={500}
-              style={{
-                ...fieldStyle,
-                resize: 'vertical' as const,
-                minHeight: '80px',
-              }}
-              onFocus={e => { (e.target as HTMLTextAreaElement).style.borderColor = THEME.MINT; }}
-              onBlur={e => { (e.target as HTMLTextAreaElement).style.borderColor = THEME.PANEL_BORDER; }}
-            />
-            <span style={{
-              fontFamily: THEME.MONO,
-              fontSize: THEME.FS_XS,
-              color: 'rgba(255,255,255,0.3)',
-              textAlign: 'right',
-            }}>
-              {profile.bio.length}/500
-            </span>
-          </div>
-
-          {/* Save button + status */}
+          {/* ─── Profile Header ─── */}
           <div style={{
             display: 'flex',
-            alignItems: 'center',
-            gap: THEME.SP_SM,
-            paddingTop: THEME.SP_SM,
-            borderTop: `1px solid ${THEME.PANEL_BORDER}`,
+            alignItems: 'flex-start',
+            gap: T.SP_LG,
+            marginBottom: T.SP_XL,
+            opacity: mounted ? 1 : 0,
+            transform: mounted ? 'translateY(0)' : 'translateY(12px)',
+            transition: 'opacity 0.5s ease 0.1s, transform 0.5s ease 0.1s',
           }}>
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '10px 20px',
-                borderRadius: THEME.R_SM,
-                background: saving ? 'rgba(191,220,205,0.15)' : 'rgba(191,220,205,0.2)',
-                border: `1px solid ${THEME.MINT}40`,
-                color: THEME.MINT,
-                fontFamily: THEME.SANS,
-                fontSize: THEME.FS_MD,
+            {/* Avatar */}
+            <div style={{ position: 'relative', flexShrink: 0 }}>
+              {profile.image ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={profile.image}
+                  alt={profile.name}
+                  width={80}
+                  height={80}
+                  style={{
+                    borderRadius: T.R_LG,
+                    border: `2px solid ${T.CARD_BORDER}`,
+                  }}
+                />
+              ) : (
+                <div style={{
+                  width: 80,
+                  height: 80,
+                  borderRadius: T.R_LG,
+                  background: 'linear-gradient(135deg, rgba(191, 220, 205, 0.12), rgba(207, 196, 227, 0.08))',
+                  border: `2px solid ${T.CARD_BORDER}`,
+                  display: 'grid',
+                  placeItems: 'center',
+                }}>
+                  <User size={32} style={{ color: T.MINT, opacity: 0.6 }} />
+                </div>
+              )}
+              {/* Provider badge */}
+              <div style={{
+                position: 'absolute',
+                bottom: -4,
+                right: -4,
+                width: 24,
+                height: 24,
+                borderRadius: '50%',
+                background: T.BG,
+                border: `2px solid ${T.CARD_BORDER}`,
+                display: 'grid',
+                placeItems: 'center',
+              }}>
+                <Sparkles size={10} style={{ color: T.LILAC }} />
+              </div>
+            </div>
+
+            {/* Name + Email */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <h1 style={{
+                fontFamily: T.SERIF,
+                fontSize: '28px',
                 fontWeight: 600,
-                cursor: saving ? 'default' : 'pointer',
-                opacity: saving ? 0.7 : 1,
-                transition: 'background 0.15s, opacity 0.15s',
-              }}
-              onMouseEnter={e => {
-                if (!saving) (e.currentTarget as HTMLElement).style.background = 'rgba(191,220,205,0.3)';
-              }}
-              onMouseLeave={e => {
-                (e.currentTarget as HTMLElement).style.background = saving
-                  ? 'rgba(191,220,205,0.15)'
-                  : 'rgba(191,220,205,0.2)';
-              }}
-            >
-              <Save size={14} />
-              {saving ? 'Saving...' : 'Save Profile'}
-            </button>
-
-            {saveStatus === 'success' && (
-              <span style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-                fontFamily: THEME.SANS,
-                fontSize: THEME.FS_SM,
-                color: THEME.NEON_SUCCESS,
+                color: T.INK,
+                letterSpacing: '-0.02em',
+                margin: 0,
+                lineHeight: 1.2,
               }}>
-                <CheckCircle size={14} />
-                Saved
-              </span>
-            )}
-
-            {saveStatus === 'error' && (
-              <span style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-                fontFamily: THEME.SANS,
-                fontSize: THEME.FS_SM,
-                color: THEME.NEON_DANGER,
+                {profile.name || 'Researcher'}
+              </h1>
+              <p style={{
+                fontFamily: T.MONO,
+                fontSize: '12px',
+                color: T.INK_SOFT,
+                margin: '6px 0 0',
               }}>
-                <AlertCircle size={14} />
-                {errorMsg}
-              </span>
-            )}
+                {profile.email}
+              </p>
+              {profile.institution && (
+                <p style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  fontFamily: T.SANS,
+                  fontSize: '13px',
+                  color: T.INK_MID,
+                  margin: '8px 0 0',
+                }}>
+                  <Building2 size={13} style={{ color: T.SKY }} />
+                  {profile.institution}
+                </p>
+              )}
+            </div>
+
+            {/* Completeness */}
+            <CompletenessRing percent={completeness} />
           </div>
-        </div>
 
-        {/* Footer hint */}
-        <p style={{
-          fontFamily: THEME.MONO,
-          fontSize: THEME.FS_XS,
-          color: 'rgba(255,255,255,0.2)',
-          textAlign: 'center',
-          marginTop: THEME.SP_LG,
-        }}>
-          Profile data is stored securely and used to personalize your Nexus-Bio experience.
-        </p>
+          {/* ─── Stats Row ─── */}
+          <div style={{
+            display: 'flex',
+            gap: T.SP_SM,
+            marginBottom: T.SP_XL,
+            opacity: mounted ? 1 : 0,
+            transform: mounted ? 'translateY(0)' : 'translateY(12px)',
+            transition: 'opacity 0.5s ease 0.2s, transform 0.5s ease 0.2s',
+          }}>
+            <StatCard icon={FlaskConical} value="--" label="Pathways" color={T.MINT} />
+            <StatCard icon={Microscope} value="--" label="Simulations" color={T.LILAC} />
+            <StatCard icon={TrendingUp} value="--" label="DBTL Iterations" color={T.SKY} />
+            <StatCard icon={Clock} value="--" label="Hours Active" color={T.APRICOT} />
+          </div>
+
+          {/* ─── Research Profile Card ─── */}
+          <div style={{
+            background: T.CARD,
+            border: `1px solid ${T.CARD_BORDER}`,
+            borderRadius: T.R_LG,
+            padding: T.SP_LG,
+            opacity: mounted ? 1 : 0,
+            transform: mounted ? 'translateY(0)' : 'translateY(12px)',
+            transition: 'opacity 0.5s ease 0.3s, transform 0.5s ease 0.3s',
+          }}>
+            {/* Section header */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: T.SP_SM,
+              paddingBottom: T.SP_MD,
+              borderBottom: `1px solid ${T.CARD_BORDER}`,
+              marginBottom: T.SP_LG,
+            }}>
+              <BookOpen size={16} style={{ color: T.LILAC }} />
+              <h2 style={{
+                fontFamily: T.SERIF,
+                fontSize: '18px',
+                fontWeight: 600,
+                color: T.INK,
+                margin: 0,
+              }}>
+                Research Identity
+              </h2>
+            </div>
+
+            {/* Fields */}
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: T.SP_LG,
+            }}>
+              {/* Institution */}
+              <div>
+                <label style={labelStyle}>
+                  <Building2 size={12} style={{ color: T.SKY }} />
+                  Institution
+                </label>
+                <input
+                  type="text"
+                  value={profile.institution}
+                  onChange={e => setProfile(p => ({ ...p, institution: e.target.value }))}
+                  placeholder="e.g. MIT, Stanford, Max Planck Institute"
+                  style={fieldStyle}
+                  onFocus={e => {
+                    e.target.style.borderColor = T.SKY;
+                    e.target.style.boxShadow = `0 0 0 3px ${T.SKY}15`;
+                  }}
+                  onBlur={e => {
+                    e.target.style.borderColor = T.CARD_BORDER;
+                    e.target.style.boxShadow = 'none';
+                  }}
+                />
+              </div>
+
+              {/* Research Area */}
+              <div>
+                <label style={labelStyle}>
+                  <FlaskConical size={12} style={{ color: T.LILAC }} />
+                  Research Area
+                </label>
+                <input
+                  type="text"
+                  value={profile.research_area}
+                  onChange={e => setProfile(p => ({ ...p, research_area: e.target.value }))}
+                  placeholder="e.g. Synthetic biology, Metabolic engineering"
+                  style={fieldStyle}
+                  onFocus={e => {
+                    e.target.style.borderColor = T.LILAC;
+                    e.target.style.boxShadow = `0 0 0 3px ${T.LILAC}15`;
+                  }}
+                  onBlur={e => {
+                    e.target.style.borderColor = T.CARD_BORDER;
+                    e.target.style.boxShadow = 'none';
+                  }}
+                />
+              </div>
+
+              {/* ORCID */}
+              <div>
+                <label style={labelStyle}>
+                  <Hash size={12} style={{ color: T.APRICOT }} />
+                  ORCID
+                  <a
+                    href="https://orcid.org"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      marginLeft: 'auto',
+                      fontFamily: T.MONO,
+                      fontSize: '10px',
+                      color: T.INK_GHOST,
+                      textDecoration: 'none',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 4,
+                    }}
+                  >
+                    orcid.org <ExternalLink size={9} />
+                  </a>
+                </label>
+                <input
+                  type="text"
+                  value={profile.orcid}
+                  onChange={e => setProfile(p => ({ ...p, orcid: e.target.value }))}
+                  placeholder="0000-0000-0000-0000"
+                  style={{ ...fieldStyle, fontFamily: T.MONO }}
+                  onFocus={e => {
+                    e.target.style.borderColor = T.APRICOT;
+                    e.target.style.boxShadow = `0 0 0 3px ${T.APRICOT}15`;
+                  }}
+                  onBlur={e => {
+                    e.target.style.borderColor = T.CARD_BORDER;
+                    e.target.style.boxShadow = 'none';
+                  }}
+                />
+              </div>
+
+              {/* Bio */}
+              <div>
+                <label style={labelStyle}>
+                  <FileText size={12} style={{ color: T.MINT }} />
+                  Bio
+                </label>
+                <textarea
+                  value={profile.bio}
+                  onChange={e => setProfile(p => ({ ...p, bio: e.target.value }))}
+                  placeholder="Brief description of your research interests and expertise..."
+                  rows={4}
+                  maxLength={500}
+                  style={{
+                    ...fieldStyle,
+                    resize: 'vertical',
+                    minHeight: 100,
+                    lineHeight: 1.6,
+                  }}
+                  onFocus={e => {
+                    e.target.style.borderColor = T.MINT;
+                    e.target.style.boxShadow = `0 0 0 3px ${T.MINT}15`;
+                  }}
+                  onBlur={e => {
+                    e.target.style.borderColor = T.CARD_BORDER;
+                    e.target.style.boxShadow = 'none';
+                  }}
+                />
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'flex-end',
+                  marginTop: T.SP_XS,
+                }}>
+                  <span style={{
+                    fontFamily: T.MONO,
+                    fontSize: '10px',
+                    color: profile.bio.length > 450 ? T.CORAL : T.INK_GHOST,
+                  }}>
+                    {profile.bio.length}/500
+                  </span>
+                </div>
+              </div>
+
+              {/* Expertise Tags */}
+              <div>
+                <label style={labelStyle}>
+                  <Sparkles size={12} style={{ color: T.LILAC }} />
+                  Expertise Tags
+                </label>
+                <div style={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: T.SP_SM,
+                }}>
+                  {EXPERTISE_SUGGESTIONS.map(tag => (
+                    <ExpertiseTag
+                      key={tag}
+                      label={tag}
+                      selected={expertise.includes(tag)}
+                      onToggle={() => {
+                        setExpertise(prev =>
+                          prev.includes(tag)
+                            ? prev.filter(t => t !== tag)
+                            : [...prev, tag]
+                        );
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* ─── Save Button ─── */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: T.SP_MD,
+              marginTop: T.SP_XL,
+              paddingTop: T.SP_LG,
+              borderTop: `1px solid ${T.CARD_BORDER}`,
+            }}>
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: T.SP_SM,
+                  padding: '12px 28px',
+                  borderRadius: T.R_MD,
+                  background: saving ? 'rgba(191, 220, 205, 0.1)' : 'rgba(191, 220, 205, 0.15)',
+                  border: `1px solid rgba(191, 220, 205, 0.25)`,
+                  color: T.MINT,
+                  fontFamily: T.SANS,
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  cursor: saving ? 'default' : 'pointer',
+                  opacity: saving ? 0.7 : 1,
+                  transition: 'all 0.2s',
+                  letterSpacing: '-0.01em',
+                }}
+                onMouseEnter={e => {
+                  if (!saving) {
+                    e.currentTarget.style.background = 'rgba(191, 220, 205, 0.2)';
+                    e.currentTarget.style.transform = 'translateY(-1px)';
+                  }
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.background = saving ? 'rgba(191, 220, 205, 0.1)' : 'rgba(191, 220, 205, 0.15)';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}
+              >
+                <Save size={15} />
+                {saving ? 'Saving...' : 'Save Profile'}
+              </button>
+
+              {saveStatus === 'success' && (
+                <span style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  fontFamily: T.SANS,
+                  fontSize: '13px',
+                  color: T.NEON_SUCCESS,
+                  animation: 'fadeInUp 0.3s ease',
+                }}>
+                  <CheckCircle size={14} />
+                  Saved successfully
+                </span>
+              )}
+
+              {saveStatus === 'error' && (
+                <span style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  fontFamily: T.SANS,
+                  fontSize: '13px',
+                  color: T.NEON_DANGER,
+                  animation: 'fadeInUp 0.3s ease',
+                }}>
+                  <AlertCircle size={14} />
+                  {errorMsg}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* ─── Footer ─── */}
+          <p style={{
+            fontFamily: T.MONO,
+            fontSize: '10px',
+            color: T.INK_GHOST,
+            textAlign: 'center',
+            marginTop: T.SP_XL,
+            lineHeight: 1.6,
+            opacity: mounted ? 1 : 0,
+            transition: 'opacity 0.5s ease 0.5s',
+          }}>
+            Profile data is stored securely and used to personalize your Nexus-Bio experience.
+          </p>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
