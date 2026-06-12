@@ -364,15 +364,16 @@ export default function LoginPage() {
         {/* Background molecular visualization */}
         <MolecularGrid />
 
-        {/* Ambient glow */}
+        {/* Ambient glow — soft mint halo behind card */}
         <div style={{
           position: 'absolute',
-          top: '-20%',
-          right: '-10%',
-          width: '60%',
-          height: '60%',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: '500px',
+          height: '500px',
           borderRadius: '50%',
-          background: `radial-gradient(circle, ${T.CARD_GLOW} 0%, transparent 60%)`,
+          background: 'radial-gradient(circle, rgba(191, 220, 205, 0.06) 0%, transparent 70%)',
           pointerEvents: 'none',
         }} />
 
@@ -380,7 +381,7 @@ export default function LoginPage() {
         <div style={{
           position: 'relative',
           zIndex: 1,
-          maxWidth: 420,
+          maxWidth: 360,
           width: '100%',
           margin: '0 24px',
           opacity: mounted ? 1 : 0,
@@ -403,11 +404,12 @@ export default function LoginPage() {
 
           {/* Card */}
           <div style={{
-            background: T.CARD,
-            border: `1px solid ${T.CARD_BORDER}`,
+            background: 'rgba(16, 19, 28, 0.92)',
+            border: '1px solid rgba(191, 220, 205, 0.08)',
             borderRadius: T.R_LG,
-            padding: '40px 32px',
-            backdropFilter: 'blur(12px)',
+            padding: '40px 28px',
+            backdropFilter: 'blur(16px)',
+            boxShadow: '0 0 60px rgba(191, 220, 205, 0.03), 0 1px 0 rgba(191, 220, 205, 0.06) inset',
           }}>
             {/* Header */}
             <div style={{
