@@ -711,6 +711,25 @@ export default function GECAIRPage() {
                       <path d={toPath('pA')} fill="none" stroke="#C8D8E8" strokeWidth={1.5} />
                       <path d={toPath('pB')} fill="none" stroke="#C8E0D0" strokeWidth={1.5} />
                       <path d={toPath('pC')} fill="none" stroke="#DDD0E8" strokeWidth={1.5} />
+                      {/* X-axis ticks */}
+                      {[0, 0.25, 0.5, 0.75, 1].map(f => (
+                        <g key={`srx-${f}`}>
+                          <line x1={f * w} y1={h} x2={f * w} y2={h - 3} stroke={PAPER_THEME.axis} strokeWidth="0.5" />
+                          <text x={f * w} y={h - 4} textAnchor="middle" fontFamily={PAPER_THEME.tickFont} fontSize="7" fill={PAPER_THEME.tickColor}>
+                            {f === 0 ? '0' : f === 0.25 ? 'T/4' : f === 0.5 ? 'T/2' : f === 0.75 ? '3T/4' : 'T'}
+                          </text>
+                        </g>
+                      ))}
+                      {/* Y-axis ticks */}
+                      {[0, 0.5, 1].map(f => (
+                        <g key={`sry-${f}`}>
+                          <line x1={0} y1={h * (1 - f)} x2={3} y2={h * (1 - f)} stroke={PAPER_THEME.axis} strokeWidth="0.5" />
+                          <text x={4} y={h * (1 - f) + 2.5} textAnchor="start" fontFamily={PAPER_THEME.tickFont} fontSize="7" fill={PAPER_THEME.tickColor}>
+                            {f === 0 ? '0' : f === 0.5 ? '50%' : '100%'}
+                          </text>
+                        </g>
+                      ))}
+                      <text x={w - 2} y={h - 2} textAnchor="end" fontFamily={PAPER_THEME.tickFont} fontSize="7" fill={PAPER_THEME.tickColor}>t (min)</text>
                     </svg>
                     <div style={{ display: 'flex', gap: '12px', marginTop: '6px', fontFamily: THEME.MONO, fontSize: '11px' }}>
                       <span style={{ color: '#C8D8E8' }}>■ LacI</span>
@@ -744,6 +763,25 @@ export default function GECAIRPage() {
                       <path d={toPath('pA')} fill="none" stroke="#C8D8E8" strokeWidth={1.5} />
                       <path d={toPath('pB')} fill="none" stroke="#C8E0D0" strokeWidth={1.5} />
                       <path d={toPath('pC')} fill="none" stroke="#DDD0E8" strokeWidth={1.5} />
+                      {/* X-axis ticks */}
+                      {[0, 0.25, 0.5, 0.75, 1].map(f => (
+                        <g key={`slc-${f}`}>
+                          <line x1={f * w} y1={h} x2={f * w} y2={h - 3} stroke={PAPER_THEME.axis} strokeWidth="0.5" />
+                          <text x={f * w} y={h - 4} textAnchor="middle" fontFamily={PAPER_THEME.tickFont} fontSize="7" fill={PAPER_THEME.tickColor}>
+                            {f === 0 ? '0' : f === 0.25 ? 'T/4' : f === 0.5 ? 'T/2' : f === 0.75 ? '3T/4' : 'T'}
+                          </text>
+                        </g>
+                      ))}
+                      {/* Y-axis ticks */}
+                      {[0, 0.5, 1].map(f => (
+                        <g key={`sly-${f}`}>
+                          <line x1={0} y1={h * (1 - f)} x2={3} y2={h * (1 - f)} stroke={PAPER_THEME.axis} strokeWidth="0.5" />
+                          <text x={4} y={h * (1 - f) + 2.5} textAnchor="start" fontFamily={PAPER_THEME.tickFont} fontSize="7" fill={PAPER_THEME.tickColor}>
+                            {f === 0 ? '0' : f === 0.5 ? '50%' : '100%'}
+                          </text>
+                        </g>
+                      ))}
+                      <text x={w - 2} y={h - 2} textAnchor="end" fontFamily={PAPER_THEME.tickFont} fontSize="7" fill={PAPER_THEME.tickColor}>t (min)</text>
                     </svg>
                     <div style={{ display: 'flex', gap: '12px', marginTop: '6px', fontFamily: THEME.MONO, fontSize: '11px' }}>
                       <span style={{ color: '#C8D8E8' }}>■ Node A (input)</span>
@@ -778,6 +816,25 @@ export default function GECAIRPage() {
                   <svg width={w} height={h} style={{ display: 'block', width: '100%' }}>
                     <path d={toPath('pA')} fill="none" stroke="#C8D8E8" strokeWidth={1.5} />
                     <path d={toPath('pB')} fill="none" stroke="#E8DCC8" strokeWidth={1.5} />
+                    {/* X-axis ticks */}
+                    {[0, 0.25, 0.5, 0.75, 1].map(f => (
+                      <g key={`sts-${f}`}>
+                        <line x1={f * w} y1={h} x2={f * w} y2={h - 3} stroke={PAPER_THEME.axis} strokeWidth="0.5" />
+                        <text x={f * w} y={h - 4} textAnchor="middle" fontFamily={PAPER_THEME.tickFont} fontSize="7" fill={PAPER_THEME.tickColor}>
+                          {f === 0 ? '0' : f === 0.25 ? 'T/4' : f === 0.5 ? 'T/2' : f === 0.75 ? '3T/4' : 'T'}
+                        </text>
+                      </g>
+                    ))}
+                    {/* Y-axis ticks */}
+                    {[0, 0.5, 1].map(f => (
+                      <g key={`sty-${f}`}>
+                        <line x1={0} y1={h * (1 - f)} x2={3} y2={h * (1 - f)} stroke={PAPER_THEME.axis} strokeWidth="0.5" />
+                        <text x={4} y={h * (1 - f) + 2.5} textAnchor="start" fontFamily={PAPER_THEME.tickFont} fontSize="7" fill={PAPER_THEME.tickColor}>
+                          {f === 0 ? '0' : f === 0.5 ? '50%' : '100%'}
+                        </text>
+                      </g>
+                    ))}
+                    <text x={w - 2} y={h - 2} textAnchor="end" fontFamily={PAPER_THEME.tickFont} fontSize="7" fill={PAPER_THEME.tickColor}>t (min)</text>
                   </svg>
                   <div style={{ display: 'flex', gap: '12px', marginTop: '6px', fontFamily: THEME.MONO, fontSize: '11px' }}>
                     <span style={{ color: '#C8D8E8' }}>■ Protein A</span>
@@ -864,12 +921,45 @@ export default function GECAIRPage() {
 
           {/* ODE Dynamics — Real RK4 simulation */}
           {(() => {
-            const w = 400, h = 120;
+            const w = 400, h = 140;
+            const mL = 35, mR = 10, mT = 5, mB = 22;
+            const plotW = w - mL - mR;
+            const plotH = h - mT - mB;
+            // Shared axis elements
+            const axisEls = (
+              <>
+                {/* Axis frame */}
+                <line x1={mL} y1={mT} x2={mL} y2={mT + plotH} stroke={PAPER_THEME.axis} strokeWidth="0.75" />
+                <line x1={mL} y1={mT + plotH} x2={mL + plotW} y2={mT + plotH} stroke={PAPER_THEME.axis} strokeWidth="0.75" />
+                {/* X-axis ticks */}
+                {[0, 0.25, 0.5, 0.75, 1].map(f => (
+                  <g key={`dxt-${f}`}>
+                    <line x1={mL + f * plotW} y1={mT + plotH} x2={mL + f * plotW} y2={mT + plotH + 4} stroke={PAPER_THEME.axis} strokeWidth="0.5" />
+                    <text x={mL + f * plotW} y={mT + plotH + 14} textAnchor="middle" fontFamily={PAPER_THEME.tickFont} fontSize={PAPER_THEME.tickSize} fill={PAPER_THEME.tickColor}>
+                      {f === 0 ? '0' : f === 0.25 ? 'T/4' : f === 0.5 ? 'T/2' : f === 0.75 ? '3T/4' : 'T'}
+                    </text>
+                  </g>
+                ))}
+                {/* Y-axis ticks */}
+                {[0, 0.5, 1].map(f => (
+                  <g key={`dyt-${f}`}>
+                    <line x1={mL - 4} y1={mT + plotH - f * plotH} x2={mL} y2={mT + plotH - f * plotH} stroke={PAPER_THEME.axis} strokeWidth="0.5" />
+                    <text x={mL - 6} y={mT + plotH - f * plotH + 3} textAnchor="end" fontFamily={PAPER_THEME.tickFont} fontSize={PAPER_THEME.tickSize} fill={PAPER_THEME.tickColor}>
+                      {f === 0 ? '0' : f === 0.5 ? '50%' : '100%'}
+                    </text>
+                  </g>
+                ))}
+                {/* Axis labels */}
+                <text x={mL + plotW / 2} y={h - 2} textAnchor="middle" fontFamily={PAPER_THEME.tickFont} fontSize={PAPER_THEME.tickSize} fill={PAPER_THEME.tickColor}>t (min)</text>
+                <text x={12} y={mT + plotH / 2} textAnchor="middle" fontFamily={PAPER_THEME.tickFont} fontSize={PAPER_THEME.tickSize} fill={PAPER_THEME.tickColor}
+                  transform={`rotate(-90,12,${mT + plotH / 2})`}>Protein</text>
+              </>
+            );
             if (circuitType === 'repressilator') {
               const trajectory = runRepressilator(undefined, 300, 1.0);
               const maxP = Math.max(...trajectory.flatMap(s => [s.pA, s.pB, s.pC]));
               const toPath = (key: keyof RepressilatorState) => {
-                const pts = trajectory.map((s, i) => `${(i / trajectory.length) * w},${h - (s[key] / maxP) * h}`);
+                const pts = trajectory.map((s, i) => `${mL + (i / trajectory.length) * plotW},${mT + plotH - (s[key] / maxP) * plotH}`);
                 return `M${pts.join(' L')}`;
               };
               return (
@@ -878,6 +968,7 @@ export default function GECAIRPage() {
                     <path d={toPath('pA')} fill="none" stroke="#C8D8E8" strokeWidth={2} />
                     <path d={toPath('pB')} fill="none" stroke="#C8E0D0" strokeWidth={2} />
                     <path d={toPath('pC')} fill="none" stroke="#DDD0E8" strokeWidth={2} />
+                    {axisEls}
                   </svg>
                   <div style={{ display: 'flex', gap: '16px', marginTop: '8px', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)' }}>
                     <span style={{ color: '#C8D8E8' }}>■ LacI</span>
@@ -891,7 +982,7 @@ export default function GECAIRPage() {
               const trajectory = runLogicCascade(undefined, 300, 1.0);
               const maxP = Math.max(...trajectory.flatMap(s => [s.pA, s.pB, s.pC]));
               const toPath = (key: keyof LogicCascadeState) => {
-                const pts = trajectory.map((s, i) => `${(i / trajectory.length) * w},${h - (s[key] / maxP) * h}`);
+                const pts = trajectory.map((s, i) => `${mL + (i / trajectory.length) * plotW},${mT + plotH - (s[key] / maxP) * plotH}`);
                 return `M${pts.join(' L')}`;
               };
               const finalPA = trajectory[trajectory.length - 1].pA;
@@ -903,6 +994,7 @@ export default function GECAIRPage() {
                     <path d={toPath('pA')} fill="none" stroke="#C8D8E8" strokeWidth={2} />
                     <path d={toPath('pB')} fill="none" stroke="#C8E0D0" strokeWidth={2} />
                     <path d={toPath('pC')} fill="none" stroke="#DDD0E8" strokeWidth={2} />
+                    {axisEls}
                   </svg>
                   <div style={{ display: 'flex', gap: '16px', marginTop: '8px', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)' }}>
                     <span style={{ color: '#C8D8E8' }}>■ Node A (input)</span>
@@ -919,7 +1011,7 @@ export default function GECAIRPage() {
             const trajectory = runToggleSwitch(undefined, 300, 1.0, togglePerturbation);
             const maxP = Math.max(...trajectory.flatMap(s => [s.pA, s.pB]));
             const toPath = (key: keyof ToggleSwitchState) => {
-              const pts = trajectory.map((s, i) => `${(i / trajectory.length) * w},${h - (s[key] / maxP) * h}`);
+              const pts = trajectory.map((s, i) => `${mL + (i / trajectory.length) * plotW},${mT + plotH - (s[key] / maxP) * plotH}`);
               return `M${pts.join(' L')}`;
             };
             const finalPA = trajectory[trajectory.length - 1].pA;
@@ -940,6 +1032,7 @@ export default function GECAIRPage() {
                 <svg width={w} height={h} style={{ display: 'block', width: '100%' }} viewBox={`0 0 ${w} ${h}`}>
                   <path d={toPath('pA')} fill="none" stroke="#C8D8E8" strokeWidth={2} />
                   <path d={toPath('pB')} fill="none" stroke="#C8E0D0" strokeWidth={2} />
+                  {axisEls}
                 </svg>
                 <div style={{ display: 'flex', gap: '16px', marginTop: '8px', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)' }}>
                   <span style={{ color: '#C8D8E8' }}>■ State A</span>
