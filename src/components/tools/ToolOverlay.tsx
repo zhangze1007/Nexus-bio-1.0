@@ -322,7 +322,7 @@ export default function ToolOverlay({
         {state === 'simulating' && (
           <>
             <ActionBtn label="Pause" icon={Pause} onClick={onPause} />
-            <ActionBtn label="Stress" icon={Activity} tone="stress" onClick={onStress} />
+            <ActionBtn label="Parameter Oscillation" icon={Activity} tone="stress" onClick={onStress} />
           </>
         )}
         {state === 'stress_test' && (

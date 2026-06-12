@@ -551,7 +551,9 @@ export default React.memo(function MetabolicEngPage({ embedded = false }: { embe
     workerRef.current?.postMessage({ type: 'STOP' } satisfies FBAWorkerIn);
   }, [send]);
 
-  const handleStress = useCallback(() => {
+  // Parameter Oscillation: applies sinusoidal perturbation to model parameters.
+  // NOT a biological stress model — tests simulation robustness under parameter drift.
+  const handleParameterOscillation = useCallback(() => {
     send({ type: 'STRESS' });
     workerRef.current?.postMessage({
       type: 'START', params, mode: 'stress_test',
@@ -731,7 +733,7 @@ export default React.memo(function MetabolicEngPage({ embedded = false }: { embe
             onStart={handleStart}
             onPause={handlePause}
             onReset={handleReset}
-            onStress={handleStress}
+            onStress={handleParameterOscillation}
             onResume={handleResume}
             forceRef={forceRef}
             width={PATHD_LEFT_PANEL_WIDTH}

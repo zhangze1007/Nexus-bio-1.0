@@ -76,12 +76,14 @@ export type MetabolicEvent =
 // ── Default values ─────────────────────────────────────────────────────
 
 const DEFAULT_PARAMS: SimParams = {
-  substrate:   50,
-  enzyme:       5,
-  temperature: 37,
-  pH:         7.4,
-  vmax:        8.5,
-  km:         12.0,
+  substrate:   50,       // [S] in mM — generic test concentration
+  enzyme:       5,       // [E] in nM — typical in vitro
+  temperature: 37,       // °C — E. coli optimal growth temperature
+  pH:         7.4,       // E. coli cytoplasmic pH
+  vmax:        8.5,      // μmol/min — generic test value
+  km:         12.0,      // mM — generic test value
+  // Note: For PFK-1 (EC 2.7.1.11), BRENDA reports Km(F6P) ≈ 0.1 mM
+  // These defaults are illustrative, not enzyme-specific
 };
 
 const ZERO_READOUTS: SimReadouts = {
@@ -175,7 +177,10 @@ export const metabolicMachine = createMachine({
       },
     },
 
-    // ── Stress Test — extreme parameter perturbation ───────────────────
+    // ── Parameter Oscillation — sinusoidal perturbation of model params ─
+    // NOTE: The state name 'stress_test' is retained for machine compatibility.
+    // This mode applies sinusoidal oscillation to substrate/temperature/pH;
+    // it is NOT a biological stress model.
     stress_test: {
       on: {
         RESUME: {

@@ -297,7 +297,7 @@ export default function StatusOverlay({
               animate={{ opacity:[1,0.4,1] }} transition={{ duration:0.7, repeat:Infinity }}
               style={{ fontFamily: THEME.MONO, fontSize:'var(--nb-fs-xs)', color:THEME.VALUE, textTransform:'uppercase', letterSpacing:'0.1em' }}
             >
-              Stress Test Active
+              Parameter Oscillation Active
             </motion.span>
           </motion.div>
         )}

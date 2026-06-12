@@ -505,9 +505,11 @@ function computeStressIndex(p: SimParams): number {
   return Math.min(1, heatStress + phStress + subStress);
 }
 
-// ── Stress test: apply random perturbation to params ──────────────────
+// ── Parameter oscillation: sinusoidal perturbation to model params ───
+// NOT a biological stress model — applies sinusoidal perturbation to
+// substrate, temperature, and pH to test simulation robustness.
 
-function applyStress(p: SimParams): SimParams {
+function applyParameterOscillation(p: SimParams): SimParams {
   const t = tick * 0.05;
   return {
     ...p,
@@ -524,7 +526,7 @@ async function runTick() {
   tick++;
 
   const effectiveParams = currentMode === 'stress_test'
-    ? applyStress(currentParams)
+    ? applyParameterOscillation(currentParams)
     : currentParams;
 
   const rate = michaelisRate(effectiveParams);
