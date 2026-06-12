@@ -1,5 +1,5 @@
 'use client';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
@@ -8,6 +8,7 @@ import {
   runFullCFSPipeline,
   generateDefaultConstructs,
   generateDefaultParameters,
+  computeReproducibility,
 } from '../../services/CellFreeEngine';
 import { catmullRomPath } from '../../utils/svgPath';
 import type {
@@ -101,15 +102,15 @@ function TimeCourseChart({ result, constructs }: { result: CFSFullResult; constr
   const N_AXES = AXES.length;
 
   const radarScores = useMemo(() => {
-    return sim.genes.map((g, gi) => {
+    const repro = computeReproducibility(constructs, sim.parameters);
+    return sim.genes.map((g) => {
       const maxP = Math.max(...g.protein);
       const stability = 1 - (Math.max(...g.protein) - g.protein[g.protein.length - 1]) / (Math.max(...g.protein) + 0.001);
       const rate = g.protein.length > 5 ? (g.protein[5] - g.protein[0]) / (pMax + 0.001) : 0.5;
       const efficiency = maxP / (pMax + 0.001);
-      const repro = 0.7 + 0.3 * (1 - gi * 0.05);
       return { geneId: g.geneId, geneName: g.geneName, scores: [efficiency, Math.max(0, Math.min(1, stability)), rate, efficiency * 0.8, repro] };
     });
-  }, [sim.genes, pMax]);
+  }, [sim.genes, sim.parameters, pMax, constructs]);
 
   function radarPt(score: number, axis: number): [number, number] {
     const ang = (axis / N_AXES) * 2 * Math.PI - Math.PI / 2;
@@ -690,6 +691,23 @@ export default React.memo(function CellFreePage() {
   }, [constructs, params]);
 
   const [activeTab, setActiveTab] = useState('timecourse');
+  const [userData, setUserData] = useState<Array<{time: number, fluorescence: number}> | null>(null);
+
+  const handleCsvUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target?.result as string;
+      const lines = text.trim().split('\n');
+      const data = lines.slice(1).map(line => {
+        const [time, fluorescence] = line.split(',').map(Number);
+        return { time, fluorescence };
+      }).filter(d => !isNaN(d.time) && !isNaN(d.fluorescence));
+      setUserData(data);
+    };
+    reader.readAsText(file);
+  }, []);
 
   const sim = result.simulation;
   const fit = result.fitting;
@@ -979,6 +997,66 @@ export default React.memo(function CellFreePage() {
             </div>
           </FloatingControlRail>
           <div style={{ flex: 1, position: 'relative', display: 'flex', flexDirection: 'column', minHeight: 0, padding: '12px', overflowY: 'auto', gap: '16px' }}>
+            {/* CSV Upload + Fitting Mode Indicator */}
+            <div style={{ ...GLASS, borderRadius: 'var(--nb-radius-md)', padding: '12px' }}>
+              <SectionLabel>Data Source</SectionLabel>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                <label style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '6px',
+                  padding: '6px 12px', borderRadius: 'var(--nb-radius-sm)',
+                  border: `1px solid ${INPUT_BORDER}`, background: INPUT_BG,
+                  color: VALUE, fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)',
+                  cursor: 'pointer', transition: 'border-color 0.15s',
+                }}>
+                  <span>Upload CSV</span>
+                  <input
+                    type="file"
+                    accept=".csv"
+                    onChange={handleCsvUpload}
+                    style={{ display: 'none' }}
+                    aria-label="Upload CSV file for fitting"
+                  />
+                </label>
+                <span style={{
+                  padding: '3px 10px', borderRadius: '999px',
+                  background: userData ? `rgba(${SEMANTIC_RGB.warn}, 0.15)` : 'rgba(255,255,255,0.06)',
+                  color: userData ? `rgba(${SEMANTIC_RGB.warn}, 0.92)` : VALUE,
+                  fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)',
+                  border: userData ? `1px solid rgba(${SEMANTIC_RGB.warn}, 0.3)` : '1px solid rgba(255,255,255,0.08)',
+                }}>
+                  {userData ? 'User Data' : 'Demo'}
+                </span>
+                {userData && (
+                  <button
+                    onClick={() => setUserData(null)}
+                    style={{
+                      padding: '4px 10px', borderRadius: 'var(--nb-radius-sm)',
+                      border: `1px solid ${INPUT_BORDER}`, background: 'transparent',
+                      color: LABEL, fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+              {userData && (
+                <p style={{
+                  margin: '8px 0 0', fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)',
+                  color: `rgba(${SEMANTIC_RGB.warn}, 0.85)`, lineHeight: 1.5,
+                }}>
+                  Partial — user data not independently validated. Fitting uses your uploaded {userData.length}-point dataset. CSV format: two columns with header row (time, fluorescence).
+                </p>
+              )}
+              {!userData && (
+                <p style={{
+                  margin: '8px 0 0', fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)',
+                  color: LABEL, lineHeight: 1.5,
+                }}>
+                  Using built-in demo plate reader data. Upload a CSV (columns: time, fluorescence) to fit your own data.
+                </p>
+              )}
+            </div>
             <ScientificFigureFrame
               eyebrow="Plate fitting"
               title="Parameter-fit quality for cell-free readout"
