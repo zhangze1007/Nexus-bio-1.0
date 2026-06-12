@@ -30,6 +30,7 @@ import InlineMetricOverlay from './shared/InlineMetricOverlay';
 import WorkbenchRangeSlider from './shared/WorkbenchRangeSlider';
 import type { ToolTab } from './shared/ToolTabBar';
 import { THEME, TOOL_RESULT_PALETTE } from '../../theme';
+import { PAPER_THEME } from '../charts/chartTheme';
 import { SVGChartContainer } from '../charts/primitives';
 
 /**
@@ -97,13 +98,13 @@ function GenomeMap({
   ];
 
   return (
-    <SVGChartContainer W={W} H={H} ariaLabel="IGV-style E. coli genome map" rx={14}>
+    <SVGChartContainer W={W} H={H} ariaLabel="IGV-style E. coli genome map" variant="paper">
 
       {/* Title */}
-      <text x={PAD.left} y={22} fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.45)" letterSpacing="0.08em">
+      <text x={PAD.left} y={22} fontFamily={PAPER_THEME.tickFont} fontSize="10" fill={PAPER_THEME.tickColor} letterSpacing="0.08em">
         E. COLI K-12 · 4.64 Mb · IGV STYLE
       </text>
-      <text x={PAD.left} y={38} fontFamily={THEME.SANS} fontSize="11" fill="rgba(255,255,255,0.55)">
+      <text x={PAD.left} y={38} fontFamily={THEME.SANS} fontSize="11" fill={PAPER_THEME.labelColor}>
         CRISPRi target landscape — horizontal arrow gene bodies
       </text>
 
@@ -111,7 +112,7 @@ function GenomeMap({
       <line
         x1={PAD.left} y1={PAD.top + innerH / 2}
         x2={PAD.left + innerW} y2={PAD.top + innerH / 2}
-        stroke="rgba(255,255,255,0.15)" strokeWidth={2}
+        stroke={PAPER_THEME.axis} strokeWidth={2}
       />
 
       {/* Tick marks and labels */}
@@ -122,12 +123,12 @@ function GenomeMap({
             <line
               x1={x} y1={PAD.top + innerH / 2 - 4}
               x2={x} y2={PAD.top + innerH / 2 + 4}
-              stroke="rgba(255,255,255,0.2)" strokeWidth={1}
+              stroke={PAPER_THEME.grid} strokeWidth={1}
             />
             <text
               x={x} y={PAD.top + innerH + 16}
               textAnchor="middle" fontFamily={THEME.MONO} fontSize="9"
-              fill="rgba(255,255,255,0.35)"
+              fill={PAPER_THEME.tickColor}
             >
               {(kb / 1000).toFixed(1)} Mb
             </text>
@@ -148,7 +149,7 @@ function GenomeMap({
               d={geneArrowPath(t, y, h, i)}
               fill={color}
               opacity={selectedIds.has(t.gene) ? 0.9 : 0.75}
-              stroke={prominent ? 'rgba(255,255,255,0.4)' : 'none'}
+              stroke={prominent ? PAPER_THEME.axis : 'none'}
               strokeWidth={prominent ? 0.8 : 0}
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: selectedIds.has(t.gene) ? 0.9 : 0.75, x: 0 }}
@@ -159,8 +160,8 @@ function GenomeMap({
               x={xScale(t.position + GENE_KB / 2)}
               y={y - 4}
               textAnchor="middle" fontFamily={THEME.MONO} fontSize="8"
-              fill="rgba(255,255,255,0.5)"
-              style={{ paintOrder: 'stroke', stroke: 'rgba(0,0,0,0.6)', strokeWidth: 2 }}
+              fill={PAPER_THEME.labelColor}
+              style={{ paintOrder: 'stroke', stroke: PAPER_THEME.bg, strokeWidth: 2 }}
             >
               {t.gene.length > 8 ? `${t.gene.slice(0, 7)}…` : t.gene}
             </text>
@@ -189,7 +190,7 @@ function GenomeMap({
         {LEGEND.map((l, i) => (
           <g key={l.label} transform={`translate(${i * 100}, 0)`}>
             <rect width={8} height={8} rx={2} fill={l.color} opacity={0.8} />
-            <text x={12} y={7} fontFamily={THEME.SANS} fontSize="9" fill="rgba(255,255,255,0.35)">
+            <text x={12} y={7} fontFamily={THEME.SANS} fontSize="9" fill={PAPER_THEME.tickColor}>
               {l.label}
             </text>
           </g>
@@ -198,7 +199,7 @@ function GenomeMap({
 
       {/* Viability indicator */}
       <g transform={`translate(${W - 100}, ${PAD.top + innerH + 20})`}>
-        <text fontFamily={THEME.MONO} fontSize="9" fill="rgba(255,255,255,0.3)" textAnchor="end">
+        <text fontFamily={THEME.MONO} fontSize="9" fill={PAPER_THEME.tickColor} textAnchor="end">
           VIABILITY
         </text>
         <text y={14} fontFamily={THEME.MONO} fontSize="16" fill={viability > 70 ? THEME.MINT : viability > 40 ? THEME.APRICOT : THEME.CORAL} textAnchor="end" fontWeight={700}>
