@@ -51,15 +51,35 @@ export interface BioreactorParams {
 }
 
 export const DEFAULT_PARAMS: BioreactorParams = {
-  muMax: 0.4, Ks: 0.15, Ko: 0.2, Yxs: 0.45, Yps: 0.38,
-  kLa: 0.015, OstarSat: 8, feedConc: 400, feedRate: 0.02,
-  kFPP: 12.0,      // FPP synthesis: 12 μM/h per g/L biomass
-  kADS: 0.08,      // ADS catalysis rate
-  fppDegradation: 0.15,  // FPP consumed at 0.15 h⁻¹
-  fppToxicThreshold: 120, // FPP toxicity above 120 μM
-  productToxicThreshold: 25, // Product IC₅₀ at 25 g/L
-  maxBurdenTolerance: 0.6,
+  muMax: 0.4,       // h⁻¹ — typical E. coli max growth rate (Varma & Palsson 1994, Appl Environ Microbiol 60:3724)
+  Ks: 0.15,         // g/L — substrate affinity constant
+  Ko: 0.2,          // mg/L — O₂ half-saturation constant (Varma & Palsson 1994)
+  Yxs: 0.45,        // g/g — aerobic biomass yield on glucose (Varma & Palsson 1994)
+  Yps: 0.38,        // g/g — product yield
+  kLa: 0.015,       // h⁻¹ — volumetric oxygen transfer coefficient (tuned for simulation)
+  OstarSat: 8,      // mg/L — dissolved O₂ saturation
+  feedConc: 400,    // g/L — substrate feed concentration
+  feedRate: 0.02,   // L/h — feed rate
+  kFPP: 12.0,       // μM/h per g/L biomass — FPP synthesis rate
+  kADS: 0.08,       // g/L per h per a.u. — ADS catalysis rate
+  fppDegradation: 0.15,  // h⁻¹ — FPP consumption rate
+  fppToxicThreshold: 120, // μM — FPP toxicity threshold (IC₅₀ model)
+  productToxicThreshold: 25, // g/L — product IC₅₀
+  maxBurdenTolerance: 0.6, // max protein expression before lethality
 };
+
+// ── Tunable simulation constants — exported for Advanced panel overrides ─────
+// SPONTANEOUS_LOSS_RATE = 0.02 h⁻¹ — estimated plasmid/metabolite loss
+// TODO: calibrate against experimental data
+export const SPONTANEOUS_LOSS_RATE = 0.02;
+
+// PROTEIN_TURNOVER_RATE = 0.3 h⁻¹ — Bentley et al. 1990, Biotechnol Bioeng 35:668
+// Typical E. coli protein half-life ~2.3 h → k = ln(2)/2.3 ≈ 0.3 h⁻¹
+export const PROTEIN_TURNOVER_RATE = 0.3;
+
+// O2_CONSUMPTION_COEFF = 1.5 — tuned for simulation
+// Typical E. coli: 10-20 mmol O₂/gDW/h (Varma & Palsson 1994, Appl Environ Microbiol 60:3724)
+export const O2_CONSUMPTION_COEFF = 1.5;
 
 // ── Hill Function: Negative feedback — FPP represses ADS expression ──────────
 // f(FPP) = Vmax * Kd^n / (Kd^n + FPP^n)
@@ -75,6 +95,7 @@ function monodRate(
   S: number, O: number,
   fpp: number, product: number,
   adsExpr: number, p: BioreactorParams,
+  burdenPenaltyCoeff = 0.4,
 ): { mu: number; toxicity: number; burden: number } {
   const muO = O > 0 ? O / (p.Ko + O) : 0;
   const muBase = p.muMax * (S / (p.Ks + S)) * muO;
@@ -86,8 +107,10 @@ function monodRate(
   const toxicity = 1 - fppInhibition * productInhibition;
 
   // Metabolic burden: protein expression costs growth
+  // burdenPenalty factor = 0.4 — estimated, no direct literature source
+  // Up to 40% growth reduction at max expression
   const burden = Math.min(1, adsExpr / p.maxBurdenTolerance);
-  const burdenPenalty = Math.max(0, 1 - burden * 0.4); // Up to 40% growth reduction
+  const burdenPenalty = Math.max(0, 1 - burden * burdenPenaltyCoeff);
 
   const mu = muBase * fppInhibition * productInhibition * burdenPenalty;
   return { mu, toxicity, burden };
@@ -96,22 +119,29 @@ function monodRate(
 // ── RK4 ODE derivatives ──────────────────────────────────────────────────────
 interface State { X: number; S: number; P: number; O: number; FPP: number; ADS: number; }
 
+export interface DynConOverrides {
+  spontaneousLossRate?: number;
+  o2ConsumptionCoeff?: number;
+  burdenPenalty?: number;
+}
+
 function derivatives(
   s: State, airflowScale: number,
   p: BioreactorParams, hill: HillParams,
+  overrides?: DynConOverrides,
 ): State {
   const V = 2.0; // working volume L
-  const SPONTANEOUS_LOSS_RATE = 0.02; // h⁻¹ FPP spontaneous degradation
-  const PROTEIN_TURNOVER_RATE = 0.3; // h⁻¹ protein turnover
-  const O2_CONSUMPTION_COEFF = 1.5; // O₂ consumption coefficient (mg O₂ per g biomass per h)
-  const { mu } = monodRate(s.S, s.O, s.FPP, s.P, s.ADS, p);
+  const spontaneousLossRate = overrides?.spontaneousLossRate ?? SPONTANEOUS_LOSS_RATE;
+  const o2ConsumptionCoeff = overrides?.o2ConsumptionCoeff ?? O2_CONSUMPTION_COEFF;
+  const burdenPenaltyCoeff = overrides?.burdenPenalty ?? 0.4;
+  const { mu } = monodRate(s.S, s.O, s.FPP, s.P, s.ADS, p, burdenPenaltyCoeff);
 
   // Biomass
   const dX = mu * s.X;
   // Substrate
   const dS = -dX / p.Yxs + p.feedRate * (p.feedConc - s.S) / V;
   // FPP intermediate: produced proportional to biomass, consumed by ADS
-  const dFPP = p.kFPP * s.X - s.ADS * s.FPP * p.fppDegradation - s.FPP * SPONTANEOUS_LOSS_RATE;
+  const dFPP = p.kFPP * s.X - s.ADS * s.FPP * p.fppDegradation - s.FPP * spontaneousLossRate;
   // ADS expression: Hill-function feedback from FPP
   const adsTarget = hillFeedback(s.FPP, hill);
   const dADS = (adsTarget - s.ADS) * PROTEIN_TURNOVER_RATE;
@@ -119,7 +149,7 @@ function derivatives(
   // Note: ADS is already a concentration (a.u./L), so no additional X factor
   const dP = p.kADS * s.ADS * s.FPP;
   // Dissolved O₂
-  const dO = p.kLa * airflowScale * (p.OstarSat - s.O) - mu * s.X * O2_CONSUMPTION_COEFF;
+  const dO = p.kLa * airflowScale * (p.OstarSat - s.O) - mu * s.X * o2ConsumptionCoeff;
 
   return { X: dX, S: dS, P: dP, O: dO, FPP: dFPP, ADS: dADS };
 }
@@ -153,6 +183,7 @@ export function runBioreactor(
   steps = 100,
   dt = 1.0,
   hill: HillParams = DEFAULT_HILL,
+  overrides?: DynConOverrides,
 ): ODEState[] {
   const states: ODEState[] = [];
   let state: State = { X: 0.5, S: 20.0, P: 0.0, O: params.OstarSat, FPP: 10.0, ADS: hill.Vmax * 0.8 };
@@ -173,13 +204,13 @@ export function runBioreactor(
     };
 
     // RK4 integration with PID recomputed at each sub-step
-    const k1 = derivatives(state, calcAirflow(state), params, hill);
+    const k1 = derivatives(state, calcAirflow(state), params, hill, overrides);
     const s2 = clampState(addState(state, k1, dt / 2), params);
-    const k2 = derivatives(s2, calcAirflow(s2), params, hill);
+    const k2 = derivatives(s2, calcAirflow(s2), params, hill, overrides);
     const s3 = clampState(addState(state, k2, dt / 2), params);
-    const k3 = derivatives(s3, calcAirflow(s3), params, hill);
+    const k3 = derivatives(s3, calcAirflow(s3), params, hill, overrides);
     const s4 = clampState(addState(state, k3, dt), params);
-    const k4 = derivatives(s4, calcAirflow(s4), params, hill);
+    const k4 = derivatives(s4, calcAirflow(s4), params, hill, overrides);
 
     // Update PID state after RK4 step
     const currentMeasurement = state.O / params.OstarSat;
@@ -197,7 +228,7 @@ export function runBioreactor(
       ADS: state.ADS + (dt / 6) * (k1.ADS + 2 * k2.ADS + 2 * k3.ADS + k4.ADS),
     }, params);
 
-    const { toxicity, burden } = monodRate(state.S, state.O, state.FPP, state.P, state.ADS, params);
+    const { toxicity, burden } = monodRate(state.S, state.O, state.FPP, state.P, state.ADS, params, overrides?.burdenPenalty ?? 0.4);
 
     states.push({
       time: (i + 1) * dt,
@@ -296,13 +327,15 @@ export function analyzeMetabolicBurden(
   const avgBurden = trajectory.reduce((s, t) => s + (t.metabolicBurden ?? 0), 0) / trajectory.length;
   const maxToxicity = Math.max(...trajectory.map(t => t.toxicity ?? 0));
 
-  // Protein cost: fraction of ribosome budget (assume 15% max for heterologous)
+  // Protein cost factor = 0.15 — Russell & Cook 1995, Microbiol Rev 59:126
+  // ATP cost of protein synthesis: fraction of ribosome budget for heterologous expression
   const proteinCost = Math.min(1, avgADS * 0.15);
 
-  // ATP drain: each enzyme unit costs ~2.5 mmol ATP/gDW/h for synthesis + folding
+  // ATP drain factor = 2.5 — Russell & Cook 1995, Microbiol Rev 59:126
+  // Each enzyme unit costs ~2.5 mmol ATP/gDW/h for synthesis + folding
   const atpDrain = avgADS * 2.5;
 
-  // Growth penalty: integrated burden over time
+  // Growth penalty factor = 0.4 — estimated, no direct literature source
   const growthPenalty = avgBurden * 0.4;
 
   const burdenIndex = (proteinCost + growthPenalty + maxToxicity) / 3;

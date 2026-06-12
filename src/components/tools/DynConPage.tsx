@@ -22,8 +22,11 @@ import {
   analyzeMetabolicBurden,
   mapControlGainToRBS,
   hillFeedback,
+  SPONTANEOUS_LOSS_RATE,
+  O2_CONSUMPTION_COEFF,
 } from '../../data/mockDynCon';
 import type { ODEState, HillParams } from '../../types';
+import type { DynConOverrides } from '../../data/mockDynCon';
 import { buildDynConSeed } from './shared/workbenchDataflow';
 import ToolShell from './shared/ToolShell';
 import ToolTabPanel from './shared/ToolTabPanel';
@@ -228,6 +231,7 @@ function ParamSlider({ label, value, min, max, step = 0.1, onChange, unit }: {
   label: string; value: number; min: number; max: number; step?: number;
   onChange: (v: number) => void; unit?: string;
 }) {
+  const decimals = step > 0 ? Math.max(2, Math.ceil(-Math.log10(step))) : 2;
   return (
     <WorkbenchRangeSlider
       label={label}
@@ -237,7 +241,7 @@ function ParamSlider({ label, value, min, max, step = 0.1, onChange, unit }: {
       step={step}
       unit={unit}
       onChange={onChange}
-      formatValue={(nextValue) => nextValue.toFixed(2)}
+      formatValue={(nextValue) => nextValue.toFixed(decimals)}
     />
   );
 }
@@ -287,6 +291,12 @@ export default React.memo(function DynConPage() {
   const [vmax, setVmax] = usePersistedState('nexus-bio:dyncon:vmax', DEFAULT_HILL.Vmax);
   const [hillKd, setHillKd] = usePersistedState('nexus-bio:dyncon:hillKd', DEFAULT_HILL.Kd);
   const [hillN, setHillN] = usePersistedState('nexus-bio:dyncon:hillN', DEFAULT_HILL.n);
+
+  /* ── Advanced overrides (persisted) ──────────────────────────────────────── */
+  const [spontaneousLossRate, setSpontaneousLossRate] = usePersistedState('nexus-bio:dyncon:spontaneousLossRate', SPONTANEOUS_LOSS_RATE);
+  const [o2ConsumptionCoeff, setO2ConsumptionCoeff] = usePersistedState('nexus-bio:dyncon:o2ConsumptionCoeff', O2_CONSUMPTION_COEFF);
+  const [burdenPenalty, setBurdenPenalty] = usePersistedState('nexus-bio:dyncon:burdenPenalty', 0.4);
+
   const [activeTab, setActiveTab] = useState('trajectory');
   const recommendedSeed = useMemo(
     () => buildDynConSeed(fbaPayload, cethxPayload, catalystPayload, dbtlPayload),
@@ -320,15 +330,21 @@ export default React.memo(function DynConPage() {
 
   const hill: HillParams = useMemo(() => ({ Vmax: vmax, Kd: hillKd, n: hillN }), [vmax, hillKd, hillN]);
 
+  const overrides: DynConOverrides = useMemo(() => ({
+    spontaneousLossRate,
+    o2ConsumptionCoeff,
+    burdenPenalty,
+  }), [spontaneousLossRate, o2ConsumptionCoeff, burdenPenalty]);
+
   /* ── Simulation ─────────────────────────────────────────────────────────── */
   const { trajectory, simError } = useMemo(() => {
     try {
-      const t = runBioreactor({ kp, ki, kd, setpoint }, DEFAULT_PARAMS, 100, 1.0, hill);
+      const t = runBioreactor({ kp, ki, kd, setpoint }, DEFAULT_PARAMS, 100, 1.0, hill, overrides);
       return { trajectory: t, simError: null as string | null };
     } catch (e) {
       return { trajectory: [] as ODEState[], simError: e instanceof Error ? e.message : 'Simulation failed' };
     }
-  }, [kp, ki, kd, setpoint, hill]);
+  }, [kp, ki, kd, setpoint, hill, overrides]);
 
   const last = trajectory[trajectory.length - 1];
   const productTiter = last?.product ?? 0;
@@ -502,6 +518,10 @@ export default React.memo(function DynConPage() {
                 <ParamSlider label="Vmax" value={vmax} min={0.1} max={2.0} step={0.05} onChange={setVmax} />
                 <ParamSlider label="Kd" value={hillKd} min={5} max={200} step={5} onChange={setHillKd} unit="μM" />
                 <ParamSlider label="n" value={hillN} min={1} max={4} step={0.5} onChange={setHillN} />
+                <SectionLabel>Advanced</SectionLabel>
+                <ParamSlider label="Spont. Loss Rate" value={spontaneousLossRate} min={0.001} max={0.1} step={0.001} onChange={setSpontaneousLossRate} unit="h⁻¹" />
+                <ParamSlider label="O₂ Cons. Coeff" value={o2ConsumptionCoeff} min={0.5} max={3.0} step={0.1} onChange={setO2ConsumptionCoeff} />
+                <ParamSlider label="Burden Penalty" value={burdenPenalty} min={0.1} max={0.8} step={0.05} onChange={setBurdenPenalty} />
               </FloatingControlRail>
 
               <div style={{ flex: 1, position: 'relative', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
