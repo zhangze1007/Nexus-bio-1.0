@@ -438,6 +438,7 @@ export interface CRISPRiTarget {
   knockdown_efficiency: number;
   phenotype?: string;
   growth_impact?: number;
+  source?: string;
 }
 
 // ── MODULE: NEXAI ─────────────────────────────────────────────────────────────

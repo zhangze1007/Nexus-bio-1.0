@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
 import SimErrorBanner from '../ide/shared/SimErrorBanner';
-import { CRISPRI_TARGETS, greedyKnockdownSchedule } from '../../data/mockGenMIM';
+import { CRISPRI_TARGETS, greedyKnockdownSchedule, computeOffTargetScore } from '../../data/mockGenMIM';
 import type { CRISPRiTarget } from '../../types';
 import { useWorkbenchStore } from '../../store/workbenchStore';
 import ScientificHero from './shared/ScientificHero';
@@ -241,7 +241,19 @@ export default React.memo(function GenMIMPage() {
   const growthImpact = schedule.reduce((a, t) => a + (t.growth_impact ?? 0), 0);
   const avgEfficiency = schedule.length > 0
     ? schedule.reduce((a, t) => a + t.knockdown_efficiency, 0) / schedule.length : 0;
-  const offTargetRisk = schedule.filter(t => t.knockdown_efficiency < 0.9).length / Math.max(schedule.length, 1);
+  // Representative 20-nt sgRNA spacer sequences per gene (E. coli K-12 intergenic contexts)
+  const sgRNASequences: Record<string, string> = {
+    gapA: 'GCTGAACTGAAAGCGGTAAA', gpmA: 'CATCGTCAGCAATGGCTGAA', eno: 'AATTGCGGCAATCTGCTGGA',
+    pykF: 'GGTCAGTACACCGATAACGA', pykA: 'ATCGCTGCTGAAATCGGTGA', zwf: 'CTGATGACCAAATCGGCAAA',
+    pfkA: 'AACTGGCAACCACGATTTCG', pfkB: 'GGTGAATTCGCTCTGACGAA', aceA: 'TTCGGTAACTGGATCGTGCA',
+    aceB: 'CCAGTCTGAAACCGCTGATG', ppc: 'GTGATTGAAGCCACCGGAAA', pckA: 'CAGTCAGGCGTACTGGAACA',
+    maeB: 'TGCTGACTTCGGTAAACGGA', sdhA: 'GATCGTGAACGTCTGATGGC', sucA: 'CTGACCGCTGAAAACTGGAT',
+    glk: 'ATGAACGTCTGGATCAAGCG', pta: 'GTCAGCAACCTGATCGAAGA', ackA: 'CCTGATCAACTGCGTGAAAG',
+    ldhA: 'ATGCGTCTGACCAATCTGGA', adhE: 'GGATCAACTGGTGCGTAACT',
+  };
+  const offTargetRisk = schedule.length > 0
+    ? Math.round(schedule.reduce((sum, t) => sum + computeOffTargetScore(sgRNASequences[t.gene] ?? t.gene.toUpperCase().padEnd(20, 'A').slice(0, 20)), 0) / schedule.length * 100) / 100
+    : 0;
   const [activeTab, setActiveTab] = useState('genome');
 
   const figureMeta = useMemo(() => ({
@@ -414,7 +426,7 @@ export default React.memo(function GenMIMPage() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ borderBottom: `1px solid ${THEME.BORDER_STRONG}` }}>
-                  {['Gene', 'Position', 'Essential', 'KD Eff.', 'Phenotype', 'Growth ΔΔ'].map(h => (
+                  {['Gene', 'Position', 'Essential', 'KD Eff.', 'sgRNA Score', 'Phenotype', 'Growth ΔΔ'].map(h => (
                     <th key={h} style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', letterSpacing: '0.06em', color: THEME.LABEL, padding: '5px 8px', textAlign: 'left' }}>
                       {h}
                     </th>
@@ -430,6 +442,7 @@ export default React.memo(function GenMIMPage() {
                       <td style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', padding: '4px 8px', color: THEME.LABEL }}>{t.position.toLocaleString()}</td>
                       <td style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', padding: '4px 8px', color: t.essential ? THEME.APRICOT : THEME.LABEL }}>{t.essential ? 'YES' : 'no'}</td>
                       <td style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', padding: '4px 8px', color: THEME.VALUE }}>{t.essential ? '—' : `${(t.knockdown_efficiency * 100).toFixed(0)}%`}</td>
+                      <td style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', padding: '4px 8px', color: THEME.LABEL }}>{t.essential ? '—' : computeOffTargetScore(sgRNASequences[t.gene] ?? t.gene.toUpperCase().padEnd(20, 'A').slice(0, 20)).toFixed(2)}</td>
                       <td style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', padding: '4px 8px', color: THEME.LABEL }}>{t.phenotype}</td>
                       <td style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', padding: '4px 8px', color: THEME.LABEL }}>{t.essential ? '—' : `${((t.growth_impact ?? 0) * 100).toFixed(0)}%`}</td>
                     </tr>
