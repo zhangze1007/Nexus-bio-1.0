@@ -1210,13 +1210,6 @@ export function predictMutagenesisSites(
     else if (pos.conservation > 0.7) predictedEffect = 'deleterious';
     else predictedEffect = 'neutral';
 
-    // Predicted kinetic changes — NOT AVAILABLE
-    // Quantitative mutagenesis effects require molecular dynamics or
-    // trained models (FoldX, Rosetta ddg_monomer, ProteinMPNN).
-    // We report null to indicate no prediction is made.
-    const kcatFold: number | null = null;
-    const kmFold: number | null = null;
-
     let rationale: string;
     if (predictedEffect === 'beneficial') {
       rationale = `Position ${pos.position} is in the substrate access channel with moderate conservation — `

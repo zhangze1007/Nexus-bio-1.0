@@ -125,7 +125,7 @@ export default function MutagenesisChart({ result, enzyme }: MutagenesisChartPro
       </div>
 
       {/* ── ΔKcat Bar Chart ── */}
-      <p style={SECTION_LABEL}>PREDICTED ΔKcat BY SITE</p>
+      <p style={SECTION_LABEL}>ΔKcat BY SITE — no predictions available</p>
 
       <div style={{ width: '100%', height: 160 }}>
         <ResponsiveContainer width="100%" height="100%">
