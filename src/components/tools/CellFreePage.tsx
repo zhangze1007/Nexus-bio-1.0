@@ -98,19 +98,21 @@ function TimeCourseChart({ result, constructs }: { result: CFSFullResult; constr
 
   // ── BOTTOM RIGHT: radar chart ──────────────────────────────────────
   const BR_W = 240, BR_H = 200, RADAR_CX = 120, RADAR_CY = 105, RADAR_R = 74;
-  const AXES = ['Yield', 'Stability', 'Rate', 'Efficiency', 'Reproducibility'];
+  const AXES = ['Yield', 'Stability', 'Rate', 'Yield/ATP', 'Reproducibility'];
   const N_AXES = AXES.length;
 
   const radarScores = useMemo(() => {
     const repro = computeReproducibility(constructs, sim.parameters);
+    const atpUsed = (res.atp[0] || 1) - (res.atp[res.atp.length - 1] || 0);
     return sim.genes.map((g) => {
       const maxP = Math.max(...g.protein);
       const stability = 1 - (Math.max(...g.protein) - g.protein[g.protein.length - 1]) / (Math.max(...g.protein) + 0.001);
       const rate = g.protein.length > 5 ? (g.protein[5] - g.protein[0]) / (pMax + 0.001) : 0.5;
       const efficiency = maxP / (pMax + 0.001);
-      return { geneId: g.geneId, geneName: g.geneName, scores: [efficiency, Math.max(0, Math.min(1, stability)), rate, efficiency * 0.8, repro] };
+      const yieldPerATP = Math.min(1, maxP / (atpUsed || 0.001) / (pMax + 0.001));
+      return { geneId: g.geneId, geneName: g.geneName, scores: [efficiency, Math.max(0, Math.min(1, stability)), rate, yieldPerATP, repro] };
     });
-  }, [sim.genes, sim.parameters, pMax, constructs]);
+  }, [sim.genes, sim.parameters, pMax, constructs, res]);
 
   function radarPt(score: number, axis: number): [number, number] {
     const ang = (axis / N_AXES) * 2 * Math.PI - Math.PI / 2;
