@@ -86,14 +86,14 @@ Nexus-Bio connects the entire workflow into a single platform. Results from one 
 
 #### 2. FBASim — Flux Balance Analysis
 **Route:** `/tools/fbasim`
-**What it does:** Run flux balance analysis on metabolic models. Single-species LP solver with knockout, overexpression, and shadow price analysis. Community mode for multi-species simulation.
+**What it does:** single-species simplex LP plus illustrative two-species demo mode. single-species FBA plus demo-only two-species comparison. Knockout, overexpression, and shadow price analysis.
 
 **Key features:**
 - BiGG model selector (load real E. coli iML1515 or other genome-scale models)
 - Simplex LP solver (two-phase, in-browser)
 - Knockout and OE strategy analysis
 - Shadow prices and carbon efficiency metrics
-- Community FBA mode (demo — not joint LP)
+- Community FBA mode — illustrative two-species demo, NOT a joint community LP
 
 **Database:** BiGG Models (live model loading)
 
@@ -175,7 +175,7 @@ Nexus-Bio connects the entire workflow into a single platform. Results from one 
 
 #### 9. CellFree — Cell-Free Simulation
 **Route:** `/tools/cellfree`
-**What it does:** Simulate cell-free protein synthesis (TX-TL). Resource-aware ODE model with transcription, translation, energy pools, and ribosome dynamics. Plate-reader kinetic fitting.
+**What it does:** Simulate cell-free protein synthesis (TX-TL) with heuristic expression estimates. Resource-aware ODE model with transcription, translation, energy pools, and ribosome dynamics. Plate-reader kinetic fitting.
 
 **Key features:**
 - BRENDA reference kinetics display
@@ -199,7 +199,7 @@ Nexus-Bio connects the entire workflow into a single platform. Results from one 
 
 #### 11. MultiO — Multi-Omics Integration
 **Route:** `/tools/multio`
-**What it does:** Integrate transcriptomics, proteomics, and metabolomics data. PCA biplot, correlation heatmap, volcano plot, and layer signal scoring.
+**What it does:** Integrate transcriptomics, proteomics, and metabolomics data with deterministic sensitivity sketches. PCA biplot, correlation heatmap, volcano plot, and layer signal scoring.
 
 **Key features:**
 - Real PCA biplot (Gabriel scaling, shared coordinate system)
