@@ -15,12 +15,12 @@ export const COLORS = {
   strainA: '#E8A3A1',
   strainB: '#AFC3D6',
   sharedPool: '#BFDCCD',
-  strainABg: 'rgba(232,163,161,0.07)',
-  strainBBg: 'rgba(175,195,214,0.07)',
-  sharedBg: 'rgba(191,220,205,0.07)',
-  strainABorder: 'rgba(232,163,161,0.28)',
-  strainBBorder: 'rgba(175,195,214,0.28)',
-  sharedBorder: 'rgba(191,220,205,0.28)',
+  strainABg: 'rgba(232,163,161,0.10)',
+  strainBBg: 'rgba(175,195,214,0.10)',
+  sharedBg: 'rgba(191,220,205,0.10)',
+  strainABorder: 'rgba(232,163,161,0.20)',
+  strainBBorder: 'rgba(175,195,214,0.20)',
+  sharedBorder: 'rgba(191,220,205,0.20)',
 };
 
 // ── ParamSlider ──
@@ -42,9 +42,8 @@ export function GlassContainer({ children, color, borderColor, style }: {
 }) {
   return (
     <div style={{
-      borderRadius: 'var(--nb-radius-xl)', background: color, backdropFilter: 'blur(10px)',
-      WebkitBackdropFilter: 'blur(10px)', border: `1px solid ${borderColor}`,
-      boxShadow: '0 4px 24px rgba(0,0,0,0.15)', overflow: 'hidden', ...style,
+      borderRadius: '6px', background: 'rgba(17, 19, 24, 0.95)', border: `1px solid rgba(255,255,255,0.10)`,
+      overflow: 'hidden', ...style,
     }}>
       {children}
     </div>
