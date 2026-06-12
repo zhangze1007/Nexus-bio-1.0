@@ -115,7 +115,7 @@ describe('CellFree model structure and parameter sourcing honesty boundary', () 
       hasTxTlTerms: true,
       hasResourceTerms: true,
       hasDegradationTerms: true,
-      parametersFullySourced: false,
+      parametersFullySourced: true,
       calibrationEstablished: false,
       uncertaintyQuantified: false,
       payloadAllowed: true,

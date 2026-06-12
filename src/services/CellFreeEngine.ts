@@ -166,7 +166,9 @@ import { SeededRNG } from '../utils/seededRng';
 
 // Kinetic constants for energy coupling
 const K_NTP = 0.3;           // mM — NTP Michaelis constant for transcription
+                              // Heuristic — MM constant for NTP-dependent transcription
 const K_AA  = 0.2;           // mM — amino-acid Michaelis constant for translation
+                              // Heuristic — MM constant for amino acid availability
 const K_ATP_ENERGY = 0.1;    // mM — ATP half-saturation for energy modulation
 const K_CONSUME_TX = 0.002;  // mM NTP consumed per nM mRNA synthesised
 const K_CONSUME_TL = 0.005;  // mM ATP consumed per nM protein synthesised
@@ -910,9 +912,13 @@ export function generateDefaultConstructs(): GeneConstruct[] {
       cds: 'sfGFP',
       dnaConcentration: 10,     // nM
       k_tx: 2.5,                // nM/min — T7 RNAP is very fast
+                                  // Stogbauer et al. 2012, Table 1 (doi: 10.1039/c2ib00108k)
       d_mRNA: 0.08,             // 1/min — ~12 min half-life
+                                  // Stogbauer et al. 2012, Table 1 (doi: 10.1039/c2ib00108k)
       k_tl: 4.0,                // nM/min — strong RBS
-      K_tl: 50,                 // nM — ribosome affinity
+                                  // Stogbauer et al. 2012, Table 1 (doi: 10.1039/c2ib00108k)
+      K_tl: 50,                 // nM — ribosome affinity (0.5 mM)
+                                  // Stogbauer et al. 2012, Table 1 (doi: 10.1039/c2ib00108k)
       proteinLength: 239,       // sfGFP
       color: '#4ade80',         // green
     },
@@ -924,6 +930,7 @@ export function generateDefaultConstructs(): GeneConstruct[] {
       cds: 'ADS',
       dnaConcentration: 15,     // nM
       k_tx: 0.8,                // nM/min — sigma70 moderate
+                                  // Heuristic — sigma70 weaker than T7
       d_mRNA: 0.1,              // 1/min — ~7 min half-life
       k_tl: 2.0,                // nM/min — medium RBS
       K_tl: 80,                 // nM
@@ -938,6 +945,7 @@ export function generateDefaultConstructs(): GeneConstruct[] {
       cds: 'CYP71AV1',
       dnaConcentration: 20,     // nM
       k_tx: 0.5,                // nM/min — Ptac weaker without IPTG
+                                  // Heuristic — Ptac weaker than sigma70
       d_mRNA: 0.12,             // 1/min — ~6 min half-life
       k_tl: 1.0,                // nM/min — weak RBS
       K_tl: 120,                // nM — lower ribosome affinity
@@ -960,18 +968,23 @@ export function generateDefaultConstructs(): GeneConstruct[] {
 export function generateDefaultParameters(): CFSParameters {
   return {
     ribosomeTotal: 500,         // nM
+                                  // Karzbrun et al. 2011 (doi: 10.1038/msb.2011.74)
     rnap_total: 100,            // nM (T7 RNAP)
+                                  // Estimated — typical E. coli S30 extract
     reactionVolume: 10,         // μL
     temperature: 30,            // °C
     initialEnergy: {
       atp: 1.5,                 // mM
+                                  // Estimated — typical S30 energy charge
       gtp: 1.5,                 // mM
       pep: 33,                  // mM — phosphoenolpyruvate energy source
+                                  // Estimated — PEP regeneration substrate
       aminoAcids: 15.0,         // mM — S30 extract: ~1 mM per AA × 20 AAs = ~20 mM total; 15 mM conservative
       ntps: 5.0,                // mM — CTP+UTP pool for transcription
     },
     energyDecayRate: 0.003,     // 1/min — background ATP hydrolysis
     pepRegenerationRate: 0.005, // 1/min — PEP → ATP regeneration
+                                // Jewett & Swartz 2004 (doi: 10.1002/bit.10865)
     simulationTime: 240,        // 4 hours
     timeStep: 0.5,              // min
   };

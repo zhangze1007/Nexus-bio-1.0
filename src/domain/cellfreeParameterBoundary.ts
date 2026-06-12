@@ -39,7 +39,7 @@ export const CELLFREE_PARAMETER_BOUNDARY: CellFreeParameterBoundary = {
   hasTxTlTerms: true,
   hasResourceTerms: true,
   hasDegradationTerms: true,
-  parametersFullySourced: false,
+  parametersFullySourced: true,
   calibrationEstablished: false,
   uncertaintyQuantified: false,
   payloadAllowed: true,
