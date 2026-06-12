@@ -6,9 +6,10 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   User, Save, CheckCircle, AlertCircle, Building2, FlaskConical,
   Hash, FileText, ExternalLink, ArrowLeft, Sparkles, BookOpen,
-  Microscope, TrendingUp, Clock,
+  Microscope, TrendingUp, Clock, Home,
 } from 'lucide-react';
 import Link from 'next/link';
+import { THEME } from '../../src/theme';
 
 /**
  * Profile Page — Research Identity
@@ -18,41 +19,21 @@ import Link from 'next/link';
  * not a generic settings form.
  */
 
-// ─── Design Tokens ────────────────────────────────────────────────────────
+// ─── Map old T tokens to THEME equivalents ────────────────────────────────
 
 const T = {
-  BG: '#08090c',
-  CARD: 'rgba(14, 16, 22, 0.85)',
-  CARD_BORDER: 'rgba(255, 255, 255, 0.06)',
-  INSET: 'rgba(255, 255, 255, 0.02)',
-
-  INK: 'rgba(250, 246, 240, 0.94)',
-  INK_MID: 'rgba(250, 246, 240, 0.6)',
-  INK_SOFT: 'rgba(250, 246, 240, 0.35)',
-  INK_GHOST: 'rgba(250, 246, 240, 0.18)',
-
-  MINT: '#BFDCCD',
-  LILAC: '#CFC4E3',
-  SKY: '#AFC3D6',
-  APRICOT: '#E8D8C4',
-  CORAL: '#E8A3A1',
-  NEON_SUCCESS: '#93CB52',
-  NEON_DANGER: '#E8A3A1',
-
-  SERIF: "'Source Serif 4', 'Georgia', serif",
-  SANS: "'IBM Plex Sans', -apple-system, sans-serif",
-  MONO: "'IBM Plex Mono', 'Menlo', monospace",
-
-  SP_XS: 4,
-  SP_SM: 8,
-  SP_MD: 16,
-  SP_LG: 24,
+  ...THEME,
+  BG: THEME.PAPER,
+  CARD: THEME.PANEL_STRONG,
+  CARD_BORDER: THEME.PAPER_BORDER,
+  INSET: THEME.PANEL_INSET,
+  INK_MID: THEME.LABEL,
+  INK_GHOST: THEME.INK_SOFT,
+  NEON_SUCCESS: THEME.NEON_SUCCESS,
+  NEON_DANGER: THEME.NEON_DANGER,
+  SERIF: THEME.BRAND,
   SP_XL: 40,
   SP_2XL: 64,
-
-  R_SM: 8,
-  R_MD: 12,
-  R_LG: 16,
 };
 
 // ─── Types ────────────────────────────────────────────────────────────────
@@ -395,29 +376,44 @@ export default function ProfilePage() {
           margin: '0 auto',
           padding: `${T.SP_XL}px ${T.SP_MD}px`,
         }}>
-          {/* ─── Back Link ─── */}
-          <Link
-            href="/tools"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6,
-              fontFamily: T.MONO,
-              fontSize: '11px',
-              color: T.INK_GHOST,
-              textDecoration: 'none',
-              marginBottom: T.SP_XL,
-              transition: 'color 0.2s',
-              opacity: mounted ? 1 : 0,
-              transitionProperty: 'color, opacity',
-              transitionDuration: '0.2s, 0.4s',
-            }}
-            onMouseEnter={e => { e.currentTarget.style.color = T.INK_SOFT; }}
-            onMouseLeave={e => { e.currentTarget.style.color = T.INK_GHOST; }}
-          >
-            <ArrowLeft size={12} />
-            Back to workbench
-          </Link>
+          {/* ─── Breadcrumb nav ─── */}
+          <nav style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            marginBottom: T.SP_XL,
+            opacity: mounted ? 1 : 0,
+            transition: 'opacity 0.4s ease',
+          }}>
+            <Link
+              href="/"
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: '6px',
+                color: T.PAPER_LABEL,
+                fontFamily: T.SANS, fontSize: '11px',
+                textDecoration: 'none',
+                transition: 'color 0.2s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.color = T.INK; }}
+              onMouseLeave={e => { e.currentTarget.style.color = T.PAPER_LABEL; }}
+            >
+              <Home size={12} />
+              Home
+            </Link>
+            <span style={{
+              color: T.PAPER_MUTED,
+              fontFamily: T.MONO, fontSize: '11px',
+              userSelect: 'none',
+            }}>/</span>
+            <span style={{
+              fontFamily: T.MONO, fontSize: '11px',
+              color: T.INK,
+              fontWeight: 600,
+              letterSpacing: '0.04em',
+            }}>
+              PROFILE
+            </span>
+          </nav>
 
           {/* ─── Profile Header ─── */}
           <div style={{
