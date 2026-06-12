@@ -155,8 +155,8 @@ export default function ResultPanel({
         <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL }}>AXON</span>
         <Chip
           tone="neutral"
-          label={`${(result.confidence * 100).toFixed(0)}%`}
-          title="Model-estimated answer confidence"
+          label={`${(result.confidence * 100).toFixed(0)}`}
+          title="This is a heuristic score based on answer length and hedging language. It is NOT a calibrated probability."
         />
         <Chip
           tone="neutral"

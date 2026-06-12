@@ -64,7 +64,7 @@ export default function EvidencePanel({ citations, onNodeClick }: EvidencePanelP
           Citation support map
         </div>
         <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: THEME.LABEL, lineHeight: 1.55 }}>
-          {citations.length} source{citations.length === 1 ? '' : 's'} · positioned by year and relevance.
+          {citations.length} source{citations.length === 1 ? '' : 's'} · positioned by year and rank.
         </div>
       </div>
       <CitationGraph citations={citations} onNodeClick={onNodeClick} />
@@ -125,7 +125,7 @@ function CitationGraph({
         LITERATURE SUPPORT MAP
       </text>
       <text x="40" y="36" fontFamily={THEME.SANS} fontSize="12" fill="rgba(247,249,255,0.92)">
-        Publications positioned by year and relevance, with bridge citations highlighted
+        Publications positioned by year and rank, with bridge citations highlighted
       </text>
 
       {[0, 0.25, 0.5, 0.75, 1].map((tick) => {
@@ -202,7 +202,7 @@ function CitationGraph({
             onClick={() => onNodeClick?.(n)}
             style={{ cursor: 'pointer' }}
           >
-            <title>{n.title} ({n.year}) — Relevance: {(n.relevance * 100).toFixed(0)}%</title>
+            <title>{n.title} ({n.year}) — Rank: {(n.relevance * 100).toFixed(0)}%</title>
             <line x1={n.x} y1="330" x2={n.x} y2={n.y + n.r + 4} stroke="rgba(255,255,255,0.08)" strokeDasharray="3 4" />
             {n.relevance > 0.7 && (
               <circle
@@ -251,7 +251,7 @@ function CitationGraph({
         );
       })}
       <text x={14} y={H - 12} fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.18)">
-        Y-axis = citation relevance · X-axis = publication year
+        Y-axis = citation rank · X-axis = publication year
       </text>
     </svg>
   );

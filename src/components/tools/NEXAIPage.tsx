@@ -189,6 +189,20 @@ export default React.memo(function NEXAIPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Auto-verify first 3 citations when a new result arrives
+  useEffect(() => {
+    if (result?.citations && result.citations.length > 0 && !verified) {
+      const controller = new AbortController();
+      const toVerify = result.citations.slice(0, 3);
+      verifyCitationsBatch(toVerify, controller.signal).then(batchResults => {
+        const merged = mergeVerificationResults(result.citations, batchResults);
+        setResult(prev => prev ? { ...prev, citations: merged } : prev);
+        setVerified(true);
+      }).catch(() => {});
+      return () => controller.abort();
+    }
+  }, [result?.citations]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const contextPrompt = useMemo(() => {
     if (workflowControl.status === 'blocked' || workflowControl.status === 'gated' || workflowControl.status === 'demoOnly') {
       return `Review the current workflow gate (${workflowControl.status}) and explain what evidence or upstream node is required before ${workflowControl.nextRecommendedNode ?? workflowControl.currentToolId ?? 'the next tool'} can advance.`;
@@ -295,6 +309,7 @@ export default React.memo(function NEXAIPage() {
     setLoading(true);
     setApiError(null);
     setParseError(null);
+    setVerified(false);
     appendConsole({ level: 'info', module: 'nexai', message: `Query: "${activeQuery.slice(0, 60)}${activeQuery.length > 60 ? '…' : ''}"` });
 
     const contextualQuery = composeCopilotQuery(activeQuery, copilotContext);
@@ -512,8 +527,8 @@ export default React.memo(function NEXAIPage() {
                 tone: malformedParse ? 'alert' : resultMode === 'pathway' ? 'cool' : resultMode === 'text' ? 'warm' : 'neutral',
               },
               {
-                label: 'Confidence',
-                value: result ? `${(result.confidence * 100).toFixed(0)}%` : '—',
+                label: 'Quality Index',
+                value: result ? `${(result.confidence * 100).toFixed(0)}` : '—',
                 detail: `${selectedEvidenceIds.length} selected evidence item(s) · ${nextRecommendations.length} queued next-step recommendation(s)`,
                 tone: result && result.confidence > 0.75 ? 'cool' : 'neutral',
               },
@@ -995,7 +1010,7 @@ export default React.memo(function NEXAIPage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
           {result ? (
             <>
-              <MetricCard label="Confidence" value={`${(result.confidence * 100).toFixed(0)}%`} highlight />
+              <MetricCard label="Quality Index" value={`${(result.confidence * 100).toFixed(0)}`} highlight />
               <MetricCard label="Citations" value={result.citations.length} />
               <MetricCard label="Model" value={provider ?? 'groq'} />
               {verified && (() => {
