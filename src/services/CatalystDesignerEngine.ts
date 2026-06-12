@@ -463,7 +463,7 @@ function sequenceIdentity(a: string, b: string): number {
  * Known limitation: No position-dependent weighting, no structural context.
  * For accurate DDG, use FoldX (r ≈ 0.7) or Rosetta ddg_monomer.
  */
-function estimateStabilityDelta(original: string, mutant: string): number {
+export function estimateStabilityDelta(original: string, mutant: string): number {
   // Coefficients calibrated against SKEMPI 2.0 dataset
   // a = -0.25 kcal/mol per BLOSUM62 unit
   // b = -0.1 kcal/mol intercept (slight destabilizing baseline)
