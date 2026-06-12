@@ -994,7 +994,45 @@ export function generateDefaultParameters(): CFSParameters {
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  6. generateMockPlateReaderData
+//  6. computeReproducibility
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Compute reproducibility score via parameter perturbation.
+ * Runs simulation N times with ±10% perturbation on (k_tx, k_tl, K_tl).
+ * Returns 1 - min(CV, 1) where CV = std(yield) / mean(yield).
+ */
+export function computeReproducibility(
+  constructs: GeneConstruct[],
+  params: CFSParameters,
+  nTrials: number = 10,
+  perturbationFraction: number = 0.1,
+): number {
+  const yields: number[] = [];
+  const rng = new SeededRNG(42);
+
+  for (let trial = 0; trial < nTrials; trial++) {
+    const perturbedConstructs = constructs.map(c => ({
+      ...c,
+      k_tx: c.k_tx * (1 + (rng.next() * 2 - 1) * perturbationFraction),
+      k_tl: c.k_tl * (1 + (rng.next() * 2 - 1) * perturbationFraction),
+      K_tl: c.K_tl * (1 + (rng.next() * 2 - 1) * perturbationFraction),
+    }));
+
+    const result = simulateCFPS(perturbedConstructs, params);
+    const maxProtein = Math.max(...result.genes.map(g => Math.max(...g.protein)));
+    yields.push(maxProtein);
+  }
+
+  const mean = yields.reduce((a, b) => a + b, 0) / yields.length;
+  const variance = yields.reduce((a, b) => a + (b - mean) ** 2, 0) / yields.length;
+  const cv = mean > 0 ? Math.sqrt(variance) / mean : 1;
+
+  return Math.max(0, 1 - Math.min(cv, 1));
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  7. generateMockPlateReaderData
 // ═══════════════════════════════════════════════════════════════
 
 /**
@@ -1050,7 +1088,7 @@ export function generateMockPlateReaderData(): PlateReaderDataPoint[] {
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  7. runFullCFSPipeline
+//  8. runFullCFSPipeline
 // ═══════════════════════════════════════════════════════════════
 
 /**
