@@ -34,6 +34,99 @@
  */
 
 import { KDTreeIndex } from '../utils/knnIndex';
+import { mannWhitneyU } from '../utils/statistics';
+
+// ══════════════════════════════════════════════════════════════════════
+//  Marker gene sets for expression-based cell-type annotation
+// ══════════════════════════════════════════════════════════════════════
+
+const MARKER_GENE_SETS: Record<string, { markers: string[]; label: string }> = {
+  progenitor: { markers: ['SOX2', 'NES', 'VIM', 'NOTCH1'], label: 'Progenitor' },
+  metabolic: { markers: ['ATP5F1', 'COX4I1', 'SDHB', 'IDH1'], label: 'Metabolically Active' },
+  stressed: { markers: ['HSPA5', 'DDIT3', 'ATF4', 'XBP1'], label: 'Stressed' },
+  quiescent: { markers: ['MKI67', 'PCNA', 'TOP2A'], label: 'Quiescent' },
+};
+
+/**
+ * Label clusters by running Wilcoxon rank-sum tests on known marker gene sets.
+ *
+ * For each cluster, compares expression of marker genes inside vs outside the
+ * cluster.  The marker set with the highest mean -log10(p) enrichment wins.
+ * Falls back to "Cluster N" when no set reaches p < 0.05.
+ */
+function markerGeneAnnotation(
+  community: Int32Array,
+  cells: CellRecord[],
+  geneNames: string[],
+): Map<number, string> {
+  const nClusters = new Set(community).size;
+  const labels = new Map<number, string>();
+
+  for (let c = 0; c < nClusters; c++) {
+    const inIdx: number[] = [];
+    const outIdx: number[] = [];
+    for (let i = 0; i < community.length; i++) {
+      (community[i] === c ? inIdx : outIdx).push(i);
+    }
+    if (inIdx.length < 2 || outIdx.length < 2) {
+      labels.set(c, `Cluster ${c}`);
+      continue;
+    }
+
+    let bestKey = '';
+    let bestScore = -Infinity;
+
+    for (const [key, { markers }] of Object.entries(MARKER_GENE_SETS)) {
+      let scoreSum = 0;
+      let matched = 0;
+
+      for (const marker of markers) {
+        // Find the gene index (case-insensitive match)
+        const gIdx = geneNames.findIndex(g => g.toUpperCase() === marker.toUpperCase());
+        if (gIdx < 0) continue;
+
+        const inVals = inIdx.map(i => cells[i].geneExpression[geneNames[gIdx]] ?? 0);
+        const outVals = outIdx.map(i => cells[i].geneExpression[geneNames[gIdx]] ?? 0);
+
+        // Skip if all values are identical (no variance)
+        const allSame = inVals.every(v => v === inVals[0]) && outVals.every(v => v === outVals[0]);
+        if (allSame) continue;
+
+        try {
+          const { pValue } = mannWhitneyU(inVals, outVals);
+          if (pValue > 0 && pValue < 1) {
+            // Enrichment: higher expression in cluster means the marker is relevant
+            const inMean = inVals.reduce((s, v) => s + v, 0) / inVals.length;
+            const outMean = outVals.reduce((s, v) => s + v, 0) / outVals.length;
+            if (inMean > outMean) {
+              scoreSum += -Math.log10(pValue);
+            }
+          }
+          matched++;
+        } catch {
+          // mannWhitneyU throws on empty samples; skip
+        }
+      }
+
+      if (matched > 0) {
+        const enrichment = scoreSum / matched;
+        if (enrichment > bestScore) {
+          bestScore = enrichment;
+          bestKey = key;
+        }
+      }
+    }
+
+    // Require at least one significant marker (p < 0.05 -> -log10 > 1.301)
+    if (bestKey && bestScore > -Math.log10(0.05)) {
+      labels.set(c, MARKER_GENE_SETS[bestKey].label);
+    } else {
+      labels.set(c, `Cluster ${c}`);
+    }
+  }
+
+  return labels;
+}
 
 // ══════════════════════════════════════════════════════════════════════
 //  Types
@@ -355,13 +448,73 @@ export function normalizeAndLog(cells: CellRecord[], targetSum: number = 10000):
 // ══════════════════════════════════════════════════════════════════════
 
 /**
+ * Tricube-weighted LOESS (locally estimated scatterplot smoothing).
+ *
+ * Fits a locally-weighted linear regression at `xQuery` using the
+ * nearest `span * n` data points with tricube distance weights.
+ *
+ * @param x       Predictor array (sorted by caller — gene means)
+ * @param y       Response array (gene variances)
+ * @param xQuery  The predictor value at which to estimate y
+ * @param span    Proportion of data used in each local fit (0–1)
+ * @returns       LOESS-predicted y value at xQuery
+ */
+export function loessPredict(
+  x: number[],
+  y: number[],
+  xQuery: number,
+  span: number,
+): number {
+  const n = x.length;
+  if (n === 0) return 0;
+
+  const halfWidth = Math.max(3, Math.ceil(span * n));
+
+  // Sort indices by distance to xQuery
+  const distances = x.map((xi, i) => ({ i, dist: Math.abs(xi - xQuery) }));
+  distances.sort((a, b) => a.dist - b.dist);
+
+  // Maximum distance in the neighbourhood (clamp to avoid division by zero)
+  const maxDist = distances[Math.min(halfWidth, n) - 1].dist || 1;
+
+  // Accumulate weighted sums for WLS regression
+  let sumW = 0,
+    sumWX = 0,
+    sumWY = 0,
+    sumWXX = 0,
+    sumWXY = 0;
+  const kMax = Math.min(halfWidth, n);
+  for (let k = 0; k < kMax; k++) {
+    const { i, dist } = distances[k];
+    const u = dist / maxDist;
+    // Tricube weight: (1 - |u|^3)^3
+    const w = Math.pow(1 - Math.pow(Math.min(u, 1), 3), 3);
+    sumW += w;
+    sumWX += w * x[i];
+    sumWY += w * y[i];
+    sumWXX += w * x[i] * x[i];
+    sumWXY += w * x[i] * y[i];
+  }
+
+  // Solve weighted least-squares: y = intercept + slope * x
+  const denom = sumW * sumWXX - sumWX * sumWX;
+  if (Math.abs(denom) < 1e-10) return sumWY / sumW;
+  const slope = (sumW * sumWXY - sumWX * sumWY) / denom;
+  const intercept = (sumWY - slope * sumWX) / sumW;
+  return intercept + slope * xQuery;
+}
+
+/**
  * Seurat v3 HVG selection via variance-stabilizing transformation.
  *
  * For each gene the mean and variance across cells are computed. A
- * loess-like local regression is fitted to the mean-variance trend (using
- * sliding-window averaging), and the normalized variance is the ratio of
- * observed to expected variance. The top `nTop` genes ranked by
- * normalized variance are flagged as highly variable.
+ * tricube-weighted LOESS regression is fitted to the mean-variance trend,
+ * and the normalized variance is the ratio of observed to expected
+ * variance. The top `nTop` genes ranked by normalized variance are
+ * flagged as highly variable.
+ *
+ * For datasets with >10 000 genes a fast sliding-window average is used
+ * instead of LOESS to keep runtime manageable.
  *
  * @param cells  Normalized cells (post-normalizeAndLog)
  * @param nTop   Number of HVGs to select (default 2000)
@@ -385,21 +538,33 @@ export function selectHVGs(cells: CellRecord[], nTop: number = 2000): HVGResult 
     stats.push({ gene: g, mean, variance });
   }
 
-  // Sort by mean for windowed trend estimation
+  // Sort by mean for trend estimation
   stats.sort((a, b) => a.mean - b.mean);
 
-  // Loess-like local regression: sliding window of width ~10% of genes
-  const windowHalf = Math.max(5, Math.floor(stats.length * 0.05));
+  // Compute expected variance via LOESS (tricube-weighted) or fast
+  // sliding-window fallback for very large gene sets
+  const sortedMean = stats.map((s) => s.mean);
+  const sortedVar = stats.map((s) => s.variance);
+  const useLoess = stats.length <= 10000;
+
   const expectedVariance: number[] = new Array(stats.length);
-  for (let i = 0; i < stats.length; i++) {
-    let wSum = 0, wCount = 0;
-    const lo = Math.max(0, i - windowHalf);
-    const hi = Math.min(stats.length - 1, i + windowHalf);
-    for (let j = lo; j <= hi; j++) {
-      wSum += stats[j].variance;
-      wCount++;
+  if (useLoess) {
+    for (let i = 0; i < stats.length; i++) {
+      expectedVariance[i] = loessPredict(sortedMean, sortedVar, stats[i].mean, 0.3);
     }
-    expectedVariance[i] = wSum / Math.max(wCount, 1);
+  } else {
+    // Fast fallback: unweighted sliding window (width ~10% of genes)
+    const windowHalf = Math.max(5, Math.floor(stats.length * 0.05));
+    for (let i = 0; i < stats.length; i++) {
+      let wSum = 0, wCount = 0;
+      const lo = Math.max(0, i - windowHalf);
+      const hi = Math.min(stats.length - 1, i + windowHalf);
+      for (let j = lo; j <= hi; j++) {
+        wSum += stats[j].variance;
+        wCount++;
+      }
+      expectedVariance[i] = wSum / Math.max(wCount, 1);
+    }
   }
 
   // Normalized variance
@@ -673,17 +838,14 @@ export function clusterCells(
   for (let i = 0; i < n; i++) community[i] = commRemap.get(community[i])!;
   const nClusters = uniqueComms.length;
 
-  // Cell-type heuristic based on marker genes
-  const cellTypeLabels = [
-    'Progenitor', 'Metabolically Active', 'Stressed', 'Quiescent',
-    'Proliferating', 'Differentiating', 'Secretory', 'Senescent',
-  ];
+  // Expression-based marker-gene cell-type annotation (Wilcoxon rank-sum)
+  const markerLabels = markerGeneAnnotation(community, cells, genes);
 
   // Assign labels
   const clusterSizes: ClusterResult['clusterSizes'] = [];
   for (let c = 0; c < nClusters; c++) {
     const size = community.filter(v => v === c).length;
-    clusterSizes.push({ cluster: c, size, label: cellTypeLabels[c % cellTypeLabels.length] });
+    clusterSizes.push({ cluster: c, size, label: markerLabels.get(c) ?? `Cluster ${c}` });
   }
 
   // Silhouette score (sampled for performance)
@@ -737,7 +899,7 @@ export function clusterCells(
   const updated = cells.map((c, idx) => ({
     ...c,
     cluster: community[idx],
-    cellType: cellTypeLabels[community[idx] % cellTypeLabels.length],
+    cellType: markerLabels.get(community[idx]) ?? `Cluster ${community[idx]}`,
   }));
 
   return {
@@ -753,6 +915,54 @@ function sumCommunityDegree(community: Int32Array, degree: Float64Array, comm: n
     if (community[i] === comm) s += degree[i];
   }
   return s;
+}
+
+// ── Metabolic marker genes for expression-based fate classification ──
+
+const METABOLIC_MARKERS: Record<string, string[]> = {
+  artemisinin: ['ADS', 'CYP71AV1', 'CPR1', 'DBR2'],
+  general: ['ACTB', 'ACT1'],   // housekeeping
+  stress: ['HSPA5', 'DDIT3'],  // stress / UPR
+};
+
+/**
+ * Classify a cluster's cell fate by comparing its metabolic marker gene
+ * expression to the population-wide mean.
+ *
+ * For each pathway in METABOLIC_MARKERS, computes the mean expression of
+ * the cluster's cells vs. all cells. If the ratio exceeds 1.5 the cluster
+ * is 'productive'; below 0.5 it is 'stressed'; otherwise 'quiescent'.
+ */
+function classifyFateByExpression(
+  clusterCells: CellRecord[],
+  allCells: CellRecord[],
+  geneNames: string[],
+): 'productive' | 'stressed' | 'quiescent' {
+  for (const markers of Object.values(METABOLIC_MARKERS)) {
+    const markerIndices = markers
+      .map(m => geneNames.indexOf(m))
+      .filter(i => i >= 0);
+    if (markerIndices.length === 0) continue;
+
+    const clusterMean =
+      clusterCells.reduce((s, c) => {
+        const cellMean = markerIndices.reduce((ss, i) => ss + (c.geneExpression[geneNames[i]] ?? 0), 0) / markerIndices.length;
+        return s + cellMean;
+      }, 0) / Math.max(clusterCells.length, 1);
+
+    const allMean =
+      allCells.reduce((s, c) => {
+        const cellMean = markerIndices.reduce((ss, i) => ss + (c.geneExpression[geneNames[i]] ?? 0), 0) / markerIndices.length;
+        return s + cellMean;
+      }, 0) / Math.max(allCells.length, 1);
+
+    if (allMean > 0) {
+      const score = clusterMean / allMean;
+      if (score > 1.5) return 'productive';
+      if (score < 0.5) return 'stressed';
+    }
+  }
+  return 'quiescent';
 }
 
 // ══════════════════════════════════════════════════════════════════════
@@ -882,7 +1092,6 @@ export function computePAGA(cells: CellRecord[], clusters: ClusterResult): PAGAR
   }
 
   // Identify branching points (clusters with 3+ strong connections)
-  const fates: Array<'productive' | 'stressed' | 'quiescent'> = ['productive', 'stressed', 'quiescent'];
   const branchingPoints: PAGAResult['branchingPoints'] = [];
   for (let i = 0; i < nC; i++) {
     const strongNeighbors = [];
@@ -892,10 +1101,14 @@ export function computePAGA(cells: CellRecord[], clusters: ClusterResult): PAGAR
     if (strongNeighbors.length >= 2) {
       const children = strongNeighbors
         .filter(j => pseudotime[j] > pseudotime[i])
-        .map((j, idx) => ({
+        .map(j => ({
           cluster: j,
           label: clusters.clusterSizes[j]?.label ?? `Cluster ${j}`,
-          fate: fates[idx % fates.length],
+          fate: classifyFateByExpression(
+            cells.filter(c => c.cluster === j),
+            cells,
+            genes,
+          ),
         }));
       if (children.length >= 2) {
         branchingPoints.push({
