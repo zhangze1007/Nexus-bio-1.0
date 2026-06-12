@@ -196,7 +196,18 @@ describe('Computational Performance Benchmarks', () => {
     };
     const r = await benchmark('CatDes — runFullDesignPipeline', () => {
       runFullDesignPipeline(enzyme, [
-        { dG0: -25.0, name: 'step1' }, { dG0: -15.0, name: 'step2' },
+        {
+          stepNumber: 1, enzyme: 'HMGR', substrate: 'hmg_coa', product: 'mevalonate',
+          kcat: 10, km: 0.5, currentFlux: 5, targetFlux: 8,
+          intermediateConc: 0.1, toxicityThreshold: 1.0, isToxic: false,
+          adjustedKcat: 10, expressionMultiplier: 1.0,
+        },
+        {
+          stepNumber: 2, enzyme: 'ERG20', substrate: 'mevalonate', product: 'fpp',
+          kcat: 8, km: 0.3, currentFlux: 4, targetFlux: 7,
+          intermediateConc: 0.05, toxicityThreshold: 0.5, isToxic: false,
+          adjustedKcat: 8, expressionMultiplier: 1.0,
+        },
       ], [
         {
           id: 'c1', name: 'candidate1', steps: 2, deltaG: -40,
