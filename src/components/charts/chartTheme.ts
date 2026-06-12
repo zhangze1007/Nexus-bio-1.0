@@ -96,6 +96,74 @@ export const SCI_PASTEL = {
 } as const;
 
 /**
+ * Muted pastel palette — replaces SCI_PASTEL for paper-style charts.
+ * Same hue family but desaturated to match Nature/Science figure aesthetic.
+ */
+export const SCI_PASTEL_MUTED = {
+  teal:       '#5BA3A5',
+  lavender:   '#9B82BF',
+  coral:      '#D4886C',
+  periwinkle: '#7A9BC0',
+  olive:      '#7FA362',
+  pink:       '#C07A96',
+  butter:     '#C4AD66',
+  mauve:      '#A08878',
+} as const;
+
+/**
+ * Nature/Science journal paper-style chart tokens.
+ * Use for chart SVG canvases — white background, thin lines, serif annotations.
+ */
+export const PAPER_THEME = {
+  // Canvas
+  bg: '#FAFAF8',
+  bgAlt: '#F5F3EF',
+  border: '#E0DDD8',
+  borderRadius: 2,
+
+  // Grid & axes
+  grid: '#E8E5E0',
+  gridWidth: 0.5,
+  axis: '#888888',
+  axisWidth: 0.75,
+
+  // Typography
+  tickFont: "'IBM Plex Mono', monospace",
+  tickSize: 10,
+  tickColor: '#666666',
+  labelFont: "'Public Sans', sans-serif",
+  labelSize: 11,
+  labelColor: '#444444',
+  titleFont: "'Public Sans', sans-serif",
+  titleSize: 13,
+  titleColor: '#222222',
+
+  // Data
+  linePrimary: 1.5,
+  lineSecondary: 1.0,
+  bandOpacity: 0.15,
+  scatterR: 3,
+  scatterFillOpacity: 0.7,
+  scatterStroke: '#333333',
+  scatterStrokeWidth: 0.5,
+  barFillOpacity: 0.85,
+
+  // Tooltip
+  tooltipBg: '#FFFEF9',
+  tooltipBorder: '#D0CDC8',
+  tooltipRadius: 4,
+  tooltipShadow: '0 2px 8px rgba(0,0,0,0.12)',
+  tooltipColor: '#333333',
+
+  // Legend
+  legendFont: "'Public Sans', sans-serif",
+  legendSize: 10,
+  legendColor: '#555555',
+  legendSwatchW: 10,
+  legendSwatchH: 3,
+} as const;
+
+/**
  * Ordered pastel palette — use when stable series-to-color mapping is desired
  * under the pastel aesthetic (e.g. CellFree yield curves, DYNCON multi-lane
  * time series, exploratory overlays).
@@ -241,10 +309,21 @@ export const TOOLTIP_STYLE: React.CSSProperties = {
   color: colors.text.primary,
 };
 
+export const PAPER_TOOLTIP_STYLE: React.CSSProperties = {
+  background: PAPER_THEME.tooltipBg,
+  border: `1px solid ${PAPER_THEME.tooltipBorder}`,
+  borderRadius: PAPER_THEME.tooltipRadius,
+  padding: '6px 10px',
+  boxShadow: PAPER_THEME.tooltipShadow,
+  fontFamily: PAPER_THEME.tickFont,
+  fontSize: PAPER_THEME.tickSize,
+  color: PAPER_THEME.tooltipColor,
+};
+
 /* ── Container Styling ────────────────────────────────────────── */
 
 export const CHART_CONTAINER: React.CSSProperties = {
-  borderRadius: 20,
+  borderRadius: PAPER_THEME.borderRadius,
   overflow: 'hidden',
 };
 
