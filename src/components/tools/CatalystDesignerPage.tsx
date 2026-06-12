@@ -545,7 +545,7 @@ export default React.memo(function CatalystDesignerPage() {
   const [spinEnabled, setSpinEnabled] = useState(true);
   const [selectedResidue, setSelectedResidue] = useState<number | null>(null);
   const [selectedMutation, setSelectedMutation] = useState<string | null>(null);
-  const [brendaEcInput, setBrendaEcInput] = useState(enzyme.ecNumber);
+  const [brendaEcInput, setBrendaEcInput] = useState('');
   const [brendaData, setBrendaData] = useState<BRENDAKinetics | null>(null);
   const [brendaSource, setBrendaSource] = useState<'live' | 'mock'>('mock');
   const [brendaLoading, setBrendaLoading] = useState(false);
@@ -554,6 +554,8 @@ export default React.memo(function CatalystDesignerPage() {
     () => buildCatalystSeed(project, analyzeArtifact, fbaPayload, cethxPayload, dbtlPayload),
     [analyzeArtifact?.generatedAt, analyzeArtifact?.id, cethxPayload?.updatedAt, dbtlPayload?.feedbackSource, dbtlPayload?.result.improvementRate, dbtlPayload?.result.latestPhase, dbtlPayload?.result.passRate, dbtlPayload?.updatedAt, fbaPayload?.updatedAt, project?.id, project?.updatedAt],
   );
+
+  const enzyme = ENZYME_STRUCTURES[selectedEnzyme];
 
   useEffect(() => {
     setSelectedEnzyme(recommendedSeed.enzymeIndex);
@@ -575,8 +577,6 @@ export default React.memo(function CatalystDesignerPage() {
       setBrendaLoading(false);
     }
   }, [brendaEcInput]);
-
-  const enzyme = ENZYME_STRUCTURES[selectedEnzyme];
   const { data: binding, error: simError } = useMemo(() => {
     try { return { data: predictBindingAffinity(enzyme), error: null as string | null }; }
     catch (e) { return { data: predictBindingAffinity(ENZYME_STRUCTURES[selectedEnzyme]), error: e instanceof Error ? e.message : 'Binding prediction failed' }; }
