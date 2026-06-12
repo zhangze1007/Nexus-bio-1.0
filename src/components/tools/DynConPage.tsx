@@ -90,11 +90,11 @@ function TimeSeriesSVG({ trajectory, setpoint, svgRef }: { trajectory: ODEState[
   const ppPath = catmullRomPath(ppPts);
 
   return (
-    <SVGChartContainer W={W} H={H + 36} ariaLabel="Closed-loop trajectory" rx={18} svgRef={svgRef}>
-      <text x="22" y="22" fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.24)">
+    <SVGChartContainer W={W} H={H + 36} ariaLabel="Closed-loop trajectory" variant="paper" svgRef={svgRef}>
+      <text x="22" y="22" fontFamily={PAPER_THEME.tickFont} fontSize="10" fill={PAPER_THEME.tickColor}>
         Closed-loop trajectory
       </text>
-      <text x="22" y="36" fontFamily={THEME.SANS} fontSize="12" fill="rgba(255,255,255,0.72)">
+      <text x="22" y="36" fontFamily={THEME.SANS} fontSize="12" fill={PAPER_THEME.labelColor}>
         Shared timeline for product, host state, oxygen control, precursor load, and expression
       </text>
 
@@ -113,11 +113,11 @@ function TimeSeriesSVG({ trajectory, setpoint, svgRef }: { trajectory: ODEState[
 
         return (
           <g key={lane.key}>
-            <rect x={PAD_X} y={y} width={plotWidth} height={laneH} rx="12" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.05)" />
+            <rect x={PAD_X} y={y} width={plotWidth} height={laneH} rx="2" fill={PAPER_THEME.bgAlt} stroke={PAPER_THEME.border} />
             {[0.25, 0.5, 0.75].map((fraction) => (
               <line key={fraction} x1={PAD_X} y1={y + laneH - fraction * laneH}
                 x2={PAD_X + plotWidth} y2={y + laneH - fraction * laneH}
-                stroke="rgba(255,255,255,0.04)" strokeWidth="1" />
+                stroke={PAPER_THEME.grid} strokeWidth="1" />
             ))}
             {setpointY !== null && (
               <>
@@ -131,14 +131,14 @@ function TimeSeriesSVG({ trajectory, setpoint, svgRef }: { trajectory: ODEState[
             {/* Smooth Catmull-Rom curve — deterministic simulation, no uncertainty quantification */}
             <motion.path d={smoothPath} fill="none" stroke={lane.color} strokeWidth="2" initial={{ pathLength: 0, opacity: 0 }} animate={{ pathLength: 1, opacity: 1 }} transition={{ duration: 1.2, ease: 'easeOut', delay: index * 0.1 }} />
             <motion.circle cx={markerX} cy={markerY} r="4" fill={lane.color} initial={{ opacity: 0, scale: 0 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.3, delay: 1.0 + index * 0.1 }} />
-            <text x="20" y={y + 14} fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.24)">{lane.label}</text>
-            <text x="20" y={y + 28} fontFamily={THEME.SANS} fontSize="10" fill="rgba(255,255,255,0.62)">
+            <text x="20" y={y + 14} fontFamily={PAPER_THEME.tickFont} fontSize="10" fill={PAPER_THEME.tickColor}>{lane.label}</text>
+            <text x="20" y={y + 28} fontFamily={THEME.SANS} fontSize="10" fill={PAPER_THEME.labelColor}>
               {(lastValue ?? 0).toFixed(lane.key === 'fpp' ? 1 : 2)} {lane.unit}
             </text>
-            <text x={PAD_X + plotWidth + 8} y={y + 14} fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.2)">
+            <text x={PAD_X + plotWidth + 8} y={y + 14} fontFamily={PAPER_THEME.tickFont} fontSize="10" fill={PAPER_THEME.tickColor}>
               {lane.max.toFixed(lane.key === 'fpp' ? 0 : 1)}
             </text>
-            <text x={PAD_X + plotWidth + 8} y={y + laneH} fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.16)">0</text>
+            <text x={PAD_X + plotWidth + 8} y={y + laneH} fontFamily={PAPER_THEME.tickFont} fontSize="10" fill={PAPER_THEME.tickColor}>0</text>
           </g>
         );
       })}
@@ -149,9 +149,9 @@ function TimeSeriesSVG({ trajectory, setpoint, svgRef }: { trajectory: ODEState[
           <g key={tick}>
             <line x1={x} y1={plotTop + lanes.length * (laneH + laneGap) - laneGap}
               x2={x} y2={plotTop + lanes.length * (laneH + laneGap) - laneGap + 6}
-              stroke="rgba(255,255,255,0.08)" />
+              stroke={PAPER_THEME.grid} />
             <text x={x} y={plotTop + lanes.length * (laneH + laneGap) - laneGap + 18}
-              textAnchor="middle" fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.45)">
+              textAnchor="middle" fontFamily={PAPER_THEME.tickFont} fontSize="10" fill={PAPER_THEME.tickColor}>
               {tick}h
             </text>
           </g>
@@ -160,21 +160,21 @@ function TimeSeriesSVG({ trajectory, setpoint, svgRef }: { trajectory: ODEState[
 
       {/* Deterministic simulation — no uncertainty quantification */}
       <text x={PAD_X} y={plotTop + lanes.length * (laneH + laneGap) - laneGap + 30}
-        fontFamily={THEME.MONO} fontSize="9" fill="rgba(255,255,255,0.18)" fontStyle="italic">
+        fontFamily={PAPER_THEME.tickFont} fontSize="9" fill={PAPER_THEME.tickColor} fontStyle="italic">
         Deterministic simulation — no uncertainty quantification
       </text>
 
       {/* Phase portrait inset (P vs FPP) */}
-      <rect x={PP_X - 4} y={PP_Y - 12} width={PP_W + 8} height={PP_H + 22} rx="8"
-        fill="rgba(0,0,0,0.7)" stroke="rgba(255,255,255,0.08)" />
-      <text x={PP_X + PP_W / 2} y={PP_Y - 4} textAnchor="middle" fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.3)">
+      <rect x={PP_X - 4} y={PP_Y - 12} width={PP_W + 8} height={PP_H + 22} rx="2"
+        fill={PAPER_THEME.bgAlt} stroke={PAPER_THEME.border} />
+      <text x={PP_X + PP_W / 2} y={PP_Y - 4} textAnchor="middle" fontFamily={PAPER_THEME.tickFont} fontSize="10" fill={PAPER_THEME.tickColor}>
         PHASE PORTRAIT
       </text>
-      <line x1={PP_X} y1={PP_Y} x2={PP_X} y2={PP_Y + PP_H} stroke="rgba(255,255,255,0.1)" />
-      <line x1={PP_X} y1={PP_Y + PP_H} x2={PP_X + PP_W} y2={PP_Y + PP_H} stroke="rgba(255,255,255,0.1)" />
-      <text x={PP_X - 2} y={PP_Y + PP_H + 8} textAnchor="middle" fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.45)">P</text>
-      <text x={PP_X + PP_W} y={PP_Y + PP_H + 8} textAnchor="end" fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.45)">→</text>
-      <text x={PP_X - 2} y={PP_Y} fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.45)">R↑</text>
+      <line x1={PP_X} y1={PP_Y} x2={PP_X} y2={PP_Y + PP_H} stroke={PAPER_THEME.grid} />
+      <line x1={PP_X} y1={PP_Y + PP_H} x2={PP_X + PP_W} y2={PP_Y + PP_H} stroke={PAPER_THEME.grid} />
+      <text x={PP_X - 2} y={PP_Y + PP_H + 8} textAnchor="middle" fontFamily={PAPER_THEME.tickFont} fontSize="10" fill={PAPER_THEME.tickColor}>P</text>
+      <text x={PP_X + PP_W} y={PP_Y + PP_H + 8} textAnchor="end" fontFamily={PAPER_THEME.tickFont} fontSize="10" fill={PAPER_THEME.tickColor}>→</text>
+      <text x={PP_X - 2} y={PP_Y} fontFamily={PAPER_THEME.tickFont} fontSize="10" fill={PAPER_THEME.tickColor}>R↑</text>
       {ppPath && <path d={ppPath} fill="none" stroke={`${THEME.CORAL}B2`} strokeWidth="1.2" />}
       {ppPts.length > 0 && (
         <circle cx={ppPts[ppPts.length - 1][0]} cy={ppPts[ppPts.length - 1][1]} r="2.5" fill={THEME.CORAL} />
@@ -198,12 +198,12 @@ function HillCurveSVG({ hill, currentFPP }: { hill: HillParams; currentFPP: numb
   const markerX = PAD + (Math.min(currentFPP, fppMax) / fppMax) * (W - PAD * 2);
 
   return (
-    <SVGChartContainer W={W} H={H + 10} ariaLabel="Hill feedback curve" rx={18} style={{ height: '132px' }}>
+    <SVGChartContainer W={W} H={H + 10} ariaLabel="Hill feedback curve" variant="paper" style={{ height: '132px' }}>
       {/* axes */}
-      <line x1={PAD} y1={H - PAD + 4} x2={W - PAD} y2={H - PAD + 4} stroke="rgba(255,255,255,0.08)" />
-      <line x1={PAD} y1={PAD - 8} x2={PAD} y2={H - PAD + 4} stroke="rgba(255,255,255,0.08)" />
+      <line x1={PAD} y1={H - PAD + 4} x2={W - PAD} y2={H - PAD + 4} stroke={PAPER_THEME.axis} />
+      <line x1={PAD} y1={PAD - 8} x2={PAD} y2={H - PAD + 4} stroke={PAPER_THEME.axis} />
       {/* curve */}
-      <rect x={PAD} y={PAD - 8} width={W - PAD * 2} height={H - PAD * 2 + 12} fill="rgba(255,255,255,0.02)" rx="14" />
+      <rect x={PAD} y={PAD - 8} width={W - PAD * 2} height={H - PAD * 2 + 12} fill={PAPER_THEME.bgAlt} rx="2" />
       <polyline points={pts.join(' ')} fill="none" stroke={THEME.MINT} strokeWidth={2.2} />
       {/* current FPP marker */}
       <line x1={markerX} y1={PAD - 8} x2={markerX} y2={H - PAD + 4}
@@ -211,17 +211,17 @@ function HillCurveSVG({ hill, currentFPP }: { hill: HillParams; currentFPP: numb
       <circle cx={markerX} cy={H - PAD + 4 - (hillFeedback(Math.min(currentFPP, fppMax), hill) / hill.Vmax) * (H - PAD * 2 + 4)}
         r={3} fill={THEME.CORAL} />
       {/* labels */}
-      <text x="20" y="18" fontFamily={THEME.MONO} fontSize="10" fill="rgba(255,255,255,0.24)">
+      <text x="20" y="18" fontFamily={PAPER_THEME.tickFont} fontSize="10" fill={PAPER_THEME.tickColor}>
         Repression response
       </text>
-      <text x="20" y="32" fontFamily={THEME.SANS} fontSize="11" fill="rgba(255,255,255,0.5)">
+      <text x="20" y="32" fontFamily={THEME.SANS} fontSize="11" fill={PAPER_THEME.labelColor}>
         Operating point of the current precursor pool on the Hill feedback curve
       </text>
       <text x={W / 2} y={H + 6} fontFamily={THEME.MONO} fontSize="10" textAnchor="middle" fill={LABEL}>FPP (μM)</text>
       <text x={10} y={(PAD + H - PAD) / 2} fontFamily={THEME.MONO} fontSize="10" textAnchor="middle" fill={LABEL}
         transform={`rotate(-90, 10, ${(PAD + H - PAD) / 2})`}>ADS</text>
-      <text x={W - PAD} y={H + 6} fontFamily={THEME.MONO} fontSize="10" textAnchor="end" fill="rgba(255,255,255,0.15)">200</text>
-      <text x={PAD} y={H + 6} fontFamily={THEME.MONO} fontSize="10" textAnchor="start" fill="rgba(255,255,255,0.15)">0</text>
+      <text x={W - PAD} y={H + 6} fontFamily={PAPER_THEME.tickFont} fontSize="10" textAnchor="end" fill={PAPER_THEME.tickColor}>200</text>
+      <text x={PAD} y={H + 6} fontFamily={PAPER_THEME.tickFont} fontSize="10" textAnchor="start" fill={PAPER_THEME.tickColor}>0</text>
     </SVGChartContainer>
   );
 }
@@ -248,6 +248,7 @@ function ParamSlider({ label, value, min, max, step = 0.1, onChange, unit }: {
 
 /* ── Section Header ────────────────────────────────────────────────────────── */
 import SectionLabel from './shared/SectionLabel';
+import { PAPER_THEME } from '../charts/chartTheme';
 import { THEME, TOOL_RESULT_PALETTE } from '../../theme';
 
 /* ── Stat Row (for convergence / burden readouts) ──────────────────────────── */
