@@ -55,6 +55,8 @@ These data flows must be verified after all fixes:
 
 ## Performance Benchmarks
 
+### Computational Performance
+
 | Tool | Operation | Target | Current |
 |------|-----------|--------|---------|
 | FBA | Solve 200-reaction model | < 5s | ~2s (HiGHS) |
@@ -66,6 +68,20 @@ These data flows must be verified after all fixes:
 | MultiO | VAE training (50 genes, 50 epochs) | < 10s | ~5s |
 | ScSpatial | 10,000 cells clustering | < 30s | ~15s |
 | NEXAI | Citation verification (10 papers) | < 10s | ~5s |
+
+### Trust Policy Engine (Measured)
+
+Source: `reports/trust-metrics/latest.json` (2026-04-30), 74-case corpus.
+
+| Metric | Value | Target |
+|--------|-------|--------|
+| Unsafe propagation rate (runtime-gating) | 0% | 0% |
+| False trust rate | 0% | 0% |
+| False block rate | 0% | < 5% |
+| Demo leakage rate | 0% | 0% |
+| Unsafe export prevention | 100% | 100% |
+| Known-bad prevention | 100% | 100% |
+| Python/TS agreement | 74/74 (100%) | 100% |
 
 ---
 
@@ -457,12 +473,12 @@ These data flows must be verified after all fixes:
 ## Execution Order
 
 ```
-Wave 5: CatDes (Phase 1) — highest priority, demo → research-grade
-Wave 6: CellFree (Phase 2) + DynCon (Phase 3) — parallel
-Wave 7: MultiO (Phase 4) + ScSpatial (Phase 5) — parallel
-Wave 8: GenMIM (Phase 6) + NEXAI (Phase 7) + MetabolicEng (Phase 8) — parallel
-Wave 9: Cross-tool integration verification
-Wave 10: Performance benchmarking + documentation
+Wave 5:  CatDes (Phase 1) — highest priority, demo → research-grade                         [COMPLETE]
+Wave 6:  CellFree (Phase 2) + DynCon (Phase 3) — parallel                                   [COMPLETE]
+Wave 7:  MultiO (Phase 4) + ScSpatial (Phase 5) — parallel                                  [COMPLETE]
+Wave 8:  GenMIM (Phase 6) + NEXAI (Phase 7) + MetabolicEng (Phase 8) — parallel             [COMPLETE]
+Wave 9:  Cross-tool integration verification                                                 [COMPLETE]
+Wave 10: Performance benchmarking + documentation                                            [COMPLETE]
 ```
 
 Each wave follows:
@@ -471,9 +487,13 @@ Each wave follows:
 3. Test verification (unit + integration)
 4. Commit and push
 
+All 10 waves complete. All 14 tools are research-grade.
+
 ---
 
-## Already Completed (Waves 1-4)
+## Already Completed (Waves 1-10)
+
+### Waves 1-4: Foundation
 
 - [x] Turso persistence migration
 - [x] HiGHS LP solver (FVA, pFBA, GPR)
@@ -489,3 +509,55 @@ Each wave follows:
 - [x] MetabolicEng FBA fallback removal
 - [x] CellFree LM fitting fix
 - [x] GenMIM CRISPRi positions corrected
+
+### Wave 5: CatDes (Phase 1)
+
+- [x] Removed random mutagenesis predictions (`Math.random()` eliminated from mutagenesis code path)
+- [x] Fixed LJ epsilon from 0.15 to 0.5 kcal/mol, added analytical SASA approximation
+- [x] Renamed misleading names: "ProteinMPNN-style" → "BLOSUM62-based", "ESM-2-inspired" → "conservation-weighted", "AlphaFold 3-inspired" → "MM-PBSA-style"
+- [x] Calibrated DDG estimation against SKEMPI 2.0 dataset
+
+### Wave 6: CellFree (Phase 2) + DynCon (Phase 3)
+
+- [x] CellFree: sourced all kinetic constants with inline citations (Stogbauer 2012, Jewett & Swartz 2004, BRENDA)
+- [x] CellFree: renamed IvIv MLP → `estimateIvIvHeuristic`, removed numeric predictions, added qualitative guidance
+- [x] CellFree: fixed radar chart reproducibility with N=10 perturbation and CV-based scoring
+- [x] CellFree: added CSV upload for user data fitting (PapaParse, time/fluorescence format)
+- [x] DynCon: fixed RBS mapping monotonicity (sorted registry, linear interpolation)
+- [x] DynCon: cited all hardcoded constants (Bentley 1990, Russell & Cook 1995, tunable estimates exposed in UI)
+- [x] DynCon: added fed-batch volume dynamics (dV/dt = feedRate, CSTR substrate equation)
+
+### Wave 7: MultiO (Phase 4) + ScSpatial (Phase 5)
+
+- [x] MultiO: computed real PCA loadings from eigenvectors, replaced hardcoded variance ratios
+- [x] MultiO: renamed `AttentionHead` → `LayerSignalScore`, `computeAttentionWeights` → `computeLayerSignals`
+- [x] MultiO: fixed `EmbeddingPoint` comment to reflect actual projection method
+- [x] ScSpatial: implemented Wilcoxon rank-sum marker-gene cell-type annotation (Progenitor, Metabolically Active, Stressed, Quiescent)
+- [x] ScSpatial: implemented LOESS with tricube kernel for HVG selection (span=0.3, degree-1)
+- [x] ScSpatial: expression-based fate classification using pathway-specific marker genes (ADS, CYP71AV1, CPR1, DBR2)
+
+### Wave 8: GenMIM (Phase 6) + NEXAI (Phase 7) + MetabolicEng (Phase 8)
+
+- [x] GenMIM: sourced CRISPRi targets from literature (Rousset et al. 2018, Peters et al. 2016) with knockdown efficiencies
+- [x] GenMIM: added off-target scoring (mismatch counting against E. coli genome)
+- [x] GenMIM: calibrated efficiency heuristics per Doench et al. 2016 Rule Set 2, exposed parameters in Advanced panel
+- [x] NEXAI: auto-verify citations on result load using PubMed E-utilities (verified/not-found/ambiguous badges)
+- [x] NEXAI: fixed relevance scores (use API score when available, label as "Rank" for positional)
+- [x] NEXAI: renamed "Confidence" → "Quality Index" with tooltip explaining it is a heuristic, not a calibrated probability
+- [x] MetabolicEng: renamed `applyStress()` → `applyParameterOscillation()`, updated UI labels
+- [x] MetabolicEng: sourced default parameters from BRENDA (PFK-1 EC 2.7.1.11, E. coli)
+
+### Wave 9: Cross-Tool Integration
+
+- [x] FBA → GenMIM: knockout targets align with FBA-identified bottlenecks
+- [x] FBA → DynCon: biomass tracks FBA-predicted growth rate
+- [x] CETHX → CatDes: binding energy is thermodynamically consistent with ΔG values
+- [x] FBA → MultiO: perturbation model reflects FBA flux changes
+- [x] ScSpatial → MultiO: factor decomposition correlates with spatial clusters
+- [x] Kinetics → DynCon: PID response matches kinetic time constants
+
+### Wave 10: Performance Benchmarking + Documentation
+
+- [x] Trust policy benchmark: 74-case corpus, 3 modes, runtime-gating achieves 100% unsafe export prevention, 0% false block rate
+- [x] Python reference implementation: 74/74 agreement with TypeScript runtime (consistency report 2026-06-12)
+- [x] Performance benchmarks documented (see table above)
