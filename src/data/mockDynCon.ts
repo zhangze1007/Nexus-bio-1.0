@@ -117,7 +117,7 @@ function monodRate(
 }
 
 // ── RK4 ODE derivatives ──────────────────────────────────────────────────────
-interface State { X: number; S: number; P: number; O: number; FPP: number; ADS: number; }
+interface State { X: number; S: number; P: number; O: number; FPP: number; ADS: number; V: number; }
 
 export interface DynConOverrides {
   spontaneousLossRate?: number;
@@ -130,28 +130,32 @@ function derivatives(
   p: BioreactorParams, hill: HillParams,
   overrides?: DynConOverrides,
 ): State {
-  const V = 2.0; // working volume L
   const spontaneousLossRate = overrides?.spontaneousLossRate ?? SPONTANEOUS_LOSS_RATE;
   const o2ConsumptionCoeff = overrides?.o2ConsumptionCoeff ?? O2_CONSUMPTION_COEFF;
   const burdenPenaltyCoeff = overrides?.burdenPenalty ?? 0.4;
   const { mu } = monodRate(s.S, s.O, s.FPP, s.P, s.ADS, p, burdenPenaltyCoeff);
 
-  // Biomass
-  const dX = mu * s.X;
-  // Substrate
-  const dS = -dX / p.Yxs + p.feedRate * (p.feedConc - s.S) / V;
-  // FPP intermediate: produced proportional to biomass, consumed by ADS
-  const dFPP = p.kFPP * s.X - s.ADS * s.FPP * p.fppDegradation - s.FPP * spontaneousLossRate;
+  // Dilution factor: D = F/V — accounts for volume expansion in fed-batch
+  const dilution = p.feedRate / s.V;
+
+  // Volume dynamics: dV/dt = feedRate (fed-batch expansion)
+  const dV = p.feedRate;
+
+  // Biomass with dilution: growth minus washout
+  const dX = mu * s.X - dilution * s.X;
+  // Substrate: consumption for growth, replenished by feed with volume correction
+  const dS = p.feedRate * (p.feedConc - s.S) / s.V - dX / p.Yxs;
+  // FPP intermediate: produced proportional to biomass, consumed by ADS, diluted
+  const dFPP = p.kFPP * s.X - s.ADS * s.FPP * p.fppDegradation - s.FPP * spontaneousLossRate - dilution * s.FPP;
   // ADS expression: Hill-function feedback from FPP
   const adsTarget = hillFeedback(s.FPP, hill);
   const dADS = (adsTarget - s.ADS) * PROTEIN_TURNOVER_RATE;
-  // Product: formed by ADS enzyme acting on FPP
-  // Note: ADS is already a concentration (a.u./L), so no additional X factor
-  const dP = p.kADS * s.ADS * s.FPP;
+  // Product: formed by ADS enzyme acting on FPP, diluted by feed
+  const dP = p.kADS * s.ADS * s.FPP - dilution * s.P;
   // Dissolved O₂
   const dO = p.kLa * airflowScale * (p.OstarSat - s.O) - mu * s.X * o2ConsumptionCoeff;
 
-  return { X: dX, S: dS, P: dP, O: dO, FPP: dFPP, ADS: dADS };
+  return { X: dX, S: dS, P: dP, O: dO, FPP: dFPP, ADS: dADS, V: dV };
 }
 
 function addState(a: State, b: State, scale: number): State {
@@ -162,6 +166,7 @@ function addState(a: State, b: State, scale: number): State {
     O: a.O + b.O * scale,
     FPP: a.FPP + b.FPP * scale,
     ADS: a.ADS + b.ADS * scale,
+    V: a.V + b.V * scale,
   };
 }
 
@@ -173,6 +178,7 @@ function clampState(s: State, p: BioreactorParams): State {
     O: Math.max(0, Math.min(p.OstarSat * 1.2, s.O)),
     FPP: Math.max(0, s.FPP),
     ADS: Math.max(0, Math.min(2.0, s.ADS)), // Cap at 2× baseline
+    V: Math.max(0.1, s.V), // Volume cannot go below 0.1 L
   };
 }
 
@@ -186,7 +192,7 @@ export function runBioreactor(
   overrides?: DynConOverrides,
 ): ODEState[] {
   const states: ODEState[] = [];
-  let state: State = { X: 0.5, S: 20.0, P: 0.0, O: params.OstarSat, FPP: 10.0, ADS: hill.Vmax * 0.8 };
+  let state: State = { X: 0.5, S: 20.0, P: 0.0, O: params.OstarSat, FPP: 10.0, ADS: hill.Vmax * 0.8, V: 2.0 };
   let integral = 0;
   let prevMeasurement = state.O / params.OstarSat; // for derivative-on-measurement
 
@@ -226,6 +232,7 @@ export function runBioreactor(
       O:   state.O   + (dt / 6) * (k1.O   + 2 * k2.O   + 2 * k3.O   + k4.O),
       FPP: state.FPP + (dt / 6) * (k1.FPP + 2 * k2.FPP + 2 * k3.FPP + k4.FPP),
       ADS: state.ADS + (dt / 6) * (k1.ADS + 2 * k2.ADS + 2 * k3.ADS + k4.ADS),
+      V:   state.V   + (dt / 6) * (k1.V   + 2 * k2.V   + 2 * k3.V   + k4.V),
     }, params);
 
     const { toxicity, burden } = monodRate(state.S, state.O, state.FPP, state.P, state.ADS, params, overrides?.burdenPenalty ?? 0.4);
@@ -239,6 +246,7 @@ export function runBioreactor(
       fpp: state.FPP,
       adsExpression: state.ADS,
       toxicity,
+      volume: state.V,
       metabolicBurden: burden,
     });
   }

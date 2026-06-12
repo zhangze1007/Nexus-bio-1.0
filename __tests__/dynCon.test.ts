@@ -115,6 +115,39 @@ describe('DynCon Engine', () => {
     });
   });
 
+  // ── Fed-Batch Volume Dynamics ──────────────────────────────────────────
+
+  describe('fed-batch volume dynamics', () => {
+    it('fed-batch volume increases over time', () => {
+      const result = runBioreactor(DEFAULT_CONTROLLER);
+      const firstV = result[0].volume!;
+      const lastV = result[result.length - 1].volume!;
+      expect(lastV).toBeGreaterThan(firstV);
+    });
+
+    it('initial volume is 2.0 L', () => {
+      const result = runBioreactor(DEFAULT_CONTROLLER, DEFAULT_PARAMS, 5, 1.0);
+      // At t=1 (first step), volume should be slightly above 2.0
+      expect(result[0].volume!).toBeCloseTo(2.0 + DEFAULT_PARAMS.feedRate, 2);
+    });
+
+    it('volume grows linearly at constant feed rate', () => {
+      const result = runBioreactor(DEFAULT_CONTROLLER, DEFAULT_PARAMS, 100, 1.0);
+      // V(t) = V0 + feedRate * t
+      const expectedV = 2.0 + DEFAULT_PARAMS.feedRate * 100;
+      expect(result[99].volume!).toBeCloseTo(expectedV, 0);
+    });
+
+    it('dilution reduces biomass concentration at zero growth', () => {
+      // With zero substrate, growth is near-zero so dilution dominates
+      const noGrowthParams = { ...DEFAULT_PARAMS, muMax: 0, feedRate: 0.1 };
+      const result = runBioreactor(DEFAULT_CONTROLLER, noGrowthParams, 50, 1.0);
+      const firstX = result[0].biomass;
+      const lastX = result[result.length - 1].biomass;
+      expect(lastX).toBeLessThan(firstX);
+    });
+  });
+
   // ── Convergence Analysis ────────────────────────────────────────────────
 
   describe('analyzeConvergence', () => {

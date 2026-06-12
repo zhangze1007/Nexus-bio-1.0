@@ -496,14 +496,15 @@ describe('10. Full Simulation Smoke Test', () => {
 
   test('[PASS] FPP partially stabilizes via Hill feedback (still drifting due to biomass growth)', () => {
     const traj = runBioreactor(DEFAULT_CONTROLLER, DEFAULT_PARAMS, 200, 1.0);
-    // FPP is repressed by Hill feedback (FPP=2088 at 200h, Kd=50 => ADS≈0.0006)
-    // But it doesn't fully stabilize because biomass keeps growing (feed sustains growth)
+    // FPP is repressed by Hill feedback and now also diluted by fed-batch volume expansion
+    // Dilution (dV/dt = feedRate) reduces FPP concentration as volume grows
+    const fpp50 = traj[49].fpp ?? 0;
     const fpp100 = traj[99].fpp ?? 0;
     const fpp200 = traj[199].fpp ?? 0;
-    // Verify FPP is in the expected range (thousands of μM due to high kFPP * X)
-    expect(fpp100).toBeGreaterThan(1000);
-    expect(fpp200).toBeGreaterThan(1000);
-    // The drift rate should slow down (Hill feedback is working)
+    // Verify FPP is in the expected range (hundreds of μM with dilution)
+    expect(fpp50).toBeGreaterThan(500);
+    expect(fpp100).toBeGreaterThan(500);
+    // The drift rate should slow down (Hill feedback + dilution working)
     const driftRate100to200 = (fpp200 - fpp100) / fpp100;
     expect(driftRate100to200).toBeLessThan(0.25); // <25% change over 100h
   });

@@ -232,6 +232,7 @@ export interface ODEState {
   adsExpression?: number;  // ADS enzyme expression level (a.u.)
   toxicity?: number;       // Toxicity index (0–1)
   metabolicBurden?: number;// Metabolic burden penalty (0–1)
+  volume?: number;         // Working volume (L) — fed-batch expansion
 }
 
 export interface ControllerParams { kp: number; ki: number; kd: number; setpoint: number; }
