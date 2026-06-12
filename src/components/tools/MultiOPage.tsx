@@ -2,7 +2,7 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { computeConvexHull, expandHull } from '../../utils/vizUtils';
 import { SVGChartContainer, ChartGrid, ChartAxisLabels, ChartLegend } from '../charts/primitives';
-import { PAPER_THEME, SCI_PASTEL_MUTED } from '../charts/chartTheme';
+import { PAPER_THEME, SCI_PASTEL_MUTED, SCI_SERIES } from '../charts/chartTheme';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
 import ActionButton from './shared/ActionButton';
@@ -194,7 +194,7 @@ const COLUMNS: TableColumn<OmicsRow>[] = [
 
 /* ── Shared helpers for tri-panel ────────────────────────────────── */
 
-const CLUSTER_PAL = ['#E41A1C','#377EB8','#4DAF4A','#984EA3','#FF7F00','#A65628','#F781BF','#FFFF33'];
+const CLUSTER_PAL = SCI_SERIES.slice(0, 8);
 
 function divergingColor(t: number): string {
   const n = (t + 1) / 2;
@@ -413,7 +413,7 @@ function TriPanelEmbedding({ embeddings, data, fcThreshold, pvThreshold, activeL
           })}
           {/* Unit label */}
           <text x={hmW - 12} y={hmPAD.top - 6} textAnchor="middle" fontFamily={PAPER_THEME.tickFont} fontSize={PAPER_THEME.tickSize} fill={PAPER_THEME.tickColor}>
-            z
+            r
           </text>
         </SVGChartContainer>
       </div>
