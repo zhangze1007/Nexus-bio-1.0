@@ -6,43 +6,32 @@ import { Github, Chrome, ArrowRight, Shield, Lock, Globe } from 'lucide-react';
 import Link from 'next/link';
 
 /**
- * Login Page — Scientific Elegance
+ * Login Page — Sign-In Focused
  *
- * Design direction: Institutional authority meets research precision.
- * Target: Synthetic biology researchers, PhDs, enterprise consultants.
- *
- * Typography: Source Serif 4 (headings) + IBM Plex Sans (body)
- * Aesthetic: Dark, refined, subtle molecular visualization
+ * Design: Centered sign-in card as primary focus.
+ * No marketing copy. Standard T&C checkbox.
  */
 
 // ─── Design Tokens ────────────────────────────────────────────────────────
 
 const T = {
-  // Surfaces
   BG: '#08090c',
   CARD: 'rgba(14, 16, 22, 0.85)',
   CARD_BORDER: 'rgba(255, 255, 255, 0.06)',
   CARD_GLOW: 'rgba(191, 220, 205, 0.03)',
 
-  // Text
   INK: 'rgba(250, 246, 240, 0.94)',
   INK_MID: 'rgba(250, 246, 240, 0.6)',
   INK_SOFT: 'rgba(250, 246, 240, 0.35)',
   INK_GHOST: 'rgba(250, 246, 240, 0.18)',
 
-  // Accents
   MINT: '#BFDCCD',
-  LILAC: '#CFC4E3',
-  SKY: '#AFC3D6',
-  APRICOT: '#E8D8C4',
   CORAL: '#E8A3A1',
 
-  // Fonts
   SERIF: "'Source Serif 4', 'Georgia', serif",
   SANS: "'IBM Plex Sans', -apple-system, sans-serif",
   MONO: "'IBM Plex Mono', 'Menlo', monospace",
 
-  // Spacing
   SP_XS: 4,
   SP_SM: 8,
   SP_MD: 16,
@@ -50,14 +39,13 @@ const T = {
   SP_XL: 40,
   SP_2XL: 64,
 
-  // Radius
   R_SM: 8,
   R_MD: 12,
   R_LG: 16,
   R_XL: 20,
 };
 
-// ─── Molecular Visualization ──────────────────────────────────────────────
+// ─── Molecular Background ─────────────────────────────────────────────────
 
 function MolecularGrid() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -75,24 +63,21 @@ function MolecularGrid() {
     canvas.height = rect.height * dpr;
     ctx.scale(dpr, dpr);
 
-    // Nodes — positioned to suggest a metabolic pathway
     const nodes = [
-      { x: 0.12, y: 0.25, r: 3, label: 'Acetyl-CoA' },
-      { x: 0.28, y: 0.18, r: 2.5, label: 'HMG-CoA' },
-      { x: 0.42, y: 0.32, r: 3, label: 'Mevalonate' },
-      { x: 0.58, y: 0.22, r: 2, label: 'FPP' },
-      { x: 0.72, y: 0.35, r: 3.5, label: 'Amorpha-4,11-diene' },
-      { x: 0.85, y: 0.28, r: 2.5, label: 'Artemisinic acid' },
-      { x: 0.92, y: 0.42, r: 4, label: 'Artemisinin' },
-      // Branch points
-      { x: 0.2, y: 0.55, r: 1.5, label: '' },
-      { x: 0.35, y: 0.65, r: 2, label: '' },
-      { x: 0.55, y: 0.58, r: 1.5, label: '' },
-      { x: 0.75, y: 0.62, r: 2, label: '' },
-      { x: 0.88, y: 0.55, r: 1.5, label: '' },
+      { x: 0.12, y: 0.25, r: 3 },
+      { x: 0.28, y: 0.18, r: 2.5 },
+      { x: 0.42, y: 0.32, r: 3 },
+      { x: 0.58, y: 0.22, r: 2 },
+      { x: 0.72, y: 0.35, r: 3.5 },
+      { x: 0.85, y: 0.28, r: 2.5 },
+      { x: 0.92, y: 0.42, r: 4 },
+      { x: 0.2, y: 0.55, r: 1.5 },
+      { x: 0.35, y: 0.65, r: 2 },
+      { x: 0.55, y: 0.58, r: 1.5 },
+      { x: 0.75, y: 0.62, r: 2 },
+      { x: 0.88, y: 0.55, r: 1.5 },
     ];
 
-    // Edges — pathway connections
     const edges = [
       [0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6],
       [0, 7], [7, 8], [8, 9], [9, 10], [10, 11],
@@ -105,19 +90,13 @@ function MolecularGrid() {
       if (!ctx || !canvas) return;
       const w = rect.width;
       const h = rect.height;
-
       ctx.clearRect(0, 0, w, h);
 
-      // Draw edges
       edges.forEach(([a, b]) => {
         const na = nodes[a];
         const nb = nodes[b];
-        const ax = na.x * w;
-        const ay = na.y * h;
-        const bx = nb.x * w;
-        const by = nb.y * h;
-
-        // Animated flow
+        const ax = na.x * w, ay = na.y * h;
+        const bx = nb.x * w, by = nb.y * h;
         const flowOffset = (time * 0.0005) % 1;
 
         ctx.beginPath();
@@ -127,7 +106,6 @@ function MolecularGrid() {
         ctx.lineWidth = 0.5;
         ctx.stroke();
 
-        // Flow dot
         const dotX = ax + (bx - ax) * flowOffset;
         const dotY = ay + (by - ay) * flowOffset;
         ctx.beginPath();
@@ -136,13 +114,11 @@ function MolecularGrid() {
         ctx.fill();
       });
 
-      // Draw nodes
       nodes.forEach((node, i) => {
         const x = node.x * w;
         const y = node.y * h;
         const pulse = Math.sin(time * 0.002 + i * 0.5) * 0.3 + 0.7;
 
-        // Glow
         const gradient = ctx.createRadialGradient(x, y, 0, x, y, node.r * 8);
         gradient.addColorStop(0, `rgba(191, 220, 205, ${0.08 * pulse})`);
         gradient.addColorStop(1, 'rgba(191, 220, 205, 0)');
@@ -151,13 +127,11 @@ function MolecularGrid() {
         ctx.fillStyle = gradient;
         ctx.fill();
 
-        // Core
         ctx.beginPath();
         ctx.arc(x, y, node.r, 0, Math.PI * 2);
         ctx.fillStyle = `rgba(191, 220, 205, ${0.3 + pulse * 0.2})`;
         ctx.fill();
 
-        // Ring
         ctx.beginPath();
         ctx.arc(x, y, node.r + 2, 0, Math.PI * 2);
         ctx.strokeStyle = `rgba(191, 220, 205, ${0.08 + pulse * 0.05})`;
@@ -233,6 +207,7 @@ function OAuthButton({
   label,
   sublabel,
   loading,
+  disabled,
   onClick,
   delay,
 }: {
@@ -241,11 +216,12 @@ function OAuthButton({
   label: string;
   sublabel: string;
   loading: string | null;
+  disabled: boolean;
   onClick: (provider: string) => void;
   delay: number;
 }) {
   const isActive = loading === provider;
-  const isDisabled = !!loading;
+  const isDisabled = disabled || !!loading;
 
   return (
     <button
@@ -264,7 +240,7 @@ function OAuthButton({
         fontFamily: T.SANS,
         fontSize: '14px',
         fontWeight: 500,
-        cursor: isDisabled ? 'wait' : 'pointer',
+        cursor: isDisabled ? 'not-allowed' : 'pointer',
         transition: 'all 0.2s ease',
         opacity: 0,
         animation: `fadeInUp 0.5s ease ${delay}s forwards`,
@@ -336,6 +312,7 @@ function OAuthButton({
 export default function LoginPage() {
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -343,6 +320,7 @@ export default function LoginPage() {
   }, []);
 
   const handleSignIn = async (provider: string) => {
+    if (!termsAccepted) return;
     setLoading(provider);
     setError(null);
     try {
@@ -372,146 +350,69 @@ export default function LoginPage() {
         @keyframes spin {
           to { transform: rotate(360deg); }
         }
-        @keyframes shimmer {
-          0% { background-position: -200% 0; }
-          100% { background-position: 200% 0; }
-        }
       `}</style>
 
       <div style={{
         minHeight: '100vh',
         background: T.BG,
         display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
         position: 'relative',
         overflow: 'hidden',
       }}>
-        {/* ─── Left: Molecular Visualization ─── */}
+        {/* Background molecular visualization */}
+        <MolecularGrid />
+
+        {/* Ambient glow */}
         <div style={{
-          flex: '1 1 55%',
-          position: 'relative',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          padding: T.SP_2XL,
-          opacity: mounted ? 1 : 0,
-          transition: 'opacity 1s ease 0.2s',
-        }}>
-          <MolecularGrid />
+          position: 'absolute',
+          top: '-20%',
+          right: '-10%',
+          width: '60%',
+          height: '60%',
+          borderRadius: '50%',
+          background: `radial-gradient(circle, ${T.CARD_GLOW} 0%, transparent 60%)`,
+          pointerEvents: 'none',
+        }} />
 
-          {/* Brand mark */}
-          <div style={{ position: 'relative', zIndex: 1 }}>
-            <div style={{
-              fontFamily: T.MONO,
-              fontSize: '11px',
-              color: T.INK_GHOST,
-              letterSpacing: '0.12em',
-              textTransform: 'uppercase',
-              marginBottom: T.SP_LG,
-              opacity: 0,
-              animation: 'fadeInUp 0.6s ease 0.3s forwards',
-            }}>
-              Synthetic Biology Research Workbench
-            </div>
-
-            <h1 style={{
-              fontFamily: T.SERIF,
-              fontSize: 'clamp(32px, 4vw, 48px)',
-              fontWeight: 400,
-              color: T.INK,
-              lineHeight: 1.2,
-              letterSpacing: '-0.02em',
-              margin: 0,
-              maxWidth: 480,
-              opacity: 0,
-              animation: 'fadeInUp 0.6s ease 0.4s forwards',
-            }}>
-              From literature to{' '}
-              <span style={{ color: T.MINT, fontStyle: 'italic' }}>validated</span>{' '}
-              pathway decisions
-            </h1>
-
-            <p style={{
-              fontFamily: T.SANS,
-              fontSize: '15px',
-              color: T.INK_MID,
-              lineHeight: 1.7,
-              marginTop: T.SP_LG,
-              maxWidth: 400,
-              opacity: 0,
-              animation: 'fadeInUp 0.6s ease 0.5s forwards',
-            }}>
-              14 integrated tools for pathway design, flux balance analysis,
-              protein evolution, and multi-omics validation.
-            </p>
-
-            {/* Stats */}
-            <div style={{
-              display: 'flex',
-              gap: T.SP_XL,
-              marginTop: T.SP_XL,
-              opacity: 0,
-              animation: 'fadeInUp 0.6s ease 0.6s forwards',
-            }}>
-              {[
-                { value: '14', label: 'Research Tools' },
-                { value: '4', label: 'DBTL Stages' },
-                { value: '< 2ms', label: 'FBA Solve Time' },
-              ].map((stat, i) => (
-                <div key={i}>
-                  <div style={{
-                    fontFamily: T.SERIF,
-                    fontSize: '28px',
-                    fontWeight: 600,
-                    color: T.MINT,
-                    letterSpacing: '-0.02em',
-                  }}>
-                    {stat.value}
-                  </div>
-                  <div style={{
-                    fontFamily: T.MONO,
-                    fontSize: '10px',
-                    color: T.INK_GHOST,
-                    letterSpacing: '0.06em',
-                    textTransform: 'uppercase',
-                    marginTop: 4,
-                  }}>
-                    {stat.label}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* ─── Right: Sign In Card ─── */}
+        {/* Centered sign-in card */}
         <div style={{
-          flex: '0 0 440px',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          padding: T.SP_2XL,
           position: 'relative',
           zIndex: 1,
+          maxWidth: 420,
+          width: '100%',
+          margin: '0 24px',
+          opacity: mounted ? 1 : 0,
+          transition: 'opacity 0.8s ease',
         }}>
-          {/* Subtle left border glow */}
+          {/* Brand */}
           <div style={{
-            position: 'absolute',
-            left: 0,
-            top: '10%',
-            bottom: '10%',
-            width: 1,
-            background: `linear-gradient(to bottom, transparent, ${T.CARD_BORDER}, transparent)`,
-          }} />
-
-          <div style={{
-            maxWidth: 360,
-            margin: '0 auto',
-            width: '100%',
+            fontFamily: T.MONO,
+            fontSize: '11px',
+            color: T.INK_GHOST,
+            letterSpacing: '0.12em',
+            textTransform: 'uppercase',
+            textAlign: 'center',
+            marginBottom: T.SP_LG,
+            opacity: 0,
+            animation: 'fadeInUp 0.6s ease 0.2s forwards',
           }}>
-            {/* Card header */}
+            Nexus-Bio
+          </div>
+
+          {/* Card */}
+          <div style={{
+            background: T.CARD,
+            border: `1px solid ${T.CARD_BORDER}`,
+            borderRadius: T.R_LG,
+            padding: '40px 32px',
+            backdropFilter: 'blur(12px)',
+          }}>
+            {/* Header */}
             <div style={{
               opacity: 0,
-              animation: 'fadeInUp 0.5s ease 0.4s forwards',
+              animation: 'fadeInUp 0.5s ease 0.3s forwards',
             }}>
               <h2 style={{
                 fontFamily: T.SERIF,
@@ -520,6 +421,7 @@ export default function LoginPage() {
                 color: T.INK,
                 letterSpacing: '-0.02em',
                 margin: 0,
+                textAlign: 'center',
               }}>
                 Sign in
               </h2>
@@ -529,6 +431,7 @@ export default function LoginPage() {
                 color: T.INK_SOFT,
                 margin: '8px 0 0',
                 lineHeight: 1.5,
+                textAlign: 'center',
               }}>
                 Access your research projects and pathway designs.
               </p>
@@ -540,7 +443,7 @@ export default function LoginPage() {
               background: T.CARD_BORDER,
               margin: `${T.SP_LG}px 0`,
               opacity: 0,
-              animation: 'fadeInUp 0.5s ease 0.5s forwards',
+              animation: 'fadeInUp 0.5s ease 0.4s forwards',
             }} />
 
             {/* OAuth buttons */}
@@ -555,8 +458,9 @@ export default function LoginPage() {
                 label="Continue with GitHub"
                 sublabel="For researchers & developers"
                 loading={loading}
+                disabled={!termsAccepted}
                 onClick={handleSignIn}
-                delay={0.55}
+                delay={0.5}
               />
               <OAuthButton
                 provider="google"
@@ -564,9 +468,50 @@ export default function LoginPage() {
                 label="Continue with Google"
                 sublabel="For institutional accounts"
                 loading={loading}
+                disabled={!termsAccepted}
                 onClick={handleSignIn}
-                delay={0.65}
+                delay={0.6}
               />
+            </div>
+
+            {/* Terms & Conditions checkbox */}
+            <div style={{
+              marginTop: T.SP_LG,
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: T.SP_SM,
+              opacity: 0,
+              animation: 'fadeInUp 0.5s ease 0.7s forwards',
+            }}>
+              <input
+                type="checkbox"
+                id="terms-checkbox"
+                checked={termsAccepted}
+                onChange={(e) => setTermsAccepted(e.target.checked)}
+                style={{
+                  marginTop: 2,
+                  width: 14,
+                  height: 14,
+                  accentColor: T.MINT,
+                  cursor: 'pointer',
+                  flexShrink: 0,
+                }}
+              />
+              <label
+                htmlFor="terms-checkbox"
+                style={{
+                  fontFamily: T.SANS,
+                  fontSize: '12px',
+                  color: T.INK_SOFT,
+                  lineHeight: 1.5,
+                  cursor: 'pointer',
+                }}
+              >
+                I agree to the{' '}
+                <Link href="/terms" style={{ color: T.INK_MID, textDecoration: 'none' }}>Terms of Service</Link>
+                {' '}and{' '}
+                <Link href="/privacy" style={{ color: T.INK_MID, textDecoration: 'none' }}>Privacy Policy</Link>
+              </label>
             </div>
 
             {/* Error */}
@@ -587,39 +532,12 @@ export default function LoginPage() {
               </div>
             )}
 
-            {/* Guest link */}
+            {/* Footer */}
             <div style={{
               marginTop: T.SP_LG,
               textAlign: 'center',
               opacity: 0,
-              animation: 'fadeInUp 0.5s ease 0.75s forwards',
-            }}>
-              <Link
-                href="/tools"
-                style={{
-                  fontFamily: T.MONO,
-                  fontSize: '11px',
-                  color: T.INK_GHOST,
-                  textDecoration: 'none',
-                  letterSpacing: '0.02em',
-                  transition: 'color 0.2s',
-                }}
-                onMouseEnter={e => { e.currentTarget.style.color = T.INK_SOFT; }}
-                onMouseLeave={e => { e.currentTarget.style.color = T.INK_GHOST; }}
-              >
-                Continue as guest →
-              </Link>
-            </div>
-
-            {/* Trust bar */}
-            <TrustBar />
-
-            {/* Footer */}
-            <div style={{
-              marginTop: T.SP_XL,
-              textAlign: 'center',
-              opacity: 0,
-              animation: 'fadeInUp 0.5s ease 0.9s forwards',
+              animation: 'fadeInUp 0.5s ease 0.8s forwards',
             }}>
               <p style={{
                 fontFamily: T.MONO,
@@ -635,19 +553,10 @@ export default function LoginPage() {
               </p>
             </div>
           </div>
-        </div>
 
-        {/* ─── Background gradient ─── */}
-        <div style={{
-          position: 'absolute',
-          top: '-20%',
-          right: '-10%',
-          width: '60%',
-          height: '60%',
-          borderRadius: '50%',
-          background: `radial-gradient(circle, ${T.CARD_GLOW} 0%, transparent 60%)`,
-          pointerEvents: 'none',
-        }} />
+          {/* Trust badges */}
+          <TrustBar />
+        </div>
       </div>
     </>
   );
