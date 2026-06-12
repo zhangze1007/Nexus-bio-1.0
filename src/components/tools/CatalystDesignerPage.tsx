@@ -38,6 +38,9 @@ import ToolTabPanel from './shared/ToolTabPanel';
 import FloatingControlRail from './shared/FloatingControlRail';
 import InlineMetricOverlay from './shared/InlineMetricOverlay';
 import type { ToolTab } from './shared/ToolTabBar';
+import { getBRENDAKinetics } from '../../services/database/brendaClient';
+import type { BRENDAKinetics } from '../../services/database/brendaClient';
+import DataSourceBadge from '../ide/shared/DataSourceBadge';
 
 /* ── Design Tokens (shared via useToolTheme) ──────────────────────── */
 
@@ -542,6 +545,10 @@ export default React.memo(function CatalystDesignerPage() {
   const [spinEnabled, setSpinEnabled] = useState(true);
   const [selectedResidue, setSelectedResidue] = useState<number | null>(null);
   const [selectedMutation, setSelectedMutation] = useState<string | null>(null);
+  const [brendaEcInput, setBrendaEcInput] = useState(enzyme.ecNumber);
+  const [brendaData, setBrendaData] = useState<BRENDAKinetics | null>(null);
+  const [brendaSource, setBrendaSource] = useState<'live' | 'mock'>('mock');
+  const [brendaLoading, setBrendaLoading] = useState(false);
 
   const recommendedSeed = useMemo(
     () => buildCatalystSeed(project, analyzeArtifact, fbaPayload, cethxPayload, dbtlPayload),
@@ -551,6 +558,23 @@ export default React.memo(function CatalystDesignerPage() {
   useEffect(() => {
     setSelectedEnzyme(recommendedSeed.enzymeIndex);
   }, [recommendedSeed.enzymeIndex]);
+
+  useEffect(() => {
+    setBrendaEcInput(enzyme.ecNumber);
+    setBrendaData(null);
+  }, [enzyme.ecNumber]);
+
+  const handleBrendaLookup = useCallback(async () => {
+    if (!brendaEcInput.trim()) return;
+    setBrendaLoading(true);
+    try {
+      const result = await getBRENDAKinetics(brendaEcInput.trim());
+      setBrendaData(result.data);
+      setBrendaSource(result.source);
+    } finally {
+      setBrendaLoading(false);
+    }
+  }, [brendaEcInput]);
 
   const enzyme = ENZYME_STRUCTURES[selectedEnzyme];
   const { data: binding, error: simError } = useMemo(() => {
@@ -701,6 +725,51 @@ export default React.memo(function CatalystDesignerPage() {
               </select>
               {enzyme.id === RATE_LIMITING_ENZYME.id && (
                 <span style={{ display: 'inline-block', marginTop: 4, fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.RISK_LOW, background: 'rgba(255,251,31,0.12)', padding: '2px 8px', borderRadius: 8 }}>Rate-limiting</span>
+              )}
+            </div>
+            {/* BRENDA Kinetics Lookup */}
+            <div style={{ marginBottom: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>BRENDA Lookup</span>
+                <DataSourceBadge source={brendaSource} />
+              </div>
+              <div style={{ display: 'flex', gap: 4 }}>
+                <input
+                  value={brendaEcInput}
+                  onChange={e => setBrendaEcInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') handleBrendaLookup(); }}
+                  placeholder="EC number (e.g. 1.1.1.34)"
+                  style={{ flex: 1, fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: INPUT_TEXT, background: INPUT_BG, border: `1px solid ${INPUT_BORDER}`, borderRadius: 6, padding: '4px 6px', outline: 'none' }}
+                />
+                <button
+                  onClick={handleBrendaLookup}
+                  disabled={brendaLoading}
+                  style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: VALUE, background: 'rgba(175,195,214,0.12)', border: `1px solid ${INPUT_BORDER}`, borderRadius: 6, padding: '4px 8px', cursor: brendaLoading ? 'wait' : 'pointer', opacity: brendaLoading ? 0.6 : 1 }}
+                >
+                  {brendaLoading ? '...' : 'Fetch'}
+                </button>
+              </div>
+              {brendaData && brendaData.km.length > 0 && (
+                <div style={{ marginTop: 6, padding: '6px 8px', borderRadius: 8, background: 'rgba(255,255,255,0.02)', border: `1px solid ${BORDER}` }}>
+                  <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xxs)', color: LABEL, marginBottom: 4 }}>{brendaData.enzymeName}</div>
+                  {brendaData.km.map((k, i) => (
+                    <div key={`km-${i}`} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
+                      <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Km ({k.substrate})</span>
+                      <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE }}>{k.value} {k.unit}</span>
+                    </div>
+                  ))}
+                  {brendaData.kcat.map((k, i) => (
+                    <div key={`kcat-${i}`} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
+                      <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Kcat ({k.substrate})</span>
+                      <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE }}>{k.value} {k.unit}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {brendaData && brendaData.km.length === 0 && (
+                <p style={{ margin: '4px 0 0', fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xxs)', color: LABEL, opacity: 0.7 }}>
+                  No kinetics data found for {brendaData.ecNumber}
+                </p>
               )}
             </div>
             <div style={{ marginBottom: '12px', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>
