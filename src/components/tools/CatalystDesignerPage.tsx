@@ -550,6 +550,11 @@ export default React.memo(function CatalystDesignerPage() {
   const [brendaSource, setBrendaSource] = useState<'live' | 'mock'>('mock');
   const [brendaLoading, setBrendaLoading] = useState(false);
 
+  // AlphaFold structure lookup
+  const [alphafoldStatus, setAlphafoldStatus] = useState<'idle' | 'loading' | 'found' | 'not_found' | 'error'>('idle');
+  const [alphafoldSource, setAlphafoldSource] = useState<'live' | 'mock'>('mock');
+  const [alphafoldPdbLength, setAlphafoldPdbLength] = useState(0);
+
   const recommendedSeed = useMemo(
     () => buildCatalystSeed(project, analyzeArtifact, fbaPayload, cethxPayload, dbtlPayload),
     [analyzeArtifact?.generatedAt, analyzeArtifact?.id, cethxPayload?.updatedAt, dbtlPayload?.feedbackSource, dbtlPayload?.result.improvementRate, dbtlPayload?.result.latestPhase, dbtlPayload?.result.passRate, dbtlPayload?.updatedAt, fbaPayload?.updatedAt, project?.id, project?.updatedAt],
@@ -577,6 +582,42 @@ export default React.memo(function CatalystDesignerPage() {
       setBrendaLoading(false);
     }
   }, [brendaEcInput]);
+
+  // AlphaFold lookup when enzyme changes
+  const handleAlphaFoldLookup = useCallback(async () => {
+    if (!enzyme.uniprotId) return;
+    setAlphafoldStatus('loading');
+    try {
+      const res = await fetch(`/api/alphafold?id=${enzyme.uniprotId}`, {
+        signal: AbortSignal.timeout(10000),
+      });
+      if (res.ok) {
+        const pdb = await res.text();
+        if (pdb && pdb.length > 100) {
+          setAlphafoldStatus('found');
+          setAlphafoldSource('live');
+          setAlphafoldPdbLength(pdb.length);
+        } else {
+          setAlphafoldStatus('not_found');
+          setAlphafoldSource('mock');
+        }
+      } else {
+        setAlphafoldStatus('not_found');
+        setAlphafoldSource('mock');
+      }
+    } catch {
+      setAlphafoldStatus('error');
+      setAlphafoldSource('mock');
+    }
+  }, [enzyme.uniprotId]);
+
+  // Auto-fetch AlphaFold when enzyme changes
+  useEffect(() => {
+    setAlphafoldStatus('idle');
+    setAlphafoldPdbLength(0);
+    handleAlphaFoldLookup();
+  }, [handleAlphaFoldLookup]);
+
   const { data: binding, error: simError } = useMemo(() => {
     try { return { data: predictBindingAffinity(enzyme), error: null as string | null }; }
     catch (e) { return { data: predictBindingAffinity(ENZYME_STRUCTURES[selectedEnzyme]), error: e instanceof Error ? e.message : 'Binding prediction failed' }; }
@@ -771,6 +812,50 @@ export default React.memo(function CatalystDesignerPage() {
                   No kinetics data found for {brendaData.ecNumber}
                 </p>
               )}
+            </div>
+            {/* AlphaFold Structure Lookup */}
+            <div style={{ marginBottom: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>AlphaFold</span>
+                <DataSourceBadge source={alphafoldSource} />
+              </div>
+              <div style={{
+                padding: '6px 8px', borderRadius: 8,
+                background: 'rgba(255,255,255,0.02)', border: `1px solid ${BORDER}`,
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
+                  <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>UniProt</span>
+                  <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE }}>{enzyme.uniprotId}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
+                  <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Status</span>
+                  <span style={{
+                    fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)',
+                    color: alphafoldStatus === 'found' ? THEME.MINT :
+                           alphafoldStatus === 'loading' ? THEME.APRICOT :
+                           alphafoldStatus === 'not_found' ? THEME.CORAL : LABEL,
+                  }}>
+                    {alphafoldStatus === 'found' ? `Structure loaded (${(alphafoldPdbLength / 1000).toFixed(0)}k atoms)` :
+                     alphafoldStatus === 'loading' ? 'Fetching...' :
+                     alphafoldStatus === 'not_found' ? 'Not found' :
+                     alphafoldStatus === 'error' ? 'API unavailable' : 'Pending'}
+                  </span>
+                </div>
+                {alphafoldStatus !== 'loading' && (
+                  <button
+                    onClick={handleAlphaFoldLookup}
+                    style={{
+                      width: '100%', marginTop: 4,
+                      fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xxs)',
+                      color: LABEL, background: 'rgba(175,195,214,0.08)',
+                      border: `1px solid ${BORDER}`, borderRadius: 4,
+                      padding: '3px 6px', cursor: 'pointer',
+                    }}
+                  >
+                    Re-fetch
+                  </button>
+                )}
+              </div>
             </div>
             <div style={{ marginBottom: '12px', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>
               <span>{enzyme.substrate}</span>
