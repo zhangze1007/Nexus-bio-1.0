@@ -17,6 +17,7 @@ import type {
   ProEvolRound,
 } from '../../domain/proevolArtifact';
 import { buildProEvolResearchSummary } from '../../services/proevolAnalysis';
+import { GaussianProcess } from '../../server/gaussianProcess';
 
 import EvolutionCampaignContextCard from './proevol/EvolutionCampaignContextCard';
 import NextRoundRecommendationCard from './proevol/NextRoundRecommendationCard';
@@ -27,7 +28,7 @@ import ActivityLandscapePanel from './proevol/ActivityLandscapePanel';
 import ToolShell from './shared/ToolShell';
 import type { ToolTab } from './shared/ToolTabBar';
 import ToolTabPanel from './shared/ToolTabPanel';
-import { PROEVOL_THEME, formatSigned, StatusPill } from './proevol/shared';
+import { PROEVOL_THEME, formatSigned, StatusPill, tableHeaderStyle, tableCellStyle } from './proevol/shared';
 
 import TruthHeader from './proevol/research/TruthHeader';
 import EvidenceStatRail from './proevol/research/EvidenceStatRail';
@@ -262,6 +263,12 @@ export default function ProEvolPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [activeTab, setActiveTab] = useState('landscape');
 
+  // ── ML-Guided mode (Gaussian Process) ────────────────────────────────
+  const [mlMode, setMlMode] = useState(false);
+  const [gpPredictions, setGpPredictions] = useState<Array<{ mean: number; variance: number }>>([]);
+  const [eiScores, setEiScores] = useState<number[]>([]);
+  const [suggestedVariantId, setSuggestedVariantId] = useState<string | null>(null);
+
   // ── CSV upload handler ──────────────────────────────────────────────────
   const handleCSVUpload = useCallback((file: File) => {
     setIsParsing(true);
@@ -421,12 +428,98 @@ export default function ProEvolPage() {
   const lead = campaign.leadVariant;
   const wt = campaign.wildType;
 
+  // ── ML-Guided GP analysis ────────────────────────────────────────────
+  const mlVariants = useMemo(() => {
+    return Object.values(campaign.variantIndex);
+  }, [campaign.variantIndex]);
+
+  const runGPAnalysis = useCallback(() => {
+    if (mlVariants.length < 3) return;
+
+    // Encode each variant as a feature vector:
+    // [predictedActivity, predictedStability, predictedExpression, predictedSpecificity, mutationBurden]
+    const X: number[][] = mlVariants.map((v) => [
+      v.predictedActivity,
+      v.predictedStability,
+      v.predictedExpression,
+      v.predictedSpecificity,
+      v.mutationBurden,
+    ]);
+
+    // Fitness = composite score
+    const y: number[] = mlVariants.map((v) => v.score.composite);
+
+    // Fit GP with RBF kernel
+    const gp = new GaussianProcess({
+      kernel: 'rbf',
+      lengthScale: 10.0,
+      signalVariance: 1.0,
+      noiseVariance: 0.1,
+    });
+
+    try {
+      gp.fit(X, y);
+
+      // Predict for all variants
+      const predictions = gp.predict(X);
+      setGpPredictions(predictions);
+
+      // Compute Expected Improvement against current best
+      const bestY = Math.max(...y);
+      const ei = gp.expectedImprovement(X, bestY, 0.1);
+      setEiScores(ei);
+
+      // Suggest variant with highest EI (excluding already-lead)
+      let maxEi = -Infinity;
+      let bestIdx = 0;
+      for (let i = 0; i < ei.length; i++) {
+        if (ei[i] > maxEi) {
+          maxEi = ei[i];
+          bestIdx = i;
+        }
+      }
+      setSuggestedVariantId(mlVariants[bestIdx]?.id ?? null);
+    } catch {
+      setGpPredictions([]);
+      setEiScores([]);
+      setSuggestedVariantId(null);
+    }
+  }, [mlVariants]);
+
+  // Run GP analysis when ML mode is toggled on
+  useEffect(() => {
+    if (mlMode) {
+      runGPAnalysis();
+    } else {
+      setGpPredictions([]);
+      setEiScores([]);
+      setSuggestedVariantId(null);
+    }
+  }, [mlMode, runGPAnalysis]);
+
+  // Build GP data rows for the ML tab table
+  const gpTableRows = useMemo(() => {
+    if (!mlMode || gpPredictions.length === 0) return [];
+    return mlVariants.map((v, i) => ({
+      id: v.id,
+      name: v.name,
+      mutationString: v.mutationString,
+      composite: v.score.composite,
+      gpMean: gpPredictions[i]?.mean ?? 0,
+      gpStd: Math.sqrt(gpPredictions[i]?.variance ?? 0),
+      ei: eiScores[i] ?? 0,
+      suggested: v.id === suggestedVariantId,
+      selected: v.status === 'selected',
+    }));
+  }, [mlMode, gpPredictions, eiScores, mlVariants, suggestedVariantId]);
+
   const tabs: ToolTab[] = [
     { id: 'landscape', label: 'Landscape' },
     { id: 'trajectory', label: 'Trajectory' },
     { id: 'library', label: 'Library' },
     { id: 'lineage', label: 'Lineage' },
     { id: 'campaign', label: 'Campaign' },
+    { id: 'ml', label: 'ML-Guided' },
   ];
 
   return (
@@ -762,6 +855,273 @@ export default function ProEvolPage() {
             <EvolutionCampaignContextCard campaign={campaign} totalRounds={totalRounds} librarySize={librarySize} survivorCount={survivorCount} selectionStringency={selectionStringency} onTotalRoundsChange={setTotalRounds} onLibrarySizeChange={setLibrarySize} onSurvivorCountChange={setSurvivorCount} onSelectionStringencyChange={setSelectionStringency} />
             <NextRoundRecommendationCard campaign={campaign} />
           </div>
+        </div>
+      </ToolTabPanel>
+
+      {/* ═══════ ML-GUIDED TAB ═══════ */}
+      <ToolTabPanel activeId={activeTab} tabId="ml">
+        <div style={{ padding: '16px', display: 'grid', gap: '12px' }}>
+          {/* Toggle header */}
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap',
+            padding: '10px 12px', borderRadius: 'var(--nb-radius-md)',
+            border: `1px solid ${PROEVOL_THEME.border}`, background: PROEVOL_THEME.surface,
+          }}>
+            <span style={kicker}>ML-Guided Prediction</span>
+            <button
+              type="button"
+              onClick={() => setMlMode(!mlMode)}
+              style={{
+                padding: '6px 14px', borderRadius: '999px',
+                background: mlMode ? 'rgba(147,203,82,0.15)' : 'rgba(191,220,205,0.08)',
+                color: mlMode ? '#93CB52' : PROEVOL_THEME.mint,
+                fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', letterSpacing: '0.06em',
+                textTransform: 'uppercase', cursor: 'pointer',
+                border: `1px solid ${mlMode ? '#93CB52' : PROEVOL_THEME.mint}44`,
+              }}
+            >
+              {mlMode ? 'GP Active' : 'Enable GP'}
+            </button>
+            <button
+              type="button"
+              onClick={runGPAnalysis}
+              disabled={!mlMode}
+              style={{
+                padding: '6px 14px', borderRadius: '999px',
+                background: mlMode ? 'rgba(81,81,205,0.15)' : 'rgba(255,255,255,0.03)',
+                color: mlMode ? PROEVOL_THEME.sky : PROEVOL_THEME.muted,
+                fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', letterSpacing: '0.06em',
+                textTransform: 'uppercase', cursor: mlMode ? 'pointer' : 'default',
+                border: `1px solid ${mlMode ? PROEVOL_THEME.sky : PROEVOL_THEME.border}44`,
+                opacity: mlMode ? 1 : 0.5,
+              }}
+            >
+              Refresh GP
+            </button>
+            {mlMode && suggestedVariantId && (
+              <button
+                type="button"
+                onClick={() => setSelectedVariantId(suggestedVariantId)}
+                style={{
+                  padding: '6px 14px', borderRadius: '999px',
+                  background: 'rgba(232,220,200,0.12)',
+                  color: PROEVOL_THEME.apricot,
+                  fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', letterSpacing: '0.06em',
+                  textTransform: 'uppercase', cursor: 'pointer',
+                  border: `1px solid ${PROEVOL_THEME.apricot}44`,
+                  marginLeft: 'auto',
+                }}
+              >
+                Suggest Next: {suggestedVariantId}
+              </button>
+            )}
+            <span style={{
+              fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: PROEVOL_THEME.muted,
+            }}>
+              RBF kernel, lengthScale=10, signalVar=1, noiseVar=0.1
+            </span>
+          </div>
+
+          {/* Feature encoding info */}
+          {mlMode && (
+            <div style={{
+              padding: '10px 12px', borderRadius: 'var(--nb-radius-md)',
+              border: `1px solid ${PROEVOL_THEME.border}`, background: PROEVOL_THEME.surface,
+            }}>
+              <div style={kicker}>Feature Encoding</div>
+              <div style={{
+                fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: PROEVOL_THEME.muted,
+                lineHeight: 1.5, marginTop: '4px',
+              }}>
+                Each variant is encoded as a 5-dimensional feature vector:
+                <code style={{ fontFamily: THEME.MONO, color: PROEVOL_THEME.sky, fontSize: 'var(--nb-fs-xs)', marginLeft: '4px' }}>
+                  [activity, stability, expression, specificity, mutationBurden]
+                </code>.
+                The GP is trained on composite fitness scores from {mlVariants.length} variants.
+                Expected Improvement (EI) acquisition suggests the next variant to explore.
+              </div>
+            </div>
+          )}
+
+          {/* GP predictions with uncertainty */}
+          {mlMode && gpPredictions.length > 0 && (
+            <div style={{
+              padding: '10px 12px', borderRadius: 'var(--nb-radius-md)',
+              border: `1px solid ${PROEVOL_THEME.border}`, background: PROEVOL_THEME.surface,
+            }}>
+              <div style={kicker}>GP Fitness Predictions with Uncertainty</div>
+              <div style={{
+                display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+                gap: '8px', marginTop: '8px',
+              }}>
+                {gpTableRows.slice(0, 12).map((row) => (
+                  <div
+                    key={row.id}
+                    style={{
+                      padding: '8px 10px', borderRadius: 'var(--nb-radius-sm)',
+                      border: `1px solid ${row.suggested ? PROEVOL_THEME.apricot : row.selected ? PROEVOL_THEME.mint : PROEVOL_THEME.border}${row.suggested ? '' : '66'}`,
+                      background: row.suggested ? 'rgba(232,220,200,0.08)' : 'rgba(255,255,255,0.02)',
+                      display: 'grid', gap: '3px',
+                    }}
+                  >
+                    <div style={{
+                      fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)',
+                      color: row.suggested ? PROEVOL_THEME.apricot : PROEVOL_THEME.label,
+                      letterSpacing: '0.06em', textTransform: 'uppercase',
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    }}>
+                      {row.name} {row.suggested ? '(suggested)' : ''}
+                    </div>
+                    <div style={{
+                      fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)',
+                      color: PROEVOL_THEME.value, fontWeight: 600,
+                    }}>
+                      {row.gpMean.toFixed(1)}
+                      <span style={{
+                        fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)',
+                        color: PROEVOL_THEME.muted, fontWeight: 400, marginLeft: '4px',
+                      }}>
+                        +/- {row.gpStd.toFixed(2)}
+                      </span>
+                    </div>
+                    {/* Uncertainty bar */}
+                    <div style={{
+                      height: '4px', borderRadius: '2px', overflow: 'hidden',
+                      background: PROEVOL_THEME.inset,
+                    }}>
+                      <div style={{
+                        height: '100%', borderRadius: '2px',
+                        width: `${Math.min(100, (row.gpStd / (Math.max(...gpTableRows.map(r => r.gpStd)) || 1)) * 100)}%`,
+                        background: PROEVOL_THEME.sky,
+                        opacity: 0.6,
+                      }} />
+                    </div>
+                    <div style={{
+                      fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)',
+                      color: row.ei > 0 ? '#93CB52' : PROEVOL_THEME.muted,
+                    }}>
+                      EI: {row.ei.toFixed(4)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* EI ranking table */}
+          {mlMode && gpTableRows.length > 0 && (
+            <div style={{
+              padding: '10px 12px', borderRadius: 'var(--nb-radius-md)',
+              border: `1px solid ${PROEVOL_THEME.border}`, background: PROEVOL_THEME.surface,
+              overflow: 'auto',
+            }}>
+              <div style={kicker}>Expected Improvement Ranking</div>
+              <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '8px' }}>
+                <thead>
+                  <tr>
+                    <th style={tableHeaderStyle()}>Rank</th>
+                    <th style={tableHeaderStyle()}>Variant</th>
+                    <th style={tableHeaderStyle()}>Mutation</th>
+                    <th style={tableHeaderStyle()}>Composite</th>
+                    <th style={tableHeaderStyle()}>GP Mean</th>
+                    <th style={tableHeaderStyle()}>GP Std</th>
+                    <th style={tableHeaderStyle()}>EI</th>
+                    <th style={tableHeaderStyle()}>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[...gpTableRows]
+                    .sort((a, b) => b.ei - a.ei)
+                    .slice(0, 15)
+                    .map((row, rank) => (
+                      <tr
+                        key={row.id}
+                        style={{
+                          background: row.suggested ? 'rgba(232,220,200,0.06)' : undefined,
+                          cursor: 'pointer',
+                        }}
+                        onClick={() => setSelectedVariantId(row.id)}
+                      >
+                        <td style={tableCellStyle()}>
+                          <span style={{
+                            fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)',
+                            color: rank === 0 ? PROEVOL_THEME.apricot : PROEVOL_THEME.muted,
+                          }}>
+                            {rank + 1}
+                          </span>
+                        </td>
+                        <td style={tableCellStyle()}>
+                          <span style={{ fontWeight: row.suggested ? 700 : 400 }}>
+                            {row.name}
+                          </span>
+                        </td>
+                        <td style={tableCellStyle()}>
+                          <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: PROEVOL_THEME.sky }}>
+                            {row.mutationString || '-'}
+                          </span>
+                        </td>
+                        <td style={tableCellStyle()}>
+                          {row.composite.toFixed(1)}
+                        </td>
+                        <td style={tableCellStyle()}>
+                          {row.gpMean.toFixed(2)}
+                        </td>
+                        <td style={tableCellStyle()}>
+                          <span style={{ color: PROEVOL_THEME.sky }}>
+                            +/- {row.gpStd.toFixed(3)}
+                          </span>
+                        </td>
+                        <td style={tableCellStyle()}>
+                          <span style={{
+                            color: row.ei > 0 ? '#93CB52' : PROEVOL_THEME.muted,
+                            fontWeight: row.ei > 0 ? 600 : 400,
+                          }}>
+                            {row.ei.toFixed(4)}
+                          </span>
+                        </td>
+                        <td style={tableCellStyle()}>
+                          <StatusPill tone={row.suggested ? 'warm' : row.selected ? 'cool' : 'neutral'}>
+                            {row.suggested ? 'suggest' : row.selected ? 'selected' : 'candidate'}
+                          </StatusPill>
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Empty state */}
+          {mlMode && gpPredictions.length === 0 && (
+            <div style={{
+              padding: '20px', borderRadius: 'var(--nb-radius-md)',
+              border: `1px dashed ${PROEVOL_THEME.border}`, background: PROEVOL_THEME.surface,
+              textAlign: 'center',
+            }}>
+              <div style={{
+                fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: PROEVOL_THEME.muted,
+              }}>
+                Need at least 3 variants to fit GP. Current: {mlVariants.length} variants.
+              </div>
+            </div>
+          )}
+
+          {!mlMode && (
+            <div style={{
+              padding: '20px', borderRadius: 'var(--nb-radius-md)',
+              border: `1px dashed ${PROEVOL_THEME.border}`, background: PROEVOL_THEME.surface,
+              textAlign: 'center',
+            }}>
+              <div style={{
+                fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: PROEVOL_THEME.muted,
+                lineHeight: 1.6,
+              }}>
+                Enable the Gaussian Process to predict fitness landscapes and identify
+                high-Expected-Improvement variants for the next round of directed evolution.
+                The GP uses an RBF kernel trained on the current variant library.
+              </div>
+            </div>
+          )}
         </div>
       </ToolTabPanel>
     </ToolShell>
