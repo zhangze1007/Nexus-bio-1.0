@@ -86,3 +86,23 @@ jobs:
         env:
           BASE_URL: http://localhost:3000
           AUTH_SECRET: ci-e2e-placeholder-secret-for-testing-only
+
+  python-ref:
+    name: Python Reference Implementation
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Run Python tests
+        run: python3 -m unittest discover -s reference_impl_py/tests -v
+
+      - name: Run benchmark evaluation
+        run: python3 reference_impl_py/run_reference_benchmark.py validate
