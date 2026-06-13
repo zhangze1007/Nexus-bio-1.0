@@ -478,6 +478,7 @@ function resolveViewMode(
     umap: datasetMeta.availableViews.umap,
     trajectory: datasetMeta.availableViews.trajectory,
     table: datasetMeta.availableViews.table,
+    communication: true, // always available — client-side analysis
   };
   if (availability[requested]) return requested;
   return viewOrder.find((candidate) => availability[candidate]) ?? 'table';

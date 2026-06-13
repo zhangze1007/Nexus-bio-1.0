@@ -6,7 +6,8 @@ export type ScSpatialViewMode =
   | 'spatial-3d'
   | 'umap'
   | 'trajectory'
-  | 'table';
+  | 'table'
+  | 'communication';
 
 export interface ScSpatialSparseRow {
   indices: number[];

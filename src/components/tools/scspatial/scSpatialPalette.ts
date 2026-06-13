@@ -15,6 +15,7 @@ export const SCSPATIAL_VIEW_LABELS = {
   umap: 'UMAP',
   trajectory: 'PAGA Trajectory',
   table: 'Cell Table',
+  communication: 'Cell Communication',
 } as const;
 
 export function colorForCluster(clusterId: number) {
