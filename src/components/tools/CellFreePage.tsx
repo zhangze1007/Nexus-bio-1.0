@@ -32,6 +32,7 @@ import ToolTabPanel from './shared/ToolTabPanel';
 import FloatingControlRail from './shared/FloatingControlRail';
 import InlineMetricOverlay from './shared/InlineMetricOverlay';
 import type { ToolTab } from './shared/ToolTabBar';
+import { calibrateParameters } from '../../server/mcmcCalibration';
 import { getBRENDAKinetics } from '../../services/database/brendaClient';
 import type { BRENDAKinetics } from '../../services/database/brendaClient';
 import DataSourceBadge from '../ide/shared/DataSourceBadge';
@@ -666,6 +667,7 @@ const CELLFREE_TABS: ToolTab[] = [
   { id: 'timecourse', label: 'Time Course', accent: THEME.SKY },
   { id: 'resources', label: 'Resources', accent: THEME.LILAC },
   { id: 'fitting', label: 'Fitting', accent: THEME.APRICOT },
+  { id: 'calibrate', label: 'Calibrate', accent: THEME.MINT },
   { id: 'iviv', label: 'IVIV', accent: THEME.MINT },
   { id: 'reactor', label: 'Reactor 3D', accent: THEME.CORAL },
 ];
@@ -714,6 +716,34 @@ export default React.memo(function CellFreePage() {
   const [brendaSource, setBrendaSource] = useState<'live' | 'mock'>('mock');
   const [brendaLoading, setBrendaLoading] = useState(false);
   const [brendaApplied, setBrendaApplied] = useState(false);
+  const [calibrationResult, setCalibrationResult] = useState<import('../../server/mcmcCalibration').CalibrationResult | null>(null);
+  const [calibrationLoading, setCalibrationLoading] = useState(false);
+
+  const handleCalibrate = useCallback(() => {
+    setCalibrationLoading(true);
+    try {
+      const timepoints = userData
+        ? Array.from(new Set(userData.map(d => d.time))).sort((a, b) => a - b)
+        : [0, 30, 60, 90, 120];
+      const observations = userData
+        ? { protein: timepoints.map(t => userData.filter(d => d.time === t).reduce((sum, d) => sum + d.fluorescence, 0) / Math.max(1, userData.filter(d => d.time === t).length)) }
+        : { protein: [0, 0.5, 1.2, 1.8, 2.1] };
+      const data = { timepoints, observations };
+      const result = calibrateParameters(data, {
+        nSamples: 200,
+        burnIn: 50,
+        priorRanges: { k_tx: [0.01, 5], k_tl: [0.1, 20], d_mRNA: [0.001, 0.5] },
+      }, (params) => {
+        const { k_tx, k_tl, d_mRNA } = params;
+        return {
+          protein: data.timepoints.map(t => (k_tx * k_tl / d_mRNA) * (1 - Math.exp(-d_mRNA * t))),
+        };
+      });
+      setCalibrationResult(result);
+    } finally {
+      setCalibrationLoading(false);
+    }
+  }, [userData]);
 
   const handleBrendaLookup = useCallback(async () => {
     if (!brendaEcInput.trim()) return;
@@ -893,7 +923,7 @@ export default React.memo(function CellFreePage() {
       tabs={CELLFREE_TABS}
       activeTab={activeTab}
       onTabChange={setActiveTab}
-      advancedTabIds={['fitting', 'iviv', 'reactor']}
+      advancedTabIds={['fitting', 'calibrate', 'iviv', 'reactor']}
       footer={
         <>
           <ExportButton label="Export Simulation JSON" data={result} filename="cellfree-simulation" format="json" />
@@ -1392,6 +1422,245 @@ export default React.memo(function CellFreePage() {
                   </p>
                 </div>
               </>
+            )}
+          </div>
+        </div>
+      </ToolTabPanel>
+
+      {/* ── Calibrate Tab ── */}
+      <ToolTabPanel tabId="calibrate" activeId={activeTab}>
+        <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
+          <FloatingControlRail label="MCMC Config" defaultCollapsed={false}>
+            <SectionLabel>Model</SectionLabel>
+            <div style={{ ...GLASS, borderRadius: 'var(--nb-radius-md)', padding: '10px', marginBottom: '16px' }}>
+              <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xxs)', color: LABEL, margin: 0, lineHeight: 1.5 }}>
+                protein(t) = (k_tx · k_tl / d_mRNA) · (1 - exp(-d_mRNA · t))
+              </p>
+            </div>
+            <SectionLabel>Prior Ranges</SectionLabel>
+            <div style={{ ...GLASS, borderRadius: 'var(--nb-radius-md)', padding: '10px', marginBottom: '16px' }}>
+              {[
+                { label: 'k_tx', range: '[0.01, 5]' },
+                { label: 'k_tl', range: '[0.1, 20]' },
+                { label: 'd_mRNA', range: '[0.001, 0.5]' },
+              ].map(item => (
+                <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                  <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>{item.label}</span>
+                  <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE }}>{item.range}</span>
+                </div>
+              ))}
+            </div>
+            <SectionLabel>Sampler</SectionLabel>
+            <div style={{ ...GLASS, borderRadius: 'var(--nb-radius-md)', padding: '10px' }}>
+              {[
+                { label: 'Samples', value: '200' },
+                { label: 'Burn-in', value: '50' },
+                { label: 'Algorithm', value: 'Metropolis-Hastings' },
+              ].map(item => (
+                <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                  <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>{item.label}</span>
+                  <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE }}>{item.value}</span>
+                </div>
+              ))}
+            </div>
+          </FloatingControlRail>
+          <div style={{ flex: 1, position: 'relative', display: 'flex', flexDirection: 'column', minHeight: 0, padding: '12px', overflowY: 'auto', gap: '16px' }}>
+            {/* Data source info */}
+            <div style={{ ...GLASS, borderRadius: 'var(--nb-radius-md)', padding: '12px' }}>
+              <SectionLabel>Data Source</SectionLabel>
+              <p style={{ margin: 0, fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, lineHeight: 1.5 }}>
+                {userData
+                  ? `Calibrating against uploaded plate reader data (${Array.from(new Set(userData.map(d => d.time))).length} timepoints).`
+                  : 'Using built-in demo timecourse. Upload a CSV in the Fitting tab to calibrate against your own data.'}
+              </p>
+            </div>
+            {/* Calibrate button */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <button
+                onClick={handleCalibrate}
+                disabled={calibrationLoading}
+                style={{
+                  padding: '8px 20px',
+                  borderRadius: 'var(--nb-radius-sm)',
+                  border: `1px solid ${INPUT_BORDER}`,
+                  background: calibrationLoading ? 'transparent' : 'rgba(74, 222, 128, 0.12)',
+                  color: calibrationLoading ? LABEL : VALUE,
+                  fontFamily: THEME.SANS,
+                  fontSize: 'var(--nb-fs-sm)',
+                  fontWeight: 600,
+                  cursor: calibrationLoading ? 'wait' : 'pointer',
+                  opacity: calibrationLoading ? 0.6 : 1,
+                  transition: 'all 0.15s',
+                }}
+              >
+                {calibrationLoading ? 'Running MCMC...' : 'Run Calibration'}
+              </button>
+              {calibrationResult && (
+                <span style={{
+                  padding: '3px 10px', borderRadius: '999px',
+                  background: calibrationResult.converged ? `rgba(${SEMANTIC_RGB.pass}, 0.15)` : `rgba(${SEMANTIC_RGB.warn}, 0.15)`,
+                  color: calibrationResult.converged ? `rgba(${SEMANTIC_RGB.pass}, 0.92)` : `rgba(${SEMANTIC_RGB.warn}, 0.92)`,
+                  fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)',
+                  border: `1px solid ${calibrationResult.converged ? `rgba(${SEMANTIC_RGB.pass}, 0.3)` : `rgba(${SEMANTIC_RGB.warn}, 0.3)`}`,
+                }}>
+                  {calibrationResult.converged ? 'Converged' : 'Not converged'}
+                </span>
+              )}
+            </div>
+            {/* Results */}
+            {calibrationResult && (
+              <>
+                {/* Posterior distributions */}
+                <ScientificFigureFrame
+                  eyebrow="Posterior distributions"
+                  title="MCMC parameter posteriors"
+                  caption="Posterior mean and standard deviation for each TX-TL parameter estimated via Metropolis-Hastings sampling."
+                  legend={[
+                    { label: 'Samples', value: `${Object.values(calibrationResult.samples)[0]?.length ?? 0}`, accent: THEME.MINT },
+                    { label: 'Acceptance', value: `${((typeof calibrationResult.acceptanceRate === 'number' ? calibrationResult.acceptanceRate : 0) * 100).toFixed(1)}%`, accent: THEME.SKY },
+                  ]}
+                  minHeight="280px"
+                >
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '8px 0' }}>
+                    {/* Acceptance rate bar */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, width: '100px', flexShrink: 0 }}>Acceptance</span>
+                      <div style={{ flex: 1, height: '8px', borderRadius: '4px', background: PAPER_THEME.bgAlt, overflow: 'hidden' }}>
+                        <div style={{
+                          width: `${(typeof calibrationResult.acceptanceRate === 'number' ? calibrationResult.acceptanceRate : 0) * 100}%`,
+                          height: '100%',
+                          borderRadius: '4px',
+                          background: THEME.MINT,
+                          transition: 'width 0.3s',
+                        }} />
+                      </div>
+                      <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE, width: '40px', textAlign: 'right' }}>
+                        {((typeof calibrationResult.acceptanceRate === 'number' ? calibrationResult.acceptanceRate : 0) * 100).toFixed(1)}%
+                      </span>
+                    </div>
+                    {/* Per-parameter posterior info */}
+                    {Object.keys(calibrationResult.posteriorMean).map(param => {
+                      const mu = calibrationResult.posteriorMean[param];
+                      const sigma = calibrationResult.posteriorStd[param];
+                      const ci = calibrationResult.credibleInterval[param];
+                      const [lo, hi] = [ci[0], ci[1]];
+                      const priorMin = { k_tx: 0.01, k_tl: 0.1, d_mRNA: 0.001 }[param] ?? 0;
+                      const priorMax = { k_tx: 5, k_tl: 20, d_mRNA: 0.5 }[param] ?? 1;
+                      const priorRange = priorMax - priorMin;
+                      const normalizedMean = (mu - priorMin) / priorRange;
+                      const normalizedLo = (lo - priorMin) / priorRange;
+                      const normalizedHi = (hi - priorMin) / priorRange;
+                      return (
+                        <div key={param} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                            <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', fontWeight: 600, color: VALUE }}>{param}</span>
+                            <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE }}>{mu.toFixed(4)} ± {sigma.toFixed(4)}</span>
+                          </div>
+                          <div style={{ position: 'relative', height: '20px' }}>
+                            {/* CI bar */}
+                            <div style={{ position: 'absolute', top: '4px', left: `${normalizedLo * 100}%`, width: `${Math.max(2, (normalizedHi - normalizedLo) * 100)}%`, height: '12px', borderRadius: '3px', background: `${THEME.MINT}30`, border: `1px solid ${THEME.MINT}60` }} />
+                            {/* Mean marker */}
+                            <div style={{ position: 'absolute', top: '0', left: `calc(${Math.min(99, Math.max(1, normalizedMean)) * 100}% - 3px)`, width: '6px', height: '20px', borderRadius: '3px', background: THEME.MINT }} />
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xxs)', color: LABEL }}>95% CI: [{lo.toFixed(4)}, {hi.toFixed(4)}]</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </ScientificFigureFrame>
+
+                {/* Credible intervals table */}
+                <div style={{ ...GLASS, borderRadius: 'var(--nb-radius-md)', padding: '12px' }}>
+                  <SectionLabel>Credible Intervals</SectionLabel>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)' }}>
+                    <thead>
+                      <tr style={{ borderBottom: `1px solid ${BORDER}` }}>
+                        {['Parameter', 'Mean', 'Std', '2.5%', '97.5%', 'Status'].map(h => (
+                          <th key={h} style={{ padding: '6px 8px', textAlign: 'left', color: LABEL, fontWeight: 500 }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Object.keys(calibrationResult.posteriorMean).map(param => {
+                        const mu = calibrationResult.posteriorMean[param];
+                        const sigma = calibrationResult.posteriorStd[param];
+                        const ci = calibrationResult.credibleInterval[param];
+                        const [lo, hi] = [ci[0], ci[1]];
+                        const priorMin = { k_tx: 0.01, k_tl: 0.1, d_mRNA: 0.001 }[param] ?? 0;
+                        const priorMax = { k_tx: 5, k_tl: 20, d_mRNA: 0.5 }[param] ?? 1;
+                        const tight = sigma < 0.3 * (priorMax - priorMin);
+                        return (
+                          <tr key={param} style={{ borderBottom: `1px solid ${BORDER}40` }}>
+                            <td style={{ padding: '6px 8px', color: VALUE, fontWeight: 600 }}>{param}</td>
+                            <td style={{ padding: '6px 8px', color: VALUE }}>{mu.toFixed(4)}</td>
+                            <td style={{ padding: '6px 8px', color: VALUE }}>{sigma.toFixed(4)}</td>
+                            <td style={{ padding: '6px 8px', color: LABEL }}>{lo.toFixed(4)}</td>
+                            <td style={{ padding: '6px 8px', color: LABEL }}>{hi.toFixed(4)}</td>
+                            <td style={{ padding: '6px 8px' }}>
+                              <span style={{
+                                padding: '2px 8px', borderRadius: '999px',
+                                background: tight ? `rgba(${SEMANTIC_RGB.pass}, 0.15)` : `rgba(${SEMANTIC_RGB.warn}, 0.15)`,
+                                color: tight ? `rgba(${SEMANTIC_RGB.pass}, 0.92)` : `rgba(${SEMANTIC_RGB.warn}, 0.92)`,
+                                fontSize: 'var(--nb-fs-xxs)',
+                              }}>
+                                {tight ? 'Tight' : 'Wide'}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Convergence summary */}
+                <div style={{ ...GLASS, borderRadius: 'var(--nb-radius-md)', padding: '12px', border: `1px solid ${calibrationResult.converged ? `rgba(${SEMANTIC_RGB.pass}, 0.3)` : `rgba(${SEMANTIC_RGB.warn}, 0.3)`}` }}>
+                  <SectionLabel>Convergence Summary</SectionLabel>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Acceptance Rate</span>
+                      <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE }}>
+                        {((typeof calibrationResult.acceptanceRate === 'number' ? calibrationResult.acceptanceRate : 0) * 100).toFixed(1)}%
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Converged</span>
+                      <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: calibrationResult.converged ? `rgba(${SEMANTIC_RGB.pass}, 0.92)` : `rgba(${SEMANTIC_RGB.warn}, 0.92)` }}>
+                        {calibrationResult.converged ? 'Yes' : 'No'}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Total Samples</span>
+                      <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE }}>
+                        {Object.values(calibrationResult.samples)[0]?.length ?? 0}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Parameters</span>
+                      <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE }}>
+                        {Object.keys(calibrationResult.posteriorMean).length}
+                      </span>
+                    </div>
+                  </div>
+                  <p style={{ margin: '10px 0 0', fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, lineHeight: 1.5 }}>
+                    {calibrationResult.converged
+                      ? 'All posterior standard deviations are below 30% of their prior range widths. Parameter estimates are reasonably constrained.'
+                      : 'Some posterior standard deviations exceed 30% of prior range widths. Consider running more samples or narrowing priors.'}
+                  </p>
+                </div>
+              </>
+            )}
+            {!calibrationResult && !calibrationLoading && (
+              <div style={{ ...GLASS, borderRadius: 'var(--nb-radius-md)', padding: '20px', textAlign: 'center' }}>
+                <p style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: LABEL, margin: 0 }}>
+                  Click "Run Calibration" to estimate TX-TL parameters via Metropolis-Hastings MCMC.
+                </p>
+                <p style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, margin: '8px 0 0', opacity: 0.7 }}>
+                  The sampler fits k_tx, k_tl, and d_mRNA to observed protein expression timecourses.
+                </p>
+              </div>
             )}
           </div>
         </div>

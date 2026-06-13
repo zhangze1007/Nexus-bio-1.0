@@ -23,8 +23,10 @@ import {
   mapControlGainToRBS,
   hillFeedback,
   SPONTANEOUS_LOSS_RATE,
+  PROTEIN_TURNOVER_RATE,
   O2_CONSUMPTION_COEFF,
 } from '../../data/mockDynCon';
+import { runMPC } from '../../server/modelPredictiveControl';
 import type { ODEState, HillParams } from '../../types';
 import type { DynConOverrides } from '../../data/mockDynCon';
 import { buildDynConSeed } from './shared/workbenchDataflow';
@@ -300,6 +302,21 @@ export default React.memo(function DynConPage() {
   const [o2ConsumptionCoeff, setO2ConsumptionCoeff] = usePersistedState('nexus-bio:dyncon:o2ConsumptionCoeff', O2_CONSUMPTION_COEFF);
   const [burdenPenalty, setBurdenPenalty] = usePersistedState('nexus-bio:dyncon:burdenPenalty', 0.4);
 
+  /* ── MPC mode (persisted) ──────────────────────────────────────────────── */
+  const [controlMode, setControlMode] = usePersistedState<'pid' | 'mpc'>('nexus-bio:dyncon:controlMode', 'pid');
+  const [mpcPredHorizon, setMpcPredHorizon] = usePersistedState('nexus-bio:dyncon:mpcPredHorizon', 10);
+  const [mpcCtrlHorizon, setMpcCtrlHorizon] = usePersistedState('nexus-bio:dyncon:mpcCtrlHorizon', 4);
+  const [mpcStateWeight, setMpcStateWeight] = usePersistedState('nexus-bio:dyncon:mpcStateWeight', 10.0);
+  const [mpcControlWeight, setMpcControlWeight] = usePersistedState('nexus-bio:dyncon:mpcControlWeight', 0.5);
+  const [mpcResult, setMpcResult] = useState<{
+    trajectory: ODEState[];
+    controlSignals: number[];
+    cost: number;
+    feasible: boolean;
+    predictedTrajectory: ODEState[];
+    constraintViolations: { time: number; variable: string; value: number; bound: string }[];
+  } | null>(null);
+
   const [activeTab, setActiveTab] = useState('trajectory');
   const recommendedSeed = useMemo(
     () => buildDynConSeed(fbaPayload, cethxPayload, catalystPayload, dbtlPayload),
@@ -359,8 +376,68 @@ export default React.memo(function DynConPage() {
     burdenPenalty,
   }), [spontaneousLossRate, o2ConsumptionCoeff, burdenPenalty]);
 
-  /* ── Simulation ─────────────────────────────────────────────────────────── */
-  const { trajectory, simError } = useMemo(() => {
+  /* ── MPC state-transition model (discrete-time, 1 Euler step) ─────────── */
+  const mpcModelStateRef = useRef<{
+    p: typeof DEFAULT_PARAMS;
+    hill: HillParams;
+    overrides: DynConOverrides;
+  }>({ p: DEFAULT_PARAMS, hill, overrides });
+  mpcModelStateRef.current = { p: DEFAULT_PARAMS, hill, overrides };
+
+  const mpcModelFn = useMemo(
+    () => (state: number[], control: number[]): number[] => {
+      // State: [X, S, P, O_norm, FPP, ADS, V]
+      // Control: [airflowScale]  (0..3)
+      const { p, hill: h, overrides: ov } = mpcModelStateRef.current;
+      const spontaneousLoss = ov.spontaneousLossRate ?? SPONTANEOUS_LOSS_RATE;
+      const o2Coeff = ov.o2ConsumptionCoeff ?? O2_CONSUMPTION_COEFF;
+      const burdenCoeff = ov.burdenPenalty ?? 0.4;
+      const airflowScale = Math.max(0, Math.min(3, control[0]));
+      const dt = 1.0; // 1-hour timestep (matches PID simulation)
+
+      const X = Math.max(0, state[0]);
+      const S = Math.max(0, state[1]);
+      const P = Math.max(0, state[2]);
+      const O_norm = Math.max(0, Math.min(1.2, state[3]));
+      const FPP = Math.max(0, state[4]);
+      const ADS = Math.max(0, Math.min(2.0, state[5]));
+      const V = Math.max(0.1, state[6]);
+      const O = O_norm * p.OstarSat;
+
+      const muO = O > 0 ? O / (p.Ko + O) : 0;
+      const muBase = p.muMax * (S / (p.Ks + S)) * muO;
+      const fppInhib = 1 / (1 + (FPP / p.fppToxicThreshold) ** 2);
+      const prodInhib = 1 / (1 + (P / p.productToxicThreshold) ** 2);
+      const burdenRaw = Math.min(1, ADS / p.maxBurdenTolerance);
+      const burdenPen = Math.max(0, 1 - burdenRaw * burdenCoeff);
+      const mu = muBase * fppInhib * prodInhib * burdenPen;
+
+      const dilution = p.feedRate / V;
+      const dX = mu * X - dilution * X;
+      const dS = p.feedRate * (p.feedConc - S) / V - dX / p.Yxs;
+      const dFPP = p.kFPP * X - ADS * FPP * p.fppDegradation - FPP * spontaneousLoss - dilution * FPP;
+      const adsTarget = hillFeedback(FPP, h);
+      const dADS = (adsTarget - ADS) * PROTEIN_TURNOVER_RATE;
+      const dP = p.kADS * ADS * FPP - dilution * P;
+      const dO_full = p.kLa * airflowScale * (p.OstarSat - O) - mu * X * o2Coeff;
+      const dO = dO_full / p.OstarSat;
+
+      const Xn = Math.max(0, X + dt * dX);
+      const Sn = Math.max(0, S + dt * dS);
+      const Pn = Math.max(0, P + dt * dP);
+      const On = Math.max(0, Math.min(1.2, O_norm + dt * dO));
+      const FPPn = Math.max(0, FPP + dt * dFPP);
+      const ADSn = Math.max(0, Math.min(2.0, ADS + dt * dADS));
+      const Vn = Math.max(0.1, V + dt * p.feedRate);
+
+      return [Xn, Sn, Pn, On, FPPn, ADSn, Vn];
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
+
+  /* ── MPC simulation ────────────────────────────────────────────────────── */
+  const pidSimulation = useMemo(() => {
     try {
       const t = runBioreactor({ kp, ki, kd, setpoint }, DEFAULT_PARAMS, 100, 1.0, hill, overrides);
       return { trajectory: t, simError: null as string | null };
@@ -368,6 +445,137 @@ export default React.memo(function DynConPage() {
       return { trajectory: [] as ODEState[], simError: e instanceof Error ? e.message : 'Simulation failed' };
     }
   }, [kp, ki, kd, setpoint, hill, overrides]);
+
+  const mpcSimulation = useMemo(() => {
+    if (controlMode !== 'mpc') return null;
+    try {
+      const params = DEFAULT_PARAMS;
+      const initialState = [
+        0.5,                     // X (biomass)
+        20.0,                    // S (substrate)
+        0.0,                     // P (product)
+        1.0,                     // O_norm (dissolved O2, normalized)
+        10.0,                    // FPP
+        hill.Vmax * 0.8,        // ADS
+        2.0,                     // V (volume)
+      ];
+
+      const predHorizon = Math.max(2, Math.min(20, mpcPredHorizon));
+      const ctrlHorizon = Math.max(1, Math.min(predHorizon, mpcCtrlHorizon));
+
+      const mpcConfig = {
+        predictionHorizon: predHorizon,
+        controlHorizon: ctrlHorizon,
+        dt: 1.0,
+        setpoint: [0, 0, 0, setpoint, 0, 0, 0],
+        stateConstraints: {
+          min: [0, 0, 0, 0, 0, 0, 0.1],
+          max: [50, 100, 50, 1.2, 300, 2.0, 20],
+        },
+        controlConstraints: { min: [0], max: [3] },
+        costWeights: {
+          state: [0.1, 0.01, 1.0, mpcStateWeight, 0.05, 0.1, 0.01],
+          control: [mpcControlWeight],
+        },
+      };
+
+      const result = runMPC(initialState, mpcConfig, mpcModelFn, 100);
+
+      const toODEState = (idx: number): ODEState => ({
+        time: (idx + 1) * 1.0,
+        biomass: result.trajectories[0][idx + 1],
+        substrate: result.trajectories[1][idx + 1],
+        product: result.trajectories[2][idx + 1],
+        dissolvedO2: result.trajectories[3][idx + 1],
+        fpp: result.trajectories[4][idx + 1],
+        adsExpression: result.trajectories[5][idx + 1],
+        volume: result.trajectories[6][idx + 1],
+      });
+
+      const trajectory = Array.from({ length: 100 }, (_, i) => toODEState(i));
+
+      // Predicted trajectory from current state (last point) over prediction horizon
+      const lastIdx = 99;
+      const currentState = [
+        result.trajectories[0][lastIdx],
+        result.trajectories[1][lastIdx],
+        result.trajectories[2][lastIdx],
+        result.trajectories[3][lastIdx],
+        result.trajectories[4][lastIdx],
+        result.trajectories[5][lastIdx],
+        result.trajectories[6][lastIdx],
+      ];
+      const lastControl = result.controlSignals[lastIdx];
+      const predictedStates: ODEState[] = [toODEState(lastIdx)];
+      let prevState = currentState;
+      for (let k = 0; k < predHorizon; k++) {
+        const nextState = mpcModelFn(prevState, [lastControl]);
+        predictedStates.push({
+          time: lastIdx + 1 + k + 1,
+          biomass: nextState[0],
+          substrate: nextState[1],
+          product: nextState[2],
+          dissolvedO2: nextState[3],
+          fpp: nextState[4],
+          adsExpression: nextState[5],
+          volume: nextState[6],
+        });
+        prevState = nextState;
+      }
+
+      // Constraint violations
+      const violations: { time: number; variable: string; value: number; bound: string }[] = [];
+      trajectory.forEach((s, i) => {
+        if (s.fpp !== undefined && s.fpp > params.fppToxicThreshold) {
+          violations.push({ time: s.time, variable: 'FPP', value: s.fpp, bound: `< ${params.fppToxicThreshold} uM` });
+        }
+        if (s.product > params.productToxicThreshold) {
+          violations.push({ time: s.time, variable: 'Product', value: s.product, bound: `< ${params.productToxicThreshold} g/L` });
+        }
+      });
+
+      return {
+        trajectory,
+        controlSignals: result.controlSignals,
+        cost: result.cost,
+        feasible: result.feasible,
+        predictedTrajectory: predictedStates,
+        constraintViolations: violations,
+        simError: null as string | null,
+      };
+    } catch (e) {
+      return {
+        trajectory: [] as ODEState[],
+        controlSignals: [] as number[],
+        cost: 0,
+        feasible: false,
+        predictedTrajectory: [] as ODEState[],
+        constraintViolations: [] as { time: number; variable: string; value: number; bound: string }[],
+        simError: e instanceof Error ? e.message : 'MPC simulation failed',
+      };
+    }
+  }, [controlMode, mpcPredHorizon, mpcCtrlHorizon, mpcStateWeight, mpcControlWeight, setpoint, hill, mpcModelFn]);
+
+  useEffect(() => {
+    if (controlMode === 'mpc' && mpcSimulation) {
+      setMpcResult({
+        trajectory: mpcSimulation.trajectory,
+        controlSignals: mpcSimulation.controlSignals,
+        cost: mpcSimulation.cost,
+        feasible: mpcSimulation.feasible,
+        predictedTrajectory: mpcSimulation.predictedTrajectory,
+        constraintViolations: mpcSimulation.constraintViolations,
+      });
+    }
+  }, [controlMode, mpcSimulation]);
+
+  /* ── Active simulation results ─────────────────────────────────────────── */
+  const trajectory = controlMode === 'mpc' && mpcResult && mpcResult.trajectory.length > 0
+    ? mpcResult.trajectory
+    : pidSimulation.trajectory;
+  const simError = controlMode === 'mpc' && mpcResult
+    ? (mpcSimulation?.simError ?? null)
+    : pidSimulation.simError;
 
   const last = trajectory[trajectory.length - 1];
   const productTiter = last?.product ?? 0;
@@ -392,11 +600,19 @@ export default React.memo(function DynConPage() {
     if (simError) {
       appendConsole({ level: 'error', module: 'DYNCON', message: `Simulation error: ${simError}` });
     } else if (trajectory.length > 0) {
-      appendConsole({
-        level: 'info',
-        module: 'DYNCON',
-        message: `ODE sim complete — Kp=${kp} Ki=${ki} Kd=${kd} SP=${setpoint} | Product=${productTiter.toFixed(2)} g/L | RMSE=${doRmse.toFixed(3)} | ${convergence.isStable ? 'Stable' : 'Unstable'}`,
-      });
+      if (controlMode === 'mpc' && mpcResult) {
+        appendConsole({
+          level: 'info',
+          module: 'DYNCON',
+          message: `MPC sim complete — Np=${mpcPredHorizon} Nc=${mpcCtrlHorizon} Q_DO2=${mpcStateWeight} R=${mpcControlWeight} | Product=${productTiter.toFixed(2)} g/L | Cost=${mpcResult.cost.toFixed(2)} | ${mpcResult.feasible ? 'Feasible' : 'Constraint violations'} | RMSE=${doRmse.toFixed(3)}`,
+        });
+      } else {
+        appendConsole({
+          level: 'info',
+          module: 'DYNCON',
+          message: `ODE sim complete — Kp=${kp} Ki=${ki} Kd=${kd} SP=${setpoint} | Product=${productTiter.toFixed(2)} g/L | RMSE=${doRmse.toFixed(3)} | ${convergence.isStable ? 'Stable' : 'Unstable'}`,
+        });
+      }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trajectory, simError]);
@@ -434,7 +650,7 @@ export default React.memo(function DynConPage() {
     <ToolShell
       moduleId="dyncon"
       title="Dynamic Control Simulator"
-      description="Fed-batch bioreactor with PID-controlled DO₂ and Hill-function negative feedback"
+      description={`Fed-batch bioreactor with ${controlMode === 'mpc' ? 'MPC (Model Predictive Control)' : 'PID-controlled'} DO₂ and Hill-function negative feedback`}
       formula="f(FPP) = Vmax·Kd^n / (Kd^n + FPP^n)"
       tabs={DYNCON_TABS}
       activeTab={activeTab}
@@ -503,28 +719,54 @@ export default React.memo(function DynConPage() {
           {/* ── Algorithm Transparency ── */}
           <div style={{ padding: '8px 16px' }}>
             <AlgorithmPanel
-              name="RK4 ODE + PID Control"
-              description="Simulates dynamic bioreactor control using 4th-order Runge-Kutta integration. PID controller adjusts feed rate to maintain setpoint. Hill functions model feedback inhibition."
+              name={controlMode === 'mpc' ? 'Euler Discrete + MPC (Projected QP)' : 'RK4 ODE + PID Control'}
+              description={controlMode === 'mpc'
+                ? 'Model Predictive Control with online linearisation and quadratic programming. At each timestep the nonlinear bioreactor model is linearised via finite-difference Jacobians, a QP is solved over the prediction horizon, and the first optimal control signal is applied.'
+                : 'Simulates dynamic bioreactor control using 4th-order Runge-Kutta integration. PID controller adjusts feed rate to maintain setpoint. Hill functions model feedback inhibition.'}
               assumptions={[
                 'Well-mixed bioreactor (CSTR model)',
                 'Instantaneous mixing (no transport delays)',
                 'Monod kinetics for substrate uptake',
                 'Hill function for product inhibition',
-                'PID controller with anti-windup',
+                ...(controlMode === 'mpc'
+                  ? [
+                      'Linearised state-space model per timestep',
+                      'Quadratic cost: state error + control effort',
+                      'Box constraints on states and controls',
+                      'Projected gradient descent QP solver',
+                    ]
+                  : ['PID controller with anti-windup']
+                ),
               ]}
               limitations={[
                 'No discrete event modeling (e.g., batch transitions)',
                 'Simplified metabolic network (6 species)',
                 'No stochastic effects',
-                'Controller tuning is manual',
+                ...(controlMode === 'mpc'
+                  ? [
+                      'Euler integration (1h step) — less accurate than RK4',
+                      'QP solved by gradient descent (not a commercial solver)',
+                      'Linearisation may diverge far from operating point',
+                    ]
+                  : ['Controller tuning is manual']
+                ),
               ]}
-              citation={{
-                authors: 'Bailey JE, Ollis DF',
-                title: 'Biochemical Engineering Fundamentals',
-                journal: 'McGraw-Hill',
-                year: 1986,
-                doi: '',
-              }}
+              citation={controlMode === 'mpc'
+                ? {
+                    authors: 'Camacho EF, Bordons C',
+                    title: 'Model Predictive Control',
+                    journal: 'Springer',
+                    year: 2007,
+                    doi: '10.1007/978-0-85729-398-5',
+                  }
+                : {
+                    authors: 'Bailey JE, Ollis DF',
+                    title: 'Biochemical Engineering Fundamentals',
+                    journal: 'McGraw-Hill',
+                    year: 1986,
+                    doi: '',
+                  }
+              }
             />
           </div>
 
@@ -532,31 +774,85 @@ export default React.memo(function DynConPage() {
           <ToolTabPanel tabId="trajectory" activeId={activeTab}>
             <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
               <FloatingControlRail label="Parameters" defaultCollapsed={false} width={260}>
-                <SectionLabel>PID Controller</SectionLabel>
-                <ParamSlider label="Kp" value={kp} min={0} max={10} step={0.1} onChange={setKp} />
-                <ParamSlider label="Ki" value={ki} min={0} max={5} step={0.05} onChange={setKi} />
-                <ParamSlider label="Kd" value={kd} min={0} max={2} step={0.02} onChange={setKd} />
-                <ParamSlider label="DO₂ Setpoint" value={setpoint} min={0.1} max={1.0} step={0.05} onChange={setSetpoint} unit="sat." />
-                <SectionLabel>Hill Feedback</SectionLabel>
-                <ParamSlider label="Vmax" value={vmax} min={0.1} max={2.0} step={0.05} onChange={setVmax} />
-                <ParamSlider label="Kd" value={hillKd} min={5} max={200} step={5} onChange={setHillKd} unit="μM" />
-                <ParamSlider label="n" value={hillN} min={1} max={4} step={0.5} onChange={setHillN} />
-                <SectionLabel>Advanced</SectionLabel>
-                <ParamSlider label="Spont. Loss Rate" value={spontaneousLossRate} min={0.001} max={0.1} step={0.001} onChange={setSpontaneousLossRate} unit="h⁻¹" />
-                <ParamSlider label="O₂ Cons. Coeff" value={o2ConsumptionCoeff} min={0.5} max={3.0} step={0.1} onChange={setO2ConsumptionCoeff} />
-                <ParamSlider label="Burden Penalty" value={burdenPenalty} min={0.1} max={0.8} step={0.05} onChange={setBurdenPenalty} />
+                {/* Control mode toggle */}
+                <SectionLabel>Control Mode</SectionLabel>
+                <div style={{ display: 'flex', gap: '4px', marginBottom: '12px' }}>
+                  {(['pid', 'mpc'] as const).map((mode) => (
+                    <button
+                      key={mode}
+                      onClick={() => setControlMode(mode)}
+                      style={{
+                        flex: 1,
+                        padding: '6px 8px',
+                        fontFamily: THEME.MONO,
+                        fontSize: 'var(--nb-fs-xs)',
+                        fontWeight: controlMode === mode ? 700 : 400,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.06em',
+                        background: controlMode === mode ? `${THEME.SKY}20` : 'transparent',
+                        color: controlMode === mode ? THEME.SKY : LABEL,
+                        border: `1px solid ${controlMode === mode ? `${THEME.SKY}60` : BORDER}`,
+                        borderRadius: 'var(--nb-radius-sm)',
+                        cursor: 'pointer',
+                        transition: 'all 150ms ease',
+                      }}
+                    >
+                      {mode === 'pid' ? 'PID' : 'MPC'}
+                    </button>
+                  ))}
+                </div>
+
+                {controlMode === 'pid' ? (
+                  <>
+                    <SectionLabel>PID Controller</SectionLabel>
+                    <ParamSlider label="Kp" value={kp} min={0} max={10} step={0.1} onChange={setKp} />
+                    <ParamSlider label="Ki" value={ki} min={0} max={5} step={0.05} onChange={setKi} />
+                    <ParamSlider label="Kd" value={kd} min={0} max={2} step={0.02} onChange={setKd} />
+                    <ParamSlider label="DO₂ Setpoint" value={setpoint} min={0.1} max={1.0} step={0.05} onChange={setSetpoint} unit="sat." />
+                    <SectionLabel>Hill Feedback</SectionLabel>
+                    <ParamSlider label="Vmax" value={vmax} min={0.1} max={2.0} step={0.05} onChange={setVmax} />
+                    <ParamSlider label="Kd" value={hillKd} min={5} max={200} step={5} onChange={setHillKd} unit="μM" />
+                    <ParamSlider label="n" value={hillN} min={1} max={4} step={0.5} onChange={setHillN} />
+                    <SectionLabel>Advanced</SectionLabel>
+                    <ParamSlider label="Spont. Loss Rate" value={spontaneousLossRate} min={0.001} max={0.1} step={0.001} onChange={setSpontaneousLossRate} unit="h⁻¹" />
+                    <ParamSlider label="O₂ Cons. Coeff" value={o2ConsumptionCoeff} min={0.5} max={3.0} step={0.1} onChange={setO2ConsumptionCoeff} />
+                    <ParamSlider label="Burden Penalty" value={burdenPenalty} min={0.1} max={0.8} step={0.05} onChange={setBurdenPenalty} />
+                  </>
+                ) : (
+                  <>
+                    <SectionLabel>MPC Configuration</SectionLabel>
+                    <ParamSlider label="Prediction Horizon" value={mpcPredHorizon} min={2} max={20} step={1} onChange={setMpcPredHorizon} />
+                    <ParamSlider label="Control Horizon" value={mpcCtrlHorizon} min={1} max={Math.min(mpcPredHorizon, 10)} step={1} onChange={setMpcCtrlHorizon} />
+                    <ParamSlider label="DO₂ Setpoint" value={setpoint} min={0.1} max={1.0} step={0.05} onChange={setSetpoint} unit="sat." />
+                    <SectionLabel>Cost Weights</SectionLabel>
+                    <ParamSlider label="State Weight (DO₂)" value={mpcStateWeight} min={0.1} max={50} step={0.5} onChange={setMpcStateWeight} />
+                    <ParamSlider label="Control Weight" value={mpcControlWeight} min={0.01} max={5} step={0.05} onChange={setMpcControlWeight} />
+                    <SectionLabel>Hill Feedback</SectionLabel>
+                    <ParamSlider label="Vmax" value={vmax} min={0.1} max={2.0} step={0.05} onChange={setVmax} />
+                    <ParamSlider label="Kd" value={hillKd} min={5} max={200} step={5} onChange={setHillKd} unit="μM" />
+                    <ParamSlider label="n" value={hillN} min={1} max={4} step={0.5} onChange={setHillN} />
+                  </>
+                )}
               </FloatingControlRail>
 
               <div style={{ flex: 1, position: 'relative', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
                 <ScientificFigureFrame
-                  eyebrow="Controller figure"
-                  title="Closed-loop bioreactor dynamics"
-                  caption="6-lane time-series showing biomass, substrate, product, DO₂, FPP, and ADS expression trajectories under PID control."
+                  eyebrow={controlMode === 'mpc' ? 'MPC controller figure' : 'Controller figure'}
+                  title={controlMode === 'mpc' ? 'MPC-controlled bioreactor dynamics' : 'Closed-loop bioreactor dynamics'}
+                  caption={controlMode === 'mpc'
+                    ? `6-lane time-series under MPC control (Np=${mpcPredHorizon}, Nc=${mpcCtrlHorizon}). Predicted trajectory shown as dashed overlay.`
+                    : '6-lane time-series showing biomass, substrate, product, DO₂, FPP, and ADS expression trajectories under PID control.'}
                   legend={[
                     { label: 'Setpoint', value: `${setpoint.toFixed(2)} sat.`, accent: THEME.SKY },
                     { label: 'Stability', value: convergence.isStable ? 'Stable' : 'Unstable', accent: convergence.isStable ? THEME.MINT : THEME.CORAL },
                     { label: 'Titer', value: `${productTiter.toFixed(2)} g/L`, accent: THEME.MINT },
-                    { label: 'RBS', value: rbsMapping.rbsName, accent: THEME.LILAC },
+                    ...(controlMode === 'mpc' && mpcResult
+                      ? [
+                          { label: 'MPC Cost', value: mpcResult.cost.toFixed(1), accent: THEME.APRICOT },
+                          { label: 'Feasible', value: mpcResult.feasible ? 'Yes' : 'No', accent: mpcResult.feasible ? THEME.MINT : THEME.CORAL },
+                        ]
+                      : [{ label: 'RBS', value: rbsMapping.rbsName, accent: THEME.LILAC }]
+                    ),
                   ]}
                   minHeight="100%"
                 >
@@ -570,8 +866,71 @@ export default React.memo(function DynConPage() {
                     { label: 'DO₂ RMSE', value: doRmse.toFixed(3), accent: doRmse > 0.1 ? THEME.CORAL : THEME.SKY },
                     { label: 'FPP', value: `${currentFPP.toFixed(1)} μM`, accent: currentFPP > DEFAULT_PARAMS.fppToxicThreshold ? THEME.CORAL : THEME.SKY },
                     { label: 'Burden', value: burden.burdenIndex.toFixed(3), accent: burden.isViable ? THEME.MINT : THEME.CORAL },
+                    ...(controlMode === 'mpc' && mpcResult
+                      ? [{ label: 'MPC Cost', value: mpcResult.cost.toFixed(2), accent: THEME.APRICOT }]
+                      : []
+                    ),
                   ]}
                 />
+
+                {/* ── MPC Prediction Horizon Visualization ── */}
+                {controlMode === 'mpc' && mpcResult && mpcResult.predictedTrajectory.length > 1 && (
+                  <div style={{ ...GLASS, padding: '12px', margin: '8px 16px' }}>
+                    <SectionLabel>Prediction Horizon</SectionLabel>
+                    <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, marginBottom: '8px', lineHeight: 1.5 }}>
+                      MPC-predicted DO₂ trajectory over the next {mpcPredHorizon} steps from the final operating point.
+                      The controller optimizes airflow to keep DO₂ at setpoint while respecting constraints.
+                    </div>
+                    <svg width="100%" viewBox="0 0 560 100" style={{ display: 'block' }}>
+                      {(() => {
+                        const W = 560, H = 100, PAD = 30;
+                        const pred = mpcResult.predictedTrajectory;
+                        const tMax = pred[pred.length - 1].time - pred[0].time;
+                        const doMax = 1.2;
+                        const spY = PAD + (1 - setpoint / doMax) * (H - 2 * PAD);
+                        const predPts = pred.map((s, i) => {
+                          const x = PAD + ((s.time - pred[0].time) / Math.max(1, tMax)) * (W - 2 * PAD);
+                          const y = PAD + (1 - (s.dissolvedO2 ?? 0) / doMax) * (H - 2 * PAD);
+                          return `${x},${y}`;
+                        });
+                        return (
+                          <>
+                            <rect x={PAD} y={PAD} width={W - 2 * PAD} height={H - 2 * PAD} rx="2" fill={PAPER_THEME.bgAlt} stroke={PAPER_THEME.border} />
+                            <line x1={PAD} y1={spY} x2={W - PAD} y2={spY} stroke={`${THEME.SKY}50`} strokeDasharray="4 4" />
+                            <text x={W - PAD + 4} y={spY + 3} fontFamily={PAPER_THEME.tickFont} fontSize="9" fill={PAPER_THEME.tickColor}>SP</text>
+                            <polyline points={predPts.join(' ')} fill="none" stroke={THEME.MINT} strokeWidth="2" strokeDasharray="6 3" />
+                            <circle cx={predPts[0]?.split(',')[0]} cy={predPts[0]?.split(',')[1]} r="3" fill={THEME.CORAL} />
+                            <text x={PAD} y={12} fontFamily={PAPER_THEME.tickFont} fontSize="10" fill={PAPER_THEME.tickColor}>DO₂ prediction</text>
+                            <text x={PAD} y={H - 8} fontFamily={PAPER_THEME.tickFont} fontSize="9" fill={PAPER_THEME.tickColor}>now</text>
+                            <text x={W - PAD} y={H - 8} textAnchor="end" fontFamily={PAPER_THEME.tickFont} fontSize="9" fill={PAPER_THEME.tickColor}>+{mpcPredHorizon}h</text>
+                          </>
+                        );
+                      })()}
+                    </svg>
+                  </div>
+                )}
+
+                {/* ── MPC Constraint Violations ── */}
+                {controlMode === 'mpc' && mpcResult && mpcResult.constraintViolations.length > 0 && (
+                  <div style={{ ...GLASS, padding: '12px', margin: '0 16px 8px', borderLeft: `3px solid ${THEME.CORAL}` }}>
+                    <SectionLabel>Constraint Violations</SectionLabel>
+                    <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: THEME.CORAL, marginBottom: '4px' }}>
+                      {mpcResult.constraintViolations.length} violation(s) detected during simulation
+                    </div>
+                    <div style={{ maxHeight: '80px', overflow: 'auto' }}>
+                      {mpcResult.constraintViolations.slice(0, 8).map((v, i) => (
+                        <div key={i} style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-2xs)', color: LABEL, padding: '2px 0' }}>
+                          t={v.time.toFixed(0)}h: {v.variable} = {v.value.toFixed(2)} (bound: {v.bound})
+                        </div>
+                      ))}
+                      {mpcResult.constraintViolations.length > 8 && (
+                        <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-2xs)', color: THEME.DIM }}>
+                          +{mpcResult.constraintViolations.length - 8} more
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </ToolTabPanel>
