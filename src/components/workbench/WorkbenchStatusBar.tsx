@@ -21,6 +21,7 @@ import WorkbenchEvidenceTracePanel from './WorkbenchEvidenceTracePanel';
 import WorkbenchExperimentLedger from './WorkbenchExperimentLedger';
 import WorkbenchProjectTimeline from './WorkbenchProjectTimeline';
 import WorkbenchRunCompare from './WorkbenchRunCompare';
+import ReportExportButton from '../tools/shared/ReportExportButton';
 import { getFreshnessMap, getToolFreshness } from './workbenchTrust';
 import {
   buildWorkflowDashboardItems,
@@ -301,6 +302,7 @@ export default function WorkbenchStatusBar({ moduleId }: WorkbenchStatusBarProps
 
         {/* Action buttons */}
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
+          <ReportExportButton />
           <Link
             href="/research"
             style={{
