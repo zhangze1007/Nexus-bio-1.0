@@ -15,8 +15,8 @@
  *   6. Rank pathways by: 1/(length+1) + enzyme_availability + thermodynamic_feasibility.
  */
 
-import * as path from 'path';
-import * as fs from 'fs';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const reactionRulesData = require('../data/reactionRules.json') as ReactionRule[];
 
 /* ------------------------------------------------------------------ */
 /*  Public interfaces                                                 */
@@ -109,16 +109,10 @@ for (const [name, smi] of Object.entries(CENTRAL_METABOLITES)) {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Load reaction rules                                               */
+/*  Load reaction rules (static import — browser-safe)                */
 /* ------------------------------------------------------------------ */
 
-function loadReactionRules(): ReactionRule[] {
-  const rulesPath = path.join(__dirname, '..', 'data', 'reactionRules.json');
-  const raw = fs.readFileSync(rulesPath, 'utf-8');
-  return JSON.parse(raw) as ReactionRule[];
-}
-
-const REACTION_RULES = loadReactionRules();
+const REACTION_RULES: ReactionRule[] = reactionRulesData;
 
 /* ------------------------------------------------------------------ */
 /*  Scoring helpers                                                   */
