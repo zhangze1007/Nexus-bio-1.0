@@ -12,17 +12,11 @@ const commands = [
   ['npm', ['run', 'benchmark:trust:validate']],
   ['npm', ['run', 'benchmark:trust:evaluate']],
   ['npm', ['run', 'benchmark:trust:report']],
-  ['npm', ['run', 'benchmark:public']],
   ['npm', ['run', 'reference:py:compare']],
 ];
 
 const reportCopies = [
   ['reports/trust-metrics/latest.json', 'proof-package/reports/trust-metrics-latest.json'],
-  ['reports/public-benchmark/report.json', 'proof-package/reports/public-benchmark-report.json'],
-  ['reports/public-benchmark/summary.csv', 'proof-package/reports/public-benchmark-summary.csv'],
-  ['reports/public-benchmark/summary.json', 'proof-package/reports/public-benchmark-summary.json'],
-  ['reports/public-benchmark/raw-results.csv', 'proof-package/reports/public-benchmark-raw-results.csv'],
-  ['reports/public-benchmark/raw-results.json', 'proof-package/reports/public-benchmark-raw-results.json'],
   ['reports/second-implementation-consistency.json', 'proof-package/reports/second-implementation-consistency.json'],
   ['reports/second-implementation-consistency.md', 'proof-package/reports/second-implementation-consistency.md'],
 ];
