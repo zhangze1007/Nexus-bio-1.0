@@ -19,7 +19,7 @@ import {
 import type { FBAOutput, CommunityFBAOutput } from '../../data/mockFBA';
 import type { ProvenanceEntry } from '../../types/assumptions';
 import { buildFBASeed } from './shared/workbenchDataflow';
-import { solveAuthorityCommunityFBAWithProvenance, solveAuthorityFBAWithProvenance } from '../../services/FBAAuthorityClient';
+import { solveAuthorityCommunityFBAWithProvenance, solveAuthorityFBAWithProvenance, solveDynamicModelFBA } from '../../services/FBAAuthorityClient';
 import { SCI_PALETTE, SCI_PASTEL } from '../charts/chartTheme';
 import ScientificFigureFrame from './shared/ScientificFigureFrame';
 import WorkbenchRangeSlider from './shared/WorkbenchRangeSlider';
@@ -29,8 +29,8 @@ import FloatingControlRail from './shared/FloatingControlRail';
 import InlineMetricOverlay from './shared/InlineMetricOverlay';
 import type { ToolTab } from './shared/ToolTabBar';
 import WorkbenchTrustIndicator from '../workbench/WorkbenchTrustIndicator';
-import { listBiGGModels } from '../../services/database/biggClient';
-import type { BiGGModel } from '../../services/database/biggClient';
+import { listBiGGModels, getModelReactions } from '../../services/database/biggClient';
+import type { BiGGModel, BiGGReaction } from '../../services/database/biggClient';
 import type { FallbackResult } from '../../services/database/fetchWithFallback';
 import DataSourceBadge from '../ide/shared/DataSourceBadge';
 
@@ -110,6 +110,9 @@ export default React.memo(function FBASimPage() {
   const [biggResult, setBiggResult] = useState<FallbackResult<BiGGModel[]> | null>(null);
   const [selectedModel, setSelectedModel] = useState<string>('e_coli_core');
   const [biggLoading, setBiggLoading] = useState(false);
+  const [loadedReactions, setLoadedReactions] = useState<BiGGReaction[] | null>(null);
+  const [loadedObjectiveId, setLoadedObjectiveId] = useState<string>('BIOMASS');
+  const [modelLoading, setModelLoading] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -180,6 +183,7 @@ export default React.memo(function FBASimPage() {
   ]);
 
   useEffect(() => {
+    if (loadedReactions) return;
     const controller = new AbortController();
     setSingleLoading(true);
     setSingleError(null);
@@ -208,7 +212,40 @@ export default React.memo(function FBASimPage() {
     });
 
     return () => controller.abort();
-  }, [glucoseUptake, knockouts, objective, oxygenUptake]);
+  }, [glucoseUptake, knockouts, loadedReactions, objective, oxygenUptake]);
+
+  useEffect(() => {
+    if (!loadedReactions || loadedReactions.length === 0) return;
+    const controller = new AbortController();
+    setSingleLoading(true);
+    setSingleError(null);
+
+    solveDynamicModelFBA(
+      {
+        reactions: loadedReactions,
+        objectiveId: loadedObjectiveId,
+        glucoseUptake,
+        oxygenUptake,
+        knockouts,
+      },
+      controller.signal,
+    ).then(({ result, provenance }) => {
+      setSingleResult(result);
+      setSingleRunProvenance(provenance);
+      setSingleError(null);
+    }).catch((error) => {
+      if (controller.signal.aborted) return;
+      setSingleResult(createEmptyFBAOutput());
+      setSingleRunProvenance(undefined);
+      setSingleError(error instanceof Error ? error.message : 'BiGG model FBA solve failed');
+    }).finally(() => {
+      if (!controller.signal.aborted) {
+        setSingleLoading(false);
+      }
+    });
+
+    return () => controller.abort();
+  }, [loadedReactions, loadedObjectiveId, glucoseUptake, knockouts, oxygenUptake]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -279,6 +316,24 @@ export default React.memo(function FBASimPage() {
   }
   function toggleYeastKO(id: string) {
     setYeastKO(prev => prev.includes(id) ? prev.filter(k => k !== id) : [...prev, id]);
+  }
+
+  function handleLoadModel() {
+    setModelLoading(true);
+    setLoadedReactions(null);
+    getModelReactions(selectedModel).then((result) => {
+      if (result.data.reactions.length > 0) {
+        setLoadedReactions(result.data.reactions);
+        const bioRxn = result.data.reactions.find(
+          r => r.id.toLowerCase().includes('biomass') || r.name.toLowerCase().includes('biomass')
+        );
+        setLoadedObjectiveId(bioRxn?.id ?? result.data.reactions[0].id);
+      }
+    }).catch(() => {
+      setLoadedReactions(null);
+    }).finally(() => {
+      setModelLoading(false);
+    });
   }
 
   const exportData = simMode === 'single' ? singleResult : communityResult;
@@ -558,6 +613,26 @@ export default React.memo(function FBASimPage() {
                   </p>
                 );
               })()}
+              <button
+                onClick={handleLoadModel}
+                disabled={modelLoading}
+                className="nb-tool-toggle"
+                style={{
+                  display: 'block', width: '100%', marginTop: '6px',
+                  padding: '5px 8px', borderRadius: 'var(--nb-radius-sm)',
+                  background: loadedReactions ? 'rgba(20,140,80,0.12)' : undefined,
+                  borderColor: loadedReactions ? 'rgba(20,140,80,0.3)' : undefined,
+                  color: loadedReactions ? 'rgba(140,230,170,0.9)' : undefined,
+                  fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)',
+                }}
+              >
+                {modelLoading ? 'Loading...' : loadedReactions ? 'Model Loaded' : 'Load Model'}
+              </button>
+              {loadedReactions && (
+                <p style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xxs)', color: 'rgba(140,230,170,0.7)', margin: '3px 0 0', lineHeight: 1.3 }}>
+                  {loadedReactions.length} reactions loaded · obj: {loadedObjectiveId}
+                </p>
+              )}
             </div>
 
             <p style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.55)', margin: '0 0 8px' }}>
