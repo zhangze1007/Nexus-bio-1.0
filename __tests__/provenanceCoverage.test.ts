@@ -176,6 +176,7 @@ function cellfree(updatedAt = 5): WorkbenchToolPayloadMap['cellfree'] {
       invitroMaxProtein: 120,
       invivoExpression: 88,
       confidence: 0.72,
+      brendaOverrides: null,
     },
     runProvenance: workbenchProvenance('cellfree', updatedAt),
     updatedAt,

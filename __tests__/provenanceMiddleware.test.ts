@@ -160,6 +160,7 @@ const CELLFREE_OK: WorkbenchToolPayloadMap['cellfree'] = {
     invitroMaxProtein: 120,
     invivoExpression: 88,
     confidence: 0.72,
+    brendaOverrides: null,
   },
   updatedAt: 5,
 };
