@@ -40,6 +40,7 @@ import InlineMetricOverlay from './shared/InlineMetricOverlay';
 import type { ToolTab } from './shared/ToolTabBar';
 import { getBRENDAKinetics } from '../../services/database/brendaClient';
 import type { BRENDAKinetics } from '../../services/database/brendaClient';
+import { runDocking } from '../../services/database/dockingClient';
 import DataSourceBadge from '../ide/shared/DataSourceBadge';
 
 /* ── Design Tokens (shared via useToolTheme) ──────────────────────── */
@@ -557,6 +558,10 @@ export default React.memo(function CatalystDesignerPage() {
   const [alphafoldSource, setAlphafoldSource] = useState<'live' | 'mock'>('mock');
   const [alphafoldPdbLength, setAlphafoldPdbLength] = useState(0);
 
+  // Molecular docking state
+  const [dockingResult, setDockingResult] = useState<any>(null);
+  const [dockingLoading, setDockingLoading] = useState(false);
+
   const recommendedSeed = useMemo(
     () => buildCatalystSeed(project, analyzeArtifact, fbaPayload, cethxPayload, dbtlPayload),
     [analyzeArtifact?.generatedAt, analyzeArtifact?.id, cethxPayload?.updatedAt, dbtlPayload?.feedbackSource, dbtlPayload?.result.improvementRate, dbtlPayload?.result.latestPhase, dbtlPayload?.result.passRate, dbtlPayload?.updatedAt, fbaPayload?.updatedAt, project?.id, project?.updatedAt],
@@ -624,6 +629,18 @@ export default React.memo(function CatalystDesignerPage() {
   }, []);
 
   const hasBrendaApplied = brendaAppliedKm != null || brendaAppliedKcat != null;
+
+  // Molecular docking handler
+  const handleDocking = useCallback(async () => {
+    if (!enzyme.pdbId || !enzyme.substrate) return;
+    setDockingLoading(true);
+    try {
+      const result = await runDocking(enzyme.pdbId, enzyme.substrate);
+      setDockingResult(result.data);
+    } finally {
+      setDockingLoading(false);
+    }
+  }, [enzyme.pdbId, enzyme.substrate]);
 
   // AlphaFold lookup when enzyme changes
   const handleAlphaFoldLookup = useCallback(async () => {
@@ -733,6 +750,7 @@ export default React.memo(function CatalystDesignerPage() {
     { id: 'sequences', label: 'Sequences', accent: THEME.APRICOT },
     { id: 'pareto', label: 'Pareto', accent: THEME.MINT },
     { id: 'mutagenesis', label: 'Mutagenesis', accent: THEME.CORAL },
+    { id: 'docking', label: 'Docking', accent: THEME.SKY },
   ];
 
   const kdQ = kdQuality(mutationImpact?.newKd ?? binding.predictedKd);
@@ -748,11 +766,11 @@ export default React.memo(function CatalystDesignerPage() {
       tabs={CATDES_TABS}
       activeTab={activeTab}
       onTabChange={setActiveTab}
-      advancedTabIds={['sequences', 'pareto', 'mutagenesis']}
+      advancedTabIds={['sequences', 'pareto', 'mutagenesis', 'docking']}
       footer={
         <>
           <ExportButton label="Export JSON"
-            data={{ enzyme: enzyme.id, binding, sequences, drain, balance, pareto, mutagenesis }}
+            data={{ enzyme: enzyme.id, binding, sequences, drain, balance, pareto, mutagenesis, docking: dockingResult }}
             filename="catalyst-design" format="json" />
           <ExportButton label="Export CSV"
             data={sequences.designs} filename="catalyst-sequences" format="csv" />
@@ -1131,6 +1149,145 @@ export default React.memo(function CatalystDesignerPage() {
         <div style={{ flex: 1, overflowY: 'auto', padding: '12px' }}>
           <div style={{ ...GLASS, borderRadius: 16, overflow: 'hidden' }}>
             <MutagenesisView result={mutagenesis} enzyme={enzyme} />
+          </div>
+        </div>
+      </ToolTabPanel>
+
+      {/* ── Docking Tab ── */}
+      <ToolTabPanel tabId="docking" activeId={activeTab}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '12px 16px' }}>
+          <div style={{ ...GLASS, borderRadius: 16, overflow: 'hidden' }}>
+            <div style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {/* Header */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  Molecular Docking
+                </span>
+                {dockingResult && (
+                  <DataSourceBadge source={dockingResult.source || 'mock'} />
+                )}
+              </div>
+
+              {/* Protein & Ligand info */}
+              <div style={{ display: 'flex', gap: 16 }}>
+                <div>
+                  <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Protein PDB</span>
+                  <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-md)', color: VALUE, margin: '1px 0 0', ...tn }}>
+                    {enzyme.pdbId || 'N/A'}
+                  </p>
+                </div>
+                <div>
+                  <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Ligand</span>
+                  <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-sm)', color: VALUE, margin: '1px 0 0', ...tn }}>
+                    {enzyme.substrate}
+                  </p>
+                </div>
+              </div>
+
+              {/* Run button */}
+              <button
+                onClick={handleDocking}
+                disabled={dockingLoading || !enzyme.pdbId}
+                style={{
+                  fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', fontWeight: 600,
+                  color: dockingLoading ? LABEL : THEME.SKY,
+                  background: dockingLoading ? 'rgba(255,255,255,0.03)' : 'rgba(175,195,214,0.12)',
+                  border: `1px solid ${dockingLoading ? BORDER : 'rgba(175,195,214,0.3)'}`,
+                  borderRadius: 8, padding: '6px 16px', cursor: dockingLoading || !enzyme.pdbId ? 'wait' : 'pointer',
+                  opacity: dockingLoading || !enzyme.pdbId ? 0.5 : 1,
+                  alignSelf: 'flex-start',
+                }}
+              >
+                {dockingLoading ? 'Running Docking...' : 'Run Docking'}
+              </button>
+
+              {/* Results */}
+              {dockingResult && (
+                <>
+                  {/* Score metrics */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
+                    <div style={{ ...GLASS, borderRadius: 10, padding: '8px 10px' }}>
+                      <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Docking Score</span>
+                      <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-lg)', color: dockingResult.dockingScore < -7 ? THEME.MINT : dockingResult.dockingScore < -5 ? THEME.RISK_LOW : THEME.CORAL, margin: '2px 0 0', ...tn }}>
+                        {dockingResult.dockingScore.toFixed(1)} <span style={{ fontSize: 'var(--nb-fs-xs)', color: LABEL }}>kcal/mol</span>
+                      </p>
+                    </div>
+                    <div style={{ ...GLASS, borderRadius: 10, padding: '8px 10px' }}>
+                      <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Binding Energy</span>
+                      <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-lg)', color: VALUE, margin: '2px 0 0', ...tn }}>
+                        {dockingResult.bindingEnergy.toFixed(1)} <span style={{ fontSize: 'var(--nb-fs-xs)', color: LABEL }}>kcal/mol</span>
+                      </p>
+                    </div>
+                    <div style={{ ...GLASS, borderRadius: 10, padding: '8px 10px' }}>
+                      <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>MM-PBSA (model)</span>
+                      <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-lg)', color: VALUE, margin: '2px 0 0', ...tn }}>
+                        {binding.bindingEnergy.toFixed(1)} <span style={{ fontSize: 'var(--nb-fs-xs)', color: LABEL }}>kcal/mol</span>
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Score comparison bar chart */}
+                  <div>
+                    <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                      Score Comparison
+                    </span>
+                    <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      {[
+                        { label: 'Docking', value: dockingResult.dockingScore, color: THEME.SKY },
+                        { label: 'MM-PBSA', value: binding.bindingEnergy, color: THEME.LILAC },
+                      ].map(item => {
+                        const absMax = Math.max(Math.abs(dockingResult.dockingScore), Math.abs(binding.bindingEnergy), 1);
+                        const pct = Math.min(100, (Math.abs(item.value) / absMax) * 100);
+                        return (
+                          <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, minWidth: 52 }}>{item.label}</span>
+                            <div style={{ flex: 1, height: 8, borderRadius: 4, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+                              <motion.div
+                                initial={{ width: 0 }}
+                                animate={{ width: `${pct}%` }}
+                                transition={{ duration: 0.6, ease: 'easeOut' }}
+                                style={{ height: '100%', borderRadius: 4, background: item.color, opacity: 0.8 }}
+                              />
+                            </div>
+                            <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE, minWidth: 56, textAlign: 'right', ...tn }}>
+                              {item.value.toFixed(1)} kcal/mol
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Delta comparison */}
+                  {(() => {
+                    const delta = dockingResult.dockingScore - binding.bindingEnergy;
+                    const agreeColor = Math.abs(delta) < 2 ? THEME.MINT : Math.abs(delta) < 4 ? THEME.RISK_LOW : THEME.CORAL;
+                    return (
+                      <div style={{
+                        fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: LABEL,
+                        padding: '6px 8px', borderRadius: 8,
+                        background: 'rgba(255,255,255,0.02)', border: `1px solid ${BORDER}`,
+                      }}>
+                        <span style={{ fontFamily: THEME.MONO, color: agreeColor, ...tn }}>
+                          {delta > 0 ? '+' : ''}{delta.toFixed(1)} kcal/mol
+                        </span>
+                        {' '}difference between docking and MM-PBSA predictions.
+                        {Math.abs(delta) < 2 && ' Strong agreement — high confidence in binding prediction.'}
+                        {Math.abs(delta) >= 2 && Math.abs(delta) < 4 && ' Moderate discrepancy — consider re-scoring with explicit solvent.'}
+                        {Math.abs(delta) >= 4 && ' Large discrepancy — docking and physics-based models disagree; experimental validation recommended.'}
+                      </div>
+                    );
+                  })()}
+                </>
+              )}
+
+              {!dockingResult && !dockingLoading && (
+                <p style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: LABEL, opacity: 0.6, padding: '8px 0' }}>
+                  Run molecular docking to predict protein-ligand binding pose and affinity.
+                  {!enzyme.pdbId && ' No PDB structure available for this enzyme.'}
+                </p>
+              )}
+            </div>
           </div>
         </div>
       </ToolTabPanel>
