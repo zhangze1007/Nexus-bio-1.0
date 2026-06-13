@@ -341,7 +341,7 @@ describe('provenance middleware', () => {
       const state = useWorkbenchStore.getState();
       expect(state.toolPayloads.pathd?.runProvenance).toMatchObject({
         toolId: 'pathd',
-        outputAssumptions: ['pathd.template_route_synthesis', 'pathd.delta_g_lookup_real', 'pathd.kegg_database_integration'],
+        outputAssumptions: ['pathd.template_route_synthesis', 'pathd.delta_g_lookup_real', 'pathd.kegg_database_integration', 'pathd.database_fallback_boundary'],
       });
       expect(state.toolPayloads.dyncon?.runProvenance).toMatchObject({
         toolId: 'dyncon',
@@ -356,6 +356,7 @@ describe('provenance middleware', () => {
           'catdes.alphafold3_inspired',
           'catdes.codon_table_yeast',
           'catdes.brenda_database_integration',
+          'catdes.database_fallback_boundary',
         ],
       });
       const dbtlRun = state.runArtifacts.find((artifact) => artifact.toolId === 'dbtlflow');
