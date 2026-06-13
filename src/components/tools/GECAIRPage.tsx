@@ -5,6 +5,8 @@ import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
 import { CIRCUIT_NODES, LOGIC_GATES, hillInhibition, hillActivation, runRepressilator, runToggleSwitch, runLogicCascade } from '../../data/mockGECAIR';
 import type { GateType, RepressilatorState, ToggleSwitchState, LogicCascadeState } from '../../data/mockGECAIR';
+import { runGillespie } from '../../server/gillespieSSA';
+import type { StochasticModel, GillespieResult } from '../../server/gillespieSSA';
 import { useWorkbenchStore } from '../../store/workbenchStore';
 import { THEME } from '../../theme';
 import WorkbenchRangeSlider from './shared/WorkbenchRangeSlider';
@@ -384,6 +386,8 @@ export default function GECAIRPage() {
   const [circuitType, setCircuitType] = useState<'repressilator' | 'toggle_switch' | 'logic_cascade'>('repressilator');
   const [togglePerturbation, setTogglePerturbation] = useState<'A' | 'B'>('A');
   const [activeTab, setActiveTab] = useState('circuit');
+  const [stochasticMode, setStochasticMode] = useState(false);
+  const [ensembleRuns, setEnsembleRuns] = useState(10);
   const recommendedGate = useMemo<GateType>(() => {
     if ((catalystPayload?.result.totalMetabolicDrain ?? 0) > 0.45) return 'NAND';
     if (dynconPayload?.result.stable && catalystPayload?.result.isViable) return 'AND';
@@ -404,6 +408,165 @@ export default function GECAIRPage() {
     setInputB(recommendedInputB);
     setGateType(recommendedGate);
   }, [recommendedGate, recommendedInputA, recommendedInputB]);
+
+  // ── Stochastic model builders ──
+  // Convert ODE circuit models to Gillespie StochasticModel format.
+  // Species counts are scaled by a volume factor (Omega) so that
+  // stochastic fluctuations have biologically realistic magnitude.
+  const OMEGA = 100; // volume scaling factor (arbitrary units)
+
+  function buildRepressilatorStochastic(): StochasticModel {
+    // Repressilator: 3 mRNA + 3 protein species, 12 reactions
+    // (transcription, translation, mRNA degradation, protein degradation for each node)
+    return {
+      species: [
+        { id: 'mA', initialCount: 10 * OMEGA },
+        { id: 'mB', initialCount: 5 * OMEGA },
+        { id: 'mC', initialCount: 3 * OMEGA },
+        { id: 'pA', initialCount: 100 * OMEGA },
+        { id: 'pB', initialCount: 50 * OMEGA },
+        { id: 'pC', initialCount: 30 * OMEGA },
+      ],
+      reactions: [
+        // Transcription: mRNA_i produced, repressed by protein_j
+        { id: 'txnA', reactants: {}, products: { mA: 1 }, rate: 0.216 * OMEGA, hillRepression: { species: 'pC', K: 100 * OMEGA, n: 2 } },
+        { id: 'txnB', reactants: {}, products: { mB: 1 }, rate: 0.216 * OMEGA, hillRepression: { species: 'pA', K: 100 * OMEGA, n: 2 } },
+        { id: 'txnC', reactants: {}, products: { mC: 1 }, rate: 0.216 * OMEGA, hillRepression: { species: 'pB', K: 100 * OMEGA, n: 2 } },
+        // Translation: protein_i produced from mRNA_i
+        { id: 'tlA', reactants: { mA: 1 }, products: { mA: 1, pA: 1 }, rate: 0.2 },
+        { id: 'tlB', reactants: { mB: 1 }, products: { mB: 1, pB: 1 }, rate: 0.2 },
+        { id: 'tlC', reactants: { mC: 1 }, products: { mC: 1, pC: 1 }, rate: 0.2 },
+        // mRNA degradation
+        { id: 'deg_mA', reactants: { mA: 1 }, products: {}, rate: 1.0 },
+        { id: 'deg_mB', reactants: { mB: 1 }, products: {}, rate: 1.0 },
+        { id: 'deg_mC', reactants: { mC: 1 }, products: {}, rate: 1.0 },
+        // Protein degradation
+        { id: 'deg_pA', reactants: { pA: 1 }, products: {}, rate: 0.0075 },
+        { id: 'deg_pB', reactants: { pB: 1 }, products: {}, rate: 0.0075 },
+        { id: 'deg_pC', reactants: { pC: 1 }, products: {}, rate: 0.0075 },
+      ],
+    };
+  }
+
+  function buildToggleSwitchStochastic(): StochasticModel {
+    // Toggle Switch: 2 mRNA + 2 protein species, 8 reactions
+    const stateA = togglePerturbation === 'A';
+    return {
+      species: [
+        { id: 'mA', initialCount: (stateA ? 20 : 2) * OMEGA },
+        { id: 'mB', initialCount: (stateA ? 2 : 20) * OMEGA },
+        { id: 'pA', initialCount: (stateA ? 200 : 20) * OMEGA },
+        { id: 'pB', initialCount: (stateA ? 20 : 200) * OMEGA },
+      ],
+      reactions: [
+        { id: 'txnA', reactants: {}, products: { mA: 1 }, rate: 0.216 * OMEGA, hillRepression: { species: 'pB', K: 100 * OMEGA, n: 2.5 } },
+        { id: 'txnB', reactants: {}, products: { mB: 1 }, rate: 0.216 * OMEGA, hillRepression: { species: 'pA', K: 100 * OMEGA, n: 2.5 } },
+        { id: 'tlA', reactants: { mA: 1 }, products: { mA: 1, pA: 1 }, rate: 0.2 },
+        { id: 'tlB', reactants: { mB: 1 }, products: { mB: 1, pB: 1 }, rate: 0.2 },
+        { id: 'deg_mA', reactants: { mA: 1 }, products: {}, rate: 1.0 },
+        { id: 'deg_mB', reactants: { mB: 1 }, products: {}, rate: 1.0 },
+        { id: 'deg_pA', reactants: { pA: 1 }, products: {}, rate: 0.0075 },
+        { id: 'deg_pB', reactants: { pB: 1 }, products: {}, rate: 0.0075 },
+      ],
+    };
+  }
+
+  function buildLogicCascadeStochastic(): StochasticModel {
+    // Logic Cascade: 3 mRNA + 3 protein species, 12 reactions
+    return {
+      species: [
+        { id: 'mA', initialCount: 10 * OMEGA },
+        { id: 'mB', initialCount: 3 * OMEGA },
+        { id: 'mC', initialCount: 1 * OMEGA },
+        { id: 'pA', initialCount: 80 * OMEGA },
+        { id: 'pB', initialCount: 30 * OMEGA },
+        { id: 'pC', initialCount: 10 * OMEGA },
+      ],
+      reactions: [
+        // Node A: constitutive (input-driven)
+        { id: 'txnA', reactants: {}, products: { mA: 1 }, rate: 1.5 * OMEGA },
+        // Node B: repressed by pA
+        { id: 'txnB', reactants: {}, products: { mB: 1 }, rate: 0.216 * OMEGA, hillRepression: { species: 'pA', K: 100 * OMEGA, n: 2 } },
+        // Node C: repressed by pB
+        { id: 'txnC', reactants: {}, products: { mC: 1 }, rate: 0.216 * OMEGA, hillRepression: { species: 'pB', K: 100 * OMEGA, n: 2 } },
+        // Translation
+        { id: 'tlA', reactants: { mA: 1 }, products: { mA: 1, pA: 1 }, rate: 0.2 },
+        { id: 'tlB', reactants: { mB: 1 }, products: { mB: 1, pB: 1 }, rate: 0.2 },
+        { id: 'tlC', reactants: { mC: 1 }, products: { mC: 1, pC: 1 }, rate: 0.2 },
+        // mRNA degradation
+        { id: 'deg_mA', reactants: { mA: 1 }, products: {}, rate: 1.0 },
+        { id: 'deg_mB', reactants: { mB: 1 }, products: {}, rate: 1.0 },
+        { id: 'deg_mC', reactants: { mC: 1 }, products: {}, rate: 1.0 },
+        // Protein degradation
+        { id: 'deg_pA', reactants: { pA: 1 }, products: {}, rate: 0.0075 },
+        { id: 'deg_pB', reactants: { pB: 1 }, products: {}, rate: 0.0075 },
+        { id: 'deg_pC', reactants: { pC: 1 }, products: {}, rate: 0.0075 },
+      ],
+    };
+  }
+
+  // Ensemble stochastic simulation: run Gillespie SSA N times with different seeds,
+  // then compute mean, std, Fano factor, and CV at each timepoint.
+  const stochasticEnsemble = useMemo(() => {
+    if (!stochasticMode) return null;
+
+    const model = circuitType === 'repressilator' ? buildRepressilatorStochastic()
+      : circuitType === 'toggle_switch' ? buildToggleSwitchStochastic()
+      : buildLogicCascadeStochastic();
+
+    const maxTime = 300;
+    const N = ensembleRuns;
+    const runs: GillespieResult[] = [];
+    for (let i = 0; i < N; i++) {
+      runs.push(runGillespie(model, { maxTime, seed: i * 1000 + 42 }));
+    }
+
+    // Find common time grid by resampling each trajectory onto a uniform grid
+    const gridPoints = 60;
+    const dt = maxTime / gridPoints;
+    const speciesIds = model.species.map(s => s.id);
+
+    // Resample each run onto uniform grid
+    const resampled: Record<string, number[][]> = {};
+    for (const id of speciesIds) {
+      resampled[id] = [];
+      for (let r = 0; r < N; r++) {
+        const row: number[] = [];
+        for (let g = 0; g <= gridPoints; g++) {
+          const t = g * dt;
+          const times = runs[r].times;
+          const traj = runs[r].trajectories[id];
+          // Find the trajectory value at time t (nearest-neighbor interpolation)
+          let idx = 0;
+          while (idx < times.length - 1 && times[idx + 1] <= t) idx++;
+          row.push(traj[idx]);
+        }
+        resampled[id].push(row);
+      }
+    }
+
+    // Compute mean, std, Fano, CV at each gridpoint
+    const stats: Record<string, { mean: number[]; std: number[]; fano: number[]; cv: number[] }> = {};
+    for (const id of speciesIds) {
+      const mean: number[] = [];
+      const std: number[] = [];
+      const fano: number[] = [];
+      const cv: number[] = [];
+      for (let g = 0; g <= gridPoints; g++) {
+        const values = resampled[id].map(run => run[g]);
+        const m = values.reduce((a, b) => a + b, 0) / N;
+        const v = values.reduce((a, b) => a + (b - m) ** 2, 0) / (N - 1);
+        mean.push(m);
+        std.push(Math.sqrt(v));
+        fano.push(m > 0 ? v / m : 0);
+        cv.push(m > 0 ? Math.sqrt(v) / m : 0);
+      }
+      stats[id] = { mean, std, fano, cv };
+    }
+
+    const timeGrid = Array.from({ length: gridPoints + 1 }, (_, i) => i * dt);
+    return { runs, resampled, stats, timeGrid, speciesIds, maxTime };
+  }, [stochasticMode, circuitType, ensembleRuns, togglePerturbation]);
 
   const outA = hillInhibition(inputA);
   const outB = hillInhibition(inputB);
@@ -909,7 +1072,7 @@ export default function GECAIRPage() {
       {/* ═══════ DYNAMICS TAB ═══════ */}
       <ToolTabPanel activeId={activeTab} tabId="dynamics">
         <div style={{ padding: '16px' }}>
-          <div style={{ display: 'flex', gap: '6px', marginBottom: '16px' }}>
+          <div style={{ display: 'flex', gap: '6px', marginBottom: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
             {(['repressilator', 'toggle_switch', 'logic_cascade'] as const).map(ct => (
               <button key={ct} onClick={() => setCircuitType(ct)}
                 className={`nb-tool-toggle ${circuitType === ct ? 'nb-tool-toggle--active' : ''}`}
@@ -917,6 +1080,26 @@ export default function GECAIRPage() {
                 {ct === 'repressilator' ? 'Repressilator' : ct === 'toggle_switch' ? 'Toggle Switch' : 'Logic Cascade'}
               </button>
             ))}
+            <div style={{ width: '1px', height: '20px', background: THEME.BORDER, margin: '0 4px' }} />
+            <button
+              onClick={() => setStochasticMode(!stochasticMode)}
+              className={`nb-tool-toggle ${stochasticMode ? 'nb-tool-toggle--active' : ''}`}
+              style={{ fontSize: '11px' }}
+            >
+              {stochasticMode ? 'Stochastic ON' : 'Stochastic'}
+            </button>
+            {stochasticMode && (
+              <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                <span style={{ fontFamily: THEME.MONO, fontSize: '11px', color: THEME.LABEL }}>Runs:</span>
+                {[5, 10, 20].map(n => (
+                  <button key={n} onClick={() => setEnsembleRuns(n)}
+                    className={`nb-tool-toggle ${ensembleRuns === n ? 'nb-tool-toggle--active' : ''}`}
+                    style={{ fontSize: '10px', padding: '2px 6px' }}>
+                    {n}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* ODE Dynamics — Real RK4 simulation */}
@@ -1040,6 +1223,181 @@ export default function GECAIRPage() {
                 </div>
                 <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.MINT, marginTop: '6px' }}>
                   Settled: State {settledState} (A={finalPA.toFixed(2)}, B={finalPB.toFixed(2)})
+                </div>
+              </ScientificFigureFrame>
+            );
+          })()}
+
+          {/* ── Stochastic Gillespie Ensemble ── */}
+          {stochasticMode && stochasticEnsemble && (() => {
+            const { stats, timeGrid, speciesIds, maxTime } = stochasticEnsemble;
+            const w = 400, h = 180;
+            const mL = 45, mR = 10, mT = 10, mB = 22;
+            const plotW = w - mL - mR;
+            const plotH = h - mT - mB;
+
+            // Color palette for species
+            const speciesColors: Record<string, string> = {
+              mA: '#C8D8E8', pA: '#C8D8E8',
+              mB: '#C8E0D0', pB: '#C8E0D0',
+              mC: '#DDD0E8', pC: '#DDD0E8',
+            };
+
+            // Only show protein species in the ensemble plot
+            const proteinIds = speciesIds.filter(id => id.startsWith('p'));
+
+            // Find global max for normalization
+            const globalMax = Math.max(...proteinIds.flatMap(id => {
+              const s = stats[id];
+              return s.mean.map((m, i) => m + s.std[i]);
+            }), 1);
+
+            const toX = (i: number) => mL + (i / (timeGrid.length - 1)) * plotW;
+            const toY = (v: number) => mT + plotH - (v / globalMax) * plotH;
+
+            // Build individual run trajectories (thin lines)
+            const runLines = proteinIds.map(id => {
+              return stochasticEnsemble.runs.map((run, ri) => {
+                const times = run.times;
+                const traj = run.trajectories[id];
+                // Subsample for performance
+                const step = Math.max(1, Math.floor(times.length / 120));
+                const pts: string[] = [];
+                for (let j = 0; j < times.length; j += step) {
+                  const x = mL + (times[j] / maxTime) * plotW;
+                  const y = toY(traj[j]);
+                  pts.push(`${x.toFixed(1)},${y.toFixed(1)}`);
+                }
+                // Add last point
+                const lastX = mL + (times[times.length - 1] / maxTime) * plotW;
+                const lastY = toY(traj[traj.length - 1]);
+                pts.push(`${lastX.toFixed(1)},${lastY.toFixed(1)}`);
+                return { id, ri, path: `M${pts.join(' L')}` };
+              });
+            }).flat();
+
+            // Build mean +/- std bands
+            const bands = proteinIds.map(id => {
+              const s = stats[id];
+              const upperPts: string[] = [];
+              const lowerPts: string[] = [];
+              const meanPts: string[] = [];
+              for (let i = 0; i < timeGrid.length; i++) {
+                const x = toX(i);
+                upperPts.push(`${x.toFixed(1)},${toY(s.mean[i] + s.std[i]).toFixed(1)}`);
+                lowerPts.push(`${x.toFixed(1)},${toY(Math.max(0, s.mean[i] - s.std[i])).toFixed(1)}`);
+                meanPts.push(`${x.toFixed(1)},${toY(s.mean[i]).toFixed(1)}`);
+              }
+              // Band polygon: upper forward, lower reversed
+              const bandPath = `M${upperPts.join(' L')} L${lowerPts.reverse().join(' L')} Z`;
+              const meanPath = `M${meanPts.join(' L')}`;
+              return { id, bandPath, meanPath, color: speciesColors[id] || '#888' };
+            });
+
+            // Compute summary statistics from the final timepoint
+            const summary = proteinIds.map(id => {
+              const s = stats[id];
+              const last = s.mean.length - 1;
+              return {
+                id,
+                mean: s.mean[last],
+                std: s.std[last],
+                fano: s.fano[last],
+                cv: s.cv[last],
+                color: speciesColors[id],
+              };
+            });
+
+            return (
+              <ScientificFigureFrame
+                eyebrow="Stochastic Dynamics"
+                title={`${circuitType === 'repressilator' ? 'Repressilator' : circuitType === 'toggle_switch' ? 'Toggle Switch' : 'Logic Cascade'} — Gillespie SSA Ensemble`}
+                caption={`${ensembleRuns} independent stochastic trajectories. Thin lines: individual runs. Band: mean +/- 1 std. Gillespie (1977) exact SSA.`}
+              >
+                <svg width={w} height={h} style={{ display: 'block', width: '100%' }} viewBox={`0 0 ${w} ${h}`}>
+                  {/* Grid */}
+                  {[0, 0.25, 0.5, 0.75, 1].map(f => (
+                    <g key={`sgrid-${f}`}>
+                      <line x1={mL + f * plotW} y1={mT} x2={mL + f * plotW} y2={mT + plotH}
+                        stroke={PAPER_THEME.grid} strokeWidth="0.5" />
+                      <line x1={mL} y1={mT + f * plotH} x2={mL + plotW} y2={mT + f * plotH}
+                        stroke={PAPER_THEME.grid} strokeWidth="0.5" />
+                    </g>
+                  ))}
+                  {/* Axes */}
+                  <line x1={mL} y1={mT} x2={mL} y2={mT + plotH} stroke={PAPER_THEME.axis} strokeWidth="0.75" />
+                  <line x1={mL} y1={mT + plotH} x2={mL + plotW} y2={mT + plotH} stroke={PAPER_THEME.axis} strokeWidth="0.75" />
+                  {/* X-axis ticks */}
+                  {[0, 0.25, 0.5, 0.75, 1].map(f => (
+                    <g key={`sgx-${f}`}>
+                      <line x1={mL + f * plotW} y1={mT + plotH} x2={mL + f * plotW} y2={mT + plotH + 4}
+                        stroke={PAPER_THEME.axis} strokeWidth="0.5" />
+                      <text x={mL + f * plotW} y={mT + plotH + 14} textAnchor="middle"
+                        fontFamily={PAPER_THEME.tickFont} fontSize={PAPER_THEME.tickSize} fill={PAPER_THEME.tickColor}>
+                        {f === 0 ? '0' : f === 0.25 ? '75' : f === 0.5 ? '150' : f === 0.75 ? '225' : '300'}
+                      </text>
+                    </g>
+                  ))}
+                  {/* Y-axis ticks */}
+                  {[0, 0.5, 1].map(f => (
+                    <g key={`sgy-${f}`}>
+                      <line x1={mL - 4} y1={mT + plotH - f * plotH} x2={mL} y2={mT + plotH - f * plotH}
+                        stroke={PAPER_THEME.axis} strokeWidth="0.5" />
+                      <text x={mL - 6} y={mT + plotH - f * plotH + 3} textAnchor="end"
+                        fontFamily={PAPER_THEME.tickFont} fontSize={PAPER_THEME.tickSize} fill={PAPER_THEME.tickColor}>
+                        {(f * globalMax).toFixed(0)}
+                      </text>
+                    </g>
+                  ))}
+                  <text x={mL + plotW / 2} y={h - 2} textAnchor="middle"
+                    fontFamily={PAPER_THEME.tickFont} fontSize={PAPER_THEME.tickSize} fill={PAPER_THEME.tickColor}>t (min)</text>
+                  <text x={14} y={mT + plotH / 2} textAnchor="middle"
+                    fontFamily={PAPER_THEME.tickFont} fontSize={PAPER_THEME.tickSize} fill={PAPER_THEME.tickColor}
+                    transform={`rotate(-90,14,${mT + plotH / 2})`}>Count</text>
+
+                  {/* Individual run trajectories (thin, low opacity) */}
+                  {runLines.map(rl => (
+                    <path key={`run-${rl.id}-${rl.ri}`} d={rl.path} fill="none"
+                      stroke={speciesColors[rl.id] || '#888'} strokeWidth={0.6} opacity={0.25} />
+                  ))}
+
+                  {/* Mean +/- std bands */}
+                  {bands.map(b => (
+                    <g key={`band-${b.id}`}>
+                      <path d={b.bandPath} fill={b.color} fillOpacity={0.15} stroke="none" />
+                      <path d={b.meanPath} fill="none" stroke={b.color} strokeWidth={2} />
+                    </g>
+                  ))}
+                </svg>
+
+                {/* Legend */}
+                <div style={{ display: 'flex', gap: '16px', marginTop: '8px', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', flexWrap: 'wrap' }}>
+                  {proteinIds.map(id => (
+                    <span key={id} style={{ color: speciesColors[id] }}>
+                      ■ {id === 'pA' ? 'Protein A' : id === 'pB' ? 'Protein B' : 'Protein C'} (mean +/- std)
+                    </span>
+                  ))}
+                </div>
+
+                {/* Fano factor and CV table */}
+                <div style={{ marginTop: '12px', display: 'grid', gridTemplateColumns: `repeat(${proteinIds.length}, 1fr)`, gap: '8px' }}>
+                  {summary.map(s => (
+                    <div key={s.id} style={{
+                      padding: '8px 10px',
+                      borderRadius: 'var(--nb-radius-md)',
+                      border: `1px solid ${THEME.BORDER}`,
+                      background: THEME.PANEL_INSET,
+                    }}>
+                      <div style={{ fontFamily: THEME.MONO, fontSize: '11px', color: s.color, fontWeight: 600, marginBottom: '4px' }}>
+                        {s.id === 'pA' ? 'Protein A' : s.id === 'pB' ? 'Protein B' : 'Protein C'}
+                      </div>
+                      <div style={{ fontFamily: THEME.MONO, fontSize: '10px', color: THEME.LABEL, lineHeight: 1.6 }}>
+                        <div>Mean: {s.mean.toFixed(1)} +/- {s.std.toFixed(1)}</div>
+                        <div>Fano: {s.fano.toFixed(2)}</div>
+                        <div>CV: {(s.cv * 100).toFixed(1)}%</div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </ScientificFigureFrame>
             );
