@@ -32,6 +32,7 @@ import {
   type RejectedExperimentCsvRow,
 } from '../importers/experimentCsvImporter';
 import type { ExperimentRecordV1 } from '../types/experimentRecord';
+import { GaussianProcess } from '../server/gaussianProcess';
 
 // ── CSV parsing ───────────────────────────────────────────────────────────────
 /**
@@ -453,4 +454,338 @@ export async function AutomatedFeedbackLoop(
     sourceExperimentRecordIds,
     rejectedExperimentRows,
   };
+}
+
+// ── Bayesian Optimization ─────────────────────────────────────────────────────
+
+export interface BOExperiment {
+  params: Record<string, number>;
+  yield: number;
+}
+
+export interface BOConfig {
+  paramRanges: Record<string, [number, number]>;
+  nSuggestions?: number; // default 3
+}
+
+export interface BOResult {
+  suggestions: Array<{
+    params: Record<string, number>;
+    expectedImprovement: number;
+    predictedYield: number;
+    predictedUncertainty: number;
+  }>;
+}
+
+/**
+ * Normalize a parameter value from its original range to [0, 1].
+ */
+function normalizeParam(value: number, min: number, max: number): number {
+  if (max === min) return 0.5;
+  return (value - min) / (max - min);
+}
+
+/**
+ * Denormalize a [0, 1] value back to the original parameter range.
+ */
+function denormalizeParam(normalized: number, min: number, max: number): number {
+  return min + normalized * (max - min);
+}
+
+/**
+ * Build a grid of candidate points in normalized [0,1] space.
+ * Uses `resolution` steps per dimension, capped at 5000 total points.
+ */
+function buildGrid(paramNames: string[], resolution: number, maxPoints: number): number[][] {
+  const nDim = paramNames.length;
+  // Cap resolution so total points stay manageable
+  const effectiveResolution = Math.max(
+    2,
+    Math.min(resolution, Math.floor(Math.pow(maxPoints, 1 / nDim))),
+  );
+
+  const axes: number[][] = paramNames.map(() => {
+    const pts: number[] = [];
+    for (let i = 0; i <= effectiveResolution; i++) {
+      pts.push(i / effectiveResolution);
+    }
+    return pts;
+  });
+
+  // Cartesian product
+  let grid: number[][] = [[]];
+  for (const axis of axes) {
+    const next: number[][] = [];
+    for (const existing of grid) {
+      for (const val of axis) {
+        next.push([...existing, val]);
+      }
+    }
+    grid = next;
+    if (grid.length > maxPoints) {
+      // Subsample to stay under cap
+      const step = Math.ceil(grid.length / maxPoints);
+      grid = grid.filter((_, idx) => idx % step === 0);
+    }
+  }
+  return grid;
+}
+
+/**
+ * GP-based Bayesian optimization for suggesting next experiment parameters.
+ *
+ * When history has < 5 experiments, falls back to a heuristic: suggests points
+ * spread across the parameter space (corners + center) that avoid existing observations.
+ *
+ * @param history  Previous experiments with parameter vectors and measured yield.
+ * @param config   Parameter ranges and optional suggestion count.
+ * @returns        Top-N suggestions ranked by Expected Improvement.
+ */
+export function runBayesianOptimization(
+  history: BOExperiment[],
+  config: BOConfig,
+): BOResult {
+  const paramNames = Object.keys(config.paramRanges).sort();
+  const nSuggestions = config.nSuggestions ?? 3;
+  const ranges = paramNames.map((k) => config.paramRanges[k]);
+
+  if (paramNames.length === 0) {
+    return { suggestions: [] };
+  }
+
+  // ── Fallback heuristic for small history (< 5 experiments) ──────────────────
+  if (history.length < 5) {
+    return heuristicSuggestions(history, paramNames, ranges, nSuggestions);
+  }
+
+  // ── GP-based optimization ──────────────────────────────────────────────────
+
+  // Normalize training data to [0,1]^d
+  const XTrain: number[][] = history.map((exp) =>
+    paramNames.map((name, i) => normalizeParam(exp.params[name] ?? 0, ranges[i][0], ranges[i][1])),
+  );
+  const yTrain: number[] = history.map((exp) => exp.yield);
+
+  // Fit GP with sensible defaults for normalized space
+  const gp = new GaussianProcess({
+    kernel: 'rbf',
+    lengthScale: 0.5,
+    signalVariance: 1.0,
+    noiseVariance: 0.01,
+  });
+  gp.fit(XTrain, yTrain);
+
+  // Build candidate grid
+  const candidates = buildGrid(paramNames, 10, 5000);
+
+  // Filter out candidates too close to existing observations (distance < 0.05)
+  const minDist = 0.05;
+  const novelCandidates = candidates.filter((cand) => {
+    for (const train of XTrain) {
+      let distSq = 0;
+      for (let d = 0; d < cand.length; d++) {
+        distSq += (cand[d] - train[d]) ** 2;
+      }
+      if (Math.sqrt(distSq) < minDist) return false;
+    }
+    return true;
+  });
+
+  // If all candidates are too close to training data, use all candidates
+  const evalCandidates = novelCandidates.length >= nSuggestions ? novelCandidates : candidates;
+
+  // Compute EI for each candidate
+  const bestY = Math.max(...yTrain);
+  const eiValues = gp.expectedImprovement(evalCandidates, bestY, 0.01);
+
+  // Also get predictions for reporting
+  const predictions = gp.predict(evalCandidates);
+
+  // Rank by EI, take top-N
+  const indexed = eiValues.map((ei, i) => ({ ei, idx: i }));
+  indexed.sort((a, b) => b.ei - a.ei);
+
+  const suggestions: BOResult['suggestions'] = [];
+  const selectedPoints: number[][] = [];
+
+  for (const { ei, idx } of indexed) {
+    if (suggestions.length >= nSuggestions) break;
+
+    const point = evalCandidates[idx];
+
+    // Ensure diversity: skip if too close to an already-selected suggestion
+    let tooClose = false;
+    for (const sel of selectedPoints) {
+      let distSq = 0;
+      for (let d = 0; d < point.length; d++) {
+        distSq += (point[d] - sel[d]) ** 2;
+      }
+      if (Math.sqrt(distSq) < 0.08) {
+        tooClose = true;
+        break;
+      }
+    }
+    if (tooClose) continue;
+
+    selectedPoints.push(point);
+
+    const pred = predictions[idx];
+    const params: Record<string, number> = {};
+    for (let i = 0; i < paramNames.length; i++) {
+      params[paramNames[i]] = round2(denormalizeParam(point[i], ranges[i][0], ranges[i][1]));
+    }
+
+    suggestions.push({
+      params,
+      expectedImprovement: round4(Math.max(ei, 0)),
+      predictedYield: round2(pred.mean),
+      predictedUncertainty: round4(Math.sqrt(Math.max(pred.variance, 0))),
+    });
+  }
+
+  // If we still have fewer suggestions than requested (e.g. all EI = 0),
+  // fill with the highest-predicted-yield candidates
+  if (suggestions.length < nSuggestions) {
+    const predIndexed = predictions.map((p, i) => ({ mean: p.mean, idx: i }));
+    predIndexed.sort((a, b) => b.mean - a.mean);
+
+    for (const { mean, idx } of predIndexed) {
+      if (suggestions.length >= nSuggestions) break;
+
+      const point = evalCandidates[idx];
+
+      // Check diversity against already selected
+      let tooClose = false;
+      for (const sel of selectedPoints) {
+        let distSq = 0;
+        for (let d = 0; d < point.length; d++) {
+          distSq += (point[d] - sel[d]) ** 2;
+        }
+        if (Math.sqrt(distSq) < 0.08) {
+          tooClose = true;
+          break;
+        }
+      }
+      if (tooClose) continue;
+
+      // Check not duplicate with existing suggestions
+      const params: Record<string, number> = {};
+      for (let i = 0; i < paramNames.length; i++) {
+        params[paramNames[i]] = round2(denormalizeParam(point[i], ranges[i][0], ranges[i][1]));
+      }
+
+      const isDuplicate = suggestions.some((s) =>
+        paramNames.every((name) => s.params[name] === params[name]),
+      );
+      if (isDuplicate) continue;
+
+      selectedPoints.push(point);
+      const pred = predictions[idx];
+      suggestions.push({
+        params,
+        expectedImprovement: 0,
+        predictedYield: round2(pred.mean),
+        predictedUncertainty: round4(Math.sqrt(Math.max(pred.variance, 0))),
+      });
+    }
+  }
+
+  return { suggestions };
+}
+
+function round4(value: number): number {
+  return Math.round(value * 10000) / 10000;
+}
+
+/**
+ * Heuristic fallback when history has < 5 experiments.
+ * Suggests points spread across the parameter space: corners, midpoints,
+ * and perturbations of the best observed point.
+ */
+function heuristicSuggestions(
+  history: BOExperiment[],
+  paramNames: string[],
+  ranges: Array<[number, number]>,
+  nSuggestions: number,
+): BOResult {
+  const nDim = paramNames.length;
+  const suggestions: BOResult['suggestions'] = [];
+  const bestY = history.length > 0 ? Math.max(...history.map((e) => e.yield)) : 0;
+
+  // Strategy 1: Explore corners of the parameter space
+  const cornerCombos = Math.min(2 ** nDim, nSuggestions * 2);
+  for (let c = 0; c < cornerCombos && suggestions.length < nSuggestions; c++) {
+    const params: Record<string, number> = {};
+    for (let d = 0; d < nDim; d++) {
+      const bit = (c >> d) & 1;
+      params[paramNames[d]] = round2(
+        bit === 0 ? ranges[d][0] : ranges[d][1],
+      );
+    }
+
+    // Skip if too close to an existing experiment
+    const isDuplicate = history.some((exp) =>
+      paramNames.every((name) => Math.abs((exp.params[name] ?? 0) - params[name]) < 1e-9),
+    );
+    if (isDuplicate) continue;
+
+    suggestions.push({
+      params,
+      expectedImprovement: round4(bestY > 0 ? bestY * 0.1 : 1.0),
+      predictedYield: round2(bestY > 0 ? bestY * 1.1 : 1.0),
+      predictedUncertainty: round4(bestY > 0 ? bestY * 0.3 : 0.5),
+    });
+  }
+
+  // Strategy 2: Perturb the best observed point (if any history exists)
+  if (history.length > 0 && suggestions.length < nSuggestions) {
+    const bestExp = history.reduce((best, exp) => (exp.yield > best.yield ? exp : best), history[0]);
+
+    // Midpoint of the range
+    const params: Record<string, number> = {};
+    for (let d = 0; d < nDim; d++) {
+      params[paramNames[d]] = round2((ranges[d][0] + ranges[d][1]) / 2);
+    }
+    const isDuplicate = suggestions.some((s) =>
+      paramNames.every((name) => Math.abs(s.params[name] - params[name]) < 1e-9),
+    ) || history.some((exp) =>
+      paramNames.every((name) => Math.abs((exp.params[name] ?? 0) - params[name]) < 1e-9),
+    );
+
+    if (!isDuplicate && suggestions.length < nSuggestions) {
+      suggestions.push({
+        params,
+        expectedImprovement: round4(bestY * 0.15),
+        predictedYield: round2(bestY * 1.05),
+        predictedUncertainty: round4(bestY * 0.2),
+      });
+    }
+
+    // Slightly expand from best point
+    if (suggestions.length < nSuggestions) {
+      const expanded: Record<string, number> = {};
+      for (let d = 0; d < nDim; d++) {
+        const val = bestExp.params[paramNames[d]] ?? (ranges[d][0] + ranges[d][1]) / 2;
+        const range = ranges[d][1] - ranges[d][0];
+        const direction = val < (ranges[d][0] + ranges[d][1]) / 2 ? 1 : -1;
+        expanded[paramNames[d]] = round2(clamp(val + direction * range * 0.15, ranges[d][0], ranges[d][1]));
+      }
+      const isDupExpand = suggestions.some((s) =>
+        paramNames.every((name) => Math.abs(s.params[name] - expanded[name]) < 1e-9),
+      ) || history.some((exp) =>
+        paramNames.every((name) => Math.abs((exp.params[name] ?? 0) - expanded[name]) < 1e-9),
+      );
+
+      if (!isDupExpand) {
+        suggestions.push({
+          params: expanded,
+          expectedImprovement: round4(bestY * 0.12),
+          predictedYield: round2(bestY * 1.08),
+          predictedUncertainty: round4(bestY * 0.25),
+        });
+      }
+    }
+  }
+
+  return { suggestions };
 }
