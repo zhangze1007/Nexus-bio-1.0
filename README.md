@@ -334,6 +334,21 @@ npm run build              # Production build
 
 ---
 
+## Report System
+
+Nexus-Bio includes a one-click report export that collects all tool results into a single Markdown document.
+
+**How to use:** Click the "Export Report" button in the workbench status bar (bottom of the IDE). The report is generated from every tool payload saved in the current workbench project.
+
+**What the report includes:**
+- Project metadata (title, target molecule, generation date)
+- Per-tool sections with summary text, data tables (FBA fluxes, thermodynamic metrics, enzyme design scores, etc.), and provenance blockquotes (data source, validity tier, assumptions)
+- Automatic section ordering matching your tool execution sequence
+
+**Output format:** Markdown (.md), easily convertible to PDF or HTML with any standard tool.
+
+---
+
 ## Deployment
 
 The app is deployed on Vercel. API proxy routes use Edge Runtime for low latency. Node.js runtime routes include FBA solver, workbench persistence, and ScSpatial sidecar.
