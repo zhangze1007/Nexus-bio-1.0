@@ -1,15 +1,20 @@
 'use client';
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import MetabolicEngPage from './MetabolicEngPage';
 import { searchKEGGPathway } from '../../services/database/keggClient';
 import type { KEGGPathwayResult } from '../../services/database/keggClient';
 import type { FallbackResult } from '../../services/database/fetchWithFallback';
 import DataSourceBadge from '../ide/shared/DataSourceBadge';
+import { useUIStore } from '../../store/uiStore';
+import { keggToPathway } from '../../utils/keggToPathway';
 
 export default React.memo(function PathDPage() {
   const [keggQuery, setKeggQuery] = useState('');
   const [keggResult, setKeggResult] = useState<FallbackResult<KEGGPathwayResult> | null>(null);
   const [keggLoading, setKeggLoading] = useState(false);
+
+  const setAiPathway = useUIStore(s => s.setAiPathway);
+  const resetPathway = useUIStore(s => s.resetPathway);
 
   const handleKeggSearch = useCallback(async () => {
     if (!keggQuery.trim()) return;
@@ -21,6 +26,25 @@ export default React.memo(function PathDPage() {
       setKeggLoading(false);
     }
   }, [keggQuery]);
+
+  const handleClear = useCallback(() => {
+    setKeggQuery('');
+    setKeggResult(null);
+    resetPathway();
+  }, [resetPathway]);
+
+  // Inject KEGG pathway into uiStore when live data arrives.
+  // MetabolicEngPage picks it up via tier 4 (uiGraph) of its resolution cascade.
+  useEffect(() => {
+    if (keggResult && keggResult.data.compounds.length > 0) {
+      const { nodes, edges } = keggToPathway(keggResult.data);
+      if (nodes.length > 0) {
+        setAiPathway(nodes, edges);
+      }
+    }
+    // Reset on unmount so MetabolicEngPage falls back to demo
+    return () => { resetPathway(); };
+  }, [keggResult, setAiPathway, resetPathway]);
 
   return (
     <>
@@ -73,6 +97,19 @@ export default React.memo(function PathDPage() {
         >
           {keggLoading ? 'Searching...' : 'Search'}
         </button>
+        {keggResult && (
+          <button
+            onClick={handleClear}
+            className="nb-tool-toggle"
+            style={{
+              padding: '4px 8px',
+              fontSize: 'var(--nb-fs-xs)',
+              color: 'rgba(255,255,255,0.5)',
+            }}
+          >
+            Clear
+          </button>
+        )}
         {keggResult && (
           <DataSourceBadge source={keggResult.source} label={keggResult.source === 'live' ? 'KEGG Live' : 'KEGG Demo'} />
         )}

@@ -549,6 +549,8 @@ export default React.memo(function CatalystDesignerPage() {
   const [brendaData, setBrendaData] = useState<BRENDAKinetics | null>(null);
   const [brendaSource, setBrendaSource] = useState<'live' | 'mock'>('mock');
   const [brendaLoading, setBrendaLoading] = useState(false);
+  const [brendaAppliedKm, setBrendaAppliedKm] = useState<number | null>(null);
+  const [brendaAppliedKcat, setBrendaAppliedKcat] = useState<number | null>(null);
 
   // AlphaFold structure lookup
   const [alphafoldStatus, setAlphafoldStatus] = useState<'idle' | 'loading' | 'found' | 'not_found' | 'error'>('idle');
@@ -562,6 +564,22 @@ export default React.memo(function CatalystDesignerPage() {
 
   const enzyme = ENZYME_STRUCTURES[selectedEnzyme];
 
+  // Active enzyme with optional BRENDA-applied Km/Kcat overrides
+  const activeEnzyme: EnzymeStructure = useMemo(() => {
+    if (brendaAppliedKm == null && brendaAppliedKcat == null) return enzyme;
+    return {
+      ...enzyme,
+      km: brendaAppliedKm ?? enzyme.km,
+      kcat: brendaAppliedKcat ?? enzyme.kcat,
+    };
+  }, [enzyme, brendaAppliedKm, brendaAppliedKcat]);
+
+  // Clear applied BRENDA values when enzyme selection changes
+  useEffect(() => {
+    setBrendaAppliedKm(null);
+    setBrendaAppliedKcat(null);
+  }, [selectedEnzyme]);
+
   useEffect(() => {
     setSelectedEnzyme(recommendedSeed.enzymeIndex);
   }, [recommendedSeed.enzymeIndex]);
@@ -569,6 +587,8 @@ export default React.memo(function CatalystDesignerPage() {
   useEffect(() => {
     setBrendaEcInput(enzyme.ecNumber);
     setBrendaData(null);
+    setBrendaAppliedKm(null);
+    setBrendaAppliedKcat(null);
   }, [enzyme.ecNumber]);
 
   const handleBrendaLookup = useCallback(async () => {
@@ -582,6 +602,19 @@ export default React.memo(function CatalystDesignerPage() {
       setBrendaLoading(false);
     }
   }, [brendaEcInput]);
+
+  const handleApplyBrenda = useCallback(() => {
+    if (!brendaData) return;
+    if (brendaData.km.length > 0) setBrendaAppliedKm(brendaData.km[0].value);
+    if (brendaData.kcat.length > 0) setBrendaAppliedKcat(brendaData.kcat[0].value);
+  }, [brendaData]);
+
+  const handleRevertBrenda = useCallback(() => {
+    setBrendaAppliedKm(null);
+    setBrendaAppliedKcat(null);
+  }, []);
+
+  const hasBrendaApplied = brendaAppliedKm != null || brendaAppliedKcat != null;
 
   // AlphaFold lookup when enzyme changes
   const handleAlphaFoldLookup = useCallback(async () => {
@@ -623,7 +656,7 @@ export default React.memo(function CatalystDesignerPage() {
     catch (e) { return { data: predictBindingAffinity(ENZYME_STRUCTURES[selectedEnzyme]), error: e instanceof Error ? e.message : 'Binding prediction failed' }; }
   }, [enzyme]);
   const sequences = useMemo(() => designSequences(enzyme, recommendedSeed.designCount), [enzyme, recommendedSeed.designCount]);
-  const drain = useMemo(() => estimateMetabolicDrain(enzyme, recommendedSeed.requiredFlux), [enzyme, recommendedSeed.requiredFlux]);
+  const drain = useMemo(() => estimateMetabolicDrain(activeEnzyme, recommendedSeed.requiredFlux), [activeEnzyme, recommendedSeed.requiredFlux]);
   const balance = useMemo(() => balancePathway(PATHWAY_STEPS), []);
   const pareto = useMemo(() => rankPathways(PATHWAY_CANDIDATES), []);
   const mutagenesis = useMemo(() => predictMutagenesisSites(enzyme, 5), [enzyme]);
@@ -694,7 +727,7 @@ export default React.memo(function CatalystDesignerPage() {
   ];
 
   const kdQ = kdQuality(mutationImpact?.newKd ?? binding.predictedKd);
-  const kcatQ = kcatQuality(mutationImpact?.newKcat ?? enzyme.kcat);
+  const kcatQ = kcatQuality(mutationImpact?.newKcat ?? activeEnzyme.kcat);
   const fitQ = fitQuality(binding.overallScore);
 
   return (
@@ -812,6 +845,100 @@ export default React.memo(function CatalystDesignerPage() {
                   No kinetics data found for {brendaData.ecNumber}
                 </p>
               )}
+              {/* BRENDA vs Model Comparison Panel */}
+              {brendaData && (brendaData.km.length > 0 || brendaData.kcat.length > 0) && (
+                <div style={{ marginTop: 8, padding: '6px 8px', borderRadius: 8, background: 'rgba(255,255,255,0.02)', border: `1px solid ${BORDER}` }}>
+                  <div style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xxs)', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>
+                    BRENDA vs Model
+                  </div>
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr>
+                        <th style={{ ...hdrCell, fontSize: 'var(--nb-fs-xxs)', padding: '2px 4px' }}>Param</th>
+                        <th style={{ ...hdrCell, fontSize: 'var(--nb-fs-xxs)', padding: '2px 4px', textAlign: 'right' }}>Model</th>
+                        <th style={{ ...hdrCell, fontSize: 'var(--nb-fs-xxs)', padding: '2px 4px', textAlign: 'right' }}>BRENDA</th>
+                        <th style={{ ...hdrCell, fontSize: 'var(--nb-fs-xxs)', padding: '2px 4px', textAlign: 'right' }}>Δ</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {brendaData.km.length > 0 && (() => {
+                        const brendaKm = brendaData.km[0].value;
+                        const modelKm = enzyme.km;
+                        const delta = brendaKm - modelKm;
+                        const deltaColor = Math.abs(delta) > modelKm * 0.5 ? THEME.CORAL : THEME.MINT;
+                        return (
+                          <tr>
+                            <td style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, padding: '2px 4px' }}>Km</td>
+                            <td style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE, padding: '2px 4px', textAlign: 'right', ...tn }}>{modelKm.toFixed(3)} mM</td>
+                            <td style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.SKY, padding: '2px 4px', textAlign: 'right', ...tn }}>
+                              {brendaKm} {brendaData.km[0].unit}
+                              <DataSourceBadge source={brendaSource} />
+                            </td>
+                            <td style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: deltaColor, padding: '2px 4px', textAlign: 'right', ...tn }}>
+                              {delta > 0 ? '+' : ''}{delta.toFixed(3)}
+                            </td>
+                          </tr>
+                        );
+                      })()}
+                      {brendaData.kcat.length > 0 && (() => {
+                        const brendaKcat = brendaData.kcat[0].value;
+                        const modelKcat = enzyme.kcat;
+                        const delta = brendaKcat - modelKcat;
+                        const deltaColor = Math.abs(delta) > modelKcat * 0.5 ? THEME.CORAL : THEME.MINT;
+                        return (
+                          <tr>
+                            <td style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, padding: '2px 4px' }}>Kcat</td>
+                            <td style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE, padding: '2px 4px', textAlign: 'right', ...tn }}>{modelKcat.toFixed(3)} s⁻¹</td>
+                            <td style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.SKY, padding: '2px 4px', textAlign: 'right', ...tn }}>
+                              {brendaKcat} {brendaData.kcat[0].unit}
+                              <DataSourceBadge source={brendaSource} />
+                            </td>
+                            <td style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: deltaColor, padding: '2px 4px', textAlign: 'right', ...tn }}>
+                              {delta > 0 ? '+' : ''}{delta.toFixed(3)}
+                            </td>
+                          </tr>
+                        );
+                      })()}
+                    </tbody>
+                  </table>
+                  {/* Apply / Revert buttons */}
+                  <div style={{ display: 'flex', gap: 4, marginTop: 6 }}>
+                    <button
+                      onClick={handleApplyBrenda}
+                      disabled={hasBrendaApplied}
+                      style={{
+                        flex: 1, fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xxs)',
+                        color: hasBrendaApplied ? LABEL : THEME.MINT,
+                        background: hasBrendaApplied ? 'rgba(255,255,255,0.03)' : 'rgba(147,203,82,0.12)',
+                        border: `1px solid ${hasBrendaApplied ? BORDER : 'rgba(147,203,82,0.3)'}`,
+                        borderRadius: 6, padding: '4px 6px',
+                        cursor: hasBrendaApplied ? 'default' : 'pointer',
+                        opacity: hasBrendaApplied ? 0.5 : 1,
+                      }}
+                    >
+                      {hasBrendaApplied ? 'Applied' : 'Apply BRENDA Values'}
+                    </button>
+                    {hasBrendaApplied && (
+                      <button
+                        onClick={handleRevertBrenda}
+                        style={{
+                          fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xxs)',
+                          color: THEME.CORAL, background: 'rgba(250,128,114,0.08)',
+                          border: `1px solid rgba(250,128,114,0.2)`,
+                          borderRadius: 6, padding: '4px 8px', cursor: 'pointer',
+                        }}
+                      >
+                        Revert
+                      </button>
+                    )}
+                  </div>
+                  {hasBrendaApplied && (
+                    <p style={{ margin: '4px 0 0', fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xxs)', color: LABEL, opacity: 0.6 }}>
+                      BRENDA values applied to metabolic drain model.
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
             {/* AlphaFold Structure Lookup */}
             <div style={{ marginBottom: '12px' }}>
@@ -922,7 +1049,7 @@ export default React.memo(function CatalystDesignerPage() {
               position="top-right"
               metrics={[
                 { label: 'Kd', value: `${(mutationImpact?.newKd ?? binding.predictedKd).toFixed(1)} μM`, accent: kdQ.color },
-                { label: 'Kcat', value: `${(mutationImpact?.newKcat ?? enzyme.kcat).toFixed(2)} s⁻¹`, accent: kcatQ.color },
+                { label: 'Kcat', value: `${(mutationImpact?.newKcat ?? activeEnzyme.kcat).toFixed(2)} s⁻¹`, accent: kcatQ.color },
                 { label: 'Fit', value: binding.overallScore.toFixed(2), accent: fitQ.color },
                 { label: 'Tm', value: `${enzyme.meltingTemp.toFixed(0)}°C`, accent: THEME.APRICOT },
               ]}
@@ -947,11 +1074,11 @@ export default React.memo(function CatalystDesignerPage() {
                 <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Kcat</span>
                 <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: kcatQ.color }}>{kcatQ.icon}</span>
               </div>
-              <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-md)', color: VALUE, margin: '2px 0 0' }}>{(mutationImpact?.newKcat ?? enzyme.kcat).toFixed(2)}<span style={{ fontSize: 'var(--nb-fs-sm)', color: LABEL }}> s⁻¹</span></p>
+              <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-md)', color: VALUE, margin: '2px 0 0' }}>{(mutationImpact?.newKcat ?? activeEnzyme.kcat).toFixed(2)}<span style={{ fontSize: 'var(--nb-fs-sm)', color: LABEL }}> s⁻¹</span></p>
             </div>
             <div style={{ ...GLASS, padding: '10px 12px', borderRadius: 14 }}>
               <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Km</span>
-              <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-md)', color: VALUE, margin: '2px 0 0' }}>{enzyme.km.toFixed(2)}<span style={{ fontSize: 'var(--nb-fs-sm)', color: LABEL }}> mM</span></p>
+              <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-md)', color: VALUE, margin: '2px 0 0' }}>{activeEnzyme.km.toFixed(2)}<span style={{ fontSize: 'var(--nb-fs-sm)', color: LABEL }}> mM</span></p>
             </div>
             <div style={{ ...GLASS, padding: '10px 12px', borderRadius: 14 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
