@@ -306,7 +306,15 @@ export default React.memo(function DynConPage() {
     [catalystPayload?.updatedAt, cethxPayload?.updatedAt, dbtlPayload?.feedbackSource, dbtlPayload?.result.improvementRate, dbtlPayload?.result.latestPhase, dbtlPayload?.result.passRate, dbtlPayload?.updatedAt, fbaPayload?.updatedAt],
   );
 
+  // Seed signature guard: only re-apply when seed values actually change
+  const seedSignature = useMemo(
+    () => `${recommendedSeed.controller.kp}|${recommendedSeed.controller.ki}|${recommendedSeed.controller.kd}|${recommendedSeed.controller.setpoint}|${recommendedSeed.hill.vmax}|${recommendedSeed.hill.kd}|${recommendedSeed.hill.n}`,
+    [recommendedSeed.controller.kp, recommendedSeed.controller.ki, recommendedSeed.controller.kd, recommendedSeed.controller.setpoint, recommendedSeed.hill.vmax, recommendedSeed.hill.kd, recommendedSeed.hill.n],
+  );
+  const lastAppliedSeedRef = useRef<string | null>(null);
+
   useEffect(() => {
+    if (lastAppliedSeedRef.current === seedSignature) return;
     setKp(recommendedSeed.controller.kp);
     setKi(recommendedSeed.controller.ki);
     setKd(recommendedSeed.controller.kd);
@@ -323,7 +331,9 @@ export default React.memo(function DynConPage() {
       setHillKd(recommendedSeed.hill.kd);
     }
     setHillN(recommendedSeed.hill.n);
+    lastAppliedSeedRef.current = seedSignature;
   }, [
+    seedSignature,
     kineticsPayload?.result,
     recommendedSeed.controller.kd,
     recommendedSeed.controller.ki,

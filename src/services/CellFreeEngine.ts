@@ -67,6 +67,8 @@ export interface CFSParameters {
   brendaKm?: number;
   /** BRENDA-sourced Kcat (1/s) — overrides per-construct k_tl when provided. */
   brendaKcat?: number;
+  /** Reaction pH from CETHX thermodynamic environment. */
+  pH?: number;
 }
 
 /** Time-series state for one gene. */

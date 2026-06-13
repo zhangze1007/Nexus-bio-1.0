@@ -1,5 +1,5 @@
 'use client';
-import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
@@ -562,6 +562,13 @@ export default React.memo(function CatalystDesignerPage() {
     [analyzeArtifact?.generatedAt, analyzeArtifact?.id, cethxPayload?.updatedAt, dbtlPayload?.feedbackSource, dbtlPayload?.result.improvementRate, dbtlPayload?.result.latestPhase, dbtlPayload?.result.passRate, dbtlPayload?.updatedAt, fbaPayload?.updatedAt, project?.id, project?.updatedAt],
   );
 
+  // Seed signature guard: only re-apply enzyme selection when seed actually changes
+  const seedSignature = useMemo(
+    () => `${recommendedSeed.enzymeIndex}|${recommendedSeed.requiredFlux}|${recommendedSeed.designCount}`,
+    [recommendedSeed.enzymeIndex, recommendedSeed.requiredFlux, recommendedSeed.designCount],
+  );
+  const lastAppliedSeedRef = useRef<string | null>(null);
+
   const enzyme = ENZYME_STRUCTURES[selectedEnzyme];
 
   // Active enzyme with optional BRENDA-applied Km/Kcat overrides
@@ -581,8 +588,10 @@ export default React.memo(function CatalystDesignerPage() {
   }, [selectedEnzyme]);
 
   useEffect(() => {
+    if (lastAppliedSeedRef.current === seedSignature) return;
     setSelectedEnzyme(recommendedSeed.enzymeIndex);
-  }, [recommendedSeed.enzymeIndex]);
+    lastAppliedSeedRef.current = seedSignature;
+  }, [seedSignature, recommendedSeed.enzymeIndex]);
 
   useEffect(() => {
     setBrendaEcInput(enzyme.ecNumber);

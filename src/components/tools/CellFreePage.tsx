@@ -1,5 +1,5 @@
 'use client';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
@@ -687,10 +687,25 @@ export default React.memo(function CellFreePage() {
     [analyzeArtifact?.generatedAt, analyzeArtifact?.id, catalystPayload?.updatedAt, cethxPayload?.updatedAt, dbtlPayload?.feedbackSource, dbtlPayload?.result.improvementRate, dbtlPayload?.result.latestPhase, dbtlPayload?.result.passRate, dbtlPayload?.updatedAt, dynconPayload?.updatedAt, project?.id, project?.updatedAt],
   );
 
+  // Seed signature guard: only re-apply when seed values actually change
+  const seedSignature = useMemo(
+    () => JSON.stringify({
+      ids: recommendedSeed.constructs.map((c) => c.id),
+      temp: recommendedSeed.params.temperature,
+      time: recommendedSeed.params.simulationTime,
+      ribo: recommendedSeed.params.ribosomeTotal,
+      atp: recommendedSeed.params.initialEnergy.atp,
+    }),
+    [recommendedSeed],
+  );
+  const lastAppliedSeedRef = useRef<string | null>(null);
+
   useEffect(() => {
+    if (lastAppliedSeedRef.current === seedSignature) return;
     setConstructs(recommendedSeed.constructs);
     setParams(recommendedSeed.params);
-  }, [recommendedSeed]);
+    lastAppliedSeedRef.current = seedSignature;
+  }, [seedSignature, recommendedSeed]);
 
   const [activeTab, setActiveTab] = useState('timecourse');
   const [userData, setUserData] = useState<PlateReaderDataPoint[] | null>(null);
