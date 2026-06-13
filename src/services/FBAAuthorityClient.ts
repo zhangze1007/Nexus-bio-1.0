@@ -156,3 +156,25 @@ export function solveFSEOF(request: FSEOFRequest, signal?: AbortSignal) {
     signal,
   );
 }
+
+interface OptKnockRequest {
+  reactions: Array<{ id: string; lb: number; ub: number; stoichiometry: Record<string, number> }>;
+  objectiveId: string;
+  productReactionId: string;
+  maxKnockouts?: number;
+  growthFraction?: number;
+}
+
+export function solveOptKnock(request: OptKnockRequest, signal?: AbortSignal) {
+  return requestAuthorityResponse<unknown>(
+    {
+      action: 'optknock',
+      reactions: request.reactions,
+      objectiveId: request.objectiveId,
+      productReactionId: request.productReactionId,
+      maxKnockouts: request.maxKnockouts,
+      growthFraction: request.growthFraction,
+    },
+    signal,
+  );
+}
