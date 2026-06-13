@@ -57,6 +57,10 @@ interface CatalystSeed {
   enzymeIndex: number;
   requiredFlux: number;
   designCount: number;
+  /** Thermodynamic temperature (deg C) from CETHX or benchmark default. */
+  tempC: number;
+  /** pH from CETHX or benchmark default. */
+  pH: number;
 }
 
 interface DynConSeed {
@@ -114,6 +118,7 @@ function provenanceEntryId(provenance?: ProvenanceEntry) {
 function sourceFromPayload(
   payload:
     | CatalystWorkbenchPayload
+    | CETHXWorkbenchPayload
     | DynConWorkbenchPayload
     | CellFreeWorkbenchPayload
     | DBTLWorkbenchPayload
@@ -392,10 +397,17 @@ export function buildCatalystSeed(
   requiredFlux = applyChangedPrior(requiredFlux, approvedDeltas, 'catdes.requiredFlux', 0.15, 3.2);
   designCount = Math.round(applyChangedPrior(designCount, approvedDeltas, 'catdes.designCount', 6, 14));
 
+  // Thermodynamic environment from CETHX payload or benchmark defaults
+  const benchmark = findBenchmarkByTarget(getTargetProduct(project, artifact));
+  const tempC = cethx?.tempC ?? benchmark?.optimalTempC ?? (pathway === 'tca' ? 31 : pathway === 'ppp' ? 29 : 33);
+  const pH = cethx?.pH ?? benchmark?.optimalPH ?? 7.0;
+
   return {
     enzymeIndex: enzymeIndex >= 0 ? enzymeIndex : 2,
     requiredFlux: round(requiredFlux, 2),
     designCount,
+    tempC: round(tempC, 1),
+    pH: round(pH, 1),
   };
 }
 
@@ -499,6 +511,7 @@ export function buildCellFreeSeed(
   };
 
   params.temperature = Math.round(cethx?.tempC ?? benchmark?.cellFreeTempC ?? params.temperature);
+  params.pH = round(cethx?.pH ?? benchmark?.optimalPH ?? 7.0, 1);
   params.simulationTime = Math.round(clampNumber(
     220 + (dyncon?.result.stable ? 20 : 70) + (catalyst?.result.totalMetabolicDrain ?? 0.2) * 35,
     180,
@@ -534,6 +547,7 @@ export function buildDBTLDraft(
   catalyst?: CatalystWorkbenchPayload | null,
   dyncon?: DynConWorkbenchPayload | null,
   cellfree?: CellFreeWorkbenchPayload | null,
+  cethx?: CETHXWorkbenchPayload | null,
 ): DBTLDraft {
   const targetProduct = getTargetProduct(project, artifact);
   const confidence = cellfree?.result.confidence ?? 0;
@@ -564,6 +578,12 @@ export function buildDBTLDraft(
     `DO RMSE ${round(dyncon?.result.doRmse ?? 0, 3)}`,
     `CFPS confidence ${round(confidence * 100, 0)}%`,
   ];
+  if (cethx) {
+    learnedParameters.push(
+      `ΔG' ${round(cethx.result.gibbsFreeEnergy, 1)} kJ/mol`,
+      `thermo eff ${round(cethx.result.efficiency * 100, 1)}%`,
+    );
+  }
   const learnedMetrics: DBTLLearnedMetrics = {};
   if (catalyst) {
     learnedMetrics.bindingKdUM = round(catalyst.result.bindingKd, 2);
@@ -577,10 +597,16 @@ export function buildDBTLDraft(
     learnedMetrics.cfpsConfidence = round(cellfree.result.confidence * 100, 0);
     learnedMetrics.confidenceScore = round(cellfree.result.confidence, 3);
   }
+  if (cethx) {
+    learnedMetrics.gibbsFreeEnergy = round(cethx.result.gibbsFreeEnergy, 1);
+    learnedMetrics.thermoEfficiency = round(cethx.result.efficiency, 3);
+    learnedMetrics.thermoTempC = round(cethx.tempC, 1);
+  }
   const sources = [
     sourceFromPayload(catalyst, 'Catalyst metrics moved into DBTL typed feedback.'),
     sourceFromPayload(dyncon, 'DynCon metrics moved into DBTL typed feedback.'),
     sourceFromPayload(cellfree, 'CellFree metrics moved into DBTL typed feedback.'),
+    sourceFromPayload(cethx, 'CETHX thermodynamic metrics moved into DBTL typed feedback.'),
   ].filter((source): source is DBTLMetricSource => source !== null);
   const feedback: DBTLLearnedFeedback = {
     learnedMetrics,
@@ -589,13 +615,17 @@ export function buildDBTLDraft(
     schemaVersion: 'dbtl-feedback-v1',
   };
 
+  // Derive unit from benchmark: mg/L for titer targets, U/mL for enzymatic, mM for metabolites
+  const benchmark = findBenchmarkByTarget(targetProduct);
+  const unit = benchmark ? 'mg/L' : /ase$|enzyme|protein/.test(normalize(targetProduct)) ? 'U/mL' : 'mg/L';
+
   return {
     phase,
     hypothesis,
     result,
-    unit: 'mg/L',
+    unit,
     passed: confidence >= 0.6 && stable && viable,
-    notes: `${targetProduct} draft generated from live Catalyst, DynCon, and Cell-Free outputs.`,
+    notes: `${targetProduct} draft generated from live Catalyst, DynCon, Cell-Free, and CETHX outputs.`,
     feedback,
     learnedParameters,
   };

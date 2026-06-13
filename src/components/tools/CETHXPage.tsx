@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AlertTriangle, Wifi, WifiOff } from 'lucide-react';
 import ToolShell, { TOOL_TOKENS as T } from './shared/ToolShell';
@@ -354,11 +354,20 @@ export default React.memo(function CETHXPage() {
     [analyzeArtifact?.generatedAt, analyzeArtifact?.id, fbaPayload?.updatedAt, pathdPayload?.updatedAt, project?.id, project?.updatedAt],
   );
 
+  // Seed signature guard: only re-apply when seed values actually change
+  const seedSignature = useMemo(
+    () => `${recommendedSeed.pathway}|${recommendedSeed.tempC}|${recommendedSeed.pH}`,
+    [recommendedSeed.pathway, recommendedSeed.tempC, recommendedSeed.pH],
+  );
+  const lastAppliedSeedRef = useRef<string | null>(null);
+
   useEffect(() => {
+    if (lastAppliedSeedRef.current === seedSignature) return;
     setPathway(recommendedSeed.pathway);
     setTempC(recommendedSeed.tempC);
     setPH(recommendedSeed.pH);
-  }, [recommendedSeed.pH, recommendedSeed.pathway, recommendedSeed.tempC]);
+    lastAppliedSeedRef.current = seedSignature;
+  }, [seedSignature, recommendedSeed.pathway, recommendedSeed.tempC, recommendedSeed.pH]);
 
   // Fetch real eQuilibrator data when conditions change
   useEffect(() => {

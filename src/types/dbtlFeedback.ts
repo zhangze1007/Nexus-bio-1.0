@@ -6,6 +6,12 @@ export interface DBTLLearnedMetrics {
   yieldChangePercent?: number;
   growthPenaltyPercent?: number;
   confidenceScore?: number;
+  /** CETHX: Gibbs free energy (kJ/mol) of the pathway. */
+  gibbsFreeEnergy?: number;
+  /** CETHX: thermodynamic efficiency (0-1). */
+  thermoEfficiency?: number;
+  /** CETHX: temperature used for thermodynamic analysis (deg C). */
+  thermoTempC?: number;
 }
 
 export interface DBTLMetricSource {
