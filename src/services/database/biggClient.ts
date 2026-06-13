@@ -130,9 +130,7 @@ export async function getModelReactions(modelId: string): Promise<FallbackResult
 
       if (reactions.length === 0) throw new Error('Failed to fetch any reaction details');
 
-      const metabolites = await fetchModelMetabolites(modelId, signal);
-
-      return { reactions, metabolites };
+      return { reactions, metabolites: [] as string[] };
     },
     {
       reactions: [{

@@ -319,8 +319,10 @@ export default React.memo(function FBASimPage() {
   }
 
   function handleLoadModel() {
+    if (modelLoading || !selectedModel) return;
     setModelLoading(true);
     setLoadedReactions(null);
+    setSingleError(null);
     getModelReactions(selectedModel).then((result) => {
       if (result.data.reactions.length > 0) {
         setLoadedReactions(result.data.reactions);
@@ -329,8 +331,9 @@ export default React.memo(function FBASimPage() {
         );
         setLoadedObjectiveId(bioRxn?.id ?? result.data.reactions[0].id);
       }
-    }).catch(() => {
+    }).catch((err) => {
       setLoadedReactions(null);
+      setSingleError(`Failed to load model: ${err instanceof Error ? err.message : String(err)}`);
     }).finally(() => {
       setModelLoading(false);
     });

@@ -1,6 +1,7 @@
 import { solveLP, type LPModel } from './highsSolver';
 import { SHARED_METABOLITES, type CommunityFBAOutput, type FBAOutput } from '../data/mockFBA';
 import { IJO1366_REACTIONS, IJO1366_METABOLITES, IJO1366_STATS } from '../data/iJO1366Subset';
+import type { BiGGReaction } from '../services/database/biggClient';
 
 export type FBAObjective = 'biomass' | 'atp' | 'product';
 export type FBASpecies = 'ecoli' | 'yeast';
@@ -476,14 +477,7 @@ export async function solveExpandedFBA(request: ExpandedFBARequest): Promise<Exp
 
 // ── Dynamic FBA: solve from user-supplied reaction data (BiGG models) ──
 
-export interface DynamicReaction {
-  id: string;
-  name: string;
-  subsystem: string;
-  lb: number;
-  ub: number;
-  stoichiometry: Record<string, number>;
-}
+export type DynamicReaction = BiGGReaction;
 
 export interface DynamicFBAOptions {
   glucoseUptake?: number;
@@ -491,22 +485,11 @@ export interface DynamicFBAOptions {
   knockouts?: string[];
 }
 
-function findObjectiveReaction(reactions: DynamicReaction[]): string {
-  const candidates = ['BIOMASS', 'Biomass', 'biomass'];
-  for (const c of candidates) {
-    if (reactions.some(r => r.id === c)) return c;
-  }
-  const bioRxn = reactions.find(r => r.id.toLowerCase().includes('biomass') || r.name.toLowerCase().includes('biomass'));
-  if (bioRxn) return bioRxn.id;
-  const exchangeRxns = reactions.filter(r => r.id.startsWith('EX_') && r.ub > 0);
-  return exchangeRxns.length > 0 ? exchangeRxns[0].id : reactions[0]?.id ?? 'BIOMASS';
-}
-
 function findExchangeReaction(reactions: DynamicReaction[], metaboliteSuffix: string): DynamicReaction | undefined {
   return reactions.find(r => r.id.startsWith('EX_') && r.id.includes(metaboliteSuffix));
 }
 
-function findMetaboliteConstraint(metId: string, reactions: DynamicReaction[]): string {
+function findMetaboliteConstraint(metId: string): string {
   return `${metId}_balance`;
 }
 
@@ -570,10 +553,10 @@ export async function solveDynamicFBA(
   const glcRxn = findExchangeReaction(reactions, 'glc');
   const o2Rxn = findExchangeReaction(reactions, 'o2');
   const glcConstraint = glcRxn ? findMetaboliteConstraint(
-    Object.keys(glcRxn.stoichiometry)[0], reactions
+    Object.keys(glcRxn.stoichiometry)[0]
   ) : '';
   const o2Constraint = o2Rxn ? findMetaboliteConstraint(
-    Object.keys(o2Rxn.stoichiometry)[0], reactions
+    Object.keys(o2Rxn.stoichiometry)[0]
   ) : '';
 
   const glucoseShadow = glcConstraint ? (result.duals[glcConstraint] ?? 0) : 0;
@@ -582,15 +565,10 @@ export async function solveDynamicFBA(
   const glcFlux = glcRxn ? Math.abs(fluxes[glcRxn.id] ?? 0) : glucoseUptake;
   const biomassFlux = fluxes[objectiveId] ?? 0;
 
-  let atpFlux = 0;
-  let nadhFlux = 0;
-  for (const r of reactions) {
-    const absFlux = Math.abs(fluxes[r.id] ?? 0);
-    const nameLc = r.name.toLowerCase();
-    if (nameLc.includes('atp') && !nameLc.includes('atpase')) atpFlux += absFlux * 0.3;
-    if (nameLc.includes('nadh') || nameLc.includes('nad')) nadhFlux += absFlux * 0.2;
-  }
-  const atpYield = glcFlux > 1e-9 ? atpFlux / glcFlux : 0;
+  // For dynamic models, ATP/NADH cannot be reliably computed without
+  // explicit metabolite-level identification (stoichiometric coefficients
+  // for ATP and NADH metabolites). Return 0 rather than heuristic guesses.
+  const atpYield = 0;
   const carbonEfficiency = glcFlux > 1e-9 ? (biomassFlux / glcFlux) * 60 : 0;
   const growthRate = biomassFlux;
   const feasible = result.status === 'optimal' && result.objectiveValue > 1e-6;
@@ -599,7 +577,7 @@ export async function solveDynamicFBA(
     fluxes,
     growthRate: round(growthRate),
     atpYield: round(atpYield, 2),
-    nadhProduction: round(nadhFlux, 2),
+    nadhProduction: 0,
     carbonEfficiency: round(clamp(carbonEfficiency, 0, 100), 1),
     feasible,
     sensitivityCoefficients: {

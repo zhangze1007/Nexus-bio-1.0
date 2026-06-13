@@ -19,7 +19,6 @@ export async function GET(request: Request) {
     reaction: `models/${id}/reactions`,
     metabolite: `models/${id}/metabolites`,
     rxn_detail: rxnId ? `models/${id}/reactions/${rxnId}` : '',
-    met_detail: rxnId ? `models/${id}/metabolites/${rxnId}` : '',
   };
 
   const endpoint = endpointMap[type];
