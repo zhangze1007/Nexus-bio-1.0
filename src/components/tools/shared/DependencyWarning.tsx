@@ -2,7 +2,7 @@ import React from 'react';
 import { AlertTriangle, Clock } from 'lucide-react';
 import { useWorkbenchStore } from '../../../store/workbenchStore';
 import { validateDependencies } from '../../../services/toolDependencyValidator';
-import { THEME } from '../../../theme';
+import { THEME, BIO_THEME_COLORS } from '../../../theme';
 
 /**
  * DependencyWarning — shown at the top of a tool page when required
@@ -19,7 +19,7 @@ export default function DependencyWarning({ toolId }: { toolId: string }) {
   const isMissing = validation.status === 'missing';
   const borderColor = isMissing ? 'rgba(232,220,200,0.35)' : 'rgba(231,199,169,0.25)';
   const bgColor = isMissing ? 'rgba(232,220,200,0.10)' : 'rgba(231,199,169,0.08)';
-  const iconColor = isMissing ? THEME.AMBER : THEME.APRICOT;
+  const iconColor = isMissing ? BIO_THEME_COLORS.AMBER : THEME.APRICOT;
   const Icon = isMissing ? AlertTriangle : Clock;
 
   const depNames = isMissing ? validation.missing : validation.stale;
