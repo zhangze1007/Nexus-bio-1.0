@@ -11,7 +11,7 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { THEME } from '../../../theme';
 import { optimizeCodons } from '../../../server/codonOptimizer';
 import type { Organism, CodonOptimizationResult } from '../../../server/codonOptimizer';
-import MetricCard from '../../ide/shared/MetricCard';
+import MetricCard from './MetricCard';
 
 /* ── Types ──────────────────────────────────────────────────────────────── */
 

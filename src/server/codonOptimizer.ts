@@ -46,7 +46,7 @@ type CodonUsageTable = Record<string, [string, number][]>;
 
 /** Load the codon usage table for the given organism. */
 function loadTable(organism: Organism): CodonUsageTable {
-  return (codonTables as Record<string, CodonUsageTable>)[organism];
+  return (codonTables as unknown as Record<string, CodonUsageTable>)[organism];
 }
 
 /** Compute GC fraction of a DNA string. */

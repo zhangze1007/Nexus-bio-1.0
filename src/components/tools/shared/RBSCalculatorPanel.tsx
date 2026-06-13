@@ -404,7 +404,7 @@ function SpacingDiagram({
         >
           {seq.split('').map((nt, i) => {
             let bg = 'transparent';
-            let color = THEME.VALUE;
+            let color: string = THEME.VALUE;
             if (sdPosition >= 0 && i >= sdPosition && i < sdEnd) {
               bg = 'rgba(191,220,205,0.25)';
               color = THEME.MINT;
