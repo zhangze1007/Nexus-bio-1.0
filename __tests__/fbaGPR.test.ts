@@ -7,6 +7,7 @@ import {
   getKnockoutReactions,
   getGeneKnockoutEffect,
   extractGeneIds,
+  applyGeneKnockoutsToModel,
   GPRTreeNode,
 } from '../src/server/fbaGPR';
 import { IJO1366_GPR_RULES } from '../src/data/iJO1366Subset';
@@ -398,5 +399,78 @@ describe('iJO1366 GPR rules integration', () => {
     expect(genes).toContain('b4025');  // PGI
     expect(genes).toContain('b0720');  // CS
     expect(genes).toContain('b3916');  // PFK
+  });
+});
+
+// ── GPR-to-LP integration (applyGeneKnockoutsToModel) ───────────────
+
+describe('GPR-to-LP integration', () => {
+  it('knocks out reactions when their GPR genes are knocked out', () => {
+    const model = {
+      reactions: [
+        { id: 'RXN_A', lb: -10, ub: 10, stoichiometry: { a: -1, b: 1 }, gpr: '(gene1 AND gene2)' },
+        { id: 'RXN_B', lb: -10, ub: 10, stoichiometry: { b: -1, c: 1 }, gpr: '(gene3 OR gene4)' },
+        { id: 'RXN_C', lb: -10, ub: 10, stoichiometry: { c: -1, d: 1 }, gpr: '(gene5)' },
+      ],
+    };
+    const knockedOutGenes = ['gene1', 'gene3'];
+    const modifiedModel = applyGeneKnockoutsToModel(model, knockedOutGenes);
+
+    // RXN_A: gene1 AND gene2 → gene1 knocked out → RXN_A knocked out
+    expect(modifiedModel.reactions[0].ub).toBe(0);
+    expect(modifiedModel.reactions[0].lb).toBe(0);
+
+    // RXN_B: gene3 OR gene4 → gene3 knocked out but gene4 still active → RXN_B active
+    expect(modifiedModel.reactions[1].ub).toBe(10);
+
+    // RXN_C: gene5 → not knocked out → RXN_C active
+    expect(modifiedModel.reactions[2].ub).toBe(10);
+  });
+
+  it('handles complex nested GPR rules', () => {
+    const model = {
+      reactions: [
+        { id: 'COMPLEX', lb: -10, ub: 10, stoichiometry: {}, gpr: '((g1 AND g2) OR (g3 AND g4))' },
+      ],
+    };
+    const result = applyGeneKnockoutsToModel(model, ['g1', 'g3']);
+    expect(result.reactions[0].ub).toBe(0);
+  });
+
+  it('leaves reactions without GPR rules unchanged', () => {
+    const model = {
+      reactions: [
+        { id: 'NO_GPR', lb: -5, ub: 5, stoichiometry: {} },
+        { id: 'WITH_GPR', lb: -5, ub: 5, stoichiometry: {}, gpr: '(gene1)' },
+      ],
+    };
+    const result = applyGeneKnockoutsToModel(model, ['gene1']);
+    expect(result.reactions[0].lb).toBe(-5);
+    expect(result.reactions[0].ub).toBe(5);
+    expect(result.reactions[1].lb).toBe(0);
+    expect(result.reactions[1].ub).toBe(0);
+  });
+
+  it('does not mutate the original model', () => {
+    const model = {
+      reactions: [
+        { id: 'RXN', lb: -10, ub: 10, stoichiometry: {}, gpr: '(gene1)' },
+      ],
+    };
+    const result = applyGeneKnockoutsToModel(model, ['gene1']);
+    expect(model.reactions[0].ub).toBe(10); // original unchanged
+    expect(result.reactions[0].ub).toBe(0);  // copy is modified
+  });
+
+  it('no knockouts means all reactions stay active', () => {
+    const model = {
+      reactions: [
+        { id: 'A', lb: -10, ub: 10, stoichiometry: {}, gpr: '(gene1 AND gene2)' },
+        { id: 'B', lb: -10, ub: 10, stoichiometry: {}, gpr: '(gene3 OR gene4)' },
+      ],
+    };
+    const result = applyGeneKnockoutsToModel(model, []);
+    expect(result.reactions[0].ub).toBe(10);
+    expect(result.reactions[1].ub).toBe(10);
   });
 });

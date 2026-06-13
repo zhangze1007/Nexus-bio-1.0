@@ -13,13 +13,13 @@ import ParameterSnapshot from '../shared/ParameterSnapshot';
 import DataUpload from '../shared/DataUpload';
 import DataPreview from '../shared/DataPreview';
 import {
-  METABOLIC_NODES, FLUX_EDGES, REACTION_DEFS,
+  METABOLIC_NODES, FLUX_EDGES, REACTION_DEFS, BASE_REACTIONS,
   YEAST_NODES, YEAST_FLUX_EDGES, YEAST_REACTION_DEFS, SHARED_METABOLITES,
 } from '../../data/mockFBA';
 import type { FBAOutput, CommunityFBAOutput } from '../../data/mockFBA';
 import type { ProvenanceEntry } from '../../types/assumptions';
 import { buildFBASeed } from './shared/workbenchDataflow';
-import { solveAuthorityCommunityFBAWithProvenance, solveAuthorityFBAWithProvenance, solveDynamicModelFBA } from '../../services/FBAAuthorityClient';
+import { solveAuthorityCommunityFBAWithProvenance, solveAuthorityFBAWithProvenance, solveDynamicModelFBA, solveFSEOF, solveOptKnock } from '../../services/FBAAuthorityClient';
 import { SCI_PALETTE, SCI_PASTEL } from '../charts/chartTheme';
 import ScientificFigureFrame from './shared/ScientificFigureFrame';
 import WorkbenchRangeSlider from './shared/WorkbenchRangeSlider';
@@ -53,6 +53,7 @@ const FBA_TABS: ToolTab[] = [
   { id: 'fva', label: 'FVA', accent: THEME.LILAC },
   { id: 'gpr', label: 'GPR KO', accent: THEME.CORAL },
   { id: 'knockout', label: 'Knockout', accent: THEME.CORAL },
+  { id: 'strain', label: 'Strain Design', accent: THEME.MINT },
   { id: 'shadows', label: 'Sensitivity', accent: THEME.LILAC },
   { id: 'community', label: 'Community', accent: THEME.MINT },
 ];
@@ -87,6 +88,12 @@ export default React.memo(function FBASimPage() {
   const [communityRunProvenance, setCommunityRunProvenance] = useState<ProvenanceEntry | undefined>(undefined);
   const [communityError, setCommunityError] = useState<string | null>(null);
   const [communityLoading, setCommunityLoading] = useState(true);
+
+  // Strain Design state (FSEOF + OptKnock)
+  const [fseofResult, setFseofResult] = useState<any>(null);
+  const [optknockResult, setOptknockResult] = useState<any>(null);
+  const [strainDesignLoading, setStrainDesignLoading] = useState(false);
+
   const recommendedSeed = useMemo(
     () => buildFBASeed(project, analyzeArtifact, dbtlPayload, pathdPayload),
     [analyzeArtifact?.generatedAt, analyzeArtifact?.id, dbtlPayload?.feedbackSource, dbtlPayload?.result.improvementRate, dbtlPayload?.result.latestPhase, dbtlPayload?.result.passRate, dbtlPayload?.updatedAt, pathdPayload?.updatedAt, project?.id, project?.updatedAt],
@@ -339,6 +346,45 @@ export default React.memo(function FBASimPage() {
     });
   }
 
+  // Default reactions for strain design when no BiGG model is loaded
+  const defaultStrainReactions = useMemo(() => BASE_REACTIONS.map(r => ({
+    id: r.id,
+    lb: r.lb,
+    ub: r.ub,
+    stoichiometry: {} as Record<string, number>,
+  })), []);
+
+  const handleRunFSEOF = async () => {
+    setStrainDesignLoading(true);
+    try {
+      const reactions = loadedReactions ?? defaultStrainReactions;
+      const result = await solveFSEOF({
+        reactions: reactions.map(r => ({ id: r.id, lb: r.lb, ub: r.ub, stoichiometry: r.stoichiometry })),
+        objectiveId: loadedObjectiveId || 'BIOMASS',
+        productReactionId: 'PRODUCT',
+      });
+      setFseofResult(result.result);
+    } finally {
+      setStrainDesignLoading(false);
+    }
+  };
+
+  const handleRunOptKnock = async () => {
+    setStrainDesignLoading(true);
+    try {
+      const reactions = loadedReactions ?? defaultStrainReactions;
+      const result = await solveOptKnock({
+        reactions: reactions.map(r => ({ id: r.id, lb: r.lb, ub: r.ub, stoichiometry: r.stoichiometry })),
+        objectiveId: loadedObjectiveId || 'BIOMASS',
+        productReactionId: 'PRODUCT',
+        maxKnockouts: 3,
+      });
+      setOptknockResult(result.result);
+    } finally {
+      setStrainDesignLoading(false);
+    }
+  };
+
   const exportData = simMode === 'single' ? singleResult : communityResult;
 
   /* ── Console logging ─────────────────────────────────────────────────── */
@@ -518,7 +564,7 @@ export default React.memo(function FBASimPage() {
       tabs={FBA_TABS}
       activeTab={activeTab}
       onTabChange={setActiveTab}
-      advancedTabIds={['fva', 'gpr', 'knockout', 'shadows', 'community']}
+      advancedTabIds={['fva', 'gpr', 'knockout', 'strain', 'shadows', 'community']}
       footer={
         <>
           <ExportButton label="Export JSON" data={exportData} filename={`fbasim-${simMode}-result`} format="json" />
@@ -776,6 +822,194 @@ export default React.memo(function FBASimPage() {
                 { label: 'Feasible', value: singleResult.feasible ? 'YES' : 'NO', accent: singleResult.feasible ? THEME.MINT : THEME.CORAL },
               ]}
             />
+          </div>
+        </div>
+      </ToolTabPanel>
+
+      {/* ── Strain Design Tab ── */}
+      <ToolTabPanel tabId="strain" activeId={activeTab}>
+        <div style={{ display: 'flex', gap: '16px', flex: 1, minHeight: 0, overflow: 'auto', padding: '12px' }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <ScientificFigureFrame
+              eyebrow="FSEOF — Flux Scanning based on Enforced Objective Flux"
+              title="Overexpression Targets"
+              caption="FSEOF identifies gene overexpression targets by scanning flux changes as the enforced product flux increases from zero to its maximum. Reactions with monotonically increasing flux are candidate overexpression targets."
+              legend={[
+                { label: 'Objective', value: loadedObjectiveId || 'BIOMASS', accent: THEME.APRICOT },
+                { label: 'Model', value: loadedReactions ? `${loadedReactions.length} rxns` : 'iJO1366 subset', accent: THEME.SKY },
+              ]}
+            >
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+                <button
+                  onClick={handleRunFSEOF}
+                  disabled={strainDesignLoading}
+                  className="nb-tool-toggle nb-tool-toggle--active"
+                  style={{
+                    padding: '6px 14px',
+                    borderRadius: 'var(--nb-radius-sm)',
+                    background: strainDesignLoading ? 'rgba(255,255,255,0.04)' : 'rgba(191,220,205,0.14)',
+                    borderColor: strainDesignLoading ? 'rgba(255,255,255,0.08)' : 'rgba(191,220,205,0.3)',
+                    color: strainDesignLoading ? 'rgba(255,255,255,0.35)' : 'rgba(191,220,205,0.9)',
+                    fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)',
+                    cursor: strainDesignLoading ? 'wait' : 'pointer',
+                  }}
+                >
+                  {strainDesignLoading ? 'Running...' : 'Run FSEOF'}
+                </button>
+              </div>
+
+              {fseofResult ? (
+                <div style={{ overflow: 'auto' }}>
+                  {fseofResult.wildType && (
+                    <div style={{
+                      padding: '8px 12px', marginBottom: '12px',
+                      background: 'rgba(191,220,205,0.08)',
+                      border: '1px solid rgba(191,220,205,0.15)',
+                      borderRadius: 'var(--nb-radius-sm)',
+                    }}>
+                      <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: 'rgba(191,220,205,0.7)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                        Wild-Type Baseline
+                      </p>
+                      <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-sm)', color: 'rgba(250,246,240,0.9)', margin: '4px 0 0' }}>
+                        Growth: {fseofResult.wildType.growthRate?.toFixed(4) ?? 'N/A'} h⁻¹ | Product Flux: {fseofResult.wildType.productFlux?.toFixed(4) ?? 'N/A'} mmol/gDW/h
+                      </p>
+                    </div>
+                  )}
+
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                        <th style={{ padding: '6px 8px', textAlign: 'left', color: 'rgba(217,225,235,0.68)', fontWeight: 500 }}>Reaction</th>
+                        <th style={{ padding: '6px 8px', textAlign: 'right', color: 'rgba(217,225,235,0.68)', fontWeight: 500 }}>Flux @ Min</th>
+                        <th style={{ padding: '6px 8px', textAlign: 'right', color: 'rgba(217,225,235,0.68)', fontWeight: 500 }}>Flux @ Max</th>
+                        <th style={{ padding: '6px 8px', textAlign: 'right', color: 'rgba(217,225,235,0.68)', fontWeight: 500 }}>Monotonicity</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(fseofResult.targets ?? fseofResult).map((t: any, i: number) => (
+                        <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                          <td style={{ padding: '5px 8px', color: 'rgba(250,246,240,0.85)' }}>{t.reactionId ?? t.id ?? t[0]}</td>
+                          <td style={{ padding: '5px 8px', textAlign: 'right', color: 'rgba(250,246,240,0.6)' }}>{(t.fluxAtMin ?? t[1] ?? 0).toFixed(3)}</td>
+                          <td style={{ padding: '5px 8px', textAlign: 'right', color: 'rgba(191,220,205,0.85)' }}>{(t.fluxAtMax ?? t[2] ?? 0).toFixed(3)}</td>
+                          <td style={{ padding: '5px 8px', textAlign: 'right' }}>
+                            <span style={{
+                              display: 'inline-block',
+                              padding: '1px 6px',
+                              borderRadius: '3px',
+                              background: (t.monotonicity ?? t[3] ?? 0) >= 0.8 ? 'rgba(191,220,205,0.15)' : (t.monotonicity ?? t[3] ?? 0) >= 0.5 ? 'rgba(231,199,169,0.15)' : 'rgba(232,163,161,0.15)',
+                              color: (t.monotonicity ?? t[3] ?? 0) >= 0.8 ? 'rgba(191,220,205,0.9)' : (t.monotonicity ?? t[3] ?? 0) >= 0.5 ? 'rgba(231,199,169,0.9)' : 'rgba(232,163,161,0.9)',
+                            }}>
+                              {(t.monotonicity ?? t[3] ?? 0).toFixed(2)}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div style={{
+                  padding: '24px', textAlign: 'center',
+                  color: 'rgba(217,225,235,0.35)', fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)',
+                }}>
+                  Click "Run FSEOF" to scan for overexpression targets.
+                </div>
+              )}
+            </ScientificFigureFrame>
+          </div>
+
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <ScientificFigureFrame
+              eyebrow="OptKnock — Bi-level Knockout Optimization"
+              title="Knockout Strategies"
+              caption="OptKnock uses bi-level optimization (Burgard et al. 2003) to find gene knockout sets that couple growth to product formation. The inner problem maximizes biomass; the outer problem maximizes product flux under the identified knockouts."
+              legend={[
+                { label: 'Max Knockouts', value: '3', accent: THEME.CORAL },
+                { label: 'Model', value: loadedReactions ? `${loadedReactions.length} rxns` : 'iJO1366 subset', accent: THEME.SKY },
+              ]}
+            >
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+                <button
+                  onClick={handleRunOptKnock}
+                  disabled={strainDesignLoading}
+                  className="nb-tool-toggle nb-tool-toggle--active"
+                  style={{
+                    padding: '6px 14px',
+                    borderRadius: 'var(--nb-radius-sm)',
+                    background: strainDesignLoading ? 'rgba(255,255,255,0.04)' : 'rgba(232,163,161,0.14)',
+                    borderColor: strainDesignLoading ? 'rgba(255,255,255,0.08)' : 'rgba(232,163,161,0.3)',
+                    color: strainDesignLoading ? 'rgba(255,255,255,0.35)' : 'rgba(232,163,161,0.9)',
+                    fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)',
+                    cursor: strainDesignLoading ? 'wait' : 'pointer',
+                  }}
+                >
+                  {strainDesignLoading ? 'Running...' : 'Run OptKnock'}
+                </button>
+              </div>
+
+              {optknockResult ? (
+                <div style={{ overflow: 'auto' }}>
+                  {optknockResult.wildType && (
+                    <div style={{
+                      padding: '8px 12px', marginBottom: '12px',
+                      background: 'rgba(232,163,161,0.08)',
+                      border: '1px solid rgba(232,163,161,0.15)',
+                      borderRadius: 'var(--nb-radius-sm)',
+                    }}>
+                      <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: 'rgba(232,163,161,0.7)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                        Wild-Type Baseline
+                      </p>
+                      <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-sm)', color: 'rgba(250,246,240,0.9)', margin: '4px 0 0' }}>
+                        Growth: {optknockResult.wildType.growthRate?.toFixed(4) ?? 'N/A'} h⁻¹ | Product Flux: {optknockResult.wildType.productFlux?.toFixed(4) ?? 'N/A'} mmol/gDW/h
+                      </p>
+                    </div>
+                  )}
+
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                        <th style={{ padding: '6px 8px', textAlign: 'left', color: 'rgba(217,225,235,0.68)', fontWeight: 500 }}>#</th>
+                        <th style={{ padding: '6px 8px', textAlign: 'left', color: 'rgba(217,225,235,0.68)', fontWeight: 500 }}>Knockout Set</th>
+                        <th style={{ padding: '6px 8px', textAlign: 'right', color: 'rgba(217,225,235,0.68)', fontWeight: 500 }}>Growth (h⁻¹)</th>
+                        <th style={{ padding: '6px 8px', textAlign: 'right', color: 'rgba(217,225,235,0.68)', fontWeight: 500 }}>Product Flux</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(optknockResult.strategies ?? optknockResult).map((s: any, i: number) => (
+                        <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                          <td style={{ padding: '5px 8px', color: 'rgba(250,246,240,0.5)' }}>{i + 1}</td>
+                          <td style={{ padding: '5px 8px' }}>
+                            {(s.knockouts ?? s[0] ?? []).map((ko: string, j: number) => (
+                              <span key={j} style={{
+                                display: 'inline-block',
+                                padding: '1px 5px',
+                                marginRight: j < (s.knockouts ?? s[0] ?? []).length - 1 ? '3px' : 0,
+                                background: 'rgba(232,163,161,0.12)',
+                                border: '1px solid rgba(232,163,161,0.2)',
+                                borderRadius: '3px',
+                                color: 'rgba(232,163,161,0.85)',
+                                fontSize: 'var(--nb-fs-xxs)',
+                              }}>
+                                {ko}
+                              </span>
+                            ))}
+                          </td>
+                          <td style={{ padding: '5px 8px', textAlign: 'right', color: 'rgba(191,220,205,0.85)' }}>{(s.growthRate ?? s[1] ?? 0).toFixed(4)}</td>
+                          <td style={{ padding: '5px 8px', textAlign: 'right', color: 'rgba(231,199,169,0.85)' }}>{(s.productFlux ?? s[2] ?? 0).toFixed(4)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div style={{
+                  padding: '24px', textAlign: 'center',
+                  color: 'rgba(217,225,235,0.35)', fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)',
+                }}>
+                  Click "Run OptKnock" to find knockout strategies that couple growth to product formation.
+                </div>
+              )}
+            </ScientificFigureFrame>
           </div>
         </div>
       </ToolTabPanel>

@@ -160,6 +160,28 @@ export function getGeneKnockoutEffect(
 }
 
 /**
+ * Apply gene knockouts to a metabolic model by evaluating GPR rules.
+ * For each reaction, if its GPR rule evaluates to false (all paths knocked out),
+ * set the reaction bounds to 0.
+ */
+export function applyGeneKnockoutsToModel<T extends { reactions: Array<{ id: string; lb: number; ub: number; gpr?: string }> }>(
+  model: T,
+  knockedOutGenes: string[],
+): T {
+  const geneSet = new Set(knockedOutGenes);
+  const modifiedReactions = model.reactions.map(rxn => {
+    if (!rxn.gpr) return rxn; // No GPR rule → can't knock out via genes
+    const gprTree = parseGPR(rxn.gpr);
+    const isActive = evaluateGPR(gprTree, geneSet);
+    if (!isActive) {
+      return { ...rxn, lb: 0, ub: 0 };
+    }
+    return rxn;
+  });
+  return { ...model, reactions: modifiedReactions };
+}
+
+/**
  * Collect all unique gene IDs mentioned in a set of GPR rules.
  */
 export function extractGeneIds(gprRules: Record<string, string>): string[] {

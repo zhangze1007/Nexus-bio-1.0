@@ -39,6 +39,8 @@ export interface LPModel {
   objective: LPVariable[];
   constraints: LPConstraint[];
   bounds?: LPBound[];
+  binaries?: string[];   // variable names that must be binary (0 or 1)
+  integers?: string[];   // variable names that must be integer
 }
 
 export interface LPSolution {
@@ -217,6 +219,22 @@ function buildLPString(model: LPModel): string {
           lines.push(` ${lbStr} <= ${escapeName(name)} <= ${ubStr}`);
         }
       }
+    }
+  }
+
+  // Binary section — variables restricted to {0, 1}
+  if (model.binaries && model.binaries.length > 0) {
+    lines.push('Binary');
+    for (const varName of model.binaries) {
+      lines.push(`  ${escapeName(varName)}`);
+    }
+  }
+
+  // General section — variables restricted to integer values
+  if (model.integers && model.integers.length > 0) {
+    lines.push('General');
+    for (const varName of model.integers) {
+      lines.push(`  ${escapeName(varName)}`);
     }
   }
 
