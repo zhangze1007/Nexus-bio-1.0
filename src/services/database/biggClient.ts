@@ -19,7 +19,7 @@ const MOCK_ECOLI_MODEL: BiGGModel = {
 export async function listBiGGModels(): Promise<FallbackResult<BiGGModel[]>> {
   return fetchWithFallback(
     async () => {
-      const res = await fetch('/api/bigg?type=models');
+      const res = await fetch('/api/bigg?type=models', { signal: AbortSignal.timeout(10000) });
       if (!res.ok) throw new Error(`BiGG returned ${res.status}`);
       const data = await res.json();
       return data.results ?? [];
@@ -32,7 +32,7 @@ export async function listBiGGModels(): Promise<FallbackResult<BiGGModel[]>> {
 export async function getBiGGModel(modelId: string): Promise<FallbackResult<BiGGModel>> {
   return fetchWithFallback(
     async () => {
-      const res = await fetch(`/api/bigg?type=model&id=${modelId}`);
+      const res = await fetch(`/api/bigg?type=model&id=${modelId}`, { signal: AbortSignal.timeout(10000) });
       if (!res.ok) throw new Error(`BiGG returned ${res.status}`);
       return res.json();
     },
