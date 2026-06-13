@@ -43,7 +43,7 @@ export async function searchKEGGPathway(
 
   return fetchWithFallback(
     async () => {
-      const res = await fetch(`/api/kegg?pathway=${encodeURIComponent(query)}`);
+      const res = await fetch(`/api/kegg?pathway=${encodeURIComponent(query)}`, { signal: AbortSignal.timeout(10000) });
       if (!res.ok) throw new Error(`KEGG returned ${res.status}`);
       const data = await res.json();
       return {
@@ -70,7 +70,7 @@ export async function getKEGGCompound(
 
   return fetchWithFallback(
     async () => {
-      const res = await fetch(`/api/kegg?compound=${compoundId}`);
+      const res = await fetch(`/api/kegg?compound=${compoundId}`, { signal: AbortSignal.timeout(10000) });
       if (!res.ok) throw new Error(`KEGG returned ${res.status}`);
       const data = await res.json();
       return {

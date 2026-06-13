@@ -29,7 +29,7 @@ export async function getBRENDAKinetics(ecNumber: string): Promise<FallbackResul
 
   return fetchWithFallback(
     async () => {
-      const res = await fetch(`/api/brenda?type=kinetics&id=${ecNumber}`);
+      const res = await fetch(`/api/brenda?type=kinetics&id=${ecNumber}`, { signal: AbortSignal.timeout(10000) });
       if (!res.ok) throw new Error(`BRENDA returned ${res.status}`);
       return res.json();
     },

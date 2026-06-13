@@ -1,4 +1,4 @@
-export { fetchWithFallback, type FallbackResult } from './fetchWithFallback';
+export { fetchWithFallback, type FallbackResult, type FallbackOptions } from './fetchWithFallback';
 export { searchKEGGPathway, getKEGGCompound, type KEGGPathwayResult, type KEGGCompoundResult } from './keggClient';
 export { listBiGGModels, getBiGGModel, type BiGGModel } from './biggClient';
 export { getBRENDAKinetics, type BRENDAKinetics } from './brendaClient';

@@ -16,6 +16,7 @@ import type {
   GeneConstruct,
   CFSParameters,
   PlateReaderDataPoint,
+  BRENDAOverrides,
 } from '../../services/CellFreeEngine';
 import { useWorkbenchStore } from '../../store/workbenchStore';
 import type { ProvenanceEntry } from '../../types/assumptions';
@@ -697,6 +698,7 @@ export default React.memo(function CellFreePage() {
   const [brendaData, setBrendaData] = useState<BRENDAKinetics | null>(null);
   const [brendaSource, setBrendaSource] = useState<'live' | 'mock'>('mock');
   const [brendaLoading, setBrendaLoading] = useState(false);
+  const [brendaApplied, setBrendaApplied] = useState(false);
 
   const handleBrendaLookup = useCallback(async () => {
     if (!brendaEcInput.trim()) return;
@@ -705,10 +707,34 @@ export default React.memo(function CellFreePage() {
       const result = await getBRENDAKinetics(brendaEcInput.trim());
       setBrendaData(result.data);
       setBrendaSource(result.source);
+      setBrendaApplied(false); // reset apply state on new lookup
     } finally {
       setBrendaLoading(false);
     }
   }, [brendaEcInput]);
+
+  const handleApplyBrenda = useCallback(() => {
+    if (!brendaData) return;
+    const km = brendaData.km.length > 0 ? brendaData.km[0].value : undefined;
+    const kcat = brendaData.kcat.length > 0 ? brendaData.kcat[0].value : undefined;
+    if (km === undefined && kcat === undefined) return;
+    setParams(prev => ({
+      ...prev,
+      ...(km !== undefined ? { brendaKm: km } : {}),
+      ...(kcat !== undefined ? { brendaKcat: kcat } : {}),
+    }));
+    setBrendaApplied(true);
+  }, [brendaData]);
+
+  const handleClearBrenda = useCallback(() => {
+    setParams(prev => {
+      const next = { ...prev };
+      delete next.brendaKm;
+      delete next.brendaKcat;
+      return next;
+    });
+    setBrendaApplied(false);
+  }, []);
 
   const { data: result, error: simError } = useMemo(() => {
     try { return { data: runFullCFSPipeline(constructs, params, userData ?? undefined), error: null as string | null }; }
@@ -763,13 +789,18 @@ export default React.memo(function CellFreePage() {
           'cellfree.no_chassis_specificity',
           'cellfree.lm_fitting_local',
           'cellfree.iviv_heuristic_unfit',
+          ...(brendaApplied ? ['cellfree.brenda_constants_applied'] : []),
         ],
         evidence: [{
           id: `cellfree-${now}`,
-          source: 'mock',
-          reference: 'MOCK_DATA: no calibrated source for the bundled cell-free parameter defaults.',
-          confidence: 'demo',
-          notes: 'Tier/code mismatch is preserved honestly; no parameter calibration or chassis-specific TXTL model is claimed.',
+          source: brendaApplied ? (brendaSource === 'live' ? 'database' : 'mock') : 'mock',
+          reference: brendaApplied
+            ? `BRENDA: Km=${params.brendaKm ?? '—'} mM, Kcat=${params.brendaKcat ?? '—'} 1/s seeded into ODE and LM fitter.`
+            : 'MOCK_DATA: no calibrated source for the bundled cell-free parameter defaults.',
+          confidence: brendaApplied ? (brendaSource === 'live' ? 'high' : 'demo') : 'demo',
+          notes: brendaApplied
+            ? 'BRENDA constants injected as initial guesses for LM optimizer and as construct kinetic overrides.'
+            : 'Tier/code mismatch is preserved honestly; no parameter calibration or chassis-specific TXTL model is claimed.',
         }],
         upstreamProvenance,
       }),
@@ -787,12 +818,15 @@ export default React.memo(function CellFreePage() {
         invitroMaxProtein,
         invivoExpression: iviv?.invivo_expression ?? null,
         confidence: iviv?.confidence ?? null,
+        brendaOverrides: sim.brendaOverrides,
       },
       updatedAt: now,
     });
   }, [
     analyzeArtifact?.id,
     analyzeArtifact?.targetProduct,
+    brendaApplied,
+    brendaSource,
     catalystPayload?.runProvenance,
     constructs,
     cethxPayload?.runProvenance,
@@ -800,11 +834,14 @@ export default React.memo(function CellFreePage() {
     invitroMaxProtein,
     iviv?.confidence,
     iviv?.invivo_expression,
+    params.brendaKcat,
+    params.brendaKm,
     params.simulationTime,
     params.temperature,
     project?.targetProduct,
     project?.title,
     setToolPayload,
+    sim.brendaOverrides,
     sim.energyDepletionTime,
     sim.isResourceLimited,
     sim.totalProteinYield,
@@ -932,6 +969,26 @@ export default React.memo(function CellFreePage() {
                 </div>
               ))}
             </div>
+            {/* BRENDA override indicator */}
+            {brendaApplied && (
+              <div style={{ marginTop: '8px' }}>
+                <SectionLabel>BRENDA Overrides</SectionLabel>
+                <div style={{ ...GLASS, borderRadius: 'var(--nb-radius-md)', padding: '10px', border: '1px solid rgba(74, 222, 128, 0.2)' }}>
+                  {params.brendaKm !== undefined && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', alignItems: 'center' }}>
+                      <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Km (BRENDA)</span>
+                      <DataSourceBadge source={brendaSource} label={`${params.brendaKm} mM`} />
+                    </div>
+                  )}
+                  {params.brendaKcat !== undefined && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Kcat (BRENDA)</span>
+                      <DataSourceBadge source={brendaSource} label={`${params.brendaKcat} 1/s`} />
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </FloatingControlRail>
 
           <div style={{ flex: 1, position: 'relative', display: 'flex', flexDirection: 'column', minHeight: 0, padding: '12px' }}>
@@ -1135,6 +1192,56 @@ export default React.memo(function CellFreePage() {
                   Search an EC number to compare BRENDA reference Km/Vmax against your fitted parameters.
                 </p>
               )}
+              {/* Apply / Clear BRENDA buttons */}
+              {brendaData && (brendaData.km.length > 0 || brendaData.kcat.length > 0) && (
+                <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+                  <button
+                    onClick={handleApplyBrenda}
+                    disabled={brendaApplied}
+                    style={{
+                      fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)',
+                      color: brendaApplied ? LABEL : VALUE,
+                      background: brendaApplied ? 'transparent' : 'rgba(74, 222, 128, 0.12)',
+                      border: `1px solid ${brendaApplied ? INPUT_BORDER : 'rgba(74, 222, 128, 0.3)'}`,
+                      borderRadius: 6, padding: '5px 10px',
+                      cursor: brendaApplied ? 'default' : 'pointer',
+                      opacity: brendaApplied ? 0.6 : 1,
+                    }}
+                  >
+                    {brendaApplied ? 'Applied' : 'Apply to Model'}
+                  </button>
+                  {brendaApplied && (
+                    <button
+                      onClick={handleClearBrenda}
+                      style={{
+                        fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)',
+                        color: LABEL, background: 'transparent',
+                        border: `1px solid ${INPUT_BORDER}`,
+                        borderRadius: 6, padding: '5px 10px', cursor: 'pointer',
+                      }}
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+              )}
+              {/* BRENDA provenance indicator */}
+              {brendaApplied && params.brendaKm !== undefined && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: 8 }}>
+                  <DataSourceBadge source={brendaSource} label="BRENDA Km" />
+                  <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE }}>
+                    {params.brendaKm} mM → K<sub>tl</sub>
+                  </span>
+                </div>
+              )}
+              {brendaApplied && params.brendaKcat !== undefined && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: 4 }}>
+                  <DataSourceBadge source={brendaSource} label="BRENDA Kcat" />
+                  <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE }}>
+                    {params.brendaKcat} 1/s → k<sub>tl</sub>
+                  </span>
+                </div>
+              )}
             </div>
             <ScientificFigureFrame
               eyebrow="Plate fitting"
@@ -1155,13 +1262,23 @@ export default React.memo(function CellFreePage() {
               <div style={{ ...GLASS, borderRadius: 'var(--nb-radius-md)', padding: '12px' }}>
                 <SectionLabel>Fitting Results</SectionLabel>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Vmax</span>
-                    <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE }}>{fit.vmax.toFixed(3)}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE }}>{fit.vmax.toFixed(3)}</span>
+                      {brendaApplied && params.brendaKcat !== undefined && (
+                        <DataSourceBadge source={brendaSource} label="BRENDA" />
+                      )}
+                    </div>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Kd</span>
-                    <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE }}>{fit.kd.toFixed(3)}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE }}>{fit.kd.toFixed(3)}</span>
+                      {brendaApplied && params.brendaKm !== undefined && (
+                        <DataSourceBadge source={brendaSource} label="BRENDA" />
+                      )}
+                    </div>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>R²</span>
@@ -1176,6 +1293,16 @@ export default React.memo(function CellFreePage() {
                     <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>[{fit.kd_ci[0].toFixed(2)}, {fit.kd_ci[1].toFixed(2)}]</span>
                   </div>
                 </div>
+                {/* BRENDA override provenance summary */}
+                {brendaApplied && (
+                  <div style={{ marginTop: 8, padding: '6px 8px', borderRadius: 'var(--nb-radius-sm)', border: '1px solid rgba(74, 222, 128, 0.2)', background: 'rgba(74, 222, 128, 0.06)' }}>
+                    <p style={{ margin: 0, fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xxs)', color: 'rgba(74, 222, 128, 0.85)', lineHeight: 1.5 }}>
+                      BRENDA constants seeded the LM optimizer initial guesses.
+                      {params.brendaKm !== undefined && ` Km=${params.brendaKm} mM → Kd.`}
+                      {params.brendaKcat !== undefined && ` Kcat=${params.brendaKcat} 1/s → Vmax.`}
+                    </p>
+                  </div>
+                )}
               </div>
             )}
           </div>

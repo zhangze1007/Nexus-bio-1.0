@@ -1,5 +1,6 @@
 import type { CommunityFBAOutput, FBAOutput } from '../data/mockFBA';
 import type { ProvenanceEntry } from '../types/assumptions';
+import type { BiGGReaction } from './database/biggClient';
 
 export type FBAObjective = 'biomass' | 'atp' | 'product';
 
@@ -107,6 +108,28 @@ export function solveAuthorityCommunityFBAWithProvenance(request: CommunityAutho
       alpha: request.alpha ?? 0.5,
       ecoli: request.ecoli,
       yeast: request.yeast,
+    },
+    signal,
+  );
+}
+
+interface DynamicModelRequest {
+  reactions: BiGGReaction[];
+  objectiveId: string;
+  glucoseUptake: number;
+  oxygenUptake: number;
+  knockouts?: string[];
+}
+
+export function solveDynamicModelFBA(request: DynamicModelRequest, signal?: AbortSignal) {
+  return requestAuthorityResponse<FBAOutput>(
+    {
+      mode: 'custom',
+      reactions: request.reactions,
+      objectiveId: request.objectiveId,
+      glucoseUptake: request.glucoseUptake,
+      oxygenUptake: request.oxygenUptake,
+      knockouts: request.knockouts ?? [],
     },
     signal,
   );

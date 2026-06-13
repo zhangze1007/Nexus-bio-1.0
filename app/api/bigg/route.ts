@@ -11,11 +11,14 @@ export async function GET(request: Request) {
     return Response.json({ error: 'Missing param: type' }, { status: 400 });
   }
 
+  const rxnId = searchParams.get('rxnId');
+
   const endpointMap: Record<string, string> = {
     models: 'models',
     model: `models/${id}`,
     reaction: `models/${id}/reactions`,
     metabolite: `models/${id}/metabolites`,
+    rxn_detail: rxnId ? `models/${id}/reactions/${rxnId}` : '',
   };
 
   const endpoint = endpointMap[type];

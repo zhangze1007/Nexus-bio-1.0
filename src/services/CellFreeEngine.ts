@@ -63,6 +63,10 @@ export interface CFSParameters {
   pepRegenerationRate: number;
   simulationTime: number;
   timeStep: number;
+  /** BRENDA-sourced Km (mM) — overrides per-construct K_tl when provided. */
+  brendaKm?: number;
+  /** BRENDA-sourced Kcat (1/s) — overrides per-construct k_tl when provided. */
+  brendaKcat?: number;
 }
 
 /** Time-series state for one gene. */
@@ -89,6 +93,16 @@ export interface ResourceTimeSeries {
   energyIndex: number[];
 }
 
+/** BRENDA provenance: which constants were sourced from BRENDA vs defaults. */
+export interface BRENDAOverrides {
+  kmApplied: boolean;
+  kcatApplied: boolean;
+  originalKtl: number[];
+  originalKtlK: number[];
+  brendaKm: number | null;
+  brendaKcat: number | null;
+}
+
 /** Full simulation result. */
 export interface CFSSimulationResult {
   genes: GeneTimeSeries[];
@@ -104,6 +118,8 @@ export interface CFSSimulationResult {
   energyDepletionTime: number;
   isResourceLimited: boolean;
   parameters: CFSParameters;
+  /** Tracks which construct parameters were overridden by BRENDA values. */
+  brendaOverrides: BRENDAOverrides | null;
 }
 
 /** Plate-reader data point. */
@@ -369,7 +385,40 @@ export function simulateCFPS(
   constructs: GeneConstruct[],
   params: CFSParameters,
 ): CFSSimulationResult {
-  const n = constructs.length;
+  // ---- Apply BRENDA overrides to construct kinetics when provided ----
+  // BRENDA Km → K_tl (ribosome half-saturation, nM)
+  // BRENDA Kcat → k_tl (translation rate, nM/min)
+  // Unit conversion: BRENDA Kcat is in 1/s; engine k_tl is nM/min.
+  // k_tl(nM/min) = kcat(1/s) × 60(s/min) × ribosomeTotal(nM) — scales to same order
+  const hasBrendaKm = params.brendaKm !== undefined && params.brendaKm > 0;
+  const hasBrendaKcat = params.brendaKcat !== undefined && params.brendaKcat > 0;
+  const originalKtl: number[] = [];
+  const originalKtlK: number[] = [];
+
+  const activeConstructs = (hasBrendaKm || hasBrendaKcat)
+    ? constructs.map((c) => {
+        originalKtl.push(c.k_tl);
+        originalKtlK.push(c.K_tl);
+        return {
+          ...c,
+          ...(hasBrendaKm ? { K_tl: params.brendaKm! * 1000 } : {}),    // mM → nM
+          ...(hasBrendaKcat ? { k_tl: params.brendaKcat! * 60 } : {}),   // 1/s → 1/min (rate per ribosome)
+        };
+      })
+    : constructs;
+
+  const brendaOverrides: BRENDAOverrides | null = (hasBrendaKm || hasBrendaKcat)
+    ? {
+        kmApplied: hasBrendaKm,
+        kcatApplied: hasBrendaKcat,
+        originalKtl,
+        originalKtlK,
+        brendaKm: params.brendaKm ?? null,
+        brendaKcat: params.brendaKcat ?? null,
+      }
+    : null;
+
+  const n = activeConstructs.length;
   const dt = params.timeStep;
   const steps = Math.ceil(params.simulationTime / dt) + 1;
   const atpInit = params.initialEnergy.atp;
@@ -388,7 +437,7 @@ export function simulateCFPS(
   // Pre-allocate recording arrays
   const timeArr: number[] = [];
   const geneRec: { mRNA: number[]; protein: number[]; tlRate: number[]; ribFrac: number[] }[] =
-    constructs.map(() => ({ mRNA: [], protein: [], tlRate: [], ribFrac: [] }));
+    activeConstructs.map(() => ({ mRNA: [], protein: [], tlRate: [], ribFrac: [] }));
   const resRec = {
     ribosomeFree: [] as number[],
     ribosomeUtil: [] as number[],
@@ -412,7 +461,7 @@ export function simulateCFPS(
     const mRNAs: number[] = [];
     for (let i = 0; i < n; i++) mRNAs.push(Math.max(0, v[2 * i]));
 
-    const rFree = solveRibosomeFree(mRNAs, constructs, params.ribosomeTotal);
+    const rFree = solveRibosomeFree(mRNAs, activeConstructs, params.ribosomeTotal);
 
     const eidx = 2 * n;
     const atp  = Math.max(0, v[eidx]);
@@ -428,9 +477,9 @@ export function simulateCFPS(
     for (let i = 0; i < n; i++) {
       const mRNA = mRNAs[i];
       const protein = Math.max(0, v[2 * i + 1]);
-      const ribFrac = rFree / (constructs[i].K_tl + rFree);
-      const tlRate = constructs[i].k_tl * mRNA * ribFrac * aaFactor * energyMod;
-      const rBound_i = mRNA * rFree / (constructs[i].K_tl + rFree);
+      const ribFrac = rFree / (activeConstructs[i].K_tl + rFree);
+      const tlRate = activeConstructs[i].k_tl * mRNA * ribFrac * aaFactor * energyMod;
+      const rBound_i = mRNA * rFree / (activeConstructs[i].K_tl + rFree);
 
       geneRec[i].mRNA.push(mRNA);
       geneRec[i].protein.push(protein);
@@ -457,12 +506,12 @@ export function simulateCFPS(
 
     // RK4 step
     if (step < steps - 1) {
-      state = rk4Step(state, dt, constructs, params, atpInit20);
+      state = rk4Step(state, dt, activeConstructs, params, atpInit20);
     }
   }
 
   // ---- Build result structures ----
-  const genes: GeneTimeSeries[] = constructs.map((c, i) => ({
+  const genes: GeneTimeSeries[] = activeConstructs.map((c, i) => ({
     geneId: c.id,
     geneName: c.name,
     time: timeArr,
@@ -485,7 +534,7 @@ export function simulateCFPS(
   };
 
   // ---- Steady-state metrics ----
-  const steadyState = constructs.map((c, i) => {
+  const steadyState = activeConstructs.map((c, i) => {
     const pArr = geneRec[i].protein;
     const maxP = Math.max(...pArr);
     const half = maxP * 0.5;
@@ -522,6 +571,7 @@ export function simulateCFPS(
     energyDepletionTime,
     isResourceLimited,
     parameters: params,
+    brendaOverrides,
   };
 }
 
@@ -534,9 +584,13 @@ export function simulateCFPS(
  * a Levenberg-Marquardt nonlinear least-squares algorithm.
  *
  * @param data - array of plate-reader data points (time, fluorescence, well, concentration)
+ * @param brendaHints - optional BRENDA-sourced initial guesses for the LM optimizer
  * @returns kinetic fit result with Vmax, Kd, confidence intervals, R², and fitted curve
  */
-export function fitPlateReaderKinetics(data: PlateReaderDataPoint[]): KineticFitResult {
+export function fitPlateReaderKinetics(
+  data: PlateReaderDataPoint[],
+  brendaHints?: { km?: number; kcat?: number },
+): KineticFitResult {
   // Group data by concentration
   const concMap = new Map<number, PlateReaderDataPoint[]>();
   for (const dp of data) {
@@ -576,8 +630,13 @@ export function fitPlateReaderKinetics(data: PlateReaderDataPoint[]): KineticFit
   const mmModel = (s: number, vmax: number, kd: number) => vmax * s / (kd + s);
 
   // ---- Levenberg-Marquardt ----
-  let vmax = Math.max(...rates) * 1.2;
-  let kd = concentrations[Math.floor(nPts / 2)] || 10;
+  // Use BRENDA-sourced initial guesses when available for better convergence
+  let vmax = brendaHints?.kcat
+    ? brendaHints.kcat * 60  // 1/s → 1/min (unit conversion for the fitter)
+    : Math.max(...rates) * 1.2;
+  let kd = brendaHints?.km
+    ? brendaHints.km          // already in mM, use directly
+    : concentrations[Math.floor(nPts / 2)] || 10;
   let lambda = 0.01;
 
   for (let iter = 0; iter < 200; iter++) {
@@ -1105,12 +1164,16 @@ export function runFullCFSPipeline(
   const simulation = simulateCFPS(genes, simParams);
 
   // 2. Plate-reader kinetic fitting (user data if provided, otherwise mock)
+  // Pass BRENDA hints to the fitter as initial guesses when available
+  const brendaHints = (simParams.brendaKm || simParams.brendaKcat)
+    ? { km: simParams.brendaKm, kcat: simParams.brendaKcat }
+    : undefined;
   const plateData = userPlateData && userPlateData.length > 0
     ? userPlateData
     : generateMockPlateReaderData();
   let fitting: KineticFitResult | null = null;
   try {
-    fitting = fitPlateReaderKinetics(plateData);
+    fitting = fitPlateReaderKinetics(plateData, brendaHints);
   } catch {
     fitting = null;
     console.debug('[CellFreeEngine] Plate reader kinetics fitting failed, continuing without fit');

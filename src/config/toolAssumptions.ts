@@ -71,6 +71,14 @@ export const TOOL_ASSUMPTIONS: Record<string, ToolAssumption[]> = {
         'PATHD queries KEGG for real metabolic pathways when available. Falls back to demo data.',
       severity: 'info',
     },
+    {
+      id: 'pathd.database_fallback_boundary',
+      toolId: 'pathd',
+      category: 'data',
+      statement:
+        'When database is unavailable, this tool falls back to demo data. Results are scientifically valid only when sourced from live database (indicated by DataSourceBadge).',
+      severity: 'warning',
+    },
   ],
 
   'metabolic-eng': [
@@ -143,6 +151,14 @@ export const TOOL_ASSUMPTIONS: Record<string, ToolAssumption[]> = {
       statement:
         'FBAsim loads real E. coli models from BiGG when available. Falls back to demo model.',
       severity: 'info',
+    },
+    {
+      id: 'fbasim.database_fallback_boundary',
+      toolId: 'fbasim',
+      category: 'data',
+      statement:
+        'When database is unavailable, this tool falls back to demo data. Results are scientifically valid only when sourced from live database (indicated by DataSourceBadge).',
+      severity: 'warning',
     },
   ],
 
@@ -333,6 +349,14 @@ export const TOOL_ASSUMPTIONS: Record<string, ToolAssumption[]> = {
       statement:
         'CatDes queries BRENDA for real enzyme kinetics. Falls back to demo values.',
       severity: 'info',
+    },
+    {
+      id: 'catdes.database_fallback_boundary',
+      toolId: 'catdes',
+      category: 'data',
+      statement:
+        'When database is unavailable, this tool falls back to demo data. Results are scientifically valid only when sourced from live database (indicated by DataSourceBadge).',
+      severity: 'warning',
     },
   ],
 
@@ -530,6 +554,14 @@ export const TOOL_ASSUMPTIONS: Record<string, ToolAssumption[]> = {
       statement:
         'CellFree queries BRENDA for real Km/Kcat reference values when available.',
       severity: 'info',
+    },
+    {
+      id: 'cellfree.database_fallback_boundary',
+      toolId: 'cellfree',
+      category: 'data',
+      statement:
+        'When database is unavailable, this tool falls back to demo data. Results are scientifically valid only when sourced from live database (indicated by DataSourceBadge).',
+      severity: 'warning',
     },
   ],
 

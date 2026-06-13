@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { solveAuthorityCommunityFBA, solveAuthorityFBA, buildAuthorityFBAModel, solveExpandedFBA, type CommunityFBARequest, type FBAObjective, type FBASpecies } from '../../../src/server/fbaEngine';
+import { solveAuthorityCommunityFBA, solveAuthorityFBA, buildAuthorityFBAModel, solveExpandedFBA, solveDynamicFBA, type CommunityFBARequest, type FBAObjective, type FBASpecies, type DynamicReaction } from '../../../src/server/fbaEngine';
 import { solveLP } from '../../../src/server/highsSolver';
 import { runFVA } from '../../../src/server/fbaFVA';
 import { runPFBA } from '../../../src/server/fbaPFBA';
@@ -101,6 +101,44 @@ export async function POST(request: Request) {
         }],
       });
       return NextResponse.json({ ok: true, mode: 'community', result, provenance: provenanceEntry }, { headers: getCorsHeaders(request) });
+    }
+
+    // ── Custom (BiGG model) FBA ─────────────────────────────────────
+    if (input.mode === 'custom') {
+      const reactions = input.reactions as DynamicReaction[] | undefined;
+      const objectiveId = (input.objectiveId as string) || 'BIOMASS';
+      if (!Array.isArray(reactions) || reactions.length === 0) {
+        return NextResponse.json(
+          { ok: false, error: 'Custom mode requires a non-empty "reactions" array', requestId },
+          { status: 400, headers: getCorsHeaders(request) },
+        );
+      }
+      const result = await solveDynamicFBA(
+        reactions,
+        objectiveId,
+        {
+          glucoseUptake: asNumber(input.glucoseUptake, 10),
+          oxygenUptake: asNumber(input.oxygenUptake, 12),
+          knockouts: asKnockouts(input.knockouts),
+        },
+      );
+      const provenanceEntry = createProvenanceEntry({
+        toolId: 'fbasim-custom',
+        outputAssumptions: [
+          'fbasim-custom.steady_state',
+          'fbasim-custom.biomass_objective',
+          'fbasim-custom.no_regulation',
+          'fbasim-custom.simplex_real',
+          'fbasim-custom.bigg_model_stoichiometry',
+        ],
+        evidence: [{
+          id: `fba-custom-${Date.now()}`,
+          source: 'computation',
+          reference: `Dynamic FBA on BiGG model: ${reactions.length} reactions, objective=${objectiveId}`,
+          confidence: 'high',
+        }],
+      });
+      return NextResponse.json({ ok: true, mode: 'custom', result, provenance: provenanceEntry }, { headers: getCorsHeaders(request) });
     }
 
     const species = asSpecies(input.species);

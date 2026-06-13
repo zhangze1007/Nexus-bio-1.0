@@ -1,6 +1,7 @@
 import { solveLP, type LPModel } from './highsSolver';
 import { SHARED_METABOLITES, type CommunityFBAOutput, type FBAOutput } from '../data/mockFBA';
 import { IJO1366_REACTIONS, IJO1366_METABOLITES, IJO1366_STATS } from '../data/iJO1366Subset';
+import type { BiGGReaction } from '../services/database/biggClient';
 
 export type FBAObjective = 'biomass' | 'atp' | 'product';
 export type FBASpecies = 'ecoli' | 'yeast';
@@ -471,5 +472,118 @@ export async function solveExpandedFBA(request: ExpandedFBARequest): Promise<Exp
     feasible: result.status === 'optimal' && result.objectiveValue > 1e-6,
     stats: IJO1366_STATS,
     subsystemFluxSums,
+  };
+}
+
+// ── Dynamic FBA: solve from user-supplied reaction data (BiGG models) ──
+
+export type DynamicReaction = BiGGReaction;
+
+export interface DynamicFBAOptions {
+  glucoseUptake?: number;
+  oxygenUptake?: number;
+  knockouts?: string[];
+}
+
+function findExchangeReaction(reactions: DynamicReaction[], metaboliteSuffix: string): DynamicReaction | undefined {
+  return reactions.find(r => r.id.startsWith('EX_') && r.id.includes(metaboliteSuffix));
+}
+
+function findMetaboliteConstraint(metId: string): string {
+  return `${metId}_balance`;
+}
+
+export async function solveDynamicFBA(
+  reactions: DynamicReaction[],
+  objectiveId: string,
+  options: DynamicFBAOptions = {},
+): Promise<FBAOutput> {
+  const knockoutSet = new Set(options.knockouts ?? []);
+  const glucoseUptake = options.glucoseUptake ?? 10;
+  const oxygenUptake = options.oxygenUptake ?? 12;
+
+  const allMetIds = new Set<string>();
+  for (const r of reactions) {
+    for (const metId of Object.keys(r.stoichiometry)) {
+      allMetIds.add(metId);
+    }
+  }
+
+  const objective = [{ name: objectiveId, coef: 1 }];
+
+  const constraints = Array.from(allMetIds).map(metId => ({
+    name: `${metId}_balance`,
+    vars: reactions
+      .filter(r => r.stoichiometry[metId] !== undefined)
+      .map(r => ({ name: r.id, coef: r.stoichiometry[metId] })),
+    lb: 0,
+    ub: 0,
+  }));
+
+  const bounds = reactions.map(r => {
+    let lb = r.lb;
+    if (r.id.startsWith('EX_')) {
+      const isGlucose = r.id.includes('glc') || r.id.includes('glu');
+      const isOxygen = r.id.includes('o2') || r.id.includes('O2');
+      if (isGlucose) lb = -Math.abs(glucoseUptake);
+      if (isOxygen) lb = -Math.abs(oxygenUptake);
+    }
+    return {
+      name: r.id,
+      lb,
+      ub: knockoutSet.has(r.id) ? 0 : r.ub,
+    };
+  });
+
+  const model: LPModel = {
+    name: 'fba_dynamic',
+    sense: 'maximize',
+    objective,
+    constraints,
+    bounds,
+  };
+
+  const result = await solveLP(model);
+
+  const fluxes: Record<string, number> = {};
+  for (const r of reactions) {
+    fluxes[r.id] = round(result.primals[r.id] ?? 0);
+  }
+
+  const glcRxn = findExchangeReaction(reactions, 'glc');
+  const o2Rxn = findExchangeReaction(reactions, 'o2');
+  const glcConstraint = glcRxn ? findMetaboliteConstraint(
+    Object.keys(glcRxn.stoichiometry)[0]
+  ) : '';
+  const o2Constraint = o2Rxn ? findMetaboliteConstraint(
+    Object.keys(o2Rxn.stoichiometry)[0]
+  ) : '';
+
+  const glucoseShadow = glcConstraint ? (result.duals[glcConstraint] ?? 0) : 0;
+  const oxygenShadow = o2Constraint ? (result.duals[o2Constraint] ?? 0) : 0;
+
+  const glcFlux = glcRxn ? Math.abs(fluxes[glcRxn.id] ?? 0) : glucoseUptake;
+  const biomassFlux = fluxes[objectiveId] ?? 0;
+
+  // For dynamic models, ATP/NADH cannot be reliably computed without
+  // explicit metabolite-level identification (stoichiometric coefficients
+  // for ATP and NADH metabolites). Return 0 rather than heuristic guesses.
+  const atpYield = 0;
+  const carbonEfficiency = glcFlux > 1e-9 ? (biomassFlux / glcFlux) * 60 : 0;
+  const growthRate = biomassFlux;
+  const feasible = result.status === 'optimal' && result.objectiveValue > 1e-6;
+
+  return {
+    fluxes,
+    growthRate: round(growthRate),
+    atpYield: round(atpYield, 2),
+    nadhProduction: 0,
+    carbonEfficiency: round(clamp(carbonEfficiency, 0, 100), 1),
+    feasible,
+    sensitivityCoefficients: {
+      glc: round(glucoseShadow, 4),
+      o2: round(oxygenShadow, 4),
+      atp: round(glcFlux > 1e-9 ? atpYield / glcFlux : 0, 4),
+    },
   };
 }

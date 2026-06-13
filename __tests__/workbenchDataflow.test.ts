@@ -189,6 +189,7 @@ function makeCellFreePayload(overrides: Record<string, unknown> = {}) {
       invitroMaxProtein: 2.1,
       invivoExpression: 1.2,
       confidence: 0.72,
+      brendaOverrides: null,
     },
     updatedAt: Date.now(),
     ...overrides,
@@ -651,6 +652,7 @@ describe('buildDBTLDraft', () => {
         invitroMaxProtein: 2.1,
         invivoExpression: 1.2,
         confidence: 0.7,
+        brendaOverrides: null,
       },
     });
     const dyncon = makeDynConPayload({
@@ -693,6 +695,7 @@ describe('buildDBTLDraft', () => {
         invitroMaxProtein: 2.1,
         invivoExpression: 1.2,
         confidence: 0.55,
+        brendaOverrides: null,
       },
     });
     const dyncon = makeDynConPayload({

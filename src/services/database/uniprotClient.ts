@@ -25,7 +25,7 @@ export async function searchUniProt(query: string): Promise<FallbackResult<UniPr
 
   return fetchWithFallback(
     async () => {
-      const res = await fetch(`/api/uniprot?type=search&id=${encodeURIComponent(query)}`);
+      const res = await fetch(`/api/uniprot?type=search&id=${encodeURIComponent(query)}`, { signal: AbortSignal.timeout(10000) });
       if (!res.ok) throw new Error(`UniProt returned ${res.status}`);
       return res.json();
     },

@@ -66,6 +66,7 @@ export async function searchPubChemCompound(
     async () => {
       const res = await fetch(
         `/api/pubchem?name=${encodeURIComponent(name)}`,
+        { signal: AbortSignal.timeout(10000) },
       );
       if (!res.ok) throw new Error(`PubChem returned ${res.status}`);
       // The proxy returns SDF text; extract CID from the X-PubChem-CID header
@@ -77,6 +78,7 @@ export async function searchPubChemCompound(
       try {
         const propRes = await fetch(
           `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${cid}/property/MolecularFormula,MolecularWeight,IUPACName/JSON`,
+          { signal: AbortSignal.timeout(10000) },
         );
         if (propRes.ok) {
           const propData = (await propRes.json()) as {

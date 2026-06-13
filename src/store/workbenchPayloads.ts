@@ -4,6 +4,7 @@ import type { ProvenanceEntry } from '../types/assumptions';
 import type { DBTLLearnedFeedback } from '../types/dbtlFeedback';
 import type { LearnedDeltaPack } from '../types/learnedDelta';
 import type { ScSpatialDatasetMeta, ScSpatialViewMode } from '../types/scspatial';
+import type { BRENDAOverrides } from '../services/CellFreeEngine';
 
 /**
  * Validity tag attached to every workbench payload (P0.4 from REVIEW_REPORT.md).
@@ -159,6 +160,7 @@ export interface CellFreeWorkbenchPayload extends WorkbenchPayloadBase {
     invitroMaxProtein: number;
     invivoExpression: number | null;
     confidence: number | null;
+    brendaOverrides: BRENDAOverrides | null;
   };
   updatedAt: number;
 }
