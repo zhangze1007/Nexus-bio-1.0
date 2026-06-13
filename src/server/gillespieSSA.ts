@@ -18,6 +18,8 @@ export interface StochasticReaction {
   reactants: Record<string, number>;
   products: Record<string, number>;
   rate: number;
+  hillRepression?: { species: string; K: number; n: number };
+  hillActivation?: { species: string; K: number; n: number };
 }
 
 export interface StochasticModel {
@@ -119,6 +121,21 @@ export function runGillespie(
         // For higher-order, use falling factorial: n * (n-1) * ... * (n-k+1)
         for (let k = 0; k < stoich; k++) {
           propensity *= (count - k);
+        }
+      }
+
+      // Apply Hill-function modulation if specified
+      if (propensity > 0 && (rxn.hillRepression || rxn.hillActivation)) {
+        const hill = rxn.hillRepression ?? rxn.hillActivation!;
+        const x = state[hill.species] ?? 0;
+        const Kn = Math.pow(hill.K, hill.n);
+        const xn = Math.pow(x, hill.n);
+        if (rxn.hillRepression) {
+          // Repression: propensity = rate * K^n / (K^n + x^n)
+          propensity *= Kn / (Kn + xn);
+        } else {
+          // Activation: propensity = rate * x^n / (K^n + x^n)
+          propensity *= xn / (Kn + xn);
         }
       }
 

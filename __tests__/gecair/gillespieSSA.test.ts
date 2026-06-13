@@ -77,4 +77,52 @@ describe('Gillespie SSA', () => {
     expect(result.finalState['x']).toBe(result.trajectories.x[result.trajectories.x.length - 1]);
     expect(result.finalState['y']).toBe(result.trajectories.y[result.trajectories.y.length - 1]);
   });
+
+  it('Hill repression reduces transcription propensity', () => {
+    const model: StochasticModel = {
+      species: [
+        { id: 'repressor', initialCount: 100 },
+        { id: 'mRNA', initialCount: 0 },
+      ],
+      reactions: [
+        {
+          id: 'transcription',
+          reactants: {},
+          products: { mRNA: 1 },
+          rate: 10,
+          hillRepression: { species: 'repressor', K: 50, n: 2 },
+        },
+        { id: 'degradation', reactants: { mRNA: 1 }, products: {}, rate: 0.1 },
+      ],
+    };
+    const result = runGillespie(model, { maxTime: 1000, seed: 42 });
+    const mean = result.trajectories.mRNA.reduce((a, b) => a + b, 0) / result.trajectories.mRNA.length;
+    // With repressor at 100, K=50, n=2: propensity = 10 * 50²/(50²+100²) = 10 * 2500/12500 = 2
+    // Steady state mean = 2/0.1 = 20
+    expect(mean).toBeLessThan(30);
+  });
+
+  it('Hill activation increases transcription propensity', () => {
+    const model: StochasticModel = {
+      species: [
+        { id: 'activator', initialCount: 100 },
+        { id: 'mRNA', initialCount: 0 },
+      ],
+      reactions: [
+        {
+          id: 'transcription',
+          reactants: {},
+          products: { mRNA: 1 },
+          rate: 10,
+          hillActivation: { species: 'activator', K: 50, n: 2 },
+        },
+        { id: 'degradation', reactants: { mRNA: 1 }, products: {}, rate: 0.1 },
+      ],
+    };
+    const result = runGillespie(model, { maxTime: 1000, seed: 42 });
+    const mean = result.trajectories.mRNA.reduce((a, b) => a + b, 0) / result.trajectories.mRNA.length;
+    // With activator at 100, K=50, n=2: propensity = 10 * 100²/(50²+100²) = 10 * 10000/12500 = 8
+    // Steady state mean = 8/0.1 = 80
+    expect(mean).toBeGreaterThan(50);
+  });
 });
