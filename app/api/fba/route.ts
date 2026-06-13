@@ -32,8 +32,8 @@ function asKnockouts(value: unknown) {
   return value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0);
 }
 
-function asAction(value: unknown): 'fba' | 'fva' | 'pfba' | 'knockout' {
-  if (value === 'fva' || value === 'pfba' || value === 'knockout') return value;
+function asAction(value: unknown): 'fba' | 'fva' | 'pfba' | 'knockout' | 'fseof' {
+  if (value === 'fva' || value === 'pfba' || value === 'knockout' || value === 'fseof') return value;
   return 'fba';
 }
 
@@ -241,6 +241,35 @@ export async function POST(request: Request) {
         }],
       });
       return NextResponse.json({ ok: true, action: 'knockout', genes, knockedOutReactions: geneKnockouts, result, provenance: provenanceEntry }, { headers: getCorsHeaders(request) });
+    }
+
+    // ── FSEOF (Flux Scanning based on Enforced Objective Flux) ─────
+    if (action === 'fseof') {
+      const { runFSEOF } = await import('../../../src/server/fbaFSEOF');
+      const fseofResult = runFSEOF({
+        reactions: (input.reactions as import('../../../src/server/fbaFSEOF').FSEOFReaction[]) ?? [],
+        objectiveId: (input.objectiveId as string) ?? 'BIOMASS',
+        productReactionId: (input.productReactionId as string) ?? 'PRODUCT',
+      }, {
+        numSteps: asNumber(input.numSteps, 10),
+        reductionFactor: asNumber(input.reductionFactor, 0.5),
+      });
+      const provenanceEntry = createProvenanceEntry({
+        toolId: 'fbasim-fseof',
+        outputAssumptions: [
+          'fbasim-fseof.steady_state',
+          'fbasim-fseof.enforced_objective_flux',
+          'fbasim-fseof.no_regulation',
+          'fbasim-fseof.simplex_real',
+        ],
+        evidence: [{
+          id: `fseof-${Date.now()}`,
+          source: 'computation',
+          reference: 'FSEOF (Choi et al. 2010, BMC Bioinformatics 11:616) — Flux Scanning based on Enforced Objective Flux',
+          confidence: 'high',
+        }],
+      });
+      return NextResponse.json({ ok: true, action: 'fseof', result: fseofResult, provenance: provenanceEntry }, { headers: getCorsHeaders(request) });
     }
 
     // ── Standard FBA (default) ──────────────────────────────────────

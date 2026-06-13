@@ -134,3 +134,25 @@ export function solveDynamicModelFBA(request: DynamicModelRequest, signal?: Abor
     signal,
   );
 }
+
+interface FSEOFRequest {
+  reactions: Array<{ id: string; lb: number; ub: number; stoichiometry: Record<string, number> }>;
+  objectiveId: string;
+  productReactionId: string;
+  numSteps?: number;
+  reductionFactor?: number;
+}
+
+export function solveFSEOF(request: FSEOFRequest, signal?: AbortSignal) {
+  return requestAuthorityResponse<unknown>(
+    {
+      action: 'fseof',
+      reactions: request.reactions,
+      objectiveId: request.objectiveId,
+      productReactionId: request.productReactionId,
+      numSteps: request.numSteps,
+      reductionFactor: request.reductionFactor,
+    },
+    signal,
+  );
+}
