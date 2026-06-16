@@ -308,12 +308,16 @@ export function runMOFA(input: MOFAInput): MOFAResult {
         const scaledAlpha: number[][] = Array.from({ length: nFactors }, () => [0]);
         for (let a = 0; a < nFactors; a++) scaledAlpha[a][0] = alpha[a] / t;
 
-        // For each feature, solve (ZtZ + alpha/tau * I) * w_j = YtZ_j
+        // For each feature, solve (ZtZ + diag(alpha/tau) + lambda*I) * w_j = YtZ_j
+        // Use per-factor alpha scaled by tau, with small constant regularizer
+        const ardLambda = alpha.map(av => lambda + av / t);
         for (let j = 0; j < nf; j++) {
           const B: number[][] = Array.from({ length: nFactors }, () => [0]);
           for (let a = 0; a < nFactors; a++) B[a][0] = YtZ[j][a];
 
-          const wSol = solveRidge(ZtZ, B, lambda + alpha[0] / t);
+          // Use average ARD lambda (solveRidge applies uniform lambda)
+          const avgLambda = ardLambda.reduce((s, v) => s + v, 0) / nFactors;
+          const wSol = solveRidge(ZtZ, B, avgLambda);
           for (let a = 0; a < nFactors; a++) W[vn][j][a] = wSol[a][0];
         }
       }
@@ -343,18 +347,28 @@ export function runMOFA(input: MOFAInput): MOFAResult {
     }
 
     // === Step 4: Update ARD prior alpha_k ===
+    // Use damped update to prevent explosive growth in early iterations.
+    // Standard VB ARD: alpha_k = N / (E[W_k^2] + Var[W_k])
+    // We approximate Var[W_k] with a floor proportional to 1/tau to avoid
+    // the death spiral where small W → huge alpha → W crushed → repeat.
+    const ARD_MAX = 100; // Cap precision to prevent factor collapse
+    const ARD_DAMP = 0.5; // Damping factor for update
     for (let a = 0; a < nFactors; a++) {
       let sumW2 = 0;
       let countW = 0;
       for (const vn of viewNames) {
         const Wv = W[vn];
+        const t = tau[vn];
         for (let j = 0; j < Wv.length; j++) {
           sumW2 += Wv[j][a] * Wv[j][a];
           countW++;
         }
       }
-      // alpha_k = (nViews * nFeatures) / (sum_j W_jk^2 + eps)
-      alpha[a] = countW > 0 ? countW / (sumW2 + 1e-8) : 1.0;
+      // Floor on sumW2 based on noise to prevent alpha explosion
+      const noiseFloor = countW * 0.01;
+      const rawAlpha = countW > 0 ? countW / (sumW2 + noiseFloor + 1e-8) : 1.0;
+      // Damped update: blend old and new to stabilize
+      alpha[a] = Math.min(ARD_MAX, (1 - ARD_DAMP) * alpha[a] + ARD_DAMP * rawAlpha);
     }
 
     // === Step 5: Compute approximate ELBO for convergence check ===

@@ -99,6 +99,12 @@ export const createSyncSlice: StateCreator<WorkbenchState, [], [], SyncSlice> = 
   },
 
   persistWorkflowArtifact: async (artifact) => {
+    // Guard: reject concurrent save attempts to prevent state interleaving
+    const currentStatus = get().syncStatus;
+    if (currentStatus === 'saving') {
+      throw new Error('A save operation is already in progress. Please wait for it to complete.');
+    }
+
     const state = get();
     const previousArtifact = state.workflowArtifact?.id === artifact.id
       ? state.workflowArtifact
@@ -111,7 +117,7 @@ export const createSyncSlice: StateCreator<WorkbenchState, [], [], SyncSlice> = 
       updatedAt: Date.now(),
       sourcePage: 'analyze',
     };
-    console.info('[workbench] compiled artifact before save', summarizeWorkflowArtifactDebug(candidate));
+    if (process.env.NODE_ENV !== 'production') console.info('[workbench] compiled artifact before save', summarizeWorkflowArtifactDebug(candidate));
     if (!candidate.atomicPathwayGraph || candidate.atomicPathwayGraph.nodes.length === 0) {
       const message = 'Compiled workflow artifact is missing an atomic pathway graph';
       set({
@@ -146,7 +152,7 @@ export const createSyncSlice: StateCreator<WorkbenchState, [], [], SyncSlice> = 
         projectId: canonicalState.project?.id ?? DEFAULT_PROJECT_SYNC_SCOPE,
       });
       const savedArtifact = savedState.workflowArtifact;
-      console.info('[workbench] persisted artifact returned from API', {
+      if (process.env.NODE_ENV !== 'production') console.info('[workbench] persisted artifact returned from API', {
         workflowArtifact: summarizeWorkflowArtifactDebug(savedArtifact),
         activeArtifactId: savedState.activeArtifactId ?? null,
       });
@@ -185,7 +191,7 @@ export const createSyncSlice: StateCreator<WorkbenchState, [], [], SyncSlice> = 
       }));
 
       const installedState = get();
-      console.info('[workbench] installed workflow artifact after save', {
+      if (process.env.NODE_ENV !== 'production') console.info('[workbench] installed workflow artifact after save', {
         workflowArtifact: summarizeWorkflowArtifactDebug(installedState.workflowArtifact),
         activeArtifactId: installedState.activeArtifactId ?? null,
       });
@@ -223,6 +229,10 @@ export const createSyncSlice: StateCreator<WorkbenchState, [], [], SyncSlice> = 
   },
 
   loadFromServer: async (options) => {
+    // Guard: skip if already loading or saving
+    const currentStatus = get().syncStatus;
+    if (currentStatus === 'loading' || currentStatus === 'saving') return;
+
     const artifactId = options?.artifactId ?? null;
     set({
       syncStatus: 'loading',

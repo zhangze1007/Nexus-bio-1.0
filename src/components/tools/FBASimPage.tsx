@@ -23,6 +23,36 @@ import { solveAuthorityCommunityFBAWithProvenance, solveAuthorityFBAWithProvenan
 import { SCI_PALETTE, SCI_PASTEL } from '../charts/chartTheme';
 import ScientificFigureFrame from './shared/ScientificFigureFrame';
 import WorkbenchRangeSlider from './shared/WorkbenchRangeSlider';
+
+// ── Strain Design Types ─────────────────────────────────────────────────
+interface FSEOFBasalState {
+  growthRate?: number;
+  productFlux?: number;
+}
+
+interface FSEOFReactionData {
+  reactionId: string;
+  fluxAtMin: number;
+  fluxAtMax: number;
+  monotonicity: number;
+}
+
+interface FSEOFResultType {
+  basalState?: FSEOFBasalState;
+  wildType?: FSEOFBasalState;
+  targets: FSEOFReactionData[];
+}
+
+interface OptKnockKnockout {
+  knockouts: string[];
+  growthRate: number;
+  productFlux: number;
+}
+
+interface OptKnockResultType {
+  wildType?: FSEOFBasalState;
+  strategies: OptKnockKnockout[];
+}
 import ToolShell from './shared/ToolShell';
 import ToolTabPanel from './shared/ToolTabPanel';
 import FloatingControlRail from './shared/FloatingControlRail';
@@ -90,8 +120,8 @@ export default React.memo(function FBASimPage() {
   const [communityLoading, setCommunityLoading] = useState(true);
 
   // Strain Design state (FSEOF + OptKnock)
-  const [fseofResult, setFseofResult] = useState<any>(null);
-  const [optknockResult, setOptknockResult] = useState<any>(null);
+  const [fseofResult, setFseofResult] = useState<FSEOFResultType | null>(null);
+  const [optknockResult, setOptknockResult] = useState<OptKnockResultType | null>(null);
   const [strainDesignLoading, setStrainDesignLoading] = useState(false);
 
   const recommendedSeed = useMemo(
@@ -363,7 +393,7 @@ export default React.memo(function FBASimPage() {
         objectiveId: loadedObjectiveId || 'BIOMASS',
         productReactionId: 'PRODUCT',
       });
-      setFseofResult(result.result);
+      setFseofResult(result.result as FSEOFResultType);
     } finally {
       setStrainDesignLoading(false);
     }
@@ -379,7 +409,7 @@ export default React.memo(function FBASimPage() {
         productReactionId: 'PRODUCT',
         maxKnockouts: 3,
       });
-      setOptknockResult(result.result);
+      setOptknockResult(result.result as OptKnockResultType);
     } finally {
       setStrainDesignLoading(false);
     }
@@ -886,20 +916,20 @@ export default React.memo(function FBASimPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {(fseofResult.targets ?? fseofResult).map((t: any, i: number) => (
+                      {(fseofResult.targets ?? []).map((t, i) => (
                         <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                          <td style={{ padding: '5px 8px', color: 'rgba(250,246,240,0.85)' }}>{t.reactionId ?? t.id ?? t[0]}</td>
-                          <td style={{ padding: '5px 8px', textAlign: 'right', color: 'rgba(250,246,240,0.6)' }}>{(t.fluxAtMin ?? t[1] ?? 0).toFixed(3)}</td>
-                          <td style={{ padding: '5px 8px', textAlign: 'right', color: 'rgba(191,220,205,0.85)' }}>{(t.fluxAtMax ?? t[2] ?? 0).toFixed(3)}</td>
+                          <td style={{ padding: '5px 8px', color: 'rgba(250,246,240,0.85)' }}>{t.reactionId}</td>
+                          <td style={{ padding: '5px 8px', textAlign: 'right', color: 'rgba(250,246,240,0.6)' }}>{t.fluxAtMin.toFixed(3)}</td>
+                          <td style={{ padding: '5px 8px', textAlign: 'right', color: 'rgba(191,220,205,0.85)' }}>{t.fluxAtMax.toFixed(3)}</td>
                           <td style={{ padding: '5px 8px', textAlign: 'right' }}>
                             <span style={{
                               display: 'inline-block',
                               padding: '1px 6px',
                               borderRadius: '3px',
-                              background: (t.monotonicity ?? t[3] ?? 0) >= 0.8 ? 'rgba(191,220,205,0.15)' : (t.monotonicity ?? t[3] ?? 0) >= 0.5 ? 'rgba(231,199,169,0.15)' : 'rgba(232,163,161,0.15)',
-                              color: (t.monotonicity ?? t[3] ?? 0) >= 0.8 ? 'rgba(191,220,205,0.9)' : (t.monotonicity ?? t[3] ?? 0) >= 0.5 ? 'rgba(231,199,169,0.9)' : 'rgba(232,163,161,0.9)',
+                              background: t.monotonicity >= 0.8 ? 'rgba(191,220,205,0.15)' : t.monotonicity >= 0.5 ? 'rgba(231,199,169,0.15)' : 'rgba(232,163,161,0.15)',
+                              color: t.monotonicity >= 0.8 ? 'rgba(191,220,205,0.9)' : t.monotonicity >= 0.5 ? 'rgba(231,199,169,0.9)' : 'rgba(232,163,161,0.9)',
                             }}>
-                              {(t.monotonicity ?? t[3] ?? 0).toFixed(2)}
+                              {t.monotonicity.toFixed(2)}
                             </span>
                           </td>
                         </tr>
@@ -975,15 +1005,15 @@ export default React.memo(function FBASimPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {(optknockResult.strategies ?? optknockResult).map((s: any, i: number) => (
+                      {(optknockResult.strategies ?? []).map((s, i) => (
                         <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
                           <td style={{ padding: '5px 8px', color: 'rgba(250,246,240,0.5)' }}>{i + 1}</td>
                           <td style={{ padding: '5px 8px' }}>
-                            {(s.knockouts ?? s[0] ?? []).map((ko: string, j: number) => (
+                            {(s.knockouts ?? []).map((ko, j) => (
                               <span key={j} style={{
                                 display: 'inline-block',
                                 padding: '1px 5px',
-                                marginRight: j < (s.knockouts ?? s[0] ?? []).length - 1 ? '3px' : 0,
+                                marginRight: j < (s.knockouts ?? []).length - 1 ? '3px' : 0,
                                 background: 'rgba(232,163,161,0.12)',
                                 border: '1px solid rgba(232,163,161,0.2)',
                                 borderRadius: '3px',
@@ -994,8 +1024,8 @@ export default React.memo(function FBASimPage() {
                               </span>
                             ))}
                           </td>
-                          <td style={{ padding: '5px 8px', textAlign: 'right', color: 'rgba(191,220,205,0.85)' }}>{(s.growthRate ?? s[1] ?? 0).toFixed(4)}</td>
-                          <td style={{ padding: '5px 8px', textAlign: 'right', color: 'rgba(231,199,169,0.85)' }}>{(s.productFlux ?? s[2] ?? 0).toFixed(4)}</td>
+                          <td style={{ padding: '5px 8px', textAlign: 'right', color: 'rgba(191,220,205,0.85)' }}>{s.growthRate.toFixed(4)}</td>
+                          <td style={{ padding: '5px 8px', textAlign: 'right', color: 'rgba(231,199,169,0.85)' }}>{s.productFlux.toFixed(4)}</td>
                         </tr>
                       ))}
                     </tbody>

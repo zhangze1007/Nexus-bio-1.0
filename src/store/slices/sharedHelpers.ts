@@ -415,7 +415,7 @@ export async function requestCanonicalState(
     : '/api/workbench';
   const requestBody = method === 'PUT' ? { state } : undefined;
   const isCanonicalArtifactSave = method === 'PUT' && Boolean(state?.workflowArtifact);
-  if (isCanonicalArtifactSave) {
+  if (isCanonicalArtifactSave && process.env.NODE_ENV !== 'production') {
     console.info('[workbench] canonical save request payload', {
       url,
       projectId,
@@ -434,7 +434,7 @@ export async function requestCanonicalState(
     body: requestBody ? JSON.stringify(requestBody) : undefined,
   });
   const payload = await response.json().catch(() => ({}));
-  if (isCanonicalArtifactSave) {
+  if (isCanonicalArtifactSave && process.env.NODE_ENV !== 'production') {
     console.info('[workbench] canonical save response payload', payload);
   }
   if (!response.ok) {

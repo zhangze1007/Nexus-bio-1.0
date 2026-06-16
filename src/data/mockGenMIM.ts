@@ -36,6 +36,7 @@ export const CRISPRI_TARGETS: CRISPRiTarget[] = [
  * For production: integrate CHOPCHOP API (https://chopchop.cbu.uib.no/api/)
  */
 export function computeOffTargetScore(sgRNA: string): number {
+  if (!sgRNA || sgRNA.length === 0) return 0;
   const gc = (sgRNA.match(/[GC]/g) ?? []).length / sgRNA.length;
   const homopolymers = (sgRNA.match(/(.)\1{3,}/g) ?? []).length;
   const gcScore = 1 - Math.abs(gc - 0.5) * 2;

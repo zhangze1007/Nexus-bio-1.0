@@ -19,11 +19,31 @@ export async function OPTIONS(req: NextRequest) {
 export async function GET(req: NextRequest) {
   const cid = req.nextUrl.searchParams.get('cid');
   const name = req.nextUrl.searchParams.get('name');
+  const properties = req.nextUrl.searchParams.get('properties');
 
-  // ── Mode 1: fetch SDF by CID ──────────────────────────────────────
+  // ── Mode 1: fetch SDF or properties by CID ────────────────────────
   if (cid) {
     if (!/^\d+$/.test(cid)) return errorResponse('Invalid CID', 400, undefined, getCors(req));
 
+    // Mode 1b: fetch molecular properties as JSON
+    if (properties === 'true') {
+      try {
+        const propUrl = `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${cid}/property/MolecularFormula,MolecularWeight,IUPACName/JSON`;
+        const propRes = await fetch(propUrl, {
+          headers: { 'User-Agent': 'NexusBio/1.0 (contact@nexus-bio.vercel.app)' },
+        });
+        if (!propRes.ok) return errorResponse(`No properties for CID ${cid}`, 404, undefined, getCors(req));
+        const propData = await propRes.text();
+        return new NextResponse(propData, {
+          status: 200,
+          headers: { ...getCors(req), 'Content-Type': 'application/json' },
+        });
+      } catch {
+        return errorResponse(`Property fetch failed for CID ${cid}`, 502, undefined, getCors(req));
+      }
+    }
+
+    // Mode 1a: fetch SDF (default)
     const attempts = [
       `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${cid}/SDF?record_type=3d`,
       `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${cid}/SDF`,

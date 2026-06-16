@@ -29,6 +29,7 @@ export type { WorkbenchState } from './slices/types';
 
 // ── Debounced localStorage adapter to prevent UI stutter on large projects ──
 let _persistTimer: ReturnType<typeof setTimeout> | null = null;
+let _pendingPersist: { name: string; value: string } | null = null;
 const PERSIST_DEBOUNCE_MS = 500;
 
 function createDebouncedStorage() {
@@ -40,16 +41,36 @@ function createDebouncedStorage() {
       removeItem: () => {},
     }));
   }
+
+  // Flush pending writes on page unload to prevent data loss
+  if (typeof window !== 'undefined') {
+    window.addEventListener('beforeunload', () => {
+      if (_persistTimer) {
+        clearTimeout(_persistTimer);
+        _persistTimer = null;
+      }
+      if (_pendingPersist) {
+        try { localStorage.setItem(_pendingPersist.name, _pendingPersist.value); } catch { /* quota exceeded */ }
+        _pendingPersist = null;
+      }
+    });
+  }
+
   return createJSONStorage(() => ({
     getItem: (name: string) => localStorage.getItem(name),
     setItem: (name: string, value: string) => {
       if (_persistTimer) clearTimeout(_persistTimer);
+      _pendingPersist = { name, value };
       _persistTimer = setTimeout(() => {
         try { localStorage.setItem(name, value); } catch { /* quota exceeded */ }
+        _persistTimer = null;
+        _pendingPersist = null;
       }, PERSIST_DEBOUNCE_MS);
     },
     removeItem: (name: string) => {
       if (_persistTimer) clearTimeout(_persistTimer);
+      _persistTimer = null;
+      _pendingPersist = null;
       localStorage.removeItem(name);
     },
   }));

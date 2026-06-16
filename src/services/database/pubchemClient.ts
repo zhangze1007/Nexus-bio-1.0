@@ -74,10 +74,10 @@ export async function searchPubChemCompound(
       const cid = cidHeader ? parseInt(cidHeader, 10) : 0;
       if (!cid) throw new Error('No CID returned from PubChem');
 
-      // Try to fetch compound properties from PubChem REST API
+      // Fetch compound properties via the /api/pubchem proxy (never direct browser fetch)
       try {
         const propRes = await fetch(
-          `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${cid}/property/MolecularFormula,MolecularWeight,IUPACName/JSON`,
+          `/api/pubchem?cid=${cid}&properties=true`,
           { signal: AbortSignal.timeout(10000) },
         );
         if (propRes.ok) {
