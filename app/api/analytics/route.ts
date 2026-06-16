@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
 
     // Use structured logging — easy to parse with log aggregators
     // eslint-disable-next-line no-console
-    console.log(JSON.stringify(logEntry));
+    if (process.env.NODE_ENV !== 'production') console.log(JSON.stringify(logEntry));
 
     return NextResponse.json({ ok: true }, { status: 200 });
   } catch {

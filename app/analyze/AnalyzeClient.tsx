@@ -95,7 +95,7 @@ export default function AnalyzeClient() {
 
   useEffect(() => {
     if (!routeArtifactId || typeof window === 'undefined') return;
-    console.info('[analyze] final router URL', window.location.pathname + window.location.search);
+    if (process.env.NODE_ENV !== 'production') console.info('[analyze] final router URL', window.location.pathname + window.location.search);
   }, [routeArtifactId]);
 
   useEffect(() => {
@@ -183,7 +183,7 @@ export default function AnalyzeClient() {
       sourceProvider: payload.sourceProvider,
     });
 
-    console.info('[analyze] compiled artifact before save', summarizeWorkflowArtifactDebug(nextDraft));
+    if (process.env.NODE_ENV !== 'production') console.info('[analyze] compiled artifact before save', summarizeWorkflowArtifactDebug(nextDraft));
     if (!nextDraft.atomicPathwayGraph || nextDraft.atomicPathwayGraph.nodes.length === 0) {
       const message = 'Analyze compile did not produce a valid atomic pathway graph to persist';
       setPersistError(message);
@@ -201,13 +201,13 @@ export default function AnalyzeClient() {
     try {
       const savedArtifact = await persistWorkflowArtifact(nextDraft);
       const installedState = useWorkbenchStore.getState();
-      console.info('[analyze] installed workflow artifact after save', {
+      if (process.env.NODE_ENV !== 'production') console.info('[analyze] installed workflow artifact after save', {
         workflowArtifact: summarizeWorkflowArtifactDebug(installedState.workflowArtifact),
         activeArtifactId: installedState.activeArtifactId ?? null,
       });
       setPersistedArtifactId(savedArtifact.id);
       const nextAnalyzeUrl = `/analyze?artifact=${encodeURIComponent(savedArtifact.id)}`;
-      console.info('[analyze] replacing URL after save', {
+      if (process.env.NODE_ENV !== 'production') console.info('[analyze] replacing URL after save', {
         artifactId: savedArtifact.id,
         nextAnalyzeUrl,
       });
