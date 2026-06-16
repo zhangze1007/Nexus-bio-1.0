@@ -13,6 +13,7 @@ import {
 import type { ProteinEvolutionCampaign, VariantCandidate } from '../../../services/ProEvolCampaignEngine';
 import { PROEVOL_THEME, StatusPill } from './shared';
 import { THEME } from '../../../theme';
+import CanvasErrorBoundary from '../../shared/CanvasErrorBoundary';
 
 /* ── Constants ────────────────────────────────────────────────────────── */
 
@@ -47,13 +48,14 @@ interface FitnessCell {
 function buildFitnessGrid(campaign: ProteinEvolutionCampaign, metric: FitnessMetricKey): {
   cells: FitnessCell[];
   positions: number[];
+  wtFitness: number;
 } {
   const allVariants = Object.values(campaign.variantIndex);
   const sitePool = campaign.rounds[0]?.variantLibrary.candidates[0]?.mutatedPositions ?? [];
 
   // Collect all mutation positions from sitePool
   const positions = [...sitePool].sort((a, b) => a - b);
-  if (positions.length === 0) return { cells: [], positions: [] };
+  if (positions.length === 0) return { cells: [], positions: [], wtFitness: 55 };
 
   // Build WT residue map
   const wtResidueMap = new Map<number, string>();
@@ -88,6 +90,13 @@ function buildFitnessGrid(campaign: ProteinEvolutionCampaign, metric: FitnessMet
     }
   }
 
+  // Derive actual WT fitness from campaign data for the selected metric
+  const wtFitness = metric === 'composite' ? wt.score.composite
+    : metric === 'activity' ? wt.predictedActivity
+    : metric === 'stability' ? wt.predictedStability
+    : metric === 'expression' ? wt.predictedExpression
+    : wt.predictedSpecificity;
+
   // Build cells
   const cells: FitnessCell[] = [];
   for (const pos of positions) {
@@ -100,20 +109,19 @@ function buildFitnessGrid(campaign: ProteinEvolutionCampaign, metric: FitnessMet
         position: pos,
         aa,
         wtResidue: wtRes,
-        fitness: data ? data.sum / data.count : (isWT ? 55 : 0),
+        fitness: data ? data.sum / data.count : (isWT ? wtFitness : 0),
         count: data?.count ?? 0,
         isWildType: isWT,
       });
     }
   }
 
-  return { cells, positions };
+  return { cells, positions, wtFitness };
 }
 
-function mutationEffect(cell: FitnessCell, fitnessRange: { min: number; max: number }): 'wt' | 'tolerated' | 'deleterious' | 'gain-of-function' {
+function mutationEffect(cell: FitnessCell, fitnessRange: { min: number; max: number }, wtFitness: number): 'wt' | 'tolerated' | 'deleterious' | 'gain-of-function' {
   if (cell.isWildType) return 'wt';
   if (cell.count === 0) return 'tolerated';
-  const wtFitness = 55; // baseline WT fitness
   const threshold = (fitnessRange.max - fitnessRange.min) * 0.15;
   if (cell.fitness > wtFitness + threshold) return 'gain-of-function';
   if (cell.fitness < wtFitness - threshold) return 'deleterious';
@@ -148,13 +156,15 @@ function viridisColor(t: number): [number, number, number] {
 
 /* ── DMS Heatmap (2D canvas) ──────────────────────────────────────────── */
 
-function DMSHeatmap({ cells, positions, metric, selectedVariantId, campaign, onSelectVariant }: {
+function DMSHeatmap({ cells, positions, metric, wtFitness, selectedVariantId, campaign, onSelectVariant, peakThreshold = 0.7 }: {
   cells: FitnessCell[];
   positions: number[];
   metric: FitnessMetricKey;
+  wtFitness: number;
   selectedVariantId: string | null;
   campaign: ProteinEvolutionCampaign;
   onSelectVariant: (id: string) => void;
+  peakThreshold?: number;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [hovered, setHovered] = useState<FitnessCell | null>(null);
@@ -338,6 +348,10 @@ function DMSHeatmap({ cells, positions, metric, selectedVariantId, campaign, onS
     }
 
     // ── Peak markers ────────────────────────────────────────────────────
+    // Build O(1) lookup map for cells
+    const cellLookup = new Map<string, FitnessCell>();
+    for (const c of cells) cellLookup.set(`${c.position}-${c.aa}`, c);
+
     // Find local maxima (cells higher than all 8 neighbors)
     const peakCells: FitnessCell[] = [];
     for (let yi = 1; yi < gridH - 1; yi++) {
@@ -357,8 +371,8 @@ function DMSHeatmap({ cells, positions, metric, selectedVariantId, campaign, onS
           }
         }
 
-        if (isPeak && v > 0.7) { // Only mark high-fitness peaks
-          const cell = cells.find(c => c.position === positions[xi] && c.aa === AMINO_ACIDS[yi]);
+        if (isPeak && v > peakThreshold) {
+          const cell = cellLookup.get(`${positions[xi]}-${AMINO_ACIDS[yi]}`);
           if (cell) peakCells.push(cell);
         }
       }
@@ -366,8 +380,9 @@ function DMSHeatmap({ cells, positions, metric, selectedVariantId, campaign, onS
 
     // Draw peak markers
     for (const peak of peakCells) {
-      const xi = posIndex.get(peak.position)!;
-      const yi = aaIndex.get(peak.aa)!;
+      const xi = posIndex.get(peak.position);
+      const yi = aaIndex.get(peak.aa);
+      if (xi === undefined || yi === undefined) continue;
       const cx = labelW + xi * cellW + cellW / 2;
       const cy = labelH + yi * cellH + cellH / 2;
 
@@ -393,6 +408,16 @@ function DMSHeatmap({ cells, positions, metric, selectedVariantId, campaign, onS
       ctx.textAlign = 'center';
       ctx.fillText(`★${peak.fitness.toFixed(0)}`, cx, cy - 8);
     }
+
+    // Cleanup function to prevent memory leaks
+    return () => {
+      if (canvas) {
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+      }
+    };
   }, [cells, positions, fitnessRange, posIndex, aaIndex]);
 
   // Handle hover
@@ -434,8 +459,8 @@ function DMSHeatmap({ cells, positions, metric, selectedVariantId, campaign, onS
           display: 'grid', gap: '2px',
         }}>
           <span>{hovered.wtResidue}{hovered.position}{hovered.aa === hovered.wtResidue ? '(WT)' : hovered.aa}</span>
-          <span style={{ color: effectColor(mutationEffect(hovered, fitnessRange)) }}>
-            {effectLabel(mutationEffect(hovered, fitnessRange))} · predicted {metric}: {hovered.count > 0 ? hovered.fitness.toFixed(1) : '—'} · n={hovered.count}
+          <span style={{ color: effectColor(mutationEffect(hovered, fitnessRange, wtFitness)) }}>
+            {effectLabel(mutationEffect(hovered, fitnessRange, wtFitness))} · predicted {metric}: {hovered.count > 0 ? hovered.fitness.toFixed(1) : '—'} · n={hovered.count}
           </span>
         </div>
       )}
@@ -523,24 +548,26 @@ function FitnessSurfaceCanvas({ cells, positions, metric }: {
   metric: FitnessMetricKey;
 }) {
   return (
-    <Canvas
-      orthographic
-      camera={{ position: [2, 2, 2.5], zoom: 100 }}
-      dpr={[1, 1.5]}
-      gl={{ alpha: true, antialias: true }}
-      style={{ width: '100%', height: '320px', borderRadius: 'var(--nb-radius-sm)', cursor: 'grab' }}
-    >
-      <FitnessSurface cells={cells} positions={positions} metric={metric} />
-      <OrbitControls
-        enablePan={false}
-        enableZoom={true}
-        minZoom={50}
-        maxZoom={250}
-        rotateSpeed={0.5}
-      />
-      <ambientLight intensity={0.4} />
-      <directionalLight position={[3, 2, 4]} intensity={0.6} />
-    </Canvas>
+    <CanvasErrorBoundary>
+      <Canvas
+        orthographic
+        camera={{ position: [2, 2, 2.5], zoom: 100 }}
+        dpr={[1, 1.5]}
+        gl={{ alpha: true, antialias: true }}
+        style={{ width: '100%', height: '320px', borderRadius: 'var(--nb-radius-sm)', cursor: 'grab' }}
+      >
+        <FitnessSurface cells={cells} positions={positions} metric={metric} />
+        <OrbitControls
+          enablePan={false}
+          enableZoom={true}
+          minZoom={50}
+          maxZoom={250}
+          rotateSpeed={0.5}
+        />
+        <ambientLight intensity={0.4} />
+        <directionalLight position={[3, 2, 4]} intensity={0.6} />
+      </Canvas>
+    </CanvasErrorBoundary>
   );
 }
 
@@ -612,7 +639,7 @@ export default function ActivityLandscapePanel({
   const [metric, setMetric] = useState<FitnessMetricKey>('activity');
   const [viewMode, setViewMode] = useState<'heatmap' | '3d'>('heatmap');
 
-  const { cells, positions } = useMemo(() => buildFitnessGrid(campaign, metric), [campaign, metric]);
+  const { cells, positions, wtFitness } = useMemo(() => buildFitnessGrid(campaign, metric), [campaign, metric]);
 
   return (
     <div style={{
@@ -677,6 +704,7 @@ export default function ActivityLandscapePanel({
             cells={cells}
             positions={positions}
             metric={metric}
+            wtFitness={wtFitness}
             selectedVariantId={selectedVariantId}
             campaign={campaign}
             onSelectVariant={onSelectVariant}

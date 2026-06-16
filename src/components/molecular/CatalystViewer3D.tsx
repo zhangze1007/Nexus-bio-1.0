@@ -136,23 +136,29 @@ export default function CatalystViewer3D({
         // ── Apply base enzyme style ──
         viewer.setStyle({}, {});
         if (renderMode === 'surface') {
-          viewer.setStyle({}, { cartoon: { color: shouldUseAF ? '#EAEAEA' : 'spectrum', thickness: 0.35 } });
-          viewer.addSurface(window.$3Dmol.SurfaceType.VDW, { opacity: 0.55, color: shouldUseAF ? '#F0FDFA' : '#FFFFFF' });
-        } else if (renderMode === 'confidence' && shouldUseAF) {
+          // Surface mode: thin cartoon + translucent molecular surface
+          viewer.setStyle({}, { cartoon: { color: shouldUseAF ? '#EAEAEA' : 'spectrum', thickness: 0.3 } });
+          viewer.addSurface(window.$3Dmol.SurfaceType.VDW, {
+            opacity: 0.7,
+            color: shouldUseAF ? '#C8E0D0' : '#FFFFFF',
+          });
+        } else if (renderMode === 'confidence') {
+          // Confidence mode: color by B-factor (pLDDT for AlphaFold, temperature factor for PDB)
           viewer.setStyle({}, {
             cartoon: {
               colorfunc: (atom: Record<string, unknown>) => {
                 const b = atom.b as number;
-                if (b >= 90) return 0x0053D6;
-                if (b >= 70) return 0x65CBF3;
-                if (b >= 50) return 0xFFDB13;
-                return 0xFF7D45;
+                if (b >= 90) return 0x0053D6;  // Very high confidence (dark blue)
+                if (b >= 70) return 0x65CBF3;  // High confidence (cyan)
+                if (b >= 50) return 0xFFDB13;  // Medium confidence (yellow)
+                return 0xFF7D45;               // Low confidence (orange)
               },
-              thickness: 0.55,
+              thickness: 0.6,
             },
           });
         } else {
-          viewer.setStyle({}, { cartoon: { color: shouldUseAF ? '#EAEAEA' : 'spectrum', thickness: 0.5 } });
+          // Cartoon mode: solid color ribbon
+          viewer.setStyle({}, { cartoon: { color: shouldUseAF ? '#C8D8E8' : 'spectrum', thickness: 0.5 } });
         }
 
         // ── Highlight catalytic residues as sticks ──
