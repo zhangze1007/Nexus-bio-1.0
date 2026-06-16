@@ -161,8 +161,10 @@ function ProteinCanvas({ pdbId, alphafoldId, name, useAlphaFold }: ProteinCanvas
           // Fetch PDB data via backend proxy, then add to viewer
           try {
             const proxyRes = await fetch(`/api/alphafold?id=${alphafoldId}`);
+            if (cancelled) return;
             if (!proxyRes.ok) throw new Error('AlphaFold proxy failed');
             const pdbData = await proxyRes.text();
+            if (cancelled) return;
             if (!pdbData || pdbData.length < 100) throw new Error('Empty PDB data');
             viewer.addModel(pdbData, 'pdb');
             // pLDDT via B-factor
@@ -174,11 +176,12 @@ function ProteinCanvas({ pdbId, alphafoldId, name, useAlphaFold }: ProteinCanvas
             });
           } catch (afErr) {
             // Fallback to RCSB PDB
-            console.warn('AlphaFold failed, falling back to RCSB:', afErr);
+            if (process.env.NODE_ENV !== 'production') console.warn('AlphaFold failed, falling back to RCSB:', afErr);
             await new Promise<void>((resolve, reject) => {
               const timer = setTimeout(() => reject(new Error('Timeout')), 15000);
               window.$3Dmol.download(`pdb:${pdbId}`, viewer, {}, () => { clearTimeout(timer); resolve(); });
             });
+            if (cancelled) return;
             viewer.setStyle({}, { cartoon: { color: 'spectrum', thickness: 0.5 } });
           }
         } else {
@@ -186,6 +189,7 @@ function ProteinCanvas({ pdbId, alphafoldId, name, useAlphaFold }: ProteinCanvas
             const timer = setTimeout(() => reject(new Error('Timeout')), 15000);
             window.$3Dmol.download(`pdb:${pdbId}`, viewer, {}, () => { clearTimeout(timer); resolve(); });
           });
+          if (cancelled) return;
           viewer.setStyle({}, {
             cartoon: { color: 'spectrum', thickness: 0.5 }
           });
