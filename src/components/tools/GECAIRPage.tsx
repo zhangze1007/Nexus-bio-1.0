@@ -757,7 +757,7 @@ export default function GECAIRPage() {
                   const b = row.B > 0.5 ? 1 : 0;
                   const out = gateType === 'AND' ? a && b
                     : gateType === 'OR' ? a || b
-                    : gateType === 'NAND' ? !(a && b) ? 1 : 0
+                    : gateType === 'NAND' ? (!(a && b)) ? 1 : 0
                     : 1 - a;
                   return (
                     <tr key={i} style={{ background: i % 2 === 0 ? 'transparent' : THEME.paperSurfaceMuted }}>

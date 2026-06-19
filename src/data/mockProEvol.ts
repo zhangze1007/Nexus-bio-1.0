@@ -1,4 +1,5 @@
 import type { FitnessPoint } from '../types';
+import { SeededRNG } from '../utils/seededRng';
 
 // Pre-computed 20x20 fitness landscape grid for a model enzyme (ADS variant)
 // Values 0-1, peak around (12,14) — mimics empirical directed evolution data
@@ -37,6 +38,7 @@ export function generateEvolutionTrajectory(
   let x = 2, y = 2;
   let fitness = FITNESS_LANDSCAPE[y]?.[x] ?? 0;
   const AMINO_ACIDS = 'ACDEFGHIKLMNPQRSTVWY';
+  const rng = new SeededRNG(42);
 
   const initialSeq = 'MSDKIVVVGSGPAGLTAAKYLLEKAGIEVSLIEREFLGGVCHTPYWDSIQLAELFGKMPVIPR';
   let seq = initialSeq;
@@ -44,17 +46,17 @@ export function generateEvolutionTrajectory(
   trajectory.push({ mutationCount: 0, fitness, sequence: seq.slice(0, 20) + '...' });
 
   for (let i = 0; i < rounds; i++) {
-    const dx = Math.floor(Math.random() * 3 - 1);
-    const dy = Math.floor(Math.random() * 3 - 1);
+    const dx = Math.floor(rng.next() * 3 - 1);
+    const dy = Math.floor(rng.next() * 3 - 1);
     const nx = Math.max(0, Math.min(19, x + dx));
     const ny = Math.max(0, Math.min(19, y + dy));
     const newFitness = FITNESS_LANDSCAPE[ny]?.[nx] ?? 0;
 
     // Accept by Metropolis criterion
-    if (newFitness >= fitness || Math.random() < Math.exp((newFitness - fitness) / 0.05)) {
+    if (newFitness >= fitness || rng.next() < Math.exp((newFitness - fitness) / 0.05)) {
       x = nx; y = ny; fitness = newFitness;
-      const pos = Math.floor(Math.random() * seq.length);
-      seq = seq.slice(0, pos) + AMINO_ACIDS[Math.floor(Math.random() * 20)] + seq.slice(pos + 1);
+      const pos = Math.floor(rng.next() * seq.length);
+      seq = seq.slice(0, pos) + AMINO_ACIDS[Math.floor(rng.next() * 20)] + seq.slice(pos + 1);
     }
 
     if ((i + 1) % Math.max(1, Math.floor(rounds / 20)) === 0) {

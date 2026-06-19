@@ -5,6 +5,7 @@
  * Supports encoding, sampling (reparameterization trick), decoding, and full forward pass.
  */
 import * as ort from 'onnxruntime-web';
+import { SeededRNG } from '../utils/seededRng';
 
 export interface EncodeResult {
   mu: Float32Array;
@@ -21,9 +22,11 @@ export interface ForwardResult {
 export class VAEInference {
   private session: ort.InferenceSession | null = null;
   private latentDim: number;
+  private rng: SeededRNG;
 
-  constructor(latentDim: number = 4) {
+  constructor(latentDim: number = 4, seed: number = 42) {
     this.latentDim = latentDim;
+    this.rng = new SeededRNG(seed);
   }
 
   /**
@@ -106,9 +109,6 @@ export class VAEInference {
    * Generate standard normal random number using Box-Muller transform.
    */
   private randn(): number {
-    let u = 0, v = 0;
-    while (u === 0) u = Math.random();
-    while (v === 0) v = Math.random();
-    return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+    return this.rng.gaussian();
   }
 }

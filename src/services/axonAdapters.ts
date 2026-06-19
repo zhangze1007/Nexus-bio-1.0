@@ -51,7 +51,10 @@ export const pathdAdapter: AxonAdapter<PathdAdapterInput, PathdAdapterResult> =
       signal: ctx.signal,
     });
 
-    const data = await res.json().catch(() => ({}));
+    const data = await res.json().catch(() => {
+      console.warn(`[Axon] Failed to parse JSON response (status ${res.status})`);
+      return {};
+    });
     if (!res.ok) {
       throw new Error(
         typeof data?.error === 'string'
@@ -135,7 +138,10 @@ export const fbasimAdapter: AxonAdapter<FbasimAdapterInput, FbasimAdapterResult>
       signal: ctx.signal,
     });
 
-    const data = await res.json().catch(() => ({}));
+    const data = await res.json().catch(() => {
+      console.warn(`[Axon] Failed to parse JSON response (status ${res.status})`);
+      return {};
+    });
     if (!res.ok || !data?.ok) {
       throw new Error(
         typeof data?.error === 'string'

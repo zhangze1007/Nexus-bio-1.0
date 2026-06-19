@@ -44,12 +44,12 @@ const { panelBg: PANEL_BG, border: BORDER, label: LABEL, value: VALUE,
         inputBg: INPUT_BG, inputBorder: INPUT_BORDER, inputText: INPUT_TEXT,
         glass: GLASS } = toolTokens;
 
-const GENE_COLORS = [THEME.MINT, THEME.SKY, THEME.CORAL, THEME.APRICOT, THEME.LILAC];
-
 /* ── Section Label ────────────────────────────────────────────────── */
 
 import SectionLabel from './shared/SectionLabel';
 import { THEME, TOOL_RESULT_PALETTE } from '../../theme';
+
+const GENE_COLORS = [THEME.MINT, THEME.SKY, THEME.CORAL, THEME.APRICOT, THEME.LILAC];
 
 /* ── SVG Helpers ──────────────────────────────────────────────────── */
 /* GridLines is now ChartGrid from ../charts/primitives */
@@ -96,8 +96,7 @@ function TimeCourseChart({ result, constructs }: { result: CFSFullResult; constr
       const a1 = fa / 3, a2 = (fa + fr) / 3, a3 = (fa + fr + faa) / 3;
       fwd.push(`${bsx(t).toFixed(1)},${bsy(a1).toFixed(1)}`);
       bwd.unshift(`${bsx(t).toFixed(1)},${bsy(0).toFixed(1)}`);
-      // store for layered fill
-      return { t, a1, a2, a3 };
+      // (no return needed — forEach ignores it)
     });
     return { atp: fwd, base: bwd };
   }, [res, initAtp, initRib, initAA, bsx, bsy]);
@@ -740,6 +739,9 @@ export default React.memo(function CellFreePage() {
         };
       });
       setCalibrationResult(result);
+    } catch (calibrationError) {
+      console.warn('Calibration failed:', calibrationError);
+      setCalibrationResult(null);
     } finally {
       setCalibrationLoading(false);
     }
@@ -783,7 +785,14 @@ export default React.memo(function CellFreePage() {
 
   const { data: result, error: simError } = useMemo(() => {
     try { return { data: runFullCFSPipeline(constructs, params, userData ?? undefined), error: null as string | null }; }
-    catch (e) { return { data: runFullCFSPipeline([], generateDefaultParameters()), error: e instanceof Error ? e.message : 'CFS pipeline failed' }; }
+    catch (e) {
+      const errMsg = e instanceof Error ? e.message : 'CFS pipeline failed';
+      try { return { data: runFullCFSPipeline([], generateDefaultParameters()), error: errMsg }; }
+      catch (fallbackErr) {
+        console.warn('CFS fallback also failed:', fallbackErr);
+        return { data: runFullCFSPipeline([], generateDefaultParameters()), error: errMsg };
+      }
+    }
   }, [constructs, params, userData]);
 
   const handleCsvUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {

@@ -109,6 +109,9 @@ const ECOLI_NETWORK: NetworkSpec = {
         PFK: round(vars.PFK ?? 0),
         FBA: round(vars.FBA ?? 0),
         GAPD: round(vars.GAPD ?? 0),
+        // PGK and ENO carry the same flux as GAPD in this linear glycolysis
+        // segment (GAPD → PGK → ENO → PYK). This is a simplification — the
+        // toy network does not include independent PGK/ENO variables.
         PGK: round(vars.GAPD ?? 0),
         ENO: round(vars.GAPD ?? 0),
         PYK: round(vars.PYK ?? 0),
@@ -184,6 +187,7 @@ const YEAST_NETWORK: NetworkSpec = {
         ADH: round(vars.ADH ?? 0),
         ACS: round(vars.ACS ?? 0),
         IDH: round(vars.IDH ?? 0),
+        O2tx_y: round(vars.O2tx_y ?? 0),
         BIOMASS_y: round(vars.BIOMASS_y ?? 0),
         PRODUCT_y: round(vars.PRODUCT_y ?? 0),
       },
@@ -384,7 +388,8 @@ export async function solveAuthorityCommunityFBA(request: CommunityFBARequest): 
     exchangeFluxes,
     communityGrowthRate: communityObjective,
     communityBiomassObjective: communityObjective,
-    feasible: ecoli.feasible || yeast.feasible,
+    // Community is feasible only if BOTH species solve successfully
+    feasible: ecoli.feasible && yeast.feasible,
   };
 }
 

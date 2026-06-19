@@ -321,18 +321,23 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ ok: true, mode: 'single', result, provenance: provenanceEntry }, { headers: getCorsHeaders(request) });
   } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
     console.error(JSON.stringify({
       level: 'error',
       message: 'FBA route failed',
       requestId,
-      error: error instanceof Error ? error.message : String(error),
+      error: errorMsg,
       timestamp: new Date().toISOString(),
     }));
-    // Don't expose internal error details to client
+    // Expose the error type to the client (solver errors are safe to share;
+    // stack traces and internal paths are not).
+    const clientMessage = errorMsg.includes('solve') || errorMsg.includes('infeasible') || errorMsg.includes('unbounded')
+      ? `FBA solve failed: ${errorMsg}`
+      : 'Authoritative FBA solve failed';
     return NextResponse.json(
       {
         ok: false,
-        error: 'Authoritative FBA solve failed',
+        error: clientMessage,
         requestId,
       },
       { status: 500, headers: getCorsHeaders(request) },

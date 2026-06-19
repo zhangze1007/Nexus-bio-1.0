@@ -1,3 +1,5 @@
+import { SeededRNG } from '../utils/seededRng';
+
 /**
  * MOFA+ Multi-Omics Factor Analysis
  *
@@ -176,6 +178,7 @@ function totalSumSq(A: number[][]): number {
  *   - Check convergence via ELBO change
  */
 export function runMOFA(input: MOFAInput): MOFAResult {
+  const rng = new SeededRNG(42);
   const viewNames = Object.keys(input.views);
   const nSamples = input.views[viewNames[0]].length;
   const nViews = viewNames.length;
@@ -194,7 +197,7 @@ export function runMOFA(input: MOFAInput): MOFAResult {
 
   // Initialize Z randomly [nSamples x nFactors]
   let Z: number[][] = Array.from({ length: nSamples }, () =>
-    Array.from({ length: nFactors }, () => (Math.random() - 0.5) * 0.1),
+    Array.from({ length: nFactors }, () => (rng.next() - 0.5) * 0.1),
   );
 
   // Initialize W_v per view [features_v x nFactors]
@@ -202,7 +205,7 @@ export function runMOFA(input: MOFAInput): MOFAResult {
   for (const vn of viewNames) {
     const nf = input.views[vn][0].length;
     W[vn] = Array.from({ length: nf }, () =>
-      Array.from({ length: nFactors }, () => (Math.random() - 0.5) * 0.1),
+      Array.from({ length: nFactors }, () => (rng.next() - 0.5) * 0.1),
     );
   }
 

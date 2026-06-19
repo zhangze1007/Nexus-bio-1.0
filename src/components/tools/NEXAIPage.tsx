@@ -202,7 +202,7 @@ export default React.memo(function NEXAIPage() {
       }).catch(() => {});
       return () => controller.abort();
     }
-  }, [result?.citations]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [result?.citations, verified]);
 
   const contextPrompt = useMemo(() => {
     if (workflowControl.status === 'blocked' || workflowControl.status === 'gated' || workflowControl.status === 'demoOnly') {

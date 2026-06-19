@@ -139,6 +139,9 @@ export default React.memo(function FBASimPage() {
     [recommendedSeed.glucoseUptake, recommendedSeed.knockouts, recommendedSeed.mode, recommendedSeed.objective, recommendedSeed.oxygenUptake],
   );
   const lastAppliedSeedRef = useRef<string | null>(null);
+  // Store the expected values from the last seed application so we can detect
+  // when the user has manually diverged from them (not just stale closures).
+  const lastExpectedRef = useRef<{ eg: number; eo: number; yg: number; yo: number } | null>(null);
   const [seedOverwriteNotice, setSeedOverwriteNotice] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('flux');
 
@@ -175,13 +178,16 @@ export default React.memo(function FBASimPage() {
     const expectedYeastGlc = Math.max(2, round(recommendedSeed.glucoseUptake * 0.42));
     const expectedYeastO2  = Math.max(2, round(recommendedSeed.oxygenUptake  * 0.45));
 
-    // Detect divergence: only meaningful after we have applied at least one seed.
-    if (lastAppliedSeedRef.current !== null) {
+    // Detect divergence: compare CURRENT state against the PREVIOUS expected
+    // values (not the new ones). This catches when the user manually changed
+    // uptake values between seed applications.
+    if (lastAppliedSeedRef.current !== null && lastExpectedRef.current !== null) {
+      const prev = lastExpectedRef.current;
       const localDiverged =
-        ecoliGlucose !== expectedEcoliGlc ||
-        ecoliOxygen  !== expectedEcoliO2  ||
-        yeastGlucose !== expectedYeastGlc ||
-        yeastOxygen  !== expectedYeastO2;
+        ecoliGlucose !== prev.eg ||
+        ecoliOxygen  !== prev.eo ||
+        yeastGlucose !== prev.yg ||
+        yeastOxygen  !== prev.yo;
       if (localDiverged) {
         setSeedOverwriteNotice('Upstream FBA seed has changed and your local Two-Species uptake edits were just replaced. Re-apply manual values if needed.');
       }
@@ -199,6 +205,7 @@ export default React.memo(function FBASimPage() {
     setEcoliKO(recommendedSeed.knockouts.slice(0, 1));
     setYeastKO(recommendedSeed.knockouts.slice(1));
     lastAppliedSeedRef.current = seedSignature;
+    lastExpectedRef.current = { eg: expectedEcoliGlc, eo: expectedEcoliO2, yg: expectedYeastGlc, yo: expectedYeastO2 };
   }, [
     seedSignature,
     recommendedSeed.glucoseUptake,
@@ -872,19 +879,20 @@ export default React.memo(function FBASimPage() {
               <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
                 <button
                   onClick={handleRunFSEOF}
-                  disabled={strainDesignLoading}
+                  disabled={strainDesignLoading || !loadedReactions}
+                  title={!loadedReactions ? 'Load a BiGG model first — FSEOF requires stoichiometric data' : undefined}
                   className="nb-tool-toggle nb-tool-toggle--active"
                   style={{
                     padding: '6px 14px',
                     borderRadius: 'var(--nb-radius-sm)',
-                    background: strainDesignLoading ? 'rgba(255,255,255,0.04)' : 'rgba(191,220,205,0.14)',
-                    borderColor: strainDesignLoading ? 'rgba(255,255,255,0.08)' : 'rgba(191,220,205,0.3)',
-                    color: strainDesignLoading ? 'rgba(255,255,255,0.35)' : 'rgba(191,220,205,0.9)',
+                    background: (strainDesignLoading || !loadedReactions) ? 'rgba(255,255,255,0.04)' : 'rgba(191,220,205,0.14)',
+                    borderColor: (strainDesignLoading || !loadedReactions) ? 'rgba(255,255,255,0.08)' : 'rgba(191,220,205,0.3)',
+                    color: (strainDesignLoading || !loadedReactions) ? 'rgba(255,255,255,0.35)' : 'rgba(191,220,205,0.9)',
                     fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)',
-                    cursor: strainDesignLoading ? 'wait' : 'pointer',
+                    cursor: (strainDesignLoading || !loadedReactions) ? 'not-allowed' : 'pointer',
                   }}
                 >
-                  {strainDesignLoading ? 'Running...' : 'Run FSEOF'}
+                  {strainDesignLoading ? 'Running...' : !loadedReactions ? 'Load BiGG Model First' : 'Run FSEOF'}
                 </button>
               </div>
 
@@ -961,19 +969,20 @@ export default React.memo(function FBASimPage() {
               <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
                 <button
                   onClick={handleRunOptKnock}
-                  disabled={strainDesignLoading}
+                  disabled={strainDesignLoading || !loadedReactions}
+                  title={!loadedReactions ? 'Load a BiGG model first — OptKnock requires stoichiometric data' : undefined}
                   className="nb-tool-toggle nb-tool-toggle--active"
                   style={{
                     padding: '6px 14px',
                     borderRadius: 'var(--nb-radius-sm)',
-                    background: strainDesignLoading ? 'rgba(255,255,255,0.04)' : 'rgba(232,163,161,0.14)',
-                    borderColor: strainDesignLoading ? 'rgba(255,255,255,0.08)' : 'rgba(232,163,161,0.3)',
-                    color: strainDesignLoading ? 'rgba(255,255,255,0.35)' : 'rgba(232,163,161,0.9)',
+                    background: (strainDesignLoading || !loadedReactions) ? 'rgba(255,255,255,0.04)' : 'rgba(232,163,161,0.14)',
+                    borderColor: (strainDesignLoading || !loadedReactions) ? 'rgba(255,255,255,0.08)' : 'rgba(232,163,161,0.3)',
+                    color: (strainDesignLoading || !loadedReactions) ? 'rgba(255,255,255,0.35)' : 'rgba(232,163,161,0.9)',
                     fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)',
-                    cursor: strainDesignLoading ? 'wait' : 'pointer',
+                    cursor: (strainDesignLoading || !loadedReactions) ? 'not-allowed' : 'pointer',
                   }}
                 >
-                  {strainDesignLoading ? 'Running...' : 'Run OptKnock'}
+                  {strainDesignLoading ? 'Running...' : !loadedReactions ? 'Load BiGG Model First' : 'Run OptKnock'}
                 </button>
               </div>
 

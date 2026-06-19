@@ -1,3 +1,5 @@
+import { SeededRNG } from '../utils/seededRng';
+
 /**
  * RobustKnock — Guaranteed minimum product flux under ALL optimal growth solutions.
  *
@@ -103,8 +105,10 @@ function combinations<T>(arr: T[], k: number): T[][] {
 function sampleCombinations<T>(arr: T[], k: number, n: number): T[][] {
   const allCombos = combinations(arr, k);
   if (allCombos.length <= n) return allCombos;
+  // Fisher-Yates partial shuffle (seeded for reproducibility)
+  const rng = new SeededRNG(42);
   for (let i = allCombos.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(rng.next() * (i + 1));
     [allCombos[i], allCombos[j]] = [allCombos[j], allCombos[i]];
   }
   return allCombos.slice(0, n);

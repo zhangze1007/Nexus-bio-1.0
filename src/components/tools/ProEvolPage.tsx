@@ -479,7 +479,8 @@ export default function ProEvolPage() {
         }
       }
       setSuggestedVariantId(mlVariants[bestIdx]?.id ?? null);
-    } catch {
+    } catch (gpError) {
+      console.warn('GP analysis failed:', gpError);
       setGpPredictions([]);
       setEiScores([]);
       setSuggestedVariantId(null);

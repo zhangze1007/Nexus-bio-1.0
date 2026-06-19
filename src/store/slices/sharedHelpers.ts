@@ -433,7 +433,10 @@ export async function requestCanonicalState(
     cache: 'no-store',
     body: requestBody ? JSON.stringify(requestBody) : undefined,
   });
-  const payload = await response.json().catch(() => ({}));
+  const payload = await response.json().catch(() => {
+    console.warn(`[Workbench] Failed to parse JSON response (status ${response.status})`);
+    return {};
+  });
   if (isCanonicalArtifactSave && process.env.NODE_ENV !== 'production') {
     console.info('[workbench] canonical save response payload', payload);
   }

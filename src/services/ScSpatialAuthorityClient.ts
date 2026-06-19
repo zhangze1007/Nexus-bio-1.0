@@ -7,7 +7,10 @@ import type {
 } from '../types/scspatial';
 
 async function parsePayload<T>(response: Response) {
-  return response.json().catch(() => ({})) as Promise<T>;
+  return response.json().catch(() => {
+    console.warn(`[ScSpatial] Failed to parse JSON response (status ${response.status})`);
+    return {};
+  }) as Promise<T>;
 }
 
 export async function ingestScSpatialFile(
