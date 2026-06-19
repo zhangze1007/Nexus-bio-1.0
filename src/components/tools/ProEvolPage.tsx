@@ -5,7 +5,15 @@ import ExportButton from '../ide/shared/ExportButton';
 import { useWorkbenchStore } from '../../store/workbenchStore';
 import { THEME } from '../../theme';
 import { buildProEvolCampaignInput } from '../../data/proevolMockCampaign';
-import { buildProEvolCampaign } from '../../services/ProEvolCampaignEngine';
+import {
+  buildProEvolCampaign,
+  scanMutations,
+  predictFitness,
+  analyzeConservation,
+  designSequences,
+  designMutantLibrary,
+} from '../../services/ProEvolCampaignEngine';
+import type { DDGMutation } from '../../server/ddgPrediction';
 import {
   campaignToArtifact,
   PROEVOL_ARTIFACT_VERSION,
@@ -263,6 +271,19 @@ export default function ProEvolPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [activeTab, setActiveTab] = useState('landscape');
 
+  // ── Mutation Scanner state ───────────────────────────────────────────
+  const [scanSequence, setScanSequence] = useState('');
+  const [pdbText, setPdbText] = useState<string | null>(null);
+  const [pdbLoading, setPdbLoading] = useState(false);
+  const [scanResult, setScanResult] = useState<ReturnType<typeof scanMutations> | null>(null);
+  const [conservationResult, setConservationResult] = useState<ReturnType<typeof analyzeConservation> | null>(null);
+  const [fitnessResult, setFitnessResult] = useState<ReturnType<typeof predictFitness>['predictions'] | null>(null);
+
+  // ── Sequence Design state ────────────────────────────────────────────
+  const [designResult, setDesignResult] = useState<ReturnType<typeof designSequences> | null>(null);
+  const [libraryResult, setLibraryResult] = useState<ReturnType<typeof designMutantLibrary> | null>(null);
+  const [designLoading, setDesignLoading] = useState(false);
+
   // ── ML-Guided mode (Gaussian Process) ────────────────────────────────
   const [mlMode, setMlMode] = useState(false);
   const [gpPredictions, setGpPredictions] = useState<Array<{ mean: number; variance: number }>>([]);
@@ -515,12 +536,12 @@ export default function ProEvolPage() {
   }, [mlMode, gpPredictions, eiScores, mlVariants, suggestedVariantId]);
 
   const tabs: ToolTab[] = [
-    { id: 'landscape', label: 'Landscape' },
-    { id: 'trajectory', label: 'Trajectory' },
-    { id: 'library', label: 'Library' },
-    { id: 'lineage', label: 'Lineage' },
-    { id: 'campaign', label: 'Campaign' },
-    { id: 'ml', label: 'ML-Guided' },
+    { id: 'landscape', label: 'Landscape', accent: THEME.SKY },
+    { id: 'scanner', label: 'Mutation Scanner', accent: THEME.CORAL },
+    { id: 'design', label: 'Sequence Design', accent: THEME.MINT },
+    { id: 'trajectory', label: 'Trajectory', accent: THEME.LILAC },
+    { id: 'library', label: 'Library', accent: THEME.APRICOT },
+    { id: 'ml', label: 'ML-Guided', accent: THEME.LILAC },
   ];
 
   return (
@@ -811,6 +832,273 @@ export default function ProEvolPage() {
           <ExportButton label="Artifact JSON" data={artifact} filename={`proevol-artifact${exportSuffix}`} format="json" />
         </div>
       </div>
+      </ToolTabPanel>
+
+      {/* ═══════ MUTATION SCANNER TAB ═══════ */}
+      <ToolTabPanel activeId={activeTab} tabId="scanner">
+        <div style={{ padding: '16px', display: 'grid', gap: '12px' }}>
+          {/* Sequence Input */}
+          <div style={{ border: `1px solid ${PROEVOL_THEME.border}`, background: PROEVOL_THEME.surface, borderRadius: 'var(--nb-radius-md)', padding: '14px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+              <span style={kicker}>Protein Sequence Input</span>
+              {pdbText && <span style={{ fontFamily: THEME.MONO, fontSize: 10, color: PROEVOL_THEME.mint }}>✓ PDB loaded</span>}
+            </div>
+            <textarea
+              placeholder="Paste protein sequence (one-letter amino acid codes)..."
+              value={scanSequence}
+              onChange={e => setScanSequence(e.target.value.toUpperCase().replace(/[^ACDEFGHIKLMNPQRSTVWY]/g, ''))}
+              style={{
+                width: '100%', height: 60, resize: 'vertical',
+                fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: PROEVOL_THEME.value,
+                background: PROEVOL_THEME.inset, border: `1px solid ${PROEVOL_THEME.border}`,
+                borderRadius: 'var(--nb-radius-sm)', padding: '8px',
+              }}
+            />
+            <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+              <button
+                onClick={async () => {
+                  if (!scanSequence) return;
+                  setPdbLoading(true);
+                  try {
+                    // Try to fetch PDB from AlphaFold using target product as search
+                    const res = await fetch(`/api/alphafold?id=${campaign.targetProtein.substring(0, 6)}`);
+                    if (res.ok) { const text = await res.text(); setPdbText(text); }
+                  } finally { setPdbLoading(false); }
+                }}
+                disabled={!scanSequence || pdbLoading}
+                style={{
+                  padding: '6px 12px', borderRadius: 'var(--nb-radius-sm)',
+                  background: pdbLoading ? 'rgba(255,255,255,0.04)' : 'rgba(175,195,214,0.12)',
+                  border: `1px solid ${pdbLoading ? 'rgba(255,255,255,0.08)' : 'rgba(175,195,214,0.25)'}`,
+                  color: pdbLoading ? 'rgba(255,255,255,0.35)' : PROEVOL_THEME.sky,
+                  fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', cursor: 'pointer',
+                }}
+              >
+                {pdbLoading ? 'Fetching…' : 'Fetch PDB (optional)'}
+              </button>
+              <button
+                onClick={() => {
+                  if (!scanSequence) return;
+                  // Conservation always works (no PDB needed)
+                  setConservationResult(analyzeConservation(scanSequence));
+                  // ΔΔG scan needs PDB
+                  if (pdbText) {
+                    const result = scanMutations(pdbText, scanSequence);
+                    setScanResult(result);
+                    const ddgMap = new Map<string, number>();
+                    for (const r of result.results) ddgMap.set(`${r.position}:${r.mut}`, r.ddg);
+                    const fitness = predictFitness({
+                      sequence: scanSequence,
+                      mutations: result.results.map(r => ({ position: r.position, mut: r.mut })),
+                      pdbText,
+                      ddgResults: ddgMap,
+                    });
+                    setFitnessResult(fitness.predictions);
+                  } else {
+                    // Fitness prediction without PDB (BLOSUM62 + conservation only)
+                    const conserved = conservationResult?.conservedPositions ?? [];
+                    const variable = conservationResult?.variablePositions ?? [];
+                    const mutations = variable.slice(0, 20).flatMap(pos => {
+                      const wt = scanSequence[pos - 1];
+                      return 'ACDEFGHIKLMNPQRSTVWY'.split('').filter(aa => aa !== wt).slice(0, 3).map(aa => ({ position: pos, mut: aa }));
+                    });
+                    const fitness = predictFitness({ sequence: scanSequence, mutations });
+                    setFitnessResult(fitness.predictions);
+                  }
+                }}
+                disabled={!scanSequence}
+                style={{
+                  padding: '6px 12px', borderRadius: 'var(--nb-radius-sm)',
+                  background: !scanSequence ? 'rgba(255,255,255,0.04)' : 'rgba(191,220,205,0.14)',
+                  border: `1px solid ${!scanSequence ? 'rgba(255,255,255,0.08)' : 'rgba(191,220,205,0.3)'}`,
+                  color: !scanSequence ? 'rgba(255,255,255,0.35)' : PROEVOL_THEME.mint,
+                  fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', cursor: 'pointer',
+                }}
+              >
+                Run Analysis
+              </button>
+            </div>
+          </div>
+
+          {/* ΔΔG Heatmap */}
+          {scanResult && (
+            <div style={{ border: `1px solid ${PROEVOL_THEME.border}`, background: PROEVOL_THEME.surface, borderRadius: 'var(--nb-radius-md)', padding: '14px' }}>
+              <span style={kicker}>ΔΔG Stability Heatmap</span>
+              <p style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL, margin: '4px 0 8px' }}>
+                {scanResult.results.length} mutations scanned · {scanResult.aminoAcids.length} amino acids × {scanResult.heatmap.length} positions
+              </p>
+              {/* Simple text-based heatmap summary */}
+              <div style={{ fontFamily: THEME.MONO, fontSize: 10, color: THEME.VALUE, maxHeight: 200, overflow: 'auto' }}>
+                {scanResult.heatmap.slice(0, 20).map((row, i) => (
+                  <div key={i} style={{ display: 'flex', gap: 2 }}>
+                    <span style={{ width: 20, color: THEME.LABEL }}>{i + 1}</span>
+                    {row.slice(0, 20).map((v, j) => (
+                      <span key={j} style={{
+                        width: 16, textAlign: 'center',
+                        color: v > 1 ? '#dc2626' : v < -1 ? '#16a34a' : THEME.LABEL,
+                        background: Math.abs(v) > 2 ? 'rgba(255,255,255,0.05)' : 'transparent',
+                      }}>
+                        {v > 0 ? '+' : ''}{v.toFixed(1)}
+                      </span>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Conservation Track */}
+          {conservationResult && (
+            <div style={{ border: `1px solid ${PROEVOL_THEME.border}`, background: PROEVOL_THEME.surface, borderRadius: 'var(--nb-radius-md)', padding: '14px' }}>
+              <span style={kicker}>Conservation Analysis</span>
+              <div style={{ display: 'flex', gap: 4, marginTop: 8, flexWrap: 'wrap' }}>
+                {conservationResult.perPosition.slice(0, 50).map((p, i) => (
+                  <div key={i} style={{
+                    width: 16, height: 16, borderRadius: 3,
+                    background: p.classification === 'conserved' ? '#dc2626'
+                      : p.classification === 'moderate' ? '#d97706' : '#16a34a',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 8, color: '#fff', fontFamily: THEME.MONO,
+                  }} title={`${p.position}: ${p.residue} (${p.classification}, C=${p.conservation.toFixed(2)})`}>
+                    {p.residue}
+                  </div>
+                ))}
+              </div>
+              <p style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL, margin: '8px 0 0' }}>
+                🔴 Conserved ({conservationResult.conservedPositions.length}) ·
+                🟡 Moderate · 🟢 Variable ({conservationResult.variablePositions.length})
+              </p>
+            </div>
+          )}
+
+          {/* Fitness Predictions Summary */}
+          {fitnessResult && fitnessResult.length > 0 && (
+            <div style={{ border: `1px solid ${PROEVOL_THEME.border}`, background: PROEVOL_THEME.surface, borderRadius: 'var(--nb-radius-md)', padding: '14px' }}>
+              <span style={kicker}>Fitness Predictions (Top 20)</span>
+              <div style={{ marginTop: 8, fontFamily: THEME.MONO, fontSize: 10 }}>
+                {fitnessResult.slice(0, 20).map((f, i) => (
+                  <div key={i} style={{ display: 'flex', gap: 8, padding: '2px 0' }}>
+                    <span style={{ width: 40, color: THEME.LABEL }}>{f.wt}{f.position}{f.mut}</span>
+                    <span style={{ width: 50, color: f.fitnessScore > 0.7 ? '#16a34a' : f.fitnessScore < 0.4 ? '#dc2626' : THEME.VALUE }}>
+                      {f.fitnessScore.toFixed(3)}
+                    </span>
+                    <span style={{
+                      padding: '0 4px', borderRadius: 3, fontSize: 9,
+                      background: f.classification === 'beneficial' ? 'rgba(22,163,74,0.15)' : f.classification === 'deleterious' ? 'rgba(220,38,38,0.15)' : 'rgba(255,255,255,0.05)',
+                      color: f.classification === 'beneficial' ? '#16a34a' : f.classification === 'deleterious' ? '#dc2626' : THEME.LABEL,
+                    }}>
+                      {f.classification}
+                    </span>
+                    <span style={{ color: THEME.LABEL, fontSize: 9 }}>
+                      B:{f.components.blosum.toFixed(2)} S:{f.components.stability.toFixed(2)} E:{f.components.structural.toFixed(2)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </ToolTabPanel>
+
+      {/* ═══════ SEQUENCE DESIGN TAB ═══════ */}
+      <ToolTabPanel activeId={activeTab} tabId="design">
+        <div style={{ padding: '16px', display: 'grid', gap: '12px' }}>
+          {/* Design Controls */}
+          <div style={{ border: `1px solid ${PROEVOL_THEME.border}`, background: PROEVOL_THEME.surface, borderRadius: 'var(--nb-radius-md)', padding: '14px' }}>
+            <span style={kicker}>Inverse Folding Design</span>
+            <p style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL, margin: '4px 0 12px' }}>
+              Design sequences that fold into the target structure using structural constraints + BLOSUM62 plausibility.
+            </p>
+            <button
+              onClick={() => {
+                if (!scanSequence) return;
+                setDesignLoading(true);
+                try {
+                  const designs = designSequences({
+                    sequence: scanSequence,
+                    pdbText: pdbText ?? undefined,
+                    fixedPositions: conservationResult?.conservedPositions,
+                    numDesigns: 10,
+                  });
+                  setDesignResult(designs);
+
+                  // Also design mutant library
+                  const variablePos = conservationResult?.variablePositions.slice(0, 8) ?? [];
+                  const library = designMutantLibrary({
+                    sequence: scanSequence,
+                    positions: variablePos,
+                    candidatesPerPosition: variablePos.map(() => 'ACDEFGHIKLMNPQRSTVWY'.split('')),
+                    librarySize: 20,
+                    pdbText: pdbText ?? undefined,
+                  });
+                  setLibraryResult(library);
+                } finally { setDesignLoading(false); }
+              }}
+              disabled={!scanSequence || designLoading}
+              style={{
+                  padding: '6px 12px', borderRadius: 'var(--nb-radius-sm)',
+                  background: (!scanSequence || designLoading) ? 'rgba(255,255,255,0.04)' : 'rgba(191,220,205,0.14)',
+                  border: `1px solid ${(!scanSequence || designLoading) ? 'rgba(255,255,255,0.08)' : 'rgba(191,220,205,0.3)'}`,
+                  color: (!scanSequence || designLoading) ? 'rgba(255,255,255,0.35)' : PROEVOL_THEME.mint,
+                  fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', cursor: 'pointer',
+                }}
+            >
+              {designLoading ? 'Designing…' : 'Design Sequences'}
+            </button>
+          </div>
+
+          {/* Designed Sequences */}
+          {designResult && (
+            <div style={{ border: `1px solid ${PROEVOL_THEME.border}`, background: PROEVOL_THEME.surface, borderRadius: 'var(--nb-radius-md)', padding: '14px' }}>
+              <span style={kicker}>Designed Sequences ({designResult.designs.length})</span>
+              <div style={{ marginTop: 8, fontFamily: THEME.MONO, fontSize: 10, maxHeight: 300, overflow: 'auto' }}>
+                {designResult.designs.slice(0, 10).map((d, i) => (
+                  <div key={i} style={{ padding: '4px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                      <span style={{ color: THEME.SKY, width: 20 }}>#{i + 1}</span>
+                      <span style={{ color: THEME.VALUE }}>
+                        {d.mutations.length} mutations
+                      </span>
+                      <span style={{ color: THEME.LABEL }}>
+                        S:{d.scores.stability.toFixed(2)} P:{d.scores.plausibility.toFixed(2)} C:{d.scores.compatibility.toFixed(2)}
+                      </span>
+                      <span style={{ color: THEME.MINT, fontWeight: 600 }}>
+                        Σ:{d.scores.composite.toFixed(3)}
+                      </span>
+                    </div>
+                    <div style={{ color: THEME.LABEL, fontSize: 9, marginTop: 2 }}>
+                      {d.mutations.slice(0, 5).map(m => `${m.wt}${m.position}${m.mut}`).join(' ')}
+                      {d.mutations.length > 5 ? ` +${d.mutations.length - 5} more` : ''}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Mutant Library */}
+          {libraryResult && (
+            <div style={{ border: `1px solid ${PROEVOL_THEME.border}`, background: PROEVOL_THEME.surface, borderRadius: 'var(--nb-radius-md)', padding: '14px' }}>
+              <span style={kicker}>Mutant Library (Pareto-optimal)</span>
+              <p style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL, margin: '4px 0 8px' }}>
+                {libraryResult.stats.totalEnumerated} enumerated → {libraryResult.stats.paretoFrontSize} Pareto-optimal → {libraryResult.stats.librarySize} selected
+              </p>
+              <div style={{ fontFamily: THEME.MONO, fontSize: 10, maxHeight: 200, overflow: 'auto' }}>
+                {libraryResult.library.slice(0, 20).map((m, i) => (
+                  <div key={i} style={{ display: 'flex', gap: 8, padding: '2px 0' }}>
+                    <span style={{ width: 20, color: THEME.SKY }}>{i + 1}</span>
+                    <span style={{ color: THEME.VALUE }}>
+                      {m.mutations.map(mut => `${mut.wt}${mut.position}${mut.mut}`).join(' ')}
+                    </span>
+                    <span style={{ color: THEME.LABEL }}>
+                      S:{m.scores.stability.toFixed(2)} F:{m.scores.fitness.toFixed(2)} D:{m.scores.diversity.toFixed(2)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </ToolTabPanel>
 
       {/* ═══════ TRAJECTORY TAB ═══════ */}
