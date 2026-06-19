@@ -1,15 +1,13 @@
 /**
  * axonAdapterRegistry — scalable adapter map for the orchestrator.
  *
- * PR-2b hard-coded two adapters (pathd, fbasim) via `buildDefaultAdapters`.
- * PR-3 introduces a registry pattern so future tool support can be added
- * without editing the orchestrator or its call sites. The registry is
- * still honest: unsupported tools are **not** silently stubbed. They
- * return `undefined` so the orchestrator surfaces an explicit "no
- * adapter registered" error on the task.
+ * Two types of adapters:
+ *   1. Direct adapters (pathd, fbasim) — call existing API routes
+ *   2. Pipeline adapters (all other tools) — call /api/pipeline/:tool
+ *      which runs the pipeline server-side
  *
- * Supported tools grow one at a time, only when a real execution surface
- * (an API route that actually computes something) is already in place.
+ * The registry never imports server-side code directly.
+ * All pipeline execution goes through API routes.
  */
 import type { AxonAdapter, AxonAdapterMap, AxonTool } from './AxonOrchestrator';
 import { pathdAdapter, fbasimAdapter } from './axonAdapters';
@@ -17,12 +15,7 @@ import { pathdAdapter, fbasimAdapter } from './axonAdapters';
 export interface AxonAdapterRegistration {
   tool: AxonTool;
   adapter: AxonAdapter;
-  /** Short human label used in logs / drawer. */
   label: string;
-  /**
-   * Optional: declare a stable shape contract. Not enforced at runtime;
-   * kept for future typing work and so the registry self-documents.
-   */
   inputShape?: string;
 }
 
@@ -33,10 +26,6 @@ export interface AxonAdapterRegistry {
   isSupported(tool: AxonTool): boolean;
 }
 
-/**
- * Factory for the default registry shipped with the app. Tests can
- * construct their own via `createRegistry([...])` to stub a tool out.
- */
 export function createAxonAdapterRegistry(
   registrations: AxonAdapterRegistration[],
 ): AxonAdapterRegistry {
@@ -44,53 +33,63 @@ export function createAxonAdapterRegistry(
   for (const r of registrations) byTool.set(r.tool, r);
 
   return {
-    get(tool) {
-      return byTool.get(tool)?.adapter;
-    },
-    list() {
-      return Array.from(byTool.values());
-    },
+    get(tool) { return byTool.get(tool)?.adapter; },
+    list() { return Array.from(byTool.values()); },
     toMap() {
       const map: AxonAdapterMap = {};
-      for (const [tool, reg] of byTool) {
-        map[tool] = reg.adapter;
-      }
+      for (const [tool, reg] of byTool) map[tool] = reg.adapter;
       return map;
     },
-    isSupported(tool) {
-      return byTool.has(tool);
-    },
+    isSupported(tool) { return byTool.has(tool); },
   };
 }
 
+// ── Generic Pipeline Adapter ─────────────────────────────────────────────
+
+/**
+ * Build an adapter that calls /api/pipeline/:tool.
+ * The API route runs the pipeline server-side and returns the result.
+ */
+function buildPipelineApiAdapter(tool: string, label: string): AxonAdapter {
+  return async (input: unknown, ctx: { signal?: AbortSignal }) => {
+    const response = await fetch(`/api/pipeline/${tool}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(input ?? {}),
+      signal: ctx.signal,
+    });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.error ?? `Pipeline ${tool} failed (${response.status})`);
+    }
+    return response.json();
+  };
+}
+
+// ── Registry ─────────────────────────────────────────────────────────────
+
 export const DEFAULT_AXON_ADAPTERS: AxonAdapterRegistration[] = [
-  {
-    tool: 'pathd',
-    adapter: pathdAdapter as AxonAdapter,
-    label: 'Pathway design (PATHD)',
-    inputShape: '{ targetProduct: string; hint?: string }',
-  },
-  {
-    tool: 'fbasim',
-    adapter: fbasimAdapter as AxonAdapter,
-    label: 'Flux-balance analysis (FBASIM)',
-    inputShape: '{ species?, objective?, glucoseUptake?, oxygenUptake?, knockouts? }',
-  },
+  // Original direct adapters
+  { tool: 'pathd', adapter: pathdAdapter as AxonAdapter, label: 'Pathway design (PATHD)', inputShape: '{ targetProduct: string; hint?: string }' },
+  { tool: 'fbasim', adapter: fbasimAdapter as AxonAdapter, label: 'Flux-balance analysis (FBASIM)', inputShape: '{ species?, objective?, glucoseUptake?, oxygenUptake?, knockouts? }' },
+
+  // Pipeline-backed adapters (call /api/pipeline/:tool)
+  { tool: 'catdes', adapter: buildPipelineApiAdapter('catdes', 'Catalyst Designer'), label: 'Catalyst Designer — bottleneck analysis', inputShape: '{ pathwaySteps?, fbaData?, cethxData? }' },
+  { tool: 'proevol', adapter: buildPipelineApiAdapter('proevol', 'Protein Engineering'), label: 'Protein Engineering — ΔΔG + fitness + conservation', inputShape: '{ sequence?, pdbText?, maxMutations? }' },
+  { tool: 'dyncon', adapter: buildPipelineApiAdapter('dyncon', 'Dynamic Control'), label: 'Dynamic Control — PID/MPC optimization', inputShape: '{ setpoint?, processGain?, timeConstant? }' },
+  { tool: 'cethx', adapter: buildPipelineApiAdapter('cethx', 'Thermodynamics'), label: 'Thermodynamics — TFA feasibility analysis', inputShape: '{ reactions?, conditions? }' },
+  { tool: 'gecair', adapter: buildPipelineApiAdapter('gecair', 'Gene Circuit'), label: 'Gene Circuit Reasoner — ODE + Jacobian + Pareto', inputShape: '{ topology?, sensitivityTarget? }' },
+  { tool: 'cellfree', adapter: buildPipelineApiAdapter('cellfree', 'Cell-Free'), label: 'Cell-Free Robustness — Monte Carlo + sensitivity', inputShape: '{ singleCellData?, nTrials? }' },
+  { tool: 'genmim', adapter: buildPipelineApiAdapter('genmim', 'Genome Minimization'), label: 'Genome Minimization — CRISPRi scheduling', inputShape: '{ species?, targetGenomeReduction? }' },
+  { tool: 'multio', adapter: buildPipelineApiAdapter('multio', 'Multi-Omics'), label: 'Multi-Omics — MOFA+ factorization', inputShape: '{ datasets?, nFactors? }' },
+  { tool: 'scspatial', adapter: buildPipelineApiAdapter('scspatial', 'Single-Cell Spatial'), label: 'Single-Cell Spatial — clustering + Moran\'s I', inputShape: '{ expressionMatrix?, geneNames? }' },
+  { tool: 'nexai', adapter: buildPipelineApiAdapter('nexai', 'Research'), label: 'Research — paper scoring + evidence synthesis', inputShape: '{ question?, papers? }' },
 ];
 
 export function buildDefaultAxonAdapterRegistry(): AxonAdapterRegistry {
   return createAxonAdapterRegistry(DEFAULT_AXON_ADAPTERS);
 }
 
-/**
- * Phase-2B.1 — single source of truth for "does this tool have a real
- * Axon adapter?". The workflow snapshot, planner, and supervisor all
- * read this helper instead of duplicating the registered-tool list.
- *
- * The registry is built once and cached. If a future PR adds a new
- * adapter to DEFAULT_AXON_ADAPTERS, this helper picks it up
- * automatically — no parallel list to keep in sync.
- */
 let cachedRegistry: AxonAdapterRegistry | null = null;
 function defaultRegistry(): AxonAdapterRegistry {
   if (!cachedRegistry) cachedRegistry = buildDefaultAxonAdapterRegistry();
