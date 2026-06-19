@@ -33,7 +33,7 @@ jobs:
         run: npx tsc --noEmit
 
       - name: Run unit tests
-        run: npm test
+        run: npx jest --verbose 2>&1
         env:
           CI: true
 
