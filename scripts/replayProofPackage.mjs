@@ -44,6 +44,10 @@ for (const [command, args] of commands) run(command, args);
 for (const [source, destination] of reportCopies) {
   const sourcePath = path.join(repoRoot, source);
   const destinationPath = path.join(repoRoot, destination);
+  if (!fs.existsSync(sourcePath)) {
+    console.log(`⚠ Report not found: ${source} — skipping copy`);
+    continue;
+  }
   fs.mkdirSync(path.dirname(destinationPath), { recursive: true });
   fs.copyFileSync(sourcePath, destinationPath);
 }
