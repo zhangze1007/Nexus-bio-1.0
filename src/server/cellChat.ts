@@ -13,6 +13,8 @@
  */
 
 import ligandReceptorDB from '../data/ligandReceptorDB.json';
+import { EXPANDED_LR_DB, type LRPairExpanded } from '../data/ligandReceptorDBExpanded';
+import { SeededRNG } from '../utils/seededRng';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -263,6 +265,327 @@ export function analyzeCommunication(input: CommunicationInput): CommunicationRe
  */
 export function getLRDatabase(): LRPair[] {
   return ligandReceptorDB as LRPair[];
+}
+
+/**
+ * Get expanded L-R database (2000+ pairs).
+ */
+export function getExpandedLRDatabase(): LRPairExpanded[] {
+  return EXPANDED_LR_DB;
+}
+
+// ─── Expanded Communication Analysis with Permutation Testing ──────────────
+
+export interface ExpandedCommunicationInput {
+  /** gene -> cluster -> mean expression */
+  expressionMatrix: Record<string, Record<string, number>>;
+  /** cluster identifiers */
+  clusters: string[];
+  /** cell counts per cluster */
+  cellCounts?: Record<string, number>;
+  /** Hill coefficient (default 1.5) */
+  hillCoef?: number;
+  /** number of permutations for p-value (default 1000) */
+  nPermutations?: number;
+  /** RNG seed for reproducibility */
+  seed?: number;
+  /** use expanded database (default true) */
+  useExpandedDB?: boolean;
+}
+
+export interface ExpandedLRInteraction {
+  ligand: string;
+  receptor: string;
+  pathway: string;
+  category: string;
+  sender: string;
+  receiver: string;
+  probability: number;
+  pValue: number;
+  pAdj: number;
+  significant: boolean;
+}
+
+export interface ExpandedCommunicationResult {
+  interactions: ExpandedLRInteraction[];
+  centrality: Record<string, ClusterCentrality>;
+  pathwaySummary: Record<string, number>;
+  pathwayDetails: PathwaySummary[];
+  topInteractions: ExpandedLRInteraction[];
+  network: {
+    nodes: Array<{ id: string; cellType: string; nCells: number }>;
+    edges: Array<{ source: string; target: string; weight: number; significant: boolean }>;
+  };
+  stats: {
+    totalInteractions: number;
+    significantInteractions: number;
+    nCellTypes: number;
+    nPermutations: number;
+    nLRPairs: number;
+  };
+}
+
+/**
+ * Benjamini-Hochberg FDR correction.
+ */
+function benjaminiHochberg(pValues: number[]): number[] {
+  const n = pValues.length;
+  if (n === 0) return [];
+
+  // Create (index, p-value) pairs and sort by p-value
+  const indexed = pValues.map((p, i) => ({ p, i }));
+  indexed.sort((a, b) => a.p - b.p);
+
+  const adjusted = new Array(n).fill(0);
+  let prevAdj = 1;
+
+  // Apply BH correction from largest to smallest
+  for (let k = n - 1; k >= 0; k--) {
+    const rank = k + 1;
+    const adj = Math.min(1, indexed[k].p * n / rank);
+    adjusted[indexed[k].i] = Math.min(adj, prevAdj);
+    prevAdj = adjusted[indexed[k].i];
+  }
+
+  return adjusted;
+}
+
+/**
+ * Analyze cell-cell communication with expanded L-R database and permutation testing.
+ *
+ * For each cluster pair and L-R pair:
+ *   1. Compute observed communication probability
+ *   2. Permutation test: shuffle cell labels nPermutations times
+ *   3. p-value = fraction of permuted values >= observed
+ *   4. FDR correction: Benjamini-Hochberg
+ */
+export function analyzeCommunicationExpanded(input: ExpandedCommunicationInput): ExpandedCommunicationResult {
+  const {
+    expressionMatrix,
+    clusters,
+    cellCounts,
+    hillCoef = 1.5,
+    nPermutations = 1000,
+    seed = 42,
+    useExpandedDB = true,
+  } = input;
+
+  const rng = new SeededRNG(seed);
+  const db: LRPairExpanded[] = useExpandedDB ? EXPANDED_LR_DB : (ligandReceptorDB as LRPair[]).map(lr => ({
+    ...lr,
+    category: 'other',
+  }));
+
+  const rawInteractions: ExpandedLRInteraction[] = [];
+  const rawProbs: number[] = [];
+
+  // Step 1: Compute observed communication probabilities
+  for (const lr of db) {
+    const ligandExpr = expressionMatrix[lr.ligand];
+    const receptorExpr = expressionMatrix[lr.receptor];
+
+    if (!ligandExpr && !receptorExpr) continue;
+
+    for (const sender of clusters) {
+      for (const receiver of clusters) {
+        const lExpr = ligandExpr?.[sender] ?? 0;
+        const rExpr = receptorExpr?.[receiver] ?? 0;
+
+        let prob = lExpr * rExpr;
+
+        if (cellCounts) {
+          const nSender = cellCounts[sender] ?? 1;
+          const nReceiver = cellCounts[receiver] ?? 1;
+          const nAvg = (nSender + nReceiver) / 2;
+          prob *= hill(nAvg / 100, hillCoef);
+        }
+
+        rawProbs.push(prob);
+        rawInteractions.push({
+          ligand: lr.ligand,
+          receptor: lr.receptor,
+          pathway: lr.pathway,
+          category: lr.category,
+          sender,
+          receiver,
+          probability: prob,
+          pValue: 1,
+          pAdj: 1,
+          significant: false,
+        });
+      }
+    }
+  }
+
+  // Step 2: Normalize probabilities
+  const normalized = normalizeProbabilities(rawProbs);
+
+  // Step 3: Permutation testing for significance
+  // For each L-R pair, shuffle cluster labels and recompute
+  const permutationMaxProbs: number[] = [];
+
+  for (let perm = 0; perm < nPermutations; perm++) {
+    // Shuffle cluster labels
+    const shuffledClusters = [...clusters];
+    for (let i = shuffledClusters.length - 1; i > 0; i--) {
+      const j = Math.floor(rng.next() * (i + 1));
+      [shuffledClusters[i], shuffledClusters[j]] = [shuffledClusters[j], shuffledClusters[i]];
+    }
+
+    // Compute max probability under permutation
+    let maxPermProb = 0;
+    for (const lr of db) {
+      const ligandExpr = expressionMatrix[lr.ligand];
+      const receptorExpr = expressionMatrix[lr.receptor];
+      if (!ligandExpr && !receptorExpr) continue;
+
+      for (let si = 0; si < clusters.length; si++) {
+        for (let ri = 0; ri < clusters.length; ri++) {
+          const sender = shuffledClusters[si];
+          const receiver = shuffledClusters[ri];
+          const lExpr = ligandExpr?.[sender] ?? 0;
+          const rExpr = receptorExpr?.[receiver] ?? 0;
+          const prob = lExpr * rExpr;
+          if (prob > maxPermProb) maxPermProb = prob;
+        }
+      }
+    }
+    permutationMaxProbs.push(maxPermProb);
+  }
+
+  // Step 4: Compute p-values
+  const pValues: number[] = [];
+  for (let idx = 0; idx < rawInteractions.length; idx++) {
+    const obsProb = normalized[idx];
+    let count = 0;
+    for (const permProb of permutationMaxProbs) {
+      if (permProb >= obsProb) count++;
+    }
+    const pValue = (count + 1) / (nPermutations + 1); // +1 for continuity
+    pValues.push(pValue);
+    rawInteractions[idx].pValue = round(pValue, 6);
+  }
+
+  // Step 5: FDR correction
+  const pAdj = benjaminiHochberg(pValues);
+
+  // Step 6: Build final interactions
+  const interactions: ExpandedLRInteraction[] = [];
+  for (let idx = 0; idx < rawInteractions.length; idx++) {
+    const interaction = rawInteractions[idx];
+    const prob = normalized[idx];
+    if (prob > 0) {
+      interaction.probability = round(prob);
+      interaction.pAdj = round(pAdj[idx], 6);
+      interaction.significant = pAdj[idx] < 0.05;
+      interactions.push(interaction);
+    }
+  }
+
+  interactions.sort((a, b) => b.probability - a.probability);
+
+  // Step 7: Compute centrality
+  const centrality: Record<string, ClusterCentrality> = {};
+  for (const cluster of clusters) {
+    let outgoing = 0;
+    let incoming = 0;
+
+    for (const inter of interactions) {
+      if (inter.sender === cluster) outgoing += inter.probability;
+      if (inter.receiver === cluster) incoming += inter.probability;
+    }
+
+    const total = outgoing + incoming;
+    let dominantRole: 'sender' | 'receiver' | 'mediator';
+    if (total === 0) {
+      dominantRole = 'mediator';
+    } else {
+      const ratio = outgoing / total;
+      if (ratio > 0.6) dominantRole = 'sender';
+      else if (ratio < 0.4) dominantRole = 'receiver';
+      else dominantRole = 'mediator';
+    }
+
+    centrality[cluster] = {
+      outgoingStrength: round(outgoing),
+      incomingStrength: round(incoming),
+      totalStrength: round(total),
+      dominantRole,
+    };
+  }
+
+  // Step 8: Pathway summary
+  const pathwayAgg: Record<string, { total: number; count: number; senders: Record<string, number>; receivers: Record<string, number> }> = {};
+  for (const inter of interactions) {
+    if (!pathwayAgg[inter.pathway]) {
+      pathwayAgg[inter.pathway] = { total: 0, count: 0, senders: {}, receivers: {} };
+    }
+    pathwayAgg[inter.pathway].total += inter.probability;
+    pathwayAgg[inter.pathway].count += 1;
+    pathwayAgg[inter.pathway].senders[inter.sender] =
+      (pathwayAgg[inter.pathway].senders[inter.sender] ?? 0) + inter.probability;
+    pathwayAgg[inter.pathway].receivers[inter.receiver] =
+      (pathwayAgg[inter.pathway].receivers[inter.receiver] ?? 0) + inter.probability;
+  }
+
+  const pathwaySummary: Record<string, number> = {};
+  const pathwayDetails: PathwaySummary[] = [];
+
+  for (const [pathway, agg] of Object.entries(pathwayAgg)) {
+    pathwaySummary[pathway] = round(agg.total);
+    const topSender = Object.entries(agg.senders).sort(([, a], [, b]) => b - a)[0]?.[0] ?? '';
+    const topReceiver = Object.entries(agg.receivers).sort(([, a], [, b]) => b - a)[0]?.[0] ?? '';
+    pathwayDetails.push({
+      pathway,
+      totalStrength: round(agg.total),
+      interactionCount: agg.count,
+      topSender,
+      topReceiver,
+    });
+  }
+  pathwayDetails.sort((a, b) => b.totalStrength - a.totalStrength);
+
+  // Step 9: Build network
+  const networkNodes = clusters.map(c => ({
+    id: c,
+    cellType: c,
+    nCells: cellCounts?.[c] ?? 0,
+  }));
+
+  const edgeMap = new Map<string, { weight: number; significant: boolean }>();
+  for (const inter of interactions) {
+    const key = `${inter.sender}->${inter.receiver}`;
+    const existing = edgeMap.get(key);
+    if (existing) {
+      existing.weight += inter.probability;
+      existing.significant = existing.significant || inter.significant;
+    } else {
+      edgeMap.set(key, { weight: inter.probability, significant: inter.significant });
+    }
+  }
+
+  const networkEdges = Array.from(edgeMap.entries()).map(([key, val]) => {
+    const [source, target] = key.split('->');
+    return { source, target, weight: round(val.weight), significant: val.significant };
+  });
+
+  const topInteractions = interactions.slice(0, 20);
+
+  return {
+    interactions,
+    centrality,
+    pathwaySummary,
+    pathwayDetails,
+    topInteractions,
+    network: { nodes: networkNodes, edges: networkEdges },
+    stats: {
+      totalInteractions: interactions.length,
+      significantInteractions: interactions.filter(i => i.significant).length,
+      nCellTypes: clusters.length,
+      nPermutations,
+      nLRPairs: db.length,
+    },
+  };
 }
 
 /**
