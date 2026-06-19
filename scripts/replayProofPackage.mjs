@@ -12,8 +12,15 @@ const commands = [
   ['npm', ['run', 'benchmark:trust:validate']],
   ['npm', ['run', 'benchmark:trust:evaluate']],
   ['npm', ['run', 'benchmark:trust:report']],
-  ['npm', ['run', 'reference:py:compare']],
 ];
+
+// Python comparison is optional — skip if python3 is not available
+const pythonCheck = spawnSync('python3', ['--version'], { stdio: 'pipe', shell: process.platform === 'win32' });
+if (pythonCheck.status === 0) {
+  commands.push(['npm', ['run', 'reference:py:compare']]);
+} else {
+  console.log('⚠ python3 not available — skipping reference:py:compare');
+}
 
 const reportCopies = [
   ['reports/trust-metrics/latest.json', 'proof-package/reports/trust-metrics-latest.json'],
