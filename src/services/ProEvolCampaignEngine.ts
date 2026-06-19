@@ -1,3 +1,40 @@
+import { predictDDG, predictMultiDDG, scanAllMutations } from '../server/ddgPrediction';
+import { parsePDB, computeDihedrals, computeSASA, assignSecondaryStructure, getHydrophobicity } from '../utils/pdbParser';
+
+// ── BLOSUM62 matrix for evolutionary scoring ──────────────────────────────
+// Built from the standard BLOSUM62 matrix. Each row maps amino acid → score.
+const _B62: number[][] = [
+  // A  R  N  D  C  Q  E  G  H  I  L  K  M  F  P  S  T  W  Y  V
+  [ 4,-1,-2,-2, 0,-1,-1, 0,-2,-1,-1,-1,-1,-2,-1, 1, 0,-3,-2, 0], // A
+  [-1, 5, 0,-2,-3, 1, 0,-2, 0,-3,-2, 2,-1,-3,-2,-1,-1,-3,-2,-3], // R
+  [-2, 0, 6, 1,-3, 0, 0, 0, 1,-3,-3, 0,-2,-3,-2, 1, 0,-4,-2,-3], // N
+  [-2,-1, 1, 6,-3, 0, 2,-1,-1,-3,-4,-1,-3,-3,-1, 0,-1,-4,-3,-3], // D
+  [ 0,-3,-3,-3, 9,-3,-4,-3,-3,-1,-1,-3,-1,-2,-3,-1,-1,-2,-2,-1], // C
+  [-1, 1, 0, 0,-3, 5, 2,-2, 0,-3,-2, 1, 0,-3,-1, 0,-1,-2,-1,-2], // Q
+  [-1, 0, 0, 2,-4, 2, 5,-2, 0,-3,-3, 1,-2,-3,-1, 0,-1,-3,-2,-2], // E
+  [ 0,-2, 0,-1,-3,-2,-2, 6,-2,-4,-4,-2,-3,-3,-2, 0,-2,-2,-3,-3], // G
+  [-2, 0, 1,-1,-3, 0, 0,-2, 8,-3,-3,-1,-2,-1,-2,-1,-2,-2, 2,-3], // H
+  [-1,-3,-3,-3,-1,-3,-3,-4,-3, 4, 2,-3, 1, 0,-3,-2,-1,-3,-1, 3], // I
+  [-1,-2,-3,-4,-1,-2,-3,-4,-1, 2, 4,-2, 2, 0,-3,-2,-1,-2,-1, 1], // L
+  [-1, 2, 0,-1,-3, 1, 1,-2,-1,-3,-2, 5,-1,-3,-1, 0,-1,-3,-2,-2], // K
+  [-1,-1,-2,-3,-1, 0,-2,-3,-2, 1, 2,-1, 5, 0,-2,-1,-1,-1,-1, 1], // M
+  [-2,-3,-3,-3,-2,-3,-3,-3,-1, 0, 0,-3, 0, 6,-4,-2,-2, 1, 3,-1], // F
+  [-1,-2,-2,-1,-3,-1,-1,-2,-2,-3,-3,-1,-2,-4, 7,-1,-1,-4,-3,-2], // P
+  [ 1,-1, 0, 0,-1, 0, 0, 0,-1,-2,-2, 0,-1,-2,-1, 4, 1,-3,-2,-2], // S
+  [ 0,-1, 0,-1,-1,-1,-1,-2,-2,-1,-1,-1,-1,-2,-1, 1, 5,-2,-2, 0], // T
+  [-3,-3,-4,-4,-2,-1,-3,-2,-2,-3,-2,-3,-1, 1,-4,-3,-2,11, 2,-3], // W
+  [-2,-2,-2,-3,-2,-1,-2,-3, 2,-1,-1,-2,-1, 3,-3,-2,-2, 2, 7,-1], // Y
+  [ 0,-3,-3,-3,-1,-2,-2,-3,-3, 3, 1,-2, 1,-1,-2,-2, 0,-3,-1, 4], // V
+];
+const AA_ORDER = 'ARNDCEQGHILKMFPSTWYV';
+const BLOSUM62: Record<string, Record<string, number>> = {};
+for (let i = 0; i < 20; i++) {
+  BLOSUM62[AA_ORDER[i]] = {};
+  for (let j = 0; j < 20; j++) {
+    BLOSUM62[AA_ORDER[i]][AA_ORDER[j]] = _B62[i][j];
+  }
+}
+
 export type CampaignProvenance = 'simulated' | 'inferred' | 'literature-backed' | 'user-supplied';
 export type VariantSelectionStatus = 'selected' | 'rejected' | 'wild-type';
 export type ConvergenceState =
@@ -1464,4 +1501,430 @@ export function buildProEvolCampaign(input: ProEvolCampaignInput): ProteinEvolut
   };
   campaign.landscape = buildLandscapeMap(campaign);
   return campaign;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PROTEIN DESIGN ENGINES — Real computational biology
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Scan all single-point mutations for ΔΔG stability prediction.
+ * Connects the server-side ddgPrediction engine to ProEvol's workflow.
+ */
+export function scanMutations(pdbText: string, sequence: string, chainId?: string) {
+  return scanAllMutations(pdbText, sequence, chainId);
+}
+
+/**
+ * Zero-shot fitness prediction combining evolutionary (BLOSUM62), structural,
+ * and stability features. No ML model required — runs entirely client-side.
+ *
+ * @returns Per-mutation fitness predictions with component breakdown
+ */
+export function predictFitness(input: {
+  sequence: string;
+  mutations: Array<{ position: number; mut: string }>;
+  pdbText?: string;
+  ddgResults?: Map<string, number>; // pre-computed ΔΔG cache
+}): {
+  predictions: Array<{
+    position: number;
+    wt: string;
+    mut: string;
+    fitnessScore: number;
+    classification: 'beneficial' | 'neutral' | 'deleterious';
+    confidence: number;
+    components: { blosum: number; stability: number; structural: number };
+  }>;
+} {
+  const { sequence, mutations, pdbText, ddgResults } = input;
+  const AA_CODES = 'ACDEFGHIKLMNPQRSTVWY';
+
+  // Pre-compute structural features if PDB available
+  let sasaMap: Map<number, number> = new Map();
+  let ssMap: Map<number, string> = new Map();
+  if (pdbText) {
+    try {
+      const structure = parsePDB(pdbText);
+      const sasa = computeSASA(structure);
+      const ss = assignSecondaryStructure(structure);
+      for (const r of sasa) sasaMap.set(r.residueNumber, r.relativeSASA);
+      for (const r of ss) ssMap.set(r.residueNumber, r.ss);
+    } catch { /* PDB parse failed — use defaults */ }
+  }
+
+  const predictions = mutations.map(({ position, mut }) => {
+    const wt = sequence[position - 1]?.toUpperCase() ?? 'A';
+    const mutUpper = mut.toUpperCase();
+
+    // 1. BLOSUM62 score (evolutionary plausibility)
+    const blosumRaw = BLOSUM62[wt]?.[mutUpper] ?? -4;
+    // Normalize to [0, 1] range (BLOSUM62 range is roughly -4 to +11)
+    const blosum = Math.max(0, Math.min(1, (blosumRaw + 4) / 15));
+
+    // 2. Stability score from ΔΔG
+    let stability = 0.5; // default if no PDB
+    if (ddgResults?.has(`${position}:${mutUpper}`)) {
+      const ddg = ddgResults.get(`${position}:${mutUpper}`)!;
+      // exp(-|ΔΔG|/2): 0 kcal/mol → 1.0, 2 kcal/mol → 0.37, 5 kcal/mol → 0.08
+      stability = Math.exp(-Math.abs(ddg) / 2);
+    } else if (pdbText) {
+      try {
+        const result = predictDDG(pdbText, { position, wtResidue: wt, mutantResidue: mutUpper });
+        stability = Math.exp(-Math.abs(result.ddG) / 2);
+      } catch { /* prediction failed */ }
+    }
+
+    // 3. Structural environment score
+    let structural = 0.5;
+    const relSASA = sasaMap.get(position) ?? 0.5;
+    const ss = ssMap.get(position) ?? 'C';
+    const mutHydro = getHydrophobicity(residueName3(mutUpper));
+    const isBuried = relSASA < 0.3;
+    const isHelix = ss === 'H';
+    const isSheet = ss === 'E';
+
+    // Buried positions prefer hydrophobic residues
+    if (isBuried) {
+      structural = mutHydro;
+    } else {
+      // Surface positions prefer polar/charged
+      structural = 1 - mutHydro;
+    }
+
+    // Helix/sheet propensity bonus
+    const HELIX_P: Record<string, number> = { A: 1.42, E: 1.51, L: 1.21, M: 1.45, K: 1.16, Q: 1.11, R: 0.98, V: 1.06, I: 1.08, F: 1.13, D: 1.01, H: 1.0, W: 1.08, S: 0.77, N: 0.67, T: 0.83, C: 0.70, P: 0.57, G: 0.57, Y: 0.69 };
+    const SHEET_P: Record<string, number> = { V: 1.7, I: 1.6, Y: 1.47, F: 1.38, W: 1.37, L: 1.3, T: 1.19, C: 1.19, Q: 1.1, M: 1.05, R: 0.93, H: 0.87, N: 0.89, A: 0.83, G: 0.75, S: 0.75, K: 0.74, D: 0.54, E: 0.37, P: 0.55 };
+
+    if (isHelix) {
+      const prop = (HELIX_P[mutUpper] ?? 1.0) / 1.5;
+      structural = (structural + prop) / 2;
+    } else if (isSheet) {
+      const prop = (SHEET_P[mutUpper] ?? 1.0) / 1.7;
+      structural = (structural + prop) / 2;
+    }
+
+    // Composite fitness score
+    const fitnessScore = round(0.4 * blosum + 0.3 * stability + 0.3 * structural, 3);
+
+    // Classification
+    const classification: 'beneficial' | 'neutral' | 'deleterious' =
+      fitnessScore > 0.7 ? 'beneficial' : fitnessScore > 0.4 ? 'neutral' : 'deleterious';
+
+    // Confidence: higher when we have PDB data
+    const confidence = pdbText ? 0.65 : 0.35;
+
+    return {
+      position,
+      wt,
+      mut: mutUpper,
+      fitnessScore,
+      classification,
+      confidence,
+      components: { blosum: round(blosum, 3), stability: round(stability, 3), structural: round(structural, 3) },
+    };
+  });
+
+  return { predictions };
+}
+
+function residueName3(aa1: string): string {
+  const map: Record<string, string> = {
+    A: 'ALA', R: 'ARG', N: 'ASN', D: 'ASP', C: 'CYS',
+    E: 'GLU', Q: 'GLN', G: 'GLY', H: 'HIS', I: 'ILE',
+    L: 'LEU', K: 'LYS', M: 'MET', F: 'PHE', P: 'PRO',
+    S: 'SER', T: 'THR', W: 'TRP', Y: 'TYR', V: 'VAL',
+  };
+  return map[aa1] ?? 'ALA';
+}
+
+/**
+ * Conservation analysis using BLOSUM62 column entropy.
+ * Positions with low entropy are evolutionarily conserved (do not mutate).
+ * Positions with high entropy are variable (safe to mutate).
+ */
+export function analyzeConservation(sequence: string): {
+  perPosition: Array<{
+    position: number;
+    residue: string;
+    entropy: number;
+    conservation: number;
+    classification: 'conserved' | 'moderate' | 'variable';
+  }>;
+  conservedPositions: number[];
+  variablePositions: number[];
+} {
+  const perPosition = sequence.split('').map((aa, i) => {
+    const upper = aa.toUpperCase();
+    const row = BLOSUM62[upper];
+    if (!row) {
+      return { position: i + 1, residue: upper, entropy: 2.0, conservation: 0.5, classification: 'moderate' as const };
+    }
+
+    // Convert BLOSUM62 row to probability distribution via softmax
+    const values = Object.values(row);
+    const maxVal = Math.max(...values);
+    const expValues = values.map(v => Math.exp((v - maxVal) / 3)); // temperature = 3
+    const sumExp = expValues.reduce((s, v) => s + v, 0);
+    const probs = expValues.map(v => v / sumExp);
+
+    // Shannon entropy
+    const entropy = -probs.reduce((s, p) => s + (p > 0 ? p * Math.log2(p) : 0), 0);
+    const maxEntropy = Math.log2(20); // max possible entropy for 20 AAs
+    const conservation = 1 - entropy / maxEntropy;
+
+    const classification: 'conserved' | 'moderate' | 'variable' =
+      conservation > 0.8 ? 'conserved' : conservation > 0.5 ? 'moderate' : 'variable';
+
+    return { position: i + 1, residue: upper, entropy: round(entropy, 3), conservation: round(conservation, 3), classification };
+  });
+
+  return {
+    perPosition,
+    conservedPositions: perPosition.filter(p => p.classification === 'conserved').map(p => p.position),
+    variablePositions: perPosition.filter(p => p.classification === 'variable').map(p => p.position),
+  };
+}
+
+/**
+ * Inverse folding: design sequences that fold into a target structure.
+ * Uses structural constraints (burial, secondary structure, hydrophobicity)
+ * combined with BLOSUM62 evolutionary plausibility.
+ */
+export function designSequences(input: {
+  sequence: string;
+  pdbText?: string;
+  fixedPositions?: number[];
+  numDesigns?: number;
+}): {
+  designs: Array<{
+    sequence: string;
+    mutations: Array<{ position: number; wt: string; mut: string }>;
+    scores: { stability: number; plausibility: number; compatibility: number; composite: number };
+  }>;
+} {
+  const { sequence, pdbText, fixedPositions = [], numDesigns = 10 } = input;
+  const fixedSet = new Set(fixedPositions);
+  const AA_CODES = 'ACDEFGHIKLMNPQRSTVWY';
+
+  // Pre-compute structural features
+  let burialMap: Map<number, number> = new Map();
+  let ssMap: Map<number, string> = new Map();
+  if (pdbText) {
+    try {
+      const structure = parsePDB(pdbText);
+      const sasa = computeSASA(structure);
+      const ss = assignSecondaryStructure(structure);
+      for (const r of sasa) burialMap.set(r.residueNumber, 1 - r.relativeSASA);
+      for (const r of ss) ssMap.set(r.residueNumber, r.ss);
+    } catch { /* use defaults */ }
+  }
+
+  const designs: Array<{
+    sequence: string;
+    mutations: Array<{ position: number; wt: string; mut: string }>;
+    scores: { stability: number; plausibility: number; compatibility: number; composite: number };
+  }> = [];
+
+  for (let d = 0; d < numDesigns; d++) {
+    const mutSeq = sequence.split('');
+    const mutations: Array<{ position: number; wt: string; mut: string }> = [];
+    let totalPlausibility = 0;
+    let totalCompatibility = 0;
+    let positionsScored = 0;
+
+    for (let i = 0; i < sequence.length; i++) {
+      const pos = i + 1;
+      if (fixedSet.has(pos)) continue;
+
+      const wt = sequence[i].toUpperCase();
+      const burial = burialMap.get(pos) ?? 0.5;
+      const ss = ssMap.get(pos) ?? 'C';
+
+      // Score all 20 AAs for this position
+      const scores: Array<{ aa: string; score: number }> = [];
+      for (const aa of AA_CODES) {
+        if (aa === wt) { scores.push({ aa, score: 1.0 }); continue; }
+
+        // BLOSUM62 plausibility
+        const blosum = BLOSUM62[wt]?.[aa] ?? -4;
+        const plausibility = Math.max(0, (blosum + 4) / 15);
+
+        // Hydrophobic match
+        const hydro = getHydrophobicity(residueName3(aa));
+        const hydroMatch = burial > 0.6 ? hydro : 1 - hydro;
+
+        // Secondary structure propensity
+        const HELIX_P: Record<string, number> = { A: 1.42, E: 1.51, L: 1.21, M: 1.45, K: 1.16, Q: 1.11, R: 0.98, V: 1.06, I: 1.08, F: 1.13, D: 1.01, H: 1.0, W: 1.08, S: 0.77, N: 0.67, T: 0.83, C: 0.70, P: 0.57, G: 0.57, Y: 0.69 };
+        const SHEET_P: Record<string, number> = { V: 1.7, I: 1.6, Y: 1.47, F: 1.38, W: 1.37, L: 1.3, T: 1.19, C: 1.19, Q: 1.1, M: 1.05, R: 0.93, H: 0.87, N: 0.89, A: 0.83, G: 0.75, S: 0.75, K: 0.74, D: 0.54, E: 0.37, P: 0.55 };
+        const ssProp = ss === 'H' ? (HELIX_P[aa] ?? 1.0) / 1.5 : ss === 'E' ? (SHEET_P[aa] ?? 1.0) / 1.7 : 0.5;
+
+        const composite = 0.4 * plausibility + 0.3 * hydroMatch + 0.3 * ssProp;
+        scores.push({ aa, score: composite });
+      }
+
+      // Sample from softmax distribution (temperature decreases with design rank)
+      const temp = 0.3 + (d / numDesigns) * 0.5;
+      const expScores = scores.map(s => Math.exp(s.score / temp));
+      const sumExp = expScores.reduce((s, v) => s + v, 0);
+      const probs = expScores.map(v => v / sumExp);
+
+      // Weighted random selection
+      const r = Math.random(); // OK for design diversity
+      let cumulative = 0;
+      let selected = wt;
+      for (let j = 0; j < probs.length; j++) {
+        cumulative += probs[j];
+        if (r < cumulative) { selected = scores[j].aa; break; }
+      }
+
+      if (selected !== wt) {
+        mutSeq[i] = selected;
+        mutations.push({ position: pos, wt, mut: selected });
+        const bestScore = scores.find(s => s.aa === selected)?.score ?? 0.5;
+        totalPlausibility += (BLOSUM62[wt]?.[selected] ?? -4 + 4) / 15;
+        totalCompatibility += getHydrophobicity(residueName3(selected));
+        positionsScored++;
+      }
+    }
+
+    const avgPlausibility = positionsScored > 0 ? totalPlausibility / positionsScored : 1;
+    const avgCompatibility = positionsScored > 0 ? totalCompatibility / positionsScored : 1;
+    const stability = pdbText ? estimateDesignStability(pdbText, mutations) : 0.5;
+
+    designs.push({
+      sequence: mutSeq.join(''),
+      mutations,
+      scores: {
+        stability: round(stability, 3),
+        plausibility: round(avgPlausibility, 3),
+        compatibility: round(avgCompatibility, 3),
+        composite: round(0.4 * stability + 0.3 * avgPlausibility + 0.3 * avgCompatibility, 3),
+      },
+    });
+  }
+
+  // Sort by composite score (best first)
+  designs.sort((a, b) => b.scores.composite - a.scores.composite);
+  return { designs };
+}
+
+function estimateDesignStability(pdbText: string, mutations: Array<{ position: number; wt: string; mut: string }>): number {
+  if (mutations.length === 0) return 1.0;
+  try {
+    const result = predictMultiDDG(pdbText, mutations.map(m => ({
+      position: m.position, wtResidue: m.wt, mutantResidue: m.mut,
+    })));
+    return Math.exp(-Math.abs(result.ddG) / 3);
+  } catch { return 0.5; }
+}
+
+/**
+ * Design a mutant library with intelligent sampling.
+ * Combines combinatorial enumeration with Pareto-based selection.
+ */
+export function designMutantLibrary(input: {
+  sequence: string;
+  positions: number[];
+  candidatesPerPosition: string[][];
+  librarySize?: number;
+  pdbText?: string;
+}): {
+  library: Array<{
+    sequence: string;
+    mutations: Array<{ position: number; wt: string; mut: string }>;
+    scores: { stability: number; fitness: number; diversity: number };
+  }>;
+  stats: { totalEnumerated: number; librarySize: number; paretoFrontSize: number };
+} {
+  const { sequence, positions, candidatesPerPosition, librarySize = 50, pdbText } = input;
+
+  // Generate all combinations (cap at 10000)
+  let combinations: string[][] = [[]];
+  for (let i = 0; i < positions.length; i++) {
+    const newCombos: string[][] = [];
+    for (const combo of combinations) {
+      for (const aa of candidatesPerPosition[i]) {
+        newCombos.push([...combo, aa]);
+      }
+    }
+    combinations = newCombos;
+    if (combinations.length > 10000) break;
+  }
+
+  // Score each combination
+  const scored = combinations.map(combo => {
+    const mutSeq = sequence.split('');
+    const mutations: Array<{ position: number; wt: string; mut: string }> = [];
+    for (let i = 0; i < positions.length; i++) {
+      const pos = positions[i];
+      const wt = sequence[pos - 1];
+      const mut = combo[i];
+      if (mut !== wt) {
+        mutSeq[pos - 1] = mut;
+        mutations.push({ position: pos, wt, mut });
+      }
+    }
+
+    // Stability: from ΔΔG if PDB available
+    let stability = 0.5;
+    if (pdbText && mutations.length > 0) {
+      stability = estimateDesignStability(pdbText, mutations);
+    }
+
+    // Fitness: BLOSUM62 average
+    const fitness = mutations.length > 0
+      ? mutations.reduce((s, m) => s + ((BLOSUM62[m.wt]?.[m.mut] ?? -4) + 4) / 15, 0) / mutations.length
+      : 1.0;
+
+    // Diversity: Hamming distance from wild-type (normalized)
+    const diversity = mutations.length / positions.length;
+
+    return {
+      sequence: mutSeq.join(''),
+      mutations,
+      scores: { stability: round(stability, 3), fitness: round(fitness, 3), diversity: round(diversity, 3) },
+    };
+  });
+
+  // Pareto front selection: pick non-dominated solutions
+  const paretoFront = selectParetoFront(scored);
+
+  // If pareto front is larger than librarySize, sample uniformly
+  const selected = paretoFront.length <= librarySize
+    ? paretoFront
+    : paretoFront.slice(0, librarySize);
+
+  return {
+    library: selected,
+    stats: {
+      totalEnumerated: scored.length,
+      librarySize: selected.length,
+      paretoFrontSize: paretoFront.length,
+    },
+  };
+}
+
+function selectParetoFront<T extends { scores: { stability: number; fitness: number; diversity: number } }>(
+  candidates: T[],
+): T[] {
+  const front: T[] = [];
+  for (const c of candidates) {
+    let dominated = false;
+    for (const other of candidates) {
+      if (other === c) continue;
+      // other dominates c if it's better in ALL objectives
+      const betterInAll =
+        other.scores.stability >= c.scores.stability &&
+        other.scores.fitness >= c.scores.fitness &&
+        other.scores.diversity >= c.scores.diversity;
+      const strictlyBetter =
+        other.scores.stability > c.scores.stability ||
+        other.scores.fitness > c.scores.fitness ||
+        other.scores.diversity > c.scores.diversity;
+      if (betterInAll && strictlyBetter) { dominated = true; break; }
+    }
+    if (!dominated) front.push(c);
+  }
+  return front;
 }

@@ -1426,3 +1426,184 @@ export function runFullDesignPipeline(
     auditTrail,
   };
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PATHWAY OPTIMIZATION ENGINES — Real data integration
+// ═══════════════════════════════════════════════════════════════════════════
+
+export interface BottleneckInput {
+  pathwaySteps: Array<{
+    enzymeId: string;
+    enzymeName: string;
+    ecNumber?: string;
+    substrate: string;
+    product: string;
+  }>;
+  fbaData?: {
+    shadowPrices?: Record<string, number>;
+    fluxes?: Record<string, number>;
+    feasible?: boolean;
+  };
+  cethxData?: {
+    steps?: Array<{ reaction: string; deltaG: number }>;
+    overallFeasible?: boolean;
+  };
+  dbtlflowData?: {
+    iterations?: Array<{ phase: string; passed: boolean }>;
+    passRate?: number;
+  };
+}
+
+export interface BottleneckResult {
+  enzymeId: string;
+  enzymeName: string;
+  score: number;
+  factors: {
+    fba: number;
+    thermo: number;
+    experimental: number;
+  };
+  recommendation: string;
+}
+
+/**
+ * Identify bottleneck enzymes in a pathway using real data from FBA, CETHX, and DBTLflow.
+ *
+ * Scoring:
+ * - 0.4 × |shadow price| (FBA sensitivity — how much the objective changes per unit flux)
+ * - 0.3 × max(0, ΔG) (thermodynamic barrier — positive ΔG = unfavorable)
+ * - 0.3 × (1 - pass rate) (experimental difficulty)
+ */
+export function identifyBottlenecks(input: BottleneckInput): {
+  bottlenecks: BottleneckResult[];
+  topBottleneck: BottleneckResult | null;
+  summary: string;
+} {
+  const { pathwaySteps, fbaData, cethxData, dbtlflowData } = input;
+
+  const bottlenecks: BottleneckResult[] = pathwaySteps.map(step => {
+    // FBA factor: normalized shadow price
+    let fbaFactor = 0.5; // default if no FBA data
+    if (fbaData?.shadowPrices) {
+      const shadowPrice = Math.abs(fbaData.shadowPrices[step.enzymeId] ?? 0);
+      // Normalize: shadow prices typically range 0-2
+      fbaFactor = Math.min(shadowPrice / 2, 1);
+    }
+    if (fbaData?.fluxes) {
+      const flux = fbaData.fluxes[step.enzymeId] ?? 0;
+      // Low flux = potential bottleneck
+      const maxFlux = Math.max(...Object.values(fbaData.fluxes).map(Math.abs));
+      if (maxFlux > 0) {
+        const normalizedFlux = Math.abs(flux) / maxFlux;
+        fbaFactor = (fbaFactor + (1 - normalizedFlux)) / 2;
+      }
+    }
+
+    // Thermo factor: positive ΔG = unfavorable = bottleneck
+    let thermoFactor = 0.3; // default
+    if (cethxData?.steps) {
+      const stepData = cethxData.steps.find(s =>
+        s.reaction.toLowerCase().includes(step.enzymeId.toLowerCase()) ||
+        s.reaction.toLowerCase().includes(step.enzymeName.toLowerCase())
+      );
+      if (stepData) {
+        // ΔG > 0 = unfavorable, scale by RT (2.48 kJ/mol at 298K)
+        thermoFactor = Math.min(Math.max(0, stepData.deltaG) / 5, 1);
+      }
+    }
+
+    // Experimental factor: pass rate from DBTLflow
+    let experimentalFactor = 0.3; // default
+    if (dbtlflowData?.passRate !== undefined) {
+      experimentalFactor = 1 - dbtlflowData.passRate;
+    } else if (dbtlflowData?.iterations) {
+      const passed = dbtlflowData.iterations.filter(i => i.passed).length;
+      const total = dbtlflowData.iterations.length;
+      if (total > 0) {
+        experimentalFactor = 1 - passed / total;
+      }
+    }
+
+    // Composite score
+    const score = round3(0.4 * fbaFactor + 0.3 * thermoFactor + 0.3 * experimentalFactor);
+
+    // Generate recommendation
+    let recommendation = '';
+    if (fbaFactor > 0.7) recommendation = 'High flux sensitivity — consider overexpression or enzyme replacement';
+    else if (thermoFactor > 0.7) recommendation = 'Thermodynamically unfavorable — consider product removal or substrate feeding';
+    else if (experimentalFactor > 0.7) recommendation = 'Low experimental pass rate — consider alternative assay conditions';
+    else if (score > 0.5) recommendation = 'Moderate bottleneck — monitor in next DBTL cycle';
+    else recommendation = 'Not a significant bottleneck';
+
+    return {
+      enzymeId: step.enzymeId,
+      enzymeName: step.enzymeName,
+      score,
+      factors: { fba: round3(fbaFactor), thermo: round3(thermoFactor), experimental: round3(experimentalFactor) },
+      recommendation,
+    };
+  });
+
+  // Sort by score (highest = biggest bottleneck)
+  bottlenecks.sort((a, b) => b.score - a.score);
+
+  const topBottleneck = bottlenecks.length > 0 ? bottlenecks[0] : null;
+  const summary = topBottleneck
+    ? `${topBottleneck.enzymeName} is the primary bottleneck (score: ${topBottleneck.score}). ${topBottleneck.recommendation}`
+    : 'No significant bottlenecks identified.';
+
+  return { bottlenecks, topBottleneck, summary };
+}
+
+/**
+ * Evaluate pathway thermodynamics from CETHX data.
+ * Identifies which steps are thermodynamically unfavorable.
+ */
+export function evaluateThermodynamics(
+  pathwaySteps: Array<{ enzymeId: string; enzymeName: string }>,
+  cethxData?: { steps?: Array<{ reaction: string; deltaG: number }>; overallDeltaG?: number },
+): {
+  steps: Array<{
+    enzymeId: string;
+    enzymeName: string;
+    deltaG: number | null;
+    feasible: boolean;
+    recommendation: string;
+  }>;
+  overallFeasible: boolean;
+  summary: string;
+} {
+  const steps = pathwaySteps.map(step => {
+    let deltaG: number | null = null;
+    if (cethxData?.steps) {
+      const match = cethxData.steps.find(s =>
+        s.reaction.toLowerCase().includes(step.enzymeId.toLowerCase()) ||
+        s.reaction.toLowerCase().includes(step.enzymeName.toLowerCase())
+      );
+      if (match) deltaG = match.deltaG;
+    }
+
+    const feasible = deltaG === null ? true : deltaG < 5; // 5 kJ/mol threshold
+    let recommendation = '';
+    if (deltaG !== null) {
+      if (deltaG > 10) recommendation = 'Strongly unfavorable — requires energy coupling';
+      else if (deltaG > 5) recommendation = 'Marginally unfavorable — product removal may help';
+      else if (deltaG > 0) recommendation = 'Slightly unfavorable — feasible under cellular conditions';
+      else recommendation = 'Thermodynamically favorable';
+    } else {
+      recommendation = 'No thermodynamic data available';
+    }
+
+    return { enzymeId: step.enzymeId, enzymeName: step.enzymeName, deltaG, feasible, recommendation };
+  });
+
+  const overallFeasible = cethxData?.overallDeltaG !== undefined
+    ? cethxData.overallDeltaG < 0
+    : steps.every(s => s.feasible);
+
+  const summary = overallFeasible
+    ? 'Pathway is thermodynamically feasible'
+    : 'Pathway has thermodynamic barriers — consider pathway modifications';
+
+  return { steps, overallFeasible, summary };
+}

@@ -19,6 +19,7 @@ import {
   balancePathway,
   rankPathways,
   predictMutagenesisSites,
+  identifyBottlenecks,
 } from '../../services/CatalystDesignerEngine';
 import type {
   BindingAffinityResult,
@@ -687,6 +688,27 @@ export default React.memo(function CatalystDesignerPage() {
   const pareto = useMemo(() => rankPathways(PATHWAY_CANDIDATES), []);
   const mutagenesis = useMemo(() => predictMutagenesisSites(enzyme, 5), [enzyme]);
 
+  // Bottleneck identification using real data from workbenchStore
+  const bottlenecks = useMemo(() => identifyBottlenecks({
+    pathwaySteps: PATHWAY_STEPS.map(s => ({
+      enzymeId: s.enzyme,
+      enzymeName: s.enzyme,
+      substrate: s.substrate,
+      product: s.product,
+    })),
+    fbaData: fbaPayload?.result ? {
+      shadowPrices: fbaPayload.result.sensitivityCoefficients,
+      fluxes: Object.fromEntries(fbaPayload.result.topFluxes.map(f => [f.reactionId, f.flux])),
+      feasible: fbaPayload.result.feasible,
+    } : undefined,
+    cethxData: cethxPayload?.result ? {
+      overallFeasible: cethxPayload.result.gibbsFreeEnergy < 0,
+    } : undefined,
+    dbtlflowData: dbtlPayload?.result ? {
+      passRate: dbtlPayload.result.passRate,
+    } : undefined,
+  }), [fbaPayload, cethxPayload, dbtlPayload]);
+
   const bestPathway = pareto.candidates.find(c => c.id === pareto.bestOverall);
 
   const handleResidueClick = useCallback((data: ResidueClickData) => {
@@ -743,14 +765,12 @@ export default React.memo(function CatalystDesignerPage() {
 
   const selectedCatResidue = enzyme.catalyticResidues.find(r => r.position === selectedResidue);
 
-  const [activeTab, setActiveTab] = useState('viewer');
+  const [activeTab, setActiveTab] = useState('overview');
   const CATDES_TABS: ToolTab[] = [
+    { id: 'overview', label: 'Overview', accent: THEME.CORAL },
+    { id: 'balance', label: 'Pathway Balance', accent: THEME.MINT },
+    { id: 'pareto', label: 'Pareto', accent: THEME.LILAC },
     { id: 'viewer', label: '3D Viewer', accent: THEME.SKY },
-    { id: 'binding', label: 'Binding', accent: THEME.LILAC },
-    { id: 'sequences', label: 'Sequences', accent: THEME.APRICOT },
-    { id: 'pareto', label: 'Pareto', accent: THEME.MINT },
-    { id: 'mutagenesis', label: 'Mutagenesis', accent: THEME.CORAL },
-    { id: 'docking', label: 'Docking', accent: THEME.SKY },
   ];
 
   const kdQ = kdQuality(mutationImpact?.newKd ?? binding.predictedKd);
@@ -766,7 +786,7 @@ export default React.memo(function CatalystDesignerPage() {
       tabs={CATDES_TABS}
       activeTab={activeTab}
       onTabChange={setActiveTab}
-      advancedTabIds={['sequences', 'pareto', 'mutagenesis', 'docking']}
+      advancedTabIds={['balance', 'pareto']}
       footer={
         <>
           <ExportButton label="Export JSON"
@@ -808,6 +828,156 @@ export default React.memo(function CatalystDesignerPage() {
           }}
         />
       </div>
+
+      {/* ── Overview Tab: Bottleneck Analysis + ProEvol Handoff ── */}
+      <ToolTabPanel tabId="overview" activeId={activeTab}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '12px 16px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: '16px' }}>
+            {/* Bottleneck Analysis */}
+            <div style={{ ...GLASS, borderRadius: 16, padding: '14px' }}>
+              <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                Bottleneck Analysis
+              </span>
+              {bottlenecks.topBottleneck ? (
+                <div style={{ marginTop: 8 }}>
+                  <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-md)', color: VALUE, margin: 0 }}>
+                    {bottlenecks.topBottleneck.enzymeName}
+                  </p>
+                  <p style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, margin: '4px 0 0' }}>
+                    Score: {bottlenecks.topBottleneck.score.toFixed(3)} — {bottlenecks.topBottleneck.recommendation}
+                  </p>
+                  <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                    <div style={{ flex: 1 }}>
+                      <span style={{ fontFamily: THEME.MONO, fontSize: '10px', color: LABEL }}>FBA</span>
+                      <div style={{ height: 4, background: 'rgba(255,255,255,0.06)', borderRadius: 2, marginTop: 2 }}>
+                        <div style={{ height: '100%', width: `${bottlenecks.topBottleneck.factors.fba * 100}%`, background: THEME.SKY, borderRadius: 2 }} />
+                      </div>
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <span style={{ fontFamily: THEME.MONO, fontSize: '10px', color: LABEL }}>Thermo</span>
+                      <div style={{ height: 4, background: 'rgba(255,255,255,0.06)', borderRadius: 2, marginTop: 2 }}>
+                        <div style={{ height: '100%', width: `${bottlenecks.topBottleneck.factors.thermo * 100}%`, background: THEME.CORAL, borderRadius: 2 }} />
+                      </div>
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <span style={{ fontFamily: THEME.MONO, fontSize: '10px', color: LABEL }}>Expt</span>
+                      <div style={{ height: 4, background: 'rgba(255,255,255,0.06)', borderRadius: 2, marginTop: 2 }}>
+                        <div style={{ height: '100%', width: `${bottlenecks.topBottleneck.factors.experimental * 100}%`, background: THEME.MINT, borderRadius: 2 }} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <p style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: LABEL, margin: '8px 0 0' }}>
+                  Connect FBA/CETHX/DBTLflow data to identify bottlenecks.
+                </p>
+              )}
+            </div>
+
+            {/* Metabolic Cost */}
+            <div style={{ ...GLASS, borderRadius: 16, padding: '14px' }}>
+              <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                Metabolic Cost
+              </span>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 8 }}>
+                <MetricCard label="ATP Cost" value={drain.atpCost.toFixed(0)} unit="ATP/chain" />
+                <MetricCard label="Growth Penalty" value={(drain.growthPenalty * 100).toFixed(1)} unit="%" />
+                <MetricCard label="Ribosome" value={(drain.ribosomeBurden * 100).toFixed(1)} unit="%" />
+                <MetricCard label="Total Drain" value={(drain.totalMetabolicDrain * 100).toFixed(1)} unit="%" />
+              </div>
+            </div>
+          </div>
+
+          {/* Pathway Steps */}
+          <div style={{ ...GLASS, borderRadius: 16, padding: '14px', marginBottom: 12 }}>
+            <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              Pathway Steps
+            </span>
+            <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {PATHWAY_STEPS.map((step, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 8px', borderRadius: 8, background: 'rgba(255,255,255,0.02)' }}>
+                  <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.SKY, minWidth: 24 }}>{i + 1}</span>
+                  <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: VALUE, flex: 1 }}>
+                    {step.enzyme} · {step.substrate} → {step.product}
+                  </span>
+                  {step.enzyme === bottlenecks.topBottleneck?.enzymeId && (
+                    <span style={{ fontFamily: THEME.MONO, fontSize: '10px', color: THEME.RISK_LOW, background: 'rgba(255,251,31,0.12)', padding: '2px 6px', borderRadius: 6 }}>BOTTLENECK</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Send to ProEvol Button */}
+          {bottlenecks.topBottleneck && (
+            <div style={{ ...GLASS, borderRadius: 16, padding: '14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: VALUE }}>
+                  {bottlenecks.topBottleneck.enzymeName} is the rate-limiting step
+                </span>
+                <p style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, margin: '2px 0 0' }}>
+                  Send to ProEvol for protein engineering
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  const targetEnzyme = ENZYME_STRUCTURES.find(e => e.id === bottlenecks.topBottleneck?.enzymeId);
+                  if (targetEnzyme) {
+                    // Store ProEvol handoff data in localStorage (workaround for payload type constraints)
+                    localStorage.setItem('nexus-bio:catdes-to-proevol', JSON.stringify({
+                      targetEnzyme: targetEnzyme.id,
+                      targetEnzymeName: targetEnzyme.name,
+                      targetProperty: 'kcat',
+                      currentValue: targetEnzyme.kcat,
+                      targetValue: targetEnzyme.kcat * 3,
+                      pdbId: targetEnzyme.pdbId,
+                      uniprotId: targetEnzyme.uniprotId,
+                      sequence: targetEnzyme.sequence,
+                    }));
+                    window.location.href = '/tools/proevol';
+                  }
+                }}
+                style={{
+                  padding: '8px 16px', borderRadius: 8,
+                  background: 'rgba(191,220,205,0.14)', border: '1px solid rgba(191,220,205,0.3)',
+                  color: 'rgba(191,220,205,0.9)', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-sm)',
+                  cursor: 'pointer',
+                }}
+              >
+                Send to ProEvol →
+              </button>
+            </div>
+          )}
+        </div>
+      </ToolTabPanel>
+
+      {/* ── Pathway Balance Tab ── */}
+      <ToolTabPanel tabId="balance" activeId={activeTab}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '12px 16px' }}>
+          <div style={{ ...GLASS, borderRadius: 16, overflow: 'hidden' }}>
+            <div style={{ padding: 8 }}>
+              <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                Pathway Balance (Newton-Raphson)
+              </span>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 8 }}>
+                <MetricCard label="Converged" value={balance.isBalanced ? 'Yes' : 'No'} />
+                <MetricCard label="Objective" value={balance.objectiveValue.toFixed(4)} />
+                <MetricCard label="Iterations" value={String(balance.iterations)} />
+                <MetricCard label="Toxicity" value={balance.toxicIntermediates.length > 0 ? '⚠ Flagged' : '✓ OK'} />
+              </div>
+            </div>
+          </div>
+        </div>
+      </ToolTabPanel>
+
+      {/* ── Pareto Tab ── */}
+      <ToolTabPanel tabId="pareto" activeId={activeTab}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '12px' }}>
+          <div style={{ ...GLASS, borderRadius: 16, overflow: 'hidden' }}>
+            <div style={{ padding: 8 }}><ParetoView result={pareto} /></div>
+          </div>
+        </div>
+      </ToolTabPanel>
 
       {/* ── 3D Viewer Tab ── */}
       <ToolTabPanel tabId="viewer" activeId={activeTab}>
@@ -1085,212 +1255,6 @@ export default React.memo(function CatalystDesignerPage() {
         </div>
       </ToolTabPanel>
 
-      {/* ── Binding Tab ── */}
-      <ToolTabPanel tabId="binding" activeId={activeTab}>
-        <div style={{ flex: 1, overflowY: 'auto', padding: '12px 0' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6, marginBottom: '16px', padding: '0 12px' }}>
-            <div style={{ ...GLASS, padding: '10px 12px', borderRadius: 14 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Kd</span>
-                <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: kdQ.color }}>{kdQ.icon}</span>
-              </div>
-              <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-md)', color: VALUE, margin: '2px 0 0' }}>{(mutationImpact?.newKd ?? binding.predictedKd).toFixed(1)}<span style={{ fontSize: 'var(--nb-fs-sm)', color: LABEL }}> μM</span></p>
-            </div>
-            <div style={{ ...GLASS, padding: '10px 12px', borderRadius: 14 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Kcat</span>
-                <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: kcatQ.color }}>{kcatQ.icon}</span>
-              </div>
-              <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-md)', color: VALUE, margin: '2px 0 0' }}>{(mutationImpact?.newKcat ?? activeEnzyme.kcat).toFixed(2)}<span style={{ fontSize: 'var(--nb-fs-sm)', color: LABEL }}> s⁻¹</span></p>
-            </div>
-            <div style={{ ...GLASS, padding: '10px 12px', borderRadius: 14 }}>
-              <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Km</span>
-              <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-md)', color: VALUE, margin: '2px 0 0' }}>{activeEnzyme.km.toFixed(2)}<span style={{ fontSize: 'var(--nb-fs-sm)', color: LABEL }}> mM</span></p>
-            </div>
-            <div style={{ ...GLASS, padding: '10px 12px', borderRadius: 14 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Fit</span>
-                <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: fitQ.color }}>{fitQ.icon}</span>
-              </div>
-              <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-md)', color: VALUE, margin: '2px 0 0' }}>{binding.overallScore.toFixed(2)}</p>
-            </div>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6, marginBottom: '16px', padding: '0 12px' }}>
-            <MetricCard label="Tm" value={enzyme.meltingTemp.toFixed(0)} unit="°C" />
-            <MetricCard label="MW" value={enzyme.molecularWeight.toFixed(1)} unit="kDa" />
-            <MetricCard label="pH opt" value={enzyme.optimalPH.toFixed(1)} />
-          </div>
-          <div style={{ ...GLASS, borderRadius: 16, overflow: 'hidden', margin: '0 12px' }}>
-            <BindingView result={binding} enzyme={enzyme} />
-          </div>
-        </div>
-      </ToolTabPanel>
-
-      {/* ── Sequences Tab ── */}
-      <ToolTabPanel tabId="sequences" activeId={activeTab}>
-        <div style={{ flex: 1, overflowY: 'auto', padding: '12px 0' }}>
-          <div style={{ ...GLASS, borderRadius: 16, overflow: 'hidden', margin: '0 12px' }}>
-            <SequenceView result={sequences} />
-          </div>
-        </div>
-      </ToolTabPanel>
-
-      {/* ── Pareto Tab ── */}
-      <ToolTabPanel tabId="pareto" activeId={activeTab}>
-        <div style={{ flex: 1, overflowY: 'auto', padding: '12px' }}>
-          <div style={{ ...GLASS, borderRadius: 16, overflow: 'hidden' }}>
-            <div style={{ padding: 8 }}><ParetoView result={pareto} /></div>
-          </div>
-        </div>
-      </ToolTabPanel>
-
-      {/* ── Mutagenesis Tab ── */}
-      <ToolTabPanel tabId="mutagenesis" activeId={activeTab}>
-        <div style={{ flex: 1, overflowY: 'auto', padding: '12px' }}>
-          <div style={{ ...GLASS, borderRadius: 16, overflow: 'hidden' }}>
-            <MutagenesisView result={mutagenesis} enzyme={enzyme} />
-          </div>
-        </div>
-      </ToolTabPanel>
-
-      {/* ── Docking Tab ── */}
-      <ToolTabPanel tabId="docking" activeId={activeTab}>
-        <div style={{ flex: 1, overflowY: 'auto', padding: '12px 16px' }}>
-          <div style={{ ...GLASS, borderRadius: 16, overflow: 'hidden' }}>
-            <div style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {/* Header */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                  Molecular Docking
-                </span>
-                {dockingResult && (
-                  <DataSourceBadge source={dockingResult.source || 'mock'} />
-                )}
-              </div>
-
-              {/* Protein & Ligand info */}
-              <div style={{ display: 'flex', gap: 16 }}>
-                <div>
-                  <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Protein PDB</span>
-                  <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-md)', color: VALUE, margin: '1px 0 0', ...tn }}>
-                    {enzyme.pdbId || 'N/A'}
-                  </p>
-                </div>
-                <div>
-                  <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Ligand</span>
-                  <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-sm)', color: VALUE, margin: '1px 0 0', ...tn }}>
-                    {enzyme.substrate}
-                  </p>
-                </div>
-              </div>
-
-              {/* Run button */}
-              <button
-                onClick={handleDocking}
-                disabled={dockingLoading || !enzyme.pdbId}
-                style={{
-                  fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', fontWeight: 600,
-                  color: dockingLoading ? LABEL : THEME.SKY,
-                  background: dockingLoading ? 'rgba(255,255,255,0.03)' : 'rgba(175,195,214,0.12)',
-                  border: `1px solid ${dockingLoading ? BORDER : 'rgba(175,195,214,0.3)'}`,
-                  borderRadius: 8, padding: '6px 16px', cursor: dockingLoading || !enzyme.pdbId ? 'wait' : 'pointer',
-                  opacity: dockingLoading || !enzyme.pdbId ? 0.5 : 1,
-                  alignSelf: 'flex-start',
-                }}
-              >
-                {dockingLoading ? 'Running Docking...' : 'Run Docking'}
-              </button>
-
-              {/* Results */}
-              {dockingResult && (
-                <>
-                  {/* Score metrics */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
-                    <div style={{ ...GLASS, borderRadius: 10, padding: '8px 10px' }}>
-                      <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Docking Score</span>
-                      <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-lg)', color: dockingResult.dockingScore < -7 ? THEME.MINT : dockingResult.dockingScore < -5 ? THEME.RISK_LOW : THEME.CORAL, margin: '2px 0 0', ...tn }}>
-                        {dockingResult.dockingScore.toFixed(1)} <span style={{ fontSize: 'var(--nb-fs-xs)', color: LABEL }}>kcal/mol</span>
-                      </p>
-                    </div>
-                    <div style={{ ...GLASS, borderRadius: 10, padding: '8px 10px' }}>
-                      <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>Binding Energy</span>
-                      <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-lg)', color: VALUE, margin: '2px 0 0', ...tn }}>
-                        {dockingResult.bindingEnergy.toFixed(1)} <span style={{ fontSize: 'var(--nb-fs-xs)', color: LABEL }}>kcal/mol</span>
-                      </p>
-                    </div>
-                    <div style={{ ...GLASS, borderRadius: 10, padding: '8px 10px' }}>
-                      <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL }}>MM-PBSA (model)</span>
-                      <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-lg)', color: VALUE, margin: '2px 0 0', ...tn }}>
-                        {binding.bindingEnergy.toFixed(1)} <span style={{ fontSize: 'var(--nb-fs-xs)', color: LABEL }}>kcal/mol</span>
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Score comparison bar chart */}
-                  <div>
-                    <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                      Score Comparison
-                    </span>
-                    <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                      {[
-                        { label: 'Docking', value: dockingResult.dockingScore, color: THEME.SKY },
-                        { label: 'MM-PBSA', value: binding.bindingEnergy, color: THEME.LILAC },
-                      ].map(item => {
-                        const absMax = Math.max(Math.abs(dockingResult.dockingScore), Math.abs(binding.bindingEnergy), 1);
-                        const pct = Math.min(100, (Math.abs(item.value) / absMax) * 100);
-                        return (
-                          <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: LABEL, minWidth: 52 }}>{item.label}</span>
-                            <div style={{ flex: 1, height: 8, borderRadius: 4, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
-                              <motion.div
-                                initial={{ width: 0 }}
-                                animate={{ width: `${pct}%` }}
-                                transition={{ duration: 0.6, ease: 'easeOut' }}
-                                style={{ height: '100%', borderRadius: 4, background: item.color, opacity: 0.8 }}
-                              />
-                            </div>
-                            <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE, minWidth: 56, textAlign: 'right', ...tn }}>
-                              {item.value.toFixed(1)} kcal/mol
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Delta comparison */}
-                  {(() => {
-                    const delta = dockingResult.dockingScore - binding.bindingEnergy;
-                    const agreeColor = Math.abs(delta) < 2 ? THEME.MINT : Math.abs(delta) < 4 ? THEME.RISK_LOW : THEME.CORAL;
-                    return (
-                      <div style={{
-                        fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: LABEL,
-                        padding: '6px 8px', borderRadius: 8,
-                        background: 'rgba(255,255,255,0.02)', border: `1px solid ${BORDER}`,
-                      }}>
-                        <span style={{ fontFamily: THEME.MONO, color: agreeColor, ...tn }}>
-                          {delta > 0 ? '+' : ''}{delta.toFixed(1)} kcal/mol
-                        </span>
-                        {' '}difference between docking and MM-PBSA predictions.
-                        {Math.abs(delta) < 2 && ' Strong agreement — high confidence in binding prediction.'}
-                        {Math.abs(delta) >= 2 && Math.abs(delta) < 4 && ' Moderate discrepancy — consider re-scoring with explicit solvent.'}
-                        {Math.abs(delta) >= 4 && ' Large discrepancy — docking and physics-based models disagree; experimental validation recommended.'}
-                      </div>
-                    );
-                  })()}
-                </>
-              )}
-
-              {!dockingResult && !dockingLoading && (
-                <p style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: LABEL, opacity: 0.6, padding: '8px 0' }}>
-                  Run molecular docking to predict protein-ligand binding pose and affinity.
-                  {!enzyme.pdbId && ' No PDB structure available for this enzyme.'}
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
-      </ToolTabPanel>
     </ToolShell>
   );
 });

@@ -487,3 +487,84 @@ export function predictDDG(
     },
   };
 }
+
+/**
+ * Predict ΔΔG for multiple mutations (additive model).
+ * Sums individual single-point ΔΔG values. This is a simplification —
+ * real epistatic effects require Rosetta/FoldX multi-mutant scoring.
+ */
+export function predictMultiDDG(
+  pdbText: string,
+  mutations: DDGMutation[],
+): DDGResult {
+  if (mutations.length === 0) {
+    return { ddG: 0, confidence: 1, components: { vdw: 0, solvation: 0, hbond: 0, backbone: 0, entropy: 0 } };
+  }
+
+  const results = mutations.map(m => predictDDG(pdbText, m));
+  const totalDDG = results.reduce((s, r) => s + r.ddG, 0);
+  const avgConfidence = results.reduce((s, r) => s + r.confidence, 0) / results.length;
+
+  return {
+    ddG: Math.round(totalDDG * 1000) / 1000,
+    confidence: Math.round(avgConfidence * 1000) / 1000,
+    components: {
+      vdw: Math.round(results.reduce((s, r) => s + r.components.vdw, 0) * 1000) / 1000,
+      solvation: Math.round(results.reduce((s, r) => s + r.components.solvation, 0) * 1000) / 1000,
+      hbond: Math.round(results.reduce((s, r) => s + r.components.hbond, 0) * 1000) / 1000,
+      backbone: Math.round(results.reduce((s, r) => s + r.components.backbone, 0) * 1000) / 1000,
+      entropy: Math.round(results.reduce((s, r) => s + r.components.entropy, 0) * 1000) / 1000,
+    },
+  };
+}
+
+/**
+ * Scan all single-point mutations for a protein structure.
+ * Returns a 20 × L matrix of ΔΔG values (amino acid × position).
+ *
+ * @param pdbText - PDB format text
+ * @param sequence - Wild-type sequence (1-letter codes)
+ * @param chainId - Optional chain to restrict scanning
+ * @returns Scan results with heatmap data
+ */
+export function scanAllMutations(
+  pdbText: string,
+  sequence: string,
+  chainId?: string,
+): {
+  results: Array<{ position: number; wt: string; mut: string; ddg: number; confidence: number }>;
+  heatmap: number[][]; // [position][amino acid] → ΔΔG
+  aminoAcids: string[];
+} {
+  const AA_CODES = 'ACDEFGHIKLMNPQRSTVWY';
+  const results: Array<{ position: number; wt: string; mut: string; ddg: number; confidence: number }> = [];
+  const heatmap: number[][] = [];
+
+  for (let i = 0; i < sequence.length; i++) {
+    const wt = sequence[i].toUpperCase();
+    if (!AA_PROPERTIES[wt]) {
+      heatmap.push(Array(20).fill(0));
+      continue;
+    }
+
+    const row: number[] = [];
+    for (let j = 0; j < AA_CODES.length; j++) {
+      const mut = AA_CODES[j];
+      if (mut === wt) {
+        row.push(0);
+        continue;
+      }
+
+      try {
+        const result = predictDDG(pdbText, { position: i + 1, wtResidue: wt, mutantResidue: mut });
+        row.push(result.ddG);
+        results.push({ position: i + 1, wt, mut, ddg: result.ddG, confidence: result.confidence });
+      } catch {
+        row.push(0);
+      }
+    }
+    heatmap.push(row);
+  }
+
+  return { results, heatmap, aminoAcids: AA_CODES.split('') };
+}
