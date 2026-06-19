@@ -4,8 +4,24 @@ import { motion } from 'framer-motion';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
 import SimErrorBanner from '../ide/shared/SimErrorBanner';
-import { CRISPRI_TARGETS, greedyKnockdownSchedule, computeOffTargetScore } from '../../data/mockGenMIM';
+import { CRISPRI_TARGETS, greedyKnockdownSchedule, computeOffTargetScore, designsgRNAs } from '../../data/mockGenMIM';
 import type { CRISPRiTarget } from '../../types';
+
+/**
+ * Generate a deterministic pseudo-sequence from a numeric seed.
+ * Used to demonstrate sgRNA design when real coding sequences are not available.
+ * In production, this would be replaced by actual genome sequence lookup.
+ */
+function generatePseudoSequence(seed: number, length: number): string {
+  const bases = 'ACGT';
+  let s = seed;
+  let seq = '';
+  for (let i = 0; i < length; i++) {
+    s = (s * 1103515245 + 12345) & 0x7fffffff;
+    seq += bases[s % 4];
+  }
+  return seq;
+}
 
 // FBA reaction → gene mapping for flux-driven CRISPRi prioritization
 // Targets aligned with FBA-identified flux bottlenecks receive a score boost
@@ -280,18 +296,23 @@ export default React.memo(function GenMIMPage() {
   const growthImpact = schedule.reduce((a, t) => a + (t.growth_impact ?? 0), 0);
   const avgEfficiency = schedule.length > 0
     ? schedule.reduce((a, t) => a + t.knockdown_efficiency, 0) / schedule.length : 0;
-  // Representative 20-nt sgRNA spacer sequences per gene (E. coli K-12 intergenic contexts)
-  const sgRNASequences: Record<string, string> = {
-    gapA: 'GCTGAACTGAAAGCGGTAAA', gpmA: 'CATCGTCAGCAATGGCTGAA', eno: 'AATTGCGGCAATCTGCTGGA',
-    pykF: 'GGTCAGTACACCGATAACGA', pykA: 'ATCGCTGCTGAAATCGGTGA', zwf: 'CTGATGACCAAATCGGCAAA',
-    pfkA: 'AACTGGCAACCACGATTTCG', pfkB: 'GGTGAATTCGCTCTGACGAA', aceA: 'TTCGGTAACTGGATCGTGCA',
-    aceB: 'CCAGTCTGAAACCGCTGATG', ppc: 'GTGATTGAAGCCACCGGAAA', pckA: 'CAGTCAGGCGTACTGGAACA',
-    maeB: 'TGCTGACTTCGGTAAACGGA', sdhA: 'GATCGTGAACGTCTGATGGC', sucA: 'CTGACCGCTGAAAACTGGAT',
-    glk: 'ATGAACGTCTGGATCAAGCG', pta: 'GTCAGCAACCTGATCGAAGA', ackA: 'CCTGATCAACTGCGTGAAAG',
-    ldhA: 'ATGCGTCTGACCAATCTGGA', adhE: 'GGATCAACTGGTGCGTAACT',
-  };
+  // sgRNA sequences computed from gene coding sequences using designsgRNAs()
+  // For genes without a provided coding sequence, we use the gene name as a seed
+  // and generate a deterministic pseudo-sequence for demonstration purposes.
+  const sgRNASequences: Record<string, string> = useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const t of schedule) {
+      // Use gene name to generate a deterministic 60-nt pseudo-sequence for sgRNA design
+      // In production, this would use the actual coding sequence from the genome
+      const seed = t.gene.split('').reduce((s, c) => s + c.charCodeAt(0), 0);
+      const pseudoSeq = generatePseudoSequence(seed, 60);
+      const guides = designsgRNAs(pseudoSeq, 1);
+      map[t.gene] = guides[0]?.spacer ?? t.gene.toUpperCase().padEnd(20, 'A').slice(0, 20);
+    }
+    return map;
+  }, [schedule]);
   const offTargetRisk = schedule.length > 0
-    ? Math.round(schedule.reduce((sum, t) => sum + computeOffTargetScore(sgRNASequences[t.gene] ?? t.gene.toUpperCase().padEnd(20, 'A').slice(0, 20)), 0) / schedule.length * 100) / 100
+    ? Math.round(schedule.reduce((sum, t) => sum + computeOffTargetScore(sgRNASequences[t.gene] ?? ''), 0) / schedule.length * 100) / 100
     : 0;
   const [activeTab, setActiveTab] = useState('genome');
 

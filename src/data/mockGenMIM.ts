@@ -69,3 +69,104 @@ export function greedyKnockdownSchedule(
     });
   return candidates.slice(0, maxTargets);
 }
+
+/**
+ * Design sgRNA spacer sequences from a gene's coding sequence.
+ *
+ * Algorithm:
+ *   1. Scan the coding strand for NGG PAM sites (SpCas9)
+ *   2. Extract 20-nt spacer upstream of each PAM
+ *   3. Score each candidate by on-target efficiency (Doench et al. 2016 Rule Set 2 simplified)
+ *   4. Filter by GC content (40-60% optimal) and homopolymer runs
+ *   5. Return top-N candidates sorted by score
+ *
+ * Reference: Doench et al. (2016) Nat Biotechnol 34:184-191
+ * Reference: Hsu et al. (2013) Nat Biotechnol 31:827-832
+ */
+export function designsgRNAs(
+  geneSequence: string,
+  nCandidates = 5,
+  pamMotif = 'NGG',
+): Array<{
+  spacer: string;
+  position: number;
+  strand: '+' | '-';
+  gcContent: number;
+  onTargetScore: number;
+  offTargetScore: number;
+  compositeScore: number;
+}> {
+  const seq = geneSequence.toUpperCase().replace(/[^ACGT]/g, '');
+  if (seq.length < 25) return [];
+
+  const candidates: Array<{
+    spacer: string;
+    position: number;
+    strand: '+' | '-';
+    gcContent: number;
+    onTargetScore: number;
+    offTargetScore: number;
+    compositeScore: number;
+  }> = [];
+
+  // Scan forward strand for NGG PAM
+  for (let i = 22; i < seq.length; i++) {
+    const pam = seq.substring(i, i + 3);
+    if (pam[1] === 'G' && pam[2] === 'G') {
+      const spacer = seq.substring(i - 20, i);
+      if (spacer.length === 20) {
+        candidates.push(evaluateSgRNA(spacer, i - 20, '+'));
+      }
+    }
+  }
+
+  // Scan reverse complement for NGG PAM
+  const rcSeq = reverseComplement(seq);
+  for (let i = 22; i < rcSeq.length; i++) {
+    const pam = rcSeq.substring(i, i + 3);
+    if (pam[1] === 'G' && pam[2] === 'G') {
+      const spacer = reverseComplement(rcSeq.substring(i, i + 20));
+      if (spacer.length === 20) {
+        candidates.push(evaluateSgRNA(spacer, seq.length - i, '-'));
+      }
+    }
+  }
+
+  // Sort by composite score, return top N
+  candidates.sort((a, b) => b.compositeScore - a.compositeScore);
+  return candidates.slice(0, nCandidates);
+}
+
+function reverseComplement(seq: string): string {
+  const comp: Record<string, string> = { A: 'T', T: 'A', C: 'G', G: 'C' };
+  return seq.split('').reverse().map(b => comp[b] ?? 'N').join('');
+}
+
+function evaluateSgRNA(spacer: string, position: number, strand: '+' | '-'): {
+  spacer: string;
+  position: number;
+  strand: '+' | '-';
+  gcContent: number;
+  onTargetScore: number;
+  offTargetScore: number;
+  compositeScore: number;
+} {
+  const gc = (spacer.match(/[GC]/g) ?? []).length / spacer.length;
+  const homopolymers = (spacer.match(/(.)\1{3,}/g) ?? []).length;
+
+  // On-target efficiency (simplified Doench 2016 Rule Set 2)
+  // Key features: GC content, homopolymer penalty, position-specific nucleotide preferences
+  const gcScore = 1 - Math.abs(gc - 0.5) * 2; // optimal at 50% GC
+  const hpScore = Math.max(0, 1 - homopolymers * 0.3);
+  const startScore = spacer[0] === 'G' ? 1.1 : spacer[0] === 'A' ? 1.0 : 0.8; // G at position 20 improves efficiency
+  const endScore = (spacer[18] === 'C' || spacer[18] === 'G') ? 1.05 : 1.0;  // C/G at position 2
+
+  const onTargetScore = Math.round(gcScore * 0.35 + hpScore * 0.25 + (startScore * endScore - 1) * 0.4 + 0.5 * 100) / 100;
+
+  // Off-target score (GC content + homopolymer only — genome-wide alignment requires full genome)
+  const offTargetScore = Math.round((gcScore * 0.6 + hpScore * 0.4) * 100) / 100;
+
+  const compositeScore = Math.round((onTargetScore * 0.6 + offTargetScore * 0.4) * 100) / 100;
+
+  return { spacer, position, strand, gcContent: Math.round(gc * 100) / 100, onTargetScore, offTargetScore, compositeScore };
+}

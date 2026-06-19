@@ -23,7 +23,7 @@ import { colorForCluster } from './scspatial/scSpatialPalette';
 
 const SCSPATIAL_TABS: ToolTab[] = [
   { id: 'spatial-2d', label: 'Hex Grid', accent: THEME.SKY },
-  { id: 'umap', label: 'UMAP', accent: THEME.LILAC },
+  { id: 'umap', label: 'Projection', accent: THEME.LILAC },
   { id: 'trajectory', label: 'Clusters', accent: THEME.APRICOT },
   { id: 'table', label: 'Gene Expression', accent: THEME.MINT },
   { id: 'communication', label: 'Communication', accent: THEME.CORAL },
@@ -277,7 +277,7 @@ export default React.memo(function ScSpatialPage() {
     <ToolShell
       moduleId="scspatial"
       title="Single-Cell Spatial Transcriptomics"
-      formula="hex-grid · UMAP · Moran's I · cluster enrichment"
+      formula="hex-grid · linear projection · Moran's I · cluster enrichment"
       tabs={SCSPATIAL_TABS}
       activeTab={activeTab}
       onTabChange={setActiveTab}

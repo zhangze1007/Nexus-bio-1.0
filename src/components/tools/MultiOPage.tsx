@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { computeConvexHull, expandHull } from '../../utils/vizUtils';
 import { SVGChartContainer, ChartGrid, ChartAxisLabels, ChartLegend } from '../charts/primitives';
 import { PAPER_THEME, SCI_PASTEL_MUTED, SCI_SERIES } from '../charts/chartTheme';
@@ -75,8 +75,8 @@ function canonicalGeneToken(value: string) {
   return value.toUpperCase().replace(/[^A-Z0-9]/g, '');
 }
 
-function findPreferredGene(candidates: string[]) {
-  const availableGenes = OMICS_DATA.map((row) => row.gene);
+function findPreferredGene(candidates: string[], data: { gene: string }[]) {
+  const availableGenes = data.map((row) => row.gene);
   const availableTokens = new Map(availableGenes.map((gene) => [canonicalGeneToken(gene), gene]));
   for (const candidate of candidates) {
     const token = canonicalGeneToken(candidate);
@@ -459,12 +459,13 @@ function TriPanelEmbedding({ embeddings, data, fcThreshold, pvThreshold, activeL
 
 /* ── 3D→2D Embedding Scatter (SVG) ───────────────────────────────── */
 
-function EmbeddingScatter({ embeddings, fcThreshold, activeLayers, highlightedGene, bottleneckGene }: {
+function EmbeddingScatter({ embeddings, fcThreshold, activeLayers, highlightedGene, bottleneckGene, geneFC }: {
   embeddings: EmbeddingPoint[];
   fcThreshold: number;
   activeLayers: Record<OmicsLayer, boolean>;
   highlightedGene?: string;
   bottleneckGene?: string;
+  geneFC: Record<string, number>;
 }) {
   const W = 520, H = 420, PAD = 44;
 
@@ -493,11 +494,7 @@ function EmbeddingScatter({ embeddings, fcThreshold, activeLayers, highlightedGe
     }));
   }, [visible, W, H]);
 
-  const geneFC = useMemo(() => {
-    const map: Record<string, number> = {};
-    OMICS_DATA.forEach(r => { map[r.gene] = Math.abs(r.fold_change ?? 0); });
-    return map;
-  }, []);
+  // geneFC is now passed as a prop from the parent component
 
   const GRID_COUNT = 8;
   const centroids = useMemo(() => {
@@ -642,22 +639,67 @@ export default React.memo(function MultiOPage() {
   const [fcThreshold, setFcThreshold] = useState(1.5);
   const [pvThreshold, setPvThreshold] = useState(0.05);
 
+  /* Data upload state — use uploaded data when available, fallback to demo data */
+  const [uploadedData, setUploadedData] = useState<OmicsRow[] | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const activeData = uploadedData ?? OMICS_DATA;
+  const dataSource = uploadedData ? 'uploaded' : 'demo';
+
+  const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target?.result as string;
+      if (!text) return;
+      const lines = text.split('\n').filter(l => l.trim().length > 0);
+      if (lines.length < 2) return;
+      const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+      const geneIdx = headers.findIndex(h => h === 'gene' || h === 'gene_name' || h === 'symbol');
+      const transcriptIdx = headers.findIndex(h => h === 'transcript' || h === 'mrna' || h === 'rna' || h === 'expression');
+      const proteinIdx = headers.findIndex(h => h === 'protein' || h === 'proteomics');
+      const metaboliteIdx = headers.findIndex(h => h === 'metabolite' || h === 'metabolomics');
+      const fcIdx = headers.findIndex(h => h === 'fold_change' || h === 'fc' || h === 'log2fc');
+      const pvIdx = headers.findIndex(h => h === 'pvalue' || h === 'p_value' || h === 'padj');
+
+      if (geneIdx < 0) return; // need at least gene column
+
+      const parsed: OmicsRow[] = [];
+      for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split(',').map(c => c.trim());
+        const gene = cols[geneIdx];
+        if (!gene) continue;
+        parsed.push({
+          id: `u${i}`,
+          gene,
+          transcript: transcriptIdx >= 0 ? parseFloat(cols[transcriptIdx]) || 0 : 0,
+          protein: proteinIdx >= 0 ? parseFloat(cols[proteinIdx]) || 0 : 0,
+          metabolite: metaboliteIdx >= 0 ? parseFloat(cols[metaboliteIdx]) || 0 : 0,
+          fold_change: fcIdx >= 0 ? parseFloat(cols[fcIdx]) || 0 : 0,
+          pValue: pvIdx >= 0 ? parseFloat(cols[pvIdx]) || 1 : 1,
+        });
+      }
+      if (parsed.length > 0) setUploadedData(parsed);
+    };
+    reader.readAsText(file);
+  }, []);
+
   /* Perturbation state */
-  const [selectedGene, setSelectedGene] = useState<string>(OMICS_DATA[0]?.gene ?? '');
+  const [selectedGene, setSelectedGene] = useState<string>(activeData[0]?.gene ?? '');
   const [perturbedExpr, setPerturbedExpr] = useState<number>(4);
   const [perturbResult, setPerturbResult] = useState<PerturbationResult | null>(null);
 
   /* Deterministic local integration model */
   const { data: model, error: simError } = useMemo(() => {
-    try { return { data: new OmicsFoundationModel(OMICS_DATA), error: null as string | null }; }
-    catch (e) { return { data: new OmicsFoundationModel(OMICS_DATA), error: e instanceof Error ? e.message : 'Model init failed' }; }
+    try { return { data: new OmicsFoundationModel(activeData), error: null as string | null }; }
+    catch (e) { return { data: new OmicsFoundationModel(activeData), error: e instanceof Error ? e.message : 'Model init failed' }; }
   }, []);
   const embeddings = useMemo(() => model.computeEmbeddings(), [model]);
   const bottleneck = useMemo(() => model.analyzeBottleneck(), [model]);
   const correlations = useMemo(() => model.computeCorrelationMatrix(), [model]);
 
   /* MOI Engine — ALS factors / linear embedding / Efficiency (see MOIEngine.ts header for honest method names) */
-  const mofaResult = useMemo(() => extractMOFAFactors(OMICS_DATA, 5), []);
+  const mofaResult = useMemo(() => extractMOFAFactors(activeData, 5), []);
 
   /* MOFA+ variational Bayes factor analysis */
   const [mofaPlusResult, setMofaPlusResult] = useState<MOFAPlusResultType | null>(null);
@@ -666,9 +708,9 @@ export default React.memo(function MultiOPage() {
     setMofaPlusLoading(true);
     try {
       const views: Record<string, number[][]> = {};
-      views.transcriptomics = OMICS_DATA.map(r => [r.transcript ?? 0]);
-      views.proteomics = OMICS_DATA.map(r => [r.protein ?? 0]);
-      views.metabolomics = OMICS_DATA.map(r => [r.metabolite ?? 0]);
+      views.transcriptomics = activeData.map(r => [r.transcript ?? 0]);
+      views.proteomics = activeData.map(r => [r.protein ?? 0]);
+      views.metabolomics = activeData.map(r => [r.metabolite ?? 0]);
       const result = runMOFA({ views, nFactors: 5 });
       setMofaPlusResult(result);
     } finally {
@@ -676,7 +718,7 @@ export default React.memo(function MultiOPage() {
     }
   }, []);
   const { result: vaeResult, loading: vaeLoading, error: vaeError, train: trainVAE } = useVAEWorker({
-    data: OMICS_DATA,
+    data: activeData,
     latentDim: 8,
     beta: 0.5,
     epochs: 100,
@@ -685,20 +727,20 @@ export default React.memo(function MultiOPage() {
 
   /* Auto-train VAE on mount */
   useEffect(() => { trainVAE(); }, [trainVAE]);
-  const efficiencyScores = useMemo(() => computeMetabolicEfficiency(OMICS_DATA), []);
+  const efficiencyScores = useMemo(() => computeMetabolicEfficiency(activeData), []);
   const vaeEmbeddings = useMemo(
     () => vaeResult ? exportEmbeddingsWithEfficiency(vaeResult, efficiencyScores) : [],
     [vaeResult, efficiencyScores],
   );
 
   /* Local embedding perturbation state; API names are retained for compatibility. */
-  const [vaePerturbGene, setVaePerturbGene] = useState<string>(OMICS_DATA[0]?.gene ?? '');
+  const [vaePerturbGene, setVaePerturbGene] = useState<string>(activeData[0]?.gene ?? '');
   const [vaePerturbFC, setVaePerturbFC] = useState<number>(2.0);
   const [vaePerturbResult, setVaePerturbResult] = useState<VAEPerturbationPrediction | null>(null);
 
   /* Derived data */
   const filtered = useMemo(
-    () => OMICS_DATA.filter(r => Math.abs(r.fold_change ?? 0) > 0),
+    () => activeData.filter(r => Math.abs(r.fold_change ?? 0) > 0),
     [],
   );
 
@@ -725,19 +767,20 @@ export default React.memo(function MultiOPage() {
   const maxSignal = Math.max(...Object.values(layerSignals), 0.01);
 
   /* Gene list for perturbation dropdown */
-  const geneNames = useMemo(() => [...new Set(OMICS_DATA.map(r => r.gene))], []);
+  const geneNames = useMemo(() => [...new Set(activeData.map(r => r.gene))], []);
   const preferredGene = useMemo(
     () => findPreferredGene([
       analyzeArtifact?.bottleneckAssumptions?.[0]?.label ?? '',
       analyzeArtifact?.enzymeCandidates?.[0]?.label ?? '',
       analyzeArtifact?.targetProduct ?? '',
       project?.targetProduct ?? '',
-    ]),
+    ], activeData),
     [
       analyzeArtifact?.bottleneckAssumptions,
       analyzeArtifact?.enzymeCandidates,
       analyzeArtifact?.targetProduct,
       project?.targetProduct,
+      activeData,
     ],
   );
 
@@ -917,8 +960,34 @@ export default React.memo(function MultiOPage() {
           />
       }
       footer={
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <ExportButton label="Export All CSV" data={OMICS_DATA} filename="multio-all" format="csv" />
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <input ref={fileInputRef} type="file" accept=".csv" style={{ display: 'none' }} onChange={handleFileUpload} />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            style={{
+              padding: '4px 10px', borderRadius: 6, fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)',
+              background: dataSource === 'uploaded' ? 'rgba(191,220,205,0.14)' : 'rgba(255,255,255,0.04)',
+              border: `1px solid ${dataSource === 'uploaded' ? 'rgba(191,220,205,0.3)' : 'rgba(255,255,255,0.08)'}`,
+              color: dataSource === 'uploaded' ? 'rgba(191,220,205,0.9)' : 'rgba(255,255,255,0.5)',
+              cursor: 'pointer',
+            }}
+          >
+            {dataSource === 'uploaded' ? `✓ ${activeData.length} genes loaded` : 'Upload CSV'}
+          </button>
+          {dataSource === 'uploaded' && (
+            <button
+              onClick={() => setUploadedData(null)}
+              style={{
+                padding: '4px 8px', borderRadius: 6, fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)',
+                background: 'rgba(232,163,161,0.1)', border: '1px solid rgba(232,163,161,0.2)',
+                color: 'rgba(232,163,161,0.7)', cursor: 'pointer',
+              }}
+            >
+              Reset to demo
+            </button>
+          )}
+          <div style={{ flex: 1 }} />
+          <ExportButton label="Export All CSV" data={activeData} filename="multio-all" format="csv" />
           <ExportButton label="Export Significant JSON" data={significant} filename="multio-significant" format="json" />
         </div>
       }
@@ -1446,7 +1515,7 @@ export default React.memo(function MultiOPage() {
                     {(() => {
                       const viewNames = Object.keys(mofaPlusResult.loadings);
                       const nFactors = mofaPlusResult.factors[0]?.length ?? 0;
-                      const geneNames = OMICS_DATA.map(r => r.gene);
+                      const geneNames = activeData.map(r => r.gene);
                       return Array.from({ length: nFactors }, (_, fi) => {
                         // Collect top features across all views for this factor
                         const topFeatures: { gene: string; view: string; loading: number }[] = [];
