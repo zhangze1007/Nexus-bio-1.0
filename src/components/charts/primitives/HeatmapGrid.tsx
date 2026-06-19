@@ -1,6 +1,7 @@
 'use client';
 import React from 'react';
 import { colors, typography } from '../../../design-system/tokens';
+import { THEME } from '../../../theme';
 
 /**
  * HeatmapGrid — rect-based heatmap for SVG charts.
@@ -52,7 +53,7 @@ export interface HeatmapGridProps {
     /** Unit label above the colorbar */
     unitLabel?: string;
   };
-  /** Font family for labels (default: typography.fontFamily.mono) */
+  /** Font family for labels (default: THEME.MONO) */
   fontFamily?: string;
   /** Font size for labels (default: typography.fontSize.xs) */
   fontSize?: string;
@@ -72,7 +73,7 @@ export default function HeatmapGrid({
   xLabels,
   yLabels,
   colorbar,
-  fontFamily = typography.fontFamily.mono,
+  fontFamily = THEME.MONO,
   fontSize = typography.fontSize.xs,
   labelFill = colors.text.tertiary,
   gradientId = 'hm',

@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react';
+import { THEME } from '../../theme';
 import type {
   BlockedShowcaseTrace,
   ShowcaseTrace,
@@ -36,7 +37,7 @@ const eyebrowStyle: CSSProperties = {
   fontWeight: 700,
   letterSpacing: '0.06em',
   textTransform: 'uppercase',
-  fontFamily: "'IBM Plex Mono', monospace",
+  fontFamily: THEME.MONO,
 };
 
 const titleStyle: CSSProperties = {
@@ -79,7 +80,7 @@ const thStyle: CSSProperties = {
   color: 'rgba(255,255,255,0.6)',
   borderBottom: '1px solid rgba(255,255,255,0.08)',
   fontWeight: 700,
-  fontFamily: "'IBM Plex Mono', monospace",
+  fontFamily: THEME.MONO,
   fontSize: 11,
   letterSpacing: '0.06em',
   textTransform: 'uppercase',
@@ -101,7 +102,7 @@ const badgeStyle: CSSProperties = {
   color: '#BFDCCD',
   fontSize: 12,
   fontWeight: 700,
-  fontFamily: "'IBM Plex Mono', monospace",
+  fontFamily: THEME.MONO,
 };
 
 function idsText(ids: string[]): string {

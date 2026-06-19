@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Terminal, Server, AlertTriangle, X, Code } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { THEME } from '../theme';
 
 const steps = [
   'Push code to a GitHub repository',
@@ -91,7 +92,7 @@ export default function DevModePanel() {
                 height: '60vh', display: 'flex', flexDirection: 'column',
                 background: '#0f0f0f',
                 borderTop: '1px solid rgba(255,255,255,0.08)',
-                fontFamily: "'Public Sans', -apple-system, BlinkMacSystemFont, sans-serif",
+                fontFamily: THEME.SANS,
               }}
             >
               {/* Header */}
@@ -101,7 +102,7 @@ export default function DevModePanel() {
                   <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '13px', fontWeight: 600, letterSpacing: '-0.01em' }}>
                     Developer Info
                   </span>
-                  <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '11px', fontFamily: 'monospace' }}>
+                  <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '11px', fontFamily: THEME.MONO }}>
                     Nexus-Bio 1.0
                   </span>
                 </div>
@@ -122,14 +123,14 @@ export default function DevModePanel() {
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
                     <Server size={14} style={{ color: 'rgba(255,255,255,0.3)' }} />
-                    <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                    <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px', fontFamily: THEME.MONO, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                       Deployment
                     </span>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     {steps.map((step, i) => (
                       <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-                        <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '11px', fontFamily: 'monospace', flexShrink: 0, marginTop: '1px' }}>
+                        <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '11px', fontFamily: THEME.MONO, flexShrink: 0, marginTop: '1px' }}>
                           {String(i + 1).padStart(2, '0')}
                         </span>
                         <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', lineHeight: 1.6 }}>
@@ -141,7 +142,7 @@ export default function DevModePanel() {
 
                   {/* Stack info */}
                   <div style={{ marginTop: '20px', padding: '14px', borderRadius: '12px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                    <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>
+                    <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', fontFamily: THEME.MONO, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>
                       Stack
                     </p>
                     {[
@@ -152,8 +153,8 @@ export default function DevModePanel() {
                       ['Deploy', 'Vercel · GitHub'],
                     ].map(([label, value]) => (
                       <div key={label} style={{ display: 'flex', gap: '12px', marginBottom: '6px' }}>
-                        <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '11px', fontFamily: 'monospace', width: '72px', flexShrink: 0 }}>{label}</span>
-                        <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: '11px', fontFamily: 'monospace' }}>{value}</span>
+                        <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '11px', fontFamily: THEME.MONO, width: '72px', flexShrink: 0 }}>{label}</span>
+                        <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: '11px', fontFamily: THEME.MONO }}>{value}</span>
                       </div>
                     ))}
                   </div>
@@ -163,20 +164,20 @@ export default function DevModePanel() {
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
                     <AlertTriangle size={14} style={{ color: 'rgba(255,255,255,0.3)' }} />
-                    <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                    <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px', fontFamily: THEME.MONO, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                       Troubleshooting
                     </span>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     {faqs.map((faq, i) => (
                       <div key={i} style={{ padding: '12px 14px', borderRadius: '12px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px', fontFamily: 'monospace', fontWeight: 600, margin: '0 0 5px' }}>
+                        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px', fontFamily: THEME.MONO, fontWeight: 600, margin: '0 0 5px' }}>
                           {faq.q}
                         </p>
                         <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '12px', margin: 0, lineHeight: 1.5 }}>
                           {faq.a}
                           {faq.code && (
-                            <code style={{ marginLeft: '6px', color: 'rgba(255,255,255,0.55)', background: 'rgba(255,255,255,0.06)', padding: '1px 5px', borderRadius: '4px', fontFamily: 'monospace' }}>
+                            <code style={{ marginLeft: '6px', color: 'rgba(255,255,255,0.55)', background: 'rgba(255,255,255,0.06)', padding: '1px 5px', borderRadius: '4px', fontFamily: THEME.MONO }}>
                               {faq.code}
                             </code>
                           )}

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Loader2, ExternalLink, ChevronDown, ChevronUp, X } from 'lucide-react';
+import { THEME } from '../theme';
 
 const PLDDT_LEVELS = [
   { color: '#0053D6', label: 'Very high', range: '>90', desc: 'Confident — accurately modelled' },
@@ -251,7 +252,7 @@ function ProteinCanvas({ pdbId, alphafoldId, name, useAlphaFold }: ProteinCanvas
         <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '10px', background: '#050505', borderRadius: '12px', pointerEvents: 'none' }}>
           <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
           <Loader2 size={22} style={{ color: '#6495ED', animation: 'spin 1s linear infinite' }} />
-          <span style={{ color: 'rgba(250,246,240,0.5)', fontSize: '12px', fontFamily: 'monospace' }}>
+          <span style={{ color: 'rgba(250,246,240,0.5)', fontSize: '12px', fontFamily: THEME.MONO }}>
             Loading {useAlphaFold ? 'AlphaFold' : 'RCSB PDB'} · {useAlphaFold ? alphafoldId : pdbId}
           </span>
         </div>
@@ -260,7 +261,7 @@ function ProteinCanvas({ pdbId, alphafoldId, name, useAlphaFold }: ProteinCanvas
       {/* Error */}
       {status === 'error' && (
         <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', background: '#050505', borderRadius: '12px' }}>
-          <span style={{ color: '#FA8072', fontSize: '12px', fontFamily: 'monospace' }}>Structure unavailable</span>
+          <span style={{ color: '#FA8072', fontSize: '12px', fontFamily: THEME.MONO }}>Structure unavailable</span>
           <a href={`https://www.rcsb.org/structure/${pdbId}`} target="_blank" rel="noopener noreferrer" style={{ color: '#6495ED', fontSize: '11px' }}>
             Open in RCSB →
           </a>
@@ -285,20 +286,20 @@ function ProteinCanvas({ pdbId, alphafoldId, name, useAlphaFold }: ProteinCanvas
           {/* Residue name + color */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
             <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: residueInfo.color, flexShrink: 0 }} />
-            <span style={{ color: '#ffffff', fontSize: '13px', fontWeight: 700, fontFamily: 'monospace' }}>
+            <span style={{ color: '#ffffff', fontSize: '13px', fontWeight: 700, fontFamily: THEME.MONO }}>
               {tooltip.resn} {tooltip.resi}
             </span>
-            <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', fontFamily: 'monospace' }}>
+            <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', fontFamily: THEME.MONO }}>
               Chain {tooltip.chain}
             </span>
           </div>
 
           {/* Atom info */}
           <div style={{ display: 'flex', gap: '6px', marginBottom: '6px', flexWrap: 'wrap' }}>
-            <span style={{ padding: '2px 6px', background: 'rgba(255,255,255,0.07)', borderRadius: '4px', color: 'rgba(255,255,255,0.5)', fontSize: '10px', fontFamily: 'monospace' }}>
+            <span style={{ padding: '2px 6px', background: 'rgba(255,255,255,0.07)', borderRadius: '4px', color: 'rgba(255,255,255,0.5)', fontSize: '10px', fontFamily: THEME.MONO }}>
               Atom: {tooltip.atom}
             </span>
-            <span style={{ padding: '2px 6px', background: 'rgba(255,255,255,0.07)', borderRadius: '4px', color: 'rgba(255,255,255,0.5)', fontSize: '10px', fontFamily: 'monospace' }}>
+            <span style={{ padding: '2px 6px', background: 'rgba(255,255,255,0.07)', borderRadius: '4px', color: 'rgba(255,255,255,0.5)', fontSize: '10px', fontFamily: THEME.MONO }}>
               Elem: {tooltip.elem}
             </span>
           </div>
@@ -312,8 +313,8 @@ function ProteinCanvas({ pdbId, alphafoldId, name, useAlphaFold }: ProteinCanvas
           {tooltip.b > 0 && (
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-                <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: '10px', fontFamily: 'monospace' }}>pLDDT</span>
-                <span style={{ color: getPLDDTColor(tooltip.b), fontSize: '10px', fontFamily: 'monospace', fontWeight: 700 }}>
+                <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: '10px', fontFamily: THEME.MONO }}>pLDDT</span>
+                <span style={{ color: getPLDDTColor(tooltip.b), fontSize: '10px', fontFamily: THEME.MONO, fontWeight: 700 }}>
                   {tooltip.b.toFixed(1)}
                 </span>
               </div>
@@ -330,13 +331,13 @@ function ProteinCanvas({ pdbId, alphafoldId, name, useAlphaFold }: ProteinCanvas
         <>
           <div style={{ position: 'absolute', top: '10px', left: '10px', pointerEvents: 'none', display: 'flex', gap: '6px' }}>
             <div style={{ padding: '3px 8px', background: 'rgba(0,0,0,0.6)', borderRadius: '6px', backdropFilter: 'blur(8px)' }}>
-              <span style={{ color: 'rgba(255,255,255,0.75)', fontSize: '10px', fontFamily: 'monospace', fontWeight: 700 }}>
+              <span style={{ color: 'rgba(255,255,255,0.75)', fontSize: '10px', fontFamily: THEME.MONO, fontWeight: 700 }}>
                 {useAlphaFold ? `AF-${alphafoldId}` : pdbId}
               </span>
             </div>
             {useAlphaFold && (
               <div style={{ padding: '3px 8px', background: 'rgba(0,83,214,0.15)', border: '1px solid rgba(0,83,214,0.3)', borderRadius: '6px' }}>
-                <span style={{ color: '#65CBF3', fontSize: '10px', fontFamily: 'monospace' }}>pLDDT coloring</span>
+                <span style={{ color: '#65CBF3', fontSize: '10px', fontFamily: THEME.MONO }}>pLDDT coloring</span>
               </div>
             )}
           </div>
@@ -345,7 +346,7 @@ function ProteinCanvas({ pdbId, alphafoldId, name, useAlphaFold }: ProteinCanvas
           <div style={{ position: 'absolute', top: '10px', right: '10px', display: 'flex', gap: '6px' }}>
             <a href={`https://www.rcsb.org/structure/${pdbId}`}
               target="_blank" rel="noopener noreferrer"
-              style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 8px', background: 'rgba(0,0,0,0.55)', borderRadius: '6px', color: 'rgba(255,255,255,0.5)', fontSize: '10px', fontFamily: 'monospace', textDecoration: 'none', backdropFilter: 'blur(8px)' }}
+              style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 8px', background: 'rgba(0,0,0,0.55)', borderRadius: '6px', color: 'rgba(255,255,255,0.5)', fontSize: '10px', fontFamily: THEME.MONO, textDecoration: 'none', backdropFilter: 'blur(8px)' }}
               onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#ffffff'; }}
               onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.5)'; }}>
               RCSB PDB <ExternalLink size={8} />
@@ -353,7 +354,7 @@ function ProteinCanvas({ pdbId, alphafoldId, name, useAlphaFold }: ProteinCanvas
             {alphafoldId && (
               <a href={`https://alphafold.ebi.ac.uk/entry/${alphafoldId}`}
                 target="_blank" rel="noopener noreferrer"
-                style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 8px', background: 'rgba(0,0,0,0.55)', borderRadius: '6px', color: 'rgba(255,255,255,0.5)', fontSize: '10px', fontFamily: 'monospace', textDecoration: 'none', backdropFilter: 'blur(8px)' }}
+                style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 8px', background: 'rgba(0,0,0,0.55)', borderRadius: '6px', color: 'rgba(255,255,255,0.5)', fontSize: '10px', fontFamily: THEME.MONO, textDecoration: 'none', backdropFilter: 'blur(8px)' }}
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#ffffff'; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.5)'; }}>
                 AlphaFold DB <ExternalLink size={8} />
@@ -362,7 +363,7 @@ function ProteinCanvas({ pdbId, alphafoldId, name, useAlphaFold }: ProteinCanvas
           </div>
 
           <div style={{ position: 'absolute', bottom: '10px', right: '10px', pointerEvents: 'none' }}>
-            <span style={{ color: 'rgba(0,0,0,0.3)', fontSize: '10px', fontFamily: 'monospace', background: 'rgba(255,255,255,0.7)', padding: '2px 6px', borderRadius: '4px' }}>
+            <span style={{ color: 'rgba(0,0,0,0.3)', fontSize: '10px', fontFamily: THEME.MONO, background: 'rgba(255,255,255,0.7)', padding: '2px 6px', borderRadius: '4px' }}>
               Hover residues for data · Drag to rotate
             </span>
           </div>
@@ -391,7 +392,7 @@ export default function PDBExplorer() {
       <div className="max-w-5xl mx-auto">
 
         <div className="mb-10">
-          <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '11px', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' }}>
+          <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '11px', fontFamily: THEME.MONO, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' }}>
             Structure
           </p>
           <h2 className="text-2xl md:text-3xl font-semibold text-white mb-2" style={{ letterSpacing: '-0.02em' }}>
@@ -399,9 +400,9 @@ export default function PDBExplorer() {
           </h2>
           <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '14px' }}>
             Real 3D structures from{' '}
-            <span style={{ color: '#6495ED', fontFamily: 'monospace' }}>RCSB PDB</span>
+            <span style={{ color: '#6495ED', fontFamily: THEME.MONO }}>RCSB PDB</span>
             {' '}·{' '}
-            <span style={{ color: '#65CBF3', fontFamily: 'monospace' }}>AlphaFold DB</span>
+            <span style={{ color: '#65CBF3', fontFamily: THEME.MONO }}>AlphaFold DB</span>
             {' '}· Hover any atom for biochemical data
           </p>
         </div>
@@ -411,7 +412,7 @@ export default function PDBExplorer() {
           {/* Left controls */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
 
-            <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', fontFamily: THEME.MONO, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
               Artemisinin Pathway Enzymes
             </p>
 
@@ -428,8 +429,8 @@ export default function PDBExplorer() {
                 onMouseLeave={e => { if (activeEnzyme.id !== enzyme.id || customActive) (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.07)'; }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-                  <span style={{ color: '#6495ED', fontSize: '11px', fontFamily: 'monospace', fontWeight: 700 }}>{enzyme.name}</span>
-                  <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', fontFamily: 'monospace' }}>{enzyme.pdbId}</span>
+                  <span style={{ color: '#6495ED', fontSize: '11px', fontFamily: THEME.MONO, fontWeight: 700 }}>{enzyme.name}</span>
+                  <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', fontFamily: THEME.MONO }}>{enzyme.pdbId}</span>
                 </div>
                 <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '12px', fontWeight: 500, margin: '0 0 2px' }}>{enzyme.fullName}</p>
                 <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '10px', margin: 0, fontStyle: 'italic' }}>{enzyme.organism}</p>
@@ -438,7 +439,7 @@ export default function PDBExplorer() {
 
             {/* Custom PDB */}
             <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '10px' }}>
-              <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '7px' }}>Custom PDB ID</p>
+              <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', fontFamily: THEME.MONO, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '7px' }}>Custom PDB ID</p>
               <div style={{ display: 'flex', gap: '6px' }}>
                 <input
                   type="text"
@@ -446,7 +447,7 @@ export default function PDBExplorer() {
                   onChange={e => setCustomPDB(e.target.value.toUpperCase().slice(0, 4))}
                   placeholder="e.g. 1TQN"
                   maxLength={4}
-                  style={{ flex: 1, padding: '8px 10px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', color: '#fff', fontSize: '13px', fontFamily: 'monospace', outline: '2px solid rgba(175,195,214,0.5)', outlineOffset: '2px', letterSpacing: '0.08em' }}
+                  style={{ flex: 1, padding: '8px 10px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', color: '#fff', fontSize: '13px', fontFamily: THEME.MONO, outline: '2px solid rgba(175,195,214,0.5)', outlineOffset: '2px', letterSpacing: '0.08em' }}
                 />
                 <button
                   onClick={() => { if (customPDB.length === 4) setCustomActive(true); }}
@@ -461,7 +462,7 @@ export default function PDBExplorer() {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', borderRadius: '12px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
               <div>
                 <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '12px', fontWeight: 500, margin: '0 0 2px' }}>AlphaFold pLDDT</p>
-                <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '10px', fontFamily: 'monospace', margin: 0 }}>Confidence color coding</p>
+                <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '10px', fontFamily: THEME.MONO, margin: 0 }}>Confidence color coding</p>
               </div>
               <button
                 onClick={() => setUseAlphaFold(!useAlphaFold)}
@@ -474,7 +475,7 @@ export default function PDBExplorer() {
             <div>
               <button
                 onClick={() => setShowLegend(!showLegend)}
-                style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0', color: 'rgba(255,255,255,0.3)', fontSize: '11px', fontFamily: 'monospace' }}
+                style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0', color: 'rgba(255,255,255,0.3)', fontSize: '11px', fontFamily: THEME.MONO }}
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.6)'; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.3)'; }}>
                 {showLegend ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
@@ -486,12 +487,12 @@ export default function PDBExplorer() {
                     <div key={l.color} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
                       <div style={{ width: '26px', height: '8px', borderRadius: '3px', background: l.color, flexShrink: 0, marginTop: '2px' }} />
                       <div>
-                        <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '10px', fontFamily: 'monospace', margin: '0 0 1px' }}>{l.label} ({l.range})</p>
+                        <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '10px', fontFamily: THEME.MONO, margin: '0 0 1px' }}>{l.label} ({l.range})</p>
                         <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', margin: 0 }}>{l.desc}</p>
                       </div>
                     </div>
                   ))}
-                  <p style={{ color: 'rgba(255,255,255,0.12)', fontSize: '10px', fontFamily: 'monospace', margin: '4px 0 0', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '6px' }}>
+                  <p style={{ color: 'rgba(255,255,255,0.12)', fontSize: '10px', fontFamily: THEME.MONO, margin: '4px 0 0', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '6px' }}>
                     Jumper et al., Nature 2021 · AlphaFold2 standard
                   </p>
                 </div>
@@ -511,16 +512,16 @@ export default function PDBExplorer() {
             {!customActive && (
               <div style={{ padding: '16px', borderRadius: '12px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-                  <span style={{ padding: '2px 8px', background: 'rgba(100,149,237,0.1)', border: '1px solid rgba(100,149,237,0.2)', borderRadius: '6px', color: '#6495ED', fontSize: '10px', fontFamily: 'monospace' }}>
+                  <span style={{ padding: '2px 8px', background: 'rgba(100,149,237,0.1)', border: '1px solid rgba(100,149,237,0.2)', borderRadius: '6px', color: '#6495ED', fontSize: '10px', fontFamily: THEME.MONO }}>
                     {activeEnzyme.pathway} Pathway
                   </span>
-                  <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '11px', fontFamily: 'monospace' }}>{activeEnzyme.fullName}</span>
+                  <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '11px', fontFamily: THEME.MONO }}>{activeEnzyme.fullName}</span>
                 </div>
                 <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '13px', lineHeight: 1.65, margin: '0 0 10px' }}>
                   {activeEnzyme.role}
                 </p>
                 <div style={{ padding: '8px 12px', borderRadius: '8px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                  <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', fontFamily: 'monospace' }}>ACTIVE SITE · </span>
+                  <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', fontFamily: THEME.MONO }}>ACTIVE SITE · </span>
                   <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: '11px' }}>{activeEnzyme.activeResidue}</span>
                 </div>
               </div>

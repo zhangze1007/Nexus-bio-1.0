@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react';
 import type { TrustFalsificationMetrics, TrustMetricCounts } from '../../types/trustMetrics';
+import { THEME } from '../../theme';
 
 export interface TrustMetricsDashboardProps {
   report: TrustFalsificationMetrics;
@@ -37,7 +38,7 @@ const eyebrowStyle: CSSProperties = {
   fontWeight: 700,
   letterSpacing: '0.06em',
   textTransform: 'uppercase',
-  fontFamily: "'IBM Plex Mono', monospace",
+  fontFamily: THEME.MONO,
 };
 
 const titleStyle: CSSProperties = {
@@ -81,7 +82,7 @@ const metricValueStyle: CSSProperties = {
   fontSize: 30,
   fontWeight: 800,
   letterSpacing: 0,
-  fontFamily: "'IBM Plex Mono', monospace",
+  fontFamily: THEME.MONO,
 };
 
 const labelStyle: CSSProperties = {
@@ -103,7 +104,7 @@ const thStyle: CSSProperties = {
   color: 'rgba(255,255,255,0.6)',
   borderBottom: '1px solid rgba(255,255,255,0.08)',
   fontWeight: 700,
-  fontFamily: "'IBM Plex Mono', monospace",
+  fontFamily: THEME.MONO,
   fontSize: 11,
   letterSpacing: '0.06em',
   textTransform: 'uppercase',
@@ -125,7 +126,7 @@ const badgeStyle: CSSProperties = {
   color: '#BFDCCD',
   fontSize: 12,
   fontWeight: 700,
-  fontFamily: "'IBM Plex Mono', monospace",
+  fontFamily: THEME.MONO,
 };
 
 function formatPercent(value: number): string {

@@ -331,6 +331,13 @@ The `/nexus-bio-viz` skill (`.claude/commands/nexus-bio-viz.md`) defines standar
 - SVG directed edges use `<marker>` in `<defs>` for arrowheads
 - Never hardcode final values — compute from props/state
 
+**Typography (mandatory for all UI):**
+- Body text: `THEME.SANS` → `'Public Sans', -apple-system, sans-serif`
+- Monospace / code / data: `THEME.MONO` → `'IBM Plex Mono', 'JetBrains Mono', 'Fira Code', monospace`
+- Brand / headings: `THEME.BRAND` → `'Space Grotesk', -apple-system, sans-serif`
+- All font references must use `THEME.SANS`, `THEME.MONO`, or `THEME.BRAND` — never hardcode font-family strings
+- Import from `src/theme/index.ts` via `import { THEME } from '../../theme'`
+
 **Per-tool visualization targets:**
 
 | Tool | Target Aesthetic |

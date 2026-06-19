@@ -11,6 +11,7 @@
  */
 
 import { colors, spacing, typography } from '../../design-system/tokens';
+import { THEME } from '../../theme';
 
 /* ── Color Palette ────────────────────────────────────────────── */
 
@@ -205,8 +206,8 @@ export const HEATMAP_COLORS = {
 /* ── Typography ───────────────────────────────────────────────── */
 
 export const FONT = {
-  SANS:  typography.fontFamily.sans,
-  MONO:  typography.fontFamily.mono,
+  SANS:  THEME.SANS,
+  MONO:  THEME.MONO,
 } as const;
 
 /* ── Axis & Grid Styling ──────────────────────────────────────── */

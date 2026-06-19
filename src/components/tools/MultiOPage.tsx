@@ -182,13 +182,13 @@ const COLUMNS: TableColumn<OmicsRow>[] = [
   { key: 'protein',     header: 'Prot.',       width: 55, render: v => typeof v === 'number' ? v.toFixed(1) : '—' },
   { key: 'metabolite',  header: 'Met.',        width: 55, render: v => typeof v === 'number' ? v.toFixed(1) : '—' },
   { key: 'fold_change', header: 'FC',          width: 55, render: v => typeof v === 'number'
-    ? <span style={{ color: (v as number) > 0 ? 'rgba(147,203,82,0.85)' : 'rgba(250,128,114,0.8)', fontFamily: "'JetBrains Mono',monospace", fontSize: 'var(--nb-fs-xs)' }}>
+    ? <span style={{ color: (v as number) > 0 ? 'rgba(147,203,82,0.85)' : 'rgba(250,128,114,0.8)', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)' }}>
         {(v as number) > 0 ? '+' : ''}{(v as number).toFixed(2)}
       </span>
     : '—'
   },
   { key: 'pValue',      header: 'p-val',       width: 60, render: v => typeof v === 'number'
-    ? <span style={{ color: (v as number) < 0.05 ? 'rgba(255,139,31,0.85)' : PAPER_THEME.tickColor, fontFamily: "'JetBrains Mono',monospace", fontSize: 'var(--nb-fs-xs)' }}>
+    ? <span style={{ color: (v as number) < 0.05 ? 'rgba(255,139,31,0.85)' : PAPER_THEME.tickColor, fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)' }}>
         {(v as number).toFixed(3)}
       </span>
     : '—'

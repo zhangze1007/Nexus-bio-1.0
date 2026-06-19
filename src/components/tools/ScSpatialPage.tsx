@@ -330,7 +330,7 @@ export default React.memo(function ScSpatialPage() {
           <div style={{
             flex: 1, overflow: 'auto', padding: '20px',
             background: 'var(--sc-bg, #f3f6f8)', color: 'var(--sc-value, #111827)',
-            fontFamily: 'var(--font-sans)',
+            fontFamily: THEME.SANS,
           }}>
             {/* ── Header ───────────────────────────────────────── */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
@@ -354,14 +354,14 @@ export default React.memo(function ScSpatialPage() {
             {!query ? (
               <div style={{
                 padding: 32, textAlign: 'center', color: 'var(--sc-muted)',
-                fontFamily: 'var(--font-sans)', fontSize: 13,
+                fontFamily: THEME.SANS, fontSize: 13,
               }}>
                 Load a dataset first (use the Hex Grid tab to upload or load demo data), then return here to analyze cell-cell communication.
               </div>
             ) : !commResult ? (
               <div style={{
                 padding: 32, textAlign: 'center', color: 'var(--sc-muted)',
-                fontFamily: 'var(--font-sans)', fontSize: 13,
+                fontFamily: THEME.SANS, fontSize: 13,
               }}>
                 Click "Analyze Communication" to infer ligand-receptor interactions between {availableClusters.length} clusters across 52 known L-R pairs.
               </div>
@@ -656,7 +656,7 @@ export default React.memo(function ScSpatialPage() {
                     </table>
                   </div>
                   <p style={{
-                    margin: '8px 0 0', fontFamily: 'Georgia, "Times New Roman", serif',
+                    margin: '8px 0 0', fontFamily: THEME.SANS,
                     fontSize: 11, fontStyle: 'italic', color: 'var(--sc-label)', lineHeight: 1.5,
                   }}>
                     Communication probabilities inferred via CellChat-style ligand-receptor co-expression model (Jin et al., Nat Commun 2021). Significance = percentile rank among all nonzero interactions.

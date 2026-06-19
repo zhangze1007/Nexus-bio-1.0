@@ -3,6 +3,7 @@
 import styles from './ScSpatialWorkbench.module.css';
 import type { ScSpatialQueryResponse } from '../../../types/scspatial';
 import { colorForCluster } from './scSpatialPalette';
+import { THEME } from '../../../theme';
 
 interface ScSpatialInsightRailProps {
   query: ScSpatialQueryResponse | null;
@@ -298,7 +299,7 @@ export default function ScSpatialInsightRail({ query }: ScSpatialInsightRailProp
                       </span>
                     </td>
                     <td className="num">{cluster.cellCount}</td>
-                    <td style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--sc-label)' }}>
+                    <td style={{ fontFamily: THEME.MONO, fontSize: 9, color: 'var(--sc-label)' }}>
                       {cluster.fate}
                     </td>
                   </tr>

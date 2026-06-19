@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { Loader2, Play, RotateCcw, Info, Plus, Trash2 } from 'lucide-react';
 import ActionButton from './tools/shared/ActionButton';
+import { THEME } from '../theme';
 import { type SimResult } from '../utils/kinetics';
 import { useWorkbenchStore } from '../store/workbenchStore';
 import {
@@ -136,7 +137,7 @@ function LineChart({ data, color, label, unit }: {
 
   return (
     <div>
-      <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+      <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
         {label}
       </p>
       <svg width={W} height={H} style={{ overflow: 'visible' }}>
@@ -149,19 +150,19 @@ function LineChart({ data, color, label, unit }: {
         {/* Y axis labels */}
         {[0, 0.5, 1].map(f => (
           <text key={f} x={PAD.l - 4} y={PAD.t + iH * (1 - f) + 3}
-            textAnchor="end" fill="rgba(255,255,255,0.2)" fontSize={8} fontFamily="Public Sans, sans-serif">
+            textAnchor="end" fill="rgba(255,255,255,0.2)" fontSize={8} fontFamily={THEME.SANS}>
             {(yMin + (yMax - yMin) * f).toFixed(1)}
           </text>
         ))}
         {/* X axis labels */}
         {[0, 0.5, 1].map(f => (
           <text key={f} x={PAD.l + iW * f} y={H - 4}
-            textAnchor="middle" fill="rgba(255,255,255,0.2)" fontSize={8} fontFamily="Public Sans, sans-serif">
+            textAnchor="middle" fill="rgba(255,255,255,0.2)" fontSize={8} fontFamily={THEME.SANS}>
             {(xMin + (xMax - xMin) * f).toFixed(1)}
           </text>
         ))}
         {/* X axis unit */}
-        <text x={W - PAD.r} y={H - 4} textAnchor="end" fill="rgba(255,255,255,0.15)" fontSize={7} fontFamily="Public Sans, sans-serif">
+        <text x={W - PAD.r} y={H - 4} textAnchor="end" fill="rgba(255,255,255,0.15)" fontSize={7} fontFamily={THEME.SANS}>
           {unit}
         </text>
         {/* Line */}
@@ -203,7 +204,7 @@ function EstimationChart({ data, fittedCurve, color }: {
 
   return (
     <div>
-      <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+      <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
         Data vs Fitted Curve
       </p>
       <svg width={W} height={H} style={{ overflow: 'visible' }}>
@@ -214,17 +215,17 @@ function EstimationChart({ data, fittedCurve, color }: {
         ))}
         {[0, 0.5, 1].map(f => (
           <text key={f} x={PAD.l - 4} y={PAD.t + iH * (1 - f) + 3}
-            textAnchor="end" fill="rgba(255,255,255,0.2)" fontSize={8} fontFamily="Public Sans, sans-serif">
+            textAnchor="end" fill="rgba(255,255,255,0.2)" fontSize={8} fontFamily={THEME.SANS}>
             {(yMin + (yMax - yMin) * f).toFixed(1)}
           </text>
         ))}
         {[0, 0.5, 1].map(f => (
           <text key={f} x={PAD.l + iW * f} y={H - 4}
-            textAnchor="middle" fill="rgba(255,255,255,0.2)" fontSize={8} fontFamily="Public Sans, sans-serif">
+            textAnchor="middle" fill="rgba(255,255,255,0.2)" fontSize={8} fontFamily={THEME.SANS}>
             {(xMin + (xMax - xMin) * f).toFixed(1)}
           </text>
         ))}
-        <text x={W - PAD.r} y={H - 4} textAnchor="end" fill="rgba(255,255,255,0.15)" fontSize={7} fontFamily="Public Sans, sans-serif">
+        <text x={W - PAD.r} y={H - 4} textAnchor="end" fill="rgba(255,255,255,0.15)" fontSize={7} fontFamily={THEME.SANS}>
           mM
         </text>
         {fittedCurve.x.length > 1 && (
@@ -236,11 +237,11 @@ function EstimationChart({ data, fittedCurve, color }: {
         ))}
       </svg>
       <div style={{ display: 'flex', gap: '12px', marginTop: '4px' }}>
-        <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'rgba(255,255,255,0.3)', fontSize: '9px', fontFamily: "'Public Sans',sans-serif" }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'rgba(255,255,255,0.3)', fontSize: '9px', fontFamily: THEME.SANS }}>
           <span style={{ width: '12px', height: '1.5px', background: color, display: 'inline-block' }} />
           Fitted
         </span>
-        <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'rgba(255,255,255,0.3)', fontSize: '9px', fontFamily: "'Public Sans',sans-serif" }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'rgba(255,255,255,0.3)', fontSize: '9px', fontFamily: THEME.SANS }}>
           <span style={{ width: '7px', height: '7px', border: '1.5px solid #FA8072', borderRadius: '50%', display: 'inline-block' }} />
           Data
         </span>
@@ -260,17 +261,17 @@ function InputField({ label, value, unit, onChange, min, max, step, hint }: {
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
-        <label style={{ color: 'rgba(255,255,255,0.4)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        <label style={{ color: 'rgba(255,255,255,0.4)', fontSize: '10px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.05em' }}>
           {label}
         </label>
-        <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1" }}>{unit}</span>
+        <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1" }}>{unit}</span>
       </div>
       <input
         type="number" value={value} min={min} max={max} step={step}
         onChange={e => onChange(parseFloat(e.target.value) || 0)}
-        style={{ width: '100%', padding: '6px 10px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', color: '#ffffff', fontSize: '12px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", outline: '2px solid rgba(175,195,214,0.5)', outlineOffset: '2px' }}
+        style={{ width: '100%', padding: '6px 10px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', color: '#ffffff', fontSize: '12px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", outline: '2px solid rgba(175,195,214,0.5)', outlineOffset: '2px' }}
       />
-      {hint && <p style={{ color: 'rgba(255,255,255,0.15)', fontSize: '10px', margin: '3px 0 0', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1" }}>{hint}</p>}
+      {hint && <p style={{ color: 'rgba(255,255,255,0.15)', fontSize: '10px', margin: '3px 0 0', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1" }}>{hint}</p>}
     </div>
   );
 }
@@ -285,7 +286,7 @@ function SelectField({ label, value, options, onChange, hint }: {
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
-        <label style={{ color: 'rgba(255,255,255,0.4)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        <label style={{ color: 'rgba(255,255,255,0.4)', fontSize: '10px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.05em' }}>
           {label}
         </label>
       </div>
@@ -297,7 +298,7 @@ function SelectField({ label, value, options, onChange, hint }: {
           background: 'rgba(255,255,255,0.04)',
           border: '1px solid rgba(255,255,255,0.08)',
           borderRadius: '12px', color: '#ffffff', fontSize: '12px',
-          fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1",
+          fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1",
           outline: '2px solid rgba(175,195,214,0.5)', outlineOffset: '2px',
           cursor: 'pointer', appearance: 'none' as const,
           backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'10\' height=\'6\' viewBox=\'0 0 10 6\'%3E%3Cpath d=\'M0 0l5 6 5-6z\' fill=\'rgba(255,255,255,0.3)\'/%3E%3C/svg%3E")',
@@ -312,7 +313,7 @@ function SelectField({ label, value, options, onChange, hint }: {
           </option>
         ))}
       </select>
-      {hint && <p style={{ color: 'rgba(255,255,255,0.15)', fontSize: '10px', margin: '3px 0 0', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1" }}>{hint}</p>}
+      {hint && <p style={{ color: 'rgba(255,255,255,0.15)', fontSize: '10px', margin: '3px 0 0', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1" }}>{hint}</p>}
     </div>
   );
 }
@@ -326,7 +327,7 @@ function SensitivityBar({ name, value, maxValue, color }: {
   const isPositive = value >= 0;
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-      <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", width: '36px', textAlign: 'right', fontWeight: 600 }}>
+      <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '10px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", width: '36px', textAlign: 'right', fontWeight: 600 }}>
         {name}
       </span>
       <div style={{ flex: 1, height: '14px', background: 'rgba(255,255,255,0.03)', borderRadius: '7px', overflow: 'hidden', position: 'relative' }}>
@@ -337,7 +338,7 @@ function SensitivityBar({ name, value, maxValue, color }: {
           opacity: 0.7,
         }} />
       </div>
-      <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", width: '55px', textAlign: 'right' }}>
+      <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '10px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", width: '55px', textAlign: 'right' }}>
         {isPositive ? '+' : ''}{value.toFixed(3)}
       </span>
     </div>
@@ -662,7 +663,7 @@ Be specific and scientific. No generic statements.`;
 
       {/* Header */}
       <div style={{ padding: '10px 12px', borderRadius: '16px', background: 'rgba(200,216,232,0.05)', border: '1px solid rgba(200,216,232,0.1)' }}>
-        <p style={{ color: 'rgba(200,216,232,0.6)', fontSize: '11px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", margin: 0 }}>
+        <p style={{ color: 'rgba(200,216,232,0.6)', fontSize: '11px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", margin: 0 }}>
           Michaelis-Menten kinetics + RK4 ODE simulation
         </p>
         <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', margin: '3px 0 0' }}>
@@ -682,7 +683,7 @@ Be specific and scientific. No generic statements.`;
 
       {/* Inhibition section */}
       <div>
-        <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 8px' }}>
+        <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 8px' }}>
           Inhibition
         </p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -730,7 +731,7 @@ Be specific and scientific. No generic statements.`;
               flex: 1, padding: '7px 8px', borderRadius: '10px', border: 'none',
               background: activeTab === tab.key ? 'rgba(200,216,232,0.1)' : 'transparent',
               color: activeTab === tab.key ? 'rgba(200,216,232,0.8)' : 'rgba(255,255,255,0.3)',
-              fontSize: '10px', fontFamily: "'Public Sans',sans-serif",
+              fontSize: '10px', fontFamily: THEME.SANS,
               fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase',
               letterSpacing: '0.05em', cursor: 'pointer', transition: 'all 0.15s ease',
               fontWeight: activeTab === tab.key ? 600 : 400,
@@ -770,7 +771,7 @@ Be specific and scientific. No generic statements.`;
           {/* MM curve — always visible */}
           <div style={{ padding: '14px', borderRadius: '20px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
             <LineChart data={mmCurve} color="#C8D8E8" label={`Michaelis-Menten curve (${inhibitionLabel(inhibitionType)} model)`} unit="mM" />
-            <p style={{ color: 'rgba(255,255,255,0.15)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", margin: '6px 0 0' }}>
+            <p style={{ color: 'rgba(255,255,255,0.15)', fontSize: '10px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", margin: '6px 0 0' }}>
               {getFormulaText(inhibitionType)}
             </p>
           </div>
@@ -806,8 +807,8 @@ Be specific and scientific. No generic statements.`;
                   { l: 'Saturation', v: `${((S0 / (S0 + Km)) * 100).toFixed(1)}%` },
                 ].map(m => (
                   <div key={m.l} style={{ padding: '8px 10px', borderRadius: '12px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                    <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", margin: '0 0 3px', textTransform: 'uppercase' }}>{m.l}</p>
-                    <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '11px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", margin: 0, fontWeight: 600 }}>{m.v}</p>
+                    <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '10px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", margin: '0 0 3px', textTransform: 'uppercase' }}>{m.l}</p>
+                    <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '11px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", margin: 0, fontWeight: 600 }}>{m.v}</p>
                   </div>
                 ))}
               </div>
@@ -819,7 +820,7 @@ Be specific and scientific. No generic statements.`;
             <div style={{ padding: '14px', borderRadius: '20px', background: 'rgba(200,216,232,0.04)', border: '1px solid rgba(200,216,232,0.1)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
                 <Info size={11} style={{ color: 'rgba(200,216,232,0.5)' }} />
-                <span style={{ color: 'rgba(200,216,232,0.5)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                <span style={{ color: 'rgba(200,216,232,0.5)', fontSize: '10px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                   AI Interpretation
                 </span>
               </div>
@@ -853,17 +854,17 @@ Be specific and scientific. No generic statements.`;
 
           {/* Data table header */}
           <div>
-            <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 8px' }}>
+            <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 8px' }}>
               Experimental Data ({estData.length} points)
             </p>
 
             {/* Column headers */}
             {estData.length > 0 && (
               <div style={{ display: 'grid', gridTemplateColumns: estModel !== 'competitive' ? '1fr 1fr 1fr 28px' : '1fr 1fr 28px', gap: '6px', marginBottom: '6px', padding: '0 2px' }}>
-                <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '9px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.04em' }}>[S] (mM)</span>
-                <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '9px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.04em' }}>v (μmol/min)</span>
+                <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '9px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.04em' }}>[S] (mM)</span>
+                <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '9px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.04em' }}>v (μmol/min)</span>
                 {estModel !== 'competitive' && (
-                  <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '9px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.04em' }}>[I] (mM)</span>
+                  <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '9px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.04em' }}>[I] (mM)</span>
                 )}
                 <span />
               </div>
@@ -875,19 +876,19 @@ Be specific and scientific. No generic statements.`;
                 <input
                   type="number" value={d.s} min={0} step={0.1}
                   onChange={e => updateDataPoint(i, 's', parseFloat(e.target.value) || 0)}
-                  style={{ padding: '5px 8px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', color: '#fff', fontSize: '11px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", width: '100%', outline: 'none' }}
+                  style={{ padding: '5px 8px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', color: '#fff', fontSize: '11px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", width: '100%', outline: 'none' }}
                 />
                 <input
                   type="number" value={d.v} min={0} step={0.01}
                   onChange={e => updateDataPoint(i, 'v', parseFloat(e.target.value) || 0)}
-                  style={{ padding: '5px 8px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', color: '#fff', fontSize: '11px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", width: '100%', outline: 'none' }}
+                  style={{ padding: '5px 8px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', color: '#fff', fontSize: '11px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", width: '100%', outline: 'none' }}
                 />
                 {estModel !== 'competitive' && (
                   <input
                     type="number" value={d.i ?? 0} min={0} step={0.1}
                     onChange={e => updateDataPoint(i, 'i', parseFloat(e.target.value) || 0)}
                     placeholder="0"
-                    style={{ padding: '5px 8px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', color: '#fff', fontSize: '11px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", width: '100%', outline: 'none' }}
+                    style={{ padding: '5px 8px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', color: '#fff', fontSize: '11px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", width: '100%', outline: 'none' }}
                   />
                 )}
                 <button
@@ -907,7 +908,7 @@ Be specific and scientific. No generic statements.`;
                 display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 12px',
                 background: 'rgba(200,216,232,0.05)', border: '1px dashed rgba(200,216,232,0.15)',
                 borderRadius: '10px', color: 'rgba(200,216,232,0.5)', fontSize: '10px',
-                fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1",
+                fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1",
                 textTransform: 'uppercase', letterSpacing: '0.04em', cursor: 'pointer',
                 marginTop: estData.length > 0 ? '6px' : '0',
                 width: '100%', justifyContent: 'center',
@@ -917,7 +918,7 @@ Be specific and scientific. No generic statements.`;
             </button>
 
             {estData.length === 0 && (
-              <p style={{ color: 'rgba(255,255,255,0.15)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", margin: '8px 0 0', textAlign: 'center' }}>
+              <p style={{ color: 'rgba(255,255,255,0.15)', fontSize: '10px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", margin: '8px 0 0', textAlign: 'center' }}>
                 Add at least 3 data points to fit parameters
               </p>
             )}
@@ -940,14 +941,14 @@ Be specific and scientific. No generic statements.`;
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {/* Fitted parameters */}
               <div style={{ padding: '14px', borderRadius: '20px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                   Fitted Parameters
                 </p>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
                   {estResult.params.map((p, i) => (
                     <div key={i} style={{ padding: '8px 10px', borderRadius: '12px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                      <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", margin: '0 0 3px', textTransform: 'uppercase' }}>{estParamNames[i]}</p>
-                      <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '11px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", margin: 0, fontWeight: 600 }}>{p.toFixed(4)}</p>
+                      <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '10px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", margin: '0 0 3px', textTransform: 'uppercase' }}>{estParamNames[i]}</p>
+                      <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '11px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", margin: 0, fontWeight: 600 }}>{p.toFixed(4)}</p>
                     </div>
                   ))}
                 </div>
@@ -961,8 +962,8 @@ Be specific and scientific. No generic statements.`;
                   { l: 'Converged', v: estResult.converged ? 'Yes' : 'No' },
                 ].map(m => (
                   <div key={m.l} style={{ padding: '8px 10px', borderRadius: '12px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                    <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", margin: '0 0 3px', textTransform: 'uppercase' }}>{m.l}</p>
-                    <p style={{ color: m.l === 'Converged' && !estResult.converged ? '#FA8072' : 'rgba(255,255,255,0.7)', fontSize: '11px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", margin: 0, fontWeight: 600 }}>{m.v}</p>
+                    <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '10px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", margin: '0 0 3px', textTransform: 'uppercase' }}>{m.l}</p>
+                    <p style={{ color: m.l === 'Converged' && !estResult.converged ? '#FA8072' : 'rgba(255,255,255,0.7)', fontSize: '11px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", margin: 0, fontWeight: 600 }}>{m.v}</p>
                   </div>
                 ))}
               </div>
@@ -991,7 +992,7 @@ Be specific and scientific. No generic statements.`;
       {activeTab === 'sensitivity' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           <div style={{ padding: '10px 12px', borderRadius: '16px', background: 'rgba(200,216,232,0.05)', border: '1px solid rgba(200,216,232,0.1)' }}>
-            <p style={{ color: 'rgba(200,216,232,0.6)', fontSize: '11px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", margin: 0 }}>
+            <p style={{ color: 'rgba(200,216,232,0.6)', fontSize: '11px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", margin: 0 }}>
               Normalized Sensitivity Coefficients
             </p>
             <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', margin: '3px 0 0' }}>
@@ -1001,14 +1002,14 @@ Be specific and scientific. No generic statements.`;
 
           {/* Current velocity at S0 */}
           <div style={{ padding: '8px 10px', borderRadius: '12px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase' }}>v at [S]={S0.toFixed(2)} mM</span>
-            <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '11px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", fontWeight: 600 }}>{velocityFn(S0).toFixed(4)} μmol/min/mg</span>
+            <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: '10px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase' }}>v at [S]={S0.toFixed(2)} mM</span>
+            <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '11px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", fontWeight: 600 }}>{velocityFn(S0).toFixed(4)} μmol/min/mg</span>
           </div>
 
           {/* Sensitivity bars */}
           {sensitivities.length > 0 ? (
             <div style={{ padding: '14px', borderRadius: '20px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
-              <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", margin: '0 0 10px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", margin: '0 0 10px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                 Parameter Sensitivity
               </p>
               {(() => {
@@ -1026,7 +1027,7 @@ Be specific and scientific. No generic statements.`;
             </div>
           ) : (
             <div style={{ padding: '14px', borderRadius: '20px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', textAlign: 'center' }}>
-              <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1" }}>
+              <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1" }}>
                 No sensitivity data. Ensure [S] &gt; 0 and parameters are non-zero.
               </p>
             </div>
@@ -1034,10 +1035,10 @@ Be specific and scientific. No generic statements.`;
 
           {/* Interpretation guide */}
           <div style={{ padding: '10px 12px', borderRadius: '16px', background: 'rgba(200,216,232,0.04)', border: '1px solid rgba(200,216,232,0.08)' }}>
-            <p style={{ color: 'rgba(200,216,232,0.5)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <p style={{ color: 'rgba(200,216,232,0.5)', fontSize: '10px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               Reading the chart
             </p>
-            <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", margin: 0, lineHeight: 1.5 }}>
+            <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '10px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", margin: 0, lineHeight: 1.5 }}>
               Positive values (blue) mean velocity increases when the parameter increases. Negative values (red) mean velocity decreases. For competitive inhibition, increasing Ki reduces inhibition and increases velocity. The larger the absolute value, the more sensitive the system is to that parameter.
             </p>
           </div>
@@ -1045,14 +1046,14 @@ Be specific and scientific. No generic statements.`;
           {/* Sensitivity summary table */}
           {sensitivities.length > 0 && (
             <div style={{ padding: '14px', borderRadius: '20px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
-              <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                 Parameter Values
               </p>
               <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(sensitivities.length, 3)}, 1fr)`, gap: '6px' }}>
                 {sensitivities.map(s => (
                   <div key={s.name} style={{ padding: '8px 10px', borderRadius: '12px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                    <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", margin: '0 0 3px', textTransform: 'uppercase' }}>{s.name}</p>
-                    <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '11px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", margin: 0, fontWeight: 600 }}>{s.value.toFixed(3)}</p>
+                    <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '10px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", margin: '0 0 3px', textTransform: 'uppercase' }}>{s.name}</p>
+                    <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '11px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", margin: 0, fontWeight: 600 }}>{s.value.toFixed(3)}</p>
                   </div>
                 ))}
               </div>
@@ -1061,7 +1062,7 @@ Be specific and scientific. No generic statements.`;
         </div>
       )}
 
-      <p style={{ color: 'rgba(255,255,255,0.1)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", textAlign: 'center', margin: 0 }}>
+      <p style={{ color: 'rgba(255,255,255,0.1)', fontSize: '10px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", textAlign: 'center', margin: 0 }}>
         Numerical integration via 4th-order Runge-Kutta · LM parameter estimation · Based on user-provided experimental parameters
       </p>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>

@@ -36,6 +36,7 @@ import { useWorkbenchStore } from '../../store/workbenchStore';
 import { AxonOrchestratorProvider } from '../../providers/AxonOrchestratorProvider';
 import { ErrorBoundary } from '../shared/ErrorBoundary';
 import { OnboardingOverlay } from '../shared/OnboardingOverlay';
+import { THEME } from '../../theme';
 
 function openCopilot() {
   useUIStore.getState().setCopilotOpen(true);
@@ -216,7 +217,7 @@ function CopilotFloatingButton() {
         borderRadius: '999px',
         background: 'linear-gradient(135deg, rgba(175,195,214,0.92), rgba(231,199,169,0.88))',
         color: '#111318',
-        fontFamily: 'var(--font-sans, system-ui)',
+        fontFamily: THEME.SANS,
         fontSize: '12px',
         fontWeight: 700,
         letterSpacing: '0.02em',
@@ -225,12 +226,12 @@ function CopilotFloatingButton() {
         border: '1px solid rgba(255,255,255,0.45)',
       }}
     >
-      <span aria-hidden style={{ fontFamily: 'monospace', fontSize: '14px' }}>⬡</span>
+      <span aria-hidden style={{ fontFamily: THEME.MONO, fontSize: '14px' }}>⬡</span>
       <span>Ask Axon</span>
       <span
         aria-hidden
         style={{
-          fontFamily: 'monospace',
+          fontFamily: THEME.MONO,
           fontSize: '10px',
           padding: '2px 6px',
           borderRadius: '6px',

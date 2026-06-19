@@ -1,6 +1,7 @@
 'use client';
 import React from 'react';
 import { useWorkbenchStore } from '../../store/workbenchStore';
+import { THEME } from '../../theme';
 
 // Ordered pipeline: each tool feeds the next
 const PIPELINE_NODES = [
@@ -71,7 +72,7 @@ export default function DataFlowVisualization() {
               {/* Label */}
               <span
                 style={{
-                  fontFamily: "'IBM Plex Mono', monospace",
+                  fontFamily: THEME.MONO,
                   fontSize: 11,
                   fontWeight: 600,
                   letterSpacing: '0.04em',

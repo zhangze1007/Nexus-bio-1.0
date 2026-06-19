@@ -11,7 +11,7 @@ import {
   AxonInteraction, BottleneckEnzyme, DeNovoDesignStrategy,
   NodeType, NodeColorMapping,
 } from '../types';
-import { BIO_THEME_COLORS } from '../theme';
+import { BIO_THEME_COLORS, THEME } from '../theme';
 import type { StructuredAnalysisPayload } from '../store/workbenchStore';
 
 interface PaperAnalyzerProps {
@@ -506,7 +506,7 @@ export default function PaperAnalyzer({
 
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '11px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' }}>
+          <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '11px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' }}>
             Analysis
           </p>
           <h2 style={{ color: '#ffffff', fontSize: 'clamp(24px, 4vw, 32px)', fontWeight: 600, letterSpacing: '-0.03em', marginBottom: '8px' }}>
@@ -635,7 +635,7 @@ export default function PaperAnalyzer({
         {/* Status messages */}
         <div style={{ marginTop: '10px', minHeight: '28px' }}>
           {analysisState === 'analyzing' && (
-            <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '12px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", textAlign: 'center' }}>
+            <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '12px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", textAlign: 'center' }}>
               Extracting pathway structure from literature...
             </p>
           )}
@@ -710,7 +710,7 @@ export default function PaperAnalyzer({
             </div>
           )}
           {analysisState === 'idle' && (
-            <p style={{ color: 'rgba(255,255,255,0.12)', fontSize: '11px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", textAlign: 'center' }}>
+            <p style={{ color: 'rgba(255,255,255,0.12)', fontSize: '11px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", textAlign: 'center' }}>
               Press Enter to analyze · Shift+Enter for new line · Groq primary / Gemini fallback
             </p>
           )}
@@ -737,7 +737,7 @@ export default function PaperAnalyzer({
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: '10px', fontWeight: 700, color: '#1a2f2a',
                 }}>A</div>
-                <span style={{ fontSize: '11px', color: 'rgba(201,228,222,0.6)', fontFamily: "var(--font-mono, 'JetBrains Mono', monospace)", letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                <span style={{ fontSize: '11px', color: 'rgba(201,228,222,0.6)', fontFamily: THEME.MONO, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
                   Axon · Predictive Design
                 </span>
               </div>
@@ -746,7 +746,7 @@ export default function PaperAnalyzer({
                 fontSize: '13.5px',
                 lineHeight: 1.7,
                 margin: 0,
-                fontFamily: "var(--font-sans, 'Public Sans', sans-serif)",
+                fontFamily: THEME.SANS,
               }}>
                 {axonInteraction.question}
               </p>
@@ -765,7 +765,7 @@ export default function PaperAnalyzer({
                         background: 'rgba(201,228,222,0.06)',
                         color: 'rgba(201,228,222,0.85)',
                         fontSize: '12px',
-                        fontFamily: "var(--font-sans, 'Public Sans', sans-serif)",
+                        fontFamily: THEME.SANS,
                         cursor: 'pointer',
                         transition: 'all 0.15s',
                       }}
@@ -790,7 +790,7 @@ export default function PaperAnalyzer({
               {axonInteraction.disclosure_phase === 'revealed' && selectedOption && (
                 <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <CheckCircle2 size={12} style={{ color: '#95C8BC' }} />
-                  <span style={{ fontSize: '11px', color: 'rgba(201,228,222,0.55)', fontFamily: "var(--font-mono, 'JetBrains Mono', monospace)" }}>
+                  <span style={{ fontSize: '11px', color: 'rgba(201,228,222,0.55)', fontFamily: THEME.MONO }}>
                     Selected: {optionLabels[selectedOption] || selectedOption}
                   </span>
                 </div>
@@ -810,7 +810,7 @@ export default function PaperAnalyzer({
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px' }}>
                   <Zap size={13} style={{ color: '#FAEDCB' }} />
-                  <span style={{ fontSize: '11px', color: 'rgba(250,237,203,0.7)', fontFamily: "var(--font-mono, 'JetBrains Mono', monospace)", letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                  <span style={{ fontSize: '11px', color: 'rgba(250,237,203,0.7)', fontFamily: THEME.MONO, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
                     Bottleneck Enzymes
                   </span>
                 </div>
@@ -823,7 +823,7 @@ export default function PaperAnalyzer({
                     <span style={{ color: 'rgba(255,255,255,0.75)', fontSize: '12.5px' }}>{b.enzyme}</span>
                     <span style={{
                       color: '#FAEDCB', fontSize: '12px', textAlign: 'right',
-                      fontFamily: "var(--font-mono, 'JetBrains Mono', monospace)",
+                      fontFamily: THEME.MONO,
                       fontFeatureSettings: "'tnum' 1",
                     }}>
                       {b.efficiency_percent}% eff
@@ -831,7 +831,7 @@ export default function PaperAnalyzer({
                     <span style={{ color: 'rgba(255,255,255,0.55)', fontSize: '11px', gridColumn: '1 / -1' }}>{b.evidence}</span>
                     <span style={{
                       color: 'rgba(250,237,203,0.6)', fontSize: '11px', textAlign: 'right', gridColumn: '2',
-                      fontFamily: "var(--font-mono, 'JetBrains Mono', monospace)",
+                      fontFamily: THEME.MONO,
                       fontFeatureSettings: "'tnum' 1",
                     }}>
                       −{b.yield_loss_percent}% yield
@@ -862,7 +862,7 @@ export default function PaperAnalyzer({
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <FlaskConical size={13} style={{ color: '#95C8BC' }} />
-                    <span style={{ fontSize: '11px', color: 'rgba(201,228,222,0.7)', fontFamily: "var(--font-mono, 'JetBrains Mono', monospace)", letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                    <span style={{ fontSize: '11px', color: 'rgba(201,228,222,0.7)', fontFamily: THEME.MONO, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
                       De Novo Design Strategies ({designStrategies.length})
                     </span>
                   </div>
@@ -880,7 +880,7 @@ export default function PaperAnalyzer({
                   }}>
                     <p style={{
                       fontSize: '11px', color: 'rgba(201,228,222,0.5)', marginBottom: '10px', marginTop: '12px',
-                      fontFamily: "var(--font-mono, 'JetBrains Mono', monospace)",
+                      fontFamily: THEME.MONO,
                       textTransform: 'uppercase', letterSpacing: '0.05em',
                     }}>
                       Target: {s.node_id.replace(/_/g, ' ')}
@@ -894,7 +894,7 @@ export default function PaperAnalyzer({
                       <div key={label} style={{ marginBottom: '8px' }}>
                         <span style={{
                           fontSize: '10.5px', color: 'rgba(201,228,222,0.45)',
-                          fontFamily: "var(--font-mono, 'JetBrains Mono', monospace)",
+                          fontFamily: THEME.MONO,
                           fontFeatureSettings: "'tnum' 1",
                         }}>
                           {label}

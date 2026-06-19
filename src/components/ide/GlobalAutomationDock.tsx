@@ -88,7 +88,7 @@ export default function GlobalAutomationDock() {
           border: `1px solid ${THEME.BORDER}`,
           background: THEME.PANEL_INSET,
           color: THEME.VALUE,
-          fontFamily: 'var(--font-mono, monospace)',
+          fontFamily: THEME.MONO,
           fontSize: '10px',
           letterSpacing: '0.08em',
           textTransform: 'uppercase',
@@ -144,7 +144,7 @@ export default function GlobalAutomationDock() {
           >
             <div
               style={{
-                fontFamily: 'var(--font-mono, monospace)',
+                fontFamily: THEME.MONO,
                 fontSize: '10px',
                 letterSpacing: '0.08em',
                 textTransform: 'uppercase',

@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { Loader2, Play, Info, RotateCcw, Database, Zap } from 'lucide-react';
 import ActionButton from './tools/shared/ActionButton';
+import { THEME } from '../theme';
 import { calcDeltaG, calcKeq, calcMassBalance_DEMO, R } from '../utils/thermodynamics';
 import { calculateEnzymeKinetics, eyringRateConstant, estimateActivationEnergy } from '../utils/eyringKinetics';
 import { calcTransformedGibbs, calcTransformedKeq, calcPathwayDeltaG, PathwayStep } from '../services/thermoEngine';
@@ -37,18 +38,18 @@ function MiniChart({ x, y, color, label }: { x: number[]; y: number[]; color: st
 
   return (
     <div>
-      <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 4px' }}>{label}</p>
+      <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '10px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 4px' }}>{label}</p>
       <svg width={W} height={H}>
         {[0.33, 0.66, 1].map(f => (
           <line key={f} x1={PAD.l} x2={W-PAD.r} y1={PAD.t+iH*(1-f)} y2={PAD.t+iH*(1-f)} stroke="rgba(255,255,255,0.05)" strokeWidth={0.5} />
         ))}
         {[0, 0.5, 1].map(f => (
-          <text key={f} x={PAD.l-4} y={PAD.t+iH*(1-f)+3} textAnchor="end" fill="rgba(255,255,255,0.18)" fontSize={7} fontFamily="Public Sans, sans-serif">
+          <text key={f} x={PAD.l-4} y={PAD.t+iH*(1-f)+3} textAnchor="end" fill="rgba(255,255,255,0.18)" fontSize={7} fontFamily={THEME.SANS}>
             {(yMax*f).toFixed(2)}
           </text>
         ))}
         {[0, 0.5, 1].map(f => (
-          <text key={f} x={PAD.l+iW*f} y={H-3} textAnchor="middle" fill="rgba(255,255,255,0.18)" fontSize={7} fontFamily="Public Sans, sans-serif">
+          <text key={f} x={PAD.l+iW*f} y={H-3} textAnchor="middle" fill="rgba(255,255,255,0.18)" fontSize={7} fontFamily={THEME.SANS}>
             {((xMax-xMin)*f).toFixed(0)}s
           </text>
         ))}
@@ -95,7 +96,7 @@ function PathwayWaterfallChart({ steps }: { steps: { label: string; dG0: number;
             <line x1={PAD.l} x2={W - PAD.r} y1={PAD.t + iH * (1 - f)} y2={PAD.t + iH * (1 - f)}
               stroke="rgba(255,255,255,0.04)" strokeWidth={0.5} />
             <text x={PAD.l - 4} y={PAD.t + iH * (1 - f) + 3} textAnchor="end"
-              fill="rgba(255,255,255,0.18)" fontSize={7} fontFamily="Public Sans, sans-serif">
+              fill="rgba(255,255,255,0.18)" fontSize={7} fontFamily={THEME.SANS}>
               {yVal.toFixed(1)}
             </text>
           </g>
@@ -104,7 +105,7 @@ function PathwayWaterfallChart({ steps }: { steps: { label: string; dG0: number;
 
       {/* Y-axis label */}
       <text x={4} y={PAD.t + iH / 2} textAnchor="middle" fill="rgba(255,255,255,0.2)" fontSize={7}
-        fontFamily="Public Sans, sans-serif" transform={`rotate(-90, 4, ${PAD.t + iH / 2})`}>
+        fontFamily={THEME.SANS} transform={`rotate(-90, 4, ${PAD.t + iH / 2})`}>
         kJ/mol
       </text>
 
@@ -128,7 +129,7 @@ function PathwayWaterfallChart({ steps }: { steps: { label: string; dG0: number;
               fill={color} fillOpacity={0.6} rx={2} />
             {/* Value label */}
             <text x={x + barW / 2} y={step.dGTransformed >= 0 ? yTop - 4 : yTop + barHeight + 10}
-              textAnchor="middle" fill={color} fontSize={7} fontFamily="Public Sans, sans-serif">
+              textAnchor="middle" fill={color} fontSize={7} fontFamily={THEME.SANS}>
               {step.dGTransformed.toFixed(1)}
             </text>
             {/* Cumulative dot */}
@@ -136,7 +137,7 @@ function PathwayWaterfallChart({ steps }: { steps: { label: string; dG0: number;
               fill="#C8D8E8" stroke="none" />
             {/* Step label */}
             <text x={x + barW / 2} y={H - 8} textAnchor="middle"
-              fill="rgba(255,255,255,0.25)" fontSize={7} fontFamily="Public Sans, sans-serif">
+              fill="rgba(255,255,255,0.25)" fontSize={7} fontFamily={THEME.SANS}>
               {step.label}
             </text>
           </g>
@@ -365,13 +366,13 @@ Do not return JSON, code fences, or developer-style logs.` }] }],
   }) => (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-        <label style={{ color: 'rgba(255,255,255,0.4)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</label>
-        <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1" }}>{unit}</span>
+        <label style={{ color: 'rgba(255,255,255,0.4)', fontSize: '10px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</label>
+        <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1" }}>{unit}</span>
       </div>
       <input type={type} value={value}
         onChange={e => onChange(e.target.value)}
-        style={{ width: '100%', padding: '6px 10px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', color: '#ffffff', fontSize: '12px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", outline: '2px solid rgba(175,195,214,0.5)', outlineOffset: '2px', boxSizing: 'border-box' }} />
-      {hint && <p style={{ color: 'rgba(255,255,255,0.15)', fontSize: '10px', margin: '3px 0 0', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1" }}>{hint}</p>}
+        style={{ width: '100%', padding: '6px 10px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', color: '#ffffff', fontSize: '12px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", outline: '2px solid rgba(175,195,214,0.5)', outlineOffset: '2px', boxSizing: 'border-box' }} />
+      {hint && <p style={{ color: 'rgba(255,255,255,0.15)', fontSize: '10px', margin: '3px 0 0', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1" }}>{hint}</p>}
     </div>
   );
 
@@ -379,7 +380,7 @@ Do not return JSON, code fences, or developer-style logs.` }] }],
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
 
       <div style={{ padding: '10px 12px', borderRadius: '16px', background: 'rgba(200,224,208,0.05)', border: '1px solid rgba(200,224,208,0.1)' }}>
-        <p style={{ color: 'rgba(200,224,208,0.6)', fontSize: '11px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", margin: 0 }}>
+        <p style={{ color: 'rgba(200,224,208,0.6)', fontSize: '11px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", margin: 0 }}>
           Gibbs free energy · Mass balance · Thermodynamic spontaneity
         </p>
         <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', margin: '3px 0 0' }}>
@@ -415,30 +416,30 @@ Do not return JSON, code fences, or developer-style logs.` }] }],
       {/* pH and ionic strength sliders for transformed Gibbs energy */}
       <div style={{ padding: '10px 12px', borderRadius: '16px', background: 'rgba(221,208,232,0.05)', border: '1px solid rgba(221,208,232,0.1)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
-          <span style={{ color: 'rgba(221,208,232,0.6)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+          <span style={{ color: 'rgba(221,208,232,0.6)', fontSize: '10px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.06em' }}>
             Alberty Transform Controls
           </span>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-              <label style={{ color: 'rgba(255,255,255,0.4)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.05em' }}>pH</label>
-              <span style={{ color: 'rgba(221,208,232,0.6)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1" }}>{pH.toFixed(1)}</span>
+              <label style={{ color: 'rgba(255,255,255,0.4)', fontSize: '10px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.05em' }}>pH</label>
+              <span style={{ color: 'rgba(221,208,232,0.6)', fontSize: '10px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1" }}>{pH.toFixed(1)}</span>
             </div>
             <input type="range" min="5.0" max="9.0" step="0.1" value={pH}
               onChange={e => setPH(parseFloat(e.target.value))}
               style={{ width: '100%', accentColor: '#DDD0E8' }} />
-            <p style={{ color: 'rgba(255,255,255,0.15)', fontSize: '10px', margin: '3px 0 0', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1" }}>Physiological = 7.0</p>
+            <p style={{ color: 'rgba(255,255,255,0.15)', fontSize: '10px', margin: '3px 0 0', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1" }}>Physiological = 7.0</p>
           </div>
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-              <label style={{ color: 'rgba(255,255,255,0.4)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.05em' }}>Ionic Strength</label>
-              <span style={{ color: 'rgba(221,208,232,0.6)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1" }}>{ionicStrength.toFixed(2)} M</span>
+              <label style={{ color: 'rgba(255,255,255,0.4)', fontSize: '10px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.05em' }}>Ionic Strength</label>
+              <span style={{ color: 'rgba(221,208,232,0.6)', fontSize: '10px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1" }}>{ionicStrength.toFixed(2)} M</span>
             </div>
             <input type="range" min="0" max="0.5" step="0.01" value={ionicStrength}
               onChange={e => setIonicStrength(parseFloat(e.target.value))}
               style={{ width: '100%', accentColor: '#DDD0E8' }} />
-            <p style={{ color: 'rgba(255,255,255,0.15)', fontSize: '10px', margin: '3px 0 0', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1" }}>Physiological ~0.1 M</p>
+            <p style={{ color: 'rgba(255,255,255,0.15)', fontSize: '10px', margin: '3px 0 0', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1" }}>Physiological ~0.1 M</p>
           </div>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '10px' }}>
@@ -454,7 +455,7 @@ Do not return JSON, code fences, or developer-style logs.` }] }],
       {/* Pathway steps input for waterfall */}
       <div style={{ padding: '10px 12px', borderRadius: '16px', background: 'rgba(200,216,232,0.05)', border: '1px solid rgba(200,216,232,0.1)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
-          <span style={{ color: 'rgba(200,216,232,0.6)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+          <span style={{ color: 'rgba(200,216,232,0.6)', fontSize: '10px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.06em' }}>
             Pathway Steps (Waterfall)
           </span>
         </div>
@@ -468,31 +469,31 @@ Do not return JSON, code fences, or developer-style logs.` }] }],
         <div style={{ padding: '8px 12px', borderRadius: '12px', background: brendaData ? 'rgba(200,224,208,0.05)' : 'rgba(200,200,200,0.05)', border: `1px solid ${brendaData ? 'rgba(200,224,208,0.1)' : 'rgba(200,200,200,0.1)'}` }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <Database size={11} style={{ color: brendaData ? 'rgba(200,224,208,0.5)' : 'rgba(200,200,200,0.3)' }} />
-            <span style={{ color: brendaData ? 'rgba(200,224,208,0.6)' : 'rgba(200,200,200,0.4)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+            <span style={{ color: brendaData ? 'rgba(200,224,208,0.6)' : 'rgba(200,200,200,0.4)', fontSize: '10px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.06em' }}>
               {brendaLoading ? 'Loading BRENDA...' : brendaError ? 'BRENDA unavailable' : brendaData ? 'BRENDA data loaded' : 'Enter EC number'}
             </span>
           </div>
           {brendaData && (
             <div style={{ marginTop: '6px', display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
               {brendaData.km?.median && (
-                <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1" }}>
+                <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '10px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1" }}>
                   Km: {brendaData.km.median.toFixed(3)} mM (n={brendaData.km.n_observations})
                 </span>
               )}
               {brendaData.kcat?.median && (
-                <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1" }}>
+                <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '10px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1" }}>
                   kcat: {brendaData.kcat.median.toFixed(2)} 1/s (n={brendaData.kcat.n_observations})
                 </span>
               )}
               {brendaData.ki?.median && (
-                <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1" }}>
+                <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '10px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1" }}>
                   Ki: {brendaData.ki.median.toFixed(3)} mM
                 </span>
               )}
             </div>
           )}
           {brendaError && (
-            <p style={{ color: 'rgba(232,200,212,0.5)', fontSize: '10px', margin: '4px 0 0', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1" }}>
+            <p style={{ color: 'rgba(232,200,212,0.5)', fontSize: '10px', margin: '4px 0 0', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1" }}>
               {brendaError} — Using default parameters
             </p>
           )}
@@ -530,26 +531,26 @@ Do not return JSON, code fences, or developer-style logs.` }] }],
               { l: 'T (Kelvin)', v: `${T.toFixed(2)} K`, col: 'rgba(255,255,255,0.5)' },
             ].map(m => (
               <div key={m.l} style={{ padding: '8px 10px', borderRadius: '12px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", margin: '0 0 3px', textTransform: 'uppercase' }}>{m.l}</p>
-                <p style={{ color: m.col, fontSize: '11px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", margin: 0, fontWeight: 600 }}>{m.v}</p>
+                <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '10px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", margin: '0 0 3px', textTransform: 'uppercase' }}>{m.l}</p>
+                <p style={{ color: m.col, fontSize: '11px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", margin: 0, fontWeight: 600 }}>{m.v}</p>
               </div>
             ))}
           </div>
 
           {/* Equation display */}
           <div style={{ padding: '10px 12px', borderRadius: '16px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
-            <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", margin: '0 0 4px' }}>ΔG = ΔG° + RT ln(Q)</p>
-            <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '11px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", margin: 0 }}>
+            <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", margin: '0 0 4px' }}>ΔG = ΔG° + RT ln(Q)</p>
+            <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '11px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", margin: 0 }}>
               {result.dG.toFixed(2)} = {dG0} + {(R * T).toFixed(3)} × ln(Q)
             </p>
           </div>
 
           {/* Transformed Gibbs energy (Alberty) */}
           <div style={{ padding: '10px 12px', borderRadius: '16px', background: 'rgba(221,208,232,0.05)', border: '1px solid rgba(221,208,232,0.1)' }}>
-            <p style={{ color: 'rgba(221,208,232,0.6)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+            <p style={{ color: 'rgba(221,208,232,0.6)', fontSize: '10px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
               Alberty Transformed Gibbs Energy
             </p>
-            <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", margin: '0 0 6px' }}>
+            <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", margin: '0 0 6px' }}>
               ΔG'° = ΔG° + RT·ln(10)·(pH - 7)·nH + Debye-Huckel correction
             </p>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
@@ -560,12 +561,12 @@ Do not return JSON, code fences, or developer-style logs.` }] }],
                 { l: 'Ionic Strength', v: `${ionicStrength.toFixed(2)} M`, col: 'rgba(255,255,255,0.5)' },
               ].map(m => (
                 <div key={m.l} style={{ padding: '6px 8px', borderRadius: '8px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)' }}>
-                  <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", margin: '0 0 2px', textTransform: 'uppercase' }}>{m.l}</p>
-                  <p style={{ color: m.col, fontSize: '11px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", margin: 0, fontWeight: 600 }}>{m.v}</p>
+                  <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '10px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", margin: '0 0 2px', textTransform: 'uppercase' }}>{m.l}</p>
+                  <p style={{ color: m.col, fontSize: '11px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", margin: 0, fontWeight: 600 }}>{m.v}</p>
                 </div>
               ))}
             </div>
-            <p style={{ color: 'rgba(255,255,255,0.15)', fontSize: '10px', margin: '6px 0 0', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1" }}>
+            <p style={{ color: 'rgba(255,255,255,0.15)', fontSize: '10px', margin: '6px 0 0', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1" }}>
               Alberty (2003) Thermodynamics of Biochemical Reactions
             </p>
           </div>
@@ -574,15 +575,15 @@ Do not return JSON, code fences, or developer-style logs.` }] }],
           {result.pathwaySteps.length > 0 && (
             <div style={{ padding: '14px', borderRadius: '20px', background: 'rgba(200,216,232,0.04)', border: '1px solid rgba(200,216,232,0.1)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-                <span style={{ color: 'rgba(200,216,232,0.6)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                <span style={{ color: 'rgba(200,216,232,0.6)', fontSize: '10px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                   Pathway ΔG'° Waterfall
                 </span>
-                <span style={{ color: 'rgba(200,216,232,0.5)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1" }}>
+                <span style={{ color: 'rgba(200,216,232,0.5)', fontSize: '10px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1" }}>
                   Total: {result.pathwayTotal.toFixed(2)} kJ/mol
                 </span>
               </div>
               <PathwayWaterfallChart steps={result.pathwaySteps} />
-              <p style={{ color: 'rgba(255,255,255,0.15)', fontSize: '10px', margin: '8px 0 0', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1" }}>
+              <p style={{ color: 'rgba(255,255,255,0.15)', fontSize: '10px', margin: '8px 0 0', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1" }}>
                 pH {pH.toFixed(1)} · I = {ionicStrength.toFixed(2)} M · {T.toFixed(1)} K
               </p>
             </div>
@@ -599,7 +600,7 @@ Do not return JSON, code fences, or developer-style logs.` }] }],
             <div style={{ padding: '14px', borderRadius: '20px', background: 'rgba(200,224,208,0.04)', border: '1px solid rgba(200,224,208,0.1)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
                 <Zap size={11} style={{ color: 'rgba(200,224,208,0.5)' }} />
-                <span style={{ color: 'rgba(200,224,208,0.6)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                <span style={{ color: 'rgba(200,224,208,0.6)', fontSize: '10px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                   Real Kinetics (BRENDA + Eyring)
                 </span>
               </div>
@@ -614,13 +615,13 @@ Do not return JSON, code fences, or developer-style logs.` }] }],
                   ...(result.eyringRate ? [{ l: 'Eyring k', v: `${result.eyringRate.toExponential(2)} 1/s`, col: 'rgba(255,255,255,0.5)' }] : []),
                 ].map(m => (
                   <div key={m.l} style={{ padding: '6px 8px', borderRadius: '8px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)' }}>
-                    <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '11px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", margin: '0 0 2px', textTransform: 'uppercase' }}>{m.l}</p>
-                    <p style={{ color: m.col, fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", margin: 0, fontWeight: 600 }}>{m.v}</p>
+                    <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '11px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", margin: '0 0 2px', textTransform: 'uppercase' }}>{m.l}</p>
+                    <p style={{ color: m.col, fontSize: '10px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", margin: 0, fontWeight: 600 }}>{m.v}</p>
                   </div>
                 ))}
               </div>
 
-              <p style={{ color: 'rgba(255,255,255,0.15)', fontSize: '11px', margin: '8px 0 0', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1" }}>
+              <p style={{ color: 'rgba(255,255,255,0.15)', fontSize: '11px', margin: '8px 0 0', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1" }}>
                 Source: {result.kinetics.source} · BRENDA: Chang et al. (2021) Nucleic Acids Res. 49:D498-D508
               </p>
             </div>
@@ -632,7 +633,7 @@ Do not return JSON, code fences, or developer-style logs.` }] }],
         <div style={{ padding: '14px', borderRadius: '20px', background: 'rgba(200,224,208,0.04)', border: '1px solid rgba(200,224,208,0.1)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
             <Info size={11} style={{ color: 'rgba(200,224,208,0.5)' }} />
-            <span style={{ color: 'rgba(200,224,208,0.5)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.06em' }}>AI Interpretation</span>
+            <span style={{ color: 'rgba(200,224,208,0.5)', fontSize: '10px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.06em' }}>AI Interpretation</span>
           </div>
           {ai.loading
             ? <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -644,7 +645,7 @@ Do not return JSON, code fences, or developer-style logs.` }] }],
         </div>
       )}
 
-      <p style={{ color: 'rgba(255,255,255,0.1)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontFeatureSettings: "'tnum' 1", textAlign: 'center', margin: 0 }}>
+      <p style={{ color: 'rgba(255,255,255,0.1)', fontSize: '10px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", textAlign: 'center', margin: 0 }}>
         ΔG = ΔG° + RT ln(Q) · Based on user-provided concentrations
       </p>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>

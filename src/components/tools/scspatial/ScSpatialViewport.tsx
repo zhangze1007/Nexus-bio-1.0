@@ -3,6 +3,7 @@
 import { useMemo, useState, useRef, useEffect, useCallback, type KeyboardEvent, type MutableRefObject } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
+import { THEME } from '../../../theme';
 import * as THREE from 'three';
 import { Minus, Plus } from 'lucide-react';
 import DataTable, { type TableColumn } from '../../ide/shared/DataTable';
@@ -269,7 +270,7 @@ function ScatterViewport({
               fontWeight={600}
               textAnchor="middle"
               fill="rgba(255,255,255,0.7)"
-              fontFamily="var(--font-mono)"
+              fontFamily={THEME.MONO}
               style={{ paintOrder: 'stroke', stroke: 'rgba(0,0,0,0.5)', strokeWidth: 2.5, strokeLinejoin: 'round' }}
             >
               {g.label.length > 14 ? `${g.label.slice(0, 13)}…` : g.label}
@@ -293,7 +294,7 @@ function ScatterViewport({
                 fontSize={8}
                 textAnchor="middle"
                 fill="#475569"
-                fontFamily="var(--font-mono)"
+                fontFamily={THEME.MONO}
               >
                 {v.toFixed(1)}
               </text>
@@ -313,7 +314,7 @@ function ScatterViewport({
                 fontSize={8}
                 textAnchor="end"
                 fill="#475569"
-                fontFamily="var(--font-mono)"
+                fontFamily={THEME.MONO}
               >
                 {v.toFixed(1)}
               </text>
@@ -329,7 +330,7 @@ function ScatterViewport({
           fontWeight={700}
           textAnchor="middle"
           fill="rgba(255,255,255,0.5)"
-          fontFamily="var(--font-mono)"
+          fontFamily={THEME.MONO}
         >
           {xLabel}
         </text>
@@ -340,7 +341,7 @@ function ScatterViewport({
           fontWeight={700}
           textAnchor="middle"
           fill="rgba(255,255,255,0.5)"
-          fontFamily="var(--font-mono)"
+          fontFamily={THEME.MONO}
           transform={`rotate(-90 12 ${marginT + plotH / 2})`}
         >
           {yLabel}
@@ -353,7 +354,7 @@ function ScatterViewport({
           fontSize={8}
           textAnchor="end"
           fill="#475569"
-          fontFamily="var(--font-mono)"
+          fontFamily={THEME.MONO}
           fontStyle="italic"
         >
           n = {points.length.toLocaleString()}
@@ -628,7 +629,7 @@ function SpatialContextPanel({ query }: { query: ScSpatialQueryResponse }) {
           y={bounds.minY - padding * 0.2}
           fontSize={Math.max(bounds.width, bounds.height) * 0.028}
           fill="#475569"
-          fontFamily="var(--font-mono)"
+          fontFamily={THEME.MONO}
         >
           {query.datasetMeta.cellCount.toLocaleString()} cells
         </text>
@@ -761,7 +762,7 @@ function MarkerHeatmapPanel({ query }: { query: ScSpatialQueryResponse }) {
               fontSize={8}
               fill="#111827"
               textAnchor="end"
-              fontFamily="var(--font-mono)"
+              fontFamily={THEME.MONO}
             >
               {cluster.clusterLabel.length > 7 ? `${cluster.clusterLabel.slice(0, 6)}…` : cluster.clusterLabel}
             </text>
@@ -776,7 +777,7 @@ function MarkerHeatmapPanel({ query }: { query: ScSpatialQueryResponse }) {
             fontSize={7.2}
             fill="#111827"
             textAnchor="end"
-            fontFamily="var(--font-mono)"
+            fontFamily={THEME.MONO}
             fontStyle="italic"
             transform={`rotate(-45 ${marginL + cIdx * cellW + cellW / 2} ${marginT + gridH + 4})`}
           >
@@ -789,7 +790,7 @@ function MarkerHeatmapPanel({ query }: { query: ScSpatialQueryResponse }) {
           y={marginT - 1}
           fontSize={7.5}
           fill="#374151"
-          fontFamily="var(--font-mono)"
+          fontFamily={THEME.MONO}
           fontWeight={700}
         >
           Domain
@@ -929,7 +930,7 @@ function BoxPlotPanel({ query }: { query: ScSpatialQueryResponse }) {
               fontSize={7}
               fill="#475569"
               textAnchor="end"
-              fontFamily="var(--font-mono)"
+              fontFamily={THEME.MONO}
             >
               {t.toFixed(1)}
             </text>
@@ -940,7 +941,7 @@ function BoxPlotPanel({ query }: { query: ScSpatialQueryResponse }) {
           y={marginT + plotH / 2}
           fontSize={7.5}
           fill="#374151"
-          fontFamily="var(--font-mono)"
+          fontFamily={THEME.MONO}
           fontWeight={700}
           textAnchor="middle"
           transform={`rotate(-90 8 ${marginT + plotH / 2})`}
@@ -998,7 +999,7 @@ function BoxPlotPanel({ query }: { query: ScSpatialQueryResponse }) {
                 fontSize={7}
                 fill="#111827"
                 textAnchor="middle"
-                fontFamily="var(--font-mono)"
+                fontFamily={THEME.MONO}
               >
                 {s.clusterLabel.length > 6 ? `${s.clusterLabel.slice(0, 5)}…` : s.clusterLabel}
               </text>
@@ -1008,7 +1009,7 @@ function BoxPlotPanel({ query }: { query: ScSpatialQueryResponse }) {
                 fontSize={6}
                 fill="#6b7280"
                 textAnchor="middle"
-                fontFamily="var(--font-mono)"
+                fontFamily={THEME.MONO}
               >
                 n={s.n}
               </text>

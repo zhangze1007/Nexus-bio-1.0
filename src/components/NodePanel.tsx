@@ -112,10 +112,10 @@ function ConfidenceBar({ score }: { score: number }) {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
-        <span style={{ fontFamily: "'Public Sans', -apple-system, sans-serif", fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: THEME.LABEL }}>
+        <span style={{ fontFamily: THEME.SANS, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: THEME.LABEL }}>
           AI Confidence
         </span>
-        <span style={{ fontFamily: "'Public Sans', -apple-system, sans-serif", fontSize: '13px', color, fontWeight: 700, fontFeatureSettings: "'tnum' 1" }}>{pct}%</span>
+        <span style={{ fontFamily: THEME.SANS, fontSize: '13px', color, fontWeight: 700, fontFeatureSettings: "'tnum' 1" }}>{pct}%</span>
       </div>
       <div style={{ height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '2px' }}>
         <div
@@ -184,14 +184,14 @@ function PLDDTHistogram({ nodes, currentNodeId }: { nodes?: PathwayNode[]; curre
     <div style={{ padding: '14px 16px', borderRadius: '20px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
       {/* Header row */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-        <p style={{ fontFamily: "'Public Sans', -apple-system, sans-serif", fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'rgba(255,255,255,0.45)', margin: 0 }}>
+        <p style={{ fontFamily: THEME.SANS, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'rgba(255,255,255,0.45)', margin: 0 }}>
           Confidence Distribution
         </p>
         <div style={{ display: 'flex', gap: '10px' }}>
-          <span style={{ fontFamily: "'Public Sans', -apple-system, sans-serif", fontSize: '10px', color: 'rgba(255,255,255,0.2)', fontFeatureSettings: "'tnum' 1" }}>
+          <span style={{ fontFamily: THEME.SANS, fontSize: '10px', color: 'rgba(255,255,255,0.2)', fontFeatureSettings: "'tnum' 1" }}>
             n = {n}
           </span>
-          <span style={{ fontFamily: "'Public Sans', -apple-system, sans-serif", fontSize: '10px', color: 'rgba(255,255,255,0.6)', fontFeatureSettings: "'tnum' 1", fontWeight: 600 }}>
+          <span style={{ fontFamily: THEME.SANS, fontSize: '10px', color: 'rgba(255,255,255,0.6)', fontFeatureSettings: "'tnum' 1", fontWeight: 600 }}>
             μ = {mean.toFixed(1)}%
           </span>
         </div>
@@ -201,7 +201,7 @@ function PLDDTHistogram({ nodes, currentNodeId }: { nodes?: PathwayNode[]; curre
       <div style={{ position: 'relative', height: `${CHART_H + 20}px` }}>
         <div style={{ position: 'absolute', left: 0, top: 0, bottom: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', width: '18px' }}>
           {[max, Math.round(max/2), 0].map((v, i) => (
-            <span key={i} style={{ fontFamily: "'Public Sans', -apple-system, sans-serif", fontSize: '10px', color: 'rgba(255,255,255,0.15)', fontFeatureSettings: "'tnum' 1", lineHeight: 1 }}>
+            <span key={i} style={{ fontFamily: THEME.SANS, fontSize: '10px', color: 'rgba(255,255,255,0.15)', fontFeatureSettings: "'tnum' 1", lineHeight: 1 }}>
               {v}
             </span>
           ))}
@@ -218,7 +218,7 @@ function PLDDTHistogram({ nodes, currentNodeId }: { nodes?: PathwayNode[]; curre
           }}>
             <span style={{
               position: 'absolute', top: '-1px', left: '3px',
-              fontFamily: "'Public Sans', -apple-system, sans-serif", fontSize: '10px',
+              fontFamily: THEME.SANS, fontSize: '10px',
               color: `${THEME.SUCCESS_MEDIUM}cc`, fontFeatureSettings: "'tnum' 1",
               whiteSpace: 'nowrap',
             }}>μ</span>
@@ -249,14 +249,14 @@ function PLDDTHistogram({ nodes, currentNodeId }: { nodes?: PathwayNode[]; curre
 
         <div style={{ marginLeft: '22px', display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}>
           {[0, 20, 40, 60, 80, 100].map(v => (
-            <span key={v} style={{ fontFamily: "'Public Sans', -apple-system, sans-serif", fontSize: '10px', color: 'rgba(255,255,255,0.15)', fontFeatureSettings: "'tnum' 1" }}>
+            <span key={v} style={{ fontFamily: THEME.SANS, fontSize: '10px', color: 'rgba(255,255,255,0.15)', fontFeatureSettings: "'tnum' 1" }}>
               {v}
             </span>
           ))}
         </div>
       </div>
 
-      <p style={{ fontFamily: "'Public Sans', -apple-system, sans-serif", fontSize: '10px', color: 'rgba(255,255,255,0.12)', margin: '4px 0 0', textAlign: 'center' }}>
+      <p style={{ fontFamily: THEME.SANS, fontSize: '10px', color: 'rgba(255,255,255,0.12)', margin: '4px 0 0', textAlign: 'center' }}>
         Confidence Score (%)
       </p>
     </div>
@@ -602,7 +602,7 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                             : <CheckCircle size={14} />}
                       </span>
                       <div>
-                        <span style={{ fontSize: '12px', fontWeight: 700, fontFamily: "'Public Sans', -apple-system, sans-serif",
+                        <span style={{ fontSize: '12px', fontWeight: 700, fontFamily: THEME.SANS,
                           color: statusAccent,
                         }}>
                           {node.nodeType === 'impurity' ? 'Impurity — Purification Risk'
@@ -610,7 +610,7 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                             : node.nodeType === 'intermediate' ? 'Pathway Intermediate'
                             : 'Verified High-Yield'}
                         </span>
-                        <span style={{ display: 'block', fontSize: '10px', color: `${statusAccent}cc`, marginTop: '2px', fontFamily: "'Public Sans', -apple-system, sans-serif" }}>
+                        <span style={{ display: 'block', fontSize: '10px', color: `${statusAccent}cc`, marginTop: '2px', fontFamily: THEME.SANS }}>
                           {node.nodeType === 'impurity'
                             ? 'This compound requires separation from the target product'
                             : (node.risk_score && node.risk_score > MODERATE_RISK_THRESHOLD)
@@ -703,8 +703,8 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                         background: `${THEME.RISK_HIGH}12`,
                         border: `0.5px solid ${THEME.RISK_HIGH}33`,
                       }}>
-                        <span style={{ display: 'block', fontSize: '10px', color: `${THEME.RISK_HIGH}cc`, marginBottom: '4px', fontWeight: 700, textTransform: 'uppercase', fontFamily: "'Public Sans', -apple-system, sans-serif" }}>Potential Toxicity Analysis</span>
-                        <p style={{ color: 'rgba(255,214,210,0.78)', fontSize: '11px', fontWeight: 500, margin: 0, lineHeight: 1.5, fontFamily: "'Public Sans', -apple-system, sans-serif" }}>
+                        <span style={{ display: 'block', fontSize: '10px', color: `${THEME.RISK_HIGH}cc`, marginBottom: '4px', fontWeight: 700, textTransform: 'uppercase', fontFamily: THEME.SANS }}>Potential Toxicity Analysis</span>
+                        <p style={{ color: 'rgba(255,214,210,0.78)', fontSize: '11px', fontWeight: 500, margin: 0, lineHeight: 1.5, fontFamily: THEME.SANS }}>
                           {node.toxicity_impact}
                         </p>
                       </div>
@@ -724,7 +724,7 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                         background: 'rgba(255,255,255,0.02)',
                         border: '0.5px solid rgba(255,255,255,0.07)',
                       }}>
-                        <span style={{ display: 'block', fontSize: '10px', color: 'rgba(255,255,255,0.55)', marginBottom: '4px', fontWeight: 700, textTransform: 'uppercase', fontFamily: "'Public Sans', -apple-system, sans-serif" }}>Cofactor Balance (ATP/NAD(P)H)</span>
+                        <span style={{ display: 'block', fontSize: '10px', color: 'rgba(255,255,255,0.55)', marginBottom: '4px', fontWeight: 700, textTransform: 'uppercase', fontFamily: THEME.SANS }}>Cofactor Balance (ATP/NAD(P)H)</span>
                         <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '11px', fontWeight: 500, margin: 0, lineHeight: 1.5, fontFamily: UI_MONO }}>
                           {node.cofactor_balance}
                         </p>
@@ -734,7 +734,7 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                         background: 'rgba(255,255,255,0.02)',
                         border: '1px solid rgba(255,255,255,0.06)',
                       }}>
-                        <span style={{ display: 'block', fontSize: '10px', color: 'rgba(255,255,255,0.55)', marginBottom: '4px', fontWeight: 700, textTransform: 'uppercase', fontFamily: "'Public Sans', -apple-system, sans-serif" }}>Cofactor Balance (ATP/NAD(P)H)</span>
+                        <span style={{ display: 'block', fontSize: '10px', color: 'rgba(255,255,255,0.55)', marginBottom: '4px', fontWeight: 700, textTransform: 'uppercase', fontFamily: THEME.SANS }}>Cofactor Balance (ATP/NAD(P)H)</span>
                         <span style={{ fontSize: '10px', color: '#9CA3AF', background: 'rgba(255,255,255,0.05)', padding: '3px 10px', borderRadius: '6px', fontFamily: UI_MONO, fontWeight: 600 }}>
                           Inference Pending / Data Insufficient
                         </span>
@@ -780,8 +780,8 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                         background: 'rgba(255,255,255,0.02)',
                         border: '0.5px solid rgba(255,255,255,0.07)',
                       }}>
-                        <span style={{ display: 'block', fontSize: '10px', color: 'rgba(255,255,255,0.55)', marginBottom: '4px', fontWeight: 700, textTransform: 'uppercase', fontFamily: "'Public Sans', -apple-system, sans-serif" }}>Gene Engineering Target (KO/OE)</span>
-                        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '11px', fontWeight: 500, margin: 0, lineHeight: 1.5, fontFamily: "'Public Sans', -apple-system, sans-serif" }}>
+                        <span style={{ display: 'block', fontSize: '10px', color: 'rgba(255,255,255,0.55)', marginBottom: '4px', fontWeight: 700, textTransform: 'uppercase', fontFamily: THEME.SANS }}>Gene Engineering Target (KO/OE)</span>
+                        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '11px', fontWeight: 500, margin: 0, lineHeight: 1.5, fontFamily: THEME.SANS }}>
                           {node.gene_recommendation}
                         </p>
                       </div>
@@ -819,13 +819,13 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                           <SectionLabel label="Evidence Trace" />
-                          <span style={{ color: 'rgba(255,255,255,0.12)', fontSize: '10px', fontFamily: "'Public Sans', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1", marginBottom: '8px' }}>
+                          <span style={{ color: 'rgba(255,255,255,0.12)', fontSize: '10px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", marginBottom: '8px' }}>
                             AI · grounded in source
                           </span>
                         </div>
                         {node.evidenceSnippet && (
                           <div style={{ padding: '12px 14px', borderRadius: '20px', background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderLeft: '3px solid rgba(255,255,255,0.18)', position: 'relative' }}>
-                            <span style={{ position: 'absolute', top: '8px', left: '14px', color: 'rgba(255,255,255,0.12)', fontSize: '28px', fontFamily: "'Public Sans', -apple-system, sans-serif", lineHeight: 1, userSelect: 'none' }}>"</span>
+                            <span style={{ position: 'absolute', top: '8px', left: '14px', color: 'rgba(255,255,255,0.12)', fontSize: '28px', fontFamily: THEME.SANS, lineHeight: 1, userSelect: 'none' }}>"</span>
                             <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '12px', lineHeight: 1.7, margin: '12px 0 0', fontStyle: 'italic', letterSpacing: '-0.005em' }}>
                               {node.evidenceSnippet}
                             </p>
@@ -834,7 +834,7 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                         {node.citation && (
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', borderRadius: '16px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
                             <FileText size={11} style={{ color: 'rgba(255,255,255,0.2)', flexShrink: 0 }} />
-                            <p style={{ color: 'rgba(255,255,255,0.38)', fontSize: '11px', lineHeight: 1.5, margin: 0, fontFamily: "'Public Sans', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1", letterSpacing: '0.01em' }}>{node.citation}</p>
+                            <p style={{ color: 'rgba(255,255,255,0.38)', fontSize: '11px', lineHeight: 1.5, margin: 0, fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", letterSpacing: '0.01em' }}>{node.citation}</p>
                           </div>
                         )}
                       </div>
@@ -848,7 +848,7 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                       <div>
                         <button onClick={() => setShowConnections(!showConnections)}
                           style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', background: 'none', border: 'none', cursor: 'pointer', padding: '0 0 8px' }}>
-                          <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', fontFamily: "'Public Sans', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                          <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                             Connections ({connections.length})
                           </span>
                           {showConnections ? <ChevronUp size={12} style={{ color: 'rgba(255,255,255,0.2)' }} /> : <ChevronDown size={12} style={{ color: 'rgba(255,255,255,0.2)' }} />}
@@ -863,17 +863,17 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                               return (
                                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', borderRadius: '16px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
                                   <Link2 size={11} style={{ color: 'rgba(255,255,255,0.2)', flexShrink: 0 }} />
-                                  <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: '10px', fontFamily: "'Public Sans', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1" }}>{isSource ? '→' : '←'}</span>
+                                  <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: '10px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1" }}>{isSource ? '→' : '←'}</span>
                                   <div style={{ flex: 1, minWidth: 0 }}>
                                     <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px', margin: '0 0 1px', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                       {otherNode?.label || otherId}
                                     </p>
-                                    <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', fontFamily: "'Public Sans', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1", margin: 0 }}>
+                                    <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", margin: 0 }}>
                                       {isSource ? `this ${EDGE_TYPE_LABELS[relType]} →` : `← ${EDGE_TYPE_LABELS[relType]} this`}
                                     </p>
                                   </div>
                                   {edge.confidenceScore !== undefined && (
-                                    <span style={{ color: successMetricColor(edge.confidenceScore), fontSize: '10px', fontFamily: "'Public Sans', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1", flexShrink: 0 }}>{Math.round(edge.confidenceScore * 100)}%</span>
+                                    <span style={{ color: successMetricColor(edge.confidenceScore), fontSize: '10px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", flexShrink: 0 }}>{Math.round(edge.confidenceScore * 100)}%</span>
                                   )}
                                 </div>
                               );
@@ -893,20 +893,20 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                           {pubchemCID && (
                             <div style={{ display: 'flex', gap: '10px' }}>
-                              <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '11px', fontFamily: "'Public Sans', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1", width: '64px', flexShrink: 0 }}>PubChem</span>
-                              <a href={`https://pubchem.ncbi.nlm.nih.gov/compound/${pubchemCID}`} target="_blank" rel="noopener noreferrer" style={{ color: '#A8C5DA', fontSize: '11px', fontFamily: "'Public Sans', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1", textDecoration: 'none' }}>CID {pubchemCID}</a>
+                              <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '11px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", width: '64px', flexShrink: 0 }}>PubChem</span>
+                              <a href={`https://pubchem.ncbi.nlm.nih.gov/compound/${pubchemCID}`} target="_blank" rel="noopener noreferrer" style={{ color: '#A8C5DA', fontSize: '11px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", textDecoration: 'none' }}>CID {pubchemCID}</a>
                             </div>
                           )}
                           {node.ecNumber && (
                             <div style={{ display: 'flex', gap: '10px' }}>
-                              <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '11px', fontFamily: "'Public Sans', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1", width: '64px', flexShrink: 0 }}>EC</span>
-                              <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px', fontFamily: "'Public Sans', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1" }}>{node.ecNumber}</span>
+                              <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '11px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", width: '64px', flexShrink: 0 }}>EC</span>
+                              <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1" }}>{node.ecNumber}</span>
                             </div>
                           )}
                           {node.uniprotId && (
                             <div style={{ display: 'flex', gap: '10px' }}>
-                              <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '11px', fontFamily: "'Public Sans', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1", width: '64px', flexShrink: 0 }}>UniProt</span>
-                              <a href={`https://www.uniprot.org/uniprotkb/${node.uniprotId}`} target="_blank" rel="noopener noreferrer" style={{ color: '#A8C5DA', fontSize: '11px', fontFamily: "'Public Sans', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1", textDecoration: 'none' }}>{node.uniprotId}</a>
+                              <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '11px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", width: '64px', flexShrink: 0 }}>UniProt</span>
+                              <a href={`https://www.uniprot.org/uniprotkb/${node.uniprotId}`} target="_blank" rel="noopener noreferrer" style={{ color: '#A8C5DA', fontSize: '11px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", textDecoration: 'none' }}>{node.uniprotId}</a>
                             </div>
                           )}
                         </div>
@@ -929,7 +929,7 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                           {node.genetic_intervention.startsWith('KO') ? <Scissors size={12} /> : <ArrowUp size={12} />}
                         </span>
                         <span style={{
-                          fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+                          fontFamily: THEME.MONO,
                           fontSize: '11px', fontWeight: 600,
                           color: 'rgba(255,255,255,0.75)',
                         }}>
@@ -952,7 +952,7 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                       >
                         <span style={{
                           color: 'rgba(255,255,255,0.3)', fontSize: '10px',
-                          fontFamily: "'Public Sans', -apple-system, sans-serif",
+                          fontFamily: THEME.SANS,
                           textTransform: 'uppercase', letterSpacing: '0.08em',
                           fontFeatureSettings: "'tnum' 1",
                         }}>
@@ -969,20 +969,20 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                           borderRadius: '16px',
                           background: 'rgba(0,0,0,0.3)',
                           border: '1px solid rgba(255,255,255,0.06)',
-                          fontFamily: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace",
+                          fontFamily: THEME.MONO,
                           fontSize: '11px',
                           lineHeight: 1.8,
                           color: 'rgba(255,255,255,0.5)',
                         }}>
                           {node.cofactor_balance && (
                             <div style={{ marginBottom: '8px' }}>
-                              <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: "'Public Sans', -apple-system, sans-serif", fontWeight: 700 }}>Cofactor Balance</span>
+                              <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: THEME.SANS, fontWeight: 700 }}>Cofactor Balance</span>
                               <div style={{ color: BIO_THEME_COLORS.PURPLE, marginTop: '2px' }}>{node.cofactor_balance}</div>
                             </div>
                           )}
                           {node.atom_economy !== undefined && node.atom_economy !== 0 ? (
                             <div style={{ marginBottom: '8px' }}>
-                              <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: "'Public Sans', -apple-system, sans-serif", fontWeight: 700 }}>Atom Economy (Carbon Efficiency)</span>
+                              <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: THEME.SANS, fontWeight: 700 }}>Atom Economy (Carbon Efficiency)</span>
                               <div style={{
                                 color: node.atom_economy >= 80 ? THEME.SUCCESS_HIGH
                                   : node.atom_economy >= 50 ? THEME.SUCCESS_MEDIUM
@@ -994,19 +994,19 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                             </div>
                           ) : !isFinalTarget && (
                             <div style={{ marginBottom: '8px' }}>
-                              <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: "'Public Sans', -apple-system, sans-serif", fontWeight: 700 }}>Atom Economy (Carbon Efficiency)</span>
+                              <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: THEME.SANS, fontWeight: 700 }}>Atom Economy (Carbon Efficiency)</span>
                               <div style={{ color: 'rgba(255,255,255,0.30)', marginTop: '2px' }}>Inference Pending / Data Insufficient</div>
                             </div>
                           )}
                           {node.dsp_bottleneck && (
                             <div style={{ marginBottom: '8px' }}>
-                              <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: "'Public Sans', -apple-system, sans-serif", fontWeight: 700 }}>DSP Bottleneck</span>
+                              <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: THEME.SANS, fontWeight: 700 }}>DSP Bottleneck</span>
                               <div style={{ color: THEME.RISK_MEDIUM, marginTop: '2px' }}>{node.dsp_bottleneck}</div>
                             </div>
                           )}
                           {node.ic50_toxicity && (
                             <div>
-                              <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: "'Public Sans', -apple-system, sans-serif", fontWeight: 700 }}>IC50 Toxicity</span>
+                              <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: THEME.SANS, fontWeight: 700 }}>IC50 Toxicity</span>
                               <div style={{ color: THEME.RISK_HIGH, marginTop: '2px' }}>{node.ic50_toxicity}</div>
                             </div>
                           )}
@@ -1109,7 +1109,7 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                               label={node.canonicalLabel || node.label}
                               height={260}
                             />
-                            <p style={{ color: 'rgba(255,255,255,0.12)', fontSize: '10px', fontFamily: "'Public Sans', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1", marginTop: '6px' }}>
+                            <p style={{ color: 'rgba(255,255,255,0.12)', fontSize: '10px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", marginTop: '6px' }}>
                               3D conformer · CPK coloring · Source: PubChem
                             </p>
                           </div>
@@ -1129,7 +1129,7 @@ const NodePanel = React.memo(function NodePanel({ node, onClose, allNodes, allEd
                           </div>
                           <CellImageViewer searchTerm={node.canonicalLabel || node.label} height={260} />
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                            <p style={{ color: 'rgba(255,255,255,0.15)', fontSize: '10px', fontFamily: "'Public Sans', -apple-system, sans-serif", fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.06em', margin: 0 }}>
+                            <p style={{ color: 'rgba(255,255,255,0.15)', fontSize: '10px', fontFamily: THEME.SANS, fontFeatureSettings: "'tnum' 1", textTransform: 'uppercase', letterSpacing: '0.06em', margin: 0 }}>
                               Search more databases:
                             </p>
                             <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>

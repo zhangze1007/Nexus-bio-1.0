@@ -1,6 +1,7 @@
 'use client';
 import React from 'react';
 import { colors, typography } from '../../../design-system/tokens';
+import { THEME } from '../../../theme';
 
 /**
  * ChartAxisLabels — axis title labels for SVG charts.
@@ -22,7 +23,7 @@ export interface ChartAxisLabelsProps {
   xLabel?: string;
   /** Y-axis label text */
   yLabel?: string;
-  /** Font family (default: typography.fontFamily.mono) */
+  /** Font family (default: THEME.MONO) */
   fontFamily?: string;
   /** Font size (default: typography.fontSize.xs) */
   fontSize?: string;
@@ -40,7 +41,7 @@ export default function ChartAxisLabels({
   PAD,
   xLabel,
   yLabel,
-  fontFamily = typography.fontFamily.mono,
+  fontFamily = THEME.MONO,
   fontSize = typography.fontSize.xs,
   fill = colors.text.tertiary,
   yLabelX = 12,

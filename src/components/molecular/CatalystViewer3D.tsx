@@ -2,6 +2,7 @@
 
 import { useRef, useState, useEffect } from 'react';
 import { load3Dmol } from '../../hooks/use3Dmol';
+import { THEME } from '../../theme';
 import type { EnzymeStructure, CatalyticResidue } from '../../services/CatalystDesignerEngine';
 
 /* ── Helpers ───────────────────────────────────────────────────── */
@@ -318,7 +319,7 @@ export default function CatalystViewer3D({
               border: '2px solid rgba(0,83,214,0.3)', borderTopColor: '#0053D6',
               animation: 'cv3d-spin 1s linear infinite',
             }} />
-            <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, margin: 0, fontFamily: "'Public Sans', sans-serif" }}>
+            <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, margin: 0, fontFamily: THEME.SANS }}>
               Loading {enzyme.name}...
             </p>
           </div>
@@ -341,7 +342,7 @@ export default function CatalystViewer3D({
               <span style={{
                 color: 'rgba(255,255,255,0.5)', fontSize: 9,
                 background: 'rgba(0,0,0,0.45)', padding: '2px 6px', borderRadius: 8,
-                fontFamily: "'Public Sans', sans-serif",
+                fontFamily: THEME.SANS,
               }}>
                 {sourceLabel}
               </span>
@@ -368,7 +369,7 @@ export default function CatalystViewer3D({
           padding: '5px 10px', borderRadius: 10,
           background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)',
         }}>
-          <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 9, fontFamily: "'Public Sans', sans-serif" }}>
+          <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 9, fontFamily: THEME.SANS }}>
             AlphaFold
           </span>
           <button
@@ -393,7 +394,7 @@ export default function CatalystViewer3D({
 
       <p style={{
         color: 'rgba(255,255,255,0.08)', fontSize: 8, margin: 0, textAlign: 'center',
-        fontFamily: "'Public Sans', sans-serif",
+        fontFamily: THEME.SANS,
       }}>
         Click residue to inspect · drag to rotate · {sourceLabel}
       </p>

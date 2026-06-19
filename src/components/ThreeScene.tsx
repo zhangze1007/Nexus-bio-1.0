@@ -308,7 +308,7 @@ const HIGH_RISK_THRESHOLD = 0.7;
 
 // ─── BIO_THEME_COLORS — Pastel tones per CLAUDE.md design system ─────────
 // Single source of truth in theme/index.ts — re-exported here for backward compatibility
-import { BIO_THEME_COLORS } from '../theme';
+import { BIO_THEME_COLORS, THEME } from '../theme';
 export { BIO_THEME_COLORS };
 
 // Map each nodeType to its semantic BIO_THEME color
@@ -568,7 +568,7 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov
         <div style={{
           color: hov || sel ? '#fff' : 'rgba(160,180,200,0.55)',
           fontSize: '10px', fontWeight: sel ? 600 : 500,
-          fontFamily: "'JetBrains Mono', 'Fira Code', monospace", letterSpacing: '0.01em',
+          fontFamily: THEME.MONO, letterSpacing: '0.01em',
           textShadow: '0 1px 12px rgba(0,0,0,0.9), 0 0 24px rgba(0,0,0,0.7)',
           padding: '2px 4px', background: sel ? 'rgba(200,216,232,0.08)' : 'transparent',
           borderRadius: '4px', border: sel ? '1px solid rgba(200,216,232,0.14)' : '1px solid transparent',
@@ -581,7 +581,7 @@ const MolNode = React.memo(function MolNode({ node, hov, sel, cc, onClick, onHov
           <div style={{
             background: 'rgba(6,9,16,0.95)', border: '1px solid rgba(200,216,232,0.12)',
             borderRadius: '16px', padding: '10px 14px', width: '210px',
-            backdropFilter: 'blur(20px)', transform: 'translateY(-120%)', fontFamily: "'Public Sans', sans-serif",
+            backdropFilter: 'blur(20px)', transform: 'translateY(-120%)', fontFamily: THEME.SANS,
           }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
               <span style={{ color: '#c8d8e4', fontSize: '12px', fontWeight: 600 }}>{lbl}</span>
@@ -1013,7 +1013,7 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, 
               <div key={c} style={{ width:'4px', height:'4px', borderRadius:'50%', background:c, opacity:0.35 }} />
             ))}
           </div>
-          <span style={{ color:'rgba(255,255,255,0.45)', fontSize:'10px', fontFamily:"'Public Sans',sans-serif", fontWeight:700, textTransform:'uppercase', letterSpacing:'0.08em' }}>
+          <span style={{ color:'rgba(255,255,255,0.45)', fontSize:'10px', fontFamily:THEME.SANS, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.08em' }}>
             METABOLIC · {safeNodes.length} ENTITIES
           </span>
         </div>
@@ -1091,16 +1091,16 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, 
             ↺ Reset
           </button>
           {fallbackLabel && (
-            <span style={{ ...getRendererTone(rendererMode), fontSize:'10px', fontFamily:"'Public Sans',sans-serif", padding:'2px 8px', borderRadius:'99px', letterSpacing:'0.04em', fontWeight:700 }}>
+            <span style={{ ...getRendererTone(rendererMode), fontSize:'10px', fontFamily:THEME.SANS, padding:'2px 8px', borderRadius:'99px', letterSpacing:'0.04em', fontWeight:700 }}>
               {fallbackLabel}
             </span>
           )}
-          <span style={{ color:'rgba(255,255,255,0.10)', fontSize:'10px', fontFamily:"'Public Sans',sans-serif" }}>drag · scroll · click</span>
+          <span style={{ color:'rgba(255,255,255,0.10)', fontSize:'10px', fontFamily:THEME.SANS }}>drag · scroll · click</span>
         </div>
       </div>
 
       <div style={{ pointerEvents: 'none', position:'absolute', bottom:`${resolvedOpticalInsets.bottom}px`, left:`${resolvedOpticalInsets.left}px`, zIndex:10 }}>
-        <p style={{ color:'rgba(255,255,255,0.12)', fontSize:'10px', fontFamily:"'Public Sans',sans-serif", fontWeight:700, margin:'0 0 4px', letterSpacing:'0.07em', textTransform:'uppercase' }}>
+        <p style={{ color:'rgba(255,255,255,0.12)', fontSize:'10px', fontFamily:THEME.SANS, fontWeight:700, margin:'0 0 4px', letterSpacing:'0.07em', textTransform:'uppercase' }}>
           {viewMode === 'risk' ? 'RISK NODES' : viewMode === 'flow' ? 'FLUX EDGES' : 'CONFIDENCE'}
         </p>
         {(viewMode === 'risk'
@@ -1116,7 +1116,7 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, 
             : [{ c:'#C8D8E8',l:'>90' },{ c:'#C8E0D0',l:'70–90' },{ c:'#E8DCC8',l:'50–70' },{ c:'#E8C8D4',l:'<50' }]).map(x => (
           <div key={x.l} style={{ display:'flex', alignItems:'center', gap:'5px', marginBottom:'2px' }}>
             <div style={{ width:'12px', height:'2px', background:x.c, borderRadius:'1px', opacity:0.65 }} />
-            <span style={{ color:'rgba(255,255,255,0.14)', fontSize:'10px', fontFamily:"'Public Sans',sans-serif", fontFeatureSettings:"'tnum' 1" }}>{x.l}</span>
+            <span style={{ color:'rgba(255,255,255,0.14)', fontSize:'10px', fontFamily:THEME.SANS, fontFeatureSettings:"'tnum' 1" }}>{x.l}</span>
           </div>
         ))}
       </div>
@@ -1141,21 +1141,21 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, 
           boxShadow: '0 14px 34px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.10)',
         }}
       >
-        <p style={{ margin: '0 0 6px', color: 'rgba(255,255,255,0.45)', fontSize: '10px', fontFamily: "'Public Sans',sans-serif", fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+        <p style={{ margin: '0 0 6px', color: 'rgba(255,255,255,0.45)', fontSize: '10px', fontFamily: THEME.SANS, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
           {modeTrace.label}
         </p>
-        <p style={{ margin: '0 0 8px', color: 'rgba(255,255,255,0.68)', fontSize: '10px', lineHeight: 1.5, fontFamily: "'Public Sans',sans-serif" }}>
+        <p style={{ margin: '0 0 8px', color: 'rgba(255,255,255,0.68)', fontSize: '10px', lineHeight: 1.5, fontFamily: THEME.SANS }}>
           {modeTrace.summary}
         </p>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          <span style={{ minHeight: '22px', padding: '0 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.55)', display: 'inline-flex', alignItems: 'center', fontSize: '10px', fontFamily: "'Public Sans',sans-serif" }}>
+          <span style={{ minHeight: '22px', padding: '0 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.55)', display: 'inline-flex', alignItems: 'center', fontSize: '10px', fontFamily: THEME.SANS }}>
             {selectedNode ? `${selectedNode.label}` : 'No node selected'}
           </span>
-          <span style={{ minHeight: '22px', padding: '0 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.55)', display: 'inline-flex', alignItems: 'center', fontSize: '10px', fontFamily: "'Public Sans',sans-serif" }}>
+          <span style={{ minHeight: '22px', padding: '0 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.55)', display: 'inline-flex', alignItems: 'center', fontSize: '10px', fontFamily: THEME.SANS }}>
             {modeTrace.metric}
           </span>
           {selectedNode?.citation && (
-            <span style={{ minHeight: '22px', padding: '0 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.55)', display: 'inline-flex', alignItems: 'center', fontSize: '10px', fontFamily: "'Public Sans',sans-serif" }}>
+            <span style={{ minHeight: '22px', padding: '0 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.55)', display: 'inline-flex', alignItems: 'center', fontSize: '10px', fontFamily: THEME.SANS }}>
               {selectedNode.citation}
             </span>
           )}
@@ -1163,7 +1163,7 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, 
       </div>
 
       <div style={{ pointerEvents: 'none', position:'absolute', bottom:`${resolvedOpticalInsets.bottom}px`, right:`${resolvedOpticalInsets.right}px`, zIndex:10, background:'rgba(0,0,0,0.42)', padding:'8px 12px', borderRadius:'12px', border:'1px solid rgba(255,255,255,0.06)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}>
-        <p style={{ color:'rgba(255,255,255,0.45)', fontSize:'10px', fontFamily:"'Public Sans',sans-serif", fontWeight:700, margin:'0 0 6px', letterSpacing:'0.07em', textTransform:'uppercase' }}>Node Types</p>
+        <p style={{ color:'rgba(255,255,255,0.45)', fontSize:'10px', fontFamily:THEME.SANS, fontWeight:700, margin:'0 0 6px', letterSpacing:'0.07em', textTransform:'uppercase' }}>Node Types</p>
         {[
           { c: BIO_THEME_COLORS.CYAN,   l:'Metabolite', s:'●' },
           { c: BIO_THEME_COLORS.AMBER,  l:'Enzyme', s:'◆' },
@@ -1174,7 +1174,7 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, 
         ].map(x => (
           <div key={x.l} style={{ display:'flex', alignItems:'center', gap:'6px', marginBottom:'3px' }}>
             <span style={{ color:x.c, fontSize:'10px', lineHeight:1, width:'10px', textAlign:'center' }}>{x.s}</span>
-            <span style={{ color:'rgba(255,255,255,0.4)', fontSize:'10px', fontFamily:"'Public Sans',sans-serif" }}>{x.l}</span>
+            <span style={{ color:'rgba(255,255,255,0.4)', fontSize:'10px', fontFamily:THEME.SANS }}>{x.l}</span>
           </div>
         ))}
       </div>
@@ -1240,7 +1240,7 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, 
             background: 'rgba(8,10,14,0.74)',
             padding: '12px 14px',
             color: 'rgba(255,255,255,0.70)',
-            fontFamily: "'Public Sans',sans-serif",
+            fontFamily: THEME.SANS,
             fontSize: '11px',
             lineHeight: 1.45,
             textAlign: 'center',
@@ -1260,7 +1260,7 @@ export default function ThreeScene({ nodes, onNodeClick, edges, selectedNodeId, 
                     pointerEvents: 'auto', marginTop: '8px', padding: '5px 14px',
                     background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)',
                     borderRadius: '6px', color: 'rgba(255,255,255,0.80)', cursor: 'pointer',
-                    fontFamily: "'Public Sans',sans-serif", fontSize: '11px',
+                    fontFamily: THEME.SANS, fontSize: '11px',
                   }}
                 >
                   Try again

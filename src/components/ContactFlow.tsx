@@ -1,6 +1,7 @@
 'use client';
 
 import { Mail, Linkedin, ArrowRight } from 'lucide-react';
+import { THEME } from '../theme';
 
 export default function ContactFlow() {
   return (
@@ -9,7 +10,7 @@ export default function ContactFlow() {
 
         {/* Header */}
         <div className="mb-12">
-          <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '11px', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' }}>
+          <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '11px', fontFamily: THEME.MONO, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' }}>
             Contact
           </p>
           <h2 className="text-2xl md:text-3xl font-semibold text-white mb-2"
@@ -45,7 +46,7 @@ export default function ContactFlow() {
             <div style={{ width: '36px', height: '36px', borderRadius: '12px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
               <Mail size={16} style={{ color: 'rgba(255,255,255,0.6)' }} />
             </div>
-            <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 6px' }}>
+            <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px', fontFamily: THEME.MONO, textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 6px' }}>
               Email
             </p>
             <p style={{ color: '#ffffff', fontSize: '14px', fontWeight: 500, margin: '0 0 4px', letterSpacing: '-0.01em' }}>
@@ -83,7 +84,7 @@ export default function ContactFlow() {
             <div style={{ width: '36px', height: '36px', borderRadius: '12px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
               <Linkedin size={16} style={{ color: 'rgba(255,255,255,0.6)' }} />
             </div>
-            <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 6px' }}>
+            <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px', fontFamily: THEME.MONO, textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 6px' }}>
               LinkedIn
             </p>
             <p style={{ color: '#ffffff', fontSize: '14px', fontWeight: 500, margin: '0 0 4px', letterSpacing: '-0.01em' }}>
