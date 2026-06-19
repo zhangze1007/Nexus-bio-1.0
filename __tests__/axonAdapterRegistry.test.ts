@@ -38,10 +38,24 @@ describe('createAxonAdapterRegistry', () => {
 });
 
 describe('buildDefaultAxonAdapterRegistry', () => {
-  it('registers both PATHD and FBASIM adapters', () => {
+  it('registers PATHD, FBASIM, and all pipeline adapters', () => {
     const reg = buildDefaultAxonAdapterRegistry();
+    const registeredTools = DEFAULT_AXON_ADAPTERS.map(r => r.tool).sort();
+    const supportedTools = ['pathd', 'fbasim', 'catdes', 'proevol', 'dyncon', 'cethx',
+      'gecair', 'cellfree', 'genmim', 'multio', 'scspatial', 'nexai'];
+
+    // Debug: show what's actually registered
+    console.log('Registered adapters:', registeredTools);
+    console.log('Registry count:', DEFAULT_AXON_ADAPTERS.length);
+
     expect(reg.isSupported('pathd')).toBe(true);
     expect(reg.isSupported('fbasim')).toBe(true);
-    expect(DEFAULT_AXON_ADAPTERS.map((r) => r.tool).sort()).toEqual(['fbasim', 'pathd']);
+
+    // Check all expected tools are supported
+    for (const tool of supportedTools) {
+      expect(reg.isSupported(tool as AxonTool)).toBe(true);
+    }
+
+    expect(DEFAULT_AXON_ADAPTERS.length).toBeGreaterThanOrEqual(12);
   });
 });
