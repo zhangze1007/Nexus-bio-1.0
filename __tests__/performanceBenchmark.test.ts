@@ -308,8 +308,8 @@ describe('Computational Performance Benchmarks', () => {
       batchId: 0,
       qcPass: true,
     }));
-    const r = await benchmark('ScSpatial — runFullPipeline (200 cells)', () => {
-      runFullPipeline(cells);
+    const r = await benchmark('ScSpatial — runFullPipeline (200 cells)', async () => {
+      await runFullPipeline(cells);
     });
     results.push(r);
     expect(r.medianMs).toBeLessThan(30000);

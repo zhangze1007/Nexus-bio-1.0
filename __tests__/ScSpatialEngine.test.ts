@@ -468,9 +468,9 @@ describe('computeMoranI', () => {
 // ── trainScVAE ──────────────────────────────────────────────────────────────
 
 describe('trainScVAE', () => {
-  it('returns VAE result with correct structure', () => {
+  it('returns VAE result with correct structure', async () => {
     const cells = makePassingCells(15);
-    const vae = trainScVAE(cells, 5, 0.5, 5);
+    const vae = await trainScVAE(cells, 5, 0.5, 5);
 
     expect(vae.latentCells).toHaveLength(15);
     expect(typeof vae.elbo).toBe('number');
@@ -481,9 +481,9 @@ describe('trainScVAE', () => {
     expect(Array.isArray(vae.convergenceHistory)).toBe(true);
   });
 
-  it('latent cells have required fields', () => {
+  it('latent cells have required fields', async () => {
     const cells = makePassingCells(10);
-    const vae = trainScVAE(cells, 5, 0.5, 5);
+    const vae = await trainScVAE(cells, 5, 0.5, 5);
     for (const lc of vae.latentCells) {
       expect(typeof lc.id).toBe('string');
       expect(typeof lc.barcode).toBe('string');
@@ -497,8 +497,8 @@ describe('trainScVAE', () => {
     }
   });
 
-  it('handles empty cells', () => {
-    const vae = trainScVAE([]);
+  it('handles empty cells', async () => {
+    const vae = await trainScVAE([]);
     expect(vae.latentCells).toHaveLength(0);
     expect(vae.elbo).toBe(0);
     expect(vae.reconLoss).toBe(0);
@@ -506,9 +506,9 @@ describe('trainScVAE', () => {
     expect(vae.convergenceHistory).toHaveLength(0);
   });
 
-  it('convergence history has entries', () => {
+  it('convergence history has entries', async () => {
     const cells = makePassingCells(10);
-    const vae = trainScVAE(cells, 5, 0.5, 20);
+    const vae = await trainScVAE(cells, 5, 0.5, 20);
     expect(vae.convergenceHistory.length).toBeGreaterThan(0);
     for (const entry of vae.convergenceHistory) {
       expect(typeof entry.epoch).toBe('number');
@@ -518,29 +518,29 @@ describe('trainScVAE', () => {
     }
   });
 
-  it('detects batch correction', () => {
+  it('detects batch correction', async () => {
     const cells = makePassingCells(20);
     // All cells have batchId 0 or 1 (from makePassingCells)
-    const vae = trainScVAE(cells, 5, 0.5, 5);
+    const vae = await trainScVAE(cells, 5, 0.5, 5);
     expect(vae.batchCorrected).toBe(true);
   });
 
-  it('no batch correction with single batch', () => {
+  it('no batch correction with single batch', async () => {
     const cells = makePassingCells(10).map(c => ({ ...c, batchId: 0 }));
-    const vae = trainScVAE(cells, 5, 0.5, 5);
+    const vae = await trainScVAE(cells, 5, 0.5, 5);
     expect(vae.batchCorrected).toBe(false);
   });
 
-  it('custom batchLabels override cell batchId', () => {
+  it('custom batchLabels override cell batchId', async () => {
     const cells = makePassingCells(10).map(c => ({ ...c, batchId: 0 }));
     const batchLabels = cells.map((_, i) => i < 5 ? 0 : 1);
-    const vae = trainScVAE(cells, 5, 0.5, 5, batchLabels);
+    const vae = await trainScVAE(cells, 5, 0.5, 5, batchLabels);
     expect(vae.batchCorrected).toBe(true);
   });
 
-  it('metabolic efficiency is between 0 and 1', () => {
+  it('metabolic efficiency is between 0 and 1', async () => {
     const cells = makePassingCells(10);
-    const vae = trainScVAE(cells, 5, 0.5, 5);
+    const vae = await trainScVAE(cells, 5, 0.5, 5);
     for (const lc of vae.latentCells) {
       expect(lc.metabolicEfficiency).toBeGreaterThanOrEqual(0);
       expect(lc.metabolicEfficiency).toBeLessThanOrEqual(1);
@@ -636,9 +636,9 @@ describe('identifyHighYieldClusters', () => {
 // ── runFullPipeline ─────────────────────────────────────────────────────────
 
 describe('runFullPipeline', () => {
-  it('runs the complete pipeline', () => {
+  it('runs the complete pipeline', async () => {
     const cells = makePassingCells(30);
-    const result = runFullPipeline(cells);
+    const result = await runFullPipeline(cells);
 
     expect(result.qc).toBeDefined();
     expect(result.hvg).toBeDefined();
@@ -650,22 +650,22 @@ describe('runFullPipeline', () => {
     expect(result.highYieldClusters).toBeDefined();
   });
 
-  it('handles empty input', () => {
-    const result = runFullPipeline([]);
+  it('handles empty input', async () => {
+    const result = await runFullPipeline([]);
     expect(result.qc.totalCells).toBe(0);
     expect(result.hvg.nHVGs).toBe(0);
     expect(result.clusters.nClusters).toBe(0);
   });
 
-  it('QC filters are applied', () => {
+  it('QC filters are applied', async () => {
     const cells = makeCells(50); // some will fail QC
-    const result = runFullPipeline(cells);
+    const result = await runFullPipeline(cells);
     expect(result.qc.passedCells).toBeLessThanOrEqual(50);
   });
 
-  it('pipeline produces consistent cluster assignments', () => {
+  it('pipeline produces consistent cluster assignments', async () => {
     const cells = makePassingCells(20);
-    const result = runFullPipeline(cells);
+    const result = await runFullPipeline(cells);
     // All clustered cells should have valid cluster IDs
     for (const lc of result.vae.latentCells) {
       expect(lc.cluster).toBeGreaterThanOrEqual(0);

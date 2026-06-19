@@ -1432,13 +1432,13 @@ interface ForwardResult {
  * This function uses hand-derived gradient updates on only the output layer.
  * The "t-SNE-like" projection is actually a force-directed layout, not t-SNE.
  */
-export function trainScVAE(
+export async function trainScVAE(
   cells: CellRecord[],
   latentDim: number = 10,
   beta: number = 0.5,
   epochs: number = 50,
   batchLabels?: number[],
-): ScVAEResult {
+): Promise<ScVAEResult> {
   const rng = new SeededRNG(42);
   const n = cells.length;
   if (n === 0) {
@@ -1715,27 +1715,16 @@ export function trainScVAE(
     reconErrors.push(err / nFeatures);
   }
 
-  // 2-D projection via t-SNE-like force layout on latent means
-  const pos: [number, number][] = latentPoints.map(() => [rng.next() * 2 - 1, rng.next() * 2 - 1]);
-
-  for (let iter = 0; iter < 200; iter++) {
-    const alpha = 0.5 * (1 - iter / 200);
-    for (let i = 0; i < n; i++) {
-      let fx = 0, fy = 0;
-      for (let j = 0; j < n; j++) {
-        if (i === j) continue;
-        const dLatent = euclideanDistance(latentPoints[i].z_mean, latentPoints[j].z_mean);
-        const dx = pos[i][0] - pos[j][0];
-        const dy = pos[i][1] - pos[j][1];
-        const d2D = Math.sqrt(dx * dx + dy * dy) + 1e-8;
-        const force = (dLatent - d2D) / d2D;
-        fx += force * dx * 0.01;
-        fy += force * dy * 0.01;
-      }
-      pos[i][0] += alpha * fx;
-      pos[i][1] += alpha * fy;
-    }
-  }
+  // 2-D projection via UMAP on latent means
+  const { runUMAP } = await import('../server/umapEngine');
+  const latentData = latentPoints.map(lp => lp.z_mean);
+  const umapResult = runUMAP(latentData, {
+    nNeighbors: Math.min(15, Math.max(2, n - 1)),
+    minDist: 0.1,
+    nEpochs: 200,
+    seed: 42,
+  });
+  const pos: [number, number][] = umapResult.embedding.map(e => [e.x, e.y]);
 
   // Metabolic efficiency: inverse normalised reconstruction error
   const maxErr = Math.max(...reconErrors) || 1;
@@ -1876,7 +1865,7 @@ export function identifyHighYieldClusters(
  *
  * @param cells  Raw cell records (pre-QC)
  */
-export function runFullPipeline(cells: CellRecord[]): ScSpatialAnalysisResult {
+export async function runFullPipeline(cells: CellRecord[]): Promise<ScSpatialAnalysisResult> {
   // 1. QC
   const { filtered, qc } = preprocessAndQC(cells);
 
@@ -1905,7 +1894,7 @@ export function runFullPipeline(cells: CellRecord[]): ScSpatialAnalysisResult {
   const autocorrelation = computeMoranI(withPseudotime, spatial);
 
   // 8. VAE
-  const vae = trainScVAE(withPseudotime);
+  const vae = await trainScVAE(withPseudotime);
 
   // 9. High-yield clusters
   const highYieldClusters = identifyHighYieldClusters(withPseudotime, clusterResult, paga, autocorrelation);

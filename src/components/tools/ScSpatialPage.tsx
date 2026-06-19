@@ -17,8 +17,8 @@ import ToolTabPanel from './shared/ToolTabPanel';
 import InlineMetricOverlay from './shared/InlineMetricOverlay';
 import { THEME } from '../../theme';
 import { PAPER_THEME } from '../charts/chartTheme';
-import { analyzeCommunication } from '../../server/cellChat';
-import type { CommunicationResult } from '../../server/cellChat';
+import { analyzeCommunicationExpanded } from '../../server/cellChat';
+import type { ExpandedCommunicationResult } from '../../server/cellChat';
 import { colorForCluster } from './scspatial/scSpatialPalette';
 
 const SCSPATIAL_TABS: ToolTab[] = [
@@ -49,7 +49,7 @@ function readyLabel(validity: 'real' | 'partial' | 'demo' | null, loadState: str
 
 export default React.memo(function ScSpatialPage() {
   const [activeTab, setActiveTab] = useState('spatial-2d');
-  const [commResult, setCommResult] = useState<CommunicationResult | null>(null);
+  const [commResult, setCommResult] = useState<ExpandedCommunicationResult | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -155,10 +155,12 @@ export default React.memo(function ScSpatialPage() {
       cellCounts[cs.clusterId.toString()] = cs.cellCount;
     }
 
-    const result = analyzeCommunication({
+    const result = analyzeCommunicationExpanded({
       expressionMatrix: geneClusterExpr,
       clusters: clusterNames,
       cellCounts,
+      nPermutations: 200,   // reduced from 1000 for client-side performance
+      useExpandedDB: true,   // 2780 L-R pairs
     });
 
     setCommResult(result);
@@ -637,14 +639,14 @@ export default React.memo(function ScSpatialPage() {
                                   overflow: 'hidden',
                                 }}>
                                   <div style={{
-                                    width: `${inter.significance * 100}%`,
+                                    width: `${Math.max(5, (1 - inter.pAdj) * 100)}%`,
                                     height: '100%',
                                     borderRadius: 3,
-                                    background: inter.significance > 0.8 ? '#16a34a' : inter.significance > 0.5 ? '#d97706' : '#dc2626',
+                                    background: inter.significant ? '#16a34a' : inter.pAdj < 0.1 ? '#d97706' : '#dc2626',
                                   }} />
                                 </div>
                                 <span style={{ fontFamily: THEME.MONO, fontSize: 10, minWidth: 36, textAlign: 'right' }}>
-                                  {(inter.significance * 100).toFixed(0)}%
+                                  {inter.significant ? '✓' : `p=${inter.pAdj.toFixed(3)}`}
                                 </span>
                               </div>
                             </td>
