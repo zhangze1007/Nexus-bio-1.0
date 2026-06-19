@@ -12,7 +12,6 @@
  *   3. Agent C (Optimizer): Monte Carlo results → robustness score + sensitivity
  */
 
-import { simulateCircuit } from './circuitBuilder';
 import {
   buildParameterDistributions,
   sampleBatch,
@@ -210,9 +209,6 @@ function runOptimizer(
   mcResults: MonteCarloResults,
   nominalParams: CellFreeNominalParams = DEFAULT_CELL_FREE_NOMINAL,
 ): { robustness: RobustnessReport; sensitivity: SensitivityReport } {
-  // Robustness score
-  const robustness = computeRobustness(mcResults.trials);
-
   // Sensitivity analysis: perturb each parameter by ±5%
   const nominal = { ...nominalParams } as unknown as Record<string, number>;
   const sensitivity = computeSensitivity(
@@ -222,6 +218,13 @@ function runOptimizer(
     },
     nominal,
   );
+
+  // Extract energy and resource sensitivities for robustness score
+  const energySens = sensitivity.results.find(r => r.parameter === 'energy_decay')?.sensitivity ?? 0;
+  const resourceSens = sensitivity.results.find(r => r.parameter === 'Rnap_activity')?.sensitivity ?? 0;
+
+  // Robustness score with real sensitivity values
+  const robustness = computeRobustness(mcResults.trials, energySens, resourceSens);
 
   return { robustness, sensitivity };
 }

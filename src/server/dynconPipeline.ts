@@ -13,7 +13,6 @@
 import { solveRK4, type ODESystem } from '../utils/odeSolver';
 import { analyzeStability, type JacobianResult } from './jacobianAnalysis';
 import { computeSensitivity, type SensitivityReport } from './sensitivityAnalysis';
-import { runGridSearch, type ParameterRange, type GridSearchResult } from './gridSearch';
 
 // ── Interfaces ──────────────────────────────────────────────────────────────
 
@@ -55,6 +54,9 @@ export interface ControlDesignResult {
 /**
  * First-order plus dead time (FOPDT) process model.
  * dy/dt = (Kp * u(t-θ) - y) / τ
+ *
+ * Dead time is implemented via a circular buffer that stores
+ * past control values and retrieves the value from θ seconds ago.
  */
 function fopdtDerivatives(
   params: ControlSpec,
@@ -63,20 +65,39 @@ function fopdtDerivatives(
   let integral = 0;
   let prevError = 0;
   const { setpoint, processGain, timeConstant, deadTime, disturbanceMagnitude } = params;
+  const dt = 0.5;
+
+  // Dead time buffer: stores (time, control_value) pairs
+  const delayBuffer: Array<{ t: number; u: number }> = [];
+  const bufferSize = Math.max(1, Math.ceil(deadTime / dt));
 
   return (_t: number, y: number[]) => {
     const current = y[0];
     const error = setpoint - current;
-    integral += error * 0.5; // dt = 0.5
-    const derivative = (error - prevError) / 0.5;
+    integral += error * dt;
+    const derivative = (error - prevError) / dt;
     prevError = error;
 
-    // Dead time approximation: use delayed value
     const u = controller(error, integral, derivative);
+
+    // Store current control in buffer
+    delayBuffer.push({ t: _t, u });
+    if (delayBuffer.length > bufferSize * 2) delayBuffer.shift();
+
+    // Retrieve delayed control value (from deadTime seconds ago)
+    const delayedT = _t - deadTime;
+    let delayedU = u; // fallback to current if buffer too short
+    for (let i = delayBuffer.length - 1; i >= 0; i--) {
+      if (delayBuffer[i].t <= delayedT) {
+        delayedU = delayBuffer[i].u;
+        break;
+      }
+    }
+
     const disturbance = disturbanceMagnitude * Math.sin(_t / 50);
 
     return [
-      (processGain * u - current + disturbance) / timeConstant,
+      (processGain * delayedU - current + disturbance) / timeConstant,
     ];
   };
 }
@@ -92,10 +113,15 @@ function designControllers(): {
 } {
   const solverCalls: Array<{ solver: string; description: string }> = [];
 
-  // Ziegler-Nichols initial estimate
-  const znKp = 0.9;
-  const znKi = znKp / 1.0;
-  const znKd = znKp * 0.25;
+  // Ziegler-Nichols tuning from FOPDT model parameters
+  // ZN rules for PID: Kp = 1.2*τ/(Kp*θ), Ki = Kp/(2*θ), Kd = Kp*θ/2
+  // Reference: Ziegler & Nichols (1942) Trans. ASME
+  const Kp = 1.0; // process gain (normalized)
+  const tau = 1.0; // time constant (normalized)
+  const theta = 0.5; // dead time (normalized)
+  const znKp = 1.2 * tau / (Kp * theta);
+  const znKi = znKp / (2 * theta);
+  const znKd = znKp * theta / 2;
 
   // Generate candidates around ZN estimate
   const candidates: PIDParams[] = [

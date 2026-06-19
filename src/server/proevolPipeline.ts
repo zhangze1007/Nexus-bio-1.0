@@ -19,7 +19,6 @@ import {
   designMutantLibrary,
 } from '../services/ProEvolCampaignEngine';
 import { predictDDG, type DDGMutation } from './ddgPrediction';
-import { runGridSearch, type ParameterRange, type GridSearchResult } from './gridSearch';
 
 // ── Interfaces ──────────────────────────────────────────────────────────────
 
@@ -202,12 +201,11 @@ function evaluateDesigns(
     let dominated = false;
     for (const other of enriched) {
       if (other === candidate) continue;
+      const otherFitness = (other.scores as typeof candidate.scores & { fitness?: number }).fitness ?? 0.5;
+      const candidateFitness = (candidate.scores as typeof candidate.scores & { fitness?: number }).fitness ?? 0.5;
       const betterStability = other.scores.stability >= candidate.scores.stability;
-      const betterFitness = (other.scores as typeof candidate.scores & { fitness?: number }).fitness ?? 0.5 >=
-                            ((candidate.scores as typeof candidate.scores & { fitness?: number }).fitness ?? 0.5);
-      const strictlyBetter = other.scores.stability > candidate.scores.stability ||
-                             ((other.scores as typeof candidate.scores & { fitness?: number }).fitness ?? 0.5) >
-                             ((candidate.scores as typeof candidate.scores & { fitness?: number }).fitness ?? 0.5);
+      const betterFitness = otherFitness >= candidateFitness;
+      const strictlyBetter = other.scores.stability > candidate.scores.stability || otherFitness > candidateFitness;
       if (betterStability && betterFitness && strictlyBetter) {
         dominated = true;
         break;

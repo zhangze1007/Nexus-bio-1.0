@@ -14,7 +14,6 @@ import { solveAuthorityFBA, type FBASpecies, type FBAObjective } from './fbaEngi
 import type { FBAOutput } from '../data/mockFBA';
 import { getKnockoutReactions } from './fbaGPR';
 import { IJO1366_REACTIONS } from '../data/iJO1366Subset';
-import { runGridSearch, type ParameterRange } from './gridSearch';
 
 // ── Interfaces ──────────────────────────────────────────────────────────────
 

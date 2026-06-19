@@ -11,7 +11,6 @@
  */
 
 import { runMOFA, type MOFAInput, type MOFAResult } from './mofaPlus';
-import { computeSensitivity, type SensitivityReport } from './sensitivityAnalysis';
 
 // ── Interfaces ──────────────────────────────────────────────────────────────
 

@@ -14,11 +14,8 @@
  * Reference: Choi et al. (2010) BMC Bioinformatics — FSEOF
  */
 
-import { solveAuthorityFBA, buildAuthorityFBAModel, type FBASpecies, type FBAObjective } from './fbaEngine';
+import { solveAuthorityFBA, type FBASpecies, type FBAObjective } from './fbaEngine';
 import type { FBAOutput } from '../data/mockFBA';
-import { solveLP, type LPModel } from './highsSolver';
-import { runFVA, type FVAResult } from './fbaFVA';
-import { runPFBA, type pFBAOutput } from './fbaPFBA';
 import { runOptKnock, type OptKnockModel, type OptKnockReaction, type KnockoutSet } from './fbaOptKnock';
 import { runFSEOF, type FSEOFModel, type FSEOFReaction, type FSEOFResult } from './fbaFSEOF';
 import { getKnockoutReactions } from './fbaGPR';
@@ -71,26 +68,28 @@ export interface StrainDesignResult {
  * Generate candidate strain strategies using OptKnock and FSEOF.
  * These are real solver calls, not LLM suggestions.
  */
-function generateStrategies(
+async function generateStrategies(
   spec: StrainDesignSpec,
   reactions: OptKnockReaction[],
-): {
+): Promise<{
   knockoutStrategies: KnockoutSet[];
   overexpressionTargets: FSEOFResult;
   solverCalls: Array<{ solver: string; description: string }>;
-} {
+}> {
   const solverCalls: Array<{ solver: string; description: string }> = [];
 
-  // OptKnock: find knockout strategies (async — uses LP solver)
+  // OptKnock: find knockout strategies
   solverCalls.push({ solver: 'fbaOptKnock::runOptKnock', description: `Bilevel knockout optimization, max ${spec.maxKnockouts} knockouts` });
   const optKnockModel: OptKnockModel = {
     reactions,
     objectiveId: 'BIOMASS',
     productReactionId: 'PRODUCT',
   };
-  // Note: runOptKnock is async but we call it synchronously here for pipeline simplicity
-  // In production, this would be awaited
-  const knockoutStrategies: KnockoutSet[] = [];
+  const optKnockResult = await runOptKnock(optKnockModel, {
+    maxKnockouts: spec.maxKnockouts,
+    growthFraction: spec.growthFractionConstraint,
+  });
+  const knockoutStrategies = optKnockResult.knockoutSets;
 
   // FSEOF: find overexpression targets
   solverCalls.push({ solver: 'fbaFSEOF::runFSEOF', description: 'Flux scanning for overexpression targets' });
@@ -99,13 +98,7 @@ function generateStrategies(
     objectiveId: 'BIOMASS',
     productReactionId: 'PRODUCT',
   };
-  const overexpressionTargets: FSEOFResult = {
-    overexpressionTargets: [],
-    knockoutTargets: [],
-    steps: [],
-    maxGrowthRate: 0,
-    maxProductFlux: 0,
-  };
+  const overexpressionTargets = await runFSEOF(fseofModel);
 
   return { knockoutStrategies, overexpressionTargets, solverCalls };
 }
@@ -119,6 +112,7 @@ function generateStrategies(
 async function evaluateStrategy(
   spec: StrainDesignSpec,
   strategy: StrainStrategy,
+  wildTypeGrowthRate: number,
 ): Promise<StrainEvaluation> {
   const solverCalls: Array<{ solver: string; description: string }> = [];
 
@@ -132,17 +126,8 @@ async function evaluateStrategy(
     knockouts: strategy.knockouts,
   });
 
-  // Run wild-type for comparison
-  solverCalls.push({ solver: 'fbaEngine::solveAuthorityFBA', description: 'Wild-type FBA baseline' });
-  const wildType = await solveAuthorityFBA({
-    species: spec.species,
-    objective: spec.objective,
-    glucoseUptake: spec.glucoseUptake,
-    oxygenUptake: spec.oxygenUptake,
-  });
-
-  const growthFraction = wildType.growthRate > 0
-    ? result.growthRate / wildType.growthRate
+  const growthFraction = wildTypeGrowthRate > 0
+    ? result.growthRate / wildTypeGrowthRate
     : 0;
 
   return {
@@ -165,6 +150,7 @@ async function evaluateStrategy(
 async function optimizeStrategies(
   spec: StrainDesignSpec,
   strategies: StrainStrategy[],
+  wildTypeGrowthRate: number,
 ): Promise<{
   evaluations: StrainEvaluation[];
   paretoFront: StrainEvaluation[];
@@ -177,7 +163,7 @@ async function optimizeStrategies(
   solverCalls.push({ solver: 'fbaEngine::evaluateStrategy', description: `Evaluating ${strategies.length} strategies` });
   const evaluations: StrainEvaluation[] = [];
   for (const strategy of strategies) {
-    const eval_ = await evaluateStrategy(spec, strategy);
+    const eval_ = await evaluateStrategy(spec, strategy, wildTypeGrowthRate);
     evaluations.push(eval_);
   }
 
@@ -233,7 +219,7 @@ export async function runStrainDesignPipeline(
 
   // Agent A: Generate strategies
   allSolverCalls.push({ solver: 'pipeline::generateStrategies', description: 'OptKnock + FSEOF strategy generation' });
-  const { knockoutStrategies, overexpressionTargets, solverCalls: genCalls } = generateStrategies(spec, reactions);
+  const { knockoutStrategies, overexpressionTargets, solverCalls: genCalls } = await generateStrategies(spec, reactions);
   allSolverCalls.push(...genCalls);
 
   // Build strategy list from OptKnock results
@@ -255,18 +241,18 @@ export async function runStrainDesignPipeline(
     });
   }
 
-  // Agent B + C: Evaluate and optimize
-  allSolverCalls.push({ solver: 'pipeline::optimizeStrategies', description: `Evaluating ${strategies.length} strategies` });
-  const { evaluations, paretoFront, bestDesign, solverCalls: optCalls } = await optimizeStrategies(spec, strategies);
-  allSolverCalls.push(...optCalls);
-
-  // Get wild-type baseline
+  // Get wild-type baseline first (needed for growth fraction calculation)
   const wildType = await solveAuthorityFBA({
     species: spec.species,
     objective: spec.objective,
     glucoseUptake: spec.glucoseUptake,
     oxygenUptake: spec.oxygenUptake,
   });
+
+  // Agent B + C: Evaluate and optimize
+  allSolverCalls.push({ solver: 'pipeline::optimizeStrategies', description: `Evaluating ${strategies.length} strategies` });
+  const { evaluations, paretoFront, bestDesign, solverCalls: optCalls } = await optimizeStrategies(spec, strategies, wildType.growthRate);
+  allSolverCalls.push(...optCalls);
 
   return {
     spec,

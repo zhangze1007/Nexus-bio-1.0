@@ -110,7 +110,7 @@ function analyzeClusters(
   const solverCalls: Array<{ solver: string; description: string }> = [];
   solverCalls.push({ solver: 'clustering::kmeans', description: `${nClusters} clusters on ${matrix.length} cells` });
 
-  // Simple k-means (deterministic, seeded initialization)
+  // K-means with iterative centroid updates (max 20 iterations)
   const nGenes = matrix[0]?.length ?? 0;
   const centroids: number[][] = [];
   for (let k = 0; k < nClusters; k++) {
@@ -118,19 +118,38 @@ function analyzeClusters(
     centroids.push([...matrix[idx]]);
   }
 
-  // Assign cells to nearest centroid
-  const assignments = matrix.map(row => {
-    let minDist = Infinity;
-    let bestK = 0;
-    for (let k = 0; k < nClusters; k++) {
-      let dist = 0;
-      for (let j = 0; j < nGenes; j++) {
-        dist += (row[j] - centroids[k][j]) ** 2;
+  let assignments = new Array(matrix.length).fill(0);
+  const maxIter = 20;
+
+  for (let iter = 0; iter < maxIter; iter++) {
+    // Assign cells to nearest centroid
+    const newAssignments = matrix.map(row => {
+      let minDist = Infinity;
+      let bestK = 0;
+      for (let k = 0; k < nClusters; k++) {
+        let dist = 0;
+        for (let j = 0; j < nGenes; j++) {
+          dist += (row[j] - centroids[k][j]) ** 2;
+        }
+        if (dist < minDist) { minDist = dist; bestK = k; }
       }
-      if (dist < minDist) { minDist = dist; bestK = k; }
+      return bestK;
+    });
+
+    // Check convergence
+    const changed = newAssignments.filter((a, i) => a !== assignments[i]).length;
+    assignments = newAssignments;
+    if (changed === 0) break;
+
+    // Recompute centroids
+    for (let k = 0; k < nClusters; k++) {
+      const members = matrix.filter((_, i) => assignments[i] === k);
+      if (members.length === 0) continue;
+      for (let j = 0; j < nGenes; j++) {
+        centroids[k][j] = members.reduce((s, row) => s + row[j], 0) / members.length;
+      }
     }
-    return bestK;
-  });
+  }
 
   // Build cluster results
   const clusters: ClusterResult[] = [];
@@ -140,17 +159,17 @@ function analyzeClusters(
     // Mean expression
     const meanExpression: Record<string, number> = {};
     for (let j = 0; j < geneNames.length; j++) {
-      const values = cellIndices.map(i => matrix[i][j]);
+      const values = cellIndices.map((ci: number) => matrix[ci][j]);
       meanExpression[geneNames[j]] = values.length > 0
-        ? values.reduce((s, v) => s + v, 0) / values.length
+        ? values.reduce((s: number, v: number) => s + v, 0) / values.length
         : 0;
     }
 
     // Spatial center and spread
-    const cx = cellIndices.reduce((s, i) => s + coords[i].x, 0) / Math.max(cellIndices.length, 1);
-    const cy = cellIndices.reduce((s, i) => s + coords[i].y, 0) / Math.max(cellIndices.length, 1);
-    const spread = cellIndices.reduce((s, i) =>
-      s + Math.sqrt((coords[i].x - cx) ** 2 + (coords[i].y - cy) ** 2), 0
+    const cx = cellIndices.reduce((s: number, ci: number) => s + coords[ci].x, 0) / Math.max(cellIndices.length, 1);
+    const cy = cellIndices.reduce((s: number, ci: number) => s + coords[ci].y, 0) / Math.max(cellIndices.length, 1);
+    const spread = cellIndices.reduce((s: number, ci: number) =>
+      s + Math.sqrt((coords[ci].x - cx) ** 2 + (coords[ci].y - cy) ** 2), 0
     ) / Math.max(cellIndices.length, 1);
 
     clusters.push({ clusterId: k, cellIndices, meanExpression, spatialCenter: { x: cx, y: cy }, spatialSpread: Math.round(spread * 100) / 100 });
@@ -210,8 +229,22 @@ function interpretSpatial(
     }
 
     const moransI = totalW > 0 ? (n / totalW) * numerator / (variance * n) : 0;
-    // Approximate p-value: |I| > 0.1 is roughly significant for n > 50
-    const pValue = Math.max(0, 1 - Math.abs(moransI) * 5);
+
+    // Asymptotic p-value under H0: I ~ N(E[I], Var[I])
+    // E[I] = -1 / (n - 1)
+    // z = (I - E[I]) / sqrt(Var[I])
+    const EI = -1 / (n - 1);
+    // Simplified variance (Cliff & Ord 1981)
+    const S0 = totalW;
+    const S1 = 0.5 * W.flat().reduce((s: number, w: number) => s + 2 * w * w, 0);
+    const rowSums = W.map((row: number[]) => row.reduce((s: number, w: number) => s + w, 0));
+    const colSums = W[0].map((_: number, j: number) => W.reduce((s: number, row: number[]) => s + row[j], 0));
+    const S2 = rowSums.reduce((s: number, rs: number, i: number) => s + (rs + colSums[i]) ** 2, 0);
+    const varI = (n * S1 - S2 + 3 * S0 * S0) / ((n - 1) * (n + 1) * S0 * S0) - EI * EI;
+    const seI = Math.sqrt(Math.max(varI, 1e-20));
+    const z = (moransI - EI) / seI;
+    // Two-tailed p-value from z-score (normal CDF approximation)
+    const pValue = Math.max(0, Math.min(1, 2 * (1 - normalCDF(Math.abs(z)))));
 
     svgs.push({
       geneName: geneNames[g],
@@ -250,4 +283,21 @@ export function runScSpatialPipeline(input: ScSpatialInput): ScSpatialResult {
     trajectoryPseudotime: null,  // would need PAGA
     allSolverCalls,
   };
+}
+
+/**
+ * Standard normal CDF approximation (Abramowitz & Stegun 1964, formula 26.2.17)
+ */
+function normalCDF(x: number): number {
+  const a1 = 0.254829592;
+  const a2 = -0.284496736;
+  const a3 = 1.421413741;
+  const a4 = -1.453152027;
+  const a5 = 1.061405429;
+  const p = 0.3275911;
+  const sign = x < 0 ? -1 : 1;
+  const absX = Math.abs(x);
+  const t = 1 / (1 + p * absX);
+  const y = 1 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-absX * absX / 2);
+  return 0.5 * (1 + sign * y);
 }
