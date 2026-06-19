@@ -44,6 +44,8 @@ import { ContextChips } from './nexai/ContextChips';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
 import { THEME } from '../../theme';
 import { PAPER_THEME } from '../charts/chartTheme';
+import { routeQuery, formatSolverResult, setCachedResponse } from '../../services/cognitiveRouter';
+import { computeConfidenceFromResult } from '../../services/confidenceEngine';
 
 const PRESET_QUERIES = [
   'Summarise current pathway bottlenecks and recommend the next tool to run.',
@@ -289,19 +291,12 @@ export default React.memo(function NEXAIPage() {
 
     setHistory(prev => [activeQuery, ...prev.slice(0, 19)]);
 
-    // PR-4: routing + planning gate. When agentic mode is on we (a) run
-    // the lightweight intent router to keep the existing route-hint chip
-    // working, and (b) hand the query to the deterministic planner so
-    // multi-step requests (e.g. "design a pathway and run FBA on it")
-    // get a dependency-aware plan instead of a single-tool enqueue. The
-    // planner emits a 0-step plan with a warning when neither keyword
-    // matches, so it is safe to call unconditionally here.
+    // Agentic mode: route + plan
     if (agenticMode) {
       const targetProduct = analyzeArtifact?.targetProduct ?? project?.targetProduct;
       const route = routeIntent(activeQuery, { targetProduct });
       setRouteHint(route);
       planAndRun({ request: activeQuery, context: copilotContext });
-      // PR-5: session viewer is the center of gravity when agentic is on.
       setSurfaceView('session');
     } else {
       setRouteHint(null);
@@ -313,40 +308,112 @@ export default React.memo(function NEXAIPage() {
     setVerified(false);
     appendConsole({ level: 'info', module: 'nexai', message: `Query: "${activeQuery.slice(0, 60)}${activeQuery.length > 60 ? '…' : ''}"` });
 
+    // ── Cognitive Kernel: tier routing ──
+    const routing = routeQuery(activeQuery, typeof copilotContext === 'string' ? copilotContext : JSON.stringify(copilotContext).substring(0, 200));
+    appendConsole({ level: 'info', module: 'nexai', message: `Router: ${routing.tier} — ${routing.reason}` });
+
     const contextualQuery = composeCopilotQuery(activeQuery, copilotContext);
 
     try {
-      const res = await fetch('/api/analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ searchQuery: contextualQuery }),
-        signal: controller.signal,
-      });
+      let answerText = '';
+      let resolvedProvider = 'cognitive-kernel';
+      let solverResult: unknown = null;
+      let solverName = '';
 
-      const data = await res.json();
-      const answerText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-      const meta = data?.meta ?? {};
-      const resolvedProvider: string = meta.provider ?? 'groq';
-      const backendParseError: ParseErrorInfo | null = meta.parseError
-        ? {
-            code: meta.parseError.code as ParseErrorInfo['code'],
-            message: meta.parseError.message ?? 'Backend could not parse model output as JSON',
+      // ── Tier 0: Cache hit ──
+      if (routing.tier === 'cache' && routing.cachedResponse) {
+        const cached = routing.cachedResponse;
+        answerText = typeof cached.result === 'string' ? cached.result :
+          (cached.result as Record<string, unknown>)?.text as string ?? JSON.stringify(cached.result);
+        resolvedProvider = 'cache';
+        appendConsole({ level: 'info', module: 'nexai', message: `Cache hit — $0 cost, <10ms` });
+      }
+
+      // ── Tier 1: Solver direct ──
+      else if (routing.tier === 'solver-direct' && routing.solver) {
+        solverName = routing.solver;
+        const pipelineRes = await fetch(`/api/pipeline/${routing.solver}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({}),
+          signal: controller.signal,
+        });
+        if (!pipelineRes.ok) throw new Error(`Pipeline ${routing.solver} failed (${pipelineRes.status})`);
+        const pipelineData = await pipelineRes.json();
+        solverResult = pipelineData.result;
+        answerText = formatSolverResult(routing.solver, solverResult);
+        resolvedProvider = `solver:${routing.solver}`;
+        appendConsole({ level: 'success', module: 'nexai', message: `Solver direct: ${routing.solver} — $0 cost` });
+      }
+
+      // ── Tier 2: Solver + LLM explain ──
+      else if (routing.tier === 'solver-explain' && routing.solver) {
+        solverName = routing.solver;
+        try {
+          const pipelineRes = await fetch(`/api/pipeline/${routing.solver}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({}),
+            signal: controller.signal,
+          });
+          if (pipelineRes.ok) {
+            const pipelineData = await pipelineRes.json();
+            solverResult = pipelineData.result;
           }
-        : null;
+        } catch { /* solver failed — proceed with LLM only */ }
 
-      if (!res.ok || !answerText) throw new Error(data?.error ?? `HTTP ${res.status}`);
+        // Send solver result to LLM for explanation
+        const llmQuery = solverResult
+          ? `${contextualQuery}\n\n[Solver result from ${routing.solver}]:\n${JSON.stringify(solverResult, null, 2).substring(0, 2000)}`
+          : contextualQuery;
+
+        const res = await fetch('/api/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ searchQuery: llmQuery }),
+          signal: controller.signal,
+        });
+        const data = await res.json();
+        answerText = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+        resolvedProvider = data?.meta?.provider ?? 'groq';
+        if (!res.ok || !answerText) throw new Error(data?.error ?? `HTTP ${res.status}`);
+        appendConsole({ level: 'success', module: 'nexai', message: `Solver + LLM: ${routing.solver} + ${resolvedProvider}` });
+      }
+
+      // ── Tier 3: LLM reasoning ──
+      else {
+        const res = await fetch('/api/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ searchQuery: contextualQuery }),
+          signal: controller.signal,
+        });
+        const data = await res.json();
+        answerText = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+        resolvedProvider = data?.meta?.provider ?? 'groq';
+        if (!res.ok || !answerText) throw new Error(data?.error ?? `HTTP ${res.status}`);
+        appendConsole({ level: 'success', module: 'nexai', message: `LLM reasoning: ${resolvedProvider}` });
+      }
 
       setRawText(answerText);
       setProvider(resolvedProvider);
-      setParseError(backendParseError);
+      setParseError(null);
 
+      // Try to parse as pathway JSON
       let pathway: GeneratedPathway | null = null;
-      if (!backendParseError || backendParseError.code === 'NO_OBJECT') {
-        try {
-          const parsed = JSON.parse(answerText);
-          if (parsed?.nodes?.length) pathway = parsed as GeneratedPathway;
-        } catch { /* prose answer — fine */ }
-      }
+      try {
+        const parsed = JSON.parse(answerText);
+        if (parsed?.nodes?.length) pathway = parsed as GeneratedPathway;
+      } catch { /* prose answer — fine */ }
+
+      // ── Unified confidence via confidenceEngine ──
+      const confidenceResult = computeConfidenceFromResult(
+        solverResult,
+        solverName,
+        [],  // citations added later
+        undefined,
+        answerText,
+      );
 
       if (pathway) {
         setResult(pathwayToResult(pathway, activeQuery, resolvedProvider));
@@ -355,33 +422,16 @@ export default React.memo(function NEXAIPage() {
         const bottlenecks = pathway.bottleneck_enzymes?.length ?? 0;
         appendConsole({ level: 'success', module: 'nexai', message: `Axon: ${pathway.nodes.length} nodes · ${bottlenecks} bottleneck(s) · ${resolvedProvider}` });
       } else {
-        // Plain text or malformed — both render via ResultPanel, which
-        // branches on parseError. We still set a result so confidence,
-        // citation, and recent-query UI have something to display.
-        // Estimate confidence based on answer quality signals
-        const hasHedging = /i'm not sure|possibly|might|uncertain|unclear/i.test(answerText);
-        // Base confidence 0.5, +0.1 for longer answers (more detail), -0.15 for hedging language
-        const estimatedConfidence = Math.max(0.3, Math.min(0.95,
-          0.5 + 0.1 * Math.min(answerText.length / 200, 1) - (hasHedging ? 0.15 : 0)
-        ));
         setResult({
           query: activeQuery,
           answer: answerText.slice(0, 1200),
           citations: [],
-          confidence: estimatedConfidence,
+          confidence: confidenceResult.overall,
           generatedAt: Date.now(),
         });
         setResultMode('text');
         setSurfaceView('answer');
-        if (backendParseError && backendParseError.code !== 'NO_OBJECT') {
-          appendConsole({
-            level: 'warn',
-            module: 'nexai',
-            message: `Axon: ${backendParseError.code} — raw output preserved · ${resolvedProvider}`,
-          });
-        } else {
-          appendConsole({ level: 'success', module: 'nexai', message: `Axon: text response · ${resolvedProvider}` });
-        }
+        appendConsole({ level: 'success', module: 'nexai', message: `Response: ${confidenceResult.badge} confidence (${confidenceResult.level}) · ${routing.tier}` });
       }
 
       try {
@@ -413,7 +463,7 @@ export default React.memo(function NEXAIPage() {
       // Add assistant message to conversation
       const finalResult = pathway
         ? pathwayToResult(pathway, activeQuery, resolvedProvider)
-        : { answer: answerText.slice(0, 1200), confidence: 0.75, citations: [] as CitationNode[] };
+        : { answer: answerText.slice(0, 1200), confidence: confidenceResult.overall, citations: [] as CitationNode[] };
       setMessages(prev => [...prev, {
         role: 'assistant',
         content: finalResult.answer,
