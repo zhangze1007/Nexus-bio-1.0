@@ -4,7 +4,8 @@ import { motion } from 'framer-motion';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
 import SimErrorBanner from '../ide/shared/SimErrorBanner';
-import { CRISPRI_TARGETS, greedyKnockdownSchedule, computeOffTargetScore, designsgRNAs } from '../../data/mockGenMIM';
+import { CRISPRI_TARGETS, greedyKnockdownSchedule, computeOffTargetScore } from '../../data/mockGenMIM';
+import { designgRNAs, type CasProtein } from '../../server/grnaDesigner';
 import type { CRISPRiTarget } from '../../types';
 
 /**
@@ -296,18 +297,17 @@ export default React.memo(function GenMIMPage() {
   const growthImpact = schedule.reduce((a, t) => a + (t.growth_impact ?? 0), 0);
   const avgEfficiency = schedule.length > 0
     ? schedule.reduce((a, t) => a + t.knockdown_efficiency, 0) / schedule.length : 0;
-  // sgRNA sequences computed from gene coding sequences using designsgRNAs()
+  // sgRNA sequences computed from gene coding sequences using designgRNAs()
+  // Uses Rule Set 2 (Doench 2016) on-target scoring + CFD off-target scoring.
   // For genes without a provided coding sequence, we use the gene name as a seed
   // and generate a deterministic pseudo-sequence for demonstration purposes.
   const sgRNASequences: Record<string, string> = useMemo(() => {
     const map: Record<string, string> = {};
     for (const t of schedule) {
-      // Use gene name to generate a deterministic 60-nt pseudo-sequence for sgRNA design
-      // In production, this would use the actual coding sequence from the genome
       const seed = t.gene.split('').reduce((s, c) => s + c.charCodeAt(0), 0);
       const pseudoSeq = generatePseudoSequence(seed, 60);
-      const guides = designsgRNAs(pseudoSeq, 1);
-      map[t.gene] = guides[0]?.spacer ?? t.gene.toUpperCase().padEnd(20, 'A').slice(0, 20);
+      const result = designgRNAs(pseudoSeq, 'SpCas9', 1, t.gene);
+      map[t.gene] = result.candidates[0]?.spacer ?? t.gene.toUpperCase().padEnd(20, 'A').slice(0, 20);
     }
     return map;
   }, [schedule]);
