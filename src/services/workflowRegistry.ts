@@ -384,6 +384,99 @@ const NEXAI_CONTRACT: ToolContract = {
   isGoldenPath: false,
 };
 
+const INVERSE_FOLDING_CONTRACT: ToolContract = {
+  toolId: 'inversefolding',
+  contractScope: 'contractOnly',
+  stageId: 'stage-2',
+  primaryIntent: 'design',
+  requiredInputs: [],
+  optionalInputs: [],
+  outputArtifacts: [
+    { toolId: 'inversefolding', payloadPath: 'sequences', required: true, rationale: 'Designed sequences from backbone structure.' },
+  ],
+  evidenceRequired: NO_EVIDENCE,
+  validityBaseline: { floor: 'partial', reason: 'Real inverse folding algorithm with message passing + PSSM decoding.' },
+  confidencePolicy: NO_CONFIDENCE,
+  uncertaintyPolicy: NO_UNCERTAINTY,
+  humanGatePolicy: NO_GATE,
+  nextRecommendedNodes: ['catdes', 'proevol'],
+  failureModes: [
+    { code: 'EMPTY_BACKBONE', detection: 'backbone.length < 10', recovery: 'Provide at least 10 Cα coordinates.' },
+  ],
+  demoPolicy: { allowsDemoSeed: true, blockGoldenPath: false },
+  isGoldenPath: false,
+};
+
+const MULTIPLEX_CRISPR_CONTRACT: ToolContract = {
+  toolId: 'multiplexcrispr',
+  contractScope: 'contractOnly',
+  stageId: 'stage-3',
+  primaryIntent: 'design',
+  requiredInputs: [],
+  optionalInputs: [],
+  outputArtifacts: [
+    { toolId: 'multiplexcrispr', payloadPath: 'strategies', required: true, rationale: 'Combinatorial CRISPR editing strategies.' },
+  ],
+  evidenceRequired: NO_EVIDENCE,
+  validityBaseline: { floor: 'partial', reason: 'Greedy combinatorial search + epistasis modeling.' },
+  confidencePolicy: NO_CONFIDENCE,
+  uncertaintyPolicy: NO_UNCERTAINTY,
+  humanGatePolicy: NO_GATE,
+  nextRecommendedNodes: ['genmim', 'fbasim'],
+  failureModes: [
+    { code: 'TOO_FEW_GENES', detection: 'genes.length < 2', recovery: 'Provide at least 2 target genes.' },
+  ],
+  demoPolicy: { allowsDemoSeed: true, blockGoldenPath: false },
+  isGoldenPath: false,
+};
+
+const PATHWAY_DISCOVERY_CONTRACT: ToolContract = {
+  toolId: 'pathwaydiscovery',
+  contractScope: 'contractOnly',
+  stageId: 'stage-1',
+  primaryIntent: 'design',
+  requiredInputs: [],
+  optionalInputs: [],
+  outputArtifacts: [
+    { toolId: 'pathwaydiscovery', payloadPath: 'pathways', required: true, rationale: 'Discovered biosynthetic pathways.' },
+  ],
+  evidenceRequired: NO_EVIDENCE,
+  validityBaseline: { floor: 'partial', reason: 'A* search with thermodynamic scoring over reaction database.' },
+  confidencePolicy: NO_CONFIDENCE,
+  uncertaintyPolicy: NO_UNCERTAINTY,
+  humanGatePolicy: NO_GATE,
+  nextRecommendedNodes: ['pathd', 'cethx'],
+  failureModes: [
+    { code: 'NO_TARGET', detection: 'target.id empty', recovery: 'Provide a target molecule ID.' },
+    { code: 'NO_PRECURSORS', detection: 'precursors.length === 0', recovery: 'Provide at least one precursor.' },
+  ],
+  demoPolicy: { allowsDemoSeed: true, blockGoldenPath: false },
+  isGoldenPath: false,
+};
+
+const DIGITAL_TWIN_CONTRACT: ToolContract = {
+  toolId: 'digitaltwin',
+  contractScope: 'contractOnly',
+  stageId: 'stage-4',
+  primaryIntent: 'simulate',
+  requiredInputs: [],
+  optionalInputs: [],
+  outputArtifacts: [
+    { toolId: 'digitaltwin', payloadPath: 'currentState', required: true, rationale: 'EKF-estimated bioreactor state.' },
+  ],
+  evidenceRequired: NO_EVIDENCE,
+  validityBaseline: { floor: 'partial', reason: 'Extended Kalman Filter with Monod kinetics model.' },
+  confidencePolicy: NO_CONFIDENCE,
+  uncertaintyPolicy: NO_UNCERTAINTY,
+  humanGatePolicy: NO_GATE,
+  nextRecommendedNodes: ['dyncon'],
+  failureModes: [
+    { code: 'NO_SENSOR_DATA', detection: 'sensorReadings.length === 0', recovery: 'Provide at least one sensor reading.' },
+  ],
+  demoPolicy: { allowsDemoSeed: true, blockGoldenPath: false },
+  isGoldenPath: false,
+};
+
 export const WORKFLOW_CONTRACTS: Record<ToolId, ToolContract> = {
   pathd: PATHD_CONTRACT,
   'metabolic-eng': METABOLIC_ENG_CONTRACT,
@@ -399,6 +492,10 @@ export const WORKFLOW_CONTRACTS: Record<ToolId, ToolContract> = {
   multio: MULTIO_CONTRACT,
   scspatial: SCSPATIAL_CONTRACT,
   nexai: NEXAI_CONTRACT,
+  inversefolding: INVERSE_FOLDING_CONTRACT,
+  multiplexcrispr: MULTIPLEX_CRISPR_CONTRACT,
+  pathwaydiscovery: PATHWAY_DISCOVERY_CONTRACT,
+  digitaltwin: DIGITAL_TWIN_CONTRACT,
 };
 
 export function getToolContract(id: ToolId): ToolContract {
