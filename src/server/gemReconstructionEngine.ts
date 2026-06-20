@@ -15,7 +15,7 @@
  *     - Uses KEGG reaction database (not organism-specific)
  *     - No gap-filling or biomass reaction optimization
  *     - No thermodynamic constraints
- *     - Simplified gene-protein-reaction (GPR) rules
+ *     - Full GPR boolean parser with probability knockout model
  */
 
 import { IJO1366_REACTIONS, IJO1366_METABOLITES } from '../data/iJO1366Subset';
@@ -255,6 +255,140 @@ export function mapGenesToReactions(annotations: GeneAnnotation[]): Reaction[] {
   }
 
   return reactions;
+}
+
+// ── Gene-Protein-Reaction (GPR) Rules ──────────────────────────────────────
+
+/**
+ * GPR abstract syntax tree node.
+ * Represents boolean expressions like "(geneA AND geneB) OR geneC".
+ *
+ * Reference: Thiele & Palsson (2010) Nature Protocols 5:9-13
+ */
+export interface GPRNode {
+  type: 'and' | 'or' | 'gene';
+  genes: string[];
+  children: GPRNode[];
+}
+
+/**
+ * Parse a GPR boolean expression into an AST.
+ *
+ * Supports: AND, OR, parentheses, gene IDs
+ * Example: "(b0001 AND b0002) OR b0003"
+ *
+ * Grammar:
+ *   expr → term (OR term)*
+ *   term → factor (AND factor)*
+ *   factor → gene | (expr)
+ */
+export function parseGPR(expression: string): GPRNode {
+  const tokens = tokenizeGPR(expression.trim());
+  let pos = 0;
+
+  function peek(): string | undefined { return tokens[pos]; }
+  function consume(): string { return tokens[pos++]; }
+
+  function parseExpr(): GPRNode {
+    let left = parseTerm();
+    while (peek() === 'OR') {
+      consume(); // consume OR
+      const right = parseTerm();
+      // Flatten: merge OR children
+      const leftChildren = left.type === 'or' ? left.children : [left];
+      const rightChildren = right.type === 'or' ? right.children : [right];
+      const allGenes = [...leftChildren, ...rightChildren].flatMap(c => c.genes);
+      left = { type: 'or', genes: [...new Set(allGenes)], children: [...leftChildren, ...rightChildren] };
+    }
+    return left;
+  }
+
+  function parseTerm(): GPRNode {
+    let left = parseFactor();
+    while (peek() === 'AND') {
+      consume(); // consume AND
+      const right = parseFactor();
+      // Flatten: merge AND children
+      const leftChildren = left.type === 'and' ? left.children : [left];
+      const rightChildren = right.type === 'and' ? right.children : [right];
+      const allGenes = [...leftChildren, ...rightChildren].flatMap(c => c.genes);
+      left = { type: 'and', genes: [...new Set(allGenes)], children: [...leftChildren, ...rightChildren] };
+    }
+    return left;
+  }
+
+  function parseFactor(): GPRNode {
+    if (peek() === '(') {
+      consume(); // consume (
+      const node = parseExpr();
+      if (peek() === ')') consume(); // consume )
+      return node;
+    }
+    // Gene ID
+    const gene = consume();
+    return { type: 'gene', genes: [gene], children: [] };
+  }
+
+  const result = parseExpr();
+  return result;
+}
+
+function tokenizeGPR(expr: string): string[] {
+  const tokens: string[] = [];
+  let i = 0;
+  while (i < expr.length) {
+    if (expr[i] === ' ') { i++; continue; }
+    if (expr[i] === '(' || expr[i] === ')') { tokens.push(expr[i]); i++; continue; }
+    // Read word
+    let word = '';
+    while (i < expr.length && expr[i] !== ' ' && expr[i] !== '(' && expr[i] !== ')') {
+      word += expr[i]; i++;
+    }
+    if (word) tokens.push(word);
+  }
+  return tokens;
+}
+
+/**
+ * Compute the probability that a GPR rule is active after gene knockouts.
+ *
+ * For OR (isozymes): P(active) = 1 - ∏(1 - p_i)
+ *   → at least one isozyme must be active
+ * For AND (protein complex): P(active) = ∏(p_i)
+ *   → all subunits must be active
+ * For gene: P = 0 if knocked out, 1 otherwise
+ *
+ * Reference: Thiele & Palsson (2010) Nature Protocols 5:9-13
+ */
+export function computeKnockoutProbability(gpr: GPRNode, knockedOut: Set<string>): number {
+  if (gpr.type === 'gene') {
+    return knockedOut.has(gpr.genes[0]) ? 0 : 1;
+  }
+
+  const childProbs = gpr.children.map(c => computeKnockoutProbability(c, knockedOut));
+
+  if (gpr.type === 'or') {
+    // P(OR) = 1 - ∏(1 - p_i)
+    return 1 - childProbs.reduce((prod, p) => prod * (1 - p), 1);
+  }
+
+  if (gpr.type === 'and') {
+    // P(AND) = ∏(p_i)
+    return childProbs.reduce((prod, p) => prod * p, 1);
+  }
+
+  return 0;
+}
+
+/**
+ * Evaluate a GPR rule (deterministic version).
+ * Returns true if the rule is satisfied.
+ */
+export function evaluateGPR(gpr: GPRNode, activeGenes: Set<string>): boolean {
+  if (gpr.type === 'gene') return activeGenes.has(gpr.genes[0]);
+  if (gpr.type === 'or') return gpr.children.some(c => evaluateGPR(c, activeGenes));
+  if (gpr.type === 'and') return gpr.children.every(c => evaluateGPR(c, activeGenes));
+  return false;
 }
 
 // ── Biomass Reaction (iJO1366 composition) ──────────────────────────────────

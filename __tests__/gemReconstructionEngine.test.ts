@@ -1,4 +1,4 @@
-import { reconstructGEM, mapGenesToReactions, generateBiomassReaction } from '../src/server/gemReconstructionEngine';
+import { reconstructGEM, mapGenesToReactions, generateBiomassReaction, parseGPR, computeKnockoutProbability, evaluateGPR } from '../src/server/gemReconstructionEngine';
 
 describe('gemReconstructionEngine', () => {
   describe('mapGenesToReactions', () => {
@@ -55,8 +55,70 @@ describe('gemReconstructionEngine', () => {
 
     it('handles empty annotations gracefully', () => {
       const gem = reconstructGEM([]);
-      expect(gem.reactions.length).toBe(0);
-      expect(gem.stats.nReactions).toBe(0);
+      // Empty annotations still produce exchange + biomass reactions
+      expect(gem.genes.length).toBe(0);
+      expect(gem.reactions.length).toBeGreaterThan(0); // exchange + biomass
+      expect(gem.biomassReaction).toBe('BIOMASS');
+    });
+  });
+
+  describe('GPR parsing', () => {
+    it('parses simple AND expression', () => {
+      const gpr = parseGPR('b0001 AND b0002');
+      expect(gpr.type).toBe('and');
+      expect(gpr.genes).toContain('b0001');
+      expect(gpr.genes).toContain('b0002');
+    });
+
+    it('parses simple OR expression', () => {
+      const gpr = parseGPR('b0001 OR b0002');
+      expect(gpr.type).toBe('or');
+      expect(gpr.genes).toContain('b0001');
+      expect(gpr.genes).toContain('b0002');
+    });
+
+    it('parses nested OR/AND expression', () => {
+      const gpr = parseGPR('(b0001 AND b0002) OR b0003');
+      expect(gpr.type).toBe('or');
+      expect(gpr.children.length).toBe(2);
+      expect(gpr.genes).toContain('b0001');
+      expect(gpr.genes).toContain('b0002');
+      expect(gpr.genes).toContain('b0003');
+    });
+
+    it('parses single gene', () => {
+      const gpr = parseGPR('b0001');
+      expect(gpr.type).toBe('gene');
+      expect(gpr.genes).toEqual(['b0001']);
+    });
+
+    it('evaluates GPR with active genes', () => {
+      const gpr = parseGPR('b0001 AND b0002');
+      expect(evaluateGPR(gpr, new Set(['b0001', 'b0002']))).toBe(true);
+      expect(evaluateGPR(gpr, new Set(['b0001']))).toBe(false);
+    });
+
+    it('evaluates OR GPR correctly', () => {
+      const gpr = parseGPR('b0001 OR b0002');
+      expect(evaluateGPR(gpr, new Set(['b0001']))).toBe(true);
+      expect(evaluateGPR(gpr, new Set(['b0002']))).toBe(true);
+      expect(evaluateGPR(gpr, new Set(['b0003']))).toBe(false);
+    });
+
+    it('computes knockout probability for OR (isozymes)', () => {
+      const gpr = parseGPR('b0001 OR b0002');
+      // Knocking out b0001: b0002 still active → P = 1
+      expect(computeKnockoutProbability(gpr, new Set(['b0001']))).toBe(1);
+      // Knocking out both: P = 0
+      expect(computeKnockoutProbability(gpr, new Set(['b0001', 'b0002']))).toBe(0);
+    });
+
+    it('computes knockout probability for AND (complex)', () => {
+      const gpr = parseGPR('b0001 AND b0002');
+      // Knocking out b0001: complex inactive → P = 0
+      expect(computeKnockoutProbability(gpr, new Set(['b0001']))).toBe(0);
+      // No knockouts: P = 1
+      expect(computeKnockoutProbability(gpr, new Set())).toBe(1);
     });
   });
 });
