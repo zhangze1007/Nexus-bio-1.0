@@ -16,6 +16,8 @@
  *   ALGORITHM: SteadyCom LP + QS Hill-function ODE + QR eigenvalue decomposition
  */
 
+import { solveLP, type LPModel } from './highsSolver';
+
 // ── Types ──────────────────────────────────────────────────────────────────
 
 export interface Strain {
@@ -66,92 +68,208 @@ export interface ConsortiumDesign {
 /**
  * SteadyCom: community FBA with balanced growth constraint.
  *
- * Iterative approach:
- *   1. For each strain, solve individual FBA with exchange constraints
- *   2. Balance exchange fluxes across community
- *   3. Enforce equal growth rates (balanced growth)
- *   4. Iterate until convergence
+ * Builds a linear program (LP) to maximize community growth rate μ
+ * subject to:
+ *   1. Monod-derived growth rate bounds per strain (μ ≤ μmax·S/(Ks+S))
+ *   2. Balanced growth: all strains share the same μ
+ *   3. Exchange flux mass balance: Σ exchange_j = 0 for each shared metabolite
+ *   4. Sign constraints: producers ≥ 0, consumers ≤ 0
+ *   5. Exchange capacity bounds derived from yield coefficients
+ *
+ * If the LP solver fails, falls back to Monod-derived rates.
  *
  * Reference: Zomorrodi & Segre (2016) Bioinformatics 32:i429-i437
  * Reference: Khandelwal et al. (2013) Biotechnol J 8:1008-1016
+ * Reference: Monod (1949) J Bacteriol 56:567
+ * Reference: Varma & Palsson (1994) Bioeng 13:341-368 (yield coefficients)
  *
  * @param strains - Community members
  * @param targetProduct - Product metabolite ID
  * @param substrateConc - Available substrate (g/L) — Varma & Palsson 1994
  * @returns Growth rates, product fluxes, exchange fluxes
  */
-function steadyComOptimize(
+async function steadyComOptimize(
   strains: Strain[],
   targetProduct: string,
   substrateConc: number = 10, // g/L — Varma & Palsson 1994: typical glucose
-): { growthRates: number[]; productFluxes: number[]; exchangeFluxes: Record<string, number> } {
+): Promise<{ growthRates: number[]; productFluxes: number[]; exchangeFluxes: Record<string, number> }> {
   const n = strains.length;
-  const maxIter = 100;
-  const tol = 1e-6;
 
-  // Initialize growth rates
-  let growthRates = strains.map(s => s.growthRate);
+  // Collect shared metabolites (produced by at least one strain, consumed by another)
+  const allMetabolites = new Set<string>();
+  for (const strain of strains) {
+    for (const met of strain.metabolites.produces) allMetabolites.add(met);
+    for (const met of strain.metabolites.consumes) allMetabolites.add(met);
+  }
+  const sharedMetabolites = Array.from(allMetabolites).filter(met => {
+    const hasProducer = strains.some(s => s.metabolites.produces.includes(met));
+    const hasConsumer = strains.some(s => s.metabolites.consumes.includes(met));
+    return hasProducer && hasConsumer;
+  });
 
-  for (let iter = 0; iter < maxIter; iter++) {
-    const newGrowthRates: number[] = [];
-    const exchangeFluxes: Record<string, number> = {};
+  // ── Build LP ─────────────────────────────────────────────────────────────
+  // Variables: mu (community growth rate), v_ex_{i}_{met} (exchange fluxes)
+  // Objective: maximize mu
 
-    // Step 1: For each strain, compute flux using Monod kinetics
-    // μ = μmax * S / (Ks + S) — Monod (1949) J Bacteriol 56:567
-    for (let i = 0; i < n; i++) {
-      const strain = strains[i];
-      const mu = strain.monod.muMax * substrateConc / (strain.monod.ks + substrateConc);
-      newGrowthRates.push(mu);
-    }
+  const constraints: Array<{ name: string; vars: Array<{ name: string; coef: number }>; lb: number; ub: number }> = [];
+  const bounds: Array<{ name: string; lb: number; ub: number }> = [
+    { name: 'mu', lb: 0.001, ub: 10 }, // Monod 1949: min viable growth; reasonable max
+  ];
 
-    // Step 2: Enforce balanced growth constraint
-    // All strains must grow at community rate μ_community
-    const muCommunity = newGrowthRates.reduce((s, mu) => s + mu, 0) / n;
-
-    // Step 3: Compute exchange fluxes
-    // Exchange = production_rate - consumption_rate (must balance)
-    for (let i = 0; i < n; i++) {
-      const strain = strains[i];
-      // Substrate uptake: qS = μ/Yxs — Varma & Palsson 1994
-      const qS = muCommunity / strain.monod.yieldCoeff;
-
-      for (const met of strain.metabolites.produces) {
-        // Production rate proportional to growth
-        const rate = muCommunity * strain.monod.yieldCoeff * 0.5; // mmol/gDW/h
-        exchangeFluxes[met] = (exchangeFluxes[met] || 0) + rate;
-      }
-      for (const met of strain.metabolites.consumes) {
-        const rate = qS * 0.3;
-        exchangeFluxes[met] = (exchangeFluxes[met] || 0) - rate;
-      }
-    }
-
-    growthRates = new Array(n).fill(muCommunity);
-
-    // Check convergence
-    const maxChange = Math.max(...newGrowthRates.map((mu, i) => Math.abs(mu - growthRates[i])));
-    if (maxChange < tol) break;
+  // Constraint 1: Growth rate bounds per strain (Monod kinetics)
+  // μ ≤ μmax · S / (Ks + S) — Monod (1949) J Bacteriol 56:567
+  for (let i = 0; i < n; i++) {
+    const strain = strains[i];
+    // Koch (1998): E. coli μmax ~0.7-1.0 h⁻¹, Ks ~0.1-0.5 g/L
+    const muMaxAtConc = strain.monod.muMax * substrateConc / (strain.monod.ks + substrateConc);
+    constraints.push({
+      name: `growth_bound_${i}`,
+      vars: [{ name: 'mu', coef: 1 }],
+      lb: -Infinity,
+      ub: muMaxAtConc,
+    });
   }
 
-  // Product fluxes
+  // Exchange flux variables and constraints
+  for (let i = 0; i < n; i++) {
+    const strain = strains[i];
+    for (const met of sharedMetabolites) {
+      const varName = `v_ex_${i}_${met}`;
+      const isProducer = strain.metabolites.produces.includes(met);
+      const isConsumer = strain.metabolites.consumes.includes(met);
+
+      if (isProducer) {
+        // Sign constraint: producer exchange ≥ 0
+        bounds.push({ name: varName, lb: 0, ub: 100 });
+        // Capacity bound: production ≤ yield · μmax·S/(Ks+S)
+        // Varma & Palsson (1994): flux capacity from yield
+        const maxProd = strain.monod.yieldCoeff * strain.monod.muMax * substrateConc / (strain.monod.ks + substrateConc);
+        constraints.push({
+          name: `prod_cap_${i}_${met}`,
+          vars: [{ name: varName, coef: 1 }],
+          lb: -Infinity,
+          ub: maxProd,
+        });
+      } else if (isConsumer) {
+        // Sign constraint: consumer exchange ≤ 0
+        bounds.push({ name: varName, lb: -100, ub: 0 });
+        // Capacity bound: consumption ≥ -μmax·S/(Ks+S) / yield
+        const maxCons = strain.monod.muMax * substrateConc / (strain.monod.ks + substrateConc) / strain.monod.yieldCoeff;
+        constraints.push({
+          name: `cons_cap_${i}_${met}`,
+          vars: [{ name: varName, coef: 1 }],
+          lb: -maxCons,
+          ub: Infinity,
+        });
+      } else {
+        // Not involved in this metabolite
+        bounds.push({ name: varName, lb: 0, ub: 0 });
+      }
+    }
+  }
+
+  // Constraint 2: Exchange balance — Σ exchange_{i,j} = 0 for each shared metabolite
+  // Zomorrodi & Segre (2016): community mass balance
+  for (const met of sharedMetabolites) {
+    constraints.push({
+      name: `exchange_balance_${met}`,
+      vars: strains.map((_, i) => ({ name: `v_ex_${i}_${met}`, coef: 1 })),
+      lb: 0,
+      ub: 0, // equality constraint
+    });
+  }
+
+  // Constraint 3: Growth-metabolite coupling — consumer growth limited by producer output
+  // For each consumer i of metabolite j: μ ≤ Y_i · Σ v_ex_{k,j} for producers k
+  // This ensures the consumer's growth rate is supported by available metabolite.
+  // Zomorrodi & Segre (2016): balanced growth requires exchange-growth coupling
+  for (const met of sharedMetabolites) {
+    const producerIndices = strains.reduce<number[]>((acc, s, idx) =>
+      s.metabolites.produces.includes(met) ? [...acc, idx] : acc, []);
+    const consumerIndices = strains.reduce<number[]>((acc, s, idx) =>
+      s.metabolites.consumes.includes(met) ? [...acc, idx] : acc, []);
+
+    for (const ci of consumerIndices) {
+      const consumer = strains[ci];
+      // μ ≤ Y_consumer · Σ v_ex_{k,j} for producers k
+      constraints.push({
+        name: `growth_coupling_${ci}_${met}`,
+        vars: [
+          { name: 'mu', coef: 1 },
+          ...producerIndices.map(k => ({ name: `v_ex_${k}_${met}`, coef: -consumer.monod.yieldCoeff })),
+        ],
+        lb: -Infinity,
+        ub: 0,
+      });
+    }
+  }
+
+  const model: LPModel = {
+    name: 'steadycom',
+    sense: 'maximize',
+    objective: [{ name: 'mu', coef: 1 }],
+    constraints,
+    bounds,
+  };
+
+  // ── Solve LP ─────────────────────────────────────────────────────────────
+  try {
+    const result = await solveLP(model);
+
+    if (result.status === 'optimal') {
+      const mu = result.primals['mu'] ?? 0;
+      const growthRates = new Array(n).fill(mu);
+
+      // Product fluxes from LP exchange variables
+      const productFluxes = strains.map((strain, i) => {
+        if (strain.metabolites.produces.includes(targetProduct)) {
+          return result.primals[`v_ex_${i}_${targetProduct}`] ?? 0;
+        }
+        return 0;
+      });
+
+      // Aggregate exchange fluxes (net community exchange)
+      const exchangeFluxes: Record<string, number> = {};
+      for (const met of sharedMetabolites) {
+        exchangeFluxes[met] = strains.reduce((sum, _, i) =>
+          sum + (result.primals[`v_ex_${i}_${met}`] ?? 0), 0
+        );
+      }
+
+      return { growthRates, productFluxes, exchangeFluxes };
+    }
+  } catch {
+    // LP solver unavailable — fall through to Monod fallback
+  }
+
+  // ── Fallback: Monod-derived rates ────────────────────────────────────────
+  // When LP solver is unavailable, use Monod equation directly.
+  // This is a simplified approximation, not a true community FBA solution.
+  // Reference: Monod (1949) J Bacteriol 56:567
+  const growthRates = strains.map(s =>
+    // μ = μmax · S / (Ks + S) — Monod (1949)
+    s.monod.muMax * substrateConc / (s.monod.ks + substrateConc)
+  );
+  const muCommunity = growthRates.reduce((s, mu) => s + mu, 0) / n; // arithmetic mean
+
   const productFluxes = strains.map(s =>
     s.metabolites.produces.includes(targetProduct)
-      ? growthRates[0] * s.monod.yieldCoeff * 0.5 // Producer flux
+      ? muCommunity * s.monod.yieldCoeff // yield-scaled production
       : 0
   );
 
-  // Final exchange fluxes
+  // Exchange fluxes: balanced production/consumption
   const exchangeFluxes: Record<string, number> = {};
   for (const strain of strains) {
     for (const met of strain.metabolites.produces) {
-      exchangeFluxes[met] = (exchangeFluxes[met] || 0) + growthRates[0] * strain.monod.yieldCoeff * 0.5;
+      exchangeFluxes[met] = (exchangeFluxes[met] || 0) + muCommunity * strain.monod.yieldCoeff;
     }
     for (const met of strain.metabolites.consumes) {
-      exchangeFluxes[met] = (exchangeFluxes[met] || 0) - growthRates[0] / strain.monod.yieldCoeff * 0.3;
+      exchangeFluxes[met] = (exchangeFluxes[met] || 0) - muCommunity / strain.monod.yieldCoeff;
     }
   }
 
-  return { growthRates, productFluxes, exchangeFluxes };
+  return { growthRates: new Array(n).fill(muCommunity), productFluxes, exchangeFluxes };
 }
 
 // ── Cross-Feeding Model ─────────────────────────────────────────────────────
@@ -215,7 +333,7 @@ function computeCrossFeeding(strains: Strain[]): CrossFeedingInteraction[] {
  *
  * Reference: Zomorrodi & Segre (2016) Bioinformatics 32:i429-i437
  */
-function simulateQuorumSensing(
+export function simulateQuorumSensing(
   strains: Strain[],
   cellDensities: number[],  // cells/mL
   dt: number = 0.1,         // h
@@ -336,7 +454,7 @@ function analyzeStability(
  *
  * This implementation handles arbitrary n×n matrices correctly (not just 2×2).
  */
-function computeEigenvaluesQR(A: number[][]): number[] {
+export function computeEigenvaluesQR(A: number[][]): number[] {
   const n = A.length;
   if (n === 0) return [];
   if (n === 1) return [A[0][0]];
@@ -480,11 +598,11 @@ function computeEigenvaluesQR(A: number[][]): number[] {
 
 // ── Main Entry Point ───────────────────────────────────────────────────────
 
-export function optimizeConsortium(
+export async function optimizeConsortium(
   availableStrains: Strain[],
   targetProduct: string,
   maxStrains: number = 3,
-): ConsortiumDesign {
+): Promise<ConsortiumDesign> {
   // Score strains by relevance to target product
   const scored = availableStrains.map(strain => {
     let score = strain.growthRate;
@@ -498,7 +616,7 @@ export function optimizeConsortium(
   const selected = scored.slice(0, maxStrains).map(s => s.strain);
 
   // SteadyCom optimization
-  const steadyComResult = steadyComOptimize(selected, targetProduct);
+  const steadyComResult = await steadyComOptimize(selected, targetProduct);
 
   // Cross-feeding analysis
   const interactions = computeCrossFeeding(selected);

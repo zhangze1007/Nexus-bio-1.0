@@ -33,6 +33,7 @@ export interface GenomeRegion {
   function: string;
   essential: boolean;
   removable: boolean;
+  sequence?: string;  // optional DNA sequence for GC content computation
 }
 
 export interface GenomeDesign {
@@ -66,6 +67,41 @@ export interface SCRaMbLEEvent {
 }
 
 // ── Genome Minimization ────────────────────────────────────────────────────
+
+/**
+ * Compute GC content from input genome regions.
+ *
+ * If regions contain sequence data, counts (G+C) / total valid bases.
+ * If no sequence data is available, returns organism-based default.
+ *
+ * Reference: Muto & Osawa (1987) Proc Natl Acad Sci USA 84:166-169
+ * Reference: Hayashi et al. (2013) DNA Res 20:349 — E. coli K-12 GC = 50.79%
+ *
+ * @param regions - Genome regions (may or may not have sequence data)
+ * @returns GC content as fraction (0-1)
+ */
+function computeGCContent(regions: GenomeRegion[]): number {
+  // Attempt to compute from actual sequence data
+  const regionsWithSeq = regions.filter(r => r.sequence && r.sequence.length > 0);
+  if (regionsWithSeq.length > 0) {
+    let gcCount = 0;
+    let totalCount = 0;
+    for (const region of regionsWithSeq) {
+      const seq = region.sequence!.toUpperCase();
+      for (let i = 0; i < seq.length; i++) {
+        const base = seq[i];
+        if (base === 'G' || base === 'C') gcCount++;
+        // Only count valid DNA bases (ignore N, gaps, etc.)
+        if (base === 'A' || base === 'T' || base === 'G' || base === 'C') totalCount++;
+      }
+    }
+    if (totalCount > 0) return gcCount / totalCount;
+  }
+
+  // No sequence data available — use E. coli K-12 default
+  // Reference: Hayashi et al. (2013) DNA Res 20:349 — E. coli K-12 MG1655 GC = 50.79%
+  return 0.508;
+}
 
 /**
  * Minimize a genome by removing non-essential regions.
@@ -134,7 +170,7 @@ export function minimizeGenome(
     originalSize,
     minimizedSize,
     regions: kept,
-    gcContent: 0.51, // E. coli K-12 average — Hayashi et al. (2013) DNA Res 20:349
+    gcContent: computeGCContent(regions), // computed from input sequences or organism default
     essentialGenes,
     removedRegions: removable,
     safetyScore: Math.max(0, Math.round(safetyScore * 100) / 100),
@@ -370,7 +406,7 @@ const CODON_TABLE: Record<string, string> = {
  * Reference: dos Reis et al. (2004) J Mol Evol 58:523-533
  * Reference: Sharp & Li (1987) Nucleic Acids Res 15:1281-1295
  */
-function optimizeCodonsForHost(sequence: string, host: string): string {
+export function optimizeCodonsForHost(sequence: string, host: string): string {
   const codonUsage = host === 'yeast' ? YEAST_CODON_USAGE : ECOLI_CODON_USAGE;
   let optimized = '';
 
@@ -408,7 +444,7 @@ function optimizeCodonsForHost(sequence: string, host: string): string {
  *
  * Reference: Sharp & Li (1987) Nucleic Acids Res 15:1281-1295
  */
-function computeCAI(sequence: string, host: string): number {
+export function computeCAI(sequence: string, host: string): number {
   const codonUsage = host === 'yeast' ? YEAST_CODON_USAGE : ECOLI_CODON_USAGE;
   let logSum = 0;
   let nCodons = 0;
