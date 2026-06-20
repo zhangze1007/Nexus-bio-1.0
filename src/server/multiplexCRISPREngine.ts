@@ -15,6 +15,9 @@
  * Reference: Zhou et al. (2021) Nature Communications 12:637
  * Reference: Garst et al. (2017) Nature Communications 8:13860
  * Reference: Ronda et al. (2016) Bioinformatics 32:i469-i477
+ * Reference: Segre et al. (2005) Nat Genet 37:77-83 (epistasis model)
+ * Reference: Doench et al. (2016) Nature Biotechnology 34:184-191 (Rule Set 2)
+ * Reference: Turner & Mathews (2010) Nucleic Acids Res 38:D280-D282 (NN params)
  *
  * @scientific_provenance
  *   ALGORITHM: Greedy combinatorial search + epistasis matrix + fitness prediction
@@ -23,7 +26,10 @@
  *     - Fitness prediction is proxy-based (not full FBA)
  *     - No chromatin accessibility modeling
  *     - No repair pathway modeling (NHEJ vs HDR)
+ *     - Off-target search requires Cas-OFFinder + genome FASTA (not available locally)
  */
+
+import { computeOnTargetScore } from './grnaDesigner';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -40,6 +46,8 @@ export interface GeneTarget {
   epistaticPartners?: string[];
   /** CRISPRi fold-reduction achievable (0-1) */
   maxKnockdown: number;
+  /** Gene coding sequence (DNA, 5'→3'). Required for real gRNA design. */
+  geneSequence?: string;
 }
 
 export interface GuideRNA {
@@ -48,7 +56,7 @@ export interface GuideRNA {
   sequence: string;
   /** On-target score (Rule Set 2, 0-1) */
   onTargetScore: number;
-  /** Off-target sites */
+  /** Off-target sites — empty when no genome DB is available */
   offTargetSites: Array<{
     gene: string;
     mismatches: number;
@@ -56,7 +64,7 @@ export interface GuideRNA {
   }>;
   /** GC content (0-1) */
   gcContent: number;
-  /** Self-folding ΔG (kcal/mol) */
+  /** Self-folding ΔG (kcal/mol), nearest-neighbor estimate */
   selfFoldDG: number;
   /** Composite quality score */
   qualityScore: number;
@@ -133,15 +141,46 @@ export interface MultiplexCRISPRResult {
   designNotes: string[];
 }
 
+// ── RNA Nearest-Neighbor Parameters ────────────────────────────────────────
+
+/**
+ * RNA nearest-neighbor stacking parameters (Turner 2009).
+ * Simple 2-nt key notation for self-folding ΔG estimation.
+ * Units: kcal/mol at 37°C, 1M NaCl.
+ *
+ * Reference: Turner & Mathews (2010) Nucleic Acids Res 38:D280-D282
+ * Reference: Freier et al. (1986) PNAS 83:9373-9377
+ */
+const NN_RNA_STACK: Record<string, number> = {
+  'AA': -0.9, 'UU': -0.9, 'AU': -1.1, 'UA': -1.3,
+  'CA': -1.8, 'UG': -2.1, 'CU': -0.9, 'AG': -0.9,
+  'GA': -1.1, 'UC': -1.3, 'GU': -1.4, 'AC': -1.4,
+  'CG': -2.4, 'GC': -3.4, 'GG': -1.7, 'CC': -1.7,
+};
+
+/**
+ * Initiation parameter for RNA duplex formation.
+ * Reference: Freier et al. (1986) PNAS 83:9373-9377
+ */
+const RNA_INITIATION_DG = 3.1; // kcal/mol, initiation free energy
+
+/**
+ * AU/GU end penalty for terminal pairs.
+ * Reference: Freier et al. (1986) PNAS 83:9373-9377
+ */
+const AU_END_PENALTY = 0.45; // kcal/mol per AU or GU terminal pair
+
 // ── Epistasis Modeling ─────────────────────────────────────────────────────
 
 /**
  * Compute pairwise epistasis interactions between gene targets.
  *
- * Uses flux-based estimation:
- *   - Genes in the same pathway → likely negative epistasis (redundancy)
- *   - Genes in different pathways → likely positive epistasis (additive)
+ * Uses flux-based estimation with principled thresholds from Segre et al. (2005):
+ *   - Same subsystem, similar flux (|Δflux|/max < 0.3) → negative epistasis (redundancy)
+ *   - Different subsystem, both flux > 1 mmol/gDW/h → positive epistasis
  *   - Essential genes → synthetic lethal interactions
+ *
+ * Reference: Segre et al. (2005) Nat Genet 37:77-83
  *
  * The epistasis coefficient ε_AB = ΔFitness_AB - (ΔFitness_A + ΔFitness_B)
  */
@@ -163,13 +202,16 @@ function computeEpistasisMatrix(genes: GeneTarget[]): EpistasisInteraction[] {
       let confidence = 0.5;
 
       if (sameSubsystem) {
-        // Same pathway: likely redundant → negative epistasis
-        const fluxRatio = Math.min(geneA.flux, geneB.flux) / Math.max(geneA.flux, geneB.flux, 0.01);
-        if (fluxRatio > 0.5) {
-          // Similar flux → strong redundancy
+        // Same pathway: check flux similarity for redundancy
+        // Segre et al. (2005): negative epistasis when fluxes are similar
+        const maxFlux = Math.max(geneA.flux, geneB.flux, 0.01);
+        const fluxSimilarity = 1 - Math.abs(geneA.flux - geneB.flux) / maxFlux;
+
+        if (fluxSimilarity > 0.7) {
+          // |flux_A - flux_B| / max(flux) < 0.3 → similar flux → strong redundancy
           type = 'antagonistic';
-          strength = -0.3 - 0.4 * fluxRatio;
-          mechanism = `Redundant flux through ${geneA.subsystem} pathway`;
+          strength = -0.3 - 0.4 * fluxSimilarity;
+          mechanism = `Redundant flux through ${geneA.subsystem} pathway (Segre 2005: similar flux → negative epistasis)`;
           confidence = 0.7;
         } else {
           // Very different flux → weak interaction
@@ -179,13 +221,15 @@ function computeEpistasisMatrix(genes: GeneTarget[]): EpistasisInteraction[] {
           confidence = 0.4;
         }
       } else {
-        // Different pathways: likely additive or synergistic
-        const totalFlux = geneA.flux + geneB.flux;
-        if (totalFlux > 5.0) {
-          // Both carry significant flux → synergistic
+        // Different pathways: positive epistasis when both carry significant flux
+        // Segre et al. (2005): positive epistasis between independent pathways
+        // Threshold: both flux > 1 mmol/gDW/h = significant metabolic contribution
+        const bothSignificant = geneA.flux > 1.0 && geneB.flux > 1.0;
+
+        if (bothSignificant) {
           type = 'synergistic';
-          strength = 0.2 + 0.1 * Math.min(totalFlux / 10.0, 1.0);
-          mechanism = `Independent flux contributions to ${geneA.subsystem} and ${geneB.subsystem}`;
+          strength = 0.2 + 0.1 * Math.min((geneA.flux + geneB.flux) / 20.0, 1.0);
+          mechanism = `Independent flux contributions to ${geneA.subsystem} and ${geneB.subsystem} (Segre 2005: independent pathways → positive epistasis)`;
           confidence = 0.6;
         } else {
           // Low flux → minimal interaction
@@ -323,99 +367,172 @@ function predictFitness(
 // ── Guide RNA Generation ───────────────────────────────────────────────────
 
 /**
- * Generate candidate guide RNAs for a gene.
+ * Compute self-folding ΔG using RNA nearest-neighbor parameters.
  *
- * Uses standard Rule Set 2 scoring:
- *   - GC content optimization (40-60%)
- *   - Self-folding penalty
- *   - Off-target analysis
- *   - Position-specific nucleotide preferences
+ * This is a simplified proxy: scans the spacer for the best possible
+ * intramolecular stem-loop structure by looking for reverse-complement
+ * runs, then sums nearest-neighbor stacking energies.
+ *
+ * Reference: Turner & Mathews (2010) Nucleic Acids Res 38:D280-D282
+ * Reference: Freier et al. (1986) PNAS 83:9373-9377
+ */
+function computeSelfFoldingDG(spacer: string): number {
+  const seq = spacer.toUpperCase().replace(/U/g, 'T'); // normalize to DNA for matching
+  const rcSeq = reverseComplement(seq);
+
+  // Find the longest reverse-complement stretch (potential stem)
+  let maxStemLen = 0;
+  for (let offset = 1; offset < seq.length - 1; offset++) {
+    let stemLen = 0;
+    for (let i = 0; i < Math.min(seq.length - offset, offset); i++) {
+      if (seq[i] === rcSeq[rcSeq.length - 1 - offset - i]) {
+        stemLen++;
+      } else {
+        break;
+      }
+    }
+    maxStemLen = Math.max(maxStemLen, stemLen);
+  }
+
+  // Compute ΔG from nearest-neighbor stacking
+  let dg = RNA_INITIATION_DG; // initiation cost
+
+  // Convert spacer to RNA for NN parameters (U instead of T)
+  const rnaSeq = seq.replace(/T/g, 'U');
+
+  // Sum stacking energies for the stem region
+  const stemStart = 0;
+  const stemEnd = Math.min(maxStemLen, Math.floor(seq.length / 2));
+  for (let i = stemStart; i < stemEnd - 1; i++) {
+    const dinuc = rnaSeq.substring(i, i + 2);
+    dg += NN_RNA_STACK[dinuc] || 0;
+  }
+
+  // AU/GU end penalty for terminal pairs
+  if (stemEnd > 0) {
+    const lastBase = rnaSeq[stemEnd - 1];
+    if (lastBase === 'A' || lastBase === 'U') {
+      dg += AU_END_PENALTY;
+    }
+  }
+
+  // Loop penalty (hairpin of size seq.length - 2*stemEnd)
+  const loopSize = seq.length - 2 * stemEnd;
+  if (loopSize >= 3 && loopSize <= 30) {
+    // Hairpin loop penalty from Turner 2009
+    const loopPenalty: Record<number, number> = {
+      3: 5.7, 4: 5.6, 5: 5.6, 6: 5.4, 7: 5.9,
+      8: 6.0, 9: 6.1, 10: 6.3, 11: 6.5, 12: 6.7,
+    };
+    dg += loopPenalty[Math.min(loopSize, 12)] || 6.7;
+  }
+
+  return Math.round(dg * 10) / 10;
+}
+
+/**
+ * Reverse complement of a DNA sequence.
+ */
+function reverseComplement(seq: string): string {
+  const comp: Record<string, string> = { A: 'T', T: 'A', C: 'G', G: 'C', N: 'N' };
+  return seq.split('').reverse().map(b => comp[b] ?? 'N').join('');
+}
+
+/**
+ * Generate candidate guide RNAs for a gene by scanning its sequence for PAM sites.
+ *
+ * Instead of fabricating random sequences, this function:
+ *   1. Scans the gene sequence for NGG PAM sites (SpCas9)
+ *   2. Extracts the 20-nt spacer upstream of each PAM
+ *   3. Scores each spacer with the real Rule Set 2 model (Doench 2016)
+ *   4. Computes self-folding ΔG using nearest-neighbor parameters
+ *   5. Returns empty off-target sites (genome search requires Cas-OFFinder)
+ *
+ * If no gene sequence is provided, returns an empty array with a warning.
+ *
+ * Reference: Doench et al. (2016) Nature Biotechnology 34:184-191
  */
 function generateGuides(
   geneId: string,
+  geneSequence: string | undefined,
   nGuides: number = 3,
-): GuideRNA[] {
-  const guides: GuideRNA[] = [];
-
-  // Nucleotide preferences for SpCas9 (standard from Doench 2016)
-  const positionPrefs: Record<number, Record<string, number>> = {
-    0: { G: 0.8, A: 0.6, C: 0.4, T: 0.3 }, // position 1 prefers G
-    1: { G: 0.5, A: 0.7, C: 0.5, T: 0.4 }, // position 2 prefers A
-    // Positions 3-19: more flexible
-  };
-
-  for (let i = 0; i < nGuides; i++) {
-    // Generate a random 20-nt guide sequence
-    const bases = ['A', 'C', 'G', 'T'];
-    let sequence = '';
-    for (let pos = 0; pos < 20; pos++) {
-      if (positionPrefs[pos]) {
-        // Weighted random selection
-        const weights = positionPrefs[pos];
-        const total = Object.values(weights).reduce((a, b) => a + b, 0);
-        let r = Math.random() * total;
-        for (const base of bases) {
-          r -= weights[base] || 0.25;
-          if (r <= 0) { sequence += base; break; }
-        }
-      } else {
-        sequence += bases[Math.floor(Math.random() * 4)];
-      }
-    }
-
-    // Compute metrics
-    const gcCount = (sequence.match(/[GC]/g) || []).length;
-    const gcContent = gcCount / 20;
-
-    // On-target score (standard Rule Set 2)
-    let onTargetScore = 0.5;
-    // GC content penalty
-    if (gcContent >= 0.4 && gcContent <= 0.6) onTargetScore += 0.2;
-    else if (gcContent >= 0.3 && gcContent <= 0.7) onTargetScore += 0.1;
-    else onTargetScore -= 0.1;
-
-    // Position-specific bonuses
-    if (sequence[0] === 'G') onTargetScore += 0.1;
-    if (sequence[19] === 'G' || sequence[19] === 'T') onTargetScore -= 0.05; // avoid G/T at PAM-distal
-
-    // Self-folding penalty (standard)
-    const selfFoldDG = -2.0 - Math.random() * 5.0; // -2 to -7 kcal/mol
-    if (selfFoldDG < -6) onTargetScore -= 0.15;
-
-    onTargetScore = Math.max(0, Math.min(1, onTargetScore));
-
-    // Off-target sites (proxy — full search requires Cas-OFFinder + genome FASTA)
-    const offTargetSites: GuideRNA['offTargetSites'] = [];
-    const nOffTargets = Math.floor(Math.random() * 3);
-    for (let j = 0; j < nOffTargets; j++) {
-      offTargetSites.push({
-        gene: `offtarget_${j}`,
-        mismatches: 1 + Math.floor(Math.random() * 3),
-        position: `chr${Math.floor(Math.random() * 22) + 1}:${Math.floor(Math.random() * 1e8)}`,
-      });
-    }
-
-    // Composite quality score
-    const offTargetPenalty = offTargetSites.filter(s => s.mismatches <= 2).length * 0.15;
-    const qualityScore = Math.max(0, Math.min(1,
-      onTargetScore * 0.6 + gcContent > 0.4 && gcContent < 0.6 ? 0.2 : 0.1 + (1 + selfFoldDG / 10) * 0.1 - offTargetPenalty
-    ));
-
-    guides.push({
-      id: `${geneId}_guide_${i + 1}`,
-      targetGene: geneId,
-      sequence: sequence + 'NGG', // add PAM
-      onTargetScore: Math.round(onTargetScore * 100) / 100,
-      offTargetSites,
-      gcContent: Math.round(gcContent * 100) / 100,
-      selfFoldDG: Math.round(selfFoldDG * 10) / 10,
-      qualityScore: Math.round(qualityScore * 100) / 100,
-    });
+): { guides: GuideRNA[]; warning?: string } {
+  // If no gene sequence provided, return empty — do NOT fabricate
+  if (!geneSequence || geneSequence.length < 23) {
+    return {
+      guides: [],
+      warning: `No gene sequence provided for ${geneId}. Guide RNA design requires a coding sequence of at least 23 nt. Skipping guide generation for this gene.`,
+    };
   }
 
-  // Sort by quality
-  guides.sort((a, b) => b.qualityScore - a.qualityScore);
-  return guides;
+  const seq = geneSequence.toUpperCase().replace(/[^ACGT]/g, '');
+  if (seq.length < 23) {
+    return {
+      guides: [],
+      warning: `Gene sequence for ${geneId} is too short after cleaning (${seq.length} nt). Need at least 23 nt for SpCas9 guide + PAM.`,
+    };
+  }
+
+  const candidates: Array<{ spacer: string; position: number }> = [];
+
+  // Scan forward strand for NGG PAM sites
+  for (let i = 20; i < seq.length - 2; i++) {
+    const pam = seq.substring(i, i + 3);
+    if (pam[1] === 'G' && pam[2] === 'G') {
+      // NGG PAM found — extract 20-nt spacer upstream
+      const spacer = seq.substring(i - 20, i);
+      candidates.push({ spacer, position: i - 20 });
+    }
+  }
+
+  // Scan reverse strand for NGG PAM sites (CCN on forward strand)
+  const rcSeq = reverseComplement(seq);
+  for (let i = 20; i < rcSeq.length - 2; i++) {
+    const pam = rcSeq.substring(i, i + 3);
+    if (pam[1] === 'G' && pam[2] === 'G') {
+      const spacer = reverseComplement(rcSeq.substring(i, i + 20));
+      candidates.push({ spacer, position: seq.length - i - 2 });
+    }
+  }
+
+  // Score each candidate with Rule Set 2 and filter
+  const scored = candidates
+    .map(c => {
+      const { score: onTargetScore } = computeOnTargetScore(c.spacer);
+      const gcCount = (c.spacer.match(/[GC]/g) || []).length;
+      const gcContent = gcCount / 20;
+      const selfFoldDG = computeSelfFoldingDG(c.spacer);
+
+      // Filter: GC content 30-80%, no poly-T (U6 termination)
+      const hasPolyT = /TTTT/.test(c.spacer);
+      if (gcContent < 0.3 || gcContent > 0.8 || hasPolyT) return null;
+
+      // Off-target sites: empty — genome-wide search requires Cas-OFFinder + FASTA
+      const offTargetSites: GuideRNA['offTargetSites'] = [];
+
+      // Composite quality score
+      const gcScore = gcContent >= 0.4 && gcContent <= 0.6 ? 0.2 : 0.1;
+      const foldScore = Math.max(0, (1 + selfFoldDG / 10)) * 0.1;
+      const qualityScore = Math.max(0, Math.min(1,
+        onTargetScore * 0.6 + gcScore + foldScore
+      ));
+
+      return {
+        id: `${geneId}_guide_${c.position}`,
+        targetGene: geneId,
+        sequence: c.spacer,
+        onTargetScore,
+        offTargetSites,
+        gcContent: Math.round(gcContent * 100) / 100,
+        selfFoldDG,
+        qualityScore: Math.round(qualityScore * 100) / 100,
+      };
+    })
+    .filter((g): g is GuideRNA => g !== null);
+
+  // Sort by quality and return top N
+  scored.sort((a, b) => b.qualityScore - a.qualityScore);
+  return { guides: scored.slice(0, nGuides) };
 }
 
 // ── Combinatorial Search ───────────────────────────────────────────────────
@@ -438,13 +555,6 @@ function combinatorialSearch(
   includeOverexpression: boolean,
 ): EditingStrategy[] {
   const strategies: EditingStrategy[] = [];
-  const epistasisMap = new Map<string, EpistasisInteraction>();
-
-  // Build epistasis lookup
-  for (const e of epistasisMatrix) {
-    const key = [e.geneA, e.geneB].sort().join('_');
-    epistasisMap.set(key, e);
-  }
 
   // Rank genes by individual flux impact
   const rankedGenes = [...genes].sort((a, b) => {
@@ -471,11 +581,15 @@ function combinatorialSearch(
 
       if (fitness >= minFitness) {
         const guides: Record<string, GuideRNA[]> = {};
+        const warnings: string[] = [];
         for (const geneId of currentGenes) {
-          guides[geneId] = generateGuides(geneId, 2);
+          const gene = genes.find(g => g.geneId === geneId);
+          const result = generateGuides(geneId, gene?.geneSequence, 2);
+          guides[geneId] = result.guides;
+          if (result.warning) warnings.push(result.warning);
         }
 
-        const notes: string[] = [];
+        const notes: string[] = [...warnings];
         if (epistasisScore < -0.3) notes.push('Warning: negative epistasis detected');
         if (currentGenes.some(g => (genes.find(gg => gg.geneId === g)?.essentiality || 0) > 0.7)) {
           notes.push('Warning: includes essential gene(s)');
@@ -633,21 +747,22 @@ export function runMultiplexCRISPR(input: MultiplexCRISPRInput): MultiplexCRISPR
 
   // 4. Generate guides for all genes
   const allGuides: GuideRNA[] = [];
+  const guideWarnings: string[] = [];
   for (const gene of genes) {
-    allGuides.push(...generateGuides(gene.geneId, 3));
+    const result = generateGuides(gene.geneId, gene.geneSequence, 3);
+    allGuides.push(...result.guides);
+    if (result.warning) guideWarnings.push(result.warning);
   }
 
   const libraryStats = {
     totalGuides: allGuides.length,
-    avgOnTargetScore: Math.round(
-      allGuides.reduce((sum, g) => sum + g.onTargetScore, 0) / allGuides.length * 100
-    ) / 100,
-    avgOffTargetRisk: Math.round(
-      allGuides.reduce((sum, g) => sum + g.offTargetSites.filter(s => s.mismatches <= 2).length, 0) / allGuides.length * 100
-    ) / 100,
-    diversityScore: Math.round(
-      (new Set(allGuides.map(g => g.sequence)).size / allGuides.length) * 100
-    ) / 100,
+    avgOnTargetScore: allGuides.length > 0
+      ? Math.round(allGuides.reduce((sum, g) => sum + g.onTargetScore, 0) / allGuides.length * 100) / 100
+      : 0,
+    avgOffTargetRisk: 0, // no genome DB → no off-target data
+    diversityScore: allGuides.length > 0
+      ? Math.round((new Set(allGuides.map(g => g.sequence)).size / allGuides.length) * 100) / 100
+      : 0,
   };
 
   // 5. MAGE cycling order
@@ -661,7 +776,14 @@ export function runMultiplexCRISPR(input: MultiplexCRISPRInput): MultiplexCRISPR
     `Approach: ${approach}, max ${maxEdits} simultaneous edits`,
     `Epistasis matrix: ${epistasisMatrix.length} pairwise interactions computed`,
     `Library: ${libraryStats.totalGuides} guides, avg on-target ${libraryStats.avgOnTargetScore}`,
+    `Epistasis thresholds: Segre et al. (2005) Nat Genet 37:77-83`,
+    `Guide scoring: Rule Set 2 (Doench et al. 2016) — 31-feature logistic regression`,
+    `Off-target search: NOT performed (requires Cas-OFFinder + genome FASTA)`,
   ];
+
+  if (guideWarnings.length > 0) {
+    designNotes.push(`Guide warnings: ${guideWarnings.join('; ')}`);
+  }
 
   if (strategies.length > 0) {
     designNotes.push(`Top strategy: ${strategies[0].targetGenes.join('+')} (fitness=${strategies[0].predictedFitness}, titer=${strategies[0].predictedTiterImprovement}x)`);
