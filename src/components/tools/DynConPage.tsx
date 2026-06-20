@@ -317,6 +317,14 @@ export default React.memo(function DynConPage() {
     constraintViolations: { time: number; variable: string; value: number; bound: string }[];
   } | null>(null);
 
+  // Pipeline state
+  const [pipelineResult, setPipelineResult] = useState<{
+    optimalKp: number; optimalKi: number; optimalKd: number;
+    costReduction: number; iterations: number; convergenceMetric: number;
+  } | null>(null);
+  const [pipelineLoading, setPipelineLoading] = useState(false);
+  const [pipelineError, setPipelineError] = useState<string | null>(null);
+
   const [activeTab, setActiveTab] = useState('trajectory');
   const recommendedSeed = useMemo(
     () => buildDynConSeed(fbaPayload, cethxPayload, catalystPayload, dbtlPayload),
@@ -1000,6 +1008,60 @@ export default React.memo(function DynConPage() {
                     <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: burden.isViable ? VALUE : THEME.CORAL }}>{burden.isViable ? 'Viable' : 'Non-viable'}</span>
                   </div>
                   <p style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', fontStyle: 'italic', color: LABEL, lineHeight: 1.45, marginTop: '6px' }}>{burden.recommendation}</p>
+                </div>
+
+                {/* ── Pipeline Section ── */}
+                <div style={{ ...GLASS, padding: '12px', marginTop: '12px' }}>
+                  <SectionLabel>Control Optimization Pipeline</SectionLabel>
+                  <p style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL, margin: '0 0 8px' }}>
+                    Optimize PID gains via gradient-free search against current trajectory cost.
+                  </p>
+                  <button
+                    onClick={async () => {
+                      setPipelineLoading(true);
+                      setPipelineError(null);
+                      try {
+                        const res = await fetch('/api/pipeline/dyncon', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ kp, ki, kd, setpoint, hill, controlMode }),
+                        });
+                        if (!res.ok) throw new Error(`Pipeline failed (${res.status})`);
+                        const data = await res.json();
+                        setPipelineResult(data.result);
+                      } catch (err) {
+                        setPipelineError(err instanceof Error ? err.message : 'Pipeline failed');
+                      } finally {
+                        setPipelineLoading(false);
+                      }
+                    }}
+                    disabled={pipelineLoading}
+                    style={{
+                      padding: '6px 14px', borderRadius: 'var(--nb-radius-sm)',
+                      background: pipelineLoading ? 'rgba(255,255,255,0.04)' : 'rgba(191,220,205,0.14)',
+                      border: `1px solid ${pipelineLoading ? 'rgba(255,255,255,0.08)' : 'rgba(191,220,205,0.3)'}`,
+                      color: pipelineLoading ? 'rgba(255,255,255,0.35)' : 'rgba(191,220,205,0.9)',
+                      fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)',
+                      cursor: pipelineLoading ? 'wait' : 'pointer',
+                    }}
+                  >
+                    {pipelineLoading ? 'Running Pipeline...' : 'Run Pipeline'}
+                  </button>
+                  {pipelineError && (
+                    <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.CORAL, margin: '6px 0 0' }}>
+                      {pipelineError}
+                    </p>
+                  )}
+                  {pipelineResult && (
+                    <div style={{ marginTop: 8, padding: '6px 8px', background: 'rgba(191,220,205,0.08)', border: '1px solid rgba(191,220,205,0.15)', borderRadius: 'var(--nb-radius-sm)' }}>
+                      <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.VALUE }}>
+                        Kp={pipelineResult.optimalKp.toFixed(2)} Ki={pipelineResult.optimalKi.toFixed(3)} Kd={pipelineResult.optimalKd.toFixed(3)}
+                      </div>
+                      <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xxs)', color: THEME.LABEL, marginTop: 2 }}>
+                        Cost reduction: {(pipelineResult.costReduction * 100).toFixed(1)}% | {pipelineResult.iterations} iterations
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>

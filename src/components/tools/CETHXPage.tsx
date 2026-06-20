@@ -615,6 +615,14 @@ export default React.memo(function CETHXPage() {
 
   const [activeTab, setActiveTab] = useState('waterfall');
 
+  // Pipeline state
+  const [pipelineResult, setPipelineResult] = useState<{
+    totalDeltaG: number; atpYield: number; nadhYield: number; efficiency: number;
+    feasible: boolean; limitingStep: string; bottlenecks: string[];
+  } | null>(null);
+  const [pipelineLoading, setPipelineLoading] = useState(false);
+  const [pipelineError, setPipelineError] = useState<string | null>(null);
+
   // TFA state — pre-populated with glycolysis fragment
   const [tfaReactions, setTfaReactions] = useState<TFAReaction[]>(GLYCOLYSIS_TFA_REACTIONS);
   const [tfaResult, setTfaResult] = useState<TFAResult | null>(null);
@@ -841,6 +849,66 @@ export default React.memo(function CETHXPage() {
                 <p style={{ margin: '4px 0 0', fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xxs)', color: THEME.LABEL, opacity: 0.7 }}>
                   No compound found for "{compoundQuery}"
                 </p>
+              )}
+            </div>
+
+            {/* ── Pipeline Section ── */}
+            <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: `1px solid ${THEME.BORDER}` }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                <span style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                  Pipeline
+                </span>
+                {pipelineResult && (
+                  <span style={{ fontFamily: THEME.MONO, fontSize: 10, color: THEME.MINT, background: 'rgba(191,220,205,0.12)', padding: '2px 6px', borderRadius: 6 }}>
+                    {pipelineResult.feasible ? 'FEASIBLE' : 'INFEASIBLE'}
+                  </span>
+                )}
+              </div>
+              <button
+                onClick={async () => {
+                  setPipelineLoading(true);
+                  setPipelineError(null);
+                  try {
+                    const res = await fetch('/api/pipeline/cethx', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ pathway, tempC, pH, steps: thermo.steps }),
+                    });
+                    if (!res.ok) throw new Error(`Pipeline failed (${res.status})`);
+                    const data = await res.json();
+                    setPipelineResult(data.result);
+                  } catch (err) {
+                    setPipelineError(err instanceof Error ? err.message : 'Pipeline failed');
+                  } finally {
+                    setPipelineLoading(false);
+                  }
+                }}
+                disabled={pipelineLoading}
+                style={{
+                  width: '100%', padding: '6px 14px', borderRadius: 'var(--nb-radius-sm)',
+                  background: pipelineLoading ? 'rgba(255,255,255,0.04)' : 'rgba(191,220,205,0.14)',
+                  border: `1px solid ${pipelineLoading ? 'rgba(255,255,255,0.08)' : 'rgba(191,220,205,0.3)'}`,
+                  color: pipelineLoading ? 'rgba(255,255,255,0.35)' : 'rgba(191,220,205,0.9)',
+                  fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)',
+                  cursor: pipelineLoading ? 'wait' : 'pointer',
+                }}
+              >
+                {pipelineLoading ? 'Running Pipeline...' : 'Run Pipeline'}
+              </button>
+              {pipelineError && (
+                <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.CORAL, margin: '6px 0 0' }}>
+                  {pipelineError}
+                </p>
+              )}
+              {pipelineResult && (
+                <div style={{ marginTop: 8, padding: '6px 8px', background: 'rgba(191,220,205,0.08)', border: '1px solid rgba(191,220,205,0.15)', borderRadius: 'var(--nb-radius-sm)' }}>
+                  <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.VALUE }}>
+                    {pipelineResult.totalDeltaG.toFixed(1)} kJ/mol | {pipelineResult.atpYield.toFixed(0)} ATP | {pipelineResult.efficiency.toFixed(1)}%
+                  </div>
+                  <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xxs)', color: THEME.LABEL, marginTop: 2 }}>
+                    Limiting: {pipelineResult.limitingStep}
+                  </div>
+                </div>
               )}
             </div>
           </FloatingControlRail>

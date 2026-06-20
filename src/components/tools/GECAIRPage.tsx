@@ -388,6 +388,14 @@ export default function GECAIRPage() {
   const [activeTab, setActiveTab] = useState('circuit');
   const [stochasticMode, setStochasticMode] = useState(false);
   const [ensembleRuns, setEnsembleRuns] = useState(10);
+
+  // Pipeline state
+  const [pipelineResult, setPipelineResult] = useState<{
+    recommendedGate: string; outputLevel: number; noiseScore: number;
+    stability: string; optimizationSteps: number;
+  } | null>(null);
+  const [pipelineLoading, setPipelineLoading] = useState(false);
+  const [pipelineError, setPipelineError] = useState<string | null>(null);
   const recommendedGate = useMemo<GateType>(() => {
     if ((catalystPayload?.result.totalMetabolicDrain ?? 0) > 0.45) return 'NAND';
     if (dynconPayload?.result.stable && catalystPayload?.result.isViable) return 'AND';
@@ -1027,6 +1035,67 @@ export default function GECAIRPage() {
                   ? 'The active gate agrees with the system-derived recommendation, so the control story is internally coherent.'
                   : 'The active gate differs from the system-derived recommendation, which is useful when stress-testing alternative logic before build.'}
               </div>
+            </div>
+
+            {/* ── Pipeline Section ── */}
+            <div style={{
+              marginTop: '12px', padding: '12px',
+              borderRadius: 'var(--nb-radius-md)',
+              border: `1px solid ${THEME.paperBorder}`,
+              background: THEME.paperSurfaceStrong,
+            }}>
+              <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.paperLabel, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>
+                Circuit Pipeline
+              </div>
+              <p style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: THEME.paperLabel, margin: '0 0 8px' }}>
+                Optimize circuit topology for current metabolic context.
+              </p>
+              <button
+                onClick={async () => {
+                  setPipelineLoading(true);
+                  setPipelineError(null);
+                  try {
+                    const res = await fetch('/api/pipeline/gecair', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ gateType, inputA, inputB, output: finalOutput, noiseScore }),
+                    });
+                    if (!res.ok) throw new Error(`Pipeline failed (${res.status})`);
+                    const data = await res.json();
+                    setPipelineResult(data.result);
+                  } catch (err) {
+                    setPipelineError(err instanceof Error ? err.message : 'Pipeline failed');
+                  } finally {
+                    setPipelineLoading(false);
+                  }
+                }}
+                disabled={pipelineLoading}
+                style={{
+                  width: '100%', padding: '6px 14px', borderRadius: 'var(--nb-radius-sm)',
+                  background: pipelineLoading ? 'rgba(255,255,255,0.04)' : 'rgba(191,220,205,0.14)',
+                  border: `1px solid ${pipelineLoading ? 'rgba(255,255,255,0.08)' : 'rgba(191,220,205,0.3)'}`,
+                  color: pipelineLoading ? 'rgba(255,255,255,0.35)' : 'rgba(191,220,205,0.9)',
+                  fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)',
+                  cursor: pipelineLoading ? 'wait' : 'pointer',
+                }}
+              >
+                {pipelineLoading ? 'Running Pipeline...' : 'Run Pipeline'}
+              </button>
+              {pipelineError && (
+                <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.CORAL, margin: '6px 0 0' }}>
+                  {pipelineError}
+                </p>
+              )}
+              {pipelineResult && (
+                <div style={{ marginTop: 8, padding: '6px 8px', background: 'rgba(191,220,205,0.08)', border: '1px solid rgba(191,220,205,0.15)', borderRadius: 'var(--nb-radius-sm)' }}>
+                  <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.paperValue }}>
+                    Gate: {pipelineResult.recommendedGate} | Out: {(pipelineResult.outputLevel * 100).toFixed(1)}% | Noise: {pipelineResult.noiseScore.toFixed(4)}
+                  </div>
+                  <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xxs)', color: THEME.paperLabel, marginTop: 2 }}>
+                    {pipelineResult.stability} | {pipelineResult.optimizationSteps} steps
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

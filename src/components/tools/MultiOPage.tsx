@@ -738,6 +738,14 @@ export default React.memo(function MultiOPage() {
   const [vaePerturbFC, setVaePerturbFC] = useState<number>(2.0);
   const [vaePerturbResult, setVaePerturbResult] = useState<VAEPerturbationPrediction | null>(null);
 
+  // Pipeline state
+  const [pipelineResult, setPipelineResult] = useState<{
+    topFactors: number; varianceExplained: number; dominantView: string;
+    keyGenes: string[]; converged: boolean;
+  } | null>(null);
+  const [pipelineLoading, setPipelineLoading] = useState(false);
+  const [pipelineError, setPipelineError] = useState<string | null>(null);
+
   /* Derived data */
   const filtered = useMemo(
     () => activeData.filter(r => Math.abs(r.fold_change ?? 0) > 0),
@@ -1293,7 +1301,7 @@ export default React.memo(function MultiOPage() {
             ]}
           >
             {/* Run button */}
-            <div style={{ marginBottom: '16px' }}>
+            <div style={{ marginBottom: '16px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
               <ActionButton
                 variant="primary"
                 size="sm"
@@ -1304,7 +1312,58 @@ export default React.memo(function MultiOPage() {
               >
                 {mofaPlusLoading ? 'Running MOFA+...' : 'Run MOFA+'}
               </ActionButton>
+              <button
+                onClick={async () => {
+                  setPipelineLoading(true);
+                  setPipelineError(null);
+                  try {
+                    const res = await fetch('/api/pipeline/multio', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        data: activeData.map(r => ({ gene: r.gene, transcript: r.transcript, protein: r.protein, metabolite: r.metabolite, foldChange: r.fold_change, pValue: r.pValue })),
+                        nFactors: 5,
+                        fcThreshold,
+                        pvThreshold,
+                      }),
+                    });
+                    if (!res.ok) throw new Error(`Pipeline failed (${res.status})`);
+                    const data = await res.json();
+                    setPipelineResult(data.result);
+                  } catch (err) {
+                    setPipelineError(err instanceof Error ? err.message : 'Pipeline failed');
+                  } finally {
+                    setPipelineLoading(false);
+                  }
+                }}
+                disabled={pipelineLoading}
+                style={{
+                  padding: '6px 14px', borderRadius: 'var(--nb-radius-sm)',
+                  background: pipelineLoading ? 'rgba(255,255,255,0.04)' : 'rgba(191,220,205,0.14)',
+                  border: `1px solid ${pipelineLoading ? 'rgba(255,255,255,0.08)' : 'rgba(191,220,205,0.3)'}`,
+                  color: pipelineLoading ? 'rgba(255,255,255,0.35)' : 'rgba(191,220,205,0.9)',
+                  fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)',
+                  cursor: pipelineLoading ? 'wait' : 'pointer',
+                }}
+              >
+                {pipelineLoading ? 'Running Pipeline...' : 'Run Pipeline'}
+              </button>
             </div>
+            {pipelineError && (
+              <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.CORAL, margin: '0 0 12px' }}>
+                {pipelineError}
+              </p>
+            )}
+            {pipelineResult && (
+              <div style={{ marginBottom: 12, padding: '8px 12px', background: 'rgba(191,220,205,0.08)', border: '1px solid rgba(191,220,205,0.15)', borderRadius: 'var(--nb-radius-sm)' }}>
+                <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.VALUE }}>
+                  {pipelineResult.topFactors} factors | {(pipelineResult.varianceExplained * 100).toFixed(1)}% var | {pipelineResult.dominantView}
+                </div>
+                <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xxs)', color: THEME.LABEL, marginTop: 2 }}>
+                  Key genes: {pipelineResult.keyGenes.join(', ')}
+                </div>
+              </div>
+            )}
 
             {!mofaPlusResult && !mofaPlusLoading && (
               <div style={{

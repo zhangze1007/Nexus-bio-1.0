@@ -718,6 +718,14 @@ export default React.memo(function CellFreePage() {
   const [calibrationResult, setCalibrationResult] = useState<import('../../server/mcmcCalibration').CalibrationResult | null>(null);
   const [calibrationLoading, setCalibrationLoading] = useState(false);
 
+  // Pipeline state
+  const [pipelineResult, setPipelineResult] = useState<{
+    predictedYield: number; robustnessScore: number; energyDepletionTime: number;
+    recommendedConstruct: string; confidenceLevel: string;
+  } | null>(null);
+  const [pipelineLoading, setPipelineLoading] = useState(false);
+  const [pipelineError, setPipelineError] = useState<string | null>(null);
+
   const handleCalibrate = useCallback(() => {
     setCalibrationLoading(true);
     try {
@@ -1043,6 +1051,60 @@ export default React.memo(function CellFreePage() {
                 </div>
               </div>
             )}
+
+            {/* ── Pipeline Section ── */}
+            <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: `1px solid ${THEME.BORDER}` }}>
+              <SectionLabel>Robustness Pipeline</SectionLabel>
+              <button
+                onClick={async () => {
+                  setPipelineLoading(true);
+                  setPipelineError(null);
+                  try {
+                    const res = await fetch('/api/pipeline/cellfree', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        constructs: constructs.map(c => ({ id: c.id, name: c.name, promoter: c.promoter, dnaConcentration: c.dnaConcentration })),
+                        params: { temperature: params.temperature, simulationTime: params.simulationTime, ribosomeTotal: params.ribosomeTotal, initialEnergy: params.initialEnergy },
+                      }),
+                    });
+                    if (!res.ok) throw new Error(`Pipeline failed (${res.status})`);
+                    const data = await res.json();
+                    setPipelineResult(data.result);
+                  } catch (err) {
+                    setPipelineError(err instanceof Error ? err.message : 'Pipeline failed');
+                  } finally {
+                    setPipelineLoading(false);
+                  }
+                }}
+                disabled={pipelineLoading}
+                style={{
+                  width: '100%', padding: '6px 14px', borderRadius: 'var(--nb-radius-sm)',
+                  background: pipelineLoading ? 'rgba(255,255,255,0.04)' : 'rgba(191,220,205,0.14)',
+                  border: `1px solid ${pipelineLoading ? 'rgba(255,255,255,0.08)' : 'rgba(191,220,205,0.3)'}`,
+                  color: pipelineLoading ? 'rgba(255,255,255,0.35)' : 'rgba(191,220,205,0.9)',
+                  fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)',
+                  cursor: pipelineLoading ? 'wait' : 'pointer',
+                }}
+              >
+                {pipelineLoading ? 'Running Pipeline...' : 'Run Pipeline'}
+              </button>
+              {pipelineError && (
+                <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.CORAL, margin: '6px 0 0' }}>
+                  {pipelineError}
+                </p>
+              )}
+              {pipelineResult && (
+                <div style={{ marginTop: 8, padding: '6px 8px', background: 'rgba(191,220,205,0.08)', border: '1px solid rgba(191,220,205,0.15)', borderRadius: 'var(--nb-radius-sm)' }}>
+                  <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: VALUE }}>
+                    Yield: {pipelineResult.predictedYield.toFixed(1)} nM | Robustness: {(pipelineResult.robustnessScore * 100).toFixed(0)}%
+                  </div>
+                  <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xxs)', color: LABEL, marginTop: 2 }}>
+                    Best: {pipelineResult.recommendedConstruct} | {pipelineResult.confidenceLevel} | Depletion: {pipelineResult.energyDepletionTime.toFixed(0)} min
+                  </div>
+                </div>
+              )}
+            </div>
           </FloatingControlRail>
 
           <div style={{ flex: 1, position: 'relative', display: 'flex', flexDirection: 'column', minHeight: 0, padding: '12px' }}>
