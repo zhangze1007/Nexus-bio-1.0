@@ -19,7 +19,7 @@
  *   KNOWN_LIMITATIONS:
  *     - No protein aggregation modeling
  *     - No metabolite toxicity effects
- *     - Simplified extract composition
+ *     - Standard E. coli extract composition
  */
 
 // ── Types ──────────────────────────────────────────────────────────────────

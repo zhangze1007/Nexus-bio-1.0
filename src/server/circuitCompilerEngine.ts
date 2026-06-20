@@ -129,7 +129,7 @@ export function truthTableToBoolean(tt: TruthTable): string {
   if (minterms.length === 0) return '0';
   if (minterms.length === tt.rows.length) return '1';
 
-  // Simplified: return sum-of-products expression
+  // Return sum-of-products expression
   const terms = minterms.map(m => {
     const binary = m.toString(2).padStart(tt.inputs.length, '0');
     return tt.inputs.map((inp, i) => binary[i] === '1' ? inp : `${inp}'`).join(' · ');
@@ -155,7 +155,7 @@ export function booleanToGates(
   const gates: LogicGate[] = [];
 
   // Parse expression into gate tree
-  // Simplified: create NOT/AND/OR gates directly
+  // Create NOT/AND/OR gates directly
   if (expression.includes(' + ')) {
     // OR gate
     const terms = expression.split(' + ');
@@ -335,7 +335,7 @@ export function designToeholdSwitch(
   const switchRNA = toeholdDomain + loopDomain + rbsSequence + 'AUG';
 
   // Compute RBS accessibility (fraction of time RBS is exposed)
-  // Simplified: based on toehold length and GC content
+  // Based on toehold length and GC content
   const gcContent = (toeholdDomain.match(/[GC]/g) || []).length / toeholdDomain.length;
   const rbsAccessibility = Math.min(0.95, 0.3 + 0.1 * toeholdLength + 0.2 * gcContent);
 

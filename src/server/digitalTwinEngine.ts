@@ -21,7 +21,7 @@
  *   KNOWN_LIMITATIONS:
  *     - Single-phase model (no gas-liquid mass transfer dynamics)
  *     - No spatial heterogeneity (assumes perfect mixing)
- *     - Simplified noise model (Gaussian only)
+ *     - Gaussian noise model (Gaussian only)
  *     - No model selection / switching
  */
 
@@ -290,7 +290,7 @@ function processJacobian(
   const mu = params.muMax * Math.max(0, S) / (params.ks + Math.max(0, S)) *
              params.dissolvedO2 / (ko + params.dissolvedO2);
 
-  // Partial derivatives (simplified)
+  // Partial derivatives (linearized around current state)
   const dMu_dS = params.muMax * params.ks / Math.pow(params.ks + Math.max(0, S), 2) *
                  params.dissolvedO2 / (ko + params.dissolvedO2);
 

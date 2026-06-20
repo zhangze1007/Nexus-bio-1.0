@@ -17,7 +17,7 @@
  * @scientific_provenance
  *   ALGORITHM: Multi-scale ODE + stochastic gene expression + FBA coupling
  *   KNOWN_LIMITATIONS:
- *     - Simplified chromosome structure (no 3D organization)
+ *     - Linear chromosome model (no 3D organization)
  *     - No stochastic protein folding
  *     - Deterministic metabolite dynamics (no spatial heterogeneity)
  *     - Single-cell only (no population dynamics)
@@ -106,7 +106,7 @@ export interface SimulationResult {
 
 /**
  * Minimal gene set inspired by JCVI-syn3.0 (473 genes).
- * Simplified to ~50 representative genes covering all cellular functions.
+ * Representative subset of ~50 representative genes covering all cellular functions.
  *
  * Reference: Hutchison et al. (2016) Science 351:aad6253
  */

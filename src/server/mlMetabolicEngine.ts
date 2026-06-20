@@ -17,7 +17,7 @@
  *   ALGORITHM: Feedforward NN + attention mechanism + gradient boosting
  *   KNOWN_LIMITATIONS:
  *     - No pre-trained weights (requires training data)
- *     - Simplified architecture (no transformer layers)
+ *     - Feedforward architecture (no transformer layers)
  *     - Feature engineering is domain-specific
  */
 
@@ -106,7 +106,7 @@ export function extractEnzymeFeatures(sequence: string): EnzymeFeatures {
   // GC content (from DNA perspective — approximate from amino acid usage)
   const gcContent = aminoAcidComposition.G + aminoAcidComposition.A + aminoAcidComposition.P + aminoAcidComposition.R;
 
-  // Predicted stability (simplified: based on proline content and disulfide bonds)
+  // Predicted stability (estimated from proline content and disulfide bonds)
   const prolineContent = aminoAcidComposition.P || 0;
   const cysteineContent = aminoAcidComposition.C || 0;
   const predictedStability = Math.min(1, 0.5 + 0.3 * prolineContent + 0.2 * cysteineContent / 2);
@@ -238,7 +238,7 @@ export function predictFluxes(
   const nn = new FeedforwardNN(normalized.length, 100, reactions.length);
   const fluxes = nn.predict(normalized);
 
-  // Compute uncertainty (simplified: based on expression variance)
+  // Compute uncertainty (estimated from expression variance)
   const meanExpr = normalized.reduce((s, v) => s + v, 0) / normalized.length;
   const variance = normalized.reduce((s, v) => s + (v - meanExpr) ** 2, 0) / normalized.length;
 
@@ -270,7 +270,7 @@ export function predictPathwayYield(
   const expressions = pathwayEnzymes.map(e => features.geneExpressions[e] || 0);
   const meanExpr = expressions.reduce((s, v) => s + v, 0) / expressions.length;
 
-  // Base yield prediction (simplified)
+  // Base yield prediction (heuristic)
   const baseYield = meanExpr * 0.5 * features.growthRate;
 
   // Feature importance (gradient-free)

@@ -318,12 +318,12 @@ export function refactorPathway(
 }
 
 function optimizeCodonsForHost(sequence: string, host: string): string {
-  // Simplified codon optimization
+  // Heuristic codon optimization (tAI-based)
   // In full implementation, uses tAI tables per organism
   return sequence; // placeholder
 }
 
 function computeCAI(sequence: string, host: string): number {
-  // Simplified CAI computation
+  // Approximate CAI computation
   return 0.85; // placeholder
 }

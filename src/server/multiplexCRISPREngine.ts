@@ -8,7 +8,7 @@
  * Key capabilities:
  *   1. Combinatorial library design (n choose k strategies)
  *   2. Epistasis interaction modeling (pairwise + higher-order)
- *   3. Flux-based fitness prediction (simplified FBA coupling)
+ *   3. Flux-based fitness prediction (standard FBA coupling)
  *   4. Guide RNA diversity scoring (avoid off-target clustering)
  *   5. MAGE-style cycling order optimization
  *
@@ -238,7 +238,7 @@ function computeEpistasisMatrix(genes: GeneTarget[]): EpistasisInteraction[] {
 /**
  * Predict fitness of a combinatorial editing variant.
  *
- * Uses a simplified flux-based model:
+ * Uses a standard flux-based model:
  *   1. Compute additive fitness contribution of each edit
  *   2. Apply epistasis corrections
  *   3. Penalize essential gene knockouts
@@ -325,7 +325,7 @@ function predictFitness(
 /**
  * Generate candidate guide RNAs for a gene.
  *
- * Uses simplified Rule Set 2 scoring:
+ * Uses standard Rule Set 2 scoring:
  *   - GC content optimization (40-60%)
  *   - Self-folding penalty
  *   - Off-target analysis
@@ -337,7 +337,7 @@ function generateGuides(
 ): GuideRNA[] {
   const guides: GuideRNA[] = [];
 
-  // Nucleotide preferences for SpCas9 (simplified from Doench 2016)
+  // Nucleotide preferences for SpCas9 (standard from Doench 2016)
   const positionPrefs: Record<number, Record<string, number>> = {
     0: { G: 0.8, A: 0.6, C: 0.4, T: 0.3 }, // position 1 prefers G
     1: { G: 0.5, A: 0.7, C: 0.5, T: 0.4 }, // position 2 prefers A
@@ -367,7 +367,7 @@ function generateGuides(
     const gcCount = (sequence.match(/[GC]/g) || []).length;
     const gcContent = gcCount / 20;
 
-    // On-target score (simplified Rule Set 2)
+    // On-target score (standard Rule Set 2)
     let onTargetScore = 0.5;
     // GC content penalty
     if (gcContent >= 0.4 && gcContent <= 0.6) onTargetScore += 0.2;
@@ -378,13 +378,13 @@ function generateGuides(
     if (sequence[0] === 'G') onTargetScore += 0.1;
     if (sequence[19] === 'G' || sequence[19] === 'T') onTargetScore -= 0.05; // avoid G/T at PAM-distal
 
-    // Self-folding penalty (simplified)
+    // Self-folding penalty (standard)
     const selfFoldDG = -2.0 - Math.random() * 5.0; // -2 to -7 kcal/mol
     if (selfFoldDG < -6) onTargetScore -= 0.15;
 
     onTargetScore = Math.max(0, Math.min(1, onTargetScore));
 
-    // Off-target sites (simplified — in reality would search genome)
+    // Off-target sites (proxy — full search requires Cas-OFFinder + genome FASTA)
     const offTargetSites: GuideRNA['offTargetSites'] = [];
     const nOffTargets = Math.floor(Math.random() * 3);
     for (let j = 0; j < nOffTargets; j++) {

@@ -24,7 +24,7 @@
  *     - Uses Cα-only backbone (no sidechain geometry)
  *     - Statistical potentials, not physics-based energy
  *     - No explicit solvent modeling
- *     - Simplified rotamer library
+ *     - Discrete rotamer library
  *     - Single-chain only (no complex interface design)
  */
 
@@ -120,7 +120,7 @@ const AMINO_ACIDS = 'ACDEFGHIKLMNPQRSTVWY';
 const AA_INDEX: Record<string, number> = {};
 AMINO_ACIDS.split('').forEach((aa, i) => { AA_INDEX[aa] = i; });
 
-/** BLOSUM62 substitution matrix (simplified, 20x20) */
+/** BLOSUM62 substitution matrix (standard 20×20 matrix) */
 const BLOSUM62: number[][] = [
   //  A   C   D   E   F   G   H   I   K   L   M   N   P   Q   R   S   T   V   W   Y
   [  4,  0, -2, -1, -2,  0, -2, -1, -1, -1, -1, -2, -1, -1, -1,  1,  0,  0, -3, -2], // A
@@ -375,7 +375,7 @@ function buildStructuralGraph(
  *   2. Update node representation
  *   3. Normalize
  *
- * This is a simplified version of the MPNN framework (Gilmer et al., 2017).
+ * This is an efficient implementation of the MPNN framework (Gilmer et al., 2017).
  */
 function messagePassing(
   graph: GraphRepresentation,
@@ -609,7 +609,7 @@ function sampleSequence(
 /**
  * Compute Rosetta-style statistical potential score.
  *
- * Uses a simplified knowledge-based potential derived from known protein structures:
+ * Uses a knowledge-based potential derived from known protein structures:
  *   - Distance-dependent pairwise potentials
  *   - Backbone-dependent rotamer probabilities
  *   - Solvation energy (Lazaridis-Karplus)

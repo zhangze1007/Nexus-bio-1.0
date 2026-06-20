@@ -20,7 +20,7 @@
  *   ALGORITHM: A* graph search + thermodynamic scoring + enzyme matching
  *   KNOWN_LIMITATIONS:
  *     - Reaction database is curated subset (not full KEGG/Rhea)
- *     - No atom mapping (uses simplified stoichiometry)
+ *     - No atom mapping (uses reaction-type-based stoichiometry)
  *     - Thermodynamic estimates are group-contribution approximations
  *     - No regulatory constraint modeling
  *     - No compartmentalization (assumes cytosol only)
@@ -262,7 +262,7 @@ const REACTION_DB: Reaction[] = [
 // ── Functional Group Analysis ──────────────────────────────────────────────
 
 /**
- * Simplified functional group detection for molecular matching.
+ * Pattern-based functional group detection for molecular matching.
  */
 function detectFunctionalGroups(smiles: string): string[] {
   const groups: string[] = [];
@@ -301,10 +301,10 @@ function molecularSimilarity(a: Molecule, b: Molecule): number {
  * Compute atom economy of a reaction.
  * Atom economy = (MW of desired product) / (MW of all reactants) × 100%
  *
- * Simplified: uses molecular weight ratios.
+ * Estimation using reaction-type molecular weight ratios.
  */
 function computeAtomEconomy(reaction: Reaction): number {
-  // Simplified estimation based on reaction type
+  // Estimation based on reaction type
   const typeEconomy: Record<string, number> = {
     'oxidoreductase': 0.85,
     'transferase': 0.90,
