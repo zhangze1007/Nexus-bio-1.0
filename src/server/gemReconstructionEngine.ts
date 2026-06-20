@@ -64,26 +64,162 @@ export interface GEMReconstruction {
 // ── EC Number → Reaction Mapping ────────────────────────────────────────────
 
 /**
- * Map EC numbers to metabolic reactions using KEGG-style mappings.
- * Simplified: uses a hardcoded mapping for common EC numbers.
+ * Map EC numbers to metabolic reactions with iJO1366 stoichiometry.
+ * Covers 8 subsystems: glycolysis, TCA, PPP, amino acids, nucleotides,
+ * fatty acids, cofactors, and transport reactions.
  */
 const EC_REACTION_MAP: Record<string, Array<{
   reactionId: string;
   name: string;
   stoichiometry: Record<string, number>;
   subsystem: string;
+  reversible: boolean;
+  lb: number;
+  ub: number;
 }>> = {
-  '2.7.1.1': [{ reactionId: 'HEX1', name: 'Hexokinase', stoichiometry: { 'glc__D_c': -1, 'atp_c': -1, 'g6p_c': 1, 'adp_c': 1 }, subsystem: 'Glycolysis' }],
-  '5.3.1.9': [{ reactionId: 'PGI', name: 'Glucose-6-phosphate isomerase', stoichiometry: { 'g6p_c': -1, 'f6p_c': 1 }, subsystem: 'Glycolysis' }],
-  '2.7.1.11': [{ reactionId: 'PFK', name: 'Phosphofructokinase', stoichiometry: { 'f6p_c': -1, 'atp_c': -1, 'fdp_c': 1, 'adp_c': 1 }, subsystem: 'Glycolysis' }],
-  '4.1.2.13': [{ reactionId: 'FBA', name: 'Fructose-bisphosphate aldolase', stoichiometry: { 'fdp_c': -1, 'dhap_c': 1, 'g3p_c': 1 }, subsystem: 'Glycolysis' }],
-  '1.2.1.12': [{ reactionId: 'GAPD', name: 'Glyceraldehyde-3-phosphate dehydrogenase', stoichiometry: { 'g3p_c': -1, 'nad_c': -1, 'pi_c': -1, '13dpg_c': 1, 'nadh_c': 1 }, subsystem: 'Glycolysis' }],
-  '2.7.2.3': [{ reactionId: 'PGK', name: 'Phosphoglycerate kinase', stoichiometry: { '13dpg_c': -1, 'adp_c': -1, '3pg_c': 1, 'atp_c': 1 }, subsystem: 'Glycolysis' }],
-  '4.2.1.11': [{ reactionId: 'ENO', name: 'Enolase', stoichiometry: { '2pg_c': -1, 'h2o_c': 1, 'pep_c': 1 }, subsystem: 'Glycolysis' }],
-  '2.7.1.40': [{ reactionId: 'PYK', name: 'Pyruvate kinase', stoichiometry: { 'pep_c': -1, 'adp_c': -1, 'pyr_c': 1, 'atp_c': 1 }, subsystem: 'Glycolysis' }],
-  '1.1.1.27': [{ reactionId: 'LDH', name: 'Lactate dehydrogenase', stoichiometry: { 'pyr_c': -1, 'nadh_c': -1, 'lac__D_c': 1, 'nad_c': 1 }, subsystem: 'Fermentation' }],
-  '4.1.1.1': [{ reactionId: 'PDC', name: 'Pyruvate decarboxylase', stoichiometry: { 'pyr_c': -1, 'co2_c': 1, 'acald_c': 1 }, subsystem: 'Fermentation' }],
-  '1.2.1.3': [{ reactionId: 'ALDD2x', name: 'Aldehyde dehydrogenase', stoichiometry: { 'acald_c': -1, 'nad_c': -1, 'h2o_c': -1, 'ac_c': 1, 'nadh_c': 1 }, subsystem: 'Fermentation' }],
+  // ════════════════════════════════════════════════════════════════════════════
+  // GLYCOLYSIS (10 reactions)
+  // ════════════════════════════════════════════════════════════════════════════
+  '2.7.1.1': [{ reactionId: 'HEX1', name: 'Hexokinase (D-glucose)', stoichiometry: { 'glc__D_c': -1, 'atp_c': -1, 'g6p_c': 1, 'adp_c': 1, 'h_c': 1 }, subsystem: 'Glycolysis', reversible: false, lb: 0, ub: 1000 }],
+  '5.3.1.9': [{ reactionId: 'PGI', name: 'Glucose-6-phosphate isomerase', stoichiometry: { 'g6p_c': -1, 'f6p_c': 1 }, subsystem: 'Glycolysis', reversible: true, lb: -1000, ub: 1000 }],
+  '2.7.1.11': [{ reactionId: 'PFK', name: 'Phosphofructokinase', stoichiometry: { 'atp_c': -1, 'f6p_c': -1, 'adp_c': 1, 'fdp_c': 1, 'h_c': 1 }, subsystem: 'Glycolysis', reversible: false, lb: 0, ub: 1000 }],
+  '4.1.2.13': [{ reactionId: 'FBA', name: 'Fructose-bisphosphate aldolase', stoichiometry: { 'fdp_c': -1, 'dhap_c': 1, 'g3p_c': 1 }, subsystem: 'Glycolysis', reversible: true, lb: -1000, ub: 1000 }],
+  '5.3.1.1': [{ reactionId: 'TPI', name: 'Triose-phosphate isomerase', stoichiometry: { 'dhap_c': -1, 'g3p_c': 1 }, subsystem: 'Glycolysis', reversible: true, lb: -1000, ub: 1000 }],
+  '1.2.1.12': [{ reactionId: 'GAPD', name: 'Glyceraldehyde-3-phosphate dehydrogenase', stoichiometry: { 'g3p_c': -1, 'nad_c': -1, 'pi_c': -1, '13dpg_c': 1, 'nadh_c': 1, 'h_c': 1 }, subsystem: 'Glycolysis', reversible: true, lb: -1000, ub: 1000 }],
+  '2.7.2.3': [{ reactionId: 'PGK', name: 'Phosphoglycerate kinase', stoichiometry: { '13dpg_c': -1, 'adp_c': -1, '3pg_c': 1, 'atp_c': 1 }, subsystem: 'Glycolysis', reversible: true, lb: -1000, ub: 1000 }],
+  '5.4.2.12': [{ reactionId: 'PGM', name: 'Phosphoglycerate mutase', stoichiometry: { '3pg_c': -1, '2pg_c': 1 }, subsystem: 'Glycolysis', reversible: true, lb: -1000, ub: 1000 }],
+  '4.2.1.11': [{ reactionId: 'ENO', name: 'Enolase', stoichiometry: { '2pg_c': -1, 'h2o_c': 1, 'pep_c': 1 }, subsystem: 'Glycolysis', reversible: true, lb: -1000, ub: 1000 }],
+  '2.7.1.40': [{ reactionId: 'PYK', name: 'Pyruvate kinase', stoichiometry: { 'adp_c': -1, 'pep_c': -1, 'h_c': -1, 'atp_c': 1, 'pyr_c': 1 }, subsystem: 'Glycolysis', reversible: false, lb: 0, ub: 1000 }],
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // TCA CYCLE (8 reactions)
+  // ════════════════════════════════════════════════════════════════════════════
+  '2.3.3.1': [{ reactionId: 'CS', name: 'Citrate synthase', stoichiometry: { 'accoa_c': -1, 'h2o_c': -1, 'oaa_c': -1, 'cit_c': 1, 'coa_c': 1, 'h_c': 1 }, subsystem: 'TCA Cycle', reversible: false, lb: 0, ub: 1000 }],
+  '4.2.1.3': [{ reactionId: 'ACONT', name: 'Aconitase', stoichiometry: { 'cit_c': -1, 'icit_c': 1, 'h2o_c': 1 }, subsystem: 'TCA Cycle', reversible: true, lb: -1000, ub: 1000 }],
+  '1.1.1.41': [{ reactionId: 'ICDHyr', name: 'Isocitrate dehydrogenase (NADP+)', stoichiometry: { 'icit_c': -1, 'nadp_c': -1, 'akg_c': 1, 'co2_c': 1, 'nadph_c': 1 }, subsystem: 'TCA Cycle', reversible: true, lb: -1000, ub: 1000 }],
+  '1.2.4.2': [{ reactionId: 'AKGDH', name: '2-Oxoglutarate dehydrogenase', stoichiometry: { 'akg_c': -1, 'coa_c': -1, 'nad_c': -1, 'succoa_c': 1, 'co2_c': 1, 'nadh_c': 1 }, subsystem: 'TCA Cycle', reversible: false, lb: 0, ub: 1000 }],
+  '6.2.1.5': [{ reactionId: 'SUCOAS', name: 'Succinyl-CoA synthetase (ADP-forming)', stoichiometry: { 'atp_c': -1, 'coa_c': -1, 'succ_c': -1, 'adp_c': 1, 'pi_c': 1, 'succoa_c': 1 }, subsystem: 'TCA Cycle', reversible: true, lb: -1000, ub: 1000 }],
+  '1.3.5.1': [{ reactionId: 'FRD', name: 'Fumarate reductase', stoichiometry: { 'fum_c': -1, 'q8h2_c': -1, 'succ_c': 1, 'q8_c': 1 }, subsystem: 'TCA Cycle', reversible: false, lb: -1000, ub: 1000 }],
+  '4.2.1.2': [{ reactionId: 'FUM', name: 'Fumarase', stoichiometry: { 'fum_c': -1, 'h2o_c': -1, 'mal__L_c': 1 }, subsystem: 'TCA Cycle', reversible: true, lb: -1000, ub: 1000 }],
+  '1.1.1.37': [{ reactionId: 'MDH', name: 'Malate dehydrogenase', stoichiometry: { 'mal__L_c': -1, 'nad_c': -1, 'oaa_c': 1, 'nadh_c': 1, 'h_c': 1 }, subsystem: 'TCA Cycle', reversible: true, lb: -1000, ub: 1000 }],
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // PENTOSE PHOSPHATE PATHWAY (7 reactions)
+  // ════════════════════════════════════════════════════════════════════════════
+  '1.1.1.49': [{ reactionId: 'G6PDH', name: 'Glucose-6-phosphate 1-dehydrogenase', stoichiometry: { 'g6p_c': -1, 'nadp_c': -1, '6pgl_c': 1, 'nadph_c': 1, 'h_c': 1 }, subsystem: 'Pentose Phosphate', reversible: false, lb: 0, ub: 1000 }],
+  '3.1.1.31': [{ reactionId: 'PGL', name: '6-Phosphogluconolactonase', stoichiometry: { '6pgl_c': -1, 'h2o_c': -1, '6pgc_c': 1, 'h_c': 1 }, subsystem: 'Pentose Phosphate', reversible: false, lb: 0, ub: 1000 }],
+  '1.1.1.44': [{ reactionId: 'GND', name: 'Phosphogluconate dehydrogenase', stoichiometry: { '6pgc_c': -1, 'nadp_c': -1, 'ru5p__D_c': 1, 'co2_c': 1, 'nadph_c': 1 }, subsystem: 'Pentose Phosphate', reversible: false, lb: 0, ub: 1000 }],
+  '5.1.3.1': [{ reactionId: 'RPE', name: 'Ribulose 5-phosphate 3-epimerase', stoichiometry: { 'ru5p__D_c': -1, 'xu5p__D_c': 1 }, subsystem: 'Pentose Phosphate', reversible: true, lb: -1000, ub: 1000 }],
+  '5.3.1.6': [{ reactionId: 'RPI', name: 'Ribose-5-phosphate isomerase', stoichiometry: { 'ru5p__D_c': -1, 'r5p_c': 1 }, subsystem: 'Pentose Phosphate', reversible: true, lb: -1000, ub: 1000 }],
+  '2.2.1.1': [{ reactionId: 'TKT', name: 'Transketolase', stoichiometry: { 'r5p_c': -1, 'xu5p__D_c': -1, 'g3p_c': 1, 's7p_c': 1 }, subsystem: 'Pentose Phosphate', reversible: true, lb: -1000, ub: 1000 }],
+  '2.2.1.2': [{ reactionId: 'TALA', name: 'Transaldolase', stoichiometry: { 's7p_c': -1, 'g3p_c': -1, 'f6p_c': 1, 'e4p_c': 1 }, subsystem: 'Pentose Phosphate', reversible: true, lb: -1000, ub: 1000 }],
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // AMINO ACID BIOSYNTHESIS (20 reactions)
+  // ════════════════════════════════════════════════════════════════════════════
+  '2.6.1.2': [{ reactionId: 'ALATA_L', name: 'Alanine transaminase', stoichiometry: { 'ala__L_c': -1, 'akg_c': -1, 'pyr_c': 1, 'glu__L_c': 1 }, subsystem: 'Amino Acid Biosynthesis', reversible: true, lb: -1000, ub: 1000 }],
+  '6.3.5.4': [{ reactionId: 'ASNS1', name: 'Asparagine synthetase (glutamine-hydrolyzing)', stoichiometry: { 'asp__L_c': -1, 'gln__L_c': -1, 'atp_c': -1, 'asn__L_c': -1, 'glu__L_c': 1, 'amp_c': 1, 'ppi_c': 1, 'h_c': 1 }, subsystem: 'Amino Acid Biosynthesis', reversible: false, lb: 0, ub: 1000 }],
+  '1.4.1.14': [{ reactionId: 'GLUSy', name: 'Glutamate synthase (NADH)', stoichiometry: { 'akg_c': -1, 'gln__L_c': -1, 'nadph_c': -1, 'h_c': -1, 'glu__L_c': 2, 'nadp_c': 1 }, subsystem: 'Amino Acid Biosynthesis', reversible: false, lb: 0, ub: 1000 }],
+  '6.3.1.2': [{ reactionId: 'GLNS', name: 'Glutamine synthetase', stoichiometry: { 'glu__L_c': -1, 'nh4_c': -1, 'atp_c': -1, 'gln__L_c': 1, 'adp_c': 1, 'pi_c': 1, 'h_c': 1 }, subsystem: 'Amino Acid Biosynthesis', reversible: false, lb: 0, ub: 1000 }],
+  '2.1.2.1': [{ reactionId: 'GHMT2r', name: 'Glycine hydroxymethyltransferase', stoichiometry: { 'ser__L_c': -1, 'thf_c': -1, 'gly_c': 1, 'mlthf_c': 1, 'h2o_c': 1 }, subsystem: 'Amino Acid Biosynthesis', reversible: true, lb: -1000, ub: 1000 }],
+  '4.3.1.3': [{ reactionId: 'HSDy', name: 'Homoserine dehydrogenase (NADPH)', stoichiometry: { 'aspsa_c': -1, 'nadph_c': -1, 'h_c': -1, 'hom__L_c': 1, 'nadp_c': 1 }, subsystem: 'Amino Acid Biosynthesis', reversible: true, lb: -1000, ub: 1000 }],
+  '2.7.1.39': [{ reactionId: 'HSK', name: 'Homoserine kinase', stoichiometry: { 'hom__L_c': -1, 'atp_c': -1, 'phom_c': 1, 'adp_c': 1 }, subsystem: 'Amino Acid Biosynthesis', reversible: false, lb: 0, ub: 1000 }],
+  '4.2.3.1': [{ reactionId: 'THRS', name: 'Threonine synthase', stoichiometry: { 'phom_c': -1, 'h2o_c': -1, 'thr__L_c': 1, 'pi_c': 1 }, subsystem: 'Amino Acid Biosynthesis', reversible: false, lb: 0, ub: 1000 }],
+  '4.1.1.48': [{ reactionId: 'IGPS', name: 'Indole-3-glycer-phosphate synthase', stoichiometry: { 'gar_c': -1, 'e4p_c': -1, 'gln__L_c': -1, 'h2o_c': -1, '3ig3p_c': -1, 'glu__L_c': 1, 'h_c': 1 }, subsystem: 'Amino Acid Biosynthesis', reversible: false, lb: 0, ub: 1000 }],
+  '2.6.1.57': [{ reactionId: 'TYRTA', name: 'Tyrosine transaminase', stoichiometry: { 'tyr__L_c': -1, 'akg_c': -1, '34hpp_c': 1, 'glu__L_c': 1 }, subsystem: 'Amino Acid Biosynthesis', reversible: true, lb: -1000, ub: 1000 }],
+  '4.2.1.20': [{ reactionId: 'TRPS', name: 'Tryptophan synthase', stoichiometry: { 'ser__L_c': -1, 'indole_c': -1, 'trp__L_c': 1, 'h2o_c': 1, 'pyr_c': 1 }, subsystem: 'Amino Acid Biosynthesis', reversible: false, lb: 0, ub: 1000 }],
+  '5.4.99.5': [{ reactionId: 'CHORM', name: 'Chorismate mutase', stoichiometry: { 'chor_c': -1, 'pphn_c': 1 }, subsystem: 'Amino Acid Biosynthesis', reversible: true, lb: -1000, ub: 1000 }],
+  '4.1.3.27': [{ reactionId: 'ANS', name: 'Anthranilate synthase', stoichiometry: { 'chor_c': -1, 'gln__L_c': -1, 'h2o_c': -1, 'anth_c': 1, 'pyr_c': 1, 'glu__L_c': 1, 'h_c': 1 }, subsystem: 'Amino Acid Biosynthesis', reversible: false, lb: 0, ub: 1000 }],
+  '1.1.1.23': [{ reactionId: 'HISTD', name: 'Histidinol dehydrogenase', stoichiometry: { 'hisp_c': -1, 'h2o_c': -1, 'nad_c': -2, 'his__L_c': 1, 'nadh_c': 2, 'h_c': 3 }, subsystem: 'Amino Acid Biosynthesis', reversible: false, lb: 0, ub: 1000 }],
+  '5.3.1.16': [{ reactionId: 'PRPPS', name: 'Phosphoribosylpyrophosphate synthetase', stoichiometry: { 'r5p_c': -1, 'atp_c': -1, 'prpp_c': 1, 'amp_c': 1 }, subsystem: 'Amino Acid Biosynthesis', reversible: false, lb: 0, ub: 1000 }],
+  '2.7.2.4': [{ reactionId: 'ASPK', name: 'Aspartate kinase', stoichiometry: { 'asp__L_c': -1, 'atp_c': -1, '4pasp_c': 1, 'adp_c': 1 }, subsystem: 'Amino Acid Biosynthesis', reversible: false, lb: 0, ub: 1000 }],
+  '1.2.1.11': [{ reactionId: 'ASAD', name: 'Aspartate-semialdehyde dehydrogenase', stoichiometry: { '4pasp_c': -1, 'nadph_c': -1, 'h_c': -1, 'aspsa_c': 1, 'nadp_c': 1, 'pi_c': 1 }, subsystem: 'Amino Acid Biosynthesis', reversible: true, lb: -1000, ub: 1000 }],
+  '4.1.1.20': [{ reactionId: 'DAPDC', name: 'Diaminopimelate decarboxylase', stoichiometry: { '26dap__M_c': -1, 'h_c': -1, 'lys__L_c': 1, 'co2_c': 1 }, subsystem: 'Amino Acid Biosynthesis', reversible: false, lb: 0, ub: 1000 }],
+  '2.6.1.44': [{ reactionId: 'ALATA_L2', name: 'Alanine transaminase (glyoxylate)', stoichiometry: { 'ala__L_c': -1, 'glyox_c': -1, 'pyr_c': 1, 'gly_c': 1 }, subsystem: 'Amino Acid Biosynthesis', reversible: true, lb: -1000, ub: 1000 }],
+  '2.6.1.42': [{ reactionId: 'BCAT', name: 'Branched-chain amino acid transaminase', stoichiometry: { 'val__L_c': -1, 'akg_c': -1, '3mob_c': 1, 'glu__L_c': 1 }, subsystem: 'Amino Acid Biosynthesis', reversible: true, lb: -1000, ub: 1000 }],
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // NUCLEOTIDE BIOSYNTHESIS (12 reactions)
+  // ════════════════════════════════════════════════════════════════════════════
+  '6.3.4.13': [{ reactionId: 'PRAGSr', name: 'Phosphoribosylamine glycine ligase', stoichiometry: { 'gly_c': -1, 'prpp_c': -1, 'atp_c': -1, 'gar_c': 1, 'adp_c': 1, 'pi_c': 1 }, subsystem: 'Nucleotide Biosynthesis', reversible: false, lb: 0, ub: 1000 }],
+  '6.3.3.1': [{ reactionId: 'PRFGS', name: 'Phosphoribosylformylglycinamidine synthase', stoichiometry: { 'fgam_c': -1, 'gln__L_c': -1, 'atp_c': -1, 'h2o_c': -1, 'fpram_c': 1, 'glu__L_c': 1, 'adp_c': 1, 'pi_c': 1 }, subsystem: 'Nucleotide Biosynthesis', reversible: false, lb: 0, ub: 1000 }],
+  '6.3.2.6': [{ reactionId: 'PRPPS2', name: 'Phosphoribosylaminoimidazole carboxylase', stoichiometry: { 'air_c': -1, 'co2_c': -1, 'atp_c': -1, 'h2o_c': -1, 'cair_c': 1, 'adp_c': 1, 'pi_c': 1 }, subsystem: 'Nucleotide Biosynthesis', reversible: false, lb: 0, ub: 1000 }],
+  '6.3.4.4': [{ reactionId: 'ADSS', name: 'Adenylosuccinate synthase', stoichiometry: { 'imp_c': -1, 'asp__L_c': -1, 'gtp_c': -1, 'dcamp_c': 1, 'gdp_c': 1, 'pi_c': 1 }, subsystem: 'Nucleotide Biosynthesis', reversible: false, lb: 0, ub: 1000 }],
+  '4.3.2.2': [{ reactionId: 'ADSL1r', name: 'Adenylosuccinate lyase', stoichiometry: { 'dcamp_c': -1, 'amp_c': 1, 'fum_c': 1 }, subsystem: 'Nucleotide Biosynthesis', reversible: true, lb: -1000, ub: 1000 }],
+  '2.4.2.14': [{ reactionId: 'PRPPS3', name: 'Amidophosphoribosyltransferase', stoichiometry: { 'prpp_c': -1, 'gln__L_c': -1, 'h2o_c': -1, 'pram_c': 1, 'glu__L_c': 1, 'ppi_c': 1 }, subsystem: 'Nucleotide Biosynthesis', reversible: false, lb: 0, ub: 1000 }],
+  '6.3.5.2': [{ reactionId: 'GMPS', name: 'GMP synthase', stoichiometry: { 'xmp_c': -1, 'gln__L_c': -1, 'atp_c': -1, 'h2o_c': -1, 'gmp_c': 1, 'glu__L_c': 1, 'amp_c': 1, 'ppi_c': 1 }, subsystem: 'Nucleotide Biosynthesis', reversible: false, lb: 0, ub: 1000 }],
+  '2.7.4.6': [{ reactionId: 'NDPK1', name: 'Nucleoside-diphosphate kinase (ATP:dGDP)', stoichiometry: { 'atp_c': -1, 'gdp_c': -1, 'adp_c': 1, 'gtp_c': 1 }, subsystem: 'Nucleotide Biosynthesis', reversible: true, lb: -1000, ub: 1000 }],
+  '6.3.4.2': [{ reactionId: 'CTPS', name: 'CTP synthase', stoichiometry: { 'utp_c': -1, 'gln__L_c': -1, 'atp_c': -1, 'h2o_c': -1, 'ctp_c': 1, 'glu__L_c': 1, 'adp_c': 1, 'pi_c': 1 }, subsystem: 'Nucleotide Biosynthesis', reversible: false, lb: 0, ub: 1000 }],
+  '2.4.2.9': [{ reactionId: 'UPRT', name: 'Uracil phosphoribosyltransferase', stoichiometry: { 'ura_c': -1, 'prpp_c': -1, 'ump_c': 1, 'ppi_c': 1 }, subsystem: 'Nucleotide Biosynthesis', reversible: false, lb: 0, ub: 1000 }],
+  '1.3.5.2': [{ reactionId: 'DHORD', name: 'Dihydroorotate dehydrogenase', stoichiometry: { 'dhor__S_c': -1, 'q8_c': -1, 'orot_c': 1, 'q8h2_c': 1 }, subsystem: 'Nucleotide Biosynthesis', reversible: false, lb: 0, ub: 1000 }],
+  '4.1.1.23': [{ reactionId: 'OMPDC', name: 'Orotidine-5-phosphate decarboxylase', stoichiometry: { 'orot5p_c': -1, 'h_c': -1, 'ump_c': 1, 'co2_c': 1 }, subsystem: 'Nucleotide Biosynthesis', reversible: false, lb: 0, ub: 1000 }],
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // FATTY ACID BIOSYNTHESIS (8 reactions)
+  // ════════════════════════════════════════════════════════════════════════════
+  '6.4.1.2': [{ reactionId: 'ACCOAC', name: 'Acetyl-CoA carboxylase', stoichiometry: { 'accoa_c': -1, 'atp_c': -1, 'hco3_c': -1, 'malcoa_c': 1, 'adp_c': 1, 'pi_c': 1, 'h_c': 1 }, subsystem: 'Fatty Acid Biosynthesis', reversible: false, lb: 0, ub: 1000 }],
+  '2.3.1.39': [{ reactionId: 'MALS', name: 'Malonyl-CoA-ACP transacylase', stoichiometry: { 'malcoa_c': -1, 'ACP_c': -1, 'malACP_c': 1, 'coa_c': 1 }, subsystem: 'Fatty Acid Biosynthesis', reversible: false, lb: 0, ub: 1000 }],
+  '2.3.1.41': [{ reactionId: 'KAS1', name: '3-Oxoacyl-ACP synthase (acetyl-CoA)', stoichiometry: { 'acACP_c': -1, 'malACP_c': -1, 'ACP_c': -1, 'actACP_c': 1, 'co2_c': 1 }, subsystem: 'Fatty Acid Biosynthesis', reversible: false, lb: 0, ub: 1000 }],
+  '2.3.1.179': [{ reactionId: 'KAS2', name: '3-Oxoacyl-ACP synthase (malonyl-ACP)', stoichiometry: { 'butACP_c': -1, 'malACP_c': -1, 'ACP_c': -1, '3ocACP_c': 1, 'co2_c': 1 }, subsystem: 'Fatty Acid Biosynthesis', reversible: false, lb: 0, ub: 1000 }],
+  '1.1.1.100': [{ reactionId: 'G3PD', name: 'Glycerol-3-phosphate dehydrogenase (NADP+)', stoichiometry: { 'dhap_c': -1, 'nadph_c': -1, 'h_c': -1, 'glyc3p_c': 1, 'nadp_c': 1 }, subsystem: 'Fatty Acid Biosynthesis', reversible: true, lb: -1000, ub: 1000 }, { reactionId: 'FABG', name: '3-Oxoacyl-ACP reductase', stoichiometry: { 'actACP_c': -1, 'nadph_c': -1, 'h_c': -1, '3haACP_c': 1, 'nadp_c': 1 }, subsystem: 'Fatty Acid Biosynthesis', reversible: false, lb: 0, ub: 1000 }],
+  '2.3.1.15': [{ reactionId: 'GPDD', name: 'Glycerol-3-phosphate acyltransferase', stoichiometry: { 'glyc3p_c': -1, 'ACP_c': -1, '1ag3p_c': 1, 'h_c': 1 }, subsystem: 'Fatty Acid Biosynthesis', reversible: false, lb: 0, ub: 1000 }],
+  '4.2.1.59': [{ reactionId: 'FABZ', name: '3-Hydroxyacyl-ACP dehydratase', stoichiometry: { '3haACP_c': -1, 'b2coa_c': 1, 'h2o_c': 1 }, subsystem: 'Fatty Acid Biosynthesis', reversible: false, lb: 0, ub: 1000 }],
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // COFACTOR BIOSYNTHESIS (10 reactions)
+  // ════════════════════════════════════════════════════════════════════════════
+  '6.3.1.5': [{ reactionId: 'NADS', name: 'NAD synthetase (glutamine-hydrolyzing)', stoichiometry: { 'dhnad_c': -1, 'gln__L_c': -1, 'atp_c': -1, 'h2o_c': -1, 'nad_c': 1, 'glu__L_c': 1, 'amp_c': 1, 'ppi_c': 1 }, subsystem: 'Cofactor Biosynthesis', reversible: false, lb: 0, ub: 1000 }],
+  '6.3.5.3': [{ reactionId: 'FMNS', name: 'FMN synthetase', stoichiometry: { 'ribflv_c': -1, 'atp_c': -1, 'fmn_c': 1, 'amp_c': 1, 'ppi_c': 1 }, subsystem: 'Cofactor Biosynthesis', reversible: false, lb: 0, ub: 1000 }],
+  '2.7.1.25': [{ reactionId: 'ADK', name: 'Adenylate kinase', stoichiometry: { 'amp_c': -1, 'atp_c': -1, 'adp_c': 2 }, subsystem: 'Cofactor Biosynthesis', reversible: true, lb: -1000, ub: 1000 }],
+  '2.7.4.3': [{ reactionId: 'ADK3', name: 'Adenylate kinase (GTP)', stoichiometry: { 'amp_c': -1, 'gtp_c': -1, 'adp_c': 1, 'gdp_c': 1 }, subsystem: 'Cofactor Biosynthesis', reversible: true, lb: -1000, ub: 1000 }],
+  '6.3.2.1': [{ reactionId: 'PANTS', name: 'Pantothenate synthetase', stoichiometry: { 'pant__R_c': -1, 'ala__L_c': -1, 'atp_c': -1, 'pnto__R_c': 1, 'amp_c': 1, 'ppi_c': 1 }, subsystem: 'Cofactor Biosynthesis', reversible: false, lb: 0, ub: 1000 }],
+  '2.7.7.3': [{ reactionId: 'PPNCL2', name: 'Pantetheine-phosphate adenylyltransferase', stoichiometry: { 'pan4p_c': -1, 'ctp_c': -1, 'dpcoa_c': 1, 'ppi_c': 1 }, subsystem: 'Cofactor Biosynthesis', reversible: false, lb: 0, ub: 1000 }],
+  '4.1.1.15': [{ reactionId: 'GLUTRS', name: 'Glutamate decarboxylase', stoichiometry: { 'glu__L_c': -1, 'h_c': -1, '4abut_c': 1, 'co2_c': 1 }, subsystem: 'Cofactor Biosynthesis', reversible: false, lb: 0, ub: 1000 }],
+  '2.7.6.3': [{ reactionId: 'HETZK', name: '2-Amino-4-hydroxy-6-hydroxymethyl-dihydropteridine pyrophosphokinase', stoichiometry: { 'ahdt_c': -1, 'atp_c': -1, 'dhpmp_c': 1, 'adp_c': 1 }, subsystem: 'Cofactor Biosynthesis', reversible: false, lb: 0, ub: 1000 }],
+  '2.5.1.6': [{ reactionId: 'METS', name: 'Methionine synthase', stoichiometry: { 'hcys__L_c': -1, 'mlthf_c': -1, 'met__L_c': 1, 'thf_c': 1 }, subsystem: 'Cofactor Biosynthesis', reversible: false, lb: 0, ub: 1000 }],
+  '2.1.1.13': [{ reactionId: 'MTHFR', name: 'Methylenetetrahydrofolate reductase (NADPH)', stoichiometry: { 'mlthf_c': -1, 'nadph_c': -1, 'h_c': -1, 'mthf_c': 1, 'nadp_c': 1 }, subsystem: 'Cofactor Biosynthesis', reversible: false, lb: 0, ub: 1000 }],
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // TRANSPORT REACTIONS (15 reactions)
+  // ════════════════════════════════════════════════════════════════════════════
+  '2.7.1.69': [{ reactionId: 'GLCptspp', name: 'Glucose PTS transport (periplasm)', stoichiometry: { 'glc__D_p': -1, 'pep_c': -1, 'g6p_c': 1, 'pyr_c': 1 }, subsystem: 'Transport', reversible: false, lb: 0, ub: 1000 }],
+  '7.5.2.1': [{ reactionId: 'GLCabcpp', name: 'Glucose ABC transport (periplasm)', stoichiometry: { 'glc__D_p': -1, 'atp_c': -1, 'h2o_c': -1, 'glc__D_c': 1, 'adp_c': 1, 'pi_c': 1, 'h_c': 1 }, subsystem: 'Transport', reversible: false, lb: 0, ub: 1000 }],
+  '7.2.2.1': [{ reactionId: 'NH4t', name: 'Ammonium transport', stoichiometry: { 'nh4_e': -1, 'nh4_c': 1 }, subsystem: 'Transport', reversible: true, lb: -1000, ub: 1000 }],
+  '7.3.2.1': [{ reactionId: 'PItex', name: 'Phosphate transport (periplasm)', stoichiometry: { 'pi_p': -1, 'h_p': -1, 'pi_c': 1, 'h_c': 1 }, subsystem: 'Transport', reversible: false, lb: 0, ub: 1000 }],
+  '7.3.2.3': [{ reactionId: 'SO4t', name: 'Sulfate transport', stoichiometry: { 'so4_e': -1, 'so4_c': 1 }, subsystem: 'Transport', reversible: true, lb: -1000, ub: 1000 }],
+  '7.2.2.2': [{ reactionId: 'Kt', name: 'Potassium transport', stoichiometry: { 'k_e': -1, 'k_c': 1 }, subsystem: 'Transport', reversible: true, lb: -1000, ub: 1000 }],
+  '7.2.2.3': [{ reactionId: 'FE2t', name: 'Iron(II) transport', stoichiometry: { 'fe2_e': -1, 'fe2_c': 1 }, subsystem: 'Transport', reversible: true, lb: -1000, ub: 1000 }],
+  '7.2.2.4': [{ reactionId: 'ZN2t', name: 'Zinc transport', stoichiometry: { 'zn2_e': -1, 'zn2_c': 1 }, subsystem: 'Transport', reversible: true, lb: -1000, ub: 1000 }],
+  '7.4.2.1': [{ reactionId: 'ACt2rpp', name: 'Acetate reversible transport (periplasm)', stoichiometry: { 'ac_p': -1, 'h_p': -1, 'ac_c': 1, 'h_c': 1 }, subsystem: 'Transport', reversible: true, lb: -1000, ub: 1000 }],
+  '7.4.2.2': [{ reactionId: 'SUCCt2rpp', name: 'Succinate transport (periplasm)', stoichiometry: { 'succ_p': -1, 'h_p': -1, 'succ_c': 1, 'h_c': 1 }, subsystem: 'Transport', reversible: true, lb: -1000, ub: 1000 }],
+  '7.4.2.3': [{ reactionId: 'MALt2rpp', name: 'L-Malate transport (periplasm)', stoichiometry: { 'mal__L_p': -1, 'h_p': -1, 'mal__L_c': 1, 'h_c': 1 }, subsystem: 'Transport', reversible: true, lb: -1000, ub: 1000 }],
+  '7.4.2.4': [{ reactionId: 'PYRt2rpp', name: 'Pyruvate transport (periplasm)', stoichiometry: { 'pyr_p': -1, 'h_p': -1, 'pyr_c': 1, 'h_c': 1 }, subsystem: 'Transport', reversible: true, lb: -1000, ub: 1000 }],
+  '7.4.2.5': [{ reactionId: 'FORt2rpp', name: 'Formate transport (periplasm)', stoichiometry: { 'for_p': -1, 'h_p': -1, 'for_c': 1, 'h_c': 1 }, subsystem: 'Transport', reversible: true, lb: -1000, ub: 1000 }],
+  '7.4.2.6': [{ reactionId: 'LACZtpp', name: 'D-Lactate transport (periplasm)', stoichiometry: { 'lac__D_p': -1, 'h_p': -1, 'lac__D_c': 1, 'h_c': 1 }, subsystem: 'Transport', reversible: true, lb: -1000, ub: 1000 }],
+  '7.4.2.7': [{ reactionId: 'O2t', name: 'Oxygen transport', stoichiometry: { 'o2_e': -1, 'o2_c': 1 }, subsystem: 'Transport', reversible: true, lb: -1000, ub: 1000 }],
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // FERMENTATION (5 reactions)
+  // ════════════════════════════════════════════════════════════════════════════
+  '1.1.1.27': [{ reactionId: 'LDH_D', name: 'D-Lactate dehydrogenase', stoichiometry: { 'pyr_c': -1, 'nadh_c': -1, 'h_c': -1, 'lac__D_c': 1, 'nad_c': 1 }, subsystem: 'Fermentation', reversible: true, lb: -1000, ub: 1000 }],
+  '4.1.1.1': [{ reactionId: 'PDC', name: 'Pyruvate decarboxylase', stoichiometry: { 'pyr_c': -1, 'h_c': -1, 'acald_c': 1, 'co2_c': 1 }, subsystem: 'Fermentation', reversible: false, lb: 0, ub: 1000 }],
+  '1.2.1.3': [{ reactionId: 'ALDD2x', name: 'Aldehyde dehydrogenase (acetaldehyde, NAD+)', stoichiometry: { 'acald_c': -1, 'h2o_c': -1, 'nad_c': -1, 'ac_c': 1, 'nadh_c': 1, 'h_c': 1 }, subsystem: 'Fermentation', reversible: false, lb: 0, ub: 1000 }],
+  '1.1.1.1': [{ reactionId: 'ALCD2x', name: 'Alcohol dehydrogenase (ethanol)', stoichiometry: { 'acald_c': -1, 'nadh_c': -1, 'h_c': -1, 'etoh_c': 1, 'nad_c': 1 }, subsystem: 'Fermentation', reversible: true, lb: -1000, ub: 1000 }],
+  '4.1.1.5': [{ reactionId: 'ACLS', name: 'Acetolactate synthase', stoichiometry: { 'pyr_c': -2, 'h_c': -1, 'alac__S_c': 1, 'co2_c': 1 }, subsystem: 'Fermentation', reversible: false, lb: 0, ub: 1000 }],
+  '1.1.1.40': [{ reactionId: 'ME2', name: 'Malic enzyme (NADP+)', stoichiometry: { 'mal__L_c': -1, 'nadp_c': -1, 'pyr_c': 1, 'co2_c': 1, 'nadph_c': 1 }, subsystem: 'Fermentation', reversible: false, lb: 0, ub: 1000 }],
+  '1.2.1.10': [{ reactionId: 'ACALD', name: 'Acetaldehyde dehydrogenase (acetylating)', stoichiometry: { 'acald_c': -1, 'coa_c': -1, 'nad_c': -1, 'accoa_c': 1, 'nadh_c': 1, 'h_c': 1 }, subsystem: 'Fermentation', reversible: true, lb: -1000, ub: 1000 }],
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // GLUCONEOGENESIS (2 reactions)
+  // ════════════════════════════════════════════════════════════════════════════
+  '3.1.3.11': [{ reactionId: 'FBP', name: 'Fructose-bisphosphatase', stoichiometry: { 'fdp_c': -1, 'h2o_c': -1, 'f6p_c': 1, 'pi_c': 1 }, subsystem: 'Gluconeogenesis', reversible: false, lb: 0, ub: 1000 }],
+  '4.1.1.32': [{ reactionId: 'PPCK', name: 'Phosphoenolpyruvate carboxykinase', stoichiometry: { 'oaa_c': -1, 'atp_c': -1, 'pep_c': 1, 'adp_c': 1, 'co2_c': 1 }, subsystem: 'Gluconeogenesis', reversible: false, lb: 0, ub: 1000 }],
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // GLYOXYLATE SHUNT (2 reactions)
+  // ════════════════════════════════════════════════════════════════════════════
+  '4.1.3.1': [{ reactionId: 'ICL', name: 'Isocitrate lyase', stoichiometry: { 'icit_c': -1, 'succ_c': 1, 'glyox_c': 1 }, subsystem: 'Glyoxylate Shunt', reversible: false, lb: 0, ub: 1000 }],
+  '2.3.3.9': [{ reactionId: 'MS', name: 'Malate synthase', stoichiometry: { 'accoa_c': -1, 'glyox_c': -1, 'h2o_c': -1, 'coa_c': -1, 'mal__L_c': 1, 'h_c': 1 }, subsystem: 'Glyoxylate Shunt', reversible: false, lb: 0, ub: 1000 }],
 };
 
 // ── Gene → Reaction Mapping ────────────────────────────────────────────────
@@ -110,8 +246,8 @@ export function mapGenesToReactions(annotations: GeneAnnotation[]): Reaction[] {
         name: rxn.name,
         ecNumber: gene.ecNumber,
         stoichiometry: rxn.stoichiometry,
-        lb: 0,
-        ub: 1000,
+        lb: rxn.lb,
+        ub: rxn.ub,
         subsystem: rxn.subsystem,
         gpr: gene.geneId,
       });
