@@ -1,9 +1,9 @@
 {
   "schemaVersion": "trust-metrics-v1",
-  "generatedAt": "2026-04-30T03:33:36.200Z",
+  "generatedAt": "2026-06-19T07:42:07.608Z",
   "runLabel": "local-dev",
   "reportScope": "local-trust-runtime-benchmark",
-  "corpusVersion": "sha256:5425125fbab741e9",
+  "corpusVersion": "sha256:a0ae540d36286d47",
   "totalCases": 74,
   "statusCounts": {
     "totalCases": 74,

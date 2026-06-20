@@ -10,5 +10,17 @@
     "demoLeakageRate": 0,
     "missingProvenanceRate": 0.1622,
     "mismatchCount": 0
+  },
+  {
+    "generatedAt": "2026-06-19T07:42:07.608Z",
+    "runLabel": "local-dev",
+    "corpusVersion": "sha256:a0ae540d36286d47",
+    "totalCases": 74,
+    "blockRate": 0.527,
+    "falseBlockRate": 0,
+    "unsafeExportPreventionRate": 1,
+    "demoLeakageRate": 0,
+    "missingProvenanceRate": 0.1622,
+    "mismatchCount": 0
   }
 ]
