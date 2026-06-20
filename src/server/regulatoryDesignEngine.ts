@@ -132,23 +132,66 @@ function generateConsensusBox(consensus: string, matchRate: number): string {
 // ── RBS Design (Salis 2009) ────────────────────────────────────────────────
 
 /**
- * RNA nearest-neighbor stacking parameters (Freier 1983, Turner 2009).
+ * RNA nearest-neighbor stacking parameters (Turner 2009).
+ * Complete 5'/3' pair notation: XY means 5'-X...Y-3' on one strand
+ * paired with 3'-X'...Y'-5' on the other.
  * Units: kcal/mol at 37°C, 1M NaCl.
+ *
+ * Reference: Turner & Mathews (2010) Nucleic Acids Res 38:D280-D282
+ * Reference: Freier et al. (1986) PNAS 83:9373-9377
  */
 const NN_RNA_STACK: Record<string, number> = {
+  // Watson-Crick pairs
+  'AA/UU': -0.9, 'AU/UA': -1.1, 'UA/AU': -1.3, 'UU/AA': -0.9,
+  'CA/GU': -1.8, 'GU/CA': -1.4, 'CU/AG': -0.9, 'AG/CU': -0.9,
+  'GA/UC': -1.1, 'UC/GA': -1.3, 'AC/UG': -1.4, 'UG/AC': -2.1,
+  // Wobble pairs
+  'CG/GC': -2.4, 'GC/CG': -3.4, 'GG/CC': -1.7, 'CC/GG': -1.7,
+  // GU wobble
+  'GG/UC': -1.3, 'UC/GG': -1.3, 'GU/UG': -0.5, 'UG/GU': -0.5,
+};
+
+/**
+ * Simplified stacking for cases where we don't have the full 5'/3' notation.
+ * Falls back to nearest available value.
+ */
+const NN_RNA_STACK_SIMPLE: Record<string, number> = {
   'AA': -0.9, 'UU': -0.9, 'AU': -1.1, 'UA': -1.3,
-  'CA': -1.8, 'UG': -1.8, 'CU': -0.9, 'AG': -0.9,
-  'GA': -1.3, 'UC': -1.3, 'GU': -1.4, 'AC': -1.4,
+  'CA': -1.8, 'UG': -2.1, 'CU': -0.9, 'AG': -0.9,
+  'GA': -1.1, 'UC': -1.3, 'GU': -1.4, 'AC': -1.4,
   'CG': -2.4, 'GC': -3.4, 'GG': -1.7, 'CC': -1.7,
 };
 
 /**
  * Hairpin loop free energy parameters (Turner 2009).
  * Key: loop size (nt), Value: ΔG (kcal/mol)
+ * Complete set from Turner 2009 nearest-neighbor parameters.
  */
 const HAIRPIN_LOOP_DG: Record<number, number> = {
   3: 5.7, 4: 5.6, 5: 5.6, 6: 5.4, 7: 5.9,
-  8: 6.0, 9: 6.1, 10: 6.3, 12: 6.7, 14: 7.0,
+  8: 6.0, 9: 6.1, 10: 6.3, 11: 6.5, 12: 6.7,
+  13: 6.9, 14: 7.0, 15: 7.1, 16: 7.2, 17: 7.3,
+  18: 7.4, 19: 7.5, 20: 7.6, 25: 8.0, 30: 8.4,
+};
+
+/**
+ * Internal loop free energy parameters (Turner 2009).
+ * Key: total loop size (nt), Value: ΔG (kcal/mol)
+ */
+const INTERNAL_LOOP_DG: Record<number, number> = {
+  2: 2.0, 3: 3.0, 4: 3.5, 5: 4.0, 6: 4.4,
+  7: 4.7, 8: 5.0, 9: 5.2, 10: 5.4, 12: 5.8,
+  14: 6.1, 16: 6.4, 18: 6.6, 20: 6.8, 25: 7.2,
+  30: 7.5,
+};
+
+/**
+ * Bulge loop free energy parameters (Turner 2009).
+ * Key: bulge size (nt), Value: ΔG (kcal/mol)
+ */
+const BULGE_LOOP_DG: Record<number, number> = {
+  1: 3.8, 2: 2.8, 3: 3.2, 4: 3.6, 5: 4.0,
+  6: 4.4, 7: 4.6, 8: 4.8, 9: 5.0, 10: 5.2,
 };
 
 /**
