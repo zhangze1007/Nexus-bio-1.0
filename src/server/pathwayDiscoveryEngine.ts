@@ -257,6 +257,116 @@ const REACTION_DB: Reaction[] = [
   { id: 'R00305', name: 'Transaldolase', substrates: ['s7p', 'g3p'], products: ['f6p', 'e4p'], ecNumber: '2.2.1.2', deltaG: 0, reversible: true, enzymeAvailability: 0.85, organisms: ['ecoli', 'yeast', 'human'], cofactors: [], type: 'transferase' },
   { id: 'R00306', name: 'Transketolase', substrates: ['xu5p', 'r5p'], products: ['s7p', 'g3p'], ecNumber: '2.2.1.1', deltaG: 0, reversible: true, enzymeAvailability: 0.85, organisms: ['ecoli', 'yeast', 'human'], cofactors: ['TPP'], type: 'transferase' },
   { id: 'R00307', name: 'Ribulose-5-P epimerase', substrates: ['ru5p'], products: ['xu5p'], ecNumber: '5.1.3.1', deltaG: 0, reversible: true, enzymeAvailability: 0.9, organisms: ['ecoli', 'yeast', 'human'], cofactors: [], type: 'isomerase' },
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // GLYOXYLATE CYCLE (5 reactions)
+  // ════════════════════════════════════════════════════════════════════════════
+  { id: 'R00479', name: 'Isocitrate lyase', substrates: ['icit'], products: ['succinate', 'glyoxylate'], ecNumber: '4.1.3.1', deltaG: 2.0, reversible: true, enzymeAvailability: 0.8, organisms: ['ecoli', 'plant'], cofactors: [], type: 'lyase' },
+  { id: 'R00480', name: 'Malate synthase', substrates: ['glyoxylate', 'acetyl_coa', 'h2o'], products: ['malate', 'coa'], ecNumber: '2.3.3.9', deltaG: -5.0, reversible: false, enzymeAvailability: 0.8, organisms: ['ecoli', 'plant'], cofactors: [], type: 'transferase' },
+  { id: 'R00344', name: 'Citrate synthase (glyoxylate)', substrates: ['acetyl_coa', 'oxaloacetate', 'h2o'], products: ['citrate', 'coa'], ecNumber: '2.3.3.1', deltaG: -7.5, reversible: false, enzymeAvailability: 0.9, organisms: ['ecoli', 'yeast', 'human'], cofactors: [], type: 'transferase' },
+  { id: 'R01324', name: 'Aconitase', substrates: ['citrate'], products: ['isocitrate'], ecNumber: '4.2.1.3', deltaG: 1.3, reversible: true, enzymeAvailability: 0.85, organisms: ['ecoli', 'yeast', 'human'], cofactors: ['Fe-S'], type: 'isomerase' },
+  { id: 'R00342', name: 'Malate dehydrogenase', substrates: ['malate', 'nad'], products: ['oxaloacetate', 'nadh'], ecNumber: '1.1.1.37', deltaG: 6.7, reversible: true, enzymeAvailability: 0.9, organisms: ['ecoli', 'yeast', 'human'], cofactors: ['NAD+'], type: 'oxidoreductase' },
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // FERMENTATION PATHWAYS (10 reactions)
+  // ════════════════════════════════════════════════════════════════════════════
+  { id: 'R00702', name: 'Lactate dehydrogenase', substrates: ['pyruvate', 'nadh'], products: ['lactate', 'nad'], ecNumber: '1.1.1.27', deltaG: 0, reversible: true, enzymeAvailability: 0.9, organisms: ['ecoli', 'yeast', 'human'], cofactors: ['NADH'], type: 'oxidoreductase' },
+  { id: 'R00703', name: 'Alcohol dehydrogenase', substrates: ['acetaldehyde', 'nadh'], products: ['ethanol', 'nad'], ecNumber: '1.1.1.1', deltaG: 0, reversible: true, enzymeAvailability: 0.9, organisms: ['ecoli', 'yeast', 'human'], cofactors: ['NADH'], type: 'oxidoreductase' },
+  { id: 'R00704', name: 'Pyruvate decarboxylase', substrates: ['pyruvate'], products: ['acetaldehyde', 'co2'], ecNumber: '4.1.1.1', deltaG: -2.0, reversible: false, enzymeAvailability: 0.85, organisms: ['yeast'], cofactors: ['TPP'], type: 'decarboxylase' },
+  { id: 'R00705', name: 'Acetate kinase', substrates: ['acetate', 'atp'], products: ['acetyl_p', 'adp'], ecNumber: '2.7.2.1', deltaG: 0, reversible: true, enzymeAvailability: 0.85, organisms: ['ecoli'], cofactors: ['Mg2+'], type: 'kinase' },
+  { id: 'R00706', name: 'Phosphotransacetylase', substrates: ['acetyl_p', 'coa'], products: ['acetyl_coa', 'pi'], ecNumber: '2.3.1.8', deltaG: 0, reversible: true, enzymeAvailability: 0.85, organisms: ['ecoli'], cofactors: [], type: 'transferase' },
+  { id: 'R00707', name: 'Formate dehydrogenase', substrates: ['formate', 'nad'], products: ['co2', 'nadh'], ecNumber: '1.17.1.9', deltaG: 0, reversible: true, enzymeAvailability: 0.8, organisms: ['ecoli'], cofactors: ['NAD+', 'Mo'], type: 'oxidoreductase' },
+  { id: 'R00708', name: 'Hydrogenase', substrates: ['h2', 'fad'], products: ['2h', 'fadh2'], ecNumber: '1.12.1.2', deltaG: 0, reversible: true, enzymeAvailability: 0.7, organisms: ['ecoli'], cofactors: ['FAD', 'Fe-S', 'Ni'], type: 'oxidoreductase' },
+  { id: 'R00709', name: 'Acetaldehyde dehydrogenase', substrates: ['acetaldehyde', 'nad', 'coa'], products: ['acetyl_coa', 'nadh'], ecNumber: '1.2.1.10', deltaG: 0, reversible: true, enzymeAvailability: 0.85, organisms: ['ecoli', 'yeast'], cofactors: ['NAD+'], type: 'oxidoreductase' },
+  { id: 'R00710', name: 'Succinate thiokinase', substrates: ['succinate', 'atp', 'coa'], products: ['succinyl_coa', 'adp', 'pi'], ecNumber: '6.2.1.5', deltaG: 0, reversible: true, enzymeAvailability: 0.85, organisms: ['ecoli', 'yeast', 'human'], cofactors: ['Mg2+'], type: 'ligase' },
+  { id: 'R00711', name: 'Phosphoenolpyruvate carboxylase', substrates: ['pep', 'co2'], products: ['oxaloacetate', 'pi'], ecNumber: '4.1.1.31', deltaG: -5.0, reversible: false, enzymeAvailability: 0.85, organisms: ['ecoli', 'plant'], cofactors: ['Mg2+'], type: 'lyase' },
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // AMINO ACID DEGRADATION (15 reactions)
+  // ════════════════════════════════════════════════════════════════════════════
+  { id: 'R00712', name: 'Glutamate dehydrogenase (NAD)', substrates: ['glutamate', 'nad', 'h2o'], products: ['akg', 'nh4', 'nadh'], ecNumber: '1.4.1.2', deltaG: 0, reversible: true, enzymeAvailability: 0.9, organisms: ['ecoli', 'yeast', 'human'], cofactors: ['NAD+'], type: 'oxidoreductase' },
+  { id: 'R00713', name: 'Alanine dehydrogenase', substrates: ['alanine', 'nad', 'h2o'], products: ['pyruvate', 'nh4', 'nadh'], ecNumber: '1.4.1.1', deltaG: 0, reversible: true, enzymeAvailability: 0.85, organisms: ['ecoli'], cofactors: ['NAD+'], type: 'oxidoreductase' },
+  { id: 'R00714', name: 'Aspartase', substrates: ['aspartate'], products: ['fumarate', 'nh4'], ecNumber: '4.3.1.1', deltaG: 0, reversible: true, enzymeAvailability: 0.85, organisms: ['ecoli'], cofactors: [], type: 'lyase' },
+  { id: 'R00715', name: 'Serine dehydratase', substrates: ['serine'], products: ['pyruvate', 'nh4'], ecNumber: '4.3.1.17', deltaG: 0, reversible: true, enzymeAvailability: 0.8, organisms: ['ecoli', 'human'], cofactors: ['PLP'], type: 'lyase' },
+  { id: 'R00716', name: 'Threonine dehydratase', substrates: ['threonine'], products: ['2obut', 'nh4'], ecNumber: '4.3.1.19', deltaG: 0, reversible: true, enzymeAvailability: 0.8, organisms: ['ecoli'], cofactors: ['PLP'], type: 'lyase' },
+  { id: 'R00717', name: 'Valine transaminase', substrates: ['valine', 'akg'], products: ['3mob', 'glutamate'], ecNumber: '2.6.1.42', deltaG: 0, reversible: true, enzymeAvailability: 0.85, organisms: ['ecoli', 'human'], cofactors: ['PLP'], type: 'transaminase' },
+  { id: 'R00718', name: 'Leucine transaminase', substrates: ['leucine', 'akg'], products: ['4mop', 'glutamate'], ecNumber: '2.6.1.6', deltaG: 0, reversible: true, enzymeAvailability: 0.85, organisms: ['ecoli', 'human'], cofactors: ['PLP'], type: 'transaminase' },
+  { id: 'R00719', name: 'Isoleucine transaminase', substrates: ['isoleucine', 'akg'], products: ['3mop', 'glutamate'], ecNumber: '2.6.1.42', deltaG: 0, reversible: true, enzymeAvailability: 0.85, organisms: ['ecoli', 'human'], cofactors: ['PLP'], type: 'transaminase' },
+  { id: 'R00720', name: 'Phenylalanine hydroxylase', substrates: ['phenylalanine', 'o2', 'bh4'], products: ['tyrosine', 'h2o', 'bh2'], ecNumber: '1.14.16.1', deltaG: -5.0, reversible: false, enzymeAvailability: 0.8, organisms: ['human'], cofactors: ['Fe', 'O2', 'BH4'], type: 'oxidoreductase' },
+  { id: 'R00721', name: 'Tyrosine transaminase', substrates: ['tyrosine', 'akg'], products: ['4hpp', 'glutamate'], ecNumber: '2.6.1.5', deltaG: 0, reversible: true, enzymeAvailability: 0.85, organisms: ['ecoli', 'human'], cofactors: ['PLP'], type: 'transaminase' },
+  { id: 'R00722', name: 'Tryptophanase', substrates: ['tryptophan', 'h2o'], products: ['indole', 'pyruvate', 'nh4'], ecNumber: '4.99.1.1', deltaG: 0, reversible: true, enzymeAvailability: 0.75, organisms: ['ecoli'], cofactors: ['PLP'], type: 'lyase' },
+  { id: 'R00723', name: 'Histidine ammonia-lyase', substrates: ['histidine'], products: ['urocanate', 'nh4'], ecNumber: '4.3.1.3', deltaG: 0, reversible: true, enzymeAvailability: 0.8, organisms: ['ecoli', 'human'], cofactors: [], type: 'lyase' },
+  { id: 'R00724', name: 'Proline oxidase', substrates: ['proline', 'nad'], products: ['pyrroline_5_carboxylate', 'nadh'], ecNumber: '1.5.5.2', deltaG: 0, reversible: true, enzymeAvailability: 0.8, organisms: ['ecoli', 'human'], cofactors: ['FAD'], type: 'oxidoreductase' },
+  { id: 'R00725', name: 'Arginase', substrates: ['arginine', 'h2o'], products: ['ornithine', 'urea'], ecNumber: '3.5.3.1', deltaG: 0, reversible: true, enzymeAvailability: 0.85, organisms: ['human', 'yeast'], cofactors: ['Mn2+'], type: 'hydrolase' },
+  { id: 'R00726', name: 'Ornithine transaminase', substrates: ['ornithine', 'akg'], products: ['glutamate_semialdehyde', 'glutamate'], ecNumber: '2.6.1.13', deltaG: 0, reversible: true, enzymeAvailability: 0.8, organisms: ['ecoli', 'human'], cofactors: ['PLP'], type: 'transaminase' },
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // ADDITIONAL COFACTOR REACTIONS (10 reactions)
+  // ════════════════════════════════════════════════════════════════════════════
+  { id: 'R00727', name: 'Thiamine kinase', substrates: ['thiamine', 'atp'], products: ['thiamine_p', 'adp'], ecNumber: '2.7.6.2', deltaG: -3.0, reversible: false, enzymeAvailability: 0.8, organisms: ['ecoli', 'yeast', 'human'], cofactors: ['Mg2+'], type: 'kinase' },
+  { id: 'R00728', name: 'Pyridoxal kinase', substrates: ['pyridoxal', 'atp'], products: ['pyridoxal_p', 'adp'], ecNumber: '2.7.1.35', deltaG: -3.0, reversible: false, enzymeAvailability: 0.8, organisms: ['ecoli', 'yeast', 'human'], cofactors: ['Mg2+'], type: 'kinase' },
+  { id: 'R00729', name: 'Folate synthase', substrates: ['pteroate', 'glutamate', 'atp'], products: ['folate', 'adp', 'pi'], ecNumber: '6.3.2.12', deltaG: -5.0, reversible: false, enzymeAvailability: 0.75, organisms: ['ecoli', 'yeast'], cofactors: ['ATP'], type: 'ligase' },
+  { id: 'R00730', name: 'Dihydrofolate reductase', substrates: ['dhf', 'nadph'], products: ['thf', 'nadp'], ecNumber: '1.5.1.3', deltaG: -2.0, reversible: false, enzymeAvailability: 0.9, organisms: ['ecoli', 'yeast', 'human'], cofactors: ['NADPH'], type: 'oxidoreductase' },
+  { id: 'R00731', name: 'Thymidylate synthase', substrates: ['dump', 'methf'], products: ['dtmp', 'dhf'], ecNumber: '2.1.1.45', deltaG: -2.0, reversible: false, enzymeAvailability: 0.85, organisms: ['ecoli', 'yeast', 'human'], cofactors: ['THF'], type: 'transferase' },
+  { id: 'R00732', name: 'Biotin carboxylase', substrates: ['biotin', 'atp', 'co2'], products: ['carboxybiotin', 'adp', 'pi'], ecNumber: '6.3.4.14', deltaG: -3.0, reversible: false, enzymeAvailability: 0.8, organisms: ['ecoli'], cofactors: ['ATP', 'Mg2+'], type: 'ligase' },
+  { id: 'R00733', name: 'Lipoate synthase', substrates: ['octanoate', 's', 'am'], products: ['lipoate', 'amp'], ecNumber: '2.8.1.8', deltaG: -5.0, reversible: false, enzymeAvailability: 0.6, organisms: ['ecoli'], cofactors: ['Fe-S', 'SAM'], type: 'transferase' },
+  { id: 'R00734', name: 'Menaquinone biosynthesis', substrates: ['chorismate'], products: ['menaquinone'], ecNumber: '1.14.13.-', deltaG: -8.0, reversible: false, enzymeAvailability: 0.6, organisms: ['ecoli'], cofactors: ['O2'], type: 'oxidoreductase' },
+  { id: 'R00735', name: 'Ubiquinone biosynthesis', substrates: ['chorismate', 'octaprenyl_pp'], products: ['ubiquinone'], ecNumber: '2.5.1.-', deltaG: -5.0, reversible: false, enzymeAvailability: 0.6, organisms: ['ecoli'], cofactors: ['Mg2+'], type: 'transferase' },
+  { id: 'R00736', name: 'Heme biosynthesis', substrates: ['uroporphyrinogen_III'], products: ['heme'], ecNumber: '1.3.3.3', deltaG: -5.0, reversible: false, enzymeAvailability: 0.7, organisms: ['ecoli', 'yeast', 'human'], cofactors: ['Fe2+', 'O2'], type: 'oxidoreductase' },
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // SECONDARY METABOLISM (10 reactions)
+  // ════════════════════════════════════════════════════════════════════════════
+  { id: 'R00737', name: 'Chorismate mutase', substrates: ['chorismate'], products: ['prephenate'], ecNumber: '5.4.99.5', deltaG: 0, reversible: true, enzymeAvailability: 0.85, organisms: ['ecoli', 'yeast'], cofactors: [], type: 'isomerase' },
+  { id: 'R00738', name: 'Prephenate dehydratase', substrates: ['prephenate'], products: ['phenylpyruvate', 'co2', 'h2o'], ecNumber: '4.2.1.51', deltaG: -2.0, reversible: false, enzymeAvailability: 0.8, organisms: ['ecoli'], cofactors: [], type: 'lyase' },
+  { id: 'R00739', name: 'Prephenate dehydrogenase', substrates: ['prephenate', 'nad'], products: ['4hpp', 'co2', 'nadh'], ecNumber: '1.3.1.12', deltaG: -3.0, reversible: false, enzymeAvailability: 0.8, organisms: ['ecoli'], cofactors: ['NAD+'], type: 'oxidoreductase' },
+  { id: 'R00740', name: 'Anthranilate synthase', substrates: ['chorismate', 'gln'], products: ['anthranilate', 'glu', 'pyruvate'], ecNumber: '4.1.3.27', deltaG: -2.0, reversible: false, enzymeAvailability: 0.8, organisms: ['ecoli', 'yeast'], cofactors: [], type: 'lyase' },
+  { id: 'R00741', name: 'Isochorismate synthase', substrates: ['chorismate'], products: ['isochorismate'], ecNumber: '5.4.4.2', deltaG: 0, reversible: true, enzymeAvailability: 0.75, organisms: ['ecoli'], cofactors: [], type: 'isomerase' },
+  { id: 'R00742', name: 'Salicylate synthase', substrates: ['isochorismate'], products: ['salicylate', 'pyruvate'], ecNumber: '4.2.99.21', deltaG: -2.0, reversible: false, enzymeAvailability: 0.7, organisms: ['ecoli'], cofactors: [], type: 'lyase' },
+  { id: 'R00743', name: 'Enterochelin synthase', substrates: ['serine', 'dhb'], products: ['enterochelin'], ecNumber: '6.3.2.14', deltaG: -8.0, reversible: false, enzymeAvailability: 0.6, organisms: ['ecoli'], cofactors: ['ATP'], type: 'ligase' },
+  { id: 'R00744', name: 'Siderophore biosynthesis', substrates: ['citrate'], products: ['siderophore'], ecNumber: '6.3.2.-', deltaG: -5.0, reversible: false, enzymeAvailability: 0.5, organisms: ['ecoli'], cofactors: ['ATP'], type: 'ligase' },
+  { id: 'R00745', name: 'Melanin biosynthesis', substrates: ['tyrosine', 'o2'], products: ['dopa', 'h2o'], ecNumber: '1.14.18.1', deltaG: -3.0, reversible: false, enzymeAvailability: 0.7, organisms: ['human', 'fungi'], cofactors: ['Cu2+', 'O2'], type: 'oxidoreductase' },
+  { id: 'R00746', name: 'Carotenoid biosynthesis', substrates: ['ggpp'], products: ['phytoene'], ecNumber: '2.5.1.32', deltaG: -3.0, reversible: false, enzymeAvailability: 0.6, organisms: ['plant', 'bacteria'], cofactors: ['Mg2+'], type: 'transferase' },
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // STRESS RESPONSE & DETOXIFICATION (10 reactions)
+  // ════════════════════════════════════════════════════════════════════════════
+  { id: 'R00747', name: 'Catalase', substrates: ['h2o2'], products: ['h2o', 'o2'], ecNumber: '1.11.1.6', deltaG: -5.0, reversible: false, enzymeAvailability: 0.9, organisms: ['ecoli', 'yeast', 'human'], cofactors: ['Fe'], type: 'oxidoreductase' },
+  { id: 'R00748', name: 'Superoxide dismutase', substrates: ['o2_minus', 'h'], products: ['h2o2', 'o2'], ecNumber: '1.15.1.1', deltaG: -3.0, reversible: false, enzymeAvailability: 0.9, organisms: ['ecoli', 'yeast', 'human'], cofactors: ['Mn', 'Fe', 'Cu', 'Zn'], type: 'oxidoreductase' },
+  { id: 'R00749', name: 'Glutathione reductase', substrates: ['gssg', 'nadph'], products: ['gsh', 'nadp'], ecNumber: '8.1.1.7', deltaG: -2.0, reversible: false, enzymeAvailability: 0.85, organisms: ['ecoli', 'yeast', 'human'], cofactors: ['FAD', 'NADPH'], type: 'oxidoreductase' },
+  { id: 'R00750', name: 'Glutathione peroxidase', substrates: ['gsh', 'h2o2'], products: ['gssg', 'h2o'], ecNumber: '1.11.1.9', deltaG: -3.0, reversible: false, enzymeAvailability: 0.85, organisms: ['human'], cofactors: ['Se'], type: 'oxidoreductase' },
+  { id: 'R00751', name: 'Thioredoxin reductase', substrates: ['trx_s2', 'nadph'], products: ['trx_sh2', 'nadp'], ecNumber: '8.1.1.9', deltaG: -2.0, reversible: false, enzymeAvailability: 0.85, organisms: ['ecoli', 'yeast', 'human'], cofactors: ['FAD'], type: 'oxidoreductase' },
+  { id: 'R00752', name: 'Methionine sulfoxide reductase', substrates: ['met_so', 'trx_sh2'], products: ['met', 'trx_s2', 'h2o'], ecNumber: '1.8.4.11', deltaG: -2.0, reversible: false, enzymeAvailability: 0.8, organisms: ['ecoli', 'yeast', 'human'], cofactors: [], type: 'oxidoreductase' },
+  { id: 'R00753', name: 'Alkyl hydroperoxide reductase', substrates: ['rooh', 'nadph'], products: ['roh', 'nadp', 'h2o'], ecNumber: '1.11.1.15', deltaG: -3.0, reversible: false, enzymeAvailability: 0.8, organisms: ['ecoli'], cofactors: ['NADPH'], type: 'oxidoreductase' },
+  { id: 'R00754', name: 'DNA repair glycosylase', substrates: ['damaged_dna', 'h2o'], products: ['apurinic_site', 'base'], ecNumber: '3.2.2.-', deltaG: 0, reversible: true, enzymeAvailability: 0.7, organisms: ['ecoli', 'human'], cofactors: [], type: 'hydrolase' },
+  { id: 'R00755', name: 'O6-methylguanine-DNA methyltransferase', substrates: ['o6_methyl_g_dna'], products: ['g_dna', 'methyl_protein'], ecNumber: '2.1.1.63', deltaG: 0, reversible: true, enzymeAvailability: 0.7, organisms: ['ecoli', 'human'], cofactors: [], type: 'transferase' },
+  { id: 'R00756', name: 'Formamidopyrimidine DNA glycosylase', substrates: ['fapy_dna', 'h2o'], products: ['fapy', 'apurinic_site'], ecNumber: '3.2.2.23', deltaG: 0, reversible: true, enzymeAvailability: 0.7, organisms: ['ecoli'], cofactors: [], type: 'hydrolase' },
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // SIGNAL MOLECULES & QUORUM SENSING (8 reactions)
+  // ════════════════════════════════════════════════════════════════════════════
+  { id: 'R00757', name: 'LuxI-type AHL synthase', substrates: ['sam', 'acyl_acp'], products: ['ahl', 'methionine', 'acp'], ecNumber: '2.3.1.184', deltaG: -3.0, reversible: false, enzymeAvailability: 0.6, organisms: ['vibrio', 'pseudomonas'], cofactors: ['SAM'], type: 'transferase' },
+  { id: 'R00758', name: 'AHL lactonase', substrates: ['ahl', 'h2o'], products: ['ahl_open'], ecNumber: '3.1.1.81', deltaG: -2.0, reversible: false, enzymeAvailability: 0.7, organisms: ['bacillus', 'agrobacterium'], cofactors: ['Zn2+'], type: 'hydrolase' },
+  { id: 'R00759', name: 'AHL acylase', substrates: ['ahl', 'h2o'], products: ['fatty_acid', 'homoserine_lactone'], ecNumber: '3.5.1.97', deltaG: -2.0, reversible: false, enzymeAvailability: 0.7, organisms: ['ecoli', 'pseudomonas'], cofactors: [], type: 'hydrolase' },
+  { id: 'R00760', name: 'Autoinducer-2 synthase', substrates: ['4,5-dihydroxy-2,3-pentanedione'], products: ['ai2'], ecNumber: '4.2.1.119', deltaG: -1.0, reversible: false, enzymeAvailability: 0.7, organisms: ['ecoli'], cofactors: [], type: 'lyase' },
+  { id: 'R00761', name: 'Cyclic-di-GMP synthase', substrates: ['2gtp'], products: ['cdg', '2ppi'], ecNumber: '2.7.7.65', deltaG: -3.0, reversible: false, enzymeAvailability: 0.7, organisms: ['ecoli', 'pseudomonas'], cofactors: ['Mg2+'], type: 'transferase' },
+  { id: 'R00762', name: 'Cyclic-di-GMP phosphodiesterase', substrates: ['cdg', 'h2o'], products: ['pgpg'], ecNumber: '3.1.4.52', deltaG: -2.0, reversible: false, enzymeAvailability: 0.7, organisms: ['ecoli', 'pseudomonas'], cofactors: ['Mg2+'], type: 'hydrolase' },
+  { id: 'R00763', name: 'ppGpp synthase', substrates: ['gtp', 'atp'], products: ['ppgpp', 'amp'], ecNumber: '2.7.6.5', deltaG: -3.0, reversible: false, enzymeAvailability: 0.7, organisms: ['ecoli'], cofactors: ['Mg2+'], type: 'transferase' },
+  { id: 'R00764', name: 'ppGpp hydrolase', substrates: ['ppgpp', 'h2o'], products: ['gtp', 'ppi'], ecNumber: '3.1.7.2', deltaG: -2.0, reversible: false, enzymeAvailability: 0.7, organisms: ['ecoli'], cofactors: ['Mg2+'], type: 'hydrolase' },
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // TRANSPORT & MEMBRANE (10 reactions)
+  // ════════════════════════════════════════════════════════════════════════════
+  { id: 'R00765', name: 'Lactose permease', substrates: ['lactose_ext'], products: ['lactose_int'], ecNumber: '2.A.1.2.1', deltaG: 0, reversible: true, enzymeAvailability: 0.85, organisms: ['ecoli'], cofactors: [], type: 'transferase' },
+  { id: 'R00766', name: 'Maltose transporter', substrates: ['maltose_ext', 'atp'], products: ['maltose_int', 'adp', 'pi'], ecNumber: '3.A.1.1.1', deltaG: -5.0, reversible: false, enzymeAvailability: 0.8, organisms: ['ecoli'], cofactors: ['ATP'], type: 'transferase' },
+  { id: 'R00767', name: 'Arabinose transporter', substrates: ['arabinose_ext'], products: ['arabinose_int'], ecNumber: '2.A.1.2.2', deltaG: 0, reversible: true, enzymeAvailability: 0.8, organisms: ['ecoli'], cofactors: [], type: 'transferase' },
+  { id: 'R00768', name: 'Xylose transporter', substrates: ['xylose_ext'], products: ['xylose_int'], ecNumber: '2.A.1.2.3', deltaG: 0, reversible: true, enzymeAvailability: 0.75, organisms: ['ecoli'], cofactors: [], type: 'transferase' },
+  { id: 'R00769', name: 'Glycerol transporter', substrates: ['glycerol_ext'], products: ['glycerol_int'], ecNumber: '2.A.1.2.4', deltaG: 0, reversible: true, enzymeAvailability: 0.8, organisms: ['ecoli'], cofactors: [], type: 'transferase' },
+  { id: 'R00770', name: 'Amino acid transporter', substrates: ['aa_ext', 'h_ext'], products: ['aa_int', 'h_int'], ecNumber: '2.A.3.1.1', deltaG: 0, reversible: true, enzymeAvailability: 0.8, organisms: ['ecoli', 'human'], cofactors: [], type: 'transferase' },
+  { id: 'R00771', name: 'Phosphate transporter', substrates: ['pi_ext', 'h_ext'], products: ['pi_int', 'h_int'], ecNumber: '2.A.1.2.5', deltaG: 0, reversible: true, enzymeAvailability: 0.85, organisms: ['ecoli'], cofactors: [], type: 'transferase' },
+  { id: 'R00772', name: 'Sulfate transporter', substrates: ['so4_ext'], products: ['so4_int'], ecNumber: '2.A.1.2.6', deltaG: 0, reversible: true, enzymeAvailability: 0.8, organisms: ['ecoli'], cofactors: [], type: 'transferase' },
+  { id: 'R00773', name: 'Iron transporter', substrates: ['fe3_ext', 'atp'], products: ['fe3_int', 'adp', 'pi'], ecNumber: '3.A.1.1.2', deltaG: -5.0, reversible: false, enzymeAvailability: 0.7, organisms: ['ecoli'], cofactors: ['ATP'], type: 'transferase' },
+  { id: 'R00774', name: 'Potassium transporter', substrates: ['k_ext'], products: ['k_int'], ecNumber: '1.A.1.1.1', deltaG: 0, reversible: true, enzymeAvailability: 0.8, organisms: ['ecoli', 'human'], cofactors: [], type: 'transferase' },
 ];
 
 // ── Functional Group Analysis ──────────────────────────────────────────────
