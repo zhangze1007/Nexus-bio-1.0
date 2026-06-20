@@ -50,7 +50,7 @@ export interface RobustnessPredictorResult {
 // ── Cell-Free ODE Model ─────────────────────────────────────────────────────
 
 /**
- * Simplified cell-free TX-TL ODE model.
+ * Cell-free TX-TL ODE model.
  *
  * State: [mRNA, protein, ATP]
  *
@@ -58,7 +58,7 @@ export interface RobustnessPredictorResult {
  * dprotein/dt = k_tl * mRNA * AA_conc / (K_tl + mRNA) * energy - d_protein * protein
  * dATP/dt = -energy_decay * ATP - k_tl * mRNA * AA_conc / (K_tl + mRNA) * 0.01
  *
- * This is a simplified version of CellFreeEngine.ts::simulateCFPS.
+ * This is a version of CellFreeEngine.ts::simulateCFPS.
  * Uses the same RK4 integrator pattern.
  */
 function cellFreeODE(

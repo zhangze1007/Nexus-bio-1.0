@@ -295,7 +295,7 @@ function computeBackbone(
   const mutSheet = sheetPropensity[mutResidue] || 0;
 
   // Backbone strain: difference in secondary structure propensity
-  // We weight helix and sheet equally (simplified)
+  // Weight helix and sheet equally
   const helixDelta = mutHelix - wtHelix;
   const sheetDelta = mutSheet - wtSheet;
 

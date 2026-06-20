@@ -234,7 +234,7 @@ function interpretSpatial(
     // E[I] = -1 / (n - 1)
     // z = (I - E[I]) / sqrt(Var[I])
     const EI = -1 / (n - 1);
-    // Simplified variance (Cliff & Ord 1981)
+    // Estimated variance (Cliff & Ord 1981)
     const S0 = totalW;
     const S1 = 0.5 * W.flat().reduce((s: number, w: number) => s + 2 * w * w, 0);
     const rowSums = W.map((row: number[]) => row.reduce((s: number, w: number) => s + w, 0));

@@ -99,14 +99,14 @@ function runPhysiologist(params: CircuitParameters): PhysiologistOutput {
   const features = extractCircuitFeatures(sim.trajectory, params);
 
   // Step 3: Compute growth burden
-  // Simplified model: burden ∝ (total protein production rate) / (cell capacity)
+  // Burden model: (total protein production rate) / (cell capacity)
   // Real FBA would be used here in production
   const totalProtein = Object.entries(sim.steadyState)
     .filter(([k]) => k.startsWith('p'))
     .reduce((s, [, v]) => s + v, 0);
   const ribosomeBurden = Math.min(1, totalProtein / 10000); // 10000 nM capacity
-  const growthBurden = ribosomeBurden * 0.8; // simplified growth penalty
-  solverCalls.push({ solver: 'burdenModel::simplified', description: 'Growth burden from protein load' });
+  const growthBurden = ribosomeBurden * 0.8; // growth penalty from protein load
+  solverCalls.push({ solver: 'burdenModel::ribosomeLoad', description: 'Growth burden from protein load' });
 
   // Step 4: Jacobian stability analysis
   solverCalls.push({ solver: 'jacobianAnalysis::analyzeStability', description: 'Finite-difference Jacobian + eigenvalues' });

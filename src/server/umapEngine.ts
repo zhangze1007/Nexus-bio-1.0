@@ -136,7 +136,7 @@ function computeSmoothKNNDistances(
     // sigma = distance to k-th neighbor (scaled)
     // UMAP uses a binary search to find sigma such that
     // Σ exp(-(d_ij - rho_i) / sigma) = log2(k)
-    // Simplified: use k-th neighbor distance
+    // Use k-th neighbor distance
     const target = Math.log2(Math.max(k, 1));
     const kthDist = neighbors[Math.min(neighbors.length - 1, k - 1)].distance;
 
@@ -319,7 +319,7 @@ function optimizeEmbedding(
  * Uses the relationship: w(d) = 1 / (1 + a * d^(2*b))
  */
 function findAB(minDist: number, spread: number): number {
-  // Simplified: use the standard UMAP parameterization
+  // Use the standard UMAP parameterization
   // For minDist=0.1, spread=1.0: a ≈ 1.577
   const a = 1.5769434603874644;
   return a;

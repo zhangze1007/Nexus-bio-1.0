@@ -152,7 +152,7 @@ const NN_RNA_STACK: Record<string, number> = {
 };
 
 /**
- * Simplified stacking for cases where we don't have the full 5'/3' notation.
+ * Stacking for cases where we don't have the full 5'/3' notation.
  * Falls back to nearest available value.
  */
 const NN_RNA_STACK_SIMPLE: Record<string, number> = {

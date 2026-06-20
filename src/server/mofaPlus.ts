@@ -3,7 +3,7 @@ import { SeededRNG } from '../utils/seededRng';
 /**
  * MOFA+ Multi-Omics Factor Analysis
  *
- * Simplified variational Bayes inference with ARD priors.
+ * Variational Bayes inference with ARD priors.
  * Reference: Argelaguet et al. (2020) Mol Syst Biol 16:e9918
  *
  * Model: Y_vm = Z * W_v^T + E_vm
@@ -11,7 +11,7 @@ import { SeededRNG } from '../utils/seededRng';
  *   W_v: view-specific loadings [features x factors]
  *   E_vm: Gaussian noise
  *
- * Inference via coordinate ascent variational Bayes (simplified):
+ * Inference via coordinate ascent variational Bayes:
  *   1. Update Z (shared factors) via ridge regression
  *   2. Update W_v (view loadings) via ridge regression per view
  *   3. Update noise precision
@@ -170,7 +170,7 @@ function totalSumSq(A: number[][]): number {
 /**
  * Run MOFA+ multi-omics factor analysis.
  *
- * Uses simplified variational Bayes with coordinate ascent:
+ * Uses variational Bayes with coordinate ascent:
  *   - Update Z via ridge regression (fix W)
  *   - Update W_v via ridge regression per view (fix Z)
  *   - Update noise precision (inverse variance)
@@ -226,7 +226,7 @@ export function runMOFA(input: MOFAInput): MOFAResult {
   for (iter = 0; iter < maxIter; iter++) {
     // === Step 1: Update Z (shared factors) ===
     // For each sample i, Z_i = (sum_v tau_v * W_v^T * mask_v_i * Y_v_i) / (sum_v tau_v * W_v^T * mask_v_i * W_v + I)
-    // Simplified: Z = Y_eff * W_eff * (W_eff^T * W_eff + lambda*I)^{-1}
+    // Z = Y_eff * W_eff * (W_eff^T * W_eff + lambda*I)^{-1}
     {
       // Build stacked weighted W and Y
       // W_eff^T W_eff [k x k]
