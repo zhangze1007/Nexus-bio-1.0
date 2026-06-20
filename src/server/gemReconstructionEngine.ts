@@ -566,3 +566,260 @@ export function reconstructGEM(annotations: GeneAnnotation[]): GEMReconstruction
     },
   };
 }
+
+// ── Gap Detection ──────────────────────────────────────────────────────────
+
+/**
+ * Detect metabolic gaps (orphan metabolites and dead-end reactions).
+ *
+ * Orphan metabolites: produced but not consumed (or vice versa)
+ * Dead-end reactions: cannot carry flux in FBA
+ *
+ * Reference: Thiele & Palsson (2010) Nature Protocols 5:9-13
+ */
+export function detectGaps(model: GEMReconstruction): {
+  orphanProducers: string[];  // metabolites produced but not consumed
+  orphanConsumers: string[];  // metabolites consumed but not produced
+  deadEndReactions: string[]; // reactions that cannot carry flux
+} {
+  const produced = new Set<string>();
+  const consumed = new Set<string>();
+
+  for (const rxn of model.reactions) {
+    for (const [met, coeff] of Object.entries(rxn.stoichiometry)) {
+      if (met === 'biomass_c') continue;
+      if (coeff > 0) produced.add(met);
+      if (coeff < 0) consumed.add(met);
+    }
+  }
+
+  const orphanProducers = [...produced].filter(m => !consumed.has(m) && !m.endsWith('_e'));
+  const orphanConsumers = [...consumed].filter(m => !produced.has(m) && !m.endsWith('_e'));
+
+  // Dead-end: reactions where all products are orphan producers or all substrates are orphan consumers
+  const deadEndReactions: string[] = [];
+  for (const rxn of model.reactions) {
+    const products = Object.entries(rxn.stoichiometry).filter(([_, c]) => c > 0).map(([m]) => m);
+    const substrates = Object.entries(rxn.stoichiometry).filter(([_, c]) => c < 0).map(([m]) => m);
+    if (products.length > 0 && products.every(m => orphanProducers.includes(m))) {
+      deadEndReactions.push(rxn.id);
+    }
+    if (substrates.length > 0 && substrates.every(m => orphanConsumers.includes(m))) {
+      deadEndReactions.push(rxn.id);
+    }
+  }
+
+  return { orphanProducers, orphanConsumers, deadEndReactions };
+}
+
+// ── Essential Gene Analysis ────────────────────────────────────────────────
+
+/**
+ * Result of essentiality analysis for a single gene.
+ */
+export interface EssentialityResult {
+  geneId: string;
+  essential: boolean;
+  growthWithout: number;       // growth rate when knocked out (fraction of WT)
+  affectedReactions: string[]; // reactions disabled by this knockout
+}
+
+/**
+ * Epistasis interaction between two genes.
+ */
+export interface EpistasisResult {
+  geneA: string;
+  geneB: string;
+  singleA: number;  // growth with only A knocked out
+  singleB: number;  // growth with only B knocked out
+  double: number;   // growth with both knocked out
+  epistasis: number; // ε = double - singleA - singleB + WT
+  type: 'synergistic' | 'antagonistic' | 'synthetic_lethal' | 'neutral';
+}
+
+/**
+ * Find essential genes by single-gene knockout FBA.
+ *
+ * For each gene: knock out associated reactions, compute growth rate.
+ * Essential if growth < 1% of wild-type.
+ *
+ * Reference: Joyce et al. (2006) Genome Biol 7:R65 (Keio collection)
+ */
+export function findEssentialGenes(model: GEMReconstruction): EssentialityResult[] {
+  const results: EssentialityResult[] = [];
+
+  // Build stoichiometric matrix for FBA
+  const metaboliteIds = [...new Set(model.reactions.flatMap(r => Object.keys(r.stoichiometry)))];
+  const metIdx = new Map(metaboliteIds.map((m, i) => [m, i]));
+  const nMets = metaboliteIds.length;
+  const nRxns = model.reactions.length;
+
+  // Build S matrix (m×n)
+  const S: number[][] = Array.from({ length: nMets }, () => new Array(nRxns).fill(0));
+  for (let j = 0; j < nRxns; j++) {
+    for (const [met, coeff] of Object.entries(model.reactions[j].stoichiometry)) {
+      const i = metIdx.get(met);
+      if (i !== undefined) S[i][j] = coeff;
+    }
+  }
+
+  // Find biomass reaction index
+  const biomassIdx = model.reactions.findIndex(r => r.id === 'BIOMASS');
+
+  // Compute wild-type growth via FBA
+  const wtGrowth = solveFBA(S, model.reactions, biomassIdx, nMets, nRxns);
+
+  for (const geneId of model.genes) {
+    // Find reactions associated with this gene via GPR
+    const affectedReactions: string[] = [];
+    for (const rxn of model.reactions) {
+      if (rxn.gpr && rxn.gpr.includes(geneId)) {
+        const gpr = parseGPR(rxn.gpr);
+        const prob = computeKnockoutProbability(gpr, new Set([geneId]));
+        if (prob < 0.01) {
+          affectedReactions.push(rxn.id);
+        }
+      }
+    }
+
+    // Knockout: set affected reaction bounds to 0, re-solve FBA
+    const knockoutRxns = new Set(affectedReactions);
+    const growthWithout = solveFBAWithKnockout(S, model.reactions, biomassIdx, nMets, nRxns, knockoutRxns);
+
+    results.push({
+      geneId,
+      essential: growthWithout < 0.01 * wtGrowth,
+      growthWithout: wtGrowth > 0 ? Math.round((growthWithout / wtGrowth) * 1000) / 1000 : 0,
+      affectedReactions,
+    });
+  }
+
+  return results;
+}
+
+/**
+ * Solve FBA using the existing simplexLP solver.
+ * Returns optimal biomass flux.
+ */
+function solveFBA(
+  S: number[][],
+  reactions: Reaction[],
+  biomassIdx: number,
+  nMets: number,
+  nRxns: number,
+): number {
+  if (biomassIdx < 0) return 0;
+
+  try {
+    const { solveSimplexLP } = require('./simplexLP');
+    const c = new Array(nRxns).fill(0);
+    c[biomassIdx] = 1;
+
+    const lb = reactions.map(r => r.lb);
+    const ub = reactions.map(r => r.ub);
+
+    const result = solveSimplexLP({
+      c,
+      A: S,
+      b: new Array(nMets).fill(0),
+      lb,
+      ub,
+      maximize: true,
+    });
+
+    return result.status === 'optimal' ? result.objective : 0;
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * Solve FBA with specific reactions knocked out (bounds set to 0).
+ */
+function solveFBAWithKnockout(
+  S: number[][],
+  reactions: Reaction[],
+  biomassIdx: number,
+  nMets: number,
+  nRxns: number,
+  knockoutRxns: Set<string>,
+): number {
+  if (biomassIdx < 0) return 0;
+
+  try {
+    const { solveSimplexLP } = require('./simplexLP');
+    const c = new Array(nRxns).fill(0);
+    c[biomassIdx] = 1;
+
+    const lb = reactions.map(r => knockoutRxns.has(r.id) ? 0 : r.lb);
+    const ub = reactions.map(r => knockoutRxns.has(r.id) ? 0 : r.ub);
+
+    const result = solveSimplexLP({
+      c,
+      A: S,
+      b: new Array(nMets).fill(0),
+      lb,
+      ub,
+      maximize: true,
+    });
+
+    return result.status === 'optimal' ? result.objective : 0;
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * Compute double-knockout epistasis matrix.
+ *
+ * ε_ij = f(Δi,Δj) - f(Δi) - f(Δj) + f(∅)
+ *
+ * ε > 0: synergistic (better than expected)
+ * ε < 0: antagonistic (worse than expected)
+ * ε ≈ -f(Δi): synthetic lethal
+ *
+ * Reference: Segre et al. (2005) Nat Genet 37:77-83
+ */
+export function computeEpistasis(
+  model: GEMReconstruction,
+  genePairs: Array<[string, string]>,
+): EpistasisResult[] {
+  const essentiality = findEssentialGenes(model);
+  const geneMap = new Map(essentiality.map(e => [e.geneId, e]));
+
+  // Build FBA infrastructure once
+  const metaboliteIds = [...new Set(model.reactions.flatMap(r => Object.keys(r.stoichiometry)))];
+  const metIdx = new Map(metaboliteIds.map((m, i) => [m, i]));
+  const nMets = metaboliteIds.length;
+  const nRxns = model.reactions.length;
+  const S: number[][] = Array.from({ length: nMets }, () => new Array(nRxns).fill(0));
+  for (let j = 0; j < nRxns; j++) {
+    for (const [met, coeff] of Object.entries(model.reactions[j].stoichiometry)) {
+      const i = metIdx.get(met);
+      if (i !== undefined) S[i][j] = coeff;
+    }
+  }
+  const biomassIdx = model.reactions.findIndex(r => r.id === 'BIOMASS');
+  const wtGrowth = solveFBA(S, model.reactions, biomassIdx, nMets, nRxns);
+
+  return genePairs.map(([geneA, geneB]) => {
+    const singleA = geneMap.get(geneA)?.growthWithout ?? 1;
+    const singleB = geneMap.get(geneB)?.growthWithout ?? 1;
+
+    // Double knockout: combine affected reactions from both genes
+    const affectedA = geneMap.get(geneA)?.affectedReactions ?? [];
+    const affectedB = geneMap.get(geneB)?.affectedReactions ?? [];
+    const allAffected = new Set([...affectedA, ...affectedB]);
+    const doubleGrowth = solveFBAWithKnockout(S, model.reactions, biomassIdx, nMets, nRxns, allAffected);
+
+    const double = wtGrowth > 0 ? doubleGrowth / wtGrowth : 0;
+    const epistasis = Math.round((double - singleA - singleB + 1) * 1000) / 1000;
+
+    let type: EpistasisResult['type'] = 'neutral';
+    if (epistasis > 0.05) type = 'synergistic';
+    else if (epistasis < -0.05 && double < 0.01) type = 'synthetic_lethal';
+    else if (epistasis < -0.05) type = 'antagonistic';
+
+    return { geneA, geneB, singleA, singleB, double: Math.round(double * 1000) / 1000, epistasis, type };
+  });
+}

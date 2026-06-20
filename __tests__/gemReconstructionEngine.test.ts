@@ -1,4 +1,4 @@
-import { reconstructGEM, mapGenesToReactions, generateBiomassReaction, parseGPR, computeKnockoutProbability, evaluateGPR } from '../src/server/gemReconstructionEngine';
+import { reconstructGEM, mapGenesToReactions, generateBiomassReaction, parseGPR, computeKnockoutProbability, evaluateGPR, detectGaps, findEssentialGenes, computeEpistasis } from '../src/server/gemReconstructionEngine';
 
 describe('gemReconstructionEngine', () => {
   describe('mapGenesToReactions', () => {
@@ -119,6 +119,60 @@ describe('gemReconstructionEngine', () => {
       expect(computeKnockoutProbability(gpr, new Set(['b0001']))).toBe(0);
       // No knockouts: P = 1
       expect(computeKnockoutProbability(gpr, new Set())).toBe(1);
+    });
+  });
+
+  describe('gap detection', () => {
+    it('detects orphan metabolites in incomplete model', () => {
+      const annotations = [
+        { geneId: 'b0001', geneName: 'hexA', organism: 'ecoli', ecNumber: '2.7.1.1' },
+      ];
+      const gem = reconstructGEM(annotations);
+      const gaps = detectGaps(gem);
+      expect(gaps.orphanProducers.length).toBeGreaterThan(0);
+    });
+
+    it('returns empty gaps for complete model', () => {
+      // A model with many reactions should have fewer gaps
+      const annotations = [
+        { geneId: 'b0001', geneName: 'hexA', organism: 'ecoli', ecNumber: '2.7.1.1' },
+        { geneId: 'b0002', geneName: 'pgi', organism: 'ecoli', ecNumber: '5.3.1.9' },
+        { geneId: 'b0003', geneName: 'pfk', organism: 'ecoli', ecNumber: '2.7.1.11' },
+        { geneId: 'b0004', geneName: 'fba', organism: 'ecoli', ecNumber: '4.1.2.13' },
+      ];
+      const gem = reconstructGEM(annotations);
+      const gaps = detectGaps(gem);
+      // With more reactions, fewer orphans
+      expect(gaps.orphanProducers.length).toBeLessThan(5);
+    });
+  });
+
+  describe('essential gene analysis', () => {
+    it('identifies essential genes', () => {
+      const annotations = [
+        { geneId: 'b0001', geneName: 'hexA', organism: 'ecoli', ecNumber: '2.7.1.1' },
+        { geneId: 'b0002', geneName: 'pgi', organism: 'ecoli', ecNumber: '5.3.1.9' },
+      ];
+      const gem = reconstructGEM(annotations);
+      const essential = findEssentialGenes(gem);
+      expect(essential.length).toBe(2);
+      expect(essential[0]).toHaveProperty('geneId');
+      expect(essential[0]).toHaveProperty('essential');
+      expect(essential[0]).toHaveProperty('growthWithout');
+      expect(essential[0]).toHaveProperty('affectedReactions');
+    });
+
+    it('computes epistasis for gene pairs', () => {
+      const annotations = [
+        { geneId: 'b0001', geneName: 'hexA', organism: 'ecoli', ecNumber: '2.7.1.1' },
+        { geneId: 'b0002', geneName: 'pgi', organism: 'ecoli', ecNumber: '5.3.1.9' },
+      ];
+      const gem = reconstructGEM(annotations);
+      const epistasis = computeEpistasis(gem, [['b0001', 'b0002']]);
+      expect(epistasis.length).toBe(1);
+      expect(epistasis[0]).toHaveProperty('epistasis');
+      expect(epistasis[0]).toHaveProperty('type');
+      expect(['synergistic', 'antagonistic', 'synthetic_lethal', 'neutral']).toContain(epistasis[0].type);
     });
   });
 });
