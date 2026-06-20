@@ -440,7 +440,7 @@ function extractTerminatorFeatures(terminator: string): {
   const tTractMatch = seq.match(/T{4,}/);
   const tTractLength = tTractMatch ? tTractMatch[0].length : 4;
 
-  // Stem-loop detection (simplified: look for palindromic region)
+  // Stem-loop detection (palindromic region search)
   let stemLength = 0;
   for (let i = 0; i < seq.length - 10; i++) {
     for (let len = 4; len <= 10; len++) {
