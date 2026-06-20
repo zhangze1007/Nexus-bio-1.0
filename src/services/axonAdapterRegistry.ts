@@ -84,6 +84,12 @@ export const DEFAULT_AXON_ADAPTERS: AxonAdapterRegistration[] = [
   { tool: 'multio', adapter: buildPipelineApiAdapter('multio', 'Multi-Omics'), label: 'Multi-Omics — MOFA+ factorization', inputShape: '{ datasets?, nFactors? }' },
   { tool: 'scspatial', adapter: buildPipelineApiAdapter('scspatial', 'Single-Cell Spatial'), label: 'Single-Cell Spatial — clustering + Moran\'s I', inputShape: '{ expressionMatrix?, geneNames? }' },
   { tool: 'nexai', adapter: buildPipelineApiAdapter('nexai', 'Research'), label: 'Research — paper scoring + evidence synthesis', inputShape: '{ question?, papers? }' },
+
+  // Frontier engines (2025-2026)
+  { tool: 'inversefolding' as AxonTool, adapter: buildPipelineApiAdapter('inversefolding', 'Inverse Folding'), label: 'Inverse Folding — ProteinMPNN-style sequence design', inputShape: '{ backbone?, nSequences?, temperature? }' },
+  { tool: 'multiplexcrispr' as AxonTool, adapter: buildPipelineApiAdapter('multiplexcrispr', 'Multiplex CRISPR'), label: 'Multiplex CRISPR — combinatorial editing strategy', inputShape: '{ genes?, maxEdits?, minFitness? }' },
+  { tool: 'pathwaydiscovery' as AxonTool, adapter: buildPipelineApiAdapter('pathwaydiscovery', 'Pathway Discovery'), label: 'Pathway Discovery — A* search + thermodynamic scoring', inputShape: '{ target?, precursors?, maxLength? }' },
+  { tool: 'digitaltwin' as AxonTool, adapter: buildPipelineApiAdapter('digitaltwin', 'Digital Twin'), label: 'Digital Twin — EKF state estimation + Monte Carlo forecast', inputShape: '{ config?, sensorReadings?, forecastHorizon? }' },
 ];
 
 export function buildDefaultAxonAdapterRegistry(): AxonAdapterRegistry {

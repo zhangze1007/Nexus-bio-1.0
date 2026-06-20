@@ -271,6 +271,7 @@ const DYNCON_TABS: ToolTab[] = [
   { id: 'hill', label: 'Hill Curve', accent: THEME.LILAC },
   { id: 'convergence', label: 'Convergence', accent: THEME.APRICOT },
   { id: 'rbs', label: 'RBS Bridge', accent: THEME.MINT },
+  { id: 'digitaltwin', label: 'Digital Twin', accent: THEME.LILAC },
 ];
 
 /* ══════════════════════════════════════════════════════════════════════════════
@@ -1129,6 +1130,141 @@ export default React.memo(function DynConPage() {
           </ToolTabPanel>
         </>
       )}
+
+      {/* ── Digital Twin Tab ──────────────────────────────────────────── */}
+      <ToolTabPanel tabId="digitaltwin" activeId={activeTab}>
+        <DigitalTwinPanel />
+      </ToolTabPanel>
     </ToolShell>
   );
 });
+
+/* ── Digital Twin Panel ──────────────────────────────────────────────────── */
+
+function DigitalTwinPanel() {
+  const [readings, setReadings] = useState(10);
+  const [result, setResult] = useState<import('../../server/digitalTwinEngine').DigitalTwinResult | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const handleRun = React.useCallback(async () => {
+    setLoading(true);
+    try {
+      const { runDigitalTwin } = await import('../../server/digitalTwinEngine');
+      const config = {
+        volume: 1, temperature: 37, pH: 7.0, dissolvedO2: 100,
+        muMax: 0.5, ks: 0.5, yieldCoeff: 0.5, maintenanceCoeff: 0.02,
+        productYield: 0.1, feedConcentration: 10, feedRate: 0.01,
+        processNoise: 1.0, measurementNoise: 1.0, initialUncertainty: 1.0,
+      };
+      // Generate synthetic sensor readings
+      const sensorReadings = Array.from({ length: readings }, (_, i) => ({
+        timestamp: i * 0.5,
+        biomass: 0.1 * Math.exp(0.3 * i) + (Math.random() - 0.5) * 0.02,
+        substrate: Math.max(0, 10 - 0.5 * i + (Math.random() - 0.5) * 0.1),
+        product: 0.05 * i + (Math.random() - 0.5) * 0.01,
+      }));
+      const res = runDigitalTwin(config, sensorReadings, 12);
+      setResult(res);
+    } finally {
+      setLoading(false);
+    }
+  }, [readings]);
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      {/* Controls */}
+      <div style={{
+        background: THEME.PANEL_SURFACE, borderRadius: 'var(--nb-radius-lg)', padding: 16,
+        display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12,
+        border: `1px solid ${THEME.BORDER}`,
+      }}>
+        <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+          Sensor Readings
+        </span>
+        <input type="number" min={5} max={100} value={readings}
+          onChange={(e) => setReadings(Number(e.target.value))}
+          style={{ width: 60, padding: '4px 8px', background: THEME.INPUT_BG, border: `1px solid ${THEME.INPUT_BORDER}`, borderRadius: 'var(--nb-radius-sm)', color: THEME.INPUT_TEXT, fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-sm)', outline: 'none' }}
+        />
+        <button onClick={handleRun} disabled={loading} className="nb-tool-toggle"
+          style={{ padding: '6px 14px', fontSize: 'var(--nb-fs-sm)', opacity: loading ? 0.4 : 1 }}
+        >
+          {loading ? 'Synchronizing...' : 'Run Digital Twin'}
+        </button>
+        {result && (
+          <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: 'rgba(255,255,255,0.4)' }}>
+            R²={result.diagnostics.modelFit.toFixed(3)} • {result.diagnostics.anomalyCount} anomalies
+          </span>
+        )}
+      </div>
+
+      {/* Diagnostics */}
+      {result && (
+        <div style={{
+          background: THEME.PANEL_SURFACE, borderRadius: 'var(--nb-radius-lg)', padding: 12,
+          display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10,
+          border: `1px solid ${THEME.BORDER}`,
+        }}>
+          {[
+            { label: 'Biomass', value: `${result.currentState.biomass.toFixed(3)} g/L`, color: THEME.MINT },
+            { label: 'Substrate', value: `${result.currentState.substrate.toFixed(3)} g/L`, color: THEME.SKY },
+            { label: 'Product', value: `${result.currentState.product.toFixed(3)} g/L`, color: THEME.APRICOT },
+            { label: 'μ (growth)', value: `${result.currentState.specificGrowthRate.toFixed(4)} h⁻¹`, color: THEME.LILAC },
+            { label: 'μ_max drift', value: `${result.diagnostics.parameterDrift.muMax}%`, color: Math.abs(result.diagnostics.parameterDrift.muMax) > 10 ? 'rgba(250,128,114,0.7)' : 'rgba(147,203,82,0.7)' },
+            { label: 'Model Fit', value: `R² ${result.diagnostics.modelFit.toFixed(3)}`, color: result.diagnostics.modelFit > 0.9 ? 'rgba(147,203,82,0.7)' : 'rgba(250,128,114,0.7)' },
+          ].map((m, i) => (
+            <div key={i} style={{
+              background: 'rgba(255,255,255,0.02)', borderRadius: 'var(--nb-radius-sm)', padding: '8px 10px',
+              border: `1px solid rgba(255,255,255,0.05)`,
+            }}>
+              <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xxs)', color: THEME.LABEL, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>
+                {m.label}
+              </div>
+              <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-sm)', color: m.color, fontWeight: 600 }}>
+                {m.value}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Forecast */}
+      {result && result.forecast.length > 0 && (
+        <div style={{ background: THEME.PANEL_SURFACE, borderRadius: 'var(--nb-radius-lg)', padding: 12, border: `1px solid ${THEME.BORDER}` }}>
+          <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            12h Forecast (Monte Carlo, 95% CI)
+          </div>
+          <div style={{ display: 'flex', gap: 4, overflowX: 'auto', paddingBottom: 4 }}>
+            {result.forecast.filter((_, i) => i % 4 === 0).map((f, i) => (
+              <div key={i} style={{
+                minWidth: 80, padding: '6px 8px', background: 'rgba(255,255,255,0.02)',
+                border: '1px solid rgba(255,255,255,0.05)', borderRadius: 'var(--nb-radius-sm)',
+                textAlign: 'center',
+              }}>
+                <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xxs)', color: 'rgba(255,255,255,0.3)' }}>
+                  {f.time.toFixed(0)}h
+                </div>
+                <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.MINT }}>
+                  {f.biomass.mean.toFixed(2)}
+                </div>
+                <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xxs)', color: 'rgba(255,255,255,0.25)' }}>
+                  [{f.biomass.ci95[0].toFixed(2)}, {f.biomass.ci95[1].toFixed(2)}]
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Design notes */}
+      {result && result.designNotes.length > 0 && (
+        <div style={{
+          background: THEME.PANEL_SURFACE, borderRadius: 'var(--nb-radius-lg)', padding: 12,
+          fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: 'rgba(255,255,255,0.5)', lineHeight: 1.6,
+          border: `1px solid ${THEME.BORDER}`,
+        }}>
+          {result.designNotes.map((n, i) => <div key={i}>• {n}</div>)}
+        </div>
+      )}
+    </div>
+  );
+}

@@ -9,10 +9,11 @@ import { useUIStore } from '../../store/uiStore';
 import { keggToPathway } from '../../utils/keggToPathway';
 import { findPathways } from '../../server/retrosynthesis';
 import type { RetrosynthesisResult } from '../../server/retrosynthesis';
+import type { PathwayDiscoveryResult, DiscoveredPathway } from '../../server/pathwayDiscoveryEngine';
 import { THEME } from '../../theme';
 
 export default React.memo(function PathDPage() {
-  const [activeTab, setActiveTab] = useState<'kegg' | 'retro'>('kegg');
+  const [activeTab, setActiveTab] = useState<'kegg' | 'retro' | 'discover'>('kegg');
   const [keggQuery, setKeggQuery] = useState('');
   const [keggResult, setKeggResult] = useState<FallbackResult<KEGGPathwayResult> | null>(null);
   const [keggLoading, setKeggLoading] = useState(false);
@@ -21,6 +22,13 @@ export default React.memo(function PathDPage() {
   const [retroTarget, setRetroTarget] = useState('');
   const [retroResult, setRetroResult] = useState<RetrosynthesisResult | null>(null);
   const [retroLoading, setRetroLoading] = useState(false);
+
+  // Pathway Discovery state
+  const [discoverTarget, setDiscoverTarget] = useState('');
+  const [discoverPrecursors, setDiscoverPrecursors] = useState('glucose,pyruvate,acetyl_coa');
+  const [discoverResult, setDiscoverResult] = useState<PathwayDiscoveryResult | null>(null);
+  const [discoverLoading, setDiscoverLoading] = useState(false);
+  const [discoverOrganism, setDiscoverOrganism] = useState('ecoli');
 
   const setAiPathway = useUIStore(s => s.setAiPathway);
   const resetPathway = useUIStore(s => s.resetPathway);
@@ -56,6 +64,25 @@ export default React.memo(function PathDPage() {
       setRetroLoading(false);
     }
   }, [retroTarget]);
+
+  const handlePathwayDiscovery = useCallback(async () => {
+    if (!discoverTarget.trim()) return;
+    setDiscoverLoading(true);
+    try {
+      const { runPathwayDiscovery } = await import('../../server/pathwayDiscoveryEngine');
+      const precursorList = discoverPrecursors.split(',').map(s => s.trim()).filter(Boolean);
+      const result = runPathwayDiscovery({
+        target: { id: discoverTarget.toLowerCase().replace(/\s+/g, '_'), name: discoverTarget, functionalGroups: [], isPrecursor: false },
+        precursors: precursorList.map(p => ({ id: p.toLowerCase().replace(/\s+/g, '_'), name: p, functionalGroups: [], isPrecursor: true })),
+        maxLength: 8,
+        topN: 5,
+        preferredOrganism: discoverOrganism,
+      });
+      setDiscoverResult(result);
+    } finally {
+      setDiscoverLoading(false);
+    }
+  }, [discoverTarget, discoverPrecursors, discoverOrganism]);
 
   // Inject KEGG pathway into uiStore when live data arrives.
   // MetabolicEngPage picks it up via tier 4 (uiGraph) of its resolution cascade.
@@ -162,6 +189,49 @@ export default React.memo(function PathDPage() {
               right: 0,
               height: '2px',
               background: THEME.MINT,
+              borderRadius: '2px 2px 0 0',
+            }} />
+          )}
+        </button>
+        <button
+          role="tab"
+          aria-selected={activeTab === 'discover'}
+          onClick={() => setActiveTab('discover')}
+          style={{
+            position: 'relative',
+            padding: '10px 16px',
+            background: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+            fontFamily: THEME.SANS,
+            fontSize: 'var(--nb-fs-sm)',
+            fontWeight: activeTab === 'discover' ? 600 : 400,
+            color: activeTab === 'discover' ? THEME.LILAC : 'rgba(255,255,255,0.45)',
+            borderRadius: '6px 6px 0 0',
+            transition: 'color 0.2s ease, background 0.15s ease',
+          }}
+          onMouseEnter={(e) => {
+            if (activeTab !== 'discover') {
+              e.currentTarget.style.background = 'rgba(255,255,255,0.04)';
+              e.currentTarget.style.color = 'rgba(255,255,255,0.7)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (activeTab !== 'discover') {
+              e.currentTarget.style.background = 'transparent';
+              e.currentTarget.style.color = 'rgba(255,255,255,0.45)';
+            }
+          }}
+        >
+          Pathway Discovery
+          {activeTab === 'discover' && (
+            <div style={{
+              position: 'absolute',
+              bottom: '-1px',
+              left: 0,
+              right: 0,
+              height: '2px',
+              background: THEME.LILAC,
               borderRadius: '2px 2px 0 0',
             }} />
           )}
@@ -438,6 +508,296 @@ export default React.memo(function PathDPage() {
               color: 'rgba(255,255,255,0.4)',
             }}>
               No retrosynthetic pathways found for this target. Try a different SMILES or a simpler molecule.
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Pathway Discovery ── */}
+      {activeTab === 'discover' && (
+        <div style={{
+          padding: '16px',
+          borderBottom: '1px solid rgba(255,255,255,0.06)',
+          background: 'rgba(10,12,16,0.72)',
+        }}>
+          {/* Input controls */}
+          <div style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            gap: '8px',
+            marginBottom: discoverResult ? '16px' : 0,
+          }}>
+            <span style={{
+              fontFamily: THEME.MONO,
+              fontSize: THEME.FS_XS,
+              color: 'rgba(255,255,255,0.45)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.08em',
+              whiteSpace: 'nowrap',
+            }}>
+              Target
+            </span>
+            <input
+              type="text"
+              value={discoverTarget}
+              onChange={(e) => setDiscoverTarget(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') handlePathwayDiscovery(); }}
+              placeholder="e.g. artemisinin, lycopene, vanillin"
+              style={{
+                width: '180px',
+                padding: '6px 10px',
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: 'var(--nb-radius-sm)',
+                color: 'rgba(255,255,255,0.85)',
+                fontFamily: THEME.MONO,
+                fontSize: THEME.FS_SM,
+                outline: 'none',
+              }}
+            />
+            <span style={{
+              fontFamily: THEME.MONO,
+              fontSize: THEME.FS_XS,
+              color: 'rgba(255,255,255,0.45)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.08em',
+              whiteSpace: 'nowrap',
+            }}>
+              Precursors
+            </span>
+            <input
+              type="text"
+              value={discoverPrecursors}
+              onChange={(e) => setDiscoverPrecursors(e.target.value)}
+              placeholder="glucose,pyruvate,acetyl_coa"
+              style={{
+                flex: 1,
+                minWidth: '200px',
+                maxWidth: '360px',
+                padding: '6px 10px',
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: 'var(--nb-radius-sm)',
+                color: 'rgba(255,255,255,0.85)',
+                fontFamily: THEME.MONO,
+                fontSize: THEME.FS_SM,
+                outline: 'none',
+              }}
+            />
+            <select
+              value={discoverOrganism}
+              onChange={(e) => setDiscoverOrganism(e.target.value)}
+              style={{
+                padding: '6px 8px',
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: 'var(--nb-radius-sm)',
+                color: 'rgba(255,255,255,0.85)',
+                fontFamily: THEME.MONO,
+                fontSize: THEME.FS_SM,
+                outline: 'none',
+              }}
+            >
+              <option value="ecoli">E. coli</option>
+              <option value="yeast">S. cerevisiae</option>
+              <option value="human">Human</option>
+            </select>
+            <button
+              onClick={handlePathwayDiscovery}
+              disabled={discoverLoading || !discoverTarget.trim()}
+              className="nb-tool-toggle"
+              style={{
+                padding: '6px 14px',
+                fontSize: THEME.FS_SM,
+                opacity: discoverLoading || !discoverTarget.trim() ? 0.4 : 1,
+              }}
+            >
+              {discoverLoading ? 'Searching...' : 'Discover Pathways'}
+            </button>
+            {discoverResult && (
+              <button
+                onClick={() => { setDiscoverTarget(''); setDiscoverResult(null); }}
+                className="nb-tool-toggle"
+                style={{
+                  padding: '6px 10px',
+                  fontSize: THEME.FS_SM,
+                  color: 'rgba(255,255,255,0.5)',
+                }}
+              >
+                Clear
+              </button>
+            )}
+            {discoverResult && (
+              <span style={{
+                fontFamily: THEME.MONO,
+                fontSize: THEME.FS_XS,
+                color: 'rgba(255,255,255,0.4)',
+                whiteSpace: 'nowrap',
+              }}>
+                {discoverResult.pathways.length} pathway{discoverResult.pathways.length !== 1 ? 's' : ''} found
+              </span>
+            )}
+          </div>
+
+          {/* Design notes */}
+          {discoverResult && discoverResult.designNotes.length > 0 && (
+            <div style={{
+              marginBottom: '12px',
+              padding: '8px 10px',
+              background: 'rgba(221,208,232,0.05)',
+              border: '1px solid rgba(221,208,232,0.12)',
+              borderRadius: 'var(--nb-radius-sm)',
+              fontFamily: THEME.MONO,
+              fontSize: THEME.FS_XS,
+              color: 'rgba(255,255,255,0.5)',
+              lineHeight: 1.6,
+            }}>
+              {discoverResult.designNotes.map((note, i) => (
+                <div key={i}>• {note}</div>
+              ))}
+            </div>
+          )}
+
+          {/* Results */}
+          {discoverResult && discoverResult.pathways.length > 0 && (
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '10px',
+              maxHeight: '320px',
+              overflowY: 'auto',
+            }}>
+              {discoverResult.pathways.map((pathway, idx) => (
+                <div
+                  key={idx}
+                  style={{
+                    padding: '12px',
+                    background: 'rgba(255,255,255,0.03)',
+                    border: `1px solid ${idx === 0 ? 'rgba(221,208,232,0.2)' : 'rgba(255,255,255,0.07)'}`,
+                    borderRadius: 'var(--nb-radius-sm)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '8px',
+                  }}
+                >
+                  {/* Pathway header */}
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    fontFamily: THEME.SANS,
+                    fontSize: THEME.FS_SM,
+                  }}>
+                    <span style={{
+                      color: idx === 0 ? THEME.LILAC : 'rgba(255,255,255,0.6)',
+                      fontWeight: idx === 0 ? 700 : 400,
+                    }}>
+                      Route {idx + 1}
+                    </span>
+                    <span style={{ color: 'rgba(255,255,255,0.5)' }}>
+                      {pathway.metrics.pathwayLength} step{pathway.metrics.pathwayLength !== 1 ? 's' : ''}
+                    </span>
+                    <span style={{
+                      color: 'rgba(255,255,255,0.35)',
+                      fontFamily: THEME.MONO,
+                      fontSize: THEME.FS_XS,
+                    }}>
+                      score {pathway.metrics.overallScore.toFixed(2)}
+                    </span>
+                    <span style={{
+                      color: pathway.metrics.totalDeltaG < 0 ? 'rgba(147,203,82,0.7)' : 'rgba(250,128,114,0.7)',
+                      fontFamily: THEME.MONO,
+                      fontSize: THEME.FS_XS,
+                    }}>
+                      ΔG {pathway.metrics.totalDeltaG.toFixed(1)} kcal/mol
+                    </span>
+                    <span style={{
+                      color: 'rgba(255,255,255,0.35)',
+                      fontFamily: THEME.MONO,
+                      fontSize: THEME.FS_XS,
+                    }}>
+                      enzyme {(pathway.metrics.avgEnzymeAvailability * 100).toFixed(0)}%
+                    </span>
+                  </div>
+
+                  {/* Steps visualization */}
+                  <div style={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: '4px',
+                    alignItems: 'center',
+                  }}>
+                    <span style={{
+                      padding: '2px 6px',
+                      background: 'rgba(147,203,82,0.1)',
+                      border: '1px solid rgba(147,203,82,0.2)',
+                      borderRadius: '3px',
+                      fontFamily: THEME.MONO,
+                      fontSize: THEME.FS_XS,
+                      color: 'rgba(147,203,82,0.8)',
+                    }}>
+                      {pathway.precursor.name}
+                    </span>
+                    {pathway.steps.map((step, si) => (
+                      <React.Fragment key={si}>
+                        <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: THEME.FS_XS }}>→</span>
+                        <span style={{
+                          padding: '2px 6px',
+                          background: step.deltaG < 0 ? 'rgba(191,220,205,0.08)' : 'rgba(250,128,114,0.08)',
+                          border: `1px solid ${step.deltaG < 0 ? 'rgba(191,220,205,0.15)' : 'rgba(250,128,114,0.15)'}`,
+                          borderRadius: '3px',
+                          fontFamily: THEME.MONO,
+                          fontSize: THEME.FS_XS,
+                          color: 'rgba(255,255,255,0.7)',
+                          whiteSpace: 'nowrap',
+                        }}>
+                          {step.reaction.name}
+                          <span style={{ color: 'rgba(255,255,255,0.3)', marginLeft: '4px' }}>
+                            [{step.reaction.ecNumber || step.reaction.type}]
+                          </span>
+                        </span>
+                      </React.Fragment>
+                    ))}
+                    <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: THEME.FS_XS }}>→</span>
+                    <span style={{
+                      padding: '2px 6px',
+                      background: 'rgba(221,208,232,0.1)',
+                      border: '1px solid rgba(221,208,232,0.2)',
+                      borderRadius: '3px',
+                      fontFamily: THEME.MONO,
+                      fontSize: THEME.FS_XS,
+                      color: 'rgba(221,208,232,0.8)',
+                    }}>
+                      {pathway.target.name}
+                    </span>
+                  </div>
+
+                  {/* Bottlenecks */}
+                  {pathway.bottlenecks.length > 0 && (
+                    <div style={{
+                      fontFamily: THEME.MONO,
+                      fontSize: THEME.FS_XS,
+                      color: 'rgba(250,128,114,0.6)',
+                    }}>
+                      ⚠ {pathway.bottlenecks.filter(b => b.severity === 'high').length} high-severity bottleneck{pathway.bottlenecks.filter(b => b.severity === 'high').length !== 1 ? 's' : ''}: {pathway.bottlenecks.filter(b => b.severity === 'high').map(b => b.reason).join('; ')}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Empty state */}
+          {discoverResult && discoverResult.pathways.length === 0 && (
+            <div style={{
+              padding: '16px',
+              textAlign: 'center',
+              fontFamily: THEME.SANS,
+              fontSize: THEME.FS_SM,
+              color: 'rgba(255,255,255,0.4)',
+            }}>
+              No pathways discovered from available precursors to {discoverTarget}. Try adding more precursors or increasing max pathway length.
             </div>
           )}
         </div>

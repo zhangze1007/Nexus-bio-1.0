@@ -72,6 +72,29 @@ const PIPELINE_MAP: Record<string, () => Promise<(input: unknown) => unknown | P
       );
     };
   },
+  inversefolding: async () => {
+    const { runInverseFolding } = await import('../../../../src/server/inverseFoldingEngine');
+    return (input: unknown) => runInverseFolding(input as Parameters<typeof runInverseFolding>[0]);
+  },
+  multiplexcrispr: async () => {
+    const { runMultiplexCRISPR } = await import('../../../../src/server/multiplexCRISPREngine');
+    return (input: unknown) => runMultiplexCRISPR(input as Parameters<typeof runMultiplexCRISPR>[0]);
+  },
+  pathwaydiscovery: async () => {
+    const { runPathwayDiscovery } = await import('../../../../src/server/pathwayDiscoveryEngine');
+    return (input: unknown) => runPathwayDiscovery(input as Parameters<typeof runPathwayDiscovery>[0]);
+  },
+  digitaltwin: async () => {
+    const { runDigitalTwin } = await import('../../../../src/server/digitalTwinEngine');
+    return (input: unknown) => {
+      const p = input as Record<string, unknown> ?? {};
+      return runDigitalTwin(
+        p.config as Parameters<typeof runDigitalTwin>[0],
+        (p.sensorReadings as Parameters<typeof runDigitalTwin>[1]) ?? [],
+        (p.forecastHorizon as number) ?? 24,
+      );
+    };
+  },
 };
 
 export async function POST(

@@ -232,6 +232,7 @@ const GENMIM_TABS: ToolTab[] = [
   { id: 'targets', label: 'Targets', accent: THEME.LILAC },
   { id: 'schedule', label: 'Schedule', accent: THEME.CORAL },
   { id: 'efficiency', label: 'Efficiency', accent: THEME.MINT },
+  { id: 'multiplex', label: 'Multiplex Strategy', accent: THEME.LILAC },
 ];
 
 export default React.memo(function GenMIMPage() {
@@ -569,6 +570,135 @@ export default React.memo(function GenMIMPage() {
           </div>
         </div>
       </ToolTabPanel>
+
+      {/* ── Multiplex Strategy Tab ────────────────────────────────────── */}
+      <ToolTabPanel tabId="multiplex" activeId={activeTab}>
+        <MultiplexCRISPRPanel />
+      </ToolTabPanel>
     </ToolShell>
   );
 });
+
+/* ── Multiplex CRISPR Strategy Panel ──────────────────────────────────── */
+
+function MultiplexCRISPRPanel() {
+  const [maxEdits, setMaxEdits] = useState(4);
+  const [result, setResult] = useState<import('../../server/multiplexCRISPREngine').MultiplexCRISPRResult | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const handleRun = React.useCallback(async () => {
+    setLoading(true);
+    try {
+      const { runMultiplexCRISPR } = await import('../../server/multiplexCRISPREngine');
+      // Use CRISPRI_TARGETS as gene pool
+      const genes = CRISPRI_TARGETS.map((t: CRISPRiTarget) => ({
+        geneId: t.gene,
+        geneName: t.gene,
+        essentiality: t.essential ? 0.8 : 0.2,
+        flux: 2.0,
+        subsystem: 'central_metabolism',
+        maxKnockdown: t.knockdown_efficiency,
+      }));
+      const res = runMultiplexCRISPR({ genes, maxEdits, minFitness: 0.2, topN: 5 });
+      setResult(res);
+    } finally {
+      setLoading(false);
+    }
+  }, [maxEdits]);
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      {/* Controls */}
+      <div style={{
+        background: THEME.PANEL_SURFACE, borderRadius: 'var(--nb-radius-lg)', padding: 16,
+        display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12,
+        border: `1px solid ${THEME.BORDER}`,
+      }}>
+        <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+          Max Edits
+        </span>
+        <input type="number" min={2} max={8} value={maxEdits}
+          onChange={(e) => setMaxEdits(Number(e.target.value))}
+          style={{ width: 60, padding: '4px 8px', background: THEME.INPUT_BG, border: `1px solid ${THEME.INPUT_BORDER}`, borderRadius: 'var(--nb-radius-sm)', color: THEME.INPUT_TEXT, fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-sm)', outline: 'none' }}
+        />
+        <button onClick={handleRun} disabled={loading} className="nb-tool-toggle"
+          style={{ padding: '6px 14px', fontSize: 'var(--nb-fs-sm)', opacity: loading ? 0.4 : 1 }}
+        >
+          {loading ? 'Computing...' : 'Design Strategy'}
+        </button>
+        {result && (
+          <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: 'rgba(255,255,255,0.4)' }}>
+            {result.strategies.length} strategies • {result.epistasisMatrix.length} epistatic pairs
+          </span>
+        )}
+      </div>
+
+      {/* Gene ranking */}
+      {result && result.geneRanking.length > 0 && (
+        <div style={{ background: THEME.PANEL_SURFACE, borderRadius: 'var(--nb-radius-lg)', padding: 12, border: `1px solid ${THEME.BORDER}` }}>
+          <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            Gene Importance Ranking
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {result.geneRanking.slice(0, 10).map((g, i) => (
+              <span key={i} style={{
+                padding: '3px 8px', background: g.importance > 0.6 ? 'rgba(147,203,82,0.1)' : 'rgba(255,255,255,0.04)',
+                border: `1px solid ${g.importance > 0.6 ? 'rgba(147,203,82,0.2)' : 'rgba(255,255,255,0.08)'}`,
+                borderRadius: '3px', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)',
+                color: g.importance > 0.6 ? 'rgba(147,203,82,0.8)' : 'rgba(255,255,255,0.5)',
+              }}>
+                {g.geneId} ({g.importance.toFixed(2)})
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Top strategies */}
+      {result && result.strategies.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 300, overflowY: 'auto' }}>
+          {result.strategies.map((s, i) => (
+            <div key={i} style={{
+              background: THEME.PANEL_SURFACE, borderRadius: 'var(--nb-radius-lg)', padding: 12,
+              border: `1px solid ${i === 0 ? 'rgba(221,208,232,0.2)' : THEME.BORDER}`,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', marginBottom: 6 }}>
+                <span style={{ color: i === 0 ? THEME.LILAC : 'rgba(255,255,255,0.6)', fontWeight: i === 0 ? 700 : 400 }}>
+                  Strategy {i + 1}
+                </span>
+                <span style={{ color: 'rgba(255,255,255,0.5)' }}>
+                  {s.targetGenes.length} edits
+                </span>
+                <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: s.predictedFitness > 0.7 ? 'rgba(147,203,82,0.7)' : 'rgba(250,128,114,0.7)' }}>
+                  fitness {s.predictedFitness.toFixed(3)}
+                </span>
+                <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: 'rgba(255,255,255,0.35)' }}>
+                  titer {s.predictedTiterImprovement.toFixed(1)}x
+                </span>
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, alignItems: 'center' }}>
+                {s.targetGenes.map((g, gi) => (
+                  <React.Fragment key={gi}>
+                    <span style={{
+                      padding: '2px 6px', background: s.editTypes[g] === 'knockout' ? 'rgba(250,128,114,0.1)' : 'rgba(200,216,232,0.1)',
+                      border: `1px solid ${s.editTypes[g] === 'knockout' ? 'rgba(250,128,114,0.2)' : 'rgba(200,216,232,0.2)'}`,
+                      borderRadius: '3px', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: 'rgba(255,255,255,0.7)',
+                    }}>
+                      {g} ({s.editTypes[g]})
+                    </span>
+                    {gi < s.targetGenes.length - 1 && <span style={{ color: 'rgba(255,255,255,0.15)', fontSize: 'var(--nb-fs-xs)' }}>+</span>}
+                  </React.Fragment>
+                ))}
+              </div>
+              {s.notes.length > 0 && (
+                <div style={{ marginTop: 6, fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xxs)', color: 'rgba(250,128,114,0.5)' }}>
+                  {s.notes.join(' • ')}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
