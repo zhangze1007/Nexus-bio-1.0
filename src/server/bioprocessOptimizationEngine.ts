@@ -235,16 +235,31 @@ export function simulateFedBatch(params: BioprocessParameters, duration = 48): B
     // Fed-batch feeding
     const feedSubstrate = params.feedRate * params.feedConcentration / volume;
 
-    // RK4 integration for biomass
-    const dBdt = kinetics.growthRate - params.deathRate * biomass;
-    const dSdt = feedSubstrate - kinetics.substrateConsumption;
-    const dPdt = kinetics.productFormation;
-    const dOdt = oxygenTransfer - kinetics.oxygenConsumption;
+    // RK4 integration (Runge-Kutta 4th order)
+    // Reference: Press et al. (2007) Numerical Recipes, Ch. 16
+    const state = [biomass, substrate, product, dissolvedO2];
+    const derivatives = (s: number[]) => {
+      const [X, S, P, O] = s;
+      const k = computeStructuredKinetics(X, S, P, O, params);
+      const otr = kla * (100 - O) * 0.01;
+      const fs = params.feedRate * params.feedConcentration / volume;
+      return [
+        k.growthRate - params.deathRate * X,          // dX/dt
+        fs - k.substrateConsumption,                   // dS/dt
+        k.productFormation,                            // dP/dt
+        otr - k.oxygenConsumption,                     // dO/dt
+      ];
+    };
 
-    biomass += dBdt * dt;
-    substrate += dSdt * dt;
-    product += dPdt * dt;
-    dissolvedO2 += dOdt * dt;
+    const k1 = derivatives(state);
+    const k2 = derivatives(state.map((s, i) => s + 0.5 * dt * k1[i]));
+    const k3 = derivatives(state.map((s, i) => s + 0.5 * dt * k2[i]));
+    const k4 = derivatives(state.map((s, i) => s + dt * k3[i]));
+
+    for (let i = 0; i < 4; i++) {
+      state[i] += (dt / 6) * (k1[i] + 2 * k2[i] + 2 * k3[i] + k4[i]);
+    }
+    [biomass, substrate, product, dissolvedO2] = state;
     volume += params.feedRate * dt;
 
     // Clamp

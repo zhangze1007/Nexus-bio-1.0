@@ -243,18 +243,33 @@ function subsetMIDByAtoms(sourceMID: number[], nSubset: number, nTotal: number):
   return result;
 }
 
+/**
+ * Scale MID from source carbon count to target carbon count using
+ * hypergeometric distribution (correct statistical model for subsetting).
+ *
+ * P(j labeled in subset | k labeled in source) = C(m,j) * C(n-m, k-j) / C(n, k)
+ *
+ * Reference: Antoniewicz et al. (2007) Metab Eng 9:68-86
+ */
 function scaleMID(sourceMID: number[], targetSize: number): number[] {
   const result = new Array(targetSize + 1).fill(0);
   const sourceSize = sourceMID.length - 1;
 
-  // Map source MID to target size
-  for (let i = 0; i <= Math.min(sourceSize, targetSize); i++) {
-    const fraction = i / Math.max(sourceSize, 1);
-    const targetIdx = Math.round(fraction * targetSize);
-    result[Math.min(targetIdx, targetSize)] += sourceMID[i];
+  if (sourceSize === targetSize) return [...sourceMID];
+
+  // For each possible labeling state k in source
+  for (let k = 0; k <= sourceSize; k++) {
+    if (sourceMID[k] === 0) continue;
+
+    // For each possible labeling state j in target
+    for (let j = Math.max(0, k - (sourceSize - targetSize)); j <= Math.min(k, targetSize); j++) {
+      // Hypergeometric probability: C(m,j) * C(n-m, k-j) / C(n, k)
+      const prob = (binomial(targetSize, j) * binomial(sourceSize - targetSize, k - j)) / binomial(sourceSize, k);
+      result[j] += sourceMID[k] * prob;
+    }
   }
 
-  // Normalize
+  // Normalize to ensure sum = 1
   const sum = result.reduce((s, v) => s + v, 0);
   if (sum > 0) {
     for (let i = 0; i <= targetSize; i++) {
@@ -502,7 +517,7 @@ export function run13CMFA(input: MFAInput): MFAResult {
     objectiveFlux = result.bestObjective;
     fitQuality = result.bestFitQuality;
     nIterations = result.nIterations;
-    converged = fitQuality < 0.1;  // convergence threshold
+    converged = fitQuality < 1.0;  // χ²/dof < 1.0 indicates good fit — Bevington & Robinson (2003)
   } else {
     // No measured data — return simulated MIDs only
     fluxEstimates = input.reactions.map(r => ({

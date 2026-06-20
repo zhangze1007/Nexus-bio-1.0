@@ -156,7 +156,7 @@ function estimateBindingAffinity(kdUM: number): {
   koff: number;       // estimated off-rate (s⁻¹)
   halfLife: number;   // complex half-life (s)
 } {
-  const RT = 0.593; // kcal/mol at 310K
+  const RT = 0.616; // R*T at 310K, R=1.987 cal/(mol·K) — Fersht (1999) Structure and Mechanism
   const kdM = kdUM * 1e-6; // convert to M
 
   const deltaG = RT * Math.log(kdM);
