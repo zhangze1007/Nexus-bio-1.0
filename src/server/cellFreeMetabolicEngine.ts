@@ -234,9 +234,21 @@ export function simulateCellFreePathway(
 /**
  * Optimize enzyme ratios for maximum product yield.
  *
- * Uses gradient-free optimization: vary each enzyme concentration
- * and measure effect on product yield.
+ * Uses coordinate descent: optimize one enzyme at a time,
+ * cycling through all enzymes until convergence.
  */
+function generateRatioCombinations(n: number, steps: number[]): number[][] {
+  if (n === 0) return [[]];
+  const rest = generateRatioCombinations(n - 1, steps);
+  const result: number[][] = [];
+  for (const step of steps) {
+    for (const r of rest) {
+      result.push([step, ...r]);
+    }
+  }
+  return result;
+}
+
 export function optimizeEnzymeRatios(
   system: CellFreeSystem,
   pathway: PathwayStep[],
@@ -245,22 +257,49 @@ export function optimizeEnzymeRatios(
   const nEnzymes = pathway.length;
   const baseline = simulateCellFreePathway(system, pathway);
 
-  // Grid search over enzyme ratios
+  // Systematic grid search: vary each enzyme ratio in steps
+  // For n enzymes, test all combinations of ratios [0.1, 0.3, 0.5, 0.7, 0.9]
+  // This is deterministic and reproducible
+  const ratioSteps = [0.1, 0.3, 0.5, 0.7, 0.9];
   let bestYield = baseline.productYield;
   let bestRatios = pathway.map(s => s.enzymeConc);
 
-  for (let iter = 0; iter < 50; iter++) {
-    // Random perturbation
-    const ratios = pathway.map(() => Math.random());
-    const sum = ratios.reduce((a, b) => a + b, 0);
-    const normalized = ratios.map(r => (r / sum) * totalEnzymeBudget);
-
-    const testPathway = pathway.map((s, i) => ({ ...s, enzymeConc: normalized[i] }));
-    const result = simulateCellFreePathway(system, testPathway);
-
-    if (result.productYield > bestYield) {
-      bestYield = result.productYield;
-      bestRatios = normalized;
+  // For 2-3 enzymes, test all combinations
+  // For >3 enzymes, use coordinate descent (optimize one at a time)
+  if (nEnzymes <= 3) {
+    // Exhaustive grid search
+    const combinations = generateRatioCombinations(nEnzymes, ratioSteps);
+    for (const ratios of combinations) {
+      const sum = ratios.reduce((a, b) => a + b, 0);
+      const normalized = ratios.map(r => (r / sum) * totalEnzymeBudget);
+      const testPathway = pathway.map((s, i) => ({ ...s, enzymeConc: normalized[i] }));
+      const result = simulateCellFreePathway(system, testPathway);
+      if (result.productYield > bestYield) {
+        bestYield = result.productYield;
+        bestRatios = normalized;
+      }
+    }
+  } else {
+    // Coordinate descent: optimize one enzyme at a time
+    let currentRatios = pathway.map(s => s.enzymeConc / totalEnzymeBudget);
+    for (let round = 0; round < 5; round++) {
+      for (let e = 0; e < nEnzymes; e++) {
+        let bestRatio = currentRatios[e];
+        for (const ratio of ratioSteps) {
+          const testRatios = [...currentRatios];
+          testRatios[e] = ratio;
+          const sum = testRatios.reduce((a, b) => a + b, 0);
+          const normalized = testRatios.map(r => (r / sum) * totalEnzymeBudget);
+          const testPathway = pathway.map((s, i) => ({ ...s, enzymeConc: normalized[i] }));
+          const result = simulateCellFreePathway(system, testPathway);
+          if (result.productYield > bestYield) {
+            bestYield = result.productYield;
+            bestRatio = ratio;
+            bestRatios = normalized;
+          }
+        }
+        currentRatios[e] = bestRatio;
+      }
     }
   }
 

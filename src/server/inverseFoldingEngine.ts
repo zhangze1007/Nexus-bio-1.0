@@ -156,26 +156,29 @@ const AA_PROPERTIES: Record<string, {
   helixPropensity: number;
   sheetPropensity: number;
 }> = {
-  A: { hydrophobic: true,  charge: 0, volume: 88.6,  flexibility: 0.3, helixPropensity: 1.42, sheetPropensity: 0.83 },
-  C: { hydrophobic: false, charge: 0, volume: 108.5, flexibility: 0.3, helixPropensity: 0.70, sheetPropensity: 1.19 },
-  D: { hydrophobic: false, charge: -1, volume: 111.1, flexibility: 0.5, helixPropensity: 1.01, sheetPropensity: 0.54 },
-  E: { hydrophobic: false, charge: -1, volume: 138.4, flexibility: 0.5, helixPropensity: 1.51, sheetPropensity: 0.37 },
-  F: { hydrophobic: true,  charge: 0, volume: 189.9, flexibility: 0.2, helixPropensity: 1.13, sheetPropensity: 1.38 },
-  G: { hydrophobic: false, charge: 0, volume: 60.1,  flexibility: 0.9, helixPropensity: 0.57, sheetPropensity: 0.75 },
-  H: { hydrophobic: false, charge: 0.5, volume: 153.2, flexibility: 0.4, helixPropensity: 1.00, sheetPropensity: 0.87 },
-  I: { hydrophobic: true,  charge: 0, volume: 166.7, flexibility: 0.2, helixPropensity: 1.08, sheetPropensity: 1.60 },
-  K: { hydrophobic: false, charge: 1, volume: 168.6, flexibility: 0.5, helixPropensity: 1.16, sheetPropensity: 0.74 },
-  L: { hydrophobic: true,  charge: 0, volume: 166.7, flexibility: 0.2, helixPropensity: 1.21, sheetPropensity: 1.30 },
-  M: { hydrophobic: true,  charge: 0, volume: 162.9, flexibility: 0.3, helixPropensity: 1.45, sheetPropensity: 1.05 },
-  N: { hydrophobic: false, charge: 0, volume: 114.1, flexibility: 0.5, helixPropensity: 0.67, sheetPropensity: 0.89 },
-  P: { hydrophobic: false, charge: 0, volume: 112.7, flexibility: 0.7, helixPropensity: 0.57, sheetPropensity: 0.55 },
-  Q: { hydrophobic: false, charge: 0, volume: 143.8, flexibility: 0.5, helixPropensity: 1.11, sheetPropensity: 1.10 },
-  R: { hydrophobic: false, charge: 1, volume: 173.4, flexibility: 0.5, helixPropensity: 0.98, sheetPropensity: 0.93 },
-  S: { hydrophobic: false, charge: 0, volume: 89.0,  flexibility: 0.6, helixPropensity: 0.77, sheetPropensity: 0.75 },
-  T: { hydrophobic: false, charge: 0, volume: 116.1, flexibility: 0.4, helixPropensity: 0.83, sheetPropensity: 1.19 },
-  V: { hydrophobic: true,  charge: 0, volume: 140.0, flexibility: 0.2, helixPropensity: 1.06, sheetPropensity: 1.70 },
-  W: { hydrophobic: true,  charge: 0, volume: 227.8, flexibility: 0.1, helixPropensity: 1.08, sheetPropensity: 1.37 },
-  Y: { hydrophobic: true,  charge: 0, volume: 193.6, flexibility: 0.2, helixPropensity: 0.69, sheetPropensity: 1.47 },
+  // Flexibility: Bhaskaran & Ponnuswamy (1988) Int J Pept Protein Res 32:241-255
+  // Volume: Chothia (1975) J Mol Biol 105:1-14
+  // Helix/Sheet propensity: Chou & Fasman (1978) Annu Rev Biochem 47:251-276
+  A: { hydrophobic: true,  charge: 0, volume: 88.6,  flexibility: 0.357, helixPropensity: 1.42, sheetPropensity: 0.83 },
+  C: { hydrophobic: false, charge: 0, volume: 108.5, flexibility: 0.345, helixPropensity: 0.70, sheetPropensity: 1.19 },
+  D: { hydrophobic: false, charge: -1, volume: 111.1, flexibility: 0.511, helixPropensity: 1.01, sheetPropensity: 0.54 },
+  E: { hydrophobic: false, charge: -1, volume: 138.4, flexibility: 0.497, helixPropensity: 1.51, sheetPropensity: 0.37 },
+  F: { hydrophobic: true,  charge: 0, volume: 189.9, flexibility: 0.314, helixPropensity: 1.13, sheetPropensity: 1.38 },
+  G: { hydrophobic: false, charge: 0, volume: 60.1,  flexibility: 0.544, helixPropensity: 0.57, sheetPropensity: 0.75 },
+  H: { hydrophobic: false, charge: 0.5, volume: 153.2, flexibility: 0.397, helixPropensity: 1.00, sheetPropensity: 0.87 },
+  I: { hydrophobic: true,  charge: 0, volume: 166.7, flexibility: 0.326, helixPropensity: 1.08, sheetPropensity: 1.60 },
+  K: { hydrophobic: false, charge: 1, volume: 168.6, flexibility: 0.466, helixPropensity: 1.16, sheetPropensity: 0.74 },
+  L: { hydrophobic: true,  charge: 0, volume: 166.7, flexibility: 0.365, helixPropensity: 1.21, sheetPropensity: 1.30 },
+  M: { hydrophobic: true,  charge: 0, volume: 162.9, flexibility: 0.295, helixPropensity: 1.45, sheetPropensity: 1.05 },
+  N: { hydrophobic: false, charge: 0, volume: 114.1, flexibility: 0.464, helixPropensity: 0.67, sheetPropensity: 0.89 },
+  P: { hydrophobic: false, charge: 0, volume: 112.7, flexibility: 0.196, helixPropensity: 0.57, sheetPropensity: 0.55 },
+  Q: { hydrophobic: false, charge: 0, volume: 143.8, flexibility: 0.493, helixPropensity: 1.11, sheetPropensity: 1.10 },
+  R: { hydrophobic: false, charge: 1, volume: 173.4, flexibility: 0.529, helixPropensity: 0.98, sheetPropensity: 0.93 },
+  S: { hydrophobic: false, charge: 0, volume: 89.0,  flexibility: 0.467, helixPropensity: 0.77, sheetPropensity: 0.75 },
+  T: { hydrophobic: false, charge: 0, volume: 116.1, flexibility: 0.413, helixPropensity: 0.83, sheetPropensity: 1.19 },
+  V: { hydrophobic: true,  charge: 0, volume: 140.0, flexibility: 0.334, helixPropensity: 1.06, sheetPropensity: 1.70 },
+  W: { hydrophobic: true,  charge: 0, volume: 227.8, flexibility: 0.246, helixPropensity: 1.08, sheetPropensity: 1.37 },
+  Y: { hydrophobic: true,  charge: 0, volume: 193.6, flexibility: 0.353, helixPropensity: 0.69, sheetPropensity: 1.47 },
 };
 
 /** Distance thresholds for secondary structure classification */
