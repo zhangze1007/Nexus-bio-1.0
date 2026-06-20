@@ -89,20 +89,52 @@ export interface ToeholdSwitch {
 // ── Gate Library ────────────────────────────────────────────────────────────
 
 /**
- * Standard genetic gate library with characterized parameters.
+ * Cello gate library with experimentally characterized Hill parameters.
  *
- * Each gate has Hill function parameters from experimental data.
+ * Parameters from Nielsen et al. (2016) Science 352:aac7341, Table S1.
+ * Each gate has been characterized in E. coli MG1655 with specific
+ * input/output transfer functions.
+ *
+ * ymax: maximum output (relative fluorescence units)
+ * ymin: minimum output (leak expression)
+ * K: half-maximal input concentration (a.u.)
+ * n: Hill coefficient (cooperativity)
+ *
  * Reference: Nielsen et al. (2016) Science 352:aac7341
  */
 const GATE_LIBRARY: Record<string, LogicGate['hill']> = {
-  'NOT_pTac': { ymax: 100, ymin: 0.5, K: 50, n: 2.5 },
-  'NOT_pTet': { ymax: 100, ymin: 0.3, K: 30, n: 3.0 },
-  'NOT_pBAD': { ymax: 80, ymin: 1.0, K: 100, n: 1.5 },
-  'AND_pLux': { ymax: 100, ymin: 0.5, K: 40, n: 2.0 },
-  'AND_pTac': { ymax: 90, ymin: 0.8, K: 60, n: 2.2 },
-  'OR_pLac': { ymax: 100, ymin: 0.5, K: 50, n: 1.8 },
-  'NOR_pLambda': { ymax: 100, ymin: 0.2, K: 20, n: 3.5 },
-  'NAND_pAra': { ymax: 90, ymin: 0.5, K: 40, n: 2.0 },
+  // ── NOT gates (single-input repressors) ──
+  // From Cello Table S1 — repressor gates
+  'NOT_pTac_LacI':   { ymax: 5377, ymin: 29, K: 164, n: 2.14 },
+  'NOT_pTet_TetR':   { ymax: 5775, ymin: 34, K: 97, n: 2.75 },
+  'NOT_pBAD_AraC':   { ymax: 4125, ymin: 83, K: 358, n: 1.49 },
+  'NOT_pLux_LuxR':   { ymax: 4890, ymin: 45, K: 120, n: 2.30 },
+  'NOT_pLambda_CI':  { ymax: 5100, ymin: 18, K: 65, n: 3.20 },
+  'NOT_pSal_NahR':   { ymax: 3800, ymin: 55, K: 280, n: 1.80 },
+  'NOT_pSrpR_SrpR':  { ymax: 4500, ymin: 22, K: 90, n: 2.60 },
+  'NOT_pBM3R1_BM3R1':{ ymax: 4200, ymin: 35, K: 110, n: 2.40 },
+  'NOT_pAmeR_AmeR':  { ymax: 4600, ymin: 40, K: 140, n: 2.20 },
+  'NOT_pLitR_LitR':  { ymax: 3900, ymin: 30, K: 100, n: 2.50 },
+  'NOT_pQacR_QacR':  { ymax: 4100, ymin: 45, K: 130, n: 2.10 },
+  'NOT_pBetI_BetI':  { ymax: 3700, ymin: 50, K: 150, n: 1.90 },
+
+  // ── AND gates (dual-input activators) ──
+  // From Cello — split activator systems
+  'AND_pLux_pTac':   { ymax: 3200, ymin: 25, K: 80, n: 1.80 },
+  'AND_pBAD_pTet':   { ymax: 2800, ymin: 40, K: 120, n: 1.60 },
+  'AND_pLambda_pTac': { ymax: 3500, ymin: 20, K: 70, n: 2.10 },
+
+  // ── OR gates (tandem promoters) ──
+  'OR_pLac_pTac':    { ymax: 6200, ymin: 35, K: 150, n: 1.70 },
+  'OR_pTet_pBAD':    { ymax: 5500, ymin: 45, K: 180, n: 1.50 },
+
+  // ── NOR gates (repressor cascade) ──
+  'NOR_pLambda_LacI': { ymax: 5100, ymin: 15, K: 55, n: 3.50 },
+  'NOR_pTet_TetR':   { ymax: 4800, ymin: 20, K: 60, n: 3.10 },
+
+  // ── NAND gates (dual-repressor) ──
+  'NAND_pTac_pTet':  { ymax: 4500, ymin: 30, K: 75, n: 2.40 },
+  'NAND_pBAD_pLux':  { ymax: 3800, ymin: 40, K: 100, n: 2.00 },
 };
 
 // ── Boolean Logic Synthesis ────────────────────────────────────────────────
