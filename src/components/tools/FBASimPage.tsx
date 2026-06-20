@@ -124,6 +124,16 @@ export default React.memo(function FBASimPage() {
   const [optknockResult, setOptknockResult] = useState<OptKnockResultType | null>(null);
   const [strainDesignLoading, setStrainDesignLoading] = useState(false);
 
+  // Strain Design Pipeline state
+  interface PipelineResult {
+    paretoFront: Array<{ growthRate: number; productFlux: number; growthFractionOfWT: number; strategy: { knockouts: string[]; description: string } }>;
+    bestDesign: { growthRate: number; productFlux: number; growthFractionOfWT: number; strategy: { knockouts: string[]; description: string } };
+    evaluations: Array<{ growthRate: number; productFlux: number; feasible: boolean }>;
+  }
+  const [pipelineResult, setPipelineResult] = useState<PipelineResult | null>(null);
+  const [pipelineLoading, setPipelineLoading] = useState(false);
+  const [pipelineError, setPipelineError] = useState<string | null>(null);
+
   const recommendedSeed = useMemo(
     () => buildFBASeed(project, analyzeArtifact, dbtlPayload, pathdPayload),
     [analyzeArtifact?.generatedAt, analyzeArtifact?.id, dbtlPayload?.feedbackSource, dbtlPayload?.result.improvementRate, dbtlPayload?.result.latestPhase, dbtlPayload?.result.passRate, dbtlPayload?.updatedAt, pathdPayload?.updatedAt, project?.id, project?.updatedAt],
@@ -867,6 +877,105 @@ export default React.memo(function FBASimPage() {
       <ToolTabPanel tabId="strain" activeId={activeTab}>
         <div style={{ display: 'flex', gap: '16px', flex: 1, minHeight: 0, overflow: 'auto', padding: '12px' }}>
           <div style={{ flex: 1, minWidth: 0 }}>
+
+            {/* ── Strain Design Pipeline ── */}
+            <div style={{ marginBottom: 12, padding: '12px', border: `1px solid ${THEME.BORDER}`, borderRadius: 'var(--nb-radius-md)', background: THEME.PANEL_SURFACE }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  Strain Design Pipeline
+                </span>
+                {pipelineResult && (
+                  <span style={{ fontFamily: THEME.MONO, fontSize: 10, color: THEME.MINT, background: 'rgba(191,220,205,0.12)', padding: '2px 6px', borderRadius: 6 }}>
+                    ✓ {pipelineResult.paretoFront.length} Pareto designs
+                  </span>
+                )}
+              </div>
+              <p style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL, margin: '0 0 8px' }}>
+                Run full strain design: FSEOF + OptKnock → FBA evaluation → Pareto ranking
+              </p>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button
+                  onClick={async () => {
+                    setPipelineLoading(true);
+                    setPipelineError(null);
+                    try {
+                      const res = await fetch('/api/pipeline/fbasim', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          species: 'ecoli',
+                          objective,
+                          glucoseUptake,
+                          oxygenUptake,
+                          knockouts,
+                          maxKnockouts: 3,
+                          growthFractionConstraint: 0.1,
+                        }),
+                      });
+                      if (!res.ok) throw new Error(`Pipeline failed (${res.status})`);
+                      const data = await res.json();
+                      setPipelineResult(data.result);
+                    } catch (err) {
+                      setPipelineError(err instanceof Error ? err.message : 'Pipeline failed');
+                    } finally {
+                      setPipelineLoading(false);
+                    }
+                  }}
+                  disabled={pipelineLoading}
+                  style={{
+                    padding: '6px 14px', borderRadius: 'var(--nb-radius-sm)',
+                    background: pipelineLoading ? 'rgba(255,255,255,0.04)' : 'rgba(191,220,205,0.14)',
+                    border: `1px solid ${pipelineLoading ? 'rgba(255,255,255,0.08)' : 'rgba(191,220,205,0.3)'}`,
+                    color: pipelineLoading ? 'rgba(255,255,255,0.35)' : 'rgba(191,220,205,0.9)',
+                    fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)',
+                    cursor: pipelineLoading ? 'wait' : 'pointer',
+                  }}
+                >
+                  {pipelineLoading ? 'Running Pipeline...' : 'Run Strain Design'}
+                </button>
+                {pipelineResult?.bestDesign && (
+                  <button
+                    onClick={() => {
+                      // Send to ProEvol
+                      localStorage.setItem('nexus-bio:fbasim-to-proevol', JSON.stringify({
+                        targetReaction: pipelineResult.bestDesign.strategy.knockouts[0] ?? 'PRODUCT',
+                        knockouts: pipelineResult.bestDesign.strategy.knockouts,
+                      }));
+                      window.location.href = '/tools/proevol';
+                    }}
+                    style={{
+                      padding: '6px 14px', borderRadius: 'var(--nb-radius-sm)',
+                      background: 'rgba(175,195,214,0.12)',
+                      border: '1px solid rgba(175,195,214,0.25)',
+                      color: 'rgba(175,195,214,0.9)',
+                      fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Send to ProEvol →
+                  </button>
+                )}
+              </div>
+              {pipelineError && (
+                <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.CORAL, margin: '8px 0 0' }}>
+                  {pipelineError}
+                </p>
+              )}
+              {pipelineResult?.bestDesign && (
+                <div style={{ marginTop: 12, padding: '8px 12px', background: 'rgba(191,220,205,0.08)', border: '1px solid rgba(191,220,205,0.15)', borderRadius: 'var(--nb-radius-sm)' }}>
+                  <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: 'rgba(191,220,205,0.7)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                    Best Design
+                  </p>
+                  <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-sm)', color: 'rgba(250,246,240,0.9)', margin: '4px 0 0' }}>
+                    Growth: {pipelineResult.bestDesign.growthRate?.toFixed(4) ?? 'N/A'} h⁻¹ | Product: {pipelineResult.bestDesign.productFlux?.toFixed(4) ?? 'N/A'} | Burden: {(pipelineResult.bestDesign.growthFractionOfWT * 100).toFixed(1)}%
+                  </p>
+                  <p style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL, margin: '4px 0 0' }}>
+                    {pipelineResult.bestDesign.strategy.description}
+                  </p>
+                </div>
+              )}
+            </div>
+
             <ScientificFigureFrame
               eyebrow="FSEOF — Flux Scanning based on Enforced Objective Flux"
               title="Overexpression Targets"
