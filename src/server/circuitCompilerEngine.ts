@@ -199,7 +199,7 @@ export function booleanToGates(
       inputs: orInputs,
       output,
       genetic: { promoter: 'pLac_tandem', rbs: 'RBS_strong', cds: 'GFP', terminator: 'T1' },
-      hill: GATE_LIBRARY['OR_pLac'],
+      hill: GATE_LIBRARY['OR_pLac_pTac'] || { ymax: 100, ymin: 0.5, K: 50, n: 1.8 },
     });
   } else if (expression.includes(' · ')) {
     // AND gate
@@ -212,7 +212,7 @@ export function booleanToGates(
       inputs: andInputs,
       output,
       genetic: { promoter: 'pLux_split', rbs: 'RBS_medium', cds: 'GFP', terminator: 'T1' },
-      hill: GATE_LIBRARY['AND_pLux'],
+      hill: GATE_LIBRARY['AND_pLux_pTac'] || { ymax: 100, ymin: 0.5, K: 40, n: 2.0 },
     });
   } else if (expression.endsWith("'")) {
     // NOT gate
@@ -224,7 +224,7 @@ export function booleanToGates(
       inputs: [inputName],
       output,
       genetic: { promoter: 'pTac', rbs: 'RBS_strong', cds: 'LacI', terminator: 'T1' },
-      hill: GATE_LIBRARY['NOT_pTac'],
+      hill: GATE_LIBRARY['NOT_pTac_LacI'] || { ymax: 100, ymin: 0.5, K: 50, n: 2.0 },
     });
   } else {
     // BUFFER (direct connection)
