@@ -189,6 +189,74 @@ const REACTION_DB: Reaction[] = [
   // ── NADPH production ──
   { id: 'R01528', name: 'Glucose-6-P dehydrogenase', substrates: ['glucose_6p', 'nadp'], products: ['6pgl', 'nadph'], ecNumber: '1.1.1.49', deltaG: -4.0, reversible: false, enzymeAvailability: 0.9, organisms: ['ecoli', 'yeast', 'human'], cofactors: ['NADP+'], type: 'oxidoreductase' },
   { id: 'R01528b', name: '6-PG dehydrogenase', substrates: ['6pgl', 'nadp'], products: ['ru5p', 'co2', 'nadph'], ecNumber: '1.1.1.44', deltaG: -5.0, reversible: false, enzymeAvailability: 0.9, organisms: ['ecoli', 'yeast', 'human'], cofactors: ['NADP+'], type: 'oxidoreductase' },
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // FATTY ACID METABOLISM (12 reactions)
+  // ════════════════════════════════════════════════════════════════════════════
+  { id: 'R01396', name: 'Acetyl-CoA carboxylase', substrates: ['acetyl_coa', 'atp', 'hco3'], products: ['malonyl_coa', 'adp', 'pi'], ecNumber: '6.4.1.2', deltaG: -4.1, reversible: false, enzymeAvailability: 0.85, organisms: ['ecoli', 'yeast', 'human'], cofactors: ['biotin'], type: 'ligase' },
+  { id: 'R01699', name: 'Malonyl-CoA-ACP transacylase', substrates: ['malonyl_coa', 'acp'], products: ['malonyl_acp', 'coa'], ecNumber: '2.3.1.39', deltaG: 0, reversible: true, enzymeAvailability: 0.85, organisms: ['ecoli'], cofactors: ['ACP'], type: 'transferase' },
+  { id: 'R01700', name: 'β-Ketoacyl-ACP synthase III', substrates: ['acetyl_coa', 'malonyl_acp'], products: ['acetoacetyl_acp', 'co2', 'coa'], ecNumber: '2.3.1.180', deltaG: -3.5, reversible: false, enzymeAvailability: 0.85, organisms: ['ecoli'], cofactors: ['ACP'], type: 'transferase' },
+  { id: 'R01701', name: 'β-Ketoacyl-ACP reductase', substrates: ['acetoacetyl_acp', 'nadph'], products: ['beta_hydroxybutyryl_acp', 'nadp'], ecNumber: '1.1.1.100', deltaG: -2.0, reversible: false, enzymeAvailability: 0.85, organisms: ['ecoli'], cofactors: ['NADPH'], type: 'oxidoreductase' },
+  { id: 'R01702', name: 'β-Hydroxyacyl-ACP dehydratase', substrates: ['beta_hydroxybutyryl_acp'], products: ['crotonyl_acp', 'h2o'], ecNumber: '4.2.1.59', deltaG: 0, reversible: true, enzymeAvailability: 0.85, organisms: ['ecoli'], cofactors: [], type: 'lyase' },
+  { id: 'R01703', name: 'Enoyl-ACP reductase', substrates: ['crotonyl_acp', 'nadph'], products: ['butyryl_acp', 'nadp'], ecNumber: '1.3.1.9', deltaG: -2.5, reversible: false, enzymeAvailability: 0.85, organisms: ['ecoli'], cofactors: ['NADPH'], type: 'oxidoreductase' },
+  { id: 'R04751', name: 'Palmitoyl-ACP thioesterase', substrates: ['palmitoyl_acp', 'h2o'], products: ['palmitate', 'acp', 'h'], ecNumber: '3.1.2.14', deltaG: -2.0, reversible: false, enzymeAvailability: 0.8, organisms: ['ecoli', 'plant'], cofactors: [], type: 'hydrolase' },
+  { id: 'R04752', name: 'Stearoyl-ACP desaturase', substrates: ['stearoyl_acp', 'o2', 'nadph'], products: ['oleoyl_acp', 'h2o', 'nadp'], ecNumber: '1.14.19.2', deltaG: -5.0, reversible: false, enzymeAvailability: 0.7, organisms: ['plant'], cofactors: ['Fe', 'O2'], type: 'oxidoreductase' },
+  { id: 'R01786', name: 'β-Oxidation (acyl-CoA dehydrogenase)', substrates: ['palmitoyl_coa', 'fad'], products: ['trans2_enoyl_coa', 'fadh2'], ecNumber: '1.3.8.8', deltaG: 0, reversible: true, enzymeAvailability: 0.85, organisms: ['ecoli', 'human'], cofactors: ['FAD'], type: 'oxidoreductase' },
+  { id: 'R01787', name: 'β-Oxidation (enoyl-CoA hydratase)', substrates: ['trans2_enoyl_coa', 'h2o'], products: ['3hydroxyacyl_coa'], ecNumber: '4.2.1.17', deltaG: 0, reversible: true, enzymeAvailability: 0.85, organisms: ['ecoli', 'human'], cofactors: [], type: 'lyase' },
+  { id: 'R01788', name: 'β-Oxidation (3-hydroxyacyl-CoA dehydrogenase)', substrates: ['3hydroxyacyl_coa', 'nad'], products: ['3ketoacyl_coa', 'nadh'], ecNumber: '1.1.1.35', deltaG: 0, reversible: true, enzymeAvailability: 0.85, organisms: ['ecoli', 'human'], cofactors: ['NAD+'], type: 'oxidoreductase' },
+  { id: 'R01789', name: 'β-Oxidation (thiolase)', substrates: ['3ketoacyl_coa', 'coa'], products: ['acetyl_coa', 'acyl_coa_short'], ecNumber: '2.3.1.16', deltaG: 0, reversible: true, enzymeAvailability: 0.85, organisms: ['ecoli', 'human'], cofactors: ['CoA'], type: 'transferase' },
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // NUCLEOTIDE BIOSYNTHESIS (10 reactions)
+  // ════════════════════════════════════════════════════════════════════════════
+  { id: 'R00569', name: 'Adenylosuccinate synthase', substrates: ['imp', 'asp', 'gtp'], products: ['dcamp', 'gdp', 'pi'], ecNumber: '6.3.4.4', deltaG: -4.0, reversible: false, enzymeAvailability: 0.85, organisms: ['ecoli', 'yeast', 'human'], cofactors: ['GTP'], type: 'ligase' },
+  { id: 'R00570', name: 'Adenylosuccinate lyase', substrates: ['dcamp'], products: ['amp', 'fumarate'], ecNumber: '4.3.2.2', deltaG: 0, reversible: true, enzymeAvailability: 0.85, organisms: ['ecoli', 'yeast', 'human'], cofactors: [], type: 'lyase' },
+  { id: 'R00571', name: 'IMP dehydrogenase', substrates: ['imp', 'nad', 'h2o'], products: ['xmp', 'nadh'], ecNumber: '1.1.1.205', deltaG: 0, reversible: true, enzymeAvailability: 0.85, organisms: ['ecoli', 'yeast', 'human'], cofactors: ['NAD+'], type: 'oxidoreductase' },
+  { id: 'R00572', name: 'GMP synthase', substrates: ['xmp', 'gln', 'atp'], products: ['gmp', 'glu', 'amp', 'ppi'], ecNumber: '6.3.5.2', deltaG: -8.0, reversible: false, enzymeAvailability: 0.85, organisms: ['ecoli', 'yeast', 'human'], cofactors: ['ATP'], type: 'ligase' },
+  { id: 'R00573', name: 'CMP synthase (CTP synthase)', substrates: ['utp', 'gln', 'atp'], products: ['ctp', 'glu', 'adp', 'pi'], ecNumber: '6.3.4.2', deltaG: -6.0, reversible: false, enzymeAvailability: 0.85, organisms: ['ecoli', 'yeast', 'human'], cofactors: ['ATP'], type: 'ligase' },
+  { id: 'R00574', name: 'UMP synthase (orotate phosphoribosyltransferase)', substrates: ['orotate', 'prpp'], products: ['orot5p', 'ppi'], ecNumber: '2.4.2.10', deltaG: 0, reversible: true, enzymeAvailability: 0.85, organisms: ['ecoli', 'yeast', 'human'], cofactors: [], type: 'transferase' },
+  { id: 'R00575', name: 'Orotidine-5-P decarboxylase', substrates: ['orot5p'], products: ['ump', 'co2'], ecNumber: '4.1.1.23', deltaG: -4.0, reversible: false, enzymeAvailability: 0.85, organisms: ['ecoli', 'yeast', 'human'], cofactors: [], type: 'decarboxylase' },
+  { id: 'R00576', name: 'Nucleoside diphosphate kinase', substrates: ['ump', 'atp'], products: ['udp', 'adp'], ecNumber: '2.7.4.22', deltaG: 0, reversible: true, enzymeAvailability: 0.9, organisms: ['ecoli', 'yeast', 'human'], cofactors: ['Mg2+'], type: 'kinase' },
+  { id: 'R00577', name: 'UTP-glucose-1-P uridylyltransferase', substrates: ['utp', 'glucose_1p'], products: ['udpg', 'ppi'], ecNumber: '2.7.7.9', deltaG: 0, reversible: true, enzymeAvailability: 0.85, organisms: ['ecoli', 'yeast', 'human'], cofactors: ['Mg2+'], type: 'transferase' },
+  { id: 'R00578', name: 'Ribose-5-P isomerase', substrates: ['ru5p'], products: ['r5p'], ecNumber: '5.3.1.6', deltaG: 0, reversible: true, enzymeAvailability: 0.9, organisms: ['ecoli', 'yeast', 'human'], cofactors: [], type: 'isomerase' },
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // AMINO ACID BIOSYNTHESIS (10 reactions)
+  // ════════════════════════════════════════════════════════════════════════════
+  { id: 'R00258', name: 'Aspartate aminotransferase', substrates: ['oxaloacetate', 'glutamate'], products: ['aspartate', 'akg'], ecNumber: '2.6.1.1', deltaG: 0, reversible: true, enzymeAvailability: 0.9, organisms: ['ecoli', 'yeast', 'human'], cofactors: ['PLP'], type: 'transaminase' },
+  { id: 'R00480', name: 'Glutamate dehydrogenase', substrates: ['akg', 'nh4', 'nadph'], products: ['glutamate', 'nadp'], ecNumber: '1.4.1.4', deltaG: 4.2, reversible: true, enzymeAvailability: 0.85, organisms: ['ecoli', 'yeast', 'human'], cofactors: ['NADPH'], type: 'oxidoreductase' },
+  { id: 'R00709', name: 'Serine hydroxymethyltransferase', substrates: ['serine', 'thf'], products: ['glycine', 'methf', 'h2o'], ecNumber: '2.1.2.1', deltaG: 0.8, reversible: true, enzymeAvailability: 0.85, organisms: ['ecoli', 'yeast', 'human'], cofactors: ['PLP', 'THF'], type: 'transferase' },
+  { id: 'R01522', name: 'Phosphoserine aminotransferase', substrates: ['3p_hydroxypyruvate', 'glutamate'], products: ['phosphoserine', 'akg'], ecNumber: '2.6.1.52', deltaG: 0, reversible: true, enzymeAvailability: 0.8, organisms: ['ecoli', 'yeast'], cofactors: ['PLP'], type: 'transaminase' },
+  { id: 'R01523', name: 'Phosphoserine phosphatase', substrates: ['phosphoserine', 'h2o'], products: ['serine', 'pi'], ecNumber: '3.1.3.3', deltaG: -2.0, reversible: false, enzymeAvailability: 0.85, organisms: ['ecoli', 'yeast', 'human'], cofactors: [], type: 'hydrolase' },
+  { id: 'R01524', name: 'Threonine synthase', substrates: ['phosphohomoserine', 'h2o'], products: ['threonine', 'pi'], ecNumber: '4.2.3.1', deltaG: -2.0, reversible: false, enzymeAvailability: 0.85, organisms: ['ecoli', 'yeast'], cofactors: ['PLP'], type: 'lyase' },
+  { id: 'R01525', name: 'Threonine dehydratase', substrates: ['threonine'], products: ['2obut', 'nh4'], ecNumber: '4.3.1.19', deltaG: 0, reversible: true, enzymeAvailability: 0.8, organisms: ['ecoli', 'yeast'], cofactors: ['PLP'], type: 'lyase' },
+  { id: 'R01526', name: 'Acetolactate synthase', substrates: ['2pyr', 'h'], products: ['acetolactate', 'co2'], ecNumber: '2.2.1.6', deltaG: -2.0, reversible: false, enzymeAvailability: 0.8, organisms: ['ecoli', 'yeast'], cofactors: ['TPP'], type: 'transferase' },
+  { id: 'R01527', name: 'Ketol-acid reductoisomerase', substrates: ['acetolactate', 'nadph'], products: ['dihydroxyisovalerate', 'nadp'], ecNumber: '1.1.1.86', deltaG: -2.0, reversible: false, enzymeAvailability: 0.8, organisms: ['ecoli', 'yeast'], cofactors: ['NADPH', 'Mg2+'], type: 'oxidoreductase' },
+  { id: 'R01528c', name: 'Dihydroxyacid dehydratase', substrates: ['dihydroxyisovalerate'], products: ['3mob', 'h2o'], ecNumber: '4.2.1.9', deltaG: 0, reversible: true, enzymeAvailability: 0.75, organisms: ['ecoli', 'yeast'], cofactors: ['Fe-S'], type: 'lyase' },
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // COFACTOR BIOSYNTHESIS (8 reactions)
+  // ════════════════════════════════════════════════════════════════════════════
+  { id: 'R00127', name: 'NAD synthetase', substrates: ['dhnad', 'gln', 'atp', 'h2o'], products: ['nad', 'glu', 'amp', 'ppi'], ecNumber: '6.3.5.1', deltaG: -6.0, reversible: false, enzymeAvailability: 0.85, organisms: ['ecoli', 'yeast'], cofactors: ['ATP'], type: 'ligase' },
+  { id: 'R00128', name: 'NMN adenylyltransferase', substrates: ['nmn', 'atp'], products: ['nad', 'ppi'], ecNumber: '2.7.7.1', deltaG: 0, reversible: true, enzymeAvailability: 0.85, organisms: ['ecoli', 'yeast', 'human'], cofactors: ['Mg2+'], type: 'transferase' },
+  { id: 'R00129', name: 'FMN adenylyltransferase', substrates: ['fmn', 'atp'], products: ['fad', 'ppi'], ecNumber: '2.7.7.2', deltaG: 0, reversible: true, enzymeAvailability: 0.85, organisms: ['ecoli', 'yeast', 'human'], cofactors: ['Mg2+'], type: 'transferase' },
+  { id: 'R00130', name: 'Pantothenate kinase', substrates: ['pantothenate', 'atp'], products: ['4ppan', 'adp'], ecNumber: '2.7.1.33', deltaG: -3.0, reversible: false, enzymeAvailability: 0.8, organisms: ['ecoli', 'yeast'], cofactors: ['Mg2+'], type: 'kinase' },
+  { id: 'R00131', name: 'Phosphopantothenate-cysteine ligase', substrates: ['4ppan', 'cys', 'atp'], products: ['4ppcys', 'amp', 'ppi'], ecNumber: '6.3.2.5', deltaG: -5.0, reversible: false, enzymeAvailability: 0.75, organisms: ['ecoli'], cofactors: ['ATP'], type: 'ligase' },
+  { id: 'R00132', name: 'Phosphopantothenoylcysteine decarboxylase', substrates: ['4ppcys'], products: ['pan4p', 'co2'], ecNumber: '4.1.1.36', deltaG: -2.0, reversible: false, enzymeAvailability: 0.75, organisms: ['ecoli'], cofactors: [], type: 'decarboxylase' },
+  { id: 'R00133', name: 'Dephospho-CoA kinase', substrates: ['dpcoa', 'atp'], products: ['coa', 'adp'], ecNumber: '2.7.1.24', deltaG: -3.0, reversible: false, enzymeAvailability: 0.8, organisms: ['ecoli', 'yeast', 'human'], cofactors: ['Mg2+'], type: 'kinase' },
+  { id: 'R00134', name: 'Biotin synthase', substrates: ['dethiobiotin', 's', 'am', 'flxdo'], products: ['biotin', 'amp', 'flxrd'], ecNumber: '2.8.1.6', deltaG: -5.0, reversible: false, enzymeAvailability: 0.6, organisms: ['ecoli'], cofactors: ['Fe-S', 'SAM'], type: 'transferase' },
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // ADDITIONAL CENTRAL METABOLISM (8 reactions)
+  // ════════════════════════════════════════════════════════════════════════════
+  { id: 'R00300', name: 'Phosphofructokinase (PPi-dependent)', substrates: ['f6p', 'ppi'], products: ['fdp', 'pi'], ecNumber: '2.7.1.90', deltaG: -3.0, reversible: false, enzymeAvailability: 0.7, organisms: ['plant', 'protist'], cofactors: ['Mg2+'], type: 'kinase' },
+  { id: 'R00301', name: 'Fructose-1,6-bisphosphatase', substrates: ['fdp', 'h2o'], products: ['f6p', 'pi'], ecNumber: '3.1.3.11', deltaG: -4.0, reversible: false, enzymeAvailability: 0.85, organisms: ['ecoli', 'yeast', 'human'], cofactors: ['Mg2+'], type: 'hydrolase' },
+  { id: 'R00302', name: 'Phosphoglucomutase', substrates: ['glucose_1p'], products: ['glucose_6p'], ecNumber: '5.4.2.2', deltaG: 0, reversible: true, enzymeAvailability: 0.9, organisms: ['ecoli', 'yeast', 'human'], cofactors: ['Mg2+'], type: 'isomerase' },
+  { id: 'R00303', name: 'Galactokinase', substrates: ['galactose', 'atp'], products: ['galactose_1p', 'adp'], ecNumber: '2.7.1.6', deltaG: -3.0, reversible: false, enzymeAvailability: 0.8, organisms: ['ecoli', 'yeast', 'human'], cofactors: ['Mg2+'], type: 'kinase' },
+  { id: 'R00304', name: 'UDP-glucose 4-epimerase', substrates: ['udpg'], products: ['udpgal'], ecNumber: '5.1.3.2', deltaG: 0, reversible: true, enzymeAvailability: 0.85, organisms: ['ecoli', 'yeast', 'human'], cofactors: ['NAD+'], type: 'isomerase' },
+  { id: 'R00305', name: 'Transaldolase', substrates: ['s7p', 'g3p'], products: ['f6p', 'e4p'], ecNumber: '2.2.1.2', deltaG: 0, reversible: true, enzymeAvailability: 0.85, organisms: ['ecoli', 'yeast', 'human'], cofactors: [], type: 'transferase' },
+  { id: 'R00306', name: 'Transketolase', substrates: ['xu5p', 'r5p'], products: ['s7p', 'g3p'], ecNumber: '2.2.1.1', deltaG: 0, reversible: true, enzymeAvailability: 0.85, organisms: ['ecoli', 'yeast', 'human'], cofactors: ['TPP'], type: 'transferase' },
+  { id: 'R00307', name: 'Ribulose-5-P epimerase', substrates: ['ru5p'], products: ['xu5p'], ecNumber: '5.1.3.1', deltaG: 0, reversible: true, enzymeAvailability: 0.9, organisms: ['ecoli', 'yeast', 'human'], cofactors: [], type: 'isomerase' },
 ];
 
 // ── Functional Group Analysis ──────────────────────────────────────────────
