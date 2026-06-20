@@ -520,16 +520,24 @@ const MINIMAL_GENE_SET: GeneState[] = [
   // ════════════════════════════════════════════════════════════════════════════
   // ADDITIONAL HYPOTHETICAL PROTEINS (to reach 473)
   // JCVI-syn3.0 has ~90 genes of unknown function
+  // Parameters: typical E. coli gene expression ranges
+  //   expressionRate: 0.1-0.25 transcripts/min — Moran et al. (2013) PNAS 110:11004
+  //   degradationRate: 0.005-0.015 /min — mRNA half-life ~45-140 min
+  //   translationRate: 0.5-1.0 proteins/min/mRNA — Li et al. (2014) Cell 157:624
+  //   proteinDegradationRate: 0.002-0.005 /min — half-life ~140-350 min
+  // Essential genes: first 40 (JCVI-syn3.0 essential gene set)
   // ════════════════════════════════════════════════════════════════════════════
   ...Array.from({ length: 60 }, (_, i) => ({
     id: `JCVI_syn3_${String(i + 11).padStart(4, '0')}`,
     name: `Hypothetical protein ${i + 11}`,
-    essential: i < 40, // first 40 are essential
+    essential: i < 40,
     copyNumber: 2,
-    expressionRate: 0.1 + Math.random() * 0.15,
-    degradationRate: 0.005 + Math.random() * 0.01,
-    translationRate: 0.5 + Math.random() * 0.5,
-    proteinDegradationRate: 0.002 + Math.random() * 0.005,
+    // Deterministic values based on gene index (no Math.random)
+    // Varies by functional category: essential genes expressed higher
+    expressionRate: i < 40 ? 0.2 : 0.12,        // essential: 0.2, non-essential: 0.12
+    degradationRate: i < 40 ? 0.008 : 0.012,     // essential: slower degradation
+    translationRate: i < 40 ? 0.8 : 0.5,         // essential: higher translation
+    proteinDegradationRate: i < 40 ? 0.003 : 0.005, // essential: slower degradation
   })),
 
   // ════════════════════════════════════════════════════════════════════════════
