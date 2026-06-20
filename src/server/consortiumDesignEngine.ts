@@ -275,15 +275,27 @@ async function steadyComOptimize(
 // ── Cross-Feeding Model ─────────────────────────────────────────────────────
 
 /**
- * Compute cross-feeding interactions using stoichiometric coupling.
+ * Compute cross-feeding interactions using LP-derived exchange fluxes.
+ *
+ * Uses the exchange fluxes from SteadyCom LP solution to determine
+ * actual metabolite exchange rates between strains.
  *
  * For each producer-consumer pair sharing a metabolite:
- *   flux = min(production_rate, consumption_capacity)
- *   benefit = flux / consumer_growth_rate
+ *   flux = exchange_flux from LP (stoichiometrically consistent)
+ *   benefit = flux * Yxs_consumer / μ_consumer (growth benefit)
  *
  * Reference: Zelezniak et al. (2015) Cell Syst 1:154-165
+ * Reference: Zomorrodi & Segre (2016) Bioinformatics 32:i429-i437
+ *
+ * @param strains - Community members
+ * @param exchangeFluxes - LP-derived exchange fluxes (mmol/gDW/h)
+ * @param growthRates - LP-derived growth rates per strain
  */
-function computeCrossFeeding(strains: Strain[]): CrossFeedingInteraction[] {
+function computeCrossFeeding(
+  strains: Strain[],
+  exchangeFluxes: Record<string, number>,
+  growthRates: number[],
+): CrossFeedingInteraction[] {
   const interactions: CrossFeedingInteraction[] = [];
 
   for (const producer of strains) {
@@ -292,14 +304,24 @@ function computeCrossFeeding(strains: Strain[]): CrossFeedingInteraction[] {
 
       for (const met of producer.metabolites.produces) {
         if (consumer.metabolites.consumes.includes(met)) {
-          // Production rate: proportional to growth rate and yield
-          const productionRate = producer.growthRate * producer.monod.yieldCoeff * 0.5;
-          // Consumption capacity: proportional to substrate affinity
-          const consumptionCapacity = consumer.growthRate / consumer.monod.ks;
-          const flux = Math.min(productionRate, consumptionCapacity);
+          // Use LP-derived exchange flux if available
+          const lpFlux = exchangeFluxes[met];
 
-          // Benefit: fractional growth increase
-          const benefit = flux * consumer.monod.yieldCoeff / Math.max(consumer.growthRate, 0.001);
+          // LP flux is net exchange; for cross-feeding, use producer's contribution
+          // Producer contribution = total exchange * (producer_growth / sum_of_producer_growths)
+          const producerIdx = strains.indexOf(producer);
+          const producerGrowth = growthRates[producerIdx] || producer.growthRate;
+
+          // Exchange flux from LP (positive = net production)
+          // Cross-feeding flux = producer's contribution to exchange
+          const flux = lpFlux !== undefined
+            ? Math.max(0, lpFlux) * (producerGrowth / Math.max(...growthRates))
+            : producerGrowth * producer.monod.yieldCoeff * (1 / (1 + producer.monod.ks));
+
+          // Benefit: how much does this flux help the consumer grow?
+          // Δμ = flux * Yxs_consumer (yield of consumer on this metabolite)
+          const consumerGrowth = growthRates[strains.indexOf(consumer)] || consumer.growthRate;
+          const benefit = flux * consumer.monod.yieldCoeff / Math.max(consumerGrowth, 0.001);
 
           interactions.push({
             producer: producer.id,
@@ -618,8 +640,8 @@ export async function optimizeConsortium(
   // SteadyCom optimization
   const steadyComResult = await steadyComOptimize(selected, targetProduct);
 
-  // Cross-feeding analysis
-  const interactions = computeCrossFeeding(selected);
+  // Cross-feeding analysis (uses LP-derived exchange fluxes)
+  const interactions = computeCrossFeeding(selected, steadyComResult.exchangeFluxes, steadyComResult.growthRates);
 
   // Community growth rate: geometric mean
   const communityGrowthRate = selected.reduce((prod, s) => prod * s.growthRate, 1) ** (1 / selected.length);
