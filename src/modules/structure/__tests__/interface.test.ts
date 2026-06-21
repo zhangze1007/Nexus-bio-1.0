@@ -275,6 +275,7 @@ describe('interface prediction', () => {
       expect(result.chainPairs.length).toBe(1);
       // Dissimilar -> lower similarity
       expect(result.chainPairs[0].similarity).toBeLessThan(0.95);
+      expect(result.chainPairs[0].predictedInterface).toBe(false);
     });
 
     it('returns correct confidence scores', async () => {
@@ -393,7 +394,7 @@ describe('interface prediction', () => {
       expect(prob).toBeLessThanOrEqual(1);
     });
 
-    it('returns 0 for empty sequences with no embeddings', () => {
+    it('returns probability in valid range for empty sequences', () => {
       const emptyChainA: ProteinChain = { id: 'A', sequence: '', type: 'protein' };
       const emptyChainB: ProteinChain = { id: 'B', sequence: '', type: 'protein' };
       const emptyEmbeddings = new Map<string, number[]>();

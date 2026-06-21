@@ -18,8 +18,14 @@ import type { InterfaceResidue, ProteinChain, InterfacePrediction } from './type
 /** Charged amino acids (positive + negative at physiological pH) */
 const CHARGED_RESIDUES = new Set(['ASP', 'GLU', 'LYS', 'ARG', 'HIS']);
 
-/** Hydrophobic amino acids */
+/** Hydrophobic amino acids (3-letter PDB codes) */
 const HYDROPHOBIC_RESIDUES = new Set(['ALA', 'VAL', 'LEU', 'ILE', 'PHE', 'TRP', 'MET', 'PRO']);
+
+/** Hydrophobic amino acids (1-letter codes for sequence iteration) */
+const HYDROPHOBIC_1LETTER = new Set(['A', 'V', 'L', 'I', 'F', 'W', 'M', 'P']);
+
+/** Charged amino acids (1-letter codes for sequence iteration) */
+const CHARGED_1LETTER = new Set(['D', 'E', 'K', 'R', 'H']);
 
 /** Residues capable of hydrogen bonding */
 const HBOND_RESIDUES = new Set([
@@ -103,8 +109,8 @@ function distance3D(
  * Classify a contact between two residues based on distance and residue type.
  *
  * Classification priority:
- *   1. Hydrogen bond: dist < 3.5Å and both residues capable of H-bonding
- *   2. Salt bridge: dist < 4.0Å and one residue positive, one negative
+ *   1. Salt bridge: dist < 4.0Å and one residue positive, one negative (most specific)
+ *   2. Hydrogen bond: dist < 3.5Å and residues capable of H-bonding
  *   3. Hydrophobic: dist < 5.0Å and both residues hydrophobic
  *   4. Van der Waals: dist < 5.0Å (default fallback)
  *
@@ -214,8 +220,8 @@ function sequenceFeatures(sequence: string): {
   let charged = 0;
 
   for (const aa of sequence) {
-    if (HYDROPHOBIC_RESIDUES.has(aa)) hydrophobic++;
-    if (CHARGED_RESIDUES.has(aa)) charged++;
+    if (HYDROPHOBIC_1LETTER.has(aa)) hydrophobic++;
+    if (CHARGED_1LETTER.has(aa)) charged++;
   }
 
   return {
