@@ -238,8 +238,9 @@ async function steadyComOptimize(
 
       return { growthRates, productFluxes, exchangeFluxes };
     }
-  } catch {
+  } catch (e) {
     // LP solver unavailable — fall through to Monod fallback
+    console.warn('[Consortium] LP solver unavailable, using Monod fallback:', e);
   }
 
   // ── Fallback: Monod-derived rates ────────────────────────────────────────

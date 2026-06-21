@@ -276,7 +276,7 @@ export async function predictEnzymeFunction(sequence: string): Promise<MLPredict
         alternativeECs,
       };
     }
-  } catch {
+  } catch (e) { console.warn("[Engine] Error:", e);
     // API unavailable — fall back to rule-based
   }
 

@@ -742,7 +742,9 @@ function solveFBA(
     });
 
     return result.status === 'optimal' ? result.objective : 0;
-  } catch {
+  } catch (e) {
+    // LP solver unavailable or failed — return 0 (no growth)
+    console.warn('[GEM] FBA solver error:', e);
     return 0;
   }
 }
@@ -778,7 +780,8 @@ function solveFBAWithKnockout(
     });
 
     return result.status === 'optimal' ? result.objective : 0;
-  } catch {
+  } catch (e) {
+    console.warn('[GEM] FBA knockout solver error:', e);
     return 0;
   }
 }
