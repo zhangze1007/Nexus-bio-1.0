@@ -288,13 +288,12 @@ export function designBiosensor(spec: SensorSpec): BiosensorDesign {
   const ec50Point = responseCurve.find(p => p.signalIntensity >= halfMax);
   const sensitivity = ec50Point?.ligandConc ?? entry.kd;
 
-  // Specificity: based on binding affinity and Hill coefficient
-  // Specificity: orthogonality metric from Tamsir et al. (2011) Nature 469:212
-  // specificity = 1 - max(cross_talk_signal) / cognate_signal
-  // Higher Hill coefficient and tighter Kd → better discrimination
-  const kdFactor = Math.min(1, 10 / entry.kd); // tighter Kd = better
-  const hillFactor = Math.min(1, entry.n / 3);  // higher Hill = better
-  const specificity = Math.min(0.99, Math.max(0.1, 0.3 + 0.4 * kdFactor + 0.3 * hillFactor));
+  // Specificity: Hill-based discrimination metric
+  // Higher Hill coefficient → steeper response → better on/off discrimination
+  // Tighter Kd (lower) → better sensitivity at low concentrations
+  // specificity = 1 - (1/Hill_coeff) → approaches 1 as Hill → ∞
+  // Reference: Tamsir et al. (2011) Nature 469:212 (orthogonality metric)
+  const specificity = Math.min(0.99, Math.max(0.1, 1 - 1 / entry.n));
 
   // Signal-to-noise
   const signalToNoise = (maxSignal - basalSignal) / Math.max(basalSignal, 0.001);

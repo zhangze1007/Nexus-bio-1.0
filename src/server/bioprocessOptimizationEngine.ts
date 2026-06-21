@@ -313,19 +313,20 @@ export function simulateFedBatch(params: BioprocessParameters, duration = 48): B
   };
 }
 
-// ── Pontryagin Fed-Batch Optimization ──────────────────────────────────────
+// ── Fed-Batch Feed Rate Optimization ──────────────────────────────────────
 
 /**
- * Optimize fed-batch feed rate using Pontryagin maximum principle.
+ * Optimize fed-batch feed rate via exhaustive grid search.
  *
- * The Hamiltonian:
- *   H = λ_X·dX/dt + λ_S·dS/dt + λ_P·dP/dt + λ_O·dO/dt
+ * Tests nSteps different constant feed rates and selects the one
+ * that maximizes final product concentration.
  *
- * Optimal feed rate: ∂H/∂F = 0 → F*
- *
- * This maximizes product at final time subject to substrate constraints.
+ * Note: Full Pontryagin maximum principle requires solving the costate
+ * equations (dλ/dt = -∂H/∂x) which is a two-point boundary value problem.
+ * Grid search is a valid alternative for single-parameter optimization.
  *
  * Reference: Lim & Shin (1989) Biotechnol Bioeng 33:1073-1081
+ * Reference: Modak & Lim (1989) Chem Eng Sci 44:1693-1704
  */
 export function optimizeFedBatch(
   params: BioprocessParameters,
