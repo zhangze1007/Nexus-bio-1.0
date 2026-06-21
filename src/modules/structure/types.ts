@@ -89,6 +89,32 @@ export interface ComplexScore {
   finalScore: number;
 }
 
+// ── Hetero-Complex Types ─────────────────────────────────────────────────────
+
+export type ChainType = 'protein' | 'dna' | 'rna' | 'ligand';
+
+export interface HeteroChain {
+  /** Chain identifier */
+  id: string;
+  /** Sequence (amino acid or nucleotide) */
+  sequence: string;
+  /** Chain type */
+  type: ChainType;
+  /** Type-specific feature vector */
+  features: number[];
+}
+
+export interface HeteroComplex {
+  /** Chains in the complex */
+  chains: HeteroChain[];
+  /** All pairwise chain combinations with classified pair types */
+  chainPairs: Array<{
+    chainA: string;
+    chainB: string;
+    pairType: 'protein-protein' | 'protein-dna' | 'protein-rna' | 'dna-dna' | 'rna-rna' | 'dna-rna';
+  }>;
+}
+
 export interface StructureResult {
   /** Individual chain results */
   chains: ChainResult[];
