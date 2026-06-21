@@ -16,4 +16,11 @@ export {
   estimateContactProbability,
   classifyInterfaceResidues,
 } from './interface';
-export type { StructureInput, StructureResult, ChainResult, InterfaceResidue, ProteinChain, InterfacePrediction } from './types';
+export {
+  computeContactScore,
+  computeAreaScore,
+  computeEnergyScore,
+  computeClashPenalty,
+  scoreComplex,
+} from './scoring';
+export type { StructureInput, StructureResult, ChainResult, InterfaceResidue, ProteinChain, InterfacePrediction, ComplexScore } from './types';

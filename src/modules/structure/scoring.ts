@@ -450,8 +450,8 @@ export function scoreComplex(
     weights.area * areaScore +
     weights.energy * energyScore;
 
-  // Final score: weighted sum minus clash penalty
-  const finalScore = Math.max(0, Math.min(1, weightedSum - clashPenalty));
+  // Final score: weighted sum minus weighted clash penalty
+  const finalScore = Math.max(0, Math.min(1, weightedSum - weights.clash * clashPenalty));
 
   return {
     contactScore: Math.round(contactScore * 1000) / 1000,

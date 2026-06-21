@@ -62,9 +62,9 @@ function buildContactPdb(): string {
     lines.push(buildAtomLine(i + 1, 'CA', 'ALA', 'A', i + 1, i * 3.8, 0, 0));
   }
 
-  // Chain B: 5 residues along x-axis, offset to create interface near x=7.6
+  // Chain B: 5 residues along x-axis, offset by 6A in x to create realistic inter-chain distances
   for (let i = 0; i < 5; i++) {
-    lines.push(buildAtomLine(i + 6, 'CA', 'GLY', 'B', i + 1, 7.6 + i * 3.8, 0, 0));
+    lines.push(buildAtomLine(i + 6, 'CA', 'GLY', 'B', i + 1, 13.6 + i * 3.8, 0, 0));
   }
 
   lines.push('END');
@@ -254,6 +254,7 @@ describe('complex assembly scoring', () => {
       // No-contact PDB returns 0 (no energy contribution)
       expect(scoreWithContacts).toBeGreaterThanOrEqual(0);
       expect(scoreNoContacts).toBe(0);
+      expect(scoreWithContacts).toBeGreaterThan(scoreNoContacts);
     });
 
     it('returns 0 for empty PDB', () => {
@@ -369,7 +370,7 @@ describe('complex assembly scoring', () => {
       expect(result.clashPenalty).toBeLessThanOrEqual(1);
     });
 
-    it('computes final score as weighted sum minus clash penalty', () => {
+    it('computes final score as weighted sum minus weighted clash penalty', () => {
       const pdb = buildContactPdb();
       const result = scoreComplex(pdb, ['A', 'B']);
 
@@ -379,7 +380,7 @@ describe('complex assembly scoring', () => {
         0.3 * result.areaScore +
         0.3 * result.energyScore;
 
-      const expectedFinal = expectedWeightedSum - result.clashPenalty;
+      const expectedFinal = expectedWeightedSum - 0.1 * result.clashPenalty;
 
       expect(result.finalScore).toBeCloseTo(expectedFinal, 2);
     });
@@ -395,7 +396,7 @@ describe('complex assembly scoring', () => {
         0.2 * result.areaScore +
         0.2 * result.energyScore;
 
-      const expectedFinal = expectedWeightedSum - result.clashPenalty;
+      const expectedFinal = expectedWeightedSum - 0.1 * result.clashPenalty;
 
       expect(result.finalScore).toBeCloseTo(expectedFinal, 2);
     });

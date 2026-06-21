@@ -76,6 +76,19 @@ export interface InterfacePrediction {
   overallConfidence: number;
 }
 
+export interface ComplexScore {
+  /** Contact density score [0, 1] */
+  contactScore: number;
+  /** Buried surface area score [0, 1] */
+  areaScore: number;
+  /** Statistical potential energy score [0, 1], lower = more stable */
+  energyScore: number;
+  /** Steric clash penalty [0, 1], higher = more clashes */
+  clashPenalty: number;
+  /** Weighted composite score */
+  finalScore: number;
+}
+
 export interface StructureResult {
   /** Individual chain results */
   chains: ChainResult[];
