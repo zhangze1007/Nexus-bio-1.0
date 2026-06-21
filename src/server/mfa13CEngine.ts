@@ -448,6 +448,7 @@ function solveLinearSystem(A: number[][], b: number[]): number[] | null {
   // Back substitution
   const x = new Array(n).fill(0);
   for (let i = n - 1; i >= 0; i--) {
+    if (Math.abs(aug[i][i]) < 1e-12) return null; // singular matrix
     let sum = aug[i][n];
     for (let j = i + 1; j < n; j++) sum -= aug[i][j] * x[j];
     x[i] = sum / aug[i][i];
@@ -469,18 +470,34 @@ function simulateNetworkMIDs(
     mids[labelMet.id] = simulateMID(labelMet.nCarbon, labelFraction);
   }
 
-  // Propagate through reactions
-  for (let iteration = 0; iteration < 3; iteration++) {
+  // Propagate through reactions with convergence check
+  // Reference: Antoniewicz et al. (2007) Metab Eng 9:68-86
+  let converged = false;
+  for (let iteration = 0; iteration < 50 && !converged; iteration++) {
+    const prevMIDs: Record<string, number[]> = {};
+    for (const [k, v] of Object.entries(mids)) prevMIDs[k] = [...v];
+
     for (const reaction of input.reactions) {
       for (const product of reaction.products) {
-        if (!mids[product.metabolite]) {
-          const met = input.metabolites.find(m => m.id === product.metabolite);
-          if (met) {
-            mids[product.metabolite] = simulateReactionMID(reaction, mids, product.metabolite, met.nCarbon);
-          }
+        const met = input.metabolites.find(m => m.id === product.metabolite);
+        if (met) {
+          const newMID = simulateReactionMID(reaction, mids, product.metabolite, met.nCarbon);
+          mids[product.metabolite] = newMID;
         }
       }
     }
+
+    // Check convergence: max change < 1e-6
+    let maxChange = 0;
+    for (const [k, v] of Object.entries(mids)) {
+      const prev = prevMIDs[k];
+      if (prev) {
+        for (let i = 0; i < v.length; i++) {
+          maxChange = Math.max(maxChange, Math.abs(v[i] - (prev[i] || 0)));
+        }
+      }
+    }
+    if (maxChange < 1e-6) converged = true;
   }
 
   // Fill missing MIDs with uniform distribution
