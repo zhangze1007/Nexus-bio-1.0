@@ -151,9 +151,10 @@ export async function generateComplexEmbedding(
 // ── Embedding Cache ──────────────────────────────────────────────────────────
 
 /**
- * LRU-style cache for embeddings, keyed by sequence string.
+ * Simple sequence-keyed cache for embeddings.
  *
  * Avoids recomputation when the same sequence is queried multiple times.
+ * Uses insertion-ordered Map; no LRU eviction policy.
  * Thread-safe by design (JavaScript is single-threaded).
  */
 export class EmbeddingCache {
@@ -212,11 +213,14 @@ export class EmbeddingCache {
 
 // ── Batch Processing ─────────────────────────────────────────────────────────
 
+// Module-level cache for batch embedding operations
+const batchCache = new EmbeddingCache();
+
 /**
  * Generate embeddings for multiple sequences in batch.
  *
- * Uses a shared cache to avoid recomputation. Processes sequences
- * in configurable batch sizes to manage memory.
+ * Uses a module-level cache to avoid recomputation across calls.
+ * Processes sequences in configurable batch sizes to manage memory.
  *
  * @param sequences - Array of sequences to embed
  * @param options - Optional batch configuration
@@ -237,9 +241,15 @@ export async function generateBatchEmbeddings(
 
   for (let i = 0; i < sequences.length; i += batchSize) {
     const batch = sequences.slice(i, i + batchSize);
-    const embeddings = await Promise.all(batch.map(seq => generateEmbedding(seq)));
-    for (let j = 0; j < batch.length; j++) {
-      result.set(batch[j], embeddings[j]);
+    for (const seq of batch) {
+      const cached = batchCache.get(seq);
+      if (cached) {
+        result.set(seq, cached);
+      } else {
+        const embedding = await generateEmbedding(seq);
+        batchCache.set(seq, embedding);
+        result.set(seq, embedding);
+      }
     }
   }
 

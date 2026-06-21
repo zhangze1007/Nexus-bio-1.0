@@ -172,17 +172,13 @@ describe('embeddings', () => {
       }
     });
 
-    it('uses cache to avoid recomputation', async () => {
+    it('returns consistent results across calls (deterministic)', async () => {
       const sequences = ['MKWV', 'AAAA'];
-      // First call populates cache
-      await generateBatchEmbeddings(sequences);
-      // Second call should use cache (same results)
-      const result = await generateBatchEmbeddings(sequences);
-      expect(result.size).toBe(2);
-      // Verify deterministic results (cached)
+      const result1 = await generateBatchEmbeddings(sequences);
       const result2 = await generateBatchEmbeddings(sequences);
+      expect(result1.size).toBe(2);
       for (const seq of sequences) {
-        expect(result.get(seq)).toEqual(result2.get(seq));
+        expect(result1.get(seq)).toEqual(result2.get(seq));
       }
     });
 
