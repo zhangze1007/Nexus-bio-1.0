@@ -10,7 +10,6 @@ import {
   encodeHeteroComplex,
   predictHeteroInterface,
 } from '../heteroComplex';
-import { generateEmbedding } from '../embeddings';
 import type { ProteinChain, HeteroComplex } from '../types';
 
 // ── Test Data ─────────────────────────────────────────────────────────────────

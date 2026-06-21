@@ -198,8 +198,8 @@ function classifyPairType(
   if (sorted[0] === 'rna' && sorted[1] === 'rna') return 'rna-rna';
   if (sorted[0] === 'dna' && sorted[1] === 'rna') return 'dna-rna';
 
-  // Fallback for ligand or unknown types
-  return 'protein-protein';
+  // Unsupported pair type
+  throw new Error(`Unsupported chain type pair: ${typeA} + ${typeB}`);
 }
 
 // ── Similarity Utilities ─────────────────────────────────────────────────────
@@ -207,24 +207,29 @@ function classifyPairType(
 /**
  * Compute cosine similarity between two feature vectors.
  *
- * Both vectors must be the same length. Returns 0 for zero-magnitude vectors.
- * Output normalized to [0, 1] range.
+ * Handles different-length vectors by zero-padding the shorter vector.
+ * This enables cross-type comparisons (e.g. protein 24-dim vs DNA 6-dim).
+ * Returns 0 for zero-magnitude vectors. Output normalized to [0, 1] range.
  *
  * @param a - First feature vector
  * @param b - Second feature vector
  * @returns Cosine similarity in [0, 1]
  */
 function computeFeatureSimilarity(a: number[], b: number[]): number {
-  if (a.length !== b.length || a.length === 0) return 0;
+  if (a.length === 0 || b.length === 0) return 0;
+
+  const len = Math.max(a.length, b.length);
 
   let dot = 0;
   let magA = 0;
   let magB = 0;
 
-  for (let i = 0; i < a.length; i++) {
-    dot += a[i] * b[i];
-    magA += a[i] * a[i];
-    magB += b[i] * b[i];
+  for (let i = 0; i < len; i++) {
+    const va = i < a.length ? a[i] : 0;
+    const vb = i < b.length ? b[i] : 0;
+    dot += va * vb;
+    magA += va * va;
+    magB += vb * vb;
   }
 
   const denom = Math.sqrt(magA) * Math.sqrt(magB);

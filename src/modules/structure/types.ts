@@ -91,7 +91,7 @@ export interface ComplexScore {
 
 // ── Hetero-Complex Types ─────────────────────────────────────────────────────
 
-export type ChainType = 'protein' | 'dna' | 'rna' | 'ligand';
+export type ChainType = 'protein' | 'dna' | 'rna';
 
 export interface HeteroChain {
   /** Chain identifier */
