@@ -11,6 +11,7 @@ import {
   EmbeddingCache,
   generateBatchEmbeddings,
   generateEmbeddingWithFallback,
+  sharedCache,
 } from '../embeddings';
 import type { ProteinChain } from '../types';
 
@@ -180,6 +181,37 @@ describe('embeddings', () => {
       for (const seq of sequences) {
         expect(result1.get(seq)).toEqual(result2.get(seq));
       }
+    });
+
+    it('uses cache for repeated sequences in batch', async () => {
+      const sequences = ['MKWVTFISLLFLFSSAYS', 'MKWVTFISLLFLFSSAYS', 'GATTACA'];
+
+      // First call
+      const result1 = await generateBatchEmbeddings(sequences);
+
+      // Second call with same sequences
+      const result2 = await generateBatchEmbeddings(sequences);
+
+      // Results should be identical (deterministic)
+      expect(result1.get('MKWVTFISLLFLFSSAYS')).toEqual(result2.get('MKWVTFISLLFLFSSAYS'));
+      expect(result1.get('GATTACA')).toEqual(result2.get('GATTACA'));
+
+      // Verify sharedCache is populated with the sequences
+      expect(sharedCache.has('MKWVTFISLLFLFSSAYS')).toBe(true);
+      expect(sharedCache.has('GATTACA')).toBe(true);
+    });
+
+    it('shares cache with generateEmbeddingWithFallback (cross-function hits)', async () => {
+      const seq = 'CrossFuncTest' + Date.now();
+
+      // Populate cache via batch
+      await generateBatchEmbeddings([seq]);
+      expect(sharedCache.has(seq)).toBe(true);
+
+      // Fallback should hit the shared cache
+      const result = await generateEmbeddingWithFallback(seq);
+      expect(result.source).toBe('cache');
+      expect(result.embedding.length).toBe(32);
     });
 
     it('handles empty input', async () => {

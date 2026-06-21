@@ -213,8 +213,8 @@ export class EmbeddingCache {
 
 // ── Batch Processing ─────────────────────────────────────────────────────────
 
-// Module-level cache for batch embedding operations
-const batchCache = new EmbeddingCache();
+// Single shared cache for all embedding operations
+export const sharedCache = new EmbeddingCache();
 
 /**
  * Generate embeddings for multiple sequences in batch.
@@ -242,12 +242,12 @@ export async function generateBatchEmbeddings(
   for (let i = 0; i < sequences.length; i += batchSize) {
     const batch = sequences.slice(i, i + batchSize);
     for (const seq of batch) {
-      const cached = batchCache.get(seq);
+      const cached = sharedCache.get(seq);
       if (cached) {
         result.set(seq, cached);
       } else {
         const embedding = await generateEmbedding(seq);
-        batchCache.set(seq, embedding);
+        sharedCache.set(seq, embedding);
         result.set(seq, embedding);
       }
     }
@@ -257,9 +257,6 @@ export async function generateBatchEmbeddings(
 }
 
 // ── Failure Fallback ─────────────────────────────────────────────────────────
-
-// Module-level cache for fallback function
-const fallbackCache = new EmbeddingCache();
 
 /**
  * Generate an embedding with automatic fallback.
@@ -284,7 +281,7 @@ export async function generateEmbeddingWithFallback(
   sequence: string
 ): Promise<{ embedding: number[]; source: 'cache' | 'computed' | 'fallback' }> {
   // Try cache first
-  const cached = fallbackCache.get(sequence);
+  const cached = sharedCache.get(sequence);
   if (cached) {
     return { embedding: cached, source: 'cache' };
   }
@@ -298,7 +295,7 @@ export async function generateEmbeddingWithFallback(
   // Compute embedding
   try {
     const embedding = await generateEmbedding(sequence);
-    fallbackCache.set(sequence, embedding);
+    sharedCache.set(sequence, embedding);
     return { embedding, source: 'computed' };
   } catch {
     // Fallback to zero vector
