@@ -133,7 +133,9 @@ export function trainTestSplit(
  * @param y - Target vector (n_samples)
  * @param k - Number of folds (default: 5)
  * @param metrics - Custom metrics function (defaults to standard regression/classification metrics)
- * @param taskType - 'regression' or 'classification' (default: 'regression')
+ * @param taskType - 'regression' or 'classification'. If omitted, auto-detected
+ *   from labels: 10 or fewer unique integer labels is treated as classification,
+ *   otherwise regression.
  * @returns Per-fold metrics and mean metrics
  */
 export function crossValidate(
@@ -142,12 +144,19 @@ export function crossValidate(
   y: number[],
   k: number = 5,
   metrics?: (yTrue: number[], yPred: number[]) => ModelMetrics,
-  taskType: 'regression' | 'classification' = 'regression',
+  taskType?: 'regression' | 'classification',
 ): { foldMetrics: ModelMetrics[]; meanMetrics: ModelMetrics } {
   const n = X.length;
   if (n === 0) {
     const empty: ModelMetrics = { mae: 0, rmse: 0, r2: 0, accuracy: 0, f1: 0 };
     return { foldMetrics: [], meanMetrics: empty };
+  }
+
+  // Auto-detect task type if not explicitly provided
+  if (!taskType) {
+    const uniqueLabels = new Set(y);
+    const allInteger = y.every(v => v === Math.round(v));
+    taskType = allInteger && uniqueLabels.size <= 10 ? 'classification' : 'regression';
   }
 
   // Cap k at sample count
@@ -198,12 +207,28 @@ export function crossValidate(
 /**
  * Train a model with early stopping based on validation loss.
  *
- * For linear models (linear, ridge, lasso), uses iterative gradient descent
- * and monitors validation MSE at each iteration. Training stops if no
- * improvement is seen for `patience` consecutive iterations.
+ * **Architecture note:** This function operates in two phases:
  *
- * For non-linear models (decision_tree, random_forest), trains once and
- * records the validation loss.
+ * 1. **Gradient descent loop (monitoring phase):** For linear models, an
+ *    iterative gradient descent builds a loss history over `maxIterations`
+ *    steps, tracking both training and validation MSE. Early stopping fires
+ *    when validation loss stalls for `patience` consecutive iterations. This
+ *    history is useful for diagnosing convergence, overfitting, and choosing
+ *    hyperparameters — but the resulting GD weights are *not* used directly.
+ *
+ * 2. **Closed-form training (final model):** After the monitoring loop, the
+ *    model is trained via its own solver (`model.fit()`), which uses the
+ *    normal equation for linear/ridge/lasso models. This guarantees the
+ *    mathematically optimal solution for the given training data.
+ *
+ * For non-linear models (decision_tree, random_forest), the model is trained
+ * once and a single validation loss entry is recorded — early stopping does
+ * not apply because these models do not support incremental weight updates.
+ *
+ * **If you need the GD-optimized weights** (e.g., for online learning or
+ * incremental training on streaming data), extract them from the history
+ * and set them on a model that exposes mutable weights. For the built-in
+ * linear models, `model.fit()` always computes the closed-form solution.
  *
  * @param model - Model instance to train
  * @param XTrain - Training feature matrix
@@ -211,7 +236,7 @@ export function crossValidate(
  * @param XVal - Validation feature matrix
  * @param yVal - Validation target vector
  * @param options - Training options
- * @returns The trained model and training history
+ * @returns The trained model (via closed-form solver) and GD training history
  */
 export function trainWithEarlyStopping(
   model: MLModel,
@@ -353,9 +378,9 @@ export function trainWithEarlyStopping(
     bias = bestBias;
   }
 
-  // Re-fit model on original training data (uses closed-form solution internally).
-  // The gradient descent loop above was used for validation monitoring;
-  // the final model is trained analytically on the full training set.
+  // Phase 2: Train the final model using its own solver (closed-form for linear models).
+  // The GD loop above was for monitoring/diagnostics only — the final weights come from
+  // model.fit(), which computes the normal equation solution on the full training set.
   model.fit(XTrain, yTrain);
 
   return { model, history };
@@ -563,8 +588,24 @@ export function computeAllMetrics(yTrue: number[], yPred: number[]): ModelMetric
 
 // ── Internal Helpers ───────────────────────────────────────────────────────
 
-/** Check if a model is a linear model type (supports iterative gradient descent). */
+/** Linear model class names — used for primary detection. */
+const LINEAR_MODEL_NAMES = new Set([
+  'LinearRegression', 'RidgeRegression', 'LassoRegression',
+]);
+
+/**
+ * Check if a model is a linear model type (supports iterative gradient descent).
+ *
+ * Detection strategy (in order):
+ *   1. Constructor name — fast and resistant to serialization format changes
+ *   2. Serialized JSON `type` field — fallback for subclasses or minified builds
+ */
 function isLinearModel(model: MLModel): boolean {
+  // Primary: constructor name (works even if serialize() format changes)
+  const ctorName = model.constructor.name;
+  if (LINEAR_MODEL_NAMES.has(ctorName)) return true;
+
+  // Fallback: parse serialized JSON (covers minified builds where constructor.name is mangled)
   try {
     const json = model.serialize();
     const parsed = JSON.parse(json);
