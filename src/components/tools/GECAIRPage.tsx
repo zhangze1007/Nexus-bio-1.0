@@ -1,5 +1,5 @@
 'use client';
-import { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import AlgorithmInsight from '../ide/shared/AlgorithmInsight';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
@@ -641,6 +641,7 @@ export default function GECAIRPage() {
     { id: 'transfer', label: 'Transfer' },
     { id: 'dynamics', label: 'Dynamics' },
     { id: 'truth', label: 'Truth Table' },
+    { id: 'compiler', label: 'Compiler' },
   ];
 
   return (
@@ -1508,10 +1509,111 @@ export default function GECAIRPage() {
         </div>
       </ToolTabPanel>
 
+      {/* ── Circuit Compiler Tab ──────────────────────────────────────────── */}
+      <ToolTabPanel activeId={activeTab} tabId="compiler">
+        <CircuitCompilerPanel />
+      </ToolTabPanel>
+
       {/* ═══════ Footer ═══════ */}
       <div style={{ borderTop: `1px solid ${THEME.BORDER}`, padding: '8px 16px', display: 'flex', gap: '8px', flexShrink: 0, background: THEME.PANEL_MUTED }}>
         <ExportButton label="Export JSON" data={exportData} filename="gecair-circuit" format="json" />
       </div>
     </ToolShell>
+  );
+}
+
+/* ── Circuit Compiler Panel ──────────────────────────────────────────────── */
+
+function CircuitCompilerPanel() {
+  const [inputs, setInputs] = useState('A,B');
+  const [output, setOutput] = useState('Y');
+  const [truthTableRows, setTruthTableRows] = useState('0,0,0\n0,1,1\n1,0,1\n1,1,1');
+  const [result, setResult] = useState<import('../../server/circuitCompilerEngine').GeneticCircuit | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const handleCompile = useCallback(async () => {
+    setLoading(true);
+    try {
+      const { compileCircuit } = await import('../../server/circuitCompilerEngine');
+      const inputNames = inputs.split(',').map(s => s.trim());
+      const rows = truthTableRows.split('\n').filter(r => r.trim()).map(row => {
+        const vals = row.split(',').map(v => v.trim());
+        const inputValues: Record<string, boolean> = {};
+        inputNames.forEach((name, i) => { inputValues[name] = vals[i] === '1'; });
+        return { inputValues, outputValue: vals[inputNames.length] === '1' };
+      });
+      const tt = { inputs: inputNames, output, rows };
+      const res = compileCircuit('User Circuit', tt);
+      setResult(res);
+    } finally {
+      setLoading(false);
+    }
+  }, [inputs, output, truthTableRows]);
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: 16 }}>
+      <div style={{
+        background: THEME.PANEL_SURFACE, borderRadius: 'var(--nb-radius-lg)', padding: 16,
+        display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12,
+        border: `1px solid ${THEME.BORDER}`,
+      }}>
+        <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL }}>Inputs</span>
+        <input value={inputs} onChange={(e) => setInputs(e.target.value)} placeholder="A,B"
+          style={{ width: 100, padding: '4px 8px', background: THEME.INPUT_BG, border: `1px solid ${THEME.INPUT_BORDER}`, borderRadius: 'var(--nb-radius-sm)', color: THEME.INPUT_TEXT, fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-sm)', outline: 'none' }}
+        />
+        <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL }}>Output</span>
+        <input value={output} onChange={(e) => setOutput(e.target.value)} placeholder="Y"
+          style={{ width: 50, padding: '4px 8px', background: THEME.INPUT_BG, border: `1px solid ${THEME.INPUT_BORDER}`, borderRadius: 'var(--nb-radius-sm)', color: THEME.INPUT_TEXT, fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-sm)', outline: 'none' }}
+        />
+        <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL }}>Truth Table</span>
+        <textarea value={truthTableRows} onChange={(e) => setTruthTableRows(e.target.value)}
+          rows={4} cols={20}
+          style={{ padding: '4px 8px', background: THEME.INPUT_BG, border: `1px solid ${THEME.INPUT_BORDER}`, borderRadius: 'var(--nb-radius-sm)', color: THEME.INPUT_TEXT, fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', outline: 'none', resize: 'vertical' }}
+        />
+        <button onClick={handleCompile} disabled={loading} className="nb-tool-toggle"
+          style={{ padding: '6px 14px', fontSize: 'var(--nb-fs-sm)', opacity: loading ? 0.4 : 1 }}
+        >
+          {loading ? 'Compiling...' : 'Compile Circuit'}
+        </button>
+      </div>
+
+      {result && (
+        <>
+          <div style={{ background: THEME.PANEL_SURFACE, borderRadius: 'var(--nb-radius-lg)', padding: 12, border: `1px solid ${THEME.BORDER}` }}>
+            <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL, marginBottom: 6 }}>Gates</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {result.gates.map((g, i) => (
+                <span key={i} style={{
+                  padding: '3px 8px',
+                  background: g.source === 'cello_characterized' ? 'rgba(147,203,82,0.1)' : 'rgba(255,255,255,0.04)',
+                  border: `1px solid ${g.source === 'cello_characterized' ? 'rgba(147,203,82,0.2)' : 'rgba(255,255,255,0.08)'}`,
+                  borderRadius: '3px',
+                  fontFamily: THEME.MONO,
+                  fontSize: 'var(--nb-fs-xs)',
+                  color: 'rgba(255,255,255,0.7)',
+                }}>
+                  {g.type} → {g.output}
+                  <span style={{ color: 'rgba(255,255,255,0.3)', marginLeft: 4 }}>[{g.source}]</span>
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ background: THEME.PANEL_SURFACE, borderRadius: 'var(--nb-radius-lg)', padding: 12, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 8, border: `1px solid ${THEME.BORDER}` }}>
+            {[
+              { label: 'Dynamic Range', value: result.metrics.dynamicRange.toFixed(1), color: THEME.MINT },
+              { label: 'Signal/Noise', value: result.metrics.signalToNoise.toFixed(1), color: THEME.SKY },
+              { label: 'Orthogonality', value: result.metrics.orthogonality.toFixed(2), color: THEME.LILAC },
+              { label: 'Burden', value: (result.burden * 100).toFixed(0) + '%', color: result.burden > 0.3 ? 'rgba(250,128,114,0.7)' : 'rgba(147,203,82,0.7)' },
+            ].map((m, i) => (
+              <div key={i} style={{ textAlign: 'center' }}>
+                <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xxs)', color: THEME.LABEL }}>{m.label}</div>
+                <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-sm)', color: m.color, fontWeight: 600 }}>{m.value}</div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
   );
 }
