@@ -46,6 +46,7 @@ const PATHD_TABS: ToolTab[] = [
   { id: 'node', label: 'Node Panel', accent: THEME.LILAC },
   { id: 'dbtl', label: 'DBTL', accent: THEME.APRICOT },
   { id: 'evidence', label: 'Evidence', accent: THEME.MINT },
+  { id: 'digitalcell', label: 'Digital Cell', accent: THEME.CORAL },
 ];
 
 // ── Demo pathway edges (Artemisinin biosynthesis — Ro et al. 2006) ─────
@@ -700,6 +701,8 @@ export default React.memo(function MetabolicEngPage({ embedded = false }: { embe
           bottleneckCount={activeAnalyzeArtifact?.bottleneckAssumptions.length ?? 0}
           recommendedNextTool={recommendedNextTool}
         />
+      ) : activeTab === 'digitalcell' ? (
+        <DigitalCellPanel />
       ) : null}
 
       {/* ── Center: 3D Pathway Visualization — full-screen, panels float over ── */}
@@ -776,3 +779,87 @@ export default React.memo(function MetabolicEngPage({ embedded = false }: { embe
     </div>
   );
 });
+
+/* ── Digital Cell Panel ──────────────────────────────────────────────────── */
+
+function DigitalCellPanel() {
+  const [duration, setDuration] = useState(4);
+  const [glucose, setGlucose] = useState(10);
+  const [result, setResult] = useState<import('../../server/digitalCellEngine').SimulationResult | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const handleSimulate = React.useCallback(async () => {
+    setLoading(true);
+    try {
+      const { simulateDigitalCell } = await import('../../server/digitalCellEngine');
+      const config = {
+        duration,
+        dt: 0.1,
+        stochasticGeneExpression: false,
+        includeDivision: true,
+        environmentConditions: { glucose, oxygen: 100, temperature: 37 },
+      };
+      const res = simulateDigitalCell(config);
+      setResult(res);
+    } finally {
+      setLoading(false);
+    }
+  }, [duration, glucose]);
+
+  return (
+    <div style={{
+      position: 'absolute', top: 16, right: 18, width: 280, zIndex: 14,
+      display: 'flex', flexDirection: 'column', gap: 10,
+    }}>
+      <div style={{
+        background: 'rgba(10,12,16,0.92)', borderRadius: 'var(--nb-radius-lg)', padding: 14,
+        border: '1px solid rgba(255,255,255,0.08)', backdropFilter: 'blur(12px)',
+      }}>
+        <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+          Digital Cell Simulation
+        </div>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+          <div>
+            <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xxs)', color: 'rgba(255,255,255,0.4)' }}>Duration (h)</div>
+            <input type="number" min={1} max={24} value={duration} onChange={(e) => setDuration(Number(e.target.value))}
+              style={{ width: 50, padding: '3px 6px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 'var(--nb-radius-sm)', color: 'rgba(255,255,255,0.85)', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', outline: 'none' }}
+            />
+          </div>
+          <div>
+            <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xxs)', color: 'rgba(255,255,255,0.4)' }}>Glucose (mM)</div>
+            <input type="number" min={1} max={50} value={glucose} onChange={(e) => setGlucose(Number(e.target.value))}
+              style={{ width: 50, padding: '3px 6px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 'var(--nb-radius-sm)', color: 'rgba(255,255,255,0.85)', fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', outline: 'none' }}
+            />
+          </div>
+        </div>
+        <button onClick={handleSimulate} disabled={loading} className="nb-tool-toggle"
+          style={{ width: '100%', padding: '6px', fontSize: 'var(--nb-fs-sm)', opacity: loading ? 0.4 : 1 }}
+        >
+          {loading ? 'Simulating...' : 'Simulate Cell'}
+        </button>
+      </div>
+
+      {result && (
+        <div style={{
+          background: 'rgba(10,12,16,0.92)', borderRadius: 'var(--nb-radius-lg)', padding: 14,
+          border: '1px solid rgba(255,255,255,0.08)', backdropFilter: 'blur(12px)',
+        }}>
+          <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xxs)', color: THEME.LABEL, marginBottom: 6 }}>Results</div>
+          {[
+            { label: 'Genes', value: result.finalState.genes.length, color: THEME.SKY },
+            { label: 'Mass', value: `${result.finalState.mass.toFixed(3)} pg`, color: THEME.MINT },
+            { label: 'Divisions', value: result.divisionEvents, color: THEME.APRICOT },
+            { label: 'Doubling', value: `${result.doublingTime.toFixed(1)}h`, color: THEME.LILAC },
+            { label: 'μ avg', value: `${result.metrics.avgGrowthRate.toFixed(4)}`, color: THEME.CORAL },
+            { label: 'ATP', value: `${result.finalState.atp.toFixed(1)} mM`, color: THEME.SKY },
+          ].map((m, i) => (
+            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
+              <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xxs)', color: 'rgba(255,255,255,0.4)' }}>{m.label}</span>
+              <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: m.color }}>{m.value}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
