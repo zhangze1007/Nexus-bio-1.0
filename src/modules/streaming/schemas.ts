@@ -57,8 +57,18 @@ export function validateDashboardState(data: any): DashboardState {
   if (!Array.isArray(data.activeTopics)) {
     throw new Error('DashboardState.activeTopics must be an array');
   }
+  for (let i = 0; i < data.activeTopics.length; i++) {
+    if (typeof data.activeTopics[i] !== 'string') {
+      throw new Error(`DashboardState.activeTopics[${i}] must be a string`);
+    }
+  }
   if (data.metrics == null || typeof data.metrics !== 'object' || Array.isArray(data.metrics)) {
     throw new Error('DashboardState.metrics must be a non-null object');
+  }
+  for (const [key, value] of Object.entries(data.metrics)) {
+    if (typeof value !== 'number') {
+      throw new Error(`DashboardState.metrics.${key} must be a number`);
+    }
   }
 
   return {
