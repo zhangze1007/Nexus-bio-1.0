@@ -370,31 +370,29 @@ describe('StreamingPipeline', () => {
       expect(result).toBeUndefined();
     });
 
-    it('clears backpressure after draining buffer', () => {
+    it('clears backpressure after draining buffer', async () => {
       const pipeline = new StreamingPipeline({ bufferSize: 4, backpressureThreshold: 0.5 });
-
-      // Fill to trigger backpressure (3 > 4 * 0.5 = 2)
+      pipeline.addStage({ name: 'pass', process: async (d) => d });
       pipeline.submit(1);
       pipeline.submit(2);
       pipeline.submit(3);
       expect(pipeline.isBackpressured()).toBe(true);
 
-      // Drain two items via processNext would need async, but we can test
-      // that submit still respects the buffer limit
-      expect(pipeline.submit(4)).toBe(true);  // 4th item fills buffer
-      expect(pipeline.submit(5)).toBe(false);  // 5th rejected
+      await pipeline.processNext(); // drain 1
+      await pipeline.processNext(); // drain 2
+      expect(pipeline.isBackpressured()).toBe(false);
+      expect(pipeline.submit(4)).toBe(true);
     });
 
-    it('accepts items again after buffer space is freed', () => {
+    it('accepts items again after buffer space is freed', async () => {
       const pipeline = new StreamingPipeline({ bufferSize: 2 });
-
+      pipeline.addStage({ name: 'pass', process: async (d) => d });
       expect(pipeline.submit(1)).toBe(true);
       expect(pipeline.submit(2)).toBe(true);
       expect(pipeline.submit(3)).toBe(false); // full
 
-      // Note: submit returns false but processNext is async.
-      // The buffer should accept items after dequeue frees space.
-      // We verify the BufferQueue behavior separately above.
+      await pipeline.processNext(); // free 1 slot
+      expect(pipeline.submit(4)).toBe(true); // accepted
     });
   });
 });
