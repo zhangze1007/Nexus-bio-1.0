@@ -233,6 +233,7 @@ const GENMIM_TABS: ToolTab[] = [
   { id: 'schedule', label: 'Schedule', accent: THEME.CORAL },
   { id: 'efficiency', label: 'Efficiency', accent: THEME.MINT },
   { id: 'multiplex', label: 'Multiplex Strategy', accent: THEME.LILAC },
+  { id: 'synthetic', label: 'Synthetic', accent: THEME.APRICOT },
 ];
 
 export default React.memo(function GenMIMPage() {
@@ -575,6 +576,11 @@ export default React.memo(function GenMIMPage() {
       <ToolTabPanel tabId="multiplex" activeId={activeTab}>
         <MultiplexCRISPRPanel />
       </ToolTabPanel>
+
+      {/* ── Synthetic Genomics Tab ──────────────────────────────────────────── */}
+      <ToolTabPanel tabId="synthetic" activeId={activeTab}>
+        <SyntheticGenomicsPanel />
+      </ToolTabPanel>
     </ToolShell>
   );
 });
@@ -697,6 +703,79 @@ function MultiplexCRISPRPanel() {
               )}
             </div>
           ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Synthetic Genomics Panel ────────────────────────────────────────────── */
+
+function SyntheticGenomicsPanel() {
+  const [host, setHost] = useState<'ecoli' | 'yeast'>('ecoli');
+  const [caiResult, setCaiResult] = useState<{ cai: number; optimized: string } | null>(null);
+  const [testSequence, setTestSequence] = useState('ATGAAACGCACCAGCAACAGCAACTAA');
+  const [loading, setLoading] = useState(false);
+
+  const handleOptimize = React.useCallback(async () => {
+    setLoading(true);
+    try {
+      const { optimizeCodonsForHost, computeCAI } = await import('../../server/syntheticGenomicsEngine');
+      const optimized = optimizeCodonsForHost(testSequence, host);
+      const cai = computeCAI(optimized, host);
+      setCaiResult({ cai, optimized });
+    } finally {
+      setLoading(false);
+    }
+  }, [testSequence, host]);
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div style={{
+        background: THEME.PANEL_SURFACE, borderRadius: 'var(--nb-radius-lg)', padding: 14,
+        display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 10,
+        border: `1px solid ${THEME.BORDER}`,
+      }}>
+        <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+          Codon Optimizer
+        </span>
+        <select value={host} onChange={(e) => setHost(e.target.value as 'ecoli' | 'yeast')}
+          style={{ padding: '4px 8px', background: THEME.INPUT_BG, border: `1px solid ${THEME.INPUT_BORDER}`, borderRadius: 'var(--nb-radius-sm)', color: THEME.INPUT_TEXT, fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-sm)' }}
+        >
+          <option value="ecoli">E. coli (Nakamura 2000)</option>
+          <option value="yeast">S. cerevisiae (Nakamura 2000)</option>
+        </select>
+        <input value={testSequence} onChange={(e) => setTestSequence(e.target.value)} placeholder="ATG..."
+          style={{ flex: 1, minWidth: 150, padding: '4px 8px', background: THEME.INPUT_BG, border: `1px solid ${THEME.INPUT_BORDER}`, borderRadius: 'var(--nb-radius-sm)', color: THEME.INPUT_TEXT, fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', outline: 'none' }}
+        />
+        <button onClick={handleOptimize} disabled={loading} className="nb-tool-toggle"
+          style={{ padding: '6px 14px', fontSize: 'var(--nb-fs-sm)', opacity: loading ? 0.4 : 1 }}
+        >
+          {loading ? 'Optimizing...' : 'Optimize Codons'}
+        </button>
+      </div>
+
+      {caiResult && (
+        <div style={{
+          background: THEME.PANEL_SURFACE, borderRadius: 'var(--nb-radius-lg)', padding: 14,
+          border: `1px solid ${THEME.BORDER}`,
+        }}>
+          <div style={{ display: 'flex', gap: 12, marginBottom: 8 }}>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xxs)', color: THEME.LABEL }}>CAI</div>
+              <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-lg)', color: caiResult.cai > 0.8 ? 'rgba(147,203,82,0.8)' : caiResult.cai > 0.5 ? 'rgba(200,216,232,0.8)' : 'rgba(250,128,114,0.8)', fontWeight: 700 }}>
+                {caiResult.cai.toFixed(3)}
+              </div>
+            </div>
+          </div>
+          <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xxs)', color: THEME.LABEL, marginBottom: 4 }}>Optimized Sequence</div>
+          <div style={{
+            fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: 'rgba(255,255,255,0.6)',
+            wordBreak: 'break-all', maxHeight: 60, overflow: 'auto',
+            padding: '6px 8px', background: 'rgba(255,255,255,0.02)', borderRadius: '4px',
+          }}>
+            {caiResult.optimized}
+          </div>
         </div>
       )}
     </div>
