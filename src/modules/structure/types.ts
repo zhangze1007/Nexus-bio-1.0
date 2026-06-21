@@ -63,6 +63,19 @@ export interface ChainResult {
   ptm: number;
 }
 
+export interface InterfacePrediction {
+  /** Pairwise chain predictions */
+  chainPairs: Array<{
+    chainA: string;
+    chainB: string;
+    similarity: number;
+    contactProbability: number;
+    predictedInterface: boolean;
+  }>;
+  /** Overall prediction confidence (0-1) */
+  overallConfidence: number;
+}
+
 export interface StructureResult {
   /** Individual chain results */
   chains: ChainResult[];

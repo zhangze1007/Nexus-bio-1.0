@@ -10,4 +10,10 @@ export {
   generateBatchEmbeddings,
   generateEmbeddingWithFallback,
 } from './embeddings';
-export type { StructureInput, StructureResult, ChainResult, InterfaceResidue, ProteinChain } from './types';
+export {
+  detectGeometricInterfaces,
+  predictInterfaceFromEmbeddings,
+  estimateContactProbability,
+  classifyInterfaceResidues,
+} from './interface';
+export type { StructureInput, StructureResult, ChainResult, InterfaceResidue, ProteinChain, InterfacePrediction } from './types';
