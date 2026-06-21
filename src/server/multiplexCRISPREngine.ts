@@ -369,7 +369,7 @@ function predictFitness(
 /**
  * Compute self-folding ΔG using RNA nearest-neighbor parameters.
  *
- * This is a simplified proxy: scans the spacer for the best possible
+ * This is a proxy: scans the spacer for the best possible
  * intramolecular stem-loop structure by looking for reverse-complement
  * runs, then sums nearest-neighbor stacking energies.
  *

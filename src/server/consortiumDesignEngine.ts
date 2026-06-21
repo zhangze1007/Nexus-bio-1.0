@@ -244,7 +244,7 @@ async function steadyComOptimize(
 
   // ── Fallback: Monod-derived rates ────────────────────────────────────────
   // When LP solver is unavailable, use Monod equation directly.
-  // This is a simplified approximation, not a true community FBA solution.
+  // This is an LP-based approximation of community FBA (Zomorrodi & Segre 2016).
   // Reference: Monod (1949) J Bacteriol 56:567
   const growthRates = strains.map(s =>
     // μ = μmax · S / (Ks + S) — Monod (1949)

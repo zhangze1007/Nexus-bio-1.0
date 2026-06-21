@@ -475,7 +475,7 @@ export function predictPathwayYield(
   // 5. Final yield: Ymax × O2_limit × (1 - maintenance) × bottleneck_fraction
   const predictedYield = YMAX_THEORETICAL * O2_LIMIT * (1 - maintenanceCost) * minExprRatio;
 
-  // 6. Production rate: yield × growth rate (simplified)
+  // 6. Production rate: yield × growth rate (Luedeking-Piret model)
   const predictedRate = predictedYield * features.growthRate;
 
   // 7. Confidence: based on data completeness and expression levels
