@@ -31,6 +31,7 @@ export class StreamingServer {
   private readonly port: number;
   private readonly heartbeatInterval: number;
   private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
+  private stopping = false;
 
   /** Map from clientId to client metadata */
   private clients: Map<string, ClientInfo> = new Map();
@@ -69,10 +70,15 @@ export class StreamingServer {
       throw new Error('Server already started');
     }
 
-    return new Promise<void>((resolve) => {
+    return new Promise<void>((resolve, reject) => {
       this.wss = new WebSocketServer({ port: this.port }, () => {
         this.startHeartbeat();
         resolve();
+      });
+
+      this.wss.on('error', (err) => {
+        this.wss = null;
+        reject(err);
       });
 
       this.wss.on('connection', (ws: WebSocket) => {
@@ -94,21 +100,23 @@ export class StreamingServer {
       throw new Error('Server not started');
     }
 
+    this.stopping = true;
     this.stopHeartbeat();
 
-    return new Promise<void>((resolve, reject) => {
-      // Close all client connections
-      for (const [, ws] of this.connections) {
-        ws.close();
-      }
+    // Close all client connections
+    for (const ws of this.connections.values()) {
+      ws.close();
+    }
 
-      this.clients.clear();
-      this.connections.clear();
-      this.topicSubscribers.clear();
-      this.wsToClientId.clear();
-
+    // Close the server and clear maps after close completes
+    await new Promise<void>((resolve, reject) => {
       this.wss!.close((err) => {
         this.wss = null;
+        this.stopping = false;
+        this.clients.clear();
+        this.connections.clear();
+        this.wsToClientId.clear();
+        this.topicSubscribers.clear();
         if (err) reject(err);
         else resolve();
       });
