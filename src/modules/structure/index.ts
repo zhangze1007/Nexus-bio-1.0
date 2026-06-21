@@ -23,4 +23,12 @@ export {
   computeClashPenalty,
   scoreComplex,
 } from './scoring';
-export type { StructureInput, StructureResult, ChainResult, InterfaceResidue, ProteinChain, InterfacePrediction, ComplexScore } from './types';
+export {
+  mapPLDDT,
+  mapIPTM,
+  confidenceToColor,
+  exportConfidenceJSON,
+  exportConfidenceCSV,
+  computeConfidenceSummary,
+} from './visualization';
+export type { StructureInput, StructureResult, ChainResult, InterfaceResidue, ProteinChain, InterfacePrediction, ComplexScore, ResidueConfidence, ChainConfidence, ConfidenceSummary } from './types';

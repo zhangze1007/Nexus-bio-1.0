@@ -142,3 +142,45 @@ export interface StructureResult {
   /** Design notes */
   designNotes: string[];
 }
+
+// ── Confidence Visualization Types ──────────────────────────────────────────
+
+export interface ResidueConfidence {
+  /** Residue index (0-based) */
+  residueIndex: number;
+  /** Raw confidence score (pLDDT: 0-100) */
+  score: number;
+  /** Confidence level classification */
+  confidence: 'very_high' | 'high' | 'low' | 'very_low';
+  /** Hex color for visualization */
+  color: string;
+}
+
+export interface ChainConfidence {
+  /** Chain identifier */
+  chainId: string;
+  /** Confidence score (ipTM: 0-1) */
+  score: number;
+  /** Hex color for visualization */
+  color: string;
+}
+
+export interface ConfidenceSummary {
+  /** Mean pLDDT across all residues */
+  residueMean: number;
+  /** Minimum pLDDT across all residues */
+  residueMin: number;
+  /** Maximum pLDDT across all residues */
+  residueMax: number;
+  /** Standard deviation of pLDDT scores */
+  residueStd: number;
+  /** Overall complex confidence (ipTM, 0-1) */
+  overallConfidence: number;
+  /** Count of residues in each confidence level */
+  counts: {
+    very_high: number;
+    high: number;
+    low: number;
+    very_low: number;
+  };
+}
