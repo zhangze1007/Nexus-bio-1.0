@@ -108,6 +108,29 @@ function buildClashPdb(): string {
 }
 
 /**
+ * Build a two-chain PDB with moderate inter-chain distances (~5Å).
+ * Y-offset of 5Å places chains at LJ-favorable distances where the
+ * statistical potential produces negative (stabilizing) energies.
+ * Chain A along x-axis at y=0, Chain B along x-axis at y=5.
+ */
+function buildEnergyPdb(): string {
+  const lines: string[] = [];
+
+  // Chain A: 5 residues along x-axis
+  for (let i = 0; i < 5; i++) {
+    lines.push(buildAtomLine(i + 1, 'CA', 'ALA', 'A', i + 1, i * 3.8, 0, 0));
+  }
+
+  // Chain B: 5 residues along x-axis, offset by 5Å in y direction
+  for (let i = 0; i < 5; i++) {
+    lines.push(buildAtomLine(i + 6, 'CA', 'GLY', 'B', i + 1, i * 3.8, 5.0, 0));
+  }
+
+  lines.push('END');
+  return lines.join('\n');
+}
+
+/**
  * Build a PDB with many interface contacts (high density).
  * Two chains with residues interleaved in 3D space.
  */
@@ -244,13 +267,15 @@ describe('complex assembly scoring', () => {
     });
 
     it('returns lower energy for stable complexes (close contacts)', () => {
-      const contactPdb = buildContactPdb();
+      // Use energy-specific fixture with ~5Å inter-chain distances
+      // where LJ potential produces favorable (negative) values
+      const energyPdb = buildEnergyPdb();
       const noContactPdb = buildNoInterfacePdb();
 
-      const scoreWithContacts = computeEnergyScore(contactPdb, ['A', 'B']);
+      const scoreWithContacts = computeEnergyScore(energyPdb, ['A', 'B']);
       const scoreNoContacts = computeEnergyScore(noContactPdb, ['A', 'B']);
 
-      // Contact PDB should have lower energy (more stable) when there are favorable contacts
+      // Energy PDB should have lower energy (more stable) when there are favorable contacts
       // No-contact PDB returns 0 (no energy contribution)
       expect(scoreWithContacts).toBeGreaterThanOrEqual(0);
       expect(scoreNoContacts).toBe(0);
