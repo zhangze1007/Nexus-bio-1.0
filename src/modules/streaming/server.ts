@@ -331,6 +331,8 @@ export class StreamingServer {
    * Removes the client from all subscriptions and cleans up metadata.
    */
   private handleDisconnect(ws: WebSocket, clientId: string): void {
+    if (this.stopping) return;
+
     const client = this.clients.get(clientId);
 
     if (client) {
