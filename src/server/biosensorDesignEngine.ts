@@ -146,7 +146,7 @@ const TF_DATABASE: Record<string, {
  * Uses empirical relationship between Kd and ΔG:
  *   ΔG = RT · ln(Kd)
  *
- * At 37°C (310K): ΔG = 0.593 · ln(Kd) kcal/mol
+ * At 37°C (310K): ΔG = 0.616 · ln(Kd) kcal/mol
  *
  * Reference: Fersht (1999) Structure and Mechanism in Protein Science
  */

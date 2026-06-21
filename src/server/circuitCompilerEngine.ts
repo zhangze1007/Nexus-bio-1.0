@@ -44,6 +44,8 @@ export interface LogicGate {
     K: number;         // half-max concentration
     n: number;         // Hill coefficient
   };
+  /** Data source: 'cello_characterized' = from Nielsen 2016 Table S1, 'estimated' = extrapolated */
+  source: 'cello_characterized' | 'estimated' | 'literature';
 }
 
 export interface TruthTable {
@@ -102,44 +104,44 @@ export interface ToeholdSwitch {
  *
  * Reference: Nielsen et al. (2016) Science 352:aac7341
  */
-const GATE_LIBRARY: Record<string, LogicGate['hill']> = {
+interface GateEntry {
+  hill: LogicGate['hill'];
+  source: 'cello_characterized' | 'estimated' | 'literature';
+}
+
+const GATE_LIBRARY: Record<string, GateEntry> = {
   // ── NOT gates (single-input repressors) ──
-  // Gates marked [Cello] are from Nielsen et al. (2016) Table S1
-  // Gates marked [Estimated] are plausible values based on similar characterized gates
-  'NOT_pTac_LacI':   { ymax: 5377, ymin: 29, K: 164, n: 2.14 },   // [Cello] Nielsen 2016 Table S1
-  'NOT_pTet_TetR':   { ymax: 5775, ymin: 34, K: 97, n: 2.75 },    // [Cello] Nielsen 2016 Table S1
-  'NOT_pBAD_AraC':   { ymax: 4125, ymin: 83, K: 358, n: 1.49 },   // [Cello] Nielsen 2016 Table S1
-  'NOT_pLux_LuxR':   { ymax: 4890, ymin: 45, K: 120, n: 2.30 },   // [Cello] Nielsen 2016 Table S1
-  'NOT_pLambda_CI':  { ymax: 5100, ymin: 18, K: 65, n: 3.20 },    // [Cello] Nielsen 2016 Table S1
-  'NOT_pSal_NahR':   { ymax: 3800, ymin: 55, K: 280, n: 1.80 },
-  // [Estimated] — not in Cello Table S1; values extrapolated from similar repressor families
-  'NOT_pSrpR_SrpR':  { ymax: 4500, ymin: 22, K: 90, n: 2.60 },   // [Estimated]
-  'NOT_pBM3R1_BM3R1':{ ymax: 4200, ymin: 35, K: 110, n: 2.40 },  // [Estimated]
-  'NOT_pAmeR_AmeR':  { ymax: 4600, ymin: 40, K: 140, n: 2.20 },  // [Estimated]
-  'NOT_pLitR_LitR':  { ymax: 3900, ymin: 30, K: 100, n: 2.50 },  // [Estimated]
-  'NOT_pQacR_QacR':  { ymax: 4100, ymin: 45, K: 130, n: 2.10 },  // [Estimated]
-  'NOT_pBetI_BetI':  { ymax: 3700, ymin: 50, K: 150, n: 1.90 },  // [Estimated]
+  // source: 'cello_characterized' = from Nielsen et al. (2016) Table S1
+  // source: 'estimated' = extrapolated from similar repressor families
+  'NOT_pTac_LacI':   { hill: { ymax: 5377, ymin: 29, K: 164, n: 2.14 }, source: 'cello_characterized' },
+  'NOT_pTet_TetR':   { hill: { ymax: 5775, ymin: 34, K: 97, n: 2.75 },  source: 'cello_characterized' },
+  'NOT_pBAD_AraC':   { hill: { ymax: 4125, ymin: 83, K: 358, n: 1.49 }, source: 'cello_characterized' },
+  'NOT_pLux_LuxR':   { hill: { ymax: 4890, ymin: 45, K: 120, n: 2.30 }, source: 'cello_characterized' },
+  'NOT_pLambda_CI':  { hill: { ymax: 5100, ymin: 18, K: 65, n: 3.20 },  source: 'cello_characterized' },
+  'NOT_pSal_NahR':   { hill: { ymax: 3800, ymin: 55, K: 280, n: 1.80 }, source: 'estimated' },
+  'NOT_pSrpR_SrpR':  { hill: { ymax: 4500, ymin: 22, K: 90, n: 2.60 },  source: 'estimated' },
+  'NOT_pBM3R1_BM3R1':{ hill: { ymax: 4200, ymin: 35, K: 110, n: 2.40 }, source: 'estimated' },
+  'NOT_pAmeR_AmeR':  { hill: { ymax: 4600, ymin: 40, K: 140, n: 2.20 }, source: 'estimated' },
+  'NOT_pLitR_LitR':  { hill: { ymax: 3900, ymin: 30, K: 100, n: 2.50 }, source: 'estimated' },
+  'NOT_pQacR_QacR':  { hill: { ymax: 4100, ymin: 45, K: 130, n: 2.10 }, source: 'estimated' },
+  'NOT_pBetI_BetI':  { hill: { ymax: 3700, ymin: 50, K: 150, n: 1.90 }, source: 'estimated' },
 
-  // ── AND gates (dual-input activators) ──
-  // [Estimated] — composite gate parameters from individual component characterization
-  'AND_pLux_pTac':   { ymax: 3200, ymin: 25, K: 80, n: 1.80 },    // [Estimated]
-  'AND_pBAD_pTet':   { ymax: 2800, ymin: 40, K: 120, n: 1.60 },   // [Estimated]
-  'AND_pLambda_pTac': { ymax: 3500, ymin: 20, K: 70, n: 2.10 },   // [Estimated]
+  // ── AND gates ──
+  'AND_pLux_pTac':   { hill: { ymax: 3200, ymin: 25, K: 80, n: 1.80 },  source: 'estimated' },
+  'AND_pBAD_pTet':   { hill: { ymax: 2800, ymin: 40, K: 120, n: 1.60 }, source: 'estimated' },
+  'AND_pLambda_pTac': { hill: { ymax: 3500, ymin: 20, K: 70, n: 2.10 }, source: 'estimated' },
 
-  // ── OR gates (tandem promoters) ──
-  // [Estimated] — tandem promoter parameters
-  'OR_pLac_pTac':    { ymax: 6200, ymin: 35, K: 150, n: 1.70 },   // [Estimated]
-  'OR_pTet_pBAD':    { ymax: 5500, ymin: 45, K: 180, n: 1.50 },   // [Estimated]
+  // ── OR gates ──
+  'OR_pLac_pTac':    { hill: { ymax: 6200, ymin: 35, K: 150, n: 1.70 }, source: 'estimated' },
+  'OR_pTet_pBAD':    { hill: { ymax: 5500, ymin: 45, K: 180, n: 1.50 }, source: 'estimated' },
 
-  // ── NOR gates (repressor cascade) ──
-  // [Estimated] — cascade parameters
-  'NOR_pLambda_LacI': { ymax: 5100, ymin: 15, K: 55, n: 3.50 },   // [Estimated]
-  'NOR_pTet_TetR':   { ymax: 4800, ymin: 20, K: 60, n: 3.10 },   // [Estimated]
+  // ── NOR gates ──
+  'NOR_pLambda_LacI': { hill: { ymax: 5100, ymin: 15, K: 55, n: 3.50 }, source: 'estimated' },
+  'NOR_pTet_TetR':   { hill: { ymax: 4800, ymin: 20, K: 60, n: 3.10 }, source: 'estimated' },
 
-  // ── NAND gates (dual-repressor) ──
-  // [Estimated] — dual-repressor parameters
-  'NAND_pTac_pTet':  { ymax: 4500, ymin: 30, K: 75, n: 2.40 },   // [Estimated]
-  'NAND_pBAD_pLux':  { ymax: 3800, ymin: 40, K: 100, n: 2.00 },  // [Estimated]
+  // ── NAND gates ──
+  'NAND_pTac_pTet':  { hill: { ymax: 4500, ymin: 30, K: 75, n: 2.40 },  source: 'estimated' },
+  'NAND_pBAD_pLux':  { hill: { ymax: 3800, ymin: 40, K: 100, n: 2.00 }, source: 'estimated' },
 };
 
 // ── Boolean Logic Synthesis ────────────────────────────────────────────────
@@ -204,7 +206,8 @@ export function booleanToGates(
       inputs: orInputs,
       output,
       genetic: { promoter: 'pLac_tandem', rbs: 'RBS_strong', cds: 'GFP', terminator: 'T1' },
-      hill: GATE_LIBRARY['OR_pLac_pTac'] || { ymax: 100, ymin: 0.5, K: 50, n: 1.8 },
+      hill: GATE_LIBRARY['OR_pLac_pTac']?.hill || { ymax: 100, ymin: 0.5, K: 50, n: 1.8 },
+      source: GATE_LIBRARY['OR_pLac_pTac']?.source || 'estimated',
     });
   } else if (expression.includes(' · ')) {
     // AND gate
@@ -217,7 +220,8 @@ export function booleanToGates(
       inputs: andInputs,
       output,
       genetic: { promoter: 'pLux_split', rbs: 'RBS_medium', cds: 'GFP', terminator: 'T1' },
-      hill: GATE_LIBRARY['AND_pLux_pTac'] || { ymax: 100, ymin: 0.5, K: 40, n: 2.0 },
+      hill: GATE_LIBRARY['AND_pLux_pTac']?.hill || { ymax: 100, ymin: 0.5, K: 40, n: 2.0 },
+      source: GATE_LIBRARY['AND_pLux_pTac']?.source || 'estimated',
     });
   } else if (expression.endsWith("'")) {
     // NOT gate
@@ -229,7 +233,8 @@ export function booleanToGates(
       inputs: [inputName],
       output,
       genetic: { promoter: 'pTac', rbs: 'RBS_strong', cds: 'LacI', terminator: 'T1' },
-      hill: GATE_LIBRARY['NOT_pTac_LacI'] || { ymax: 100, ymin: 0.5, K: 50, n: 2.0 },
+      hill: GATE_LIBRARY['NOT_pTac_LacI']?.hill || { ymax: 100, ymin: 0.5, K: 50, n: 2.0 },
+      source: GATE_LIBRARY['NOT_pTac_LacI']?.source || 'estimated',
     });
   } else {
     // BUFFER (direct connection)
@@ -241,6 +246,7 @@ export function booleanToGates(
       output,
       genetic: { promoter: 'pConst', rbs: 'RBS_medium', cds: 'GFP', terminator: 'T1' },
       hill: { ymax: 100, ymin: 0, K: 50, n: 1 },
+      source: 'estimated' as const,
     });
   }
 

@@ -68,6 +68,7 @@ describe('circuitCompilerEngine', () => {
         id: 'g1', type: 'NOT' as const, inputs: ['A'], output: 'Y',
         genetic: { promoter: 'pTac', rbs: 'RBS', cds: 'LacI', terminator: 'T1' },
         hill: { ymax: 100, ymin: 0.5, K: 50, n: 2.5 },
+        source: 'cello_characterized' as const,
       }];
       const burden = estimateBurden(gates);
       expect(burden).toBeGreaterThan(0);
