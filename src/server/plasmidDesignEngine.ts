@@ -367,8 +367,9 @@ function checkAssembly(components: ComponentMetadata[], method: AssemblyMethod):
     const startSeq = components[i + 1].sequence.substring(0, 20);
     const junction = endSeq + startSeq;
     const junctionGC = (junction.match(/[GC]/g) || []).length / junction.length;
-    // Junction GC: 30-70% avoids secondary structure
+    // Junction GC: 30-70% optimal for isothermal assembly
     // Reference: Gibson et al. (2009) Nat Methods 6:343-345
+    // Reference: Gibson et al. (2010) Methods Enzymol 498:11-32
     if (junctionGC > 0.7 || junctionGC < 0.3) {
       junctionRisk += 0.2;
       issues.push(`Junction ${i}-${i + 1}: extreme GC (${(junctionGC * 100).toFixed(0)}%) may form secondary structure`);

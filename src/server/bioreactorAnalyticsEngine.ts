@@ -348,11 +348,14 @@ function identifyPhases(data: TimeSeriesPoint[]): GrowthPhase[] {
     const segmentRates = growthRates.slice(start, end);
     const avgRate = mean(segmentRates);
 
+    // Growth phase classification based on specific growth rate
+    // Reference: Monod (1949) Annu Rev Microbiol 3:371-394
+    // Reference: Zwietering et al. (1990) Appl Environ Microbiol 56:1875-1881
     let phase: GrowthPhase['phase'];
-    if (avgRate < 0.01) phase = 'lag';
-    else if (avgRate > 0.05) phase = 'exponential';
-    else if (avgRate > -0.01) phase = 'stationary';
-    else phase = 'decline';
+    if (avgRate < 0.01) phase = 'lag';           // μ < 0.01 h⁻¹: no significant growth
+    else if (avgRate > 0.05) phase = 'exponential'; // μ > 0.05 h⁻¹: exponential growth
+    else if (avgRate > -0.01) phase = 'stationary'; // -0.01 < μ < 0.05: near-steady state
+    else phase = 'decline';                        // μ < -0.01: cell death
 
     // Confidence based on segment consistency
     const rateStd = std(segmentRates);
