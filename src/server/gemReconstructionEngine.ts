@@ -593,23 +593,23 @@ export function detectGaps(model: GEMReconstruction): {
     }
   }
 
-  const orphanProducers = [...produced].filter(m => !consumed.has(m) && !m.endsWith('_e'));
-  const orphanConsumers = [...consumed].filter(m => !produced.has(m) && !m.endsWith('_e'));
+  const orphanProducers = new Set([...produced].filter(m => !consumed.has(m) && !m.endsWith('_e')));
+  const orphanConsumers = new Set([...consumed].filter(m => !produced.has(m) && !m.endsWith('_e')));
 
   // Dead-end: reactions where all products are orphan producers or all substrates are orphan consumers
   const deadEndReactions: string[] = [];
   for (const rxn of model.reactions) {
     const products = Object.entries(rxn.stoichiometry).filter(([_, c]) => c > 0).map(([m]) => m);
     const substrates = Object.entries(rxn.stoichiometry).filter(([_, c]) => c < 0).map(([m]) => m);
-    if (products.length > 0 && products.every(m => orphanProducers.includes(m))) {
+    if (products.length > 0 && products.every(m => orphanProducers.has(m))) {
       deadEndReactions.push(rxn.id);
     }
-    if (substrates.length > 0 && substrates.every(m => orphanConsumers.includes(m))) {
+    if (substrates.length > 0 && substrates.every(m => orphanConsumers.has(m))) {
       deadEndReactions.push(rxn.id);
     }
   }
 
-  return { orphanProducers, orphanConsumers, deadEndReactions };
+  return { orphanProducers: [...orphanProducers], orphanConsumers: [...orphanConsumers], deadEndReactions };
 }
 
 // ── Essential Gene Analysis ────────────────────────────────────────────────
@@ -673,11 +673,16 @@ export function findEssentialGenes(model: GEMReconstruction): EssentialityResult
     // Find reactions associated with this gene via GPR
     const affectedReactions: string[] = [];
     for (const rxn of model.reactions) {
-      if (rxn.gpr && rxn.gpr.includes(geneId)) {
-        const gpr = parseGPR(rxn.gpr);
-        const prob = computeKnockoutProbability(gpr, new Set([geneId]));
-        if (prob < 0.01) {
-          affectedReactions.push(rxn.id);
+      if (rxn.gpr) {
+        // Use word-boundary matching to avoid partial gene ID matches
+        // e.g., "lac" should NOT match "lacI" or "lacZ"
+        const geneRegex = new RegExp(`\\b${geneId}\\b`);
+        if (geneRegex.test(rxn.gpr)) {
+          const gpr = parseGPR(rxn.gpr);
+          const prob = computeKnockoutProbability(gpr, new Set([geneId]));
+          if (prob < 0.01) {
+            affectedReactions.push(rxn.id);
+          }
         }
       }
     }
@@ -686,10 +691,19 @@ export function findEssentialGenes(model: GEMReconstruction): EssentialityResult
     const knockoutRxns = new Set(affectedReactions);
     const growthWithout = solveFBAWithKnockout(S, model.reactions, biomassIdx, nMets, nRxns, knockoutRxns);
 
+    // Essential if growth drops below 1% of wild-type
+    // If wtGrowth is 0, all genes are considered essential (model can't grow)
+    const essential = wtGrowth > 0
+      ? growthWithout < 0.01 * wtGrowth
+      : true;
+    const growthFraction = wtGrowth > 0
+      ? Math.round((growthWithout / wtGrowth) * 1000) / 1000
+      : 0;
+
     results.push({
       geneId,
-      essential: growthWithout < 0.01 * wtGrowth,
-      growthWithout: wtGrowth > 0 ? Math.round((growthWithout / wtGrowth) * 1000) / 1000 : 0,
+      essential,
+      growthWithout: growthFraction,
       affectedReactions,
     });
   }
