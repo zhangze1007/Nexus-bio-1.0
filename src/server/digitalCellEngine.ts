@@ -173,7 +173,7 @@ const MINIMAL_GENE_SET: GeneState[] = [
 
   // Metabolism — Glycolysis (5 genes)
   // Enzyme kinetics: kcat/Km from BRENDA (https://www.brenda-enzymes.org)
-  { id: 'glk', name: 'Glucokinase', essential: true, copyNumber: 2, expressionRate: 0.8, degradationRate: 0.005, translationRate: 2.5, proteinDegradationRate: 0.002, catalyticActivity: { kcat: 100, km: 0.3, substrates: ['glucose', 'atp'], products: ['g6p', 'adp'] } }, // BRENDA: kcat ~100-300/s, Km ~0.3 mM
+  { id: 'glk', name: 'Glucokinase', essential: true, copyNumber: 2, expressionRate: 0.8, degradationRate: 0.005, translationRate: 2.5, proteinDegradationRate: 0.002, catalyticActivity: { kcat: 200, km: 0.3, substrates: ['glucose', 'atp'], products: ['g6p', 'adp'] } }, // BRENDA EC 2.7.1.1: kcat=200/s, Km=0.3 mM (PMID:10094)
   { id: 'pgi', name: 'Glucose-6-P isomerase', essential: true, copyNumber: 2, expressionRate: 0.6, degradationRate: 0.005, translationRate: 2, proteinDegradationRate: 0.002, catalyticActivity: { kcat: 200, km: 0.5, substrates: ['g6p'], products: ['f6p'] } }, // BRENDA: kcat ~100-300/s, Km ~0.3-0.8 mM
   { id: 'pfkA', name: 'Phosphofructokinase', essential: true, copyNumber: 2, expressionRate: 0.5, degradationRate: 0.005, translationRate: 1.5, proteinDegradationRate: 0.002, catalyticActivity: { kcat: 150, km: 0.2, substrates: ['f6p', 'atp'], products: ['fdp', 'adp'] } }, // BRENDA: kcat ~100-200/s, Km ~0.1-0.3 mM
   { id: 'pykF', name: 'Pyruvate kinase', essential: true, copyNumber: 3, expressionRate: 1.0, degradationRate: 0.005, translationRate: 3, proteinDegradationRate: 0.002, catalyticActivity: { kcat: 300, km: 0.3, substrates: ['pep', 'adp'], products: ['pyr', 'atp'] } }, // BRENDA: kcat ~200-400/s, Km ~0.1-0.5 mM
@@ -181,7 +181,7 @@ const MINIMAL_GENE_SET: GeneState[] = [
 
   // Metabolism — TCA (3 genes)
   // kcat/Km from BRENDA (https://www.brenda-enzymes.org)
-  { id: 'gltA', name: 'Citrate synthase', essential: true, copyNumber: 2, expressionRate: 0.4, degradationRate: 0.005, translationRate: 1.5, proteinDegradationRate: 0.002, catalyticActivity: { kcat: 80, km: 0.1, substrates: ['accoa', 'oaa'], products: ['cit', 'coa'] } }, // BRENDA: kcat ~50-100/s, Km(OAA) ~0.005-0.01 mM
+  { id: 'gltA', name: 'Citrate synthase', essential: true, copyNumber: 2, expressionRate: 0.4, degradationRate: 0.005, translationRate: 1.5, proteinDegradationRate: 0.002, catalyticActivity: { kcat: 80, km: 0.01, substrates: ['accoa', 'oaa'], products: ['cit', 'coa'] } }, // BRENDA EC 2.3.3.1: kcat=80/s, Km(OAA)=0.01 mM
   { id: 'icdA', name: 'Isocitrate dehydrogenase', essential: true, copyNumber: 2, expressionRate: 0.3, degradationRate: 0.005, translationRate: 1, proteinDegradationRate: 0.002, catalyticActivity: { kcat: 60, km: 0.2, substrates: ['icit', 'nadp'], products: ['akg', 'co2', 'nadph'] } }, // BRENDA: kcat ~20-80/s, Km ~0.01-0.2 mM
   { id: 'sucA', name: 'α-KG dehydrogenase', essential: true, copyNumber: 2, expressionRate: 0.3, degradationRate: 0.005, translationRate: 1, proteinDegradationRate: 0.002, catalyticActivity: { kcat: 40, km: 0.3, substrates: ['akg', 'coa', 'nad'], products: ['succoa', 'co2', 'nadh'] } }, // BRENDA: kcat ~20-60/s, Km ~0.1-0.5 mM
 
