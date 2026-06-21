@@ -129,6 +129,35 @@ describe('LinearRegression', () => {
     const sum = importances.reduce((s, v) => s + v, 0);
     expect(Math.abs(sum - 1)).toBeLessThan(1e-10);
   });
+
+  it('should recover non-zero intercept', () => {
+    const X = [[1], [2], [3], [4], [5]];
+    const y = [7, 9, 11, 13, 15]; // y = 5 + 2*x
+    const model = new LinearRegression();
+    model.fit(X, y);
+    const preds = model.predict(X);
+
+    // Predictions should be close to y
+    for (let i = 0; i < y.length; i++) {
+      expect(Math.abs(preds[i] - y[i])).toBeLessThan(0.1);
+    }
+
+    // Check bias (weight[0]) is ~5, slope (weight[1]) is ~2
+    const serialized = JSON.parse(model.serialize());
+    expect(Math.abs(serialized.weights[0] - 5)).toBeLessThan(0.5);
+    expect(Math.abs(serialized.weights[1] - 2)).toBeLessThan(0.5);
+  });
+
+  it('should handle zero-variance features gracefully', () => {
+    const X = [[1, 5], [1, 10], [1, 15]]; // feature 0 is constant
+    const y = [10, 20, 30];
+    const model = new LinearRegression();
+    model.fit(X, y);
+    // Should not crash, should produce reasonable predictions
+    const preds = model.predict(X);
+    expect(preds.length).toBe(3);
+    preds.forEach(p => expect(typeof p).toBe('number'));
+  });
 });
 
 // ── 2. Ridge Regression ─────────────────────────────────────────────────────
@@ -201,6 +230,23 @@ describe('RidgeRegression', () => {
     const preds = model.predict([[1, 2]]);
     expect(preds).toEqual([0]);
   });
+
+  it('should recover non-zero intercept', () => {
+    const X = [[1], [2], [3], [4], [5]];
+    const y = [7, 9, 11, 13, 15]; // y = 5 + 2*x
+    const model = new RidgeRegression(0.01);
+    model.fit(X, y);
+    const preds = model.predict(X);
+
+    // Predictions should be close to y (low regularization)
+    for (let i = 0; i < y.length; i++) {
+      expect(Math.abs(preds[i] - y[i])).toBeLessThan(0.5);
+    }
+
+    const serialized = JSON.parse(model.serialize());
+    expect(Math.abs(serialized.weights[0] - 5)).toBeLessThan(1.0);
+    expect(Math.abs(serialized.weights[1] - 2)).toBeLessThan(1.0);
+  });
 });
 
 // ── 3. Lasso Regression ─────────────────────────────────────────────────────
@@ -256,6 +302,25 @@ describe('LassoRegression', () => {
     expect(importances.length).toBe(3);
     const sum = importances.reduce((s, v) => s + v, 0);
     expect(Math.abs(sum - 1)).toBeLessThan(1e-10);
+  });
+
+  it('should recover non-zero intercept', () => {
+    const X = [[1], [2], [3], [4], [5]];
+    const y = [7, 9, 11, 13, 15]; // y = 5 + 2*x
+    const model = new LassoRegression(0.01, 3000, 1e-6);
+    model.fit(X, y);
+    const preds = model.predict(X);
+
+    // Predictions should be close to y (low regularization)
+    for (let i = 0; i < y.length; i++) {
+      expect(Math.abs(preds[i] - y[i])).toBeLessThan(1.0);
+    }
+
+    const serialized = JSON.parse(model.serialize());
+    // Bias should be non-zero (close to 5)
+    expect(serialized.weights[0]).toBeGreaterThan(1.0);
+    // Slope should be non-zero (close to 2)
+    expect(Math.abs(serialized.weights[1])).toBeGreaterThan(0.5);
   });
 });
 
@@ -331,6 +396,35 @@ describe('DecisionTree', () => {
     const deepRMSE = rmse(y, deepPreds);
 
     expect(deepRMSE).toBeLessThanOrEqual(shallowRMSE);
+  });
+
+  it('should respect minSamplesSplit parameter', () => {
+    // minSamplesSplit=100 means no split with only 50 samples
+    const tree = new DecisionTree(10, 100, 1);
+    const X: number[][] = [];
+    const y: number[] = [];
+    for (let i = 0; i < 50; i++) {
+      X.push([Math.random() * 10]);
+      y.push(Math.random() * 10);
+    }
+    tree.fit(X, y);
+
+    // All predictions should be the same (single leaf)
+    const preds = tree.predict([[1], [2], [3]]);
+    expect(preds[0]).toBeCloseTo(preds[1], 5);
+    expect(preds[1]).toBeCloseTo(preds[2], 5);
+  });
+
+  it('should respect minSamplesLeaf parameter', () => {
+    // minSamplesLeaf=40 means every leaf must have >= 40 samples
+    // With 100 samples, the tree can split at most once
+    const tree = new DecisionTree(10, 2, 40);
+    const { X, y } = generateLinearData(100, [2, 3], 5);
+    tree.fit(X, y);
+
+    const preds = tree.predict(X);
+    expect(preds.length).toBe(X.length);
+    preds.forEach(p => expect(typeof p).toBe('number'));
   });
 });
 

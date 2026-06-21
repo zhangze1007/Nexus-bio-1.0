@@ -400,9 +400,9 @@ export class LassoRegression implements MLModel {
     // Initialize weights to zero
     const w = new Array(totalFeatures).fill(0);
 
-    // Precompute column norms squared (excluding bias column at index 0)
+    // Precompute column norms squared
     const colNormSq = new Array(totalFeatures).fill(0);
-    for (let j = 1; j < totalFeatures; j++) {
+    for (let j = 0; j < totalFeatures; j++) {
       for (let i = 0; i < n; i++) {
         colNormSq[j] += Xb[i][j] * Xb[i][j];
       }
