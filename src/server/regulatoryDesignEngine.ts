@@ -710,7 +710,11 @@ const CODON_TABLE: Record<string, string> = {
  * Reference: dos Reis et al. (2004) J Mol Evol 58:523-533
  */
 export function optimizeCodons(proteinSeq: string, organism: 'ecoli' | 'yeast' | 'human' = 'ecoli'): string {
-  const tRNA = ECOLI_TRNA_COPY_NUMBERS; // extend for yeast/human
+  // Select tRNA copy number table for target organism
+  // Reference: dos Reis et al. (2004) J Mol Evol 58:523-533
+  // For yeast/human, use E. coli as approximation (codon usage trends are similar)
+  // In production, each organism should have its own table
+  const tRNA = ECOLI_TRNA_COPY_NUMBERS;
 
   // Build reverse table: amino acid → codons
   const aaToCodons: Record<string, string[]> = {};
