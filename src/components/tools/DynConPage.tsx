@@ -272,6 +272,7 @@ const DYNCON_TABS: ToolTab[] = [
   { id: 'convergence', label: 'Convergence', accent: THEME.APRICOT },
   { id: 'rbs', label: 'RBS Bridge', accent: THEME.MINT },
   { id: 'digitaltwin', label: 'Digital Twin', accent: THEME.LILAC },
+  { id: 'analytics', label: 'Analytics', accent: THEME.MINT },
 ];
 
 /* ══════════════════════════════════════════════════════════════════════════════
@@ -1135,6 +1136,11 @@ export default React.memo(function DynConPage() {
       <ToolTabPanel tabId="digitaltwin" activeId={activeTab}>
         <DigitalTwinPanel />
       </ToolTabPanel>
+
+      {/* ── Bioreactor Analytics Tab ────────────────────────────────────── */}
+      <ToolTabPanel tabId="analytics" activeId={activeTab}>
+        <BioreactorAnalyticsPanel />
+      </ToolTabPanel>
     </ToolShell>
   );
 });
@@ -1264,6 +1270,115 @@ function DigitalTwinPanel() {
         }}>
           {result.designNotes.map((n, i) => <div key={i}>• {n}</div>)}
         </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Bioreactor Analytics Panel ──────────────────────────────────────────── */
+
+function BioreactorAnalyticsPanel() {
+  const [readings, setReadings] = useState(20);
+  const [result, setResult] = useState<import('../../server/bioreactorAnalyticsEngine').BioreactorAnalytics | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const handleRun = React.useCallback(async () => {
+    setLoading(true);
+    try {
+      const { analyzeBioreactorData } = await import('../../server/bioreactorAnalyticsEngine');
+      // Generate synthetic batch data
+      const data = Array.from({ length: readings }, (_, i) => ({
+        time: i * 0.5,
+        biomass: 0.1 * Math.exp(0.15 * i),
+        substrate: Math.max(0, 10 - 0.3 * i),
+        product: 0.04 * i,
+        dissolvedO2: 80 - i * 0.5,
+        pH: 7.0,
+        temperature: 37,
+      }));
+      const res = analyzeBioreactorData(data);
+      setResult(res);
+    } finally {
+      setLoading(false);
+    }
+  }, [readings]);
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div style={{
+        background: THEME.PANEL_SURFACE, borderRadius: 'var(--nb-radius-lg)', padding: 16,
+        display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12,
+        border: `1px solid ${THEME.BORDER}`,
+      }}>
+        <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+          Batch Data Points
+        </span>
+        <input type="number" min={10} max={200} value={readings}
+          onChange={(e) => setReadings(Number(e.target.value))}
+          style={{ width: 60, padding: '4px 8px', background: THEME.INPUT_BG, border: `1px solid ${THEME.INPUT_BORDER}`, borderRadius: 'var(--nb-radius-sm)', color: THEME.INPUT_TEXT, fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-sm)', outline: 'none' }}
+        />
+        <button onClick={handleRun} disabled={loading} className="nb-tool-toggle"
+          style={{ padding: '6px 14px', fontSize: 'var(--nb-fs-sm)', opacity: loading ? 0.4 : 1 }}
+        >
+          {loading ? 'Analyzing...' : 'Run Analytics'}
+        </button>
+        {result && (
+          <span style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: 'rgba(255,255,255,0.4)' }}>
+            {result.anomalies.length} anomalies • {result.phases.length} phases • μmax={result.kinetics.muMax}
+          </span>
+        )}
+      </div>
+
+      {result && (
+        <>
+          {/* Growth phases */}
+          <div style={{ background: THEME.PANEL_SURFACE, borderRadius: 'var(--nb-radius-lg)', padding: 12, border: `1px solid ${THEME.BORDER}` }}>
+            <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL, marginBottom: 6 }}>Growth Phases</div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {result.phases.map((p, i) => (
+                <span key={i} style={{
+                  padding: '3px 8px',
+                  background: p.phase === 'exponential' ? 'rgba(147,203,82,0.1)' : p.phase === 'stationary' ? 'rgba(200,216,232,0.1)' : 'rgba(255,255,255,0.04)',
+                  border: `1px solid ${p.phase === 'exponential' ? 'rgba(147,203,82,0.2)' : 'rgba(255,255,255,0.08)'}`,
+                  borderRadius: '3px',
+                  fontFamily: THEME.MONO,
+                  fontSize: 'var(--nb-fs-xs)',
+                  color: p.phase === 'exponential' ? 'rgba(147,203,82,0.8)' : 'rgba(255,255,255,0.5)',
+                }}>
+                  {p.phase} ({p.duration.toFixed(1)}h)
+                  {p.growthRate !== undefined && ` μ=${p.growthRate}`}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* Kinetics */}
+          <div style={{ background: THEME.PANEL_SURFACE, borderRadius: 'var(--nb-radius-lg)', padding: 12, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 8, border: `1px solid ${THEME.BORDER}` }}>
+            {[
+              { label: 'μmax', value: `${result.kinetics.muMax} h⁻¹`, color: THEME.MINT },
+              { label: 'Ks', value: `${result.kinetics.ks} g/L`, color: THEME.SKY },
+              { label: 'Yxs', value: `${result.kinetics.yieldCoeff} g/g`, color: THEME.APRICOT },
+              { label: 'R²', value: result.kinetics.r2.toString(), color: result.kinetics.r2 > 0.8 ? 'rgba(147,203,82,0.7)' : 'rgba(250,128,114,0.7)' },
+            ].map((m, i) => (
+              <div key={i} style={{ textAlign: 'center' }}>
+                <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xxs)', color: THEME.LABEL }}>{m.label}</div>
+                <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-sm)', color: m.color, fontWeight: 600 }}>{m.value}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Recommendations */}
+          {result.recommendations.length > 0 && (
+            <div style={{ background: THEME.PANEL_SURFACE, borderRadius: 'var(--nb-radius-lg)', padding: 12, border: `1px solid ${THEME.BORDER}` }}>
+              <div style={{ fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', color: THEME.LABEL, marginBottom: 6 }}>Recommendations</div>
+              {result.recommendations.map((r, i) => (
+                <div key={i} style={{ fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-sm)', color: 'rgba(255,255,255,0.7)', marginBottom: 4 }}>
+                  • {r}
+                </div>
+              ))}
+            </div>
+          )}
+        </>
       )}
     </div>
   );
