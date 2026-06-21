@@ -19,6 +19,21 @@ export async function OPTIONS(req: Request) {
 }
 
 const PIPELINE_MAP: Record<string, () => Promise<(input: unknown) => unknown | Promise<unknown>>> = {
+  fbasim: async () => {
+    const { runStrainDesignPipeline } = await import('../../../../src/server/fbaStrainPipeline');
+    return (input: unknown) => {
+      const p = input as Record<string, unknown> ?? {};
+      return runStrainDesignPipeline({
+        species: (p.species as 'ecoli' | 'yeast') ?? 'ecoli',
+        objective: (p.objective as 'biomass' | 'atp' | 'product') ?? 'biomass',
+        glucoseUptake: (p.glucoseUptake as number) ?? 10,
+        oxygenUptake: (p.oxygenUptake as number) ?? 20,
+        targetProduct: (p.targetProduct as string) ?? 'PRODUCT',
+        maxKnockouts: (p.maxKnockouts as number) ?? 3,
+        growthFractionConstraint: (p.growthFractionConstraint as number) ?? 0.1,
+      });
+    };
+  },
   catdes: async () => {
     const { identifyBottlenecks } = await import('../../../../src/services/CatalystDesignerEngine');
     return (input: unknown) => identifyBottlenecks(input as Parameters<typeof identifyBottlenecks>[0]);

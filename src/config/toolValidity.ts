@@ -50,6 +50,12 @@ export const TOOL_VALIDITY: Record<string, ToolValidity> = {
 
   // Cross-stage
   nexai:        { level: 'real',    caption: 'Answers come exclusively from Groq llama-3.3-70b-versatile via /api/analyze. No client-side template fallback.' },
+
+  // Frontier engines (2025-2026)
+  inversefolding:    { level: 'partial', caption: 'k-NN graph, message passing, and PSSM decoding are real (Cα-only backbone). BLOSUM62 declared but unused (uniform prior); all weights hand-tuned, not learned; ESM-2 path is a stub.' },
+  multiplexcrispr:   { level: 'partial', caption: 'Rule Set 2 on-target scoring (Doench 2016 weights) and recursive combinatorial enumeration are real. CFD off-target matrix is uniform placeholder (all 0.893). Fitness is a proxy model, not FBA.' },
+  pathwaydiscovery:  { level: 'partial', caption: 'A* graph search structure and thermodynamic ΔG cascade summation are real. Heuristic is broken (empty functional groups); atom economy is a fixed lookup; no mass conservation; common-metabolites shortcut bypasses search.' },
+  digitaltwin:       { level: 'real',    caption: 'EKF with RK4 integration, Monod kinetics, analytical Jacobian, and sensor fusion are all genuine. Bugs: likelihood Mahalanobis uses S instead of S⁻¹; NIS uses state covariance P instead of innovation covariance S.' },
 };
 
 export function getToolValidity(moduleId: string): ToolValidity | undefined {

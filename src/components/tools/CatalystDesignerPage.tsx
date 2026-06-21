@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { motion } from 'framer-motion';
 import MetricCard from '../ide/shared/MetricCard';
 import ExportButton from '../ide/shared/ExportButton';
+import { getToolValidity } from '../../config/toolValidity';
 import SimErrorBanner from '../ide/shared/SimErrorBanner';
 import CatalystViewer3D from '../molecular/CatalystViewer3D';
 import type { ResidueClickData } from '../molecular/CatalystViewer3D';
@@ -531,6 +532,39 @@ function MutagenesisView({ result, enzyme }: { result: MutagenesisResult; enzyme
 }
 
 /* ══════════════════════════════════════════════════════════════════════
+   Frontier Engine Badge — renders validity badge for embedded frontier engines
+   ══════════════════════════════════════════════════════════════════════ */
+
+const VALIDITY_STYLES: Record<string, { bg: string; border: string; color: string; label: string }> = {
+  real:    { bg: 'rgba(147, 203, 82, 0.16)',  border: 'rgba(147, 203, 82, 0.45)',  color: '#5d8a2f', label: 'REAL' },
+  partial: { bg: 'rgba(232, 220, 200, 0.32)', border: 'rgba(180, 150, 100, 0.50)', color: '#8a6a30', label: 'PARTIAL' },
+  demo:    { bg: 'rgba(250, 128, 114, 0.16)', border: 'rgba(250, 128, 114, 0.50)', color: '#a8453a', label: 'DEMO' },
+};
+
+function FrontierEngineBadge({ engineId }: { engineId: string }) {
+  const validity = getToolValidity(engineId);
+  if (!validity) return null;
+  const style = VALIDITY_STYLES[validity.level] ?? VALIDITY_STYLES.partial;
+  return (
+    <div
+      title={validity.caption}
+      style={{
+        display: 'inline-flex', alignItems: 'center', gap: '6px',
+        marginLeft: 'auto', marginRight: 16,
+        fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', fontWeight: 700,
+        letterSpacing: '0.10em', padding: '5px 9px',
+        borderRadius: 'var(--nb-radius-md)',
+        background: style.bg, border: `1px solid ${style.border}`, color: style.color,
+        cursor: 'help', flexShrink: 0,
+      }}
+    >
+      {style.label}
+      <span style={{ fontWeight: 400, opacity: 0.7, letterSpacing: 0 }}>/ {engineId}</span>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════════════
    Main Component
    ══════════════════════════════════════════════════════════════════════ */
 
@@ -857,6 +891,7 @@ export default React.memo(function CatalystDesignerPage() {
       activeTab={activeTab}
       onTabChange={setActiveTab}
       advancedTabIds={['balance', 'pareto']}
+      hero={<FrontierEngineBadge engineId="inversefolding" />}
       footer={
         <>
           <ExportButton label="Export JSON"

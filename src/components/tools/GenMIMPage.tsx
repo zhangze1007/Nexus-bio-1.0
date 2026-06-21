@@ -7,6 +7,7 @@ import SimErrorBanner from '../ide/shared/SimErrorBanner';
 import { CRISPRI_TARGETS, greedyKnockdownSchedule, computeOffTargetScore } from '../../data/mockGenMIM';
 import { designgRNAs, type CasProtein } from '../../server/grnaDesigner';
 import type { CRISPRiTarget } from '../../types';
+import { getToolValidity } from '../../config/toolValidity';
 
 /**
  * Generate a deterministic pseudo-sequence from a numeric seed.
@@ -236,6 +237,35 @@ const GENMIM_TABS: ToolTab[] = [
   { id: 'synthetic', label: 'Synthetic', accent: THEME.APRICOT },
 ];
 
+const VALIDITY_STYLES: Record<string, { bg: string; border: string; color: string; label: string }> = {
+  real:    { bg: 'rgba(147, 203, 82, 0.16)',  border: 'rgba(147, 203, 82, 0.45)',  color: '#5d8a2f', label: 'REAL' },
+  partial: { bg: 'rgba(232, 220, 200, 0.32)', border: 'rgba(180, 150, 100, 0.50)', color: '#8a6a30', label: 'PARTIAL' },
+  demo:    { bg: 'rgba(250, 128, 114, 0.16)', border: 'rgba(250, 128, 114, 0.50)', color: '#a8453a', label: 'DEMO' },
+};
+
+function FrontierEngineBadge({ engineId }: { engineId: string }) {
+  const validity = getToolValidity(engineId);
+  if (!validity) return null;
+  const style = VALIDITY_STYLES[validity.level] ?? VALIDITY_STYLES.partial;
+  return (
+    <div
+      title={validity.caption}
+      style={{
+        display: 'inline-flex', alignItems: 'center', gap: '6px',
+        marginLeft: 'auto', marginRight: 16,
+        fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', fontWeight: 700,
+        letterSpacing: '0.10em', padding: '5px 9px',
+        borderRadius: 'var(--nb-radius-md)',
+        background: style.bg, border: `1px solid ${style.border}`, color: style.color,
+        cursor: 'help', flexShrink: 0,
+      }}
+    >
+      {style.label}
+      <span style={{ fontWeight: 400, opacity: 0.7, letterSpacing: 0 }}>/ {engineId}</span>
+    </div>
+  );
+}
+
 export default React.memo(function GenMIMPage() {
   const project = useWorkbenchStore((s) => s.project);
   const analyzeArtifact = useWorkbenchStore((s) => s.analyzeArtifact);
@@ -372,7 +402,9 @@ export default React.memo(function GenMIMPage() {
       onTabChange={setActiveTab}
       advancedTabIds={['schedule', 'efficiency']}
       hero={
-        <ScientificHero
+        <>
+          <FrontierEngineBadge engineId="multiplexcrispr" />
+          <ScientificHero
           eyebrow="Stage 3 · Chassis Minimization"
           title="Minimal chassis decisions with explicit growth tradeoffs"
           summary="GENMIM now foregrounds the chassis question instead of burying it in a schedule table. You can read immediately how many targets are being proposed, how much growth is being sacrificed, and whether the current protection policy is conservative enough for the active project."
@@ -383,6 +415,7 @@ export default React.memo(function GenMIMPage() {
             { label: 'Lead Gene', value: schedule[0]?.gene ?? 'Pending', detail: schedule[0] ? `${schedule[0].phenotype}` : 'No schedule yet.', tone: 'neutral' },
           ]}
         />
+        </>
       }
       footer={
         <>

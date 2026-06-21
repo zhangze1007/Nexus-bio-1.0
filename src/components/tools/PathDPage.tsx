@@ -11,6 +11,7 @@ import { findPathways } from '../../server/retrosynthesis';
 import type { RetrosynthesisResult } from '../../server/retrosynthesis';
 import type { PathwayDiscoveryResult, DiscoveredPathway } from '../../server/pathwayDiscoveryEngine';
 import { THEME } from '../../theme';
+import { getToolValidity } from '../../config/toolValidity';
 
 export default React.memo(function PathDPage() {
   const [activeTab, setActiveTab] = useState<'kegg' | 'retro' | 'discover'>('kegg');
@@ -97,6 +98,8 @@ export default React.memo(function PathDPage() {
     return () => { resetPathway(); };
   }, [keggResult, setAiPathway, resetPathway]);
 
+  const pathwayValidity = getToolValidity('pathwaydiscovery');
+
   return (
     <>
       {/* ── Tab bar ── */}
@@ -106,6 +109,7 @@ export default React.memo(function PathDPage() {
         padding: '0 16px',
         borderBottom: `1px solid rgba(255,255,255,0.06)`,
         background: 'rgba(10,12,16,0.72)',
+        alignItems: 'center',
       }}>
         <button
           role="tab"
@@ -236,6 +240,27 @@ export default React.memo(function PathDPage() {
             }} />
           )}
         </button>
+        {pathwayValidity && (
+          <div
+            title={pathwayValidity.caption}
+            style={{
+              marginLeft: 'auto',
+              fontFamily: THEME.MONO,
+              fontSize: 'var(--nb-fs-xs)',
+              fontWeight: 700,
+              letterSpacing: '0.10em',
+              padding: '5px 9px',
+              borderRadius: 'var(--nb-radius-md)',
+              background: pathwayValidity.level === 'real' ? 'rgba(147, 203, 82, 0.16)' : pathwayValidity.level === 'partial' ? 'rgba(232, 220, 200, 0.32)' : 'rgba(250, 128, 114, 0.16)',
+              border: `1px solid ${pathwayValidity.level === 'real' ? 'rgba(147, 203, 82, 0.45)' : pathwayValidity.level === 'partial' ? 'rgba(180, 150, 100, 0.50)' : 'rgba(250, 128, 114, 0.50)'}`,
+              color: pathwayValidity.level === 'real' ? '#5d8a2f' : pathwayValidity.level === 'partial' ? '#8a6a30' : '#a8453a',
+              cursor: 'help',
+              flexShrink: 0,
+            }}
+          >
+            {pathwayValidity.level === 'real' ? 'REAL' : pathwayValidity.level === 'partial' ? 'PARTIAL' : 'DEMO'}
+          </div>
+        )}
       </div>
 
       {/* ── KEGG Pathway Search ── */}

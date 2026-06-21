@@ -6,6 +6,7 @@ import ExportButton from '../ide/shared/ExportButton';
 import { useUIStore } from '../../store/uiStore';
 import { useWorkbenchStore } from '../../store/workbenchStore';
 import ScientificHero from './shared/ScientificHero';
+import { getToolValidity } from '../../config/toolValidity';
 import AlgorithmPanel from '../shared/AlgorithmPanel';
 import ScientificFigureFrame from './shared/ScientificFigureFrame';
 import SimErrorBanner from '../ide/shared/SimErrorBanner';
@@ -274,6 +275,35 @@ const DYNCON_TABS: ToolTab[] = [
   { id: 'digitaltwin', label: 'Digital Twin', accent: THEME.LILAC },
   { id: 'analytics', label: 'Analytics', accent: THEME.MINT },
 ];
+
+const VALIDITY_STYLES: Record<string, { bg: string; border: string; color: string; label: string }> = {
+  real:    { bg: 'rgba(147, 203, 82, 0.16)',  border: 'rgba(147, 203, 82, 0.45)',  color: '#5d8a2f', label: 'REAL' },
+  partial: { bg: 'rgba(232, 220, 200, 0.32)', border: 'rgba(180, 150, 100, 0.50)', color: '#8a6a30', label: 'PARTIAL' },
+  demo:    { bg: 'rgba(250, 128, 114, 0.16)', border: 'rgba(250, 128, 114, 0.50)', color: '#a8453a', label: 'DEMO' },
+};
+
+function FrontierEngineBadge({ engineId }: { engineId: string }) {
+  const validity = getToolValidity(engineId);
+  if (!validity) return null;
+  const style = VALIDITY_STYLES[validity.level] ?? VALIDITY_STYLES.partial;
+  return (
+    <div
+      title={validity.caption}
+      style={{
+        display: 'inline-flex', alignItems: 'center', gap: '6px',
+        marginLeft: 'auto', marginRight: 16,
+        fontFamily: THEME.MONO, fontSize: 'var(--nb-fs-xs)', fontWeight: 700,
+        letterSpacing: '0.10em', padding: '5px 9px',
+        borderRadius: 'var(--nb-radius-md)',
+        background: style.bg, border: `1px solid ${style.border}`, color: style.color,
+        cursor: 'help', flexShrink: 0,
+      }}
+    >
+      {style.label}
+      <span style={{ fontWeight: 400, opacity: 0.7, letterSpacing: 0 }}>/ {engineId}</span>
+    </div>
+  );
+}
 
 /* ══════════════════════════════════════════════════════════════════════════════
    MAIN PAGE
@@ -674,7 +704,9 @@ export default React.memo(function DynConPage() {
         </>
       }
       hero={
-        <ScientificHero
+        <>
+          <FrontierEngineBadge engineId="digitaltwin" />
+          <ScientificHero
             eyebrow="Stage 3 · Chassis Control"
             title="Controller behavior is tied to the current metabolic burden"
             summary="DYNCON turns pathway risk into operating policy. PID tuning, Hill repression, and genetic-part mapping are treated as one control package so the page behaves like a scientific control surface for a living system, not a disconnected slider set."
@@ -718,6 +750,7 @@ export default React.memo(function DynConPage() {
               },
             ]}
           />
+        </>
       }
     >
       {simError ? (
