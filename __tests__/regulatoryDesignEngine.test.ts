@@ -54,7 +54,7 @@ describe('regulatoryDesignEngine — literature benchmarks', () => {
       // lacZ gene — highly expressed in E. coli
       // Reference: Sharp & Li (1987) Nucleic Acids Res 15:1281-1295
       const lacZ = 'ATGACCATGATTACGGATTCACTGGCCGTCGTTTTACAACGTCGTGACTGGGAAAACCCTGGCGTTACCCAACTTAATCGCCTTGCAGCACATCCCCCTTTCGCCAGCTGGCGTAATAGCGAAGAGGCCCGCACCGATCGCCCTTCCCAACAGTTGCGCAG';
-      const cai = computeCAI(lacZ, 'ecoli');
+      const cai = computeCAI(lacZ);
       // Natural genes have CAI 0.4-0.9 (Sharp & Li 1987)
       expect(cai).toBeGreaterThan(0.4);
     });
@@ -63,7 +63,7 @@ describe('regulatoryDesignEngine — literature benchmarks', () => {
       // ATG(M) GCG(A) GAA(E) GAT(D) TTT(F) — all most-frequent codons
       // Reference: Nakamura et al. (2000) Nucleic Acids Res 28:292
       const optimal = 'ATGGCGGAAGATTTTATGGCGGAAGATTTT';
-      const cai = computeCAI(optimal, 'ecoli');
+      const cai = computeCAI(optimal);
       // CAI = exp(mean(log(w_i))) where w_i = freq/max_freq
       // All optimal → CAI close to 1.0 but geometric mean is conservative
       expect(cai).toBeGreaterThan(0.8);
@@ -72,7 +72,7 @@ describe('regulatoryDesignEngine — literature benchmarks', () => {
     it('rare codons should give CAI < 0.5', () => {
       // CTA(L) AGA(R) — rare in E. coli
       const rare = 'CTACTACTACTAAGAAGAAGA';
-      const cai = computeCAI(rare, 'ecoli');
+      const cai = computeCAI(rare);
       expect(cai).toBeLessThan(0.6);
     });
   });

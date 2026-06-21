@@ -795,12 +795,34 @@ export default React.memo(function CatalystDesignerPage() {
       setInvFoldLoading(false);
     }
   }, [enzyme.catalyticResidues.length, invFoldSeqCount, invFoldTemp]);
+
+  // Expression Prediction state
+  const [exprResult, setExprResult] = useState<import('../../server/geneExpressionPredictor').ExpressionPrediction | null>(null);
+  const [exprLoading, setExprLoading] = useState(false);
+
+  const handleExpressionPrediction = useCallback(async () => {
+    setExprLoading(true);
+    try {
+      const { predictGeneExpression } = await import('../../server/geneExpressionPredictor');
+      // Use current enzyme's sequence for prediction
+      const cds = enzyme.sequence || 'ATGAAACGCACCAGCAACAGCAACTAA';
+      const promoter = 'TTGACATATACATTAAGAATTCGATATCAATGACA';
+      const rbs = 'AAGAAGGAGATATACAT';
+      const terminator = 'GCAAAAAACCCCTCAAGACCCGTTTAGAG';
+      const result = predictGeneExpression(promoter, rbs, cds, terminator, 'ecoli');
+      setExprResult(result);
+    } finally {
+      setExprLoading(false);
+    }
+  }, [enzyme.sequence]);
+
   const CATDES_TABS: ToolTab[] = [
     { id: 'overview', label: 'Overview', accent: THEME.CORAL },
     { id: 'balance', label: 'Pathway Balance', accent: THEME.MINT },
     { id: 'pareto', label: 'Pareto', accent: THEME.LILAC },
     { id: 'viewer', label: '3D Viewer', accent: THEME.SKY },
     { id: 'inversefold', label: 'Inverse Folding', accent: THEME.LILAC },
+    { id: 'expression', label: 'Expression', accent: THEME.MINT },
   ];
 
   const kdQ = kdQuality(mutationImpact?.newKd ?? binding.predictedKd);
@@ -1389,6 +1411,85 @@ export default React.memo(function CatalystDesignerPage() {
                 ))}
               </div>
             </div>
+          )}
+        </div>
+      </ToolTabPanel>
+
+      {/* ── Expression Prediction Tab ──────────────────────────────────────── */}
+      <ToolTabPanel tabId="expression" activeId={activeTab}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{
+            ...GLASS,
+            padding: 16,
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            gap: 12,
+          }}>
+            <span style={{ fontFamily: THEME.MONO, fontSize: THEME.FS_XS, color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              Gene Expression Predictor
+            </span>
+            <button onClick={handleExpressionPrediction} disabled={exprLoading} className="nb-tool-toggle"
+              style={{ padding: '6px 14px', fontSize: THEME.FS_SM, opacity: exprLoading ? 0.4 : 1 }}
+            >
+              {exprLoading ? 'Predicting...' : 'Predict Expression'}
+            </button>
+            {exprResult && (
+              <span style={{ fontFamily: THEME.MONO, fontSize: THEME.FS_XS, color: 'rgba(255,255,255,0.4)' }}>
+                Expression: {exprResult.relativeExpression.toFixed(3)} | Confidence: {(exprResult.confidence * 100).toFixed(0)}%
+              </span>
+            )}
+          </div>
+
+          {exprResult && (
+            <>
+              {/* Contribution breakdown */}
+              <div style={{ ...GLASS, padding: 12, display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8 }}>
+                {[
+                  { label: 'Promoter', value: exprResult.contributions.promoter, color: THEME.CORAL },
+                  { label: 'RBS', value: exprResult.contributions.rbs, color: THEME.MINT },
+                  { label: 'CDS', value: exprResult.contributions.cds, color: THEME.SKY },
+                  { label: 'Terminator', value: exprResult.contributions.terminator, color: THEME.LILAC },
+                  { label: 'Host', value: exprResult.contributions.host, color: THEME.APRICOT },
+                ].map(c => (
+                  <div key={c.label} style={{ textAlign: 'center' }}>
+                    <div style={{ fontFamily: THEME.MONO, fontSize: THEME.FS_XS, color: LABEL }}>{c.label}</div>
+                    <div style={{ fontFamily: THEME.MONO, fontSize: THEME.FS_SM, color: c.color, fontWeight: 600 }}>
+                      {(c.value * 100).toFixed(0)}%
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Bottlenecks */}
+              {exprResult.bottlenecks.length > 0 && (
+                <div style={{ ...GLASS, padding: 12 }}>
+                  <div style={{ fontFamily: THEME.MONO, fontSize: THEME.FS_XS, color: LABEL, marginBottom: 6 }}>Bottlenecks</div>
+                  {exprResult.bottlenecks.map((b, i) => (
+                    <div key={i} style={{ fontFamily: THEME.SANS, fontSize: THEME.FS_SM, color: 'rgba(255,255,255,0.7)', marginBottom: 4 }}>
+                      <span style={{ color: b.severity > 0.7 ? THEME.RISK_HIGH : b.severity > 0.4 ? THEME.RISK_MEDIUM : THEME.SUCCESS_MEDIUM }}>
+                        [{b.stage}]
+                      </span> {b.description}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Optimization suggestions */}
+              {exprResult.suggestions.length > 0 && (
+                <div style={{ ...GLASS, padding: 12 }}>
+                  <div style={{ fontFamily: THEME.MONO, fontSize: THEME.FS_XS, color: LABEL, marginBottom: 6 }}>Optimization Suggestions</div>
+                  {exprResult.suggestions.map((s, i) => (
+                    <div key={i} style={{ fontFamily: THEME.SANS, fontSize: THEME.FS_SM, color: 'rgba(255,255,255,0.7)', marginBottom: 4 }}>
+                      <span style={{ color: THEME.SKY }}>[{s.component}]</span> {s.action}
+                      <span style={{ color: 'rgba(255,255,255,0.4)', marginLeft: 8 }}>
+                        (Δ={s.expectedImprovement.toFixed(3)})
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </div>
       </ToolTabPanel>
