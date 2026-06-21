@@ -482,7 +482,7 @@ class ExtendedKalmanFilter {
 
     // Likelihood (Gaussian)
     const Sdet = S[0][0] * (nMeas > 1 ? S[1][1] : 1) * (nMeas > 2 ? S[2][2] : 1);
-    const StimesInnovation = matMul(S, [innovation]).flat();
+    const StimesInnovation = matMul(S, innovation.map(v => [v])).flat();
     const mahalanobis = innovation.reduce((sum, yi, i) => sum + yi * StimesInnovation[i], 0);
     const likelihood = Math.exp(-0.5 * mahalanobis) / Math.sqrt(Math.pow(2 * Math.PI, nMeas) * Math.abs(Sdet) + 1e-300);
 
