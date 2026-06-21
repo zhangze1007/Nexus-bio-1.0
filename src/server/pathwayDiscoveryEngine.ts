@@ -141,6 +141,8 @@ export interface PathwayDiscoveryResult {
  *   0.5-0.7: Specialized enzymes in limited organisms (secondary metabolism)
  *   0.3-0.5: Rare or engineered enzymes (synthetic pathways)
  *   Reference: Kanehisa & Goto (2000) Nucleic Acids Res 28:27-30 (KEGG)
+ *   Reference: Caspi et al. (2020) Nucleic Acids Res 48:D480 (MetaCyc)
+ *   Reference: Schomburg et al. (2013) Nucleic Acids Res 41:D764 (BRENDA)
  *
  * deltaG values: standard biochemical values at physiological conditions (pH 7, 25°C, 1M)
  *   Reference: Noor et al. (2013) Bioinformatics 29:3101-3102 (eQuilibrator)

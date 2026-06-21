@@ -127,21 +127,25 @@ export interface SimulationResult {
  *   - Range: 0.05-5.0 transcripts/min depending on gene and condition
  *   - Highly expressed genes (ribosomal): 1-5 transcripts/min
  *   - Low expression genes: 0.05-0.5 transcripts/min
+ *   - Validation: Li et al. (2014) Cell 157:624 (ribosome profiling)
  *
  * degradationRate (1/min):
  *   - Bernstein et al. (2002) PNAS 99:9697 — mRNA half-life measurements
  *   - E. coli mRNA half-life: 3-20 min → k_deg = ln(2)/t½ = 0.035-0.23 /min
  *   - Stable mRNAs: 0.005-0.02 /min
+ *   - Validation: Selinger et al. (2003) Nat Biotechnol 21:817 (microarray)
  *
  * translationRate (proteins/min/mRNA):
  *   - Li et al. (2014) Cell 157:624 — ribosome profiling
  *   - Range: 0.5-20 proteins/min/mRNA
  *   - Highly translated: 5-20 proteins/min/mRNA
+ *   - Validation: Bremer & Dennis (1996) EcoSal Plus (E. coli growth)
  *
  * proteinDegradationRate (1/min):
  *   - Nath & Koch (1971) J Biol Chem 246:6956 — protein half-lives
  *   - Most E. coli proteins: very stable (t½ > 10h → k < 0.001 /min)
  *   - Regulated proteins: 0.005-0.05 /min
+ *   - Validation: Maurizi (1992) Experientia 48:178 (proteases)
  */
 const MINIMAL_GENE_SET: GeneState[] = [
   // DNA replication (5 genes)

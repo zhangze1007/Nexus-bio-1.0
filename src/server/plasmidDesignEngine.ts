@@ -254,7 +254,10 @@ function optimizeCDS(cds: string, host: HostOrganism): CDSOptimizationResult {
   // Module 2c: GC content balance
   let gcContent = (optimized.match(/[GC]/g) || []).length / optimized.length;
   // GC content bounds: 35-65% optimal for E. coli expression
+  // Extreme GC causes mRNA secondary structure (high GC) or instability (low GC)
   // Reference: Welch et al. (2009) PLoS Biol 7:e1000136 (codon optimization)
+  // Reference: Puigbò et al. (2008) Nucleic Acids Res 36:D491 (codon usage DB)
+  // Reference: Plotkin & Kudla (2011) Nat Rev Genet 12:32-42 (synonymous codons)
   if (gcContent > 0.65 || gcContent < 0.35) {
     const targetGC = 0.5;
     for (let i = 0; i < optimized.length - 2 && Math.abs(gcContent - targetGC) > 0.05; i += 3) {

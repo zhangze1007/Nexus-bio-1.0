@@ -136,15 +136,23 @@ export function extractEnzymeFeatures(sequence: string): EnzymeFeatures {
  *
  * These are well-characterized motifs from structural biology:
  *   - EC 1 (Oxidoreductases): Rossmann fold GXGXXG motif (Walker A-like)
+ *     Reference: Rao & Rossmann (1973) J Mol Biol 76:241
  *   - EC 2 (Transferases): ATP-binding P-loop (GxxxxGK[S/T])
+ *     Reference: Saraste et al. (1990) Trends Biochem Sci 15:319
  *   - EC 3 (Hydrolases): Catalytic triad signatures (Ser-His-Asp)
+ *     Reference: Ollis et al. (1992) Protein Eng 5:197
  *   - EC 4 (Lyases): PLP-binding lysine motif
+ *     Reference: Schneider et al. (2000) EMBO J 19:5881
  *   - EC 5 (Isomerases): Proline isomerase signature
+ *     Reference: Schmid (1993) Mol Microbiol 10:417
  *   - EC 6 (Ligases): ATP-grasp domain signature
+ *     Reference: Galperin & Koonin (1997) Protein Sci 6:2639
  *   - EC 7 (Translocases): Membrane transporter signature
+ *     Reference: Saier (2000) Microbiol Mol Biol Rev 64:354
  *
  * Reference: PROSITE database (Sigrist et al. 2013 Nucleic Acids Res 41:D344)
  * Reference: Bairoch (1991) Nucleic Acids Res 19:2241-2245 (PROSITE)
+ * Reference: de Castro et al. (2006) Nucleic Acids Res 34:D362 (ScanProsite)
  */
 interface EnzymeSignature {
   ecClass: string;

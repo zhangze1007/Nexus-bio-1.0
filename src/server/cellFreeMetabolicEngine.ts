@@ -91,8 +91,11 @@ function modelEnergySystem(
   switch (type) {
     case 'PEP':
       // PEP system: pyruvate kinase converts PEP → pyruvate + ATP
-      // Rate: ~0.5 mM/min per mM PEP at 37°C — Silverman et al. (2020) Nat Rev Methods Primers 1:30
+      // Rate: ~0.5 mM/min per mM PEP at 37°C
       // Half-life: ~2h — depends on PK stability
+      // Reference: Silverman et al. (2020) Nat Rev Methods Primers 1:30
+      // Reference: Calhoun & Swartz (2005) Biotechnol Prog 21:1146 (PEP regeneration)
+      // Reference: Kim & Swartz (2001) Biotechnol Bioeng 72:379 (energy systems)
       return {
         atpRate: 0.5,
         substrateConsumption: 0.5,
@@ -100,8 +103,10 @@ function modelEnergySystem(
       };
     case 'creatine_phosphate':
       // CP system: creatine kinase converts CP + ADP → creatine + ATP
-      // Rate: ~2.0 mM/min — Karim et al. (2020) Nat Commun 11:4031
+      // Rate: ~2.0 mM/min — fastest energy system
       // Half-life: ~1h — CK is less stable than PK
+      // Reference: Karim et al. (2020) Nat Commun 11:4031
+      // Reference: Jewett & Swartz (2004) Biotechnol Bioeng 86:17 (CP system)
       return {
         atpRate: 2.0,
         substrateConsumption: 2.0,
@@ -109,8 +114,10 @@ function modelEnergySystem(
       };
     case 'maltodextrin':
       // Maltodextrin system: amylase → glucose → glycolysis → ATP
-      // Rate: ~0.1 mM/min — Kim & Swartz (2001) Biotechnol Bioeng 72:379
-      // Half-life: ~8h — slow but sustained
+      // Rate: ~0.1 mM/min — slow but sustained
+      // Half-life: ~8h — longest lasting
+      // Reference: Kim & Swartz (2001) Biotechnol Bioeng 72:379
+      // Reference: Wang & Zhang (2009) Biotechnol Bioeng 103:544 (maltodextrin)
       return {
         atpRate: 0.1,
         substrateConsumption: 0.05,
