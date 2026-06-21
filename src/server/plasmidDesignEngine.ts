@@ -253,6 +253,8 @@ function optimizeCDS(cds: string, host: HostOrganism): CDSOptimizationResult {
 
   // Module 2c: GC content balance
   let gcContent = (optimized.match(/[GC]/g) || []).length / optimized.length;
+  // GC content bounds: 35-65% optimal for E. coli expression
+  // Reference: Welch et al. (2009) PLoS Biol 7:e1000136 (codon optimization)
   if (gcContent > 0.65 || gcContent < 0.35) {
     const targetGC = 0.5;
     for (let i = 0; i < optimized.length - 2 && Math.abs(gcContent - targetGC) > 0.05; i += 3) {
@@ -365,6 +367,8 @@ function checkAssembly(components: ComponentMetadata[], method: AssemblyMethod):
     const startSeq = components[i + 1].sequence.substring(0, 20);
     const junction = endSeq + startSeq;
     const junctionGC = (junction.match(/[GC]/g) || []).length / junction.length;
+    // Junction GC: 30-70% avoids secondary structure
+    // Reference: Gibson et al. (2009) Nat Methods 6:343-345
     if (junctionGC > 0.7 || junctionGC < 0.3) {
       junctionRisk += 0.2;
       issues.push(`Junction ${i}-${i + 1}: extreme GC (${(junctionGC * 100).toFixed(0)}%) may form secondary structure`);
