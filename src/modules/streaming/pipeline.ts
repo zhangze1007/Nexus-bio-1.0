@@ -133,22 +133,61 @@ export class BufferQueue<T> {
  * ```
  */
 export class StreamingPipeline {
-  private readonly stages: PipelineStage[] = [];
-  private readonly options: Required<PipelineOptions>;
+  private stages: PipelineStage[] = [];
+  private buffer: BufferQueue<any>;
+  private options: Required<PipelineOptions>;
 
   /**
    * Create a new StreamingPipeline.
    *
    * @param options - Pipeline configuration
    * @param options.bufferSize - Maximum items in the buffer queue (default: 100)
-   * @param options.backpressureThreshold - Threshold for backpressure (default: bufferSize)
+   * @param options.backpressureThreshold - Fraction of buffer capacity at which backpressure kicks in (default: 0.8)
    */
   constructor(options?: PipelineOptions) {
     const bufferSize = options?.bufferSize ?? 100;
     this.options = {
       bufferSize,
-      backpressureThreshold: options?.backpressureThreshold ?? bufferSize,
+      backpressureThreshold: options?.backpressureThreshold ?? 0.8,
     };
+    this.buffer = new BufferQueue(this.options.bufferSize);
+  }
+
+  /**
+   * Submit data to the pipeline buffer for processing.
+   *
+   * Returns `false` if the buffer is full (backpressure signal to the producer).
+   *
+   * @param data - The data item to enqueue
+   * @returns `true` if accepted, `false` if the buffer is full
+   */
+  submit(data: any): boolean {
+    return this.buffer.enqueue(data);
+  }
+
+  /**
+   * Process the next item from the buffer through all stages.
+   *
+   * Returns `undefined` if the buffer is empty.
+   *
+   * @returns The transformed output, or `undefined` if nothing to process
+   */
+  async processNext(): Promise<any> {
+    const item = this.buffer.dequeue();
+    if (item === undefined) return undefined;
+    return this.processItem(item);
+  }
+
+  /**
+   * Check if the buffer is under backpressure.
+   *
+   * Backpressure is active when the current buffer size exceeds the
+   * configured fraction of the maximum buffer capacity.
+   *
+   * @returns `true` if the buffer fill level exceeds the backpressure threshold
+   */
+  isBackpressured(): boolean {
+    return this.buffer.size() > this.options.bufferSize * this.options.backpressureThreshold;
   }
 
   /**
@@ -180,7 +219,7 @@ export class StreamingPipeline {
   }
 
   /**
-   * Process data through all stages sequentially.
+   * Process data through all stages sequentially (direct, no buffering).
    *
    * Each stage receives the output of the previous stage. If the pipeline
    * has no stages, the input data is returned unchanged.
@@ -189,11 +228,7 @@ export class StreamingPipeline {
    * @returns The final transformed output
    */
   async process(data: any): Promise<any> {
-    let result = data;
-    for (const stage of this.stages) {
-      result = await stage.process(result);
-    }
-    return result;
+    return this.processItem(data);
   }
 
   /**
@@ -210,6 +245,14 @@ export class StreamingPipeline {
    */
   clear(): void {
     this.stages.length = 0;
+  }
+
+  private async processItem(data: any): Promise<any> {
+    let result = data;
+    for (const stage of this.stages) {
+      result = await stage.process(result);
+    }
+    return result;
   }
 }
 
