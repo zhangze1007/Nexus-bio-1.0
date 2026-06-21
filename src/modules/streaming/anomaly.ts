@@ -261,7 +261,7 @@ export function detectZScoreAnomaly(
  * MAD = median(|xi - median(x)|). Returns 0 for empty arrays.
  *
  * @param values - The numeric array
- * @returns The MAD value
+ * @returns The median value
  */
 function computeMedian(values: number[]): number {
   if (values.length === 0) return 0;
@@ -364,9 +364,17 @@ export function detectRobustZScoreAnomaly(
  * to `check()` evaluates the incoming data point against all applicable rules
  * and the z-score detector, returning all triggered anomalies.
  *
+ * Supports both standard z-score and robust (MAD-based) z-score detection.
+ * Enable robust mode via `useRobustZScore: true` in the constructor options
+ * for better outlier resistance.
+ *
  * @example
  * ```ts
+ * // Standard mode
  * const detector = new AnomalyDetector({ windowSize: 200, zScoreThreshold: 2.5 });
+ *
+ * // Robust mode (MAD-based, better outlier resistance)
+ * const robustDetector = new AnomalyDetector({ windowSize: 200, useRobustZScore: true });
  * detector.addRule({ metric: 'ph', min: 6, max: 8, severity: 'critical', message: 'pH out of range' });
  *
  * // Feed data
@@ -379,6 +387,7 @@ export function detectRobustZScoreAnomaly(
 export class AnomalyDetector {
   private readonly windowSize: number;
   private readonly zScoreThreshold: number;
+  private readonly useRobustZScore: boolean;
   private readonly rules: Map<string, ThresholdRule[]> = new Map();
   private readonly windows: Map<string, SlidingWindow> = new Map();
 
@@ -388,10 +397,12 @@ export class AnomalyDetector {
    * @param options - Configuration options
    * @param options.windowSize - Size of the sliding window per metric (default: 100)
    * @param options.zScoreThreshold - |z-score| threshold for anomaly flagging (default: 3)
+   * @param options.useRobustZScore - Use MAD-based robust z-score instead of standard z-score (default: false)
    */
-  constructor(options?: { windowSize?: number; zScoreThreshold?: number }) {
+  constructor(options?: { windowSize?: number; zScoreThreshold?: number; useRobustZScore?: boolean }) {
     this.windowSize = options?.windowSize ?? 100;
     this.zScoreThreshold = options?.zScoreThreshold ?? 3;
+    this.useRobustZScore = options?.useRobustZScore ?? false;
   }
 
   /**
@@ -467,7 +478,9 @@ export class AnomalyDetector {
       this.windows.set(metric, window);
     }
 
-    const zEvent = detectZScoreAnomaly(value, window, this.zScoreThreshold);
+    const zEvent = this.useRobustZScore
+      ? detectRobustZScoreAnomaly(value, window, this.zScoreThreshold)
+      : detectZScoreAnomaly(value, window, this.zScoreThreshold);
     if (zEvent) {
       // Override the metric name (detectZScoreAnomaly uses 'stream')
       anomalies.push({ ...zEvent, metric });

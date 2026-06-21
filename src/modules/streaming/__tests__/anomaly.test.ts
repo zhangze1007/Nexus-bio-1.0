@@ -375,23 +375,19 @@ describe('detectRobustZScoreAnomaly', () => {
 
   describe('more robust than standard z-score', () => {
     it('is less affected by outliers in the window', () => {
-      const w = new SlidingWindow(100);
-      // Data with outliers
-      fillWindow(w, [10, 12, 11, 13, 10, 1000, 11, 12, 10, 11]);
+      const w = new SlidingWindow(20);
+      // Add data with a huge outlier
+      [10, 12, 11, 13, 10, 1000, 11, 12, 10, 11].forEach(v => w.add(v));
 
-      // Standard z-score might miss this because outlier inflates std
-      const standardResult = detectZScoreAnomaly(100, w);
+      const standardResult = detectZScoreAnomaly(100, w, 3);
+      const robustResult = detectRobustZScoreAnomaly(100, w, 3);
 
-      // Robust z-score should still detect it because MAD is less affected
-      const robustResult = detectRobustZScoreAnomaly(100, w);
+      // Standard z-score should NOT detect (outlier inflates std)
+      expect(standardResult).toBeNull();
 
-      // The robust version should have a higher z-score magnitude
-      // (or at least detect the anomaly where standard might not)
-      if (standardResult && robustResult) {
-        expect(Math.abs(robustResult.zScore!)).toBeGreaterThanOrEqual(
-          Math.abs(standardResult.zScore!)
-        );
-      }
+      // Robust z-score SHOULD detect (MAD is robust to outliers)
+      expect(robustResult).not.toBeNull();
+      expect(robustResult!.severity).toBeDefined();
     });
 
     it('handles window with many outliers gracefully', () => {
@@ -607,6 +603,38 @@ describe('AnomalyDetector', () => {
       // After reset, no z-score anomalies should be detected (no history)
       const anomalies = detector.check({ metric: 'a', value: 500 });
       expect(anomalies).toEqual([]);
+    });
+  });
+
+  describe('useRobustZScore option', () => {
+    it('uses standard z-score by default', () => {
+      const detector = new AnomalyDetector({ windowSize: 20, zScoreThreshold: 3 });
+      // Build history with an outlier that inflates std
+      [10, 12, 11, 13, 10, 1000, 11, 12, 10, 11].forEach(v => {
+        detector.check({ metric: 'temp', value: v });
+      });
+
+      // 100 is far from the bulk of the data but the outlier inflates std,
+      // so standard z-score should NOT detect it
+      const anomalies = detector.check({ metric: 'temp', value: 100 });
+      expect(anomalies).toEqual([]);
+    });
+
+    it('uses robust z-score when useRobustZScore is true', () => {
+      const detector = new AnomalyDetector({
+        windowSize: 20,
+        zScoreThreshold: 3,
+        useRobustZScore: true,
+      });
+      // Build history with an outlier that inflates std
+      [10, 12, 11, 13, 10, 1000, 11, 12, 10, 11].forEach(v => {
+        detector.check({ metric: 'temp', value: v });
+      });
+
+      // 100 is far from the bulk of the data; robust z-score should detect it
+      const anomalies = detector.check({ metric: 'temp', value: 100 });
+      expect(anomalies.length).toBeGreaterThanOrEqual(1);
+      expect(anomalies.some(a => a.zScore !== undefined)).toBe(true);
     });
   });
 });
