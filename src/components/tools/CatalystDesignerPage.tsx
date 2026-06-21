@@ -800,6 +800,11 @@ export default React.memo(function CatalystDesignerPage() {
   const [exprResult, setExprResult] = useState<import('../../server/geneExpressionPredictor').ExpressionPrediction | null>(null);
   const [exprLoading, setExprLoading] = useState(false);
 
+  // Plasmid Design state
+  const [plasmidResult, setPlasmidResult] = useState<import('../../server/plasmidDesignEngine').PlasmidDesignResult | null>(null);
+  const [plasmidLoading, setPlasmidLoading] = useState(false);
+  const [plasmidHost, setPlasmidHost] = useState<'ecoli' | 'yeast'>('ecoli');
+
   const handleExpressionPrediction = useCallback(async () => {
     setExprLoading(true);
     try {
@@ -816,6 +821,18 @@ export default React.memo(function CatalystDesignerPage() {
     }
   }, [enzyme.sequence]);
 
+  const handlePlasmidDesign = useCallback(async () => {
+    setPlasmidLoading(true);
+    try {
+      const { designPlasmid } = await import('../../server/plasmidDesignEngine');
+      const cds = enzyme.sequence || 'ATGAAACGCACCAGCAACAGCAACTAA';
+      const result = designPlasmid(cds, plasmidHost, 'high_expression', 'gibson', 2);
+      setPlasmidResult(result);
+    } finally {
+      setPlasmidLoading(false);
+    }
+  }, [enzyme.sequence, plasmidHost]);
+
   const CATDES_TABS: ToolTab[] = [
     { id: 'overview', label: 'Overview', accent: THEME.CORAL },
     { id: 'balance', label: 'Pathway Balance', accent: THEME.MINT },
@@ -823,6 +840,7 @@ export default React.memo(function CatalystDesignerPage() {
     { id: 'viewer', label: '3D Viewer', accent: THEME.SKY },
     { id: 'inversefold', label: 'Inverse Folding', accent: THEME.LILAC },
     { id: 'expression', label: 'Expression', accent: THEME.MINT },
+    { id: 'plasmid', label: 'Plasmid', accent: THEME.APRICOT },
   ];
 
   const kdQ = kdQuality(mutationImpact?.newKd ?? binding.predictedKd);
@@ -1485,6 +1503,86 @@ export default React.memo(function CatalystDesignerPage() {
                       <span style={{ color: 'rgba(255,255,255,0.4)', marginLeft: 8 }}>
                         (Δ={s.expectedImprovement.toFixed(3)})
                       </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </ToolTabPanel>
+
+      {/* ── Plasmid Design Tab ──────────────────────────────────────────────── */}
+      <ToolTabPanel tabId="plasmid" activeId={activeTab}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{
+            ...GLASS,
+            padding: 16,
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            gap: 12,
+          }}>
+            <span style={{ fontFamily: THEME.MONO, fontSize: THEME.FS_XS, color: LABEL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              Plasmid Designer
+            </span>
+            <select
+              value={plasmidHost}
+              onChange={(e) => setPlasmidHost(e.target.value as 'ecoli' | 'yeast')}
+              style={{ padding: '4px 8px', background: INPUT_BG, border: `1px solid ${INPUT_BORDER}`, borderRadius: 'var(--nb-radius-sm)', color: INPUT_TEXT, fontFamily: THEME.MONO, fontSize: THEME.FS_SM }}
+            >
+              <option value="ecoli">E. coli</option>
+              <option value="yeast">S. cerevisiae</option>
+            </select>
+            <button onClick={handlePlasmidDesign} disabled={plasmidLoading} className="nb-tool-toggle"
+              style={{ padding: '6px 14px', fontSize: THEME.FS_SM, opacity: plasmidLoading ? 0.4 : 1 }}
+            >
+              {plasmidLoading ? 'Designing...' : 'Design Plasmid'}
+            </button>
+            {plasmidResult && (
+              <span style={{ fontFamily: THEME.MONO, fontSize: THEME.FS_XS, color: 'rgba(255,255,255,0.4)' }}>
+                {plasmidResult.mainDesign.name} | {plasmidResult.mainDesign.totalSize} bp | Score: {plasmidResult.mainDesign.overallScore}
+              </span>
+            )}
+          </div>
+
+          {plasmidResult && (
+            <>
+              {/* Main design */}
+              <div style={{ ...GLASS, padding: 12 }}>
+                <div style={{ fontFamily: THEME.MONO, fontSize: THEME.FS_XS, color: LABEL, marginBottom: 6 }}>Main Design: {plasmidResult.mainDesign.name}</div>
+                <div style={{ fontFamily: THEME.SANS, fontSize: THEME.FS_SM, color: 'rgba(255,255,255,0.7)', lineHeight: 1.6 }}>
+                  {plasmidResult.mainDesign.designNotes.map((n, i) => <div key={i}>• {n}</div>)}
+                </div>
+              </div>
+
+              {/* Components */}
+              <div style={{ ...GLASS, padding: 12 }}>
+                <div style={{ fontFamily: THEME.MONO, fontSize: THEME.FS_XS, color: LABEL, marginBottom: 6 }}>Components</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {plasmidResult.mainDesign.components.map((c, i) => (
+                    <span key={i} style={{
+                      padding: '3px 8px',
+                      background: c.type === 'replicon' ? 'rgba(200,216,232,0.1)' : c.type === 'resistance' ? 'rgba(200,224,208,0.1)' : 'rgba(221,208,232,0.1)',
+                      border: `1px solid ${c.type === 'replicon' ? 'rgba(200,216,232,0.2)' : c.type === 'resistance' ? 'rgba(200,224,208,0.2)' : 'rgba(221,208,232,0.2)'}`,
+                      borderRadius: '3px',
+                      fontFamily: THEME.MONO,
+                      fontSize: THEME.FS_XS,
+                      color: 'rgba(255,255,255,0.7)',
+                    }}>
+                      {c.name}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Alternatives */}
+              {plasmidResult.alternatives.length > 0 && (
+                <div style={{ ...GLASS, padding: 12 }}>
+                  <div style={{ fontFamily: THEME.MONO, fontSize: THEME.FS_XS, color: LABEL, marginBottom: 6 }}>Alternatives</div>
+                  {plasmidResult.alternatives.map((alt, i) => (
+                    <div key={i} style={{ fontFamily: THEME.SANS, fontSize: THEME.FS_SM, color: 'rgba(255,255,255,0.5)', marginBottom: 4 }}>
+                      <span style={{ color: THEME.SKY }}>Alt {i + 1}:</span> {alt.name} | {alt.totalSize} bp | Score: {alt.overallScore}
                     </div>
                   ))}
                 </div>
