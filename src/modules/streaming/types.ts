@@ -47,3 +47,26 @@ export interface ClientInfo {
   /** Timestamp of the last received heartbeat response */
   lastHeartbeat: number;
 }
+
+// ── Pipeline Types ───────────────────────────────────────────────────────────
+
+/**
+ * A single processing stage in a streaming pipeline.
+ * Receives input data and returns transformed output.
+ */
+export interface PipelineStage {
+  /** Human-readable stage name (used for identification and ordering) */
+  name: string;
+  /** Async processing function that transforms data */
+  process: (data: any) => Promise<any>;
+}
+
+/**
+ * Configuration options for StreamingPipeline.
+ */
+export interface PipelineOptions {
+  /** Maximum number of items in the buffer queue (default: 100) */
+  bufferSize?: number;
+  /** Threshold at which backpressure is applied (default: bufferSize) */
+  backpressureThreshold?: number;
+}
