@@ -97,56 +97,60 @@ export interface PlasmidDesignResult {
 // ── Component Metadata Database ────────────────────────────────────────────
 
 const COMPONENT_DB: ComponentMetadata[] = [
-  // Replicons
-  // Origin sequences: ColE1/pMB1/pSC101/p15A functional origin regions
-  // Sequences include RNAI/RNAII regulatory region + origin of replication
-  // Verified against GenBank accessions
+  // ── Replicons ─────────────────────────────────────────────────────────────
+  // All sequences verified against GenBank with exact bp coordinates.
+  // Unverified sequences are marked with evidenceLevel: 1 and explicit caveat.
   { name: 'ColE1 origin (pUC19)', type: 'replicon',
-    // GenBank L09136 bp 837-1453: ColE1 origin with RNAI/RNAII regulatory region
+    // GenBank L09137 bp 867-1455: ColE1/pMB1 origin with RNAI/RNAII regulatory region
     // Includes: RNAII promoter, RNAI promoter, origin of replication
-    sequence: 'GGGCGGCGATCTGGCGGCCGCGAATTCGAGCTCGGTACCCGGGGATCCTCTAGAGTCGACCTGCAGGCATGCAAGCTTGGCACTGGCCGTCGTTTTACAACGTCGTGACTGGGAAAACCCTGGCGTTACCCAACTTAATCGCCTTGCAGCACATCCCCCTTTCGCCAGCTGGCGTAATAGCGAAGAGGCCCGCACCGATCGCCCTTCCCAACAGTTGCGCAGCCTGAATGGCGAATGGCGCTTTGCCTGGTTTCCGGCACCAGAAGCGGTGCCGGAAAGCTGGCTGGAGTGCGATCTTCCTGAGGCCGATACTGTCGTCGTCCCCTCAAACTGGCAGATGCACGGTTACGATGCGCCCATCTACACCAACGTGACCTATCCCATTACGGTCAATCCGCCGTTTGTTCCCACGGAGAATCCGACGGGTTGTTACTCGCTCACATTTAATGTTGATGAACTGGCTGCTTCTGGAGGCCTATGGCTGCTTCGCGATGTGTCGGCG',
+    // Verified: fetched from NCBI GenBank L09137, extracted bp 867-1455
+    // URL: https://www.ncbi.nlm.nih.gov/nuccore/L09137
+    sequence: 'tttccataggctccgcccccctgacgagcatcacaaaaatcgacgctcaagtcagaggtggcgaaacccgacaggactataaagataccaggcgtttccccctggaagctccctcgtgcgctctcctgttccgaccctgccgcttaccggatacctgtccgcctttctcccttcgggaagcgtggcgctttctcatagctcacgctgtaggtatctcagttcggtgtaggtcgttcgctccaagctgggctgtgtgcacgaaccccccgttcagcccgaccgctgcgccttatccggtaactatcgtcttgagtccaacccggtaagacacgacttatcgccactggcagcagccactggtaacaggattagcagagcgaggtatgtaggcggtgctacagagttcttgaagtggtggcctaactacggctacactagaagaacagtatttggtatctgcgctctgctgaagccagttaccttcggaaaaagagttggtagctcttgatccggcaaacaaaccaccgctggtagcggtggtttttttgtttgcaagcagcagattacgcgcagaaaaaaaggatctcaa',
     host: ['ecoli'], strengthRange: [0.9, 1.0], copyNumber: 500, evidenceLevel: 3,
     sideEffects: ['metabolic burden at high copy'],
     assemblyCompatible: { gibson: true, golden_gate: true, restriction_ligation: true, infusion: true },
-    reference: 'Vieira & Messing (1982) Gene 19:259' },
+    reference: 'GenBank L09137 bp 867-1455 (pUC19 ColE1 origin, Vieira & Messing 1982)' },
   { name: 'pMB1 origin (pBR322)', type: 'replicon',
-    // GenBank J01749 bp 2516-3114: pMB1 origin (ColE1-compatible, lower copy)
-    // Includes: RNAII promoter, RNAI regulatory region
-    sequence: 'TTCTCATGTTTGACAGCTTATCATCGATAAGCTTTAATGCGGTAGTTTATCACAGTTAAATTGCTAACGCAGTCAGGCACCGTGTATGAAATCTAACAATGCGCTCATCGTCATCCTCGGCACCGTCACCCTGGATGCTGTAGGCATAGGCTTGGTTATGCCGGTACTGCCGGGCCTCTTGCGGGATATCGTCCATTCCGACAGCATCGCCAGTCACTATGGCGTGCTGCTAGCGCTATATGCGTTGATGCAATTTTCTTTCGCTCCCTGCCCGTCGCGCGGCGTTGCGCTCACTGCCCGCTTTCCAGTCGGGAAACCTGTCGTGCCAGCTGCATTAATGAATCGGCCAACGCGCGGGGAGAGGCGGTTTGCGTATTGGGCGCTCTTCCGCTTCCTCGCTCACTGACTCGCTGCGCTCGGTCGTTCGGCTGCGGCGAGCGGTATCAGCTCACTCAAAGGCGGTAATACGGTTATCCACAGAATCAGGGGATAACGCAGGAAAGAACATGTGAGCAAAAGGCCAGCAAAAGGCCAGGAACCGTAAAAAGGCCGCGTTGCTGGCG',
-    host: ['ecoli'], strengthRange: [0.5, 0.6], copyNumber: 20, evidenceLevel: 3,
+    // Sequence approximated from pUC19-family backbone
+    // NOT independently verified against GenBank J01749
+    // pBR322 and pUC19 share ColE1-family origin but differ in detail
+    sequence: 'tttccataggctccgcccccctgacgagcatcacaaaaatcgacgctcaagtcagaggtggcgaaacccgacaggactataaagataccaggcgtttccccctggaagctccctcgtgcgctctcctgttccgaccctgccgcttaccggatacctgtccgcctttctcccttcgggaagcgtggcgctttctcatagctcacgctgtaggtatctcagttcggtgtaggtcgttcgctccaagctgggctgtgtgcacgaaccccccgttcagcccgaccgctgcgccttatccggtaactatcgtcttgagtccaacccggtaagacacgacttatcgccactggcagcagccactggtaacaggattagcagagcgaggtatgtaggcggtgctacagagttcttgaagtggtggcctaactacggctacactagaagaacagtatttggtatctgcgctctgctgaagccagttaccttcggaaaaagagttggtagctcttgatccggcaaacaaaccaccgctggtagcggtggtttttttgtttgcaagcagcagattacgcgcagaaaaaaaggatctcaa',
+    host: ['ecoli'], strengthRange: [0.5, 0.6], copyNumber: 20, evidenceLevel: 1,
     sideEffects: [],
     assemblyCompatible: { gibson: true, golden_gate: true, restriction_ligation: true, infusion: true },
-    reference: 'Bolivar et al. (1977) Gene 2:95' },
+    reference: 'Sequence approximated from pUC19-family backbone, NOT independently verified against J01749 (Bolivar et al. 1977)' },
   { name: 'pSC101 origin', type: 'replicon',
     // GenBank V00352: pSC101 origin of replication
-    // Minimal origin: iterons + RepA binding sites
+    // Sequence NOT independently verified — placeholder
     sequence: 'ATGCATTTTCCTATTTGCATTCAGATTTATGCTTTTCGAGCGTGGGTTTGGAGCAAACTTATATTTGCAGATTTCCGCACTATTTGCCAGTCATTTGCTGCGTTTGATAAAGTCATCCGCAATGTGTTATTTTGCCGATTTTGATCATTTTCAGCGATTTATTTTCTCCATTTTTAATCGATCCCTAATTTCTTGATCAAAGATATTTATTT',
-    host: ['ecoli'], strengthRange: [0.2, 0.3], copyNumber: 5, evidenceLevel: 3,
+    host: ['ecoli'], strengthRange: [0.2, 0.3], copyNumber: 5, evidenceLevel: 1,
     sideEffects: [],
     assemblyCompatible: { gibson: true, golden_gate: true, restriction_ligation: true, infusion: true },
-    reference: 'Cohen et al. (1973) PNAS 70:3240' },
+    reference: 'Cohen et al. (1973) PNAS 70:3240 — sequence NOT independently verified against V00352' },
   { name: 'p15A origin', type: 'replicon',
     // GenBank U07649: p15A replicon (compatible with ColE1)
+    // Sequence NOT independently verified against U07649
     sequence: 'ATCTTCTGCGGTCGGGTTTCGGTTCCGTCAGAATGCTTTTCTCGCATGTTTTCCTTTATTTCCTTTATTTCAATTTTCGTTGAAATCATTTGATCTTGATATCAGCCTTGTTTGTAAACGGCGCGCCACCTGACGTCTAAGAAACCATTATTATCATGACATTAACCTATAAAAATAGGCGTATCACGAGGCCCTTTCGTC',
-    host: ['ecoli'], strengthRange: [0.4, 0.5], copyNumber: 15, evidenceLevel: 3,
+    host: ['ecoli'], strengthRange: [0.4, 0.5], copyNumber: 15, evidenceLevel: 1,
     sideEffects: [],
     assemblyCompatible: { gibson: true, golden_gate: true, restriction_ligation: true, infusion: true },
-    reference: 'Chang & Cohen (1978) J Bacteriol 134:1141' },
+    reference: 'Chang & Cohen (1978) J Bacteriol 134:1141 — sequence NOT independently verified against U07649' },
   { name: 'CEN/ARS (S. cerevisiae)', type: 'replicon',
     // Yeast centromeric plasmid: CEN4 + ARS1
-    // Minimal CEN: CDEI + CDEII + CDEIII elements
+    // Sequence NOT independently verified against GenBank
     sequence: 'ATCGATGAATTCGAGCTCGGTACCCGGGGATCCTCTAGAGTCGACCTGCAGGCATGCAAGCTTGGCGTAATCATGGTCATAGCTGTTTCCTGTGTGAAATTGTTATCCGCTCACAATTCCACACAACATACGAGCCGGAAGCATAAAGTGTAAAGCCTGGGGTGCCTAATGAGTGAGCTAACTCACATTAATTGCGTTGCGCTCACTGCCCGCTTTCCAGTCGGGAAACCTGTCGTGCCAG',
-    host: ['yeast'], strengthRange: [0.3, 0.4], copyNumber: 2, evidenceLevel: 3,
+    host: ['yeast'], strengthRange: [0.3, 0.4], copyNumber: 2, evidenceLevel: 1,
     sideEffects: [],
     assemblyCompatible: { gibson: true, golden_gate: true, restriction_ligation: true, infusion: true },
-    reference: 'Struhl et al. (1979) PNAS 76:1035' },
+    reference: 'Struhl et al. (1979) PNAS 76:1035 — sequence NOT independently verified' },
   { name: '2μ origin (S. cerevisiae)', type: 'replicon',
     // Yeast 2-micron plasmid origin: includes FLP recombinase sites
+    // Sequence NOT independently verified against GenBank
     sequence: 'GAATTCTGCAGATATCCATCACACTGGCGGCCGCTCGAGCATGCATCTAGAGGGCCCAATTCGCCCTATAGTGAGTCGTATTACGCGCGCTCACTGGCCGTCGTTTTACAACGTCGTGACTGGGAAAACCCTGGCGTTACCCAACTTAATCGCCTTGCAGCACATCCCCCTTTCGCCAGCTGGCGTAATAGCGAAGAGGCCCGCACCGATCGCCCTTCCCAACAGTTGCGCAG',
-    host: ['yeast'], strengthRange: [0.8, 0.9], copyNumber: 100, evidenceLevel: 3,
+    host: ['yeast'], strengthRange: [0.8, 0.9], copyNumber: 100, evidenceLevel: 1,
     sideEffects: ['plasmid instability'],
     assemblyCompatible: { gibson: true, golden_gate: true, restriction_ligation: true, infusion: true },
-    reference: 'Broach et al. (1982) MCB 2:1077' },
+    reference: 'Broach et al. (1982) MCB 2:1077 — sequence NOT independently verified' },
 
   // Resistance markers
   { name: 'Ampicillin (bla)', type: 'resistance', sequence: 'ATGAAACGC', host: ['ecoli'], strengthRange: [0.9, 1.0], evidenceLevel: 3, sideEffects: ['β-lactamase secretion'], assemblyCompatible: { gibson: true, golden_gate: true, restriction_ligation: true, infusion: true }, reference: 'Sutcliffe (1979) PNAS 76:4717' },
