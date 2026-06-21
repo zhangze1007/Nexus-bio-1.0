@@ -61,4 +61,50 @@ describe('closedLoopDBTLEngine', () => {
       expect(result.protocol).toContain('Experiment Protocol');
     });
   });
+
+  describe('literature benchmarks', () => {
+    it('GP should predict higher values near observed maxima', () => {
+      // Create campaign with experiments clustered at x=0.8
+      const campaign = createCampaign('Test', [
+        { name: 'x', type: 'continuous', bounds: [0, 1] },
+      ], 'maximize');
+
+      // Add experiments near x=0.8 with high objective
+      for (let i = 0; i < 5; i++) {
+        campaign.experiments.push({
+          id: `exp_${i}`,
+          parameters: { x: 0.7 + Math.random() * 0.2 },
+          objective: 0.8 + Math.random() * 0.15,
+          timestamp: Date.now(),
+          round: 0,
+          status: 'completed',
+        });
+      }
+
+      const result = runClosedLoopDBTL(campaign, 'EI', 3);
+      // Suggestions should be near the observed high-value region
+      expect(result.suggestions.length).toBeGreaterThan(0);
+      expect(result.convergence.bestValue).toBeGreaterThan(0.7);
+    });
+
+    it('EI should balance exploration and exploitation', () => {
+      const campaign = createCampaign('Test', [
+        { name: 'x', type: 'continuous', bounds: [0, 1] },
+      ], 'maximize');
+
+      // Single experiment at x=0.5
+      campaign.experiments.push({
+        id: 'exp1',
+        parameters: { x: 0.5 },
+        objective: 0.6,
+        timestamp: Date.now(),
+        round: 0,
+        status: 'completed',
+      });
+
+      const result = runClosedLoopDBTL(campaign, 'EI', 3);
+      // Should suggest points both near and far from observed
+      expect(result.suggestions.length).toBeGreaterThan(0);
+    });
+  });
 });

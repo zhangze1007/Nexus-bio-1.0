@@ -66,3 +66,57 @@ describe('bioreactorAnalyticsEngine', () => {
     });
   });
 });
+
+describe('bioreactorAnalyticsEngine — literature benchmarks', () => {
+  // Generate deterministic exponential growth data
+  // μ = 0.5 h⁻¹, X0 = 0.1 g/L, S0 = 10 g/L, Yxs = 0.5 g/g
+  // Reference: Monod (1949) Annu Rev Microbiol 3:371-394
+  const muMax = 0.5;
+  const x0 = 0.1;
+  const s0 = 10;
+  const nPoints = 40;
+  const dt = 0.5;
+
+  const exponentialData = Array.from({ length: nPoints }, (_, i) => {
+    const t = i * dt;
+    const x = x0 * Math.exp(muMax * t);
+    return {
+      time: t,
+      biomass: Math.min(x, 50),
+      substrate: Math.max(0, s0 - x * 0.5),
+      product: 0.05 * x,
+      dissolvedO2: 80,
+      pH: 7.0,
+      temperature: 37,
+    };
+  });
+
+  describe('kinetic parameter estimation', () => {
+    it('should recover μmax within order of magnitude of 0.5 h⁻¹', () => {
+      const result = analyzeBioreactorData(exponentialData);
+      expect(result.kinetics.muMax).toBeGreaterThan(0.1);
+      expect(result.kinetics.muMax).toBeLessThan(2.0);
+    });
+
+    it('should report R² for fit quality', () => {
+      const result = analyzeBioreactorData(exponentialData);
+      expect(result.kinetics.r2).toBeGreaterThanOrEqual(0);
+    });
+  });
+
+  describe('growth phase identification', () => {
+    it('should identify exponential phase', () => {
+      const result = analyzeBioreactorData(exponentialData);
+      const expPhase = result.phases.find(p => p.phase === 'exponential');
+      expect(expPhase).toBeDefined();
+    });
+  });
+
+  describe('summary statistics', () => {
+    it('max biomass should be reasonable', () => {
+      const result = analyzeBioreactorData(exponentialData);
+      expect(result.summary.maxBiomass).toBeGreaterThan(0);
+      expect(result.summary.maxBiomass).toBeLessThan(100);
+    });
+  });
+});
