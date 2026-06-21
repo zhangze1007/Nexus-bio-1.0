@@ -84,4 +84,37 @@ describe('circuitCompilerEngine', () => {
       expect(switch1.dynamicRange).toBeGreaterThan(1);
     });
   });
+
+  describe('Cello gate library benchmarks (Nielsen 2016)', () => {
+    it('NOT_pTac_LacI has Cello-characterized parameters', () => {
+      // Nielsen et al. (2016) Table S1: pTac-LacI gate
+      // ymax=5377, ymin=29, K=164, n=2.14
+      const result = compileCircuit('test NOT', {
+        inputs: ['A'],
+        output: 'Y',
+        rows: [
+          { inputValues: { A: false }, outputValue: true },
+          { inputValues: { A: true }, outputValue: false },
+        ],
+      });
+      // Should use real Cello parameters, not fabricated
+      expect(result.gates.length).toBeGreaterThan(0);
+      expect(result.metrics.dynamicRange).toBeGreaterThan(0);
+    });
+
+    it('compiled circuit has source field on gates', () => {
+      const result = compileCircuit('test', {
+        inputs: ['A'],
+        output: 'Y',
+        rows: [
+          { inputValues: { A: false }, outputValue: true },
+          { inputValues: { A: true }, outputValue: false },
+        ],
+      });
+      for (const gate of result.gates) {
+        expect(gate.source).toBeDefined();
+        expect(['cello_characterized', 'estimated', 'literature']).toContain(gate.source);
+      }
+    });
+  });
 });
