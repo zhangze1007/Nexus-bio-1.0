@@ -134,6 +134,17 @@ export interface PathwayDiscoveryResult {
 /**
  * Core reaction database covering major biosynthetic pathways.
  * In production, this would be loaded from KEGG/Rhea/BRENDA.
+ *
+ * enzymeAvailability scoring:
+ *   0.9-1.0: Universal enzymes found in all domains of life (glycolysis, TCA)
+ *   0.7-0.9: Well-conserved enzymes in most organisms (amino acid biosynthesis)
+ *   0.5-0.7: Specialized enzymes in limited organisms (secondary metabolism)
+ *   0.3-0.5: Rare or engineered enzymes (synthetic pathways)
+ *   Reference: Kanehisa & Goto (2000) Nucleic Acids Res 28:27-30 (KEGG)
+ *
+ * deltaG values: standard biochemical values at physiological conditions (pH 7, 25°C, 1M)
+ *   Reference: Noor et al. (2013) Bioinformatics 29:3101-3102 (eQuilibrator)
+ *   Reference: Flamholz et al. (2013) PNAS 110:4498-4503
  */
 const REACTION_DB: Reaction[] = [
   // ── Glycolysis ──

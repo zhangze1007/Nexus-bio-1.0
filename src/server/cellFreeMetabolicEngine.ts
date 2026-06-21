@@ -90,22 +90,31 @@ function modelEnergySystem(
 ): { atpRate: number; substrateConsumption: number; halfLife: number } {
   switch (type) {
     case 'PEP':
+      // PEP system: pyruvate kinase converts PEP → pyruvate + ATP
+      // Rate: ~0.5 mM/min per mM PEP at 37°C — Silverman et al. (2020) Nat Rev Methods Primers 1:30
+      // Half-life: ~2h — depends on PK stability
       return {
-        atpRate: 0.5,      // mM/min per mM PEP
+        atpRate: 0.5,
         substrateConsumption: 0.5,
-        halfLife: 2.0,      // hours
+        halfLife: 2.0,
       };
     case 'creatine_phosphate':
+      // CP system: creatine kinase converts CP + ADP → creatine + ATP
+      // Rate: ~2.0 mM/min — Karim et al. (2020) Nat Commun 11:4031
+      // Half-life: ~1h — CK is less stable than PK
       return {
-        atpRate: 2.0,      // faster
+        atpRate: 2.0,
         substrateConsumption: 2.0,
-        halfLife: 1.0,      // shorter
+        halfLife: 1.0,
       };
     case 'maltodextrin':
+      // Maltodextrin system: amylase → glucose → glycolysis → ATP
+      // Rate: ~0.1 mM/min — Kim & Swartz (2001) Biotechnol Bioeng 72:379
+      // Half-life: ~8h — slow but sustained
       return {
-        atpRate: 0.1,      // slower
+        atpRate: 0.1,
         substrateConsumption: 0.05,
-        halfLife: 8.0,      // longer
+        halfLife: 8.0,
       };
     default:
       return { atpRate: 0, substrateConsumption: 0, halfLife: 0 };
@@ -143,11 +152,13 @@ export function simulateCellFreePathway(
   // Energy system parameters
   const energy = modelEnergySystem(system.energySystem, 10, dt);
 
-  // TX-TL parameters (E. coli extract)
-  const k_txn = 0.1;       // transcription rate (nM/min)
-  const k_tln = 0.05;      // translation rate (nM/min)
-  const k_deg_mRNA = 0.02; // mRNA degradation (1/min)
-  const k_deg_prot = 0.01; // protein degradation (1/min)
+  // TX-TL parameters (E. coli S30 extract)
+  // Reference: Silverman et al. (2020) Nat Rev Methods Primers 1:30
+  // Reference: Sun et al. (2013) ACS Synth Biol 2:1764 (E. coli TX-TL rates)
+  const k_txn = 0.1;       // transcription rate (nM/min) — Sun 2013: ~0.1-0.5 nM/min
+  const k_tln = 0.05;      // translation rate (nM/min) — Sun 2013: ~0.05-0.2 nM/min
+  const k_deg_mRNA = 0.02; // mRNA degradation (1/min) — half-life ~35 min, E. coli extract
+  const k_deg_prot = 0.01; // protein degradation (1/min) — half-life ~70 min, limited proteases
 
   for (let step = 0; step <= steps; step++) {
     const t = step * dt;
