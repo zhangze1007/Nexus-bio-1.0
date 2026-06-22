@@ -20,6 +20,26 @@ export async function GET(req: NextRequest) {
   const cid = req.nextUrl.searchParams.get('cid');
   const name = req.nextUrl.searchParams.get('name');
   const properties = req.nextUrl.searchParams.get('properties');
+  const suggest = req.nextUrl.searchParams.get('suggest');
+
+  // ── Mode 0: autocomplete suggestions ──────────────────────────────
+  if (suggest) {
+    try {
+      const res = await fetch(
+        `https://pubchem.ncbi.nlm.nih.gov/rest/autocomplete/compound/${encodeURIComponent(suggest)}?limit=8`,
+        { signal: AbortSignal.timeout(3000) },
+      );
+      if (!res.ok) return NextResponse.json({ ok: true, suggestions: [] }, { headers: getCors(req) });
+      const data = await res.json();
+      const suggestions = (data.dictionary?.compound ?? []).map((item: { ci?: number; name?: string }) => ({
+        cid: item.ci ?? 0,
+        name: item.name ?? '',
+      }));
+      return NextResponse.json({ ok: true, suggestions }, { headers: getCors(req) });
+    } catch {
+      return NextResponse.json({ ok: true, suggestions: [] }, { headers: getCors(req) });
+    }
+  }
 
   // ── Mode 1: fetch SDF or properties by CID ────────────────────────
   if (cid) {

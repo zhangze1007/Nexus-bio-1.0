@@ -51,6 +51,7 @@ export default function Hero() {
   const [activeIndex, setActiveIndex] = useState(-1);
   const [smartResult, setSmartResult] = useState<ReturnType<typeof parseSmartInput> | null>(null);
   const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [pubchemSuggestions, setPubchemSuggestions] = useState<Array<{ cid: number; name: string }>>([]);
   const [, startTransition] = useTransition();
 
   // Parallax
@@ -75,6 +76,23 @@ export default function Hero() {
       } catch { /* aborted */ }
       finally { setPreviewLoading(false); }
     }, 300);
+    return () => { clearTimeout(timer); ctrl.abort(); };
+  }, [query, focused]);
+
+  // PubChem autocomplete (debounced)
+  useEffect(() => {
+    if (!focused || query.trim().length < 3) { setPubchemSuggestions([]); return; }
+    const ctrl = new AbortController();
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/pubchem?suggest=${encodeURIComponent(query.trim())}`, { signal: ctrl.signal });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.ok && Array.isArray(data.suggestions)) {
+          setPubchemSuggestions(data.suggestions);
+        }
+      } catch { /* aborted */ }
+    }, 400);
     return () => { clearTimeout(timer); ctrl.abort(); };
   }, [query, focused]);
 
@@ -111,10 +129,11 @@ export default function Hero() {
 
   const hasSmartResult = smartResult !== null;
   const hasSuggestions = suggestions.length > 0;
-  const showPopup = focused && query.length >= 2 && (hasSuggestions || preview.length > 0 || previewLoading || hasSmartResult);
+  const hasPubchem = pubchemSuggestions.length > 0;
+  const showPopup = focused && query.length >= 2 && (hasSuggestions || hasPubchem || preview.length > 0 || previewLoading || hasSmartResult);
 
-  // Total dropdown items = smart result (if any) + suggestions + preview results + "View all" footer
-  const totalItems = (hasSmartResult ? 1 : 0) + suggestions.length + preview.length + 1;
+  // Total dropdown items = smart result + suggestions + pubchem + preview + "View all" footer
+  const totalItems = (hasSmartResult ? 1 : 0) + suggestions.length + pubchemSuggestions.length + preview.length + 1;
 
   const onKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Escape') {
@@ -307,6 +326,33 @@ export default function Hero() {
                       color: 'rgba(255,255,255,0.2)',
                     }}>
                       ↗
+                    </span>
+                  </button>
+                );
+              })}
+              {/* PubChem compound suggestions */}
+              {hasPubchem && pubchemSuggestions.map((p, i) => {
+                const idx = (hasSmartResult ? 1 : 0) + suggestions.length + i;
+                return (
+                  <button
+                    key={`pubchem-${p.cid}`}
+                    id={`hero-search-option-pubchem-${i}`}
+                    role="option"
+                    aria-selected={activeIndex === idx}
+                    onMouseDown={() => {
+                      setQuery(p.name);
+                      navigate(p.name);
+                    }}
+                    className={styles.previewItem}
+                    style={activeIndex === idx ? { background: 'rgba(255,255,255,0.08)' } : undefined}>
+                    <span style={{ fontFamily: SANS, fontSize: '13px', color: 'rgba(255,255,255,0.7)' }}>
+                      {p.name}
+                    </span>
+                    <span style={{
+                      marginLeft: 'auto', fontSize: '10px', fontFamily: MONO,
+                      color: 'rgba(255,255,255,0.2)',
+                    }}>
+                      CID:{p.cid}
                     </span>
                   </button>
                 );

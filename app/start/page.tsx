@@ -5,6 +5,7 @@ import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { parseSmartInput, type ParseResult } from '../../src/lib/smart-parser';
 import { buildGoalContext, saveGoalContext } from '../../src/lib/goal-context';
+import { THEME } from '../../src/theme';
 
 function StartContent() {
   const router = useRouter();
@@ -36,15 +37,15 @@ function StartContent() {
       gap: '32px', padding: '24px',
       background: '#050505',
       color: '#fff',
-      fontFamily: "'Public Sans', -apple-system, sans-serif",
+      fontFamily: THEME.SANS,
     }}>
       {/* Title */}
       <div style={{ textAlign: 'center' }}>
-        <h1 style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '8px' }}>
+        <h1 style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '8px', fontFamily: THEME.BRAND }}>
           Smart Entry
         </h1>
         <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.875rem' }}>
-          输入你的目标，平台自动路由到正确的工具链
+          Enter your goal — the platform routes you to the right tool chain
         </p>
       </div>
 
@@ -57,7 +58,7 @@ function StartContent() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') handleSubmit(input); }}
-              placeholder="输入分子名、菌株、DOI 或生产指标..."
+              placeholder="Molecule, strain, DOI, or production target..."
               style={{
                 flex: 1, padding: '12px 16px',
                 background: 'rgba(255,255,255,0.04)',
@@ -66,7 +67,7 @@ function StartContent() {
                   : '1px solid rgba(255,255,255,0.1)',
                 borderRadius: '8px',
                 color: '#fff', fontSize: '0.875rem',
-                outline: 'none', fontFamily: 'inherit',
+                outline: 'none', fontFamily: THEME.SANS,
               }}
             />
             <button
@@ -74,18 +75,18 @@ function StartContent() {
               disabled={!input.trim()}
               style={{
                 padding: '12px 24px',
-                background: input.trim() ? 'rgba(147,203,82,0.9)' : 'rgba(255,255,255,0.1)',
+                background: input.trim() ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.1)',
                 border: 'none', borderRadius: '8px',
                 color: input.trim() ? '#000' : 'rgba(255,255,255,0.3)',
                 fontSize: '0.875rem', fontWeight: 600,
                 cursor: input.trim() ? 'pointer' : 'not-allowed',
               }}
             >
-              开始 →
+              Start →
             </button>
           </div>
-          <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.3)', marginTop: '8px', textAlign: 'center' }}>
-            支持：分子名 · 菌株 · DOI · 生产指标
+          <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.3)', marginTop: '8px', textAlign: 'center', fontFamily: THEME.MONO }}>
+            molecule · strain · DOI · production target
           </p>
         </div>
       )}
@@ -97,10 +98,11 @@ function StartContent() {
           background: 'rgba(250,128,114,0.1)',
           border: '1px solid rgba(250,128,114,0.3)',
           color: '#FA8072', maxWidth: '560px', width: '100%',
+          fontFamily: THEME.SANS,
         }}>
-          无法识别输入：{parseError}
+          Could not recognize input: {parseError}
           <button onClick={() => router.push('/start')} style={{ marginLeft: '16px', color: '#fff', background: 'none', border: 'none', cursor: 'pointer' }}>
-            重新输入
+            Try again
           </button>
         </div>
       )}
@@ -115,10 +117,10 @@ function StartContent() {
         }}>
           {/* Header */}
           <div style={{ marginBottom: '16px' }}>
-            <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-              已识别为
+            <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.08em', fontFamily: THEME.MONO }}>
+              Recognized as
             </span>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginTop: '4px' }}>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginTop: '4px', fontFamily: THEME.BRAND }}>
               {parseResult.displayLabel}
             </h2>
           </div>
@@ -126,26 +128,27 @@ function StartContent() {
           {/* Details */}
           <div style={{ display: 'grid', gap: '8px', marginBottom: '16px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
-              <span style={{ color: 'rgba(255,255,255,0.5)' }}>输入内容</span>
-              <span style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{parseResult.rawInput}</span>
+              <span style={{ color: 'rgba(255,255,255,0.5)' }}>Input</span>
+              <span style={{ fontFamily: THEME.MONO }}>{parseResult.rawInput}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
-              <span style={{ color: 'rgba(255,255,255,0.5)' }}>识别类型</span>
+              <span style={{ color: 'rgba(255,255,255,0.5)' }}>Type</span>
               <span style={{
                 padding: '2px 8px', borderRadius: '4px',
-                background: 'rgba(147,203,82,0.15)', color: '#93CB52',
-                fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.75rem',
+                background: 'rgba(255,255,255,0.08)',
+                color: '#fff',
+                fontFamily: THEME.MONO, fontSize: '0.75rem',
               }}>
                 {parseResult.type}
               </span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
-              <span style={{ color: 'rgba(255,255,255,0.5)' }}>置信度</span>
+              <span style={{ color: 'rgba(255,255,255,0.5)' }}>Confidence</span>
               <span style={{
                 padding: '2px 8px', borderRadius: '4px',
-                background: parseResult.confidence === 'HIGH' ? 'rgba(147,203,82,0.15)' : parseResult.confidence === 'MEDIUM' ? 'rgba(232,220,200,0.2)' : 'rgba(255,255,255,0.1)',
-                color: parseResult.confidence === 'HIGH' ? '#93CB52' : parseResult.confidence === 'MEDIUM' ? '#E8DCC8' : 'rgba(255,255,255,0.5)',
-                fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.75rem',
+                background: 'rgba(255,255,255,0.08)',
+                color: '#fff',
+                fontFamily: THEME.MONO, fontSize: '0.75rem',
               }}>
                 {parseResult.confidence}
               </span>
@@ -159,8 +162,8 @@ function StartContent() {
             border: '1px solid rgba(255,255,255,0.05)',
             marginBottom: '16px',
           }}>
-            <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-              将触发工具链
+            <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.08em', fontFamily: THEME.MONO }}>
+              Tool chain
             </span>
             <p style={{ fontSize: '0.875rem', marginTop: '4px', color: 'rgba(255,255,255,0.8)' }}>
               {parseResult.toolChainDescription}
@@ -172,23 +175,22 @@ function StartContent() {
             {parseResult.validityClass === 'COMPUTATIONAL' ? (
               <span style={{
                 display: 'inline-block', padding: '4px 12px', borderRadius: '4px',
-                background: 'rgba(147,203,82,0.15)', color: '#93CB52',
-                fontSize: '0.75rem', fontWeight: 600,
+                background: 'rgba(255,255,255,0.08)',
+                color: '#fff',
+                fontSize: '0.75rem', fontWeight: 600, fontFamily: THEME.MONO,
               }}>
-                ✓ 计算引擎验证
+                ✓ Computational engine
               </span>
             ) : (
               <div>
                 <span style={{
                   display: 'inline-block', padding: '4px 12px', borderRadius: '4px',
-                  background: 'rgba(232,220,200,0.2)', color: '#E8DCC8',
-                  fontSize: '0.75rem', fontWeight: 600,
+                  background: 'rgba(255,255,255,0.08)',
+                  color: 'rgba(255,255,255,0.7)',
+                  fontSize: '0.75rem', fontWeight: 600, fontFamily: THEME.MONO,
                 }}>
-                  ⚠ AI 辅助 · 仅供参考
+                  ⚠ AI-assisted · for reference only
                 </span>
-                <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.3)', marginTop: '4px' }}>
-                  此路径基于 AI 分析，结果仅供参考
-                </p>
               </div>
             )}
           </div>
@@ -203,12 +205,12 @@ function StartContent() {
               }}
               style={{
                 flex: 1, padding: '12px',
-                background: 'rgba(147,203,82,0.9)', border: 'none', borderRadius: '8px',
+                background: 'rgba(255,255,255,0.9)', border: 'none', borderRadius: '8px',
                 color: '#000', fontWeight: 600, fontSize: '0.875rem',
                 cursor: 'pointer',
               }}
             >
-              确认，前往工具链
+              Confirm — Go to tool chain
             </button>
             <button
               onClick={() => router.push('/start')}
@@ -219,7 +221,7 @@ function StartContent() {
                 cursor: 'pointer',
               }}
             >
-              重新输入
+              Start over
             </button>
           </div>
         </div>
