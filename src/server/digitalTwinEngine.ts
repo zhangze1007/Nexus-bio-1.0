@@ -109,6 +109,7 @@ export interface DigitalTwinUpdate {
     product: number;
   };
   likelihood: number;
+  anomalyScore: number;
   anomalyDetected: boolean;
 }
 
@@ -426,11 +427,12 @@ class ExtendedKalmanFilter {
     innovation: number[];
     kalmanGains: number[];
     likelihood: number;
+    innovationCovDiag: number[];
   } {
     // Measurement function h(x) — direct observation of states
     const nMeas = measurementMask.filter(Boolean).length;
     if (nMeas === 0) {
-      return { innovation: [], kalmanGains: [], likelihood: 1.0 };
+      return { innovation: [], kalmanGains: [], likelihood: 1.0, innovationCovDiag: [] };
     }
 
     // Build measurement matrix H (select observed states)
@@ -482,14 +484,21 @@ class ExtendedKalmanFilter {
 
     // Likelihood (Gaussian)
     const Sdet = S[0][0] * (nMeas > 1 ? S[1][1] : 1) * (nMeas > 2 ? S[2][2] : 1);
-    const StimesInnovation = matMul(S, innovation.map(v => [v])).flat();
-    const mahalanobis = innovation.reduce((sum, yi, i) => sum + yi * StimesInnovation[i], 0);
+    const SinvTimesInnovation = matMul(Sinv, innovation.map(v => [v])).flat();
+    const mahalanobis = innovation.reduce((sum, yi, i) => sum + yi * SinvTimesInnovation[i], 0);
     const likelihood = Math.exp(-0.5 * mahalanobis) / Math.sqrt(Math.pow(2 * Math.PI, nMeas) * Math.abs(Sdet) + 1e-300);
 
     // Extract Kalman gains for display
     const kalmanGains = [K[0][0] || 0, K[1]?.[0] || 0, K[2]?.[0] || 0];
 
-    return { innovation, kalmanGains, likelihood: Math.min(1, likelihood) };
+    // Extract innovation covariance diagonal for anomaly detection
+    const innovationCovDiag = [
+      S[0][0],
+      S[1]?.[1] ?? S[0][0],
+      S[2]?.[2] ?? S[0][0],
+    ];
+
+    return { innovation, kalmanGains, likelihood: Math.min(1, likelihood), innovationCovDiag };
   }
 
   getState(): number[] { return [...this.state]; }
@@ -677,15 +686,11 @@ export function runDigitalTwin(
 
     // Update
     const priorState = buildState(ekf, config);
-    const { innovation, kalmanGains, likelihood } = ekf.update(measurement, mask);
+    const { innovation, kalmanGains, likelihood, innovationCovDiag } = ekf.update(measurement, mask);
     const posteriorState = buildState(ekf, config);
 
-    // Anomaly detection
-    const innovationCov = ekf.getUncertainty();
-    const anomalyResult = detectAnomaly(
-      innovation,
-      [innovationCov.biomass ** 2, innovationCov.substrate ** 2, innovationCov.product ** 2],
-    );
+    // Anomaly detection — use innovation covariance S (not state covariance P)
+    const anomalyResult = detectAnomaly(innovation, innovationCovDiag);
 
     if (anomalyResult.score > 0.5) anomalyCount++;
 
@@ -704,6 +709,7 @@ export function runDigitalTwin(
         product: kalmanGains[2],
       },
       likelihood,
+      anomalyScore: anomalyResult.score,
       anomalyDetected: anomalyResult.score > 0.5,
     });
   }

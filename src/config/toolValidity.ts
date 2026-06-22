@@ -32,7 +32,7 @@ export const TOOL_VALIDITY: Record<string, ToolValidity> = {
   'metabolic-eng': { level: 'partial', caption: 'Same engine as PathD with live FBA hooks; force layout is heuristic.' },
 
   // Stage 2 — simulation
-  fbasim:       { level: 'partial', caption: 'Single-species FBA uses a real two-phase simplex LP. Two-Species mode runs two independent LPs and post-hoc scales exchange fluxes — NOT a joint community LP.' },
+  fbasim:       { level: 'partial', caption: 'Single-species FBA uses a real two-phase simplex LP. Two-Species mode runs two independent LPs and post-hoc scales exchange fluxes — NOT a joint community LP. growthRate is a scaled proxy (×0.061 E. coli / ×0.045 yeast) whose scaling factor is heuristic and not derived from literature; raw LP objective value is available as objectiveValue.' },
   cethx:        { level: 'partial', caption: "Alberty-transformed ΔG' from Lehninger reference ΔG° via calcTransformedGibbs (thermoEngine). Condition-aware at pH, ionic-strength, temperature. eQuilibrator 3 used when available. Proton stoichiometry estimated." },
   catdes:       { level: 'partial', caption: 'Distance / orientation / VdW / electrostatic scoring is real (Warshel ε); residue weights are curated reference values.' },
   proevol:      { level: 'partial', caption: 'Campaign scoring, survivor selection, lineage tracking, and next-round recommendations are deterministic modeled heuristics; outputs are simulated/inferred decision support, not wet-lab measurements.' },
@@ -55,7 +55,15 @@ export const TOOL_VALIDITY: Record<string, ToolValidity> = {
   inversefolding:    { level: 'partial', caption: 'k-NN graph, message passing, and PSSM decoding are real (Cα-only backbone). BLOSUM62 declared but unused (uniform prior); all weights hand-tuned, not learned; ESM-2 path is a stub.' },
   multiplexcrispr:   { level: 'partial', caption: 'Rule Set 2 on-target scoring (Doench 2016 weights) and recursive combinatorial enumeration are real. CFD off-target matrix is uniform placeholder (all 0.893). Fitness is a proxy model, not FBA.' },
   pathwaydiscovery:  { level: 'partial', caption: 'A* graph search structure and thermodynamic ΔG cascade summation are real. Heuristic is broken (empty functional groups); atom economy is a fixed lookup; no mass conservation; common-metabolites shortcut bypasses search.' },
-  digitaltwin:       { level: 'real',    caption: 'EKF with RK4 integration, Monod kinetics, analytical Jacobian, and sensor fusion are all genuine. Bugs: likelihood Mahalanobis uses S instead of S⁻¹; NIS uses state covariance P instead of innovation covariance S.' },
+  digitaltwin:       { level: 'real',    caption: 'EKF with RK4 integration, Monod kinetics, analytical Jacobian, and sensor fusion are all genuine. Monte Carlo forecast uses diagonal-only covariance (no cross-correlations). Likelihood and NIS use correct S⁻¹ and innovation covariance S.' },
+
+  // ── Expansion tabs (2026-06-22) ───────────────────────────────────────────
+  // These are sub-tabs within existing tool pages, not independent tools.
+  // Badges rendered via FrontierEngineBadge inline component, not ToolShell.
+  mfa13c:            { level: 'partial', caption: 'EMU decomposition and isotopomer balancing (Antoniewicz 2007) are real. Monte Carlo confidence intervals via Box-Muller perturbation are genuine. Limitations: flux estimation uses grid search (not nonlinear least-squares); no atom mapping verification; σ=0.01 noise level is fixed, not data-driven.' },
+  gemreconstruct:    { level: 'partial', caption: 'GPR boolean parsing and iJO1366 stoichiometric matrix assembly are real. Biomass composition from iJO1366 (Orth et al. 2011). Limitations: KEGG reaction mapping uses iJO1366Subset as proxy (no live KEGG API); no gap-filling; no organism-specific biomass optimization.' },
+  rnaengineering:    { level: 'partial', caption: 'Turner 2009 nearest-neighbor stacking parameters (Turner & Mathews 2010 NAR) and Watson-Crick/wobble complementarity rules are genuine. Limitations: no full secondary structure prediction (no NUPACK/RNAfold integration); thermodynamic scores are nearest-neighbor approximations only; off-target scoring uses simplified similarity, not full alignment.' },
+  biosafety:         { level: 'demo',    caption: 'k-mer Jaccard similarity algorithm is real. Pattern database is a 14-entry simulated subset (not live VFDB/CDC download); 21-mer substring matching has very low sensitivity to real mutant sequences. Not suitable for actual biosafety screening without BLAST integration and live database.' },
 };
 
 export function getToolValidity(moduleId: string): ToolValidity | undefined {

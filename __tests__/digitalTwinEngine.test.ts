@@ -231,11 +231,12 @@ describe('Digital Twin Engine — Anomaly Detection', () => {
   test('anomaly detected when sensor reading deviates significantly from model', () => {
     const readings = generateSensorReadings(standardConfig, 15);
 
-    // Add an anomalous reading: substrate jumps to 0.1 when model expects ~8.5
+    // Add an anomalous reading: substrate jumps to 10 when model expects ~0.01
+    // (substrate is consumed by growth, converges near 0 in this config)
     const anomalousReading: SensorReading = {
       timestamp: 16.0,
       biomass: readings[readings.length - 1].biomass, // biomass normal
-      substrate: 0.1, // far below expected ~8.5 g/L
+      substrate: 10.0, // far above expected ~0.01 g/L (substrate spike = media contamination)
       product: readings[readings.length - 1].product, // product normal
     };
 
@@ -510,5 +511,51 @@ describe('Digital Twin Engine — Model Fit', () => {
 
     // With noiseless data from the same model, R² should be very high
     expect(result.diagnostics.modelFit).toBeGreaterThan(0.5);
+  });
+});
+
+// ── EKF Mathematical Correctness — Bug Regressions ────────────────────────
+// BUG REGRESSION TESTS (see toolValidity.ts digitaltwin caption for context):
+// - "likelihood Mahalanobis uses S instead of S⁻¹" → test: 'likelihood decreases monotonically...'
+// - "NIS uses state covariance P instead of innovation covariance S" → test: 'anomaly score uses innovation covariance S...'
+
+function makeReadings(count: number, opts?: { biomassNoise?: number }): SensorReading[] {
+  const noise = opts?.biomassNoise ?? 0.01;
+  const readings: SensorReading[] = [];
+  let X = 0.1, S = 10.0, P = 0.0;
+  for (let i = 0; i < count; i++) {
+    const mu = standardConfig.muMax * S / (standardConfig.ks + S) * standardConfig.dissolvedO2 / (0.5 + standardConfig.dissolvedO2);
+    const D = standardConfig.feedRate / standardConfig.volume;
+    X = Math.max(0.01, X + (mu * X - D * X) + (Math.random() - 0.5) * noise);
+    S = Math.max(0.01, S + (-(mu / standardConfig.yieldCoeff) * X - standardConfig.maintenanceCoeff * X + D * (standardConfig.feedConcentration - S)));
+    P = Math.max(0, P + (standardConfig.productYield * mu * X + 0.01 * X - D * P));
+    readings.push({ timestamp: i + 1, biomass: +X.toFixed(4), substrate: +S.toFixed(4), product: +P.toFixed(4) });
+  }
+  return readings;
+}
+
+describe('EKF Mathematical Correctness — Bug Regressions', () => {
+  test('likelihood decreases monotonically as innovation magnitude grows (Mahalanobis bug regression)', () => {
+    // If Mahalanobis used S instead of S⁻¹, likelihood at large innovation could
+    // incorrectly increase. Correct EKF likelihood decreases with ||innovation|| (Gaussian).
+    const base = makeReadings(10, { biomassNoise: 0.01 });
+    const noisy = makeReadings(10, { biomassNoise: 2.0 });
+
+    const r1 = runDigitalTwin(standardConfig, base);
+    const r2 = runDigitalTwin(standardConfig, noisy);
+
+    const avgL1 = r1.updateHistory.reduce((s, u) => s + u.likelihood, 0) / r1.updateHistory.length;
+    const avgL2 = r2.updateHistory.reduce((s, u) => s + u.likelihood, 0) / r2.updateHistory.length;
+
+    expect(avgL2).toBeLessThan(avgL1);
+  });
+
+  test('anomaly score uses innovation covariance S not state covariance P (NIS bug regression)', () => {
+    // If NIS used P instead of S, high P would suppress anomaly detection.
+    // With correct S, moderate innovation should trigger at least some anomaly flags.
+    const readings = makeReadings(8, { biomassNoise: 0.5 });
+    const result = runDigitalTwin(standardConfig, readings);
+    const anomalous = result.updateHistory.filter(u => (u as any).anomalyScore > 0.3);
+    expect(anomalous.length).toBeGreaterThan(0);
   });
 });

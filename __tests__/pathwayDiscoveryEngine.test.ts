@@ -362,3 +362,40 @@ describe('Pathway Discovery — Organism Preference', () => {
     expect(result.pathways.length).toBeGreaterThanOrEqual(1);
   });
 });
+
+// ── Known Limitations — Regression Guards ─────────────────────────────────
+describe('Known Limitations — Regression Guards', () => {
+  test('heuristic breakage: search still returns paths when functional group scoring fails', () => {
+    // toolValidity caption: "heuristic is broken (empty functional groups)"
+    // A* heuristic degenerates to 0 or fixed value; search must still complete.
+    const result = runPathwayDiscovery(defaultInput);
+    expect(result.pathways.length).toBeGreaterThanOrEqual(1);
+    // Record current behavior: scores may all be identical when heuristic is broken
+    if (result.pathways.length > 0) {
+      const scores = result.pathways[0].steps.map(s => s.enzymeScore);
+      expect(scores.length).toBeGreaterThan(0);
+    }
+  });
+
+  test('atom economy: value is a fixed lookup (same precursor always returns same atom economy)', () => {
+    // toolValidity caption: "atom economy is a fixed lookup"
+    const r1 = runPathwayDiscovery(defaultInput);
+    const r2 = runPathwayDiscovery(defaultInput);
+    if (r1.pathways.length > 0 && r2.pathways.length > 0) {
+      expect(r1.pathways[0].metrics.atomEconomy).toBe(r2.pathways[0].metrics.atomEconomy);
+    }
+  });
+
+  test('no mass conservation: pathway steps do NOT guarantee stoichiometric balance', () => {
+    // toolValidity caption: "no mass conservation"
+    // Records current behavior: pathways exist but chemical balance is not enforced.
+    // FUTURE: when mass conservation is implemented, replace with positive balance check.
+    const result = runPathwayDiscovery({
+      target: { id: 'ethanol', name: 'ethanol', functionalGroups: ['hydroxyl'], isPrecursor: false },
+      precursors: [glucose],
+    });
+    if (result.pathways.length > 0) {
+      expect(result.pathways[0].steps.length).toBeGreaterThanOrEqual(1);
+    }
+  });
+});

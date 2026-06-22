@@ -1,14 +1,14 @@
 name,medianMs,meanMs,stdevMs,minMs,maxMs,iterations
-"FBA — solveAuthorityFBA",9.29,14.09,8.14,7.57,26.69,5
-"Thermo — calcGroupContribution × 50",0.62,0.60,0.08,0.52,0.70,5
-"Thermo — calcPathwayDeltaG (6-step)",0.01,0.02,0.02,0.01,0.06,5
-"Kinetics — simulateEnzymeSystem",12.71,11.76,1.58,9.28,12.87,5
-"Kinetics — runRK4 (1000 steps)",29.38,30.27,5.07,25.70,38.05,5
-"CatDes — predictBindingAffinity",0.06,0.07,0.03,0.05,0.13,5
-"CatDes — runFullDesignPipeline",122.32,151.17,71.41,82.82,268.85,5
-"CellFree — runFullCFSPipeline",202.79,192.87,63.92,99.32,272.04,5
-"CellFree — simulateCFPS",69.70,80.37,36.40,57.10,144.64,5
-"MultiO — computeEmbeddings (50 genes)",71.34,71.12,6.91,61.93,79.28,5
-"MultiO — full pipeline",81.39,78.19,8.56,68.07,86.16,5
-"ScSpatial — runFullPipeline (200 cells)",2703.96,2833.99,414.71,2344.27,3396.97,5
-"ScSpatial — clusterCells (200 cells)",379.10,372.50,119.14,229.50,523.51,5
+"FBA — solveAuthorityFBA",13.20,11.98,2.66,7.89,14.31,5
+"Thermo — calcGroupContribution × 50",0.66,0.86,0.47,0.53,1.68,5
+"Thermo — calcPathwayDeltaG (6-step)",0.01,0.02,0.02,0.01,0.05,5
+"Kinetics — simulateEnzymeSystem",17.19,19.41,16.31,6.57,47.01,5
+"Kinetics — runRK4 (1000 steps)",60.64,70.30,32.34,38.15,107.08,5
+"CatDes — predictBindingAffinity",0.09,0.10,0.06,0.05,0.20,5
+"CatDes — runFullDesignPipeline",123.19,135.22,65.09,75.47,242.63,5
+"CellFree — runFullCFSPipeline",236.04,218.50,31.79,178.25,248.72,5
+"CellFree — simulateCFPS",71.16,91.73,49.31,66.02,179.82,5
+"MultiO — computeEmbeddings (50 genes)",223.43,213.12,45.34,154.06,272.14,5
+"MultiO — full pipeline",181.94,207.29,106.86,99.00,381.54,5
+"ScSpatial — runFullPipeline (200 cells)",3279.11,3276.24,818.65,2374.90,4458.82,5
+"ScSpatial — clusterCells (200 cells)",624.99,599.25,99.31,432.86,700.14,5
