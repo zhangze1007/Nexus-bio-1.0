@@ -193,7 +193,7 @@ export default function Hero() {
               onFocus={onFocus}
               onBlur={() => setTimeout(() => setFocused(false), 200)}
               onKeyDown={onKeyDown}
-              placeholder="Search pathways, enzymes, literature…"
+              placeholder="Search research or enter a goal (e.g. artemisinin, E. coli, DOI)…"
               className={styles.searchInput}
               style={{ fontFamily: SANS }}
               aria-label="Search research database"
@@ -274,6 +274,27 @@ export default function Hero() {
               </div>
             </motion.div>
           )}
+        </motion.div>
+
+        {/* Smart Entry hint */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+          style={{
+            display: 'flex', justifyContent: 'center', gap: '16px',
+            marginTop: '12px', flexWrap: 'wrap',
+          }}
+        >
+          {['molecule', 'strain', 'DOI', 'production target'].map((ex) => (
+            <span key={ex} style={{
+              fontFamily: MONO, fontSize: '11px',
+              color: 'rgba(255,255,255,0.25)',
+              letterSpacing: '0.02em',
+            }}>
+              {ex}
+            </span>
+          ))}
         </motion.div>
 
         {/* Sub-label */}

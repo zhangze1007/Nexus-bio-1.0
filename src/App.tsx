@@ -50,8 +50,8 @@ export default function App() {
         <section className={styles.metrics}>
           <div className={styles.metricsGrid}>
             {[
-              { value: '14', label: 'Research Tools' },
-              { value: '6', label: 'Database Integrations' },
+              { value: '37+', label: 'Compute Engines' },
+              { value: '8', label: 'Database Integrations' },
               { value: '3D', label: 'Real-time Visualization' },
               { value: '100%', label: 'Client-side Computation' },
             ].map((m) => (
