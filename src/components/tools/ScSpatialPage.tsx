@@ -11,6 +11,7 @@ import { SCSPATIAL_VIEW_LABELS } from './scspatial/scSpatialPalette';
 import { ingestScSpatialDemo, ingestScSpatialFile, queryScSpatial } from '../../services/ScSpatialAuthorityClient';
 import { useScSpatialStore } from '../../store/scSpatialStore';
 import { useWorkbenchStore } from '../../store/workbenchStore';
+import SimErrorBanner from '../ide/shared/SimErrorBanner';
 import ToolShell from './shared/ToolShell';
 import ToolTabBar, { type ToolTab } from './shared/ToolTabBar';
 import ToolTabPanel from './shared/ToolTabPanel';
@@ -50,6 +51,7 @@ function readyLabel(validity: 'real' | 'partial' | 'demo' | null, loadState: str
 export default React.memo(function ScSpatialPage() {
   const [activeTab, setActiveTab] = useState('spatial-2d');
   const [commResult, setCommResult] = useState<ExpandedCommunicationResult | null>(null);
+  const [scspatialError, setScspatialError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -120,50 +122,55 @@ export default React.memo(function ScSpatialPage() {
     const clusterNames = query.availableClusters;
     if (clusterNames.length === 0) return;
 
-    // Build expression matrix from spatial points (per-cell expression for selected gene)
-    const geneClusterExpr: Record<string, Record<string, number>> = {};
+    try {
+      // Build expression matrix from spatial points (per-cell expression for selected gene)
+      const geneClusterExpr: Record<string, Record<string, number>> = {};
 
-    if (query.centerView.points.length > 0) {
-      // Aggregate per-cell expression into per-cluster means
-      const geneAgg: Record<string, Record<string, { sum: number; count: number }>> = {};
-      const selGene = query.selection.selectedGene;
-      if (selGene) {
-        geneAgg[selGene] = {};
-        for (const pt of query.centerView.points) {
-          const cid = pt.clusterId.toString();
-          if (!geneAgg[selGene][cid]) geneAgg[selGene][cid] = { sum: 0, count: 0 };
-          geneAgg[selGene][cid].sum += pt.expression;
-          geneAgg[selGene][cid].count += 1;
+      if (query.centerView.points.length > 0) {
+        // Aggregate per-cell expression into per-cluster means
+        const geneAgg: Record<string, Record<string, { sum: number; count: number }>> = {};
+        const selGene = query.selection.selectedGene;
+        if (selGene) {
+          geneAgg[selGene] = {};
+          for (const pt of query.centerView.points) {
+            const cid = pt.clusterId.toString();
+            if (!geneAgg[selGene][cid]) geneAgg[selGene][cid] = { sum: 0, count: 0 };
+            geneAgg[selGene][cid].sum += pt.expression;
+            geneAgg[selGene][cid].count += 1;
+          }
         }
-      }
 
-      // Convert aggregated sums to mean expression matrix
-      for (const [gene, clusterAgg] of Object.entries(geneAgg)) {
-        geneClusterExpr[gene] = {};
-        for (const cid of clusterNames) {
-          const agg = clusterAgg[cid];
-          if (agg && agg.count > 0) {
-            geneClusterExpr[gene][cid] = agg.sum / agg.count;
+        // Convert aggregated sums to mean expression matrix
+        for (const [gene, clusterAgg] of Object.entries(geneAgg)) {
+          geneClusterExpr[gene] = {};
+          for (const cid of clusterNames) {
+            const agg = clusterAgg[cid];
+            if (agg && agg.count > 0) {
+              geneClusterExpr[gene][cid] = agg.sum / agg.count;
+            }
           }
         }
       }
+
+      // Build cell counts per cluster
+      const cellCounts: Record<string, number> = {};
+      for (const cs of query.rightPanel.clusterSummaries) {
+        cellCounts[cs.clusterId.toString()] = cs.cellCount;
+      }
+
+      const result = analyzeCommunicationExpanded({
+        expressionMatrix: geneClusterExpr,
+        clusters: clusterNames,
+        cellCounts,
+        nPermutations: 200,   // reduced from 1000 for client-side performance
+        useExpandedDB: true,   // 2780 L-R pairs
+      });
+
+      setCommResult(result);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Communication analysis failed';
+      setScspatialError(msg);
     }
-
-    // Build cell counts per cluster
-    const cellCounts: Record<string, number> = {};
-    for (const cs of query.rightPanel.clusterSummaries) {
-      cellCounts[cs.clusterId.toString()] = cs.cellCount;
-    }
-
-    const result = analyzeCommunicationExpanded({
-      expressionMatrix: geneClusterExpr,
-      clusters: clusterNames,
-      cellCounts,
-      nPermutations: 200,   // reduced from 1000 for client-side performance
-      useExpandedDB: true,   // 2780 L-R pairs
-    });
-
-    setCommResult(result);
   }, [query]);
 
   // Sync tab → viewMode in store
@@ -324,6 +331,9 @@ export default React.memo(function ScSpatialPage() {
       />
 
       {error ? <div className={styles.errorBanner} role="alert">{error}</div> : null}
+      {scspatialError && (
+        <div style={{ padding: '0 0 8px' }}><SimErrorBanner message={scspatialError} onRetry={() => setScspatialError(null)} /></div>
+      )}
 
       <ToolTabPanel tabId={activeTab} activeId={activeTab}>
         {activeTab === 'communication' ? (

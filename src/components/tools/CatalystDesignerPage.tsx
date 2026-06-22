@@ -782,6 +782,9 @@ export default React.memo(function CatalystDesignerPage() {
       const result = await getBRENDAKinetics(brendaEcInput.trim());
       setBrendaData(result.data);
       setBrendaSource(result.source);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'BRENDA lookup failed';
+      setCatdesError(msg);
     } finally {
       setBrendaLoading(false);
     }
@@ -807,6 +810,9 @@ export default React.memo(function CatalystDesignerPage() {
     try {
       const result = await runDocking(enzyme.pdbId, enzyme.substrate);
       setDockingResult(result.data);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Docking failed';
+      setCatdesError(msg);
     } finally {
       setDockingLoading(false);
     }
@@ -920,6 +926,7 @@ export default React.memo(function CatalystDesignerPage() {
 
   const selectedCatResidue = enzyme.catalyticResidues.find(r => r.position === selectedResidue);
 
+  const [catdesError, setCatdesError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
 
   // Inverse Folding state
@@ -946,6 +953,9 @@ export default React.memo(function CatalystDesignerPage() {
         temperature: invFoldTemp,
       });
       setInvFoldResult(result);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Inverse folding failed';
+      setCatdesError(msg);
     } finally {
       setInvFoldLoading(false);
     }
@@ -984,6 +994,9 @@ export default React.memo(function CatalystDesignerPage() {
         maxLength: rnaMaxLength,
       });
       setRnaResult(result);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'RNA design failed';
+      setCatdesError(msg);
     } finally {
       setRnaLoading(false);
     }
@@ -1015,6 +1028,9 @@ export default React.memo(function CatalystDesignerPage() {
         hostOrganism: bioHost,
       });
       setBioResult(result);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Biosensor design failed';
+      setCatdesError(msg);
     } finally {
       setBioLoading(false);
     }
@@ -1027,6 +1043,9 @@ export default React.memo(function CatalystDesignerPage() {
       const cds = enzyme.sequence || 'ATGAAACGCACCAGCAACAGCAACTAA';
       const result = designRegulatoryCassette(regTargetStrength, cds);
       setRegResult(result);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Regulatory design failed';
+      setCatdesError(msg);
     } finally {
       setRegLoading(false);
     }
@@ -1042,6 +1061,9 @@ export default React.memo(function CatalystDesignerPage() {
       const cds = enzyme.sequence || 'ATGAAACGCACCAGCAACAGCAACTAA';
       const result = predictGeneExpression(exprPromoter, exprRbs, cds, exprTerminator, 'ecoli');
       setExprResult(result);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Expression prediction failed';
+      setCatdesError(msg);
     } finally {
       setExprLoading(false);
     }
@@ -1054,6 +1076,9 @@ export default React.memo(function CatalystDesignerPage() {
       const cds = enzyme.sequence || 'ATGAAACGCACCAGCAACAGCAACTAA';
       const result = designPlasmid(cds, plasmidHost, expressionLevel, assemblyMethod, copyNumber);
       setPlasmidResult(result);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Plasmid design failed';
+      setCatdesError(msg);
     } finally {
       setPlasmidLoading(false);
     }
@@ -1099,6 +1124,9 @@ export default React.memo(function CatalystDesignerPage() {
     >
       {simError && (
         <div style={{ padding: '0 0 8px' }}><SimErrorBanner message={simError} /></div>
+      )}
+      {catdesError && (
+        <div style={{ padding: '0 0 8px' }}><SimErrorBanner message={catdesError} onRetry={() => setCatdesError(null)} /></div>
       )}
 
       {/* ── Algorithm Transparency ── */}

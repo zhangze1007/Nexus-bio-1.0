@@ -697,6 +697,7 @@ export default React.memo(function MultiOPage() {
   const [selectedGene, setSelectedGene] = useState<string>(activeData[0]?.gene ?? '');
   const [perturbedExpr, setPerturbedExpr] = useState<number>(4);
   const [perturbResult, setPerturbResult] = useState<PerturbationResult | null>(null);
+  const [multioError, setMultioError] = useState<string | null>(null);
 
   /* Deterministic local integration model */
   const { data: model, error: simError } = useMemo(() => {
@@ -722,6 +723,9 @@ export default React.memo(function MultiOPage() {
       views.metabolomics = activeData.map(r => [r.metabolite ?? 0]);
       const result = runMOFA({ views, nFactors: 5 });
       setMofaPlusResult(result);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'MOFA+ analysis failed';
+      setMultioError(msg);
     } finally {
       setMofaPlusLoading(false);
     }
@@ -760,6 +764,9 @@ export default React.memo(function MultiOPage() {
         growthRate: 0.45,
       });
       setFluxomicsResult(result);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Fluxomics analysis failed';
+      setMultioError(msg);
     } finally {
       setFluxomicsLoading(false);
     }
@@ -835,6 +842,9 @@ export default React.memo(function MultiOPage() {
       // Monte Carlo confidence intervals
       const mcResult = monteCarloConfidenceIntervals(input, mfa13cMCTrials);
       setMfa13cMCResult(mcResult);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : '13C-MFA analysis failed';
+      setMultioError(msg);
     } finally {
       setMfa13cLoading(false);
     }
@@ -937,10 +947,15 @@ export default React.memo(function MultiOPage() {
   }, [fbaPayload?.result.topFluxes, selectedGene]);
 
   const handleSimulate = useCallback(() => {
-    // High-flux reactions from FBA produce stronger perturbation effects in the simulation
-    const weightedExpr = perturbedExpr * fbaFluxWeight;
-    const result = model.simulatePerturbation(selectedGene, weightedExpr);
-    setPerturbResult(result);
+    try {
+      // High-flux reactions from FBA produce stronger perturbation effects in the simulation
+      const weightedExpr = perturbedExpr * fbaFluxWeight;
+      const result = model.simulatePerturbation(selectedGene, weightedExpr);
+      setPerturbResult(result);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Perturbation simulation failed';
+      setMultioError(msg);
+    }
   }, [model, selectedGene, perturbedExpr, fbaFluxWeight]);
 
   useEffect(() => {
@@ -1123,6 +1138,9 @@ export default React.memo(function MultiOPage() {
     >
       {simError && (
         <div style={{ padding: '0 16px 8px' }}><SimErrorBanner message={simError} /></div>
+      )}
+      {multioError && (
+        <div style={{ padding: '0 16px 8px' }}><SimErrorBanner message={multioError} onRetry={() => setMultioError(null)} /></div>
       )}
 
       {/* Workflow Stepper */}

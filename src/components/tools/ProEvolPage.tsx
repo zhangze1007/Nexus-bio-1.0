@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ExportButton from '../ide/shared/ExportButton';
+import SimErrorBanner from '../ide/shared/SimErrorBanner';
 import { useWorkbenchStore } from '../../store/workbenchStore';
 import { THEME } from '../../theme';
 import { buildProEvolCampaignInput } from '../../data/proevolMockCampaign';
@@ -270,6 +271,7 @@ export default function ProEvolPage() {
   const [isParsing, setIsParsing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [activeTab, setActiveTab] = useState('landscape');
+  const [proevolError, setProevolError] = useState<string | null>(null);
 
   // ── Mutation Scanner state ───────────────────────────────────────────
   const [scanSequence, setScanSequence] = useState('');
@@ -558,6 +560,10 @@ export default function ProEvolPage() {
       onTabChange={setActiveTab}
       advancedTabIds={['lineage', 'campaign']}
     >
+      {proevolError && (
+        <div style={{ padding: '0 0 8px' }}><SimErrorBanner message={proevolError} onRetry={() => setProevolError(null)} /></div>
+      )}
+
       {/* ═══════ LANDSCAPE TAB (default) ═══════ */}
       <ToolTabPanel activeId={activeTab} tabId="landscape">
       <div style={{ display: 'grid', gap: '10px', padding: '10px 12px 14px' }}>
@@ -883,31 +889,36 @@ export default function ProEvolPage() {
               <button
                 onClick={() => {
                   if (!scanSequence) return;
-                  // Conservation always works (no PDB needed)
-                  setConservationResult(analyzeConservation(scanSequence));
-                  // ΔΔG scan needs PDB
-                  if (pdbText) {
-                    const result = scanMutations(pdbText, scanSequence);
-                    setScanResult(result);
-                    const ddgMap = new Map<string, number>();
-                    for (const r of result.results) ddgMap.set(`${r.position}:${r.mut}`, r.ddg);
-                    const fitness = predictFitness({
-                      sequence: scanSequence,
-                      mutations: result.results.map(r => ({ position: r.position, mut: r.mut })),
-                      pdbText,
-                      ddgResults: ddgMap,
-                    });
-                    setFitnessResult(fitness.predictions);
-                  } else {
-                    // Fitness prediction without PDB (BLOSUM62 + conservation only)
-                    const conserved = conservationResult?.conservedPositions ?? [];
-                    const variable = conservationResult?.variablePositions ?? [];
-                    const mutations = variable.slice(0, 20).flatMap(pos => {
-                      const wt = scanSequence[pos - 1];
-                      return 'ACDEFGHIKLMNPQRSTVWY'.split('').filter(aa => aa !== wt).slice(0, 3).map(aa => ({ position: pos, mut: aa }));
-                    });
-                    const fitness = predictFitness({ sequence: scanSequence, mutations });
-                    setFitnessResult(fitness.predictions);
+                  try {
+                    // Conservation always works (no PDB needed)
+                    setConservationResult(analyzeConservation(scanSequence));
+                    // ΔΔG scan needs PDB
+                    if (pdbText) {
+                      const result = scanMutations(pdbText, scanSequence);
+                      setScanResult(result);
+                      const ddgMap = new Map<string, number>();
+                      for (const r of result.results) ddgMap.set(`${r.position}:${r.mut}`, r.ddg);
+                      const fitness = predictFitness({
+                        sequence: scanSequence,
+                        mutations: result.results.map(r => ({ position: r.position, mut: r.mut })),
+                        pdbText,
+                        ddgResults: ddgMap,
+                      });
+                      setFitnessResult(fitness.predictions);
+                    } else {
+                      // Fitness prediction without PDB (BLOSUM62 + conservation only)
+                      const conserved = conservationResult?.conservedPositions ?? [];
+                      const variable = conservationResult?.variablePositions ?? [];
+                      const mutations = variable.slice(0, 20).flatMap(pos => {
+                        const wt = scanSequence[pos - 1];
+                        return 'ACDEFGHIKLMNPQRSTVWY'.split('').filter(aa => aa !== wt).slice(0, 3).map(aa => ({ position: pos, mut: aa }));
+                      });
+                      const fitness = predictFitness({ sequence: scanSequence, mutations });
+                      setFitnessResult(fitness.predictions);
+                    }
+                  } catch (err) {
+                    const msg = err instanceof Error ? err.message : 'Mutation analysis failed';
+                    setProevolError(msg);
                   }
                 }}
                 disabled={!scanSequence}
@@ -1036,6 +1047,9 @@ export default function ProEvolPage() {
                     pdbText: pdbText ?? undefined,
                   });
                   setLibraryResult(library);
+                } catch (err) {
+                  const msg = err instanceof Error ? err.message : 'Sequence design failed';
+                  setProevolError(msg);
                 } finally { setDesignLoading(false); }
               }}
               disabled={!scanSequence || designLoading}

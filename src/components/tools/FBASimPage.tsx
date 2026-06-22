@@ -372,6 +372,7 @@ export default React.memo(function FBASimPage() {
   const [fseofResult, setFseofResult] = useState<FSEOFResultType | null>(null);
   const [optknockResult, setOptknockResult] = useState<OptKnockResultType | null>(null);
   const [strainDesignLoading, setStrainDesignLoading] = useState(false);
+  const [strainDesignError, setStrainDesignError] = useState<string | null>(null);
 
   // Strain Design Pipeline state
   interface PipelineResult {
@@ -660,6 +661,9 @@ export default React.memo(function FBASimPage() {
         productReactionId: 'PRODUCT',
       });
       setFseofResult(result.result as FSEOFResultType);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'FSEOF analysis failed';
+      setStrainDesignError(msg);
     } finally {
       setStrainDesignLoading(false);
     }
@@ -676,6 +680,9 @@ export default React.memo(function FBASimPage() {
         maxKnockouts: 3,
       });
       setOptknockResult(result.result as OptKnockResultType);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'OptKnock analysis failed';
+      setStrainDesignError(msg);
     } finally {
       setStrainDesignLoading(false);
     }
@@ -1225,6 +1232,8 @@ export default React.memo(function FBASimPage() {
               )}
             </div>
 
+            {strainDesignError && <div style={{ padding: '0 16px 8px' }}><SimErrorBanner message={strainDesignError} onRetry={() => setStrainDesignError(null)} /></div>}
+
             <ScientificFigureFrame
               eyebrow="FSEOF — Flux Scanning based on Enforced Objective Flux"
               title="Overexpression Targets"
@@ -1517,7 +1526,7 @@ export default React.memo(function FBASimPage() {
           </FloatingControlRail>
 
           <div style={{ flex: 1, position: 'relative', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-            {communityError && <div style={{ padding: '0 16px 8px' }}><SimErrorBanner message={communityError} /></div>}
+            {communityError && <div style={{ padding: '0 16px 8px' }}><SimErrorBanner message={communityError} onRetry={() => setCommunityError(null)} /></div>}
             {communityLoading && (
               <div style={{ padding: '0 16px 8px' }}>
                 <div style={{ padding: '6px 10px', borderRadius: 'var(--nb-radius-md)', border: '1px solid rgba(81,81,205,0.22)', background: 'rgba(81,81,205,0.08)', color: 'rgba(240,245,255,0.78)', fontFamily: THEME.SANS, fontSize: 'var(--nb-fs-xs)' }}>

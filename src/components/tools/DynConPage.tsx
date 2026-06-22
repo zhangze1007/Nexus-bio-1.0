@@ -1228,6 +1228,7 @@ function DigitalTwinPanel() {
   const [readings, setReadings] = useState(10);
   const [result, setResult] = useState<import('../../server/digitalTwinEngine').DigitalTwinResult | null>(null);
   const [loading, setLoading] = useState(false);
+  const [dtError, setDtError] = useState<string | null>(null);
 
   const handleRun = React.useCallback(async () => {
     setLoading(true);
@@ -1248,6 +1249,9 @@ function DigitalTwinPanel() {
       }));
       const res = runDigitalTwin(config, sensorReadings, 12);
       setResult(res);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Digital twin simulation failed';
+      setDtError(msg);
     } finally {
       setLoading(false);
     }
@@ -1279,6 +1283,8 @@ function DigitalTwinPanel() {
           </span>
         )}
       </div>
+
+      {dtError && <SimErrorBanner message={dtError} onRetry={() => setDtError(null)} />}
 
       {/* Diagnostics */}
       {result && (
@@ -1359,6 +1365,7 @@ function BioprocessOptimizationPanel() {
   const [simResult, setSimResult] = useState<import('../../server/bioprocessOptimizationEngine').BioprocessResult | null>(null);
   const [optResult, setOptResult] = useState<{ optimalFeedRates: number[]; maxProduct: number; improvement: number } | null>(null);
   const [activeBioprocessTab, setActiveBioprocessTab] = useState<'kinetics' | 'kla' | 'optimize'>('kinetics');
+  const [bpError, setBpError] = useState<string | null>(null);
 
   // Default bioprocess parameters
   const [muMax, setMuMax] = usePersistedState('nexus-bio:dyncon:bp:muMax', 0.5);
@@ -1385,6 +1392,9 @@ function BioprocessOptimizationPanel() {
       setSimResult(sim);
       const opt = optimizeFedBatch(params, duration, 12);
       setOptResult(opt);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Bioprocess simulation failed';
+      setBpError(msg);
     } finally {
       setLoading(false);
     }
@@ -1445,6 +1455,8 @@ function BioprocessOptimizationPanel() {
           {loading ? 'Simulating...' : 'Run Simulation'}
         </button>
       </div>
+
+      {bpError && <SimErrorBanner message={bpError} onRetry={() => setBpError(null)} />}
 
       {/* Parameters */}
       <ParameterPanel title="Bioprocess Parameters" onReset={() => {
@@ -1668,6 +1680,7 @@ function BioreactorAnalyticsPanel() {
   const [readings, setReadings] = useState(20);
   const [result, setResult] = useState<import('../../server/bioreactorAnalyticsEngine').BioreactorAnalytics | null>(null);
   const [loading, setLoading] = useState(false);
+  const [baError, setBaError] = useState<string | null>(null);
 
   const handleRun = React.useCallback(async () => {
     setLoading(true);
@@ -1685,6 +1698,9 @@ function BioreactorAnalyticsPanel() {
       }));
       const res = analyzeBioreactorData(data);
       setResult(res);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Bioreactor analytics failed';
+      setBaError(msg);
     } finally {
       setLoading(false);
     }
@@ -1715,6 +1731,8 @@ function BioreactorAnalyticsPanel() {
           </span>
         )}
       </div>
+
+      {baError && <SimErrorBanner message={baError} onRetry={() => setBaError(null)} />}
 
       {result && (
         <>

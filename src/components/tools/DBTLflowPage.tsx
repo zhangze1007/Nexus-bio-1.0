@@ -254,6 +254,7 @@ export default function DBTLflowPage() {
   const [feedbackLoading, setFeedbackLoading] = useState(false);
   const [feedbackError, setFeedbackError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('cycle');
+  const [dbtlError, setDbtlError] = useState<string | null>(null);
   const liveIteration = useMemo<DBTLIteration>(() => ({
     id: iterations.length + 1,
     phase: liveDraft.phase,
@@ -431,21 +432,31 @@ export default function DBTLflowPage() {
       setActivityMessage('Iteration not added. Result must be a valid number.');
       return;
     }
-    setIterations(prev => appendIteration(prev, hypothesis.trim(), numericResult, unit.trim() || liveDraft.unit, passed, liveDraft.notes));
-    setHypothesis('');
-    setResult('');
-    setActivityTone('success');
-    setActivityMessage(`Iteration #${iterations.length + 1} committed to the ledger at ${numericResult.toFixed(1)} ${unit.trim() || liveDraft.unit}.`);
+    try {
+      setIterations(prev => appendIteration(prev, hypothesis.trim(), numericResult, unit.trim() || liveDraft.unit, passed, liveDraft.notes));
+      setHypothesis('');
+      setResult('');
+      setActivityTone('success');
+      setActivityMessage(`Iteration #${iterations.length + 1} committed to the ledger at ${numericResult.toFixed(1)} ${unit.trim() || liveDraft.unit}.`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to add iteration';
+      setDbtlError(msg);
+    }
   }
 
   function handleGenerateProtocol() {
     const protocolSource = draftIteration ?? latestIteration;
     if (!protocolSource) return;
-    const proto = generator.generate(protocolSource);
-    setGeneratedProtocol(proto);
-    setProtocolExpanded(true);
-    setActivityTone('success');
-    setActivityMessage(`Protocol generated for ${protocolSource.phase.toLowerCase()} iteration #${protocolSource.id}.`);
+    try {
+      const proto = generator.generate(protocolSource);
+      setGeneratedProtocol(proto);
+      setProtocolExpanded(true);
+      setActivityTone('success');
+      setActivityMessage(`Protocol generated for ${protocolSource.phase.toLowerCase()} iteration #${protocolSource.id}.`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Protocol generation failed';
+      setDbtlError(msg);
+    }
   }
 
   function handleDownloadProtocol() {
@@ -493,14 +504,19 @@ export default function DBTLflowPage() {
   ], []);
 
   function handleSBOLExport() {
-    const constructName = hypothesis.trim()
-      ? hypothesis.trim().slice(0, 48).replace(/[^a-z0-9]+/gi, '_')
-      : 'ADS_Expression_Cassette';
-    const doc = serializePartsToSBOL(SHOWCASE_PARTS, constructName);
-    setSbolDoc(doc);
-    setSbolValidation(validateSBOL(doc));
-    setActivityTone('success');
-    setActivityMessage(`SBOL package generated with ${doc.components.length} components and ${doc.interactions.length} interactions.`);
+    try {
+      const constructName = hypothesis.trim()
+        ? hypothesis.trim().slice(0, 48).replace(/[^a-z0-9]+/gi, '_')
+        : 'ADS_Expression_Cassette';
+      const doc = serializePartsToSBOL(SHOWCASE_PARTS, constructName);
+      setSbolDoc(doc);
+      setSbolValidation(validateSBOL(doc));
+      setActivityTone('success');
+      setActivityMessage(`SBOL package generated with ${doc.components.length} components and ${doc.interactions.length} interactions.`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'SBOL export failed';
+      setDbtlError(msg);
+    }
   }
 
   function handleDownloadSBOL(format: 'xml' | 'turtle') {
@@ -540,12 +556,17 @@ export default function DBTLflowPage() {
       return;
     }
     setAssemblyError(null);
-    const plan = planGibsonAssembly(seq, 'ADS_Cassette', { maxFragmentLength: 800, overlapLength: 30 });
-    setAssemblyPlan(plan);
-    setAssemblyProvenance(generateProvenanceRecords(plan));
-    setAssemblyExpanded(true);
-    setActivityTone('success');
-    setActivityMessage(`Assembly plan generated for ${plan.fragments.length} fragments with ${plan.primers.length} primers.`);
+    try {
+      const plan = planGibsonAssembly(seq, 'ADS_Cassette', { maxFragmentLength: 800, overlapLength: 30 });
+      setAssemblyPlan(plan);
+      setAssemblyProvenance(generateProvenanceRecords(plan));
+      setAssemblyExpanded(true);
+      setActivityTone('success');
+      setActivityMessage(`Assembly plan generated for ${plan.fragments.length} fragments with ${plan.primers.length} primers.`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Assembly planning failed';
+      setDbtlError(msg);
+    }
   }
 
   function handleDownloadPrimers() {
@@ -612,6 +633,10 @@ export default function DBTLflowPage() {
       onTabChange={setActiveTab}
       advancedTabIds={['protocol', 'deltapack', 'gibson']}
     >
+      {dbtlError && (
+        <div style={{ padding: '0 0 8px' }}><SimErrorBanner message={dbtlError} onRetry={() => setDbtlError(null)} /></div>
+      )}
+
       {/* ═══════ CYCLE TAB ═══════ */}
       <ToolTabPanel activeId={activeTab} tabId="cycle">
         <div style={{ padding: '0 16px 4px' }}>

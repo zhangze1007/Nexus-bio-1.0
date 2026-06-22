@@ -731,6 +731,7 @@ export default React.memo(function CellFreePage() {
   const [brendaApplied, setBrendaApplied] = useState(false);
   const [calibrationResult, setCalibrationResult] = useState<import('../../server/mcmcCalibration').CalibrationResult | null>(null);
   const [calibrationLoading, setCalibrationLoading] = useState(false);
+  const [cellfreeError, setCellfreeError] = useState<string | null>(null);
 
   // Pipeline state
   const [pipelineResult, setPipelineResult] = useState<{
@@ -764,6 +765,8 @@ export default React.memo(function CellFreePage() {
     } catch (calibrationError) {
       console.warn('Calibration failed:', calibrationError);
       setCalibrationResult(null);
+      const msg = calibrationError instanceof Error ? calibrationError.message : 'MCMC calibration failed';
+      setCellfreeError(msg);
     } finally {
       setCalibrationLoading(false);
     }
@@ -777,6 +780,9 @@ export default React.memo(function CellFreePage() {
       setBrendaData(result.data);
       setBrendaSource(result.source);
       setBrendaApplied(false); // reset apply state on new lookup
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'BRENDA lookup failed';
+      setCellfreeError(msg);
     } finally {
       setBrendaLoading(false);
     }
@@ -977,6 +983,9 @@ export default React.memo(function CellFreePage() {
     >
       {simError && (
         <div style={{ padding: '0 0 8px' }}><SimErrorBanner message={simError} /></div>
+      )}
+      {cellfreeError && (
+        <div style={{ padding: '0 0 8px' }}><SimErrorBanner message={cellfreeError} onRetry={() => setCellfreeError(null)} /></div>
       )}
 
       {/* ── Algorithm Transparency ── */}
@@ -1829,6 +1838,7 @@ function CellFreeMetabolicPanel() {
   const [energySystem, setEnergySystem] = useState<'PEP' | 'creatine_phosphate' | 'maltodextrin'>('PEP');
   const [result, setResult] = useState<import('../../server/cellFreeMetabolicEngine').CellFreeResult | null>(null);
   const [loading, setLoading] = useState(false);
+  const [metError, setMetError] = useState<string | null>(null);
 
   const handleRun = React.useCallback(async () => {
     setLoading(true);
@@ -1849,6 +1859,9 @@ function CellFreeMetabolicPanel() {
       ];
       const res = simulateCellFreePathway(system, pathway, 8);
       setResult(res);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Cell-free metabolic simulation failed';
+      setMetError(msg);
     } finally {
       setLoading(false);
     }
@@ -1882,6 +1895,8 @@ function CellFreeMetabolicPanel() {
           </span>
         )}
       </div>
+
+      {metError && <SimErrorBanner message={metError} onRetry={() => setMetError(null)} />}
 
       {result && (
         <>
