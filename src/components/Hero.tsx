@@ -49,6 +49,7 @@ export default function Hero() {
   const [preview, setPreview]   = useState<PreviewResult[]>([]);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
+  const [smartResult, setSmartResult] = useState<ReturnType<typeof parseSmartInput> | null>(null);
   const [, startTransition] = useTransition();
 
   // Parallax
@@ -76,6 +77,15 @@ export default function Hero() {
     return () => { clearTimeout(timer); ctrl.abort(); };
   }, [query, focused]);
 
+  // Smart Entry detection (sync, no debounce needed)
+  useEffect(() => {
+    if (query.trim().length < 2) { setSmartResult(null); return; }
+    try {
+      const parsed = parseSmartInput(query);
+      setSmartResult(parsed.type !== 'FREEFORM' ? parsed : null);
+    } catch { setSmartResult(null); }
+  }, [query]);
+
   const onFocus = useCallback(() => {
     setFocused(true);
     fluidRef.current?.triggerConverge();
@@ -96,10 +106,11 @@ export default function Hero() {
     router.push(`/research?q=${encodeURIComponent(term)}`);
   }, [router]);
 
-  const showPopup = focused && query.length >= 3 && (preview.length > 0 || previewLoading);
+  const hasSmartResult = smartResult !== null;
+  const showPopup = focused && query.length >= 3 && (preview.length > 0 || previewLoading || hasSmartResult);
 
-  // Total dropdown items = preview results + "View all" footer
-  const totalItems = preview.length + 1;
+  // Total dropdown items = smart result (if any) + preview results + "View all" footer
+  const totalItems = (hasSmartResult ? 1 : 0) + preview.length + 1;
 
   const onKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Escape') {
@@ -193,7 +204,7 @@ export default function Hero() {
               onFocus={onFocus}
               onBlur={() => setTimeout(() => setFocused(false), 200)}
               onKeyDown={onKeyDown}
-              placeholder="Search research or enter a goal (e.g. artemisinin, E. coli, DOI)…"
+              placeholder="Search pathways, enzymes, molecules, or literature…"
               className={styles.searchInput}
               style={{ fontFamily: SANS }}
               aria-label="Search research database"
@@ -228,6 +239,47 @@ export default function Hero() {
               role="listbox"
               id="hero-search-listbox"
               aria-label="Search suggestions">
+              {/* Smart Entry result */}
+              {hasSmartResult && (
+                <button
+                  id="hero-search-option-smart"
+                  role="option"
+                  aria-selected={activeIndex === 0}
+                  onMouseDown={() => router.push(`/start?q=${encodeURIComponent(query.trim())}`)}
+                  className={styles.previewItem}
+                  style={{
+                    ...(activeIndex === 0 ? { background: 'rgba(255,255,255,0.08)' } : undefined),
+                    borderBottom: '1px solid rgba(255,255,255,0.06)',
+                  }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{
+                      padding: '2px 6px', borderRadius: '4px',
+                      background: smartResult!.validityClass === 'COMPUTATIONAL'
+                        ? 'rgba(147,203,82,0.15)' : 'rgba(232,220,200,0.2)',
+                      color: smartResult!.validityClass === 'COMPUTATIONAL'
+                        ? '#93CB52' : '#E8DCC8',
+                      fontSize: '10px', fontWeight: 600, fontFamily: MONO,
+                    }}>
+                      {smartResult!.type}
+                    </span>
+                    <span style={{ fontFamily: SANS, fontSize: '13px', color: '#fff' }}>
+                      {smartResult!.displayLabel}
+                    </span>
+                    <span style={{
+                      marginLeft: 'auto', fontSize: '10px', fontFamily: MONO,
+                      color: 'rgba(255,255,255,0.3)',
+                    }}>
+                      {smartResult!.confidence}
+                    </span>
+                  </div>
+                  <p style={{
+                    fontFamily: MONO, fontSize: '11px',
+                    color: 'rgba(148,163,184,0.5)', marginTop: '2px',
+                  }}>
+                    {smartResult!.toolChainDescription}
+                  </p>
+                </button>
+              )}
               {previewLoading && preview.length === 0 ? (
                 <div style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <Loader2 size={12} style={{ color: 'rgba(255,255,255,0.75)', animation: 'spin 1s linear infinite' }} />
@@ -274,27 +326,6 @@ export default function Hero() {
               </div>
             </motion.div>
           )}
-        </motion.div>
-
-        {/* Smart Entry hint */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-          style={{
-            display: 'flex', justifyContent: 'center', gap: '16px',
-            marginTop: '12px', flexWrap: 'wrap',
-          }}
-        >
-          {['molecule', 'strain', 'DOI', 'production target'].map((ex) => (
-            <span key={ex} style={{
-              fontFamily: MONO, fontSize: '11px',
-              color: 'rgba(255,255,255,0.25)',
-              letterSpacing: '0.02em',
-            }}>
-              {ex}
-            </span>
-          ))}
         </motion.div>
 
         {/* Sub-label */}
