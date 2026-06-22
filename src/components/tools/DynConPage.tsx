@@ -40,6 +40,7 @@ import ResultSummaryPanel from './shared/ResultSummaryPanel';
 import ParameterPanel from './shared/ParameterPanel';
 import type { ToolTab } from './shared/ToolTabBar';
 import DataSourceBadge from '../ide/shared/DataSourceBadge';
+import NextStepButton from '../NextStepButton';
 
 /* ── Design Tokens (shared via useToolTheme) ───────────────────────────────── */
 import { toolTokens } from '../../hooks/useToolTheme';
@@ -1220,6 +1221,7 @@ export default React.memo(function DynConPage() {
       <ToolTabPanel tabId="analytics" activeId={activeTab}>
         <BioreactorAnalyticsPanel />
       </ToolTabPanel>
+      <NextStepButton currentStepId="dyncon" />
     </ToolShell>
   );
 });

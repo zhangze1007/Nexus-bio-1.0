@@ -6,6 +6,7 @@ import { RouteTransition } from '../src/components/shared/RouteTransition';
 import { OnboardingOverlay } from '../src/components/shared/OnboardingOverlay';
 import AuthProvider from '../src/components/auth/AuthProvider';
 import WebVitals from '../src/components/WebVitals';
+import WorkflowBanner from '../src/components/WorkflowBanner';
 
 export const metadata: Metadata = {
   title: 'Nexus-Bio | Synthetic Biology Research Workbench',
@@ -55,6 +56,7 @@ export default function RootLayout({
             <WorkbenchSyncProvider />
           </Suspense>
           <div id="root">
+            <WorkflowBanner />
             <RouteTransition>
               <main id="main-content">{children}</main>
             </RouteTransition>

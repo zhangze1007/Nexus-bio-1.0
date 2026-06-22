@@ -50,6 +50,7 @@ import HandoffCard from './shared/HandoffCard';
 import ResultSummaryPanel from './shared/ResultSummaryPanel';
 import ConfidenceBadge from './shared/ConfidenceBadge';
 import WorkflowStepper from './shared/WorkflowStepper';
+import NextStepButton from '../NextStepButton';
 
 /* ── Docking Result Interface ─────────────────────────────────────── */
 
@@ -2678,6 +2679,7 @@ export default React.memo(function CatalystDesignerPage() {
         </div>
       </ToolTabPanel>
 
+      <NextStepButton currentStepId="catdes" />
     </ToolShell>
   );
 });

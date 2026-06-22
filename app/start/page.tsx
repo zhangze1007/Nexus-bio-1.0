@@ -4,6 +4,7 @@
 import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { parseSmartInput, type ParseResult } from '../../src/lib/smart-parser';
+import { buildGoalContext, saveGoalContext } from '../../src/lib/goal-context';
 
 function StartContent() {
   const router = useRouter();
@@ -195,7 +196,11 @@ function StartContent() {
           {/* Actions */}
           <div style={{ display: 'flex', gap: '12px' }}>
             <button
-              onClick={() => router.push(parseResult!.routeTo)}
+              onClick={() => {
+                const ctx = buildGoalContext(parseResult!.rawInput, parseResult!.type);
+                saveGoalContext(ctx);
+                router.push(parseResult!.routeTo);
+              }}
               style={{
                 flex: 1, padding: '12px',
                 background: 'rgba(147,203,82,0.9)', border: 'none', borderRadius: '8px',

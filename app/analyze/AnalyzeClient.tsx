@@ -19,6 +19,7 @@ import {
   type StructuredAnalysisPayload,
 } from '../../src/store/workbenchStore';
 import { TOOL_BY_ID } from '../../src/components/tools/shared/toolRegistry';
+import NextStepButton from '../../src/components/NextStepButton';
 
 const PaperAnalyzer = dynamic(
   () => import('../../src/components/PaperAnalyzer'),
@@ -575,6 +576,7 @@ export default function AnalyzeClient() {
             </div>
           </div>
         )}
+        <NextStepButton currentStepId="analyze" />
       </div>
     </div>
   );

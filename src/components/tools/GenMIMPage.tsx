@@ -55,6 +55,7 @@ import WorkbenchRangeSlider from './shared/WorkbenchRangeSlider';
 import type { ToolTab } from './shared/ToolTabBar';
 import { THEME, TOOL_RESULT_PALETTE } from '../../theme';
 import { PAPER_THEME } from '../charts/chartTheme';
+import NextStepButton from '../NextStepButton';
 import { SVGChartContainer } from '../charts/primitives';
 
 /**
@@ -726,6 +727,7 @@ export default React.memo(function GenMIMPage() {
       <ToolTabPanel tabId="gem" activeId={activeTab}>
         <GEMReconstructionPanel />
       </ToolTabPanel>
+      <NextStepButton currentStepId="genmim" />
     </ToolShell>
   );
 });

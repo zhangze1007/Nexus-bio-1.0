@@ -14,6 +14,7 @@ import type { RetrosynthesisResult } from '../../server/retrosynthesis';
 import type { PathwayDiscoveryResult, DiscoveredPathway } from '../../server/pathwayDiscoveryEngine';
 import { THEME } from '../../theme';
 import { getToolValidity } from '../../config/toolValidity';
+import NextStepButton from '../NextStepButton';
 
 /** Tab bar / section divider border — subtle white edge */
 const BORDER_SUBTLE = 'rgba(255,255,255,0.06)';
@@ -925,6 +926,7 @@ export default React.memo(function PathDPage() {
       )}
 
       {activeTab === 'kegg' && <MetabolicEngPage embedded />}
+      <NextStepButton currentStepId="pathd" />
     </>
   );
 });

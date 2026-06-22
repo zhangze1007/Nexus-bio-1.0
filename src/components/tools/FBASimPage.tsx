@@ -68,6 +68,7 @@ import { FluxMap, W, H, SUBSYSTEM_COLORS, FLUX_FWD_COLOR, FLUX_REV_COLOR, runFor
 import { COLORS, ParamSlider, GlassContainer, SharedMetaboliteBus, StrainPanel } from './fbasim/CommunityPanels';
 import { round, createEmptyFBAOutput, createEmptyCommunityOutput, type SimMode } from './fbasim/fbaHelpers';
 import { THEME, TOOL_RESULT_PALETTE } from '../../theme';
+import NextStepButton from '../NextStepButton';
 
 // ── Consortium panel (imported from fbasim/) ──
 import ConsortiumPanel from './fbasim/ConsortiumPanel';
@@ -1593,6 +1594,7 @@ export default React.memo(function FBASimPage() {
       <ToolTabPanel tabId="custom" activeId={activeTab}>
         <CustomModelPanel />
       </ToolTabPanel>
+      <NextStepButton currentStepId="fbasim" />
     </ToolShell>
   );
 });
